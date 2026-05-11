@@ -60,7 +60,7 @@ storage layer must be:
 | Is it really faster than ClickHouse? | Not proven generally. GreptimeDB publishes strong benchmark results, but ClickHouse remains extremely strong for analytical/log workloads and has broader independent validation. |
 | Is it cheaper? | Plausible for long-retention observability because GreptimeDB is object-storage-oriented, but total cost depends on query load, cache, compaction, egress, operations, and enterprise needs. Not proven by public data alone. |
 | Is it better for metrics than ClickHouse? | Likely yes for Prometheus-compatible metrics workflows because GreptimeDB supports Prometheus remote write and PromQL. ClickHouse can store metrics, but it is less metrics-native in the core database. |
-| Is it better for logs and traces than ClickHouse? | Not clearly. ClickHouse is a proven fit for logs/traces analytics, and ClickStack now also presents a unified observability story. GreptimeDB's advantage is more metrics-native architecture, not obvious superiority on every log/trace query. |
+| Is it better for logs and traces than ClickHouse? | Not clearly. ClickHouse is a proven fit for logs/traces analytics, and ClickStack proves ClickHouse can be packaged into a unified observability stack. GreptimeDB's advantage is more metrics-native architecture, not obvious superiority on every log/trace query. |
 | Is it mature enough? | Promising but young. GreptimeDB reached 1.0 recently, has several years of development, and lists production users, but ClickHouse has a much larger ecosystem and longer production history. |
 | Should Parallax choose it now? | Prototype it, but do not hard-code the product around it until Parallax runs representative benchmarks and validates operational complexity. |
 
@@ -104,8 +104,9 @@ ask cross-signal questions without stitching together Prometheus, Loki, Tempo,
 Elasticsearch, and separate metrics stores itself.
 
 This advantage is strongest against split observability stacks. It is less
-unique against ClickStack, which also uses ClickHouse to unify logs, metrics, and
-traces. In that comparison, GreptimeDB's differentiator is its
+unique against ClickHouse once ClickStack is considered, because ClickStack uses
+ClickHouse as the telemetry store for logs, metrics, and traces. In that
+comparison, GreptimeDB's differentiator is its
 Prometheus-compatible metric model plus compute/storage separation in the
 database architecture, not simply "one place for telemetry."
 
@@ -297,6 +298,169 @@ Sources:
 
 ## Other Storage Alternatives
 
+The search space is broader than GreptimeDB and ClickHouse, but many apparent
+alternatives collapse into one of three buckets:
+
+1. ClickHouse-based observability platforms, not independent databases.
+2. Split stacks with separate metrics, logs, and traces stores.
+3. Search/log-first systems that can ingest all three signals but are not
+   metrics-native time-series engines.
+
+That means Parallax should not say "GreptimeDB has no competitors." A more
+accurate statement is:
+
+> GreptimeDB and the ClickHouse ecosystem are the strongest open-source
+> candidates for a fast, self-hostable observability storage layer that can
+> handle metrics, logs, and traces together. Parseable is the most relevant
+> non-ClickHouse challenger to watch, but it is still more of an observability
+> datalake/platform than a direct GreptimeDB-style database substitute.
+
+## Unified-Storage Candidate and Exclusion Map
+
+| Candidate | Stores metrics/logs/traces in one self-hostable system? | Query model | Storage design | Main weakness for Parallax |
+| --- | --- | --- | --- | --- |
+| GreptimeDB | Yes. One database engine targets metrics, logs, traces, and events. | SQL + PromQL + log/trace APIs. | Compute/storage separation, timestamp-first layout, object storage support. | Young; traces are still experimental in 1.0 docs; public speed/cost evidence is mostly vendor-published. |
+| ClickHouse | Yes in practice. ClickStack stores OTel logs, metrics, traces, session replay, and errors in ClickHouse, but ClickStack itself is not a database. | SQL first; HyperDX search when using ClickStack; PromQL story is less native than GreptimeDB/Prometheus-style systems. | Mature columnar OLAP engine; open-source self-host is local-disk oriented, while managed ClickStack gets stronger object-storage economics. | Metrics semantics are stack-level rather than database-native; more operational surface than GreptimeDB for an OSS deployment. |
+| Parseable | Yes by product direction. It describes itself as a telemetry/MELT observability datalake and documents logs, metrics, and traces via OpenTelemetry. | PostgreSQL-compatible SQL; PromQL docs exist. | Object-store-first datalake with local/distributed deployment. | Younger and less battle-tested; more platform-specific than GreptimeDB/ClickHouse as an embeddable storage choice. |
+| OpenSearch Observability Stack | Partly. Logs/traces live in OpenSearch, but metrics discovery uses a Prometheus data source. | PPL for logs/traces; PromQL for metrics. | Search-index architecture with OpenSearch plus Prometheus and OTel/Data Prepper components. | Not one storage engine for all three; likely heavier and less cost-efficient for high-volume telemetry. |
+| Elastic Observability | Yes as a product, and Elastic has an AGPL option for source code as of 2024, but releases/default distribution remain under Elastic licensing. | Elastic search/query stack plus OTel ingestion. | Search/index architecture. | Licensing and open-core history complicate "fully open"; heavier than Parallax wants for an OSS storage dependency. |
+| VictoriaMetrics family | No single database. VictoriaMetrics, VictoriaLogs, and VictoriaTraces are separate specialized stores. | MetricsQL/PromQL, LogsQL, Jaeger-compatible trace APIs. | Highly optimized per signal. | Excellent specialized components, but Parallax would still stitch multiple stores together. |
+| Grafana LGTM | No single database. Loki, Grafana/Mimir, Tempo, and Pyroscope are separate systems. | LogQL, PromQL, TraceQL, profiles APIs. | Mature composable stack. | Strong ecosystem, but operationally multi-system and not a single storage layer. |
+
+Sources:
+
+- [Parseable GitHub repository](https://github.com/parseablehq/parseable)
+- [Parseable OpenTelemetry docs](https://www.parseable.com/docs/ingest-data/otel)
+- [OpenSearch Observability Stack](https://observability.opensearch.org/docs/)
+- [OpenSearch metrics discovery docs](https://observability.opensearch.org/docs/investigate/discover-metrics/)
+- [Elastic licensing FAQ](https://www.elastic.co/pricing/faq/licensing)
+- [Elastic OpenTelemetry docs](https://www.elastic.co/docs/solutions/observability/apm/opentelemetry/upstream-opentelemetry-collectors-language-sdks)
+- [VictoriaMetrics product overview](https://victoriametrics.com/)
+- [VictoriaLogs docs](https://docs.victoriametrics.com/victorialogs/)
+- [VictoriaTraces docs](https://docs.victoriametrics.com/victoriatraces/)
+
+## ClickHouse-Based Platforms Are Not Separate Storage Competitors
+
+ClickStack should not be compared to GreptimeDB as a database. ClickStack is a
+ClickHouse-backed observability stack. The official architecture docs describe
+the open-source deployment as ClickHouse, HyperDX, and an OpenTelemetry
+Collector, with MongoDB used for application state. The database under the stack
+is ClickHouse.
+
+Several strong "Datadog alternative" products support metrics, logs, and traces,
+but they reinforce the ClickHouse side of the comparison rather than adding a new
+storage engine:
+
+| Platform | Storage implication |
+| --- | --- |
+| ClickStack / HyperDX | Official ClickHouse observability stack. Uses ClickHouse plus HyperDX and the OpenTelemetry Collector. |
+| SigNoz | Open-source OpenTelemetry observability platform that uses ClickHouse as the datastore. |
+| Uptrace | Open-source APM for traces, metrics, and logs; uses ClickHouse plus PostgreSQL metadata storage. |
+| qryn | API compatibility layer for Loki, Prometheus, Tempo, and other protocols backed by ClickHouse. |
+
+These are important market competitors, but for Parallax's storage decision they
+mostly answer: "ClickHouse can be used as a unified telemetry backend if a stack
+adds the observability semantics around it."
+
+OpenObserve is also excluded from the database shortlist. It is a self-hostable
+observability product/platform, not a clean storage engine candidate for
+Parallax to embed or recommend as the default database. It can stay on a broad
+market-watch list, but it should not drive the GreptimeDB-vs-ClickHouse storage
+decision.
+
+Sources:
+
+- [ClickStack product page](https://clickhouse.com/clickstack)
+- [ClickStack architecture docs](https://clickhouse.com/docs/use-cases/observability/clickstack/architecture)
+- [SigNoz repository](https://github.com/SigNoz/signoz)
+- [SigNoz architecture docs](https://signoz.io/docs/architecture/)
+- [Uptrace repository](https://github.com/uptrace/uptrace)
+- [Uptrace open-source APM page](https://uptrace.dev/get/hosted/open-source-apm)
+- [qryn OpenTelemetry collector repository](https://github.com/metrico/otel-collector)
+- [OpenObserve repository](https://github.com/openobserve/openobserve)
+
+## Technical Difference: GreptimeDB vs. ClickHouse
+
+The key technical difference is not that one can store telemetry and the other
+cannot. Both can.
+
+The real difference is where observability semantics live.
+
+### GreptimeDB
+
+GreptimeDB bakes more observability semantics into the database:
+
+- time is required through a `TIME INDEX`;
+- Prometheus remote write/read and PromQL are first-class interfaces;
+- OTLP ingestion can target GreptimeDB directly;
+- logs, traces, metrics, and wide events are part of the same product story;
+- object storage is a primary architectural target;
+- dynamic schema behavior is designed for changing OTLP attributes.
+
+That makes GreptimeDB more naturally aligned with Parallax if Parallax wants a
+database that already understands observability-shaped data.
+
+### ClickHouse
+
+ClickHouse is the stronger general analytical engine:
+
+- mature columnar OLAP engine;
+- broad ecosystem and operational knowledge;
+- excellent high-cardinality event/log/trace analytics;
+- powerful SQL and materialized-view patterns;
+- many observability platforms already choose it as their store.
+
+But observability behavior often lives above the database:
+
+- OpenTelemetry schemas and transforms;
+- HyperDX/ClickStack UX;
+- Prometheus/PromQL compatibility layers;
+- materialized views for rollups;
+- adapters for trace and log workflows.
+
+This is not necessarily bad. It is a strong architecture when the team wants SQL
+control and raw analytical power. It is less attractive if Parallax wants the
+smallest self-hosted path to "send OTLP/Prometheus in, query evidence bundles
+out."
+
+Sources:
+
+- [GreptimeDB as an Alternative to ClickHouse for Time-Series and Observability](https://greptime.com/tech-content/2026-04-17-clickhouse-alternative-greptimedb)
+- [ClickStack product page](https://clickhouse.com/clickstack)
+- [ClickHouse OpenTelemetry integration docs](https://clickhouse.com/docs/use-cases/observability/integrating-opentelemetry)
+
+## What We Can Finalize
+
+We can finalize the following research position:
+
+1. GreptimeDB is not the only open-source system that can store metrics, logs,
+   and traces.
+2. GreptimeDB is one of very few databases designed around all three signals
+   rather than assembled into an observability stack later.
+3. ClickHouse is the only equally serious mature baseline, and the ecosystem
+   around it is now large: ClickStack, SigNoz, Uptrace, qryn, and custom
+   ClickHouse observability pipelines.
+4. Parseable is the main non-ClickHouse alternative worth watching, but it is
+   more platform/datalake-shaped than database-shaped.
+5. OpenObserve is excluded from the storage shortlist because it is better
+   treated as an observability product, not a database competitor.
+6. Grafana LGTM, VictoriaMetrics family, and OpenSearch are credible
+   observability stacks, but they do not beat GreptimeDB on "single database for
+   all three signals."
+7. The remaining unproven claim is performance/cost. GreptimeDB has strong
+   published results, including a 2026 Greptime-authored comparison against
+   ClickHouse, but Parallax should still run its own benchmark before saying
+   GreptimeDB is faster or cheaper for our workload.
+
+The storage shortlist for Parallax should therefore be:
+
+1. GreptimeDB as the purpose-built observability database candidate.
+2. ClickHouse as the mature high-performance database baseline.
+
+Parseable can stay on a watch list, but it should not be treated as equal to
+GreptimeDB or ClickHouse until it proves database-level maturity, operational
+fit, and Parallax-shaped performance.
+
 | Option | Technical fit | Why it may lose for Parallax |
 | --- | --- | --- |
 | Prometheus + Thanos/Mimir | Excellent metrics ecosystem and PromQL. | Metrics-first; logs and traces require Loki/Tempo or other stores. Cross-signal evidence requires multi-system assembly. |
@@ -370,9 +534,11 @@ needs a focused benchmark that uses its own access patterns.
 ### Systems to Compare
 
 1. GreptimeDB.
-2. ClickHouse or ClickStack.
-3. Grafana stack: Mimir/Loki/Tempo.
-4. VictoriaMetrics family if time allows.
+2. ClickHouse, optionally using ClickStack schemas/collector to represent the
+   official ClickHouse observability path.
+3. Parseable only if time allows.
+4. Grafana stack and VictoriaMetrics family as sanity checks, not primary
+   database candidates.
 
 ### Metrics
 
