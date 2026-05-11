@@ -21,6 +21,7 @@ idea becomes sharper.
 - [Project thesis](docs/research/project-thesis.md)
 - [Market landscape](docs/research/market-landscape.md)
 - [GreptimeDB storage evaluation](docs/research/greptimedb-storage-evaluation.md)
+- [Observability storage benchmark plan](docs/research/observability-storage-benchmark-plan.md)
 - [Repository structure](PROJECT_STRUCTURE.md)
 - [Agent instructions](AGENTS.md)
 

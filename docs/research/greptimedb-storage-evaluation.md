@@ -52,6 +52,11 @@ storage layer must be:
 - compatible with OpenTelemetry and Prometheus workflows;
 - mature enough that Parallax is not blocked by storage bugs.
 
+This is a database decision, not a platform decision. Platform products such as
+ClickStack, SigNoz, Uptrace, OpenObserve, and Grafana LGTM can prove market
+demand or provide useful schemas, but they should not be treated as storage
+engine candidates. Parallax should compare the databases underneath them.
+
 ## Short Verdict
 
 | Question | Current answer |
@@ -314,6 +319,14 @@ accurate statement is:
 > handle metrics, logs, and traces together. Parseable is the most relevant
 > non-ClickHouse challenger to watch, but it is still more of an observability
 > datalake/platform than a direct GreptimeDB-style database substitute.
+
+The primary benchmark should therefore compare databases only:
+
+1. GreptimeDB.
+2. ClickHouse.
+
+Everything else is either excluded, watch-listed, or used only as a reference
+for schemas and operational patterns.
 
 ## Unified-Storage Candidate and Exclusion Map
 
