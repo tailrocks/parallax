@@ -37,6 +37,7 @@ or CI contract yet.
 | --- | --- |
 | `docs/research/project-thesis.md` | Original thesis. |
 | `docs/research/market-landscape.md` | Market research. |
+| `docs/research/greptimedb-storage-evaluation.md` | Storage-layer evaluation for GreptimeDB, ClickHouse, and observability backends. |
 
 ## Update Rule
 
