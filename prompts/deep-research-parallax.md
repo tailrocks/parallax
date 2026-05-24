@@ -25,6 +25,55 @@ The research should be opinionated, technical, and evidence-based.
 
 ---
 
+# Evaluation Lens (Most Important)
+
+This is the lens for the entire research. Apply it to every candidate.
+
+I am an engineer. I care about which system delivers the performance and which
+project is most deeply connected, by design, to the goal stated here.
+
+Judge every candidate ONLY by:
+- raw performance
+- architecture and design quality
+- how deeply the project is purpose-built, down to the small details, for this goal
+- operational simplicity
+- technical fit for an AI-native debugging/investigation context engine
+
+Explicitly IGNORE:
+- team size
+- company backing or funding
+- popularity, fame, hype
+- market share or community size
+- age or "maturity as credibility"
+
+None of that matters. It does not matter how big the team is or how famous the
+project is.
+
+We do NOT care about legacy systems. This is the AI world. I care about new
+solutions designed from first principles for AI-native workflows. A legacy
+system retrofitted to this goal is not a point in its favor; being incumbent is
+not an advantage here.
+
+"Best fit" means the system whose core design most directly serves, from the
+smallest details up:
+- append-only event ingestion
+- unified observability storage
+- correlation
+- causal reconstruction
+- context-graph building
+- agent-consumable, machine-readable structured output
+
+For each layer, answer two things concretely:
+1. Who provides what performance?
+2. Which project is architecturally closest to this goal — which one looks like
+   it was designed, from scratch and in every detail, to achieve this perfectly?
+
+The purpose of this research is to decide, purely from the technical
+perspective, which direction to take and which system to use to build this the
+right way the first time.
+
+---
+
 # Background and Motivation
 
 My current workflow changed dramatically because of AI coding agents.
