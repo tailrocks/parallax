@@ -380,6 +380,9 @@ Research:
 - OTLP protocol internals
 - scaling patterns
 - production deployment architectures
+- Rust-native collectors, especially Rotel (https://rotel.dev/,
+  https://github.com/rotel-dev/rotel) — a Rust OTLP collector to evaluate as a
+  reference design and possible component
 
 Key question:
 Is OpenTelemetry becoming the universal observability protocol layer?

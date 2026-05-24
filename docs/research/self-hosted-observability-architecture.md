@@ -213,6 +213,55 @@ Source:
 
 - [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/)
 
+### Rust Collector Candidate: Rotel
+
+Rotel (by Streamfold) is a Rust-native OpenTelemetry collector worth tracking
+because it matches the Parallax bias: Rust, OTLP-native, Apache-2.0, small
+footprint. It is not on the critical path, but it is a useful reference design
+and a possible drop-in collector for users who want one.
+
+What it is:
+
+- "High Performance, Resource Efficient OpenTelemetry Collection," written in
+  Rust with no garbage collector overhead;
+- receivers: OTLP/gRPC, OTLP/HTTP, OTLP/HTTP-JSON, and a Kafka receiver for
+  traces/metrics/logs;
+- exporters: OTLP, ClickHouse, Kafka, Datadog, AWS X-Ray, AWS EMF, plus debug
+  output;
+- custom processors via native Python integration (pyo3 bindings);
+- deployment: Docker, language packages (Python/Node.js), and an AWS Lambda
+  extension layer with adaptive flushing and fast cold starts;
+- license Apache-2.0; latest release v0.2.2 (2026-05-04); ~366 GitHub stars.
+
+Performance claims (vendor/loadtest, verify independently):
+
+- fewer resources than the upstream OpenTelemetry Collector for the same
+  workloads;
+- faster cold starts than the OpenTelemetry Lambda and Datadog OTEL Lambda
+  layers.
+
+Sources:
+
+- [Rotel site](https://rotel.dev/)
+- [Rotel GitHub repo](https://github.com/rotel-dev/rotel)
+
+Why it matters for prototyping:
+
+- a working example of a Rust OTLP receiver pipeline we can study instead of
+  building one blind;
+- its ClickHouse and Kafka exporters map directly onto the storage and stream
+  layers Parallax is evaluating (GreptimeDB/ClickHouse + Iggy/Kafka);
+- the pyo3 processor model is one concrete answer to "where do correlation and
+  enrichment processors run."
+
+Caveats:
+
+- primary focus is serverless/Lambda collection, not a self-hosted ingestion
+  backbone, so its strengths may not align with Parallax's durable-stream model;
+- young (v0.2.2) and small ecosystem; treat as a reference and optional
+  component, not a load-bearing dependency yet;
+- no GreptimeDB exporter today, so OTLP would be the integration path.
+
 Rust support matters because the target user is Rust-heavy. The OpenTelemetry
 Rust docs currently mark traces, metrics, and logs as beta. That is good enough
 for early adoption, but Parallax should expect API churn and should document
