@@ -30,6 +30,7 @@ or CI contract yet.
 | --- | --- |
 | `docs/` | Documentation and research notes. No generated docs UI yet. |
 | `docs/research/` | Market, product, and strategy research. |
+| `prompts/` | Reusable research and agent prompts. |
 
 ## Research Documents
 
@@ -41,6 +42,12 @@ or CI contract yet.
 | `docs/research/ci-failure-context-mvp.md` | MVP research for GitHub Actions failure-context bundles. |
 | `docs/research/greptimedb-storage-evaluation.md` | Storage-layer evaluation for GreptimeDB, ClickHouse, and observability backends. |
 | `docs/research/observability-storage-benchmark-plan.md` | Database-only benchmark plan for observability storage candidates. |
+
+## Prompts
+
+| Path | Purpose |
+| --- | --- |
+| `prompts/deep-research-parallax.md` | Deep research brief for validating the AI-native debugging/investigation direction. |
 
 ## Update Rule
 
