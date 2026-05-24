@@ -25,6 +25,94 @@ The research should be opinionated, technical, and evidence-based.
 
 ---
 
+# Project Vision and Overall Target
+
+This is the north star the whole research serves. Everything is moving to an
+AI-centric way of building and running software, and in that world observability
+becomes a key layer — eventually we need to know what is happening in every
+system, and an AI model is often capable of fixing issues itself. The gating
+factor is not the model's ability; it is context. An AI is only as good as the
+context it is given.
+
+## The belief
+
+Software is now fast to build and slow to debug in production. Code generation,
+CI/CD, and provisioning are fast; finding out what actually went wrong in
+production is still slow. Two reasons dominate:
+
+1. The AI does not have access to everything it needs (telemetry, the database,
+   the runtime state).
+2. Even with access to the data, the AI still has to reconstruct the lifecycle —
+   how the system reached the error, and what led to that state.
+
+The perfect world this project assumes:
+
+- A monorepo that stores as much as possible in one place: frontend, backend, and
+  everything else. More of the system in one place means more context for an AI
+  to understand how the whole thing works.
+- Not only code. The repository should also hold documentation, design decisions,
+  tasks (what was worked on, what was finished, and why), and the roadmap. Code
+  alone is slow for an AI to derive meaning from; explicit intent, decisions, and
+  direction give it the "why," the purpose, and what each thing is meant to
+  solve. With that in the repo, an AI can work far more autonomously and build
+  according to the plan.
+- Parallax is the runtime half of that same idea. The repository explains why the
+  code is the way it is; Parallax explains what happened at runtime and how the
+  system got to a failure. Together they give an AI a near-complete picture.
+
+## What the system must make possible
+
+When a production error fires, an AI (or a human) should be able to pull
+everything connected to that moment and reconstruct the path to it:
+
+- detailed error messages and the Sentry-style error event;
+- logs, including debug logs, as an audit trail of what happened and why
+  decisions were taken;
+- traces and spans, including how long each span took;
+- metrics describing what the system was doing overall;
+- the release/deploy and change context around the window.
+
+The storage layer should let us always extract this data and reconstruct "how we
+got to that stage and what led to it." Cheap, durable retention matters: object
+storage / S3-style backends are close to a requirement, because the value depends
+on being able to keep and re-extract history without cost anxiety.
+
+## The end state
+
+Given all of this context, the expectation is that in most cases an AI can act
+without hand-holding:
+
+- open a pull request that fixes the issue directly, or
+- open a pull request that states the problem, proposes a few candidate fixes,
+  shows the research and evidence behind them, recommends the one it finds most
+  logical, and asks only when it needs a human to choose a direction.
+
+That is the point of the approach: with enough structured context, the agent
+makes the call and brings evidence, instead of asking a human to gather context
+first.
+
+## What this research must prove
+
+This vision is a strong belief that needs verification, not assumption. The
+research must answer, from a technical perspective:
+
+- Does this make sense, and what is missing?
+- What is genuinely essential versus nice-to-have?
+- Is causal/lifecycle reconstruction ("how did we get here") actually achievable
+  from telemetry, or only partially?
+- What are the hard problems and dangers: giving an agent access to systems and
+  data (including a database), privacy and secrets, trust in autonomous pull
+  requests, and the cost/scale of retaining enough history?
+- Concretely, how would we build it and what should we use — which infrastructure
+  projects are capable of serving this goal under the evaluation lens and
+  benchmark axes below?
+
+The job of Parallax-as-research is to prove or disprove that a Rust-first,
+open-source, self-hostable observability system can become the runtime context
+engine that makes autonomous AI debugging real.
+
+---
+
 # Evaluation Lens (Most Important)
 
 This is the lens for the entire research. Apply it to every candidate.
@@ -453,6 +541,8 @@ Questions:
 - what are cardinality limitations?
 - ingestion performance
 - query performance
+- object storage / S3 backend support (close to a requirement: cheap, durable
+  retention so history can always be re-extracted for AI context)
 - retention models
 - compression
 - distributed architecture
@@ -683,6 +773,15 @@ Please critically evaluate:
    - telemetry graph modeling?
    - debugging datasets?
 10. Does AI fundamentally change observability architecture?
+11. Does the autonomy end state hold — can an agent realistically open a correct
+    PR (or a well-reasoned proposal) from telemetry context alone, and how often?
+12. Is causal/lifecycle reconstruction ("how did we get to this error")
+    achievable from logs/traces/metrics/errors, or only partial?
+13. The vision assumes a context-rich monorepo (code plus docs, decisions, tasks,
+    roadmap). How much does Parallax's value depend on that, and what happens for
+    teams that do not work this way?
+14. What are the dangers of giving an agent access to systems and data, including
+    a database — secrets, privacy, blast radius — and how is that bounded?
 
 ---
 
