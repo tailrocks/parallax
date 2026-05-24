@@ -809,6 +809,43 @@ Tell me:
 
 ---
 
+# Required Output: Technical Implementation Concept
+
+Research is not finished at analysis. It must end in a concrete, opinionated
+technical implementation concept — a blueprint someone could start building from.
+Deliver, with reasoning tied to the evaluation lens and the benchmark axes:
+
+- Which system to use at each layer, named and justified: collection/SDK, ingest
+  gateway, messaging/stream (if any), storage, correlation/processing, and the
+  agent-facing context surface (API/MCP). Make an actual recommendation, not a
+  menu.
+- What storage to use as the default, and why it wins on speed, cost, and scaling
+  for this purpose — including the object-storage / S3 story.
+- The technical view of the best way to implement it: component diagram, data
+  flow from event to evidence bundle, the event/error data model, deterministic
+  grouping and correlation approach, and where causal/lifecycle reconstruction
+  happens.
+- Tradeoffs and the rejected alternatives, so the choice is defensible.
+
+## Scaling Trajectory: Startups First, Big Companies Later
+
+Treat scale as a trajectory, not a single target.
+
+- Basic point (now): optimize for startups and small teams — a tiny, single-node,
+  low-resource, cheap-to-run deployment that beats self-hosted Sentry on
+  simplicity. This is where the first version must win.
+- Future direction: the same system must scale horizontally to big-company
+  volumes later. This will be used by large companies eventually, so the
+  architecture, data model, and interfaces must not paint us into a single-node
+  corner.
+
+The implementation concept must show both: the smallest viable deployment AND a
+credible horizontal scale-out path to large volumes, with the seams (stream,
+storage, stateless processors) identified up front. Design the small system so
+the large one is a configuration and topology change, not a rewrite.
+
+---
+
 # Final Goal
 
 Help me determine whether this direction could evolve into:
