@@ -42,6 +42,7 @@ or CI contract yet.
 | `docs/research/ci-failure-context-mvp.md` | MVP research for GitHub Actions failure-context bundles. |
 | `docs/research/greptimedb-storage-evaluation.md` | Storage-layer evaluation for GreptimeDB, ClickHouse, and observability backends. |
 | `docs/research/observability-storage-benchmark-plan.md` | Database-only benchmark plan for observability storage candidates. |
+| `docs/research/rust-data-collection-and-instrumentation.md` | Rust-first data-collection decision (SDK/OTLP vs eBPF) and error-capture data model. |
 
 ## Prompts
 
