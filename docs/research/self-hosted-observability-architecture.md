@@ -396,10 +396,24 @@ Sources:
 
 ## API and UI Shape
 
-The UI should be simpler than Sentry because the primary consumer is often a
-human plus an agent, not a human alone.
+Parallax has two consumers with very different needs, and the design ranks them
+deliberately.
 
-Core screens:
+**Primary consumer: AI agents.** The system's main job is to hand a coding agent
+everything it needs to understand a failure and propose a fix — structured,
+machine-readable context exposed over an HTTP API and an MCP server. Agents do
+not need charts; they need evidence: the grouped issue, a representative stack
+trace, the error chain, correlated logs/traces/metrics, the release/deploy diff,
+and links to raw records. This agent-facing context is the differentiator and
+should be built first.
+
+**Secondary consumer: humans.** A Sentry-like UI still matters because humans
+debug with their eyes: they need to see grouped errors, counts, trends, and an
+issue timeline to build a mental model and to trust the system. But the UI is a
+visualizer over the same context API, not a separate product surface, and it is
+not the differentiator. It should stay simpler than Sentry.
+
+Core screens (Sentry-like, grouped-error oriented):
 
 | Screen | Purpose |
 | --- | --- |
@@ -435,6 +449,25 @@ Return a bounded evidence bundle:
 - metric deltas;
 - release/deploy changes;
 - links to raw records.
+
+### MCP Server for Agents
+
+Beyond the HTTP API, Parallax should expose an MCP (Model Context Protocol)
+server so coding agents (Claude Code, Codex, Amp, OpenCode) can pull
+investigation context as tools without bespoke per-agent integration. The MCP
+tools should mirror the CLI/API surface:
+
+| MCP tool | Returns |
+| --- | --- |
+| `parallax_issue_list` | Grouped issues for a project/environment. |
+| `parallax_issue_show` | Issue detail: stack trace, recent events, status. |
+| `parallax_issue_context` | Bounded evidence bundle (markdown or JSON). |
+| `parallax_event_raw` | Raw normalized event plus envelope reference. |
+| `parallax_test_explain` | Flaky-test evidence bundle (CI wedge). |
+
+The same evidence bundle that renders in the UI is the payload the agent reads.
+MCP makes the agent a first-class client rather than an afterthought, which is
+the point of the product.
 
 ## Minimal Deployment Profiles
 

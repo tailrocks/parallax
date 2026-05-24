@@ -411,6 +411,55 @@ Questions:
 
 ---
 
+# Data Collection Method
+
+How should the system actually collect data from applications? This is a core
+open question. Research and compare:
+
+- in-process language SDKs (Sentry SDK, OpenTelemetry SDK) emitting OTLP
+- the Sentry ingestion API (envelopes)
+- the OpenTelemetry API / OTLP
+- eBPF-based, zero-instrumentation collection
+
+The priority is getting as much useful data as possible. Specifically research
+eBPF: what it is, how it works (kernel, syscalls, network, perf events), and
+whether it can magically solve data collection — or whether it fundamentally
+cannot capture app-level error semantics (language exceptions, Rust panics with
+messages, typed error chains, span attributes, release/environment context).
+
+Key questions:
+- what can eBPF capture with zero code changes, and what can it NOT capture?
+- for Rust specifically: symbol resolution, frame pointers, and stack unwinding
+  limits under eBPF
+- is eBPF a primary collection path, a complement (network/syscall/profiling),
+  or a distraction for error-context capture?
+- is the right answer SDK/OTLP for app errors plus optional eBPF for
+  infrastructure-level signals?
+
+---
+
+# Initial Scope: Rust Applications First
+
+The first target is Rust applications, because that is what we build. Research
+the Rust-specific collection story end to end:
+
+- how to detect and capture errors in Rust apps: panic hooks
+  (`std::panic::set_hook`), `std::backtrace::Backtrace`, the `sentry` crate's
+  panic integration, `tracing` + `tracing-error` (`SpanTrace`),
+  `anyhow`/`eyre`/`color-eyre` error chains, and `opentelemetry` /
+  `tracing-opentelemetry` for traces/logs/metrics
+- what data to store: panic message, error type, backtrace frames
+  (crate/module/function/file/line), error source chain, span/trace IDs,
+  release, environment
+- symbol/debuginfo requirements to get useful Rust backtraces (line tables,
+  split debuginfo) without bloating binaries
+- how to store and process this data efficiently in the Parallax pipeline
+
+The goal: a clear, detailed Rust-first capture-and-storage design that produces
+the best possible evidence for agents.
+
+---
+
 # AI-Native Observability
 
 This is probably the MOST important research area.
@@ -426,6 +475,9 @@ Research:
 - telemetry knowledge graphs
 - debugging copilots
 - incident intelligence platforms
+- agent integration surfaces: MCP (Model Context Protocol) servers, tool/function
+  interfaces, structured context APIs
+- how agents consume evidence (API/MCP/CLI) versus how humans consume dashboards
 
 Research companies/products/projects like:
 - Datadog AI features
