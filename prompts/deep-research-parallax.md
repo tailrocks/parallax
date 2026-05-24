@@ -98,6 +98,72 @@ right way the first time.
 
 ---
 
+# Benchmarking and Comparison Methodology
+
+Comparison is part of the research, and it has two halves.
+
+1. Study how systems are designed. Read public benchmarks and, more importantly,
+   the architecture and design docs behind each candidate: data layout, ingest
+   path, query path, indexing, compaction, retention, replication, and
+   clustering model. Public benchmarks are a starting signal, not the verdict —
+   most are vendor-published and measure the workload that flatters the vendor.
+
+2. Prototype our own benchmark concept during the research. Define and sketch a
+   benchmark (datasets, queries, metrics, harness) that measures each candidate
+   against THIS system's purpose, not a general-purpose leaderboard. A system can
+   be excellent for the job it was designed for and still be wrong for us. The
+   question is never "which system is best in general" — it is "which system is
+   best designed for OUR purpose."
+
+Judge every candidate on these axes, in priority order:
+
+## 1. Speed — time to see real data
+
+How fast can we see what is happening right now? Measure the end-to-end path,
+not just raw ingest:
+- ingest-to-queryable latency (data freshness): how long after an event arrives
+  until it is visible in a query;
+- query latency for our access patterns (evidence-bundle and correlation
+  queries, not generic scans);
+- behavior under concurrent ingest plus query (real-time view while data still
+  streams in).
+
+The winning system lets a human or agent see "what is going on" with the lowest
+delay.
+
+## 2. Cost — storage size and money
+
+How expensive is this to run and keep?
+- retained storage size per unit of telemetry, and compression ratio by signal
+  (logs vs traces vs metrics vs error events);
+- money cost of that storage (object storage vs local SSD/block), including
+  request and egress cost where relevant;
+- compute cost for ingest and query;
+- retention math: cost to keep N days or weeks of real data.
+
+If a candidate is fast but its storage is huge or expensive, say so explicitly
+and quantify it.
+
+## 3. Scaling — how hard to grow, horizontal first
+
+Some systems are designed for a single machine. We must know what happens when
+one machine is no longer enough:
+- single-node ceiling: where does one box stop being enough (ingest rate, data
+  size, query concurrency)?
+- scale-out difficulty: how hard is it to go past one node — config, operational
+  burden, new dependencies, rebalancing, data movement?
+- does performance hold when scaling? Adding parallel servers must keep
+  processing fast; a system that scales but degrades sharply is a weak fit.
+
+Horizontal scaling matters most: when we add parallel servers, does throughput
+and query speed keep up? Vertical scaling (a bigger box) also matters but is
+secondary. A candidate that only scales vertically is a serious limitation and
+must be flagged. For each candidate, state both the single-node story and the
+horizontal-scale story, and whether the architecture was designed for scale-out
+from the start or had it bolted on.
+
+---
+
 # Background and Motivation
 
 My current workflow changed dramatically because of AI coding agents.
@@ -267,6 +333,15 @@ The system should eventually answer:
 
 # Important Architectural Direction
 
+Hard exclusion — language / runtime:
+- No Java/JVM-based candidates. Exclude them from every list (storage, messaging,
+  collectors, anything), not merely down-weight them. The JVM operational profile
+  — heap tuning, GC pauses, fat runtime — is exactly what this system avoids.
+- Prefer Rust. Accept other non-JVM systems languages where the fit is strong:
+  Go, Zig, and C++ (for example ClickHouse and Redpanda are C++ and stay in
+  scope).
+- When two candidates are close, the Rust-native one wins (see Why Rust).
+
 I do NOT want:
 - another giant JVM-heavy operational monster
 - enormous distributed infrastructure
@@ -296,10 +371,22 @@ Research:
 - Apache Iggy
 - Redpanda
 - NATS JetStream
-- Kafka
-- Pulsar
-- WarpStream
 - Liftbridge
+
+Excluded by the language filter (JVM):
+- Kafka, Pulsar — keep only as the baseline-to-beat for throughput and
+  persistence numbers, not as deployable candidates.
+
+Watch-list, not a candidate:
+- WarpStream — Go, but proprietary and SaaS-shaped (Confluent-owned); fails the
+  open-source lens.
+
+Lead candidate: Apache Iggy. It looks like the fastest option that can replace
+Kafka, and it is Rust-native, single-binary, and append-only — the right
+operational profile. Kafka wire-protocol compatibility is NOT a requirement for
+this system; do not weight it. What matters is raw speed, persistence guarantees,
+and operational simplicity. Evaluate Iggy first and hard, then compare Redpanda
+(C++) and NATS JetStream (Go) against it.
 
 Questions:
 - do we actually need Kafka-scale complexity?
@@ -334,16 +421,23 @@ I want deep analysis of:
 Research:
 - GreptimeDB
 - ClickHouse
-- QuestDB
 - VictoriaMetrics
 - Mimir
-- Elasticsearch/OpenSearch
-- Apache Doris
-- Pinot
 - Tempo/Loki storage architectures
 
 Especially:
 GreptimeDB
+
+Explicitly exclude as a storage engine:
+- Elasticsearch/OpenSearch — too slow for high-volume observability ingest and
+  query, and the search-index architecture is not the performance or operational
+  profile this system wants. The only thing worth taking from
+  Elasticsearch/Kibana is UI/UX: showing a log as a structured object (fields,
+  surrounding context, what happened in that time window), not just a flat
+  message string. Treat it as a presentation reference only, never a storage
+  candidate.
+- QuestDB, Apache Doris, Apache Pinot — Java/JVM stack, excluded by the language
+  filter. Doris carries a Java frontend even though its backend is C++.
 
 Questions:
 - can one backend realistically store:
@@ -555,6 +649,12 @@ I strongly believe:
 - APIs matter more than visual exploration
 - machine-readable context is more important than visualization
 - agents need structured evidence, not charts
+
+One UI/UX exception worth keeping: when a human does look, a log should be shown
+as a structured object — fields, surrounding context, and what happened in that
+time window — not a flat message string. Elasticsearch/Kibana is the reference
+for this object-centric log view (and only this), even though it is excluded as a
+storage engine.
 
 Research whether this philosophy is correct or naive.
 
