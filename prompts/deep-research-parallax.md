@@ -54,6 +54,30 @@ solutions designed from first principles for AI-native workflows. A legacy
 system retrofitted to this goal is not a point in its favor; being incumbent is
 not an advantage here.
 
+## Why Rust
+
+In the AI world I believe a Rust-based project has the advantage, so I weight
+Rust projects heavily:
+- AI coding agents work extremely well with Rust
+- strong compiler feedback loops and compile-time guarantees help agents
+- systems-programming performance
+- low memory, high throughput, minimal infrastructure
+- operational simplicity and predictability
+
+When two candidates are close on the technical lens above, the Rust-native one
+wins.
+
+## Why Open Source
+
+In the AI world, open source is the key. With AI agents, anyone can open a pull
+request and propose an improvement, so the rate of contribution and iteration on
+open projects compounds far faster than on closed ones. An open, agent-friendly
+codebase is itself a performance and survival advantage.
+
+The whole system is designed around this concept first: open source, Rust-native,
+agent-contributable. Favor projects whose license, architecture, and codebase
+make external and agent-driven contribution easy.
+
 "Best fit" means the system whose core design most directly serves, from the
 smallest details up:
 - append-only event ingestion
