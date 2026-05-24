@@ -40,6 +40,39 @@ Platform stacks may still be useful as references. For example, ClickStack can
 inform the ClickHouse schema and OpenTelemetry ingestion path, but the benchmark
 target is ClickHouse, not ClickStack.
 
+## Language and Runtime Filter
+
+Candidates are constrained by language and runtime before anything else. Only
+high-performance, low-resource systems languages are in scope: Rust, Go, Zig,
+C++, and C. These are compiled and lean on memory and startup, which is the
+operational profile Parallax needs for cheap, predictable self-hosting.
+
+Heavyweight managed or interpreted runtimes are excluded outright — Java/JVM,
+Python, Ruby, PHP, and similar. This is why systems such as Elasticsearch,
+OpenSearch, QuestDB, Apache Doris, Apache Pinot, Kafka, and Pulsar are removed as
+candidates: the JVM profile (heap tuning, GC pauses, fat runtime) and
+interpreted-runtime overhead are the operational weight Parallax is trying to
+escape — the same weight that makes self-hosted Sentry painful. Prefer Rust; when
+two candidates are close, Rust wins.
+
+## Priority Axes
+
+Rank candidates against Parallax's purpose, not a general leaderboard, in this
+order:
+
+1. **Speed — time to see real data.** When a production error fires, how fast can
+   we pull everything correlated to that moment (metrics, traces, spans, logs)?
+   Measure ingest-to-queryable latency (freshness) and evidence-bundle query
+   latency under concurrent ingest plus query. Lower delay means richer AI
+   context.
+2. **Cost — storage size and money.** Retained size per unit telemetry,
+   compression by signal, object-vs-block cost, compute, and retention math. Flag
+   and quantify any candidate that is fast but storage-heavy or expensive.
+3. **Scaling — horizontal first.** Single-node ceiling, scale-out difficulty, and
+   whether performance holds when adding parallel servers. Horizontal scaling
+   matters most; vertical scaling is secondary; vertical-only is a flagged
+   limitation.
+
 ## Candidate Classes
 
 ### Primary Candidates
@@ -54,7 +87,7 @@ target is ClickHouse, not ClickStack.
 | Candidate | Why not primary |
 | --- | --- |
 | Parseable | Interesting object-store-first observability datalake, but currently more platform-shaped than database-shaped for Parallax's storage dependency. Revisit only if it exposes a clean database-level interface and proves maturity. |
-| OpenSearch / Elasticsearch | Search databases that can store telemetry-shaped documents, but metrics are not native in the same way and the cost/performance profile is likely worse for high-volume observability. Use only as a log-search sanity check if needed. |
+| OpenSearch / Elasticsearch | Excluded by the language/runtime filter (Java/JVM). Also slow for high-volume observability and not metrics-native. Keep only as a UI/UX reference for showing a log as a structured object (Kibana), never as a storage candidate. |
 | VictoriaMetrics family | Strong metrics/logs/traces projects, but they are separate specialized databases rather than one unified storage engine. Useful as per-signal reference, not as Parallax's unified backend. |
 | Grafana LGTM | Mature observability stack, but intentionally split across Loki, Mimir, Tempo, and other components. Useful as an ecosystem reference, not a database candidate. |
 | InfluxDB / TimescaleDB / M3DB | Strong time-series or metrics heritage, but weaker fit for unified logs/traces/metrics evidence bundles. |

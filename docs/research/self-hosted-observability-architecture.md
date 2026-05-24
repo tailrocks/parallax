@@ -93,6 +93,16 @@ The useful lesson is not "Sentry is wrong." It is that Sentry's architecture is
 optimized for Sentry's full cloud product. Parallax should preserve the SDK
 protocol surface while choosing a smaller internal design.
 
+Parallax also constrains every infrastructure choice by language and runtime.
+Only high-performance, low-resource systems languages are in scope — Rust
+(preferred), Go, Zig, C++, and C — and heavyweight managed or interpreted
+runtimes are excluded outright: Java/JVM, Python, Ruby, PHP, and similar. This is
+not stylistic. Sentry's heaviness is partly a runtime story: a JVM broker (Kafka)
+plus a large Python service graph. Parallax keeps the Sentry SDK protocol surface
+but refuses that runtime profile, which is why its stream (Apache Iggy, Rust),
+storage (GreptimeDB in Rust or ClickHouse in C++), and gateway/processors all
+stay on lean compiled runtimes.
+
 ## Sentry-Compatible Ingestion
 
 Sentry envelopes are the right compatibility target. Sentry's SDK docs define

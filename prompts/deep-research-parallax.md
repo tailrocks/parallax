@@ -334,13 +334,17 @@ The system should eventually answer:
 # Important Architectural Direction
 
 Hard exclusion — language / runtime:
-- No Java/JVM-based candidates. Exclude them from every list (storage, messaging,
-  collectors, anything), not merely down-weight them. The JVM operational profile
-  — heap tuning, GC pauses, fat runtime — is exactly what this system avoids.
-- Prefer Rust. Accept other non-JVM systems languages where the fit is strong:
-  Go, Zig, and C++ (for example ClickHouse and Redpanda are C++ and stay in
-  scope).
-- When two candidates are close, the Rust-native one wins (see Why Rust).
+- Only high-performance, low-resource systems languages are in scope: Rust, Go,
+  Zig, C++, and C. These are compiled and lean on memory and startup, which is
+  the operational profile this system needs.
+- Exclude heavyweight managed or interpreted runtimes entirely — Java/JVM,
+  Python, Ruby, PHP, and similar. Remove them from every list (storage,
+  messaging, collectors, anything), do not merely down-weight. The JVM profile
+  (heap tuning, GC pauses, fat runtime) and interpreted-runtime overhead are
+  exactly what this system avoids; they are also part of why self-hosted Sentry
+  is heavy.
+- Prefer Rust. When two candidates are close, the Rust-native one wins (see
+  Why Rust). C++ examples that stay in scope: ClickHouse, Redpanda.
 
 I do NOT want:
 - another giant JVM-heavy operational monster

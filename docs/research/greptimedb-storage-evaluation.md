@@ -33,6 +33,24 @@ But the skeptical view matters:
 5. The first Parallax MVP may not need a heavy observability database at all if
    it starts as a local CI failure context compiler.
 
+## Language and Runtime Filter
+
+Before fit, cost, or speed, candidates must pass a language/runtime gate. Only
+high-performance, low-resource systems languages are in scope: Rust, Go, Zig,
+C++, and C. Heavyweight managed or interpreted runtimes are excluded outright —
+Java/JVM, Python, Ruby, PHP, and similar.
+
+This removes the Java-family stores from contention regardless of features:
+Elasticsearch, OpenSearch, QuestDB, Apache Doris, and Apache Pinot. The reason is
+operational: the JVM profile (heap tuning, GC pauses, fat runtime) is the weight
+Parallax exists to avoid — the same weight that makes self-hosted Sentry heavy.
+The shortlist therefore stays GreptimeDB (Rust) versus ClickHouse (C++), with
+Go/Rust/C++ systems (VictoriaMetrics, Parseable, Quickwit) as references. Prefer
+Rust; when two candidates are close, Rust wins.
+
+Note: Elasticsearch/OpenSearch is still worth studying for one thing only — its
+UI/UX of presenting a log as a structured object (Kibana), not as storage.
+
 ## The Decision That Matters
 
 Parallax should evaluate storage against this product question:
@@ -479,7 +497,7 @@ fit, and Parallax-shaped performance.
 | Prometheus + Thanos/Mimir | Excellent metrics ecosystem and PromQL. | Metrics-first; logs and traces require Loki/Tempo or other stores. Cross-signal evidence requires multi-system assembly. |
 | Loki + Tempo + Mimir | Strong open observability stack around Grafana. | Mature but split across systems; operational and query model complexity remains. |
 | VictoriaMetrics / VictoriaLogs / VictoriaTraces | Efficient, strong self-hosted story, metrics heritage. | More of a family of specialized systems than one unified SQL observability database. |
-| Elasticsearch / OpenSearch | Strong log search ecosystem and mature operations knowledge. | Less metrics-native, can become expensive at scale, and Elastic licensing history complicates "fully open" positioning. |
+| Elasticsearch / OpenSearch | Strong log search ecosystem and mature operations knowledge. | Excluded by the language/runtime filter (Java/JVM). Also less metrics-native and expensive at scale. Useful only as a Kibana-style log-as-object UI/UX reference. |
 | InfluxDB | Metrics/time-series heritage. | Weaker fit for unified logs/traces/context bundles than GreptimeDB or ClickHouse. |
 | TimescaleDB | Postgres-based time-series familiarity. | Strong relational/time-series fit, but not a full observability-native logs/traces/metrics backend. |
 
