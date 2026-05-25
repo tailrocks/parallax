@@ -1394,6 +1394,38 @@ table (Run 23/24), so the only practical CH metric-agg path is SQL. (3) Smoke sc
 fixed series-normalization cost should grow with series count — a cold/larger-tier run is owed
 to the harness. (4) GT first-call was 219 ms (cold/plan) vs 120 ms warm — warm used throughout.
 
+### Run 45 — Build the GreptimeDB implementation DDL live (the "buildable design" bar)
+
+`greptimedb-implementation.md` claimed "DDL syntax verified against the pinned source" but
+the full schema had **never been executed** — only read against `create_parser.rs`. The
+brief's bar is "we know *exactly* how we would build it." Ran the entire schema on live
+GreptimeDB `v1.0.2` in a scratch database (`ddlcheck`, dropped after). **Two real defects
+caught — the design did NOT build as written:**
+
+1. **Reserved-keyword columns rejected.** `service`, `name`, `status`, `level`, `release`,
+   `url`, **`message`** are reserved in v1.0.2's SQL parser → `Cannot use keyword '…' as
+   column name`. Fix: quote them (`"col"` *or* `` `col` `` — both confirmed working; my
+   first "quoting doesn't work" reading was a shell command-substitution artifact on
+   backticks, retested clean via `--data-urlencode sql@file`). Not reserved:
+   project/environment/fingerprint/error_type/span_id/trace_id/duration_ms/session_id/
+   user_id/command/tool/app/event_type/action_type/commit_sha/host/instance.
+2. **Empty `PRIMARY KEY ()` invalid** on the metric-engine physical table →
+   `Expected: identifier, found: )`. Fix: omit the clause; `ENGINE = metric WITH
+   ("physical_metric_table" = '')` alone is correct.
+
+After both fixes: **all 8 signal tables + 1 logical metric table build clean.** `SHOW CREATE
+TABLE` confirmed `trace_id … INVERTED INDEX` (spans) and `message … FULLTEXT INDEX` (logs)
+attached (not silently dropped), `SKIPPING INDEX` on `user_id` (cli/frontend) accepted, and
+the logical→physical metric link (`on_physical_table = 'greptime_physical_metrics'`) works.
+
+**Consequence (axis: correctness of the design, not speed):** the recommended engine's
+storage design is now **verified buildable**, not just syntax-reasoned — and two drift bugs
+that would have bitten a real implementer on day one are fixed in the note. No verdict
+impact (both defects are DDL-surface, not mechanism). Bench base data untouched (scratch db
+only). **Owed next: the same live-build pass on `clickhouse-implementation.md`** (codecs like
+`Gorilla`/`DoubleDelta`/`T64`, `LowCardinality`, the `text`/`tokenbf` skip indexes, MV/AggMT
+— confirm each parses on `26.5.1.882`).
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

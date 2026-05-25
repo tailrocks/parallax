@@ -2,18 +2,22 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 12. The buildable storage design for the **recommended** engine
-(`verdict-which-to-choose.md`): full schema, ingest path, exact retrieval, object
-storage, and operational shape — for the whole Parallax signal set. Builds on the
-seed DDL in `storage-benchmark-prototype.md` and applies the empirical lessons
-from `local-benchmark-results.md` (Runs 1–5). DDL syntax verified against the
-pinned source.
+Status: pass 12 (design) + pass 73 (**whole schema built live**, Run 45). The buildable
+storage design for the **recommended** engine (`verdict-which-to-choose.md`): full schema,
+ingest path, exact retrieval, object storage, and operational shape — for the whole Parallax
+signal set. Builds on the seed DDL in `storage-benchmark-prototype.md` and applies the
+empirical lessons from `local-benchmark-results.md` (Runs 1–5). **The DDL below was executed
+against a live GreptimeDB `v1.0.2` (Run 45): all 9 tables (8 signals + a logical metric
+table) build, with the `trace_id INVERTED INDEX` and `message FULLTEXT INDEX` confirmed
+attached via `SHOW CREATE TABLE`.** Two corrections vs the original syntax-only design were
+caught and applied — see the note above the DDL (reserved-keyword quoting) and table 4 (no
+empty `PRIMARY KEY ()`).
 
 Pin: GreptimeDB `v1.0.2` (`0ef5451`). DDL features confirmed in
 `src/sql/src/parsers/create_parser.rs` (`INVERTED`/`FULLTEXT`/`SKIPPING INDEX`),
 `src/store-api/src/region_request.rs` (`append_mode`, `ttl`), and
 `src/store-api/src/metric_engine_consts.rs` (`physical_metric_table`,
-`on_physical_table`).
+`on_physical_table`) — and now end-to-end live (Run 45).
 
 ## Design principles (each justified from internals)
 
@@ -39,30 +43,35 @@ Pin: GreptimeDB `v1.0.2` (`0ef5451`). DDL features confirmed in
 ## Schema (real DDL)
 
 ```sql
+-- NOTE: service, name, status, level, release, url, message are RESERVED keywords in
+-- GreptimeDB v1.0.2's SQL parser and MUST be quoted ("col" or `col`) in DDL — verified
+-- live (Run 45). Bench tables carry a bare `service` column only because the ingest
+-- protocols (OTLP/InfluxDB line) auto-create schema outside the SQL parser.
+
 -- 1. Spans (anchored by trace_id; append-only)
 CREATE TABLE spans (
   ts             TIMESTAMP TIME INDEX,
   trace_id       STRING INVERTED INDEX,        -- Q1/Q4 point lookup (Run-1 fix)
   span_id        STRING,
   parent_span_id STRING,
-  service        STRING,
-  name           STRING,
+  "service"      STRING,
+  "name"         STRING,
   duration_ms    DOUBLE,
-  status         STRING,
+  "status"       STRING,
   attributes     JSON,                          -- dynamic OTLP span attrs
-  PRIMARY KEY (service, name)                    -- low-card series tags
+  PRIMARY KEY ("service", "name")                -- low-card series tags
 ) WITH (append_mode = 'true', ttl = '30d');
 
 -- 2. Logs (full-text + trace anchor; append-only)
 CREATE TABLE logs (
   ts        TIMESTAMP TIME INDEX,
-  service   STRING,
-  level     STRING,
-  message   STRING FULLTEXT INDEX WITH (analyzer = 'English', case_sensitive = 'false'),
+  "service" STRING,
+  "level"   STRING,
+  "message" STRING FULLTEXT INDEX WITH (analyzer = 'English', case_sensitive = 'false'),
   trace_id  STRING INVERTED INDEX,
   span_id   STRING,
   attributes JSON,
-  PRIMARY KEY (service, level)
+  PRIMARY KEY ("service", "level")
 ) WITH (append_mode = 'true', ttl = '30d');
 
 -- 3. Error events (issue/fingerprint history + trace anchor)
@@ -70,10 +79,10 @@ CREATE TABLE error_events (
   ts            TIMESTAMP TIME INDEX,
   project       STRING,
   environment   STRING,
-  release       STRING,
+  "release"     STRING,
   fingerprint   STRING,
   error_type    STRING,
-  message       STRING FULLTEXT INDEX WITH (analyzer = 'English'),
+  "message"     STRING FULLTEXT INDEX WITH (analyzer = 'English'),
   trace_id      STRING INVERTED INDEX,
   span_id       STRING,
   panic_location STRING,
@@ -84,20 +93,22 @@ CREATE TABLE error_events (
 
 -- 4. Metrics — physical wide table under the metric engine; logical tables
 --    auto-created by OTLP / Prometheus remote write (one logical table per metric).
+--    NOTE: no empty PRIMARY KEY () — invalid syntax in v1.0.2 (Run 45); omit it.
 CREATE TABLE greptime_physical_metrics (
-  ts        TIMESTAMP TIME INDEX,
-  greptime_value DOUBLE,
-  PRIMARY KEY ()
-) ENGINE = metric WITH (physical_metric_table = '');
--- logical metric tables are created on ingest:
---   ... ENGINE = metric WITH (on_physical_table = 'greptime_physical_metrics');
+  ts             TIMESTAMP TIME INDEX,
+  greptime_value DOUBLE
+) ENGINE = metric WITH ("physical_metric_table" = '');
+-- logical metric tables are created on ingest (or explicitly):
+--   CREATE TABLE http_req_latency (ts TIMESTAMP TIME INDEX, greptime_value DOUBLE,
+--     "service" STRING PRIMARY KEY) ENGINE = metric
+--     WITH (on_physical_table = 'greptime_physical_metrics');
 
 -- 5. Deploy markers (low volume; release timeline)
 CREATE TABLE deploy_markers (
   ts          TIMESTAMP TIME INDEX,
   project     STRING,
   environment STRING,
-  release     STRING,
+  "release"   STRING,
   commit_sha  STRING,
   attributes  JSON,
   PRIMARY KEY (project, environment)
@@ -134,7 +145,7 @@ CREATE TABLE frontend_events (
   session_id  STRING INVERTED INDEX,
   event_type  STRING,
   trace_id    STRING INVERTED INDEX,            -- Q4 cross-tier join key
-  url         STRING,
+  "url"       STRING,
   user_id     STRING SKIPPING INDEX,
   attributes  JSON,
   PRIMARY KEY (app, event_type)
@@ -236,11 +247,23 @@ cache_path = "/var/cache/greptimedb"   # local read cache in front of S3 (defaul
 
 ## Build-validation status
 
-Runs 1–5 already exercised the `spans`/`logs`/`error_events`/metrics schemas and
-Q1/Q4 on a live GreptimeDB `v1.0.2` with cross-engine parity. **Not yet built:**
-the `INVERTED INDEX`-on-`trace_id` variant (the Run-1 fix) — the next Docker run
-should create spans with `trace_id INVERTED INDEX` and re-measure the trace lookup
-(expect it to close the 16 ms→~2 ms gap). Routed to `benchmarking-the-differences.md`.
+**Whole schema built live on GreptimeDB `v1.0.2` (Run 45).** All 8 signal tables + 1
+logical metric table created clean in a scratch database; `SHOW CREATE TABLE` confirmed
+`trace_id INVERTED INDEX` (spans) and `message FULLTEXT INDEX` (logs) attached, and the
+logical→physical metric-engine link (`on_physical_table`) works. Two real defects in the
+original syntax-only design were caught and fixed:
+
+1. **Reserved-keyword columns must be quoted.** `service`, `name`, `status`, `level`,
+   `release`, `url`, `message` are reserved in v1.0.2's SQL parser (`Cannot use keyword
+   '…' as column name`); the DDL now quotes them (`"col"`; backticks also work). This is a
+   real implementer gotcha — the bench tables dodge it only because OTLP/line-protocol
+   ingest auto-creates schema outside the SQL parser.
+2. **No empty `PRIMARY KEY ()`** on the metric-engine physical table — invalid syntax;
+   omit the clause entirely.
+
+Earlier (Runs 1–6) exercised the trace-lookup variants: `trace_id INVERTED INDEX` closes
+the Run-1 16 ms→~8 ms gap (Run 6). Remaining live work is data-loaded Q1–Q6 on *this exact*
+schema (vs the bench's simplified tables) — routed to `benchmarking-the-differences.md`.
 
 ## Side-by-side
 

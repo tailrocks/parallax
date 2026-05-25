@@ -8,10 +8,13 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 44 local runs + B1–B15 cases (Run 43 closed the last source-only
-note: rollup/continuous-aggregation is now live; Run 44 closed the twice-owed metrics item
-— GreptimeDB's *native PromQL* path is ~5× slower than its own SQL at 40k series, a
-`SeriesNormalize` fixed-setup cost, so metrics→GreptimeDB is capability, never speed).
+cold/first-run measurement showed). 25 mechanism notes + 45 local runs + B1–B15 cases. Recent: Run 43 closed the last
+source-only note (rollup live); Run 44 closed the twice-owed metrics item (GreptimeDB's
+*native PromQL* path is ~5× slower than its own SQL at 40k series — a `SeriesNormalize`
+fixed-setup cost, so metrics→GreptimeDB is capability, never speed); Run 45 **built the
+whole GreptimeDB implementation schema live** (the "buildable design" bar), catching two
+real DDL defects (7 reserved-keyword columns need quoting; metric physical table can't have
+empty `PRIMARY KEY ()`) — ClickHouse-impl live-build owed next.
 **Verdict (sharpened through pass 58): GreptimeDB on fit** — metrics/PromQL-native (GA
 vs ClickHouse's experimental), ingest/freshness/upsert ergonomics, object-store +
 replication economics, horizontal scaling, Rust — **not on raw speed** (ClickHouse leads
