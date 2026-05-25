@@ -2,12 +2,12 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 22 (Method step #4). Gathers the public performance claims for both
-systems and rates each against the **source code** (passes 1–3) and the **local
-Docker runs** (Runs 1–12). Ratings: *confirmed (my runs)*, *confirmed (code)*,
-*workload-specific*, *vendor-reported (not re-run here)*, *contradicted*.
-Claims go stale — dates/versions noted. Pins: GreptimeDB `v1.0.2`, ClickHouse
-`v26.5.1.882-stable`.
+Status: pass 22, **re-verified pass 47** (Method step #4). Gathers the public
+performance claims for both systems and rates each against the **source code**, the
+**local Docker runs** (Runs 1–25), and a periodic web re-sweep. Ratings: *confirmed
+(my runs)*, *confirmed (code)*, *workload-specific*, *vendor-reported (not re-run
+here)*, *contradicted*. Claims go stale — dates/versions noted. Pins: GreptimeDB
+`v1.0.2`, ClickHouse `v26.5.1.882-stable` (re-verified current 2026-05-25).
 
 ## Claims table
 
@@ -19,7 +19,7 @@ Claims go stale — dates/versions noted. Pins: GreptimeDB `v1.0.2`, ClickHouse
 | 4 | **GreptimeDB is object-storage-native (~1–2% loss vs local); ClickHouse uses S3 as a cold tier, not primary** (Greptime) | **confirmed (code + my runs)** | Run 8–9 (B10): GreptimeDB single `[storage]` block, 4 objects; ClickHouse 74 objects via S3-disk-under-policy. `distributed-and-scaling.md` (SharedMergeTree Cloud-only). |
 | 5 | **GreptimeDB offers better compression / resource efficiency** (Greptime) | **workload-specific** | Run 4/10: a tuning-dependent **wash** — GreptimeDB wins out-of-the-box (ZSTD-all default) but ClickHouse ties/beats with matched per-column ZSTD. Not a blanket win. |
 | 6 | **GreptimeDB ranked #1 on cold run (4th hot) in ClickHouse's official JSONBench, 1B JSON docs — beats ClickHouse/VictoriaLogs** (Greptime blog, on ClickHouse's harness, 2026) | **vendor-reported (not re-run here); plausible** | **Key counterpoint** — see below. On ClickHouse's *own* public harness, so hard to game; but vendor-selected framing and not locally reproduced. |
-| 7 | **GreptimeDB: native OTLP + full PromQL + Jaeger API; ClickHouse treats time as just another column** (Greptime) | **confirmed (code + my runs)** | Run 3: PromQL native on GreptimeDB, absent in ClickHouse. `greptimedb-internals.md` metric engine + time index. |
+| 7 | **GreptimeDB: native OTLP + full PromQL + Jaeger API; ClickHouse treats time as just another column** (Greptime) | **mostly confirmed — one part corrected** | GreptimeDB: native GA OTLP (metrics/logs/traces, pass 46) + GA default-on PromQL (pass 44/45) + Jaeger API. **Correction (pass 44/47):** PromQL is **no longer absent in ClickHouse** — 26.x has it via the experimental `TimeSeries` engine + `prometheusQuery[Range]`, but **early-stage and limited to basic functions (`rate`/`delta`/`increase`)**, off by default (triangulated: code pass 44 + live pass 45 + Greptime's own comparison page). **OTLP still collector-only on ClickHouse** (pass 46, no drift). So the claim holds in *spirit* (GreptimeDB = GA-native, ClickHouse = early-stage/assembled) but "absent" is wrong. See `promql-and-metrics-query.md`. |
 | 8 | **GreptimeDB "up to 50× total cost reduction for observability"** (Greptime OSS marketing) | **marketing headline** | Directionally consistent with object-store retention economics (`retention-and-ttl.md` $-framing), but "50×" is vs SaaS, not vs self-hosted ClickHouse. Treat as marketing, not a ClickHouse comparison. |
 | 9 | **ClickHouse is a strong choice for observability (logs/traces/metrics) + broad ecosystem** (clickhouse.com; independent) | **confirmed (code + my runs)** | Its log scan/search + analytical maturity (Run 12) and ecosystem are real; the gap is metrics-PromQL nativeness + ingest ergonomics. |
 
@@ -75,9 +75,35 @@ reproduced before finalizing.
   not a configuration error (both were correctly indexed in Run 12). Re-check on each
   GreptimeDB release for fulltext perf work that could narrow it.
 
+## Re-verification sweep (pass 47)
+
+Periodic re-check of all 9 claims against the current pins + a web re-sweep
+(claims drift — PromQL just did):
+
+- **Claim #7 corrected — the one drift.** "PromQL absent in ClickHouse" is **stale**:
+  ClickHouse 26.x has experimental PromQL (`prometheusQuery[Range]` over the
+  `TimeSeries` engine), **early-stage, limited to `rate`/`delta`/`increase`**, off by
+  default. **Triangulated three ways** — source (pass 44), live test (pass 45), **and
+  Greptime's own comparison page** ("PromQL support in the ClickHouse ecosystem is
+  early-stage and limited to basic functions like rate, delta, and increase"). So even
+  the *vendor* frames it as early-stage-present, not absent. Net: still a GreptimeDB
+  maturity win, not a binary capability gap.
+- **Claim #6 (JSONBench cold-run #1 GreptimeDB) still stands**, vendor-reported,
+  **still not locally reproduced** — remains the single highest-value claim to
+  reproduce (1B docs, cold object-store regime = Parallax's pattern). Greptime blog
+  dates to **2025-03** (earlier than first noted); no newer public cold-run that
+  reverses it surfaced in the sweep.
+- **Claims #1–5, #8–9 unchanged** — re-scan found no drift: CH ingest/agg/log-search
+  wins (Runs 5/11/12), small-write async-insert, object-store-native, compression
+  wash, "50× cost" marketing-vs-SaaS all hold at the current pins.
+- **OTLP (part of claim #7) re-verified — no drift** (pass 46): ClickHouse still has
+  no native OTLP receiver; GreptimeDB native GA. Notably ClickHouse's 26.x protocol
+  investment went to **Prometheus** (TimeSeries/remote-write/PromQL), not OTLP.
+
 ## Sources
 
 - [GreptimeDB as a ClickHouse alternative for time-series/observability (Greptime, 2026-04)](https://greptime.com/tech-content/2026-04-17-clickhouse-alternative-greptimedb)
+- [GreptimeDB vs. ClickHouse comparison page (Greptime) — source of the "ClickHouse PromQL early-stage, limited to rate/delta/increase" framing](https://greptime.com/compare/click_house)
 - [GreptimeDB vs ClickHouse vs Elasticsearch — log engine benchmark (Greptime)](https://greptime.com/blogs/2024-08-22-log-benchmark)
 - [GreptimeDB takes on the billion-JSON-document challenge (JSONBench) (Greptime, 2026)](https://medium.com/@sunng87/greptimedb-takes-on-the-billion-json-document-challenge-outperforms-clickhouse-victorialogs-48214d3311dd)
 - [ClickBench — benchmark for analytical DBMS (ClickHouse)](https://benchmark.clickhouse.com/)
