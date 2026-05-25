@@ -28,7 +28,12 @@ Legend: **Runnable now** = expressible in the current prototype/`bench/compose.y
   enough" for Parallax; if >3× → ClickHouse's read-path edge is *material* and,
   combined with a log-search-dominated query mix, **flips the verdict** (Q5).
 - **Prereq:** `small`+ tier with realistic log text; cold-cache harness step.
-- **Status:** Needs harness ext. (cold-cache control + larger tier). **Top priority.**
+- **Status:** **DONE at medium-warm (Run 12).** 5M realistic logs, both with text
+  indexes: **full-text search ClickHouse 7 ms vs GreptimeDB 130 ms (~18×)**, full
+  scan ~4×, but **selective keyed filter a tie** (4 vs 5 ms). Flip-trigger
+  confirmed: log-search-at-volume strongly favors ClickHouse; anchored/keyed access
+  does not. True cold GB–TB (drop OS cache, 25–50 GB) owed to the full harness —
+  expected to widen the gap.
 
 ## B2 — `trace_id` point lookup with the GreptimeDB inverted-index fix
 

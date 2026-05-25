@@ -443,6 +443,46 @@ engine already shows ~10×; the cold GB–TB log/trace scan likely shows it larg
 
 **B5 status: done** (SQL aggregation); PromQL-path + metric-engine high-card run owed.
 
+### Run 12 — 2026-05-25 — B1 (medium tier, warm): log full-text search + scan
+
+The verdict's flip-trigger, at medium volume. 5M realistic logs (99%-unique
+messages) loaded into **both with their text indexes** — ClickHouse native `text`
+index (`tokenizer='splitByNonAlpha'`), GreptimeDB `FULLTEXT INDEX` (English
+analyzer). Parity exact: `timeout` token = **698,955** both; `svc-3`+`ERROR` =
+**49,679** both.
+
+| Query | ClickHouse | GreptimeDB | Gap |
+| --- | --- | --- | --- |
+| **Full-text token search** (`hasToken`/`matches` 'timeout') | **7 ms** | **130 ms** | **~18× ClickHouse** |
+| Selective filter (`service` + `level`) | 4 ms | 5 ms | **~tie** |
+| Full count-by-`level` (scan) | 7 ms | 28 ms | ~4× ClickHouse |
+
+**Findings (decisive for the flip-trigger):**
+
+1. **ClickHouse wins log full-text search ~18×**, *even with both engines using
+   their text indexes*. ClickHouse's mature `text` posting-list index + vectorized
+   `hasToken` far outruns GreptimeDB's `FULLTEXT` (Puffin) + DataFusion `matches()`
+   at 5M rows. This is the **dominant-signal flip-trigger query**, and ClickHouse's
+   advantage is large and real — confirming the verdict's trigger: *if Parallax's
+   query mix is dominated by ad-hoc log search at volume, ClickHouse wins decisively.*
+2. **Selective keyed filter is a tie** (4 vs 5 ms): when the filter hits indexed/
+   low-card columns (`service` PK prefix, `level`), GreptimeDB prunes as well as
+   ClickHouse. Anchored/keyed access — Parallax's actual bundle pattern — does not
+   show the gap.
+3. **Full scan ~4×** (consistent with B5's ~10× at 8M metric rows): ClickHouse's
+   vectorized engine widens with volume.
+
+**Consequence:** the decision genuinely hinges on Parallax's real query mix.
+*Anchored bundle assembly* (trace_id/fingerprint lookups + keyed filters) → both
+fine, GreptimeDB's fit pillars win. *Heavy ad-hoc full-text log search at volume*
+→ ClickHouse ~18×, the flip-trigger fires. Parallax is designed around anchored
+evidence bundles, so the verdict holds — but this is the number that would flip it.
+
+**B1 status: done at medium-warm.** True cold-cache GB–TB (drop OS page cache,
+25–50 GB) would likely widen the scan/search gaps further; owed to the full
+harness. Caveat: 5M rows still largely cache-resident — the 18× search gap is an
+index-implementation difference, not just scan throughput.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

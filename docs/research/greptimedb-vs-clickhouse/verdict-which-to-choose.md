@@ -136,6 +136,16 @@ advantage becomes central and the choice flips — accepting the PromQL/OTLP lay
 as the cost of doing business. This is the single most important thing the larger
 benchmark must settle.
 
+**Update (Run 12, measured at 5M logs, both indexed):** condition (b) is now
+**partly confirmed** — ClickHouse full-text log search is **~18×** faster (7 ms vs
+130 ms; mature `text` posting-list index vs GreptimeDB `FULLTEXT`+DataFusion), and
+full scans ~4×. So if Parallax's mix is **log-search-dominated**, the flip is real
+and large. But the **selective keyed filter was a tie** (4 vs 5 ms), and Parallax's
+designed pattern is *anchored* bundle assembly (keyed lookups), not ad-hoc log
+search — so the verdict holds **conditional on that workload assumption**. Validate
+the assumption (what fraction of real Parallax queries are ad-hoc log search vs
+anchored retrieval) — it is now the load-bearing question, not the engine speed.
+
 ## Open questions handed to the benchmark (veto power)
 
 `storage-benchmark-prototype.md` must settle, at `small`+ tier, cold cache,
