@@ -33,8 +33,13 @@ As of 2026-05-25:
   non-prerelease and `v0.7.0-pre.3` as the newest pre-release. Benchmark results
   must record the exact tag and whether the run used a stable or pre-release
   track.
+- Same-day GitHub metadata also shows `main` pushed after those releases, with
+  current HEAD `6b60915d...` touching MVCC internals. A `main` benchmark can
+  explain drift or guide investigation, but it is a separate track and cannot
+  stand in for a stable production-readiness result.
 - The public README marks Turso Database beta and warns to use caution with
-  production data and backups.
+  production data and independent backups; it still says Turso Database is not
+  production ready while libSQL is production ready.
 - Public docs distinguish legacy libSQL embedded replicas from newer Turso
   Database/Turso Sync direction.
 - The Rust quickstart says the Rust SDK is built on the Turso Database engine, a
@@ -178,7 +183,7 @@ parallax-metadata-bench
   ├── load        concurrent writer/reader workload
   ├── crash       crash/restart and backup/restore probes
   ├── migrate     Turso -> Postgres export/import check
-  └── report      results.json + markdown summary
+  └── report      results.json + markdown summary with release-track eligibility
 MetadataStore (trait)
   ├── TursoStore      local file, optional sync mode when testing cloud sync
   └── PostgresStore   sqlx or tokio-postgres against local container

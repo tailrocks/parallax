@@ -186,6 +186,9 @@ Use the `tursodatabase/turso` engine for the embedded metadata slot, not the old
 C SQLite default. As of 2026-05 Turso Database is still pre-1.0 (latest
 non-prerelease checked `v0.6.1`, 2026-05-22; newest checked pre-release
 `v0.7.0-pre.3`) and the repository still carries an explicit beta warning;
+same-day GitHub metadata also shows `main` moving after those tags, including
+MVCC-internal changes, so benchmark rows must distinguish stable release,
+pre-release, and moving `main` commit results;
 Turso Cloud has separate documented durability, PITR, export, and sync behavior,
 but those managed-cloud guarantees do not prove the embedded local store is safe
 under Parallax crash, backup, migration, and audit workloads. This is an
