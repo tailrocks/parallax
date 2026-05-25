@@ -43,6 +43,7 @@ date.
 | [OpenTelemetry logs data model](https://opentelemetry.io/docs/specs/otel/logs/data-model/) | Logs have timestamps, observed timestamps, trace/span fields, severity, body, resource, scope, attributes, and event names; exception attributes should follow exception semantic conventions. | Raw stdout/stderr should be normalized as log records with line refs, severity guesses, and trace/span IDs when available. |
 | [OpenTelemetry exception logs](https://opentelemetry.io/docs/specs/semconv/exceptions/exceptions-logs/) and [exception spans](https://opentelemetry.io/docs/specs/semconv/exceptions/exceptions-spans/) | Exceptions can be represented as events/logs associated with span context, with standardized exception attributes. | Reconstructed exceptions must be labeled as reconstructed and must not be upgraded to SDK-observed production events. |
 | [Sentry Python envelope source docs](https://getsentry.github.io/sentry-python/_modules/sentry_sdk/envelope.html) | The official SDK envelope implementation maps item types like event, transaction, span, attachment, log, and profile, and notes documented envelope constraints. | For Phase 0, emit a minimal Sentry-style error event object and point exact envelope compatibility to the Sentry fixture gate rather than rebuilding Relay semantics in the eval harness. |
+| [MCP tools specification `2025-11-25`](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) and [RFC 8785 JCS](https://www.rfc-editor.org/rfc/rfc8785.html) | MCP tools can return JSON `structuredContent` validated by `outputSchema`; JCS gives a deterministic JSON form for hashing. | Arm C/D must be generated as canonical bundle JSON first, then rendered to Markdown/CLI/HTTP/MCP projections with recorded hashes. Text-only context cannot prove bundle value. |
 
 ## Decision
 
@@ -54,6 +55,7 @@ The overlay is an **eval fixture**, not a product pipeline:
 | Can it use the gold patch or test patch? | No. Gold artifacts are private grader inputs only. |
 | Can an LLM summarize logs before the bundle is built? | No. Overlay generation and truncation are deterministic. |
 | Can raw dump and bundle use different evidence? | No. They must derive from the same normalized overlay artifact. |
+| Can Arm C be only a hand-written Markdown summary? | No. The bundle JSON is canonical; Markdown and MCP text are projections with hashes. |
 | Can perfect trace IDs be invented? | Only as harness span IDs with `observed_from_harness`; never claim production-grade trace linkage. |
 | Can missing production telemetry be hidden? | No. Missing spans, SDK events, deploys, frontend breadcrumbs, or metrics appear in `missing_evidence`. |
 
@@ -130,6 +132,8 @@ docs/research/bundle-value-eval/tasks/<task_id>/
   arm-b-raw-dump.md
   arm-c-bundle.json
   arm-c-bundle.md
+  arm-c-projection-manifest.json
+  arm-c-mcp-structured-content.json
   source-field-policy.json
   provenance.md
   hashes.sha256
@@ -146,7 +150,9 @@ Artifact meanings:
 | `redaction-report.json` | Yes | Policy version, seeded canaries, findings, and denied fields. |
 | `refs/*.txt` | Usually yes if redacted | Bounded stdout/stderr/harness excerpts with line numbers. |
 | `arm-b-raw-dump.md` | Yes | Token-budgeted raw dump generated from `normalized.jsonl`. |
-| `arm-c-bundle.*` | Yes | Product-arm bundle generated from the same `normalized.jsonl`. |
+| `arm-c-bundle.*` | Yes | Product-arm canonical bundle JSON and Markdown projection generated from the same `normalized.jsonl`. |
+| `arm-c-projection-manifest.json` | Yes | Hashes proving Markdown, CLI, HTTP, and MCP projections derive from the same canonical bundle. |
+| `arm-c-mcp-structured-content.json` | Yes when MCP is tested | Exact MCP `structuredContent` object validated against the bundle `outputSchema`. |
 | `source-field-policy.json` | Yes | Field-level allow/deny policy separating agent-visible, runner-private, grader-private, triage-private, and audit-only fields. |
 | `grader-private.sha256` | Yes | Hashes of gold patch/test patch/verifier-only files, not the files. |
 
@@ -196,7 +202,8 @@ These rules are part of the evaluation, not optional hygiene:
 2. Build `raw.ndjson` and `normalized.jsonl` before generating any agent arm.
 3. Hash and freeze `normalized.jsonl` before creating Arm B or Arm C.
 4. Generate Arm B first using a fixed truncation rule.
-5. Generate Arm C from the same normalized rows and refs; no extra evidence.
+5. Generate Arm C canonical JSON from the same normalized rows and refs; no
+   extra evidence.
 6. Keep gold patch, test patch, resolving PR/commit URLs, hints, LLM metadata,
    parser source, hidden verifier IDs, and hidden verifier output out of all agent
    contexts.
@@ -205,7 +212,10 @@ These rules are part of the evaluation, not optional hygiene:
    absent from agent-visible files.
 9. Preserve missing evidence instead of filling it with plausible defaults.
 10. Commit artifact hashes and provenance labels for every public task.
-11. If a human manually repairs a malformed record, record the edit in
+11. Compute `schema_ref`, post-redaction `canonical_hash`, and
+    `projection_manifest` before any agent run, and prove Markdown/CLI/HTTP/MCP
+    projections match the canonical bundle.
+12. If a human manually repairs a malformed record, record the edit in
     `provenance.md` before any agent run.
 
 If any no-cheat rule fails, the task can be used for harness debugging but not
@@ -268,12 +278,17 @@ Arm B:
 
 Arm C:
 
-- evidence bundle from the same normalized rows;
+- canonical evidence bundle from the same normalized rows;
+- `schema_ref`, post-redaction `canonical_hash`, `projection_manifest`, and
+  `access` fields;
 - typed nodes/edges;
 - edge strengths;
 - missing evidence;
 - redaction report;
 - hypotheses only when the cited evidence supports them.
+- Markdown is a projection of the canonical JSON, never the source of truth.
+- MCP delivery, if tested, must expose the canonical object as
+  `structuredContent` validated against the bundle `outputSchema`.
 
 Arm D:
 
@@ -290,6 +305,8 @@ The overlay corpus is acceptable for Phase 0 only if:
 | Gold isolation | Zero gold patch/test patch lines appear in Arm A/B/C artifacts. |
 | Source-field isolation | 100 percent of source fields are classified, and zero `runner_private`, `grader_private`, or default `triage_private` fields appear in agent-visible artifacts. |
 | Redaction | Zero seeded secrets or PII canaries appear in agent-visible artifacts. |
+| Canonical bundle | Arm C/D include `schema_ref`, post-redaction `canonical_hash`, `projection_manifest`, `access`, `redaction_report`, and `source_field_policy` in canonical JSON. |
+| Projection equivalence | Markdown, CLI, HTTP, and MCP projections derive from the canonical bundle and carry matching hashes; MCP `structuredContent` validates against the bundle `outputSchema` when MCP is in the run. |
 | Provenance coverage | 100 percent of records carry provenance labels. |
 | Missing evidence | 100 percent of absent production-grade signals are represented as `missing_evidence`. |
 | Reproducibility | Re-running capture on the same task produces equivalent normalized rows except timestamps, durations, and nondeterministic line ordering documented in `provenance.md`. |
@@ -301,6 +318,9 @@ Failure consequences:
 - If gold isolation fails, discard the task and rotate the canary.
 - If source-field isolation fails, discard the task for A1 and repair the field
   policy before reusing that source.
+- If canonical bundle or projection equivalence fails, discard Arm C/D rows until
+  bundle generation is repaired; the failure can debug the renderer but cannot
+  count toward bundle value.
 - If reproducibility fails, keep the task only as a harness-debugging case.
 - If provenance is mostly reconstructed, report the task under
   `reconstructed_overlay`, not `runtime_overlay`.
@@ -340,7 +360,8 @@ Failure consequences:
 
 The Phase 0 overlay should be boring, deterministic, and hard to cheat. If a
 Parallax bundle wins only because the overlay invented perfect links, hid
-missing evidence, or quietly curated better context than the raw dump, the eval
-is worse than useless. Freeze one normalized, provenance-labeled overlay first;
-derive raw and bundled arms from it; then let the agent comparison mean
-something.
+missing evidence, quietly curated better context than the raw dump, or exposed a
+Markdown-only summary with no canonical bundle/projection proof, the eval is
+worse than useless. Freeze one normalized, provenance-labeled overlay first;
+derive raw and canonical bundled arms from it; then let the agent comparison
+mean something.

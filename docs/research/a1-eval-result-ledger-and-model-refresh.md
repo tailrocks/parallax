@@ -67,6 +67,12 @@ Outside sources checked for this pass:
   training-contamination canary on the public site, a good reminder that
   benchmark artifacts need leakage checks
   ([Terminal-Bench](https://www.tbench.ai/)).
+- MCP `2025-11-25` separates human-readable tool text from JSON
+  `structuredContent`, and RFC 8785/JCS gives a deterministic JSON
+  canonicalization target. Arm C/D rows must therefore prove the agent saw a
+  canonical bundle projection, not an untracked Markdown rendering
+  ([MCP tools specification](https://modelcontextprotocol.io/specification/2025-11-25/server/tools),
+  [RFC 8785](https://www.rfc-editor.org/rfc/rfc8785.html)).
 
 Internal sources:
 
@@ -107,6 +113,7 @@ docs/research/bundle-value-eval/
     benchmark-source-snapshot.json
     model-snapshots.json
     arm-results.jsonl
+    projection-audit.jsonl
     scorecards.md
     statistics.md
     contamination-checks.md
@@ -124,6 +131,7 @@ docs/research/bundle-value-eval/
 | `benchmark-source-snapshot.json` | Yes | Dataset revisions, row counts, split counts, last-updated/checked timestamps, and source-field quarantine summary for every public task source. |
 | `model-snapshots.json` | Yes | Exact provider model IDs and API parameters used for that run. |
 | `arm-results.jsonl` | Yes | One row per task/arm/model/seed outcome. |
+| `projection-audit.jsonl` | Yes | Canonical bundle hash, projection manifest, CLI/HTTP/MCP equivalence, and MCP `structuredContent` validation for agent-visible bundle arms. |
 | `scorecards.md` | Yes | Blind grading notes, root-cause accuracy, evidence-grounding counts, and patch-quality notes. |
 | `statistics.md` | Yes | Paired C-vs-B/C-vs-A deltas, confidence intervals where possible, token/time deltas, and sensitivity checks. |
 | `contamination-checks.md` | Yes | Canary status, publicness tier, freshness checks, and any contamination probes. |
@@ -148,7 +156,16 @@ as durable prose; exact model IDs live here because they change over time.
   "benchmark_source_snapshot_hash": "sha256:...",
   "overlay_contract_version": "phase0-overlay-v1",
   "bundle_template_version": "bundle-v0",
+  "bundle_schema_ref": {
+    "uri": "https://parallax.dev/schemas/evidence-bundle/v0.json",
+    "hash": "sha256:...",
+    "canonicalization": "jcs-rfc8785"
+  },
+  "projection_surfaces_required": ["bundle_json", "bundle_markdown", "cli_output", "http_api", "mcp_structuredContent"],
+  "mcp_output_schema_required": true,
   "redaction_policy_version": "phase0-redaction-v1",
+  "a6_redaction_claim_level": "not_measured|synthetic_canary_pass|agent_visible_mixed_pass",
+  "a4_correlation_claim_level": "not_measured|synthetic_only|backend_mvp_pass|frontend_cross_tier_pass",
   "agent_scaffold": {
     "name": "codex|claude-code|openhands|swe-agent|custom",
     "version_or_commit": "...",
@@ -226,6 +243,12 @@ task/arm/model/seed attempt:
   "model_family": "frontier-a",
   "seed": 1,
   "context_hash": "sha256:...",
+  "bundle_schema_ref_hash": "sha256:...|not_applicable",
+  "canonical_bundle_hash": "sha256:...|not_applicable",
+  "projection_manifest_hash": "sha256:...|not_applicable",
+  "projection_equivalence_passed": true,
+  "mcp_structured_content_valid": true,
+  "safety_fields_only_in_meta": false,
   "benchmark_source_snapshot_hash": "sha256:...",
   "normalized_overlay_hash": "sha256:...",
   "source_field_policy_hash": "sha256:...",
@@ -249,7 +272,12 @@ task/arm/model/seed attempt:
 
 No result row counts toward A1 if `evidence_parity_passed`,
 `gold_isolation_passed`, `source_field_isolation_passed`, or
-`redaction_passed` is false.
+`redaction_passed` is false. For Arm C and D, the row also does not count if
+`bundle_schema_ref_hash`, `canonical_bundle_hash`, or
+`projection_manifest_hash` is missing, if `projection_equivalence_passed` is
+false, if MCP `structuredContent` is invalid for an MCP-delivered context, or if
+any safety field appears only in `_meta`, a tool description, a prompt wrapper,
+or Markdown.
 
 Also exclude or downgrade rows when:
 
@@ -296,7 +324,7 @@ Use these labels in `result-ledger.md`:
 | --- | --- | --- |
 | `harness_debug` | Any incomplete or T0-heavy run. | "The harness works/does not work." |
 | `provisional_signal` | 10-16 tasks, at least one model family, all no-cheat gates pass. | "Bundle value is promising enough for more research." |
-| `a1_gate_pass` | 12+ tasks, at least two model families, mixed contamination tiers, C beats B per pre-registered rule, and no redaction/gold/parity failures. | "A1 currently passes under the stated eval conditions." |
+| `a1_gate_pass` | 12+ tasks, at least two model families, mixed contamination tiers, C beats B per pre-registered rule, and no redaction/gold/parity/canonical-projection failures. | "A1 currently passes under the stated eval conditions." |
 | `production_claim` | A1 gate pass plus real or fault-injected production-shaped telemetry reproduces the same direction. | "Bundles improved fixes on production-shaped evidence under these conditions." |
 
 Never write "Parallax improves production fixes" from reconstructed public
@@ -316,8 +344,9 @@ Rerun earlier when any of these happen:
   license, Docker images, verifier commands, or source-field risk posture;
 - OpenAI, SWE-bench, SWE-bench-Live, Terminal-Bench, or another primary source
   reports contamination or scoring issues affecting the task family used;
-- the evidence-bundle schema, hypothesis block, truncation rule, source-field
-  policy, redaction policy, or agent scaffold changes materially;
+- the evidence-bundle schema, canonicalization method, projection renderer, MCP
+  output schema, hypothesis block, truncation rule, source-field policy,
+  redaction policy, or agent scaffold changes materially;
 - more than 25 percent of the task set changes;
 - A2 interviews produce real incidents that can replace synthetic/public tasks;
 - a competitor publishes a credible telemetry-augmented agent eval.
@@ -345,6 +374,8 @@ False-positive triggers:
 | --- | --- |
 | C wins only because it used more context than B | Do not count as bundle value; report as more-context value. |
 | C evidence includes rows or facts not present in B's source overlay | Discard task for A1. |
+| C context is only Markdown/text or has a projection hash mismatch | Discard the C/D row until the canonical bundle and projections are regenerated. |
+| MCP-delivered context lacks valid `structuredContent` for the bundle schema | Discard the MCP-delivered row; it can debug the adapter but cannot prove A1. |
 | One task accounts for most C-vs-B lift | Downgrade to provisional signal. |
 | One model family wins while another loses | Do not claim model-general A1 pass. |
 | Unsupported-claim rate rises in C | Treat as safety regression even if tests pass. |
@@ -362,4 +393,5 @@ A1 is a moving target. Frontier models, coding-agent scaffolds, public benchmark
 sets, and contamination findings will keep changing. The only durable way to
 use A1 as a GO gate is to treat every eval result as a versioned, expiring
 research artifact with exact model snapshots, task provenance, evidence hashes,
-and public failure rows. If the ledger is missing or expired, A1 is not proven.
+canonical bundle hashes, projection audits, and public failure rows. If the
+ledger is missing or expired, A1 is not proven.
