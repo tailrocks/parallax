@@ -25,6 +25,8 @@ pressure the Sentry-compatible migration and low-ops claims from below.
 
 The current trigger-hit status for both watchlists lives in the
 [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md).
+The SigNoz open-investigation-format claim now has a focused falsification note:
+[SigNoz open investigation format check](signoz-open-investigation-format-check.md).
 
 ## Current Verdict
 
@@ -54,7 +56,7 @@ audit.
 | Competitor | Current strongest fit | Current Parallax gap | Threat level |
 | --- | --- | --- | --- |
 | OpenObserve | Rust, object-storage-oriented, self-hostable observability platform with OTLP ingest, RUM/source maps, Enterprise AI SRE Agent, AI Assistant, incident/RCA workflow, and Enterprise MCP with broad query/admin tools. | AI/MCP features are Enterprise-gated; public pages conflict on the free Self-Hosted Enterprise allowance (`50 GB/day` on pricing, `200 GB/day` on the homepage FAQ); current ingestion docs emphasize OTLP/log APIs/Prometheus/etc., not Sentry envelopes; MCP is not a narrow read-only bundle surface; no portable evidence-bundle schema or coding-agent action audit. | Very high. |
-| SigNoz | Open self-hostable MCP server, agent-native positioning, Claude Code/Codex/Cursor/Gemini integration, traces/logs/metrics/topology/deploy history through agent clients, a marketing claim around an "open investigation format," and MCP tools for alerts/dashboards/views/channels. | Go + ClickHouse stack; checked docs do not expose the claimed investigation format as a schema or portable artifact; query/management interface rather than deterministic evidence bundle; no Sentry envelope ingestion in current docs; no Parallax-style CLI/agent side-effect audit. | High. |
+| SigNoz | Open self-hostable MCP server, agent-native positioning, Claude Code/Codex/Cursor/Gemini integration, traces/logs/metrics/topology/deploy history through agent clients, a landing-page claim around an "open investigation format," and MCP tools for alerts/dashboards/views/channels. | Go + ClickHouse stack; the 2026-05-25 focused check found the claim only as workflow/product language, not as a published schema or portable artifact; query/management interface rather than deterministic evidence bundle; no Sentry envelope ingestion in current docs; no Parallax-style CLI/agent side-effect audit. | High. |
 | Coroot | Apache-2.0 OSS, eBPF zero-instrumentation, metrics/logs/traces/profiles, service map, deployment tracking, current `1.20.2` release, Community MCP, Community `resolve_alerts`, and Enterprise/Cloud AI RCA. | eBPF spans can be incomplete and lack app-level Rust panic/error-chain semantics; AI RCA is not purely OSS/local in Community; MCP is OAuth/RBAC-scoped but still not purely read-only; no Sentry migration path, portable evidence bundle, or coding-agent action audit in official docs. | High. |
 
 ## OpenObserve
@@ -121,7 +123,8 @@ SigNoz is the closest open agent-native threat:
 - Agent-native product language: telemetry inside the coding-agent workflow,
   not only dashboards.
 - A public landing-page claim that the "open investigation format" SigNoz uses
-  can become a team standard.
+  can become a team standard. The focused 2026-05-25 re-check found this as
+  product/workflow language, not as a published schema or artifact.
 - Architecture centered on OpenTelemetry and ClickHouse.
 - Recent docs for observing Claude Code itself with OpenTelemetry logs and
   metrics, including terminal/MCP connection/cost fields.
@@ -144,7 +147,8 @@ and structured APIs.
    format, but this pass did not find a source-linked schema, canonical artifact,
    redaction report, query manifest, raw-ref policy, or outcome-row contract.
    Parallax's bet is that a pre-correlated, citable, redacted bundle beats asking
-   the agent to assemble context itself.
+   the agent to assemble context itself. See
+   [SigNoz open investigation format check](signoz-open-investigation-format-check.md).
 4. **MCP power boundary.** SigNoz MCP includes management tools. That is useful,
    but it is not the same product surface as a least-privilege, read-only,
    citable evidence bundle.
@@ -273,6 +277,7 @@ SigNoz:
 - [SigNoz agent-native observability](https://signoz.io/agent-native-observability/)
 - [SigNoz agent-native blog](https://signoz.io/blog/introducing-agent-native-observability/)
 - [SigNoz MCP server docs](https://signoz.io/docs/ai/signoz-mcp-server/)
+- [SigNoz open investigation format check](signoz-open-investigation-format-check.md)
 - [SigNoz AI tools and skills](https://signoz.io/docs/ai/overview/)
 - [SigNoz architecture docs](https://signoz.io/docs/architecture/)
 - [SigNoz Claude Code monitoring](https://signoz.io/docs/claude-code-monitoring/)

@@ -56,6 +56,7 @@ or CI contract yet.
 | `docs/research/open-self-hosted-competitor-watch.md` | Focused watchlist for OpenObserve, SigNoz, and Coroot: current primary-source posture, remaining Parallax gaps, and trigger conditions that would reopen the GO verdict. |
 | `docs/research/lightweight-sentry-compatible-competitor-watch.md` | Focused watchlist for Bugsink, Rustrak, Traceway, GoSnag, and Urgentry: lightweight Sentry-compatible or OTLP-native self-hosted challengers that pressure Parallax's migration and simplicity claims. |
 | `docs/research/agentic-observability-competitor-drift-ledger.md` | Market-drift ledger for agentic observability competitors: current source snapshot, drift levels, trigger-hit rows, refresh triggers, and public wording boundaries. |
+| `docs/research/signoz-open-investigation-format-check.md` | Focused falsification note for SigNoz's "open investigation format" claim: current primary-source posture, evidence checked, A3 schema-counting rule, and watch triggers. |
 | `docs/research/self-hosted-observability-architecture.md` | Architecture research for the Sentry-compatible, OpenTelemetry-native self-hosted observability direction. |
 | `docs/research/ci-failure-context-mvp.md` | MVP research for GitHub Actions failure-context bundles. |
 | `docs/research/greptimedb-storage-evaluation.md` | Storage-layer evaluation for GreptimeDB, ClickHouse, and observability backends. |

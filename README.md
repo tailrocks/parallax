@@ -66,6 +66,7 @@ Code `/loop` runbook.
 - [Open self-hosted competitor watch](docs/research/open-self-hosted-competitor-watch.md)
 - [Lightweight Sentry-compatible competitor watch](docs/research/lightweight-sentry-compatible-competitor-watch.md)
 - [Agentic observability competitor drift ledger](docs/research/agentic-observability-competitor-drift-ledger.md)
+- [SigNoz open investigation format check](docs/research/signoz-open-investigation-format-check.md)
 - [Self-hosted observability architecture](docs/research/self-hosted-observability-architecture.md)
 - [CI failure context MVP](docs/research/ci-failure-context-mvp.md)
 - [GreptimeDB storage evaluation](docs/research/greptimedb-storage-evaluation.md)

@@ -48,6 +48,14 @@ Current primary references reinforce three rules:
   projection
   ([MCP specification](https://modelcontextprotocol.io/specification/2025-11-25),
   [MCP schema reference](https://modelcontextprotocol.io/specification/2025-11-25/schema)).
+- SigNoz's official agent-native landing page now claims an "open investigation
+  format," but the 2026-05-25 focused check found no published schema or
+  portable artifact in the checked landing page, MCP docs, MCP README, or
+  release metadata
+  ([SigNoz open investigation format check](signoz-open-investigation-format-check.md)).
+  Product-language claims therefore do not start the A3 clock. Only
+  machine-readable schemas, fixtures, validators, compatibility rules, and
+  artifact exports count.
 
 Updated implication from the A1/A6 source-field pass: JSON Schema and MCP output
 schemas can require the presence and shape of `source_field_policy`, but they
