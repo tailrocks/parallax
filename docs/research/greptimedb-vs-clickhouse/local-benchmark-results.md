@@ -4678,6 +4678,45 @@ numbers`, GT `FROM spans_idx LIMIT 20000`); foreground sample the anchored `coun
 on the static spans table ×8–10 during the load; check CH `system.parts` (active) and GT
 `region_statistics.sst_num`. Expect flat query latency + bounded parts/SSTs. Drop scratch after.
 
+### Run 113 — 2026-05-25 — Counter-rate panel (the #1 observability metric query): CH ~12 ms / GT ~19 ms (~1.6×) — smallest agg gap yet, both interactive; completes the metric-panel picture
+
+**Pass target.** Model the **counter-rate panel** — request-rate / error-rate / CPU over time, the
+single most common observability metric query (PromQL `rate()`). Completes the metric-panel set
+alongside avg-by-service (Run 96, ~3×), bucketed line (Run 96, ~2×), last-value (Run 109, GT wins).
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned live — 13 h up, no bump).
+`metrics_real` = 864k rows / 12 svc / monotonic `counter` / 6 h span, parity. Query = per-service
+per-5-min-bucket counter delta (`max(counter)-min(counter)`, the rate numerator — same shape both
+engines, fair). CH `toStartOfInterval`; GT `date_bin('5 minutes'::INTERVAL, ts)`. Warm ×8.
+
+| Engine | warm reps (ms) | median |
+| --- | --- | --- |
+| ClickHouse | `12 12 10 11 12 16 27 14` | **~12 ms** |
+| GreptimeDB | `97 19 19 17 21 16 20 19` | **~19 ms** |
+| **Ratio** | | **~1.6×** |
+
+**Verdict — the most common metric panel is ~1.6× (smallest agg gap measured), both interactive.**
+
+- **~1.6× — smaller than flat avg-by-service (~3×, Run 96)** because the rate query does more per-row
+  work (bucket `date_bin` + `max`/`min` per group + delta + more groups), which (consistent with Runs
+  96/102) dilutes ClickHouse's scan-throughput edge. Both ≪ 300 ms — fully interactive.
+- **Completes the metric-panel picture** across the common dashboard query types:
+  - last-value / "current value" → **GreptimeDB wins ~2.4×** (Run 109)
+  - counter-rate over time → **~1.6×** (this run)
+  - bucketed line chart → **~2×** (Run 96)
+  - flat avg-by-service → **~3×** (Run 96)
+  - wide PromQL range → GT PromQL ~5.6× its own SQL (Run 105 — use SQL/Flow, not wide PromQL)
+  So across real metric dashboards GreptimeDB ranges from **winning to ~3× behind, all interactive**.
+- **Decision relevance:** metric dashboards are **interactive on GreptimeDB for every common panel**,
+  and the speed gap is **small and shrinks as the query does more per-row work** (the scan-throughput
+  edge only dominates flat full-table scans). Reinforces "metrics → GreptimeDB is capability/
+  ergonomics; the speed gap is real but sub-perceptible on real panels." **Adopt-native metric engine
+  stands** — the same DataFusion path serves all these panels.
+
+**Reproduce.** On `metrics_real` (864k): CH `SELECT service, toStartOfInterval(ts, INTERVAL 5 MINUTE)
+m, max(counter)-min(counter) FROM metrics_real GROUP BY service, m`; GT `date_bin('5 minutes'::
+INTERVAL, ts)` equivalent. Warm ×8. Expect CH ~12 ms / GT ~19 ms.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

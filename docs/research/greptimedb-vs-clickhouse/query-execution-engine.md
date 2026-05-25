@@ -114,6 +114,13 @@ ClickHouse's scan-throughput edge. So ~2–3× is the scan-bound *ceiling*; comp
 aggregations trend toward ~2×. Both panels stay **sub-300 ms warm on GreptimeDB** — interactive
 either way, so the gap is real but not user-perceptible on single-user dashboard refreshes.
 
+**The full metric-panel picture (Runs 96/105/109/113) confirms the trend:** counter-rate panel
+**~1.6×** (Run 113, CH 12 / GT 19 ms — smallest, most per-row compute), bucketed line **~2×**, flat
+avg-by-service **~3×** (Run 96), and **last-value GreptimeDB *wins* ~2.4×** (Run 109 — time-sorted
+layout beats `argMax`). Only the wide PromQL range is slow on GT (~5.6× its own SQL, Run 105 — use
+SQL/Flow). Net: across real metric dashboards GreptimeDB ranges from winning to ~3× behind, **all
+interactive** — the scan-throughput edge only dominates flat full-table aggregation.
+
 ## Axis consequence
 
 - **Speed (axis #1):** ClickHouse's engine is faster on **heavy scans and
