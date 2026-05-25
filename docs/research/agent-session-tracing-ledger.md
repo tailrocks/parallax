@@ -19,9 +19,9 @@ The central rule:
 
 > No "Parallax traces coding-agent sessions" claim without a dated tool/version
 > matrix, adapter coverage rows, normalized session snapshots, lossiness reports,
-> redaction results, source-field policy status, projection raw-ref denial,
-> canonical bundle hashes, projection manifests, MCP structured-output
-> validation, overhead rows, and an audit-value comparison.
+> state-verification rows, redaction results, source-field policy status,
+> projection raw-ref denial, canonical bundle hashes, projection manifests, MCP
+> structured-output validation, overhead rows, and an audit-value comparison.
 
 This ledger is separate from the
 [agent access surface safety ledger](agent-access-surface-safety-ledger.md): that
@@ -47,6 +47,7 @@ and normalization of agent execution traces.
 | [OpenCode MCP servers](https://opencode.ai/docs/mcp-servers/) | OpenCode supports local MCP servers with command/environment/timeout/enabled fields and remote MCP servers with URL, enabled, headers, OAuth config or OAuth disabled, timeout, remote defaults, global tool toggles, glob disables, and per-agent MCP enablement. | MCP settings are secret-bearing and policy-bearing. OpenCode tool-call rows need transport, header/env/OAuth source, enabled/global/per-agent tool state, and timeout provenance before cross-agent MCP comparisons are claimable. |
 | [OpenTelemetry semantic conventions 1.41.0](https://opentelemetry.io/docs/specs/semconv/) | Current semconv catalog includes GenAI, MCP, CLI, process, CI/CD, VCS, exception, and test areas. | Adapters should record source semantic-convention versions instead of hard-coding unstable span shapes into Parallax storage. |
 | [OpenTelemetry GenAI agent spans](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/), [MCP](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/), and [CLI spans](https://opentelemetry.io/docs/specs/semconv/cli/cli-spans/) | GenAI and MCP conventions are useful ingestion vocabulary; CLI conventions define short-lived command spans and exit/error semantics. | OTel-native sources feed normalized Parallax rows, but raw spans are not the durable product schema. |
+| [OpenTelemetry CICD spans](https://opentelemetry.io/docs/specs/semconv/cicd/cicd-spans/), [test attributes](https://opentelemetry.io/docs/specs/semconv/registry/attributes/test/), and [VCS attributes](https://opentelemetry.io/docs/specs/semconv/registry/attributes/vcs/) | CICD task runs expose result states, test attributes expose case/suite statuses, and VCS attributes distinguish head/base refs and revisions. These are development-stage/registry vocabularies, not proof that an agent command changed external state. | Agent-session rows need a separate state-verification artifact before wording can move from "command reported success" to "patch validated," "file changed," "deploy succeeded," or "issue fixed." |
 | [MCP tools specification `2025-11-25`](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) and [RFC 8785 JCS](https://www.rfc-editor.org/rfc/rfc8785.html) | MCP tool results can include JSON `structuredContent` validated by `outputSchema`; JCS defines deterministic JSON for repeatable hashes. | Agent-session projection rows must bind redaction/source-field checks to canonical JSON and prove CLI/HTTP/MCP projections preserve the same safety fields. |
 
 ## Claim Levels
@@ -70,10 +71,11 @@ Use these levels in `claim-ledger.jsonl`:
 | `amp_plugin_supported` | Amp plugin lifecycle/tool events normalize for a dated version/config. | "Amp plugin session events normalize for the tested version/config." |
 | `normalized_session_schema_pass` | A tested adapter set maps sessions, turns, actions, commands, edits, permissions, and outcomes into stable Parallax rows. | "Normalized agent-session schema passes for the tested adapter set." |
 | `lossiness_reported` | Every unmapped, redacted, source-not-exposed, raw-ref-only, or parse-failed event class is counted. | "Adapter lossiness is reported for the tested agents." |
+| `state_verification_reported` | Every state-change, validation, deploy, database, file, or outcome claim either has a verifier row or is explicitly marked unverified. | "State verification is reported for the tested agent-session claims." |
 | `redaction_safe` | Agent-visible canonical JSON, Markdown, CLI/HTTP output, and MCP `structuredContent` leak zero seeded canaries. | "Agent-session projections pass seeded redaction tests." |
 | `projection_safe` | Redaction report, source-field policy status, missing-evidence flags, raw-ref dereference denial, schema/hash metadata, projection manifest, and MCP structured-output validation pass for the tested projection set. | "Agent-session projections are safe for the tested adapter set." |
 | `audit_value_positive` | Normalized Parallax sessions answer audit questions better than final-output-only and at least as usefully as raw transcript/export arms. | "Normalized sessions improve audit reconstruction in the tested task set." |
-| `multi_agent_trace_supported` | At least two agents, including one native OTel path and one non-OTel structured path, pass schema, lossiness, redaction, source-field/projection, and audit-value gates. | "Parallax normalizes coding-agent session traces for the tested agent matrix." |
+| `multi_agent_trace_supported` | At least two agents, including one native OTel path and one non-OTel structured path, pass schema, lossiness, state-verification, redaction, source-field/projection, and audit-value gates. | "Parallax normalizes coding-agent session traces for the tested agent matrix." |
 | `claim_expired` | Agent docs/version/config, OTel semconv, adapter, schema, redaction/source-field/projection policy, or 90-day timer changed. | "Agent-session tracing result expired; rerun required." |
 | `claim_failed` | A required gate fails for the advertised level. | No claim for the affected tool/version/path. |
 
@@ -93,6 +95,7 @@ docs/research/agent-session-tracing-runs/<run_id>/adapter-event-results.jsonl
 docs/research/agent-session-tracing-runs/<run_id>/normalized-session-results.jsonl
 docs/research/agent-session-tracing-runs/<run_id>/coverage-results.jsonl
 docs/research/agent-session-tracing-runs/<run_id>/lossiness-results.jsonl
+docs/research/agent-session-tracing-runs/<run_id>/state-verification-results.jsonl
 docs/research/agent-session-tracing-runs/<run_id>/redaction-results.jsonl
 docs/research/agent-session-tracing-runs/<run_id>/source-field-policy-results.jsonl
 docs/research/agent-session-tracing-runs/<run_id>/projection-results.jsonl
@@ -315,6 +318,8 @@ approves a redacted synthetic fixture.
   "shell_command_count": 3,
   "file_edit_count": 2,
   "permission_decision_count": 1,
+  "state_verification_count": 3,
+  "unverified_state_claim_count": 0,
   "outcome_linked": true,
   "content_capture_level": "structural",
   "raw_ref_count": 0,
@@ -349,13 +354,36 @@ approves a redacted synthetic fixture.
 }
 ```
 
+### State Verification Result Row
+
+```json
+{
+  "fixture_task_id": "task_bugfix_001",
+  "tool": "codex",
+  "action_id": "agent_action:shell_003",
+  "observed_event_ref": "adapter-event-results.jsonl#agt_evt_003",
+  "reported_result": {
+    "exit_code": 0,
+    "status": "success",
+    "stdout_ref": "raw-ref-manifest.jsonl#stdout_003",
+    "stderr_ref": null
+  },
+  "state_claim": "patch_validation_passed|file_changed|database_changed|deploy_succeeded|issue_fixed|none",
+  "verifier_kind": "repo_diff|file_hash|test_report|provider_api_readback|database_readback|deployment_status|runtime_recurrence_check|manual_fixture_expectation|none",
+  "verifier_ref": "coverage-results.jsonl#repo_diff_003",
+  "verification_status": "supported|contradicted|unverified|not_applicable",
+  "agent_visible_wording": "command_reported_success|state_verified|state_unverified",
+  "missing_evidence": []
+}
+```
+
 ### Lossiness Result Row
 
 ```json
 {
   "tool": "amp",
   "fixture_task_id": "task_research_001",
-  "event_class": "thinking_block|tool_output|permission_decision|subagent|raw_transcript|uncovered_hook_tool_path|bare_mode_suppressed_surface|no_session_persistence|plugin_load_error|hook_mutated_tool_input|hook_persisted_environment|mcp_output_truncated|settings_source_unknown|plugin_event_disabled|source_schema_changed",
+  "event_class": "thinking_block|tool_output|permission_decision|subagent|raw_transcript|uncovered_hook_tool_path|bare_mode_suppressed_surface|no_session_persistence|plugin_load_error|hook_mutated_tool_input|hook_persisted_environment|mcp_output_truncated|settings_source_unknown|plugin_event_disabled|source_schema_changed|state_verifier_missing|unverified_state_claim",
   "lossiness_reason": "source_not_exposed|redacted|raw_ref_only|unsupported|parse_failed|unstable_format",
   "count": 0,
   "user_visible_warning": "Thinking blocks disabled by policy.",
@@ -582,8 +610,24 @@ approves a redacted synthetic fixture.
 - Coverage denominators must come from native events, wrapper observation, repo
   diff/hash evidence, or manual fixture expectations. Do not calculate coverage
   only from events the adapter happened to see.
-- `multi_agent_trace_supported` requires at least one native OTel path and at
-  least one non-OTel structured path.
+- Command/tool observation, exit code, stdout/stderr, and tool result objects
+  prove reported execution only. They do not prove durable file, repo, database,
+  deploy, runtime, or issue state.
+- A `state_verification` row is required before an agent-visible projection may
+  say a patch was validated, a file changed as intended, a migration succeeded,
+  a deploy completed, or an issue was fixed. Without a verifier row, use
+  "command reported success" or mark the state claim unverified.
+- Test/build/lint command rows may support "the test runner reported success"
+  from exit code and test output, but "the fix works" still requires linked
+  issue/runtime/recurrence or fixture expectation evidence.
+- State verifiers must identify their method: repo diff/hash, file stat/hash,
+  test report, provider API readback, database readback, deployment status,
+  runtime recurrence check, or manual fixture expectation. Verifier refs are
+  subject to the same redaction, source-field, raw-ref, and projection gates as
+  other agent-session evidence.
+- `multi_agent_trace_supported` requires at least one native OTel path, at
+  least one non-OTel structured path, and passing state-verification rows for
+  projected state claims.
 - No claim may depend on hidden chain-of-thought or private model reasoning.
 - Agent-visible canonical JSON, Markdown, CLI, HTTP, and MCP outputs must leak
   zero seeded canaries and must not dereference raw transcript/export/tool
@@ -628,6 +672,8 @@ Current claim level: not_measured
 | Non-OTel structured adapter pass | 0 | >=1 | Pending |
 | Tool-call mapping rate | 0% | >=90% | Pending |
 | Command/edit coverage | 0% | 100% where surfaced | Pending |
+| State verification coverage | 0% | 100% for projected state claims | Pending |
+| Unverified state claims in product wording | 0 | 0 | Pending |
 | Lossiness report coverage | 0% | 100% | Pending |
 | Agent-visible canary leaks | 0 | 0 | Pending |
 | Source-field policy violations | 0 | 0 | Pending |
@@ -670,6 +716,8 @@ Avoid:
 - "records every prompt/tool output by default";
 - "captures model reasoning";
 - "supports Codex/Claude/Amp/OpenCode" without a version/config matrix;
+- "validated the patch" from exit code/stdout alone;
+- "changed production state" without readback evidence;
 - "safe transcript ingestion" before redaction, source-field, and projection
   rows pass.
 
@@ -714,6 +762,7 @@ Mark affected claims `claim_expired` when:
 Agent-session tracing should be measured like an adapter compatibility contract.
 The first credible claim is not "trace every agent." It is a dated matrix showing
 that at least two real tools emit enough structured events for Parallax to
-normalize sessions, report lossiness, preserve redaction/source-field/projection
-safety across canonical CLI/API/MCP projections, and improve audit
+normalize sessions, report lossiness, verify or mark state claims, preserve
+redaction/source-field/projection safety across canonical CLI/API/MCP
+projections, and improve audit
 reconstruction over final outputs alone.

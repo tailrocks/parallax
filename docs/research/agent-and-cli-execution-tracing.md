@@ -138,6 +138,13 @@ OTel spans through the
 and measure real Codex, Claude Code, Amp, and OpenCode adapters through the
 [agent session tracing ledger](agent-session-tracing-ledger.md).
 
+Follow-up source check on 2026-05-25: OTel CLI spans require process exit code
+and define non-zero exit as an error, while command args are not default-safe
+without sanitization. OTel CICD, test, and VCS registries provide useful result
+and head/base vocabulary. They still do not prove external state. Parallax must
+separate "the command ran and reported status" from "the system state changed or
+was validated."
+
 ## Market Room
 
 There is clearly room in the sense that many teams and vendors are already
@@ -227,10 +234,11 @@ Normalized actions:
 | `agent_action(kind=context_load)` | Parallax bundle access, file/ADR/issue/trace/log load, MCP resource read. | Link every context item to source evidence and redaction status. |
 | `agent_action(kind=model_call)` / `agent_turn` | OTel GenAI invoke/chat spans, stream JSON model objects, source tool metadata when exposed. | Store model/provider/token counts when available; prompt and output content are opt-in/redacted/raw-ref-only. |
 | `agent_action(kind=tool_call)` | OTel `execute_tool`, MCP spans, Codex hooks, Amp/OpenCode plugin events, JSONL/stream JSON objects. | Tool name, input/output hashes or refs, status, error type, and deduplication refs. |
-| `agent_action(kind=shell_command)` | CLI wrapper, tool hook/plugin events, run JSON, subprocess spans. | Store structural command identity, args policy, exit status, stdout/stderr refs, and traceparent when available. |
+| `agent_action(kind=shell_command)` | CLI wrapper, tool hook/plugin events, run JSON, subprocess spans. | Store structural command identity, args policy, exit status, stdout/stderr refs, and traceparent when available. This proves reported execution, not durable state. |
 | `agent_action(kind=file_read|file_edit)` | Hook/plugin file events, patches, repo diff/hash observation, export/import rows. | File path policy, patch hash/ref, added/deleted line counts, and gaps when the source cannot prove a read or edit. |
 | `agent_action(kind=permission_decision)` | Approval hooks, permission plugin events, policy mode, dangerous CLI flags. | Record actor/source when available and separate denied actions from missing policy evidence. |
-| `agent_action(kind=validation|outcome)` | Test/build/lint command, commit/PR/review refs, recurrence/revert/human decision rows. | Required before direct-fix claims and outcome-feedback claims. |
+| `agent_action(kind=state_verification)` | Repo diff/hash, file stat/hash, test report, provider API readback, database readback, deployment status, runtime recurrence check, fixture expectation. | Required before projecting "validated," "changed," "deployed," or "fixed" claims. |
+| `agent_action(kind=validation|outcome)` | Test/build/lint command, commit/PR/review refs, recurrence/revert/human decision rows. | Required before direct-fix claims and outcome-feedback claims. Test command success alone is a reported validation result, not production fix proof. |
 
 ## Agent Records
 
@@ -351,6 +359,19 @@ Capture:
 | spawned child processes | Client spans with command name and exit code. |
 | file/network effects | Later; only if observable and safe. |
 
+Observation boundary:
+
+- `exit_code=0` means the process reported successful completion.
+- stdout/stderr excerpts are reported output, not policy or durable truth.
+- a file/tool hook event means a source reported an operation, not necessarily
+  that post-state matches the intended change;
+- state-changing claims need readback: repo diff/hash, file stat/hash, test
+  report, provider API readback, database readback, deployment status, runtime
+  recurrence check, or fixture expectation.
+
+Agent-visible wording should say "command reported success" unless a verifier
+row supports stronger wording such as "patch validated" or "deploy succeeded."
+
 This makes Parallax useful for local tools, deploy tools, migration tools,
 developer CLIs, and agent-invoked commands.
 
@@ -404,7 +425,8 @@ New edge types:
 | `agent_used_evidence` | Agent context included this event/span/log/test/doc. |
 | `agent_called_tool` | Agent performed MCP/API/shell/file action. |
 | `agent_changed_file` | Patch touched source file. |
-| `agent_validated_with` | Test/build/CLI command validated patch. |
+| `agent_validated_with` | Test/build/CLI command reported a validation result for the patch. |
+| `agent_verified_state` | Independent readback verified or contradicted a state claim. |
 | `cli_spawned_process` | CLI invoked child command. |
 | `cli_failed_with_error` | CLI produced error/exit/panic evidence. |
 | `fix_attempt_for_issue` | Patch/session tried to fix issue. |
@@ -422,7 +444,8 @@ Update the product thesis:
 The product reason is simple: agents are becoming a primary way people operate
 software systems. If the future workflow is "ask an agent to investigate,
 change, deploy, or repair," then the future audit requirement is "show exactly
-what the agent saw, decided, executed, changed, validated, and produced."
+what the agent saw, decided, executed, changed, verified or failed to verify,
+and produced."
 
 Parallax should make those actions queryable, explainable, and tied back to
 runtime evidence.

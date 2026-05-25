@@ -44,6 +44,7 @@ result rows and claim levels required before this becomes product wording.
 | [OpenCode CLI](https://opencode.ai/docs/cli/) and local `opencode --help` | OpenCode exposes session IDs, continuation/forking, `run --format json` raw JSON events, `run --attach` against a `serve` backend, `session list --format json`, `export` with a `--sanitize` flag, token/cost stats, a headless `serve` HTTP API with optional basic auth, and `acp` over nd-JSON. It also has `--thinking` and `--dangerously-skip-permissions` flags that must be recorded as sensitive capture/policy state. Local help adds `--pure` to disable external plugins plus `web`, `github`, `pr`, `plugin`, `db`, `models`, `upgrade`, and `uninstall` commands. This is a strong import, live-adapter, API, and protocol target, but fixture rows must distinguish plugin-enabled runs from `--pure` runs and treat GitHub/PR/session-database commands as side-effect surfaces. |
 | [OpenCode plugins](https://opencode.ai/docs/plugins/) | OpenCode plugins can hook command, file, installation, LSP, message, permission, server, session, todo, shell, tool, and TUI events. `tool.execute.before` can mutate tool arguments, and `shell.env` can inject environment variables. That makes OpenCode a strong open tool to instrument deeply without parsing terminal output, but fixture runs must distinguish observational plugin events from mutating/control-plane plugin behavior and prove enabled event classes one by one. |
 | [OpenCode MCP servers](https://opencode.ai/docs/mcp-servers/) | OpenCode supports local MCP servers with command/environment/timeout/enabled fields and remote MCP servers with URL, enabled, headers, OAuth config or OAuth disabled, timeout, remote defaults, global tool toggles, glob disables, and per-agent MCP enablement. Parallax should treat MCP config as both context source and secret-bearing/policy-bearing audit surface. |
+| [OpenTelemetry CLI](https://opentelemetry.io/docs/specs/semconv/cli/cli-spans/), [CICD](https://opentelemetry.io/docs/specs/semconv/cicd/cicd-spans/), [test](https://opentelemetry.io/docs/specs/semconv/registry/attributes/test/), and [VCS](https://opentelemetry.io/docs/specs/semconv/registry/attributes/vcs/) semantic conventions `1.41.0` | CLI spans require process exit code and treat non-zero as an error; command args are explicitly not default-safe without sanitization. CICD task rows carry task-run result, test rows carry case/suite status, and VCS rows distinguish head/base refs and revisions. All checked pages are development-stage or registry vocabulary, not Parallax's durable schema. |
 
 ## Adapter Strategy
 
@@ -182,6 +183,38 @@ Until those rows exist, the updated claim is: Amp has a plausible structured
 plugin adapter path plus a non-interactive stream, not proven full session
 tracing.
 
+### Observed Output Is Not State Verification
+
+Agent traces should distinguish three evidence classes:
+
+1. **Execution observed.** A hook/plugin/stream/wrapper saw a tool call,
+   command, file operation, or API request.
+2. **Result reported.** The source reported exit code, status, stdout/stderr,
+   tool result, test status, or error text.
+3. **State verified.** An independent readback, repo diff/hash, test report,
+   provider API read, deployment status, database query, or runtime signal
+   confirms the state claim the agent wants to make.
+
+`exit 0`, a green-looking stdout line, or a tool result object can support
+"the command reported success." It does not by itself support "the file changed
+as intended," "the migration was safe," "the deploy succeeded," or "production
+is fixed." Those stronger claims need verification rows with deterministic
+evidence refs.
+
+The adapter must therefore report:
+
+- the observed command/tool event and its source surface;
+- the reported result fields and their redaction policy;
+- the state claim, if any, that the agent or evaluator wants to infer;
+- the verifier type: repo diff/hash, file stat/hash, test report, provider API
+  readback, database readback, deployment status, runtime recurrence check, or
+  `none`;
+- whether the verifier supports, contradicts, or leaves the state claim
+  unverified.
+
+Unverified state claims should appear as missing evidence, not as adapter
+success.
+
 ### OpenCode Plugins Are Class-By-Class
 
 OpenCode support should be split into separate claim surfaces: run JSON, export
@@ -271,6 +304,7 @@ Required action kinds:
 | `permission_decision` | requested tool/action, decision, source, actor if available |
 | `subagent` | parent session/turn, subagent id/type, status |
 | `compaction` | before/after token counts when available, summary ref/hash |
+| `state_verification` | state claim, verifier kind, verifier ref, supported/contradicted/unverified status |
 | `outcome` | PR/commit/patch/test/deploy refs, accepted/rejected/reverted/unknown |
 
 ## Redaction Defaults
@@ -341,6 +375,7 @@ to 40 sessions. Store raw refs only in a controlled local fixture project.
 | Command/edit coverage | 100 percent of surfaced shell commands and file edits captured when the source exposes them. |
 | Audit answer accuracy | Evaluator can answer who/what/when/which tool/which file/which command/which outcome for >= 80 percent of sessions from normalized data alone. |
 | Evidence citation completeness | Agent-produced diagnosis or PR proposal cites deterministic session/evidence refs for each material claim. |
+| State verification coverage | 100 percent of agent-visible state-change or validation claims have verifier rows, or are explicitly labeled unverified. |
 | Redaction | Zero seeded canary leaks in canonical JSON, Markdown, CLI/HTTP output, and MCP `structuredContent`. |
 | Projection safety | Raw transcript/export/tool payload refs are present only as refs, are not dereferenced in agent-visible projections, and every projection matches the canonical bundle hash. |
 | Source-field policy | Synthetic/evaluation fixtures pass source-field policy checks before redaction or projection claims pass. |
@@ -369,6 +404,8 @@ Pass the agent-session gate only if:
    than final-output-only and raw-transcript arms.
 7. The adapter emits an honest lossiness report for every unsupported source
    event class.
+8. State-change and validation claims are backed by verification rows; command
+   exit code and stdout/stderr alone can only support reported-result wording.
 
 Fail or narrow if:
 
