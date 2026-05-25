@@ -191,6 +191,9 @@ Build only enough to generate the bundle automatically and repeatably:
   claim-level contract for release-regression and "what changed?" context.
 - [Production database evidence access gate](production-database-evidence-access.md)
   — the safety gate before direct production database evidence enters bundles.
+- [Production database evidence ledger](production-database-evidence-ledger.md)
+  — the claim-level contract for proving least privilege, RLS/view scoping,
+  template parsing, redaction, audit, and projection safety.
 - [Technical implementation concept](technical-implementation-concept.md) — the
   component detail each phase builds.
 - [Storage benchmark prototype](storage-benchmark-prototype.md),

@@ -18,6 +18,9 @@ that boundary:
 The first product claim should be "Parallax can show database-related evidence"
 from traces, errors, logs, migrations, deploys, and safe query templates. It
 should not be "agents can query production."
+Results and product-claim status should be published through the
+[Production database evidence ledger](production-database-evidence-ledger.md),
+not inferred from this gate alone.
 
 ## Current Primary Sources
 
@@ -225,6 +228,9 @@ investigation extension, not an agent default.
   defines the autonomy ladder and keeps database mutation out of scope.
 - [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
   owns the output policy for query results and raw refs.
+- [Production database evidence ledger](production-database-evidence-ledger.md)
+  defines the result artifacts, claim levels, expiry triggers, and product
+  wording that make this gate measurable.
 - [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
   rejects generic SQL tools in the context server.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) should carry

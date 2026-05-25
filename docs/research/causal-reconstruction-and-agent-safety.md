@@ -402,7 +402,9 @@ Recommended policy:
 
 The agent should see summaries and bounded result sets unless a human explicitly
 opens a wider view. The focused gate for this boundary is
-[Production database evidence access gate](production-database-evidence-access.md).
+[Production database evidence access gate](production-database-evidence-access.md),
+and the measurable claim contract is the
+[Production database evidence ledger](production-database-evidence-ledger.md).
 
 ## MCP and API Safety
 

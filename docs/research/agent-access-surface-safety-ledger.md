@@ -309,6 +309,9 @@ Avoid:
   power before any agent-visible claim.
 - [Production database evidence access gate](production-database-evidence-access.md)
   keeps generic SQL tools out of the context server.
+- [Production database evidence ledger](production-database-evidence-ledger.md)
+  defines the stricter claim contract before any direct database evidence can
+  appear through CLI, HTTP, or MCP.
 - [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md)
   explains why MCP availability alone is no longer differentiating.
 

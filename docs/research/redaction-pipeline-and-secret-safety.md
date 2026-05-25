@@ -263,6 +263,9 @@ production secrets. Therefore:
 - [Production database evidence access gate](production-database-evidence-access.md)
   — turns database query output into a read-only, template-driven, redacted, and
   audited evidence source.
+- [Production database evidence ledger](production-database-evidence-ledger.md)
+  — defines when direct database evidence can be claimed after seeded secrets,
+  prompt injection, RLS scope, limits, and audit fixtures pass.
 
 ## Bottom Line
 

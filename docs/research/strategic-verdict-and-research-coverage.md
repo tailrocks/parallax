@@ -213,7 +213,9 @@ Technical proof gates:
     and made claimable through the
     [Agent access surface safety ledger](agent-access-surface-safety-ledger.md).
 14. Production database evidence access safety, specified further in
-    [Production database evidence access gate](production-database-evidence-access.md).
+    [Production database evidence access gate](production-database-evidence-access.md)
+    and made claimable through the
+    [Production database evidence ledger](production-database-evidence-ledger.md).
 15. OTLP receiver conformance and direct-SDK/Collector/Rotel normalization
     equivalence, specified further in
     [OTLP receiver conformance and Collector equivalence](otlp-receiver-conformance-and-collector-equivalence.md)

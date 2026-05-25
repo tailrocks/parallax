@@ -723,7 +723,9 @@ candidate versions:
 - evidence citation completeness;
 - "inconclusive" behavior when data is missing;
 - production database evidence safety, with the initial gate in
-  [Production database evidence access gate](production-database-evidence-access.md);
+  [Production database evidence access gate](production-database-evidence-access.md)
+  and the claim ledger in
+  [Production database evidence ledger](production-database-evidence-ledger.md);
 - PR correctness rate by failure class.
 
 ### Agent And CLI Execution

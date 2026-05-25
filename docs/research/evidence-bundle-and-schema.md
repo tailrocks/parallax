@@ -371,6 +371,9 @@ it survives contact with real data:
   default-on safety and overhead gate for CLI invocation nodes.
 - [Production database evidence access gate](production-database-evidence-access.md)
   defines when database evidence nodes can enter agent-visible bundles.
+- [Production database evidence ledger](production-database-evidence-ledger.md)
+  defines when direct database evidence claims are measured, fresh, and safe
+  enough to project into JSON and Markdown bundles.
 - [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
   — the additive frontend node types (`frontend_session`, `user_step`,
   `frontend_error`, `route_view`, `frontend_release`) and cross-tier edges.

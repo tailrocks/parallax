@@ -71,6 +71,7 @@ idea becomes sharper.
 - [Agent access surface safety ledger](docs/research/agent-access-surface-safety-ledger.md)
 - [Fixer component and outcome loop](docs/research/fixer-component-and-outcome-loop.md)
 - [Production database evidence access gate](docs/research/production-database-evidence-access.md)
+- [Production database evidence ledger](docs/research/production-database-evidence-ledger.md)
 - [Agent observability technical review](docs/research/agent-observability-technical-review.md)
 - [Bundle-value evaluation](docs/research/bundle-value-evaluation.md)
 - [Bundle-value seed corpus](docs/research/bundle-value-seed-corpus.md)
