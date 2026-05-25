@@ -3831,6 +3831,51 @@ subquery-fold gap is a GreptimeDB optimizer wrinkle (cf. Run 81 join-pushdown).
 GreptimeDB ~93 ms); the `… >= (SELECT max(ts) …) - INTERVAL '1 hour'` subquery form is ~1100 ms
 on GreptimeDB (artifact — use a literal).
 
+### Run 94 — 2026-05-25 — Anchored-lookup scale attempt (confounded by dedup) → re-confirms cold-read scatter, warm tie stable
+
+**Pass target.** Stress the load-bearing "anchored hot path tie" toward scale — does
+GreptimeDB's anchored `trace_id` lookup stay fast as the table grows (the operator's
+scaling concern)? Build 5M-row spans on both, measure.
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned — latest, no bump).
+CH `spans_5m` = `spans` ×5 (`ORDER BY (trace_id,ts)`, `OPTIMIZE FINAL`). GreptimeDB
+`spans_5m` = `spans_idx` ×5 INSERT-SELECT (`trace_id` INVERTED, `PK(service,name)`).
+
+**What actually happened (two confounds, logged honestly):**
+
+1. **GreptimeDB deduped to 1M, not 5M.** `PK(service,name)` + same `(service,name,ts)` keys
+   across the 5 identical inserts → dedup collapsed to **1M logical rows** (`region_rows:
+   1000000`). So this did **not** test 5M-*distinct* scale. *(To test it needs unique
+   trace_ids/keys per copy — owed.)*
+2. **The "GreptimeDB ~1000 ms anchored lookup" was a COLD-cache warming curve, not a scale or
+   compaction finding.** The 7 reps fell monotonically **1890 → 1694 → 1413 → 1084 → 1032 →
+   682 → 668 ms**, then after a few seconds settled to **~12 ms** (10–14). SST count was **1**
+   throughout (not many-SST merge). So the first reads were **cold** — reading the
+   un-partitioned 1M-row SST into the local cache (the scatter effect, Run 63: `trace_id`
+   not the sort key → cold read touches ~the whole SST) — warming to ~12 ms. ClickHouse
+   `spans_5m` (5M) stayed **~3 ms** even fresh (granule/sort-key, OS page cache).
+
+**Verdict — re-confirms the cold/warm divergence on the anchored path; warm tie stable.**
+
+- **Warm anchored lookup at 1M is ~12 ms on GreptimeDB** (matches `spans_idx` ~15 ms, no
+  drift); ClickHouse ~3 ms. The warm tie holds.
+- **Cold un-partitioned GreptimeDB anchored read is slow (~1000 ms first read, warming to
+  ~12 ms)** — the Run-55/63 scatter again: an un-partitioned table's cold anchored read pulls
+  ~the whole SST into cache. ClickHouse cold anchored is ~3 ms (granular). **Decision-relevant:
+  if Parallax re-reads *cold/evicted* bundles on an un-partitioned GreptimeDB table, the first
+  read pays a big warming cost** — another reason the **`PARTITION ON COLUMNS(trace_id)`**
+  design (principle 8, Run 87/88: cold prune to ~1/16) matters; warm (the common recent-bundle
+  case, persistent cache) is ~12 ms.
+- CH anchored lookup **scales flat** (3 ms at 1M and 5M — sort-key seek is table-size-independent).
+
+**Owed:** a clean 5M-*distinct*-trace scale test (unique keys, partitioned + warm + cold) to
+confirm the anchored lookup stays flat at scale — mechanically expected (index/partition
+prune is ~table-size-independent), but unverified at distinct scale; harness-tier.
+
+**Reproduce.** Build the 5M tables; note GreptimeDB `PK(service,name)` dedups identical
+re-inserts (use unique keys for a true scale test); the first GreptimeDB reads on a fresh
+un-partitioned table are cold (~1000 ms warming → ~12 ms).
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
