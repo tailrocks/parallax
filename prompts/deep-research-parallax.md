@@ -870,6 +870,29 @@ hold up under research and benchmarks.
 Do not describe the metadata layer as "use SQLite" except when discussing
 SQLite compatibility. The operator preference is Turso.
 
+**Grouped errors live here, not in the telemetry store.** Sentry-style grouped errors (fingerprint →
+first/last seen, count, status, assignee, notes) are mutable, relational, low-volume OLTP — they belong
+in this metadata store (Turso default / Postgres fallback), **not** in the columnar telemetry engine
+(ClickHouse/GreptimeDB do not do easy row UPDATEs — Sentry built a ClickHouse "replacements consumer"
+to fake mutations). The columnar store holds the raw error/log/trace/metric firehose + computed
+aggregates (count/first/last via `argMin/argMax` or a materialized rollup); the workflow/identity state
+stays relational.
+
+## Storage choice through the Parallax-proxy lens (operator, 2026-05-25)
+
+Parallax is the first layer — a proxy that owns OTLP ingestion, routing, and conversion, and writes to
+whatever backend it chooses. This **neutralizes native-protocol/ingest-ergonomics advantages** when
+picking the telemetry store: "the DB speaks OTLP/PromQL/Jaeger natively / schema-on-write" stops
+mattering because Parallax supplies those APIs and translates (the proof: SigNoz/Uptrace/HyperDX/
+ClickStack all front ClickHouse with exactly such a layer). Judge the telemetry store on **practical
+fit, not raw speed**: retrieval speed + build-on-top ecosystem (ClickHouse leads) vs object-store
+economics + metrics cardinality + auto-rebalance (GreptimeDB leads). Current standing lean: **ClickHouse
+is the pragmatic default; GreptimeDB for the metrics-cardinality / self-hosted-1×-S3-economics /
+mandatory-auto-rebalance bet.** GreptimeDB's slower heavy-query speed is an *engine* gap (closable), not
+a consequence of object storage; its cost advantage (fewer always-on servers, cheap S3) is the
+*architecture* and is its strongest surviving argument. Full reasoning + the alternatives survey:
+[`docs/research/greptimedb-vs-clickhouse/platform-fit-and-alternatives.md`](../docs/research/greptimedb-vs-clickhouse/platform-fit-and-alternatives.md).
+
 ---
 
 # OpenTelemetry Research

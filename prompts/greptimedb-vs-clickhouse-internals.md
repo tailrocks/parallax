@@ -90,6 +90,35 @@ Every "X is faster" claim in the output must carry a *because* tied to a concret
 data structure or code path, and a *scenario* (which signal, which query shape,
 what cardinality, hot vs cold cache, single-node vs scaled-out).
 
+## Practical fit, not raw speed — and the Parallax-proxy lens (operator, 2026-05-25)
+
+Judge the systems on **practical fit for Parallax's vision**, not on which is abstractly faster. The
+decisive architectural fact: **Parallax is the first layer — a proxy that owns OTLP ingestion, routing,
+and conversion, and writes to whatever backend it chooses.** Consequences this loop must apply:
+
+- **Native-protocol / ingest-ergonomics advantages are largely NEUTRALIZED.** "GreptimeDB speaks OTLP/
+  PromQL/Jaeger natively and needs no collector/pipeline" stops being a differentiator, because Parallax
+  *is* that pipeline by design and translates to any backend API. If ClickHouse lacks a format out of
+  the box, Parallax supplies it. Weight ingest-nativeness near zero in the verdict; do **not** let the
+  Run 150–152 native-trio findings drive the recommendation.
+- **What still counts (Parallax can't paper over it):** retrieval speed, storage cost/compression,
+  object-store economics at scale, high-cardinality handling, horizontal-scale/topology change, and —
+  central — **the "build on top" ecosystem surface.** ClickHouse leads retrieval + ecosystem; GreptimeDB
+  leads object-store economics + metrics cardinality + auto-rebalance. Score on these, re-weighted.
+- **Alternatives are in scope.** Each pass may sanity-check whether a third system (within the
+  language filter) beats both as an *embeddable backend* — OpenObserve (a competitor *platform*, not a
+  DB), Quickwit (logs/traces only), InfluxDB 3, VictoriaMetrics/Logs (split products), StarRocks/Doris
+  (JVM-FE filter risk). Current finding: none clearly beats CH/GT as a backend.
+- **The data model is a 2–3 store split, not one engine.** metrics/logs/traces/raw-error-events →
+  columnar store (ClickHouse or GreptimeDB); **Sentry-style grouped errors + metadata (mutable,
+  relational, OLTP) → Postgres**; cold tier → object storage. Do not force mutable issue state into the
+  columnar engine (Sentry's ClickHouse "replacements consumer" is the warning). See
+  [`platform-fit-and-alternatives.md`](../docs/research/greptimedb-vs-clickhouse/platform-fit-and-alternatives.md).
+
+Net standing lean under the proxy: **ClickHouse is the pragmatic default**; GreptimeDB is the choice
+only for the metrics-cardinality/PromQL · self-hosted-1×-S3-economics · mandatory-auto-rebalance bet.
+Keep testing this honestly — flip it if the mechanism evidence says so.
+
 ## Count Experimental As Stable — Judge On Mechanism And Trajectory
 
 Operator rule (durable): when either system gates an observability capability
@@ -614,6 +643,19 @@ The loop must drive toward an explicit, defensible answer to all of these, in
    potential** (Postgres-overtook-MySQL: better-architected-for-the-domain can pass a
    more-mature incumbent); (d) **cost + scalability**, now and projected. Answer it
    unbiased — name the honest risk that the bet depends on sustained contribution.
+7. **Does the Parallax-proxy lens change the answer?** Parallax owns ingestion (OTLP/routing/
+   conversion), so native-protocol/ingest-ergonomics advantages are neutralized. Re-score on what
+   remains (retrieval speed + build-on-top ecosystem + cost/scaling/cardinality). Current standing
+   answer: the proxy tilts the default to **ClickHouse**; GreptimeDB stays for the metrics-cardinality /
+   self-hosted-1×-S3 / mandatory-auto-rebalance bet. Keep this honest and flip on contrary evidence.
+   (See [`platform-fit-and-alternatives.md`](../docs/research/greptimedb-vs-clickhouse/platform-fit-and-alternatives.md).)
+8. **Where do grouped errors + metadata live?** Sentry-style grouped errors (fingerprint → first/last
+   seen, count, status, assignee) are **mutable, relational, low-volume OLTP** — neither ClickHouse nor
+   GreptimeDB handles that well (Sentry uses Postgres + a ClickHouse "replacements consumer" to fake
+   mutations). Standing answer: put issue/workflow/metadata state in the **relational metadata store
+   already chosen — Turso (default) / Postgres (scale-out fallback)** per `deep-research-parallax.md`
+   "Metadata Store" — NOT in the columnar engine; keep the raw firehose + computed aggregates in the
+   columnar store; cold tier on object storage. Confirm or refute this split as evidence accrues.
 
 The decision must rest on the design decisions behind each system, so the choice
 is the right one to build on the first time.

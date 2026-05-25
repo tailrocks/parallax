@@ -39,6 +39,24 @@ small-write ingest ergonomics, horizontal scale-out designed-in, object-storage
 native, and Rust (tiebreak). This is a **fit decision, not a speed decision** —
 and the honest correction to the operator hypothesis below makes that explicit.
 
+> **⚠ Reconsideration — the Parallax-proxy lens re-weights this toward ClickHouse (Run 153, operator
+> 2026-05-25).** The headline below leans GreptimeDB largely on **ingest-nativeness** (native
+> OTLP/PromQL/Jaeger, schema-on-write, small-write ergonomics). The operator has since fixed the
+> architecture: **Parallax is the first layer — a proxy that implements OTLP itself, routes, and
+> converts before writing to any backend.** That **neutralizes GreptimeDB's marquee advantage** (the
+> DB no longer needs to speak OTLP/Jaeger/Prom natively — Parallax does, and translates). Stripping
+> ingest ergonomics from the scorecard, the two axes Parallax *cannot* paper over are **retrieval
+> speed** and **build-on-top ecosystem**, and **ClickHouse wins both** (and is the de-facto unified-obs
+> backend: SigNoz/Uptrace/HyperDX/ClickStack). So under the proxy lens **ClickHouse becomes the
+> pragmatic default**, and GreptimeDB is reserved for a specific bet (metrics-cardinality/PromQL as a
+> product surface · self-hosted 1×-S3 HA economics at scale · mandatory zero-ops auto-rebalance).
+> Full reasoning, the alternatives survey (OpenObserve/Quickwit/InfluxDB3/VictoriaMetrics/StarRocks —
+> none beats them as an embeddable backend), and the **grouped-errors/metadata → relational store
+> (Turso default / Postgres fallback, already chosen), NOT the columnar engine** split
+> are in [`platform-fit-and-alternatives.md`](platform-fit-and-alternatives.md). Treat that note as the
+> current top-level lean; the fit/closability analysis below remains valid *as analysis* but is
+> re-weighted by the proxy.
+
 **A second lens — the long-term *investment* decision (DQ6) — reaches the same answer
 from a different direction.** ClickHouse's speed lead is a **closable engineering gap, not
 a physics wall** (the parity-roadmap's per-gap test finds no architectural wall; the two

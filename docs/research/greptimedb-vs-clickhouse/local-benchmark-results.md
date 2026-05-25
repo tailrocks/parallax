@@ -6180,6 +6180,41 @@ localhost:4000/v1/jaeger/api/services` → 200. Source: `gh api
 ".../src/servers/src/otlp/trace.rs?ref=v1.0.2"` → column-name consts. (Use `docker exec`; host
 port-forward down.)
 
+### Run 153 — 2026-05-25 — STRATEGY (operator redirect, not a benchmark): the Parallax-proxy lens re-weights the decision toward ClickHouse; alternatives survey; metadata split; slower-vs-cheaper
+
+**Context.** Operator redirect (not a loop pass): re-examine skeptically whether ClickHouse beats
+GreptimeDB given **Parallax is the proxy/first layer** (owns OTLP ingest, routing, conversion); survey
+third-system alternatives; decide where Sentry-style grouped errors + metadata live (Postgres?);
+compare on **practical fit, not raw speed**. Web research used (host-port still down; no benchmark).
+
+**Findings (full write-up in `platform-fit-and-alternatives.md`):**
+- **Proxy lens neutralizes GreptimeDB's headline edge.** GT's marquee pitch is native OTLP/PromQL/Jaeger
+  + schema-on-write ("no collector/pipeline tier") — exactly what Parallax *is* by design. Market proof:
+  SigNoz/Uptrace/HyperDX/ClickStack all put a platform layer in front of ClickHouse and treat it as a
+  fast store — the Parallax-on-ClickHouse path. So Runs 150–152's native-trio findings must NOT drive
+  the verdict.
+- **Re-score on what survives:** retrieval speed (CH) + build-on-top ecosystem (CH) are central and both
+  ClickHouse; object-store economics + cardinality + auto-rebalance (GT) are real but niche/proxy-soft.
+  → **ClickHouse becomes the pragmatic default;** GreptimeDB reserved for metrics-cardinality/PromQL ·
+  self-hosted-1×-S3 · mandatory-auto-rebalance. A genuine shift from the prior GT-on-fit lean.
+- **Alternatives:** none beats CH/GT as an embeddable backend (filter applies) — OpenObserve = competitor
+  *platform* (Rust, DataFusion+Parquet+tantivy, but you'd query its APIs, not embed it), Quickwit =
+  logs/traces only (Datadog-acquired), InfluxDB3 = metrics-centric (clustering commercial),
+  VictoriaMetrics/Logs = split products, StarRocks/Doris = JVM-FE/ops risk.
+- **Metadata/grouped-errors:** mutable/relational/OLTP → the **already-chosen relational store: Turso
+  (default) / Postgres (fallback)** per `deep-research-parallax.md`; NOT the columnar engine. Sentry's
+  Postgres + ClickHouse-"replacements-consumer" split is the proof. Columnar holds the firehose +
+  computed aggregates.
+- **Slower vs cheaper = separate levers.** The query gap is the **engine** (DataFusion vs CH C++/JIT —
+  measured warm on *local* disk, so not a storage-location artifact; closable). The cost win is the
+  **object-store architecture** (compute/storage separation + 1× vs N× S3 + elastic compute → fewer
+  always-on servers). Don't attribute the speed gap to remote storage. Operator's "fewer servers,
+  cheaper storage" intuition = GT's strongest surviving argument under the proxy.
+
+**Actions.** New note `platform-fit-and-alternatives.md`; verdict banner added re-weighting toward CH;
+prompts updated (`greptimedb-vs-clickhouse-internals.md` DQ7/DQ8 + practical-fit framing;
+`deep-research-parallax.md` proxy-lens pointer). No containers touched.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
