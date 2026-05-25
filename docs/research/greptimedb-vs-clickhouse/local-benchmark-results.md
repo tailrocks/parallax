@@ -898,6 +898,26 @@ per-series dict cap, high cardinality is the design center.
 axes — "GreptimeDB handles high card better" = modeling/storage, NOT agg speed. Sized
 storage comparison (1k→1M distinct series) routed to B13.
 
+### Run 27 — 2026-05-25 — Trace span-tree: flat fetch vs in-DB recursion
+
+Backs `trace-span-tree.md` (pass 49). Smoke, on the existing 1M-row `spans` table.
+
+- **Recursive CTE works on BOTH** (verdict-relevant tie): `WITH RECURSIVE … sum(1..5)`
+  → `15` on ClickHouse (native) and GreptimeDB (DataFusion). Real span-tree recursive
+  join over `spans` executed on both — CH ~7 ms, **GreptimeDB ~8 ms server-side** (the
+  synthetic data isn't a clean parent chain so depth grouping was trivial, but the
+  recursive join ran with no error on both).
+- **Flat anchored fetch** (all 14 spans of one `trace_id`, the dominant pattern, app
+  builds the tree): **ClickHouse 4 ms** (`ORDER BY (trace_id, ts)` sort-key locality →
+  one granule range) vs **GreptimeDB ~54 ms** HTTP (inverted index on `trace_id` +
+  fixed HTTP/setup floor; `trace_id` not the PK prefix in the seed).
+
+**Claim status:** span-tree retrieval is **not a new differentiator** — it = the
+anchored `trace_id` fetch (ClickHouse edge via sort-key locality, Run 2/6) + app-side
+tree assembly; in-DB recursive CTE is a **capability tie** (DataFusion gives GreptimeDB
+recursion for free). Reinforces, doesn't move, the verdict. Clean-tree recursion-depth
+latency owed to harness.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
