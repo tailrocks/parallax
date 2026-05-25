@@ -22,6 +22,10 @@ reproducible verifier. Public issues often have stack traces but no isolated
 test, no clean fix, or several confounded changes. Current SWE-style datasets
 solve much of the reproducibility problem, but they do **not** solve the
 telemetry problem. Parallax must generate or attach the telemetry leg itself.
+The current public-source freeze snapshot lives in
+[A1 task source freeze check](a1-task-source-freeze-check.md); use it as the
+starting manifest for dataset SHA, row/split count, feature, and quarantine
+fields.
 
 ## Current Primary-Source Checks
 
@@ -35,6 +39,22 @@ telemetry problem. Parallax must generate or attach the telemetry leg itself.
 | [SWE-rebench V2 paper](https://arxiv.org/abs/2602.23866), [dataset collection](https://huggingface.co/collections/nebius/swe-rebench-v2), [main dataset](https://huggingface.co/datasets/nebius/SWE-rebench-V2), and [PR-scale dataset](https://huggingface.co/datasets/nebius/SWE-rebench-V2-PRs) | Language-agnostic pipeline for harvesting executable real-world SWE tasks. The current main dataset viewer shows 32.1k rows, with the card specifying 32,079 samples across 20 languages; fields include base commit, image name, language, license, patch, test patch, fail-to-pass/pass-to-pass tests, install config, and LLM metadata. The PR-scale dataset shows 126k rows and a quick-start length of 126,300. | Best for expansion or training-scale corpus work after the seed run, not as the first headline A1 source. The scale is attractive, but the seed should prefer smaller, inspectable tasks before relying on automatically collected/generated problem statements and metadata-filtered rows. |
 | [BugsJS](https://bugsjs.github.io/) | 453 validated JavaScript bugs with bug reports, isolated bug/fix/test revisions, and a Docker-backed framework. Good for server-side JS and frontend-adjacent failure shapes. | Historical and not agent-benchmark-native; use as a controlled supplemental source, not the headline freshness source. |
 | [CrashAnalysis dataset](https://crashanalysis.github.io/Dataset-CrashAnalysis) | Thousands of exception stack traces, including GitHub-linked reports. Useful for stacktrace-shape and crash-report realism. | Access is gated and many issues are historical Android cases; it lacks the clean issue/fix/test/verifier contract needed for Phase 0 headline tasks. |
+
+The current Hugging Face API snapshot for the moving public datasets is recorded
+in [A1 task source freeze check](a1-task-source-freeze-check.md). As of that
+2026-05-25 source check, the row counts above still hold, and the exact dataset
+SHAs to freeze are:
+
+| Dataset | SHA | Row/split snapshot |
+| --- | --- | --- |
+| `SWE-bench-Live/MultiLang` | `608f7ae9ab8ea1f9f0d030fe04562cf6bd1a0c8b` | 743 rows; Rust 94, Go 138, JS 93, TS 111, C 37, C++ 74, Java 109, C# 87. |
+| `SWE-bench-Live/OS-bench` | `53ccce58d8ca4d1273755658d68d4643afadb7de` | 126 rows; `windows2linux` 126, `linux2windows` 0. |
+| `SWE-bench-Live/Windows` | `ac8b120eaf36957da1884dde9f71fd28ed632487` | 61 rows in `test`. |
+| `nebius/SWE-rebench-V2` | `475dd5e8703bb5fb22dd3c60b5d038b019eba1e0` | 32,079 rows in `train`. |
+| `nebius/SWE-rebench-V2-PRs` | `40faf2c1bb160de625f3c3270ac9d62ea45f3f9c` | 126,300 rows in `train`. |
+
+Any future A1 run must recheck these before task selection. A row-count match is
+not enough if the dataset SHA or feature list changed.
 
 ## Seed Corpus Shape
 
@@ -161,6 +181,7 @@ docs/research/bundle-value-eval/
   "task_id": "swe-live-rust-example",
   "source": "SWE-bench-Live/MultiLang",
   "source_version": "hf-viewer-checked-2026-05-25",
+  "hf_dataset_sha": "608f7ae9ab8ea1f9f0d030fe04562cf6bd1a0c8b",
   "dataset_revision": "hf-revision-or-commit",
   "row_count_at_selection": 743,
   "split_counts_at_selection": {"rust": 94},
@@ -208,6 +229,9 @@ bundle lift.
   this note defines the first corpus.
 - [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) defines arms,
   run protocol, and scoring.
+- [A1 task source freeze check](a1-task-source-freeze-check.md) records the
+  current Hugging Face dataset SHAs, row/split counts, feature lists, and
+  source-field quarantine rules that the first task manifest should start from.
 - [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
   defines how task-source freshness and contamination tiers are reported in the
   eventual result artifact.

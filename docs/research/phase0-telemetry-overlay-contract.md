@@ -24,7 +24,9 @@ bounded, structured bundle beats a raw dump under honest conditions.
 The eval result must then be published through the
 [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
 so the run has model snapshots, contamination tiers, result rows, and an expiry
-date.
+date. The current public dataset SHA and feature snapshots that feed this
+contract are recorded in
+[A1 task source freeze check](a1-task-source-freeze-check.md).
 
 ## Current Primary-Source Checks
 

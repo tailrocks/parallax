@@ -251,6 +251,9 @@ raw-access policy described in
   experimental design; this is the first runnable pass.
 - [Bundle-value seed corpus](bundle-value-seed-corpus.md) defines the first
   task-source mix, task eligibility gates, and telemetry overlay requirements.
+- [A1 task source freeze check](a1-task-source-freeze-check.md) defines the
+  current public dataset SHAs, row/split counts, and feature/quarantine
+  snapshots that preregistration should freeze before task selection.
 - [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md)
   defines the normalized overlay rows and raw-vs-bundle parity checks this
   runbook depends on.

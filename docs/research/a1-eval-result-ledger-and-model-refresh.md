@@ -91,6 +91,9 @@ Internal sources:
   arms and says C must beat B, not only repo-only A.
 - [Bundle-value seed corpus](bundle-value-seed-corpus.md) defines task
   eligibility and the initial seed mix.
+- [A1 task source freeze check](a1-task-source-freeze-check.md) pins the current
+  Hugging Face dataset SHAs, row/split counts, feature snapshots, and field
+  quarantine posture for the likely Phase 0 task sources.
 - [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) defines the
   first run matrix and scoring.
 - [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md)
@@ -197,10 +200,13 @@ as durable prose; exact model IDs live here because they change over time.
   "task_sources": [
     {
       "source": "SWE-bench-Live/MultiLang",
+      "hf_dataset_sha": "608f7ae9ab8ea1f9f0d030fe04562cf6bd1a0c8b",
       "dataset_revision": "hf-revision-or-commit",
       "checked_at": "2026-05-25T00:00:00Z",
       "row_count": 743,
       "split_counts": {"rust": 94},
+      "features_hash": "sha256:<hex>",
+      "datasets_server_size_partial": false,
       "source_field_policy_hash": "sha256:<hex>"
     }
   ],
@@ -304,6 +310,8 @@ Also exclude or downgrade rows when:
 
 - the public dataset revision, row count, split count, or source-field
   quarantine summary is missing from `benchmark-source-snapshot.json`;
+- the Hugging Face dataset SHA, feature hash, or datasets-server `partial=false`
+  status is missing for a public Hugging Face task source;
 - the task source changed after preregistration and before the run without a new
   task-set hash;
 - the model was addressed through a mutable alias without a provider-visible

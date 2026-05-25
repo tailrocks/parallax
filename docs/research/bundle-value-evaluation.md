@@ -215,6 +215,9 @@ Outcomes and what they mean:
   the concrete first pass to run before a full benchmark corpus exists.
 - [Bundle-value seed corpus](bundle-value-seed-corpus.md) — selects the first
   public task sources and defines the telemetry overlay required before Phase 0.
+- [A1 task source freeze check](a1-task-source-freeze-check.md) — pins current
+  public dataset SHAs, row/split counts, and field quarantine requirements for
+  the likely seed sources.
 - [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
   — defines the public result artifact, model snapshot, contamination tiers, and
   expiry rules for A1 claims.
