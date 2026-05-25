@@ -232,8 +232,12 @@ Legend: **Runnable now** = expressible in the current prototype/`bench/compose.y
   request-counts and B12 cold reads start from a one-command base; what's still
   needed is the JSONBench dataset/queries + cold-cache eviction + `mc admin trace`
   request counting.
-- **Status:** **proposed, high priority** — the one public claim most worth
-  independently reproducing; my local runs only covered hot/warm. Stack ready.
+- **Status:** **local full-scan part DONE (Run 15).** Cold full-scan GET count:
+  **GreptimeDB 26 vs ClickHouse 57** — GreptimeDB's few-large-objects layout issues
+  fewer cold S3 GETs on a full scan, **locally confirming the JSONBench cold-run
+  mechanism**. Combined with Run 14 (anchored: CH 5 < GT 22), the cold request-cost
+  splits cleanly by query shape. The **1B-doc JSONBench scale** + cold-latency (not
+  just GET count) stays the prototype's job; the mechanism is now verified locally.
 
 ## Priority order (what to run next)
 

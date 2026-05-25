@@ -556,6 +556,35 @@ cached. One measurement, 1M-span SST, single trace — directional, not a law.
 scan/JSONBench cold reads, where GreptimeDB is expected to win on object count) still
 owed — needs the wide/JSON dataset; the stack is ready (`bench/s3/`).
 
+### Run 15 — 2026-05-25 — B12 (local): cold full-scan S3 GET count
+
+Companion to Run 14 (anchored). Same S3 stack + 1M spans, cold caches; counted
+`s3.GetObject` during a cold **full-scan** query (`count`, `avg(duration_ms)`,
+`uniq(service)` over all 1M rows). Parity: both returned 1,000,000 / 24.96 / 12.
+
+| Query shape (cold) | ClickHouse `s3.GetObject` | GreptimeDB `s3.GetObject` | Fewer |
+| --- | --- | --- | --- |
+| **Anchored keyed lookup** (Run 14) | 5 | 22 | **ClickHouse** |
+| **Full scan** (Run 15) | 57 | 26 | **GreptimeDB** |
+
+**This completes the cold object-store request-cost story — it splits cleanly by
+query shape:**
+
+- **Anchored / keyed lookup** → **ClickHouse fewer GETs** (data clustered by
+  `ORDER BY` key → sparse index pinpoints ~1 granule → minimal ranged reads).
+- **Full scan** → **GreptimeDB fewer GETs** (few large Parquet objects → fewer S3
+  round-trips than ClickHouse's many per-column-file objects). **This locally
+  confirms the JSONBench cold-run mechanism** (`public-performance-claims.md` #6):
+  GreptimeDB's object layout wins cold full-scan/wide reads.
+
+**Consequence for Parallax:** its dominant retrieval is **anchored** evidence-bundle
+assembly → on the cold object-store request-cost sub-axis, **ClickHouse is the
+better fit for the anchored pattern** (5 vs 22), while GreptimeDB wins the
+scan-heavy regime (dashboards over wide windows, JSONBench) it does less of. Bounded
+by: the read cache makes warm re-reads local (0 GETs) on both, so this only bites
+genuinely cold reads. One measurement each, 1M-span SST — directional. B12's local
+full-scan question is answered; the 1B-doc JSONBench scale stays the prototype's.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
