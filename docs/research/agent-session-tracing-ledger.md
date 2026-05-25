@@ -31,7 +31,7 @@ and normalization of agent execution traces.
 
 | Source | Current check | Parallax implication |
 | --- | --- | --- |
-| Local tool version probe | `command -v` plus `--version` checks in this workspace on 2026-05-25 found `/home/agent/.local/bin/codex` with Codex CLI `0.133.0`, `/home/agent/.local/bin/claude` with Claude Code `2.1.150`, `/home/agent/.local/bin/amp` with raw output `0.0.1779639467-g6d0650 (released 2026-05-24T16:17:47.000Z, 20h ago)`, and `/home/agent/.opencode/bin/opencode` with OpenCode `1.15.10`. | Real runs must store the exact tool binary path, raw version output, normalized version/release fields, and docs snapshot date. Relative age strings such as `20h ago` are not durable freshness evidence. |
+| Local tool version probe | `command -v` plus `--version` checks re-run in this workspace on 2026-05-25 found `/home/agent/.local/bin/codex` with Codex CLI `0.133.0`, `/home/agent/.local/bin/claude` with Claude Code `2.1.150`, `/home/agent/.local/bin/amp` with version `0.0.1779639467-g6d0650` released `2026-05-24T16:17:47.000Z`, and `/home/agent/.opencode/bin/opencode` with OpenCode `1.15.10`. Amp's raw output includes a relative age suffix that changed across probes (`20h ago` to `21h ago`). | Real runs must store the exact tool binary path, raw version output, probe captured-at timestamp, normalized version/release fields, and docs snapshot date. Relative age strings are per-probe raw text, not durable freshness evidence. |
 | [Codex hooks](https://developers.openai.com/codex/hooks) | Hooks expose structured JSON with `session_id`, `transcript_path`, `cwd`, `hook_event_name`, `model`, `turn_id`, and `permission_mode` for session, tool, prompt, permission, subagent, compaction, and stop events. The docs warn that transcript format is not a stable hook interface and that tool interception is incomplete for some shell and non-shell paths. They also document managed hooks, plugin-bundled hooks, and command-only handler support. | Codex capture can be structured, but transcripts must stay raw refs; hook gaps must be measured against wrapper, repo diff/hash, or other independent evidence; and every hook claim must record hook source and trust mode. |
 | [Codex CLI](https://developers.openai.com/codex/cli) and local `codex --help` / `codex exec --help` | Codex CLI is a local command-line agent surface and supports repo work, file edits, command execution, and automation workflows. Local `0.133.0` help shows `codex exec --json`, `--ephemeral`, plugin management, `mcp-server`, and dangerous approval/sandbox and hook-trust bypass flags. | Codex needs separate claim rows for interactive hooks, non-interactive JSONL, plugin/MCP server surfaces, and policy-sensitive dangerous flags. |
 | [Claude Code monitoring](https://code.claude.com/docs/en/monitoring-usage) | Claude Code exports opt-in OpenTelemetry metrics, logs/events, and optional beta traces; prompt text, tool details, tool content, and raw API bodies are disabled by default and require explicit flags. It does not pass generic `OTEL_*` exporter variables to subprocesses, but when tracing is active Bash/PowerShell inherit `TRACEPARENT`. | Claude Code is the strongest native OTel target, but content capture must remain opt-in/redacted and subprocess coverage must distinguish trace-context inheritance from full telemetry-exporter inheritance. |
@@ -110,6 +110,7 @@ approves a redacted synthetic fixture.
   "source_field_policy_version": "phase0-source-field-policy-vN",
   "semconv_version": "1.41.0",
   "raw_ref_policy": "transcripts_exports_prompts_tool_payloads_not_agent_visible_by_default",
+  "tool_version_probe_captured_at": "YYYY-MM-DDTHH:MM:SSZ",
   "tool_version_probe": {
     "codex": "codex --version",
     "claude_code": "claude --version",
@@ -134,6 +135,10 @@ approves a redacted synthetic fixture.
   "tool_version": "unknown",
   "tool_binary_path": "/path/to/tool",
   "tool_version_probe_output": "raw version output",
+  "tool_version_probe_captured_at": "YYYY-MM-DDTHH:MM:SSZ",
+  "tool_release_timestamp": "YYYY-MM-DDTHH:MM:SSZ|null",
+  "version_relative_age_present": false,
+  "version_normalization_notes": [],
   "docs_checked_at": "YYYY-MM-DD",
   "adapter_name": "parallax-codex-hooks",
   "adapter_version": "0.1.0",
@@ -328,7 +333,8 @@ approves a redacted synthetic fixture.
 - Claims above `fixture_harness_ready` require a resolved tool version and
   binary/package source. `tool_version: unknown` can only support exploratory
   design notes.
-- Version probes must preserve raw output and normalized fields separately.
+- Version probes must preserve raw output, captured-at timestamp, normalized
+  version, release timestamp when present, and normalization notes separately.
   Relative strings emitted by CLIs, such as "20h ago", cannot be used as
   durable freshness evidence after the run date.
 - A transcript/export can support audit, but cannot be the only source for a
