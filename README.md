@@ -32,6 +32,7 @@ idea becomes sharper.
 - [AI-native observability and incident intelligence](docs/research/ai-native-observability-and-incident-intelligence.md)
 - [Flaky test investigation and replay](docs/research/flaky-test-investigation-and-replay.md)
 - [Agent and CLI execution tracing](docs/research/agent-and-cli-execution-tracing.md)
+- [Agent observability technical review](docs/research/agent-observability-technical-review.md)
 - [Strategic verdict and research coverage](docs/research/strategic-verdict-and-research-coverage.md)
 - [Technical implementation concept](docs/research/technical-implementation-concept.md)
 - [Sentry-compatible ingestion](docs/research/sentry-compatible-ingestion.md)
