@@ -6721,6 +6721,34 @@ No research-content change. (Meta/trustworthiness pass, not a benchmark.)
 **Reproduce.** `ls docs/research/greptimedb-vs-clickhouse/*.md | wc -l` (=34); dead-link check:
 `grep -rhoE '[a-z0-9-]+\.md' <subdir>/*.md | sort -u` then test each `-f`.
 
+### Run 171 — 2026-05-25 — projection re-verify (no drift) + verdict consistency fix + gap ledger (operator asked "what have we missed?")
+
+**Context.** Final pass before the operator stopped the loop. Re-pin unchanged.
+
+**Projection re-verify (no drift):** CH projection `p_svc (ORDER BY service)` on a 200k test table → a
+`WHERE service='s5'` query used **`ReadFromMergeTree (p_svc)` `Granules 2/24`** (pruned via the
+secondary sort order). Confirms Run 28/71: ClickHouse projections serve non-primary-sort access paths
+fast (a second physical order in one table); GreptimeDB's analog = additional indexes / metric-engine.
+Cleaned up.
+
+**Verdict consistency fix:** `verdict-which-to-choose.md` still carried the pre-Run-168 dynamic-attr
+framing ("26.6 enforces the cast, 26.5 lax, ~57× a 26.5-only lax path"). Corrected to match Run 168: the
+`.:Type` GROUP BY cast is enforced on **26.5 too** (not 26.6-only); the ~57×/~1 ms cast-free path was the
+**FILTER**, not a lax GROUP BY. (The schema-evolution note was already fixed in Run 168; this aligns the
+top-level verdict.)
+
+**Gap ledger created** — `open-questions-and-gaps.md` consolidates what's NOT addressed, prioritized: (1)
+**Parallax's real workload mix** (the un-characterized deciding input the whole verdict is gated on); (2)
+server-tier benchmarks (deferred); (3) Parallax's own layers (proxy/ingest, query API, evidence-bundle
+assembly); (4) cross-cutting (multi-tenancy, auth, backup/DR); (5) **managed-cloud vs self-host** (changes
+the cost/ops calculus, may be most practically decisive after workload mix); (6) decided-but-not-designed
+(metadata schema, hybrid federation, production DDL); (7) full ops-complexity picture. The engine
+comparison itself is settled + re-verified.
+
+**Reproduce.** CH projection: `CREATE TABLE pj(... PROJECTION p_svc (SELECT * ORDER BY service)) ENGINE
+=MergeTree ORDER BY (trace_id,ts)`; `EXPLAIN indexes=1 SELECT count() FROM pj WHERE service='s5'` →
+`ReadFromMergeTree (p_svc)`. (exec; host port down.)
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
