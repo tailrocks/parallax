@@ -67,24 +67,29 @@ scrubber:
   should be excluded or protected; it also says data from other trust zones must
   be treated as untrusted
   ([OWASP Logging Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html)).
-- Gitleaks `v8.30.1` is the latest-release redirect checked on 2026-05-25
-  and can scan git history,
-  directories/files, and stdin with configurable rules and baselines, making it a
-  good fixture-output comparator
+- Gitleaks `v8.30.1` is the latest release checked on 2026-05-25, published
+  2026-03-21, and can scan git history, directories/files, and stdin with
+  configurable rules and baselines. Its README now says Gitleaks is
+  feature-complete and future releases are security patches only, making it a
+  stable fixture-output comparator but not a sufficient current-provider-pattern
+  source
   ([Gitleaks v8.30.1](https://github.com/gitleaks/gitleaks/releases/tag/v8.30.1)).
-- detect-secrets `v1.5.0` is the latest-release redirect checked on 2026-05-25
-  and supports baselines, plugin configuration, staged-file hooks, and audit
-  workflows, making it useful for "new secret" regression checks
+- detect-secrets `v1.5.0` is the latest release checked on 2026-05-25,
+  published 2024-05-06, and supports baselines, plugin configuration,
+  staged-file hooks, verification settings, and audit workflows, making it
+  useful for "new secret" regression checks but stale for provider-token churn
   ([Yelp detect-secrets v1.5.0](https://github.com/Yelp/detect-secrets/releases/tag/v1.5.0)).
-- TruffleHog `v3.95.3` is the latest-release redirect checked on 2026-05-25
-  and can return verified credential findings across
-  repositories and other stores, but verification can create network/privacy
-  side effects and should stay out of the default runtime path
+- TruffleHog `v3.95.3` is the latest release checked on 2026-05-25, published
+  2026-05-11, and can return verified credential findings across repositories
+  and other stores, but verification and credential analysis can create
+  network/privacy side effects and should stay out of the default runtime path
   ([TruffleHog v3.95.3](https://github.com/trufflesecurity/trufflehog/releases/tag/v3.95.3)).
-- Presidio `2.2.362` is the latest-release redirect checked on 2026-05-25
-  and explicitly warns that automated PII detection cannot guarantee that
-  all sensitive information is found, so PII scanners are comparators and
-  optional offline processors, not the only safety control
+- Presidio `2.2.362` is the latest release checked on 2026-05-25, published
+  2026-03-18 on GitHub with `presidio-analyzer` and `presidio-anonymizer`
+  uploaded to PyPI on 2026-03-15. It explicitly warns that automated PII
+  detection cannot guarantee that all sensitive information is found, so PII
+  scanners are comparators and optional offline processors, not the only safety
+  control
   ([Microsoft Presidio 2.2.362](https://github.com/microsoft/presidio/releases/tag/2.2.362)).
 
 ## Artifact Set
@@ -153,6 +158,29 @@ Each run gets exactly one manifest:
     "detect_secrets": "1.5.0",
     "presidio": "2.2.362",
     "github_pattern_snapshot": "2026-05-25"
+  },
+  "scanner_release_metadata": {
+    "gitleaks": {
+      "published_at": "2026-03-21T02:17:58Z",
+      "development_posture": "feature_complete_security_patches_only",
+      "replacement_watch": "betterleaks_unvetted"
+    },
+    "trufflehog": {
+      "published_at": "2026-05-11T18:38:34Z",
+      "license": "AGPL-3.0",
+      "verification_policy": "disabled_unless_approved_private_fixture"
+    },
+    "detect_secrets": {
+      "published_at": "2024-05-06T18:05:06Z",
+      "role": "baseline_and_new_secret_regression_comparator"
+    },
+    "presidio": {
+      "published_at": "2026-03-18T05:32:57Z",
+      "pypi_uploads_checked": [
+        "presidio-analyzer 2026-03-15T12:40:43.801880Z",
+        "presidio-anonymizer 2026-03-15T12:40:38.651984Z"
+      ]
+    }
   },
   "hmac_key_policy": "ephemeral-test-key",
   "raw_ref_policy": "metadata_only",
@@ -242,6 +270,9 @@ External scanner checks go in `scanner-comparison.jsonl`:
   "artifact": "bundle_markdown",
   "scanner": "gitleaks",
   "scanner_version": "x.y.z",
+  "scanner_release_published_at": "YYYY-MM-DDTHH:MM:SSZ",
+  "scanner_execution_mode": "offline_no_network|network_verification_disabled|network_verification_approved_private_fixture",
+  "scanner_development_posture": "active|feature_complete_security_patches_only|stale_baseline",
   "findings_total": 0,
   "expected_canaries_missed_by_runtime": 0,
   "runtime_findings_missed_by_scanner": 2,

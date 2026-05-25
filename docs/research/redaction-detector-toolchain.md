@@ -32,14 +32,14 @@ low-latency, source-aware, evidence-bundle-safe runtime.
 
 | Source | What it provides | Parallax implication |
 | --- | --- | --- |
-| [OpenTelemetry Collector redaction processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/redactionprocessor/README.md) | `allowed_keys`, `blocked_values`, masking, HMAC hash functions, and audit attributes such as redacted/masked counts. The processor explicitly recommends HMAC for low-entropy values. | Good model for OTLP attribute policy and audit fields. Not enough for bundle safety because it only covers data that flowed through that Collector processor. |
-| [OpenTelemetry Collector processor catalog](https://opentelemetry.io/docs/collector/components/processor/) | Processors transform, filter, enrich, and sample telemetry in Collector pipelines; component stability varies by signal and processor. | Parallax should support Collector-side redaction, but still repeat policy in ingest and bundle building. |
+| [OpenTelemetry Collector redaction processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/redactionprocessor/README.md) | Checked 2026-05-25. Current README lists stability as alpha for logs/metrics and beta for traces. It supports `allowed_keys`, `blocked_values`, `allowed_values`, masking, HMAC hash functions, redaction audit attributes, URL sanitization, and database-query sanitization. `allowed_values` takes precedence over `blocked_values`. | Good model for OTLP attribute policy and audit fields, but broad allowlists can intentionally bypass blocked-value masking. Not enough for bundle safety because it only covers data that flowed through that Collector processor. |
+| [OpenTelemetry Collector processor catalog](https://opentelemetry.io/docs/collector/components/processor/) | Checked 2026-05-25. The catalog was last modified 2026-03-16 and links Redaction Processor at contrib `v0.152.0`, included in contrib/K8s with traces beta and metrics/logs alpha. | Parallax should support Collector-side redaction, but still repeat policy in ingest and bundle building. Treat upstream Collector redaction as a useful pre-filter, not an agent-safety boundary. |
 | [OpenTelemetry common `AnyValue`](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) | OTLP values can be scalars, byte arrays, arrays, and key/value lists. | Redaction must traverse typed values directly; string rendering of maps/lists is only a projection and cannot be the detector input. |
 | [GitHub secret scanning supported patterns](https://docs.github.com/en/code-security/reference/secret-security/supported-secret-scanning-patterns) | Current pattern taxonomy includes generic, AI-detected, and provider patterns, with 500+ provider entries and notes on precision, validity checks, partner alerts, and token-version churn. | Use as a maintained external reference for canary coverage and provider-pattern watchlists. Do not assume Parallax can copy GitHub's proprietary AI/validity checks. |
-| [Gitleaks v8.30.1](https://github.com/gitleaks/gitleaks/releases/tag/v8.30.1) | Latest release checked 2026-05-25. Mature open-source scanner for git history, directories, files, and stdin; supports default/custom config, pre-commit, GitHub Action, JSON/CSV/JUnit/SARIF-style workflows, and baseline/ignore behavior. | Best open comparator for static and fixture scanning. Its Go binary can validate redaction fixtures in CI, but a blocking runtime shell-out would hurt tiny-tier latency and failure modes. |
-| [TruffleHog v3.95.3](https://github.com/trufflesecurity/trufflehog/releases/tag/v3.95.3) | Latest release checked 2026-05-25. Open-source scanner focused on finding and verifying leaked credentials, with dynamic/verification posture and broad source scanning. | Useful red-team comparator for live/verified secrets and historical/source scans. Verification can create network and privacy side effects, so it must not run in the default runtime path. |
-| [Yelp detect-secrets v1.5.0](https://github.com/Yelp/detect-secrets/releases/tag/v1.5.0) | Latest release checked 2026-05-25. Baseline-driven secret detection with configurable plugins, allowlists, entropy detectors, filters, and audit workflow. | Useful for repository baselines and human review workflows. Its Python/plugin model is not a fit for the Parallax hot path. |
-| [Microsoft Presidio 2.2.362](https://github.com/microsoft/presidio/releases/tag/2.2.362) | Latest release checked 2026-05-25. Open-source PII detection/anonymization framework with NER, regex, rule logic, image redaction, custom recognizers, and explicit warning that automated detection cannot guarantee all sensitive information is found. | Best reference for PII/anonymization and optional offline processing. Too heavy and probabilistic to be the only runtime guarantee for agent-visible bundles. |
+| [Gitleaks v8.30.1](https://github.com/gitleaks/gitleaks/releases/tag/v8.30.1) | Latest release checked 2026-05-25; GitHub API shows `v8.30.1` published 2026-03-21. Mature open-source scanner for git history, directories, files, and stdin; supports default/custom config, pre-commit, GitHub Action, JSON/CSV/JUnit/SARIF-style workflows, archive/decode scanning, redacted output, and baseline/ignore behavior. Its README now says Gitleaks is feature-complete and future releases are security patches only while focus shifts to Betterleaks. | Best open comparator for static and fixture scanning, but no longer a strong signal for new provider-pattern coverage. Its Go binary can validate redaction fixtures in CI, but a blocking runtime shell-out would hurt tiny-tier latency and failure modes. Watch Betterleaks only as a future pattern-source candidate once its license, CLI, and output contracts are checked. |
+| [TruffleHog v3.95.3](https://github.com/trufflesecurity/trufflehog/releases/tag/v3.95.3) | Latest release checked 2026-05-25; GitHub API shows `v3.95.3` published 2026-05-11. AGPL-3.0 scanner focused on finding, verifying, and analyzing leaked credentials across git, GitHub, S3/GCS, Docker, Hugging Face, stdin, and multi-source configs. Verified findings are confirmed by testing against provider APIs, and JSON output is available. | Useful red-team comparator for live/verified secrets and historical/source scans. Verification and credential analysis can create network, privacy, and rate-limit side effects, so A6 must record whether verification was disabled or approved for a private fixture run and must not run it in the default runtime path. |
+| [Yelp detect-secrets v1.5.0](https://github.com/Yelp/detect-secrets/releases/tag/v1.5.0) | Latest release checked 2026-05-25; GitHub API shows `v1.5.0` published 2024-05-06. Baseline-driven secret detection with configurable plugins, allowlists, entropy detectors, filters, verification settings, pre-commit hooks, and audit workflow. | Useful for repository baselines, "new secret" regression checks, and human review workflows. Its older release cadence and Python/plugin model make it a secondary comparator, not a provider-churn source and not a fit for the Parallax hot path. |
+| [Microsoft Presidio 2.2.362](https://github.com/microsoft/presidio/releases/tag/2.2.362) | Latest release checked 2026-05-25; GitHub API shows `2.2.362` published 2026-03-18, and PyPI shows `presidio-analyzer`/`presidio-anonymizer` `2.2.362` uploaded 2026-03-15. Open-source PII detection/anonymization framework with NER, regex, rule logic, image redaction, custom recognizers, and an explicit warning that automated detection cannot guarantee all sensitive information is found. | Best reference for PII/anonymization and optional offline processing. Too heavy and probabilistic to be the only runtime guarantee for agent-visible bundles. |
 | [IssueGuard paper](https://arxiv.org/abs/2602.08072) | Current research on real-time secret leak prevention in issue reports; targets unstructured collaborative text and separates real secrets from false positives. | Confirms Parallax's risk surface: secrets leak in issue-like/debug text, not only git repos. Good design reference for pre-submit warning UX, not yet a runtime dependency. |
 
 ## What Existing Tools Are Good At
@@ -55,6 +55,38 @@ low-latency, source-aware, evidence-bundle-safe runtime.
 The conclusion is not "pick Gitleaks" or "pick Presidio." The correct design is
 layered: Parallax owns the final runtime decision and uses external tools to
 stress-test that decision.
+
+## 2026-05-25 Freshness Findings
+
+This pass narrowed the trust boundary rather than changing the architecture:
+
+- Gitleaks remains the best simple static comparator for generated fixture
+  output, but its current README says active feature work has moved elsewhere.
+  Parallax should not depend on Gitleaks alone for current provider-token churn.
+- TruffleHog is fresher and stronger for verified credential evidence, but that
+  strength comes from provider/API verification and optional credential
+  analysis. A6 fixture runs must record network policy, verification mode, and
+  whether the corpus was synthetic or private.
+- detect-secrets is still useful for baseline and audit workflows, but a 2024
+  latest release makes it weak evidence for current provider coverage.
+- Presidio is current enough to remain the PII reference, but its own warning
+  means PII detection cannot replace default-deny source policy.
+- The OpenTelemetry redaction processor is a good upstream minimizer, especially
+  for HMAC hashing and query/URL sanitization, but alpha signal stability and
+  `allowed_values` precedence make it unsafe as the final agent-output boundary.
+
+Falsification criteria:
+
+- If Betterleaks or another maintained scanner becomes the active replacement
+  for Gitleaks and offers stable CLI/SARIF/JSON output under an acceptable
+  license, revisit the external comparator set.
+- If OpenTelemetry redaction reaches stable status for logs/metrics and removes
+  or changes allowlist precedence, revisit how much work must be duplicated at
+  Parallax ingest.
+- If TruffleHog changes verification defaults, license, output schema, or
+  detector/source coverage materially, re-run the A6 scanner comparison rows.
+- If detect-secrets remains stale while GitHub's provider taxonomy changes
+  substantially, demote it further to legacy-baseline checks only.
 
 ## Runtime Architecture
 
