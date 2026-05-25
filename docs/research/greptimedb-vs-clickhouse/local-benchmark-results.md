@@ -2756,6 +2756,57 @@ ingest, upsert/DELETE ergonomics, PromQL GA, cheap retention) all re-confirmed R
 
 **Reproduce.** `for i in $(seq 7); do docker exec parallax-bench-clickhouse-1 clickhouse-client --time -q "SELECT service,avg(value) FROM metrics_hc GROUP BY service FORMAT Null"; done` vs GreptimeDB `/v1/sql` `execution_time_ms`.
 
+### Run 68 — 2026-05-25 — Span-tree recursion: GreptimeDB v1.0.2 FAILS the table-self-join CTE (corrects Run 27)
+
+**Pass target.** Rotate onto the traces span-tree slice (Run 27 ~pass 49). Re-verify the
+flat anchored fetch + the in-DB recursive-CTE claim ("works on both").
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned —
+latest, no bump).
+
+**Measured / verified:**
+
+| Check | ClickHouse | GreptimeDB |
+| --- | --- | --- |
+| Flat anchored fetch (`WHERE trace_id=X`, 14 spans) | ~2 ms | ~15 ms (re-verified, anchored-lookup floor) |
+| Recursive CTE — **counter** (`SELECT 1 … n+1 … n<5`) | ✓ | ✓ (`n=5`) |
+| Recursive CTE — **table self-join span-tree** (`… c JOIN t ON c.pid=t.sid`) | ✓ **3 rows / depth 2** (clean root→child→grandchild) | ✗ **`Schema error: project index out of bounds`** (both 1-col and 2-col recursive projections) |
+| Root empty-parent representation | `''` | **`NULL`** (CSV empty → NULL; base case must use `IS NULL`) |
+
+**The comparison logic & verdict.**
+
+- **CORRECTS Run 27.** Run 27 logged "the recursive join *ran* on both" — that was the
+  **counter** form. The **span-tree pattern** (recursive term joins the base table to the
+  recursive relation) **errors on GreptimeDB v1.0.2** (`project index out of bounds`,
+  reproduced 1-col + 2-col), while ClickHouse runs it correctly. So **in-DB span-tree
+  recursion is a ClickHouse capability edge, not a tie** — a DataFusion recursive-CTE
+  projection limitation in this GreptimeDB version.
+- **Practical impact LOW.** The dominant span-tree pattern is the **flat anchored fetch +
+  app-side tree build** (what Jaeger/Tempo do) — re-verified working on both (CH ~2 ms /
+  GT ~15 ms). In-DB recursion is only needed for server-side tree analytics
+  (critical-path, descendant rollups). So this **does not block Parallax** (it builds
+  trees app-side) and **does not move the verdict** — but it is a genuine, mechanism-grounded
+  ClickHouse edge to record honestly, and a GreptimeDB upstream-fix candidate.
+- Also corrected: the earlier synthetic-`spans` recursion returned degenerate counts
+  because (a) the synthetic parent links don't form a connected tree from the root, and
+  (b) GreptimeDB stores the root's empty parent as `NULL`. The clean 3-node tree isolates
+  the real capability difference.
+
+Caveat: `v1.0.2`-specific (DataFusion recursive CTE is young — re-check on bumps); recursion
+latency-vs-depth unmeasured (moot for GreptimeDB until the form is supported).
+
+**Reproduce (copy-paste).**
+
+```bash
+# CH: clean tree recursion works
+docker exec parallax-bench-clickhouse-1 clickhouse-client --multiquery -q "CREATE TABLE tree_ch (sid String, pid String, nm String) ENGINE=MergeTree ORDER BY sid; INSERT INTO tree_ch VALUES ('s1','','root'),('s2','s1','child'),('s3','s2','grandchild'); WITH RECURSIVE t AS (SELECT sid,pid,nm,0 d FROM tree_ch WHERE pid='' UNION ALL SELECT c.sid,c.pid,c.nm,t.d+1 FROM tree_ch c JOIN t ON c.pid=t.sid) SELECT count() n, max(d) FROM t"   # 3, 2
+# GT: counter works, table-self-join errors
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=WITH RECURSIVE t AS (SELECT 1 AS n UNION ALL SELECT n+1 FROM t WHERE n<5) SELECT count(*),max(n) FROM t"   # 5,5
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=CREATE TABLE tree_gt (ts TIMESTAMP(3) TIME INDEX, sid STRING, pid STRING, nm STRING, PRIMARY KEY(sid))"
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=INSERT INTO tree_gt VALUES (1000,'s1','','root'),(2000,'s2','s1','child'),(3000,'s3','s2','grandchild')"
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=WITH RECURSIVE t AS (SELECT sid,0 AS d FROM tree_gt WHERE pid='' UNION ALL SELECT c.sid,t.d+1 FROM tree_gt c JOIN t ON c.pid=t.sid) SELECT count(*) FROM t"   # Schema error: project index out of bounds
+```
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
