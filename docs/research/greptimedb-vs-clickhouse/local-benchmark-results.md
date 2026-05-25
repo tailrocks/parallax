@@ -6350,6 +6350,35 @@ hard (~tie); broad term → scan-bound on both → ClickHouse vectorized scan wi
 clickhouse-client -q "EXPLAIN indexes=1 SELECT count() FROM logs_b1 WHERE hasToken(message,'e3b74f33')"`
 → `Granules 1/611` (vs `611/611` for `'timeout'`). (exec; host port down.)
 
+### Run 158 — 2026-05-25 — LIVE re-verify (exec): the dominant-query pillar (anchored evidence-bundle) — prunes IFF trace_id is keyed, on BOTH engines + a methodological correction
+
+**Context.** Network isolation persists (exec-only). Rotated to the **anchored evidence-bundle** — the
+single most load-bearing query (Parallax always anchors on `trace_id`/`fingerprint`), last verified Run
+56. Plan-level (`EXPLAIN`), 4-build-exempt. Re-pin unchanged (GT GA v1.0.2).
+
+**Re-verified — anchored `trace_id` fetch prunes IFF `trace_id` is keyed/indexed on that signal:**
+- **Keyed (fast):** GreptimeDB `spans_idx` (`trace_id` INVERTED) → reads **14 rows**; ClickHouse `spans`
+  (`ORDER BY (trace_id,ts)`) → **`Granules 1/123`**. Both prune hard → interactive.
+- **Un-keyed (full scan):** `logs_b1` (both key `service`, not `trace_id`) → ClickHouse
+  **`Granules 611/611`** (all); GreptimeDB `UnorderedScan` **`scan_cost 429ms`** over 49 file_ranges
+  (emits 1, reads 5M). Both full-scan.
+- → **Schema blueprint (engine-agnostic): key/index `trace_id` (or `fingerprint`) on EVERY signal
+  table**, else the anchored bundle scans. The verdict's "anchored retrieval fast on both" pillar holds
+  — *conditioned on this schema choice*, which Parallax controls.
+
+**METHODOLOGICAL CORRECTION (applies to future plan reads).** GreptimeDB scan-node `output_rows` is
+**post-pushed-filter EMISSION, not rows-read** — `logs_b1` showed `output_rows: 1` yet `scan_cost
+429ms`/49 file_ranges = a full 5M scan. **Gauge GreptimeDB scan work by `scan_cost`/`elapsed_poll`/
+`file_ranges`, NOT `output_rows`** (which can mask a full scan when a selective filter is pushed into
+the scan). (Run 154's join case is unaffected: no filter was pushed to the left scan there, so its
+`output_rows: 1000000` genuinely was rows-read, confirmed by the join consuming all 1M.) ClickHouse's
+`Granules X/Y` is the clearer scan-work signal.
+
+**Reproduce.** Keyed: `docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql
+--data-urlencode "sql=EXPLAIN ANALYZE SELECT count(*) FROM spans_idx WHERE trace_id='<id>'"` → ~14
+rows. Un-keyed: same on `logs_b1` → `output_rows` small but `scan_cost ~429ms`/49 file_ranges (full
+scan). CH: `EXPLAIN indexes=1 … FROM spans …` → `Granules 1/123` vs `… FROM logs_b1 …` → `611/611`.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
