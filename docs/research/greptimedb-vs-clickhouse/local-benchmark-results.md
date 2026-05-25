@@ -4301,6 +4301,51 @@ error_events e ON s.trace_id=e.trace_id WHERE s.trace_id='X'` (~3 ms); GT same o
 (~53 ms, full-scan); GT subquery `FROM (SELECT * FROM spans_idx WHERE trace_id='X') s JOIN …`
 (~19 ms, pruned). Warm ×10.
 
+### Run 104 — 2026-05-25 — Dynamic-attribute JSON path query re-verified — gap WIDENED to ~57× (CH ~1 ms / GT ~57 ms @200k): CH's new JSON subcolumn read matured, GT's per-row jsonb parse unchanged
+
+**Pass target.** Re-verify the load-bearing ClickHouse *win* on **dynamic-attribute path queries**
+(Run 61, parity-roadmap #4, verdict DQ2): CH stores each JSON path as a typed columnar subcolumn;
+GreptimeDB stores `Json` as a binary jsonb blob read with per-row `json_get_*`. Production shape: a
+user groups/filters by an **undeclared** OTLP attribute.
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned live — latest stable, no
+bump). Built `sj (ts, trace_id, service, attributes JSON)` on both, loaded **200,000 rows** from
+`spans`/`spans_idx` with `attributes = {"http":{"status_code":<200..600>}}` (CH `JSON` type, GT
+`JSON` jsonb via `parse_json`). Query: `GROUP BY` the attribute path. Method: CH `--time`, GT
+`execution_time_ms`, warm.
+
+| Query | ClickHouse | GreptimeDB | Ratio |
+| --- | --- | --- | --- |
+| `GROUP BY attributes.http.status_code` (200k) | `~1 ms` (typed subcolumn) | `56 55 57 57 60 58 56 57 55 59` → **~57 ms** (`json_get_int`, per-row jsonb parse) | **~57×** |
+
+**Verdict — Run 61 reproduces in direction but the gap WIDENED (CH improved); honest update needed.**
+
+- **The dynamic-attr gap is now ~57× warm at 200k (CH ~1 ms / GT ~57 ms)**, vs Run 61's ~13× (CH
+  6 ms / GT 78 ms @100k). The change is on **ClickHouse's side**: the 26.x **new `JSON` type**
+  matured — a path like `attributes.http.status_code` reads exactly one **typed, dictionary-encoded
+  subcolumn** (5 distinct values here) in ~1 ms. GreptimeDB's `json_get_int` still **parses the
+  whole jsonb blob per row** (`jsonb::get_by_path`, parity-roadmap #4) → ~57 ms / 200k rows
+  (~0.28 µs/row, scan-bound, grows linearly). So the mechanism is unchanged; CH simply got faster at
+  it, widening the ratio. **Correct the verdict's "~13×" to "~13–57× (CH's subcolumn read improved
+  in 26.x; widens with CH maturity)".**
+- **Scope unchanged — this is the *undeclared/arbitrary* attribute case only.** The Tier-A mitigation
+  still holds: for **known hot attributes**, GreptimeDB promotes them to real typed columns at
+  ingest (schema-on-write auto-adds columns, Run 18) → a normal columnar group-by (~13 ms class,
+  Run 102), erasing the gap. Parallax's anchored bundle fetches attributes *for a trace* (already
+  pruned), not `GROUP BY` across 200k undeclared paths — so this bites only if Parallax ships heavy
+  **ad-hoc arbitrary-attribute analytics**. Then it is a real, now-larger ClickHouse advantage.
+- **Adopt-native / blueprint:** carry the rule — **promote hot OTLP attributes to typed columns**
+  (don't leave them in the jsonb blob for repeated analytics); reserve the `Json` column for
+  genuinely sparse/unpredictable attributes accessed by anchored fetch, not aggregation.
+- **parity-roadmap #4 strengthened:** the JSON-shredding improvement (shred paths into Parquet
+  subcolumns) now closes a **bigger** gap than measured at Run 61 — but is still **Tier-B
+  integration** (Parquet Variant), and Parallax's Tier-A column-promotion covers the common case.
+
+**Reproduce.** Build `sj (… attributes JSON)` both; load 200k with `{"http":{"status_code":N}}`
+(GT via `parse_json(concat(...))`); CH `SELECT attributes.http.status_code, count() GROUP BY 1`
+(~1 ms); GT `SELECT json_get_int("attributes",'http.status_code'), count(*) GROUP BY 1` (~57 ms).
+Drop `sj` after.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

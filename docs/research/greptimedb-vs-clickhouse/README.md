@@ -8,8 +8,11 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 103 local runs + B1–B15 cases. Recent: **Run 103 re-verified
-the cross-tier in-DB join pushdown** — CH prunes the anchor through the join (~3 ms) while GT full-scans the input
+cold/first-run measurement showed). 25 mechanism notes + 104 local runs + B1–B15 cases. Recent: **Run 104 re-verified
+dynamic-attr JSON path queries — gap WIDENED to ~57×** (CH ~1 ms / GT ~57 ms @200k, was ~13× at Run 61): CH's 26.x
+new-`JSON`-type typed-subcolumn read matured (~6→~1 ms) while GT's per-row jsonb parse is unchanged; bites only on
+undeclared-attribute analytics at volume — Tier-A column-promotion + anchored bundle fetch sidestep it. **Run 103
+re-verified the cross-tier in-DB join pushdown** — CH prunes the anchor through the join (~3 ms) while GT full-scans the input
 (~53 ms, ~17×, parity-roadmap #8 optimizer gap); the subquery-prefilter workaround cuts GT to ~19 ms, and Parallax's
 app-side correlation sidesteps it entirely (all ≪ 300 ms; Run 81 reproduces). **Run 102 re-verified the unindexed/ad-hoc scan gap warm** — ~2–5× shape-dependent at 1M (point-filter ~5×, full-scan aggregation ~2×), NOT
 Run 31's ~10× which was cold/HTTP-wall inflated (confirms the Run 40 correction); all ≪ 300 ms at 1M, so the DQ5
