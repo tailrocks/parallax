@@ -47,6 +47,14 @@ settle the performance question:
   `wait_for_async_insert=0` is risky because clients may miss errors and lose
   backpressure
   ([ClickHouse insert strategy](https://clickhouse.com/docs/best-practices/selecting-an-insert-strategy)).
+- ClickHouse release metadata checked on 2026-05-25 shows
+  `v26.5.1.882-stable` as the newest feature-stable release and
+  `v26.3.12.3-lts` as the newest LTS/latest release. ClickHouse production
+  guidance says `stable` is recommended by default while `lts` fits slower
+  upgrade policies and simpler secondary workloads
+  ([ClickHouse stable release](https://github.com/ClickHouse/ClickHouse/releases/tag/v26.5.1.882-stable),
+  [ClickHouse LTS release](https://github.com/ClickHouse/ClickHouse/releases/tag/v26.3.12.3-lts),
+  [ClickHouse production version guidance](https://clickhouse.com/docs/faq/operations/production#how-to-choose-between-clickhouse-releases)).
 - ClickHouse MergeTree docs say primary-key conditions can trim ranges for fast
   reads, and PREWHERE docs say ClickHouse can automatically move filters into
   PREWHERE to reduce I/O
@@ -159,6 +167,13 @@ Run at least two insert modes:
 2. **Async insert safe mode:** `async_insert=1,wait_for_async_insert=1`, with
    flush thresholds recorded in the result file.
 
+Run or explicitly exclude two release tracks:
+
+1. **Feature-stable baseline:** latest checked stable feature train, initially
+   `v26.5.1.882-stable`.
+2. **LTS baseline:** latest checked LTS train, initially `v26.3.12.3-lts`, for
+   conservative self-hosted operators that prefer slower upgrade cadence.
+
 Do not accept `wait_for_async_insert=0` as the default Parallax ingest mode even
 if it improves client ack latency. It weakens error visibility and backpressure,
 which are part of the product contract for debugging evidence.
@@ -197,6 +212,7 @@ Every run should write a `results.json` entry with at least:
 {
   "candidate": "greptime",
   "candidate_version": "1.0.2",
+  "release_track": "ga|feature-stable|lts",
   "mode": "mixed",
   "schema_variant": "append_only_skip_index",
   "insert_mode": "otlp_http",

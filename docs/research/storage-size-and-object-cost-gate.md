@@ -32,6 +32,14 @@ candidates, but not a cost winner:
   Azure Blob Storage through external disks, and tables can use an S3
   `storage_policy` or `disk`
   ([ClickHouse external disks](https://clickhouse.com/docs/operations/storing-data)).
+- ClickHouse release metadata checked on 2026-05-25 shows
+  `v26.5.1.882-stable` as the newest feature-stable release and
+  `v26.3.12.3-lts` as the newest LTS/latest release. ClickHouse production
+  guidance says `stable` is recommended by default while `lts` fits teams that
+  cannot upgrade frequently or have simpler secondary workloads
+  ([ClickHouse stable release](https://github.com/ClickHouse/ClickHouse/releases/tag/v26.5.1.882-stable),
+  [ClickHouse LTS release](https://github.com/ClickHouse/ClickHouse/releases/tag/v26.3.12.3-lts),
+  [ClickHouse production version guidance](https://clickhouse.com/docs/faq/operations/production#how-to-choose-between-clickhouse-releases)).
 - ClickHouse S3 docs distinguish table functions/engines from S3-backed
   MergeTree; the simple S3 table path lacks primary-index and cache support, so
   the benchmark must use S3-backed MergeTree for the real candidate comparison
@@ -161,6 +169,13 @@ Run two ClickHouse schema modes:
 - **default-effort mode:** minimal explicit codec tuning, so the result exposes
   whether operational simplicity changes the cost winner.
 
+Run or explicitly exclude two ClickHouse release tracks:
+
+- **feature-stable mode:** latest checked stable feature train, initially
+  `v26.5.1.882-stable`;
+- **LTS mode:** latest checked LTS train, initially `v26.3.12.3-lts`, when the
+  storage decision is being evaluated for conservative self-hosted operators.
+
 GreptimeDB gets the same fairness rule: do not compare ClickHouse tuned codecs
 against unexamined GreptimeDB defaults and then call it an engine verdict.
 
@@ -193,7 +208,8 @@ Every result should include a cost section like:
 ```json
 {
   "candidate": "clickhouse",
-  "candidate_version": "26.5.1.882",
+  "candidate_version": "26.5.1.882-stable",
+  "release_track": "feature-stable|lts",
   "storage_mode": "s3_backed_mergetree",
   "schema_variant": "matched_effort",
   "dataset_tier": "small",

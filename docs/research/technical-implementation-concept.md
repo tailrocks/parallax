@@ -278,16 +278,22 @@ the first Parallax implementation because:
 - the user specifically wants systems purpose-built for this new AI-native
   context use case, not only incumbent analytical strength.
 
-ClickHouse should stay behind a storage abstraction and be benchmarked with the
-latest stable/public version. It becomes the default only if GreptimeDB fails the
-Parallax-shaped benchmark on freshness, evidence-bundle latency, trace/log
-performance, operational simplicity, or OSS production viability.
+ClickHouse should stay behind a storage abstraction and be benchmarked with
+exact release tracks, not a vague "latest" label. As of 2026-05-25, the current
+checked baselines are `v26.5.1.882-stable` for the feature-stable track and
+`v26.3.12.3-lts` for conservative operators. ClickHouse becomes the default only
+if GreptimeDB fails the Parallax-shaped benchmark on freshness,
+evidence-bundle latency, trace/log performance, operational simplicity, or OSS
+production viability.
 
 Current source anchors:
 
 - [ClickHouse observability docs](https://clickhouse.com/docs/use-cases/observability)
 - [ClickHouse OpenTelemetry integration](https://clickhouse.com/docs/use-cases/observability/integrating-opentelemetry)
 - [ClickHouse object storage docs](https://clickhouse.com/docs/operations/storing-data)
+- [ClickHouse v26.5.1.882-stable release](https://github.com/ClickHouse/ClickHouse/releases/tag/v26.5.1.882-stable)
+- [ClickHouse v26.3.12.3-lts release](https://github.com/ClickHouse/ClickHouse/releases/tag/v26.3.12.3-lts)
+- [ClickHouse production version guidance](https://clickhouse.com/docs/faq/operations/production#how-to-choose-between-clickhouse-releases)
 
 ## Component Diagram
 

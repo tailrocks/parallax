@@ -39,8 +39,24 @@ Pinned candidate versions for the first run (update at run time per the
 version-freshness rule):
 
 - GreptimeDB `v1.0.2` (GA, 2026-05-14) — standalone, then object-storage mode.
-- ClickHouse latest stable (pin the exact version in results; e.g. `25.x`).
+- ClickHouse feature-stable `v26.5.1.882-stable` (published 2026-05-21) as the
+  newest stable feature train checked.
+- ClickHouse LTS `v26.3.12.3-lts` (published 2026-05-22) as the conservative
+  operations baseline checked.
 - MinIO (S3-compatible) for the object-storage cost path.
+
+ClickHouse docs recommend `stable` by default and `lts` for teams that cannot
+upgrade frequently or are using simpler secondary workloads. Because Parallax is
+choosing a storage default, not just a leaderboard winner, the first serious
+benchmark should either run both ClickHouse tracks or explicitly justify why one
+track is excluded. A result that says only "latest ClickHouse" expires as soon
+as either track moves.
+
+Current release/version sources:
+
+- [ClickHouse v26.5.1.882-stable release](https://github.com/ClickHouse/ClickHouse/releases/tag/v26.5.1.882-stable)
+- [ClickHouse v26.3.12.3-lts release](https://github.com/ClickHouse/ClickHouse/releases/tag/v26.3.12.3-lts)
+- [ClickHouse production version guidance](https://clickhouse.com/docs/faq/operations/production#how-to-choose-between-clickhouse-releases)
 
 ## Harness Architecture
 
