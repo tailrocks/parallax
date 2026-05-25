@@ -134,6 +134,9 @@ full storage-default proof. A reproducible local matrix can tighten schema and
 flip-trigger decisions, but it does not become an A5 stack pass until mixed
 native ingest, Q6 p95/p99, stale bundles, object-store economics, setup,
 metadata, ingest-log, restart, redaction, and integration rows exist.
+Do not launch millions-scale GreptimeDB-vs-ClickHouse runs on a local laptop;
+local four-build checks stay small but meaningful, and `N=5,000,000+` runs belong
+on a server only when the operator explicitly asks.
 
 Keep challenging the GO verdict, storage choice, API boundary, CLI/MCP access
 surface, scaling tiers, frontend direction, agent/CLI tracing model, safety

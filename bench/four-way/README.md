@@ -16,12 +16,12 @@ to reproduce is all here.
 
 ```bash
 docker compose -f bench/compose.yml up -d        # bring up all four builds (wait for healthy)
-bench/four-way/gen.sh                            # generate identical data on all four (N=1,000,000)
+bench/four-way/gen.sh                            # generate identical data on all four (N=100,000 default)
 bench/four-way/bench.sh                           # print the 4-way matrix (median of 6 warm reps)
 docker compose -f bench/compose.yml down -v      # tear down
 ```
 
-Tunables (env): `N` = rows per table (gen.sh; **minimum 50,000**, default **1,000,000**); `REPS` =
+Tunables (env): `N` = rows per table (gen.sh; **minimum 50,000**, default **100,000**); `REPS` =
 warm reps per query (bench.sh, default 6). Container-name overrides: `GT_STABLE`, `GT_NIGHTLY`,
 `CH_STABLE`, `CH_HEAD` (default to the compose names).
 
@@ -31,7 +31,7 @@ Two tiers:
 - **LOCAL (laptop): small but meaningful — default `N=100,000`** (≥50,000 enforced). This is a
   **preliminary comparison only**. Running big `N` (millions) with 4 DB containers **freezes a
   MacBook** — don't. Keep local runs small; tear the nightly containers down between runs.
-- **SERVER: large, detailed — `N=5,000,000`+`** (`N=5000000 bench/four-way/gen.sh`). The proper
+- **SERVER: large, detailed — `N=5,000,000+`** (`N=5000000 bench/four-way/gen.sh`). The proper
   performance test runs on a server with headroom, not the dev laptop.
 
 `gen.sh` enforces `N >= 50,000` (no toy benchmarks) and builds all six tables at the same `N` for an

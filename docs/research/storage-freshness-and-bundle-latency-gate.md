@@ -79,6 +79,7 @@ are useful but intentionally narrow:
 | Run 140: four-way 1M local warm | Reproducible four-build matrix, `N >= 50000` enforcement, and 20 query shapes; every 1M warm query is interactive. | Small-tier 25-50 GB, cold/object-store, native ingest, mixed Q6 p95/p99, stale bundles, ClickHouse LTS. |
 | Run 141: four-way 5M local warm | Anchored/keyed hot path remains interactive; heavy analytical queries cross or approach the 300 ms gate on GreptimeDB. | Whether full Q6 under mixed native ingest remains under budget; object-store/cold behavior; production hardware. |
 | Run 142: GreptimeDB dedup vs append A/B | Dedup-mode aggregation is much slower than append mode at 5M for unique metric-like data; table mode is load-bearing. | Native metric-engine/Prometheus path under v1.1 GA; correctness tradeoff for out-of-order correction workloads. |
+| Run 143: benchmark tier policy | Local laptop default is now `N=100000`, with `N=5000000+` reserved for operator-requested server runs; forced compaction reduced stable GreptimeDB dedup aggregation from about 314 ms to about 60 ms. | Server-tier large run, full mixed native ingest, and compaction-state-sensitive metric path under v1.1 GA. |
 
 The useful correction from Run 2 is now part of this gate: Parallax bundle
 queries are anchored, so key/index placement and per-anchor pruning matter more
@@ -165,7 +166,9 @@ Run 142 adds a schema requirement: for scrape-style metric tables where
 `(series, ts)` uniqueness is guaranteed, test an append-mode variant. Dedup or
 `last_non_null` remains valid for partial-upsert and out-of-order correction, but
 it cannot be assumed safe for aggregation-heavy metric reads at 5M+ without
-fresh v1.1 GA evidence.
+fresh v1.1 GA evidence. Run 143 narrows the finding: forced compaction can make
+stable dedup aggregation acceptable, but append mode still avoids both compaction
+dependence and the nightly dedup regression.
 
 ### ClickHouse
 

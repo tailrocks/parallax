@@ -165,7 +165,8 @@ cast in JSON GROUP BY (`Code 44` without it) where 26.5 allowed a lax no-cast ~1
 ## Cross-refs
 
 Detailed single-engine runs: `local-benchmark-results.md` (Run 140 logs the reproducible 1M matrix;
-Run 141 logs the 5M scale matrix; Run 142 isolates the dedup-vs-append finding; Runs 96–127 are the
-per-query deep dives). Decision: `verdict-which-to-choose.md`. Closability:
-`greptimedb-parity-roadmap.md`. **Re-run on GreptimeDB v1.1 GA** (`local-benchmark-results.md` Run
-128 flagged the trigger). Reproduce with `bench/four-way/`; record `N` and `REPS` with each result.
+Run 141 logs the 5M scale matrix; Run 142 isolates the dedup-vs-append finding; Run 143 sets the
+local-small/server-large policy and compaction addendum; Runs 96–127 are the per-query deep dives).
+Decision: `verdict-which-to-choose.md`. Closability: `greptimedb-parity-roadmap.md`. **Re-run on
+GreptimeDB v1.1 GA** (`local-benchmark-results.md` Run 128 flagged the trigger). Reproduce with
+`bench/four-way/`; record `N`, `REPS`, and local-vs-server tier with each result.
