@@ -5469,6 +5469,37 @@ flushed GT, median of 5 warm reps. **Full table in `four-way-version-comparison.
 
 **Reproduce.** See `four-way-version-comparison.md` (method + the 14 query forms + per-engine SQL).
 
+### Run 132 — 2026-05-25 — 4-way INGEST + STORAGE + cardinality-insensitivity (completes the "all places" matrix → `four-way-version-comparison.md`)
+
+**Pass target.** Extend the 4-way (Run 131 = query latency) to the non-query performance axes the
+operator's "all places" implies: ingest throughput, storage size, cardinality-insensitivity. All four
+builds, identical 1M data.
+
+| Measure | GT-stable v1.0.2 | GT-nightly v1.1.0 | CH-stable 26.5 | CH-head 26.6 |
+| --- | ---: | ---: | ---: | ---: |
+| Ingest `INSERT…SELECT` 1M (ms) | 719 | 623 | 201 | 170 |
+| Storage 1M (compressed) | 2.0 MiB | 2.0 MiB | 1.69 MiB | 1.69 MiB |
+| GT cardinality-insensitivity (append: low / 1M-series) | 527 / 457 | 489 / 401 | — | — |
+
+**Verdict — completes the matrix; nightlies ≈ stables, GT cardinality-insensitivity holds.**
+
+- **Ingest (synthetic `INSERT…SELECT`):** CH ~3.5× faster (170–201 vs 623–719 ms). **Caveat: not the
+  native path** — GreptimeDB's real ingest is native OTLP/gRPC bulk (>1 M rows/s, vendor 2.68 M/s) +
+  cardinality-insensitivity, not `INSERT…SELECT`. Both nightlies ~13–15% faster (relative).
+- **Storage:** CH ~1.2× smaller (high-card strings; ZSTD+sort locality); **no nightly change** either
+  side. Per-column-pattern (GT wins high-card metric storage, Run 100).
+- **Cardinality-insensitivity holds on both GT versions:** with `append_mode`, 1M rows at **1M
+  distinct series** ingests **≈/faster** than at 12 series (457 vs 527 ms stable; 401 vs 489 nightly)
+  — cap-free ingest (Runs 84/101), **unchanged in v1.1**.
+- **Net:** the non-query perf axes match the query matrix — nightlies don't move the picture; the
+  GT-vs-CH trade-offs (CH faster raw ingest/storage on this path; GT cardinality-insensitive +
+  object-store-economic) hold on all four builds. The full consolidated comparison (query + ingest +
+  storage) lives in `four-way-version-comparison.md`.
+
+**Reproduce.** See `four-way-version-comparison.md`. Ingest: time `INSERT…SELECT` 1M via
+`range()`/`numbers()`. Storage: GT `region_statistics.disk_size` / CH `system.parts`. Cardinality:
+GT `append_mode` load at `PK(k)` with k = 12-card vs 1M-card.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

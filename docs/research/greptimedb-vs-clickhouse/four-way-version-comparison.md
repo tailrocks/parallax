@@ -66,6 +66,28 @@ cast in JSON GROUP BY (`Code 44` without it) where 26.5 allowed a lax no-cast ~1
 - **Everything ≪ 300 ms on every build** — for Parallax's queries, all four are interactive; the
   decision stays *fit not speed* (the speed gaps never cross the interactive gate).
 
+## Ingest + storage (the non-query "performance" axes; Run 132)
+
+| Measure | GT-stable v1.0.2 | GT-nightly v1.1.0 | CH-stable 26.5 | CH-head 26.6 |
+| --- | ---: | ---: | ---: | ---: |
+| **Ingest** `INSERT…SELECT` 1M rows (ms) | 719 | 623 | 201 | 170 |
+| **Storage** 1M-row table (compressed) | 2.0 MiB | 2.0 MiB | 1.69 MiB | 1.69 MiB |
+| **Cardinality-insensitivity** (GT ingest, append: low-card vs 1M-series) | 527 / 457 ms | 489 / 401 ms | — | — |
+
+- **Ingest (this synthetic `INSERT…SELECT` path):** ClickHouse ~3.5× faster than GreptimeDB
+  (170–201 vs 623–719 ms / 1M). **Caveat:** this is *not* the native ingest path — GreptimeDB's real
+  ingest story is **native OTLP/gRPC bulk** (>1 M rows/s, Run 101's vendor-confirmed 2.68 M/s) +
+  **cardinality-insensitivity**, not `INSERT…SELECT`. As a *relative* cross-build measure: both
+  nightlies ~13–15% faster (GT 719→623, CH 201→170).
+- **Storage:** ClickHouse ~1.2× smaller on this high-card-string table (2.0 vs 1.69 MiB) — ZSTD +
+  sort-key locality. **No nightly change** either side. (Per-column-pattern; GreptimeDB wins
+  high-card metric storage, Run 100.)
+- **Cardinality-insensitivity holds on both GreptimeDB versions:** with `append_mode`, ingesting 1M
+  rows at **1M distinct series** is **≈ or faster than** at 12 series (457 vs 527 ms stable; 401 vs
+  489 nightly) — cap-free ingest, the load-bearing GreptimeDB ingest pillar (Runs 84/101), **unchanged
+  in v1.1**. (ClickHouse has no dedup-merge, so its analog is the LowCardinality-overflow storage cost,
+  Run 101 — not re-run here.)
+
 ## Bottom line for the operator
 
 - **Nightlies don't change the decision.** GT v1.1 gives a modest broad speedup (aggs ~25%, join

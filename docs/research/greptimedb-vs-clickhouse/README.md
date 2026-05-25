@@ -8,8 +8,10 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 131 local runs + B1–B15 cases. Recent: **Run 131 — FULL
-14-query 4-way matrix** (operator-requested "one clear comparison", `four-way-version-comparison.md`): every
+cold/first-run measurement showed). 25 mechanism notes + 132 local runs + B1–B15 cases. Recent: **Run 132 — 4-way
+INGEST + STORAGE** completing the matrix: CH ~3.5× faster on synthetic INSERT…SELECT ingest (not the native path; GT's
+real ingest = native bulk + cardinality-insensitivity) + ~1.2× smaller storage; both nightlies ~13–15% faster, no other
+change; GT cardinality-insensitivity holds on both versions (1M-series ingest ≈ 12-series). **Run 131 — FULL 14-query 4-way matrix** (operator-requested "one clear comparison", `four-way-version-comparison.md`): every
 load-bearing query across GT v1.0.2 / v1.1-nightly / CH 26.5 / 26.6-head. GT-nightly equal-or-faster on all (aggs
 ~20–30%, join 65→36 ms; no regressions), CH-head perf-flat+stricter; GreptimeDB wins last-value ~2× + ties selective
 full-text, ClickHouse leads anchored/scan/log-tail/JSON/join — all ≪ 300 ms on every build, verdict identical. **Run 130 — COMPREHENSIVE 4-way re-check** (operator-requested, all load-bearing speed findings across GT v1.0.2 / v1.1-nightly /
