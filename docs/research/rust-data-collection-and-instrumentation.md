@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: 2026-05-24
+Research date: 2026-05-25
 
 ## Executive Summary
 
@@ -13,6 +13,13 @@ shapes everything downstream.
 > Capture app-level errors in-process with Rust SDKs over OTLP plus a
 > Sentry-compatible panic/error layer. Treat eBPF as an optional complement for
 > zero-instrumentation infrastructure signal, never as the primary error path.
+
+The current capture-feature/version matrix and fixture additions are tracked in
+[Rust capture fidelity recheck](rust-capture-fidelity-recheck.md). The important
+update from that pass is that Parallax should not claim "Rust errors are
+agent-ready" from a single SDK init: Sentry feature flags, `tracing-error`
+`ErrorLayer`, OpenTelemetry log appender setup, backtrace environment, panic
+strategy, and debuginfo profile all have to be measured.
 
 The reason is architectural, not a maturity gap that will close later. A Rust
 panic message, an `anyhow` context chain, a typed error's source chain, span
@@ -139,10 +146,25 @@ that are Parallax's whole product.
 | `tracing-opentelemetry` + `opentelemetry-otlp` | Traces, metrics over OTLP (gRPC/HTTP) | Does **not** export logs — use `opentelemetry-appender-tracing` for logs. |
 | `anyhow` / `eyre` / `color-eyre` | Error source chain + backtrace | `anyhow::Error` auto-captures a backtrace (Rust ≥ 1.65) unless the inner error already has one; `.context()` builds the chain; `color-eyre` adds a `SpanTrace`. |
 
+Current source check, 2026-05-25:
+
+- Rust docs show `std` `1.95.0`; `Backtrace::capture` remains env-gated by
+  `RUST_LIB_BACKTRACE` / `RUST_BACKTRACE`, while `force_capture` bypasses that
+  gate.
+- `sentry` remains `0.48.2`; default features include `backtrace`, `contexts`,
+  `debug-images`, `panic`, `release-health`, and `transport`, while `tracing`,
+  `anyhow`, and `opentelemetry` are opt-in.
+- `tracing` is `0.1.44`; `tracing-error` is `0.2.1`; `tracing-opentelemetry`
+  is `0.33.0` and depends on `opentelemetry` `0.32.0`.
+- `opentelemetry`, `opentelemetry-otlp`, and
+  `opentelemetry-appender-tracing` are `0.32.0`.
+- `anyhow` is `1.0.102`, `eyre` is `0.6.12`, and `color-eyre` is `0.6.5`.
+
 Sources:
 
 - [std::backtrace](https://doc.rust-lang.org/std/backtrace/index.html)
 - [docs.rs/sentry](https://docs.rs/sentry/latest/sentry/)
+- [Rust capture fidelity recheck](rust-capture-fidelity-recheck.md)
 - [Sentry Rust platform docs](https://docs.sentry.io/platforms/rust/)
 - [docs.rs/tracing-error](https://docs.rs/tracing-error/latest/tracing_error/)
 - [docs.rs/tracing-opentelemetry](https://docs.rs/tracing-opentelemetry)

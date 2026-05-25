@@ -46,6 +46,7 @@ Rust envelopes can parse and normalize before Rust grouping is proven.
 | [Sentry Symbolicator](https://getsentry.github.io/symbolicator/), [lookup strategy](https://getsentry.github.io/symbolicator/advanced/symbol-lookup/), and [system architecture](https://getsentry.github.io/symbolicator/advanced/system-architecture/) | Symbolicator resolves function names, file locations, and source context; it computes code/debug identifiers, looks up files across sources, ranks debug/unwind files over symbol-table fallbacks, and caches downloaded objects plus derived symbol caches. | Ledger rows need symbol source, matched-file provenance, quality ranking, and cache/source status so agents can tell full evidence from fallback evidence. |
 | [Symbolicator source bundles](https://getsentry.github.io/symbolicator/advanced/source-bundles/) | Source bundles are ZIP archives with manifests containing code ID, debug ID, object name, architecture, and original source paths. | Source snippets and paths are source-derived evidence; they require source-field policy checks and redaction before agent-visible projection. |
 | [sentry Rust crate 0.48.2](https://docs.rs/sentry/0.48.2/sentry/) and [feature flags](https://docs.rs/crate/sentry/0.48.2/features) | Docs.rs currently resolves the explicit crate page to `0.48.2`; default features include backtrace, contexts, panic capture, transport, debug-image metadata, and release health. | The first fixture target remains current Sentry Rust SDK panic/error envelopes, but runs must record exact feature flags because `tracing`, `anyhow`, and OpenTelemetry are opt-in. |
+| [Rust capture fidelity recheck](rust-capture-fidelity-recheck.md) | Current capture pass pins the broader Rust capture layer: `tracing` `0.1.44`, `tracing-error` `0.2.1`, `tracing-opentelemetry` `0.33.0`, `opentelemetry`/`opentelemetry-otlp`/`opentelemetry-appender-tracing` `0.32.0`, `anyhow` `1.0.102`, `eyre` `0.6.12`, and `color-eyre` `0.6.5`. | Grouping claims need capture-layer version rows too; a Sentry envelope alone does not prove span traces, OTLP logs, or `anyhow`/`eyre` chains. |
 | [sentry-panic 0.48.2](https://docs.rs/sentry-panic/0.48.2/sentry_panic/), [sentry-backtrace 0.48.2](https://docs.rs/sentry-backtrace/0.48.2/sentry_backtrace/), and [sentry-debug-images 0.48.2](https://docs.rs/sentry-debug-images/0.48.2/sentry_debug_images/) | The subcrates separately install a panic handler, convert/process stacktraces, and attach loaded-library metadata. | Result rows must identify which capture integration produced panic, stack, and loaded-image evidence; one SDK envelope is not enough proof. |
 
 ## Claim Levels
@@ -109,6 +110,17 @@ Each `manifest.json` should pin the moving parts:
   "sentry_rust_version": "0.48.2",
   "sentry_types_version": "0.48.2",
   "sentry_features": ["backtrace", "contexts", "panic", "debug-images", "transport"],
+  "capture_layer_versions": {
+    "tracing": "0.1.44",
+    "tracing-error": "0.2.1",
+    "tracing-opentelemetry": "0.33.0",
+    "opentelemetry": "0.32.0",
+    "opentelemetry-otlp": "0.32.0",
+    "opentelemetry-appender-tracing": "0.32.0",
+    "anyhow": "1.0.102",
+    "eyre": "0.6.12",
+    "color-eyre": "0.6.5"
+  },
   "rustc_version": "rustc <version>",
   "cargo_version": "cargo <version>",
   "target_triples": ["x86_64-unknown-linux-gnu"],

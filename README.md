@@ -90,6 +90,7 @@ Code `/loop` runbook.
 - [Ingest log replay and backpressure gate](docs/research/ingest-log-replay-and-backpressure-gate.md)
 - [A5 stack decision ledger](docs/research/a5-stack-decision-ledger.md)
 - [Rust data collection and instrumentation](docs/research/rust-data-collection-and-instrumentation.md)
+- [Rust capture fidelity recheck](docs/research/rust-capture-fidelity-recheck.md)
 - [Rust stacktrace grouping and symbolication](docs/research/rust-stacktrace-grouping-and-symbolication.md)
 - [Rust stacktrace grouping ledger](docs/research/rust-stacktrace-grouping-ledger.md)
 - [Frontend collection and cross-tier correlation](docs/research/frontend-collection-and-cross-tier-correlation.md)

@@ -940,6 +940,9 @@ the Rust-specific collection story end to end:
 - what data to store: panic message, error type, backtrace frames
   (crate/module/function/file/line), error source chain, span/trace IDs,
   release, environment
+- current Rust capture feature/version matrix: Sentry features, panic strategy,
+  `tracing-error` `SpanTrace`, OTLP traces/metrics/log appender, backtrace env
+  gates, and negative fixtures for missing layers
 - symbol/debuginfo requirements to get useful Rust backtraces (line tables,
   split debuginfo) without bloating binaries
 - how to store and process this data efficiently in the Parallax pipeline
