@@ -25,7 +25,9 @@ telemetry problem. Parallax must generate or attach the telemetry leg itself.
 The current public-source freeze snapshot lives in
 [A1 task source freeze check](a1-task-source-freeze-check.md); use it as the
 starting manifest for dataset SHA, row/split count, feature, and quarantine
-fields.
+fields. The companion [A1 source drift and leakage recheck](a1-source-drift-and-leakage-recheck.md)
+adds source roles and selected-row hashing rules after confirming that
+datasets-server `first-rows` previews are truncated.
 
 ## Current Primary-Source Checks
 
@@ -50,11 +52,25 @@ SHAs to freeze are:
 | `SWE-bench-Live/MultiLang` | `608f7ae9ab8ea1f9f0d030fe04562cf6bd1a0c8b` | 743 rows; Rust 94, Go 138, JS 93, TS 111, C 37, C++ 74, Java 109, C# 87. |
 | `SWE-bench-Live/OS-bench` | `53ccce58d8ca4d1273755658d68d4643afadb7de` | 126 rows; `windows2linux` 126, `linux2windows` 0. |
 | `SWE-bench-Live/Windows` | `ac8b120eaf36957da1884dde9f71fd28ed632487` | 61 rows in `test`. |
+| `SWE-bench-Live/SWE-bench-Live` | `a637bd46829f3132e12938c8a0ca93173a977b8e` | 3,688 Python-only rows; `test` 1000, `lite` 300, `verified` 500, `full` 1888. |
 | `nebius/SWE-rebench-V2` | `475dd5e8703bb5fb22dd3c60b5d038b019eba1e0` | 32,079 rows in `train`. |
 | `nebius/SWE-rebench-V2-PRs` | `40faf2c1bb160de625f3c3270ac9d62ea45f3f9c` | 126,300 rows in `train`. |
 
 Any future A1 run must recheck these before task selection. A row-count match is
-not enough if the dataset SHA or feature list changed.
+not enough if the dataset SHA or feature list changed. A `first-rows` preview is
+also not enough for row-level audit when the preview reports `truncated=true`;
+selected tasks need full-row hashes from pinned revisions.
+
+Use these source roles in the seed manifest:
+
+| Source role | Meaning |
+| --- | --- |
+| `seed_candidate` | Small enough to inspect and appropriate for first A1 tasks. Current default: SWE-bench-Live MultiLang and curated multilingual/Rust sources. |
+| `supplemental_cli_platform` | Useful for one OS/CLI/platform slice, but reported separately from production-telemetry claims. Current examples: OS-bench and Windows. |
+| `harness_shakeout` | Useful to debug the harness without changing the Rust-first seed shape. Current example: Python-only SWE-bench-Live. |
+| `expansion_only` | Useful after the seed run proves source policy and overlay generation. Current example: SWE-rebench V2. |
+| `expansion_only_high_risk` | Large or PR-scale source with LLM/generated metadata that requires strict quarantine. Current example: SWE-rebench V2 PRs. |
+| `excluded_leakage_source` | Trajectory, leaderboard, result, solved-run, or agent-action datasets that should not become task prompts. Current examples: SWE-rebench OpenHands trajectories and SWE-rebench leaderboard. |
 
 ## Seed Corpus Shape
 
@@ -180,9 +196,14 @@ docs/research/bundle-value-eval/
 {
   "task_id": "swe-live-rust-example",
   "source": "SWE-bench-Live/MultiLang",
+  "source_role": "seed_candidate",
   "source_version": "hf-viewer-checked-2026-05-25",
   "hf_dataset_sha": "608f7ae9ab8ea1f9f0d030fe04562cf6bd1a0c8b",
   "dataset_revision": "hf-revision-or-commit",
+  "first_rows_truncated_observed": true,
+  "selected_row_fetch_method": "pinned_revision_parquet_or_datasets_library",
+  "full_selected_row_hash": "sha256:...",
+  "agent_visible_row_hash": "sha256:...",
   "row_count_at_selection": 743,
   "split_counts_at_selection": {"rust": 94},
   "source_checked_at": "2026-05-25T00:00:00Z",
@@ -232,6 +253,10 @@ bundle lift.
 - [A1 task source freeze check](a1-task-source-freeze-check.md) records the
   current Hugging Face dataset SHAs, row/split counts, feature lists, and
   source-field quarantine rules that the first task manifest should start from.
+- [A1 source drift and leakage recheck](a1-source-drift-and-leakage-recheck.md)
+  adds source roles, excludes trajectory/result datasets from task-source use,
+  and requires full selected-row hashes because `first-rows` previews are
+  truncated.
 - [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
   defines how task-source freshness and contamination tiers are reported in the
   eventual result artifact.

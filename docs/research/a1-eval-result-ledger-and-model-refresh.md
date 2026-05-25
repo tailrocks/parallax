@@ -94,6 +94,10 @@ Internal sources:
 - [A1 task source freeze check](a1-task-source-freeze-check.md) pins the current
   Hugging Face dataset SHAs, row/split counts, feature snapshots, and field
   quarantine posture for the likely Phase 0 task sources.
+- [A1 source drift and leakage recheck](a1-source-drift-and-leakage-recheck.md)
+  assigns source roles, excludes trajectory/result datasets from task-source
+  use, and requires full selected-row hashes because `first-rows` previews can
+  be truncated.
 - [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) defines the
   first run matrix and scoring.
 - [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md)
@@ -144,7 +148,7 @@ docs/research/bundle-value-eval/
 | `result-ledger.md` | Yes | Current gate status, claim level, expiry date, and links to all run IDs. |
 | `run-manifest.json` | Yes | Exact run configuration, model snapshots, scaffold commit, task-set hash, bundle template version, redaction policy, and token ceilings. |
 | `task-set.json` | Yes | Public task IDs, source, freshness tier, language, provenance, source-field policy hash, and inclusion/exclusion reason. |
-| `benchmark-source-snapshot.json` | Yes | Dataset revisions, row counts, split counts, last-updated/checked timestamps, and source-field quarantine summary for every public task source. |
+| `benchmark-source-snapshot.json` | Yes | Dataset revisions, source roles, row counts, split counts, last-updated/checked timestamps, first-row truncation observations, full-row fetch/hash methods, and source-field quarantine summary for every public task source. |
 | `investigation-world-snapshots.jsonl` | Yes | One frozen normalized world per task: evidence rows, topology/deploy/source links, raw-ref hashes, evidence completeness, and source-field policy status. |
 | `noise-manifest.jsonl` | Yes | Distractor evidence included in the raw and bundle arms: unrelated but plausible services, logs, spans, alerts, deploys, and rationale for inclusion. |
 | `model-snapshots.json` | Yes | Exact provider model IDs and API parameters used for that run. |
@@ -200,6 +204,7 @@ as durable prose; exact model IDs live here because they change over time.
   "task_sources": [
     {
       "source": "SWE-bench-Live/MultiLang",
+      "source_role": "seed_candidate",
       "hf_dataset_sha": "608f7ae9ab8ea1f9f0d030fe04562cf6bd1a0c8b",
       "dataset_revision": "hf-revision-or-commit",
       "checked_at": "2026-05-25T00:00:00Z",
@@ -207,6 +212,10 @@ as durable prose; exact model IDs live here because they change over time.
       "split_counts": {"rust": 94},
       "features_hash": "sha256:<hex>",
       "datasets_server_size_partial": false,
+      "first_rows_truncated_observed": true,
+      "selected_row_fetch_method": "pinned_revision_parquet_or_datasets_library",
+      "full_selected_row_hash": "sha256:<hex>",
+      "agent_visible_row_hash": "sha256:<hex>",
       "source_field_policy_hash": "sha256:<hex>"
     }
   ],
@@ -310,8 +319,9 @@ Also exclude or downgrade rows when:
 
 - the public dataset revision, row count, split count, or source-field
   quarantine summary is missing from `benchmark-source-snapshot.json`;
-- the Hugging Face dataset SHA, feature hash, or datasets-server `partial=false`
-  status is missing for a public Hugging Face task source;
+- the Hugging Face dataset SHA, source role, feature hash, selected-row full
+  hash, agent-visible row hash, or datasets-server `partial=false` status is
+  missing for a public Hugging Face task source;
 - the task source changed after preregistration and before the run without a new
   task-set hash;
 - the model was addressed through a mutable alias without a provider-visible

@@ -125,6 +125,7 @@ Code `/loop` runbook.
 - [Datadog Bits AI eval loop](docs/research/datadog-bits-ai-eval-loop.md)
 - [Bundle-value seed corpus](docs/research/bundle-value-seed-corpus.md)
 - [A1 task source freeze check](docs/research/a1-task-source-freeze-check.md)
+- [A1 source drift and leakage recheck](docs/research/a1-source-drift-and-leakage-recheck.md)
 - [Phase 0 telemetry overlay contract](docs/research/phase0-telemetry-overlay-contract.md)
 - [A1 eval result ledger and model refresh](docs/research/a1-eval-result-ledger-and-model-refresh.md)
 - [Bundle-value Phase 0 runbook](docs/research/bundle-value-phase0-runbook.md)

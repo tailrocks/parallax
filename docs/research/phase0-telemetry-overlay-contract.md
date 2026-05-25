@@ -26,7 +26,10 @@ The eval result must then be published through the
 so the run has model snapshots, contamination tiers, result rows, and an expiry
 date. The current public dataset SHA and feature snapshots that feed this
 contract are recorded in
-[A1 task source freeze check](a1-task-source-freeze-check.md).
+[A1 task source freeze check](a1-task-source-freeze-check.md). The companion
+[A1 source drift and leakage recheck](a1-source-drift-and-leakage-recheck.md)
+adds a stricter rule: datasets-server `first-rows` previews are not row-hash
+evidence when they report `truncated=true`.
 
 ## Current Primary-Source Checks
 
@@ -37,7 +40,7 @@ contract are recorded in
 | [SWE-bench Docker setup](https://www.swebench.com/SWE-bench/guides/docker_setup/) | SWE-bench isolation has real resource cost: large disk needs, cache levels, and worker-count tradeoffs. | The overlay runbook must record container image/cache/resource settings because telemetry differences can come from harness resource pressure. |
 | [SWE-bench-Live MultiLang](https://huggingface.co/datasets/SWE-bench-Live/MultiLang) | Current rows expose fields beyond the issue/fix/test minimum: `patch`, `test_patch`, `problem_statement`, `hints_text`, `all_hints_text`, `commit_urls`, `commit_url`, rebuild/test/print commands, `log_parser`, fail-to-pass/pass-to-pass tests, and `docker_image`. | The overlay must use a source-field policy. Runner fields can drive the harness, but hints, resolving commit URLs, patches, test patches, and verifier IDs cannot silently become agent context. |
 | [SWE-bench-Live OS-bench](https://huggingface.co/datasets/SWE-bench-Live/OS-bench) and [Windows](https://huggingface.co/datasets/SWE-bench-Live/Windows) | Current public platform slices expose patch/test fields, Docker images, rebuild/test/print commands, log parsers, platform/language metadata, hints, commit URLs, and verifier lists. The Windows viewer currently shows 61 rows across eight language values. | OS/CLI/platform tasks are useful, but generated statements, parser bodies, platform labels, hints, commit URLs, and patch/test metadata are contamination-sensitive. Freeze dataset revision and use them for harness/grading only unless an allowlist explicitly marks a field agent-visible. |
-| [SWE-rebench V2](https://huggingface.co/datasets/nebius/SWE-rebench-V2) and [SWE-rebench V2 PRs](https://huggingface.co/datasets/nebius/SWE-rebench-V2-PRs) | Current rows include scale-friendly fields such as `install_config`, `interface`, `pr_description`, `problem_statement`, `meta`, `llm_metadata`, patches, test patches, and fail/pass test IDs. The PR-scale set exposes long `hints_text` and generated task metadata. | Large automatically collected corpora require stricter field-level quarantine than small curated tasks. LLM metadata, generated interfaces, hints, and PR descriptions must be audited before use and should not feed hypotheses by default. |
+| [SWE-rebench V2](https://huggingface.co/datasets/nebius/SWE-rebench-V2) and [SWE-rebench V2 PRs](https://huggingface.co/datasets/nebius/SWE-rebench-V2-PRs) | Current rows include scale-friendly fields such as `install_config`, `interface`, `pr_description`, `problem_statement`, `meta`, `llm_metadata`, patches, test patches, and fail/pass test IDs. The PR-scale set exposes long `hints_text` and generated task metadata. The Nebius org also exposes trajectory and leaderboard/result datasets. | Large automatically collected corpora require stricter field-level quarantine than small curated tasks. LLM metadata, generated interfaces, hints, and PR descriptions must be audited before use and should not feed hypotheses by default. Trajectory and leaderboard/result datasets are excluded from task-source use unless the experiment is explicitly about contamination. |
 | [Terminal-Bench](https://www.tbench.ai/) | Terminal-Bench measures agents in terminal environments and publishes task/verifier style examples; it also includes a public canary warning against training contamination. | Parallax Phase 0 should borrow the task/verifier discipline and include contamination/leakage canaries in committed artifacts. |
 | [OpenTelemetry semantic conventions 1.41.0](https://opentelemetry.io/docs/specs/semconv/) | OTel provides common semantic attributes across traces, metrics, logs, events, CLI, CI/CD, process, exception, and VCS domains. | The overlay should use OTel names where possible, while marking development-status conventions as provisional. |
 | [OpenTelemetry CLI spans](https://opentelemetry.io/docs/specs/semconv/cli/cli-spans/) | CLI span conventions require executable name, exit code, PID, and `error.type` for non-zero exits; command args are recommended but should not be collected by default without sanitization. | Phase 0 command telemetry must capture exit/error status and sanitized args, never raw argv by default. |
@@ -60,6 +63,7 @@ The overlay is an **eval fixture**, not a product pipeline:
 | Can Arm C be only a hand-written Markdown summary? | No. The bundle JSON is canonical; Markdown and MCP text are projections with hashes. |
 | Can perfect trace IDs be invented? | Only as harness span IDs with `observed_from_harness`; never claim production-grade trace linkage. |
 | Can missing production telemetry be hidden? | No. Missing spans, SDK events, deploys, frontend breadcrumbs, or metrics appear in `missing_evidence`. |
+| Can Hugging Face `first-rows` preview rows be used as source row hashes? | No. Checked previews returned `truncated=true`; selected rows must be fetched in full from pinned dataset revisions before hashing and field separation. |
 
 ## Source Field Policy
 
@@ -80,9 +84,11 @@ Use these zones:
 | `public_audit` | Dataset name, source version/check date, task ID, repo, base commit, language, license, artifact hashes. | Yes in manifests; not necessarily in prompts. | Safe for committed audit artifacts, but agent prompts should receive only what the selected arm needs. |
 
 For moving public datasets, `public_audit` also includes dataset revision,
-row-count snapshot, split-count snapshot, source checked timestamp, and source
-field policy hash. A task selected from a mutable dataset cannot count toward A1
-unless these values are frozen before the agent run.
+source role, row-count snapshot, split-count snapshot, source checked timestamp,
+`first_rows_truncated_observed`, selected-row fetch method, full selected-row
+hash, agent-visible row hash, and source field policy hash. A task selected from
+a mutable dataset cannot count toward A1 unless these values are frozen before
+the agent run.
 
 Every task directory must include `source-field-policy.json` or an equivalent
 section in `provenance.md` that records, for each source field:

@@ -1089,7 +1089,12 @@ leg, especially sources with Rust or multilingual tasks, then add a Parallax
 telemetry overlay with explicit provenance labels. Do not rely on random public
 GitHub issues unless they have a pre-fix snapshot, isolated fix, deterministic
 verifier, runnable environment, observable failure, and generated or real
-telemetry artifacts.
+telemetry artifacts. For moving public Hugging Face sources, record explicit
+source roles, dataset SHAs, feature hashes, `first_rows_truncated_observed`,
+full selected-row hashes from pinned revisions, and agent-visible row hashes
+after source-field policy. Do not use trajectory, leaderboard, result, or
+solved-run datasets as task sources unless the experiment is explicitly a
+contamination study.
 
 I want to understand:
 - what already exists
