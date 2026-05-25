@@ -32,6 +32,9 @@ make data visible synchronously on the write, sub-second, no flush barrier.**
 
 This matches `greptimedb-internals.md` (queryable on memtable insert via
 `committed_sequence`) and `clickhouse-internals.md` (queryable on part commit).
+**Re-verified Run 83 (no drift):** insert 1 row → immediate `SELECT count()` = 1 on both
+(ClickHouse with live `async_insert=1`/`wait_for_async_insert=1` → ack blocks until buffer
+flush, visible on ack; GreptimeDB memtable visible via `committed_sequence`).
 
 ## The real write-path difference: small-write absorption
 

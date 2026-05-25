@@ -3386,6 +3386,36 @@ volume) — the workaround/fix matters more as data grows.
 **Reproduce.** `EXPLAIN ANALYZE` the join forms above on GreptimeDB, read the `spans_idx`
 `UnorderedScan output_rows` (1,000,000 = no pushdown; 14 = pruned).
 
+### Run 83 — 2026-05-25 — Write-path freshness re-verified (axis #1 tie: both visible-on-write)
+
+**Pass target.** Re-verify the top-axis (#1, ingest-to-queryable) load-bearing tie: a write
+is **visible-on-write on both engines, no flush barrier** (Run 5).
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned —
+latest, no bump).
+
+**Verified:** insert 1 row → immediately `SELECT count() WHERE v='marker'`:
+
+| Engine | immediate count | mechanism |
+| --- | --- | --- |
+| ClickHouse | **1** (visible) | `async_insert=1` + `wait_for_async_insert=1` (live defaults) → ack blocks until the buffer flushes to a part → visible on ack (no separate merge) |
+| GreptimeDB | **1** (visible) | row in the mutable memtable, visible via `committed_sequence` (no flush) |
+
+**Verdict.** **Freshness tie reproduces — no drift.** Both make an acked write queryable
+immediately, no flush/merge required. (Mechanism nuance, Run 33/56: ClickHouse's default
+`async_insert=1`/`wait=1` means the ack *absorbs* the ≤200 ms buffer window — visible on ack
+but the ack waits; `wait=0` would give a fast ack + a brief invisible/lossy window.
+GreptimeDB's memtable is visible+durable on write with no window.) Axis-#1 freshness stays a
+tie; the write-path *differences* that favour GreptimeDB are small-write absorption + native
+OTLP/Prom ingest (`write-path-and-ingestion.md`), not freshness latency. Status: **confirmed.**
+
+**Method gotcha (logged):** GreptimeDB v1.0.2 reserves **`id`** as a keyword — `CREATE TABLE …
+(id …)` errors ("Cannot use keyword 'id'"); quote it (`"id"`). Joins the reserved set
+(`service`/`name`/`status`/`level`/`value`/`v`-ok). Matters for hand-written DDL.
+
+**Reproduce.** `INSERT INTO t VALUES (…)` then immediately `SELECT count() FROM t WHERE …`
+on each — count=1 on both, no flush.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
