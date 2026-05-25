@@ -56,6 +56,11 @@ has to keep the evidence granular:
   warn that sensitive baggage can reach unintended downstream resources such as
   third-party APIs
   ([OpenTelemetry baggage](https://opentelemetry.io/docs/concepts/signals/baggage/)).
+- MCP `2025-11-25` separates human-readable text content from JSON
+  `structuredContent` and lets tools advertise an `outputSchema`; RFC 8785/JCS
+  provides deterministic, hashable JSON
+  ([MCP tools specification](https://modelcontextprotocol.io/specification/2025-11-25/server/tools),
+  [RFC 8785](https://www.rfc-editor.org/rfc/rfc8785.html)).
 
 Internal sources:
 
@@ -102,6 +107,7 @@ docs/research/correlation-reliability-results.md
 docs/research/correlation-reliability-runs/<run_id>/manifest.json
 docs/research/correlation-reliability-runs/<run_id>/anchor-ledger.jsonl
 docs/research/correlation-reliability-runs/<run_id>/manual-audit.jsonl
+docs/research/correlation-reliability-runs/<run_id>/projection-audit.jsonl
 docs/research/correlation-reliability-runs/<run_id>/instrumentation-repairs.jsonl
 docs/research/correlation-reliability-runs/<run_id>/hashes.sha256
 ```
@@ -142,6 +148,14 @@ Each run gets exactly one manifest:
   "sampling_policy": "tail_sample_errors_and_10pct_other",
   "log_trace_context_format": "otel_log_fields",
   "baggage_policy": "first_party_opaque_allowlist_v1",
+  "bundle_schema_ref": {
+    "uri": "https://parallax.dev/schemas/evidence-bundle/v0.json",
+    "hash": "sha256:...",
+    "canonicalization": "jcs-rfc8785"
+  },
+  "projection_surfaces_required": ["bundle_json", "bundle_markdown", "cli_output", "http_api", "mcp_structuredContent"],
+  "mcp_output_schema_required": true,
+  "frontend_capture_claim_level": "not_measured|projection_pass|frontend_tiny_default_ready",
   "release_source": "ci_release_marker",
   "deploy_source": "github_actions_environment_deploy",
   "redaction_policy": "parallax-default-deny-v0",
@@ -201,6 +215,15 @@ Every sampled anchor gets one row in `anchor-ledger.jsonl`:
   "weak_only_bundle": false,
   "missing_evidence": ["missing_async_link"],
   "bundle_artifact_hash": "sha256:...",
+  "bundle_schema_ref_hash": "sha256:...",
+  "canonical_bundle_hash": "sha256:...",
+  "projection_manifest_hash": "sha256:...",
+  "projection_surfaces_checked": ["bundle_json", "bundle_markdown", "cli_output", "http_api", "mcp_structuredContent"],
+  "projection_equivalence_pass": true,
+  "mcp_structured_content_valid": true,
+  "safety_fields_only_in_meta": false,
+  "frontend_capture_claim_level": "not_applicable|projection_pass|frontend_tiny_default_ready",
+  "frontend_projection_pass": null,
   "redaction_report_hash": "sha256:..."
 }
 ```
@@ -244,6 +267,26 @@ applies and was expected but absent.
   `same_trace_span_count` or `strong_edge_count`.
 - Every expected missing-evidence category from the A4 gate must be represented
   when absent. Absence of the absence report blocks agent-visible bundles.
+- Agent-visible A4 bundles require `schema_ref`, post-redaction
+  `canonical_hash`, `projection_manifest`, `access`, `redaction_report`, and
+  `missing_evidence` in the canonical JSON. `bundle_artifact_hash` alone is not
+  enough because it can describe an unsafe or stale rendering.
+- CLI, HTTP, and MCP projections must carry the same canonical bundle hash for
+  the same authorized anchor request. A projection hash mismatch, missing
+  projection row, or unscanned output path blocks the anchor from agent-visible
+  A4 counts.
+- MCP bundle output counts only when `structuredContent` validates against the
+  evidence-bundle `outputSchema`; text-only JSON/Markdown can be a demo
+  projection but not A4 proof.
+- Safety fields such as `missing_evidence`, `redaction_report`,
+  `source_field_policy`, and cited edge strengths must live in canonical JSON,
+  not only in MCP `_meta`, descriptions, annotations, or prompt-wrapper
+  metadata.
+- Frontend anchors can count for `frontend_cross_tier_pass` only when the
+  browser-side run has fresh frontend capture rows for trace propagation,
+  metadata privacy, source-field policy, and projection safety. A trace
+  continuation row without those browser safety rows is a correlation data
+  point, not product wording.
 
 ## Manual Audit Row
 
@@ -266,6 +309,9 @@ Manual review rows go in `manual-audit.jsonl`:
   "resource_scope_checked": true,
   "sampling_gap_explained": true,
   "baggage_privacy_checked": true,
+  "canonical_projection_checked": true,
+  "mcp_structured_content_checked": true,
+  "frontend_capture_rows_checked": true,
   "bundle_next_step_useful": true,
   "verdict": "pass",
   "notes": "Medium deploy edge downgraded because first-seen history contradicted the rollout window."
@@ -341,7 +387,7 @@ Use these claim levels in `correlation-reliability-results.md`:
 | `synthetic_only` | Only generator or fault-injected runs exist. | "Correlation model has been tested on fixtures." |
 | `backend_mvp_measured` | Real backend anchors were measured, but one or more pass targets failed or sample size was too small. | "Best-effort backend context with explicit missing evidence." |
 | `backend_mvp_pass` | Real backend error anchors pass the A4 backend targets. | "Evidence-backed backend request reconstruction for instrumented services." |
-| `frontend_cross_tier_pass` | Backend targets pass and real frontend anchors pass continuation and missing-evidence targets. | "Evidence-backed frontend-to-backend reconstruction for configured first-party routes." |
+| `frontend_cross_tier_pass` | Backend targets pass, real frontend anchors pass continuation and missing-evidence targets, and the corresponding frontend capture safety rows are fresh for trace propagation, metadata privacy, source-field policy, and projection safety. | "Evidence-backed frontend-to-backend reconstruction for configured first-party routes." |
 | `async_pass` | Queue/background anchors pass the async target. | "Evidence-backed async workflow reconstruction for instrumented queues." |
 | `mixed_anchor_pass` | Backend, frontend, CI, CLI, and agent-session anchors pass their target slices. | "Evidence-backed execution context across configured engineering workflows." |
 | `claim_expired` | A previous pass is older than the freshness window or a rerun trigger occurred. | "Previously measured; rerun required." |
@@ -363,6 +409,9 @@ Rerun A4 when any of these change:
 - log format or log trace-context injection method;
 - release/deploy marker source;
 - schema version for evidence bundle edges or missing-evidence categories;
+- evidence-bundle canonicalization, projection renderer, MCP output schema, or
+  access-surface projection behavior;
+- frontend capture safety claim level or projection safety result;
 - redaction policy that can remove join keys;
 - a new anchor class enters the product claim;
 - 90 days pass after a public product claim based on the previous run.
@@ -391,4 +440,6 @@ A4 can pass only through a row-level audit of real telemetry. The ledger keeps
 Parallax honest: strong edges must be deterministic, missing evidence must be
 explicit, trace context must be valid and scoped, sampling gaps must be
 explained, baggage-derived joins must be privacy-safe, repairs must be recorded,
-and product claims must expire when the instrumentation surface changes.
+agent-visible projections must preserve the same canonical bundle hash, and
+product claims must expire when the instrumentation or projection surface
+changes.

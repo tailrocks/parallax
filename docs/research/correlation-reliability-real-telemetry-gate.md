@@ -70,10 +70,13 @@ Internal sources:
   identifies CORS, sampling coherence, and browser gaps as the cross-tier failure
   modes.
 - [Frontend capture safety ledger](frontend-capture-safety-ledger.md) defines
-  the browser/route, source-map, CORS, privacy, export, and projection rows that
-  must be fresh before frontend anchors can support product wording.
+  the browser/route, source-map, CORS, privacy, export, canonical hash,
+  projection-manifest, and MCP structured-output rows that must be fresh before
+  frontend anchors can support product wording.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) already
-  distinguishes strong, medium, weak, and inferred edges.
+  distinguishes strong, medium, weak, and inferred edges, and requires
+  `schema_ref`, `canonical_hash`, `projection_manifest`, and access fields for
+  agent-visible CLI/API/MCP bundles.
 
 ## What To Measure
 
@@ -93,6 +96,9 @@ Measure by anchor class:
 
 For each anchor, build the bundle using only evidence actually present in the
 telemetry and metadata stores. Do not backfill synthetic links for the audit.
+For any agent-visible claim, also emit the canonical bundle JSON plus projection
+hashes for file, CLI, HTTP, and MCP output paths; otherwise A4 has measured
+correlation rows but has not proven safe agent context.
 
 ## Core Metrics
 
@@ -117,6 +123,7 @@ telemetry and metadata stores. Do not backfill synthetic links for the audit.
 | `weak_only_bundle_rate` | Fraction of bundles with no strong or medium edges. |
 | `false_strong_edge_rate` | Manual-audit rate where a strong edge is structurally present but semantically wrong because of instrumentation bugs. |
 | `missing_evidence_report_rate` | Fraction of bundles that correctly list every expected missing evidence category. |
+| `projection_equivalence_rate` | Fraction of agent-visible bundles whose canonical JSON, CLI output, HTTP API result, and MCP `structuredContent` carry the same post-redaction canonical bundle hash and complete safety fields. |
 
 Expected missing-evidence categories:
 
@@ -145,6 +152,10 @@ Expected missing-evidence categories:
 - `duplicate_span_identity`
 - `clock_skew_suspected`
 - `redaction_removed_required_field`
+- `missing_canonical_bundle_hash`
+- `projection_hash_mismatch`
+- `mcp_structured_content_missing`
+- `mcp_output_schema_invalid`
 
 ## Manual Audit
 
@@ -183,6 +194,7 @@ Initial targets for the Rust backend/tiny-tier wedge:
 | `weak_only_bundle_rate` | <= 20 percent for the target MVP anchor classes. |
 | `false_strong_edge_rate` | <= 5 percent in manual audit. |
 | `missing_evidence_report_rate` | 100 percent for expected categories. |
+| `projection_equivalence_rate` | 100 percent for agent-visible bundles. |
 
 Separate frontend/cross-tier target:
 
@@ -213,6 +225,7 @@ environments, lower the product claim before lowering the safety bar.
 | Baggage privacy fails | Disable baggage-derived session joins and treat the run as a redaction/privacy failure, not an A4 pass. |
 | False strong edges exceed target | Downgrade the edge class or fix instrumentation before agent exposure. |
 | Missing evidence is not reported | Block agent-visible bundles; absence reporting is a safety invariant. |
+| Projection equivalence fails | Keep the correlation result as internal measurement only; do not expose the bundle through CLI/API/MCP or agent prompts until canonical hashes and safety fields match. |
 | Release/deploy context missing | Do not rank release-regression hypotheses above medium/weak. |
 
 The goal is not to force a pass. A failed A4 gate is useful: it tells Parallax
@@ -264,6 +277,7 @@ levels, and refresh rules are defined in the
   "weak_only_bundle_rate": 0.14,
   "false_strong_edge_rate": 0.03,
   "missing_evidence_report_rate": 1.0,
+  "projection_equivalence_rate": 1.0,
   "verdict": "pass_backend_mvp"
 }
 ```
@@ -285,8 +299,8 @@ data to pass A4.
 - [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
   defines the browser-to-backend propagation path and its failure modes.
 - [Frontend capture safety ledger](frontend-capture-safety-ledger.md) defines
-  the browser-side source-map, CORS, privacy, export, overhead, and projection
-  rows consumed by frontend correlation claims.
+  the browser-side source-map, CORS, privacy, export, overhead, canonical hash,
+  and projection rows consumed by frontend correlation claims.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
   edge and missing-evidence fields that must be audited.
 - [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md)
@@ -304,6 +318,7 @@ data to pass A4.
 
 A4 is true only if real telemetry contains enough deterministic edges. Measure
 that before marketing lifecycle reconstruction. If strong edges are common,
-Parallax can claim evidence-backed reconstruction for the target wedge. If they
-are rare, the product must become honest best-effort context plus tooling that
-helps users fix instrumentation gaps.
+and the same safe canonical bundle survives CLI/API/MCP projection, Parallax can
+claim evidence-backed reconstruction for the target wedge. If strong edges are
+rare or projections diverge, the product must become honest best-effort context
+plus tooling that helps users fix instrumentation and access-surface gaps.
