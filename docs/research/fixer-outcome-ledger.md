@@ -20,8 +20,9 @@ The central rule:
 > No "Parallax fixes issues", "agent opens correct PRs", "accepted-fix feedback
 > loop", "autonomous fix outcome learning", or "fixer business seam validated"
 > claim without dated result rows linking evidence bundle -> fixer run -> agent
-> session -> patch/branch/PR -> CI/checks -> review/merge/revert/recurrence ->
-> human or policy verdict.
+> session -> provider agent task when used -> patch/branch/PR -> CI/checks ->
+> review/merge/revert/recurrence -> human or policy verdict, with
+> source-field, redaction, raw-ref, and projection policy status preserved.
 
 Parallax itself still does not fix. This ledger measures the separate fixer
 component and the outcome records that flow back into Parallax.
@@ -30,12 +31,14 @@ component and the outcome records that flow back into Parallax.
 
 | Source | What it shows | Parallax implication |
 | --- | --- | --- |
+| [GitHub REST API docs](https://docs.github.com/rest/pulls/pulls) | GitHub's REST pages now identify API version `2026-03-10` as latest on the checked pages. | Fixer runs must record provider API version, not just provider name. |
 | [GitHub pull request REST API](https://docs.github.com/rest/pulls/pulls) | GitHub exposes pull request creation, head/base refs, requested reviewers, diff/patch URLs, merge state, and related issue/status URLs. | PR creation is measurable plumbing, not a fix-success signal. Store branch, head SHA, PR URL, requested reviewers, and patch refs separately from outcome. |
 | [GitHub pull request reviews API](https://docs.github.com/rest/pulls/reviews) | Pull request reviews are grouped review objects with states such as approved or changes requested, submitted timestamps, commit IDs, and author association. | Human review state must be a first-class outcome row. "Opened" and "approved" are different claims. |
 | [GitHub Actions workflow runs API](https://docs.github.com/en/rest/actions/workflow-runs) and [check runs API](https://docs.github.com/v3/checks/runs) | Workflow/check rows include head SHA, status, conclusion, job/log/artifact URLs, pull request linkage, and rerun metadata. | CI evidence must be tied to the exact fixer head SHA and run attempt; stale, skipped, failed, timed-out, and rerun outcomes matter. |
 | [GitHub webhooks](https://docs.github.com/en/webhooks/webhook-events-and-payloads) | GitHub emits events for pull requests, pull request reviews, check runs, check suites, workflow jobs, and workflow runs. | The production loop should consume webhook/event updates instead of relying only on polling or final snapshots. |
 | [GitHub rulesets and required status checks](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets) | Required status checks can gate merges, and repositories can bind checks to expected sources. | Fixer success must respect repository policy. A PR that cannot satisfy required checks is not a successful fix even if the patch looks plausible. |
-| [GitHub Copilot coding agent](https://docs.github.com/en/copilot/concepts/about-copilot-coding-agent) and [Copilot PR review guidance](https://docs.github.com/copilot/how-tos/agents/copilot-coding-agent/reviewing-a-pull-request-created-by-copilot) | Copilot can work through the pull-request workflow, but GitHub documents human review before merging and says the agent cannot approve or merge its own pull request. | Human governance is the normal end state for agent PRs. Parallax should model autonomy levels and never treat L3 draft PR creation as L4/L5 completion. |
+| [GitHub Agent Tasks REST API](https://docs.github.com/en/rest/agent-tasks/agent-tasks) | GitHub exposes public-preview endpoints to start and manage Copilot cloud-agent tasks. Task rows include states, session count, and pull-request artifacts; the start endpoint accepts a prompt, model, `create_pull_request`, and `base_ref`, with "Agent tasks" permissions. | If the fixer delegates to Copilot through GitHub, Parallax must record provider task id, task state, selected model, preview status, artifact PR refs, and permission mode. A provider task is still not a fix-success signal. |
+| [GitHub Copilot coding agent](https://docs.github.com/en/copilot/concepts/about-copilot-coding-agent) and [Copilot PR review guidance](https://docs.github.com/copilot/how-tos/agents/copilot-coding-agent/reviewing-a-pull-request-created-by-copilot) | Copilot can work through the pull-request workflow. Current review guidance says Copilot PRs need thorough review, required approval may need another reviewer, and Actions workflows do not run automatically by default when Copilot pushes changes unless approved or configured. | Human governance and workflow approval are first-class outcome states. Parallax should model autonomy levels and never treat L3 draft PR creation or provider-task completion as L4/L5 completion. |
 | [Sentry Seer issue-fix API](https://docs.sentry.io/api/seer/start-seer-issue-fix/) and [Seer product docs](https://docs.sentry.io/product/ai-in-sentry/seer) | Seer can run issue-fix workflows through root cause, solution, code changes, and open PR, using Sentry telemetry and connected code repositories. | "Issue -> code changes -> PR" is already incumbent behavior. The Parallax differentiator must be evidence citation, redaction, audit, and outcome feedback. |
 | [Where Do AI Coding Agents Fail?](https://arxiv.org/abs/2601.15195) | A large-scale study of agent-authored PRs reports failures tied to task class, change size, CI, and review/alignment problems. | The ledger must stratify by failure class, patch size, touched files, CI status, and review outcome instead of reporting one aggregate PR-open metric. |
 | [Collaborator or Assistant?](https://arxiv.org/abs/2605.08017) | A PR lifecycle study finds agents can initiate and carry PR work while merge governance remains predominantly human. | Outcome rows must separate operational agency from terminal approval authority. |
@@ -50,9 +53,11 @@ scope.
 | --- | --- | --- |
 | `not_measured` | No run artifacts exist. Current status. | "Fixer outcome loop is designed but not run-proven." |
 | `fixture_harness_ready` | Repeatable task matrix, fixture repos, redaction fixtures, expected checks, and scoring protocol exist. | "Fixer outcome fixture harness prepared." |
-| `bundle_handoff_supported` | Fixer consumes immutable Parallax bundles with manifest, query report, redaction report, missing evidence, and raw-ref policy. | "Fixer bundle handoff works for the tested task set." |
-| `fixer_run_record_supported` | Every run records status, policy, autonomy level, tool scopes, agent session ID, and failure/no-op/timeout cases. | "Fixer runs are recorded for the tested task set." |
+| `bundle_handoff_supported` | Fixer consumes immutable Parallax bundles with manifest, query report, redaction report, source-field policy, missing evidence, and raw-ref policy. | "Fixer bundle handoff works for the tested task set." |
+| `fixer_run_record_supported` | Every run records status, policy, autonomy level, tool scopes, provider API version, optional provider task ID, agent session ID, and failure/no-op/timeout cases. | "Fixer runs are recorded for the tested task set." |
 | `pr_creation_supported` | Separate fixer can create branches and draft PRs for allowed tasks with least-privilege repo policy. | "Separate fixer can open draft PRs for tested tasks." |
+| `provider_agent_task_linkage_pass` | Copilot/GitHub Agent Tasks or similar provider-task runs are linked to task state, model, session count, artifacts, PR refs, and API preview/stability status. | "Provider agent-task linkage is recorded for tested tasks." |
+| `source_field_projection_pass` | Eval/corpus-derived bundle projections preserve source-field policy status, redaction reports, missing-evidence flags, and raw-ref denial into fixer-visible inputs. | "Fixer-visible inputs preserve safety fields for tested tasks." |
 | `evidence_citation_pass` | Every material diagnosis or PR-body claim cites bundle evidence refs or explicitly names missing evidence. | "Fixer output cites evidence for the tested tasks." |
 | `ci_check_linkage_pass` | Required tests/checks are linked to exact head SHAs and conclusions, including skipped/failed/stale/rerun cases. | "Fixer PRs link CI/check evidence for the tested tasks." |
 | `human_review_outcome_pass` | Human review state, edits, requested changes, close reasons, and verdict are recorded. | "Human review outcomes are recorded for tested fixer PRs." |
@@ -93,11 +98,13 @@ docs/research/fixer-outcome-runs/<run_id>/task-matrix.jsonl
 docs/research/fixer-outcome-runs/<run_id>/bundle-handoff-results.jsonl
 docs/research/fixer-outcome-runs/<run_id>/fixer-run-results.jsonl
 docs/research/fixer-outcome-runs/<run_id>/agent-session-linkage.jsonl
+docs/research/fixer-outcome-runs/<run_id>/provider-agent-task-results.jsonl
 docs/research/fixer-outcome-runs/<run_id>/patch-pr-results.jsonl
 docs/research/fixer-outcome-runs/<run_id>/ci-check-results.jsonl
 docs/research/fixer-outcome-runs/<run_id>/review-outcome-results.jsonl
 docs/research/fixer-outcome-runs/<run_id>/merge-revert-recurrence-results.jsonl
 docs/research/fixer-outcome-runs/<run_id>/evidence-citation-results.jsonl
+docs/research/fixer-outcome-runs/<run_id>/source-field-projection-results.jsonl
 docs/research/fixer-outcome-runs/<run_id>/policy-safety-results.jsonl
 docs/research/fixer-outcome-runs/<run_id>/claim-ledger.jsonl
 docs/research/fixer-outcome-runs/<run_id>/hashes.sha256
@@ -118,10 +125,18 @@ raw refs unless the operator explicitly approves redacted fixtures.
   "agent_product": "codex|claude_code|copilot|openhands|amp|opencode|custom",
   "agent_version": "unknown",
   "repo_provider": "github|gitlab|local_fixture|other",
+  "provider_api_versions": {
+    "github_rest": "2026-03-10|not_used",
+    "github_agent_tasks": "2026-03-10_public_preview|not_used"
+  },
+  "provider_agent_task_used": false,
   "source_repo_commit": "<git-sha>",
   "evidence_bundle_schema_version": "bundle-v0",
   "agent_session_schema_version": "agent-session-v0",
   "redaction_policy_version": "a6-default-deny-vN",
+  "source_field_policy_version": "phase0-source-field-policy-vN",
+  "projection_schema_version": "fixer-projection-vN",
+  "raw_ref_policy": "deny_dereference_by_default",
   "autonomy_level_requested": "L1|L2|L3|L4",
   "autonomy_level_max_allowed": "L1|L2|L3",
   "task_count": 0,
@@ -165,10 +180,15 @@ raw refs unless the operator explicitly approves redacted fixtures.
   "bundle_schema_version": "bundle-v0",
   "query_manifest_present": true,
   "redaction_report_present": true,
+  "source_field_policy_status": "pass|fail|not_applicable",
+  "source_field_policy_hash": "sha256:<hex>|null",
   "missing_evidence_present": true,
   "raw_ref_count": 3,
+  "raw_ref_policy": "deny_dereference_by_default",
+  "raw_ref_dereferenced": false,
   "agent_visible_leak_count": 0,
   "allowed_raw_refs": [],
+  "projection_equivalence_hash": "sha256:<hex>",
   "handoff_to_agent_success": true,
   "failure_reason": null
 }
@@ -182,6 +202,9 @@ raw refs unless the operator explicitly approves redacted fixtures.
   "task_id": "fix_task_001",
   "bundle_id": "bndl_001",
   "agent_session_id": "ags_001",
+  "provider_api_version": "github_rest:2026-03-10|not_used",
+  "provider_agent_task_id": "github-agent-task-uuid|null",
+  "provider_agent_task_api_status": "public_preview|stable|not_used",
   "requested_autonomy_level": "L3",
   "actual_autonomy_level": "L2",
   "policy_decision": "allow|downgrade|deny|human_required",
@@ -190,6 +213,28 @@ raw refs unless the operator explicitly approves redacted fixtures.
   "ended_at": "2026-05-25T00:10:00Z",
   "status": "success|failed|timeout|no_op|policy_denied",
   "failure_reason": null
+}
+```
+
+### Provider Agent Task Row
+
+```json
+{
+  "fixer_run_id": "fixrun_001",
+  "provider": "github_agent_tasks|none",
+  "provider_api_version": "2026-03-10",
+  "api_status": "public_preview",
+  "provider_agent_task_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "task_state": "queued|in_progress|completed|failed|idle|waiting_for_user|timed_out|cancelled|not_used",
+  "session_count": 1,
+  "model_requested": "gpt-5.3-codex|claude-sonnet-4.6|unknown",
+  "create_pull_request_requested": true,
+  "base_ref": "main",
+  "artifact_provider": "github|null",
+  "artifact_type": "pull|null",
+  "artifact_pr_number": 456,
+  "permission_mode": "agent_tasks_read_write|custom|unknown",
+  "result": "pass|fail|not_applicable"
 }
 ```
 
@@ -217,7 +262,9 @@ raw refs unless the operator explicitly approves redacted fixtures.
   "fixer_run_id": "fixrun_001",
   "provider": "github",
   "branch": "parallax/fix-task-001",
+  "base_sha": "<base-sha>",
   "commit_sha": "<head-sha>",
+  "provider_agent_task_id": "github-agent-task-uuid|null",
   "patch_hash": "sha256:<hex>",
   "pr_number": 456,
   "pr_url": "https://github.com/acme/repo/pull/456",
@@ -247,6 +294,9 @@ raw refs unless the operator explicitly approves redacted fixtures.
   "run_attempt": 1,
   "required_checks_total": 3,
   "required_checks_passed": 3,
+  "required_check_expected_source_match": true,
+  "copilot_workflow_human_approved": "true|false|not_applicable",
+  "workflow_auto_run_policy": "human_approval_required|auto_run_enabled|not_applicable",
   "failed_checks": [],
   "skipped_checks": [],
   "stale_checks": [],
@@ -266,6 +316,8 @@ raw refs unless the operator explicitly approves redacted fixtures.
   "reviewer_type": "human|copilot_review|external_bot|none",
   "human_reviewed": true,
   "review_decision": "approved|changes_requested|commented|closed_without_review|pending",
+  "required_human_approval_satisfied": true,
+  "agent_author_approval_counted": false,
   "requested_changes_count": 0,
   "accepted_without_edit": false,
   "edited_before_merge": true,
@@ -306,6 +358,7 @@ raw refs unless the operator explicitly approves redacted fixtures.
   "wrong_evidence_ref_count": 0,
   "query_manifest_cited": true,
   "missing_evidence_cited": true,
+  "source_field_policy_cited": true,
   "pass": true
 }
 ```
@@ -320,6 +373,9 @@ raw refs unless the operator explicitly approves redacted fixtures.
   "auto_merge_attempted": false,
   "raw_ref_access_requested": false,
   "raw_ref_access_granted": false,
+  "raw_ref_dereferenced": false,
+  "source_field_policy_status": "pass|fail|not_applicable",
+  "provider_api_preview_used": false,
   "agent_visible_leak_count": 0,
   "scope_limit_violation": false,
   "policy_pass": true
@@ -353,13 +409,29 @@ raw refs unless the operator explicitly approves redacted fixtures.
 - Draft proposal, patch diff, draft PR, non-draft PR, merge, and deployment are
   separate autonomy levels.
 - Any agent-visible secret leak fails the run regardless of PR quality.
+- Eval/corpus-derived bundle handoff fails unless source-field policy status is
+  `pass`; direct production telemetry may use `not_applicable` only with an
+  explicit reason and no mixed source rows.
+- Fixer-visible projections must not dereference raw refs by default. Raw rows,
+  raw telemetry payloads, agent transcripts, CI logs, PR comments, and review
+  notes stay refs unless a human-approved sensitive-read policy is recorded.
 - Any missing critical evidence that is not disclosed in the diagnosis or PR
   body fails the evidence-citation gate.
 - PRs generated from raw refs are not allowed unless policy and human approval
   explicitly grant that access.
+- GitHub Agent Tasks or similar provider-task completion is never fix success by
+  itself. It is an orchestration artifact that must link to PR, CI, review,
+  merge/revert, and recurrence rows.
+- Public-preview provider APIs can support fixture evidence only when the run
+  records preview status, API version, and expiry. They cannot support broad
+  stable-product wording.
 - Human edits before merge are partial credit, not "agent fixed unaided".
 - Reverted PRs, recurrence, or new linked regressions downgrade prior success.
 - Skipped, stale, timed-out, or unrelated checks do not count as passing checks.
+- Copilot-authored PR checks do not count as CI-passing unless workflow run
+  approval or an explicit auto-run policy is recorded for the exact head SHA.
+- Required human approval is not satisfied by the same agent or provider account
+  that authored the PR.
 - Outcome rows are append-only. Do not overwrite an opened PR row after review,
   merge, revert, or recurrence; append the new state.
 - The business-model fixer seam cannot be validated from PR creation alone. It
@@ -385,6 +457,8 @@ Current claim level: not_measured
 | Fixture tasks | 0 | >=10 | Pending |
 | Bundle handoff pass rate | 0% | 100% | Pending |
 | Agent-visible canary leaks | 0 | 0 | Pending |
+| Source-field/projection pass rate | 0% | 100% | Pending |
+| Provider agent-task linkage rate | 0% | 100% when provider tasks are used | Pending |
 | Evidence-citation pass rate | 0% | >=95% | Pending |
 | Required-check linkage rate | 0% | 100% | Pending |
 | Draft PR creation pass rate | 0% | >=80% for eligible tasks | Pending |
@@ -417,6 +491,15 @@ Allowed after `pr_creation_supported`:
 
 > A separate fixer can open draft PRs for tested tasks.
 
+Allowed after `provider_agent_task_linkage_pass`:
+
+> Provider agent-task artifacts are linked to fixer outcomes for tested tasks.
+
+Allowed after `source_field_projection_pass`:
+
+> Fixer-visible inputs preserve source-field, redaction, missing-evidence, and
+> raw-ref policy fields for tested tasks.
+
 Allowed after `human_review_outcome_pass`:
 
 > Fixer PR review outcomes are recorded for tested tasks.
@@ -433,6 +516,8 @@ Avoid:
 - "opened PR equals fixed";
 - "self-healing";
 - "agent PRs are correct";
+- "Copilot task completed equals fixed";
+- "GitHub Agent Tasks integration is stable" while the API is public preview;
 - "validated fixer business seam";
 - "auto-merge safe";
 - "fixer learns from outcomes" before outcome rows alter a policy, retrieval,
@@ -444,10 +529,13 @@ Mark affected claims `claim_expired` when:
 
 - GitHub, GitLab, Sentry, Copilot, OpenHands, Codex, Claude Code, Amp, or
   OpenCode changes the relevant PR/review/check/agent API surface materially;
+- GitHub REST API version, Agent Tasks preview/stability status, or task state
+  model changes;
 - branch protection, rulesets, required checks, or repository permission policy
   changes;
-- Parallax bundle schema, fixer outcome schema, agent-session schema, or
-  redaction policy changes;
+- Parallax bundle schema, fixer outcome schema, agent-session schema,
+  source-field policy, projection schema, raw-ref policy, or redaction policy
+  changes;
 - the fixer model, agent product, prompt, tool policy, or task matrix changes;
 - 90 days pass since the last run during discovery;
 - a prior accepted fixer PR is later reverted, linked to recurrence, or marked

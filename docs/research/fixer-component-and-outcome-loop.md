@@ -30,7 +30,8 @@ improves future evidence selection."
 | --- | --- | --- |
 | [Sentry Seer issue-fix API](https://docs.sentry.io/api/seer/start-seer-issue-fix/) | Sentry exposes an asynchronous issue-fix endpoint that can identify root cause, propose a solution, generate code changes, and create a pull request; callers can choose stopping points from root cause through open PR. | The Sentry-like "issue -> fix PR" workflow already exists. Parallax must differentiate below that workflow with open evidence bundles, self-hosted data ownership, and outcome instrumentation. |
 | [Sentry Seer GA changelog](https://sentry.io/changelog/seer-sentrys-ai-debugger-is-generally-available/) | Sentry says Seer uses issue context such as stack traces, environment details, spans, commits, beta logs, and profiling data, assigns actionability scores, and can open PRs automatically based on project settings. | Actionability scoring and automatic PRs are now incumbent features. Parallax should treat "should this issue be fixed by agent?" as a measured gate, not marketing copy. |
-| [GitHub Copilot cloud-agent docs](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/cloud-agent/start-copilot-sessions) | Copilot can be assigned issues, started from GitHub, IDEs, mobile, CLI, MCP, or failing Actions; it creates pull requests, pushes changes, and requests human review. | PR creation, branch pushing, and human-review routing are platform primitives. Parallax should integrate with them rather than rebuild GitHub workflow plumbing in core. |
+| [GitHub Copilot cloud-agent docs](https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-cloud-agent) and [Copilot review guidance](https://docs.github.com/en/copilot/how-tos/copilot-on-github/use-copilot-agents/review-copilot-output) | Copilot can operate through the pull-request workflow. Current review guidance says Copilot PRs deserve normal review, required approval can require another reviewer, and Actions workflows do not run automatically by default on Copilot pushes unless approved or configured. | PR creation, branch pushing, review routing, and workflow approval are platform primitives. Parallax should integrate with them, record human/workflow gates, and avoid treating provider completion as fix success. |
+| [GitHub Agent Tasks REST API](https://docs.github.com/en/rest/agent-tasks/agent-tasks) | GitHub exposes public-preview endpoints to start and manage Copilot cloud-agent tasks with prompt, model, `create_pull_request`, `base_ref`, task states, session counts, and pull-request artifacts. | A fixer adapter may call provider agent-task APIs instead of owning every branch/PR primitive, but outcome records must preserve provider task id, API version, preview status, model, state, permission mode, and artifacts. |
 | [GitHub Agentic Workflows assign-to-copilot](https://github.github.com/gh-aw/reference/assign-to-copilot/) | Workflow automation can assign Copilot to issues/PRs, route cross-repository PR creation, and requires fine-grained PAT permissions for assignment. | The fixer needs explicit repo/branch/permission policy. Cross-repo issue-to-code routing is real and must be captured in outcome records. |
 | [GitHub Copilot for Jira preview](https://github.blog/changelog/2026-03-05-github-copilot-coding-agent-for-jira-is-now-in-public-preview/) | Jira issues can be assigned to Copilot; Copilot implements changes, opens draft PRs, posts updates, asks clarifying questions, and follows existing review/approval rules. | Issue tracker -> agent -> PR is becoming a standard integration flow. Parallax should store the evidence trail across tracker, repo, CI, agent, and runtime recurrence. |
 | [OpenHands GitHub Action](https://docs.openhands.dev/openhands/usage/run-openhands/github-action) | OpenHands can be triggered from issues via label or mention, attempts resolution, opens a PR, and supports iterative feedback through comments and review threads. | Open-source fixer patterns exist. Parallax should not hard-code one fixer; it should define an adapter/event contract. |
@@ -65,7 +66,8 @@ The first request from fixer to Parallax should be read-only:
     "provider": "github",
     "url": "https://github.com/acme/checkout",
     "base_ref": "main",
-    "head_policy": "new_branch_only"
+    "head_policy": "new_branch_only",
+    "provider_agent_task_policy": "disabled|allowed_preview|allowed_stable_only"
   },
   "limits": {
     "max_bundle_tokens": 30000,
@@ -75,6 +77,8 @@ The first request from fixer to Parallax should be read-only:
   },
   "safety": {
     "redaction_policy": "redact-v1",
+    "source_field_policy": "phase0-source-field-policy-v1",
+    "projection_raw_ref_dereference": "deny",
     "raw_access": "deny",
     "production_mutation": "deny"
   }
@@ -87,9 +91,12 @@ Parallax returns a normal evidence bundle plus a `fixer_context` block:
 | --- | --- |
 | `bundle_id` | Immutable context object consumed by the fixer. |
 | `bundle_hash` | Canonical hash for replay and projection equivalence. |
+| `source_field_policy_status` | Provenance/source-field status for eval, corpus, benchmark, or mixed-source bundles. |
+| `raw_ref_policy` | Whether raw refs are denied, listed only, or human-readable under a sensitive-read approval. |
 | `evidence_strength_summary` | Counts of strong/medium/weak/inferred edges. |
 | `missing_evidence` | Explicit blockers to autonomy. |
 | `allowed_raw_refs` | Usually empty for Phase 1/2; raw access is human-scoped. |
+| `provider_task_policy` | Whether this request may start a provider agent task such as GitHub Copilot Agent Tasks. |
 | `recommended_autonomy_level` | `diagnose_only`, `propose_patch`, or `draft_pr_allowed`. |
 | `required_validation` | Tests, commands, or manual checks the fixer must run before reporting success. |
 
@@ -103,6 +110,15 @@ The fixer writes back an append-only outcome record, not a vague "fixed" flag:
   "bundle_id": "bndl_01J...",
   "fixer_run_id": "fixrun_01J...",
   "agent_session_id": "ags_01J...",
+  "provider_agent_task": {
+    "provider": "github_agent_tasks|none",
+    "api_version": "2026-03-10",
+    "api_status": "public_preview|stable|not_used",
+    "task_id": null,
+    "model": null,
+    "state": "not_used",
+    "create_pull_request": false
+  },
   "repo": "github.com/acme/checkout",
   "base_ref": "main",
   "head_ref": "parallax/iss-8b21-empty-discount-rules",
@@ -122,8 +138,11 @@ The fixer writes back an append-only outcome record, not a vague "fixed" flag:
   ],
   "human_review": {
     "status": "pending|approved|changes_requested|closed",
-    "reviewer_refs": []
+    "reviewer_refs": [],
+    "required_human_approval_satisfied": false
   },
+  "source_field_policy_status": "pass|fail|not_applicable",
+  "raw_ref_dereferenced": false,
   "merge": {
     "status": "unmerged|merged|reverted",
     "merge_commit": null,
@@ -150,7 +169,7 @@ non-recurrence. Parallax should model that sequence, not collapse it.
 | `L0 observe` | Store issue, telemetry, bundle, and human investigation notes. | Any valid bundle. |
 | `L1 diagnose` | Produce evidence-cited diagnosis and next checks. | Strong or medium evidence, or explicit inconclusive output. |
 | `L2 propose_patch` | Produce patch diff or PR plan, no branch push. | A1 bundle-value gate positive for this failure class; redaction passed; tests identified. |
-| `L3 draft_pr` | Create branch and draft PR, request human review. | Same as L2 plus repo permission policy, validation commands, patch-size limits, and no missing critical evidence. |
+| `L3 draft_pr` | Create branch and draft PR, or start a provider task that creates a draft PR artifact, then request human review. | Same as L2 plus repo permission policy, validation commands, provider API policy if used, patch-size limits, and no missing critical evidence. |
 | `L4 auto_pr` | Automatically open PR for high-actionability issues. | Later only; requires per-project setting, actionability threshold, passing validation, and rollback/revert tracking. |
 | `L5 auto_merge/deploy` | Merge or deploy without human approval. | Out of scope for Parallax MVP and should remain rejected until a separate production-control safety program exists. |
 
@@ -165,10 +184,12 @@ The fixer should not ship before these gates pass:
 | --- | --- |
 | A1 bundle value | Bundles beat raw telemetry dumps for the target failure class, or the product claim is narrowed to audit/retention. |
 | Redaction | The [redaction pipeline](redaction-pipeline-and-secret-safety.md) and [detector toolchain](redaction-detector-toolchain.md) pass on generated bundle, raw dump, validation-log, and agent-session fixtures. |
+| Source-field and projection | Eval/corpus-derived bundles preserve source-field policy status, redaction reports, missing-evidence flags, and raw-ref denial into fixer-visible inputs and PR text. |
 | Evidence citation | Every material claim in the diagnosis/PR body cites bundle evidence refs or says evidence is missing. |
 | Patch limits | Draft PRs obey max files/lines/touched services and reject broad rewrites by default. |
 | Validation | Required tests/builds are run or explicitly reported as unavailable; logs are stored as refs. |
 | Repo permission | Fixer can create a branch and draft PR only; no direct push to protected branches, merge, deploy, or production mutation. |
+| Provider-task linkage | If the fixer uses GitHub Agent Tasks, or an equivalent hosted agent API, the outcome records task id, API version, preview/stability status, task state, model, session count, artifacts, and permission mode. |
 | Outcome writeback | Every run writes an agent session trace and outcome record, including failure, timeout, and no-op cases. |
 | Human review | Draft PRs request a human reviewer and carry a clear "agent generated" marker. |
 | Recurrence tracking | Merged fixes create a follow-up watch window before Parallax marks `fix_addressed_issue` as strong. |
@@ -185,6 +206,7 @@ edges. This note adds stricter semantics:
 | Edge / field | Rule |
 | --- | --- |
 | `agent_opened_pr` | Created when fixer or agent creates a branch/PR. Not evidence that the issue is fixed. |
+| `provider_agent_task_started` | Created when a hosted agent task is started. Not evidence that the issue is fixed or that a PR exists. |
 | `validation_checked_patch` | Created for each test/build/lint/security command. Carries command ref, status, and redaction report. |
 | `fix_addressed_issue` | Strong only after human acceptance or merge plus recurrence window evidence. Medium if tests pass but runtime follow-up is unknown. |
 | `fix_worsened_issue` | Created on revert, linked regression, new issue caused by PR, failed rollout, or human classification. |
@@ -198,10 +220,10 @@ This prevents the classic bad metric: counting opened PRs as successful fixes.
 1. **Sentry is the direct incumbent for issue-to-fix.** Seer already combines
    Sentry context, actionability scoring, code changes, and PR creation. Parallax
    cannot win by copying that UI flow alone.
-2. **GitHub owns the PR workflow.** Copilot can start from issues, IDEs, CLI,
-   MCP, mobile, Jira, Actions failures, and Agentic Workflows. Parallax should
-   produce the evidence artifact that improves these agents, not fight GitHub for
-   branch mechanics.
+2. **GitHub owns the PR workflow.** Copilot and GitHub Agent Tasks can carry
+   work into PR artifacts under GitHub permissions and review rules. Parallax
+   should produce the evidence artifact and outcome trail that improves these
+   agents, not fight GitHub for branch mechanics.
 3. **Open-source agent runners are adequate adapters.** OpenHands shows that
    issue-label and mention-driven resolution is already open-source-shaped. The
    Parallax adapter contract should allow OpenHands, Copilot, Codex, Claude Code,
