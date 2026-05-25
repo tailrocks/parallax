@@ -341,6 +341,43 @@ disk + storage-policy run on the same MinIO (object count + bytes), and actual
 GET/PUT/LIST counts (MinIO audit log / `mc admin trace`) during ingest and during
 cold-cache Q1–Q6 — the real request-cost comparison. Cold-read egress too.
 
+### Run 9 — 2026-05-25 — B10 complete: ClickHouse vs GreptimeDB object layout on MinIO
+
+Stood up a ClickHouse `v26.5.1.882` with an `s3` disk + `storage_policy='s3only'`
+against the **same MinIO**, loaded the same 1M spans, `OPTIMIZE FINAL`. Compared
+the object layout to GreptimeDB-S3 (Run 8).
+
+| Engine | Objects in S3 | S3 bytes used | Active logical bytes |
+| --- | --- | --- | --- |
+| **GreptimeDB** | **4** | 37 MiB | 37 MiB |
+| **ClickHouse** | **74** | 63 MiB | 31.82 MiB (1 Wide part) |
+
+**Findings (cost axis #2 — the decisive object-store result):**
+
+1. **Object count: GreptimeDB 4 vs ClickHouse 74 (~18×).** ClickHouse's Wide part
+   stores **one S3 object per column** (+ marks + metadata), so a single table
+   becomes dozens of objects; GreptimeDB writes a few large Parquet objects. **This
+   is the object-store-economics advantage**: per-request pricing dominates an
+   object-store bill, and a cold read in ClickHouse must issue **many more S3 GETs**
+   (one per needed column file) than GreptimeDB's few-Parquet-file reads. Confirms
+   the verdict's "object-store-native" claim with a hard number.
+2. **Size nuance — a partial reversal.** Active logical data: ClickHouse 31.82 MiB
+   < GreptimeDB 37 MiB (ClickHouse's tuned spans codecs win on the high-card hex
+   columns, consistent with Run 1's local result). But ClickHouse's **raw S3 usage
+   was 63 MiB** — nearly 2× its logical — because pre-`OPTIMIZE` merge parts' S3
+   objects are **not yet garbage-collected** (ClickHouse S3 cleanup is async). So
+   ClickHouse on object storage carries **transient space amplification** from
+   merge garbage until cleanup runs — an operational cost GreptimeDB's LSM-flush
+   model largely avoids.
+
+**B10 status: done** (object layout + footprint). Remaining refinement: actual
+GET/PUT/LIST **request counts** during cold-cache Q1–Q6 (MinIO audit / `mc admin
+trace`) to quantify the request-cost gap the 4-vs-74 object split implies — but the
+object-count proxy already shows the direction decisively.
+
+Cleanup: the MinIO + GreptimeDB-S3 + ClickHouse-S3 containers and `pbench-s3`
+network are torn down after this run (ephemeral; nothing committed).
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

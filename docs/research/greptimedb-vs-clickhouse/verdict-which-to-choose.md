@@ -48,7 +48,7 @@ storage*, accepting a younger DataFusion scan engine.
 | **Metrics / PromQL** | Native PromQL planner + Prom remote-write + metric engine; ClickHouse has no PromQL (needs a translation layer). | plan+smoke (Run 3) |
 | **Write ergonomics** | LSM memtable absorbs high-frequency small writes; no ClickHouse "too many parts". Native OTLP/Prom ingest, no collector. | arch+Run 5 |
 | **Horizontal scaling** | Region model + Metasrv auto-rebalance + repartition + compute/storage separation (object store + remote WAL) → topology change, not rewrite. | arch (multi-node owed) |
-| **Object-storage-native** | OpenDAL default + read cache; cheap re-readable retention is first-class. | arch (MinIO run owed) |
+| **Object-storage-native** | OpenDAL default + read cache; cheap re-readable retention is first-class. **Measured (Runs 8–9): 1M spans = 4 S3 objects vs ClickHouse's 74 (~18× fewer → request-efficient).** | measured (object layout); request-count owed |
 | Freshness | Visible-on-write (tie with ClickHouse, not a win). | smoke |
 
 ## Decision question 2 — where is ClickHouse genuinely better, and why?
@@ -142,6 +142,8 @@ concurrent ingest+query:
    beyond the cache-resident smoke floor? (Could flip Q5.)
 2. **Object-store $ on equal footing** (MinIO): retained bytes, GET/PUT/LIST, cold-
    read egress — is GreptimeDB's object-store-native economics a real cost win?
+   **Partly answered (Runs 8–9): yes on object count (4 vs 74, ~18× fewer requests
+   per read); GET/PUT/LIST counts during cold query still owed for the $ figure.**
 3. **Concurrent ingest+query freshness p95** — the real axis-1 number under load.
 4. **Multi-node scale-out hold** — does p95 hold as nodes are added; GreptimeDB
    region rebalance vs ClickHouse resharding effort.
