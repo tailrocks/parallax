@@ -1,0 +1,87 @@
+# Caching and Cold-vs-Warm Divergence (Subsystem #7)
+
+<!-- markdownlint-disable MD013 -->
+
+Status: pass 24. The cache hierarchy of each engine and **why cold-cache and
+warm-cache performance diverge** — the dimension my local runs (all warm,
+cache-resident at ≤5M rows) could not measure, and the mechanism behind the
+cold-object-store regime the verdict now hinges on (JSONBench cold-run,
+`public-performance-claims.md`). Code-grounded.
+
+Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d8`).
+
+## Cache hierarchies, side by side
+
+| Cache | GreptimeDB | ClickHouse |
+| --- | --- | --- |
+| Index/marks | Inverted / bloom / vector index caches + **index result cache** (`src/mito2/src/cache/index`). | **Mark cache (5 GiB default)** — sparse-index marks, the hot path; prewarmed to 0.95 on startup. + secondary `index_mark_cache`. |
+| Decompressed data | **Page cache 512 MB** (Parquet pages), **vector cache 512 MB** (Arrow arrays) (`config.rs:205-206`). | **Uncompressed cache — OFF by default (0 MiB)**; relies on the **OS page cache** for *compressed* blocks, decompresses per query. |
+| Metadata | **SST-meta cache 128 MB** (Parquet footers), manifest cache. | Primary-key (index) in memory; part metadata. |
+| Query results | **Selector result cache 512 MB**. | **Query cache** (1 GB max, opt-in per query). |
+| **Object-store read cache** | **LRU local-disk cache in front of S3, default ON** (`object-store/src/config.rs:318-340`), `cache_capacity` bound. | S3-disk **filesystem cache** (local), configured per disk/policy — an extra config layer, not default-primary. |
+| Memtable/write buffer | Global write buffer 1 GB; write cache (`write_cache.rs`). | Insert blocks; `async_insert` buffer. |
+
+## Why cold ≠ warm — the mechanism
+
+**ClickHouse (local-disk-tuned).** Warm = the 5 GiB **mark cache** holds the sparse
+index (skip granules with zero disk I/O) + the OS page cache holds compressed
+blocks. Cold (fresh start / evicted) = read marks from disk to rebuild the mark
+cache, then read+decompress granules. Because the **uncompressed cache is off by
+default**, ClickHouse re-decompresses on each read but keeps marks hot — so its
+cold penalty is dominated by *mark loading + decompression*, mitigated by mark
+prewarm (0.95). On a **local NVMe** this cold penalty is modest; the design assumes
+data is on fast local disk.
+
+**GreptimeDB (object-store-tuned).** Warm = the requested SST objects are already
+in the **local read cache** (disk) + Parquet pages in the 512 MB page cache + index
+data in the index caches. Cold (object not in local cache) = an **S3 GET per
+needed object** (network round-trip) to pull it local, then decode. GreptimeDB's
+cold penalty is dominated by **object-store request latency**, not local disk —
+and its **few-large-objects layout** (4 objects for 1M spans, Run 9) means a cold
+read issues *few* GETs.
+
+## The decisive consequence for Parallax (object-store cold re-reads)
+
+Parallax re-reads evidence bundles from cheap object storage, often **cold**. In
+that regime the cache + object-layout interaction (this note + B10) predicts:
+
+- **GreptimeDB**: cold bundle re-read = a handful of S3 GETs (few large Parquet
+  objects) → local read cache → warm thereafter. The whole stack (OpenDAL read
+  cache + index caches + few objects) is **built for cold object-store reads**.
+- **ClickHouse on an S3 disk**: cold re-read = **many S3 GETs** (one per column
+  file per part — 74 objects for the same 1M spans, Run 9) → S3-disk filesystem
+  cache. More cold round-trips + request cost; its mark/uncompressed caching assumes
+  local disk, not S3 latency.
+
+**This is the mechanism behind the JSONBench cold-run result** (GreptimeDB #1 cold
+at 1B docs, `public-performance-claims.md`): fewer cold object-store round-trips +
+an object-store-native read cache. It also explains why my **warm small-scale runs
+favoured ClickHouse** (everything in RAM/mark-cache, ClickHouse's vectorized hot
+path dominates) while the **cold object-store regime can favour GreptimeDB** — the
+two regimes are genuinely different, and Parallax lives in the cold one for
+retention re-reads.
+
+## Why my local runs couldn't show this (honest limitation)
+
+All Runs 1–12 were **warm and cache-resident** (≤5M rows, <1 GB — fits in RAM/OS
+page cache regardless of app caches). At that scale the cold/warm gap is muted: even
+"cold" data sits in the host OS page cache. Demonstrating the divergence requires
+either **data > RAM** (drop OS page cache) or **true object-store cold reads**
+(evict the local read cache, force S3 GETs) — both need the larger tier / the
+object-store harness (B1 cold, B10 request-counts, B12 JSONBench). The *mechanism*
+above predicts the divergence direction; the *magnitude* is owed to those runs.
+
+## Axis roll-up
+
+| Sub-axis | Winner | Mechanism | Confidence |
+| --- | --- | --- | --- |
+| Warm local hot-path query | **ClickHouse** | 5 GiB mark cache + vectorized decompress; data in RAM. | arch + Runs 1–12 |
+| Cold object-store re-read | **GreptimeDB (predicted)** | object-store read cache + few large objects → few cold S3 GETs (B10); JSONBench cold-run. | arch + B10 + vendor claim |
+| Cache memory footprint / tuning | ~tie, different shape | CH one big mark cache (5 GB) vs GreptimeDB several smaller purpose caches. | arch |
+| Index-lookup caching | both | CH index_mark_cache; GreptimeDB inverted/bloom/vector + result cache. | arch |
+
+## Source / evidence
+
+- GreptimeDB caches: `src/mito2/src/cache/{write_cache,file_cache,manifest_cache,index}.rs`; defaults `src/mito2/src/config.rs:204-207` (sst_meta 128 MB, vector 512 MB, page 512 MB, selector-result 512 MB); object-store read cache `src/object-store/src/config.rs:318-340` (default on).
+- ClickHouse caches: `src/Core/ServerSettings.cpp:496-588,1574` (mark/uncompressed/index/query cache + prewarm); defaults `src/Core/Defines.h:85,88` (mark 5 GiB, uncompressed 0 MiB = off).
+- Ties to `local-benchmark-results.md` Runs 8–9 (object layout), `public-performance-claims.md` (JSONBench cold-run), `benchmarking-the-differences.md` B1/B10/B12.
