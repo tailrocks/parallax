@@ -264,7 +264,7 @@ Legend: **Runnable now** = expressible in the current prototype/`bench/compose.y
 - **Pass/fail:** does ClickHouse's per-series byte cost jump past 8,192 distinct while
   GreptimeDB's stays smooth? If yes, confirms the storage-ergonomics edge for
   high-cardinality Parallax metrics. (Agg *latency* is separate — Run 11 already gives
-  ClickHouse ~10×; B13 is about **storage/ingest**, not aggregation.)
+  ClickHouse ~2× warm (Run 37; ~10× was cold); B13 is about **storage/ingest**, not aggregation.)
 - **Prereq:** a high-cardinality metric generator knob (distinct-series count) added to
   the harness; both stacks already up. **Status: proposed (pass 48), not yet run.**
 

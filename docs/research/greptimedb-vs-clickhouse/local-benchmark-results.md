@@ -417,7 +417,7 @@ Plain time-series table on both (not the metric engine / PromQL path).
 | --- | --- | --- |
 | Bulk ingest 8M rows | 0.669 s (~12M rows/s) | 2.98 s (~2.7M rows/s) |
 | Retained size | 57.42 MiB | 62 MiB |
-| **`avg by service`, 5-min buckets (SQL group-by)** | **65 ms** | **638 ms (~10×)** |
+| **`avg by service`, 5-min buckets (SQL group-by)** | **65 ms** | **638 ms (~10×)** [⚠ superseded — see Run 37: warm steady-state is ~2× (CH 50 / GT 107 ms); the 638 ms was cold/first-run] |
 | single-series lookup | 3 ms | 9 ms |
 
 **Significant refinement of the metrics finding.** At 1,200 series (Run 3) the SQL
@@ -1090,7 +1090,9 @@ Backs `caching-and-cold-warm.md` (pass 60). Completes the caching-layer comparis
 - **ClickHouse:** has a query-result cache. `use_query_cache=0` (off by default),
   `query_cache_ttl=60` s, `enable_reads_from_query_cache=1` (live). On a hit a repeated
   identical SELECT returns the cached result and **skips execution**.
-- **GreptimeDB:** **no query-result cache.** `src/mito2/src/cache/` = file/index/manifest/
+- **GreptimeDB:** **no *whole-query* result cache** [refined Run 36: it *does* have a
+  partition-range scan-result cache `read/range_cache.rs`; the distinction is granularity].
+  `src/mito2/src/cache/` = file/index/manifest/
   write caches + an *index-probe* `index/result_cache.rs` (caches index-match rows, not
   the final result). A repeated query re-executes on warm data (live: 66 → 4 ms = data-
   cache warmth, not result-caching).

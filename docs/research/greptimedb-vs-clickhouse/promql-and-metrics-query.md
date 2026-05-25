@@ -77,9 +77,10 @@ ClickHouse **has gained** PromQL, but it is experimental and off by default:
   a product shipping *now* on metrics, "GA + ergonomic" beats "experimental + setup,"
   but the gap is **narrowing as ClickHouse invests** — a real trend to watch, exactly
   the version-drift the method guards against.
-- **Speed is still separate and unchanged:** GreptimeDB's PromQL *capability* win never
-  implied a *speed* win — SQL aggregation at volume still favors ClickHouse ~10×
-  (Run 11). PromQL is about expressing the query, not running it fastest.
+- **Speed is still separate:** GreptimeDB's PromQL *capability* win never implied a
+  *speed* win — SQL aggregation at volume still favors ClickHouse, **~2× warm** (Run 37;
+  corrected from the ~10× of Run 11, which was a cold/first-run artifact — larger cold).
+  PromQL is about expressing the query, not running it fastest.
 
 ## Axis consequence
 

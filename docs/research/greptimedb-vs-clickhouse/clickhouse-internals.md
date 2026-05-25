@@ -142,8 +142,11 @@ ClickHouse's structural strengths for Parallax:
 
 Structural weaknesses vs GreptimeDB to test:
 
-- **No native PromQL / metric model** — metrics rely on AggregatingMergeTree + MV;
-  likely a GreptimeDB advantage for the metrics signal.
+- **No *GA* PromQL / metric model** — metrics rely on AggregatingMergeTree + MV.
+  **(Corrected pass 44:** ClickHouse 26.x *does* have **experimental** PromQL via the
+  `TimeSeries` engine + `prometheusQuery[Range]` — off by default, limited to
+  `rate`/`delta`/`increase`; see `promql-and-metrics-query.md`. So "no PromQL" → "no
+  *GA* PromQL".) Still a GreptimeDB advantage for metrics, on maturity/ergonomics.
 - **Object storage is a disk policy, not the native home** — more config for the
   cheap-S3-retention story than GreptimeDB's OpenDAL default.
 - **Scale-out is operator-driven** (manual sharding) vs GreptimeDB's region model.

@@ -36,9 +36,11 @@ implementation strategies, and which one Parallax uses decides what matters:
 - **The flat anchored fetch is the real hot path, and it's the anchored-lookup
   question already settled.** All 14 spans of one `trace_id`: **ClickHouse 4 ms**
   (the `spans` `ORDER BY (trace_id, ts)` sort-key prefix → spans are physically
-  contiguous, one granule range), **GreptimeDB ~24–54 ms** (seed PK is `(service,name)`,
-  so `trace_id` is served by the **inverted index** + a fixed HTTP/setup floor — Run
-  1/6). So span-tree *retrieval* performance = the anchored-fetch performance, where
+  contiguous, one granule range), **GreptimeDB ~14 ms server-time** (Run 40 — *not* the
+  24–54 ms HTTP-wall; the seed `spans` has PK `(service,name)` so `trace_id` is a full
+  scan, and the HTTP wall added ~40 ms; with the `trace_id INVERTED INDEX` Parallax's
+  design adds, ~8 ms, Run 6). So span-tree *retrieval* performance = the anchored-fetch
+  performance (both ≪ the 300 ms gate), where
   **ClickHouse's sort-key locality wins** unless GreptimeDB makes `trace_id` the key
   prefix.
 

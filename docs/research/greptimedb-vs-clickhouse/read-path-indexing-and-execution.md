@@ -18,7 +18,7 @@ and `clickhouse-internals.md`.
 
 | Stage | GreptimeDB | ClickHouse |
 | --- | --- | --- |
-| **Planner** | SQL/PromQL → DataFusion `LogicalPlan` → physical plan. PromQL has a **native planner** (`src/promql`, `range_select`, `extension_plan`), not SQL emulation. | SQL → AST → `InterpreterSelectQuery` → `QueryPlan` → `Processors` pipeline. No PromQL. |
+| **Planner** | SQL/PromQL → DataFusion `LogicalPlan` → physical plan. PromQL has a **native planner** (`src/promql`, `range_select`, `extension_plan`), not SQL emulation. | SQL → AST → `InterpreterSelectQuery` → `QueryPlan` → `Processors` pipeline. No GA PromQL (experimental `prometheusQuery[Range]` via the `TimeSeries` engine, pass 44). |
 | **Predicate pushdown** | DataFusion pushes filters down to the region scan; **dynamic filter pushdown reaches the region scan** (`src/query/src/datafusion.rs:959` test `test_join_dynamic_filter_pushdown_reaches_region_scan`). | `KeyCondition` turns `WHERE` on key columns into mark ranges; **PREWHERE** moves filters to a filter-columns-first read step (`optimize_move_to_prewhere=true`, `Settings.cpp:890`). |
 | **Scan/skip unit** | Parquet **row group = 102,400 rows** (`DEFAULT_ROW_GROUP_SIZE`); skip via time-range → index → row-group min/max stats → page index. | **Granule = 8,192 rows** (`index_granularity`, adaptive 10 MB); skip via sparse primary index → skip indexes → mark ranges. |
 | **Execution** | **DataFusion / Arrow** vectorized operators (Rust). | **`Processors`** pull-based vectorized pipeline, hand-tuned C++ + SIMD. |
