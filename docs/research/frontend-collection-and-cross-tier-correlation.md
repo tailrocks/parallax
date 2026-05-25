@@ -207,7 +207,9 @@ propagation + bounded breadcrumbs + route/release context, joined to backend by
 `trace_id`. Defer: session replay, Web Vitals dashboards, full RUM. Prove the
 cross-tier join on one frontend↔backend path before broadening. The real-data
 pass/fail threshold for that claim lives in
-[Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md).
+[Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md),
+with row-level proof captured by the
+[A4 correlation reliability ledger](a4-correlation-reliability-ledger.md).
 
 ## Relationship To Other Research
 
@@ -224,6 +226,9 @@ pass/fail threshold for that claim lives in
 - [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md)
   — the A4 gate for real frontend-backend continuation and missing-evidence
   reporting.
+- [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md)
+  — the run artifact schema that proves frontend continuation rates came from
+  real anchors, not generator-perfect traces.
 
 ## Sources
 

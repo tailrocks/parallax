@@ -120,7 +120,7 @@ Build only enough to generate the bundle automatically and repeatably:
 | A2 real users | Phase 0 | [20 scored deployment-intent interviews](user-interview-and-deployment-intent-gate.md) plus the [redacted A2 evidence ledger](a2-interview-evidence-ledger.md) |
 | A6 redaction trust | Phase 2 | red-team on real data |
 | A5 stack holds | Phase 2 | storage/metadata benchmarks |
-| A4 correlation reliable | Phase 1–2 | [strong-edge prevalence on real telemetry](correlation-reliability-real-telemetry-gate.md) |
+| A4 correlation reliable | Phase 1–2 | [strong-edge prevalence on real telemetry](correlation-reliability-real-telemetry-gate.md) plus the [A4 result ledger](a4-correlation-reliability-ledger.md) |
 | A3 schema/corpus moat | Phase 2 (publish) → Phase 4 (corpus) | [schema conformance + external adoption + outcome corpus](schema-adoption-and-corpus-moat-gate.md) |
 | A7 scope discipline | enforced by phase order | tiny tier passes the [self-hosted simplicity gate](self-hosted-simplicity-gate.md) before breadth |
 
@@ -159,6 +159,9 @@ Build only enough to generate the bundle automatically and repeatably:
   compatibility decisions, and outcome-corpus rows.
 - [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md)
   — the A4 strong-edge prevalence gate for Phase 1/2 real telemetry.
+- [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md) —
+  the run manifest, per-anchor rows, manual audit rows, claim levels, and
+  freshness rules for making A4 pass/fail claims auditable.
 - [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
   — the focused answer to the CLI-versus-MCP access-surface question.
 - [Production database evidence access gate](production-database-evidence-access.md)

@@ -20,6 +20,9 @@ active span.
 This gate measures whether Parallax's evidence graph has enough strong edges in
 real telemetry to justify the product claim. If it fails, Parallax can still be a
 useful error/context store, but it must stop promising lifecycle reconstruction.
+The [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md)
+defines the row-level result artifact required before any aggregate result can
+count as proof.
 
 ## Source Posture
 
@@ -36,10 +39,10 @@ show why it must be measured:
   `SpanId` being present in log records
   ([OpenTelemetry logs](https://opentelemetry.io/docs/specs/otel/logs/),
   [Trace context in non-OTLP logs](https://opentelemetry.io/docs/specs/otel/compatibility/logging_trace_context/)).
-- OpenTelemetry sampling guidance says head sampling usually happens when a
-  trace starts and parent-based sampling propagates decisions downstream; error
-  or slow-trace retention often needs tail sampling in the Collector
-  ([OpenTelemetry sampling](https://opentelemetry.io/docs/languages/dotnet/sampling/),
+- OpenTelemetry sampling guidance says head sampling cannot select traces based
+  on later error or latency outcomes; error or slow-trace retention often needs
+  tail sampling in the Collector
+  ([OpenTelemetry sampling](https://opentelemetry.io/docs/concepts/sampling/),
   [OpenTelemetry trace SDK](https://opentelemetry.io/docs/specs/otel/trace/sdk/)).
 - OpenTelemetry's agent-to-gateway deployment docs warn that tail sampling only
   makes accurate decisions when all spans for a trace reach the same Collector
@@ -48,7 +51,7 @@ show why it must be measured:
 - Sentry SDK tracing propagates `sentry-trace` and `baggage`, and can optionally
   propagate W3C `traceparent` for OpenTelemetry interoperability when configured
   and allowed by `tracePropagationTargets`
-  ([Sentry distributed tracing SDK spec](https://develop.sentry.dev/sdk/telemetry/traces/distributed-tracing)).
+  ([Sentry trace propagation SDK spec](https://develop.sentry.dev/sdk/foundations/trace-propagation/)).
 
 Internal sources:
 
@@ -200,7 +203,10 @@ where instrumentation, setup diagnostics, and honest product wording must change
 
 ## Result Record
 
-Store aggregate results in a Markdown note and machine-readable JSON:
+Store aggregate results in a Markdown note and machine-readable JSON. The row
+schema, run manifest, manual audit rows, instrumentation repair rows, claim
+levels, and refresh rules are defined in the
+[A4 correlation reliability ledger](a4-correlation-reliability-ledger.md).
 
 ```json
 {
@@ -228,8 +234,9 @@ Recommended future doc:
 docs/research/correlation-reliability-results.md
 ```
 
-That results note should separate real telemetry from synthetic/fault-injected
-telemetry. Do not use generator-perfect data to pass A4.
+That results note should link to the per-run ledger artifacts and separate real
+telemetry from synthetic/fault-injected telemetry. Do not use generator-perfect
+data to pass A4.
 
 ## Relationship To Other Research
 
@@ -239,6 +246,8 @@ telemetry. Do not use generator-perfect data to pass A4.
   defines the browser-to-backend propagation path and its failure modes.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
   edge and missing-evidence fields that must be audited.
+- [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md)
+  defines the public run artifacts, row schemas, claim levels, and refresh rules.
 - [Bundle-value evaluation](bundle-value-evaluation.md) depends on this gate: an
   agent eval over unrealistically perfect links would overstate the product.
 - [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
