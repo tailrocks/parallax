@@ -1,0 +1,165 @@
+# Bundle-Value Evaluation: Does Parallax Context Actually Help Agents?
+
+<!-- markdownlint-disable MD013 -->
+
+Research date: 2026-05-25
+
+## Purpose
+
+This designs the single most important experiment for the whole project. The
+[verdict](verdict.md) makes it kill criterion 3 and the [bear case](risks-and-bear-case.md)
+makes it load-bearing assumption A1:
+
+> A bounded Parallax evidence bundle makes a coding agent's diagnosis and fix
+> materially better than the context it could get without Parallax.
+
+If this is false, Parallax is elegant ceremony: the agent fixes just as well from
+a raw stack trace plus the repo, and the evidence graph adds latency and cost,
+not accuracy. Everything else — storage, schema, frontend, tiers — is plumbing
+until A1 is measured. This document specifies how to measure it.
+
+It is an experiment design, not results. No bundle-value claim should be made in
+any other doc until this runs.
+
+## Why The Field Has Not Answered This
+
+Current coding-agent benchmarks evaluate fixing from **repository context only**:
+
+- SWE-bench (Princeton): real GitHub issue → reproduce bug, find root cause,
+  write fix, keep tests green.
+- SWE-bench Verified (human-cleaned subset), SWE-bench Pro (Scale AI, 1,865
+  multi-language tasks), SWE Atlas (RCA, codebase QnA, test writing), SWE-bench-CL
+  (continual learning).
+
+Every one of these gives the agent the **repo and an issue description**. None
+provides production **telemetry** — logs, traces, metrics, error events, deploy
+context — at the moment of failure. So the entire field has measured "can an
+agent fix from code + issue text," and **nobody has measured whether runtime
+evidence adds value on top of that**. That is precisely Parallax's bet, and it is
+currently unproven by anyone. This is both the risk (no prior signal) and the
+opportunity (a telemetry-augmented eval would be novel and is the natural moat
+artifact).
+
+Sources: [SWE-bench explained](https://www.morphllm.com/swe-benchmark),
+[SWE-bench Pro (Scale)](https://www.morphllm.com/swe-bench-pro),
+[SWE Atlas](https://scale.com/blog/swe-atlas-complete),
+[UTBoost: rigorous SWE-bench evaluation](https://arxiv.org/pdf/2506.09289).
+
+## Hypothesis And Arms
+
+**H1:** an agent given a Parallax bundle resolves more issues, with more accurate
+root causes, than the same agent given weaker context — at acceptable token/time
+cost.
+
+Four arms, same agent, same model, same repo access, only the context differs:
+
+| Arm | Context provided | What it isolates |
+| --- | --- | --- |
+| **A. Repo-only (control)** | Repo + issue/error title + stack trace. | The SWE-bench-style baseline. Beating this proves runtime evidence helps at all. |
+| **B. Raw telemetry dump** | Repo + stack + an unbounded-ish dump of logs/spans/metrics in the time window. | "More data" control. Beating this proves the **bundling/correlation**, not mere data access, is the value. |
+| **C. Parallax bundle** | Repo + the bounded, correlated, redacted [evidence bundle](evidence-bundle-and-schema.md) with hypotheses. | The product. |
+| **D. Bundle minus hypotheses** | Arm C without the ranked hypothesis block. | Isolates whether value is the **correlated evidence** or the **ranking**. |
+
+The decisive comparison is **C vs B**, not C vs A. If C only beats A but ties B,
+the value is raw data access — which is cheaper to deliver by dumping telemetry,
+and the correlation/bundle moat is weak. C must beat B to justify Parallax.
+
+## Dataset (The Hard Part)
+
+A1 needs triples: **(failure, known-correct fix, real telemetry at failure
+time)**. No off-the-shelf dataset has the telemetry leg. Three ways to build it,
+worst-to-best on realism:
+
+1. **Telemetry-augmented SWE-bench (semi-synthetic).** Take SWE-bench Verified /
+   Pro tasks, run the failing test under `tracing`/OTLP + panic capture to
+   synthesize the spans/logs/error event that a real run would emit, attach
+   deploy/release metadata from git. Pro: reuses labeled fixes + passing tests as
+   ground truth. Con: telemetry is reconstructed, not from production traffic.
+2. **Operator's own repos.** Real Sentry/OTLP history joined to git "bug commit →
+   fix commit" pairs. Pro: real telemetry. Con: small N, n=1 bias (bear case A2),
+   labeling effort.
+3. **Reference app + fault injection.** A seeded multi-service app (the same
+   generator family as the [storage benchmark](storage-benchmark-prototype.md)),
+   inject known faults, capture real telemetry, the fix is known by construction.
+   Pro: real telemetry + known fix + cross-tier frontend↔backend cases. Con:
+   faults may be less representative than wild bugs.
+
+Recommended: start with (1) for scale and labeled grading, validate the headline
+result on (3) for telemetry realism, and use (2) as a reality check. Building this
+telemetry-linked fix corpus is itself a research contribution and a moat seed.
+
+## Metrics
+
+| Metric | How measured | Why |
+| --- | --- | --- |
+| Resolved rate | Known/hidden test passes after the agent's patch (SWE-bench-style). | The headline outcome. |
+| Root-cause accuracy | Agent's stated cause vs labeled cause (LLM-judge + human spot-check, blind). | Diagnosis quality, not just lucky patch. |
+| Token cost | Input+output tokens per task. | Bundles must not win only by dumping more tokens; cost-adjust the comparison. |
+| Wall-clock / tool calls | Time and number of fetches to first patch. | Bounded bundle should reduce flailing vs raw dump. |
+| Unsupported-claim rate | Fraction of agent claims with no evidence ref (hallucination proxy). | Bundles should reduce ungrounded reasoning. |
+| Calibration | Says "inconclusive" when evidence is genuinely insufficient. | Safety-relevant; over-confidence is dangerous (agent-safety doc). |
+
+Cost-adjust: report resolved-rate **per 1k tokens** as well as raw, so a bundle
+that wins only by being bigger is exposed.
+
+## Protocol And Controls
+
+- **Multiple model families** (≥2, e.g. one frontier + one mid) so the result is
+  not an artifact of one model's context handling.
+- **Blind, randomized arm order**; graders do not know the arm.
+- **Multiple seeds / repeated trials** per task; report variance, not just means.
+- **Same agent scaffold** across arms; only the injected context differs.
+- **Held-out hidden tests** for grading so the agent cannot game the visible test.
+- Pre-register the decision gate below before looking at results.
+
+## Decision Gate
+
+Parallax's bundle thesis passes only if:
+
+- **C beats A** on resolved rate (runtime evidence helps), and
+- **C beats B** on resolved rate at equal-or-lower token cost (the *bundle*, not
+  raw data, is the value), and
+- the lift is statistically meaningful across ≥2 model families.
+
+Outcomes and what they mean:
+
+| Result | Interpretation | Action |
+| --- | --- | --- |
+| C > B > A | Bundle and telemetry both add value; correlation is real. | Strong GO confirmation; bundle is the moat. |
+| C ≈ B > A | Telemetry helps, but bundling adds little over dumping. | Narrow the claim: value is cheap retention + access, not correlation. Pivot moat toward retention/audit (bear case). |
+| C ≈ A | Bundle does not beat repo-only. | Kill criterion 3 triggers; reopen verdict. |
+| D ≈ C | Hypotheses add nothing; correlated evidence is the value. | Drop/deprioritize the hypothesis engine; keep deterministic evidence. |
+| C > D | Ranking adds value. | Invest in the hypothesis layer. |
+
+## Honest Limitations
+
+- Semi-synthetic telemetry may flatter Parallax (clean trace IDs, perfect
+  linkage) versus messy production — so the realism check on dataset (3) and (2)
+  is mandatory before any public claim.
+- Frontier models improve fast; an A1 win today can erode as models get better at
+  fixing from less context. Re-run across model generations (this is why the gate
+  requires ≥2 families and periodic re-runs).
+- Resolved-rate on tests is not the same as a *good* fix; pair it with root-cause
+  accuracy and human review.
+
+## Relationship To Other Research
+
+- [Verdict](verdict.md) — kill criterion 3, which this operationalizes.
+- [Risks and the bear case](risks-and-bear-case.md) — assumption A1 (and A3,
+  since a positive result is what makes the schema worth adopting).
+- [Evidence bundle and open schema](evidence-bundle-and-schema.md) — the artifact
+  under test (arm C/D).
+- [Storage benchmark prototype](storage-benchmark-prototype.md) — shares the
+  seeded dataset/reference-app generator for dataset option (3).
+- [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
+  — calibration/unsupported-claim metrics feed the safety model.
+
+## Bottom Line
+
+The whole project rests on a claim no existing benchmark tests: that runtime
+evidence, bundled and correlated, makes agents fix better. Design the eval with a
+raw-telemetry-dump control (arm B), because beating repo-only is easy and
+unconvincing — beating a raw dump is the real test of whether Parallax's
+correlation is worth building. Run this before, not after, investing further in
+the storage and stream layers. It is the experiment that converts the GO from
+argued to proven.

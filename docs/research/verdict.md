@@ -247,7 +247,9 @@ Reverse this GO if prototype evidence shows any of the following:
 2. GreptimeDB or the fallback store cannot answer evidence-bundle queries with
    acceptable freshness, latency, and storage cost.
 3. Agent bundles do not improve diagnosis or patch quality over raw Sentry/CI
-   context in controlled tests.
+   context in controlled tests. The experiment that decides this is designed in
+   [Bundle-value evaluation](bundle-value-evaluation.md) — note its raw-telemetry-dump
+   control: the bundle must beat a raw dump, not just repo-only context.
 4. CLI and agent-session tracing produces too much sensitive data to redact
    safely.
 5. MCP/API access cannot be made least-privilege, auditable, and read-only by
