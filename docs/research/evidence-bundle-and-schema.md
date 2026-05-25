@@ -131,8 +131,8 @@ Every node: `{ "id", "type", "ts" (when applicable), "summary", "data", "refs" }
 | `ci_run` | CI pipeline execution. | `provider`, `run_id`, `workflow`, `status`, `commit_sha`, `branch`, `started_at`, `jobs[]` |
 | `test_case` | One test and its history. | `suite`, `name`, `status`, `retries`, `pass_fail_history`, `first_failed_commit?`, `flaky_score?` |
 | `cli_invocation` | First-class CLI execution. | `command`, `subcommand`, `args_sanitized`, `cwd`, `repo`, `branch`, `commit`, `exit_code`, `duration_ms`, `stdout_ref`, `stderr_ref`, `child_processes[]`, `side_effects[]` |
-| `agent_session` | Coding-agent run. | `agent_product`, `agent_version`, `adapter_name`, `semconv_version?`, `started_at`, `ended_at`, `status`, `prompt_refs`, `bundles_used[]`, `lossiness_report_ref`, `outcome` |
-| `agent_action` | One action inside a session. | `kind` (model_call/tool_call/mcp_tool_call/shell/file_read/file_edit/test/pr/approval), `target`, `status`, `input_policy?`, `output_policy?`, `result_ref`, `ts`, `confidence?`, `lossiness[]` |
+| `agent_session` | Coding-agent run. | `agent_product`, `agent_version`, `tool_binary_ref?`, `tool_version_probe?`, `adapter_name`, `adapter_version`, `capture_surface`, `source_schema_snapshot`, `source_config_ref`, `semconv_version?`, `content_capture_level`, `raw_ref_policy`, `redaction_report_ref`, `source_field_policy_ref`, `lossiness_report_ref`, `started_at`, `ended_at`, `status`, `prompt_refs`, `bundles_used[]`, `outcome` |
+| `agent_action` | One action inside a session. | `kind` (context_load/model_call/tool_call/mcp_tool_call/shell_command/file_read/file_edit/permission_decision/validation/outcome), `target`, `status`, `source_event_class`, `source_event_hash?`, `input_policy?`, `output_policy?`, `result_ref`, `ts`, `confidence?`, `raw_ref_only?`, `lossiness[]` |
 | `hypothesis` | A candidate cause (see below). | `statement`, `confidence`, `supporting[]`, `contradicting[]`, `checks[]` |
 
 Frame shape inside `error_event.stack` (oldest→newest), matching the Rust-first
@@ -143,6 +143,29 @@ capture story in
 { "crate": "checkout", "module": "discount", "function": "apply",
   "file": "src/discount.rs", "line": 118, "in_app": true, "build_id": "a1b2..." }
 ```
+
+### Agent Node Projection Rules
+
+`agent_session` and `agent_action` nodes are agent-visible only when their
+adapter provenance survives projection. A bundle that includes agent execution
+evidence must carry enough fields for a reviewer to answer:
+
+- which tool binary/version/config emitted the source data;
+- which capture surface produced the row: native OTel, hooks/plugins,
+  JSONL/stream JSON, export, server/API, ACP, wrapper observation, or raw ref;
+- which source schema snapshot and adapter version parsed it;
+- which fields were redacted, raw-ref-only, source-not-exposed, unsupported, or
+  parse-failed;
+- whether JSON and Markdown projections preserved redaction,
+  source-field-policy, missing-evidence, and raw-ref-denial status.
+
+Do not let a bundle turn "Codex hook event normalized" into "Codex session
+traced" or "Claude OTel event normalized" into "Claude `stream-json` traced."
+Those are separate capture-surface claims controlled by the
+[Agent session tracing ledger](agent-session-tracing-ledger.md). If provenance,
+lossiness, or projection-safety fields are missing, the node may remain as
+debugging context, but it cannot support a product claim, accepted-fix outcome,
+or external schema-adoption result.
 
 ## Edge Type Catalog
 
@@ -384,6 +407,11 @@ it survives contact with real data:
 6. Do CLI, HTTP, and MCP surfaces produce byte-equivalent canonical JSON for the
    same anchor, with Markdown/text renderings provably derived from that object?
    MCP text-only output is not enough for schema adoption or corpus claims.
+7. Do `agent_session` and `agent_action` nodes preserve adapter provenance,
+   capture surface, tool version/config, lossiness, redaction report,
+   source-field policy, projection status, and raw-ref-denial status? If not,
+   the bundle can be useful for debugging but cannot count toward agent-tracing,
+   fix-outcome, or schema-adoption claims.
 
 ## Relationship To Other Research
 
