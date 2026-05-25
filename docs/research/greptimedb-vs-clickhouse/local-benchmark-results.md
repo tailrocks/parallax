@@ -72,6 +72,11 @@ Re-run with matched codec effort before drawing a cost conclusion.
 3. **Measurement is only roughly comparable.** ClickHouse `--time` is native-client
    query time; GreptimeDB `execution_time_ms` is its own server-side figure over
    HTTP. Close enough to read direction at this scale, not for a precise ratio.
+   **Validated (Run 60):** GreptimeDB `execution_time_ms` *matches* its native
+   MySQL-wire client-wall for heavy queries (agg ~96 ms both) and slightly
+   *over*-states GreptimeDB on tiny queries (anchor: HTTP ~10 ms vs native ~5 ms) —
+   so the basis is fair-to-GreptimeDB-conservative, never flattering. Reported gaps
+   are real, not artifacts.
 
 **Claims checked**
 
@@ -2352,6 +2357,68 @@ docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public 
 # ClickHouse RMT (loses a=10)
 docker exec parallax-bench-clickhouse-1 clickhouse-client --multiquery -q "CREATE TABLE upsert_ch (k String, ts DateTime64(3), a Nullable(Int64), b Nullable(String)) ENGINE=ReplacingMergeTree ORDER BY (k,ts); INSERT INTO upsert_ch VALUES ('x',toDateTime64(1,3),10,NULL); INSERT INTO upsert_ch VALUES ('x',toDateTime64(1,3),NULL,'hello');"
 docker exec parallax-bench-clickhouse-1 clickhouse-client -q "SELECT k,a,b FROM upsert_ch FINAL WHERE k='x'"   # a=NULL,b=hello
+```
+
+### Run 60 — 2026-05-25 — Measurement-basis fairness: GreptimeDB MySQL-native vs HTTP `execution_time_ms` (validates the whole record)
+
+**Pass target.** Resolve the long-owed cross-cutting fairness item ("Next runs #5:
+fairer GreptimeDB timing via MySQL native protocol, not HTTP"). Every GreptimeDB
+latency in this log is `execution_time_ms` (server-side, over HTTP); every ClickHouse
+one is `--time` (native-client wall). Are these comparable, or has the basis been
+flattering/penalizing GreptimeDB? Measure GreptimeDB via the **MySQL native wire
+(port 4002)** — a client-wall basis comparable to ClickHouse's native client.
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned
+— latest, no bump). MySQL-wall measured by timing a 20-query batch in one `mysql:8`
+client session on `parallax-bench_default` and subtracting a 1-query baseline (isolates
+per-query from container-startup+connection ≈ 0.42 s). GreptimeDB's MySQL status line
+omits per-query timing, hence the batch method.
+
+**Measured (3 bases, two query shapes):**
+
+| Query | GreptimeDB MySQL-wall (native, amortized) | GreptimeDB HTTP `execution_time_ms` (server) | GreptimeDB in-container HTTP curl-wall | ClickHouse `--time` |
+| --- | --- | --- | --- | --- |
+| anchor `trace_id` lookup (spans_idx) | **~5 ms** ((0.523−0.424)/20) | **9–10 ms** | ~10–12 ms | 2–9 ms |
+| metric agg `GROUP BY service` (8M) | **~96 ms** ((2.352−0.424)/20) | **93–99 ms** | 94–101 ms | ~36 ms |
+
+**The comparison logic & verdict.**
+
+- **`execution_time_ms` is a FAIR — and slightly GreptimeDB-conservative — basis.**
+  For the **heavy** query (agg) all three GreptimeDB bases agree (~95 ms): execution
+  dominates, protocol/transport is noise. So every heavy-query GreptimeDB number in
+  this log (metric agg, scans) is **protocol-independent and fair** — not inflated by
+  HTTP.
+- **For tiny queries the basis matters at the few-ms level, and HTTP slightly
+  *over*-states GreptimeDB:** native MySQL-wall ~5 ms vs HTTP `execution_time_ms` ~10 ms
+  — i.e. a warm native session amortizes ~4–5 ms of per-request planning/overhead that
+  the isolated HTTP path pays each time. **So the anchored-lookup gap was reported
+  slightly *against* GreptimeDB**; on the native protocol GreptimeDB's anchor is ~5 ms,
+  even closer to ClickHouse's 2–9 ms. The measurement bias runs *toward* ClickHouse,
+  never flattering GreptimeDB.
+- **The old "GreptimeDB 54 ms HTTP-wall" artifacts (Run 40) were external-network
+  client wall, not the protocol** — in-container curl-wall ≈ `execution_time_ms`
+  (10 vs 9 ms; loopback ~1–2 ms). Confirms the Run 40/58 corrections: those inflated
+  numbers were measurement environment, and the server-side figures are the truth.
+
+**Net:** the record's GreptimeDB-vs-ClickHouse latency gaps are **real, not measurement
+artifacts**, and if anything GreptimeDB is marginally faster on tiny queries than the
+HTTP basis showed. No prior verdict number needs reversing on fairness grounds; the
+non-comparability caveat is upgraded from "close enough to read direction" to
+"validated: heavy-query-identical, tiny-query slightly GreptimeDB-conservative."
+**Status: fairness item closed.**
+
+Caveat: MySQL-wall is a warm-session amortized per-query (20-batch); a cold single
+native query would sit between ~5 ms and the HTTP ~10 ms. ClickHouse `--time` is
+likewise warm. Container-startup (~0.42 s) excluded by subtraction; 8M/1M smoke scale.
+
+**Reproduce (copy-paste).**
+
+```bash
+NET=parallax-bench_default; TR=3fb2d84c0a2032fa7681cde05c2051e9
+QA="SELECT count(*) FROM spans_idx WHERE trace_id='$TR'"; A20=$(for i in $(seq 20); do printf '%s;' "$QA"; done)
+b=$(date +%s.%N); docker run --rm --network $NET mysql:8 mysql -h parallax-bench-greptimedb-1 -P4002 -uroot -N -e "SELECT 1" >/dev/null 2>&1; e=$(date +%s.%N); python3 -c "print($e-$b)"   # baseline
+b=$(date +%s.%N); docker run --rm --network $NET mysql:8 mysql -h parallax-bench-greptimedb-1 -P4002 -uroot -N -e "$A20" >/dev/null 2>&1; e=$(date +%s.%N); python3 -c "print(($e-$b))"  # /20 minus baseline = per-query
+docker exec parallax-bench-greptimedb-1 curl -s -w 'WALL=%{time_total}' localhost:4000/v1/sql?db=public --data-urlencode "sql=$QA"   # exec vs wall
 ```
 
 ## Next runs (to make the numbers mean something)
