@@ -46,14 +46,20 @@ But they reduce the value of "simpler than self-hosted Sentry" as a standalone
 claim. Parallax must lead with evidence bundles and agent-safe context, not only
 with a lighter Sentry replacement.
 
+The focused
+[lightweight error-tracker MCP boundary check](lightweight-error-tracker-mcp-boundary-check.md)
+adds the agent-surface detail: Rustrak and GoSnag now prove that MCP can appear
+inside small error trackers, but their checked tools are management/write/raw
+event surfaces rather than read-only, redacted evidence bundles.
+
 ## Current Matrix
 
 | Project | Strongest current fit | Current Parallax gap | Threat |
 | --- | --- | --- | --- |
 | Bugsink | Self-hosted error tracking, Sentry SDK compatible, single container, SQLite by default, no queue or external service dependency, MySQL/Postgres optional. | Python/runtime mismatch; focused on error tracking rather than OTLP-native evidence graph, CLI/agent audit, or fix-outcome corpus. | High for Sentry-compatible simplicity. |
-| Rustrak | Rust/Actix server, Sentry SDK compatible, SQLite default or Postgres production mode, claims small memory/image footprint, no Redis, no complex infrastructure, and ships `@rustrak/mcp` for AI assistant management. | Early project; UI is a separate Next.js service; MCP is management-shaped rather than a read-only citable evidence-bundle contract; no clear OTLP-native logs/traces/metrics or fix-outcome corpus. | Very high for product-shape pressure, lower for maturity. |
+| Rustrak | Rust/Actix server, Sentry SDK compatible, SQLite default or Postgres production mode, claims small memory/image footprint, no Redis, no complex infrastructure, and ships `@rustrak/mcp` for AI assistant management. | Early project; UI is a separate Next.js service; MCP exposes project/issue/event/token/alert tools including destructive issue/token actions and raw Sentry-envelope event access, not a read-only citable evidence-bundle contract; no clear OTLP-native logs/traces/metrics or fix-outcome corpus. | Very high for product-shape pressure, lower for maturity. |
 | Traceway | MIT, OpenTelemetry-native, self-hostable, combines logs/traces/metrics/session replay/exceptions/AI tracing, Docker Compose path, and Go embedded SQLite dev mode. | OTel-first rather than Sentry-envelope-first; Go, not Rust; no explicit Parallax-style evidence bundle, redaction manifest, or agent session/action audit. | Very high for OTLP-native unified observability simplicity. |
-| GoSnag | Go single binary with embedded React UI/migrations, Sentry `/store/` and `/envelope/` ingestion, issue lifecycle, GitHub/Jira integrations, AI RCA features, and a documented MCP server. | Requires Postgres for normal deployment; early project with low visible traction and no tagged release in the checked GitHub metadata; not Rust-first; MCP exposes broad management tools, not a Parallax-style read-only bundle contract or fix-outcome graph. | Medium-high: important capability shape, weak maturity signal. |
+| GoSnag | Go single binary with embedded React UI/migrations, Sentry `/store/` and `/envelope/` ingestion, issue lifecycle, GitHub/Jira integrations, AI RCA features, and a documented MCP server. | Requires Postgres for normal deployment; early project with low visible traction and no tagged release in the checked GitHub metadata; not Rust-first; MCP uses Bearer-token API calls for broad project/issue/alert/tag/ticket/user management, not a Parallax-style read-only bundle contract or fix-outcome graph. | Medium-high: important capability shape, weak maturity signal. |
 | Urgentry | Source-available Sentry-compatible replacement with one-binary Tiny mode, split self-hosted mode, route coverage and benchmark claims against self-hosted Sentry. | FSL source-available, not open source; broad Sentry replacement posture rather than open evidence schema; no clear coding-agent audit or measured fixer-outcome loop. | High for the self-hosted simplicity benchmark, lower for the open-source thesis. |
 
 ## Current Version And Maturity Snapshot
@@ -212,6 +218,8 @@ The ongoing competitor watch now has two layers:
 
 Current trigger-hit and drift statuses across both layers live in the
 [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md).
+Agent-surface detail for the lightweight layer lives in the
+[lightweight error-tracker MCP boundary check](lightweight-error-tracker-mcp-boundary-check.md).
 
 Reopen the Parallax wedge if any lightweight challenger combines:
 

@@ -55,6 +55,7 @@ or CI contract yet.
 | `docs/research/market-landscape.md` | Market research. |
 | `docs/research/open-self-hosted-competitor-watch.md` | Focused watchlist for OpenObserve, SigNoz, and Coroot: current primary-source posture, remaining Parallax gaps, and trigger conditions that would reopen the GO verdict. |
 | `docs/research/lightweight-sentry-compatible-competitor-watch.md` | Focused watchlist for Bugsink, Rustrak, Traceway, GoSnag, and Urgentry: lightweight Sentry-compatible or OTLP-native self-hosted challengers that pressure Parallax's migration and simplicity claims. |
+| `docs/research/lightweight-error-tracker-mcp-boundary-check.md` | Focused MCP/agent-surface check for lightweight error trackers: Rustrak and GoSnag management/write/raw-event MCP tools versus Parallax's intended read-only evidence-bundle boundary. |
 | `docs/research/agentic-observability-competitor-drift-ledger.md` | Market-drift ledger for agentic observability competitors: current source snapshot, drift levels, trigger-hit rows, refresh triggers, and public wording boundaries. |
 | `docs/research/signoz-open-investigation-format-check.md` | Focused falsification note for SigNoz's "open investigation format" claim: current primary-source posture, evidence checked, A3 schema-counting rule, and watch triggers. |
 | `docs/research/self-hosted-observability-architecture.md` | Architecture research for the Sentry-compatible, OpenTelemetry-native self-hosted observability direction. |
