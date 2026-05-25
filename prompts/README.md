@@ -107,7 +107,7 @@ the goal, replaces it, or says the research program is complete.
 
 ### 3. Claude Code `/loop` — scheduled research re-trigger
 
-Use Claude Code `/loop` with a fixed interval for the never-stop behavior.
+Use Claude Code `/loop` with a fixed interval for scheduled re-triggering.
 `/loop` is Claude Code-only. The interval is a re-trigger beat, not a freshness
 requirement. If the scheduler waits while a pass is running, `5m` keeps the loop
 close to continuous; if overlapping work or cost becomes a problem, raise it to
