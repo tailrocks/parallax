@@ -2169,6 +2169,81 @@ Caveat: warm cache-resident smoke (≤1M rows); these are minimum-latency floors
 at-scale. The *not-latency-bound* conclusion is robust at this scale; cold GB–TB is the
 harness's job.
 
+### Run 57 — 2026-05-25 — Native out-of-the-box schema, live (the adopt-native-vs-custom decision)
+
+**Pass target.** The brief's standing requirement: verify each system's *native
+out-of-the-box* metrics/logs/traces structure with **zero schema work** and decide
+adopt-native-vs-custom per signal. Rotate onto it (last native-structure work was
+~pass 32–33/55). Trigger GreptimeDB's native ingest live and read the auto-created
+DDL; confirm ClickHouse has no native-ingest equivalent.
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (versions
+re-pinned this pass — latest, no bump).
+
+**What GreptimeDB auto-created (live `SHOW CREATE TABLE`):**
+
+- **Metrics** — `POST /v1/influxdb/write` (HTTP **204**), line `app_requests,service=api,env=prod count=42i,latency_ms=1.5`:
+
+  ```sql
+  CREATE TABLE "app_requests" ("service" STRING, "env" STRING, "count" BIGINT,
+    "latency_ms" DOUBLE, "greptime_timestamp" TIMESTAMP(9) NOT NULL,
+    TIME INDEX ("greptime_timestamp"), PRIMARY KEY ("service","env"))
+    ENGINE=mito WITH(merge_mode='last_non_null');
+  ```
+
+  Tags → PK, fields **auto-typed** (`42i`→`BIGINT`, `1.5`→`DOUBLE`), auto TIME INDEX,
+  `merge_mode='last_non_null'` (partial-upsert). One table per measurement.
+
+- **Logs** — `POST /v1/ingest?table=app_logs&pipeline_name=greptime_identity` (HTTP
+  **200**), JSON `[{"level","message","service","trace_id","span_id"}]`:
+
+  ```sql
+  CREATE TABLE "app_logs" ("greptime_timestamp" TIMESTAMP(9) NOT NULL, "level" STRING,
+    "message" STRING, "service" STRING, "span_id" STRING, "trace_id" STRING,
+    TIME INDEX ("greptime_timestamp")) ENGINE=mito WITH(append_mode='true');
+  ```
+
+  Every JSON key → `STRING` column, auto TIME INDEX, `append_mode='true'`, **no PK, no
+  index on `trace_id`/`message`** (flat append).
+
+- **Traces** — `POST /v1/otlp/v1/traces` with `Content-Type: application/json` →
+  **HTTP 400**: `"OTLP endpoint only supports 'application/x-protobuf'"`. Native trace
+  ingest is **protobuf-only** (re-confirms the pass-33 metrics finding for traces);
+  the native `opentelemetry_traces` table needs a real OTLP exporter — **not
+  hand-verifiable here**, owed to a collector-fed harness check.
+
+**ClickHouse:** the same native writes have **no endpoint** — no InfluxDB/OTLP
+receiver (re-confirmed: only GreptimeDB accepted these). Native ingest = an OTel
+Collector + ClickHouse exporter (ClickStack) or a hand-defined schema; **no "zero
+schema work" path.**
+
+**Adopt-vs-custom verdict (feeds `greptimedb-implementation.md`):**
+
+- **Metrics → ADOPT native** (tags-as-PK + auto-typed fields + last-non-null + PromQL
+  on it = a correct metric table, zero DDL).
+- **Logs → ADOPT-then-CUSTOMIZE** — the native append schema is right except it omits
+  the **anchor index**; Parallax must add `trace_id INVERTED INDEX` (+ `message
+  FULLTEXT`) because Run 56 showed `trace_id` retrieval is the bundle's dominant cost
+  and the native table would **scan**. Name the shortfall precisely: *no index on
+  `trace_id`/`message` on the auto-created log table.*
+- **Traces → OWED + likely customize** — native model exists but couldn't be verified
+  live (protobuf); Parallax's custom `spans` indexes `trace_id` regardless.
+
+This is a real GreptimeDB **ingest/onboarding ergonomics edge** (usable tables with
+zero/near-zero DDL) that ClickHouse structurally cannot match (collector-mediated).
+
+**Reproduce (copy-paste).**
+
+```bash
+docker exec parallax-bench-greptimedb-1 curl -s -w '[%{http_code}]' -X POST "http://localhost:4000/v1/influxdb/write?db=public" --data-binary 'app_requests,service=api,env=prod count=42i,latency_ms=1.5'
+docker exec parallax-bench-greptimedb-1 curl -s -X POST "http://localhost:4000/v1/ingest?db=public&table=app_logs&pipeline_name=greptime_identity" -H 'Content-Type: application/json' -d '[{"level":"error","message":"db timeout","service":"api","trace_id":"abc123","span_id":"s1"}]'
+docker exec parallax-bench-greptimedb-1 curl -s -X POST "http://localhost:4000/v1/otlp/v1/traces" -H 'Content-Type: application/json' -d '{}'   # -> 400 protobuf-only
+for t in app_requests app_logs; do docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=SHOW CREATE TABLE $t"; done
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode 'sql=DROP TABLE app_requests'; docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode 'sql=DROP TABLE app_logs'  # cleanup
+```
+
+Caveat: structure is exact (DDL); traces native schema unverified (protobuf-only ingest).
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
