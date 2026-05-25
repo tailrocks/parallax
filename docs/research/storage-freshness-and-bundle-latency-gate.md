@@ -41,6 +41,12 @@ settle the performance question:
   and recommends skipping indexes for high-cardinality columns like `trace_id`
   and `request_id`
   ([GreptimeDB table design](https://docs.greptime.com/user-guide/deployments-administration/performance-tuning/design-table/)).
+- GreptimeDB `v1.0.2` TWCS source assigns SST files to compaction windows by
+  max timestamp and the compactor removes expired SSTs separately from successful
+  merge outputs. This strengthens the retention mechanism but makes many-window
+  dedup metric tables a schema-sensitive latency risk
+  ([TWCS picker source](https://github.com/GreptimeTeam/greptimedb/blob/v1.0.2/src/mito2/src/compaction/twcs.rs),
+  [compactor source](https://github.com/GreptimeTeam/greptimedb/blob/v1.0.2/src/mito2/src/compaction/compactor.rs)).
 - ClickHouse insert docs say async inserts buffer data in memory and flush when
   size, time, or query-count thresholds fire; if async inserts are used, the
   recommended safe mode is `async_insert=1,wait_for_async_insert=1`, while
@@ -80,6 +86,7 @@ are useful but intentionally narrow:
 | Run 141: four-way 5M local warm | Anchored/keyed hot path remains interactive; heavy analytical queries cross or approach the 300 ms gate on GreptimeDB. | Whether full Q6 under mixed native ingest remains under budget; object-store/cold behavior; production hardware. |
 | Run 142: GreptimeDB dedup vs append A/B | Dedup-mode aggregation is much slower than append mode at 5M for unique metric-like data; table mode is load-bearing. | Native metric-engine/Prometheus path under v1.1 GA; correctness tradeoff for out-of-order correction workloads. |
 | Run 143: benchmark tier policy | Local laptop default is now `N=100000`, with `N=5000000+` reserved for operator-requested server runs; forced compaction reduced stable GreptimeDB dedup aggregation from about 314 ms to about 60 ms. | Server-tier large run, full mixed native ingest, and compaction-state-sensitive metric path under v1.1 GA. |
+| Run 144: GreptimeDB TWCS source read | Time-window compaction explains why forced compaction can help within-window state while many-window tables still require cross-window dedup merging; expired SSTs can be removed without merging survivors. | Native metric-engine/Prometheus path under v1.1 GA, server-tier many-window metrics, and object-store request/cold-read economics. |
 
 The useful correction from Run 2 is now part of this gate: Parallax bundle
 queries are anchored, so key/index placement and per-anchor pruning matter more
@@ -167,8 +174,10 @@ Run 142 adds a schema requirement: for scrape-style metric tables where
 `last_non_null` remains valid for partial-upsert and out-of-order correction, but
 it cannot be assumed safe for aggregation-heavy metric reads at 5M+ without
 fresh v1.1 GA evidence. Run 143 narrows the finding: forced compaction can make
-stable dedup aggregation acceptable, but append mode still avoids both compaction
-dependence and the nightly dedup regression.
+stable dedup aggregation acceptable for compacted within-window state. Run 144
+adds the source-level caveat: long-retention tables still retain at least one SST
+per TWCS window, so many-window dedup aggregation remains a structural risk that
+append mode avoids.
 
 ### ClickHouse
 

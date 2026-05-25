@@ -38,12 +38,12 @@ rows into a stack-default claim.
 The current checked-in `bench/four-way/` harness is a useful preliminary local
 artifact, not this full prototype. See
 [Storage benchmark artifact interpretation](storage-benchmark-artifact-interpretation.md):
-Runs 140-143 store the four-build benchmark as code, define the local/server
-tier split, and tighten schema guidance, but they do not measure mixed native
-ingest, Q6 p95/p99, stale-bundle rate, object-store economics, ClickHouse LTS,
-or end-to-end A5 integration. Local `bench/four-way` defaults to `N=100000`
-after Run 143; `N=5000000+` belongs on a server and only when the operator
-explicitly asks.
+Runs 140-144 store the four-build benchmark as code, define the local/server
+tier split, tighten schema guidance, and source-read GreptimeDB TWCS/TTL
+mechanisms, but they do not measure mixed native ingest, Q6 p95/p99,
+stale-bundle rate, object-store economics, ClickHouse LTS, or end-to-end A5
+integration. Local `bench/four-way` defaults to `N=100000` after Run 143;
+`N=5000000+` belongs on a server and only when the operator explicitly asks.
 
 Pinned candidate versions for the first run (update at run time per the
 version-freshness rule):

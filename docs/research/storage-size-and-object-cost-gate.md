@@ -47,6 +47,12 @@ candidates, but not a cost winner:
 - ClickHouse compression docs say compression is data-distribution dependent and
   tunable through data types, codecs, ordering, and compression algorithms
   ([ClickHouse compression](https://clickhouse.com/docs/data-compression/compression-in-clickhouse)).
+- GreptimeDB `v1.0.2` TWCS/compactor source shows time-window scoped compaction
+  and separate expired-SST removal. This supports the cheap whole-SST TTL
+  mechanism, but it does not measure object counts, request costs, or cold reads
+  for Parallax's full data mix
+  ([TWCS picker source](https://github.com/GreptimeTeam/greptimedb/blob/v1.0.2/src/mito2/src/compaction/twcs.rs),
+  [compactor source](https://github.com/GreptimeTeam/greptimedb/blob/v1.0.2/src/mito2/src/compaction/compactor.rs)).
 - Cloudflare R2 pricing lists Standard storage at `$0.015 / GB-month`,
   operation fees, and free egress
   ([Cloudflare R2 pricing](https://developers.cloudflare.com/r2/pricing/)).
@@ -68,6 +74,7 @@ data, fair schema tuning, and provider-specific request/egress modeling.
 | --- | --- | --- |
 | [Retention cost model](retention-cost-model.md) | Shows compressed object storage can make 30-90 day retention cheap, and that egress is the hidden read-heavy cost. | Uses assumed compression/request rates, not measured Parallax data. |
 | [Local benchmark results](greptimedb-vs-clickhouse/local-benchmark-results.md) | Run 1 measured ClickHouse at 28.9 MiB and GreptimeDB SST at 38 MiB for 1M spans. | The schema comparison was unfair: ClickHouse had tuned codecs; GreptimeDB used defaults. No object storage or request counts. |
+| [Storage benchmark artifact interpretation](storage-benchmark-artifact-interpretation.md) | Run 144 source-read confirms GreptimeDB's expired-SST removal path is structural under TWCS. | Does not measure provider request counts, cold-read bytes, compaction amplification, or ClickHouse tuned partition/drop behavior for the full Parallax dataset. |
 | [Storage benchmark prototype](storage-benchmark-prototype.md) | Defines retained size, compression, and object-store request metrics. | Does not yet spell out the cost gate, source pricing inputs, or failure consequences. |
 
 The local size result is a warning, not a verdict. It says schema/codecs can

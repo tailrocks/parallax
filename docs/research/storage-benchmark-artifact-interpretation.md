@@ -7,9 +7,9 @@ Research date: 2026-05-25
 ## Pass Target
 
 Consume the separate benchmark agent's new artifacts without running another
-storage benchmark. The goal is to decide what Runs 140-143 prove, what they
-falsify, and which product/storage claims must stay unproven until the full
-storage gates run.
+storage benchmark. The goal is to decide what Runs 140-144 prove, what they
+falsify, which source-read mechanism claims they strengthen, and which
+product/storage claims must stay unproven until the full storage gates run.
 
 ## Artifacts Checked
 
@@ -19,8 +19,11 @@ storage gates run.
 | Commit `1728da7` | Local 5M scale run interpretation | Run 141 docs showing anchored hot path holds while GreptimeDB heavy analytics cross the 300 ms gate. |
 | Commit `ead9482` | Local A/B isolation | Run 142 docs showing GreptimeDB dedup aggregation vs append-mode aggregation at 5M. |
 | Commit `f3a4023` | Benchmark tier policy + Run 143 docs | Local laptop default lowered to `N=100000`, 5M+ runs moved to explicit server tier, and forced compaction reduced the 5M dedup aggregation penalty. |
+| Commit `20140c2` | Primary-source code read + Run 144 docs | GreptimeDB `v1.0.2` TWCS picker, window picker, and compactor source: compaction is time-window scoped and expired SSTs are removed separately from successful merges. |
+| Commit `a6107e3` | Consolidation note | The storage verdict's DQ6 section now carries the 5M `v1.1.0-nightly-20260525` dedup-aggregation regression instead of preserving the stale "no regressions" wording from the 1M tier. |
 | `bench/four-way/gen.sh` | Reproducibility source | Generates six logical tables in-engine across all four builds; now defaults `N=100000`; rejects `N < 50000`; flushes GreptimeDB tables. |
 | `bench/four-way/bench.sh` | Reproducibility source | Runs the 20-query matrix; `REPS` defaults to 6 and must be recorded per run when docs cite medians. |
+| GreptimeDB TWCS source | Primary source | `TwcsPicker` groups files into compaction windows by max timestamp; `WindowedCompactionPicker` splits strict-window compaction by file time spans; the compactor removes expired SSTs even when merge output fails. |
 | GitHub release APIs | Current release-track check | GreptimeDB latest GA remains `v1.0.2` published 2026-05-14; ClickHouse latest release endpoint currently returns LTS `v26.3.12.3-lts`, while the benchmarked feature-stable line remains `v26.5.1.882-stable`. |
 
 ## What The Artifacts Prove
@@ -43,19 +46,31 @@ storage gates run.
    metric aggregations, dynamic JSON, in-DB cross-tier join, and high-card
    distinct. This turns the DQ5 flip trigger from theory into measured local
    evidence: analytics-heavy usage favors ClickHouse.
-5. **GreptimeDB table mode and compaction state are load-bearing.** Run 142
-   isolates dedup aggregation as roughly 8x slower than append-mode aggregation
-   in the less-compacted 5M state; Run 143 shows forced compaction drops
-   GreptimeDB stable's dedup aggregation from about 314 ms to about 60 ms, while
-   append mode stays faster at about 40 ms and avoids compaction dependence. For
-   scrape-style metrics where `(series, ts)` is already unique, append mode is
-   still the safer load-bearing default; dedup/`last_non_null` belongs where
-   partial upsert or out-of-order correction is actually needed.
+5. **GreptimeDB table mode, compaction state, and TWCS window count are
+   load-bearing.** Run 142 isolates dedup aggregation as roughly 8x slower than
+   append-mode aggregation in the less-compacted 5M state; Run 143 shows forced
+   compaction drops GreptimeDB stable's dedup aggregation from about 314 ms to
+   about 60 ms, while append mode stays faster at about 40 ms and avoids
+   compaction dependence. Run 144 makes the mechanism more precise: forced
+   compaction can collapse within-window state, but a long-retention table still
+   keeps at least one SST per TWCS window, so a dedup reader can still merge
+   across windows. For scrape-style metrics where `(series, ts)` is already
+   unique, append mode is still the safer load-bearing default; dedup/
+   `last_non_null` belongs where partial upsert or out-of-order correction is
+   actually needed.
 6. **GreptimeDB `v1.1.0-nightly-20260525` is not a clean upgrade signal.** It is
    better on some append/scan paths but regresses the dedup aggregation path at
-   5M. Run 143 makes that more precise: the less-compacted dedup path is the
-   risky state, and compaction/append mode are the escape hatches. The defensible
-   future claim is "re-test v1.1 GA", not "v1.1 fixes GreptimeDB performance."
+   5M. Run 143 makes the compaction-state sensitivity visible; Run 144 shows why
+   many-window metric tables remain structurally different from a single compacted
+   window; commit `a6107e3` carries that caveat into the storage verdict. The
+   defensible future claim is "re-test v1.1 GA", not "v1.1 fixes GreptimeDB
+   performance."
+7. **GreptimeDB's cheap-retention claim is stronger than a benchmark number.**
+   The Run 144 source read shows TWCS windows are the compaction boundary and the
+   compactor includes expired SSTs in removals separately from successful merge
+   outputs. That makes whole-SST TTL drop a structural GreptimeDB advantage,
+   while object-store request counts and cold-read cost are still unmeasured for
+   the full Parallax gate.
 
 ## What The Artifacts Do Not Prove
 
@@ -73,7 +88,8 @@ gate, storage cost gate, or A5 stack decision ledger:
 - no production hardware profile. Runs 140-143 are local Docker warm-cache
   artifacts, with four containers sharing a host and different timing bases by
   engine; Run 143 explicitly demotes large local runs and moves `N=5000000+` to
-  an operator-requested server tier.
+  an operator-requested server tier. Run 144 is source-read mechanism evidence,
+  not a new timing or cost run.
 
 Therefore, these artifacts can support `smoke_only` storage evidence and schema
 decisions. They cannot produce `greptime_prototype_default`,
@@ -83,9 +99,9 @@ decisions. They cannot produce `greptime_prototype_default`,
 
 | Prior wording risk | Corrected wording |
 | --- | --- |
-| "GT-nightly has no regressions." | "GT-nightly has no regressions at the 1M warm tier, but Run 141/142 found a 5M dedup aggregation regression; re-test v1.1 GA and compaction states." |
+| "GT-nightly has no regressions." | "GT-nightly has no regressions at the 1M warm tier, but Runs 141/142 found a 5M dedup aggregation regression; re-test v1.1 GA, compaction states, and many-window metric tables." |
 | "Every query is below the 300 ms gate." | "Every 1M warm query is below the gate; at 5M, GreptimeDB heavy analytics cross the gate while anchored/keyed hot paths remain interactive. Server-tier runs own future large absolute numbers." |
-| "Metrics should use GreptimeDB dedup/metric mode by default." | "Use append mode for scrape-style unique metrics when aggregation is load-bearing; reserve dedup/`last_non_null` for true correction/upsert semantics, and measure compaction-state sensitivity." |
+| "Metrics should use GreptimeDB dedup/metric mode by default." | "Use append mode for scrape-style unique metrics when aggregation is load-bearing; reserve dedup/`last_non_null` for true correction/upsert semantics, and measure compaction-state plus TWCS-window-count sensitivity." |
 | "Benchmark confirms GreptimeDB as the default." | "Benchmark confirms GreptimeDB remains plausible for Parallax's anchored hot path, while ClickHouse is the fallback/default for analytics-heavy usage until the full gates decide." |
 
 ## Decision Impact
@@ -107,9 +123,9 @@ default. The new evidence strengthens both sides:
 - The `bench/four-way` harness is valuable but narrower than the Rust
   `parallax-bench` prototype. It does not yet emit the JSONL result rows that A5
   expects.
-- Runs 142-143 used local A/B and compaction checks; they isolate the dedup path
-  and compaction sensitivity, but the real native metric engine / Prometheus
-  remote-write path still needs a v1.1 GA re-test on the server tier.
+- Runs 142-144 isolate the dedup path, compaction sensitivity, and TWCS window
+  mechanism, but the real native metric engine / Prometheus remote-write path
+  still needs a v1.1 GA re-test on the server tier.
 - Object-store economics and cold selective reads are still the cost decision's
   highest-risk gap.
 
@@ -130,14 +146,17 @@ offset ClickHouse's scan efficiency?**
 - [Storage benchmark prototype](storage-benchmark-prototype.md)
 - [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md)
 - [Storage size and object cost gate](storage-size-and-object-cost-gate.md)
+- [GreptimeDB `v1.0.2` TWCS picker source](https://github.com/GreptimeTeam/greptimedb/blob/v1.0.2/src/mito2/src/compaction/twcs.rs)
+- [GreptimeDB `v1.0.2` compactor source](https://github.com/GreptimeTeam/greptimedb/blob/v1.0.2/src/mito2/src/compaction/compactor.rs)
 - [GreptimeDB `v1.0.2` release](https://github.com/GreptimeTeam/greptimedb/releases/tag/v1.0.2)
 - [ClickHouse `v26.5.1.882-stable` release](https://github.com/ClickHouse/ClickHouse/releases/tag/v26.5.1.882-stable)
 - [ClickHouse `v26.3.12.3-lts` release](https://github.com/ClickHouse/ClickHouse/releases/tag/v26.3.12.3-lts)
 
 ## Bottom Line
 
-Runs 140-143 made the storage evidence better and less comfortable. The anchored
+Runs 140-144 made the storage evidence better and less comfortable. The anchored
 Parallax hot path still supports the GreptimeDB fit thesis, but the 5M results
 prove that analytics-heavy usage is a ClickHouse-shaped workload and that
-GreptimeDB table mode can dominate version choice. Treat the new benchmark code
-as strong smoke evidence and schema guidance, not as an A5 pass.
+GreptimeDB table mode, compaction state, and TWCS window count can dominate
+version choice. Treat the new benchmark code and source-read mechanism evidence
+as strong smoke/schema guidance, not as an A5 pass.

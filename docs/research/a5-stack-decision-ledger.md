@@ -44,7 +44,7 @@ fallback trigger that would change the default.
 
 The focused
 [storage benchmark artifact interpretation](storage-benchmark-artifact-interpretation.md)
-consumes the separate benchmark agent's Runs 140-143 without rerunning them.
+consumes the separate benchmark agent's Runs 140-144 without rerunning them.
 Those artifacts are useful A5 inputs, but they do not create an A5 pass:
 
 - `bench/four-way/` is reproducible local benchmark code: four storage builds,
@@ -59,6 +59,11 @@ Those artifacts are useful A5 inputs, but they do not create an A5 pass:
   not local laptop work; it also shows forced compaction greatly reduces the
   stable dedup aggregation penalty while append mode still avoids compaction
   dependence.
+- Run 144 reads GreptimeDB `v1.0.2` TWCS/compactor source and strengthens two
+  mechanism claims: long-retention dedup metric tables can still merge across
+  many time-window SSTs, and TTL-expired windows can be removed as whole SSTs.
+- Commit `a6107e3` carries the 5M `v1.1.0-nightly-20260525` dedup-aggregation
+  caveat into the storage verdict; it is a consolidation note, not a new run.
 - They do not include mixed native ingest, Q6 p95/p99, stale-bundle rate,
   object-store request/egress/cost rows, ClickHouse LTS, metadata, ingest-log,
   setup, restart, redaction, or end-to-end integration rows.
@@ -319,7 +324,7 @@ instead of weakening the product claim.
 | Component | Trigger | Default consequence |
 | --- | --- | --- |
 | Storage speed | Freshness p95 or Q6 p95 misses threshold under mixed ingest. | Switch to ClickHouse if it passes, or narrow MVP signal retention. |
-| Storage schema | GreptimeDB dedup/`last_non_null` metric tables exceed query budgets or depend on compaction state for scrape-style unique metrics. | Use append-mode metric tables where `(series, ts)` uniqueness is guaranteed; reserve dedup for correction/upsert semantics. |
+| Storage schema | GreptimeDB dedup/`last_non_null` metric tables exceed query budgets, depend on compaction state, or span many TWCS windows for scrape-style unique metrics. | Use append-mode metric tables where `(series, ts)` uniqueness is guaranteed; reserve dedup for correction/upsert semantics. |
 | Storage cost | Retained bytes/object count/provider costs exceed budget without offsetting simplicity. | Change schema/retention or switch object-store/candidate. |
 | Metadata | Turso/local metadata fails crash, backup/restore, contention, or migration gates. | Use Postgres for production metadata; keep Turso only for prototype/tiny if safe. |
 | Ingest log | Local WAL loses acknowledged data or cannot backpressure before disk risk. | Add Iggy/NATS/Redpanda profile or reject the target workload. |
