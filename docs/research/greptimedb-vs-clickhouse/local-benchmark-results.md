@@ -4926,6 +4926,42 @@ has no read-path dedup-merge, so the trap may be far milder. Test the CH side di
 `system.parts` size (~11% larger high-card-first), `GROUP BY svc` agg (~equal), `WHERE span_id` lookup
 (~equal). Contrast with GreptimeDB Run 114 (~16× scan penalty for the analogous PK mistake). Drop after.
 
+### Run 119 — 2026-05-25 — Issue-list / error-grouping query (the #1 error-tracker view): CH ~10 ms / GT ~26 ms (~2.6×), both interactive — another core Parallax query confirmed
+
+**Pass target.** Model the **issue-list** view — Sentry-style "group errors by fingerprint, count +
+last-seen, ranked by frequency." THE primary error-tracker screen, core to Parallax (debugging),
+not previously benchmarked (the existing `error_events` is only 2,226 rows — too small).
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned live — no bump). Built
+`err_big` = **1,000,000 error events** from `spans`/`spans_idx`, `fingerprint` = `abs(duration_ms)
+% 5000` → **279 distinct issues** (realistic issue count), both engines, parity. GreptimeDB event-table
+design (Run 114): `append_mode='true'` + low-card `PK(service)`, `fingerprint` a plain column. Query =
+`SELECT fingerprint, count(), max(ts) GROUP BY fingerprint ORDER BY count() DESC LIMIT 50`. Warm ×8.
+
+| Engine | warm reps (ms) | median |
+| --- | --- | --- |
+| ClickHouse | `12 11 10 26 8 7 8 9` | **~10 ms** |
+| GreptimeDB | `26 26 27 25 24 26 27 26` | **~26 ms** |
+| **Ratio** | | **~2.6×** |
+
+**Verdict — both interactive; another core Parallax query in the safe zone.**
+
+- **The issue-list is CH ~10 ms / GT ~26 ms (~2.6×), both ≪ 300 ms.** It's a full-scan group-by (1M
+  rows → 279 groups) + `max(ts)` + top-50 sort — the ~2–3× scan-agg class (consistent with Runs
+  96/102/113). GreptimeDB serves the frequency-ranked issue list in ~26 ms — instant for the user.
+- **Rounds out Parallax's core-query coverage — all interactive on GreptimeDB:** anchored evidence
+  bundle (Q6 ~16 ms, Run 99), trace waterfall (~18 ms, Run 97), log tail (~28 ms, Run 107), selective
+  log search (~10 ms, Run 98), metric panels (last-value GT-wins, rate ~1.6×, avg ~3×, Runs 96/109/113),
+  and now the **issue list (~26 ms)**. ClickHouse is ~2–7× faster on the analytical shapes, but every
+  core Parallax view is sub-perceptible on GreptimeDB. No verdict change — reaffirms "fit not speed:
+  the speed gap is real but never crosses the interactive gate on Parallax's actual queries."
+- **Event-table design confirmed (Run 114):** `append_mode` + low-card PK + fingerprint-as-column is
+  the right shape; the issue-list group-by runs fine on it.
+
+**Reproduce.** Build `err_big` (1M, `fingerprint = abs(duration_ms)%5000` → 279 issues; GT `append_mode`
++ `PK(service)`); `SELECT fingerprint, count(), max(ts) GROUP BY fingerprint ORDER BY count() DESC LIMIT
+50` warm ×8 → CH ~10 ms / GT ~26 ms. Drop after.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
