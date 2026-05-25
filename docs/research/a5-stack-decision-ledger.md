@@ -44,7 +44,7 @@ fallback trigger that would change the default.
 
 The focused
 [storage benchmark artifact interpretation](storage-benchmark-artifact-interpretation.md)
-consumes the separate benchmark agent's Runs 140-147 without rerunning them.
+consumes the separate benchmark agent's Runs 140-157 without rerunning them.
 Those artifacts are useful A5 inputs, but they do not create an A5 pass:
 
 - `bench/four-way/` is reproducible local benchmark code: four storage builds,
@@ -81,15 +81,31 @@ Those artifacts are useful A5 inputs, but they do not create an A5 pass:
   default dictionary cap is 8192 rows. This strengthens GreptimeDB's
   metric-ingest ergonomics claim, but not aggregation speed or mixed-load bundle
   latency.
+- Run 154 re-verifies the GreptimeDB Q4 `LEFT JOIN` pushdown gap and isolates it
+  to predicate-through-join propagation: plain anchored filters prune, direct
+  `LEFT JOIN` scans, and subquery/app-side correlation restores pruning. A5
+  storage-speed rows must record which correlation shape was tested.
+- Run 155 narrows the object-storage claim: ClickHouse can tier to S3/object
+  storage, so GreptimeDB's surviving cost argument must be proven as total
+  self-hosted 1x object-store, HA/server-count, request/egress, cache, and
+  elastic-compute cost rather than as "ClickHouse has no object storage."
+- Run 156 falsifies a capability worry: both engines can express grouped-error
+  rollups and evidence-window ranking. The ClickHouse build-on-top advantage is
+  ecosystem/maturity, not unique SQL expressibility for those views.
+- Run 157 re-verifies the full-text mechanism at 5M: selective search prunes on
+  both engines, while broad terms prune on neither and favor ClickHouse's scan
+  engine. A5 must keep broad log search as a ClickHouse flip trigger.
 - They do not include mixed native ingest, Q6 p95/p99, stale-bundle rate,
-  object-store request/egress/cost rows, ClickHouse LTS, storage crash/restart
-  loss counts under declared durability modes, high-cardinality native metric
-  ingest memory/flush rows, metadata, ingest-log, setup, restart, redaction, or
-  end-to-end integration rows.
+  object-store request/egress/cost rows, ClickHouse LTS, server-tier validation
+  of the Run 154 workaround, storage crash/restart loss counts under declared
+  durability modes, high-cardinality native metric ingest memory/flush rows,
+  metadata, ingest-log, setup, restart, redaction, or end-to-end integration
+  rows.
 
 So A5 remains unpassed. The current storage stance is "GreptimeDB remains a
-prototype-fit candidate for the anchored hot path; ClickHouse is the measured
-analytics-heavy fallback; the adapter boundary stays mandatory."
+prototype-fit candidate for the anchored hot path if Parallax avoids the direct
+in-DB `LEFT JOIN` trap; ClickHouse is the measured analytics-heavy, broad-search,
+and ecosystem fallback; the adapter boundary stays mandatory."
 
 ## Ledger Artifacts
 

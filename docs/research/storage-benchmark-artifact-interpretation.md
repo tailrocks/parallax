@@ -7,7 +7,7 @@ Research date: 2026-05-25
 ## Pass Target
 
 Consume the separate benchmark agent's new artifacts without running another
-storage benchmark. The goal is to decide what Runs 140-147 prove, what they
+storage benchmark. The goal is to decide what Runs 140-157 prove, what they
 falsify, which source-read mechanism claims they strengthen, and which
 product/storage claims must stay unproven until the full storage gates run.
 
@@ -30,7 +30,11 @@ product/storage claims must stay unproven until the full storage gates run.
 | GreptimeDB raft-engine WAL source | Primary source | `RaftEngineLogStore` owns `sync_write`, `sync_period`, and the raft-engine handle; writes convert entries into a `LogBatch` and call `engine.write(&mut batch, self.sync_write)`, while `SyncWalTaskFunction` calls `engine.sync()`. |
 | GreptimeDB PartitionTree source | Primary source | `PartitionTreeMemtable` uses a partition tree with `dict`, `partition`, `shard`, and `shard_builder`; `KeyDictBuilder` maps encoded primary keys to compact key indexes; default dictionary memory is capped by `min(total_memory / 8, 512 MiB)`. |
 | ClickHouse `LowCardinality` setting source | Primary source | `low_cardinality_max_dictionary_size` defaults to 8192 rows; values beyond the dictionary limit are written in the ordinary method. |
-| GitHub release APIs | Current release-track check | GreptimeDB latest GA remains `v1.0.2` published 2026-05-14; ClickHouse latest release endpoint currently returns LTS `v26.3.12.3-lts`, while the benchmarked feature-stable line remains `v26.5.1.882-stable`. |
+| Commit `3e50523` | Local plan re-verification | Run 154 re-runs the Q4 anchored cross-tier join gap and isolates it to GreptimeDB predicate-through-`LEFT JOIN` propagation: plain `trace_id` filtering prunes, but the direct join scans 1M rows; subquery prefilter or app-side correlation restores pruning. |
+| Commit `b06d519` | Local object-storage interpretation under the Parallax proxy lens | Run 155 confirms ClickHouse can use S3/object-storage tiering, narrowing the raw cold-storage gap, while GreptimeDB's remaining edge is self-hosted 1x object storage, elastic compute/storage separation, and simpler self-hosted HA assumptions. |
+| Commit `f5dbb57` | Local SQL capability recheck | Run 156 verifies both engines can compute Sentry-style grouped-error rollups and evidence-window ranking with SQL, so GreptimeDB is not capability-blocked for those product views; ClickHouse's build-on-top edge is ecosystem/maturity, not SQL expressibility. |
+| Commit `0d63446` | Local 5M full-text mechanism recheck | Run 157 confirms the full-text mechanism: selective terms prune on both engines, with ClickHouse reading one 8192-row granule and GreptimeDB bloom reading about five 10240-row blocks; broad terms prune on neither and become scan-bound, favoring ClickHouse. |
+| GitHub release redirects and tag refs | Current release-track check | `releases/latest` still resolves GreptimeDB to `v1.0.2`; `git ls-remote` confirms `v1.1.0-nightly-20260525` is a pre-release tag. ClickHouse `releases/latest` currently resolves to LTS `v26.3.12.3-lts`, while the benchmarked feature-stable `v26.5.1.882-stable` tag still exists. |
 
 ## What The Artifacts Prove
 
@@ -103,6 +107,27 @@ product/storage claims must stay unproven until the full storage gates run.
     metrics-ingest ergonomics thesis; it does not prove aggregation latency,
     native Prometheus/OTLP freshness, or memory pressure at production
     cardinality.
+11. **The in-database `LEFT JOIN` gap is real but avoidable for Parallax's hot
+    path.** Run 154 re-verifies that GreptimeDB's `trace_id` index prunes a
+    plain anchored filter, but the same predicate does not push through the
+    direct `LEFT JOIN` shape and the spans side scans 1M rows. That makes
+    app-side correlation and subquery pre-filtering load-bearing design choices,
+    not cosmetic implementation preferences.
+12. **ClickHouse's object-storage story is stronger than the old local-disk
+    comparison implied.** Run 155 shows ClickHouse can use S3/object-storage
+    tiering, so "GreptimeDB is cheaper because ClickHouse cannot use object
+    storage" is false. The remaining GreptimeDB argument is narrower:
+    self-hosted 1x object-store economics, elastic compute/storage separation,
+    fewer always-on HA assumptions, and operational fit.
+13. **Grouped errors are not a GreptimeDB SQL capability blocker.** Run 156
+    verifies both engines can compute Sentry-style grouped-error rollups and
+    evidence-window ranking. The relevant ClickHouse edge is the ecosystem that
+    already builds observability platforms on it, not a unique ability to express
+    Parallax's grouped-error queries.
+14. **Full-text findings survived a 5M plan recheck.** Run 157 confirms the
+    corrected interpretation: selective full-text is effectively a tie with a
+    small ClickHouse granularity edge, while broad terms remain a
+    ClickHouse-shaped scan workload.
 
 ## What The Artifacts Do Not Prove
 
@@ -120,8 +145,18 @@ gate, storage cost gate, or A5 stack decision ledger:
   crash/restart under the declared GreptimeDB `sync_write`/`sync_period` mode
   or the declared ClickHouse fsync/replication mode;
 - no S3/MinIO object-store request, egress, cache-size, or provider-cost rows;
-- no ClickHouse LTS run, even though GitHub's latest ClickHouse release endpoint
+- no ClickHouse LTS run, even though GitHub's latest ClickHouse release redirect
   currently points to the LTS line;
+- no server-tier re-run of the Run 154 `LEFT JOIN` shape, subquery workaround,
+  and app-side correlation under mixed ingest;
+- no storage-cost gate that prices the Run 155 object-storage conclusions across
+  retained bytes, request count, reread percentage, egress, cache size, and
+  HA/replication profile;
+- no product bundle proof from Run 156: SQL expressibility does not prove the
+  evidence graph schema, redaction policy, bundle canonicalization, or
+  outcome-loop rows;
+- no full-text user-workflow proof from Run 157: it isolates search mechanisms,
+  not alert triage quality, ranking, or evidence-bundle usefulness;
 - no metadata-store, ingest-log, setup, restart, redaction, or integration rows;
 - no production hardware profile. Runs 140-143 and 145 are local Docker
   warm-cache artifacts, with four containers sharing a host and different timing
@@ -143,6 +178,9 @@ decisions. They cannot produce `greptime_prototype_default`,
 | "Metrics should use GreptimeDB dedup/metric mode by default." | "Use append mode for scrape-style unique metrics when aggregation is load-bearing; reserve dedup/`last_non_null` for true correction/upsert semantics, and measure compaction-state plus TWCS-window-count sensitivity." |
 | "Strict durability is only a smoke timing claim." | "Run 75 timing is now source-grounded in GreptimeDB's append-log sync path, but A5 still needs a version-pinned durability-mode run that records `sync_write`, `sync_period`, ClickHouse fsync/replication settings, crash/restart loss counts, and mixed-ingest p95/p99." |
 | "GreptimeDB high-cardinality ingest is only a local smoke result." | "Runs 84/101 are now source-grounded by the PartitionTree primary-key dictionary, but A5 still needs native metric ingestion with series-count, dictionary-memory, flush-pressure, and mixed-query rows." |
+| "GreptimeDB is blocked from Sentry-style grouped-error views." | "Run 156 falsifies that capability fear for grouped-error rollup and evidence-window ranking; the remaining ClickHouse advantage is ecosystem/maturity, not SQL expressibility for those views." |
+| "ClickHouse cannot compete on object-storage economics." | "Run 155 narrows this: ClickHouse can tier to S3/object storage, so GreptimeDB's surviving cost edge must be proven on self-hosted 1x object storage, HA/server count, request/egress, and elastic compute behavior." |
+| "The full-text correction might be a one-off." | "Run 157 re-verifies at 5M that selective full-text prunes on both engines while broad terms become scan-bound and favor ClickHouse." |
 | "Benchmark confirms GreptimeDB as the default." | "Benchmark confirms GreptimeDB remains plausible for Parallax's anchored hot path, while ClickHouse is the fallback/default for analytics-heavy usage until the full gates decide." |
 
 ## Decision Impact
@@ -155,6 +193,17 @@ default. The new evidence strengthens both sides:
   dynamic JSON, broad log search, or in-database cross-tier joins at scale.
 - A storage adapter boundary remains mandatory because the measured flip trigger
   is now real, not hypothetical.
+- For GreptimeDB, the hot path should fetch anchored signal slices separately
+  and correlate in application code or use explicit subquery prefilters. A direct
+  `LEFT JOIN` on the bundle path is a known optimizer trap until a future
+  version proves predicate-through-join pushdown.
+- ClickHouse's build-on-top advantage should be treated as an ecosystem and
+  operating-model advantage, not as proof that GreptimeDB cannot express
+  Parallax grouped-error or evidence-window queries.
+- The object-storage decision is no longer "GreptimeDB object storage versus
+  ClickHouse local disk." Both can use object storage; the remaining question is
+  total self-hosted cost under Parallax's retention, cache, HA, and reread
+  profile.
 - GreptimeDB's durability fit is stronger for a no-loss-on-crash single-node
   profile because the source-backed strict path is an append-log sync, but A5
   must still pin durability settings and run crash/restart loss tests before the
@@ -173,6 +222,9 @@ default. The new evidence strengthens both sides:
 - The `bench/four-way` harness is valuable but narrower than the Rust
   `parallax-bench` prototype. It does not yet emit the JSONL result rows that A5
   expects.
+- Runs 154-157 sharpen mechanisms but stay local, warm, and artifact-specific:
+  they do not settle server-tier mixed-ingest p95/p99, cold/object-store reads,
+  crash durability, or an end-to-end Parallax evidence-bundle workflow.
 - Runs 142-144 isolate the dedup path, compaction sensitivity, and TWCS window
   mechanism, but the real native metric engine / Prometheus remote-write path
   still needs a v1.1 GA re-test on the server tier.
@@ -190,9 +242,11 @@ default. The new evidence strengthens both sides:
 Run the full mixed-load Q6 freshness gate and the object-store cost gate before
 turning these numbers into a storage default. The next storage-specific
 falsification target is: **does GreptimeDB keep Q6 p95 under 300 ms under mixed
-native ingest with cold/object-store reads, while preserving acknowledged rows
-under the declared durability mode, and does its object-count advantage offset
-ClickHouse's scan efficiency?**
+native ingest with cold/object-store reads, using the app-side/subquery
+correlation shape that avoids the Run 154 join trap, while preserving
+acknowledged rows under the declared durability mode, and does its total
+self-hosted object-store/HA cost beat ClickHouse's object-storage-capable
+profile?**
 
 ## Sources
 
@@ -218,13 +272,17 @@ ClickHouse's scan efficiency?**
 
 ## Bottom Line
 
-Runs 140-147 made the storage evidence better and less comfortable. The anchored
+Runs 140-157 made the storage evidence better and less comfortable. The anchored
 Parallax hot path still supports the GreptimeDB fit thesis, but the 5M results
 prove that analytics-heavy usage is a ClickHouse-shaped workload and that
 GreptimeDB table mode, compaction state, and TWCS window count can dominate
 version choice. Run 145 confirms the laptop-safe smoke tier, but also reinforces
-why small local timings are directional only. Runs 144, 146, and 147 now
+why small local timings are directional only. Runs 144, 146, and 147
 source-ground three GreptimeDB mechanism claims: TTL window drops, append-log
-durability, and cardinality-insensitive metric ingest. They are still mechanism
-evidence. Treat the new benchmark code and source-read evidence as strong
-smoke/schema guidance, not as an A5 pass.
+durability, and cardinality-insensitive metric ingest. Runs 154-157 add four
+more guardrails: avoid direct in-DB `LEFT JOIN` correlation on GreptimeDB's hot
+path, treat ClickHouse object storage as real, stop describing grouped-error
+rollups as a GreptimeDB capability blocker, and keep broad full-text search as a
+ClickHouse flip trigger. They are still mechanism evidence. Treat the benchmark
+code, local runs, and source-read evidence as strong smoke/schema guidance, not
+as an A5 pass.
