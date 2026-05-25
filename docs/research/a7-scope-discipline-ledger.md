@@ -122,7 +122,8 @@ Phase 2 can widen only after the tiny bundle works:
 | Storage benchmark and fallback | A1/A2 have justified engineering spend; A5 ledger records current result. |
 | Open schema/conformance | A3 ledger can count real conformance and external review rows. |
 | Redaction red-team | A6 ledger can prove seeded fixtures and projections are safe enough. |
-| CLI and agent tracing | It improves bundle quality without adding agent autonomy. |
+| CLI structural tracing | The CLI trace safety ledger proves the requested capture/redaction/overhead level and it improves bundle quality without adding agent autonomy. |
+| Agent-session fixture harness | The agent-session tracing ledger reaches `fixture_harness_ready`; no generic product claim or default ingestion is admitted before per-surface rows exist. |
 | Frontend error/correlation slice | A4 can measure strong edges and A6 can protect browser PII. |
 
 Phase 2 still does not justify MCP-as-required, fixer autonomy, HA, enterprise
@@ -139,6 +140,7 @@ Scale-out and breadth are topology changes after the core contract works:
 | Split workers | One process is bottlenecked by measured load, not by architecture preference. |
 | Object storage default | Storage cost gate proves retained-size and reread economics. |
 | MCP adapter | CLI/HTTP bundle API is stable, read-only safety is proven, and agent workflows need tool discovery rather than shell commands. |
+| Coding-agent session tracing | Per-surface fixture rows pass for the exact tool/version/config and capture surface; a multi-agent claim requires at least one native OTel adapter and one non-OTel structured adapter. |
 | Fixer component | A1 bundle value is green, A3 outcome rows exist, and A6 agent-exposure safety is green. |
 | HA deployment | There is real adoption or workload pressure that needs it. |
 
@@ -243,6 +245,7 @@ Default decisions:
 | --- | --- |
 | MCP server in Phase 1 | Defer. CLI/HTTP first. |
 | Fixer PR workflow in Phase 1 | Defer. Parallax stores and serves evidence; fixer is separate and later. |
+| Generic coding-agent tracing in Phase 1 or Phase 2 | Defer product ingestion/claim. Phase 2 may prepare fixture harnesses; Phase 3+ requires per-surface ledger rows. |
 | Frontend session replay in Phase 1 | Defer. Browser PII and replay storage are A4/A6/retention problems. |
 | Iggy/NATS/Redpanda in tiny tier | Defer unless local WAL fails an ingest-log gate required for the first bundle. |
 | Postgres required in tiny tier | Reject unless embedded/local metadata fails and the product claim is narrowed. |
@@ -260,6 +263,7 @@ Default decisions:
 | A milestone spends material effort on Phase 3+ features before Phase 1 gates pass. | Move to `scope_budget_warning` or `scope_reset_required`. |
 | A feature lacks a delete/defer trigger. | It cannot enter active scope. |
 | The CLI/API bundle contract is not stable, but UI/MCP/fixer work begins. | Stop that work and return to bundle contract. |
+| "Agent tracing" enters a milestone without naming capture surface, tool version/config, lossiness, redaction, projection, and audit-value rows. | Move to `scope_budget_warning`; split or defer the milestone. |
 | Self-hosted setup exceeds 15 minutes or needs hidden tribal knowledge. | A7 and the self-hosted simplicity gate both fail. |
 | Competitor pressure causes feature copying without a Parallax proof gate. | Record as rejected or deferred; do not silently expand scope. |
 
@@ -277,6 +281,13 @@ Default decisions:
   claims; A7 owns whether those stack choices keep the product buildable.
 - [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
   is the main source for deferring MCP until the CLI/API contract is proven.
+- [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
+  and [Agent session tracing ledger](agent-session-tracing-ledger.md) are the
+  main sources for treating agent-session tracing as a per-tool,
+  per-capture-surface fixture program rather than a single feature.
+- [CLI trace safety ledger](cli-trace-safety-ledger.md) owns the admission gate
+  for CLI structural capture, redacted excerpts, raw refs, child-process policy,
+  and projection safety.
 - [Fixer component and outcome loop](fixer-component-and-outcome-loop.md) keeps
   fix PR work outside the Parallax core until the evidence contract and outcome
   loop are ready.
