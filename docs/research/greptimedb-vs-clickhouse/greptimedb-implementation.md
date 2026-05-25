@@ -3,7 +3,9 @@
 <!-- markdownlint-disable MD013 -->
 
 Status: pass 12 (design) + pass 73 (**whole schema built live**, Run 45) + pass 94
-(**native auto-schema vs custom decided live**, Run 57). The buildable
+(**native auto-schema vs custom decided live**, Run 57) + pass 116 (**Q4 retrieval
+corrected for the join-pushdown gap**, Runs 81/82 — direct in-DB join full-scans; use
+subquery pre-filter or app-side assembly). The buildable
 storage design for the **recommended** engine (`verdict-which-to-choose.md`): full schema,
 ingest path, exact retrieval, object storage, and operational shape — for the whole Parallax
 signal set. Builds on the seed DDL in `storage-benchmark-prototype.md` and applies the
@@ -220,11 +222,16 @@ SELECT DISTINCT fingerprint FROM error_events
    AND fingerprint NOT IN (
      SELECT fingerprint FROM error_events WHERE project = ? AND release = ?);
 
--- Q4 cross_tier: frontend trace -> backend spans + errors (trace_id INVERTED INDEX)
+-- Q4 cross_tier: frontend trace -> backend spans + errors.
+-- IMPORTANT (Run 81/82): a *direct* `spans s LEFT JOIN error_events e WHERE s.trace_id=?`
+-- does NOT push the anchor into the join-input scan on GreptimeDB v1.0.2 — it FULL-SCANS
+-- spans (~54 ms / 1M rows) because the inverted index is not consulted for a join input.
+-- Fix: pre-filter the anchored side in a subquery so the index prunes (~21 ms), OR assemble
+-- app-side like Q1/Q6 (anchored fetch each signal + join in app — Parallax's pattern, fastest).
 SELECT s.service, s.name, s.duration_ms, e.error_type, e.message
-  FROM spans s LEFT JOIN error_events e
-    ON e.trace_id = s.trace_id AND e.span_id = s.span_id
- WHERE s.trace_id = ? ORDER BY s.ts;
+  FROM (SELECT * FROM spans WHERE trace_id = ?) s
+  LEFT JOIN error_events e ON e.trace_id = s.trace_id AND e.span_id = s.span_id
+ ORDER BY s.ts;
 
 -- Q5 high_cardinality: filter by user over window (SKIPPING INDEX / JSON attr)
 SELECT count(*) FROM spans
@@ -236,10 +243,16 @@ SELECT count(*) FROM spans
 --   GET /v1/prometheus/api/v1/query_range?query=avg by (service)(http_req_latency)&start=&end=&step=
 ```
 
-Key/index usage: Q1/Q4 use the `trace_id` inverted index (point lookup, Run-2
-plan confirmed filter pushdown into the region scan); Q2/Q3 use the
-`(project,fingerprint)` PK prefix; Q5 uses the `SKIPPING INDEX` or falls back to a
-JSON-attribute scan over the time window; metrics use the native PromQL planner.
+Key/index usage: **Q1** uses the `trace_id` inverted index (the UNION's per-table
+`WHERE trace_id=?` each prune — point lookup). **Q4 needs the subquery-prefilter form
+above** (or app-side assembly): a *direct* join does **not** push the anchor into the
+join-input scan, so the index isn't used and spans is full-scanned (Run 81/82 — corrects
+the earlier "Q4 uses the index" claim; the standalone `WHERE` prunes, the join input does
+not). Q2/Q3 use the `(project,fingerprint)` PK prefix; Q5 uses the `SKIPPING INDEX` or
+falls back to a JSON-attribute scan over the time window; metrics use the native PromQL
+planner. **Design rule for Parallax retrieval: anchor each signal with its own
+`WHERE trace_id=?` (index-pruned) and join app-side — never a direct in-DB join on an
+indexed anchor.**
 
 ## Object storage and retention
 
