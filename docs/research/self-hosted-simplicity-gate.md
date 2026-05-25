@@ -30,6 +30,7 @@ Use that note as the measurement manifest and refresh it before each real run.
 | Sentry self-hosted | Sentry describes self-hosted as a minimal setup for simple use cases with no dedicated support, Docker/Docker Compose plus install scripts, 4 CPU cores, 16 GB RAM plus 16 GB swap, 20 GB disk, and a single-node graph that still includes databases, brokers, and product services. The current pinned release also has manual release-note action/security items. | This is the main complexity baseline. Parallax does not need to beat Sentry's feature depth; it must beat Sentry's first-deployment burden for the narrower error-context job, including operator-visible release-note work. |
 | SigNoz self-hosted | Official Docker setup clones the repo and runs Docker Compose; the verification example shows `signoz`, `signoz-otel-collector`, ClickHouse, and ZooKeeper containers. Architecture docs center ClickHouse and the SigNoz OTel Collector. | SigNoz is easier than Sentry for OTel-native observability, but ClickHouse plus ZooKeeper is still heavier than the Parallax tiny tier should be. |
 | OpenObserve single-node | The official quickstart offers binary and Docker single-node self-hosted paths with root credentials and port 5080; its architecture page separates larger deployments into router, ingester, compactor, querier, and alert manager roles. | OpenObserve proves a Rust, single-node observability product can be simple. Parallax must justify any extra complexity with Sentry compatibility, evidence bundles, and agent-safe context. |
+| Lightweight challengers | The current named set is Bugsink, Rustrak, Traceway, GoSnag, and Urgentry. The deployment inventory pins Bugsink `2.2.1`, Rustrak `@rustrak/server@0.2.5`, Traceway `backend/v1.7.27`, GoSnag `main` commit `418b8b1`, and Urgentry `v0.2.12`. | These are the real simplicity bar below Sentry. Parallax must compare against them by role: Sentry-compatible error-only simplicity, Rust-first tiny tracking, OTLP-native embedded mode, AI/MCP issue tooling, and vendor benchmark claims. |
 | GreptimeDB standalone | GreptimeDB can run as one standalone binary or one Docker container, with local data persisted in a directory and HTTP/RPC/MySQL/Postgres ports exposed. | Acceptable for the tiny tier if it remains one storage process and passes freshness/cost gates. |
 | Turso/libSQL metadata | Turso docs support local SQLite file development without an auth token, `turso dev --db-file` for a local libSQL server, and libSQL commits to embeddability without a network connection. | Metadata must default to an embedded/local file mode. A required hosted Turso dependency would violate the self-hosted tiny-tier claim. |
 
@@ -43,6 +44,7 @@ Sources:
 - [SigNoz architecture docs](https://signoz.io/docs/architecture/)
 - [OpenObserve quickstart](https://openobserve.ai/docs/getting-started/)
 - [OpenObserve architecture docs](https://openobserve.ai/docs/architecture/)
+- [Self-hosted deployment baseline inventory](self-hosted-deployment-baseline-inventory.md)
 - [GreptimeDB standalone install docs](https://docs.greptime.com/getting-started/installation/greptimedb-standalone/)
 - [Turso local development docs](https://docs.turso.tech/local-development)
 - [libSQL repository](https://github.com/tursodatabase/libsql)
@@ -77,8 +79,8 @@ Not allowed in the default tiny tier:
 ## Measurement Protocol
 
 Run the same protocol for Sentry self-hosted, SigNoz Docker, OpenObserve
-single-node, representative lightweight Sentry-compatible challengers from the
-[lightweight competitor watch](lightweight-sentry-compatible-competitor-watch.md),
+single-node, the named lightweight challengers from the
+[deployment baseline inventory](self-hosted-deployment-baseline-inventory.md),
 and Parallax tiny tier.
 
 1. Start from a fresh Ubuntu LTS VM with Docker installed and no product data.
@@ -100,6 +102,12 @@ and Parallax tiny tier.
 12. Run the documented backup/export path and restore into a clean instance.
 13. Run the documented upgrade path or dry-run upgrade and record the operator
     steps.
+
+For lightweight challengers, record maturity separately from measured
+deployment result. Bugsink and Traceway are active enough to be baseline
+comparisons; Rustrak and Urgentry are fresh and strategically relevant; GoSnag
+is currently a capability-shape warning because the checked metadata has no
+tagged release and low visible traction.
 
 For Parallax, the "first useful moment" is not seeing a dashboard. It is this:
 
@@ -125,6 +133,7 @@ warnings.
 | Backup/restore clarity | A documented local snapshot/export restores into a clean instance in <=10 minutes for the sample data. | If backup requires custom database expertise, the tiny tier is not operator-simple. |
 | Upgrade path | One binary/image replacement plus explicit migrations and rollback notes. | If upgrades resemble a bespoke multi-service migration, the Sentry comparison becomes unfavorable. |
 | Secret safety | The sample bundle redacts seeded tokens in event fields, tags, logs, env, and CLI output. | The deployment gate cannot pass before the redaction gate is at least green on fixture data. |
+| Lightweight challenger comparison | Parallax is compared against Bugsink, Rustrak, Traceway, Urgentry, and GoSnag when current enough, with vendor benchmark claims marked unreproduced unless the benchmark artifacts exist. | If Parallax only beats self-hosted Sentry but is much heavier than lightweight baselines for the first useful context, narrow the simplicity claim. |
 
 ## Comparison Scorecard
 
@@ -133,20 +142,22 @@ estimates; fill it only after running the protocol above.
 The current version and deployment-shape manifest is
 [Self-hosted deployment baseline inventory](self-hosted-deployment-baseline-inventory.md).
 
-| Metric | Sentry self-hosted | SigNoz Docker | OpenObserve single-node | Lightweight challenger | Parallax tiny tier |
-| --- | --- | --- | --- | --- | --- |
-| Version/tag tested | TBD | TBD | TBD | TBD | TBD |
-| Time to usable UI/API | TBD | TBD | TBD | TBD | TBD |
-| Time to first error/context result | TBD | TBD | TBD | TBD | TBD |
-| Long-running services | TBD | TBD | TBD | TBD | TBD |
-| Recommended CPU/RAM/disk | TBD | TBD | TBD | TBD | TBD |
-| Measured idle RSS/CPU | TBD | TBD | TBD | TBD | TBD |
-| Required external broker/cache | TBD | TBD | TBD | TBD | TBD |
-| Backup/restore steps | TBD | TBD | TBD | TBD | TBD |
-| Upgrade steps | TBD | TBD | TBD | TBD | TBD |
-| Sentry SDK DSN-change path | TBD | TBD | TBD | TBD | TBD |
-| OTLP path without extra collector | TBD | TBD | TBD | TBD | TBD |
-| Evidence bundle available | N/A | N/A | N/A | N/A | TBD |
+| Metric | Sentry self-hosted | SigNoz Docker | OpenObserve single-node | Bugsink | Rustrak | Traceway | GoSnag | Urgentry | Parallax tiny tier |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Version/tag tested | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Release maturity confidence | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Time to usable UI/API | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Time to first error/context result | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Long-running services | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Recommended CPU/RAM/disk | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Measured idle RSS/CPU | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Required external broker/cache | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Backup/restore steps | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Upgrade steps | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Sentry SDK DSN-change path | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| OTLP path without extra collector | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Evidence bundle available | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | TBD |
+| Vendor benchmark reproduced | N/A | N/A | N/A | N/A | N/A | N/A | N/A | TBD | N/A |
 
 ## Design Consequences
 
@@ -163,6 +174,10 @@ The current version and deployment-shape manifest is
 5. OpenObserve is the simplicity pressure test. If Parallax is less simple than
    OpenObserve while claiming a narrower first product, the architecture needs
    another cut.
+6. Bugsink and Rustrak are the Sentry-compatible error-only simplicity bar;
+   Traceway is the OTLP-native embedded-mode bar; Urgentry is the benchmark
+   claim bar. Parallax must win on evidence context, not pretend those products
+   do not exist.
 
 ## Kill Trigger
 

@@ -43,7 +43,7 @@ Central rule:
 | Level | Meaning | Minimum evidence |
 | --- | --- | --- |
 | `not_measured` | No current self-hosted simplicity run exists. | Default state. |
-| `baseline_inventory_current` | Competitor versions, install paths, and service shapes were refreshed. | Source snapshot rows for Sentry, SigNoz, OpenObserve, at least one lightweight Sentry-compatible challenger, GreptimeDB, and Turso/libSQL. |
+| `baseline_inventory_current` | Competitor versions, install paths, service shapes, release maturity, and moving-target risk were refreshed. | Source snapshot rows for Sentry, SigNoz, OpenObserve, Bugsink, Rustrak, Traceway, GoSnag, Urgentry, GreptimeDB, and Turso/libSQL, with explicit stale/excluded reasons for any omitted lightweight challenger. |
 | `parallax_install_smoke` | Parallax tiny tier starts from public docs on a clean VM. | Command ledger and service inventory show no private steps or hidden dependencies. |
 | `first_bundle_under_15m` | Fresh VM reaches the first useful issue context bundle inside the gate target. | Wall-clock row from first command to `parallax issue context <issue-id>` with bundle hash. |
 | `service_budget_pass` | Tiny tier stays inside the long-running service budget. | Steady-state inventory shows no more than three required services and no broker/cache/Postgres/MCP sidecar. |
@@ -55,7 +55,7 @@ Central rule:
 | `redaction_smoke_pass` | Seeded setup/event/log/CLI secrets stay out of the bundle and transcript. | Redaction smoke row reports zero visible canary leaks in JSON, Markdown, and committed run artifacts. |
 | `sentry_comparison_pass` | Parallax beats self-hosted Sentry for the first useful evidence-bundle job. | Current Sentry baseline row plus Parallax row show lower setup time, service count, and resource burden for the scoped job. |
 | `lightweight_comparison_pass` | Parallax remains close enough to lightweight challengers while covering more context. | Bugsink/Rustrak/Traceway/GoSnag/Urgentry comparison row records the tradeoff honestly. |
-| `tiny_tier_self_hosted_claim` | Parallax can claim the tested tiny-tier self-hosted workflow. | All required Parallax rows pass and at least Sentry plus one lightweight challenger comparison is current. |
+| `tiny_tier_self_hosted_claim` | Parallax can claim the tested tiny-tier self-hosted workflow. | All required Parallax rows pass; Sentry, SigNoz, OpenObserve, and the named lightweight challenger set are current or explicitly marked stale/excluded; vendor benchmark claims are reproduced or labeled unmeasured. |
 | `claim_expired` | A prior claim is stale. | Refresh trigger fired or max age elapsed. |
 | `claim_failed` | A required fixture failed. | Any gate miss that changes allowed product wording. |
 
@@ -334,6 +334,10 @@ Claim ledger row:
 - Measure competitors using their official install path and their own first
   useful result: captured issue/error for error trackers, usable query/result
   for observability systems.
+- Measure lightweight challengers by role, not as one interchangeable column:
+  Bugsink for mature Sentry-compatible simplicity, Rustrak for Rust-first
+  Sentry-compatible + MCP shape, Traceway for OTLP-native embedded mode, Urgentry
+  for vendor benchmark claims, and GoSnag as a low-maturity feature warning.
 - Pin product code, image tags, docs hashes, and Compose files. Do not use
   estimates in the scorecard.
 - Pin the correct release stream. For monorepos or package-specific releases,
@@ -355,6 +359,9 @@ Claim ledger row:
   private local build is not a claimable path.
 - A pass is scoped to the host profile, exact versions, public docs, sample
   workload, and Parallax commit in the manifest.
+- Vendor benchmark numbers are not evidence until reproduced by the benchmark
+  agent or an equivalent recorded run. Until then, they affect watch priority,
+  not measured Parallax pass/fail status.
 
 ## Required Pass Set
 
@@ -372,6 +379,7 @@ Claim ledger row:
 | Backup/restore | Clean-instance restore for sample data in <= 10 minutes. |
 | Upgrade rehearsal | Binary/image replacement plus explicit migration and rollback notes. |
 | Redaction smoke | Zero seeded canary leaks in bundle JSON, Markdown, and committed run artifacts. |
+| Named lightweight baseline comparison | Bugsink, Rustrak, Traceway, Urgentry, and GoSnag are measured or explicitly marked stale/excluded with reasons. |
 
 ## Refresh Triggers
 
@@ -411,6 +419,11 @@ Allowed after `tiny_tier_self_hosted_claim`:
 > self-hosted Sentry and remains close to lightweight error trackers while
 > producing a broader evidence bundle.
 
+Allowed only when named lightweight baselines are current:
+
+> Against the tested lightweight baseline set, Parallax trades modest extra
+> setup for cross-signal evidence bundles and agent-safe context.
+
 Avoid:
 
 - "Drop-in Sentry replacement."
@@ -420,6 +433,8 @@ Avoid:
 - "No operations required."
 - "Air-gapped ready" unless the run used an air-gapped fixture.
 - "Self-hosted claim" without naming the host profile, versions, and workload.
+- "Urgentry benchmark beaten" or similar wording before the benchmark artifact
+  reproduces the vendor claim under the shared protocol.
 
 ## Relationship To Other Research
 
