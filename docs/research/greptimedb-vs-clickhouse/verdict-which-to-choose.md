@@ -335,6 +335,13 @@ operator fully controls) — don't extrapolate the prefilter/TopK velocity to "t
 dynamic-attr JSON gap (#4, *widened* to ~57× at Run 104) **is** roadmap-committed: **JSON Type v2
 (field-level index, dynamic fields), v1.1 / Q2 2026.**
 
+**⚠ The v1.1 *nightly* is uneven, not uniformly better (Runs 141/142):** at 1M it's a modest broad
+improvement, and it helps the join path (cross-tier 65→36 ms); but at **5M it REGRESSES the dedup-table
+aggregation ~2.5×** (metric-agg 315→782 ms; append-mode unaffected — isolated to the dedup-merge path).
+Since the metric engine uses dedup-like `last_non_null`, **don't assume v1.1 is a free upgrade for
+metrics-at-scale — re-test on v1.1 GA.** The append-mode escape hatch (Run 142: ~8× faster dedup-agg at
+scale, scrape-style metrics) sidesteps both the regression and the dedup cost regardless of version.
+
 **(B) Who can move the engine?** — This is the operator's decisive lever, and it is
 *asymmetric*. GreptimeDB and DataFusion are **open-source Rust**; a gap there is one the
 operator (and AI-assisted contribution, which is markedly stronger at Rust than C++ — cf.
