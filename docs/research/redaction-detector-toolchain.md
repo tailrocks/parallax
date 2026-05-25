@@ -37,7 +37,7 @@ must be disabled by default for A6 fixture runs.
 
 | Source | What it provides | Parallax implication |
 | --- | --- | --- |
-| [OpenTelemetry Collector redaction processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/redactionprocessor/README.md) | Checked 2026-05-25. Current README lists stability as alpha for logs/metrics and beta for traces. It supports `allowed_keys`, `blocked_values`, `allowed_values`, masking, HMAC hash functions, redaction audit attributes, URL sanitization, and database-query sanitization. `allowed_values` takes precedence over `blocked_values`. | Good model for OTLP attribute policy and audit fields, but broad allowlists can intentionally bypass blocked-value masking. Not enough for bundle safety because it only covers data that flowed through that Collector processor. |
+| [OpenTelemetry Collector redaction processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/redactionprocessor/README.md) | Checked 2026-05-25. Current README lists stability as alpha for logs/metrics and beta for traces. It supports `allowed_keys`, `blocked_values`, `allowed_values`, masking, HMAC hash functions, redaction audit attributes, URL sanitization, and database-query sanitization. `allowed_values` takes precedence over `blocked_values`. Follow-up release API checks showed OpenTelemetry Collector core source at `v0.153.0` on 2026-05-25, collector-releases stable binaries/images at `v0.152.1`, and collector-contrib latest still `v0.152.0`. | Good model for OTLP attribute policy and audit fields, but broad allowlists can intentionally bypass blocked-value masking. Not enough for bundle safety because it only covers data that flowed through that Collector processor. Pin redaction evidence to the collector-contrib processor and tested distribution version, not just the Collector core source version. |
 | [OpenTelemetry Collector processor catalog](https://opentelemetry.io/docs/collector/components/processor/) | Checked 2026-05-25. The catalog was last modified 2026-03-16 and links Redaction Processor at contrib `v0.152.0`, included in contrib/K8s with traces beta and metrics/logs alpha. | Parallax should support Collector-side redaction, but still repeat policy in ingest and bundle building. Treat upstream Collector redaction as a useful pre-filter, not an agent-safety boundary. |
 | [OpenTelemetry common `AnyValue`](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) | OTLP values can be scalars, byte arrays, arrays, and key/value lists. | Redaction must traverse typed values directly; string rendering of maps/lists is only a projection and cannot be the detector input. |
 | [GitHub secret scanning supported patterns](https://docs.github.com/en/code-security/reference/secret-security/supported-secret-scanning-patterns) | Current pattern taxonomy includes generic, AI-detected, and provider patterns, with 500+ provider entries and notes on precision, validity checks, partner alerts, and token-version churn. | Use as a maintained external reference for canary coverage and provider-pattern watchlists. Do not assume Parallax can copy GitHub's proprietary AI/validity checks. |
@@ -84,6 +84,11 @@ This pass narrowed the trust boundary rather than changing the architecture:
 - The OpenTelemetry redaction processor is a good upstream minimizer, especially
   for HMAC hashing and query/URL sanitization, but alpha signal stability and
   `allowed_values` precedence make it unsafe as the final agent-output boundary.
+- OpenTelemetry Collector version numbers need source/distribution precision:
+  core source reached `v0.153.0`, while collector-contrib redaction and the
+  latest stable collector-releases distribution checked here remain on the
+  `v0.152.x` axis. A6 rows should store both the processor source version and
+  the actual Collector binary/image used in a fixture.
 
 Falsification criteria:
 

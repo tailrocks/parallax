@@ -45,6 +45,10 @@ scrubber:
   `allow_all_keys` is set, applies `blocked_values` to allowed keys, supports
   HMAC hash functions for low-entropy data, and can emit audit attributes
   ([OpenTelemetry redaction processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/redactionprocessor/README.md)).
+  Follow-up release API checks on 2026-05-25 showed Collector core source at
+  `v0.153.0`, collector-releases stable binaries/images at `v0.152.1`, and
+  collector-contrib at `v0.152.0`, so redaction fixtures must pin the processor
+  source and tested distribution separately.
 - OpenTelemetry common values can contain typed scalars, bytes, arrays, and
   key/value lists; Parallax must inspect the typed value tree before string or
   Markdown rendering
@@ -168,6 +172,8 @@ Each run gets exactly one manifest:
     "trufflehog": "3.95.3",
     "detect_secrets": "1.5.0",
     "presidio": "2.2.362",
+    "otel_collector_contrib": "0.152.0",
+    "otel_collector_distribution": "0.152.1",
     "github_pattern_snapshot": "2026-05-25"
   },
   "scanner_release_metadata": {
@@ -197,6 +203,15 @@ Each run gets exactly one manifest:
         "presidio-analyzer 2026-03-15T12:40:43.801880Z",
         "presidio-anonymizer 2026-03-15T12:40:38.651984Z"
       ]
+    },
+    "otel_collector_redaction": {
+      "collector_core_latest": "0.153.0",
+      "collector_core_published_at": "2026-05-25T08:09:17Z",
+      "collector_releases_latest": "0.152.1",
+      "collector_releases_published_at": "2026-05-20T15:47:17Z",
+      "collector_contrib_latest": "0.152.0",
+      "collector_contrib_published_at": "2026-05-11T13:38:04Z",
+      "role": "upstream_otlp_minimizer_comparator_not_final_bundle_boundary"
     }
   },
   "hmac_key_policy": "ephemeral-test-key",

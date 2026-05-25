@@ -28,7 +28,7 @@ This pass rechecks that boundary:
 | [TruffleHog `v3.95.3`](https://github.com/trufflesecurity/trufflehog/releases/tag/v3.95.3) | Latest release remains `v3.95.3`, published `2026-05-11T18:38:34Z`; repository license API reports AGPL-3.0. | Still useful for private verified-secret checks, not runtime. |
 | [detect-secrets `v1.5.0`](https://github.com/Yelp/detect-secrets/releases/tag/v1.5.0) | Latest release remains `v1.5.0`, published `2024-05-06T18:05:06Z`; docs emphasize baseline/audit/plugin workflows. | Keep as legacy-baseline/new-secret comparator, not provider-churn source. |
 | [Presidio `2.2.362`](https://github.com/microsoft/presidio/releases/tag/2.2.362), [PyPI analyzer](https://pypi.org/project/presidio-analyzer/), and [PyPI anonymizer](https://pypi.org/project/presidio-anonymizer/) | Latest release remains `2.2.362`, published `2026-03-18T05:32:57Z`; PyPI analyzer/anonymizer latest versions are `2.2.362`. README warns automated detection cannot guarantee all sensitive information is found. | Keep as PII reference and optional offline comparator; default-deny source policy still carries the safety guarantee. |
-| [OpenTelemetry Collector redaction processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/redactionprocessor/README.md) and [contrib `v0.152.0`](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.152.0) | Current README still lists alpha logs/metrics and beta traces. It supports fail-closed `allowed_keys`, `blocked_values`, `allowed_values`, HMAC hashes, audit attributes, URL sanitization, and database-query sanitization; `allowed_values` takes precedence over `blocked_values`. Latest contrib release remains `v0.152.0`. | Good upstream minimizer and policy model, but still not the final bundle-output boundary. |
+| [OpenTelemetry Collector redaction processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/redactionprocessor/README.md), [contrib `v0.152.0`](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.152.0), [collector core `v0.153.0`](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.153.0), and [collector-releases `v0.152.1`](https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.152.1) | Current README still lists alpha logs/metrics and beta traces. It supports fail-closed `allowed_keys`, `blocked_values`, `allowed_values`, HMAC hashes, audit attributes, URL sanitization, and database-query sanitization; `allowed_values` takes precedence over `blocked_values`. Follow-up release API checks found collector core source latest `v0.153.0`, collector-releases stable binaries/images latest `v0.152.1`, and collector-contrib latest `v0.152.0`. | Good upstream minimizer and policy model, but still not the final bundle-output boundary. A6 fixture rows must pin the contrib processor/source and the actual Collector distribution used instead of inheriting the newer core-source version number. |
 
 ## Decision Update
 
@@ -87,6 +87,10 @@ machine, and why that does not apply to the default runtime path.
   stability.
 - GitHub's provider-pattern taxonomy remains a separate watchlist; Betterleaks
   does not replace the need to track provider token churn.
+- Collector-side redaction is also a versioned fixture input. Store the
+  collector-contrib redaction processor version and the tested Collector
+  distribution separately because core source, contrib, and released
+  binaries/images can move on different dates.
 
 ## Falsification Triggers
 
