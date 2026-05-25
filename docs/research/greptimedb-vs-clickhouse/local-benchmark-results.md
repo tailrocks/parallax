@@ -310,6 +310,37 @@ merges + async insert. Confirming the *sustained* failure needs a rate-ramp test
 **B9 status: done, refined** (mechanism confirmed; severity downgraded to a
 sustained-rate concern).
 
+### Run 8 — 2026-05-25 — B10 (partial): GreptimeDB object storage on MinIO
+
+First object-storage run. Stood up MinIO + bucket `greptimedb` on an isolated
+network; ran a GreptimeDB `v1.0.2` standalone with `[storage] type = "S3"`,
+`endpoint = http://…minio:9000`, path-style, against MinIO; ingested the 1M spans,
+flushed. (Config via `docker create` + `docker cp` + `docker start` — bind-mounts
+don't reach the orbstack daemon.)
+
+| Observation | Result |
+| --- | --- |
+| GreptimeDB-S3 startup | clean — logs confirm `store: S3(bucket: greptimedb)`; healthy in ~4 s |
+| Ingest 1M spans → flush | OK (COPY 950 ms server-side), 1,000,000 rows queryable |
+| **MinIO footprint** | **36 MiB across 4 objects** |
+| vs local-disk SST (Run 1) | 38 MiB — **no object-storage size penalty** (same Parquet SST) |
+
+**Findings (cost axis #2):**
+
+1. **GreptimeDB object-store-native is real and clean** — one `[storage]` block,
+   data lands in S3 directly as Parquet. Empirically confirms the verdict's
+   "object-store-native" claim (vs ClickHouse's S3-disk-under-a-policy).
+2. **Few, large objects (4 for 1M rows)** → **request-efficient on S3**: fewer
+   GET/PUT/LIST, so lower per-request cost amplification — the thing that dominates
+   object-store bills for a re-read-heavy engine (`retention-cost-model.md`).
+   ClickHouse Wide parts store **one object per column per part** → many more,
+   smaller objects → more requests; this is the contrast to measure next.
+
+**B10 status: partial.** GreptimeDB side done. **Still owed:** ClickHouse `s3`
+disk + storage-policy run on the same MinIO (object count + bytes), and actual
+GET/PUT/LIST counts (MinIO audit log / `mc admin trace`) during ingest and during
+cold-cache Q1–Q6 — the real request-cost comparison. Cold-read egress too.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

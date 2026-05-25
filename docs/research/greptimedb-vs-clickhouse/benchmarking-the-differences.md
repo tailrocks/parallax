@@ -163,7 +163,11 @@ Legend: **Runnable now** = expressible in the current prototype/`bench/compose.y
 - **Pass/fail:** quantify the object-store cost + the cold-read request amplification
   per engine; is GreptimeDB's native path cheaper or just simpler?
 - **Prereq:** MinIO in compose; S3 config for both; request-counting instrumentation.
-- **Status:** Needs harness ext. (MinIO + S3 configs + request counters). Axis-2 key.
+- **Status:** **PARTIAL (Run 8).** GreptimeDB-S3 on MinIO done: 1M spans → **36 MiB
+  in 4 objects** (≈ local SST 38 MiB, no penalty); few large objects =
+  request-efficient. Object-store-native claim confirmed. **Owed:** ClickHouse `s3`
+  disk run on the same MinIO (expect many more objects — one per column per Wide
+  part) + actual GET/PUT/LIST counts via MinIO audit during ingest + cold queries.
 
 ## B11 — Multi-node scale-out hold + rebalance
 

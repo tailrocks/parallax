@@ -78,8 +78,13 @@ decided less by "who compresses spans 1.3× better" and more by:
 1. **Object-storage-native vs object-storage-as-policy.** GreptimeDB is
    OpenDAL-native with a default local read cache (`greptimedb-internals.md`);
    ClickHouse uses an S3 disk under a storage policy with TTL-move tiering. For
-   cheap, re-readable long retention GreptimeDB's design is the more direct fit —
-   **untested locally; needs the MinIO run** (next).
+   cheap, re-readable long retention GreptimeDB's design is the more direct fit.
+   **Partially measured (Run 8):** GreptimeDB-S3 on MinIO stored 1M spans as
+   **36 MiB in just 4 Parquet objects** (≈ its local SST, no size penalty) — clean
+   single-config-block, and **few large objects → request-efficient on S3** (low
+   GET/PUT/LIST amplification, which dominates object-store bills). The ClickHouse
+   S3-disk counterpart (expected: many more objects — one per column per Wide part)
+   + actual request counts are still owed.
 2. **Compute per ingested GB and per query** — not yet measured (CPU/RSS sampling
    pending; the harness protocol covers it).
 3. **Tiered retention**: both can keep hot data local and cold on object store;
