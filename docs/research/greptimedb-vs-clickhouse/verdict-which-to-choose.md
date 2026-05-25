@@ -2,13 +2,17 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: standing decision, continually sharpened (current through **pass 52**).
+Status: standing decision, continually sharpened (current through **pass 58**).
 Synthesizes the internals teardowns (all 10 subsystems + rollup, retention,
 schema-evolution, dedup, WAL/durability, execution-engine, indexing, PromQL, metric
-cardinality, span-tree, projections, deletes/mutations), the per-signal matrix, Docker
-Runs 1–29, and public-claims triangulation. The runnable `storage-benchmark-prototype.md`
-holds final veto; this verdict states the mechanism-grounded recommendation and the
-triggers that would flip it. Pins re-verified current through pass 52 (no newer stable
+cardinality, span-tree, projections, deletes/mutations, async-insert, zero-copy
+replication), the per-signal matrix, Docker Runs 1–34, and public-claims triangulation.
+The runnable `storage-benchmark-prototype.md` holds final veto; this verdict states the
+mechanism-grounded recommendation and the triggers that would flip it. **The white-box
+smoke comparison is now comprehensive** — all 10 checklist subsystems, every named
+ClickHouse/GreptimeDB lead, the Q1–Q6 evidence-bundle set, and all 9 public claims are
+covered; the remaining open questions are **harness-gated** (scale/cold/multi-node),
+listed below. Pins re-verified current through pass 58 (no newer stable
 on either side: GreptimeDB v1.1.0 is nightly-only; ClickHouse 26.5.x is the highest line).
 
 Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d8`).
@@ -93,12 +97,16 @@ storage*, accepting a younger DataFusion scan engine.
 evidence bundles (Runs 1–4 parity PASS). But three design decisions impose real
 cost:
 
-1. **PromQL/Prom/OTLP are experimental or external, not GA-native** → as of 26.x
-   ClickHouse *does* have PromQL (`prometheusQuery[Range]`) and Prom remote-write via
-   the **experimental, off-by-default `TimeSeries` engine** (pass 44 correction — not
-   "absent" anymore), and OTLP still needs a collector. So Parallax would depend on an
-   *experimental* metrics path or an external pipeline, vs GreptimeDB's GA-native one.
-   A maturity/ergonomics cost now, not a hard capability blocker.
+1. **Observability protocols are experimental or external, not GA-native.** All three
+   are **GA-native + default-on in GreptimeDB** (OTLP metrics/logs/traces Run 25; PromQL
+   Runs 23–24; **Jaeger query API Run 32** — `/v1/jaeger/api/services` live). On
+   ClickHouse 26.x each is *assembled*: OTLP via a collector (no native receiver, pass
+   46); PromQL via the **experimental, off-by-default `TimeSeries` engine**
+   (`prometheusQuery[Range]`, limited to `rate`/`delta`/`increase`, pass 44 — *not*
+   "absent" anymore, but not GA); Jaeger via the **external `jaeger-clickhouse` storage
+   plugin** (pass 55). So Parallax would depend on experimental/external observability
+   paths, vs GreptimeDB's GA-native trio. A maturity/ergonomics cost now, not a hard
+   capability blocker.
 2. **Horizontal scale-out is manual** (shard count + sharding key up front; no OSS
    auto-resharding; `SharedMergeTree` is Cloud-only). Outgrowing the initial layout
    is a disruptive data-move — friction against the startups→big-companies path.
@@ -226,6 +234,22 @@ concurrent ingest+query:
 5. **Realistic-cardinality compression** — **answered (Run 10):** realistic
    99%-unique log text → tie at matched codecs (GreptimeDB 25 vs CH 24.24 MiB),
    GreptimeDB-favored out-of-the-box.
+6. **Multi-replica object-store cost** (B-new, pass 57) — does OSS ClickHouse HA on S3
+   really pay N× storage (zero-copy not-production-ready) vs GreptimeDB's 1× shared
+   copy? Mechanism source-confirmed (Run 34); the $ delta at N replicas is owed.
+7. **Strict-durability throughput cost** (pass 41) — `sync_write=true` (GreptimeDB) vs
+   `fsync_after_insert=1` (ClickHouse): the ingest-rate hit when forcing per-write
+   durability. Both default to throughput-over-fsync; the tuned-durable cost is unmeasured.
+8. **High-cardinality metric storage at volume** (B13, pass 48) — does ClickHouse's
+   `LowCardinality` 8,192 cliff show as a per-series byte kink vs GreptimeDB's
+   dict-encoded PartitionTree across 1k→1M distinct series? Mechanism confirmed (Run 26);
+   sized storage curve owed.
+
+**These are the complete remaining gaps** — every smoke/source-answerable question is
+closed; #0–#8 all require the larger-tier / cold-cache / multi-node / sized harness, and
+are the prototype's domain (it holds veto). The white-box loop has done its job for the
+mechanism layer; further sharpening waits on harness numbers (or a version bump that
+ships a new mechanism — re-checked each pass).
 
 ## Supporting notes
 
@@ -239,7 +263,7 @@ concurrent ingest+query:
   `promql-and-metrics-query.md`, `metric-cardinality.md`, `trace-span-tree.md`,
   `projections-and-access-paths.md`, `deletes-and-mutations.md`.
 - Matrix: `per-signal-verdict.md`. Empirical: `local-benchmark-results.md`
-  (Runs 1–29). Public claims: `public-performance-claims.md`. Targeted cases:
+  (Runs 1–34). Public claims: `public-performance-claims.md`. Targeted cases:
   `benchmarking-the-differences.md` (B1–B13).
 - Build designs: `greptimedb-implementation.md`, `clickhouse-implementation.md`.
 - Reproducible object-store stack: `bench/s3/`.
