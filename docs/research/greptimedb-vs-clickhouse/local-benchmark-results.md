@@ -378,6 +378,35 @@ object-count proxy already shows the direction decisively.
 Cleanup: the MinIO + GreptimeDB-S3 + ClickHouse-S3 containers and `pbench-s3`
 network are torn down after this run (ephemeral; nothing committed).
 
+### Run 10 — 2026-05-25 — B7: realistic-cardinality log-text compression
+
+Re-ran log compression with **realistic high-entropy text** (500k rows, **99%
+unique messages**: templated with embedded UUIDs/IDs/latencies + stack-trace
+lines), fixing Run 4's synthetic-cardinality distortion (Run 4 had 10 distinct
+messages).
+
+| Schema | Total on disk | Notes |
+| --- | --- | --- |
+| GreptimeDB `logs_real` (default ZSTD-all) | **25 MiB** | Parquet + table-wide ZSTD |
+| ClickHouse `logs_real` (only `message` ZSTD; ids default **LZ4**) | 35.53 MiB | trace_id 15.3M + span_id 7.7M dominate (LZ4 on hex) |
+| ClickHouse `logs_real_z` (**ZSTD on all string cols**) | **24.24 MiB** | trace_id 15.3→7.8M, span_id 7.7→3.9M |
+
+**Finding — corrects both earlier framings:**
+
+- Run-4's GreptimeDB logs win was **not** purely a synthetic artifact: with
+  realistic 99%-unique text GreptimeDB **still wins at defaults** (25 vs 35.5 MiB).
+- **But the win is a default-codec effect, not engine superiority.** ClickHouse's
+  per-column default is **LZ4**; the high-cardinality hex `trace_id`/`span_id`
+  columns compress poorly under LZ4. Switching them to ZSTD drops ClickHouse to
+  **24.24 MiB ≈ GreptimeDB's 25 MiB** — essentially a **tie when both tuned**.
+- **Operational nuance:** GreptimeDB ZSTDs everything automatically → good log
+  compression with **zero tuning**; ClickHouse needs explicit per-column `CODEC(ZSTD)`
+  on high-card columns to match (its default LZ4 leaves ~30% on the table here).
+
+**B7 status: done.** Realistic-log compression is a **tie at matched effort**,
+**GreptimeDB-favored out-of-the-box**. Reinforces the pass-8 "compression is a
+tuning-dependent wash" conclusion with realistic data, plus the defaults nuance.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

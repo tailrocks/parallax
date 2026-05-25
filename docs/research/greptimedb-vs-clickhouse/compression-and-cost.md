@@ -57,15 +57,26 @@ compression is per-column-pattern:
 | `ts` | DoubleDelta, ZSTD | 10.1 KiB | 6.59 MiB | 668× (regular 30 s step) |
 | `service`/`instance` | LowCardinality | ~4–10 KiB | 0.85 MiB | dictionary |
 
-## Heavy caveat — synthetic cardinality
+## Realistic-cardinality logs (Run 10 — resolves the synthetic caveat)
 
-The `logs`/`errors` GreptimeDB win is **likely a synthetic artifact**: the
-generator uses only ~10 distinct log messages and one error message, which is
-extremely dictionary-friendly and unrepresentative of real log text (high-entropy,
-many unique strings, stack traces). **Real log/trace text would narrow or reverse
-the logs result.** Trust the *mechanism* (dictionary vs codec), not the exact
-ratio. Re-run with realistic-cardinality text before any cost conclusion — routed
-to `benchmarking-the-differences.md` and the harness generator.
+Run 4's `logs` result used only ~10 distinct messages (extreme dictionary
+friendliness). Re-run with **realistic high-entropy text** (500k rows, **99%
+unique** messages — embedded UUIDs/IDs/latencies + stack traces):
+
+| Schema | Total |
+| --- | --- |
+| GreptimeDB (default ZSTD-all) | **25 MiB** |
+| ClickHouse (only `message` ZSTD; ids default LZ4) | 35.5 MiB |
+| ClickHouse (**ZSTD on all string cols**) | **24.24 MiB** |
+
+→ **Tie at matched effort** (24.24 vs 25 MiB); **GreptimeDB wins out-of-the-box**.
+ClickHouse's per-column default is **LZ4**, which compresses the high-cardinality
+hex `trace_id`/`span_id` poorly; switching them to ZSTD closes the gap. So the
+earlier GreptimeDB logs win was a **default-codec effect, not a synthetic artifact
+and not engine superiority** — it ZSTDs everything automatically, while ClickHouse
+needs explicit per-column ZSTD on high-card columns. Confirms the "compression is a
+tuning-dependent wash" conclusion on realistic data, with one operational nuance:
+**GreptimeDB needs no codec tuning; ClickHouse does.**
 
 ## What actually decides Parallax's storage cost
 

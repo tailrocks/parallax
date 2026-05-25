@@ -115,7 +115,12 @@ Legend: **Runnable now** = expressible in the current prototype/`bench/compose.y
 - **Pass/fail:** establishes the *real* log/trace storage cost ranking (the dominant
   Parallax volume).
 - **Prereq:** realistic text generator (or a real log sample).
-- **Status:** Needs harness ext. **High priority** (logs dominate volume + cost).
+- **Status:** **DONE (Run 10).** 500k logs, 99% unique messages: GreptimeDB 25 MiB
+  vs ClickHouse 35.5 MiB at **defaults** (ClickHouse ids default to LZ4), but
+  ClickHouse with ZSTD on all string cols = **24.24 MiB ≈ tie**. Realistic-log
+  compression is a tie at matched effort, GreptimeDB-favored out-of-the-box (it
+  ZSTDs everything; ClickHouse needs explicit per-column ZSTD on high-card hex).
+  Run-4's GreptimeDB win was a default-codec effect, not a synthetic artifact.
 
 ## B8 — Ingest-to-queryable freshness under concurrent load
 
