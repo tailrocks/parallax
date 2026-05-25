@@ -5912,6 +5912,40 @@ small-tier preliminary matrix. Restarted nightlies → `gen.sh` (100k, **10 s**,
 **Reproduce.** `docker start gt-nightly ch-head && N=100000 bench/four-way/gen.sh && bench/four-way/
 bench.sh && docker stop gt-nightly ch-head`. ~10 s gen, laptop-safe.
 
+### Run 146 — 2026-05-25 — SOURCE (gentle, gh-only): GT WAL = raft-engine append-log fsync — grounds the strict-durability ~10× claim (couldn't be benchmarked locally)
+
+**Pass target.** Source-ground the strict-durability GT win (Run 75: GT ~+1.7 ms/write vs CH
+~+18 ms/part, ~10× cheaper) — which couldn't be re-benchmarked locally (needs GT datanode reconfig).
+gh-only, no local load.
+
+**Source (`src/log-store/src/raft_engine/log_store.rs` + `raft_engine.rs`, v1.0.2):**
+- WAL is **raft-engine** — an **append-only log**; writes are appended as `LogBatch`
+  (`use raft_engine::{Engine, LogBatch, RecoveryMode}`).
+- `sync_write: bool` (`:43`) + `sync_period: Option<Duration>` (`:44`) + `sync_task: RepeatedTask`
+  (`:48`) + `SyncWalTaskFunction` (`:85-94`) which calls **`engine.sync()`** — the raft-engine fsync.
+- So strict durability (`sync_write=true`) = **fsync the append-log file per write** (one sequential
+  fsync); the alternative is a **background periodic `sync_period`** (group-commit middle ground —
+  durable within the period, cheaper than per-write). Remote **Kafka** WAL (`kafka.rs`) decouples
+  durability from the datanode entirely.
+
+**Verdict — grounds Run 75: GT's strict-durable cost is structurally lower.**
+- **GreptimeDB strict-durable = ONE sequential append-log fsync** (`engine.sync()` on the raft-engine
+  log file). ClickHouse `fsync_after_insert=1` = fsync the **whole part** (every column file + the
+  part directory) per insert — many fsyncs of many files. So GT's per-write durable cost (~+1.7 ms,
+  Run 75) ≪ ClickHouse's (~+18 ms) → the ~10× edge is **architectural** (append-log fsync ≪ part
+  fsync), now source-confirmed — not just the smoke measurement.
+- **Bonus levers:** `sync_period` gives a group-commit middle ground (most of the durability, less
+  fsync cost); the Kafka remote WAL is the same mechanism behind cheap region migration (durability
+  lives off-datanode, so reopen-from-object-store is cheap). Both reinforce the durability/scaling
+  pillars.
+- **Decision relevance:** for Parallax, per-write durability (no data loss on crash) is ~free on
+  GreptimeDB (~3% ingest cost) but expensive on ClickHouse (~20%), or ClickHouse relies on replicas
+  (no WAL). Confirms the `wal-and-durability.md` GT edge at the source level.
+
+**Reproduce.** `gh api ".../log-store/src/raft_engine/log_store.rs?ref=v1.0.2"` → `sync_write`/
+`sync_period`/`SyncWalTaskFunction`→`engine.sync()`; raft-engine = append-only `LogBatch` log. No
+local containers touched.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

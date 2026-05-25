@@ -3,7 +3,12 @@
 <!-- markdownlint-disable MD013 -->
 
 Status: pass 41, re-verified pass 105 (Run 69 — CH WAL settings `is_obsolete=1` live),
-extended pass 111 (Run 75 — **strict-durability cost measured: GreptimeDB ~10× cheaper**). White-box teardown of the **durability path** (checklist
+extended pass 111 (Run 75 — **strict-durability cost measured: GreptimeDB ~10× cheaper**) + **Run 146
+(SOURCE-grounded: `log-store/src/raft_engine/log_store.rs` — `sync_write`/`sync_period`/`SyncWalTaskFunction`
+→ `engine.sync()` over raft-engine's append-only `LogBatch` log; so GT strict-durable = ONE sequential
+append-log fsync vs ClickHouse `fsync_after_insert=1` = whole-part (all column files + dir) fsync — the
+~10× edge is architectural, not just a smoke number; `sync_period` is a group-commit middle ground, Kafka
+remote WAL decouples durability off-datanode)**. White-box teardown of the **durability path** (checklist
 #2's WAL/durability sub-item): what makes an acked write survive a crash, the
 durability-vs-throughput knobs, and — the load-bearing part for Parallax —
 **GreptimeDB's remote (Kafka) WAL as the compute/storage-separation enabler** behind
