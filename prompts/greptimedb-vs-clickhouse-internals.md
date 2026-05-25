@@ -522,6 +522,24 @@ comparisons, record real numbers, and use them to confirm or refute the publishe
 performance claims for each system. Capture every run in
 `local-benchmark-results.md`.
 
+## STANDING RULE — every benchmark runs on ALL FOUR builds + updates the comparison table
+
+Operator directive (durable): **every performance benchmark must be measured on all four builds**,
+never stable-only, never a 2-way:
+
+1. **GreptimeDB — latest stable** (currently `v1.0.2`, production-OK).
+2. **GreptimeDB — latest nightly** (currently `v1.1.0-nightly-…`, everything not-yet-released).
+3. **ClickHouse — latest stable feature line, NOT LTS** (currently `v26.5.1.882-stable`).
+4. **ClickHouse — latest nightly** (`clickhouse/clickhouse-server:head`, currently `v26.6.x`).
+
+Keep the two nightly containers **standing** (GT-nightly :4100, CH-head :8124) alongside the bench
+stables so any benchmark can hit all four without a re-spin; build identical data on all four via
+`range()` (GT) / `numbers()` (CH). On a new nightly tag (nightlies roll daily) re-pull + rebuild.
+**Every benchmark must also update [`four-way-version-comparison.md`](../docs/research/greptimedb-vs-clickhouse/four-way-version-comparison.md)** — the single consolidated matrix (every query × 4 builds,
+a *Faster* column, per-query *Details* links to the mechanism note + run). Always re-pin the latest
+stable + nightly of both at the start of a benchmarking pass. Do **not** record a stable-only number
+as the result; the four-build row is the result.
+
 How to run it:
 
 - **Stand up the candidates in Docker.** Bring up GreptimeDB and ClickHouse (and

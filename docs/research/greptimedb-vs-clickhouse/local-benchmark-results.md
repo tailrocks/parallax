@@ -5581,6 +5581,10 @@ Both return ~115 (values match). Warm.
 | **Single p99** by service | ~11 ms | ~21 ms | ~1.9× |
 | **p50 + p95 + p99** by service | ~11 ms | ~28 ms | ~2.5× |
 
+**4-way (completed per the all-builds rule, on `spans1m`):** p99-by-service GT-stable 15 / GT-nightly
+12 / CH-stable 8 / CH-head 8 ms; p50/p95/p99 GT-stable 18 / GT-nightly 15 / CH 8–9 ms. Nightlies ≈
+stables (GT-nightly marginally faster). Added to `four-way-version-comparison.md`.
+
 **Verdict — interactive on both; GT's multi-percentile cost scales, CH's doesn't.**
 
 - Single p99: ~1.9× (scan-agg class). Both ≪ 300 ms.
