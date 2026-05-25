@@ -73,6 +73,22 @@ Internal sources:
 - [A2 interview evidence ledger](a2-interview-evidence-ledger.md) defines the
   design-partner signal that can seed external schema review.
 
+## Current Claim Boundary
+
+Current Parallax claim level: `schema_draft`.
+
+This is intentionally narrow. The repository has a Markdown evidence-bundle
+draft, but no released JSON Schema artifact, schema changelog, canonicalization
+command, validator command, committed fixture corpus, projection-equivalence
+harness, or MCP `outputSchema` fixture. The A3 adoption clock has not started.
+
+The next boundary is not another prose refinement. It is a first
+`schema_release` event that records the exact schema URI/hash, validator
+version, fixture hash, canonicalization method, changelog entry, release/tag or
+commit, and initial conformance command. Until that event exists, every
+integration, agent-demo, or bundle example must be marked `do_not_count` for
+schema adoption unless it is explicitly only an internal learning signal.
+
 ## Why A3 Needs A Ledger
 
 The schema/corpus moat has several false-positive paths:

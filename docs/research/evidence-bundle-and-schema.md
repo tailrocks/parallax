@@ -38,6 +38,42 @@ additive compatibility and explicit stability labels. Until Parallax implements
 a concrete canonicalization and validation command, projection-equivalence and
 schema-adoption claims remain unproven.
 
+## Current Artifact Boundary
+
+As of this re-check, the repository contains a Markdown schema draft, not a
+released evidence-bundle schema. A local artifact scan found no
+`schemas/evidence-bundle/.../schema.json`, no committed fixture corpus, no
+validator command, no canonicalizer command, no projection-equivalence harness,
+and no MCP `outputSchema` fixture. The current claim level is therefore
+`schema_draft` only, matching the
+[A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md).
+
+Do not treat the examples below as validator-backed artifacts. Until the
+missing artifacts exist, Parallax cannot claim an adoption clock, schema
+gravity, ecosystem standard, projection-equivalent agent surfaces, or
+validator-backed portable bundles. It can only claim that the bundle contract is
+specified as a research draft.
+
+The first countable implementation event must include:
+
+- a versioned JSON Schema Draft 2020-12 artifact with stable `$id`,
+  `schema_version`, `schema_ref.uri`, changelog entry, and schema hash;
+- positive and negative fixtures for the envelope, core node/edge types,
+  redaction report, source-field policy, missing evidence, refs, cited
+  hypotheses, and access policy;
+- a canonicalization command that rejects non-I-JSON input before hashing,
+  including duplicate property names, non-finite numbers, unsupported number
+  precision, and malformed Unicode;
+- a validation command that records validator version, schema hash, fixture set
+  hash, pass/fail output, and enough JSON Schema output to debug failures;
+- a projection-equivalence check proving CLI JSON, HTTP JSON, Markdown/text
+  projection, and MCP `structuredContent` all derive from the same canonical
+  object and preserve required safety fields.
+
+The command names can wait for implementation, but the semantics cannot. Any
+early bundle artifact that lacks those checks should be labeled demo/debugging
+evidence, not A1/A3 proof.
+
 ## Why The Bundle Is The Unit, Not The Query
 
 Incumbents (Datadog, Sentry, Grafana, New Relic) keep investigations inside their
@@ -399,7 +435,10 @@ count, Parallax must define and implement:
   changelog, and `schema_ref.hash`;
 - a canonical JSON procedure for `canonical_hash` and
   `projection_manifest.json_hash`; RFC 8785/JCS is the current candidate because
-  it defines deterministic JSON serialization for repeatable hashing;
+  it defines deterministic JSON serialization for repeatable hashing, but it
+  also requires I-JSON-compatible input, so the canonicalizer must fail closed on
+  duplicate object members, malformed Unicode, non-finite numbers, and
+  precision-unsafe numeric values before computing a hash;
 - a rule that Markdown, text, ZIP manifests, and MCP content are projections of
   the canonical JSON and include the `bundle_id`, `schema_version`, and
   `canonical_hash` they derive from;
