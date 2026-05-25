@@ -228,14 +228,16 @@ That is narrower than "AI observability" but much more buildable.
 
 Use **GreptimeDB** as the default v0.1 observability store.
 
-GreptimeDB reached **v1.0 GA in April 2026** (latest `v1.0.2`, 2026-05-14), with
-stable APIs, a unified engine for metrics/logs/traces on object storage, and
-SQL + PromQL + native OTLP ingestion. This removes the largest risk that existed
-in earlier passes, when it was still beta: the storage layer is now a
-production-grade choice, not a bet on an unreleased database. Distributed mode
-(Frontend/Datanode/Metasrv with region failover and online repartition) is real
-but younger than standalone, so the storage benchmark still applies to the
-scale-out tiers.
+GreptimeDB reached **v1.0 GA in April 2026** (latest stable checked `v1.0.2`,
+2026-05-14), with a unified engine for metrics/logs/traces on object storage,
+SQL, PromQL, and native OTLP ingestion. This removes the largest risk that
+existed in earlier passes, when it was still beta: the first build is no longer
+betting on an unreleased database. It does **not** prove production fit for
+Parallax yet. The trace docs still mark trace support as experimental, public
+performance evidence remains mostly vendor-published, and distributed mode
+(Frontend/Datanode/Metasrv with region failover and online repartition) is
+younger than standalone. The storage freshness, bundle-latency, object-cost, and
+operational-complexity gates still have veto power.
 
 This remains an opinionated default, not a claim that GreptimeDB has already
 beaten ClickHouse on every workload. The storage benchmark still has veto power.
@@ -256,9 +258,11 @@ inherited incumbency.
 Current source anchors:
 
 - [GreptimeDB docs](https://docs.greptime.com/)
+- [GreptimeDB v1.0.2 release](https://github.com/GreptimeTeam/greptimedb/releases/tag/v1.0.2)
 - [GreptimeDB OpenTelemetry ingestion](https://docs.greptime.com/user-guide/ingest-data/for-observability/opentelemetry/)
 - [GreptimeDB Prometheus ingestion](https://docs.greptime.com/user-guide/ingest-data/for-observability/prometheus/)
 - [GreptimeDB PromQL](https://docs.greptime.com/user-guide/query-data/promql/)
+- [GreptimeDB trace read/write docs](https://docs.greptime.com/user-guide/traces/read-write/)
 - [GreptimeDB architecture](https://docs.greptime.com/user-guide/concepts/architecture/)
 - [GreptimeDB storage options](https://docs.greptime.com/user-guide/deployments-administration/configuration/)
 
