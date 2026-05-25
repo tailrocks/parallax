@@ -12,7 +12,9 @@ user data columns default to `PLAIN`+ZSTD, floats miss the Gorilla-class encodin
 user stories + explicit "does this make GreptimeDB the clear winner?" verdicts, per operator —
 the reason to add anything is solving a real Parallax user's problem) + pass 83 (user-story /
 clear-winner bullet now on **every** improvement #1–#7 — format complete; honest verdict:
-only #1 flips a real common user moment, #2–#5,#7 are footnotes for Parallax's usage). This is **the dedicated,
+only #1 flips a real common user moment, #2–#5,#7 are footnotes for Parallax's usage) + pass 84
+(format correction: #6 now carries the same user-story verdict, explicitly as a maturity caveat,
+not an implementable feature). This is **the dedicated,
 standalone file** answering "what can GreptimeDB improve, why, and how" — the summary table
 scans, the detailed sections below carry the code-oriented specifics. Answers the operator
 question: GreptimeDB wins Parallax on *fit*
@@ -324,6 +326,13 @@ Parallax. Source read at GreptimeDB `v1.0.2` (`0ef5451`).
 - **What / How:** inherited via Improvement 2 (engine throughput) plus time and
   production hardening; not a discrete feature to implement.
 - **Tier:** **C** (accept or wait). **Maturity**, not integration.
+- **User story & clear-winner:** *a user runs a large single-node deployment into high
+  retained data, high query concurrency, or merge/compaction pressure and expects predictable
+  p99 behavior without moving to a distributed topology.* This is a real operator pain, but
+  it is not a GreptimeDB feature Parallax can add. **It does not make GreptimeDB a clear
+  winner; it is the main ClickHouse maturity caveat to measure or accept.** GreptimeDB's
+  answer is horizontal scale-out plus object storage, so the practical gate is whether the
+  Parallax tiny/small tier ever reaches this ceiling before it wants scale-out anyway.
 - **Value here:** GreptimeDB's answer is horizontal scale-out + object storage (the
   verdict's scaling pillar), not chasing ClickHouse's vertical ceiling.
 
@@ -335,9 +344,10 @@ Parallax. Source read at GreptimeDB `v1.0.2` (`0ef5451`).
   ~5× faster than GT's own PromQL), FULLTEXT-index + anchored log search, and the Flow
   alternate-ordering workaround (#5a). **This already makes GreptimeDB a clear winner for
   Parallax's *anchored* workload** — the gaps below only bite on heavy *ad-hoc* analytics.
-- **Tier B — contribute upstream (Rust, open-source) to win *all* cases.** Items 1–5: batch
-  size, JIT, SIMD, PREWHERE late materialization, JSON shredding, native projections,
-  index↔scan fusion. These are what "clear winner even for large-scale ad-hoc log/trace
+- **Tier B — contribute upstream (Rust, open-source) to win *all* cases.** Items 1–5 (and
+  #7 only if retained metric-float cost becomes material): batch size, JIT, SIMD, PREWHERE
+  late materialization, JSON shredding, native projections, index↔scan fusion, and type-aware
+  Parquet encodings. Items 1–5 are what "clear winner even for large-scale ad-hoc log/trace
   search and heavy scans" requires. Several (#2, #3) ride the **DataFusion roadmap** and
   arrive without Parallax work; the rest are GreptimeDB-specific but **engineering, not
   redesign**, and PR-able given the Rust-first north star.
