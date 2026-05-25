@@ -21,9 +21,10 @@ release/deploy/code/work-item context as planned evidence, not as proven
 The central rule:
 
 > No release-regression or "what changed?" claim without exact release,
-> deployment, commit, CI/check, PR/file, and work-item evidence rates, plus
-> missing-evidence rows, edge-strength audits, source-field policy status,
-> redaction reports, and agent-visible projection checks.
+> deployment, commit, workflow-run/job, CI/check, PR/file, and work-item
+> evidence rates, plus missing-evidence rows, edge-strength audits,
+> source-field policy status, redaction reports, and agent-visible projection
+> checks.
 
 ## Current Source Snapshot
 
@@ -35,6 +36,10 @@ The central rule:
 | [GitHub deployment webhooks](https://docs.github.com/en/webhooks/webhook-events-and-payloads#deployment_status) | `deployment_status` webhooks require deployment read permission and are not fired for statuses with state `inactive`; `deployment` webhooks cover deployment creation. | Webhooks are useful low-latency evidence, but API backfill remains mandatory for inactive transitions and missed delivery. |
 | [GitHub deployment review webhooks](https://docs.github.com/en/webhooks/webhook-events-and-payloads#deployment_review) | `deployment_review` webhooks represent approval activity and can include reviewer, comment, deployment callback, workflow run, and workflow job run context. | Approval/protection context is separate from deployment status. Agent-visible "who allowed this deploy?" claims need review/gate rows, not only success status rows. |
 | [GitHub Actions variables](https://docs.github.com/actions/reference/workflows-and-actions/variables) | `GITHUB_SHA` exists, but its value depends on the workflow event that triggered the run. | CI/deploy ingestion must store event type, ref, and head/base context instead of treating `GITHUB_SHA` alone as deployed truth. |
+| [GitHub events that trigger workflows](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows) | GitHub's event matrix gives event-specific `GITHUB_SHA` and `GITHUB_REF` semantics: PR runs use merge-branch SHA/ref, workflow-run triggers use the default branch SHA/ref, deployment events use deployed commit/ref, and inactive deployment statuses do not trigger workflows. | Any Actions-derived deploy/change edge must name the event and preserve the interpreted SHA role. A default-branch `workflow_run` row is not evidence that the upstream PR head or deployed SHA passed. |
+| [GitHub workflow runs API](https://docs.github.com/en/rest/actions/workflow-runs?apiVersion=2022-11-28) | Workflow-run listing can filter by event, branch, check suite, and head SHA, and response rows include run ID, attempt, event, head branch/SHA, PR refs, URLs for jobs/logs/check suite/artifacts, actor, triggering actor, and head commit. | Parallax needs durable workflow-run rows before it can turn check status into a change-candidate edge. |
+| [GitHub workflow jobs API](https://docs.github.com/en/rest/actions/workflow-jobs?apiVersion=2022-11-28) | Workflow jobs are fetched by run ID, can include latest or all attempts, and expose job ID, run ID, head SHA, status/conclusion, step timing/status, check-run URL, runner labels, workflow name, and head branch. | Job rows can prove a deploy/test step ran in a workflow attempt, but they inherit event/SHA meaning from the parent workflow run. |
+| [GitHub check runs API](https://docs.github.com/en/rest/checks/runs?apiVersion=2022-11-28) | Check runs are tied to a `head_sha`, but GitHub documents that Checks API PR association only detects pushes in the repository where the run/suite was created; fork-originated pushes can return an empty `pull_requests` array. | Check success can validate a SHA, not an inferred PR/deploy, unless workflow event and PR head/base rows remove the ambiguity. |
 | [GitHub PR files API](https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#list-pull-requests-files) | PR files are paginated and capped at 3000 files; PR commits endpoint caps at 250 commits before needing the commits endpoint. | File-touch and PR-contains-commit edges must include completeness flags and downgrade broad changes. |
 | [GitHub compare commits API](https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#compare-two-commits) | Compare supports refs/SHAs and returns commits chronologically with file details, but unpaged responses are limited and large comparisons require pagination. | Release-to-release change windows need exact base/head SHAs and pagination metadata. |
 | [Sentry release management CLI](https://docs.sentry.io/cli/releases/) | Sentry CLI can create/finalize releases, set commits automatically or manually, use exact full commit SHAs, configure previous/current commit ranges, and create deploys with at least an environment. | Sentry migration data is useful only when release, commit, dist, and environment semantics are preserved. |
@@ -55,9 +60,9 @@ The central rule:
 | `commit_window_reconstructed` | Release/deploy rows carry exact head and predecessor/base SHAs, and compare/PR backfill produces complete-or-flagged commit/file rows. | "Code-change windows reconstructed for tested releases." |
 | `work_item_links_ingested` | GitHub/Linear/Jira work-item links ingest with machine-vs-text link strength and redacted text refs. | "Work-item links attached as context for tested providers." |
 | `edge_strength_audited` | Strong/medium/weak/inferred deploy/change edges are audited against raw provider refs, completeness flags, and missing-evidence rows. | "Deploy/change evidence strengths audited for tested anchors." |
-| `release_regression_context` | Release, deploy, commit-window, PR/file, CI/check, and missing-evidence rates meet thresholds for production error anchors. | "Release-regression context for the tested services and providers." |
+| `release_regression_context` | Release, deploy, commit-window, PR/file, workflow-run/job, CI/check, and missing-evidence rates meet thresholds for production error anchors. | "Release-regression context for the tested services and providers." |
 | `projection_safe` | Agent-visible bundle projections include edge strength, missing-evidence blockers, redaction reports, source-field policy status, and raw-ref denial. | "Deploy/change projections are safe for the tested subset." |
-| `what_changed_context` | The bundle can answer likely change candidates with cited release/deploy/code/work-item edges, explicit missing-evidence blockers, and no raw text/log dereference. | "Evidence-backed 'what changed?' context for the tested subset." |
+| `what_changed_context` | The bundle can answer likely change candidates with cited release/deploy/code/workflow/check/work-item edges, explicit missing-evidence blockers, and no raw text/log dereference. | "Evidence-backed 'what changed?' context for the tested subset." |
 | `claim_expired` | Provider API behavior, source version/header, schema, edge rules, redaction/source-field/projection policy, or freshness window changed. | "Deploy/change context result expired; rerun required." |
 | `claim_failed` | A required gate fails for the advertised level. | No claim for the affected provider/surface/edge. |
 
@@ -75,6 +80,8 @@ docs/research/deploy-change-context-runs/<run_id>/release-results.jsonl
 docs/research/deploy-change-context-runs/<run_id>/deploy-results.jsonl
 docs/research/deploy-change-context-runs/<run_id>/deployment-gate-results.jsonl
 docs/research/deploy-change-context-runs/<run_id>/code-change-results.jsonl
+docs/research/deploy-change-context-runs/<run_id>/workflow-run-results.jsonl
+docs/research/deploy-change-context-runs/<run_id>/workflow-job-results.jsonl
 docs/research/deploy-change-context-runs/<run_id>/ci-check-results.jsonl
 docs/research/deploy-change-context-runs/<run_id>/work-item-results.jsonl
 docs/research/deploy-change-context-runs/<run_id>/edge-audit-results.jsonl
@@ -111,6 +118,10 @@ Each `manifest.json` should include:
     "github_rest_supported_versions_checked": ["2026-03-10", "2022-11-28"],
     "github_deployment_status_webhook_inactive_gap": true,
     "github_deployment_review_webhook_checked": "YYYY-MM-DD",
+    "github_actions_event_sha_semantics_checked": "YYYY-MM-DD",
+    "github_workflow_runs_api_checked": "YYYY-MM-DD",
+    "github_workflow_jobs_api_checked": "YYYY-MM-DD",
+    "github_check_runs_fork_pr_gap_checked": "YYYY-MM-DD",
     "sentry_api": "current-docs-YYYY-MM-DD",
     "linear_releases": "current-docs-YYYY-MM-DD",
     "jira_deployments": "current-docs-YYYY-MM-DD",
@@ -211,19 +222,77 @@ does not carry over to another.
 }
 ```
 
+### Workflow Run Result Row
+
+```json
+{
+  "workflow_run_id": "github:actions_run:30433642",
+  "provider": "github",
+  "repo": "github.com/acme/checkout",
+  "workflow_name": "deploy",
+  "run_attempt": 1,
+  "event_name": "pull_request|push|workflow_run|deployment|deployment_status|workflow_dispatch",
+  "github_ref": "refs/pull/456/merge",
+  "github_ref_role": "pr_merge_ref|branch|tag|deployment_ref|default_branch|unknown",
+  "github_sha": "merge-sha...",
+  "github_sha_role": "pr_merge_commit|head_commit|deployment_commit|default_branch_commit|unknown",
+  "head_branch": "feature/checkout-rules",
+  "head_sha": "9d1f...",
+  "base_branch": "main",
+  "base_sha": "7a2b...",
+  "pull_request_refs": ["https://github.com/acme/checkout/pull/456"],
+  "check_suite_id": "github:check_suite:42",
+  "jobs_ref_present": true,
+  "logs_ref_present": true,
+  "source_ref": "github:actions_run:30433642",
+  "event_context_complete": true,
+  "missing_fields": []
+}
+```
+
+### Workflow Job Result Row
+
+```json
+{
+  "workflow_job_id": "github:actions_job:399444496",
+  "provider": "github",
+  "workflow_run_id": "github:actions_run:30433642",
+  "run_attempt": 1,
+  "job_name": "deploy",
+  "head_sha": "9d1f...",
+  "status": "completed",
+  "conclusion": "success",
+  "started_at": "2026-05-25T14:58:00Z",
+  "completed_at": "2026-05-25T15:01:44Z",
+  "check_run_ref": "github:check_run:399444496",
+  "runner_ref_present": true,
+  "step_summary_ref_present": true,
+  "log_ref_present": true,
+  "inherits_event_context_from_run": true,
+  "missing_fields": []
+}
+```
+
 ### CI/Check Result Row
 
 ```json
 {
   "check_id": "github:check_run:99",
   "provider": "github",
-  "commit_sha": "9d1f...",
+  "head_sha": "9d1f...",
+  "head_sha_role": "pr_head_commit|pr_merge_commit|push_commit|deployment_commit|unknown",
+  "check_suite_id": "github:check_suite:42",
+  "workflow_run_id": "github:actions_run:30433642",
+  "workflow_job_id": "github:actions_job:399444496",
   "event_name": "push",
   "ref": "refs/heads/main",
+  "pull_request_refs": [],
+  "pr_linkage_complete": true,
   "status": "completed",
   "conclusion": "success",
   "workflow": "deploy",
   "log_ref_present": true,
+  "event_context_complete": true,
   "deployed_truth": false
 }
 ```
@@ -342,6 +411,10 @@ does not carry over to another.
     "github_rest_request_header": "2026-03-10",
     "github_rest_docs_api_version": "2022-11-28",
     "github_rest_unversioned_default": "2022-11-28",
+    "github_actions_event_sha_semantics_checked": "YYYY-MM-DD",
+    "github_workflow_run_schema_checked": "YYYY-MM-DD",
+    "github_workflow_job_schema_checked": "YYYY-MM-DD",
+    "github_check_run_pr_linkage_checked": "YYYY-MM-DD",
     "otel_semconv": "1.41.0",
     "bundle_schema": "parallax-bundle-vN",
     "edge_rules": "deploy-change-edges-vN",
@@ -374,6 +447,13 @@ does not carry over to another.
   strong without provider confirmation.
 - CI/check success is validation evidence, not deployed runtime truth, unless
   linked to a deployment or release.
+- No Actions-derived change candidate unless workflow-run rows record
+  `event_name`, `github_sha_role`, `github_ref_role`, run attempt, and PR
+  head/base/merge refs where applicable.
+- No check-to-PR edge when the check run has an empty PR array or unknown
+  head/base context; this is especially important for fork-originated changes.
+- No workflow-job deploy-step claim unless the parent workflow-run row supplies
+  complete event/SHA context and the job row is tied to the run attempt.
 - Provider text fields, issue descriptions, comments, deploy logs, and release
   notes are untrusted and redacted/ref-only by default.
 - Raw provider events, issue text, PR text, deploy logs, and release notes may
@@ -397,8 +477,9 @@ change:
 
 - GitHub REST supported versions, unversioned default, request-header guidance,
   deployment/status API behavior, PR file/commit caps, compare pagination,
-  Actions event/SHA semantics, deployment-review behavior, inactive-status
-  webhook behavior, or webhook payloads change;
+  Actions event/SHA semantics, workflow-run/job response fields, check-run PR
+  association behavior, deployment-review behavior, inactive-status webhook
+  behavior, or webhook payloads change;
 - Sentry release/deploy API or CLI release semantics change;
 - Linear release, GitHub integration, path-filter, or plan availability changes;
 - Jira development/deployment information APIs, sequence semantics, or accepted
@@ -430,7 +511,8 @@ Allowed after `release_regression_context`:
 Allowed after `what_changed_context`:
 
 > Evidence-backed "what changed?" context for the tested subset, citing
-> release, deploy, code-change, CI/check, and work-item records.
+> release, deploy, code-change, workflow-run/job, CI/check, and work-item
+> records.
 
 Avoid:
 
@@ -438,6 +520,8 @@ Avoid:
 - "automatically finds the breaking commit";
 - "knows what shipped" without environment-specific release/deploy evidence;
 - "knows who approved the deploy" without deployment review/protection rows;
+- "CI proved the deployed change" without workflow event/SHA role rows and
+  release/deploy linkage;
 - "issue Done means shipped";
 - "PR touched the file, so it caused the issue";
 - "full GitHub/Linear/Jira context" without provider, scope, and freshness
@@ -462,7 +546,7 @@ Avoid:
 
 ## Bottom Line
 
-Release, deploy, code-change, CI/check, and work-item context is mandatory for
-useful lifecycle reconstruction, but it is easy to overclaim. Parallax should
-prove exact linkage and make missing context visible before it lets an agent say
-what changed.
+Release, deploy, code-change, workflow-run/job, CI/check, and work-item context
+is mandatory for useful lifecycle reconstruction, but it is easy to overclaim.
+Parallax should prove exact linkage and make missing context visible before it
+lets an agent say what changed.

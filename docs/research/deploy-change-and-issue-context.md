@@ -33,10 +33,13 @@ from this design alone.
 | [GitHub deployment webhooks](https://docs.github.com/en/webhooks/webhook-events-and-payloads) | `deployment` and `deployment_status` webhooks carry deployment activity; deployment-status webhooks require deployment read permission and do not fire for inactive statuses. | Webhooks are the lowest-latency ingestion path, but Parallax still needs API backfill because missed/inactive transitions can matter. |
 | [GitHub deployment review webhooks](https://docs.github.com/en/webhooks/webhook-events-and-payloads#deployment_review) | `deployment_review` webhook payloads represent approval activity and can include reviewer, comment, deployment callback, workflow run, and workflow job run context. | Deployment approval/protection evidence is a separate policy edge. A successful deployment status does not prove who or what approved the deploy. |
 | [GitHub Actions variables](https://docs.github.com/en/actions/reference/workflows-and-actions/variables) | `GITHUB_SHA` records the commit that triggered a workflow, with value depending on the event. | CI/deploy ingestion must record event type and ref context; `GITHUB_SHA` alone is ambiguous for PR workflows. |
+| [GitHub events that trigger workflows](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows) | `pull_request` workflows use the PR merge branch and merge-commit SHA, while `workflow_run` workflows use the last commit on the default branch. Deployment and deployment-status events use the commit/ref to be deployed, and inactive deployment statuses do not trigger workflows. | Actions rows need event-specific SHA semantics, PR head/base refs, and trigger lineage before they can support a change candidate. A workflow-run SHA is often automation context, not the deployed or PR head commit. |
+| [GitHub workflow runs API](https://docs.github.com/en/rest/actions/workflow-runs?apiVersion=2022-11-28) | Workflow run list/backfill exposes filters for event, branch, check suite, and head SHA, and response rows include run ID, attempt, head branch/SHA, event, pull requests, jobs/logs/check-suite URLs, and head commit. | CI evidence should preserve the workflow run object separately from checks so Parallax can tell which workflow/event observed which commit. |
+| [GitHub workflow jobs API](https://docs.github.com/en/rest/actions/workflow-jobs?apiVersion=2022-11-28) | Workflow jobs are fetched by run ID; the API distinguishes latest vs all attempts and returns job ID, run ID, head SHA, status/conclusion, timing, steps, check-run URL, runner labels, workflow name, and head branch. | Job-level evidence is useful for deploy steps and runner context, but it must not overwrite the parent workflow run/event interpretation. |
 | [GitHub issue timeline API](https://docs.github.com/en/rest/issues/timeline?apiVersion=2022-11-28) | Timeline events cover issue/PR activity; every pull request is an issue, but not every issue is a pull request. | GitHub issues and PRs should be one normalized `work_item` family, with provider-specific event refs preserved. |
 | [GitHub pull request files API](https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#list-pull-requests-files) | PR file lists are paginated and capped at 3000 files. | `code_change_touched_frame` is only reliable for bounded PRs; broad PRs must be marked incomplete or low confidence. |
 | [GitHub compare commits API](https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#compare-two-commits) | GitHub compares base/head refs or SHAs and can return commit/file deltas. | Release-to-release change windows can be reconstructed if predecessor/head SHAs are known; missing base makes blame weak. |
-| [GitHub check runs API](https://docs.github.com/en/rest/checks/runs?apiVersion=2022-11-28) | Check runs and suites track status/conclusion for code validation and can be rerequested. | CI validation is separate evidence from deployment. A green check is not a deployed runtime fact unless linked to a deploy/release. |
+| [GitHub check runs API](https://docs.github.com/en/rest/checks/runs?apiVersion=2022-11-28) | Check runs track status/conclusion for a specific `head_sha`, but the Checks API only detects pushes in the repository where the check run or suite was created; fork pushes can return an empty PR array. | CI validation is separate evidence from deployment. A green check is not a deployed runtime fact unless linked to a deploy/release, and check-to-PR edges need explicit PR/head/base evidence. |
 | [Sentry releases API](https://docs.sentry.io/api/releases/) and [Create a Deploy](https://docs.sentry.io/api/releases/create-a-deploy/) | Sentry models releases and deploys; deploy creation requires environment and can include name, URL, started/finished times, and project list. | Sentry release/deploy data is a migration source for Parallax and a compatibility target for users already tagging releases. |
 | [Sentry release management CLI](https://docs.sentry.io/product/cli/releases/?promo_name=hp-banner) | Sentry recommends creating a release first and then a deploy with an environment; deploys can be listed but not deleted. | Parallax should mirror the simple `release -> deploy -> environment` mental model, while keeping append-only corrections instead of destructive delete semantics. |
 | [Linear GitHub integration](https://linear.app/docs/github-integration) | Linear links PRs and commits to issues through branches, titles, magic words, and commit messages; workflow automation can move issues based on PR/commit activity. | Linear is useful work-context evidence, but text/magic-word links must be treated differently from machine IDs emitted by GitHub webhooks. |
@@ -73,7 +76,9 @@ Add or tighten these schema nodes:
 | `deployment_review` | `deployment_id`, `state`, `reviewer?`, `created_at`, `comment_ref?`, `workflow_run?`, `workflow_job_run?`, `source_ref` | Approval/protection evidence is policy context, not runtime causality. Comments stay ref-only by default. |
 | `code_change` | `repo`, `base_ref?`, `head_ref`, `base_sha?`, `head_sha`, `commits[]`, `files[]`, `pr_url?`, `merge_commit_sha?`, `compare_url?` | File list can be incomplete for very large PRs; store `files_complete`. |
 | `work_item` | `provider`, `key`, `title`, `status`, `type`, `url`, `created_at`, `updated_at`, `labels[]`, `linked_prs[]`, `linked_commits[]` | Description/comments are high-risk and should be summarized or ref-only by default. |
-| `check_run` | `provider`, `run_id`, `commit_sha`, `status`, `conclusion?`, `started_at?`, `completed_at?`, `workflow?`, `log_ref?` | CI validation should connect to code change and deploy separately. |
+| `workflow_run` | `provider`, `run_id`, `run_attempt`, `event_name`, `workflow_name`, `head_branch?`, `head_sha`, `github_ref?`, `github_sha?`, `pull_requests[]`, `check_suite_id?`, `jobs_url?`, `logs_ref?`, `source_ref` | Preserve the event-trigger identity separately from deployment and check status. For PR events, store merge SHA and PR head/base SHA separately. |
+| `workflow_job` | `provider`, `job_id`, `run_id`, `run_attempt?`, `head_sha`, `status`, `conclusion?`, `started_at?`, `completed_at?`, `step_refs[]`, `check_run_url?`, `runner_ref?`, `source_ref` | Job and step names are execution evidence; logs remain refs/redacted by default. |
+| `check_run` | `provider`, `check_run_id`, `head_sha`, `check_suite_id?`, `status`, `conclusion?`, `started_at?`, `completed_at?`, `workflow_run_id?`, `pull_requests[]`, `log_ref?` | CI validation should connect to code change and deploy separately. Check PR linkage can be absent, especially for fork-originated changes. |
 
 Provider-specific raw IDs stay in `refs` so integrations can replay/backfill.
 
@@ -87,7 +92,8 @@ Use deterministic identifiers before time windows.
 | `deploy_status_for_release` | strong | Deployment status references a deployment whose ref/SHA/release is known. |
 | `deployment_review_for_deploy` | strong | Provider review/approval event references the deployment ID and reviewer/workflow context. This proves approval lineage, not deploy success or causality. |
 | `deploy_contains_commit` | strong | Deployment or release records exact `commit_sha` and it equals the commit/change node. |
-| `check_validated_commit` | strong | Check run/check suite records the same commit SHA. |
+| `workflow_run_observed_commit` | strong for the recorded event context only | Workflow run records event name, head SHA, ref, run attempt, and PR head/base/merge context when applicable. This proves workflow execution context, not deployment. |
+| `check_validated_commit` | strong for validation only | Check run/check suite records the same head SHA and has enough workflow/event or PR context to interpret that SHA. |
 | `pr_contains_commit` | strong | GitHub PR commits endpoint or merge metadata contains the commit. |
 | `work_item_linked_pr` | strong when provider emits link; medium when parsed from title/body/magic words | Machine-emitted provider link is stronger than text convention. |
 | `release_contains_work_item` | medium | Release tool or issue tracker says issue shipped in the release/environment, but runtime deploy confirmation is separate. |
@@ -123,6 +129,11 @@ Bundles should report these gaps explicitly:
 - `issue_tracker_link_text_only`
 - `issue_tracker_eventually_consistent`
 - `missing_ci_check`
+- `missing_workflow_run`
+- `missing_workflow_job`
+- `missing_actions_event_context`
+- `ambiguous_actions_sha`
+- `missing_pr_head_base_sha`
 - `missing_source_owner`
 
 Agents should see these as blockers to strong claims, not as prompts to guess.
@@ -238,6 +249,7 @@ Before Parallax claims release-regression or "what changed?" intelligence:
 | `deploy_success_status_rate` | >= 90 percent of deploys have terminal status within the audit window. |
 | `deployment_backfill_coverage_rate` | 100 percent for providers where webhooks omit states or delivery can be missed. |
 | `deployment_review_context_rate` | >= 90 percent where deployment protection/reviews are configured. |
+| `actions_event_context_rate` | 100 percent for GitHub Actions rows used in deploy/change edges. |
 | `compare_base_rate` | >= 80 percent of release/deploy windows have predecessor ref/commit for diff. |
 | `pr_file_list_complete_rate` | >= 95 percent for PRs used in `code_change_touched_frame` edges. |
 | `work_item_machine_link_rate` | >= 70 percent for issue tracker links before treating work items as more than weak context. |
@@ -254,6 +266,10 @@ Failure consequences:
   when a success webhook exists.
 - If deployment review/protection context is configured but missing, do not claim
   who approved or which gate allowed the deploy.
+- If Actions event context is missing, say "workflow/check observed" rather
+  than "validated this deployed change."
+- If a PR workflow uses a merge-branch SHA, keep PR head/base and merge SHA
+  distinct before connecting checks to code-change candidates.
 - If PR file list is truncated, do not use file-touch evidence as a strong
   explanation.
 - If issue-tracker links are text-only, keep them as context, not causality.
