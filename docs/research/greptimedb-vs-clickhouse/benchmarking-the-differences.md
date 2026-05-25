@@ -268,6 +268,48 @@ Legend: **Runnable now** = expressible in the current prototype/`bench/compose.y
 - **Prereq:** a high-cardinality metric generator knob (distinct-series count) added to
   the harness; both stacks already up. **Status: proposed (pass 48), not yet run.**
 
+## B14 — Multi-replica object-store cost (the zero-copy gap)
+
+- **Hypothesis / mechanism:** for HA on S3, OSS ClickHouse `ReplicatedMergeTree` is
+  shared-nothing — each replica stores its **own full copy** → **N replicas ≈ N× S3
+  bytes**; zero-copy replication (1× shared copy) is `allow_remote_fs_zero_copy_replication=0`
+  + *"not ready"* (`wal-and-durability.md` / `distributed-and-scaling.md`, Run 34), and
+  `SharedMergeTree` is Cloud-only. GreptimeDB is object-store-native → **one shared S3
+  copy per region** regardless of HA replicas (replication = leadership/metadata, not
+  data copy). So GreptimeDB HA should cost ~1× S3, ClickHouse ~N×.
+- **Workload:** a 3-replica HA cluster of each on MinIO/S3, same dataset (`small` tier);
+  measure **total S3 bytes stored** across the replica set. Optionally repeat with
+  ClickHouse zero-copy *on* (to quantify the not-production-ready alternative).
+- **Record:** total object-store bytes for the replica set; bytes-per-replica; object
+  count; (if zero-copy on) any consistency/corruption events under churn.
+- **Pass/fail:** GreptimeDB replica-set S3 bytes ≈ 1× single-copy; ClickHouse default
+  ≈ 3×. Confirms the replication-storage-economics edge → real HA cost multiplier on the
+  cost axis. "Close enough to not matter" only if Parallax runs single-replica (no HA).
+- **Prereq:** multi-node compose for both (3 replicas), MinIO, S3 byte accounting
+  (`mc du` / `system.parts` bytes_on_disk × replicas). **Needs the multi-node harness.**
+  **Status: proposed (pass 59), not yet run.** (Mechanism source-confirmed, Run 34.)
+
+## B15 — Strict-durability throughput cost (`sync_write` vs `fsync_after_insert`)
+
+- **Hypothesis / mechanism:** both default to **throughput-over-fsync** (GreptimeDB
+  `sync_write=false`; ClickHouse `fsync_after_insert=false`, `wal-and-durability.md`).
+  Forcing per-write durability — GreptimeDB `sync_write=true` (fsync each WAL record);
+  ClickHouse `fsync_after_insert=1` (fsync each part) — costs ingest throughput. The
+  question: **how much**, and is one engine's strict-durable mode cheaper? GreptimeDB's
+  WAL-append fsync (sequential) should beat ClickHouse's per-part fsync (the CH doc warns
+  it "significantly decreases performance").
+- **Workload:** sustained single-row + small-batch ingest at a fixed rate, four configs:
+  GT default / GT `sync_write=true` / CH default / CH `fsync_after_insert=1`. Same
+  hardware, same NVMe.
+- **Record:** ingest rows/s and p99 insert latency per config; the **throughput ratio
+  strict-vs-default** for each engine.
+- **Pass/fail:** quantify each engine's strict-durability penalty; confirm/refute that
+  GreptimeDB's sequential-WAL fsync is the cheaper strict-durable path. Matters only if
+  Parallax needs hard per-write durability (telemetry usually tolerates the default).
+- **Prereq:** a fixed-rate small-write driver (have the shape from B9) + the two strict
+  settings. Runnable on the existing single-node stacks. **Status: proposed (pass 59),
+  not yet run** (mechanism source+live confirmed, Runs 20/33).
+
 ## Priority order (what to run next)
 
 1. **B2** (GreptimeDB inverted-index trace lookup) — runnable now, cheap, validates

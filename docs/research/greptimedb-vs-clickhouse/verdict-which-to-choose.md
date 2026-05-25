@@ -264,6 +264,7 @@ ships a new mechanism — re-checked each pass).
   `projections-and-access-paths.md`, `deletes-and-mutations.md`.
 - Matrix: `per-signal-verdict.md`. Empirical: `local-benchmark-results.md`
   (Runs 1–34). Public claims: `public-performance-claims.md`. Targeted cases:
-  `benchmarking-the-differences.md` (B1–B13).
+  `benchmarking-the-differences.md` (B1–B15; B14 multi-replica S3 cost, B15
+  strict-durability throughput added pass 59 as harness-handoff specs for open Q#6/#7).
 - Build designs: `greptimedb-implementation.md`, `clickhouse-implementation.md`.
 - Reproducible object-store stack: `bench/s3/`.
