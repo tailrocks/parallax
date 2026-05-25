@@ -5,7 +5,9 @@
 Status: pass 12 (design) + pass 73 (**whole schema built live**, Run 45) + pass 94
 (**native auto-schema vs custom decided live**, Run 57) + pass 116 (**Q4 retrieval
 corrected for the join-pushdown gap**, Runs 81/82 — direct in-DB join full-scans; use
-subquery pre-filter or app-side assembly). The buildable
+subquery pre-filter or app-side assembly) + pass 119 (**native traces verified → ADOPT**,
+Run 86 — `opentelemetry_traces` auto-created via `greptime_trace_v1` pipeline, partitioned
+by `trace_id` + bloom-indexed). The buildable
 storage design for the **recommended** engine (`verdict-which-to-choose.md`): full schema,
 ingest path, exact retrieval, object storage, and operational shape — for the whole Parallax
 signal set. Builds on the seed DDL in `storage-benchmark-prototype.md` and applies the
@@ -53,7 +55,7 @@ native ingest endpoints on a clean table and reading `SHOW CREATE TABLE`:
 | --- | --- | --- | --- |
 | **Metrics** | InfluxDB line `POST /v1/influxdb/write` (HTTP 204); also Prom remote-write / OTLP | tags → `PRIMARY KEY` (e.g. `(service, env)`); fields **auto-typed** (`count`→`BIGINT`, `latency_ms`→`DOUBLE`); auto `greptime_timestamp TIMESTAMP(9) TIME INDEX`; `merge_mode='last_non_null'` (partial-upsert last-non-null per series+ts); **one table per measurement** | **ADOPT.** This *is* a correct metric table — tags-as-PK bounds series, PromQL runs on it, last-non-null gives upsert. No custom DDL needed unless a specific PK order is wanted. |
 | **Logs** | `greptime_identity` pipeline `POST /v1/ingest?…&pipeline_name=greptime_identity` (HTTP 200), JSON body | auto `greptime_timestamp TIMESTAMP(9) TIME INDEX`; **every JSON key → `STRING` column** (`level`, `message`, `service`, `trace_id`, `span_id`); `append_mode='true'`; **NO `PRIMARY KEY`, NO index on `trace_id`/`message`** (flat append) | **ADOPT-then-CUSTOMIZE.** Append-mode + auto-timestamp are right; the **one shortfall is the missing anchor index** — a `trace_id` log lookup on the native table **scans** (no index). Parallax adds `trace_id INVERTED INDEX` (+ `message FULLTEXT`) — exactly the deviation principle 1/4 already specify. Run 56 showed `trace_id` retrieval is the evidence-bundle's dominant cost, so this index is load-bearing, not optional. |
-| **Traces** | OTLP `POST /v1/otlp/v1/traces` — **protobuf only** | not hand-verifiable: JSON **rejected live** (HTTP 400 `"OTLP endpoint only supports 'application/x-protobuf'"`, Run 57) — needs a real OTLP exporter/collector. Native table is `opentelemetry_traces` (per docs), flattening spans | **OWED + likely CUSTOMIZE.** Whether the native `opentelemetry_traces` indexes `trace_id` for the anchored lookup is **unverified** (protobuf blocker — route a collector-fed check to the harness). Parallax's custom `spans` table indexes `trace_id` explicitly regardless. |
+| **Traces** | OTLP `POST /v1/otlp/v1/traces` (**protobuf** + header `x-greptime-pipeline-name: greptime_trace_v1` — *not* zero-config; bare POST → "Pipeline is required") | **Verified live (Run 86):** auto-creates `opentelemetry_traces` (+ `_operations`/`_services` for the Jaeger API). Schema: `trace_id`/`parent_span_id`/`service_name` **BLOOM `SKIPPING INDEX`**, **PK `service_name`**, **`PARTITION ON COLUMNS (trace_id)` (16-way)**, full OTLP fields, `span_events`/`span_links` JSON. | **ADOPT native.** It is a complete, well-designed trace model: `trace_id` is bloom-indexed **and** the table is **partitioned by `trace_id`** → an anchored lookup prunes to ~1/16 partitions + bloom-skips (good anchored retrieval — better than the hand-rolled `spans` here). The 16-way `trace_id` partition is also an **anchor-locality lever without PK-cardinality cost** (refines Run 63/65). Customize only to add `fingerprint`/cross-signal columns the native model lacks. |
 
 **Decision:** GreptimeDB's adopt-native path is **genuinely usable with zero DDL for
 metrics** and **near-usable for logs** — the *only* forced deviation is adding the

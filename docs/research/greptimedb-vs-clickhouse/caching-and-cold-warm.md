@@ -96,6 +96,12 @@ process lifetime), not per-query; the per-query cold cost is the **5 SST GETs / 
   39→14 ms) **explodes series cardinality**, which the design avoids. Cluster-vs-cardinality
   is a tradeoff ClickHouse does not face. **The exact cold-egress byte count at large SST
   is still owed to the harness; the mechanism is settled (Run 63).**
+  **Partial mitigation (Run 86):** GreptimeDB's native `opentelemetry_traces` table is
+  **`PARTITION ON COLUMNS (trace_id)` (16-way)** — partitioning by the anchor **without**
+  making it the PK (no series-cardinality cost), so an anchored cold trace read prunes to
+  **~1/16 of the data**, not the whole table. A coarse (16-bucket, not granule-level)
+  anchor-locality lever GreptimeDB *does* have — it can *partition* (cheaply), just not
+  *sort*, by the anchor. Mitigates, doesn't erase, the gap vs ClickHouse's granule locality.
 
 **The warm/repeat path is the real Parallax economics, and it favours GreptimeDB.**
 GreptimeDB **write-through populates the whole SST into a persistent local read cache

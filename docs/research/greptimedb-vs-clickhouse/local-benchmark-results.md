@@ -3488,6 +3488,58 @@ Caveat: tested 42 names; GreptimeDB's full reserved list is larger (it inherits 
 
 **Reproduce.** `for col in value timestamp user status …; do CREATE TABLE t (ts TIMESTAMP TIME INDEX, $col STRING); done` on each — GreptimeDB errors "Cannot use keyword '$col'" on ~28; ClickHouse only on `index`.
 
+### Run 86 — 2026-05-25 — Native OTLP traces structure verified (closes Run 57) + a partition-by-trace_id finding
+
+**Pass target.** Close the one owed native-structure gap (Run 57: OTLP traces is
+protobuf-only, couldn't verify the native trace table live). Hand-build a minimal OTLP-trace
+protobuf, ingest, inspect the auto-created table.
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned — latest, no bump).
+Built a 100-byte `ExportTraceServiceRequest` protobuf by hand (one span: trace_id/span_id/
+name/kind/start/end + a `service.name` resource attr), `docker cp` + `curl -X POST
+.../v1/otlp/v1/traces -H 'Content-Type: application/x-protobuf'`.
+
+**Verified:**
+
+- **OTLP traces is NOT zero-config — it requires a pipeline.** Bare POST → `"Pipeline is
+  required for this API"`; only **`x-greptime-pipeline-name: greptime_trace_v1`** worked
+  (others → `"Unsupported pipeline for trace"`). (Contrast: Influx metrics / `greptime_identity`
+  logs auto-create with no pipeline, Run 57.)
+- **Auto-created 3 tables:** `opentelemetry_traces` (+ `_operations`, `_services` companions —
+  these back the native Jaeger query API, Run 55). The span landed (`count=1`).
+- **`opentelemetry_traces` native schema:** `timestamp` TIMESTAMP(9) TIME INDEX,
+  `timestamp_end`, `duration_nano`; `trace_id` / `parent_span_id` / `service_name` each a
+  **BLOOM `SKIPPING INDEX`** (fpr 0.01, granularity 10240); **`PRIMARY KEY (service_name)`**;
+  full OTLP fields (`span_id`, `span_kind`, `span_name`, `span_status_code`/`_message`,
+  `trace_state`, `scope_name`/`_version`); **`span_events` / `span_links` as `JSON`**; and
+  **`PARTITION ON COLUMNS (trace_id)`** — a **16-way partition by `trace_id` first hex char**.
+
+**Verdict — ADOPT native for traces; + a partition-by-trace_id mechanism finding.**
+
+- **Adopt-vs-custom (traces): ADOPT the native `opentelemetry_traces`.** It is a complete,
+  well-designed OTLP trace model — `trace_id` bloom-skipping-indexed **and** the table is
+  **partitioned by `trace_id`**, so an anchored `trace_id` lookup prunes to **1 of 16
+  partitions** then bloom-skips within → good anchored retrieval, plus `service_name`
+  PK/index for service queries and JSON events/links. Better-designed for traces than the
+  hand-rolled `spans_idx` (PK `service,name` + `trace_id` inverted) — Parallax should adopt
+  it (custom only to add `fingerprint`/cross-signal columns the native model lacks).
+- **Refines Run 63/65 (cluster-vs-cardinality).** I'd concluded GreptimeDB "cannot cluster
+  by the high-card anchor without making it the PK (→ series blowup)" and has no `order_by`.
+  But `PARTITION ON COLUMNS (trace_id)` is a **distribution-level anchor mechanism**: it
+  buckets traces 16-way by `trace_id` **without** `trace_id` being the PK/series identity —
+  so an anchored cold read touches **~1/16 of the data**, not the whole table. It is coarse
+  (16 buckets, not per-trace sort locality), so it **partially** mitigates the Run-55/63
+  cold-egress scatter (16× fewer bytes, not granule-level), at **no series-cardinality cost.**
+  So GreptimeDB *does* have an anchor-locality lever (partitioning) — coarser than ClickHouse
+  `ORDER BY` but real and cardinality-free. Updates parity #5 / the cold-read story.
+
+Caveat: 1-span smoke; the partition-prune cold-egress benefit (1/16) is structural (from the
+DDL), not yet measured at volume on S3 — route the sized native-trace cold-read to the harness.
+
+**Reproduce.** Build the OTLP protobuf (see the Python in this run's history), `curl -X POST
+.../v1/otlp/v1/traces -H 'Content-Type: application/x-protobuf' -H 'x-greptime-pipeline-name:
+greptime_trace_v1' --data-binary @trace.pb`; `SHOW CREATE TABLE opentelemetry_traces`.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
