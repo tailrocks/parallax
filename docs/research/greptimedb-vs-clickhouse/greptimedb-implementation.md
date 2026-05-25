@@ -7,7 +7,8 @@ Status: pass 12 (design) + pass 73 (**whole schema built live**, Run 45) + pass 
 corrected for the join-pushdown gap**, Runs 81/82 — direct in-DB join full-scans; use
 subquery pre-filter or app-side assembly) + pass 119 (**native traces verified → ADOPT**,
 Run 86 — `opentelemetry_traces` auto-created via `greptime_trace_v1` pipeline, partitioned
-by `trace_id` + bloom-indexed). The buildable
+by `trace_id` + bloom-indexed) + pass 120 (**added design principle 8: PARTITION ON
+COLUMNS(trace_id)**, Run 87 — anchored prune ~3.5×, cardinality-free anchor locality). The buildable
 storage design for the **recommended** engine (`verdict-which-to-choose.md`): full schema,
 ingest path, exact retrieval, object storage, and operational shape — for the whole Parallax
 signal set. Builds on the seed DDL in `storage-benchmark-prototype.md` and applies the
@@ -44,6 +45,14 @@ Pin: GreptimeDB `v1.0.2` (`0ef5451`). DDL features confirmed in
 6. **Dynamic OTLP attributes → `JSON` column**; promote a hot attribute to a tag or
    `SKIPPING INDEX` only when a query needs it (Q5).
 7. **`ttl` per table** + object storage for cheap re-readable retention.
+8. **`PARTITION ON COLUMNS (trace_id)`** on the anchored signals (spans/logs/error_events)
+   — as the native `opentelemetry_traces` does (Run 86). Measured (Run 87): an anchored
+   `trace_id` lookup prunes to the **one matching partition** (~1/N data) → ~3.5× faster
+   scan (11 ms vs 39 ms at 8-way) **and ~1/N cold-read S3 egress**, at **no series-
+   cardinality cost** (trace_id stays a non-PK column). This is GreptimeDB's coarse
+   anchor-locality lever — it cannot *sort* by a non-PK anchor (Run 63/65) but it *can*
+   *partition* by it cheaply. Combine with the `trace_id` inverted index (principle 1) for
+   within-partition pruning. ~16-way (hex) matches the native model.
 
 ## Native out-of-the-box schema vs this custom design (adopt-vs-custom — Run 57, live)
 

@@ -334,11 +334,16 @@ Parallax. Source read at GreptimeDB `v1.0.2` (`0ef5451`).
   integration.)*
 - **Tier:** **A** (Flow workaround) / **B** (native copy). **Integration** (via copy; full
   sort/identity decoupling would be design).
-- **Value here:** still a **footnote** for Parallax, but with a *second* justification now:
-  not just alternate scan order (rare — anchored retrieval keys on `trace_id`/`fingerprint`)
-  but **cold-tier selective-read egress** (Run 55/63). Both only bite outside the common
-  cache-warm anchored hot path. Invest only if the real query mix proves frequent **cold,
-  selective** re-reads — otherwise the persistent read cache already wins the hot path.
+- **Value here:** **downgraded further (Run 87): GreptimeDB already has a cheap
+  anchor-locality lever — `PARTITION ON COLUMNS(trace_id)`** — that partly closes the
+  cold-read motivation *without* this improvement. Measured: an anchored read on a
+  trace_id-partitioned table prunes to ~1/N partitions (11 ms vs 39 ms at 8-way; ~1/N cold
+  egress) at no PK-cardinality cost, and the native `opentelemetry_traces` ships 16-way by
+  default (Run 86). So the residual that *only* a true alternate-sort (#5) would add is
+  granule-level (vs partition-level) anchor locality — a small increment over partitioning.
+  Combined with partitioning being free, #5 is a **footnote**; invest only if a real query
+  mix proves frequent cold selective re-reads that 16-way partitioning + the read cache
+  don't already handle.
 
 ### Improvement 7 — Type-aware Parquet encodings (per-column codec parity)
 

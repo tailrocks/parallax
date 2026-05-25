@@ -3540,6 +3540,51 @@ DDL), not yet measured at volume on S3 — route the sized native-trace cold-rea
 .../v1/otlp/v1/traces -H 'Content-Type: application/x-protobuf' -H 'x-greptime-pipeline-name:
 greptime_trace_v1' --data-binary @trace.pb`; `SHOW CREATE TABLE opentelemetry_traces`.
 
+### Run 87 — 2026-05-25 — PARTITION ON COLUMNS(trace_id) prunes anchored reads (cardinality-free anchor locality)
+
+**Pass target.** Test the Run-86 hypothesis on bulk data: does partitioning by `trace_id`
+actually prune an anchored query to the matching partition (mitigating the Run-63 cold
+scatter), and at what cost?
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned — latest, no
+bump). Built `spans_part` = the 1M-span data, `PRIMARY KEY(service,name)` (trace_id **not**
+keyed, no trace_id index), **`PARTITION ON COLUMNS (trace_id)`** (8-way hex ranges). Loaded
+via `INSERT … SELECT FROM spans_idx`. `EXPLAIN ANALYZE` an anchored `trace_id='3fb2d84c…'`.
+
+**Measured (anchored `trace_id` scan, `EXPLAIN ANALYZE`):**
+
+| Table | partitions touched | scan_cost | output_rows |
+| --- | --- | --- | --- |
+| `spans_idx` (no partition, `PK(service,name)`) — Run 63 | all (`file_ranges: 10`) | **39 ms** | 14 |
+| `spans_part` (`PARTITION ON COLUMNS(trace_id)`, 8-way) | **1 matching** (`count: 2, file_ranges: 2`) | **11 ms** | 14 |
+
+**Verdict — partition-prune is real, ~3.5× here, and cardinality-free.** Partitioning by
+`trace_id` pruned the anchored scan to the **one matching partition** (~1/8 of the data,
+2 file ranges) → **11 ms vs 39 ms (~3.5×)** — *without* `trace_id` being the PK and with
+**no inverted index on it** (pure partition-pruning). So **GreptimeDB DOES have a
+cardinality-free anchor-locality lever: `PARTITION ON COLUMNS(<anchor>)`.** This:
+
+- **Confirms the Run-86 mitigation with a number:** a cold anchored read on a trace_id-
+  partitioned table touches ~**1/N** of the SSTs (N = partition count; native traces use
+  16-way → ~1/16), materially shrinking the Run-55/63 whole-SST cold egress (coarse, not
+  ClickHouse's granule-level, but real).
+- **Refines Run 63/65:** the earlier "GreptimeDB cannot cluster by the anchor without PK-
+  cardinality blowup / has no `order_by`" stands for *sort* locality, but **partitioning is
+  the cheap coarse alternative** — proven here. Combine with a `trace_id` index for
+  within-partition pruning too.
+- **Blueprint rule:** Parallax's GreptimeDB spans/logs/error tables should
+  `PARTITION ON COLUMNS(trace_id)` (as the native `opentelemetry_traces` does) for
+  anchored-read + cold-egress locality at no series-cardinality cost.
+
+Caveat: 8-way here (native is 16-way); finer partitioning = finer prune but more regions to
+manage. Warm scan_cost (the cold S3 egress reduction to ~1/N is structural, owed for the
+sized number). Partition count is a fixed schema choice (not adaptive).
+
+**Reproduce.** `CREATE TABLE spans_part (… PRIMARY KEY("service","name")) PARTITION ON
+COLUMNS ("trace_id") (trace_id < '1', …)`; `INSERT … SELECT FROM spans_idx`; `EXPLAIN ANALYZE
+SELECT span_id FROM spans_part WHERE trace_id='…'` → `partition_count count:2`, scan_cost
+~11 ms vs spans_idx ~39 ms.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
