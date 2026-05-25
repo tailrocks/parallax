@@ -32,7 +32,7 @@ Median ms, lower = faster. **Faster** = which engine wins this query (both inter
 | **Counter-rate panel** (5-min `max-min(counter)`) | 35 | 25 | 23 | 19 | CH ~1.3× | [promql/metrics](promql-and-metrics-query.md) · [Runs 113/131](local-benchmark-results.md) |
 | **Last-value** ("current value" per series) | **5** | **5** | 10 | 11 | **GT ~2×** | [exec-engine](query-execution-engine.md) · [Runs 109/131](local-benchmark-results.md) |
 | **Full-text selective** (exact token, 1 row) | 7 | 8 | 9 | 7 | ~tie | [indexing](indexing-internals.md) · [Runs 98/131](local-benchmark-results.md) |
-| **Full-text broad** (~143k matches) | 24 | 24 | 16 | 16 | CH ~1.5× | [indexing](indexing-internals.md) · [Runs 98/131](local-benchmark-results.md) |
+| **Full-text broad** (~143k matches, this corpus) | 24 | 24 | 16 | 16 | CH ~1.5× *here*; **~12× canonical** | [indexing](indexing-internals.md) · [Runs 98/131/133](local-benchmark-results.md) |
 | **Log-tail** (`service` + `ts DESC LIMIT 100`) | 17 | 13 | 3 | 3 | CH ~5× | [per-signal](per-signal-verdict.md) · [Runs 107/131](local-benchmark-results.md) |
 | **Issue-list** (`GROUP BY fingerprint` + top-50) | 16 | 13 | 7 | 9 | CH ~1.8× | [verdict DQ1](verdict-which-to-choose.md) · [Runs 119/131](local-benchmark-results.md) |
 | **Dynamic-attr JSON** (path GROUP BY, typed cast) | 48 | 48 | 5 | 5 | CH ~10× | [schema-evolution](schema-evolution-and-dynamic-columns.md) · [Runs 104/129/131](local-benchmark-results.md) |
@@ -44,6 +44,12 @@ Median ms, lower = faster. **Faster** = which engine wins this query (both inter
 *(All data 1–2M rows, warm, median-of-5. Absolute numbers scale with data size — the **ratios** and
 **cross-build deltas** are the signal. **Every query cell is ≪ the 300 ms interactive gate** on all
 four builds. Click a row's Details for the mechanism write-up + the reproducible run.)*
+
+*Broad-term full-text caveat (Run 133): the ~1.5× shown is on this synthetic corpus + a `tokenbf_v1`
+index. On the **canonical full-text bench** (`logs_b1`, 5M rows, 699k matches) the broad-term gap is
+**~12×** (CH ~7 ms / GT ~85 ms) — GreptimeDB's broad-term cost is scan-bound and grows with the
+matched-row set × scale. Use ~12× as the load-bearing broad-term number; selective full-text stays a
+~tie either way.*
 
 ## What this says — version by version
 

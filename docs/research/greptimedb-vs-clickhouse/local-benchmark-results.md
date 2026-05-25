@@ -5500,6 +5500,40 @@ builds, identical 1M data.
 `range()`/`numbers()`. Storage: GT `region_statistics.disk_size` / CH `system.parts`. Cardinality:
 GT `append_mode` load at `PK(k)` with k = 12-card vs 1M-card.
 
+### Run 133 — 2026-05-25 — Reconcile the broad-term full-text gap: ~12× REPRODUCES on logs_b1 (5M); Run-131's ~1.5× was a different corpus+index, not comparable. The canonical broad-term gap is ~12×, scan-bound.
+
+**Pass target.** The 4-way (Run 131) showed broad-term full-text ~1.5× (logs1m, 1M), but Run 98 had
+~12× (logs_b1, 5M). Reconcile — which is the real broad-term gap, and what drives the difference?
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned live — 15 h up, no bump).
+`logs_b1` = **5M rows**, `'timeout'` matches **698,955** (~14%). CH `hasToken` (the table's index) vs
+GT `matches_term`. Warm ×6.
+
+| Table / build | broad-term `'timeout'` | rows | matches | CH index |
+| --- | --- | --- | --- | --- |
+| **logs_b1 (5M)** — Run 98 + now | **CH ~7 ms / GT ~85 ms = ~11×** | 5M | 699k (14%) | bloom-class |
+| logs1m (1M) — Run 131 | CH ~16 ms / GT ~24 ms = ~1.5× | 1M | 143k (14%) | `tokenbf_v1` |
+
+**Verdict — ~12× on logs_b1 REPRODUCES (Run 98); the ~1.5× was a different dataset, not a contradiction.**
+
+- **The canonical broad-term gap is ~11–12× (logs_b1, 5M)** — reproduced exactly. GreptimeDB's
+  broad-term cost is **scan-bound** (it scans + processes the ~699k matched rows), so it scales with
+  rows (~85 ms @5M vs ~24 ms @1M ≈ sub-linear with the matched set); ClickHouse stays ~single-digit
+  ms. This is the **scan-engine gap (parity #2, diffuse maturity, Runs 124/125)** showing on full-text
+  — the gap WIDENS with scale (DQ5-flip territory at GB-scale broad scans).
+- **Run-131's ~1.5× is NOT comparable** to logs_b1: it used a *different* table (logs1m), a *different*
+  message corpus, and a *different* ClickHouse index (`tokenbf_v1` vs logs_b1's). CH's logs1m broad
+  number (~16 ms) was slower than logs_b1's (~7 ms) due to the index/corpus, compressing the ratio.
+  Not a drift — a dataset artifact. **The load-bearing broad-term number is ~12× (logs_b1).**
+- **Selective full-text is still competitive (~tie)** — unchanged (Run 98/131); only *broad-term*
+  (many-match) full-text is the ~12× scan-bound gap. Parallax's incident grep is selective → fine.
+- **Action:** correct the four-way table's `full-text broad` row to the canonical ~12× (logs_b1)
+  with the caveat that logs1m's ~1.5× was corpus/index-specific.
+
+**Reproduce.** On `logs_b1` (5M): CH `SELECT count() WHERE hasToken(message,'timeout')` (~7 ms) vs GT
+`SELECT count(*) WHERE matches_term(message,'timeout')` (~85 ms) → ~12×. The ratio is scan-bound (grows
+with matched-row count × scale); selective single-token search stays ~tie.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
