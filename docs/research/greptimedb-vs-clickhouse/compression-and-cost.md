@@ -2,9 +2,10 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 8. The cost axis (#2). Combines the codec mechanisms from the
-internals notes with **measured per-table/per-column sizes** from the live Docker
-candidates, then ties to retention $. Builds on `local-benchmark-results.md`.
+Status: pass 8, extended pass 88 (Run 51: full-text index storage cost). The cost
+axis (#2). Combines the codec mechanisms from the internals notes with **measured
+per-table/per-column sizes** from the live Docker candidates, then ties to retention
+$. Builds on `local-benchmark-results.md`.
 
 Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d8`).
 
@@ -78,6 +79,40 @@ needs explicit per-column ZSTD on high-card columns. Confirms the "compression i
 tuning-dependent wash" conclusion on realistic data, with one operational nuance:
 **GreptimeDB needs no codec tuning; ClickHouse does.**
 
+## Full-text index storage cost (Run 51 — the cost the column comparison misses)
+
+Column compression is a wash, but for **logs** the full-text *index* is a large,
+separate storage cost the table above ignores. Measured on an identical 5M-row log
+corpus, all compacted to 1 SST/part:
+
+| Full-text index on `message` | column/SST data | index | total | index overhead |
+| --- | --- | --- | --- | --- |
+| ClickHouse `text` (inverted, `splitByNonAlpha`) | 228 MiB | **170 MiB** | 399 MiB | **~75%** |
+| GreptimeDB tantivy (inverted, Lucene-class) | 240 MiB | **148 MiB** | 388 MiB | **~62%** |
+| GreptimeDB bloom (probabilistic, fpr=0.01) | 240 MiB | **18 MiB** | 258 MiB | **~7.5%** |
+
+**Fair reading (the trap to avoid):** the live `logs_b1` carries a *bloom*-backend
+full-text index (18 MiB), so comparing it to ClickHouse's *inverted* `text` index
+(170 MiB) falsely suggests a ~9× GreptimeDB win. That is inverted-vs-bloom — an
+apples-to-oranges trick. **Inverted-vs-inverted, GreptimeDB tantivy is only ~13%
+smaller (148 vs 170 MiB)**; both true inverted indexes cost **60–75% on top of the
+column data**, so full-text indexing is expensive on *both* engines.
+
+**The real cost lever** is that GreptimeDB *offers a bloom-backend full-text index*
+(~7.5% overhead, ~9× smaller than either inverted index) that still answers exact-term
+search at ~8 ms (Run 49, `matches_term`). For Parallax's **anchored** log search
+(exact request-id/trace-id grep during an incident) that is a genuine retention-cost
+win with a capability tradeoff (probabilistic, 1% false positive re-checked at scan;
+no ranking/phrase). ClickHouse's fair analog is a `tokenbf_v1` bloom skip-index —
+**not yet measured bloom-vs-bloom** (owed; routed to `benchmarking-the-differences.md`),
+so the bloom-tier size edge is real for *managed full-text* but not yet proven against
+CH's own bloom token filter.
+
+Consequence for the cost axis: at log-retention scale the **index choice dominates
+the storage delta, not the column codec** — choosing GreptimeDB bloom full-text over
+an inverted index saves ~55–65% of total log-table size while keeping anchored grep
+fast. (Source: `local-benchmark-results.md` Run 51.)
+
 ## What actually decides Parallax's storage cost
 
 Local-disk size deltas of 1.3–1.9× are **second-order** for Parallax. The
@@ -135,5 +170,6 @@ decided less by "who compresses spans 1.3× better" and more by:
 
 - GreptimeDB compression: `src/mito2/src/sst/parquet/writer.rs:36,391,433` (Parquet + ZSTD; no per-column codec DDL).
 - ClickHouse codecs: `src/Compression/CompressionCodec*.cpp` (`clickhouse-internals.md`).
-- Measured sizes: `local-benchmark-results.md` Run 1/3 + this pass (`system.parts`, `system.parts_columns`, GreptimeDB per-`table_id` `du`).
+- Measured sizes: `local-benchmark-results.md` Run 1/3/10 (column compression) + Run 51 (full-text index cost) via `system.parts`, `system.data_skipping_indices`, GreptimeDB `information_schema.region_statistics`.
+- GreptimeDB full-text backends (`bloom` vs `tantivy`): index built per SST in the `.puffin` sidecar; backend chosen in `FULLTEXT INDEX WITH(backend=…)` DDL (`indexing-internals.md`).
 - Retention $ + TTL expiry mechanism: `retention-and-ttl.md`.

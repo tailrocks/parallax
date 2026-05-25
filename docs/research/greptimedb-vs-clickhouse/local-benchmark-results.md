@@ -1655,6 +1655,119 @@ docker exec parallax-bench-clickhouse-1 clickhouse-client -q \
 
 Caveat: all warm, cache-resident smoke (1–8 M rows). Directional only; cold-cache GB–TB and concurrent ingest+query stay owed to the sized harness.
 
+### Run 51 — 2026-05-25 — Full-text index *storage* cost, fair inverted-vs-inverted (the "9×" was a bloom-vs-text artifact)
+
+**Pass target.** Rotate the re-verification slice off latency (Run 50 swept the
+latency headlines) onto the **cost axis**: how much disk does each system's
+full-text index cost for the same log corpus? The verdict's cost note
+(`compression-and-cost.md`) measured *column* compression (a wash) but never the
+*full-text index* — a major log-storage cost. Naive reading of the live tables
+(ClickHouse `text` 170 MiB vs GreptimeDB `logs_b1` full-text 18 MiB) suggests a ~9×
+GreptimeDB win — but that compares ClickHouse's **inverted** index against
+GreptimeDB's **bloom**-backend full-text. That is exactly the apples-to-oranges
+trick the brief forbids. This run builds the fair inverted-vs-inverted comparison.
+
+**Environment**
+
+| Item | Value |
+| --- | --- |
+| Host | Linux container dev box (orbstack); same as Runs 1–50 |
+| Compose | `bench/compose.yml` (local disk) |
+| GreptimeDB | `greptime/greptimedb:v1.0.2` (`0ef5451`) — standalone, default config |
+| ClickHouse | `clickhouse/clickhouse-server:26.5.1.882` (`5b96a8d8`) |
+| Versions re-pinned this pass | GreptimeDB latest GA = `v1.0.2` (newer tags are `v1.1.0-nightly`/`v1.0.0-nightly` only); ClickHouse latest stable feature line = `v26.5.1.882-stable` (later-dated `v26.2.19.43`/`v26.4.3.37` are lower-line backports, not higher). **No bump.** |
+| Dataset | The existing `logs_b1` corpus: **5,000,000 log rows**, `message` = high-entropy text (embedded UUIDs/IDs/latencies + stack traces). Identical bytes on both sides (the GreptimeDB tantivy variant is `INSERT … SELECT`-copied from `logs_b1`). |
+| Measurement | Metadata only (stable, not timing): ClickHouse `system.parts` (`bytes_on_disk`, `data_compressed_bytes`) + `system.data_skipping_indices` (`data_compressed_bytes`); GreptimeDB `information_schema.region_statistics` (`sst_size`, `index_size`, `disk_size`). All tables compacted to **1 SST/part** so the comparison is segment-matched. |
+
+**Schema under test (full-text index on `message`, copy-paste):**
+
+```sql
+-- ClickHouse: true inverted posting-list index
+INDEX idx_msg message TYPE text(tokenizer = splitByNonAlpha) GRANULARITY 100000000
+-- (table: ENGINE=MergeTree ORDER BY (service, ts); message String CODEC(ZSTD(1)))
+
+-- GreptimeDB A — bloom backend (probabilistic, fpr=0.01) — the live logs_b1
+"message" STRING NULL FULLTEXT INDEX WITH(analyzer='English', backend='bloom',
+  case_sensitive='false', false_positive_rate='0.01', granularity='10240')
+
+-- GreptimeDB B — tantivy backend (true inverted, Lucene-class) — built this run
+CREATE TABLE "logs_b1_tan" (... "message" STRING NULL
+  FULLTEXT INDEX WITH(analyzer='English', backend='tantivy', case_sensitive='false'),
+  ... TIME INDEX("ts"), PRIMARY KEY("service","level")) ENGINE=mito WITH(append_mode='true');
+INSERT INTO "logs_b1_tan" SELECT * FROM "logs_b1";   -- 5M rows, 6.8 s
+ADMIN flush_table('logs_b1_tan'); ADMIN compact_table('logs_b1_tan');  -- settle to 1 SST
+```
+
+**Measured (5M identical log rows, 1 SST/part each):**
+
+| Full-text index | column/SST data | full-text index | total on disk | index overhead on data | index size vs CH |
+| --- | --- | --- | --- | --- | --- |
+| **ClickHouse `text`** (inverted, `splitByNonAlpha`) | 228.2 MiB | **170.4 MiB** | 399.2 MiB | ~75% | 1.0× (baseline) |
+| **GreptimeDB tantivy** (inverted, Lucene-class) | 239.9 MiB | **148.3 MiB** | 388.2 MiB | ~62% | **0.87× (13% smaller)** |
+| **GreptimeDB bloom** (probabilistic full-text, fpr=0.01) | 239.8 MiB | **18.1 MiB** | 258.0 MiB | ~7.5% | 0.11× (9.4× smaller) |
+
+**Method notes / honesty.**
+
+- **1-SST gate matters.** tantivy builds one index per SST; pre-compaction the
+  variant showed 7 SSTs / idx 108 MiB, then transiently 3 SSTs / 149 MiB
+  (mid-compaction double-count of old+new puffin sidecars). Only the **settled
+  1-SST reading (148.3 MiB)** is reported — matching `logs_b1`'s 1-SST bloom state.
+- ClickHouse `bytes_on_disk` (399.2 MiB) is authoritative for total; `system.parts_columns`
+  `data_compressed_bytes` summed to 1.34 GiB because that column is part-level
+  repeated per column (6 cols) — **do not sum it**; use `system.parts.data_compressed_bytes`
+  (228.2 MiB, columns only, excludes skip indexes).
+
+**The comparison logic & verdict.**
+
+- **What this isolates:** the *storage* cost of full-text indexing for logs, held
+  on an identical corpus, segment-matched (1 SST/part), index-family-matched for the
+  fair cell (inverted vs inverted).
+- **Column data is parity** (CH 228 MiB vs GT 240 MiB; CH ~5% smaller from tuned
+  `ZSTD`+`LowCardinality` vs GreptimeDB Parquet defaults — consistent with Run 10).
+- **Fair inverted-vs-inverted: GreptimeDB tantivy is ~13% smaller than ClickHouse
+  `text` (148 vs 170 MiB).** Both true inverted indexes cost **60–75% on top of the
+  column data** — full-text indexing is expensive on *both* engines. The headline
+  "~9× smaller" is **REFUTED as an inverted-index claim** — it only appears when
+  comparing CH inverted against GT *bloom*.
+- **The real cost lever is GreptimeDB's bloom-backend full-text:** ~7.5% overhead
+  (18 MiB) vs ~75% for an inverted index, i.e. **~9× smaller index** — and Run 49
+  measured it at ~8 ms exact-term (`matches_term`). For Parallax's *anchored* log
+  search (exact request-id/trace-id grep), this is a genuine cost-axis win with a
+  capability tradeoff (probabilistic, 1% false positive, re-checked at scan; no
+  ranking/phrase). **Status: confirmed (fair inverted compare); the "9×" headline
+  refuted as inverted, recharacterized as a bloom-vs-inverted *capability/cost
+  tradeoff*.**
+
+**Owed for full symmetry (do NOT claim until measured):** build a ClickHouse
+`tokenbf_v1` bloom skip-index variant and compare **bloom-vs-bloom** — only then is
+the bloom-tier size claim symmetric. ClickHouse's bloom token filter is the fair
+analog to GreptimeDB's bloom full-text; this run measured CH only on its `text`
+(inverted) index. Routed to `benchmarking-the-differences.md`.
+
+**Reproduce (copy-paste).**
+
+```bash
+# ClickHouse: total, column-data, and text-index bytes (authoritative)
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q \
+  "SELECT formatReadableSize(sum(bytes_on_disk)) total, formatReadableSize(sum(data_compressed_bytes)) cols FROM system.parts WHERE active AND database='default' AND table='logs_b1'"
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q \
+  "SELECT name, formatReadableSize(sum(data_compressed_bytes)) FROM system.data_skipping_indices WHERE database='default' AND table='logs_b1' GROUP BY name"
+# GreptimeDB: build tantivy variant over the same corpus, settle to 1 SST, measure
+docker exec parallax-bench-greptimedb-1 curl -s "http://localhost:4000/v1/sql?db=public" \
+  --data-urlencode "sql=CREATE TABLE IF NOT EXISTS \"logs_b1_tan\" (\"ts\" TIMESTAMP(3) NOT NULL, \"service\" STRING NULL, \"level\" STRING NULL, \"message\" STRING NULL FULLTEXT INDEX WITH(analyzer='English', backend='tantivy', case_sensitive='false'), \"trace_id\" STRING NULL, \"span_id\" STRING NULL, TIME INDEX(\"ts\"), PRIMARY KEY(\"service\",\"level\")) ENGINE=mito WITH(append_mode='true')"
+docker exec parallax-bench-greptimedb-1 curl -s "http://localhost:4000/v1/sql?db=public" \
+  --data-urlencode "sql=INSERT INTO \"logs_b1_tan\" SELECT * FROM \"logs_b1\""
+docker exec parallax-bench-greptimedb-1 curl -s "http://localhost:4000/v1/sql?db=public" --data-urlencode "sql=ADMIN flush_table('logs_b1_tan')"
+docker exec parallax-bench-greptimedb-1 curl -s "http://localhost:4000/v1/sql?db=public" --data-urlencode "sql=ADMIN compact_table('logs_b1_tan')"   # repeat until sst_num=1
+docker exec parallax-bench-greptimedb-1 curl -s "http://localhost:4000/v1/sql?db=public" \
+  --data-urlencode "sql=SELECT t.table_name, r.region_rows, r.sst_size, r.index_size, r.disk_size, r.sst_num FROM information_schema.region_statistics r JOIN information_schema.tables t ON r.table_id=t.table_id WHERE t.table_name IN ('logs_b1','logs_b1_tan')"
+docker exec parallax-bench-greptimedb-1 curl -s "http://localhost:4000/v1/sql?db=public" --data-urlencode "sql=DROP TABLE \"logs_b1_tan\""   # cleanup scratch
+```
+
+Caveat: warm, cache-resident smoke; metadata sizes are exact and stable (not
+timing). 5M-row single-node laptop scale — directional for cost ratios, not a
+production retention-bill verdict.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
