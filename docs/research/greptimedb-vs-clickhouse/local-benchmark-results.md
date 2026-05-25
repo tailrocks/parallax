@@ -6143,6 +6143,43 @@ change query speed. Wrote up in `write-path-and-ingestion.md` (new "Native log i
 then `SELECT column_name,data_type FROM information_schema.columns WHERE table_name='nativelog_demo'`.
 Source: `gh api ".../src/pipeline/src/lib.rs?ref=v1.0.2"`. (Use `docker exec`; host port-forward down.)
 
+### Run 152 — 2026-05-25 — SOURCE+LIVE (gentle): native TRACES — OTLP→span table + Jaeger-native read; completes the adopt-native metrics/logs/traces trio
+
+**Context.** Host→container HTTP still **down** (5th pass; exec fine). Completes the brief's
+native-structure trio: metrics (Run 150), logs (Run 151), **traces** (here). No benchmark; gentle
+source + live-endpoint-verify via `docker exec`. Re-pin unchanged (GT GA v1.0.2; v1.1 nightly-only).
+
+**Pass target.** Source-ground + live-verify GreptimeDB's native **trace** structure + the
+adopt-native-vs-custom decision for the trace signal.
+
+**Source (`src/servers/src/otlp/trace.rs` + `trace/{span,v0,v1}.rs` @v1.0.2):** OTLP traces auto-map to
+a span table (`opentelemetry_traces`) with explicit columns: `trace_id, span_id, parent_span_id,
+span_name, service_name, timestamp` (TIME INDEX), `duration_nano, span_kind, span_status_code,
+span_status_message, span_attributes, span_events, scope_name, scope_version, resource_attributes,
+trace_state` — full OTel span model as first-class columns (two schema versions `v0`/`v1`). OTel
+semantic keys (`service.name`, `span.kind`, `otel.status_code`, `w3c.tracestate`) recognised. trace.rs:
+the main trace table is written first, then service/operation tuples recorded so **auxiliary tables**
+can update — these back the Jaeger query API.
+
+**Live (exec):** `/v1/jaeger/api/services` → **HTTP 200** on v1.0.2 (Jaeger read path live; returns 200
+even with zero traces). So GreptimeDB serves a Jaeger UI directly — no separate Jaeger backend. (Only
+synthetic `spans`/`spans_idx` tables present now; no native `opentelemetry_traces` since none ingested
+this pass — protobuf OTLP is awkward to hand-craft via curl, so grounded the schema from source +
+verified the read API live.)
+
+**Verdict — traces are adopt-native on GreptimeDB; build-the-glue on ClickHouse.** GT = OTLP-in
+(native receiver) → structured span table → Jaeger-out (native API), zero glue. ClickHouse needs an
+external OTel Collector + exporter (ingest), a hand-modelled span schema, and the external
+`jaeger-clickhouse` plugin (read) — three custom pieces. **Trio complete:** metrics/logs/traces are
+**all adopt-native on GT**; ClickHouse is native only for raw inserts + needs a collector/plugin tier
+per OTel signal. Consistent native-ingest-ergonomics edge to GT (orthogonal to query speed, where CH
+leads analytics). Wrote up in `write-path-and-ingestion.md` (new "Native trace ingestion" §).
+
+**Reproduce.** `docker exec parallax-bench-greptimedb-1 curl -s -o /dev/null -w "%{http_code}"
+localhost:4000/v1/jaeger/api/services` → 200. Source: `gh api
+".../src/servers/src/otlp/trace.rs?ref=v1.0.2"` → column-name consts. (Use `docker exec`; host
+port-forward down.)
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

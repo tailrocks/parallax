@@ -6,7 +6,11 @@ Status: pass 9, extended pass 90 (Run 53: concurrent ingest+query) + **Run 151 (
 log ingestion = the built-in `src/pipeline` ETL engine — processors+transforms; `greptime_identity`
 zero-config JSON→auto-schema live-verified, types inferred + new field auto-adds a column; ClickHouse
 has no in-db log-parsing pipeline → needs an external collector + pre-modelled schema. Adopt-native
-logs edge to GreptimeDB)**. The top
+logs edge to GreptimeDB)** + **Run 152 (SOURCE+LIVE: native TRACES — OTLP→`opentelemetry_traces` span
+table (full OTel column model, `otlp/trace.rs`) + auxiliary service/operation tables backing a
+Jaeger-native read API, `/v1/jaeger/api/services` HTTP 200 live; GT = OTLP-in→Jaeger-out zero-glue vs
+ClickHouse's external collector + custom schema + jaeger-clickhouse plugin. Completes the
+adopt-native metrics/logs/traces trio — all native on GT)**. The top
 evaluation axis: **ingest → durable → queryable**, and exactly when written data
 becomes visible (freshness). Combines the write-path mechanisms from the internals
 notes with empirical freshness/throughput/concurrency probes
@@ -219,6 +223,41 @@ logs, GreptimeDB is **adopt-native** (built-in pipeline + identity + schema-on-w
 **adopt-with-a-pipeline-tier** (external collector + pre-modelled schema). For Parallax — where logs
 arrive in heterogeneous shapes and the value is *not* having to pre-model every field — this is a real
 ingest-ergonomics edge to GreptimeDB (it does not change query speed; see `query-execution-engine.md`).
+
+## Native trace ingestion + Jaeger-native read (source + live, Run 152)
+
+Completes the native-signal trio (metrics → `metric-cardinality.md`; logs → above; traces here).
+GreptimeDB ingests **OTLP traces natively** and auto-creates a structured span table
+(`opentelemetry_traces` by default). The OTel span model maps to explicit columns
+(`src/servers/src/otlp/trace.rs` + `trace/{span,v0,v1}.rs`):
+
+`trace_id`, `span_id`, `parent_span_id`, `span_name`, `service_name`, `timestamp` (TIME INDEX),
+`duration_nano`, `span_kind`, `span_status_code`, `span_status_message`, `span_attributes`,
+`span_events`, `scope_name`, `scope_version`, `resource_attributes`, `trace_state` — the full OTel
+span shape as first-class columns (two layout versions, `v0.rs` legacy / `v1.rs` current). OTel
+semantic-convention keys (`service.name`, `span.kind`, `otel.status_code`, `w3c.tracestate`) are
+recognised and lifted out of the attribute bags.
+
+**Jaeger-native read — GreptimeDB *is* a Jaeger backend out of the box.** trace.rs notes the main
+trace table is written first, then *"the service and operation tuples [are recorded] here so the
+auxiliary tables can be [updated]"* — GreptimeDB maintains **auxiliary service/operation tables** that
+back the Jaeger query API. **Live-verified (exec):** `/v1/jaeger/api/services` → **HTTP 200** on the
+running v1.0.2 (the Jaeger read path is live even with zero traces ingested). So a Jaeger UI can point
+straight at GreptimeDB — no separate Jaeger storage backend.
+
+**Adopt-native traces decision.** GreptimeDB: **OTLP in (native receiver) → structured span table →
+Jaeger out (native query API)**, zero glue. ClickHouse: traces need an **external OTel Collector +
+ClickHouse exporter** to ingest, a **hand-modelled span schema**, and the **external
+`jaeger-clickhouse` plugin** (or ClickStack/HyperDX) for Jaeger-style read — three custom pieces vs
+GreptimeDB's built-ins. For Parallax's trace signal this is **adopt-native on GreptimeDB,
+build-the-glue on ClickHouse.** (Trace *query latency* is a separate axis — `trace_id` lookup is tiny
+on both, ClickHouse slightly faster by sort-key locality; `per-signal-verdict.md` Traces rows.)
+
+→ **Native-structure trio verdict:** metrics (metric-engine multiplexer), logs (pipeline + identity
+schema-on-write), and traces (OTLP→span table + Jaeger API) are **all adopt-native on GreptimeDB**;
+ClickHouse is adopt-native only for *raw inserts* and needs an external collector/plugin tier for each
+OTel signal. The native-ingest ergonomics axis is a consistent GreptimeDB edge across all three signals
+(orthogonal to query speed, where ClickHouse leads analytics).
 
 ## Freshness/write-path verdict (axis #1)
 
