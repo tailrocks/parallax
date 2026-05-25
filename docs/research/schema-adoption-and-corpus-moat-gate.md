@@ -38,10 +38,15 @@ Current primary references reinforce three rules:
   the core spec
   ([JSON Schema 2020-12](https://json-schema.org/draft/2020-12),
   [JSON Schema Core](https://json-schema.org/draft/2020-12/json-schema-core)).
-- MCP's current schema exposes tool inputs as JSON Schema objects, so a Parallax
-  bundle schema can be reused by MCP tools and clients instead of inventing a
-  separate agent-only contract
-  ([MCP schema reference](https://modelcontextprotocol.io/specification/2025-11-25/schema)).
+- MCP's latest specification is `2025-11-25`. It uses JSON Schema 2020-12 as the
+  default schema dialect, exposes tool input/output schemas and structured tool
+  results, reserves `_meta` for protocol/extension metadata, and warns that tool
+  descriptions/annotations are untrusted unless obtained from a trusted server.
+  A Parallax bundle schema can therefore be reused by MCP tools and clients, but
+  only the canonical structured JSON counts for conformance; Markdown/text is a
+  projection
+  ([MCP specification](https://modelcontextprotocol.io/specification/2025-11-25),
+  [MCP schema reference](https://modelcontextprotocol.io/specification/2025-11-25/schema)).
 
 Updated implication from the A1/A6 source-field pass: JSON Schema and MCP output
 schemas can require the presence and shape of `source_field_policy`, but they
@@ -71,8 +76,8 @@ Do not declare "schema published" until all of these exist in the repo:
 | Artifact | Required content |
 | --- | --- |
 | Canonical JSON Schema | `schemas/evidence-bundle/v0.1.0/schema.json` with `$schema`, `$id`, semver `schema_version`, required top-level fields, node/edge/hypothesis/redaction/source-field-policy definitions, and extension rules. |
-| Example fixtures | At least one valid fixture for issue, trace, CI failure, CLI invocation, and agent session anchors. |
-| Negative fixtures | Missing `redaction_report`, missing source-field policy status for eval/corpus bundles, source-field policy violation, missing `missing_evidence`, uncited hypothesis, invalid edge target, unknown required field, and oversized inline dump. |
+| Example fixtures | At least one valid fixture for issue, trace, CI failure, CLI invocation, agent session anchors, and an MCP structured tool-result wrapper. |
+| Negative fixtures | Missing `redaction_report`, missing source-field policy status for eval/corpus bundles, source-field policy violation, missing `missing_evidence`, uncited hypothesis, invalid edge target, unknown required field, oversized inline dump, MCP text-only result counted as canonical, and safety fields hidden only in `_meta`. |
 | Validator | A small CLI or test command that validates all positive/negative fixtures. |
 | Compatibility policy | A short `schemas/evidence-bundle/README.md` that states major/minor/patch rules, extension namespacing, deprecation window, and consumer expectations. |
 | Changelog | Schema changes recorded by version, with migration notes and breaking-change labels. |
@@ -93,6 +98,7 @@ Parallax should copy the discipline of stable telemetry ecosystems:
 | Breaking major | Removing/renaming required fields, changing field meaning, changing `strength` semantics, or changing redaction-report requirements requires a major version. |
 | Consumer behavior | Consumers must ignore unknown optional node/edge types and preserve unknown extension fields when round-tripping. |
 | Extension namespace | External extensions use reverse-DNS or URI-like namespaces, such as `com.example.foo`, to avoid collisions. |
+| MCP projection | MCP tools must declare an output schema and return the canonical bundle as structured JSON. Text/Markdown content is a deterministic projection and cannot be the source of truth. |
 | Required extension | If an extension is required to interpret safety or meaning, it must be listed in a `required_extensions` field. Consumers that do not understand it must fail closed. |
 | Deprecation | Fields can be deprecated in one minor, retained for at least one more minor, then removed only in the next major. |
 | Safety invariants | `redaction_report`, source-field policy status for eval/corpus bundles, `missing_evidence`, evidence refs, and cited hypotheses are never optional for agent-visible bundles. |
@@ -151,7 +157,7 @@ Until the 1,000-labeled-bundle threshold, do not claim a data moat.
 
 ## Conformance Suite
 
-The conformance suite should test four things:
+The conformance suite should test five things:
 
 1. **Schema validity:** every positive fixture validates against JSON Schema
    draft 2020-12; every negative fixture fails for the expected reason.
@@ -159,9 +165,13 @@ The conformance suite should test four things:
    for the same anchor; Markdown is a deterministic projection.
 3. **Compatibility:** a v0.1 consumer can ignore v0.2 optional fields and still
    preserve safety fields.
-4. **Safety invariants:** bundles without `redaction_report`,
+4. **MCP structured output:** the MCP tool wrapper declares an `outputSchema`,
+   returns canonical bundle JSON as structured content, and keeps Markdown/text
+   as a projection.
+5. **Safety invariants:** bundles without `redaction_report`,
    required source-field policy status, `missing_evidence`, valid refs, or cited
-   hypotheses are invalid for agent exposure.
+   hypotheses are invalid for agent exposure; the same fields must not live only
+   in optional `_meta` or tool annotations.
 
 Minimum command shape:
 

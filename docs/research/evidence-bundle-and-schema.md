@@ -334,6 +334,15 @@ three transports), per the focused
   rendering is a deterministic projection of the JSON, never a separate source of
   truth.
 
+For MCP, the current `2025-11-25` specification makes structured output the
+important compatibility target: the tool should declare an `outputSchema` for the
+bundle and return the canonical object as `structuredContent`. Text/Markdown
+content is only for human/model readability. Required safety fields such as
+`redaction_report`, `source_field_policy`, `missing_evidence`, evidence refs, and
+cited hypotheses must live in the canonical JSON, not only in optional `_meta`,
+tool annotations, or descriptions, because MCP treats descriptions/annotations
+as untrusted unless the server is trusted.
+
 ## Versioning And Compatibility
 
 The schema is the moat only if external tools can depend on it. Rules:
@@ -372,6 +381,9 @@ it survives contact with real data:
    working across two minor revisions? The concrete conformance artifacts,
    adoption-clock thresholds, and corpus requirements are specified in the
    [schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md).
+6. Do CLI, HTTP, and MCP surfaces produce byte-equivalent canonical JSON for the
+   same anchor, with Markdown/text renderings provably derived from that object?
+   MCP text-only output is not enough for schema adoption or corpus claims.
 
 ## Relationship To Other Research
 

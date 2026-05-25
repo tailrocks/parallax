@@ -39,11 +39,17 @@ Outside sources checked for this pass:
   core keywords, identifiers, references, annotations, and output structure
   ([JSON Schema Draft 2020-12](https://json-schema.org/draft/2020-12),
   [JSON Schema Core](https://json-schema.org/draft/2020-12/json-schema-core)).
-- MCP's current specification says MCP uses JSON Schema for validation, defaults
-  to JSON Schema 2020-12 when `$schema` is omitted, and exposes tool
-  input/output schemas and structured tool results; this makes Parallax bundle
-  schema compatibility relevant to agent tool surfaces
+- MCP's current specification is version `2025-11-25` and says MCP uses JSON
+  Schema for validation, defaults to JSON Schema 2020-12 when `$schema` is
+  omitted, and exposes tool input/output schemas plus structured tool results.
+  It also says tool annotations/descriptions should be treated as untrusted
+  unless they come from a trusted server, and that security/consent controls are
+  implementor responsibilities rather than protocol guarantees. This makes
+  Parallax bundle schema compatibility relevant to agent tool surfaces, but only
+  if the canonical bundle is returned as structured content and safety fields are
+  preserved
   ([MCP overview](https://modelcontextprotocol.io/specification/2025-11-25/basic),
+  [MCP specification](https://modelcontextprotocol.io/specification/2025-11-25),
   [MCP schema reference](https://modelcontextprotocol.io/specification/2025-11-25/schema)).
 
 Internal sources:
@@ -135,6 +141,10 @@ event_type: schema_release | external_review | producer_integration | consumer_i
 schema_version: 0.1.0
 actor_class: operator | design_partner | unrelated_tool | oss_maintainer | customer_team | agent_wrapper | observability_tool | private_partner
 actor_relationship: operator_controlled | warm_design_partner | external_non_operator | unrelated_public | private_non_operator
+transport_surface: file | cli | http | mcp | other
+canonical_json_present: true
+projection_equivalence_status: pass | fail | not_checked
+safety_fields_preserved: true
 public_evidence:
   url: https://example.invalid/link-or-null
   hash: sha256:...
@@ -157,6 +167,12 @@ reviewer: operator | second_reviewer | external_reviewer
 An event must be marked `do_not_count` when evidence is missing, the actor is
 operator-controlled, the fixture cannot validate, or the integration is only a
 demo scripted entirely by Parallax.
+
+For MCP events, a text-only or Markdown-only tool response is a projection, not
+a schema-consumer event. Count MCP producer/consumer events only when the tool
+declares an `outputSchema`, returns the canonical bundle in `structuredContent`,
+and preserves required safety fields outside untrusted descriptions,
+annotations, or optional `_meta` fields.
 
 ## Corpus Outcome Event Types
 
@@ -240,6 +256,9 @@ Count an event only if all applicable checks pass:
 - The actor is not controlled by the operator, unless the event is explicitly
   marked as operator-controlled and excluded from adoption totals.
 - The bundle validates against the canonical JSON Schema version claimed.
+- For MCP integrations, `structuredContent` validates against the declared
+  `outputSchema`; unstructured text is treated only as a deterministic
+  projection.
 - `redaction_report`, required `source_field_policy` status, `missing_evidence`,
   evidence refs, and cited hypotheses remain present through projection or
   round-trip.
@@ -260,6 +279,8 @@ Do not count:
 - integrations that strip safety fields;
 - agent demos where the model sees a Markdown projection but no consumer depends
   on the canonical JSON schema.
+- MCP tool demos that expose only text/Markdown, hide safety fields in `_meta`,
+  or rely on tool descriptions/annotations as trusted behavior guarantees.
 
 ## Refresh Cadence
 
