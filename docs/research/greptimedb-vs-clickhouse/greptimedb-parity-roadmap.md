@@ -6,7 +6,8 @@ Status: pass 76 (new) + pass 77 (gaps #2/#3 source-verified) + pass 78 (gap #1
 source-corrected) + pass 79 (**expanded to detailed per-improvement what/why/how**, framed
 as borrowed-concept → GreptimeDB structure → value, per operator) + pass 80 (#4 JSON
 binary-jsonb + per-row `json_get` source-confirmed; #2 batch-size has no runtime knob,
-live-probed). This is **the dedicated,
+live-probed) + pass 81 (**added Improvement #7** — per-column codec parity; source-grounded:
+user data columns default to `PLAIN`+ZSTD, floats miss the Gorilla-class encoding). This is **the dedicated,
 standalone file** answering "what can GreptimeDB improve, why, and how" — the summary table
 scans, the detailed sections below carry the code-oriented specifics. Answers the operator
 question: GreptimeDB wins Parallax on *fit*
@@ -56,6 +57,7 @@ method working: source beats reasoning.
 | 3 | **Late materialization (PREWHERE)** | Decodes cheap filter columns first → row mask → decodes wide columns only for surviving rows. | **Add column-staged late materialization to the mito2 reader.** Source-confirmed (pass 77): GreptimeDB already **prunes** row-groups/pages (`RowGroupSelection` from Puffin fulltext/inverted indexes + the Parquet **page index**, `reader.rs`) and then **post-decode**-filters rows (`PruneReader::precise_filter`, `read/prune.rs:119`) — so within a surviving row-group it decodes **all projected columns before dropping rows**. There is **no arrow `RowFilter`** in the reader (grep = 0) → no column-staging. Fix: wire the pushed-down predicate into arrow's **`RowFilter`** (`ParquetRecordBatchReaderBuilder::with_row_filter`, which arrow-rs already provides) so filter columns decode first, build a selection, and wide/`Json` columns materialize only for survivors. File: `src/mito2/src/sst/parquet/reader.rs`. **Arrow ships the primitive → integration, not a new algorithm.** | **B** | integration |
 | 4 | **Dynamic-attribute path queries (JSON)** | `JSON` type stores each path as a **typed columnar subcolumn** → `attributes.user` reads one subcolumn. GreptimeDB `Json` is a **binary blob** (jsonb) + `json_get_*` per-row parse (`schema-evolution-and-dynamic-columns.md`). | **Shred JSON paths into Parquet subcolumns.** Adopt the emerging Parquet **Variant/shredding** layout: at flush, write hot/declared attribute paths as their own typed Parquet columns; push `attributes.k` access down to a subcolumn scan instead of a per-row blob parse. Files: a shredded column type + mito2 SST writer + DataFusion pushdown. **Biggest storage-format change here** — borders on design, but Parquet's variant work makes it integration, not a rewrite. | **B** | integration / format |
 | 5 | **Projections (alternate physical `ORDER BY`)** | A projection stores a 2nd sort order **inside each part**, optimizer-picked → fast sequential scan on an alternate key from one table (Run 28). GreptimeDB indexes give *positions*, not a 2nd physical order. | Two paths: (a) **today, Tier A workaround** — maintain a re-sorted derived table via **Flow** (`CREATE FLOW … SINK TO …` keyed on the alternate order; Run 43 proved Flow works) — extra storage, app-managed; (b) **true parity, Tier B** — mito2 writes an alternate-sorted SST copy per region with planner auto-pick. Files: `src/mito2` SST writer + region metadata + DataFusion planner rule. | **A** (workaround) / **B** (native) | integration |
+| 7 | **Per-column codecs (`CODEC(Gorilla/DoubleDelta/T64)`)** | Hand-picked per-column codecs match each column's shape — `Gorilla` on float gauges (Run 4: 78×), `DoubleDelta` on monotonic counters (7.3×). | **Type-aware Parquet encodings + a column codec DDL option.** Source (pass 81): mito2's writer **already** sets per-column encodings for *internal* columns (`writer.rs:387-391`: `ts`/`seq` → `DELTA_BINARY_PACKED` ≈ DoubleDelta, `op_type` → UNCOMPRESSED) but **user data columns default to `Encoding::PLAIN` + table-wide ZSTD** (`writer.rs:433-434`) — so a `Float64` gauge gets **no Gorilla/float-split encoding**. Fix: in the writer's `customize_column_config` (`writer.rs:371`), pick **type-aware encodings** for user columns (floats → Parquet **`BYTE_STREAM_SPLIT`** ≈ Gorilla; monotonic ints → `DELTA_BINARY_PACKED`); optionally expose a per-column codec option in DDL. Parquet already ships these encodings → integration. | **B** | integration |
 | 6 | **Vertical single-node ceiling + analytical/merge maturity** | A decade of single-box scan tuning; battle-tested merges. | Inherited via #2 (engine) + time/battle-testing. Not a discrete feature. | **C** | maturity |
 
 ## Detailed improvements (borrowed concept · what · why · how)
@@ -203,6 +205,41 @@ Parallax. Source read at GreptimeDB `v1.0.2` (`0ef5451`).
   `fingerprint`; matters only if a second high-volume scan order emerges. Use the Flow
   workaround if/when it does.
 
+### Improvement 7 — Type-aware Parquet encodings (per-column codec parity)
+
+- **Borrowed concept (ClickHouse):** per-column **`CODEC()` chains** — `Gorilla` for float
+  gauges, `DoubleDelta` for monotonic counters/timestamps, `T64`, etc. The portable idea is
+  "pick the encoding that matches each column's *shape*," and it is general: **Parquet already
+  defines equivalent column encodings** (`BYTE_STREAM_SPLIT` for floats, `DELTA_BINARY_PACKED`
+  for monotonic ints, dictionary/RLE) — so this is not ClickHouse-specific.
+- **What:** select type-aware Parquet encodings for user data columns (and optionally expose a
+  per-column codec option in DDL), instead of defaulting every data column to `PLAIN` + ZSTD.
+- **Why:** compression is mostly a **wash** (GreptimeDB's auto Parquet+ZSTD ties or beats
+  ClickHouse out-of-the-box on logs/dict-friendly columns — Run 10), **but** ClickHouse wins
+  where a specialized codec matches: float gauges via `Gorilla` (Run 4: gauge 84.7 KiB from
+  6.59 MiB raw = **78×**) and monotonic counters via `DoubleDelta` (7.3×). Source (pass 81):
+  GreptimeDB's writer (`src/mito2/src/sst/parquet/writer.rs`) **already** customizes internal
+  columns (`:387-391` — `ts`/`seq` → `DELTA_BINARY_PACKED`, the DoubleDelta-equivalent for the
+  time index, which is why GreptimeDB's `ts` compression is competitive) but sets user data
+  columns to **`Encoding::PLAIN` + ZSTD** (`:433-434`). A flat/slow-moving `Float64` gauge
+  therefore misses the Gorilla-class win ClickHouse gets. Axis: cost (#2), and only the
+  numeric-metric columns — second-order for Parallax's overall bytes.
+- **How (code-oriented):** extend `customize_column_config` (`writer.rs:371`, already the place
+  that sets `set_column_encoding(...)` per internal column) to choose encodings by **column
+  type/semantic**: `Float64` field → Parquet **`BYTE_STREAM_SPLIT`** (splits mantissa/exponent
+  byte planes → ZSTD compresses flat floats far better, the Gorilla analog); monotonic integer
+  field → `DELTA_BINARY_PACKED`; low-card string → keep dictionary. The writer already imports
+  `parquet::basic::Encoding` and calls `set_column_encoding`, so this is **filling in a
+  per-column policy that the code is structured for** (there is even a `TODO` at `:430` to set
+  proper encodings for internal columns). Optionally add a `CREATE TABLE … col Float64
+  CODEC(...)`-style DDL option mapping to the same `Encoding`.
+- **Tier:** **B**. **Integration** — Parquet ships the encodings; the writer already does
+  per-column config; this extends the policy to user columns.
+- **Value here:** low/second-order. Compression is a near-wash and a 1.3–1.9× local-disk delta
+  is not the cost driver (object-store request economics dominate — `compression-and-cost.md`).
+  Worth it mainly for **metric float columns** if/when retained metric volume is large;
+  otherwise leave GreptimeDB's zero-tuning default, which is itself an ergonomics win.
+
 ### Improvement 6 — Vertical ceiling + analytical/merge maturity
 
 - **Borrowed concept:** none portable — this is ClickHouse's decade of single-box scan
@@ -280,5 +317,10 @@ first which gaps Parallax's real query mix actually hits before investing in Tie
   (`jsonb::get_by_path` per-row scalar UDF) + `json_get_rewriter.rs` (`JsonGetRewriter` =
   logical `FunctionRewrite`, not subcolumn pushdown). Live: `SET …batch_size` →
   `Unsupported set variable` (no runtime knob for #2).
+- Source (pass 81, v1.0.2): `src/mito2/src/sst/parquet/writer.rs` — `customize_column_config`
+  (`:371`) sets internal-column encodings (`:387-391` `ts`/`seq` → `DELTA_BINARY_PACKED`,
+  `op_type` → UNCOMPRESSED) but user data columns default to `Encoding::PLAIN` + ZSTD
+  (`:433-434`); `TODO` at `:430`. Confirms #7: no Gorilla-class float encoding on user columns,
+  no per-column codec DDL.
 - Decision context: `verdict-which-to-choose.md`. Loop target: `prompts/greptimedb-vs-clickhouse-internals.md`
   ("Closing The Gap").
