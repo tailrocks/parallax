@@ -2,6 +2,12 @@
 
 <!-- markdownlint-disable MD013 -->
 
+> 📊 **All benchmark results in one table → [`four-way-version-comparison.md`](four-way-version-comparison.md)**
+> — every load-bearing query measured across **all four builds** (GreptimeDB v1.0.2 + v1.1-nightly,
+> ClickHouse 26.5 + 26.6-head), with a **Faster** column and per-query **Details** links to the
+> mechanism note + reproducible run. That is the at-a-glance "which system is faster" research result;
+> the per-query deep dives live in `local-benchmark-results.md` (Runs 1–132) and the topic notes below.
+
 Status: pass 76 (new) + pass 77 (gaps #2/#3 source-verified) + pass 78 (gap #1
 source-corrected) + pass 79 (**expanded to detailed per-improvement what/why/how**, framed
 as borrowed-concept → GreptimeDB structure → value, per operator) + pass 80 (#4 JSON

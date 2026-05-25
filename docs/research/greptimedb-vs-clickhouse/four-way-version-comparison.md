@@ -18,25 +18,32 @@ Warm, **median of 5 reps**. GT = `execution_time_ms`; CH = `clickhouse-client --
 
 ## The matrix (median ms; lower = faster)
 
-| Query (Parallax view) | GT-stable v1.0.2 | GT-nightly v1.1.0 | CH-stable 26.5 | CH-head 26.6 | GT/CH gap |
-| --- | ---: | ---: | ---: | ---: | --- |
-| **Anchored lookup** (`trace_id`, evidence bundle hot path) | 8 | 7 | 3 | 2 | ~3× |
-| **Unindexed scan** (`span_id` point, full scan) | 18 | 13 | 4 | 3 | ~4× |
-| **TopK** (`ORDER BY duration LIMIT 10`) | 6 | 7 | 6 | 4 | ~1× |
-| **Trace-explorer** (`status=error AND dur>250` + sort) | 13 | 16 | 8 | 10 | ~1.6× |
-| **Metric-agg flat** (`avg(val) GROUP BY service`) | 23 | 18 | 13 | 11 | ~1.6× |
-| **Metric bucketed line** (1-min `date_bin`) | 31 | 23 | 17 | 15 | ~1.5× |
-| **Counter-rate panel** (5-min `max-min(counter)`) | 35 | 25 | 23 | 19 | ~1.3× |
-| **Last-value** ("current value" per series) | **5** | **5** | 10 | 11 | **GT wins ~2×** |
-| **Full-text selective** (exact token, 1 row) | 7 | 8 | 9 | 7 | ~1× (tie) |
-| **Full-text broad** (~143k matches) | 24 | 24 | 16 | 16 | ~1.5× |
-| **Log-tail** (`service` + `ts DESC LIMIT 100`) | 17 | 13 | 3 | 3 | ~5× |
-| **Issue-list** (`GROUP BY fingerprint` + top-50) | 16 | 13 | 7 | 9 | ~1.8× |
-| **Dynamic-attr JSON** (path GROUP BY, typed cast) | 48 | 48 | 5 | 5 | ~10× |
-| **Cross-tier join** (anchored `spans ⋈ errs`) | 65 | 36 | 3 | 3 | ~12–20× |
+Median ms, lower = faster. **Faster** = which engine wins this query (both interactive — every cell
+≪ 300 ms). **Details** links the curated mechanism note + the reproducible run(s) in the run log.
 
-*(All data 1–2M rows, warm. Absolute numbers scale with data size; the **ratios** and **cross-build
-deltas** are the signal. Every cell is ≪ the 300 ms interactive gate.)*
+| Query (Parallax view) | GT v1.0.2 | GT v1.1-nightly | CH 26.5 | CH 26.6-head | Faster | Details |
+| --- | ---: | ---: | ---: | ---: | --- | --- |
+| **Anchored lookup** (`trace_id`, evidence-bundle hot path) | 8 | 7 | 3 | 2 | CH ~3× (both ≪ gate) | [read-path](read-path-indexing-and-execution.md) · [Runs 16/95/99/130/131](local-benchmark-results.md) |
+| **Unindexed scan** (`span_id` point, full scan) | 18 | 13 | 4 | 3 | CH ~4× | [exec-engine](query-execution-engine.md) · [Runs 102/130/131](local-benchmark-results.md) |
+| **TopK** (`ORDER BY duration LIMIT 10`) | 6 | 7 | 6 | 4 | ~tie | [exec-engine](query-execution-engine.md) · [Runs 106/131](local-benchmark-results.md) |
+| **Trace-explorer** (`status=error AND dur>250` + sort) | 13 | 16 | 8 | 10 | CH ~1.6× | [trace-tree](trace-span-tree.md) · [Runs 127/131](local-benchmark-results.md) |
+| **Metric-agg flat** (`avg(val) GROUP BY service`) | 23 | 18 | 13 | 11 | CH ~1.6× | [exec-engine](query-execution-engine.md) · [Runs 96/124/125/131](local-benchmark-results.md) |
+| **Metric bucketed line** (1-min `date_bin`) | 31 | 23 | 17 | 15 | CH ~1.5× | [exec-engine](query-execution-engine.md) · [Runs 96/131](local-benchmark-results.md) |
+| **Counter-rate panel** (5-min `max-min(counter)`) | 35 | 25 | 23 | 19 | CH ~1.3× | [promql/metrics](promql-and-metrics-query.md) · [Runs 113/131](local-benchmark-results.md) |
+| **Last-value** ("current value" per series) | **5** | **5** | 10 | 11 | **GT ~2×** | [exec-engine](query-execution-engine.md) · [Runs 109/131](local-benchmark-results.md) |
+| **Full-text selective** (exact token, 1 row) | 7 | 8 | 9 | 7 | ~tie | [indexing](indexing-internals.md) · [Runs 98/131](local-benchmark-results.md) |
+| **Full-text broad** (~143k matches) | 24 | 24 | 16 | 16 | CH ~1.5× | [indexing](indexing-internals.md) · [Runs 98/131](local-benchmark-results.md) |
+| **Log-tail** (`service` + `ts DESC LIMIT 100`) | 17 | 13 | 3 | 3 | CH ~5× | [per-signal](per-signal-verdict.md) · [Runs 107/131](local-benchmark-results.md) |
+| **Issue-list** (`GROUP BY fingerprint` + top-50) | 16 | 13 | 7 | 9 | CH ~1.8× | [verdict DQ1](verdict-which-to-choose.md) · [Runs 119/131](local-benchmark-results.md) |
+| **Dynamic-attr JSON** (path GROUP BY, typed cast) | 48 | 48 | 5 | 5 | CH ~10× | [schema-evolution](schema-evolution-and-dynamic-columns.md) · [Runs 104/129/131](local-benchmark-results.md) |
+| **Cross-tier join** (anchored `spans ⋈ errs`) | 65 | 36 | 3 | 3 | CH ~12–20× | [read-path](read-path-indexing-and-execution.md) · [Runs 81/103/131](local-benchmark-results.md) |
+| **Ingest** (`INSERT…SELECT` 1M; *not* native path) | 719 | 623 | 201 | 170 | CH ~3.5× (synthetic) | [write-path](write-path-and-ingestion.md) · [Runs 101/132](local-benchmark-results.md) |
+| **Storage** (1M rows, compressed) | 2.0 MiB | 2.0 MiB | 1.69 MiB | 1.69 MiB | CH ~1.2× | [compression/cost](compression-and-cost.md) · [Runs 100/132](local-benchmark-results.md) |
+| **Cardinality-insensitive ingest** (GT append, 12 vs 1M series) | 527/457 | 489/401 | n/a | n/a | **GT (flat/cap-free)** | [metric-cardinality](metric-cardinality.md) · [Runs 84/101/132](local-benchmark-results.md) |
+
+*(All data 1–2M rows, warm, median-of-5. Absolute numbers scale with data size — the **ratios** and
+**cross-build deltas** are the signal. **Every query cell is ≪ the 300 ms interactive gate** on all
+four builds. Click a row's Details for the mechanism write-up + the reproducible run.)*
 
 ## What this says — version by version
 
