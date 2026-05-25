@@ -102,7 +102,7 @@ The architecture is plausible with current open-source components:
 | --- | --- | --- |
 | Error compatibility | Support the Sentry envelope event path, not the whole Sentry product. | Sentry envelopes are the modern SDK ingestion format, and Relay is a useful Rust reference without copying its Kafka/Snuba architecture. |
 | Telemetry standard | Use OpenTelemetry as the native telemetry protocol. | OTLP is stable for traces, metrics, and logs, and gives shared `trace_id`, `span_id`, resource, and semantic-convention context. |
-| Observability store | Start with GreptimeDB, benchmark against ClickHouse. | GreptimeDB publicly targets metrics, logs, and traces in one observability engine, with native OpenTelemetry support and object-storage-oriented deployment. |
+| Observability store | Start with GreptimeDB, benchmark against ClickHouse. | GreptimeDB targets metrics, logs, and traces in one observability engine, with native OpenTelemetry support and object-storage-oriented deployment. It reached **v1.0 GA in April 2026**, so the storage layer is now production-grade rather than a bet on a beta database. |
 | Stream | Start with local WAL; add Apache Iggy only when replay/burst separation matters. | Iggy is Rust-native, persistent, append-oriented, and explicitly designed for low-latency message streaming. |
 | Metadata | Start with Turso, keep Postgres as fallback. | Turso is Rust-written and SQLite-compatible, but still beta, so benchmark and backup gates are mandatory. |
 | Agent surface | CLI first, MCP required for first-class agent UX, HTTP API underneath. | Coding agents can call CLIs today, but MCP has become the standard tool discovery/invocation surface and has explicit auth/security requirements. |
@@ -116,7 +116,8 @@ Sources:
 - [GreptimeDB docs](https://docs.greptime.com/)
 - [Apache Iggy docs](https://iggy.apache.org/docs/)
 - [Turso Database repository](https://github.com/tursodatabase/turso)
-- [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization)
+- [MCP specification 2025-11-25](https://modelcontextprotocol.io/specification/2025-11-25)
+- [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)
 - [MCP security best practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)
 
 ## What Parallax Actually Solves
@@ -160,12 +161,43 @@ That honesty is a strength, not a limitation.
 
 | Competitor | What they prove | Where they fall short for Parallax's goal |
 | --- | --- | --- |
-| Sentry Seer | Production error AI debugging and PR generation are real workflows. | Platform-bound to Sentry context; not positioned as a small open evidence store for Sentry-compatible migration plus OTLP plus CLI/agent audit. |
-| Datadog Bits AI SRE | Hypothesis-driven, evidence-backed investigations are the enterprise direction. | Datadog data gravity is strong, but the product is not an open, self-hosted Rust context engine or portable evidence-bundle standard. |
-| Grafana Assistant | Agent access through CLI/API/MCP-like surfaces is becoming normal. | Grafana's center is the LGTM/Grafana ecosystem, not Sentry-compatible issue grouping or coding-agent action audit. |
+| Sentry Seer | Production error AI debugging and PR generation are real workflows. | GA but closed-source, SaaS-only, and confirmed **not available to self-hosted Sentry** (2026-05). The dominant error tracker paywalls its AI away from exactly the self-hosting, data-ownership audience Parallax targets. This is the single clearest opening. |
+| Datadog Bits AI SRE / Dev Agent | Hypothesis-driven investigations and flaky-test autofix are the enterprise direction. | Closed, expensive, SaaS-only, and tied to Datadog data gravity. Dev Agent (flaky-test autofix) is still public Preview. Not an open, self-hosted Rust context engine or portable evidence-bundle standard. |
+| Grafana Assistant | Agent access through CLI/API/MCP surfaces is now normal. | Now on-prem and free for OSS Grafana (Apr 2026) but **still requires a Grafana Cloud account for the LLM connection** — not air-gapped — and is dashboard/assistant-first, not portable evidence bundles. LGTM-shaped, not evidence-engine-shaped. |
+| OpenObserve "Observability 3.0" (late Apr 2026) | An open, Rust, single-binary, object-storage observability store *with* an AI SRE agent + MCP is now real and self-hostable. | The closest thing to a wedge-killer on storage/runtime fit, saved by two gaps: the **AI SRE agent and Assistant are Enterprise-license-gated, not in the free AGPL tier**, and ingestion is **OTLP-only with no Sentry-envelope path**. The open + self-hosted + agent combination does not exist for free in one product yet. |
+| SigNoz agent-native (May 2026) | Open, self-hostable MCP server + trace-ID RCA shipping in OSS validates the agent-native direction loudly. | Go + ClickHouse (fails the runtime filter and carries the heavy store Parallax escapes), a query interface rather than a deterministic evidence graph / portable bundle, and **no Sentry-compatible ingestion**. |
 | Dynatrace / New Relic / Splunk | Topology-aware RCA is enterprise table stakes. | Enterprise suite gravity, not open small-team self-hosting or agent-readable bundle portability. |
 | LangSmith / Langfuse / Phoenix / Braintrust / AgentOps / similar | Agent and LLM traces are important. | They usually observe LLM app execution, not the full chain from production error to deploy, CLI side effect, coding-agent patch, CI validation, and outcome. |
 | CI autofix and flaky-test tools | Failure bundles and PR automation are valuable. | They usually start at CI/test evidence, not production Sentry/OTLP context plus runtime evidence graph. |
+
+## Competitive Window (2026-05 update)
+
+This is the finding that moves the posture from "comfortable GO" to "GO, move
+now." Between the earlier market pass and 2026-05-25, agent-native observability
+went from emerging to table stakes, and two open, non-incumbent projects moved
+toward Parallax's exact space: OpenObserve shipped an AI SRE agent + MCP on a
+Rust, object-storage, AGPL-self-hostable base, and SigNoz shipped an open,
+self-hostable agent-native MCP server.
+
+Neither closes the wedge today — OpenObserve gates its agent behind an Enterprise
+license and has no Sentry ingest; SigNoz is Go/ClickHouse with no Sentry ingest
+and no evidence-graph/bundle abstraction. But both could close their gap inside
+6–12 months. The consequence: **the moat cannot be any single feature.** It must
+be the assets that compound with usage and are hard to copy from a standing
+start —
+
+1. the failure/fix corpus and accepted-fix feedback loop;
+2. the open evidence schema and portable bundle format as a standard others
+   build on;
+3. runtime-plus-repo-intent linkage;
+4. Rust-first capture quality.
+
+The strategic instruction that follows: ship the narrow tiny tier fast, get the
+schema and bundle format adopted, and start accumulating the corpus before the
+category fully commoditizes. If an open competitor ships the full combination
+(open + self-hosted + Rust-light + Sentry-compatible + evidence bundles) before
+Parallax has adoption and a corpus, revisit this verdict — that is the live path
+to NO-GO.
 
 ## Market Verdict
 
