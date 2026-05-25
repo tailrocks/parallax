@@ -5845,6 +5845,40 @@ Run 142) and avoids the compaction dependence + the v1.1 regression** — so the
 **Action taken:** dropped all 5M tables on all four; stopped the two nightly containers (freed RAM);
 bench back to the two light stables. Future local 4-build checks use `N=100,000`.
 
+### Run 144 — 2026-05-25 — SOURCE (gentle, gh-only — no local load): TWCS grounds BOTH the multi-window dedup-agg cost AND the cheap whole-SST retention
+
+**Pass target.** Resource-gentle pass (operator's Mac froze on the 5M run) — pure source-read, no
+containers. Deepen **TWCS** (Time-Window Compaction Strategy), which underpins the dedup-agg
+compaction-transience (Runs 117/142/143) and the cheap-retention pillar (Runs 17/111).
+
+**Source (`src/mito2/src/compaction/{twcs,window,picker}.rs`, v1.0.2):**
+- `TwcsPicker` (`twcs.rs:42`): *"picks files of which the max timestamp are in the same time window."*
+  It groups SSTs into **time windows** (`time_window_seconds`, inferred if unset) and **compacts
+  WITHIN each window only**, triggered per-window by `trigger_file_num` (`:46-49,63-103`).
+- `window.rs` (`:31`): *"splits the time range of all involved files to windows, and merges the data
+  segments [that] intersect those windows together"* — within-window merge.
+- Append mode **skips large files** in compaction (`twcs.rs:82`).
+
+**Verdict — TWCS explains the two findings cleanly:**
+- **Why a time-spanning metric table keeps multiple SSTs → dedup-agg pays the merge (Run 142):** TWCS
+  compacts *within* windows, never *across* them, so a table spanning N time windows keeps **≥1 SST
+  per window** and can never compact to a single run. The dedup reader then merges across those
+  per-window SSTs → the ~8× dedup-agg cost at 5M (which spanned multiple windows → sst_num=2). A
+  *single-window* table (small ts span, Run 117's 1M) compacts to 1 SST → cheap passthrough → fast.
+  So the dedup-agg cost is a function of **how many TWCS windows the table spans**, not just compaction
+  freshness — a long-retention metric table (many windows) always pays it; append-mode avoids it.
+- **Why GreptimeDB retention is cheap (Runs 17/111):** because each time window is its **own SST**, a
+  TTL-expired window's SST **drops whole** — no read/rewrite of survivors (TWCS aligns SST boundaries
+  with time → time-based TTL = whole-file delete). This is the *structural* reason GT's whole-SST TTL
+  drop is cheap-by-default, source-confirmed.
+- **Decision relevance:** grounds the append-vs-dedup metric blueprint (Run 142) — for a long-retention
+  (many-window) metric table, dedup-agg pays the cross-window merge, so **append_mode** (scrape-style,
+  unique series/ts) is the better choice for agg-heavy metrics; dedup is for genuine partial-upsert.
+  Also confirms the cheap-retention pillar is a TWCS structural property, not a tuning accident.
+
+**Reproduce.** `gh api ".../compaction/twcs.rs?ref=v1.0.2"` → `TwcsPicker` doc + the per-window
+`trigger_file_num` loop; `window.rs` → within-window merge. No local containers touched.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

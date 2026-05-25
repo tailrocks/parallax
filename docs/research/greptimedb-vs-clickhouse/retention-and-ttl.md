@@ -7,7 +7,10 @@ paths measured live; GreptimeDB read-time TTL filter confirmed) + **Run 111 (ref
 *fully-expired* part cheaply (whole-part drop, verified) — the rewrite cost is only a *boundary*
 part with expired+live mixed, or a non-time-ordered part; for time-ordered ingestion both engines
 are cheap, GT's edge is zero-config TWCS vs CH cheap-when-time-partitioned; GT TTL purge is
-eventual/background, not forced by `compact_table`)**. White-box teardown of
+eventual/background, not forced by `compact_table`)** + **Run 144 (SOURCE: the cheap whole-SST TTL
+drop is a TWCS *structural* property — `TwcsPicker` groups SSTs by time window and compacts only
+within a window, so each time window is its own SST; a TTL-expired window's SST drops whole, no
+rewrite of survivors. `compaction/twcs.rs`, `window.rs` @v1.0.2)**. White-box teardown of
 the **TTL expiry mechanism** in each engine
 — *when* old data is dropped, and *what it costs* to drop it. This is a first-class
 lever for an observability product: Parallax keeps every signal on a retention

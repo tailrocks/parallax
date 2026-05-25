@@ -8,7 +8,11 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 142 local runs + B1–B15 cases. Recent: **Run 142 — isolated
+cold/first-run measurement showed). 25 mechanism notes + 144 local runs + B1–B15 cases. Recent: **Run 144 — SOURCE
+(gentle, gh-only): TWCS** grounds two findings — `TwcsPicker` compacts only WITHIN time windows, so a time-spanning
+table keeps ≥1 SST/window → dedup-agg merges across them (the Run-142 ~8× cost; single-window → 1 SST → fast, Run 117),
+and each window = own SST → TTL-expired window drops WHOLE (the cheap-retention pillar, now structural). **Run 143 —
+benchmark-tier policy** (Mac froze on 5M: LOCAL small/100k preliminary, SERVER large/5M+ on request only). Earlier: **Run 142 — isolated
 the 5M dedup-agg finding**: (A) dedup-mode metric agg is **~8× slower than append at 5M** on BOTH versions (m2m dedup
 314 ms vs m2m_ap append 40 ms, same data) — the Run-117 dedup-merge cost at scale; blueprint nuance: use append_mode for
 scrape-style metrics where (series,ts) is unique. (B) v1.1-nightly regressed the dedup path specifically (~2.8×: 314→867)
