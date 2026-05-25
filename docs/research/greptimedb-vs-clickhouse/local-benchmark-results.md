@@ -2925,6 +2925,57 @@ Caveat: 500k smoke; scan-with-projection vs index-lookup at GB scale unmeasured.
 
 **Reproduce.** `CREATE TABLE proj_yes (a String,b String,ts DateTime,v UInt64, PROJECTION p_b (SELECT * ORDER BY b)) ENGINE=MergeTree ORDER BY (a,ts)` + `INSERT … numbers(500000)` + `EXPLAIN indexes=1 SELECT count() FROM proj_yes WHERE b='b500'` (→ ReadFromMergeTree(p_b)); GreptimeDB `CREATE TABLE … PROJECTION …` → rejected.
 
+### Run 72 — 2026-05-25 — Index file formats re-verified (.puffin vs per-part zoo) + text-index decomposition
+
+**Pass target.** Rotate onto indexing internals (Run 22 ~pass 43). Re-verify the on-disk
+index-format contrast (GreptimeDB `.puffin` sidecar vs ClickHouse per-part skip-index files)
+and decompose what the ClickHouse `text` index actually is.
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned —
+latest, no bump). Live filesystem inspection.
+
+**Verified:**
+
+- **GreptimeDB:** `.puffin` files in an `index/` subdir per region —
+  `…/public/<table_id>/<region>/index/<uuid>.puffin` (UUID matches the SST). One `.puffin`
+  per indexed SST, holding *all* that SST's indexes as named blobs. So an indexed table =
+  `.parquet` + `.puffin` = **2 files per SST** (the spans_idx puffin = 5.8 MiB, matches the
+  Run-54 inverted-index size).
+- **ClickHouse `logs_b1` part `all_1_5_1`:** `primary.cidx` (2.5 KB sparse primary) + the
+  `text` index as **a cluster of files** — `skp_idx_idx_msg.idx` (238 KB skip) +
+  **`skp_idx_idx_msg.dct.idx` (97 MB term dictionary)** + **`skp_idx_idx_msg.pst.idx`
+  (81 MB posting lists)** + `.cmrk2` mark file each + per-column `.bin`/`.cmrk2`. **37 files
+  in one part.**
+
+**The comparison logic & verdict.**
+
+- **`text` is a true dict+postings inverted index (Lucene-shaped), decomposed live:** the
+  `.dct.idx` (97 MB) + `.pst.idx` (81 MB) ≈ 178 MB raw are the bulk of the 170 MiB
+  text-index measured in Run 51. So ClickHouse's GA `text` is a real inverted index (term
+  dictionary + posting lists), not merely a bloom skip — confirms + decomposes the Run 51
+  size.
+- **File count is the root of the object-store gap (links Run 22 ↔ Run 54):** GreptimeDB =
+  **2 files/SST** (`.parquet` + `.puffin`); ClickHouse = **37 files/part** (per-column +
+  per-index dict/postings/skip + marks). On object storage each file → an object, so this
+  *is* the mechanism behind Run 54's CH 74 objects vs GreptimeDB 3 — index format and object
+  count are two views of the same file-per-everything-vs-few-large-files difference.
+- GreptimeDB's index toolkit stays richer/more precise (FST+roaring inverted, tantivy
+  full-text, configurable-granularity bloom) in **one** sidecar; ClickHouse spreads a
+  sparse primary + per-skip-index file clusters across the part. **Status: confirmed +
+  decomposed; no drift.**
+
+Caveat: file inspection (exact structure), not a latency run; the index *speed* findings are
+Runs 6/22/48–49.
+
+**Reproduce.**
+
+```bash
+docker exec parallax-bench-greptimedb-1 sh -c 'find /greptimedb_data/data -name "*.puffin"'   # index/ subdir, 1 per SST
+P=$(docker exec parallax-bench-clickhouse-1 clickhouse-client -q "SELECT path FROM system.parts WHERE active AND table='logs_b1' LIMIT 1")
+docker exec parallax-bench-clickhouse-1 sh -c "ls -la '$P' | grep skp_idx"   # .idx + .dct.idx + .pst.idx + .cmrk2
+docker exec parallax-bench-clickhouse-1 sh -c "ls '$P' | wc -l"   # 37
+```
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

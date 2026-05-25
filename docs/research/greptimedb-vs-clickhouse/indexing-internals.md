@@ -6,7 +6,10 @@ Status: pass 43 + pass 78 (index-cache asymmetry source-checked) + pass 86
 (Run 48 corrected the full-text result: `matches()` on a bloom-backed index full-scans;
 `matches_term()` prunes, so exact-term incident grep is competitive) + pass 87 (Run 49:
 tantivy backend `matches()` **also prunes** ~6 ms — query-syntax path fast too; the ~18×
-was fully a backend/function pairing artifact, not an index-maturity gap). The storage half of checklist #3: **how each engine stores its
+was fully a backend/function pairing artifact, not an index-maturity gap) + pass 108
+(Run 72 — index file formats re-verified live: GreptimeDB `.puffin` sidecar in an `index/`
+subdir, one per SST; ClickHouse `text` index decomposes into `.dct.idx` 97 MB + `.pst.idx`
+81 MB + skip + marks, 37 files/part → the root of the Run-54 object-count gap). The storage half of checklist #3: **how each engine stores its
 secondary/skip indexes on disk, what they can skip, and the honest paradox** that
 GreptimeDB's *richer* index toolkit appeared to lose full-text search ~18× until
 Runs 48-49 traced that result to a backend/function mismatch. The
@@ -44,12 +47,19 @@ ClickHouse has two different things:
    *main* pruning structure (one mark per 8,192-row granule). This is what makes
    anchored `trace_id` lookups cheap when `trace_id` is the sort prefix (Run 2/6).
 2. **Data-skipping indexes** — per part, each is its own file pair
-   **`skp_idx_<name>.idx`** (+ `.cmrk4` marks), confirmed live (Run 22:
+   **`skp_idx_<name>.idx`** (+ `.cmrk` marks), confirmed live (Run 22:
    `skp_idx_i_tid.idx`, `skp_idx_i_msg.idx`, `skp_idx_i_lvl.idx`). Types:
    `minmax`, `set(N)`, `bloom_filter`, `tokenbf_v1`, `ngrambf_v1`, and the GA-26.2
    **`text`** (posting-list). `GRANULARITY N` = one index entry per **N table-granules**
    (8,192 rows each) → **coarse**: it prunes *granule ranges*, then the vectorized scan
    confirms inside survivors. It does **not** pinpoint rows.
+   **The `text` index decomposes into multiple files (Run 72, live on `logs_b1`):**
+   `skp_idx_idx_msg.idx` (238 KB skip) **+ `skp_idx_idx_msg.dct.idx` (97 MB term
+   *dictionary*) + `skp_idx_idx_msg.pst.idx` (81 MB *posting lists*) + a `.cmrk2` mark
+   file each** — i.e. the GA `text` index is a real **dictionary + postings inverted
+   index** (Lucene-shaped), and those two files (~178 MB raw) are the bulk of the 170 MiB
+   text-index size measured in Run 51. So ClickHouse *does* now ship a true inverted text
+   index (not just bloom), stored as separate dict/postings files per part.
 
 | | GreptimeDB | ClickHouse |
 | --- | --- | --- |
@@ -61,7 +71,18 @@ ClickHouse has two different things:
 
 On *format*, GreptimeDB's toolkit is the **richer and more precise** one: a real
 FST+roaring inverted index and a Lucene-class full-text engine, versus ClickHouse's
-coarse granule-pruning skip indexes.
+coarse granule-pruning skip indexes (though the GA `text` index is itself a true
+dict+postings inverted index, Run 72).
+
+**File-count consequence → object-store economics (Run 72 ↔ Run 54).** GreptimeDB writes
+**2 files per SST** (`.parquet` + one `.puffin` holding *all* indexes). ClickHouse writes
+a **per-part file zoo**: live `logs_b1` part = **37 files** (`primary.cidx` + per-column
+`.bin`/`.cmrk2` + the text index's `.idx`/`.dct.idx`/`.pst.idx`/`.cmrk2` cluster). This
+file-per-column-per-index structure is the **direct root of the Run-54 object-store
+finding** (CH 74 S3 objects vs GreptimeDB 3 for 1M spans): on object storage each of
+those part files becomes its own object → many GET/PUT/LIST; GreptimeDB's
+two-files-per-SST layout is request-efficient. Same mechanism, two views (index format +
+object count).
 
 ## The paradox corrected: richer index, query-form matters (Run 12/48 reconciled)
 
