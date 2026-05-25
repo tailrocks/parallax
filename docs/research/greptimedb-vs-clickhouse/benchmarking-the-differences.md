@@ -244,6 +244,30 @@ Legend: **Runnable now** = expressible in the current prototype/`bench/compose.y
   splits cleanly by query shape. The **1B-doc JSONBench scale** + cold-latency (not
   just GET count) stays the prototype's job; the mechanism is now verified locally.
 
+## B13 — High-cardinality metric storage (the `LowCardinality` cliff)
+
+- **Hypothesis / mechanism:** GreptimeDB's metric engine (`__tsid` label-set hash +
+  shared physical wide table) + PartitionTree memtable (dict-encoded label sets,
+  sharded, no per-series cap) stores high-cardinality series more cost-stably than
+  ClickHouse, whose `LowCardinality(String)` dictionary **caps at 8,192 distinct
+  values** then falls back to plain encoding (`metric-cardinality.md`, Run 26). Above
+  the cliff, ClickHouse label columns should bloat (lost dict encoding) + the sparse
+  primary index gains marks, while GreptimeDB's per-memtable dict keeps sharing label
+  strings.
+- **Workload:** ingest a metric at **N distinct series** for N ∈ {1k, 10k, 100k, 1M}
+  (label combos that cross the 8,192 cap), same sample count per series; GreptimeDB
+  metric engine vs ClickHouse `ORDER BY (metric, labels…, ts)` with
+  `LowCardinality(String)` labels.
+- **Record:** retained bytes per series-tier (the cliff should show as a kink in the
+  ClickHouse curve at ~8,192), ingest rows/s, single-label-filter latency
+  (`{job="x"}`), and memtable/flush memory.
+- **Pass/fail:** does ClickHouse's per-series byte cost jump past 8,192 distinct while
+  GreptimeDB's stays smooth? If yes, confirms the storage-ergonomics edge for
+  high-cardinality Parallax metrics. (Agg *latency* is separate — Run 11 already gives
+  ClickHouse ~10×; B13 is about **storage/ingest**, not aggregation.)
+- **Prereq:** a high-cardinality metric generator knob (distinct-series count) added to
+  the harness; both stacks already up. **Status: proposed (pass 48), not yet run.**
+
 ## Priority order (what to run next)
 
 1. **B2** (GreptimeDB inverted-index trace lookup) — runnable now, cheap, validates

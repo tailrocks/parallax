@@ -875,6 +875,29 @@ For Parallax's OTLP-centric telemetry the native-ingest edge stays decisively
 GreptimeDB. (Re-verification — confirms an existing claim, the honest opposite of the
 PromQL drift.)
 
+### Run 26 — 2026-05-25 — Metric high-cardinality mechanism (config confirm)
+
+Backs `metric-cardinality.md` (pass 48). Config-level confirm of the high-cardinality
+storage mechanism (not a sized storage benchmark — that's owed).
+
+**ClickHouse:** `low_cardinality_max_dictionary_size = 8192` (live). Source doc: data
+past the cap is written "in an ordinary method" → a `LowCardinality(String)` label
+column with **>8192 distinct values overflows the dict and falls back to plain
+storage** = the high-cardinality cliff. (A 50k-distinct demo table was created but the
+quick `system.columns` size probe returned 0 — a view/timing artifact; the cliff is
+source-documented, the cap is live-confirmed.)
+
+**GreptimeDB:** metric engine series key = `__tsid` (label-set hash;
+`benches/bench_tsid_generator.rs` exists → perf-critical for high card); PartitionTree
+memtable dict-encodes label sets + shards series + multi-partitions by primary key — no
+per-series dict cap, high cardinality is the design center.
+
+**Claim status:** high-cardinality **storage/ingest ergonomics → GreptimeDB**
+(metric engine + PartitionTree, no LowCardinality cliff); high-cardinality
+**aggregation latency → ClickHouse** (Run 11 ~10×, vectorized engine). Split across
+axes — "GreptimeDB handles high card better" = modeling/storage, NOT agg speed. Sized
+storage comparison (1k→1M distinct series) routed to B13.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
