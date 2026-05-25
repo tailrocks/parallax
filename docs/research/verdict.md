@@ -105,7 +105,7 @@ The architecture is plausible with current open-source components:
 | Telemetry standard | Use OpenTelemetry as the native telemetry protocol. | OTLP is stable for traces, metrics, and logs, and gives shared `trace_id`, `span_id`, resource, and semantic-convention context. |
 | Observability store | Start with GreptimeDB as the v0.1 prototype default, benchmark against exact ClickHouse stable/LTS tracks. | GreptimeDB targets metrics, logs, and traces in one observability engine, with native OpenTelemetry support and object-storage-oriented deployment. It reached **v1.0 GA in April 2026** and latest stable checked is `v1.0.2`, so the first build is no longer a bet on an unreleased database. It is still not a proven production winner: trace docs remain experimental, and the storage freshness, bundle-latency, object-cost, and operational-complexity gates keep veto power. |
 | Stream | Start with local WAL; add Apache Iggy only when replay/burst separation matters. | Iggy is Rust-native, persistent, append-oriented, and explicitly designed for low-latency message streaming. |
-| Metadata | Start with Turso, keep Postgres as fallback. | Turso is Rust-written and SQLite-compatible, but still beta, so benchmark and backup gates are mandatory. |
+| Metadata | Start with local Turso Database for prototype/tiny metadata; keep Postgres as an active production and scale-out fallback. | Latest non-prerelease checked is `v0.6.1`; `v0.7.0-pre.3` exists but is a prerelease. Turso is Rust-written and SQLite-compatible, but still beta/production-caution in the repository README, so crash, backup/restore, concurrency, migration, and fallback gates are mandatory before any production-default claim. |
 | Agent surface | CLI first, MCP required for first-class agent UX, HTTP API underneath. | Coding agents can call CLIs today, but MCP has become the standard tool discovery/invocation surface and has explicit auth/security requirements. |
 
 Sources:
@@ -119,6 +119,8 @@ Sources:
 - [GreptimeDB trace read/write docs](https://docs.greptime.com/user-guide/traces/read-write/)
 - [Apache Iggy docs](https://iggy.apache.org/docs/)
 - [Turso Database repository](https://github.com/tursodatabase/turso)
+- [Turso Database v0.6.1 release](https://github.com/tursodatabase/turso/releases/tag/v0.6.1)
+- [Turso Database v0.7.0-pre.3 release](https://github.com/tursodatabase/turso/releases/tag/v0.7.0-pre.3)
 - [MCP specification 2025-11-25](https://modelcontextprotocol.io/specification/2025-11-25)
 - [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)
 - [MCP security best practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)

@@ -9,8 +9,8 @@ Research date: 2026-05-25
 This note turns assumption A5 from
 [Risks and the bear case](risks-and-bear-case.md) into a roll-up claim ledger:
 
-> The chosen stack holds: GreptimeDB speed/cost, Turso reliability, and Iggy
-> where used.
+> The chosen stack holds: GreptimeDB speed/cost, Turso metadata correctness and
+> backup path, and Iggy where used.
 
 Parallax already has focused proof gates for storage speed, storage cost,
 metadata, ingest-log replay/backpressure, and self-hosted setup. The missing

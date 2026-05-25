@@ -55,7 +55,7 @@ Rust service / CLI / coding agent
   -> Parallax Rust ingest gateway
   -> local WAL for tiny mode
   -> GreptimeDB prototype default for observability evidence
-  -> Turso for metadata/product state
+  -> Turso prototype metadata / Postgres production fallback
   -> deterministic grouping/correlation/evidence graph
   -> API/MCP context bundle
 ```
@@ -123,7 +123,7 @@ storage tests.
 | Ingest | Rust `parallax-ingest` gateway. |
 | Stream | No external broker for tiny mode; Apache Iggy for durable profile. |
 | Observability storage | GreptimeDB prototype default v0.1; ClickHouse feature-stable/LTS benchmark fallback. |
-| Metadata | Turso for tiny/local metadata and product state; Postgres only as scale-out fallback. |
+| Metadata | Turso Database for prototype/tiny local metadata; Postgres remains the production and scale-out fallback until Turso passes the production-readiness gate. |
 | Processing | Rust workers, deterministic normalization/grouping/correlation before AI. |
 | Context model | Typed evidence graph in tables first. |
 | Execution surfaces | Services, CI runs, CLI apps, and coding agents. |

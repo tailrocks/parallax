@@ -22,8 +22,9 @@ Build Parallax as:
 
 > A Rust-first, Sentry-compatible, OpenTelemetry-native execution context system
 > for services, CLI apps, CI runs, and coding agents that stores observability
-> evidence in GreptimeDB, keeps product metadata in Turso, and exposes bounded
-> schema-bound evidence bundles through a CLI and HTTP API, with a later
+> evidence in GreptimeDB, starts product metadata in local Turso Database, keeps
+> Postgres as the production fallback until metadata gates pass, and exposes
+> bounded schema-bound evidence bundles through a CLI and HTTP API, with a later
 > read-only MCP adapter once the canonical bundle and projection contracts are
 > stable.
 
@@ -39,7 +40,7 @@ should not start as a full observability dashboard or autonomous production SRE.
 | Ingest gateway | Build a Rust `parallax-ingest` service. | Parallax needs auth, redaction, size limits, raw evidence retention, grouping hooks, and idempotency before storage. |
 | Message stream | No external broker in the tiny deployment. Use a local WAL/outbox. Add Apache Iggy for the durable profile. | The first version must stay simpler than Sentry. Iggy is the best Rust-native append-only stream once replay and processor isolation matter. |
 | Storage default | GreptimeDB for v0.1 observability storage. Keep a ClickHouse adapter as the benchmark fallback. | GreptimeDB is the closest architectural fit: Rust, observability-native, OTLP, Prometheus/PromQL, SQL, object-storage-oriented deployment. |
-| Metadata store | Turso Database for local/dev and tiny single-node; keep Postgres only as a scale-out fallback until Turso production behavior is proven. | Users, projects, DSNs, issue status, policies, and audit records are relational product state, not telemetry. Turso keeps the embedded metadata path Rust-native and SQLite-compatible without choosing C SQLite. |
+| Metadata store | Turso Database for local/dev and tiny single-node prototypes; keep Postgres as the production and scale-out fallback until Turso production behavior is proven. | Users, projects, DSNs, issue status, policies, and audit records are relational product state, not telemetry. Turso keeps the embedded metadata path Rust-native and SQLite-compatible without choosing C SQLite. |
 | Processing | Rust workers, in-process for tiny mode and separate services for durable/scale-out mode. | Normalization, symbolication, grouping, correlation, and graph building need deterministic logic and strong testability. |
 | Causal layer | Typed evidence graph stored as tables first. | Materialize graph edges before adopting a graph database. Causality needs explicit evidence and confidence. |
 | Agent surface | CLI plus canonical HTTP context API first; read-only MCP adapter after the access-surface gate. | Agents need structured evidence, not dashboards. CLI/HTTP keeps the tiny tier testable; MCP becomes valuable once the bundle contract and safety model are stable. |
@@ -121,7 +122,7 @@ Access decision:
 | Agent-session tracing | Normalized `agent_session` / `agent_action` schema fed by bounded adapters for native OTel, hooks/plugins, JSONL or stream JSON, exports, server/API protocols, wrappers, and raw refs. | Fixer component and real-tool adapters source session traces with per-tool/version/config coverage, lossiness, redaction, and projection rows in the ledger. | Multi-agent session graph with policy, review, and accepted-fix feedback loops. |
 | Stream / buffer | Local append-only WAL/outbox segment files. | Apache Iggy standalone when replay, backpressure, or worker separation is needed. | Iggy cluster or storage-backed stream fallback if Iggy fails scale tests. |
 | Observability storage | GreptimeDB standalone on local disk. | GreptimeDB standalone with S3/object storage. | GreptimeDB distributed with object storage; ClickHouse fallback cluster if benchmarks force it. |
-| Metadata store | Turso Database for projects, DSNs, policies, issue state, audit, agent sessions, CLI invocations, outcomes. | Turso with benchmarked backup/restore and concurrency gates; Postgres fallback if those fail. | Postgres fallback for large multi-node metadata if Turso fails production gates. |
+| Metadata store | Turso Database for prototype projects, DSNs, policies, issue state, audit, agent sessions, CLI invocations, and outcomes. | Turso with benchmarked backup/restore and concurrency gates; Postgres production fallback if those fail. | Postgres fallback for production or large multi-node metadata if Turso fails production gates. |
 | Raw evidence retention | Local disk raw refs with TTL. | S3-compatible object storage for raw envelopes, attachments, logs, and bundle manifests. | Tiered object storage with lifecycle policy and per-tenant retention. |
 | Processing | In-process Rust normalizer/grouping/evidence-graph worker. | Separate Rust worker services and consumer groups. | Worker pools by normalization, grouping, symbolication, graph, bundle indexing. |
 | Context surface | CLI + HTTP API in the same binary; optional read-only MCP adapter only after the access-surface gate. | Separate API and optional MCP service. | Horizontally scaled API/MCP tier with tenant isolation and audit indexing. |
@@ -321,7 +322,7 @@ Rust app / service / CLI / coding agent
        - CLI / HTTP context API
        - optional MCP adapter after access-surface gate
   -> GreptimeDB standalone
-  -> Turso metadata
+  -> Turso prototype metadata
 ```
 
 Durable single-server:
@@ -338,7 +339,7 @@ Rust app / service / CLI / coding agent
        - correlate
        - build evidence graph
   -> GreptimeDB standalone + object storage
-  -> Turso metadata
+  -> Turso prototype metadata
   -> parallax-api
   -> optional MCP adapter
 ```
@@ -686,7 +687,8 @@ Properties:
 - stateless ingest split from API;
 - raw replay and worker separation if Iggy is enabled;
 - object storage for retained telemetry;
-- Turso for metadata and audit;
+- Turso for prototype metadata and audit, with Postgres ready if production
+  gates fail;
 - still small enough for one VM or a simple Compose deployment.
 
 The explicit seams are ingest, stream, workers, storage, API, and optional MCP. Moving
@@ -819,7 +821,7 @@ parallax-server
   - CLI invocation trace ingestion
   - coding-agent session trace ingestion
   - GreptimeDB writer
-  - Turso metadata
+  - Turso prototype metadata
   - issue context API
   - no MCP requirement until CLI/HTTP bundle contract and safety gates are green
 ```
