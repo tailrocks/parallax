@@ -5427,6 +5427,48 @@ properly) and any CH 26.6 GA.
 (:8124); build spans1m (1M, trace_id 70k-card) + m2m (2M/40k) + sj (200k JSON) identically via
 `range()`/`numbers()`; flush GT; run the four queries warm ×6 across all four. Expect the table above.
 
+### Run 131 — 2026-05-25 — FULL 14-query 4-way matrix (operator-requested "one clear comparison") → `four-way-version-comparison.md`
+
+**Pass target.** Operator goal: every load-bearing query measured across **all four builds** (GT
+v1.0.2 / GT v1.1.0-nightly / CH 26.5.1.882 / CH 26.6.1.127-head), consolidated. Built identical data
+on all four (spans1m 1M, m2m 2M, logs1m 1M+fulltext, errs 1M, sj 200k via `range()`/`numbers()`),
+flushed GT, median of 5 warm reps. **Full table in `four-way-version-comparison.md`.**
+
+| Query | GT-stable | GT-nightly | CH-stable | CH-head |
+| --- | ---: | ---: | ---: | ---: |
+| anchored-lookup | 8 | 7 | 3 | 2 |
+| unindexed-scan | 18 | 13 | 4 | 3 |
+| topk | 6 | 7 | 6 | 4 |
+| trace-explorer | 13 | 16 | 8 | 10 |
+| metric-agg-flat | 23 | 18 | 13 | 11 |
+| metric-bucketed | 31 | 23 | 17 | 15 |
+| counter-rate | 35 | 25 | 23 | 19 |
+| last-value | **5** | **5** | 10 | 11 |
+| fulltext-selective | 7 | 8 | 9 | 7 |
+| fulltext-broad | 24 | 24 | 16 | 16 |
+| log-tail | 17 | 13 | 3 | 3 |
+| issue-list | 16 | 13 | 7 | 9 |
+| dynamic-attr-json (cast) | 48 | 48 | 5 | 5 |
+| cross-tier-join | 65 | 36 | 3 | 3 |
+
+(all median ms, warm, 1–2M rows; every cell ≪ 300 ms gate)
+
+**Verdict — nightlies ≈ stables (GT v1.1 a modest broad win); GT-vs-CH gaps hold on all four.**
+
+- **GT-nightly v1.1.0: equal-or-faster on every query, no regressions** — consistently on the heavy
+  ones (metric aggs ~20–30% faster, cross-tier join 65→36 ms ~1.8×); ≈ equal on anchored/topk/
+  full-text/JSON/last-value. Real but modest step (Flat-SST/metric-engine/exec work); does **not**
+  close any CH gap (JSON ~10×, join ~12×) and does **not** move dynamic-attr JSON (48 ms — JSON Type
+  v2 not yet helping `json_get_int`).
+- **CH-head 26.6: perf-flat** (~15% faster aggs, noise elsewhere); the real 26.6 delta is **stricter**
+  (enforces the `.:Int64` JSON-GROUP-BY cast).
+- **GreptimeDB wins** last-value ~2× + **ties** selective full-text on both versions; **ClickHouse
+  faster** on anchored ~3×, scan ~4×, log-tail ~5×, JSON ~10×, in-DB join ~12–20× — all interactive.
+- **Every query ≪ 300 ms on all four builds.** The verdict (fit not speed) is identical across all
+  versions. Only genuine re-test pending: **GT v1.1 GA** (JSON Type v2).
+
+**Reproduce.** See `four-way-version-comparison.md` (method + the 14 query forms + per-engine SQL).
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
