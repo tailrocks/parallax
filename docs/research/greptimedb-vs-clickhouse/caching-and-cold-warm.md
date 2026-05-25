@@ -101,7 +101,11 @@ process lifetime), not per-query; the per-query cold cost is the **5 SST GETs / 
   making it the PK (no series-cardinality cost), so an anchored cold trace read prunes to
   **~1/16 of the data**, not the whole table. A coarse (16-bucket, not granule-level)
   anchor-locality lever GreptimeDB *does* have — it can *partition* (cheaply), just not
-  *sort*, by the anchor. Mitigates, doesn't erase, the gap vs ClickHouse's granule locality.
+  *sort*, by the anchor. **Measured on S3 (Run 88): a cold anchored read on a 16-way
+  trace_id-partitioned table fetched ~2.8 MiB (the matching partition) vs ~23 MiB
+  non-partitioned (Run 55) — ~8× less cold egress, narrowing the gap to ClickHouse's
+  granule-level 294 KiB from ~80× to ~10×.** Mitigates (not erases) the gap; finer
+  partitioning narrows more, and the persistent read cache keeps the warm path at ~0 S3.
 
 **The warm/repeat path is the real Parallax economics, and it favours GreptimeDB.**
 GreptimeDB **write-through populates the whole SST into a persistent local read cache
@@ -139,7 +143,7 @@ above predicts the divergence direction; the *magnitude* is owed to those runs.
 | --- | --- | --- | --- |
 | Warm local hot-path query | **ClickHouse** | 5 GiB mark cache + vectorized decompress; data in RAM. | arch + Runs 1–12 |
 | Cold object-store re-read — **request count** | **GreptimeDB** | few-objects layout → 9 vs 18 GETs for an anchored lookup (Run 55/B10). | **measured** |
-| Cold object-store re-read — **egress (selective)** | **ClickHouse** | granule reads (294 KiB) vs GreptimeDB whole-SST (~23 MiB), ~80×. **Scatter-driven, persists at scale (Run 63):** recommended design keys on `service` so `trace_id` scatters across all row groups (anchored scan 39 ms vs 14 ms clustered); CH `ORDER BY(trace_id,ts)` clusters the anchor free, GreptimeDB PK=series-identity can't without cardinality blowup. | **measured** (Run 55/B10) + mechanism (Run 63) |
+| Cold object-store re-read — **egress (selective)** | **ClickHouse, but only ~10× with partitioning** | granule reads (294 KiB) vs GreptimeDB non-partitioned whole-SST (~23 MiB, ~80×). **Mitigated by `PARTITION ON COLUMNS(trace_id)` (Run 88): 16-way partitioning → cold anchored read fetches ~2.8 MiB (matching partition), narrowing the gap to ~10×** (cardinality-free; native traces ship 16-way). CH `ORDER BY(trace_id,ts)` clusters the anchor at granule level (finer); GreptimeDB can *partition* by it (coarser) but not *sort* without PK-cardinality cost. | **measured** (Runs 55, 88) + mechanism (Run 63/87) |
 | Cold object-store re-read — **wide scan** | **GreptimeDB (predicted)** | few large objects + object-store-native cache; JSONBench cold-run #1 @1B. | arch + vendor claim |
 | Warm/repeat re-read (Parallax norm) | **GreptimeDB** | write-through persistent local read cache (survives restart) → ~0 S3 after first touch (Run 55). | **measured** |
 | Cache memory footprint / tuning | ~tie, different shape | CH one big mark cache (5 GB) vs GreptimeDB several smaller purpose caches. | arch |

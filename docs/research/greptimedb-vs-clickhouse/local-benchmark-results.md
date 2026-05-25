@@ -3585,6 +3585,47 @@ COLUMNS ("trace_id") (trace_id < '1', …)`; `INSERT … SELECT FROM spans_idx`;
 SELECT span_id FROM spans_part WHERE trace_id='…'` → `partition_count count:2`, scan_cost
 ~11 ms vs spans_idx ~39 ms.
 
+### Run 88 — 2026-05-25 — Cold S3 egress with trace_id partitioning: ~8× less (closes the cold-egress thread)
+
+**Pass target.** Measure the *cold S3 egress* of an anchored read on a trace_id-partitioned
+table (Run 87 measured warm prune; Run 55 measured the non-partitioned whole-SST 23 MiB).
+Does partitioning cut cold egress to ~1/N on object storage?
+
+**Environment.** Isolated S3 stack (MinIO + GreptimeDB(S3) `v1.0.2`). Versions re-pinned —
+latest, no bump. Loaded the 1M-span set into `spans_part` = **`PARTITION ON COLUMNS(trace_id)`
+16-way** (like native `opentelemetry_traces`), `PK(service,name)`, no trace_id index → 22 MiB
+across **48 objects** (16 partition-regions). Cold = `rm` the local read cache + restart;
+`mc admin trace` the anchored `trace_id='3fb2d84c…'` query.
+
+**Measured (cold anchored read):**
+
+| Table | per-query parquet GETs | parquet egress | vs ClickHouse (Run 55) |
+| --- | --- | --- | --- |
+| GreptimeDB non-partitioned (Run 55) | 5 | **~23 MiB** (whole SST) | ~80× CH |
+| GreptimeDB **16-way trace_id-partitioned** (this run) | **3** | **~2.8 MiB** (the matching partition) | **~10× CH** |
+| ClickHouse (Run 55, granule prune) | 18 | **~294 KiB** | 1× |
+
+**Verdict — partitioning cuts cold egress ~8×; closes the thread.** The cold anchored read
+fetched only the **matching partition's parquet (~2.8 MiB)**, not the whole table (~23 MiB) —
+**~8× less cold S3 egress**, confirming Run 87's warm prune translates to object-store egress.
+So `PARTITION ON COLUMNS(trace_id)` (which the native `opentelemetry_traces` ships 16-way)
+**substantially closes the Run-55/63 cold-egress gap**: GreptimeDB cold-selective egress goes
+23 MiB → 2.8 MiB, narrowing the gap to ClickHouse's granule-level 294 KiB from **~80× to
+~10×** (finer partitioning — e.g. 64-way — would narrow further). ClickHouse still wins
+cold-*selective* egress (granule beats partition), but by ~10×, not ~80×, and GreptimeDB's
+**persistent read cache keeps the common warm path at ~0 S3** regardless. **Cold-egress
+thread resolved: the partition lever (cardinality-free) is the mitigation; adopt the
+16-way-partitioned native trace table + partition Parallax's custom tables.**
+
+Caveat: 51 *total* data/ GETs include one-time **per-partition manifest reopen** (16
+partitions each read their manifest on restart) — that is region-open overhead, not
+per-query; the per-query cold data egress is the ~2.8 MiB parquet (3 GETs). 16-way gave ~1/8
+here (uneven partition sizes), not exactly 1/16. Single-node smoke.
+
+**Reproduce.** Load `spans_part` (16-way `PARTITION ON COLUMNS(trace_id)`) into GreptimeDB(S3);
+`rm -rf /greptimedb_data/cache/*` + restart; `mc admin trace` the anchored query; sum parquet
+`GetObject` sizes on `data/` (~2.8 MiB vs Run 55's ~23 MiB non-partitioned).
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
