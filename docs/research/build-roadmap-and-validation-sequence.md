@@ -66,7 +66,9 @@ assumption. Failing a gate sends you back, not forward.
 
 Build only enough to generate the bundle automatically and repeatably:
 
-- Sentry-envelope + OTLP ingest (subset), deterministic Rust-focused grouping.
+- Sentry-envelope + OTLP ingest (subset), deterministic Rust-focused grouping,
+  with compatibility claims controlled by the
+  [Sentry SDK compatibility ledger](sentry-sdk-compatibility-ledger.md).
 - Same-trace correlation → one real `issue context` bundle.
 - GreptimeDB standalone + Turso metadata, local WAL, single binary.
 - CLI (`parallax issue context …`) + read-only context API.
@@ -172,6 +174,9 @@ Build only enough to generate the bundle automatically and repeatably:
 - [A7 scope discipline ledger](a7-scope-discipline-ledger.md) — the phase budget
   and feature-admission contract that prevents broad roadmap work from entering
   Phase 1 before the tiny bundle proof.
+- [Sentry SDK compatibility ledger](sentry-sdk-compatibility-ledger.md) — the
+  claim-level contract for turning real SDK fixture runs into allowed
+  Sentry-compatible product wording.
 - [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
   — the focused answer to the CLI-versus-MCP access-surface question.
 - [Production database evidence access gate](production-database-evidence-access.md)

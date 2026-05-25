@@ -141,6 +141,9 @@ If two or more trigger, reopen the verdict.
 - [A7 scope discipline ledger](a7-scope-discipline-ledger.md) — the scope
   control contract for keeping Phase 1 buildable before frontend, MCP, fixer,
   HA, and broad observability-suite work enter active scope.
+- [Sentry SDK compatibility ledger](sentry-sdk-compatibility-ledger.md) — the
+  claim-control contract for avoiding broad Sentry-compatible wording before
+  real SDK fixture results exist.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) — the A1/A3
   value-and-moat claims.
 - [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)

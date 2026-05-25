@@ -81,6 +81,7 @@ idea becomes sharper.
 - [Technical implementation concept](docs/research/technical-implementation-concept.md)
 - [Sentry-compatible ingestion](docs/research/sentry-compatible-ingestion.md)
 - [Sentry SDK fixture compatibility gate](docs/research/sentry-sdk-fixture-compatibility.md)
+- [Sentry SDK compatibility ledger](docs/research/sentry-sdk-compatibility-ledger.md)
 - [OpenTelemetry protocol and context layer](docs/research/opentelemetry-protocol-and-context-layer.md)
 - [OTLP receiver conformance and Collector equivalence](docs/research/otlp-receiver-conformance-and-collector-equivalence.md)
 - [Repository structure](PROJECT_STRUCTURE.md)

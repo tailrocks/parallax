@@ -91,6 +91,7 @@ or CI contract yet.
 | `docs/research/bundle-value-phase0-runbook.md` | Concrete first-pass A1 runbook: task mix, arms, artifact contract, agent-run protocol, scoring, analysis, and continue/kill thresholds for testing bundles against raw telemetry dumps. |
 | `docs/research/sentry-compatible-ingestion.md` | Focused Sentry envelope, Relay, grouping, fingerprinting, stacktrace normalization, and event pipeline analysis for Parallax ingestion. |
 | `docs/research/sentry-sdk-fixture-compatibility.md` | Fixture-driven Sentry compatibility gate: current SDK-generated envelopes, Rust-first fixture matrix, parser oracle strategy, normalization snapshots, and honest product wording. |
+| `docs/research/sentry-sdk-compatibility-ledger.md` | Result-ledger contract for Sentry SDK compatibility claims: claim levels, fixture-run artifacts, row schemas, expiry triggers, and allowed product wording. |
 | `docs/research/opentelemetry-protocol-and-context-layer.md` | Focused OpenTelemetry protocol, OTLP endpoint, Collector, Rotel, semantic context, scaling, and above-OTEL product opportunity analysis. |
 | `docs/research/otlp-receiver-conformance-and-collector-equivalence.md` | Fixture and conformance gate for OTLP-native claims: direct Rust SDK, official Collector, Collector Contrib, and Rotel equivalence over normalized Parallax evidence rows. |
 | `docs/research/rust-data-collection-and-instrumentation.md` | Rust-first data-collection decision (SDK/OTLP vs eBPF) and error-capture data model. |
