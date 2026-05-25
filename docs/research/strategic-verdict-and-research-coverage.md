@@ -88,10 +88,10 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Prompt area | Repository evidence |
 | --- | --- |
 | Market and product thesis | [Project thesis](project-thesis.md), [Market landscape](market-landscape.md), [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md) |
-| Evaluation lens and benchmark methodology | [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [Metadata store benchmark plan](metadata-store-benchmark-plan.md), [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Messaging and ingestion layer](messaging-and-ingestion-layer.md) |
+| Evaluation lens and benchmark methodology | [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md), [Metadata store benchmark plan](metadata-store-benchmark-plan.md), [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Messaging and ingestion layer](messaging-and-ingestion-layer.md) |
 | Language/runtime filter and Rust preference | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md), [Technical implementation concept](technical-implementation-concept.md) |
 | Messaging/streaming | [Messaging and ingestion layer](messaging-and-ingestion-layer.md) |
-| Unified observability storage | [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Observability storage benchmark plan](observability-storage-benchmark-plan.md) |
+| Unified observability storage | [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md) |
 | Metadata store | [Metadata store benchmark plan](metadata-store-benchmark-plan.md), [Technical implementation concept](technical-implementation-concept.md) |
 | OpenTelemetry | [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md) |
 | Sentry-compatible ingestion | [Sentry-compatible ingestion](sentry-compatible-ingestion.md) |
@@ -101,10 +101,12 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Flaky-test investigation | [CI failure context MVP](ci-failure-context-mvp.md), [Flaky test investigation and replay](flaky-test-investigation-and-replay.md) |
 | Agent and CLI execution tracing | [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) |
 | Agent-observability technical references | [Agent observability technical review](agent-observability-technical-review.md) |
+| Frontend collection and cross-tier correlation | [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md) |
+| Evidence bundle and open schema | [Evidence bundle and open schema specification](evidence-bundle-and-schema.md) |
 | Core architecture | [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Technical implementation concept](technical-implementation-concept.md) |
 | CLI/API/MCP philosophy | [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md), [Technical implementation concept](technical-implementation-concept.md) |
 | Critical strategic questions | [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md), this document |
-| Final implementation blueprint | [Technical implementation concept](technical-implementation-concept.md) |
+| Final implementation blueprint | [Technical implementation concept](technical-implementation-concept.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md) |
 
 ## Key Decisions
 
