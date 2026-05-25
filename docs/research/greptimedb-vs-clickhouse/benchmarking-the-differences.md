@@ -186,9 +186,13 @@ Legend: **Runnable now** = expressible in the current prototype/`bench/compose.y
   37 MiB vs ClickHouse 74 objects / 63 MiB** (~18× more objects — Wide part =
   one S3 object per column + marks; confirmed the hypothesis). ClickHouse active
   logical 31.82 MiB is slightly smaller (codec edge) but raw S3 use is inflated by
-  un-GC'd merge garbage (async S3 cleanup). The 18× object gap = the object-store
-  request-cost advantage for GreptimeDB. **Remaining refinement:** GET/PUT/LIST
-  counts during cold Q1–Q6 (MinIO audit) to put a number on request cost.
+  un-GC'd merge garbage (async S3 cleanup). **Run 14 added the cold per-query GET
+  count (anchored lookup): ClickHouse 5 vs GreptimeDB 22** — the *reverse* of the
+  object count, because ClickHouse's sort-key locality pinpoints ~1 granule while
+  GreptimeDB pays inverted-index indirection. So object-store request cost is
+  **query-shape-dependent**: GreptimeDB fewer *total objects* (full-scan/management
+  edge), ClickHouse fewer *GETs per anchored lookup*. Full-scan cold GET count
+  (B12, where GreptimeDB's few objects should win) still owed.
 
 ## B11 — Multi-node scale-out hold + rebalance
 

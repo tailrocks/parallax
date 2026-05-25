@@ -51,7 +51,7 @@ storage*, accepting a younger DataFusion scan engine.
 | **Metrics / PromQL** | Native PromQL planner + Prom remote-write + metric engine; ClickHouse has no PromQL (needs a translation layer). | plan+smoke (Run 3) |
 | **Write ergonomics** | LSM memtable absorbs high-frequency small writes; no ClickHouse "too many parts". Native OTLP/Prom ingest, no collector. | arch+Run 5 |
 | **Horizontal scaling** | Region model + Metasrv auto-rebalance + repartition + compute/storage separation (object store + remote WAL) → topology change, not rewrite. | arch (multi-node owed) |
-| **Object-storage-native** | OpenDAL default + read cache; cheap re-readable retention is first-class. **Measured (Runs 8–9): 1M spans = 4 S3 objects vs ClickHouse's 74 (~18× fewer → request-efficient).** | measured (object layout); request-count owed |
+| **Object-storage-native** | OpenDAL default + read cache; cheap re-readable retention first-class. Fewer *total* objects (4 vs 74, Runs 8–9) → wins full-scan cold reads. **But for a cold *anchored* lookup ClickHouse issued fewer S3 GETs (5 vs 22, Run 14)** — sort-key locality beats GreptimeDB's index indirection; request cost is query-shape-dependent. Read cache → warm re-reads local on both. | measured (layout + anchored cold-GETs); full-scan cold owed |
 | Freshness | Visible-on-write (tie with ClickHouse, not a win). | smoke |
 
 ## Decision question 2 — where is ClickHouse genuinely better, and why?

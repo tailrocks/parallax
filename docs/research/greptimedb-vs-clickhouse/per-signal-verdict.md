@@ -75,7 +75,7 @@ per-query overhead.
 | --- | --- | --- |
 | **Speed — query latency** | ClickHouse leads logs/traces/bundle; GreptimeDB leads metrics (PromQL) + ties metric agg. | smoke |
 | **Speed — freshness** | **Tie** (measured Run 5): both visible-on-write, sub-second, no flush barrier. GreptimeDB write-path *edge*: LSM absorbs small high-frequency writes (no ClickHouse part-explosion / "too many parts") + native OTLP/Prom ingest. | smoke+arch |
-| **Cost** | Measured (passes 8,17–18): local compression a **pattern-dependent wash** (ClickHouse tuned numerics/high-card strings; GreptimeDB dict-friendly/noisy floats). **Object storage favors GreptimeDB**: 1M spans = **4 objects vs ClickHouse's 74** (~18× fewer → request-efficient) + no async-cleanup space amplification. Request-count-during-query still owed. | smoke compression; object-layout measured |
+| **Cost** | Measured (passes 8,17–19,29): local compression a **pattern-dependent wash**. Object storage is **query-shape-dependent**: GreptimeDB has far fewer *total* objects (4 vs 74 — wins full-scan cold reads + management), but for a **cold anchored keyed lookup ClickHouse issues fewer S3 GETs** (5 vs 22, Run 14 — sort-key locality beats GreptimeDB's inverted-index indirection). Read cache makes warm re-reads local (0 GETs) on both. | compression smoke; object layout + anchored cold-GETs measured; full-scan cold GETs owed |
 | **Scaling** | **Split** (pass 10): ClickHouse wins vertical single-node ceiling; **GreptimeDB wins horizontal** (operator's primary) — region model + Metasrv rebalance + repartition + compute/storage separation vs ClickHouse OSS manual sharding (SharedMergeTree Cloud-only). | arch (multi-node run owed) |
 
 ## Bottom line (provisional, will sharpen in the verdict)

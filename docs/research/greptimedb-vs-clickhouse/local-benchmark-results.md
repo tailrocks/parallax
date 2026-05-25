@@ -513,6 +513,49 @@ ratio + continuous visibility here already show neither engine has a concurrent
 read-blocking problem. Caveat: cache-resident scale + docker-exec measurement
 coarseness — directional.
 
+### Run 14 — 2026-05-25 — B10/B12 partial: cold-read S3 GET count (anchored lookup)
+
+Using the now-committed `bench/s3/` stack: loaded 1M spans into both S3-backed
+engines, **cleared the local read caches + restarted** (forced cold S3 reads), then
+counted `s3.GetObject` via `mc admin trace` during a **cold anchored `trace_id`
+lookup** (14 spans). Both returned 14 (parity).
+
+| Engine | Cold `s3.GetObject` for one anchored trace lookup |
+| --- | --- |
+| ClickHouse (`ORDER BY (trace_id, ts)`) | **5** |
+| GreptimeDB (`trace_id INVERTED INDEX`) | **22** |
+
+**Partial correction to B10's inference.** B10 measured the *total object count*
+(GreptimeDB 4 vs ClickHouse 74) and I inferred GreptimeDB would issue fewer cold S3
+requests. **For an *anchored keyed lookup* the opposite is true** (CH 5 < GT 22),
+and the mechanism is clear:
+
+- **ClickHouse** physically **clusters data by `trace_id`** (`ORDER BY` prefix), so
+  the sparse index pinpoints ~1 granule and the cold read is a handful of ranged
+  GETs into the relevant column files.
+- **GreptimeDB** keys on `(service,name)` with `trace_id` as a **secondary inverted
+  index** → it must GET the SST footer + the **Puffin index objects** + the column
+  pages + manifest = ~22 ranged GETs (index indirection + more round-trips).
+
+So **object-store request cost is query-shape-dependent**:
+
+- **Anchored point/keyed lookups** (Parallax's evidence-bundle pattern) → **ClickHouse
+  issues fewer cold GETs** (sort-key locality beats index indirection). This
+  **counters** the earlier "GreptimeDB is object-store request-efficient" reading
+  *for the anchored case*.
+- **Full-scan / wide cold reads** (JSONBench-style) → GreptimeDB's **few large
+  objects** win (fewer objects to touch for a scan) — consistent with the JSONBench
+  cold-run claim (B12).
+
+**Bounding caveat:** GreptimeDB's **read cache** (which I deliberately evicted here)
+means warm re-reads are **local (0 S3 GETs)** for both engines — so the 5-vs-22 cold
+gap only bites on genuinely cache-cold reads; Parallax's hot/recent bundles stay
+cached. One measurement, 1M-span SST, single trace — directional, not a law.
+
+**B10 status: extended (request counts done for the anchored case).** **B12** (full-
+scan/JSONBench cold reads, where GreptimeDB is expected to win on object count) still
+owed — needs the wide/JSON dataset; the stack is ready (`bench/s3/`).
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
