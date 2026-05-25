@@ -33,7 +33,7 @@ not inferred from this design alone.
 | [MCP security best practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices) | The official guidance favors least-privilege scopes, targeted elevation, precise scope challenges, correlation IDs, and avoiding wildcard or omnibus scopes. |
 | [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/) | MCP calls should be observable as MCP-specific spans and metrics; MCP does not yet define its own standard trace-context propagation, so instrumentation needs explicit propagation in message metadata. |
 | [OpenAI Docs MCP](https://developers.openai.com/learn/docs-mcp) | Codex, VS Code/Copilot Agent mode, Cursor, and Claude Code can consume MCP servers; OpenAI's own docs server uses MCP as the cross-client integration surface. |
-| [Claude Code MCP docs](https://code.claude.com/docs/en/mcp) | Claude Code supports MCP servers, resources, OAuth callback configuration, dynamic headers, and MCP output limits; its docs also show that some helpers execute shell commands and require workspace trust. |
+| [Claude Code MCP docs](https://code.claude.com/docs/en/mcp) and local `claude mcp --help` on `2.1.150` | Claude Code supports local, project, user, plugin, claude.ai connector, and managed MCP sources. Current docs define source precedence, project `.mcp.json` approval, environment expansion in command/args/env/url/headers, OAuth callback/client credentials/metadata override/scope pinning, dynamic `headersHelper` commands gated by workspace trust, output warnings and limits, per-tool `_meta["anthropic/maxResultSizeChars"]`, and `claude mcp serve`. Local help confirms `add` supports stdio/SSE/HTTP, headers, env vars, scope, client credentials, callback port, and warns that `mcp get`/`list` skip the workspace trust dialog and spawn stdio servers for health checks. |
 | [NSA MCP security design considerations](https://www.nsa.gov/Portals/75/documents/Cybersecurity/CSI_MCP_SECURITY.pdf?ver=bmgiSbNQLP6Z_GiWtRt6bg%3D%3D) | As of May 2026, NSA describes MCP as widely adopted but security-maturing, with risks around dynamic tool invocation, implicit trust, context sharing, serialization, token/session handling, overbroad tools, and unauthorized servers. |
 
 Version note: the official MCP pages checked for this pass show
@@ -258,13 +258,13 @@ MCP should not ship until these tests pass:
 | Gate | Pass condition |
 | --- | --- |
 | Projection equivalence | CLI, HTTP, and MCP return the same canonical JSON hash for the same request. |
-| Client fixture | The same local server is callable from at least Codex and Claude Code using official MCP configuration paths. |
+| Client fixture | The same local server is callable from at least Codex and Claude Code using official MCP configuration paths, with each client's config source, server precedence, auth/header source, output-budget behavior, and local trust prompts recorded. |
 | Scope fixture | Calls without `evidence:read` fail closed; raw refs require `evidence:read_sensitive`. |
 | Remote auth fixture | Streamable HTTP proves protected-resource metadata, resource indicators in authorization and token requests, MCP-server audience validation, PKCE S256 for public clients, HTTPS policy, and token-passthrough denial. |
 | Local stdio fixture | Stdio server startup requires explicit local trust, reads only approved credential sources, redacts credentials from logs/audit rows, and cannot be auto-enabled by a repository checkout. |
 | Redaction fixture | Seeded secrets in logs, CLI output, agent transcripts, and frontend breadcrumbs do not appear in MCP output. |
 | Source-field fixture | Eval/corpus-derived bundles preserve `source_field_policy.status = pass`, policy hash, and zero violations across CLI, HTTP, and MCP. |
-| Output budget | Oversized bundles return summary + refs, not unbounded text. |
+| Output budget | Oversized bundles return summary + refs, not unbounded text, and remain within both Parallax's own budget and the tested client's MCP output behavior. |
 | Audit fixture | Every MCP call emits an audit row and OpenTelemetry span with caller, tool, scopes, bundle id, status, and redaction policy. |
 | Negative tool catalog | Generic shell, SQL, deploy, rollback, and delete tools are absent. |
 | Capability fixture | Sampling, elicitation, task-augmented execution, and unreviewed tool-list changes are denied or audited for the read-only context server. |

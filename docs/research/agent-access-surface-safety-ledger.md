@@ -34,7 +34,7 @@ The central rule:
 | [MCP security best practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices) | Official guidance emphasizes least privilege, precise scope challenges, resource indicators, token audience validation, correlation IDs, and avoiding broad scopes. | The first MCP server must start read-only and deny wildcard/admin scopes. |
 | [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/) | MCP client/server spans, JSON-RPC request IDs, transport values, tool/resource/prompt attributes, session metrics, `elicitation/create`, `sampling/createMessage`, `notifications/tools/list_changed`, and provisional `_meta` trace propagation are defined with development-stage status. | MCP calls and server-initiated capability attempts must be observable and normalized into Parallax audit/action rows without treating development-stage semconv names as stable storage fields. |
 | [OpenAI Docs MCP](https://developers.openai.com/learn/docs-mcp) | OpenAI documents MCP as a docs integration surface for Codex and other agent clients. | Cross-client MCP is a distribution requirement, not a unique moat. |
-| [Claude Code MCP docs](https://code.claude.com/docs/en/mcp) | Claude Code supports MCP servers, resources, OAuth callback configuration, dynamic headers, output limits, and workspace trust concerns. | Client fixtures must test real agent clients and output-budget behavior. |
+| [Claude Code MCP docs](https://code.claude.com/docs/en/mcp) and local `claude mcp --help` on `2.1.150` | Claude Code supports local, project, user, plugin, claude.ai connector, and managed MCP sources with source precedence. Current docs define project `.mcp.json` approval, environment expansion in command/args/env/url/headers, OAuth callback/client credentials/metadata override/scope pinning, dynamic `headersHelper` commands gated by workspace trust, output warning and limit behavior, per-tool `_meta["anthropic/maxResultSizeChars"]`, and `claude mcp serve`. Local help confirms stdio/SSE/HTTP, headers, env vars, scope, client credentials, callback port, and warns that `mcp get`/`list` skip the workspace trust dialog and spawn stdio servers for health checks. | Claude Code client fixtures must record configuration source, precedence, auth/header source, output-budget behavior, workspace trust, health-check side effects, and whether Claude-as-MCP-server is in play. Cross-client MCP safety is not proven by a generic "Claude supports MCP" row. |
 | [NSA MCP security design considerations](https://www.nsa.gov/Portals/75/documents/Cybersecurity/CSI_MCP_SECURITY.pdf?ver=bmgiSbNQLP6Z_GiWtRt6bg%3D%3D) | NSA's May 2026 guidance treats MCP as widely adopted but security-maturing, with risks around dynamic tool invocation, implicit trust, context sharing, serialization, token/session handling, overbroad tools, and unauthorized servers. | The safe path is a narrow read-only adapter over canonical bundles, not a broad production-control toolset. |
 | [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md) | MCP is already present in Sentry-adjacent, Grafana, SigNoz, Coroot, Rustrak, and GoSnag-like surfaces. | Parallax must prove safer evidence semantics, not merely MCP availability. |
 
@@ -74,6 +74,7 @@ docs/research/agent-access-surface-runs/<run_id>/cli-results.jsonl
 docs/research/agent-access-surface-runs/<run_id>/http-results.jsonl
 docs/research/agent-access-surface-runs/<run_id>/mcp-results.jsonl
 docs/research/agent-access-surface-runs/<run_id>/capability-results.jsonl
+docs/research/agent-access-surface-runs/<run_id>/client-config-results.jsonl
 docs/research/agent-access-surface-runs/<run_id>/scope-results.jsonl
 docs/research/agent-access-surface-runs/<run_id>/auth-results.jsonl
 docs/research/agent-access-surface-runs/<run_id>/stdio-trust-results.jsonl
@@ -116,6 +117,7 @@ Each `manifest.json` should include:
   "transport_modes": ["stdio", "streamable-http"],
   "mcp_features_allowed": ["tools", "resources"],
   "mcp_features_denied": ["sampling", "elicitation", "task-augmented execution for context tools"],
+  "client_config_matrix": ["codex:stdio", "codex:streamable-http", "claude-code:stdio", "claude-code:http"],
   "notes": []
 }
 ```
@@ -171,6 +173,40 @@ combination does not carry over to another.
   "all_context_tools_read_only": true
 }
 ```
+
+### MCP Client Configuration Row
+
+```json
+{
+  "run_id": "agent-access-surface-YYYYMMDD-N",
+  "client": "claude-code",
+  "client_version": "2.1.150",
+  "client_binary_path": "/home/agent/.local/bin/claude",
+  "transport": "stdio|sse|http",
+  "config_source": "local|project|user|plugin|claude_ai|managed|cli_inline",
+  "source_precedence_observed": ["local", "project", "user", "plugin", "claude_ai"],
+  "project_scope_approval_required": true,
+  "project_scope_approval_reset_tested": true,
+  "health_check_spawns_stdio": true,
+  "env_var_expansion_fields": ["command", "args", "env", "url", "headers"],
+  "static_header_sources": [],
+  "headers_helper_present": false,
+  "headers_helper_workspace_trusted": false,
+  "oauth_metadata_override_present": false,
+  "oauth_scopes_pinned": false,
+  "client_output_warning_threshold_tokens": 10000,
+  "client_output_limit_tokens": 25000,
+  "tool_meta_max_result_size_chars": null,
+  "tool_result_persisted_to_disk": false,
+  "claude_mcp_serve_exposed": false,
+  "notes": []
+}
+```
+
+This row is mandatory for client-specific fixture claims. It is especially
+important for Claude Code because the same server name can be hidden or
+deduplicated by source precedence, project-scoped servers require approval, and
+some inspection commands can start stdio servers for health checks.
 
 ### MCP Capability Result Row
 
@@ -233,9 +269,14 @@ combination does not carry over to another.
   "case_id": "local_stdio_trust",
   "transport": "stdio",
   "client": "codex|claude-code",
+  "client_config_source": "local|project|user|plugin|managed|cli_inline",
   "explicit_install_trust_required": true,
   "repo_checkout_auto_enable_denied": true,
+  "project_scope_approval_required": true,
+  "health_check_spawns_stdio": false,
   "approved_credential_sources": ["environment", "local_config"],
+  "env_var_expansion_values_logged": false,
+  "dynamic_header_helper_executed": false,
   "ambient_token_forwarding_denied": true,
   "credential_values_logged": false,
   "status": "pass|fail",
@@ -283,10 +324,16 @@ combination does not carry over to another.
 {
   "case_id": "oversized_logs",
   "surface": "mcp",
+  "client": "claude-code",
   "inline_bytes": 24576,
   "max_inline_bytes": 32768,
+  "client_warning_threshold_tokens": 10000,
+  "client_limit_tokens": 25000,
+  "tool_meta_max_result_size_chars": null,
   "resource_refs": 4,
   "truncated": true,
+  "client_persisted_result_to_disk": false,
+  "client_file_ref_agent_visible": false,
   "canonical_hash_preserved": true
 }
 ```
@@ -345,7 +392,9 @@ combination does not carry over to another.
 - No raw-reference read claim unless `evidence:read_sensitive` denial and
   approval paths are tested and audited.
 - No cross-client claim unless at least Codex and Claude Code pass the same
-  fixture suite.
+  fixture suite and publish client configuration rows. The rows must identify
+  transport, config source, source precedence, auth/header source, output-limit
+  behavior, and any client-specific server/tool hiding.
 - No remote MCP claim unless protected-resource metadata, resource indicators
   in authorization and token requests, token audience validation, PKCE S256,
   HTTPS, localhost redirect policy, precise scope challenges, down-scoping
@@ -354,11 +403,27 @@ combination does not carry over to another.
 - No local stdio MCP claim unless explicit install/trust, approved credential
   sources, no repository auto-enable, no ambient-token forwarding, and
   credential log redaction are proven for the tested client.
+- Claude Code client claims must record local/project/user/plugin/claude.ai
+  source precedence, project `.mcp.json` approval, reset behavior for project
+  choices, and whether `mcp get`/`mcp list` or other health checks start stdio
+  servers. Do not run health-check probes against untrusted project configs.
+- Claude Code dynamic header helpers are local code execution. A client fixture
+  must record workspace trust, command identity, secret source, and redaction
+  before treating `headersHelper` as safe.
+- Claude Code OAuth fixture rows must record callback port/client credentials,
+  metadata override, pinned scopes, and any offline-access behavior rather than
+  assuming a generic OAuth success proves least privilege.
+- Claude Code `claude mcp serve` exposes Claude Code tools to another MCP
+  client. It is not a substitute for the Parallax MCP context server; if present
+  in a fixture, record it as a separate client/server topology and keep it out
+  of read-only Parallax server claims.
 - No prompt-injection safety claim unless malicious telemetry, issue text, PR
   text, logs, and transcripts fail to change tool policy, scopes, windows,
   redaction, or output limits.
 - No output-budget claim if MCP can inline unbounded logs, traces, transcripts,
-  terminal output, or source-map data.
+  terminal output, or source-map data. Client-side output warnings, default
+  limits, `_meta["anthropic/maxResultSizeChars"]`, and persisted-file
+  substitutions do not replace Parallax's own bounded bundle contract.
 - No audit claim unless allowed and denied calls produce audit rows and OTel MCP
   spans with correlation ids.
 - Markdown output is a projection. Claim levels are based on canonical JSON
