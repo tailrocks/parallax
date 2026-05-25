@@ -370,12 +370,35 @@ candidate, including Aduce if it is compared in future research.
    clustering model. Public benchmarks are a starting signal, not the verdict —
    most are vendor-published and measure the workload that flatters the vendor.
 
-2. Prototype our own benchmark concept during the research. Define and sketch a
-   benchmark (datasets, queries, metrics, harness) that measures each candidate
-   against THIS system's purpose, not a general-purpose leaderboard. A system can
-   be excellent for the job it was designed for and still be wrong for us. The
-   question is never "which system is best in general" — it is "which system is
-   best designed for OUR purpose."
+2. Build a prototype of our own benchmark, do not only describe one. The
+   research must produce a concrete, runnable evaluation harness — not just a
+   plan — that measures each storage candidate (GreptimeDB, ClickHouse, and any
+   other in-scope system) against THIS system's purpose, not a general-purpose
+   leaderboard. A system can be excellent for the job it was designed for and
+   still be wrong for us. The question is never "which system is best in general"
+   — it is "which system is best designed for OUR purpose."
+
+   The benchmark prototype is a required deliverable and must be specific enough
+   to run, including:
+   - a representative dataset and a generator for it: mixed error events, OTLP
+     logs/traces/metrics, deploy markers, CI/CLI/agent traces, and frontend
+     sessions, at realistic cardinality and trace-linkage;
+   - the actual schema/DDL per candidate and the exact queries that matter to
+     Parallax — evidence-bundle and correlation queries (issue context,
+     trace/log/metric join, release-regression window, cross-tier
+     frontend↔backend reconstruction), not generic scans;
+   - the metrics tied to the axes below: ingest-to-queryable freshness,
+     evidence-bundle/correlation query latency, behavior under concurrent
+     ingest+query, retained size and compression by signal, and object-storage
+     cost/retention math;
+   - a harness that drives load and records results reproducibly, with the
+     candidate behind a storage abstraction so candidates can be swapped.
+
+   The storage benchmark has veto power over the default storage choice: no
+   storage winner is declared until the prototype is run against the latest
+   stable versions. Grow `docs/research/observability-storage-benchmark-plan.md`
+   from a plan into this runnable prototype spec, and keep the metadata-store
+   benchmark aligned the same way.
 
 Judge every candidate on these axes, in priority order:
 
@@ -1093,6 +1116,13 @@ Deliver, with reasoning tied to the evaluation lens and the benchmark axes:
   flow from event to evidence bundle, the event/error data model, deterministic
   grouping and correlation approach, agent/CLI trace model, audit graph, and
   where causal/lifecycle reconstruction happens.
+- A runnable benchmark prototype for evaluating and comparing storage systems
+  (GreptimeDB, ClickHouse, and any other in-scope candidate) against the Parallax
+  goal: dataset + generator, per-candidate schema/DDL, the exact
+  evidence-bundle/correlation queries, the freshness/latency/cost/size metrics,
+  and a reproducible harness with the candidate behind a storage abstraction.
+  This is a deliverable, not a description, and it has veto power over the default
+  storage choice (see "Benchmarking and Comparison Methodology").
 - Tradeoffs and the rejected alternatives, so the choice is defensible.
 
 ## Scaling Trajectory: Three Tiers, Startups First
