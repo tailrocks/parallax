@@ -47,6 +47,7 @@ idea becomes sharper.
 - [Agent and CLI execution tracing](docs/research/agent-and-cli-execution-tracing.md)
 - [Agent observability technical review](docs/research/agent-observability-technical-review.md)
 - [Bundle-value evaluation](docs/research/bundle-value-evaluation.md)
+- [Bundle-value Phase 0 runbook](docs/research/bundle-value-phase0-runbook.md)
 - [Build roadmap and validation sequence](docs/research/build-roadmap-and-validation-sequence.md)
 - [Future platform direction](docs/research/future-platform-direction.md)
 - [Evidence bundle and open schema specification](docs/research/evidence-bundle-and-schema.md)

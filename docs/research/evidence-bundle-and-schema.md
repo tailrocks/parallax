@@ -309,7 +309,8 @@ This is a draft contract. The benchmark and prototype gates that decide whether
 it survives contact with real data:
 
 1. Does the bundle improve agent fix/diagnosis quality versus raw Sentry/CI
-   context? (The core moat claim — see kill criterion 3 in [verdict](verdict.md).)
+   context? (The core moat claim — see kill criterion 3 in [verdict](verdict.md)
+   and the first runnable [Phase 0 runbook](bundle-value-phase0-runbook.md).)
 2. Can bundles stay bounded (size/token budget) while still carrying enough
    evidence for high-confidence application-error fixes?
 3. Is `redaction_report` trustworthy across logs, CLI args/env, attachments, and

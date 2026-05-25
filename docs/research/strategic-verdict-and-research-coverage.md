@@ -103,7 +103,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Agent-observability technical references | [Agent observability technical review](agent-observability-technical-review.md) |
 | Frontend collection and cross-tier correlation | [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Storage benchmark prototype](storage-benchmark-prototype.md) |
 | Redaction/privacy/agent exposure safety | [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md), [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) |
-| Evidence bundle and open schema | [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Bundle-value evaluation](bundle-value-evaluation.md) |
+| Evidence bundle and open schema | [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Bundle-value evaluation](bundle-value-evaluation.md), [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) |
 | Core architecture | [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Technical implementation concept](technical-implementation-concept.md) |
 | CLI/API/MCP philosophy | [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md), [Technical implementation concept](technical-implementation-concept.md) |
 | Critical strategic questions | [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md), this document |
@@ -138,7 +138,9 @@ The research validates direction, not performance claims. These must be tested:
 6. Rust stacktrace grouping stability across release/debug-info variants,
    specified as a proof gate in
    [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md).
-7. Agent fix quality with bounded Parallax bundles versus raw Sentry/CI context.
+7. Agent fix quality with bounded Parallax bundles versus raw Sentry/CI context,
+   with the first runnable pass specified in
+   [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md).
 8. Redaction quality for logs, events, attachments, database query output, and
    agent prompt bundles; the [redaction pipeline](redaction-pipeline-and-secret-safety.md)
    has veto power before agent exposure.

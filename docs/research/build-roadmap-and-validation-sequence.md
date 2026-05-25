@@ -95,7 +95,7 @@ Build only enough to generate the bundle automatically and repeatably:
 
 | Assumption (bear case) | Tested in | Cheapest test |
 | --- | --- | --- |
-| A1 bundle value | Phase 0 (hand), re-check Phase 1 (auto) | manual bundle + eval, days |
+| A1 bundle value | Phase 0 (hand), re-check Phase 1 (auto) | [manual bundle + eval](bundle-value-phase0-runbook.md), days |
 | A2 real users | Phase 0 | 20 interviews |
 | A6 redaction trust | Phase 2 | red-team on real data |
 | A5 stack holds | Phase 2 | storage/metadata benchmarks |
@@ -108,7 +108,9 @@ Build only enough to generate the bundle automatically and repeatably:
 - Build the storage layer for months before testing A1. (Most common failure
   mode for infra-minded founders; the bear case's "comfortable engineering" trap.)
 - Add frontend, MCP, fixer, or Tier-3 before the tiny tier is excellent (A7).
-- Claim bundle value publicly before Phase 0/1 evidence exists.
+- Claim bundle value publicly before the
+  [Phase 0 bundle eval](bundle-value-phase0-runbook.md) and Phase 1 automated
+  evidence exist.
 - Bet Tier-3 on Iggy clustering that does not exist yet.
 
 ## Relationship To Other Research
@@ -116,6 +118,8 @@ Build only enough to generate the bundle automatically and repeatably:
 - [Verdict](verdict.md) and [risks/bear case](risks-and-bear-case.md) — the GO and
   the assumptions this sequences.
 - [Bundle-value evaluation](bundle-value-evaluation.md) — the Phase 0/1 gate.
+- [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) — the first
+  paired run against raw telemetry dumps.
 - [Technical implementation concept](technical-implementation-concept.md) — the
   component detail each phase builds.
 - [Storage benchmark prototype](storage-benchmark-prototype.md),

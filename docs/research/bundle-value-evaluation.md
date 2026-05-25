@@ -21,6 +21,9 @@ until A1 is measured. This document specifies how to measure it.
 It is an experiment design, not results. No bundle-value claim should be made in
 any other doc until this runs.
 
+The cheapest runnable version of this experiment is specified in
+[Bundle-value Phase 0 evaluation runbook](bundle-value-phase0-runbook.md).
+
 ## Why The Field Has Not Answered This
 
 Current coding-agent benchmarks evaluate fixing from **repository context only**:
@@ -173,6 +176,8 @@ Outcomes and what they mean:
   since a positive result is what makes the schema worth adopting).
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) — the artifact
   under test (arm C/D).
+- [Bundle-value Phase 0 evaluation runbook](bundle-value-phase0-runbook.md) —
+  the concrete first pass to run before a full benchmark corpus exists.
 - [Storage benchmark prototype](storage-benchmark-prototype.md) — shares the
   seeded dataset/reference-app generator for dataset option (3).
 - [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
