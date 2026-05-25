@@ -56,6 +56,7 @@ or CI contract yet.
 | `docs/research/agent-observability-technical-review.md` | Technical review of current agent-observability tools, instrumentation patterns, storage/eval/redaction lessons, and the Parallax-specific audit gap. |
 | `docs/research/strategic-verdict-and-research-coverage.md` | Final strategic verdict, prompt coverage map, key decisions, unresolved proof gates, and prototype acceptance criteria. |
 | `docs/research/technical-implementation-concept.md` | Opinionated end-to-end blueprint with named component choices, deployment profiles, data flow, and rejected alternatives. |
+| `docs/research/build-roadmap-and-validation-sequence.md` | De-risking build sequence: phases ordered to kill the project cheapest-first, with go/no-go gates tied to bear-case assumptions (validate A1 bundle value and A2 users before the storage benchmark). |
 | `docs/research/evidence-bundle-and-schema.md` | Concrete `v0` spec for the portable evidence bundle and open evidence schema (envelope, node/edge catalog, hypothesis/confidence model, redaction report, versioning) — the named moat artifact. |
 | `docs/research/bundle-value-evaluation.md` | Experiment design for the existential claim (kill criterion 3 / assumption A1): does a Parallax bundle beat raw context for agent fix quality? Arms incl. a raw-telemetry-dump control, dataset options, metrics, and the decision gate. |
 | `docs/research/sentry-compatible-ingestion.md` | Focused Sentry envelope, Relay, grouping, fingerprinting, stacktrace normalization, and event pipeline analysis for Parallax ingestion. |
