@@ -39,6 +39,7 @@ or CI contract yet.
 | `docs/research/project-thesis.md` | Original thesis. |
 | `docs/research/verdict.md` | Phase 1 GO / NO-GO gate for whether Parallax is worth building. |
 | `docs/research/risks-and-bear-case.md` | Adversarial counterweight to the verdict: steelmanned NO-GO case, load-bearing-assumption register, risk matrix, and NO-GO/strengthen triggers. |
+| `docs/research/business-model-and-economics.md` | Economic/business-model analysis: is the category company-sized, licensing options (Apache-2.0 recommended), and value-capture seams (hosting, the fixer, enterprise ops add-ons) that do not gate the open differentiator. |
 | `docs/research/market-landscape.md` | Market research. |
 | `docs/research/self-hosted-observability-architecture.md` | Architecture research for the Sentry-compatible, OpenTelemetry-native self-hosted observability direction. |
 | `docs/research/ci-failure-context-mvp.md` | MVP research for GitHub Actions failure-context bundles. |
