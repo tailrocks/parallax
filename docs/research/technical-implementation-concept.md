@@ -22,9 +22,12 @@ Build Parallax as:
 
 > A Rust-first execution context system with fixture-gated Sentry envelope
 > error-event ingest and OpenTelemetry-compatible telemetry ingest for services,
-> CLI apps, CI runs, and coding agents. It stores observability evidence in
-> GreptimeDB, starts product metadata in local Turso Database, keeps Postgres as
-> the production fallback until metadata gates pass, and exposes bounded
+> CLI apps, CI runs, and coding agents. It stores observability evidence behind
+> a swappable ClickHouse/GreptimeDB adapter, with the current proxy-lens lean
+> toward ClickHouse as the pragmatic columnar default and GreptimeDB retained for
+> the metrics-cardinality, self-hosted 1x object-storage, and auto-rebalance
+> bet. It starts product metadata in local Turso Database, keeps Postgres as the
+> production fallback until metadata gates pass, and exposes bounded
 > schema-bound evidence bundles through a CLI and HTTP API, with a later
 > read-only MCP adapter once the canonical bundle and projection contracts are
 > stable.
@@ -40,7 +43,7 @@ should not start as a full observability dashboard or autonomous production SRE.
 | External protocol | Accept the Sentry envelope `event` subset and OTLP HTTP/gRPC. | Preserves the error-event migration path while avoiding sessions, replay, profiles, release-health, exact grouping parity, and full Sentry API/UI parity until fixture gates prove each surface. |
 | Ingest gateway | Build a Rust `parallax-ingest` service. | Parallax needs auth, redaction, size limits, raw evidence retention, grouping hooks, and idempotency before storage. |
 | Message stream | No external broker in the tiny deployment. Use a local WAL/outbox. Add Apache Iggy for the durable profile. | The first version must stay simpler than Sentry. Iggy is the best Rust-native append-only stream once replay and processor isolation matter. |
-| Storage default | GreptimeDB for v0.1 observability storage. Keep a ClickHouse adapter as the benchmark fallback. | GreptimeDB is the closest architectural fit: Rust, observability-native, OTLP, Prometheus/PromQL, SQL, object-storage-oriented deployment. |
+| Storage default | Do not hard-code one engine in the first design. Current standing lean is ClickHouse as the pragmatic columnar default, with GreptimeDB as the Rust/object-storage/cardinality candidate and benchmark-controlled fallback/branch. | Runs 153-170 re-weighted the decision through the Parallax proxy: Parallax owns OTLP/routing/conversion, so retrieval speed and build-on-top ecosystem now favor ClickHouse; GreptimeDB still matters for self-hosted 1x object storage, cardinality, PromQL, and auto-rebalance. Full A5 gates still have veto power. |
 | Metadata store | Turso Database for local/dev and tiny single-node prototypes; keep Postgres as the production and scale-out fallback until Turso production behavior is proven. | Users, projects, DSNs, issue status, policies, and audit records are relational product state, not telemetry. Turso keeps the embedded metadata path Rust-native and SQLite-compatible without choosing C SQLite. |
 | Processing | Rust workers, in-process for tiny mode and separate services for durable/scale-out mode. | Normalization, symbolication, grouping, correlation, and graph building need deterministic logic and strong testability. |
 | Causal layer | Typed evidence graph stored as tables first. | Materialize graph edges before adopting a graph database. Causality needs explicit evidence and confidence. |
@@ -122,7 +125,7 @@ Access decision:
 | CLI tracing | `parallax` CLI built with `clap`; wrapper/subcommand mode records structural command metadata, sanitized args/env/cwd, stdout/stderr policy refs, exit code, and overhead metrics. | CI and deploy systems call CLI with project token and redaction policy after the [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) gate passes. | Organization-wide CLI/agent gateway and policy templates. |
 | Agent-session tracing | Normalized `agent_session` / `agent_action` schema fed by bounded adapters for native OTel, hooks/plugins, JSONL or stream JSON, exports, server/API protocols, wrappers, and raw refs. | Fixer component and real-tool adapters source session traces with per-tool/version/config coverage, lossiness, redaction, and projection rows in the ledger. | Multi-agent session graph with policy, review, and fixer outcome feedback loops after ledger gates. |
 | Stream / buffer | Local append-only WAL/outbox segment files. | Apache Iggy standalone when replay, backpressure, or worker separation is needed. | Iggy cluster or storage-backed stream fallback if Iggy fails scale tests. |
-| Observability storage | GreptimeDB standalone on local disk. | GreptimeDB standalone with S3/object storage. | GreptimeDB distributed with object storage; ClickHouse fallback cluster if benchmarks force it. |
+| Observability storage | Storage adapter with ClickHouse and GreptimeDB profiles; use ClickHouse for the pragmatic proxy-lens default if implementation starts now. | ClickHouse hot tier or GreptimeDB S3-native profile depending on freshness/cost gates. | ClickHouse cluster, GreptimeDB distributed/object-storage profile, or a later hot/cold split only if A5 cost and latency gates justify the added operations. |
 | Metadata store | Turso Database for prototype projects, DSNs, policies, issue state, audit, agent sessions, CLI invocations, and outcomes. | Turso with benchmarked backup/restore and concurrency gates; Postgres production fallback if those fail. | Postgres fallback for production or large multi-node metadata if Turso fails production gates. |
 | Raw evidence retention | Local disk raw refs with TTL. | S3-compatible object storage for raw envelopes, attachments, logs, and bundle manifests. | Tiered object storage with lifecycle policy and per-tenant retention. |
 | Processing | In-process Rust normalizer/grouping/evidence-graph worker. | Separate Rust worker services and consumer groups. | Worker pools by normalization, grouping, symbolication, graph, bundle indexing. |
@@ -239,34 +242,36 @@ That is narrower than "AI observability" but much more buildable.
 
 ## Default Storage Decision
 
-Use **GreptimeDB** as the default v0.1 observability store.
+Keep **ClickHouse and GreptimeDB** behind a storage adapter. If implementation
+starts before A5 fully resolves storage, the current proxy-lens lean is
+**ClickHouse as the pragmatic columnar default**, not GreptimeDB.
 
-GreptimeDB reached **v1.0 GA in April 2026** (latest stable checked `v1.0.2`,
-2026-05-14), with a unified engine for metrics/logs/traces on object storage,
-SQL, PromQL, and native OTLP ingestion. This removes the largest risk that
-existed in earlier passes, when it was still beta: the first build is no longer
-betting on an unreleased database. It does **not** prove production fit for
-Parallax yet. The trace docs still mark trace support as experimental, public
-performance evidence remains mostly vendor-published, and distributed mode
-(Frontend/Datanode/Metasrv with region failover and online repartition) is
-younger than standalone. The storage freshness, bundle-latency, object-cost, and
-operational-complexity gates still have veto power.
+The reason is not that GreptimeDB stopped being credible. GreptimeDB reached
+**v1.0 GA in April 2026** (latest stable checked `v1.0.2`, 2026-05-14), and it
+remains a serious Rust/object-storage/cardinality candidate. The change is the
+Parallax architecture: Parallax itself owns OTLP ingestion, routing,
+normalization, and format conversion before writing to storage. That neutralizes
+much of GreptimeDB's native-ingest advantage. The axes the proxy cannot
+neutralize are retrieval speed, mature SQL/build-on-top ecosystem, cost shape,
+and scale/operations. Current benchmark artifacts through Run 170 lean
+ClickHouse on retrieval and ecosystem, while preserving GreptimeDB for
+self-hosted 1x object-storage economics, high-cardinality metrics, PromQL, and
+auto-rebalance.
 
-This remains an opinionated default, not a claim that GreptimeDB has already
-beaten ClickHouse on every workload. The storage benchmark still has veto power.
-But the first prototype should optimize for architectural fit rather than
-inherited incumbency.
+This is still a benchmark-controlled decision. The storage freshness,
+bundle-latency, object-cost, cold-read, durability, setup, and
+operational-complexity gates keep veto power.
 
-### Why GreptimeDB Wins The First Build
+### Current Lean
 
-| Axis | GreptimeDB rationale |
+| Axis | Current interpretation |
 | --- | --- |
-| Speed | Direct OTLP ingestion, SQL, PromQL, and observability-shaped tables reduce pipeline work before query. Public performance evidence is not enough, so Parallax must benchmark evidence-bundle latency. |
-| Cost | Object-storage-oriented deployment fits long observability retention better than pure local SSD retention. Cost still depends on cache, compaction, query load, and object-store requests. |
-| Scaling | Standalone mode fits small teams; distributed mode and compute/storage separation fit the future scale-out trajectory. |
-| Architecture | Purpose-built for metrics, logs, traces, events, SQL, PromQL, and OpenTelemetry rather than a generic analytics database adapted to observability. |
-| Rust/open-source lens | Rust-native, Apache-2.0 core, inspectable and agent-contributable. |
-| Agent context | Cross-signal query surface is closer to the evidence-bundle use case than separate metrics/logs/traces databases. |
+| Retrieval speed | ClickHouse leads the pragmatic default because it is faster on scans, broad log search, dynamic JSON, joins, and mature analytical SQL. Anchored bundle paths remain interactive on both only when schema keys/indexes are correct. |
+| Build-on-top ecosystem | ClickHouse leads: SigNoz, Uptrace, HyperDX, and ClickStack prove a large observability platform surface over ClickHouse. GreptimeDB can express the core grouped-error/evidence-window queries, but the ecosystem is younger. |
+| Cost and retention | GreptimeDB remains the important branch for self-hosted 1x object-storage economics, fewer always-on compute assumptions, and deep retained history. ClickHouse can use object storage too, so this must be priced rather than assumed. |
+| Metrics/cardinality/PromQL | GreptimeDB remains strategically relevant for PromQL-native and high-cardinality metric workflows. This can flip the storage choice if metrics become a first-class product surface rather than background evidence. |
+| Rust/open-source lens | GreptimeDB is the operator-contributable Rust substrate. That matters for a long-term bet, but does not override current retrieval/ecosystem evidence. |
+| First build discipline | The first build should not depend on either engine-specific magic. It should keep the schema, bundle, and storage adapter boundaries honest until A5 decides. |
 
 Current source anchors:
 
@@ -279,34 +284,15 @@ Current source anchors:
 - [GreptimeDB architecture](https://docs.greptime.com/user-guide/concepts/architecture/)
 - [GreptimeDB storage options](https://docs.greptime.com/user-guide/deployments-administration/configuration/)
 
-### Why Not ClickHouse As Default?
-
-ClickHouse remains the strongest mature fallback. It may beat GreptimeDB on raw
-log/trace analytics or operational maturity. But it is not the best default for
-the first Parallax implementation because:
-
-- core metrics semantics require more application-layer work;
-- PromQL compatibility is not the database's native center;
-- the observability story often depends on platform wrappers such as ClickStack;
-- the user specifically wants systems purpose-built for this new AI-native
-  context use case, not only incumbent analytical strength.
-
-ClickHouse should stay behind a storage abstraction and be benchmarked with
-exact release tracks, not a vague "latest" label. As of 2026-05-25, the current
-checked baselines are `v26.5.1.882-stable` for the feature-stable track and
-`v26.3.12.3-lts` for conservative operators. ClickHouse becomes the default only
-if GreptimeDB fails the Parallax-shaped benchmark on freshness,
-evidence-bundle latency, trace/log performance, operational simplicity, or OSS
-production viability.
-
-Current source anchors:
-
 - [ClickHouse observability docs](https://clickhouse.com/docs/use-cases/observability)
 - [ClickHouse OpenTelemetry integration](https://clickhouse.com/docs/use-cases/observability/integrating-opentelemetry)
 - [ClickHouse object storage docs](https://clickhouse.com/docs/operations/storing-data)
 - [ClickHouse v26.5.1.882-stable release](https://github.com/ClickHouse/ClickHouse/releases/tag/v26.5.1.882-stable)
 - [ClickHouse v26.3.12.3-lts release](https://github.com/ClickHouse/ClickHouse/releases/tag/v26.3.12.3-lts)
 - [ClickHouse production version guidance](https://clickhouse.com/docs/faq/operations/production#how-to-choose-between-clickhouse-releases)
+- [Storage benchmark artifact interpretation](storage-benchmark-artifact-interpretation.md)
+- [Platform fit and alternatives](greptimedb-vs-clickhouse/platform-fit-and-alternatives.md)
+- [Storage architecture, cost, and tiering](greptimedb-vs-clickhouse/storage-cost-and-tiering.md)
 
 ## Component Diagram
 
@@ -327,7 +313,7 @@ Rust app / service / CLI / coding agent
        - evidence graph builder
        - CLI / HTTP context API
        - optional MCP adapter after access-surface gate
-  -> GreptimeDB standalone
+  -> columnar storage adapter (ClickHouse lean / GreptimeDB branch)
   -> Turso prototype metadata
 ```
 
@@ -344,7 +330,7 @@ Rust app / service / CLI / coding agent
        - group
        - correlate
        - build evidence graph
-  -> GreptimeDB standalone + object storage
+  -> columnar storage adapter + object storage profile
   -> Turso prototype metadata
   -> parallax-api
   -> optional MCP adapter
@@ -858,8 +844,9 @@ agent's fix proposal materially better than reading the stacktrace alone.
 Parallax is technically plausible if it stays disciplined:
 
 - start as a small Rust/Sentry/OTLP error-context system;
-- use GreptimeDB as the default v0.1 observability store, with ClickHouse as the
-  latest-version benchmark fallback;
+- keep the columnar observability store behind an adapter; the current
+  proxy-lens lean is ClickHouse by default, with GreptimeDB preserved for the
+  metrics-cardinality, object-storage-cost, and auto-rebalance bet;
 - use no broker in the tiny profile and Apache Iggy in the durable profile;
 - build deterministic grouping and evidence graphs before AI claims;
 - expose safe CLI/API context before autonomous action, then add MCP after the

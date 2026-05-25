@@ -17,10 +17,11 @@ CLI invocation traces, and tested coding-agent session records, then serves
 schema-valid, redacted evidence bundles. Do not read this thesis as a claim for
 a generic AI RCA chatbot, a full dashboard suite, or autonomous production
 mutation. The
-current storage posture is also narrower than early drafts: GreptimeDB is the
-v0.1 prototype default, but ClickHouse remains the exact-version benchmark
-fallback and storage claims stay unproven until freshness, bundle-latency,
-object-cost, and operational gates pass.
+current storage posture is also narrower than early drafts: the observability
+store stays behind a ClickHouse/GreptimeDB adapter, the current proxy-lens lean
+is ClickHouse, GreptimeDB remains the cost/cardinality/auto-rebalance branch,
+and storage claims stay unproven until freshness, bundle-latency, object-cost,
+and operational gates pass.
 
 Maintained follow-ups:
 
@@ -218,10 +219,10 @@ GreptimeDB reached `v1.0.2` as the latest stable release checked on
 2026-05-25. Its GA status reduces unreleased-database risk, but its trace
 read/write docs still mark trace support as experimental, and vendor-published
 benchmarks do not prove Parallax's evidence-bundle workload. The current
-research position is: GreptimeDB is the prototype default because the
-architecture fits metrics/logs/traces, PromQL, SQL, OTLP, and object-storage
-retention, while ClickHouse remains the mature fallback until the benchmark
-gates settle speed, cost, and operations.
+research position is: ClickHouse is the pragmatic proxy-lens lean for retrieval
+speed and build-on-top ecosystem, while GreptimeDB stays alive for PromQL,
+object-storage economics, high-cardinality metrics, and auto-rebalance until
+the benchmark gates settle speed, cost, and operations.
 
 Sources: [GreptimeDB v1.0.2 release](https://github.com/GreptimeTeam/greptimedb/releases/tag/v1.0.2),
 [GreptimeDB trace read/write docs](https://docs.greptime.com/user-guide/traces/read-write/),

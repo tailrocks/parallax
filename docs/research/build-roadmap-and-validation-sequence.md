@@ -74,7 +74,8 @@ Build only enough to generate the bundle automatically and repeatably:
 - Direct-SDK and Collector OTLP claim levels controlled by the
   [OTLP conformance ledger](otlp-conformance-ledger.md).
 - Same-trace correlation → one real `issue context` bundle.
-- GreptimeDB standalone + Turso metadata, local WAL, single binary.
+- Columnar storage adapter with ClickHouse and GreptimeDB profiles, Turso
+  metadata, local WAL, single binary.
 - CLI (`parallax issue context …`) + read-only context API.
 - **Gate:** the auto-generated bundle reproduces the Phase-0 hand-bundle quality
   (re-run A1 on real pipeline output); tiny-tier setup is meaningfully simpler
