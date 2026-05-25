@@ -6060,6 +6060,52 @@ WHERE name LIKE '%MaterializedView%'; SELECT value FROM system.settings WHERE
 name='allow_experimental_refreshable_materialized_view'"` → `MaterializedView` / `1`. Source via
 `gh api ".../src/flow/src/lib.rs?ref=v1.0.2"` etc. (Use `docker exec` — host port-forward was down.)
 
+### Run 150 — 2026-05-25 — SOURCE+LIVE (gentle): metric engine = a multiplexer over Mito2 — two logical tables provably share one physical region (adopt-native-metrics backbone)
+
+**Context.** Host→container HTTP still **down** (`curl localhost:4000/health`→000, GT-internal
+`docker exec … /health`→200) — env port-forward fault persists across passes; container itself fine.
+Worked via `docker exec`. Also corrects Run 148/149's "stables empty": the GT stable container in fact
+holds 11 tables from prior runs (`logs, spans, logs_b1, metrics_real, …`) — the "empty" reads were the
+broken host path, not empty schemas. No benchmark; gentle source + live-DDL-verify pass.
+
+**Pass target.** Source-ground + live-verify the **metric-engine architecture** — the structural
+backbone of the "adopt native metrics" decision (brief's native-structure mandate). Source =
+`src/metric-engine` @v1.0.2; live = create physical+logical tables and inspect the multiplexing.
+
+**Source (`src/metric-engine/src/{lib,data_region,metadata_region}.rs`):**
+- `lib.rs`: metric engine = *"a multiplexer over the Mito engine … a synthetic wide physical table
+  (region) that offers storage for multiple logical tables … handle a tremendous number of small
+  tables like Prometheus metrics."* Wraps Mito2 (no re-implemented file R/W), adds storage + metadata
+  multiplexing.
+- `data_region.rs` (`DataRegion` wraps `MitoEngine`): the wide physical table; new labels/metrics →
+  automatic `AddColumn` alter on the physical region; **direct physical alter forbidden**
+  (`ForbiddenPhysicalAlterSnafu`) — schema is engine-managed.
+- `metadata_region.rs` (`MetadataRegion`): a second Mito region holding the logical→physical mapping
+  as a kv table (`__region_`/`__column_` keys), **moka-cached**.
+
+**Live (exec): multiplexing confirmed empirically.** `CREATE TABLE phy … engine=metric
+with('physical_metric_table'='')`; `la(host)` + `lb(host,dc)` both `on_physical_table='phy'`; one row
+each. Physical `phy` columns became **`[__table_id, __tsid, dc, host, ts, val]`** — the **union** of
+both label sets (`dc` **auto-added** when `lb` created) + reserved `__table_id` (logical-table
+discriminator) + `__tsid` (label-set hash → PartitionTree dict, Run 147). `SELECT … FROM la` returned
+only `[h1,1.0]`; `lb` only `[h2,us,2.0]` — **logical isolation over shared physical storage.** Dropped
+phy/la/lb after (container left as found).
+
+**Verdict — "10k metrics ≠ 10k tables" is live-proven, not just source.** Two logical tables share one
+physical region with per-logical row isolation via `__table_id`; the physical schema auto-accretes
+label columns. This is *why* GT metrics are adopt-native: a Prometheus scrape's thousands of metric
+names collapse to rows in one wide table (no small-table explosion), and `__tsid` + PartitionTree
+dict-encoding make series-cardinality cheap. ClickHouse has no engine-level analog — its metrics schema
+is hand-modelled per `LowCardinality`/`ORDER BY` tradeoffs. Wrote up in `metric-cardinality.md` (new
+"Metric-engine architecture" §). Reinforces the metric-engine ADOPT recommendation.
+
+**Reproduce.** `docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql --data-urlencode
+"sql=CREATE TABLE phy (ts timestamp time index, val double) engine=metric
+with('physical_metric_table'='')"`, then logical tables `on_physical_table='phy'`, then `SELECT
+column_name FROM information_schema.columns WHERE table_name='phy'` → union+`__table_id`+`__tsid`.
+Source: `gh api ".../src/metric-engine/src/lib.rs?ref=v1.0.2"`. (Use `docker exec`; host port-forward
+down.)
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

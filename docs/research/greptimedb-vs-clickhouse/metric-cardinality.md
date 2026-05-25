@@ -6,7 +6,11 @@ Status: pass 48 + **Run 147 (SOURCE: the cardinality-insensitive INGEST is struc
 PartitionTree memtable dict-encodes label sets in a primary-key dictionary sized to ~1/8 OS memory
 (`partition_tree.rs` `DICTIONARY_SIZE_FACTOR=8`, `fork_dictionary_bytes` 512 MB), with NO per-series
 cap; vs ClickHouse `LowCardinality`'s 8192-cap-then-degrade. So GT ~flat 12→1M-series ingest (Runs
-84/101) is a property of the dict-encoded PK, not a tuning accident)**, extended passes 112–114 (Runs 76–79 — high-card storage curve: CH
+84/101) is a property of the dict-encoded PK, not a tuning accident)** + **Run 150 (SOURCE+LIVE: the
+metric engine is a *multiplexer over Mito2* — `DataRegion` (wide physical table, auto `AddColumn`) +
+`MetadataRegion` (moka-cached logical→physical map); live-verified two logical tables sharing one
+physical region with `__table_id` isolation + auto-added `dc` column — the adopt-native-metrics
+backbone, "10k metrics ≠ 10k tables")**, extended passes 112–114 (Runs 76–79 — high-card storage curve: CH
 `LowCardinality` wins low–mid cardinality (1k/200k) but **GreptimeDB wins at ~1M unique
 series — a crossover**; `LowCardinality` cliff is *graceful*; metric-engine `__tsid` is
 overhead not a saving. B13 storage curve complete — storage winner is cardinality-dependent;
@@ -46,6 +50,39 @@ re-confirmed latest stable 2026-05-25.
 
 No per-series dictionary cap; the dict is per-memtable and label strings are shared.
 High cardinality is the metric engine's **design center**, not an edge case.
+
+### Metric-engine architecture — a multiplexer over Mito2 (source + live, Run 150)
+
+The metric engine does **not** re-implement storage; it is *"something like a multiplexer over
+the Mito engine … by leveraging a synthetic wide physical table (region) that offers storage for
+multiple logical tables … able to handle a tremendous number of small tables in scenarios like
+Prometheus metrics"* (`src/metric-engine/src/lib.rs`). Each logical table (one metric name) is a
+**view**; the data lives in a shared physical Mito region. Two physical regions back it:
+
+- **`DataRegion`** (`data_region.rs`) — wraps `MitoEngine`, holds the actual rows in the wide
+  physical table. New metrics/labels trigger an **automatic `AddColumn` alter on the physical
+  region**; direct user alter of the physical table is rejected (`ForbiddenPhysicalAlterSnafu`) —
+  the schema is engine-managed, columns accrete as logical tables appear.
+- **`MetadataRegion`** (`metadata_region.rs`) — a second Mito region storing the **logical→physical
+  mapping** as a key/value table (`__region_`/`__column_`-prefixed keys), **moka-cached** in memory
+  for fast lookup. This is what lets one physical table serve many isolated logical tables.
+
+**Live-verified (Run 150, via `docker exec` — host port-forward was down):** created one physical
+metric table `phy` + two logical tables `la(host)` and `lb(host,dc)` `on_physical_table='phy'`,
+inserted one row each. The physical table's columns became
+**`[__table_id, __tsid, dc, host, ts, val]`** — the **union** of both logical label sets (`dc` was
+**auto-added** when `lb` was created) plus the reserved `__table_id` (which logical table a row
+belongs to) and `__tsid` (the label-set hash feeding the PartitionTree dict). Querying `la` returned
+only its row, `lb` only its — **logical isolation over shared physical storage, confirmed
+empirically.** So "10k metrics ≠ 10k tables" is not just a source claim: two logical tables
+provably share one physical region with per-logical-table row isolation via `__table_id`.
+
+**Why it's the adopt-native-metrics backbone:** a Prometheus scrape emits thousands of distinct
+metric names (each a logical table). Naively that is thousands of tables → metadata/file explosion.
+The multiplexer collapses them onto one wide physical table (rows, not tables), and `__tsid` +
+PartitionTree dict-encoding (Run 147) make high series-cardinality cheap. This is the structural
+reason GreptimeDB's metrics path is adopt-native (vs ClickHouse, where the metrics schema is
+hand-modelled per the `LowCardinality`/`ORDER BY` tradeoffs below).
 
 ## ClickHouse — high cardinality needs schema care (the `LowCardinality` cliff)
 
