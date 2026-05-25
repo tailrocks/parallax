@@ -114,6 +114,7 @@ storage*, accepting a younger DataFusion scan engine.
 | Area | Mechanism | Confidence |
 | --- | --- | --- |
 | **Log/trace selective scan + full-text search** | 8,192 granule + PREWHERE + inverted text index + LowCardinality + C++ SIMD vectorized pipeline. | arch+smoke (Runs 1–2) |
+| **Log-explorer time-DESC tail** | `ORDER BY (service, ts)` sort-key locality serves "recent logs for a service ordered by time" as a direct tail-of-run read. **Run 107: service-tail CH ~4 ms / GT ~28 ms (~7×); errors-in-window CH ~10 ms / GT ~60 ms (~6×)** — a concrete instance of the #5 alternate-ordering gap (GT's PK=sort=series can't give time-within-service locality). **Both ≪ 300 ms (GT interactive)**; blueprint fix: key GT logs by `service` (not `service,level`). | live (Run 107) |
 | **Generic wide scan / aggregate throughput** | Decade-tuned vectorized engine — the OLAP-scan bar. Mechanism (pass 42): 65k-row blocks (8× DataFusion's batch) + LLVM-JIT expressions/aggregation + bespoke SIMD kernels + specialized hash aggregation vs GreptimeDB's DataFusion-over-Arrow; explains Runs 11–12. | arch+live (`query-execution-engine.md`) |
 | **Vertical single-node ceiling** | Saturates many cores + NVMe on one big box. | arch |
 | **Per-column codec tuning** | Hand-picked `DoubleDelta`/`Gorilla`/etc. (counter 7.3×, gauge 78×, Run 4). | smoke (Run 4) |

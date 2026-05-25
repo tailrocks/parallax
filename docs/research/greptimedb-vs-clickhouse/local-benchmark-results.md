@@ -4431,6 +4431,46 @@ unindexed numeric column — a naive full sort of 1M would be ~100 ms+). Method:
 **Reproduce.** `SELECT trace_id, duration_ms FROM spans ORDER BY duration_ms DESC LIMIT 10` on each
 (GT `spans_idx`), warm ×6. Expect GT ~20 ms (TopK pushdown, not full sort) / CH ~7 ms.
 
+### Run 107 — 2026-05-25 — Log-explorer hot queries (service-tail + errors-in-window): CH ~6–7× via sort-key locality, but both ≪ 300 ms (GT interactive); a concrete instance of the #5 alternate-ordering gap
+
+**Pass target.** Model the **log-explorer / live-tail** hot path — the most-run operational log query
+(every incident opens with "tail the logs for service X" and "show errors in the last window").
+Production-realistic, single-user, often-run.
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned live — latest stable, no
+bump). `logs_b1` = 5M rows / 12 services / INFO 3.5M·WARN 899k·ERROR 600k / ~9 h span, parity. CH
+`ORDER BY (service, ts)`; GT `PRIMARY KEY (service, level)` + `TIME INDEX ts`. Method: CH `--time`,
+GT `execution_time_ms`, warm.
+
+| Query | ClickHouse | GreptimeDB | Ratio |
+| --- | --- | --- | --- |
+| **Q1 service tail** `WHERE service='svc-8' ORDER BY ts DESC LIMIT 100` | `6 3 4 3 4 4 4 4` → **~4 ms** | `104 24 22 23 26 33 36 33` → **~28 ms** | **~7×** |
+| **Q2 errors-in-window** `WHERE level='ERROR' AND ts >= <last 30 min> ORDER BY ts DESC LIMIT 100` | `10 10 9 9 10 8 10 11` → **~10 ms** | `84 62 61 56 63 57 67 62` → **~60 ms** | **~6×** |
+
+**Verdict — a real ~6–7× ClickHouse win on a common operational query, but both interactive (≪ 300 ms).**
+
+- **ClickHouse's `ORDER BY (service, ts)` sort-key locality is structurally ideal for the time-DESC
+  tail:** "recent logs for a service ordered by time" reads the tail of a sorted run directly (~4 ms,
+  no sort). GreptimeDB pays a reverse-ordered scan within the service partition (~28 ms). Q2 adds a
+  `level` filter + ts window: CH prunes ts granules + filters (~10 ms); GT ~60 ms.
+- **This is a concrete manifestation of the #5 alternate-ordering gap** (parity-roadmap): CH decouples
+  physical sort order from identity, so `(service, ts)` clustering serves time-DESC-per-service for
+  free; GreptimeDB's `PK = sort = series` cannot give the same time-within-service locality. One of
+  the larger *warm* ratios measured (vs metric-agg ~2–3×, ad-hoc scan ~2–5×, anchored ~3×) precisely
+  because the query is pure sort-key-locality territory.
+- **But both are ≪ the 300 ms gate** — GT ~28 ms / ~60 ms is interactive; the log explorer opens
+  instantly on either. So this is a fair "CH genuinely better" point, not a Parallax blocker.
+- **Adopt-native (logs) refinement:** GreptimeDB's benchmark table uses `PK (service, level)` — the
+  `level` in the key does **not** help the time-DESC tail and adds a sort dimension. For a log-tail
+  workload, **PK on `service` (drop `level` from the key; keep it a plain/indexed column)** is the
+  better blueprint, and for a heavy time-ordered-tail pattern a Flow-maintained `ts`-leading copy
+  (#5a) or accepting ~28 ms. Carry into the logs blueprint: key by the anchor you tail on, not by
+  `level`.
+
+**Reproduce.** On `logs_b1` (5M): Q1 `SELECT ts,level,message,trace_id WHERE service='svc-8' ORDER BY
+ts DESC LIMIT 100`; Q2 `… WHERE level='ERROR' AND ts >= '<max-30min>' ORDER BY ts DESC LIMIT 100`.
+Warm ×8; CH `--time`, GT `execution_time_ms`. Expect CH ~4/~10 ms, GT ~28/~60 ms.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
