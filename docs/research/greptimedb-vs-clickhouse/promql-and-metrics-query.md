@@ -105,12 +105,37 @@ ClickHouse **has gained** PromQL, but it is experimental and off by default:
   GreptimeDB's fastest metric path is SQL, and PromQL is the *expressiveness* tool
   (range vectors, `rate`/`irate`, lookback), "fast enough" but never the speed leader.
 
+## Proxy-lens nuance — native PromQL is LESS neutralized than native OTLP (Run 164)
+
+Re-verified live (exec, no drift): GreptimeDB `/v1/prometheus/api/v1/query` still answers GA + zero-setup
+(returns the Prometheus vector envelope); ClickHouse's `TimeSeries` engine is still **creatable only with
+`allow_experimental_time_series_table=1`** ("created ok" with the flag) and its PromQL path runs through
+that engine + `prometheusQuery([db,] ts_table, promql[, eval])` / `timeSeriesData/Metrics/Tags`
+(catalog-listed; a bare `prometheusQuery('up')` errors `UNKNOWN_FUNCTION` — it's an arg/overload
+mismatch needing a `TimeSeries` table, not a missing function). So pass-44/Run-23 holds.
+
+**The proxy reframe (`platform-fit-and-alternatives.md`) does NOT neutralize this the way it neutralizes
+OTLP.** Native *ingest* protocols (OTLP/Jaeger) stopped counting because Parallax-the-proxy speaks them
+and **translation is cheap** (re-shape bytes into the backend's insert). But **PromQL is a query
+engine**, and translating a Parallax-exposed PromQL/Grafana API into the backend's SQL is **expensive**
+(PromQL's instant/range-vector semantics, `rate`/`increase` extrapolation, staleness handling, lookback
+deltas — a real engine to reimplement). So a backend that **executes PromQL natively saves Parallax
+from building a PromQL engine**, whereas a backend that only speaks SQL forces Parallax to either embed a
+PromQL engine over it or drop PromQL/Grafana compatibility. Therefore **GreptimeDB's GA-native PromQL is
+a *more durable* surviving edge than its (neutralized) native OTLP** — it's worth real weight *if*
+Parallax wants first-class PromQL/Grafana compatibility. (ClickHouse's experimental TimeSeries+
+`prometheusQuery` narrows it, and "experimental counts as stable / judge trajectory" says the gap is
+closing — but today GreptimeDB is the GA-native PromQL option, and the proxy can't trivially erase the
+difference.)
+
 ## Axis consequence
 
 - **Capability (axis #1 enabler):** metrics/PromQL is no longer binary. GreptimeDB
   leads on GA + ergonomics; ClickHouse has closed the *can-it-at-all* gap
   experimentally. Net: still a GreptimeDB advantage for Parallax shipping today, but
-  **downgraded from "decisive binary" to "maturity/ergonomics lead."**
+  **downgraded from "decisive binary" to "maturity/ergonomics lead"** — though under the
+  proxy lens (above) it is **less neutralized than native OTLP**, so it keeps more weight
+  than the other ingest-nativeness edges.
 - **Replaceability (Q3):** "ClickHouse can't do PromQL" is no longer a hard blocker; it
   becomes "ClickHouse's PromQL is experimental, so relying on it for a metrics product
   today is a maturity risk + setup cost," which is softer.

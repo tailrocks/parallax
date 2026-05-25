@@ -6541,6 +6541,37 @@ ORDER BY k`; insert 2 versions of one `k`; `SELECT count()` (=2) vs `SELECT coun
 `CREATE TABLE dd("k" STRING,"v" INT,"ts" TIMESTAMP(3) TIME INDEX, PRIMARY KEY("k"))`; insert two rows
 with **same `(k,ts)`** different `v` → `SELECT count()` =1 (read-time dedup). (exec; host port down.)
 
+### Run 164 — 2026-05-25 — LIVE re-verify (exec): PromQL nativeness (no drift) + the proxy-lens nuance (PromQL less neutralized than OTLP)
+
+**Context.** Rotated to PromQL nativeness — a GreptimeDB metrics edge (verdict #1 GT lead), re-examined
+under the proxy lens. Re-pin unchanged.
+
+**Re-verified (no drift vs pass 44/Run 23):**
+- **GreptimeDB:** `/v1/prometheus/api/v1/query?query=…` returns the Prometheus vector envelope
+  (`{"status":"success","data":{"resultType":"vector",...}}`) — GA-native, zero-setup. Holds.
+- **ClickHouse:** `TimeSeries` engine **creatable only with `allow_experimental_time_series_table=1`**
+  ("created ok" with flag; off by default). `system.functions` lists `prometheusQuery`/
+  `prometheusQueryRange` + `timeSeriesData/Metrics/Tags/Selector`. A bare `prometheusQuery('up')` →
+  `UNKNOWN_FUNCTION` — **arg/overload mismatch** (the real signature is `([db,] ts_table, promql[,
+  eval])`, needs a TimeSeries table), NOT a missing function (corrected my own probe). So CH PromQL is
+  still **experimental + engine-gated**, surface unchanged from Run 23.
+
+**New contribution — proxy-lens nuance.** Native *ingest* protocols (OTLP/Jaeger) are neutralized by
+the Parallax proxy because translation is **cheap** (re-shape bytes to the backend insert). **PromQL is
+a query engine** — translating a Parallax-exposed PromQL/Grafana API to backend SQL is **expensive**
+(instant/range vectors, `rate`/`increase` extrapolation, staleness, lookback). So a GA-native-PromQL
+backend **saves Parallax from building a PromQL engine**; a SQL-only backend forces embed-a-PromQL-engine
+or drop Grafana compat. → **GreptimeDB's GA-native PromQL is a MORE durable surviving edge than its
+(neutralized) native OTLP** — keeps real weight if Parallax wants first-class PromQL/Grafana. CH's
+experimental TimeSeries+`prometheusQuery` narrows it (trajectory), but today GT is the GA option and the
+proxy can't trivially erase it. Updated `promql-and-metrics-query.md` (new proxy-lens section).
+
+**Reproduce.** GT: `docker exec parallax-bench-greptimedb-1 curl -s
+'localhost:4000/v1/prometheus/api/v1/query?query=count(metrics_real)'` → success vector envelope. CH:
+`clickhouse-client -q "CREATE TABLE t ENGINE=TimeSeries SETTINGS allow_experimental_time_series_table=1"`
+→ ok; `SELECT prometheusQuery('up')` → UNKNOWN_FUNCTION (needs `(ts_table, promql)` args). (exec; host
+port down.)
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
