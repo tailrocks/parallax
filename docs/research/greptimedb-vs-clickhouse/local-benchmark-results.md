@@ -3189,6 +3189,37 @@ measures bytes only. Method gotcha logged: GreptimeDB COPY-CSV matches columns *
 table, `INSERT INTO hc_log (ts,val,series) SELECT …`, `ADMIN flush_table('hc_phy')`, read
 `region_statistics.sst_size` for `hc_phy` (12.63 MiB) vs CH `system.parts` (9.64 MiB LC).
 
+### Run 78 — 2026-05-25 — Full-text selective latency re-verified (the most-corrected headline holds)
+
+**Pass target.** Drift-watch the single most-corrected claim: selective full-text search
+is **~2× ClickHouse, not the originally-reported ~18×** (Runs 48–49) — the artifact was
+`matches()` (tantivy query-syntax fn) on a `backend='bloom'` index full-scanning. Re-verify
+both the correct pairing and the artifact reproduce.
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned —
+latest, no bump). `logs_b1` (5M, full-text on `message`), unique term `0835d162` (1 row).
+
+**Measured (warm, min of 7):**
+
+| Query | latency | note |
+| --- | --- | --- |
+| ClickHouse `hasToken(message,'…')` (text index) | **~3 ms** | posting-list prune + vectorized confirm |
+| GreptimeDB `matches_term(message,'…')` (bloom backend) | **~8 ms** | bloom prune + scan confirm → **~2.7× CH** |
+| GreptimeDB `matches(message,'…')` (bloom, **wrong** pairing) | **~157 ms** | full-scans 5M (no index push) — the **18× artifact** |
+
+**Verdict.** **Reproduces exactly, no drift.** Correct pairing: CH ~3 ms vs GreptimeDB
+~8 ms = **~2.7×** (the corrected ~2–3× band, both sub-perceptible). The **wrong** pairing
+(`matches()` on a bloom index) still full-scans ~157 ms — the exact artifact that produced
+the false ~18× when compared against the old GreptimeDB number. So the headline correction
+(selective full-text is interactive-fast on both, ~2–3×; the residual real gap is broad-term
+analytics, Run 48) **holds at current versions.** Status: **confirmed.** The verdict's
+log-search cell stands.
+
+Caveat: warm cache-resident smoke (5M); broad-term (many-row) full-text scan latency at
+volume remains the residual gap (~12×, Run 48 / `query-execution-engine.md`).
+
+**Reproduce.** `docker exec …clickhouse… --time -q "SELECT count() FROM logs_b1 WHERE hasToken(message,'0835d162') FORMAT Null"` (~3 ms) vs GreptimeDB `…matches_term(message,'0835d162')` (~8 ms) and `…matches(message,'0835d162')` (~157 ms, full-scan).
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
