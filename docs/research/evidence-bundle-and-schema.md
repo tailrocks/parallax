@@ -29,6 +29,15 @@ Version freshness rule: this is a `v0` schema draft as of the research date. It
 is intended to be implemented, benchmarked, and revised — not frozen. Every field
 here is a proposal to validate against real Sentry/OTLP/CI/agent data.
 
+Interoperability sources checked for this pass: JSON Schema Draft 2020-12 is the
+schema dialect to target; MCP `2025-11-25` defaults tool input/output schemas to
+JSON Schema 2020-12 when `$schema` is omitted and separates `structuredContent`
+from text content; RFC 8785 defines a JSON Canonicalization Scheme suitable for
+repeatable JSON hashes; OpenTelemetry's versioning rules are a useful model for
+additive compatibility and explicit stability labels. Until Parallax implements
+a concrete canonicalization and validation command, projection-equivalence and
+schema-adoption claims remain unproven.
+
 ## Why The Bundle Is The Unit, Not The Query
 
 Incumbents (Datadog, Sentry, Grafana, New Relic) keep investigations inside their
@@ -88,7 +97,13 @@ The top-level object:
 ```json
 {
   "schema_version": "0.1.0",
+  "schema_ref": {
+    "uri": "https://schemas.parallax.dev/evidence-bundle/0.1.0/schema.json",
+    "hash": "sha256:...",
+    "canonicalization": "jcs-rfc8785"
+  },
   "bundle_id": "bndl_01J9...",
+  "canonical_hash": "sha256:...",
   "generated_at": "2026-05-25T14:03:11.482Z",
   "generator": { "name": "parallax", "version": "0.1.0", "grouping_algo": "rust-stack-v1" },
   "project": { "id": "proj_checkout", "environment": "production" },
@@ -99,6 +114,11 @@ The top-level object:
   "hypotheses": [ /* ranked, evidence-cited */ ],
   "missing_evidence": [ /* explicit gaps */ ],
   "redaction_report": { /* what was removed and why */ },
+  "projection_manifest": {
+    "json_hash": "sha256:...",
+    "markdown_hash": "sha256:...",
+    "mcp_output_schema": "https://schemas.parallax.dev/evidence-bundle/0.1.0/schema.json"
+  },
   "query_manifest": [ /* reproducible queries that built this bundle */ ],
   "access": { "raw_access_policy": "scoped-read", "expires_at": "2026-05-25T15:03:11Z" }
 }
@@ -106,8 +126,11 @@ The top-level object:
 
 Required top-level fields: `schema_version`, `bundle_id`, `generated_at`,
 `generator`, `project`, `anchor`, `nodes`, `edges`, `missing_evidence`,
-`redaction_report`. `hypotheses`, `window`, `query_manifest`, and `access` are
-recommended but may be empty/absent for the smallest bundles.
+`redaction_report`. For any bundle returned to an agent, CLI/API caller, MCP
+client, eval, or corpus/adoption fixture, `schema_ref`, `canonical_hash`,
+`projection_manifest`, and `access` are also required. `hypotheses`, `window`,
+and `query_manifest` are recommended but may be empty/absent for the smallest
+internal debugging bundles.
 
 ## Node Type Catalog
 
@@ -366,6 +389,34 @@ cited hypotheses must live in the canonical JSON, not only in optional `_meta`,
 tool annotations, or descriptions, because MCP treats descriptions/annotations
 as untrusted unless the server is trusted.
 
+## Canonical Hash And Projection Contract
+
+Projection equivalence needs a byte-level contract, not a reviewer impression.
+Before any CLI/API/MCP equivalence, A3 schema-adoption, or corpus event can
+count, Parallax must define and implement:
+
+- a JSON Schema Draft 2020-12 artifact with a stable `$id`, `schema_version`,
+  changelog, and `schema_ref.hash`;
+- a canonical JSON procedure for `canonical_hash` and
+  `projection_manifest.json_hash`; RFC 8785/JCS is the current candidate because
+  it defines deterministic JSON serialization for repeatable hashing;
+- a rule that Markdown, text, ZIP manifests, and MCP content are projections of
+  the canonical JSON and include the `bundle_id`, `schema_version`, and
+  `canonical_hash` they derive from;
+- an MCP rule that bundle-returning tools declare an `outputSchema` matching
+  `schema_ref.uri` and return the complete canonical object in
+  `structuredContent`; `_meta` may duplicate hashes or carry transport hints but
+  cannot be the only location for `redaction_report`, `source_field_policy`,
+  `missing_evidence`, refs, or cited hypotheses;
+- a raw-ref rule that MCP resource links, CLI refs, and HTTP refs identify
+  evidence without dereferencing it unless the caller has the matching scoped
+  permission and an audit row is emitted.
+
+If a client receives only Markdown/text, if the `structuredContent` hash differs
+from the CLI/API canonical hash, or if a safety field exists only in `_meta` or a
+tool description, the result is a projection/demo, not a schema-consumer or
+agent-native safety event.
+
 ## Versioning And Compatibility
 
 The schema is the moat only if external tools can depend on it. Rules:
@@ -412,6 +463,9 @@ it survives contact with real data:
    source-field policy, projection status, and raw-ref-denial status? If not,
    the bundle can be useful for debugging but cannot count toward agent-tracing,
    fix-outcome, or schema-adoption claims.
+8. Does the schema validator reject duplicate-property, non-I-JSON,
+   missing-required-field, missing-safety-field, and projection-hash-mismatch fixtures
+   before any agent-visible output is accepted?
 
 ## Relationship To Other Research
 

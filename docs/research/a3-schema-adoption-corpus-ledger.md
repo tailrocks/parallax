@@ -39,6 +39,10 @@ Outside sources checked for this pass:
   core keywords, identifiers, references, annotations, and output structure
   ([JSON Schema Draft 2020-12](https://json-schema.org/draft/2020-12),
   [JSON Schema Core](https://json-schema.org/draft/2020-12/json-schema-core)).
+- RFC 8785 JSON Canonicalization Scheme is the current candidate for canonical
+  bundle hashing because it specifies deterministic JSON serialization and
+  UTF-8 output for repeatable hashing
+  ([RFC 8785](https://www.rfc-editor.org/rfc/rfc8785.html)).
 - MCP's current specification is version `2025-11-25` and says MCP uses JSON
   Schema for validation, defaults to JSON Schema 2020-12 when `$schema` is
   omitted, and exposes tool input/output schemas plus structured tool results.
@@ -143,8 +147,14 @@ actor_class: operator | design_partner | unrelated_tool | oss_maintainer | custo
 actor_relationship: operator_controlled | warm_design_partner | external_non_operator | unrelated_public | private_non_operator
 transport_surface: file | cli | http | mcp | other
 canonical_json_present: true
+schema_uri: https://schemas.parallax.dev/evidence-bundle/0.1.0/schema.json
+schema_hash: sha256:...
+canonicalization_method: jcs-rfc8785 | other
+canonical_bundle_hash: sha256:...
 projection_equivalence_status: pass | fail | not_checked
 safety_fields_preserved: true
+mcp_output_schema_id: https://schemas.parallax.dev/evidence-bundle/0.1.0/schema.json | null
+structured_content_hash: sha256:... | null
 public_evidence:
   url: https://example.invalid/link-or-null
   hash: sha256:...
@@ -256,9 +266,13 @@ Count an event only if all applicable checks pass:
 - The actor is not controlled by the operator, unless the event is explicitly
   marked as operator-controlled and excluded from adoption totals.
 - The bundle validates against the canonical JSON Schema version claimed.
+- The event records the schema URI, schema hash, canonicalization method, and
+  canonical bundle hash. File, CLI, HTTP, and MCP variants that claim to be the
+  same bundle must share the same canonical hash.
 - For MCP integrations, `structuredContent` validates against the declared
   `outputSchema`; unstructured text is treated only as a deterministic
-  projection.
+  projection. Safety fields hidden only in `_meta`, tool descriptions, or
+  annotations do not count as preserved.
 - `redaction_report`, required `source_field_policy` status, `missing_evidence`,
   evidence refs, and cited hypotheses remain present through projection or
   round-trip.
