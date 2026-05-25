@@ -78,7 +78,7 @@ These are produced and grown by the loop; this index is updated as they land.
 | `clickhouse-internals.md` | ClickHouse architecture and code-path teardown. | drafted (pass 2: topology + MergeTree part/granule/mark, skip indexes, codecs, merge variants; deeper KeyCondition/merge-selector/text-index/S3-cache dives pending) |
 | `write-path-and-ingestion.md` | Ingest → durable → queryable, both systems, with the freshness consequence. | pending |
 | `read-path-indexing-and-execution.md` | Query planning, indexing, execution, scan-vs-skip, joins. | drafted (pass 3: pushdown, scan/skip order, PREWHERE vs row-group pruning, join strategy; pass 5: join verdict corrected by Run 2 EXPLAIN — both engines prune the anchor before joining, so join algo is not a differentiator for anchored evidence-bundle queries) |
-| `compression-and-cost.md` | Layout, codecs, compression by signal, retention-cost consequence. | pending |
+| `compression-and-cost.md` | Layout, codecs, compression by signal, retention-cost consequence. | drafted (pass 8: measured per-table/per-column sizes — NO blanket winner, per-column-pattern; ClickHouse wins tuned counter/gauge/high-card-string, GreptimeDB wins dict-friendly + noisy-float; cost ~tie; object-store MinIO run + realistic-cardinality redo pending) |
 | `distributed-and-scaling.md` | Single-node ceiling and horizontal-scale design of each. | pending |
 | `greptimedb-implementation.md` | Concrete Parallax-on-GreptimeDB design: full schema, ingest path, exact retrieval queries, object-storage/retention layout. | pending |
 | `clickhouse-implementation.md` | Concrete Parallax-on-ClickHouse design: full schema, ingest path, exact retrieval queries, object-storage/retention layout. | pending |

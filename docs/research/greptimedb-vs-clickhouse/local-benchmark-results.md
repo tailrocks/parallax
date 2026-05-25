@@ -220,6 +220,18 @@ realistic metric shapes** before any cost conclusion.
 | Gorilla codec shrinks float metrics | not exercised (incompressible synthetic data) | *inconclusive* — redo with realistic shapes |
 | Cross-engine metric-aggregation correctness | 864 groups + 106.2274 both | **confirmed** |
 
+### Run 4 — 2026-05-25 — per-signal compression (cost axis)
+
+Measured retained size for all loaded tables (flushed / `OPTIMIZE FINAL`) plus a
+realistic counter+gauge metric table. **Full analysis in
+[`compression-and-cost.md`](compression-and-cost.md).** Headline: **no blanket
+compression winner** — ClickHouse wins tuned counters (`DoubleDelta` 7.3×), flat
+gauges (`Gorilla` 78×) and high-cardinality random strings (`spans` 28.9 vs 38
+MiB); GreptimeDB wins dictionary-friendly low-card columns (`logs` 5.5 vs 10.24
+MiB ⚠ synthetic) and high-entropy floats where Gorilla backfires
+(`http_req_latency` 5.1 vs 6.31 MiB). Cost is closer to a tie than pass 2 implied;
+object-store $ (MinIO) still unmeasured.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
