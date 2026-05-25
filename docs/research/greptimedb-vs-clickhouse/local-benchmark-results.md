@@ -232,6 +232,24 @@ MiB ⚠ synthetic) and high-entropy floats where Gorilla backfires
 (`http_req_latency` 5.1 vs 6.31 MiB). Cost is closer to a tie than pass 2 implied;
 object-store $ (MinIO) still unmeasured.
 
+### Run 5 — 2026-05-25 — freshness + ingest throughput (axis #1)
+
+Full analysis in [`write-path-and-ingestion.md`](write-path-and-ingestion.md).
+
+- **Freshness = tie.** A single synchronous insert was **immediately queryable on
+  both** engines (count=1 on the first query after ack); neither needs a
+  flush/merge. Per-call ms (CH 288, GT 124) are client/HTTP overhead, not the
+  mechanism — they do not rank freshness.
+- **ClickHouse 26.x reports `async_insert=1` by default** (busy timeout 50–200 ms):
+  small inserts auto-batch → visible after the buffer window, not instantly.
+- **Bulk ingest:** ClickHouse 1M spans in 0.575 s (~1.74M rows/s, client wall) vs
+  GreptimeDB 0.895 s (~1.12M rows/s, server time). Both >1M rows/s; inconclusive at
+  smoke (different measurement bases, non-concurrent).
+- **Mechanism difference that matters:** ClickHouse writes one part per INSERT →
+  small high-frequency inserts risk "too many parts" → needs batching/async-insert;
+  GreptimeDB's LSM memtable absorbs small writes natively. Favors GreptimeDB for
+  streaming small-batch telemetry.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
