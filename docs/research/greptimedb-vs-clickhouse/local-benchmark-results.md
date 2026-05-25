@@ -4803,6 +4803,39 @@ tables at two series cardinalities.)*
 instance)`, 40k series, 8M rows → ~110 ms agg) vs **many series / ~1 row each** (`PK(span_id)`, 1M
 series, 1M rows → ~1220 ms, Run 114). The gap tracks series count, not rows.
 
+### Run 116 — 2026-05-25 — Freshness / visible-on-write re-verified: TIE, both visible immediately (no flush barrier), 5/5 trials each
+
+**Pass target.** Re-verify the load-bearing **freshness tie** (Run 5): data is queryable immediately
+on write on both engines (no flush/commit/refresh barrier) — so freshness is *not* a differentiator.
+Rotation re-check of a tie (the brief: keep the whole record re-verified, including ties).
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned live — 13 h up, no bump).
+Method: insert a uniquely-marked row via the default sync path, then **immediately** query for it
+(single round trip, no delay); repeat ×5 each.
+
+| Engine | insert→immediate-query visible? |
+| --- | --- |
+| GreptimeDB (memtable, append) | **5/5 visible** |
+| ClickHouse (MergeTree, sync insert) | **5/5 visible** |
+
+**Verdict — TIE, no drift. Both visible-on-write; freshness is not a decision axis.**
+
+- **Both fresh-on-write:** GreptimeDB serves from the LSM **memtable** immediately (also WAL-backed,
+  Run 112: writes queryable in-memory pre-flush); ClickHouse's row is visible on **insert-ack** (the
+  part is written + visible synchronously). Neither needs a flush/commit/refresh before the data is
+  queryable. Confirms the verdict's "freshness = tie (both visible-on-write, not a GreptimeDB win)."
+- **Caveat unchanged (prior runs):** this is the **default sync** path. ClickHouse `async_insert`
+  trades freshness for a visibility window (data invisible until server-side flush, ≤200 ms — Run 33),
+  and durability without `fsync_after_insert` leaves the part unsynced; GreptimeDB's memtable is
+  visible + WAL-durable on write. So on the *default* path both are fresh; if either side enables
+  async batching for ingest throughput, that side gives up immediate visibility.
+- **Decision relevance:** none beyond confirming a tie — freshness does not separate the engines for
+  Parallax. The fit decision rests elsewhere (metrics-native, ingest ergonomics, object-store,
+  scaling), per the verdict.
+
+**Reproduce.** Insert a uniquely-marked row (`now()`, default sync path), immediately `SELECT count()
+WHERE marker='…'` → 1 on both, every trial. Drop scratch after.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
