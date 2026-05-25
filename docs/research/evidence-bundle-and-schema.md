@@ -65,7 +65,10 @@ error to deploy to CLI side effect to coding-agent patch to outcome.
    to the full raw evidence behind Parallax's access policy. It never inlines
    unbounded logs or full production payloads.
 3. **Redaction is mandatory and reported.** Every bundle includes a
-   `redaction_report`. A bundle with no redaction report is invalid.
+   `redaction_report`. A bundle with no redaction report is invalid. For
+   eval/corpus-derived bundles, the report must also include source-field policy
+   status so private grader, runner, and triage fields cannot be laundered into
+   agent-visible context.
 4. **Deterministic before probabilistic.** Nodes, edges, and edge strengths are
    computed by typed logic. The `hypotheses` block is the only place model-ranked
    or inferred content appears, and it must cite deterministic evidence.
@@ -222,6 +225,13 @@ Mandatory. Shape:
 ```json
 {
   "policy_version": "redact-v1",
+  "source_field_policy": {
+    "status": "pass",
+    "version": "phase0-source-field-policy-v1",
+    "hash": "sha256:...",
+    "violations": 0,
+    "denied_zones_checked": ["runner_private", "grader_private", "triage_private"]
+  },
   "rules_applied": ["secret-detector", "pii-email", "auth-header-strip"],
   "removed": [
     { "node": "cli_invocation_1", "field": "args_sanitized", "rule": "secret-detector", "count": 1 },
@@ -241,6 +251,14 @@ trust model and red-team gate for this object are specified in
 [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md),
 with run-level proof defined in the
 [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md).
+
+`source_field_policy.status` is `pass`, `fail`, or `not_applicable`.
+`not_applicable` is acceptable for direct production telemetry that does not
+come from a mixed eval/corpus source row. It is not acceptable for A1 Phase 0,
+seed-corpus, benchmark, or corpus-outcome bundles. Those bundles require
+`status: "pass"`, a policy hash, and `violations: 0`; otherwise the bundle can
+exist for debugging but is invalid for agent exposure and cannot count toward
+A1/A3 claims.
 
 Release/deploy/code-change/work-item claim status is not proven by node presence
 alone; the [Deploy/change context ledger](deploy-change-context-ledger.md)
@@ -290,7 +308,13 @@ bundle fragment:
   "missing_evidence": [
     { "what": "metric_window for checkout error rate", "reason": "metrics not ingested for this service" }
   ],
-  "redaction_report": { "policy_version": "redact-v1", "rules_applied": ["secret-detector"], "removed": [], "residual_risk": "low" }
+  "redaction_report": {
+    "policy_version": "redact-v1",
+    "source_field_policy": { "status": "not_applicable", "violations": 0 },
+    "rules_applied": ["secret-detector"],
+    "removed": [],
+    "residual_risk": "low"
+  }
 }
 ```
 
@@ -334,8 +358,8 @@ it survives contact with real data:
    and the first runnable [Phase 0 runbook](bundle-value-phase0-runbook.md).)
 2. Can bundles stay bounded (size/token budget) while still carrying enough
    evidence for high-confidence application-error fixes?
-3. Is `redaction_report` trustworthy across logs, CLI args/env, attachments, and
-   agent prompt material? See the
+3. Is `redaction_report` trustworthy across logs, CLI args/env, attachments,
+   source-field policy, and agent prompt material? See the
    [redaction pipeline](redaction-pipeline-and-secret-safety.md) for the
    required default-deny policy and red-team gate, and the
    [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) gate
@@ -388,7 +412,7 @@ it survives contact with real data:
   enforceable rather than decorative.
 - [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) — the result
   ledger that proves redaction reports are backed by canary, scanner, projection,
-  and usefulness audits.
+  source-field policy, and usefulness audits.
 - [Verdict](verdict.md) — why the open schema and portable bundle are the moat.
 - [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
   — the A3 gate that decides whether the schema becomes external leverage and

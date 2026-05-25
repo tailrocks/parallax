@@ -43,6 +43,13 @@ Current primary references reinforce three rules:
   separate agent-only contract
   ([MCP schema reference](https://modelcontextprotocol.io/specification/2025-11-25/schema)).
 
+Updated implication from the A1/A6 source-field pass: JSON Schema and MCP output
+schemas can require the presence and shape of `source_field_policy`, but they
+cannot prove that no forbidden value was copied into a free-text field. The
+conformance suite therefore needs both schema validation and semantic negative
+fixtures that intentionally leak runner-private, grader-private, and default
+triage-private fields.
+
 Internal sources:
 
 - [Risks and the bear case](risks-and-bear-case.md) makes A3 existential: without
@@ -63,9 +70,9 @@ Do not declare "schema published" until all of these exist in the repo:
 
 | Artifact | Required content |
 | --- | --- |
-| Canonical JSON Schema | `schemas/evidence-bundle/v0.1.0/schema.json` with `$schema`, `$id`, semver `schema_version`, required top-level fields, node/edge/hypothesis/redaction definitions, and extension rules. |
+| Canonical JSON Schema | `schemas/evidence-bundle/v0.1.0/schema.json` with `$schema`, `$id`, semver `schema_version`, required top-level fields, node/edge/hypothesis/redaction/source-field-policy definitions, and extension rules. |
 | Example fixtures | At least one valid fixture for issue, trace, CI failure, CLI invocation, and agent session anchors. |
-| Negative fixtures | Missing `redaction_report`, missing `missing_evidence`, uncited hypothesis, invalid edge target, unknown required field, and oversized inline dump. |
+| Negative fixtures | Missing `redaction_report`, missing source-field policy status for eval/corpus bundles, source-field policy violation, missing `missing_evidence`, uncited hypothesis, invalid edge target, unknown required field, and oversized inline dump. |
 | Validator | A small CLI or test command that validates all positive/negative fixtures. |
 | Compatibility policy | A short `schemas/evidence-bundle/README.md` that states major/minor/patch rules, extension namespacing, deprecation window, and consumer expectations. |
 | Changelog | Schema changes recorded by version, with migration notes and breaking-change labels. |
@@ -88,7 +95,7 @@ Parallax should copy the discipline of stable telemetry ecosystems:
 | Extension namespace | External extensions use reverse-DNS or URI-like namespaces, such as `com.example.foo`, to avoid collisions. |
 | Required extension | If an extension is required to interpret safety or meaning, it must be listed in a `required_extensions` field. Consumers that do not understand it must fail closed. |
 | Deprecation | Fields can be deprecated in one minor, retained for at least one more minor, then removed only in the next major. |
-| Safety invariants | `redaction_report`, `missing_evidence`, evidence refs, and cited hypotheses are never optional for agent-visible bundles. |
+| Safety invariants | `redaction_report`, source-field policy status for eval/corpus bundles, `missing_evidence`, evidence refs, and cited hypotheses are never optional for agent-visible bundles. |
 
 ## A3 Adoption Clock
 
@@ -124,7 +131,7 @@ Parallax records outcomes for real or realistic tasks:
 
 | Corpus event | Required fields |
 | --- | --- |
-| `bundle_presented` | bundle id/version, anchor type/id, redaction policy, consumer type, token/size budget. |
+| `bundle_presented` | bundle id/version, anchor type/id, redaction policy, source-field policy status when eval/corpus-derived, consumer type, token/size budget. |
 | `agent_or_human_action` | actor type, tool/model if agent, action summary, evidence refs cited, unsupported claims. |
 | `patch_or_proposal` | repo/ref, files touched, tests run, PR/proposal link or local patch ref. |
 | `outcome` | accepted/rejected/needs-human/inconclusive, tests passed, recurrence status, reviewer notes. |
@@ -152,8 +159,9 @@ The conformance suite should test four things:
    for the same anchor; Markdown is a deterministic projection.
 3. **Compatibility:** a v0.1 consumer can ignore v0.2 optional fields and still
    preserve safety fields.
-4. **Safety invariants:** bundles without `redaction_report`, `missing_evidence`,
-   valid refs, or cited hypotheses are invalid for agent exposure.
+4. **Safety invariants:** bundles without `redaction_report`,
+   required source-field policy status, `missing_evidence`, valid refs, or cited
+   hypotheses are invalid for agent exposure.
 
 Minimum command shape:
 

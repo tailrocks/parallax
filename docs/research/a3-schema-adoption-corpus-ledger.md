@@ -57,6 +57,8 @@ Internal sources:
 - [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
   defines the first outcome-style result ledger that can seed early corpus
   events.
+- [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) now requires
+  source-field policy audit rows for agent-visible eval/corpus projections.
 - [A2 interview evidence ledger](a2-interview-evidence-ledger.md) defines the
   design-partner signal that can seed external schema review.
 
@@ -147,6 +149,7 @@ counts_toward:
 summary: "Short public summary with no secrets."
 blockers:
   - "Missing redaction_report in fixture."
+  - "Missing source_field_policy status in eval-derived fixture."
 decision: count | do_not_count | negative_signal
 reviewer: operator | second_reviewer | external_reviewer
 ```
@@ -184,6 +187,8 @@ telemetry_provenance:
   - observed_from_sdk
   - observed_from_harness
 redaction_policy_version: redact-v1
+source_field_policy_status: pass | fail | not_applicable
+source_field_policy_hash: sha256:... | null
 actor_type: human | coding_agent | fixer_component | external_tool
 model_or_tool: "exact model/tool id if applicable"
 action_type: diagnosis | patch | pr | rollback | no_action | escalation
@@ -206,7 +211,8 @@ reviewer: operator | second_reviewer | external_reviewer
 summary: "Short public summary."
 ```
 
-Corpus rows with `verifier: unknown`, missing `redaction_policy_version`, or
+Corpus rows with `verifier: unknown`, missing `redaction_policy_version`,
+missing required source-field policy status, or
 `privacy_level: private_hash_only` can support internal learning but should not
 support a public corpus-improves-agents claim.
 
@@ -234,8 +240,12 @@ Count an event only if all applicable checks pass:
 - The actor is not controlled by the operator, unless the event is explicitly
   marked as operator-controlled and excluded from adoption totals.
 - The bundle validates against the canonical JSON Schema version claimed.
-- `redaction_report`, `missing_evidence`, evidence refs, and cited hypotheses
-  remain present through projection or round-trip.
+- `redaction_report`, required `source_field_policy` status, `missing_evidence`,
+  evidence refs, and cited hypotheses remain present through projection or
+  round-trip.
+- Eval/corpus-derived bundles have `source_field_policy_status: pass` and a
+  policy hash; `not_applicable` is allowed only for direct production telemetry
+  that did not originate from a mixed source row.
 - The event has a public URL or a private evidence hash plus reviewer.
 - The event is dated and tied to a schema version.
 - Compatibility breakage is recorded as negative evidence, not omitted.
@@ -276,6 +286,8 @@ If a ledger is stale at a checkpoint, A3 remains unproven.
   bundle contract events validate against.
 - [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
   can seed early `outcome_labeled` rows.
+- [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) defines the
+  source-field and redaction proof that corpus rows must preserve.
 - [A2 interview evidence ledger](a2-interview-evidence-ledger.md) can seed early
   `external_review`, `producer_integration`, and `consumer_integration` rows.
 - [Fixer component and outcome loop](fixer-component-and-outcome-loop.md)
