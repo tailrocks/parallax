@@ -30,6 +30,7 @@ idea becomes sharper.
 - [Causal reconstruction and agent safety](docs/research/causal-reconstruction-and-agent-safety.md)
 - [Technical implementation concept](docs/research/technical-implementation-concept.md)
 - [Sentry-compatible ingestion](docs/research/sentry-compatible-ingestion.md)
+- [OpenTelemetry protocol and context layer](docs/research/opentelemetry-protocol-and-context-layer.md)
 - [Repository structure](PROJECT_STRUCTURE.md)
 - [Agent instructions](AGENTS.md)
 

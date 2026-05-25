@@ -49,6 +49,7 @@ Related research:
 - [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md)
 - [Messaging and ingestion layer](messaging-and-ingestion-layer.md)
 - [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
+- [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md)
 
 Metadata-store source:
 
