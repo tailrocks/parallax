@@ -2,13 +2,15 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 27. The "rollup / correlation tooling" dissection (checklist item for
-ClickHouse; previously only covered on the ClickHouse side). Compares GreptimeDB's
-**Flow engine** to ClickHouse's **Materialized Views + AggregatingMergeTree** for
-Parallax's rollups: metric downsampling (5 m / 1 h), issue/fingerprint counts per
-window, release-regression aggregates. Code-grounded.
+Status: pass 71 (live-verified; was pass 27 source-only). The "rollup / correlation
+tooling" dissection (checklist item for ClickHouse; previously only covered on the
+ClickHouse side). Compares GreptimeDB's **Flow engine** to ClickHouse's **Materialized
+Views + AggregatingMergeTree** for Parallax's rollups: metric downsampling (5 m / 1 h),
+issue/fingerprint counts per window, release-regression aggregates. Code-grounded **and
+now Docker-verified (Run 43)** — this was the last major note with no live run.
 
-Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d8`).
+Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d8`),
+re-confirmed latest stable 2026-05-25.
 
 ## Mechanism, side by side
 
@@ -20,7 +22,33 @@ Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d
 | Result form | Sink table holds **finalized** rows (Flow computes the full aggregate). | Target holds **partial `-State`**; queries must use `-Merge` (or `FINAL`) to finalize. |
 | Windowing | Time-window-native (`date_bin`, PromQL range) + **`EXPIRE AFTER`** drops old windows. | `toStartOfInterval`; `AggregatingMergeTree` merges states across blocks at compaction. |
 | Per-block semantics | None — Flow sees the stream/window, not a single insert block. | MV sees **only the inserted block**; cross-block correctness relies on `AggregatingMergeTree` merging states (a known foot-gun for JOINs/dedup in MVs). |
+| Auto-population scope | **Forward-only** — Flow computes data inserted *after* creation; pre-existing rows are not pulled in (Run 43: 864k → 0 on flush). | **Forward-only** — push-MV runs only on new insert blocks; pre-existing rows not seen. |
+| Historical backfill | sink is a plain table → one-off `INSERT…SELECT date_bin(…)` (Run 43, 84 rows). | target is a plain table → one-off `INSERT…SELECT …State()`. |
 | Maturity | **Younger** (laminar 2025, incremental-query 2026). | **Very mature**, battle-tested at scale; the `-State`/`-Merge` ceremony is the cost. |
+
+## Live verification (Run 43)
+
+Built the same 1 h `avg(gauge)`-by-service rollup on both engines over `metrics_real`
+(864 000 rows, ~6 h, 12 services) and measured warm:
+
+| | GreptimeDB Flow | ClickHouse MV+AggMT |
+| --- | --- | --- |
+| Raw windowed-avg over 864k (warm) | ~16–25 ms | ~10–13 ms |
+| Rollup-table read (warm) | ~3–4 ms | ~2 ms |
+| Pre-aggregation read speedup | **~5×** | **~5–6×** |
+
+- **Pre-aggregation pays off on both (~5–6×), confirmed live** — not just reasoned.
+- **Flow auto-population is forward-only.** `CREATE FLOW` + `ADMIN FLUSH_FLOW` over the
+  pre-existing 864k rows yielded **0 sink rows**; only inserts arriving *after* flow
+  creation flowed through (a fresh probe insert appeared post-flush). **But the sink is a
+  plain writable table**, so a one-off `INSERT INTO sink SELECT … date_bin(…)` backfills
+  history (verified, 84 rows). This is **operationally parallel to ClickHouse**, where the
+  push-MV maintains forward and a manual `INSERT…SELECT …State()` backfills the target.
+- **Stored-form contrast confirmed live:** GT sink holds **finalized** values (read direct);
+  CH target holds partial **`-State`** (read via `avgMerge`). Cleaner read model for GT.
+- **Flow correctness confirmed** (sink matched raw post-dedup truth; the dedup wrinkle
+  cross-confirmed `dedup-and-update-semantics.md`). Full numbers: `local-benchmark-results.md`
+  Run 43.
 
 ## For Parallax's rollups
 
@@ -41,8 +69,9 @@ Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d
 ## Consequence (axes)
 
 - **Cost (#2) / speed (#1):** pre-aggregation moves compute from query time to
-  ingest/background, making dashboard/rollup reads cheap on both. Not a
-  differentiator — both have the capability.
+  ingest/background, making dashboard/rollup reads cheap on both — **measured ~5–6× read
+  speedup on each** (Run 43), so this is real, not just reasoned. Not a differentiator —
+  both have the capability and a comparable payoff.
 - **Fit:** GreptimeDB Flow's **streaming + batching + time-window-native + EXPIRE**
   is a slightly cleaner model for Parallax's metric/issue rollups (continues the
   metric-native theme), and avoids the MV per-block + `-State`/`-Merge` ceremony.
@@ -57,3 +86,4 @@ Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d
 
 - GreptimeDB Flow: `src/flow/src/{lib.rs,adapter.rs (StreamingEngine),batching_mode.rs}`; DDL `src/sql/src/parsers/create_parser.rs:277-320,1496-1526` (`CREATE FLOW … SINK TO … EXPIRE AFTER … EVAL INTERVAL`); RFCs `2024-01-17-dataflow-framework`, `2025-09-08-laminar-flow`, `2026-03-16-flow-inc-query`.
 - ClickHouse: MV + `AggregatingMergeTree`/`SummingMergeTree` (`clickhouse-internals.md`, `clickhouse-implementation.md`); refreshable MV.
+- Live: `local-benchmark-results.md` Run 43 (rollup ~5–6× read speedup both; Flow forward-only auto-pop + manual sink backfill; finalized vs `-State` read model). Cross-ref `dedup-and-update-semantics.md` (the dedup wrinkle in the correctness check).

@@ -1297,6 +1297,56 @@ warm + HTTP-fair-checked (Runs 37–42), and all conclusions hold (one correctio
 metric-agg 10×→2× warm; everything else confirmed). Further empirical value needs the
 larger-tier/cold/multi-node harness.
 
+### Run 43 — Rollup / continuous aggregation, live (Flow vs MV+AggregatingMergeTree)
+
+First **live** test of the rollup mechanism — `rollup-and-continuous-aggregation.md` was
+the only major note that was pure source-reasoning (no Docker run). Env: same containers,
+GreptimeDB `v1.0.2`, ClickHouse `v26.5.1.882-stable`. Source: `metrics_real` (864000 rows,
+~6 h span, 12 services, 100 instances, `gauge Float64`). Rollup built on both: **1 h
+`avg(gauge)` by service** → 84 rollup rows. Measured warm (GT = `execution_time_ms`; CH =
+`--time`).
+
+| Metric | GreptimeDB (Flow) | ClickHouse (MV + AggregatingMergeTree) |
+| --- | --- | --- |
+| Raw windowed-avg over 864k (warm) | ~16–25 ms | ~10–13 ms |
+| Rollup-table read (warm) | ~3–4 ms (first 46 ms cold/plan) | ~2 ms |
+| Pre-aggregation read speedup | **~5×** | **~5–6×** |
+| Forward maintenance | `CREATE FLOW` + new insert → sink updates (verified) | push-MV on insert block → target updates (verified) |
+| Historical backfill | **forward-only auto-pop**; sink is a plain table → one-off `INSERT…SELECT` backfills (verified, 84 rows) | target is a plain table → one-off `INSERT…SELECT …State()` backfills (verified, 84 rows) |
+| Stored form | **finalized** values, read direct | partial `-State`, read needs `-Merge` |
+
+Findings:
+
+- **Both deliver ~5–6× rollup read speedup** (raw windowed-agg vs reading the
+  pre-aggregated table). The "pre-aggregation moves compute to ingest/background; reads
+  get cheap on both" claim is now **confirmed live**, not just reasoned. Raw windowed-agg
+  itself is CH-faster (~10–13 ms vs ~16–25 ms), consistent with the established
+  scan-aggregation edge (~1.5–2× warm).
+- **GreptimeDB Flow is forward-only on auto-population.** `CREATE FLOW` over `metrics_real`
+  then `ADMIN FLUSH_FLOW` produced **0 sink rows** — the 864k pre-existing rows were not
+  pulled in; only data inserted *after* flow creation flowed to the sink (verified: a fresh
+  `flow_probe` insert appeared post-flush). **But the sink is an ordinary writable table**,
+  so a one-off `INSERT INTO sink SELECT … GROUP BY date_bin(…)` backfills history (verified,
+  84 rows). Net: operationally **parallel** to ClickHouse's "MV maintains forward + manual
+  `INSERT…SELECT` backfills the target."
+- **Flow correctness confirmed.** The `flow_probe` sink row (avg 40.0 / n 2) matched the raw
+  truth exactly — the apparent "n=2 not 5" was GreptimeDB read-time dedup: 5 inserts shared
+  one `now()` ms, so PK `(ts,service,instance)` collapsed them to 2 logical rows (i1→30,
+  i2→50; avg=40). Cross-confirms `dedup-and-update-semantics.md` (LastRow) and that Flow
+  aggregates over the *deduplicated* source.
+- **CH MV catches new inserts live**: a row inserted into `metrics_real` immediately
+  surfaced in the rollup via `avgMerge` (mv_probe_svc→42).
+- **Mechanism contrast confirmed live**: GT Flow sink holds **finalized** values (read
+  directly, zero ceremony); CH AggregatingMergeTree holds partial **`-State`** (read via
+  `avgMerge`/`FINAL`). The cleaner-model point for GreptimeDB is now empirical, not just RFC.
+
+Verdict on the note's claim: **"wash with opposite tilts" holds, now with an empirical
+backbone** — both give Parallax the rollup tooling it needs at ~5–6× read speedup;
+GreptimeDB's model is cleaner (finalized rows, no `-State`/`-Merge`, forward-only auto-pop
+softened by trivial manual backfill); ClickHouse's MV+AggregatingMergeTree is more mature.
+Neither moves the verdict. Cleanup: dropped both rollups + flow/MV and the probe rows;
+both base tables back to 864000.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

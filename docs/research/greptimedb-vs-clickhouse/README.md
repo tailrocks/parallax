@@ -3,12 +3,14 @@
 <!-- markdownlint-disable MD013 -->
 
 Status: produced by an indefinite research loop; **white-box analysis comprehensive
-(through pass ~69)**. All 10 checklist subsystems + every named ClickHouse/GreptimeDB
+(through pass ~71)**. All 10 checklist subsystems + every named ClickHouse/GreptimeDB
 lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; the 9
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 42 local runs + B1–B15 cases.
+cold/first-run measurement showed). 25 mechanism notes + 43 local runs + B1–B15 cases (Run 43 closed the last source-only
+note: rollup/continuous-aggregation is now live — Flow vs MV+AggregatingMergeTree, ~5–6×
+pre-agg read speedup on both).
 **Verdict (sharpened through pass 58): GreptimeDB on fit** — metrics/PromQL-native (GA
 vs ClickHouse's experimental), ingest/freshness/upsert ergonomics, object-store +
 replication economics, horizontal scaling, Rust — **not on raw speed** (ClickHouse leads
