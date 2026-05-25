@@ -8,7 +8,11 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 141 local runs + B1–B15 cases. Recent: **Run 141 — 5M tier**
+cold/first-run measurement showed). 25 mechanism notes + 142 local runs + B1–B15 cases. Recent: **Run 142 — isolated
+the 5M dedup-agg finding**: (A) dedup-mode metric agg is **~8× slower than append at 5M** on BOTH versions (m2m dedup
+314 ms vs m2m_ap append 40 ms, same data) — the Run-117 dedup-merge cost at scale; blueprint nuance: use append_mode for
+scrape-style metrics where (series,ts) is unique. (B) v1.1-nightly regressed the dedup path specifically (~2.8×: 314→867)
+while improving append (40→26) — re-test on v1.1 GA. **Run 141 — 5M tier**
 (the trust-the-numbers tier): GreptimeDB's anchored/keyed hot path HOLDS (anchored ~14 ms, last-value ~10 ms ≪ gate),
 but heavy ANALYTICAL queries CROSS 300 ms at 5M (metric-agg 315–1021 ms, JSON 330 ms, in-DB join 659 ms) while ClickHouse
 stays fast — scan/agg gaps WIDEN with scale (the DQ5 flip-trigger). ⚠ Surfaced a **v1.1-nightly dedup-agg regression**

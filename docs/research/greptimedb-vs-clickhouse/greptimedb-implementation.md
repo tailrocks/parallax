@@ -53,6 +53,14 @@ Pin: GreptimeDB `v1.0.2` (`0ef5451`). DDL features confirmed in
    8M) and catastrophic only when rows-per-series ≈ 1 (per-event ids → 1M single-row series). So
    dedup/`last_non_null` is FINE for the metric engine (label-set PK = moderate series, many points)
    — the gotcha is confined to using append_mode on EVENT tables, which this principle requires.**
+   **REFINED AGAIN (Run 142, 5M A/B): that "dedup fine for metrics" holds only in the fully-COMPACTED
+   single-run state. With OVERLAPPING runs (the realistic continuously-ingesting state — always a
+   memtable + recent un-compacted SSTs), dedup-agg is ~8× SLOWER than append at 5M (`m2m` dedup 314 ms
+   vs `m2m_ap` append 40 ms, same data). So for agg-heavy metric tables where `(series, ts)` is already
+   unique (Prometheus scrapes = one sample per series per scrape), prefer `append_mode='true'` even for
+   metrics — ~8× faster aggregation, no dedup needed. Reserve dedup/`last_non_null` for genuine
+   partial-upsert / out-of-order correction. ⚠ Also: GT v1.1-nightly REGRESSED the dedup-agg path ~2.8×
+   at 5M (867 vs 314 ms) while improving append — re-test on v1.1 GA; the append escape hatch avoids it.**
    **Source + mechanism (Run 117, GreptimeDB v1.0.2): the penalty is per-series-boundary work in the
    merge/dedup of OVERLAPPING sorted runs (`flat_merge.rs` — cheap passthrough only when `hot.len()==1`;
    `append_mode` skips the dedup reader at `seq_scan.rs:224`). It is concentrated in the unflushed

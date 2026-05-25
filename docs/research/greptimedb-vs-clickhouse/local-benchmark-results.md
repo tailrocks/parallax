@@ -5791,6 +5791,39 @@ see how the gaps scale. `bench/four-way/gen.sh` (84 s) + `bench.sh` (median-of-6
 regression: `metric-agg-flat` on `m2m` (dedup) → GT-stable ~315 / GT-nightly ~782 ms; same query on
 an `append_mode` copy → both fast → isolates it to the dedup path.
 
+### Run 142 — 2026-05-25 — Isolated the Run-141 finding: (A) dedup-agg is ~8× slower than append at 5M (both versions); (B) v1.1-nightly regressed the DEDUP path specifically (~2.8×) while improving append
+
+**Pass target.** Pin down the Run-141 v1.1 dedup-agg regression. Built an **append-mode copy** of the
+dedup `m2m` table (`m2m_ap`, same 5M data, `append_mode='true'`) on both GT builds; aggregate both.
+
+| Agg `avg(val) GROUP BY service` @5M | GT-stable v1.0.2 | GT-nightly v1.1.0 |
+| --- | ---: | ---: |
+| **DEDUP** `m2m` (`PK(service,instance)` default) | 314 ms | **867 ms** |
+| **APPEND** `m2m_ap` (same data, `append_mode`) | **40 ms** | **26 ms** |
+
+**Verdict — two clean, isolated findings:**
+
+- **(A) Dedup-mode aggregation is ~8× SLOWER than append-mode at 5M, on BOTH versions** (314 vs 40 ms
+  stable). This is the Run-117 dedup-merge/scan cost (the `DedupReader` processes per-series merge
+  boundaries) confirmed **at scale** on a clean A/B. The `append_mode` table aggregates the same 5M
+  rows in ~40 ms vs ~314 ms with dedup on. **Blueprint nuance:** for **agg-heavy metric tables where
+  `(series, ts)` is already unique** (e.g. Prometheus scrapes — one sample per series per scrape),
+  prefer **`append_mode='true'`** — you get ~8× faster aggregation and don't need read-time dedup
+  (no duplicate timestamps to collapse). Reserve dedup/`last_non_null` for true partial-upsert /
+  out-of-order-correction metrics.
+- **(B) v1.1-nightly regressed the DEDUP path specifically (~2.8×: 314→867 ms) while IMPROVING the
+  append path (40→26 ms).** So v1.1's changes help the append/scan path but hurt the dedup-merge
+  path at scale. The metric engine uses dedup-like `last_non_null`, so this could touch metrics-at-
+  scale on v1.1 — **flag for v1.1 GA re-test + a potential upstream GreptimeDB issue** (it's a nightly;
+  may be a transient regression). The append-mode escape hatch (finding A) sidesteps it entirely.
+
+**Decision relevance:** the dominant GreptimeDB lesson here is **(A)** — at scale, *how you configure
+the metric table* (append vs dedup) matters ~8×, far more than the version. Use append-mode for
+scrape-style metrics. **(B)** is a v1.1-nightly caveat to watch, not a v1.0.2-stable problem.
+
+**Reproduce.** Build `m2m_ap` = `m2m` with `append_mode='true'` (INSERT…SELECT); `SELECT service,
+avg(val) GROUP BY service` on both @5M → dedup ~314/867 ms (stable/nightly), append ~40/26 ms.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
