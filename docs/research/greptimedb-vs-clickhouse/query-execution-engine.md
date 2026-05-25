@@ -66,6 +66,38 @@ OLAP scan/aggregate **throughput bar**.
   metrics/PromQL nativeness the verdict rewards is *bought* with DataFusion's
   extensibility; a bespoke C++ engine would have to reimplement all of it.
 
+## GreptimeDB Flat SST — the scan-format foundation (v1.0 GA, source-read Run 134)
+
+The **Flat SST** format (default since v1.0 GA) is the scan-side redesign behind several recent
+findings. Source (`src/mito2/src/sst/parquet/flat_format.rs`, v1.0.2): the Parquet layout is
+
+```text
+primary-key (tag) columns, field columns, time index, __primary_key (encoded), __sequence, __op_type
+```
+
+— i.e. it **stores the tag/primary-key columns as RAW, individual columnar columns** (tags
+dictionary-encoded, `dictionary(uint32, binary)`), *alongside* the encoded composite `__primary_key`
+blob. The pre-Flat format stored tags **only** inside the encoded composite key, so any query that
+filtered or grouped on a tag had to **decode the composite key per row**. Flat SST makes the tag a
+first-class column.
+
+**Why it matters (and what it grounds):**
+- **Tag-keyed group-by / filter reads the raw tag column directly** — `GROUP BY service`,
+  `WHERE service=…` no longer decode the composite key per row. This is the mechanism behind the v1.0
+  GA "Flat SST" claim (write ~4×, high-cardinality TSBS query latency up to ~10×) and the marginal
+  GT-nightly agg edge (Run 131).
+- **It is what the prefilter reads** (Run 121/122): `prefilter_flat_batch_by_primary_key` decodes the
+  raw PK/partition columns first → row selection → then the rest. Flat SST is the precondition for
+  that late-materialization.
+- **`__primary_key` (encoded) + `__sequence` + `__op_type`** remain for ordering, dedup
+  (`DedupReader`, Runs 114–117), and MVCC — so the dedup cost (per-series merge) is unchanged by
+  Flat SST; Flat SST helps the *scan/group* side, not the dedup side.
+
+So GreptimeDB's scan format is now genuinely columnar on tags (like ClickHouse's columns), which is
+why tag-keyed aggregations are ~2× (not catastrophic) and the prefilter works — while the *raw
+vectorized-execution throughput* gap (SIMD/hash-agg, Runs 124/125) is separate and still the diffuse,
+slow-closing part.
+
 ## Side by side
 
 | Aspect | ClickHouse | GreptimeDB (DataFusion 52.1) |

@@ -5534,6 +5534,39 @@ GT `matches_term`. Warm ×6.
 `SELECT count(*) WHERE matches_term(message,'timeout')` (~85 ms) → ~12×. The ratio is scan-bound (grows
 with matched-row count × scale); selective single-token search stays ~tie.
 
+### Run 134 — 2026-05-25 — SOURCE: GreptimeDB Flat SST format (v1.0 GA) stores tags as RAW columnar — the scan-format foundation behind the prefilter + tag-keyed agg improvements
+
+**Pass target.** Source-deepen the **Flat SST** format (v1.0 GA default), referenced in Runs
+106/117/121/131 but never read. What does "Flat" change, and why does it help?
+
+**Source (`src/mito2/src/sst/parquet/flat_format.rs`, v1.0.2 doc comment + layout):**
+- Parquet layout: `primary-key (tag) columns, field columns, time index, __primary_key (encoded),
+  __sequence, __op_type`.
+- **Tags/primary-key columns are stored as RAW individual columns** (dictionary-encoded,
+  `dictionary(uint32, binary)`), **alongside** the encoded composite `__primary_key` blob. The
+  pre-Flat format stored tags **only** in the encoded composite key.
+
+**Verdict — Flat SST = tags-as-raw-columns; the foundation for the recent scan-side wins.**
+
+- **The win:** tag-keyed group-by/filter (`GROUP BY service`, `WHERE service=…`) now reads the **raw
+  tag column directly** instead of decoding the composite key per row. This is the mechanism behind
+  the v1.0-GA "Flat SST" claim (write ~4×, high-card TSBS query latency up to ~10×) and the marginal
+  GT-nightly agg edge (Run 131).
+- **It is what the prefilter reads** (Runs 121/122): `prefilter_flat_batch_by_primary_key` decodes the
+  raw PK/partition columns first → row selection → rest. Flat SST is the precondition for that
+  late-materialization.
+- **`__primary_key`/`__sequence`/`__op_type`** remain for ordering, **dedup** (`DedupReader`, Runs
+  114–117), and MVCC — so the dedup per-series-merge cost is **unchanged** by Flat SST; Flat SST helps
+  the scan/group side, not dedup.
+- **Decision relevance:** GreptimeDB's scan format is now genuinely columnar on tags (like
+  ClickHouse's columns) — which is why tag-keyed aggregation is ~2× (not catastrophic) and the
+  prefilter exists. The *raw vectorized-execution throughput* gap (SIMD/hash-agg, Runs 124/125) is
+  separate and remains the diffuse, slow-closing part. Documented in `query-execution-engine.md`
+  ("GreptimeDB Flat SST" section).
+
+**Reproduce.** `gh api ".../flat_format.rs?ref=v1.0.2"` → module doc: "store both encoded primary key
+and raw key columns; two additional internal columns `__primary_key`/`__sequence`/`__op_type`."
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
