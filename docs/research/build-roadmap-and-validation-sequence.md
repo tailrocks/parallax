@@ -45,8 +45,11 @@ assumption. Failing a gate sends you back, not forward.
 - Hand-assemble evidence bundles for 5–10 real incidents (operator's repos +
   public incidents).
 - Run the bundle-value eval (arms A/B/C) with these manual bundles, ≥2 models.
-- Interview ~20 Rust-heavy / self-hosting teams: would they deploy? would they
-  pay? what is their actual debugging pain?
+- Interview ~20 target teams across the A2 slices: would they deploy? would they
+  pay or sustain it? what is their actual debugging pain? Use the
+  [user interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
+  so the result is scored by past behavior and concrete commitments, not
+  compliments.
 - **Gate:** hand-bundle beats raw-dump on fix quality (A1) **and** ≥a handful of
   teams would genuinely deploy (A2). If both fail, **stop or pivot** — this is the
   cheapest NO-GO and the most valuable possible outcome to learn now.
@@ -96,7 +99,7 @@ Build only enough to generate the bundle automatically and repeatably:
 | Assumption (bear case) | Tested in | Cheapest test |
 | --- | --- | --- |
 | A1 bundle value | Phase 0 (hand), re-check Phase 1 (auto) | [manual bundle + eval](bundle-value-phase0-runbook.md), days |
-| A2 real users | Phase 0 | 20 interviews |
+| A2 real users | Phase 0 | [20 scored deployment-intent interviews](user-interview-and-deployment-intent-gate.md) |
 | A6 redaction trust | Phase 2 | red-team on real data |
 | A5 stack holds | Phase 2 | storage/metadata benchmarks |
 | A4 correlation reliable | Phase 1–2 | strong-edge prevalence on real telemetry |
@@ -120,6 +123,8 @@ Build only enough to generate the bundle automatically and repeatably:
 - [Bundle-value evaluation](bundle-value-evaluation.md) — the Phase 0/1 gate.
 - [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) — the first
   paired run against raw telemetry dumps.
+- [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
+  — the A2 demand-validation runbook for Phase 0.
 - [Technical implementation concept](technical-implementation-concept.md) — the
   component detail each phase builds.
 - [Storage benchmark prototype](storage-benchmark-prototype.md),

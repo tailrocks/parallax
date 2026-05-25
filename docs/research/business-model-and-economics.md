@@ -145,7 +145,9 @@ Sources: [Sentry FSL announcement](https://blog.sentry.io/introducing-the-functi
 
 - The bear case's "no monetization path" risk is **narrowed, not eliminated**:
   there are legitimate seams (cloud, fixer, ops add-ons, support), but they all
-  depend on adoption that is unproven (bear case A2/A3 remain the gating risks).
+  depend on adoption that is unproven. A2 now has a concrete
+  [user interview and deployment intent gate](user-interview-and-deployment-intent-gate.md);
+  A3 remains gated on schema adoption.
 - It sharpens the boundary decision: the Parallax-stores / separate-fixer split
   is not only an architecture choice, it is the **primary value-capture seam** —
   another reason to keep that boundary clean.
@@ -156,12 +158,17 @@ Sources: [Sentry FSL announcement](https://blog.sentry.io/introducing-the-functi
   add-ons convert any team to paying, the business (not the product) is
   disproven — fold back to the bear case's NO-GO triggers.
 - If adoption itself never materializes (bear case A2), monetization is moot.
+  Validate that with the
+  [user interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
+  before treating hosting, fixer, support, or enterprise ops as real seams.
 
 ## Relationship To Other Research
 
 - [Verdict](verdict.md) — company-sized question and the open-wedge thesis.
 - [Risks and the bear case](risks-and-bear-case.md) — the monetization and
   distribution risks this narrows.
+- [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
+  — the A2 gate that determines whether adoption beyond the operator is real.
 - [Market landscape](market-landscape.md) — OpenObserve's agent-gating weakness
   that Parallax must not replicate.
 - [Technical implementation concept](technical-implementation-concept.md) — the
