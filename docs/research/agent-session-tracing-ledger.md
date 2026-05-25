@@ -32,8 +32,8 @@ and normalization of agent execution traces.
 | Source | Current check | Parallax implication |
 | --- | --- | --- |
 | Local tool version probe | `command -v` plus `--version` checks in this workspace on 2026-05-25 found `/home/agent/.local/bin/codex` with Codex CLI `0.133.0`, `/home/agent/.local/bin/claude` with Claude Code `2.1.150`, `/home/agent/.local/bin/amp` with raw output `0.0.1779639467-g6d0650 (released 2026-05-24T16:17:47.000Z, 20h ago)`, and `/home/agent/.opencode/bin/opencode` with OpenCode `1.15.10`. | Real runs must store the exact tool binary path, raw version output, normalized version/release fields, and docs snapshot date. Relative age strings such as `20h ago` are not durable freshness evidence. |
-| [Codex hooks](https://developers.openai.com/codex/hooks) | Hooks expose structured JSON with `session_id`, `transcript_path`, `cwd`, `hook_event_name`, `model`, `turn_id`, and `permission_mode` for session, tool, prompt, permission, subagent, compaction, and stop events. The docs warn that transcript format is not a stable hook interface and that tool interception is incomplete for some shell and non-shell paths. | Codex capture can be structured, but transcripts must stay raw refs and hook gaps must be measured against wrapper, repo diff/hash, or other independent evidence. |
-| [Codex CLI](https://developers.openai.com/codex/cli) | Codex CLI is a local command-line agent surface and supports repo work, file edits, command execution, and automation workflows. | Codex is a first adapter target because it runs where Parallax can observe local repo, shell, and file evidence. |
+| [Codex hooks](https://developers.openai.com/codex/hooks) | Hooks expose structured JSON with `session_id`, `transcript_path`, `cwd`, `hook_event_name`, `model`, `turn_id`, and `permission_mode` for session, tool, prompt, permission, subagent, compaction, and stop events. The docs warn that transcript format is not a stable hook interface and that tool interception is incomplete for some shell and non-shell paths. They also document managed hooks, plugin-bundled hooks, and command-only handler support. | Codex capture can be structured, but transcripts must stay raw refs; hook gaps must be measured against wrapper, repo diff/hash, or other independent evidence; and every hook claim must record hook source and trust mode. |
+| [Codex CLI](https://developers.openai.com/codex/cli) and local `codex --help` / `codex exec --help` | Codex CLI is a local command-line agent surface and supports repo work, file edits, command execution, and automation workflows. Local `0.133.0` help shows `codex exec --json`, `--ephemeral`, plugin management, `mcp-server`, and dangerous approval/sandbox and hook-trust bypass flags. | Codex needs separate claim rows for interactive hooks, non-interactive JSONL, plugin/MCP server surfaces, and policy-sensitive dangerous flags. |
 | [Claude Code monitoring](https://code.claude.com/docs/en/monitoring-usage) | Claude Code exports opt-in OpenTelemetry metrics, logs/events, and optional beta traces; prompt text, tool details, tool content, and raw API bodies are disabled by default and require explicit flags. It does not pass generic `OTEL_*` exporter variables to subprocesses, but when tracing is active Bash/PowerShell inherit `TRACEPARENT`. | Claude Code is the strongest native OTel target, but content capture must remain opt-in/redacted and subprocess coverage must distinguish trace-context inheritance from full telemetry-exporter inheritance. |
 | [Claude Code CLI reference](https://code.claude.com/docs/en/cli-usage) and local `claude --help` | Current docs and local `2.1.150` help show `--output-format stream-json` in print mode, `--include-hook-events` for hook lifecycle events in that stream, `--include-partial-messages`, stream JSON input, replayed user messages, session IDs, permission modes, and MCP config flags. | Claude stream JSON is a separate non-interactive structured adapter claim. It can support fixture automation and hook-event validation, but it must not be counted as interactive OTel coverage or as default-safe prompt/tool-content capture. |
 | [Amp manual](https://ampcode.com/manual) | Amp supports streaming JSON output in `--execute` mode for programmatic integration and real-time conversation monitoring; optional thinking blocks extend the schema. The same manual documents TypeScript plugins, project/system/global plugin locations, lifecycle events such as `session.start`, `agent.start`, `tool.call`, `tool.result`, and `agent.end`, and plugin activation for both interactive sessions and `amp --execute` runs. | Amp should be measured through both plugin-event fixtures and non-interactive stream fixtures. Thinking blocks are sensitive opt-in, not default capture. Plugin events are a stronger interactive capture surface than the prior wrapper/thread-ref assumption, but still need payload and version proof. |
@@ -53,6 +53,7 @@ Use these levels in `claim-ledger.jsonl`:
 | `claude_otel_ingest_supported` | Claude Code OTel metrics/logs/events/traces ingest and normalize for a dated configuration. | "Claude Code OTel session events normalize for the tested version/config." |
 | `claude_stream_json_supported` | Claude Code print-mode `stream-json` events, with hook lifecycle events when enabled, normalize for a dated version/config. | "Claude Code stream JSON sessions normalize for the tested version/config." |
 | `codex_hooks_supported` | Codex hook events normalize for a dated CLI/config without relying on transcript parsing as the source of truth. | "Codex hook events normalize for the tested version/config." |
+| `codex_exec_json_supported` | Codex non-interactive `exec --json` JSONL events normalize for a dated CLI/config. | "Codex exec JSONL sessions normalize for the tested version/config." |
 | `opencode_run_json_supported` | OpenCode `run --format json` events normalize for a dated version/config. | "OpenCode run JSON events normalize for the tested version/config." |
 | `opencode_export_supported` | OpenCode session export/list JSON normalizes for a dated version/config. | "OpenCode session export normalizes for the tested version/config." |
 | `opencode_plugin_supported` | OpenCode plugin events normalize for a dated version/config. | "OpenCode plugin events normalize for the tested version/config." |
@@ -144,6 +145,10 @@ approves a redacted synthetic fixture.
     "source_field_policy_required": true,
     "content_bearing_flags_enabled": [],
     "secret_bearing_config_refs": [],
+    "dangerous_flags_enabled": [],
+    "hook_source": "none|user|project|managed|plugin|mixed",
+    "hook_trust_mode": "persisted|bypassed|not_applicable|unknown",
+    "plugin_hooks_enabled": false,
     "expected_event_classes": ["SessionStart", "PreToolUse", "PostToolUse"],
     "coverage_denominator_source": "native_events|wrapper_observation|repo_diff|manual_fixture"
   },
@@ -158,8 +163,8 @@ approves a redacted synthetic fixture.
   "event_id": "agt_evt_001",
   "tool": "codex",
   "fixture_task_id": "task_bugfix_001",
-  "source_event_type": "SessionStart|PreToolUse|tool.execution|message.updated|session.start|agent.start|tool.call|tool.result|agent.end|command.executed|file.edited|permission.asked|permission.replied|session.created|session.idle|shell.env|tool.execute.before|tool.execute.after|stream_json_object|ndjson_object|unknown",
-  "source_event_class": "hook|plugin|otel|run_json|json_export|stream_json|server_api|acp|wrapper",
+  "source_event_type": "SessionStart|PreToolUse|tool.execution|message.updated|session.start|agent.start|tool.call|tool.result|agent.end|command.executed|file.edited|permission.asked|permission.replied|session.created|session.idle|shell.env|tool.execute.before|tool.execute.after|codex_exec_jsonl_event|stream_json_object|ndjson_object|unknown",
+  "source_event_class": "hook|plugin|otel|run_json|json_export|stream_json|jsonl|server_api|acp|wrapper",
   "source_event_schema": "docs-checked-YYYY-MM-DD",
   "source_event_hash": "sha256:<hex>",
   "accepted": true,
@@ -342,6 +347,13 @@ approves a redacted synthetic fixture.
   source, but hook support proves structured hook normalization rather than
   complete shell/file side-effect coverage unless wrapper, repo-diff, or
   equivalent independent evidence rows also pass.
+- Codex hook claims must record whether hooks came from user, project, managed,
+  plugin-bundled, or mixed sources, and whether persisted hook trust was
+  required or bypassed. `--dangerously-bypass-hook-trust` and approval/sandbox
+  bypass flags are policy-sensitive run configuration, not normal defaults.
+- Codex `exec --json` claims are separate from interactive hook claims. JSONL
+  fixture support cannot prove interactive coverage unless a separate coverage
+  row links equivalent side effects.
 - Amp streaming JSON claims apply to `--execute --stream-json`.
 - Amp plugin claims apply per plugin location, activation mode, event class, and
   run mode. A plugin fixture must cover interactive and/or `--execute` separately

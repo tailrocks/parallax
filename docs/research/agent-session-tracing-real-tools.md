@@ -31,8 +31,8 @@ result rows and claim levels required before this becomes product wording.
 | Tool/source | What matters for Parallax |
 | --- | --- |
 | Local tool version probe | In this workspace on 2026-05-25, `command -v` plus `--version` found `/home/agent/.local/bin/codex` with `codex-cli 0.133.0`, `/home/agent/.local/bin/claude` with `2.1.150 (Claude Code)`, `/home/agent/.local/bin/amp` with raw output `0.0.1779639467-g6d0650 (released 2026-05-24T16:17:47.000Z, 20h ago)`, and `/home/agent/.opencode/bin/opencode` with `1.15.10`. These are environment observations, not universal current versions. Every measured run needs its own binary path, raw version output, normalized version/release fields, and docs snapshot. Relative strings such as `20h ago` are not durable freshness evidence. |
-| [Codex CLI](https://developers.openai.com/codex/cli) | Codex CLI is local, open source, Rust-built, and can inspect repos, edit files, and run commands. This makes it a direct Parallax target for local coding-agent session tracing. |
-| [Codex hooks](https://developers.openai.com/codex/hooks) | Codex hooks expose `session_id`, `cwd`, `hook_event_name`, `model`, `permission_mode`, `tool_name`, `tool_use_id`, and `tool_input` for events such as session start, tool use, permission requests, subagents, and stop. The docs warn that `transcript_path` is not a stable hook interface and that `PreToolUse`/`PostToolUse` interception is incomplete for some shell and non-shell tool paths. Parallax should use hooks for structured events, treat transcripts as raw refs only, and measure hook coverage against wrapper and repo-diff evidence. |
+| [Codex CLI](https://developers.openai.com/codex/cli) and local `codex --help` / `codex exec --help` | Codex CLI is local, open source, Rust-built, and can inspect repos, edit files, and run commands. Local `0.133.0` help also shows `codex exec --json` JSONL output, `--ephemeral`, plugin management, `mcp-server`, and dangerous bypass flags for approvals/sandbox and hook trust. | Codex is a direct adapter target, but Parallax must separate interactive hooks, non-interactive JSONL, plugin/MCP server surfaces, and dangerous policy flags instead of treating "Codex support" as one claim. |
+| [Codex hooks](https://developers.openai.com/codex/hooks) | Codex hooks expose `session_id`, `cwd`, `hook_event_name`, `model`, `permission_mode`, `tool_name`, `tool_use_id`, and `tool_input` for events such as session start, tool use, permission requests, subagents, and stop. The docs warn that `transcript_path` is not a stable hook interface and that `PreToolUse`/`PostToolUse` interception is incomplete for some shell and non-shell tool paths. They also document managed hooks, plugin-bundled hooks, and that only command handlers run today. | Parallax should use hooks for structured events, treat transcripts as raw refs only, measure hook coverage against wrapper/repo-diff evidence, and record hook source/trust mode because plugin or managed hooks change the trust boundary. |
 | [Codex MCP](https://developers.openai.com/codex/mcp) | Codex supports MCP servers in CLI and IDE clients, including local stdio and remote HTTP servers. Parallax can provide a read-only MCP context surface, but MCP configuration also introduces tokens, headers, and tool-call audit needs. |
 | [OpenAI agent-improvement cookbook](https://developers.openai.com/cookbook/examples/agents_sdk/agent_improvement_loop) | OpenAI's own agent-improvement loop starts from traces, adds feedback, converts expectations into evals, and produces a Codex-ready handoff. That validates Parallax's "trace -> feedback -> eval -> better agent work" loop. |
 | [Claude Code monitoring](https://code.claude.com/docs/en/monitoring-usage) | Claude Code has the strongest first-party telemetry posture: opt-in OTel metrics/logs/events and beta traces. It records sessions, tool activity, API calls, costs, tokens, commits, PRs, active time, and MCP activity. Prompt text, tool details, tool content, and raw API bodies are disabled by default and require explicit flags. Generic `OTEL_*` exporter variables are not passed to spawned subprocesses, but active tracing injects `TRACEPARENT` into Bash/PowerShell. |
@@ -50,7 +50,7 @@ Instead, build adapters into one normalized session schema.
 | Agent | Best initial adapter | Capture strength | Main gaps |
 | --- | --- | --- | --- |
 | Claude Code | Native OTel logs/events/traces into Parallax ingest, plus `-p --output-format stream-json --include-hook-events` as a separate non-interactive adapter. | Strongest first-party signal: sessions, tools, API requests, costs, tokens, commits, PRs, MCP, identity, optional traces, and a structured print-mode stream for scripted fixture runs. | Traces are beta; raw prompt/tool content is intentionally off by default; stream JSON is print-mode/non-interactive coverage; subprocess telemetry needs precise handling because `TRACEPARENT` can propagate while generic OTEL exporter variables do not. |
-| Codex | Hook adapter plus Parallax CLI wrapper, repo diff/hash observation, and raw transcript refs. | Strong lifecycle/tool/permission signals, session IDs, model, cwd, subagents, and MCP tool inputs. | Transcript format is not stable; hook interception is incomplete for some tool paths; no first-party OTel export in the checked docs. |
+| Codex | Hook adapter, `codex exec --json` non-interactive JSONL adapter, Parallax CLI wrapper, repo diff/hash observation, and raw transcript refs. | Strong lifecycle/tool/permission signals, session IDs, model, cwd, subagents, MCP tool inputs, and a scripted JSONL stream for fixture runs. | Transcript format is not stable; hook interception is incomplete for some tool paths; exec JSONL is non-interactive coverage; plugin/managed hooks and hook-trust bypass flags must be measured separately; no first-party OTel export in the checked docs. |
 | Amp | Plugin-event adapter plus streaming JSON adapter for execute mode, thread refs, and CLI wrapper. | Stronger than previously assumed: plugin events cover session/agent lifecycle plus tool calls/results, while streaming JSON gives a programmatic non-interactive stream. | Manual does not show native OTel; no documented `session.end`; plugin safety/version drift and event payload coverage need fixture proof; permissions are broad by default unless configured or enforced by plugins. |
 | OpenCode | `run --format json`, `export --sanitize`, plugin hooks, `serve` HTTP API, and ACP adapter. | Strong open adapter path: raw JSON events, session export/list, plugins for session/tool/file/permission events, and nd-JSON protocol mode. | Need fixture tests to prove run JSON, export JSON, plugin hooks, ACP, permission flags, thinking capture, and sanitation quality separately across versions. |
 
@@ -79,6 +79,10 @@ The Codex adapter must therefore report:
   subagent, compaction, and stop events when those paths are exercised;
 - observed hook classes and normalized rows;
 - side effects seen by wrapper or repo observation but not by hooks;
+- whether events came from user, project, managed, or plugin-bundled hooks;
+- whether persisted hook trust was required, bypassed, or unavailable;
+- whether dangerous approval/sandbox bypass flags were enabled for the run;
+- `codex exec --json` event classes separately from interactive hook classes;
 - transcript use as `raw_ref_only`, never as the stable structured source.
 
 ### Claude Stream JSON Is A Separate Adapter
@@ -327,8 +331,9 @@ Fail or narrow if:
    OpenTelemetry-shaped; add the Claude stream-json adapter as a fixture and
    non-interactive validation surface, not as a replacement for OTel.
 3. Implement Codex hook ingestion next, paired with a Parallax CLI wrapper and
-   repo diff/hash capture, because Codex is already part of the Parallax
-   operator workflow and exposes structured hook events.
+   repo diff/hash capture, plus a separate `codex exec --json` fixture adapter,
+   because Codex is already part of the Parallax operator workflow and exposes
+   structured hook events.
 4. Implement Amp plugin-event ingestion plus streaming JSON ingestion, because
    Amp plugins now appear to cover interactive and execute-mode lifecycle/tool
    events.
