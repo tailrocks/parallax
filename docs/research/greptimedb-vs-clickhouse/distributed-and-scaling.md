@@ -70,6 +70,39 @@ wall. **ClickHouse wins the single-node vertical ceiling.** Since the operator
 ranks **horizontal first** and vertical-only is a flagged limitation, this axis
 favors GreptimeDB for Parallax's startups→big-companies trajectory.
 
+## Replication economics — the zero-copy gap (pass 57)
+
+HA needs replicas; the question is **does each replica multiply the storage cost?**
+
+- **ClickHouse OSS: yes, safely.** `ReplicatedMergeTree` is **shared-nothing** — each
+  replica downloads and stores its **own full copy** of every part. On an S3 disk that
+  means **N replicas → N× the S3 storage cost**. The fix, **zero-copy replication**
+  (replicas share one S3 copy; only metadata + ref-counts replicate via ZooKeeper at
+  `/clickhouse/zero_copy`), is **`allow_remote_fs_zero_copy_replication = false` by
+  default** and the source itself warns: *"Don't use this setting in production,
+  because it is not ready"* (`MergeTreeSettings.cpp:1955`, **EXPERIMENTAL**; live `0`,
+  Run 34). Its fragility shows in the surrounding machinery — ZooKeeper-coordinated
+  part-removal split/postpone locks, and `freeze`/`detach`/`fetch partition` **disabled**
+  under it. The elastic, safe shared-storage engine (**`SharedMergeTree`**) is
+  **ClickHouse Cloud-only** (above). So OSS ClickHouse HA on object storage realistically
+  pays **N× storage**.
+- **GreptimeDB: no zero-copy concept needed.** Object-store-native + compute/storage
+  separation makes storage **inherently shared** — a region's SSTs live once in S3 and
+  any datanode opens them (region migration = reopen-from-S3, no bulk copy, pass 34).
+  Replication is **region leadership + Metasrv metadata (Raft) + remote WAL (Kafka)**,
+  **not data duplication**. So HA does **not** multiply S3 storage; one copy backs the
+  region, compute is near-stateless. The "1× storage + elastic compute" economics
+  ClickHouse can only reach via an experimental flag (or Cloud) are GreptimeDB's
+  **default architecture**.
+
+→ Cost-axis (#2) + scaling-axis (#3) consequence: for **HA at scale on object storage**,
+GreptimeDB's shared-storage model is both cheaper (1× vs N× S3) and simpler (no fragile
+zero-copy coordination); OSS ClickHouse must choose between N× storage cost, the
+not-production-ready zero-copy feature, or Cloud `SharedMergeTree`. Reinforces the
+object-store-native advantage (`compression-and-cost.md`, `caching-and-cold-warm.md`)
+on the replication dimension. Arch-reasoned + ClickHouse's own source warning (Run 34);
+a real multi-replica S3 cost measurement is owed to the harness.
+
 ## Honest caveats
 
 - **This is architecture-reasoned, not cluster-measured.** All Docker runs so far
@@ -104,8 +137,9 @@ favors GreptimeDB for Parallax's startups→big-companies trajectory.
 | Resharding / topology change | **GreptimeDB** | automatic region rebalance vs ClickHouse OSS manual resharding wall | arch |
 | Elastic compute/storage separation | **GreptimeDB** (OSS) | OpenDAL + remote WAL; ClickHouse `SharedMergeTree` is Cloud-only | confirmed (OSS absence) |
 | Read parallelism across replicas | ~tie | ClickHouse `max_parallel_replicas` (experimental) vs GreptimeDB frontend fan-out | arch |
+| **Replication storage economics** | **GreptimeDB** | Object-store-native = one shared S3 copy per region (HA via leadership/metadata, not data copy); OSS ClickHouse `ReplicatedMergeTree` stores N full copies (N× S3), zero-copy is **not-production-ready** + Cloud `SharedMergeTree` only | arch+source (Run 34) |
 
 ## Source / evidence
 
 - GreptimeDB: `src/partition/src/{splitter,multi_dim,manager}.rs`; **region-migration procedure `src/meta-srv/src/procedure/region_migration/` (flush_leader → downgrade → open_candidate → upgrade → close; no bulk-copy step)**; RFCs `2023-11-07-region-migration`, `2025-06-20-repartition`, `2025-07-23-global-gc-worker`; dist plan `src/query/src/dist_plan` (`MergeScanExec`); remote WAL `src/log-store/src/kafka`.
-- ClickHouse: `src/Storages/StorageDistributed.cpp`, `src/Storages/StorageReplicatedMergeTree.cpp`, `src/Coordination/Keeper*`; `max_parallel_replicas`/`allow_experimental_parallel_reading_from_replicas` (`src/Core/Settings.cpp:7308`); **no** `SharedMergeTree` in `src/Storages` (Cloud-only).
+- ClickHouse: `src/Storages/StorageDistributed.cpp`, `src/Storages/StorageReplicatedMergeTree.cpp`, `src/Coordination/Keeper*`; `max_parallel_replicas`/`allow_experimental_parallel_reading_from_replicas` (`src/Core/Settings.cpp:7308`); **no** `SharedMergeTree` in `src/Storages` (Cloud-only); **zero-copy replication** `allow_remote_fs_zero_copy_replication=false` + *"Don't use … not ready"* (`MergeTreeSettings.cpp:1955`, EXPERIMENTAL), `remote_fs_zero_copy_zookeeper_path=/clickhouse/zero_copy`, `disable_{freeze,detach,fetch}_partition_for_zero_copy_replication`.

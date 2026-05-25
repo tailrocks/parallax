@@ -1056,6 +1056,31 @@ server-side **buffer** costing a ≤200 ms freshness/durability/latency window;
 GreptimeDB's LSM gives it natively, visible+durable on write. Write-path ergonomics +
 freshness edge GreptimeDB (mechanism-grounded; modest absolute ms). No verdict flip.
 
+### Run 34 — 2026-05-25 — Zero-copy replication (replication storage economics)
+
+Backs `distributed-and-scaling.md` (pass 57). Config + source confirm.
+
+**ClickHouse:** `allow_remote_fs_zero_copy_replication = 0` (live default). Source
+(`MergeTreeSettings.cpp:1955`) marks it **EXPERIMENTAL** with the explicit warning
+**"Don't use this setting in production, because it is not ready."** Surrounding
+machinery confirms the fragility: ZooKeeper-coordinated part-removal split/postpone
+locks (`zero_copy_concurrent_part_removal_*`), `remote_fs_zero_copy_zookeeper_path=
+/clickhouse/zero_copy`, and `freeze`/`detach`/`fetch partition` **disabled** under it.
+→ OSS `ReplicatedMergeTree` on S3 realistically stores **N full copies for N replicas**
+(N× S3 cost); the 1× shared-copy path is not production-ready, and `SharedMergeTree` is
+Cloud-only.
+
+**GreptimeDB:** no zero-copy concept — object-store-native means storage is inherently
+shared; a region's SSTs live once in S3, datanodes open them (reopen-from-S3, pass 34).
+HA replication = region leadership + Metasrv metadata + remote WAL, **not data copy**.
+1× S3 storage by default.
+
+**Claim status:** for **HA on object storage**, GreptimeDB's shared-storage model is
+cheaper (1× vs N× S3) and simpler (no fragile coordination); OSS ClickHouse must pick
+N× cost, not-production-ready zero-copy, or Cloud. Reinforces the object-store-native
+edge on the replication dimension (cost #2 + scaling #3). Arch + ClickHouse's own
+source warning; multi-replica S3 cost measurement owed to harness.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
