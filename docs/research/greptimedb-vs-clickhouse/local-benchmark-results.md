@@ -1768,6 +1768,102 @@ Caveat: warm, cache-resident smoke; metadata sizes are exact and stable (not
 timing). 5M-row single-node laptop scale — directional for cost ratios, not a
 production retention-bill verdict.
 
+### Run 52 — 2026-05-25 — Bloom-vs-bloom full-text, fair 1% fpr (corrects Run 51's "no CH equivalent" over-claim)
+
+**Pass target.** Close the symmetry Run 51 owed: compare GreptimeDB's bloom-backend
+full-text against ClickHouse's bloom token filter (`tokenbf_v1`) — the fair
+bloom-vs-bloom cell — and check whether the cheap full-text option is really a
+GreptimeDB-only cost lever (Run 51's tentative claim) or exists equally on both.
+
+**Environment.** Same as Run 51 (GreptimeDB `v1.0.2` `0ef5451`, ClickHouse
+`v26.5.1.882` `5b96a8d8`, `bench/compose.yml` local disk). Versions re-pinned this
+pass — both still latest GA/stable, no bump. Same identical 5M-row `logs_b1` corpus
+(`message` ≈ 9.85 tokens/row, ~6.76M distinct tokens globally; **27,062 distinct
+tokens per 8192-row granule** — measured, this drives bloom sizing).
+
+**Schema under test (bloom full-text, copy-paste):**
+
+```sql
+-- GreptimeDB bloom backend (the live logs_b1), fpr=0.01, 10240-row blocks
+"message" STRING NULL FULLTEXT INDEX WITH(analyzer='English', backend='bloom',
+  case_sensitive='false', false_positive_rate='0.01', granularity='10240')
+
+-- ClickHouse tokenbf_v1 — sized for ~1% fpr at n≈27k tokens/granule:
+--   m = -n·ln(0.01)/(ln2)^2 ≈ 259k bits ≈ 32 KB; k = (m/n)·ln2 ≈ 7
+INDEX idx_msg_tbf message TYPE tokenbf_v1(32768, 7, 0) GRANULARITY 1   -- 8192-row granules
+```
+
+**The sizing-fairness correction (why the first attempt was a trick).** First build
+used `tokenbf_v1(98304, 6, 0)` on a *guessed* n≈80k tokens/granule → index **57.5
+MiB**, pruning **1/611** granules. But the *measured* distinct tokens/granule is
+**27,062**, not 80k (most of the 80,690 raw tokens repeat — common words, levels,
+services; only UUIDs are unique). So 98 KB/granule was **~3× oversized** (fpr ≪ 1%) —
+an unfair, over-provisioned filter. Resized to the math-correct **32 KB/granule** for
+genuine ~1% fpr and re-measured. *This is the no-tricks rule applied to my own prior
+pass: the 57 MiB number was an artifact of my sizing, not an engine property.*
+
+**Measured (5M identical log rows, fair ~1% fpr, warm):**
+
+| Full-text index | type | index size | exact-term latency | granules pruned (unique term) |
+| --- | --- | --- | --- | --- |
+| ClickHouse `text` | inverted | 170.4 MiB | **3 ms** | exact (posting list) |
+| GreptimeDB tantivy | inverted | 148.3 MiB | ~6 ms (Run 49) | exact (posting list) |
+| **ClickHouse `tokenbf_v1`** (1% fpr) | **bloom** | **19.2 MiB** | **8 ms** | **3/611** (1 true + 2 fp) |
+| **GreptimeDB bloom** (1% fpr) | **bloom** | **18.1 MiB** | **9 ms** | block-bloom (Run 49 ~8 ms) |
+
+Term `0835d162` matches exactly 1 row on both (correctness anchor). CH `tokenbf`
+latency went 18 ms (oversized 98 KB) → **8 ms** (fair 32 KB) — fewer bytes to load
+per probed granule, same pruning quality (3/611).
+
+**The comparison logic & verdict.**
+
+- **Bloom-vs-bloom is a TIE.** At matched ~1% fpr: ClickHouse `tokenbf_v1` **19.2
+  MiB / 8 ms** vs GreptimeDB bloom **18.1 MiB / 9 ms**. Bloom-filter size at a fixed
+  fpr is governed by distinct-token count (pure math: `m ≈ 9.585·n` bits for 1%),
+  which is ~equal on the same corpus — so **neither engine has a bloom-tier size or
+  speed advantage.** **Status: Run 51's "GreptimeDB bloom is the cost lever with no
+  managed CH equivalent" is REFUTED / CORRECTED — ClickHouse's equal-cost equivalent
+  is `tokenbf_v1` (or `ngrambf_v1`).**
+- **The real axis is index *family*, identical on both engines:** *inverted*
+  (148–170 MiB, ~60–75% overhead, 3–6 ms exact-term, supports phrase/ranking) **vs**
+  *bloom* (~18–19 MiB, ~8% overhead, 8–9 ms, token-membership only, probabilistic).
+  Bloom is ~9× smaller and ~2–3× slower than inverted — **on both engines.** Choosing
+  bloom over inverted saves ~55–65% of total log-table size at a ~2–3× exact-term
+  latency cost — a real cost/latency lever, but **engine-neutral.**
+- **What survives as a GreptimeDB nuance (ergonomics, not cost/speed):** GreptimeDB
+  exposes both tiers behind one `FULLTEXT INDEX WITH(backend=bloom|tantivy)` knob
+  *with analyzer/case/phrase semantics*; ClickHouse splits them — `text` (inverted,
+  GA, ranking/phrase) vs `tokenbf_v1`/`ngrambf_v1` (bloom *skip-index*, token-only,
+  no analyzer-class features). Capability/ergonomics difference, not a storage-cost
+  or latency one. Feeds `compression-and-cost.md` (corrected) and `indexing-internals.md`.
+
+**Reproduce (copy-paste).**
+
+```bash
+# measured distinct tokens per granule (drives bloom sizing — do this first)
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q \
+  "SELECT uniqExact(arrayJoin(splitByNonAlpha(message))) FROM (SELECT message FROM logs_b1 ORDER BY service, ts LIMIT 8192)"
+# CH fair-sized bloom: build, size, prune, time
+docker exec parallax-bench-clickhouse-1 clickhouse-client --multiquery -q "
+DROP TABLE IF EXISTS logs_b1_tbf;
+CREATE TABLE logs_b1_tbf (ts DateTime64(3) CODEC(DoubleDelta,ZSTD(1)), service LowCardinality(String),
+  level LowCardinality(String), message String CODEC(ZSTD(1)), trace_id String CODEC(ZSTD(1)),
+  span_id String CODEC(ZSTD(1)), INDEX idx_msg_tbf message TYPE tokenbf_v1(32768, 7, 0) GRANULARITY 1)
+ENGINE=MergeTree ORDER BY (service, ts) SETTINGS index_granularity=8192;
+INSERT INTO logs_b1_tbf SELECT * FROM logs_b1; OPTIMIZE TABLE logs_b1_tbf FINAL;"
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q "SELECT name, formatReadableSize(sum(data_compressed_bytes)) FROM system.data_skipping_indices WHERE database='default' AND table='logs_b1_tbf' GROUP BY name"
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q "EXPLAIN indexes=1 SELECT count() FROM logs_b1_tbf WHERE hasToken(message,'0835d162')"
+docker exec parallax-bench-clickhouse-1 clickhouse-client --time -q "SELECT count() FROM logs_b1_tbf WHERE hasToken(message,'0835d162') FORMAT Null"
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q "DROP TABLE logs_b1_tbf"  # cleanup
+# GreptimeDB bloom (live logs_b1)
+docker exec parallax-bench-greptimedb-1 curl -s "http://localhost:4000/v1/sql?db=public" \
+  --data-urlencode "sql=SELECT count(*) FROM logs_b1 WHERE matches_term(message,'0835d162')" | grep -o '"execution_time_ms":[0-9]*'
+```
+
+Caveat: warm, cache-resident smoke; sizes are exact metadata. Bloom sizing depends on
+distinct-token count, so the size *tie* generalizes (it's fpr math); the precise MiB
+scales with corpus token cardinality.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

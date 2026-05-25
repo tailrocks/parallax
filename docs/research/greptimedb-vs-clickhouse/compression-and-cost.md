@@ -2,8 +2,8 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 8, extended pass 88 (Run 51: full-text index storage cost). The cost
-axis (#2). Combines the codec mechanisms from the internals notes with **measured
+Status: pass 8, extended passes 88–89 (Runs 51–52: full-text index storage cost,
+inverted + bloom-vs-bloom). The cost axis (#2). Combines the codec mechanisms from the internals notes with **measured
 per-table/per-column sizes** from the live Docker candidates, then ties to retention
 $. Builds on `local-benchmark-results.md`.
 
@@ -79,39 +79,49 @@ needs explicit per-column ZSTD on high-card columns. Confirms the "compression i
 tuning-dependent wash" conclusion on realistic data, with one operational nuance:
 **GreptimeDB needs no codec tuning; ClickHouse does.**
 
-## Full-text index storage cost (Run 51 — the cost the column comparison misses)
+## Full-text index storage cost (Runs 51–52 — the cost the column comparison misses)
 
 Column compression is a wash, but for **logs** the full-text *index* is a large,
 separate storage cost the table above ignores. Measured on an identical 5M-row log
-corpus, all compacted to 1 SST/part:
+corpus (1 SST/part; bloom filters sized for matched ~1% fpr):
 
-| Full-text index on `message` | column/SST data | index | total | index overhead |
+| Full-text index on `message` | type | index | exact-term | overhead on data |
 | --- | --- | --- | --- | --- |
-| ClickHouse `text` (inverted, `splitByNonAlpha`) | 228 MiB | **170 MiB** | 399 MiB | **~75%** |
-| GreptimeDB tantivy (inverted, Lucene-class) | 240 MiB | **148 MiB** | 388 MiB | **~62%** |
-| GreptimeDB bloom (probabilistic, fpr=0.01) | 240 MiB | **18 MiB** | 258 MiB | **~7.5%** |
+| ClickHouse `text` (`splitByNonAlpha`) | inverted | **170 MiB** | 3 ms | **~75%** |
+| GreptimeDB tantivy (Lucene-class) | inverted | **148 MiB** | ~6 ms | **~62%** |
+| ClickHouse `tokenbf_v1` (1% fpr) | bloom | **19 MiB** | 8 ms | **~8.4%** |
+| GreptimeDB bloom (1% fpr) | bloom | **18 MiB** | 9 ms | **~7.5%** |
 
-**Fair reading (the trap to avoid):** the live `logs_b1` carries a *bloom*-backend
-full-text index (18 MiB), so comparing it to ClickHouse's *inverted* `text` index
-(170 MiB) falsely suggests a ~9× GreptimeDB win. That is inverted-vs-bloom — an
-apples-to-oranges trick. **Inverted-vs-inverted, GreptimeDB tantivy is only ~13%
-smaller (148 vs 170 MiB)**; both true inverted indexes cost **60–75% on top of the
-column data**, so full-text indexing is expensive on *both* engines.
+**The axis is the index *family*, and it is identical on both engines** — not an
+engine advantage either way:
 
-**The real cost lever** is that GreptimeDB *offers a bloom-backend full-text index*
-(~7.5% overhead, ~9× smaller than either inverted index) that still answers exact-term
-search at ~8 ms (Run 49, `matches_term`). For Parallax's **anchored** log search
-(exact request-id/trace-id grep during an incident) that is a genuine retention-cost
-win with a capability tradeoff (probabilistic, 1% false positive re-checked at scan;
-no ranking/phrase). ClickHouse's fair analog is a `tokenbf_v1` bloom skip-index —
-**not yet measured bloom-vs-bloom** (owed; routed to `benchmarking-the-differences.md`),
-so the bloom-tier size edge is real for *managed full-text* but not yet proven against
-CH's own bloom token filter.
+- **Inverted-vs-inverted:** GreptimeDB tantivy is only ~13% smaller than ClickHouse
+  `text` (148 vs 170 MiB); both cost **60–75% on top of the column data** and answer
+  exact-term in 3–6 ms with phrase/ranking support. Full-text inversion is expensive
+  on *both*.
+- **Bloom-vs-bloom is a TIE** (CH `tokenbf_v1` 19 MiB / 8 ms vs GreptimeDB bloom 18
+  MiB / 9 ms). Bloom size at a fixed fpr is governed by distinct-token count (pure
+  math, `m ≈ 9.585·n` bits for 1%), so it is ~equal on the same corpus. *(Run 52
+  corrected a prior Run 51 over-claim: the naive live numbers — CH inverted 170 MiB
+  vs GreptimeDB bloom 18 MiB — compared different index families, an apples-to-oranges
+  ~9×; and a first CH `tokenbf` build measured 57 MiB only because it was ~3×
+  oversized for fpr ≪ 1%. At matched fpr the bloom tier ties.)*
 
-Consequence for the cost axis: at log-retention scale the **index choice dominates
-the storage delta, not the column codec** — choosing GreptimeDB bloom full-text over
-an inverted index saves ~55–65% of total log-table size while keeping anchored grep
-fast. (Source: `local-benchmark-results.md` Run 51.)
+**The real cost lever is bloom-vs-inverted, available on both engines:** choosing a
+bloom full-text index over an inverted one saves **~55–65% of total log-table size**
+(~18 MiB vs ~150–170 MiB index) at a ~2–3× exact-term latency cost (8–9 ms vs 3–6 ms)
+and a capability tradeoff (token-membership only, probabilistic 1% fp re-checked at
+scan; no phrase/ranking). For Parallax's **anchored** log search (exact
+request-id/trace-id grep) the bloom tier is the right cost/latency point — and *both*
+engines offer it.
+
+**GreptimeDB's only edge here is ergonomics, not cost or speed:** it exposes both
+tiers behind one `FULLTEXT INDEX WITH(backend=bloom|tantivy)` knob with
+analyzer/case/phrase semantics; ClickHouse splits them — `text` (inverted, GA) vs
+`tokenbf_v1`/`ngrambf_v1` (bloom *skip-index*, token-only, no analyzer-class
+features). At log-retention scale the **index-family choice dominates the storage
+delta, not the column codec or the engine.** (Source: `local-benchmark-results.md`
+Runs 51–52.)
 
 ## What actually decides Parallax's storage cost
 
@@ -170,6 +180,6 @@ decided less by "who compresses spans 1.3× better" and more by:
 
 - GreptimeDB compression: `src/mito2/src/sst/parquet/writer.rs:36,391,433` (Parquet + ZSTD; no per-column codec DDL).
 - ClickHouse codecs: `src/Compression/CompressionCodec*.cpp` (`clickhouse-internals.md`).
-- Measured sizes: `local-benchmark-results.md` Run 1/3/10 (column compression) + Run 51 (full-text index cost) via `system.parts`, `system.data_skipping_indices`, GreptimeDB `information_schema.region_statistics`.
+- Measured sizes: `local-benchmark-results.md` Run 1/3/10 (column compression) + Runs 51–52 (full-text index cost: inverted + fair bloom-vs-bloom) via `system.parts`, `system.data_skipping_indices`, GreptimeDB `information_schema.region_statistics`.
 - GreptimeDB full-text backends (`bloom` vs `tantivy`): index built per SST in the `.puffin` sidecar; backend chosen in `FULLTEXT INDEX WITH(backend=…)` DDL (`indexing-internals.md`).
 - Retention $ + TTL expiry mechanism: `retention-and-ttl.md`.
