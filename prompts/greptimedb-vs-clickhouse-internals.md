@@ -124,6 +124,9 @@ demands it, and update the README and `PROJECT_STRUCTURE.md` when you do):
   pinned image tags, dataset, queries, real measured numbers, and which published
   claim each run confirms or refutes (see below).
 - `verdict-which-to-choose.md` — the final synthesized decision (see below).
+- `greptimedb-parity-roadmap.md` — for the recommended system, the per-capability
+  gap-closing analysis: what GreptimeDB would implement (against its real internals) to
+  match each ClickHouse advantage, tiered by effort (see "Closing The Gap" below).
 
 Keep each note source-linked and concise. Prefer comparison tables plus short
 mechanism analysis, per the repo research conventions.
@@ -445,6 +448,52 @@ The loop must drive toward an explicit, defensible answer to all of these, in
 
 The decision must rest on the design decisions behind each system, so the choice
 is the right one to build on the first time.
+
+---
+
+# Closing The Gap — What The Winner Must Implement For Full Parity
+
+The recommended system (currently **GreptimeDB**, on fit) wins most cases but **lacks
+some capabilities the other has** that may matter for Parallax. The comparison is not
+complete at "X wins on balance" — it must also answer: *to make the winner a clear
+winner in **all** cases, what would have to be built into it, and is that an
+engineering gap or an architectural one?* Maintain this as a standing deliverable in
+`greptimedb-parity-roadmap.md` (and keep it consistent with `verdict-which-to-choose.md`).
+
+For each capability where the rejected system (ClickHouse) is genuinely ahead, specify:
+
+- **The gap, mechanism-level.** What ClickHouse does and *why it is faster/abler*, tied
+  to the concrete data structure or code path (e.g. PREWHERE late materialization, 65k
+  blocks + LLVM JIT, the `text` posting-list index, typed-subcolumn JSON, projections).
+- **What GreptimeDB would implement to close it — against its *actual* structure.** Map
+  the fix to GreptimeDB's real internals (mito2 region engine, Parquet SST + Puffin index
+  sidecar, DataFusion `=52.x` execution, OpenDAL object store). Name the file/subsystem
+  that would change. Be concrete: "bump the DataFusion `RecordBatch` size in
+  `SessionConfig`," "add late materialization to the mito2 Parquet reader," "shred JSON
+  paths into Parquet subcolumns," not "make it faster."
+- **Classify the effort** into one of three tiers, because the operator's decision turns
+  on this:
+  1. **Tier A — solvable in Parallax today** (schema/app, no engine change): indexing
+     `trace_id`/`fingerprint`, Flow pre-aggregation, choosing SQL over PromQL for hot
+     aggregations. These close the gaps that matter for Parallax's *anchored* workload now.
+  2. **Tier B — upstream engine work (contributable, since GreptimeDB + DataFusion are
+     open-source Rust)**: batch size, expression/aggregation JIT, SIMD kernels, PREWHERE,
+     JSON shredding, projection-equivalent alternate ordering, index↔scan fusion. These are
+     what "clear winner for *all* cases (incl. heavy ad-hoc log/scan analytics)" requires.
+     State whether each is already on the DataFusion roadmap vs a GreptimeDB-specific build.
+  3. **Tier C — accept or wait**: distributed/analytical maturity that only time and
+     battle-testing close.
+- **Whether it is a *design* gap or an *integration* gap.** The load-bearing finding so
+  far: GreptimeDB's index *toolkit is richer* (FST+roaring inverted, tantivy full-text),
+  so its losses are **execution-integration**, not architecture — closable by engineering,
+  not redesign. Keep testing whether each gap is integration-level (good news) or a true
+  architectural limit (which would weaken the recommendation).
+
+The point is decision-useful: tell the operator exactly what it costs to make GreptimeDB
+the unambiguous choice for every Parallax query shape, and which of those costs they pay
+in their own schema vs. by contributing upstream. (A hybrid GreptimeDB+ClickHouse split is
+the alternative to closing the gap — evaluate it honestly, but note it splits Parallax's
+cross-signal correlation hot path across two engines, its biggest cost.)
 
 ---
 

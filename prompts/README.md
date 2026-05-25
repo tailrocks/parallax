@@ -9,7 +9,7 @@ OpenCode) so a piece of work runs the same way every time.
 | File | Purpose |
 | --- | --- |
 | `deep-research-parallax.md` | Deep, critical research brief that validates the Parallax direction and must end in a concrete technical implementation concept (which system, which storage, how to build it). |
-| `greptimedb-vs-clickhouse-internals.md` | Never-ending `/loop` brief for the under-the-hood GreptimeDB vs ClickHouse comparison: read the source, explain which design decisions make each fast or slow per signal, and decide which to build Parallax on. Writes to `docs/research/greptimedb-vs-clickhouse/`. |
+| `greptimedb-vs-clickhouse-internals.md` | Never-ending `/loop` brief for the under-the-hood GreptimeDB vs ClickHouse comparison: read the source, explain which design decisions make each fast or slow per signal, decide which to build Parallax on, and (when one wins but lacks features) map what the winner must implement to close the gap. Writes to `docs/research/greptimedb-vs-clickhouse/`. |
 
 ## How to run a prompt
 

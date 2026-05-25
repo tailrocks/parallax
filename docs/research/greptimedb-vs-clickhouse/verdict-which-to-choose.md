@@ -187,6 +187,14 @@ scan-shaped queries Parallax does not run on the hot path.
   PromQL/OTLP/sharding cost above.
 - **No third system** is warranted: neither a mechanism gap nor the language filter
   opens room for one; both candidates cover the workload.
+- **No hybrid by default.** A GreptimeDB+ClickHouse split would put logs/search on
+  ClickHouse and the rest on GreptimeDB — but that splits Parallax's cross-signal
+  evidence-bundle correlation (the hot path) across two engines and doubles ops. Only
+  justified if a benchmark shows ad-hoc log search is both heavy *and* standalone. The
+  better route to "clear winner for all cases" is closing GreptimeDB's few gaps — see
+  **`greptimedb-parity-roadmap.md`** (the gaps are execution-integration, mostly on the
+  DataFusion roadmap or contributable in Rust, not architectural; Tier-A schema/Flow work
+  already wins Parallax's anchored workload today).
 
 ### Recommendation, tradeoffs, and the rejected alternative
 
