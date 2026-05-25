@@ -3147,6 +3147,48 @@ sorted-column locality (fair — it's the recommended high-card schema).
 
 **Reproduce.** CH `CREATE TABLE hc_lc (series LowCardinality(String), ts DateTime, val Float64) ENGINE=MergeTree ORDER BY (series,ts)` + `INSERT … 'svc-'||toString(number%200000) … numbers(1000000)`; dump `FORMAT CSVWithNames`, `COPY` into GreptimeDB `hc_gt (series STRING, ts_ms TIMESTAMP(3) TIME INDEX, val DOUBLE, PRIMARY KEY(series))`; compare `system.parts` vs `region_statistics`.
 
+### Run 77 — 2026-05-25 — B13 complete: metric-engine `__tsid` high-card storage (CH wins, corrects Run 26)
+
+**Pass target.** Close the Run-76-owed fair tiebreaker: does GreptimeDB's **metric engine**
+(series as a u64 `__tsid` hash) store 200k high-card series more compactly than the plain
+table (11.99 MiB) or CH `LowCardinality` (9.64 MiB)?
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned — latest, no
+bump). Same 200k-series / 1M-row data. Built the metric engine: physical `hc_phy`
+(`ENGINE=metric WITH('physical_metric_table'='')`) + logical `hc_log`
+(`ENGINE=metric WITH('on_physical_table'='hc_phy')`, `series STRING PRIMARY KEY`); loaded via
+a staging table + `INSERT … SELECT`.
+
+**Measured (200k series, 1M rows, full ladder):**
+
+| Storage | total |
+| --- | --- |
+| ClickHouse `LowCardinality(String)` | **9.64 MiB** |
+| ClickHouse `String` | 10.11 MiB |
+| GreptimeDB plain mito table | 11.99 MiB |
+| **GreptimeDB metric engine** (`__tsid`) | **12.63 MiB** |
+
+**Verdict — B13 storage COMPLETE; corrects Run 26.** The metric engine is **not smaller**
+— it is *slightly larger* than the plain table (12.63 vs 11.99 MiB). `__tsid` (the u64
+label-set hash) + `__table_id` are stored **in addition to** the label columns (the physical
+table keeps labels for query), so the hash is **overhead for fast series identity +
+multi-metric sharing, not a storage replacement.** **ClickHouse `LowCardinality` wins
+high-card metric *storage* ~1.3×** over both GreptimeDB layouts. So the Run-26 "high-card
+*storage* → GreptimeDB" is **refuted on raw bytes**: GreptimeDB's high-card edge is purely
+**ingest ergonomics/operability** (no `LowCardinality` cap, no `ORDER BY` tuning, many
+logical metrics → one physical table, label-set hashing) — **not** storage size (→ CH) and
+**not** aggregation latency (→ CH ~2–3×, Run 26/67). Status: **B13 storage complete; verdict
+high-card cell corrected.**
+
+Caveat: 200k series / 1M rows smoke; the metric engine's *operational* wins (cap-free
+ingest, multi-metric consolidation, repartition growth) are real and not about bytes — this
+measures bytes only. Method gotcha logged: GreptimeDB COPY-CSV matches columns **by name**
+(header `ts_ms` vs column `ts` → "missing column ts"); name them to match.
+
+**Reproduce.** Build `hc_phy`/`hc_log` (metric engine), stage the 200k-series CSV in a plain
+table, `INSERT INTO hc_log (ts,val,series) SELECT …`, `ADMIN flush_table('hc_phy')`, read
+`region_statistics.sst_size` for `hc_phy` (12.63 MiB) vs CH `system.parts` (9.64 MiB LC).
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
