@@ -28,8 +28,10 @@ The central rule:
 
 | Source | Current check | Why it matters |
 | --- | --- | --- |
-| [GitHub Deployments API](https://docs.github.com/en/rest/deployments/deployments?apiversion=2022-11-28) | The page currently renders examples with `X-GitHub-Api-Version: 2026-03-10`. Deployments record `ref`, `sha`, `task`, `payload`, `environment`, transient/production flags, creator, status URL, and repository URL; creating a deployment can require successful commit statuses unless explicitly bypassed. | Parallax must pin the API header/date used in each run and treat deployment objects as requested/deployed-ref evidence, not runtime causality. |
+| [GitHub API versions](https://docs.github.com/en/rest/about-the-rest-api/api-versions) | GitHub lists `2026-03-10` and `2022-11-28` as supported REST API versions; unversioned requests default to `2022-11-28`; unsupported versions return `410 Gone`. | Parallax runs must record the request header version, the unversioned default, and the docs/source snapshot date separately. |
+| [GitHub Deployments API](https://docs.github.com/en/rest/deployments/deployments?apiVersion=2022-11-28) | The docs page is labeled `API Version: 2022-11-28`, while current examples render `X-GitHub-Api-Version: 2026-03-10`. Deployments record `ref`, `sha`, `task`, `payload`, `environment`, transient/production flags, creator, status URL, and repository URL; creating a deployment can require successful commit statuses unless explicitly bypassed. | Parallax must not collapse docs page version, request header, and source date into one field. Deployment objects are requested/deployed-ref evidence, not runtime causality. |
 | [GitHub Deployment Statuses API](https://docs.github.com/en/rest/deployments/statuses?apiVersion=2022-11-28) | Status states include `error`, `failure`, `inactive`, `in_progress`, `queued`, `pending`, and `success`; `log_url` is preferred over legacy `target_url`; `environment`, `environment_url`, and `auto_inactive` affect interpretation. | A deployment without a terminal status, environment, and log/status refs is incomplete evidence. |
+| [GitHub deployment webhooks](https://docs.github.com/en/webhooks/webhook-events-and-payloads#deployment_status) | `deployment_status` webhooks require deployment read permission and are not fired for statuses with state `inactive`; `deployment` webhooks cover deployment creation. | Webhooks are useful low-latency evidence, but API backfill remains mandatory for inactive transitions and missed delivery. |
 | [GitHub Actions variables](https://docs.github.com/actions/reference/workflows-and-actions/variables) | `GITHUB_SHA` exists, but its value depends on the workflow event that triggered the run. | CI/deploy ingestion must store event type, ref, and head/base context instead of treating `GITHUB_SHA` alone as deployed truth. |
 | [GitHub PR files API](https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#list-pull-requests-files) | PR files are paginated and capped at 3000 files; PR commits endpoint caps at 250 commits before needing the commits endpoint. | File-touch and PR-contains-commit edges must include completeness flags and downgrade broad changes. |
 | [GitHub compare commits API](https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#compare-two-commits) | Compare supports refs/SHAs and returns commits chronologically with file details, but unpaged responses are limited and large comparisons require pagination. | Release-to-release change windows need exact base/head SHAs and pagination metadata. |
@@ -94,7 +96,10 @@ Each `manifest.json` should include:
   "edge_rules_version": "deploy-change-edges-vN",
   "redaction_policy_version": "a6-default-deny-vN",
   "source_snapshot": {
-    "github_rest_api_header": "2026-03-10",
+    "github_rest_request_header": "2026-03-10",
+    "github_rest_docs_api_version": "2022-11-28",
+    "github_rest_unversioned_default": "2022-11-28",
+    "github_rest_supported_versions_checked": ["2026-03-10", "2022-11-28"],
     "sentry_api": "current-docs-YYYY-MM-DD",
     "linear_releases": "current-docs-YYYY-MM-DD",
     "jira_deployments": "current-docs-YYYY-MM-DD",
@@ -238,7 +243,9 @@ does not carry over to another.
   "claim_level": "release_regression_context",
   "claim_status": "pass|fail|expired",
   "version_matrix": {
-    "github_rest_api_header": "2026-03-10",
+    "github_rest_request_header": "2026-03-10",
+    "github_rest_docs_api_version": "2022-11-28",
+    "github_rest_unversioned_default": "2022-11-28",
     "otel_semconv": "1.41.0",
     "bundle_schema": "parallax-bundle-vN",
     "edge_rules": "deploy-change-edges-vN"
@@ -278,9 +285,9 @@ does not carry over to another.
 Rerun the matrix and mark affected claims `claim_expired` when any of these
 change:
 
-- GitHub REST API version/header, deployment/status API behavior, PR file/commit
-  caps, compare pagination, Actions event/SHA semantics, or webhook payloads
-  change;
+- GitHub REST supported versions, unversioned default, request-header guidance,
+  deployment/status API behavior, PR file/commit caps, compare pagination,
+  Actions event/SHA semantics, or webhook payloads change;
 - Sentry release/deploy API or CLI release semantics change;
 - Linear release, GitHub integration, path-filter, or plan availability changes;
 - Jira development/deployment information APIs, sequence semantics, or accepted
