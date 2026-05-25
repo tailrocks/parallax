@@ -38,8 +38,9 @@ and normalization of agent execution traces.
 | [Claude Code monitoring](https://code.claude.com/docs/en/monitoring-usage) | Claude Code exports opt-in OpenTelemetry metrics, logs/events, and optional beta traces; prompt text, tool details, tool content, and raw API bodies are disabled by default and require explicit flags. It does not pass generic `OTEL_*` exporter variables to subprocesses, but when tracing is active Bash/PowerShell inherit `TRACEPARENT`. | Claude Code is the strongest native OTel target, but content capture must remain opt-in/redacted and subprocess coverage must distinguish trace-context inheritance from full telemetry-exporter inheritance. |
 | [Claude Code CLI reference](https://code.claude.com/docs/en/cli-usage) and local `claude --help` | Current docs and local `2.1.150` help show `--output-format stream-json` in print mode, `--include-hook-events` for hook lifecycle events in that stream, `--include-partial-messages`, stream JSON input, replayed user messages, session IDs, permission modes, and MCP config flags. | Claude stream JSON is a separate non-interactive structured adapter claim. It can support fixture automation and hook-event validation, but it must not be counted as interactive OTel coverage or as default-safe prompt/tool-content capture. |
 | [Amp manual](https://ampcode.com/manual) | Amp supports streaming JSON output in `--execute` mode for programmatic integration and real-time conversation monitoring; optional thinking blocks extend the schema and are not Claude Code compatible. `--stream-json-input` supports multi-message stdin and a `steer` marker. The same manual documents TypeScript plugins, project/system/global plugin locations, lifecycle events such as `session.start`, `agent.start`, `tool.call`, `tool.result`, and `agent.end`, plugin activation for both interactive sessions and `amp --execute` runs, and explicitly notes there is no `session.end` event. Amp does not ask before running tools by default; `amp.permissions`, `amp.guardedFiles.allowlist`, or `amp.dangerouslyAllowAll=false` activate an internal permissions plugin. | Amp should be measured through both plugin-event fixtures and non-interactive stream fixtures. Thinking blocks, stdin messages, `steer` messages, and image/base64 payloads are sensitive input modes, not default-safe capture. Plugin events are a stronger interactive capture surface than the prior wrapper/thread-ref assumption, but still need payload, permissions, and version proof. |
-| [OpenCode CLI](https://opencode.ai/docs/cli/) | OpenCode supports `run --format json` raw JSON events, session continuation/forking, `session list --format json`, export JSON with `--sanitize`, headless `serve`, ACP over nd-JSON, stats, and permission/thinking flags. | OpenCode is a strong JSON/export/plugin/API/protocol adapter target; `--sanitize` is helpful but does not replace Parallax redaction, and `--thinking` / `--dangerously-skip-permissions` must be recorded as sensitive run configuration. |
-| [OpenCode plugins](https://opencode.ai/docs/plugins/) | Plugins expose documented event names including `command.executed`, `file.edited`, `permission.asked`, `permission.replied`, `session.*`, `shell.env`, `tool.execute.before`, and `tool.execute.after`. | OpenCode can provide deep structured events without terminal parsing, but support must be proven per enabled event class and must not be inferred from run JSON or export JSON alone. |
+| [OpenCode CLI](https://opencode.ai/docs/cli/) | OpenCode supports `run --format json` raw JSON events, `run --attach` against a `serve` backend, session continuation/forking, `session list --format json`, export JSON with `--sanitize`, headless `serve` API with optional basic auth, ACP over nd-JSON, stats, and permission/thinking flags. | OpenCode is a strong JSON/export/plugin/API/protocol adapter target; `--sanitize` is helpful but does not replace Parallax redaction, and `--thinking`, `--dangerously-skip-permissions`, server attach URL, basic-auth credential source, CORS, host/port, and mDNS settings must be recorded as sensitive run configuration. |
+| [OpenCode plugins](https://opencode.ai/docs/plugins/) | Plugins expose event families for command, file, installation, LSP, message, permission, server, session, todo, shell, tool, and TUI behavior. `tool.execute.before` can mutate tool arguments; `shell.env` can inject environment variables. | OpenCode can provide deep structured events without terminal parsing, but support must be proven per enabled event class, and fixtures must separate observer-only plugins from plugins that mutate tool calls, environment, or TUI behavior. |
+| [OpenCode MCP servers](https://opencode.ai/docs/mcp-servers/) | OpenCode supports local MCP servers with command/environment/timeout/enabled fields and remote MCP servers with URL, enabled, headers, OAuth config or OAuth disabled, timeout, remote defaults, global tool toggles, glob disables, and per-agent MCP enablement. | MCP settings are secret-bearing and policy-bearing. OpenCode tool-call rows need transport, header/env/OAuth source, enabled/global/per-agent tool state, and timeout provenance before cross-agent MCP comparisons are claimable. |
 | [OpenTelemetry semantic conventions 1.41.0](https://opentelemetry.io/docs/specs/semconv/) | Current semconv catalog includes GenAI, MCP, CLI, process, CI/CD, VCS, exception, and test areas. | Adapters should record source semantic-convention versions instead of hard-coding unstable span shapes into Parallax storage. |
 | [OpenTelemetry GenAI agent spans](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/), [MCP](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/), and [CLI spans](https://opentelemetry.io/docs/specs/semconv/cli/cli-spans/) | GenAI and MCP conventions are useful ingestion vocabulary; CLI conventions define short-lived command spans and exit/error semantics. | OTel-native sources feed normalized Parallax rows, but raw spans are not the durable product schema. |
 
@@ -174,6 +175,22 @@ approves a redacted synthetic fixture.
       "disabled_tools": [],
       "approval_modes": [],
       "plugin_server_origins": []
+    },
+    "opencode_config": {
+      "run_format": "default|json",
+      "attach_url": null,
+      "serve_enabled": false,
+      "server_auth_mode": "none|basic",
+      "server_credential_sources": [],
+      "cors_origins": [],
+      "mdns_enabled": false,
+      "mcp_tool_enablement_scope": "global|per_agent|mixed|unknown",
+      "plugin_event_classes_enabled": [],
+      "plugin_mutates_tool_args": false,
+      "plugin_injects_shell_env": false,
+      "export_sanitize": false,
+      "thinking_visible": false,
+      "dangerously_skip_permissions": false
     },
     "expected_event_classes": ["SessionStart", "PreToolUse", "PostToolUse"],
     "coverage_denominator_source": "native_events|wrapper_observation|repo_diff|manual_fixture"
@@ -402,9 +419,17 @@ approves a redacted synthetic fixture.
 - OpenCode `--sanitize` is a source feature, not Parallax redaction proof.
   Parallax redaction must still pass on normalized projections.
 - OpenCode plugin support requires coverage rows for enabled event classes.
-  JSON/export rows alone do not prove live side-effect coverage.
+  JSON/export rows alone do not prove live side-effect coverage. Plugin rows
+  must record whether the plugin only observed events or mutated tool
+  arguments, injected shell environment, or affected TUI/server behavior.
 - OpenCode run JSON, export JSON, plugin hooks, server/API, and ACP are separate
   claim surfaces. Do not collapse them into one support claim.
+- OpenCode server/API and `run --attach` claims must record attach URL,
+  host/port, CORS, mDNS, basic-auth mode, and credential source. Local run JSON
+  does not prove attached-server behavior.
+- OpenCode MCP claims must record local/remote transport, command/env/header
+  sources, OAuth enabled/disabled state, timeout, remote defaults, global tool
+  toggles, glob disables, and per-agent enablement.
 - OpenCode `--thinking` and `--dangerously-skip-permissions` must be recorded as
   run configuration and excluded from default-safe product claims unless the
   redaction and policy rows explicitly cover them.
