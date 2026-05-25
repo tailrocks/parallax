@@ -279,3 +279,6 @@ Add these to `parallax-bench` before quoting storage-cost numbers:
 - [Observability storage benchmark plan](observability-storage-benchmark-plan.md)
 - [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md)
 - [GreptimeDB vs ClickHouse local benchmark results](greptimedb-vs-clickhouse/local-benchmark-results.md)
+- [A5 stack decision ledger](a5-stack-decision-ledger.md) consumes this gate's
+  retained-size, object-count, provider-pricing, and cache-dependency rows
+  before any storage result can become a stack default.

@@ -30,6 +30,11 @@ requests, cache dependency, and provider cost projection is
 Treat that gate as the first storage-cost pass before quoting retention numbers
 externally.
 
+The storage result does not, by itself, prove assumption A5. The
+[A5 stack decision ledger](a5-stack-decision-ledger.md) decides when storage
+speed/cost rows can roll up with metadata, ingest-log, setup, and integration
+rows into a stack-default claim.
+
 Pinned candidate versions for the first run (update at run time per the
 version-freshness rule):
 

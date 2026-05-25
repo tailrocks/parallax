@@ -65,6 +65,7 @@ or CI contract yet.
 | `docs/research/turso-metadata-production-readiness.md` | Turso metadata production-readiness gate: current Turso source posture, local-vs-cloud distinction, MVCC conflict/CDC/sync constraints, backup/restore requirements, and Postgres fallback triggers. |
 | `docs/research/messaging-and-ingestion-layer.md` | Stream and ingest-layer evaluation for Apache Iggy, Redpanda, NATS JetStream, and brokerless startup deployments. |
 | `docs/research/ingest-log-replay-and-backpressure-gate.md` | Proof gate for the append-only ingest log: local WAL versus Iggy/NATS/Redpanda replay, backpressure, durability modes, fault tests, and pass/fail criteria. |
+| `docs/research/a5-stack-decision-ledger.md` | A5 stack-decision result contract: roll up storage speed/cost, metadata, ingest-log, setup, and integration gates into explicit stack claim levels and fallback triggers. |
 | `docs/research/causal-reconstruction-and-agent-safety.md` | Evidence-graph, causal reconstruction, agent autonomy, MCP, and production-data safety analysis. |
 | `docs/research/redaction-pipeline-and-secret-safety.md` | A6 redaction-trust plan: source-specific minimization, default-deny ingest policy, detector/output passes, redaction report fields, and red-team gate before agent exposure. |
 | `docs/research/rust-stacktrace-grouping-and-symbolication.md` | Rust grouping proof gate: debuginfo policy, symbolication status, conservative frame normalization, `rust-stack-v1` fingerprinting, and fixture matrix for grouping stability across rebuild/debug-info variants. |

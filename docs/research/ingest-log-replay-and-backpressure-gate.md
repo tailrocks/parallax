@@ -221,6 +221,9 @@ The architecture should make these claims, and no stronger ones:
 - [Storage benchmark prototype](storage-benchmark-prototype.md) is separate:
   databases own long retention; this gate owns short raw replay and processor
   fan-out.
+- [A5 stack decision ledger](a5-stack-decision-ledger.md) consumes this gate's
+  local-WAL/Iggy/NATS/Redpanda rows before any ingest-log result can become a
+  tiny, durable-single, or clustered stack default.
 
 ## Bottom Line
 

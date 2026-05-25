@@ -157,6 +157,9 @@ The report should include:
   Postgres as an active fallback.
 - [Risks and bear case](risks-and-bear-case.md) should treat this gate as part
   of A5: the chosen stack holds.
+- [A5 stack decision ledger](a5-stack-decision-ledger.md) consumes this gate's
+  metadata rows and decides whether Turso is only a prototype metadata default
+  or whether Postgres must be the production fallback/default.
 - [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) depends
   on this metadata store for auditability and outcome state.
 

@@ -269,4 +269,7 @@ verdict:
 - [Observability storage benchmark plan](observability-storage-benchmark-plan.md)
 - [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md)
 - [GreptimeDB vs ClickHouse local benchmark results](greptimedb-vs-clickhouse/local-benchmark-results.md)
+- [A5 stack decision ledger](a5-stack-decision-ledger.md) consumes this gate's
+  freshness and Q6 latency rows before any storage result can become a stack
+  default.
 - [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)

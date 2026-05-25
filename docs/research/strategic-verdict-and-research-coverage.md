@@ -88,10 +88,10 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Prompt area | Repository evidence |
 | --- | --- |
 | Market and product thesis | [Project thesis](project-thesis.md), [Market landscape](market-landscape.md), [Open self-hosted competitor watch](open-self-hosted-competitor-watch.md), [Lightweight Sentry-compatible competitor watch](lightweight-sentry-compatible-competitor-watch.md), [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md), [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md), [A2 interview evidence ledger](a2-interview-evidence-ledger.md), [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md), [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md) |
-| Evaluation lens and benchmark methodology | [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md), [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md), [Storage size and object cost gate](storage-size-and-object-cost-gate.md), [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md), [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Messaging and ingestion layer](messaging-and-ingestion-layer.md) |
+| Evaluation lens and benchmark methodology | [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md), [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md), [Storage size and object cost gate](storage-size-and-object-cost-gate.md), [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md), [A5 stack decision ledger](a5-stack-decision-ledger.md), [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Messaging and ingestion layer](messaging-and-ingestion-layer.md) |
 | Language/runtime filter and Rust preference | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md), [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md), [Technical implementation concept](technical-implementation-concept.md) |
 | Messaging/streaming | [Messaging and ingestion layer](messaging-and-ingestion-layer.md), [Ingest log replay and backpressure gate](ingest-log-replay-and-backpressure-gate.md) |
-| Unified observability storage | [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md), [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md), [Storage size and object cost gate](storage-size-and-object-cost-gate.md) |
+| Unified observability storage | [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md), [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md), [Storage size and object cost gate](storage-size-and-object-cost-gate.md), [A5 stack decision ledger](a5-stack-decision-ledger.md) |
 | Metadata store | [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md), [Turso metadata production readiness](turso-metadata-production-readiness.md), [Technical implementation concept](technical-implementation-concept.md) |
 | OpenTelemetry | [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md), [OTLP receiver conformance and Collector equivalence](otlp-receiver-conformance-and-collector-equivalence.md) |
 | Sentry-compatible ingestion | [Sentry-compatible ingestion](sentry-compatible-ingestion.md), [Sentry SDK fixture compatibility gate](sentry-sdk-fixture-compatibility.md) |
@@ -143,6 +143,11 @@ Market/product gates:
   and [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md).
 
 Technical proof gates:
+
+- A5 stack-decision roll-up across storage speed/cost, metadata, ingest-log,
+  setup, and integration rows, specified in the
+  [A5 stack decision ledger](a5-stack-decision-ledger.md). This ledger controls
+  when component benchmarks are allowed to become stack-default claims.
 
 - Deterministic cross-signal correlation reliability on real telemetry,
   specified further in the
