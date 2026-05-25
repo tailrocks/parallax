@@ -4639,6 +4639,45 @@ expired part drops whole (count = live, no rewrite); to see the rewrite, interle
 ONE part (`ORDER BY v`, single INSERT) at the boundary. GT: `WITH(ttl='1s')`, insert old rows;
 `ADMIN compact_table` does NOT force the purge (eventual/background). Drop scratch after.
 
+### Run 112 — 2026-05-25 — Concurrent ingest + query re-verified: neither engine blocks reads under sustained ingest (~1.0× penalty both), neither explodes storage (CH merges→2 parts, GT LSM memtable)
+
+**Pass target.** Re-verify the load-bearing operational claim (Run 53): under **sustained
+concurrent ingest**, neither engine blocks/slows reads, and neither suffers storage explosion (CH
+"too many parts" vs GT LSM). Production-realistic — Parallax ingests telemetry continuously while
+users/agents query.
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned live — 13 h up, no bump).
+Method: background loop inserting **50 × 20,000-row batches (1M rows)** into a scratch table while
+foreground samples an **anchored query** (`count WHERE trace_id='…'`, 14-row result) on the static
+1M-row `spans`/`spans_idx`. Isolates engine contention (ingest CPU/IO vs read latency). CH `--time`,
+GT `execution_time_ms`, warm.
+
+| Engine | anchored query, baseline (no load) | anchored query, DURING ingest | penalty | storage state after 1M ingested |
+| --- | --- | --- | --- | --- |
+| ClickHouse | ~2 ms | `3 2 2 2 3 2 2 2` → **~2 ms** | **~1.0× (none)** | **2 active parts** (50 inserts merged down — no explosion) |
+| GreptimeDB | ~10 ms | `14 10 17 10 9 7 7 9 12 11` → **~10 ms** | **~1.0× (none)** | **1M rows in LSM memtable** (`sst_num=0` — absorbed in memory, queryable, no explosion) |
+
+**Verdict — Run 53 reproduces, no drift. Neither blocks reads; neither explodes storage at a realistic rate.**
+
+- **Ingest does NOT slow reads on either engine** — the anchored query stayed flat (CH 2→2 ms, GT
+  10→10 ms, ~1.0× penalty both, even tighter than Run 53's 1.0–1.19×). The hot anchored path is
+  effectively **immune to concurrent ingest** on both.
+- **Neither explodes storage at this sustained-but-realistic rate:** ClickHouse's background merges
+  collapsed 50 inserts into **2 active parts** (the "too many parts" failure is a *sustained-overload*
+  regime where inserts outrun merges, not normal ingest — confirms Run 7/53); GreptimeDB **absorbed
+  1M rows in its LSM memtable** (`sst_num=0`), queryable in-memory, flushing to SSTs later. Two
+  different mechanisms (CH merge-on-write parts vs GT LSM memtable), same healthy outcome.
+- **Decision relevance:** the "continuous ingest while querying" pattern — Parallax's normal operating
+  mode — is **safe on both**. ClickHouse's edge needs a batching/async-insert layer only at
+  *overload* rates (streaming tiny writes); GreptimeDB's LSM absorbs small writes natively (no batching
+  layer). At realistic Parallax volumes neither degrades. No verdict change; reaffirms the
+  write-ergonomics rows (GT no-batching-layer) and that reads are safe under load on both.
+
+**Reproduce.** Create a scratch table each side; background loop `INSERT … 20k rows × 50` (CH `FROM
+numbers`, GT `FROM spans_idx LIMIT 20000`); foreground sample the anchored `count WHERE trace_id='X'`
+on the static spans table ×8–10 during the load; check CH `system.parts` (active) and GT
+`region_statistics.sst_num`. Expect flat query latency + bounded parts/SSTs. Drop scratch after.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
