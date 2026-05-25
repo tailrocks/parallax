@@ -2849,6 +2849,48 @@ docker exec parallax-bench-clickhouse-1 clickhouse-client -q "SELECT part_type,c
 docker exec parallax-bench-clickhouse-1 sh -c "find /var/lib/clickhouse -name '*wal*'"
 ```
 
+### Run 70 — 2026-05-25 — Rollup re-verified (Flow vs MV): correctness tie + a freshness tilt to ClickHouse
+
+**Pass target.** Rotate onto rollup/continuous-aggregation (Run 43 ~pass 43). Re-verify
+GreptimeDB Flow and ClickHouse MV+AggregatingMergeTree both produce correct rollups, and
+characterize freshness.
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned —
+latest, no bump). 4 source rows → minute+service rollup (`avg`, `count`).
+
+**Measured:**
+
+| | GreptimeDB Flow | ClickHouse MV + AggregatingMergeTree |
+| --- | --- | --- |
+| DDL | `CREATE FLOW f SINK TO sink AS SELECT date_bin('1 minute', ts), svc, avg(val), count(val) GROUP BY` (sink **auto-created**) | sink `AggregateFunction(avg)`+`SimpleAggregateFunction(sum)` + `CREATE MATERIALIZED VIEW … avgState/count()` |
+| Result (api m0 / web m0 / api m1) | **15·2 / 5·1 / 30·1** | **15·2 / 5·1 / 30·1** (identical) |
+| Read form | plain values (`avg_val=15`) | `avgMerge(avg_state)`, `sum(n)` (the `-State`/`-Merge` ceremony) |
+| **Freshness** | **batched** — sink empty until `ADMIN FLUSH_FLOW` (streaming mode is low-latency; default/batching path is interval/flush) | **synchronous on INSERT** — 3 sink rows present immediately, no flush (push-MV runs per insert block) |
+
+**Verdict.** **Both correct (tie), opposite tilts reproduce (Run 43).** GreptimeDB Flow:
+cleaner, metric-native (`date_bin`, auto-sink, plain-value reads), younger. ClickHouse MV:
+more ceremony (`-State`/`-Merge`, manual typed sink) but **fresher on the rollup path** —
+the push-MV materializes inside the INSERT, while GreptimeDB Flow is batched (flush/interval).
+**New sharpening:** for *real-time* rollup reads (dashboard refreshing a downsample seconds
+after ingest) ClickHouse's MV is fresher; for eventually-consistent downsamples both fine.
+A freshness tilt to ClickHouse **on the rollup path specifically** (raw-write freshness is
+still a tie, Run 5). Neither moves the verdict. Status: **confirmed + freshness sharpened.**
+
+Caveat: 4-row smoke; GreptimeDB *streaming* Flow mode (laminar) may narrow the freshness gap
+vs the batching path tested here — re-check if real-time rollups become a Parallax need.
+
+**Reproduce (copy-paste).**
+
+```bash
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=CREATE TABLE flow_src (ts TIMESTAMP(3) TIME INDEX, svc STRING, val DOUBLE)"
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=CREATE FLOW f_rollup SINK TO flow_sink AS SELECT date_bin('1 minute'::INTERVAL, ts) AS t, svc, avg(val) AS avg_val, count(val) AS n FROM flow_src GROUP BY t, svc"
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=INSERT INTO flow_src VALUES (1716000001000,'api',10),(1716000002000,'api',20),(1716000003000,'web',5),(1716000061000,'api',30)"
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=ADMIN FLUSH_FLOW('f_rollup')"; docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=SELECT * FROM flow_sink ORDER BY t,svc"
+# ClickHouse: MV materializes synchronously (no flush)
+docker exec parallax-bench-clickhouse-1 clickhouse-client --multiquery -q "CREATE TABLE mv_src (ts DateTime, svc String, val Float64) ENGINE=MergeTree ORDER BY ts; CREATE TABLE mv_sink (t DateTime, svc String, avg_state AggregateFunction(avg,Float64), n SimpleAggregateFunction(sum,UInt64)) ENGINE=AggregatingMergeTree ORDER BY (t,svc); CREATE MATERIALIZED VIEW mv TO mv_sink AS SELECT toStartOfMinute(ts) t, svc, avgState(val) avg_state, toUInt64(count()) n FROM mv_src GROUP BY t,svc; INSERT INTO mv_src VALUES (toDateTime('2024-05-18 03:00:01'),'api',10),(toDateTime('2024-05-18 03:00:02'),'api',20),(toDateTime('2024-05-18 03:00:03'),'web',5),(toDateTime('2024-05-18 03:01:01'),'api',30);"
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q "SELECT t,svc,avgMerge(avg_state),sum(n) FROM mv_sink GROUP BY t,svc ORDER BY t,svc"
+```
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

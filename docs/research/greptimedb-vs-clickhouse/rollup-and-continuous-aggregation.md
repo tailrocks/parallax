@@ -2,7 +2,8 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 71 (live-verified; was pass 27 source-only). The "rollup / correlation
+Status: pass 71 (live-verified; was pass 27 source-only), re-verified pass 106 (Run 70 —
+correctness reproduced + rollup freshness distinction measured). The "rollup / correlation
 tooling" dissection (checklist item for ClickHouse; previously only covered on the
 ClickHouse side). Compares GreptimeDB's **Flow engine** to ClickHouse's **Materialized
 Views + AggregatingMergeTree** for Parallax's rollups: metric downsampling (5 m / 1 h),
@@ -50,6 +51,19 @@ Built the same 1 h `avg(gauge)`-by-service rollup on both engines over `metrics_
   cross-confirmed `dedup-and-update-semantics.md`). Full numbers: `local-benchmark-results.md`
   Run 43.
 
+**Re-verification (Run 70) — correctness reproduced + a freshness distinction.** Built the
+same minute+service rollup (`avg`, `count`) on both from 4 source rows: **identical
+results** (api min0 avg=15/n=2, web min0 5/1, api min1 30/1) — Flow and MV+AggMT both
+correct. **New finding — rollup freshness:** ClickHouse's **push-MV populates the sink
+synchronously within the INSERT** (the 3 sink rows were present *immediately*, no flush);
+**GreptimeDB Flow is batched/async** — the sink stayed empty until `ADMIN FLUSH_FLOW`
+(the laminar *streaming* mode is low-latency, but the default/batching path materializes
+on an interval/flush, not inside the insert). So for **real-time rollup reads** (a
+dashboard refreshing a downsample seconds after ingest) ClickHouse's MV is fresher; for
+*eventually-consistent* downsamples both are fine. A freshness tilt to ClickHouse on the
+rollup path specifically (distinct from raw-write freshness, which is a tie —
+`write-path-and-ingestion.md`).
+
 ## For Parallax's rollups
 
 - **Metric downsampling (5 m / 1 h):** GreptimeDB Flow is a clean fit — a
@@ -86,4 +100,4 @@ Built the same 1 h `avg(gauge)`-by-service rollup on both engines over `metrics_
 
 - GreptimeDB Flow: `src/flow/src/{lib.rs,adapter.rs (StreamingEngine),batching_mode.rs}`; DDL `src/sql/src/parsers/create_parser.rs:277-320,1496-1526` (`CREATE FLOW … SINK TO … EXPIRE AFTER … EVAL INTERVAL`); RFCs `2024-01-17-dataflow-framework`, `2025-09-08-laminar-flow`, `2026-03-16-flow-inc-query`.
 - ClickHouse: MV + `AggregatingMergeTree`/`SummingMergeTree` (`clickhouse-internals.md`, `clickhouse-implementation.md`); refreshable MV.
-- Live: `local-benchmark-results.md` Run 43 (rollup ~5–6× read speedup both; Flow forward-only auto-pop + manual sink backfill; finalized vs `-State` read model). Cross-ref `dedup-and-update-semantics.md` (the dedup wrinkle in the correctness check).
+- Live: `local-benchmark-results.md` Run 43 (rollup ~5–6× read speedup both; Flow forward-only auto-pop + manual sink backfill; finalized vs `-State` read model), Run 70 (correctness reproduced minute+svc; **rollup freshness: CH MV synchronous-on-insert vs GT Flow flush/interval-batched**). Cross-ref `dedup-and-update-semantics.md` (the dedup wrinkle in the correctness check).
