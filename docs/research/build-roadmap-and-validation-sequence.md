@@ -104,7 +104,7 @@ Build only enough to generate the bundle automatically and repeatably:
 | A2 real users | Phase 0 | [20 scored deployment-intent interviews](user-interview-and-deployment-intent-gate.md) |
 | A6 redaction trust | Phase 2 | red-team on real data |
 | A5 stack holds | Phase 2 | storage/metadata benchmarks |
-| A4 correlation reliable | Phase 1–2 | strong-edge prevalence on real telemetry |
+| A4 correlation reliable | Phase 1–2 | [strong-edge prevalence on real telemetry](correlation-reliability-real-telemetry-gate.md) |
 | A3 schema/corpus moat | Phase 2 (publish) → Phase 4 (corpus) | [schema conformance + external adoption + outcome corpus](schema-adoption-and-corpus-moat-gate.md) |
 | A7 scope discipline | enforced by phase order | tiny tier excellent before breadth |
 
@@ -129,6 +129,8 @@ Build only enough to generate the bundle automatically and repeatably:
   — the A2 demand-validation runbook for Phase 0.
 - [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
   — the A3 conformance/adoption/corpus runbook for Phase 2 onward.
+- [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md)
+  — the A4 strong-edge prevalence gate for Phase 1/2 real telemetry.
 - [Technical implementation concept](technical-implementation-concept.md) — the
   component detail each phase builds.
 - [Storage benchmark prototype](storage-benchmark-prototype.md),

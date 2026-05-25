@@ -20,6 +20,10 @@ is only partial unless the system has dependency topology, change history,
 complete instrumentation, known async links, and enough counterfactual evidence
 to separate causes from symptoms.
 
+The proof gate for whether those strong edges are common enough in real telemetry
+is
+[Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md).
+
 The product implication:
 
 - build deterministic context assembly first;
@@ -568,3 +572,9 @@ The product should optimize for the strong and medium claims. That means
 deterministic evidence first, AI second, safe autonomy third. The architecture
 should be built around a typed evidence graph and bounded agent context, not
 around a dashboard and not around an untrusted LLM reading unbounded telemetry.
+
+Related proof gate:
+
+- [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md)
+  — A4 measurement plan for strong edges, false strong edges, frontend
+  continuation, async links, and missing-evidence reporting.

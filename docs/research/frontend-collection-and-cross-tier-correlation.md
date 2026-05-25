@@ -205,7 +205,9 @@ team's infrastructure), which is a Parallax advantage over SaaS RUM.
 Ship: frontend error (source-mapped) + fetch/XHR spans with `traceparent`
 propagation + bounded breadcrumbs + route/release context, joined to backend by
 `trace_id`. Defer: session replay, Web Vitals dashboards, full RUM. Prove the
-cross-tier join on one frontend↔backend path before broadening.
+cross-tier join on one frontend↔backend path before broadening. The real-data
+pass/fail threshold for that claim lives in
+[Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md).
 
 ## Relationship To Other Research
 
@@ -219,6 +221,9 @@ cross-tier join on one frontend↔backend path before broadening.
   — OTLP and propagation foundation.
 - [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
   — how cross-tier edges and missing-evidence flags feed safe agent reasoning.
+- [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md)
+  — the A4 gate for real frontend-backend continuation and missing-evidence
+  reporting.
 
 ## Sources
 

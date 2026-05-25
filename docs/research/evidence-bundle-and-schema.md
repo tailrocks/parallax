@@ -321,7 +321,9 @@ it survives contact with real data:
    [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) gate
    for CLI-specific canaries and overhead budgets.
 4. Do `strength` tiers correspond to real predictive value, or are `medium`
-   edges noise?
+   edges noise? The real-telemetry strong-edge prevalence and false-strong-edge
+   audit are specified in the
+   [correlation reliability gate](correlation-reliability-real-telemetry-gate.md).
 5. Is the schema stable enough that an external tool built on `v0.1` keeps
    working across two minor revisions? The concrete conformance artifacts,
    adoption-clock thresholds, and corpus requirements are specified in the
@@ -334,6 +336,8 @@ it survives contact with real data:
   builds it.
 - [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
   — how edges, confidence, and missing-data feed safe agent behavior.
+- [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md)
+  — the A4 gate that measures whether edge strengths hold on real data.
 - [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) — the
   source detail for `cli_invocation`, `agent_session`, `agent_action`, and audit
   edges.

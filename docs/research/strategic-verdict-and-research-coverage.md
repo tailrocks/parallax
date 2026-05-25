@@ -101,7 +101,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Flaky-test investigation | [CI failure context MVP](ci-failure-context-mvp.md), [Flaky test investigation and replay](flaky-test-investigation-and-replay.md) |
 | Agent and CLI execution tracing | [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md), [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) |
 | Agent-observability technical references | [Agent observability technical review](agent-observability-technical-review.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md) |
-| Frontend collection and cross-tier correlation | [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Storage benchmark prototype](storage-benchmark-prototype.md) |
+| Frontend collection and cross-tier correlation | [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md), [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Storage benchmark prototype](storage-benchmark-prototype.md) |
 | Redaction/privacy/agent exposure safety | [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md), [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md), [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) |
 | Evidence bundle and open schema | [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md), [Bundle-value evaluation](bundle-value-evaluation.md), [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) |
 | Core architecture | [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Technical implementation concept](technical-implementation-concept.md) |
@@ -138,6 +138,10 @@ Market/product gates:
   [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md).
 
 Technical proof gates:
+
+- Deterministic cross-signal correlation reliability on real telemetry,
+  specified further in
+  [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md).
 
 1. GreptimeDB ingest-to-queryable freshness for mixed logs/traces/metrics/errors,
    specified further in

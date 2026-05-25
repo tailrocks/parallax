@@ -81,6 +81,7 @@ or CI contract yet.
 | `docs/research/opentelemetry-protocol-and-context-layer.md` | Focused OpenTelemetry protocol, OTLP endpoint, Collector, Rotel, semantic context, scaling, and above-OTEL product opportunity analysis. |
 | `docs/research/rust-data-collection-and-instrumentation.md` | Rust-first data-collection decision (SDK/OTLP vs eBPF) and error-capture data model. |
 | `docs/research/frontend-collection-and-cross-tier-correlation.md` | Frontend (browser JS/TS) collection method, cross-tier frontend↔backend trace propagation, schema extension (frontend nodes/edges), source-map symbolication, and the frontend privacy problem. |
+| `docs/research/correlation-reliability-real-telemetry-gate.md` | A4 validation gate for real telemetry: strong-edge prevalence, trace/log/release/deploy coverage, frontend continuation, async links, false-strong-edge audit, and missing-evidence reporting. |
 
 ## Prompts
 
