@@ -6257,6 +6257,41 @@ clickhouse-client -q "EXPLAIN indexes=1 SELECT count(*) FROM spans s LEFT JOIN e
 s.trace_id=e.trace_id WHERE s.trace_id='<id>'"` → `Granules 1/123`. (Use `docker exec`; host port down.)
 Timing re-verify (4-build) owed when the host port-forward is restored.
 
+### Run 155 — 2026-05-25 — ENV finding (host networking) + object-storage-economics grounding under the proxy lens
+
+**ENV finding — localhost benchmarking is STRUCTURALLY blocked, not transient.** Diagnosed the
+host-port outage (down since Run ~149): `docker compose restart` of the stable containers did **not**
+fix it; `curl 127.0.0.1:4000`→000, the bridge IP `172.18.0.2:4000`→timeout, and `ss`/`netstat` show no
+4000/8123 listeners from the agent shell. So the **agent capsule is network-isolated** from both
+Docker's published ports and the bridge network; only `docker exec` (inside the container namespace)
+reaches the engines. **Consequence:** the localhost harness (`bench/four-way/gen.sh`+`bench.sh`, which
+curl `localhost`) cannot run from here; timing benchmarks require either running inside the containers
+via exec or the operator running them (`! …`) / fixing agent network access. Restart was harmless —
+data persisted (e.g. `spans` 1M still present), containers healthy. Re-pin unchanged (GT GA v1.0.2).
+
+**Pass target.** Decision-relevant under the proxy reframe: GreptimeDB's object-storage economics is one
+of its *surviving* edges (operator's "fewer servers, cheaper storage"). Does ClickHouse's own S3
+support neutralize it? Source/capability + live-exec.
+
+**Live (exec):** both bench containers run **local disk** by default (`system.disks`=`default Local`,
+one `default` policy), but ClickHouse *supports* object storage — `s3` table function + `storage_policy`
+settings present. So it's a capability comparison.
+
+**Verdict — CH S3 tiering closes most of the raw cold-storage cost gap; GT's edge narrows but persists
+on two specifics:** (1) **1× vs N× replication** — OSS `ReplicatedMergeTree` keeps N full S3 copies
+(zero-copy off/guard-railed, Run 91) vs GT's 1 shared copy; (2) **complete compute/storage separation**
+— GT datanodes near-stateless (elastic, copy-free migration) vs OSS CH only *tiering* to S3 (node still
+stateful; the fully-separated elastic engine `SharedMergeTree` is **Cloud-only**, Run 74). So GT's cost
+edge is specifically the **self-hosted HA-replication multiplier + elastic compute**, an **OSS-vs-Cloud
+distinction** — ClickHouse Cloud `SharedMergeTree` largely closes it; self-hosted HA at scale is where
+GT's 1×+elastic model genuinely wins. This is exactly the GreptimeDB bet the proxy lens reserves.
+Wrote up in `distributed-and-scaling.md` (new "Object-storage economics under the proxy lens" §).
+
+**Reproduce.** `docker exec parallax-bench-clickhouse-1 clickhouse-client -q "SELECT name,type FROM
+system.disks; SELECT policy_name FROM system.storage_policies"` → `default Local` only (capability via
+`system.table_functions` `s3` + `storage_policy` settings). Network diag: `curl 127.0.0.1:4000/health`
+→ 000 from agent shell (exec→200) = capsule network isolation.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

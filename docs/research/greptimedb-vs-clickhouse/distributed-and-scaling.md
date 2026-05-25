@@ -187,6 +187,35 @@ closability), while the **join-gap is architectural and worsens distributed** (k
 app-side-correlation blueprint). Mechanism source-grounded; multi-node *latency* still owed
 to the cluster harness.
 
+## Object-storage economics under the proxy lens — can ClickHouse's S3 tiering match GreptimeDB? (Run 155)
+
+The proxy reframe (`platform-fit-and-alternatives.md`) left **object-storage economics** as one of
+GreptimeDB's few *surviving* edges (the operator's "fewer servers, cheaper storage" priority). So the
+sharp question: does ClickHouse's own S3 support neutralize it too? Checked the live capability + the
+mechanism. **Live (exec):** both bench containers run **local disk** by default (`system.disks` =
+`default Local`; one `default` storage policy), but ClickHouse *supports* object storage — the `s3`
+table function and `storage_policy` settings are present. So this is a **capability** comparison.
+
+| | GreptimeDB | ClickHouse (OSS) |
+| --- | --- | --- |
+| Object store role | **Primary store** — SSTs written directly to S3 via OpenDAL; datanodes near-stateless | **A disk tier** — `<disk type=s3>` + storage policy (volumes), data **moved** hot→cold via `TTL … TO VOLUME/DISK`; local disk stays primary/cache |
+| Replication cost | **1× shared copy** per region (HA via metadata/leadership) | **N× copies** — `ReplicatedMergeTree` stores a full copy per replica even on S3; **zero-copy replication off + guard-railed** (Run 91, "not production-ready") |
+| Compute/storage separation | **Yes (practical)** — WAL in Kafka + SSTs in S3 → elastic, copy-free region migration | **No in OSS** — node owns parts + replication state; the fully-separated elastic engine is **`SharedMergeTree`, Cloud-proprietary** (Run 74) |
+| Cheap cold storage | Native | **Yes** — S3 disk tiering is real and is the ClickStack cost-optimization path |
+
+**Verdict — ClickHouse CAN get cheap object storage, so GreptimeDB's edge is narrower than "GT has S3,
+CH doesn't" — but it does persist, specifically on two points:** (1) **1× vs N× replication** — at HA,
+OSS ClickHouse stores N full S3 copies (zero-copy is off/guard-railed), GreptimeDB stores one shared
+copy; (2) **complete compute/storage separation** — GreptimeDB datanodes are near-stateless (elastic
+scale, copy-free migration), whereas OSS ClickHouse only *tiers* to S3 (the node is still stateful) and
+the fully-separated elastic model is **Cloud-only**. So under the proxy lens the honest framing is:
+**ClickHouse + S3 tiering closes most of the raw cold-storage-cost gap; GreptimeDB's remaining cost
+edge is the HA-replication multiplier (1× vs N×) + elastic near-stateless compute (fewer always-on
+servers) — and it is an OSS-vs-Cloud distinction (ClickHouse Cloud `SharedMergeTree` closes it
+commercially).** This is exactly the GreptimeDB bet the proxy lens reserves: *self-hosted* HA economics
+at scale. If Parallax runs on ClickHouse Cloud, the edge largely evaporates; if it self-hosts HA at
+scale, GreptimeDB's 1×+elastic model is the genuine win.
+
 ## Honest caveats
 
 - **This is architecture-reasoned, not cluster-measured.** All Docker runs so far
