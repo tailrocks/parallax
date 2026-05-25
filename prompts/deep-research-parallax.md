@@ -200,6 +200,59 @@ name, subcommand, sanitized args/env, cwd, repo/branch/commit, config refs,
 stdout/stderr excerpts, exit code, panic/error chain, spawned child processes,
 tests/build/deploy steps, and redaction policy.
 
+## Confirmed extension: the frontend is a first-class collection target
+
+Parallax is not backend-only. The frontend is a large system in its own right,
+and a major share of real incidents are user-facing: a user hits an error and we
+must reconstruct what led to it. So the confirmed direction is that Parallax must
+be able to collect from the frontend too, and — critically — correlate that
+frontend evidence with the backend and the rest of the microservices
+architecture, because the frontend is connected to the backend and the real cause
+often crosses systems.
+
+What the frontend capture must make possible, for a user-facing error:
+
+- the error/exception itself with a usable stack (source-mapped, not minified);
+- the sequence of steps that led to it — user actions, navigation, and
+  breadcrumbs ("what previous steps led here");
+- relevant frontend state at the time (route, component/view, feature flags,
+  sanitized app state) and console/network logs;
+- the outbound request(s) that crossed into the backend, and the trace/span IDs
+  that tie the frontend session to backend spans, logs, errors, and metrics;
+- the release/deploy/build context of the frontend, separate from but joinable to
+  the backend release context.
+
+Cross-system reconstruction is the point. The research must treat
+frontend↔backend↔microservices correlation as a core requirement, not a later
+add-on: propagate a trace from the browser through the API gateway into backend
+services (W3C `traceparent` / OTLP context propagation), and make a single
+evidence bundle able to span the user's frontend session and the backend
+lifecycle it triggered. "How did we get to this user-facing error" must be
+answerable across the boundary, not only inside one tier.
+
+Research must answer, specifically:
+
+- collection method for the frontend: browser/JS-TS SDK emitting OTLP and/or the
+  Sentry browser envelope, source maps for symbolication, session/breadcrumb
+  capture, optional session replay, and Real User Monitoring (RUM) signals — and
+  what is essential versus nice-to-have;
+- how to propagate and join trace context across the frontend↔backend boundary so
+  a frontend error links to the exact backend spans/logs/errors it caused or was
+  caused by;
+- privacy: the frontend carries heavy PII and user content, so redaction,
+  consent, and data-minimization for breadcrumbs, state, replay, and logs are
+  harder here and must be designed in;
+- the evidence bundle and schema must extend to frontend nodes (session, user
+  step/breadcrumb, frontend error, route/view, frontend release) and cross-tier
+  edges, without breaking the open schema.
+
+Scope note: this does not change the language/runtime filter. The frontend is a
+telemetry **source** (a JS/TS browser client SDK), exactly like any app that
+emits Sentry/OTLP data; the Parallax engine and its infrastructure stay
+Rust-first and within the Rust/Go/Zig/C++/C filter. The Rust-applications-first
+initial scope still holds for the backend; frontend collection is a confirmed
+roadmap target alongside services, CI, CLIs, and coding agents.
+
 ## What this research must prove
 
 This vision is a strong belief that needs verification, not assumption. The
@@ -520,6 +573,8 @@ The core idea is:
 - ingest CI data
 - ingest deploy metadata
 - ingest issue tracker context
+- ingest frontend errors, user-step breadcrumbs, and session/RUM context, joined
+  to the backend via propagated trace context
 
 Then:
 - correlate everything
