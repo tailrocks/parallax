@@ -49,6 +49,7 @@ Related research:
 - [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md)
 - [Self-hosted observability architecture](self-hosted-observability-architecture.md)
 - [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md)
+- [Metadata store benchmark plan](metadata-store-benchmark-plan.md)
 - [Messaging and ingestion layer](messaging-and-ingestion-layer.md)
 - [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
 - [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md)
@@ -448,6 +449,14 @@ candidate versions:
 - worker restart and consumer group behavior.
 - disk-full and segment-corruption behavior.
 - memory use on a tiny VPS.
+
+### Metadata
+
+- Turso versus Postgres for product metadata, agent sessions, CLI invocations,
+  outcomes, and audit records.
+- Crash/restart and backup/restore correctness.
+- Concurrent ingest, agent-session, CLI-invocation, and API metadata writes.
+- Migration/export path from Turso to Postgres if Turso fails scale-out gates.
 
 ### Agent Context
 

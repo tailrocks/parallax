@@ -88,10 +88,11 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Prompt area | Repository evidence |
 | --- | --- |
 | Market and product thesis | [Project thesis](project-thesis.md), [Market landscape](market-landscape.md), [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md) |
-| Evaluation lens and benchmark methodology | [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Messaging and ingestion layer](messaging-and-ingestion-layer.md) |
+| Evaluation lens and benchmark methodology | [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [Metadata store benchmark plan](metadata-store-benchmark-plan.md), [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Messaging and ingestion layer](messaging-and-ingestion-layer.md) |
 | Language/runtime filter and Rust preference | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md), [Technical implementation concept](technical-implementation-concept.md) |
 | Messaging/streaming | [Messaging and ingestion layer](messaging-and-ingestion-layer.md) |
 | Unified observability storage | [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Observability storage benchmark plan](observability-storage-benchmark-plan.md) |
+| Metadata store | [Metadata store benchmark plan](metadata-store-benchmark-plan.md), [Technical implementation concept](technical-implementation-concept.md) |
 | OpenTelemetry | [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md) |
 | Sentry-compatible ingestion | [Sentry-compatible ingestion](sentry-compatible-ingestion.md) |
 | Collection method and eBPF tradeoff | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md) |
@@ -138,6 +139,9 @@ The research validates direction, not performance claims. These must be tested:
    stdout, and stderr.
 10. Agent-session tracing value across real Codex, Claude Code, Amp, and
     OpenCode runs.
+11. Turso correctness, backup/restore, concurrency, migration, and fallback
+    behavior for metadata, agent session state, CLI invocation state, outcomes,
+    and audit records.
 
 ## First Prototype Gate
 

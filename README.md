@@ -27,6 +27,7 @@ idea becomes sharper.
 - [CI failure context MVP](docs/research/ci-failure-context-mvp.md)
 - [GreptimeDB storage evaluation](docs/research/greptimedb-storage-evaluation.md)
 - [Observability storage benchmark plan](docs/research/observability-storage-benchmark-plan.md)
+- [Metadata store benchmark plan](docs/research/metadata-store-benchmark-plan.md)
 - [Messaging and ingestion layer](docs/research/messaging-and-ingestion-layer.md)
 - [Causal reconstruction and agent safety](docs/research/causal-reconstruction-and-agent-safety.md)
 - [AI-native observability and incident intelligence](docs/research/ai-native-observability-and-incident-intelligence.md)

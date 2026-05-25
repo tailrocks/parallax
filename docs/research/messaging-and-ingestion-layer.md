@@ -63,6 +63,8 @@ sentry.raw_envelopes
 otel.raw_traces
 otel.raw_logs
 otel.raw_metrics
+parallax.raw_cli_invocations
+parallax.raw_agent_sessions
 parallax.normalized_errors
 parallax.group_updates
 parallax.context_jobs
@@ -78,6 +80,8 @@ Partition keys should be chosen by the correlation unit:
 | OTLP log | `project_id + trace_id` when present, otherwise `project_id + service_name` |
 | Metric sample | `project_id + metric_name + service_name` |
 | CI/test event | `repository + run_id` or `repository + test_signature` |
+| CLI invocation | `repository + command + invocation_id` |
+| Coding-agent session | `repository + agent_session_id` |
 
 This keeps related data close enough for deterministic processors while still
 allowing horizontal scaling.

@@ -144,6 +144,14 @@ open-source project CI data when available.
   - test suite, test name, status, duration;
   - retry count, failure signature, log excerpt pointer;
   - first-seen and previous occurrence windows.
+- CLI invocation traces:
+  - command, subcommand, sanitized args/env, cwd, repo, branch, commit;
+  - stdout/stderr excerpt refs, exit code/signal, panic/error chain;
+  - spawned process spans and test/build/deploy phase markers.
+- Coding-agent traces:
+  - agent product/version, model/provider, context bundle ID;
+  - tool calls, shell commands, files read/written, patch refs;
+  - validation commands, PR/proposal refs, human review and outcome state.
 
 ## Query Workload
 
@@ -160,6 +168,12 @@ queries.
 7. Given a high-cardinality attribute, measure query degradation.
 8. Given a time range, build an agent-ready context bundle with bounded raw
    evidence excerpts.
+9. Given an agent session, fetch context bundle refs, tool calls, command spans,
+   file changes, validation commands, patch refs, and outcome.
+10. Given a CLI invocation, fetch stdout/stderr excerpts, child process spans,
+    repo state, related CI run, and linked runtime issue.
+11. Given a runtime issue, find agent sessions and CLI commands that attempted a
+    fix and whether the issue recurred after deploy.
 
 ## Benchmark Dimensions
 
