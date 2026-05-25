@@ -28,12 +28,17 @@ Outside sources checked for this pass:
   ([OpenAI](https://openai.com/index/why-we-no-longer-evaluate-swe-bench-verified/)).
 - SWE-bench-Live is explicitly designed around recent issue-resolution tasks and
   says it plans monthly dataset updates for fresher, more contamination-resistant
-  evaluation ([SWE-bench-Live](https://swe-bench-live.github.io/)).
+  evaluation. Its current Hugging Face org shows active updates; the current
+  MultiLang viewer shows 743 rows across eight language splits, including 94
+  Rust rows, plus build/test commands, log parsers, patches, and Docker images
+  ([SWE-bench-Live](https://swe-bench-live.github.io/),
+  [MultiLang](https://huggingface.co/datasets/SWE-bench-Live/MultiLang)).
 - SWE-bench-Live's Hugging Face org now also lists OS-bench, a fresh
-  cross-platform migration dataset with Docker images, build/test commands,
-  log parsers, patches, and test fields. It is useful as a supplemental CLI/OS
-  slice, but because it is public and generated, it should be reported
-  separately from wild issue-resolution tasks
+  cross-platform migration dataset with Docker images, rebuild/test/print
+  commands, log parsers, patches, and test fields. The current viewer shows 126
+  `windows2linux` rows and zero `linux2windows` rows. It is useful as a
+  supplemental CLI/OS slice, but because it is public and generated, it should
+  be reported separately from wild issue-resolution tasks
   ([OS-bench](https://huggingface.co/datasets/SWE-bench-Live/OS-bench)).
 - The official SWE-bench leaderboard reports resolved rate, cost, step limits,
   benchmark variants, model release date, and scaffold filtering, which is a
