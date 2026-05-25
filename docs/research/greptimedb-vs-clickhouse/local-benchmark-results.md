@@ -3349,6 +3349,43 @@ volume) — exactly why the subquery rewrite / app-side join matters.
 `output_rows: 1000000`) vs the subquery form (`output_rows: 14`); CH `--time` direct join
 ~4 ms.
 
+### Run 82 — 2026-05-25 — Join-pushdown gap characterized (INNER + LEFT) → parity Improvement #8
+
+**Pass target.** Deepen Run 81's GreptimeDB join-pushdown gap: is it LEFT-JOIN-specific or
+general? Feed the parity-roadmap.
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned — latest, no
+bump). `spans_idx` (1M, `trace_id` inverted), anchor `trace_id=3fb2d84c…`; `EXPLAIN ANALYZE`
+the `spans_idx` scan `output_rows` (14 = inverted-index pruned; 1,000,000 = full scan).
+
+**Measured (GreptimeDB `spans_idx` scan output_rows):**
+
+| Query form | scan output_rows | pruned? |
+| --- | --- | --- |
+| plain `WHERE trace_id='X'` (no join) | **14** | ✓ index used |
+| `LEFT JOIN … WHERE s.trace_id='X'` | **1,000,000** | ✗ full scan |
+| `INNER JOIN … WHERE s.trace_id='X'` | **1,000,000** | ✗ full scan |
+| `LEFT JOIN … WHERE s.trace_id='X' AND e.trace_id='X'` | **1,000,000** | ✗ full scan |
+
+**Verdict.** **General join-pushdown gap (both INNER and LEFT).** GreptimeDB's inverted
+index prunes a standalone anchored query (14 rows) but is **not consulted when the table is
+a join input** (full-scans 1M) — the pushed `trace_id='X'` filter lands as a post-scan
+`FilterExec` on the `MergeScanExec` output, not as an index-eligible scan predicate. ClickHouse
+prunes the same join input (`Granules 1`, Run 30/81). **Added as parity-roadmap Improvement
+#8** (push an equality filter into an indexed join input): Tier-A workaround today = subquery
+pre-filter (Run 81: prunes to 14, ~21 ms) or Parallax's app-side correlation; Tier-B fix =
+the optimizer reaching the region scan's index path for join-pushed filters
+(`src/query/src/optimizer` + DataFusion `push_down_filter`). **Integration, not architecture**
+— the index works; the pushdown plumbing into the join-input scan is the gap. Footnote-priority
+for Parallax (its bundle assembly is app-side), real for in-DB-join users. Status: **gap
+characterized + roadmapped.**
+
+Caveat: 1M-row left table; the full-scan cost scales with the un-pruned table size (worse at
+volume) — the workaround/fix matters more as data grows.
+
+**Reproduce.** `EXPLAIN ANALYZE` the join forms above on GreptimeDB, read the `spans_idx`
+`UnorderedScan output_rows` (1,000,000 = no pushdown; 14 = pruned).
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

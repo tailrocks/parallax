@@ -21,7 +21,10 @@ so #1's primary lever is the scan engine (#2/#3), the tantivy cache is second-or
 full-scans; `matches_term()` prunes → selective exact-term is **~8 ms / ~2–3×**, not 18×. #1
 downgraded to a Tier-A usage fix; verdict flip-trigger narrowed) + pass 87 (**Run 49**: tantivy
 backend `matches()` **also prunes** ~6 ms → query-syntax path fast too; full-text gap is fully
-a backend/function pairing artifact, residual = broad-term analytics only) + pass 101 (**Improvement
+a backend/function pairing artifact, residual = broad-term analytics only) + pass 115 (**added
+Improvement #8** — push an equality filter into an *indexed join input*: Run 81/82 found GreptimeDB
+full-scans a join's anchored table (`output_rows: 1M`, both INNER+LEFT) instead of using the inverted
+index, an optimizer pushdown gap; Tier-A workaround = subquery pre-filter / app-side correlation) + pass 101 (**Improvement
 #5 deepened with the Run 63 root cause**: GreptimeDB's PK = sort = series identity, so it can't
 cluster by a high-card anchor like `trace_id` without series blowup, while ClickHouse `ORDER BY`
 decouples sort from identity at zero cost — this is *also* the root of the cold-selective-read egress
@@ -128,6 +131,7 @@ only if that fraction is high. Anything else is mechanism elegance without user 
 | 5 | **Projections / alternate physical `ORDER BY`** (decouple sort from PK/series identity) | A projection stores a 2nd sort order **inside each part**, optimizer-picked → fast scan on an alternate key (Run 28); CH `ORDER BY(trace_id,ts)` also clusters the high-card anchor at **zero cardinality cost**. GreptimeDB's **PK = sort = series identity**, so it can't cluster by `trace_id` without 71k-series blowup (Run 63), and indexes give *positions* not a 2nd order. **Now also the root of cold-read egress** (Run 55/63: scattered anchor → cold read pulls whole SST). | (a) **Tier A** — Flow re-sorted copy (`SINK TO …`, Run 43); a `trace_id`-sorted copy also fixes cold-read egress; (b) **Tier B** — mito2 alternate-sorted SST copy + planner auto-pick (`src/mito2` SST writer + region metadata + DataFusion rule). Full sort/identity decoupling = redesign; the copy sidesteps it. | **A** / **B** (copy) | integration (copy); design (full decouple) |
 | 7 | **Per-column codecs (`CODEC(Gorilla/DoubleDelta/T64)`)** | Hand-picked per-column codecs match each column's shape — `Gorilla` on float gauges (Run 4: 78×), `DoubleDelta` on monotonic counters (7.3×). | **Type-aware Parquet encodings + a column codec DDL option.** Source (pass 81): mito2's writer **already** sets per-column encodings for *internal* columns (`writer.rs:387-391`: `ts`/`seq` → `DELTA_BINARY_PACKED` ≈ DoubleDelta, `op_type` → UNCOMPRESSED) but **user data columns default to `Encoding::PLAIN` + table-wide ZSTD** (`writer.rs:433-434`) — so a `Float64` gauge gets **no Gorilla/float-split encoding**. Fix: in the writer's `customize_column_config` (`writer.rs:371`), pick **type-aware encodings** for user columns (floats → Parquet **`BYTE_STREAM_SPLIT`** ≈ Gorilla; monotonic ints → `DELTA_BINARY_PACKED`); optionally expose a per-column codec option in DDL. Parquet already ships these encodings → integration. | **B** | integration |
 | 6 | **Vertical single-node ceiling + analytical/merge maturity** | A decade of single-box scan tuning; battle-tested merges. | Inherited via #2 (engine) + time/battle-testing. Not a discrete feature. | **C** | maturity |
+| 8 | **Push an equality filter into an *indexed join input*** | CH pushes a join input's filter into its scan → index/PREWHERE prunes *before* the join (Q4 `Granules 1`, Run 30/81). | **Optimizer fix:** push a join input's equality predicate to the `TableScan` as an *index-eligible* filter so the inverted index prunes, instead of landing as a post-scan `FilterExec` → full scan. Run 81/82: direct cross-tier join full-scans 1M (`output_rows: 1,000,000`, ~54 ms, both INNER+LEFT) vs CH 4 ms; standalone `WHERE` prunes (14). `src/query/src/optimizer` + DataFusion `push_down_filter` → reach the region scan's index path. | **A** (subquery/app-side today) **/ B** (optimizer) | integration |
 
 ## Detailed improvements (borrowed concept · what · why · how)
 
@@ -391,6 +395,41 @@ Parallax. Source read at GreptimeDB `v1.0.2` (`0ef5451`).
   Parallax tiny/small tier ever reaches this ceiling before it wants scale-out anyway.
 - **Value here:** GreptimeDB's answer is horizontal scale-out + object storage (the
   verdict's scaling pillar), not chasing ClickHouse's vertical ceiling.
+
+### Improvement 8 — Push an equality predicate into an *indexed* join input
+
+- **Borrowed concept (ClickHouse):** push a join input's filter into its scan and let the
+  scan's index prune *before* the join runs. ClickHouse's Q4 cross-tier join prunes the
+  anchored side to `Granules 1` + PREWHERE → reads ~nothing before joining (Run 30/81).
+  Portable idea: a join input that has an equality predicate on an indexed column should
+  use the index, not full-scan.
+- **What:** make GreptimeDB's optimizer push a join input's equality filter
+  (`s.trace_id='X'`) down to the `spans_idx` `TableScan` **as an index-eligible predicate**,
+  so the inverted index prunes the join input instead of full-scanning it.
+- **Why:** **Run 81/82** — a direct cross-tier `spans ⋈ error_events` join anchored on
+  `trace_id` **full-scans all 1M spans** on GreptimeDB (`EXPLAIN ANALYZE` `output_rows:
+  1,000,000`, ~54 ms) vs ClickHouse ~4 ms; confirmed for **both INNER and LEFT** joins,
+  while the *standalone* `WHERE trace_id='X'` prunes to `output_rows: 14`. So the inverted
+  index works — it is just **not consulted when the table is a join input**: the pushed
+  filter lands as a post-scan `FilterExec` on the `MergeScanExec` output rather than as an
+  index-eligible scan predicate. Axis: speed (#1), on cross-tier correlation.
+- **How (code-oriented):** in the query optimizer (`src/query/src/optimizer` + the
+  DataFusion `push_down_filter` rule), ensure a predicate pushed to a join input reaches the
+  region/`MergeScanExec` scan in its **index-applicable filter set** (the same path a plain
+  `WHERE` takes), not merely as a `FilterExec` above the scan. The subquery rewrite
+  (`FROM (SELECT * FROM spans_idx WHERE trace_id='X') s …`) already lands the filter as the
+  scan's own → prunes (`output_rows: 14`, ~21 ms, Run 81), which localizes the fix to
+  "make the join-pushed filter take that same index path."
+- **Tier:** **A** (today: subquery pre-filter, or app-side correlation — Parallax's pattern)
+  **/ B** (optimizer-rule fix upstream). **Integration** — the index exists and works; this
+  is pushdown plumbing into the join-input scan, not architecture.
+- **User story & clear-winner:** *an SRE/agent runs a cross-tier correlation as one in-DB
+  join (`spans ⋈ error_events ON trace_id` during an incident).* On GreptimeDB the direct
+  join full-scans (slow, and worse at volume); the fix makes it prune. **But Parallax's
+  evidence-bundle assembly is *app-side* (anchored fetch each signal + join in app, Q6 =
+  Q1+Q2+Q3 not in-DB joins), so this rarely bites — footnote-priority unless Parallax adds
+  direct in-DB cross-tier joins.** Real win for in-DB-join users; for Parallax, the Tier-A
+  app-side pattern already sidesteps it.
 
 ## The three tiers (the decision-useful summary)
 
