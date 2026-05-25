@@ -2,7 +2,11 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 48, extended passes 112–114 (Runs 76–79 — high-card storage curve: CH
+Status: pass 48 + **Run 147 (SOURCE: the cardinality-insensitive INGEST is structural — the
+PartitionTree memtable dict-encodes label sets in a primary-key dictionary sized to ~1/8 OS memory
+(`partition_tree.rs` `DICTIONARY_SIZE_FACTOR=8`, `fork_dictionary_bytes` 512 MB), with NO per-series
+cap; vs ClickHouse `LowCardinality`'s 8192-cap-then-degrade. So GT ~flat 12→1M-series ingest (Runs
+84/101) is a property of the dict-encoded PK, not a tuning accident)**, extended passes 112–114 (Runs 76–79 — high-card storage curve: CH
 `LowCardinality` wins low–mid cardinality (1k/200k) but **GreptimeDB wins at ~1M unique
 series — a crossover**; `LowCardinality` cliff is *graceful*; metric-engine `__tsid` is
 overhead not a saving. B13 storage curve complete — storage winner is cardinality-dependent;

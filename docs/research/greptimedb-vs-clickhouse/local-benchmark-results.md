@@ -5946,6 +5946,36 @@ gh-only, no local load.
 `sync_period`/`SyncWalTaskFunction`→`engine.sync()`; raft-engine = append-only `LogBatch` log. No
 local containers touched.
 
+### Run 147 — 2026-05-25 — SOURCE (gentle, gh-only): PartitionTree memtable dict-encodes label sets — grounds the cardinality-insensitive ingest win (Run 84/101)
+
+**Pass target.** Source-ground the last major un-sourced GT pillar: **cardinality-insensitive ingest**
+(Run 84/101 — GT ~flat 12→1M series vs ClickHouse `LowCardinality` 8192-cap degrade). gh-only, no load.
+
+**Source (`src/mito2/src/memtable/partition_tree.rs` + `dict`/`partition` submodules, v1.0.2):**
+- *"Memtable implementation based on a partition tree"* (`:15`); submodules **`dict`** (`:19`) +
+  **`partition`** (`:21`). Structure: partition → **shard** → **primary-key index in shard** →
+  pk-id-in-tree (`:56-61`).
+- A **primary-key DICTIONARY** dict-encodes the label sets: `DICTIONARY_SIZE_FACTOR=8` (use 1/8 of OS
+  memory for the dict, `:51-52`), `fork_dictionary_bytes` (default **512 MB**, `:85-99`).
+
+**Verdict — grounds cardinality-insensitivity: GT dict-encodes label sets, no per-series cap.**
+- **GreptimeDB stores label sets ONCE in a primary-key dictionary** (the partition-tree `dict`), so a
+  high-cardinality table at 1M distinct series ≈ 1M compact dict entries, **not** per-row label
+  storage — the dictionary is sized to a fraction of memory (1/8) and forkable, with **no fixed
+  per-series cap.** This is the mechanism behind the ~flat ingest (Run 84: 357→381 ms at 1k→1M
+  series; Run 101: 1.16× at 12→1M).
+- **vs ClickHouse `LowCardinality`:** a per-part dictionary that **caps at 8,192** distinct values then
+  degrades (Run 76/84) — so high-card label columns lose the dict benefit. GreptimeDB's partition-tree
+  dict has no such cliff (it's a memory-budgeted, forkable global dict per partition), which is why GT
+  ingest is cardinality-insensitive while ClickHouse slows ~2.6× at high card.
+- **Decision relevance:** confirms the headline GT ingest pillar (cap-free, cardinality-insensitive)
+  is a *structural* property of the PartitionTree memtable's dict-encoded primary keys — source-level,
+  not just the smoke measurement. Reinforces `metric-cardinality.md` + the metric-engine ADOPT
+  recommendation (the `__tsid` label-set hash feeds this dict).
+
+**Reproduce.** `gh api ".../memtable/partition_tree.rs?ref=v1.0.2"` → "partition tree" doc + `mod dict`
++ `DICTIONARY_SIZE_FACTOR`/`fork_dictionary_bytes`. No local containers touched.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
