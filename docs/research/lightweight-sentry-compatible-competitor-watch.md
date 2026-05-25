@@ -53,13 +53,15 @@ inside small error trackers, but their checked tools are management/write/raw
 event surfaces rather than read-only, redacted evidence bundles.
 The Bugsink low-ops/Sentry-compatibility claim now has a focused recheck:
 [Bugsink Sentry-compatible simplicity recheck](bugsink-sentry-compatible-simplicity-recheck.md).
+The Rustrak Rust/Sentry/MCP/protocol claim now has a focused recheck:
+[Rustrak Sentry MCP protocol recheck](rustrak-sentry-mcp-protocol-recheck.md).
 
 ## Current Matrix
 
 | Project | Strongest current fit | Current Parallax gap | Threat |
 | --- | --- | --- | --- |
 | Bugsink | Source-available self-hosted error tracking, Sentry SDK compatible, DSN migration, one-container throwaway Docker path, SQLite default outside the Docker-volume caveat, MySQL/PostgreSQL support, and small third-party MCP adapters over Bugsink's API. | PolyForm Shield rather than OSI-open; Python/runtime mismatch; persistent Docker setup needs external database care; official product is error tracking rather than OTLP-native evidence graph, first-party read-only agent bundle, CLI/agent audit, or fix-outcome corpus. | High for Sentry-compatible simplicity. |
-| Rustrak | Rust/Actix server, Sentry SDK compatible, SQLite default or Postgres production mode, claims small memory/image footprint, no Redis, no complex infrastructure, and ships `@rustrak/mcp` for AI assistant management. | Early project; UI is a separate Next.js service; MCP exposes project/issue/event/token/alert tools including destructive issue/token actions and raw Sentry-envelope event access, not a read-only citable evidence-bundle contract; no clear OTLP-native logs/traces/metrics or fix-outcome corpus. | Very high for product-shape pressure, lower for maturity. |
+| Rustrak | Rust/Actix server, Sentry SDK compatible for modern envelope error events, SQLite default or Postgres production mode, small Docker server image, GPL-3.0, `@rustrak/mcp` for AI assistant management, and a maintainer-side Sentry protocol drift workflow. | Early project; UI is a separate Next.js service; MCP exposes project/issue/event/token/alert tools including destructive issue/token actions and raw Sentry-envelope event access, not a read-only citable evidence-bundle contract; current ingest stores event items while its own drift report says sessions, transactions, client reports, attachments, and spans are not stored; no clear OTLP-native logs/traces/metrics or fix-outcome corpus. | Very high for product-shape pressure, lower for maturity. |
 | Traceway | MIT, OpenTelemetry-native, self-hostable, combines logs/traces/metrics/session replay/exceptions/AI tracing, Docker Compose path, and Go embedded SQLite dev mode. | OTel-first rather than Sentry-envelope-first; Go, not Rust; no explicit Parallax-style evidence bundle, redaction manifest, or agent session/action audit. | Very high for OTLP-native unified observability simplicity. |
 | GoSnag | Go single binary with embedded React UI/migrations, Sentry `/store/` and `/envelope/` ingestion, issue lifecycle, GitHub/Jira integrations, AI RCA features, and a documented MCP server. | Requires Postgres for normal deployment; early project with low visible traction and no tagged release in the checked GitHub metadata; not Rust-first; MCP uses Bearer-token API calls for broad project/issue/alert/tag/ticket/user management, not a Parallax-style read-only bundle contract or fix-outcome graph. | Medium-high: important capability shape, weak maturity signal. |
 | Urgentry | Source-available Sentry-compatible replacement with one-binary Tiny mode, split self-hosted mode, route coverage and benchmark claims against self-hosted Sentry. | FSL source-available, not open source; broad Sentry replacement posture rather than open evidence schema; no clear coding-agent audit or measured fixer-outcome loop. | High for the self-hosted simplicity benchmark, lower for the open-source thesis. |
@@ -71,7 +73,7 @@ Checked on 2026-05-25 with primary project docs, npm, and GitHub metadata:
 | Project | Freshness signal | Maturity read |
 | --- | --- | --- |
 | Bugsink | GitHub latest release `2.2.1` on 2026-05-22; roughly 1.8k stars and 105 forks at check time; release adds canonical API issue actions/comments and OpenAPI docs; docs continue to claim SDK compatibility and low-ops self-hosting; third-party `bugsink-mcp` adapters are public but small. | Mature enough to be a real low-ops Sentry-compatible baseline; API/MCP ecosystem pressure means "no agent access" is no longer a durable ecosystem-level claim. |
-| Rustrak | GitHub pushed on 2026-05-25; latest visible release `docs@0.1.16`; npm `@rustrak/mcp` is `0.1.2`; roughly 43 stars at check time. | Product shape is very close, but maturity is still early. |
+| Rustrak | GitHub pushed on 2026-05-25; latest visible release `docs@0.1.16`; server package release `@rustrak/server@0.2.5`; npm `@rustrak/mcp` is `0.1.2`; Docker Hub server image `v0.2.5` was last updated 2026-05-21; roughly 43 stars at check time. | Product shape is very close, but maturity is still early and component release streams must be pinned separately. |
 | Traceway | GitHub latest backend release `backend/v1.7.27` on 2026-05-22; MIT license; roughly 817 stars and 23 forks; README claims native OTLP/HTTP, logs/traces/metrics/exceptions/session replay/AI tracing. | Strong active open-source pressure on the OTLP + unified context side. |
 | GoSnag | GitHub has no tagged release in the checked metadata, roughly 8 stars and 4 forks, and last push on 2026-04-17. | Treat as a capability warning, not a proven market baseline. |
 | Urgentry | GitHub latest release `v0.2.12` on 2026-05-22; roughly 55 stars and 5 forks; site claims Tiny mode, DSN migration, traces/replay/profiling/logs, and benchmark deltas versus self-hosted Sentry. | Fresh and strategically relevant, but source-available rather than OSI-open. |
@@ -119,6 +121,15 @@ lets Claude, Cursor, and Continue manage a Rustrak instance. This crosses the
 old "adds MCP" watch trigger. The npm package is currently `0.1.2`. MCP
 presence is no longer a sufficient Parallax differentiator in lightweight error
 tracking.
+
+The focused recheck also found two important caveats. First, current source
+stores only Sentry envelope `event` items; Rustrak's own protocol drift report
+says sessions, transactions, client reports, attachments, and spans are not
+stored. Second, current `main` contains an unreleased `.claude`/BMad Sentry
+protocol agent workflow. That is repo-maintenance tooling rather than a
+product-facing runtime feature, but it is a warning that Rustrak is
+operationalizing compatibility research. See
+[Rustrak Sentry MCP protocol recheck](rustrak-sentry-mcp-protocol-recheck.md).
 
 Implication: Rust-first lightweight Sentry-compatible error tracking now exists
 as a live open project. Parallax should not frame itself as "Rustrak plus more
@@ -258,6 +269,7 @@ Reopen the Parallax wedge if any lightweight challenger combines:
 - [Rustrak GitHub repository](https://github.com/AbianS/rustrak)
 - [Rustrak MCP package](https://www.npmjs.com/package/@rustrak/mcp)
 - [Rustrak Docker Hub](https://hub.docker.com/r/abians7/rustrak-server)
+- [Rustrak Sentry MCP protocol recheck](rustrak-sentry-mcp-protocol-recheck.md)
 - [Traceway GitHub repository](https://github.com/tracewayapp/traceway)
 - [Traceway embedded mode](https://docs.tracewayapp.com/learn/embedded-mode)
 - [GoSnag GitHub repository](https://github.com/darkspock/gosnag)

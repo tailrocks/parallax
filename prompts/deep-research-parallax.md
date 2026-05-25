@@ -996,7 +996,10 @@ that pressure the migration and simplicity claims from below:
 - Bugsink (PolyForm Shield/source-available, strong Sentry SDK/DSN migration and
   low-ops baseline; watch first-party MCP/agent surface, third-party MCP
   maturity, OTLP context, and evidence bundles)
-- Rustrak
+- Rustrak (GPL, Rust/Actix, Sentry-envelope-focused, SQLite/Postgres, live
+  `@rustrak/mcp` management/raw-event tools, and maintainer protocol-drift
+  agent workflow; watch OTLP context, broader Sentry item handling, read-only
+  evidence bundles, fixture proof, and action/outcome audit)
 - Traceway
 - GoSnag
 - Urgentry
