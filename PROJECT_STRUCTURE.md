@@ -48,6 +48,7 @@ or CI contract yet.
 
 | Path | Purpose |
 | --- | --- |
+| `prompts/README.md` | How to use the prompts in this folder (one-off, `/goal`, `/loop`). |
 | `prompts/deep-research-parallax.md` | Deep research brief for validating the AI-native debugging/investigation direction. |
 
 ## Update Rule
