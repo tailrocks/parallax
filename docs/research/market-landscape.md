@@ -52,9 +52,12 @@ material shifts have happened, and they narrow the wedge without closing it:
    as workflow/product language, not as a published schema or portable artifact;
    Coroot has no Sentry migration or coding-agent action audit and its local AI
    RCA is not in the Community OSS tier.
-2. **The dominant error tracker paywalls its AI from self-hosters.** Sentry Seer
-   is GA but closed and SaaS-only, and is confirmed not available to self-hosted
-   Sentry. That exclusion is Parallax's clearest opening.
+2. **The dominant error tracker has not proven hosted-Seer parity for
+   self-hosters.** Sentry Seer/Autofix is closed-source, subscription/add-on,
+   and cloud-GitHub-oriented. Current self-hosted Sentry docs do not list
+   Seer/AI in the feature-complete set, and sentry-mcp says Seer-like skills may
+   be unavailable on self-hosted instances. That is still a Parallax opening,
+   but the claim should be "not proven available," not "confirmed absent."
 3. **Incumbents partially closed the self-host gap, but not the air-gap.**
    Grafana Assistant now runs inside self-managed Grafana only by connecting to a
    Grafana Cloud stack. The Assistant backend, usage limits, and billing stay in
@@ -237,19 +240,22 @@ Sentry's advantage is developer workflow and error data gravity. Sentry already
 has the issue, stack trace, release, trace, logs, and repository connection for a
 large number of teams.
 
-The checked self-hosted docs still exclude Seer and other AI/ML features, so the
-main Parallax opening remains. Sentry MCP narrows the agent-access gap for
-self-hosted users, but its current `0.35.0` README describes stdio as a
-work-in-progress path, requires write-capable token scopes for the documented
-stdio setup, needs OpenAI or Anthropic configuration for AI-powered search, and
-may require disabling unsupported Seer skills on self-hosted instances. Treat
-that as Sentry-data access for coding agents, not self-hosted Seer parity.
+Current self-hosted docs do not list Seer/AI in the feature-complete set, and
+the sentry-mcp README says some features like Seer may not be available on
+self-hosted instances. Sentry MCP narrows the agent-access gap for self-hosted
+users, but its current `0.35.0` README describes stdio as a work-in-progress
+path, needs OpenAI or Anthropic configuration for AI-powered search, and may
+require disabling unsupported Seer skills. The README setup path lists
+write-capable token scopes, while the stdio testing guide documents a read-only
+testing scope set. Treat that as Sentry-data access for coding agents, not
+self-hosted Seer parity or a Parallax-style read-only bundle contract.
 
 Sources:
 
 - [Sentry Seer product page](https://sentry.io/product/seer/)
 - [Sentry Seer GA changelog](https://sentry.io/changelog/seer-sentrys-ai-debugger-is-generally-available/)
 - [Self-hosted Sentry docs](https://develop.sentry.dev/self-hosted/)
+- [Sentry MCP and Seer self-hosted recheck](sentry-mcp-seer-self-hosted-recheck.md)
 - [Sentry MCP README](https://github.com/getsentry/sentry-mcp)
 - [Sentry MCP 0.35.0 release](https://github.com/getsentry/sentry-mcp/releases/tag/0.35.0)
 
