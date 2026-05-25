@@ -2,7 +2,10 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: standing decision, continually sharpened (current through **pass 75**).
+Status: standing decision, continually sharpened (current through **pass 86**; pass 86 /
+Run 48 **materially narrowed the full-text gap** — the ~18× was a query-form artifact
+(`matches()` on a bloom-backed index full-scans; `matches_term()` prunes → selective
+exact-term is ~2–3×, not 18× — see the flip-trigger correction below).
 Synthesizes the internals teardowns (all 10 subsystems + rollup, retention,
 schema-evolution, dedup, WAL/durability, execution-engine, indexing, PromQL, metric
 cardinality, span-tree, projections, deletes/mutations, async-insert, zero-copy
@@ -231,6 +234,22 @@ was a tie** (4 vs 5 ms), and Parallax's designed pattern is *anchored* bundle as
 workload assumption**. Validate the assumption (what fraction of real Parallax queries
 are ad-hoc log search vs anchored retrieval) — it is the load-bearing question, not the
 engine speed.
+
+**Major correction (Run 48): the ~18× was largely a query-form artifact.** `logs_b1`'s
+fulltext index is `backend='bloom'`, and Run 12 queried it with **`matches()`** (the
+tantivy *query-syntax* function) — which does **not** push to a bloom index, so it
+**full-scanned 5M rows** (EXPLAIN ANALYZE `output_rows: 5000000`), fixed regardless of
+selectivity (even a 1-row-match term took ~150 ms). With the **correct pairing** —
+**`matches_term()`** (exact term) on the bloom index — GreptimeDB **prunes** (scan
+`output_rows: 1`) and selective exact-term search is **~8 ms warm, ~2–3× ClickHouse's
+~3 ms, not 18×.** So for Parallax's *actual* incident-search pattern — an SRE grepping a
+specific request-id (an exact term) — **GreptimeDB is competitive (~8 ms), not 18× slower.**
+The large gap now only applies to (a) `matches()` *query-syntax/phrase* search on a bloom
+index (use the tantivy backend for that case), or (b) broad-term scans matching many rows
+(~12×, scan-engine territory = Improvement #2). This **substantially narrows the flip
+trigger**: the verdict's one big ClickHouse win shrinks to "query-syntax/phrase log search
+or broad-term analytics," not the everyday exact-term incident grep. Detail in
+`local-benchmark-results.md` Run 48 + `greptimedb-parity-roadmap.md` #1.
 
 ## Open questions handed to the benchmark (veto power)
 

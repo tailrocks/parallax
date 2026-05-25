@@ -1480,6 +1480,41 @@ matters more for `SELECT *`-shaped log search); 333k/5M = 6.7 % scattered matche
 row-group-skip locality (a very selective term would isolate the apply even more cleanly — a
 follow-up). No verdict impact; bench data untouched (read-only).
 
+### Run 48 — The ~18× full-text gap was a query-form artifact (`matches()` vs `matches_term()`)
+
+Follow-up to Run 47 (selective term). Env: GT `v1.0.2`, `logs_b1` (5M), warm. **Key context
+discovered via `SHOW CREATE TABLE`: `logs_b1`'s `message` fulltext index is `backend = 'bloom'`**
+(granularity 10240, fpr 0.01), **not** tantivy. The bloom backend pairs with the exact-term
+function `matches_term()`; `matches()` is the tantivy-style *query-syntax* function.
+
+| Query (selective, 1 match) | GreptimeDB | EXPLAIN scan `output_rows` | ClickHouse (`hasToken`) |
+| --- | --- | --- | --- |
+| `matches('ae119f2b')` (tantivy syntax) | **~150 ms** | **5,000,000 (full scan — no prune)** | — |
+| `matches_term('ae119f2b')` (exact term) | **~8 ms warm** (32 ms cold) | **1 (pruned via bloom)** | **~3 ms** |
+| `matches_term('users')` (333k matches) | ~85 ms | (scales with matched rows) | ~7 ms |
+
+**Finding (load-bearing correction):** the **~18× full-text gap (Run 12) and the ~150 ms
+"fixed-cost" of Run 47 were a query-form/backend-pairing artifact** — `matches()` on a
+`backend='bloom'` index does **not** push to the index, so it **full-scans 5M rows** (EXPLAIN
+ANALYZE: `UnorderedScan output_rows: 5000000`), fixed regardless of selectivity. With the
+**correct pairing** (`matches_term()` on the bloom index) GreptimeDB **prunes** (scan
+`output_rows: 1`) and selective exact-term search is **~8 ms warm — ~2–3× ClickHouse's ~3 ms,
+not 18×.** Broad-term (`users`, 333k) is ~85 ms (~12×, scales with matched rows = real
+scan-engine territory, Improvement #2).
+
+**Consequence:** Improvement #1's user story — *an SRE greps for a request-id during an
+incident* — is an **exact-term selective** search, and GreptimeDB already serves it in **~8 ms**
+with `matches_term()` + the bloom backend. **The big ~18× only hits (a) `matches()`
+query-syntax/phrase search on a bloom index (use the tantivy backend for that), or (b)
+broad-term analytics.** This **narrows the verdict's one big ClickHouse win** (log search): for
+the actual incident-grep pattern the gap is ~2–3× (both sub-perceptible), not a chasm.
+Sharpens the verdict + parity-roadmap #1; updated both. No data changed (read-only).
+
+**Caveats:** smoke 5M; `count(*)` shape; the tantivy backend (`backend='fulltext'`) would make
+`matches()` query-syntax search prune too — owed a direct tantivy-backend re-run to quantify
+query-syntax search (vs exact-term). The right Parallax choice is **bloom + `matches_term` for
+exact-term incident grep**; tantivy only if phrase/relevance search is needed.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

@@ -16,7 +16,10 @@ only #1 flips a real common user moment, #2–#5,#7 are footnotes for Parallax's
 (format correction: #6 now carries the same user-story verdict, explicitly as a maturity caveat,
 not an implementable feature) + pass 85 (**Run 47 isolated the full-text gap** via live metrics:
 the fulltext index apply is ~0.15 ms / ~0.1 % of the query → the ~18× is the **post-index scan**,
-so #1's primary lever is the scan engine (#2/#3), the tantivy cache is second-order). This is **the dedicated,
+so #1's primary lever is the scan engine (#2/#3), the tantivy cache is second-order) + pass 86
+(**Run 48 — the ~18× was a query-form artifact**: `matches()` on a `backend='bloom'` index
+full-scans; `matches_term()` prunes → selective exact-term is **~8 ms / ~2–3×**, not 18×. #1
+downgraded to a Tier-A usage fix; verdict flip-trigger narrowed). This is **the dedicated,
 standalone file** answering "what can GreptimeDB improve, why, and how" — the summary table
 scans, the detailed sections below carry the code-oriented specifics. Answers the operator
 question: GreptimeDB wins Parallax on *fit*
@@ -64,14 +67,14 @@ own sake. Parallax's users are developers / SREs / AI agents debugging an incide
 flow is **anchored evidence-bundle assembly** (fetch everything for a `trace_id`/`fingerprint`),
 which is *already fast on GreptimeDB* (Q6 ~33 ms, Run 16). Ranked by who-actually-feels-it:
 
-1. **Improvement 1 (full-text log search) — the only plausible clear-winner-maker, and only
-   for the *exploratory* persona.** User story: *an SRE paged at 2 a.m. greps logs for a
-   request-id / `payment timeout` across a service over the last hour to find the failing
-   path.* This ad-hoc substring search is the one common Parallax action where ClickHouse's
-   ~18× warm edge is felt by a human waiting. Closing it makes GreptimeDB clearly win the
-   "search logs during an incident" case. **But** it's the *secondary* path (anchored bundle
-   assembly is primary and already fast), and the **Tier-A bloom-variant lever** mitigates it
-   today — so "huge win" only if real usage shows log-search is frequent.
+1. **Improvement 1 (full-text log search) — Run 48 downgraded it from "clear-winner-maker" to
+   "already competitive, just configure it right."** User story: *an SRE greps logs for a
+   request-id during an incident* — an **exact-term** search. With **`matches_term()` + the
+   bloom backend** GreptimeDB already does it in **~8 ms (~2–3× ClickHouse, both
+   sub-perceptible)**. The reported ~18× was a query-form artifact (`matches()` on a bloom index
+   full-scans — Run 48). So the incident grep needs **no engine work** (Tier-A usage). The big
+   gap remains only for **query-syntax/phrase** search (needs the tantivy backend) and
+   **broad-term analytics** (~12×, scan engine #2) — neither is the everyday incident grep.
 2. **Improvement 4 (JSON attribute queries) — matters only for unplanned attribute analytics.**
    User story: *a user groups errors by `http.status_code` or filters spans by `user.id`
    across last week.* Felt only at volume on **undeclared** attributes; the Tier-A answer
@@ -88,10 +91,13 @@ which is *already fast on GreptimeDB* (Q6 ~33 ms, Run 16). Ranked by who-actuall
    None makes GreptimeDB a "clear winner" of a user-felt case.
 
 **Honest bottom line (user-first):** for Parallax's actual hot path, GreptimeDB is *already*
-the clear winner — none of these is required. The single improvement that would make it
-clearly win a real, common user moment is **#1 (incident log search)**, and even that is
-secondary and Tier-A-mitigable. **Validate the query mix first** (what fraction of real
-Parallax queries are ad-hoc log search vs anchored retrieval); invest in Tier-B engine work
+the clear winner — none of these is required. **Run 48 strengthened this further:** even the
+incident log-search case (#1, once thought the one clear-winner-maker) is **already competitive
+~8 ms with the right function/backend** (`matches_term`+bloom) — a Tier-A usage choice, not an
+engine build. So **no improvement here is a must-do for Parallax's common user moments.** The
+remaining real gaps are query-syntax/phrase log search and broad-term/ad-hoc analytics.
+**Validate the query mix first** (what fraction of real Parallax queries are ad-hoc log search
+vs anchored retrieval); invest in Tier-B engine work
 only if that fraction is high. Anything else is mechanism elegance without user impact.
 
 ## The gaps and what closes each
@@ -122,42 +128,40 @@ Parallax. Source read at GreptimeDB `v1.0.2` (`0ef5451`).
   "copy ClickHouse's index format" (GreptimeDB's tantivy index is already richer).
 - **What:** add an in-memory cache for the tantivy full-text reader/segments, and feed its
   matched row-set directly into the Parquet row-selection so only survivors are decoded.
-- **Why:** full-text log search is ClickHouse-faster **~18× warm** (Run 12, re-confirmed
-  warm Run 38 — index-bound, not a cold artifact). Source (pass 78) localizes the cause:
-  GreptimeDB **already** in-memory-caches the inverted/bloom/vector indexes
-  (`cache/index/{inverted_index,bloom_filter_index,vector_index}.rs`) + an
-  index-application result cache (`result_cache.rs`) — which is why anchored *inverted*
-  lookup is competitive (Run 6). There is **no `FulltextIndexCache`** (the tantivy applier
-  opens a Lucene dir through a **file/dir cache**, `SstPuffinDir`/`dir_cache_hit/miss`, and
-  re-opens segment readers per query). **But Run 47 corrected the emphasis: the index *apply*
-  is not the bottleneck.** Live metric isolation on `logs_b1` (5M): a `matches()` query is
-  ~150 ms warm, of which the fulltext index apply is **~0.15 ms (~0.1 %)** — the other ~99.9 %
-  is the **post-index scan/count over the 333k matched rows** (and `index_content`/`index_result`
-  caches are populated + hitting). **So the ~18× gap is the post-index scan, not the index
-  lookup or its cache** — the dominant lever is the scan engine, which #1 shares with #2/#3.
-- **How (code-oriented), reordered by Run-47 impact:** (1) **Primary — the scan engine
-  (= Improvement #2):** the matched-row scan/count is the ~99.9 %, so bigger DataFusion
-  batches + JIT/SIMD aggregation are the real win (`state.rs` `with_batch_size`, upstream
-  DataFusion). (2) **Index→scan fusion:** in `src/mito2/src/sst/index/fulltext_index/applier.rs`,
-  return the matched `RowId` set and feed it into the gap-#3 arrow `RowFilter`/`RowSelection`
-  so the scan visits only matched rows (helps when matches are sparse; the 6.7 %-scattered
-  case has poor row-group-skip locality). (3) **Second-order — a `FulltextIndexCache`** member
-  in `src/mito2/src/cache/index/` (mirror `inverted_index.rs`, wire through `CacheManager`):
-  only worth it if a *selective* term's per-query tantivy dir re-open shows up; Run 47's apply
-  was already ~0.15 ms, so this is the smallest lever, not the first.
-- **Tier:** **B** (scan engine, shared with #2) + minor **B** (cache). **Integration**, not redesign.
+- **Why — substantially corrected by Run 48:** the reported **~18× warm** gap (Run 12/38) was
+  **largely a query-form/backend artifact.** `logs_b1`'s fulltext index is `backend='bloom'`,
+  and Run 12 used **`matches()`** (the tantivy *query-syntax* function), which does **not** push
+  to a bloom index → **full 5M scan** (EXPLAIN ANALYZE `UnorderedScan output_rows: 5000000`),
+  fixed regardless of selectivity (even a 1-match term = ~150 ms). With the **correct pairing —
+  `matches_term()`** (exact term) on the bloom index — GreptimeDB **prunes** (scan
+  `output_rows: 1`) and selective exact-term search is **~8 ms warm (~2–3× ClickHouse's ~3 ms,
+  not 18×)**; broad-term (333k matches) is ~85 ms (~12×, scan-engine territory = #2).
+  GreptimeDB already in-memory-caches the inverted/bloom/vector indexes + results
+  (`cache/index/`, confirmed live Run 47), so the index *apply* is sub-ms — the residual cost is
+  the scan, and only when the index doesn't prune (wrong function) or the term matches many rows.
+- **How — reordered by Run-48 impact:** (1) **Tier-A usage fix (no engine change, the real
+  answer for the user story):** for exact-term incident grep, use **`matches_term()` + the
+  `bloom` backend** — already ~8 ms, competitive with ClickHouse. (2) For **query-syntax/phrase**
+  search, use the **tantivy backend** (`backend='fulltext'`) so `matches()` prunes via tantivy
+  (owed: a direct tantivy-backend latency run to quantify). (3) **Broad-term** scans (~12×) are
+  the scan engine (Improvement #2: bigger batches/JIT). (4) Index→scan fusion
+  (`src/mito2/src/sst/index/fulltext_index/applier.rs` → arrow `RowFilter`) still helps sparse
+  matches. A dedicated `FulltextIndexCache` is moot — the apply is already sub-ms.
+- **Tier:** **A** (usage: `matches_term`+bloom — the user-story fix) + **B** (scan engine, for
+  broad-term/query-syntax). **Integration / usage**, not redesign.
 - **User story & clear-winner:** *an SRE paged at 2 a.m. greps logs for a request-id /
-  `payment timeout` across a service over the last hour to find the failing path* — the one
-  common Parallax action where ClickHouse's ~18× warm edge is felt by a human waiting. **By
-  adding this, GreptimeDB clearly wins the "search logs during an incident" case** — the only
-  improvement here that flips a real, common user moment (see the user-first ranking above).
-  Caveat: it is the *secondary* path (anchored bundle assembly is primary and already fast),
-  so the huge win lands only if real usage shows log search is frequent.
-- **Value here:** directly shrinks the only large *warm* gap (log search). **Tier-A lever
-  first:** for Parallax log search that does **not** need exact-phrase ranking, declare the
-  **bloom full-text variant** (`INDEX_BLOB_TYPE_BLOOM`) on `message` — it already reuses
-  `BloomFilterIndexCache`, no engine change. Reserve the tantivy cache (Tier B) for when
-  exact phrase/relevance matters.
+  `payment timeout` across a service over the last hour to find the failing path.* **Run 48
+  downgrades this from "the one clear-winner-maker" to "already competitive":** that grep is an
+  **exact-term** search, and with `matches_term()` + the bloom backend GreptimeDB already does
+  it in **~8 ms (~2–3× ClickHouse, both sub-perceptible)** — *not* 18× slower. So the incident
+  user story needs **no engine work**, just the right function/backend (Tier-A usage). The big
+  gap only remains for **query-syntax/phrase** search (`matches()`, needs the tantivy backend)
+  and **broad-term analytics** (~12×, scan engine #2) — neither is the everyday incident grep.
+- **Value here:** **mostly a usage fix, not a build.** Use `matches_term()` + `backend='bloom'`
+  for Parallax's exact-term log search — competitive today, no engine change. Invest in the
+  scan engine (#2) only if broad-term/query-syntax log analytics proves frequent. Net: #1 drops
+  from "the improvement that flips a user moment" to "configure it right and GreptimeDB is fine
+  for incident grep" — strengthening the verdict further.
 
 ### Improvement 2 — Bigger execution batch + expression/aggregation JIT + SIMD aggregation
 
@@ -397,8 +401,10 @@ first which gaps Parallax's real query mix actually hits before investing in Tie
   (pushdown/skip), `schema-evolution-and-dynamic-columns.md` (JSON blob vs subcolumn),
   `projections-and-access-paths.md` (Run 28), `rollup-and-continuous-aggregation.md` (Flow).
 - Empirical: `local-benchmark-results.md` Runs 11/12/37/38 (the gaps), 43 (Flow), 44 (PromQL
-  vs SQL), 45 (GreptimeDB schema build), **47 (full-text gap = post-index scan, not the index
-  apply — index apply ~0.15 ms via `greptime_index_apply_elapsed{type=fulltext_index}`)**.
+  vs SQL), 45 (GreptimeDB schema build), 47 (full-text gap = post-index scan, not the index
+  apply — index apply ~0.15 ms via `greptime_index_apply_elapsed{type=fulltext_index}`),
+  **48 (`matches()` on a `backend='bloom'` index full-scans 5M, EXPLAIN `output_rows: 5000000`;
+  `matches_term()` prunes, `output_rows: 1` → selective exact-term ~8 ms / ~2–3× CH, not 18×)**.
 - Source (pass 77, v1.0.2): `src/query/src/query_engine/state.rs:126-128` (SessionConfig =
   `with_target_partitions` only, no `batch_size`); `src/mito2/src/sst/parquet/reader.rs`
   (`RowGroupSelection` + `PageIndexPolicy` + `prune_row_groups_by_{fulltext,inverted}_index`;
