@@ -115,8 +115,10 @@ MV all build; one `text`-tokenizer fix). But three design decisions impose real 
    Runs 23–24; **Jaeger query API Run 32** — `/v1/jaeger/api/services` live). On
    ClickHouse 26.x each is *assembled*: OTLP via a collector (no native receiver, pass
    46); PromQL via the **experimental, off-by-default `TimeSeries` engine**
-   (`prometheusQuery[Range]`, limited to `rate`/`delta`/`increase`, pass 44 — *not*
-   "absent" anymore, but not GA); Jaeger via the **external `jaeger-clickhouse` storage
+   (`prometheusQuery[Range]` table functions + the 12-function `timeSeries*ToGrid`
+   family — broad PromQL coverage, *not* "limited to rate/delta/increase"; pass 44 /
+   Run 50 — *not* "absent" anymore, but off by default); Jaeger via the **external
+   `jaeger-clickhouse` storage
    plugin** (pass 55). So Parallax would depend on experimental/external observability
    paths, vs GreptimeDB's GA-native trio. A maturity/ergonomics cost now, not a hard
    capability blocker.
@@ -135,8 +137,8 @@ ClickHouse 26.x is *actively* closing the observability gaps: it added PromQL
 lightweight `DELETE` (GA-default mask, pass 51), and an experimental lightweight
 `UPDATE` (pass 51) — all things earlier framed as "absent." But the pattern is
 consistent: each lands **experimental and/or setup-gated** (TimeSeries off by default,
-PromQL limited to `rate`/`delta`/`increase`, lightweight update needs a per-table
-block-number column), while OTLP ingest is **still collector-only** (pass 46). So the
+lightweight update needs a per-table block-number column), while OTLP ingest is
+**still collector-only** (pass 46). So the
 replaceability *cost is trending down* — but today it is "depend on experimental
 metrics/correction paths" rather than "GA-native," and **GreptimeDB's are GA now**.
 This is a live trend to re-evaluate on every ClickHouse version bump (the method's

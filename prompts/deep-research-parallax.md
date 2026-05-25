@@ -74,12 +74,13 @@ prior conclusions is expected; stopping shallow or early is not.
 The Phase 1 verdict and Phase 2 blueprint are gates, not the end of the research
 program.
 
-For open-ended Codex `run` / `go` runs or Claude Code `/loop` runs, keep this
-prompt active as an indefinite research brief after the verdict and blueprint
-exist. Do not mark the goal complete merely because `docs/research/verdict.md`
-and `docs/research/technical-implementation-concept.md` exist. Continue in
-repeated passes until the operator explicitly stops the goal, replaces it, or
-says the research program is complete.
+For open-ended `/goal` runs in Codex or Claude Code, or Claude Code `/loop` runs,
+keep this prompt active as an indefinite research brief after the verdict and
+blueprint exist. Do not mark the run complete merely because
+`docs/research/verdict.md` and
+`docs/research/technical-implementation-concept.md` exist. Continue in repeated
+passes until the operator explicitly stops the run, replaces it, or says the
+research program is complete.
 
 Treat every existing finding in `docs/research/` as a theory, not a settled
 fact. The job of each pass is not to defend prior work. The job is to re-check

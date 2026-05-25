@@ -1557,6 +1557,104 @@ log search, bloom backend for exact-term grep** — both ~6–8 ms. Caveat: smok
 bloom), `count(*)` shape; cold-cache GB-scale still owed to the harness. Cleanup: `logs_tantivy`
 dropped; bench data untouched.
 
+### Run 50 — 2026-05-25 — Re-verification sweep of the headline claims + a fairness correction (experimental-as-stable)
+
+**Why this run.** Operator clarified two durable rules: (a) count ClickHouse's
+*experimental* observability as **stable** — judge on mechanism + future trajectory,
+do not maturity-shame; (b) every comparison statement is a theory to re-verify on the
+live stack. This run re-checks the load-bearing numbers against the **same containers
+that have been up 7 h** (so it also tests warm-steady-state stability), and corrects
+what no longer holds.
+
+**Environment**
+
+| Item | Value |
+| --- | --- |
+| Host | Linux dev box (orbstack); Docker 29.5.0, compose v5.1.3 |
+| Stack | `bench/compose.yml`, both containers `(healthy)` for ~7 h |
+| GreptimeDB | `greptime/greptimedb:v1.0.2` (`0ef5451`) standalone |
+| ClickHouse | `clickhouse/clickhouse-server:26.5.1.882` (`5b96a8d8`) |
+| Access | `docker exec` (sandbox blocks host→container ports — confirmed: host `curl localhost:8123/9000/4000` all refused; exec works). CH via `clickhouse-client --time`; GT via HTTP `/v1/sql` `execution_time_ms`; PromQL via `/v1/prometheus/api/v1/query[_range]`, wall-clock with an exec+curl baseline subtracted. |
+| Datasets (pre-loaded, unchanged) | `metrics_hc` 8 M (40k series), `logs_b1` 5 M (bloom FULLTEXT on `message`), `spans` 1 M + `spans_idx` 1 M (trace_id `INVERTED`), `metrics_real` 864 k. |
+
+**A. Metric aggregation `avg(value) by service` on `metrics_hc` (8 M), warm, min of 3**
+
+- CH SQL: `SELECT service,avg(value) FROM metrics_hc GROUP BY service FORMAT Null` → **31–33 ms**
+- GT SQL: same SQL via `/v1/sql` → **105–113 ms** (server)
+- GT PromQL: `avg by(service)(metrics_hc)` instant → **~595 ms** server-equivalent (≈650 ms wall − ≈55 ms exec/curl baseline)
+
+→ Ordering **CH SQL > GT SQL (~3.3×) > GT PromQL (~5.4×)** — **confirms** Run 37 (warm ~2–3×) and Run 44 (native PromQL ~5× slower than GT SQL; `SeriesNormalize`/`SeriesDivide` fixed setup). Mechanism holds. *Fairness note:* ClickHouse's PromQL-equivalent runs on the **fast SQL engine** (`timeSeries*ToGrid`, below), so counting CH's experimental metrics path as stable makes CH **stronger** on metric-agg latency, not weaker.
+
+**B. Selective full-text log search on `logs_b1` (5 M), term `0835d162` (matches exactly 1 row), warm, min of 3**
+
+- CH `text` index: `WHERE hasToken(message,'0835d162')` → **~4 ms**
+- GT bloom + `matches_term(message,'0835d162')` (exact-term fn) → **~9–11 ms** (prunes)
+- GT bloom + `matches(message,'0835d162')` (query-syntax fn on a *bloom* index) → **~152 ms** (full-scan)
+
+→ **Confirms Runs 48–49 exactly**: CH ~4 ms vs GT ~10 ms (~2.5×, *not* 18×) for the real incident-grep shape; the old "18×" reproduces **only** with the wrong fn/backend pairing (`matches()` on bloom). The dissolution of the full-text gap stands.
+
+**C. `trace_id` point lookup, warm, min of 3** (`f6a4d02…` = 14 spans)
+
+- CH `spans` (`ORDER BY (trace_id,ts)` → PK seek) → **~3 ms**
+- GT `spans_idx` (`trace_id INVERTED`) → **~16 ms** (prunes, scattered reads)
+- GT `spans` (trace_id un-indexed) → **~35 ms** (scan)
+
+→ **Confirms Run 1 / Run 40**: CH wins via clustered-PK locality; GT competitive only with the inverted index, still ~4–5× CH — but both ≪ the 300 ms gate. Schema-discipline point holds.
+
+**D. ClickHouse experimental observability — verified live, counts as stable**
+
+| Feature | Probe | Result |
+| --- | --- | --- |
+| `TimeSeries` engine | `CREATE TABLE … ENGINE=TimeSeries` (flag on) | **builds** — DATA(MergeTree)+TAGS(AggregatingMergeTree)+METRICS(ReplacingMergeTree) |
+| `prometheusQuery` / `prometheusQueryRange` | `system.table_functions` | **present** (they are **table functions**, not in `system.functions` — earlier-pass naming is correct; a `system.functions`-only search misses them, noted so future passes don't mis-correct) |
+| `timeSeries*ToGrid` family | `system.functions` | **12 fns**: rate, delta, instant rate/delta, deriv, predict_linear, changes, resets, resample-with-staleness, last, last-two — broader than "rate/delta/increase" |
+| PromQL-style rate, executed | `timeSeriesRateToGrid(...)(ts, toFloat64(counter))` on `metrics_real` | **returns correct per-service rate grid**, `NULL` first bucket (no prior sample) — works |
+| `JSON` typed subcolumn | `attrs.\`http.status\`.:Int64` group-by | **reads typed subcolumn** correctly |
+| `async_insert` | `system.settings` | **`=1` (DEFAULT ON)**, 10 MiB / 200 ms flush, `wait_for_async_insert=1` |
+| lightweight `DELETE` / `UPDATE` | `system.settings` | delete GA (`lightweight_deletes_sync=2`); experimental update flag present |
+| native OTLP receiver | functions + config scan | **none** — OTLP ingest is genuinely collector-mediated (this point stands) |
+
+GreptimeDB symmetric check: `/v1/prometheus/api/v1/query_range` returns a proper Prometheus **matrix**; `count(metrics_real)` parses as PromQL — real PromQL-**language** HTTP endpoint, drop-in for Grafana.
+
+**Corrections this run produces (applied to the notes):**
+
+1. **`async_insert` is default-on in 26.5.1** → the verdict's "ClickHouse needs an ingest-batching layer for streaming small writes" is **overstated**: server-side batching is built in and on by default. Re-stated as "tune/confirm async-insert," not "build a batching layer."
+2. **CH PromQL is not "limited to rate/delta/increase"** → it executes arbitrary PromQL via `prometheusQuery[Range]` table functions *and* exposes 12 `timeSeries*ToGrid` aggregate primitives. Verdict wording corrected.
+3. The honest distinction that **survives** (not a maturity penalty, a mechanism/integration fact): GreptimeDB = PromQL-**language** over the standard Prometheus HTTP API (drop-in Grafana datasource); ClickHouse = PromQL-**equivalent computation in SQL** + table functions (capable, runs on the fast engine, but not a PromQL-string HTTP endpoint, and OTLP ingest is collector-mediated).
+
+**Reproduce (copy-paste).**
+
+```bash
+# A — metric agg
+docker exec parallax-bench-clickhouse-1 clickhouse-client --time -q \
+  "SELECT service,avg(value) FROM metrics_hc GROUP BY service FORMAT Null"
+docker exec parallax-bench-greptimedb-1 curl -s "http://localhost:4000/v1/sql?db=public" \
+  --data-urlencode "sql=SELECT service,avg(value) FROM metrics_hc GROUP BY service" | grep -o '"execution_time_ms":[0-9]*'
+docker exec parallax-bench-greptimedb-1 curl -s "http://localhost:4000/v1/prometheus/api/v1/query" \
+  --data-urlencode "query=avg by(service)(metrics_hc)" --data-urlencode "time=2024-05-18T03:00:00Z" -o /dev/null
+# B — full-text (term matches 1 row)
+docker exec parallax-bench-clickhouse-1 clickhouse-client --time -q \
+  "SELECT count() FROM logs_b1 WHERE hasToken(message,'0835d162') FORMAT Null"
+docker exec parallax-bench-greptimedb-1 curl -s "http://localhost:4000/v1/sql?db=public" \
+  --data-urlencode "sql=SELECT count(*) FROM logs_b1 WHERE matches_term(message,'0835d162')" | grep -o '"execution_time_ms":[0-9]*'
+docker exec parallax-bench-greptimedb-1 curl -s "http://localhost:4000/v1/sql?db=public" \
+  --data-urlencode "sql=SELECT count(*) FROM logs_b1 WHERE matches(message,'0835d162')" | grep -o '"execution_time_ms":[0-9]*'
+# C — trace lookup
+docker exec parallax-bench-clickhouse-1 clickhouse-client --time -q \
+  "SELECT span_id,service,name FROM spans WHERE trace_id='f6a4d0239985efee1cfd72928e65e92a' ORDER BY ts FORMAT Null"
+docker exec parallax-bench-greptimedb-1 curl -s "http://localhost:4000/v1/sql?db=public" \
+  --data-urlencode "sql=SELECT span_id,service,name FROM spans_idx WHERE trace_id='f6a4d0239985efee1cfd72928e65e92a' ORDER BY ts" | grep -o '"execution_time_ms":[0-9]*'
+# D — CH experimental obs (counts as stable)
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q \
+  "SELECT name FROM system.table_functions WHERE name ILIKE '%prometh%'"
+docker exec parallax-bench-clickhouse-1 clickhouse-client --allow_experimental_time_series_aggregate_functions=1 -q \
+  "SELECT service, timeSeriesRateToGrid(toDateTime64('2024-05-18 02:40:00',3), toDateTime64('2024-05-18 03:40:00',3), INTERVAL 600 SECOND, INTERVAL 600 SECOND)(ts, toFloat64(counter)) FROM metrics_real WHERE service='svc-0' GROUP BY service"
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q \
+  "SELECT name,value FROM system.settings WHERE name='async_insert'"
+```
+
+Caveat: all warm, cache-resident smoke (1–8 M rows). Directional only; cold-cache GB–TB and concurrent ingest+query stay owed to the sized harness.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

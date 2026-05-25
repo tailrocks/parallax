@@ -23,7 +23,9 @@ idea becomes sharper.
 
 The preferred research workflow is an indefinite re-verification loop over
 [`prompts/deep-research-parallax.md`](prompts/deep-research-parallax.md), run
-through Codex `run` / `go` or Claude Code `/loop`.
+through `/goal` in Codex or Claude Code, or through Claude Code `/loop`.
+`/goal` is the cross-tool long-running command; `/loop` is Claude Code-only and
+is useful when you want the prompt re-fired on a schedule.
 
 Treat every existing note under `docs/research/` as a theory until current
 primary-source evidence supports it. Each pass should re-check a weak, stale,
@@ -37,8 +39,8 @@ Do not spend those passes benchmarking storage or infrastructure performance
 differences; use separate benchmark-agent artifacts when they exist and mark
 benchmark-dependent claims as unproven until measured.
 
-See [`prompts/README.md`](prompts/README.md) for the exact Codex and Claude Code
-commands to keep the research running indefinitely.
+See [`prompts/README.md`](prompts/README.md) for the exact `/goal` and Claude
+Code `/loop` commands to keep the research running indefinitely.
 
 ## Start Here
 

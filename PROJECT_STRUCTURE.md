@@ -63,7 +63,7 @@ or CI contract yet.
 | `docs/research/storage-benchmark-prototype.md` | Runnable storage-benchmark harness spec: `StorageAdapter` trait, seeded dataset generator, per-candidate DDL, exact evidence-bundle/correlation queries, measurement protocol, and numeric decision gates. Has veto power over the default storage choice. |
 | `docs/research/storage-freshness-and-bundle-latency-gate.md` | Proof gate for mixed-load ingest-to-queryable freshness and Q6 evidence-bundle latency under concurrent ingest; specifies timing definitions, per-signal probes, pass targets, and storage-default consequences. |
 | `docs/research/storage-size-and-object-cost-gate.md` | Proof gate for retained size, per-signal compression, object-store request/egress cost, cache dependency, and provider cost projection across GreptimeDB and ClickHouse. |
-| `docs/research/greptimedb-vs-clickhouse/` | White-box internals comparison of GreptimeDB and ClickHouse: source-level teardown of write/read paths, indexing, compaction, compression, execution, and the distributed model, mapped to per-signal speed/cost/scaling, a build decision, and a gap-closing implementation roadmap for the chosen engine. Produced by an indefinite `/loop`. |
+| `docs/research/greptimedb-vs-clickhouse/` | White-box internals comparison of GreptimeDB and ClickHouse: source-level teardown of write/read paths, indexing, compaction, compression, execution, and the distributed model, mapped to per-signal speed/cost/scaling, a build decision, and a gap-closing implementation roadmap for the chosen engine. Produced by an indefinite `/goal` or Claude Code `/loop`. |
 | `docs/research/retention-cost-model.md` | Quantified retention cost math (object-store pricing, per-signal compression, 3-tier worked model); finds object-storage retention is ~100× cheaper than ingest-priced SaaS and that egress pricing favors R2/B2 over S3 for a re-read-heavy context engine. |
 | `docs/research/metadata-store-benchmark-plan.md` | Turso-first benchmark plan and runnable prototype spec for product metadata, agent session state, CLI invocation state, audit records, crash/restore tests, and Postgres fallback gates. |
 | `docs/research/turso-metadata-production-readiness.md` | Turso metadata production-readiness gate: current Turso source posture, local-vs-cloud distinction, MVCC conflict/CDC/sync constraints, backup/restore requirements, and Postgres fallback triggers. |
@@ -122,7 +122,7 @@ or CI contract yet.
 | --- | --- |
 | `prompts/README.md` | How to use the prompts in this folder (one-off, `/goal`, `/loop`). |
 | `prompts/deep-research-parallax.md` | Deep research brief for validating the AI-native debugging/investigation direction. |
-| `prompts/greptimedb-vs-clickhouse-internals.md` | Never-ending `/loop` brief for the under-the-hood GreptimeDB vs ClickHouse comparison; writes to `docs/research/greptimedb-vs-clickhouse/`. |
+| `prompts/greptimedb-vs-clickhouse-internals.md` | Never-ending `/goal` or Claude Code `/loop` brief for the under-the-hood GreptimeDB vs ClickHouse comparison; writes to `docs/research/greptimedb-vs-clickhouse/`. |
 
 ## Update Rule
 

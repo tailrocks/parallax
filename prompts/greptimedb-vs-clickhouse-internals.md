@@ -86,6 +86,38 @@ Every "X is faster" claim in the output must carry a *because* tied to a concret
 data structure or code path, and a *scenario* (which signal, which query shape,
 what cardinality, hot vs cold cache, single-node vs scaled-out).
 
+## Count Experimental As Stable — Judge On Mechanism And Trajectory
+
+Operator rule (durable): when either system gates an observability capability
+behind an *experimental* flag, evaluate it **as if it were stable**. Do not lower
+the score, hedge the verdict, or treat the feature as absent because of the
+experimental label. ClickHouse's `TimeSeries` engine, its PromQL table functions
+(`prometheusQuery` / `prometheusQueryRange`), the `timeSeries*ToGrid` family,
+lightweight `UPDATE` / `DELETE`, the `JSON` type, async inserts — and GreptimeDB's
+equivalently young subsystems — all count as real, shipping capabilities. Both
+teams are best-in-class and both ship fast; the question is which *design* serves
+Parallax best and which has the **bigger future advantage**, not which printed a GA
+stamp first.
+
+What this rule does and does not change:
+
+- **Capability is judged on the mechanism, present-tense.** If the feature works
+  when enabled — verify it live, do not assume — it counts. "Experimental,
+  therefore it loses" is banned reasoning.
+- **Maturity and ergonomics may still be reported — but only as a *shipping-today*
+  operational note, never inflated into a capability or speed verdict.** "Off by
+  default / needs a flag / setup-heavy / fewer integrations today" is a fair cost to
+  state plainly; "experimental, so it does not count" is not. Do not let a maturity
+  gap masquerade as a mechanism gap.
+- **Trajectory is a first-class axis.** For every gap, ask which design's *future*
+  is stronger: is the laggard's gap an engineering item already in flight (cite the
+  changelog / RFC / PR), or a true architectural limit? A capability that ships
+  experimentally *this* release and closes a gap is evidence the *direction* favors
+  that system — weigh it explicitly when judging the bigger future advantage.
+- **Symmetry.** Apply the identical standard to GreptimeDB. Neither system is
+  penalized for the experimental label; both are judged on what the code does now
+  and where the design is heading.
+
 ---
 
 # Output Location And File Plan
@@ -221,6 +253,12 @@ fast or slow, and for which signal?*
    tradeoff versus local disk.
 10. **Schema / dynamic columns.** Handling of changing OTLP attributes,
     high-cardinality tags, JSON/Map columns, and the metric-series model.
+11. **Native observability data model (out-of-the-box).** What table/column
+    structure each system creates for OTLP metrics, logs, and traces with no schema
+    work — the default ingest schema, the built-in log/trace models, the metric
+    engine — and whether that native structure is good enough to adopt for Parallax
+    or must be customized (feeds the adopt-native-vs-custom decision in the
+    implementation documents).
 
 ---
 
@@ -308,6 +346,26 @@ Each implementation document must specify, for the full Parallax signal set
 (error events, spans, logs, metrics, deploy markers, CLI invocations, agent
 actions, frontend events):
 
+- **Native out-of-the-box structure first — then an explicit adopt-native vs
+  design-custom decision.** Before designing any schema, establish what each system
+  gives you with **zero schema work**: what table(s) and column layout it
+  auto-creates when a standard client just sends OTLP metrics / logs / traces (and
+  Prometheus remote-write) at it. Verify it **live**, do not assume — e.g.
+  GreptimeDB's OTLP / pipeline auto-created tables, its log-table model, its trace
+  model (and Jaeger query API), and the metric engine; ClickHouse's default
+  observability schema (the OpenTelemetry Collector ClickHouse exporter tables /
+  "ClickStack" defaults, since OTLP ingest is collector-mediated — confirm whether a
+  native receiver exists). Then decide, **per signal**: if the native / default
+  structure already serves Parallax's retrieval — anchored evidence-bundle
+  correlation by `trace_id` / `fingerprint` / time window — **prefer adopting it**:
+  it is less to build, less to maintain, and stays aligned with the ecosystem and
+  each project's own tuning. Only **design a custom schema where the native one
+  demonstrably falls short** (wrong sort/primary key for the anchored lookup, no
+  home for `fingerprint`, dynamic-attribute handling that hurts the hot path, etc.) —
+  and when you deviate, **name the exact native shortfall that forces it**. Do not
+  hand-roll a schema without first proving the out-of-the-box one inadequate; do not
+  adopt the native one without proving it actually fits. This native-vs-custom
+  finding is a required part of each implementation document.
 - **Schema / structure.** The complete table design in that system's real DDL:
   table engine / table type, the time/sort/primary key and why it is ordered that
   way, tag vs field columns, per-column types and compression codecs, JSON/Map vs
@@ -375,6 +433,81 @@ extended) rather than forked into a parallel benchmark. Distinguish what is
 **already runnable there** from what is a **proposed new case**.
 
 ---
+
+# How To Benchmark — Production Realism Over Scoreboard Optics
+
+Benchmarks here exist to predict the **real Parallax user's experience**, not to
+produce a flattering number. The operator does not care how the benchmark *looks*;
+the operator cares whether, on the system Parallax actually ships, the everyday
+workflow is fast and everything stays queryable under load. Hold every benchmark to
+this standard:
+
+1. **Model the real usage, not a microbenchmark trophy.** Parallax's user is one
+   developer / SRE / AI agent (and later a team) hitting the store with the queries
+   they run *often*: anchored evidence-bundle assembly (Q1–Q6), a request-id /
+   trace-id grep during an incident, a metric-panel refresh, a recent-logs tail.
+   Benchmark *those*, at a realistic shape and load, against a realistically
+   populated store — the queries that decide whether the product feels fast,
+   weighted by how often they actually run. A system that is heavily and repeatedly
+   used by one user is the case to optimize for.
+2. **No benchmark tricks — ever.** Vendors game benchmarks; we do the opposite.
+   Forbidden: cherry-picking the query form that flatters one engine, tuning one
+   side's schema / flags / codecs while leaving the other on defaults, reporting
+   only warm when cold is the real user moment (or vice-versa), hiding the ingest
+   cost by querying a frozen table, or picking a cardinality / window that dodges a
+   known weak spot. If a result depends on a trick to look good, it is worthless
+   here — discard it.
+3. **Fair footing on both sides.** Give *each* engine its best honest
+   configuration: if you tune codecs / indexes / flags on one, apply equivalent
+   effort on the other, and state what you did for each. Enable each engine's
+   relevant capabilities (experimental counts as stable, per the rule above). The
+   comparison is design-vs-design at equal effort, never tuned-vs-default.
+4. **Measure what the user feels.** Lead with user-perceptible outcomes:
+   ingest-to-queryable freshness, end-to-end latency of the *often-run* queries
+   (p50 / p95 / p99, warm **and** cold stated separately), and whether latency holds
+   under concurrent ingest+query (the real production state) — not an isolated
+   read-only scan. Always attach the scenario qualifiers: signal, query shape,
+   cardinality, time window, cache state, single-node vs scaled, single-user vs
+   concurrent.
+5. **A laptop smoke run is indicative, never the verdict.** State the scale and
+   hardware; label small-scale numbers as directional; route the load-bearing
+   questions to the sized / cold / multi-node harness that holds veto.
+
+# Reproducibility Contract — Every Run Is Re-Runnable By Hand
+
+The operator must be able to re-run any benchmark himself and land on the same
+number. **A result that cannot be reproduced from the written record does not
+exist.** So for *every* benchmark logged in `local-benchmark-results.md`, capture
+enough that a reader reproduces it byte-for-byte without asking the agent — **and**
+record *how the benchmark was constructed and how the two systems were compared*,
+not merely the number:
+
+- **Exact environment.** Image tags **and** the source commit SHA under test, host
+  hardware / OS, Docker / compose versions, and how the stack was brought up (the
+  `bench/` compose or script invocation).
+- **Exact dataset.** The generator command, the seed, row counts per table, the
+  shape (cardinality, linkage, signal mix), and which file / table loaded where — so
+  the same bytes regenerate.
+- **Exact schema.** The full DDL under test for *both* systems (copy-pasteable),
+  every index / codec / flag included, with the per-side tuning stated.
+- **Exact queries.** The literal queries run on each system, copy-pasteable in that
+  system's dialect, in the form actually executed. (Note: the dev sandbox blocks
+  host→container ports, so prefer the `docker exec …` form the agent actually ran;
+  record it verbatim.)
+- **Exact method.** Warm vs cold and how cache state was set, repetition count and
+  which figure is reported (min / median), the timing source (ClickHouse `--time`,
+  GreptimeDB `execution_time_ms`, or wall-clock — and note their non-comparability),
+  and any overhead stripped.
+- **The comparison logic and the result.** State *what mechanism the case isolates*
+  and *why this query / shape is the fair way to compare the two here*, then the
+  measured numbers for both sides, then the verdict against the claim being checked —
+  **confirmed / refuted / workload-specific / inconclusive-at-this-scale** — tied to
+  the internals mechanism that predicts it.
+
+Rule of thumb: a future pass, or the operator, should be able to open the entry,
+paste the commands, land within noise of the recorded number, **and understand why
+that comparison is fair**. If they cannot, the entry is incomplete — finish it
+before moving on.
 
 # Verify Claims Locally With Docker (Measure, Do Not Just Reason)
 
@@ -544,7 +677,10 @@ cross-signal correlation hot path across two engines, its biggest cost.)
 
 # Evaluation Axes (Priority Order)
 
-Judge every mechanism by its consequence on these axes, in this order:
+These axes are proxies for one thing: **the real user's experience** on the system
+Parallax ships — is it fast, does ingest keep up, does every signal stay queryable
+under load (see "Benchmark Like Production Over Scoreboard Optics"). Judge every
+mechanism by its consequence on these axes, in this order:
 
 1. **Speed — time to see real data.** Ingest-to-queryable freshness, and query
    latency for the evidence-bundle/correlation patterns under concurrent
@@ -567,18 +703,30 @@ Each pass:
 
 1. Re-read this prompt and the current state of
    `docs/research/greptimedb-vs-clickhouse/`.
-2. Pick the single highest-value unanswered (or weakest, or most stale) internals
+2. **Re-verify before deepening — treat every existing comparison statement as a
+   theory, not a settled fact.** Re-pin the versions (Method #1). Then re-check the
+   most load-bearing, most-suspicious, or stalest existing claims against the *live*
+   containers and the *current* source — especially any "X is faster / abler"
+   headline and anything the verdict leans on. Rotate the slice each pass so that,
+   over successive passes, the **entire record stays continuously re-verified**, not
+   merely appended to. Any claim that fails to reproduce is corrected *immediately*,
+   in the same pass, with the run that falsified it logged under the Reproducibility
+   Contract. A number that no longer reproduces is a top-priority finding.
+3. Pick the single highest-value unanswered (or weakest, or most stale) internals
    question.
-3. Confirm/refresh the pinned versions; read the relevant design docs and the
+4. Confirm/refresh the pinned versions; read the relevant design docs and the
    source code for that subsystem in both systems.
-4. Write or revise one focused note with mechanism-level findings, file/commit
+5. Where the question is empirical, run it on the live Docker stack to the
+   production-realism + reproducibility standard above, and log the run so the
+   operator can re-run it by hand.
+6. Write or revise one focused note with mechanism-level findings, file/commit
    citations, and the scenario/axis consequence.
-5. Update the subfolder `README.md` (index + status), and update this prompt,
+7. Update the subfolder `README.md` (index + status), and update this prompt,
    `prompts/README.md`, and `PROJECT_STRUCTURE.md` when durable direction or
    repository shape changes.
-6. Commit and push the durable change.
-7. Move to the next highest-value gap. Do not declare the comparison complete;
-   keep deepening until the operator stops the loop.
+8. Commit and push the durable change.
+9. Move to the next highest-value gap. Do not declare the comparison complete;
+   keep deepening *and* re-verifying until the operator stops the loop.
 
 ---
 

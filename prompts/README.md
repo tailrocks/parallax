@@ -9,7 +9,7 @@ OpenCode) so a piece of work runs the same way every time.
 | File | Purpose |
 | --- | --- |
 | `deep-research-parallax.md` | Deep, critical research brief that validates, re-verifies, and extends the Parallax direction indefinitely; every prior finding is treated as a hypothesis until current evidence supports it. |
-| `greptimedb-vs-clickhouse-internals.md` | Never-ending `/loop` brief for the under-the-hood GreptimeDB vs ClickHouse comparison: read the source, explain which design decisions make each fast or slow per signal, decide which to build Parallax on, and (when one wins but lacks features) map what the winner must implement to close the gap. Writes to `docs/research/greptimedb-vs-clickhouse/`. |
+| `greptimedb-vs-clickhouse-internals.md` | Never-ending `/goal` or Claude Code `/loop` brief for the under-the-hood GreptimeDB vs ClickHouse comparison: read the source, explain which design decisions make each fast or slow per signal, re-verify every claim against the live Docker stack with production-realistic, no-tricks, reproducible benchmarks, check each system's native out-of-the-box metrics/logs/traces structure (adopt-native vs custom), decide which to build Parallax on, and (when one wins but lacks features) map what the winner must implement to close the gap. Writes to `docs/research/greptimedb-vs-clickhouse/`. |
 
 ## Current preferred mode
 
@@ -41,13 +41,25 @@ file, or reference the path (for example `@prompts/deep-research-parallax.md` in
 Claude Code). Use this for a targeted pass only. For the main Parallax research
 program, prefer the indefinite modes below.
 
-### 2. Codex run/go — indefinite
+### 2. `/goal` — indefinite
 
-Use Codex's long-running `run` / `go` flow with an explicit never-finished
-research instruction:
+Use `/goal` in Codex or Claude Code with an explicit never-finished research
+instruction. `/goal` is the cross-tool long-running command; the stop condition
+for the ordinary research program is operator intervention:
+
+For Codex specifically, current official Codex CLI and app docs list `/goal` for
+persistent long-running goals. They do not list `/run` or `/go` as the documented
+slash command for this workflow. If `/goal` is hidden in Codex, enable the
+feature first:
+
+```sh
+codex features enable goals
+```
 
 ```text
-Run/go prompts/deep-research-parallax.md indefinitely.
+/goal Follow prompts/deep-research-parallax.md as the active indefinite
+research brief. Keep improving the research record until I explicitly stop or
+replace the research program.
 
 Treat every existing docs/research finding as a theory, not a settled fact.
 Each pass: re-read the prompt and current docs/research state; pick the weakest,
@@ -64,16 +76,17 @@ storage or infrastructure performance differences unless explicitly asked; use
 the separate benchmark agent's artifacts when they exist and mark unmeasured
 claims as unproven.
 
-Do not mark the run complete until the operator explicitly stops it, replaces it,
-or says the research program is complete.
+Never declare the research complete on your own. Keep going until the operator
+explicitly stops the goal, replaces it, or says the research program is complete.
 ```
 
-### 3. Claude Code `/loop` — indefinite
+### 3. Claude Code `/loop` — scheduled indefinite
 
-Use `/loop` with a fixed interval for the never-stop behavior. The interval is a
-re-trigger beat, not a freshness requirement. If the scheduler coalesces while a
-pass is running, `5m` keeps the loop close to continuous; if overlapping work or
-cost becomes a problem, raise it to `15m` or `30m`.
+Use Claude Code `/loop` with a fixed interval for the never-stop behavior.
+`/loop` is Claude Code-only. The interval is a re-trigger beat, not a freshness
+requirement. If the scheduler coalesces while a pass is running, `5m` keeps the
+loop close to continuous; if overlapping work or cost becomes a problem, raise it
+to `15m` or `30m`.
 
 ```text
 /loop 5m Follow prompts/deep-research-parallax.md as the active indefinite
@@ -103,7 +116,7 @@ Notes:
 - `/loop` tasks auto-expire after about 7 days and stop if the session closes
   (they resume on `--resume` while unexpired). Relaunch for a longer program.
 - Do not wrap `/goal` inside `/loop` for this open-ended research. Pick one
-  runner: Codex `run` / `go` or Claude Code `/loop`.
+  runner: `/goal` in Codex or Claude Code, or Claude Code `/loop`.
 
 ### 4. Bounded `/goal` — fixed deliverables only
 
@@ -122,28 +135,50 @@ do not stop shallow or early.
 ```
 
 A vague bounded goal like "research Parallax" lets an agent declare victory
-early. For indefinite improvement, use Codex `run` / `go` or Claude Code
-`/loop` instead.
+early. For indefinite improvement, use the explicit indefinite `/goal` or Claude
+Code `/loop` examples above.
 
 ### Running the GreptimeDB vs ClickHouse internals comparison
 
 `greptimedb-vs-clickhouse-internals.md` is an indefinite, never-converging brief,
-so run it with `/loop` (not `/goal`). Use a clear, explicit instruction so the run
-keeps going:
+so run it with `/goal` in Codex or Claude Code, or with Claude Code `/loop`. Use
+a clear, explicit instruction so the run keeps going:
+
+```text
+/goal Follow prompts/greptimedb-vs-clickhouse-internals.md as the active
+never-ending research brief. Keep researching the GreptimeDB vs ClickHouse
+internals pass after pass until I explicitly stop or replace this goal. Each pass:
+re-pin versions and re-verify the load-bearing comparison statements against the
+live Docker containers (every claim is a theory; correct what no longer
+reproduces), deepen one subsystem against the source code, verify performance
+claims with production-realistic, no-tricks benchmarks logged under the
+reproducibility contract (so I can re-run them by hand), verify each system's
+native out-of-the-box metrics/logs/traces structure and the adopt-native-vs-custom
+decision, write or update one focused note under
+docs/research/greptimedb-vs-clickhouse/, commit and push it, then continue to the
+next gap. Do not declare the comparison done.
+```
+
+For Claude Code scheduled repetition, use `/loop` with the same never-stop
+wording:
 
 ```text
 /loop Follow prompts/greptimedb-vs-clickhouse-internals.md as the active research
-brief. Never stop on your own — keep researching the GreptimeDB vs ClickHouse
-internals pass after pass, each pass deepening one subsystem against the source
-code and verifying performance claims, write or update one focused note under
+brief. Never stop on your own. Each pass: re-pin versions and re-verify the
+load-bearing comparison statements against the live Docker containers (treat every
+claim as a theory; correct anything that no longer reproduces), deepen one subsystem
+against the source code, verify performance claims with production-realistic,
+no-tricks benchmarks logged under the reproducibility contract (so I can re-run them
+by hand), verify each system's native out-of-the-box metrics/logs/traces structure
+and the adopt-native-vs-custom decision, write or update one focused note under
 docs/research/greptimedb-vs-clickhouse/, commit and push it, then continue to the
 next gap. Do not declare the comparison done; keep going until I stop you by hand.
 ```
 
-The bare path also works (`/loop prompts/greptimedb-vs-clickhouse-internals.md`),
-since the brief is self-contained — the explicit wording above just makes the
-never-stop intent unmistakable. Do not use `/goal` here, because the brief is
-designed to keep going rather than reach a fixed deliverable.
+The bare path also works for Claude Code
+(`/loop prompts/greptimedb-vs-clickhouse-internals.md`), since the brief is
+self-contained. The explicit wording above just makes the never-stop intent
+unmistakable.
 
 #### How often to trigger it
 
@@ -162,10 +197,18 @@ as continuous as possible and to re-fire quickly if a pass ever stops early:
 
 ```text
 /loop 5m Follow prompts/greptimedb-vs-clickhouse-internals.md as the active
-research brief. Never stop — each pass, deepen one subsystem against the source
-code, verify performance claims (local Docker run where useful), write or update
-one focused note under docs/research/greptimedb-vs-clickhouse/, commit and push
-it, then continue to the next gap. Do not declare the comparison done.
+research brief. Never stop. Each pass: re-pin versions and re-verify the
+load-bearing comparison statements against the live Docker containers (every
+"X is faster/abler" claim is a theory — rotate the slice so the whole record stays
+re-verified; correct anything that no longer reproduces). Deepen one subsystem
+against the source code; verify claims with production-realistic, no-tricks
+benchmarks (model the often-run single-user queries, fair footing on both sides,
+experimental features count as stable) and log each run to
+local-benchmark-results.md under the reproducibility contract so I can re-run it by
+hand. Also verify each system's native out-of-the-box metrics/logs/traces structure
+and the adopt-native-vs-custom decision. Write or update one focused note under
+docs/research/greptimedb-vs-clickhouse/, commit and push, continue to the next gap.
+Do not declare the comparison done.
 ```
 
 - Because one deep pass — read source, verify claims, optional local Docker run,
