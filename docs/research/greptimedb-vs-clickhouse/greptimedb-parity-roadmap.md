@@ -4,7 +4,9 @@
 
 Status: pass 76 (new) + pass 77 (gaps #2/#3 source-verified) + pass 78 (gap #1
 source-corrected) + pass 79 (**expanded to detailed per-improvement what/why/how**, framed
-as borrowed-concept → GreptimeDB structure → value, per operator). This is **the dedicated,
+as borrowed-concept → GreptimeDB structure → value, per operator) + pass 80 (#4 JSON
+binary-jsonb + per-row `json_get` source-confirmed; #2 batch-size has no runtime knob,
+live-probed). This is **the dedicated,
 standalone file** answering "what can GreptimeDB improve, why, and how" — the summary table
 scans, the detailed sections below carry the code-oriented specifics. Answers the operator
 question: GreptimeDB wins Parallax on *fit*
@@ -112,7 +114,10 @@ Parallax. Source read at GreptimeDB `v1.0.2` (`0ef5451`).
 - **How (code-oriented):** (1) **one-line, cheap to try:** add
   `.with_batch_size(32768)` (tune 16–64k) to the `SessionConfig` builder in
   `state.rs:126-128`; measure the agg gap before/after (a proposed `benchmarking-the-
-  differences.md` case). (2) **Upstream/contributed:** DataFusion expression + aggregate
+  differences.md` case). **Pass-80 live probe:** v1.0.2 has **no runtime knob** for this —
+  `SET datafusion.execution.batch_size` (and `execution.batch_size`, `batch_size`) all return
+  `Not supported: Unsupported set variable`, so it requires the code change (or a
+  config-plumb to expose it), not a session `SET`. (2) **Upstream/contributed:** DataFusion expression + aggregate
   codegen and specialized grouping — track the DataFusion roadmap; GreptimeDB inherits on
   the `datafusion = "=52.x"` bump (`Cargo.toml`). (3) SIMD aggregation kernels: upstream
   arrow/DataFusion.
@@ -156,9 +161,16 @@ Parallax. Source read at GreptimeDB `v1.0.2` (`0ef5451`).
 - **What:** store hot/declared attribute paths as their own Parquet columns and push path
   access down to a subcolumn scan.
 - **Why:** GreptimeDB's `Json` is a **binary blob** (jsonb) read with `json_get_*`
-  **per-row parse** (`schema-evolution-and-dynamic-columns.md`, Run 18) — every
-  `attributes.k` filter parses the whole blob for every row, vs ClickHouse reading one
-  pre-split subcolumn. Axis: cost + speed on dynamic-attribute queries (Q5-shaped).
+  **per-row parse** — every `attributes.k` filter parses the whole blob for every row, vs
+  ClickHouse reading one pre-split subcolumn. **Source-confirmed (pass 80, v1.0.2):** the
+  `Json` type is stored via `BinaryVectorBuilder` (`src/datatypes/src/types/json_type.rs`);
+  `json_get_*` is a DataFusion **scalar UDF** that calls `jsonb::get_by_path(...)` element-wise
+  over the binary column (`src/common/function/src/scalars/json/json_get.rs`); the
+  `JsonGetRewriter` (`json_get_rewriter.rs`) is only a **logical function-canonicalization**
+  (a DataFusion `FunctionRewrite`), **not** a subcolumn pushdown — there are no subcolumns to
+  push to. (v1.0.2 has a `JsonNativeType`→`Struct`/`List` typed *representation* for value
+  conversion, but storage stays binary jsonb.) Axis: cost + speed on dynamic-attribute
+  queries (Q5-shaped).
 - **How (code-oriented):** adopt the emerging **Parquet Variant/shredding** layout: at
   flush in the mito2 SST writer (`src/mito2/src/sst/parquet/`), split declared/hot paths of
   a `Json` column into typed Parquet leaf columns; in the read path, lower
@@ -263,5 +275,10 @@ first which gaps Parallax's real query mix actually hits before investing in Tie
   (`InvertedIndexCache`/`BloomFilterIndexCache`/`VectorIndexCache`/`PuffinMetadataCache`);
   `src/mito2/src/sst/index/fulltext_index/applier.rs` (`TantivyFulltextIndexSearcher` over
   `SstPuffinDir` + `dir_cache_hit/miss`; bloom variant uses `BloomFilterIndexCacheRef`).
+- Source (pass 80, v1.0.2): `src/datatypes/src/types/json_type.rs` (`Json` via
+  `BinaryVectorBuilder` = jsonb binary); `src/common/function/src/scalars/json/json_get.rs`
+  (`jsonb::get_by_path` per-row scalar UDF) + `json_get_rewriter.rs` (`JsonGetRewriter` =
+  logical `FunctionRewrite`, not subcolumn pushdown). Live: `SET …batch_size` →
+  `Unsupported set variable` (no runtime knob for #2).
 - Decision context: `verdict-which-to-choose.md`. Loop target: `prompts/greptimedb-vs-clickhouse-internals.md`
   ("Closing The Gap").
