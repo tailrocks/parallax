@@ -408,7 +408,9 @@ opens a wider view.
 MCP is the right agent integration surface, but it expands blast radius if it
 becomes a generic production-control plane. The MCP spec now has authorization
 and security guidance, and OpenTelemetry has MCP semantic conventions, which
-means Parallax can make the agent surface observable from day one.
+means Parallax can make the agent surface observable from day one. The focused
+CLI/API/MCP decision is captured in
+[Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md).
 
 Sources:
 

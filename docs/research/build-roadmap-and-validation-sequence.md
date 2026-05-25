@@ -85,8 +85,10 @@ Build only enough to generate the bundle automatically and repeatably:
 - Tier-2 topology (split ingest/workers, object storage, optional Iggy
   single-node; NATS/Redpanda reserved for Tier-3 clustering per
   [messaging](messaging-and-ingestion-layer.md)).
-- Add MCP server, CLI-invocation + coding-agent session tracing, then frontend
-  collection ([frontend](frontend-collection-and-cross-tier-correlation.md)).
+- Add the read-only MCP adapter specified in
+  [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md),
+  then CLI-invocation + coding-agent session tracing, then frontend collection
+  ([frontend](frontend-collection-and-cross-tier-correlation.md)).
 - **Gate:** scale-out changes topology, not the event/bundle contract.
 
 ### Phase 4 — Value capture and the feedback loop
@@ -131,6 +133,8 @@ Build only enough to generate the bundle automatically and repeatably:
   — the A3 conformance/adoption/corpus runbook for Phase 2 onward.
 - [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md)
   — the A4 strong-edge prevalence gate for Phase 1/2 real telemetry.
+- [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
+  — the focused answer to the CLI-versus-MCP access-surface question.
 - [Technical implementation concept](technical-implementation-concept.md) — the
   component detail each phase builds.
 - [Storage benchmark prototype](storage-benchmark-prototype.md),

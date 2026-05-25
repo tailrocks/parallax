@@ -105,7 +105,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Redaction/privacy/agent exposure safety | [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md), [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md), [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) |
 | Evidence bundle and open schema | [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md), [Bundle-value evaluation](bundle-value-evaluation.md), [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) |
 | Core architecture | [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Technical implementation concept](technical-implementation-concept.md) |
-| CLI/API/MCP philosophy | [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md), [Technical implementation concept](technical-implementation-concept.md) |
+| CLI/API/MCP philosophy | [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md), [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md), [Technical implementation concept](technical-implementation-concept.md) |
 | Critical strategic questions | [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md), this document |
 | Final implementation blueprint | [Technical implementation concept](technical-implementation-concept.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md) |
 
@@ -175,6 +175,9 @@ Technical proof gates:
     behavior for metadata, agent session state, CLI invocation state, outcomes,
     and audit records, specified further in
     [Turso metadata production readiness](turso-metadata-production-readiness.md).
+12. CLI/HTTP/MCP projection equivalence and read-only MCP safety, specified
+    further in
+    [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md).
 
 ## First Prototype Gate
 

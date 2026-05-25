@@ -516,8 +516,11 @@ The agent surface has three concrete forms:
 
 The CLI is the first usable surface. MCP is still required because a dedicated
 MCP server makes Parallax discoverable as a structured, least-privilege context
-provider rather than a bag of shell commands. Both surfaces must call the same
-authorization, redaction, and bundle-building code.
+provider rather than a bag of shell commands. The focused decision is captured
+in [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md):
+canonical HTTP API first, day-one CLI, and a read-only MCP adapter before broad
+agent pilots. All surfaces must call the same authorization, redaction, and
+bundle-building code.
 
 First CLI commands:
 
@@ -557,15 +560,16 @@ First MCP tools:
 | `parallax_agent_session_show` | Return agent-session timeline, tools, files, tests, patch refs, and outcome. |
 | `parallax_cli_invocation_show` | Return sanitized CLI invocation evidence and side-effect refs. |
 
-Build the MCP server against the current stable spec revision **2025-11-25**.
-A later revision (2026-07-28) is in release-candidate state as of the research
-date and is not final; do not adopt its breaking changes yet. MCP is now
-effectively universal across coding-agent clients (Claude Code, Codex, Cursor,
-Gemini CLI, Copilot/VS Code), which is why a read-only MCP context server is the
-right agent-native surface alongside the CLI.
+Build the MCP server against the current official spec revision shown by the MCP
+site on the research date: **2025-11-25**. Do not cite or implement a
+future-dated spec revision until the official site publishes it as current. MCP
+is supported by the major checked agent clients (Claude Code, Codex, Cursor,
+and Copilot/VS Code), which is why a read-only MCP context server is the right
+agent-native surface alongside the CLI.
 
 Sources:
 
+- [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
 - [MCP specification 2025-11-25](https://modelcontextprotocol.io/specification/2025-11-25)
 - [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)
 - [MCP security best practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)

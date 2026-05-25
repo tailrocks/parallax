@@ -282,7 +282,8 @@ rule set 4 ms earlier in the same trace, see the regression began at release
 ## Surfaces That Emit The Bundle
 
 The same bundle object is returned by all three agent surfaces (one contract,
-three transports), per the CLI-vs-MCP decision in the implementation concept:
+three transports), per the focused
+[agent access surface decision](agent-access-surface-cli-api-mcp.md):
 
 - **CLI:** `parallax issue context iss_8b21 --window 10m --format json|markdown`
 - **HTTP:** `GET /api/projects/:project/issues/:issue_id/context?window=10m`

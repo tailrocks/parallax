@@ -466,7 +466,11 @@ Return a bounded evidence bundle:
 Beyond the HTTP API, Parallax should expose an MCP (Model Context Protocol)
 server so coding agents (Claude Code, Codex, Amp, OpenCode) can pull
 investigation context as tools without bespoke per-agent integration. The MCP
-tools should mirror the CLI/API surface:
+tools should mirror the CLI/API surface. The focused access-surface decision is
+captured in
+[Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md):
+CLI ships first, HTTP/API is canonical, and MCP is a read-only adapter before
+broad agent pilots.
 
 | MCP tool | Returns |
 | --- | --- |
