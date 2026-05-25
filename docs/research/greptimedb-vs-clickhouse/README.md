@@ -8,8 +8,10 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 107 local runs + B1–B15 cases. Recent: **Run 107 benchmarked
-the log-explorer hot path** (service time-DESC tail + errors-in-window): CH ~4/~10 ms vs GT ~28/~60 ms (~6–7×, the
+cold/first-run measurement showed). 25 mechanism notes + 108 local runs + B1–B15 cases. Recent: **Run 108 verified the
+Run-107 blueprint claim** — PK(service) is only ~10% faster than PK(service,level) for the log-tail (~27 vs ~30 ms), so
+keying by service is a minor optimization, NOT the main lever; the ~7× gap to ClickHouse is the structural #5
+sort-locality, not PK choice (honest correction to Run 107's overstatement). **Run 107 benchmarked the log-explorer hot path** (service time-DESC tail + errors-in-window): CH ~4/~10 ms vs GT ~28/~60 ms (~6–7×, the
 larger warm gap, from CH's `(service,ts)` sort-key locality — a concrete instance of the #5 alternate-ordering gap);
 both ≪ 300 ms so GT is interactive; blueprint fix = key GT logs by `service` not `service,level`. **Run 106 audited
 GreptimeDB's own marketing pages** (`compare/click_house` + 15 blogs, `vendor-claims-audit.md`) — verdict: the page

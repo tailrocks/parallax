@@ -4471,6 +4471,44 @@ GT `execution_time_ms`, warm.
 ts DESC LIMIT 100`; Q2 `… WHERE level='ERROR' AND ts >= '<max-30min>' ORDER BY ts DESC LIMIT 100`.
 Warm ×8; CH `--time`, GT `execution_time_ms`. Expect CH ~4/~10 ms, GT ~28/~60 ms.
 
+### Run 108 — 2026-05-25 — Verified the Run-107 blueprint claim: PK(service) only ~10% faster than PK(service,level) for the log-tail — directionally right, but a MINOR lever (the ~7× gap to CH is structural #5, not PK choice)
+
+**Pass target.** Run 107 claimed GreptimeDB log tables should key by `service` (not `service,level`)
+for the time-DESC tail. The brief says **verify claims, don't speculate** — so A/B it directly
+rather than leave it as advice.
+
+**Environment.** GreptimeDB `v1.0.2` (re-pinned live — no bump). Built two identical 1M-row tables
+from `logs_b1` (same data, `append_mode`): `gt_logs_sl` `PRIMARY KEY(service,level)` vs `gt_logs_s`
+`PRIMARY KEY(service)`. Within a GreptimeDB region data is sorted by `(PK…, ts)`, so the hypothesis
+was: `PK(service)` → `(service, ts)` order serves the per-service tail directly, while
+`PK(service,level)` → `(service, level, ts)` forces a merge across per-level runs for a cross-level
+ts-DESC tail. Query = `WHERE service='svc-8' ORDER BY ts DESC LIMIT 100`. Warm ×8 (`execution_time_ms`).
+
+| Layout | warm reps (ms) | median |
+| --- | --- | --- |
+| `PK(service, level)` | `32 33 29 31 43 29 28 27` | **~30 ms** |
+| `PK(service)` | `27 28 27 27 27 26 27 27` | **~27 ms** |
+
+**Verdict — claim is directionally CORRECT but the effect is MINOR (~10%); correct the overstatement.**
+
+- **`PK(service)` is only ~10% faster (~27 vs ~30 ms)** for the cross-level tail — and noticeably more
+  *stable* (no variance spikes). So keying by `service` (not `service,level`) is a real but **small**
+  optimization; `level` in the PK adds a minor sort-grouping cost with no tail benefit. Prefer
+  `PK(service)` for log-tail tables — but it is **not** the main lever.
+- **The dominant cost is GreptimeDB's reverse-ordered ts-DESC scan itself, not the PK composition.**
+  Neither layout approaches ClickHouse's ~4 ms (Run 107) — the ~7× gap is the **structural #5
+  alternate-ordering / sort-key-locality gap** (GT's `PK=sort=series` can't make `ts` the leading
+  physical order; `order_by` table option is rejected, Run 65), not something a PK tweak closes.
+- **Correction to Run 107:** downgrade "key by `service`" from a "fix" to a "minor optimization." The
+  honest blueprint line: prefer `PK(service)` for tail-heavy log tables (small, free win), but expect
+  ~27 ms (interactive, ≪ 300 ms) — closing to CH's ~4 ms would require a real alternate-ordering
+  structure (#5b, a Tier-B engine build) or a Flow `ts`-leading copy (#5a), which is rarely worth it
+  since ~27 ms is already interactive.
+
+**Reproduce.** Build `gt_logs_sl` `PK(service,level)` and `gt_logs_s` `PK(service)`, load same 1M from
+`logs_b1` (`append_mode`); run `WHERE service='svc-8' ORDER BY ts DESC LIMIT 100` warm ×8 on each.
+Expect ~30 vs ~27 ms. Drop both after.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
