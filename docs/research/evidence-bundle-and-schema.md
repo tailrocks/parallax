@@ -380,6 +380,9 @@ it survives contact with real data:
 - [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md)
   tightens the release/deploy/code-change/work-item nodes, edge strengths, and
   missing-evidence categories.
+- [Repo-intent value ledger](repo-intent-value-ledger.md) defines when optional
+  docs, decisions, roadmap, task, and agent-instruction intent nodes can be
+  treated as a measured bundle multiplier.
 - [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
   — the source-specific policy and eval gate that makes `redaction_report`
   enforceable rather than decorative.

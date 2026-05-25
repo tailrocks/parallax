@@ -330,6 +330,10 @@ Possible moat order:
 5. **Trust layer.** Auditable confidence, redaction, permissions, and action
    boundaries matter more as agents become autonomous.
 
+The runtime-plus-repo-intent moat is only claimable through the
+[Repo-intent value ledger](repo-intent-value-ledger.md), because it must improve
+agent work without making runtime-only degraded mode too weak.
+
 Telemetry storage alone is not a moat.
 
 ## Autonomy Reality

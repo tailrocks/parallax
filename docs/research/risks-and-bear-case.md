@@ -77,7 +77,7 @@ and "Lik" are H/M/L.
 | Redaction leak of PII/secrets | Safety | H | L | Red-team finds leak; user report | Default-deny, redaction report per bundle, [redaction red-team gate](redaction-pipeline-and-secret-safety.md), and [A6 red-team ledger](a6-redaction-red-team-ledger.md) before any agent exposure |
 | Scope sprawl — many half-built layers | Execution | H | M | Tiny tier not excellent before tier 2 work starts | Hard sequencing: tiny tier must win on simplicity before broadening; reject feature creep |
 | Storage/stack gate failure | Technical | M | M | Benchmark misses freshness/cost gates | Storage abstraction lets ClickHouse/Postgres/NATS substitute; benchmark has veto power |
-| Founder-market fit only (n=1) | Market | H | M | Value resonates only with operator's exact workflow | External user interviews; treat monorepo-intent dependence (Q13) as a narrowing risk, not a given |
+| Founder-market fit only (n=1) | Market | H | M | Value resonates only with operator's exact workflow | External user interviews; treat monorepo-intent dependence (Q13) as a narrowing risk, not a given; measure degraded mode through the [repo-intent value ledger](repo-intent-value-ledger.md) |
 | Frontend cross-tier join unreliable in practice | Technical | M | M | A4 shows strong edges rare on real data | Treat frontend capture as best-effort; flag missing continuation; do not market guaranteed reconstruction |
 
 ## Where The Bear Case Is Weak (Why GO Still Holds)

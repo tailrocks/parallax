@@ -81,7 +81,9 @@ Do not interview 20 copies of the operator. Split the first 20 across slices:
 
 A strong signal from only the Rust-heavy slice is not enough. That would
 reinforce the founder-market-fit risk in
-[Repo-intent dependence](repo-intent-dependence.md).
+[Repo-intent dependence](repo-intent-dependence.md) and should be measured
+against the degraded-mode rows in
+[Repo-intent value ledger](repo-intent-value-ledger.md).
 
 ## Interview Protocol
 

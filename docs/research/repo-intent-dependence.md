@@ -34,6 +34,8 @@ runtime-evidence floor alone. Repo-intent is an optional multiplier, never a
 prerequisite.** If Parallax's pitch requires the monorepo+intent setup, its
 market collapses to teams that work exactly like the operator — which is the
 n=1 founder-market-fit trap.
+The result contract for proving or narrowing this claim is the
+[Repo-intent value ledger](repo-intent-value-ledger.md).
 
 ## Degraded Mode (Teams Without Repo-Intent)
 
@@ -101,5 +103,8 @@ advantage rather than presume it.
   repo-intent dependence is the sharpest form of that risk.
 - [Bundle-value evaluation](bundle-value-evaluation.md) — add the
   intent-vs-no-intent arm proposed here.
+- [Repo-intent value ledger](repo-intent-value-ledger.md) — defines the paired
+  runtime-only versus runtime-plus-intent result rows, claim levels, and
+  stale/conflicting-intent fixtures.
 - [AI-native observability](ai-native-observability-and-incident-intelligence.md)
   — repo-intent linkage as a differentiator vs telemetry-only products.

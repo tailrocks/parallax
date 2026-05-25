@@ -91,6 +91,12 @@ The decisive comparison is **C vs B**, not C vs A. If C only beats A but ties B,
 the value is raw data access — which is cheaper to deliver by dumping telemetry,
 and the correlation/bundle moat is weak. C must beat B to justify Parallax.
 
+Repo-held intent is a paired sub-study, not a replacement for the main A1 arms:
+split Arm C into runtime-only and runtime-plus-intent variants as defined in the
+[Repo-intent value ledger](repo-intent-value-ledger.md). That measures whether
+docs, decisions, tasks, roadmap, or agent instruction files add value without
+making degraded runtime-only mode too weak.
+
 ## Dataset (The Hard Part)
 
 A1 needs triples: **(failure, known-correct fix, real telemetry at failure
@@ -198,6 +204,9 @@ Outcomes and what they mean:
 - [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
   — defines the public result artifact, model snapshot, contamination tiers, and
   expiry rules for A1 claims.
+- [Repo-intent value ledger](repo-intent-value-ledger.md) — defines the paired
+  runtime-only versus runtime-plus-intent sub-study under the Parallax-bundle
+  arm.
 - [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md) —
   freezes the normalized overlay artifact, provenance labels, and no-cheat rules
   used to derive raw-dump and bundle arms from the same evidence.

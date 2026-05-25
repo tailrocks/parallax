@@ -87,7 +87,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 
 | Prompt area | Repository evidence |
 | --- | --- |
-| Market and product thesis | [Project thesis](project-thesis.md), [Market landscape](market-landscape.md), [Open self-hosted competitor watch](open-self-hosted-competitor-watch.md), [Lightweight Sentry-compatible competitor watch](lightweight-sentry-compatible-competitor-watch.md), [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md), [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md), [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md), [A2 interview evidence ledger](a2-interview-evidence-ledger.md), [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md), [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md) |
+| Market and product thesis | [Project thesis](project-thesis.md), [Market landscape](market-landscape.md), [Open self-hosted competitor watch](open-self-hosted-competitor-watch.md), [Lightweight Sentry-compatible competitor watch](lightweight-sentry-compatible-competitor-watch.md), [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md), [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md), [Repo-intent dependence](repo-intent-dependence.md), [Repo-intent value ledger](repo-intent-value-ledger.md), [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md), [A2 interview evidence ledger](a2-interview-evidence-ledger.md), [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md), [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md) |
 | Evaluation lens and benchmark methodology | [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md), [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md), [Storage size and object cost gate](storage-size-and-object-cost-gate.md), [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md), [A5 stack decision ledger](a5-stack-decision-ledger.md), [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Messaging and ingestion layer](messaging-and-ingestion-layer.md) |
 | Language/runtime filter and Rust preference | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md), [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md), [Technical implementation concept](technical-implementation-concept.md) |
 | Messaging/streaming | [Messaging and ingestion layer](messaging-and-ingestion-layer.md), [Ingest log replay and backpressure gate](ingest-log-replay-and-backpressure-gate.md) |
@@ -138,6 +138,10 @@ Market/product gates:
 - A2 real-user demand beyond the operator, using the
   [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
   and [A2 interview evidence ledger](a2-interview-evidence-ledger.md).
+- Repo-intent dependence and degraded-mode breadth, using
+  [Repo-intent dependence](repo-intent-dependence.md) and
+  [Repo-intent value ledger](repo-intent-value-ledger.md). Runtime-only bundles
+  must remain useful for teams without curated docs, decisions, or roadmap.
 - A3 schema/corpus moat, using the
   [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
   and [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md).

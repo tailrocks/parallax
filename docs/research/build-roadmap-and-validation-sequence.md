@@ -156,6 +156,9 @@ Build only enough to generate the bundle automatically and repeatably:
   — the A2 demand-validation runbook for Phase 0.
 - [A2 interview evidence ledger](a2-interview-evidence-ledger.md) — the
   privacy-preserving public artifact that makes the A2 result auditable.
+- [Repo-intent value ledger](repo-intent-value-ledger.md) — the paired eval for
+  whether docs, decisions, tasks, roadmap, and agent instructions improve bundle
+  value without weakening runtime-only degraded mode.
 - [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
   — the A3 conformance/adoption/corpus runbook for Phase 2 onward.
 - [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md)

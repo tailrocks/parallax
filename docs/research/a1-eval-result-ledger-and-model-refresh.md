@@ -270,6 +270,12 @@ False-positive triggers:
 | Unsupported-claim rate rises in C | Treat as safety regression even if tests pass. |
 | Any gold patch/test-patch leakage appears in agent context | Discard task and rotate canaries. |
 
+Repo-intent sub-study results should be linked from the same A1 run only when
+they use the same task/model/scaffold snapshots. The paired rows and claim
+levels live in [Repo-intent value ledger](repo-intent-value-ledger.md), because
+repo-intent can improve constraint adherence while still failing broad-market
+degraded-mode requirements.
+
 ## Bottom Line
 
 A1 is a moving target. Frontier models, coding-agent scaffolds, public benchmark
