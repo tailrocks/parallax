@@ -36,6 +36,15 @@ The benchmark shows *that* one system is faster; this folder must explain *why*,
 from the data structures and code paths — and the two must agree. A benchmark
 number the internals cannot explain is a flag that one of them is wrong.
 
+## Version pins (re-check and bump every pass)
+
+As of 2026-05-25:
+
+| System | Pinned version | Source commit | Notes |
+| --- | --- | --- | --- |
+| GreptimeDB | `v1.0.2` (GA 2026-05-14) | `0ef54511f710f0ef2c05941c8c600bb4c1fd46c8` | Latest GA; `v1.1.0-nightly` exists but is not stable. |
+| ClickHouse | `v26.5.1.882-stable` | `fae722ba30c82d0975692fa2a93cbbe8f6ae3af2` | Latest stable; LTS line is `v26.3.12.3-lts` (`f118ee7c3b4c1a57dde6a389e5c3e29080f38c5d`). |
+
 ## Method
 
 - Compare the latest stable release of each system; record exact versions and the
@@ -65,7 +74,7 @@ These are produced and grown by the loop; this index is updated as they land.
 | File | Scope | Status |
 | --- | --- | --- |
 | `README.md` | Index, method, version pins, status. | seeded |
-| `greptimedb-internals.md` | GreptimeDB architecture and code-path teardown. | pending |
+| `greptimedb-internals.md` | GreptimeDB architecture and code-path teardown. | drafted (pass 1: topology + mito2 storage engine; deeper read-path/compaction/index/metric-engine dives pending) |
 | `clickhouse-internals.md` | ClickHouse architecture and code-path teardown. | pending |
 | `write-path-and-ingestion.md` | Ingest → durable → queryable, both systems, with the freshness consequence. | pending |
 | `read-path-indexing-and-execution.md` | Query planning, indexing, execution, scan-vs-skip, joins. | pending |
