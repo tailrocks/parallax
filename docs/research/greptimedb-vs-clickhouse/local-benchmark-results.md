@@ -826,6 +826,33 @@ PromQL exists). Re-rated: GreptimeDB's metrics win is now **maturity/ergonomics
 write-path corrected. Does **not** flip the recommendation; narrows a pillar.
 Feature-completeness of ClickHouse PromQL vs Prometheus unverified — follow-up case.
 
+### Run 24 — 2026-05-25 — PromQL maturity, end-to-end (follow-up to Run 23)
+
+Backs `promql-and-metrics-query.md` (pass 45). Turned "ClickHouse PromQL exists"
+(Run 23) into "how usable" by running it end-to-end. Smoke.
+
+**ClickHouse `TimeSeries` + `prometheusQuery`:** `CREATE TABLE … ENGINE=TimeSeries`
+exposes a flat view (id/timestamp/value/metric_name/tags) over 3 inner tables
+(data/tags/metrics, `AggregatingMergeTree`/`ReplacingMergeTree`). But:
+- `INSERT INTO <ts>` → **"INSERT is not supported by storage TimeSeries yet"**.
+- `SELECT … FROM <ts>` → **"SELECT is not supported by storage TimeSeries yet"**.
+- Ingest is **Prometheus-remote-write only**; query is **table-function only**.
+- `prometheusQuery(pm,'http_requests_total',now())` and
+  `prometheusQueryRange(pm,'rate(http_requests_total[2m])',start,end,30)` **parsed +
+  executed with no error** (returned empty — hand-loaded the inner `.data` table but
+  the id-coupled `.tags`/`.metrics` were empty, so no series resolved; there is no
+  practical hand-load path without a remote-write client).
+
+**GreptimeDB, same counter:** InfluxDB-line write auto-created `http_requests_total`
+(job tag, value, ts); `TQL EVAL (start,end,'30s') rate(http_requests_total[2m])`
+returned **real values** (`0.72`, `1.17` for `job=api`) via native `prom_rate`.
+
+**Claim status:** sharpens Run 23. PromQL *capability* present on both; **maturity/
+ergonomics gap large** — ClickHouse: experimental, remote-write-only ingest,
+table-function-only query, no INSERT/SELECT ("yet"). GreptimeDB: GA, multi-protocol
+ingest, PromQL+SQL+TQL, any metric table, real result with zero ceremony. Verdict
+metrics pillar = maturity/ergonomics lead (confirmed concretely), not present-vs-absent.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

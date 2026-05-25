@@ -91,6 +91,35 @@ ClickHouse **has gained** PromQL, but it is experimental and off by default:
   becomes "ClickHouse's PromQL is experimental, so relying on it for a metrics product
   today is a maturity risk + setup cost," which is softer.
 
+## Maturity, measured end-to-end (pass 45, Run 24)
+
+Pass 44 established ClickHouse PromQL *exists*; this pass ran it to characterize *how
+usable* it is. Concrete findings on the `TimeSeries` engine + `prometheusQuery[Range]`:
+
+- **No direct `INSERT`** — `INSERT INTO <ts_table>` → `"INSERT is not supported by
+  storage TimeSeries yet"` (NOT_IMPLEMENTED). Data can land **only via the Prometheus
+  remote-write protocol**.
+- **No direct `SELECT`** — `SELECT … FROM <ts_table>` → `"SELECT is not supported by
+  storage TimeSeries yet"`. The table is queryable **only** through the
+  `prometheusQuery`/`prometheusQueryRange`/`timeSeries*` functions.
+- **The PromQL functions do execute.** `prometheusQuery(<table>, '<promql>',
+  <eval_time>)` and `prometheusQueryRange(<table>, '<promql>', start, end, step)`
+  parsed and ran `rate(http_requests_total[2m])` and an instant selector with **no
+  error** (returned empty only because hand-loading the engine's inner `.data` table
+  without populating the id-coupled `.tags`/`.metrics` inner tables yields no
+  resolvable series — i.e. there is **no practical hand-load path**; you need a real
+  remote-write client).
+- **GreptimeDB, same workload, real result:** an InfluxDB-line write auto-created the
+  metric table, and `TQL EVAL (start,end,'30s') rate(http_requests_total[2m])`
+  returned **actual values** (`0.72`, `1.17` for `job=api`) via the native `prom_rate`
+  planner — zero ceremony, multi-protocol ingest, PromQL **and** SQL **and** TQL query.
+
+So the maturity gap is concrete: **ClickHouse PromQL = experimental, remote-write-only
+ingest, table-function-only query, no INSERT/SELECT** ("yet"); **GreptimeDB PromQL =
+GA, multi-protocol ingest, multi-surface query, works on any metric table.** The
+*capability* exists on both (pass 44); the *workflow maturity/ergonomics* gap is large
+and real (pass 45). This is the precise shape of the metrics-pillar advantage now.
+
 ## Honest caveats
 
 - ClickHouse PromQL is experimental — **feature completeness vs Prometheus is
