@@ -990,6 +990,14 @@ what technical patterns Parallax should reuse, and where existing tools stop
 short of the Parallax goal: runtime evidence plus coding-agent and CLI action
 audit.
 
+For the A1 bundle-value evaluation, keep a seed corpus plan current. Prefer
+current executable SWE-style issue-resolution datasets for the issue/fix/test
+leg, especially sources with Rust or multilingual tasks, then add a Parallax
+telemetry overlay with explicit provenance labels. Do not rely on random public
+GitHub issues unless they have a pre-fix snapshot, isolated fix, deterministic
+verifier, runnable environment, observable failure, and generated or real
+telemetry artifacts.
+
 I want to understand:
 - what already exists
 - what is missing

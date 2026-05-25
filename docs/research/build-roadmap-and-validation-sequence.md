@@ -42,8 +42,10 @@ assumption. Failing a gate sends you back, not forward.
 
 ### Phase 0 — Validate the killers (days, ~no build)
 
-- Hand-assemble evidence bundles for 5–10 real incidents (operator's repos +
-  public incidents).
+- Hand-assemble evidence bundles for 10–12 seed tasks selected through the
+  [bundle-value seed corpus](bundle-value-seed-corpus.md): current executable
+  SWE-style issue/fix/test tasks plus generated Parallax telemetry overlays,
+  with operator/public incidents only when they pass the same gates.
 - Run the bundle-value eval (arms A/B/C) with these manual bundles, ≥2 models.
 - Interview ~20 target teams across the A2 slices: would they deploy? would they
   pay or sustain it? what is their actual debugging pain? Use the
@@ -127,8 +129,9 @@ Build only enough to generate the bundle automatically and repeatably:
 - [Verdict](verdict.md) and [risks/bear case](risks-and-bear-case.md) — the GO and
   the assumptions this sequences.
 - [Bundle-value evaluation](bundle-value-evaluation.md) — the Phase 0/1 gate.
-- [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) — the first
-  paired run against raw telemetry dumps.
+- [Bundle-value seed corpus](bundle-value-seed-corpus.md) and
+  [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) — the first
+  task-source selection and paired run against raw telemetry dumps.
 - [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
   — the A2 demand-validation runbook for Phase 0.
 - [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)

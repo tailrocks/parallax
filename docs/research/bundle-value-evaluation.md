@@ -22,7 +22,9 @@ It is an experiment design, not results. No bundle-value claim should be made in
 any other doc until this runs.
 
 The cheapest runnable version of this experiment is specified in
-[Bundle-value Phase 0 evaluation runbook](bundle-value-phase0-runbook.md).
+[Bundle-value Phase 0 evaluation runbook](bundle-value-phase0-runbook.md). The
+first corpus-selection pass is specified in
+[Bundle-value seed corpus](bundle-value-seed-corpus.md).
 
 ## Why The Field Has Not Answered This
 
@@ -110,6 +112,12 @@ Recommended: start with (1) for scale and labeled grading, validate the headline
 result on (3) for telemetry realism, and use (2) as a reality check. Building this
 telemetry-linked fix corpus is itself a research contribution and a moat seed.
 
+The seed-corpus rule is stricter than this high-level menu: use current
+executable SWE-style datasets for the issue/fix/test leg, then add a Parallax
+telemetry overlay with honest provenance labels. Do not start by hand-picking
+random public GitHub issues unless they pass the
+[seed-corpus eligibility gates](bundle-value-seed-corpus.md).
+
 ## Metrics
 
 | Metric | How measured | Why |
@@ -178,6 +186,8 @@ Outcomes and what they mean:
   under test (arm C/D).
 - [Bundle-value Phase 0 evaluation runbook](bundle-value-phase0-runbook.md) —
   the concrete first pass to run before a full benchmark corpus exists.
+- [Bundle-value seed corpus](bundle-value-seed-corpus.md) — selects the first
+  public task sources and defines the telemetry overlay required before Phase 0.
 - [Storage benchmark prototype](storage-benchmark-prototype.md) — shares the
   seeded dataset/reference-app generator for dataset option (3).
 - [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)

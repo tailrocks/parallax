@@ -1,0 +1,198 @@
+# Bundle-Value Seed Corpus
+
+<!-- markdownlint-disable MD013 -->
+
+Research date: 2026-05-25
+
+## Purpose
+
+The [bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) says to test
+whether a hand-built Parallax bundle beats a raw telemetry dump. The missing
+piece is the first task corpus.
+
+This note defines the seed-corpus selection rule:
+
+> Do not hand-pick random public GitHub issues as the first A1 corpus. Start
+> from current executable issue-resolution datasets for the issue/fix/test leg,
+> then add a Parallax telemetry overlay. Use hand-picked public incidents only
+> as supplemental reality checks.
+
+The reason is blunt: Parallax needs tasks with a pre-fix repo, known fix, and
+reproducible verifier. Public issues often have stack traces but no isolated
+test, no clean fix, or several confounded changes. Current SWE-style datasets
+solve much of the reproducibility problem, but they do **not** solve the
+telemetry problem. Parallax must generate or attach the telemetry leg itself.
+
+## Current Primary-Source Checks
+
+| Source | What it provides | Parallax gap |
+| --- | --- | --- |
+| [SWE-bench dataset docs](https://www.swebench.com/SWE-bench/guides/datasets/) | Standard task fields include repository, issue URL, PR URL, base commit, gold patch, test patch, fail-to-pass tests, and pass-to-pass tests. This is the right manifest shape for issue/fix/test tasks. | No runtime telemetry, trace, log, deploy, redaction, or evidence-bundle artifacts. |
+| [SWE-bench-Live GitHub](https://github.com/microsoft/SWE-bench-Live) and [SWE-bench-Live Hugging Face org](https://huggingface.co/SWE-bench-Live) | Live benchmark infrastructure now includes MultiLang and Windows datasets; the May 16, 2026 update reports 743 MultiLang tasks across 6 languages and 381 repos, plus instance-level Docker images and evaluation commands. The org page shows active dataset updates. | Strong freshness and execution harness, but still issue-to-patch, not telemetry-to-patch. |
+| [SWE-bench Multilingual](https://www.swebench.com/multilingual) | 300 curated tasks across 42 repositories and 9 languages, including Rust; tasks follow SWE-bench issue/PR/test format and are designed to run quickly. | Small and high quality, but no runtime evidence. Useful as the first Rust/system seed, not a complete Parallax corpus. |
+| [Multi-SWE-bench](https://github.com/multi-swe-bench/multi-swe-bench) | 1,632 issue-resolution tasks across Java, TypeScript, JavaScript, Go, Rust, C, and C++, with open data, code, and environments. | Larger multilingual pool; quality and environment friction must be checked per task before inclusion. |
+| [SWE-rebench V2 paper](https://arxiv.org/abs/2602.23866) and [dataset collection](https://huggingface.co/collections/nebius/swe-rebench-v2) | A language-agnostic pipeline with 32,000+ executable tasks across 20 languages and 3,600+ repositories, plus a Hugging Face dataset updated in 2026. | Best for expansion after the seed run. The first corpus should prefer smaller, inspectable, high-quality tasks before using a very large automatically collected set. |
+| [BugsJS](https://bugsjs.github.io/) | 453 validated JavaScript bugs with bug reports, isolated bug/fix/test revisions, and a Docker-backed framework. Good for server-side JS and frontend-adjacent failure shapes. | Historical and not agent-benchmark-native; use as a controlled supplemental source, not the headline freshness source. |
+| [CrashAnalysis dataset](https://crashanalysis.github.io/Dataset-CrashAnalysis) | Thousands of exception stack traces, including GitHub-linked reports. Useful for stacktrace-shape and crash-report realism. | Access is gated and many issues are historical Android cases; it lacks the clean issue/fix/test/verifier contract needed for Phase 0 headline tasks. |
+
+## Seed Corpus Shape
+
+The first corpus should be small enough to inspect manually and large enough to
+catch obvious bundle-vs-raw differences:
+
+```text
+12 tasks x 3 arms x 2 seeds x 1 model = 72 runs
+```
+
+Recommended seed mix:
+
+| Slice | Count | Source priority | Why |
+| --- | --- | --- | --- |
+| Rust/systems tasks | 4 | SWE-bench Multilingual Rust, SWE-bench-Live MultiLang Rust, Multi-SWE-bench Rust | Parallax is Rust-first; this tests stack/error shapes closest to the first product. |
+| Fresh multilingual tasks | 4 | SWE-bench-Live MultiLang | Keeps contamination and stale-fixture risk lower than old benchmark pools. |
+| JS/TS user-facing or server tasks | 2 | SWE-bench Multilingual JS/TS, Multi-SWE-bench JS/TS, BugsJS | Frontend and browser/server JS errors are part of the prompt, but should not dominate the Rust-first seed. |
+| Synthetic cross-tier or CLI tasks | 2 | Parallax reference app / fault injection | Supplies the telemetry shapes public datasets lack: frontend-to-backend traces, CLI invocation traces, and known side effects. |
+
+Operator-private incidents can replace at most two public tasks in the first
+run, but label them separately and exclude them from public claims unless the
+artifacts can be safely shared or independently audited.
+
+## Task Eligibility
+
+A task can enter the seed corpus only if all of these are true:
+
+| Gate | Requirement |
+| --- | --- |
+| Reproducible verifier | The task has fail-to-pass and pass-to-pass tests, or an equivalent deterministic verifier. |
+| Isolated fix | The resolving PR or fix patch addresses one bug class and does not mix broad refactors, formatting churn, or unrelated feature work. |
+| Runnable environment | The pre-fix repo can run in a documented container or local harness within a bounded setup time. |
+| Observable failure | The failing command can emit at least one anchor: exception, panic, failed assertion, failed HTTP/API response, CLI error, or test failure event. |
+| Telemetry overlay possible | The harness can collect a Sentry-style event or CI failure event, stdout/stderr logs, span/timing data, and release/commit context without changing the target fix. |
+| Gold patch hidden | The context builder may use issue metadata and failing output, but the agent arm must not see the gold patch or test patch content except through the verifier. |
+| License/publicness | The task artifacts can be committed as redacted manifests, hashes, and generated telemetry fixtures. |
+
+Reject tasks when the fix depends on a private service, network flakiness, huge
+dependency downloads, non-deterministic timing, multiple unrelated PR changes,
+or manual UI steps that cannot be scripted.
+
+## Telemetry Overlay
+
+Every accepted public task needs a generated telemetry overlay. Without this,
+the evaluation only tests issue-resolution from benchmarks, not Parallax.
+
+Minimum overlay per task:
+
+| Artifact | How to generate | Notes |
+| --- | --- | --- |
+| Error / failure event | Wrap the failing test or command and convert panic/exception/assertion output into a Sentry-style event. | Mark as `reconstructed` unless captured from a real SDK. |
+| Trace / span tree | Instrument the task runner as root span; add child spans for setup, failing command, selected test, subprocesses, and relevant app calls where feasible. | For most public tasks, this is harness telemetry, not production telemetry. Say so in the bundle. |
+| Logs | Capture bounded stdout/stderr, test logs, and app logs with stable line refs. | Raw dump arm and bundle arm must use the same underlying logs. |
+| Metrics / timings | Capture duration, retry count, exit code, memory/time limits, and relevant test counts. | Metrics are optional if not causally useful, but timing helps compare agent flailing. |
+| Release/change context | Record base commit, issue URL, PR URL, task source, dataset version, and known fixed commit/patch hash. | The gold patch hash can be in the private grader manifest, not in the agent context. |
+| Redaction report | Run the same seeded canary/redaction policy used by the bundle schema docs. | A task without a redaction report is invalid. |
+
+All overlay artifacts must carry provenance:
+
+```text
+observed_from_sdk | observed_from_test_output | reconstructed_from_harness
+```
+
+The Phase 0 report must separate results on real telemetry, harness-generated
+telemetry, and synthetic fault-injection telemetry. A win on reconstructed
+telemetry is a reason to continue; it is not a public production-telemetry claim.
+
+## Bundle Construction Discipline
+
+The raw-dump arm and bundle arm must be built from exactly the same evidence.
+
+Rules:
+
+- Build the raw artifact first, then derive the Parallax bundle from it.
+- Pre-register the truncation rule before any agent run.
+- Keep token ceilings equal across arms B and C.
+- Include `missing_evidence` when the task lacks production traces, deploy data,
+  frontend breadcrumbs, or real SDK events.
+- Include `query_manifest` entries even when the "queries" are file reads over
+  generated fixtures.
+- Keep hypotheses conservative; if the issue statement already names the fix,
+  do not let the bundle repeat gold-patch knowledge as if telemetry discovered
+  it.
+
+## Seed Manifest
+
+Use this future layout for the first corpus:
+
+```text
+docs/research/bundle-value-eval/
+  manifest.md
+  tasks/<task_id>/task.md
+  tasks/<task_id>/source.json
+  tasks/<task_id>/telemetry/raw.ndjson
+  tasks/<task_id>/telemetry/redaction-report.json
+  tasks/<task_id>/arm-a-context.md
+  tasks/<task_id>/arm-b-raw-dump.md
+  tasks/<task_id>/arm-c-bundle.json
+  tasks/<task_id>/arm-c-bundle.md
+  tasks/<task_id>/grader-private.sha256
+```
+
+`source.json` should include:
+
+```json
+{
+  "task_id": "swe-live-rust-example",
+  "source": "SWE-bench-Live/MultiLang",
+  "source_version": "2026-05-16",
+  "repo": "owner/repo",
+  "base_commit": "...",
+  "issue_url": "https://github.com/owner/repo/issues/123",
+  "pr_url": "https://github.com/owner/repo/pull/456",
+  "language": "Rust",
+  "failure_anchor": "panic|exception|assertion|cli_exit|http_error",
+  "telemetry_provenance": ["reconstructed_from_harness"],
+  "license_review": "public source; generated redacted artifacts only",
+  "excluded_gold_artifacts": ["patch", "test_patch"]
+}
+```
+
+Do not commit private raw telemetry. Commit public/generated fixtures, redacted
+projections, hashes, manifests, and summaries.
+
+## Decision
+
+The next A1 step is not "build storage." It is:
+
+1. Select the 12-task seed manifest using the gates above.
+2. Generate the telemetry overlay for each task.
+3. Build raw dump and bundle artifacts from the same overlay.
+4. Run the [Phase 0 eval](bundle-value-phase0-runbook.md).
+5. Only then decide whether automated bundle generation deserves Phase 1 build
+   work.
+
+If no 12-task seed can be assembled without cheating, that is itself a negative
+signal: Parallax's strongest claim may depend on a dataset that does not yet
+exist. In that case, the correct research move is to build and publish the
+telemetry-linked fixture corpus as the first moat artifact, before claiming
+bundle lift.
+
+## Relationship To Other Research
+
+- [Bundle-value evaluation](bundle-value-evaluation.md) defines the experiment;
+  this note defines the first corpus.
+- [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) defines arms,
+  run protocol, and scoring.
+- [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
+  bundle artifact generated for arm C.
+- [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
+  becomes more credible if the seed corpus is public, reproducible, and
+  conformance-tested.
+- [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md)
+  keeps A1 before storage and stream work.
+
+## Bottom Line
+
+Use current executable SWE-style datasets for clean issue/fix/test tasks, but do
+not pretend they already contain Parallax evidence. The first valuable artifact
+is a small telemetry-augmented seed corpus with honest provenance labels. That is
+the cheapest way to test whether bundles beat raw dumps without building the
+full backend first.

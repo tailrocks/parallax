@@ -59,6 +59,7 @@ idea becomes sharper.
 - [Production database evidence access gate](docs/research/production-database-evidence-access.md)
 - [Agent observability technical review](docs/research/agent-observability-technical-review.md)
 - [Bundle-value evaluation](docs/research/bundle-value-evaluation.md)
+- [Bundle-value seed corpus](docs/research/bundle-value-seed-corpus.md)
 - [Bundle-value Phase 0 runbook](docs/research/bundle-value-phase0-runbook.md)
 - [Build roadmap and validation sequence](docs/research/build-roadmap-and-validation-sequence.md)
 - [Future platform direction](docs/research/future-platform-direction.md)

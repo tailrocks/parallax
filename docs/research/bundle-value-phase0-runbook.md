@@ -16,6 +16,12 @@ The decision: **before building the full storage/stream system, run a small
 paired agent eval that tests whether a hand-built Parallax-style bundle beats
 raw telemetry at similar token/time cost.**
 
+The seed task source is now specified separately in
+[Bundle-value seed corpus](bundle-value-seed-corpus.md): start from current
+executable SWE-style datasets for issue/fix/test reproducibility, then add a
+Parallax telemetry overlay with provenance labels. Public GitHub issues enter
+only when they pass those eligibility gates.
+
 This is not the final statistically powered benchmark. It is the cheapest way to
 find out whether the central product claim is promising enough to keep building.
 
@@ -47,9 +53,9 @@ Use 10 to 16 tasks for the first run.
 
 | Source | Count | Why |
 | --- | --- | --- |
-| Telemetry-augmented SWE-bench-Live or SWE-bench Pro-like tasks | 4-6 | Gives real issue/fix/test structure with low contamination risk. Telemetry is reconstructed by running failing tests under instrumentation. |
-| Fault-injected reference app tasks | 4-6 | Gives real Parallax-style traces/logs/error events with known fixes by construction. Include at least one frontend-to-backend or CLI-triggered failure if possible. |
-| Operator real incidents | 2-4 if available | Reality check using true telemetry and real fix history. Label separately because n=1 bias is high. |
+| Telemetry-augmented executable SWE-style tasks | 8-10 | Gives real issue/fix/test structure with low contamination risk. Use the [seed-corpus note](bundle-value-seed-corpus.md) to prioritize SWE-bench-Live MultiLang, SWE-bench Multilingual, Multi-SWE-bench, or SWE-rebench V2 candidates, then reconstruct telemetry by running failing tests under instrumentation. |
+| Fault-injected reference app tasks | 2-4 | Gives real Parallax-style traces/logs/error events with known fixes by construction. Include at least one frontend-to-backend or CLI-triggered failure if possible. |
+| Operator real incidents | 0-2 if available | Reality check using true telemetry and real fix history. Treat these as replacements for public tasks, not additive count inflation, and label separately because n=1 bias is high. |
 
 Do not use SWE-bench Verified for headline Phase 0 decisions. It can shake out
 the harness, but current public evidence says it is too contaminated and test
@@ -211,6 +217,8 @@ artifacts behind the same raw-access policy described in
 
 - [Bundle-value evaluation](bundle-value-evaluation.md) defines the full
   experimental design; this is the first runnable pass.
+- [Bundle-value seed corpus](bundle-value-seed-corpus.md) defines the first
+  task-source mix, task eligibility gates, and telemetry overlay requirements.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
   artifact Arm C must use.
 - [Risks and bear case](risks-and-bear-case.md) names A1 as existential; this is
