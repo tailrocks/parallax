@@ -34,6 +34,7 @@ The central rule:
 | [MCP security best practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices) | Official guidance emphasizes least privilege, precise scope challenges, resource indicators, token audience validation, correlation IDs, and avoiding broad scopes. | The first MCP server must start read-only and deny wildcard/admin scopes. |
 | [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/) | MCP client/server spans, JSON-RPC request IDs, transport values, tool/resource/prompt attributes, session metrics, `elicitation/create`, `sampling/createMessage`, `notifications/tools/list_changed`, and provisional `_meta` trace propagation are defined with development-stage status. | MCP calls and server-initiated capability attempts must be observable and normalized into Parallax audit/action rows without treating development-stage semconv names as stable storage fields. |
 | [OpenAI Docs MCP](https://developers.openai.com/learn/docs-mcp) | OpenAI documents MCP as a docs integration surface for Codex and other agent clients. | Cross-client MCP is a distribution requirement, not a unique moat. |
+| [Codex MCP](https://developers.openai.com/codex/mcp), [Codex MCP server guide](https://developers.openai.com/codex/guides/agents-sdk), [Codex config reference](https://developers.openai.com/codex/config-reference), and local `codex 0.133.0` help | Codex supports MCP in the CLI and IDE extension with shared `config.toml` configuration. Current docs cover user and trusted-project config paths, stdio and Streamable HTTP, fixed `env`, whitelisted `env_vars` with local/remote source, remote stdio placement, bearer-token env vars, static/env HTTP headers, startup/tool timeouts, enabled/required servers, enabled/disabled tools, default and per-tool approval modes, OAuth resource/scopes/callback URL/port/credential store, and plugin-provided MCP servers. Codex can also run as a stdio MCP server exposing `codex` and `codex-reply` tools with approval-policy, sandbox, config, cwd, model, and profile controls. Local help confirms `codex mcp add` and `codex mcp-server --strict-config` flags. | Codex client fixtures must record config path/trust, local versus remote env/header sources, OAuth resource/scope/callback behavior, tool approval policy, plugin origin, required-server startup behavior, and Codex-as-MCP-server topology. A Codex MCP success does not by itself prove a safe read-only Parallax context surface. |
 | [Claude Code MCP docs](https://code.claude.com/docs/en/mcp) and local `claude mcp --help` on `2.1.150` | Claude Code supports local, project, user, plugin, claude.ai connector, and managed MCP sources with source precedence. Current docs define project `.mcp.json` approval, environment expansion in command/args/env/url/headers, OAuth callback/client credentials/metadata override/scope pinning, dynamic `headersHelper` commands gated by workspace trust, output warning and limit behavior, per-tool `_meta["anthropic/maxResultSizeChars"]`, and `claude mcp serve`. Local help confirms stdio/SSE/HTTP, headers, env vars, scope, client credentials, callback port, and warns that `mcp get`/`list` skip the workspace trust dialog and spawn stdio servers for health checks. | Claude Code client fixtures must record configuration source, precedence, auth/header source, output-budget behavior, workspace trust, health-check side effects, and whether Claude-as-MCP-server is in play. Cross-client MCP safety is not proven by a generic "Claude supports MCP" row. |
 | [NSA MCP security design considerations](https://www.nsa.gov/Portals/75/documents/Cybersecurity/CSI_MCP_SECURITY.pdf?ver=bmgiSbNQLP6Z_GiWtRt6bg%3D%3D) | NSA's May 2026 guidance treats MCP as widely adopted but security-maturing, with risks around dynamic tool invocation, implicit trust, context sharing, serialization, token/session handling, overbroad tools, and unauthorized servers. | The safe path is a narrow read-only adapter over canonical bundles, not a broad production-control toolset. |
 | [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md) | MCP is already present in Sentry-adjacent, Grafana, SigNoz, Coroot, Rustrak, and GoSnag-like surfaces. | Parallax must prove safer evidence semantics, not merely MCP availability. |
@@ -183,9 +184,11 @@ combination does not carry over to another.
   "client_version": "2.1.150",
   "client_binary_path": "/home/agent/.local/bin/claude",
   "transport": "stdio|sse|http",
+  "config_path": "~/.codex/config.toml|.codex/config.toml|~/.claude.json|.mcp.json|cli_inline|unknown",
   "config_source": "local|project|user|plugin|claude_ai|managed|cli_inline",
   "source_precedence_observed": ["local", "project", "user", "plugin", "claude_ai"],
   "project_scope_approval_required": true,
+  "trusted_project_required": true,
   "project_scope_approval_reset_tested": true,
   "health_check_spawns_stdio": true,
   "env_var_expansion_fields": ["command", "args", "env", "url", "headers"],
@@ -199,14 +202,32 @@ combination does not carry over to another.
   "tool_meta_max_result_size_chars": null,
   "tool_result_persisted_to_disk": false,
   "claude_mcp_serve_exposed": false,
+  "codex_config": {
+    "project_config_trusted": false,
+    "env_vars_sources": ["local", "remote"],
+    "experimental_environment": "local|remote|null",
+    "startup_timeout_sec": 10,
+    "tool_timeout_sec": 60,
+    "required_server": false,
+    "enabled_tools": [],
+    "disabled_tools": [],
+    "default_tools_approval_mode": "auto|prompt|approve|null",
+    "per_tool_approval_modes": {},
+    "oauth_resource": null,
+    "oauth_callback_port": null,
+    "oauth_callback_url": null,
+    "oauth_credentials_store": "auto|file|keyring|null",
+    "plugin_provided_server": false,
+    "codex_mcp_server_exposed": false,
+    "mcp_server_strict_config": false
+  },
   "notes": []
 }
 ```
 
 This row is mandatory for client-specific fixture claims. It is especially
-important for Claude Code because the same server name can be hidden or
-deduplicated by source precedence, project-scoped servers require approval, and
-some inspection commands can start stdio servers for health checks.
+important because Codex and Claude Code make different trust, config, and
+output-budget decisions even when they call the same Parallax MCP server.
 
 ### MCP Capability Result Row
 
@@ -270,11 +291,14 @@ some inspection commands can start stdio servers for health checks.
   "transport": "stdio",
   "client": "codex|claude-code",
   "client_config_source": "local|project|user|plugin|managed|cli_inline",
+  "trusted_project_required": true,
   "explicit_install_trust_required": true,
   "repo_checkout_auto_enable_denied": true,
   "project_scope_approval_required": true,
   "health_check_spawns_stdio": false,
   "approved_credential_sources": ["environment", "local_config"],
+  "codex_env_vars_sources": ["local"],
+  "codex_remote_stdio_used": false,
   "env_var_expansion_values_logged": false,
   "dynamic_header_helper_executed": false,
   "ambient_token_forwarding_denied": true,
@@ -403,6 +427,29 @@ some inspection commands can start stdio servers for health checks.
 - No local stdio MCP claim unless explicit install/trust, approved credential
   sources, no repository auto-enable, no ambient-token forwarding, and
   credential log redaction are proven for the tested client.
+- Codex client claims must record whether configuration came from
+  `~/.codex/config.toml`, trusted-project `.codex/config.toml`, CLI override,
+  or plugin-provided MCP server configuration. Project-scoped config cannot
+  stand in for trusted install behavior unless the trust state is recorded.
+- Codex stdio fixture rows must distinguish fixed `env` values from whitelisted
+  `env_vars`, and local versus remote environment sources. Remote stdio
+  placement, remote env sources, and `experimental_environment = "remote"` are
+  separate transport/topology claims.
+- Codex HTTP and OAuth fixture rows must record `bearer_token_env_var`, static
+  `http_headers`, `env_http_headers`, `oauth_resource`, configured scopes,
+  server-advertised scopes, callback port or URL, and credentials-store mode.
+  A successful OAuth login does not prove least privilege if scopes or resource
+  indicators were not captured.
+- Codex tool-policy claims must record `enabled_tools`, `disabled_tools` after
+  allow-list filtering, default tool approval mode, per-tool approval modes,
+  startup/tool timeouts, and whether `required = true` caused fail-closed
+  startup or resume behavior.
+- Codex plugin-provided MCP servers must record plugin origin and the user
+  config that controls enablement and tool policy under the plugin server key.
+- Codex `mcp-server` exposes `codex` and `codex-reply` tools that can run Codex
+  sessions with approval-policy, sandbox, config, cwd, model, and profile
+  controls. Treat it as a separate automation topology, not as proof that
+  Parallax's read-only context MCP server is safe.
 - Claude Code client claims must record local/project/user/plugin/claude.ai
   source precedence, project `.mcp.json` approval, reset behavior for project
   choices, and whether `mcp get`/`mcp list` or other health checks start stdio
