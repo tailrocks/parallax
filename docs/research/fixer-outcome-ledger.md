@@ -17,8 +17,8 @@ outcome schema, but no dated result rows.
 
 The central rule:
 
-> No "Parallax fixes issues", "agent opens correct PRs", "accepted-fix feedback
-> loop", "autonomous fix outcome learning", or "fixer business seam validated"
+> No "Parallax fixes issues", "agent opens correct PRs", "fixer outcome
+> feedback loop", "autonomous fix outcome learning", or "fixer business seam validated"
 > claim without dated result rows linking evidence bundle -> fixer run -> agent
 > session, with exact tool/version/config, adapter, capture surface, lossiness,
 > redaction, source-field, schema ref, canonical hash, projection manifest,
@@ -642,8 +642,8 @@ Mark affected claims `claim_expired` when:
   changes;
 - the fixer model, agent product, prompt, tool policy, or task matrix changes;
 - 90 days pass since the last run during discovery;
-- a prior accepted fixer PR is later reverted, linked to recurrence, or marked
-  unsafe.
+- a prior fixer PR counted as successful is later reverted, linked to
+  recurrence, or marked unsafe.
 
 ## Relationship To Other Research
 

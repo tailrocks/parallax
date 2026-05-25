@@ -187,7 +187,7 @@ traced" or "Claude OTel event normalized" into "Claude `stream-json` traced."
 Those are separate capture-surface claims controlled by the
 [Agent session tracing ledger](agent-session-tracing-ledger.md). If provenance,
 lossiness, or projection-safety fields are missing, the node may remain as
-debugging context, but it cannot support a product claim, accepted-fix outcome,
+debugging context, but it cannot support a product claim, measured fix outcome,
 or external schema-adoption result.
 
 ## Edge Type Catalog
@@ -510,7 +510,7 @@ it survives contact with real data:
 - [Verdict](verdict.md) — why the open schema and portable bundle are the moat.
 - [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
   — the A3 gate that decides whether the schema becomes external leverage and
-  whether the failure/fix corpus is large enough to call a moat.
+  whether the failure/fixer-outcome corpus is large enough to call a moat.
 
 ## Bottom Line
 

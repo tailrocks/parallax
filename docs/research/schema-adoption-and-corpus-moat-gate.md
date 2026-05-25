@@ -8,14 +8,15 @@ Research date: 2026-05-25
 
 This operationalizes bear-case assumption A3:
 
-> The open evidence schema plus failure/fix corpus becomes a compounding moat.
+> The open evidence schema plus failure/fixer-outcome corpus becomes a
+> compounding moat.
 
 The repo already defines a `v0` [Evidence bundle and open schema](evidence-bundle-and-schema.md).
 That is necessary but not sufficient. A schema is not a moat because it exists in
 Markdown; it becomes leverage only when external tools can validate against it,
 agents can consume it consistently, contributors can extend it without breaking
-older consumers, and real accepted/rejected fix outcomes accumulate into a
-corpus.
+older consumers, and real accepted/rejected/reverted fixer outcomes accumulate
+into a corpus.
 
 This gate defines the adoption clock, conformance artifacts, compatibility
 rules, corpus events, and NO-GO conditions for A3.
@@ -132,7 +133,7 @@ Count:
 
 ## Corpus Gate
 
-The failure/fix corpus is separate from schema adoption. It starts only when
+The failure/fixer-outcome corpus is separate from schema adoption. It starts only when
 Parallax records outcomes for real or realistic tasks:
 
 | Corpus event | Required fields |

@@ -37,7 +37,7 @@ The target domains are:
 | Services | Long-running runtime, request/job traces, production errors. | Sentry-compatible and OTLP-native runtime context. |
 | CI runs | Bounded workflow/job/test execution. | Deterministic bundle, logs, artifacts, test history. |
 | CLI apps | Bounded command invocation with args/env/stdout/stderr/exit. | Reproducible local failure context and Rust-first error capture. |
-| Coding agents | Bounded or long-running agent session with prompts, tools, file edits, tests, PRs. | Agent trust, replay, audit, outcome feedback, and failure/fix corpus. |
+| Coding agents | Bounded or long-running agent session with prompts, tools, file edits, tests, PRs. | Agent trust, replay, audit, outcome feedback, and failure/fixer-outcome corpus. |
 
 This is stronger than "observability for apps." It is:
 

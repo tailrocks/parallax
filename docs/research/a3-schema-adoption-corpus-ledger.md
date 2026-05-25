@@ -9,13 +9,14 @@ Research date: 2026-05-25
 The [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
 defines what A3 must prove:
 
-> The open evidence schema plus failure/fix corpus becomes a compounding moat.
+> The open evidence schema plus failure/fixer-outcome corpus becomes a
+> compounding moat.
 
 This note defines the missing public ledger for that proof. A3 is not validated
 by publishing Markdown, JSON Schema files, or a few friendly comments. It is
 validated by durable events: schema releases, conformance runs, external review,
 external bundle producers/consumers, compatibility decisions, and labeled
-failure/fix outcomes.
+failure/fixer-outcome rows.
 
 No A3 pass, schema-gravity, corpus-growth, or moat claim should count unless the
 supporting events are recorded in a committed, source-linked ledger.
@@ -81,7 +82,7 @@ The schema/corpus moat has several false-positive paths:
 | Schema published, no consumer pain | The repo has a format, not a standard. | Count only validated producer/consumer events and compatibility decisions. |
 | Operator-controlled demos counted as adoption | n=1 activity masquerades as ecosystem pull. | Track actor relationship and control level for every event. |
 | Friendly feedback counted as dependency | Review is useful, but not adoption. | Separate review events from integration/dependency events. |
-| Corpus rows without outcomes | A pile of bundles is not a failure/fix corpus. | Count only rows with action, outcome, and recurrence/review status. |
+| Corpus rows without outcomes | A pile of bundles is not a failure/fixer-outcome corpus. | Count only rows with action, outcome, and recurrence/review status. |
 | Private pilots summarized too vaguely | The public repo cannot audit why A3 passed. | Allow anonymized actors, but require evidence hashes, reviewer, and count rules. |
 | Compatibility breakage hidden | A schema that repeatedly breaks consumers is anti-moat. | Record breakage reports, migration decisions, and deprecation windows. |
 
@@ -198,7 +199,7 @@ The corpus only matters when bundles are tied to actions and outcomes:
 | `regression_feedback` | Follow-up issue, incident, revert, or review comment. | Negative or positive corpus signal. |
 
 The minimum counted corpus unit is `outcome_labeled`. A bundle without an
-outcome is useful operational evidence but not failure/fix corpus data.
+outcome is useful operational evidence but not failure/fixer-outcome corpus data.
 
 ## Corpus Row Schema
 

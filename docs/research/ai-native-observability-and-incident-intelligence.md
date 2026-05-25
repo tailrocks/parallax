@@ -320,7 +320,8 @@ Non-commodity:
 
 Possible moat order:
 
-1. **Failure corpus and feedback loop.** Which evidence led to accepted fixes?
+1. **Failure/fixer-outcome corpus and feedback loop.** Which evidence led to
+   accepted, rejected, reverted, or non-recurring fixes?
 2. **Open evidence schema.** If tools and agents use the Parallax bundle format,
    the schema itself becomes leverage.
 3. **Runtime plus repo intent.** Linking failures to docs, decisions, tasks, and

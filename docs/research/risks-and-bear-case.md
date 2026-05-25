@@ -30,7 +30,8 @@ If Parallax fails, this is the most likely story, told without flinching:
 > self-hosted box. Meanwhile OpenObserve moves its agent into the free tier and
 > SigNoz adds Sentry ingest, so the "only open + self-hosted + agent-native +
 > Sentry-compatible package" wedge closes. The evidence-graph/bundle moat never
-> compounds because the failure/fix corpus needs adoption that never arrives —
+> compounds because the failure/fixer-outcome corpus needs adoption that never
+> arrives —
 > the classic chicken-and-egg. The surface area (Sentry ingest + OTLP + CLI +
 > agent + frontend + evidence graph + bundles + CLI + MCP + benchmark harness) is
 > too large for the team that exists, so everything is 70% done and nothing is

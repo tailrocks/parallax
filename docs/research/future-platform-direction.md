@@ -59,7 +59,7 @@ telemetry, CI, issue trackers, deploys, and coding agents all read/write the
 Parallax bundle/schema, and Parallax sits in the middle as the shared runtime
 context layer that agents query to act. This is the platform outcome — and it is
 the *least certain* stage, entirely dependent on schema adoption and a compounding
-failure/fix corpus. It is an emergent possibility, not a plan.
+failure/fixer-outcome corpus. It is an emergent possibility, not a plan.
 
 ## Why The Direction Is Secularly Right (The Trend Tailwind)
 
@@ -78,8 +78,9 @@ is execution and distribution, not the trend.
   build against (the moat that compounds — [business model](business-model-and-economics.md),
   [business model validation ledger](business-model-validation-ledger.md),
   [schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)).
-- The **failure/fix corpus** accumulates enough that Parallax's bundles measurably
-  improve agent outcomes over time (the data moat — [bundle-value eval](bundle-value-evaluation.md)).
+- The **failure/fixer-outcome corpus** accumulates enough that Parallax's bundles
+  measurably improve agent outcomes over time (the data moat —
+  [bundle-value eval](bundle-value-evaluation.md)).
 - **Audit-of-agents** becomes a compliance/trust necessity as autonomous changes
   become normal, and Parallax is the open answer.
 

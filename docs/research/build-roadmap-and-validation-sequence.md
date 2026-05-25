@@ -124,7 +124,8 @@ Build only enough to generate the bundle automatically and repeatably:
   [business model](business-model-and-economics.md), measured through the
   [fixer outcome ledger](fixer-outcome-ledger.md) before any value claim feeds
   the [business model validation ledger](business-model-validation-ledger.md).
-- Accepted/rejected-fix outcome capture → the failure/fix corpus (A3 moat).
+- Accepted/rejected/reverted fixer outcome capture -> the
+  failure/fixer-outcome corpus (A3 moat).
 - Use the [fixer component and outcome loop](fixer-component-and-outcome-loop.md)
   contract and [fixer outcome ledger](fixer-outcome-ledger.md) so opened PRs are
   not counted as successful fixes until review, validation, and recurrence

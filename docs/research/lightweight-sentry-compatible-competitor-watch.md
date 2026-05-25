@@ -39,7 +39,7 @@ Sentry-compatible error migration
 + portable evidence bundles
 + deterministic evidence graph
 + CLI/coding-agent action audit
-+ accepted-fix feedback loop
++ accepted/rejected/reverted fixer outcome loop
 ```
 
 But they reduce the value of "simpler than self-hosted Sentry" as a standalone
@@ -54,7 +54,7 @@ with a lighter Sentry replacement.
 | Rustrak | Rust/Actix server, Sentry SDK compatible, SQLite default or Postgres production mode, claims small memory/image footprint, no Redis, no complex infrastructure, and ships `@rustrak/mcp` for AI assistant management. | Early project; UI is a separate Next.js service; MCP is management-shaped rather than a read-only citable evidence-bundle contract; no clear OTLP-native logs/traces/metrics or fix-outcome corpus. | Very high for product-shape pressure, lower for maturity. |
 | Traceway | MIT, OpenTelemetry-native, self-hostable, combines logs/traces/metrics/session replay/exceptions/AI tracing, Docker Compose path, and Go embedded SQLite dev mode. | OTel-first rather than Sentry-envelope-first; Go, not Rust; no explicit Parallax-style evidence bundle, redaction manifest, or agent session/action audit. | Very high for OTLP-native unified observability simplicity. |
 | GoSnag | Go single binary with embedded React UI/migrations, Sentry `/store/` and `/envelope/` ingestion, issue lifecycle, GitHub/Jira integrations, AI RCA features, and a documented MCP server. | Requires Postgres for normal deployment; early project with low visible traction and no tagged release in the checked GitHub metadata; not Rust-first; MCP exposes broad management tools, not a Parallax-style read-only bundle contract or fix-outcome graph. | Medium-high: important capability shape, weak maturity signal. |
-| Urgentry | Source-available Sentry-compatible replacement with one-binary Tiny mode, split self-hosted mode, route coverage and benchmark claims against self-hosted Sentry. | FSL source-available, not open source; broad Sentry replacement posture rather than open evidence schema; no clear coding-agent audit or accepted-fix loop. | High for the self-hosted simplicity benchmark, lower for the open-source thesis. |
+| Urgentry | Source-available Sentry-compatible replacement with one-binary Tiny mode, split self-hosted mode, route coverage and benchmark claims against self-hosted Sentry. | FSL source-available, not open source; broad Sentry replacement posture rather than open evidence schema; no clear coding-agent audit or measured fixer-outcome loop. | High for the self-hosted simplicity benchmark, lower for the open-source thesis. |
 
 ## Current Version And Maturity Snapshot
 
