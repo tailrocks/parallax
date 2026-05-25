@@ -41,6 +41,32 @@ Outside sources checked for this pass:
   says PII should be protected from inappropriate access, use, and disclosure
   ([NIST Privacy Framework getting started](https://www.nist.gov/privacy-framework/getting-started-0),
   [NIST SP 800-122](https://csrc.nist.gov/pubs/sp/800/122/final)).
+- Stack Overflow's 2025 Developer Survey received 49,000+ responses and added a
+  focus on AI agent tools and LLMs. Its agent section says 14.1% of respondents
+  use AI agents at work daily and 9% weekly, while a majority either do not use
+  agents or only use simpler AI tools. The same survey ranks security/privacy,
+  prohibitive pricing, and better alternatives as the top three reasons
+  developers reject technologies, and reports that more respondents actively
+  distrust AI accuracy than trust it
+  ([Stack Overflow Developer Survey 2025](https://survey.stackoverflow.co/2025/)).
+- GitHub's 2025 Octoverse says generative AI is now standard in development, but
+  explicitly labels its productivity/activity data as observational rather than
+  causal. It also says 81.5% of contributions happen in private repositories,
+  which matters because Parallax's strongest evidence lives in private runtime,
+  repo, CI, and agent-session data
+  ([GitHub Octoverse 2025](https://github.blog/news-insights/octoverse/octoverse-a-new-developer-joins-github-every-second-as-ai-leads-typescript-to-1/)).
+- GitHub's Copilot coding-agent announcement describes draft PRs, session logs,
+  human approval before CI/CD workflows run, and MCP configuration in repository
+  settings. This is primary evidence that agent workflows are becoming
+  auditable/control-layered, not just chat prompts
+  ([GitHub Copilot coding agent](https://github.com/newsroom/press-releases/coding-agent-for-github-copilot)).
+- JetBrains' 2025 Developer Ecosystem AI report says AI use is often ad hoc,
+  rollout is commonly still in pilots or partial integration, and developer
+  concerns center on control, code quality, reliability, and security. Its
+  methodology reports 24,534 cleaned responses and notes remaining survey bias
+  controls
+  ([JetBrains AI report](https://devecosystem-2025.jetbrains.com/artificial-intelligence),
+  [JetBrains methodology](https://lp.jetbrains.com/developer-ecosystem-2025-methedology/)).
 
 Internal sources:
 
@@ -121,9 +147,15 @@ evidence_classes:
   - data_access_permission
   - redaction_blocker
   - agent_usage_observed
+  - agent_workflow_maturity
+  - agent_context_permission
+  - agent_control_audit_need
   - budget_owner_named
   - concrete_commitment
   - contradiction
+agent_workflow_maturity: none | autocomplete_only | individual_ad_hoc | team_pilot | agent_pr_workflow | agent_with_runtime_context | unknown
+agent_context_permission: none | code_only | ci_only | read_only_runtime | redacted_runtime | production_runtime | unknown
+agent_incident_evidence: none | near_miss | bad_patch | failed_fix | successful_agent_fix | unknown
 score:
   pain_frequency: 0
   existing_behavior: 0
@@ -171,7 +203,10 @@ Use these classes to separate real signal from conversational noise:
 | `retention_cost_constraint` | They shortened retention, sample aggressively, or avoid storing evidence because of cost. | Abstract concern about future bills. |
 | `data_access_permission` | They can provide Sentry/OTLP/CI/CLI/agent data, with named redaction constraints. | "Probably okay" without owner or policy detail. |
 | `redaction_blocker` | Required evidence is legally, contractually, or culturally unavailable even after redaction. | Vague discomfort. |
-| `agent_usage_observed` | Coding agents are already used in normal engineering work or incident workflows. | Curiosity about AI. |
+| `agent_usage_observed` | Coding agents are already used in normal engineering work or incident workflows. | Curiosity about AI, autocomplete-only use, or broad survey adoption. |
+| `agent_workflow_maturity` | The team can place agent use on a concrete maturity step: ad hoc, team pilot, PR workflow, or runtime-context workflow. | "We use AI" without where, how often, or with what permissions. |
+| `agent_context_permission` | The team states whether agents can see code only, CI only, redacted runtime evidence, or production runtime evidence. | No owner or policy detail for what agents may access. |
+| `agent_control_audit_need` | The team has or wants session logs, human approval gates, CI approval, MCP/tool access review, or post-change outcome tracking. | General fear that agents are risky. |
 | `budget_owner_named` | A role or person can approve pilot/support/hosting/fixer spend. | "Someone would pay." |
 | `concrete_commitment` | An intro, data share, pilot, design-partner call, budget conversation, or incident handoff has owner and due date. | Praise, stars, newsletter signup, or "keep me posted." |
 | `contradiction` | A fact that weakens the score is recorded explicitly. | Softening a blocker because the call felt positive. |
@@ -211,6 +246,14 @@ Use these controls during the 20-interview run:
   participant owns a different decision surface, such as security/privacy or
   budget.
 - Treat a privacy/data-access refusal as evidence, not as a recruiting failure.
+- Do not treat broad AI coding-tool adoption as an A2 signal. It only justifies
+  sampling agent-heavy teams. A2 signal requires observed agent workflow,
+  permission surface, audit/control need, or an agent-caused/successful-fix
+  incident.
+- Autocomplete-only usage does not satisfy `agent_usage_observed`; classify it
+  as `autocomplete_only` and score agent relevance no higher than 1 unless the
+  team has a concrete plan to move agents into PR, CI, incident, or runtime
+  workflows.
 
 ## Aggregate Summary Template
 

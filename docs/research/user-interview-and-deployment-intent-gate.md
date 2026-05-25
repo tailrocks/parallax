@@ -35,6 +35,17 @@ Two outside references shape the protocol:
   hypotheticals. The useful signal is facts about past behavior and concrete
   commitment, not "I would use that"
   ([The Mom Test](https://www.momtestbook.com/)).
+- Current developer-market sources make the agent slice worth testing but not
+  self-validating. Stack Overflow's 2025 Developer Survey says daily/weekly AI
+  agent use is still a minority behavior, security/privacy and pricing are top
+  technology rejection reasons, and AI accuracy distrust is higher than trust;
+  GitHub's 2025 Octoverse says AI is now standard in development but warns its
+  activity signals are observational rather than causal; JetBrains' 2025 AI
+  report says many teams use AI ad hoc or in partial rollouts and worry about
+  control, quality, reliability, and security
+  ([Stack Overflow Developer Survey 2025](https://survey.stackoverflow.co/2025/),
+  [GitHub Octoverse 2025](https://github.blog/news-insights/octoverse/octoverse-a-new-developer-joins-github-every-second-as-ai-leads-typescript-to-1/),
+  [JetBrains AI report](https://devecosystem-2025.jetbrains.com/artificial-intelligence)).
 
 Internal sources:
 
@@ -63,7 +74,7 @@ Each interview should test these without pitching the answer first:
 | H2 Current workaround | They already pay for, self-host, script around, or manually stitch Sentry/logs/traces/CI/repo context. |
 | H3 Self-host fit | They can and will run a small service if the operational footprint is lower than self-hosted Sentry. |
 | H4 Data access | They can legally and culturally send Sentry/OTLP/CI/CLI/agent evidence into a self-hosted system. |
-| H5 Agent relevance | They already use coding agents or expect to, and want evidence bundles for human or agent debugging. |
+| H5 Agent relevance | They already use coding agents in concrete workflows, can describe what those agents may access, and want evidence bundles or audit trails for human/agent debugging. |
 | H6 Commitment | They will give time, data, an intro, a pilot, sponsorship, hosted interest, or paid support interest. |
 
 Do not count enthusiasm as validation unless it is paired with past behavior or
@@ -87,6 +98,11 @@ reinforce the founder-market-fit risk in
 [Repo-intent dependence](repo-intent-dependence.md) and should be measured
 against the degraded-mode rows in
 [Repo-intent value ledger](repo-intent-value-ledger.md).
+
+Broad AI coding-tool usage is not an A2 signal by itself. It only justifies
+including agent-heavy teams in the sample. A2 signal requires an observed
+agentic workflow, production/CI/repo context permission detail, an audit/control
+need, or a concrete agent-caused or agent-fixed incident.
 
 ## Interview Protocol
 
@@ -121,7 +137,7 @@ Use these as prompts, not a rigid survey:
 | Self-hosting | "Do you self-host observability today?" "If yes, why?" "If no, what would make self-hosting unacceptable?" |
 | Sentry pain | "Have you used self-hosted Sentry?" "What broke or became too expensive or too operationally heavy?" |
 | Retention | "How long do you keep logs/traces/errors?" "Have you shortened retention because of cost?" |
-| Agents | "Which coding agents are engineers using now?" "Are they allowed to see production evidence?" "What would make that safe enough?" |
+| Agents | "Which coding agents are engineers using now?" "Is that autocomplete/chat only, ad hoc agent work, a team pilot, or a PR/CI workflow?" "Are agents allowed to see code, CI logs, Sentry/OTLP data, database evidence, or production evidence?" "What would make that safe enough?" "What logs, session records, approvals, or PR review gates do you have today?" "Walk me through the last agent output that needed correction, rollback, or extra human investigation." |
 | Data constraints | "What data can never leave your environment?" "What fields must be redacted before an agent sees them?" |
 | Buying/deploy path | "Who would approve deploying this?" "Who would pay for hosting/support/fixer workflow if the open core is free?" |
 | Alternatives | "If Parallax did not exist, what would you do next to improve this workflow?" |
@@ -152,7 +168,7 @@ Score each interview immediately after the call:
 | Existing behavior | No workaround/tool. | Manual habit only. | Uses standard tools. | Scripts/custom glue. | Built or bought serious internal workflow. |
 | Self-host/deploy fit | Cannot deploy. | Strong blockers. | Possible with heavy review. | Can run Docker/small service. | Actively prefers self-host/open core. |
 | Data access fit | Cannot expose needed data. | Major redaction/legal blockers. | Partial data only. | Most data usable with policy. | Can provide rich Sentry/OTLP/CI/CLI data. |
-| Agent relevance | No agents/no interest. | Experimenting only. | Agents used individually. | Agents in normal engineering flow. | Agents touch CI/deploy/debug workflows already. |
+| Agent relevance | No agents/no interest. | Autocomplete/chat only or vague plans. | Individual ad hoc agent use. | Team pilot or PR workflow with clear permissions. | Agents touch CI/deploy/debug/runtime workflows with audit or control needs. |
 | Budget/sustainability | No budget path. | Only free OSS. | Possible support/hosting later. | Known owner and budget category. | Active willingness for pilot/support/hosted/fixer spend. |
 | Commitment | None. | Follow-up allowed. | Intro or async feedback. | Shares incident/data or runs pilot. | Time-boxed pilot plus budget/sponsor/fixer conversation. |
 
@@ -205,6 +221,10 @@ current_workarounds:
 self_hosting_posture:
 data_access_constraints:
 agent_usage:
+agent_workflow_maturity:
+agent_context_permission:
+agent_control_or_audit_need:
+agent_incident_evidence:
 budget_owner:
 exact_quotes:
 score:
