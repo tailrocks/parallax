@@ -4346,6 +4346,50 @@ bump). Built `sj (ts, trace_id, service, attributes JSON)` on both, loaded **200
 (~1 ms); GT `SELECT json_get_int("attributes",'http.status_code'), count(*) GROUP BY 1` (~57 ms).
 Drop `sj` after.
 
+### Run 105 — 2026-05-25 — PromQL vs SQL re-verified: GreptimeDB's own PromQL ~5.6× slower than its own SQL (Run 44 reproduces); wide PromQL range is OVER the 300 ms gate — "metrics = capability not speed"
+
+**Pass target.** Re-verify the load-bearing **"metrics → GreptimeDB is capability/ergonomics, not
+speed"** claim (Run 44): GreptimeDB's *native* PromQL path is materially slower than its own SQL,
+because the PromQL planner pays a near-fixed `SeriesNormalize`/`SeriesDivide` series-sort setup. The
+metric-agg ordering should be **CH SQL > GT SQL > GT PromQL**.
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned live — latest stable, no
+bump). `metrics_hc` = 8M rows / 40k series (40 svc × instances), parity. Query = `avg by (service)`
+over a **60-min range at 60 s step** (~2,400 output points). GT PromQL via `TQL EVAL`; GT/CH SQL via
+matched `date_bin`/`toStartOfInterval` bucketed group-by over the same window. Method: GT
+`execution_time_ms`, CH `--time`, warm.
+
+| Path | warm reps (ms) | median | ratio |
+| --- | --- | --- | --- |
+| **CH SQL** | `69 55 54 56 52 54 54 61` | **~55 ms** | 1× (baseline) |
+| **GT SQL** (`date_bin`) | `134 118 118 115 105 126 128 123` | **~120 ms** | ~2.2× CH |
+| **GT PromQL** (`TQL EVAL`) | `756 670 683 639 675 676 666 724` | **~675 ms** | **~5.6× GT-SQL, ~12× CH** |
+
+**Verdict — Run 44 reproduces exactly, no drift. Ordering CH SQL > GT SQL > GT PromQL confirmed.**
+
+- **GreptimeDB's native PromQL is ~5.6× slower than its own SQL** (675 vs 120 ms) on the same
+  `avg by (service)` over the same window — the `SeriesNormalize`/`SeriesDivide` series-sort setup
+  the PromQL planner pays, which a streaming SQL hash-agg avoids. So on metrics, GreptimeDB's edge is
+  PromQL **maturity/ergonomics** (GA, default-on, range-vector/`rate`/lookback expressiveness), **not
+  query speed** — exactly the verdict's framing.
+- **Sharp practical caveat (sharper than Run 44 stated):** a **wide** PromQL range over 40k series is
+  **~675 ms — OVER the 300 ms interactive gate.** Wide/high-card PromQL range queries are *not*
+  interactive on GreptimeDB at this scale. The Tier-A answers apply: for hot/interactive metric
+  panels use **SQL** (~120 ms here, Run 96), **Flow pre-aggregation** (Run 43), or **narrow the
+  series** with label filters; reserve PromQL for alerting/expressiveness, not wide interactive
+  dashboards. *(A real dashboard PromQL query is usually narrower — few series via label matchers,
+  shorter range — so it lands faster; the 675 ms is the wide-range worst case.)*
+- **CH context:** ClickHouse's own PromQL (26.x `TimeSeries` engine) is experimental/off-by-default,
+  so the GA-PromQL comparison still favours GreptimeDB on *capability*; this run is GT-PromQL vs
+  GT-SQL (the speed claim), which holds.
+- **Adopt-native (metrics):** unchanged — ADOPT the native metric engine, but **drive hot panels
+  with SQL/Flow, not wide PromQL**. Carry this into the blueprint.
+
+**Reproduce.** GT PromQL: `TQL EVAL (1716000000, 1716003600, '60s') avg by (service) (metrics_hc)`
+(~675 ms). GT SQL: `SELECT date_bin('60 seconds'::INTERVAL, ts) m, service, avg(value) FROM
+metrics_hc WHERE ts BETWEEN …::timestamp_ms GROUP BY m, service` (~120 ms). CH SQL:
+`toStartOfInterval(ts, INTERVAL 60 SECOND)` equivalent (~55 ms). Warm ×8.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

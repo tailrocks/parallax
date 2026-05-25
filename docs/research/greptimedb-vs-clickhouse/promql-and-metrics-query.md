@@ -3,7 +3,11 @@
 <!-- markdownlint-disable MD013 -->
 
 Status: pass 44 (capability/maturity) + pass 72 (PromQL **speed** characterization, Run 44)
-+ pass 98 (**re-verified live, no drift, Run 62**). The PromQL planning path (a GreptimeDB
++ pass 98 (**re-verified live, no drift, Run 62**) + **Run 105 (re-verified, no drift: GT
+PromQL ~675 ms vs GT SQL ~120 ms vs CH SQL ~55 ms on `avg by(service)` over a 60-min/60-s
+range — ~5.6× GT-SQL, ordering CH SQL > GT SQL > GT PromQL confirmed; sharper caveat: a WIDE
+PromQL range over 40k series is OVER the 300 ms gate, so drive hot panels with SQL/Flow, not
+wide PromQL)**. The PromQL planning path (a GreptimeDB
 system-lead) **and** a required re-verification of the verdict's load-bearing claim that
 "ClickHouse has no PromQL." Metrics/PromQL nativeness is the verdict's #1 GreptimeDB
 advantage, so a version-drift here is decision-critical. Source + live (Runs 23, 24, 44, 62).
