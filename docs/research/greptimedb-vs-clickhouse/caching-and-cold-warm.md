@@ -40,6 +40,18 @@ cold penalty is dominated by **object-store request latency**, not local disk �
 and its **few-large-objects layout** (4 objects for 1M spans, Run 9) means a cold
 read issues *few* GETs.
 
+**Cold-inflation magnitude ∝ bytes decoded cold (measured, Runs 37/39).** The
+warm→cold gap-widening scales with how many bytes a query must decode cold, which is
+why re-verified gaps differed: the **metric-agg** (8M rows × `value`+`ts`+`service` +
+per-row bucketing) was **10× cold → 2× warm** (heavy cold decode); **count-by-`level`**
+(5M rows × one `LowCardinality` column) was only ~94 ms cold → ~4× warm (light decode);
+**full-text** (small index, no wide scan) showed **no cold inflation** (~18× warm). So
+"cold widens the gap" is true *in proportion to scan width* — wide/heavy aggregations
+inflate most cold, light single-column scans little, index-bound queries not at all.
+This is why the warm read-path numbers (Runs 37–39) are the trustworthy steady-state
+and the *cold-regime* widening is a separate, scan-width-dependent effect the cold-tier
+harness must quantify.
+
 ## The decisive consequence for Parallax (object-store cold re-reads)
 
 Parallax re-reads evidence bundles from cheap object storage, often **cold**. In

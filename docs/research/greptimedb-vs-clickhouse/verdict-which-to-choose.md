@@ -201,7 +201,8 @@ benchmark must settle.
 **Update (Run 12, measured at 5M logs, both indexed; warm-re-verified Run 38):**
 condition (b) is now **partly confirmed** — ClickHouse full-text log search is **~18×**
 faster (7 ms vs 129 ms; mature `text` posting-list index vs GreptimeDB
-`FULLTEXT`+DataFusion `matches()`), and full scans ~4×. **Run 38 confirmed the ~18×
+`FULLTEXT`+DataFusion `matches()`), and full count-by-`level` scans ~4× (Run 39,
+warm-verified). **Run 38 confirmed the ~18×
 holds *warm* — it is index-bound (real index-maturity gap), not a cold artifact** (the
 contrast: the scan-bound metric-agg's "~10×" *was* a cold artifact, corrected to ~2×
 warm in Run 37 — so the two big ClickHouse numbers were stress-tested and only the

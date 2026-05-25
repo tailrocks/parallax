@@ -1189,6 +1189,33 @@ selective keyed filter a tie; anchored bundle not latency-bound. **The verdict's
 flip-trigger (log-search-dominated mix → ClickHouse wins decisively) STANDS** —
 confirmed warm. No correction needed (unlike Run 37); confirmation strengthens it.
 
+### Run 39 — 2026-05-25 — Re-verify Run 12 count-by-level scan ~4× → HOLDS warm
+
+Third re-verification (after Runs 37/38), completing the warm-check of Run 12's three
+numbers. Count-by-`level` scan on `logs_b1` (5M), warm, min of 3. Versions unchanged.
+
+| | ClickHouse | GreptimeDB | ratio |
+| --- | --- | --- | --- |
+| Run 12 | 7 ms | 28 ms | ~4× |
+| **Run 39 (warm)** | **8 ms** | **32 ms** (first run 94 ms cold) | **~4×** |
+
+**Holds warm (~4×)** — *not* cold-inflated. So Run 12's three numbers now stress-tested:
+full-text ~18× (Run 38, holds), count-by-level scan ~4× (holds), selective filter tie.
+Only the **separate** metric-agg (Run 11/37) was cold-inflated (10×→2×).
+
+**Refines the cold-inflation model:** the cold penalty is ∝ **bytes decoded cold**, not
+"scan vs index" alone —
+- **metric-agg** scans 8M rows reading **value(Float64)+ts+service** + per-row
+  time-bucketing → heavy cold decode → 638 ms cold (10×), 107 ms warm (2×);
+- **count-by-level** scans 5M rows reading **one `LowCardinality(level)` column** into ~5
+  groups → light cold decode → 94 ms cold, 32 ms warm (~4× both);
+- **full-text** reads a small index, no wide scan → no cold inflation (~18× warm).
+
+So warm gaps: full-text ~18× (index), count-by-level scan ~4× (light scan), metric-agg
+~2× (heavy bucketed agg). The *cold* regime widens the scan gaps (∝ bytes decoded) —
+the cold-tier harness will quantify it; the read-path warm numbers are now all
+verified. No verdict move; confirmation + a cleaner cold/warm mental model.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
