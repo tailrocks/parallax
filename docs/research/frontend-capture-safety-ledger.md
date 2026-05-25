@@ -26,7 +26,8 @@ The central rule:
 > route fixtures, browser ingest posture, source-map identity and artifact
 > access, CORS/header propagation, backend continuation, breadcrumbs, privacy
 > canaries, export reliability, payload/drop behavior, overhead, replay opt-in
-> policy, source-field policy status, and agent-visible projections.
+> policy, source-field policy status, canonical bundle hash, projection
+> manifest, and agent-visible projections including MCP `structuredContent`.
 
 This ledger is separate from the
 [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md): A4
@@ -51,6 +52,7 @@ those anchors.
 | [Sentry artifact bundles and Debug IDs](https://docs.sentry.io/platforms/javascript/guides/cloudflare/sourcemaps/troubleshooting_js/artifact-bundles/) | Artifact bundles bind minified files and source maps by Debug ID instead of relying on paths; retention and release association are explicit. | Parallax should use Debug-ID-like source-map identity and test missing/mismatched/private source maps directly. |
 | [Sentry source-map upload warning](https://docs.sentry.io/platforms/javascript/guides/tanstackstart-react/sourcemaps/uploading/esbuild) | Sentry warns generated source maps can expose source and recommends denying public `.js.map` access or deleting maps after upload. | A source-mapped claim fails if the build deploys public source maps or if agents can dereference source-map/source-content refs by default. |
 | [Sentry JavaScript data collected](https://docs.sentry.io/platforms/javascript/guides/react/data-management/data-collected) | Sentry documents privacy-relevant defaults: cookies, logged-in user identity, user IP, client-side request bodies, and response bodies are not sent by default; HTTP request/response headers, full request URLs, full query strings, referrer URLs, and console logs/breadcrumbs may be collected; Replay masks text/images/user input by default and network detail bodies are opt-in. The docs page package detail can lag npm (`10.11.0` shown while npm reports `10.53.1` for `@sentry/react`). | Parallax should keep frontend capture metadata-first, make replay/network bodies opt-in, deny or allowlist headers, redact URL/query/referrer/console values before projection, seed PII canaries across every browser surface, and record docs-vs-registry version drift. |
+| [MCP tools specification `2025-11-25`](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) and [RFC 8785 JCS](https://www.rfc-editor.org/rfc/rfc8785.html) | MCP tools can return JSON `structuredContent` validated by `outputSchema`; JCS provides deterministic, hashable JSON. | Frontend projection rows must bind browser privacy canary results to `schema_ref`, post-redaction `canonical_hash`, `projection_manifest`, and MCP `structuredContent`, not only JSON/Markdown text renderings. |
 | [OpenTelemetry browser resource semconv](https://opentelemetry.io/docs/specs/semconv/resource/browser/) | Browser resource conventions are development-stage except `user_agent.original`, which is stable/recommended; some fields should be unset if client hints are unavailable. | Store semconv version and avoid treating browser attributes as stable product schema. |
 
 ## Claim Levels
@@ -70,7 +72,7 @@ Use these levels in `claim-ledger.jsonl`:
 | `browser_export_reliability_pass` | Browser export, browser ingest endpoint posture, payload size limits, CSP/CORS, offline/drop behavior, and client outcome reporting are measured. | "Browser telemetry export behavior is measured for the tested routes." |
 | `frontend_overhead_pass` | Capture stays within page-load, interaction, memory, payload, and network overhead budgets. | "Frontend capture overhead is within budget for the tested routes." |
 | `replay_opt_in_privacy_pass` | Replay is opt-in, masked by default, blocks media/text/input, and network bodies remain disabled unless allowlisted. | "Replay is privacy-gated for the tested opt-in configuration." |
-| `projection_pass` | Agent-visible JSON and Markdown include redaction reports, source-field policy status, missing-evidence flags, and blocked raw refs without leaking seeded canaries, source content, replay content, or raw refs. | "Frontend evidence projections pass redaction and missing-evidence checks." |
+| `projection_pass` | Agent-visible canonical JSON, Markdown, CLI/HTTP output, and MCP `structuredContent` include redaction reports, source-field policy status, missing-evidence flags, schema/hash/projection metadata, and blocked raw refs without leaking seeded canaries, source content, replay content, or raw refs. | "Frontend evidence projections pass redaction and missing-evidence checks." |
 | `frontend_tiny_default_ready` | Error, route, release, source-map, ingest, breadcrumb, export, overhead, metadata privacy, source-field, and projection rows pass for the tiny-tier capture set. | "Parallax captures source-mapped frontend errors and safe breadcrumbs for the tested browser matrix." |
 | `frontend_cross_tier_claim_ready` | Tiny default is ready and A4 continuation rows pass for real first-party routes. | "Parallax reconstructs frontend-to-backend paths for the tested first-party routes." |
 | `replay_claim_ready` | Replay opt-in privacy, overhead, retention, projection, and access controls pass. | "Parallax can attach privacy-gated replay refs for the tested opt-in configuration." |
@@ -137,6 +139,13 @@ operator explicitly approves a private retained artifact.
   },
   "redaction_policy_version": "a6-default-deny-vN",
   "source_field_policy_version": "phase0-source-field-policy-vN",
+  "bundle_schema_ref": {
+    "uri": "https://parallax.dev/schemas/evidence-bundle/v0.json",
+    "hash": "sha256:...",
+    "canonicalization": "jcs-rfc8785"
+  },
+  "canonical_bundle_hash_algorithm": "sha256 over RFC8785 canonical JSON after frontend redaction",
+  "mcp_output_schema_required": true,
   "source_map_identity_version": "debug-id-like-vN",
   "frontend_ingest_endpoint": {
     "mode": "same_origin_tunnel|signed_project_token|dsn_public_key|reverse_proxy",
@@ -151,7 +160,7 @@ operator explicitly approves a private retained artifact.
   "route_count": 0,
   "api_domains": ["https://api.example.test"],
   "capture_modes": ["error_metadata", "breadcrumbs", "trace_propagation", "replay_ref_opt_in"],
-  "projection_formats": ["json", "markdown"],
+  "projection_formats": ["bundle_json", "bundle_markdown", "cli_output", "http_api", "mcp_structuredContent"],
   "budgets": {
     "sdk_bundle_gzip_kb": 40,
     "page_load_delta_p95_ms": 50,
@@ -344,8 +353,12 @@ operator explicitly approves a private retained artifact.
   "surface": "dom_text|form_input|url_query|request_url|referrer_url|console|breadcrumb|network_header|network_body|user_context|replay",
   "capture_mode": "metadata|redacted_excerpt|raw_ref|replay_ref_opt_in",
   "seeded_canaries": 20,
+  "canonical_json_leaks": 0,
   "json_projection_leaks": 0,
   "markdown_projection_leaks": 0,
+  "cli_output_leaks": 0,
+  "http_api_leaks": 0,
+  "mcp_structured_content_leaks": 0,
   "raw_ref_leaks": 0,
   "scanner_error_count": 0,
   "scanner_error_behavior": "fail_closed|strip_field|block_bundle",
@@ -437,12 +450,20 @@ operator explicitly approves a private retained artifact.
 {
   "route_id": "checkout-error-001",
   "browser": "chromium",
-  "projection_format": "json|markdown",
+  "projection": "bundle_json|bundle_markdown|cli_output|http_api|mcp_structuredContent",
+  "schema_ref_hash": "sha256:...",
+  "canonical_bundle_hash": "sha256:...",
+  "projection_hash": "sha256:...",
+  "projection_manifest_hash": "sha256:...",
+  "projection_derives_from_canonical": true,
   "redaction_report_present": true,
   "redaction_report_hash": "sha256:...",
   "source_field_policy_status": "pass|fail|not_applicable",
   "source_field_policy_hash": "sha256:...",
   "source_field_policy_violations": 0,
+  "mcp_output_schema_valid": null,
+  "mcp_structured_content_hash": null,
+  "safety_fields_only_in_meta": false,
   "missing_evidence_present": true,
   "raw_ref_count": 0,
   "replay_ref_count": 0,
@@ -516,6 +537,19 @@ operator explicitly approves a private retained artifact.
 - Projection pass requires redaction report presence, source-field policy
   status, missing-evidence flags, zero seeded canary leaks, and no raw source-map
   or replay dereference by default.
+- Projection pass also requires `schema_ref`, post-redaction `canonical_hash`,
+  `projection_manifest`, and `access` fields on the canonical bundle. A frontend
+  projection is incomplete if it cannot be tied back to the exact canonical
+  bundle hash that A6 scanned.
+- CLI, HTTP, and MCP frontend projections must carry the same canonical bundle
+  hash for the same authorized request. A mismatch is a projection failure even
+  when each output separately scans clean.
+- MCP frontend output counts only when bundle-returning tools validate
+  `structuredContent` against the evidence-bundle `outputSchema`. Text-only MCP
+  JSON/Markdown is a projection, not a schema-safe frontend bundle.
+- Safety fields for frontend evidence cannot live only in MCP `_meta`, tool
+  annotations, descriptions, or prompt-wrapper metadata. They must be in the
+  canonical bundle JSON.
 - `frontend_cross_tier_claim_ready` also requires fresh A4 rows for real or
   fault-injected first-party routes; generator-perfect links are not enough.
 
@@ -570,8 +604,8 @@ Mark affected claims `claim_expired` when:
 - frontend route structure, router, rendering mode, API domain, or deployment
   topology changes;
 - privacy/redaction policy, source-field policy, breadcrumb filtering, replay
-  masking, network-body policy, projection format, or raw-ref access control
-  changes;
+  masking, network-body policy, bundle schema, canonicalization, projection
+  manifest, MCP output schema, or raw-ref access control changes;
 - a new browser, device class, or route class enters product wording;
 - 90 days pass since the last run during active development.
 
@@ -610,4 +644,4 @@ metadata, bounded redacted breadcrumbs, and first-party trace propagation. Repla
 and raw browser content stay opt-in refs. Product claims start only after this
 ledger proves the browser matrix, source-map identity and access controls,
 browser ingest posture, source-field policy status, propagation, privacy, export
-reliability, overhead, and projections.
+reliability, overhead, canonical hashes, and projection equivalence.
