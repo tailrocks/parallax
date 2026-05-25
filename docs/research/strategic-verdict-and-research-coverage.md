@@ -94,7 +94,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Unified observability storage | [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md) |
 | Metadata store | [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md), [Technical implementation concept](technical-implementation-concept.md) |
 | OpenTelemetry | [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md) |
-| Sentry-compatible ingestion | [Sentry-compatible ingestion](sentry-compatible-ingestion.md) |
+| Sentry-compatible ingestion | [Sentry-compatible ingestion](sentry-compatible-ingestion.md), [Sentry SDK fixture compatibility gate](sentry-sdk-fixture-compatibility.md) |
 | Collection method and eBPF tradeoff | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md) |
 | Rust applications first | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md), [Technical implementation concept](technical-implementation-concept.md) |
 | AI-native observability | [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md), [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md) |
@@ -133,7 +133,8 @@ The research validates direction, not performance claims. These must be tested:
 2. Evidence-bundle query latency under concurrent ingest.
 3. GreptimeDB versus ClickHouse storage size and object-storage cost.
 4. Iggy replay and backpressure behavior versus local WAL and NATS/Redpanda.
-5. Sentry envelope compatibility across real SDKs.
+5. Sentry envelope compatibility across real SDKs, starting with the
+   [Sentry SDK fixture gate](sentry-sdk-fixture-compatibility.md).
 6. Rust stacktrace grouping stability across release/debug-info variants.
 7. Agent fix quality with bounded Parallax bundles versus raw Sentry/CI context.
 8. Redaction quality for logs, events, attachments, database query output, and

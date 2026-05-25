@@ -116,7 +116,8 @@ The gateway must validate:
 - organization/project/environment policy.
 
 For SDK compatibility, Parallax should use real SDK-generated envelopes in
-fixtures, not hand-written JSON.
+fixtures, not hand-written JSON. The focused fixture strategy is specified in
+[Sentry SDK fixture compatibility gate](sentry-sdk-fixture-compatibility.md).
 
 ## Envelope Item Support
 
@@ -414,6 +415,9 @@ context is easy to over-share.
 
 ## Compatibility Test Matrix
 
+This table is the short version. The full SDK-generated fixture gate is
+[Sentry SDK fixture compatibility](sentry-sdk-fixture-compatibility.md).
+
 | Test | Expected result |
 | --- | --- |
 | Rust panic envelope | Accepted, normalized, grouped by panic frame. |
@@ -447,3 +451,5 @@ protocol edge and opinionated internally:
 
 That path gives Parallax the useful part of Sentry without recreating the
 self-hosted Sentry service graph.
+
+Related: [Sentry SDK fixture compatibility gate](sentry-sdk-fixture-compatibility.md).
