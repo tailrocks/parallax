@@ -8,8 +8,10 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 100 local runs + B1–B15 cases. Recent: **Run 100 re-verified
-storage/compression** across all four signal tables — no blanket winner, pattern-dependent: GT wins high-card metrics
+cold/first-run measurement showed). 25 mechanism notes + 101 local runs + B1–B15 cases. Recent: **Run 101 re-verified
+ingest cardinality-insensitivity** — going 12→1M distinct series, GreptimeDB ingest slows only ~1.16× (≈flat) vs
+ClickHouse ~1.53× (plain String) / ~2.6× (idiomatic LowCardinality, Run 84); GT has no cardinality knob to mis-size
+(metric-engine `__tsid`), the clearest high-card GT win is the ingest axis. **Run 100 re-verified storage/compression** across all four signal tables — no blanket winner, pattern-dependent: GT wins high-card metrics
 (`metrics_hc` 8M 38.6 < CH 57.3 MiB, the Run-79 crossover on a real table), CH wins low-card metrics via codecs
 (`metrics_real` 1.01 < GT 1.89 MiB, Gorilla — parity #7) + spans; logs ~wash; raw bytes second-order to object-store
 request economics. **Run 99 re-verified THE load-bearing anchor** — the Q6 evidence-bundle composite (all signals for one trace_id) is still not latency-bound on
