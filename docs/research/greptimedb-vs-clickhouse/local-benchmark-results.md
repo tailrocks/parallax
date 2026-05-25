@@ -83,6 +83,87 @@ Re-run with matched codec effort before drawing a cost conclusion.
 | GreptimeDB metric/PromQL advantage | not tested (no metrics signal in this run) | pending |
 | Evidence-bundle large↔large join advantage | not tested | pending |
 
+### Run 2 — 2026-05-25 — evidence-bundle join (Q1 + Q4), EXPLAIN plans
+
+Same containers/dataset as Run 1, plus `logs` (214,287 rows) and `error_events`
+(2,226 rows) generated to share the spans' `trace_id`/`span_id` (one real pair per
+trace). ClickHouse `logs ORDER BY (service, ts)`, `error_events ORDER BY (project,
+fingerprint, ts)`; GreptimeDB per seed DDL `PRIMARY KEY` equivalents.
+
+**Correctness parity (anchor `trace_id` with an error): PASS**
+
+| Query | ClickHouse | GreptimeDB |
+| --- | --- | --- |
+| Q1 `trace_context` (UNION spans+logs+error) | 18 rows (14+3+1) | 18 rows |
+| Q4 `cross_tier` (spans LEFT JOIN error_events ON trace_id, span_id) | 14 rows, 1 matched error | 14 rows, 1 matched error |
+
+**Query latency (warm, min of 3)** — same smoke-scale caveat as Run 1.
+
+| Query | ClickHouse | GreptimeDB |
+| --- | --- | --- |
+| Q1 trace_context | 4 ms | 24 ms |
+| Q4 cross_tier join | 3 ms | 54 ms |
+
+**EXPLAIN plans — the real mechanism evidence (scale-independent):**
+
+ClickHouse Q4 (`EXPLAIN actions=1`):
+
+```text
+Join (JOIN FillRightFirst)
+Algorithm: SpillingHashJoin(ConcurrentHashJoin)
+Clauses: [(trace_id, span_id) = (trace_id, span_id)]
+  ReadFromMergeTree (default.spans)        Granules: 1   Prewhere: trace_id = '3fb2…'
+  ReadFromMergeTree (default.error_events) Granules: 1   Prewhere: trace_id = '3fb2…'
+```
+
+GreptimeDB Q4 (`EXPLAIN`):
+
+```text
+SortPreservingMergeExec
+  HashJoinExec: mode=Partitioned, join_type=Left, on=[(trace_id,trace_id),(span_id,span_id)]
+    RepartitionExec: Hash([trace_id, span_id], 10)
+      FilterExec: trace_id = '3fb2…'   <- MergeScanExec (spans region)
+    RepartitionExec: Hash([trace_id, span_id], 10)
+      FilterExec: trace_id = '3fb2…'   <- MergeScanExec (error_events region)
+```
+
+**What the plans confirm (and one correction to pass 3):**
+
+1. **ClickHouse:** `FillRightFirst` + `SpillingHashJoin(ConcurrentHashJoin)`
+   confirms the broadcast/concurrent-hash + grace-spill family from
+   `clickhouse-internals.md`. The anchor `trace_id` became a **PREWHERE** and the
+   **sparse index pruned to `Granules: 1`** on the spans side — empirical proof of
+   the pass-3 PREWHERE + 8192-row-granule-skip mechanism.
+2. **GreptimeDB:** `HashJoinExec: mode=Partitioned` + `RepartitionExec Hash(…,10)`
+   confirms the **partitioned hash join** (repartition both sides) from pass 3 —
+   the structure that scales to large↔large joins.
+3. **Both engines propagate the anchor constant to BOTH join inputs.** ClickHouse
+   pushed `trace_id='…'` to the `error_events` scan as a PREWHERE (`Granules: 1`);
+   GreptimeDB pushed `FilterExec: trace_id='…'` to *both* region scans. **This
+   corrects pass 3**, which implied ClickHouse's broadcast join must build the
+   whole right table — for a *constant-anchored* join it does not; the optimizer
+   propagates the equi-join constant and prunes both sides first.
+4. **Consequence for Parallax (important):** the evidence-bundle queries (Q1–Q6)
+   are **always anchored** on a specific `trace_id`/`fingerprint`. Both engines
+   reduce each side to a tiny set *before* the join, so the join-algorithm
+   difference (broadcast vs partitioned) is **largely irrelevant for Parallax's
+   actual query pattern**. The "join strategy decides the winner" framing applies
+   only to *un-anchored large↔large* joins, which Parallax does not run for bundle
+   assembly. This downgrades the join from "the deciding factor" to "not a
+   differentiator for the anchored pattern" — the **key placement** (so the anchor
+   prunes cheaply) matters far more, which Run 1 already showed.
+
+**Claims checked (Run 2)**
+
+| Claim | Result | Status |
+| --- | --- | --- |
+| ClickHouse PREWHERE + sparse-index granule skip on key-anchored read | spans pruned to `Granules: 1` | **confirmed (plan)** |
+| GreptimeDB uses partitioned hash join (pass 3) | `mode=Partitioned` in plan | **confirmed (plan)** |
+| GreptimeDB pushes the anchor filter into region scans (pass 3) | `FilterExec` on both `MergeScanExec` inputs | **confirmed (plan)** |
+| ClickHouse broadcast join must build whole right side (pass 3) | constant propagated → right side pruned to 1 granule | **contradicted (plan)** for anchored joins |
+| Evidence-bundle join algorithm decides the winner | both prune before join on anchored queries | **refined**: not a differentiator for anchored Parallax queries |
+| Cross-engine bundle correctness (Q1/Q4 identical) | 18 / 14 rows both | **confirmed** |
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

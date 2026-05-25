@@ -88,6 +88,25 @@ hash-join families — neither is a join-first engine.**
 (large↔large `trace_id` join, cold/warm, single-node) and the implementation
 notes (sort-key co-location to avoid the join).
 
+**Update (Run 2 EXPLAIN, 2026-05-25 — see `local-benchmark-results.md`).** Real
+planner output on Q4 confirmed the algorithms *and corrected the framing*:
+
+- ClickHouse picks `SpillingHashJoin(ConcurrentHashJoin)` with `FillRightFirst`;
+  GreptimeDB picks `HashJoinExec: mode=Partitioned` with `RepartitionExec` — both
+  as predicted.
+- **But both engines propagate the anchor `trace_id` constant to *both* join
+  inputs** (ClickHouse via PREWHERE → spans pruned to `Granules: 1`; GreptimeDB via
+  `FilterExec` on both `MergeScanExec` scans). So the earlier worry that
+  ClickHouse's broadcast join "builds the whole right side" is **wrong for a
+  constant-anchored join** — it prunes the right side first.
+- **Therefore the join algorithm is not a differentiator for Parallax's
+  evidence-bundle queries**, which are always anchored on a `trace_id`/
+  `fingerprint`. Both prune to a tiny working set before joining. What matters is
+  **key placement** so the anchor prunes cheaply (Run 1: ClickHouse 2 ms vs
+  GreptimeDB 16 ms on the un-keyed `trace_id` lookup). The large↔large join
+  scenario where partitioned-vs-broadcast would matter is one Parallax does not run
+  for bundle assembly — so it drops in priority.
+
 ## Execution engine: DataFusion vs Processors
 
 | | GreptimeDB (DataFusion, Rust) | ClickHouse (Processors, C++) |

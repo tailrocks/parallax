@@ -77,14 +77,14 @@ These are produced and grown by the loop; this index is updated as they land.
 | `greptimedb-internals.md` | GreptimeDB architecture and code-path teardown. | drafted (pass 1: topology + mito2 storage engine; deeper read-path/compaction/index/metric-engine dives pending) |
 | `clickhouse-internals.md` | ClickHouse architecture and code-path teardown. | drafted (pass 2: topology + MergeTree part/granule/mark, skip indexes, codecs, merge variants; deeper KeyCondition/merge-selector/text-index/S3-cache dives pending) |
 | `write-path-and-ingestion.md` | Ingest → durable → queryable, both systems, with the freshness consequence. | pending |
-| `read-path-indexing-and-execution.md` | Query planning, indexing, execution, scan-vs-skip, joins. | drafted (pass 3: pushdown, scan/skip order, PREWHERE vs row-group pruning, join strategy for evidence-bundle; late-materialization comparison + benchmark pending) |
+| `read-path-indexing-and-execution.md` | Query planning, indexing, execution, scan-vs-skip, joins. | drafted (pass 3: pushdown, scan/skip order, PREWHERE vs row-group pruning, join strategy; pass 5: join verdict corrected by Run 2 EXPLAIN — both engines prune the anchor before joining, so join algo is not a differentiator for anchored evidence-bundle queries) |
 | `compression-and-cost.md` | Layout, codecs, compression by signal, retention-cost consequence. | pending |
 | `distributed-and-scaling.md` | Single-node ceiling and horizontal-scale design of each. | pending |
 | `greptimedb-implementation.md` | Concrete Parallax-on-GreptimeDB design: full schema, ingest path, exact retrieval queries, object-storage/retention layout. | pending |
 | `clickhouse-implementation.md` | Concrete Parallax-on-ClickHouse design: full schema, ingest path, exact retrieval queries, object-storage/retention layout. | pending |
 | `per-signal-verdict.md` | Scenario matrix: metrics vs logs vs traces vs evidence-bundle correlation. | pending |
 | `benchmarking-the-differences.md` | Per-difference targeted benchmark design (hypothesis, workload, metric, pass/fail, prerequisites); routes runnable cases into the benchmark prototype. | pending |
-| `local-benchmark-results.md` | Empirical log of local Docker runs: env, pinned image tags, dataset, queries, measured numbers, and which published claim each run confirms or refutes. | drafted (pass 4: spans smoke run, 1M rows, local disk — parity PASS; ClickHouse faster at cache-resident scale; trace-lookup schema asymmetry confirmed; bigger/cold tiers pending) |
+| `local-benchmark-results.md` | Empirical log of local Docker runs: env, pinned image tags, dataset, queries, measured numbers, and which published claim each run confirms or refutes. | drafted (pass 4 Run 1: spans smoke, parity PASS, trace-lookup schema asymmetry; pass 5 Run 2: evidence-bundle Q1/Q4 join parity PASS + EXPLAIN plans confirm PREWHERE/granule-skip + partitioned-hash + anchor-constant pushdown on both → join algo not a differentiator for anchored queries; bigger/cold tiers pending) |
 | `verdict-which-to-choose.md` | Final synthesized decision and the mechanism-level reasoning. | pending |
 
 ## Source repositories (read, do not vendor into this repo)
