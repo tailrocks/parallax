@@ -8,7 +8,8 @@ Status: pass 43 + pass 78 (index-cache asymmetry source-checked) + pass 86
 tantivy backend `matches()` **also prunes** ~6 ms — query-syntax path fast too; the ~18×
 was fully a backend/function pairing artifact, not an index-maturity gap). The storage half of checklist #3: **how each engine stores its
 secondary/skip indexes on disk, what they can skip, and the honest paradox** that
-GreptimeDB's *richer* index toolkit still lost full-text search ~18× (Run 12). The
+GreptimeDB's *richer* index toolkit appeared to lose full-text search ~18× until
+Runs 48-49 traced that result to a backend/function mismatch. The
 read-path note covers *what each index lets the engine skip*; this is the **on-disk
 index format + build mechanism** and the reconciliation with the measured results.
 Source + live file-format check (Run 22).
@@ -119,8 +120,9 @@ scan execution (`query-execution-engine.md`), which is analytics, not interactiv
 
 Net: this **strengthens** the GreptimeDB verdict for Parallax's likely incident-grep path.
 It corrects two tempting wrong inferences: richer indexes alone do not guarantee speed, and
-the old ~18× result should not be generalized to exact-term log search. The next fair test is
-tantivy-backed `matches()` plus larger/cold broad-term search.
+the old ~18× result should not be generalized to selective log search. The next fair test is
+larger/cold broad-term search, especially `SELECT *` shapes where the matched row set must be
+materialized rather than counted.
 
 ## Honest caveats
 
@@ -147,7 +149,8 @@ tantivy-backed `matches()` plus larger/cold broad-term search.
   `primary.cidx` + `skp_idx_<name>.idx`/`.cmrk4` per part.
 - Empirical: `local-benchmark-results.md` Run 6 (trace_id index), Run 12 (original full-text
   ~18×), Run 22 (file formats), Run 47 (index apply sub-ms), Run 48 (`matches_term()` + bloom
-  prunes and selective exact-term search is ~8 ms warm).
+  prunes and selective exact-term search is ~8 ms warm), Run 49 (tantivy + `matches()` prunes
+  and selective query-syntax search is ~6 ms warm).
 - Cross-refs: `read-path-indexing-and-execution.md` (what each skips),
   `query-execution-engine.md` (why integration beats index richness),
   `clickhouse-internals.md` / `greptimedb-internals.md`.

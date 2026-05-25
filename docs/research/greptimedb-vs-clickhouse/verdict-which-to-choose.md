@@ -220,21 +220,17 @@ advantage becomes central and the choice flips — accepting the PromQL/OTLP lay
 as the cost of doing business. This is the single most important thing the larger
 benchmark must settle.
 
-**Update (Run 12, measured at 5M logs, both indexed; warm-re-verified Run 38):**
-condition (b) is now **partly confirmed** — ClickHouse full-text log search is **~18×**
-faster (7 ms vs 129 ms; mature `text` posting-list index vs GreptimeDB
-`FULLTEXT`+DataFusion `matches()`), and full count-by-`level` scans ~4× (Run 39,
-warm-verified). **Run 38 confirmed the ~18×
-holds *warm* — it is index-bound (real index-maturity gap), not a cold artifact** (the
-contrast: the scan-bound metric-agg's "~10×" *was* a cold artifact, corrected to ~2×
-warm in Run 37 — so the two big ClickHouse numbers were stress-tested and only the
-full-text one survives as a large *warm* gap). So if Parallax's mix is
-**log-search-dominated**, the flip is real and large. But the **selective keyed filter
-was a tie** (4 vs 5 ms), and Parallax's designed pattern is *anchored* bundle assembly
-(keyed lookups), not ad-hoc log search — so the verdict holds **conditional on that
-workload assumption**. Validate the assumption (what fraction of real Parallax queries
-are ad-hoc log search vs anchored retrieval) — it is the load-bearing question, not the
-engine speed.
+**Historical update (Run 12, measured at 5M logs, both indexed; warm-re-verified Run 38;
+superseded by Runs 48-49):** condition (b) once looked **partly confirmed** — ClickHouse
+full-text log search appeared **~18×** faster (7 ms vs 129 ms) and full count-by-`level`
+scans ~4× (Run 39, warm-verified). That was useful because it proved the difference was
+not a cold-cache artifact, but Runs 48-49 later showed the full-text number was a
+backend/function artifact, not a real index-maturity gap. Keep only the surviving lesson:
+if Parallax's mix is **broad log/trace scan-dominated**, the flip can still be real. But
+Parallax's designed pattern is *anchored* bundle assembly (keyed lookups), and selective
+full-text is now competitive with the right backend/function pairing. Validate the
+assumption (what fraction of real Parallax queries are broad ad-hoc search vs anchored
+retrieval) — it is the load-bearing question, not the old 18× number.
 
 **Major correction (Run 48): the ~18× was largely a query-form artifact.** `logs_b1`'s
 fulltext index is `backend='bloom'`, and Run 12 queried it with **`matches()`** (the
@@ -245,11 +241,11 @@ selectivity (even a 1-row-match term took ~150 ms). With the **correct pairing**
 `output_rows: 1`) and selective exact-term search is **~8 ms warm, ~2–3× ClickHouse's
 ~3 ms, not 18×.** So for Parallax's *actual* incident-search pattern — an SRE grepping a
 specific request-id (an exact term) — **GreptimeDB is competitive (~8 ms), not 18× slower.**
-The large gap now only applies to (a) `matches()` *query-syntax/phrase* search on a bloom
-index (use the tantivy backend for that case), or (b) broad-term scans matching many rows
-(~12×, scan-engine territory = Improvement #2). This **substantially narrows the flip
-trigger**: the verdict's one big ClickHouse win shrinks to "query-syntax/phrase log search
-or broad-term analytics," not the everyday exact-term incident grep. Detail in
+After Run 48, the large gap only applied to (a) the `matches()`/bloom mismatch (use the
+tantivy backend for query-syntax), or (b) broad-term scans matching many rows (~12×,
+scan-engine territory = Improvement #2). This **substantially narrowed the flip trigger**:
+the verdict's one big ClickHouse win shrank to "wrong backend/function pairing or broad-term
+analytics," not the everyday exact-term incident grep. Detail in
 `local-benchmark-results.md` Run 48 + `greptimedb-parity-roadmap.md` #1.
 
 **Closed (Run 49): the query-syntax path is also fast.** A tantivy-backed index makes
@@ -275,8 +271,9 @@ concurrent ingest+query:
    GET-count mechanism is verified locally). This cold/object-store regime is one
    Parallax touches for retention re-reads.
 1. **Cold-cache GB–TB log/trace scan latency** — how much slower is GreptimeDB
-   beyond the cache-resident smoke floor? (Could flip Q5.) Run 12 measured warm 5M
-   (CH ~18× on full-text search); the GB–TB cold *latency* number is still owed.
+   beyond the cache-resident smoke floor? (Could flip Q5.) Runs 48-49 dissolved the old
+   selective full-text ~18×; the remaining owed number is broad-term and unanchored
+   scan latency at GB-TB scale.
 2. **Object-store cost on equal footing** (MinIO) — **largely answered:** retained
    bytes ~tie (compression wash); object count GreptimeDB 4 vs CH 74; and cold GET
    count is **query-shape-dependent** (anchored: CH 5 < GT 22, Run 14; full scan:

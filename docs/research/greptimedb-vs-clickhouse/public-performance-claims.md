@@ -2,7 +2,8 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 22, **re-verified pass 47** (Method step #4). Gathers the public
+Status: pass 22, **re-verified pass 47**, full-text claim corrected passes 86-87 /
+Runs 48-49 (Method step #4). Gathers the public
 performance claims for both systems and rates each against the **source code**, the
 **local Docker runs** (Runs 1–25), and a periodic web re-sweep. Ratings: *confirmed
 (my runs)*, *confirmed (code)*, *workload-specific*, *vendor-reported (not re-run
@@ -14,7 +15,7 @@ here)*, *contradicted*. Claims go stale — dates/versions noted. Pins: Greptime
 | # | Claim (source) | Rating | Reconciliation with this loop |
 | --- | --- | --- | --- |
 | 1 | **ClickHouse has the best ingestion throughput** (Greptime log benchmark, 2024–25) | **confirmed (my runs)** | Run 5/11: CH bulk ingest ~1.55–4.5× faster than GreptimeDB COPY. |
-| 2 | **ClickHouse wins aggregate throughput at high volume / many group-bys** (ClickBench; independent dev.to/oneuptime) | **confirmed (my runs + code)** | Run 11: CH metric agg ~10× at 8M rows; Run 12: log full-text ~18×, scan ~4×. Predicted by the vectorized C++ engine (`clickhouse-internals.md`). |
+| 2 | **ClickHouse wins aggregate throughput at high volume / many group-bys** (ClickBench; independent dev.to/oneuptime) | **confirmed for scans/agg; selective log-search narrowed** | Run 37 corrected metric agg to ~2× warm; full scans remain ~4×. Runs 48-49 corrected the log-search headline: selective GreptimeDB full-text is ~6 ms with tantivy+`matches()` or ~8 ms with bloom+`matches_term()`, vs ClickHouse ~3 ms — not 18×. The large remaining gap is broad-term scan analytics. |
 | 3 | **ClickHouse handles high-frequency small writes poorly; async inserts are the workaround** (oneuptime, independent) | **confirmed (my runs + code)** | Run 7 (B9): one part per INSERT, merges collapse bursts, `async_insert=1` default in 26.x mitigates; sustained-rate failure. |
 | 4 | **GreptimeDB is object-storage-native (~1–2% loss vs local); ClickHouse uses S3 as a cold tier, not primary** (Greptime) | **confirmed (code + my runs)** | Run 8–9 (B10): GreptimeDB single `[storage]` block, 4 objects; ClickHouse 74 objects via S3-disk-under-policy. `distributed-and-scaling.md` (SharedMergeTree Cloud-only). |
 | 5 | **GreptimeDB offers better compression / resource efficiency** (Greptime) | **workload-specific** | Run 4/10: a tuning-dependent **wash** — GreptimeDB wins out-of-the-box (ZSTD-all default) but ClickHouse ties/beats with matched per-column ZSTD. Not a blanket win. |
@@ -26,7 +27,8 @@ here)*, *contradicted*. Claims go stale — dates/versions noted. Pins: Greptime
 ## The JSONBench cold-run counterpoint (claim #6) — important for Parallax
 
 My local runs (B1/B5) measured **warm, small-to-medium scale, hot-cache** queries,
-where ClickHouse's vectorized engine won (log search ~18×, metric agg ~10×). But
+where ClickHouse's vectorized engine won on scans and aggregation; the original
+headline log-search gap was corrected by Runs 48-49. But
 ClickHouse's *own* JSONBench (1 billion JSON documents) reportedly ranks
 **GreptimeDB #1 on the cold run** — i.e. queries served from object storage / cold
 cache at large scale, on semi-structured JSON/wide-event data.
@@ -48,32 +50,33 @@ pattern. Routed to `benchmarking-the-differences.md` as a new high-priority case
 
 ## Net effect on the verdict
 
-The public claims **triangulate cleanly** with this loop's local + code findings:
-ClickHouse wins hot analytical throughput (ingest, agg, log search) and small-write
-handling needs async-insert; GreptimeDB wins object-store-native economics, PromQL/
-OTLP nativeness, and (vendor-reported) cold-run object-store JSON queries at 1B
-scale. No public claim is **contradicted** by my runs; the only **stale/inflated**
-one is the "50× cost" marketing headline (vs SaaS, not vs ClickHouse). The
-JSONBench cold-run claim adds a genuine, decision-relevant counterpoint that favors
-GreptimeDB in **Parallax's real (cold object-store re-read) regime** and should be
-reproduced before finalizing.
+The public claims **mostly triangulate** with this loop's local + code findings:
+ClickHouse wins hot analytical throughput and broad scans; small-write handling
+needs async-insert; GreptimeDB wins object-store-native economics, PromQL/OTLP
+nativeness, selective incident grep is competitive with either correct full-text
+pairing, and GreptimeDB has a vendor-reported cold-run object-store JSONBench win
+at 1B scale. No public claim is fully contradicted, but the old local "ClickHouse
+log search is 18× faster" wording is now **over-broad**: it describes the
+`matches()`/bloom mismatch and broad-term scan cases, not the exact-term or
+query-syntax selective search Parallax likely needs most. The
+"50× cost" headline remains marketing vs SaaS, not a ClickHouse comparison. The
+JSONBench cold-run claim remains the most important public claim to reproduce.
 
 ## Version freshness + index-maturity context (pass 25 re-check)
 
 - **Pins re-verified 2026-05-25 (pass 25): still current.** GreptimeDB latest stable
   = `v1.0.2` (`v1.1.0` exists only as nightly, not GA); ClickHouse latest stable =
   `v26.5.1.882-stable`. No bump needed.
-- **ClickHouse `text` (full-text inverted) index GA'd in 26.2 (March 2026).** So the
-  B1 ~18× log-search result was measured on a **production-GA**, heavily-optimized
-  text index — **not** an experimental/immature feature that might be slow by
-  accident. ClickHouse's own claim is *"7–10× faster cold full-text, more for hot"*,
-  which **corroborates** my measured ~18× warm (B1) directionally. → B1 is
-  **solidified**: the log-search gap is a real, current, GA-grade structural
-  advantage, unlikely to narrow soon.
-- **GreptimeDB `FULLTEXT` index** is the younger side of that gap (Puffin + DataFusion
-  `matches()`); the 18× reflects a mature-vs-younger index implementation difference,
-  not a configuration error (both were correctly indexed in Run 12). Re-check on each
-  GreptimeDB release for fulltext perf work that could narrow it.
+- **ClickHouse `text` (full-text inverted) index GA'd in 26.2 (March 2026).** The
+  ClickHouse `hasToken` path remains a production-GA fast path for token search. But
+  Runs 48-49 corrected B1: the GreptimeDB table was bloom-backed and the query used
+  `matches()`, which does not prune that backend. Use `matches_term()` for bloom exact
+  terms; use `matches()` with the tantivy/fulltext backend for query-syntax search.
+- **GreptimeDB fulltext has two practical modes.** Bloom + `matches_term()` is the
+  exact-term incident-grep mode and is competitive in the 5M warm smoke. Tantivy +
+  `matches()` is the query-syntax/phrase/relevance mode and Run 49 made it competitive
+  too (~6 ms selective). Broad terms still route to scan-engine work. Re-check on each release for fulltext
+  planner/backend changes.
 
 ## Re-verification sweep (pass 47)
 
@@ -93,9 +96,11 @@ Periodic re-check of all 9 claims against the current pins + a web re-sweep
   reproduce (1B docs, cold object-store regime = Parallax's pattern). Greptime blog
   dates to **2025-03** (earlier than first noted); no newer public cold-run that
   reverses it surfaced in the sweep.
-- **Claims #1–5, #8–9 unchanged** — re-scan found no drift: CH ingest/agg/log-search
-  wins (Runs 5/11/12), small-write async-insert, object-store-native, compression
-  wash, "50× cost" marketing-vs-SaaS all hold at the current pins.
+- **Claims #1–5, #8–9 mostly unchanged, with passes 86-87 caveat on log search** — re-scan
+  found no drift on CH ingest/agg, small-write async-insert, object-store-native,
+  compression wash, or "50× cost" marketing-vs-SaaS. Runs 48-49 narrowed local B1:
+  selective log search is not an 18× GreptimeDB deficit when the backend/function pairing
+  is correct (`matches_term()`+bloom or `matches()`+tantivy).
 - **OTLP (part of claim #7) re-verified — no drift** (pass 46): ClickHouse still has
   no native OTLP receiver; GreptimeDB native GA. Notably ClickHouse's 26.x protocol
   investment went to **Prometheus** (TimeSeries/remote-write/PromQL), not OTLP.

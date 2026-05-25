@@ -459,12 +459,12 @@ analyzer). Parity exact: `timeout` token = **698,955** both; `svc-3`+`ERROR` =
 
 **Findings (decisive for the flip-trigger):**
 
-1. **ClickHouse wins log full-text search ~18×**, *even with both engines using
-   their text indexes*. ClickHouse's mature `text` posting-list index + vectorized
-   `hasToken` far outruns GreptimeDB's `FULLTEXT` (Puffin) + DataFusion `matches()`
-   at 5M rows. This is the **dominant-signal flip-trigger query**, and ClickHouse's
-   advantage is large and real — confirming the verdict's trigger: *if Parallax's
-   query mix is dominated by ad-hoc log search at volume, ClickHouse wins decisively.*
+1. **At the time, ClickHouse appeared to win log full-text search ~18×**, *even with both
+   engines using their text indexes*. ClickHouse's mature `text` posting-list index +
+   vectorized `hasToken` outran GreptimeDB's bloom-backed `FULLTEXT` queried through
+   DataFusion `matches()` at 5M rows. **Later correction:** Runs 48-49 showed this was a
+   backend/function mismatch, so the current flip-trigger is broad-term analytics rather
+   than selective incident search.
 2. **Selective keyed filter is a tie** (4 vs 5 ms): when the filter hits indexed/
    low-card columns (`service` PK prefix, `level`), GreptimeDB prunes as well as
    ClickHouse. Anchored/keyed access — Parallax's actual bundle pattern — does not
@@ -475,8 +475,13 @@ analyzer). Parity exact: `timeout` token = **698,955** both; `svc-3`+`ERROR` =
 **Consequence:** the decision genuinely hinges on Parallax's real query mix.
 *Anchored bundle assembly* (trace_id/fingerprint lookups + keyed filters) → both
 fine, GreptimeDB's fit pillars win. *Heavy ad-hoc full-text log search at volume*
-→ ClickHouse ~18×, the flip-trigger fires. Parallax is designed around anchored
-evidence bundles, so the verdict holds — but this is the number that would flip it.
+→ appeared to fire the ClickHouse flip-trigger at the time. Parallax is designed around
+anchored evidence bundles, so the verdict held — and Runs 48-49 narrowed the trigger further.
+
+**Later correction (Runs 48-49):** this measured a bloom-backed GreptimeDB index through
+the wrong function (`matches()`), so the ~18× is not a current selective-search verdict.
+Correct pairings prune: tantivy+`matches()` ~6 ms, bloom+`matches_term()` ~8 ms, ClickHouse
+~3 ms. The surviving gap is broad-term scan analytics, not selective incident grep.
 
 **B1 status: done at medium-warm.** True cold-cache GB–TB (drop OS page cache,
 25–50 GB) would likely widen the scan/search gaps further; owed to the full
@@ -793,11 +798,11 @@ index** (`skp_idx_i_tid.idx` 530 B, `skp_idx_i_msg.idx` 3.79 KiB, `skp_idx_i_lvl
 **Claim status:** GreptimeDB's index *toolkit* is richer/more precise (FST+roaring
 inverted = true secondary index; tantivy = Lucene-class full-text) → **confirmed**;
 ClickHouse skip indexes are coarse granule-pruners → **confirmed**. **Paradox
-reconciled:** richer index ≠ faster — ClickHouse still won full-text ~18× (Run 12) and
-anchored lookup (Run 6) because *index↔vectorized-scan integration + sort-key locality*
-dominate index-format richness (ties `query-execution-engine.md`). Not a verdict flip;
+reconciled, later narrowed by Runs 48-49:** richer index ≠ automatically faster — the
+old full-text ~18× (Run 12) was a backend/function mismatch, while anchored lookup
+(Run 6) still shows sort-key locality beating secondary-index lookup. Not a verdict flip;
 corrects the tempting "richer index → faster" inference. Index-build cost + cold-scale
-search latency owed to harness.
+broad-term search latency owed to harness.
 
 ### Run 23 — 2026-05-25 — PromQL capability re-verification (verdict-material)
 
@@ -1175,21 +1180,20 @@ intact `logs_b1` (5M, both text-indexed), warm. Versions unchanged.
 Parity preserved (n = **698,955** both). **The ~18× HOLDS warm — it was *not*
 cold-inflated**, unlike the metric-agg (Run 37: 10× cold → 2× warm).
 
-**Why the two re-verifications differ — and both are now trustworthy:**
+**Why the two re-verifications differed before the Run 48-49 correction:**
 
 - **Metric-agg (Run 11/37) is *scan-bound*** — a full scan+aggregate of 8M rows. Cold
   caches → full SST scan/decode (the 638 ms/10×); warm → ~2×. **Cold-sensitive.**
-- **Full-text (Run 12/38) is *index-bound*** — both use a small text index (CH `text`
-  posting-list vs GT Puffin/tantivy + DataFusion `matches()`); the index stays warm, so
-  the gap is **execution/index-maturity**, not cold scan. CH's vectorized posting-list
-  `hasToken` vs GT's tantivy-probe→DataFusion-`matches()` row eval → **~18× warm, real
-  and stable.**
+- **Full-text (Run 12/38) looked *index-bound*** — both used a small text index and the
+  gap held warm. Runs 48-49 later showed this was not an index-maturity gap: the GT table
+  was bloom-backed but queried through `matches()`, which full-scanned. Correct pairings
+  prune and make selective full-text ~6-8 ms.
 
-So the corrected, coherent picture of ClickHouse's warm wins: **full-text log search
-~18× (index maturity, real, stable)**; **SQL scan-aggregation ~2× warm (larger cold)**;
-selective keyed filter a tie; anchored bundle not latency-bound. **The verdict's
-flip-trigger (log-search-dominated mix → ClickHouse wins decisively) STANDS** —
-confirmed warm. No correction needed (unlike Run 37); confirmation strengthens it.
+So the corrected, coherent picture of ClickHouse's warm wins after Runs 48-49: **selective
+full-text ~2×, not 18×; broad-term log scan remains ~12×; SQL scan-aggregation ~2× warm
+(larger cold)**; selective keyed filter a tie; anchored bundle not latency-bound. **The verdict's
+flip-trigger narrows** from "log-search-dominated mix" to **broad ad-hoc log/trace analytics
+dominates over anchored retrieval**.
 
 ### Run 39 — 2026-05-25 — Re-verify Run 12 count-by-level scan ~4× → HOLDS warm
 
@@ -1201,8 +1205,9 @@ numbers. Count-by-`level` scan on `logs_b1` (5M), warm, min of 3. Versions uncha
 | Run 12 | 7 ms | 28 ms | ~4× |
 | **Run 39 (warm)** | **8 ms** | **32 ms** (first run 94 ms cold) | **~4×** |
 
-**Holds warm (~4×)** — *not* cold-inflated. So Run 12's three numbers now stress-tested:
-full-text ~18× (Run 38, holds), count-by-level scan ~4× (holds), selective filter tie.
+**Holds warm (~4×)** — *not* cold-inflated. So Run 12's scan numbers were stress-tested:
+count-by-level scan ~4× (holds), selective filter tie. The full-text ~18× also held warm in
+Run 38 but was later reinterpreted by Runs 48-49 as a backend/function mismatch.
 Only the **separate** metric-agg (Run 11/37) was cold-inflated (10×→2×).
 
 **Refines the cold-inflation model:** the cold penalty is ∝ **bytes decoded cold**, not
@@ -1211,12 +1216,13 @@ Only the **separate** metric-agg (Run 11/37) was cold-inflated (10×→2×).
   time-bucketing → heavy cold decode → 638 ms cold (10×), 107 ms warm (2×);
 - **count-by-level** scans 5M rows reading **one `LowCardinality(level)` column** into ~5
   groups → light cold decode → 94 ms cold, 32 ms warm (~4× both);
-- **full-text** reads a small index, no wide scan → no cold inflation (~18× warm).
+- **full-text** looked cold-insensitive in Run 38, but Runs 48-49 showed the selective
+  gap was the wrong backend/function pairing, not a current index gap.
 
-So warm gaps: full-text ~18× (index), count-by-level scan ~4× (light scan), metric-agg
-~2× (heavy bucketed agg). The *cold* regime widens the scan gaps (∝ bytes decoded) —
-the cold-tier harness will quantify it; the read-path warm numbers are now all
-verified. No verdict move; confirmation + a cleaner cold/warm mental model.
+So warm gaps after Runs 48-49: selective full-text ~2×, broad-term log scan ~12×,
+count-by-level scan ~4× (light scan), metric-agg ~2× (heavy bucketed agg). The *cold*
+regime widens the scan gaps (∝ bytes decoded) — the cold-tier harness will quantify it.
+No verdict move; the main result is a cleaner cold/warm mental model.
 
 ### Run 40 — 2026-05-25 — Fair trace-lookup: strip the HTTP floor + the index caveat
 
@@ -1270,10 +1276,10 @@ recorded server-time numbers stand.
 federated a query into it via `mysql()`. So MySQL-protocol clients / BI tools / Grafana's
 MySQL datasource can query GreptimeDB directly (relevant to Parallax's tooling surface).
 
-This completes the load-bearing-number re-verification arc (Runs 37–41): one correction
-(metric-agg 10×→2× warm), confirmations (full-text ~18×, scan ~4×), a cold-inflation
-model, a fairness fix (HTTP floor), and this cross-path validation. The empirical base
-is now self-consistent and HTTP-fair.
+This completed the first load-bearing-number re-verification arc (Runs 37–41): one correction
+(metric-agg 10×→2× warm), one later-superseded confirmation (full-text ~18×), scan ~4×, a
+cold-inflation model, a fairness fix (HTTP floor), and this cross-path validation. Runs 48-49
+then corrected the full-text interpretation.
 
 ### Run 42 — 2026-05-25 — Q6 anchored component server-time (not-latency-bound robust)
 
@@ -1510,10 +1516,10 @@ broad-term analytics.** This **narrows the verdict's one big ClickHouse win** (l
 the actual incident-grep pattern the gap is ~2–3× (both sub-perceptible), not a chasm.
 Sharpens the verdict + parity-roadmap #1; updated both. No data changed (read-only).
 
-**Caveats:** smoke 5M; `count(*)` shape; the tantivy backend (`backend='fulltext'`) would make
-`matches()` query-syntax search prune too — owed a direct tantivy-backend re-run to quantify
-query-syntax search (vs exact-term). The right Parallax choice is **bloom + `matches_term` for
-exact-term incident grep**; tantivy only if phrase/relevance search is needed.
+**Caveats:** smoke 5M; `count(*)` shape. **Resolved by Run 49:** the tantivy backend
+(`backend='tantivy'`) makes `matches()` query-syntax search prune too (~6 ms selective).
+The right Parallax choice is **bloom + `matches_term` for exact-term incident grep** and
+**tantivy + `matches` for query-syntax/phrase search**.
 
 ### Run 49 — Tantivy backend: `matches()` query-syntax search prunes (~6 ms) — the gap is fully a pairing issue
 
