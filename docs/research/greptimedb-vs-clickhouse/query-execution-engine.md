@@ -2,7 +2,9 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 42. The execution-engine half of checklist #4 (the read-path note covers
+Status: pass 42 + pass 77 (read-path late-materialization mechanism source-verified:
+`PruneReader::precise_filter` post-decode, no arrow `RowFilter`). The execution-engine half
+of checklist #4 (the read-path note covers
 planning / predicate pushdown / skip-vs-scan / joins; this is the *engine that runs
 the plan*). It is the mechanism **behind the measured throughput gaps** — ClickHouse
 **~2× on warm metric aggregation** at 40k series (Run 37; corrected from the ~10× of
@@ -67,7 +69,7 @@ OLAP scan/aggregate **throughput bar**.
 | Codegen | **LLVM JIT** expressions + aggregation (on) | young/narrow; mostly interpreted-vectorized |
 | Aggregation | specialized adaptive hash tables, per-thread | DataFusion grouping (general) |
 | Parallelism | `max_threads` pipeline lanes (auto=cores) | `target_partitions` + `ParallelizeScan`; `MergeScanExec` fan-out |
-| Late materialization | **PREWHERE** | filter pushdown; no PREWHERE-equivalent yet |
+| Late materialization | **PREWHERE** (column-staged) | row-group/page **prune** + **post-decode** row filter (`PruneReader::precise_filter`, `read/prune.rs:119`); **no arrow `RowFilter`** (pass 77) → decodes all projected cols of a surviving row-group before dropping rows |
 | Extensibility | fixed C++ (fast, not pluggable) | **pluggable** → PromQL, metric engine, TS functions |
 | Throughput | **higher** (scan/aggregate bar) | competitive, younger on raw kernels |
 
@@ -121,8 +123,10 @@ is anchored, not scan-bound.
   `max_bytes_before_external_group_by=0`.
 - GreptimeDB: `Cargo.toml` (`datafusion = "=52.1"`);
   `src/query/src/query_engine/state.rs:126-128` (`SessionConfig`,
-  `with_target_partitions`), `optimizer/parallelize_scan.rs` (`ParallelizeScan`); live
-  EXPLAIN `CooperativeExec → MergeScanExec`.
+  `with_target_partitions` only — **no `batch_size`**, pass 77), `optimizer/parallelize_scan.rs`
+  (`ParallelizeScan`); live EXPLAIN `CooperativeExec → MergeScanExec`. Read path (pass 77):
+  `src/mito2/src/sst/parquet/reader.rs` (`RowGroupSelection` + page index pruning, no arrow
+  `RowFilter`), `src/mito2/src/read/prune.rs:119` (`PruneReader::precise_filter` = post-decode).
 - Empirical anchors: `local-benchmark-results.md` Run 11 (metric agg ~10×), Run 12
   (full-text ~18×), Run 16 (anchored Q6 not throughput-bound), Run 21 (this pass).
 - Cross-refs: `read-path-indexing-and-execution.md` (planning/PREWHERE/skip/joins),

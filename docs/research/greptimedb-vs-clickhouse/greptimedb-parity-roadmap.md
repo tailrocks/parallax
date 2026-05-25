@@ -2,7 +2,8 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 76 (new). Answers the operator question: GreptimeDB wins Parallax on *fit*
+Status: pass 76 (new) + pass 77 (gaps #2/#3 **source-verified** against v1.0.2). Answers
+the operator question: GreptimeDB wins Parallax on *fit*
 (`verdict-which-to-choose.md`), but ClickHouse is genuinely ahead on a few capabilities —
 **what would GreptimeDB have to implement, against its actual internals, to be the
 unambiguous choice for every query shape?** For each ClickHouse advantage: the
@@ -23,13 +24,21 @@ gaps close by engineering; architecture gaps would require redesign.** Almost ev
 below is the former — and because GreptimeDB and DataFusion are open-source Rust (the
 project's north star), the operator can *contribute* the fixes, not just wait for them.
 
+**Pass-77 source check strengthens this** (both load-bearing engine claims verified against
+v1.0.2, not just reasoned): gap #2 — the query `SessionConfig` (`state.rs:126-128`) sets only
+`with_target_partitions`, never `batch_size`, so DataFusion's 8,192 default genuinely holds (a
+one-line change to raise). Gap #3 — the mito2 reader already prunes row-groups/pages (indexes +
+page index) and post-decode-filters rows, but has **no arrow `RowFilter`**, so the PREWHERE fix
+is *wiring an arrow primitive that already exists*, not inventing late materialization. Both are
+integration, exactly as the thesis predicts.
+
 ## The gaps and what closes each
 
 | # | ClickHouse advantage | Mechanism (why CH wins) | What GreptimeDB implements — against its real structure | Tier | Gap kind |
 | --- | --- | --- | --- | --- | --- |
 | 1 | **Full-text log search ~18× (warm, Run 12/38)** | Coarse `text` posting-list prune **inside** the C++ pipeline, then vectorized `hasToken` confirm on 65k-row blocks — index lookup + confirm are one fast path. | **Fuse the tantivy hit-set into the scan.** GreptimeDB already has the richer index (Puffin `greptime-fulltext-index-v1`, tantivy 0.24); the cost is the load-blob → apply → map-to-row-group → DataFusion-scan round trip. Implement: (a) keep the FST/posting-lists **warm-cached** (avoid per-query Puffin blob reload); (b) push the tantivy row/segment hit-set directly into a Parquet **row-selection** the scan node consumes without re-materializing. Files: `src/mito2/src/sst/index/fulltext_index.rs` (applier), the mito2 Parquet reader, the DataFusion scan node. | **B** | integration |
-| 2 | **Generic scan/aggregate throughput ~2–4×** | 65,409-row blocks (8× DataFusion's 8,192) + **LLVM-JIT** expressions/aggregation + bespoke SIMD kernels + specialized adaptive hash tables. | (a) **Raise the `RecordBatch` size** in `SessionConfig` (`src/query/src/query_engine/state.rs:126`) toward 32–64k so vectors amortize overhead and feed SIMD; (b) **expression + aggregation codegen** — DataFusion's is young/narrow vs LLVM JIT; (c) **specialized SIMD aggregation** (two-level hash for high-card, fixed-width-key kernels). Mostly **upstream DataFusion** — GreptimeDB inherits as DF improves, or contributes. | **B** | integration (upstream DataFusion) |
-| 3 | **Late materialization (PREWHERE)** | Reads cheap filter columns first → selection vector → decodes only surviving rows of wide columns. GreptimeDB reads full row-groups (filter pushdown, but no PREWHERE-equivalent yet — `query-execution-engine.md`). | **Late materialization in the mito2 Parquet reader.** Parquet supports page-index + row-filter pushdown; DataFusion `ParquetExec` has partial `RowFilter`/page-skipping. Implement: evaluate predicates on minimal columns, build a row-selection, decode wide/`Json` columns only for survivors. Files: `src/mito2/src/sst/parquet/reader.rs` + DataFusion ParquetExec row-filter. | **B** | integration |
+| 2 | **Generic scan/aggregate throughput ~2–4×** | 65,409-row blocks (8× DataFusion's 8,192) + **LLVM-JIT** expressions/aggregation + bespoke SIMD kernels + specialized adaptive hash tables. | (a) **Raise the `RecordBatch` size** in `SessionConfig` — **source-confirmed (pass 77): `state.rs:126-128` sets only `with_target_partitions`, never `batch_size`, so DataFusion's 8,192 default holds** → raise toward 32–64k so vectors amortize overhead and feed SIMD; (b) **expression + aggregation codegen** — DataFusion's is young/narrow vs LLVM JIT; (c) **specialized SIMD aggregation** (two-level hash for high-card, fixed-width-key kernels). Mostly **upstream DataFusion** — GreptimeDB inherits as DF improves, or contributes. | **B** | integration (upstream DataFusion) |
+| 3 | **Late materialization (PREWHERE)** | Decodes cheap filter columns first → row mask → decodes wide columns only for surviving rows. | **Add column-staged late materialization to the mito2 reader.** Source-confirmed (pass 77): GreptimeDB already **prunes** row-groups/pages (`RowGroupSelection` from Puffin fulltext/inverted indexes + the Parquet **page index**, `reader.rs`) and then **post-decode**-filters rows (`PruneReader::precise_filter`, `read/prune.rs:119`) — so within a surviving row-group it decodes **all projected columns before dropping rows**. There is **no arrow `RowFilter`** in the reader (grep = 0) → no column-staging. Fix: wire the pushed-down predicate into arrow's **`RowFilter`** (`ParquetRecordBatchReaderBuilder::with_row_filter`, which arrow-rs already provides) so filter columns decode first, build a selection, and wide/`Json` columns materialize only for survivors. File: `src/mito2/src/sst/parquet/reader.rs`. **Arrow ships the primitive → integration, not a new algorithm.** | **B** | integration |
 | 4 | **Dynamic-attribute path queries (JSON)** | `JSON` type stores each path as a **typed columnar subcolumn** → `attributes.user` reads one subcolumn. GreptimeDB `Json` is a **binary blob** (jsonb) + `json_get_*` per-row parse (`schema-evolution-and-dynamic-columns.md`). | **Shred JSON paths into Parquet subcolumns.** Adopt the emerging Parquet **Variant/shredding** layout: at flush, write hot/declared attribute paths as their own typed Parquet columns; push `attributes.k` access down to a subcolumn scan instead of a per-row blob parse. Files: a shredded column type + mito2 SST writer + DataFusion pushdown. **Biggest storage-format change here** — borders on design, but Parquet's variant work makes it integration, not a rewrite. | **B** | integration / format |
 | 5 | **Projections (alternate physical `ORDER BY`)** | A projection stores a 2nd sort order **inside each part**, optimizer-picked → fast sequential scan on an alternate key from one table (Run 28). GreptimeDB indexes give *positions*, not a 2nd physical order. | Two paths: (a) **today, Tier A workaround** — maintain a re-sorted derived table via **Flow** (`CREATE FLOW … SINK TO …` keyed on the alternate order; Run 43 proved Flow works) — extra storage, app-managed; (b) **true parity, Tier B** — mito2 writes an alternate-sorted SST copy per region with planner auto-pick. Files: `src/mito2` SST writer + region metadata + DataFusion planner rule. | **A** (workaround) / **B** (native) | integration |
 | 6 | **Vertical single-node ceiling + analytical/merge maturity** | A decade of single-box scan tuning; battle-tested merges. | Inherited via #2 (engine) + time/battle-testing. Not a discrete feature. | **C** | maturity |
@@ -86,5 +95,10 @@ first which gaps Parallax's real query mix actually hits before investing in Tie
   `projections-and-access-paths.md` (Run 28), `rollup-and-continuous-aggregation.md` (Flow).
 - Empirical: `local-benchmark-results.md` Runs 11/12/37/38 (the gaps), 43 (Flow), 44 (PromQL
   vs SQL), 45 (GreptimeDB schema build).
+- Source (pass 77, v1.0.2): `src/query/src/query_engine/state.rs:126-128` (SessionConfig =
+  `with_target_partitions` only, no `batch_size`); `src/mito2/src/sst/parquet/reader.rs`
+  (`RowGroupSelection` + `PageIndexPolicy` + `prune_row_groups_by_{fulltext,inverted}_index`;
+  **no `RowFilter`**); `src/mito2/src/read/prune.rs:119` (`PruneReader::precise_filter` =
+  post-decode row filtering).
 - Decision context: `verdict-which-to-choose.md`. Loop target: `prompts/greptimedb-vs-clickhouse-internals.md`
   ("Closing The Gap").
