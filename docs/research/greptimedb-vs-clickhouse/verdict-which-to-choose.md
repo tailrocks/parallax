@@ -2,10 +2,12 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 11 — standing decision, continually sharpened. Synthesizes the
-internals teardowns, the per-signal matrix, and Docker Runs 1–5. The runnable
+Status: standing decision, continually sharpened (current through pass 31).
+Synthesizes the internals teardowns (all 10 subsystems + rollup), the per-signal
+matrix, Docker Runs 1–15, and public-claims triangulation. The runnable
 `storage-benchmark-prototype.md` holds final veto; this verdict states the
-mechanism-grounded recommendation and the triggers that would flip it.
+mechanism-grounded recommendation and the triggers that would flip it. Pins
+re-verified current through pass 31 (no newer stable on either side).
 
 Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d8`).
 
@@ -51,7 +53,7 @@ storage*, accepting a younger DataFusion scan engine.
 | **Metrics / PromQL** | Native PromQL planner + Prom remote-write + metric engine; ClickHouse has no PromQL (needs a translation layer). | plan+smoke (Run 3) |
 | **Write ergonomics** | LSM memtable absorbs high-frequency small writes; no ClickHouse "too many parts". Native OTLP/Prom ingest, no collector. | arch+Run 5 |
 | **Horizontal scaling** | Region model + Metasrv auto-rebalance + repartition + compute/storage separation (object store + remote WAL) → topology change, not rewrite. | arch (multi-node owed) |
-| **Object-storage-native** | OpenDAL default + read cache; cheap re-readable retention first-class. Fewer *total* objects (4 vs 74, Runs 8–9) → wins full-scan cold reads. **But for a cold *anchored* lookup ClickHouse issued fewer S3 GETs (5 vs 22, Run 14)** — sort-key locality beats GreptimeDB's index indirection; request cost is query-shape-dependent. Read cache → warm re-reads local on both. | measured (layout + anchored cold-GETs); full-scan cold owed |
+| **Object-storage-native** | OpenDAL default + read cache; cheap re-readable retention first-class. Fewer *total* objects (4 vs 74, Runs 8–9) → wins full-scan cold reads. Cold GET cost is query-shape-dependent (measured both ways): full scan GreptimeDB fewer (26 vs 57, Run 15 — wins the JSONBench regime); **anchored lookup ClickHouse fewer (5 vs 22, Run 14)** — Parallax's pattern. Read cache → warm re-reads local on both. | measured (layout + cold GETs both shapes) |
 | Freshness | Visible-on-write (tie with ClickHouse, not a win). | smoke |
 
 ## Decision question 2 — where is ClickHouse genuinely better, and why?
@@ -151,30 +153,39 @@ anchored retrieval) — it is now the load-bearing question, not the engine spee
 `storage-benchmark-prototype.md` must settle, at `small`+ tier, cold cache,
 concurrent ingest+query:
 
-0. **Reproduce the JSONBench cold-run result** (public-claims pass 22): GreptimeDB
-   reportedly ranks #1 on ClickHouse's own JSONBench cold run at 1B docs. **This
-   cold / object-store / wide-record regime is the one Parallax actually lives in**
-   (evidence-bundle re-reads from cheap object storage), the *opposite* of the hot
-   in-cache scans my B1/B5 measured (where ClickHouse won). If it reproduces, it
-   **strengthens** the GreptimeDB verdict for Parallax's real access pattern.
-   Highest-priority reproduction (`public-performance-claims.md`, B12).
-1. **Cold-cache GB–TB log/trace scan gap** — how much slower is GreptimeDB really,
-   beyond the cache-resident smoke floor? (Could flip Q5.) NB: my B1/B5 were
-   warm/hot; the *cold* regime may behave oppositely (see #0).
-2. **Object-store $ on equal footing** (MinIO): retained bytes, GET/PUT/LIST, cold-
-   read egress — is GreptimeDB's object-store-native economics a real cost win?
-   **Partly answered (Runs 8–9): yes on object count (4 vs 74, ~18× fewer requests
-   per read); GET/PUT/LIST counts during cold query still owed for the $ figure.**
-3. **Concurrent ingest+query freshness p95** — the real axis-1 number under load.
+0. **JSONBench cold-run at 1B docs** (public claim #6). **Mechanism locally
+   confirmed (Run 15):** on a cold *full scan* GreptimeDB issued fewer S3 GETs (26
+   vs 57) — its few-large-objects layout wins cold scan/wide reads, exactly the
+   JSONBench mechanism. **Still owed:** the 1B-doc *cold latency* at scale (only the
+   GET-count mechanism is verified locally). This cold/object-store regime is one
+   Parallax touches for retention re-reads.
+1. **Cold-cache GB–TB log/trace scan latency** — how much slower is GreptimeDB
+   beyond the cache-resident smoke floor? (Could flip Q5.) Run 12 measured warm 5M
+   (CH ~18× on full-text search); the GB–TB cold *latency* number is still owed.
+2. **Object-store cost on equal footing** (MinIO) — **largely answered:** retained
+   bytes ~tie (compression wash); object count GreptimeDB 4 vs CH 74; and cold GET
+   count is **query-shape-dependent** (anchored: CH 5 < GT 22, Run 14; full scan:
+   GT 26 < CH 57, Run 15). Remaining: cold-read **egress $** + GET counts under a
+   realistic mixed bundle workload.
+3. **Concurrent ingest+query freshness p95** — **penalty answered (Run 13):** both
+   pass the ≤2× gate (CH 1.55×, GT 1.38×). The precise mixed-load *freshness p95*
+   (stamp-emit→poll) still owed.
 4. **Multi-node scale-out hold** — does p95 hold as nodes are added; GreptimeDB
-   region rebalance vs ClickHouse resharding effort.
-5. **Realistic-cardinality compression** — re-run with real log text (the smoke
-   synthetic data distorted the logs result).
+   region rebalance vs ClickHouse resharding effort. **Untested (needs multi-node
+   harness).**
+5. **Realistic-cardinality compression** — **answered (Run 10):** realistic
+   99%-unique log text → tie at matched codecs (GreptimeDB 25 vs CH 24.24 MiB),
+   GreptimeDB-favored out-of-the-box.
 
 ## Supporting notes
 
 - Mechanisms: `greptimedb-internals.md`, `clickhouse-internals.md`,
   `read-path-indexing-and-execution.md`, `write-path-and-ingestion.md`,
-  `compression-and-cost.md`, `distributed-and-scaling.md`.
-- Matrix: `per-signal-verdict.md`. Empirical: `local-benchmark-results.md` (Runs 1–5).
-- Build designs (next): `greptimedb-implementation.md`, `clickhouse-implementation.md`.
+  `compression-and-cost.md`, `distributed-and-scaling.md`,
+  `compaction-and-merge.md`, `caching-and-cold-warm.md`,
+  `rollup-and-continuous-aggregation.md`.
+- Matrix: `per-signal-verdict.md`. Empirical: `local-benchmark-results.md`
+  (Runs 1–15). Public claims: `public-performance-claims.md`. Targeted cases:
+  `benchmarking-the-differences.md` (B1–B12).
+- Build designs: `greptimedb-implementation.md`, `clickhouse-implementation.md`.
+- Reproducible object-store stack: `bench/s3/`.
