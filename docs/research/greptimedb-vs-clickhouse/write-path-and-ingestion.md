@@ -93,6 +93,19 @@ This reinforces the metrics/PromQL capability gap from `per-signal-verdict.md`:
 GreptimeDB ingests OTLP and Prometheus natively; ClickHouse needs a collector
 layer.
 
+**Confirmed live (pass 33) — schema-on-write native ingest.** A native InfluxDB
+line-protocol write (`POST /v1/influxdb/write`, plain text, HTTP 204) **auto-created
+the table** with the correct mapping, no DDL: tags → `PRIMARY KEY`, field →
+`DOUBLE`, an auto `greptime_timestamp` `TIME INDEX`, and
+`merge_mode='last_non_null'` (upsert-last). Queryable immediately. This is the
+capability ClickHouse lacks twice over — it has **no** native InfluxDB/OTLP/Prom
+ingest endpoint (needs a collector) **and** requires the table to be created first
+(no schema-on-write). **Nuance found:** GreptimeDB's **OTLP metrics endpoint is
+protobuf-only** — JSON is explicitly rejected (`src/servers/src/http/otlp.rs:80`,
+`UnsupportedJsonContentType`); in practice an OTel Collector/SDK emits protobuf, so
+this is fine, but you cannot hand-POST OTLP JSON. So "native OTLP" = the binary
+protocol a collector/SDK speaks, not a JSON shortcut.
+
 ## Freshness/write-path verdict (axis #1)
 
 | Question | Answer | Confidence |
