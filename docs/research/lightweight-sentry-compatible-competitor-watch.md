@@ -51,9 +51,9 @@ with a lighter Sentry replacement.
 | Project | Strongest current fit | Current Parallax gap | Threat |
 | --- | --- | --- | --- |
 | Bugsink | Self-hosted error tracking, Sentry SDK compatible, single container, SQLite by default, no queue or external service dependency, MySQL/Postgres optional. | Python/runtime mismatch; focused on error tracking rather than OTLP-native evidence graph, CLI/agent audit, or fix-outcome corpus. | High for Sentry-compatible simplicity. |
-| Rustrak | Rust/Actix server, Sentry SDK compatible, SQLite default or Postgres production mode, claims small memory/image footprint, no Redis, and no complex infrastructure. | Early project; UI is a separate Next.js service; no clear OTLP-native logs/traces/metrics, portable bundle schema, or coding-agent action audit. | Very high for Rust-first Sentry-compatible tiny error tracking. |
+| Rustrak | Rust/Actix server, Sentry SDK compatible, SQLite default or Postgres production mode, claims small memory/image footprint, no Redis, no complex infrastructure, and now ships `@rustrak/mcp` for AI assistant management. | Early project; UI is a separate Next.js service; MCP is management-shaped rather than a read-only citable evidence-bundle contract; no clear OTLP-native logs/traces/metrics or fix-outcome corpus. | Very high for Rust-first Sentry-compatible tiny error tracking plus MCP. |
 | Traceway | MIT, OpenTelemetry-native, self-hostable, combines logs/traces/metrics/session replay/exceptions/AI tracing, Docker Compose path, and Go embedded SQLite dev mode. | OTel-first rather than Sentry-envelope-first; Go, not Rust; no explicit Parallax-style evidence bundle, redaction manifest, or agent session/action audit. | Very high for OTLP-native unified observability simplicity. |
-| GoSnag | Go single binary with embedded React UI/migrations, Sentry `/store/` and `/envelope/` ingestion, issue lifecycle, GitHub/Jira integrations, AI RCA features, and visible MCP directory. | Requires Postgres for normal deployment; early project; not Rust-first; no clear OTLP-first multi-signal store, portable bundle contract, or fix-outcome graph. | High because it combines Sentry compatibility and AI features. |
+| GoSnag | Go single binary with embedded React UI/migrations, Sentry `/store/` and `/envelope/` ingestion, issue lifecycle, GitHub/Jira integrations, AI RCA features, and a documented MCP server. | Requires Postgres for normal deployment; early project; not Rust-first; MCP exposes broad management tools, not a Parallax-style read-only bundle contract or fix-outcome graph. | High because it combines Sentry compatibility, AI features, and MCP. |
 | Urgentry | Source-available Sentry-compatible replacement with one-binary Tiny mode, split self-hosted mode, route coverage and benchmark claims against self-hosted Sentry. | FSL source-available, not open source; broad Sentry replacement posture rather than open evidence schema; no clear coding-agent audit or accepted-fix loop. | High for the self-hosted simplicity benchmark, lower for the open-source thesis. |
 
 ## Per-Project Notes
@@ -81,6 +81,12 @@ Rust + Actix, Sentry SDK compatible, and can run with SQLite by default or
 PostgreSQL for production. It also claims small memory/image footprint and no
 Redis or complex infrastructure.
 
+Update: the README now lists official packages for programmatic access and AI
+assistant integration, including `@rustrak/mcp`, described as an MCP server that
+lets Claude, Cursor, and Continue manage a Rustrak instance. This crosses the
+old "adds MCP" watch trigger. MCP presence is no longer a sufficient Parallax
+differentiator in lightweight error tracking.
+
 Implication: Rust-first lightweight Sentry-compatible error tracking now exists
 as a live open project. Parallax should not frame itself as "Rustrak plus more
 charts." It must be "Rustrak-like migration path plus OTLP context plus evidence
@@ -89,7 +95,7 @@ bundles plus agent audit."
 Watch triggers:
 
 - Rustrak adds OTLP trace/log/metric ingestion;
-- Rustrak adds MCP or coding-agent context surfaces;
+- Rustrak's MCP gains read-only, citable evidence bundles and redaction reports;
 - Rustrak adds source/release/trace-aware evidence bundles;
 - Rustrak proves broader Sentry SDK compatibility through fixture tests.
 
@@ -118,7 +124,9 @@ Watch triggers:
 GoSnag is a focused Sentry-compatible error tracker with a surprisingly broad
 feature list. Its README claims modern and legacy Sentry ingest formats,
 embedded React UI, issue workflow, release/deploy mapping, GitHub/Jira, AI RCA,
-AI merge suggestions, token budgets, and other AI-assisted triage features.
+AI merge suggestions, token budgets, and other AI-assisted triage features. It
+also documents an MCP server for AI assistant integration, exposing project,
+issue, alert, tag, ticket, and user management tools.
 
 Implication: "AI over Sentry-compatible self-hosted errors" is not enough. If
 Parallax does not own the runtime/CI/CLI/agent evidence graph and citable bundle
@@ -126,7 +134,8 @@ contract, GoSnag-like tools can cover the visible issue-triage layer first.
 
 Watch triggers:
 
-- GoSnag's MCP surface becomes documented and useful for coding agents;
+- GoSnag's MCP becomes read-only/citable where needed and writes fix/outcome
+  records;
 - GoSnag adds OTLP correlation;
 - GoSnag adds deterministic bundle export and missing-evidence reporting;
 - GoSnag's AI RCA becomes local/open and evidence-citing by default.
@@ -161,9 +170,13 @@ Watch triggers:
 3. **Rust helps, but does not decide the market.** Rustrak proves Rust is
    available for lightweight error tracking. Traceway and GoSnag prove Go
    projects can still be operationally simple enough to matter.
-4. **Evidence bundles become more important.** The durable Parallax contract is
+4. **MCP is not a moat by itself.** Sentry has its own MCP server, Rustrak ships
+   `@rustrak/mcp`, and GoSnag documents an MCP server. Parallax's agent surface
+   has to be a bounded, redacted, read-only evidence contract with outcome
+   writeback, not just tool exposure.
+5. **Evidence bundles become more important.** The durable Parallax contract is
    the typed, redacted, citable failure dossier plus agent/action outcome graph.
-5. **Frontend/session replay is no longer distant.** Traceway and Urgentry both
+6. **Frontend/session replay is no longer distant.** Traceway and Urgentry both
    pressure the frontend replay/error context direction; Parallax should keep
    frontend collection scoped but real.
 
@@ -191,10 +204,12 @@ Reopen the Parallax wedge if any lightweight challenger combines:
 - [Bugsink built to self-host](https://www.bugsink.com/built-to-self-host/)
 - [Bugsink GitHub repository](https://github.com/bugsink/bugsink)
 - [Rustrak GitHub repository](https://github.com/AbianS/rustrak)
+- [Rustrak MCP package](https://www.npmjs.com/package/@rustrak/mcp)
 - [Rustrak Docker Hub](https://hub.docker.com/r/abians7/rustrak-server)
 - [Traceway GitHub repository](https://github.com/tracewayapp/traceway)
 - [Traceway embedded mode](https://docs.tracewayapp.com/learn/embedded-mode)
 - [GoSnag GitHub repository](https://github.com/darkspock/gosnag)
+- [Sentry MCP repository](https://github.com/getsentry/sentry-mcp)
 - [Urgentry product site](https://urgentry.com/)
 - [Urgentry GitHub repository](https://github.com/urgentry/urgentry)
 

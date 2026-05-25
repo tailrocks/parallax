@@ -18,6 +18,11 @@ one useful issue context bundle, the self-hosted wedge is not real.
 
 ## Current Baselines
 
+The source-linked version pins, install paths, and service-shape notes for this
+gate now live in
+[Self-hosted deployment baseline inventory](self-hosted-deployment-baseline-inventory.md).
+Use that note as the measurement manifest and refresh it before each real run.
+
 | System | Current official posture | Operational read for Parallax |
 | --- | --- | --- |
 | Sentry self-hosted | Sentry describes self-hosted as a minimal setup for simple use cases with no dedicated support, Docker/Docker Compose plus install scripts, 4 CPU cores, 16 GB RAM plus 16 GB swap, 20 GB disk, and a single-node graph that still includes databases, brokers, and product services. | This is the main complexity baseline. Parallax does not need to beat Sentry's feature depth; it must beat Sentry's first-deployment burden for the narrower error-context job. |
@@ -120,6 +125,8 @@ warnings.
 
 Use this scorecard in Phase 1 docs and release notes. Do not fill it with
 estimates; fill it only after running the protocol above.
+The current version and deployment-shape manifest is
+[Self-hosted deployment baseline inventory](self-hosted-deployment-baseline-inventory.md).
 
 | Metric | Sentry self-hosted | SigNoz Docker | OpenObserve single-node | Lightweight challenger | Parallax tiny tier |
 | --- | --- | --- | --- | --- | --- |

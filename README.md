@@ -28,6 +28,7 @@ idea becomes sharper.
 - [User interview and deployment intent gate](docs/research/user-interview-and-deployment-intent-gate.md)
 - [Schema adoption and corpus moat gate](docs/research/schema-adoption-and-corpus-moat-gate.md)
 - [Self-hosted simplicity gate](docs/research/self-hosted-simplicity-gate.md)
+- [Self-hosted deployment baseline inventory](docs/research/self-hosted-deployment-baseline-inventory.md)
 - [Project thesis](docs/research/project-thesis.md)
 - [Market landscape](docs/research/market-landscape.md)
 - [Open self-hosted competitor watch](docs/research/open-self-hosted-competitor-watch.md)
