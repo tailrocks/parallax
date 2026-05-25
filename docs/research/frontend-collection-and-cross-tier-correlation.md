@@ -34,7 +34,7 @@ examples:
 
 | Area | Current source signal | Parallax implication |
 | --- | --- | --- |
-| Browser tracing | OpenTelemetry's browser guide uses `@opentelemetry/sdk-trace-web` and browser instrumentations such as document-load; OpenTelemetry JS targets browser and Node.js but does not publish a fixed supported-browser list. | Treat browser OTel as viable for traces, but pin SDK versions and keep compatibility tests for target browsers. |
+| Browser tracing | OpenTelemetry's browser guide uses `@opentelemetry/sdk-trace-web` and browser instrumentations such as document-load; it also warns browser client instrumentation is experimental and mostly unspecified. | Treat browser OTel as viable for traces, but pin SDK versions and keep compatibility tests for target browsers before product wording. |
 | Browser export | OpenTelemetry's JS exporter docs say browser apps cannot use OTLP/gRPC and must use OTLP/HTTP JSON or protobuf. They also call out CSP, CORS, and the risk of exposing a collector publicly. | Parallax frontend ingest should expose a narrow OTLP/HTTP-compatible web endpoint or reverse-proxied collector path, never a broad unauthenticated collector. |
 | Trace propagation | W3C Trace Context defines `traceparent`/`tracestate` as the standard cross-system trace context, with `traceparent` carrying trace identity in a portable format. | Frontend-to-backend joins should use W3C trace context for OTEL paths. |
 | Fetch instrumentation | OpenTelemetry's fetch instrumentation config includes `propagateTraceHeaderCorsUrls`, request hooks, ignored URLs, and custom span attributes. | Propagation must be allowlisted by first-party API domain; do not leak trace headers to arbitrary third parties. |
@@ -251,7 +251,7 @@ Primary sources:
 - [Sentry JavaScript trace propagation targets](https://docs.sentry.io/platforms/javascript/configuration/environments/#tracepropagationtargets)
 - [Sentry JavaScript breadcrumbs](https://docs.sentry.io/platforms/javascript/guides/svelte/enriching-events/breadcrumbs/)
 - [Sentry source-map artifact bundles and Debug IDs](https://docs.sentry.io/platforms/javascript/guides/cloudflare/sourcemaps/troubleshooting_js/artifact-bundles/)
-- [Sentry Session Replay setup and privacy defaults](https://docs.sentry.dev/platforms/javascript/session-replay/)
+- [Sentry JavaScript data collected and Replay privacy defaults](https://docs.sentry.io/platforms/javascript/guides/react/data-management/data-collected)
 
 Secondary implementation references:
 

@@ -23,9 +23,10 @@ The central rule:
 > No "frontend-to-backend reconstruction", "source-mapped frontend errors",
 > "safe browser breadcrumbs", "RUM/replay capture", or "low-overhead browser
 > telemetry" claim without dated runs covering browser versions, SDK versions,
-> route fixtures, source-map identity, CORS/header propagation, backend
-> continuation, breadcrumbs, privacy canaries, export reliability, payload/drop
-> behavior, overhead, replay opt-in policy, and agent-visible projections.
+> route fixtures, browser ingest posture, source-map identity and artifact
+> access, CORS/header propagation, backend continuation, breadcrumbs, privacy
+> canaries, export reliability, payload/drop behavior, overhead, replay opt-in
+> policy, source-field policy status, and agent-visible projections.
 
 This ledger is separate from the
 [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md): A4
@@ -37,16 +38,18 @@ those anchors.
 
 | Source | Current check | Parallax implication |
 | --- | --- | --- |
-| [OpenTelemetry JavaScript browser guide](https://opentelemetry.io/docs/languages/js/getting-started/browser/) | Browser traces use `@opentelemetry/sdk-trace-web` plus browser instrumentations such as document-load; the guide explicitly adds an exporter before traces leave the browser. | Parallax can use OTel JS for spans, but browser support must be tested per SDK and browser matrix. |
-| [OpenTelemetry JavaScript exporters](https://opentelemetry.io/docs/languages/js/exporters/) | JS exporters support OTLP HTTP/protobuf, HTTP/JSON, and gRPC generally, but browser deployments require CSP and CORS handling and a publicly reachable collector endpoint if exporting directly. | Parallax should use a narrow browser ingest/proxy endpoint with origin, size, rate, auth, and redaction controls instead of exposing a broad collector. |
+| npm package version snapshot ([Sentry browser](https://www.npmjs.com/package/@sentry/browser), [Sentry React](https://www.npmjs.com/package/@sentry/react), [OTel web SDK](https://www.npmjs.com/package/@opentelemetry/sdk-trace-web), [OTel fetch](https://www.npmjs.com/package/@opentelemetry/instrumentation-fetch), [OTel OTLP HTTP](https://www.npmjs.com/package/@opentelemetry/exporter-trace-otlp-http)) | `npm view` on 2026-05-25 reported `@sentry/browser` `10.53.1`, `@sentry/react` `10.53.1`, `@opentelemetry/sdk-trace-web` `2.7.1`, `@opentelemetry/instrumentation-fetch` `0.218.0`, and OTLP HTTP trace exporters `0.218.0`. | Every run must persist the exact package versions from the lockfile or registry snapshot; docs pages can lag package releases. |
+| [OpenTelemetry JavaScript browser guide](https://opentelemetry.io/docs/languages/js/getting-started/browser/) | Browser traces use `@opentelemetry/sdk-trace-web` plus browser instrumentations such as document-load; the guide warns browser client instrumentation is experimental and mostly unspecified. | Parallax can use OTel JS for spans, but browser support must be tested per SDK and browser matrix before product wording. |
+| [OpenTelemetry JavaScript exporters](https://opentelemetry.io/docs/languages/js/exporters/) | Browser deployments cannot use OTLP/gRPC; they must use OTLP HTTP/JSON or HTTP/protobuf, handle CSP and CORS, and may require a collector reachable from public browsers. | Parallax should use a narrow browser ingest/proxy endpoint with origin, size, rate, auth, path, and redaction controls instead of exposing a broad collector. |
 | [OpenTelemetry fetch instrumentation](https://open-telemetry.github.io/opentelemetry-js/modules/_opentelemetry_instrumentation-fetch.html) | Fetch instrumentation exposes config such as `requestHook`, `ignoreUrls`, and propagation-related options. | Propagation and redaction need explicit allowlists and hooks; raw URLs/body-like fields must not leak by default. |
 | [W3C Trace Context](https://www.w3.org/TR/trace-context/) | W3C recommends wide deployment of `traceparent`/`tracestate`; `traceparent` carries portable trace identity and tools must propagate it to avoid broken traces. | Frontend-to-backend joins should use W3C trace context when using OTel paths and record propagation failures as missing evidence. |
 | [MDN Access-Control-Allow-Headers](https://developer.mozilla.org/docs/Web/HTTP/Reference/Headers/Access-Control-Allow-Headers) | Browsers rely on the preflight response to decide which non-safelisted request headers can be sent. | `traceparent`, `tracestate`, `baggage`, `sentry-trace`, and project auth headers need explicit CORS tests for cross-origin APIs. |
 | [Sentry JavaScript trace propagation](https://docs.sentry.io/platforms/javascript/guides/capacitor/tracing/trace-propagation/) | Sentry browser tracing propagates `sentry-trace` and `baggage`, requires those headers in CORS allowlists, and uses `tracePropagationTargets` to control outgoing propagation. | Sentry-compatible frontend events must bridge Sentry trace context into Parallax rows without spraying trace headers to third parties. |
-| [Sentry JavaScript options](https://docs.sentry.io/platforms/javascript/configuration/environments/) | Browser options include release, max breadcrumbs, `beforeBreadcrumb`, `beforeSend`, `beforeSendSpan`, `tracePropagationTargets`, replay sample rates, and transport behavior. | Result rows must capture SDK config, sampling, filtering hooks, payload limits, and whether dropped events are reported. |
+| [Sentry JavaScript options](https://docs.sentry.io/platforms/javascript/configuration/environments/) | Browser options include release, max breadcrumbs, `beforeBreadcrumb`, `beforeSend`, `beforeSendSpan`, `tracePropagationTargets`, replay sample rates, and transport behavior; same-origin trace propagation is enabled by default in the browser. | Result rows must capture SDK config, sampling, filtering hooks, trace propagation target scope, payload limits, and whether dropped events are reported. |
 | [Sentry breadcrumbs](https://docs.sentry.io/platforms/javascript/guides/svelte/enriching-events/breadcrumbs/) | Browser SDKs automatically record clicks, key presses, XHR/fetch requests, console calls, and location changes; `beforeBreadcrumb` can modify or discard breadcrumbs. | Breadcrumbs are high-value but high-risk; run artifacts must prove value-shape capture and redaction before agent exposure. |
 | [Sentry artifact bundles and Debug IDs](https://docs.sentry.io/platforms/javascript/guides/cloudflare/sourcemaps/troubleshooting_js/artifact-bundles/) | Artifact bundles bind minified files and source maps by Debug ID instead of relying on paths; retention and release association are explicit. | Parallax should use Debug-ID-like source-map identity and test missing/mismatched/private source maps directly. |
-| [Sentry JavaScript data collected](https://docs.sentry.io/platforms/javascript/guides/react/data-management/data-collected) | Sentry documents privacy-relevant defaults: cookies and user identity are not sent by default, request/response bodies are generally not sent by default, Replay masks text/images/user input by default, and network detail bodies are opt-in. | Parallax should keep frontend capture metadata-first, make replay/network bodies opt-in, and seed PII canaries across every browser surface. |
+| [Sentry source-map upload warning](https://docs.sentry.io/platforms/javascript/guides/tanstackstart-react/sourcemaps/uploading/esbuild) | Sentry warns generated source maps can expose source and recommends denying public `.js.map` access or deleting maps after upload. | A source-mapped claim fails if the build deploys public source maps or if agents can dereference source-map/source-content refs by default. |
+| [Sentry JavaScript data collected](https://docs.sentry.io/platforms/javascript/guides/react/data-management/data-collected) | Sentry documents privacy-relevant defaults: cookies and user identity are not sent by default, request URLs and query strings are sent, request/response bodies are generally not sent by default, Replay masks text/images/user input by default, and network detail bodies are opt-in. | Parallax should keep frontend capture metadata-first, make replay/network bodies opt-in, redact URL/query values before projection, and seed PII canaries across every browser surface. |
 | [OpenTelemetry browser resource semconv](https://opentelemetry.io/docs/specs/semconv/resource/browser/) | Browser resource conventions are development-stage except `user_agent.original`, which is stable/recommended; some fields should be unset if client hints are unavailable. | Store semconv version and avoid treating browser attributes as stable product schema. |
 
 ## Claim Levels
@@ -58,16 +61,16 @@ Use these levels in `claim-ledger.jsonl`:
 | `not_measured` | No current frontend capture safety run exists. | "Frontend capture is designed but not run-proven." |
 | `fixture_harness_ready` | Browser, route, API, source-map, breadcrumb, CORS, and privacy-canary fixtures are repeatable. | "Frontend capture fixture harness prepared." |
 | `browser_error_capture_pass` | Browser error/event capture works across the tested browser and route matrix with release/build/session context. | "Frontend error capture works for the tested browser and route matrix." |
-| `source_map_symbolication_pass` | Minified stack frames resolve through private Debug-ID-like artifacts; missing/mismatched maps are reported. | "Frontend errors are source-mapped for the tested build pipeline." |
+| `source_map_symbolication_pass` | Minified stack frames resolve through private Debug-ID-like artifacts; missing/mismatched maps are reported; source maps/source content are not public or agent-dereferenceable by default. | "Frontend errors are source-mapped for the tested build pipeline." |
 | `trace_propagation_config_pass` | First-party API calls receive only allowed trace headers, backend CORS permits them, and third-party domains do not. | "Browser trace propagation is configured for the tested first-party routes." |
 | `frontend_backend_continuation_pass` | Tested frontend requests continue into backend spans and missing continuations are flagged. | "Frontend-to-backend trace continuation works for the tested first-party routes." |
 | `breadcrumb_redaction_pass` | Click/navigation/console/network breadcrumbs preserve useful shapes and leak zero seeded canaries in projections. | "Browser breadcrumbs pass seeded redaction tests for the tested routes." |
 | `metadata_privacy_pass` | Default capture excludes raw form values, raw DOM text, cookies, auth headers, user identity, request/response bodies, and sensitive query values. | "Default frontend capture is metadata-first for the tested routes." |
-| `browser_export_reliability_pass` | Browser export, payload size limits, CSP/CORS, offline/drop behavior, and client outcome reporting are measured. | "Browser telemetry export behavior is measured for the tested routes." |
+| `browser_export_reliability_pass` | Browser export, browser ingest endpoint posture, payload size limits, CSP/CORS, offline/drop behavior, and client outcome reporting are measured. | "Browser telemetry export behavior is measured for the tested routes." |
 | `frontend_overhead_pass` | Capture stays within page-load, interaction, memory, payload, and network overhead budgets. | "Frontend capture overhead is within budget for the tested routes." |
 | `replay_opt_in_privacy_pass` | Replay is opt-in, masked by default, blocks media/text/input, and network bodies remain disabled unless allowlisted. | "Replay is privacy-gated for the tested opt-in configuration." |
-| `projection_pass` | Agent-visible JSON and Markdown include redaction reports and missing-evidence flags without leaking seeded canaries or raw refs. | "Frontend evidence projections pass redaction and missing-evidence checks." |
-| `frontend_tiny_default_ready` | Error, route, release, source-map, breadcrumb, export, overhead, metadata privacy, and projection rows pass for the tiny-tier capture set. | "Parallax captures source-mapped frontend errors and safe breadcrumbs for the tested browser matrix." |
+| `projection_pass` | Agent-visible JSON and Markdown include redaction reports, source-field policy status, missing-evidence flags, and blocked raw refs without leaking seeded canaries, source content, replay content, or raw refs. | "Frontend evidence projections pass redaction and missing-evidence checks." |
+| `frontend_tiny_default_ready` | Error, route, release, source-map, ingest, breadcrumb, export, overhead, metadata privacy, source-field, and projection rows pass for the tiny-tier capture set. | "Parallax captures source-mapped frontend errors and safe breadcrumbs for the tested browser matrix." |
 | `frontend_cross_tier_claim_ready` | Tiny default is ready and A4 continuation rows pass for real first-party routes. | "Parallax reconstructs frontend-to-backend paths for the tested first-party routes." |
 | `replay_claim_ready` | Replay opt-in privacy, overhead, retention, projection, and access controls pass. | "Parallax can attach privacy-gated replay refs for the tested opt-in configuration." |
 | `claim_expired` | SDK, browser, build pipeline, source-map identity, CORS/propagation, capture mode, redaction, projection, or route coverage changed, or 90 days passed. | "Frontend capture result expired; rerun required." |
@@ -88,8 +91,10 @@ docs/research/frontend-capture-runs/<run_id>/error-capture-results.jsonl
 docs/research/frontend-capture-runs/<run_id>/source-map-results.jsonl
 docs/research/frontend-capture-runs/<run_id>/propagation-results.jsonl
 docs/research/frontend-capture-runs/<run_id>/cors-results.jsonl
+docs/research/frontend-capture-runs/<run_id>/ingest-endpoint-results.jsonl
 docs/research/frontend-capture-runs/<run_id>/breadcrumb-results.jsonl
 docs/research/frontend-capture-runs/<run_id>/privacy-canary-results.jsonl
+docs/research/frontend-capture-runs/<run_id>/source-field-policy-results.jsonl
 docs/research/frontend-capture-runs/<run_id>/export-reliability-results.jsonl
 docs/research/frontend-capture-runs/<run_id>/overhead-results.jsonl
 docs/research/frontend-capture-runs/<run_id>/replay-privacy-results.jsonl
@@ -118,8 +123,25 @@ operator explicitly approves a private retained artifact.
     "instrumentation_xhr": "x.y.z"
   },
   "sentry_js_version": "x.y.z",
+  "package_version_snapshot": {
+    "@sentry/browser": "x.y.z",
+    "@sentry/react": "x.y.z",
+    "@opentelemetry/sdk-trace-web": "x.y.z",
+    "@opentelemetry/instrumentation-fetch": "x.y.z",
+    "@opentelemetry/exporter-trace-otlp-http": "x.y.z",
+    "@opentelemetry/exporter-trace-otlp-proto": "x.y.z"
+  },
   "redaction_policy_version": "a6-default-deny-vN",
+  "source_field_policy_version": "phase0-source-field-policy-vN",
   "source_map_identity_version": "debug-id-like-vN",
+  "frontend_ingest_endpoint": {
+    "mode": "same_origin_tunnel|signed_project_token|dsn_public_key|reverse_proxy",
+    "public_collector_exposed": false,
+    "accepted_paths": ["/v1/traces", "/api/parallax/browser-ingest"],
+    "cors_policy_ref": "cors-results.jsonl",
+    "csp_policy_ref": "ingest-endpoint-results.jsonl"
+  },
+  "raw_ref_policy": "metadata_only_by_default",
   "frontend_build_commit": "<git-sha>",
   "browser_matrix": ["chromium", "firefox", "webkit"],
   "route_count": 0,
@@ -210,7 +232,11 @@ operator explicitly approves a private retained artifact.
   "unresolved_frame_count": 0,
   "mismatch_detected": false,
   "missing_map_reported": false,
+  "source_map_publicly_served": false,
+  "source_content_in_agent_bundle": false,
   "source_context_agent_visible": false,
+  "source_map_ref_dereferenced_by_default": false,
+  "artifact_access_scope": "ci_upload_only|scoped_operator|public",
   "pass": true
 }
 ```
@@ -252,6 +278,30 @@ operator explicitly approves a private retained artifact.
 }
 ```
 
+### Ingest Endpoint Result Row
+
+```json
+{
+  "route_id": "checkout-error-001",
+  "browser": "chromium",
+  "transport": "sentry_envelope|otlp_http_json|otlp_http_protobuf|parallax_browser_ingest",
+  "endpoint_kind": "same_origin_tunnel|reverse_proxy|direct_collector|vendor_ingest",
+  "public_collector_exposed": false,
+  "accepted_paths_exact": true,
+  "admin_or_debug_paths_exposed": false,
+  "origin_allowed_exact": true,
+  "wildcard_origin": false,
+  "credentials_with_wildcard_origin": false,
+  "browser_bundle_secret_present": false,
+  "auth_mode": "dsn_public_key|signed_project_token|same_origin_cookie|none",
+  "request_size_limited": true,
+  "rate_limited": true,
+  "csp_connect_src_exact": true,
+  "content_type_limited": true,
+  "pass": true
+}
+```
+
 ### Breadcrumb Result Row
 
 ```json
@@ -285,6 +335,23 @@ operator explicitly approves a private retained artifact.
   "raw_ref_leaks": 0,
   "scanner_error_count": 0,
   "scanner_error_behavior": "fail_closed|strip_field|block_bundle",
+  "pass": true
+}
+```
+
+### Source Field Policy Result Row
+
+```json
+{
+  "route_id": "checkout-error-001",
+  "browser": "chromium",
+  "source_kind": "direct_production_telemetry|synthetic_fixture|benchmark_fixture|corpus_fixture",
+  "source_field_policy_status": "pass|fail|not_applicable",
+  "source_field_policy_version": "phase0-source-field-policy-vN",
+  "source_field_policy_hash": "sha256:...",
+  "denied_zone_count": 0,
+  "violation_count": 0,
+  "not_applicable_reason": "direct telemetry without mixed eval/corpus source rows",
   "pass": true
 }
 ```
@@ -358,11 +425,18 @@ operator explicitly approves a private retained artifact.
   "browser": "chromium",
   "projection_format": "json|markdown",
   "redaction_report_present": true,
+  "redaction_report_hash": "sha256:...",
+  "source_field_policy_status": "pass|fail|not_applicable",
+  "source_field_policy_hash": "sha256:...",
+  "source_field_policy_violations": 0,
   "missing_evidence_present": true,
   "raw_ref_count": 0,
   "replay_ref_count": 0,
   "source_map_ref_count": 1,
   "raw_ref_dereferenced": false,
+  "replay_ref_dereferenced": false,
+  "source_map_ref_dereferenced": false,
+  "source_content_visible": false,
   "seeded_canary_leaks": 0,
   "agent_visible_pass": true
 }
@@ -391,7 +465,13 @@ operator explicitly approves a private retained artifact.
   source signal provenance.
 - A source-mapped claim requires Debug-ID-like identity, private artifact
   storage, a matching uploaded artifact before the event, and explicit
-  missing-map reporting for negative fixtures.
+  missing-map reporting for negative fixtures. It fails if source maps are
+  publicly served, if source content is included in agent bundles by default, or
+  if an agent can dereference source-map refs without scoped operator approval.
+- A frontend fixture, benchmark, or corpus-derived run must include
+  `source_field_policy_status: pass` with zero violations before projections can
+  pass. Direct production telemetry may use `not_applicable` only when no mixed
+  eval/corpus source rows are present, matching the bundle schema rule.
 - A frontend-to-backend continuation counts only if the frontend request and
   backend span share trace context, or if Sentry trace context is explicitly
   bridged into the same normalized Parallax trace row.
@@ -412,7 +492,12 @@ operator explicitly approves a private retained artifact.
   adblocked, and CSP/CORS-failed events must be counted or surfaced as
   missing-evidence; they cannot be hidden by only counting received events.
 - Public ingest must be narrow. A broad unauthenticated collector endpoint fails
-  the export gate even if telemetry arrives.
+  the export gate even if telemetry arrives. Browser bundles must not contain
+  private ingest secrets; public keys/DSNs must be treated as identifiers, not
+  authority to access retained raw evidence.
+- Projection pass requires redaction report presence, source-field policy
+  status, missing-evidence flags, zero seeded canary leaks, and no raw source-map
+  or replay dereference by default.
 - `frontend_cross_tier_claim_ready` also requires fresh A4 rows for real or
   fault-injected first-party routes; generator-perfect links are not enough.
 
@@ -444,6 +529,8 @@ Avoid:
 - "frontend-to-backend reconstruction for all routes";
 - "source maps always resolve";
 - "safe RUM/replay" without naming the run, masking mode, and browser matrix;
+- "safe source maps" without naming the artifact access mode and projection
+  dereference result;
 - "zero overhead";
 - "agent-visible replay" by default;
 - "browser telemetry is reliable" without drop/offline/adblock/CSP/CORS rows.
@@ -462,8 +549,9 @@ Mark affected claims `claim_expired` when:
   backend extraction config changes;
 - frontend route structure, router, rendering mode, API domain, or deployment
   topology changes;
-- privacy/redaction policy, breadcrumb filtering, replay masking, network-body
-  policy, projection format, or raw-ref access control changes;
+- privacy/redaction policy, source-field policy, breadcrumb filtering, replay
+  masking, network-body policy, projection format, or raw-ref access control
+  changes;
 - a new browser, device class, or route class enters product wording;
 - 90 days pass since the last run during active development.
 
@@ -484,8 +572,9 @@ Mark affected claims `claim_expired` when:
 - [Redaction detector toolchain](redaction-detector-toolchain.md) defines the
   scanner and canary comparators used for browser privacy rows.
 - [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)
-  must expose frontend nodes, redaction reports, source-map status, replay refs,
-  and missing-evidence warnings without leaking denied fields.
+  must expose frontend nodes, redaction reports, source-field policy status,
+  source-map status, replay refs, and missing-evidence warnings without leaking
+  denied fields.
 - [Storage benchmark prototype](storage-benchmark-prototype.md) includes Q4
   `cross_tier`; this ledger defines the capture proof behind that generated
   shape.
@@ -499,5 +588,6 @@ user-facing and cross the browser/backend boundary. It is also the highest-PII
 telemetry surface. The safe default is source-mapped errors, route/release
 metadata, bounded redacted breadcrumbs, and first-party trace propagation. Replay
 and raw browser content stay opt-in refs. Product claims start only after this
-ledger proves the browser matrix, source-map identity, propagation, privacy,
-export reliability, overhead, and projections.
+ledger proves the browser matrix, source-map identity and access controls,
+browser ingest posture, source-field policy status, propagation, privacy, export
+reliability, overhead, and projections.
