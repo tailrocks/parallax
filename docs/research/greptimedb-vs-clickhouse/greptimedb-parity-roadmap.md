@@ -21,7 +21,11 @@ so #1's primary lever is the scan engine (#2/#3), the tantivy cache is second-or
 full-scans; `matches_term()` prunes → selective exact-term is **~8 ms / ~2–3×**, not 18×. #1
 downgraded to a Tier-A usage fix; verdict flip-trigger narrowed) + pass 87 (**Run 49**: tantivy
 backend `matches()` **also prunes** ~6 ms → query-syntax path fast too; full-text gap is fully
-a backend/function pairing artifact, residual = broad-term analytics only). This is **the dedicated,
+a backend/function pairing artifact, residual = broad-term analytics only) + pass 101 (**Improvement
+#5 deepened with the Run 63 root cause**: GreptimeDB's PK = sort = series identity, so it can't
+cluster by a high-card anchor like `trace_id` without series blowup, while ClickHouse `ORDER BY`
+decouples sort from identity at zero cost — this is *also* the root of the cold-selective-read egress
+loss (Run 55/63), so #5 now closes two gaps; `order_by` table option live-rejected, Run 65). This is **the dedicated,
 standalone file** answering "what can GreptimeDB improve, why, and how" — the summary table
 scans, the detailed sections below carry the code-oriented specifics. Answers the operator
 question: GreptimeDB wins Parallax on *fit*
@@ -121,7 +125,7 @@ only if that fraction is high. Anything else is mechanism elegance without user 
 | 2 | **Generic scan/aggregate throughput ~2–4×** | 65,409-row blocks (8× DataFusion's 8,192) + **LLVM-JIT** expressions/aggregation + bespoke SIMD kernels + specialized adaptive hash tables. | (a) **Raise the `RecordBatch` size** in `SessionConfig` — **source-confirmed (pass 77): `state.rs:126-128` sets only `with_target_partitions`, never `batch_size`, so DataFusion's 8,192 default holds** → raise toward 32–64k so vectors amortize overhead and feed SIMD; (b) **expression + aggregation codegen** — DataFusion's is young/narrow vs LLVM JIT; (c) **specialized SIMD aggregation** (two-level hash for high-card, fixed-width-key kernels). Mostly **upstream DataFusion** — GreptimeDB inherits as DF improves, or contributes. | **B** | integration (upstream DataFusion) |
 | 3 | **Late materialization (PREWHERE)** | Decodes cheap filter columns first → row mask → decodes wide columns only for surviving rows. | **Add column-staged late materialization to the mito2 reader.** Source-confirmed (pass 77): GreptimeDB already **prunes** row-groups/pages (`RowGroupSelection` from Puffin fulltext/inverted indexes + the Parquet **page index**, `reader.rs`) and then **post-decode**-filters rows (`PruneReader::precise_filter`, `read/prune.rs:119`) — so within a surviving row-group it decodes **all projected columns before dropping rows**. There is **no arrow `RowFilter`** in the reader (grep = 0) → no column-staging. Fix: wire the pushed-down predicate into arrow's **`RowFilter`** (`ParquetRecordBatchReaderBuilder::with_row_filter`, which arrow-rs already provides) so filter columns decode first, build a selection, and wide/`Json` columns materialize only for survivors. File: `src/mito2/src/sst/parquet/reader.rs`. **Arrow ships the primitive → integration, not a new algorithm.** | **B** | integration |
 | 4 | **Dynamic-attribute path queries (JSON)** | `JSON` type stores each path as a **typed columnar subcolumn** → `attributes.user` reads one subcolumn. GreptimeDB `Json` is a **binary blob** (jsonb) + `json_get_*` per-row parse (`schema-evolution-and-dynamic-columns.md`). | **Shred JSON paths into Parquet subcolumns.** Adopt the emerging Parquet **Variant/shredding** layout: at flush, write hot/declared attribute paths as their own typed Parquet columns; push `attributes.k` access down to a subcolumn scan instead of a per-row blob parse. Files: a shredded column type + mito2 SST writer + DataFusion pushdown. **Biggest storage-format change here** — borders on design, but Parquet's variant work makes it integration, not a rewrite. | **B** | integration / format |
-| 5 | **Projections (alternate physical `ORDER BY`)** | A projection stores a 2nd sort order **inside each part**, optimizer-picked → fast sequential scan on an alternate key from one table (Run 28). GreptimeDB indexes give *positions*, not a 2nd physical order. | Two paths: (a) **today, Tier A workaround** — maintain a re-sorted derived table via **Flow** (`CREATE FLOW … SINK TO …` keyed on the alternate order; Run 43 proved Flow works) — extra storage, app-managed; (b) **true parity, Tier B** — mito2 writes an alternate-sorted SST copy per region with planner auto-pick. Files: `src/mito2` SST writer + region metadata + DataFusion planner rule. | **A** (workaround) / **B** (native) | integration |
+| 5 | **Projections / alternate physical `ORDER BY`** (decouple sort from PK/series identity) | A projection stores a 2nd sort order **inside each part**, optimizer-picked → fast scan on an alternate key (Run 28); CH `ORDER BY(trace_id,ts)` also clusters the high-card anchor at **zero cardinality cost**. GreptimeDB's **PK = sort = series identity**, so it can't cluster by `trace_id` without 71k-series blowup (Run 63), and indexes give *positions* not a 2nd order. **Now also the root of cold-read egress** (Run 55/63: scattered anchor → cold read pulls whole SST). | (a) **Tier A** — Flow re-sorted copy (`SINK TO …`, Run 43); a `trace_id`-sorted copy also fixes cold-read egress; (b) **Tier B** — mito2 alternate-sorted SST copy + planner auto-pick (`src/mito2` SST writer + region metadata + DataFusion rule). Full sort/identity decoupling = redesign; the copy sidesteps it. | **A** / **B** (copy) | integration (copy); design (full decouple) |
 | 7 | **Per-column codecs (`CODEC(Gorilla/DoubleDelta/T64)`)** | Hand-picked per-column codecs match each column's shape — `Gorilla` on float gauges (Run 4: 78×), `DoubleDelta` on monotonic counters (7.3×). | **Type-aware Parquet encodings + a column codec DDL option.** Source (pass 81): mito2's writer **already** sets per-column encodings for *internal* columns (`writer.rs:387-391`: `ts`/`seq` → `DELTA_BINARY_PACKED` ≈ DoubleDelta, `op_type` → UNCOMPRESSED) but **user data columns default to `Encoding::PLAIN` + table-wide ZSTD** (`writer.rs:433-434`) — so a `Float64` gauge gets **no Gorilla/float-split encoding**. Fix: in the writer's `customize_column_config` (`writer.rs:371`), pick **type-aware encodings** for user columns (floats → Parquet **`BYTE_STREAM_SPLIT`** ≈ Gorilla; monotonic ints → `DELTA_BINARY_PACKED`); optionally expose a per-column codec option in DDL. Parquet already ships these encodings → integration. | **B** | integration |
 | 6 | **Vertical single-node ceiling + analytical/merge maturity** | A decade of single-box scan tuning; battle-tested merges. | Inherited via #2 (engine) + time/battle-testing. Not a discrete feature. | **C** | maturity |
 
@@ -291,22 +295,46 @@ Parallax. Source read at GreptimeDB `v1.0.2` (`0ef5451`).
   `PROJECTION` keyword in `src/sql/src/parsers/{create_parser,alter_parser}.rs` (grep = 0),
   and the `AlterTableOperation` enum has no projection/alternate-ordering variant (only
   Add/Drop/ModifyColumn, Rename, Set/UnsetTableOptions, Set/UnsetIndex{Fulltext,Inverted,
-  Skipping}) — so there is genuinely no engine-native second physical order.
-- **User story & clear-winner:** *a user wants a service's span timeline (`service`-time
-  order) **and** the trace bundle (`trace_id` order) fast from the spans table.* Parallax
-  anchors on `trace_id`/`fingerprint`, so the second scan order is rarely hot — **this does
-  not make GreptimeDB a clear winner of a common user case**; the Flow workaround covers the
-  rare instance. Footnote (see ranking above).
+  Skipping}); **live-reconfirmed (Run 65, v1.0.2): an `order_by` table option is rejected
+  ("Unrecognized table option key")** — there is genuinely no engine-native second physical
+  order. **The deeper root (Run 63): GreptimeDB's `PRIMARY KEY` *is* its sort key *and* its
+  series identity** — so clustering by a high-card anchor like `trace_id` (which *would*
+  speed reads — proven 39 ms scattered → 14 ms trace_id-clustered, Run 63) is impossible
+  without making `trace_id` the PK, which **explodes series cardinality** (71k+ traces). The
+  ClickHouse concept being borrowed is precisely the **decoupling of physical sort order
+  (`ORDER BY`) from row/series identity** — CH clusters by the anchor at **zero cardinality
+  cost** because it has no series model; GreptimeDB cannot.
+- **Why it now matters more than "scan order" (Run 55/63 — cold-read egress):** the missing
+  alternate ordering is *also* the cause of GreptimeDB's **cold-selective-read egress** loss
+  — with `trace_id` scattered (not the sort key), an anchored **cold** read touches ~all row
+  groups → pulls ~the whole SST from object storage (Run 55: ~23 MiB vs ClickHouse's ~294 KiB
+  granule read). So this improvement closes *two* gaps: alternate scan locality (Run 28)
+  **and** cold-tier anchored-read egress (Run 55/63).
+- **User story & clear-winner:** *(a)* a user wants a service's span timeline (`service`-time)
+  **and** the trace bundle (`trace_id` order) fast; *(b)* an SRE re-opens a **months-old,
+  cache-evicted** incident and greps one `trace_id` from cold object storage. **Does it make
+  GreptimeDB a clear winner? Only for case (b), and only when reads are genuinely cold** —
+  GreptimeDB's persistent local read cache (Run 55) keeps **recent/hot** data warm, so the
+  anchored hot path on recent bundles already serves locally at ~0 S3. So this stays a
+  **footnote unless Parallax's cold-tier *selective* re-read pattern is frequent** — the
+  common case (recent, cache-warm) doesn't bite. Honest: most-improved is a rare cold case.
 - **How (code-oriented):** (a) **Tier-A today:** maintain a re-sorted derived table with a
   **Flow** (`CREATE FLOW … SINK TO alt_table` keyed on the alternate order — Flow verified
-  Run 43); the app/optimizer queries whichever table matches. Extra storage, no engine
-  change. (b) **Tier-B native parity:** have the mito2 SST writer emit an alternate-sorted
-  copy per region + region metadata + a DataFusion planner rule to auto-pick — a larger
-  build.
-- **Tier:** **A** (Flow workaround) / **B** (native). **Integration.**
-- **Value here:** small for Parallax — anchored retrieval already keys on `trace_id`/
-  `fingerprint`; matters only if a second high-volume scan order emerges. Use the Flow
-  workaround if/when it does.
+  Run 43); the app/optimizer queries whichever table matches — *a `trace_id`-sorted copy
+  also fixes the cold-read egress (anchored cold reads hit the clustered copy → prune to
+  ~1 row group)*. Extra storage, no engine change. (b) **Tier-B native parity:** have the
+  mito2 SST writer emit an alternate-sorted copy per region + region metadata + a DataFusion
+  planner rule to auto-pick — a larger build. *(Note: a true secondary sort key on the
+  primary data — decoupling sort from the PK/series identity — would be a region-model
+  **redesign**, not integration; the alternate-sorted **copy** sidesteps that, staying
+  integration.)*
+- **Tier:** **A** (Flow workaround) / **B** (native copy). **Integration** (via copy; full
+  sort/identity decoupling would be design).
+- **Value here:** still a **footnote** for Parallax, but with a *second* justification now:
+  not just alternate scan order (rare — anchored retrieval keys on `trace_id`/`fingerprint`)
+  but **cold-tier selective-read egress** (Run 55/63). Both only bite outside the common
+  cache-warm anchored hot path. Invest only if the real query mix proves frequent **cold,
+  selective** re-reads — otherwise the persistent read cache already wins the hot path.
 
 ### Improvement 7 — Type-aware Parquet encodings (per-column codec parity)
 

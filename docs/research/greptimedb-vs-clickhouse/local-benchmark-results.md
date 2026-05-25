@@ -2652,6 +2652,37 @@ docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public 
 docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=SELECT count(*) FROM ttl_gt"   # 0 immediately (read-time TTL)
 ```
 
+### Run 65 — 2026-05-25 — No clustering-independent-of-PK in GreptimeDB (the Run-63 gap is architectural)
+
+**Pass target.** Run 63 found GreptimeDB can't cluster by a high-card anchor (`trace_id`)
+without making it the PK (→ series blowup). Confirm there is no *other* lever — a sort /
+clustering / `order_by` table option independent of the `PRIMARY KEY` — and feed the
+parity-roadmap (Improvement #5).
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned — latest, no bump).
+
+**Verified (live):**
+
+- `CREATE TABLE … PRIMARY KEY(tid) WITH (order_by='tid')` → **`Unrecognized table option
+  key: order_by`**. GreptimeDB exposes **no clustering/secondary-sort option** — the
+  `PRIMARY KEY` is the *only* control over physical row order within a region, and it is
+  simultaneously the **series identity** (cardinality driver) and the **dedup key**.
+- (Source corroboration from prior passes, now stale-cloned but cited in the notes: no
+  `PROJECTION` keyword in the SQL parser; `AlterTableOperation` has no ordering variant —
+  `greptimedb-parity-roadmap.md` #5.)
+
+**Consequence.** Confirms the Run 63 finding is **architectural, not a config miss**:
+ClickHouse decouples physical sort (`ORDER BY`) from row/series identity, so it clusters by
+`trace_id` free; GreptimeDB conflates PK = sort = series identity, so anchor-clustering
+costs series cardinality. This is the root of both the alternate-scan-order gap (Run 28) and
+the cold-selective-read egress loss (Run 55/63). Routed into parity-roadmap Improvement #5
+(Tier A Flow-copy workaround / Tier B mito2 alternate-sorted copy; full sort/identity
+decoupling = redesign). **Still a footnote for Parallax** — the persistent read cache keeps
+the common (recent, warm) anchored path fast regardless; only frequent **cold selective**
+re-reads would justify the build.
+
+**Reproduce.** `docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=CREATE TABLE t (ts TIMESTAMP(3) TIME INDEX, tid STRING, PRIMARY KEY(tid)) WITH (order_by='tid')"` → error.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
