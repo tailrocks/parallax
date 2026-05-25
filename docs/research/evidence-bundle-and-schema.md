@@ -335,6 +335,9 @@ it survives contact with real data:
 - [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) — the
   source detail for `cli_invocation`, `agent_session`, `agent_action`, and audit
   edges.
+- [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
+  — the real Codex, Claude Code, Amp, and OpenCode adapter gate for
+  `agent_session` and `agent_action` nodes.
 - [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) — the
   default-on safety and overhead gate for CLI invocation nodes.
 - [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)

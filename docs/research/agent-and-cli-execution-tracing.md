@@ -393,7 +393,9 @@ Near-term sequence:
 1. Keep Sentry-compatible Rust service errors as the first production wedge.
 2. Add CLI instrumentation for Rust tools because it is bounded and cheap.
 3. Trace Parallax's own agent/MCP interactions from day one.
-4. Add generic agent-session ingestion once the local schema works.
+4. Add generic agent-session ingestion once the local schema works, with the
+   real-tool adapter gate in
+   [Agent session tracing across real tools](agent-session-tracing-real-tools.md).
 5. Use agent outcome feedback to improve evidence ranking and autonomy policy.
 
 This makes the "agent context engine" claim more defensible: Parallax observes

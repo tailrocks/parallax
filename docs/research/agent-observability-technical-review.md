@@ -313,7 +313,8 @@ The technical review suggests a stronger MVP than generic trace display:
    panic/error chain.
 2. A coding-agent wrapper can record one session with context bundle, model/tool
    spans, files read, commands run, files edited, tests run, patch ref, and
-   outcome.
+   outcome. The real-tool adapter gate is specified in
+   [Agent session tracing across real tools](agent-session-tracing-real-tools.md).
 3. A Sentry-compatible runtime issue can link to the agent session that tried to
    fix it.
 4. A query can answer: "what did the agent do before this failure or deploy?"

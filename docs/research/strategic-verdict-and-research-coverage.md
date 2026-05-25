@@ -99,10 +99,10 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Rust applications first | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md), [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md), [Technical implementation concept](technical-implementation-concept.md) |
 | AI-native observability | [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md), [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md) |
 | Flaky-test investigation | [CI failure context MVP](ci-failure-context-mvp.md), [Flaky test investigation and replay](flaky-test-investigation-and-replay.md) |
-| Agent and CLI execution tracing | [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md), [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) |
-| Agent-observability technical references | [Agent observability technical review](agent-observability-technical-review.md) |
+| Agent and CLI execution tracing | [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md), [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) |
+| Agent-observability technical references | [Agent observability technical review](agent-observability-technical-review.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md) |
 | Frontend collection and cross-tier correlation | [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Storage benchmark prototype](storage-benchmark-prototype.md) |
-| Redaction/privacy/agent exposure safety | [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md), [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md), [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) |
+| Redaction/privacy/agent exposure safety | [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md), [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md), [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) |
 | Evidence bundle and open schema | [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Bundle-value evaluation](bundle-value-evaluation.md), [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) |
 | Core architecture | [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Technical implementation concept](technical-implementation-concept.md) |
 | CLI/API/MCP philosophy | [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md), [Technical implementation concept](technical-implementation-concept.md) |
@@ -148,7 +148,8 @@ The research validates direction, not performance claims. These must be tested:
    stdout, and stderr, specified further in
    [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md).
 10. Agent-session tracing value across real Codex, Claude Code, Amp, and
-    OpenCode runs.
+    OpenCode runs, specified further in
+    [Agent session tracing across real tools](agent-session-tracing-real-tools.md).
 11. Turso correctness, backup/restore, concurrency, migration, and fallback
     behavior for metadata, agent session state, CLI invocation state, outcomes,
     and audit records, specified further in

@@ -237,6 +237,9 @@ production secrets. Therefore:
 - [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) — CLI
   args/env/stdout/stderr and agent prompts/tool outputs require ref-first
   capture.
+- [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
+  — extends the prompt/tool/transcript raw-ref policy across Codex, Claude Code,
+  Amp, and OpenCode adapters.
 - [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) —
   expands CLI-specific args/env/config/stdout/stderr policy, canary fixtures,
   and overhead gates before default-on capture.

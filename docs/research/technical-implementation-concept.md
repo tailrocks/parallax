@@ -143,6 +143,7 @@ Related research:
 - [Flaky test investigation and replay](flaky-test-investigation-and-replay.md)
 - [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
 - [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md)
+- [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
 - [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md)
 - [Agent observability technical review](agent-observability-technical-review.md)
 - [Strategic verdict and research coverage](strategic-verdict-and-research-coverage.md)
@@ -694,7 +695,9 @@ candidate versions:
 
 ### Agent And CLI Execution
 
-- coding-agent session schema across Codex, Claude Code, Amp, and OpenCode;
+- coding-agent session schema across Codex, Claude Code, Amp, and OpenCode,
+  with the initial adapter/value gate in
+  [Agent session tracing across real tools](agent-session-tracing-real-tools.md);
 - CLI redaction and overhead for args, env, config, stdout, and stderr, with
   the initial gate in [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md);
 - agent-session query latency when linked to production events and CI runs;
