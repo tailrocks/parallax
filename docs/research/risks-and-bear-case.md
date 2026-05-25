@@ -122,7 +122,9 @@ If two or more trigger, reopen the verdict.
 
 - [Verdict](verdict.md) — the GO this stress-tests; its kill criteria and
   competitive window are the spine of this register.
-- [Market landscape](market-landscape.md) — the competitive-erosion risks.
+- [Market landscape](market-landscape.md) and
+  [Open self-hosted competitor watch](open-self-hosted-competitor-watch.md) —
+  the competitive-erosion risks.
 - [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
   — blast-radius and causality-overclaim mitigations.
 - [Storage benchmark prototype](storage-benchmark-prototype.md) and
