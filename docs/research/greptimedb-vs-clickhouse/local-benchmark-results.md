@@ -799,6 +799,33 @@ dominate index-format richness (ties `query-execution-engine.md`). Not a verdict
 corrects the tempting "richer index → faster" inference. Index-build cost + cold-scale
 search latency owed to harness.
 
+### Run 23 — 2026-05-25 — PromQL capability re-verification (verdict-material)
+
+Backs `promql-and-metrics-query.md` (pass 44). Re-checked the verdict's load-bearing
+"ClickHouse has no PromQL" claim against the pinned 26.5.1.882 — **it is now outdated.**
+
+**ClickHouse 26.5 (live):** has PromQL. `system.table_functions` lists
+`prometheusQuery`, `prometheusQueryRange`, `timeSeriesSelector/Metrics/Data/Tags`;
+`system.table_engines` lists **`TimeSeries`**. `CREATE TABLE … ENGINE=TimeSeries`
+succeeded with `allow_experimental_time_series_table=1`. `prometheusQuery('up')`
+exists with a real 3–4 arg signature (`[db,] ts_table, promql [, eval_time]`).
+Settings present: `allow_experimental_time_series_table=0` (default),
+`allow_experimental_time_series_aggregate_functions=0`, `promql_database`/
+`promql_table`/`promql_evaluation_time=auto`. → **experimental, off by default,
+setup-heavy (dedicated TimeSeries table + remote-write).**
+
+**GreptimeDB (live):** PromQL GA + default-on. `/v1/prometheus/api/v1/query?query=up`
+→ proper Prometheus JSON, zero setup. `TQL EXPLAIN rate(spans[5m])` invoked the native
+`prom_rate` planner (errored only on a column *type*, proving the path is live).
+Custom DataFusion plan nodes (`InstantManipulate`/`RangeManipulate`/`SeriesNormalize`/
+`SeriesDivide`/`HistogramFold`/`Absent`/…).
+
+**Claim status:** "ClickHouse has no PromQL" → **REFUTED at 26.x** (experimental
+PromQL exists). Re-rated: GreptimeDB's metrics win is now **maturity/ergonomics
+(GA, default-on) vs experimental**, not present-vs-absent. Verdict/per-signal/
+write-path corrected. Does **not** flip the recommendation; narrows a pillar.
+Feature-completeness of ClickHouse PromQL vs Prometheus unverified — follow-up case.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

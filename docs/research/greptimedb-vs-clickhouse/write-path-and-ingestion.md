@@ -86,7 +86,7 @@ matched-protocol, concurrent ingest+query run.
 
 | | GreptimeDB | ClickHouse |
 | --- | --- | --- |
-| Native protocols | OTLP (traces/logs/metrics), Prometheus remote-write, InfluxDB line, MySQL/PG wire, gRPC, HTTP SQL. | Native TCP, HTTP, many input formats; OTLP via an exporter/Collector, **no** native Prom remote-write. |
+| Native protocols | OTLP (traces/logs/metrics), Prometheus remote-write, InfluxDB line, MySQL/PG wire, gRPC, HTTP SQL — all GA. | Native TCP, HTTP, many input formats; OTLP via an exporter/Collector. **Correction (pass 44):** Prom remote-write is **no longer absent** — the **experimental `TimeSeries` engine** (off by default) accepts it. So this is GA-native (GreptimeDB) vs experimental (ClickHouse), not present-vs-absent. See `promql-and-metrics-query.md`. |
 | Parallax fit | OTLP + Prom remote-write **native** → telemetry lands with no translation. | Needs an OTLP→ClickHouse exporter / Collector pipeline in front. |
 
 This reinforces the metrics/PromQL capability gap from `per-signal-verdict.md`:

@@ -47,7 +47,10 @@ where ClickHouse leads but which Parallax's anchored pattern rarely hits.
   faster** (Run 11; Run-3's near-tie was a 1,200-series small-scale artifact).
   GreptimeDB ties only on **freshness** (both visible-on-write, Run 5). So even on
   metrics, "GreptimeDB fastest" is false for aggregation *latency at volume* — it
-  wins on PromQL nativeness, which ClickHouse lacks entirely.
+  wins on PromQL **maturity/ergonomics** (GA, default-on) vs ClickHouse's
+  **experimental** 26.x PromQL (`TimeSeries` engine, off by default) — a real lead,
+  but narrower than the old "ClickHouse has no PromQL" framing (corrected pass 44,
+  `promql-and-metrics-query.md`).
 
 So the ordering "GreptimeDB fastest, then ClickHouse" does not hold for the
 analytical query shapes; it inverts. The design decisions that cause it: ClickHouse
@@ -59,7 +62,7 @@ storage*, accepting a younger DataFusion scan engine.
 
 | Area | Mechanism | Confidence |
 | --- | --- | --- |
-| **Metrics / PromQL** | Native PromQL planner + Prom remote-write + metric engine; ClickHouse has no PromQL (needs a translation layer). | plan+smoke (Run 3) |
+| **Metrics / PromQL** | Native PromQL planner (custom DataFusion nodes) + Prom remote-write + metric engine, **GA + default-on**. **Corrected pass 44:** ClickHouse 26.x *does* have PromQL (`prometheusQuery[Range]` over the experimental `TimeSeries` engine), but **experimental, off by default, setup-heavy** — so the win is now **maturity/ergonomics, not capability** (`promql-and-metrics-query.md`). | plan+live (Run 3, Run 23) |
 | **Write ergonomics** | LSM memtable absorbs high-frequency small writes; no ClickHouse "too many parts". Native OTLP/Prom ingest, no collector. | arch+Run 5 |
 | **Horizontal scaling** | Region model + Metasrv auto-rebalance + repartition + compute/storage separation (object store + remote WAL) → topology change, not rewrite. **Region migration confirmed in source (pass 34)** = flush→downgrade→open_candidate→upgrade→close, **no bulk-copy step** — ownership reassignment + reopen-from-object-storage, cheap precisely because SSTs already live in S3. | arch+source (multi-node run owed) |
 | **Latest-state / upsert reads** | Dedup is **read-time** (`DedupReader` in the scan path): `last_row` / `last_non_null` (per-field partial-upsert merge) → "current issue status / deploy marker / metric last-value" is correct on a **plain query**, no keyword. ClickHouse `ReplacingMergeTree` dedups only at merge/`FINAL` (dupes visible until then). Concrete win on the Q2 issue-history sub-query. | source+measured (Run 19) |
@@ -86,9 +89,12 @@ storage*, accepting a younger DataFusion scan engine.
 evidence bundles (Runs 1–4 parity PASS). But three design decisions impose real
 cost:
 
-1. **No native PromQL / Prometheus remote-write / OTLP** → Parallax must build and
-   maintain a PromQL→SQL layer and an OTLP→ClickHouse collector pipeline. Metrics
-   are a first-class Parallax signal, so this is not optional.
+1. **PromQL/Prom/OTLP are experimental or external, not GA-native** → as of 26.x
+   ClickHouse *does* have PromQL (`prometheusQuery[Range]`) and Prom remote-write via
+   the **experimental, off-by-default `TimeSeries` engine** (pass 44 correction — not
+   "absent" anymore), and OTLP still needs a collector. So Parallax would depend on an
+   *experimental* metrics path or an external pipeline, vs GreptimeDB's GA-native one.
+   A maturity/ergonomics cost now, not a hard capability blocker.
 2. **Horizontal scale-out is manual** (shard count + sharding key up front; no OSS
    auto-resharding; `SharedMergeTree` is Cloud-only). Outgrowing the initial layout
    is a disruptive data-move — friction against the startups→big-companies path.
