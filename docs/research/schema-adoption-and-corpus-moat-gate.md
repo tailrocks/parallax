@@ -19,6 +19,9 @@ corpus.
 
 This gate defines the adoption clock, conformance artifacts, compatibility
 rules, corpus events, and NO-GO conditions for A3.
+The companion
+[A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md)
+defines the public event ledger that decides what actually counts.
 
 ## Source Posture
 
@@ -50,6 +53,9 @@ Internal sources:
 - [Business model and economics](business-model-and-economics.md) says adoption,
   not early revenue, is the first metric because schema/corpus gravity is the
   moat-building mechanism.
+- [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md)
+  defines the public schema-adoption and corpus-outcome event rows, count rules,
+  claim levels, and refresh cadence.
 
 ## What Must Exist Before The Clock Starts
 
@@ -189,12 +195,17 @@ schemas/
 Also add a `docs/research/schema-adoption-results.md` once external feedback or
 integration attempts exist. That file should record dates, external actors,
 integration type, compatibility issues, and whether each event counts toward the
-A3 clock.
+A3 clock, following the event schema in the
+[A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md).
+Add `docs/research/corpus-outcome-results.md` once bundles produce
+accepted/rejected/inconclusive outcome labels.
 
 ## Relationship To Other Research
 
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
   current `v0` contract this gate makes testable.
+- [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md)
+  defines the event ledger and claim labels for schema gravity and corpus growth.
 - [Risks and the bear case](risks-and-bear-case.md) names A3 as existential.
 - [Build roadmap](build-roadmap-and-validation-sequence.md) starts the adoption
   clock in Phase 2 and records accepted/rejected fix outcomes in Phase 4.

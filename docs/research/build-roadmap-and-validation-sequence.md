@@ -86,6 +86,7 @@ Build only enough to generate the bundle automatically and repeatably:
 - Publish the [open evidence schema](evidence-bundle-and-schema.md) with the
   machine-readable artifacts and conformance suite required by the
   [schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
+  and [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md)
   → starts the A3 adoption clock.
 - **Gate:** storage gates pass (freshness/latency/cost) or ClickHouse substitutes;
   redaction leak rate acceptable.
@@ -153,6 +154,9 @@ Build only enough to generate the bundle automatically and repeatably:
   privacy-preserving public artifact that makes the A2 result auditable.
 - [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
   — the A3 conformance/adoption/corpus runbook for Phase 2 onward.
+- [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md)
+  — the public event ledger for schema reviews, integrations, conformance runs,
+  compatibility decisions, and outcome-corpus rows.
 - [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md)
   — the A4 strong-edge prevalence gate for Phase 1/2 real telemetry.
 - [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)

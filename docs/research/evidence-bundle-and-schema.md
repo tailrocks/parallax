@@ -14,6 +14,9 @@ bundle format as the primary defensible moat: a feature can be copied in a
 release, but a schema that other tools and agents build against becomes leverage
 that compounds. This is the concrete spec that turns that claim into something
 buildable.
+The adoption and corpus moat claim is not proven by this spec alone; the
+[A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md)
+defines how external use and outcome data must be recorded.
 
 It elevates the data-model tables scattered across
 [Technical implementation concept](technical-implementation-concept.md) (error
