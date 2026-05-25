@@ -49,6 +49,7 @@ or CI contract yet.
 | `docs/research/a3-schema-adoption-corpus-ledger.md` | A3 schema-adoption and corpus ledger: public event schemas, counting rules, claim levels, and refresh cadence for reviews, integrations, conformance runs, compatibility decisions, and outcome rows. |
 | `docs/research/self-hosted-simplicity-gate.md` | Operational proof gate for kill criterion 6: measure Phase 1 tiny-tier setup against current self-hosted Sentry, SigNoz, OpenObserve, GreptimeDB, and Turso/libSQL baselines. |
 | `docs/research/self-hosted-deployment-baseline-inventory.md` | Source-linked version and deployment-shape manifest for the self-hosted simplicity benchmark: Sentry, SigNoz, OpenObserve, Bugsink, Rustrak, Traceway, GoSnag, and Urgentry. |
+| `docs/research/self-hosted-simplicity-ledger.md` | Result-ledger contract for tiny-tier self-hosting claims: clean-VM run artifacts, install timing, service/resource rows, ingest smoke, restart, backup/restore, upgrade, redaction, and allowed product wording. |
 | `docs/research/market-landscape.md` | Market research. |
 | `docs/research/open-self-hosted-competitor-watch.md` | Focused watchlist for OpenObserve, SigNoz, and Coroot: current primary-source posture, remaining Parallax gaps, and trigger conditions that would reopen the GO verdict. |
 | `docs/research/lightweight-sentry-compatible-competitor-watch.md` | Focused watchlist for Bugsink, Rustrak, Traceway, GoSnag, and Urgentry: lightweight Sentry-compatible or OTLP-native self-hosted challengers that pressure Parallax's migration and simplicity claims. |

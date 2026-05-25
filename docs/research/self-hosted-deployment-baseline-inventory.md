@@ -11,6 +11,8 @@ measurement protocol, but its scorecard is intentionally empty until the full VM
 run happens. This note is the source-linked baseline inventory for that run: the
 current versions to pin, official install path to follow, service shape to
 expect, and caveats that prevent apples-to-oranges claims.
+The result rows and product-claim status should be published through the
+[Self-hosted simplicity ledger](self-hosted-simplicity-ledger.md).
 
 This is not the full benchmark result. It is the manifest that makes the full
 benchmark reproducible.
@@ -129,6 +131,9 @@ works.
 
 - [Self-hosted simplicity gate](self-hosted-simplicity-gate.md) owns the full
   benchmark protocol and scorecard.
+- [Self-hosted simplicity ledger](self-hosted-simplicity-ledger.md) defines the
+  run artifacts, row schemas, claim levels, and expiry rules for using this
+  inventory in product claims.
 - [Lightweight Sentry-compatible competitor watch](lightweight-sentry-compatible-competitor-watch.md)
   tracks the projects that make this baseline necessary.
 - [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)

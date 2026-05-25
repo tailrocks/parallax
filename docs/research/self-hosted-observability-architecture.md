@@ -97,7 +97,8 @@ The smaller design has to be proven operationally, not asserted. The Phase 1
 deployment should pass the
 [self-hosted simplicity gate](self-hosted-simplicity-gate.md): <=15 minutes to
 the first useful issue context, <=3 long-running services, no required broker,
-and local/embedded metadata by default.
+and local/embedded metadata by default. Claim status belongs in the
+[self-hosted simplicity ledger](self-hosted-simplicity-ledger.md).
 
 Parallax also constrains every infrastructure choice by language and runtime.
 Only high-performance, low-resource systems languages are in scope — Rust
@@ -505,7 +506,9 @@ local disk retention
 
 No Iggy unless the ingest path needs buffering. This profile proves that
 Parallax can beat self-hosted Sentry on operational simplicity. The proof is the
-[self-hosted simplicity gate](self-hosted-simplicity-gate.md), not the diagram.
+[self-hosted simplicity gate](self-hosted-simplicity-gate.md) and
+[self-hosted simplicity ledger](self-hosted-simplicity-ledger.md), not the
+diagram.
 
 ### Profile 2: Durable Single Server
 

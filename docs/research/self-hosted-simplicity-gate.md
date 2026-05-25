@@ -15,6 +15,8 @@ than Sentry, SigNoz, or OpenObserve while accidentally inheriting their
 operational shape. If Parallax needs a broker, multiple product services, a
 separate relational database, and complex background workers before it can emit
 one useful issue context bundle, the self-hosted wedge is not real.
+Result rows, claim levels, and product wording for this gate live in the
+[Self-hosted simplicity ledger](self-hosted-simplicity-ledger.md).
 
 ## Current Baselines
 
@@ -181,3 +183,7 @@ Related competitive check: [Lightweight Sentry-compatible competitor watch](ligh
 Related scope check: [A7 scope discipline ledger](a7-scope-discipline-ledger.md)
 owns the feature, dependency, protocol, and service-count rows that must stay
 green before this simplicity gate can support a Phase 1 claim.
+
+Related result contract: [Self-hosted simplicity ledger](self-hosted-simplicity-ledger.md)
+defines the clean-VM run artifacts, row schemas, expiry triggers, and allowed
+wording before any public simplicity claim.

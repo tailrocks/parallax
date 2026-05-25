@@ -335,7 +335,8 @@ Expired results stay useful as history, but the decision row must move to
 - [OTLP conformance ledger](otlp-conformance-ledger.md) owns direct-SDK,
   Collector, and Rotel integration claim rows.
 - [Self-hosted simplicity gate](self-hosted-simplicity-gate.md) owns setup and
-  operator-burden rows.
+  operator-burden thresholds; [Self-hosted simplicity ledger](self-hosted-simplicity-ledger.md)
+  owns the clean-VM result rows and tiny-tier wording.
 - [Strategic verdict and research coverage](strategic-verdict-and-research-coverage.md)
   should treat this as the A5 stack-proof umbrella, not another component gate.
 

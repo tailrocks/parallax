@@ -255,8 +255,9 @@ Reverse this GO if prototype evidence shows any of the following:
 5. MCP/API access cannot be made least-privilege, auditable, and read-only by
    default.
 6. The first deployment fails the
-   [self-hosted simplicity gate](self-hosted-simplicity-gate.md) and is not
-   meaningfully simpler than self-hosted Sentry.
+   [self-hosted simplicity gate](self-hosted-simplicity-gate.md), cannot pass
+   the [self-hosted simplicity ledger](self-hosted-simplicity-ledger.md), and is
+   not meaningfully simpler than self-hosted Sentry.
 
 Until those kill criteria trigger, the correct decision is **GO**.
 

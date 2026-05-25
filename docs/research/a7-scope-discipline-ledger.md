@@ -270,7 +270,9 @@ Default decisions:
 - [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md)
   supplies the phase order A7 enforces.
 - [Self-hosted simplicity gate](self-hosted-simplicity-gate.md) supplies the
-  deployment/service-count budget for the tiny tier.
+  deployment/service-count budget for the tiny tier, while the
+  [Self-hosted simplicity ledger](self-hosted-simplicity-ledger.md) defines the
+  clean-VM run rows and claim levels.
 - [A5 stack decision ledger](a5-stack-decision-ledger.md) owns stack-default
   claims; A7 owns whether those stack choices keep the product buildable.
 - [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)

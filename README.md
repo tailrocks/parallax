@@ -31,6 +31,7 @@ idea becomes sharper.
 - [A3 schema adoption and corpus ledger](docs/research/a3-schema-adoption-corpus-ledger.md)
 - [Self-hosted simplicity gate](docs/research/self-hosted-simplicity-gate.md)
 - [Self-hosted deployment baseline inventory](docs/research/self-hosted-deployment-baseline-inventory.md)
+- [Self-hosted simplicity ledger](docs/research/self-hosted-simplicity-ledger.md)
 - [Project thesis](docs/research/project-thesis.md)
 - [Market landscape](docs/research/market-landscape.md)
 - [Open self-hosted competitor watch](docs/research/open-self-hosted-competitor-watch.md)
