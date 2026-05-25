@@ -110,7 +110,7 @@ Access decision:
 | OTLP/gRPC | `tonic` + `prost` receiver for OTLP/gRPC; `axum` route for OTLP/HTTP. | Dedicated `parallax-ingest` nodes. | Regional ingest tiers with collector compatibility and overload control. |
 | App collection | Rust `tracing`, `tracing-error`, `opentelemetry-otlp`, Sentry-compatible Rust panic/error capture. | Add SDK fixtures for more languages through Sentry envelope compatibility and OTLP. | Collector/agent integrations, sampling policy, tenant routing. |
 | CLI tracing | `parallax` CLI built with `clap`; wrapper/subcommand mode records structural command metadata, sanitized args/env/cwd, stdout/stderr policy refs, exit code, and overhead metrics. | CI and deploy systems call CLI with project token and redaction policy after the [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) gate passes. | Organization-wide CLI/agent gateway and policy templates. |
-| Agent-session tracing | JSON event schema for model calls, MCP/tool calls, shell commands, file reads/writes, tests, patches, PRs, approvals, outcomes. | Fixer component and agent adapters emit session traces to Parallax. | Multi-agent session graph with policy, review, and accepted-fix feedback loops. |
+| Agent-session tracing | Normalized `agent_session` / `agent_action` schema fed by bounded adapters for native OTel, hooks/plugins, JSONL or stream JSON, exports, server/API protocols, wrappers, and raw refs. | Fixer component and real-tool adapters source session traces with per-tool/version/config coverage, lossiness, redaction, and projection rows in the ledger. | Multi-agent session graph with policy, review, and accepted-fix feedback loops. |
 | Stream / buffer | Local append-only WAL/outbox segment files. | Apache Iggy standalone when replay, backpressure, or worker separation is needed. | Iggy cluster or storage-backed stream fallback if Iggy fails scale tests. |
 | Observability storage | GreptimeDB standalone on local disk. | GreptimeDB standalone with S3/object storage. | GreptimeDB distributed with object storage; ClickHouse fallback cluster if benchmarks force it. |
 | Metadata store | Turso Database for projects, DSNs, policies, issue state, audit, agent sessions, CLI invocations, outcomes. | Turso with benchmarked backup/restore and concurrency gates; Postgres fallback if those fail. | Postgres fallback for large multi-node metadata if Turso fails production gates. |
@@ -421,17 +421,27 @@ Store one session root plus ordered actions:
 | Field group | Required fields |
 | --- | --- |
 | Identity | `agent_session_id`, `project_id`, `agent_product`, `started_at`, `ended_at`, `status` |
+| Adapter provenance | `adapter_name`, `adapter_version`, capture surface, source tool binary/version/config, source schema snapshot, lossiness report |
 | Context | prompt refs, repo refs, files read, docs read, Parallax bundles requested, external issue/PR refs |
 | Tool calls | MCP/API calls, CLI commands, shell commands, database/query templates, tool result refs |
 | Model steps | model/provider metadata when available, token counts when available, reasoning summary refs, confidence |
 | Code actions | files edited, patch refs, commits, PR URLs, review comments, rollback/revert refs |
 | Validation | tests run, build commands, lint/typecheck results, failure excerpts, skipped checks |
 | Outcome | accepted, edited, rejected, reverted, inconclusive, production recurrence, human approver |
-| Safety | approvals, denied actions, policy version, redaction report, prompt-injection flags |
+| Safety | approvals, denied actions, policy version, hook/plugin source and trust mode, dangerous flags, content-capture level, raw-ref policy, redaction/source-field/projection status, prompt-injection flags |
 
 Parallax stores facts about the agent run. It does not need full private model
 reasoning to be useful; it needs enough structured action history to reconstruct
 what context the agent used and what it changed.
+
+Do not collapse tool-specific capture surfaces into one support claim. Claude
+Code native OTel is separate from Claude print-mode `stream-json`; Codex hooks
+are separate from `codex exec --json` JSONL and plugin/managed hook surfaces;
+Amp plugin events are separate from execute-mode streaming JSON; and OpenCode
+run JSON, export JSON, plugin hooks, server/API, and ACP surfaces are separate.
+Product wording must point to the dated tool/version/config matrix in the
+[Agent session tracing ledger](agent-session-tracing-ledger.md), not to generic
+"agent tracing" support.
 
 ### Audit Graph Edges
 
@@ -738,8 +748,9 @@ candidate versions:
 
 ### Agent And CLI Execution
 
-- coding-agent session schema across Codex, Claude Code, Amp, and OpenCode,
-  with the initial adapter/value gate in
+- adapter claims across native OTel, hooks/plugins, JSONL and stream JSON,
+  export/API/ACP, wrapper, and raw-ref surfaces across Codex, Claude Code, Amp,
+  and OpenCode, with the initial adapter/value gate in
   [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
   and result ledger in
   [Agent session tracing ledger](agent-session-tracing-ledger.md);
