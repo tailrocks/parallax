@@ -21,14 +21,16 @@ The central rule:
 
 > No public "Sentry SDK compatible" claim without a dated SDK/version matrix,
 > raw fixture hashes, parser results, normalization snapshots, grouping results,
-> redaction results, source-field policy status, projection safety rows, and
-> explicit unsupported-item outcomes.
+> redaction results, source-field policy status, `schema_ref`, canonical bundle
+> hashes, projection manifests, CLI/HTTP/MCP projection-equivalence rows, MCP
+> `structuredContent`/`outputSchema` validation, and explicit unsupported-item
+> outcomes.
 
 ## Current Source Snapshot
 
 | Source | Current check | Why it matters |
 | --- | --- | --- |
-| Package registry snapshot ([crates.io](https://crates.io/crates/sentry), [npm browser](https://www.npmjs.com/package/@sentry/browser), [npm node](https://www.npmjs.com/package/@sentry/node), [Go proxy](https://proxy.golang.org/github.com/getsentry/sentry-go/@latest), [PyPI](https://pypi.org/project/sentry-sdk/)) | Registry checks on 2026-05-25 found Rust `sentry` `0.48.2` on crates.io, JavaScript `@sentry/browser`, `@sentry/node`, and `@sentry/react` `10.53.1` on npm, Go `github.com/getsentry/sentry-go` `v0.46.2` on the Go module proxy, and Python `sentry-sdk` `2.60.0` on PyPI. | A compatibility claim must pin the exact SDK version and package source, because Sentry SDKs and item models move quickly. |
+| Package registry snapshot ([crates.io](https://crates.io/crates/sentry), [npm browser](https://www.npmjs.com/package/@sentry/browser), [npm node](https://www.npmjs.com/package/@sentry/node), [Go proxy](https://proxy.golang.org/github.com/getsentry/sentry-go/@latest), [PyPI](https://pypi.org/project/sentry-sdk/)) | Registry checks re-run on 2026-05-25 found Rust `sentry` `0.48.2` on crates.io, JavaScript `@sentry/browser`, `@sentry/node`, and `@sentry/react` `10.53.1` on npm, Go `github.com/getsentry/sentry-go` `v0.46.2` on the Go module proxy, and Python `sentry-sdk` `2.60.0` on PyPI. | A compatibility claim must pin the exact SDK version and package source, because Sentry SDKs and item models move quickly. |
 | [sentry Rust crate 0.48.2](https://docs.rs/sentry/latest/sentry/) | Docs.rs currently resolves `sentry` to `0.48.2`; the crate integrates Rust panics, contexts, backtraces, `anyhow`, `tracing`, OpenTelemetry, transports, and protocol/types. | This is the first SDK fixture target because Parallax is Rust-first. |
 | [Sentry envelope struct](https://docs.rs/sentry/latest/sentry/struct.Envelope.html) | Sentry describes the envelope as the ingestion data format; it can contain related items such as events and attachments, plus independent items such as sessions. | The compatibility surface is not only JSON events; item policy is part of the claim. |
 | [sentry-types envelope parser](https://docs.rs/sentry-types/latest/src/sentry_types/protocol/envelope.rs.html) | Current envelope headers include `event_id`, `dsn`, `sdk`, `sent_at`, and trace/dynamic-sampling context; item headers include `type`, optional `length`, `content_type`, filename, and attachment type. Current item variants include `event`, `session`, `sessions`, `transaction`, `attachment`, `check_in`, `log`, and `trace_metric`, and the Rust enum is non-exhaustive. | Parser fixtures must cover length/no-length payloads, current container items, and unsupported/future items without poisoning supported event ingestion. |
@@ -38,6 +40,7 @@ The central rule:
 | [Sentry fingerprint rules](https://docs.sentry.io/concepts/data-management/event-grouping/fingerprint-rules/) | Fingerprint rules can override default grouping or refine it with `{{ default }}`. | Parallax must preserve client-provided fingerprints and record whether the grouping source was client, Parallax default, or fallback. |
 | [Sentry trace propagation](https://develop.sentry.dev/sdk/foundations/trace-propagation/) | Sentry trace propagation uses `sentry-trace` and `baggage`; SDKs can optionally emit W3C `traceparent` for OpenTelemetry interop. | Compatibility is only valuable for Parallax if Sentry error context can join to OTLP traces/logs. |
 | [Sentry Relay repository](https://github.com/getsentry/relay) | Relay remains the closest Rust ingestion reference, but it is a gateway/processing system rather than a tiny Parallax dependency. | Use Relay as a reference oracle where useful, not as the operational architecture. |
+| [MCP 2025-11-25 tools spec](https://modelcontextprotocol.io/specification/2025-11-25/server/tools), [MCP base protocol](https://modelcontextprotocol.io/specification/2025-11-25/basic), and [RFC 8785 JCS](https://www.rfc-editor.org/rfc/rfc8785.html) | MCP tools can return `structuredContent` validated by `outputSchema`; MCP reserves `_meta` for protocol metadata; JCS provides a deterministic JSON representation suitable for hashes. | Sentry fixture outputs cannot be considered agent-ready unless bundle projections are structured, schema-valid, and hash-equivalent across access surfaces. |
 | [Bugsink Sentry SDK compatibility](https://www.bugsink.com/connect-any-application/) and [Urgentry](https://urgentry.com/) | Lightweight competitors publicly use DSN-change or drop-in Sentry replacement language. | Parallax needs more precise evidence and wording; simple compatibility language is already crowded. |
 
 ## Claim Levels
@@ -50,7 +53,7 @@ The central rule:
 | `rust_trace_link_compatible` | Rust SDK fixtures carrying Sentry trace context join to matching OTLP trace/log rows. | "Sentry Rust errors link to OpenTelemetry trace context." |
 | `rust_grouping_stable` | Rust fixtures plus rebuild/debuginfo variants produce stable versioned Parallax fingerprints. | "Deterministic Parallax grouping for Rust Sentry error events." |
 | `multi_sdk_error_smoke` | At least Rust plus two non-Rust SDKs parse and normalize core error fields for dated versions. | "Sentry SDK-compatible error ingestion for the tested SDK matrix." |
-| `sentry_sdk_compatible_error_ingest` | Multi-SDK error-event matrix passes parser, normalization, grouping, redaction, source-field, projection, idempotency, unsupported-item, and trace-context gates. | "Sentry SDK-compatible error ingestion" with matrix link. |
+| `sentry_sdk_compatible_error_ingest` | Multi-SDK error-event matrix passes parser, normalization, grouping, redaction, source-field, canonical bundle, projection-equivalence, MCP structured-output, idempotency, unsupported-item, and trace-context gates. | "Sentry SDK-compatible error ingestion" with matrix link. |
 | `drop_in_sentry_replacement_not_supported` | Sessions, replay, profiles, release health, attachments, exact grouping parity, and Sentry API/UI parity are not supported. | Required caveat for MVP. |
 | `claim_expired` | A supported SDK, envelope item model, grouping algorithm, redaction/source-field/projection policy, or 90-day timer changed after the last pass. | "Compatibility result expired; rerun required." |
 | `claim_failed` | A fixture run failed any required gate for the advertised level. | No compatibility claim for the affected SDK/version/path. |
@@ -73,6 +76,8 @@ docs/research/sentry-compatibility-runs/<run_id>/source-field-policy-results.jso
 docs/research/sentry-compatibility-runs/<run_id>/trace-correlation-results.jsonl
 docs/research/sentry-compatibility-runs/<run_id>/unsupported-item-results.jsonl
 docs/research/sentry-compatibility-runs/<run_id>/projection-results.jsonl
+docs/research/sentry-compatibility-runs/<run_id>/bundle-projection-results.jsonl
+docs/research/sentry-compatibility-runs/<run_id>/mcp-projection-results.jsonl
 docs/research/sentry-compatibility-runs/<run_id>/sdk-matrix.jsonl
 docs/research/sentry-compatibility-runs/<run_id>/claim-ledger.jsonl
 docs/research/sentry-compatibility-runs/<run_id>/hashes.sha256
@@ -92,8 +97,23 @@ Each `manifest.json` should include:
   "fixture_generator_commit": "<git-sha>",
   "parallax_parser_commit": "<git-sha>",
   "parallax_grouping_version": "rust-stack-v1",
+  "bundle_schema_ref": {
+    "uri": "schema://parallax/evidence-bundle/v0",
+    "hash": "sha256:<hex>",
+    "canonicalization": "jcs-rfc8785"
+  },
+  "canonical_bundle_hash_required": true,
   "redaction_policy_version": "a6-default-deny-vN",
   "source_field_policy_version": "phase0-source-field-policy-vN",
+  "projection_manifest_required": true,
+  "projection_surfaces_required": [
+    "bundle_json",
+    "bundle_markdown",
+    "cli_output",
+    "http_api",
+    "mcp_structuredContent"
+  ],
+  "mcp_output_schema_required": true,
   "source_snapshot": {
     "sentry_rust": "0.48.2",
     "sentry_tracing": "0.48.2",
@@ -109,7 +129,8 @@ Each `manifest.json` should include:
   "size_limits": {},
   "idempotency_policy": "project_id+event_id",
   "raw_envelope_visibility": "fixture_only_not_agent_visible",
-  "projection_formats": ["json", "markdown"],
+  "raw_envelope_access_policy": "deny_dereference_by_default",
+  "projection_formats": ["bundle_json", "bundle_markdown", "cli_output", "http_api", "mcp_structuredContent"],
   "fixture_app_hashes": [],
   "notes": []
 }
@@ -260,12 +281,20 @@ with one grouping/redaction version does not automatically carry over to another
 ```json
 {
   "fixture_id": "rust_request_context",
-  "projection_format": "json|markdown",
+  "projection_surface": "bundle_json|bundle_markdown|cli_output|http_api|mcp_structuredContent",
+  "schema_ref_hash": "sha256:<hex>",
+  "canonical_bundle_hash": "sha256:<hex>",
+  "projection_manifest_hash": "sha256:<hex>",
+  "projection_equivalence_hash": "sha256:<hex>",
+  "projection_equivalence_pass": true,
+  "mcp_output_schema_valid": "true|false|not_used",
+  "mcp_structured_content_hash": "sha256:<hex>|not_used",
   "redaction_report_present": true,
   "source_field_policy_status": "pass|fail",
   "missing_evidence_present": true,
   "raw_envelope_ref_count": 1,
   "raw_envelope_ref_dereferenced": false,
+  "safety_fields_only_in_meta": false,
   "unsupported_payload_visible": false,
   "seeded_canary_leaks": 0,
   "agent_visible_pass": true
@@ -280,6 +309,9 @@ with one grouping/redaction version does not automatically carry over to another
   "claim_level": "rust_error_event_compatible",
   "claim_status": "pass|fail|expired",
   "sdk_matrix": ["sentry-rust@0.48.2"],
+  "canonical_bundle_hashes": ["sha256:<hex>"],
+  "projection_manifest_hashes": ["sha256:<hex>"],
+  "mcp_output_schema_valid": "true|false|not_used",
   "product_wording": "Compatible with current Sentry Rust SDK error-event envelopes.",
   "required_caveats": ["not a drop-in Sentry replacement"],
   "expires_at": "YYYY-MM-DD"
@@ -290,6 +322,16 @@ with one grouping/redaction version does not automatically carry over to another
 
 - No broad "Sentry-compatible" claim without a dated SDK/language/version
   matrix.
+- No agent-visible Sentry compatibility claim without `schema_ref`,
+  `canonical_bundle_hash`, `projection_manifest_hash`, and access-policy rows
+  for each fixture bundle.
+- CLI, HTTP, MCP, Markdown, and persisted JSON projections must carry equivalent
+  canonical bundle and projection manifest hashes for the same fixture scope.
+- MCP projection rows count only when `structuredContent` validates against the
+  declared `outputSchema`; text-only MCP output is not an agent-ready Sentry
+  compatibility result.
+- Safety-critical fields do not count if they appear only in MCP `_meta`, text
+  descriptions, or free-form PR/diagnosis prose.
 - No "supports Sentry SDKs" wording until at least Rust L1/L2 and
   multi-SDK error smoke pass.
 - No "drop-in Sentry replacement" wording unless sessions, replay, profiles,
@@ -311,6 +353,10 @@ with one grouping/redaction version does not automatically carry over to another
   production customer data.
 - Redaction and source-field policy must pass before any fixture output is
   promoted into an agent-visible bundle.
+- A6 redaction rows must be current before any Sentry fixture projection is
+  considered safe for agent use.
+- A4 correlation rows must be current before trace-link compatibility is used
+  as evidence for cross-system reconstruction.
 - Raw envelopes and unsupported-item payloads may be retained for parser audit,
   but agent-visible projections must expose only refs, redaction/source-field
   reports, missing-evidence flags, and normalized safe fields.
@@ -329,6 +375,8 @@ change:
 - Parallax grouping algorithm changes;
 - Parallax redaction policy changes;
 - Parallax source-field policy or projection schema changes;
+- Parallax bundle schema, canonicalization method, projection surface list, MCP
+  output schema, or access policy changes;
 - unsupported-item policy changes;
 - 90 days pass since the last run.
 
@@ -345,6 +393,8 @@ Allowed after `sentry_sdk_compatible_error_ingest`:
 > Sentry SDK-compatible error ingestion for the tested SDK matrix.
 
 Always link the matrix, unsupported-item outcomes, and projection safety rows.
+When MCP is part of the advertised access surface, also link the
+`structuredContent` validation row and canonical projection hash.
 Avoid unqualified claims such as:
 
 - "Drop-in Sentry replacement";

@@ -373,8 +373,13 @@ Parallax should default to:
 
 - redact known secret/token/header fields before storage;
 - store raw envelopes with short TTL and access controls;
-- expose raw events only through a privileged read-sensitive API/MCP tool;
+- expose raw events only through an explicit read-sensitive API path after
+  approval; the first read-only MCP surface should expose raw refs, not raw
+  envelope payloads;
 - keep agent bundles bounded and redacted;
+- require `schema_ref`, canonical bundle hash, projection manifest, access
+  policy, and projection-equivalence rows before Sentry-derived evidence becomes
+  agent-visible;
 - record redaction policy version on every normalized event;
 - make attachments opt-in by project.
 
@@ -414,7 +419,10 @@ context is easy to over-share.
   - recent same-fingerprint events;
   - same-trace logs/spans;
   - release/deploy window;
-  - redaction summary.
+  - redaction summary;
+  - source-field status;
+  - canonical hash and projection manifest;
+  - CLI/API/MCP projection-equivalence report.
 
 ### Phase 5: Compatibility Expansion
 
@@ -439,6 +447,7 @@ This table is the short version. The full SDK-generated fixture gate is
 | Unknown envelope item | Raw reference retained, item ignored/rejected by policy. |
 | Oversized attachment | Rejected before storage. |
 | Duplicate event ID | Idempotent no-op or duplicate marker, no new issue event. |
+| Agent-visible projection | Redacted bundle has stable canonical hash across JSON, Markdown, CLI, HTTP, and MCP `structuredContent`; raw envelope remains a ref. |
 | Storage unavailable | Accepted only if WAL/Iggy has capacity; otherwise explicit rejection. |
 
 ## Bottom Line
@@ -458,6 +467,8 @@ protocol edge and opinionated internally:
 - local WAL first, Iggy when replay and processor separation matter;
 - deterministic grouping before AI grouping;
 - bounded evidence bundles before autonomous PRs.
+- canonical, redacted, projection-equivalent Sentry-derived bundles before any
+  "agent-ready Sentry context" wording.
 
 That path gives Parallax the useful part of Sentry without recreating the
 self-hosted Sentry service graph.
