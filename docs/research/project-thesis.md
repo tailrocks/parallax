@@ -12,10 +12,11 @@
 
 **Current research status, 2026-05-25:** the maintained verdict is **GO only for
 the narrow version**: a Rust-first, self-hostable runtime evidence/context
-engine that accepts Sentry-compatible errors, OTLP telemetry, CLI invocation
-traces, and tested coding-agent session records, then serves schema-valid,
-redacted evidence bundles. Do not read this thesis as a claim for a generic AI
-RCA chatbot, a full dashboard suite, or autonomous production mutation. The
+engine that accepts fixture-gated Sentry envelope error events, OTLP telemetry,
+CLI invocation traces, and tested coding-agent session records, then serves
+schema-valid, redacted evidence bundles. Do not read this thesis as a claim for
+a generic AI RCA chatbot, a full dashboard suite, or autonomous production
+mutation. The
 current storage posture is also narrower than early drafts: GreptimeDB is the
 v0.1 prototype default, but ClickHouse remains the exact-version benchmark
 fallback and storage claims stay unproven until freshness, bundle-latency,
@@ -61,8 +62,8 @@ schema-bound investigation context that both humans and AI agents can use.
 The initial validation wedge is an evidence-bundle evaluation: prove that a
 bounded bundle helps a human or coding agent investigate better than raw
 telemetry dumps. Flaky-test investigation remains a useful low-risk wedge, but
-the maintained build direction now also includes Sentry-compatible error
-migration, OTLP telemetry, CLI traces, and tested agent-session adapters.
+the maintained build direction now also includes fixture-gated Sentry envelope
+error migration, OTLP telemetry, CLI traces, and tested agent-session adapters.
 
 ---
 
@@ -383,7 +384,7 @@ Potential integrations:
 - GitHub Actions
 - GitHub Issues / Pull Requests
 - Linear
-- Sentry-compatible ingestion
+- Sentry envelope error-event ingestion
 - Slack
 - incident management systems
 
@@ -699,7 +700,7 @@ parallax test explain com.company.CheckoutTest.shouldApplyDiscount
 
 ```
 Input:
-- Sentry-compatible events
+- Sentry envelope error events
 - OpenTelemetry logs/traces/metrics
 - deploy metadata
 

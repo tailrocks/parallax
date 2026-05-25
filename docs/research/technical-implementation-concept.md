@@ -20,13 +20,14 @@ as historical evidence.
 
 Build Parallax as:
 
-> A Rust-first, Sentry-compatible, OpenTelemetry-compatible execution context
-> system for services, CLI apps, CI runs, and coding agents that stores
-> observability evidence in GreptimeDB, starts product metadata in local Turso
-> Database, keeps Postgres as the production fallback until metadata gates pass,
-> and exposes bounded schema-bound evidence bundles through a CLI and HTTP API,
-> with a later read-only MCP adapter once the canonical bundle and projection
-> contracts are stable.
+> A Rust-first execution context system with fixture-gated Sentry envelope
+> error-event ingest and OpenTelemetry-compatible telemetry ingest for services,
+> CLI apps, CI runs, and coding agents. It stores observability evidence in
+> GreptimeDB, starts product metadata in local Turso Database, keeps Postgres as
+> the production fallback until metadata gates pass, and exposes bounded
+> schema-bound evidence bundles through a CLI and HTTP API, with a later
+> read-only MCP adapter once the canonical bundle and projection contracts are
+> stable.
 
 The first product should beat self-hosted Sentry on operational simplicity. It
 should not start as a full observability dashboard or autonomous production SRE.
@@ -35,8 +36,8 @@ should not start as a full observability dashboard or autonomous production SRE.
 
 | Layer | Recommendation | Why |
 | --- | --- | --- |
-| Rust app collection | `tracing`, `tracing-error`, `opentelemetry-otlp`, and a Sentry-compatible panic/error layer. | Only in-process collection sees panic messages, typed error chains, span fields, release/env, and backtraces. |
-| External protocol | Accept Sentry envelopes and OTLP HTTP/gRPC. | Preserves existing Sentry SDK setup while making OTEL the native logs/traces/metrics path. |
+| Rust app collection | `tracing`, `tracing-error`, `opentelemetry-otlp`, and a Sentry envelope panic/error-event layer. | Only in-process collection sees panic messages, typed error chains, span fields, release/env, and backtraces. |
+| External protocol | Accept the Sentry envelope `event` subset and OTLP HTTP/gRPC. | Preserves the error-event migration path while avoiding sessions, replay, profiles, release-health, exact grouping parity, and full Sentry API/UI parity until fixture gates prove each surface. |
 | Ingest gateway | Build a Rust `parallax-ingest` service. | Parallax needs auth, redaction, size limits, raw evidence retention, grouping hooks, and idempotency before storage. |
 | Message stream | No external broker in the tiny deployment. Use a local WAL/outbox. Add Apache Iggy for the durable profile. | The first version must stay simpler than Sentry. Iggy is the best Rust-native append-only stream once replay and processor isolation matter. |
 | Storage default | GreptimeDB for v0.1 observability storage. Keep a ClickHouse adapter as the benchmark fallback. | GreptimeDB is the closest architectural fit: Rust, observability-native, OTLP, Prometheus/PromQL, SQL, object-storage-oriented deployment. |
@@ -117,7 +118,7 @@ Access decision:
 | Language/runtime | Rust, Tokio async runtime. | Same. | Same. |
 | HTTP API | `axum` REST/JSON service in `parallax-server`. | Separate `parallax-api` nodes behind a load balancer. | Horizontally scaled `parallax-api` fleet. |
 | OTLP/gRPC | `tonic` + `prost` receiver for OTLP/gRPC; `axum` route for OTLP/HTTP. | Dedicated `parallax-ingest` nodes. | Regional ingest tiers with collector compatibility and overload control. |
-| App collection | Rust `tracing`, `tracing-error`, `opentelemetry-otlp`, Sentry-compatible Rust panic/error capture. | Add SDK fixtures for more languages through Sentry envelope compatibility and OTLP. | Collector/agent integrations, sampling policy, tenant routing. |
+| App collection | Rust `tracing`, `tracing-error`, `opentelemetry-otlp`, and fixture-gated Sentry envelope Rust panic/error capture. | Add SDK fixtures for more languages through Sentry envelope `event` compatibility and OTLP. | Collector/agent integrations, sampling policy, tenant routing. |
 | CLI tracing | `parallax` CLI built with `clap`; wrapper/subcommand mode records structural command metadata, sanitized args/env/cwd, stdout/stderr policy refs, exit code, and overhead metrics. | CI and deploy systems call CLI with project token and redaction policy after the [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) gate passes. | Organization-wide CLI/agent gateway and policy templates. |
 | Agent-session tracing | Normalized `agent_session` / `agent_action` schema fed by bounded adapters for native OTel, hooks/plugins, JSONL or stream JSON, exports, server/API protocols, wrappers, and raw refs. | Fixer component and real-tool adapters source session traces with per-tool/version/config coverage, lossiness, redaction, and projection rows in the ledger. | Multi-agent session graph with policy, review, and accepted-fix feedback loops. |
 | Stream / buffer | Local append-only WAL/outbox segment files. | Apache Iggy standalone when replay, backpressure, or worker separation is needed. | Iggy cluster or storage-backed stream fallback if Iggy fails scale tests. |
@@ -308,7 +309,7 @@ Tiny single-node:
 
 ```text
 Rust app / service / CLI / coding agent
-  -> Sentry SDK compatible envelope endpoint
+  -> Sentry envelope event endpoint for tested SDK fixtures
   -> OTLP HTTP/gRPC endpoint
   -> agent/CLI execution trace endpoint
   -> parallax-server

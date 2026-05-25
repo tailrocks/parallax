@@ -29,8 +29,9 @@ agents, and likely to overpromise causality.
 The defensible version is:
 
 > An open-source, Rust-first, self-hostable execution context engine that
-> accepts Sentry-compatible errors, OTLP telemetry, CLI invocation traces, and
-> coding-agent session records from tested capture adapters, builds
+> accepts fixture-gated Sentry envelope error events, OTLP telemetry, CLI
+> invocation traces, and coding-agent session records from tested capture
+> adapters, builds
 > deterministic evidence graphs, and serves bounded context bundles to humans
 > and coding agents through API/MCP.
 
@@ -49,7 +50,7 @@ Build this first:
 
 ```text
 Rust service / CLI / coding agent
-  -> Sentry-compatible envelope ingest
+  -> fixture-gated Sentry envelope event ingest
   -> OTLP logs/traces/metrics ingest
   -> CLI invocation trace ingest and tested agent-session adapter ingest
   -> Parallax Rust ingest gateway
@@ -71,7 +72,7 @@ storage tests.
 | --- | --- |
 | Company-sized? | Yes, if framed as context/evidence layer for autonomous software maintenance. No, if framed as generic AI RCA. |
 | Just a Sentry/Grafana feature? | Generic AI investigation is a feature. Self-hosted Rust-first evidence bundles plus open schema plus agent workflow can be a product. |
-| Market too crowded? | Broad market is crowded. Narrow wedge remains: Sentry-compatible, OTLP-conformance-gated, self-hosted execution context for services, CI, CLIs, and coding agents. |
+| Market too crowded? | Broad market is crowded. Narrow wedge remains: fixture-gated Sentry envelope error migration, OTLP-conformance-gated ingest, and self-hosted execution context for services, CI, CLIs, and coding agents. |
 | Hardest technical problems? | High-quality error grouping, cross-signal joins, symbolication, missing-data handling, causal graph modeling, retention cost, redaction, safe agent tools. |
 | Hidden operational problems? | Cardinality, schema evolution, object-storage cost, backpressure, retries/duplicates, symbol files, tenant isolation, upgrade path, source/release mapping. |
 | Scaling bottlenecks? | Ingest-to-queryable freshness, trace/log joins, high-cardinality attributes, stream replay, GreptimeDB/ClickHouse compaction, evidence-bundle query fanout. |
@@ -96,7 +97,7 @@ storage tests.
 | Unified observability storage | [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md), [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md), [Storage size and object cost gate](storage-size-and-object-cost-gate.md), [A5 stack decision ledger](a5-stack-decision-ledger.md) |
 | Metadata store | [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md), [Turso metadata production readiness](turso-metadata-production-readiness.md), [Technical implementation concept](technical-implementation-concept.md) |
 | OpenTelemetry | [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md), [OTLP receiver conformance and Collector equivalence](otlp-receiver-conformance-and-collector-equivalence.md), [OTLP conformance ledger](otlp-conformance-ledger.md) |
-| Sentry-compatible ingestion | [Sentry-compatible ingestion](sentry-compatible-ingestion.md), [Sentry SDK fixture compatibility gate](sentry-sdk-fixture-compatibility.md), [Sentry SDK compatibility ledger](sentry-sdk-compatibility-ledger.md) |
+| Sentry envelope compatibility | [Sentry-compatible ingestion](sentry-compatible-ingestion.md), [Sentry SDK fixture compatibility gate](sentry-sdk-fixture-compatibility.md), [Sentry SDK compatibility ledger](sentry-sdk-compatibility-ledger.md) |
 | Self-hosted operational simplicity | [Self-hosted simplicity gate](self-hosted-simplicity-gate.md), [Self-hosted deployment baseline inventory](self-hosted-deployment-baseline-inventory.md), [Self-hosted simplicity ledger](self-hosted-simplicity-ledger.md), [A7 scope discipline ledger](a7-scope-discipline-ledger.md), [Lightweight Sentry-compatible competitor watch](lightweight-sentry-compatible-competitor-watch.md), [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md) |
 | Collection method and eBPF tradeoff | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md) |
 | Rust applications first | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md), [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md), [Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md), [Technical implementation concept](technical-implementation-concept.md) |
@@ -118,8 +119,8 @@ storage tests.
 
 | Layer | Decision |
 | --- | --- |
-| App collection | Rust `tracing`, `tracing-error`, `opentelemetry-otlp`, panic hooks, error-chain capture, Sentry-compatible path. |
-| External protocols | Sentry envelopes and OTLP HTTP/gRPC. |
+| App collection | Rust `tracing`, `tracing-error`, `opentelemetry-otlp`, panic hooks, error-chain capture, Sentry envelope error path. |
+| External protocols | Sentry envelope `event` subset and OTLP HTTP/gRPC. |
 | Ingest | Rust `parallax-ingest` gateway. |
 | Stream | No external broker for tiny mode; Apache Iggy for durable profile. |
 | Observability storage | GreptimeDB prototype default v0.1; ClickHouse feature-stable/LTS benchmark fallback. |
@@ -254,7 +255,7 @@ Prototype should prove this loop:
 
 ```text
 Rust app error
-  -> Sentry-compatible event
+  -> fixture-gated Sentry envelope event
   -> OTLP trace/log context
   -> optional CLI invocation or coding-agent session context
   -> Parallax grouping

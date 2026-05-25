@@ -21,9 +21,10 @@ The realistic opening for Parallax is narrower:
 
 Parallax should not position as a full observability platform or generic SRE
 agent. It should focus on the evidence substrate incumbents expose only inside
-their own platforms: Sentry-compatible error migration, OTLP correlation,
-deterministic evidence graphs, CLI/API/MCP context bundles, agent/CLI
-side-effect audit, and accepted/rejected/reverted fix outcomes.
+their own platforms: Sentry envelope error-event migration after SDK fixture
+gates, OTLP correlation after conformance gates, deterministic evidence graphs,
+CLI/API/MCP context bundles, agent/CLI side-effect audit, and
+accepted/rejected/reverted fix outcomes.
 
 This corrects the original 2026-05-11 market read. CI failures and flaky tests
 remain a useful evaluation domain, but they are no longer the primary product
@@ -59,11 +60,12 @@ material shifts have happened, and they narrow the wedge without closing it:
 
 Net: the agent-native-observability category went from emerging to table stakes
 between 05-11 and 05-25. Parallax's defensibility is therefore the *combination*
-shipped as one open, self-hosted, Rust-light package — Sentry-envelope + OTLP
-ingestion, a deterministic evidence graph, portable bundles, CLI + read-only MCP,
-and CLI/coding-agent action audit — plus the failure/fix corpus that compounds
-with use. No single competitor occupies that intersection today, but OpenObserve
-and SigNoz could close their gaps within 6–12 months, so speed matters. See
+shipped as one open, self-hosted, Rust-light package — tested Sentry-envelope
+error ingest + conformance-gated OTLP ingestion, a deterministic evidence graph,
+portable bundles, CLI + read-only MCP, and CLI/coding-agent action audit — plus
+the failure/fix corpus that compounds with use. No single competitor occupies
+that intersection today, but OpenObserve and SigNoz could close their gaps
+within 6–12 months, so speed matters. See
 [Verdict](verdict.md) for the GO/NO-GO decision built on this read. The
 [agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md)
 tracks trigger hits and public-wording boundaries as these sources change.
@@ -102,7 +104,7 @@ Current source checks for this update:
 | Grafana Assistant | Observability assistant / SRE agent | AI assistant in Grafana Cloud and connected self-managed Grafana; query/dashboard assistance, incident investigations, Knowledge Graph, Slack/Teams/API/MCP/CLI surfaces. | High for Grafana/LGTM users. |
 | Coroot | eBPF observability + AI RCA | Uses eBPF to collect metrics, logs, traces, profiles, events; Community includes agentic-ready MCP; Enterprise/Cloud adds AI RCA that explains what broke, why, and how to fix it. | High for infrastructure/service RCA and agent-access pressure, lower for Sentry migration and coding-agent action audit. |
 | OpenObserve "Observability 3.0" | Open Rust observability store + AI SRE agent | Rust, single-binary, object-storage-native, AGPL self-hostable; late-Apr-2026 launch added an AI SRE agent, AI Assistant, LLM observability, and MCP. AI SRE/MCP require Enterprise edition/license; Self-Hosted Enterprise is currently advertised as free up to 50 GB/day. Checked docs show OTLP ingestion, not a Sentry-envelope path. | Very high on storage/runtime fit; the closest open competitor. Saved (for now) by Enterprise-tier AI/MCP surfaces, broad write-capable MCP, and missing Sentry ingest. |
-| SigNoz agent-native | Open OTLP observability + agent MCP | Go + ClickHouse, OSS self-hostable; May-2026 shipped an open self-hostable MCP server, trace-ID RCA, and agent skills for Claude Code/Cursor/Codex. Query interface, not a deterministic evidence graph/bundle; no Sentry-compatible ingestion. | High on agent-native direction; fails the Rust/no-JVM-store profile and lacks the evidence-bundle abstraction. |
+| SigNoz agent-native | Open OTLP observability + agent MCP | Go + ClickHouse, OSS self-hostable; May-2026 shipped an open self-hostable MCP server, trace-ID RCA, and agent skills for Claude Code/Cursor/Codex. Query interface, not a deterministic evidence graph/bundle; no Sentry envelope error-event ingest path. | High on agent-native direction; fails the Rust/no-JVM-store profile and lacks the evidence-bundle abstraction. |
 | New Relic iRCA | Causal RCA | Preview product using topology graph, causal models, and path-based ranking to identify probable root cause. | High for New Relic customers. |
 | Dynatrace Davis / Dynatrace Intelligence | Causal AI RCA | Longstanding causal topology RCA over captured and ingested data; ranks root cause contributors and combines connected anomalies. | High in enterprise AIOps. |
 | Splunk AI Assistant in Observability Cloud | Observability GenAI assistant | Natural-language investigations, RCA over APM, infra, DB, RUM, logs, suggested actions, SignalFlow generation. | High for Splunk/AppDynamics users. |
@@ -232,7 +234,7 @@ features, or available to Community users through Coroot Cloud credits. The MCP
 endpoint uses OAuth 2.0 and server-side authorization, exposes topology,
 incidents, traces, logs, metrics, and includes the mutating Community
 `resolve_alerts` tool. Its weakness relative to Parallax is not "no agent
-surface" anymore; it is no Sentry-compatible migration, no portable evidence
+surface" anymore; it is no Sentry envelope error-event migration, no portable evidence
 bundle/schema, no coding-agent command/file/test/patch/PR outcome audit, and no
 fully local open RCA in Community.
 
@@ -361,10 +363,10 @@ Sources:
 Parallax should narrow to the evidence contract incumbents do not own cleanly:
 
 > Parallax is an open-source, Rust-first execution context engine that ingests
-> Sentry-compatible errors and OTLP telemetry, normalizes measured CLI and
-> coding-agent work through tested capture adapters, and serves portable
-> evidence bundles that agents can cite, audit, and feed back into fix-outcome
-> records.
+> tested Sentry envelope error events and conformance-gated OTLP telemetry,
+> normalizes measured CLI and coding-agent work through tested capture adapters,
+> and serves portable evidence bundles that agents can cite, audit, and feed
+> back into fix-outcome records.
 
 This positioning still avoids competing with Sentry, Datadog, Grafana,
 OpenObserve, SigNoz, or Coroot on broad dashboard coverage. It also avoids
@@ -373,10 +375,10 @@ dashboard-first flaky-test management system.
 
 The differentiator should be:
 
-1. Sentry-compatible error migration for teams that cannot or will not use
-   hosted Sentry Seer.
-2. OTLP-native traces, logs, and metrics correlation without building another
-   dashboard suite.
+1. Sentry envelope error-event migration for teams that cannot or will not use
+   hosted Sentry Seer, once SDK fixture gates pass.
+2. Conformance-gated OTLP trace, log, and metric correlation without building
+   another dashboard suite.
 3. A portable bundle/schema with redaction report, query manifest, evidence
    refs, edge strengths, missing-evidence flags, and raw refs.
 4. CLI first, canonical HTTP API underneath, and read-only MCP once projection

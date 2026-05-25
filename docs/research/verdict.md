@@ -11,9 +11,10 @@ Research date: 2026-05-25
 Build Parallax, but only as the narrow version:
 
 > An open-source, Rust-first, self-hostable execution context engine that accepts
-> Sentry-compatible errors, OpenTelemetry telemetry, CLI invocation traces, and
-> coding-agent session records from tested capture adapters, then stores and
-> serves bounded evidence bundles for humans and agents.
+> fixture-gated Sentry envelope error events, OpenTelemetry telemetry, CLI
+> invocation traces, and coding-agent session records from tested capture
+> adapters, then stores and serves bounded evidence bundles for humans and
+> agents.
 
 Do not build the broad version:
 
@@ -33,7 +34,7 @@ debugging.
 | Does Parallax solve it? | **Partially, and that is enough.** Parallax can solve context assembly, evidence retention, correlation, issue grouping, and agent-safe bundle generation. It cannot prove all root causes from telemetry alone, and it should never claim omniscient RCA. |
 | Are there direct competitors? | **Yes.** Sentry Seer and Datadog Bits AI SRE are direct for production debugging. Grafana Assistant is direct for observability-agent workflows. LangSmith/Langfuse/Phoenix/Braintrust/AgentOps-style systems are adjacent for agent/LLM execution telemetry. CI/autofix products are direct for test and pipeline failures. |
 | Do competitors leave room? | **Yes, narrowly.** They mostly optimize inside their own observability or LLM-app platform. Parallax can win only if it is simpler to self-host, exposes an open evidence schema, gives CLI/MCP/API access from day one, stores agent and CLI side effects, and produces portable bundles rather than product-bound answers. |
-| Is this just a Sentry/Grafana/Datadog feature? | **Generic AI investigation is a feature.** A low-resource, Rust-first, self-hostable context store with Sentry-compatible migration, conformance-gated OTLP ingestion, adapter-backed CLI/agent audit records, and portable evidence bundles is a product wedge. |
+| Is this just a Sentry/Grafana/Datadog feature? | **Generic AI investigation is a feature.** A low-resource, Rust-first, self-hostable context store with fixture-gated Sentry envelope error-event migration, conformance-gated OTLP ingestion, adapter-backed CLI/agent audit records, and portable evidence bundles is a product wedge. |
 | Does the market make sense? | **Yes, with discipline.** AI is making software faster to write and riskier to operate without audit trails. The market is crowded, but the crowding validates the shift from dashboards to evidence-backed investigation. The opportunity is not "better AI"; it is owning the evidence contract agents use. |
 
 ## Why This Is A GO
@@ -85,7 +86,7 @@ suite. It should compete on the evidence substrate:
 - open schema;
 - self-hosted and low-resource operation;
 - Rust-first capture quality;
-- Sentry-compatible migration path;
+- Sentry envelope error-event migration path with SDK fixture gates;
 - OpenTelemetry-based correlation with OTLP conformance gates;
 - first-class CLI invocation traces;
 - coding-agent session records only where tested adapters preserve source,
@@ -101,7 +102,7 @@ The architecture is plausible with current open-source components:
 
 | Layer | Gate decision | Evidence |
 | --- | --- | --- |
-| Error compatibility | Support the Sentry envelope event path, not the whole Sentry product. | Sentry envelopes are the modern SDK ingestion format, and Relay is a useful Rust reference without copying its Kafka/Snuba architecture. |
+| Error compatibility | Support the Sentry envelope `event` path, not the whole Sentry product. | Current registry checks still show Rust `sentry`/`sentry-types` `0.48.2`, JS SDKs `10.53.1`, Go `v0.46.2`, and Python `2.60.0`; "Sentry-compatible" remains only a target until those SDK-generated fixtures pass parser, normalization, grouping, redaction, projection, and unsupported-item gates. |
 | Telemetry standard | Use OpenTelemetry as the native telemetry protocol. | OTLP `1.10.0` is stable for traces, metrics, and logs, and gives shared `trace_id`, `span_id`, resource, and semantic-convention context. This proves the wire substrate, not agent readiness: public OTLP claims require the conformance ledger, canonical bundle/projection checks, and MCP structured-output validation. |
 | Observability store | Start with GreptimeDB as the v0.1 prototype default, benchmark against exact ClickHouse stable/LTS tracks. | GreptimeDB targets metrics, logs, and traces in one observability engine, with native OpenTelemetry support and object-storage-oriented deployment. It reached **v1.0 GA in April 2026** and latest stable checked is `v1.0.2`, so the first build is no longer a bet on an unreleased database. It is still not a proven production winner: trace docs remain experimental, and the storage freshness, bundle-latency, object-cost, and operational-complexity gates keep veto power. |
 | Stream | Start with local WAL; add Apache Iggy only when replay/burst separation matters. | Iggy is Rust-native, persistent, append-oriented, and explicitly designed for low-latency message streaming. |
@@ -171,7 +172,7 @@ That honesty is a strength, not a limitation.
 | Datadog Bits AI SRE / Dev Agent | Hypothesis-driven investigations and flaky-test autofix are the enterprise direction. | Closed, expensive, SaaS-only, and tied to Datadog data gravity. Dev Agent (flaky-test autofix) is still public Preview. Not an open, self-hosted Rust context engine or portable evidence-bundle standard. |
 | Grafana Assistant | Agent access through CLI/API/MCP surfaces is now normal. | Now on-prem and free for OSS Grafana (Apr 2026) but **still requires a Grafana Cloud account for the LLM connection** — not air-gapped — and is dashboard/assistant-first, not portable evidence bundles. LGTM-shaped, not evidence-engine-shaped. |
 | OpenObserve "Observability 3.0" (late Apr 2026) | An open, Rust, single-binary, object-storage observability store *with* an AI SRE agent + MCP is now real and self-hostable. | The closest thing to a wedge-killer on storage/runtime fit, saved by three current gaps: AI SRE/MCP require Enterprise edition/license while Self-Hosted Enterprise is advertised as free up to 50 GB/day, the MCP surface is broad and write-capable rather than a bounded read-only evidence bundle, and checked ingestion docs show OTLP rather than a Sentry-envelope path. |
-| SigNoz agent-native (May 2026) | Open, self-hostable MCP server + trace-ID RCA shipping in OSS validates the agent-native direction loudly. | Go + ClickHouse (fails the runtime filter and carries the heavy store Parallax escapes), a query interface rather than a deterministic evidence graph / portable bundle, and **no Sentry-compatible ingestion**. |
+| SigNoz agent-native (May 2026) | Open, self-hostable MCP server + trace-ID RCA shipping in OSS validates the agent-native direction loudly. | Go + ClickHouse (fails the runtime filter and carries the heavy store Parallax escapes), a query interface rather than a deterministic evidence graph / portable bundle, and **no Sentry envelope error-event ingest path**. |
 | Dynatrace / New Relic / Splunk | Topology-aware RCA is enterprise table stakes. | Enterprise suite gravity, not open small-team self-hosting or agent-readable bundle portability. |
 | LangSmith / Langfuse / Phoenix / Braintrust / AgentOps / similar | Agent and LLM traces are important. | They usually observe LLM app execution, not the full chain from production error to deploy, CLI side effect, coding-agent patch, CI validation, and outcome. |
 | CI autofix and flaky-test tools | Failure bundles and PR automation are valuable. | They usually start at CI/test evidence, not production Sentry/OTLP context plus runtime evidence graph. |
@@ -238,7 +239,7 @@ It is open enough for:
 
 - open-source evidence bundle format;
 - low-resource self-hosted deployment;
-- Sentry-compatible error migration;
+- Sentry envelope error-event migration after SDK fixture gates pass;
 - OTLP-backed correlation only after conformance and projection gates pass;
 - Rust-first capture and stacktrace quality;
 - CLI and adapter-proven agent-session observability;
@@ -264,7 +265,7 @@ Parallax itself must not become the fixer. It is the context engine.
 
 Reverse this GO if prototype evidence shows any of the following:
 
-1. Sentry-compatible event ingestion cannot work without recreating Relay,
+1. Sentry envelope event ingestion cannot work without recreating Relay,
    Kafka, Snuba, and the operational burden Parallax exists to avoid.
 2. GreptimeDB or the fallback store cannot answer evidence-bundle queries with
    acceptable freshness, latency, and storage cost.
