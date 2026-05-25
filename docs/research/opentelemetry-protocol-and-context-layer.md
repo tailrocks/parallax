@@ -159,7 +159,7 @@ Apps and collectors
   -> gateway collector tier
   -> optional trace-aware collector tier for tail sampling
   -> parallax-ingest x N
-  -> Iggy cluster or fallback stream
+  -> clustered durable stream (NATS/Redpanda; Iggy is single-node today)
   -> processing workers x N
   -> GreptimeDB distributed or ClickHouse fallback
   -> Turso or Postgres metadata fallback
