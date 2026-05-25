@@ -483,6 +483,36 @@ evidence bundles, so the verdict holds — but this is the number that would fli
 harness. Caveat: 5M rows still largely cache-resident — the 18× search gap is an
 index-implementation difference, not just scan throughput.
 
+### Run 13 — 2026-05-25 — B8: concurrent ingest + query penalty (axis #1 gate)
+
+Tests the prototype's **concurrent-penalty gate** (query p95 under mixed load ≤ 2×
+query-only). Seeded 3M rows each, ran an `avg by s` aggregation 5× as baseline,
+then again while a background loop ingested ~8M more rows (3M → 11M during the
+query window).
+
+| Engine | Query-only baseline | Under concurrent ingest | Penalty | Gate (≤2×) |
+| --- | --- | --- | --- | --- |
+| ClickHouse | 11 ms | 17 ms | **1.55×** | **PASS** |
+| GreptimeDB | 66 ms | 91 ms | **1.38×** | **PASS** |
+
+**Findings:**
+
+1. **Both pass the concurrent-penalty gate** — neither blocks reads on heavy
+   concurrent ingest (ClickHouse atomic part visibility + background merges;
+   GreptimeDB MVCC `Version` snapshot + memtable). GreptimeDB's penalty *ratio* was
+   slightly lower (1.38× vs 1.55×). Both stayed queryable while ingesting 8M rows.
+2. **Absolute agg latency at 11M rows: ClickHouse ~5× faster** (17 vs 91 ms) — the
+   same vectorized-engine-at-volume gap as B5/B1, not a concurrency effect.
+3. **Freshness held under load**: both served queries continuously while row counts
+   grew 3M→11M; visible-on-write was not disrupted by concurrent reads.
+
+**B8 status: done (within-engine penalty).** The mixed-load *freshness p95*
+(stamp-emit → poll-visible under load, the other half of the gate) needs the
+harness's freshness instrumentation for a precise sub-second number; the penalty
+ratio + continuous visibility here already show neither engine has a concurrent
+read-blocking problem. Caveat: cache-resident scale + docker-exec measurement
+coarseness — directional.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

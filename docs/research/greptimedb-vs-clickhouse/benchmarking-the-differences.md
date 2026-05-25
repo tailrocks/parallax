@@ -143,7 +143,11 @@ Legend: **Runnable now** = expressible in the current prototype/`bench/compose.y
   query-only.
 - **Pass/fail:** prototype gate — freshness p95 ≤ 5 s mixed; concurrent penalty ≤ 2×.
 - **Prereq:** concurrent load+query driver (prototype `load --mode mixed --with-query`).
-- **Status:** Needs harness ext. (concurrent driver). Axis-1 priority.
+- **Status:** **DONE (Run 13, within-engine penalty).** Both pass the ≤2× gate:
+  query latency under heavy concurrent ingest (3M→11M rows mid-query) rose only
+  ClickHouse 1.55× (11→17 ms), GreptimeDB 1.38× (66→91 ms). Neither blocks reads on
+  ingest. Absolute agg at 11M still ~5× ClickHouse (volume gap). Precise mixed-load
+  freshness p95 (stamp-emit→poll) still owed to harness instrumentation.
 
 ## B9 — Small-write part-explosion vs memtable absorption
 
