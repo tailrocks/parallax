@@ -5131,6 +5131,49 @@ v1.0.2 touch it?
 **Reproduce.** `gh api ".../state.rs?ref=v1.0.2"` → `with_target_partitions` only, no `with_batch_size`;
 `SET datafusion.execution.batch_size=32768` → "Unsupported set variable." Unchanged since pass-80.
 
+### Run 124 — 2026-05-25 — CORRECTS parity #2: batch size is NOT the agg-gap lever — ClickHouse at GreptimeDB's 8192 block is STILL ~3× faster (~38 vs ~116 ms). The "raise batch_size = cheapest win" assumption is wrong; the gap is JIT/SIMD/codegen.
+
+**Pass target.** Run 123 found GreptimeDB's `batch_size` stuck at 8192 (no knob). I can't raise GT's
+in v1.0.2, but I can test the **converse on ClickHouse**: lower CH's `max_block_size` to GT's 8192 —
+does CH's aggregation slow toward GreptimeDB's? This isolates whether **batch size** is the ~2–3×
+agg-gap driver (then raising GT's would close it — the roadmap-#2 "cheapest experiment") or whether
+it's JIT/SIMD/codegen (the hard part).
+
+**Environment.** ClickHouse `v26.5.1.882` / GreptimeDB `v1.0.2` (re-pinned live — 14 h up, no bump).
+`metrics_hc` 8M rows / 40k series. Query `SELECT service, avg(value) GROUP BY service` (Run 96 shape).
+CH `--time`, warm ×6, varying `SETTINGS max_block_size`.
+
+| ClickHouse `max_block_size` | agg latency |
+| --- | --- |
+| 65,536 (CH default) | **~37 ms** |
+| **8,192 (GreptimeDB's default)** | **~38 ms** |
+| 2,048 (tiny) | **~43 ms** |
+| — GreptimeDB (8192, fixed) | **~116 ms** (Run 96/115) |
+
+**Verdict — batch size is NOT the driver; CORRECT parity-roadmap #2's "cheapest experiment" framing.**
+
+- **ClickHouse at GreptimeDB's 8,192 block size is still ~38 ms — a ~3× gap to GreptimeDB's ~116 ms
+  PERSISTS.** Block size barely moves CH (65536→8192→2048 = 37→38→43 ms). So **the ~2–3× metric-agg
+  gap is NOT caused by the batch-size difference** — it is the *execution engine*: ClickHouse's
+  **JIT-compiled aggregation + SIMD hash-agg kernels + specialized grouping** vs GreptimeDB's
+  DataFusion interpreted aggregation. (Matches the mechanism teardown in `query-execution-engine.md`,
+  now empirically isolated.)
+- **This corrects an over-optimistic assumption in our OWN roadmap.** Parity-roadmap #2 led with
+  "raise the `RecordBatch` size — the cheapest experiment in this whole roadmap; do it first to size
+  the win." **Run 124 shows that win is ~nil** — raising GreptimeDB's batch_size to 65k would NOT
+  meaningfully close the agg gap, because ClickHouse doesn't gain from the larger block either. The
+  real lever is the **JIT/SIMD/codegen** path — the expensive, upstream-DataFusion part (untouched,
+  Run 123), not a one-line config tweak.
+- **Sharpens DQ6 honestly:** the agg-throughput gap is **neither cheap nor quick** to close — it's the
+  DataFusion execution core (codegen/SIMD), which GreptimeDB inherits only as DataFusion matures.
+  Unlike the SST-layer wins (prefilter/TopK/Flat-SST, which GreptimeDB shipped itself), this gap waits
+  on upstream. For Parallax it stays a non-issue (~2–3×, all metric panels interactive — Run 113), but
+  the "raise batch_size and the agg gap shrinks" hope is **disproven** — remove it from the plan.
+
+**Reproduce.** `SELECT service, avg(value) FROM metrics_hc GROUP BY service SETTINGS max_block_size=N`
+on ClickHouse for N ∈ {65536, 8192, 2048} → ~37/38/43 ms (≈flat); GreptimeDB fixed ~116 ms. The ~3×
+gap is independent of block size.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

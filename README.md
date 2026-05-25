@@ -67,6 +67,7 @@ Code `/loop` runbook.
 - [OpenObserve AI/MCP Enterprise recheck](docs/research/openobserve-ai-mcp-enterprise-recheck.md)
 - [Lightweight Sentry-compatible competitor watch](docs/research/lightweight-sentry-compatible-competitor-watch.md)
 - [Lightweight error-tracker MCP boundary check](docs/research/lightweight-error-tracker-mcp-boundary-check.md)
+- [Bugsink Sentry-compatible simplicity recheck](docs/research/bugsink-sentry-compatible-simplicity-recheck.md)
 - [Agentic observability competitor drift ledger](docs/research/agentic-observability-competitor-drift-ledger.md)
 - [Sentry MCP and Seer self-hosted recheck](docs/research/sentry-mcp-seer-self-hosted-recheck.md)
 - [SigNoz open investigation format check](docs/research/signoz-open-investigation-format-check.md)

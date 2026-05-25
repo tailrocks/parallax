@@ -8,8 +8,10 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 123 local runs + B1–B15 cases. Recent: **Run 123 — the OTHER
-side of gap-closing (honest balance)**: #2 batch_size is STILL untouched in v1.0.2 (state.rs sets no with_batch_size,
+cold/first-run measurement showed). 25 mechanism notes + 124 local runs + B1–B15 cases. Recent: **Run 124 CORRECTED
+parity #2**: lowering ClickHouse's max_block_size to GreptimeDB's 8192 barely changed CH's agg (~37→~38 ms) and CH is
+STILL ~3× faster (~38 vs ~116 ms) — so batch size is NOT the agg-gap lever; the roadmap's "raise batch_size = cheapest
+win" is disproven, the gap is JIT/SIMD/codegen (the expensive upstream-DataFusion part). **Run 123 — the OTHER side of gap-closing (honest balance)**: #2 batch_size is STILL untouched in v1.0.2 (state.rs sets no with_batch_size,
 8192 default holds, SET still rejected) — so the ~2–3× agg-throughput gap has NOT moved, unlike the SST-layer wins
 (TopK/Flat-SST/prefilter). Gap-closing is uneven: GreptimeDB ships what it owns in the scan layer; the execution-core
 throughput knobs ride upstream DataFusion. **Run 122 MEASURED the prefilter working** — GT selective wide-row scan prunes the wide-column decode ~3× (~16 ms vs ~50 ms full-decode), so

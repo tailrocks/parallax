@@ -240,26 +240,32 @@ Parallax. Source read at GreptimeDB `v1.0.2` (`0ef5451`).
   (`src/query/src/query_engine/state.rs:126-128`) sets only `with_target_partitions` and
   **never `batch_size`**, so DataFusion's 8,192 default holds — small vectors carry more
   per-batch overhead and feed SIMD worse than ClickHouse's 65k blocks.
-- **How (code-oriented):** (1) **one-line, cheap to try:** add
-  `.with_batch_size(32768)` (tune 16–64k) to the `SessionConfig` builder in
-  `state.rs:126-128`; measure the agg gap before/after (a proposed `benchmarking-the-
-  differences.md` case). **Pass-80 live probe:** v1.0.2 has **no runtime knob** for this —
-  `SET datafusion.execution.batch_size` (and `execution.batch_size`, `batch_size`) all return
-  `Not supported: Unsupported set variable`, so it requires the code change (or a
-  config-plumb to expose it), not a session `SET`. (2) **Upstream/contributed:** DataFusion expression + aggregate
-  codegen and specialized grouping — track the DataFusion roadmap; GreptimeDB inherits on
-  the `datafusion = "=52.x"` bump (`Cargo.toml`). (3) SIMD aggregation kernels: upstream
-  arrow/DataFusion.
-- **Tier:** **B** (batch size is a trivial config change; JIT/SIMD ride upstream
-  DataFusion). **Integration.**
+- **How (code-oriented):** (1) ~~**one-line, cheap to try:** add `.with_batch_size(32768)`~~ — **Run
+  124 DISPROVED this as the lever:** ClickHouse at GreptimeDB's 8,192 block is still ~3× faster, so
+  raising the batch size alone closes ~nothing. (`state.rs:126-128` still sets only
+  `with_target_partitions`, no `batch_size`; `SET …batch_size` rejected — Run 123, no runtime knob —
+  but it is not worth the code change for the agg gap.) (2) **The actual lever — expression + aggregate
+  CODEGEN and specialized SIMD grouping** — DataFusion's is young/narrow vs ClickHouse's LLVM-JIT;
+  this is the real ~2–3× source (Run 124). Track the DataFusion roadmap; GreptimeDB inherits on the
+  `datafusion = "=52.x"` bump (`Cargo.toml`). (3) SIMD aggregation kernels: upstream arrow/DataFusion.
+- **Tier:** **B** — but the cheap part (batch size) is a **non-lever** (Run 124); the real work is
+  JIT/SIMD/codegen, which **rides upstream DataFusion** (slow, not GreptimeDB-owned). **Integration**,
+  but the slowest-closing gap in the roadmap.
 - **User story & clear-winner:** *a user opens a high-cardinality metric dashboard, or runs
   an ad-hoc "top-20 services by error rate, last 24h".* **Flow pre-aggregation (Tier-A)
   already makes the dashboard fast (Run 43), so this does NOT make GreptimeDB a clear winner
   of the common flow** — only of *unplanned* heavy aggregation, which Parallax users rarely
   run interactively. Footnote unless analytics-heavy usage emerges.
 - **Value here:** narrows the heavy-scan/aggregation gap; mostly matters for ad-hoc
-  analytics, not the anchored hot path. The batch-size probe is the cheapest experiment in
-  this whole roadmap — do it first to size the win.
+  analytics, not the anchored hot path. ~~The batch-size probe is the cheapest experiment in
+  this whole roadmap — do it first to size the win.~~ **CORRECTED (Run 124): batch size is NOT
+  the lever.** Lowering ClickHouse's `max_block_size` to GreptimeDB's 8,192 barely changed CH's agg
+  (~37→~38 ms; even 2,048 = ~43 ms), and CH at 8,192 is **still ~3× faster than GreptimeDB (~38 vs
+  ~116 ms)** — so the ~2–3× gap is **independent of block size**. The driver is **JIT-compiled
+  aggregation + SIMD hash-agg kernels (the expensive, upstream-DataFusion codegen path)**, not the
+  cheap config tweak. Raising GreptimeDB's batch_size alone would **not** close the gap; deprioritize
+  the batch-size probe and treat #2 as the slow, DataFusion-core-dependent gap (Run 123: still
+  untouched in v1.0.2).
 
 ### Improvement 3 — Column-staged late materialization (PREWHERE) via arrow `RowFilter`
 

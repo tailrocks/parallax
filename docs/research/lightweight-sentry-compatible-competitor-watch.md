@@ -51,12 +51,14 @@ The focused
 adds the agent-surface detail: Rustrak and GoSnag now prove that MCP can appear
 inside small error trackers, but their checked tools are management/write/raw
 event surfaces rather than read-only, redacted evidence bundles.
+The Bugsink low-ops/Sentry-compatibility claim now has a focused recheck:
+[Bugsink Sentry-compatible simplicity recheck](bugsink-sentry-compatible-simplicity-recheck.md).
 
 ## Current Matrix
 
 | Project | Strongest current fit | Current Parallax gap | Threat |
 | --- | --- | --- | --- |
-| Bugsink | Self-hosted error tracking, Sentry SDK compatible, single container, SQLite by default, no queue or external service dependency, MySQL/Postgres optional. | Python/runtime mismatch; focused on error tracking rather than OTLP-native evidence graph, CLI/agent audit, or fix-outcome corpus. | High for Sentry-compatible simplicity. |
+| Bugsink | Source-available self-hosted error tracking, Sentry SDK compatible, DSN migration, one-container throwaway Docker path, SQLite default outside the Docker-volume caveat, MySQL/PostgreSQL support, and small third-party MCP adapters over Bugsink's API. | PolyForm Shield rather than OSI-open; Python/runtime mismatch; persistent Docker setup needs external database care; official product is error tracking rather than OTLP-native evidence graph, first-party read-only agent bundle, CLI/agent audit, or fix-outcome corpus. | High for Sentry-compatible simplicity. |
 | Rustrak | Rust/Actix server, Sentry SDK compatible, SQLite default or Postgres production mode, claims small memory/image footprint, no Redis, no complex infrastructure, and ships `@rustrak/mcp` for AI assistant management. | Early project; UI is a separate Next.js service; MCP exposes project/issue/event/token/alert tools including destructive issue/token actions and raw Sentry-envelope event access, not a read-only citable evidence-bundle contract; no clear OTLP-native logs/traces/metrics or fix-outcome corpus. | Very high for product-shape pressure, lower for maturity. |
 | Traceway | MIT, OpenTelemetry-native, self-hostable, combines logs/traces/metrics/session replay/exceptions/AI tracing, Docker Compose path, and Go embedded SQLite dev mode. | OTel-first rather than Sentry-envelope-first; Go, not Rust; no explicit Parallax-style evidence bundle, redaction manifest, or agent session/action audit. | Very high for OTLP-native unified observability simplicity. |
 | GoSnag | Go single binary with embedded React UI/migrations, Sentry `/store/` and `/envelope/` ingestion, issue lifecycle, GitHub/Jira integrations, AI RCA features, and a documented MCP server. | Requires Postgres for normal deployment; early project with low visible traction and no tagged release in the checked GitHub metadata; not Rust-first; MCP uses Bearer-token API calls for broad project/issue/alert/tag/ticket/user management, not a Parallax-style read-only bundle contract or fix-outcome graph. | Medium-high: important capability shape, weak maturity signal. |
@@ -68,7 +70,7 @@ Checked on 2026-05-25 with primary project docs, npm, and GitHub metadata:
 
 | Project | Freshness signal | Maturity read |
 | --- | --- | --- |
-| Bugsink | GitHub latest release `2.2.1` on 2026-05-22; roughly 1.8k stars and 105 forks at check time; docs continue to claim SDK compatibility and single-container/SQLite self-hosting. | Mature enough to be a real low-ops Sentry-compatible baseline. |
+| Bugsink | GitHub latest release `2.2.1` on 2026-05-22; roughly 1.8k stars and 105 forks at check time; release adds canonical API issue actions/comments and OpenAPI docs; docs continue to claim SDK compatibility and low-ops self-hosting; third-party `bugsink-mcp` adapters are public but small. | Mature enough to be a real low-ops Sentry-compatible baseline; API/MCP ecosystem pressure means "no agent access" is no longer a durable ecosystem-level claim. |
 | Rustrak | GitHub pushed on 2026-05-25; latest visible release `docs@0.1.16`; npm `@rustrak/mcp` is `0.1.2`; roughly 43 stars at check time. | Product shape is very close, but maturity is still early. |
 | Traceway | GitHub latest backend release `backend/v1.7.27` on 2026-05-22; MIT license; roughly 817 stars and 23 forks; README claims native OTLP/HTTP, logs/traces/metrics/exceptions/session replay/AI tracing. | Strong active open-source pressure on the OTLP + unified context side. |
 | GoSnag | GitHub has no tagged release in the checked metadata, roughly 8 stars and 4 forks, and last push on 2026-04-17. | Treat as a capability warning, not a proven market baseline. |
@@ -80,8 +82,17 @@ Checked on 2026-05-25 with primary project docs, npm, and GitHub metadata:
 
 Bugsink is the cleanest "Sentry SDK compatibility plus self-hosting simplicity"
 reference. Its docs say existing Sentry SDKs can be kept, the DSN changed, and
-errors sent to a self-hosted backend. The self-hosting page emphasizes SQLite by
-default, a single container, no message queue, and no external services.
+errors sent to a self-hosted backend. The current recheck narrows the deployment
+claim: throwaway Docker is one container with SQLite and no persistence; Docker
+with retained data should use an external database; SQLite remains the default
+production-ready database in non-containerized setups, while Docker volumes are
+not recommended for SQLite WAL mode. Bugsink's license is PolyForm Shield for
+most repository content, so it is source-available rather than OSI-open.
+
+The official Bugsink docs and repository still do not present first-party MCP or
+AI agent features, but small third-party MCP adapters now exist. Treat that as
+ecosystem pressure, not as Bugsink first-party agent-surface closure. See
+[Bugsink Sentry-compatible simplicity recheck](bugsink-sentry-compatible-simplicity-recheck.md).
 
 Implication: Parallax cannot treat Sentry compatibility plus low ops as a unique
 position. Bugsink already owns much of that error-tracking-only story and is
@@ -91,7 +102,9 @@ Watch triggers:
 
 - Bugsink adds OTLP logs/traces/metrics correlation;
 - Bugsink exports portable evidence bundles or query manifests;
-- Bugsink adds agent/MCP context tools or PR/fix outcome feedback.
+- Bugsink adds first-party agent/MCP context tools or PR/fix outcome feedback;
+- third-party Bugsink MCP becomes mature enough to pressure Parallax's
+  read-only bundle boundary.
 
 ### Rustrak
 
@@ -235,7 +248,13 @@ Reopen the Parallax wedge if any lightweight challenger combines:
 
 - [Bugsink Sentry SDK compatibility](https://www.bugsink.com/sentry-sdk-compatible/)
 - [Bugsink built to self-host](https://www.bugsink.com/built-to-self-host/)
+- [Bugsink Docker install](https://www.bugsink.com/docs/docker-install/)
+- [Bugsink settings](https://www.bugsink.com/docs/settings/)
+- [Bugsink 2.2.1 release](https://github.com/bugsink/bugsink/releases/tag/2.2.1)
 - [Bugsink GitHub repository](https://github.com/bugsink/bugsink)
+- [Bugsink Sentry-compatible simplicity recheck](bugsink-sentry-compatible-simplicity-recheck.md)
+- [`bugsink-mcp` package](https://www.npmjs.com/package/bugsink-mcp)
+- [`j-shelfwood/bugsink-mcp`](https://github.com/j-shelfwood/bugsink-mcp)
 - [Rustrak GitHub repository](https://github.com/AbianS/rustrak)
 - [Rustrak MCP package](https://www.npmjs.com/package/@rustrak/mcp)
 - [Rustrak Docker Hub](https://hub.docker.com/r/abians7/rustrak-server)

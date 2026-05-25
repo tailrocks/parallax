@@ -993,7 +993,9 @@ open + self-hosted + agent-native + evidence bundles + Sentry-compatible ingest)
 
 Also track lightweight Sentry-compatible or OTLP-native self-hosted challengers
 that pressure the migration and simplicity claims from below:
-- Bugsink
+- Bugsink (PolyForm Shield/source-available, strong Sentry SDK/DSN migration and
+  low-ops baseline; watch first-party MCP/agent surface, third-party MCP
+  maturity, OTLP context, and evidence bundles)
 - Rustrak
 - Traceway
 - GoSnag
