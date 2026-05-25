@@ -853,6 +853,28 @@ table-function-only query, no INSERT/SELECT ("yet"). GreptimeDB: GA, multi-proto
 ingest, PromQL+SQL+TQL, any metric table, real result with zero ceremony. Verdict
 metrics pillar = maturity/ergonomics lead (confirmed concretely), not present-vs-absent.
 
+### Run 25 — 2026-05-25 — OTLP ingest re-verification (claim holds, no drift)
+
+Backs `write-path-and-ingestion.md` (pass 46). After PromQL drifted (Run 23), re-checked
+the sibling claim "ClickHouse needs an OTLP collector" against pinned 26.5.1.882.
+
+**ClickHouse 26.5:** **no native OTLP receiver.** `system.table_functions` /
+`system.functions` have **no** `otlp`/`otel`/`opentel` entry; `src/Server` source has
+**no** OTLP HTTP handler. OTLP ingest still requires the OTel Collector + ClickHouse
+exporter (or a bundled collector). → claim **HOLDS (no drift)**.
+
+**GreptimeDB v1.0.2:** native OTLP, GA, default-on. `src/servers/src/http/otlp.rs`
+handles **metrics + traces + logs** (`opentelemetry_proto` + OTel-Arrow). Live:
+`/v1/otlp/v1/{metrics,traces}` → **HTTP 400** (endpoint exists, dummy payload rejected —
+not 404).
+
+**Claim status:** "ClickHouse needs an OTLP collector; GreptimeDB native OTLP" →
+**CONFIRMED at 26.5.** Notable contrast with Run 23: ClickHouse's 26.x observability
+investment went to **Prometheus** (TimeSeries + remote-write + PromQL), **not OTLP**.
+For Parallax's OTLP-centric telemetry the native-ingest edge stays decisively
+GreptimeDB. (Re-verification — confirms an existing claim, the honest opposite of the
+PromQL drift.)
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

@@ -87,20 +87,30 @@ matched-protocol, concurrent ingest+query run.
 | | GreptimeDB | ClickHouse |
 | --- | --- | --- |
 | Native protocols | OTLP (traces/logs/metrics), Prometheus remote-write, InfluxDB line, MySQL/PG wire, gRPC, HTTP SQL — all GA. | Native TCP, HTTP, many input formats; OTLP via an exporter/Collector. **Correction (pass 44):** Prom remote-write is **no longer absent** — the **experimental `TimeSeries` engine** (off by default) accepts it. So this is GA-native (GreptimeDB) vs experimental (ClickHouse), not present-vs-absent. See `promql-and-metrics-query.md`. |
-| Parallax fit | OTLP + Prom remote-write **native** → telemetry lands with no translation. | Needs an OTLP→ClickHouse exporter / Collector pipeline in front. |
+| Parallax fit | OTLP + Prom remote-write **native** → telemetry lands with no translation. | **OTLP** needs an OTel-Collector + ClickHouse-exporter pipeline; **Prom** remote-write lands in the experimental `TimeSeries` engine. |
 
-This reinforces the metrics/PromQL capability gap from `per-signal-verdict.md`:
-GreptimeDB ingests OTLP and Prometheus natively; ClickHouse needs a collector
-layer.
+**OTLP re-verified at ClickHouse 26.5 (pass 46) — claim HOLDS, no drift.** Unlike
+PromQL/Prom-remote-write (which ClickHouse *did* add, pass 44), there is **no native
+OTLP receiver** in ClickHouse 26.5: no `otlp`/`otel` table function or function
+(`system.table_functions`/`system.functions` empty), and no OTLP HTTP handler in
+`src/Server`. OTLP ingest still requires the OTel Collector + ClickHouse exporter (or a
+bundled collector like ClickStack/HyperDX). GreptimeDB has a **native, GA OTLP receiver
+for all three signals** — `src/servers/src/http/otlp.rs` handles `metrics`/`traces`/
+`logs` via the official `opentelemetry_proto` + OTel-Arrow; `/v1/otlp/v1/{metrics,
+traces}` returned **HTTP 400** live (endpoint exists, rejects a bad payload — not 404).
+**Nuance:** ClickHouse's 26.x observability-protocol investment went to **Prometheus**
+(TimeSeries + remote-write + PromQL), **not OTLP** — so for Parallax's OTLP-centric
+telemetry the native-ingest advantage stays decisively with GreptimeDB.
 
 **Confirmed live (pass 33) — schema-on-write native ingest.** A native InfluxDB
 line-protocol write (`POST /v1/influxdb/write`, plain text, HTTP 204) **auto-created
 the table** with the correct mapping, no DDL: tags → `PRIMARY KEY`, field →
 `DOUBLE`, an auto `greptime_timestamp` `TIME INDEX`, and
 `merge_mode='last_non_null'` (upsert-last). Queryable immediately. This is the
-capability ClickHouse lacks twice over — it has **no** native InfluxDB/OTLP/Prom
-ingest endpoint (needs a collector) **and** requires the table to be created first
-(no schema-on-write). **Nuance found:** GreptimeDB's **OTLP metrics endpoint is
+capability ClickHouse lacks twice over — it has **no** native InfluxDB/OTLP
+ingest endpoint (needs a collector; Prom remote-write is the one exception, via the
+experimental `TimeSeries` engine — pass 44) **and** requires the table to be created
+first (no schema-on-write). **Nuance found:** GreptimeDB's **OTLP metrics endpoint is
 protobuf-only** — JSON is explicitly rejected (`src/servers/src/http/otlp.rs:80`,
 `UnsupportedJsonContentType`); in practice an OTel Collector/SDK emits protobuf, so
 this is fine, but you cannot hand-POST OTLP JSON. So "native OTLP" = the binary
