@@ -72,6 +72,7 @@ idea becomes sharper.
 - [Sentry-compatible ingestion](docs/research/sentry-compatible-ingestion.md)
 - [Sentry SDK fixture compatibility gate](docs/research/sentry-sdk-fixture-compatibility.md)
 - [OpenTelemetry protocol and context layer](docs/research/opentelemetry-protocol-and-context-layer.md)
+- [OTLP receiver conformance and Collector equivalence](docs/research/otlp-receiver-conformance-and-collector-equivalence.md)
 - [Repository structure](PROJECT_STRUCTURE.md)
 - [Agent instructions](AGENTS.md)
 

@@ -93,7 +93,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Messaging/streaming | [Messaging and ingestion layer](messaging-and-ingestion-layer.md), [Ingest log replay and backpressure gate](ingest-log-replay-and-backpressure-gate.md) |
 | Unified observability storage | [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md), [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md), [Storage size and object cost gate](storage-size-and-object-cost-gate.md) |
 | Metadata store | [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md), [Turso metadata production readiness](turso-metadata-production-readiness.md), [Technical implementation concept](technical-implementation-concept.md) |
-| OpenTelemetry | [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md) |
+| OpenTelemetry | [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md), [OTLP receiver conformance and Collector equivalence](otlp-receiver-conformance-and-collector-equivalence.md) |
 | Sentry-compatible ingestion | [Sentry-compatible ingestion](sentry-compatible-ingestion.md), [Sentry SDK fixture compatibility gate](sentry-sdk-fixture-compatibility.md) |
 | Self-hosted operational simplicity | [Self-hosted simplicity gate](self-hosted-simplicity-gate.md), [Self-hosted deployment baseline inventory](self-hosted-deployment-baseline-inventory.md), [Lightweight Sentry-compatible competitor watch](lightweight-sentry-compatible-competitor-watch.md), [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md) |
 | Collection method and eBPF tradeoff | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md) |
@@ -188,6 +188,9 @@ Technical proof gates:
     [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md).
 14. Production database evidence access safety, specified further in
     [Production database evidence access gate](production-database-evidence-access.md).
+15. OTLP receiver conformance and direct-SDK/Collector/Rotel normalization
+    equivalence, specified further in
+    [OTLP receiver conformance and Collector equivalence](otlp-receiver-conformance-and-collector-equivalence.md).
 
 ## First Prototype Gate
 

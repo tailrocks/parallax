@@ -347,6 +347,10 @@ Before claiming OTEL-native support, Parallax should pass these tests:
 - Benchmark latest Rotel versus latest official Collector for the Parallax
   quickstart and Lambda/serverless cases before recommending it.
 
+The detailed fixture matrix and pass/fail semantics for these claims are
+specified in
+[OTLP receiver conformance and Collector equivalence](otlp-receiver-conformance-and-collector-equivalence.md).
+
 ## Bottom Line
 
 OpenTelemetry is becoming the universal observability protocol layer. Parallax
