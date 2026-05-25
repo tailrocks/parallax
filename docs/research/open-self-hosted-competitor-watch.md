@@ -60,7 +60,7 @@ audit.
 
 | Competitor | Current strongest fit | Current Parallax gap | Threat level |
 | --- | --- | --- | --- |
-| OpenObserve | Rust, object-storage-oriented, self-hostable observability platform with OTLP ingest, RUM/source maps, Enterprise AI SRE Agent, AI Assistant, incident/RCA workflow, evidence-chain/audit-trail product language, and Enterprise MCP with broad query/admin tools. | AI/MCP features are Enterprise-tier rather than plain AGPL Community; public pages conflict on the free Self-Hosted Enterprise allowance (`50 GB/day` in pricing/license docs, `200 GB/day` on the homepage FAQ); current ingestion docs emphasize OTLP/log APIs/Prometheus/etc., not Sentry envelopes; MCP is not a narrow read-only bundle surface; no checked portable evidence-bundle schema or coding-agent action audit. | Very high. |
+| OpenObserve | Rust, object-storage-oriented, self-hostable observability platform with OTLP ingest, RUM/source maps, Enterprise AI SRE Agent, AI Assistant, incident/RCA workflow, evidence-chain/audit-trail product language, and Enterprise MCP with broad query/admin tools. Latest checked release redirect/tag ref still resolves to `v0.90.2`. | AI/MCP features are Enterprise-tier rather than plain AGPL Community; public pages conflict on the free Self-Hosted Enterprise allowance (`50 GB/day` in pricing/license docs, `200 GB/day` on the homepage FAQ); current ingestion docs emphasize OTLP/log APIs/Prometheus/etc., not Sentry envelopes; MCP is not a narrow read-only bundle surface; docs-search recheck found no exact Sentry or portable evidence-bundle/export terms; no checked coding-agent action audit. | Very high. |
 | SigNoz | Open self-hostable MCP server, agent-native positioning, Claude Code/Codex/Cursor/Gemini integration, traces/logs/metrics/topology/deploy history through agent clients, a landing-page claim around an "open investigation format," a documented postmortem evidence-pack use case, and MCP tools for alerts/dashboards/views/channels. | Go + ClickHouse stack; the 2026-05-25 focused check found an evidence-pack workflow but not a published schema, validator, replayable export, or portable artifact; query/management interface rather than deterministic evidence bundle; no Sentry envelope ingestion in current docs; no Parallax-style CLI/agent side-effect audit. | High. |
 | Coroot | Apache-2.0 OSS, eBPF zero-instrumentation, metrics/logs/traces/profiles, service map, deployment tracking, current `1.20.2` release, Community MCP with read-only annotations on most telemetry tools, Community `resolve_alerts`, and Enterprise/Cloud AI RCA. | eBPF spans can be incomplete and lack app-level Rust panic/error-chain semantics; AI RCA is not purely OSS/local in Community; MCP is OAuth/RBAC-scoped but still not purely read-only because alert resolution mutates state; no Sentry migration path, portable evidence bundle, or coding-agent action audit in official docs/source. | High. |
 
@@ -85,6 +85,9 @@ OpenObserve is the closest structural threat:
 - Enterprise MCP that can query logs, metrics, and traces, but also exposes
   broad create/update/delete/admin tools for alerts, dashboards, roles, streams,
   functions, pipelines, users, KV, ingestion, and search jobs.
+- Same-day release-resolution check that still resolves the latest GitHub
+  release to `v0.90.2`, with tag ref
+  `308208f35c0a5d42da9f0e1798188cbbf46373fb`.
 
 This overlaps with Parallax's self-hosted, Rust-first, object-storage direction
 more than any broad incumbent does.
@@ -106,6 +109,8 @@ more than any broad incumbent does.
    product-level evidence-chain and audit-trail claims, but the checked sources
    still do not publish a stable, portable evidence bundle with redaction
    report, edge strengths, missing-evidence flags, query manifest, and raw refs.
+   The 2026-05-25 docs search-index recheck returned zero exact matches for
+   Parallax-style portable bundle/export terms.
 4. **Agent/CLI side-effect audit.** The threat is observability-agent RCA, not
    the full "what did Codex/Claude/Amp run, edit, test, and open as a PR?"
    audit graph.

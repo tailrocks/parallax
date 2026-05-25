@@ -64,14 +64,32 @@ Net: keep OpenObserve at `wedge_under_pressure`, not `wedge_closed`.
 
 | Source | Checked signal | Parallax implication |
 | --- | --- | --- |
-| [OpenObserve `v0.90.2` release](https://github.com/openobserve/openobserve/releases/tag/v0.90.2) | Latest checked GitHub release was published 2026-05-22. | Active release train; do not treat OpenObserve as a static baseline. |
+| [OpenObserve `v0.90.2` release](https://github.com/openobserve/openobserve/releases/tag/v0.90.2) | Latest checked GitHub release was published 2026-05-22. On 2026-05-25, `/releases/latest` returned HTTP `200` and resolved to `v0.90.2`; `git ls-remote` showed tag ref `308208f35c0a5d42da9f0e1798188cbbf46373fb`. | Active release train; do not treat OpenObserve as a static baseline. |
 | [OpenObserve homepage](https://openobserve.ai/) | Positions OpenObserve as unified logs/metrics/traces/RUM with object storage, SQL/PromQL, one-binary or Helm deployment, AI SRE Agent, AI Assistant, and MCP. Homepage FAQ says Self-Hosted Enterprise is free up to `200 GB/day`, says the OSS plan has no usage limits, and says AI Assistant is included in Self-Hosted Enterprise and Cloud Enterprise. | Strong threat to broad positioning, but allowance conflicts with pricing/docs. Do not describe the Enterprise boundary as strictly paid at small volumes. |
 | [OpenObserve pricing](https://openobserve.ai/pricing/), [Enterprise features](https://openobserve.ai/docs/features/enterprise/), and [license/pricing docs](https://openobserve.ai/docs/enterprise-setup/license-and-pricing/) | Pricing/docs say Self-Hosted Enterprise is free up to `50 GB/day`; the license docs say Enterprise works without a license key up to `10 GB/day`, requires requesting a license above that, and identifies the free-tier license as `<= 50 GB/day`. Pricing says AI-powered features are free during preview with credits. | Legitimate ops-feature comparable; exact free allowance remains unresolved. The right claim is "Enterprise-tier with a source-conflicted free allowance," not simply "paid." |
 | [OpenObserve SRE Agent setup](https://openobserve.ai/docs/enterprise-setup/sre-agent/) | SRE Agent powers AI Assistant, incidents, and RCA in OpenObserve Enterprise; requires Enterprise license, AI provider key, and `O2_AI_ENABLED=true`. Setup docs list Anthropic, OpenAI, Gemini, direct, bundled gateway, and external/self-hosted gateway paths. | AI/RCA is real but not plain AGPL Community evidence. |
 | [OpenObserve AI SRE product page](https://openobserve.ai/ai-sre/) | Says AI SRE is an OpenObserve Enterprise background service; describes context assembly over logs, metrics, traces, and dependency maps; presents evidence-chain/audit-trail investigation language; says the agent uses MCP to navigate OpenObserve tools; and supports OpenAI, Anthropic Claude, Gemini, AWS Bedrock, DeepSeek, OpenRouter, and OpenAI-compatible/self-hosted endpoints. | Provider flexibility and evidence-chain positioning are stronger than earlier notes; they increase threat but do not prove a portable evidence-bundle schema, export, redaction report, or outcome contract. |
 | [OpenObserve MCP docs](https://openobserve.ai/docs/integration/ai/mcp/) | MCP is Enterprise-only, uses `https://your-instance/api/{org_id}/mcp`, supports Claude Code/Cursor/VS Code/ChatGPT connectors and other agents, and exposes query plus broad management/destructive/admin tools. | Strongest current reason Parallax's first MCP surface must stay read-only and bundle-shaped. |
 | [OpenObserve OTLP docs](https://openobserve.ai/docs/ingestion/logs/otlp/) | Supports OTLP/HTTP and OTLP/gRPC for logs, metrics, and traces. | OTLP overlap is proven; Sentry-envelope/DSN migration was not found in checked ingestion docs. |
-| [OpenObserve docs search index](https://openobserve.ai/docs/search/search_index.json) | Exact search for `sentry` returned no matches in the current docs index. | Negative evidence only: it supports keeping Sentry migration unproven, but should be rechecked because search indexes can lag source pages. |
+| [OpenObserve docs search index](https://openobserve.ai/docs/search/search_index.json) | Current index shape is an object with `.docs[]` entries containing `title`, `text`, and `location`. On 2026-05-25, exact search across those fields returned `0` matches for `sentry` and `0` matches for `portable evidence`, `evidence bundle`, `investigation bundle`, `query manifest`, `raw refs`, `raw-ref`, `redaction report`, or `outcome ledger`; broader `sre agent` / `ai sre` / `mcp` terms returned `65` matches. | Negative evidence only: it supports keeping Sentry migration and portable evidence-bundle export unproven, but should be rechecked because search indexes can lag source pages. |
+
+## Source Resolution Notes
+
+This pass tightened the provenance of the highest-risk OpenObserve claims:
+
+- **Release freshness.** The latest-release redirect and tag ref both point to
+  `v0.90.2`, so the focused note is not relying only on a manually browsed
+  release page.
+- **Docs-search method.** Earlier checks assumed the search index was a top-level
+  array. The current index is an object with `.docs[]`; the negative Sentry and
+  bundle-schema checks now search `title`, `text`, and `location`.
+- **MCP power boundary.** The MCP docs explicitly say Enterprise only and list
+  query tools beside create/update/delete/admin tools. That keeps the Parallax
+  comparison focused on safety shape, not merely whether MCP exists.
+- **Evidence-chain pressure.** OpenObserve's AI SRE product page does use
+  evidence-chain and reasoning-at-every-step language. The current docs search
+  still did not expose a portable schema/export contract, so this remains a
+  watch trigger rather than wedge closure.
 
 ## Product Impact
 
