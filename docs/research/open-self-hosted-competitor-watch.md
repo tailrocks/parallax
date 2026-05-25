@@ -53,9 +53,9 @@ audit.
 
 | Competitor | Current strongest fit | Current Parallax gap | Threat level |
 | --- | --- | --- | --- |
-| OpenObserve | Rust, object-storage-oriented, self-hostable observability platform with OTLP ingest, RUM/source maps, Enterprise AI SRE Agent, AI Assistant, incident/RCA workflow, and MCP/tool validation in SRE agent setup. | AI features are Enterprise-gated; current ingestion docs emphasize OTLP/log APIs/Prometheus/etc., not Sentry envelopes; no portable evidence-bundle schema or coding-agent action audit. | Very high. |
-| SigNoz | Open self-hostable MCP server, agent-native positioning, Claude Code/Codex/Cursor/Gemini integration, traces/logs/metrics/topology/deploy history through agent clients. | Go + ClickHouse stack; query/tool interface rather than deterministic evidence bundle; no Sentry envelope ingestion in current docs; no Parallax-style CLI/agent side-effect audit. | High. |
-| Coroot | Apache-2.0 OSS, eBPF zero-instrumentation, metrics/logs/traces/profiles, service map, deployment tracking, official MCP endpoint, and AI RCA through Enterprise or Cloud integration for Community users. | eBPF spans can be incomplete and lack app-level Rust panic/error-chain semantics; AI RCA is not purely OSS/local in Community; no Sentry migration path, portable evidence bundle, or coding-agent action audit in official docs. | High. |
+| OpenObserve | Rust, object-storage-oriented, self-hostable observability platform with OTLP ingest, RUM/source maps, Enterprise AI SRE Agent, AI Assistant, incident/RCA workflow, and Enterprise MCP with broad query/admin tools. | AI/MCP features are Enterprise-gated; current ingestion docs emphasize OTLP/log APIs/Prometheus/etc., not Sentry envelopes; MCP is not a narrow read-only bundle surface; no portable evidence-bundle schema or coding-agent action audit. | Very high. |
+| SigNoz | Open self-hostable MCP server, agent-native positioning, Claude Code/Codex/Cursor/Gemini integration, traces/logs/metrics/topology/deploy history through agent clients, and MCP tools for alerts/dashboards/views/channels. | Go + ClickHouse stack; query/management interface rather than deterministic evidence bundle; no Sentry envelope ingestion in current docs; no Parallax-style CLI/agent side-effect audit. | High. |
+| Coroot | Apache-2.0 OSS, eBPF zero-instrumentation, metrics/logs/traces/profiles, service map, deployment tracking, official MCP endpoint, Community `resolve_alerts`, and AI RCA through Enterprise or Cloud integration for Community users. | eBPF spans can be incomplete and lack app-level Rust panic/error-chain semantics; AI RCA is not purely OSS/local in Community; MCP is not purely read-only; no Sentry migration path, portable evidence bundle, or coding-agent action audit in official docs. | High. |
 
 ## OpenObserve
 
@@ -70,7 +70,9 @@ OpenObserve is the closest structural threat:
 - Object-storage-oriented architecture already aligned with cheap retention.
 - SRE Agent setup that powers AI Assistant, incident management, and RCA in
   OpenObserve Enterprise.
-- MCP validation knobs in the SRE Agent deployment path.
+- Enterprise MCP that can query logs, metrics, and traces, but also exposes
+  broad create/update/delete/admin tools for alerts, dashboards, roles, streams,
+  functions, pipelines, users, KV, ingestion, and search jobs.
 
 This overlaps with Parallax's self-hosted, Rust-first, object-storage direction
 more than any broad incumbent does.
@@ -90,6 +92,9 @@ more than any broad incumbent does.
 4. **Agent/CLI side-effect audit.** The threat is observability-agent RCA, not
    the full "what did Codex/Claude/Amp run, edit, test, and open as a PR?"
    audit graph.
+5. **MCP safety shape.** The public MCP catalog is broad and write-capable.
+   Parallax's first MCP surface should stay narrower: read-only bundles,
+   redaction reports, raw-ref controls, and audit rows.
 
 ### Watch Triggers
 
@@ -116,6 +121,8 @@ SigNoz is the closest open agent-native threat:
 - Architecture centered on OpenTelemetry and ClickHouse.
 - Recent docs for observing Claude Code itself with OpenTelemetry logs and
   metrics, including terminal/MCP connection/cost fields.
+- MCP tools that query metrics/traces/logs and also create, update, or delete
+  alert rules, dashboards, saved views, and notification channels.
 
 SigNoz validates the Parallax thesis that agents want observability through MCP
 and structured APIs.
@@ -131,7 +138,10 @@ and structured APIs.
 3. **No evidence-bundle contract.** SigNoz MCP gives agents query access to
    observability data. Parallax's bet is that a pre-correlated, citable,
    redacted bundle beats asking the agent to assemble context itself.
-4. **Action audit gap.** SigNoz can observe Claude Code activity, which narrows
+4. **MCP power boundary.** SigNoz MCP includes management tools. That is useful,
+   but it is not the same product surface as a least-privilege, read-only,
+   citable evidence bundle.
+5. **Action audit gap.** SigNoz can observe Claude Code activity, which narrows
    Parallax's agent-observability gap, but the current public story is still
    telemetry over agent activity, not a full outcome graph tying context,
    commands, patches, tests, PRs, reviews, reverts, and recurrence.
@@ -161,6 +171,8 @@ Coroot is the strongest zero-instrumentation competitor:
 - Official MCP endpoint that exposes topology, alerts, incidents, traces, logs,
   metrics, and project selection to Claude Code, Cursor, Codex, and other MCP
   clients.
+- Community MCP tool for resolving alerts, plus Enterprise `investigate_anomaly`
+  for graph-guided RCA.
 - AI-powered RCA in Enterprise, or through Coroot Cloud integration for
   Community users.
 
@@ -180,9 +192,9 @@ get a service map and RCA without changing code.
 3. **Migration and bundle gap.** Coroot is not a Sentry-compatible error
    migration path and does not expose a Parallax-style portable evidence bundle.
 4. **MCP is now real, but action audit is still missing.** Coroot exposes
-   observability data to agents through MCP. It still does not appear, in
-   official docs checked here, to reconstruct coding-agent file, command, test,
-   patch, PR, and outcome chains.
+   observability data to agents through MCP and can resolve alerts, but it still
+   does not appear, in official docs checked here, to reconstruct coding-agent
+   file, command, test, patch, PR, and outcome chains.
 
 ### Watch Triggers
 
@@ -235,7 +247,7 @@ SigNoz:
 
 - [SigNoz agent-native observability](https://signoz.io/agent-native-observability/)
 - [SigNoz agent-native blog](https://signoz.io/blog/introducing-agent-native-observability/)
-- [SigNoz MCP server docs](https://signoz.io/docs/signoz-mcp-server/)
+- [SigNoz MCP server docs](https://signoz.io/docs/ai/signoz-mcp-server/)
 - [SigNoz AI tools and skills](https://signoz.io/docs/ai/overview/)
 - [SigNoz architecture docs](https://signoz.io/docs/architecture/)
 - [SigNoz Claude Code monitoring](https://signoz.io/docs/claude-code-monitoring/)

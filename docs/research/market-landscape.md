@@ -74,7 +74,7 @@ Current source checks for this update:
 - [OpenObserve MCP docs](https://openobserve.ai/docs/integration/ai/mcp/)
 - [OpenObserve enterprise license](https://openobserve.ai/enterprise-license/)
 - [SigNoz agent-native observability](https://signoz.io/agent-native-observability/)
-- [SigNoz MCP server](https://signoz.io/docs/signoz-mcp-server/)
+- [SigNoz MCP server](https://signoz.io/docs/ai/signoz-mcp-server/)
 - [SigNoz Claude Code monitoring](https://signoz.io/docs/claude-code-monitoring/)
 - [Coroot AI RCA](https://docs.coroot.com/ai/overview/)
 - [Coroot MCP server](https://docs.coroot.com/mcp/overview/)
