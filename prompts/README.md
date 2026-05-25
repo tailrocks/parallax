@@ -131,9 +131,10 @@ docs/research/greptimedb-vs-clickhouse/, commit and push it, then continue to th
 next gap. Do not declare the comparison done.
 ```
 
-- `30m` is a good default; use `1h` to spread token spend, or `15m` to push harder.
-- Avoid sub-pass intervals (a few minutes): a deep pass outlasts them, so fires
-  just queue — no benefit, and nothing is fresher.
+- `30m` is a good default; use `1h` to spread token spend. Passes that include a
+  local Docker benchmark run take longer, so lean toward `30m`–`1h` for those.
+- Avoid sub-pass intervals (a few minutes, e.g. `5m`): a deep pass outlasts them,
+  so fires just queue or overlap — no benefit, and nothing is fresher.
 - Each fire re-reads the brief and the current `docs/research/greptimedb-vs-clickhouse/`
   state and continues from the next gap, so a fresh re-trigger loses no progress.
 - Re-pin versions and re-check public claims about every 1–2 weeks (or when either

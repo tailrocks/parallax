@@ -120,6 +120,9 @@ demands it, and update the README and `PROJECT_STRUCTURE.md` when you do):
 - `benchmarking-the-differences.md` — for each mechanism-level difference found,
   the targeted benchmark to measure it for Parallax usage and what we must have to
   run it (see below); routes runnable cases into `storage-benchmark-prototype.md`.
+- `local-benchmark-results.md` — the empirical log of local Docker runs: env,
+  pinned image tags, dataset, queries, real measured numbers, and which published
+  claim each run confirms or refutes (see below).
 - `verdict-which-to-choose.md` — the final synthesized decision (see below).
 
 Keep each note source-linked and concise. Prefer comparison tables plus short
@@ -129,12 +132,16 @@ mechanism analysis, per the repo research conventions.
 
 # Method: Read The Source, Not The Marketing
 
-1. **Pin versions first, every pass.** Compare the latest reasonably available
-   stable release of each system as of the run date. Record the exact version and
-   the source commit SHA you read in every note. Starting pins (re-check and bump
-   at run time): GreptimeDB `v1.0.2` (GA 2026-05-14), ClickHouse latest stable
-   (`25.x` — pin the exact patch). Do not analyze an old major against a current
-   one unless the point is explicitly historical.
+1. **Pin versions first, every pass — always the latest.** This is a hard rule:
+   always compare the newest stable release available on both sides at run time.
+   At the start of every pass, check for a newer stable release of each system and
+   bump to it before comparing; if one side has shipped a new version, upgrade the
+   comparison rather than reusing an old number. Record the exact version and the
+   source commit SHA you read in every note. Starting pins (re-check and bump at
+   run time): GreptimeDB `v1.0.2` (GA 2026-05-14), ClickHouse latest stable
+   (`25.x` — pin the exact patch). Never analyze an old major against a current one
+   unless the point is explicitly historical, and never carry forward a stale
+   benchmark or claim as current — re-verify it against the latest version.
 
 2. **Clone the source and read it.** The repos are open:
    - GreptimeDB (Rust): <https://github.com/GreptimeTeam/greptimedb>
@@ -360,6 +367,55 @@ become runnable and holds veto power over the storage choice. New cases discover
 here should be folded back into that prototype (and its generator/queries
 extended) rather than forked into a parallel benchmark. Distinguish what is
 **already runnable there** from what is a **proposed new case**.
+
+---
+
+# Verify Claims Locally With Docker (Measure, Do Not Just Reason)
+
+A local Docker environment is available, so do not stop at reasoning from the code
+— actually stand each system up and measure. Reading the source tells you *why* a
+result should happen; a local run tells you *whether* it does. Run real
+comparisons, record real numbers, and use them to confirm or refute the published
+performance claims for each system. Capture every run in
+`local-benchmark-results.md`.
+
+How to run it:
+
+- **Stand up the candidates in Docker.** Bring up GreptimeDB and ClickHouse (and
+  MinIO for the object-storage path) from official images, pinned to the exact
+  version tags under analysis (the same versions pinned in the Method section).
+  Prefer a small `docker compose` definition under the benchmark harness's `bench/`
+  area so it stays consistent with `storage-benchmark-prototype.md`; reuse it
+  rather than forking a second setup.
+- **Start small and correct.** Begin at the laptop-scale smoke tier — enough data
+  to be representative, small enough to iterate. Prove query results match across
+  candidates before trusting any latency number.
+- **Measure the targeted differences.** Run the micro-benchmarks designed in
+  `benchmarking-the-differences.md` and the evidence-bundle/correlation queries
+  (Q1–Q6), using the measurement protocol in `storage-benchmark-prototype.md`
+  (freshness, per-class latency p50/p95/p99, retained size/compression,
+  object-store requests, CPU/RSS). Record warm and cold cache separately.
+- **Tie each run to a claim.** For every published claim being checked, log the
+  local result and mark it *confirmed*, *refuted*, *workload-specific*, or
+  *inconclusive at this scale*, with the exact env so it is reproducible: image
+  tags, host hardware, dataset config/seed, and the queries run.
+- **Promote solid cases into the harness.** Quick ad-hoc local probes are fine for
+  fast claim-checking, but once a case is worth keeping, fold it into the runnable
+  `parallax-bench` harness so it is reproducible and counts toward the prototype's
+  veto on the storage choice. The full reproducible harness stays owned by
+  `storage-benchmark-prototype.md`; this section is about getting empirical numbers
+  on the table fast.
+
+Hygiene and honesty:
+
+- Keep containers ephemeral and clean them up; do **not** commit Docker images,
+  generated datasets, or large result blobs into the repo — gitignore any data
+  directories and commit only the Markdown results log (and the small compose/
+  scripts).
+- A laptop run is not a production verdict. State the scale and hardware, and label
+  any single-node laptop result as indicative, not final — the larger tiers and the
+  scaled-out runs in the prototype settle the real numbers. Never present a local
+  smoke number as a proven general result.
 
 ---
 

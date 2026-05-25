@@ -75,6 +75,7 @@ These are produced and grown by the loop; this index is updated as they land.
 | `clickhouse-implementation.md` | Concrete Parallax-on-ClickHouse design: full schema, ingest path, exact retrieval queries, object-storage/retention layout. | pending |
 | `per-signal-verdict.md` | Scenario matrix: metrics vs logs vs traces vs evidence-bundle correlation. | pending |
 | `benchmarking-the-differences.md` | Per-difference targeted benchmark design (hypothesis, workload, metric, pass/fail, prerequisites); routes runnable cases into the benchmark prototype. | pending |
+| `local-benchmark-results.md` | Empirical log of local Docker runs: env, pinned image tags, dataset, queries, measured numbers, and which published claim each run confirms or refutes. | pending |
 | `verdict-which-to-choose.md` | Final synthesized decision and the mechanism-level reasoning. | pending |
 
 ## Source repositories (read, do not vendor into this repo)
