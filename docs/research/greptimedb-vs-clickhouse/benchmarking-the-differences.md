@@ -63,7 +63,12 @@ Legend: **Runnable now** = expressible in the current prototype/`bench/compose.y
 - **Pass/fail:** both sub-300 ms warm at `small` (the prototype Q6 gate); neither
   degrades super-linearly with table size given the anchor.
 - **Prereq:** the multi-signal dataset (have it) at larger tier.
-- **Status:** Runnable now at smoke; Needs harness ext. for larger tier.
+- **Status:** **DONE at smoke (Runs 2 + 16).** Full composite Q6 (Q1+Q2+Q3) measured
+  end-to-end, parity PASS: CH ~10 ms vs GT ~33 ms total — both far under the 300 ms
+  gate. Q2 issue-history (PK lookup) a tie (3 ms each); GT's gap is the 3-way UNION's
+  per-query fixed overhead, not algorithmic. Confirms the anchored bundle is **not
+  latency-bound** on either engine. Larger-tier cold + concurrent still owed to the
+  prototype.
 
 ## B4 — Un-anchored large↔large `trace_id` join
 

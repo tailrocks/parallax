@@ -585,6 +585,41 @@ by: the read cache makes warm re-reads local (0 GETs) on both, so this only bite
 genuinely cold reads. One measurement each, 1M-span SST — directional. B12's local
 full-scan question is answered; the 1B-doc JSONBench scale stays the prototype's.
 
+### Run 16 — 2026-05-25 — Q6 evidence-bundle composite (the query that matters most)
+
+Completed the end-to-end evidence-bundle measurement (Run 2 did Q1/Q4 separately;
+Q2/Q3/composite were untimed). Anchor: `fingerprint=fp-000`, `release=v1.7.0`,
+`trace_id=3fb2d84c…`, prior release `v1.6.0`. **Parity PASS**: Q1=18 rows, Q2
+count=11 (same first/last-seen instants), Q3=38 regression fingerprints — identical
+on both.
+
+| Sub-query | ClickHouse | GreptimeDB |
+| --- | --- | --- |
+| Q1 trace_context (3-way UNION spans+logs+errors) | 4 ms | 24 ms |
+| Q2 issue_history (`min/max/count` by project+fingerprint) | 3 ms | **3 ms (tie)** |
+| Q3 release_regression (`NOT IN` anti-join) | 3 ms | 6 ms |
+| **Q6 composite (sum)** | **~10 ms** | **~33 ms** |
+
+**Findings:**
+
+1. **Both assemble the full bundle correctly and fast** — ~10 ms (CH) / ~33 ms (GT)
+   at 1M-span smoke, **both far under the prototype's Q6 ≤300 ms warm gate**.
+2. **Q2 issue-history is a tie** (3 ms each): `(project, fingerprint)` is
+   GreptimeDB's PRIMARY KEY prefix = ClickHouse's `ORDER BY` prefix → both do a
+   fast keyed lookup. Confirms the anchored/keyed pattern is not latency-bound on
+   either engine.
+3. **GreptimeDB's gap is concentrated in Q1** — the 3-way UNION pays GreptimeDB's
+   per-query fixed overhead (DataFusion planning + HTTP) ×3 sub-scans; it is **not**
+   algorithmic (Q2 tie, Q3 close). At larger scale the keyed sub-queries stay cheap
+   (anchored), so the composite should remain bounded.
+
+**Consequence:** for Parallax's **single most important query** (assemble the
+evidence bundle from an anchor), **engine choice is not latency-bound** — both are
+fast and well within gate. This confirms the verdict's core point: the decision
+rests on the *fit* pillars (metrics-native, ingest ergonomics, cost, scaling), not
+on bundle-assembly speed. (Smoke scale; warm. The composite at `small`+ cold and
+under concurrent ingest is the prototype's to settle.)
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
