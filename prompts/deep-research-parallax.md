@@ -1000,7 +1000,12 @@ that pressure the migration and simplicity claims from below:
   `@rustrak/mcp` management/raw-event tools, and maintainer protocol-drift
   agent workflow; watch OTLP context, broader Sentry item handling, read-only
   evidence bundles, fixture proof, and action/outcome audit)
-- Traceway
+- Traceway (MIT, Go/Svelte, OTLP/HTTP traces/metrics/logs, exceptions,
+  session replay/RUM through native `/api/report`, AI trace promotion from
+  `gen_ai.*`, SQLite/all-in-one/minimal/embedded modes, and integration skills;
+  watch Sentry SDK/envelope migration, MCP/CLI evidence access, portable
+  redacted bundles, session/export dossier semantics, and coding-agent
+  action/outcome audit)
 - GoSnag
 - Urgentry
 

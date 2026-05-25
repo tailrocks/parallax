@@ -42,6 +42,15 @@ In one sentence:
 > OTEL should be the wire format and context substrate; Parallax should be the
 > investigation, grouping, and agent-context layer above it.
 
+Current competitor pressure strengthens this boundary. The focused
+[Traceway OTLP/AI/replay recheck](traceway-otlp-ai-replay-recheck.md) found an
+active MIT project with direct OTLP/HTTP traces, metrics, and logs; OTel
+exception-to-issue conversion; trace-linked logs; AI trace promotion from
+`gen_ai.*`; native session-replay protocol; and SQLite/all-in-one/embedded
+deployment modes. Treat "OTLP-native and no Collector required" as table stakes,
+not as the Parallax moat. The moat must be Sentry migration plus canonical,
+redacted, citable evidence bundles and action/outcome audit.
+
 ## Current Version Snapshot
 
 | Component | Latest checked version | Release date | Notes |
