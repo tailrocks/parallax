@@ -16,6 +16,14 @@ collectors, pipelines, dashboards, alerts, user management, and product UX. That
 is a different category. For Parallax, the hard dependency is the database or
 storage engine underneath the platform.
 
+> **Runnable prototype:** this document is the rationale, scope, axes, and
+> decision criteria. The concrete, runnable harness that realizes it — Rust
+> `parallax-bench`, the `StorageAdapter` trait, the seeded dataset generator,
+> per-candidate DDL, the exact query SQL, the measurement protocol, and numeric
+> decision gates — lives in
+> [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md). The
+> benchmark prototype has veto power over the default storage choice.
+
 ## Scope Rule
 
 Benchmark databases, not platforms.
