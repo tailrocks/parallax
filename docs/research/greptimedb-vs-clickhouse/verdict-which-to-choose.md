@@ -2,12 +2,13 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: standing decision, continually sharpened (current through pass 31).
-Synthesizes the internals teardowns (all 10 subsystems + rollup), the per-signal
-matrix, Docker Runs 1–15, and public-claims triangulation. The runnable
-`storage-benchmark-prototype.md` holds final veto; this verdict states the
-mechanism-grounded recommendation and the triggers that would flip it. Pins
-re-verified current through pass 31 (no newer stable on either side).
+Status: standing decision, continually sharpened (current through pass 40).
+Synthesizes the internals teardowns (all 10 subsystems + rollup + retention,
+schema-evolution, dedup), the per-signal matrix, Docker Runs 1–19, and public-claims
+triangulation. The runnable `storage-benchmark-prototype.md` holds final veto; this
+verdict states the mechanism-grounded recommendation and the triggers that would flip
+it. Pins re-verified current through pass 40 (no newer stable on either side:
+GreptimeDB v1.1.0 is nightly-only; ClickHouse 26.5.x is the highest line).
 
 Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d8`).
 
@@ -20,6 +21,14 @@ aligns with Parallax's dominant axes*: metrics/PromQL-native, fresh-on-write wit
 small-write ingest ergonomics, horizontal scale-out designed-in, object-storage
 native, and Rust (tiebreak). This is a **fit decision, not a speed decision** —
 and the honest correction to the operator hypothesis below makes that explicit.
+
+**The "fit not speed" thesis is now anchored on the query that matters most.** Pass
+35 measured the full anchored evidence-bundle composite (Q6 = Q1+Q2+Q3, Run 16): CH
+~10 ms vs GreptimeDB ~33 ms, **both far under the 300 ms gate** — so for Parallax's
+dominant retrieval, **engine choice is not latency-bound**. The decision therefore
+rests on the *fit* pillars below (metrics-native, ingest/upsert ergonomics, retention
+cost, scaling), exactly where GreptimeDB leads — not on the analytical-scan latency
+where ClickHouse leads but which Parallax's anchored pattern rarely hits.
 
 ## The operator hypothesis, tested honestly
 
@@ -52,7 +61,10 @@ storage*, accepting a younger DataFusion scan engine.
 | --- | --- | --- |
 | **Metrics / PromQL** | Native PromQL planner + Prom remote-write + metric engine; ClickHouse has no PromQL (needs a translation layer). | plan+smoke (Run 3) |
 | **Write ergonomics** | LSM memtable absorbs high-frequency small writes; no ClickHouse "too many parts". Native OTLP/Prom ingest, no collector. | arch+Run 5 |
-| **Horizontal scaling** | Region model + Metasrv auto-rebalance + repartition + compute/storage separation (object store + remote WAL) → topology change, not rewrite. | arch (multi-node owed) |
+| **Horizontal scaling** | Region model + Metasrv auto-rebalance + repartition + compute/storage separation (object store + remote WAL) → topology change, not rewrite. **Region migration confirmed in source (pass 34)** = flush→downgrade→open_candidate→upgrade→close, **no bulk-copy step** — ownership reassignment + reopen-from-object-storage, cheap precisely because SSTs already live in S3. | arch+source (multi-node run owed) |
+| **Latest-state / upsert reads** | Dedup is **read-time** (`DedupReader` in the scan path): `last_row` / `last_non_null` (per-field partial-upsert merge) → "current issue status / deploy marker / metric last-value" is correct on a **plain query**, no keyword. ClickHouse `ReplacingMergeTree` dedups only at merge/`FINAL` (dupes visible until then). Concrete win on the Q2 issue-history sub-query. | source+measured (Run 19) |
+| **Schema evolution (OTLP drift)** | Ingest **auto-adds typed columns** (`create_or_alter_tables_on_demand`) — a new attribute lands with zero migration; ClickHouse rejects unknown-column inserts (needs JSON or a managed ALTER). Both `ADD COLUMN` are metadata-only. | source+measured (Run 18) |
+| **Retention cost** | TTL = **whole-SST drop** (TWCS time-windowing → no read/rewrite; `compactor.rs:581`); ClickHouse default `ttl_only_drop_parts=0` **rewrites survivors** (Run 17: read 1M / rewrote 500k) unless tuned (`PARTITION BY` time + `ttl_only_drop_parts=1`). Cheap-by-default vs cheap-if-configured. | source+measured (Run 17) |
 | **Object-storage-native** | OpenDAL default + read cache; cheap re-readable retention first-class. Fewer *total* objects (4 vs 74, Runs 8–9) → wins full-scan cold reads. Cold GET cost is query-shape-dependent (measured both ways): full scan GreptimeDB fewer (26 vs 57, Run 15 — wins the JSONBench regime); **anchored lookup ClickHouse fewer (5 vs 22, Run 14)** — Parallax's pattern. Read cache → warm re-reads local on both. | measured (layout + cold GETs both shapes) |
 | Freshness | Visible-on-write (tie with ClickHouse, not a win). | smoke |
 
@@ -64,6 +76,7 @@ storage*, accepting a younger DataFusion scan engine.
 | **Generic wide scan / aggregate throughput** | Decade-tuned vectorized engine — the OLAP-scan bar. | arch |
 | **Vertical single-node ceiling** | Saturates many cores + NVMe on one big box. | arch |
 | **Per-column codec tuning** | Hand-picked `DoubleDelta`/`Gorilla`/etc. (counter 7.3×, gauge 78×, Run 4). | smoke (Run 4) |
+| **Dynamic-attribute path queries** | `JSON` type stores each path as a **typed columnar subcolumn** (`attributes.k` reads only that subcolumn); GreptimeDB `Json` is a binary blob + `json_get_*` per-row parse. Faster for querying arbitrary OTLP attributes by path at volume. | source+measured (Run 18) |
 | Query latency at smoke scale | Won every non-metric query (2–4 ms vs 9–54 ms) — but cache-resident, fixed-overhead-dominated. | smoke |
 
 ## Decision question 3 — can ClickHouse replace GreptimeDB for Parallax?
@@ -92,7 +105,11 @@ layer, a sharding/ops burden, and an ingest-batching layer.
    granule, no PREWHERE-equivalent late materialization yet). **But Parallax's
    dominant retrieval is *anchored* evidence-bundle assembly** (always filtered by
    `trace_id`/`fingerprint`), where both engines prune the anchor first and the
-   gap shrinks (Run 2) — so this blocker is less central than it looks.
+   gap shrinks (Run 2). **Now measured end-to-end (Run 16): the full anchored
+   composite Q6 is ~33 ms on GreptimeDB vs ~10 ms on ClickHouse — both ≪ the 300 ms
+   gate, GreptimeDB's gap being 3-way-UNION fixed overhead, not algorithmic.** So on
+   the query that matters most this blocker is **not latency-bound** — it is far less
+   central than the raw log-scan numbers suggest.
 2. **Younger analytical/distributed maturity** — region migration/repartition are
    2025-era; less battle-tested than ClickHouse's shard model.
 3. **Schema discipline required**: `trace_id` must be in the primary key / indexed
@@ -183,9 +200,10 @@ concurrent ingest+query:
   `read-path-indexing-and-execution.md`, `write-path-and-ingestion.md`,
   `compression-and-cost.md`, `distributed-and-scaling.md`,
   `compaction-and-merge.md`, `caching-and-cold-warm.md`,
-  `rollup-and-continuous-aggregation.md`.
+  `rollup-and-continuous-aggregation.md`, `retention-and-ttl.md`,
+  `schema-evolution-and-dynamic-columns.md`, `dedup-and-update-semantics.md`.
 - Matrix: `per-signal-verdict.md`. Empirical: `local-benchmark-results.md`
-  (Runs 1–15). Public claims: `public-performance-claims.md`. Targeted cases:
+  (Runs 1–19). Public claims: `public-performance-claims.md`. Targeted cases:
   `benchmarking-the-differences.md` (B1–B12).
 - Build designs: `greptimedb-implementation.md`, `clickhouse-implementation.md`.
 - Reproducible object-store stack: `bench/s3/`.
