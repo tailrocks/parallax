@@ -178,7 +178,7 @@ These are not one workload, and forcing them into one engine is the mistake.
   - **Columnar store (ClickHouse/GreptimeDB)** = the raw event/log/trace/metric firehose + the
     *computed* aggregates. The grouped-error *count/first-seen/last-seen* can be **computed on read**
     (ClickHouse `argMin/argMax/count` is fast) or **materialized** (ClickHouse MV / GreptimeDB Flow,
-    see `continuous-aggregation-and-rollups.md`) keyed by fingerprint; the *human/workflow* fields live
+    see `rollup-and-continuous-aggregation.md`) keyed by fingerprint; the *human/workflow* fields live
     in the relational store.
   - **Object storage (S3/R2)** = cold tier for the columnar firehose (already in `retention-cost-model.md`).
 
@@ -246,7 +246,7 @@ Absent one of those, the proxy lens says ClickHouse.
   `query-execution-engine.md` (retrieval-speed gap), `compression-and-cost.md` (cost ~tie),
   `distributed-and-scaling.md` (object-store economics, auto-rebalance), `metric-cardinality.md`
   (metric-engine), `write-path-and-ingestion.md` (the now-neutralized native-ingest trio),
-  `continuous-aggregation-and-rollups.md` (rollups for grouped-error aggregates).
+  `rollup-and-continuous-aggregation.md` (rollups for grouped-error aggregates).
 - External (2026): ClickHouse as de-facto obs backend — [ClickStack](https://clickhouse.com/clickstack),
   [SigNoz on ClickHouse](https://clickhouse.com/blog/signoz-observability-solution-with-clickhouse-and-open-telemetry),
   [best open-source observability 2026](https://clickhouse.com/resources/engineering/best-open-source-observability-solutions);

@@ -6051,7 +6051,7 @@ gap never applies. So **the agg-gap bites only genuinely ad-hoc analytics**, not
 the verdict concession. Small **maturity** edge to ClickHouse (insert-triggered MV is battle-tested +
 always-fresh; GT batching knobs are `experimental_*`, streaming is the mature GT path). GT's Flownode
 scales as its own tier (fits the topology-change scaling story). Neither wins decisively; the agg-gap
-is "a rollup away from moot" on both sides. Wrote up in new note `continuous-aggregation-and-rollups.md`.
+is "a rollup away from moot" on both sides. Wrote up in new note `rollup-and-continuous-aggregation.md`.
 
 **Reproduce.** `docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql --data-urlencode
 "sql=SELECT table_name FROM information_schema.tables WHERE table_name LIKE '%flow%'"` → `flows`.
@@ -6668,6 +6668,30 @@ requirement, not a 26.6 regression, and the cast-free path is the filter. Update
 toJSONString(map('user_id',…,'region',…)) FROM numbers(50000); SELECT attrs.region, count() GROUP BY
 attrs.region` → `Code 44`; add `::String` → works; `WHERE attrs.user_id='5'` → works (no cast). (exec;
 host port down.)
+
+### Run 169 — 2026-05-25 — REPO CLEANUP (deduplicated a note I created) + count-distinct re-verify (capability parity)
+
+**Context.** Rotated to count-distinct (Parallax counts distinct users-affected/traces/fingerprints) and
+discovered a **duplicate note**: `continuous-aggregation-and-rollups.md` (I created it in Run 149,
+unaware the canonical `rollup-and-continuous-aggregation.md` had existed since pass 27/70/71 with more
+content + 5 cross-refs). Repo-health fix. Re-pin unchanged.
+
+**Count-distinct re-verify (no drift, capability parity):** on `spans`(1M)/`spans_idx`(1M):
+- Exact: CH `uniqExact(trace_id)` = **71,429**; GT `count(distinct trace_id)` = **71,429** (match).
+- HLL approx: CH `uniq(trace_id)` = 71,563 (~0.19% err); GT `hll_count(hll(trace_id))` = 71,319 (~0.15%
+  err); GT also has `approx_distinct`. `count(distinct span_id)` = 1,000,000 (all-unique) on both.
+- → Both offer exact + HLL-approx, both accurate (<0.2%). **Not a differentiator.**
+
+**Cleanup done.** Merged the two unique bits from the dup (the proxy-lens agg-gap framing + the concrete
+Sentry-style grouped-error `AggregatingMergeTree` rollup from Run 160) into the canonical
+`rollup-and-continuous-aggregation.md`; redirected all refs (`platform-fit-and-alternatives.md`, README
+row + recent-line, this run-log's Run 149/160 mentions) to the canonical; `git rm` the duplicate.
+Mechanism-note count 28→27. (Lesson: before `Write`-ing a new note, grep the notes dir for an existing
+one on the topic — pass 149 skipped that check.)
+
+**Reproduce.** `docker exec parallax-bench-clickhouse-1 clickhouse-client -q "SELECT uniqExact(trace_id),
+uniq(trace_id) FROM spans"`; GT `SELECT count(distinct trace_id), hll_count(hll(trace_id)) FROM
+spans_idx`. (exec; host port down.)
 
 ## Next runs (to make the numbers mean something)
 

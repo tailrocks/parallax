@@ -3,7 +3,10 @@
 <!-- markdownlint-disable MD013 -->
 
 Status: pass 71 (live-verified; was pass 27 source-only), re-verified pass 106 (Run 70 —
-correctness reproduced + rollup freshness distinction measured). The "rollup / correlation
+correctness reproduced + rollup freshness distinction measured) + **Runs 149/160/169
+(consolidated here — a duplicate `continuous-aggregation-and-rollups.md` created in Run 149 was merged
+into this canonical note in Run 169 and deleted): adds the proxy-lens agg-gap framing + the concrete
+Sentry-style grouped-error rollup, below).** The "rollup / correlation
 tooling" dissection (checklist item for ClickHouse; previously only covered on the
 ClickHouse side). Compares GreptimeDB's **Flow engine** to ClickHouse's **Materialized
 Views + AggregatingMergeTree** for Parallax's rollups: metric downsampling (5 m / 1 h),
@@ -79,6 +82,27 @@ rollup path specifically (distinct from raw-write freshness, which is a tie —
 - **Release-regression aggregates:** periodic windowed recompute — GreptimeDB Flow
   **batching mode** (`EVAL INTERVAL`) or ClickHouse **refreshable MV** are the
   natural analogs.
+- **Sentry-style grouped-error rollup (concrete, Run 160 live):** the issue rollup built end-to-end on
+  ClickHouse — `CREATE TABLE ge_roll (fingerprint String, n AggregateFunction(count), first_seen
+  AggregateFunction(min,DateTime64(3)), last_seen AggregateFunction(max,DateTime64(3)), latest
+  AggregateFunction(argMax,String,DateTime64(3))) ENGINE=AggregatingMergeTree ORDER BY fingerprint` + a
+  `MATERIALIZED VIEW … countState()/minState()/maxState()/argMaxState() GROUP BY fingerprint`, read via
+  `-Merge`. Computed correctly (fp-135→count 21, matching the query-time aggregate). GreptimeDB does the
+  same via a `Flow` sink or query-time `last_value(… ORDER BY ts)` (Run 156). **Both build the
+  grouped-error *aggregate*; only the mutable workflow state (status/assignee) goes to the relational
+  store** (`platform-fit-and-alternatives.md`, `data-model-store-split`).
+
+## Proxy-lens framing — rollups defuse the agg-gap (Runs 149/156)
+
+Under the Parallax-proxy reframe (`platform-fit-and-alternatives.md`), continuous aggregation is the
+**escape hatch for the read-speed agg-gap**: ClickHouse is ~2× faster on *ad-hoc* aggregation
+(`query-execution-engine.md`), but Parallax's dashboards/SLOs/timelines are **known, recurring** rollups
+— defined once as a Flow (GreptimeDB) or MV (ClickHouse), they make the dashboard query hit a small
+pre-aggregated table, so the raw-scan agg-gap **never applies to dashboards**. It bites **only genuinely
+ad-hoc** analytics. Both engines close the recurring regime (~5–6× read speedup measured, Run 43); the
+only residual is ClickHouse's **maturity** edge on MV tooling + its **synchronous-on-insert freshness**
+(Run 70) vs GreptimeDB Flow's flush/interval-batched default. So continuous aggregation is a *two-sided,
+shipped* feature — it **defuses** the agg-gap as a blocker rather than differentiating the engines.
 
 ## Consequence (axes)
 
