@@ -7,7 +7,7 @@ Research date: 2026-05-25
 ## Pass Target
 
 Consume the separate benchmark agent's new artifacts without running another
-storage benchmark. The goal is to decide what Runs 140-144 prove, what they
+storage benchmark. The goal is to decide what Runs 140-145 prove, what they
 falsify, which source-read mechanism claims they strengthen, and which
 product/storage claims must stay unproven until the full storage gates run.
 
@@ -21,6 +21,7 @@ product/storage claims must stay unproven until the full storage gates run.
 | Commit `f3a4023` | Benchmark tier policy + Run 143 docs | Local laptop default lowered to `N=100000`, 5M+ runs moved to explicit server tier, and forced compaction reduced the 5M dedup aggregation penalty. |
 | Commit `20140c2` | Primary-source code read + Run 144 docs | GreptimeDB `v1.0.2` TWCS picker, window picker, and compactor source: compaction is time-window scoped and expired SSTs are removed separately from successful merges. |
 | Commit `a6107e3` | Consolidation note | The storage verdict's DQ6 section now carries the 5M `v1.1.0-nightly-20260525` dedup-aggregation regression instead of preserving the stale "no regressions" wording from the 1M tier. |
+| Commit `5d97084` | Local 100k preliminary validation | Run 145 docs showing the new `N=100000` local default completes without freezing the laptop and keeps all 20 four-way queries interactive, but compresses gaps enough that it is directional only. |
 | `bench/four-way/gen.sh` | Reproducibility source | Generates six logical tables in-engine across all four builds; now defaults `N=100000`; rejects `N < 50000`; flushes GreptimeDB tables. |
 | `bench/four-way/bench.sh` | Reproducibility source | Runs the 20-query matrix; `REPS` defaults to 6 and must be recorded per run when docs cite medians. |
 | GreptimeDB TWCS source | Primary source | `TwcsPicker` groups files into compaction windows by max timestamp; `WindowedCompactionPicker` splits strict-window compaction by file time spans; the compactor removes expired SSTs even when merge output fails. |
@@ -34,19 +35,25 @@ product/storage claims must stay unproven until the full storage gates run.
 2. **Benchmark tier policy matters.** Local laptop runs are now a small but
    meaningful preliminary tier (`N=100000` default, `N >= 50000` enforced).
    Large `N=5000000+` runs are server-tier only and should be run only when the
-   operator explicitly asks.
+   operator explicitly asks. Run 145 validates the local default operationally:
+   generation finished in about 10 seconds, did not freeze the laptop, and left
+   all 20 query shapes interactive across four builds.
 3. **At 1M warm local rows, every measured query is interactive on all four
    builds.** ClickHouse is still faster on most scans/joins/JSON/log-tail shapes;
    GreptimeDB wins or ties last-value, selective full-text, and high-cardinality
    exact distinct. This supports "fit not speed" for the anchored/local warm
    tier, not a production default.
-4. **At 5M, the distinction matters.** GreptimeDB's anchored/keyed hot path still
+4. **At 100k warm local rows, the benchmark is safe but too compressed for
+   magnitude claims.** Run 145 shows all 20 queries at 2-52 ms and nightlies
+   roughly equal to stables. It confirms direction and harness health; it does
+   not replace the 1M matrix or the 5M scale findings.
+5. **At 5M, the distinction matters.** GreptimeDB's anchored/keyed hot path still
    holds: anchored lookup, last-value, and time-range reads remain interactive.
    GreptimeDB's heavy analytical queries cross or approach the 300 ms gate:
    metric aggregations, dynamic JSON, in-DB cross-tier join, and high-card
    distinct. This turns the DQ5 flip trigger from theory into measured local
    evidence: analytics-heavy usage favors ClickHouse.
-5. **GreptimeDB table mode, compaction state, and TWCS window count are
+6. **GreptimeDB table mode, compaction state, and TWCS window count are
    load-bearing.** Run 142 isolates dedup aggregation as roughly 8x slower than
    append-mode aggregation in the less-compacted 5M state; Run 143 shows forced
    compaction drops GreptimeDB stable's dedup aggregation from about 314 ms to
@@ -58,14 +65,14 @@ product/storage claims must stay unproven until the full storage gates run.
    unique, append mode is still the safer load-bearing default; dedup/
    `last_non_null` belongs where partial upsert or out-of-order correction is
    actually needed.
-6. **GreptimeDB `v1.1.0-nightly-20260525` is not a clean upgrade signal.** It is
+7. **GreptimeDB `v1.1.0-nightly-20260525` is not a clean upgrade signal.** It is
    better on some append/scan paths but regresses the dedup aggregation path at
    5M. Run 143 makes the compaction-state sensitivity visible; Run 144 shows why
    many-window metric tables remain structurally different from a single compacted
    window; commit `a6107e3` carries that caveat into the storage verdict. The
    defensible future claim is "re-test v1.1 GA", not "v1.1 fixes GreptimeDB
    performance."
-7. **GreptimeDB's cheap-retention claim is stronger than a benchmark number.**
+8. **GreptimeDB's cheap-retention claim is stronger than a benchmark number.**
    The Run 144 source read shows TWCS windows are the compaction boundary and the
    compactor includes expired SSTs in removals separately from successful merge
    outputs. That makes whole-SST TTL drop a structural GreptimeDB advantage,
@@ -85,11 +92,11 @@ gate, storage cost gate, or A5 stack decision ledger:
 - no ClickHouse LTS run, even though GitHub's latest ClickHouse release endpoint
   currently points to the LTS line;
 - no metadata-store, ingest-log, setup, restart, redaction, or integration rows;
-- no production hardware profile. Runs 140-143 are local Docker warm-cache
-  artifacts, with four containers sharing a host and different timing bases by
-  engine; Run 143 explicitly demotes large local runs and moves `N=5000000+` to
-  an operator-requested server tier. Run 144 is source-read mechanism evidence,
-  not a new timing or cost run.
+- no production hardware profile. Runs 140-143 and 145 are local Docker
+  warm-cache artifacts, with four containers sharing a host and different timing
+  bases by engine; Run 143 explicitly demotes large local runs and moves
+  `N=5000000+` to an operator-requested server tier. Run 144 is source-read
+  mechanism evidence, not a new timing or cost run.
 
 Therefore, these artifacts can support `smoke_only` storage evidence and schema
 decisions. They cannot produce `greptime_prototype_default`,
@@ -100,7 +107,7 @@ decisions. They cannot produce `greptime_prototype_default`,
 | Prior wording risk | Corrected wording |
 | --- | --- |
 | "GT-nightly has no regressions." | "GT-nightly has no regressions at the 1M warm tier, but Runs 141/142 found a 5M dedup aggregation regression; re-test v1.1 GA, compaction states, and many-window metric tables." |
-| "Every query is below the 300 ms gate." | "Every 1M warm query is below the gate; at 5M, GreptimeDB heavy analytics cross the gate while anchored/keyed hot paths remain interactive. Server-tier runs own future large absolute numbers." |
+| "Every query is below the 300 ms gate." | "Every 100k/1M warm query is below the gate; at 5M, GreptimeDB heavy analytics cross the gate while anchored/keyed hot paths remain interactive. Server-tier runs own future large absolute numbers." |
 | "Metrics should use GreptimeDB dedup/metric mode by default." | "Use append mode for scrape-style unique metrics when aggregation is load-bearing; reserve dedup/`last_non_null` for true correction/upsert semantics, and measure compaction-state plus TWCS-window-count sensitivity." |
 | "Benchmark confirms GreptimeDB as the default." | "Benchmark confirms GreptimeDB remains plausible for Parallax's anchored hot path, while ClickHouse is the fallback/default for analytics-heavy usage until the full gates decide." |
 
@@ -116,7 +123,8 @@ default. The new evidence strengthens both sides:
   is now real, not hypothetical.
 - Future storage docs should separate local preliminary (`N=100000` default),
   historical 1M/5M local warm artifacts, operator-requested server large-tier,
-  small-tier cold/object-store, and A5 stack-proof claims.
+  small-tier cold/object-store, and A5 stack-proof claims. Run 145 belongs in
+  the preliminary bucket, not the canonical comparison bucket.
 
 ## Remaining Uncertainty
 
@@ -154,9 +162,11 @@ offset ClickHouse's scan efficiency?**
 
 ## Bottom Line
 
-Runs 140-144 made the storage evidence better and less comfortable. The anchored
+Runs 140-145 made the storage evidence better and less comfortable. The anchored
 Parallax hot path still supports the GreptimeDB fit thesis, but the 5M results
 prove that analytics-heavy usage is a ClickHouse-shaped workload and that
 GreptimeDB table mode, compaction state, and TWCS window count can dominate
-version choice. Treat the new benchmark code and source-read mechanism evidence
-as strong smoke/schema guidance, not as an A5 pass.
+version choice. Run 145 confirms the laptop-safe smoke tier, but also reinforces
+why small local timings are directional only. Treat the new benchmark code and
+source-read mechanism evidence as strong smoke/schema guidance, not as an A5
+pass.

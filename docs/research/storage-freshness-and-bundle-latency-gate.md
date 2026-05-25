@@ -87,6 +87,7 @@ are useful but intentionally narrow:
 | Run 142: GreptimeDB dedup vs append A/B | Dedup-mode aggregation is much slower than append mode at 5M for unique metric-like data; table mode is load-bearing. | Native metric-engine/Prometheus path under v1.1 GA; correctness tradeoff for out-of-order correction workloads. |
 | Run 143: benchmark tier policy | Local laptop default is now `N=100000`, with `N=5000000+` reserved for operator-requested server runs; forced compaction reduced stable GreptimeDB dedup aggregation from about 314 ms to about 60 ms. | Server-tier large run, full mixed native ingest, and compaction-state-sensitive metric path under v1.1 GA. |
 | Run 144: GreptimeDB TWCS source read | Time-window compaction explains why forced compaction can help within-window state while many-window tables still require cross-window dedup merging; expired SSTs can be removed without merging survivors. | Native metric-engine/Prometheus path under v1.1 GA, server-tier many-window metrics, and object-store request/cold-read economics. |
+| Run 145: four-way 100k local warm | The `N=100000` local default is laptop-safe and all 20 query shapes stay interactive on all four builds. | Meaningful magnitude, v1.1 dedup regression, 300 ms analytical crossover, mixed native ingest, cold/object-store behavior. |
 
 The useful correction from Run 2 is now part of this gate: Parallax bundle
 queries are anchored, so key/index placement and per-anchor pruning matter more

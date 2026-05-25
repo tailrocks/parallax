@@ -44,7 +44,7 @@ fallback trigger that would change the default.
 
 The focused
 [storage benchmark artifact interpretation](storage-benchmark-artifact-interpretation.md)
-consumes the separate benchmark agent's Runs 140-144 without rerunning them.
+consumes the separate benchmark agent's Runs 140-145 without rerunning them.
 Those artifacts are useful A5 inputs, but they do not create an A5 pass:
 
 - `bench/four-way/` is reproducible local benchmark code: four storage builds,
@@ -64,6 +64,10 @@ Those artifacts are useful A5 inputs, but they do not create an A5 pass:
   many time-window SSTs, and TTL-expired windows can be removed as whole SSTs.
 - Commit `a6107e3` carries the 5M `v1.1.0-nightly-20260525` dedup-aggregation
   caveat into the storage verdict; it is a consolidation note, not a new run.
+- Run 145 validates the laptop-safe `N=100000` default end to end: generation
+  finished quickly, did not freeze the laptop, and every query stayed
+  interactive. It also confirms that 100k is fixed-overhead-dominated and cannot
+  replace the 1M/5M canonical comparison.
 - They do not include mixed native ingest, Q6 p95/p99, stale-bundle rate,
   object-store request/egress/cost rows, ClickHouse LTS, metadata, ingest-log,
   setup, restart, redaction, or end-to-end integration rows.
