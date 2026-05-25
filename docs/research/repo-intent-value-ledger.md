@@ -24,14 +24,16 @@ Central rule:
 > No repo-intent moat or "why layer" claim until paired runs show that adding
 > repo-held intent to the same runtime bundle improves constraint-aware diagnosis
 > or patch quality without hiding degraded-mode weakness, leaking private docs,
-> or increasing unsupported claims.
+> increasing unsupported claims, or treating agent instruction files as enforced
+> policy rather than source-cited, scoped, and potentially stale context.
 
 ## Current Source Snapshot
 
-| Source | Ledger consequence |
-| --- | --- |
-| [GitHub Copilot repository custom instructions](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/add-custom-instructions/add-repository-instructions) | Repository-wide, path-specific, and agent instructions are now a mainstream agent interface. Parallax should treat repo intent as structured, versioned context rather than a chat-only convention. |
-| [Claude Code memory and CLAUDE.md docs](https://code.claude.com/docs/en/memory) | Claude Code loads project instructions such as `CLAUDE.md`, can import `AGENTS.md`, supports path-scoped rules, and warns that instructions are context rather than hard enforcement. Stale, vague, or conflicting intent must be tested as a risk. |
+| Source | Current evidence | Ledger consequence |
+| --- | --- | --- |
+| [GitHub Copilot repository custom instructions](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/add-custom-instructions/add-repository-instructions) | Copilot supports repository-wide `.github/copilot-instructions.md`, path-specific `.github/instructions/*.instructions.md`, and agent instructions. Current docs also say agents can use one or more `AGENTS.md` files, with the nearest file taking precedence, or a root `CLAUDE.md`/`GEMINI.md`. | Repo intent inventory must capture file type, path scope, nearest-file precedence, and target agent. A generic "repo instructions exist" flag is too weak. |
+| [Claude Code memory and CLAUDE.md docs](https://code.claude.com/docs/en/memory) | Claude Code treats `CLAUDE.md` and auto memory as context, not enforced configuration; supports imports such as `@AGENTS.md`, `CLAUDE.local.md`, path-scoped `.claude/rules/`, managed policy files, and local exclusions. It warns about stale/conflicting instructions and says enforced behavior belongs in hooks/settings, not prose memory. | Repo intent rows must distinguish committed project intent from local/user/managed memory, imported files, context-only guidance, and externally enforced policy. |
+| [OpenAI Codex introduction](https://openai.com/index/introducing-codex/) | OpenAI says Codex can be guided by `AGENTS.md` files placed in a repository, and that configured dev environments, reliable tests, and clear documentation improve agent performance. | `AGENTS.md` should be indexed as a cross-agent instruction source, but any lift claim still needs paired outcome rows; instruction presence alone is not fix-correctness evidence. |
 | [On the Impact of AGENTS.md Files on the Efficiency of AI Coding Agents](https://arxiv.org/abs/2601.20404) | Early empirical evidence associates AGENTS.md files with lower median runtime and output-token use, but not with a proven fix-correctness lift. Parallax should measure outcome quality separately from efficiency. |
 | [On the Use of Agentic Coding Manifests](https://arxiv.org/abs/2509.14744) | Agent manifests commonly contain operational commands, implementation notes, and architecture. That maps to Parallax intent nodes, but also shows why content quality and structure matter. |
 | [Bundle-value evaluation](bundle-value-evaluation.md) | The A1 eval already measures bundle value. Repo-intent should be a paired sub-study, not a replacement for the raw-telemetry control. |
@@ -43,8 +45,9 @@ Central rule:
 | --- | --- | --- |
 | `not_measured` | No repo-intent eval exists. | Default state. |
 | `intent_manifest_indexed` | Repo-held intent sources can be discovered and normalized. | Source inventory covers README, docs, ADRs/decision records, roadmap/tasks, issue refs, and agent instruction files when present. |
+| `instruction_surface_indexed` | Tool-specific instruction surfaces are discovered with load scope, precedence, target agents, import/symlink refs, and local/private status. | AGENTS/Copilot/Claude/Gemini/Cursor-style instruction surfaces are inventoried for tested repos. |
 | `intent_edges_projected` | Intent nodes and edges can appear in bundles without breaking schema or redaction. | Bundle projection rows include intent nodes, source refs, edge strengths, and missing-intent flags. |
-| `intent_safety_pass` | Intent context does not leak private material or override policy. | Redaction, prompt-injection, stale/conflict, and gold-patch leakage fixtures pass. |
+| `intent_safety_pass` | Intent context does not leak private material, dereference raw refs, or override policy. | Redaction, source-field, projection, prompt-injection, stale/conflict, and gold-patch leakage fixtures pass. |
 | `degraded_mode_pass` | Runtime-only bundles remain valuable without repo intent. | Runtime-only arm still meets the A1 decision rule or stays within the allowed drop from the intent arm. |
 | `intent_value_signal` | Repo intent shows a useful directional lift. | Paired run shows better constraint adherence, fewer unsupported claims, or lower investigation time without a resolved-rate drop. |
 | `intent_value_pass` | Repo intent is a claimable multiplier. | Mixed task set, at least two model families, pre-registered rule passes, degraded mode still acceptable, and no safety failures. |
@@ -82,6 +85,7 @@ Each run stores immutable artifacts under:
 ```text
 docs/research/repo-intent-value-runs/<run_id>/manifest.json
 docs/research/repo-intent-value-runs/<run_id>/intent-source-inventory.jsonl
+docs/research/repo-intent-value-runs/<run_id>/instruction-surface-inventory.jsonl
 docs/research/repo-intent-value-runs/<run_id>/intent-node-ledger.jsonl
 docs/research/repo-intent-value-runs/<run_id>/intent-edge-ledger.jsonl
 docs/research/repo-intent-value-runs/<run_id>/context-arm-manifest.jsonl
@@ -89,6 +93,8 @@ docs/research/repo-intent-value-runs/<run_id>/task-arm-results.jsonl
 docs/research/repo-intent-value-runs/<run_id>/constraint-audit.jsonl
 docs/research/repo-intent-value-runs/<run_id>/unsupported-claim-audit.jsonl
 docs/research/repo-intent-value-runs/<run_id>/intent-conflict-results.jsonl
+docs/research/repo-intent-value-runs/<run_id>/source-field-policy-results.jsonl
+docs/research/repo-intent-value-runs/<run_id>/projection-results.jsonl
 docs/research/repo-intent-value-runs/<run_id>/redaction-results.jsonl
 docs/research/repo-intent-value-runs/<run_id>/claim-ledger.jsonl
 docs/research/repo-intent-value-runs/<run_id>/hashes.sha256
@@ -112,7 +118,11 @@ hashes, normalized intent rows, bounded excerpts, and source-class labels.
   "intent_corpus_hash": "sha256:<hex>",
   "bundle_schema_version": "0.1.0",
   "redaction_policy": "a6-default-deny-vN",
+  "source_field_policy_version": "phase0-source-field-policy-vN",
+  "projection_schema_version": "repo-intent-projection-vN",
+  "instruction_surface_policy_version": "repo-intent-instruction-surface-vN",
   "intent_schema_version": "repo-intent-v1",
+  "instruction_surface_count": 0,
   "arms": ["C0_runtime_bundle", "C1_runtime_plus_intent", "C2_intent_conflict"],
   "models": [
     {
@@ -139,8 +149,39 @@ Intent source row:
   "available_before_failure": true,
   "private": false,
   "redaction_policy": "a6-default-deny-vN",
+  "source_field_policy_status": "pass|fail|not_applicable",
+  "instruction_surface": "none|agents_md|claude_md|claude_local|claude_rules|copilot_repository|copilot_path|gemini_md|cursor_rules|other",
+  "agent_products_targeted": ["codex", "copilot", "claude_code"],
+  "load_scope": "repo|path|directory_subtree|local_user|managed_policy|unknown",
+  "load_precedence": "nearest|root|path_match|imported|local_override|unknown",
+  "local_or_private": false,
+  "import_or_symlink_refs": [],
+  "enforcement_mode": "context_only|external_hook_or_setting|unknown",
   "content_hash": "sha256:<hex>",
   "included": true
+}
+```
+
+Instruction surface row:
+
+```json
+{
+  "surface_id": "instr_001",
+  "source_id": "intent_src_001",
+  "agent_product": "codex|copilot|claude_code|gemini|cursor|other",
+  "file_pattern": "AGENTS.md|CLAUDE.md|.github/copilot-instructions.md|.github/instructions/*.instructions.md|.claude/rules/*",
+  "resolved_path": "AGENTS.md",
+  "load_scope": "repo|path|directory_subtree|local_user|managed_policy|unknown",
+  "load_precedence": "nearest|root|path_match|imported|local_override|unknown",
+  "resolved_import_hashes": ["sha256:<hex>"],
+  "local_or_private": false,
+  "committed_to_repo": true,
+  "available_to_agent": true,
+  "context_only": true,
+  "policy_enforced_elsewhere": false,
+  "source_field_policy_status": "pass|fail|not_applicable",
+  "redaction_check": "pass|fail",
+  "staleness": "current|possibly_stale|stale"
 }
 ```
 
@@ -154,6 +195,8 @@ Intent node row:
   "summary": "Use passwordless auth; do not add password login.",
   "confidence": "source_stated",
   "staleness": "current|possibly_stale|stale",
+  "instruction_only": false,
+  "enforcement_mode": "context_only|external_hook_or_setting|unknown",
   "redacted": false,
   "bundle_visible": true
 }
@@ -183,6 +226,9 @@ Context arm row:
   "intent_corpus_hash": "sha256:<hex>",
   "context_hash": "sha256:<hex>",
   "gold_patch_leak_check": "pass",
+  "source_field_policy_status": "pass|fail|not_applicable",
+  "instruction_surface_policy_hash": "sha256:<hex>",
+  "raw_ref_dereferenced": false,
   "redaction_check": "pass",
   "intent_available": true
 }
@@ -241,6 +287,22 @@ Claim ledger row:
 - Agent instruction files such as `AGENTS.md`, `CLAUDE.md`, and Copilot
   instructions count as operational intent, not as source-of-truth product
   requirements unless corroborated by docs/tasks/decisions.
+- Instruction files are context evidence, not enforced policy, unless a separate
+  hook, setting, managed policy, or CI control proves enforcement.
+- Source-field policy and projection policy must pass before any instruction
+  file is bundled. Raw file refs, imports, or symlink targets must not be
+  dereferenced by downstream agents.
+- Local/private/user memory such as `CLAUDE.local.md`, local `.claude/` files,
+  and user-level memory may be hashed for run provenance, but cannot support
+  public product claims unless the tested agent actually loaded it and privacy
+  approval allowed it.
+- Imports and symlinks must resolve to committed content hashes when they affect
+  the tested context. Unresolved imports fail `instruction_surface_indexed`.
+- Path or nearest-file precedence must be recorded. Ambiguous or conflicting
+  instructions create an `intent_conflict` row and cannot be silently collapsed.
+- If an instruction conflicts with code, tests, telemetry, or a newer decision,
+  the passing behavior is to surface the conflict; obeying stale prose is a
+  failure.
 
 ## Pass Targets
 
@@ -249,6 +311,8 @@ Initial thresholds:
 | Gate | Target |
 | --- | --- |
 | Intent projection | 100 percent of included intent nodes carry source refs, staleness, and redaction status. |
+| Instruction inventory | 100 percent of discovered instruction surfaces carry load scope, precedence, target agent, import/symlink status, locality/privacy status, and enforcement mode. |
+| Source/projection policy | 100 percent of bundled instruction surfaces pass source-field and projection-policy checks before C1/C2 context construction. |
 | Degraded mode | C0 resolved rate is at least 80 percent of C1 or independently passes A1. |
 | Intent value | C1 improves constraint adherence by >=10 percentage points or reduces unsupported claims by >=15 percent. |
 | No quality regression | C1 does not lower resolved rate or root-cause accuracy versus C0. |
@@ -262,8 +326,12 @@ Mark the claim `claim_expired` and rerun when any of these changes:
 
 - A new model family, coding-agent scaffold, or repo-instruction mechanism is
   used in product claims.
-- GitHub Copilot, Claude Code, Cursor, Codex, or another target agent changes
-  how repository instructions or memory files load.
+- GitHub Copilot, Claude Code, Gemini, Cursor, Codex, or another target agent
+  changes how repository instructions, memory files, imports, local overrides,
+  or path precedence load.
+- A target agent changes whether instruction-like content is merely context or
+  externally enforced through hooks, settings, managed policy, CI, or sandbox
+  controls.
 - Parallax bundle schema, intent node schema, redaction policy, truncation
   policy, or source-ingest logic changes.
 - A2 interviews show target users have materially different repo-intent hygiene
@@ -296,6 +364,8 @@ Avoid:
 - "AGENTS.md/CLAUDE.md improves fix correctness" unless the run measured
   correctness, not only token/time.
 - "Intent is source of truth" when code/tests/runtime evidence contradict it.
+- "AGENTS.md enforces policy", "repo instructions are guardrails", or similar
+  wording unless enforcement is proven outside the prose instruction file.
 
 ## Relationship To Other Research
 
@@ -316,6 +386,7 @@ Avoid:
 ## Bottom Line
 
 Repo intent is a promising multiplier and possible moat, but it must not become
-an untested dependency. Parallax earns broad-market wording only if runtime-only
-bundles work well; it earns repo-intent wording only if adding cited, current,
-redacted intent improves agent work in paired runs.
+an untested dependency. Agent instruction files are useful context, not policy
+enforcement by themselves. Parallax earns broad-market wording only if
+runtime-only bundles work well; it earns repo-intent wording only if adding
+cited, current, redacted intent improves agent work in paired runs.

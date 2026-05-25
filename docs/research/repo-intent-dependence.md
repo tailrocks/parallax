@@ -62,13 +62,18 @@ When a team *does* keep decisions/tasks/roadmap in the repo (like the operator):
 - proposals can cite the decision a fix must not violate;
 - the agent can align a fix with stated intent, not just make tests pass;
 - "this code is intentional, do not "simplify" it" is knowable.
+- agent instruction files such as `AGENTS.md`, `CLAUDE.md`, and Copilot
+  instructions can expose repo-local operating intent, but they are still
+  context. They do not become policy enforcement unless hooks, settings, CI, or
+  another control enforces them outside the prose file.
 
 This is also a **moat seed**: telemetry-only competitors (Datadog, Sentry,
 OpenObserve, SigNoz) do not link runtime evidence to repo-held intent. So
 repo-intent is simultaneously something to *not depend on* (for market size) and
 something that *differentiates* (for high-context teams). Offer it as an
-opt-in enrichment: point Parallax at `docs/`, ADRs, and a tasks file; it adds
-intent nodes/edges to the bundle when available.
+opt-in enrichment: point Parallax at `docs/`, ADRs, tasks, and approved
+instruction surfaces; it adds source-cited intent nodes/edges to the bundle when
+available.
 
 ## Implication For The Bundle-Value Eval
 
