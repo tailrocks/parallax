@@ -165,6 +165,7 @@ That honesty is a strength, not a limitation.
 | Competitor | What they prove | Where they fall short for Parallax's goal |
 | --- | --- | --- |
 | Sentry Seer | Production error AI debugging and PR generation are real workflows. | GA but closed-source, SaaS-only, and confirmed **not available to self-hosted Sentry** (2026-05). The dominant error tracker paywalls its AI away from exactly the self-hosting, data-ownership audience Parallax targets. This is the single clearest opening. |
+| Sentry MCP | Coding-agent MCP access over Sentry data is now a first-party Sentry surface, including remote service, Claude Code plugin/subagent path, and stdio transport for self-hosted Sentry. | The surface is Sentry-data-centric rather than an open Parallax bundle schema; documented stdio scopes include write scopes; AI-powered search tools require OpenAI or Anthropic provider configuration; self-hosted instances may need unsupported Seer skills disabled. This makes MCP table stakes, not a moat. |
 | Datadog Bits AI SRE / Dev Agent | Hypothesis-driven investigations and flaky-test autofix are the enterprise direction. | Closed, expensive, SaaS-only, and tied to Datadog data gravity. Dev Agent (flaky-test autofix) is still public Preview. Not an open, self-hosted Rust context engine or portable evidence-bundle standard. |
 | Grafana Assistant | Agent access through CLI/API/MCP surfaces is now normal. | Now on-prem and free for OSS Grafana (Apr 2026) but **still requires a Grafana Cloud account for the LLM connection** — not air-gapped — and is dashboard/assistant-first, not portable evidence bundles. LGTM-shaped, not evidence-engine-shaped. |
 | OpenObserve "Observability 3.0" (late Apr 2026) | An open, Rust, single-binary, object-storage observability store *with* an AI SRE agent + MCP is now real and self-hostable. | The closest thing to a wedge-killer on storage/runtime fit, saved by three current gaps: AI SRE/MCP require Enterprise edition/license while Self-Hosted Enterprise is advertised as free up to 50 GB/day, the MCP surface is broad and write-capable rather than a bounded read-only evidence bundle, and checked ingestion docs show OTLP rather than a Sentry-envelope path. |
@@ -181,6 +182,10 @@ went from emerging to table stakes, and two open, non-incumbent projects moved
 toward Parallax's exact space: OpenObserve shipped an AI SRE agent + MCP on a
 Rust, object-storage, AGPL-self-hostable base, and SigNoz shipped an open,
 self-hostable agent-native MCP server.
+Sentry's first-party MCP server adds pressure from the incumbent side too: even
+self-hosted Sentry users can expose Sentry data to coding agents through stdio,
+although the checked tool/scopes/provider shape is not Parallax's bounded
+read-only evidence-bundle contract.
 
 Neither closes the wedge today — OpenObserve's AI SRE/MCP surfaces require
 Enterprise edition/license, its Self-Hosted Enterprise allowance weakens a
@@ -209,6 +214,8 @@ Current source checks for this competitive-window claim:
 - [OpenObserve SRE Agent setup](https://openobserve.ai/docs/administration/deployment/sre-agent-setup-guide/)
 - [OpenObserve MCP docs](https://openobserve.ai/docs/integration/ai/mcp/)
 - [OpenObserve OTLP ingestion docs](https://openobserve.ai/docs/ingestion/logs/otlp/)
+- [Sentry MCP service](https://mcp.sentry.dev/)
+- [Sentry MCP repository](https://github.com/getsentry/sentry-mcp)
 - [SigNoz agent-native observability](https://signoz.io/agent-native-observability/)
 - [SigNoz MCP server](https://signoz.io/docs/ai/signoz-mcp-server/)
 
