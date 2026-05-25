@@ -2,13 +2,22 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: in progress (produced by an indefinite research loop). All planned notes
-now drafted (passes 1–14); the loop continues **deepening** — executing the
-targeted benchmark cases (`benchmarking-the-differences.md`: B2 trace-id index,
-B1 cold GB–TB scan, B7/B10 cost, B8 concurrent freshness, B11 multi-node) and
-sharpening the verdict as their numbers land. Provisional verdict: **GreptimeDB on
-fit** (metrics-native + ingest/freshness ergonomics + horizontal scaling + Rust),
-**not on raw speed** (ClickHouse leads log/trace query latency).
+Status: produced by an indefinite research loop; **white-box analysis comprehensive
+(through pass ~69)**. All 10 checklist subsystems + every named ClickHouse/GreptimeDB
+lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; the 9
+public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
+26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
+warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
+cold/first-run measurement showed). 25 mechanism notes + 42 local runs + B1–B15 cases.
+**Verdict (sharpened through pass 58): GreptimeDB on fit** — metrics/PromQL-native (GA
+vs ClickHouse's experimental), ingest/freshness/upsert ergonomics, object-store +
+replication economics, horizontal scaling, Rust — **not on raw speed** (ClickHouse leads
+log full-text search ~18× and SQL scan/aggregation, by its vectorized C++ engine; but
+Parallax's *anchored* evidence-bundle hot path is **not latency-bound** on either). The
+remaining open questions are **harness-gated** (multi-node, 1B-doc cold, sized
+high-card storage, strict-durability, multi-replica S3 cost) — handed to
+`storage-benchmark-prototype.md`. The loop now runs in maintenance/drift-watch: per-pass
+version re-check + re-verification.
 
 ## Purpose
 
