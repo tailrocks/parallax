@@ -32,6 +32,7 @@ or CI contract yet.
 | `docs/research/` | Market, product, and strategy research. |
 | `docs/research/greptimedb-vs-clickhouse/` | Deep under-the-hood GreptimeDB vs ClickHouse internals comparison, produced by an indefinite research loop. |
 | `prompts/` | Reusable research and agent prompts. |
+| `bench/` | Local storage-benchmark scaffolding: pinned `compose.yml` for GreptimeDB + ClickHouse smoke runs. Generated datasets/results are gitignored; only compose/scripts are tracked. Consistent with `docs/research/storage-benchmark-prototype.md`. |
 
 ## Research Documents
 

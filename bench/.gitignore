@@ -1,0 +1,7 @@
+# Never commit generated datasets, results blobs, or container volumes.
+data/
+results/
+*.tsv
+*.csv
+*.parquet
+*.jsonl
