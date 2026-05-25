@@ -3706,6 +3706,50 @@ effect the smoke tier can't show; the granule-emptying condition is the other ga
 Prewhere); compare `read_bytes` in `system.query_log` for `optimize_move_to_prewhere=1` vs `0`
 (identical at 12% even selectivity).
 
+### Run 91 — 2026-05-25 — Replication-economics re-verified precisely: ClickHouse zero-copy present-but-off + guard-railed
+
+**Pass target.** Re-verify the replication-economics pillar (1× vs N× S3 copies, Run 34/74)
+precisely — the exact live status of ClickHouse zero-copy replication (what decides whether
+N OSS replicas store N× or 1× on S3). Full multi-replica $ measurement (B14) needs a
+Keeper+2-replica setup (harness-gated); this nails the deciding mechanism.
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned —
+latest, no bump). `system.merge_tree_settings` zero-copy family.
+
+**Verified (CH 26.5 zero-copy settings):**
+
+| Setting | value | obsolete? |
+| --- | --- | --- |
+| `allow_remote_fs_zero_copy_replication` | **0 (off)** | no |
+| `disable_detach_partition_for_zero_copy_replication` | 1 | no |
+| `disable_fetch_partition_for_zero_copy_replication` | 1 | no |
+| `disable_freeze_partition_for_zero_copy_replication` | 1 | no |
+| `remote_fs_zero_copy_zookeeper_path` | `/clickhouse/zero_copy` | no |
+
+**Verdict — pillar holds, precisely.** Zero-copy replication **exists** in OSS 26.5 (the
+whole settings family is present, **none obsolete**) but is **off by default** and wrapped in
+`disable_{detach,fetch,freeze}_partition_for_zero_copy_replication=1` guardrails (those ops
+are unsafe with shared S3 data) — consistent with the source "not production-ready"/EXPERIMENTAL
+flag (Run 34). So:
+
+- **OSS ClickHouse default = N× S3 copies** — with zero-copy off, each `ReplicatedMergeTree`
+  replica fetches and stores its own parts on S3 → N replicas ≈ N× storage. To get ~1× you
+  must enable the experimental/guard-railed zero-copy.
+- **GreptimeDB = 1× by default** — object-store-native: SSTs live in S3 once; HA is via
+  metadata/leadership (Metasrv) + region reopen-from-storage, not data copies (Run 34/57).
+
+So the cost/scaling pillar "GreptimeDB 1× shared S3 vs OSS ClickHouse N× (unless the
+not-ready zero-copy is enabled)" is **re-verified at the setting level.** The exact N×
+*bytes* at 2–3 replicas (B14) remains the Keeper+multi-replica harness measurement, but the
+deciding switch (zero-copy off + guard-railed by default) is confirmed live. Status:
+**replication-economics pillar re-verified precisely; full B14 $ owed to the harness.**
+
+Caveat: setting-level verification (not a 2-replica byte measurement); GreptimeDB's 1×-shared
+HA is cluster-mode (single-node `cluster_info` = STANDALONE here) — source/arch-established,
+not single-node-testable.
+
+**Reproduce.** `SELECT name,value,is_obsolete FROM system.merge_tree_settings WHERE name LIKE '%zero_copy%'` → `allow_remote_fs_zero_copy_replication=0`, not obsolete, + the `disable_*` guardrails.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

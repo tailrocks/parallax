@@ -45,9 +45,15 @@ The single-node-checkable scale-out claims, confirmed at runtime on ClickHouse 2
 - **`ReplicatedMergeTree` requires a Keeper** — creating one without ZooKeeper/Keeper →
   **`Can't create replicated table without ZooKeeper (NO_ZOOKEEPER)`**. So OSS HA needs a
   separate Keeper/ZooKeeper coordinator stood up alongside.
-- **Zero-copy replication is off by default** — `allow_remote_fs_zero_copy_replication = 0`
-  (live), so OSS replicas each keep a **full** S3 copy by default (the 1× vs N× S3 economics,
-  Run 34) — and the source flags it "not ready"/experimental.
+- **Zero-copy replication is off by default + guard-railed** — `allow_remote_fs_zero_copy_replication
+  = 0` (live), so OSS replicas each keep a **full** S3 copy by default (the 1× vs N× S3
+  economics, Run 34). **Re-verified precisely (Run 91):** the zero-copy settings family is
+  **present but none obsolete**, and wrapped in `disable_{detach,fetch,freeze}_partition_for_zero_copy_replication=1`
+  guardrails (those ops are unsafe with shared data) — consistent with the source
+  "not production-ready"/experimental flag. So **OSS default = N× S3** (each replica stores
+  its own parts); ~1× requires enabling the experimental/guard-railed zero-copy. GreptimeDB
+  = 1× native (object-store-shared, HA via metadata). The exact 2–3-replica byte measurement
+  (B14) is the harness's; the deciding switch is confirmed off+guard-railed.
 - **GreptimeDB here is `STANDALONE`** — `information_schema.cluster_info` reports one
   `STANDALONE` peer (all roles in one binary). The distributed Frontend/Datanode/Metasrv
   split + region rebalance is cluster-mode (multi-node), not exercised single-node — its
