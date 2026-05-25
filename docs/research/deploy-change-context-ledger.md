@@ -33,6 +33,7 @@ The central rule:
 | [GitHub Deployments API](https://docs.github.com/en/rest/deployments/deployments?apiVersion=2022-11-28) | The docs page is labeled `API Version: 2022-11-28`, while current examples render `X-GitHub-Api-Version: 2026-03-10`. Deployments record `ref`, `sha`, `task`, `payload`, `environment`, transient/production flags, creator, status URL, and repository URL; creating a deployment can require successful commit statuses unless explicitly bypassed. | Parallax must not collapse docs page version, request header, and source date into one field. Deployment objects are requested/deployed-ref evidence, not runtime causality. |
 | [GitHub Deployment Statuses API](https://docs.github.com/en/rest/deployments/statuses?apiVersion=2022-11-28) | Status states include `error`, `failure`, `inactive`, `in_progress`, `queued`, `pending`, and `success`; `log_url` is preferred over legacy `target_url`; `environment`, `environment_url`, and `auto_inactive` affect interpretation. | A deployment without a terminal status, environment, and log/status refs is incomplete evidence. |
 | [GitHub deployment webhooks](https://docs.github.com/en/webhooks/webhook-events-and-payloads#deployment_status) | `deployment_status` webhooks require deployment read permission and are not fired for statuses with state `inactive`; `deployment` webhooks cover deployment creation. | Webhooks are useful low-latency evidence, but API backfill remains mandatory for inactive transitions and missed delivery. |
+| [GitHub deployment review webhooks](https://docs.github.com/en/webhooks/webhook-events-and-payloads#deployment_review) | `deployment_review` webhooks represent approval activity and can include reviewer, comment, deployment callback, workflow run, and workflow job run context. | Approval/protection context is separate from deployment status. Agent-visible "who allowed this deploy?" claims need review/gate rows, not only success status rows. |
 | [GitHub Actions variables](https://docs.github.com/actions/reference/workflows-and-actions/variables) | `GITHUB_SHA` exists, but its value depends on the workflow event that triggered the run. | CI/deploy ingestion must store event type, ref, and head/base context instead of treating `GITHUB_SHA` alone as deployed truth. |
 | [GitHub PR files API](https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#list-pull-requests-files) | PR files are paginated and capped at 3000 files; PR commits endpoint caps at 250 commits before needing the commits endpoint. | File-touch and PR-contains-commit edges must include completeness flags and downgrade broad changes. |
 | [GitHub compare commits API](https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#compare-two-commits) | Compare supports refs/SHAs and returns commits chronologically with file details, but unpaged responses are limited and large comparisons require pagination. | Release-to-release change windows need exact base/head SHAs and pagination metadata. |
@@ -50,6 +51,7 @@ The central rule:
 | `not_measured` | No provider ingestion or bundle audit run exists. | "Deploy/change context is planned." |
 | `release_marker_ingest` | Release/version markers from runtime telemetry or Sentry/GitHub sources ingest and normalize with source refs. | "Release markers ingested for the tested sources." |
 | `deploy_status_ingest` | Deployment and deployment-status events ingest with environment, terminal state, actor/source refs, and log/status URLs when present. | "Deployment status context for the tested providers." |
+| `deployment_gate_ingest` | Deployment review/protection events ingest with reviewer/workflow context and missing-gate rows where configured but absent. | "Deployment approval/protection context for the tested providers." |
 | `commit_window_reconstructed` | Release/deploy rows carry exact head and predecessor/base SHAs, and compare/PR backfill produces complete-or-flagged commit/file rows. | "Code-change windows reconstructed for tested releases." |
 | `work_item_links_ingested` | GitHub/Linear/Jira work-item links ingest with machine-vs-text link strength and redacted text refs. | "Work-item links attached as context for tested providers." |
 | `edge_strength_audited` | Strong/medium/weak/inferred deploy/change edges are audited against raw provider refs, completeness flags, and missing-evidence rows. | "Deploy/change evidence strengths audited for tested anchors." |
@@ -71,6 +73,7 @@ docs/research/deploy-change-context-runs/<run_id>/manifest.json
 docs/research/deploy-change-context-runs/<run_id>/raw-provider-events/<provider>/<event_id>.json
 docs/research/deploy-change-context-runs/<run_id>/release-results.jsonl
 docs/research/deploy-change-context-runs/<run_id>/deploy-results.jsonl
+docs/research/deploy-change-context-runs/<run_id>/deployment-gate-results.jsonl
 docs/research/deploy-change-context-runs/<run_id>/code-change-results.jsonl
 docs/research/deploy-change-context-runs/<run_id>/ci-check-results.jsonl
 docs/research/deploy-change-context-runs/<run_id>/work-item-results.jsonl
@@ -106,6 +109,8 @@ Each `manifest.json` should include:
     "github_rest_docs_api_version": "2022-11-28",
     "github_rest_unversioned_default": "2022-11-28",
     "github_rest_supported_versions_checked": ["2026-03-10", "2022-11-28"],
+    "github_deployment_status_webhook_inactive_gap": true,
+    "github_deployment_review_webhook_checked": "YYYY-MM-DD",
     "sentry_api": "current-docs-YYYY-MM-DD",
     "linear_releases": "current-docs-YYYY-MM-DD",
     "jira_deployments": "current-docs-YYYY-MM-DD",
@@ -115,6 +120,7 @@ Each `manifest.json` should include:
   "providers": ["github", "sentry", "linear", "jira", "otel-cicd"],
   "anchor_types": ["issue", "error_event", "trace"],
   "environments": ["production", "staging"],
+  "backfill_policy": "webhook_plus_api_backfill_for_missing_inactive_and_review_states",
   "projection_formats": ["json", "markdown"],
   "notes": []
 }
@@ -158,6 +164,32 @@ does not carry over to another.
   "finished_at": "2026-05-25T15:01:44Z",
   "log_url_present": true,
   "status_event_count": 3,
+  "webhook_delivery_id_present": true,
+  "api_backfill_complete": true,
+  "inactive_status_backfilled": true,
+  "auto_inactive_observed": false,
+  "deployment_review_required": true,
+  "deployment_review_state": "approved|rejected|not_required|missing",
+  "missing_fields": []
+}
+```
+
+### Deployment Gate Result Row
+
+```json
+{
+  "deployment_id": "github:deployment:42",
+  "provider": "github",
+  "gate_id": "github:deployment_review:11",
+  "gate_kind": "deployment_review|environment_protection|manual_approval|unknown",
+  "state": "approved|rejected|not_required|missing",
+  "reviewer_ref_present": true,
+  "workflow_run_ref_present": true,
+  "workflow_job_run_ref_present": true,
+  "comment_mode": "ref_only|redacted_summary|denied",
+  "source_ref": "github:deployment_review:11",
+  "webhook_delivery_id_present": true,
+  "api_backfill_complete": true,
   "missing_fields": []
 }
 ```
@@ -329,6 +361,10 @@ does not carry over to another.
   rows visible in the bundle.
 - No strong deploy edge unless exact environment, terminal deployment status,
   and deployed ref/SHA/release are present.
+- No complete deployment-status claim from webhooks alone for GitHub. The run
+  must record API backfill coverage for inactive statuses and missed delivery.
+- No deployment approval/protection claim unless deployment-gate rows show the
+  provider review/protection state or an explicit `not_required` result.
 - No code-change touched-frame claim when PR file lists or compare results are
   truncated or incomplete.
 - No release-regression claim when predecessor release/base SHA is missing.
@@ -361,7 +397,8 @@ change:
 
 - GitHub REST supported versions, unversioned default, request-header guidance,
   deployment/status API behavior, PR file/commit caps, compare pagination,
-  Actions event/SHA semantics, or webhook payloads change;
+  Actions event/SHA semantics, deployment-review behavior, inactive-status
+  webhook behavior, or webhook payloads change;
 - Sentry release/deploy API or CLI release semantics change;
 - Linear release, GitHub integration, path-filter, or plan availability changes;
 - Jira development/deployment information APIs, sequence semantics, or accepted
@@ -380,6 +417,11 @@ Allowed after `deploy_status_ingest`:
 
 > Deployment status context for the tested providers and environments.
 
+Allowed after `deployment_gate_ingest`:
+
+> Deployment approval/protection context for the tested providers and
+> environments.
+
 Allowed after `release_regression_context`:
 
 > Release-regression context for the tested services and providers, with
@@ -395,6 +437,7 @@ Avoid:
 - "root cause from deploy metadata";
 - "automatically finds the breaking commit";
 - "knows what shipped" without environment-specific release/deploy evidence;
+- "knows who approved the deploy" without deployment review/protection rows;
 - "issue Done means shipped";
 - "PR touched the file, so it caused the issue";
 - "full GitHub/Linear/Jira context" without provider, scope, and freshness

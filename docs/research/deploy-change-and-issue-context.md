@@ -31,6 +31,7 @@ from this design alone.
 | [GitHub Deployments API](https://docs.github.com/en/rest/deployments/deployments?apiVersion=2022-11-28) | Deployments are requests to deploy a ref, include environment/task/payload, and dispatch `deployment` events. GitHub keeps deployment execution outside GitHub. The docs page is labeled `2022-11-28`, while current examples use `X-GitHub-Api-Version: 2026-03-10`. | A GitHub deployment is a strong change marker only when Parallax records the deployed SHA/ref, environment, status, external deployment logs, and the GitHub API version/header used to collect it. |
 | [GitHub Deployment Statuses API](https://docs.github.com/en/rest/deployments/statuses?apiVersion=2022-11-28) | Statuses include `queued`, `in_progress`, `success`, `failure`, `error`, and `inactive`, plus `log_url`, `target_url`, `environment_url`, and `auto_inactive`. | A deployment without final status is incomplete evidence. `success` is a runtime marker, not proof that an issue was introduced or fixed. |
 | [GitHub deployment webhooks](https://docs.github.com/en/webhooks/webhook-events-and-payloads) | `deployment` and `deployment_status` webhooks carry deployment activity; deployment-status webhooks require deployment read permission and do not fire for inactive statuses. | Webhooks are the lowest-latency ingestion path, but Parallax still needs API backfill because missed/inactive transitions can matter. |
+| [GitHub deployment review webhooks](https://docs.github.com/en/webhooks/webhook-events-and-payloads#deployment_review) | `deployment_review` webhook payloads represent approval activity and can include reviewer, comment, deployment callback, workflow run, and workflow job run context. | Deployment approval/protection evidence is a separate policy edge. A successful deployment status does not prove who or what approved the deploy. |
 | [GitHub Actions variables](https://docs.github.com/en/actions/reference/workflows-and-actions/variables) | `GITHUB_SHA` records the commit that triggered a workflow, with value depending on the event. | CI/deploy ingestion must record event type and ref context; `GITHUB_SHA` alone is ambiguous for PR workflows. |
 | [GitHub issue timeline API](https://docs.github.com/en/rest/issues/timeline?apiVersion=2022-11-28) | Timeline events cover issue/PR activity; every pull request is an issue, but not every issue is a pull request. | GitHub issues and PRs should be one normalized `work_item` family, with provider-specific event refs preserved. |
 | [GitHub pull request files API](https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#list-pull-requests-files) | PR file lists are paginated and capped at 3000 files. | `code_change_touched_frame` is only reliable for bounded PRs; broad PRs must be marked incomplete or low confidence. |
@@ -69,6 +70,7 @@ Add or tighten these schema nodes:
 | `release` | `version`, `repo`, `commit_sha?`, `created_at`, `released_at?`, `source`, `project_refs[]` | Release strings are often user-defined. Commit SHA should be present for strong code-change edges. |
 | `deploy` | `provider`, `deployment_id`, `release?`, `repo?`, `ref?`, `commit_sha?`, `environment`, `state`, `started_at?`, `finished_at?`, `actor?`, `task?`, `log_url?`, `source_ref` | `state` must distinguish requested/queued/in-progress/success/failure/error/inactive. |
 | `deployment_status` | `deployment_id`, `state`, `created_at`, `environment?`, `log_url?`, `target_url?`, `description?` | Preserve each status event rather than only the latest state. |
+| `deployment_review` | `deployment_id`, `state`, `reviewer?`, `created_at`, `comment_ref?`, `workflow_run?`, `workflow_job_run?`, `source_ref` | Approval/protection evidence is policy context, not runtime causality. Comments stay ref-only by default. |
 | `code_change` | `repo`, `base_ref?`, `head_ref`, `base_sha?`, `head_sha`, `commits[]`, `files[]`, `pr_url?`, `merge_commit_sha?`, `compare_url?` | File list can be incomplete for very large PRs; store `files_complete`. |
 | `work_item` | `provider`, `key`, `title`, `status`, `type`, `url`, `created_at`, `updated_at`, `labels[]`, `linked_prs[]`, `linked_commits[]` | Description/comments are high-risk and should be summarized or ref-only by default. |
 | `check_run` | `provider`, `run_id`, `commit_sha`, `status`, `conclusion?`, `started_at?`, `completed_at?`, `workflow?`, `log_ref?` | CI validation should connect to code change and deploy separately. |
@@ -83,6 +85,7 @@ Use deterministic identifiers before time windows.
 | --- | --- | --- |
 | `event_observed_in_release` | strong | Error event explicitly carries `release` matching a normalized release/version for the same project/environment. |
 | `deploy_status_for_release` | strong | Deployment status references a deployment whose ref/SHA/release is known. |
+| `deployment_review_for_deploy` | strong | Provider review/approval event references the deployment ID and reviewer/workflow context. This proves approval lineage, not deploy success or causality. |
 | `deploy_contains_commit` | strong | Deployment or release records exact `commit_sha` and it equals the commit/change node. |
 | `check_validated_commit` | strong | Check run/check suite records the same commit SHA. |
 | `pr_contains_commit` | strong | GitHub PR commits endpoint or merge metadata contains the commit. |
@@ -108,6 +111,10 @@ Bundles should report these gaps explicitly:
 - `missing_deploy_status`
 - `missing_deploy_environment`
 - `missing_deploy_log`
+- `missing_deployment_review`
+- `missing_deployment_backfill`
+- `missing_webhook_delivery`
+- `missing_inactive_status_backfill`
 - `missing_predecessor_release`
 - `missing_compare_base`
 - `missing_pr_file_list`
@@ -140,6 +147,10 @@ The first Parallax contract should be provider-neutral:
   "started_at": "2026-05-25T14:58:00Z",
   "finished_at": "2026-05-25T15:01:44Z",
   "actor": "deploy-bot",
+  "webhook_delivery_id": "github-delivery-id",
+  "api_backfill_checked_at": "2026-05-25T15:05:00Z",
+  "inactive_status_backfilled": true,
+  "deployment_review_state": "approved|not_required|missing",
   "urls": {
     "deployment": "https://github.com/acme/checkout/deployments/42",
     "log": "https://github.com/acme/checkout/actions/runs/99"
@@ -210,7 +221,8 @@ Defaults:
    work-item links as metadata refs, with redacted summaries only.
 4. **V1 deploy diagnostics.** Add `parallax doctor deploy-context` to check
    whether releases carry commit SHAs, deploys carry environments/statuses, and
-   PR file lists are complete.
+   PR file lists, deployment reviews, inactive-status backfill, and webhook/API
+   delivery coverage are complete.
 5. **Later writeback.** Only after the fixer outcome loop is proven, write
    Parallax bundle/outcome links back to GitHub/Linear/Jira.
 
@@ -224,6 +236,8 @@ Before Parallax claims release-regression or "what changed?" intelligence:
 | `release_commit_rate` | >= 80 percent of release markers carry exact commit SHA or source revision. |
 | `deploy_context_rate` | >= 70 percent where deploy markers are configured. |
 | `deploy_success_status_rate` | >= 90 percent of deploys have terminal status within the audit window. |
+| `deployment_backfill_coverage_rate` | 100 percent for providers where webhooks omit states or delivery can be missed. |
+| `deployment_review_context_rate` | >= 90 percent where deployment protection/reviews are configured. |
 | `compare_base_rate` | >= 80 percent of release/deploy windows have predecessor ref/commit for diff. |
 | `pr_file_list_complete_rate` | >= 95 percent for PRs used in `code_change_touched_frame` edges. |
 | `work_item_machine_link_rate` | >= 70 percent for issue tracker links before treating work items as more than weak context. |
@@ -236,6 +250,10 @@ Failure consequences:
 
 - If release commit is missing, do not rank code-change hypotheses above weak.
 - If deploy status is missing, say "release observed" rather than "deployed."
+- If webhook/API backfill is incomplete, mark deploy evidence incomplete even
+  when a success webhook exists.
+- If deployment review/protection context is configured but missing, do not claim
+  who approved or which gate allowed the deploy.
 - If PR file list is truncated, do not use file-touch evidence as a strong
   explanation.
 - If issue-tracker links are text-only, keep them as context, not causality.
