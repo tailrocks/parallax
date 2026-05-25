@@ -70,6 +70,7 @@ Code `/loop` runbook.
 - [Bugsink Sentry-compatible simplicity recheck](docs/research/bugsink-sentry-compatible-simplicity-recheck.md)
 - [Rustrak Sentry/MCP/protocol recheck](docs/research/rustrak-sentry-mcp-protocol-recheck.md)
 - [Traceway OTLP/AI/replay recheck](docs/research/traceway-otlp-ai-replay-recheck.md)
+- [GoSnag Sentry/AI/MCP recheck](docs/research/gosnag-sentry-ai-mcp-recheck.md)
 - [Agentic observability competitor drift ledger](docs/research/agentic-observability-competitor-drift-ledger.md)
 - [Sentry MCP and Seer self-hosted recheck](docs/research/sentry-mcp-seer-self-hosted-recheck.md)
 - [SigNoz open investigation format check](docs/research/signoz-open-investigation-format-check.md)

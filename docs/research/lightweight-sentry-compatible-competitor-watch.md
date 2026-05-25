@@ -57,6 +57,8 @@ The Rustrak Rust/Sentry/MCP/protocol claim now has a focused recheck:
 [Rustrak Sentry MCP protocol recheck](rustrak-sentry-mcp-protocol-recheck.md).
 The Traceway OTLP/AI/session-replay claim now has a focused recheck:
 [Traceway OTLP AI Replay Recheck](traceway-otlp-ai-replay-recheck.md).
+The GoSnag Sentry/AI/MCP claim now has a focused source-level recheck:
+[GoSnag Sentry AI MCP Recheck](gosnag-sentry-ai-mcp-recheck.md).
 
 ## Current Matrix
 
@@ -65,7 +67,7 @@ The Traceway OTLP/AI/session-replay claim now has a focused recheck:
 | Bugsink | Source-available self-hosted error tracking, Sentry SDK compatible, DSN migration, one-container throwaway Docker path, SQLite default outside the Docker-volume caveat, MySQL/PostgreSQL support, and small third-party MCP adapters over Bugsink's API. | PolyForm Shield rather than OSI-open; Python/runtime mismatch; persistent Docker setup needs external database care; official product is error tracking rather than OTLP-native evidence graph, first-party read-only agent bundle, CLI/agent audit, or fix-outcome corpus. | High for Sentry-compatible simplicity. |
 | Rustrak | Rust/Actix server, Sentry SDK compatible for modern envelope error events, SQLite default or Postgres production mode, small Docker server image, GPL-3.0, `@rustrak/mcp` for AI assistant management, and a maintainer-side Sentry protocol drift workflow. | Early project; UI is a separate Next.js service; MCP exposes project/issue/event/token/alert tools including destructive issue/token actions and raw Sentry-envelope event access, not a read-only citable evidence-bundle contract; current ingest stores event items while its own drift report says sessions, transactions, client reports, attachments, and spans are not stored; no clear OTLP-native logs/traces/metrics or fix-outcome corpus. | Very high for product-shape pressure, lower for maturity. |
 | Traceway | MIT, OpenTelemetry-native, self-hostable, direct OTLP/HTTP traces/metrics/logs, OTel exceptions/issues, trace-linked logs, session replay/RUM through native `/api/report`, AI trace promotion from `gen_ai.*`, SQLite/all-in-one/minimal/embedded deployment modes, and integration skills for adding instrumentation. | OTel-first rather than Sentry-envelope-first; Go, not Rust; no checked MCP/CLI evidence access, Parallax-style evidence bundle, redaction manifest, projection-equivalence contract, or coding-agent side-effect/outcome audit. | Very high for OTLP-native unified observability and local/self-hosted simplicity. |
-| GoSnag | Go single binary with embedded React UI/migrations, Sentry `/store/` and `/envelope/` ingestion, issue lifecycle, GitHub/Jira integrations, AI RCA features, and a documented MCP server. | Requires Postgres for normal deployment; early project with low visible traction and no tagged release in the checked GitHub metadata; not Rust-first; MCP uses Bearer-token API calls for broad project/issue/alert/tag/ticket/user management, not a Parallax-style read-only bundle contract or fix-outcome graph. | Medium-high: important capability shape, weak maturity signal. |
+| GoSnag | MIT Go/React tracker with embedded UI/migrations, Sentry `/store/` and `/envelope/` error-event ingest, issue lifecycle, GitHub/Jira/ticket workflows, AI RCA/merge/deploy/ticket/priority/tag/alert features, and a TypeScript MCP server over its management API. | Requires Postgres for normal deployment; early project with low visible traction and no tagged release; not Rust-first; source ignores Sentry `transaction`, `session(s)`, and `client_report` items; MCP uses Bearer-token API calls for broad project/issue/alert/tag/ticket/user management, not a Parallax-style read-only bundle contract or fix-outcome graph. | Medium-high: important capability shape, weak maturity signal. |
 | Urgentry | Source-available Sentry-compatible replacement with one-binary Tiny mode, split self-hosted mode, route coverage and benchmark claims against self-hosted Sentry. | FSL source-available, not open source; broad Sentry replacement posture rather than open evidence schema; no clear coding-agent audit or measured fixer-outcome loop. | High for the self-hosted simplicity benchmark, lower for the open-source thesis. |
 
 ## Current Version And Maturity Snapshot
@@ -77,7 +79,7 @@ Checked on 2026-05-25 with primary project docs, npm, and GitHub metadata:
 | Bugsink | GitHub latest release `2.2.1` on 2026-05-22; roughly 1.8k stars and 105 forks at check time; release adds canonical API issue actions/comments and OpenAPI docs; docs continue to claim SDK compatibility and low-ops self-hosting; third-party `bugsink-mcp` adapters are public but small. | Mature enough to be a real low-ops Sentry-compatible baseline; API/MCP ecosystem pressure means "no agent access" is no longer a durable ecosystem-level claim. |
 | Rustrak | GitHub pushed on 2026-05-25; latest visible release `docs@0.1.16`; server package release `@rustrak/server@0.2.5`; npm `@rustrak/mcp` is `0.1.2`; Docker Hub server image `v0.2.5` was last updated 2026-05-21; roughly 43 stars at check time. | Product shape is very close, but maturity is still early and component release streams must be pinned separately. |
 | Traceway | GitHub latest backend release `backend/v1.7.27` on 2026-05-22; MIT license; roughly 817 stars and 23 forks; repo pushed 2026-05-25; source/docs show `/api/otel/v1/{traces,metrics,logs}`, `/api/report`, AI trace promotion, SQLite single-container mode, and integration skills. | Strong active open-source pressure on the OTLP + unified context + replay side. |
-| GoSnag | GitHub has no tagged release in the checked metadata, roughly 8 stars and 4 forks, and last push on 2026-04-17. | Treat as a capability warning, not a proven market baseline. |
+| GoSnag | GitHub has no tagged release in the checked metadata, roughly 8 stars and 4 forks, and last push on 2026-04-17; latest checked `main` commit is `418b8b1`. | Treat as a capability warning, not a proven market baseline; source-level recheck supports error-event ingest, AI workflows, and management-shaped MCP, but not OTLP/evidence-bundle parity. |
 | Urgentry | GitHub latest release `v0.2.12` on 2026-05-22; roughly 55 stars and 5 forks; site claims Tiny mode, DSN migration, traces/replay/profiling/logs, and benchmark deltas versus self-hosted Sentry. | Fresh and strategically relevant, but source-available rather than OSI-open. |
 
 ## Per-Project Notes
@@ -178,11 +180,17 @@ Watch triggers:
 ### GoSnag
 
 GoSnag is a focused Sentry-compatible error tracker with a surprisingly broad
-feature list. Its README claims modern and legacy Sentry ingest formats,
-embedded React UI, issue workflow, release/deploy mapping, GitHub/Jira, AI RCA,
-AI merge suggestions, token budgets, and other AI-assisted triage features. It
-also documents an MCP server for AI assistant integration, exposing project,
-issue, alert, tag, ticket, and user management tools.
+feature list. The focused recheck confirms more than README language:
+source registers legacy `/store/` and modern `/envelope/` endpoints, parses and
+stores Sentry error-event JSON, runs AI-backed RCA/merge/deploy/ticket/priority/
+tag/alert workflows, and ships a TypeScript MCP server. The important caveats
+are equally concrete: envelope `transaction`, `session(s)`, and `client_report`
+items are ignored; the implemented AI provider switch covers OpenAI-compatible
+OpenAI/Groq and Bedrock, while direct Anthropic/Ollama support was not found in
+the checked switch; `.env.example` omits the README's AI variables; and the MCP
+server mutates project, issue, alert, tag, and ticket state through Bearer-token
+API calls. See
+[GoSnag Sentry AI MCP Recheck](gosnag-sentry-ai-mcp-recheck.md).
 
 Implication: "AI over Sentry-compatible self-hosted errors" is not enough. If
 Parallax does not own the runtime/CI/CLI/agent evidence graph and citable bundle
@@ -286,6 +294,7 @@ Reopen the Parallax wedge if any lightweight challenger combines:
 - [Traceway embedded mode](https://docs.tracewayapp.com/learn/embedded-mode)
 - [Traceway OTLP AI Replay Recheck](traceway-otlp-ai-replay-recheck.md)
 - [GoSnag GitHub repository](https://github.com/darkspock/gosnag)
+- [GoSnag Sentry AI MCP Recheck](gosnag-sentry-ai-mcp-recheck.md)
 - [Sentry MCP repository](https://github.com/getsentry/sentry-mcp)
 - [Urgentry product site](https://urgentry.com/)
 - [Urgentry GitHub repository](https://github.com/urgentry/urgentry)

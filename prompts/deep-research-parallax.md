@@ -1006,7 +1006,13 @@ that pressure the migration and simplicity claims from below:
   watch Sentry SDK/envelope migration, MCP/CLI evidence access, portable
   redacted bundles, session/export dossier semantics, and coding-agent
   action/outcome audit)
-- GoSnag
+- GoSnag (MIT, Go/React, Sentry `/store/` and `/envelope/` error-event ingest,
+  Postgres-backed Docker Compose, issue workflow, AI RCA/merge/deploy/ticket/
+  priority/tag/alert features, and TypeScript MCP over Bearer-token management
+  API; no releases/tags checked, transactions/sessions/client reports ignored,
+  and MCP is management/write-shaped, so watch OTLP context, stable releases,
+  read-only evidence bundles, full Sentry item handling, projection hashes, and
+  action/outcome audit)
 - Urgentry
 
 For these, watch specifically for Sentry SDK/envelope compatibility, OTLP
