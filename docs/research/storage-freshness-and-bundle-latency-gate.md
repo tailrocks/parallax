@@ -76,6 +76,9 @@ are useful but intentionally narrow:
 | Run 1: 1M spans | Correctness parity, fixed-overhead latency floors, `trace_id` key-placement sensitivity. | Freshness, mixed-load behavior, cold-cache behavior, object storage, metrics/log/error mix. |
 | Run 2: Q1/Q4 joins | Cross-engine correctness and optimizer behavior for anchored trace joins. | Full Q6 bundle latency, concurrent ingest penalty, stale/incomplete bundles. |
 | Run 3: metrics | GreptimeDB native PromQL over the metrics table; SQL metric-aggregation parity. | Mixed metrics/log/trace/error ingest, realistic metric compression, Q6 latency while metrics ingest continues. |
+| Run 140: four-way 1M local warm | Reproducible four-build matrix, `N >= 50000` enforcement, and 20 query shapes; every 1M warm query is interactive. | Small-tier 25-50 GB, cold/object-store, native ingest, mixed Q6 p95/p99, stale bundles, ClickHouse LTS. |
+| Run 141: four-way 5M local warm | Anchored/keyed hot path remains interactive; heavy analytical queries cross or approach the 300 ms gate on GreptimeDB. | Whether full Q6 under mixed native ingest remains under budget; object-store/cold behavior; production hardware. |
+| Run 142: GreptimeDB dedup vs append A/B | Dedup-mode aggregation is much slower than append mode at 5M for unique metric-like data; table mode is load-bearing. | Native metric-engine/Prometheus path under v1.1 GA; correctness tradeoff for out-of-order correction workloads. |
 
 The useful correction from Run 2 is now part of this gate: Parallax bundle
 queries are anchored, so key/index placement and per-anchor pruning matter more
@@ -157,6 +160,12 @@ Run at least two schema modes:
 Measure both SQL ingest for controlled synthetic batches and OTLP ingest for the
 real Parallax path. GreptimeDB remains the default only if the real OTLP path
 does not add unacceptable visibility delay relative to SQL/bulk ingest.
+
+Run 142 adds a schema requirement: for scrape-style metric tables where
+`(series, ts)` uniqueness is guaranteed, test an append-mode variant. Dedup or
+`last_non_null` remains valid for partial-upsert and out-of-order correction, but
+it cannot be assumed safe for aggregation-heavy metric reads at 5M+ without
+fresh v1.1 GA evidence.
 
 ### ClickHouse
 
@@ -282,6 +291,7 @@ verdict:
 ## Related Research
 
 - [Storage benchmark prototype](storage-benchmark-prototype.md)
+- [Storage benchmark artifact interpretation](storage-benchmark-artifact-interpretation.md)
 - [Observability storage benchmark plan](observability-storage-benchmark-plan.md)
 - [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md)
 - [GreptimeDB vs ClickHouse local benchmark results](greptimedb-vs-clickhouse/local-benchmark-results.md)

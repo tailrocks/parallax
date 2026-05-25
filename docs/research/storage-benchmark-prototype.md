@@ -35,6 +35,14 @@ The storage result does not, by itself, prove assumption A5. The
 speed/cost rows can roll up with metadata, ingest-log, setup, and integration
 rows into a stack-default claim.
 
+The current checked-in `bench/four-way/` harness is a useful preliminary local
+artifact, not this full prototype. See
+[Storage benchmark artifact interpretation](storage-benchmark-artifact-interpretation.md):
+Runs 140-142 store the four-build 1M/5M local warm benchmark as code and tighten
+schema guidance, but they do not measure mixed native ingest, Q6 p95/p99,
+stale-bundle rate, object-store economics, ClickHouse LTS, or end-to-end A5
+integration.
+
 Pinned candidate versions for the first run (update at run time per the
 version-freshness rule):
 
@@ -383,6 +391,9 @@ clickhouse| small |           |        |        |        |         |            
   architecture detail.
 - [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md) — the Turso
   vs Postgres harness, to be made runnable the same way.
+- [Storage benchmark artifact interpretation](storage-benchmark-artifact-interpretation.md)
+  — how to read the current `bench/four-way` local artifacts without promoting
+  them to an A5 storage-default result.
 - [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)
   — Q6 assembles this object; the query workload exists to serve it.
 

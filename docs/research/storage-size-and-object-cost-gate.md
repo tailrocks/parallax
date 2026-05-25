@@ -291,6 +291,7 @@ Add these to `parallax-bench` before quoting storage-cost numbers:
 
 - [Retention cost model](retention-cost-model.md)
 - [Storage benchmark prototype](storage-benchmark-prototype.md)
+- [Storage benchmark artifact interpretation](storage-benchmark-artifact-interpretation.md)
 - [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md)
 - [Observability storage benchmark plan](observability-storage-benchmark-plan.md)
 - [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md)

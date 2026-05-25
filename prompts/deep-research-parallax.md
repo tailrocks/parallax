@@ -129,6 +129,12 @@ and interpretation rules; it should consume and scrutinize benchmark results whe
 they exist, but not duplicate the benchmark agent's work unless the operator
 explicitly asks for a benchmark pass.
 
+When benchmark artifacts land, distinguish local smoke/sized warm results from
+full storage-default proof. A reproducible local matrix can tighten schema and
+flip-trigger decisions, but it does not become an A5 stack pass until mixed
+native ingest, Q6 p95/p99, stale bundles, object-store economics, setup,
+metadata, ingest-log, restart, redaction, and integration rows exist.
+
 Keep challenging the GO verdict, storage choice, API boundary, CLI/MCP access
 surface, scaling tiers, frontend direction, agent/CLI tracing model, safety
 model, and market positioning with fresh evidence. A good ongoing run should

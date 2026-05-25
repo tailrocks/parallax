@@ -81,6 +81,7 @@ Code `/loop` runbook.
 - [GreptimeDB storage evaluation](docs/research/greptimedb-storage-evaluation.md)
 - [Observability storage benchmark plan](docs/research/observability-storage-benchmark-plan.md)
 - [Storage benchmark prototype (runnable)](docs/research/storage-benchmark-prototype.md)
+- [Storage benchmark artifact interpretation](docs/research/storage-benchmark-artifact-interpretation.md)
 - [Storage freshness and bundle latency gate](docs/research/storage-freshness-and-bundle-latency-gate.md)
 - [Storage size and object cost gate](docs/research/storage-size-and-object-cost-gate.md)
 - [Retention cost model](docs/research/retention-cost-model.md)

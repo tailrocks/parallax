@@ -102,10 +102,13 @@ regressions" is true only at small scale. At 1M the heavier ones:
 - Cross-tier join **~1.8× faster** (65→36 ms) — though still far from CH's pushdown (3 ms).
 - Unindexed scan, log-tail, issue-list slightly faster; anchored/TopK/full-text/JSON/last-value ≈ equal.
 - **No regressions.** So v1.1 is a real (if modest) step — strongest on aggregation + join — likely
-  the Flat-SST / metric-engine / execution work on the v1.1 roadmap. It does **not** close any gap to
-  ClickHouse (JSON still ~10×, join still ~12×), and does **not** change dynamic-attr JSON (48 ms,
-  JSON Type v2 not yet helping `json_get_int`). *(Caveat: ~20–30% is modest and partly noise-adjacent;
-  the direction is consistent across the 3 agg queries, so it's a real small win, not a fluke.)*
+- **No regressions at 1M warm scale.** So v1.1 is a real (if modest) step there — strongest on
+  aggregation + join — likely the Flat-SST / metric-engine / execution work on the v1.1 roadmap. At
+  5M, though, the dedup aggregation path regresses badly, so this is not a clean upgrade signal. It
+  does **not** close any gap to ClickHouse (JSON still ~10×, join still ~12×), and does **not** change
+  dynamic-attr JSON (48 ms, JSON Type v2 not yet helping `json_get_int`). *(Caveat: ~20–30% is modest
+  and partly noise-adjacent; the 1M direction is consistent across the 3 agg queries, so it's a real
+  small win, not a fluke.)*
 
 **2. CH-head 26.6 vs CH-stable 26.5 — perf-flat, marginally faster aggs, but stricter.**
 CH-head matches or marginally beats CH-stable (~15% on aggs: 13→11, 17→15, 23→19); within noise
@@ -119,8 +122,10 @@ cast in JSON GROUP BY (`Code 44` without it) where 26.5 allowed a lax no-cast ~1
 - **GreptimeDB wins** last-value ~2× (time-sorted layout vs `argMax` full scan) and **ties** selective
   full-text (~7–8 ms, the right backend/function).
 - **Near-parity** (~1.3–1.6×): metric aggs, bucketed, rate, trace-explorer, issue-list, broad full-text.
-- **Everything ≪ 300 ms on every build** — for Parallax's queries, all four are interactive; the
-  decision stays *fit not speed* (the speed gaps never cross the interactive gate).
+- **At 1M warm scale, everything is ≪ 300 ms on every build.** At 5M, GreptimeDB's anchored/keyed hot
+  path remains interactive, but heavy analytical queries cross the gate. The decision stays *fit not
+  speed* only if Parallax keeps the hot path anchored and avoids ad hoc analytics as the default
+  product shape.
 
 ## Ingest + storage (the non-query "performance" axes; Run 132)
 
@@ -146,19 +151,21 @@ cast in JSON GROUP BY (`Code 44` without it) where 26.5 allowed a lax no-cast ~1
 
 ## Bottom line for the operator
 
-- **Nightlies don't change the decision.** GT v1.1 gives a modest broad speedup (aggs ~25%, join
-  ~1.8×) with no regressions; CH 26.6 is perf-flat + stricter. The GreptimeDB-vs-ClickHouse gaps —
-  and the verdict — are the same on all four builds.
+- **Nightlies don't change the 1M decision, but the 5M caveat is real.** GT v1.1 gives a modest broad
+  1M speedup (aggs ~25%, join ~1.8×), but Run 141/142 found a dedup-aggregation regression at 5M; CH
+  26.6 is perf-flat + stricter. The GreptimeDB-vs-ClickHouse gaps — and the fit-vs-speed verdict —
+  are the same only when that scale caveat is carried forward.
 - **The only build worth waiting for is GT v1.1 GA** (when JSON Type v2 may land properly and could
-  cut the ~10× dynamic-attr gap — it does **not** in the 20260525 nightly).
+  cut the ~10× dynamic-attr gap and may fix the 5M dedup-agg regression — neither is proven by the
+  20260525 nightly).
 - **Where ClickHouse genuinely leads** (re-confirmed on the newest of both): in-DB cross-tier join,
   dynamic-attr JSON, log-tail, raw anchored/scan latency — all of which Parallax either avoids
   (app-side correlation, anchored fetch) or absorbs (all interactive).
 
 ## Cross-refs
 
-Detailed single-engine runs: `local-benchmark-results.md` (Run 131 logs this matrix; Runs 96–127 the
-per-query deep dives; Runs 129/130 the prior 2-query and 4-way checks). Decision: `verdict-which-to-
-choose.md`. Closability: `greptimedb-parity-roadmap.md`. **Re-run on GreptimeDB v1.1 GA** (`local-
-benchmark-results.md` Run 128 flagged the trigger). Reproduce: re-spin the two nightly containers,
-rebuild the 5 tables via `range()`/`numbers()`, run the 14 queries warm ×5 (medians above).
+Detailed single-engine runs: `local-benchmark-results.md` (Run 140 logs the reproducible 1M matrix;
+Run 141 logs the 5M scale matrix; Run 142 isolates the dedup-vs-append finding; Runs 96–127 are the
+per-query deep dives). Decision: `verdict-which-to-choose.md`. Closability:
+`greptimedb-parity-roadmap.md`. **Re-run on GreptimeDB v1.1 GA** (`local-benchmark-results.md` Run
+128 flagged the trigger). Reproduce with `bench/four-way/`; record `N` and `REPS` with each result.
