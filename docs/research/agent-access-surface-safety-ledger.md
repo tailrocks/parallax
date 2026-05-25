@@ -21,8 +21,8 @@ The central rule:
 
 > No "agent-native MCP" claim until CLI, HTTP, and MCP return the same
 > canonical bundle hash for the same authorized request, and the MCP adapter
-> proves read-only scope, redaction, output-budget, audit, and negative-tool
-> catalog behavior.
+> proves read-only scope, redaction, source-field policy preservation,
+> output-budget, audit, and negative-tool catalog behavior.
 
 ## Current Source Snapshot
 
@@ -38,6 +38,14 @@ The central rule:
 | [NSA MCP security design considerations](https://www.nsa.gov/Portals/75/documents/Cybersecurity/CSI_MCP_SECURITY.pdf?ver=bmgiSbNQLP6Z_GiWtRt6bg%3D%3D) | NSA's May 2026 guidance treats MCP as widely adopted but security-maturing, with risks around dynamic tool invocation, implicit trust, context sharing, serialization, token/session handling, overbroad tools, and unauthorized servers. | The safe path is a narrow read-only adapter over canonical bundles, not a broad production-control toolset. |
 | [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md) | MCP is already present in Sentry-adjacent, Grafana, SigNoz, Coroot, Rustrak, and GoSnag-like surfaces. | Parallax must prove safer evidence semantics, not merely MCP availability. |
 
+Updated implication from the A1/A6 source-field pass: projection equivalence now
+means preserving the full canonical bundle safety contract, not just producing a
+similar user-visible answer. MCP tools that return bundles must expose
+`structuredContent` conforming to the evidence-bundle output schema, including
+`redaction_report.source_field_policy`. Text-only JSON or Markdown can be a
+compatibility projection, but it cannot be the evidence that unlocks an
+agent-native claim.
+
 ## Claim Levels
 
 | Level | Meaning | Allowed wording |
@@ -45,10 +53,10 @@ The central rule:
 | `not_measured` | No access-surface fixture run exists. | "CLI, HTTP, and MCP access surfaces are planned." |
 | `cli_http_bundle_parity` | CLI JSON and HTTP API return the same canonical bundle hash for the same authorized request. | "CLI and API expose the same evidence bundle contract." |
 | `mcp_local_smoke` | A local MCP server starts, lists only approved Parallax tools/resources, and returns a redacted sample bundle. | "Experimental local MCP context adapter." |
-| `mcp_projection_equivalent` | CLI, HTTP, and MCP return the same canonical bundle hash and equivalent redaction report for the same principal/project/anchor/window/schema. | "MCP projects the same canonical evidence bundle as CLI/API." |
-| `mcp_read_only_safe` | Scope, negative-tool, raw-ref, redaction, prompt-injection, output-budget, and audit fixtures pass. | "Read-only MCP context adapter for the tested policy set." |
+| `mcp_projection_equivalent` | CLI, HTTP, and MCP return the same canonical bundle hash and equivalent redaction/source-field report for the same principal/project/anchor/window/schema. | "MCP projects the same canonical evidence bundle as CLI/API." |
+| `mcp_read_only_safe` | Scope, negative-tool, raw-ref, redaction, source-field, prompt-injection, output-budget, and audit fixtures pass. | "Read-only MCP context adapter for the tested policy set." |
 | `mcp_cross_client_safe` | At least Codex and Claude Code can call the same local/remote MCP fixture with equivalent hashes, scopes, denials, and audit rows. | "Cross-client MCP context adapter for tested clients." |
-| `agent_native_context_surface` | MCP safety, projection equivalence, OTel MCP audit spans, bundle schema conformance, and redaction ledgers are green and fresh. | "Agent-native evidence context surface for the tested clients and policies." |
+| `agent_native_context_surface` | MCP safety, projection equivalence, OTel MCP audit spans, bundle schema conformance, source-field checks, and redaction ledgers are green and fresh. | "Agent-native evidence context surface for the tested clients and policies." |
 | `claim_expired` | MCP spec/security guidance/client behavior/Parallax schema/redaction/auth/audit code changed or freshness elapsed. | "Access-surface result expired; rerun required." |
 | `claim_failed` | Any required fixture fails for the advertised level. | No claim for the affected surface/client/policy. |
 
@@ -67,6 +75,7 @@ docs/research/agent-access-surface-runs/<run_id>/http-results.jsonl
 docs/research/agent-access-surface-runs/<run_id>/mcp-results.jsonl
 docs/research/agent-access-surface-runs/<run_id>/scope-results.jsonl
 docs/research/agent-access-surface-runs/<run_id>/redaction-results.jsonl
+docs/research/agent-access-surface-runs/<run_id>/source-field-results.jsonl
 docs/research/agent-access-surface-runs/<run_id>/output-budget-results.jsonl
 docs/research/agent-access-surface-runs/<run_id>/negative-tool-catalog.json
 docs/research/agent-access-surface-runs/<run_id>/audit-results.jsonl
@@ -89,6 +98,7 @@ Each `manifest.json` should include:
   "parallax_commit": "<git-sha>",
   "bundle_schema_version": "parallax-bundle-vN",
   "redaction_policy_version": "a6-default-deny-vN",
+  "source_field_policy_version": "phase0-source-field-policy-vN",
   "auth_policy_version": "agent-access-auth-vN",
   "audit_schema_version": "parallax-audit-vN",
   "source_snapshot": {
@@ -126,6 +136,7 @@ combination does not carry over to another.
   "schema_version": "parallax-bundle-vN",
   "canonical_bundle_hash": "sha256:<hex>",
   "redaction_report_hash": "sha256:<hex>",
+  "source_field_policy_hash": "sha256:<hex>|null",
   "status": "pass|fail",
   "differences": []
 }
@@ -147,6 +158,8 @@ combination does not carry over to another.
   "resource_prefixes": ["parallax://bundles/", "parallax://evidence/"],
   "forbidden_tools_present": [],
   "all_tools_have_input_schema": true,
+  "bundle_tools_have_output_schema": true,
+  "structured_content_schema_valid": true,
   "all_context_tools_read_only": true
 }
 ```
@@ -176,7 +189,27 @@ combination does not carry over to another.
   "leaked_canaries": 0,
   "raw_refs_leaked": 0,
   "redaction_report_present": true,
+  "source_field_policy_status": "pass|not_applicable",
+  "source_field_policy_violations": 0,
   "redaction_policy_version": "a6-default-deny-vN"
+}
+```
+
+### Source Field Result Row
+
+```json
+{
+  "case_id": "eval_bundle_source_policy",
+  "surface": "mcp",
+  "client": "codex",
+  "bundle_id": "bundle_123",
+  "source_field_policy_status": "pass",
+  "source_field_policy_hash": "sha256:<hex>",
+  "source_field_policy_violations": 0,
+  "denied_zones_checked": ["runner_private", "grader_private", "triage_private"],
+  "structured_content_schema_valid": true,
+  "text_projection_matches_canonical_hash": true,
+  "status": "pass"
 }
 ```
 
@@ -222,7 +255,8 @@ combination does not carry over to another.
     "mcp_spec": "2025-11-25",
     "otel_semconv": "1.41.0",
     "bundle_schema": "parallax-bundle-vN",
-    "redaction_policy": "a6-default-deny-vN"
+    "redaction_policy": "a6-default-deny-vN",
+    "source_field_policy": "phase0-source-field-policy-vN"
   },
   "product_wording": "Read-only MCP context adapter for the tested policy set.",
   "required_caveats": ["no generic shell tools", "no generic SQL tools"],
@@ -234,8 +268,13 @@ combination does not carry over to another.
 
 - No "agent-native MCP" claim without projection equivalence across CLI, HTTP,
   and MCP for the same authorized request.
+- No schema-safe MCP claim unless bundle-returning tools have output schemas and
+  valid `structuredContent`; Markdown/text alone is a projection.
 - No "safe MCP" claim unless negative tools are absent: no generic shell, SQL,
   deploy, rollback, delete, or broad production-control tools.
+- No eval/corpus-derived bundle claim unless `source_field_policy_status` is
+  `pass`, the policy hash is present, and violations are zero across CLI, HTTP,
+  and MCP.
 - No raw-reference read claim unless `evidence:read_sensitive` denial and
   approval paths are tested and audited.
 - No cross-client claim unless at least Codex and Claude Code pass the same
@@ -263,6 +302,7 @@ change:
   MCP configuration, output limits, auth, or resource behavior;
 - Parallax bundle schema, redaction policy, auth policy, audit schema, or tool
   catalog changes;
+- source-field policy or eval/corpus source-field schema changes;
 - new agent-visible evidence surfaces are added, especially database, raw logs,
   frontend replay, terminal output, or agent transcript content;
 - a dependency CVE or security advisory affects the MCP server, auth stack, or
@@ -279,12 +319,12 @@ Allowed after `cli_http_bundle_parity`:
 Allowed after `mcp_projection_equivalent`:
 
 > MCP projects the same canonical evidence bundle as CLI/API for the tested
-> clients and policies.
+> clients and policies, including redaction and source-field policy status.
 
 Allowed after `mcp_read_only_safe`:
 
 > Read-only MCP context adapter for the tested policy set, with redaction,
-> output limits, denied raw refs, and audit logging.
+> source-field checks, output limits, denied raw refs, and audit logging.
 
 Avoid:
 
@@ -306,7 +346,7 @@ Avoid:
   owns MCP span normalization and action/audit deduplication.
 - [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
   and [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) have veto
-  power before any agent-visible claim.
+  power before any agent-visible claim, including source-field preservation.
 - [Production database evidence access gate](production-database-evidence-access.md)
   keeps generic SQL tools out of the context server.
 - [Production database evidence ledger](production-database-evidence-ledger.md)
@@ -320,4 +360,4 @@ Avoid:
 Parallax should ship CLI and HTTP first, then MCP as a thin read-only projection
 of the same canonical bundle. The market already has MCP. The product claim
 must be that Parallax's MCP surface is equivalent, bounded, redacted, audited,
-and narrow enough for coding agents to use safely.
+source-field-safe, and narrow enough for coding agents to use safely.

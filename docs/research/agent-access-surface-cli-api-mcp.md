@@ -28,7 +28,7 @@ not inferred from this design alone.
 | Source | What matters for Parallax |
 | --- | --- |
 | [MCP server overview](https://modelcontextprotocol.io/specification/2025-11-25/server/index) | MCP exposes prompts, resources, and tools; tools are model-controlled while resources are application-controlled. This maps cleanly to Parallax's split between bounded context resources and explicit investigation tools. |
-| [MCP tools specification](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) | Tools have JSON Schema input and optional output schemas, support structured content, and carry security requirements for input validation, access control, rate limits, output sanitization, user confirmation for sensitive operations, and audit logging. |
+| [MCP tools specification](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) | Tools have JSON Schema input and optional output schemas, support structured content, and carry security requirements for input validation, access control, rate limits, output sanitization, user confirmation for sensitive operations, and audit logging. Bundle-returning Parallax tools should use `structuredContent` with an output schema, not text-only JSON. |
 | [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization) | Remote MCP requires real OAuth-style security posture: resource-bound tokens, audience validation, secure token storage, HTTPS, localhost/HTTPS redirects, and PKCE for public clients. |
 | [MCP security best practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices) | The official guidance favors least-privilege scopes, targeted elevation, precise scope challenges, correlation IDs, and avoiding wildcard or omnibus scopes. |
 | [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/) | MCP calls should be observable as MCP-specific spans and metrics; MCP does not yet define its own standard trace-context propagation, so instrumentation needs explicit propagation in message metadata. |
@@ -139,7 +139,8 @@ anchor -> bundle builder -> canonical JSON bundle
 Required invariant:
 
 > For the same principal, project, anchor, time window, redaction policy, and
-> schema version, CLI, HTTP, and MCP must produce the same canonical JSON hash.
+> schema version, CLI, HTTP, and MCP must produce the same canonical JSON hash,
+> including equivalent `redaction_report.source_field_policy` status.
 
 Markdown is a projection. Raw logs, raw envelopes, source maps, terminal output,
 and agent transcripts are refs unless a caller has explicit read-sensitive
@@ -212,9 +213,9 @@ for context retrieval and deterministic checks, not production mutation.
 | Scope model | Use small read scopes first. No wildcard scope, no `admin`, no bundled future privileges. |
 | Remote auth | Use HTTPS, resource/audience validation, secure token storage, short-lived tokens, and PKCE where applicable. |
 | Stdio/local auth | Treat local stdio MCP as local code execution. Require explicit install/trust and never auto-enable from a repo. |
-| Tool schemas | Every tool has a closed JSON Schema input. Prefer output schemas for structured results. |
+| Tool schemas | Every tool has a closed JSON Schema input. Bundle-returning tools have an output schema for structured results. |
 | Output limits | Return bounded summaries plus resource refs; do not inline unbounded logs, traces, terminal output, or transcripts. |
-| Redaction | Run the same redaction pipeline as CLI/API, and include `redaction_report` in agent-visible responses. |
+| Redaction and source-field policy | Run the same redaction pipeline as CLI/API, and include `redaction_report.source_field_policy` in agent-visible responses. |
 | Prompt injection | Treat telemetry, issues, PRs, logs, and transcripts as untrusted data; never let tool output redefine policy. |
 | Audit | Emit an audit event and OpenTelemetry MCP span for every tool call, denied call, elevation request, and raw-ref access. |
 | Trace context | Propagate request trace context through MCP metadata where supported, and link MCP spans back to bundle/evidence refs. |
@@ -225,6 +226,12 @@ MCP spans should be normalized through
 so `tools/call` client/server spans, JSON-RPC request IDs, and provisional
 `params._meta` trace context produce one audited `agent_action` rather than
 double-counted tool activity.
+
+Bundle-returning MCP tools should provide an `outputSchema` that references the
+canonical evidence-bundle schema. The text content can mirror bounded Markdown
+or serialized JSON for compatibility, but the claimable result is the
+`structuredContent` object and its canonical hash. A text-only MCP response does
+not satisfy the Parallax schema/adoption or source-field policy gates.
 
 ## Implementation Order
 
@@ -249,6 +256,7 @@ MCP should not ship until these tests pass:
 | Client fixture | The same local server is callable from at least Codex and Claude Code using official MCP configuration paths. |
 | Scope fixture | Calls without `evidence:read` fail closed; raw refs require `evidence:read_sensitive`. |
 | Redaction fixture | Seeded secrets in logs, CLI output, agent transcripts, and frontend breadcrumbs do not appear in MCP output. |
+| Source-field fixture | Eval/corpus-derived bundles preserve `source_field_policy.status = pass`, policy hash, and zero violations across CLI, HTTP, and MCP. |
 | Output budget | Oversized bundles return summary + refs, not unbounded text. |
 | Audit fixture | Every MCP call emits an audit row and OpenTelemetry span with caller, tool, scopes, bundle id, status, and redaction policy. |
 | Negative tool catalog | Generic shell, SQL, deploy, rollback, and delete tools are absent. |
