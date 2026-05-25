@@ -90,17 +90,22 @@ Notes:
 ### Running the GreptimeDB vs ClickHouse internals comparison
 
 `greptimedb-vs-clickhouse-internals.md` is an indefinite, never-converging brief,
-so run it with `/loop` (not `/goal`). The brief is self-contained — the path is
-all you need:
+so run it with `/loop` (not `/goal`). Use a clear, explicit instruction so the run
+keeps going:
 
 ```text
-# self-paced: deepens one subsystem per pass until you stop it by hand
-/loop prompts/greptimedb-vs-clickhouse-internals.md
+/loop Follow prompts/greptimedb-vs-clickhouse-internals.md as the active research
+brief. Never stop on your own — keep researching the GreptimeDB vs ClickHouse
+internals pass after pass, each pass deepening one subsystem against the source
+code and verifying performance claims, write or update one focused note under
+docs/research/greptimedb-vs-clickhouse/, commit and push it, then continue to the
+next gap. Do not declare the comparison done; keep going until I stop you by hand.
 ```
 
-It writes to `docs/research/greptimedb-vs-clickhouse/` and commits each pass. Stop
-it by hand when the comparison is deep enough; do not use `/goal` here, because the
-brief is designed to keep going rather than reach a fixed deliverable.
+The bare path also works (`/loop prompts/greptimedb-vs-clickhouse-internals.md`),
+since the brief is self-contained — the explicit wording above just makes the
+never-stop intent unmistakable. Do not use `/goal` here, because the brief is
+designed to keep going rather than reach a fixed deliverable.
 
 ## Output
 
