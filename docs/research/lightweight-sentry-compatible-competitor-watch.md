@@ -78,7 +78,7 @@ Checked on 2026-05-25 with primary project docs, npm, and GitHub metadata:
 
 | Project | Freshness signal | Maturity read |
 | --- | --- | --- |
-| Bugsink | GitHub latest release `2.2.1` on 2026-05-22; roughly 1.8k stars and 105 forks at check time; release adds canonical API issue actions/comments and OpenAPI docs; docs continue to claim SDK compatibility and low-ops self-hosting; third-party `bugsink-mcp` adapters are public but small. | Mature enough to be a real low-ops Sentry-compatible baseline; API/MCP ecosystem pressure means "no agent access" is no longer a durable ecosystem-level claim. |
+| Bugsink | GitHub latest release `2.2.1` on 2026-05-22; roughly 1.8k stars and 105 forks at check time; release adds canonical API issue actions/comments and OpenAPI docs; docs continue to claim SDK compatibility and low-ops self-hosting; third-party `bugsink-mcp` is now visible as an npm `1.0.0` MIT package. | Mature enough to be a real low-ops Sentry-compatible baseline; API/MCP ecosystem pressure means "no agent access" is no longer a durable ecosystem-level claim. |
 | Rustrak | GitHub pushed on 2026-05-25; latest visible release `docs@0.1.16`; server package release `@rustrak/server@0.2.5`; npm `@rustrak/mcp` is `0.1.2`; Docker Hub server image `v0.2.5` was last updated 2026-05-21; roughly 43 stars at check time. | Product shape is very close, but maturity is still early and component release streams must be pinned separately. |
 | Traceway | GitHub latest backend release `backend/v1.7.27` on 2026-05-22; MIT license; roughly 817 stars and 23 forks; repo pushed 2026-05-25; source/docs show `/api/otel/v1/{traces,metrics,logs}`, `/api/report`, AI trace promotion, SQLite single-container mode, and integration skills. | Strong active open-source pressure on the OTLP + unified context + replay side. |
 | GoSnag | GitHub has no tagged release in the checked metadata, roughly 8 stars and 4 forks, and last push on 2026-04-17; latest checked `main` commit is `418b8b1`. | Treat as a capability warning, not a proven market baseline; source-level recheck supports error-event ingest, AI workflows, and management-shaped MCP, but not OTLP/evidence-bundle parity. |
@@ -98,8 +98,9 @@ not recommended for SQLite WAL mode. Bugsink's license is PolyForm Shield for
 most repository content, so it is source-available rather than OSI-open.
 
 The official Bugsink docs and repository still do not present first-party MCP or
-AI agent features, but small third-party MCP adapters now exist. Treat that as
-ecosystem pressure, not as Bugsink first-party agent-surface closure. See
+AI agent features, but a small third-party `bugsink-mcp` package now exists on
+npm at `1.0.0` under MIT. Treat that as ecosystem pressure, not as Bugsink
+first-party agent-surface closure. See
 [Bugsink Sentry-compatible simplicity recheck](bugsink-sentry-compatible-simplicity-recheck.md).
 
 Implication: Parallax cannot treat Sentry compatibility plus low ops as a unique
