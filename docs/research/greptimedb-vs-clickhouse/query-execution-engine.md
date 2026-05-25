@@ -3,13 +3,17 @@
 <!-- markdownlint-disable MD013 -->
 
 Status: pass 42 + pass 77 (read-path late-materialization mechanism source-verified:
-`PruneReader::precise_filter` post-decode, no arrow `RowFilter`). The execution-engine half
+`PruneReader::precise_filter` post-decode, no arrow `RowFilter`) + pass 88 (corrected the
+full-text attribution: the Run-12 "~18×" was a config artifact, not the engine — the engine
+gap is real only for broad-term/heavy-agg, Runs 48–49). The execution-engine half
 of checklist #4 (the read-path note covers
 planning / predicate pushdown / skip-vs-scan / joins; this is the *engine that runs
 the plan*). It is the mechanism **behind the measured throughput gaps** — ClickHouse
 **~2× on warm metric aggregation** at 40k series (Run 37; corrected from the ~10× of
-Run 11, which was a cold/first-run GreptimeDB scan) and ~18× on full-text log search
-(Run 12). The verdict has called this "a decade-tuned C++ vectorized engine"; this
+Run 11, which was a cold/first-run GreptimeDB scan) and on **broad-term** full-text /
+scan (the Run-12 "~18×" was a `matches()`-on-bloom config artifact — selective is ~2×,
+Runs 48–49; the engine gap is real only for broad-term scans). The verdict has called
+this "a decade-tuned C++ vectorized engine"; this
 note makes that concrete, against source + live settings (Run 21). *(The ~2× warm
 agg gap fits this mechanism — 8× block + JIT + SIMD — far better than the old ~10×,
 which the cold-cache explanation resolves.)*
@@ -75,7 +79,12 @@ OLAP scan/aggregate **throughput bar**.
 
 ## Why ClickHouse wins scan/aggregate throughput (ties to Runs 11–12)
 
-The ~10× metric-aggregation (Run 11) and ~18× full-text (Run 12) gaps are the sum of:
+**Correction (Runs 37, 48–49) — these gaps are narrower than first measured.** The metric-agg
+gap is **~2× warm** (Run 37; the ~10× was cold). The full-text "~18×" (Run 12) was **not the
+engine at all** — it was a backend/function artifact (`matches()` on a `backend='bloom'` index
+full-scans; with the correct pairing selective full-text is ~6–8 ms, ~2× CH — Runs 48–49). The
+engine gap shows for real on **broad-term** full-text (~12×, scanning the matched set) and
+heavy aggregation. Those genuine engine gaps are the sum of:
 **(1)** 8× larger vectors → less overhead per row; **(2)** hand-tuned SIMD kernels vs
 general Arrow kernels; **(3)** runtime JIT of expressions + aggregation vs interpreted
 vectorization; **(4)** specialized aggregation hash tables; **(5)** PREWHERE late

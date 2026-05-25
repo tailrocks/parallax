@@ -2,10 +2,12 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 7 synthesis. Converges the architecture teardowns (passes 1–3) and
-the Docker runs (passes 4–6) into one matrix: **for each signal and query shape,
-which engine is faster/better, by which mechanism, under what scenario, at what
-confidence.** Feeds `verdict-which-to-choose.md`.
+Status: pass 7 synthesis; continually corrected (latest **pass 88**: the Logs·full-text
+row updated for Runs 48–49 — the ~18× was a backend/function artifact; selective full-text
+is ~2×, only broad-term is ~12×). Converges the architecture teardowns (passes 1–3) and
+the Docker runs into one matrix: **for each signal and query shape, which engine is
+faster/better, by which mechanism, under what scenario, at what confidence.** Feeds
+`verdict-which-to-choose.md`.
 
 Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d8`).
 
@@ -26,7 +28,8 @@ Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d
 | **Metrics** · high-cardinality series ingest | GreptimeDB (likely) | Metric engine maps many logical metrics onto a shared physical wide table → avoids per-series region/table explosion; ClickHouse needs careful `ORDER BY` + low-card keys. | High series cardinality | arch |
 | **Metrics** · float compression | ClickHouse (likely) | Gorilla/DoubleDelta/ALP/FPC/T64 codec breadth vs GreptimeDB Parquet defaults. **Untested** — Run 3 data was incompressible (random walk). | Flat gauges / counters | arch (inconclusive) |
 | **Logs** · selective filter (service/level + time) | **ClickHouse** | 8,192-row granule (12× finer than GreptimeDB's 102,400-row Parquet row group) + **PREWHERE** late materialization + `LowCardinality` + decade-tuned vectorized scan. Run 1: 3 ms vs 9 ms. | Wide table, selective predicate | arch+smoke |
-| **Logs** · full-text / substring search | **ClickHouse (~18×, measured + warm-verified)** | Run 12 + **Run 38 re-verify**: CH `text` posting-list + vectorized `hasToken` 7 ms vs GreptimeDB `FULLTEXT`+DataFusion `matches()` 129 ms (parity 698,955). **Index-bound → ~18× holds warm** (not a cold artifact, unlike the scan-bound metric-agg which Run 37 corrected 10×→2×). Real index-maturity gap. | token search at 5M+ | **measured warm (Runs 12, 38)** |
+| **Logs** · full-text / substring search (**selective**) | **~2× ClickHouse (corrected — was reported ~18×)** | **Runs 48–49 corrected it**: the ~18× (Run 12) was a **backend/function mismatch** — `matches()` (tantivy query-syntax fn) on a `backend='bloom'` index doesn't push to the index → **full-scans 5M** (~150 ms, EXPLAIN `output_rows: 5000000`). With the **correct pairing** GreptimeDB prunes (`output_rows: 1`): tantivy+`matches()` **~6 ms** or bloom+`matches_term()` **~8 ms**, vs CH `hasToken`/`text` **~3 ms** = **~2× warm, both sub-perceptible**. Not an index-maturity gap. | selective token search | **measured warm (Runs 48–49)** |
+| **Logs** · full-text **broad term** (matches many rows) | **ClickHouse (~12×)** | The residual real gap: a term matching ~100k+ rows scans the matched set, where CH's vectorized `hasToken`-on-65k-blocks wins (scan engine, `query-execution-engine.md` / parity-roadmap #2). Analytics, not interactive grep. | broad-term scan at 5M+ | measured warm (Run 48) |
 | **Logs** · high-volume append ingest | ~tie | Both append-friendly: ClickHouse part-per-insert (+async insert batching); GreptimeDB `append_mode` skips dedup/merge. | Write-heavy | arch |
 | **Traces** · `trace_id` point lookup | schema-decided; gap small in absolute ms | Sort-key prefix locality: ClickHouse `ORDER BY (trace_id, ts)` → sparse index seeks **Granules: 1** (Run 2), **2 ms**. GreptimeDB seed PK `(service,name)` leaves `trace_id` un-keyed → scan; **fair server-time = 14 ms** (Run 40 — *not* the 54 ms HTTP-wall; the ~40 ms was HTTP floor), **~8 ms with the `trace_id INVERTED INDEX` Parallax's design adds** (Run 6). So CH ~4–7× by locality, but **both ≪ 300 ms gate** — not latency-bound. **Flips toward ~tie when GreptimeDB keys/indexes `trace_id`** (its design does). | Whoever keys `trace_id` wins; absolute ms tiny | plan+smoke (Runs 2/6/40) |
 | **Traces** · status/duration filter, span tree over window | ClickHouse (slight) | Vectorized columnar scan + granule skip; GreptimeDB competitive via DataFusion. | Analytical scan | arch |
@@ -39,12 +42,17 @@ Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d
 
 Hypothesis: *GreptimeDB fastest, then ClickHouse.*
 
-**On raw query latency, the hypothesis is not holding (smoke scale).** ClickHouse
-is faster on logs (selective + search), trace lookups (on tuned schema), and the
-anchored evidence-bundle queries. The mechanisms are concrete and code-confirmed:
-finer granule, PREWHERE late materialization, a mature inverted text index,
-`LowCardinality`, and a decade-tuned C++ vectorized engine with lower fixed
-per-query overhead.
+**On raw query latency, the hypothesis is not holding (smoke scale) — but more
+narrowly than first measured.** ClickHouse is faster on selective log filters, trace
+lookups (on tuned schema), broad-term log scans, and the anchored evidence-bundle
+queries, by concrete code-confirmed mechanisms: finer granule, PREWHERE late
+materialization, `LowCardinality`, and a decade-tuned C++ vectorized engine with lower
+fixed per-query overhead. **Correction (Runs 48–49): full-text *search* is no longer a
+ClickHouse blowout.** The earlier ~18× was a backend/function mismatch (`matches()` on a
+bloom index full-scans); with the correct pairing (tantivy+`matches()` ~6 ms or
+bloom+`matches_term()` ~8 ms vs CH ~3 ms) **selective full-text is ~2×, both
+sub-perceptible** — the text-index advantage now only shows on **broad-term** scans
+(~12×, scan-engine), not interactive search.
 
 **Where GreptimeDB genuinely wins is not "fastest" — it is *capability and fit*:**
 
