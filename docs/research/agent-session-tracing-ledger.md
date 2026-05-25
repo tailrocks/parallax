@@ -20,7 +20,8 @@ The central rule:
 > No "Parallax traces coding-agent sessions" claim without a dated tool/version
 > matrix, adapter coverage rows, normalized session snapshots, lossiness reports,
 > redaction results, source-field policy status, projection raw-ref denial,
-> overhead rows, and an audit-value comparison.
+> canonical bundle hashes, projection manifests, MCP structured-output
+> validation, overhead rows, and an audit-value comparison.
 
 This ledger is separate from the
 [agent access surface safety ledger](agent-access-surface-safety-ledger.md): that
@@ -46,6 +47,7 @@ and normalization of agent execution traces.
 | [OpenCode MCP servers](https://opencode.ai/docs/mcp-servers/) | OpenCode supports local MCP servers with command/environment/timeout/enabled fields and remote MCP servers with URL, enabled, headers, OAuth config or OAuth disabled, timeout, remote defaults, global tool toggles, glob disables, and per-agent MCP enablement. | MCP settings are secret-bearing and policy-bearing. OpenCode tool-call rows need transport, header/env/OAuth source, enabled/global/per-agent tool state, and timeout provenance before cross-agent MCP comparisons are claimable. |
 | [OpenTelemetry semantic conventions 1.41.0](https://opentelemetry.io/docs/specs/semconv/) | Current semconv catalog includes GenAI, MCP, CLI, process, CI/CD, VCS, exception, and test areas. | Adapters should record source semantic-convention versions instead of hard-coding unstable span shapes into Parallax storage. |
 | [OpenTelemetry GenAI agent spans](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/), [MCP](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/), and [CLI spans](https://opentelemetry.io/docs/specs/semconv/cli/cli-spans/) | GenAI and MCP conventions are useful ingestion vocabulary; CLI conventions define short-lived command spans and exit/error semantics. | OTel-native sources feed normalized Parallax rows, but raw spans are not the durable product schema. |
+| [MCP tools specification `2025-11-25`](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) and [RFC 8785 JCS](https://www.rfc-editor.org/rfc/rfc8785.html) | MCP tool results can include JSON `structuredContent` validated by `outputSchema`; JCS defines deterministic JSON for repeatable hashes. | Agent-session projection rows must bind redaction/source-field checks to canonical JSON and prove CLI/HTTP/MCP projections preserve the same safety fields. |
 
 ## Claim Levels
 
@@ -68,8 +70,8 @@ Use these levels in `claim-ledger.jsonl`:
 | `amp_plugin_supported` | Amp plugin lifecycle/tool events normalize for a dated version/config. | "Amp plugin session events normalize for the tested version/config." |
 | `normalized_session_schema_pass` | A tested adapter set maps sessions, turns, actions, commands, edits, permissions, and outcomes into stable Parallax rows. | "Normalized agent-session schema passes for the tested adapter set." |
 | `lossiness_reported` | Every unmapped, redacted, source-not-exposed, raw-ref-only, or parse-failed event class is counted. | "Adapter lossiness is reported for the tested agents." |
-| `redaction_safe` | Agent-visible JSON and Markdown projections leak zero seeded canaries. | "Agent-session projections pass seeded redaction tests." |
-| `projection_safe` | Redaction report, source-field policy status, missing-evidence flags, and raw-ref dereference denial pass for JSON and Markdown. | "Agent-session projections are safe for the tested adapter set." |
+| `redaction_safe` | Agent-visible canonical JSON, Markdown, CLI/HTTP output, and MCP `structuredContent` leak zero seeded canaries. | "Agent-session projections pass seeded redaction tests." |
+| `projection_safe` | Redaction report, source-field policy status, missing-evidence flags, raw-ref dereference denial, schema/hash metadata, projection manifest, and MCP structured-output validation pass for the tested projection set. | "Agent-session projections are safe for the tested adapter set." |
 | `audit_value_positive` | Normalized Parallax sessions answer audit questions better than final-output-only and at least as usefully as raw transcript/export arms. | "Normalized sessions improve audit reconstruction in the tested task set." |
 | `multi_agent_trace_supported` | At least two agents, including one native OTel path and one non-OTel structured path, pass schema, lossiness, redaction, source-field/projection, and audit-value gates. | "Parallax normalizes coding-agent session traces for the tested agent matrix." |
 | `claim_expired` | Agent docs/version/config, OTel semconv, adapter, schema, redaction/source-field/projection policy, or 90-day timer changed. | "Agent-session tracing result expired; rerun required." |
@@ -114,6 +116,13 @@ approves a redacted synthetic fixture.
   "normalized_schema_version": "agent-session-v0",
   "redaction_policy_version": "a6-default-deny-vN",
   "source_field_policy_version": "phase0-source-field-policy-vN",
+  "bundle_schema_ref": {
+    "uri": "https://parallax.dev/schemas/evidence-bundle/v0.json",
+    "hash": "sha256:...",
+    "canonicalization": "jcs-rfc8785"
+  },
+  "projection_surfaces_required": ["bundle_json", "bundle_markdown", "cli_output", "http_api", "mcp_structuredContent"],
+  "mcp_output_schema_required": true,
   "semconv_version": "1.41.0",
   "raw_ref_policy": "transcripts_exports_prompts_tool_payloads_not_agent_visible_by_default",
   "tool_version_probe_captured_at": "YYYY-MM-DDTHH:MM:SSZ",
@@ -275,7 +284,11 @@ approves a redacted synthetic fixture.
   "content_capture_level": "structural",
   "raw_ref_count": 0,
   "redaction_report_ref": "redaction-results.jsonl#task_bugfix_001",
-  "source_field_policy_ref": "source-field-policy-results.jsonl#task_bugfix_001"
+  "source_field_policy_ref": "source-field-policy-results.jsonl#task_bugfix_001",
+  "schema_ref_hash": "sha256:...",
+  "canonical_session_bundle_hash": "sha256:...",
+  "projection_manifest_hash": "sha256:...",
+  "projection_equivalence_pass": true
 }
 ```
 
@@ -322,8 +335,12 @@ approves a redacted synthetic fixture.
   "fixture_task_id": "task_canary_001",
   "tool": "codex",
   "seeded_canaries": 20,
+  "canonical_json_leaks": 0,
   "json_projection_leaks": 0,
   "markdown_projection_leaks": 0,
+  "cli_output_leaks": 0,
+  "http_api_leaks": 0,
+  "mcp_structured_content_leaks": 0,
   "raw_ref_leaks": 0,
   "redaction_policy_version": "a6-default-deny-vN",
   "redaction_report_hash": "sha256:<hex>",
@@ -353,9 +370,19 @@ approves a redacted synthetic fixture.
 {
   "fixture_task_id": "task_canary_001",
   "tool": "codex",
-  "projection_format": "json|markdown",
+  "projection": "bundle_json|bundle_markdown|cli_output|http_api|mcp_structuredContent",
+  "schema_ref_hash": "sha256:...",
+  "canonical_bundle_hash": "sha256:...",
+  "projection_hash": "sha256:...",
+  "projection_manifest_hash": "sha256:...",
+  "projection_derives_from_canonical": true,
   "redaction_report_present": true,
   "source_field_policy_status": "pass|fail|not_applicable",
+  "source_field_policy_hash": "sha256:<hex>|null",
+  "source_field_policy_violations": 0,
+  "mcp_output_schema_valid": null,
+  "mcp_structured_content_hash": null,
+  "safety_fields_only_in_meta": false,
   "missing_evidence_present": true,
   "raw_transcript_ref_count": 1,
   "raw_export_ref_count": 0,
@@ -501,8 +528,23 @@ approves a redacted synthetic fixture.
 - `multi_agent_trace_supported` requires at least one native OTel path and at
   least one non-OTel structured path.
 - No claim may depend on hidden chain-of-thought or private model reasoning.
-- Agent-visible JSON and Markdown must leak zero seeded canaries and must not
-  dereference raw transcript/export/tool payload refs by default.
+- Agent-visible canonical JSON, Markdown, CLI, HTTP, and MCP outputs must leak
+  zero seeded canaries and must not dereference raw transcript/export/tool
+  payload refs by default.
+- Projection-safe agent-session rows require `schema_ref`, post-redaction
+  `canonical_hash`, `projection_manifest`, `access`, `redaction_report`,
+  `source_field_policy`, lossiness, and missing-evidence fields in canonical
+  JSON. A text-only transcript/export summary is not enough.
+- CLI, HTTP, and MCP projections must carry the same canonical bundle hash for
+  the same session/anchor. Projection hash mismatch, missing projection rows, or
+  unscanned output paths fail `projection_safe`.
+- MCP-delivered agent-session evidence counts only when `structuredContent`
+  validates against the evidence-bundle `outputSchema`; JSON pasted into a text
+  block is a projection, not schema-safe structured evidence.
+- Safety fields for agent-session evidence cannot live only in MCP `_meta`, tool
+  descriptions, annotations, or model-prompt wrapper metadata.
+- Agent-session rows that fail `projection_safe` can debug adapters, but cannot
+  feed A1 bundle-value, A4 reconstruction, or fixer-outcome claims.
 - Synthetic or evaluation fixture runs require `source_field_policy_status:
   pass` before redaction or projection claims can pass. Direct local sessions may
   use `not_applicable` only when no mixed eval/corpus source rows are present.
@@ -533,6 +575,8 @@ Current claim level: not_measured
 | Agent-visible canary leaks | 0 | 0 | Pending |
 | Source-field policy violations | 0 | 0 | Pending |
 | Raw refs dereferenced by projections | 0 | 0 | Pending |
+| Projection hash mismatches | 0 | 0 | Pending |
+| MCP structured output validation failures | 0 | 0 | Pending |
 | Audit-value lift over final output only | 0 | Positive | Pending |
 
 ## Tool Matrix
@@ -580,7 +624,9 @@ Mark affected claims `claim_expired` when:
 - OpenTelemetry GenAI/MCP/CLI semantic conventions change materially;
 - Parallax normalized session schema changes;
 - adapter parser logic changes;
-- redaction policy, source-field policy, or projection schema changes;
+- redaction policy, source-field policy, bundle schema, canonicalization method,
+  projection renderer, MCP output schema, or access-surface projection behavior
+  changes;
 - a source tool adds or removes hooks, OTel, streaming JSON, export, plugin, or
   permission events;
 - 90 days pass since the last run during active development.
@@ -612,4 +658,5 @@ Agent-session tracing should be measured like an adapter compatibility contract.
 The first credible claim is not "trace every agent." It is a dated matrix showing
 that at least two real tools emit enough structured events for Parallax to
 normalize sessions, report lossiness, preserve redaction/source-field/projection
-safety, and improve audit reconstruction over final outputs alone.
+safety across canonical CLI/API/MCP projections, and improve audit
+reconstruction over final outputs alone.

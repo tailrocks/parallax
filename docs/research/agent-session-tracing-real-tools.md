@@ -280,7 +280,10 @@ Agent-visible bundles must pass the
 [redaction pipeline](redaction-pipeline-and-secret-safety.md) after normalization,
 not only trust the source tool's built-in masking. Synthetic and evaluation
 fixture runs must also carry a passing source-field policy row before any
-projection is claimable.
+projection is claimable. The safe projection is the canonical bundle JSON with
+`schema_ref`, post-redaction `canonical_hash`, `projection_manifest`, and
+`access`; Markdown, CLI, HTTP, and MCP content are projections, and MCP delivery
+must use `structuredContent` validated against the bundle `outputSchema`.
 
 ## Value Evaluation Gate
 
@@ -324,8 +327,8 @@ to 40 sessions. Store raw refs only in a controlled local fixture project.
 | Command/edit coverage | 100 percent of surfaced shell commands and file edits captured when the source exposes them. |
 | Audit answer accuracy | Evaluator can answer who/what/when/which tool/which file/which command/which outcome for >= 80 percent of sessions from normalized data alone. |
 | Evidence citation completeness | Agent-produced diagnosis or PR proposal cites deterministic session/evidence refs for each material claim. |
-| Redaction | Zero seeded canary leaks in JSON and Markdown projections. |
-| Projection safety | Raw transcript/export/tool payload refs are present only as refs and are not dereferenced in agent-visible projections. |
+| Redaction | Zero seeded canary leaks in canonical JSON, Markdown, CLI/HTTP output, and MCP `structuredContent`. |
+| Projection safety | Raw transcript/export/tool payload refs are present only as refs, are not dereferenced in agent-visible projections, and every projection matches the canonical bundle hash. |
 | Source-field policy | Synthetic/evaluation fixtures pass source-field policy checks before redaction or projection claims pass. |
 | Adapter lossiness report | Every unmapped source event is counted with reason: unsupported, redacted, raw-ref-only, parse failure, or source-not-exposed. |
 | Overhead | Capture must not make the agent workflow noticeably slower; measure wall time delta and adapter CPU/RSS for each tool. |
@@ -345,8 +348,9 @@ Pass the agent-session gate only if:
 4. Either Amp plugin/streaming capture or OpenCode JSON/export/plugin capture
    provides a second open/non-OTel adapter path.
 5. The redaction, source-field, and projection suites have zero seeded canary
-   leaks, zero source-field violations, and zero default raw-ref dereferences in
-   agent-visible outputs.
+   leaks, zero source-field violations, zero default raw-ref dereferences,
+   matching canonical hashes across CLI/API/MCP projections, and valid MCP
+   `structuredContent` when MCP is tested.
 6. Normalized Parallax sessions answer audit questions faster or more accurately
    than final-output-only and raw-transcript arms.
 7. The adapter emits an honest lossiness report for every unsupported source
