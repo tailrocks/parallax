@@ -87,6 +87,21 @@ Notes:
   redundant. Pick one: `/goal` to converge on the verdict + blueprint and stop,
   or `/loop` for endless passes you end by hand.
 
+### Running the GreptimeDB vs ClickHouse internals comparison
+
+`greptimedb-vs-clickhouse-internals.md` is an indefinite, never-converging brief,
+so run it with `/loop` (not `/goal`). The brief is self-contained — the path is
+all you need:
+
+```text
+# self-paced: deepens one subsystem per pass until you stop it by hand
+/loop prompts/greptimedb-vs-clickhouse-internals.md
+```
+
+It writes to `docs/research/greptimedb-vs-clickhouse/` and commits each pass. Stop
+it by hand when the comparison is deep enough; do not use `/goal` here, because the
+brief is designed to keep going rather than reach a fixed deliverable.
+
 ## Output
 
 Running these prompts should produce source-linked Markdown under
