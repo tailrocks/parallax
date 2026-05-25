@@ -117,6 +117,10 @@ executable SWE-style datasets for the issue/fix/test leg, then add a Parallax
 telemetry overlay with honest provenance labels. Do not start by hand-picking
 random public GitHub issues unless they pass the
 [seed-corpus eligibility gates](bundle-value-seed-corpus.md).
+The overlay itself must satisfy the
+[Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md) so
+the raw dump and Parallax bundle are generated from the same frozen evidence and
+cannot leak gold patches or silently invent production-grade links.
 
 ## Metrics
 
@@ -188,6 +192,9 @@ Outcomes and what they mean:
   the concrete first pass to run before a full benchmark corpus exists.
 - [Bundle-value seed corpus](bundle-value-seed-corpus.md) — selects the first
   public task sources and defines the telemetry overlay required before Phase 0.
+- [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md) —
+  freezes the normalized overlay artifact, provenance labels, and no-cheat rules
+  used to derive raw-dump and bundle arms from the same evidence.
 - [Storage benchmark prototype](storage-benchmark-prototype.md) — shares the
   seeded dataset/reference-app generator for dataset option (3).
 - [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)

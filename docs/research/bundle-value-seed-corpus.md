@@ -79,6 +79,9 @@ or manual UI steps that cannot be scripted.
 
 Every accepted public task needs a generated telemetry overlay. Without this,
 the evaluation only tests issue-resolution from benchmarks, not Parallax.
+The exact artifact contract, provenance labels, no-cheat rules, normalized row
+shape, and raw-vs-bundle evidence-parity gate are specified in
+[Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md).
 
 Minimum overlay per task:
 
@@ -181,6 +184,9 @@ bundle lift.
   this note defines the first corpus.
 - [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) defines arms,
   run protocol, and scoring.
+- [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md)
+  defines the overlay artifact set, provenance labels, no-cheat rules, and
+  parity gates required before a task can count toward A1.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
   bundle artifact generated for arm C.
 - [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)

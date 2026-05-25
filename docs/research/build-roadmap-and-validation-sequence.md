@@ -45,7 +45,10 @@ assumption. Failing a gate sends you back, not forward.
 - Hand-assemble evidence bundles for 10–12 seed tasks selected through the
   [bundle-value seed corpus](bundle-value-seed-corpus.md): current executable
   SWE-style issue/fix/test tasks plus generated Parallax telemetry overlays,
-  with operator/public incidents only when they pass the same gates.
+  with operator/public incidents only when they pass the same gates. Generate
+  those overlays through the
+  [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md) so
+  raw-dump and bundle arms share the same frozen evidence.
 - Run the bundle-value eval (arms A/B/C) with these manual bundles, ≥2 models.
 - Interview ~20 target teams across the A2 slices: would they deploy? would they
   pay or sustain it? what is their actual debugging pain? Use the
@@ -135,6 +138,9 @@ Build only enough to generate the bundle automatically and repeatably:
 - [Bundle-value seed corpus](bundle-value-seed-corpus.md) and
   [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) — the first
   task-source selection and paired run against raw telemetry dumps.
+- [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md) —
+  the no-cheat artifact contract for the telemetry overlay used by that paired
+  run.
 - [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
   — the A2 demand-validation runbook for Phase 0.
 - [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)

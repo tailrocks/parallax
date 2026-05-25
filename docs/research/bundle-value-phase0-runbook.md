@@ -21,6 +21,10 @@ The seed task source is now specified separately in
 executable SWE-style datasets for issue/fix/test reproducibility, then add a
 Parallax telemetry overlay with provenance labels. Public GitHub issues enter
 only when they pass those eligibility gates.
+The exact telemetry-overlay artifact contract is specified in
+[Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md); a
+task that fails its no-cheat or evidence-parity gates can debug the harness but
+cannot count toward the A1 decision.
 
 This is not the final statistically powered benchmark. It is the cheapest way to
 find out whether the central product claim is promising enough to keep building.
@@ -219,6 +223,9 @@ artifacts behind the same raw-access policy described in
   experimental design; this is the first runnable pass.
 - [Bundle-value seed corpus](bundle-value-seed-corpus.md) defines the first
   task-source mix, task eligibility gates, and telemetry overlay requirements.
+- [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md)
+  defines the normalized overlay rows and raw-vs-bundle parity checks this
+  runbook depends on.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
   artifact Arm C must use.
 - [Risks and bear case](risks-and-bear-case.md) names A1 as existential; this is
