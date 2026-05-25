@@ -8,8 +8,11 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 144 local runs + B1–B15 cases. Recent: **Run 144 — SOURCE
-(gentle, gh-only): TWCS** grounds two findings — `TwcsPicker` compacts only WITHIN time windows, so a time-spanning
+cold/first-run measurement showed). 25 mechanism notes + 145 local runs + B1–B15 cases. Recent: **Run 145 — 100k
+small-tier preliminary** (validates the laptop-safe `gen.sh` default; 10 s gen, no freeze): all 20 queries 2–52 ms
+interactive, gaps compressed (~1.5–3×, JSON ~12×) — fixed-overhead-dominated, DIRECTIONAL only; magnitude + the v1.1
+regression + the >300 ms analytical crossovers show only at the 1M–5M server tier. Canonical = the 1M matrix. **Run 144
+— SOURCE (gentle): TWCS** grounds two findings — `TwcsPicker` compacts only WITHIN time windows, so a time-spanning
 table keeps ≥1 SST/window → dedup-agg merges across them (the Run-142 ~8× cost; single-window → 1 SST → fast, Run 117),
 and each window = own SST → TTL-expired window drops WHOLE (the cheap-retention pillar, now structural). **Run 143 —
 benchmark-tier policy** (Mac froze on 5M: LOCAL small/100k preliminary, SERVER large/5M+ on request only). Earlier: **Run 142 — isolated

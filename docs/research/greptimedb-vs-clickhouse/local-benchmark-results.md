@@ -5879,6 +5879,39 @@ compaction-transience (Runs 117/142/143) and the cheap-retention pillar (Runs 17
 **Reproduce.** `gh api ".../compaction/twcs.rs?ref=v1.0.2"` → `TwcsPicker` doc + the per-window
 `trigger_file_num` loop; `window.rs` → within-window merge. No local containers touched.
 
+### Run 145 — 2026-05-25 — 100k small-tier preliminary matrix (validates the laptop-safe default; gen 10 s, no freeze): all interactive, gaps compressed — differentiation needs the server tier
+
+**Pass target.** Validate the new laptop-safe default (`gen.sh N=100,000`) end-to-end + capture the
+small-tier preliminary matrix. Restarted nightlies → `gen.sh` (100k, **10 s**, no freeze) → `bench.sh`
+→ stopped nightlies + dropped data. All four builds.
+
+**100k matrix (median ms, REPS=6) — selected:**
+
+| Query | GT-stable | GT-nightly | CH-stable | CH-head |
+| --- | ---: | ---: | ---: | ---: |
+| anchored-lookup | 6 | 7 | 2 | 2 |
+| metric-agg-flat | 8 | 8 | 4 | 3 |
+| dynamic-attr-json | 52 | 48 | 4 | 4 |
+| cross-tier-join | 23 | 16 | 3 | 3 |
+| last-value | 6 | 5 | 3 | 3 |
+| (all 20 queries) | 3–52 | 3–48 | 2–12 | 2–12 |
+
+**Verdict — small-tier works + is laptop-safe, but is a DIRECTIONAL preliminary only.**
+
+- **Laptop-safe confirmed:** 100k × 6 tables × 4 builds generated in **10 s**, benchmarked clean, **no
+  freeze** (vs the 5M run that froze the Mac — 50× smaller). This is the right local default.
+- **At 100k everything is interactive (2–52 ms) and the gaps COMPRESS** (~1.5–3× for most, JSON still
+  ~12×, cross-join ~5–8×) — **fixed-overhead-dominated**, so absolute ms and fine ratios are not
+  trustworthy here. The small tier confirms *direction* (CH faster, JSON/join the biggest gaps, all
+  interactive) but **not magnitude** — the meaningful differentiation (and the v1.1 dedup regression,
+  and the >300 ms analytical crossovers) only appear at the **1M–5M server tier** (Runs 140/141).
+- **Canonical comparison stays the 1M matrix** in `four-way-version-comparison.md` (more
+  differentiated); 100k is the laptop preliminary. Nightlies ≈ stables at this tier (noise-band).
+- **Bench left light:** data dropped, nightly containers stopped (2 stable containers idle).
+
+**Reproduce.** `docker start gt-nightly ch-head && N=100000 bench/four-way/gen.sh && bench/four-way/
+bench.sh && docker stop gt-nightly ch-head`. ~10 s gen, laptop-safe.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
