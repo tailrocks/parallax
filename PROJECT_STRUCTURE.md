@@ -52,6 +52,7 @@ or CI contract yet.
 | `docs/research/agent-observability-technical-review.md` | Technical review of current agent-observability tools, instrumentation patterns, storage/eval/redaction lessons, and the Parallax-specific audit gap. |
 | `docs/research/strategic-verdict-and-research-coverage.md` | Final strategic verdict, prompt coverage map, key decisions, unresolved proof gates, and prototype acceptance criteria. |
 | `docs/research/technical-implementation-concept.md` | Opinionated end-to-end blueprint with named component choices, deployment profiles, data flow, and rejected alternatives. |
+| `docs/research/evidence-bundle-and-schema.md` | Concrete `v0` spec for the portable evidence bundle and open evidence schema (envelope, node/edge catalog, hypothesis/confidence model, redaction report, versioning) — the named moat artifact. |
 | `docs/research/sentry-compatible-ingestion.md` | Focused Sentry envelope, Relay, grouping, fingerprinting, stacktrace normalization, and event pipeline analysis for Parallax ingestion. |
 | `docs/research/opentelemetry-protocol-and-context-layer.md` | Focused OpenTelemetry protocol, OTLP endpoint, Collector, Rotel, semantic context, scaling, and above-OTEL product opportunity analysis. |
 | `docs/research/rust-data-collection-and-instrumentation.md` | Rust-first data-collection decision (SDK/OTLP vs eBPF) and error-capture data model. |
