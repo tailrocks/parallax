@@ -727,6 +727,32 @@ metric last-value) correct-by-default on GreptimeDB; ClickHouse needs `FINAL` or
 `argMax`/`AggregatingMergeTree`. Append signals: dedup moot (GT `append_mode` / CH
 plain `MergeTree`). FINAL-vs-read-dedup cost crossover at volume owed to harness.
 
+### Run 20 — 2026-05-25 — Durability defaults (live config confirmation)
+
+Backs `wal-and-durability.md` (pass 41). Not a latency benchmark — empirical
+confirmation of the durability-relevant defaults on the running pinned servers.
+
+**ClickHouse** (`system.merge_tree_settings` / `system.settings`):
+
+- `fsync_after_insert = 0`, `fsync_part_directory = 0` → inserted parts are **not
+  fsynced** (page cache only).
+- `async_insert = 1`, `wait_for_async_insert = 1` → ack waits for the buffer to flush
+  to a part, but the part is not fsynced. (`wait=0` would ack before the part exists.)
+- MergeTree has **no WAL** (`in_memory_parts_enable_wal` etc. obsolete in 26.x).
+
+**GreptimeDB** (running standalone filesystem):
+
+- `…/wal/0000000000000001.raftlog …` segments ~128–137 MiB each → **local raft-engine
+  WAL is active**; segment size matches `file_size`=128 MiB default.
+- Source default `sync_write = false` → not fsynced per write either, but the WAL is a
+  **replayable** log (crash recovery replays it); ClickHouse has no replay log.
+
+**Claim status:** both default to throughput-over-strict-fsync → **confirmed**;
+GreptimeDB has a replayable WAL (local raft-engine; Kafka remote decouples durability
+from the datanode) while ClickHouse relies on part-on-disk + replication →
+**confirmed**. Durability + scaling edge GreptimeDB; strict-durability perf cost
+(`sync_write=true` vs `fsync_after_insert=1`) owed to harness.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
