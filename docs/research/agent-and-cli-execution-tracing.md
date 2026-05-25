@@ -129,6 +129,15 @@ Sources:
 - [OpenTelemetry CLI semantic conventions](https://opentelemetry.io/docs/specs/semconv/cli/cli-spans/)
 - [OpenTelemetry process resource conventions](https://opentelemetry.io/docs/specs/semconv/resource/process/)
 
+Current source check on 2026-05-25: the official semantic-convention catalog is
+still `1.41.0`, and the GenAI agent, GenAI client, MCP, and CLI pages are still
+development-stage. That makes OTel useful ingestion vocabulary, not proof that
+real coding-agent tools emit a complete or stable trace. Parallax should map
+OTel spans through the
+[Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md)
+and measure real Codex, Claude Code, Amp, and OpenCode adapters through the
+[agent session tracing ledger](agent-session-tracing-ledger.md).
+
 ## Market Room
 
 There is clearly room in the sense that many teams and vendors are already
@@ -186,7 +195,15 @@ actions, patches, and outcomes.
 
 ## Agent Trace Model
 
-Represent one agent run as one trace.
+Represent one observed agent run as one normalized Parallax session, backed by
+the capture surface that produced it. When a source emits OTel spans, preserve
+those spans as refs and map them into stable rows. When a source emits hooks,
+plugin events, JSONL/stream JSON, exports, server/API events, ACP messages, or
+wrapper observations, map those events into the same rows with explicit adapter
+provenance and lossiness.
+
+A query or UI may render the session as a trace, but the storage contract should
+not require every tool to emit these exact span names:
 
 ```text
 agent session trace
@@ -202,19 +219,18 @@ agent session trace
   -> outcome
 ```
 
-Core spans:
+Normalized actions:
 
-| Span | Examples | Notes |
+| Parallax row/action | Possible source signals | Notes |
 | --- | --- | --- |
-| `agent.session` | Codex task, Claude Code task, Amp task. | Root span; stores repo, branch, issue, bundle ID. |
-| `agent.context.load` | Parallax bundle, file, ADR, issue, trace, logs. | Link every context item to source evidence. |
-| `gen_ai.invoke_agent` | Agent reasoning turn. | Follow OTEL GenAI agent span conventions where possible. |
-| `gen_ai.chat` / model call | Model request/response. | Store model/provider/token counts; content is opt-in/redacted. |
-| `gen_ai.execute_tool` | MCP tool, shell, git, test, file operation. | Tool name, args hash, output hash, redacted excerpt. |
-| `agent.hypothesis` | Candidate cause, confidence, evidence refs. | Parallax-specific event or span. |
-| `agent.patch` | Diff proposed, files changed. | Store patch hash and bounded diff reference. |
-| `agent.validation` | Test/build/lint command and result. | Required before direct PR claims. |
-| `agent.outcome` | accepted, rejected, modified, reverted, superseded. | Moat-bearing feedback. |
+| `agent_session` | OTel session/event, Codex hook session events, Amp plugin lifecycle events, OpenCode run/export/session events, wrapper root. | Store tool binary/version/config, adapter name/version, capture surface, source schema snapshot, and claim level. |
+| `agent_action(kind=context_load)` | Parallax bundle access, file/ADR/issue/trace/log load, MCP resource read. | Link every context item to source evidence and redaction status. |
+| `agent_action(kind=model_call)` / `agent_turn` | OTel GenAI invoke/chat spans, stream JSON model objects, source tool metadata when exposed. | Store model/provider/token counts when available; prompt and output content are opt-in/redacted/raw-ref-only. |
+| `agent_action(kind=tool_call)` | OTel `execute_tool`, MCP spans, Codex hooks, Amp/OpenCode plugin events, JSONL/stream JSON objects. | Tool name, input/output hashes or refs, status, error type, and deduplication refs. |
+| `agent_action(kind=shell_command)` | CLI wrapper, tool hook/plugin events, run JSON, subprocess spans. | Store structural command identity, args policy, exit status, stdout/stderr refs, and traceparent when available. |
+| `agent_action(kind=file_read|file_edit)` | Hook/plugin file events, patches, repo diff/hash observation, export/import rows. | File path policy, patch hash/ref, added/deleted line counts, and gaps when the source cannot prove a read or edit. |
+| `agent_action(kind=permission_decision)` | Approval hooks, permission plugin events, policy mode, dangerous CLI flags. | Record actor/source when available and separate denied actions from missing policy evidence. |
+| `agent_action(kind=validation|outcome)` | Test/build/lint command, commit/PR/review refs, recurrence/revert/human decision rows. | Required before direct-fix claims and outcome-feedback claims. |
 
 ## Agent Records
 
@@ -230,10 +246,18 @@ agent_sessions(
   commit_sha,
   agent_product,
   agent_version,
+  adapter_name,
+  adapter_version,
+  capture_surface,
+  source_schema_snapshot,
+  tool_config_ref,
+  content_capture_level,
   model,
   trigger_kind,
   anchor_issue_id,
   context_bundle_id,
+  redaction_report_ref,
+  lossiness_report_ref,
   started_at,
   ended_at,
   outcome
@@ -248,6 +272,7 @@ agent_steps(
   started_at,
   ended_at,
   status,
+  source_event_class,
   evidence_refs,
   redaction_level
 )
@@ -279,6 +304,12 @@ agent_patches(
 Do not store full prompts, full model outputs, full shell output, or full diffs
 by default. Store hashes, summaries, redacted excerpts, and artifact refs. Raw
 capture must be opt-in and scoped.
+
+Agent records are not product claims until fixture artifacts prove the target
+capture surface. A passing Claude OTel fixture does not prove Claude
+`stream-json`; a passing Codex hook fixture does not prove `codex exec --json`;
+and OpenCode run JSON, export JSON, plugins, server/API, and ACP need separate
+rows.
 
 ## CLI Trace Model
 
@@ -401,8 +432,9 @@ Near-term sequence:
 1. Keep Sentry-compatible Rust service errors as the first production wedge.
 2. Add CLI instrumentation for Rust tools because it is bounded and cheap.
 3. Trace Parallax's own agent/MCP interactions from day one.
-4. Add generic agent-session ingestion once the local schema works, with the
-   real-tool adapter gate in
+4. Add real-tool agent-session ingestion surface by surface, with separate
+   native OTel, hook/plugin, JSONL/stream JSON, export/API/ACP, wrapper, and
+   raw-ref claims controlled by the real-tool adapter gate in
    [Agent session tracing across real tools](agent-session-tracing-real-tools.md).
 5. Map OTel GenAI/MCP/CLI input through the
    [Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md)
@@ -418,9 +450,9 @@ not only failing software, but also the agent that acts on the failure.
 | --- | --- |
 | Capturing secrets in prompts/args/stdout | Hash and redacted excerpts by default; raw opt-in only. |
 | Huge traces from agent loops | Session summaries plus span/event caps. |
-| Vendor-specific agent formats | Normalize to Parallax schema plus OTEL GenAI/MCP where possible. |
+| Vendor-specific agent formats | Normalize to Parallax schema plus OTel GenAI/MCP where possible; claim support per adapter, capture surface, tool version, and config. |
 | Privacy of repo context | Same policy as production data: scoped access, audit, retention. |
-| Overfitting to one agent | Store `agent_product` and `agent_version`; avoid model-specific core schema. |
+| Overfitting to one agent | Store `agent_product`, `agent_version`, `adapter_name`, and `capture_surface`; avoid model-specific core schema. |
 | False trust in agent traces | Trace what happened; do not assume reasoning text is truth. |
 
 ## Bottom Line
