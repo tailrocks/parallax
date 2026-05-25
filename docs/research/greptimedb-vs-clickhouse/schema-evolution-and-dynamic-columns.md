@@ -4,10 +4,17 @@
 
 Status: pass 38, extended pass 97 (Run 61: dynamic-attr path query **measured** —
 CH ~13× via typed subcolumn, + a GROUP BY casting wrinkle) + **Run 104 (gap appeared ~57× — SUPERSEDED)**
-+ **Runs 129/130 (CORRECTED: the dynamic-attr gap is ~8–12× with the `.:Int64` typed-subcolumn cast —
-the fair/enforced form; the ~57× was ClickHouse 26.5's *lax no-cast* GROUP BY path (~1 ms), which 26.6
-REMOVES (`Code 44` — cast required, ~5–7 ms). GT json_get_int ~48–60 ms on both v1.0.2 + v1.1-nightly.
-So state it ~8–12× typed-cast, up to ~57× only on the deprecated 26.5 no-cast path)** + **Run 110 (schema-on-write re-verified, no drift: GT
++ **Runs 129/130 (CORRECTED: the dynamic-attr gap is ~8–12× with the `.:Int64`/`.:String` typed-subcolumn
+cast — the fair/enforced form; GT json_get_int ~48–60 ms on both v1.0.2 + v1.1-nightly)** + **Run 168
+(LIVE re-verify on 26.5.1.882 — RE-CORRECTS the version framing): the `.:Type` cast in JSON GROUP BY is
+ENFORCED on the *current 26.5.1.882 stable*, NOT 26.6-only. Live: `GROUP BY attrs.region` → `Code 44`
+("Variant/Dynamic not allowed in GROUP BY keys"); `GROUP BY attrs.region::String` works (r0–r4 ×10000).
+The cast-free fast path is the **FILTER** (`WHERE attrs.user_id='5'` → 50 rows, no cast, works) — so the
+earlier "~57× ClickHouse 26.5 *lax-no-cast GROUP BY* path that 26.6 removes" is wrong: 26.5 was never lax
+for GROUP BY; the lax/fast measurement was the cast-free **filter** (not a GROUP BY). State it: **JSON
+GROUP BY needs the `.:Type` cast on 26.5.1.882 (and 26.6); JSON filter is cast-free on both; dynamic-attr
+GROUP BY gap ~8–12× with the cast.** (GT side incomparable this run — GT's `'…'::JSON` SQL-cast INSERT
+errors `Unsupported SQL type JSON`; GT ingests JSON via the pipeline/OTLP path, not a SQL cast.))** + **Run 110 (schema-on-write re-verified, no drift: GT
 InfluxDB-line write of a new tag+field auto-adds `region`+`humidity` columns, HTTP 204, old rows
 NULL-backfilled; ClickHouse `INSERT` with an unknown column → `Code: 16 NO_SUCH_COLUMN_IN_TABLE`,
 needs ALTER or a JSON column)**. White-box teardown of how

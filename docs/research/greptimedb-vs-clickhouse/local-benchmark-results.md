@@ -6638,6 +6638,37 @@ redaction path should force compaction, not rely on the lazy default purge.** Up
 WHERE k='u1' SETTINGS mutations_sync=1` (or `DELETE FROM rd WHERE k=…`) then `SELECT count()`. (exec;
 host port down.)
 
+### Run 168 — 2026-05-25 — LIVE (exec, 50k JSON load): dynamic-attr path — DRIFT CORRECTION (cast enforced on 26.5, not 26.6-only)
+
+**Context.** Rotated to the dynamic-attribute JSON path (Parallax stores arbitrary error/user attrs) —
+decision-relevant + not recently live-verified. Loaded a 50k-row JSON table on CH 26.5.1.882; small
+storage/plan re-verify (not timing). Re-pin unchanged. Cleaned up.
+
+**DRIFT CORRECTION.** Prior claim (Runs 129/130): "the ~57× was ClickHouse 26.5's *lax no-cast GROUP BY*
+path (~1 ms), which 26.6 removes (`Code 44`)." **Does NOT reproduce on the current 26.5.1.882:**
+- `GROUP BY attrs.region` (no cast) → **`Code 44`: "Variant/Dynamic not allowed in GROUP BY keys"** — the
+  cast is **enforced on 26.5.1.882**, not 26.6-only.
+- `GROUP BY attrs.region::String` (with cast) → works (r0–r4 ×10000).
+- `WHERE attrs.user_id='5'` (filter, no cast) → **works, 50 rows** — the FILTER is cast-free.
+- So 26.5 was **never lax for GROUP BY**; the earlier "~57× lax" was the cast-free **FILTER** path (not a
+  GROUP BY). **Corrected statement: JSON GROUP BY needs the `.:Type` cast on 26.5.1.882 AND 26.6; JSON
+  filter is cast-free on both; dynamic-attr GROUP BY gap ~8–12× with the cast.** CH JSON storage: 232 KiB
+  / 50k rows (3 attrs), 1 part.
+- **GT incomparable this run:** `'…'::JSON` SQL-cast INSERT → `Code 1001: Unsupported SQL type JSON`. GT
+  ingests JSON via the pipeline/OTLP identity path (Run 151), not a SQL cast — a GT JSON-via-SQL
+  limitation (irrelevant to Parallax, which ingests via the proxy). Prior GT json_get numbers (Run
+  61/129, ~48–60 ms on the `sj` table) stand; not re-measured here.
+
+**Verdict.** Decision unchanged (CH typed-subcolumn faster on known dynamic paths; GT json_get per-row;
+both store dynamic attrs) — but the **version framing is corrected**: the GROUP-BY cast is a 26.5+
+requirement, not a 26.6 regression, and the cast-free path is the filter. Updated
+`schema-evolution-and-dynamic-columns.md` status.
+
+**Reproduce.** CH: `CREATE TABLE dj(ts DateTime64(3), attrs JSON) ENGINE=MergeTree ORDER BY ts; INSERT …
+toJSONString(map('user_id',…,'region',…)) FROM numbers(50000); SELECT attrs.region, count() GROUP BY
+attrs.region` → `Code 44`; add `::String` → works; `WHERE attrs.user_id='5'` → works (no cast). (exec;
+host port down.)
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
