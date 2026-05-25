@@ -1216,6 +1216,36 @@ So warm gaps: full-text ~18× (index), count-by-level scan ~4× (light scan), me
 the cold-tier harness will quantify it; the read-path warm numbers are now all
 verified. No verdict move; confirmation + a cleaner cold/warm mental model.
 
+### Run 40 — 2026-05-25 — Fair trace-lookup: strip the HTTP floor + the index caveat
+
+Re-measured the anchored `trace_id` point lookup (Parallax's dominant query) on a
+**fair basis** — GreptimeDB **server `execution_time_ms`** (HTTP-stripped), since all
+prior GT point-query numbers carried the ~40–50 ms HTTP-wall floor. Versions unchanged.
+
+| | ClickHouse | GreptimeDB |
+| --- | --- | --- |
+| trace lookup, warm (min 3) | **2 ms** (ORDER BY `(trace_id,ts)` sort-key seek, 1 granule) | **14 ms server** (first run 65 ms cold) |
+
+**Two fairness clarifications:**
+
+1. **HTTP floor stripped.** GT's server-side lookup is **14 ms**, not the **54 ms**
+   reported via HTTP wall (pass 49 / Run-1's 16 ms also HTTP-ish). The ~40 ms gap was
+   HTTP/JSON round-trip, not engine time. So *all* GT point-query latencies in earlier
+   runs are HTTP-inflated by ~40 ms; the engine numbers are far smaller.
+2. **The bench `spans` has NO `trace_id` index** (PK = `service,name`) → GreptimeDB is
+   **full-scanning 1M rows** for this lookup (14 ms server). **Parallax's GreptimeDB
+   *design* adds `trace_id INVERTED INDEX`** (`greptimedb-implementation.md`, the "Run-1
+   fix"); with it the lookup is ~8 ms (Run 6). So the designed-path gap is even smaller.
+
+**Fair anchored-lookup gap:** CH **2 ms** (sort-key locality) vs GT **~8 ms indexed /
+14 ms unindexed-scan** (server) — ClickHouse ~**4–7×** by sort-key locality, but **both
+are single-/low-double-digit ms, ≪ the 300 ms gate**. So GreptimeDB's "loss" on the
+anchored hot path is (a) partly an HTTP-measurement artifact and (b) shrinks with the
+trace_id index Parallax's design already specifies. Reinforces **anchored bundle = not
+latency-bound** (Run 16). Honest fairness correction; no verdict move (CH still faster
+on the lookup, GT still chosen on fit). Caveat noted: re-running GT point-queries via
+the MySQL native protocol would strip the HTTP floor in future runs.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
