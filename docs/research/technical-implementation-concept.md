@@ -23,7 +23,8 @@ Build Parallax as:
 > A Rust-first, Sentry-compatible, OpenTelemetry-native execution context system
 > for services, CLI apps, CI runs, and coding agents that stores observability
 > evidence in GreptimeDB, keeps product metadata in Turso, and exposes bounded
-> evidence bundles through an HTTP API and MCP server.
+> evidence bundles through a CLI and HTTP API, with a later read-only MCP
+> adapter once the bundle contract is stable.
 
 The first product should beat self-hosted Sentry on operational simplicity. It
 should not start as a full observability dashboard or autonomous production SRE.
@@ -40,7 +41,7 @@ should not start as a full observability dashboard or autonomous production SRE.
 | Metadata store | Turso Database for local/dev and tiny single-node; keep Postgres only as a scale-out fallback until Turso production behavior is proven. | Users, projects, DSNs, issue status, policies, and audit records are relational product state, not telemetry. Turso keeps the embedded metadata path Rust-native and SQLite-compatible without choosing C SQLite. |
 | Processing | Rust workers, in-process for tiny mode and separate services for durable/scale-out mode. | Normalization, symbolication, grouping, correlation, and graph building need deterministic logic and strong testability. |
 | Causal layer | Typed evidence graph stored as tables first. | Materialize graph edges before adopting a graph database. Causality needs explicit evidence and confidence. |
-| Agent surface | HTTP context API plus MCP server, read-only first. | Agents need structured evidence, not dashboards. MCP makes Codex, Claude Code, Amp, OpenCode, and IDE agents first-class clients. |
+| Agent surface | CLI plus canonical HTTP context API first; read-only MCP adapter after the access-surface gate. | Agents need structured evidence, not dashboards. CLI/HTTP keeps the tiny tier testable; MCP becomes valuable once the bundle contract and safety model are stable. |
 | Execution surfaces | Treat services, CLI apps, CI runs, and coding agents as first-class trace sources. | Parallax should explain software execution and the agent work performed on that execution, not only long-running services. |
 | Human surface | Minimal Sentry-like issue UI later. | Humans need inspection and trust, but the differentiator is the context API. |
 
@@ -89,12 +90,12 @@ Access decision:
 
 - **CLI first:** required from day one because coding agents already operate
   through shell commands, CI can call a CLI, and humans need local exports.
-- **HTTP API underneath:** the CLI and MCP server must call the same HTTP/JSON
-  context contract so behavior is testable and stable.
-- **MCP required, not optional:** the CLI is enough for the earliest local
-  prototype, but not enough for first-class agent integration. MCP gives agents
-  discoverable tools, structured arguments, transport-level sessions, and an
-  authorization model. Keep the MCP server thin and read-only at first.
+- **HTTP API underneath:** the CLI and later MCP adapter must call the same
+  HTTP/JSON context contract so behavior is testable and stable.
+- **MCP later, not required for the tiny tier:** the CLI is enough for the
+  earliest local prototype and Phase 1 proof. MCP becomes the right first-class
+  agent integration once the bundle API, authorization model, audit rows, and
+  redaction gates are stable. Keep the MCP adapter thin and read-only.
 - **No generic mutation tools:** no `run_sql`, `run_shell`, production deploy,
   rollback, or database mutation tools in Parallax core.
 
@@ -113,7 +114,7 @@ Access decision:
 | Metadata store | Turso Database for projects, DSNs, policies, issue state, audit, agent sessions, CLI invocations, outcomes. | Turso with benchmarked backup/restore and concurrency gates; Postgres fallback if those fail. | Postgres fallback for large multi-node metadata if Turso fails production gates. |
 | Raw evidence retention | Local disk raw refs with TTL. | S3-compatible object storage for raw envelopes, attachments, logs, and bundle manifests. | Tiered object storage with lifecycle policy and per-tenant retention. |
 | Processing | In-process Rust normalizer/grouping/evidence-graph worker. | Separate Rust worker services and consumer groups. | Worker pools by normalization, grouping, symbolication, graph, bundle indexing. |
-| Context surface | CLI + HTTP API + read-only MCP in the same binary. | Separate API/MCP service. | Horizontally scaled API/MCP tier with tenant isolation and audit indexing. |
+| Context surface | CLI + HTTP API in the same binary; optional read-only MCP adapter only after the access-surface gate. | Separate API and optional MCP service. | Horizontally scaled API/MCP tier with tenant isolation and audit indexing. |
 | Human UI | No dashboard suite; optional minimal issue/evidence view later. | Same UI over API. | Same UI over API; dashboards remain non-core. |
 
 The stack deliberately keeps Tier 1 small while preserving the seams needed for
@@ -143,6 +144,7 @@ Related research:
 - [Turso metadata production readiness](turso-metadata-production-readiness.md)
 - [Messaging and ingestion layer](messaging-and-ingestion-layer.md)
 - [Ingest log replay and backpressure gate](ingest-log-replay-and-backpressure-gate.md)
+- [A7 scope discipline ledger](a7-scope-discipline-ledger.md)
 - [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
 - [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md)
 - [Flaky test investigation and replay](flaky-test-investigation-and-replay.md)
@@ -284,7 +286,8 @@ Rust app / service / CLI / coding agent
        - deterministic grouping
        - storage writer
        - evidence graph builder
-       - context API / MCP server
+       - CLI / HTTP context API
+       - optional MCP adapter after access-surface gate
   -> GreptimeDB standalone
   -> Turso metadata
 ```
@@ -304,7 +307,8 @@ Rust app / service / CLI / coding agent
        - build evidence graph
   -> GreptimeDB standalone + object storage
   -> Turso metadata
-  -> parallax-api / MCP
+  -> parallax-api
+  -> optional MCP adapter
 ```
 
 Scale-out:
@@ -320,7 +324,7 @@ apps / collectors / CI systems / coding agents
   -> GreptimeDB distributed or ClickHouse fallback cluster
   -> Turso metadata or Postgres scale-out fallback
   -> object storage
-  -> context API / MCP / UI
+  -> context API / optional MCP adapter / UI
 ```
 
 ## Data Flow From Event To Evidence Bundle
@@ -514,16 +518,17 @@ It should not receive unlimited logs or direct production credentials.
 The agent surface has three concrete forms:
 
 1. CLI commands for shell-native agents and CI.
-2. HTTP API for stable service-to-service integration.
-3. MCP tools for first-class agent clients.
+2. HTTP API for stable service-to-service integration and the canonical context
+   contract.
+3. MCP tools later for first-class agent clients.
 
-The CLI is the first usable surface. MCP is still required because a dedicated
-MCP server makes Parallax discoverable as a structured, least-privilege context
-provider rather than a bag of shell commands. The focused decision is captured
-in [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md):
-canonical HTTP API first, day-one CLI, and a read-only MCP adapter before broad
-agent pilots. All surfaces must call the same authorization, redaction, and
-bundle-building code.
+The CLI is the first usable surface. MCP should not be required for Phase 1,
+because that would add protocol and security scope before the bundle contract is
+stable. The focused decision is captured in
+[Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md):
+canonical HTTP API first, day-one CLI, and then a read-only MCP adapter once A7
+scope discipline and A6 redaction safety are green. All surfaces must call the
+same authorization, redaction, and bundle-building code.
 
 First CLI commands:
 
@@ -549,7 +554,7 @@ GET /api/projects/:project/traces/:trace_id/context
 POST /api/projects/:project/hypotheses/check
 ```
 
-First MCP tools:
+First MCP tools, after the access-surface gate:
 
 | Tool | Purpose |
 | --- | --- |
@@ -563,12 +568,12 @@ First MCP tools:
 | `parallax_agent_session_show` | Return agent-session timeline, tools, files, tests, patch refs, and outcome. |
 | `parallax_cli_invocation_show` | Return sanitized CLI invocation evidence and side-effect refs. |
 
-Build the MCP server against the current official spec revision shown by the MCP
-site on the research date: **2025-11-25**. Do not cite or implement a
+Build the later MCP adapter against the current official spec revision shown by
+the MCP site on the research date: **2025-11-25**. Do not cite or implement a
 future-dated spec revision until the official site publishes it as current. MCP
 is supported by the major checked agent clients (Claude Code, Codex, Cursor,
-and Copilot/VS Code), which is why a read-only MCP context server is the right
-agent-native surface alongside the CLI.
+and Copilot/VS Code), which is why a read-only MCP context adapter is the right
+later agent-native surface alongside the CLI.
 
 Sources:
 
@@ -591,7 +596,8 @@ parallax-server
   - CLI/agent trace endpoint
   - local WAL/outbox
   - in-process normalizer/grouping/evidence graph
-  - HTTP API + read-only MCP
+  - HTTP API
+  - optional read-only MCP adapter after the access-surface gate
 greptimedb standalone on local disk
 turso metadata
 local disk raw retention
@@ -604,7 +610,8 @@ Properties:
 - no broker;
 - no Kubernetes requirement;
 - bounded local raw WAL;
-- CLI, HTTP API, and MCP available from the same process;
+- CLI and HTTP API available from the same process, with MCP optional after the
+  access-surface gate;
 - easiest migration path from self-hosted Sentry SDKs.
 
 This is the product that proves Parallax can be simpler than Sentry.
@@ -622,7 +629,7 @@ parallax-worker
 greptimedb standalone with object storage
 turso metadata
 optional Apache Iggy standalone
-parallax-api / MCP
+parallax-api, plus optional MCP adapter after the access-surface gate
 parallax CLI
 ```
 
@@ -634,9 +641,9 @@ Properties:
 - Turso for metadata and audit;
 - still small enough for one VM or a simple Compose deployment.
 
-The explicit seams are ingest, stream, workers, storage, and API/MCP. Moving
+The explicit seams are ingest, stream, workers, storage, API, and optional MCP. Moving
 from Tier 1 to Tier 2 should not change the event contract, the bundle schema,
-or the CLI/MCP tools.
+or the CLI/MCP tool semantics.
 
 ### Tier 3: Very Scalable
 
@@ -649,7 +656,7 @@ worker pools x N
 greptimedb distributed or clickhouse fallback cluster
 turso metadata or postgres scale-out fallback
 object storage
-api/mcp nodes x N
+api nodes x N, plus optional mcp adapter nodes
 parallax CLI across CI/dev/agent environments
 ```
 
@@ -756,7 +763,7 @@ parallax-server
   - GreptimeDB writer
   - Turso metadata
   - issue context API
-  - MCP read-only context tools
+  - no MCP requirement until CLI/HTTP bundle contract and safety gates are green
 ```
 
 First useful command/API:
@@ -789,7 +796,8 @@ Parallax is technically plausible if it stays disciplined:
   latest-version benchmark fallback;
 - use no broker in the tiny profile and Apache Iggy in the durable profile;
 - build deterministic grouping and evidence graphs before AI claims;
-- expose safe API/MCP context before autonomous action;
+- expose safe CLI/API context before autonomous action, then add MCP after the
+  access-surface and redaction gates;
 - measure speed, cost, and scaling on Parallax-shaped workloads before claiming
   a storage or stream victory.
 

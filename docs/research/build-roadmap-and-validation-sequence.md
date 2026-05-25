@@ -122,7 +122,7 @@ Build only enough to generate the bundle automatically and repeatably:
 | A5 stack holds | Phase 2 | [A5 stack decision ledger](a5-stack-decision-ledger.md), rolling up storage/metadata/ingest/setup gates |
 | A4 correlation reliable | Phase 1–2 | [strong-edge prevalence on real telemetry](correlation-reliability-real-telemetry-gate.md) plus the [A4 result ledger](a4-correlation-reliability-ledger.md) |
 | A3 schema/corpus moat | Phase 2 (publish) → Phase 4 (corpus) | [schema conformance + external adoption + outcome corpus](schema-adoption-and-corpus-moat-gate.md) |
-| A7 scope discipline | enforced by phase order | tiny tier passes the [self-hosted simplicity gate](self-hosted-simplicity-gate.md) before breadth |
+| A7 scope discipline | enforced by phase order | [A7 scope discipline ledger](a7-scope-discipline-ledger.md) stays green and the tiny tier passes the [self-hosted simplicity gate](self-hosted-simplicity-gate.md) before breadth |
 
 ## What This Sequence Refuses To Do
 
@@ -169,6 +169,9 @@ Build only enough to generate the bundle automatically and repeatably:
 - [A5 stack decision ledger](a5-stack-decision-ledger.md) — the Phase 2 umbrella
   result contract for turning component benchmarks into stack defaults or
   fallback decisions.
+- [A7 scope discipline ledger](a7-scope-discipline-ledger.md) — the phase budget
+  and feature-admission contract that prevents broad roadmap work from entering
+  Phase 1 before the tiny bundle proof.
 - [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
   — the focused answer to the CLI-versus-MCP access-surface question.
 - [Production database evidence access gate](production-database-evidence-access.md)

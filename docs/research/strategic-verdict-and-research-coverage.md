@@ -95,7 +95,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Metadata store | [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md), [Turso metadata production readiness](turso-metadata-production-readiness.md), [Technical implementation concept](technical-implementation-concept.md) |
 | OpenTelemetry | [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md), [OTLP receiver conformance and Collector equivalence](otlp-receiver-conformance-and-collector-equivalence.md) |
 | Sentry-compatible ingestion | [Sentry-compatible ingestion](sentry-compatible-ingestion.md), [Sentry SDK fixture compatibility gate](sentry-sdk-fixture-compatibility.md) |
-| Self-hosted operational simplicity | [Self-hosted simplicity gate](self-hosted-simplicity-gate.md), [Self-hosted deployment baseline inventory](self-hosted-deployment-baseline-inventory.md), [Lightweight Sentry-compatible competitor watch](lightweight-sentry-compatible-competitor-watch.md), [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md) |
+| Self-hosted operational simplicity | [Self-hosted simplicity gate](self-hosted-simplicity-gate.md), [Self-hosted deployment baseline inventory](self-hosted-deployment-baseline-inventory.md), [A7 scope discipline ledger](a7-scope-discipline-ledger.md), [Lightweight Sentry-compatible competitor watch](lightweight-sentry-compatible-competitor-watch.md), [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md) |
 | Collection method and eBPF tradeoff | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md) |
 | Rust applications first | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md), [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md), [Technical implementation concept](technical-implementation-concept.md) |
 | AI-native observability | [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md), [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md) |
@@ -148,6 +148,11 @@ Technical proof gates:
   setup, and integration rows, specified in the
   [A5 stack decision ledger](a5-stack-decision-ledger.md). This ledger controls
   when component benchmarks are allowed to become stack-default claims.
+
+- A7 scope-discipline roll-up across component inventory, dependency rows,
+  feature intake, interface surfaces, and phase budgets, specified in the
+  [A7 scope discipline ledger](a7-scope-discipline-ledger.md). This ledger
+  controls when roadmap breadth is allowed to enter active build scope.
 
 - Deterministic cross-signal correlation reliability on real telemetry,
   specified further in the

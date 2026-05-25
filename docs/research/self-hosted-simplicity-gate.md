@@ -177,3 +177,7 @@ The standard is not "as full-featured as Sentry." The standard is "much easier
 to self-host for the first useful Sentry-compatible, OTLP-native issue context."
 
 Related competitive check: [Lightweight Sentry-compatible competitor watch](lightweight-sentry-compatible-competitor-watch.md).
+
+Related scope check: [A7 scope discipline ledger](a7-scope-discipline-ledger.md)
+owns the feature, dependency, protocol, and service-count rows that must stay
+green before this simplicity gate can support a Phase 1 claim.

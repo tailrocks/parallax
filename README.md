@@ -57,6 +57,7 @@ idea becomes sharper.
 - [Redaction pipeline and secret safety](docs/research/redaction-pipeline-and-secret-safety.md)
 - [Redaction detector toolchain](docs/research/redaction-detector-toolchain.md)
 - [A6 redaction red-team ledger](docs/research/a6-redaction-red-team-ledger.md)
+- [A7 scope discipline ledger](docs/research/a7-scope-discipline-ledger.md)
 - [Causal reconstruction and agent safety](docs/research/causal-reconstruction-and-agent-safety.md)
 - [AI-native observability and incident intelligence](docs/research/ai-native-observability-and-incident-intelligence.md)
 - [Flaky test investigation and replay](docs/research/flaky-test-investigation-and-replay.md)

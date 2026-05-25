@@ -55,7 +55,7 @@ the earliest cheap test.
 | A4 | Deterministic cross-signal correlation is reliable in real, messy telemetry. | Missing trace IDs, sampling, broken CORS propagation, clock skew make joins partial; "evidence graph" degrades to "time-window guess." | Run the [correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md) and publish the [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md): measure strong-edge prevalence, false strong edges, frontend continuation, async links, and missing-evidence reporting on real telemetry with per-anchor audit rows. |
 | A5 | The chosen stack holds (GreptimeDB speed/cost, Turso reliability, Iggy where used). | GreptimeDB may miss freshness/cost gates; Turso Database is still beta/not production-ready even though Turso Cloud has separate durability/PITR guarantees; Iggy has no clustering. | The [A5 stack decision ledger](a5-stack-decision-ledger.md) rolls up the [storage benchmark prototype](storage-benchmark-prototype.md), storage freshness/cost gates, [metadata benchmark](metadata-store-benchmark-plan.md), [Turso production-readiness gate](turso-metadata-production-readiness.md), ingest-log gate, and self-hosted simplicity gate before any stack claim. |
 | A6 | Redaction can be made trustworthy enough to expose evidence to agents/third-party models. | One PII/secret leak in a bundle destroys the data-ownership value prop; frontend PII makes this harder. | Use the [redaction pipeline](redaction-pipeline-and-secret-safety.md), [detector toolchain](redaction-detector-toolchain.md), and [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md): default-deny source policy, seeded canaries, JSON/Markdown/output scans, scanner comparisons, usefulness audits, and real-data red-team before any agent exposure. |
-| A7 | The component scope is buildable by the team that exists. | The surface is very large; a small team risks many half-built layers. | Honest milestone test: can the tiny tier (error + OTLP + grouping + one bundle + CLI) ship and pass the [self-hosted simplicity gate](self-hosted-simplicity-gate.md) before anything else starts? |
+| A7 | The component scope is buildable by the team that exists. | The surface is very large; a small team risks many half-built layers. | Use the [A7 scope discipline ledger](a7-scope-discipline-ledger.md): every component, dependency, protocol, surface, and feature addition must fit the current phase budget before the tiny tier broadens beyond error + OTLP + grouping + one bundle + CLI/API. |
 
 A1, A2, and A3 are the existential ones. A1 is product value; A2 is distribution;
 A3 is durability. Technical assumptions (A4–A7) are real but more testable and
@@ -138,6 +138,9 @@ If two or more trigger, reopen the verdict.
 - [A5 stack decision ledger](a5-stack-decision-ledger.md) — the umbrella result
   contract for turning storage, metadata, ingest-log, setup, and integration
   gates into explicit stack claim levels.
+- [A7 scope discipline ledger](a7-scope-discipline-ledger.md) — the scope
+  control contract for keeping Phase 1 buildable before frontend, MCP, fixer,
+  HA, and broad observability-suite work enter active scope.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) — the A1/A3
   value-and-moat claims.
 - [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)

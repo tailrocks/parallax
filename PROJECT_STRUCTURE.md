@@ -100,6 +100,7 @@ or CI contract yet.
 | `docs/research/deploy-change-and-issue-context.md` | Contract for release/deploy/code-change/work-item evidence: GitHub/Sentry/Linear/Jira sources, normalized nodes, edge-strength rules, missing evidence, privacy defaults, and proof gates. |
 | `docs/research/redaction-detector-toolchain.md` | A6 detector/toolchain decision: use a Rust default-deny runtime redaction engine, with Gitleaks, TruffleHog, detect-secrets, Presidio, and GitHub patterns as offline validators and red-team comparators. |
 | `docs/research/a6-redaction-red-team-ledger.md` | A6 result-ledger contract: red-team run manifests, seeded surface fixture rows, scanner comparisons, projection audits, usefulness audits, repair rows, claim levels, and freshness rules. |
+| `docs/research/a7-scope-discipline-ledger.md` | A7 result-ledger contract: phase budgets, component/dependency/feature rows, admission rules, warning triggers, and scope claim levels for keeping the tiny tier buildable. |
 
 ## Prompts
 
