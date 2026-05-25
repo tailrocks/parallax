@@ -704,6 +704,8 @@ candidate versions:
 - prompt-injection resistance;
 - evidence citation completeness;
 - "inconclusive" behavior when data is missing;
+- production database evidence safety, with the initial gate in
+  [Production database evidence access gate](production-database-evidence-access.md);
 - PR correctness rate by failure class.
 
 ### Agent And CLI Execution

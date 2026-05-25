@@ -347,6 +347,8 @@ it survives contact with real data:
   `agent_session` and `agent_action` nodes.
 - [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) — the
   default-on safety and overhead gate for CLI invocation nodes.
+- [Production database evidence access gate](production-database-evidence-access.md)
+  defines when database evidence nodes can enter agent-visible bundles.
 - [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
   — the additive frontend node types (`frontend_session`, `user_step`,
   `frontend_error`, `route_view`, `frontend_release`) and cross-tier edges.

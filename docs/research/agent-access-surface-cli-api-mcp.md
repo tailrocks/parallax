@@ -255,6 +255,8 @@ If these fail, keep CLI/API available and do not claim MCP safety.
   defines the safety posture and rejects generic production-control tools.
 - [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
   remains the gate for every agent-visible surface.
+- [Production database evidence access gate](production-database-evidence-access.md)
+  is the reason generic SQL tools stay out of the context server.
 - [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md)
   keeps MCP out of the tiny tier until the bundle and safety contracts are
   strong enough.

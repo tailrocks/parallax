@@ -54,6 +54,7 @@ idea becomes sharper.
 - [Agent session tracing across real tools](docs/research/agent-session-tracing-real-tools.md)
 - [CLI trace overhead and redaction](docs/research/cli-trace-overhead-and-redaction.md)
 - [Agent access surface: CLI, HTTP API, and MCP](docs/research/agent-access-surface-cli-api-mcp.md)
+- [Production database evidence access gate](docs/research/production-database-evidence-access.md)
 - [Agent observability technical review](docs/research/agent-observability-technical-review.md)
 - [Bundle-value evaluation](docs/research/bundle-value-evaluation.md)
 - [Bundle-value Phase 0 runbook](docs/research/bundle-value-phase0-runbook.md)

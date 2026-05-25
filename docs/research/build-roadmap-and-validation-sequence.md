@@ -135,6 +135,8 @@ Build only enough to generate the bundle automatically and repeatably:
   — the A4 strong-edge prevalence gate for Phase 1/2 real telemetry.
 - [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
   — the focused answer to the CLI-versus-MCP access-surface question.
+- [Production database evidence access gate](production-database-evidence-access.md)
+  — the safety gate before direct production database evidence enters bundles.
 - [Technical implementation concept](technical-implementation-concept.md) — the
   component detail each phase builds.
 - [Storage benchmark prototype](storage-benchmark-prototype.md),

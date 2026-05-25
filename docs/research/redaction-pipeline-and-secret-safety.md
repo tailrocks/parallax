@@ -43,7 +43,7 @@ results — to trust one regex pass.
 | CLI invocations | Secrets in argv/env/config paths, cwd/repo path leaks, stdout/stderr dumps, child process args. | Store command/subcommand and safe structural metadata; hash or redact argv/env by default; bounded redacted stdout/stderr excerpts only. |
 | Agent sessions | User prompts, model inputs/outputs, tool args, shell output, file diffs, MCP responses. | Capture hashes, refs, policy decisions, and bounded redacted excerpts; full prompts/tool output are opt-in raw refs with short-lived access. |
 | Attachments and raw evidence | Crash dumps, screenshots, replay blobs, log files, test artifacts, database exports. | Metadata-only v0; later storage requires type-specific scanner, size cap, and manual/project-level enablement. |
-| Database query output | Row values, customer data, credentials in config tables, export-like queries. | Read-only templates, row/column policy, aggregate/summarize first, never raw table dumps in agent bundles. |
+| Database query output | Row values, customer data, credentials in config tables, export-like queries. | Read-only templates, row/column policy, aggregate/summarize first, never raw table dumps in agent bundles; see the [production database evidence access gate](production-database-evidence-access.md). |
 
 ## Pipeline Decision
 
@@ -245,6 +245,9 @@ production secrets. Therefore:
   and overhead gates before default-on capture.
 - [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
   — redaction is a precondition for safe read-only agent context.
+- [Production database evidence access gate](production-database-evidence-access.md)
+  — turns database query output into a read-only, template-driven, redacted, and
+  audited evidence source.
 
 ## Bottom Line
 

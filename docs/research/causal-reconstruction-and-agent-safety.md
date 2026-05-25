@@ -401,7 +401,8 @@ Recommended policy:
 | Explainable output | Store query purpose and result summary, not only raw rows. |
 
 The agent should see summaries and bounded result sets unless a human explicitly
-opens a wider view.
+opens a wider view. The focused gate for this boundary is
+[Production database evidence access gate](production-database-evidence-access.md).
 
 ## MCP and API Safety
 
