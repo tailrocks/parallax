@@ -198,15 +198,20 @@ advantage becomes central and the choice flips — accepting the PromQL/OTLP lay
 as the cost of doing business. This is the single most important thing the larger
 benchmark must settle.
 
-**Update (Run 12, measured at 5M logs, both indexed):** condition (b) is now
-**partly confirmed** — ClickHouse full-text log search is **~18×** faster (7 ms vs
-130 ms; mature `text` posting-list index vs GreptimeDB `FULLTEXT`+DataFusion), and
-full scans ~4×. So if Parallax's mix is **log-search-dominated**, the flip is real
-and large. But the **selective keyed filter was a tie** (4 vs 5 ms), and Parallax's
-designed pattern is *anchored* bundle assembly (keyed lookups), not ad-hoc log
-search — so the verdict holds **conditional on that workload assumption**. Validate
-the assumption (what fraction of real Parallax queries are ad-hoc log search vs
-anchored retrieval) — it is now the load-bearing question, not the engine speed.
+**Update (Run 12, measured at 5M logs, both indexed; warm-re-verified Run 38):**
+condition (b) is now **partly confirmed** — ClickHouse full-text log search is **~18×**
+faster (7 ms vs 129 ms; mature `text` posting-list index vs GreptimeDB
+`FULLTEXT`+DataFusion `matches()`), and full scans ~4×. **Run 38 confirmed the ~18×
+holds *warm* — it is index-bound (real index-maturity gap), not a cold artifact** (the
+contrast: the scan-bound metric-agg's "~10×" *was* a cold artifact, corrected to ~2×
+warm in Run 37 — so the two big ClickHouse numbers were stress-tested and only the
+full-text one survives as a large *warm* gap). So if Parallax's mix is
+**log-search-dominated**, the flip is real and large. But the **selective keyed filter
+was a tie** (4 vs 5 ms), and Parallax's designed pattern is *anchored* bundle assembly
+(keyed lookups), not ad-hoc log search — so the verdict holds **conditional on that
+workload assumption**. Validate the assumption (what fraction of real Parallax queries
+are ad-hoc log search vs anchored retrieval) — it is the load-bearing question, not the
+engine speed.
 
 ## Open questions handed to the benchmark (veto power)
 

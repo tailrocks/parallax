@@ -1159,6 +1159,36 @@ pass 42) but by **~2× warm**, materially narrower than stated — slightly stre
 GreptimeDB's position (does not flip the verdict). Cold-regime agg gap (larger) ties to
 `caching-and-cold-warm.md`; the precise cold number is owed to the cold-tier harness.
 
+### Run 38 — 2026-05-25 — Re-verify Run 12 full-text ~18× → HOLDS warm (unlike the agg)
+
+Companion to Run 37: applied the same warm-vs-cold scrutiny to the **other** load-bearing
+ClickHouse win — the ~18× full-text gap (the verdict's flip-trigger). Re-ran on the
+intact `logs_b1` (5M, both text-indexed), warm. Versions unchanged.
+
+| | ClickHouse (`hasToken`) | GreptimeDB (`matches`) | ratio |
+| --- | --- | --- | --- |
+| Run 12 (pass 21) | 7 ms | 130 ms | ~18× |
+| **Run 38 (warm, min of 3–4)** | **7 ms** | **129 ms** (server `execution_time_ms`) | **~18×** |
+
+Parity preserved (n = **698,955** both). **The ~18× HOLDS warm — it was *not*
+cold-inflated**, unlike the metric-agg (Run 37: 10× cold → 2× warm).
+
+**Why the two re-verifications differ — and both are now trustworthy:**
+
+- **Metric-agg (Run 11/37) is *scan-bound*** — a full scan+aggregate of 8M rows. Cold
+  caches → full SST scan/decode (the 638 ms/10×); warm → ~2×. **Cold-sensitive.**
+- **Full-text (Run 12/38) is *index-bound*** — both use a small text index (CH `text`
+  posting-list vs GT Puffin/tantivy + DataFusion `matches()`); the index stays warm, so
+  the gap is **execution/index-maturity**, not cold scan. CH's vectorized posting-list
+  `hasToken` vs GT's tantivy-probe→DataFusion-`matches()` row eval → **~18× warm, real
+  and stable.**
+
+So the corrected, coherent picture of ClickHouse's warm wins: **full-text log search
+~18× (index maturity, real, stable)**; **SQL scan-aggregation ~2× warm (larger cold)**;
+selective keyed filter a tie; anchored bundle not latency-bound. **The verdict's
+flip-trigger (log-search-dominated mix → ClickHouse wins decisively) STANDS** —
+confirmed warm. No correction needed (unlike Run 37); confirmation strengthens it.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
