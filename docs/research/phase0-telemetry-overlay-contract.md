@@ -21,6 +21,10 @@ This note defines the contract:
 
 The goal is not to simulate production perfectly. The goal is to test whether a
 bounded, structured bundle beats a raw dump under honest conditions.
+The eval result must then be published through the
+[A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
+so the run has model snapshots, contamination tiers, result rows, and an expiry
+date.
 
 ## Current Primary-Source Checks
 
@@ -271,6 +275,9 @@ Failure consequences:
   are eligible before overlay generation.
 - [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) defines the
   first run matrix, scoring, and decision rules.
+- [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
+  defines how overlay hashes, no-cheat gates, and contamination labels are
+  carried into the public A1 result artifact.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines Arm C
   once the overlay rows are transformed into nodes and edges.
 - [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)

@@ -25,6 +25,9 @@ The exact telemetry-overlay artifact contract is specified in
 [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md); a
 task that fails its no-cheat or evidence-parity gates can debug the harness but
 cannot count toward the A1 decision.
+The public result ledger, contamination tiers, model snapshot, and claim expiry
+rules are specified in
+[A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md).
 
 This is not the final statistically powered benchmark. It is the cheapest way to
 find out whether the central product claim is promising enough to keep building.
@@ -108,6 +111,8 @@ Pre-register the run before looking at results:
 - scoring rubric;
 - grader identities or judging model;
 - planned statistical comparison.
+- result-ledger claim level and expiration policy from the
+  [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md).
 
 Minimum Phase 0 matrix:
 
@@ -201,12 +206,18 @@ Store each task/run under a future results area such as:
 ```text
 docs/research/bundle-value-eval/
   manifest.md
+  preregistration.md
+  result-ledger.md
   tasks/<task_id>/task.md
   tasks/<task_id>/arm-a-context.md
   tasks/<task_id>/arm-b-raw-dump.md
   tasks/<task_id>/arm-c-bundle.json
   tasks/<task_id>/arm-c-bundle.md
   tasks/<task_id>/grader.md
+  runs/<run_id>/run-manifest.json
+  runs/<run_id>/arm-results.jsonl
+  runs/<run_id>/statistics.md
+  runs/<run_id>/contamination-checks.md
   runs/<run_id>/patch.diff
   runs/<run_id>/transcript.ref
   results.md
@@ -226,6 +237,9 @@ artifacts behind the same raw-access policy described in
 - [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md)
   defines the normalized overlay rows and raw-vs-bundle parity checks this
   runbook depends on.
+- [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
+  defines the committed result ledger, model snapshot, contamination tiers, and
+  refresh triggers that keep A1 claims current.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
   artifact Arm C must use.
 - [Risks and bear case](risks-and-bear-case.md) names A1 as existential; this is

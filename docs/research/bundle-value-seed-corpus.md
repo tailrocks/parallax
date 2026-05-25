@@ -172,6 +172,11 @@ The next A1 step is not "build storage." It is:
 5. Only then decide whether automated bundle generation deserves Phase 1 build
    work.
 
+When the run happens, publish its results through the
+[A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
+so the task mix, contamination tier, model snapshot, and claim expiry are
+auditable.
+
 If no 12-task seed can be assembled without cheating, that is itself a negative
 signal: Parallax's strongest claim may depend on a dataset that does not yet
 exist. In that case, the correct research move is to build and publish the
@@ -184,6 +189,9 @@ bundle lift.
   this note defines the first corpus.
 - [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) defines arms,
   run protocol, and scoring.
+- [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
+  defines how task-source freshness and contamination tiers are reported in the
+  eventual result artifact.
 - [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md)
   defines the overlay artifact set, provenance labels, no-cheat rules, and
   parity gates required before a task can count toward A1.

@@ -1,0 +1,279 @@
+# A1 Eval Result Ledger And Model Refresh
+
+<!-- markdownlint-disable MD013 -->
+
+Research date: 2026-05-25
+
+## Purpose
+
+The A1 bundle-value gate now has a task-source plan, a Phase 0 runbook, and a
+telemetry-overlay contract. The missing piece is the public result artifact:
+
+> A1 is not validated by "we ran the eval." It is validated by a committed,
+> reproducible result ledger that records the task set, model snapshots, agent
+> scaffold, evidence hashes, contamination checks, per-arm outcomes, and expiry
+> conditions for the claim.
+
+This note defines that ledger and the refresh policy. Without it, a Parallax
+bundle win can be stale, cherry-picked, contaminated, scaffold-specific, or
+unverifiable.
+
+## Current Source Posture
+
+Outside sources checked for this pass:
+
+- OpenAI stopped reporting SWE-bench Verified for frontier launches after
+  finding material test-design issues and contamination risk; it recommends
+  SWE-bench Pro while investing in newer uncontaminated evaluations
+  ([OpenAI](https://openai.com/index/why-we-no-longer-evaluate-swe-bench-verified/)).
+- SWE-bench-Live is explicitly designed around recent issue-resolution tasks and
+  says it plans monthly dataset updates for fresher, more contamination-resistant
+  evaluation ([SWE-bench-Live](https://swe-bench-live.github.io/)).
+- The official SWE-bench leaderboard reports resolved rate, cost, step limits,
+  benchmark variants, model release date, and scaffold filtering, which is a
+  useful result-shape reference even though SWE-bench itself lacks telemetry
+  ([SWE-bench](https://www.swebench.com/)).
+- SWE-bench Pro adds harder, long-horizon tasks and includes held-out and
+  commercial splits; it is a better current coding benchmark reference but still
+  does not isolate runtime telemetry or evidence-bundle value
+  ([Scale Labs](https://labs.scale.com/papers/swe_bench_pro)).
+- Terminal-Bench publishes agent-terminal tasks and includes an explicit
+  training-contamination canary on the public site, a good reminder that
+  benchmark artifacts need leakage checks
+  ([Terminal-Bench](https://www.tbench.ai/)).
+
+Internal sources:
+
+- [Bundle-value evaluation](bundle-value-evaluation.md) defines the A/B/C/D
+  arms and says C must beat B, not only repo-only A.
+- [Bundle-value seed corpus](bundle-value-seed-corpus.md) defines task
+  eligibility and the initial seed mix.
+- [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) defines the
+  first run matrix and scoring.
+- [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md)
+  defines the frozen evidence bytes used by raw-dump and bundle arms.
+
+## Why A1 Needs A Result Ledger
+
+The A1 eval has more ways to produce false confidence than a normal benchmark:
+
+| Failure mode | How it misleads Parallax | Ledger control |
+| --- | --- | --- |
+| Public task contamination | A model may already know an issue, fix, release note, or gold patch. | Record task freshness tier, canaries, contamination probes, and source dates. |
+| Model drift | A bundle win can disappear when newer models handle raw context better. | Attach an expiry date and rerun triggers to every A1 claim. |
+| Scaffold variance | The agent wrapper, tool permissions, step limit, or internet access may dominate the result. | Snapshot the exact scaffold, tool budget, model IDs, and run parameters. |
+| Evidence asymmetry | Arm C can win because it gets curated evidence Arm B never had. | Link every result row to overlay hashes and evidence-parity gates. |
+| Cherry-picked tasks or seeds | A handful of lucky runs can be reported as a product proof. | Commit pre-registration, all task outcomes, all seeds, and exclusions. |
+| Result-only summary | Future readers cannot audit the claim from the repo. | Commit manifests, per-arm rows, scorecards, statistical summaries, and hashes. |
+
+## Artifact Boundary
+
+When A1 runs, create a public result area under the existing future layout:
+
+```text
+docs/research/bundle-value-eval/
+  manifest.md
+  preregistration.md
+  result-ledger.md
+  runs/<run_id>/
+    run-manifest.json
+    task-set.json
+    model-snapshots.json
+    arm-results.jsonl
+    scorecards.md
+    statistics.md
+    contamination-checks.md
+    hashes.sha256
+    private-artifacts.sha256
+```
+
+| Artifact | Commit? | Purpose |
+| --- | --- | --- |
+| `manifest.md` | Yes | Human entry point for the whole A1 result set. |
+| `preregistration.md` | Yes | Task list, arms, model families, budgets, scoring, and decision rule before results are inspected. |
+| `result-ledger.md` | Yes | Current gate status, claim level, expiry date, and links to all run IDs. |
+| `run-manifest.json` | Yes | Exact run configuration, model snapshots, scaffold commit, task-set hash, bundle template version, redaction policy, and token ceilings. |
+| `task-set.json` | Yes | Public task IDs, source, freshness tier, language, provenance, and inclusion/exclusion reason. |
+| `model-snapshots.json` | Yes | Exact provider model IDs and API parameters used for that run. |
+| `arm-results.jsonl` | Yes | One row per task/arm/model/seed outcome. |
+| `scorecards.md` | Yes | Blind grading notes, root-cause accuracy, evidence-grounding counts, and patch-quality notes. |
+| `statistics.md` | Yes | Paired C-vs-B/C-vs-A deltas, confidence intervals where possible, token/time deltas, and sensitivity checks. |
+| `contamination-checks.md` | Yes | Canary status, publicness tier, freshness checks, and any contamination probes. |
+| `private-artifacts.sha256` | Yes | Hashes of transcripts, raw telemetry, gold patches, and hidden verifiers kept outside the repo. |
+
+Raw private telemetry, full agent transcripts containing secrets, and gold
+patch/test-patch contents stay outside the repo unless explicitly redacted.
+
+## Run Manifest Schema
+
+Each A1 run needs a machine-readable manifest. Model names should not be treated
+as durable prose; exact model IDs live here because they change over time.
+
+```json
+{
+  "run_id": "a1-phase0-2026-05-25-r001",
+  "research_date": "2026-05-25",
+  "claim_expires_after": "2026-08-23",
+  "repo_commit": "commit-sha-that-built-the-artifacts",
+  "preregistered_at": "2026-05-25T00:00:00Z",
+  "task_set_hash": "sha256:...",
+  "overlay_contract_version": "phase0-overlay-v1",
+  "bundle_template_version": "bundle-v0",
+  "redaction_policy_version": "phase0-redaction-v1",
+  "agent_scaffold": {
+    "name": "codex|claude-code|openhands|swe-agent|custom",
+    "version_or_commit": "...",
+    "internet_access": false,
+    "tool_permissions": ["shell", "edit", "test"],
+    "max_steps": 100,
+    "max_wall_clock_minutes": 45
+  },
+  "models": [
+    {
+      "provider": "provider-name",
+      "model_id": "exact-api-model-id",
+      "model_family": "frontier-a",
+      "api_version": "if applicable",
+      "temperature": 0,
+      "top_p": 1,
+      "context_window_observed": 0,
+      "pricing_source_checked_at": "2026-05-25T00:00:00Z"
+    }
+  ],
+  "arms": ["A_repo_only", "B_raw_dump", "C_parallax_bundle", "D_bundle_no_hypotheses"],
+  "seed_count": 2,
+  "token_ceiling_per_context": 0,
+  "pre_registered_decision_rule": "C beats B by >=10pp, no higher median token cost, lower unsupported-claim rate",
+  "rerun_triggers": [
+    "new frontier model generation",
+    "bundle template material change",
+    "task-set contamination finding",
+    "claim age > 90 days"
+  ]
+}
+```
+
+## Arm Result Row Schema
+
+`arm-results.jsonl` is the audit spine. Each row represents exactly one
+task/arm/model/seed attempt:
+
+```json
+{
+  "run_id": "a1-phase0-2026-05-25-r001",
+  "task_id": "swe-live-rust-example",
+  "task_source": "SWE-bench-Live/MultiLang",
+  "contamination_tier": "T1_fresh_public",
+  "telemetry_provenance": ["observed_from_harness", "reconstructed_from_test_output"],
+  "arm": "C_parallax_bundle",
+  "model_id": "exact-api-model-id",
+  "model_family": "frontier-a",
+  "seed": 1,
+  "context_hash": "sha256:...",
+  "normalized_overlay_hash": "sha256:...",
+  "evidence_parity_passed": true,
+  "gold_isolation_passed": true,
+  "redaction_passed": true,
+  "resolved": false,
+  "root_cause_grade": "correct|partial|wrong|unsupported|not_applicable",
+  "unsupported_claim_count": 0,
+  "evidence_ref_count": 0,
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "tool_calls": 0,
+  "wall_clock_seconds": 0,
+  "patch_hash": "sha256:...",
+  "grader_ref": "scorecards.md#task-id",
+  "failure_class": "passed|wrong_fix|no_patch|timeout|tool_error|unsafe_patch|grader_error"
+}
+```
+
+No result row counts toward A1 if `evidence_parity_passed`,
+`gold_isolation_passed`, or `redaction_passed` is false.
+
+## Contamination Tiers
+
+Report task contamination risk explicitly:
+
+| Tier | Description | Can support A1 gate? |
+| --- | --- | --- |
+| T0 old public | Historical public benchmark task or widely discussed issue. | Harness debugging only. |
+| T1 fresh public | Recent public issue-resolution task, preferably from a live benchmark update. | Yes, but not alone. |
+| T2 held-out or private audited | Operator/private or partner task with public redacted hashes and reviewer audit. | Yes; strong but watch n=1 bias. |
+| T3 post-snapshot synthetic fault | Fault-injected reference task authored after model snapshot, with hidden verifier. | Yes for contamination resistance; weaker for wild-bug realism. |
+| T4 production telemetry | Real incident with known fix and redacted, auditable evidence bundle. | Strongest for production claim if privacy permits audit. |
+
+A public A1 pass should not rely on one tier. The first credible pass needs:
+
+- at least one fresh public or live source;
+- at least one synthetic or private/held-out source that post-dates the model
+  snapshot or is inaccessible to model training;
+- no single task source contributing more than half of the positive C-vs-B lift.
+
+## Claim Levels
+
+Use these labels in `result-ledger.md`:
+
+| Claim level | Required evidence | Allowed wording |
+| --- | --- | --- |
+| `harness_debug` | Any incomplete or T0-heavy run. | "The harness works/does not work." |
+| `provisional_signal` | 10-16 tasks, at least one model family, all no-cheat gates pass. | "Bundle value is promising enough for more research." |
+| `a1_gate_pass` | 12+ tasks, at least two model families, mixed contamination tiers, C beats B per pre-registered rule, and no redaction/gold/parity failures. | "A1 currently passes under the stated eval conditions." |
+| `production_claim` | A1 gate pass plus real or fault-injected production-shaped telemetry reproduces the same direction. | "Bundles improved fixes on production-shaped evidence under these conditions." |
+
+Never write "Parallax improves production fixes" from reconstructed public
+benchmark overlays alone.
+
+## Refresh Policy
+
+Every A1 result has an expiration date. Default: **90 days from run date**.
+
+Rerun earlier when any of these happen:
+
+- a new frontier model generation or major coding-agent release is used in
+  product positioning;
+- any provider deprecates, aliases, or materially updates a model used in the
+  last A1 pass;
+- OpenAI, SWE-bench, SWE-bench-Live, Terminal-Bench, or another primary source
+  reports contamination or scoring issues affecting the task family used;
+- the evidence-bundle schema, hypothesis block, truncation rule, redaction
+  policy, or agent scaffold changes materially;
+- more than 25 percent of the task set changes;
+- A2 interviews produce real incidents that can replace synthetic/public tasks;
+- a competitor publishes a credible telemetry-augmented agent eval.
+
+Expired results still matter historically, but the GO verdict should treat A1 as
+unproven again until a current run exists.
+
+## Statistical And Reporting Rules
+
+Minimum `statistics.md` contents:
+
+- C-vs-B resolved-rate delta by model family;
+- C-vs-A resolved-rate delta by model family;
+- median token and wall-clock delta by arm;
+- unsupported-claim-rate delta;
+- per-task paired table;
+- sensitivity excluding T2/T4 private tasks;
+- sensitivity excluding the single largest C-vs-B contributor;
+- bootstrap confidence interval over tasks where sample size permits;
+- all discarded tasks and why they were discarded.
+
+False-positive triggers:
+
+| Trigger | Consequence |
+| --- | --- |
+| C wins only because it used more context than B | Do not count as bundle value; report as more-context value. |
+| C evidence includes rows or facts not present in B's source overlay | Discard task for A1. |
+| One task accounts for most C-vs-B lift | Downgrade to provisional signal. |
+| One model family wins while another loses | Do not claim model-general A1 pass. |
+| Unsupported-claim rate rises in C | Treat as safety regression even if tests pass. |
+| Any gold patch/test-patch leakage appears in agent context | Discard task and rotate canaries. |
+
+## Bottom Line
+
+A1 is a moving target. Frontier models, coding-agent scaffolds, public benchmark
+sets, and contamination findings will keep changing. The only durable way to
+use A1 as a GO gate is to treat every eval result as a versioned, expiring
+research artifact with exact model snapshots, task provenance, evidence hashes,
+and public failure rows. If the ledger is missing or expired, A1 is not proven.

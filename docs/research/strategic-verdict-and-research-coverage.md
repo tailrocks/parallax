@@ -106,7 +106,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Agent-observability technical references | [Agent observability technical review](agent-observability-technical-review.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md) |
 | Frontend collection and cross-tier correlation | [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md), [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Storage benchmark prototype](storage-benchmark-prototype.md) |
 | Redaction/privacy/agent exposure safety | [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md), [Redaction detector toolchain](redaction-detector-toolchain.md), [Production database evidence access gate](production-database-evidence-access.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md), [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md), [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) |
-| Evidence bundle and open schema | [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md), [Bundle-value evaluation](bundle-value-evaluation.md), [Bundle-value seed corpus](bundle-value-seed-corpus.md), [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md), [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) |
+| Evidence bundle and open schema | [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md), [Bundle-value evaluation](bundle-value-evaluation.md), [Bundle-value seed corpus](bundle-value-seed-corpus.md), [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md), [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md), [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md) |
 | Core architecture | [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Technical implementation concept](technical-implementation-concept.md) |
 | CLI/API/MCP philosophy | [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md), [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md), [Technical implementation concept](technical-implementation-concept.md) |
 | Critical strategic questions | [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md), this document |
@@ -171,8 +171,10 @@ Technical proof gates:
    [Bundle-value seed corpus](bundle-value-seed-corpus.md), the no-cheat
    telemetry overlay specified in
    [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md),
-   and the first runnable pass specified in
-   [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md).
+   the first runnable pass specified in
+   [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md), and the
+   claim ledger specified in
+   [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md).
 9. Redaction quality for logs, events, attachments, database query output, and
    agent prompt bundles; the [redaction pipeline](redaction-pipeline-and-secret-safety.md)
    and [redaction detector toolchain](redaction-detector-toolchain.md) have veto

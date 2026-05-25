@@ -48,7 +48,9 @@ assumption. Failing a gate sends you back, not forward.
   with operator/public incidents only when they pass the same gates. Generate
   those overlays through the
   [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md) so
-  raw-dump and bundle arms share the same frozen evidence.
+  raw-dump and bundle arms share the same frozen evidence, then publish results
+  through the
+  [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md).
 - Run the bundle-value eval (arms A/B/C) with these manual bundles, ≥2 models.
 - Interview ~20 target teams across the A2 slices: would they deploy? would they
   pay or sustain it? what is their actual debugging pain? Use the
@@ -142,6 +144,9 @@ Build only enough to generate the bundle automatically and repeatably:
 - [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md) —
   the no-cheat artifact contract for the telemetry overlay used by that paired
   run.
+- [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
+  — the public A1 result artifact and refresh policy for avoiding stale or
+  contaminated bundle-value claims.
 - [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
   — the A2 demand-validation runbook for Phase 0.
 - [A2 interview evidence ledger](a2-interview-evidence-ledger.md) — the
