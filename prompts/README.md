@@ -109,22 +109,33 @@ designed to keep going rather than reach a fixed deliverable.
 
 #### How often to trigger it
 
-Default to **self-paced (no interval)**. This loop watches nothing external — the
-source code and releases of GreptimeDB and ClickHouse change on a weeks horizon,
-not minute to minute — so a polling interval buys no fresher data. Frequency here
-only controls review cadence and token spend, not freshness. Back-to-back passes
-accumulate depth fastest, and each pass already commits a durable note, so
-progress is saved continuously and a long unattended run loses nothing if the
-session ends.
+Use a **fixed interval** for this loop. Despite the general self-paced guidance
+above, self-paced (`/loop` with no interval) has been observed to stop after a
+while: self-paced mode relies on the running agent re-scheduling itself each pass,
+so if a pass judges its work "done" it may not continue. A fixed interval re-fires
+on the harness timer regardless of that judgment — that is what actually delivers
+never-stop behavior, so prefer it here.
 
-Add an interval only for human reasons, and keep it long:
+The interval is not about data freshness. This loop watches nothing external — the
+source and releases of GreptimeDB and ClickHouse move on a weeks horizon, not
+minute to minute — so no interval makes the data newer. The interval is purely the
+re-trigger beat. Pick one a little longer than a single deep pass takes
+(clone/read source, verify claims, write and commit a note) so passes don't pile
+up:
 
-- `/loop 1h …` or `/loop 4h …` if you want checkpoints to review each pass before
-  the next, or to spread token spend across the day.
-- Do **not** use short intervals (seconds/minutes): one deep subsystem pass —
-  clone/read source, verify claims, write and commit a note — takes longer than
-  that, so a short interval just runs effectively back-to-back anyway and cannot
-  make the source any newer.
+```text
+/loop 30m Follow prompts/greptimedb-vs-clickhouse-internals.md as the active
+research brief. Never stop — each pass, deepen one subsystem against the source
+code, verify performance claims, write or update one focused note under
+docs/research/greptimedb-vs-clickhouse/, commit and push it, then continue to the
+next gap. Do not declare the comparison done.
+```
+
+- `30m` is a good default; use `1h` to spread token spend, or `15m` to push harder.
+- Avoid sub-pass intervals (a few minutes): a deep pass outlasts them, so fires
+  just queue — no benefit, and nothing is fresher.
+- Each fire re-reads the brief and the current `docs/research/greptimedb-vs-clickhouse/`
+  state and continues from the next gap, so a fresh re-trigger loses no progress.
 - Re-pin versions and re-check public claims about every 1–2 weeks (or when either
   project ships a new stable release); that is the only cadence on which the
   underlying facts actually move.
