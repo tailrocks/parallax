@@ -34,6 +34,7 @@ not inferred from this gate alone.
 | [OWASP SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html) | OWASP favors parameterized queries, safely implemented stored procedures, allow-list validation for identifiers, and least privilege. Parallax query templates should follow this rather than exposing free-form SQL. |
 | [OWASP Top 10 for LLM Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/) | Prompt injection, sensitive information disclosure, insecure plugin design, and excessive agency directly apply when an agent can request database evidence. |
 | [NSA MCP security design considerations](https://www.nsa.gov/Portals/75/documents/Cybersecurity/CSI_MCP_SECURITY.pdf?ver=bmgiSbNQLP6Z_GiWtRt6bg%3D%3D) | NSA's May 2026 guidance warns that MCP-style agent tooling depends on implementation discipline around dynamic tool invocation, implicit trust, token/session handling, and context sharing. Database evidence tools need stronger constraints than generic observability queries. |
+| [MCP resources](https://modelcontextprotocol.io/specification/2025-11-25/server/resources) and [MCP tools](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) `2025-11-25` | Resources are application-controlled context and resource templates can expose parameterized URI spaces. Tools can return `structuredContent` validated by `outputSchema`, plus optional resource links or embedded resources. Database evidence should use schema-bound tool output, not MCP resource reads that can be auto-attached or retained by clients. |
 
 ## Decision
 
@@ -95,6 +96,7 @@ Direct database evidence access must satisfy all of these:
 | Redaction | Query output passes the normal Parallax redaction pipeline and includes a redaction report. |
 | Source-field policy | Synthetic, benchmark, evaluation, or corpus fixtures prove provenance/source status before they influence DB evidence claims. |
 | Projection safety | Agent-visible JSON/Markdown carries policy status and missing-evidence flags, not dereferenced raw rows, query parameters, raw query text, or plan text. |
+| MCP resource boundary | Do not expose row values, query text, parameters, plan text, or raw refs through MCP resources, resource templates, resource links, or embedded resources by default. |
 | Audit | Every request records actor, tool, template id, parameters hash, result shape, redaction policy, bundle id, and denied/allowed decision. |
 | No mutation | DML, DDL, locking reads, copy/export, functions with side effects, and maintenance commands are rejected before reaching the database. |
 
@@ -160,7 +162,8 @@ The default agent-visible surface should be:
 | --- | --- | --- |
 | `parallax db evidence <issue_id>` | Yes, after Tier 2 gate | Runs approved templates selected by the bundle builder. |
 | `parallax db template run <template_id>` | Yes, scoped | Requires typed parameters and project/environment scope. |
-| `parallax_db_evidence` MCP tool | Yes, read-only | Returns aggregate/sanitized evidence plus refs. |
+| `parallax_db_evidence` MCP tool | Yes, read-only | Returns aggregate/sanitized `structuredContent` validated against `outputSchema`, plus refs only. |
+| `db://...` MCP resources or resource templates | No by default | Metadata-only indexes may be considered later, but row/query/parameter/plan content must not be exposed as resources. |
 | `parallax_db_raw_ref_read` | Rare | Requires read-sensitive scope and human approval. |
 | `run_sql` | No | Rejected in the Parallax context server. |
 | `db_mutate`, `migration_run`, `rollback`, `grant`, `copy`, `dump` | No | Out of scope for the evidence engine. |
@@ -190,8 +193,10 @@ Add a database evidence node only after the output is redacted:
   "redaction_report_ref": "redact_456",
   "source_field_policy_ref": "source_policy_789",
   "raw_ref_policy": "deny_dereference_by_default",
+  "mcp_resource_policy": "no_db_rows_query_text_parameters_or_plans_as_resources",
   "query_text_visible": false,
   "query_parameter_values_visible": false,
+  "mcp_resource_visible": false,
   "raw_ref": null
 }
 ```
@@ -221,6 +226,7 @@ Direct database evidence access passes only if all checks pass:
 | Redaction proof | Seeded secrets and PII in table rows, parameters, query text, errors, and plan output do not appear in agent-visible JSON or Markdown. |
 | Source-field proof | Synthetic, benchmark, evaluation, and corpus fixture rows pass source-field policy before projection claims pass; direct telemetry/template rows record an explicit not-applicable reason when no mixed source is present. |
 | Projection proof | CLI, HTTP, and MCP projections carry redaction and source-field policy status and do not dereference raw rows, query text, query parameters, plan text, transcripts, or incident-note refs by default. |
+| MCP resource proof | MCP `resources/list`, `resources/read`, resource templates, tool resource links, and embedded resources cannot expose raw rows, query text, parameters, plan text, or DB raw refs in default agent-visible paths. |
 | Audit proof | Allowed and denied attempts emit audit rows linked to actor, investigation, template id, bundle id, and policy version. |
 | RLS proof | Tenant/project scoping works for positive and negative fixtures; owner/superuser/BYPASSRLS roles are rejected. |
 | Prompt-injection proof | Malicious issue text, log lines, table names, and row values cannot change template choice, parameters, scope, or output policy. |
@@ -237,6 +243,8 @@ If the gate fails:
 - rely on OTel DB spans, errors, migrations, and deploy refs;
 - keep query text, query parameters, raw rows, and plan text out of
   agent-visible bundles unless a narrower policy explicitly passes;
+- keep database evidence out of MCP resources/resource templates and deliver
+  only schema-bound `structuredContent` for allowed tool calls;
 - expose database evidence as "missing" in bundles;
 - keep direct DB queries human-only outside Parallax;
 - do not market database-backed autonomous debugging.

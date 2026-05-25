@@ -32,7 +32,7 @@ Central rule:
 > No agent-visible direct database evidence claim until Tier 2 template fixtures
 > prove least privilege, RLS/view scoping, read-only runtime, parser/allowlist,
 > limits, redaction, source-field policy, projection raw-ref denial, audit,
-> prompt-injection resistance, and failure wording.
+> MCP resource denial, prompt-injection resistance, and failure wording.
 
 ## Current Source Snapshot
 
@@ -47,6 +47,8 @@ Central rule:
 | [OWASP SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html) | Templates must use typed parameters, allow-listed identifiers, and least privilege; free-form SQL cannot count as safe database evidence. |
 | [OWASP Top 10 for LLM Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/) | Prompt injection, sensitive information disclosure, insecure tool design, and excessive agency are direct fixture categories for database evidence. |
 | [NSA MCP security design considerations](https://www.nsa.gov/Portals/75/documents/Cybersecurity/CSI_MCP_SECURITY.pdf?ver=bmgiSbNQLP6Z_GiWtRt6bg%3D%3D) | Dynamic tool invocation, implicit trust, token/session handling, context sharing, and tool-description risk make direct DB templates stricter than ordinary evidence-bundle projection. |
+| [MCP resources](https://modelcontextprotocol.io/specification/2025-11-25/server/resources) and [MCP tools](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) `2025-11-25` | Resources and resource templates are application-controlled context surfaces, while tools can return schema-bound `structuredContent`, optional resource links, and embedded resources. DB evidence must prove the resource path cannot bypass the stricter tool-output projection path. |
+| [Codex MCP docs](https://developers.openai.com/codex/mcp) and [Claude Code MCP docs](https://code.claude.com/docs/en/mcp) | Current clients expose MCP configuration, auth/header sources, output limits, prompts/resources, elicitation, and server/client modes differently. A safe DB-evidence result cannot assume all clients treat resources, links, tool output, or retention the same way. |
 
 ## Claim Levels
 
@@ -61,8 +63,9 @@ Central rule:
 | `redacted_db_output` | Direct query results can pass the redaction gate. | Seeded PII/secrets in rows, parameters, errors, and plan text are absent from JSON and Markdown output. |
 | `audited_db_evidence` | Allowed and denied attempts are traceable. | Audit rows link actor, principal, investigation, template id, role, parameter hash, policy versions, bundle id, and allow/deny decision. |
 | `tier2_template_safe` | Direct read-only templates pass the full Tier 2 gate for one tested policy set. | Parser, privilege, runtime, limits, RLS/view, redaction, prompt-injection, audit, and failure-wording fixtures all pass. |
-| `projection_safe` | Agent-visible JSON and Markdown carry redaction reports, source-field policy status, missing-evidence flags, and no raw row/query/parameter dereference. | Bundle projection rows pass for the tested templates and surfaces. |
-| `agent_visible_db_evidence` | Agent-visible bundles may include direct DB evidence for the tested templates. | `tier2_template_safe` plus CLI/HTTP/MCP projection-equivalence, source-field, and bundle-redaction/projection checks pass. |
+| `mcp_resource_denied` | MCP resources/resource templates/resource links cannot bypass the database projection policy. | Resource-list/read/template/link/embedded-resource fixtures expose no raw rows, query text, parameters, plan text, or DB raw refs. |
+| `projection_safe` | Agent-visible JSON, Markdown, CLI, HTTP, and MCP tool output carry redaction reports, source-field policy status, missing-evidence flags, and no raw row/query/parameter/resource dereference. | Bundle projection rows pass for the tested templates and surfaces. |
+| `agent_visible_db_evidence` | Agent-visible bundles may include direct DB evidence for the tested templates. | `tier2_template_safe` plus CLI/HTTP/MCP projection-equivalence, MCP resource denial, source-field, and bundle-redaction/projection checks pass. |
 | `claim_expired` | A prior claim is stale. | Refresh trigger fired or max age elapsed. |
 | `claim_failed` | A required fixture failed. | Any write/DDL/lock/export succeeds, any secret leaks, any scope bypass succeeds, or unsafe wording reaches a bundle. |
 
@@ -91,6 +94,7 @@ docs/research/production-database-evidence-runs/<run_id>/redaction-results.jsonl
 docs/research/production-database-evidence-runs/<run_id>/source-field-policy-results.jsonl
 docs/research/production-database-evidence-runs/<run_id>/prompt-injection-results.jsonl
 docs/research/production-database-evidence-runs/<run_id>/audit-results.jsonl
+docs/research/production-database-evidence-runs/<run_id>/mcp-resource-results.jsonl
 docs/research/production-database-evidence-runs/<run_id>/raw-ref-manifest.jsonl
 docs/research/production-database-evidence-runs/<run_id>/bundle-projection-results.jsonl
 docs/research/production-database-evidence-runs/<run_id>/claim-ledger.jsonl
@@ -121,11 +125,12 @@ comparable:
     "redaction_policy_version": "a6-default-deny-vN",
     "source_field_policy_version": "phase0-source-field-policy-vN",
     "template_policy_version": "db-template-vN",
+    "mcp_resource_policy_version": "db-mcp-resource-deny-vN",
     "audit_schema_version": "audit-vN",
     "bundle_schema_version": "0.1.0",
     "projection_schema_version": "db-evidence-projection-vN",
     "otel_db_semconv_version": "1.41.0",
-    "raw_ref_policy": "raw_rows_query_parameters_and_plans_not_agent_visible_by_default"
+    "raw_ref_policy": "raw_rows_query_parameters_plans_and_db_resources_not_agent_visible_by_default"
   },
   "template_manifest_hashes": ["sha256:<hex>"],
   "fixture_hashes": {
@@ -311,6 +316,30 @@ Bundle projection row:
   "raw_row_values_visible": false,
   "query_parameter_values_visible": false,
   "plan_text_visible": false,
+  "mcp_structured_content_valid": true,
+  "mcp_resource_link_count": 0,
+  "mcp_embedded_resource_count": 0,
+  "result": "pass"
+}
+```
+
+MCP resource result row:
+
+```json
+{
+  "check": "mcp_resource_denial",
+  "surface": "resources_list|resources_read|resource_template|tool_resource_link|embedded_resource",
+  "client": "codex|claude_code|generic_mcp",
+  "template_id": "db.error_context.v1",
+  "resource_uri": "db://prod/app_db_errors/tenant_a",
+  "listed": false,
+  "read_allowed": false,
+  "raw_row_values_visible": false,
+  "query_text_visible": false,
+  "query_parameter_values_visible": false,
+  "plan_text_visible": false,
+  "raw_ref_visible": false,
+  "structured_content_equivalent_hash": "sha256:<hex>|null",
   "result": "pass"
 }
 ```
@@ -351,6 +380,14 @@ Claim ledger row:
   explicitly represented as `db_evidence_missing`.
 - Agent-visible projections must not dereference raw row, raw query, raw
   parameter, plan-text, transcript, or incident-note refs by default.
+- Direct database evidence must be delivered through canonical bundle fields or
+  MCP tool `structuredContent` that validates against an `outputSchema`.
+- No DB row values, query text, parameter values, plan text, or raw DB refs may
+  appear in MCP `resources/list`, `resources/read`, resource templates, tool
+  resource links, or embedded resources by default.
+- Client-specific MCP rows must record Codex/Claude/generic client settings
+  that affect resource reads, auth/header sources, output limits, elicitation,
+  and retention before cross-client DB-evidence wording can pass.
 - DB evidence can support or contradict hypotheses; it does not become a root
   cause by itself.
 - A pass is scoped to the database system/version, role, templates, policies,
@@ -395,6 +432,7 @@ Avoid:
 
 - "Agents can query production."
 - "Safe production SQL."
+- "Database evidence as MCP resources."
 - "Read-only means safe."
 - "Autonomous database debugging."
 - "Free-form SQL for agents."
@@ -402,6 +440,8 @@ Avoid:
 - "Production database access is enabled by default."
 - "Safe DB query text/parameters" without query-text, parameter, redaction, and
   projection rows.
+- "Safe DB MCP output" without `structuredContent` schema validation and MCP
+  resource-denial rows.
 
 ## Relationship To Other Research
 
