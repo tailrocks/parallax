@@ -718,6 +718,9 @@ candidate versions:
   [Agent session tracing across real tools](agent-session-tracing-real-tools.md);
 - CLI redaction and overhead for args, env, config, stdout, and stderr, with
   the initial gate in [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md);
+- A6 detector/runtime redaction architecture, with Parallax owning a Rust
+  default-deny runtime engine and using external scanners only as offline
+  validators, in [Redaction detector toolchain](redaction-detector-toolchain.md);
 - agent-session query latency when linked to production events and CI runs;
 - outcome feedback quality for accepted, edited, rejected, and reverted fixes.
 

@@ -1,0 +1,206 @@
+# Redaction Detector Toolchain
+
+<!-- markdownlint-disable MD013 -->
+
+Research date: 2026-05-25
+
+## Purpose
+
+The [redaction pipeline](redaction-pipeline-and-secret-safety.md) establishes the
+A6 policy: default-deny capture, source-specific minimization, detector passes,
+and a red-team gate before agent exposure. This note answers the implementation
+question it leaves open:
+
+> Which detector engines should Parallax actually use, and where are they
+> allowed in the runtime path?
+
+Decision:
+
+> Build the runtime redaction path as a small Rust policy engine with typed
+> parsers, allowlists, deny rules, HMAC hashing, and streaming output scanning.
+> Use Gitleaks/TruffleHog/detect-secrets/Presidio/GitHub patterns as reference
+> corpora, offline validators, and CI/red-team comparators, not as blocking
+> runtime dependencies in the tiny tier.
+
+The reason is operational. Parallax must redact Sentry events, OTLP attributes,
+CI logs, CLI output, agent transcripts, frontend breadcrumbs, and database
+evidence while producing bounded bundles quickly. Git-repo secret scanners and
+PII anonymizers are useful references, but they do not directly provide a
+low-latency, source-aware, evidence-bundle-safe runtime.
+
+## Current Primary-Source Checks
+
+| Source | What it provides | Parallax implication |
+| --- | --- | --- |
+| [OpenTelemetry Collector redaction processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/redactionprocessor/README.md) | `allowed_keys`, `blocked_values`, masking, HMAC hash functions, and audit attributes such as redacted/masked counts. The processor explicitly recommends HMAC for low-entropy values. | Good model for OTLP attribute policy and audit fields. Not enough for bundle safety because it only covers data that flowed through that Collector processor. |
+| [OpenTelemetry Collector processor catalog](https://opentelemetry.io/docs/collector/components/processor/) | Processors transform, filter, enrich, and sample telemetry in Collector pipelines; component stability varies by signal and processor. | Parallax should support Collector-side redaction, but still repeat policy in ingest and bundle building. |
+| [GitHub secret scanning supported patterns](https://docs.github.com/en/code-security/reference/secret-security/supported-secret-scanning-patterns) | Current pattern taxonomy includes generic, AI-detected, and provider patterns, with 500+ provider entries and notes on precision, validity checks, partner alerts, and token-version churn. | Use as a maintained external reference for canary coverage and provider-pattern watchlists. Do not assume Parallax can copy GitHub's proprietary AI/validity checks. |
+| [Gitleaks](https://github.com/gitleaks/gitleaks) | Mature open-source scanner for git history, directories, files, and stdin; supports default/custom config, pre-commit, GitHub Action, JSON/CSV/JUnit/SARIF-style workflows, and baseline/ignore behavior. | Best open comparator for static and fixture scanning. Its Go binary can validate redaction fixtures in CI, but a blocking runtime shell-out would hurt tiny-tier latency and failure modes. |
+| [TruffleHog](https://github.com/trufflesecurity/trufflehog) | Open-source scanner focused on finding and verifying leaked credentials, with dynamic/verification posture and broad source scanning. | Useful red-team comparator for live/verified secrets and historical/source scans. Verification can create network and privacy side effects, so it must not run in the default runtime path. |
+| [Yelp detect-secrets](https://github.com/Yelp/detect-secrets) | Baseline-driven secret detection with configurable plugins, allowlists, entropy detectors, filters, and audit workflow. | Useful for repository baselines and human review workflows. Its Python/plugin model is not a fit for the Parallax hot path. |
+| [Microsoft Presidio](https://github.com/microsoft/presidio) | Open-source PII detection/anonymization framework with NER, regex, rule logic, image redaction, custom recognizers, and explicit warning that automated detection cannot guarantee all sensitive information is found. | Best reference for PII/anonymization and optional offline processing. Too heavy and probabilistic to be the only runtime guarantee for agent-visible bundles. |
+| [IssueGuard paper](https://arxiv.org/abs/2602.08072) | Current research on real-time secret leak prevention in issue reports; targets unstructured collaborative text and separates real secrets from false positives. | Confirms Parallax's risk surface: secrets leak in issue-like/debug text, not only git repos. Good design reference for pre-submit warning UX, not yet a runtime dependency. |
+
+## What Existing Tools Are Good At
+
+| Tool class | Strong fit | Weak fit |
+| --- | --- | --- |
+| Git/repo secret scanners | Historical git scans, fixture corpus checks, PR/pre-commit validation, SARIF/CI reporting, provider token pattern coverage. | Runtime Sentry/OTLP/CLI/frontend bundle building; they expect files/repos more than typed telemetry nodes. |
+| Verified secret scanners | Prioritizing real credential leaks and reducing false positives when provider verification is available. | Agent-bundle redaction where making network verification calls leaks candidate secrets and slows the request. |
+| Baseline scanners | Letting teams suppress known findings and detect newly introduced secrets. | Default-deny runtime output, where "known existing secret" still must not be shown to an agent. |
+| PII anonymizers | Person names, emails, locations, phone numbers, structured and unstructured text, image redaction, custom recognizers. | Deterministic low-latency safety guarantees for all secret classes; PII tools warn that misses remain possible. |
+| Collector redaction processors | Early OTLP attribute minimization before data reaches Parallax. | Surfaces outside OTLP, raw refs, Markdown projections, database outputs, and post-correlation bundle joins. |
+
+The conclusion is not "pick Gitleaks" or "pick Presidio." The correct design is
+layered: Parallax owns the final runtime decision and uses external tools to
+stress-test that decision.
+
+## Runtime Architecture
+
+The runtime detector should be an internal Rust library used by ingest, bundle
+building, CLI/API/MCP rendering, and tests:
+
+```text
+typed source parser
+  -> field policy compiler
+  -> key-name rules
+  -> structured value parsers
+  -> provider/secret pattern matchers
+  -> PII recognizers where cheap and deterministic
+  -> HMAC/hash/strip/ref-only action
+  -> final JSON + Markdown output scanner
+  -> machine-readable redaction report
+```
+
+Implementation requirements:
+
+| Layer | Requirement |
+| --- | --- |
+| Policy compiler | Compile project policy into per-source allow/hash/strip/ref-only decisions. Unknown fields default to strip or hash. |
+| Structured parsers | Parse URLs, headers, JSON, YAML, TOML, env files, shell argv, Sentry envelope items, OTLP attributes, database URLs, JWT-like strings, and PEM/private-key blocks before regex matching. |
+| Pattern engine | Use anchored provider patterns and high-confidence generic patterns for tokens, private keys, auth headers, connection strings, cookies, and bearer/basic credentials. |
+| Streaming scanner | Scan stdout/stderr/log excerpts incrementally with bounded buffers; never buffer unbounded output just to redact it. |
+| HMAC hashing | Use keyed HMAC for joinable low-entropy values such as IPs, user IDs, session IDs, emails, and path fragments. Do not use plain SHA/MD5 for values an attacker can enumerate. |
+| Raw-ref guard | Full raw logs, prompts, attachments, screenshots, database rows, and terminal output remain refs unless a scoped human read-sensitive grant exists. |
+| Output scanner | Re-scan final JSON and Markdown renderings so projection bugs cannot leak values that were safe in the internal graph. |
+| Deterministic report | Emit rule IDs, action, counts, detector versions, policy version, residual risk, and manual-review flag for every bundle. |
+
+## Recommended Toolchain By Phase
+
+| Phase | Runtime dependency | CI / red-team dependency | Rationale |
+| --- | --- | --- | --- |
+| Phase 0 bundle eval | Internal Rust sanitizer plus a small curated canary corpus. | Run Gitleaks and detect-secrets over generated fixtures; manually inspect Presidio-style PII cases. | Keep the eval lightweight, but prevent obvious secret leaks in arms B/C. |
+| Phase 1 tiny tier | Internal Rust redaction library is mandatory. No Python/Go sidecar in the request path. | Gitleaks on fixture dirs and generated bundles; TruffleHog on private local red-team corpus when network verification is safe. | Tiny tier cannot depend on multi-runtime scanner services to claim simplicity. |
+| Phase 2 red-team | Internal library plus optional offline Presidio adapter for PII-heavy text/image fixtures. | Gitleaks, TruffleHog, detect-secrets, Presidio, GitHub pattern watchlist, and custom canary corpus. | This is where A6 can earn broader source coverage. |
+| Phase 3 enterprise/pilots | Same runtime library; optional policy pack imports from customer secret-scanning tools. | Customer scanners can validate exported bundle fixtures. | Enterprise integration should validate Parallax, not replace its default-deny core. |
+
+## Detector Catalog
+
+Start with a small explicit catalog. Add provider patterns only when they are
+fixture-tested and source-mapped to a redaction action.
+
+| Category | Minimum runtime action |
+| --- | --- |
+| Private keys and cert material | Strip entire PEM block; preserve type and count only. |
+| Auth headers and cookies | Strip value; keep header/cookie name only when policy allows. |
+| Bearer/basic credentials | Strip value; report rule and field. |
+| Cloud/provider tokens | Strip value; keep provider/rule ID when detected. |
+| Database and service URLs | Parse; strip password/token; HMAC host/user/db if joins need them. |
+| JWT-like values | Strip raw token; optionally decode header claims only if policy allows and signature/payload are not exposed. |
+| Emails/user IDs/session IDs/IPs | HMAC by default for joins; strip when not needed. |
+| File paths | Preserve repo-relative safe path; HMAC or truncate user/home/customer fragments. |
+| HTTP URLs/query strings | Normalize route/path; strip query values; HMAC selected stable identifiers. |
+| Prompt/tool output snippets | Ref-only by default; redacted excerpt only after final output scanner passes. |
+| Frontend DOM/replay/screenshot text | Metadata-only or opt-in masked replay until replay red-team passes. |
+
+## Test Corpus
+
+The redaction test corpus should be separate from production data and committed
+as synthetic fixtures. It should include:
+
+- provider-like tokens from GitHub's public pattern taxonomy;
+- generated fake private keys, JWTs, cookies, bearer/basic headers, database
+  URLs, and webhook URLs;
+- emails, phone numbers, IP addresses, names, path fragments, and customer-like
+  identifiers;
+- encoded variants: base64, URL-encoded, JSON-escaped, shell-quoted, multiline,
+  YAML/TOML/env formats;
+- adversarial context: tokens split across log lines, stack traces containing
+  env dumps, command echoes, prompt transcripts, Markdown tables, code blocks,
+  Sentry request contexts, OTLP attributes, and database error messages;
+- safe near-misses and false-positive controls so useful evidence is not erased.
+
+Every fixture should declare expected findings:
+
+```json
+{
+  "fixture": "cli_stdout_database_url",
+  "surface": "cli_stdout",
+  "expected": [
+    {
+      "kind": "database_url",
+      "action": "strip",
+      "rule_id": "secret.database_url.v1",
+      "field": "stdout.excerpt"
+    }
+  ],
+  "must_not_redact": ["postgres error code 23505", "src/users.rs:118"]
+}
+```
+
+## Pass / Fail Gate
+
+The A6 detector gate passes only when:
+
+| Gate | Pass condition |
+| --- | --- |
+| Canary leaks | Zero expected canary values appear in agent-visible JSON or Markdown. |
+| Raw refs | No default agent/API/MCP response dereferences raw refs. |
+| Cross-tool check | Gitleaks and detect-secrets do not find unredacted secrets in committed generated fixtures. |
+| Verification check | TruffleHog is run only on approved local/private red-team fixtures; any verified live secret in output fails the gate and triggers rotation. |
+| PII check | Presidio-style fixtures pass for the project-supported PII classes, but misses do not override default-deny source policy. |
+| False positives | Redaction does not remove stack frame, span, issue, route, test, or command evidence needed by the A1 bundle eval. |
+| Failure mode | Any detector crash or timeout strips the affected field or blocks the bundle; it never lets the field through. |
+| Report | The bundle's `redaction_report` records detector versions, rule IDs, actions, counts, and manual-review status. |
+
+If the cross-tool scanners catch something the runtime library missed, the
+runtime rules must be updated before the bundle is considered agent-safe. If the
+runtime library catches a value external scanners miss, keep the Parallax rule:
+external tools are comparators, not the source of truth.
+
+## Product Decision
+
+Parallax should not market "AI-safe redaction" as a generic solved problem.
+The honest claim is narrower:
+
+- runtime capture is default-deny by source and field;
+- final bundle outputs are scanned twice, once at source normalization and once
+  at projection;
+- external scanners validate fixtures and red-team corpora;
+- raw sensitive data is retained only as scoped refs, not model-visible content;
+- every bundle carries a redaction report that a test or agent can reject.
+
+This keeps the product buildable and avoids outsourcing trust to tools built for
+a different surface.
+
+## Relationship To Other Research
+
+- [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
+  defines the A6 policy and red-team gate this toolchain implements.
+- [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md)
+  supplies the highest-risk streaming output fixture surface.
+- [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
+  supplies prompt/tool-output redaction fixtures.
+- [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
+  supplies browser and replay privacy fixtures.
+- [Production database evidence access gate](production-database-evidence-access.md)
+  supplies database-output and SQL-error fixtures.
+- [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) must use this
+  toolchain before exposing any generated bundle or raw dump to an agent.
+
+## Bottom Line
+
+Use external secret and PII scanners to keep Parallax honest, but do not put
+them on the critical request path. The critical request path needs a Rust,
+source-aware, default-deny redaction engine that fails closed and proves its work
+through `redaction_report`, fixture snapshots, and cross-tool red-team checks.

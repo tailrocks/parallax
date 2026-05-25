@@ -985,6 +985,12 @@ For each relevant tool, research:
 - whether it can audit coding-agent side effects such as files read/written,
   shell commands, DB actions, deploys, tests, patches, PRs, and outcomes.
 
+For redaction, do not treat a generic scanner as sufficient. Research and keep
+current the concrete detector/runtime split: Parallax should own a Rust,
+source-aware, default-deny redaction path for runtime bundles, while external
+secret/PII scanners serve as offline validators, red-team comparators, and
+fixture corpus references.
+
 The key question is not "which LLM tracing product is best?" The key question is
 what technical patterns Parallax should reuse, and where existing tools stop
 short of the Parallax goal: runtime evidence plus coding-agent and CLI action

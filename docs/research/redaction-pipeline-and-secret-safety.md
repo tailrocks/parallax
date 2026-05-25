@@ -19,6 +19,12 @@ events, OTLP attributes, browser breadcrumbs, CI logs, CLI args/env,
 stdout/stderr, agent prompts/tool outputs, attachments, and database query
 results — to trust one regex pass.
 
+The concrete detector/toolchain decision is now split into
+[Redaction detector toolchain](redaction-detector-toolchain.md): Parallax should
+own a Rust, source-aware, default-deny runtime redaction engine and use
+Gitleaks, TruffleHog, detect-secrets, Presidio, and GitHub pattern references as
+offline validators, not as blocking tiny-tier runtime dependencies.
+
 ## Current Primary-Source Checks
 
 | Source | What matters for Parallax |
@@ -243,6 +249,8 @@ production secrets. Therefore:
 - [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) —
   expands CLI-specific args/env/config/stdout/stderr policy, canary fixtures,
   and overhead gates before default-on capture.
+- [Redaction detector toolchain](redaction-detector-toolchain.md) — chooses the
+  runtime detector architecture and external scanner role for A6.
 - [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
   — redaction is a precondition for safe read-only agent context.
 - [Production database evidence access gate](production-database-evidence-access.md)
