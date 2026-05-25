@@ -8,8 +8,10 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 136 local runs + B1–B15 cases. Recent: **Run 136 —
-count-distinct / cardinality panel 4-way**: low-card distinct CH ~1.7× (GT 20 / CH 12 ms) but high-card EXACT distinct
+cold/first-run measurement showed). 25 mechanism notes + 137 local runs + B1–B15 cases. Recent: **Run 137 —
+high-group-count agg 4-way** (`GROUP BY trace_id`, 70k groups): GT 21 / CH ~13 ms (~1.5×) — no high-group cliff on
+GreptimeDB (the group-by path is well-behaved, unlike the dedup high-card-PK path); nightlies ≈ stables (CH-head's
+initial 26 ms was a warmup/contention artifact, re-verified to ~13 ms). **Run 136 — count-distinct / cardinality panel 4-way**: low-card distinct CH ~1.7× (GT 20 / CH 12 ms) but high-card EXACT distinct
 GreptimeDB ties/wins (1M unique: GT 30–33 / CH 36–37 ms; CH approx `uniq` HLL ~10 ms fastest); nightlies ≈ stables, all
 ≪ 300 ms. (Per the new AGENTS.md rule: every benchmark now runs on all 4 builds + updates four-way-version-comparison.md.) **Run 135 — latency-percentile panel** (p99 by service): CH ~11 ms / GT ~21 ms (~1.9×); the p50/p95/p99 panel = CH ~11 ms (one pass)
 / GT ~28 ms (~2.5×, GT's approx_percentile_cont scales per-percentile, no shared sketch) — both interactive; blueprint:

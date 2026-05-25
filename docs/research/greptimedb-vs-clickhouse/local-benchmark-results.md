@@ -5635,6 +5635,35 @@ unchanged). `count(distinct)` (exact) both engines + CH approx `uniq` (HLL). Med
 **Reproduce.** `SELECT count(distinct trace_id) FROM spans1m` (70k → GT ~20 / CH ~12 ms);
 `count(distinct span_id)` (1M → GT ~31 / CH ~37 ms); CH `uniq(trace_id)` (HLL ~10 ms, approx). All 4 builds.
 
+### Run 137 — 2026-05-25 — High-group-count aggregation 4-way (`GROUP BY trace_id`, 70k groups): ~1.5× — no high-group cliff on GreptimeDB; nightlies ≈ stables
+
+**Pass target.** Stress the hash-aggregation at **high group cardinality** (`GROUP BY trace_id` → 70k
+groups from 1M rows, top-50 by span count — the "noisiest traces" query), where engine grouping
+implementations differ most (CH's two-level/adaptive hash vs DataFusion grouping). All four builds
+(standing rule), standing `spans1m`.
+
+**Environment.** GT v1.0.2 + v1.1.0-nightly / CH v26.5.1.882 + v26.6.1.127-head (4 standing
+containers). Median warm; CH re-verified ×10 (the first-pass CH-head 26 ms was a warmup/contention
+artifact — settles to ~13 ms, no 26.6 regression).
+
+| Query | GT-stable | GT-nightly | CH-stable | CH-head |
+| --- | ---: | ---: | ---: | ---: |
+| `GROUP BY trace_id` (70k groups) + top-50 | 21 | 21 | 14 | 13 |
+
+**Verdict — ~1.5×, no high-group-count cliff on either; nightlies ≈ stables.**
+
+- **High group cardinality (70k groups) does NOT worsen the gap** — ~1.5× (GT ~21 / CH ~13 ms), the
+  same class as low-group aggregations (Run 96/124). GreptimeDB's grouping handles 70k groups fine
+  (~21 ms); no degradation, no cliff. (Contrast the *dedup* high-card cliff, Runs 114/117 — that's the
+  PK/series path, not the group-by path; group-by is well-behaved.)
+- **Nightlies ≈ stables** (GT 21=21; CH 14≈13). No version change. **CH-head no regression** (the
+  initial 26 ms median was a 4-container-contention warmup outlier; ×10 settles to ~13 ms — logged the
+  re-verify to avoid a false "26.6 slower" claim).
+- All ≪ 300 ms — interactive on every build. Adds the high-group-count agg to the four-way matrix.
+
+**Reproduce.** `SELECT trace_id, count(), avg(duration_ms) FROM spans1m GROUP BY trace_id ORDER BY
+count() DESC LIMIT 50` on all 4 → GT ~21 / CH ~13 ms. Re-run CH ×10 to clear warmup outliers.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

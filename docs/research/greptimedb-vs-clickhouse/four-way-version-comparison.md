@@ -34,6 +34,7 @@ Median ms, lower = faster. **Faster** = which engine wins this query (both inter
 | **Latency p99 by service** (`quantile(0.99)`) | 15 | 12 | 8 | 8 | CH ~1.5–2× | [exec-engine](query-execution-engine.md) · [Run 135](local-benchmark-results.md) |
 | **Count-distinct** (`trace_id`, 70k of 1M) | 20 | 22 | 12 | 13 | CH ~1.7× | [exec-engine](query-execution-engine.md) · [Run 136](local-benchmark-results.md) |
 | **Count-distinct high-card** (`span_id`, 1M unique, exact) | 33 | 30 | 37 | 36 | **GT ~ties/wins** (CH approx `uniq` ~10ms) | [exec-engine](query-execution-engine.md) · [Run 136](local-benchmark-results.md) |
+| **High-group agg** (`GROUP BY trace_id`, 70k groups + top-50) | 21 | 21 | 14 | 13 | CH ~1.5× (no GT cliff) | [exec-engine](query-execution-engine.md) · [Run 137](local-benchmark-results.md) |
 | **Full-text selective** (exact token, 1 row) | 7 | 8 | 9 | 7 | ~tie | [indexing](indexing-internals.md) · [Runs 98/131](local-benchmark-results.md) |
 | **Full-text broad** (~143k matches, this corpus) | 24 | 24 | 16 | 16 | CH ~1.5× *here*; **~12× canonical** | [indexing](indexing-internals.md) · [Runs 98/131/133](local-benchmark-results.md) |
 | **Log-tail** (`service` + `ts DESC LIMIT 100`) | 17 | 13 | 3 | 3 | CH ~5× | [per-signal](per-signal-verdict.md) · [Runs 107/131](local-benchmark-results.md) |
