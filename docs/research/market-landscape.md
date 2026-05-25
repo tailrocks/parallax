@@ -76,6 +76,8 @@ Current source checks for this update:
 - [Sentry Seer docs](https://docs.sentry.io/product/ai-in-sentry/seer)
 - [Sentry Seer issue-fix API](https://docs.sentry.io/api/seer/start-seer-issue-fix/)
 - [Self-hosted Sentry docs](https://develop.sentry.dev/self-hosted)
+- [Sentry MCP repository](https://github.com/getsentry/sentry-mcp)
+- [Sentry MCP 0.35.0 release](https://github.com/getsentry/sentry-mcp/releases/tag/0.35.0)
 - [Datadog Bits AI SRE investigation docs](https://docs.datadoghq.com/bits_ai/bits_ai_sre/investigate_issues/)
 - [Datadog Bits AI Dev Agent](https://www.datadoghq.com/blog/bits-ai-dev-agent/)
 - [Grafana Assistant self-hosted docs](https://grafana.com/docs/grafana/latest/administration/assistant/)
@@ -201,10 +203,21 @@ Sentry's advantage is developer workflow and error data gravity. Sentry already
 has the issue, stack trace, release, trace, logs, and repository connection for a
 large number of teams.
 
+The checked self-hosted docs still exclude Seer and other AI/ML features, so the
+main Parallax opening remains. Sentry MCP narrows the agent-access gap for
+self-hosted users, but its current `0.35.0` README describes stdio as a
+work-in-progress path, requires write-capable token scopes for the documented
+stdio setup, needs OpenAI or Anthropic configuration for AI-powered search, and
+may require disabling unsupported Seer skills on self-hosted instances. Treat
+that as Sentry-data access for coding agents, not self-hosted Seer parity.
+
 Sources:
 
 - [Sentry Seer product page](https://sentry.io/product/seer/)
 - [Sentry Seer GA changelog](https://sentry.io/changelog/seer-sentrys-ai-debugger-is-generally-available/)
+- [Self-hosted Sentry docs](https://develop.sentry.dev/self-hosted/)
+- [Sentry MCP README](https://github.com/getsentry/sentry-mcp)
+- [Sentry MCP 0.35.0 release](https://github.com/getsentry/sentry-mcp/releases/tag/0.35.0)
 
 ### Grafana Assistant
 

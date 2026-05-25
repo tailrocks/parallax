@@ -966,7 +966,9 @@ Research:
 
 Research companies/products/projects like:
 - Datadog AI features
-- Sentry AI features
+- Sentry AI features (especially whether self-hosted Sentry still excludes
+  Seer/AI and whether Sentry MCP self-hosted stdio has become stable,
+  read-only-safe, or Seer-equivalent)
 - Grafana AI
 - New Relic AI
 - Microsoft RCA systems

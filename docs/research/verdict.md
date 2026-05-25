@@ -169,11 +169,11 @@ That honesty is a strength, not a limitation.
 | Competitor | What they prove | Where they fall short for Parallax's goal |
 | --- | --- | --- |
 | Sentry Seer | Production error AI debugging and PR generation are real workflows. | GA but closed-source, SaaS-only, and confirmed **not available to self-hosted Sentry** (2026-05). The dominant error tracker paywalls its AI away from exactly the self-hosting, data-ownership audience Parallax targets. This is the single clearest opening. |
-| Sentry MCP | Coding-agent MCP access over Sentry data is now a first-party Sentry surface, including remote service, Claude Code plugin/subagent path, and stdio transport for self-hosted Sentry. | The surface is Sentry-data-centric rather than an open Parallax bundle schema; documented stdio scopes include write scopes; AI-powered search tools require OpenAI or Anthropic provider configuration; self-hosted instances may need unsupported Seer skills disabled. This makes MCP table stakes, not a moat. |
+| Sentry MCP | Coding-agent MCP access over Sentry data is now a first-party Sentry surface, including remote service, Claude Code plugin/subagent path, and stdio transport for self-hosted Sentry. | The current checked release is `sentry-mcp` `0.35.0`; its README calls stdio a work-in-progress path, the documented self-hosted token scopes include write scopes, AI-powered search tools require OpenAI or Anthropic provider configuration, and self-hosted instances may need unsupported Seer skills disabled. This is not hosted Seer parity and makes MCP table stakes, not a moat. |
 | Datadog Bits AI SRE / Dev Agent | Hypothesis-driven investigations and flaky-test autofix are the enterprise direction. | Closed, expensive, SaaS-only, and tied to Datadog data gravity. Dev Agent (flaky-test autofix) is still public Preview. Not an open, self-hosted Rust context engine or portable evidence-bundle standard. |
 | Grafana Assistant | Agent access through CLI/API/MCP surfaces is now normal. | Now on-prem and free for OSS Grafana (Apr 2026) but **still requires a Grafana Cloud account for the LLM connection** — not air-gapped — and is dashboard/assistant-first, not portable evidence bundles. LGTM-shaped, not evidence-engine-shaped. |
-| OpenObserve "Observability 3.0" (late Apr 2026) | An open, Rust, single-binary, object-storage observability store *with* an AI SRE agent + MCP is now real and self-hostable. | The closest thing to a wedge-killer on storage/runtime fit, saved by three current gaps: AI SRE/MCP require Enterprise edition/license while Self-Hosted Enterprise is advertised as free up to 50 GB/day, the MCP surface is broad and write-capable rather than a bounded read-only evidence bundle, and checked ingestion docs show OTLP rather than a Sentry-envelope path. |
-| SigNoz agent-native (May 2026) | Open, self-hostable MCP server + trace-ID RCA shipping in OSS validates the agent-native direction loudly. | Go + ClickHouse (fails the runtime filter and carries the heavy store Parallax escapes), a query interface rather than a deterministic evidence graph / portable bundle, and **no Sentry envelope error-event ingest path**. |
+| OpenObserve "Observability 3.0" (late Apr 2026) | An open, Rust, single-binary, object-storage observability store *with* an AI SRE agent + MCP is now real and self-hostable. | The closest thing to a wedge-killer on storage/runtime fit, saved by three current gaps: AI SRE/MCP require Enterprise edition/license while public pages conflict on the free Self-Hosted Enterprise allowance, the MCP surface is broad and write-capable rather than a bounded read-only evidence bundle, and checked ingestion docs show OTLP rather than a Sentry-envelope path. |
+| SigNoz agent-native (May 2026) | Open, self-hostable MCP server + trace-ID RCA shipping in OSS validates the agent-native direction loudly. | Go + ClickHouse (fails the runtime filter and carries the heavy store Parallax escapes), a query/management interface rather than a checked deterministic evidence graph / portable bundle, an unproven landing-page claim around an "open investigation format," and **no Sentry envelope error-event ingest path**. |
 | Dynatrace / New Relic / Splunk | Topology-aware RCA is enterprise table stakes. | Enterprise suite gravity, not open small-team self-hosting or agent-readable bundle portability. |
 | LangSmith / Langfuse / Phoenix / Braintrust / AgentOps / similar | Agent and LLM traces are important. | They usually observe LLM app execution, not the full chain from production error to deploy, CLI side effect, coding-agent patch, CI validation, and outcome. |
 | CI autofix and flaky-test tools | Failure bundles and PR automation are valuable. | They usually start at CI/test evidence, not production Sentry/OTLP context plus runtime evidence graph. |
@@ -187,14 +187,15 @@ toward Parallax's exact space: OpenObserve shipped an AI SRE agent + MCP on a
 Rust, object-storage, AGPL-self-hostable base, and SigNoz shipped an open,
 self-hostable agent-native MCP server.
 Sentry's first-party MCP server adds pressure from the incumbent side too: even
-self-hosted Sentry users can expose Sentry data to coding agents through stdio,
-although the checked tool/scopes/provider shape is not Parallax's bounded
-read-only evidence-bundle contract.
+self-hosted Sentry users can expose Sentry data to coding agents through a
+work-in-progress stdio path, although the checked tool/scopes/provider shape is
+not Parallax's bounded read-only evidence-bundle contract.
 
 Neither closes the wedge today — OpenObserve's AI SRE/MCP surfaces require
-Enterprise edition/license, its Self-Hosted Enterprise allowance weakens a
-simple paywall claim, and checked docs still show no Sentry ingest; SigNoz is
-Go/ClickHouse with no Sentry ingest and no evidence-graph/bundle abstraction.
+Enterprise edition/license, its source-conflicted Self-Hosted Enterprise
+allowance weakens a simple paywall claim, and checked docs still show no Sentry
+ingest; SigNoz is Go/ClickHouse with no Sentry ingest and no checked
+evidence-graph/bundle abstraction behind its "open investigation format" claim.
 But both could close their gap inside 6–12 months. The consequence: **the moat
 cannot be any single feature.** It must be the assets that compound with usage
 and are hard to copy from a standing start —
@@ -216,11 +217,14 @@ to NO-GO.
 Current source checks for this competitive-window claim:
 
 - [OpenObserve pricing](https://openobserve.ai/pricing/)
+- [OpenObserve homepage](https://openobserve.ai/)
 - [OpenObserve SRE Agent setup](https://openobserve.ai/docs/administration/deployment/sre-agent-setup-guide/)
 - [OpenObserve MCP docs](https://openobserve.ai/docs/integration/ai/mcp/)
 - [OpenObserve OTLP ingestion docs](https://openobserve.ai/docs/ingestion/logs/otlp/)
+- [Self-hosted Sentry docs](https://develop.sentry.dev/self-hosted/)
 - [Sentry MCP service](https://mcp.sentry.dev/)
 - [Sentry MCP repository](https://github.com/getsentry/sentry-mcp)
+- [Sentry MCP 0.35.0 release](https://github.com/getsentry/sentry-mcp/releases/tag/0.35.0)
 - [SigNoz agent-native observability](https://signoz.io/agent-native-observability/)
 - [SigNoz MCP server](https://signoz.io/docs/ai/signoz-mcp-server/)
 
