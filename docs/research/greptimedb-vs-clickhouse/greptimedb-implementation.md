@@ -35,10 +35,19 @@ Pin: GreptimeDB `v1.0.2` (`0ef5451`). DDL features confirmed in
    GreptimeDB high-cardinality-lookup pattern.
 2. **Primary key = low-cardinality query tags** (e.g. `service`, `project`,
    `fingerprint`) → bounded series count, efficient `TimeSeries`/`PartitionTree`
-   memtable; high-cardinality lookups go through indexes, not the PK.
+   memtable; high-cardinality lookups go through indexes, not the PK. **Measured cost of
+   violating this (Run 114): a high-cardinality PK (`PK(span_id)`, 1M series) scans ~5×
+   slower than a low-card PK (`PK(service,name)`) on the same data — more single-row series
+   to organize. NEVER put `trace_id`/`span_id` in the PK; index them instead (principle 1).**
 3. **`append_mode = 'true'`** on all append-only signals (events/spans/logs) →
    skips the dedup/last-row merge (`greptimedb-internals.md`), lowering write/read
-   cost; matches GreptimeDB's own event-table default.
+   cost; matches GreptimeDB's own event-table default. **Measured (Run 114): this is
+   NOT optional on high-card tables — default (dedup) mode runs the `DedupReader` over every
+   series in the scan path, so `PK(span_id)+default` scans ~16× slower than the same table
+   with `append_mode='true'` (~1220 ms vs ~76 ms at 1M), even with ZERO actual duplicates.
+   Combined with a wrong (high-card) PK, the naive `PK(span_id)+default` is ~80× slower than
+   the correct `PK(service,name)+append`. Reserve dedup mode for genuine upsert signals with a
+   LOW-card key (issue status, deploy markers, metric last-value).** Append also loads ~1.2× faster.
 4. **`FULLTEXT INDEX`** on free-text (`message`) for log/error search.
 5. **Metrics via the metric engine** (logical→physical) + OTLP/Prom remote write →
    native PromQL (Run 3 capability win).

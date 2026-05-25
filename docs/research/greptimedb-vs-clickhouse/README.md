@@ -8,8 +8,11 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 113 local runs + B1–B15 cases. Recent: **Run 113 — counter-rate
-panel** (the #1 observability metric query): CH ~12 ms / GT ~19 ms (~1.6×, smallest agg gap — shrinks as per-row compute
+cold/first-run measurement showed). 25 mechanism notes + 114 local runs + B1–B15 cases. Recent: **Run 114 — BLUEPRINT
+GOTCHA** quantified: GreptimeDB default-dedup mode + high-cardinality PK = ~16× slower scans (the DedupReader merges
+every series), and a high-card PK itself ~5× — so the naive `PK(span_id)+default` is ~80× slower than the correct
+`PK(service,name)+append_mode` (which the blueprint already specifies). append_mode is mandatory for high-card event
+signals; reserve dedup for low-card upsert signals. **Run 113 — counter-rate panel** (the #1 observability metric query): CH ~12 ms / GT ~19 ms (~1.6×, smallest agg gap — shrinks as per-row compute
 grows), both interactive. Completes the metric-panel picture: last-value GT-wins ~2.4× (109), rate ~1.6×, bucketed line
 ~2× (96), flat avg ~3× (96) — across real dashboards GT ranges from winning to ~3× behind, all interactive. **Run 112 re-verified concurrent ingest+query** — under sustained ingest (1M rows) neither engine blocks reads (anchored query flat: CH
 2→2 ms, GT 10→10 ms, ~1.0× penalty both) and neither explodes storage (CH merged 50 inserts→2 parts, GT absorbed 1M in

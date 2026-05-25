@@ -4717,6 +4717,52 @@ engines, fair). CH `toStartOfInterval`; GT `date_bin('5 minutes'::INTERVAL, ts)`
 m, max(counter)-min(counter) FROM metrics_real GROUP BY service, m`; GT `date_bin('5 minutes'::
 INTERVAL, ts)` equivalent. Warm ×8. Expect CH ~12 ms / GT ~19 ms.
 
+### Run 114 — 2026-05-25 — BLUEPRINT GOTCHA: GreptimeDB default-dedup + high-cardinality PK = ~16× slower scans (~80× vs the right design); append_mode + low-card PK is mandatory for event signals
+
+**Pass target.** I've used `append_mode='true'` throughout to dodge dedup confounds — but never
+measured the *cost* of GreptimeDB's default (dedup) mode, nor isolated the PK-cardinality effect.
+This is a real Parallax design decision: which write mode + PK for which signal. Quantify it.
+
+**Environment.** GreptimeDB `v1.0.2` (re-pinned live — no bump). Three 1M-row tables from
+`spans_idx`, identical data, varying only PK-cardinality and `append_mode`. Full-table agg
+(`GROUP BY svc`, scan-bound), warm ×8.
+
+| Table | PK | mode | full-scan agg (warm) | vs best |
+| --- | --- | --- | --- | --- |
+| `spans_idx` | `(service, name)` **low-card** | append | **~15 ms** | 1× (best) |
+| `gt_ap` | `(span_id)` **1M-card** | append | **~76 ms** | ~5× |
+| `gt_dd` | `(span_id)` **1M-card** | **default (dedup)** | **~1220 ms** | **~80×** |
+| Ingest | — | dedup 1099 ms / append 894 ms | — | append ~1.2× faster to load |
+| Point lookup `WHERE span_id` | — | dd ~10 ms / ap ~25 ms | (dedup faster on PK point-lookup — secondary) | — |
+
+**Verdict — a critical GreptimeDB blueprint gotcha; two compounding effects isolated.**
+
+- **Dedup on a high-cardinality PK is catastrophic on scans (~16× vs append on the SAME table):** the
+  only difference between `gt_dd` (1220 ms) and `gt_ap` (76 ms) is `append_mode`. GreptimeDB's
+  **`DedupReader` runs in the scan path** and merge-processes **every series** — with a 1M-distinct PK
+  that is 1M single-row series to merge, even though there are **zero actual duplicates**. Append mode
+  skips the dedup merge entirely.
+- **High-cardinality PK itself costs ~5× on scans** (`gt_ap` 76 ms vs low-card-PK `spans_idx` 15 ms,
+  both append) — more series to organize. Compounded with dedup, the naive `PK(span_id)+default` is
+  **~80× slower** than the right design.
+- **Firm blueprint rule (this quantifies why the existing spans design is correct):** for GreptimeDB
+  **append-only event signals (spans / logs / traces)** use **low-cardinality `PRIMARY KEY` +
+  `append_mode='true'`**, and keep high-card anchors (`trace_id`/`span_id`) as **`INVERTED`-indexed
+  plain columns, NOT in the PK**. This is exactly `spans_idx` (`PK(service,name)` + `trace_id`
+  INVERTED + append) — now measured as ~80× faster on scans than `PK(span_id)+dedup`. Reserve **dedup
+  mode for genuine upsert signals with a LOW-card key** (issue status by fingerprint, deploy markers,
+  metric last-value) where the per-series merge is cheap and the latest-wins semantics are needed
+  (Run 19/59). Append also loads ~1.2× faster.
+- **Decision relevance:** this is a GreptimeDB *operability* sharp edge (get the PK/mode wrong on a
+  high-card event table and scans are ~80× slower) — not a GT-vs-CH point, but **essential for the
+  "adopt GreptimeDB" implementation**. ClickHouse has an analogous trap (high-card column first in
+  `ORDER BY`), so it's a both-engines schema-discipline requirement; GreptimeDB's is sharper because
+  PK = sort = series = dedup-unit all at once.
+
+**Reproduce.** Build `PK(span_id) default` vs `PK(span_id) append_mode='true'` vs `PK(service,name)
+append_mode='true'`, load same 1M; `SELECT svc, count(*), avg(dur) GROUP BY svc` warm ×8 → ~1220 /
+~76 / ~15 ms. Drop after.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
