@@ -6572,6 +6572,30 @@ proxy can't trivially erase it. Updated `promql-and-metrics-query.md` (new proxy
 → ok; `SELECT prometheusQuery('up')` → UNKNOWN_FUNCTION (needs `(ts_table, promql)` args). (exec; host
 port down.)
 
+### Run 165 — 2026-05-25 — LIVE re-verify (exec): span-tree recursive-CTE (Run 68/97) — no drift; proxy makes the GT gap irrelevant
+
+**Context.** Rotated to span-tree/trace-waterfall reconstruction (a core evidence-bundle query). Tested
+on trace `e029e24e94bd4d43167386aed28585e7` (14 spans). Re-pin unchanged.
+
+**Re-verified (no drift vs Run 68/97):**
+- **GreptimeDB** table-self-join recursive CTE → **`Schema error: project index 1 out of bounds, max
+  field 1`** (DataFusion recursive-CTE limitation at v1.0.2). Errors, exactly as Run 68.
+- **ClickHouse** `WITH RECURSIVE` → **runs** (returned cleanly; the 1-row/depth-0 result is a synthetic-
+  data artifact — the gen's `parent_span_id` chain doesn't form a clean root→child tree, consistent with
+  the note's "GT root parent_span_id is NULL" finding).
+
+**Verdict — no drift; proxy makes the gap irrelevant.** In-DB span-tree: ClickHouse yes, GreptimeDB no
+(recursive CTE errors). BUT the dominant pattern is **flat keyed fetch (prunes on both, Run 158) +
+app-side tree build** — and **Parallax IS the application layer (the proxy)**, so it builds span trees
+app-side by design. The GreptimeDB recursive-CTE gap is therefore **fully irrelevant to Parallax**, not
+just low-impact (sharpened the `trace-span-tree.md` framing). Reinforces app-side correlation (Run 154).
+
+**Reproduce.** GT: `docker exec parallax-bench-greptimedb-1 curl … "sql=WITH RECURSIVE tree AS (SELECT
+span_id,parent_span_id,0 depth FROM spans_idx WHERE trace_id='<id>' AND (parent_span_id='' OR
+parent_span_id IS NULL) UNION ALL SELECT s.span_id,s.parent_span_id,t.depth+1 FROM spans_idx s JOIN tree
+t ON s.parent_span_id=t.span_id WHERE s.trace_id='<id>') SELECT count(*),max(depth) FROM tree"` →
+schema error. CH: same `WITH RECURSIVE` on `spans` → runs. (exec; host port down.)
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

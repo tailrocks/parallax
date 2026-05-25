@@ -2,7 +2,12 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 49, **corrected pass 104 (Run 68)**, **re-verified Run 97 (no drift)** — flat
+Status: pass 49, **corrected pass 104 (Run 68)**, **re-verified Run 97 + Run 165 (no drift)** — Run 165
+(exec) reproduced it exactly on the current pin (`Schema error: project index 1 out of bounds, max
+field 1` on GreptimeDB's table-self-join recursive CTE; ClickHouse `WITH RECURSIVE` runs). **Proxy-lens
+reinforcement (Run 165):** Parallax *is* the application layer (the proxy), so it builds span trees
+**app-side by design** from the flat keyed fetch (which prunes on both, Run 158) — the GreptimeDB in-DB
+recursive-CTE gap is therefore **fully irrelevant to Parallax**, not merely low-impact. — flat
 waterfall fetch CH ~3 ms / GT ~18–20 ms warm (both ≪ 300 ms); table-self-join recursive CTE
 still errors on GT v1.0.2 (`Schema error: project index out of bounds`) while pure recursive
 works; GT root `parent_span_id` confirmed NULL not `''`; adopt-native-traces stands (app-side
