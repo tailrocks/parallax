@@ -2725,6 +2725,37 @@ docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public 
 docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode 'sql=INSERT INTO upd_gt VALUES (1000,1,'"'"'a'"'"'),(1000,1,'"'"'b'"'"')'   # same (id,ts) -> b wins
 ```
 
+### Run 67 — 2026-05-25 — Metric-agg gap re-verified (~2–3× warm) + verdict-currency pass
+
+**Pass target.** Re-verify the core "ClickHouse faster on metric aggregation" claim
+(Run 37, ~2× warm) and fold the accumulated Runs 55–66 findings into the standing verdict.
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned —
+latest, no bump).
+
+**Measured (warm, `GROUP BY service` over `metrics_hc` 8M, min of 7):**
+
+| | ClickHouse | GreptimeDB | ratio |
+| --- | --- | --- | --- |
+| Run 37 | 50 ms | 107 ms | ~2× |
+| **Run 67** | **32 ms** | **99 ms** | **~3×** |
+
+**Verdict.** ClickHouse leads metric aggregation — **direction stable**; the ratio is now
+**~3×** (was 2× in Run 37). The shift is **ClickHouse getting faster** (50→32 ms, JIT/warm),
+not GreptimeDB regressing (99–107 ms, stable). So state it as **~2–3× warm** going forward,
+not a flat 2×. Both sub-100 ms → not hot-path-critical; GreptimeDB's metrics edge stays
+*capability* (PromQL-native, Run 62), never agg speed.
+
+**Verdict-currency fold (this pass):** added two ClickHouse edges to
+`verdict-which-to-choose.md` Decision-Q2 — **cold selective object-store reads**
+(scatter-vs-cluster, Runs 55/63) and **dynamic-attr path queries ~13×** (Run 61, with the
+`Dynamic`-cast + promote-to-typed-column caveats) — and updated the metric-agg figure to
+~2–3×. No recommendation change: the offsetting GreptimeDB wins (full-text cost tie,
+non-blocking concurrency, object-count + warm-cache re-reads, Q6 not-latency-bound, native
+ingest, upsert/DELETE ergonomics, PromQL GA, cheap retention) all re-confirmed Runs 51–66.
+
+**Reproduce.** `for i in $(seq 7); do docker exec parallax-bench-clickhouse-1 clickhouse-client --time -q "SELECT service,avg(value) FROM metrics_hc GROUP BY service FORMAT Null"; done` vs GreptimeDB `/v1/sql` `execution_time_ms`.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

@@ -2,11 +2,17 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: standing decision, continually sharpened (current through **pass 87**; passes 86–87 /
+Status: standing decision, continually sharpened (current through **pass 103**; passes 86–87 /
 Runs 48–49 **dissolved most of the full-text gap** — the ~18× was a backend/function
 misconfiguration: with the correct pairing, selective full-text is ~6 ms (tantivy+`matches`)
 and ~8 ms (bloom+`matches_term`) vs ClickHouse ~3 ms; residual is broad-term analytics only —
-see the flip-trigger correction below).
+see the flip-trigger correction below. **Pass 103 folded in Runs 55–66:** added two ClickHouse
+edges — **cold *selective* object-store reads** (scatter-vs-cluster, Runs 55/63) and
+**dynamic-attribute path queries ~13×** (Run 61) — and refined the metric-agg gap to **~2–3×
+warm** (Run 67). Offsetting GreptimeDB wins re-confirmed: full-text cost tie (Runs 51–52),
+concurrent-ingest non-blocking (Run 53), object *count* + warm-cache re-reads (Runs 54–55),
+Q6 not-latency-bound (Run 56), native zero-DDL ingest (Run 57), upsert/DELETE ergonomics
+(Runs 59/66), PromQL GA (Run 62), cheap retention (Run 64). None flip the recommendation.)
 Synthesizes the internals teardowns (all 10 subsystems + rollup, retention,
 schema-evolution, dedup, WAL/durability, execution-engine, indexing, PromQL, metric
 cardinality, span-tree, projections, deletes/mutations, async-insert, zero-copy
@@ -54,8 +60,9 @@ where ClickHouse leads but which Parallax's anchored pattern rarely hits.
   per-query overhead (Runs 1–2; `read-path-indexing-and-execution.md`,
   `clickhouse-internals.md`).
 - GreptimeDB's metrics edge is **PromQL-native *capability* + native ingest, not
-  query speed**: at 40k series / 8M rows ClickHouse's SQL aggregation is **~2× faster
-  warm** (Run 37: CH 50 ms vs GT 107 ms — **corrected down from the ~10× of Run 11,
+  query speed**: at 40k series / 8M rows ClickHouse's SQL aggregation is **~2–3× faster
+  warm** (Run 37: CH 50 ms vs GT 107 ms = 2×; Run 67 re-verify: CH 32 ms vs GT 99 ms = 3×
+  as CH's JIT warms, GT stable — **corrected down from the ~10× of Run 11,
   which was a cold/first-run GreptimeDB scan, not the warm gap**; cold-regime gap is
   larger). **Hardened further (Run 44): even GreptimeDB's *own* native PromQL path is
   ~5× slower than its own SQL** (`avg by(service)` ≈590 ms vs ≈120 ms vs CH SQL ≈65 ms) —
@@ -87,7 +94,7 @@ storage*, accepting a younger DataFusion scan engine.
 | **Retention cost** | TTL = **whole-SST drop** (TWCS time-windowing → no read/rewrite; `compactor.rs:581`); ClickHouse default `ttl_only_drop_parts=0` **rewrites survivors** (Run 17: read 1M / rewrote 500k) unless tuned (`PARTITION BY` time + `ttl_only_drop_parts=1`). Cheap-by-default vs cheap-if-configured. | source+measured (Run 17) |
 | **Object-storage-native** | OpenDAL default + read cache; cheap re-readable retention first-class. Fewer *total* objects (4 vs 74, Runs 8–9) → wins full-scan cold reads. Cold GET cost is query-shape-dependent (measured both ways): full scan GreptimeDB fewer (26 vs 57, Run 15 — wins the JSONBench regime); **anchored lookup ClickHouse fewer (5 vs 22, Run 14)** — Parallax's pattern. Read cache → warm re-reads local on both. | measured (layout + cold GETs both shapes) |
 | **Durability / crash safety** | Has a **replayable WAL** (raft-engine local, tunable `sync_write`; or **Kafka remote → durability decoupled from the datanode**, the same mechanism that makes migration cheap). ClickHouse MergeTree has **no WAL** (obsolete in 26.x) — durability = unsynced part-on-disk (`fsync_after_insert=0`) + replicas; a single-node crash loses unflushed parts. | source+live (Run 20) |
-| **High-cardinality metric *storage*** | Metric engine `__tsid` (label-set hash) over a shared physical wide table + PartitionTree memtable (dict-encoded label sets, no per-series cap) — high cardinality is the design center. ClickHouse `LowCardinality` dict **caps at 8,192** then falls back to plain (the cliff); needs `ORDER BY` care or the experimental TimeSeries engine. *(Aggregation latency is the reverse — ClickHouse ~2× warm, Run 37; was ~10× cold.)* | source+live (Run 26) |
+| **High-cardinality metric *storage*** | Metric engine `__tsid` (label-set hash) over a shared physical wide table + PartitionTree memtable (dict-encoded label sets, no per-series cap) — high cardinality is the design center. ClickHouse `LowCardinality` dict **caps at 8,192** then falls back to plain (the cliff); needs `ORDER BY` care or the experimental TimeSeries engine. *(Aggregation latency is the reverse — ClickHouse **~2–3× warm** (Run 37 CH 50/GT 107 = 2×; Run 67 re-verify CH 32/GT 99 = 3× as CH's JIT warms; GT stable ~99–107 ms); was ~10× cold.)* | source+live (Runs 26, 37, 67) |
 | **Corrections (UPDATE) / upsert** | UPDATE = re-insert `(PK,ts)` → dedup last-wins = a **cheap GA upsert**, no setup; ClickHouse UPDATE = heavy `ALTER UPDATE` part rewrite (lightweight update is experimental + needs a per-table block-number column). DELETE is ~parity (both read-filtered). | source+live (Run 29) |
 | Freshness | Visible-on-write (tie with ClickHouse, not a win). | smoke |
 
@@ -99,8 +106,9 @@ storage*, accepting a younger DataFusion scan engine.
 | **Generic wide scan / aggregate throughput** | Decade-tuned vectorized engine — the OLAP-scan bar. Mechanism (pass 42): 65k-row blocks (8× DataFusion's batch) + LLVM-JIT expressions/aggregation + bespoke SIMD kernels + specialized hash aggregation vs GreptimeDB's DataFusion-over-Arrow; explains Runs 11–12. | arch+live (`query-execution-engine.md`) |
 | **Vertical single-node ceiling** | Saturates many cores + NVMe on one big box. | arch |
 | **Per-column codec tuning** | Hand-picked `DoubleDelta`/`Gorilla`/etc. (counter 7.3×, gauge 78×, Run 4). | smoke (Run 4) |
-| **Dynamic-attribute path queries** | `JSON` type stores each path as a **typed columnar subcolumn** (`attributes.k` reads only that subcolumn); GreptimeDB `Json` is a binary blob + `json_get_*` per-row parse. Faster for querying arbitrary OTLP attributes by path at volume. | source+measured (Run 18) |
+| **Dynamic-attribute path queries** | `JSON` type stores each path as a **typed columnar subcolumn** (`attributes.k` reads only that subcolumn); GreptimeDB `Json` is a binary blob + `json_get_*` per-row parse. **Measured ~13× (6 ms vs 78 ms, 100k, Run 61)** for an *unpredictable* attribute path. Two caveats: CH subcolumns are `Dynamic`-typed (GROUP BY needs a `.:Type` cast), and GreptimeDB closes it for *known* hot attrs by promoting them to typed columns (automatic-CH vs manual-GreptimeDB). Bites only on ad-hoc paths at volume. | source+measured (Runs 18, 61) |
 | **Multi-ordering scans (projections)** | A **projection** stores a 2nd physical `ORDER BY` inside each part, optimizer-picked transparently → fast sequential scans on an alternate key (e.g. `service`-time *and* `trace_id`) from one table. GreptimeDB has no equivalent (indexes give positions, not a 2nd physical order). Cost: ~2× storage per normal projection (Run 28). | source+live (Run 28) |
+| **Cold *selective* object-store reads** | ClickHouse `ORDER BY (trace_id, ts)` clusters by the high-card anchor at **zero cardinality cost**, so a cold anchored read fetches ~1 granule (**294 KiB**); GreptimeDB's PK = sort = series identity, so `trace_id` is inverted-indexed but **scattered** across all row groups → a cold anchored read pulls ~the whole SST (**~23 MiB**, ~80× egress at 21 MiB; scatter-driven, persists at scale — Runs 55, 63). **But** GreptimeDB's persistent local read cache keeps the *common* recent/warm path at ~0 S3 (Run 55), so this bites only genuinely cold, evicted, selective re-reads. | measured (Runs 55, 63) |
 | Query latency at smoke scale | Won every non-metric query (2–4 ms vs 9–54 ms) — but cache-resident, fixed-overhead-dominated. | smoke |
 
 ## Decision question 3 — can ClickHouse replace GreptimeDB for Parallax?
