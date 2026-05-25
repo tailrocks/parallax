@@ -44,7 +44,7 @@ fallback trigger that would change the default.
 
 The focused
 [storage benchmark artifact interpretation](storage-benchmark-artifact-interpretation.md)
-consumes the separate benchmark agent's Runs 140-157 without rerunning them.
+consumes the separate benchmark agent's Runs 140-158 without rerunning them.
 Those artifacts are useful A5 inputs, but they do not create an A5 pass:
 
 - `bench/four-way/` is reproducible local benchmark code: four storage builds,
@@ -95,17 +95,25 @@ Those artifacts are useful A5 inputs, but they do not create an A5 pass:
 - Run 157 re-verifies the full-text mechanism at 5M: selective search prunes on
   both engines, while broad terms prune on neither and favor ClickHouse's scan
   engine. A5 must keep broad log search as a ClickHouse flip trigger.
+- Run 158 re-verifies the dominant anchored-bundle pillar: both engines prune
+  hard only when `trace_id`/`fingerprint` is keyed or indexed on the signal table,
+  and both engines full-scan when the anchor is absent. It also corrects future
+  GreptimeDB plan interpretation: scan `output_rows` can mean post-filter
+  emission, so A5 mechanism rows must record `scan_cost`, `elapsed_poll`, and
+  `file_ranges` when judging scan work.
 - They do not include mixed native ingest, Q6 p95/p99, stale-bundle rate,
   object-store request/egress/cost rows, ClickHouse LTS, server-tier validation
-  of the Run 154 workaround, storage crash/restart loss counts under declared
-  durability modes, high-cardinality native metric ingest memory/flush rows,
-  metadata, ingest-log, setup, restart, redaction, or end-to-end integration
-  rows.
+  of the Run 154 workaround, schema-conformance rows proving anchors on every
+  bundle-participating signal table, storage crash/restart loss counts under
+  declared durability modes, high-cardinality native metric ingest memory/flush
+  rows, metadata, ingest-log, setup, restart, redaction, or end-to-end
+  integration rows.
 
 So A5 remains unpassed. The current storage stance is "GreptimeDB remains a
 prototype-fit candidate for the anchored hot path if Parallax avoids the direct
-in-DB `LEFT JOIN` trap; ClickHouse is the measured analytics-heavy, broad-search,
-and ecosystem fallback; the adapter boundary stays mandatory."
+in-DB `LEFT JOIN` trap and proves anchor keys/indexes on every bundle signal;
+ClickHouse is the measured analytics-heavy, broad-search, and ecosystem
+fallback; the adapter boundary stays mandatory."
 
 ## Ledger Artifacts
 
