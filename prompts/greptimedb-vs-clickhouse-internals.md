@@ -511,13 +511,28 @@ improvement gets its own full section** with this structure:
   `cache/index` member), and the concrete steps. Cite the source you read (file + the
   pinned version). "Add `with_row_filter` to the mito2 reader" beats "make it faster."
 - **Tier (A/B/C)** and **design-vs-integration**, as above.
-- **Value here** — what it buys Parallax specifically, and whether it is worth it given the
-  anchored hot path (often: only if the workload is log-search/scan-heavy).
+- **User story & clear-winner test (first-class — lead the value with this).** The reason to
+  add anything is **solving a real Parallax user's problem the smartest way** — never "parity
+  for its own sake." So every improvement must answer, from the *user's* perspective:
+  - **Who and when:** a concrete Parallax user story — *who* (the developer/SRE/AI agent
+    debugging an incident, the dashboard viewer, the user running an ad-hoc query) and the
+    *specific moment* the gap bites (e.g. "an SRE paged at 2am greps logs for a request-id
+    across a service over the last hour"). Name the signal and query shape.
+  - **Does it make GreptimeDB the clear winner here?** State it explicitly: "by adding this,
+    GreptimeDB clearly wins the *<case>* case because …" — **and be honest when the answer is
+    no** ("invisible to users / second-order / the anchored hot path is already fast, so this
+    is a footnote, don't invest"). Most improvements only matter if real usage proves a
+    log-search-/scan-heavy mix; say so.
+  - **Huge now + future improvement:** where it delivers a large immediate win, and how it
+    compounds (sets up later capability), if at all.
 
 When brainstorming a new improvement, always start from "what does the other system do as a
 *concept*, and how would that concept land in GreptimeDB's mito2/DataFusion/Puffin/OpenDAL
 structure to provide value here" — borrow the idea, adapt it to the real internals, prove
-it is integration not redesign (or flag it if it is redesign).
+it is integration not redesign (or flag it if it is redesign). Then **gate it on the user
+story**: if no real Parallax user case is materially better for it, mark it a footnote, not a
+roadmap priority. The deliverable ranks improvements by *user impact*, not by mechanism
+elegance.
 
 The point is decision-useful: tell the operator exactly what it costs to make GreptimeDB
 the unambiguous choice for every Parallax query shape, and which of those costs they pay

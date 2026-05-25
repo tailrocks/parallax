@@ -7,7 +7,10 @@ source-corrected) + pass 79 (**expanded to detailed per-improvement what/why/how
 as borrowed-concept → GreptimeDB structure → value, per operator) + pass 80 (#4 JSON
 binary-jsonb + per-row `json_get` source-confirmed; #2 batch-size has no runtime knob,
 live-probed) + pass 81 (**added Improvement #7** — per-column codec parity; source-grounded:
-user data columns default to `PLAIN`+ZSTD, floats miss the Gorilla-class encoding). This is **the dedicated,
+user data columns default to `PLAIN`+ZSTD, floats miss the Gorilla-class encoding) + pass 82
+(#5 projections **source-confirmed absent**; **added the user-first ranking** + per-improvement
+user stories + explicit "does this make GreptimeDB the clear winner?" verdicts, per operator —
+the reason to add anything is solving a real Parallax user's problem). This is **the dedicated,
 standalone file** answering "what can GreptimeDB improve, why, and how" — the summary table
 scans, the detailed sections below carry the code-oriented specifics. Answers the operator
 question: GreptimeDB wins Parallax on *fit*
@@ -47,6 +50,43 @@ applier re-opens a Lucene dir via a file/dir cache per query). Still an integrat
 narrower and more accurate one — and it surfaces a **Tier-A lever**: prefer the already-cached
 *bloom* full-text variant where exact phrase isn't required. The correction is itself the
 method working: source beats reasoning.
+
+## User-first ranking — does any of this actually make GreptimeDB the clear winner?
+
+The reason to add anything is **solving a real Parallax user's problem**, not parity for its
+own sake. Parallax's users are developers / SREs / AI agents debugging an incident: the hot
+flow is **anchored evidence-bundle assembly** (fetch everything for a `trace_id`/`fingerprint`),
+which is *already fast on GreptimeDB* (Q6 ~33 ms, Run 16). Ranked by who-actually-feels-it:
+
+1. **Improvement 1 (full-text log search) — the only plausible clear-winner-maker, and only
+   for the *exploratory* persona.** User story: *an SRE paged at 2 a.m. greps logs for a
+   request-id / `payment timeout` across a service over the last hour to find the failing
+   path.* This ad-hoc substring search is the one common Parallax action where ClickHouse's
+   ~18× warm edge is felt by a human waiting. Closing it makes GreptimeDB clearly win the
+   "search logs during an incident" case. **But** it's the *secondary* path (anchored bundle
+   assembly is primary and already fast), and the **Tier-A bloom-variant lever** mitigates it
+   today — so "huge win" only if real usage shows log-search is frequent.
+2. **Improvement 4 (JSON attribute queries) — matters only for unplanned attribute analytics.**
+   User story: *a user groups errors by `http.status_code` or filters spans by `user.id`
+   across last week.* Felt only at volume on **undeclared** attributes; the Tier-A answer
+   (promote hot attributes to real columns) wins the common case. Footnote unless attribute
+   exploration is core.
+3. **Improvement 2 (scan/agg engine) — Tier-A Flow pre-agg already wins the user-facing case.**
+   User story: *a user opens a high-cardinality metric dashboard.* Flow pre-aggregation makes
+   that fast (Run 43); the raw-engine gap only bites on *unplanned* heavy aggregation, which
+   Parallax users rarely run interactively. Footnote for the common flow.
+4. **Improvements 3 (PREWHERE), 5 (projections), 7 (codecs) — footnotes for Parallax users.**
+   PREWHERE helps wide-row selective scans the anchored path avoids; projections serve a
+   second scan order Parallax rarely needs (anchors on `trace_id`/`fingerprint`); codecs are
+   **invisible to users** (a storage-cost second-order lever, and compression is a near-wash).
+   None makes GreptimeDB a "clear winner" of a user-felt case.
+
+**Honest bottom line (user-first):** for Parallax's actual hot path, GreptimeDB is *already*
+the clear winner — none of these is required. The single improvement that would make it
+clearly win a real, common user moment is **#1 (incident log search)**, and even that is
+secondary and Tier-A-mitigable. **Validate the query mix first** (what fraction of real
+Parallax queries are ad-hoc log search vs anchored retrieval); invest in Tier-B engine work
+only if that fraction is high. Anything else is mechanism elegance without user impact.
 
 ## The gaps and what closes each
 
@@ -93,6 +133,13 @@ Parallax. Source read at GreptimeDB `v1.0.2` (`0ef5451`).
   `src/mito2/src/sst/index/fulltext_index/applier.rs`, return the matched `RowId` set and
   feed it into the gap-#3 arrow `RowFilter`/`RowSelection` instead of a post-decode filter.
 - **Tier:** **A** (lever) + **B** (cache). **Integration**, not redesign.
+- **User story & clear-winner:** *an SRE paged at 2 a.m. greps logs for a request-id /
+  `payment timeout` across a service over the last hour to find the failing path* — the one
+  common Parallax action where ClickHouse's ~18× warm edge is felt by a human waiting. **By
+  adding this, GreptimeDB clearly wins the "search logs during an incident" case** — the only
+  improvement here that flips a real, common user moment (see the user-first ranking above).
+  Caveat: it is the *secondary* path (anchored bundle assembly is primary and already fast),
+  so the huge win lands only if real usage shows log search is frequent.
 - **Value here:** directly shrinks the only large *warm* gap (log search). **Tier-A lever
   first:** for Parallax log search that does **not** need exact-phrase ranking, declare the
   **bloom full-text variant** (`INDEX_BLOB_TYPE_BLOOM`) on `message` — it already reuses
@@ -193,7 +240,16 @@ Parallax. Source read at GreptimeDB `v1.0.2` (`0ef5451`).
 - **What:** give GreptimeDB an alternate-ordering structure for tables queried on two keys.
 - **Why:** GreptimeDB's secondary indexes give *positions*, not a second physical sort
   order (Run 28, `projections-and-access-paths.md`) — a scan on a non-primary key can't get
-  ClickHouse's projection locality.
+  ClickHouse's projection locality. **Source-confirmed absent (pass 82, v1.0.2):** no
+  `PROJECTION` keyword in `src/sql/src/parsers/{create_parser,alter_parser}.rs` (grep = 0),
+  and the `AlterTableOperation` enum has no projection/alternate-ordering variant (only
+  Add/Drop/ModifyColumn, Rename, Set/UnsetTableOptions, Set/UnsetIndex{Fulltext,Inverted,
+  Skipping}) — so there is genuinely no engine-native second physical order.
+- **User story & clear-winner:** *a user wants a service's span timeline (`service`-time
+  order) **and** the trace bundle (`trace_id` order) fast from the spans table.* Parallax
+  anchors on `trace_id`/`fingerprint`, so the second scan order is rarely hot — **this does
+  not make GreptimeDB a clear winner of a common user case**; the Flow workaround covers the
+  rare instance. Footnote (see ranking above).
 - **How (code-oriented):** (a) **Tier-A today:** maintain a re-sorted derived table with a
   **Flow** (`CREATE FLOW … SINK TO alt_table` keyed on the alternate order — Flow verified
   Run 43); the app/optimizer queries whichever table matches. Extra storage, no engine
@@ -322,5 +378,9 @@ first which gaps Parallax's real query mix actually hits before investing in Tie
   `op_type` → UNCOMPRESSED) but user data columns default to `Encoding::PLAIN` + ZSTD
   (`:433-434`); `TODO` at `:430`. Confirms #7: no Gorilla-class float encoding on user columns,
   no per-column codec DDL.
+- Source (pass 82, v1.0.2): `src/sql/src/parsers/{create_parser,alter_parser}.rs` — **no
+  `PROJECTION` keyword** (grep = 0); `AlterTableOperation` = Add/Drop/ModifyColumn, Rename,
+  Set/UnsetTableOptions, Set/UnsetIndex{Fulltext,Inverted,Skipping} — no projection/alternate-
+  ordering op. Confirms #5: no engine-native second physical order.
 - Decision context: `verdict-which-to-choose.md`. Loop target: `prompts/greptimedb-vs-clickhouse-internals.md`
   ("Closing The Gap").
