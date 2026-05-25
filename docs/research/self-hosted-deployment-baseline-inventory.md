@@ -21,11 +21,11 @@ benchmark reproducible.
 
 | System | Current pin checked | Official path to test | Declared service shape | Immediate Parallax implication |
 | --- | --- | --- | --- | --- |
-| Sentry self-hosted | [`26.5.0`](https://github.com/getsentry/self-hosted/releases/tag/26.5.0), published 2026-05-18. | Official self-hosted install and Docker Compose. | The `26.5.0` `docker-compose.yml` declares 72 services. Official docs state self-hosted is for simple low-volume use cases, with no dedicated support, and list 4 CPU cores, 16 GB RAM, 16 GB swap, and 20 GB free disk as minimums. | Sentry remains the heavy baseline Parallax must beat for setup burden, but not the only baseline. |
+| Sentry self-hosted | [`26.5.0`](https://github.com/getsentry/self-hosted/releases/tag/26.5.0), published 2026-05-18. | Official self-hosted install and Docker Compose. | The `26.5.0` `docker-compose.yml` declares 72 services. Official docs state self-hosted is for simple low-volume use cases, with no dedicated support, and list 4 CPU cores, 16 GB RAM, 16 GB swap, and 20 GB free disk as minimums. The 26.5.0 release note adds a manual feature-flag update before `install.sh`, one new Docker container for Launchpad-backed mobile features, a weak default secret note for `LAUNCHPAD_RPC_SHARED_SECRET`, and a self-hosted objectstore gap for Snapshots. | Sentry remains the heavy baseline Parallax must beat for setup burden, but release-note action/security items now also count as operator-visible complexity. |
 | SigNoz Docker | [`v0.125.1`](https://github.com/SigNoz/signoz/releases/tag/v0.125.1), published 2026-05-20. | Official Docker Compose install. | The `v0.125.1` `deploy/docker/docker-compose.yaml` declares 6 services: `signoz`, `otel-collector`, `clickhouse`, `init-clickhouse`, `zookeeper-1`, and `signoz-telemetrystore-migrator`. | SigNoz is already a compact OTLP-native, agent-facing baseline. Parallax must beat it on evidence bundles, Sentry migration, and lower tiny-tier dependency count. |
 | OpenObserve | [`v0.90.2`](https://github.com/openobserve/openobserve/releases/tag/v0.90.2), published 2026-05-22. | Single Docker container or binary quickstart. | Single-binary/container path for local single-node operation; HA deployment splits roles later. | OpenObserve is the strongest Rust/self-hosted simplicity pressure test. Parallax must justify every extra default process with Sentry compatibility or evidence-bundle value. |
 | Bugsink | [`2.2.1`](https://github.com/bugsink/bugsink/releases/tag/2.2.1), published 2026-05-22. | Docker quickstart and installation docs. | Quickstart is a single container; docs emphasize SQLite default, no queue, and no external services, with MySQL/Postgres available for larger installs. | Error-only Sentry-compatible simplicity is already available. Parallax must not present "change the DSN and self-host" as a moat. |
-| Rustrak | [`@rustrak/server@0.2.5`](https://github.com/AbianS/rustrak/releases/tag/%40rustrak/server%400.2.5), published 2026-05-21. | README SQLite-default Docker Compose for server + UI; Postgres image for production. | Default quickstart is 2 containers (`server`, `ui`) with SQLite volume; production example adds Postgres. The README claims around 50 MB server memory, sub-50 ms P99 ingestion, 10k+ events/s, no Redis, and no complex infrastructure. | Rust-first Sentry-compatible lightweight tracking exists. Rustrak also ships an MCP package, so Parallax's agent differentiation must be the citable bundle and outcome graph, not MCP existence. |
+| Rustrak | [`@rustrak/server@0.2.5`](https://github.com/AbianS/rustrak/releases/tag/%40rustrak/server%400.2.5), published 2026-05-21. Generic [`releases/latest`](https://github.com/AbianS/rustrak/releases/latest) currently resolves to `docs@0.1.16`, so the server package must be pinned explicitly. | README SQLite-default Docker Compose for server + UI; Postgres image for production. | Default quickstart is 2 containers (`server`, `ui`) with SQLite volume; production example adds Postgres. The README claims around 50 MB server memory, sub-50 ms P99 ingestion, 10k+ events/s, no Redis, and no complex infrastructure. | Rust-first Sentry-compatible lightweight tracking exists, but the benchmark must treat monorepo/package release streams carefully. Rustrak also ships an MCP package, so Parallax's agent differentiation must be the citable bundle and outcome graph, not MCP existence. |
 | Traceway | [`backend/v1.7.27`](https://github.com/tracewayapp/traceway/releases/tag/backend/v1.7.27), published 2026-05-22. | Docker Compose for standalone; embedded Go mode for local/dev. | `main` Docker Compose declares 3 services (`traceway`, `clickhouse`, `postgres`). Embedded mode runs inside a Go process with SQLite. | Traceway pressures the OTLP-native, frontend/session replay, and "no Collector" parts of the roadmap. It is not a Sentry-envelope migration path yet. |
 | GoSnag | No GitHub release/tag at check time; pin `main` commit [`418b8b1`](https://github.com/darkspock/gosnag/commit/418b8b107e274bfaab3f905510ddd274173d216b), dated 2026-04-17, or the latest commit at benchmark time. | Docker Compose quickstart. | `main` Docker Compose declares 2 services (`gosnag`, `db`) and `DATABASE_URL` is required. README describes a single Go binary with embedded React UI and migrations, plus PostgreSQL. | GoSnag combines Sentry compatibility, AI RCA features, tickets, GitHub/Jira, and a documented MCP server. The Parallax gap is read-only evidence bundles and fix/outcome feedback, not "AI over errors." |
 | Urgentry | [`v0.2.12`](https://github.com/urgentry/urgentry/releases/tag/v0.2.12), published 2026-05-22. | Tiny one-binary path and split self-hosted path. | Tiny mode is one binary with SQLite; self-hosted mode splits roles over PostgreSQL, MinIO, Valkey, and NATS. README publishes benchmark claims against self-hosted Sentry 26.3.1. | Urgentry is not OSI-open, but it is a serious simplicity and benchmark-methodology baseline. Include it whenever Parallax claims "simpler than self-hosted Sentry." |
@@ -48,8 +48,13 @@ curl -Ls -o /dev/null -w '%{url_effective}\n' \
 curl -Ls -o /dev/null -w '%{url_effective}\n' \
   https://github.com/bugsink/bugsink/releases/latest
 
+# Rustrak is a monorepo with package-specific releases. Record the generic
+# latest URL, but pin the server package tag separately.
 curl -Ls -o /dev/null -w '%{url_effective}\n' \
   https://github.com/AbianS/rustrak/releases/latest
+
+curl -Ls -o /dev/null -w '%{url_effective}\n' \
+  https://github.com/AbianS/rustrak/releases/tag/%40rustrak/server%400.2.5
 
 curl -Ls -o /dev/null -w '%{url_effective}\n' \
   https://github.com/tracewayapp/traceway/releases/latest
@@ -87,18 +92,26 @@ unpinned moving target unless a release appears before the measured run.
    releases. For example, SigNoz docs may show sample container output from an
    older image while the current release tag is newer. The benchmark should pin
    the latest release and then follow the official install path for that release.
-2. **Separate throwaway from persistent quickstart.** Bugsink's single-container
+2. **Pin the measured release stream, not only "latest."** Monorepos and
+   componentized projects can have package-specific tags where the generic latest
+   release belongs to docs or another component. No-release projects such as
+   GoSnag remain moving targets until pinned to a commit.
+3. **Record release-note action items.** Manual pre-install steps, added
+   containers, default-secret warnings, unsupported self-hosted features, and
+   security caveats are part of operator-visible deployment complexity even
+   before a VM benchmark measures wall-clock time.
+4. **Separate throwaway from persistent quickstart.** Bugsink's single-container
    Docker quickstart is excellent for evaluation, but persistent data and backup
    behavior must be measured separately. The same rule applies to every SQLite
    default.
-3. **Count helper/init services honestly.** Init containers and migrators are
+5. **Count helper/init services honestly.** Init containers and migrators are
    not long-running services, but they are operator-visible complexity and should
    be recorded separately from steady-state containers.
-4. **Measure first useful output, not first web page.** For Sentry-like products,
+6. **Measure first useful output, not first web page.** For Sentry-like products,
    first useful output is a captured error issue. For Parallax, it is
    `parallax issue context <issue-id>` returning the first redacted evidence
    bundle with missing-data warnings.
-5. **Record agent/MCP posture separately from deployment simplicity.** Sentry,
+7. **Record agent/MCP posture separately from deployment simplicity.** Sentry,
    Rustrak, and GoSnag now have MCP surfaces. MCP presence should not improve a
    deployment score unless it is safe, read-only where appropriate, citable, and
    connected to outcome records.

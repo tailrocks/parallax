@@ -28,13 +28,15 @@ Central rule:
 | Source | Ledger consequence |
 | --- | --- |
 | [Sentry self-hosted docs](https://develop.sentry.dev/self-hosted/) | Sentry is the complexity baseline: Docker/Docker Compose plus scripts, no dedicated support, minimum 4 CPU cores, 16 GB RAM plus 16 GB swap, and larger installs becoming custom. |
-| [Sentry self-hosted 26.5.0 release](https://github.com/getsentry/self-hosted/releases/tag/26.5.0) | The Sentry baseline must pin a real release and count the exact Compose graph from that tag, not a floating `main` checkout. |
+| [Sentry self-hosted 26.5.0 release](https://github.com/getsentry/self-hosted/releases/tag/26.5.0) | The Sentry baseline must pin a real release and count the exact Compose graph from that tag, not a floating `main` checkout. Release-note action items also count: 26.5.0 requires a manual feature-flag update before `install.sh`, adds a new Docker container for Launchpad-powered mobile features, notes an objectstore gap for self-hosted Snapshots, and flags a weak hardcoded default `LAUNCHPAD_RPC_SHARED_SECRET`. |
 | [SigNoz Docker install docs](https://signoz.io/docs/install/docker/) and [SigNoz v0.125.1 release](https://github.com/SigNoz/signoz/releases/tag/v0.125.1) | SigNoz is the compact OTLP-native baseline; Parallax must beat it on first bundle, Sentry migration, and dependency count, not only on Sentry's larger footprint. |
 | [OpenObserve getting started](https://openobserve.ai/docs/getting-started/) and [OpenObserve v0.90.2 release](https://github.com/openobserve/openobserve/releases/tag/v0.90.2) | OpenObserve is the single-node Rust/self-hosted simplicity pressure test; every extra Parallax process needs evidence-bundle value. |
 | [Bugsink Docker install](https://www.bugsink.com/docs/docker-install/) and [Bugsink 2.2.1 release](https://github.com/bugsink/bugsink/releases/tag/2.2.1) | Lightweight Sentry-compatible setup already exists; Parallax's simplicity claim must include cross-signal context, not just DSN-change ingestion. |
 | [GreptimeDB standalone](https://docs.greptime.com/getting-started/installation/greptimedb-standalone/) | GreptimeDB is acceptable in the tiny tier only while it remains one standalone storage process with clear local persistence. |
 | [Turso local development](https://docs.turso.tech/local-development) and [libSQL](https://github.com/tursodatabase/libsql) | Metadata must work as an embedded/local file or local libSQL path; required hosted Turso or Postgres would fail the tiny-tier claim. |
-| [Self-hosted deployment baseline inventory](self-hosted-deployment-baseline-inventory.md) | This is the current baseline manifest. Measured runs must refresh it before claiming results because release tags and docs move quickly. |
+| [Rustrak server 0.2.5 release](https://github.com/AbianS/rustrak/releases/tag/%40rustrak/server%400.2.5) and [Rustrak latest release](https://github.com/AbianS/rustrak/releases/latest) | Rustrak is a monorepo with package-specific release tags; `releases/latest` currently resolves to `docs@0.1.16`, not the server package. Baseline refresh must record component-specific release streams, not only a generic latest URL. |
+| [Traceway backend v1.7.27 release](https://github.com/tracewayapp/traceway/releases/tag/backend/v1.7.27), [GoSnag main commits](https://github.com/darkspock/gosnag/commits/main/), and [Urgentry v0.2.12 release](https://github.com/urgentry/urgentry/releases/tag/v0.2.12) | Lightweight challengers are versioning differently: component releases, no-release moving `main`, and published tiny/split deployment modes. The comparison ledger must mark release-stream confidence and moving-target risk per competitor. |
+| [Self-hosted deployment baseline inventory](self-hosted-deployment-baseline-inventory.md) | This is the current baseline manifest. Measured runs must refresh it before claiming results because release tags, docs, release-note action items, and service graphs move quickly. |
 
 ## Claim Levels
 
@@ -72,6 +74,7 @@ Each run stores immutable artifacts under:
 ```text
 docs/research/self-hosted-simplicity-runs/<run_id>/manifest.json
 docs/research/self-hosted-simplicity-runs/<run_id>/source-snapshot.jsonl
+docs/research/self-hosted-simplicity-runs/<run_id>/release-note-risk-results.jsonl
 docs/research/self-hosted-simplicity-runs/<run_id>/command-ledger.jsonl
 docs/research/self-hosted-simplicity-runs/<run_id>/service-inventory.jsonl
 docs/research/self-hosted-simplicity-runs/<run_id>/port-config-secret-inventory.jsonl
@@ -118,10 +121,14 @@ run.
     "compose_or_binary_hash": "sha256:<hex>"
   },
   "baselines": [
-    {"system": "sentry_self_hosted", "version": "26.5.0"},
-    {"system": "signoz", "version": "v0.125.1"},
-    {"system": "openobserve", "version": "v0.90.2"},
-    {"system": "bugsink", "version": "2.2.1"}
+    {"system": "sentry_self_hosted", "version": "26.5.0", "release_stream": "self-hosted"},
+    {"system": "signoz", "version": "v0.125.1", "release_stream": "signoz"},
+    {"system": "openobserve", "version": "v0.90.2", "release_stream": "openobserve"},
+    {"system": "bugsink", "version": "2.2.1", "release_stream": "bugsink"},
+    {"system": "rustrak", "version": "@rustrak/server@0.2.5", "release_stream": "server_package"},
+    {"system": "traceway", "version": "backend/v1.7.27", "release_stream": "backend"},
+    {"system": "gosnag", "version": "418b8b1", "release_stream": "main_no_release"},
+    {"system": "urgentry", "version": "v0.2.12", "release_stream": "urgentry"}
   ],
   "policies": {
     "redaction_policy": "a6-default-deny-vN",
@@ -140,11 +147,32 @@ Source snapshot row:
 {
   "system": "sentry_self_hosted",
   "source_url": "https://github.com/getsentry/self-hosted/releases/latest",
+  "latest_url_effective": "https://github.com/getsentry/self-hosted/releases/tag/26.5.0",
+  "release_stream": "self-hosted",
   "resolved_version": "26.5.0",
   "resolved_at": "2026-05-25T13:00:00Z",
   "install_doc_url": "https://develop.sentry.dev/self-hosted/",
   "artifact_hash": "sha256:<hex>",
+  "release_note_action_items": 0,
+  "release_note_security_notes": 0,
+  "moving_target": false,
   "result": "pass"
+}
+```
+
+Release-note risk row:
+
+```json
+{
+  "system": "sentry_self_hosted",
+  "resolved_version": "26.5.0",
+  "risk_type": "manual_preinstall_step|new_service_or_container|default_secret|unsupported_self_hosted_feature|moving_release_stream",
+  "source_url": "https://github.com/getsentry/self-hosted/releases/tag/26.5.0",
+  "operator_action_required": true,
+  "affects_service_count": false,
+  "affects_secret_safety": false,
+  "summary": "Short redacted release-note summary.",
+  "counting_decision": "record_only|affects_gate|excludes_claim"
 }
 ```
 
@@ -308,6 +336,12 @@ Claim ledger row:
   for observability systems.
 - Pin product code, image tags, docs hashes, and Compose files. Do not use
   estimates in the scorecard.
+- Pin the correct release stream. For monorepos or package-specific releases,
+  generic `releases/latest` is not enough unless it resolves to the component
+  being measured. Moving `main` baselines must be marked as lower-confidence.
+- Record release-note action items, new containers/services, default-secret
+  notes, unsupported self-hosted features, and manual pre-install steps as
+  release-note risk rows before counting a baseline as current.
 - Count long-running services separately from init/migration containers, but
   record both.
 - Any required broker, Redis, Postgres, hosted Turso, external Collector,
@@ -346,6 +380,9 @@ Mark the claim `claim_expired` and rerun when any of these changes:
 - Sentry, SigNoz, OpenObserve, Bugsink, Rustrak, Traceway, GoSnag, Urgentry, or
   another measured baseline publishes a new relevant release or changes its
   install path.
+- A measured baseline release note adds a service/container, manual install
+  action, default-secret warning, unsupported self-hosted feature, or security
+  caveat relevant to first useful output.
 - Parallax adds, removes, or splits a service; changes GreptimeDB, metadata,
   raw retention, CLI, API, auth, or redaction setup; or requires a new external
   dependency.

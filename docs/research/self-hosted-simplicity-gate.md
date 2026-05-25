@@ -27,7 +27,7 @@ Use that note as the measurement manifest and refresh it before each real run.
 
 | System | Current official posture | Operational read for Parallax |
 | --- | --- | --- |
-| Sentry self-hosted | Sentry describes self-hosted as a minimal setup for simple use cases with no dedicated support, Docker/Docker Compose plus install scripts, 4 CPU cores, 16 GB RAM plus 16 GB swap, 20 GB disk, and a single-node graph that still includes databases, brokers, and product services. | This is the main complexity baseline. Parallax does not need to beat Sentry's feature depth; it must beat Sentry's first-deployment burden for the narrower error-context job. |
+| Sentry self-hosted | Sentry describes self-hosted as a minimal setup for simple use cases with no dedicated support, Docker/Docker Compose plus install scripts, 4 CPU cores, 16 GB RAM plus 16 GB swap, 20 GB disk, and a single-node graph that still includes databases, brokers, and product services. The current pinned release also has manual release-note action/security items. | This is the main complexity baseline. Parallax does not need to beat Sentry's feature depth; it must beat Sentry's first-deployment burden for the narrower error-context job, including operator-visible release-note work. |
 | SigNoz self-hosted | Official Docker setup clones the repo and runs Docker Compose; the verification example shows `signoz`, `signoz-otel-collector`, ClickHouse, and ZooKeeper containers. Architecture docs center ClickHouse and the SigNoz OTel Collector. | SigNoz is easier than Sentry for OTel-native observability, but ClickHouse plus ZooKeeper is still heavier than the Parallax tiny tier should be. |
 | OpenObserve single-node | The official quickstart offers binary and Docker single-node self-hosted paths with root credentials and port 5080; its architecture page separates larger deployments into router, ingester, compactor, querier, and alert manager roles. | OpenObserve proves a Rust, single-node observability product can be simple. Parallax must justify any extra complexity with Sentry compatibility, evidence bundles, and agent-safe context. |
 | GreptimeDB standalone | GreptimeDB can run as one standalone binary or one Docker container, with local data persisted in a directory and HTTP/RPC/MySQL/Postgres ports exposed. | Acceptable for the tiny tier if it remains one storage process and passes freshness/cost gates. |
@@ -83,19 +83,22 @@ and Parallax tiny tier.
 
 1. Start from a fresh Ubuntu LTS VM with Docker installed and no product data.
 2. Pin the exact version, commit, or image tag being tested.
-3. Follow the official install path without private knowledge.
-4. Record wall-clock time from first command to usable UI/API.
-5. Count long-running processes or containers after startup.
-6. Record required CPU/RAM/disk recommendations and actual idle RSS/CPU.
-7. Record exposed ports, config files, required secrets, and generated
+3. Record release-stream confidence, release-note action items, new
+   services/containers, default-secret warnings, and unsupported self-hosted
+   features before running the install.
+4. Follow the official install path without private knowledge.
+5. Record wall-clock time from first command to usable UI/API.
+6. Count long-running processes or containers after startup.
+7. Record required CPU/RAM/disk recommendations and actual idle RSS/CPU.
+8. Record exposed ports, config files, required secrets, and generated
    credentials.
-8. Ingest one Sentry error event from the latest Rust Sentry SDK path, one OTLP
+9. Ingest one Sentry error event from the latest Rust Sentry SDK path, one OTLP
    trace, one OTLP log, and one OTLP metric from a small sample app.
-9. Query the first issue context bundle through the CLI and HTTP API.
-10. Restart all services and verify the issue, raw event, trace link, and bundle
+10. Query the first issue context bundle through the CLI and HTTP API.
+11. Restart all services and verify the issue, raw event, trace link, and bundle
     still exist.
-11. Run the documented backup/export path and restore into a clean instance.
-12. Run the documented upgrade path or dry-run upgrade and record the operator
+12. Run the documented backup/export path and restore into a clean instance.
+13. Run the documented upgrade path or dry-run upgrade and record the operator
     steps.
 
 For Parallax, the "first useful moment" is not seeing a dashboard. It is this:
