@@ -32,17 +32,17 @@ and normalization of agent execution traces.
 
 | Source | Current check | Parallax implication |
 | --- | --- | --- |
-| Local tool version probe | `command -v` plus `--version` checks re-run in this workspace on 2026-05-25 found `/home/agent/.local/bin/codex` with Codex CLI `0.133.0`, `/home/agent/.local/bin/claude` with Claude Code `2.1.150`, `/home/agent/.local/bin/amp` with version `0.0.1779639467-g6d0650` released `2026-05-24T16:17:47.000Z`, and `/home/agent/.opencode/bin/opencode` with OpenCode `1.15.10`. Amp's raw output includes a relative age suffix that changed across probes (`20h ago` to `21h ago`). | Real runs must store the exact tool binary path, raw version output, probe captured-at timestamp, normalized version/release fields, and docs snapshot date. Relative age strings are per-probe raw text, not durable freshness evidence. |
+| Local tool version probe | `command -v` plus `--version` checks re-run in this workspace on 2026-05-25 found `/home/agent/.local/bin/codex` with Codex CLI `0.133.0`, `/home/agent/.local/bin/claude` with Claude Code `2.1.150`, `/home/agent/.local/bin/amp` with version `0.0.1779639467-g6d0650` released `2026-05-24T16:17:47.000Z`, and `/home/agent/.opencode/bin/opencode` with OpenCode `1.15.10`. Amp's raw output includes a relative age suffix that changed across probes (`20h ago` to `21h ago` to `1d ago`). | Real runs must store the exact tool binary path, raw version output, probe captured-at timestamp, normalized version/release fields, and docs snapshot date. Relative age strings are per-probe raw text, not durable freshness evidence. |
 | [Codex hooks](https://developers.openai.com/codex/hooks) | Hooks expose structured JSON with `session_id`, `transcript_path`, `cwd`, `hook_event_name`, `model`, `turn_id`, and `permission_mode` for session, tool, prompt, permission, subagent, compaction, and stop events. The docs warn that transcript format is not a stable hook interface and that tool interception is incomplete for some shell and non-shell paths. They also document managed hooks, plugin-bundled hooks, and command-only handler support. | Codex capture can be structured, but transcripts must stay raw refs; hook gaps must be measured against wrapper, repo diff/hash, or other independent evidence; and every hook claim must record hook source and trust mode. |
 | [Codex CLI](https://developers.openai.com/codex/cli), [non-interactive mode](https://developers.openai.com/codex/noninteractive), and local `codex --help` / `codex exec --help` | Codex CLI is a local command-line agent surface and supports repo work, file edits, command execution, and automation workflows. Current official docs say `codex exec --json` emits JSONL events such as `thread.started`, `turn.started`, `turn.completed`, `turn.failed`, `item.*`, and `error`; item types include agent messages, reasoning, command executions, file changes, MCP tool calls, web searches, and plan updates. Local `0.133.0` help shows `--ephemeral`, plugin management, `mcp-server`, and dangerous approval/sandbox and hook-trust bypass flags. | Codex needs separate claim rows for interactive hooks, non-interactive JSONL event/item taxonomy, plugin-provided surfaces, Codex-as-MCP-server, and policy-sensitive dangerous flags. |
 | [Codex MCP](https://developers.openai.com/codex/mcp) | Codex supports local stdio MCP servers, Streamable HTTP servers, bearer-token env vars, OAuth login/logout for supported HTTP servers, static or environment HTTP headers, `enabled_tools`, `disabled_tools`, default and per-tool approval modes, OAuth callback overrides, plugin-provided MCP servers, and `codex mcp-server` as a stdio server for other clients. | Codex MCP config is both secret-bearing and policy-bearing. Agent-session fixture rows must record transport, token/header source, OAuth mode, enabled/disabled tool lists, approval mode, and plugin/server origin before MCP tool-call rows are treated as safe or comparable. |
 | [Claude Code monitoring](https://code.claude.com/docs/en/monitoring-usage) | Claude Code exports opt-in OpenTelemetry metrics, logs/events, and optional beta traces; prompt text, tool details, tool content, and raw API bodies are disabled by default and require explicit flags. It records session/tool/API/token/cost/MCP/plugin activity, does not pass generic `OTEL_*` exporter variables to Bash, hooks, MCP servers, or language servers, but active tracing injects `TRACEPARENT` into Bash/PowerShell. In `-p`/Agent SDK mode it can accept inbound `TRACEPARENT`/`TRACESTATE`; interactive sessions ignore inbound trace context. | Claude Code is the strongest native OTel target, but content capture must remain opt-in/redacted, plugin and MCP inventory must be recorded, and subprocess coverage must distinguish trace-context inheritance from full telemetry-exporter inheritance. |
-| [Claude Code CLI reference](https://code.claude.com/docs/en/cli-usage), [programmatic usage](https://code.claude.com/docs/en/headless), and local `claude --help` | Current docs and local `2.1.150` help show `--output-format stream-json` in print mode, `--include-hook-events`, `--include-partial-messages`, stream JSON input, replayed user messages, session IDs, resume/fork/from-PR flags, `--no-session-persistence`, `--bare`, permission modes, tool allow/deny/restrict flags, plugin dirs/URLs, MCP config, strict MCP config, background-agent defaults, and `claude mcp serve`. Bare mode skips auto-discovery of hooks, skills, plugins, MCP servers, auto memory, and `CLAUDE.md`; the docs say it is recommended for scripted calls and may become the default for `-p` later. | Claude stream JSON is a separate non-interactive structured adapter claim. It can support fixture automation and hook-event validation, but it must not be counted as interactive OTel coverage or as default-safe prompt/tool-content capture. Bare/no-persistence/scripted modes must be stored because they can suppress evidence and change replay/resume behavior. |
+| [Claude Code CLI reference](https://code.claude.com/docs/en/cli-usage), [programmatic usage](https://code.claude.com/docs/en/headless), and local `claude --help` | Current docs and local `2.1.150` help show `--output-format stream-json` in print mode, `--include-hook-events`, `--include-partial-messages`, stream JSON input, replayed user messages, session IDs, resume/fork/from-PR flags, `--no-session-persistence`, `--bare`, permission modes, tool allow/deny/restrict flags, plugin dirs/URLs, MCP config, strict MCP config, background-agent defaults, and `claude mcp serve`. Local help also shows remote-control naming, Chrome/IDE/Tmux/worktree context, startup file specs, setting-source restriction, explicit settings JSON/file input, dynamic system-prompt section exclusion, fallback model, budget cap, JSON-schema output, brief mode, slash-command disabling, debug-file output, and `ultrareview`. Local non-interactive help says workspace trust prompts are skipped and settings validation failures are silently ignored; `doctor` may spawn stdio MCP servers from `.mcp.json` for health checks. Bare mode skips auto-discovery of hooks, skills, plugins, MCP servers, auto memory, and `CLAUDE.md`; the docs say it is recommended for scripted calls and may become the default for `-p` later. | Claude stream JSON is a separate non-interactive structured adapter claim. It can support fixture automation and hook-event validation, but it must not be counted as interactive OTel coverage or as default-safe prompt/tool-content capture. Bare/no-persistence/scripted modes must be stored because they can suppress evidence and change replay/resume behavior. Remote control, context-injection flags, startup file downloads, trust skips, silent settings-validation behavior, and diagnostic MCP health checks must be recorded as source-policy state. |
 | [Claude Code hooks](https://code.claude.com/docs/en/hooks) | Hooks cover session start/end, setup/instructions, user prompts, tool use, permission requests/denials, subagents/tasks, stop/failure, compaction, config/cwd/file changes, worktrees, notifications, and MCP elicitation. Handlers can be command, HTTP, MCP tool, prompt, or agent. `PreToolUse` can allow, deny, ask, defer, and mutate tool input; some hooks can persist environment through `CLAUDE_ENV_FILE`; `PostCompact` can expose a compaction summary. | Hook rows must prove event-class coverage and record handler type, source, decision, mutation, persisted environment, compaction-summary policy, and whether hooks were disabled by bare mode or settings. Hooks are a control-plane surface, not just observation. |
 | [Claude Code MCP docs](https://code.claude.com/docs/en/mcp) | Claude Code supports local, project, user, plugin, and claude.ai MCP sources with precedence rules; stdio, SSE, and HTTP servers; OAuth metadata/scopes; dynamic `headersHelper` commands; MCP prompts/resources; elicitation; output limits through `MAX_MCP_OUTPUT_TOKENS` and `_meta["anthropic/maxResultSizeChars"]`; `claude mcp serve`; and managed MCP allow/deny controls. Project/local `headersHelper` commands run only after workspace trust. | MCP tool-call rows need server scope, transport, auth/header source, OAuth scopes, output-limit behavior, elicitation hooks, duplicate/source precedence, workspace trust, and Claude-as-MCP-server state before cross-agent MCP comparisons are claimable. |
 | [Claude Code settings](https://code.claude.com/docs/en/settings), [permission modes](https://code.claude.com/docs/en/permission-modes), [plugins](https://code.claude.com/docs/en/plugins-reference), and [agent view](https://code.claude.com/docs/en/agent-view) | Settings precedence is managed, command line, local, project, then user; managed settings cannot be overridden, while array settings such as permissions merge across scopes. Permission modes include `default`, `acceptEdits`, `plan`, `auto`, `dontAsk`, and `bypassPermissions`. Plugins can contribute skills, agents, hooks, MCP servers, LSP servers, monitors, Bash executables, and limited plugin settings. `claude agents --json` exposes live background sessions for scripting, and dispatched agents can inherit settings/plugins/MCP defaults. | Claude fixtures must snapshot effective settings sources, permission mode, plugin component inventory, background-agent mode, and plugin load errors, or the same "Claude Code" claim will hide materially different context and security behavior. |
-| [Amp manual](https://ampcode.com/manual) | Amp supports streaming JSON output in `--execute` mode for programmatic integration and real-time conversation monitoring; optional thinking blocks extend the schema and are not Claude Code compatible. `--stream-json-input` supports multi-message stdin and a `steer` marker. The same manual documents TypeScript plugins, project/system/global plugin locations, lifecycle events such as `session.start`, `agent.start`, `tool.call`, `tool.result`, and `agent.end`, plugin activation for both interactive sessions and `amp --execute` runs, and explicitly notes there is no `session.end` event. Amp does not ask before running tools by default; `amp.permissions`, `amp.guardedFiles.allowlist`, or `amp.dangerouslyAllowAll=false` activate an internal permissions plugin. | Amp should be measured through both plugin-event fixtures and non-interactive stream fixtures. Thinking blocks, stdin messages, `steer` messages, and image/base64 payloads are sensitive input modes, not default-safe capture. Plugin events are a stronger interactive capture surface than the prior wrapper/thread-ref assumption, but still need payload, permissions, and version proof. |
-| [OpenCode CLI](https://opencode.ai/docs/cli/) | OpenCode supports `run --format json` raw JSON events, `run --attach` against a `serve` backend, session continuation/forking, `session list --format json`, export JSON with `--sanitize`, headless `serve` API with optional basic auth, ACP over nd-JSON, stats, and permission/thinking flags. | OpenCode is a strong JSON/export/plugin/API/protocol adapter target; `--sanitize` is helpful but does not replace Parallax redaction, and `--thinking`, `--dangerously-skip-permissions`, server attach URL, basic-auth credential source, CORS, host/port, and mDNS settings must be recorded as sensitive run configuration. |
+| [Amp manual](https://ampcode.com/manual) and local `amp --help` | Amp supports streaming JSON output in `--execute` mode for programmatic integration and real-time conversation monitoring; optional thinking blocks extend the schema and are not Claude Code compatible. `--stream-json-input` supports multi-message stdin and a `steer` marker. The same manual documents TypeScript plugins, project/system/global plugin locations, lifecycle events such as `session.start`, `agent.start`, `tool.call`, `tool.result`, and `agent.end`, plugin activation for both interactive sessions and `amp --execute` runs, and explicitly notes there is no `session.end` event. Amp does not ask before running tools by default; `amp.permissions`, `amp.guardedFiles.allowlist`, or `amp.dangerouslyAllowAll=false` activate an internal permissions plugin. Local help adds thread export, tool list/show/make/use commands, permission list/test/edit/add commands, MCP add/list/remove/OAuth/doctor/approve commands, skill loading, per-pattern tool enable/disable settings, Claude Code skill import control, commit coauthor/thread-trailer settings, IDE/JetBrains flags, and `--mcp-config`. | Amp should be measured through both plugin-event fixtures and non-interactive stream fixtures. Thinking blocks, stdin messages, `steer` messages, and image/base64 payloads are sensitive input modes, not default-safe capture. Plugin events are a stronger interactive capture surface than the prior wrapper/thread-ref assumption, but still need payload, permissions, and version proof. Tool enable/disable patterns, skill import, thread export, MCP OAuth/workspace approval, and commit-trailer settings are policy or provenance fields, not incidental CLI options. |
+| [OpenCode CLI](https://opencode.ai/docs/cli/) and local `opencode --help` | OpenCode supports `run --format json` raw JSON events, `run --attach` against a `serve` backend, session continuation/forking, `session list --format json`, export JSON with `--sanitize`, headless `serve` API with optional basic auth, ACP over nd-JSON, stats, and permission/thinking flags. Local help also exposes `--pure` to disable external plugins plus `web`, `github`, `pr`, `plugin`, `db`, `models`, `upgrade`, and `uninstall` commands. | OpenCode is a strong JSON/export/plugin/API/protocol adapter target; `--sanitize` is helpful but does not replace Parallax redaction, and `--thinking`, `--dangerously-skip-permissions`, server attach URL, basic-auth credential source, CORS, host/port, mDNS settings, plugin suppression, GitHub/PR commands, and session-database commands must be recorded as sensitive run configuration. |
 | [OpenCode plugins](https://opencode.ai/docs/plugins/) | Plugins expose event families for command, file, installation, LSP, message, permission, server, session, todo, shell, tool, and TUI behavior. `tool.execute.before` can mutate tool arguments; `shell.env` can inject environment variables. | OpenCode can provide deep structured events without terminal parsing, but support must be proven per enabled event class, and fixtures must separate observer-only plugins from plugins that mutate tool calls, environment, or TUI behavior. |
 | [OpenCode MCP servers](https://opencode.ai/docs/mcp-servers/) | OpenCode supports local MCP servers with command/environment/timeout/enabled fields and remote MCP servers with URL, enabled, headers, OAuth config or OAuth disabled, timeout, remote defaults, global tool toggles, glob disables, and per-agent MCP enablement. | MCP settings are secret-bearing and policy-bearing. OpenCode tool-call rows need transport, header/env/OAuth source, enabled/global/per-agent tool state, and timeout provenance before cross-agent MCP comparisons are claimable. |
 | [OpenTelemetry semantic conventions 1.41.0](https://opentelemetry.io/docs/specs/semconv/) | Current semconv catalog includes GenAI, MCP, CLI, process, CI/CD, VCS, exception, and test areas. | Adapters should record source semantic-convention versions instead of hard-coding unstable span shapes into Parallax storage. |
@@ -169,6 +169,10 @@ approves a redacted synthetic fixture.
     "hook_source": "none|user|project|managed|plugin|mixed",
     "hook_trust_mode": "persisted|bypassed|not_applicable|unknown",
     "plugin_hooks_enabled": false,
+    "context_injection_surfaces": [],
+    "settings_validation_mode": "strict|silent_ignore|unknown",
+    "workspace_trust_dialog_skipped": false,
+    "cloud_or_remote_control_mode": "none|remote_control|cloud_review|unknown",
     "amp_config": {
       "mode": "smart|deep|rush|large|unknown",
       "stream_json": false,
@@ -178,6 +182,12 @@ approves a redacted synthetic fixture.
       "permission_settings_present": false,
       "guarded_files_allowlist_present": false,
       "dangerously_allow_all": false,
+      "thread_export_used": false,
+      "tool_enable_patterns": [],
+      "tool_disable_patterns": [],
+      "mcp_oauth_or_workspace_approval": false,
+      "claude_code_skill_import_enabled": false,
+      "git_trailer_settings": [],
       "plugin_decision_actions_observed": []
     },
     "mcp_config": {
@@ -197,6 +207,8 @@ approves a redacted synthetic fixture.
       "no_session_persistence": false,
       "session_resume_mode": "new|continue|resume|fork|from_pr|unknown",
       "settings_sources": [],
+      "setting_sources_restricted": [],
+      "explicit_settings_input": false,
       "managed_settings_present": false,
       "settings_array_merge_observed": false,
       "permission_mode": "default|acceptEdits|plan|auto|dontAsk|bypassPermissions|unknown",
@@ -218,18 +230,41 @@ approves a redacted synthetic fixture.
       "mcp_output_limit_tokens": null,
       "claude_mcp_serve": false,
       "traceparent_inbound": false,
-      "traceparent_outbound": false
+      "traceparent_outbound": false,
+      "remote_control": false,
+      "chrome_enabled": false,
+      "ide_enabled": false,
+      "tmux_enabled": false,
+      "worktree_enabled": false,
+      "file_startup_refs": [],
+      "dynamic_system_prompt_sections_excluded": [],
+      "fallback_model": null,
+      "max_budget_usd": null,
+      "json_schema_supplied": false,
+      "brief_mode": false,
+      "slash_commands_disabled": false,
+      "debug_file": null,
+      "workspace_trust_dialog_skipped": false,
+      "settings_validation_mode": "strict|silent_ignore|unknown",
+      "doctor_spawned_workspace_mcp": false,
+      "ultrareview_used": false
     },
     "opencode_config": {
       "run_format": "default|json",
       "attach_url": null,
       "serve_enabled": false,
+      "web_mode": false,
       "server_auth_mode": "none|basic",
       "server_credential_sources": [],
       "cors_origins": [],
       "mdns_enabled": false,
       "mcp_tool_enablement_scope": "global|per_agent|mixed|unknown",
       "plugin_event_classes_enabled": [],
+      "pure_mode": false,
+      "plugin_installed_for_run": false,
+      "github_or_pr_command_used": false,
+      "db_command_used": false,
+      "models_command_used": false,
       "plugin_mutates_tool_args": false,
       "plugin_injects_shell_env": false,
       "export_sanitize": false,
@@ -459,6 +494,17 @@ approves a redacted synthetic fixture.
 - Claude Code `--no-session-persistence` claims must record that sessions cannot
   be resumed from disk and that transcript/resume-based evidence is unavailable
   or raw-ref-only for that run.
+- Claude Code context/control claims must record remote-control mode,
+  Chrome/IDE/Tmux/worktree context, startup file references, setting-source
+  restrictions, explicit settings JSON or file input, excluded dynamic
+  system-prompt sections, fallback model, budget cap, JSON schema, brief mode,
+  disabled slash commands, debug-file output, and cloud review modes such as
+  `ultrareview`.
+- Claude Code non-interactive and diagnostic claims must record whether
+  workspace trust prompts were skipped, invalid settings were silently ignored,
+  startup file references were downloaded, or `doctor` spawned stdio MCP servers
+  from workspace `.mcp.json`. These side effects can change source trust and
+  must not be hidden under a generic "print mode" row.
 - Claude Code hook claims apply per event class and handler type. Rows must
   record whether the handler was command, HTTP, MCP tool, prompt, or agent;
   whether it allowed, denied, asked, deferred, or mutated a tool call; whether
@@ -505,6 +551,11 @@ approves a redacted synthetic fixture.
   `amp.permissions`, `amp.guardedFiles.allowlist`,
   `amp.dangerouslyAllowAll=false`, or custom plugin decisions produced
   `allow`, `reject-and-continue`, `modify`, or `synthesize` outcomes.
+- Amp CLI-policy claims must record thread export use, tool enable/disable
+  patterns, permission command state, MCP config/OAuth/workspace approval,
+  Claude Code skill import setting, and git commit coauthor/thread-trailer
+  settings. These fields affect provenance and agent-visible context even when
+  the streaming or plugin event schema itself is unchanged.
 - OpenCode `--sanitize` is a source feature, not Parallax redaction proof.
   Parallax redaction must still pass on normalized projections.
 - OpenCode plugin support requires coverage rows for enabled event classes.
@@ -513,6 +564,12 @@ approves a redacted synthetic fixture.
   arguments, injected shell environment, or affected TUI/server behavior.
 - OpenCode run JSON, export JSON, plugin hooks, server/API, and ACP are separate
   claim surfaces. Do not collapse them into one support claim.
+- OpenCode `--pure` suppresses external plugins. Pure-mode fixture rows cannot
+  prove plugin-event coverage; plugin-enabled and plugin-suppressed runs are
+  separate capture configurations.
+- OpenCode `web`, `github`, `pr`, `plugin`, `db`, and `models` commands must be
+  recorded when used because they can change server/API exposure, repository
+  side effects, plugin state, session database state, or model selection.
 - OpenCode server/API and `run --attach` claims must record attach URL,
   host/port, CORS, mDNS, basic-auth mode, and credential source. Local run JSON
   does not prove attached-server behavior.
