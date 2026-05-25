@@ -42,11 +42,13 @@ material shifts have happened, and they narrow the wedge without closing it:
    Coroot Community also now makes agentic-ready MCP a first-class self-hosted
    surface, with Enterprise/Cloud-gated AI RCA. These are the first
    non-incumbent open projects to approach Parallax's exact niche. They are
-   saved-against only by gaps: OpenObserve gates its agent behind an Enterprise
-   license and ingests OTLP-only (no Sentry envelopes); SigNoz is Go/ClickHouse
-   with no Sentry ingest and no evidence-graph/bundle abstraction; Coroot has
-   no Sentry migration or coding-agent action audit and its local AI RCA is not
-   in the Community OSS tier.
+   saved-against only by gaps: OpenObserve's AI SRE and MCP surfaces require
+   Enterprise edition/license even though Self-Hosted Enterprise is currently
+   advertised as free up to 50 GB/day, and the checked ingestion path is OTLP
+   rather than Sentry envelopes; SigNoz is Go/ClickHouse with no Sentry ingest
+   and no evidence-graph/bundle abstraction; Coroot has no Sentry migration or
+   coding-agent action audit and its local AI RCA is not in the Community OSS
+   tier.
 2. **The dominant error tracker paywalls its AI from self-hosters.** Sentry Seer
    is GA but closed and SaaS-only, and is confirmed not available to self-hosted
    Sentry. That exclusion is Parallax's clearest opening.
@@ -74,9 +76,11 @@ Current source checks for this update:
 - [Datadog Bits AI SRE investigation docs](https://docs.datadoghq.com/bits_ai/bits_ai_sre/investigate_issues/)
 - [Datadog Bits AI Dev Agent](https://www.datadoghq.com/blog/bits-ai-dev-agent/)
 - [Grafana Assistant self-hosted docs](https://grafana.com/docs/grafana/latest/administration/assistant/)
+- [OpenObserve pricing](https://openobserve.ai/pricing/)
+- [OpenObserve enterprise features](https://openobserve.ai/docs/features/enterprise/)
 - [OpenObserve SRE agent setup](https://openobserve.ai/docs/administration/deployment/sre-agent-setup-guide/)
 - [OpenObserve MCP docs](https://openobserve.ai/docs/integration/ai/mcp/)
-- [OpenObserve enterprise license](https://openobserve.ai/enterprise-license/)
+- [OpenObserve OTLP ingestion docs](https://openobserve.ai/docs/ingestion/logs/otlp/)
 - [SigNoz agent-native observability](https://signoz.io/agent-native-observability/)
 - [SigNoz MCP server](https://signoz.io/docs/ai/signoz-mcp-server/)
 - [SigNoz Claude Code monitoring](https://signoz.io/docs/claude-code-monitoring/)
@@ -97,7 +101,7 @@ Current source checks for this update:
 | Datadog Test Optimization + Bits AI Dev Agent | CI/test reliability and automated fixes | Instruments and traces tests, identifies flaky tests, correlates tests with infra/log/network context, surfaces root cause, and uses Bits AI Dev Agent to generate verified PR fixes. | Very high for the flaky-test wedge. |
 | Grafana Assistant | Observability assistant / SRE agent | AI assistant in Grafana Cloud and connected self-managed Grafana; query/dashboard assistance, incident investigations, Knowledge Graph, Slack/Teams/API/MCP/CLI surfaces. | High for Grafana/LGTM users. |
 | Coroot | eBPF observability + AI RCA | Uses eBPF to collect metrics, logs, traces, profiles, events; Community includes agentic-ready MCP; Enterprise/Cloud adds AI RCA that explains what broke, why, and how to fix it. | High for infrastructure/service RCA and agent-access pressure, lower for Sentry migration and coding-agent action audit. |
-| OpenObserve "Observability 3.0" | Open Rust observability store + AI SRE agent | Rust, single-binary, object-storage-native, AGPL self-hostable; late-Apr-2026 launch added an AI SRE agent, AI Assistant, LLM observability, and MCP. AI agent/Assistant are Enterprise-license-gated, not in the free AGPL tier. OTLP-only ingestion, no Sentry-envelope path. | Very high on storage/runtime fit; the closest open competitor. Saved (for now) by the Enterprise gate and missing Sentry ingest. |
+| OpenObserve "Observability 3.0" | Open Rust observability store + AI SRE agent | Rust, single-binary, object-storage-native, AGPL self-hostable; late-Apr-2026 launch added an AI SRE agent, AI Assistant, LLM observability, and MCP. AI SRE/MCP require Enterprise edition/license; Self-Hosted Enterprise is currently advertised as free up to 50 GB/day. Checked docs show OTLP ingestion, not a Sentry-envelope path. | Very high on storage/runtime fit; the closest open competitor. Saved (for now) by Enterprise-tier AI/MCP surfaces, broad write-capable MCP, and missing Sentry ingest. |
 | SigNoz agent-native | Open OTLP observability + agent MCP | Go + ClickHouse, OSS self-hostable; May-2026 shipped an open self-hostable MCP server, trace-ID RCA, and agent skills for Claude Code/Cursor/Codex. Query interface, not a deterministic evidence graph/bundle; no Sentry-compatible ingestion. | High on agent-native direction; fails the Rust/no-JVM-store profile and lacks the evidence-bundle abstraction. |
 | New Relic iRCA | Causal RCA | Preview product using topology graph, causal models, and path-based ranking to identify probable root cause. | High for New Relic customers. |
 | Dynatrace Davis / Dynatrace Intelligence | Causal AI RCA | Longstanding causal topology RCA over captured and ingested data; ranks root cause contributors and combines connected anomalies. | High in enterprise AIOps. |
@@ -357,9 +361,10 @@ Sources:
 Parallax should narrow to the evidence contract incumbents do not own cleanly:
 
 > Parallax is an open-source, Rust-first execution context engine that ingests
-> Sentry-compatible errors and OTLP telemetry, traces CLI and coding-agent work,
-> and serves portable evidence bundles that agents can cite, audit, and feed
-> back into fix-outcome records.
+> Sentry-compatible errors and OTLP telemetry, normalizes measured CLI and
+> coding-agent work through tested capture adapters, and serves portable
+> evidence bundles that agents can cite, audit, and feed back into fix-outcome
+> records.
 
 This positioning still avoids competing with Sentry, Datadog, Grafana,
 OpenObserve, SigNoz, or Coroot on broad dashboard coverage. It also avoids
@@ -376,10 +381,12 @@ The differentiator should be:
    refs, edge strengths, missing-evidence flags, and raw refs.
 4. CLI first, canonical HTTP API underneath, and read-only MCP once projection
    equivalence and safety gates pass.
-5. First-class CLI and coding-agent action audit: commands, files, tools, tests,
-   patches, PRs, reviews, reverts, and recurrence.
+5. First-class CLI and coding-agent action audit per tested capture surface:
+   commands, files, tools, tests, patches, PRs, reviews, reverts, and
+   recurrence.
 6. Open result ledgers for bundle value, self-hosted simplicity, redaction,
-   correlation, agent tracing, access-surface safety, and fixer outcomes.
+   correlation, agent-session adapter coverage, access-surface safety, and
+   fixer outcomes.
 
 ## MVP Direction
 
@@ -391,7 +398,7 @@ parallax ingest sentry-envelope <event.json>
 parallax ingest otlp <trace-or-log-fixture>
 parallax issue context <issue-id>
 parallax bundle show <bundle-id> --format markdown
-parallax agent-session import <session-ref>
+parallax agent-session import <session-ref> --adapter <tested-adapter>
 ```
 
 The first useful output:
@@ -402,7 +409,8 @@ The first useful output:
 4. Redaction report and raw-ref boundary.
 5. Missing-evidence report instead of invented causality.
 6. Agent-ready JSON/Markdown bundle through CLI/API.
-7. Optional CI, CLI, or coding-agent session links when present.
+7. Optional CI, CLI, or coding-agent session links only when adapter/projection
+   gates pass.
 8. Outcome hooks for diagnosis, patch proposal, PR, review, revert, and
    recurrence.
 
@@ -417,8 +425,9 @@ The critical test is not "can Parallax explain failures?" Many products claim
 that. The critical test is:
 
 > Can Parallax become the easiest open-source way to hand a coding agent a
-> bounded, redacted, citable evidence bundle from production, CI, CLI, and agent
-> traces without adopting a full observability platform?
+> bounded, redacted, citable evidence bundle from production, CI, CLI, and
+> adapter-proven agent-session traces without adopting a full observability
+> platform?
 
 If yes, Parallax can have a wedge. If no, Sentry, Datadog, Grafana,
 OpenObserve, SigNoz, Coroot, Trunk, BuildPulse, and CI-autofix products already
