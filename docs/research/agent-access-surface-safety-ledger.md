@@ -39,6 +39,7 @@ The central rule:
 | [NSA MCP security design considerations](https://www.nsa.gov/Portals/75/documents/Cybersecurity/CSI_MCP_SECURITY.pdf?ver=bmgiSbNQLP6Z_GiWtRt6bg%3D%3D) | NSA's May 2026 guidance treats MCP as widely adopted but security-maturing, with risks around dynamic tool invocation, implicit trust, context sharing, serialization, token/session handling, overbroad tools, and unauthorized servers. | The safe path is a narrow read-only adapter over canonical bundles, not a broad production-control toolset. |
 | [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md) | MCP is already present in Sentry-adjacent, Grafana, SigNoz, Coroot, Rustrak, and GoSnag-like surfaces. | Parallax must prove safer evidence semantics, not merely MCP availability. |
 | [MCP power boundary competitor check](mcp-power-boundary-competitor-check.md) | Current primary docs for Sentry, Grafana, OpenObserve, SigNoz, and Coroot show MCP surfaces ranging from coding-agent read/query to broad management, alert resolution, incident creation, ticket/Slack actions, or persisted RCA. | "Read-only" must exclude production/project mutation tools, not only generic shell and SQL tools. |
+| [Lightweight error-tracker MCP boundary check](lightweight-error-tracker-mcp-boundary-check.md) | Current primary docs/source for Rustrak and GoSnag show MCP surfaces in small Sentry-compatible trackers, including project/issue/event/token/alert/ticket/user management and raw Sentry-envelope event access. | MCP availability is now table stakes even for lightweight competitors. Parallax's claim must be read-only, redacted, canonical bundle projection plus audit/outcome semantics, not "has MCP." |
 
 Updated implication from the A1/A6 source-field pass: projection equivalence now
 means preserving the full canonical bundle safety contract, not just producing a
@@ -109,10 +110,13 @@ Each `manifest.json` should include:
   "audit_schema_version": "parallax-audit-vN",
   "source_snapshot": {
     "mcp_spec": "2025-11-25",
+    "mcp_spec_latest_label_checked": "2025-11-25 (latest on official site)",
     "otel_semconv": "1.41.0",
     "otel_mcp_semconv_status": "development",
+    "otel_mcp_example_protocol_version": "2025-06-18",
     "codex_client": "<version-or-snapshot>",
-    "claude_code_client": "<version-or-snapshot>"
+    "claude_code_client": "<version-or-snapshot>",
+    "lightweight_mcp_watch": "rustrak_gosnag_management_raw_event_mcp_checked_2026-05-25"
   },
   "surfaces": ["cli", "http", "mcp"],
   "clients": ["codex", "claude-code"],
@@ -405,6 +409,10 @@ output-budget decisions even when they call the same Parallax MCP server.
 
 - No "agent-native MCP" claim without projection equivalence across CLI, HTTP,
   and MCP for the same authorized request.
+- No MCP differentiation claim based on protocol presence alone. Competitors at
+  both observability-suite and lightweight-error-tracker levels now expose MCP;
+  Parallax claims must compare evidence-bundle shape, redaction/source-field
+  proof, auditability, output bounds, and outcome loop.
 - No schema-safe MCP claim unless bundle-returning tools have output schemas and
   valid `structuredContent`; Markdown/text alone is a projection.
 - No read-only context claim if sampling, elicitation, task-augmented execution,
@@ -497,6 +505,8 @@ change:
 - OpenTelemetry semantic conventions or MCP semantic conventions change;
 - Codex, Claude Code, Cursor, VS Code/Copilot, or other claimed clients change
   MCP configuration, output limits, auth, or resource behavior;
+- a lightweight Sentry-compatible or OTLP-native competitor ships a read-only,
+  redacted, schema-bound MCP evidence bundle with projection-equivalence hashes;
 - Parallax bundle schema, redaction policy, auth policy, audit schema, or tool
   catalog changes;
 - source-field policy or eval/corpus source-field schema changes;

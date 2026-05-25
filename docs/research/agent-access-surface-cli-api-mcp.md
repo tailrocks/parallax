@@ -24,6 +24,8 @@ Results and product-claim status should be published through the
 not inferred from this design alone.
 The competitor pressure behind the read-only boundary is tracked in
 [MCP power boundary competitor check](mcp-power-boundary-competitor-check.md).
+The lightweight end of the same pressure is tracked in
+[Lightweight error-tracker MCP boundary check](lightweight-error-tracker-mcp-boundary-check.md).
 
 ## Current Primary Sources
 
@@ -43,7 +45,35 @@ Version note: the official MCP pages checked for this pass show
 `2025-11-25` as the latest specification revision. Do not cite or implement a
 future-dated spec revision until the official site publishes it as current. The
 OpenTelemetry semantic-convention page checked in the same pass still shows
-`1.41.0`, with MCP conventions marked development-stage.
+`1.41.0`, with MCP conventions marked development-stage; its examples still use
+`mcp.protocol.version = "2025-06-18"`, so Parallax should record observed MCP
+handshake versions separately from the semconv example version.
+
+## 2026-05-25 Access-Boundary Recheck
+
+Current checks kept the CLI-first, MCP-later decision, but narrowed the product
+claim:
+
+- The official MCP site labels `2025-11-25` as latest. The tools spec still
+  supports `structuredContent`, optional `outputSchema`, `tools/list_changed`,
+  and tool-level `taskSupport` with `forbidden` as the default value.
+- The authorization spec still makes remote MCP an auth/security project, not a
+  simple bearer-token tunnel: protected-resource metadata, resource indicators,
+  audience validation, PKCE S256, HTTPS/localhost redirect rules, and token
+  passthrough denial remain fixture requirements.
+- Local `codex-cli 0.133.0` and `Claude Code 2.1.150` still expose MCP client
+  and MCP-server modes, but their configuration/trust surfaces differ enough
+  that a cross-client claim needs explicit rows rather than a generic "MCP
+  works" assertion.
+- The lightweight competitor pass found Rustrak and GoSnag MCP surfaces in small
+  error trackers. That falsifies any weak claim that "Parallax has MCP" is a
+  moat. It does not falsify the read-only boundary because those checked
+  surfaces are management/write/raw-event shaped rather than canonical,
+  redacted, hash-equivalent evidence-bundle projections.
+
+Implication: keep MCP out of the tiny-tier critical path, but do not defer it so
+long that Parallax sounds non-agent-native. The claimable gap is the evidence
+contract, not protocol support.
 
 ## Decision
 
@@ -300,6 +330,9 @@ If these fail, keep CLI/API available and do not claim MCP safety.
 - [MCP power boundary competitor check](mcp-power-boundary-competitor-check.md)
   records why competitor query/management MCP catalogs should not pull the first
   Parallax context adapter into production-control scope.
+- [Lightweight error-tracker MCP boundary check](lightweight-error-tracker-mcp-boundary-check.md)
+  records why Rustrak/GoSnag-style MCP availability at the lightweight end makes
+  MCP table stakes rather than a moat.
 - [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md)
   keeps MCP out of the tiny tier until the bundle and safety contracts are
   strong enough.

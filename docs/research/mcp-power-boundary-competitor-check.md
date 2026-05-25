@@ -52,6 +52,14 @@ pass, so this note does not replace the existing release-version rows in the
 competitor drift ledger. The claims above are about documented MCP tool power,
 not about a new release-recency audit.
 
+The same boundary now applies below the large observability-suite tier. The
+[Lightweight error-tracker MCP boundary check](lightweight-error-tracker-mcp-boundary-check.md)
+found Rustrak and GoSnag MCP surfaces in small error trackers, including
+project/issue/event/token/alert/ticket/user management and raw Sentry-envelope
+event access. That makes MCP availability a table-stakes feature, not a moat,
+while strengthening the case for a Parallax first server that is read-only,
+redacted, schema-bound, and projection-equivalent.
+
 ## Product Boundary
 
 "Read-only MCP context adapter" should mean all of the following for the first
