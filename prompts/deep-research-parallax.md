@@ -25,6 +25,19 @@ The research should be opinionated, technical, and evidence-based.
 
 ---
 
+# Prompt Maintenance Rule
+
+This prompt is a living source of operator intent for `/goal` and `/loop` runs.
+When the operator clarifies the research direction, confirms a decision, changes
+evaluation criteria, adds target domains, or names tools to compare, update this
+file in the same change if future runs would otherwise use stale instructions.
+
+Do not keep important direction changes only in chat or only in generated
+research notes. The prompt must stay aligned with the current research target so
+future autonomous runs continue from the latest operator decisions.
+
+---
+
 # Project Vision and Overall Target
 
 This is the north star the whole research serves. Everything is moving to an
@@ -91,6 +104,46 @@ That is the point of the approach: with enough structured context, the agent
 makes the call and brings evidence, instead of asking a human to gather context
 first.
 
+## Confirmed extension: observe agents and CLI work too
+
+The project is not only about production services. The current confirmed
+direction is that Parallax should become an evidence engine for software
+execution across:
+
+- services;
+- CI runs;
+- CLI applications;
+- coding-agent sessions.
+
+Since engineering work is moving toward agents, we need to understand what an
+agent is doing when it works with a system. The system should preserve an audit
+trail of what happened, including what the agent saw, what it decided, which
+tools it used, which files it read or changed, which commands it ran, which
+tests it executed, which PR or patch it produced, and what outcome followed.
+
+This matters for normal debugging and for bad outcomes. If a user reports an
+error, an agent makes the wrong change, a migration corrupts data, or a database
+table is dropped, we need to reconstruct how it happened. The problem with
+agents is that many actions happen quickly and across layers, but without a
+trace we cannot see the causal chain.
+
+Parallax should add observability across these layers so a human or agent can
+ask questions later:
+
+- What did the agent do before this incident?
+- Which command or tool touched this database/table/resource?
+- Which context did the agent use, and was it stale?
+- Which files changed before this deploy?
+- Which policy, approval, or guardrail allowed the action?
+- Did the agent fix the issue, worsen it, or leave it inconclusive?
+
+CLI applications are part of the same model. A CLI run is bounded and
+reproducible, and coding agents often touch the world through CLI commands.
+Research should treat CLI invocations as first-class traces, including command
+name, subcommand, sanitized args/env, cwd, repo/branch/commit, config refs,
+stdout/stderr excerpts, exit code, panic/error chain, spawned child processes,
+tests/build/deploy steps, and redaction policy.
+
 ## What this research must prove
 
 This vision is a strong belief that needs verification, not assumption. The
@@ -106,6 +159,10 @@ research must answer, from a technical perspective:
 - Concretely, how would we build it and what should we use — which infrastructure
   projects are capable of serving this goal under the evaluation lens and
   benchmark axes below?
+- Whether agent-session and CLI tracing are technically feasible as a core
+  Parallax capability, not a later side feature.
+- Whether the system can answer audit and question-answering workflows over
+  agent actions, CLI side effects, runtime evidence, CI, deploys, and outcomes.
 
 The job of Parallax-as-research is to prove or disprove that a Rust-first,
 open-source, self-hostable observability system can become the runtime context
@@ -195,7 +252,8 @@ available stable/public version of each candidate as of the research date. Do
 not compare a current project against an older major release, stale benchmark,
 old architecture doc, or outdated feature matrix unless the point is explicitly
 historical. When versions matter, state the version or release date being
-compared and call out if a source is stale.
+compared and call out if a source is stale. This applies to every named
+candidate, including Aduce if it is compared in future research.
 
 1. Study how systems are designed. Read public benchmarks and, more importantly,
    the architecture and design docs behind each candidate: data layout, ingest
@@ -564,6 +622,25 @@ Research whether GreptimeDB is truly a viable “unified observability database.
 
 ---
 
+# Metadata Store
+
+Use Turso Database as the default metadata-store direction instead of C SQLite:
+
+https://github.com/tursodatabase/turso
+
+Research Turso as the Rust-first, SQLite-compatible metadata engine for
+low-volume product state: users, projects, DSNs, issue status, redaction
+policies, audit records, agent sessions, CLI invocations, and fix outcomes.
+
+Treat Postgres only as a scale-out fallback if Turso production behavior,
+ecosystem maturity, backup/restore, replication, or operational safety does not
+hold up under research and benchmarks.
+
+Do not describe the metadata layer as "use SQLite" except when discussing
+SQLite compatibility. The operator preference is Turso.
+
+---
+
 # OpenTelemetry Research
 
 Research:
@@ -685,12 +762,54 @@ Research companies/products/projects like:
 - Meta observability tooling
 - Amazon incident tooling
 
+Also perform a technical review of similar tools that provide observability for
+agents and use them as references, not as a final product definition. Compare
+their latest public/stable versions and focus on implementation details:
+
+- LangSmith
+- Langfuse
+- Arize Phoenix and OpenInference
+- Braintrust
+- Datadog LLM Observability
+- Helicone Sessions
+- OpenLLMetry / Traceloop
+- OpenLIT
+- AgentOps
+- Comet Opik
+- Langtrace
+- HoneyHive
+- AgentTrace research
+- AgentSight research
+
+For each relevant tool, research:
+
+- instrumentation model: SDK, proxy, framework callbacks, decorators,
+  OpenTelemetry, eBPF, or manual spans;
+- trace model: trace/session/thread/run root, span hierarchy, agent/tool/model
+  spans, session grouping, parent/child relationships;
+- storage and ingest architecture when public: OLAP store, relational metadata,
+  queue, object storage, workers, OTLP endpoint;
+- redaction/privacy controls and whether full prompts, args, tool outputs, and
+  logs are opt-in or default;
+- evaluation loop: scores, human review, datasets, experiments, accepted-fix
+  feedback, production recurrence;
+- self-hosting complexity and operational profile;
+- whether it can audit coding-agent side effects such as files read/written,
+  shell commands, DB actions, deploys, tests, patches, PRs, and outcomes.
+
+The key question is not "which LLM tracing product is best?" The key question is
+what technical patterns Parallax should reuse, and where existing tools stop
+short of the Parallax goal: runtime evidence plus coding-agent and CLI action
+audit.
+
 I want to understand:
 - what already exists
 - what is missing
 - whether agents truly change observability UX
 - whether dashboards become less important
 - whether APIs/context become more important
+- whether current agent-observability systems can explain what happened across
+  the real software system, not only inside an LLM application trace
 
 ---
 
@@ -750,6 +869,8 @@ I strongly believe:
 - APIs matter more than visual exploration
 - machine-readable context is more important than visualization
 - agents need structured evidence, not charts
+- agent audit trails become essential as agents become a primary interface for
+  operating software systems
 
 One UI/UX exception worth keeping: when a human does look, a log should be shown
 as a structured object — fields, surrounding context, and what happened in that
@@ -789,6 +910,16 @@ Please critically evaluate:
     teams that do not work this way?
 14. What are the dangers of giving an agent access to systems and data, including
     a database — secrets, privacy, blast radius — and how is that bounded?
+15. How should Parallax technically trace coding agents: model calls, tool
+    calls, MCP/API calls, shell commands, files read/written, tests, patches,
+    PRs, approvals, and outcomes?
+16. How should Parallax technically trace CLI applications as first-class
+    execution units?
+17. Which existing agent-observability tools provide the strongest technical
+    references, and where do they fail the Parallax audit/evidence-graph goal?
+18. Can the system answer operational audit questions after bad outcomes, such
+    as "which command changed this database object?" or "what did the agent do
+    before this deploy?"
 
 ---
 
@@ -824,14 +955,16 @@ Deliver, with reasoning tied to the evaluation lens and the benchmark axes:
 
 - Which system to use at each layer, named and justified: collection/SDK, ingest
   gateway, messaging/stream (if any), storage, correlation/processing, and the
-  agent-facing context surface (API/MCP). Make an actual recommendation, not a
-  menu.
+  agent-facing context surface (API/MCP). Include CLI tracing and coding-agent
+  tracing layers. Make an actual recommendation, not a menu.
 - What storage to use as the default, and why it wins on speed, cost, and scaling
   for this purpose — including the object-storage / S3 story.
+- What metadata store to use, with Turso as the preferred default and Postgres
+  only as a scale-out fallback if Turso fails the technical gates.
 - The technical view of the best way to implement it: component diagram, data
   flow from event to evidence bundle, the event/error data model, deterministic
-  grouping and correlation approach, and where causal/lifecycle reconstruction
-  happens.
+  grouping and correlation approach, agent/CLI trace model, audit graph, and
+  where causal/lifecycle reconstruction happens.
 - Tradeoffs and the rejected alternatives, so the choice is defensible.
 
 ## Scaling Trajectory: Startups First, Big Companies Later
@@ -857,6 +990,6 @@ the large one is a configuration and topology change, not a rewrite.
 
 Help me determine whether this direction could evolve into:
 
-“an AI-native debugging and investigation platform that becomes the intelligence layer between telemetry systems, CI pipelines, issue trackers, deployments, and autonomous coding agents.”
+“an AI-native debugging and investigation platform that becomes the intelligence layer between telemetry systems, CI pipelines, CLI applications, issue trackers, deployments, and autonomous coding agents.”
 
 Or whether this idea is fundamentally flawed.

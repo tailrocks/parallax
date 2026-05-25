@@ -34,15 +34,18 @@ See [BRANCHING.md](BRANCHING.md) for the current branch policy.
 
 ## Tool-Specific Files
 
-Durable rules belong in shared project files, not in tool-specific config files.
-Tool-specific files should only link back here.
+Durable agent rules for this repository belong in this local `AGENTS.md` file,
+not in tool-specific config files. When the operator gives a new durable rule or
+changes an existing one, update `AGENTS.md` in the same change.
 
 Current linker:
 
 - [CLAUDE.md](CLAUDE.md) contains only `@AGENTS.md`.
 
-If another tool needs a linker file later, add the same kind of thin pointer and
-keep the real instructions here or in the shared convention files.
+`CLAUDE.md` must always remain a thin pointer to `AGENTS.md` only. Do not put
+real instructions in `CLAUDE.md`. If another tool needs a linker file later, add
+the same kind of thin pointer and keep the real instructions here or in the
+shared convention files.
 
 ## Commit Attribution
 
@@ -86,6 +89,18 @@ Market and product research should be concise, sourced, and easy to extend.
 - Link primary sources whenever possible.
 - When a new finding changes the repo shape, update
   [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) in the same change.
+
+## Research Prompt Maintenance
+
+Research prompts are durable operator intent, not disposable one-off inputs.
+When the operator clarifies the research direction, confirms a product decision,
+changes evaluation criteria, adds or removes target domains, or names tools that
+must be compared, update the relevant prompt under `prompts/` in the same
+change if a future `/goal` or `/loop` run would otherwise repeat stale
+instructions.
+
+If a prompt does not need an update after such clarification, say why in the
+final response.
 
 ## Shared Conventions
 

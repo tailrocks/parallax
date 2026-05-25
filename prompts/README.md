@@ -56,6 +56,14 @@ prompt specifically must end in a technical implementation concept: which system
 per layer, which default storage and why, and the best way to build it, with a
 startup-first deployment and a horizontal scale-out path.
 
+## Prompt maintenance
+
+Prompts are the durable source of operator intent for `/goal` and `/loop` runs.
+When the operator clarifies the research target, confirms a direction, changes
+evaluation criteria, or names tools that must be compared, update the relevant
+prompt file in the same change if future runs would otherwise use stale
+instructions.
+
 ## Adding a prompt
 
 1. Add a new `*.md` file in this folder.
