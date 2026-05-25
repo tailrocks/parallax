@@ -93,6 +93,12 @@ The useful lesson is not "Sentry is wrong." It is that Sentry's architecture is
 optimized for Sentry's full cloud product. Parallax should preserve the SDK
 protocol surface while choosing a smaller internal design.
 
+The smaller design has to be proven operationally, not asserted. The Phase 1
+deployment should pass the
+[self-hosted simplicity gate](self-hosted-simplicity-gate.md): <=15 minutes to
+the first useful issue context, <=3 long-running services, no required broker,
+and local/embedded metadata by default.
+
 Parallax also constrains every infrastructure choice by language and runtime.
 Only high-performance, low-resource systems languages are in scope — Rust
 (preferred), Go, Zig, C++, and C — and heavyweight managed or interpreted
@@ -498,7 +504,8 @@ local disk retention
 ```
 
 No Iggy unless the ingest path needs buffering. This profile proves that
-Parallax can beat self-hosted Sentry on operational simplicity.
+Parallax can beat self-hosted Sentry on operational simplicity. The proof is the
+[self-hosted simplicity gate](self-hosted-simplicity-gate.md), not the diagram.
 
 ### Profile 2: Durable Single Server
 

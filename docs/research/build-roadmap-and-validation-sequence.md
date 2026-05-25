@@ -64,7 +64,9 @@ Build only enough to generate the bundle automatically and repeatably:
 - CLI (`parallax issue context …`) + read-only context API.
 - **Gate:** the auto-generated bundle reproduces the Phase-0 hand-bundle quality
   (re-run A1 on real pipeline output); tiny-tier setup is meaningfully simpler
-  than self-hosted Sentry (≤15 min). This is the "simpler than Sentry" proof.
+  than self-hosted Sentry (<=15 min) under the
+  [self-hosted simplicity gate](self-hosted-simplicity-gate.md). This is the
+  "simpler than Sentry" proof.
 
 ### Phase 2 — Prove the engine and start the moat clock
 
@@ -108,7 +110,7 @@ Build only enough to generate the bundle automatically and repeatably:
 | A5 stack holds | Phase 2 | storage/metadata benchmarks |
 | A4 correlation reliable | Phase 1–2 | [strong-edge prevalence on real telemetry](correlation-reliability-real-telemetry-gate.md) |
 | A3 schema/corpus moat | Phase 2 (publish) → Phase 4 (corpus) | [schema conformance + external adoption + outcome corpus](schema-adoption-and-corpus-moat-gate.md) |
-| A7 scope discipline | enforced by phase order | tiny tier excellent before breadth |
+| A7 scope discipline | enforced by phase order | tiny tier passes the [self-hosted simplicity gate](self-hosted-simplicity-gate.md) before breadth |
 
 ## What This Sequence Refuses To Do
 

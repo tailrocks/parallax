@@ -95,6 +95,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Metadata store | [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md), [Turso metadata production readiness](turso-metadata-production-readiness.md), [Technical implementation concept](technical-implementation-concept.md) |
 | OpenTelemetry | [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md) |
 | Sentry-compatible ingestion | [Sentry-compatible ingestion](sentry-compatible-ingestion.md), [Sentry SDK fixture compatibility gate](sentry-sdk-fixture-compatibility.md) |
+| Self-hosted operational simplicity | [Self-hosted simplicity gate](self-hosted-simplicity-gate.md), [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md) |
 | Collection method and eBPF tradeoff | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md) |
 | Rust applications first | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md), [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md), [Technical implementation concept](technical-implementation-concept.md) |
 | AI-native observability | [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md), [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md) |
@@ -156,29 +157,32 @@ Technical proof gates:
    [Ingest log replay and backpressure gate](ingest-log-replay-and-backpressure-gate.md).
 5. Sentry envelope compatibility across real SDKs, starting with the
    [Sentry SDK fixture gate](sentry-sdk-fixture-compatibility.md).
-6. Rust stacktrace grouping stability across release/debug-info variants,
+6. Phase 1 setup simplicity versus current Sentry, SigNoz, and OpenObserve
+   baselines, specified further in the
+   [Self-hosted simplicity gate](self-hosted-simplicity-gate.md).
+7. Rust stacktrace grouping stability across release/debug-info variants,
    specified as a proof gate in
    [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md).
-7. Agent fix quality with bounded Parallax bundles versus raw Sentry/CI context,
+8. Agent fix quality with bounded Parallax bundles versus raw Sentry/CI context,
    with the first runnable pass specified in
    [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md).
-8. Redaction quality for logs, events, attachments, database query output, and
+9. Redaction quality for logs, events, attachments, database query output, and
    agent prompt bundles; the [redaction pipeline](redaction-pipeline-and-secret-safety.md)
    has veto power before agent exposure.
-9. CLI trace capture overhead and secret redaction for args, env, config,
+10. CLI trace capture overhead and secret redaction for args, env, config,
    stdout, and stderr, specified further in
    [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md).
-10. Agent-session tracing value across real Codex, Claude Code, Amp, and
+11. Agent-session tracing value across real Codex, Claude Code, Amp, and
     OpenCode runs, specified further in
     [Agent session tracing across real tools](agent-session-tracing-real-tools.md).
-11. Turso correctness, backup/restore, concurrency, migration, and fallback
+12. Turso correctness, backup/restore, concurrency, migration, and fallback
     behavior for metadata, agent session state, CLI invocation state, outcomes,
     and audit records, specified further in
     [Turso metadata production readiness](turso-metadata-production-readiness.md).
-12. CLI/HTTP/MCP projection equivalence and read-only MCP safety, specified
+13. CLI/HTTP/MCP projection equivalence and read-only MCP safety, specified
     further in
     [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md).
-13. Production database evidence access safety, specified further in
+14. Production database evidence access safety, specified further in
     [Production database evidence access gate](production-database-evidence-access.md).
 
 ## First Prototype Gate

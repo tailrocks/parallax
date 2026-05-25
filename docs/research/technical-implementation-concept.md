@@ -605,6 +605,9 @@ Properties:
 - easiest migration path from self-hosted Sentry SDKs.
 
 This is the product that proves Parallax can be simpler than Sentry.
+That proof is measured by the
+[self-hosted simplicity gate](self-hosted-simplicity-gate.md), not assumed from
+the component diagram.
 
 ### Tier 2: Scalable
 
