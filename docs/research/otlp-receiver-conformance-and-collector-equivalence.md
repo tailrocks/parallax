@@ -34,7 +34,7 @@ fixture design alone.
 | [OpenTelemetry metrics data model](https://opentelemetry.io/docs/specs/otel/metrics/data-model/) | Metric stream identity includes resource attributes, instrumentation scope, metric name, data point type, unit, temporality, and monotonicity. Attribute sets identify individual streams. Parallax must not flatten this into ambiguous rows. |
 | [OpenTelemetry trace API](https://opentelemetry.io/docs/specs/otel/trace/api/) | Spans, links, events, status, attributes, span context, trace ID, and span ID are the core lifecycle evidence for Parallax correlation. |
 | [OpenTelemetry Collector configuration](https://opentelemetry.io/docs/collector/configuration/) | Collector configs are receiver/processor/exporter/connectors plus service pipelines. Defining a receiver does not enable it until a pipeline references it. Standard OTLP examples use gRPC `4317` and HTTP `4318`. |
-| [OpenTelemetry Collector v0.152.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.152.1) | Latest official Collector release checked for this pass. It is the compatibility reference for production OTLP pipelines. |
+| [OpenTelemetry Collector v0.152.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.152.1) | Latest official Collector release checked for this pass. Its changelog includes request-body/decompression fixes and a `pcommon.Value.AsString` behavior change for map/slice values. | It is the compatibility reference for production OTLP pipelines. Parallax fixtures must preserve typed AnyValue semantics rather than treating string rendering as the canonical value. |
 | [OpenTelemetry Collector Contrib v0.152.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.152.0) | Contrib is the realistic production distribution for broader processors/receivers/exporters. Parallax should verify both core and contrib where pipeline components differ. |
 | [OpenTelemetry Rust 0.32.0](https://github.com/open-telemetry/opentelemetry-rust/releases/tag/opentelemetry-0.32.0) | Latest Rust release checked. Rust SDK fixtures are the first direct-SDK path because Parallax is Rust-first. |
 | [Rotel v0.2.2](https://github.com/rotel-dev/rotel/releases/tag/v0.2.2) and [Rotel README](https://github.com/rotel-dev/rotel) | Rotel supports metrics/logs/traces, OTLP gRPC, OTLP HTTP/protobuf, OTLP HTTP/JSON, OTLP export, batching, retries, and resource attributes, with default receiver paths on `4317`/`4318`. It is promising but early and must be a smoke/eval path, not the compatibility baseline. |
@@ -92,7 +92,7 @@ Each fixture directory should record:
 | `trace_exception_attrs` | Exception semantic attributes can support error correlation without replacing Sentry error events. |
 | `log_correlated` | Log record with `trace_id` and `span_id` joins to the matching span. |
 | `log_uncorrelated` | Log record without trace context is accepted but never promoted to a strong edge by time proximity alone. |
-| `log_complex_body` | String, map, array, bytes, and numeric bodies either normalize safely or receive explicit unsupported-field outcomes. |
+| `log_complex_body` | String, map, array, bytes, and numeric bodies either normalize safely or receive explicit unsupported-field outcomes. Include `<`, `>`, and `&` inside map/list values to detect Collector `AsString` rendering drift and prove redaction sees the typed value. |
 | `metric_gauge` | Gauge points preserve resource, scope, name, unit, attributes, value, and timestamp. |
 | `metric_sum_delta_cumulative` | Sum points preserve temporality and monotonicity; delta and cumulative series are not merged. |
 | `metric_histogram` | Explicit bucket histograms preserve count, sum, bucket boundaries/counts, min/max when present, and exemplars. |
@@ -119,6 +119,10 @@ Equivalence should be set-based, not byte-for-byte:
 - Trace/log correlation keys must not be lost.
 - Metric stream identity must include data type, unit, temporality, and
   monotonicity.
+- Nested `AnyValue` values must remain typed through normalization. Equivalence
+  should not be based on a string renderer for map/list bodies because Collector
+  rendering behavior can change without changing the underlying telemetry
+  value.
 - Raw payload refs should record both the received Parallax payload and, when
   available, the original SDK payload before an intermediary changed it.
 
@@ -231,6 +235,9 @@ Pass only when:
   edges;
 - `trace_id`, `span_id`, `service.name`, `service.version`, deployment
   environment, resource attrs, scope attrs, and metric temporality are not lost;
+- nested log bodies and attributes preserve typed `AnyValue` semantics, and
+  redaction canaries inside map/list bodies are detected before any text
+  rendering;
 - redaction canaries in attributes, log bodies, and resource fields are removed
   from agent-visible JSON/Markdown;
 - retry, partial success, and duplicate delivery behavior is deterministic.

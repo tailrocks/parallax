@@ -35,7 +35,7 @@ The central rule:
 | [OpenTelemetry metrics data model](https://opentelemetry.io/docs/specs/otel/metrics/data-model/) | The metrics model is stable and explicitly preserves metric semantics across transformations, including temporality and stream identity. | Parallax must not merge incompatible streams or drop temporality/monotonicity. |
 | [OpenTelemetry trace API](https://opentelemetry.io/docs/specs/otel/trace/api/) | Spans carry parent/child relations, span kind, attributes, links, events, status, start/end timestamps, trace ID, and span ID. | These fields are the core lifecycle evidence for bundles. |
 | [Collector configuration](https://opentelemetry.io/docs/collector/configuration/) | Collector configs define receivers, processors, exporters, connectors, extensions, and service pipelines. Configuring a component does not enable it until a pipeline references it. OTLP defaults use `4317` and `4318`. | Equivalence results must include config hashes and declared processor transforms. |
-| [Collector releases v0.152.1](https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.152.1) | Current checked official distribution release is `v0.152.1`, released on 2026-05-20. | This is the core Collector baseline for compatibility claims. |
+| [Collector releases v0.152.1](https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.152.1) and [Collector core v0.152.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.152.1) | Current checked official distribution release is `v0.152.1`. The core changelog includes request-body/decompression fixes and a `pcommon.Value.AsString` behavior change: map/slice values no longer HTML-escape `<`, `>`, and `&`. | This is the core Collector baseline for compatibility claims. Conformance must preserve typed AnyValue/log-body semantics and not rely on string-rendered equality for redaction or row identity. |
 | [Collector Contrib v0.152.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.152.0) | Current checked Contrib release is `v0.152.0`, released on 2026-05-11, with broad processor/receiver/exporter changes. | Contrib is the realistic production distribution for many deployments; it needs its own fixture row. |
 | [OpenTelemetry Rust 0.32.0](https://docs.rs/crate/opentelemetry/latest) and [opentelemetry-otlp 0.32.0 changelog](https://docs.rs/crate/opentelemetry-otlp/latest/source/CHANGELOG.md) | Docs.rs resolves `opentelemetry` to `0.32.0`; `opentelemetry-otlp` 0.32.0 adds per-signal protocol env vars and OTLP partial-success handling. | Rust fixtures should cover per-signal protocol settings and server partial-success responses. |
 | [Rotel v0.2.2](https://github.com/rotel-dev/rotel/releases/tag/v0.2.2) and [Rotel README](https://github.com/rotel-dev/rotel) | Rotel is a Rust OpenTelemetry collector alternative with default OTLP gRPC `4317`, HTTP `4318`, `/v1/traces`, `/v1/metrics`, `/v1/logs`, gzip export, retries/timeouts, and multiple exporters. | Rotel is a useful smoke/eval path, but it is still pre-1.0 and should not replace official Collector equivalence. |
@@ -74,6 +74,7 @@ docs/research/otlp-conformance-runs/<run_id>/endpoint-results.jsonl
 docs/research/otlp-conformance-runs/<run_id>/normalization-results.jsonl
 docs/research/otlp-conformance-runs/<run_id>/equivalence-results.jsonl
 docs/research/otlp-conformance-runs/<run_id>/metric-stream-results.jsonl
+docs/research/otlp-conformance-runs/<run_id>/anyvalue-rendering-results.jsonl
 docs/research/otlp-conformance-runs/<run_id>/partial-success-results.jsonl
 docs/research/otlp-conformance-runs/<run_id>/retry-overload-results.jsonl
 docs/research/otlp-conformance-runs/<run_id>/redaction-results.jsonl
@@ -211,6 +212,24 @@ and storage mapping. A pass in one combination does not carry over to another.
 }
 ```
 
+### AnyValue Rendering Result Row
+
+```json
+{
+  "fixture_id": "log_complex_body",
+  "signal": "logs",
+  "field": "body.map.message",
+  "raw_value_hash": "sha256:<hex>",
+  "typed_anyvalue_preserved": true,
+  "collector_as_string_rendering": "contains <tag> & value",
+  "parallax_rendering_policy": "typed-json-vN",
+  "html_escape_delta_allowed": false,
+  "redaction_input_matches_typed_value": true,
+  "equivalence_basis": "typed_anyvalue",
+  "status": "pass"
+}
+```
+
 ### Partial Success Result Row
 
 ```json
@@ -291,6 +310,10 @@ and storage mapping. A pass in one combination does not carry over to another.
   downstream failure should produce retryable behavior.
 - Metric temporality, monotonicity, unit, data type, resource identity, scope
   identity, and attribute set are part of metric identity.
+- Map, array, bytes, and nested OTLP `AnyValue` fields must be compared and
+  redacted as typed values. A Collector string-rendering change is not an
+  allowed semantic difference unless the run proves the typed value and
+  redaction input are unchanged.
 - Collector processor changes must be declared by config hash and listed as
   allowed differences. Undeclared field loss is a failed equivalence result.
 - GreptimeDB OTLP mapping cannot define Parallax evidence semantics unless the
