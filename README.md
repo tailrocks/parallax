@@ -70,6 +70,7 @@ Code `/loop` runbook.
 - [Agentic observability competitor drift ledger](docs/research/agentic-observability-competitor-drift-ledger.md)
 - [Sentry MCP and Seer self-hosted recheck](docs/research/sentry-mcp-seer-self-hosted-recheck.md)
 - [SigNoz open investigation format check](docs/research/signoz-open-investigation-format-check.md)
+- [Coroot MCP and AI RCA recheck](docs/research/coroot-mcp-ai-rca-recheck.md)
 - [Self-hosted observability architecture](docs/research/self-hosted-observability-architecture.md)
 - [CI failure context MVP](docs/research/ci-failure-context-mvp.md)
 - [GreptimeDB storage evaluation](docs/research/greptimedb-storage-evaluation.md)

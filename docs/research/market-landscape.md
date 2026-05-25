@@ -106,7 +106,10 @@ Current source checks for this update:
 - [Coroot product site](https://coroot.com/)
 - [Coroot editions](https://coroot.com/editions)
 - [Coroot AI RCA](https://docs.coroot.com/ai/overview/)
+- [Coroot AI RCA configuration](https://docs.coroot.com/ai/configuration/)
+- [Coroot Cloud integration](https://docs.coroot.com/ai/coroot-cloud/)
 - [Coroot MCP server](https://docs.coroot.com/mcp/overview/)
+- [Coroot MCP and AI RCA recheck](coroot-mcp-ai-rca-recheck.md)
 - [Grafana Assistant self-managed docs](https://grafana.com/docs/grafana/latest/administration/assistant/)
 - [Grafana Assistant CLI docs](https://grafana.com/docs/grafana-cloud/machine-learning/assistant/guides/cli/)
 - [Grafana Assistant MCP server docs](https://grafana.com/docs/grafana-cloud/machine-learning/assistant/configure/mcp-servers/)
@@ -300,15 +303,16 @@ to fix it. It emphasizes self-hosting and keeping data in the customer's
 environment.
 
 Coroot's advantage is simple infrastructure/service observability with low setup
-friction. The 2026-05-25 refresh sharpens this: Community Edition includes
-agentic-ready MCP, while AI RCA and agentic anomaly investigation are Enterprise
-features, or available to Community users through Coroot Cloud credits. The MCP
-endpoint uses OAuth 2.0 and server-side authorization, exposes topology,
-incidents, traces, logs, metrics, and includes the mutating Community
+friction. The 2026-05-25 focused recheck sharpens this: Community Edition is
+listed as free forever, self-hosted, without monitored-infrastructure limits,
+and includes agentic-ready MCP, while AI RCA and agentic anomaly investigation
+are Enterprise features, or available to Community users through Coroot Cloud
+credits. The MCP endpoint uses OAuth 2.0 and server-side authorization, exposes
+topology, incidents, traces, logs, metrics, and includes the mutating Community
 `resolve_alerts` tool. Its weakness relative to Parallax is not "no agent
-surface" anymore; it is no Sentry envelope error-event migration, no portable evidence
-bundle/schema, no coding-agent command/file/test/patch/PR outcome audit, and no
-fully local open RCA in Community.
+surface" anymore; it is no Sentry envelope error-event migration, no portable
+evidence bundle/schema, no coding-agent command/file/test/patch/PR outcome
+audit, and no fully local open RCA in Community.
 
 Source:
 
@@ -317,6 +321,7 @@ Source:
 - [Coroot editions](https://coroot.com/editions)
 - [Coroot MCP server](https://docs.coroot.com/mcp/overview/)
 - [Coroot AI RCA overview](https://docs.coroot.com/ai/overview/)
+- [Coroot MCP and AI RCA recheck](coroot-mcp-ai-rca-recheck.md)
 
 ### New Relic iRCA
 

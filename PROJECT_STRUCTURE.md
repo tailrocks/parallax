@@ -60,6 +60,7 @@ or CI contract yet.
 | `docs/research/agentic-observability-competitor-drift-ledger.md` | Market-drift ledger for agentic observability competitors: current source snapshot, drift levels, trigger-hit rows, refresh triggers, and public wording boundaries. |
 | `docs/research/sentry-mcp-seer-self-hosted-recheck.md` | Focused recheck of Sentry Seer, Autofix, sentry-mcp, and self-hosted Sentry sources: hosted-Seer pressure, self-hosted parity uncertainty, read-only stdio-scope nuance, and Parallax's remaining evidence-bundle gap. |
 | `docs/research/signoz-open-investigation-format-check.md` | Focused falsification note for SigNoz's "open investigation format" claim: current primary-source posture, evidence checked, A3 schema-counting rule, and watch triggers. |
+| `docs/research/coroot-mcp-ai-rca-recheck.md` | Focused recheck of Coroot Community MCP, Enterprise/Cloud AI RCA, OAuth/RBAC MCP safety, eBPF trace limits, self-hosted deployment shape, and remaining Parallax Sentry/bundle/action-audit gaps. |
 | `docs/research/self-hosted-observability-architecture.md` | Architecture research for the Sentry-compatible, OpenTelemetry-native self-hosted observability direction. |
 | `docs/research/ci-failure-context-mvp.md` | MVP research for GitHub Actions failure-context bundles. |
 | `docs/research/greptimedb-storage-evaluation.md` | Storage-layer evaluation for GreptimeDB, ClickHouse, and observability backends. |

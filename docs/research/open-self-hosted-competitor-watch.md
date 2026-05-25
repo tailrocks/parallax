@@ -27,6 +27,9 @@ The current trigger-hit status for both watchlists lives in the
 [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md).
 OpenObserve's current AI/MCP Enterprise posture now has a focused source check:
 [OpenObserve AI/MCP Enterprise recheck](openobserve-ai-mcp-enterprise-recheck.md).
+Coroot's Community MCP and Enterprise/Cloud AI RCA posture now has a focused
+source check:
+[Coroot MCP and AI RCA recheck](coroot-mcp-ai-rca-recheck.md).
 The SigNoz open-investigation-format claim now has a focused falsification note:
 [SigNoz open investigation format check](signoz-open-investigation-format-check.md).
 
@@ -193,6 +196,9 @@ Coroot is the strongest zero-instrumentation competitor:
 - Community Edition includes the agentic-ready MCP surface; Enterprise adds
   AI-powered RCA and agentic anomaly investigation at the listed $1 per
   monitored CPU core/month price point.
+- Community Edition is listed as free forever, self-hosted, and without a
+  monitored-infrastructure limit; current Community AI RCA still goes through
+  Coroot Cloud credits rather than a fully local/open default.
 - MCP uses streamable HTTP transport, OAuth 2.0, and server-side authorization
   with the user's Coroot permissions. This is a stronger safety posture than an
   unauthenticated local tool, but it is still a live-production query surface
@@ -295,6 +301,7 @@ SigNoz:
 
 Coroot:
 
+- [Coroot MCP and AI RCA recheck](coroot-mcp-ai-rca-recheck.md)
 - [Coroot GitHub repository](https://github.com/coroot/coroot)
 - [Coroot 1.20.2 release](https://github.com/coroot/coroot/releases/tag/v1.20.2)
 - [Coroot product site](https://coroot.com/)
@@ -303,5 +310,8 @@ Coroot:
 - [Coroot AI RCA configuration](https://docs.coroot.com/ai/configuration/)
 - [Coroot Cloud integration](https://docs.coroot.com/ai/coroot-cloud/)
 - [Coroot MCP server](https://docs.coroot.com/mcp/overview/)
+- [Coroot architecture](https://docs.coroot.com/installation/architecture/)
+- [Coroot Docker installation](https://docs.coroot.com/installation/docker/)
+- [Coroot requirements](https://docs.coroot.com/installation/requirements/)
 - [Coroot eBPF-based tracing](https://docs.coroot.com/tracing/ebpf-based-tracing/)
 - [Coroot node-agent configuration](https://docs.coroot.com/configuration/coroot-node-agent)
