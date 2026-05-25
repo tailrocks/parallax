@@ -30,7 +30,7 @@ The central rule:
 
 | Source | Current check | Why it matters |
 | --- | --- | --- |
-| Package registry snapshot ([crates.io](https://crates.io/crates/sentry), [npm browser](https://www.npmjs.com/package/@sentry/browser), [npm node](https://www.npmjs.com/package/@sentry/node), [Go proxy](https://proxy.golang.org/github.com/getsentry/sentry-go/@latest), [PyPI](https://pypi.org/project/sentry-sdk/)) | Registry checks re-run on 2026-05-25 found Rust `sentry` `0.48.2` on crates.io, JavaScript `@sentry/browser`, `@sentry/node`, and `@sentry/react` `10.53.1` on npm, Go `github.com/getsentry/sentry-go` `v0.46.2` on the Go module proxy, and Python `sentry-sdk` `2.60.0` on PyPI. | A compatibility claim must pin the exact SDK version and package source, because Sentry SDKs and item models move quickly. |
+| Package registry snapshot ([crates.io](https://crates.io/crates/sentry), [npm browser](https://www.npmjs.com/package/@sentry/browser), [npm node](https://www.npmjs.com/package/@sentry/node), [npm React](https://www.npmjs.com/package/@sentry/react), [Go proxy](https://proxy.golang.org/github.com/getsentry/sentry-go/@latest), [PyPI](https://pypi.org/project/sentry-sdk/)) | Registry checks re-run on 2026-05-25 found Rust `sentry` `0.48.2`, Rust `sentry-types` `0.48.2`, JavaScript `@sentry/browser`, `@sentry/node`, and `@sentry/react` `10.53.1`, Go `github.com/getsentry/sentry-go` `v0.46.2`, and Python `sentry-sdk` `2.60.0`. Exact registry timestamps are recorded in the freshness pass below. | A compatibility claim must pin the exact SDK version and package source, because Sentry SDKs and item models move quickly. |
 | [sentry Rust crate 0.48.2](https://docs.rs/sentry/latest/sentry/) | Docs.rs currently resolves `sentry` to `0.48.2`; the crate integrates Rust panics, contexts, backtraces, `anyhow`, `tracing`, OpenTelemetry, transports, and protocol/types. | This is the first SDK fixture target because Parallax is Rust-first. |
 | [Sentry envelope struct](https://docs.rs/sentry/latest/sentry/struct.Envelope.html) | Sentry describes the envelope as the ingestion data format; it can contain related items such as events and attachments, plus independent items such as sessions. | The compatibility surface is not only JSON events; item policy is part of the claim. |
 | [sentry-types envelope parser](https://docs.rs/sentry-types/latest/src/sentry_types/protocol/envelope.rs.html) | Current envelope headers include `event_id`, `dsn`, `sdk`, `sent_at`, and trace/dynamic-sampling context; item headers include `type`, optional `length`, `content_type`, filename, and attachment type. Current item variants include `event`, `session`, `sessions`, `transaction`, `attachment`, `check_in`, `log`, and `trace_metric`, and the Rust enum is non-exhaustive. | Parser fixtures must cover length/no-length payloads, current container items, and unsupported/future items without poisoning supported event ingestion. |
@@ -42,6 +42,33 @@ The central rule:
 | [Sentry Relay repository](https://github.com/getsentry/relay) | Relay remains the closest Rust ingestion reference, but it is a gateway/processing system rather than a tiny Parallax dependency. | Use Relay as a reference oracle where useful, not as the operational architecture. |
 | [MCP 2025-11-25 tools spec](https://modelcontextprotocol.io/specification/2025-11-25/server/tools), [MCP base protocol](https://modelcontextprotocol.io/specification/2025-11-25/basic), and [RFC 8785 JCS](https://www.rfc-editor.org/rfc/rfc8785.html) | MCP tools can return `structuredContent` validated by `outputSchema`; MCP reserves `_meta` for protocol metadata; JCS provides a deterministic JSON representation suitable for hashes. | Sentry fixture outputs cannot be considered agent-ready unless bundle projections are structured, schema-valid, and hash-equivalent across access surfaces. |
 | [Bugsink Sentry SDK compatibility](https://www.bugsink.com/connect-any-application/) and [Urgentry](https://urgentry.com/) | Lightweight competitors publicly use DSN-change or drop-in Sentry replacement language. | Parallax needs more precise evidence and wording; simple compatibility language is already crowded. |
+
+## 2026-05-25 Freshness Pass
+
+Pass target: falsify whether the SDK matrix had gone stale before Parallax has
+real fixture results.
+
+Result: **no package-version drift found** from the current ledger snapshot, and
+the Sentry Rust item model remains non-exhaustive with `log` and `trace_metric`
+container items. This does **not** advance Parallax beyond `not_measured`.
+Registry freshness proves only that the source snapshot is current; it does not
+prove parser, normalization, grouping, redaction, idempotency, trace-correlation,
+canonical-bundle, projection-equivalence, MCP structured-output, or
+unsupported-item behavior.
+
+| Package/model | Primary source checked | Current version or model | Registry/source timestamp | Implication |
+| --- | --- | --- | --- | --- |
+| Rust `sentry` | [crates.io API](https://crates.io/api/v1/crates/sentry) | `0.48.2` | crate updated `2026-05-11T09:10:36.368466Z` | No SDK-version drift from the existing Rust fixture target. |
+| Rust `sentry-types` | [crates.io API](https://crates.io/api/v1/crates/sentry-types) and [docs.rs envelope source](https://docs.rs/sentry-types/latest/src/sentry_types/protocol/envelope.rs.html) | `0.48.2`; envelope/item enums are non-exhaustive; modeled items still include `event`, `session`, `sessions`, `transaction`, `attachment`, `check_in`, `log`, and `trace_metric`. | crate updated `2026-05-11T09:08:58.215870Z` | Fixture matrix still needs `log`, `trace_metric`, and unknown future-item outcomes before any multi-SDK smoke claim. |
+| JavaScript `@sentry/browser` | [npm registry](https://registry.npmjs.org/@sentry%2fbrowser) | `10.53.1` | package modified `2026-05-12T17:07:50.879Z`; version published `2026-05-12T17:07:50.769Z` | Browser smoke remains a later L4 target, not v0 proof. |
+| JavaScript `@sentry/node` | [npm registry](https://registry.npmjs.org/@sentry%2fnode) | `10.53.1` | package modified `2026-05-12T17:07:53.853Z`; version published `2026-05-12T17:07:53.694Z` | Node remains optional smoke only if migration demand needs it. |
+| JavaScript `@sentry/react` | [npm registry](https://registry.npmjs.org/@sentry%2freact) | `10.53.1` | package modified `2026-05-12T17:08:04.434Z`; version published `2026-05-12T17:08:04.309Z` | React belongs in the source snapshot because frontend capture is a roadmap branch, but it does not change the Rust-first v0 target. |
+| Go `sentry-go` | [Go module proxy](https://proxy.golang.org/github.com/getsentry/sentry-go/@latest) | `v0.46.2` | module timestamp `2026-05-04T09:47:49Z`; tag hash `1d2598e7580f52f201f06ce6b5d819c11a977f4c` | Go smoke remains a later L4 target after Rust L1/L2 pass. |
+| Python `sentry-sdk` | [PyPI JSON](https://pypi.org/pypi/sentry-sdk/json) | `2.60.0` | upload `2026-05-13T13:34:52.516271Z` | Python remains smoke/adoption research, not part of the first compatibility claim. |
+
+Freshness conclusion: keep the version matrix, keep the item-drift fixture
+requirements, and keep public wording at **planned Sentry-compatible ingestion**
+until real SDK-generated envelopes pass the ledger.
 
 ## Claim Levels
 
@@ -120,6 +147,7 @@ Each `manifest.json` should include:
     "sentry_types": "0.48.2",
     "@sentry/browser": "10.53.1",
     "@sentry/node": "10.53.1",
+    "@sentry/react": "10.53.1",
     "sentry-go": "v0.46.2",
     "sentry-sdk-python": "2.60.0"
   },
