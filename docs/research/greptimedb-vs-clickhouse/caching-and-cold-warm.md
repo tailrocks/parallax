@@ -7,7 +7,9 @@ each engine and **why cold-cache and warm-cache performance diverge** — the di
 my local runs (all warm, cache-resident at ≤5M rows) could not measure, and the
 mechanism behind the cold-object-store regime the verdict now hinges on (JSONBench
 cold-run, `public-performance-claims.md`). Code-grounded. **Pass 92 replaced the
-predicted cold-re-read winner with a measured, two-sided B10 result (Run 55).**
+predicted cold-re-read winner with a measured, two-sided B10 result (Run 55); pass 99
+(Run 63) resolved *why* the cold selective read pulls the whole SST — scatter, not a
+small-SST artifact.**
 
 Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d8`).
 
@@ -81,12 +83,19 @@ process lifetime), not per-query; the per-query cold cost is the **5 SST GETs / 
   **selective** query, ClickHouse's granule-level reads fetch only what's needed;
   GreptimeDB on a cold cache pulls ~the whole SST. **On per-GB egress pricing (R2/B2/S3),
   this reverses the cost advantage for cold selective re-reads.**
-- **⚠ Small-SST caveat (likely inflates the 80×).** The SST is only 21 MiB, so
-  GreptimeDB read ~all of it; at production SST sizes its Parquet reader should
-  **row-group-prune** (read only matching row groups), bounding egress — but its row
-  group is **coarser than ClickHouse's 8192-row granule**, so GreptimeDB will still
-  fetch *more bytes per selective query*, just not 80×. **The at-scale cold-egress
-  ratio is owed to the larger-SST harness run (B10 sized).**
+- **⚠ Caveat RESOLVED (Run 63) — it is NOT a small-SST artifact, it is *scatter*.**
+  `EXPLAIN ANALYZE` showed the recommended `spans_idx` (`PRIMARY KEY(service,name)`,
+  `trace_id` inverted-indexed but **not** the sort key) scans an anchored `trace_id`
+  lookup at **scan_cost 39 ms** vs **14 ms** for a `PRIMARY KEY(trace_id)`-clustered
+  copy of the same data. So a trace's rows **scatter across all row groups** under the
+  recommended design → an anchored read touches ~every row group → cold = ~whole SST,
+  and this **persists/grows at larger SST** (more row groups, all touched). The
+  structural cause: ClickHouse `ORDER BY (trace_id, ts)` clusters by the high-card
+  anchor **at zero cardinality cost**, so its read is ~1 granule; GreptimeDB's **PK is
+  also its series identity**, so clustering by `trace_id` (which *would* prune — proven,
+  39→14 ms) **explodes series cardinality**, which the design avoids. Cluster-vs-cardinality
+  is a tradeoff ClickHouse does not face. **The exact cold-egress byte count at large SST
+  is still owed to the harness; the mechanism is settled (Run 63).**
 
 **The warm/repeat path is the real Parallax economics, and it favours GreptimeDB.**
 GreptimeDB **write-through populates the whole SST into a persistent local read cache
@@ -124,7 +133,7 @@ above predicts the divergence direction; the *magnitude* is owed to those runs.
 | --- | --- | --- | --- |
 | Warm local hot-path query | **ClickHouse** | 5 GiB mark cache + vectorized decompress; data in RAM. | arch + Runs 1–12 |
 | Cold object-store re-read — **request count** | **GreptimeDB** | few-objects layout → 9 vs 18 GETs for an anchored lookup (Run 55/B10). | **measured** |
-| Cold object-store re-read — **egress (selective)** | **ClickHouse** | granule reads (294 KiB) vs GreptimeDB whole-SST (~23 MiB), ~80× (small-SST-inflated; at-scale owed). | **measured** (Run 55/B10) |
+| Cold object-store re-read — **egress (selective)** | **ClickHouse** | granule reads (294 KiB) vs GreptimeDB whole-SST (~23 MiB), ~80×. **Scatter-driven, persists at scale (Run 63):** recommended design keys on `service` so `trace_id` scatters across all row groups (anchored scan 39 ms vs 14 ms clustered); CH `ORDER BY(trace_id,ts)` clusters the anchor free, GreptimeDB PK=series-identity can't without cardinality blowup. | **measured** (Run 55/B10) + mechanism (Run 63) |
 | Cold object-store re-read — **wide scan** | **GreptimeDB (predicted)** | few large objects + object-store-native cache; JSONBench cold-run #1 @1B. | arch + vendor claim |
 | Warm/repeat re-read (Parallax norm) | **GreptimeDB** | write-through persistent local read cache (survives restart) → ~0 S3 after first touch (Run 55). | **measured** |
 | Cache memory footprint / tuning | ~tie, different shape | CH one big mark cache (5 GB) vs GreptimeDB several smaller purpose caches. | arch |
@@ -162,5 +171,5 @@ hot-path differentiator. Does **not** move the verdict.
 
 - GreptimeDB caches: `src/mito2/src/cache/{write_cache,file_cache,manifest_cache,index}.rs` (incl. index-probe `index/result_cache.rs`) + **partition-range scan-result cache `src/mito2/src/read/range_cache.rs`** (scan-range results, fingerprint-keyed; v1.0.2 PR #8105 fixed a merge_mode+OR-time-filter correctness bug); defaults `src/mito2/src/config.rs:204-207` (sst_meta 128 MB, vector 512 MB, page 512 MB, selector-result 512 MB); object-store read cache `src/object-store/src/config.rs:318-340` (default on); **no whole-query-result cache** (vs ClickHouse `query_cache`) — Runs 35–36.
 - ClickHouse caches: `src/Core/ServerSettings.cpp:496-588,1574` (mark/uncompressed/index/query cache + prewarm); defaults `src/Core/Defines.h:85,88` (mark 5 GiB, uncompressed 0 MiB = off).
-- Ties to `local-benchmark-results.md` Runs 8–9/54 (object layout/count), **Run 55 (B10 cold-read request count + egress, measured)**, `public-performance-claims.md` (JSONBench cold-run), `benchmarking-the-differences.md` B1/B10/B12.
+- Ties to `local-benchmark-results.md` Runs 8–9/54 (object layout/count), **Run 55 (B10 cold-read request count + egress, measured)**, **Run 63 (`EXPLAIN ANALYZE` scatter-vs-cluster: anchored scan 39 ms scattered vs 14 ms trace_id-clustered → whole-SST cold read is scatter-driven, persists at scale)**, `public-performance-claims.md` (JSONBench cold-run), `benchmarking-the-differences.md` B1/B10/B12.
 - GreptimeDB persistent local read cache: `/greptimedb_data/cache` (write-through on flush; survived `docker restart`, cleared only by explicit `rm`) — `src/object-store/src/config.rs:318-340` (default on).

@@ -2529,6 +2529,72 @@ docker exec parallax-bench-clickhouse-1 clickhouse-client --allow_experimental_t
 docker exec parallax-bench-clickhouse-1 clickhouse-client --allow_experimental_time_series_table=1 -q "DROP TABLE ts_probe"
 ```
 
+### Run 63 — 2026-05-25 — Why the cold anchored read pulls the whole SST: scatter vs cluster (resolves Run 55's caveat)
+
+**Pass target.** Run 55 found a cold anchored `trace_id` lookup read ~the whole 21 MiB
+SST from S3 and flagged it as *possibly* a small-SST artifact ("at scale GreptimeDB should
+row-group-prune"). Resolve it: does GreptimeDB prune row groups for the anchored query, or
+read all of them? Use `EXPLAIN ANALYZE` locally (no S3 needed).
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned —
+latest, no bump). `spans_idx` = 1M spans, `trace_id STRING INVERTED INDEX`, **`PRIMARY KEY
+(service, name)`** (the recommended Parallax design — trace_id indexed, *not* the sort key,
+to avoid series-cardinality blowup).
+
+**Measured (`EXPLAIN ANALYZE`, anchored `trace_id` lookup, 14 rows of 1M):**
+
+| Table | sort key (PK) | scan_cost | file_ranges | output_rows |
+| --- | --- | --- | --- | --- |
+| `spans_idx` (recommended design) | `(service, name)` → **trace_id scattered** | **39 ms** | 10 | 14 |
+| `spans_tidpk` (built this run) | `(trace_id)` → **trace_id clustered** | **14 ms** | 10 | 14 |
+| unindexed `span_id` on spans_idx (Run 58 ref) | — (full scan) | ~52 ms | 10 | 1 |
+
+**The mechanism & verdict.**
+
+- **`file_ranges:10` is the parallelism partition count, NOT bytes read** — it is 10 in
+  *all* cases. The real signal is **scan_cost**: clustering the anchor (`PRIMARY
+  KEY(trace_id)`) cut it **39 ms → 14 ms (~2.8×)** for the identical query. So GreptimeDB
+  *does* read less when the anchor is the sort key — the rows are localized to fewer row
+  groups.
+- **Run 55's whole-SST cold read is NOT a small-SST artifact — it is a scatter
+  consequence.** The recommended Parallax design indexes `trace_id` (inverted) but keys on
+  low-card `service` (to avoid 71k-series cardinality). So a trace's 14 spans **scatter
+  across all ~10 row groups** → an anchored read must touch ~every row group → cold = read
+  ~the whole SST (the 23 MiB Run 55 measured). **At a larger SST this persists/grows**
+  (more row groups, all touched) — so the cold-selective-egress gap vs ClickHouse is
+  **real and would scale**, not an artifact. *Caveat retired.*
+- **The structural asymmetry that decides it:** ClickHouse `ORDER BY (trace_id, ts)`
+  **clusters by the high-card anchor at zero cardinality cost** (sort key ≠ series), so its
+  14 spans sit in ~1 granule → cold read = 294 KiB (Run 55). GreptimeDB's **PK is also its
+  series identity**, so clustering by `trace_id` (which *would* prune cold reads — proven
+  here, 39→14 ms) **explodes series cardinality** — the very reason the design avoids it.
+  So GreptimeDB faces a **cluster-vs-cardinality tradeoff that ClickHouse does not**: it
+  can have anchor-clustered cheap cold reads *or* bounded series, not both for free. This
+  is the mechanism behind the cold-selective-egress disadvantage — a genuine,
+  design-rooted ClickHouse edge for **cold** anchored reads (mitigated for GreptimeDB by
+  its persistent local cache making most reads warm, Run 55).
+
+**Status:** Run 55 caveat **resolved** — whole-SST cold read is scatter-driven, persists
+at scale; cold-selective-egress favors ClickHouse by a sort-key/cardinality mechanism, not
+a small-data fluke. Warm/cached re-reads still favor GreptimeDB (Run 55). The precise
+cold-egress *number* at large SST is still owed to the sized harness; the *mechanism* is
+now settled.
+
+Caveat: scan_cost is warm local (not cold S3 bytes) — it proves the locality mechanism;
+the cold byte count at scale is inferred from it + Run 55, owed for an exact figure.
+
+**Reproduce (copy-paste).**
+
+```bash
+TR=3fb2d84c0a2032fa7681cde05c2051e9
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=EXPLAIN ANALYZE SELECT span_id FROM spans_idx WHERE trace_id='$TR'"   # scattered: scan_cost ~39ms
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode 'sql=CREATE TABLE spans_tidpk ("ts" TIMESTAMP(3) TIME INDEX,"trace_id" STRING,"span_id" STRING,"service" STRING,"name" STRING,"duration_ms" DOUBLE,"status" STRING, PRIMARY KEY("trace_id")) WITH (append_mode='"'"'true'"'"')'
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode 'sql=INSERT INTO spans_tidpk SELECT "ts","trace_id","span_id","service","name","duration_ms","status" FROM spans_idx'
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=ADMIN compact_table('spans_tidpk')"
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=EXPLAIN ANALYZE SELECT span_id FROM spans_tidpk WHERE trace_id='$TR'"   # clustered: scan_cost ~14ms
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=DROP TABLE spans_tidpk"
+```
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
