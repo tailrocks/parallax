@@ -33,7 +33,7 @@ debugging.
 | Is the problem real? | **Yes.** The problem is not "no one has dashboards." The problem is that production debugging, CI debugging, CLI execution, and coding-agent work produce fragmented evidence that humans and agents must manually reconstruct. Public product direction from Datadog Bits AI SRE, Sentry Seer, Grafana Assistant, and others validates this pain. |
 | Does Parallax solve it? | **Partially, and that is enough.** Parallax can solve context assembly, evidence retention, correlation, issue grouping, and agent-safe bundle generation. It cannot prove all root causes from telemetry alone, and it should never claim omniscient RCA. |
 | Are there direct competitors? | **Yes.** Sentry Seer and Datadog Bits AI SRE are direct for production debugging. Grafana Assistant is direct for observability-agent workflows. LangSmith/Langfuse/Phoenix/Braintrust/AgentOps-style systems are adjacent for agent/LLM execution telemetry. CI/autofix products are direct for test and pipeline failures. |
-| Do competitors leave room? | **Yes, narrowly.** They mostly optimize inside their own observability or LLM-app platform. Parallax can win only if it is simpler to self-host, exposes an open evidence schema, gives CLI/MCP/API access from day one, stores agent and CLI side effects, and produces portable bundles rather than product-bound answers. |
+| Do competitors leave room? | **Yes, narrowly.** They mostly optimize inside their own observability or LLM-app platform. Parallax can win only if it is simpler to self-host, exposes an open evidence schema, gives CLI/HTTP access from day one and read-only MCP only after projection/safety gates, stores agent and CLI side effects, and produces portable bundles rather than product-bound answers. |
 | Is this just a Sentry/Grafana/Datadog feature? | **Generic AI investigation is a feature.** A low-resource, Rust-first, self-hostable context store with fixture-gated Sentry envelope error-event migration, conformance-gated OTLP ingestion, adapter-backed CLI/agent audit records, and portable evidence bundles is a product wedge. |
 | Does the market make sense? | **Yes, with discipline.** AI is making software faster to write and riskier to operate without audit trails. The market is crowded, but the crowding validates the shift from dashboards to evidence-backed investigation. The opportunity is not "better AI"; it is owning the evidence contract agents use. |
 
@@ -92,7 +92,7 @@ suite. It should compete on the evidence substrate:
 - coding-agent session records only where tested adapters preserve source,
   projection, and lossiness provenance;
 - portable JSON/Markdown evidence bundles;
-- read-only CLI/MCP/API tools with tight scope.
+- read-only CLI/HTTP tools first, with MCP only after the access-surface gate.
 
 If Parallax cannot win on those dimensions, it should not be built.
 
@@ -107,7 +107,7 @@ The architecture is plausible with current open-source components:
 | Observability store | Start with GreptimeDB as the v0.1 prototype default, benchmark against exact ClickHouse stable/LTS tracks. | GreptimeDB targets metrics, logs, and traces in one observability engine, with native OpenTelemetry support and object-storage-oriented deployment. It reached **v1.0 GA in April 2026** and latest stable checked is `v1.0.2`, so the first build is no longer a bet on an unreleased database. It is still not a proven production winner: trace docs remain experimental, and the storage freshness, bundle-latency, object-cost, and operational-complexity gates keep veto power. |
 | Stream | Start with local WAL; add Apache Iggy only when replay/burst separation matters. | Iggy is Rust-native, persistent, append-oriented, and explicitly designed for low-latency message streaming. |
 | Metadata | Start with local Turso Database for prototype/tiny metadata; keep Postgres as an active production and scale-out fallback. | Latest non-prerelease checked is `v0.6.1`; `v0.7.0-pre.3` exists but is a prerelease. Turso is Rust-written and SQLite-compatible, but still beta/production-caution in the repository README, so crash, backup/restore, concurrency, migration, and fallback gates are mandatory before any production-default claim. |
-| Agent surface | CLI first, MCP required for first-class agent UX, HTTP API underneath. | Coding agents can call CLIs today, but MCP has become the standard tool discovery/invocation surface and has explicit auth/security requirements. |
+| Agent surface | CLI and HTTP first; read-only MCP only after the access-surface safety gate. | Coding agents can call CLIs today, but MCP has become the standard tool discovery/invocation surface and has explicit auth/security requirements. Do not claim first-class agent-native access until MCP projects the same canonical bundle as CLI/API and passes read-only, redaction, output-budget, and audit fixtures. |
 
 Sources:
 
@@ -136,7 +136,8 @@ Parallax should solve these concrete jobs:
 3. Join Sentry-style errors with OTLP traces, logs, metrics, releases, deploys,
    CI runs, CLI invocations, and agent sessions.
 4. Build an evidence graph with typed edge strengths, not a loose text blob.
-5. Serve bounded context bundles through CLI, HTTP API, and MCP.
+5. Serve bounded context bundles through CLI and HTTP first, then MCP after
+   projection-equivalence and safety gates pass.
 6. Record what an agent saw, queried, changed, tested, proposed, and shipped.
 7. Say "inconclusive" when evidence is missing instead of inventing certainty.
 
@@ -243,7 +244,8 @@ It is open enough for:
 - OTLP-backed correlation only after conformance and projection gates pass;
 - Rust-first capture and stacktrace quality;
 - CLI and adapter-proven agent-session observability;
-- safe MCP/API/CLI context retrieval;
+- safe CLI/HTTP context retrieval first, with MCP only after the access-surface
+  gate;
 - accepted-fix feedback loop.
 
 ## Phase 2 Gate
@@ -254,7 +256,8 @@ The blueprint must keep the boundary strict:
 
 ```text
 Parallax stores and serves evidence
-  -> CLI / HTTP API / MCP expose bounded context
+  -> CLI / HTTP API expose bounded context first
+  -> read-only MCP projects the same context after safety gates
   -> separate fixer component pulls Parallax + repository context
   -> coding agent proposes or opens a PR
 ```

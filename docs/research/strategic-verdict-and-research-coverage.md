@@ -33,7 +33,7 @@ The defensible version is:
 > invocation traces, and coding-agent session records from tested capture
 > adapters, builds
 > deterministic evidence graphs, and serves bounded context bundles to humans
-> and coding agents through API/MCP.
+> and coding agents through API first and MCP after projection/safety gates.
 
 That version can become the intelligence layer between telemetry systems, CI,
 CLI tools, deploys, issue trackers, repos, and autonomous coding agents.
@@ -58,7 +58,7 @@ Rust service / CLI / coding agent
   -> GreptimeDB prototype default for observability evidence
   -> Turso prototype metadata / Postgres production fallback
   -> deterministic grouping/correlation/evidence graph
-  -> API/MCP context bundle
+  -> API context bundle / later read-only MCP projection
 ```
 
 Add Apache Iggy only when replay, burst buffering, or worker separation is worth
@@ -128,7 +128,7 @@ storage tests.
 | Processing | Rust workers, deterministic normalization/grouping/correlation before AI. |
 | Context model | Typed evidence graph in tables first. |
 | Execution surfaces | Services, CI runs, CLI apps, and coding agents. |
-| Agent surface | Read-only API/MCP context first; PR workflow later; no production mutation. |
+| Agent surface | CLI/HTTP context first; read-only MCP after the access-surface gate; PR workflow later; no production mutation. |
 | UI | Minimal issue/evidence UI later; object-centric evidence, not dashboard suite. |
 
 ## What Is Still Unproven
