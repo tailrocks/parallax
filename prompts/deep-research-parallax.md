@@ -69,6 +69,37 @@ layer. Phase 2 is where the bulk of the deep technical research lives.
 Keep questioning the idea across multiple passes. Going deeper and challenging
 prior conclusions is expected; stopping shallow or early is not.
 
+## Ongoing Research Mode
+
+The Phase 1 verdict and Phase 2 blueprint are gates, not the end of the research
+program.
+
+For open-ended `/goal` runs, keep this prompt active as an indefinite research
+brief after the verdict and blueprint exist. Do not mark the goal complete merely
+because `docs/research/verdict.md` and
+`docs/research/technical-implementation-concept.md` exist. Continue in repeated
+passes until the operator explicitly stops the goal, replaces it, or says the
+research program is complete.
+
+Each pass should:
+
+1. Re-read this prompt and the current `docs/research/` state.
+2. Identify the weakest, least-proven, most stale, or most strategically
+   important claim.
+3. Check current primary sources and current project docs before relying on old
+   conclusions.
+4. Add or revise a focused, source-linked Markdown note under `docs/research/`.
+5. Update this prompt, `README.md`, and `PROJECT_STRUCTURE.md` when durable
+   direction or repository shape changes.
+6. Commit and push each durable research section.
+7. Move to the next highest-value research gap instead of declaring the overall
+   program finished.
+
+Keep challenging the GO verdict, storage choice, API boundary, CLI/MCP access
+surface, scaling tiers, frontend direction, agent/CLI tracing model, safety
+model, and market positioning with fresh evidence. A good ongoing run should
+improve, replace, or narrow prior conclusions when the evidence changes.
+
 ---
 
 # Project Vision and Overall Target

@@ -42,6 +42,24 @@ GO, the blueprint covers API, boundary + MCP decision, all three tiers, and a
 per-layer stack") keeps the agent grinding through many passes. A vague goal
 ("research Parallax") lets it declare victory early — avoid that.
 
+For an ongoing research program that should keep working after the verdict and
+blueprint exist, use an open-ended completion condition:
+
+```text
+/goal Continue deep research on prompts/deep-research-parallax.md indefinitely.
+
+Keep treating the prompt as the active research brief. Do not stop after one
+synthesis or one document. Work in repeated passes: re-read the prompt and
+current docs/research state, identify the weakest or stalest claim, research
+current primary sources, update focused Markdown notes, update durable prompt or
+repo-shape docs when needed, commit and push each durable section, then continue
+to the next highest-value research gap.
+
+Do not mark the goal complete merely because docs/research/verdict.md or
+docs/research/technical-implementation-concept.md exists. Keep the goal active
+until I explicitly stop it, replace it, or say the research program is complete.
+```
+
 ### 3. On a loop (`/loop`)
 
 `/loop` re-runs a prompt on an interval (or self-paced) and never self-completes —
