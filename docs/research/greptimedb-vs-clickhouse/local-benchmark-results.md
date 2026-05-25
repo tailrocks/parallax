@@ -1450,6 +1450,36 @@ are now live-built; the remaining ClickHouse gap is the **S3-disk storage policy
 VOLUME` tiering**, which needs the MinIO compose (owed to `benchmarking-the-differences.md`).
 No verdict impact. Bench data untouched (scratch db only).
 
+### Run 47 — The full-text gap is the post-index SCAN, not the index apply (metric isolation)
+
+Probed *where* GreptimeDB's ~18× warm full-text gap (Run 12/38) actually goes, using the
+engine's own Prometheus metrics to isolate index-apply cost from total query time. Env: GT
+`v1.0.2`, `logs_b1` (5M rows, `message` text-indexed), warm. Query:
+`SELECT count(*) FROM logs_b1 WHERE matches(message, 'users')` (333,433 matches), 3× warm.
+
+- **Total query: ~147–167 ms** warm (consistent with Run 12's ~130 ms GT full-text).
+- **Fulltext index apply: ~0.15 ms/query.** `greptime_index_apply_elapsed_sum{type="fulltext_index"}`
+  went 0.0013485 → 0.0018128 s over the 3 runs (count 8 → 11) = **0.46 ms for 3 applies ≈
+  0.15 ms each = ~0.1 % of the query**.
+- **Live cache state confirms indexes are cached:** `greptime_mito_cache_bytes{type="index_content"}`
+  = 2.7 MiB, `{type="index_result"}` = 27 KiB with `greptime_mito_cache_hit{type="index_result"}`
+  = 202. So index bytes + apply-results are warm-cached in memory.
+
+**Finding:** the ~18× warm full-text gap is **dominated by the post-index scan/count over the
+333k matched rows, not the index lookup** (which is sub-ms and cached). GreptimeDB resolves the
+matching row-set in ~0.15 ms via the tantivy index, then DataFusion scans/counts those rows —
+that scan is where ClickHouse's vectorized `hasToken`-confirm-on-65k-blocks wins. This
+**refines `greptimedb-parity-roadmap.md` #1**: its primary lever is the **scan engine (#2 bigger
+batches/JIT/SIMD) + index→scan fusion**, **not** an in-memory tantivy cache — pass 78 flagged the
+tantivy dir-cache, but the apply is already fast, so that is second-order. #1 and #2 share the
+same real lever (the scan engine). Refutes nothing in the verdict (ClickHouse still wins
+full-text by its engine); sharpens *why* and *what to fix*.
+
+**Caveats:** smoke scale; `count(*)` doesn't materialize wide columns (so gap #3 PREWHERE
+matters more for `SELECT *`-shaped log search); 333k/5M = 6.7 % scattered matches → poor
+row-group-skip locality (a very selective term would isolate the apply even more cleanly — a
+follow-up). No verdict impact; bench data untouched (read-only).
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

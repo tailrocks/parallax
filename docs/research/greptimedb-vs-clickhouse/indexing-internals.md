@@ -80,8 +80,11 @@ integration does** (ties to `query-execution-engine.md`):
   full-text variant re-opens a Lucene-style directory through a file/dir cache
   (`SstPuffinDir`, `dir_cache_hit/miss`) per query (`fulltext_index/applier.rs`), heavier than
   the cached in-memory FST path. The cheaper **bloom** full-text variant (`INDEX_BLOB_TYPE_BLOOM`)
-  *does* reuse `BloomFilterIndexCache`. So part of the ~18× full-text gap is this missing
-  in-memory tantivy cache, not just scan-engine maturity (`greptimedb-parity-roadmap.md` gap #1).
+  *does* reuse `BloomFilterIndexCache`. **Refinement (Run 47):** but the missing tantivy cache
+  is *not* the dominant cost — live metric isolation shows the fulltext index **apply is
+  ~0.15 ms (~0.1 % of a ~150 ms `matches()` query)**, so the ~18× warm gap is the **post-index
+  scan/count over the matched rows**, i.e. scan-engine maturity (`query-execution-engine.md`),
+  not the index lookup or its cache (`greptimedb-parity-roadmap.md` #1, reordered accordingly).
 - For the **anchored point lookup**, ClickHouse's `ORDER BY` **sort-key locality**
   (primary.cidx) beats *any* secondary index: the rows are physically contiguous, so it
   reads one granule and needs no separate index load. GreptimeDB's inverted index helps

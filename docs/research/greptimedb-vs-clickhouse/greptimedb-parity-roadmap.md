@@ -14,7 +14,9 @@ the reason to add anything is solving a real Parallax user's problem) + pass 83 
 clear-winner bullet now on **every** improvement #1–#7 — format complete; honest verdict:
 only #1 flips a real common user moment, #2–#5,#7 are footnotes for Parallax's usage) + pass 84
 (format correction: #6 now carries the same user-story verdict, explicitly as a maturity caveat,
-not an implementable feature). This is **the dedicated,
+not an implementable feature) + pass 85 (**Run 47 isolated the full-text gap** via live metrics:
+the fulltext index apply is ~0.15 ms / ~0.1 % of the query → the ~18× is the **post-index scan**,
+so #1's primary lever is the scan engine (#2/#3), the tantivy cache is second-order). This is **the dedicated,
 standalone file** answering "what can GreptimeDB improve, why, and how" — the summary table
 scans, the detailed sections below carry the code-oriented specifics. Answers the operator
 question: GreptimeDB wins Parallax on *fit*
@@ -125,18 +127,25 @@ Parallax. Source read at GreptimeDB `v1.0.2` (`0ef5451`).
   GreptimeDB **already** in-memory-caches the inverted/bloom/vector indexes
   (`cache/index/{inverted_index,bloom_filter_index,vector_index}.rs`) + an
   index-application result cache (`result_cache.rs`) — which is why anchored *inverted*
-  lookup is competitive (Run 6). But there is **no `FulltextIndexCache`**: the tantivy
-  applier opens a Lucene-style directory through a **file/dir cache** (`SstPuffinDir`,
-  `dir_cache_hit/miss`) and re-opens segment readers **per query**, then DataFusion scans.
-  So the gap is a missing warm cache for the one index type Parallax leans on for logs.
-- **How (code-oriented):** (1) add a `FulltextIndexCache` member alongside the existing
-  caches in `src/mito2/src/cache/index/` (mirror `inverted_index.rs`) and wire it through
-  `CacheManager` in `src/mito2/src/cache.rs` (`inverted_index_cache()` → add
-  `fulltext_index_cache()`); cache the opened `tantivy` `Index`/segment readers keyed by
-  `RegionIndexId`, not just the Puffin dir bytes. (2) In
-  `src/mito2/src/sst/index/fulltext_index/applier.rs`, return the matched `RowId` set and
-  feed it into the gap-#3 arrow `RowFilter`/`RowSelection` instead of a post-decode filter.
-- **Tier:** **A** (lever) + **B** (cache). **Integration**, not redesign.
+  lookup is competitive (Run 6). There is **no `FulltextIndexCache`** (the tantivy applier
+  opens a Lucene dir through a **file/dir cache**, `SstPuffinDir`/`dir_cache_hit/miss`, and
+  re-opens segment readers per query). **But Run 47 corrected the emphasis: the index *apply*
+  is not the bottleneck.** Live metric isolation on `logs_b1` (5M): a `matches()` query is
+  ~150 ms warm, of which the fulltext index apply is **~0.15 ms (~0.1 %)** — the other ~99.9 %
+  is the **post-index scan/count over the 333k matched rows** (and `index_content`/`index_result`
+  caches are populated + hitting). **So the ~18× gap is the post-index scan, not the index
+  lookup or its cache** — the dominant lever is the scan engine, which #1 shares with #2/#3.
+- **How (code-oriented), reordered by Run-47 impact:** (1) **Primary — the scan engine
+  (= Improvement #2):** the matched-row scan/count is the ~99.9 %, so bigger DataFusion
+  batches + JIT/SIMD aggregation are the real win (`state.rs` `with_batch_size`, upstream
+  DataFusion). (2) **Index→scan fusion:** in `src/mito2/src/sst/index/fulltext_index/applier.rs`,
+  return the matched `RowId` set and feed it into the gap-#3 arrow `RowFilter`/`RowSelection`
+  so the scan visits only matched rows (helps when matches are sparse; the 6.7 %-scattered
+  case has poor row-group-skip locality). (3) **Second-order — a `FulltextIndexCache`** member
+  in `src/mito2/src/cache/index/` (mirror `inverted_index.rs`, wire through `CacheManager`):
+  only worth it if a *selective* term's per-query tantivy dir re-open shows up; Run 47's apply
+  was already ~0.15 ms, so this is the smallest lever, not the first.
+- **Tier:** **B** (scan engine, shared with #2) + minor **B** (cache). **Integration**, not redesign.
 - **User story & clear-winner:** *an SRE paged at 2 a.m. greps logs for a request-id /
   `payment timeout` across a service over the last hour to find the failing path* — the one
   common Parallax action where ClickHouse's ~18× warm edge is felt by a human waiting. **By
@@ -388,7 +397,8 @@ first which gaps Parallax's real query mix actually hits before investing in Tie
   (pushdown/skip), `schema-evolution-and-dynamic-columns.md` (JSON blob vs subcolumn),
   `projections-and-access-paths.md` (Run 28), `rollup-and-continuous-aggregation.md` (Flow).
 - Empirical: `local-benchmark-results.md` Runs 11/12/37/38 (the gaps), 43 (Flow), 44 (PromQL
-  vs SQL), 45 (GreptimeDB schema build).
+  vs SQL), 45 (GreptimeDB schema build), **47 (full-text gap = post-index scan, not the index
+  apply — index apply ~0.15 ms via `greptime_index_apply_elapsed{type=fulltext_index}`)**.
 - Source (pass 77, v1.0.2): `src/query/src/query_engine/state.rs:126-128` (SessionConfig =
   `with_target_partitions` only, no `batch_size`); `src/mito2/src/sst/parquet/reader.rs`
   (`RowGroupSelection` + `PageIndexPolicy` + `prune_row_groups_by_{fulltext,inverted}_index`;
