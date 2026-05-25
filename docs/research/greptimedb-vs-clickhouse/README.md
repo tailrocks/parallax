@@ -8,8 +8,11 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 109 local runs + B1–B15 cases. Recent: **Run 109 — GreptimeDB
-WINS the last-value/"current value" stat-panel query** ~2.4× (GT ~17 ms / CH ~41 ms): time-sorted layout makes
+cold/first-run measurement showed). 25 mechanism notes + 110 local runs + B1–B15 cases. Recent: **Run 110 re-verified
+schema-on-write / OTLP-drift** — GreptimeDB InfluxDB-line write of a new tag+field auto-adds the columns (HTTP 204,
+zero migration, old rows NULL-backfilled) while ClickHouse rejects unknown-column inserts (`Code: 16
+NO_SUCH_COLUMN_IN_TABLE`, needs ALTER or a JSON column with the ~13–57× query penalty); a real GT ingest-ergonomics win
+for drifting telemetry. **Run 109 — GreptimeDB WINS the last-value/"current value" stat-panel query** ~2.4× (GT ~17 ms / CH ~41 ms): time-sorted layout makes
 latest-per-series a cheap tail read vs CH's argMax full-scan — so the vendor "GT loses lastpoint to TimescaleDB" does
 NOT carry to ClickHouse (engine-relative); a real GT metric-speed win alongside cardinality-insensitive ingest. **Run 108 verified the Run-107 blueprint claim** — PK(service) is only ~10% faster than PK(service,level) for the log-tail (~27 vs ~30 ms), so
 keying by service is a minor optimization, NOT the main lever; the ~7× gap to ClickHouse is the structural #5

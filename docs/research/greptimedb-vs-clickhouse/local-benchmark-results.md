@@ -4550,6 +4550,48 @@ ts per group). Warm ×8.
 GROUP BY service`; GT `SELECT service, last_value(value ORDER BY ts) FROM metrics_hc GROUP BY
 service`. Warm ×8. Expect GT ~17 ms / CH ~41 ms.
 
+### Run 110 — 2026-05-25 — Schema-on-write / OTLP-drift re-verified: GreptimeDB auto-adds columns on ingest (zero migration, NULL-backfill); ClickHouse rejects (`Code: 16 NO_SUCH_COLUMN`)
+
+**Pass target.** Re-verify the GreptimeDB **ingest-ergonomics** pillar (Run 18, source-confirmed
+`create_or_alter_tables_on_demand`): a new telemetry attribute lands with zero migration on
+GreptimeDB, while ClickHouse rejects unknown-column inserts. Production-realistic — OTLP attribute
+sets drift constantly (new SDK/service versions add fields/labels).
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned live — containers 13 h up,
+no bump). GreptimeDB via the **InfluxDB line protocol** (`/v1/influxdb/write`, a schema-on-write
+ingest path); ClickHouse via SQL `INSERT`.
+
+**GreptimeDB — schema-on-write:**
+- Write 1: `drift_test,host=a temp=20.5 …` → schema `host, temp, greptime_timestamp` (HTTP 204).
+- Write 2 (drift): `drift_test,host=a,region=us temp=21.0,humidity=55.2 …` → **schema auto-gained
+  `region` (String) + `humidity` (Float64)** (HTTP 204, **zero migration**).
+- Old row **NULL-backfilled**: `['a', 20.5, None, None]` then `['a', 21.0, 'us', 55.2]`. Correct.
+
+**ClickHouse — rejects:**
+- `INSERT INTO drift_test (ts,host,temp,humidity) …` → **`Code: 16 … No such column humidity in table
+  … (NO_SUCH_COLUMN_IN_TABLE)`**. Requires a prior `ALTER TABLE … ADD COLUMN` (managed migration) or
+  routing dynamic attributes into a `JSON` column.
+
+**Verdict — Run 18 reproduces exactly, no drift. A real GreptimeDB operational-simplicity win.**
+
+- **GreptimeDB absorbs OTLP attribute drift with zero ops** — a new attribute becomes a typed column
+  on first sight, history NULL-backfilled. ClickHouse needs either a **managed ALTER pipeline** on
+  every drift, or a **`JSON` column** for dynamic attributes — which then carries the **~13–57×
+  query penalty** (Run 104). So the ClickHouse "handle drift" options both cost something GreptimeDB
+  doesn't: ops complexity (ALTER) or query speed (JSON blob).
+- **Decision relevance:** Parallax's telemetry drifts continuously (every new service/SDK adds
+  attributes). GreptimeDB's schema-on-write is a genuine ingest-ergonomics + ops-simplicity edge —
+  reinforces DQ1's "write ergonomics / schema evolution" rows and the startups-first/no-ops-team
+  trajectory. **Caveat to carry:** auto-add is convenient but unbounded auto-columns on extreme drift
+  could widen tables; promote only *expected* hot attributes to columns and keep genuinely arbitrary
+  ones in a `Json` column (per Run 104's promote-hot-attrs rule).
+- **Adopt-native:** the native ingest paths (InfluxDB line here; OTLP/Prom in prod) all schema-on-write
+  → ADOPT-native ingest stands; no custom migration layer needed for drift.
+
+**Reproduce.** GT: two `/v1/influxdb/write` lines, the 2nd adding a new tag+field; `DESC TABLE` shows
+the auto-added columns, old rows NULL. CH: `CREATE TABLE (ts,host,temp)`, then `INSERT … (…,humidity)`
+→ `Code: 16 NO_SUCH_COLUMN_IN_TABLE`. Drop `drift_test` after.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

@@ -3,7 +3,11 @@
 <!-- markdownlint-disable MD013 -->
 
 Status: pass 38, extended pass 97 (Run 61: dynamic-attr path query **measured** —
-CH ~13× via typed subcolumn, + a GROUP BY casting wrinkle). White-box teardown of how
+CH ~13× via typed subcolumn, + a GROUP BY casting wrinkle) + **Run 104 (dynamic-attr gap WIDENED to
+~57× as CH's new JSON subcolumn matured)** + **Run 110 (schema-on-write re-verified, no drift: GT
+InfluxDB-line write of a new tag+field auto-adds `region`+`humidity` columns, HTTP 204, old rows
+NULL-backfilled; ClickHouse `INSERT` with an unknown column → `Code: 16 NO_SUCH_COLUMN_IN_TABLE`,
+needs ALTER or a JSON column)**. White-box teardown of how
 each engine absorbs **evolving OTLP attributes** — the checklist's "schema / dynamic
 columns" item. This is
 decision-relevant because Parallax ingests OTLP, whose attribute set drifts (a new
