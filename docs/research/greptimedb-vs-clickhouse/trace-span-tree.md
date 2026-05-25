@@ -2,7 +2,11 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 49, **corrected pass 104 (Run 68)**. The "span trees" item of the Traces
+Status: pass 49, **corrected pass 104 (Run 68)**, **re-verified Run 97 (no drift)** — flat
+waterfall fetch CH ~3 ms / GT ~18–20 ms warm (both ≪ 300 ms); table-self-join recursive CTE
+still errors on GT v1.0.2 (`Schema error: project index out of bounds`) while pure recursive
+works; GT root `parent_span_id` confirmed NULL not `''`; adopt-native-traces stands (app-side
+tree build is the dominant pattern, works on native `opentelemetry_traces`). The "span trees" item of the Traces
 signal (checklist #4 / scenario matrix): given a `trace_id`, how does each engine produce
 the parent→child span hierarchy that a trace view (and Parallax's evidence bundle) needs?
 Source-reasoned + live (Runs 27, 68). The short answer: it reduces to a question already

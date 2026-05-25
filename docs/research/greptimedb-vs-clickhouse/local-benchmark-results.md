@@ -3988,6 +3988,62 @@ GROUP BY service`; Panel B CH `SELECT toStartOfMinute(ts) m, service, avg(value)
 m,service`, GT `date_bin('1 minute'::INTERVAL, ts)`. Warm ×8–10; CH `--time`, GT
 `execution_time_ms`. Expect CH ~38/63 ms, GT ~116/126 ms (~3×/~2×).
 
+### Run 97 — 2026-05-25 — Trace-waterfall hot path re-verified: flat fetch interactive both, in-DB recursive span-tree still GT-broken (Run 68 reproduces, no drift)
+
+**Pass target.** Rotate to the **traces** slice: re-verify (a) the trace-view hot path (flat
+anchored span fetch for one `trace_id`, the "open a trace waterfall" query) and (b) the Run-68
+load-bearing claim that GreptimeDB v1.0.2 errors on the table-self-join recursive CTE used for
+in-DB span-tree building. Confirm the adopt-native-traces decision still holds.
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned live — latest stable,
+no bump). `spans` (CH) / `spans_idx` (GT): **1,000,000 rows / 71,429 traces** both (parity
+re-confirmed), identical schema incl. `parent_span_id`; `trace_id` INVERTED on GT, `ORDER BY
+(trace_id,ts)` on CH; ~14 spans/trace. Method: CH `--time`, GT `execution_time_ms`, warm.
+
+**(a) Trace-waterfall flat fetch** `SELECT span_id,parent_span_id,service,name,ts,duration_ms,
+status WHERE trace_id='f6a4…' ORDER BY ts` (14 spans), warm reps (ms):
+
+| Engine | reps | warm median |
+| --- | --- | --- |
+| ClickHouse | `5 2 3 3 3 3 3 3 3 3` | **~3 ms** |
+| GreptimeDB | `36 23 21 24 20 18 15 19 16 23` | **~18–20 ms** |
+
+→ **Both ≪ the 300 ms gate** — the trace view opens instantly on either engine. Anchored-path
+"not latency-bound" tie **holds for the trace-waterfall shape** (CH ~6× faster in ratio,
+sub-perceptible in absolute; GT un-partitioned 1M ~18 ms matches Run 94's warm anchored figure).
+
+**(b) In-DB recursive span-tree (`WITH RECURSIVE`) — Run 68 reproduces exactly, no drift:**
+
+| Form | ClickHouse | GreptimeDB v1.0.2 |
+| --- | --- | --- |
+| **Pure recursive** (counter `SELECT n+1 FROM c WHERE n<5`) | works | **works** (`count=5, max=5`) |
+| **Table-self-join recursive** (span tree: recursive term JOINs `spans_idx` to the CTE) | works (`count=1, depth=0`*) | **ERRORS — `Schema error: project index 1 out of bounds, max field 1`** |
+
+*\*The synthetic data's `parent_span_id` values don't chain to in-trace `span_id`s, so the tree
+is effectively flat (1 root, no matched children) — irrelevant to the support question.*
+
+- **GreptimeDB supports basic `WITH RECURSIVE` but still fails the table-self-join form** that a
+  span tree needs — same DataFusion recursive-CTE projection limitation as Run 68, reproduced on
+  current containers. **No drift; the claim holds.**
+- **Also re-confirmed (Run 68 detail):** GreptimeDB loads the root's empty `parent_span_id` as
+  **NULL, not `''`** — a base case of `parent_span_id=''` matched **0** rows on GT (vs CH's 1),
+  so a portable span-tree base case must test `parent_span_id IS NULL OR parent_span_id=''`.
+
+**Verdict — practical impact LOW; adopt-native-traces stands.** The dominant trace pattern is the
+**flat anchored fetch + app-side tree build** (exactly what Jaeger/Tempo do client-side) — which
+is interactive on both engines (~3 ms / ~18 ms). The in-DB recursive walk is the *non-dominant*
+path, and it is the only place ClickHouse strictly wins on traces; Parallax does not need it. The
+native `opentelemetry_traces` table (Run 86) carries `trace_id`/`span_id`/`parent_span_id`, so the
+app-side waterfall build works on the native schema → **ADOPT native traces** unchanged. Only
+caveat to carry into the blueprint: don't attempt in-DB recursive span-tree assembly on GreptimeDB
+(use the flat fetch), and handle the NULL root marker.
+
+**Reproduce.** Pick a trace_id (`SELECT trace_id FROM spans GROUP BY trace_id ORDER BY count()
+DESC LIMIT 1`); flat fetch warm ×10 (CH `--time`, GT `execution_time_ms`). Recursive: pure counter
+CTE (works both); table-self-join `WITH RECURSIVE tree AS (SELECT … FROM spans_idx WHERE
+span_id='<root>' UNION ALL SELECT s.… FROM spans_idx s JOIN tree t ON s.parent_span_id=t.span_id)`
+→ GT `Schema error: project index out of bounds`. Note GT root `parent_span_id` is NULL.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
