@@ -164,6 +164,62 @@ SortPreservingMergeExec
 | Evidence-bundle join algorithm decides the winner | both prune before join on anchored queries | **refined**: not a differentiator for anchored Parallax queries |
 | Cross-engine bundle correctness (Q1/Q4 identical) | 18 / 14 rows both | **confirmed** |
 
+### Run 3 — 2026-05-25 — metrics signal + PromQL nativeness
+
+Tests the operator hypothesis's strongest GreptimeDB claim: metrics + PromQL.
+Dataset: 864,000 points, 1,200 series (12 services × 100 instances), one value
+every 30 s over 6 h, a smooth random walk. Same containers.
+
+- ClickHouse: `http_req_latency (ts DateTime64(3) CODEC(DoubleDelta,ZSTD),
+  service LowCardinality, instance LowCardinality, value Float64 CODEC(Gorilla,
+  ZSTD)) ENGINE=MergeTree ORDER BY (service, instance, ts)`.
+- GreptimeDB: `http_req_latency (ts TIME INDEX, service, instance, value DOUBLE,
+  PRIMARY KEY (service, instance))` — a plain time-series table.
+
+**Correctness parity: PASS** — SQL 5-min range-aggregation grouped by service:
+both return 864 groups (12 × 72 buckets); svc-0 first-bucket `avg(value)` =
+**106.2274** on both.
+
+**PromQL nativeness — the capability gap (most important result):**
+
+| | GreptimeDB | ClickHouse |
+| --- | --- | --- |
+| Native PromQL | **Yes** — `GET /v1/prometheus/api/v1/query_range?query=avg by (service)(http_req_latency)` returned 12 series × 73 points directly over the plain table. | **No** — no PromQL engine. Must translate PromQL→SQL in an external layer. |
+| Range query model | Native `query_range` (start/end/step) + PromQL functions (`rate`, `avg_over_time`, `… by (label)`). | Hand-written SQL with `toStartOfInterval` + `groupArray`/window funcs. |
+
+This is a **capability difference, not just a speed delta**. If Parallax exposes
+PromQL or ingests Prometheus remote-write, GreptimeDB does it natively; ClickHouse
+requires building and maintaining a PromQL compatibility layer. **Confirmed** —
+the clearest GreptimeDB advantage found so far, and it is on the metrics signal
+exactly as the hypothesis predicted.
+
+**Latency (warm, min of 3, smoke scale — indicative)**
+
+| Query | ClickHouse | GreptimeDB |
+| --- | --- | --- |
+| SQL 5-min range-agg by service | 12 ms | 16 ms |
+| Native PromQL `avg by (service)` (wall-clock incl. HTTP) | n/a | 48 ms |
+
+GreptimeDB is **within ~1.3× of ClickHouse on the metric aggregation** — far
+closer than the 2–3× gap it showed on log/trace scans (Run 1). Consistent with
+metrics being GreptimeDB's design center. Still cache-resident scale; directional.
+
+**Compression NOT meaningfully tested this run.** The ClickHouse `value` column
+(Gorilla+ZSTD) compressed to 6.03 MiB for 864k float64 (~6.6 MB raw) — i.e. almost
+no compression, because the synthetic random-walk values are high-entropy. Real
+metrics (flat gauges, monotonic counters, repeated values) are exactly what
+Gorilla/DoubleDelta target and compress 5–10×. **Re-run float compression with
+realistic metric shapes** before any cost conclusion.
+
+**Claims checked (Run 3)**
+
+| Claim | Result | Status |
+| --- | --- | --- |
+| GreptimeDB PromQL-native; ClickHouse not | PromQL works on GreptimeDB, absent in ClickHouse | **confirmed** |
+| GreptimeDB competitive/faster on metric aggregation | 16 ms vs 12 ms (within 1.3×) | *plausible* — directional, cache-resident scale |
+| Gorilla codec shrinks float metrics | not exercised (incompressible synthetic data) | *inconclusive* — redo with realistic shapes |
+| Cross-engine metric-aggregation correctness | 864 groups + 106.2274 both | **confirmed** |
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
@@ -173,8 +229,10 @@ SortPreservingMergeExec
    size/cost comparison.
 3. **Add the signals + the join**: load `logs` + `error_events`, run Q1/Q4
    evidence-bundle joins by `trace_id` — the query that decides the choice.
-4. **Metrics signal + PromQL** vs ClickHouse AggregatingMergeTree — the predicted
-   GreptimeDB strength, currently untested.
+4. **Metrics float compression with realistic shapes** (flat gauges, monotonic
+   counters, repeated values) to actually exercise Gorilla/DoubleDelta vs
+   GreptimeDB Parquet — Run 3's random-walk data was incompressible. (PromQL
+   nativeness + aggregation latency already done in Run 3.)
 5. **Fairer GreptimeDB timing** via the MySQL native protocol, not HTTP.
 6. **Object-storage path** (MinIO) for both — add to `bench/compose.yml`.
 
