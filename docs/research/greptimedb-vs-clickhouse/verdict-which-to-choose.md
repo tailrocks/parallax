@@ -276,11 +276,20 @@ concurrent ingest+query:
    beyond the cache-resident smoke floor? (Could flip Q5.) Runs 48-49 dissolved the old
    selective full-text ~18×; the remaining owed number is broad-term and unanchored
    scan latency at GB-TB scale.
-2. **Object-store cost on equal footing** (MinIO) — **largely answered:** retained
-   bytes ~tie (compression wash); object count GreptimeDB 4 vs CH 74; and cold GET
-   count is **query-shape-dependent** (anchored: CH 5 < GT 22, Run 14; full scan:
-   GT 26 < CH 57, Run 15). Remaining: cold-read **egress $** + GET counts under a
-   realistic mixed bundle workload.
+2. **Object-store cost on equal footing** (MinIO) — **largely answered, now with a
+   measured two-sided cold result (Run 55/B10):** retained bytes ~tie (compression
+   wash); object count GreptimeDB 3 vs CH 74 (Run 54, re-verified). **Cold-read is
+   regime-split:** for a cold *anchored* lookup, **egress strongly favours ClickHouse**
+   (~294 KiB granule reads vs GreptimeDB ~23 MiB whole-SST, ~80× — small-SST-inflated,
+   at-scale owed), while **request count favours GreptimeDB** (9 vs 18 GETs) and
+   **warm/repeat re-reads favour GreptimeDB** (write-through persistent local cache →
+   ~0 S3 after first touch). ⚠ **Reproduction conflict flagged:** the anchored cold
+   GET-count *direction* did **not** reproduce — Run 14 had CH 5 < GT 22, Run 55 has
+   GT 9 < CH 18; GET count is **SST/part-state-dependent and unstable**, so the robust
+   differentiator is **egress bytes** (mechanism: CH sparse-granule reads vs GreptimeDB
+   Parquet whole-SST/row-group), not GET count. Wide cold *scan* still favours
+   GreptimeDB (GT 26 < CH 57, Run 15 — the JSONBench regime). Remaining: at-scale
+   selective-cold egress + a realistic mixed bundle workload.
 3. **Concurrent ingest+query freshness p95** — **penalty answered (Run 13):** both
    pass the ≤2× gate (CH 1.55×, GT 1.38×). The precise mixed-load *freshness p95*
    (stamp-emit→poll) still owed.

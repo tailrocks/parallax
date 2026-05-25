@@ -150,9 +150,13 @@ decided less by "who compresses spans 1.3× better" and more by:
    data (21.8 MiB) is now **smaller** than ClickHouse's (28.9 MiB) — *reversing* the
    Run-1 local-disk order (CH 28.9 < GT 38 under `PK(service,name)`), because
    trace_id-sorting clusters the high-card hex columns for better Parquet
-   dict/RLE+ZSTD. So GreptimeDB is both fewer-objects *and* smaller here. **The only
-   remaining refinement is request-count on a cold read** (GET/LIST per query — B10),
-   which fewer objects strongly implies but does not directly measure.
+   dict/RLE+ZSTD. So GreptimeDB is both fewer-objects *and* smaller here. **B10 cold-read now measured (Run 55) — two-sided:**
+   for one cold anchored lookup, **request count favours GreptimeDB** (9 vs 18 GETs)
+   but **cold egress favours ClickHouse ~80×** (294 KiB granule reads vs ~23 MiB
+   whole-SST; small-SST-inflated, at-scale owed). **Warm/repeat favours GreptimeDB**
+   (write-through persistent local cache → ~0 S3 after first touch). So object-store
+   economics split by regime — per-request + retained-object + warm-amortized re-reads →
+   GreptimeDB; cold *selective* egress → ClickHouse (see `caching-and-cold-warm.md`).
 2. **Compute per ingested GB and per query** — not yet measured (CPU/RSS sampling
    pending; the harness protocol covers it).
 3. **Tiered retention**: both can keep hot data local and cold on object store;

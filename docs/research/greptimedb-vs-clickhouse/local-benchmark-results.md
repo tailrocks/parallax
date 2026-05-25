@@ -2019,6 +2019,103 @@ bench/s3/run-s3-stack.sh down
 Caveat: warm smoke, 1M spans single-node. Object counts exact; cold-read request
 counts (the real $ driver) still owed (B10).
 
+### Run 55 — 2026-05-25 — B10: cold-read S3 request count + egress (corrects the predicted cold-re-read winner)
+
+**Pass target.** Close the number Run 54 owed: the *request count and egress* on a
+**cold** anchored read from object storage — the metric that actually prices a
+re-read-heavy engine (per-GET + per-GB egress), and the basis for the verdict's
+"object-store economics favour GreptimeDB" pillar (so far backed only by object
+*count*, not per-query request/egress).
+
+**Environment.** Isolated S3 stack (`bench/s3/run-s3-stack.sh up`): MinIO +
+GreptimeDB(S3) `v1.0.2` + ClickHouse(S3) `v26.5.1.882` on net `pbench-s3`. Versions
+re-pinned this pass — latest, no bump. Same identical 1M-span dataset as Run 54
+loaded into both; GreptimeDB `PRIMARY KEY(trace_id)`, ClickHouse `ORDER BY (trace_id,
+ts)`. Query: the anchored lookup `SELECT span_id,service,name FROM spans WHERE
+trace_id='0001dd73c341d2b9a2c3fccad1f01beb' ORDER BY ts` (14 rows). S3 requests
+captured with `mc admin trace --json` during the query, counted by bucket prefix
+(`data/`=GreptimeDB, `clickhouse/`=ClickHouse).
+
+**Forcing cold (per engine — asymmetric levers, both reach true-cold):**
+
+- ClickHouse: `SYSTEM DROP FILESYSTEM CACHE` + `DROP MARK CACHE` + `DROP UNCOMPRESSED
+  CACHE`, same process. Query then re-reads from S3.
+- GreptimeDB: **first attempt was contaminated** — a `docker restart` *preserved* the
+  on-disk read cache (`/greptimedb_data/cache`, 21 MiB = the whole SST,
+  write-through-populated on flush), so the query served locally (0 SST GETs, only 544 B
+  manifest). True cold required **`rm -rf /greptimedb_data/cache/*` + restart**. *(This
+  contamination is itself the finding in the warm row below.)*
+
+**Measured (cold anchored lookup):**
+
+| | S3 GETs | egress | objects read |
+| --- | --- | --- | --- |
+| **ClickHouse** | **18** GetObject | **294 KiB** (301,308 B) | needed **column granules** only — sparse index → ~1 granule × 5 cols + marks + primary.idx |
+| **GreptimeDB** | **9** (1 HeadObject + 4 manifest GETs + **5 SST GETs**) | **~23 MiB** (24,133,371 B on the SST GETs) | ~the **entire 21 MiB Parquet SST** (5 ranged reads of one `.parquet`) + manifest checkpoint/JSONs (region-open, one-time) |
+| **GreptimeDB warm** (cache populated — the default after flush) | **0** SST GETs | ~0 | served from persistent local read cache; survived `docker restart` |
+
+Latencies (warm-ish smoke, noise-level): CH cold 45 ms, GreptimeDB cold 44 ms.
+
+**The comparison logic & verdict (two-sided — corrects a prediction).**
+
+- **Request count → GreptimeDB** (9 vs 18, ~2× fewer). Far less than the ~25×
+  *object-count* ratio (Run 54): an **anchored** query touches few objects on both, so
+  the layout advantage shrinks to ~2× at query time.
+- **Cold egress (selective query) → ClickHouse, ~80×** (294 KiB vs ~23 MiB).
+  ClickHouse's granule-level reads fetch only the matching granule of each needed
+  column; GreptimeDB on a cold cache pulls ~the whole SST. **On per-GB egress pricing
+  this reverses the cost story for cold *selective* re-reads.** Status: the
+  `caching-and-cold-warm.md` prediction "GreptimeDB wins cold object-store re-read"
+  was **too coarse — REFINED to: GreptimeDB wins request count + warm-amortized
+  re-reads; ClickHouse wins cold-selective egress.**
+- **Warm/repeat → GreptimeDB.** Write-through populates the whole SST into a
+  **persistent** local read cache on flush (survives process restart); after first
+  touch, re-reads cost ~0 S3 req + 0 egress. For Parallax re-reading **recent** bundles
+  this amortizes the one-time cold egress to zero — the dominant economics, favourable.
+
+**Caveats / owed (honesty).**
+
+1. **Small-SST inflates the 80× egress.** 21 MiB SST → GreptimeDB read ~all of it. At
+   production SST sizes its Parquet reader should **row-group-prune** (matching row
+   groups only), bounding egress — but its row group is **coarser than ClickHouse's
+   8192-row granule**, so it will still fetch *more bytes per selective query*, just not
+   80×. **The at-scale cold-egress ratio is owed to a larger-SST B10 run** (route to harness).
+2. Asymmetric cold levers (CH drop-cache vs GreptimeDB rm-cache+restart) — both reach
+   true-cold (verified: CH 18 GETs from S3; GreptimeDB 5 SST GETs from S3), but the
+   GreptimeDB number includes one-time region-open manifest GETs (4) that don't recur
+   per query.
+   ⚠ **Reproduction conflict with Run 14** (which logged anchored cold CH 5 < GT 22 —
+   CH *fewer* GETs): Run 55 gets the opposite direction (GT 9 < CH 18). The anchored
+   GET *count* is **SST/part-state-dependent and does not reproduce stably** (GreptimeDB
+   GETs scale with SST count: 1 compacted SST → 5 ranged reads here vs many SSTs → more
+   in Run 14; CH GETs scale with active-part column files). **Treat the egress bytes
+   (granules vs whole-SST), not GET count, as the robust cold differentiator.** A number
+   that flips between runs is a flagged finding, not a settled one.
+3. Single-node smoke, 1M rows, one anchored query shape. A **wide** cold scan (most
+   columns) would narrow the egress gap (both read most data) — that is the JSONBench
+   regime, which favours GreptimeDB; this run is the *selective* regime, which favours CH.
+
+**Reproduce (copy-paste).**
+
+```bash
+bench/s3/run-s3-stack.sh up   # + load 1M spans into both as in Run 54
+# ClickHouse cold:
+docker exec pbench-ch-s3 clickhouse-client -q "SYSTEM DROP FILESYSTEM CACHE"; docker exec pbench-ch-s3 clickhouse-client -q "SYSTEM DROP MARK CACHE"
+docker run --rm --network pbench-s3 --entrypoint sh minio/mc:latest -c "mc alias set m http://pbench-minio:9000 minioadmin minioadmin >/dev/null; timeout 8 mc admin trace --json m" > /tmp/ch.json &
+sleep 2.5; docker exec pbench-ch-s3 clickhouse-client -q "SELECT span_id,service,name FROM spans WHERE trace_id='<id>' ORDER BY ts FORMAT Null"; wait
+grep '"path":"/greptimedb/clickhouse/' /tmp/ch.json | grep -c GetObject   # = 18
+# GreptimeDB TRUE cold (must clear the persistent cache, not just restart):
+docker exec pbench-gt-s3 sh -c 'rm -rf /greptimedb_data/cache/*'
+docker run --rm --network pbench-s3 --entrypoint sh minio/mc:latest -c "mc alias set m http://pbench-minio:9000 minioadmin minioadmin >/dev/null; timeout 30 mc admin trace --json m" > /tmp/gt.json &
+sleep 1.5; docker restart pbench-gt-s3; until docker exec pbench-gt-s3 curl -sf localhost:4000/health >/dev/null 2>&1; do sleep 1; done
+docker exec pbench-gt-s3 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=SELECT span_id,service,name FROM spans WHERE trace_id='<id>' ORDER BY ts" ; sleep 1.5; kill %1
+grep '"path":"/greptimedb/data/' /tmp/gt.json | grep GetObject | grep -o '"size":[0-9]*'   # 5 SST gets ~= 23 MiB
+bench/s3/run-s3-stack.sh down
+```
+
+Caveat: warm-ish latency noise; the *counts and bytes* are the result. 1M-span
+single-node smoke; at-scale selective-cold egress owed to the sized harness.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

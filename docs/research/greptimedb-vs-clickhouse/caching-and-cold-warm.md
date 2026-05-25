@@ -2,11 +2,12 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 24. The cache hierarchy of each engine and **why cold-cache and
-warm-cache performance diverge** — the dimension my local runs (all warm,
-cache-resident at ≤5M rows) could not measure, and the mechanism behind the
-cold-object-store regime the verdict now hinges on (JSONBench cold-run,
-`public-performance-claims.md`). Code-grounded.
+Status: pass 24, extended pass 92 (**B10 measured, Run 55**). The cache hierarchy of
+each engine and **why cold-cache and warm-cache performance diverge** — the dimension
+my local runs (all warm, cache-resident at ≤5M rows) could not measure, and the
+mechanism behind the cold-object-store regime the verdict now hinges on (JSONBench
+cold-run, `public-performance-claims.md`). Code-grounded. **Pass 92 replaced the
+predicted cold-re-read winner with a measured, two-sided B10 result (Run 55).**
 
 Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d8`).
 
@@ -56,26 +57,56 @@ This is why the warm read-path numbers (Runs 37–39) are the trustworthy steady
 and the *cold-regime* widening is a separate, scan-width-dependent effect the cold-tier
 harness must quantify.
 
-## The decisive consequence for Parallax (object-store cold re-reads)
+## The decisive consequence for Parallax (object-store cold re-reads) — B10 MEASURED (Run 55)
 
-Parallax re-reads evidence bundles from cheap object storage, often **cold**. In
-that regime the cache + object-layout interaction (this note + B10) predicts:
+Parallax re-reads evidence bundles from cheap object storage, sometimes **cold**.
+B10 (Run 55) measured the cold cost of one **anchored** `trace_id` lookup (14 of 1M
+spans) by capturing MinIO requests (`mc admin trace`) after forcing each engine cold
+(ClickHouse `SYSTEM DROP FILESYSTEM CACHE`; GreptimeDB `rm -rf` the local read cache
++ restart). The result is **two-sided — the earlier "GreptimeDB wins cold re-read"
+prediction was too simple:**
 
-- **GreptimeDB**: cold bundle re-read = a handful of S3 GETs (few large Parquet
-  objects) → local read cache → warm thereafter. The whole stack (OpenDAL read
-  cache + index caches + few objects) is **built for cold object-store reads**.
-- **ClickHouse on an S3 disk**: cold re-read = **many S3 GETs** (one per column
-  file per part — 74 objects for the same 1M spans, Run 9) → S3-disk filesystem
-  cache. More cold round-trips + request cost; its mark/uncompressed caching assumes
-  local disk, not S3 latency.
+| Cold anchored lookup | S3 GETs | egress bytes | what it reads |
+| --- | --- | --- | --- |
+| **ClickHouse** | **18** | **294 KiB** | only the needed **column granules** (sparse index → 1 granule × ~5 cols + marks) |
+| **GreptimeDB** | **9** (4 manifest¹ + 5 SST) | **~23 MiB** | ~the **entire 21 MiB Parquet SST** (coarse ranged reads) |
 
-**This is the mechanism behind the JSONBench cold-run result** (GreptimeDB #1 cold
-at 1B docs, `public-performance-claims.md`): fewer cold object-store round-trips +
-an object-store-native read cache. It also explains why my **warm small-scale runs
-favoured ClickHouse** (everything in RAM/mark-cache, ClickHouse's vectorized hot
-path dominates) while the **cold object-store regime can favour GreptimeDB** — the
-two regimes are genuinely different, and Parallax lives in the cold one for
-retention re-reads.
+¹ the 4 manifest GETs are one-time **region-open** overhead (amortized across the
+process lifetime), not per-query; the per-query cold cost is the **5 SST GETs / ~23 MiB**.
+
+- **Request count → GreptimeDB** (9 vs 18, ~2× fewer — its few-objects layout means
+  even a cold read touches few objects). *But this is far less than the ~25× object-count
+  ratio (Run 54), because an anchored query touches few objects on **both**.*
+- **Cold egress → ClickHouse, dramatically** (294 KiB vs ~23 MiB, **~80×**). For a
+  **selective** query, ClickHouse's granule-level reads fetch only what's needed;
+  GreptimeDB on a cold cache pulls ~the whole SST. **On per-GB egress pricing (R2/B2/S3),
+  this reverses the cost advantage for cold selective re-reads.**
+- **⚠ Small-SST caveat (likely inflates the 80×).** The SST is only 21 MiB, so
+  GreptimeDB read ~all of it; at production SST sizes its Parquet reader should
+  **row-group-prune** (read only matching row groups), bounding egress — but its row
+  group is **coarser than ClickHouse's 8192-row granule**, so GreptimeDB will still
+  fetch *more bytes per selective query*, just not 80×. **The at-scale cold-egress
+  ratio is owed to the larger-SST harness run (B10 sized).**
+
+**The warm/repeat path is the real Parallax economics, and it favours GreptimeDB.**
+GreptimeDB **write-through populates the whole SST into a persistent local read cache
+on flush** (`/greptimedb_data/cache` held the full 21 MiB; **it survived a `docker
+restart`** — only an explicit `rm` made the query cold). So after the first touch,
+*every* re-read (anchored or scan) is served locally at **~0 S3 requests / 0 egress**
+— Run 53's earlier warm anchored ~immune numbers are this path. For Parallax's
+dominant pattern — repeatedly re-reading **recent** bundles — GreptimeDB pays the cold
+SST egress **once**, then amortizes to zero. ClickHouse's S3-disk filesystem cache is
+similar but off-the-primary-path and was the thing I had to *drop* to force cold.
+
+**Net (corrects the prediction):** "cold object-store re-read favours GreptimeDB" is
+**only true for request count and for the warm-after-first-touch steady state**. For a
+genuinely **cold selective** read (evicted cold-tier history, e.g. re-opening an old
+incident), **ClickHouse transfers far less data** (granules vs whole SST) — an egress-cost
+win. The JSONBench cold-run claim (GreptimeDB #1 at 1B docs) is a **wide-scan** workload
+(reads most columns anyway), where few-large-objects + object-store-native read cache
+help; it does **not** generalize to *selective* cold reads, where granular fetch wins.
+The two regimes (wide cold scan vs selective cold lookup) split the verdict — name which
+one a given Parallax query is.
 
 ## Why my local runs couldn't show this (honest limitation)
 
@@ -92,7 +123,10 @@ above predicts the divergence direction; the *magnitude* is owed to those runs.
 | Sub-axis | Winner | Mechanism | Confidence |
 | --- | --- | --- | --- |
 | Warm local hot-path query | **ClickHouse** | 5 GiB mark cache + vectorized decompress; data in RAM. | arch + Runs 1–12 |
-| Cold object-store re-read | **GreptimeDB (predicted)** | object-store read cache + few large objects → few cold S3 GETs (B10); JSONBench cold-run. | arch + B10 + vendor claim |
+| Cold object-store re-read — **request count** | **GreptimeDB** | few-objects layout → 9 vs 18 GETs for an anchored lookup (Run 55/B10). | **measured** |
+| Cold object-store re-read — **egress (selective)** | **ClickHouse** | granule reads (294 KiB) vs GreptimeDB whole-SST (~23 MiB), ~80× (small-SST-inflated; at-scale owed). | **measured** (Run 55/B10) |
+| Cold object-store re-read — **wide scan** | **GreptimeDB (predicted)** | few large objects + object-store-native cache; JSONBench cold-run #1 @1B. | arch + vendor claim |
+| Warm/repeat re-read (Parallax norm) | **GreptimeDB** | write-through persistent local read cache (survives restart) → ~0 S3 after first touch (Run 55). | **measured** |
 | Cache memory footprint / tuning | ~tie, different shape | CH one big mark cache (5 GB) vs GreptimeDB several smaller purpose caches. | arch |
 | Index-lookup caching | both | CH index_mark_cache; GreptimeDB inverted/bloom/vector + result cache. | arch |
 
@@ -128,4 +162,5 @@ hot-path differentiator. Does **not** move the verdict.
 
 - GreptimeDB caches: `src/mito2/src/cache/{write_cache,file_cache,manifest_cache,index}.rs` (incl. index-probe `index/result_cache.rs`) + **partition-range scan-result cache `src/mito2/src/read/range_cache.rs`** (scan-range results, fingerprint-keyed; v1.0.2 PR #8105 fixed a merge_mode+OR-time-filter correctness bug); defaults `src/mito2/src/config.rs:204-207` (sst_meta 128 MB, vector 512 MB, page 512 MB, selector-result 512 MB); object-store read cache `src/object-store/src/config.rs:318-340` (default on); **no whole-query-result cache** (vs ClickHouse `query_cache`) — Runs 35–36.
 - ClickHouse caches: `src/Core/ServerSettings.cpp:496-588,1574` (mark/uncompressed/index/query cache + prewarm); defaults `src/Core/Defines.h:85,88` (mark 5 GiB, uncompressed 0 MiB = off).
-- Ties to `local-benchmark-results.md` Runs 8–9 (object layout), `public-performance-claims.md` (JSONBench cold-run), `benchmarking-the-differences.md` B1/B10/B12.
+- Ties to `local-benchmark-results.md` Runs 8–9/54 (object layout/count), **Run 55 (B10 cold-read request count + egress, measured)**, `public-performance-claims.md` (JSONBench cold-run), `benchmarking-the-differences.md` B1/B10/B12.
+- GreptimeDB persistent local read cache: `/greptimedb_data/cache` (write-through on flush; survived `docker restart`, cleared only by explicit `rm`) — `src/object-store/src/config.rs:318-340` (default on).
