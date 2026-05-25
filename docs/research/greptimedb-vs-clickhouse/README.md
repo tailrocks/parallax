@@ -8,8 +8,11 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 121 local runs + B1–B15 cases. Recent: **Run 121 — SOURCE
-gap-closing**: GreptimeDB v1.0.2 shipped `prefilter.rs`, a PREWHERE-style late-materialization framework (parity #3 was
+cold/first-run measurement showed). 25 mechanism notes + 122 local runs + B1–B15 cases. Recent: **Run 122 MEASURED the
+prefilter working** — GT selective wide-row scan prunes the wide-column decode ~3× (~16 ms vs ~50 ms full-decode), so
+the v1.0.2 `prefilter.rs` (Run 121) is shipped AND functional; parity #3 PREWHERE shifted from "catastrophic full-decode"
+to "the same ~5× throughput gap as every scan" (residual is engine throughput, not missing late-materialization), both
+interactive. **Run 121 — SOURCE gap-closing**: GreptimeDB v1.0.2 shipped `prefilter.rs`, a PREWHERE-style late-materialization framework (parity #3 was
 "missing" at pass-77, now PARTIALLY CLOSED — PK/partition-scoped, wired into the Flat read path). Third source-confirmed
 shipped scan-engine gap-closing (after TopK + Flat SST) — validates the DQ6 "closable in Rust, being closed" thesis.
 **Run 120 re-verified the native observability-protocol trio LIVE** (DQ3): GreptimeDB OTLP receiver (HTTP 400=exists) + PromQL API (200) +

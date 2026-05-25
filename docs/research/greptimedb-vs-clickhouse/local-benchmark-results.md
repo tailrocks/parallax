@@ -5050,6 +5050,47 @@ the DQ6 "gaps are closable / being closed in Rust" thesis.
 → `prefilter.rs` present; decode + read its module doc (late-materialization) + `is_usable_primary_key_filter`
 (PK/partition scope) + `file_range.rs` `has_flat_primary_key_prefilter` (wired). No `RowFilter` in the readers.
 
+### Run 122 — 2026-05-25 — MEASURED the Run-121 prefilter working: GT selective wide-row scan prunes the wide-column decode (~16 ms vs ~50 ms full-decode, ~3× pruning); #3 PREWHERE confirmed shipped + functional, residual vs CH (~5×) is general throughput not missing-late-materialization
+
+**Pass target.** Run 121 found `prefilter.rs` (PK/partition late-materialization) shipped + wired in
+v1.0.2. **Measure** it: does a selective wide-row scan on a PK predicate actually prune the wide-column
+decode (= the parity #3 PREWHERE benefit), and how close to ClickHouse is it now?
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned live — 14 h up, no bump).
+`wide_t` = 500k rows, `anchor` (CH 1000 / GT 4096 distinct, the PK/sort key), `payload` ~200-char
+string (the wide column). Selective query `WHERE anchor='X'` (CH ~500 / GT 117 matching rows) → reads
+`payload`. CH `ORDER BY anchor` + PREWHERE; GT `PK(anchor)` + `append_mode` (prefilter applies). Warm.
+
+| Query | ClickHouse | GreptimeDB |
+| --- | --- | --- |
+| Selective wide scan `WHERE anchor='X' → payload` | **~3 ms** (~500 rows) | **~16 ms** (117 rows) |
+| Decode ALL payloads (500k, no prune) — GT baseline | — | **~50 ms** |
+| → GT selective vs GT full-decode | — | **~16 vs ~50 ms = ~3× pruning (prefilter WORKS)** |
+
+**Verdict — the Run-121 prefilter is shipped AND functional; parity #3 is closing (PK case), residual is throughput.**
+
+- **GreptimeDB's prefilter prunes the wide-column decode:** the selective scan (~16 ms) is **~3×
+  faster than decoding all payloads (~50 ms)** — proof it does **not** decode every `payload` then
+  filter; the PK-predicate prefilter + PK-sort-locality prune to the matching row-groups and decode
+  `payload` only for survivors. This is the **late-materialization #3 said was missing at pass-77**,
+  now empirically working in v1.0.2 (confirms Run 121's source finding).
+- **Residual vs ClickHouse (~16 ms vs ~3 ms, ~5×) is general scan-engine throughput, NOT a missing
+  PREWHERE.** Both engines now late-materialize the selective wide scan; ClickHouse is faster by its
+  usual block+SIMD margin (Run 102 class), not because GreptimeDB re-decodes everything. So the #3
+  gap has shifted from "catastrophic full-decode" to "the same ~2–5× throughput gap as every other
+  scan" — both interactive (≪ 300 ms).
+- **Caveat:** GreptimeDB's prefilter is **PK/partition-column-scoped** (Run 121); this test filtered
+  on the PK (`anchor`). A selective filter on a **non-PK, non-indexed** wide-table column would not
+  yet get the prefilter (full decode → ~50 ms class) — the general arbitrary-column PREWHERE is the
+  remaining Tier-B piece. For Parallax, anchored/PK-keyed wide reads (the common case) get it today.
+- **DQ6:** measured confirmation (not just source) that a flagged scan-engine gap is closing in
+  shipped GreptimeDB — alongside TopK (Run 106) and the source find (Run 121). The "closable in Rust,
+  being closed" thesis now has a *measured* PREWHERE data point.
+
+**Reproduce.** Build `wide_t` (500k, `anchor` = PK/sort key ~1–4k distinct, `payload` ~200 chars);
+selective `WHERE anchor='X' → payload` (CH ~3 ms / GT ~16 ms) vs GT all-decode `max(length(payload))`
+(~50 ms). GT selective ≪ GT all-decode ⇒ prefilter pruning. Drop after.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
