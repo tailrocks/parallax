@@ -44,6 +44,79 @@ should not start as a full observability dashboard or autonomous production SRE.
 | Execution surfaces | Treat services, CLI apps, CI runs, and coding agents as first-class trace sources. | Parallax should explain software execution and the agent work performed on that execution, not only long-running services. |
 | Human surface | Minimal Sentry-like issue UI later. | Humans need inspection and trust, but the differentiator is the context API. |
 
+## Phase 2 Blueprint Decisions
+
+This section locks the decisions required after the GO verdict in
+[Parallax Go / No-Go Verdict](verdict.md).
+
+### API Standard Decision
+
+Support **both OpenTelemetry and Sentry**, with different jobs:
+
+| API surface | Decision | What Parallax supports | What Parallax stores |
+| --- | --- | --- | --- |
+| OpenTelemetry / OTLP | Native telemetry standard. | OTLP/gRPC on `4317`, OTLP/HTTP on `4318`, `/v1/traces`, `/v1/logs`, `/v1/metrics`, binary protobuf first, gzip, partial-success responses, retryable overload responses, strict body limits. | Normalized spans, logs, metric samples, resources, trace/span IDs, service identity, deployment attributes, semantic attributes, and raw payload refs. High-volume rows go to GreptimeDB; raw refs go to local disk/object storage. |
+| Sentry envelope API | Compatibility and migration standard for error events. | `POST /api/<project_id>/envelope/`, starting with `event` items only. Parse `exception`, stacktrace, release, environment, tags, breadcrumbs, `contexts.trace`, `debug_meta`, and client fingerprints. Reject or metadata-only-store high-risk items until explicitly supported. | Raw envelope refs, normalized error events, stack frames, Rust panic/error-chain fields, grouping material, issue/fingerprint metadata, release linkage, and trace/span correlation keys. High-volume event rows go to GreptimeDB; project/issue metadata goes to Turso. |
+| Parallax context API | Product API above OTEL/Sentry. | JSON and Markdown evidence bundles by issue, event, trace, CI run, CLI invocation, or agent session. All responses include redaction status, evidence refs, confidence, missing-data warnings, and query manifest. | Product/query state, investigation runs, bundle manifests, audit records, agent access logs, and accepted/rejected fix outcomes in Turso or Postgres fallback. |
+
+Do not invent a new telemetry wire protocol. OTLP is the wire format for
+logs/traces/metrics. Sentry envelopes are the wire format for error migration.
+Parallax's unique API is the context bundle and evidence graph above them.
+
+### Component Boundary And Agent Access
+
+Parallax has one job:
+
+> ingest, store, correlate, and serve evidence.
+
+Parallax does **not** fix production bugs. The fixing layer is separate:
+
+```text
+Parallax evidence store
+  -> CLI / HTTP API / MCP context surface
+  -> fixer component
+  -> coding agent
+  -> proposal PR or fix PR
+```
+
+The fixer component owns repository checkout, agent orchestration, patch
+generation, test execution, and pull-request creation. Parallax records those
+actions as evidence after the fixer performs them.
+
+Access decision:
+
+- **CLI first:** required from day one because coding agents already operate
+  through shell commands, CI can call a CLI, and humans need local exports.
+- **HTTP API underneath:** the CLI and MCP server must call the same HTTP/JSON
+  context contract so behavior is testable and stable.
+- **MCP required, not optional:** the CLI is enough for the earliest local
+  prototype, but not enough for first-class agent integration. MCP gives agents
+  discoverable tools, structured arguments, transport-level sessions, and an
+  authorization model. Keep the MCP server thin and read-only at first.
+- **No generic mutation tools:** no `run_sql`, `run_shell`, production deploy,
+  rollback, or database mutation tools in Parallax core.
+
+### Named Stack Per Layer
+
+| Layer | Simple default | Scalable path | Very scalable path |
+| --- | --- | --- | --- |
+| Language/runtime | Rust, Tokio async runtime. | Same. | Same. |
+| HTTP API | `axum` REST/JSON service in `parallax-server`. | Separate `parallax-api` nodes behind a load balancer. | Horizontally scaled `parallax-api` fleet. |
+| OTLP/gRPC | `tonic` + `prost` receiver for OTLP/gRPC; `axum` route for OTLP/HTTP. | Dedicated `parallax-ingest` nodes. | Regional ingest tiers with collector compatibility and overload control. |
+| App collection | Rust `tracing`, `tracing-error`, `opentelemetry-otlp`, Sentry-compatible Rust panic/error capture. | Add SDK fixtures for more languages through Sentry envelope compatibility and OTLP. | Collector/agent integrations, sampling policy, tenant routing. |
+| CLI tracing | `parallax` CLI built with `clap`; wrapper/subcommand mode records sanitized args/env/cwd/stdout/stderr refs/exit code. | CI and deploy systems call CLI with project token and redaction policy. | Organization-wide CLI/agent gateway and policy templates. |
+| Agent-session tracing | JSON event schema for model calls, MCP/tool calls, shell commands, file reads/writes, tests, patches, PRs, approvals, outcomes. | Fixer component and agent adapters emit session traces to Parallax. | Multi-agent session graph with policy, review, and accepted-fix feedback loops. |
+| Stream / buffer | Local append-only WAL/outbox segment files. | Apache Iggy standalone when replay, backpressure, or worker separation is needed. | Iggy cluster or storage-backed stream fallback if Iggy fails scale tests. |
+| Observability storage | GreptimeDB standalone on local disk. | GreptimeDB standalone with S3/object storage. | GreptimeDB distributed with object storage; ClickHouse fallback cluster if benchmarks force it. |
+| Metadata store | Turso Database for projects, DSNs, policies, issue state, audit, agent sessions, CLI invocations, outcomes. | Turso with benchmarked backup/restore and concurrency gates; Postgres fallback if those fail. | Postgres fallback for large multi-node metadata if Turso fails production gates. |
+| Raw evidence retention | Local disk raw refs with TTL. | S3-compatible object storage for raw envelopes, attachments, logs, and bundle manifests. | Tiered object storage with lifecycle policy and per-tenant retention. |
+| Processing | In-process Rust normalizer/grouping/evidence-graph worker. | Separate Rust worker services and consumer groups. | Worker pools by normalization, grouping, symbolication, graph, bundle indexing. |
+| Context surface | CLI + HTTP API + read-only MCP in the same binary. | Separate API/MCP service. | Horizontally scaled API/MCP tier with tenant isolation and audit indexing. |
+| Human UI | No dashboard suite; optional minimal issue/evidence view later. | Same UI over API. | Same UI over API; dashboards remain non-core. |
+
+The stack deliberately keeps Tier 1 small while preserving the seams needed for
+Tier 2 and Tier 3.
+
 Related research:
 
 - [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md)
@@ -259,6 +332,68 @@ apps / collectors / CI systems / coding agents
      `parallax_hypothesis_check`.
    - UI renders the same context later.
 
+## Agent And CLI Trace Model
+
+Agent sessions and CLI invocations are first-class execution traces, not
+attachments on an error.
+
+### CLI Invocation Row
+
+Store one invocation root plus child events:
+
+| Field group | Required fields |
+| --- | --- |
+| Identity | `invocation_id`, `project_id`, `started_at`, `ended_at`, `duration_ms`, `status`, `exit_code` |
+| Command | command name, subcommand, sanitized args, arg redaction report, cwd, repo, branch, commit SHA |
+| Environment | sanitized env refs, config refs, host/container info, user/service actor, policy version |
+| Process tree | parent invocation, spawned child processes, test/build/deploy step refs |
+| Output | bounded stdout/stderr excerpts, object-storage refs for larger output, panic/error chain when present |
+| Side effects | files read/written when available, database/resource action refs, network/deploy refs, generated artifact refs |
+| Correlation | trace ID/span ID when emitted, CI run/job/step ID, release/deploy ID, agent session ID |
+| Safety | redaction policy version, secret-detection result, raw access policy, audit actor |
+
+High-cardinality command/output events go to GreptimeDB. Long stdout/stderr,
+patches, and artifacts go to object storage with refs. Invocation metadata,
+policy, and outcome state go to Turso.
+
+### Coding-Agent Session Row
+
+Store one session root plus ordered actions:
+
+| Field group | Required fields |
+| --- | --- |
+| Identity | `agent_session_id`, `project_id`, `agent_product`, `started_at`, `ended_at`, `status` |
+| Context | prompt refs, repo refs, files read, docs read, Parallax bundles requested, external issue/PR refs |
+| Tool calls | MCP/API calls, CLI commands, shell commands, database/query templates, tool result refs |
+| Model steps | model/provider metadata when available, token counts when available, reasoning summary refs, confidence |
+| Code actions | files edited, patch refs, commits, PR URLs, review comments, rollback/revert refs |
+| Validation | tests run, build commands, lint/typecheck results, failure excerpts, skipped checks |
+| Outcome | accepted, edited, rejected, reverted, inconclusive, production recurrence, human approver |
+| Safety | approvals, denied actions, policy version, redaction report, prompt-injection flags |
+
+Parallax stores facts about the agent run. It does not need full private model
+reasoning to be useful; it needs enough structured action history to reconstruct
+what context the agent used and what it changed.
+
+### Audit Graph Edges
+
+Agent and CLI events become evidence graph nodes with typed edges:
+
+| Edge | Meaning |
+| --- | --- |
+| `agent_used_bundle` | Agent session consumed a specific Parallax context bundle. |
+| `agent_ran_command` | Agent invoked a CLI/shell command. |
+| `command_spawned_process` | CLI command created a child process or test/build/deploy step. |
+| `command_touched_resource` | Command interacted with a file, database object, queue, deploy target, or external API. |
+| `agent_changed_file` | Agent produced a patch touching a file. |
+| `agent_opened_pr` | Agent or fixer created a PR from a patch/proposal. |
+| `validation_checked_patch` | Test/build/lint command validated or rejected a patch. |
+| `fix_addressed_issue` | Human or recurrence data linked a fix outcome to an issue. |
+| `fix_worsened_issue` | Revert, recurrence, or human review linked a bad outcome to prior action. |
+
+This is what lets Parallax answer audit questions such as "what did the agent
+do before this deploy?" and "which command touched this database object?"
+
 ## Error Event Data Model
 
 The first internal error event should be Sentry-inspired but Parallax-owned:
@@ -330,6 +465,30 @@ It should not receive unlimited logs or direct production credentials.
 
 ## Agent-Facing Context API
 
+The agent surface has three concrete forms:
+
+1. CLI commands for shell-native agents and CI.
+2. HTTP API for stable service-to-service integration.
+3. MCP tools for first-class agent clients.
+
+The CLI is the first usable surface. MCP is still required because a dedicated
+MCP server makes Parallax discoverable as a structured, least-privilege context
+provider rather than a bag of shell commands. Both surfaces must call the same
+authorization, redaction, and bundle-building code.
+
+First CLI commands:
+
+| Command | Purpose |
+| --- | --- |
+| `parallax issue list --project <id>` | List grouped issues by project/environment. |
+| `parallax issue show <issue_id>` | Show issue detail and representative stacktrace. |
+| `parallax issue context <issue_id> --window 10m --format json|markdown` | Return a bounded evidence bundle. |
+| `parallax event raw <event_id>` | Return redacted normalized event data and raw refs. |
+| `parallax trace context <trace_id>` | Return spans, logs, and metric deltas for a trace. |
+| `parallax hypothesis check <issue_id> --file hypothesis.md` | Run deterministic checks for a proposed cause. |
+| `parallax agent session show <session_id>` | Show what an agent saw, queried, changed, tested, and produced. |
+| `parallax cli invocation show <invocation_id>` | Show sanitized command, environment refs, output refs, exit status, and side effects. |
+
 First HTTP endpoints:
 
 ```text
@@ -351,7 +510,9 @@ First MCP tools:
 | `parallax_event_raw` | Return raw normalized event, redacted by default. |
 | `parallax_trace_context` | Return spans, logs, and metric deltas for a trace. |
 | `parallax_hypothesis_check` | Run deterministic checks for one proposed cause. |
-| `parallax_pr_proposal` | Produce patch/proposal text, not production action. |
+| `parallax_pr_proposal` | Return evidence-backed proposal context and checklist, not code changes or production action. |
+| `parallax_agent_session_show` | Return agent-session timeline, tools, files, tests, patch refs, and outcome. |
+| `parallax_cli_invocation_show` | Return sanitized CLI invocation evidence and side-effect refs. |
 
 Sources:
 
@@ -359,17 +520,24 @@ Sources:
 - [MCP security best practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)
 - [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/)
 
-## Deployment Profiles
+## Scaling Trajectory
 
-### Profile 1: Tiny
+### Tier 1: Simple
 
 Target: personal projects, startups, and small teams.
 
 ```text
 parallax-server
-greptimedb standalone
+  - Sentry envelope endpoint
+  - OTLP HTTP/gRPC endpoint
+  - CLI/agent trace endpoint
+  - local WAL/outbox
+  - in-process normalizer/grouping/evidence graph
+  - HTTP API + read-only MCP
+greptimedb standalone on local disk
 turso metadata
-local disk retention
+local disk raw retention
+parallax CLI
 ```
 
 Properties:
@@ -378,11 +546,12 @@ Properties:
 - no broker;
 - no Kubernetes requirement;
 - bounded local raw WAL;
+- CLI, HTTP API, and MCP available from the same process;
 - easiest migration path from self-hosted Sentry SDKs.
 
 This is the product that proves Parallax can be simpler than Sentry.
 
-### Profile 2: Small Production
+### Tier 2: Scalable
 
 Target: a team running production Rust services.
 
@@ -392,16 +561,23 @@ parallax-worker
 greptimedb standalone with object storage
 turso metadata
 optional Apache Iggy standalone
+parallax-api / MCP
+parallax CLI
 ```
 
 Properties:
 
+- stateless ingest split from API;
 - raw replay and worker separation if Iggy is enabled;
 - object storage for retained telemetry;
 - Turso for metadata and audit;
 - still small enough for one VM or a simple Compose deployment.
 
-### Profile 3: Scale-Out
+The explicit seams are ingest, stream, workers, storage, and API/MCP. Moving
+from Tier 1 to Tier 2 should not change the event contract, the bundle schema,
+or the CLI/MCP tools.
+
+### Tier 3: Very Scalable
 
 Target: larger companies and high-volume telemetry.
 
@@ -413,6 +589,7 @@ greptimedb distributed or clickhouse fallback cluster
 turso metadata or postgres scale-out fallback
 object storage
 api/mcp nodes x N
+parallax CLI across CI/dev/agent environments
 ```
 
 Properties:
@@ -424,7 +601,8 @@ Properties:
 - the evidence graph and API contract stay the same.
 
 The important design constraint: scale-out should change topology, not the event
-contract.
+contract. Tier 3 is not the first product, but Tier 1 must avoid choices that
+make Tier 3 impossible.
 
 ## Benchmark Gates
 
