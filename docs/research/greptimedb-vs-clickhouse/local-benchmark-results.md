@@ -4757,7 +4757,9 @@ This is a real Parallax design decision: which write mode + PK for which signal.
   high-card event table and scans are ~80× slower) — not a GT-vs-CH point, but **essential for the
   "adopt GreptimeDB" implementation**. ClickHouse has an analogous trap (high-card column first in
   `ORDER BY`), so it's a both-engines schema-discipline requirement; GreptimeDB's is sharper because
-  PK = sort = series = dedup-unit all at once.
+  PK = sort = series = dedup-unit all at once. **(Run 118 quantified this: ClickHouse's "trap" is only
+  ~11% storage with NO scan/lookup penalty — far milder; the requirement is NOT symmetric, GreptimeDB's
+  is ~16–44× sharper. Corrected there.)**
 
 **Reproduce.** Build `PK(span_id) default` vs `PK(span_id) append_mode='true'` vs `PK(service,name)
 append_mode='true'`, load same 1M; `SELECT svc, count(*), avg(dur) GROUP BY svc` warm ×8 → ~1220 /
@@ -4883,6 +4885,46 @@ only because rows-per-series≈1.
 flush_table` then `compact_table` → `sst_num=1`; re-scan ~28 ms. `append_mode='true'` avoids the
 penalty in all states. Source: `src/mito2/src/read/{read.rs,flat_merge.rs,flat_dedup.rs,seq_scan.rs,
 scan_region.rs}`, `sst/parquet/flat_format.rs` @ v1.0.2.
+
+### Run 118 — 2026-05-25 — CORRECTS Run 114's "CH has an analogous trap": ClickHouse's wrong-ORDER-BY cost is MILD (~11% storage, no scan/lookup penalty) — the schema-discipline trap is NOT symmetric; GreptimeDB's is ~16–44× sharper
+
+**Pass target.** Run 114 claimed "ClickHouse has an analogous trap (high-card column first in
+`ORDER BY`)" to GreptimeDB's high-card-PK+dedup catastrophe. I never verified it — and CH MergeTree
+has no read-path dedup-merge, so the trap may be far milder. Test the CH side directly.
+
+**Environment.** ClickHouse `v26.5.1.882` / GreptimeDB `v1.0.2` (re-pinned live — no bump). Two
+1M-row CH tables from `spans`, identical data: `ch_hc` `ORDER BY span_id` (1M-card first) vs `ch_lc`
+`ORDER BY (svc, ts)` (low-card first). CH `--time`, warm.
+
+| Axis | ch_hc (ORDER BY span_id) | ch_lc (ORDER BY svc,ts) | effect of wrong ORDER BY |
+| --- | --- | --- | --- |
+| Storage (compressed) | 27.24 MiB | 24.44 MiB | **~11% larger** (high-card-first compresses worse) |
+| Full-scan agg `GROUP BY svc` | ~15 ms | ~14 ms | **none** (CH scans all rows regardless of sort key) |
+| Point lookup `WHERE span_id` | ~3 ms (sort-key) | ~3 ms (full scan) | **none** (vectorized scan fast either way) |
+
+**Verdict — the trap is NOT symmetric. CORRECT the Run-114 overclaim.**
+
+- **ClickHouse's wrong-`ORDER BY` cost is mild: ~11% storage, and essentially zero scan/lookup
+  penalty.** A full-scan aggregation scans all rows regardless of the sort key (no difference), and
+  even a point lookup on a non-sort-key column is ~3 ms via the vectorized scan. ClickHouse has **no
+  read-path dedup-merge** to blow up, so a bad sort key costs compression locality, not query time.
+- **GreptimeDB's schema-discipline trap is ~16–44× SHARPER** (Runs 114/117): a high-card PK + the
+  default dedup mode makes the **memtable** scan ~16× slower (~1235 ms vs ~76 ms), because in
+  GreptimeDB **`PK = sort = series = dedup-unit` all at once** — the wrong PK simultaneously explodes
+  the series count AND the dedup-merge boundaries. ClickHouse decouples these (sort key ≠ dedup;
+  dedup only in ReplacingMergeTree), so the same mistake is far cheaper.
+- **Honest correction + a fair point FOR ClickHouse:** Run 114's "CH has an analogous trap" **over-
+  stated the symmetry.** ClickHouse is **markedly more forgiving** of a schema mistake on this axis
+  (~11% storage vs GreptimeDB's ~16–44× query catastrophe). This is a real **operability** advantage
+  for ClickHouse: you can get the sort key "wrong" and still query fine; on GreptimeDB the
+  PK/`append_mode` choice on high-card event tables is load-bearing and unforgiving. Not a verdict
+  flip (the right GreptimeDB design is known + in the blueprint, and the metric path is unaffected —
+  Run 115), but a fair entry in the "where ClickHouse is genuinely better" column: **schema-mistake
+  tolerance.**
+
+**Reproduce.** Build CH `ORDER BY span_id` vs `ORDER BY (svc,ts)`, load same 1M; compare
+`system.parts` size (~11% larger high-card-first), `GROUP BY svc` agg (~equal), `WHERE span_id` lookup
+(~equal). Contrast with GreptimeDB Run 114 (~16× scan penalty for the analogous PK mistake). Drop after.
 
 ## Next runs (to make the numbers mean something)
 
