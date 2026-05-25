@@ -6693,6 +6693,34 @@ one on the topic — pass 149 skipped that check.)
 uniq(trace_id) FROM spans"`; GT `SELECT count(distinct trace_id), hll_count(hll(trace_id)) FROM
 spans_idx`. (exec; host port down.)
 
+### Run 170 — 2026-05-25 — REPO-CONSISTENCY SWEEP (trustworthiness check) — clean
+
+**Context.** Pass 169 found a duplicate note I'd introduced; a quick repo-consistency sweep to catch
+any other cruft (dead links, more dups, count drift). Re-pin unchanged (GT GA v1.0.2; nightly today).
+
+**Checks + results:**
+- **Dead cross-references:** grepped every `*.md` link target in the subdir. **No real dead links.**
+  The apparent "missing targets" are all valid: GreptimeDB RFC filenames (`2023-07-10-metric-engine.md`,
+  `2025-02-06-remote-wal-purge.md`), parent-dir docs (`retention-cost-model.md`,
+  `greptimedb-storage-evaluation.md`, `storage-*-gate.md`, `roadmap.md`) + prompts
+  (`deep-research-parallax.md`, `greptimedb-vs-clickhouse-internals.md`,
+  `observability-storage-benchmark-plan.md`, `storage-benchmark-prototype.md`), and a regex artifact
+  (`to-choose.md` ← `verdict-which-to-choose.md`).
+- **Run-169 dedup verified clean:** the 3 remaining `continuous-aggregation-and-rollups.md` strings are
+  **intentional history-prose** (status line + README + this run-log entry explaining the merge), not
+  links to the deleted file. No broken refs from the dedup.
+- **Note-count drift (cosmetic):** README said "27 mechanism notes"; actual = **31** topical notes
+  (34 `*.md` − README index − `local-benchmark-results.md` run-log − `four-way-version-comparison.md`
+  matrix). The "mechanism notes" label had been undercounting the synthesis notes (verdict,
+  per-signal-verdict, platform-fit, parity-roadmap, public-claims, vendor-claims, benchmarking,
+  storage-cost). Corrected README to "31 mechanism + synthesis notes."
+
+**Verdict — repo health good.** No dead links, no further duplicates, dedup clean; count corrected.
+No research-content change. (Meta/trustworthiness pass, not a benchmark.)
+
+**Reproduce.** `ls docs/research/greptimedb-vs-clickhouse/*.md | wc -l` (=34); dead-link check:
+`grep -rhoE '[a-z0-9-]+\.md' <subdir>/*.md | sort -u` then test each `-f`.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
