@@ -322,13 +322,18 @@ TSBS) — shipped scan-format redesign. (3) **`prefilter.rs` — PREWHERE-style 
 framework ("read filter columns first → refined row selection → read the rest"), **wired into the
 Flat read path**, PK/partition-scoped so far (Run 121, source-confirmed). Three of the scan-engine
 parity gaps closing in shipped GreptimeDB Rust — concrete proof the engineering path works exactly
-as the thesis predicts. **Honest caveat (the 2026 roadmap tempers the thesis):** the *specific* remaining gaps —
-JIT/SIMD, PREWHERE, join-input pushdown, projections — are **not GreptimeDB-roadmap-committed line
-items**; they ride **upstream DataFusion** + opportunistic release wins (as TopK/Flat-SST did). So
-the gaps are engineering not physics, but the delivery path is "DataFusion upstream + GreptimeDB
-opportunistic," not "one roadmap line per gap" — a real dependency on the broader Arrow community.
-The dynamic-attr JSON gap (#4, *widened* to ~57× at Run 104) **is** roadmap-committed, though:
-**JSON Type v2 (field-level index, dynamic fields), v1.1 / Q2 2026.**
+as the thesis predicts (PREWHERE/#3 was itself "missing" at pass-77, now shipped — Runs 121/122). **Honest
+caveat — gap-closing is UNEVEN (the 2026 roadmap + Run 123 temper the thesis):** GreptimeDB has shipped the
+improvements it owns in its **SST/scan layer** (Flat SST, TopK dynamic-filter pushdown, the prefilter/late-
+materialization), but the **raw-vectorized-throughput** gap (#2: batch size, JIT, SIMD) is **untouched in
+v1.0.2** — Run 123 re-confirmed `SessionConfig` still sets no `batch_size` (8192 default) and `SET batch_size`
+is still rejected, so the **~2–3× aggregation gap has not moved** and won't until GreptimeDB plumbs the batch
+size or **upstream DataFusion** codegen/SIMD matures. Join-input pushdown (#8) and projections (#5) are
+likewise not roadmap-committed. So: the gaps are engineering not physics, and the SST-layer ones are closing
+fast, but the **execution-core throughput gap depends on DataFusion** (the part neither GreptimeDB nor the
+operator fully controls) — don't extrapolate the prefilter/TopK velocity to "the agg gap closes soon." The
+dynamic-attr JSON gap (#4, *widened* to ~57× at Run 104) **is** roadmap-committed: **JSON Type v2
+(field-level index, dynamic fields), v1.1 / Q2 2026.**
 
 **(B) Who can move the engine?** — This is the operator's decisive lever, and it is
 *asymmetric*. GreptimeDB and DataFusion are **open-source Rust**; a gap there is one the

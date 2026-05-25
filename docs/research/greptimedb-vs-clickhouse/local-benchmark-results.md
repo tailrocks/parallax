@@ -5091,6 +5091,46 @@ string (the wide column). Selective query `WHERE anchor='X'` (CH ~500 / GT 117 m
 selective `WHERE anchor='X' → payload` (CH ~3 ms / GT ~16 ms) vs GT all-decode `max(length(payload))`
 (~50 ms). GT selective ≪ GT all-decode ⇒ prefilter pruning. Drop after.
 
+### Run 123 — 2026-05-25 — The OTHER side of gap-closing: #2 batch_size is STILL untouched in v1.0.2 (8192 default, no knob) — the ~2–3× agg gap has NOT moved, the honest counterexample to Runs 121/122
+
+**Pass target.** Runs 106/121/122 found three scan-engine gaps closing in shipped GreptimeDB. Balance
+that honestly: re-check the **#2 lever** the parity-roadmap calls "the cheapest experiment" — raising
+the DataFusion `batch_size` (pass-80: `SET` rejected, 8192 default, underlies the ~2–3× agg gap). Did
+v1.0.2 touch it?
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned live — no bump). Source via
+`gh api` @ v1.0.2 + live `SET` probe.
+
+**Findings — UNCHANGED from pass-80, no drift:**
+- **Source `state.rs:126-128` (v1.0.2):** the query `SessionConfig` sets only
+  `.with_target_partitions(options.parallelism)` (`:128`) — **never `.with_batch_size(...)`**. So
+  DataFusion's **8,192-row default batch still holds** (vs ClickHouse's 65,409-row blocks). No change.
+- **Live:** `SET datafusion.execution.batch_size = 32768` → **"Not supported: Unsupported set variable
+  DATAFUSION.EXECUTION.BATCH_SIZE"**; `SET batch_size` → same. **Still no runtime knob.**
+
+**Verdict — #2 has NOT closed; the agg-throughput gap is the honest counterexample to the gap-closing story.**
+
+- **Unlike #3 (PREWHERE, shipped Run 121/122), TopK (Run 106), and Flat SST, the #2 batch_size lever
+  is completely untouched in v1.0.2** — still the 8,192 default, still no `SET` knob, still requiring
+  the one-line `with_batch_size` code change (or a config-plumb) the roadmap proposed. So the **~2–3×
+  warm metric/scan-aggregation gap (Runs 96/102/113) is structurally unchanged** and will be until
+  either GreptimeDB plumbs the batch size or DataFusion's codegen/SIMD matures upstream.
+- **Keeps DQ6 honest:** the "gaps are closable / being closed in Rust" thesis is **real but uneven** —
+  GreptimeDB has shipped the *scan-format / late-materialization / top-k* improvements (its own Flat
+  SST work), but has **not** touched the *raw vectorized-throughput* knobs (batch size, JIT, SIMD),
+  which ride upstream DataFusion + a code change nobody's made yet. So: the gaps closing are the ones
+  GreptimeDB owns in its SST/scan layer; the one that *hasn't* moved is the one that depends on the
+  DataFusion execution core. This matches the Run-106 roadmap caveat (JIT/SIMD/batch not
+  GreptimeDB-roadmap-committed).
+- **Decision relevance:** don't over-extrapolate from the prefilter/TopK wins to "the agg gap will
+  close soon" — it's the slowest-moving one. For Parallax it stays a non-issue (the agg gap is ~2–3×,
+  all metric panels interactive — Run 113), but the *long-term* "GreptimeDB catches ClickHouse on raw
+  throughput" depends on the DataFusion core, which is the part neither GreptimeDB nor the operator
+  fully controls.
+
+**Reproduce.** `gh api ".../state.rs?ref=v1.0.2"` → `with_target_partitions` only, no `with_batch_size`;
+`SET datafusion.execution.batch_size=32768` → "Unsupported set variable." Unchanged since pass-80.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
