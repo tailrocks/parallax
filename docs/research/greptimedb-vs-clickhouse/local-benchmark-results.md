@@ -700,6 +700,33 @@ schema-on-write auto-evolution → **confirmed (live)**; ClickHouse no-auto-sche
 **confirmed**. Ingest-ergonomics edge GreptimeDB; dynamic-attr path-query edge
 ClickHouse. Smoke; column-explosion threshold + JSON query speed at volume owed.
 
+### Run 19 — 2026-05-25 — Dedup/update semantics: read-time vs merge-time
+
+Backs `dedup-and-update-semantics.md` (pass 39). Same pinned stack, smoke.
+
+**GreptimeDB — read-time dedup (always correct, no compaction forced):**
+
+- `merge_mode=last_row` (default): `(k='A',ts=1000)` inserted v=1 then v=2 → plain
+  `SELECT` = **1 row, v=2**.
+- `merge_mode='last_non_null'`: partial writes `(v1=1)` then `(v2=2)` at same key/ts →
+  plain `SELECT` = **1 row, v1=1 AND v2=2** (per-field merge).
+
+**ClickHouse — `ReplacingMergeTree(ver)` merge-time dedup:**
+
+- key=1 inserted ver=1 then ver=2 = **2 parts**.
+- plain `SELECT` → **2 rows** (`old`,`new`) — duplicates visible, not yet merged.
+- `SELECT … FINAL` → **1 row** (`new`, ver=2 wins) — dedup forced at read.
+- `OPTIMIZE TABLE … FINAL` then plain `SELECT` → **1 row** (collapsed).
+- Timing plain vs FINAL both 0.002 s at 2 rows — FINAL cost only bites at scale
+  (many covering parts); not a smoke signal.
+
+**Claim status:** GreptimeDB dedup at read (DedupReader in scan path) → **confirmed
+(live)**; ClickHouse dedup eventual/merge-time, dupes visible without `FINAL` →
+**confirmed (live)**. Consequence: latest-state queries (issue status, deploy marker,
+metric last-value) correct-by-default on GreptimeDB; ClickHouse needs `FINAL` or
+`argMax`/`AggregatingMergeTree`. Append signals: dedup moot (GT `append_mode` / CH
+plain `MergeTree`). FINAL-vs-read-dedup cost crossover at volume owed to harness.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
