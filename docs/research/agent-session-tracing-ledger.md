@@ -34,8 +34,8 @@ and normalization of agent execution traces.
 | [Codex CLI](https://developers.openai.com/codex/cli) | Codex CLI is a local command-line agent surface and supports repo work, file edits, command execution, and automation workflows. | Codex is a first adapter target because it runs where Parallax can observe local repo, shell, and file evidence. |
 | [Claude Code monitoring](https://code.claude.com/docs/en/monitoring-usage) | Claude Code exports opt-in OpenTelemetry metrics, logs/events, and optional traces; prompt text, tool details, tool content, and raw API bodies are disabled by default and require explicit flags. It also documents identity, tool, MCP, cost/token, and audit events. | Claude Code is the strongest native OTel target, but content capture must remain opt-in and redacted. |
 | [Amp manual](https://ampcode.com/manual) | Amp supports streaming JSON output in `--execute` mode for programmatic integration and real-time conversation monitoring; optional thinking blocks extend the schema. The same manual documents TypeScript plugins, project/system/global plugin locations, lifecycle events such as `session.start`, `agent.start`, `tool.call`, `tool.result`, and `agent.end`, and plugin activation for both interactive sessions and `amp --execute` runs. | Amp should be measured through both plugin-event fixtures and non-interactive stream fixtures. Thinking blocks are sensitive opt-in, not default capture. Plugin events are a stronger interactive capture surface than the prior wrapper/thread-ref assumption, but still need payload and version proof. |
-| [OpenCode CLI](https://opencode.ai/docs/cli/) | OpenCode supports `run --format json`, session continuation/forking, session list JSON, export JSON with `--sanitize`, headless `serve`, ACP, and permission flags. | OpenCode is a strong JSON/export/plugin adapter target; `--sanitize` is helpful but does not replace Parallax redaction. |
-| [OpenCode plugins](https://opencode.ai/docs/plugins/) | Plugins expose command, file, message, permission, server, session, shell, tool, TUI, and other events. | OpenCode can provide deep structured events without terminal parsing, but support must be proven per enabled event class. |
+| [OpenCode CLI](https://opencode.ai/docs/cli/) | OpenCode supports `run --format json` raw JSON events, session continuation/forking, `session list --format json`, export JSON with `--sanitize`, headless `serve`, ACP over nd-JSON, stats, and permission/thinking flags. | OpenCode is a strong JSON/export/plugin/API/protocol adapter target; `--sanitize` is helpful but does not replace Parallax redaction, and `--thinking` / `--dangerously-skip-permissions` must be recorded as sensitive run configuration. |
+| [OpenCode plugins](https://opencode.ai/docs/plugins/) | Plugins expose documented event names including `command.executed`, `file.edited`, `permission.asked`, `permission.replied`, `session.*`, `shell.env`, `tool.execute.before`, and `tool.execute.after`. | OpenCode can provide deep structured events without terminal parsing, but support must be proven per enabled event class and must not be inferred from run JSON or export JSON alone. |
 | [OpenTelemetry semantic conventions 1.41.0](https://opentelemetry.io/docs/specs/semconv/) | Current semconv catalog includes GenAI, MCP, CLI, process, CI/CD, VCS, exception, and test areas. | Adapters should record source semantic-convention versions instead of hard-coding unstable span shapes into Parallax storage. |
 | [OpenTelemetry GenAI agent spans](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/), [MCP](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/), and [CLI spans](https://opentelemetry.io/docs/specs/semconv/cli/cli-spans/) | GenAI and MCP conventions are useful ingestion vocabulary; CLI conventions define short-lived command spans and exit/error semantics. | OTel-native sources feed normalized Parallax rows, but raw spans are not the durable product schema. |
 
@@ -49,7 +49,10 @@ Use these levels in `claim-ledger.jsonl`:
 | `fixture_harness_ready` | Repeatable tasks and fixture repos exist for the target agents. | "Agent-session tracing fixture harness prepared." |
 | `claude_otel_ingest_supported` | Claude Code OTel metrics/logs/events/traces ingest and normalize for a dated configuration. | "Claude Code OTel session events normalize for the tested version/config." |
 | `codex_hooks_supported` | Codex hook events normalize for a dated CLI/config without relying on transcript parsing as the source of truth. | "Codex hook events normalize for the tested version/config." |
-| `opencode_json_plugin_supported` | OpenCode JSON/export/plugin events normalize for a dated version/config. | "OpenCode session events normalize for the tested version/config." |
+| `opencode_run_json_supported` | OpenCode `run --format json` events normalize for a dated version/config. | "OpenCode run JSON events normalize for the tested version/config." |
+| `opencode_export_supported` | OpenCode session export/list JSON normalizes for a dated version/config. | "OpenCode session export normalizes for the tested version/config." |
+| `opencode_plugin_supported` | OpenCode plugin events normalize for a dated version/config. | "OpenCode plugin events normalize for the tested version/config." |
+| `opencode_acp_supported` | OpenCode ACP nd-JSON session protocol normalizes for a dated version/config. | "OpenCode ACP events normalize for the tested version/config." |
 | `amp_stream_json_supported` | Amp `--execute --stream-json` events normalize for a dated version/config. | "Amp streaming JSON sessions normalize for the tested version/config." |
 | `amp_plugin_supported` | Amp plugin lifecycle/tool events normalize for a dated version/config. | "Amp plugin session events normalize for the tested version/config." |
 | `normalized_session_schema_pass` | A tested adapter set maps sessions, turns, actions, commands, edits, permissions, and outcomes into stable Parallax rows. | "Normalized agent-session schema passes for the tested adapter set." |
@@ -115,7 +118,7 @@ approves a redacted synthetic fixture.
   "tool_version": "unknown",
   "adapter_name": "parallax-codex-hooks",
   "adapter_version": "0.1.0",
-  "capture_surface": "hooks|otel|stream_json|json_export|plugin|wrapper|raw_ref",
+  "capture_surface": "hooks|otel|run_json|stream_json|json_export|plugin|server_api|acp|wrapper|raw_ref",
   "config": {
     "content_capture": "structural|redacted_excerpt|raw_ref",
     "thinking_capture": "disabled|raw_ref|redacted_excerpt",
@@ -134,8 +137,8 @@ approves a redacted synthetic fixture.
   "event_id": "agt_evt_001",
   "tool": "codex",
   "fixture_task_id": "task_bugfix_001",
-  "source_event_type": "SessionStart|PreToolUse|tool.execution|message.updated|session.start|agent.start|tool.call|tool.result|agent.end|stream_json_object|unknown",
-  "source_event_class": "hook|plugin|otel|json_export|stream_json|wrapper",
+  "source_event_type": "SessionStart|PreToolUse|tool.execution|message.updated|session.start|agent.start|tool.call|tool.result|agent.end|command.executed|file.edited|permission.asked|permission.replied|session.created|session.idle|shell.env|tool.execute.before|tool.execute.after|stream_json_object|ndjson_object|unknown",
+  "source_event_class": "hook|plugin|otel|run_json|json_export|stream_json|server_api|acp|wrapper",
   "source_event_schema": "docs-checked-YYYY-MM-DD",
   "source_event_hash": "sha256:<hex>",
   "accepted": true,
@@ -273,6 +276,11 @@ approves a redacted synthetic fixture.
   Parallax redaction must still pass on normalized projections.
 - OpenCode plugin support requires coverage rows for enabled event classes.
   JSON/export rows alone do not prove live side-effect coverage.
+- OpenCode run JSON, export JSON, plugin hooks, server/API, and ACP are separate
+  claim surfaces. Do not collapse them into one support claim.
+- OpenCode `--thinking` and `--dangerously-skip-permissions` must be recorded as
+  run configuration and excluded from default-safe product claims unless the
+  redaction and policy rows explicitly cover them.
 - Coverage denominators must come from native events, wrapper observation, repo
   diff/hash evidence, or manual fixture expectations. Do not calculate coverage
   only from events the adapter happened to see.
