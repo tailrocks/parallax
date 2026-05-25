@@ -3626,6 +3626,48 @@ here (uneven partition sizes), not exactly 1/16. Single-node smoke.
 `rm -rf /greptimedb_data/cache/*` + restart; `mc admin trace` the anchored query; sum parquet
 `GetObject` sizes on `data/` (~2.8 MiB vs Run 55's ~23 MiB non-partitioned).
 
+### Run 89 — 2026-05-25 — The COST of trace_id partitioning (completes the tradeoff)
+
+**Pass target.** Runs 87/88 measured the *benefit* of `PARTITION ON COLUMNS(trace_id)`
+(anchored prune 3.5× warm, cold egress ~8×). Measure the *cost* (regions, ingest, full-scan
+fan-out) so the blueprint principle is balanced.
+
+**Environment.** Main GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned — latest, no
+bump). `spans_p16` (1M spans, 16-way `PARTITION ON COLUMNS(trace_id)`) vs `spans_idx` (1
+region, no partition).
+
+**Measured:**
+
+| | spans_p16 (16-way) | spans_idx (1 region) |
+| --- | --- | --- |
+| Regions | **16** | 1 |
+| Ingest `INSERT…SELECT 1M` | 2040 ms | (single region, less routing overhead) |
+| Warm full-scan agg `GROUP BY service` | **~17 ms** | **~12 ms** |
+| Anchored `trace_id` lookup (Run 87) | **11 ms** (1 partition) | 39 ms (all) |
+| Cold S3 egress, anchored (Run 88) | **~2.8 MiB** (1 partition) | ~23 MiB (whole SST) |
+
+**Verdict — partitioning is a real tradeoff, net-positive for Parallax's anchored workload.**
+**Benefit:** anchored `trace_id` reads prune to 1 partition → **~3.5× faster warm + ~8× less
+cold egress** (Runs 87/88). **Cost:** **16× the regions** (each its own memtable/SST/compaction
+unit + manifest), **~1.4× slower full-table aggregation** (~17 vs ~12 ms — the query fans out
+to 16 partitions and merges), higher ingest routing overhead, and per-partition manifest
+reopen on restart (Run 88). For Parallax the **anchored `trace_id` lookup is the dominant
+query**, so the tradeoff **favours partitioning** (speed up the hot path + cut cold egress) at
+the cost of slower full scans (which Parallax runs less). **Key nuance:** the ~1.4% full-scan
+penalty is a **single-node fan-out artifact** — at multi-node the 16 partitions **distribute
+across datanodes**, turning the fan-out into parallelism (the scaling design). So partition
+for anchored locality + future distribution; don't over-partition (16-way native default is a
+reasonable balance — more partitions = finer prune but more region overhead + slower
+single-node scans). Status: **partition tradeoff complete; blueprint principle 8 balanced.**
+
+Caveat: single-node smoke; the multi-node "fan-out becomes parallelism" claim is
+arch-reasoned (owed to a cluster run). Ingest 2040 ms not compared to a timed non-partitioned
+INSERT-SELECT baseline (the region-routing overhead is the directional point).
+
+**Reproduce.** Build `spans_p16` (16-way) + `spans_idx`; compare `region_statistics` region
+count (16 vs 1), `GROUP BY service` `execution_time_ms` (~17 vs ~12 ms), anchored lookup
+(Run 87: 11 vs 39 ms).
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

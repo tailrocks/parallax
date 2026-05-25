@@ -52,7 +52,11 @@ Pin: GreptimeDB `v1.0.2` (`0ef5451`). DDL features confirmed in
    cardinality cost** (trace_id stays a non-PK column). This is GreptimeDB's coarse
    anchor-locality lever — it cannot *sort* by a non-PK anchor (Run 63/65) but it *can*
    *partition* by it cheaply. Combine with the `trace_id` inverted index (principle 1) for
-   within-partition pruning. ~16-way (hex) matches the native model.
+   within-partition pruning. ~16-way (hex) matches the native model. **Cost (Run 89):**
+   16-way = 16 regions (memtable/SST/compaction × 16) + ~1.4× slower full-table aggregation
+   (fan-out/merge across partitions) — a net-positive trade for Parallax's *anchored* hot
+   path (the dominant query), and the full-scan fan-out **becomes distribution/parallelism at
+   multi-node**. Don't over-partition (16-way is a reasonable balance).
 
 ## Native out-of-the-box schema vs this custom design (adopt-vs-custom — Run 57, live)
 
