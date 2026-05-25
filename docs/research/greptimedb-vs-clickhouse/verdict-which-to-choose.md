@@ -347,6 +347,14 @@ extensibility** as a contribution surface. ClickHouse is a superb *general* OLAP
 *added* observability (experimental PromQL, collector-only OTLP, plugin Jaeger — DQ3). The
 direction favours GreptimeDB for *this* domain.
 
+*(A soft future amplifier on this axis — **OTel-Arrow** — was assessed separately
+(`otel-arrow-ingest-assessment.md`) after the operator flagged it: its Arrow-native ingest plays to
+GreptimeDB's stack and could become a real GreptimeDB-fit edge **if** Phase-2 zero-copy DataFusion
+ingest ships with measured numbers. But today it is **experimental on all sides, transport-only
+(network egress, not query/storage), needs a mandatory collector hop, and its egress benefit largely
+evaporates for a co-located self-hosted backend** — so it is **not a near-term decision factor**, only
+a trajectory signal to track. Do not weight it now.)*
+
 **Cost + scalability, now and projected:** object-store tiering vs local-NVMe replicas
 (GreptimeDB 1× shared S3 copy vs OSS-ClickHouse N× replica copies — open Q#6); cardinality-
 free ingest; **small→large is a topology change, not a rewrite** ([[scaling-trajectory]]) —
