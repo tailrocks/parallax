@@ -3876,6 +3876,60 @@ prune is ~table-size-independent), but unverified at distinct scale; harness-tie
 re-inserts (use unique keys for a true scale test); the first GreptimeDB reads on a fresh
 un-partitioned table are cold (~1000 ms warming → ~12 ms).
 
+### Run 95 — 2026-05-25 — Clean 5M-DISTINCT partitioned scale test → anchored tie HOLDS at scale (the Run-94 "owed" closed)
+
+**Pass target.** Close Run 94's owed item: a *clean* 5M-**distinct**-trace scale test (unique
+trace_ids, no dedup confound, partitioned + warm) to confirm GreptimeDB's anchored `trace_id`
+lookup stays interactive as the table grows — the operator's core scaling concern.
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned — latest stable, no
+bump). 5M rows / **~360k unique MD5-hex `trace_id`s** on both (unique keys → no GreptimeDB
+dedup, the Run-94 confound removed).
+
+**DDL (the two confounds from Run 94 both fixed):**
+
+- ClickHouse `spans_big`: `ORDER BY (trace_id, ts)`, 5M rows of distinct MD5 trace_ids.
+- GreptimeDB `spans_big`: **`append_mode='true'`** (no read-time dedup → all 5M rows kept) +
+  **`PARTITION ON COLUMNS("trace_id")`** 8-way on hex prefix. Clause order matters
+  (cols → `PARTITION ON COLUMNS` → `ENGINE=mito` → `WITH`), else `SQL statement is not supported`:
+
+  ```sql
+  CREATE TABLE spans_big (
+    "ts_ms" TIMESTAMP(3) TIME INDEX, "trace_id" STRING INVERTED INDEX, "span_id" STRING,
+    "service" STRING, "name" STRING, "duration_ms" DOUBLE, "status" STRING,
+    PRIMARY KEY("service","name")
+  ) PARTITION ON COLUMNS ("trace_id") (
+    trace_id < '2', trace_id >= '2' AND trace_id < '4', trace_id >= '4' AND trace_id < '6',
+    trace_id >= '6' AND trace_id < '8', trace_id >= '8' AND trace_id < 'a',
+    trace_id >= 'a' AND trace_id < 'c', trace_id >= 'c' AND trace_id < 'e', trace_id >= 'e'
+  ) ENGINE=mito WITH (append_mode='true');
+  ```
+
+**Anchored lookup `WHERE trace_id='00003e3b9e5336685200ae85d21b4f5e'` (10 warm reps, ms):**
+
+| Engine | 5M-distinct | vs its own 1M (Run 94) |
+| --- | --- | --- |
+| ClickHouse `spans_big` | **~3 ms flat** | ~3 ms — flat (sort-key seek is table-size-independent) |
+| GreptimeDB `spans_big` (partitioned, append) | `9 7 7 10 7 6 7 6 6 11` → **~7 ms warm** | ~12 ms → **~7 ms, i.e. flat-to-faster** |
+
+**Verdict — the load-bearing "anchored tie holds at scale" claim is now CONFIRMED at 5M-distinct.**
+
+- **GreptimeDB anchored lookup stays interactive at 5M distinct (~7 ms warm), and is actually
+  *flatter/faster* than the 1M un-partitioned ~12 ms** — because `PARTITION ON COLUMNS(trace_id)`
+  prunes to ~1/8 of the data *and* the inverted index seeks within the partition. Partitioning
+  helps both the cold-egress axis (Run 88) **and** warm anchored latency at scale.
+- **ClickHouse stays ~3 ms flat.** Both engines are single-digit-ms on the anchored hot path at
+  5M-distinct — **both ≪ the 300 ms gate**, so the tie (CH ~2× faster, both sub-perceptible)
+  **does not widen with scale**. This is mechanically expected (index/partition prune is
+  ~table-size-independent) and now empirically held at 5M-distinct, not just smoke.
+- Closes the Run-94 confounds: unique trace_ids (no PK dedup) + `append_mode` (all 5M kept) +
+  warm reps (the ~1000 ms was cold-warming, not scale). Cold-at-scale + multi-node remain
+  harness-gated (open Q#1/#4).
+
+**Reproduce.** Generate 5M rows with unique MD5 `trace_id`s; load both; build GreptimeDB with
+`append_mode='true'` + `PARTITION ON COLUMNS("trace_id")` (clause order above); run the anchored
+lookup warm ×10. Cleanup: `DROP TABLE spans_big` on both, `rm /tmp/sbig.csv /tmp/trbig.txt`.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

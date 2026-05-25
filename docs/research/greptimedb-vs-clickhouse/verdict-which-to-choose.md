@@ -39,6 +39,15 @@ small-write ingest ergonomics, horizontal scale-out designed-in, object-storage
 native, and Rust (tiebreak). This is a **fit decision, not a speed decision** —
 and the honest correction to the operator hypothesis below makes that explicit.
 
+**A second lens — the long-term *investment* decision (DQ6) — reaches the same answer
+from a different direction.** ClickHouse's speed lead is a **closable engineering gap, not
+a physics wall** (the parity-roadmap's per-gap test finds no architectural wall; the two
+heaviest gaps ride the shared DataFusion + Parquet-Variant roadmaps), and GreptimeDB is the
+**Rust, open-source substrate the operator can actually contribute to** — whereas ClickHouse's
+C++ engine is one he can only wait on. So the long-term bet *reinforces* the fit choice:
+GreptimeDB's deficits are engineering/time, not physics, and they are closable in the
+language the operator will invest in. Full reasoning in **Decision question 6** below.
+
 **The "fit not speed" thesis is now anchored on the query that matters most.** Pass
 35 measured the full anchored evidence-bundle composite (Q6 = Q1+Q2+Q3, Run 16): CH
 ~10 ms vs GreptimeDB ~33 ms, **both far under the 300 ms gate** — so for Parallax's
@@ -269,6 +278,77 @@ dissolves for interactive/selective search on both query types; the only residua
 broad-term analytics (scan engine).** Parallax guidance: tantivy backend for query-syntax,
 bloom for exact-term grep — both fast. This is the strongest narrowing yet of the verdict's
 one large ClickHouse win.
+
+## Decision question 6 — which is the better long-term *investment*?
+
+DQ1–5 answer "which fits Parallax's workload today." This answers a different, sharper
+question the operator raised: **over the next several years, which engine is the better
+thing to invest in** — given that ClickHouse is faster *now* and more mature, but the
+operator will invest engineering in **Rust and not C++**? Two sub-questions decide it:
+*(A) is the speed gap closable or a permanent wall?* and *(B) who can actually close it?*
+
+**(A) Is the gap closable, or fundamental like physics?** — *Closable.* The operator's own
+analogy: some gaps are like Singapore↔US latency vs Singapore↔China — pure geography, no
+engineering crosses them. The parity-roadmap's per-gap **physics-wall test** finds **none of
+ClickHouse's advantages is that kind of wall**: seven of eight are pure engineering (same
+vectorized-columnar-over-Arrow model, ClickHouse merely a decade further along the *same*
+curve), #6 is *time-only* (maturity, closes on a calendar), and #5 (the PK=sort=series
+conflation behind cold selective egress) is the lone design-*flavoured* one — already
+**defused to an engineering choice** by `trace_id` partitioning + a re-sorted copy (Runs
+87/88 cut it from ~80× to ~10×). Decisively, the two heaviest gaps ride **shared industry
+roadmaps**: scan/agg throughput (#2) is on the **DataFusion** codegen/SIMD/batch roadmap,
+and dynamic-attr JSON (#4) is the **Parquet Variant/shredding** direction — so much of the
+closing work is *already in flight by others*, and GreptimeDB inherits it on a dependency
+bump. **ClickHouse's raw-speed lead is therefore a depreciating asset, not a moat.**
+
+**(B) Who can move the engine?** — This is the operator's decisive lever, and it is
+*asymmetric*. GreptimeDB and DataFusion are **open-source Rust**; a gap there is one the
+operator (and AI-assisted contribution, which is markedly stronger at Rust than C++ — cf.
+Bun's Zig→Rust move for performance + maintainability) can **actually land a PR against**.
+ClickHouse's C++ engine is contributable in principle but **not by this operator in
+practice** ("I will not invest in C++; I will invest in Rust"). A gap you can close is
+categorically different from one you can only wait on — so the *same* benchmark gap has
+opposite strategic meaning depending on which engine carries it. Contributions land in a
+**shared Arrow/DataFusion ecosystem**, not a private fork, so the effort compounds and is
+partly shared with the upstream community.
+
+**Design trajectory / growth potential** (judge the *direction*, not the snapshot): the
+**Postgres-overtook-MySQL** precedent — the better-architected-for-the-domain system passes
+a more-mature incumbent once effort compounds. For an AI-native observability/debugging
+context engine, GreptimeDB *is* the domain-native design: metrics+logs+traces in **one**
+engine, **object-store-native** economics, **horizontal-scale-designed-in**, **cardinality-
+insensitive ingest** (Run 84: ~flat 1k→1M series vs CH ~2.6×), and **Arrow/DataFusion
+extensibility** as a contribution surface. ClickHouse is a superb *general* OLAP engine that
+*added* observability (experimental PromQL, collector-only OTLP, plugin Jaeger — DQ3). The
+direction favours GreptimeDB for *this* domain.
+
+**Cost + scalability, now and projected:** object-store tiering vs local-NVMe replicas
+(GreptimeDB 1× shared S3 copy vs OSS-ClickHouse N× replica copies — open Q#6); cardinality-
+free ingest; **small→large is a topology change, not a rewrite** ([[scaling-trajectory]]) —
+the startups-first/tiny-single-node path grows to horizontal without re-platforming, which
+ClickHouse's manual sharding + Cloud-only `SharedMergeTree` does not match in OSS.
+
+**The honest risk of the bet (stated plainly, no cheerleading):** betting on GreptimeDB
+assumes the engineering gaps *actually get closed* — by the operator, by the GreptimeDB
+team, and by the DataFusion community. ClickHouse is faster today, more mature, and has
+momentum. **If that investment does not materialize**, the raw-speed gap persists
+indefinitely on ad-hoc analytics (though *never* the observability-native **fit** gap, which
+is structural in ClickHouse's favour-of-GreptimeDB direction). So:
+
+- **Bet GreptimeDB** if you (a) value the Rust-contributable substrate, (b) believe the
+  domain-native design compounds, and (c) will actually invest — which the operator states
+  he will. The gaps are closable, much of the work is shared/in-flight, and Parallax's
+  *anchored* hot path is already a sub-300 ms tie (Tier-A wins it today, DQ4/roadmap).
+- **Bet ClickHouse** only if the real workload turns out **analytics-/ad-hoc-scan-dominated**
+  (the DQ5 flip trigger) *and* you want maximum speed today with **zero** engine investment.
+
+**Investment verdict: GreptimeDB is the stronger long-term bet for Parallax** — its deficits
+are engineering/time not physics, its design is the better domain trajectory, and uniquely
+it is the substrate this Rust-investing operator can *improve* rather than merely consume.
+This **reinforces** the DQ5 fit recommendation from the investment angle: same answer, now
+also defensible as "the gap is closable, by us, in the language we'll invest in." It is not
+unconditional — the DQ5 flip trigger (analytics-dominated mix) still governs, and the bet's
+honest precondition is sustained contribution.
 
 ## Open questions handed to the benchmark (veto power)
 

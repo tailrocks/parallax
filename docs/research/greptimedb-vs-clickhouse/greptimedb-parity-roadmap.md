@@ -28,7 +28,12 @@ index, an optimizer pushdown gap; Tier-A workaround = subquery pre-filter / app-
 #5 deepened with the Run 63 root cause**: GreptimeDB's PK = sort = series identity, so it can't
 cluster by a high-card anchor like `trace_id` without series blowup, while ClickHouse `ORDER BY`
 decouples sort from identity at zero cost — this is *also* the root of the cold-selective-read egress
-loss (Run 55/63), so #5 now closes two gaps; `order_by` table option live-rejected, Run 65). This is **the dedicated,
+loss (Run 55/63), so #5 now closes two gaps; `order_by` table option live-rejected, Run 65) + pass 96 (**added the physics-wall
+closability test** — a per-gap engineering/fundamental/time-only verdict answering the
+operator's investment question: *no gap is a physics wall*; 7/8 are engineering, #6 is
+time, #5 is the lone design-flavoured one and is defused by `trace_id` partitioning; the
+two heaviest (#2, #4) ride shared industry roadmaps; investment synthesis → `verdict-which-
+to-choose.md` DQ6). This is **the dedicated,
 standalone file** answering "what can GreptimeDB improve, why, and how" — the summary table
 scans, the detailed sections below carry the code-oriented specifics. Answers the operator
 question: GreptimeDB wins Parallax on *fit*
@@ -78,6 +83,41 @@ bloom+`matches_term` ~8 ms), and the ~18× was **100 % a backend/function miscon
 The only residual is **broad-term scans that match many rows** (scan engine, #2). This moves #1
 from "engine work required for incident grep" to "usage/schema guard only; scan-engine work
 solely if broad-term log analytics is common."
+
+## Closable, fundamental, or time-only? — the physics-wall test
+
+The operator's investment question reduces to one thing: **is ClickHouse's speed lead a
+permanent moat (architectural physics, like Singapore↔US latency vs Singapore↔China —
+unimprovable by any amount of engineering) or a depreciating asset (a decade of C++
+hand-tuning that Rust/DataFusion can amortize)?** Each gap gets one of three verdicts:
+
+- **Engineering** — same architectural model (vectorized columnar over Arrow); the other
+  side is just further along the *same* curve. Someone writes the Rust; it is not a wall.
+- **Fundamental** — a real architectural wall the current design cannot cross without a
+  redesign. This is the only verdict that would justify "stay on ClickHouse forever."
+- **Time-only** — not code, not physics: maturity / battle-testing, closes on a calendar.
+
+| # | Gap | Verdict | Who closes it / leverage | Physics wall? |
+| --- | --- | --- | --- | --- |
+| 1 | Full-text log search | **Engineering** (selective already dissolved — usage) | Tier-A function/backend pairing today; broad-term → #2 | No |
+| 2 | Scan/agg throughput 2–4× | **Engineering** | **On the DataFusion roadmap** (batch size, expr/agg codegen, SIMD) — shared-ecosystem, benefits every Arrow engine; GreptimeDB inherits on the `datafusion` bump | No |
+| 3 | PREWHERE late materialization | **Engineering** | arrow-rs already ships `RowFilter`; wire it into mito2 reader (Tier B) | No |
+| 4 | Dynamic-attr JSON | **Engineering / format** | Parquet **Variant/shredding** spec is the industry direction; integration along a spec, not a new type | No |
+| 5 | Alternate ordering / cold selective egress | **Engineering (mitigated)** + a design *residue* | `PARTITION ON COLUMNS(trace_id)` already cuts cold egress to ~1/N at no PK-cardinality cost (Run 87/88); a re-sorted Flow copy closes the rest. Full sort/identity *decoupling* would be a region-model redesign — but the partition+copy **sidesteps** it | **Closest candidate — but defused.** The PK=sort=series conflation is the one structural edge; partitioning + copy reduce it to an engineering choice, not a wall |
+| 6 | Vertical ceiling / merge maturity | **Time-only (Tier C)** | Calendar + production hardening; GreptimeDB's structural answer is horizontal scale-out + object store | No (not engineering either) |
+| 7 | Per-column codecs | **Engineering** | Parquet ships `BYTE_STREAM_SPLIT`/`DELTA_BINARY_PACKED`; extend `customize_column_config` to user columns (Tier B) | No |
+| 8 | Join-pushdown into indexed input | **Engineering** | Tier-A subquery pre-filter today; optimizer rule upstream (Tier B) | No |
+
+**Verdict: there is no physics wall.** Seven of eight gaps are pure engineering; #6 is time;
+#5 is the only one with an architectural *flavour* (PK=sort=series identity), and it is
+already **defused to an engineering choice** by `trace_id` partitioning + a re-sorted copy
+(Runs 87/88). Critically, the two heaviest gaps (#2 scan/agg, #4 JSON) ride **shared
+industry roadmaps** (DataFusion codegen/SIMD; Parquet Variant) — so closing them is *partly
+someone else's work already in flight*, and any Parallax/operator contribution lands in an
+ecosystem, not a private fork. This is the Postgres-overtook-MySQL shape: the engine that
+was never architecturally behind, catching a faster-now incumbent as effort compounds.
+The investment synthesis (cost, scalability, Rust-contributability, the honest risk) lives
+in `verdict-which-to-choose.md` → "Long-term investment decision."
 
 ## User-first ranking — does any of this actually make GreptimeDB the clear winner?
 

@@ -582,6 +582,16 @@ The loop must drive toward an explicit, defensible answer to all of these, in
    `AGENTS.md` and the storage evaluation). A third system may only enter the
    conversation if its *design* solves a problem neither of these two can — name
    the mechanism, do not reopen the field on popularity.
+6. **Which is the better long-term *investment*** — a distinct question from "faster
+   today." Is ClickHouse's raw-speed lead a permanent moat or a depreciating asset?
+   Decide on: (a) **closability** — are the gaps engineering/time or architectural
+   physics (per the closability test above)? (b) **contributability** — the operator
+   invests in Rust, not C++, and AI-assisted contribution favors Rust, so a
+   GreptimeDB/DataFusion gap is one *this operator can actually close* whereas a
+   ClickHouse advantage is one he can only wait on; (c) **design trajectory + growth
+   potential** (Postgres-overtook-MySQL: better-architected-for-the-domain can pass a
+   more-mature incumbent); (d) **cost + scalability**, now and projected. Answer it
+   unbiased — name the honest risk that the bet depends on sustained contribution.
 
 The decision must rest on the design decisions behind each system, so the choice
 is the right one to build on the first time.
@@ -625,6 +635,65 @@ For each capability where the rejected system (ClickHouse) is genuinely ahead, s
   so its losses are **execution-integration**, not architecture — closable by engineering,
   not redesign. Keep testing whether each gap is integration-level (good news) or a true
   architectural limit (which would weaken the recommendation).
+
+## The closability test — is any gap a physics wall, or only time-on-task?
+
+The operator's framing: some gaps are *fundamental* (like Singapore↔US network latency —
+longer than Singapore↔China by pure geography, unimprovable no matter the engineering),
+and some are *merely a matter of effort* (a decade of hand-tuning the other side has
+already paid for). The decision to bet on GreptimeDB turns on which kind each gap is.
+For **every** gap in the roadmap, assign a closability verdict — do not leave it implicit:
+
+- **Engineering-closable** — same architectural model (vectorized columnar over Arrow),
+  the rejected system is just further along the *same* curve. Examples found so far: scan/
+  agg throughput (batch size + JIT + SIMD), PREWHERE late materialization, join-pushdown,
+  JSON shredding, broad-term scan-index fusion. These are "someone has to write the Rust,"
+  not "it cannot be done." State *who* would write it (Tier A Parallax / Tier B upstream)
+  and whether it is **already on the DataFusion roadmap** (shared-ecosystem leverage — the
+  contribution benefits every Arrow engine, not a private fork).
+- **Architecturally fundamental** — a real wall that the current design cannot cross
+  without a redesign (the "physics" bucket). The honest near-candidate is the
+  PK=sort-key=series-key conflation behind cold *selective* egress; record whether a
+  mitigation (e.g. partition-by-`trace_id`, Run 88 cut it to ~10×) defuses it to
+  "engineering" or whether a residue is truly structural. If you ever find a gap that is
+  genuinely fundamental, say so plainly — that is the single finding that would flip the
+  recommendation to ClickHouse.
+- **Time-only (Tier C)** — not engineering, not physics: maturity, battle-testing,
+  ecosystem depth. Closes on a calendar, not a PR. Name it as such; do not pretend code
+  closes it.
+
+The standing conclusion to keep testing (and to overturn if a run disproves it):
+**the gaps are engineering or time, not physics.** That is what makes GreptimeDB an
+investable long-term substrate rather than a permanent runner-up.
+
+## The long-term-investment decision (Rust-contributable vs C++-mature)
+
+Beyond "which is faster today," answer the operator's actual question: **which engine is
+the better thing to invest in for the next several years?** This is a distinct deliverable
+from the fit verdict — keep it in `verdict-which-to-choose.md` and grounded in the
+roadmap's closability verdicts. Weigh, explicitly and unbiased (do not cheerlead either):
+
+- **Closability of the speed gap** (from the test above): if the gaps are engineering/time
+  not physics, the faster-now incumbent's lead is a depreciating asset, not a moat.
+- **Who can actually move the engine.** The operator will invest in **Rust** and will
+  **not** invest in **C++**. GreptimeDB + DataFusion are Rust and open — the operator (and
+  AI-assisted contribution, which is markedly stronger at Rust than at C++; cf. Bun's
+  Zig→Rust move for performance + maintainability) can land PRs. ClickHouse's C++ engine is
+  contributable in principle but not by *this* operator in practice. A gap you can close is
+  categorically different from a gap you can only wait on.
+- **Design trajectory / growth potential.** Judge the *direction*, not just the snapshot:
+  observability-native (metrics+logs+traces one engine), object-store-native economics,
+  horizontal-scale-designed-in, cardinality-insensitive ingest, Arrow/DataFusion
+  extensibility. The Postgres-overtook-MySQL precedent: the better-architected-for-the-
+  domain system can pass a more-mature incumbent once effort compounds.
+- **Cost-effectiveness, now and projected.** Object-store tiering vs local-NVMe replicas;
+  ingest cost under high cardinality; operational surface at small (single-node startup)
+  and large (horizontal) scale — per [[scaling-trajectory]], small→large is a topology
+  change, not a rewrite.
+- **The honest risk of the bet.** ClickHouse is faster now, more mature, and has momentum;
+  betting on GreptimeDB assumes sustained contribution (operator + community) actually
+  closes the engineering gaps. If that investment does not materialize, the raw-speed gap
+  persists (though never the observability-native *fit* gap). State this plainly.
 
 ## How to write `greptimedb-parity-roadmap.md` (the format this loop must keep)
 
