@@ -28,6 +28,7 @@ idea becomes sharper.
 - [Observability storage benchmark plan](docs/research/observability-storage-benchmark-plan.md)
 - [Messaging and ingestion layer](docs/research/messaging-and-ingestion-layer.md)
 - [Causal reconstruction and agent safety](docs/research/causal-reconstruction-and-agent-safety.md)
+- [AI-native observability and incident intelligence](docs/research/ai-native-observability-and-incident-intelligence.md)
 - [Technical implementation concept](docs/research/technical-implementation-concept.md)
 - [Sentry-compatible ingestion](docs/research/sentry-compatible-ingestion.md)
 - [OpenTelemetry protocol and context layer](docs/research/opentelemetry-protocol-and-context-layer.md)
