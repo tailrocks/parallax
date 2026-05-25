@@ -34,6 +34,11 @@ show why it must be measured:
   boundaries
   ([W3C Trace Context](https://www.w3.org/TR/trace-context/),
   [W3C Trace Context Level 2](https://www.w3.org/TR/trace-context-2/)).
+- OpenTelemetry's trace API treats a span context as valid only when both
+  `TraceId` and `SpanId` are non-zero, and its propagator API requires W3C trace
+  context propagators to parse and validate `traceparent`/`tracestate`
+  ([OpenTelemetry trace API](https://opentelemetry.io/docs/specs/otel/trace/api),
+  [OpenTelemetry propagators API](https://opentelemetry.io/docs/specs/otel/context/api-propagators/)).
 - OpenTelemetry logs explicitly support correlation by time, execution/trace
   context, and resource context; direct trace/log joins depend on `TraceId` and
   `SpanId` being present in log records
@@ -52,6 +57,10 @@ show why it must be measured:
   propagate W3C `traceparent` for OpenTelemetry interoperability when configured
   and allowed by `tracePropagationTargets`
   ([Sentry trace propagation SDK spec](https://develop.sentry.dev/sdk/foundations/trace-propagation/)).
+- OpenTelemetry baggage can propagate arbitrary key/value data and its docs warn
+  that sensitive baggage can be shared with unintended resources such as
+  third-party APIs
+  ([OpenTelemetry baggage](https://opentelemetry.io/docs/concepts/signals/baggage/)).
 
 Internal sources:
 
@@ -90,11 +99,15 @@ telemetry and metadata stores. Do not backfill synthetic links for the audit.
 | Metric | Definition |
 | --- | --- |
 | `trace_context_rate` | Fraction of anchors with usable `trace_id`; for span-scoped anchors, also `span_id`. |
+| `trace_context_validity_rate` | Fraction of anchors with present context whose `trace_id`/`span_id`, `trace_flags`, and `tracestate` parse as valid according to the source protocol. Invalid IDs are missing evidence, not usable joins. |
 | `same_trace_bundle_rate` | Fraction of anchors where Q1 trace-context query returns spans/logs/errors beyond the anchor itself. |
 | `log_trace_join_rate` | Fraction of relevant log excerpts carrying `trace_id` or `span_id`. |
 | `error_in_span_rate` | Fraction of error events that can be placed inside a span by `trace_id` + `span_id` or equivalent Sentry trace context. |
 | `frontend_backend_continuation_rate` | Fraction of first-party frontend errors/requests whose trace continues into backend spans. |
 | `async_link_rate` | Fraction of queue/background workflow anchors with span links or explicit message/job IDs. |
+| `trace_scope_consistency_rate` | Fraction of strong same-trace joins whose project, environment, service/resource, and tenant scope match the anchor or have an explicit cross-scope edge. |
+| `sampling_state_explained_rate` | Fraction of anchors with missing span bodies where `TraceFlags`, SDK sampler, collector policy, or tail-sampling route explains whether the trace was sampled, dropped, or fragmented. |
+| `baggage_privacy_pass_rate` | Fraction of anchors carrying baggage/session context where only allowlisted opaque values are present and no raw user, account, token, email, or third-party target value is propagated. |
 | `release_context_rate` | Fraction of anchors attachable to release/version/commit metadata. |
 | `deploy_context_rate` | Fraction attachable to a deploy marker or rollout window. |
 | `release_commit_rate` | Fraction of release markers with exact commit SHA or source revision. |
@@ -123,6 +136,13 @@ Expected missing-evidence categories:
 - `missing_source_map`
 - `missing_async_link`
 - `sampled_out_trace`
+- `invalid_trace_context`
+- `unparsed_tracestate`
+- `trace_scope_mismatch`
+- `missing_sampling_policy`
+- `tail_sampling_route_unverified`
+- `unsafe_baggage`
+- `duplicate_span_identity`
 - `clock_skew_suspected`
 - `redaction_removed_required_field`
 
@@ -135,6 +155,9 @@ bundles per pilot and classify:
 | --- | --- |
 | Does every strong edge follow from a deterministic key, not time proximity? | Prevents laundering weak correlation into strong evidence. |
 | Does the trace path actually include the failing operation? | Catches wrong propagation, duplicate spans, or unrelated spans in the same trace. |
+| Are the trace context fields valid and scoped to the same project/environment/resource boundary? | Prevents invalid IDs or cross-tenant/resource collisions from becoming strong edges. |
+| Are sampling gaps explained by `TraceFlags`, SDK sampler, collector policy, or tail-sampling route evidence? | Prevents sampled-out or fragmented traces from being mistaken for complete lifecycle evidence. |
+| Does propagated baggage contain only allowlisted opaque values and stay on first-party paths? | Prevents user/session correlation from becoming a PII leak or third-party propagation bug. |
 | Are medium release/deploy edges contradicted by first-seen history? | Prevents false regression claims. |
 | Are missing-data gaps explicit? | Agents must know when evidence is absent. |
 | Would the bundle lead a human toward the same next investigation step? | Tests practical usefulness before A1 agent evals. |
@@ -149,8 +172,11 @@ Initial targets for the Rust backend/tiny-tier wedge:
 | Gate | Target |
 | --- | --- |
 | Backend `trace_context_rate` | >= 80 percent for instrumented Rust services. |
+| Backend `trace_context_validity_rate` | >= 99 percent for anchors with present trace context. |
 | Backend `error_in_span_rate` | >= 70 percent for instrumented Rust services. |
 | `same_trace_bundle_rate` | >= 70 percent for backend error anchors. |
+| `trace_scope_consistency_rate` | 100 percent for strong edges exposed to agents. |
+| `sampling_state_explained_rate` | 100 percent for anchors with missing expected span bodies. |
 | `release_context_rate` | >= 90 percent for production error anchors. |
 | `deploy_context_rate` | >= 70 percent where deploy markers are configured. |
 | `strong_edge_count_p50` | >= 2 strong edges per backend error bundle. |
@@ -164,6 +190,7 @@ Separate frontend/cross-tier target:
 | --- | --- |
 | `frontend_backend_continuation_rate` | >= 60 percent for instrumented first-party API calls after CORS/header configuration. |
 | Silent propagation failure detection | 100 percent of frontend spans with no backend continuation are flagged as missing evidence, not treated as no backend involvement. |
+| `baggage_privacy_pass_rate` | 100 percent for frontend/session baggage before cross-tier evidence is agent-visible. |
 
 Separate async target:
 
@@ -181,6 +208,9 @@ environments, lower the product claim before lowering the safety bar.
 | Backend strong-edge gates fail | Narrow MVP to Sentry-compatible grouping + release context + best-effort trace/log links. |
 | Frontend continuation fails | Keep frontend capture as session/error evidence, but do not claim frontend-to-backend reconstruction. Ship a CORS/propagation diagnostic first. |
 | Async links fail | Treat queues/background jobs as separate lifecycle anchors unless explicit message IDs or span links are present. |
+| Trace context validity or scope consistency fails | Exclude affected edges from strong-edge counts and block agent-visible bundles until the propagator/resource mapping is fixed. |
+| Sampling state is unexplained | Mark spans/logs as missing evidence and avoid "complete trace" language for the affected anchor class. |
+| Baggage privacy fails | Disable baggage-derived session joins and treat the run as a redaction/privacy failure, not an A4 pass. |
 | False strong edges exceed target | Downgrade the edge class or fix instrumentation before agent exposure. |
 | Missing evidence is not reported | Block agent-visible bundles; absence reporting is a safety invariant. |
 | Release/deploy context missing | Do not rank release-regression hypotheses above medium/weak. |
@@ -191,14 +221,21 @@ where instrumentation, setup diagnostics, and honest product wording must change
 ## Instrumentation Fixes To Try Before Declaring Failure
 
 - Ensure Sentry events carry trace context and map to OTLP `trace_id`/`span_id`.
+- Reject invalid or all-zero trace/span IDs before edge construction, and record
+  the source propagator that parsed `traceparent`, `tracestate`, `sentry-trace`,
+  or non-OTLP log fields.
 - Use parent-based sampling for end-to-end trace consistency, or collector tail
   sampling that keeps error/slow traces.
 - Route all spans of one trace to the same tail-sampling collector when using a
   gateway topology.
+- Record sampler and collector policy evidence when a trace is missing expected
+  spans; do not infer completeness from a sampled flag alone.
 - Add `trace_id`/`span_id` injection into structured logs and non-OTLP log
   formats.
 - Add browser `traceparent` propagation allowlists and backend CORS headers for
   `traceparent`, `tracestate`, and `baggage`.
+- Allowlist baggage keys and make session/account values opaque, scoped, and
+  non-PII before using baggage for frontend or cross-service joins.
 - Add explicit message IDs or span links at queue boundaries.
 - Emit release/version and deploy markers from CI/CD.
 - Add a `parallax doctor correlation` command that checks SDK propagation,

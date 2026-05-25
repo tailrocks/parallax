@@ -37,6 +37,7 @@ examples:
 | Browser tracing | OpenTelemetry's browser guide uses `@opentelemetry/sdk-trace-web` and browser instrumentations such as document-load; it also warns browser client instrumentation is experimental and mostly unspecified. | Treat browser OTel as viable for traces, but pin SDK versions and keep compatibility tests for target browsers before product wording. |
 | Browser export | OpenTelemetry's JS exporter docs say browser apps cannot use OTLP/gRPC and must use OTLP/HTTP JSON or protobuf. They also call out CSP, CORS, and the risk of exposing a collector publicly. | Parallax frontend ingest should expose a narrow OTLP/HTTP-compatible web endpoint or reverse-proxied collector path, never a broad unauthenticated collector. |
 | Trace propagation | W3C Trace Context defines `traceparent`/`tracestate` as the standard cross-system trace context, with `traceparent` carrying trace identity in a portable format. | Frontend-to-backend joins should use W3C trace context for OTEL paths. |
+| Baggage propagation | OpenTelemetry baggage can carry arbitrary key/value context downstream, and official docs warn that sensitive baggage can reach unintended resources such as third-party APIs. | Session correlation should use only allowlisted, opaque, first-party-scoped baggage keys; raw user/account IDs, emails, tokens, or third-party propagation fail the frontend safety gate. |
 | Fetch instrumentation | OpenTelemetry's fetch instrumentation config includes `propagateTraceHeaderCorsUrls`, request hooks, ignored URLs, and custom span attributes. | Propagation must be allowlisted by first-party API domain; do not leak trace headers to arbitrary third parties. |
 | Sentry browser tracing | Sentry's JS tracing docs use `tracePropagationTargets` and propagate `sentry-trace` plus `baggage`; they explicitly warn JavaScript apps need those headers in the CORS allowlist. | For Sentry-compatible frontend errors, preserve Sentry trace context and bridge it into the Parallax correlation model. |
 | Breadcrumbs | Sentry's browser SDK records automatic breadcrumbs for UI events, XHR/fetch, console calls, and location changes, with hooks for filtering or dropping them. | Breadcrumbs are essential, but Parallax must filter and redact at capture and bundle-build time. |
@@ -91,8 +92,10 @@ browser fetch(/api/checkout)
 Parallax joins: frontend_error.trace_id == backend spans.trace_id
 ```
 
-Carry a stable `session_id` in `baggage` so all spans of one user session are
-groupable even across page loads and multiple backend calls.
+Carry a stable opaque session key in `baggage` so all spans of one user session
+are groupable even across page loads and multiple backend calls. It must be
+first-party scoped, non-PII, allowlisted, and stripped from third-party
+propagation; raw user IDs, account IDs, emails, or tokens fail the safety gate.
 
 Hard parts to design around:
 
@@ -179,6 +182,9 @@ tokens, DOM content, user identity. Privacy must be designed in, not bolted on:
   strings, referrer URLs, raw request/response headers, and raw console messages;
   vendor SDK defaults are not enough because several of these metadata surfaces
   may be collected even when bodies and logged-in identity are not.
+- **Baggage allowlist.** Keep only opaque first-party correlation keys in
+  propagated baggage; treat raw user/session/account values or third-party
+  baggage propagation as a privacy failure, not as successful correlation.
 - **Consent and DNT.** Honor consent state and Do-Not-Track; gate replay/RUM on
   consent; record the consent state in the `frontend_session` node.
 - **Data minimization + retention.** Shorter retention for replay/session data;

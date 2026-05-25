@@ -43,6 +43,7 @@ those anchors.
 | [OpenTelemetry JavaScript exporters](https://opentelemetry.io/docs/languages/js/exporters/) | Browser deployments cannot use OTLP/gRPC; they must use OTLP HTTP/JSON or HTTP/protobuf, handle CSP and CORS, and may require a collector reachable from public browsers. | Parallax should use a narrow browser ingest/proxy endpoint with origin, size, rate, auth, path, and redaction controls instead of exposing a broad collector. |
 | [OpenTelemetry fetch instrumentation](https://open-telemetry.github.io/opentelemetry-js/modules/_opentelemetry_instrumentation-fetch.html) | Fetch instrumentation exposes config such as `requestHook`, `ignoreUrls`, and propagation-related options. | Propagation and redaction need explicit allowlists and hooks; raw URLs/body-like fields must not leak by default. |
 | [W3C Trace Context](https://www.w3.org/TR/trace-context/) | W3C recommends wide deployment of `traceparent`/`tracestate`; `traceparent` carries portable trace identity and tools must propagate it to avoid broken traces. | Frontend-to-backend joins should use W3C trace context when using OTel paths and record propagation failures as missing evidence. |
+| [OpenTelemetry baggage](https://opentelemetry.io/docs/concepts/signals/baggage/) | Baggage can propagate arbitrary key/value context, and official docs warn sensitive baggage can reach unintended resources such as third-party APIs. | Session correlation must use allowlisted opaque values; raw user/account IDs, emails, tokens, or third-party baggage propagation fail the browser safety gate. |
 | [MDN Access-Control-Allow-Headers](https://developer.mozilla.org/docs/Web/HTTP/Reference/Headers/Access-Control-Allow-Headers) | Browsers rely on the preflight response to decide which non-safelisted request headers can be sent. | `traceparent`, `tracestate`, `baggage`, `sentry-trace`, and project auth headers need explicit CORS tests for cross-origin APIs. |
 | [Sentry JavaScript trace propagation](https://docs.sentry.io/platforms/javascript/guides/capacitor/tracing/trace-propagation/) | Sentry browser tracing propagates `sentry-trace` and `baggage`, requires those headers in CORS allowlists, and uses `tracePropagationTargets` to control outgoing propagation. | Sentry-compatible frontend events must bridge Sentry trace context into Parallax rows without spraying trace headers to third parties. |
 | [Sentry JavaScript options](https://docs.sentry.io/platforms/javascript/configuration/environments/) | Browser options include release, max breadcrumbs, `beforeBreadcrumb`, `beforeSend`, `beforeSendSpan`, `tracePropagationTargets`, replay sample rates, and transport behavior; same-origin trace propagation is enabled by default in the browser. | Result rows must capture SDK config, sampling, filtering hooks, trace propagation target scope, payload limits, and whether dropped events are reported. |
@@ -261,8 +262,11 @@ operator explicitly approves a private retained artifact.
   "traceparent_sent": true,
   "tracestate_sent": false,
   "baggage_sent": true,
+  "baggage_keys_allowed": true,
+  "baggage_values_opaque": true,
   "sentry_trace_sent": true,
   "third_party_trace_headers_sent": false,
+  "third_party_baggage_sent": false,
   "backend_trace_id_matched": true,
   "backend_span_child_or_link": true,
   "missing_continuation_flagged": false,
@@ -487,6 +491,8 @@ operator explicitly approves a private retained artifact.
   bridged into the same normalized Parallax trace row.
 - Third-party requests must not receive trace headers by default. A single
   third-party propagation leak fails `trace_propagation_config_pass`.
+- Baggage counts for session correlation only when keys are allowlisted, values
+  are opaque/non-PII, and third-party baggage propagation is absent.
 - Cross-origin first-party propagation requires CORS rows showing allowed
   tracing and project auth headers. A frontend span without backend continuation
   must become `missing_backend_continuation`, not "backend not involved."

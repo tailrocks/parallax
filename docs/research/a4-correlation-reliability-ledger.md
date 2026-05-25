@@ -26,6 +26,11 @@ has to keep the evidence granular:
   `parent-id` and propagate the trace; invalid trace fields can force a new
   trace and discard `tracestate`
   ([W3C Trace Context](https://www.w3.org/TR/trace-context/)).
+- OpenTelemetry's trace API says a valid span context requires non-zero
+  `TraceId` and `SpanId`, and the propagator API requires W3C trace context
+  propagators to parse and validate `traceparent`/`tracestate`
+  ([OpenTelemetry trace API](https://opentelemetry.io/docs/specs/otel/trace/api),
+  [OpenTelemetry propagators API](https://opentelemetry.io/docs/specs/otel/context/api-propagators/)).
 - OpenTelemetry's model treats `TraceId`, `SpanId`, and `TraceFlags` as explicit
   log-record fields, with `SpanId` implying `TraceId`; the non-OTLP compatibility
   spec maps those fields to `trace_id`, `span_id`, and `trace_flags`
@@ -47,6 +52,10 @@ has to keep the evidence granular:
   propagation, gates outgoing headers by `tracePropagationTargets`, and can send
   W3C `traceparent` for OpenTelemetry interoperability only when configured
   ([Sentry trace propagation](https://develop.sentry.dev/sdk/foundations/trace-propagation/)).
+- OpenTelemetry baggage can propagate arbitrary key/value context and its docs
+  warn that sensitive baggage can reach unintended downstream resources such as
+  third-party APIs
+  ([OpenTelemetry baggage](https://opentelemetry.io/docs/concepts/signals/baggage/)).
 
 Internal sources:
 
@@ -68,10 +77,14 @@ Aggregate rates hide the failure modes that matter most for Parallax:
 
 - one service may have strong trace/log joins while another silently drops
   `traceparent`;
+- invalid, all-zero, or unparsable context fields can look like deterministic
+  joins if the run only checks that a string exists;
 - sampling can make an error appear trace-linked while the useful span body is
   missing;
 - frontend traces can exist without backend continuation because CORS stripped
   propagation headers;
+- baggage can make cross-tier/session joins easier while also propagating raw
+  user, tenant, account, or token-like values beyond the intended boundary;
 - a deploy edge can be present but point to the wrong release window;
 - a strong edge can be structurally valid but semantically wrong because an SDK
   or collector duplicated, rewrote, or mixed context.
@@ -120,9 +133,15 @@ Each run gets exactly one manifest:
     "opentelemetry_rust": "x.y.z",
     "opentelemetry_js": "x.y.z"
   },
+  "propagators": ["tracecontext", "baggage", "sentry_trace"],
+  "trace_context_validator_version": "a4-trace-context-v1",
+  "project_scope_fields": ["project_id", "environment", "service.name"],
   "collector_topology": "agent_to_single_gateway_tail_sampling",
+  "collector_instance_count": 1,
+  "tail_sampling_trace_routing_verified": true,
   "sampling_policy": "tail_sample_errors_and_10pct_other",
   "log_trace_context_format": "otel_log_fields",
+  "baggage_policy": "first_party_opaque_allowlist_v1",
   "release_source": "ci_release_marker",
   "deploy_source": "github_actions_environment_deploy",
   "redaction_policy": "parallax-default-deny-v0",
@@ -155,12 +174,22 @@ Every sampled anchor gets one row in `anchor-ledger.jsonl`:
   "trace_id_hash": "sha256:...",
   "span_id_present": true,
   "span_id_hash": "sha256:...",
+  "trace_context_valid": true,
   "trace_flags_sampled": true,
+  "trace_flags_raw": "01",
+  "tracestate_valid": true,
+  "remote_parent_observed": true,
+  "resource_scope_consistent": true,
+  "sampling_policy_observed": true,
+  "sampled_out_explained": null,
   "same_trace_span_count": 9,
   "same_trace_log_count": 14,
+  "duplicate_span_identity_count": 0,
   "error_in_span": true,
   "frontend_backend_continuation": null,
   "async_link_observed": false,
+  "baggage_keys_seen": ["parallax.session"],
+  "baggage_policy_pass": true,
   "release_context_present": true,
   "release_commit_present": true,
   "deploy_context_present": true,
@@ -186,6 +215,13 @@ applies and was expected but absent.
 - Count a strong edge only when the join key is deterministic: exact
   `trace_id`/`span_id`, span parentage, span link, message/job ID, release ID,
   commit SHA, deploy marker ID, CI run ID, or issue/work-item ID.
+- A deterministic trace key is not enough by itself: `trace_context_valid` must
+  be true, `resource_scope_consistent` must be true, and the join must stay
+  inside the run's `project_scope_fields` unless an explicit cross-scope edge is
+  present.
+- Invalid, all-zero, unparsable, or redaction-damaged trace context cannot count
+  toward `trace_context_rate`; record `invalid_trace_context`,
+  `unparsed_tracestate`, or `redaction_removed_required_field` instead.
 - Do not count time-window proximity as a strong edge. At most it is weak, and
   only if the bundle marks it as such.
 - Count `log_trace_join_rate` only from logs that carry OTel `TraceId`/`SpanId`
@@ -196,7 +232,16 @@ applies and was expected but absent.
 - Count `async_link_rate` only when there is an OTel span link or an explicit
   message/job/workflow ID. Queue timing alone does not qualify.
 - If an event has trace context but useful span data is unavailable because of
-  sampling, include `sampled_out_trace` in `missing_evidence`.
+  sampling, include `sampled_out_trace` in `missing_evidence`; if the SDK
+  sampler, collector policy, or tail-sampling route is not recorded, also include
+  `missing_sampling_policy` or `tail_sampling_route_unverified`.
+- Baggage-derived session or tenant joins count only when `baggage_policy_pass`
+  is true and the observed keys are allowlisted opaque values. Raw user IDs,
+  emails, account names, tokens, or third-party propagation failures make the run
+  a privacy/redaction failure for that anchor class.
+- Duplicate `(trace_id, span_id, service/resource scope)` rows must be deduped or
+  counted as `duplicate_span_identity`; do not let duplicates inflate
+  `same_trace_span_count` or `strong_edge_count`.
 - Every expected missing-evidence category from the A4 gate must be represented
   when absent. Absence of the absence report blocks agent-visible bundles.
 
@@ -217,6 +262,10 @@ Manual review rows go in `manual-audit.jsonl`:
   "false_medium_edges": 1,
   "missing_evidence_false_negative": false,
   "trace_path_includes_failure": true,
+  "trace_context_validated": true,
+  "resource_scope_checked": true,
+  "sampling_gap_explained": true,
+  "baggage_privacy_checked": true,
   "bundle_next_step_useful": true,
   "verdict": "pass",
   "notes": "Medium deploy edge downgraded because first-seen history contradicted the rollout window."
@@ -253,9 +302,13 @@ Allowed `category` values:
 
 - `browser_cors_trace_headers`
 - `trace_propagation_targets`
+- `trace_context_validation`
+- `resource_scope_mapping`
 - `collector_trace_id_routing`
 - `sampling_policy`
+- `tail_sampling_route_verification`
 - `log_trace_context_injection`
+- `baggage_allowlist`
 - `deploy_marker_ingest`
 - `release_commit_mapping`
 - `async_span_links`
@@ -270,6 +323,8 @@ The public Markdown summary should include:
 - run manifest summary;
 - per-anchor-class sample sizes;
 - aggregate A4 metrics from the gate;
+- trace context validity, scope consistency, sampling-explanation, duplicate-span,
+  and baggage privacy rates;
 - manual audit false-edge rates;
 - missing-evidence report coverage;
 - repair records attempted before final verdict;
@@ -300,7 +355,10 @@ backend MVP is useful.
 Rerun A4 when any of these change:
 
 - SDK major/minor version used for Sentry, OpenTelemetry, or browser capture;
-- collector topology, sampling policy, or trace-ID routing;
+- propagator configuration, trace-context validator, baggage allowlist, or
+  project/resource scope mapping;
+- collector topology, sampling policy, tail-sampling route verification, or
+  trace-ID routing;
 - frontend CORS/header propagation configuration;
 - log format or log trace-context injection method;
 - release/deploy marker source;
@@ -331,5 +389,6 @@ unaffected narrower level.
 
 A4 can pass only through a row-level audit of real telemetry. The ledger keeps
 Parallax honest: strong edges must be deterministic, missing evidence must be
-explicit, repairs must be recorded, and product claims must expire when the
-instrumentation surface changes.
+explicit, trace context must be valid and scoped, sampling gaps must be
+explained, baggage-derived joins must be privacy-safe, repairs must be recorded,
+and product claims must expire when the instrumentation surface changes.
