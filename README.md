@@ -45,6 +45,7 @@ idea becomes sharper.
 - [AI-native observability and incident intelligence](docs/research/ai-native-observability-and-incident-intelligence.md)
 - [Flaky test investigation and replay](docs/research/flaky-test-investigation-and-replay.md)
 - [Agent and CLI execution tracing](docs/research/agent-and-cli-execution-tracing.md)
+- [CLI trace overhead and redaction](docs/research/cli-trace-overhead-and-redaction.md)
 - [Agent observability technical review](docs/research/agent-observability-technical-review.md)
 - [Bundle-value evaluation](docs/research/bundle-value-evaluation.md)
 - [Bundle-value Phase 0 runbook](docs/research/bundle-value-phase0-runbook.md)

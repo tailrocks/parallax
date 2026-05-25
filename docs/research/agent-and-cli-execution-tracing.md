@@ -323,6 +323,11 @@ Capture:
 This makes Parallax useful for local tools, deploy tools, migration tools,
 developer CLIs, and agent-invoked commands.
 
+The default-on safety and performance gate for this model is specified in
+[CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md):
+structural capture is the default, redacted excerpts require canary and
+overhead tests, and full raw args/env/output are opt-in refs only.
+
 ## Why CLI Tracing Is Strategically Useful
 
 CLI failures are easier than production incidents:

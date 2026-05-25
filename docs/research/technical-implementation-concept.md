@@ -104,7 +104,7 @@ Access decision:
 | HTTP API | `axum` REST/JSON service in `parallax-server`. | Separate `parallax-api` nodes behind a load balancer. | Horizontally scaled `parallax-api` fleet. |
 | OTLP/gRPC | `tonic` + `prost` receiver for OTLP/gRPC; `axum` route for OTLP/HTTP. | Dedicated `parallax-ingest` nodes. | Regional ingest tiers with collector compatibility and overload control. |
 | App collection | Rust `tracing`, `tracing-error`, `opentelemetry-otlp`, Sentry-compatible Rust panic/error capture. | Add SDK fixtures for more languages through Sentry envelope compatibility and OTLP. | Collector/agent integrations, sampling policy, tenant routing. |
-| CLI tracing | `parallax` CLI built with `clap`; wrapper/subcommand mode records sanitized args/env/cwd/stdout/stderr refs/exit code. | CI and deploy systems call CLI with project token and redaction policy. | Organization-wide CLI/agent gateway and policy templates. |
+| CLI tracing | `parallax` CLI built with `clap`; wrapper/subcommand mode records structural command metadata, sanitized args/env/cwd, stdout/stderr policy refs, exit code, and overhead metrics. | CI and deploy systems call CLI with project token and redaction policy after the [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) gate passes. | Organization-wide CLI/agent gateway and policy templates. |
 | Agent-session tracing | JSON event schema for model calls, MCP/tool calls, shell commands, file reads/writes, tests, patches, PRs, approvals, outcomes. | Fixer component and agent adapters emit session traces to Parallax. | Multi-agent session graph with policy, review, and accepted-fix feedback loops. |
 | Stream / buffer | Local append-only WAL/outbox segment files. | Apache Iggy standalone when replay, backpressure, or worker separation is needed. | Iggy cluster or storage-backed stream fallback if Iggy fails scale tests. |
 | Observability storage | GreptimeDB standalone on local disk. | GreptimeDB standalone with S3/object storage. | GreptimeDB distributed with object storage; ClickHouse fallback cluster if benchmarks force it. |
@@ -143,6 +143,7 @@ Related research:
 - [Flaky test investigation and replay](flaky-test-investigation-and-replay.md)
 - [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
 - [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md)
+- [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md)
 - [Agent observability technical review](agent-observability-technical-review.md)
 - [Strategic verdict and research coverage](strategic-verdict-and-research-coverage.md)
 - [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md)
@@ -694,7 +695,8 @@ candidate versions:
 ### Agent And CLI Execution
 
 - coding-agent session schema across Codex, Claude Code, Amp, and OpenCode;
-- CLI redaction for args, env, config, stdout, and stderr;
+- CLI redaction and overhead for args, env, config, stdout, and stderr, with
+  the initial gate in [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md);
 - agent-session query latency when linked to production events and CI runs;
 - outcome feedback quality for accepted, edited, rejected, and reverted fixes.
 

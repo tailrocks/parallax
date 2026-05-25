@@ -237,6 +237,9 @@ production secrets. Therefore:
 - [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) — CLI
   args/env/stdout/stderr and agent prompts/tool outputs require ref-first
   capture.
+- [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) —
+  expands CLI-specific args/env/config/stdout/stderr policy, canary fixtures,
+  and overhead gates before default-on capture.
 - [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
   — redaction is a precondition for safe read-only agent context.
 
