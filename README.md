@@ -31,6 +31,7 @@ idea becomes sharper.
 - [Project thesis](docs/research/project-thesis.md)
 - [Market landscape](docs/research/market-landscape.md)
 - [Open self-hosted competitor watch](docs/research/open-self-hosted-competitor-watch.md)
+- [Lightweight Sentry-compatible competitor watch](docs/research/lightweight-sentry-compatible-competitor-watch.md)
 - [Self-hosted observability architecture](docs/research/self-hosted-observability-architecture.md)
 - [CI failure context MVP](docs/research/ci-failure-context-mvp.md)
 - [GreptimeDB storage evaluation](docs/research/greptimedb-storage-evaluation.md)

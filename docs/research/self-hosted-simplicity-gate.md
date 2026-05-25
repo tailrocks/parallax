@@ -70,7 +70,9 @@ Not allowed in the default tiny tier:
 ## Measurement Protocol
 
 Run the same protocol for Sentry self-hosted, SigNoz Docker, OpenObserve
-single-node, and Parallax tiny tier.
+single-node, representative lightweight Sentry-compatible challengers from the
+[lightweight competitor watch](lightweight-sentry-compatible-competitor-watch.md),
+and Parallax tiny tier.
 
 1. Start from a fresh Ubuntu LTS VM with Docker installed and no product data.
 2. Pin the exact version, commit, or image tag being tested.
@@ -119,20 +121,20 @@ warnings.
 Use this scorecard in Phase 1 docs and release notes. Do not fill it with
 estimates; fill it only after running the protocol above.
 
-| Metric | Sentry self-hosted | SigNoz Docker | OpenObserve single-node | Parallax tiny tier |
-| --- | --- | --- | --- | --- |
-| Version/tag tested | TBD | TBD | TBD | TBD |
-| Time to usable UI/API | TBD | TBD | TBD | TBD |
-| Time to first error/context result | TBD | TBD | TBD | TBD |
-| Long-running services | TBD | TBD | TBD | TBD |
-| Recommended CPU/RAM/disk | TBD | TBD | TBD | TBD |
-| Measured idle RSS/CPU | TBD | TBD | TBD | TBD |
-| Required external broker/cache | TBD | TBD | TBD | TBD |
-| Backup/restore steps | TBD | TBD | TBD | TBD |
-| Upgrade steps | TBD | TBD | TBD | TBD |
-| Sentry SDK DSN-change path | TBD | TBD | TBD | TBD |
-| OTLP path without extra collector | TBD | TBD | TBD | TBD |
-| Evidence bundle available | N/A | N/A | N/A | TBD |
+| Metric | Sentry self-hosted | SigNoz Docker | OpenObserve single-node | Lightweight challenger | Parallax tiny tier |
+| --- | --- | --- | --- | --- | --- |
+| Version/tag tested | TBD | TBD | TBD | TBD | TBD |
+| Time to usable UI/API | TBD | TBD | TBD | TBD | TBD |
+| Time to first error/context result | TBD | TBD | TBD | TBD | TBD |
+| Long-running services | TBD | TBD | TBD | TBD | TBD |
+| Recommended CPU/RAM/disk | TBD | TBD | TBD | TBD | TBD |
+| Measured idle RSS/CPU | TBD | TBD | TBD | TBD | TBD |
+| Required external broker/cache | TBD | TBD | TBD | TBD | TBD |
+| Backup/restore steps | TBD | TBD | TBD | TBD | TBD |
+| Upgrade steps | TBD | TBD | TBD | TBD | TBD |
+| Sentry SDK DSN-change path | TBD | TBD | TBD | TBD | TBD |
+| OTLP path without extra collector | TBD | TBD | TBD | TBD | TBD |
+| Evidence bundle available | N/A | N/A | N/A | N/A | TBD |
 
 ## Design Consequences
 
@@ -166,3 +168,5 @@ Phase 1 should stop or narrow if any of these happen:
 
 The standard is not "as full-featured as Sentry." The standard is "much easier
 to self-host for the first useful Sentry-compatible, OTLP-native issue context."
+
+Related competitive check: [Lightweight Sentry-compatible competitor watch](lightweight-sentry-compatible-competitor-watch.md).

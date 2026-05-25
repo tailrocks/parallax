@@ -18,6 +18,11 @@ can close the "open, self-hosted, agent-native" part of the market without
 needing incumbent cloud data gravity. This note is the current watchlist and the
 trigger list for reopening the GO verdict.
 
+A second, narrower competitor class now has its own watchlist:
+[Lightweight Sentry-compatible competitor watch](lightweight-sentry-compatible-competitor-watch.md).
+That note tracks Bugsink, Rustrak, Traceway, GoSnag, and Urgentry because they
+pressure the Sentry-compatible migration and low-ops claims from below.
+
 ## Current Verdict
 
 None of the three closes the Parallax wedge today, but the window is narrow.
@@ -204,6 +209,9 @@ The watchlist changes the product priority:
 5. Re-check this watchlist every ongoing research pass. If OpenObserve or SigNoz
    closes Sentry migration plus bundle export, the Parallax wedge must narrow
    further to agent action audit and failure/fix corpus.
+6. Re-check the
+   [lightweight Sentry-compatible watchlist](lightweight-sentry-compatible-competitor-watch.md)
+   before making any "simpler than Sentry" or "drop-in Sentry-compatible" claim.
 
 ## Sources
 

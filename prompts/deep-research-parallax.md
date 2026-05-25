@@ -937,6 +937,19 @@ open + self-hosted + agent-native + evidence bundles + Sentry-compatible ingest)
   lighter footprint, Sentry ingest, or an evidence-graph/bundle abstraction)
 - Coroot (eBPF, Go; self-hosted AI RCA)
 
+Also track lightweight Sentry-compatible or OTLP-native self-hosted challengers
+that pressure the migration and simplicity claims from below:
+- Bugsink
+- Rustrak
+- Traceway
+- GoSnag
+- Urgentry
+
+For these, watch specifically for Sentry SDK/envelope compatibility, OTLP
+logs/traces/metrics correlation, low-resource setup, evidence-bundle export,
+agent/MCP/CLI context access, coding-agent side-effect audit, and fix outcome
+feedback loops.
+
 Also perform a technical review of similar tools that provide observability for
 agents and use them as references, not as a final product definition. Compare
 their latest public/stable versions and focus on implementation details:
