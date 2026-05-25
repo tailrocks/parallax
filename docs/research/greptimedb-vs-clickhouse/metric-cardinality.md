@@ -2,10 +2,11 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 48, extended passes 112–113 (Runs 76–77 — high-card storage at 200k series:
-CH `LowCardinality` wins vs GreptimeDB plain table *and* metric engine; `LowCardinality`
-cliff refined to *graceful*; B13 storage complete — GreptimeDB edge is ingest ergonomics,
-not bytes). The
+Status: pass 48, extended passes 112–114 (Runs 76–79 — high-card storage curve: CH
+`LowCardinality` wins low–mid cardinality (1k/200k) but **GreptimeDB wins at ~1M unique
+series — a crossover**; `LowCardinality` cliff is *graceful*; metric-engine `__tsid` is
+overhead not a saving. B13 storage curve complete — storage winner is cardinality-dependent;
+GreptimeDB's clear edge is ingest ergonomics + extreme-cardinality). The
 *partitioning/storage consequence* of high series cardinality —
 GreptimeDB lead #6 ("logical metric tables → physical wide table, and the partitioning
 consequence for high-cardinality metrics"). Pass 32 confirmed the logical→physical
@@ -85,16 +86,26 @@ Two findings:
   *losing the peak dict-encoding benefit*, **not** regressing below `String` — especially
   with the column sorted in `ORDER BY` (per-granule locality) + ZSTD. The cliff is a
   *don't-expect-magic* caveat, not a footgun that inflates storage.
-- **ClickHouse wins high-card series *storage* — including vs the metric engine (Run 77,
-  B13 now complete).** CH `LowCardinality` **9.64 MiB** < CH `String` 10.11 < GreptimeDB
-  plain table 11.99 < GreptimeDB **metric engine 12.63 MiB**. The metric engine is **not
-  smaller** — it is slightly *larger* than the plain table, because `__tsid` (the u64
-  label-set hash) + `__table_id` are stored **in addition to** the label columns (the
-  physical table still keeps the labels for query), so the hash is *overhead for fast
-  series identity + multi-metric sharing*, not a storage *replacement*. So the metric
-  engine's value is **ingest ergonomics + operability** (no `LowCardinality` cap, many
-  logical metrics → one physical table, label-set hashing) — **not byte-compactness**, on
-  which ClickHouse's hand-tuned `LowCardinality` wins ~1.3×.
+- **High-card storage winner is CARDINALITY-DEPENDENT — there is a crossover (Run 79).**
+  Fixed 1M rows, varying distinct series:
+
+  | distinct series | ClickHouse `LowCardinality` | GreptimeDB plain | winner |
+  | --- | --- | --- | --- |
+  | 1,000 | 8.18 MiB | 9.18 MiB | ClickHouse ~1.12× |
+  | 200,000 | 9.64 MiB | 11.99 MiB | ClickHouse ~1.24× |
+  | 1,000,000 (all-unique) | **16.51 MiB** | **12.36 MiB** | **GreptimeDB ~1.34×** |
+
+  ClickHouse `LowCardinality` wins at **low-to-mid** cardinality but **blows up at extreme
+  cardinality** (all-unique → dict dead, pure overhead → 16.51 MiB), while GreptimeDB
+  degrades gently (11.99 → 12.36). So **GreptimeDB wins storage past ~1M unique series** —
+  the regime its metric engine targets — and ClickHouse wins the moderate-cardinality
+  storage (thousands–100k). At 200k the metric engine itself is **not** smaller than the
+  plain table (12.63 vs 11.99, Run 77 — `__tsid` is overhead on top of the labels, not a
+  saving), so GreptimeDB's storage win at the extreme is its *general* Parquet+ZSTD
+  scaling, not the metric engine specifically. **Net: storage winner depends on series
+  cardinality; GreptimeDB's clear edge is ingest ergonomics (cap-free) + extreme-cardinality
+  storage + multi-metric consolidation — not moderate-cardinality bytes (CH) or agg latency
+  (CH, Run 67).**
 
 ## Side by side
 
@@ -117,11 +128,11 @@ High cardinality splits across axes — both true, different things:
   + PartitionTree are designed so high-cardinality series are rows in a shared,
   dict-encoded, sharded structure with no `LowCardinality`-style cap and label-set
   hashing built in — **so the GreptimeDB edge is "no cardinality cap / no `ORDER BY`
-  tuning to manage," not smaller bytes.** Measured (Runs 76–77), CH `LowCardinality`
-  (9.64 MiB) is ~1.3× *smaller* than both a GreptimeDB plain table (11.99) **and the
-  metric engine itself (12.63)** at 200k series — the `__tsid` hash is overhead, not a
-  storage saving (B13 complete). ClickHouse works but needs deliberate `ORDER
-  BY` design and hits
+  tuning to manage."** On *bytes* the winner is **cardinality-dependent (Runs 76–79):** CH
+  `LowCardinality` wins low–mid (1k ~1.12×, 200k ~1.24×) but **GreptimeDB wins at ~1M
+  unique series ~1.34×** (CH `LowCardinality` blows up to 16.51 MiB all-unique vs GT 12.36)
+  — the very-high-cardinality regime GreptimeDB targets. ClickHouse works but needs
+  deliberate `ORDER BY` design and hits
   the 8,192 dict cliff on wild label values.
 - **Aggregation *speed* at volume: ClickHouse (~2× warm, Run 37; corrected from ~10×).**
   The vectorized C++ engine (`query-execution-engine.md`) out-aggregates DataFusion

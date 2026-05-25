@@ -3220,6 +3220,52 @@ volume remains the residual gap (~12×, Run 48 / `query-execution-engine.md`).
 
 **Reproduce.** `docker exec …clickhouse… --time -q "SELECT count() FROM logs_b1 WHERE hasToken(message,'0835d162') FORMAT Null"` (~3 ms) vs GreptimeDB `…matches_term(message,'0835d162')` (~8 ms) and `…matches(message,'0835d162')` (~157 ms, full-scan).
 
+### Run 79 — 2026-05-25 — High-card storage CURVE: a CROSSOVER (CH wins low-mid, GreptimeDB wins extreme)
+
+**Pass target.** Complete B13's sized curve (open Q #8 remainder): does the Run-76/77
+"ClickHouse wins high-card storage ~1.3×" hold across cardinality, or shift? Bracket the
+200k point with 1k (high-repeat) and 1M (all-unique series).
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned — latest, no
+bump). Fixed **1M rows**, distinct series ∈ {1k, 200k, 1M}; CH `LowCardinality(String)`
+`ORDER BY (series,ts)` vs GreptimeDB plain mito table `PRIMARY KEY(series)`; identical data.
+
+**Measured (total on disk):**
+
+| distinct series | ClickHouse `LowCardinality` | GreptimeDB plain | winner |
+| --- | --- | --- | --- |
+| 1,000 (1000 rows/series) | **8.18 MiB** | 9.18 MiB | ClickHouse ~1.12× |
+| 200,000 (Run 76) | **9.64 MiB** | 11.99 MiB | ClickHouse ~1.24× |
+| 1,000,000 (1 row/series, all-unique) | 16.51 MiB | **12.36 MiB** | **GreptimeDB ~1.34×** |
+
+**Verdict — there is a CROSSOVER; "CH wins high-card storage" is cardinality-dependent.**
+ClickHouse `LowCardinality` wins at **low-to-mid** cardinality (1k–200k), but at
+**extreme** cardinality (1M distinct, every series unique) it **blows up to 16.51 MiB**
+while GreptimeDB grows gently to 12.36 — **GreptimeDB wins ~1.34× at 1M series.** Mechanism:
+`LowCardinality`'s dict caps at 8,192 and gives diminishing returns as values stop
+repeating; at all-unique it is pure dict overhead over near-raw values, so CH's storage
+climbs steeply (9.64 → 16.51 from 200k → 1M). GreptimeDB's Parquet dict/RLE + ZSTD over the
+`series`-sorted data degrades more gracefully (11.99 → 12.36). So **the Run-76/77 "CH wins
+high-card storage" holds only up to ~hundreds-of-thousands of series; past ~1M unique series
+GreptimeDB wins** — which is exactly the regime GreptimeDB's metric engine is designed for.
+
+**Decision-useful framing for Parallax.** If metric series cardinality is **moderate**
+(service × instance × endpoint ≈ thousands–100k), ClickHouse stores ~1.1–1.25× smaller. If
+it is **extreme** (per-user / per-request / per-fingerprint labels → ~1M+ unique series),
+GreptimeDB stores smaller **and** ingests cap-free (no `LowCardinality` 8,192 management).
+So GreptimeDB's high-card edge is real specifically at the **very-high-cardinality** end +
+ingest operability; ClickHouse wins the moderate-cardinality storage. Status: **B13 curve
+complete — crossover at ~hundreds-of-k → 1M series.**
+
+Caveat: smoke (1M rows); the 1M case is also 1M distinct timestamps (both compress ts well —
+the `series` column is the driver). Per-column attribution of the crossover (series vs ts vs
+val) is a detail; the total-storage crossover is the result. A true sized run (1M rows ×
+many series counts at larger row volume) is the harness extension.
+
+**Reproduce.** CH `INSERT … 'svc-'||toString(number % N) … numbers(1000000)` for N ∈
+{1000, 200000} and `'svc-'||toString(number)` for all-unique; `OPTIMIZE FINAL`; compare
+`system.parts` bytes vs GreptimeDB `region_statistics.sst_size` after CSV-load + compact.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

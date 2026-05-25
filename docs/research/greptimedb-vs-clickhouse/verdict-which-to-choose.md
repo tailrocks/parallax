@@ -94,7 +94,7 @@ storage*, accepting a younger DataFusion scan engine.
 | **Retention cost** | TTL = **whole-SST drop** (TWCS time-windowing → no read/rewrite; `compactor.rs:581`); ClickHouse default `ttl_only_drop_parts=0` **rewrites survivors** (Run 17: read 1M / rewrote 500k) unless tuned (`PARTITION BY` time + `ttl_only_drop_parts=1`). Cheap-by-default vs cheap-if-configured. | source+measured (Run 17) |
 | **Object-storage-native** | OpenDAL default + read cache; cheap re-readable retention first-class. Fewer *total* objects (4 vs 74, Runs 8–9) → wins full-scan cold reads. Cold GET cost is query-shape-dependent (measured both ways): full scan GreptimeDB fewer (26 vs 57, Run 15 — wins the JSONBench regime); **anchored lookup ClickHouse fewer (5 vs 22, Run 14)** — Parallax's pattern. Read cache → warm re-reads local on both. | measured (layout + cold GETs both shapes) |
 | **Durability / crash safety** | Has a **replayable WAL** (raft-engine local, tunable `sync_write`; or **Kafka remote → durability decoupled from the datanode**, the same mechanism that makes migration cheap). ClickHouse MergeTree has **no WAL** (obsolete in 26.x) — durability = unsynced part-on-disk (`fsync_after_insert=0`) + replicas; a single-node crash loses unflushed parts. | source+live (Run 20) |
-| **High-cardinality metric *ingest ergonomics*** (not storage, not speed) | Metric engine `__tsid` (label-set hash) over a shared physical wide table + PartitionTree memtable (dict-encoded label sets, **no per-series cap**) — cap-free ingest, many logical metrics → one physical table, no `ORDER BY` tuning. ClickHouse `LowCardinality` caps at 8,192 then degrades **gracefully** (still < plain `String` at 200k — Run 76, not the "cliff explosion" first framed). **⚠ Corrected (Run 77, B13 complete): high-card *storage* favours ClickHouse** — `LowCardinality` 9.64 MiB < GreptimeDB plain 11.99 < GreptimeDB **metric engine 12.63** (the `__tsid` hash is overhead *on top of* the label columns, not a saving). And **aggregation latency → ClickHouse ~2–3× warm** (Run 37 CH 50/GT 107; Run 67 CH 32/GT 99). So GreptimeDB's high-card win is **operability/no-cap, not bytes or speed.** | source+live (Runs 26, 76, 77) |
+| **High-cardinality metric *ingest ergonomics*** (not storage, not speed) | Metric engine `__tsid` (label-set hash) over a shared physical wide table + PartitionTree memtable (dict-encoded label sets, **no per-series cap**) — cap-free ingest, many logical metrics → one physical table, no `ORDER BY` tuning. ClickHouse `LowCardinality` caps at 8,192 then degrades **gracefully** (still < plain `String` at 200k — Run 76, not the "cliff explosion" first framed). **⚠ Corrected (Runs 76–79): high-card *storage* is CARDINALITY-DEPENDENT (a crossover)** — ClickHouse `LowCardinality` wins low–mid (1k ~1.12×, 200k ~1.24×) but **GreptimeDB wins at ~1M unique series ~1.34×** (CH `LowCardinality` blows up to 16.51 MiB all-unique vs GT 12.36; the metric engine's `__tsid` is overhead not a saving). And **aggregation latency → ClickHouse ~2–3× warm** (Run 37/67). So GreptimeDB's high-card win is **operability/no-cap + extreme-cardinality storage**, ClickHouse's is **moderate-cardinality storage + agg speed.** | source+live (Runs 26, 76–79) |
 | **Corrections (UPDATE) / upsert** | UPDATE = re-insert `(PK,ts)` → dedup last-wins = a **cheap GA upsert**, no setup; ClickHouse UPDATE = heavy `ALTER UPDATE` part rewrite (lightweight update is experimental + needs a per-table block-number column). DELETE is ~parity (both read-filtered). | source+live (Run 29) |
 | Freshness | Visible-on-write (tie with ClickHouse, not a win). | smoke |
 
@@ -317,13 +317,14 @@ concurrent ingest+query:
    fsync (column files + dir). **Strict-durable ingest is ~10× cheaper on GreptimeDB**
    (architectural: append-log fsync ≪ part fsync). The *sustained* strict-durable throughput
    ceiling at scale is still a sized-harness number; the per-write cost ratio is settled.
-8. **High-cardinality metric storage at volume** (B13) — **answered at 200k series (Runs
-   76–77):** ClickHouse `LowCardinality` 9.64 MiB < GreptimeDB plain 11.99 < GreptimeDB
-   metric engine 12.63 — **ClickHouse wins high-card storage ~1.3×**, the `LowCardinality`
-   cliff is graceful (LC still < `String`), and the metric engine's `__tsid` is overhead
-   not a saving. So GreptimeDB's high-card edge is ingest ergonomics, not bytes. *Remaining:*
-   the 1k→1M sized *curve* (does the ratio hold/shift at 1M+ series) and ingest-rate
-   under cap-free vs cap-managed are the sized-harness extensions.
+8. **High-cardinality metric storage at volume** (B13) — **answered, curve complete (Runs
+   76–79):** a **crossover** — ClickHouse `LowCardinality` wins low–mid (1k 8.18/9.18 ~1.12×,
+   200k 9.64/11.99 ~1.24×) but **GreptimeDB wins at 1M unique series (12.36 vs CH 16.51,
+   ~1.34×)** — CH `LowCardinality` blows up all-unique, GreptimeDB scales gently. The cliff
+   is graceful; the metric-engine `__tsid` is overhead not a saving. So storage winner is
+   cardinality-dependent; GreptimeDB's edge = ingest ergonomics + extreme cardinality, CH's
+   = moderate-cardinality bytes + agg speed. *Remaining:* the curve at larger row volume and
+   ingest-rate under cap-free vs cap-managed are sized-harness extensions.
 
 **These are the complete remaining gaps** — every smoke/source-answerable question is
 closed; #0–#8 all require the larger-tier / cold-cache / multi-node / sized harness, and
