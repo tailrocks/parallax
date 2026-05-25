@@ -5976,6 +5976,50 @@ local containers touched.
 **Reproduce.** `gh api ".../memtable/partition_tree.rs?ref=v1.0.2"` → "partition tree" doc + `mod dict`
 + `DICTIONARY_SIZE_FACTOR`/`fork_dictionary_bytes`. No local containers touched.
 
+### Run 148 — 2026-05-25 — SOURCE (gentle, gh-only): GT distributed read fan-out (`dist_plan`) — grounds the scaling read-side; agg parallelizes (two-stage), JOIN fans in to frontend
+
+**Context.** Concurrent agents active (a `codex` + a second `claude` editing the cost-model docs) +
+operator's laptop-freeze constraint → gentle gh-only source pass, no container load. Re-pin check:
+latest GT **GA still `v1.0.2`**; latest release tag `v1.1.0-nightly-20260525` (pre-release) — **v1.1
+still not GA**, so the DQ6/Run-141 dedup-regression GA re-test stays pending. Stable containers were
+empty (no scratch data); not loaded.
+
+**Pass target.** Source-ground the one load-bearing-but-ungrounded read-side scaling claim
+(`distributed-and-scaling.md:34` "`MergeScanExec` fans sub-plans to datanodes" + the gap flagged at
+:142/:156 "fan-out … not yet measured"). Write side already grounded (WAL/Run 146 + region-migration).
+
+**Source (`src/query/src/dist_plan` @v1.0.2 — `commutativity.rs`, `merge_scan.rs`):**
+- **`Categorizer::check_plan`** (`commutativity.rs`) tags each logical-plan node by how far it pushes
+  below the `MergeScan` boundary: `TableScan`/`Filter`(commutative pred)/`Projection` = **Commutative**
+  (pushed whole); `Sort` → `merge_sort_transformer` (per-node sort + frontend merge-sort); `Limit`
+  `fetch` = Commutative/PartialCommutative (cut rows remotely, re-limit on frontend); `Distinct` =
+  PartialCommutative.
+- **Aggregate** (`:158-191`): `is_all_aggr_exprs_steppable(aggr_expr)` × `check_partition(group_expr)`.
+  Steppable + GROUP BY not partition-aligned → **`TransformedCommutative` / `step_aggr_to_upper_aggr`**
+  = **two-stage** (partial-agg per datanode → *"upper aggregation plan that will execute on the
+  frontend"* merges states). Partition-aligned → push whole agg down (no merge). Non-steppable +
+  non-aligned → **`NonCommutative`** (full agg on frontend over fanned-in rows).
+- **`Join` = `NonCommutative`** (`:207`) — runs on the **frontend**; datanodes ship rows up.
+- **`MergeScanExec`** (`merge_scan.rs:135`): holds `regions: Vec<RegionId>` + `RegionQueryHandlerRef`
+  + `target_partition`; `execute()` iterates regions (`.step_by(target_partition)`), encodes the
+  pushed-down sub-plan, **RPCs it to each region's datanode**, records per-region `sub_stage_metrics`,
+  merges the streams. Output `Partitioning::Hash(exprs, target_partition)`.
+
+**Verdict — read fan-out is a real pushdown optimizer, not a row-puller.** Scans, filters, steppable
+aggs, sorts, and limits all parallelize across datanodes; the frontend runs only the plan residue.
+Two consequences for the verdict, both now source-level:
+- **Agg-gap parallelizes** — steppable aggs (count/sum/avg/min/max) go two-stage, so the single-node
+  vectorization deficit (`query-execution-engine.md`) **does not simply multiply at scale**; it splits
+  across datanodes (helps DQ6 closability). Caveat: per-UDAF — `approx_percentile`/`uniq` distribute
+  only if their state is mergeable.
+- **Join-gap worsens distributed** — `Join` = `NonCommutative` → frontend fan-in, so an in-DB
+  distributed join pulls rows to one node. **Keeps the app-side-correlation / fetch-by-key blueprint**
+  (Parallax's anchored bundle, which is filter+project+limit, distributes cleanly — best case).
+
+**Reproduce.** `gh api ".../src/query/src/dist_plan/commutativity.rs?ref=v1.0.2"` (Aggregate branch
+`:158-191`, `Join` `:207`) + `.../merge_scan.rs` (`struct MergeScanExec` `:135`, `execute` region RPC
+loop). No local containers touched. Wrote up in `distributed-and-scaling.md` (new "Read fan-out" §).
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

@@ -135,12 +135,65 @@ object-store-native advantage (`compression-and-cost.md`, `caching-and-cold-warm
 on the replication dimension. Arch-reasoned + ClickHouse's own source warning (Run 34);
 a real multi-replica S3 cost measurement is owed to the harness.
 
+## Read fan-out — what actually distributes (source-grounded, Run 148)
+
+The line-34 "`MergeScanExec` fans sub-plans to datanodes" claim, now read at the source
+(`src/query/src/dist_plan` @v1.0.2). A query does **not** naively pull all rows to one
+node. The **Analyzer** walks the logical plan and the **`Categorizer`**
+(`commutativity.rs`) tags each node with how far below the `MergeScan` boundary it can be
+pushed; whatever can't push runs on the (stateless) frontend over the merged streams.
+`MergeScanExec` (`merge_scan.rs`) holds `regions: Vec<RegionId>` + a `RegionQueryHandler`
+and, on `execute()`, encodes the pushed-down sub-plan and **RPCs it to each region's
+datanode** (`.step_by(target_partition)`), recording per-region `sub_stage_metrics`, then
+merges the result streams. So the **datanodes do the scan/filter/partial-agg in parallel;
+the frontend does only the residual top of the plan.** The categories that decide this:
+
+| Plan node | Commutativity | What happens at scale |
+| --- | --- | --- |
+| `TableScan`, `Filter` (commutative predicate), `Projection` | **Commutative** | pushed **entirely** to datanodes |
+| `Aggregate`, steppable aggs (count/sum/min/max/avg…), GROUP BY **not** partition-aligned | **TransformedCommutative** → `step_aggr_to_upper_aggr` | **two-stage**: partial-agg per datanode → **state-merge agg on frontend** (the ClickHouse two-stage shape) |
+| `Aggregate`, GROUP BY **partition-aligned** (each region holds whole groups) | **ConditionalCommutative** | whole aggregate pushed down, **no merge** (embarrassingly parallel) |
+| `Aggregate`, **non-steppable** agg + non-aligned GROUP BY | **NonCommutative** | full aggregate on **frontend** over fanned-in rows |
+| `Sort` | **ConditionalCommutative** → `merge_sort_transformer` | per-datanode sort → **frontend merge-sort** of pre-sorted streams |
+| `Limit` (`fetch`) | **Commutative / PartialCommutative** | `fetch` pushed to datanodes (cut rows early) → frontend re-limits; `skip`/offset stays on frontend |
+| `Distinct` | **PartialCommutative** | partial-distinct per datanode → final distinct on frontend |
+| **`Join`** | **NonCommutative** | runs on the **frontend** — datanodes ship rows up |
+
+**Parallax mapping — which queries distribute well vs fan in:**
+
+- **Anchored bundle** (filter `trace_id` → project → small `LIMIT`): all Commutative /
+  PartialCommutative → fully pushed; frontend just merges. **Best case — the dominant
+  workload distributes cleanly.**
+- **Metric agg over time** (`count`/`sum`/`avg` GROUP BY service,window): steppable →
+  **two-stage**, so the single-node agg-gap (`query-execution-engine.md`) **parallelizes
+  across datanodes rather than simply multiplying** at scale. (Caveat: steppability is
+  per-UDAF — a t-digest/HLL-style `approx_percentile`/`uniq` distributes only if its state
+  is mergeable; a non-steppable UDAF forces a frontend fan-in.)
+- **Top-K / log-tail / issue-list** (Sort + Limit): merge-sort + pushed `fetch` →
+  distributes well.
+- **Cross-tier join** (`spans ⨝ errs` on `trace_id`): **`Join` is `NonCommutative`** → the
+  join runs on the frontend over rows pulled from datanodes. So the single-node join-gap is
+  **not just preserved but architecturally worsened distributed** (fan-in to one frontend).
+  This is the load-bearing limit: Parallax's app-side correlation (fetch-by-key, join in
+  the engine layer) sidesteps it; an in-DB distributed join does not. ClickHouse's
+  `Distributed` join has its own fan-in cost, but its single-node join is faster to begin
+  with (`query-execution-engine.md`).
+
+Net: GreptimeDB's read fan-out is a **real pushdown optimizer**, not a row-puller — scans,
+filters, steppable aggs, sorts, and limits all parallelize across datanodes; **only joins
+(and non-steppable aggregates) fan in to the frontend.** This refines two verdict rows: the
+**agg-gap is a single-node vectorization deficit that parallelizes** (helps DQ6
+closability), while the **join-gap is architectural and worsens distributed** (keep the
+app-side-correlation blueprint). Mechanism source-grounded; multi-node *latency* still owed
+to the cluster harness.
+
 ## Honest caveats
 
 - **This is architecture-reasoned, not cluster-measured.** All Docker runs so far
-  are single-node smoke. The region-rebalancing smoothness, repartition behavior
-  under load, and `MergeScanExec` fan-out latency at scale are **not yet measured**
-  — a real multi-node run (both engines) is owed before this is benchmark-confirmed.
+  are single-node smoke. The region-rebalancing smoothness and repartition behavior
+  under load are **not yet measured** — a real multi-node run (both engines) is owed
+  before this is benchmark-confirmed. The `MergeScanExec` fan-out **mechanism** is now
+  source-grounded (above); its **latency at scale** is still harness-owed.
 - **ClickHouse horizontal scale is proven in production** at enormous scale (many
   shards) — it is not that ClickHouse *can't* scale out, but that doing so is
   operator-managed and resharding is the known pain point. For a fixed, well-sized
@@ -173,5 +226,5 @@ a real multi-replica S3 cost measurement is owed to the harness.
 
 ## Source / evidence
 
-- GreptimeDB: `src/partition/src/{splitter,multi_dim,manager}.rs`; **region-migration procedure `src/meta-srv/src/procedure/region_migration/` (flush_leader → downgrade → open_candidate → upgrade → close; no bulk-copy step)**; RFCs `2023-11-07-region-migration`, `2025-06-20-repartition`, `2025-07-23-global-gc-worker`; dist plan `src/query/src/dist_plan` (`MergeScanExec`); remote WAL `src/log-store/src/kafka`.
+- GreptimeDB: `src/partition/src/{splitter,multi_dim,manager}.rs`; **region-migration procedure `src/meta-srv/src/procedure/region_migration/` (flush_leader → downgrade → open_candidate → upgrade → close; no bulk-copy step)**; RFCs `2023-11-07-region-migration`, `2025-06-20-repartition`, `2025-07-23-global-gc-worker`; dist plan `src/query/src/dist_plan` — **`commutativity.rs`** (`Categorizer::check_plan`: TableScan/Filter/Projection=Commutative, steppable-agg→`step_aggr_to_upper_aggr` TransformedCommutative two-stage, partition-aligned agg=ConditionalCommutative, **`Join`=NonCommutative** frontend-only, Sort→`merge_sort_transformer`, Limit `fetch` PartialCommutative), **`merge_scan.rs`** (`MergeScanExec{regions, region_query_handler, target_partition}` → encode sub-plan, RPC per region, merge streams) (Run 148); remote WAL `src/log-store/src/kafka`.
 - ClickHouse: `src/Storages/StorageDistributed.cpp`, `src/Storages/StorageReplicatedMergeTree.cpp`, `src/Coordination/Keeper*`; `max_parallel_replicas`/`allow_experimental_parallel_reading_from_replicas` (`src/Core/Settings.cpp:7308`); **no** `SharedMergeTree` in `src/Storages` (Cloud-only); **zero-copy replication** `allow_remote_fs_zero_copy_replication=false` + *"Don't use … not ready"* (`MergeTreeSettings.cpp:1955`, EXPERIMENTAL), `remote_fs_zero_copy_zookeeper_path=/clickhouse/zero_copy`, `disable_{freeze,detach,fetch}_partition_for_zero_copy_replication`.
