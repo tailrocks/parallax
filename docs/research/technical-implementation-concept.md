@@ -51,6 +51,7 @@ Related research:
 - [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
 - [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md)
 - [Flaky test investigation and replay](flaky-test-investigation-and-replay.md)
+- [Strategic verdict and research coverage](strategic-verdict-and-research-coverage.md)
 - [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md)
 
 Metadata-store source:
