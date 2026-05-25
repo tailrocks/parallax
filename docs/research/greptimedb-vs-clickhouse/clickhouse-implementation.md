@@ -2,12 +2,13 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 13. The buildable storage design for the **rejected-but-viable**
-alternative (`verdict-which-to-choose.md`): full schema, ingest path, exact
-retrieval, object storage, operational shape — kept structurally parallel to
-`greptimedb-implementation.md` so the differences are directly comparable. Builds
-on the seed DDL in `storage-benchmark-prototype.md` and the Docker runs
-(`local-benchmark-results.md`).
+Status: pass 13 (design) + pass 74 (**whole schema built live**, Run 46). The buildable
+storage design for the **rejected-but-viable** alternative (`verdict-which-to-choose.md`):
+full schema, ingest path, exact retrieval, object storage, operational shape — kept
+structurally parallel to `greptimedb-implementation.md` so the differences are directly
+comparable. Builds on the seed DDL in `storage-benchmark-prototype.md` and the Docker runs
+(`local-benchmark-results.md`). **DDL executed on live ClickHouse `v26.5.1.882` (Run 46):
+all 7 tables + rollup MV build; one fix applied (`text` tokenizer `'default'`→`splitByNonAlpha`).**
 
 Pin: ClickHouse `v26.5.1.882-stable` (`5b96a8d8`). Confirmed against source:
 skip-index types `minmax/set/tokenbf_v1/ngrambf_v1/sparse_grams/bloom_filter/text/
@@ -25,7 +26,9 @@ vector_similarity` (`src/Storages/MergeTree/MergeTreeIndices.cpp:172-195`),
    `Gorilla`+`ZSTD` for float gauges, `LowCardinality` for service/level/status,
    `ZSTD` for free text (Run 4 showed counter 7.3×, gauge 78×).
 3. **Native `text` index** on `message` for log/error substring search (the new
-   inverted index; `tokenbf_v1` as the conservative fallback).
+   inverted index; `tokenbf_v1` as the conservative fallback). **Tokenizer must be a
+   real name** — valid in 26.5.1 are `splitByNonAlpha` (word search, used here),
+   `splitByString`, `array`; `'default'`/`'standard'`/`'ngram'` are **rejected** (Run 46).
 4. **`JSON` type** (now stable) for dynamic OTLP attributes.
 5. **Metrics: `AggregatingMergeTree` + materialized view** for rollups — there is
    **no PromQL**, so a PromQL→SQL translation layer is required in front (the cost).
@@ -57,7 +60,7 @@ CREATE TABLE logs (
   message String CODEC(ZSTD),
   trace_id String, span_id String,
   attributes JSON,
-  INDEX idx_msg   message  TYPE text(tokenizer = 'default') GRANULARITY 1,
+  INDEX idx_msg   message  TYPE text(tokenizer = 'splitByNonAlpha') GRANULARITY 1,
   INDEX idx_trace trace_id TYPE bloom_filter GRANULARITY 1
 ) ENGINE = MergeTree
 ORDER BY (service, ts)
@@ -74,7 +77,7 @@ CREATE TABLE error_events (
   panic_location String, handled UInt8,
   attributes JSON,
   INDEX idx_trace trace_id TYPE bloom_filter GRANULARITY 1,
-  INDEX idx_msg   message  TYPE text(tokenizer = 'default') GRANULARITY 1
+  INDEX idx_msg   message  TYPE text(tokenizer = 'splitByNonAlpha') GRANULARITY 1
 ) ENGINE = MergeTree
 ORDER BY (project, fingerprint, ts)
 TTL toDateTime(ts) + INTERVAL 90 DAY;
@@ -236,7 +239,14 @@ GreptimeDB on *fit*; this note proves ClickHouse is a fully buildable fallback.
 
 ## Build-validation status
 
-Runs 1–5 exercised the `spans`/`logs`/`error_events`/metrics ClickHouse schemas
-and Q1/Q4 live, with cross-engine parity. **Not yet built:** the `text` index, the
-`AggregatingMergeTree` rollup MV, and the S3-disk tiering — routed to
-`benchmarking-the-differences.md`.
+**Whole schema built live on ClickHouse `v26.5.1.882-stable` (Run 46),** parallel to the
+GreptimeDB build (Run 45). All 7 tables + the rollup MV created clean in a scratch database;
+`JSON` builds bare (stable, no experimental flag), `CODEC(DoubleDelta/Gorilla, ZSTD)`,
+`LowCardinality`, `bloom_filter` skip indexes, `ttl_only_drop_parts`, the
+`AggregatingMergeTree` + `avgState/maxState` MV, and JSON-path access (`attributes.user`) all
+accepted. **One real defect caught:** the `text` index `tokenizer = 'default'` is invalid →
+`Unknown tokenizer: 'default'`; fixed to `splitByNonAlpha` (valid set: `splitByNonAlpha`,
+`splitByString`, `array`). This is a much smaller drift than the GreptimeDB side (Run 45: 7
+reserved-keyword columns + the metric-table PK) — ClickHouse's DDL was nearly correct as
+written. S3-disk tiering (the `<storage_configuration>` + `TTL … TO VOLUME`) still needs a
+MinIO-backed run — routed to `benchmarking-the-differences.md`.

@@ -1426,6 +1426,30 @@ only). **Owed next: the same live-build pass on `clickhouse-implementation.md`**
 `Gorilla`/`DoubleDelta`/`T64`, `LowCardinality`, the `text`/`tokenbf` skip indexes, MV/AggMT
 — confirm each parses on `26.5.1.882`).
 
+### Run 46 — Build the ClickHouse implementation DDL live (parallel to Run 45)
+
+Companion to Run 45: executed the full `clickhouse-implementation.md` schema on live
+ClickHouse `v26.5.1.882-stable` in a scratch database (`ddlcheck`, dropped after). The note
+flagged the `text` index / `AggregatingMergeTree` MV / S3 tiering as "not yet built."
+
+- **All 7 tables + the rollup MV build clean** after one fix. `JSON` type builds **bare**
+  (stable in 26.5 — no `allow_experimental_json_type`), `CODEC(DoubleDelta, ZSTD)` /
+  `CODEC(Gorilla, ZSTD)`, `LowCardinality`, `bloom_filter` skip indexes,
+  `SETTINGS ttl_only_drop_parts = 1`, `AggregatingMergeTree` + `avgState/maxState`
+  materialized view, and JSON-path access (`WHERE attributes.user = ?`) all accepted.
+- **One real defect:** `INDEX … TYPE text(tokenizer = 'default')` → `Code: 36 … Unknown
+  tokenizer: 'default'`. Probed the valid set on 26.5.1: **`splitByNonAlpha`,
+  `splitByString`, `array`** are valid; `'default'`, `'standard'`, `'ngram'`, `'split'`,
+  `'no_op'` are **rejected**. Fixed the note to `splitByNonAlpha` (word-token search, the
+  intended semantics).
+
+**Consequence (design correctness, not speed):** ClickHouse's buildable design is now
+**verified buildable**, with far less drift than the GreptimeDB side — one tokenizer-name fix
+vs Run 45's 7 reserved-keyword columns + invalid metric-table PK. Both implementation designs
+are now live-built; the remaining ClickHouse gap is the **S3-disk storage policy + `TTL … TO
+VOLUME` tiering**, which needs the MinIO compose (owed to `benchmarking-the-differences.md`).
+No verdict impact. Bench data untouched (scratch db only).
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
