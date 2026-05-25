@@ -30,7 +30,7 @@ The central rule:
 
 | Source | Current check | Why it matters |
 | --- | --- | --- |
-| Package registry snapshot ([crates.io](https://crates.io/crates/sentry), [npm browser](https://www.npmjs.com/package/@sentry/browser), [npm node](https://www.npmjs.com/package/@sentry/node), [npm React](https://www.npmjs.com/package/@sentry/react), [Go proxy](https://proxy.golang.org/github.com/getsentry/sentry-go/@latest), [PyPI](https://pypi.org/project/sentry-sdk/)) | Registry checks re-run on 2026-05-25 found Rust `sentry` `0.48.2`, Rust `sentry-types` `0.48.2`, JavaScript `@sentry/browser`, `@sentry/node`, and `@sentry/react` `10.53.1`, Go `github.com/getsentry/sentry-go` `v0.46.2`, and Python `sentry-sdk` `2.60.0`. Exact registry timestamps are recorded in the freshness pass below. | A compatibility claim must pin the exact SDK version and package source, because Sentry SDKs and item models move quickly. |
+| Package registry snapshot ([crates.io](https://crates.io/crates/sentry), [npm core](https://www.npmjs.com/package/@sentry/core), [npm browser](https://www.npmjs.com/package/@sentry/browser), [npm node](https://www.npmjs.com/package/@sentry/node), [npm React](https://www.npmjs.com/package/@sentry/react), [Go proxy](https://proxy.golang.org/github.com/getsentry/sentry-go/@latest), [PyPI](https://pypi.org/project/sentry-sdk/)) | Registry checks re-run on 2026-05-25 found Rust `sentry` `0.48.2`, Rust `sentry-types` `0.48.2`, JavaScript `@sentry/core`, `@sentry/browser`, `@sentry/node`, and `@sentry/react` `10.53.1`, Go `github.com/getsentry/sentry-go` `v0.46.2`, and Python `sentry-sdk` `2.60.0`. Exact registry timestamps are recorded in the freshness pass below. | A compatibility claim must pin the exact SDK version and package source, because Sentry SDKs and item models move quickly. `@sentry/core` is included explicitly because the unsupported-item fixture set depends on its broader envelope item definitions. |
 | [sentry Rust crate 0.48.2](https://docs.rs/sentry/latest/sentry/) | Docs.rs currently resolves `sentry` to `0.48.2`; the crate integrates Rust panics, contexts, backtraces, `anyhow`, `tracing`, OpenTelemetry, transports, and protocol/types. | This is the first SDK fixture target because Parallax is Rust-first. |
 | [Sentry envelope struct](https://docs.rs/sentry/latest/sentry/struct.Envelope.html) | Sentry describes the envelope as the ingestion data format; it can contain related items such as events and attachments, plus independent items such as sessions. | The compatibility surface is not only JSON events; item policy is part of the claim. |
 | [sentry-types envelope parser](https://docs.rs/sentry-types/latest/src/sentry_types/protocol/envelope.rs.html) | Current envelope headers include `event_id`, `dsn`, `sdk`, `sent_at`, and trace/dynamic-sampling context; item headers include `type`, optional `length`, `content_type`, filename, and attachment type. Current item variants include `event`, `session`, `sessions`, `transaction`, `attachment`, `check_in`, `log`, and `trace_metric`, and the Rust enum is non-exhaustive. | Parser fixtures must cover length/no-length payloads, current container items, and unsupported/future items without poisoning supported event ingestion. |
@@ -49,8 +49,10 @@ The central rule:
 Pass target: falsify whether the SDK matrix had gone stale before Parallax has
 real fixture results.
 
-Result: **no package-version drift found** from the current ledger snapshot, and
-the Sentry Rust item model remains non-exhaustive with `log` and `trace_metric`
+Result: **no package-version drift found** from the current ledger snapshot. A
+late ref-integrity check also made `@sentry/core` an explicit registry source
+because the unsupported-item policy depends on its item-family definitions. The
+Sentry Rust item model remains non-exhaustive with `log` and `trace_metric`
 container items. The same-day item-policy recheck expands the unsupported-item
 fixture set beyond Rust because JavaScript, Go, and Python SDK sources expose
 additional item families. This does **not** advance Parallax beyond
@@ -63,6 +65,7 @@ structured-output, or unsupported-item behavior.
 | --- | --- | --- | --- | --- |
 | Rust `sentry` | [crates.io API](https://crates.io/api/v1/crates/sentry) | `0.48.2` | crate updated `2026-05-11T09:10:36.368466Z` | No SDK-version drift from the existing Rust fixture target. |
 | Rust `sentry-types` | [crates.io API](https://crates.io/api/v1/crates/sentry-types) and [docs.rs envelope source](https://docs.rs/sentry-types/latest/src/sentry_types/protocol/envelope.rs.html) | `0.48.2`; envelope/item enums are non-exhaustive; modeled items still include `event`, `session`, `sessions`, `transaction`, `attachment`, `check_in`, `log`, and `trace_metric`. | crate updated `2026-05-11T09:08:58.215870Z` | Rust fixtures still need `log`, `trace_metric`, and unknown future-item outcomes, but Rust's modeled set is not enough for multi-SDK item safety. |
+| JavaScript `@sentry/core` | [npm registry](https://registry.npmjs.org/@sentry%2fcore) and [npm package page](https://www.npmjs.com/package/@sentry/core) | `10.53.1` | package modified `2026-05-12T17:07:30.496Z`; version published `2026-05-12T17:07:30.371Z` | This is the JS item-family source used by the unsupported-item policy; it should be pinned separately from browser/node/react smoke packages. |
 | JavaScript `@sentry/browser` | [npm registry](https://registry.npmjs.org/@sentry%2fbrowser) | `10.53.1` | package modified `2026-05-12T17:07:50.879Z`; version published `2026-05-12T17:07:50.769Z` | Browser smoke remains a later L4 target, not v0 proof. |
 | JavaScript `@sentry/node` | [npm registry](https://registry.npmjs.org/@sentry%2fnode) | `10.53.1` | package modified `2026-05-12T17:07:53.853Z`; version published `2026-05-12T17:07:53.694Z` | Node remains optional smoke only if migration demand needs it. |
 | JavaScript `@sentry/react` | [npm registry](https://registry.npmjs.org/@sentry%2freact) | `10.53.1` | package modified `2026-05-12T17:08:04.434Z`; version published `2026-05-12T17:08:04.309Z` | React belongs in the source snapshot because frontend capture is a roadmap branch, but it does not change the Rust-first v0 target. |
@@ -164,6 +167,7 @@ Each `manifest.json` should include:
     "sentry_rust": "0.48.2",
     "sentry_tracing": "0.48.2",
     "sentry_types": "0.48.2",
+    "@sentry/core": "10.53.1",
     "@sentry/browser": "10.53.1",
     "@sentry/node": "10.53.1",
     "@sentry/react": "10.53.1",
