@@ -4044,6 +4044,52 @@ CTE (works both); table-self-join `WITH RECURSIVE tree AS (SELECT … FROM spans
 span_id='<root>' UNION ALL SELECT s.… FROM spans_idx s JOIN tree t ON s.parent_span_id=t.span_id)`
 → GT `Schema error: project index out of bounds`. Note GT root `parent_span_id` is NULL.
 
+### Run 98 — 2026-05-25 — Full-text log search re-verified end-to-end: selective ~3× (competitive), broad-term ~12×, the `matches()`-on-bloom artifact still 155 ms (Runs 48–49 reproduce, no drift)
+
+**Pass target.** Rotate to the **logs** slice and re-verify the most-corrected load-bearing claim:
+the ~18× ClickHouse full-text advantage was a backend/function artifact (Runs 48–49), and with the
+correct pairing GreptimeDB selective search is competitive. Confirm all three legs still reproduce
+on the current containers, and re-confirm the native-logs adopt decision.
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned live — latest stable, no
+bump). `logs_b1` = **5,000,000 rows** both (parity re-confirmed). Index family **matched**: CH
+`INDEX … TYPE text(tokenizer='splitByNonAlpha')`; GT `FULLTEXT INDEX WITH(backend='bloom',
+analyzer='English', false_positive_rate='0.01')`. Selective token = `6628797f` (a `conn=` id
+matching **1 row**); broad token = `timeout` (**698,955 rows**). Method: CH `--time`, GT
+`execution_time_ms`, warm.
+
+| Leg | Query | ClickHouse | GreptimeDB | Ratio |
+| --- | --- | --- | --- | --- |
+| **Selective, correct pairing** | CH `hasToken`; GT **`matches_term`** (bloom) | `3 3 3 3 4 3 3 4 3 4` → **~3 ms** | `25 12 10 8 8 9 10 16 10 12` → **~10 ms** | **~3×** (both sub-perceptible) |
+| **Selective, WRONG pairing** | GT **`matches()`** on a bloom index | — | `156 160 155 164 149` → **~155 ms (full scan)** | the artifact |
+| **Broad term (699k matches)** | CH `hasToken`; GT `matches_term` | `8 7 7 6 7` → **~7 ms** | `91 96 89 82 85` → **~88 ms** | **~12×** (scan engine) |
+
+**Verdict — Runs 48–49 reproduce exactly; no drift. The full-text record holds:**
+
+- **Selective exact-term search is competitive (~3×, both ≪ perceptible):** CH ~3 ms / GT ~10 ms
+  with the **correct** GT pairing (`matches_term` on a bloom index → prunes to the 1 matching row).
+  This is the everyday incident-grep case (find a request-id/conn-id) — **not** an 18× gap.
+- **The ~18× was 100 % a pairing artifact, re-proven:** `matches()` (tantivy query-syntax fn) on a
+  `backend='bloom'` index **does not push to the index → 5M full scan ~155 ms**, flat regardless of
+  selectivity. Same root cause as Run 48. So the historical "18×" is a misconfiguration, not an
+  engine/index-maturity gap.
+- **The real residual is broad-term analytics (~12×):** a term matching 699k rows is scan-bound
+  (CH ~7 ms / GT ~88 ms) — this is the genuine ClickHouse lead, and it routes to the scan-engine
+  gap (parity-roadmap #2), not full-text. Bites only if Parallax runs frequent *broad* log scans
+  (not selective grep).
+- **Adopt-native (logs):** unchanged. The native logs path (greptime identity pipeline) creates an
+  all-STRING append table with **no message index**; `logs_b1`'s shape here (append + `FULLTEXT
+  WITH(backend='bloom')` on `message` + `service`/`level` PK) **is** the ADOPT-then-add-index
+  blueprint. Decision stands: **ADOPT native logs structure, ADD a `message` fulltext index** —
+  bloom backend + `matches_term` for exact-term grep (the cheap, ~10 ms path), or tantivy backend +
+  `matches` for query-syntax/phrase (Run 49 ~6 ms). Carry the pairing rule into the blueprint so a
+  bloom index is never queried through `matches()`.
+
+**Reproduce.** On `logs_b1` (5M): pick a selective token via `extract(message,'conn=([0-9a-f]+)')`;
+CH `SELECT count() WHERE hasToken(message,'<tok>')` vs GT `… WHERE matches_term(message,'<tok>')`
+(expect ~3 / ~10 ms). GT `matches(message,'<tok>')` on the bloom index → ~155 ms full scan (the
+artifact). Broad: `'timeout'` → CH ~7 ms / GT ~88 ms (~12×). Warm ×5–10.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

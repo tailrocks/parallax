@@ -8,7 +8,10 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 97 local runs + B1–B15 cases. Recent: **Run 97 re-verified the
+cold/first-run measurement showed). 25 mechanism notes + 98 local runs + B1–B15 cases. Recent: **Run 98 re-verified
+full-text log search end-to-end** (selective exact-term ~3× competitive: CH ~3 ms / GT ~10 ms via bloom+`matches_term`;
+the ~18× `matches()`-on-bloom artifact still full-scans ~155 ms; broad-term ~12× scan-bound — Runs 48–49 reproduce, no
+drift; adopt-native-logs = ADOPT structure + ADD message fulltext, carry the pairing rule). **Run 97 re-verified the
 trace-waterfall hot path** (flat span fetch CH ~3 ms / GT ~18–20 ms warm, both ≪ 300 ms; in-DB table-self-join recursive
 CTE still errors on GT v1.0.2 while pure recursive works — Run 68 reproduces, no drift; app-side tree build is the
 dominant pattern so adopt-native-traces stands). **Run 96 re-verified the metric-agg warm gap** (~3× flat `avg by service`, ~2× the realistic bucketed line-chart panel — the gap is

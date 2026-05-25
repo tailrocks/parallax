@@ -279,6 +279,12 @@ broad-term analytics (scan engine).** Parallax guidance: tantivy backend for que
 bloom for exact-term grep — both fast. This is the strongest narrowing yet of the verdict's
 one large ClickHouse win.
 
+**Re-verified (Run 98, no drift) — all three legs reproduce on the current containers:** selective
+exact-term (1 match) bloom + `matches_term` = CH ~3 ms / GT ~10 ms (~3×, both sub-perceptible); the
+`matches()`-on-bloom artifact still full-scans ~155 ms (proving the ~18× was the pairing, not the
+engine); broad-term (699k matches) CH ~7 ms / GT ~88 ms (~12×, scan-bound = parity-roadmap #2). The
+finding is stable: selective grep competitive, broad-term scan the only real residual.
+
 ## Decision question 6 — which is the better long-term *investment*?
 
 DQ1–5 answer "which fits Parallax's workload today." This answers a different, sharper
