@@ -19,7 +19,8 @@ The central rule:
 
 > No "Parallax traces coding-agent sessions" claim without a dated tool/version
 > matrix, adapter coverage rows, normalized session snapshots, lossiness reports,
-> redaction results, overhead rows, and an audit-value comparison.
+> redaction results, source-field policy status, projection raw-ref denial,
+> overhead rows, and an audit-value comparison.
 
 This ledger is separate from the
 [agent access surface safety ledger](agent-access-surface-safety-ledger.md): that
@@ -30,9 +31,10 @@ and normalization of agent execution traces.
 
 | Source | Current check | Parallax implication |
 | --- | --- | --- |
+| Local tool version probe | `--version` checks in this workspace on 2026-05-25 returned Codex CLI `0.133.0`, Claude Code `2.1.150`, Amp `0.0.1779639467-g6d0650` released 2026-05-24, and OpenCode `1.15.10`. | Real runs must store the exact tool binary path, version output, and docs snapshot date; agent surfaces change too quickly for product-level claims without version evidence. |
 | [Codex hooks](https://developers.openai.com/codex/hooks) | Hooks expose structured JSON with `session_id`, `transcript_path`, `cwd`, `hook_event_name`, `model`, `turn_id`, and `permission_mode` for session, tool, prompt, permission, subagent, compaction, and stop events. The docs warn that transcript format is not a stable hook interface and that tool interception is incomplete for some shell and non-shell paths. | Codex capture can be structured, but transcripts must stay raw refs and hook gaps must be measured against wrapper, repo diff/hash, or other independent evidence. |
 | [Codex CLI](https://developers.openai.com/codex/cli) | Codex CLI is a local command-line agent surface and supports repo work, file edits, command execution, and automation workflows. | Codex is a first adapter target because it runs where Parallax can observe local repo, shell, and file evidence. |
-| [Claude Code monitoring](https://code.claude.com/docs/en/monitoring-usage) | Claude Code exports opt-in OpenTelemetry metrics, logs/events, and optional traces; prompt text, tool details, tool content, and raw API bodies are disabled by default and require explicit flags. It also documents identity, tool, MCP, cost/token, and audit events. | Claude Code is the strongest native OTel target, but content capture must remain opt-in and redacted. |
+| [Claude Code monitoring](https://code.claude.com/docs/en/monitoring-usage) | Claude Code exports opt-in OpenTelemetry metrics, logs/events, and optional beta traces; prompt text, tool details, tool content, and raw API bodies are disabled by default and require explicit flags. It does not pass generic `OTEL_*` exporter variables to subprocesses, but when tracing is active Bash/PowerShell inherit `TRACEPARENT`. | Claude Code is the strongest native OTel target, but content capture must remain opt-in/redacted and subprocess coverage must distinguish trace-context inheritance from full telemetry-exporter inheritance. |
 | [Amp manual](https://ampcode.com/manual) | Amp supports streaming JSON output in `--execute` mode for programmatic integration and real-time conversation monitoring; optional thinking blocks extend the schema. The same manual documents TypeScript plugins, project/system/global plugin locations, lifecycle events such as `session.start`, `agent.start`, `tool.call`, `tool.result`, and `agent.end`, and plugin activation for both interactive sessions and `amp --execute` runs. | Amp should be measured through both plugin-event fixtures and non-interactive stream fixtures. Thinking blocks are sensitive opt-in, not default capture. Plugin events are a stronger interactive capture surface than the prior wrapper/thread-ref assumption, but still need payload and version proof. |
 | [OpenCode CLI](https://opencode.ai/docs/cli/) | OpenCode supports `run --format json` raw JSON events, session continuation/forking, `session list --format json`, export JSON with `--sanitize`, headless `serve`, ACP over nd-JSON, stats, and permission/thinking flags. | OpenCode is a strong JSON/export/plugin/API/protocol adapter target; `--sanitize` is helpful but does not replace Parallax redaction, and `--thinking` / `--dangerously-skip-permissions` must be recorded as sensitive run configuration. |
 | [OpenCode plugins](https://opencode.ai/docs/plugins/) | Plugins expose documented event names including `command.executed`, `file.edited`, `permission.asked`, `permission.replied`, `session.*`, `shell.env`, `tool.execute.before`, and `tool.execute.after`. | OpenCode can provide deep structured events without terminal parsing, but support must be proven per enabled event class and must not be inferred from run JSON or export JSON alone. |
@@ -58,9 +60,10 @@ Use these levels in `claim-ledger.jsonl`:
 | `normalized_session_schema_pass` | A tested adapter set maps sessions, turns, actions, commands, edits, permissions, and outcomes into stable Parallax rows. | "Normalized agent-session schema passes for the tested adapter set." |
 | `lossiness_reported` | Every unmapped, redacted, source-not-exposed, raw-ref-only, or parse-failed event class is counted. | "Adapter lossiness is reported for the tested agents." |
 | `redaction_safe` | Agent-visible JSON and Markdown projections leak zero seeded canaries. | "Agent-session projections pass seeded redaction tests." |
+| `projection_safe` | Redaction report, source-field policy status, missing-evidence flags, and raw-ref dereference denial pass for JSON and Markdown. | "Agent-session projections are safe for the tested adapter set." |
 | `audit_value_positive` | Normalized Parallax sessions answer audit questions better than final-output-only and at least as usefully as raw transcript/export arms. | "Normalized sessions improve audit reconstruction in the tested task set." |
-| `multi_agent_trace_supported` | At least two agents, including one native OTel path and one non-OTel structured path, pass schema, lossiness, redaction, and audit-value gates. | "Parallax normalizes coding-agent session traces for the tested agent matrix." |
-| `claim_expired` | Agent docs/version/config, OTel semconv, adapter, schema, or redaction policy changed, or 90 days passed. | "Agent-session tracing result expired; rerun required." |
+| `multi_agent_trace_supported` | At least two agents, including one native OTel path and one non-OTel structured path, pass schema, lossiness, redaction, source-field/projection, and audit-value gates. | "Parallax normalizes coding-agent session traces for the tested agent matrix." |
+| `claim_expired` | Agent docs/version/config, OTel semconv, adapter, schema, redaction/source-field/projection policy, or 90-day timer changed. | "Agent-session tracing result expired; rerun required." |
 | `claim_failed` | A required gate fails for the advertised level. | No claim for the affected tool/version/path. |
 
 Initial Parallax level: `not_measured`.
@@ -80,6 +83,8 @@ docs/research/agent-session-tracing-runs/<run_id>/normalized-session-results.jso
 docs/research/agent-session-tracing-runs/<run_id>/coverage-results.jsonl
 docs/research/agent-session-tracing-runs/<run_id>/lossiness-results.jsonl
 docs/research/agent-session-tracing-runs/<run_id>/redaction-results.jsonl
+docs/research/agent-session-tracing-runs/<run_id>/source-field-policy-results.jsonl
+docs/research/agent-session-tracing-runs/<run_id>/projection-results.jsonl
 docs/research/agent-session-tracing-runs/<run_id>/overhead-results.jsonl
 docs/research/agent-session-tracing-runs/<run_id>/audit-value-results.jsonl
 docs/research/agent-session-tracing-runs/<run_id>/claim-ledger.jsonl
@@ -99,7 +104,15 @@ approves a redacted synthetic fixture.
   "parallax_adapter_commit": "<git-sha>",
   "normalized_schema_version": "agent-session-v0",
   "redaction_policy_version": "a6-default-deny-vN",
+  "source_field_policy_version": "phase0-source-field-policy-vN",
   "semconv_version": "1.41.0",
+  "raw_ref_policy": "transcripts_exports_prompts_tool_payloads_not_agent_visible_by_default",
+  "tool_version_probe": {
+    "codex": "codex --version",
+    "claude_code": "claude --version",
+    "amp": "amp --version",
+    "opencode": "opencode --version"
+  },
   "fixture_repo_commit": "<git-sha>",
   "task_count": 0,
   "agents": ["codex", "claude_code", "amp", "opencode"],
@@ -116,13 +129,19 @@ approves a redacted synthetic fixture.
 {
   "tool": "codex|claude_code|amp|opencode",
   "tool_version": "unknown",
+  "tool_binary_path": "/path/to/tool",
+  "tool_version_probe_output": "raw version output",
+  "docs_checked_at": "YYYY-MM-DD",
   "adapter_name": "parallax-codex-hooks",
   "adapter_version": "0.1.0",
   "capture_surface": "hooks|otel|run_json|stream_json|json_export|plugin|server_api|acp|wrapper|raw_ref",
   "config": {
     "content_capture": "structural|redacted_excerpt|raw_ref",
     "thinking_capture": "disabled|raw_ref|redacted_excerpt",
-    "subprocess_trace_propagation": "none|traceparent|wrapper",
+    "subprocess_trace_propagation": "none|traceparent_env|otel_env|wrapper",
+    "source_field_policy_required": true,
+    "content_bearing_flags_enabled": [],
+    "secret_bearing_config_refs": [],
     "expected_event_classes": ["SessionStart", "PreToolUse", "PostToolUse"],
     "coverage_denominator_source": "native_events|wrapper_observation|repo_diff|manual_fixture"
   },
@@ -168,7 +187,9 @@ approves a redacted synthetic fixture.
   "permission_decision_count": 1,
   "outcome_linked": true,
   "content_capture_level": "structural",
-  "raw_ref_count": 0
+  "raw_ref_count": 0,
+  "redaction_report_ref": "redaction-results.jsonl#task_bugfix_001",
+  "source_field_policy_ref": "source-field-policy-results.jsonl#task_bugfix_001"
 }
 ```
 
@@ -219,6 +240,45 @@ approves a redacted synthetic fixture.
   "markdown_projection_leaks": 0,
   "raw_ref_leaks": 0,
   "redaction_policy_version": "a6-default-deny-vN",
+  "redaction_report_hash": "sha256:<hex>",
+  "agent_visible_pass": true
+}
+```
+
+### Source Field Policy Result Row
+
+```json
+{
+  "fixture_task_id": "task_canary_001",
+  "tool": "codex",
+  "source_kind": "synthetic_fixture|evaluation_fixture|direct_local_session",
+  "source_field_policy_status": "pass|fail|not_applicable",
+  "source_field_policy_version": "phase0-source-field-policy-vN",
+  "source_field_policy_hash": "sha256:<hex>",
+  "denied_zone_count": 0,
+  "violation_count": 0,
+  "not_applicable_reason": "direct local session without mixed eval/corpus source rows"
+}
+```
+
+### Projection Result Row
+
+```json
+{
+  "fixture_task_id": "task_canary_001",
+  "tool": "codex",
+  "projection_format": "json|markdown",
+  "redaction_report_present": true,
+  "source_field_policy_status": "pass|fail|not_applicable",
+  "missing_evidence_present": true,
+  "raw_transcript_ref_count": 1,
+  "raw_export_ref_count": 0,
+  "raw_tool_payload_ref_count": 0,
+  "raw_ref_dereferenced": false,
+  "thinking_content_visible": false,
+  "prompt_body_visible": false,
+  "tool_payload_visible": false,
+  "seeded_canary_leaks": 0,
   "agent_visible_pass": true
 }
 ```
@@ -258,10 +318,16 @@ approves a redacted synthetic fixture.
 
 - Count claims per agent product, version, adapter, capture surface, and config.
   Do not generalize from one tool to all agents.
+- Claims above `fixture_harness_ready` require a resolved tool version and
+  binary/package source. `tool_version: unknown` can only support exploratory
+  design notes.
 - A transcript/export can support audit, but cannot be the only source for a
   structured tracing claim if the tool documents it as unstable.
 - Claude Code content-bearing telemetry gates must remain disabled for default
   runs unless the redaction suite explicitly tests them.
+- Claude Code subprocess propagation must be counted precisely: active tracing
+  can inject `TRACEPARENT` into Bash/PowerShell, but generic `OTEL_*` exporter
+  variables are not inherited by spawned subprocesses by default.
 - Codex `transcript_path` is a raw ref. Hook events are the claimable structured
   source, but hook support proves structured hook normalization rather than
   complete shell/file side-effect coverage unless wrapper, repo-diff, or
@@ -287,7 +353,11 @@ approves a redacted synthetic fixture.
 - `multi_agent_trace_supported` requires at least one native OTel path and at
   least one non-OTel structured path.
 - No claim may depend on hidden chain-of-thought or private model reasoning.
-- Agent-visible JSON and Markdown must leak zero seeded canaries.
+- Agent-visible JSON and Markdown must leak zero seeded canaries and must not
+  dereference raw transcript/export/tool payload refs by default.
+- Synthetic or evaluation fixture runs require `source_field_policy_status:
+  pass` before redaction or projection claims can pass. Direct local sessions may
+  use `not_applicable` only when no mixed eval/corpus source rows are present.
 - If a tool changes event schema or docs materially, mark only the affected
   adapter claim expired.
 
@@ -313,6 +383,8 @@ Current claim level: not_measured
 | Command/edit coverage | 0% | 100% where surfaced | Pending |
 | Lossiness report coverage | 0% | 100% | Pending |
 | Agent-visible canary leaks | 0 | 0 | Pending |
+| Source-field policy violations | 0 | 0 | Pending |
+| Raw refs dereferenced by projections | 0 | 0 | Pending |
 | Audit-value lift over final output only | 0 | Positive | Pending |
 
 ## Tool Matrix
@@ -349,7 +421,8 @@ Avoid:
 - "records every prompt/tool output by default";
 - "captures model reasoning";
 - "supports Codex/Claude/Amp/OpenCode" without a version/config matrix;
-- "safe transcript ingestion" before redaction rows pass.
+- "safe transcript ingestion" before redaction, source-field, and projection
+  rows pass.
 
 ## Refresh Triggers
 
@@ -359,7 +432,7 @@ Mark affected claims `claim_expired` when:
 - OpenTelemetry GenAI/MCP/CLI semantic conventions change materially;
 - Parallax normalized session schema changes;
 - adapter parser logic changes;
-- redaction policy changes;
+- redaction policy, source-field policy, or projection schema changes;
 - a source tool adds or removes hooks, OTel, streaming JSON, export, plugin, or
   permission events;
 - 90 days pass since the last run during active development.
@@ -380,7 +453,8 @@ Mark affected claims `claim_expired` when:
 - [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) controls
   whether agent-session evidence can become agent-visible.
 - [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)
-  defines the target `agent_session`, `agent_action`, and audit edges.
+  defines the target `agent_session`, `agent_action`, source-field policy
+  status, redaction report, and audit edges.
 - [Fixer outcome ledger](fixer-outcome-ledger.md) consumes linked agent-session
   rows when measuring fixer runs, PRs, checks, review, and recurrence outcomes.
 
@@ -389,5 +463,5 @@ Mark affected claims `claim_expired` when:
 Agent-session tracing should be measured like an adapter compatibility contract.
 The first credible claim is not "trace every agent." It is a dated matrix showing
 that at least two real tools emit enough structured events for Parallax to
-normalize sessions, report lossiness, preserve redaction, and improve audit
-reconstruction over final outputs alone.
+normalize sessions, report lossiness, preserve redaction/source-field/projection
+safety, and improve audit reconstruction over final outputs alone.
