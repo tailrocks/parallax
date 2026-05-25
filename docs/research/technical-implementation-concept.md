@@ -22,8 +22,7 @@ Build Parallax as:
 
 > A Rust-first, Sentry-compatible, OpenTelemetry-native error context system that
 > stores observability evidence in GreptimeDB, keeps product metadata in
-> Postgres/SQLite, and exposes bounded evidence bundles through an HTTP API and
-> MCP server.
+> Turso, and exposes bounded evidence bundles through an HTTP API and MCP server.
 
 The first product should beat self-hosted Sentry on operational simplicity. It
 should not start as a full observability dashboard or autonomous production SRE.
@@ -37,7 +36,7 @@ should not start as a full observability dashboard or autonomous production SRE.
 | Ingest gateway | Build a Rust `parallax-ingest` service. | Parallax needs auth, redaction, size limits, raw evidence retention, grouping hooks, and idempotency before storage. |
 | Message stream | No external broker in the tiny deployment. Use a local WAL/outbox. Add Apache Iggy for the durable profile. | The first version must stay simpler than Sentry. Iggy is the best Rust-native append-only stream once replay and processor isolation matter. |
 | Storage default | GreptimeDB for v0.1 observability storage. Keep a ClickHouse adapter as the benchmark fallback. | GreptimeDB is the closest architectural fit: Rust, observability-native, OTLP, Prometheus/PromQL, SQL, object-storage-oriented deployment. |
-| Metadata store | SQLite for local/dev and tiny single-node; Postgres for production. | Users, projects, DSNs, issue status, policies, and audit records are relational product state, not telemetry. |
+| Metadata store | Turso Database for local/dev and tiny single-node; keep Postgres only as a scale-out fallback until Turso production behavior is proven. | Users, projects, DSNs, issue status, policies, and audit records are relational product state, not telemetry. Turso keeps the embedded metadata path Rust-native and SQLite-compatible without choosing C SQLite. |
 | Processing | Rust workers, in-process for tiny mode and separate services for durable/scale-out mode. | Normalization, symbolication, grouping, correlation, and graph building need deterministic logic and strong testability. |
 | Causal layer | Typed evidence graph stored as tables first. | Materialize graph edges before adopting a graph database. Causality needs explicit evidence and confidence. |
 | Agent surface | HTTP context API plus MCP server, read-only first. | Agents need structured evidence, not dashboards. MCP makes Codex, Claude Code, Amp, OpenCode, and IDE agents first-class clients. |
@@ -50,6 +49,16 @@ Related research:
 - [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md)
 - [Messaging and ingestion layer](messaging-and-ingestion-layer.md)
 - [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
+
+Metadata-store source:
+
+- [Turso Database GitHub repository](https://github.com/tursodatabase/turso)
+
+Use the `tursodatabase/turso` engine for the embedded metadata slot, not the old
+C SQLite default. The repository currently describes Turso Database as a
+Rust-written, SQLite-compatible in-process SQL database and marks it beta, so
+Parallax should pair this choice with backups and a metadata-store benchmark
+before relying on it for large production installs.
 
 ## Why This Is The Right First System
 
@@ -146,7 +155,7 @@ Rust app / service
        - evidence graph builder
        - context API / MCP server
   -> GreptimeDB standalone
-  -> SQLite or Postgres metadata
+  -> Turso metadata
 ```
 
 Durable single-server:
@@ -163,7 +172,7 @@ Rust app / service
        - correlate
        - build evidence graph
   -> GreptimeDB standalone + object storage
-  -> Postgres metadata
+  -> Turso metadata
   -> parallax-api / MCP
 ```
 
@@ -178,7 +187,7 @@ apps / collectors / CI systems
   -> symbolication workers x N
   -> context-index workers x N
   -> GreptimeDB distributed or ClickHouse fallback cluster
-  -> Postgres metadata
+  -> Turso metadata or Postgres scale-out fallback
   -> object storage
   -> context API / MCP / UI
 ```
@@ -216,7 +225,7 @@ apps / collectors / CI systems
    - Error events, logs, spans, metric samples, and deploy markers go to
      GreptimeDB.
    - Users, projects, DSNs, issue status, redaction policy, and audit go to
-     SQLite/Postgres.
+     Turso.
 
 7. **Build evidence graph.**
    - Create nodes for error, span, log, metric window, release, deploy, code
@@ -346,7 +355,7 @@ Target: personal projects, startups, and small teams.
 ```text
 parallax-server
 greptimedb standalone
-sqlite metadata
+turso metadata
 local disk retention
 ```
 
@@ -368,7 +377,7 @@ Target: a team running production Rust services.
 parallax-ingest
 parallax-worker
 greptimedb standalone with object storage
-postgres metadata
+turso metadata
 optional Apache Iggy standalone
 ```
 
@@ -376,7 +385,7 @@ Properties:
 
 - raw replay and worker separation if Iggy is enabled;
 - object storage for retained telemetry;
-- Postgres for metadata and audit;
+- Turso for metadata and audit;
 - still small enough for one VM or a simple Compose deployment.
 
 ### Profile 3: Scale-Out
@@ -388,7 +397,7 @@ parallax-ingest x N
 iggy cluster or fallback stream
 worker pools x N
 greptimedb distributed or clickhouse fallback cluster
-postgres primary/replica
+turso metadata or postgres scale-out fallback
 object storage
 api/mcp nodes x N
 ```
@@ -462,7 +471,7 @@ parallax-server
   - local WAL/outbox
   - deterministic Rust-focused grouping
   - GreptimeDB writer
-  - SQLite metadata
+  - Turso metadata
   - issue context API
   - MCP read-only context tools
 ```

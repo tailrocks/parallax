@@ -30,7 +30,7 @@ Applications
   -> Apache Iggy durable stream
   -> Rust processors
   -> GreptimeDB for logs/traces/metrics/error events
-  -> Postgres or embedded metadata store for projects/issues/users
+  -> Turso metadata store for projects/issues/users
   -> simple UI + CLI + agent context API
 ```
 
@@ -374,8 +374,9 @@ The MVP schema should use GreptimeDB for high-volume, time-oriented data:
 - context windows;
 - deployment/release time markers.
 
-Use Postgres, SQLite, or another simpler metadata store for low-volume product
-state:
+Use Turso Database for low-volume product state by default. Keep Postgres as a
+scale-out fallback only if Turso production behavior or ecosystem maturity
+blocks a larger deployment:
 
 - users;
 - projects;
@@ -488,7 +489,7 @@ For personal projects and small teams:
 ```text
 parallax-server
 greptimedb standalone
-sqlite or postgres
+turso metadata
 local disk retention
 ```
 
@@ -531,7 +532,7 @@ later.
 1. Implement a Sentry envelope parser fixture, not a server.
 2. Normalize one Rust panic event and one anyhow/eyre-style error event.
 3. Compute deterministic grouping fingerprints.
-4. Store normalized events in a local file or SQLite fixture.
+4. Store normalized events in a local file or Turso fixture.
 5. Add a minimal HTTP endpoint compatible with Sentry SDK envelope submission.
 6. Add GreptimeDB writes for error events and nearby logs.
 7. Add OTLP logs/traces/metrics ingestion.

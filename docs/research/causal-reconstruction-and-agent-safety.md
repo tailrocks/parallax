@@ -506,7 +506,7 @@ Ingest gateway
 
 - Store raw telemetry and normalized observability records in GreptimeDB or
   ClickHouse, per the storage benchmark.
-- Store low-volume issue/project metadata in Postgres or SQLite.
+- Store low-volume issue/project metadata in Turso.
 - Store graph edges either as tables first or as materialized JSON bundles.
 - Avoid a graph database until query patterns prove it is necessary.
 

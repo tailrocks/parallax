@@ -386,7 +386,7 @@ parallax-server
   - local WAL/outbox
   - in-process normalizer/grouping/storage writer
 greptimedb standalone or clickhouse
-sqlite/postgres metadata
+turso metadata
 ```
 
 Goal: lower operational burden than self-hosted Sentry.
