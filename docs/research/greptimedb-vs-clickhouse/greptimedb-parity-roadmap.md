@@ -10,7 +10,9 @@ live-probed) + pass 81 (**added Improvement #7** — per-column codec parity; so
 user data columns default to `PLAIN`+ZSTD, floats miss the Gorilla-class encoding) + pass 82
 (#5 projections **source-confirmed absent**; **added the user-first ranking** + per-improvement
 user stories + explicit "does this make GreptimeDB the clear winner?" verdicts, per operator —
-the reason to add anything is solving a real Parallax user's problem). This is **the dedicated,
+the reason to add anything is solving a real Parallax user's problem) + pass 83 (user-story /
+clear-winner bullet now on **every** improvement #1–#7 — format complete; honest verdict:
+only #1 flips a real common user moment, #2–#5,#7 are footnotes for Parallax's usage). This is **the dedicated,
 standalone file** answering "what can GreptimeDB improve, why, and how" — the summary table
 scans, the detailed sections below carry the code-oriented specifics. Answers the operator
 question: GreptimeDB wins Parallax on *fit*
@@ -172,6 +174,11 @@ Parallax. Source read at GreptimeDB `v1.0.2` (`0ef5451`).
   arrow/DataFusion.
 - **Tier:** **B** (batch size is a trivial config change; JIT/SIMD ride upstream
   DataFusion). **Integration.**
+- **User story & clear-winner:** *a user opens a high-cardinality metric dashboard, or runs
+  an ad-hoc "top-20 services by error rate, last 24h".* **Flow pre-aggregation (Tier-A)
+  already makes the dashboard fast (Run 43), so this does NOT make GreptimeDB a clear winner
+  of the common flow** — only of *unplanned* heavy aggregation, which Parallax users rarely
+  run interactively. Footnote unless analytics-heavy usage emerges.
 - **Value here:** narrows the heavy-scan/aggregation gap; mostly matters for ad-hoc
   analytics, not the anchored hot path. The batch-size probe is the cheapest experiment in
   this whole roadmap — do it first to size the win.
@@ -197,6 +204,11 @@ Parallax. Source read at GreptimeDB `v1.0.2` (`0ef5451`).
   `ArrowPredicate` — so this is **wiring an existing primitive**, decode the predicate
   columns first and let arrow late-materialize the rest.
 - **Tier:** **B**. **Integration** (no new algorithm).
+- **User story & clear-winner:** *a user filters spans/logs by a selective predicate (e.g.
+  `status_code = 500`) over a wide window where each row is wide (big `message`/`attributes`).*
+  Saves decoding wide columns for rows the filter drops. **Not a clear-winner of a common
+  case** — the anchored bundle already prunes to tiny row sets; this only helps *non-anchored*
+  selective scans. Footnote (pairs with #1 — the tantivy hit-set becomes the `RowFilter`).
 - **Value here:** helps wide-row selective scans (log/trace filters that aren't fully
   anchored); modest for the anchored bundle (already tiny row sets). Pairs with Improvement
   1 (the tantivy hit-set becomes the `RowFilter`).
@@ -227,6 +239,11 @@ Parallax. Source read at GreptimeDB `v1.0.2` (`0ef5451`).
   This is the **largest change** here — a storage-format addition — but Parquet's variant
   work makes it an integration along an established spec, not a from-scratch type.
 - **Tier:** **B**. **Integration / format** (borders on design — flag if it grows).
+- **User story & clear-winner:** *a user groups errors by `http.status_code`, or filters by
+  an arbitrary, undeclared OTLP attribute (`attributes.http.route = '/checkout'`) across last
+  week.* Per-row jsonb parse hurts at volume. **Clear-winner only for unplanned
+  arbitrary-attribute analytics** — the Tier-A answer (promote hot attributes to real columns)
+  wins the planned/common case. Footnote unless attribute exploration is core to the product.
 - **Value here:** only matters if Parallax does heavy arbitrary-attribute filtering at
   volume; for declared hot attributes, promoting them to real columns in the schema (Tier-A
   today) captures most of the benefit without the format work.
@@ -291,6 +308,10 @@ Parallax. Source read at GreptimeDB `v1.0.2` (`0ef5451`).
   CODEC(...)`-style DDL option mapping to the same `Encoding`.
 - **Tier:** **B**. **Integration** — Parquet ships the encodings; the writer already does
   per-column config; this extends the policy to user columns.
+- **User story & clear-winner:** **no user story — invisible to users.** It surfaces only as
+  a smaller cloud storage bill on metric-float volume, never as a faster query or a capability
+  a Parallax user reaches for. **Does not make GreptimeDB a clear winner of any user-felt
+  case** — pure second-order cost footnote.
 - **Value here:** low/second-order. Compression is a near-wash and a 1.3–1.9× local-disk delta
   is not the cost driver (object-store request economics dominate — `compression-and-cost.md`).
   Worth it mainly for **metric float columns** if/when retained metric volume is large;
