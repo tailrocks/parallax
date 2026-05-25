@@ -41,6 +41,10 @@ scrubber:
   `allow_all_keys` is set, applies `blocked_values` to allowed keys, supports
   HMAC hash functions for low-entropy data, and can emit audit attributes
   ([OpenTelemetry redaction processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/redactionprocessor/README.md)).
+- OpenTelemetry common values can contain typed scalars, bytes, arrays, and
+  key/value lists; Parallax must inspect the typed value tree before string or
+  Markdown rendering
+  ([OpenTelemetry common `AnyValue`](https://opentelemetry.io/docs/specs/otel/common/#anyvalue)).
 - GitHub Actions masking requires registering each value before it appears in
   logs; CI logs must still be treated as hostile text
   ([GitHub Actions masking](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#masking-a-value-in-a-log)).
@@ -53,20 +57,21 @@ scrubber:
   should be excluded or protected; it also says data from other trust zones must
   be treated as untrusted
   ([OWASP Logging Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html)).
-- Gitleaks can scan git history, directories/files, and stdin with configurable
-  rules and baselines, making it a good fixture-output comparator
-  ([Gitleaks](https://github.com/gitleaks/gitleaks)).
-- detect-secrets supports baselines, plugin configuration, staged-file hooks,
-  and audit workflows, making it useful for "new secret" regression checks
-  ([Yelp detect-secrets](https://github.com/Yelp/detect-secrets)).
-- TruffleHog can return verified credential findings across repositories and
-  other stores, but verification can create network/privacy side effects and
-  should stay out of the default runtime path
-  ([TruffleHog](https://github.com/trufflesecurity/trufflehog)).
+- Gitleaks `v8.30.1` is the latest release checked and can scan git history,
+  directories/files, and stdin with configurable rules and baselines, making it a
+  good fixture-output comparator
+  ([Gitleaks v8.30.1](https://github.com/gitleaks/gitleaks/releases/tag/v8.30.1)).
+- detect-secrets `v1.5.0` supports baselines, plugin configuration, staged-file
+  hooks, and audit workflows, making it useful for "new secret" regression checks
+  ([Yelp detect-secrets v1.5.0](https://github.com/Yelp/detect-secrets/releases/tag/v1.5.0)).
+- TruffleHog `v3.95.3` can return verified credential findings across
+  repositories and other stores, but verification can create network/privacy
+  side effects and should stay out of the default runtime path
+  ([TruffleHog v3.95.3](https://github.com/trufflesecurity/trufflehog/releases/tag/v3.95.3)).
 - Presidio explicitly warns that automated PII detection cannot guarantee that
   all sensitive information is found, so PII scanners are comparators and
   optional offline processors, not the only safety control
-  ([Microsoft Presidio](https://github.com/microsoft/presidio)).
+  ([Microsoft Presidio 2.2.362](https://github.com/microsoft/presidio/releases/tag/2.2.362)).
 
 ## Artifact Set
 
@@ -106,14 +111,25 @@ Each run gets exactly one manifest:
     "docs/research/bundle-value-eval/tasks/<task_id>/source-field-policy.json"
   ],
   "bundle_schema_version": "evidence-bundle-v0",
-  "surfaces": ["sentry_event", "otlp_log", "ci_log", "cli_invocation", "agent_session"],
+  "surfaces": [
+    "sentry_event",
+    "otlp_log",
+    "otlp_anyvalue",
+    "ci_log",
+    "cli_invocation",
+    "agent_session",
+    "frontend_metadata",
+    "baggage",
+    "deploy_provider_payload",
+    "database_evidence"
+  ],
   "projections": ["bundle_json", "bundle_markdown", "cli_output", "http_api", "mcp_tool_result"],
   "runtime_detector_version": "parallax-redact-rust-v0",
   "external_scanners": {
-    "gitleaks": "x.y.z",
-    "trufflehog": "x.y.z",
-    "detect_secrets": "x.y.z",
-    "presidio": "x.y.z",
+    "gitleaks": "8.30.1",
+    "trufflehog": "3.95.3",
+    "detect_secrets": "1.5.0",
+    "presidio": "2.2.362",
     "github_pattern_snapshot": "2026-05-25"
   },
   "hmac_key_policy": "ephemeral-test-key",
@@ -146,8 +162,11 @@ Every seeded fixture gets one row in `surface-fixture-ledger.jsonl`:
   "fixture_id": "cli_stdout_database_url_001",
   "surface": "cli_stdout",
   "source_shape": "bounded_stderr_excerpt",
+  "structured_path": "stdout.excerpt|otlp.body.map.key|provider_payload.deployment_status.log_url",
   "source_field_zone": "agent_visible_seed",
   "agent_visible_expected": true,
+  "raw_ref_policy": "metadata_only|ref_only|deny_dereference",
+  "projection_targets": ["bundle_json", "bundle_markdown", "cli_output", "http_api", "mcp_tool_result"],
   "canary_classes": ["postgres_connection_string", "password", "repo_path_user_fragment"],
   "encoding_variants": ["plain", "shell_quoted", "json_escaped"],
   "expected_actions": [
@@ -334,13 +353,14 @@ Cover each supported surface with at least these canary classes:
 
 | Surface | Required canaries |
 | --- | --- |
-| Sentry event | auth headers, cookies, query tokens, user email, stack local value, breadcrumb URL. |
-| OTLP span/log | custom token attribute, SQL text with password, URL query string, user/session ID, log body secret. |
+| Sentry event | auth headers, cookies, query tokens, user email, stack local value, breadcrumb URL, request/response headers, referrer URL. |
+| OTLP span/log | custom token attribute, SQL text with password, URL query string, user/session ID, log body secret, typed `AnyValue` map/list/bytes secrets, resource/scope attribute secret. |
 | CI log/artifact | env dump, transformed secret, private key block, database URL, test snapshot with PII. |
 | CLI invocation | argv secret, env secret, cwd user path, stdout/stderr token, child-process command line. |
 | Agent session | prompt secret, tool input secret, shell output secret, MCP response secret, generated Markdown leak. |
-| Frontend | form-like value, DOM text, console log, network body, replay/screenshot metadata. |
-| Database evidence | row value PII, credential-like config row, SQL error with connection string, export-like result. |
+| Frontend | form-like value, DOM text, full request URL/query, referrer URL, request/response header, console log, baggage value, network body, replay/screenshot metadata, source-map/source-content ref. |
+| Deploy/change provider payload | deployment status payload, deployment review comment, deploy log URL/body, release note, PR body, issue/comment text, environment URL, webhook delivery metadata. |
+| Database evidence | row value PII, credential-like config row, SQL query text, query parameter, plan text, SQL error with connection string, export-like result. |
 | A1/eval source fields | gold patch, test patch, fail/pass verifier IDs, generated hints, parser source, resolving commit URL, LLM metadata. |
 
 Each class should appear in multiple encodings: plain text, JSON escaped,
@@ -358,6 +378,7 @@ Use these claim levels in `redaction-red-team-results.md`:
 | `cli_ci_bundle_pass` | CLI and CI surfaces pass safety and usefulness fixtures. | "CLI/CI excerpts are agent-visible only after redaction tests pass." |
 | `frontend_metadata_only_pass` | Frontend metadata/error fixtures pass, but replay/raw DOM remains out of scope. | "Frontend metadata is redaction-tested; replay remains opt-in and gated." |
 | `agent_session_metadata_pass` | Agent/session structural metadata passes, but full prompts/tool outputs remain raw refs. | "Agent traces expose metadata and redacted excerpts, not full transcripts by default." |
+| `structured_provider_projection_pass` | OTLP typed values, deploy/change provider payloads, deployment review comments, database query text/parameters, and raw-ref projections pass for the tested subset. | "Structured telemetry and provider evidence are redaction-tested for the configured projections." |
 | `agent_visible_mixed_pass` | All claimed default surfaces pass zero-canary-leak, source-field-isolation, and usefulness gates. | "Agent-visible bundles are red-team tested for the configured surfaces." |
 | `fail_closed_only` | Leaks are avoided only by stripping/ref-only behavior that loses required usefulness. | "Safe metadata-only mode; no agent-visible rich excerpts." |
 | `claim_expired` | A previous pass is stale or invalidated by a rerun trigger. | "Previously tested; rerun required." |
@@ -375,6 +396,9 @@ Rerun A6 when any of these change:
 - runtime detector/parser version;
 - external scanner major version or GitHub pattern snapshot;
 - Sentry, OpenTelemetry, CLI, frontend, agent, or database capture surface;
+- OTLP typed-value handling, provider webhook/API payload shape, deployment
+  review/comment capture, browser URL/header/referrer/console capture, baggage
+  policy, or database query-text/parameter policy;
 - raw-ref policy or authorization model;
 - new MCP/HTTP/CLI output path;
 - new model-prompt wrapper that embeds bundle content;

@@ -34,11 +34,12 @@ low-latency, source-aware, evidence-bundle-safe runtime.
 | --- | --- | --- |
 | [OpenTelemetry Collector redaction processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/redactionprocessor/README.md) | `allowed_keys`, `blocked_values`, masking, HMAC hash functions, and audit attributes such as redacted/masked counts. The processor explicitly recommends HMAC for low-entropy values. | Good model for OTLP attribute policy and audit fields. Not enough for bundle safety because it only covers data that flowed through that Collector processor. |
 | [OpenTelemetry Collector processor catalog](https://opentelemetry.io/docs/collector/components/processor/) | Processors transform, filter, enrich, and sample telemetry in Collector pipelines; component stability varies by signal and processor. | Parallax should support Collector-side redaction, but still repeat policy in ingest and bundle building. |
+| [OpenTelemetry common `AnyValue`](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) | OTLP values can be scalars, byte arrays, arrays, and key/value lists. | Redaction must traverse typed values directly; string rendering of maps/lists is only a projection and cannot be the detector input. |
 | [GitHub secret scanning supported patterns](https://docs.github.com/en/code-security/reference/secret-security/supported-secret-scanning-patterns) | Current pattern taxonomy includes generic, AI-detected, and provider patterns, with 500+ provider entries and notes on precision, validity checks, partner alerts, and token-version churn. | Use as a maintained external reference for canary coverage and provider-pattern watchlists. Do not assume Parallax can copy GitHub's proprietary AI/validity checks. |
-| [Gitleaks](https://github.com/gitleaks/gitleaks) | Mature open-source scanner for git history, directories, files, and stdin; supports default/custom config, pre-commit, GitHub Action, JSON/CSV/JUnit/SARIF-style workflows, and baseline/ignore behavior. | Best open comparator for static and fixture scanning. Its Go binary can validate redaction fixtures in CI, but a blocking runtime shell-out would hurt tiny-tier latency and failure modes. |
-| [TruffleHog](https://github.com/trufflesecurity/trufflehog) | Open-source scanner focused on finding and verifying leaked credentials, with dynamic/verification posture and broad source scanning. | Useful red-team comparator for live/verified secrets and historical/source scans. Verification can create network and privacy side effects, so it must not run in the default runtime path. |
-| [Yelp detect-secrets](https://github.com/Yelp/detect-secrets) | Baseline-driven secret detection with configurable plugins, allowlists, entropy detectors, filters, and audit workflow. | Useful for repository baselines and human review workflows. Its Python/plugin model is not a fit for the Parallax hot path. |
-| [Microsoft Presidio](https://github.com/microsoft/presidio) | Open-source PII detection/anonymization framework with NER, regex, rule logic, image redaction, custom recognizers, and explicit warning that automated detection cannot guarantee all sensitive information is found. | Best reference for PII/anonymization and optional offline processing. Too heavy and probabilistic to be the only runtime guarantee for agent-visible bundles. |
+| [Gitleaks v8.30.1](https://github.com/gitleaks/gitleaks/releases/tag/v8.30.1) | Latest release checked 2026-05-25. Mature open-source scanner for git history, directories, files, and stdin; supports default/custom config, pre-commit, GitHub Action, JSON/CSV/JUnit/SARIF-style workflows, and baseline/ignore behavior. | Best open comparator for static and fixture scanning. Its Go binary can validate redaction fixtures in CI, but a blocking runtime shell-out would hurt tiny-tier latency and failure modes. |
+| [TruffleHog v3.95.3](https://github.com/trufflesecurity/trufflehog/releases/tag/v3.95.3) | Latest release checked 2026-05-25. Open-source scanner focused on finding and verifying leaked credentials, with dynamic/verification posture and broad source scanning. | Useful red-team comparator for live/verified secrets and historical/source scans. Verification can create network and privacy side effects, so it must not run in the default runtime path. |
+| [Yelp detect-secrets v1.5.0](https://github.com/Yelp/detect-secrets/releases/tag/v1.5.0) | Latest release checked 2026-05-25. Baseline-driven secret detection with configurable plugins, allowlists, entropy detectors, filters, and audit workflow. | Useful for repository baselines and human review workflows. Its Python/plugin model is not a fit for the Parallax hot path. |
+| [Microsoft Presidio 2.2.362](https://github.com/microsoft/presidio/releases/tag/2.2.362) | Latest release checked 2026-05-25. Open-source PII detection/anonymization framework with NER, regex, rule logic, image redaction, custom recognizers, and explicit warning that automated detection cannot guarantee all sensitive information is found. | Best reference for PII/anonymization and optional offline processing. Too heavy and probabilistic to be the only runtime guarantee for agent-visible bundles. |
 | [IssueGuard paper](https://arxiv.org/abs/2602.08072) | Current research on real-time secret leak prevention in issue reports; targets unstructured collaborative text and separates real secrets from false positives. | Confirms Parallax's risk surface: secrets leak in issue-like/debug text, not only git repos. Good design reference for pre-submit warning UX, not yet a runtime dependency. |
 
 ## What Existing Tools Are Good At
@@ -77,7 +78,7 @@ Implementation requirements:
 | Layer | Requirement |
 | --- | --- |
 | Policy compiler | Compile project policy into per-source allow/hash/strip/ref-only decisions. Unknown fields default to strip or hash. |
-| Structured parsers | Parse URLs, headers, JSON, YAML, TOML, env files, shell argv, Sentry envelope items, OTLP attributes, database URLs, JWT-like strings, and PEM/private-key blocks before regex matching. |
+| Structured parsers | Parse URLs, referrers, headers, cookies, baggage, JSON, YAML, TOML, env files, shell argv, Sentry envelope items, OTLP typed `AnyValue` values, provider webhook/API payloads, database URLs, SQL text/parameters, JWT-like strings, and PEM/private-key blocks before regex matching. |
 | Pattern engine | Use anchored provider patterns and high-confidence generic patterns for tokens, private keys, auth headers, connection strings, cookies, and bearer/basic credentials. |
 | Streaming scanner | Scan stdout/stderr/log excerpts incrementally with bounded buffers; never buffer unbounded output just to redact it. |
 | HMAC hashing | Use keyed HMAC for joinable low-entropy values such as IPs, user IDs, session IDs, emails, and path fragments. Do not use plain SHA/MD5 for values an attacker can enumerate. |
@@ -110,6 +111,10 @@ fixture-tested and source-mapped to a redaction action.
 | Emails/user IDs/session IDs/IPs | HMAC by default for joins; strip when not needed. |
 | File paths | Preserve repo-relative safe path; HMAC or truncate user/home/customer fragments. |
 | HTTP URLs/query strings | Normalize route/path; strip query values; HMAC selected stable identifiers. |
+| Referrer URLs and browser console logs | Strip or redact raw values; preserve event shape and route class only. |
+| OTLP typed maps/lists/bytes | Traverse as typed values; redact before string rendering or Markdown projection. |
+| Baggage/session context | Allowlist opaque keys; HMAC or strip values; raw user/account/session values fail the fixture. |
+| Provider payloads and deploy logs | Keep raw payload/log refs scoped; project only structural fields and redacted summaries. |
 | Prompt/tool output snippets | Ref-only by default; redacted excerpt only after final output scanner passes. |
 | Frontend DOM/replay/screenshot text | Metadata-only or opt-in masked replay until replay red-team passes. |
 
@@ -127,7 +132,10 @@ as synthetic fixtures. It should include:
   YAML/TOML/env formats;
 - adversarial context: tokens split across log lines, stack traces containing
   env dumps, command echoes, prompt transcripts, Markdown tables, code blocks,
-  Sentry request contexts, OTLP attributes, and database error messages;
+  Sentry request contexts, OTLP typed `AnyValue` maps/lists/bytes, browser
+  request URLs/referrers/headers/console logs, baggage values, provider webhook
+  payloads, deploy logs, deployment review comments, release notes, PR/issue
+  text, SQL text/parameters, and database error messages;
 - safe near-misses and false-positive controls so useful evidence is not erased.
 
 Every fixture should declare expected findings:
@@ -203,6 +211,9 @@ a different surface.
   rows for those fixtures.
 - [Production database evidence access gate](production-database-evidence-access.md)
   supplies database-output and SQL-error fixtures.
+- [Deploy/change context ledger](deploy-change-context-ledger.md) supplies
+  provider payload, deployment review, release note, PR/issue text, and deploy
+  log fixtures.
 - [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) must use this
   toolchain before exposing any generated bundle or raw dump to an agent.
 
