@@ -58,6 +58,23 @@ JSONBench cold-run claim adds a genuine, decision-relevant counterpoint that fav
 GreptimeDB in **Parallax's real (cold object-store re-read) regime** and should be
 reproduced before finalizing.
 
+## Version freshness + index-maturity context (pass 25 re-check)
+
+- **Pins re-verified 2026-05-25 (pass 25): still current.** GreptimeDB latest stable
+  = `v1.0.2` (`v1.1.0` exists only as nightly, not GA); ClickHouse latest stable =
+  `v26.5.1.882-stable`. No bump needed.
+- **ClickHouse `text` (full-text inverted) index GA'd in 26.2 (March 2026).** So the
+  B1 ~18× log-search result was measured on a **production-GA**, heavily-optimized
+  text index — **not** an experimental/immature feature that might be slow by
+  accident. ClickHouse's own claim is *"7–10× faster cold full-text, more for hot"*,
+  which **corroborates** my measured ~18× warm (B1) directionally. → B1 is
+  **solidified**: the log-search gap is a real, current, GA-grade structural
+  advantage, unlikely to narrow soon.
+- **GreptimeDB `FULLTEXT` index** is the younger side of that gap (Puffin + DataFusion
+  `matches()`); the 18× reflects a mature-vs-younger index implementation difference,
+  not a configuration error (both were correctly indexed in Run 12). Re-check on each
+  GreptimeDB release for fulltext perf work that could narrow it.
+
 ## Sources
 
 - [GreptimeDB as a ClickHouse alternative for time-series/observability (Greptime, 2026-04)](https://greptime.com/tech-content/2026-04-17-clickhouse-alternative-greptimedb)
@@ -67,3 +84,5 @@ reproduced before finalizing.
 - [ClickBench repo (ClickHouse)](https://github.com/ClickHouse/ClickBench)
 - [What really matters for performance: a year of benchmarks (ClickHouse)](https://clickhouse.com/blog/what-really-matters-for-performance-lessons-from-a-year-of-benchmarks)
 - [TimescaleDB vs ClickHouse vs MongoDB for observability (dev.to, independent)](https://dev.to/aws-builders/i-benchmarked-timescaledb-vs-clickhouse-vs-mongodb-for-observability-data-the-results-surprised-me-3d7d)
+- [Announcing GA of ClickHouse full-text search (text index GA in 26.2)](https://clickhouse.com/blog/full-text-search-ga-release)
+- [Full-text search with text indexes — ClickHouse docs](https://clickhouse.com/docs/engines/table-engines/mergetree-family/textindexes)

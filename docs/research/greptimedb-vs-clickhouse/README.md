@@ -44,7 +44,9 @@ number the internals cannot explain is a flag that one of them is wrong.
 
 ## Version pins (re-check and bump every pass)
 
-As of 2026-05-25:
+As of 2026-05-25 (re-verified through pass 25 — pins still current; GreptimeDB
+`v1.1.0` exists only as nightly, not GA; ClickHouse `v26.5.1.882-stable` still
+latest stable):
 
 | System | Pinned version | Source commit | Notes |
 | --- | --- | --- | --- |
