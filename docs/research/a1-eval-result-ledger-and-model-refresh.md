@@ -98,6 +98,9 @@ Internal sources:
   assigns source roles, excludes trajectory/result datasets from task-source
   use, and requires full selected-row hashes because `first-rows` previews can
   be truncated.
+- [A1 Hugging Face row hash procedure](a1-huggingface-row-hash-procedure.md)
+  defines how to fetch selected rows from pinned revisions and hash full,
+  source-policy, and agent-visible row projections.
 - [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) defines the
   first run matrix and scoring.
 - [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md)
@@ -213,7 +216,7 @@ as durable prose; exact model IDs live here because they change over time.
       "features_hash": "sha256:<hex>",
       "datasets_server_size_partial": false,
       "first_rows_truncated_observed": true,
-      "selected_row_fetch_method": "pinned_revision_parquet_or_datasets_library",
+      "selected_row_fetch_method": "hf_revision_load_dataset",
       "full_selected_row_hash": "sha256:<hex>",
       "agent_visible_row_hash": "sha256:<hex>",
       "source_field_policy_hash": "sha256:<hex>"

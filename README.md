@@ -126,6 +126,7 @@ Code `/loop` runbook.
 - [Bundle-value seed corpus](docs/research/bundle-value-seed-corpus.md)
 - [A1 task source freeze check](docs/research/a1-task-source-freeze-check.md)
 - [A1 source drift and leakage recheck](docs/research/a1-source-drift-and-leakage-recheck.md)
+- [A1 Hugging Face row hash procedure](docs/research/a1-huggingface-row-hash-procedure.md)
 - [Phase 0 telemetry overlay contract](docs/research/phase0-telemetry-overlay-contract.md)
 - [A1 eval result ledger and model refresh](docs/research/a1-eval-result-ledger-and-model-refresh.md)
 - [Bundle-value Phase 0 runbook](docs/research/bundle-value-phase0-runbook.md)

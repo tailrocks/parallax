@@ -27,7 +27,9 @@ The current public-source freeze snapshot lives in
 starting manifest for dataset SHA, row/split count, feature, and quarantine
 fields. The companion [A1 source drift and leakage recheck](a1-source-drift-and-leakage-recheck.md)
 adds source roles and selected-row hashing rules after confirming that
-datasets-server `first-rows` previews are truncated.
+datasets-server `first-rows` previews are truncated. The operational row-fetch
+method is defined in
+[A1 Hugging Face row hash procedure](a1-huggingface-row-hash-procedure.md).
 
 ## Current Primary-Source Checks
 
@@ -201,7 +203,7 @@ docs/research/bundle-value-eval/
   "hf_dataset_sha": "608f7ae9ab8ea1f9f0d030fe04562cf6bd1a0c8b",
   "dataset_revision": "hf-revision-or-commit",
   "first_rows_truncated_observed": true,
-  "selected_row_fetch_method": "pinned_revision_parquet_or_datasets_library",
+  "selected_row_fetch_method": "hf_revision_load_dataset",
   "full_selected_row_hash": "sha256:...",
   "agent_visible_row_hash": "sha256:...",
   "row_count_at_selection": 743,
@@ -257,6 +259,9 @@ bundle lift.
   adds source roles, excludes trajectory/result datasets from task-source use,
   and requires full selected-row hashes because `first-rows` previews are
   truncated.
+- [A1 Hugging Face row hash procedure](a1-huggingface-row-hash-procedure.md)
+  defines how to fetch selected rows from pinned dataset revisions and compute
+  full, policy, and agent-visible hashes.
 - [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
   defines how task-source freshness and contamination tiers are reported in the
   eventual result artifact.

@@ -29,7 +29,9 @@ contract are recorded in
 [A1 task source freeze check](a1-task-source-freeze-check.md). The companion
 [A1 source drift and leakage recheck](a1-source-drift-and-leakage-recheck.md)
 adds a stricter rule: datasets-server `first-rows` previews are not row-hash
-evidence when they report `truncated=true`.
+evidence when they report `truncated=true`. The concrete pinned-row hash method
+is defined in
+[A1 Hugging Face row hash procedure](a1-huggingface-row-hash-procedure.md).
 
 ## Current Primary-Source Checks
 

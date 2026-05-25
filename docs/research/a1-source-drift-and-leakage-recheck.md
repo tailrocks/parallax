@@ -16,6 +16,8 @@ left three risks under-specified:
 - the Python-only SWE-bench-Live dataset was visible but not assigned a role.
 
 This pass rechecked the current primary APIs and tightens the task-source gate.
+The concrete full-row retrieval and hashing workflow is specified in
+[A1 Hugging Face row hash procedure](a1-huggingface-row-hash-procedure.md).
 
 ## Verdict
 
@@ -92,7 +94,7 @@ record:
   "source_field_policy_hash": "sha256:<hash>",
   "first_rows_checked": true,
   "first_rows_truncated_observed": true,
-  "selected_row_fetch_method": "pinned_revision_parquet_or_datasets_library",
+  "selected_row_fetch_method": "hf_revision_load_dataset",
   "full_selected_row_hash": "sha256:<hash-before-field-removal>",
   "agent_visible_row_hash": "sha256:<hash-after-field-policy>"
 }

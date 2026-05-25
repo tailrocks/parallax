@@ -20,6 +20,8 @@ sources and makes one rule explicit:
 The companion [A1 source drift and leakage recheck](a1-source-drift-and-leakage-recheck.md)
 tightens the selected-row workflow: Hugging Face `first-rows` previews were
 observed with `truncated=true`, so they cannot be the source of row hashes.
+The exact pinned-row procedure lives in
+[A1 Hugging Face row hash procedure](a1-huggingface-row-hash-procedure.md).
 
 ## Result
 
@@ -91,7 +93,7 @@ at least:
   "source_field_policy_hash": "sha256:<hash>",
   "source_role": "seed_candidate",
   "first_rows_truncated_observed": true,
-  "selected_row_fetch_method": "pinned_revision_parquet_or_datasets_library",
+  "selected_row_fetch_method": "hf_revision_load_dataset",
   "full_selected_row_hash": "sha256:<hash-before-field-removal>",
   "agent_visible_row_hash": "sha256:<hash-after-field-policy>"
 }

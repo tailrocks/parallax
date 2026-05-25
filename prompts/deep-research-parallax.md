@@ -1092,9 +1092,10 @@ verifier, runnable environment, observable failure, and generated or real
 telemetry artifacts. For moving public Hugging Face sources, record explicit
 source roles, dataset SHAs, feature hashes, `first_rows_truncated_observed`,
 full selected-row hashes from pinned revisions, and agent-visible row hashes
-after source-field policy. Do not use trajectory, leaderboard, result, or
-solved-run datasets as task sources unless the experiment is explicitly a
-contamination study.
+after source-field policy. Use a documented pinned-row procedure, not
+datasets-server preview rows, as hash input. Do not use trajectory, leaderboard,
+result, or solved-run datasets as task sources unless the experiment is
+explicitly a contamination study.
 
 I want to understand:
 - what already exists
