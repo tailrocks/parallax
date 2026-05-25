@@ -28,22 +28,29 @@ agents, and likely to overpromise causality.
 
 The defensible version is:
 
-> An open-source, Rust-first, self-hostable runtime context engine that accepts
-> Sentry-compatible errors and OTLP telemetry, builds deterministic evidence
-> graphs, and serves bounded context bundles to humans and coding agents through
-> API/MCP.
+> An open-source, Rust-first, self-hostable execution context engine that
+> accepts Sentry-compatible errors, OTLP telemetry, CLI invocation traces, and
+> coding-agent session traces, builds deterministic evidence graphs, and serves
+> bounded context bundles to humans and coding agents through API/MCP.
 
 That version can become the intelligence layer between telemetry systems, CI,
-deploys, issue trackers, repos, and autonomous coding agents.
+CLI tools, deploys, issue trackers, repos, and autonomous coding agents.
+
+The strategic reason is that agent-driven work makes action trails harder to
+see. As more engineering and operations work moves through agents, teams need an
+audit system that can answer what happened, who or what initiated it, what the
+agent saw, what tools it used, what it changed, and whether the result fixed or
+worsened the original problem.
 
 ## Build Direction
 
 Build this first:
 
 ```text
-Rust service
+Rust service / CLI / coding agent
   -> Sentry-compatible envelope ingest
   -> OTLP logs/traces/metrics ingest
+  -> CLI invocation and agent-session trace ingest
   -> Parallax Rust ingest gateway
   -> local WAL for tiny mode
   -> GreptimeDB for observability evidence
@@ -62,7 +69,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | --- | --- |
 | Company-sized? | Yes, if framed as context/evidence layer for autonomous software maintenance. No, if framed as generic AI RCA. |
 | Just a Sentry/Grafana feature? | Generic AI investigation is a feature. Self-hosted Rust-first evidence bundles plus open schema plus agent workflow can be a product. |
-| Market too crowded? | Broad market is crowded. Narrow wedge remains: Sentry-compatible, OTLP-native, self-hosted, agent-ready context. |
+| Market too crowded? | Broad market is crowded. Narrow wedge remains: Sentry-compatible, OTLP-native, self-hosted execution context for services, CI, CLIs, and coding agents. |
 | Hardest technical problems? | High-quality error grouping, cross-signal joins, symbolication, missing-data handling, causal graph modeling, retention cost, redaction, safe agent tools. |
 | Hidden operational problems? | Cardinality, schema evolution, object-storage cost, backpressure, retries/duplicates, symbol files, tenant isolation, upgrade path, source/release mapping. |
 | Scaling bottlenecks? | Ingest-to-queryable freshness, trace/log joins, high-cardinality attributes, stream replay, GreptimeDB/ClickHouse compaction, evidence-bundle query fanout. |
@@ -74,6 +81,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Is lifecycle reconstruction achievable? | Partially. Strong for traced request/workflow/test lifecycles; weak for arbitrary true root cause without topology, change data, and counterfactual evidence. |
 | Monorepo dependency? | Context-rich repos make Parallax much stronger. Without docs/tasks/decisions, Parallax still helps with runtime evidence but loses the "why" layer. |
 | Agent data access danger? | Major risk. Use read-only scoped templates, redaction, limits, just-in-time grants, audit logs, and no production mutation in MVP. |
+| Why trace agents? | Agents will become a primary system interface. Teams need audit, observability, and question-answering over agent actions, not only final outputs. |
 
 ## Prompt Coverage Map
 
@@ -90,6 +98,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Rust applications first | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md), [Technical implementation concept](technical-implementation-concept.md) |
 | AI-native observability | [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md), [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md) |
 | Flaky-test investigation | [CI failure context MVP](ci-failure-context-mvp.md), [Flaky test investigation and replay](flaky-test-investigation-and-replay.md) |
+| Agent and CLI execution tracing | [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) |
 | Core architecture | [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Technical implementation concept](technical-implementation-concept.md) |
 | CLI/API/MCP philosophy | [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md), [Technical implementation concept](technical-implementation-concept.md) |
 | Critical strategic questions | [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md), this document |
@@ -107,6 +116,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Metadata | Turso for tiny/local metadata and product state; Postgres only as scale-out fallback. |
 | Processing | Rust workers, deterministic normalization/grouping/correlation before AI. |
 | Context model | Typed evidence graph in tables first. |
+| Execution surfaces | Services, CI runs, CLI apps, and coding agents. |
 | Agent surface | Read-only API/MCP context first; PR workflow later; no production mutation. |
 | UI | Minimal issue/evidence UI later; object-centric evidence, not dashboard suite. |
 
@@ -123,6 +133,10 @@ The research validates direction, not performance claims. These must be tested:
 7. Agent fix quality with bounded Parallax bundles versus raw Sentry/CI context.
 8. Redaction quality for logs, events, attachments, database query output, and
    agent prompt bundles.
+9. CLI trace capture overhead and secret redaction for args, env, config,
+   stdout, and stderr.
+10. Agent-session tracing value across real Codex, Claude Code, Amp, and
+    OpenCode runs.
 
 ## First Prototype Gate
 
@@ -132,6 +146,7 @@ Prototype should prove this loop:
 Rust app error
   -> Sentry-compatible event
   -> OTLP trace/log context
+  -> optional CLI invocation or coding-agent session context
   -> Parallax grouping
   -> GreptimeDB evidence query
   -> Turso issue metadata
@@ -146,6 +161,8 @@ Acceptance criteria:
 - trace/log context joined by `trace_id`/`span_id`;
 - release/commit context attached;
 - evidence bundle includes raw refs and redaction report;
+- CLI and agent traces link back to source events, commands, tests, files, and
+  outcome refs when available;
 - agent output cites evidence and says "inconclusive" when evidence is weak.
 
 ## Final Position
@@ -153,7 +170,7 @@ Acceptance criteria:
 Proceed with Parallax, but keep the claim precise:
 
 > Parallax does not prove every root cause. It makes the best available runtime,
-> CI, deploy, and repo evidence cheap to retain, fast to query, safe to expose,
-> and structured enough for humans and agents to act on.
+> CI, CLI, deploy, repo, and agent evidence cheap to retain, fast to query, safe
+> to expose, and structured enough for humans and agents to act on.
 
 That is the buildable company.

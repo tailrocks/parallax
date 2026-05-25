@@ -2,15 +2,16 @@
 
 Parallax is an early research project exploring an open-source, Rust-first,
 self-hosted observability and debugging system for production errors, logs,
-traces, metrics, and agent-ready failure context.
+traces, metrics, CLI runs, coding-agent sessions, and agent-ready failure
+context.
 
 The current working thesis is narrower than generic AI observability and more
 specific than a CI debugging tool:
 
-> Build a Sentry-compatible, OpenTelemetry-native error context system that is
-> simpler and cheaper to self-host than Sentry, while giving humans and coding
-> agents the surrounding logs, traces, metrics, releases, and runtime context
-> needed to fix production bugs.
+> Build a Sentry-compatible, OpenTelemetry-native execution context system that
+> is simpler and cheaper to self-host than Sentry, while giving humans and
+> coding agents the surrounding logs, traces, metrics, releases, CLI runs,
+> agent actions, and runtime context needed to fix software failures.
 
 ## Current Status
 
@@ -30,6 +31,7 @@ idea becomes sharper.
 - [Causal reconstruction and agent safety](docs/research/causal-reconstruction-and-agent-safety.md)
 - [AI-native observability and incident intelligence](docs/research/ai-native-observability-and-incident-intelligence.md)
 - [Flaky test investigation and replay](docs/research/flaky-test-investigation-and-replay.md)
+- [Agent and CLI execution tracing](docs/research/agent-and-cli-execution-tracing.md)
 - [Strategic verdict and research coverage](docs/research/strategic-verdict-and-research-coverage.md)
 - [Technical implementation concept](docs/research/technical-implementation-concept.md)
 - [Sentry-compatible ingestion](docs/research/sentry-compatible-ingestion.md)
@@ -41,11 +43,13 @@ idea becomes sharper.
 
 The current recommended wedge is:
 
-1. Start with Sentry-compatible error ingestion for Rust services.
+1. Start with Sentry-compatible error ingestion for Rust services and CLI apps.
 2. Add OpenTelemetry logs, traces, and metrics correlation.
 3. Store high-volume observability data in a simple self-hosted backend,
    starting with GreptimeDB as the first prototype candidate.
 4. Use a Rust message stream such as Apache Iggy only if replay, buffering, or
    processor separation is worth the operational cost.
-5. Produce evidence-backed context for humans and coding agents.
-6. Keep the UI and deployment model much simpler than self-hosted Sentry.
+5. Trace coding-agent sessions and CLI invocations as first-class execution
+   evidence.
+6. Produce evidence-backed context for humans and coding agents.
+7. Keep the UI and deployment model much simpler than self-hosted Sentry.

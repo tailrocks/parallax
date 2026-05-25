@@ -20,9 +20,10 @@ as historical evidence.
 
 Build Parallax as:
 
-> A Rust-first, Sentry-compatible, OpenTelemetry-native error context system that
-> stores observability evidence in GreptimeDB, keeps product metadata in
-> Turso, and exposes bounded evidence bundles through an HTTP API and MCP server.
+> A Rust-first, Sentry-compatible, OpenTelemetry-native execution context system
+> for services, CLI apps, CI runs, and coding agents that stores observability
+> evidence in GreptimeDB, keeps product metadata in Turso, and exposes bounded
+> evidence bundles through an HTTP API and MCP server.
 
 The first product should beat self-hosted Sentry on operational simplicity. It
 should not start as a full observability dashboard or autonomous production SRE.
@@ -40,6 +41,7 @@ should not start as a full observability dashboard or autonomous production SRE.
 | Processing | Rust workers, in-process for tiny mode and separate services for durable/scale-out mode. | Normalization, symbolication, grouping, correlation, and graph building need deterministic logic and strong testability. |
 | Causal layer | Typed evidence graph stored as tables first. | Materialize graph edges before adopting a graph database. Causality needs explicit evidence and confidence. |
 | Agent surface | HTTP context API plus MCP server, read-only first. | Agents need structured evidence, not dashboards. MCP makes Codex, Claude Code, Amp, OpenCode, and IDE agents first-class clients. |
+| Execution surfaces | Treat services, CLI apps, CI runs, and coding agents as first-class trace sources. | Parallax should explain software execution and the agent work performed on that execution, not only long-running services. |
 | Human surface | Minimal Sentry-like issue UI later. | Humans need inspection and trust, but the differentiator is the context API. |
 
 Related research:
@@ -51,6 +53,7 @@ Related research:
 - [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
 - [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md)
 - [Flaky test investigation and replay](flaky-test-investigation-and-replay.md)
+- [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md)
 - [Strategic verdict and research coverage](strategic-verdict-and-research-coverage.md)
 - [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md)
 
@@ -71,8 +74,9 @@ The product should start where the user pain is sharp:
 1. self-hosted Sentry is useful but operationally heavy;
 2. small Rust-heavy teams want ownership and predictable cost;
 3. agents need structured context around failures;
-4. dashboards are secondary to evidence retrieval;
-5. complete root cause proof is unrealistic, but deterministic context assembly
+4. teams need an audit trail for what agents saw, did, changed, and validated;
+5. dashboards are secondary to evidence retrieval and question-answering;
+6. complete root cause proof is unrealistic, but deterministic context assembly
    is achievable and valuable.
 
 The smallest useful loop is:
@@ -81,6 +85,7 @@ The smallest useful loop is:
 Rust service panics or emits error
   -> existing Sentry SDK or Parallax Rust setup sends event
   -> OpenTelemetry sends traces/logs/metrics
+  -> CLI or agent execution trace records bounded local work when applicable
   -> Parallax groups the error
   -> Parallax fetches same-trace logs/spans/metrics and deploy context
   -> Parallax builds a bounded evidence bundle
@@ -146,9 +151,10 @@ Current source anchors:
 Tiny single-node:
 
 ```text
-Rust app / service
+Rust app / service / CLI / coding agent
   -> Sentry SDK compatible envelope endpoint
   -> OTLP HTTP/gRPC endpoint
+  -> agent/CLI execution trace endpoint
   -> parallax-server
        - auth / DSN validation
        - redaction and size limits
@@ -165,7 +171,7 @@ Rust app / service
 Durable single-server:
 
 ```text
-Rust app / service
+Rust app / service / CLI / coding agent
   -> parallax-ingest
        - auth / redaction / raw append
   -> Apache Iggy standalone
@@ -183,7 +189,7 @@ Rust app / service
 Scale-out:
 
 ```text
-apps / collectors / CI systems
+apps / collectors / CI systems / coding agents
   -> parallax-ingest x N
   -> Iggy cluster or fallback stream
   -> normalizer workers x N
@@ -210,6 +216,7 @@ apps / collectors / CI systems
 
 3. **Normalize.**
    - Convert Sentry events into Parallax error-event rows.
+   - Convert CLI invocations and coding-agent sessions into execution traces.
    - Convert OTLP spans/logs/metrics into queryable records.
    - Extract release, environment, service, trace ID, span ID, runtime, SDK, and
      resource attributes.
@@ -233,7 +240,7 @@ apps / collectors / CI systems
 
 7. **Build evidence graph.**
    - Create nodes for error, span, log, metric window, release, deploy, code
-     change, CI event, and agent action.
+     change, CI event, CLI invocation, agent session, and agent action.
    - Create typed edges such as `error_in_span`, `log_in_span`,
      `same_fingerprint`, `same_release_regression`, and
      `metric_anomaly_on_path`.
@@ -450,6 +457,13 @@ candidate versions:
 - "inconclusive" behavior when data is missing;
 - PR correctness rate by failure class.
 
+### Agent And CLI Execution
+
+- coding-agent session schema across Codex, Claude Code, Amp, and OpenCode;
+- CLI redaction for args, env, config, stdout, and stderr;
+- agent-session query latency when linked to production events and CI runs;
+- outcome feedback quality for accepted, edited, rejected, and reverted fixes.
+
 ## Rejected Alternatives
 
 | Alternative | Decision | Reason |
@@ -474,6 +488,8 @@ parallax-server
   - OTLP ingest path for logs/traces/metrics
   - local WAL/outbox
   - deterministic Rust-focused grouping
+  - CLI invocation trace ingestion
+  - coding-agent session trace ingestion
   - GreptimeDB writer
   - Turso metadata
   - issue context API
@@ -516,5 +532,6 @@ Parallax is technically plausible if it stays disciplined:
 
 This direction is not fundamentally flawed. The flawed version is promising
 omniscient AI root cause analysis. The defensible company is an open-source,
-self-hosted runtime context engine that turns telemetry, deploys, code, and CI
-evidence into bounded, auditable context for humans and coding agents.
+self-hosted execution context engine that turns telemetry, deploys, code, CI,
+CLI, and agent evidence into bounded, auditable context for humans and coding
+agents.
