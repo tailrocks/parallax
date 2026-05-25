@@ -4140,6 +4140,47 @@ ORDER BY ts
 (SELECT trace_id FROM logs) AND trace_id IN (SELECT trace_id FROM error_events) LIMIT 1`); run the
 UNION-ALL composite above (GT uses `spans_idx`), warm ×10. Expect CH ~5 ms / GT ~16 ms, both ≪ 300.
 
+### Run 100 — 2026-05-25 — Storage/compression re-verified across all four signal tables: no blanket winner (pattern-dependent), high-card-metric crossover + Gorilla-codec win both reproduce
+
+**Pass target.** Rotate to the **storage/compression cost** slice (the object-store-economics
+pillar) and re-verify the load-bearing "no blanket compression winner — per-column-pattern"
+finding (`compression-and-cost.md`, Runs 4/10/79) on the *current* live tables, with real
+on-disk sizes rather than synthetic generators.
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned live — latest stable,
+no bump). Sizes: CH `system.parts.data_compressed_bytes` (active); GT
+`information_schema.region_statistics.disk_size`/`sst_size`. Same row counts both sides (parity).
+
+| Table (rows) | ClickHouse compressed | GreptimeDB disk (SST) | Winner | Mechanism |
+| --- | --- | --- | --- | --- |
+| `metrics_hc` (8M, **high-card** 40k series, Float64 value) | 57.25 MiB | **38.62 MiB** | **GT 1.48×** | high-card crossover (Run 79): CH `LowCardinality(instance)` + sort overhead bloats at 40k series; GT columnar Parquet + dict compresses the label columns better |
+| `metrics_real` (864k, **low-card** 12-svc, gauge+counter) | **1.01 MiB** (21.3× ratio) | 1.89 MiB | **CH 1.87×** | codec win (Run 4 / parity #7): CH `gauge→Gorilla` + `counter→DoubleDelta` crush the floats; GT user columns default to `PLAIN`+ZSTD — **no Gorilla-class float encoding** |
+| `logs_b1` (5M, structured `message` + fulltext index) | **228 MiB** | 258 MiB (SST 240) | **CH 1.13×** (~wash) | both ZSTD the text + carry a fulltext index; near-tie, CH marginally ahead on this structured-message data |
+| `spans` (1M, high-card id strings) | **27.93 MiB** | 42.86 MiB (SST 37.31 + ~5.5 inverted index) | **CH 1.34× raw / 1.53× w/ index** | CH ZSTD on `trace_id`/`span_id` + sort-key locality; GT also stores the `trace_id` INVERTED index (a read-speed cost, Run 99 anchor) |
+
+**Verdict — the "no blanket winner, pattern-dependent" headline HOLDS; two sub-claims re-confirmed:**
+
+- **High-card metric storage → GreptimeDB wins (1.48×), re-confirming the Run-79 crossover** — now
+  visible on a *real* 8M-row table, not just the synthetic cardinality sweep. At 40k series CH's
+  `LowCardinality` + ordering overhead exceeds GT's columnar Parquet, even with CH's Gorilla on the
+  value column. Strengthens the high-card pillar.
+- **Low-card metric storage → ClickHouse wins (1.87×) via codecs** — `Gorilla`/`DoubleDelta` crush
+  the 12-service gauge/counter table to 1.01 MiB (21× ratio) vs GT's 1.89 MiB. **Re-confirms
+  parity-roadmap #7**: GT defaults user columns to `PLAIN`+ZSTD, missing the Gorilla-class float
+  encoding — a real, measured CH storage win on codec-friendly metrics.
+- **Logs ≈ wash** (1.13×, CH marginally ahead here); **spans → CH** (high-card id strings compress
+  better under CH ZSTD+sort locality; GT additionally carries the inverted index it needs for the
+  anchored hot path).
+- **Cost-pillar caveat unchanged:** raw bytes is **not** the cost driver — object-store *request
+  economics* + fewer objects under active ingest + cheap tiering dominate (`compression-and-cost.md`).
+  Even where CH is ~1.5× smaller, GT's object-store-native model is the cost lever, and a 1–2×
+  local-byte delta is second-order. **No verdict change.**
+
+**Reproduce.** CH: `SELECT table, formatReadableSize(sum(data_compressed_bytes)) FROM system.parts
+WHERE active GROUP BY table`. GT: `SELECT t.table_name, r.disk_size, r.sst_size FROM
+information_schema.region_statistics r JOIN information_schema.tables t ON r.table_id=t.table_id`.
+Compare per table; expect GT-win on `metrics_hc`, CH-win on `metrics_real`/`spans`, wash on `logs_b1`.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

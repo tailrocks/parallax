@@ -4,7 +4,12 @@
 
 Status: pass 8, extended passes 88–89 (Runs 51–52: full-text index storage cost,
 inverted + bloom-vs-bloom) + pass 109 (Run 73: per-column codec ratios re-verified,
-exact, no drift). The cost axis (#2). Combines the codec mechanisms from the internals notes with **measured
+exact, no drift) + **Run 100 (whole-table sizes re-verified live, no drift — the
+"no blanket winner" headline holds): high-card `metrics_hc` 8M → GT 38.6 < CH 57.3 MiB
+(GT 1.48×, the Run-79 crossover on a real table); low-card `metrics_real` → CH 1.01 < GT
+1.89 MiB (CH 1.87×, Gorilla/DoubleDelta — parity #7); `logs_b1` ~wash (CH 228 / GT 258);
+`spans` CH 27.9 < GT 42.9 (GT carries its inverted index). Raw bytes still second-order to
+object-store request economics**. The cost axis (#2). Combines the codec mechanisms from the internals notes with **measured
 per-table/per-column sizes** from the live Docker candidates, then ties to retention
 $. Builds on `local-benchmark-results.md`.
 
