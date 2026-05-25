@@ -27,7 +27,8 @@ inferred from this fixture design alone.
 
 | Source | What matters for Parallax |
 | --- | --- |
-| [sentry-types envelope source](https://docs.rs/sentry-types/latest/src/sentry_types/protocol/envelope.rs.html) | The Rust protocol model treats an envelope as Sentry's ingestion format, with envelope headers such as `event_id`, `dsn`, `sdk`, `sent_at`, and `trace`, and item headers with item `type`, optional `length`, content type, filename, and attachment type. Current item variants include `event`, `session`, `transaction`, `attachment`, `check_in`, `log`, and `trace_metric`. |
+| Registry snapshot ([crates.io](https://crates.io/crates/sentry), [npm browser](https://www.npmjs.com/package/@sentry/browser), [npm node](https://www.npmjs.com/package/@sentry/node), [Go proxy](https://proxy.golang.org/github.com/getsentry/sentry-go/@latest), [PyPI](https://pypi.org/project/sentry-sdk/)) | 2026-05-25 checks found Rust `sentry` `0.48.2`, JavaScript `@sentry/browser`/`@sentry/node`/`@sentry/react` `10.53.1`, Go `sentry-go` `v0.46.2`, and Python `sentry-sdk` `2.60.0`. |
+| [sentry-types envelope source](https://docs.rs/sentry-types/latest/src/sentry_types/protocol/envelope.rs.html) | The Rust protocol model treats an envelope as Sentry's ingestion format, with envelope headers such as `event_id`, `dsn`, `sdk`, `sent_at`, and `trace`, and item headers with item `type`, optional `length`, content type, filename, and attachment type. Current item variants include `event`, `session`, `sessions`, `transaction`, `attachment`, `check_in`, `log`, and `trace_metric`; the envelope item enum is non-exhaustive. |
 | [sentry-python envelope source](https://getsentry.github.io/sentry-python/_modules/sentry_sdk/envelope.html) | The Python SDK documents the envelope constraints in code and specifically notes that each envelope may contain at most one `event` or `transaction`, not both. Its current source also emits profile/profile chunk items, proving item drift is real. |
 | [sentry Rust crate 0.48.2](https://docs.rs/sentry/latest/sentry/) | The current Rust SDK integrates with Rust panics, backtraces, contexts, `anyhow`, `tracing`, OpenTelemetry, transports, and exposes the Sentry protocol/types. This is the first SDK fixture target because Parallax is Rust-first. |
 | [sentry-tracing 0.48.2](https://docs.rs/sentry-tracing/latest/sentry_tracing/) | The tracing integration can map `tracing` events to breadcrumbs, events, logs, and spans. By default, high-severity events become Sentry events and ordinary events become breadcrumbs/spans. That directly affects which evidence arrives in an error envelope. |
@@ -75,6 +76,8 @@ Every fixture directory should record:
 - enabled features/integrations;
 - scenario name;
 - raw envelope hash;
+- raw envelope visibility and whether it is allowed into agent projections;
+- source-field policy version/status for the synthetic fixture source;
 - expected accepted/rejected items;
 - expected normalized Parallax fields;
 - expected redaction findings;
@@ -98,6 +101,7 @@ seeded PII/secret canaries from
 | `rust_request_context` | HTTP context with query string, auth header, user id/email. | Safe route/method context kept; auth/cookie/user PII redacted or hashed; redaction report cites rules. |
 | `rust_duplicate_event_id` | Same envelope sent twice. | Idempotent write; no duplicate issue event; duplicate marker or counter recorded. |
 | `rust_unknown_item` | Event envelope plus unknown or unsupported item. | Event path still handled if valid; unsupported item dropped/ref-only with explicit outcome. |
+| `rust_log_trace_metric_containers` | `log` and `trace_metric` envelope container items plus an event. | Current container items are explicitly outcome-recorded; they do not poison error-event processing or leak unsupported payloads to agents. |
 | `rust_attachment_disabled` | Event plus attachment item. | Attachment rejected or metadata-only according to v0 policy; no raw attachment in agent bundle. |
 
 This matrix is enough to validate the first product wedge without pretending to
@@ -112,6 +116,7 @@ After the Rust path is stable, add current-version smoke fixtures:
 | --- | --- | --- |
 | Go | In scope by language filter and common for backend services. | Panic/error event with release/environment/tags and stack frames. |
 | Browser JavaScript | Required for the frontend roadmap. | Minified frontend error with source-map metadata path recorded but not necessarily symbolicated in v0. |
+| Python | Common Sentry migration source and current SDK exposes fast-moving integrations. | Captured exception plus request/user context canaries, normalized only as smoke. |
 | Node JavaScript | Common service runtime but outside the preferred systems-language filter. | Only if needed for Sentry migration demand; keep as compatibility smoke, not primary scope. |
 
 Do not add broad language fixtures before the Rust parser and grouping tests are
@@ -177,6 +182,8 @@ Pass criteria for v0:
   JSON;
 - `event` item envelopes parse with and without optional item `length`;
 - unsupported items do not poison supported `event` processing;
+- `log`, `trace_metric`, attachment, session, replay/profile-like, and unknown
+  items have explicit outcomes and are not agent-visible by default;
 - malformed or oversized payloads fail before expensive normalization;
 - normalized snapshots are stable and reviewable;
 - grouping snapshots are versioned and deterministic;
@@ -185,6 +192,8 @@ Pass criteria for v0:
   pass before the L3 product claim is used;
 - duplicate event IDs are idempotent;
 - redaction fixtures leak zero seeded canaries into agent-visible JSON/Markdown;
+- source-field policy rows pass for the synthetic fixture source before
+  projections are claimable;
 - a trace-context fixture joins to an OTLP span/log row in the evidence bundle.
 
 Failure criteria:

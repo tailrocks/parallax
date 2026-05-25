@@ -133,12 +133,13 @@ Start with a strict item policy.
 | `session` | Drop with explicit outcome. | Release health is not in the MVP. |
 | `replay_event` / `replay_recording` | Reject. | Session replay is a massive storage and privacy surface. |
 | `profile` | Reject. | Profiling is later and should likely come through OTEL/profiling-specific design. |
-| `logs` / `metrics` / `spans` | Prefer OTLP. | Avoid chasing Sentry-specific telemetry extensions when OTEL is the core protocol. |
+| `log` / `trace_metric` / Sentry span containers | Explicit unsupported outcome first; prefer OTLP for normalized telemetry. | Current `sentry-types` models `log` and `trace_metric` containers, but Parallax should not chase Sentry-specific telemetry extensions when OTEL is the core protocol. |
 | Unknown item | Store bounded raw reference and drop normalized processing. | Preserves forward-compat debugging without pretending support. |
 
 The important compatibility behavior is not accepting every item. It is failing
-predictably, returning useful status/rate-limit behavior, and preserving enough
-raw data to debug SDK drift.
+predictably, returning useful status/rate-limit behavior, preserving enough raw
+data to debug SDK drift, and ensuring unsupported payloads never become
+agent-visible context by default.
 
 ## Event Payload Subset
 
