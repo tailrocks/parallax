@@ -64,6 +64,7 @@ Code `/loop` runbook.
 - [Project thesis](docs/research/project-thesis.md)
 - [Market landscape](docs/research/market-landscape.md)
 - [Open self-hosted competitor watch](docs/research/open-self-hosted-competitor-watch.md)
+- [OpenObserve AI/MCP Enterprise recheck](docs/research/openobserve-ai-mcp-enterprise-recheck.md)
 - [Lightweight Sentry-compatible competitor watch](docs/research/lightweight-sentry-compatible-competitor-watch.md)
 - [Lightweight error-tracker MCP boundary check](docs/research/lightweight-error-tracker-mcp-boundary-check.md)
 - [Agentic observability competitor drift ledger](docs/research/agentic-observability-competitor-drift-ledger.md)

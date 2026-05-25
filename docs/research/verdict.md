@@ -221,9 +221,11 @@ Current source checks for this competitive-window claim:
 
 - [OpenObserve pricing](https://openobserve.ai/pricing/)
 - [OpenObserve homepage](https://openobserve.ai/)
-- [OpenObserve SRE Agent setup](https://openobserve.ai/docs/administration/deployment/sre-agent-setup-guide/)
+- [OpenObserve SRE Agent setup](https://openobserve.ai/docs/enterprise-setup/sre-agent/)
+- [OpenObserve AI SRE product page](https://openobserve.ai/ai-sre/)
 - [OpenObserve MCP docs](https://openobserve.ai/docs/integration/ai/mcp/)
 - [OpenObserve OTLP ingestion docs](https://openobserve.ai/docs/ingestion/logs/otlp/)
+- [OpenObserve AI/MCP Enterprise recheck](openobserve-ai-mcp-enterprise-recheck.md)
 - [Self-hosted Sentry docs](https://develop.sentry.dev/self-hosted/)
 - [Sentry MCP service](https://mcp.sentry.dev/)
 - [Sentry MCP repository](https://github.com/getsentry/sentry-mcp)

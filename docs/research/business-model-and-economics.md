@@ -43,7 +43,9 @@ Primary sources checked on 2026-05-25: [Sentry Fair Source post](https://blog.se
 [Grafana Enterprise docs](https://grafana.com/docs/grafana/latest/introduction/grafana-enterprise/),
 [Grafana pricing](https://grafana.com/pricing/),
 [OpenObserve pricing](https://openobserve.ai/pricing/),
+[OpenObserve homepage](https://openobserve.ai/),
 [OpenObserve enterprise features](https://openobserve.ai/docs/features/enterprise/),
+[OpenObserve AI/MCP Enterprise recheck](openobserve-ai-mcp-enterprise-recheck.md),
 and [GitLab pricing](https://about.gitlab.com/pricing/). Secondary market
 estimates such as private-company ARR breakdowns or card-spend vendor share
 should be labeled as leads only.
@@ -134,7 +136,7 @@ and outcomes*, not on *access to the differentiator*.
 | --- | --- | --- | --- |
 | Sentry | FSL / Fair Source (delayed open-source publication) | Cloud business; Sentry says it passed 100k cloud customers and $100M annual revenue. | Cloud is the real revenue; the license protects it. Parallax rejects FSL on ethos but copies "cloud is the business." |
 | Grafana | AGPL core + proprietary Enterprise + Cloud | Enterprise docs list SAML/enhanced LDAP/protected roles, auditing, usage insights, recorded queries, Vault integration, and premium data sources; Cloud is separately priced. | Gate *ops* features, not the core engine. Good template. |
-| OpenObserve | AGPL + Self-Hosted Enterprise | Pricing now says Self-Hosted Enterprise is free up to 50 GB/day and includes SSO/RBAC/audit/redaction; the Enterprise plan lists AI SRE Agent, AI Assistant, and AI-powered observability. | Copy the ops gating; **do NOT copy the agent gating** — that is the weakness Parallax beats. |
+| OpenObserve | AGPL + Self-Hosted Enterprise | Pricing and Enterprise docs say Self-Hosted Enterprise is free up to `50 GB/day`, while the homepage FAQ says `200 GB/day`; Enterprise includes SSO/RBAC/audit/redaction, and the Enterprise plan lists AI SRE Agent, AI Assistant, and AI-powered observability. | Copy the ops gating; **do NOT copy the agent gating** — that is the weakness Parallax beats. Treat the exact free allowance as source-conflicted. |
 | GitLab (reference) | Open core / buyer-based tiering | Pricing offers GitLab.com, Self-Managed, and Dedicated; paid tiers/add-ons include governance, security, compute/storage, and Duo Agent Platform credits. | Open-core works at scale, but tier boundaries are a constant fight. |
 
 These rows are anchored to primary vendor pages where possible. Blog posts about

@@ -25,6 +25,8 @@ pressure the Sentry-compatible migration and low-ops claims from below.
 
 The current trigger-hit status for both watchlists lives in the
 [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md).
+OpenObserve's current AI/MCP Enterprise posture now has a focused source check:
+[OpenObserve AI/MCP Enterprise recheck](openobserve-ai-mcp-enterprise-recheck.md).
 The SigNoz open-investigation-format claim now has a focused falsification note:
 [SigNoz open investigation format check](signoz-open-investigation-format-check.md).
 
@@ -71,7 +73,9 @@ OpenObserve is the closest structural threat:
 - OTLP HTTP and OTLP gRPC ingestion for logs, metrics, and traces.
 - Object-storage-oriented architecture already aligned with cheap retention.
 - SRE Agent setup that powers AI Assistant, incident management, and RCA in
-  OpenObserve Enterprise.
+  OpenObserve Enterprise, with direct, bundled-gateway, and external/self-hosted
+  gateway provider paths; the AI SRE product page also claims support for
+  OpenAI-compatible/self-hosted endpoints.
 - Enterprise MCP that can query logs, metrics, and traces, but also exposes
   broad create/update/delete/admin tools for alerts, dashboards, roles, streams,
   functions, pipelines, users, KV, ingestion, and search jobs.
@@ -266,10 +270,17 @@ The watchlist changes the product priority:
 
 OpenObserve:
 
-- [OpenObserve SRE Agent setup guide](https://openobserve.ai/docs/administration/deployment/sre-agent-setup-guide/)
+- [OpenObserve AI/MCP Enterprise recheck](openobserve-ai-mcp-enterprise-recheck.md)
+- [OpenObserve homepage](https://openobserve.ai/)
+- [OpenObserve pricing](https://openobserve.ai/pricing/)
+- [OpenObserve enterprise features](https://openobserve.ai/docs/features/enterprise/)
+- [OpenObserve SRE Agent setup guide](https://openobserve.ai/docs/enterprise-setup/sre-agent/)
+- [OpenObserve AI SRE product page](https://openobserve.ai/ai-sre/)
+- [OpenObserve MCP docs](https://openobserve.ai/docs/integration/ai/mcp/)
 - [OpenObserve OTLP ingestion](https://openobserve.ai/docs/ingestion/logs/otlp/)
 - [OpenObserve data ingestion guide](https://openobserve.ai/docs/ingestion/)
 - [OpenObserve Enterprise license](https://openobserve.ai/enterprise-license/)
+- [OpenObserve v0.90.2 release](https://github.com/openobserve/openobserve/releases/tag/v0.90.2)
 - [OpenObserve RUM source maps](https://openobserve.ai/blog/rum-source-map/)
 
 SigNoz:
