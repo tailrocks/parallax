@@ -35,7 +35,7 @@ result rows and claim levels required before this becomes product wording.
 | [Codex MCP](https://developers.openai.com/codex/mcp) | Codex supports MCP servers in CLI and IDE clients, including local stdio and remote HTTP servers. Parallax can provide a read-only MCP context surface, but MCP configuration also introduces tokens, headers, and tool-call audit needs. |
 | [OpenAI agent-improvement cookbook](https://developers.openai.com/cookbook/examples/agents_sdk/agent_improvement_loop) | OpenAI's own agent-improvement loop starts from traces, adds feedback, converts expectations into evals, and produces a Codex-ready handoff. That validates Parallax's "trace -> feedback -> eval -> better agent work" loop. |
 | [Claude Code monitoring](https://code.claude.com/docs/en/monitoring-usage) | Claude Code has the strongest first-party telemetry posture: opt-in OTel metrics/logs/events and beta traces. It records sessions, tool activity, API calls, costs, tokens, commits, PRs, active time, and MCP activity. Prompt text, tool details, tool content, and raw API bodies are disabled by default and require explicit flags. |
-| [Amp manual](https://ampcode.com/manual) | Amp exposes threads, subagents, AGENTS.md loading, MCP, execute mode, non-interactive use, and streaming JSON for programmatic integration and real-time conversation monitoring. It does not appear to present a first-party OTel surface in the manual, so Parallax should ingest Amp through streaming JSON, CLI wrapping, and thread/outcome refs. |
+| [Amp manual](https://ampcode.com/manual) | Amp exposes threads, subagents, AGENTS.md loading, MCP, execute mode, non-interactive use, streaming JSON for programmatic integration, and TypeScript plugins. The manual documents plugin events for the thread/session lifecycle and tool calls/results, and says plugins apply to both interactive `amp` sessions and `amp --execute` runs. It does not show a first-party OTel surface, so Parallax should treat Amp as a plugin-plus-streaming-JSON adapter target, not only a wrapper/import target. |
 | [OpenCode CLI](https://opencode.ai/docs/cli/) | OpenCode exposes session IDs, continuation/forking, `run --format json` raw JSON events, `session list`, `export` with a `--sanitize` flag, token/cost stats, a headless server, and ACP. This is a strong import and live-adapter target. |
 | [OpenCode plugins](https://opencode.ai/docs/plugins/) | OpenCode plugins can hook command, file, message, permission, server, session, shell, tool, and TUI events. That makes OpenCode the easiest open tool to instrument deeply without parsing terminal output, but fixture runs still need class-by-class proof that enabled plugin events were observed and normalized. |
 | [OpenCode MCP servers](https://opencode.ai/docs/mcp-servers/) | OpenCode supports local and remote MCP servers with commands, environment variables, headers, OAuth, enablement, and per-agent management. Parallax should treat MCP config as both context source and secret-bearing audit surface. |
@@ -49,7 +49,7 @@ Instead, build adapters into one normalized session schema.
 | --- | --- | --- | --- |
 | Claude Code | Native OTel logs/events/traces into Parallax ingest. | Strongest first-party signal: sessions, tools, API requests, costs, tokens, commits, PRs, MCP, identity, and optional traces. | Traces are beta; raw prompt/tool content is intentionally off by default; subprocess telemetry requires explicit propagation/config. |
 | Codex | Hook adapter plus Parallax CLI wrapper, repo diff/hash observation, and raw transcript refs. | Strong lifecycle/tool/permission signals, session IDs, model, cwd, subagents, and MCP tool inputs. | Transcript format is not stable; hook interception is incomplete for some tool paths; no first-party OTel export in the checked docs. |
-| Amp | Streaming JSON adapter for execute mode plus thread refs and CLI wrapper. | Good programmatic stream for non-interactive sessions; threads and MCP provide useful refs. | Manual does not show native OTel; interactive session capture likely needs plugin/API or wrapper work; permissions are broad by default. |
+| Amp | Plugin-event adapter plus streaming JSON adapter for execute mode, thread refs, and CLI wrapper. | Stronger than previously assumed: plugin events cover session/agent lifecycle plus tool calls/results, while streaming JSON gives a programmatic non-interactive stream. | Manual does not show native OTel; no documented `session.end`; plugin safety/version drift and event payload coverage need fixture proof; permissions are broad by default unless configured or enforced by plugins. |
 | OpenCode | `run --format json`, `export --sanitize`, plugin hooks, and server/API adapter. | Strong open adapter path: raw JSON events, session export/list, plugins for session/tool/file/permission events. | Need fixture tests to prove JSON/export stability and sanitation quality across versions. |
 
 The common product rule: **native surfaces are preferred, but Parallax never
@@ -78,6 +78,35 @@ The Codex adapter must therefore report:
 - observed hook classes and normalized rows;
 - side effects seen by wrapper or repo observation but not by hooks;
 - transcript use as `raw_ref_only`, never as the stable structured source.
+
+### Amp Plugins Are A Primary Adapter Surface
+
+Amp should no longer be treated as only a streaming-JSON/non-interactive target.
+The current manual documents TypeScript plugins, project/system/global plugin
+locations, and events that follow a thread session's lifecycle:
+`session.start`, `agent.start`, `tool.call`, `tool.result`, and `agent.end`.
+It also says plugin activation applies to interactive `amp` sessions and
+`amp --execute` runs. That makes an Amp plugin adapter a plausible first-class
+capture surface for interactive work.
+
+The catch is that this is still not a measured Parallax claim. A fixture must
+record:
+
+- plugin location and activation mode: project, system, or global;
+- whether the run is interactive, `--execute`, or `--execute --stream-json`;
+- observed lifecycle events, especially the absence of a documented
+  `session.end`;
+- observed `tool.call` and `tool.result` payload fields for shell, file, MCP,
+  and custom-tool cases;
+- permission behavior, because the manual says Amp does not ask for approval
+  before running tools unless configuration or plugin rules change that
+  behavior;
+- streaming JSON rows when used, including whether `--stream-json-thinking` was
+  disabled by policy.
+
+Until those rows exist, the updated claim is: Amp has a plausible structured
+plugin adapter path plus a non-interactive stream, not proven full session
+tracing.
 
 ### OpenCode Plugins Are Class-By-Class
 
@@ -233,8 +262,8 @@ Pass the agent-session gate only if:
 3. Codex hooks plus wrapper or repo-diff observation map session lifecycle, tool
    calls, permission requests, subagent starts/stops, command/edit evidence, and
    uncovered tool paths, with transcript files stored only as raw refs.
-4. Either Amp streaming JSON or OpenCode JSON/export/plugin capture provides a
-   second open/non-OTel adapter path.
+4. Either Amp plugin/streaming capture or OpenCode JSON/export/plugin capture
+   provides a second open/non-OTel adapter path.
 5. The redaction suite has zero seeded canary leaks in agent-visible outputs.
 6. Normalized Parallax sessions answer audit questions faster or more accurately
    than final-output-only and raw-transcript arms.
@@ -260,10 +289,11 @@ Fail or narrow if:
 3. Implement Codex hook ingestion next, paired with a Parallax CLI wrapper and
    repo diff/hash capture, because Codex is already part of the Parallax
    operator workflow and exposes structured hook events.
-4. Implement OpenCode export/plugin ingestion as the first open-tool adapter
+4. Implement Amp plugin-event ingestion plus streaming JSON ingestion, because
+   Amp plugins now appear to cover interactive and execute-mode lifecycle/tool
+   events.
+5. Implement OpenCode export/plugin ingestion as the second open-tool adapter
    with deep session hooks.
-5. Implement Amp streaming JSON ingestion for non-interactive tasks and treat
-   interactive threads as raw refs until a stronger surface is proven.
 6. Run the value evaluation gate across all four tools before claiming
    "agent-session tracing" as a general capability.
 
@@ -309,7 +339,8 @@ observability interface.
 
 Agent-session tracing is technically feasible, but the unit of truth is a
 normalized, redacted, lossiness-reported execution audit. Claude Code gives
-Parallax the cleanest native OTel path. Codex gives hooks. OpenCode gives export,
-JSON, and plugins. Amp gives streaming JSON and thread refs. Together they are
-enough to test whether Parallax session traces improve audit and fix-quality
-loops, but not enough to claim perfect replay or universal raw transcript safety.
+Parallax the cleanest native OTel path. Codex gives hooks. Amp gives plugin
+events plus streaming JSON. OpenCode gives export, JSON, and plugins. Together
+they are enough to test whether Parallax session traces improve audit and
+fix-quality loops, but not enough to claim perfect replay or universal raw
+transcript safety.

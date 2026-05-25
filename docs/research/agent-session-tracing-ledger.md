@@ -33,7 +33,7 @@ and normalization of agent execution traces.
 | [Codex hooks](https://developers.openai.com/codex/hooks) | Hooks expose structured JSON with `session_id`, `transcript_path`, `cwd`, `hook_event_name`, `model`, `turn_id`, and `permission_mode` for session, tool, prompt, permission, subagent, compaction, and stop events. The docs warn that transcript format is not a stable hook interface and that tool interception is incomplete for some shell and non-shell paths. | Codex capture can be structured, but transcripts must stay raw refs and hook gaps must be measured against wrapper, repo diff/hash, or other independent evidence. |
 | [Codex CLI](https://developers.openai.com/codex/cli) | Codex CLI is a local command-line agent surface and supports repo work, file edits, command execution, and automation workflows. | Codex is a first adapter target because it runs where Parallax can observe local repo, shell, and file evidence. |
 | [Claude Code monitoring](https://code.claude.com/docs/en/monitoring-usage) | Claude Code exports opt-in OpenTelemetry metrics, logs/events, and optional traces; prompt text, tool details, tool content, and raw API bodies are disabled by default and require explicit flags. It also documents identity, tool, MCP, cost/token, and audit events. | Claude Code is the strongest native OTel target, but content capture must remain opt-in and redacted. |
-| [Amp manual](https://ampcode.com/manual) | Amp supports streaming JSON output in `--execute` mode for programmatic integration and real-time conversation monitoring; optional thinking blocks extend the schema. | Amp can be measured through non-interactive stream fixtures first; thinking blocks are sensitive opt-in, not default capture. |
+| [Amp manual](https://ampcode.com/manual) | Amp supports streaming JSON output in `--execute` mode for programmatic integration and real-time conversation monitoring; optional thinking blocks extend the schema. The same manual documents TypeScript plugins, project/system/global plugin locations, lifecycle events such as `session.start`, `agent.start`, `tool.call`, `tool.result`, and `agent.end`, and plugin activation for both interactive sessions and `amp --execute` runs. | Amp should be measured through both plugin-event fixtures and non-interactive stream fixtures. Thinking blocks are sensitive opt-in, not default capture. Plugin events are a stronger interactive capture surface than the prior wrapper/thread-ref assumption, but still need payload and version proof. |
 | [OpenCode CLI](https://opencode.ai/docs/cli/) | OpenCode supports `run --format json`, session continuation/forking, session list JSON, export JSON with `--sanitize`, headless `serve`, ACP, and permission flags. | OpenCode is a strong JSON/export/plugin adapter target; `--sanitize` is helpful but does not replace Parallax redaction. |
 | [OpenCode plugins](https://opencode.ai/docs/plugins/) | Plugins expose command, file, message, permission, server, session, shell, tool, TUI, and other events. | OpenCode can provide deep structured events without terminal parsing, but support must be proven per enabled event class. |
 | [OpenTelemetry semantic conventions 1.41.0](https://opentelemetry.io/docs/specs/semconv/) | Current semconv catalog includes GenAI, MCP, CLI, process, CI/CD, VCS, exception, and test areas. | Adapters should record source semantic-convention versions instead of hard-coding unstable span shapes into Parallax storage. |
@@ -51,6 +51,7 @@ Use these levels in `claim-ledger.jsonl`:
 | `codex_hooks_supported` | Codex hook events normalize for a dated CLI/config without relying on transcript parsing as the source of truth. | "Codex hook events normalize for the tested version/config." |
 | `opencode_json_plugin_supported` | OpenCode JSON/export/plugin events normalize for a dated version/config. | "OpenCode session events normalize for the tested version/config." |
 | `amp_stream_json_supported` | Amp `--execute --stream-json` events normalize for a dated version/config. | "Amp streaming JSON sessions normalize for the tested version/config." |
+| `amp_plugin_supported` | Amp plugin lifecycle/tool events normalize for a dated version/config. | "Amp plugin session events normalize for the tested version/config." |
 | `normalized_session_schema_pass` | A tested adapter set maps sessions, turns, actions, commands, edits, permissions, and outcomes into stable Parallax rows. | "Normalized agent-session schema passes for the tested adapter set." |
 | `lossiness_reported` | Every unmapped, redacted, source-not-exposed, raw-ref-only, or parse-failed event class is counted. | "Adapter lossiness is reported for the tested agents." |
 | `redaction_safe` | Agent-visible JSON and Markdown projections leak zero seeded canaries. | "Agent-session projections pass seeded redaction tests." |
@@ -133,7 +134,7 @@ approves a redacted synthetic fixture.
   "event_id": "agt_evt_001",
   "tool": "codex",
   "fixture_task_id": "task_bugfix_001",
-  "source_event_type": "SessionStart|PreToolUse|tool.execution|message.updated|stream_json_object|unknown",
+  "source_event_type": "SessionStart|PreToolUse|tool.execution|message.updated|session.start|agent.start|tool.call|tool.result|agent.end|stream_json_object|unknown",
   "source_event_class": "hook|plugin|otel|json_export|stream_json|wrapper",
   "source_event_schema": "docs-checked-YYYY-MM-DD",
   "source_event_hash": "sha256:<hex>",
@@ -262,8 +263,12 @@ approves a redacted synthetic fixture.
   source, but hook support proves structured hook normalization rather than
   complete shell/file side-effect coverage unless wrapper, repo-diff, or
   equivalent independent evidence rows also pass.
-- Amp streaming JSON claims apply to `--execute --stream-json` unless a stronger
-  interactive adapter is separately tested.
+- Amp streaming JSON claims apply to `--execute --stream-json`.
+- Amp plugin claims apply per plugin location, activation mode, event class, and
+  run mode. A plugin fixture must cover interactive and/or `--execute` separately
+  and must not infer `session.end` support from the documented lifecycle, because
+  the manual calls out `session.start` but does not document a `session.end`
+  event.
 - OpenCode `--sanitize` is a source feature, not Parallax redaction proof.
   Parallax redaction must still pass on normalized projections.
 - OpenCode plugin support requires coverage rows for enabled event classes.
