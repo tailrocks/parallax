@@ -90,7 +90,9 @@ Four revenue seams, none of which gate the open evidence/agent differentiator:
    the open evidence engine; the **separate component that pulls evidence, drives
    a coding agent, and opens PRs** is where autonomous value is captured. This is
    a natural commercial layer *on top of* the open engine — it monetizes the
-   outcome (fixes) without gating the evidence. Clean open-core seam.
+   outcome (fixes) without gating the evidence. Clean open-core seam. The
+   [fixer component and outcome loop](fixer-component-and-outcome-loop.md)
+   defines the technical contract and outcome records for this seam.
 3. **Enterprise operations add-ons** that are not the differentiator: SSO/SAML,
    fine-grained RBAC, multi-tenancy, audit export/compliance, long-retention
    lifecycle management, backup/DR tooling, priority support/SLA. This is exactly
@@ -176,6 +178,8 @@ Sources: [Sentry FSL announcement](https://blog.sentry.io/introducing-the-functi
   that Parallax must not replicate.
 - [Technical implementation concept](technical-implementation-concept.md) — the
   Parallax/fixer boundary that doubles as the value-capture seam.
+- [Fixer component and outcome loop](fixer-component-and-outcome-loop.md) —
+  separates the open evidence engine from the paid PR/fix orchestration seam.
 
 ## Bottom Line
 

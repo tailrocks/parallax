@@ -100,6 +100,9 @@ Build only enough to generate the bundle automatically and repeatably:
 - The separate **fixer** component (PR proposals) — the commercial seam from
   [business model](business-model-and-economics.md).
 - Accepted/rejected-fix outcome capture → the failure/fix corpus (A3 moat).
+- Use the [fixer component and outcome loop](fixer-component-and-outcome-loop.md)
+  contract so opened PRs are not counted as successful fixes until review,
+  validation, and recurrence evidence support that label.
 - **Gate:** fixes cite evidence, record outcomes, and feed recurrence back.
 
 ## Assumption → Phase Map
@@ -147,6 +150,8 @@ Build only enough to generate the bundle automatically and repeatably:
 - [Storage benchmark prototype](storage-benchmark-prototype.md),
   [retention cost model](retention-cost-model.md) — Phase 2 gates.
 - [Business model](business-model-and-economics.md) — Phase 4 value capture.
+- [Fixer component and outcome loop](fixer-component-and-outcome-loop.md) —
+  Phase 4 fixer boundary, outcome schema, and autonomy gates.
 
 ## Bottom Line
 

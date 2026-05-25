@@ -101,6 +101,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | AI-native observability | [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md), [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md) |
 | Flaky-test investigation | [CI failure context MVP](ci-failure-context-mvp.md), [Flaky test investigation and replay](flaky-test-investigation-and-replay.md) |
 | Agent and CLI execution tracing | [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md), [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) |
+| Fixer and outcome loop | [Fixer component and outcome loop](fixer-component-and-outcome-loop.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md), [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md) |
 | Agent-observability technical references | [Agent observability technical review](agent-observability-technical-review.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md) |
 | Frontend collection and cross-tier correlation | [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md), [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Storage benchmark prototype](storage-benchmark-prototype.md) |
 | Redaction/privacy/agent exposure safety | [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md), [Redaction detector toolchain](redaction-detector-toolchain.md), [Production database evidence access gate](production-database-evidence-access.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md), [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md), [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) |
@@ -214,6 +215,9 @@ Acceptance criteria:
 - CLI and agent traces link back to source events, commands, tests, files, and
   outcome refs when available;
 - agent output cites evidence and says "inconclusive" when evidence is weak.
+- fixer or agent PR workflows write outcome records instead of treating opened
+  pull requests as successful fixes; see the
+  [fixer component and outcome loop](fixer-component-and-outcome-loop.md).
 
 ## Final Position
 
