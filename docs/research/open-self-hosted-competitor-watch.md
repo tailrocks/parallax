@@ -60,7 +60,7 @@ audit.
 
 | Competitor | Current strongest fit | Current Parallax gap | Threat level |
 | --- | --- | --- | --- |
-| OpenObserve | Rust, object-storage-oriented, self-hostable observability platform with OTLP ingest, RUM/source maps, Enterprise AI SRE Agent, AI Assistant, incident/RCA workflow, and Enterprise MCP with broad query/admin tools. | AI/MCP features are Enterprise-gated; public pages conflict on the free Self-Hosted Enterprise allowance (`50 GB/day` on pricing, `200 GB/day` on the homepage FAQ); current ingestion docs emphasize OTLP/log APIs/Prometheus/etc., not Sentry envelopes; MCP is not a narrow read-only bundle surface; no portable evidence-bundle schema or coding-agent action audit. | Very high. |
+| OpenObserve | Rust, object-storage-oriented, self-hostable observability platform with OTLP ingest, RUM/source maps, Enterprise AI SRE Agent, AI Assistant, incident/RCA workflow, evidence-chain/audit-trail product language, and Enterprise MCP with broad query/admin tools. | AI/MCP features are Enterprise-tier rather than plain AGPL Community; public pages conflict on the free Self-Hosted Enterprise allowance (`50 GB/day` in pricing/license docs, `200 GB/day` on the homepage FAQ); current ingestion docs emphasize OTLP/log APIs/Prometheus/etc., not Sentry envelopes; MCP is not a narrow read-only bundle surface; no checked portable evidence-bundle schema or coding-agent action audit. | Very high. |
 | SigNoz | Open self-hostable MCP server, agent-native positioning, Claude Code/Codex/Cursor/Gemini integration, traces/logs/metrics/topology/deploy history through agent clients, a landing-page claim around an "open investigation format," and MCP tools for alerts/dashboards/views/channels. | Go + ClickHouse stack; the 2026-05-25 focused check found the claim only as workflow/product language, not as a published schema or portable artifact; query/management interface rather than deterministic evidence bundle; no Sentry envelope ingestion in current docs; no Parallax-style CLI/agent side-effect audit. | High. |
 | Coroot | Apache-2.0 OSS, eBPF zero-instrumentation, metrics/logs/traces/profiles, service map, deployment tracking, current `1.20.2` release, Community MCP, Community `resolve_alerts`, and Enterprise/Cloud AI RCA. | eBPF spans can be incomplete and lack app-level Rust panic/error-chain semantics; AI RCA is not purely OSS/local in Community; MCP is OAuth/RBAC-scoped but still not purely read-only; no Sentry migration path, portable evidence bundle, or coding-agent action audit in official docs. | High. |
 
@@ -79,6 +79,9 @@ OpenObserve is the closest structural threat:
   OpenObserve Enterprise, with direct, bundled-gateway, and external/self-hosted
   gateway provider paths; the AI SRE product page also claims support for
   OpenAI-compatible/self-hosted endpoints.
+- AI SRE product language around verifiable evidence, complete evidence chains,
+  and audit trails over the logs, metrics, traces, and dependency maps used in
+  an incident investigation.
 - Enterprise MCP that can query logs, metrics, and traces, but also exposes
   broad create/update/delete/admin tools for alerts, dashboards, roles, streams,
   functions, pipelines, users, KV, ingestion, and search jobs.
@@ -92,14 +95,17 @@ more than any broad incumbent does.
    OpenObserve Enterprise and list an Enterprise license as a prerequisite.
    Parallax should not gate the evidence/MCP layer if the open schema is meant
    to become the moat. Treat the exact free Self-Hosted Enterprise allowance as
-   unresolved until OpenObserve reconciles the checked `50 GB/day` pricing page
-   with the `200 GB/day` homepage FAQ.
+   unresolved until OpenObserve reconciles the checked `50 GB/day` pricing and
+   license docs with the `200 GB/day` homepage FAQ. Also avoid overstating this
+   as a simple paywall: current sources describe a free Self-Hosted Enterprise
+   tier at some allowance.
 2. **Sentry migration.** Current ingestion docs show OTLP, log APIs, Prometheus,
    Telegraf, syslog, forwarders, and language examples. They do not show a
    Sentry envelope compatibility path.
-3. **Evidence bundle.** OpenObserve exposes observability data and AI/RCA
-   workflows, but not a stable, portable evidence bundle with redaction report,
-   edge strengths, missing-evidence flags, query manifest, and raw refs.
+3. **Evidence bundle.** OpenObserve now directly pressures this wording with
+   product-level evidence-chain and audit-trail claims, but the checked sources
+   still do not publish a stable, portable evidence bundle with redaction
+   report, edge strengths, missing-evidence flags, query manifest, and raw refs.
 4. **Agent/CLI side-effect audit.** The threat is observability-agent RCA, not
    the full "what did Codex/Claude/Amp run, edit, test, and open as a PR?"
    audit graph.
@@ -114,6 +120,8 @@ Reopen the Parallax competitive read if OpenObserve:
 - moves SRE Agent / AI Assistant / RCA / MCP into the free AGPL tier;
 - adds Sentry envelope ingestion or Sentry SDK drop-in migration;
 - exports portable investigation bundles with redaction and query manifests;
+- turns its AI SRE evidence-chain/audit-trail view into a versioned, exportable,
+  machine-readable artifact;
 - adds coding-agent session or shell/CLI action audit;
 - publishes measured fixer outcome loops or PR-generating workflows.
 
@@ -280,6 +288,7 @@ OpenObserve:
 - [OpenObserve homepage](https://openobserve.ai/)
 - [OpenObserve pricing](https://openobserve.ai/pricing/)
 - [OpenObserve enterprise features](https://openobserve.ai/docs/features/enterprise/)
+- [OpenObserve license and pricing docs](https://openobserve.ai/docs/enterprise-setup/license-and-pricing/)
 - [OpenObserve SRE Agent setup guide](https://openobserve.ai/docs/enterprise-setup/sre-agent/)
 - [OpenObserve AI SRE product page](https://openobserve.ai/ai-sre/)
 - [OpenObserve MCP docs](https://openobserve.ai/docs/integration/ai/mcp/)

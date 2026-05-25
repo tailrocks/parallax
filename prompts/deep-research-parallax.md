@@ -1006,9 +1006,10 @@ Direct open / self-hosted competitors to track every run (these sit closest to
 the Parallax wedge and must be re-checked for whether they have closed the gap on
 open + self-hosted + agent-native + evidence bundles + Sentry-compatible ingest):
 - OpenObserve (Rust, object-storage, AGPL; AI SRE agent + MCP, currently
-  Enterprise-gated with conflicting public free Self-Hosted Enterprise allowance
-  claims, OTLP-only — watch whether the agent layer moves into the free tier or
-  Sentry ingest is added)
+  Enterprise-tier with conflicting public free Self-Hosted Enterprise allowance
+  claims, OTLP-only; AI SRE now uses evidence-chain/audit-trail language —
+  watch whether the agent layer moves into the free tier, Sentry ingest is
+  added, or the evidence-chain view becomes a versioned/exportable bundle)
 - SigNoz (Go/ClickHouse; open self-hostable agent-native MCP and a marketing
   claim around an "open investigation format" — watch for a lighter footprint,
   Sentry ingest, or a source-linked evidence-graph/bundle schema)
