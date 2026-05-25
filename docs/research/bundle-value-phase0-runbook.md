@@ -39,8 +39,8 @@ find out whether the central product claim is promising enough to keep building.
 | [SWE-bench official leaderboards](https://www.swebench.com/) | The standard metric is percent resolved over task instances. The public leaderboard tracks resolved rate, cost, step limits, and several benchmark variants. It remains a useful harness pattern, but tasks are issue/repo/test based, not telemetry based. |
 | [OpenAI on SWE-bench Verified](https://openai.com/index/why-we-no-longer-evaluate-swe-bench-verified/) | OpenAI stopped reporting SWE-bench Verified for frontier launches, citing test flaws and contamination, and recommends SWE-bench Pro. It also restates the SWE-bench setup: the model gets the issue text and repo before the fix, and passes only if hidden tests pass. |
 | [SWE-bench Pro](https://labs.scale.com/papers/swe_bench_pro) | SWE-bench Pro has 1,865 harder long-horizon tasks from 41 repositories and held-out/commercial splits. It is a stronger modern coding benchmark, but still does not isolate runtime telemetry or evidence-bundle value. |
-| [SWE-bench-Live](https://swe-bench-live.github.io/) | SWE-bench-Live updates monthly with fresh issue-resolution tasks and has expanded across repositories, languages, and Windows. It helps reduce contamination, but still tests issue-to-patch ability rather than production-failure evidence. |
-| [SWE-bench-Live OS-bench](https://huggingface.co/datasets/SWE-bench-Live/OS-bench) and [RepoLaunch](https://www.microsoft.com/en-us/research/publication/repolaunch-automating-buildtest-pipeline-of-code-repositories-on-any-language-and-any-platform/) | OS-bench exposes cross-platform migration rows with Docker images, build/test commands, log parsers, patches, and pass/fail tests. RepoLaunch is the underlying automation direction for arbitrary-language, arbitrary-OS repository build/test setup. | Useful for one CLI/OS/systems task in Phase 0, but still public/generated benchmark evidence rather than production incident telemetry. |
+| [SWE-bench-Live](https://swe-bench-live.github.io/) | SWE-bench-Live plans monthly updates, has expanded across repositories and languages, and now includes Windows-specific task coverage. It helps reduce contamination, but still tests issue-to-patch ability rather than production-failure evidence. |
+| [SWE-bench-Live OS-bench](https://huggingface.co/datasets/SWE-bench-Live/OS-bench), [SWE-bench-Live Windows](https://huggingface.co/datasets/SWE-bench-Live/Windows), and [RepoLaunch](https://www.microsoft.com/en-us/research/publication/repolaunch-automating-buildtest-pipeline-of-code-repositories-on-any-language-and-any-platform/) | OS-bench exposes generated OS migration rows; Windows currently exposes 61 rows with commands, log parsers, Docker images, patches, test patches, hints, commit URLs, and pass/fail test lists. RepoLaunch is the underlying automation direction for arbitrary-language, arbitrary-OS repository build/test setup. | Useful for one CLI/OS/platform task in Phase 0, but still public/generated benchmark evidence rather than production incident telemetry. Freeze dataset revision, row counts, and source-field policy before inclusion. |
 | [Terminal-Bench](https://www.tbench.ai/) | Terminal-Bench evaluates agents in terminal environments with task verifiers and concrete artifacts. It is a useful execution-harness model for Parallax agent runs, but it does not answer whether runtime error evidence improves bug fixes. |
 
 ## What Phase 0 Must Prove
@@ -63,7 +63,7 @@ Use 10 to 16 tasks for the first run.
 | --- | --- | --- |
 | Telemetry-augmented executable SWE-style tasks | 8-10 | Gives real issue/fix/test structure with low contamination risk. Use the [seed-corpus note](bundle-value-seed-corpus.md) to prioritize SWE-bench-Live MultiLang, SWE-bench Multilingual, Multi-SWE-bench, or SWE-rebench V2 candidates, then reconstruct telemetry by running failing tests under instrumentation. |
 | Fault-injected reference app tasks | 2-4 | Gives real Parallax-style traces/logs/error events with known fixes by construction. Include at least one frontend-to-backend or CLI-triggered failure if possible. |
-| Externally generated OS/CLI benchmark task | 0-1 replacement | A SWE-bench-Live OS-bench task may replace one reference-app/CLI task when it passes the same no-cheat and overlay gates. Keep it separate in analysis because it is public generated benchmark evidence. |
+| Externally generated OS/CLI/platform benchmark task | 0-1 replacement | A SWE-bench-Live OS-bench or Windows task may replace one reference-app/CLI task when it passes the same no-cheat and overlay gates. Keep it separate in analysis because it is public generated benchmark evidence. |
 | Operator real incidents | 0-2 if available | Reality check using true telemetry and real fix history. Treat these as replacements for public tasks, not additive count inflation, and label separately because n=1 bias is high. |
 
 Do not use SWE-bench Verified for headline Phase 0 decisions. It can shake out
@@ -107,9 +107,14 @@ agent output.
 Pre-register the run before looking at results:
 
 - exact task list;
+- exact public dataset revisions, row counts, split counts, source-field policy
+  hashes, and benchmark-source snapshot hash;
 - exact arms per task;
 - model(s), temperature, and seed count;
-- agent scaffold and tool permissions;
+- exact provider model IDs, model snapshot/source refs, alias status, API
+  parameters, and context/output token limits;
+- agent scaffold, prompt hashes, container image digest, tool versions, and tool
+  permissions;
 - time, token, and tool-call limits;
 - whether internet access is disabled;
 - scoring rubric;

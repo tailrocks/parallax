@@ -33,13 +33,19 @@ Outside sources checked for this pass:
   Rust rows, plus build/test commands, log parsers, patches, and Docker images
   ([SWE-bench-Live](https://swe-bench-live.github.io/),
   [MultiLang](https://huggingface.co/datasets/SWE-bench-Live/MultiLang)).
-- SWE-bench-Live's Hugging Face org now also lists OS-bench, a fresh
-  cross-platform migration dataset with Docker images, rebuild/test/print
-  commands, log parsers, patches, and test fields. The current viewer shows 126
-  `windows2linux` rows and zero `linux2windows` rows. It is useful as a
-  supplemental CLI/OS slice, but because it is public and generated, it should
-  be reported separately from wild issue-resolution tasks
-  ([OS-bench](https://huggingface.co/datasets/SWE-bench-Live/OS-bench)).
+- SWE-bench-Live's Hugging Face org now lists four datasets and shows recent
+  activity: OS-bench (126 rows), MultiLang (743 rows), Windows (61 rows), and
+  the Python-only SWE-bench-Live set. The official site says the benchmark plans
+  monthly updates and notes a February 2026 Windows-specific task release. The
+  Windows viewer exposes the same high-risk fields as other SWE-style sources
+  (`patch`, `test_patch`, hints, commit URLs, commands, log parser, verifier
+  lists, Docker image) and spans eight language values. OS/Windows slices are
+  useful supplemental CLI/platform evidence, but because they are public,
+  generated, and moving, they require dataset-revision snapshots and should be
+  reported separately from wild production incident tasks
+  ([SWE-bench-Live org](https://huggingface.co/SWE-bench-Live),
+  [Windows](https://huggingface.co/datasets/SWE-bench-Live/Windows),
+  [OS-bench](https://huggingface.co/datasets/SWE-bench-Live/OS-bench)).
 - The official SWE-bench leaderboard reports resolved rate, cost, step limits,
   benchmark variants, model release date, and scaffold filtering, which is a
   useful result-shape reference even though SWE-bench itself lacks telemetry
@@ -98,6 +104,7 @@ docs/research/bundle-value-eval/
   runs/<run_id>/
     run-manifest.json
     task-set.json
+    benchmark-source-snapshot.json
     model-snapshots.json
     arm-results.jsonl
     scorecards.md
@@ -114,6 +121,7 @@ docs/research/bundle-value-eval/
 | `result-ledger.md` | Yes | Current gate status, claim level, expiry date, and links to all run IDs. |
 | `run-manifest.json` | Yes | Exact run configuration, model snapshots, scaffold commit, task-set hash, bundle template version, redaction policy, and token ceilings. |
 | `task-set.json` | Yes | Public task IDs, source, freshness tier, language, provenance, source-field policy hash, and inclusion/exclusion reason. |
+| `benchmark-source-snapshot.json` | Yes | Dataset revisions, row counts, split counts, last-updated/checked timestamps, and source-field quarantine summary for every public task source. |
 | `model-snapshots.json` | Yes | Exact provider model IDs and API parameters used for that run. |
 | `arm-results.jsonl` | Yes | One row per task/arm/model/seed outcome. |
 | `scorecards.md` | Yes | Blind grading notes, root-cause accuracy, evidence-grounding counts, and patch-quality notes. |
@@ -137,25 +145,49 @@ as durable prose; exact model IDs live here because they change over time.
   "repo_commit": "commit-sha-that-built-the-artifacts",
   "preregistered_at": "2026-05-25T00:00:00Z",
   "task_set_hash": "sha256:...",
+  "benchmark_source_snapshot_hash": "sha256:...",
   "overlay_contract_version": "phase0-overlay-v1",
   "bundle_template_version": "bundle-v0",
   "redaction_policy_version": "phase0-redaction-v1",
   "agent_scaffold": {
     "name": "codex|claude-code|openhands|swe-agent|custom",
     "version_or_commit": "...",
+    "scaffold_commit": "sha-or-none",
+    "container_image_digest": "sha256:...|none",
+    "system_prompt_hash": "sha256:<hex>|none",
+    "developer_prompt_hash": "sha256:<hex>|none",
+    "tool_version_manifest_hash": "sha256:<hex>",
     "internet_access": false,
     "tool_permissions": ["shell", "edit", "test"],
     "max_steps": 100,
     "max_wall_clock_minutes": 45
   },
+  "task_sources": [
+    {
+      "source": "SWE-bench-Live/MultiLang",
+      "dataset_revision": "hf-revision-or-commit",
+      "checked_at": "2026-05-25T00:00:00Z",
+      "row_count": 743,
+      "split_counts": {"rust": 94},
+      "source_field_policy_hash": "sha256:<hex>"
+    }
+  ],
   "models": [
     {
       "provider": "provider-name",
       "model_id": "exact-api-model-id",
+      "model_id_alias_used": false,
       "model_family": "frontier-a",
       "api_version": "if applicable",
+      "model_snapshot_source": "provider-doc-url-or-release-note",
+      "model_release_or_snapshot_date": "YYYY-MM-DD|unknown",
+      "availability_checked_at": "2026-05-25T00:00:00Z",
       "temperature": 0,
       "top_p": 1,
+      "max_input_tokens": 0,
+      "max_output_tokens": 0,
+      "reasoning_or_effort_setting": "none|low|medium|high|provider_specific",
+      "tool_call_mode": "disabled|auto|required|provider_specific",
       "context_window_observed": 0,
       "pricing_source_checked_at": "2026-05-25T00:00:00Z"
     }
@@ -183,13 +215,18 @@ task/arm/model/seed attempt:
   "run_id": "a1-phase0-2026-05-25-r001",
   "task_id": "swe-live-rust-example",
   "task_source": "SWE-bench-Live/MultiLang",
+  "task_source_revision": "hf-revision-or-commit",
+  "task_source_checked_at": "2026-05-25T00:00:00Z",
   "contamination_tier": "T1_fresh_public",
   "telemetry_provenance": ["observed_from_harness", "reconstructed_from_test_output"],
   "arm": "C_parallax_bundle",
   "model_id": "exact-api-model-id",
+  "model_snapshot_hash": "sha256:<hex>",
+  "agent_scaffold_hash": "sha256:<hex>",
   "model_family": "frontier-a",
   "seed": 1,
   "context_hash": "sha256:...",
+  "benchmark_source_snapshot_hash": "sha256:...",
   "normalized_overlay_hash": "sha256:...",
   "source_field_policy_hash": "sha256:...",
   "evidence_parity_passed": true,
@@ -213,6 +250,17 @@ task/arm/model/seed attempt:
 No result row counts toward A1 if `evidence_parity_passed`,
 `gold_isolation_passed`, `source_field_isolation_passed`, or
 `redaction_passed` is false.
+
+Also exclude or downgrade rows when:
+
+- the public dataset revision, row count, split count, or source-field
+  quarantine summary is missing from `benchmark-source-snapshot.json`;
+- the task source changed after preregistration and before the run without a new
+  task-set hash;
+- the model was addressed through a mutable alias without a provider-visible
+  snapshot/source record;
+- the agent scaffold, system/developer prompts, container image, or tool-version
+  manifest cannot be hashed.
 
 ## Contamination Tiers
 
@@ -264,10 +312,12 @@ Rerun earlier when any of these happen:
   product positioning;
 - any provider deprecates, aliases, or materially updates a model used in the
   last A1 pass;
+- a public task-source dataset changes row counts, split counts, schema fields,
+  license, Docker images, verifier commands, or source-field risk posture;
 - OpenAI, SWE-bench, SWE-bench-Live, Terminal-Bench, or another primary source
   reports contamination or scoring issues affecting the task family used;
-- the evidence-bundle schema, hypothesis block, truncation rule, redaction
-  policy, or agent scaffold changes materially;
+- the evidence-bundle schema, hypothesis block, truncation rule, source-field
+  policy, redaction policy, or agent scaffold changes materially;
 - more than 25 percent of the task set changes;
 - A2 interviews produce real incidents that can replace synthetic/public tasks;
 - a competitor publishes a credible telemetry-augmented agent eval.

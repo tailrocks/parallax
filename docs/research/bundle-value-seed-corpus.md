@@ -29,7 +29,7 @@ telemetry problem. Parallax must generate or attach the telemetry leg itself.
 | --- | --- | --- |
 | [SWE-bench dataset docs](https://www.swebench.com/SWE-bench/guides/datasets/) | Standard task fields include repository, issue URL, PR URL, base commit, gold patch, test patch, fail-to-pass tests, and pass-to-pass tests. This is the right manifest shape for issue/fix/test tasks. | No runtime telemetry, trace, log, deploy, redaction, or evidence-bundle artifacts. |
 | [SWE-bench-Live site](https://swe-bench-live.github.io/), [SWE-bench-Live Hugging Face org](https://huggingface.co/SWE-bench-Live), and [SWE-bench-Live MultiLang](https://huggingface.co/datasets/SWE-bench-Live/MultiLang) | The site says SWE-bench-Live is designed for recent issue-resolution tasks and plans monthly updates. The current Hugging Face org shows active updates, and the current MultiLang viewer shows 743 rows across 8 language splits: C 37, C++ 74, Go 138, JS 93, Rust 94, Java 109, TS 111, and C# 87. Rows include base commit, patch, test patch, problem statement, commit URLs, rebuild/test/print commands, log parser, fail-to-pass/pass-to-pass tests, and Docker image. | Strong freshness and execution harness, with a meaningful Rust slice, but still issue-to-patch, not telemetry-to-patch. Counts and split mix are moving source facts and must be rechecked before selecting the seed manifest. |
-| [SWE-bench-Live OS-bench](https://huggingface.co/datasets/SWE-bench-Live/OS-bench) | Fresh cross-platform migration dataset from the same org. The current viewer shows 126 `windows2linux` rows and zero `linux2windows` rows, with `patch`, optional `test_patch`, `FAIL_TO_PASS`, `PASS_TO_PASS`, Docker image, rebuild/test/print commands, log parser, language, difficulty, repository metadata, and migration direction. | Useful for a CLI/OS/systems slice, but it is a public generated benchmark, not wild production telemetry or a replacement for issue-resolution tasks. Treat the one-way split as a source limitation. |
+| [SWE-bench-Live Hugging Face org](https://huggingface.co/SWE-bench-Live), [OS-bench](https://huggingface.co/datasets/SWE-bench-Live/OS-bench), and [Windows](https://huggingface.co/datasets/SWE-bench-Live/Windows) | The org currently lists OS-bench (126 rows), MultiLang (743 rows), Windows (61 rows), and the Python-only SWE-bench-Live set. Windows rows include language, base commit, `patch`, `test_patch`, problem statement, hints, commit URLs, rebuild/test/print commands, log parser, fail/pass test lists, and Docker image; created-at values span 2024-12-27 to 2026-04-17. | Useful for a CLI/OS/platform slice, but these are public/generated benchmark rows, not wild production telemetry or a replacement for issue-resolution tasks. Freeze dataset revision, row counts, split counts, and field policy before selecting any task. |
 | [SWE-bench Multilingual](https://www.swebench.com/multilingual) | 300 curated tasks across 42 repositories and 9 languages, including Rust; tasks follow SWE-bench issue/PR/test format and are designed to run quickly. | Small and high quality, but no runtime evidence. Useful as the first Rust/system seed, not a complete Parallax corpus. |
 | [Multi-SWE-bench](https://github.com/multi-swe-bench/multi-swe-bench) | 1,632 issue-resolution tasks across Java, TypeScript, JavaScript, Go, Rust, C, and C++, with open data, code, and environments. | Larger multilingual pool; quality and environment friction must be checked per task before inclusion. |
 | [SWE-rebench V2 paper](https://arxiv.org/abs/2602.23866), [dataset collection](https://huggingface.co/collections/nebius/swe-rebench-v2), [main dataset](https://huggingface.co/datasets/nebius/SWE-rebench-V2), and [PR-scale dataset](https://huggingface.co/datasets/nebius/SWE-rebench-V2-PRs) | Language-agnostic pipeline for harvesting executable real-world SWE tasks. The current main dataset viewer shows 32.1k rows, with the card specifying 32,079 samples across 20 languages; fields include base commit, image name, language, license, patch, test patch, fail-to-pass/pass-to-pass tests, install config, and LLM metadata. The PR-scale dataset shows 126k rows and a quick-start length of 126,300. | Best for expansion or training-scale corpus work after the seed run, not as the first headline A1 source. The scale is attractive, but the seed should prefer smaller, inspectable tasks before relying on automatically collected/generated problem statements and metadata-filtered rows. |
@@ -52,19 +52,20 @@ Recommended seed mix:
 | Rust/systems tasks | 4 | SWE-bench Multilingual Rust, SWE-bench-Live MultiLang Rust, Multi-SWE-bench Rust | Parallax is Rust-first; this tests stack/error shapes closest to the first product. |
 | Fresh multilingual tasks | 4 | SWE-bench-Live MultiLang | Keeps contamination and stale-fixture risk lower than old benchmark pools. |
 | JS/TS user-facing or server tasks | 2 | SWE-bench Multilingual JS/TS, Multi-SWE-bench JS/TS, BugsJS | Frontend and browser/server JS errors are part of the prompt, but should not dominate the Rust-first seed. |
-| Synthetic cross-tier or CLI tasks | 2 | Parallax reference app / fault injection; optionally one SWE-bench-Live OS-bench task | Supplies the telemetry shapes public datasets lack: frontend-to-backend traces, CLI invocation traces, and known side effects. OS-bench can add a fresh CLI/OS migration failure, but it remains public benchmark evidence. |
+| Synthetic cross-tier or CLI tasks | 2 | Parallax reference app / fault injection; optionally one SWE-bench-Live OS-bench or Windows task | Supplies the telemetry shapes public datasets lack: frontend-to-backend traces, CLI invocation traces, and known side effects. OS-bench/Windows can add a fresh CLI/OS/platform failure, but they remain public benchmark evidence. |
 
 Operator-private incidents can replace at most two public tasks in the first
 run, but label them separately and exclude them from public claims unless the
 artifacts can be safely shared or independently audited.
 
-Use OS-bench conservatively. It can replace at most one of the first two
-synthetic/CLI slots unless the run is explicitly an OS/CLI slice. Treat its
-`patch`, `test_patch`, `log_parser`, and generated problem statement as
+Use OS-bench and Windows conservatively. Either source can replace at most one
+of the first two synthetic/CLI slots unless the run is explicitly an OS/CLI or
+platform slice. Treat `patch`, `test_patch`, `log_parser`, hints, commit URLs,
+generated statements, platform labels, and verifier lists as
 contamination-sensitive grader or source metadata; agent arms should see only
-the allowed issue text plus the derived overlay artifacts. If an OS-bench task's
-statement over-specifies the implementation, keep it for harness debugging or
-score its diagnosis separately from wild-bug root-cause accuracy.
+the allowed issue text plus the derived overlay artifacts. If a task statement
+over-specifies the implementation, keep it for harness debugging or score its
+diagnosis separately from wild-bug root-cause accuracy.
 
 ## Task Eligibility
 
@@ -160,6 +161,10 @@ docs/research/bundle-value-eval/
   "task_id": "swe-live-rust-example",
   "source": "SWE-bench-Live/MultiLang",
   "source_version": "hf-viewer-checked-2026-05-25",
+  "dataset_revision": "hf-revision-or-commit",
+  "row_count_at_selection": 743,
+  "split_counts_at_selection": {"rust": 94},
+  "source_checked_at": "2026-05-25T00:00:00Z",
   "repo": "owner/repo",
   "base_commit": "...",
   "issue_url": "https://github.com/owner/repo/issues/123",
