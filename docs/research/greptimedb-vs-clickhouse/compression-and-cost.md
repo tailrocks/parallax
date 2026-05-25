@@ -72,6 +72,32 @@ reproduces Run 4 exactly. So "ClickHouse wins hand-tuned numeric columns (Gorill
 gauge, DoubleDelta monotonic counter)" is **stable**; GreptimeDB's automatic Parquet+ZSTD
 wins the dict-friendly + noisy-float patterns (Run 10) — the per-column-pattern wash holds.
 
+## Larger-tier real-data storage re-verify (Run 159 — 8M metrics, 5M logs, exec)
+
+Re-verified on the bigger prior-loaded tables (post-flush; GreptimeDB `sst_size`+`index_size` from
+`information_schema.region_statistics`; ClickHouse `sum(bytes_on_disk)` from `system.parts`, active):
+
+| Table (rows) | ClickHouse | GreptimeDB | Smaller | Pattern |
+| --- | --- | --- | --- | --- |
+| `metrics_hc` (8M; 40 svc × 1000 inst, plain `value`) | 57.42 MiB | **38.6 MiB** (sst, no idx) | **GreptimeDB ~1.49×** | labeled series + plain float → GT dict + Parquet/ZSTD |
+| `logs_b1` (5M; realistic HTTP log text) | 399.21 MiB | **258 MiB** (239.8 sst + 18.1 FULLTEXT idx) | **GreptimeDB ~1.55×** | mixed log text; GT wins even carrying its bloom index |
+| `spans` (1M) | **28.9 MiB** | 37.4 MiB | ClickHouse ~1.3× | high-entropy hex `trace_id`/`span_id` (no drift vs smoke table) |
+
+**Key nuance — the metric storage winner is *shape*-dependent, not a constant:** the smoke `metrics_real`
+(counter+gauge) goes to **ClickHouse ~1.7×** (Gorilla/DoubleDelta on monotonic/flat numerics), but the
+larger `metrics_hc` (label columns `service`/`instance` + a plain noisy `value`) goes to **GreptimeDB
+~1.49×** (dict-encoded labels + Parquet/ZSTD). So "metrics" is not one answer: **counter/gauge numerics
+→ ClickHouse; labeled-series-with-ordinary-values → GreptimeDB.**
+
+**Net for observability volume:** at the larger tier, **GreptimeDB is denser on the two highest-volume
+signals here (metrics_hc 8M ~1.5×, logs_b1 5M ~1.55×)**, while ClickHouse stays denser on traces (hex
+`span_id`/`trace_id`) and on hand-tuned counter/gauge numerics. Since metrics + logs usually dominate
+ingest volume, **GreptimeDB's per-copy storage tends smaller on the bulk** — which, stacked on the
+**1× vs N× replication** multiplier (`distributed-and-scaling.md`, Run 155), is the concrete basis of
+GreptimeDB's cost-axis edge under the proxy lens. Caveat: indicative (single-flush, near-default codecs;
+ClickHouse could be tuned further per-column) — the tuned-vs-tuned + multi-replica $ measurement stays
+harness/server-owed.
+
 ## Realistic-cardinality logs (Run 10 — resolves the synthetic caveat)
 
 Run 4's `logs` result used only ~10 distinct messages (extreme dictionary

@@ -6379,6 +6379,40 @@ the scan). (Run 154's join case is unaffected: no filter was pushed to the left 
 rows. Un-keyed: same on `logs_b1` → `output_rows` small but `scan_cost ~429ms`/49 file_ranges (full
 scan). CH: `EXPLAIN indexes=1 … FROM spans …` → `Granules 1/123` vs `… FROM logs_b1 …` → `611/611`.
 
+### Run 159 — 2026-05-25 — LIVE storage re-verify (exec, larger tier 8M/5M/1M): GreptimeDB denser on metrics+logs, ClickHouse denser on traces; metric winner is shape-dependent
+
+**Context.** Network isolation persists (exec-only). Cost = priority axis #2 and GreptimeDB's #1
+*surviving* edge under the proxy lens — re-verified on the bigger prior-loaded tables (storage size,
+non-timing). Re-pin unchanged. (Aside: `metrics_hc` is only 1000 distinct `instance` — UNDER the CH
+`LowCardinality` 8192 cap — so it does NOT stress the cardinality cliff; the cliff re-verify still needs
+>8192-series data, owed.)
+
+**Measured (post-flush; GT `sst_size`+`index_size` from `information_schema.region_statistics`; CH
+`sum(bytes_on_disk)` from `system.parts` active):**
+| Table (rows) | ClickHouse | GreptimeDB | Denser |
+| --- | --- | --- | --- |
+| `metrics_hc` (8M; 40 svc x 1000 inst, plain value) | 57.42 MiB | **38.6 MiB** | **GT ~1.49x** |
+| `logs_b1` (5M; HTTP log text) | 399.21 MiB | **258 MiB** (239.8 sst + 18.1 FULLTEXT idx) | **GT ~1.55x** |
+| `spans` (1M) | **28.9 MiB** | 37.4 MiB | CH ~1.3x (no drift vs smoke) |
+
+**Findings.** (1) **GreptimeDB denser on the two highest-volume signals** (metrics_hc 8M ~1.5x, logs_b1
+5M ~1.55x — GT wins logs even carrying its 18 MiB bloom FULLTEXT index); **ClickHouse denser on traces**
+(high-entropy hex `span_id`/`trace_id`). (2) **The metric storage winner is *shape-dependent*:** smoke
+`metrics_real` (counter+gauge) -> CH ~1.7x (Gorilla/DoubleDelta), but `metrics_hc` (label cols + plain
+noisy value) -> GT ~1.49x (dict + Parquet/ZSTD). So "metrics" isn't one answer — counter/gauge -> CH,
+labeled-series-plain-value -> GT. (3) **Decision:** since metrics+logs usually dominate ingest volume,
+GreptimeDB's *per-copy* storage tends smaller on the bulk — stacked on **1x vs Nx replication** (Run
+155), this is the concrete basis of GreptimeDB's cost-axis edge under the proxy lens. Updated
+`compression-and-cost.md` (new larger-tier section). Caveat: indicative (single-flush, near-default
+codecs); tuned-vs-tuned + multi-replica $ stays server-owed.
+
+**Reproduce.** GT: `docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql
+--data-urlencode "sql=SELECT table_id,region_rows,sst_size,index_size FROM
+information_schema.region_statistics WHERE region_rows>900000"` (map table_id via
+`information_schema.tables`). CH: `docker exec parallax-bench-clickhouse-1 clickhouse-client -q "SELECT
+table,sum(bytes_on_disk),sum(rows) FROM system.parts WHERE active GROUP BY table"`. (exec; host port
+down.)
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
