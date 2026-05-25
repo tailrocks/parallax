@@ -1011,6 +1011,28 @@ CH bloom/skip, GT inverted/skipping); the dominant bundle queries are *anchored*
 (not Q5-scan-bound). **Q1–Q6 smoke set now complete** (Q1/Q2/Q3 Run 16, Q4 Run 30,
 Q5 here, Q6 composite Run 16). Larger-tier cold scan still the prototype's.
 
+### Run 32 — 2026-05-25 — Jaeger query API (closes public claim #7)
+
+Backs `public-performance-claims.md` claim #7. The last unverified sub-claim
+("GreptimeDB native Jaeger API").
+
+- **GreptimeDB: native GA Jaeger query API.** Live: `GET /v1/jaeger/api/services` →
+  **HTTP 200** with Jaeger-format JSON (`{"data":null,"total":0,…}` — empty, no
+  Jaeger-ingested traces, but the endpoint works default-on). Source
+  `src/servers/src/http/jaeger.rs` (1750 lines): `handle_get_services` +
+  Operations/OperationsNames/Traces handlers + **tag/span-attribute search**
+  (`tags="{…}"`) + trace limits — the full Jaeger query surface. So Jaeger UI / Grafana
+  Jaeger datasource can query GreptimeDB traces with **zero adapter**.
+- **ClickHouse: no native Jaeger** — no `jaeger` function; integration is the external
+  **`jaeger-clickhouse` storage plugin** (Jaeger's own query service reads ClickHouse
+  via a gRPC backend), same external-adapter pattern as OTLP.
+
+**Claim status:** claim #7 **fully resolved** — all three GreptimeDB protocols verified
+(OTLP Run 25, PromQL Runs 23–24, Jaeger Run 32); ClickHouse has none natively (collector
+/ experimental TimeSeries / external plugin). Reinforces GreptimeDB's
+observability-ecosystem-native fit; the one correction stands (PromQL not "absent" on
+ClickHouse, just experimental).
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
