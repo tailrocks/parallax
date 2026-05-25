@@ -20,8 +20,10 @@ property.
 The central rule:
 
 > No "deterministic Rust grouping" claim without dated fixture runs covering
-> rebuilds, debuginfo variants, frame normalization, false splits, false merges,
-> client fingerprints, symbolication degradation, and grouping-version stability.
+> capture paths, panic strategies, rebuilds, debuginfo variants, frame
+> normalization, false splits, false merges, client fingerprints,
+> symbolication degradation, redaction, source-field isolation, and
+> grouping-version stability.
 
 This ledger is narrower than the
 [Sentry SDK compatibility ledger](sentry-sdk-compatibility-ledger.md): Sentry
@@ -32,12 +34,14 @@ Rust envelopes can parse and normalize before Rust grouping is proven.
 | Source | Current check | Why it matters |
 | --- | --- | --- |
 | [Rust `std::backtrace`](https://doc.rust-lang.org/std/backtrace/index.html) | Rust docs currently show `std` 1.95.0 and state that backtraces are best-effort, file/line reporting usually needs debug information, `Backtrace::capture` is disabled unless environment variables enable it, and `force_capture` bypasses those gates. | The ledger must record capture mode, status, and debuginfo availability; absence of file/line is expected and must become low confidence, not fabricated precision. |
+| [Rust panic hooks](https://doc.rust-lang.org/std/panic/fn.set_hook.html) and [`PanicHookInfo`](https://doc.rust-lang.org/std/panic/struct.PanicHookInfo.html) | Panic hooks run before the panic runtime for aborting and unwinding runtimes, and carry payload plus source location when available. | Panic grouping fixtures must prove the hook ran and captured the location; a missing hook is a capture-path failure, not a grouping success with fewer frames. |
 | [Cargo profiles](https://doc.rust-lang.org/cargo/reference/profiles.html) | Release defaults have `debug = false`; `line-tables-only` is the minimal debuginfo level for filename/line backtraces; `split-debuginfo` and `strip` alter where symbols live. | Fixture variants must include release default, line tables, full debuginfo, split debuginfo, and stripped binaries. |
-| [rustc codegen options](https://doc.rust-lang.org/rustc/codegen-options/index.html) | Frame-pointer and unwind-table defaults depend on target, while flags can force them. | The run manifest must pin target triple and stack-walking knobs because grouping stability is target-sensitive. |
+| [rustc codegen options](https://doc.rust-lang.org/rustc/codegen-options/index.html) | Frame-pointer and unwind-table defaults depend on target, while flags can force them; `panic=immediate-abort` does not call panic hooks. | The run manifest must pin target triple, panic strategy, and stack-walking knobs because grouping stability and capture viability are target-sensitive. |
 | [rustc symbol mangling](https://doc.rust-lang.org/stable/rustc/symbol-mangling/index.html) | Rust symbol names are mangled for linker uniqueness; tooling may need demangling; rustc supports multiple mangling versions. | Store raw, demangled, and normalized symbols. Do not assume one mangling version or one compiler release. |
 | [Sentry issue grouping](https://docs.sentry.io/concepts/data-management/event-grouping/) | Sentry versions grouping algorithms, considers fingerprint first, then stack trace, exception, and message, and uses in-app frames when available. | Parallax should copy the versioning discipline and client-fingerprint precedence, not claim exact Sentry grouping parity. |
 | [Sentry debug identifiers](https://docs.sentry.io/platforms/flutter/data-management/debug-files/identifiers/) | Sentry distinguishes code identifiers from debug identifiers and uses debug IDs to locate matching debug companions. | Parallax should record build/debug IDs and symbol-file matching results as evidence, but not include build IDs in the logical issue identity. |
-| [sentry Rust crate 0.48.2](https://docs.rs/sentry/latest/sentry/) | Docs.rs currently resolves `sentry` to `0.48.2`; default features include backtrace, contexts, panic capture, transport, and debug-image metadata. | The first fixture target remains current Sentry Rust SDK panic/error envelopes. |
+| [sentry Rust crate 0.48.2](https://docs.rs/sentry/0.48.2/sentry/) and [feature flags](https://docs.rs/crate/sentry/0.48.2/features) | Docs.rs currently resolves the explicit crate page to `0.48.2`; default features include backtrace, contexts, panic capture, transport, debug-image metadata, and release health. | The first fixture target remains current Sentry Rust SDK panic/error envelopes, but runs must record exact feature flags because `tracing`, `anyhow`, and OpenTelemetry are opt-in. |
+| [sentry-panic 0.48.2](https://docs.rs/sentry-panic/0.48.2/sentry_panic/), [sentry-backtrace 0.48.2](https://docs.rs/sentry-backtrace/0.48.2/sentry_backtrace/), and [sentry-debug-images 0.48.2](https://docs.rs/sentry-debug-images/0.48.2/sentry_debug_images/) | The subcrates separately install a panic handler, convert/process stacktraces, and attach loaded-library metadata. | Result rows must identify which capture integration produced panic, stack, and loaded-image evidence; one SDK envelope is not enough proof. |
 
 ## Claim Levels
 
@@ -47,6 +51,7 @@ Use these levels in `claim-ledger.jsonl`:
 | --- | --- | --- |
 | `not_measured` | No current fixture run exists. | "Rust grouping design exists; results pending." |
 | `fixture_harness_ready` | Synthetic Rust apps can generate raw Sentry envelopes and build variants. | "Rust grouping fixture harness prepared." |
+| `capture_path_checked` | Fixture runs show hook invocation, backtrace capture path, backtrace env state, SDK feature set, panic strategy, and debug-image presence. | "Rust stack capture paths measured for fixture builds." |
 | `debug_info_policy_checked` | Fixture runs show how release default, line tables, full debuginfo, split debuginfo, and stripped binaries affect frame quality. | "Debuginfo impact measured for Rust grouping fixtures." |
 | `rust_stack_v1_snapshot_stable` | Unchanged fixture input produces identical normalized grouping material and fingerprints across repeated parser runs. | "Grouping snapshots are deterministic for the tested fixture corpus." |
 | `rebuild_stable` | Same logical bug groups across clean rebuilds when source identity is unchanged. | "Stable across tested rebuild variants." |
@@ -54,7 +59,7 @@ Use these levels in `claim-ledger.jsonl`:
 | `false_split_controlled` | Line-only shifts, path hash changes, build IDs, and deploy metadata do not split the same logical bug unless a fixture marks the change as material. | "False-split controls pass for tested Rust fixtures." |
 | `false_merge_controlled` | Different application functions, generic instantiations, closures, async frames, and unrelated panic sites do not collapse into one issue. | "False-merge controls pass for tested Rust fixtures." |
 | `symbolication_degraded_safe` | Missing or partial symbols produce low-confidence grouping warnings and no fake file/line precision. | "Unsymbolicated Rust events degrade safely." |
-| `rust_grouping_stable` | Required stability, false-split, false-merge, client-fingerprint, and degraded-symbolication rows pass for the dated matrix. | "Deterministic Parallax grouping for the tested Rust stacktrace matrix." |
+| `rust_grouping_stable` | Required capture-path, stability, false-split, false-merge, client-fingerprint, degraded-symbolication, redaction, and source-field rows pass for the dated matrix. | "Deterministic Parallax grouping for the tested Rust stacktrace matrix." |
 | `claim_expired` | rustc/Cargo/Sentry SDK/grouping/redaction/parser inputs changed, or 90 days passed. | "Rust grouping result expired; rerun required." |
 | `claim_failed` | Any required fixture fails for the advertised level. | No Rust grouping claim for the affected matrix. |
 
@@ -69,11 +74,13 @@ docs/research/rust-stacktrace-grouping-results.md
 docs/research/rust-stacktrace-grouping-runs/<run_id>/manifest.json
 docs/research/rust-stacktrace-grouping-runs/<run_id>/fixture-matrix.jsonl
 docs/research/rust-stacktrace-grouping-runs/<run_id>/raw-envelopes/<fixture_id>.envelope
+docs/research/rust-stacktrace-grouping-runs/<run_id>/capture-path-results.jsonl
 docs/research/rust-stacktrace-grouping-runs/<run_id>/build-variant-results.jsonl
 docs/research/rust-stacktrace-grouping-runs/<run_id>/frame-normalization-results.jsonl
 docs/research/rust-stacktrace-grouping-runs/<run_id>/fingerprint-results.jsonl
 docs/research/rust-stacktrace-grouping-runs/<run_id>/symbolication-results.jsonl
 docs/research/rust-stacktrace-grouping-runs/<run_id>/false-split-merge-audit.jsonl
+docs/research/rust-stacktrace-grouping-runs/<run_id>/source-field-policy-audit.jsonl
 docs/research/rust-stacktrace-grouping-runs/<run_id>/claim-ledger.jsonl
 docs/research/rust-stacktrace-grouping-runs/<run_id>/hashes.sha256
 ```
@@ -94,6 +101,7 @@ Each `manifest.json` should pin the moving parts:
   "grouping_algorithm_version": "rust-stack-v1",
   "sentry_rust_version": "0.48.2",
   "sentry_types_version": "0.48.2",
+  "sentry_features": ["backtrace", "contexts", "panic", "debug-images", "transport"],
   "rustc_version": "rustc <version>",
   "cargo_version": "cargo <version>",
   "target_triples": ["x86_64-unknown-linux-gnu"],
@@ -101,9 +109,15 @@ Each `manifest.json` should pin the moving parts:
   "codegen_knobs": {
     "force_frame_pointers": "default|enabled|disabled",
     "force_unwind_tables": "default|enabled|disabled",
+    "panic_strategy": "unwind|abort|immediate-abort",
     "symbol_mangling_version": "default|v0|legacy"
   },
+  "backtrace_environment": {
+    "RUST_BACKTRACE": "unset|0|1|full|other",
+    "RUST_LIB_BACKTRACE": "unset|0|1|full|other"
+  },
   "redaction_policy_version": "a6-default-deny-vN",
+  "source_field_policy_version": "phase0-source-field-policy-vN",
   "fixture_count": 0,
   "notes": []
 }
@@ -130,6 +144,40 @@ under one set does not automatically cover another.
 }
 ```
 
+### Capture Path Result Row
+
+```json
+{
+  "fixture_id": "rust_panic_line_tables",
+  "sdk_name": "sentry-rust",
+  "sdk_version": "0.48.2",
+  "sdk_features": ["backtrace", "contexts", "panic", "debug-images", "transport"],
+  "panic_strategy": "unwind|abort|immediate-abort",
+  "panic_hook_status": "sentry_hook_invoked|custom_hook_invoked|not_invoked|not_applicable|unknown",
+  "previous_hook_chained": true,
+  "panic_payload_kind": "str|string|non_string|not_applicable|unknown",
+  "panic_location_available": true,
+  "backtrace_capture_path": "sentry_backtrace|std_capture|std_force_capture|parsed_string|sdk_event_only|none",
+  "backtrace_environment": {
+    "RUST_BACKTRACE": "unset|0|1|full|other",
+    "RUST_LIB_BACKTRACE": "unset|0|1|full|other"
+  },
+  "backtrace_status": "captured|disabled|unsupported|missing|unknown",
+  "debug_images_enabled": true,
+  "debug_meta_image_count": 1,
+  "loaded_image_count": 1,
+  "negative_fixture": false,
+  "expected_degradation": null,
+  "result": "pass|fail"
+}
+```
+
+Capture path rows answer whether grouping evidence exists before testing whether
+the grouping algorithm is stable. A panic event from `panic=immediate-abort`,
+disabled SDK features, a non-invoked hook, or disabled backtrace capture should
+produce an explicit degraded/failed row instead of silently flowing into
+fingerprint checks.
+
 ### Build Variant Result Row
 
 ```json
@@ -140,7 +188,7 @@ under one set does not automatically cover another.
   "debug_setting": "line-tables-only",
   "split_debuginfo": "off|packed|unpacked|platform_default",
   "strip": "none|debuginfo|symbols",
-  "panic_strategy": "unwind|abort",
+  "panic_strategy": "unwind|abort|immediate-abort",
   "backtrace_status": "captured|disabled|unsupported|unknown",
   "frame_count": 12,
   "in_app_frame_count": 3,
@@ -197,7 +245,24 @@ under one set does not automatically cover another.
   "symbolication_status": "full|function_only|missing_line|unsymbolicated|failed|unknown",
   "fabricated_precision": false,
   "agent_visible_warning": "Missing line information; grouping confidence is low.",
+  "source_field_policy_status": "pass|fail|not_applicable",
   "safe_for_agent_bundle": true
+}
+```
+
+### Source Field Policy Audit Row
+
+```json
+{
+  "fixture_id": "rust_tracing_breadcrumbs_line_tables",
+  "bundle_projection": "cli_json|cli_markdown|http_json|mcp_structured_content",
+  "source_field_policy_version": "phase0-source-field-policy-vN",
+  "source_field_policy_hash": "sha256:<hex>",
+  "checked_fields": ["frame.vars", "breadcrumbs.data", "tags", "contexts.trace", "span.attributes"],
+  "denied_field_count": 0,
+  "leaked_denied_fields": [],
+  "redaction_report_ref": "sha256:<hex>",
+  "result": "pass|fail"
 }
 ```
 
@@ -233,8 +298,15 @@ under one set does not automatically cover another.
 ## Counting Rules
 
 - No `rust_grouping_stable` claim until rebuild stability, debuginfo-variant
-  stability, false-split controls, false-merge controls, client-fingerprint
-  behavior, and degraded-symbolication behavior all pass in the same dated run.
+  stability, capture-path checks, false-split controls, false-merge controls,
+  client-fingerprint behavior, degraded-symbolication behavior, redaction
+  checks, and source-field policy checks all pass in the same dated run.
+- No `capture_path_checked` claim unless the run includes positive and negative
+  fixtures for Sentry panic hooks, disabled hooks, `Backtrace::capture` env
+  gates, `Backtrace::force_capture`, SDK debug-image feature on/off, and the
+  configured panic strategies.
+- `panic=immediate-abort` is a negative capture fixture. Do not claim Sentry
+  panic grouping for it unless a separate non-hook capture path is proven.
 - Client-provided fingerprints win only when policy allows them; record
   `fingerprint_source = client` and do not mix that pass with the default
   `rust-stack-v1` result.
@@ -252,6 +324,9 @@ under one set does not automatically cover another.
   grouping only.
 - Redaction must pass for any frame context, breadcrumbs, tags, or span fields
   exposed in agent-visible bundles.
+- Source-field policy must pass for every agent-visible projection produced from
+  fixture, eval, or corpus rows. A denied source field in projected grouping
+  material fails the Rust grouping bundle claim even if the fingerprint matched.
 
 ## Initial Results Template
 
@@ -272,10 +347,12 @@ Current claim level: not_measured
 | Build/profile variants covered | 0 | >=5 | Pending |
 | Rebuild-stability failures | 0 | 0 | Pending |
 | Debug-variant stability failures | 0 | 0 | Pending |
+| Capture-path failures | 0 | 0 | Pending |
 | False-split audit failures | 0 | 0 | Pending |
 | False-merge audit failures | 0 | 0 | Pending |
 | Fabricated symbolication precision | 0 | 0 | Pending |
 | Agent-visible redaction leaks | 0 | 0 | Pending |
+| Source-field policy leaks | 0 | 0 | Pending |
 
 ## Matrix Coverage
 
@@ -314,8 +391,10 @@ Mark affected claims `claim_expired` when:
 - rustc/Cargo versions or target triples change materially;
 - Cargo debuginfo, split-debuginfo, strip, panic, frame-pointer, unwind-table,
   or symbol-mangling behavior changes;
+- Sentry Rust SDK feature defaults, `sentry-panic`, `sentry-backtrace`, or
+  `sentry-debug-images` behavior changes;
 - `rust-stack-v1` normalization changes;
-- redaction policy changes for stack/breadcrumb/span fields;
+- redaction or source-field policy changes for stack/breadcrumb/span fields;
 - a new Rust async/runtime pattern causes false splits or false merges;
 - 90 days pass since the last run during active development.
 

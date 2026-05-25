@@ -27,15 +27,17 @@ the result rows and claim levels required before this becomes a product claim.
 | Source | What matters for Parallax |
 | --- | --- |
 | [Rust `std::backtrace`](https://doc.rust-lang.org/std/backtrace/index.html) | Backtrace capture is best-effort. Frame instruction pointers, symbols, filenames, and line numbers may be inaccurate; filename/line reporting usually requires debuginfo. `Backtrace::capture` is disabled unless `RUST_LIB_BACKTRACE` or `RUST_BACKTRACE` enables it, while `force_capture` ignores those environment gates. |
+| [Rust `std::panic::set_hook`](https://doc.rust-lang.org/std/panic/fn.set_hook.html) and [`PanicHookInfo`](https://doc.rust-lang.org/std/panic/struct.PanicHookInfo.html) | Panic hooks run before the panic runtime for both aborting and unwinding runtimes, and receive payload plus source location when available. The hook is global and replaces the previous hook unless explicitly chained. |
 | [Cargo profiles](https://doc.rust-lang.org/cargo/reference/profiles.html) | `debug = "line-tables-only"` is the minimal debuginfo level for backtraces with filename/line info. Release defaults still have `debug = false`. `split-debuginfo` can put debug info adjacent to the executable, and `strip` can remove symbols or debuginfo. |
-| [rustc codegen options](https://doc.rust-lang.org/rustc/codegen-options/index.html) | `force-frame-pointers` and `force-unwind-tables` are target-dependent durability knobs for stack walking and unwinding; defaults vary by target. |
+| [rustc codegen options](https://doc.rust-lang.org/rustc/codegen-options/index.html) | `force-frame-pointers` and `force-unwind-tables` are target-dependent durability knobs for stack walking and unwinding; defaults vary by target. The `panic` codegen option also includes `immediate-abort`, which does not call panic hooks. |
 | [rustc symbol mangling](https://doc.rust-lang.org/rustc/symbol-mangling/index.html) | Rust symbols are mangled for linker uniqueness and may need demangling for tooling. The mangling version can vary, so Parallax should store raw and demangled function material and normalize only conservatively. |
 | [Sentry issue grouping](https://docs.sentry.io/concepts/data-management/event-grouping/) | Sentry considers custom `fingerprint` first, then stack trace, exception, then message. Stacktrace grouping primarily uses frames associated with the application and normalized frame material. Grouping algorithm versions matter because grouping changes should not silently rewrite old issues. |
 | [Sentry debug files](https://docs.sentry.io/platforms/flutter/data-management/debug-files/) | Debug files carry function names, source paths, line numbers, source context, and variable placement; Sentry needs access to application and system-library debug files for fully symbolicated crash reports. |
 | [Sentry debug file formats](https://docs.sentry.io/platforms/flutter/data-management/debug-files/file-formats/) | Debug information, symbol tables, source bundles, and unwind information are distinct. Symbol tables can recover function names as a fallback but do not provide file/line or inline-frame quality. ELF release builds commonly strip debug info into companion files. |
 | [Sentry debug identifiers](https://docs.sentry.io/platforms/flutter/data-management/debug-files/identifiers/) | Native crash reports and debug files are matched by code/debug identifiers. For ELF, Sentry uses GNU build identifiers to compute debug identifiers; missing or mismatched IDs weaken symbolication. |
-| [sentry Rust crate 0.48.2](https://docs.rs/sentry/latest/sentry/) | The current Rust SDK captures panics, backtraces, Rust contexts, and debug-image metadata by default features, with optional `anyhow`, `tracing`, and OpenTelemetry integrations. |
-| [sentry tracing integration 0.48.2](https://docs.rs/sentry/latest/sentry/integrations/tracing/index.html) | `tracing` events can become Sentry events, breadcrumbs, logs, and spans. Spans and breadcrumbs give causal context, but they should support grouping rather than replace physical stack identity. |
+| [sentry Rust crate 0.48.2](https://docs.rs/sentry/0.48.2/sentry/) and [feature flags](https://docs.rs/crate/sentry/0.48.2/features) | The current Rust SDK default features include `backtrace`, `contexts`, `panic`, `transport`, `debug-images`, and release health. Optional `anyhow`, `tracing`, and OpenTelemetry integrations require explicit features/setup. |
+| [sentry-panic 0.48.2](https://docs.rs/sentry-panic/0.48.2/sentry_panic/), [sentry-backtrace 0.48.2](https://docs.rs/sentry-backtrace/0.48.2/sentry_backtrace/), and [sentry-debug-images 0.48.2](https://docs.rs/sentry-debug-images/0.48.2/sentry_debug_images/) | The panic integration installs a panic handler and forwards to the prior hook; the backtrace crate converts and processes stacktraces; the debug-images integration attaches loaded-library metadata to events. Parallax fixtures must prove which integration produced each signal instead of treating "Sentry Rust event" as one opaque capture path. |
+| [sentry-tracing 0.48.2](https://docs.rs/sentry-tracing/0.48.2/sentry_tracing/) | `tracing` error events can become Sentry events, breadcrumbs, logs, and spans; structured fields can become context fields or tags. Spans and breadcrumbs give causal context, but they should support grouping rather than replace physical stack identity. |
 | [tracing-error](https://docs.rs/tracing-error/latest/tracing_error/) | `SpanTrace` captures logical span context at the error site. It is orthogonal to a call-stack backtrace and is especially useful across async boundaries. |
 
 ## Product Decision
@@ -79,6 +81,32 @@ Policy requirements:
 - distinguish function-only symbol table fallback from full file/line
   symbolication;
 - retain enough raw frame material to re-run grouping after a normalizer fix.
+
+## Capture Path Policy
+
+Do not treat "Rust stacktrace exists" as a single boolean. The fixture output
+must preserve the chain that produced the grouping material:
+
+1. **Panic hook signal**: whether `sentry-panic`, a custom hook, or no hook
+   observed the panic; whether the previous hook was chained; and whether
+   `PanicHookInfo` exposed payload and location.
+2. **Backtrace signal**: whether frames came from `sentry-backtrace`, a Rust
+   `Backtrace::capture`, `Backtrace::force_capture`, a parsed string, or an SDK
+   event field; plus the `RUST_BACKTRACE` / `RUST_LIB_BACKTRACE` state.
+3. **Unwind and target signal**: target triple, panic strategy, frame-pointer
+   and unwind-table settings, and whether the build path can produce a stack at
+   all. `panic=immediate-abort` should be a negative fixture because panic hooks
+   are not called.
+4. **Debug-image signal**: whether `debug_meta` and loaded images were emitted,
+   and whether the matching debug companion/source bundle was found.
+5. **Agent-visible signal**: whether frame context, breadcrumbs, tags, span
+   fields, and source snippets passed the A6 redaction pipeline and the A1
+   source-field policy before entering a bundle.
+
+This separation matters for Parallax's AI-native goal. An agent needs to know
+whether it is looking at a reliable source frame, a function-only fallback, a
+panic location without a stack, or a logical span trace that only explains the
+operation. Those are different evidence classes with different fix confidence.
 
 ## `rust-stack-v1` Fingerprint
 
@@ -184,6 +212,12 @@ passes:
 | No in-app frames | Use all frames with low confidence and warnings. |
 | Explicit Sentry fingerprint | Client fingerprint wins and is recorded as `fingerprint_source = client`. |
 | Missing build/debug ID | Event accepted, symbolication warning stored, no server-side symbol lookup assumed. |
+| `panic=abort` with Sentry panic hook | Panic event captured if the hook fires; process termination path recorded; grouping confidence depends on captured frames and location. |
+| `panic=immediate-abort` / no hook path | No Sentry panic event should be assumed; fixture should fail any capture-path claim if Parallax still advertises panic grouping for this build. |
+| `Backtrace::capture` disabled by env | Stack absent or disabled status recorded; no high-confidence grouping unless another capture path supplies frames. |
+| `Backtrace::force_capture` path | Stack captured despite env gates; overhead and policy caveat recorded separately from default production behavior. |
+| Debug images disabled in SDK features | Event may still parse, but symbol-file matching and build/debug ID evidence are absent; cannot satisfy full symbolication claims. |
+| Stack/breadcrumb/span source-field canary | Agent-visible bundle carries `redaction_report.source_field_policy.status = pass`; denied fields never appear in projected grouping material. |
 
 ## Success Gates
 
@@ -196,6 +230,10 @@ This proof gate is closed only when:
 - unrelated app functions do not merge;
 - missing debuginfo creates explicit low-confidence grouping, not fabricated
   source precision;
+- capture path, panic strategy, SDK features, backtrace environment, and
+  debug-image presence are recorded for every fixture;
+- `panic=immediate-abort`, missing hooks, disabled backtraces, and disabled
+  debug images are negative fixtures with explicit degraded or failed claims;
 - all grouping material can be reprocessed under `rust-stack-v2` without losing
   the original `rust-stack-v1` issue assignment.
 
@@ -214,6 +252,10 @@ The normalized error-event model should add:
 | `grouping_material` | JSON snapshot of normalized frames and anchors used in the hash. |
 | `grouping_confidence` | `high`, `medium`, `low`; drives UI and agent wording. |
 | `grouping_warnings` | Missing debuginfo, no in-app frames, stack absent, unsymbolicated frames. |
+| `capture_path` | `sentry_panic`, `sentry_backtrace`, `std_capture`, `std_force_capture`, `parsed_stacktrace`, or `sdk_event_only`. |
+| `panic_hook_status` | `sentry_hook_invoked`, `custom_hook_invoked`, `not_invoked`, `not_applicable`, or `unknown`. |
+| `backtrace_status` | Preserve Rust/Sentry capture status: `captured`, `disabled`, `unsupported`, `missing`, or `unknown`. |
+| `sdk_feature_set` | Exact Sentry Rust features/integrations enabled for fixture generation. |
 | `frame.raw_function` | Raw SDK/symbolicator function. |
 | `frame.demangled_function` | Demangled Rust symbol, if available. |
 | `frame.normalized_function` | Versioned normalized function used for grouping. |
@@ -236,6 +278,10 @@ The normalized error-event model should add:
   `grouping_confidence`, symbolication warnings, and redaction status to agents.
 - [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
   still has veto power over stack locals, breadcrumbs, tags, and span fields.
+- [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md)
+  and [A1 eval result ledger](a1-eval-result-ledger-and-model-refresh.md)
+  define the source-field isolation policy that decides whether fixture-derived
+  frame/source/context fields can appear in agent-visible bundles at all.
 
 ## Bottom Line
 
