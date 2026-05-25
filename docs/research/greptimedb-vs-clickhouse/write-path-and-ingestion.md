@@ -69,6 +69,47 @@ first stated**: it matters under *sustained* tiny-write rates that outpace
 ClickHouse's merges — for bounded/moderate bursts ClickHouse copes. (This walks
 back the original strength of this claim; honest correction.)
 
+## Async insert — ClickHouse's server-side buffer (mechanism, pass 56)
+
+ClickHouse's answer to small-write absorption is a **server-side buffer**, the
+`AsynchronousInsertQueue` (`src/Interpreters/AsynchronousInsertQueue.cpp`). Small
+inserts accumulate per (query, settings) key and **flush to one part** when any
+trigger fires (live defaults, Run 33): `async_insert_max_data_size` = **10 MiB**,
+`async_insert_max_query_number` = **450**, or the **adaptive busy timeout**
+`async_insert_busy_timeout_min_ms`=50 / `max_ms`=200 (`async_insert_use_adaptive_busy_timeout`
+tunes it by load). `async_insert=1` default-on in 26.x.
+
+The buffer **trades freshness and/or durability for throughput**:
+
+- **Until the buffer flushes, the data is neither queryable nor a durable part.** The
+  window is bounded by the busy timeout (≤200 ms).
+- **`wait_for_async_insert`=1 (default):** the client *blocks* until the flush — so on
+  ack the data is visible + on-disk, but the insert call **absorbs the ≤200 ms buffer
+  latency**.
+- **`wait_for_async_insert`=0:** fast ack, but a ≤200 ms window where the data is
+  **invisible and not durable** (lost on crash — ties `wal-and-durability.md`).
+
+Either way there is a ~50–200 ms cost *somewhere* — blocking on ack (wait=1) or an
+invisibility/loss window (wait=0). (The window is too small to catch cleanly across
+separate `docker exec` calls, each ~50–100 ms; a single async insert had already
+flushed by query time — the *mechanism* and triggers are source+settings-confirmed.)
+
+**GreptimeDB has no async-insert buffer — and needs none.** Its **LSM memtable is the
+buffer**: small writes accumulate in memory and flush to one SST when the write buffer
+fills, *exactly* the part-explosion fix — but the memtable is **queryable immediately**
+(`committed_sequence`, visible-on-write, Run 5; re-confirmed Run 33: a single insert
+→ `count=1` instantly, no window) **and durable immediately** (WAL-first,
+`wal-and-durability.md`). So GreptimeDB gets the small-write-absorption benefit with
+**neither** the freshness window **nor** the durability tradeoff that ClickHouse's
+async buffer imposes — the absorption is native to the storage engine, not a bolt-on
+queue in front of a part-per-insert engine.
+
+→ Sharpens the axis-1 write-path point: ClickHouse *can* absorb small writes (async
+insert), but the mechanism is a buffer that costs a ≤200 ms freshness/durability/
+latency window; GreptimeDB's LSM gives the same absorption for free, visible+durable on
+write. For Parallax's streaming small-write ingest this is a clean GreptimeDB
+ergonomics + freshness edge (mechanism-grounded, modest in absolute ms).
+
 ## Bulk ingest throughput (Run 5, smoke)
 
 | Engine | 1M spans load | ~rows/s | Measurement |

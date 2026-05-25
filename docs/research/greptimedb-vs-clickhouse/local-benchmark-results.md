@@ -1033,6 +1033,29 @@ Backs `public-performance-claims.md` claim #7. The last unverified sub-claim
 observability-ecosystem-native fit; the one correction stands (PromQL not "absent" on
 ClickHouse, just experimental).
 
+### Run 33 — 2026-05-25 — Async-insert buffer mechanism + freshness window
+
+Backs `write-path-and-ingestion.md` (pass 56). Config + mechanism confirm.
+
+**ClickHouse** (`AsynchronousInsertQueue.cpp`, live settings): `async_insert=1`,
+`wait_for_async_insert=1` default; buffer flush triggers = `async_insert_max_data_size`
+**10 MiB** / `async_insert_max_query_number` **450** / adaptive busy timeout
+`min_ms=50`/`max_ms=200`. So small inserts buffer server-side and flush to one part on
+size/count/timeout → solves part-explosion, but data is invisible + non-durable until
+flush (≤200 ms window; wait=1 blocks the client to absorb it, wait=0 leaves a loss
+window). Freshness window too small to catch across separate docker-exec calls
+(~50–100 ms each) — a single async insert had already flushed by query time; mechanism
++ triggers are source/settings-confirmed.
+
+**GreptimeDB**: no async buffer — the LSM memtable absorbs small writes natively and is
+**queryable immediately** (re-confirmed: single insert → `count=1` instantly, no
+window) **and durable** (WAL-first). Same absorption, zero freshness/durability cost.
+
+**Claim status:** confirms + sharpens pass-9 — ClickHouse small-write absorption is a
+server-side **buffer** costing a ≤200 ms freshness/durability/latency window;
+GreptimeDB's LSM gives it natively, visible+durable on write. Write-path ergonomics +
+freshness edge GreptimeDB (mechanism-grounded; modest absolute ms). No verdict flip.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
