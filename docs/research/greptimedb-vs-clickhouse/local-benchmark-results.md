@@ -987,6 +987,30 @@ locality + runtime filter; GT HTTP floor + 10-way repartition of a toy input, a
 small-scale artifact). Part of the not-latency-bound bundle (Run 16). Reinforces, does
 not move, the verdict. Un-anchored large↔large join (B4) still owed.
 
+### Run 31 — 2026-05-25 — Q5 high-cardinality filter (completes Q1–Q6 smoke set)
+
+Backs the evidence-bundle verdict (the brief's Q5). Filter the 1M `spans` table by a
+**high-cardinality, non-sort-key** column (`span_id`, ~1M distinct; neither engine keys
+it — CH `ORDER BY (trace_id,ts)`, GT PK `(service,name)`). Smoke, matched dataset.
+
+- **ClickHouse: 10 ms.** `EXPLAIN` = `Granules: 123/123` — **full scan** (no skip index
+  on `span_id`), vectorized C++ filter. Found 1 row.
+- **GreptimeDB: 95 ms** (HTTP-measured) — full DataFusion scan of 1M + filter. 1 row.
+
+**Two Q5 regimes, both now covered:**
+1. **Unindexed high-card filter → full scan** (this run): ClickHouse ~**10×** faster —
+   the vectorized-engine throughput edge (pass 42), the honest "ClickHouse wins scans"
+   result; operator hypothesis still doesn't hold for scan-shaped queries.
+2. **Indexed high-card filter → anchored lookup** = the `trace_id` case (Runs 2/6):
+   CH via sort-key locality, GT via inverted index — both fast/acceptable.
+3. **JSON-attribute high-card filter:** CH columnar subcolumn beats GT blob-parse
+   `json_get_*` (pass 38 / Run 18 mechanism).
+
+**Parallax lesson:** index the high-card attributes you filter on (both engines can —
+CH bloom/skip, GT inverted/skipping); the dominant bundle queries are *anchored* anyway
+(not Q5-scan-bound). **Q1–Q6 smoke set now complete** (Q1/Q2/Q3 Run 16, Q4 Run 30,
+Q5 here, Q6 composite Run 16). Larger-tier cold scan still the prototype's.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

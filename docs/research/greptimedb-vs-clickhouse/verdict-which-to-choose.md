@@ -143,6 +143,14 @@ the gap over time, the *present state* still favors GreptimeDB for shipping toda
 → GreptimeDB can replace ClickHouse for Parallax's workload, accepting slower
 ad-hoc large-scale log/trace search.
 
+**The full Q1–Q6 evidence-bundle set is now measured at smoke** (Q1/Q2/Q3 + composite
+Run 16; Q4 cross-tier join Run 30; Q5 high-card filter Run 31). Pattern: the
+**anchored** bundle queries (Q1–Q4, Q6) are *not latency-bound* on either engine
+(both ≪ the 300 ms gate); the only place ClickHouse pulls clearly ahead is the
+**unindexed scan** shape (Q5 ~10×, and ad-hoc log search Run 12) — which Parallax
+avoids by anchoring and indexing. So "GreptimeDB slower" is real **only** for
+scan-shaped queries Parallax does not run on the hot path.
+
 ## Decision question 5 — which to choose
 
 **GreptimeDB**, for Parallax specifically.
