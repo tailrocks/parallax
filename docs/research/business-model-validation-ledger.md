@@ -41,7 +41,7 @@ Use exactly one current level in `claim_ledger.jsonl` for the business model.
 | `adoption_interest_signal` | Teams show concrete product/deployment interest, but no business signal yet. | A2 Level 3+ commitments or pilot/design-partner rows; no payment/budget claim allowed. |
 | `deployment_intent_signal` | Target teams can plausibly deploy Parallax and expose enough evidence safely. | A2 pass/continue result, named deployment approval path by role, and no unresolved redaction blocker. |
 | `hosted_payment_signal` | A team explicitly prefers hosted Parallax or managed ops over self-hosting. | Named buyer/sponsor role, budget category, and time-boxed next step for hosted or managed deployment. |
-| `fixer_payment_signal` | A team may pay for the separate fixer/outcome workflow. | A1 positive or target failure-class proof, plus budget/sponsor signal for PR/fix orchestration or success workflow. |
+| `fixer_payment_signal` | A team may pay for the separate fixer/outcome workflow. | A1 positive or target failure-class proof, budget/sponsor signal for PR/fix orchestration or success workflow, and clear labeling of whether fixer outcome rows are proven or still pre-proof. |
 | `enterprise_ops_signal` | A team may pay for SSO/RBAC/audit/retention/backup/compliance features. | Existing enterprise ops requirement, named approval path, and stated blocker that free core alone will not satisfy. |
 | `support_services_signal` | A team may pay for support, implementation, certification, or consulting. | Named support owner, explicit operating need, and time-boxed next action for paid support/services. |
 | `conversion_experiment_ready` | A seam is strong enough to test publicly with a landing page, hosted waitlist, paid pilot, or pricing conversation. | At least two same-seam payment signals, A2 deployment evidence, and no contradiction that the open core would need to be weakened. |
@@ -60,7 +60,7 @@ Create these only when measurement begins:
 | `docs/research/business-model-runs/<run_id>/interview-payment-signal.jsonl` | Yes, redacted | Payment, budget, buyer, and sustainability rows derived from A2 calls. |
 | `docs/research/business-model-runs/<run_id>/adoption-funnel.jsonl` | Yes | Public adoption funnel rows once there is a release: installs, pilots, active projects, schema integrations, churn. |
 | `docs/research/business-model-runs/<run_id>/hosting-signal.jsonl` | Yes, redacted | Hosted/managed-deployment interest, trial, conversion, and churn rows. |
-| `docs/research/business-model-runs/<run_id>/fixer-signal.jsonl` | Yes, redacted | Fixer paid-pilot, usage, outcome, and budget rows, linked to fixer outcome records. |
+| `docs/research/business-model-runs/<run_id>/fixer-signal.jsonl` | Yes, redacted | Fixer paid-pilot, usage, outcome, and budget rows, linked to fixer outcome and agent-session linkage records. |
 | `docs/research/business-model-runs/<run_id>/enterprise-ops-signal.jsonl` | Yes, redacted | SSO/RBAC/audit/export/backup/retention/compliance requirement and budget rows. |
 | `docs/research/business-model-runs/<run_id>/support-services-signal.jsonl` | Yes, redacted | Support, services, certification, implementation, or consulting rows. |
 | `docs/research/business-model-runs/<run_id>/conversion-experiment.jsonl` | Yes | Pricing-page, hosted waitlist, paid-pilot, or sales-call experiment rows. |
@@ -121,12 +121,13 @@ Use this shape for hosted, fixer, enterprise ops, and support rows.
   "seam": "hosted|fixer|enterprise_ops|support_services",
   "source_ref": "A2-007|pilot_003|fixout_012",
   "need": "Managed ops, PR/fix workflow, SSO, audit export, support SLA, or similar.",
-  "required_product_proof": ["a1_bundle_value", "a2_deployment", "a6_redaction"],
-  "current_status": "interest|trial|paid_pilot|converted|lost|churned",
+  "required_product_proof": ["a1_bundle_value", "a2_deployment", "a6_redaction", "fixer_outcome_when_seam_is_fixer"],
+  "current_status": "pre_proof_interest|interest|trial|paid_pilot|converted|lost|churned",
   "amount_bucket": "none|under_500|500_1999|2k_9999|10k_plus|unknown",
   "blocking_reason": "none|no_budget|missing_feature|redaction|self_host_only|incumbent_contract|unknown",
   "sanitized_evidence": "Paraphrased, redacted signal.",
-  "linked_outcome_refs": []
+  "linked_outcome_refs": [],
+  "linked_agent_session_linkage_refs": []
 }
 ```
 
@@ -179,7 +180,15 @@ Use this shape for hosted, fixer, enterprise ops, and support rows.
 - A seam cannot be `value_capture_validated` by gating the open evidence graph,
   bundle schema, CLI/API context surface, or read-only MCP context.
 - Fixer monetization cannot be claimed before the relevant A1/fixer outcome
-  rows show that bundles improve or govern the target failure class.
+  rows show that bundles improve or govern the target failure class. If a team
+  expresses willingness to pay before `agent_session_linkage_pass`, evidence
+  citation, review/CI, and recurrence rows exist, record it as
+  `pre_proof_interest`, not validated fixer value.
+- A paid fixer pilot counts as `value_capture_validated` only when the paid
+  agreement names the measured outcome window and links to fixer outcome rows.
+  Payment for custom fixture setup, implementation, or evaluation help counts
+  as support/services unless the fixer outcome ledger also passes for the paid
+  scope.
 - Enterprise ops monetization cannot be claimed from generic "we need SSO"
   feedback unless the team also has a deployment path and budget/sponsor role.
 - Support/services monetization can count before product maturity, but it must
