@@ -70,6 +70,13 @@ The mechanism that *does* differ and matters for Parallax:
 writes — ClickHouse needs a batching strategy to stay healthy, GreptimeDB does
 not. For bulk/batched ingest both are fine (below).
 
+**Re-verified Run 166 (exec, no drift):** a direct ClickHouse `INSERT … VALUES` was **immediately
+visible** in the next `SELECT` (count 1→2); GreptimeDB insert visible immediately from the memtable
+(count 1, no flush). Both visible-on-write holds. (Also resolves the Run-160 caveat: that pass's
+grouped-error MV-rollup *incremental* didn't reflect immediately — this confirms it was **not**
+base-table freshness, which is immediate, but MV-target write/flush timing; base ingest freshness is a
+tie, unaffected.)
+
 **Refinement (Run 7, B9 — measured).** The part-per-insert mechanism is real
 (ClickHouse logged 300 `NewPart` events for 300 single-row inserts), **but
 background merges collapse bounded bursts aggressively** (300 parts → 1 active via

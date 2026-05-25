@@ -6596,6 +6596,27 @@ parent_span_id IS NULL) UNION ALL SELECT s.span_id,s.parent_span_id,t.depth+1 FR
 t ON s.parent_span_id=t.span_id WHERE s.trace_id='<id>') SELECT count(*),max(depth) FROM tree"` →
 schema error. CH: same `WITH RECURSIVE` on `spans` → runs. (exec; host port down.)
 
+### Run 166 — 2026-05-25 — LIVE re-verify (exec): freshness (visible-on-write) — no drift; resolves the Run-160 MV caveat
+
+**Context.** Rotated to the freshness axis (#1) + resolving Run 160's open caveat (grouped-error MV
+incremental didn't reflect; suspected `async_insert`). Re-pin unchanged.
+
+**Re-verified (no drift):**
+- **ClickHouse:** direct `INSERT … VALUES` → next `SELECT count()` = **immediately visible** (1→2). Even
+  `async_insert=1, wait_for_async_insert=0` was visible by the next query (tiny data flushed fast).
+- **GreptimeDB:** insert → immediate `count()` = 1 from the **memtable, no flush** (visible-on-write).
+- Both **visible-on-write**; freshness latency tie holds (write-path note, Run 5/53).
+
+**Resolves Run 160.** The grouped-error MV-rollup incremental not reflecting was **NOT** base-table
+freshness (which is immediate, confirmed here) — it was the **MV-target write/flush timing** (the MV
+fires on the source insert + writes partial state to `ge_roll`; that path is timing-sensitive, and I
+also dropped the rollup quickly). Base ingest freshness is a tie, unaffected. Updated
+`write-path-and-ingestion.md` freshness section.
+
+**Reproduce.** CH: `clickhouse-client -q "CREATE TABLE fr(k String,v Int32) ENGINE=MergeTree ORDER BY
+k; INSERT INTO fr VALUES('a',1); SELECT count() FROM fr"` → 1. GT: create + insert + `SELECT count()`
+(no flush) → 1. (exec; host port down.)
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
