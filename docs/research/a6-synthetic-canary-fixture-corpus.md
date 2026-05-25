@@ -28,6 +28,8 @@ This note defines the minimum synthetic canary corpus for A1/A6:
 | [OpenTelemetry `AnyValue`](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) | OTLP canaries must cover typed strings, bytes, arrays, and key/value lists before Markdown/string rendering. |
 | [Sentry sensitive-data docs](https://docs.sentry.io/platforms/javascript/guides/nextjs/data-management/sensitive-data/) | Sentry-style fixtures should cover request headers, cookies, query strings, breadcrumbs, user context, stack locals, and HTTP spans. |
 | [MCP tools specification `2025-11-25`](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) | Canaries must be absent from canonical `structuredContent`, not just text projections. |
+| [MCP resources specification `2025-11-25`](https://modelcontextprotocol.io/specification/2025-11-25/server/resources) and [Claude Code MCP resources](https://code.claude.com/docs/en/mcp) | Canaries must also be absent from `resources/read` output and client resource attachments, because Claude Code can auto-fetch `@` resources into context. |
+| [Codex config reference](https://developers.openai.com/codex/config-reference) | Fixture manifests should record Codex MCP elicitation and memory settings when Codex is part of the tested client matrix, because MCP-derived context may otherwise become retained client state. |
 | [RFC 8785 JCS](https://www.rfc-editor.org/rfc/rfc8785.html) | Expected finding rows and projection hashes should use deterministic canonical JSON. |
 | [OWASP Logging Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html) | The corpus should cover access tokens, passwords, connection strings, encryption keys, payment-like values, sensitive PII, and untrusted cross-zone data. |
 | [Betterleaks recheck](redaction-toolchain-betterleaks-recheck.md) | External scanner fixtures should record network/validation/LLM mode; comparator scans must run offline by default. |
@@ -56,6 +58,8 @@ The first A1 bundle-value run should require this minimum set:
 | `raw_ref_no_deref_001` | Raw refs | Secret only in raw referenced blob | `refs/stdout.txt` or artifact ref | Agent-visible projection contains ref metadata, never raw value. |
 | `projection_markdown_001` | Projection | Markdown renderer leak | table, code block, link URL, inline JSON | Canonical JSON and Markdown projection both scan clean. |
 | `mcp_structured_001` | MCP | Structured output leak | `structuredContent` and text content | `structuredContent` validates against schema and contains no canary. |
+| `mcp_resource_read_001` | MCP resource | Resource-read or resource-attachment leak | `resources/read` response, resource URI/path, Claude Code `@` attachment | Resource output derives from redacted canonical bundle; raw refs deny without sensitive scope. |
+| `client_retention_001` | Agent client | Persisted output or memory leak | oversized MCP output file ref, resource attachment, Codex memory/external-context path | No raw canary persists; client settings and persisted artifact scanner status are recorded. |
 | `pii_joinable_id_001` | Cross-surface | Low-entropy identifier | email, IP, user/session ID, path fragment | Keyed HMAC or strip; plain SHA/MD5 counts as leak. |
 
 Phase 0 can use generated fixture values, but each value must have a stable
@@ -96,6 +100,8 @@ docs/research/redaction-fixtures/
       cli.txt
       http-response.json
       mcp-structured-content.json
+      mcp-resource-read.json
+      client-retention.json
     scanner-comparison.jsonl
     projection-audit.jsonl
     private-input.sha256

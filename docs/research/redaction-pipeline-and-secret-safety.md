@@ -49,6 +49,9 @@ The first public/private canary corpus boundary is specified in
 | [OpenTelemetry redaction processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/redactionprocessor/README.md) | The processor is designed to fail closed with `allowed_keys`, can mask blocked values, recommends HMAC for low-entropy data, can emit redaction audit attributes, and now documents URL/database-query sanitizers. Its `allowed_values` setting takes precedence over `blocked_values`, so Parallax should avoid broad allowlists in default policies. This maps well to Parallax ingest policy and bundle `redaction_report`, but it covers only telemetry attributes that pass through that processor. |
 | [OpenTelemetry common `AnyValue`](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) | OTLP values can be scalars, bytes, arrays, and key/value lists. Parallax must redact the typed tree before converting a value to text or Markdown. |
 | [MCP tools specification `2025-11-25`](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) | MCP tool results can contain both text content and JSON `structuredContent`; when an `outputSchema` is provided, servers must conform to it and clients should validate it. Parallax redaction safety must therefore scan and hash the canonical `structuredContent`, not only the text block. |
+| [MCP resources specification `2025-11-25`](https://modelcontextprotocol.io/specification/2025-11-25/server/resources) | MCP resources expose context through list/read APIs and host applications decide how resources enter model context. Sensitive resources need access controls. Parallax must scan `resources/read` output and resource templates as agent-visible projections, not only `tools/call` results. |
+| [Claude Code MCP resources](https://code.claude.com/docs/en/mcp) | Claude Code lets users reference MCP resources with `@` mentions; referenced resources are automatically fetched and included as attachments, paths are fuzzy-searchable, and resource contents can be text, JSON, structured data, or other content types. A6 must treat client resource attachment as a projection path. |
+| [Codex config reference](https://developers.openai.com/codex/config-reference) | Codex exposes `approval_policy.granular.mcp_elicitations` and memory controls including `features.memories`, `memories.generate_memories`, `memories.use_memories`, and `memories.disable_on_external_context`. A6 must record whether MCP evidence can be retained into memory or whether external-context memory generation is disabled. |
 | [RFC 8785 JSON Canonicalization Scheme](https://www.rfc-editor.org/rfc/rfc8785.html) | JCS defines a hashable JSON representation using I-JSON constraints and deterministic property sorting. Redaction reports and projection hashes should be computed after redaction over canonical JSON so CLI, HTTP, file, and MCP outputs can be compared. |
 | [GitHub Actions log masking](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#masking-a-value-in-a-log) and [Actions secrets](https://docs.github.com/en/actions/concepts/security/secrets) | GitHub can mask values in logs, but `add-mask` must happen before output and GitHub states transformed secret redaction is not guaranteed. Parallax must treat CI logs/artifacts as hostile, even when they came from GitHub. |
 | [GitHub secret scanning patterns](https://docs.github.com/en/code-security/reference/secret-security/supported-secret-scanning-patterns) | GitHub documents generic, AI-detected, and provider-specific pattern categories, with hundreds of provider patterns. Parallax should reuse a maintained pattern corpus for tests and canaries rather than inventing all patterns manually. |
@@ -65,6 +68,7 @@ The first public/private canary corpus boundary is specified in
 | CI logs/artifacts | Echoed env vars, transformed secrets, debug shells, test snapshots, coverage artifacts, uploaded files. | Treat all text/artifacts as untrusted; scan before storage and before bundle; store bounded excerpts plus raw refs behind scoped access. |
 | CLI invocations | Secrets in argv/env/config paths, cwd/repo path leaks, stdout/stderr dumps, child process args. | Store command/subcommand and safe structural metadata; hash or redact argv/env by default; bounded redacted stdout/stderr excerpts only. |
 | Agent sessions | User prompts, model inputs/outputs, tool args, shell output, file diffs, MCP responses. | Capture hashes, refs, policy decisions, and bounded redacted excerpts; full prompts/tool output are opt-in raw refs with short-lived access. |
+| MCP resources and client retention | Resource list/read output, `@` resource attachments, fuzzy-searchable resource paths, client-persisted oversized output, local attachments, and memory generation from MCP context. | Treat resources as agent-visible projections; raw refs deny without sensitive scope; high-sensitivity evidence must be excluded from client memory or persisted only as redacted bounded artifacts. |
 | Deploy/change provider records | Webhook/API payloads, deployment review comments, release notes, PR/issue text, deploy logs, environment URLs. | Store provider payloads and long text as raw refs by default; project structural fields and redacted summaries only after A6 provider-payload fixtures pass. |
 | Attachments and raw evidence | Crash dumps, screenshots, replay blobs, log files, test artifacts, database exports. | Metadata-only v0; later storage requires type-specific scanner, size cap, and manual/project-level enablement. |
 | Database query output | Row values, customer data, credentials in config tables, query text, parameters, plan text, export-like queries. | Read-only templates, row/column policy, aggregate/summarize first, never raw table dumps in agent bundles; see the [production database evidence access gate](production-database-evidence-access.md). |
@@ -183,6 +187,10 @@ accidental leaks from:
 - Markdown projection bugs;
 - model-generated summaries that copied raw material;
 - tool responses embedded inside agent-session evidence;
+- MCP `resources/read` output, resource attachments, and fuzzy-search resource
+  labels;
+- client-side persisted files, attachments, or memories derived from MCP
+  context;
 - newly added fields not covered by older bundle schema tests.
 
 ### Stage 6: Canonical Projection Gate
@@ -201,11 +209,18 @@ eval/corpus row:
   derived from the canonical JSON and recorded in `projection_manifest`;
 - MCP bundle tools must declare an `outputSchema` matching `schema_ref.uri` and
   return the canonical object in `structuredContent`;
+- MCP resource paths, `resources/read` responses, and resource-template outputs
+  must either return redacted bounded evidence derived from the same canonical
+  object or deny access to raw refs without the matching sensitive scope;
+- client-retention paths, including persisted oversized MCP output, resource
+  attachments, and memory generation from MCP context, must be recorded in the
+  projection or retention manifest when a client is part of the claim;
 - `_meta`, tool annotations, descriptions, or text-only JSON can duplicate
   hashes or give hints, but cannot be the only place safety fields appear;
 - if a projection hash differs from the manifest, if `structuredContent` is
-  missing for a bundle-returning MCP tool, or if a leak appears only in a
-  rendered projection, the A6 run fails.
+  missing for a bundle-returning MCP tool, if a resource read bypasses the
+  canonical/redacted path, or if a leak appears only in a rendered projection,
+  client attachment, or retained client artifact, the A6 run fails.
 
 This is stricter than "scan JSON and Markdown." Redaction must hold for the
 canonical object and for every consumer-visible projection, otherwise a safe
@@ -291,6 +306,8 @@ freshness rules are defined in the
 | Dual rendering scan | Canonical bundle JSON and Markdown projection scan clean. |
 | Projection manifest | Every CLI, HTTP, MCP, model-prompt, and file projection has a hash in `projection_manifest` and derives from the canonical bundle hash. |
 | MCP structured output | Bundle-returning MCP tools validate `structuredContent` against the bundle `outputSchema`; text-only MCP output is a projection, not proof of schema-safe redaction. |
+| MCP resource output | `resources/list`, `resources/read`, resource templates, and client resource attachments contain no canaries and enforce raw-ref scope denial. |
+| Client retention | Codex memory settings, Claude persisted-file behavior, resource attachments, and any client-side output persistence are recorded; sensitive evidence is excluded from memory or stored only as redacted bounded artifacts. |
 | Raw-ref isolation | Raw refs are not dereferenced in default agent/API/MCP output. |
 | Detector failure mode | If a detector errors, unsafe fields are stripped and the bundle reports `manual_review_required` or fails closed. |
 | Source-field isolation | `runner_private`, `grader_private`, and default `triage_private` fields do not appear in agent-visible projections. |

@@ -19,6 +19,10 @@ only by a committed run artifact showing:
   MCP output;
 - detector failures failed closed;
 - raw refs were not dereferenced by default;
+- MCP resources, resource templates, and client resource-attachment paths did
+  not bypass the tool-output scanner;
+- client retention paths such as persisted oversized outputs, attachments, or
+  Codex memories did not keep sensitive MCP evidence after the turn;
 - source-field policies kept runner-private, grader-private, and default
   triage-private fields out of agent-visible projections;
 - external scanners did not find unredacted secrets in generated outputs;
@@ -58,6 +62,22 @@ scrubber:
   client validation part of the contract. A6 must therefore test the canonical
   structured output, not only the human-readable text projection
   ([MCP tools specification](https://modelcontextprotocol.io/specification/2025-11-25/server/tools)).
+- MCP resources expose context through `resources/list`, `resources/read`,
+  resource templates, annotations, and text/binary content; host applications
+  decide how resources enter model context, and the spec calls for access
+  controls on sensitive resources. A6 must therefore test resource reads and
+  resource templates as projection paths
+  ([MCP resources specification](https://modelcontextprotocol.io/specification/2025-11-25/server/resources)).
+- Claude Code's current MCP docs say resource `@` mentions auto-fetch resources
+  as attachments, resources are fuzzy-searchable, and resource contents can be
+  text, JSON, structured data, or other content types. That makes client-side
+  resource attachment a redaction target, not just a UX detail
+  ([Claude Code MCP docs](https://code.claude.com/docs/en/mcp)).
+- Codex's current config reference exposes granular MCP elicitation approval and
+  memory controls for whether threads with external context such as MCP, web, or
+  tool search enter memory generation. A6 runs that claim Codex client safety
+  must record those settings
+  ([Codex config reference](https://developers.openai.com/codex/config-reference)).
 - RFC 8785/JCS constrains JSON to a deterministic, hashable representation.
   A6 projection rows should bind scanner results to the canonical bundle hash so
   JSON, Markdown, CLI, HTTP, and MCP outputs can be compared without trusting
@@ -116,6 +136,8 @@ docs/research/redaction-red-team-runs/<run_id>/manifest.json
 docs/research/redaction-red-team-runs/<run_id>/surface-fixture-ledger.jsonl
 docs/research/redaction-red-team-runs/<run_id>/scanner-comparison.jsonl
 docs/research/redaction-red-team-runs/<run_id>/projection-audit.jsonl
+docs/research/redaction-red-team-runs/<run_id>/resource-read-audit.jsonl
+docs/research/redaction-red-team-runs/<run_id>/client-retention-audit.jsonl
 docs/research/redaction-red-team-runs/<run_id>/source-field-policy-audit.jsonl
 docs/research/redaction-red-team-runs/<run_id>/usefulness-audit.jsonl
 docs/research/redaction-red-team-runs/<run_id>/repair-ledger.jsonl
@@ -164,7 +186,15 @@ Each run gets exactly one manifest:
     "deploy_provider_payload",
     "database_evidence"
   ],
-  "projections": ["bundle_json", "bundle_markdown", "cli_output", "http_api", "mcp_tool_result"],
+  "projections": ["bundle_json", "bundle_markdown", "cli_output", "http_api", "mcp_tool_result", "mcp_resource_read", "client_retention"],
+  "client_retention_policy": {
+    "codex_features_memories": false,
+    "codex_memories_generate_memories": false,
+    "codex_memories_use_memories": false,
+    "codex_memories_disable_on_external_context": true,
+    "claude_resource_attachment_checked": true,
+    "oversized_output_persisted_artifacts_checked": true
+  },
   "runtime_detector_version": "parallax-redact-rust-v0",
   "external_scanners": {
     "gitleaks": "8.30.1",
@@ -248,7 +278,7 @@ Every seeded fixture gets one row in `surface-fixture-ledger.jsonl`:
   "source_field_zone": "agent_visible_seed",
   "agent_visible_expected": true,
   "raw_ref_policy": "metadata_only|ref_only|deny_dereference",
-  "projection_targets": ["bundle_json", "bundle_markdown", "cli_output", "http_api", "mcp_tool_result"],
+  "projection_targets": ["bundle_json", "bundle_markdown", "cli_output", "http_api", "mcp_tool_result", "mcp_resource_read", "client_retention"],
   "schema_ref_hash": "sha256:...",
   "canonical_bundle_hash": "sha256:...",
   "projection_manifest_hashes": {
@@ -278,6 +308,8 @@ Every seeded fixture gets one row in `surface-fixture-ledger.jsonl`:
   "cli_output_leak_count": 0,
   "http_api_leak_count": 0,
   "mcp_tool_result_leak_count": 0,
+  "mcp_resource_read_leak_count": 0,
+  "client_retention_leak_count": 0,
   "mcp_structured_content_hash": "sha256:...",
   "mcp_output_schema_valid": true,
   "safety_fields_only_in_meta": false,
@@ -350,7 +382,58 @@ Projection rows prove that the safe internal bundle did not leak when rendered:
 ```
 
 Every public output path needs coverage: JSON, Markdown, CLI, HTTP API, MCP tool
-result, and any model prompt wrapper.
+result, MCP resource read, client-retained artifact, and any model prompt
+wrapper.
+
+## Resource Read Audit Row
+
+Resource rows catch leaks outside `tools/call`:
+
+```json
+{
+  "schema_version": "a6-resource-read-audit-v1",
+  "run_id": "a6-2026-05-25-phase1-canary",
+  "resource_uri": "parallax://bundles/fixture_bundle_001",
+  "client": "claude-code",
+  "client_auto_fetch_path": "@-mention|autocomplete|direct_resources_read|none",
+  "projection_derives_from_canonical": true,
+  "canonical_bundle_hash": "sha256:...",
+  "resource_output_hash": "sha256:...",
+  "redaction_report_present": true,
+  "source_field_policy_hash": "sha256:...",
+  "scope_required": "evidence:read",
+  "raw_ref_denied_without_sensitive_scope": true,
+  "canary_leaks": 0,
+  "raw_refs_expanded": 0,
+  "audit_row_emitted": true,
+  "verdict": "pass"
+}
+```
+
+## Client Retention Audit Row
+
+Client rows catch leaks after the immediate tool/resource response:
+
+```json
+{
+  "schema_version": "a6-client-retention-audit-v1",
+  "run_id": "a6-2026-05-25-phase1-canary",
+  "client": "codex",
+  "client_version": "0.133.0",
+  "surface": "mcp",
+  "features_memories": false,
+  "memories_generate_memories": false,
+  "memories_use_memories": false,
+  "memories_disable_on_external_context": true,
+  "tool_result_persisted_to_disk": false,
+  "resource_attachment_persisted": false,
+  "persisted_artifact_hash": null,
+  "persisted_artifact_scanner_status": "not_applicable|pass|fail",
+  "canary_leaks": 0,
+  "raw_ref_material_persisted": false,
+  "verdict": "pass"
+}
+```
 
 ## Source Field Policy Audit Row
 
@@ -449,6 +532,13 @@ When a red-team run finds a leak or usefulness failure, record the repair:
   evidence-bundle `outputSchema` and carries the same canonical hash as the CLI
   and HTTP result. Text-only MCP JSON or Markdown is a projection, not proof of
   schema-safe redaction.
+- MCP resource output counts only when `resources/list`, `resources/read`,
+  resource templates, and client attachment paths preserve redaction,
+  source-field policy, canonical hashes, output bounds, raw-ref denial, and
+  audit rows.
+- Client-retention output counts only when persisted files, attachments,
+  memories, and oversized-output substitutions are either absent or contain only
+  redacted bounded artifacts with scanner status recorded.
 - Safety fields that appear only in MCP `_meta`, tool annotations, descriptions,
   or model-prompt wrapper metadata do not count. They must be present in the
   canonical bundle JSON.
@@ -483,6 +573,7 @@ Cover each supported surface with at least these canary classes:
 | CI log/artifact | env dump, transformed secret, private key block, database URL, test snapshot with PII. |
 | CLI invocation | argv secret, env secret, cwd user path, stdout/stderr token, child-process command line. |
 | Agent session | prompt secret, tool input secret, shell output secret, MCP response secret, generated Markdown leak. |
+| MCP resource/client retention | resource URI/path canary, resource read body canary, attachment canary, persisted-output canary, memory-retention canary, elicitation-prompt canary. |
 | Frontend | form-like value, DOM text, full request URL/query, referrer URL, request/response header, console log, baggage value, network body, replay/screenshot metadata, source-map/source-content ref. |
 | Deploy/change provider payload | deployment status payload, deployment review comment, deploy log URL/body, release note, PR body, issue/comment text, environment URL, webhook delivery metadata. |
 | Database evidence | row value PII, credential-like config row, SQL query text, query parameter, plan text, SQL error with connection string, export-like result. |
