@@ -753,6 +753,28 @@ from the datanode) while ClickHouse relies on part-on-disk + replication →
 **confirmed**. Durability + scaling edge GreptimeDB; strict-durability perf cost
 (`sync_write=true` vs `fsync_after_insert=1`) owed to harness.
 
+### Run 21 — 2026-05-25 — Execution-engine config (live confirmation)
+
+Backs `query-execution-engine.md` (pass 42). Live settings, not a latency benchmark —
+the engine knobs behind the Run 11/12 throughput gaps.
+
+**ClickHouse** (`system.settings`): `max_block_size = 65409` (≈65536, ~8× DataFusion's
+batch), `max_threads = auto(10)` (per-core pipeline lanes), `compile_expressions = 1`
++ `compile_aggregate_expressions = 1` (LLVM JIT on, `min_count_to_compile_expression =
+3`), `max_bytes_before_external_group_by = 0` (in-memory aggregation).
+
+**GreptimeDB**: DataFusion `=52.1` (Cargo); `SessionConfig.with_target_partitions(...)`
++ custom `ParallelizeScan` rule; default Arrow batch 8,192. EXPLAIN of `GROUP BY
+service` → `CooperativeExec → MergeScanExec` (scan+aggregate pushed into the region
+via DataFusion).
+
+**Claim status:** "decade-tuned C++ vectorized engine" → **confirmed concrete**:
+8× larger vectors + JIT expressions/aggregation + bespoke SIMD kernels + specialized
+hash aggregation explain ClickHouse's scan/aggregate throughput lead (Runs 11–12).
+GreptimeDB trades raw kernel speed for DataFusion extensibility (PromQL, metric
+engine). Anchored Q6 stays not-throughput-bound (Run 16). Isolated micro-benchmark of
+each knob owed to harness.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

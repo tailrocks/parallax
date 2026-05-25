@@ -74,7 +74,7 @@ storage*, accepting a younger DataFusion scan engine.
 | Area | Mechanism | Confidence |
 | --- | --- | --- |
 | **Log/trace selective scan + full-text search** | 8,192 granule + PREWHERE + inverted text index + LowCardinality + C++ SIMD vectorized pipeline. | arch+smoke (Runs 1–2) |
-| **Generic wide scan / aggregate throughput** | Decade-tuned vectorized engine — the OLAP-scan bar. | arch |
+| **Generic wide scan / aggregate throughput** | Decade-tuned vectorized engine — the OLAP-scan bar. Mechanism (pass 42): 65k-row blocks (8× DataFusion's batch) + LLVM-JIT expressions/aggregation + bespoke SIMD kernels + specialized hash aggregation vs GreptimeDB's DataFusion-over-Arrow; explains Runs 11–12. | arch+live (`query-execution-engine.md`) |
 | **Vertical single-node ceiling** | Saturates many cores + NVMe on one big box. | arch |
 | **Per-column codec tuning** | Hand-picked `DoubleDelta`/`Gorilla`/etc. (counter 7.3×, gauge 78×, Run 4). | smoke (Run 4) |
 | **Dynamic-attribute path queries** | `JSON` type stores each path as a **typed columnar subcolumn** (`attributes.k` reads only that subcolumn); GreptimeDB `Json` is a binary blob + `json_get_*` per-row parse. Faster for querying arbitrary OTLP attributes by path at volume. | source+measured (Run 18) |
