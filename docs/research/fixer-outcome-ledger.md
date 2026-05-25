@@ -20,9 +20,10 @@ The central rule:
 > No "Parallax fixes issues", "agent opens correct PRs", "accepted-fix feedback
 > loop", "autonomous fix outcome learning", or "fixer business seam validated"
 > claim without dated result rows linking evidence bundle -> fixer run -> agent
-> session -> provider agent task when used -> patch/branch/PR -> CI/checks ->
-> review/merge/revert/recurrence -> human or policy verdict, with
-> source-field, redaction, raw-ref, and projection policy status preserved.
+> session, with exact tool/version/config, adapter, capture surface, lossiness,
+> redaction, source-field, projection, and raw-ref status -> provider agent task
+> when used -> patch/branch/PR -> CI/checks -> review/merge/revert/recurrence
+> -> human or policy verdict.
 
 Parallax itself still does not fix. This ledger measures the separate fixer
 component and the outcome records that flow back into Parallax.
@@ -55,6 +56,7 @@ scope.
 | `fixture_harness_ready` | Repeatable task matrix, fixture repos, redaction fixtures, expected checks, and scoring protocol exist. | "Fixer outcome fixture harness prepared." |
 | `bundle_handoff_supported` | Fixer consumes immutable Parallax bundles with manifest, query report, redaction report, source-field policy, missing evidence, and raw-ref policy. | "Fixer bundle handoff works for the tested task set." |
 | `fixer_run_record_supported` | Every run records status, policy, autonomy level, tool scopes, provider API version, optional provider task ID, agent session ID, and failure/no-op/timeout cases. | "Fixer runs are recorded for the tested task set." |
+| `agent_session_linkage_pass` | Every run using an agent-session arm links to a dated agent-session ledger row with tool binary/version/config, adapter name/version, capture surface, source schema snapshot, lossiness, redaction, source-field policy, projection status, and raw-ref policy. | "Fixer runs link measured agent-session evidence for tested tasks." |
 | `pr_creation_supported` | Separate fixer can create branches and draft PRs for allowed tasks with least-privilege repo policy. | "Separate fixer can open draft PRs for tested tasks." |
 | `provider_agent_task_linkage_pass` | Copilot/GitHub Agent Tasks or similar provider-task runs are linked to task state, model, session count, artifacts, PR refs, and API preview/stability status. | "Provider agent-task linkage is recorded for tested tasks." |
 | `source_field_projection_pass` | Eval/corpus-derived bundle projections preserve source-field policy status, redaction reports, missing-evidence flags, and raw-ref denial into fixer-visible inputs. | "Fixer-visible inputs preserve safety fields for tested tasks." |
@@ -245,13 +247,27 @@ raw refs unless the operator explicitly approves redacted fixtures.
   "agent_session_id": "ags_001",
   "fixer_run_id": "fixrun_001",
   "tool": "codex|claude_code|copilot|openhands|amp|opencode|custom",
-  "adapter_claim_level": "codex_hooks_supported|claude_otel_ingest_supported|unknown",
+  "tool_binary_ref": "/path/to/tool|provider_task|unknown",
+  "tool_version": "unknown",
+  "tool_version_probe_output_ref": "raw://version-probe-or-provider-snapshot",
+  "adapter_name": "parallax-codex-hooks",
+  "adapter_version": "0.1.0",
+  "capture_surface": "otel|hooks|plugin|run_json|stream_json|json_export|jsonl|server_api|acp|wrapper|provider_task_ref|raw_ref|unknown",
+  "source_schema_snapshot": "docs-checked-YYYY-MM-DD|provider-api-YYYY-MM-DD|unknown",
+  "source_config_ref": "raw://agent-config-snapshot",
+  "adapter_claim_level": "codex_hooks_supported|codex_exec_json_supported|claude_otel_ingest_supported|claude_stream_json_supported|amp_plugin_supported|amp_stream_json_supported|opencode_run_json_supported|opencode_export_supported|opencode_plugin_supported|opencode_acp_supported|provider_task_link_only|unknown",
   "command_count": 4,
   "file_edit_count": 2,
   "test_count": 1,
   "agent_session_ledger_run_id": "agent-session-YYYYMMDD-N",
   "lossiness_report_present": true,
-  "outcome_linked": true
+  "redaction_report_present": true,
+  "source_field_policy_status": "pass|fail|not_applicable",
+  "projection_safe": true,
+  "raw_ref_policy": "deny_dereference_by_default",
+  "raw_ref_dereferenced": false,
+  "outcome_linked": true,
+  "linkage_pass": true
 }
 ```
 
@@ -422,6 +438,13 @@ raw refs unless the operator explicitly approves redacted fixtures.
 - GitHub Agent Tasks or similar provider-task completion is never fix success by
   itself. It is an orchestration artifact that must link to PR, CI, review,
   merge/revert, and recurrence rows.
+- Provider task `session_count` is not an agent-session trace. It supports
+  `provider_agent_task_linkage_pass` only; a `parallax_bundle_plus_session_trace`
+  arm requires `agent_session_linkage_pass` with a measured capture surface.
+- A fixer run with `adapter_claim_level: unknown`, missing capture surface, or
+  missing lossiness/redaction/projection rows can count as PR plumbing evidence
+  only. It cannot support session-trace value, outcome-feedback-loop, or
+  multi-agent tracing claims.
 - Public-preview provider APIs can support fixture evidence only when the run
   records preview status, API version, and expiry. They cannot support broad
   stable-product wording.
@@ -458,6 +481,7 @@ Current claim level: not_measured
 | Bundle handoff pass rate | 0% | 100% | Pending |
 | Agent-visible canary leaks | 0 | 0 | Pending |
 | Source-field/projection pass rate | 0% | 100% | Pending |
+| Agent session linkage pass rate | 0% | 100% when session-trace arm is used | Pending |
 | Provider agent-task linkage rate | 0% | 100% when provider tasks are used | Pending |
 | Evidence-citation pass rate | 0% | >=95% | Pending |
 | Required-check linkage rate | 0% | 100% | Pending |
@@ -494,6 +518,10 @@ Allowed after `pr_creation_supported`:
 Allowed after `provider_agent_task_linkage_pass`:
 
 > Provider agent-task artifacts are linked to fixer outcomes for tested tasks.
+
+Allowed after `agent_session_linkage_pass`:
+
+> Fixer runs link measured agent-session evidence for tested tasks.
 
 Allowed after `source_field_projection_pass`:
 
