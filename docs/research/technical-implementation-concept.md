@@ -50,6 +50,7 @@ Related research:
 - [Messaging and ingestion layer](messaging-and-ingestion-layer.md)
 - [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
 - [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md)
+- [Flaky test investigation and replay](flaky-test-investigation-and-replay.md)
 - [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md)
 
 Metadata-store source:
