@@ -74,6 +74,12 @@ scrubber:
   stable fixture-output comparator but not a sufficient current-provider-pattern
   source
   ([Gitleaks v8.30.1](https://github.com/gitleaks/gitleaks/releases/tag/v8.30.1)).
+- Betterleaks `v1.3.1` is the latest release checked on 2026-05-25, published
+  2026-05-22, and its public repository is MIT-licensed and actively pushed.
+  It supports git, dir, GitHub, S3, and stdin sources plus JSON/SARIF reports,
+  but its CEL validation can make network or LLM calls. Use it as an
+  experimental active comparator with validation disabled by default
+  ([Betterleaks v1.3.1](https://github.com/betterleaks/betterleaks/releases/tag/v1.3.1)).
 - detect-secrets `v1.5.0` is the latest release checked on 2026-05-25,
   published 2024-05-06, and supports baselines, plugin configuration,
   staged-file hooks, verification settings, and audit workflows, making it
@@ -154,6 +160,7 @@ Each run gets exactly one manifest:
   "runtime_detector_version": "parallax-redact-rust-v0",
   "external_scanners": {
     "gitleaks": "8.30.1",
+    "betterleaks": "1.3.1",
     "trufflehog": "3.95.3",
     "detect_secrets": "1.5.0",
     "presidio": "2.2.362",
@@ -163,7 +170,13 @@ Each run gets exactly one manifest:
     "gitleaks": {
       "published_at": "2026-03-21T02:17:58Z",
       "development_posture": "feature_complete_security_patches_only",
-      "replacement_watch": "betterleaks_unvetted"
+      "replacement_watch": "betterleaks_experimental_active"
+    },
+    "betterleaks": {
+      "published_at": "2026-05-22T16:18:18Z",
+      "license": "MIT",
+      "development_posture": "active_experimental_comparator",
+      "verification_policy": "network_and_llm_validation_disabled_by_default"
     },
     "trufflehog": {
       "published_at": "2026-05-11T18:38:34Z",
@@ -273,6 +286,9 @@ External scanner checks go in `scanner-comparison.jsonl`:
   "scanner_release_published_at": "YYYY-MM-DDTHH:MM:SSZ",
   "scanner_execution_mode": "offline_no_network|network_verification_disabled|network_verification_approved_private_fixture",
   "scanner_development_posture": "active|feature_complete_security_patches_only|stale_baseline",
+  "network_calls_allowed": false,
+  "secret_validation_allowed": false,
+  "llm_validation_allowed": false,
   "findings_total": 0,
   "expected_canaries_missed_by_runtime": 0,
   "runtime_findings_missed_by_scanner": 2,
@@ -429,6 +445,9 @@ When a red-team run finds a leak or usefulness failure, record the repair:
 - External scanner verification must not run against live customer values in the
   default path. Verified-secret checks belong in approved private red-team
   fixtures.
+- Betterleaks validation, including HTTP, AWS, or LLM-assisted validation, must
+  be disabled by default. If enabled, it requires an approved private run and a
+  manifest entry naming every allowed endpoint/provider.
 - A redaction report is complete only if it records policy version, rule IDs,
   action counts, detector versions, residual risk, and manual-review status.
 - A pass requires both safety and usefulness: zero canary leaks and

@@ -31,8 +31,9 @@ resolving commit URL that the source-field policy forbids.
 The concrete detector/toolchain decision is now split into
 [Redaction detector toolchain](redaction-detector-toolchain.md): Parallax should
 own a Rust, source-aware, default-deny runtime redaction engine and use
-Gitleaks, TruffleHog, detect-secrets, Presidio, and GitHub pattern references as
-offline validators, not as blocking tiny-tier runtime dependencies.
+Gitleaks, Betterleaks, TruffleHog, detect-secrets, Presidio, and GitHub pattern
+references as offline validators, not as blocking tiny-tier runtime
+dependencies.
 The result-ledger contract for proving this gate is in
 [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md).
 
@@ -359,6 +360,9 @@ production secrets. Therefore:
   and overhead gates before default-on capture.
 - [Redaction detector toolchain](redaction-detector-toolchain.md) — chooses the
   runtime detector architecture and external scanner role for A6.
+- [Redaction toolchain Betterleaks recheck](redaction-toolchain-betterleaks-recheck.md)
+  — updates the external scanner set now that Betterleaks is active, while
+  keeping network and LLM validation out of the default path.
 - [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) — defines the
   run artifacts, fixture rows, projection audits, claim levels, and freshness
   rules that make A6 pass/fail claims auditable.

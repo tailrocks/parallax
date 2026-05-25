@@ -18,15 +18,20 @@ Decision:
 
 > Build the runtime redaction path as a small Rust policy engine with typed
 > parsers, allowlists, deny rules, HMAC hashing, and streaming output scanning.
-> Use Gitleaks/TruffleHog/detect-secrets/Presidio/GitHub patterns as reference
-> corpora, offline validators, and CI/red-team comparators, not as blocking
-> runtime dependencies in the tiny tier.
+> Use Gitleaks, Betterleaks, TruffleHog, detect-secrets, Presidio, and GitHub
+> patterns as reference corpora, offline validators, and CI/red-team
+> comparators, not as blocking runtime dependencies in the tiny tier.
 
 The reason is operational. Parallax must redact Sentry events, OTLP attributes,
 CI logs, CLI output, agent transcripts, frontend breadcrumbs, and database
 evidence while producing bounded bundles quickly. Git-repo secret scanners and
 PII anonymizers are useful references, but they do not directly provide a
 low-latency, source-aware, evidence-bundle-safe runtime.
+
+The companion [redaction toolchain Betterleaks recheck](redaction-toolchain-betterleaks-recheck.md)
+updates the external scanner boundary: Betterleaks is now an active comparator
+candidate, but its network, credential-verification, and LLM-validation features
+must be disabled by default for A6 fixture runs.
 
 ## Current Primary-Source Checks
 
@@ -36,7 +41,8 @@ low-latency, source-aware, evidence-bundle-safe runtime.
 | [OpenTelemetry Collector processor catalog](https://opentelemetry.io/docs/collector/components/processor/) | Checked 2026-05-25. The catalog was last modified 2026-03-16 and links Redaction Processor at contrib `v0.152.0`, included in contrib/K8s with traces beta and metrics/logs alpha. | Parallax should support Collector-side redaction, but still repeat policy in ingest and bundle building. Treat upstream Collector redaction as a useful pre-filter, not an agent-safety boundary. |
 | [OpenTelemetry common `AnyValue`](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) | OTLP values can be scalars, byte arrays, arrays, and key/value lists. | Redaction must traverse typed values directly; string rendering of maps/lists is only a projection and cannot be the detector input. |
 | [GitHub secret scanning supported patterns](https://docs.github.com/en/code-security/reference/secret-security/supported-secret-scanning-patterns) | Current pattern taxonomy includes generic, AI-detected, and provider patterns, with 500+ provider entries and notes on precision, validity checks, partner alerts, and token-version churn. | Use as a maintained external reference for canary coverage and provider-pattern watchlists. Do not assume Parallax can copy GitHub's proprietary AI/validity checks. |
-| [Gitleaks v8.30.1](https://github.com/gitleaks/gitleaks/releases/tag/v8.30.1) | Latest release checked 2026-05-25; GitHub API shows `v8.30.1` published 2026-03-21. Mature open-source scanner for git history, directories, files, and stdin; supports default/custom config, pre-commit, GitHub Action, JSON/CSV/JUnit/SARIF-style workflows, archive/decode scanning, redacted output, and baseline/ignore behavior. Its README now says Gitleaks is feature-complete and future releases are security patches only while focus shifts to Betterleaks. | Best open comparator for static and fixture scanning, but no longer a strong signal for new provider-pattern coverage. Its Go binary can validate redaction fixtures in CI, but a blocking runtime shell-out would hurt tiny-tier latency and failure modes. Watch Betterleaks only as a future pattern-source candidate once its license, CLI, and output contracts are checked. |
+| [Gitleaks v8.30.1](https://github.com/gitleaks/gitleaks/releases/tag/v8.30.1) | Latest release checked 2026-05-25; GitHub API shows `v8.30.1` published 2026-03-21. Mature open-source scanner for git history, directories, files, and stdin; supports default/custom config, pre-commit, GitHub Action, JSON/CSV/JUnit/SARIF-style workflows, archive/decode scanning, redacted output, and baseline/ignore behavior. Its README now says Gitleaks is feature-complete and future releases are security patches only while focus shifts to Betterleaks. | Best stable comparator for Phase 0 fixture scanning, but no longer a strong signal for new provider-pattern coverage. Its Go binary can validate redaction fixtures in CI, but a blocking runtime shell-out would hurt tiny-tier latency and failure modes. |
+| [Betterleaks v1.3.1](https://github.com/betterleaks/betterleaks/releases/tag/v1.3.1) | Latest release checked 2026-05-25; GitHub API shows `v1.3.1` published 2026-05-22, public MIT repo, current push activity, JSON/SARIF reports, `dir`/`git`/`github`/`s3`/`stdin` sources, checksums, Sigstore metadata, CEL filters, and live validation hooks. Config docs include HTTP, AWS, and LLM-assisted validation examples. | Move from unvetted future candidate to experimental active comparator. Useful for red-team fixture comparison once binary/checksum/report schema are pinned. Validation/network/LLM features must be disabled by default and never run in the Parallax runtime path. |
 | [TruffleHog v3.95.3](https://github.com/trufflesecurity/trufflehog/releases/tag/v3.95.3) | Latest release checked 2026-05-25; GitHub API shows `v3.95.3` published 2026-05-11. AGPL-3.0 scanner focused on finding, verifying, and analyzing leaked credentials across git, GitHub, S3/GCS, Docker, Hugging Face, stdin, and multi-source configs. Verified findings are confirmed by testing against provider APIs, and JSON output is available. | Useful red-team comparator for live/verified secrets and historical/source scans. Verification and credential analysis can create network, privacy, and rate-limit side effects, so A6 must record whether verification was disabled or approved for a private fixture run and must not run it in the default runtime path. |
 | [Yelp detect-secrets v1.5.0](https://github.com/Yelp/detect-secrets/releases/tag/v1.5.0) | Latest release checked 2026-05-25; GitHub API shows `v1.5.0` published 2024-05-06. Baseline-driven secret detection with configurable plugins, allowlists, entropy detectors, filters, verification settings, pre-commit hooks, and audit workflow. | Useful for repository baselines, "new secret" regression checks, and human review workflows. Its older release cadence and Python/plugin model make it a secondary comparator, not a provider-churn source and not a fit for the Parallax hot path. |
 | [Microsoft Presidio 2.2.362](https://github.com/microsoft/presidio/releases/tag/2.2.362) | Latest release checked 2026-05-25; GitHub API shows `2.2.362` published 2026-03-18, and PyPI shows `presidio-analyzer`/`presidio-anonymizer` `2.2.362` uploaded 2026-03-15. Open-source PII detection/anonymization framework with NER, regex, rule logic, image redaction, custom recognizers, and an explicit warning that automated detection cannot guarantee all sensitive information is found. | Best reference for PII/anonymization and optional offline processing. Too heavy and probabilistic to be the only runtime guarantee for agent-visible bundles. |
@@ -60,9 +66,13 @@ stress-test that decision.
 
 This pass narrowed the trust boundary rather than changing the architecture:
 
-- Gitleaks remains the best simple static comparator for generated fixture
+- Gitleaks remains the best simple stable comparator for generated fixture
   output, but its current README says active feature work has moved elsewhere.
   Parallax should not depend on Gitleaks alone for current provider-token churn.
+- Betterleaks is now active enough to track as an experimental comparator, with
+  MIT licensing, JSON/SARIF output, stdin support, and release checksums. Its
+  CEL validation can make network or LLM calls, so A6 must default it to
+  offline/no-validation mode and record any exception.
 - TruffleHog is fresher and stronger for verified credential evidence, but that
   strength comes from provider/API verification and optional credential
   analysis. A6 fixture runs must record network policy, verification mode, and
@@ -77,9 +87,9 @@ This pass narrowed the trust boundary rather than changing the architecture:
 
 Falsification criteria:
 
-- If Betterleaks or another maintained scanner becomes the active replacement
-  for Gitleaks and offers stable CLI/SARIF/JSON output under an acceptable
-  license, revisit the external comparator set.
+- If Betterleaks changes license, report schema, default validation behavior,
+  checksum/signing contract, or offline/no-network behavior, re-run the scanner
+  comparison rows before using it in an A6 gate.
 - If OpenTelemetry redaction reaches stable status for logs/metrics and removes
   or changes allowlist precedence, revisit how much work must be duplicated at
   Parallax ingest.
@@ -122,9 +132,9 @@ Implementation requirements:
 
 | Phase | Runtime dependency | CI / red-team dependency | Rationale |
 | --- | --- | --- | --- |
-| Phase 0 bundle eval | Internal Rust sanitizer plus a small curated canary corpus. | Run Gitleaks and detect-secrets over generated fixtures; manually inspect Presidio-style PII cases. | Keep the eval lightweight, but prevent obvious secret leaks in arms B/C. |
-| Phase 1 tiny tier | Internal Rust redaction library is mandatory. No Python/Go sidecar in the request path. | Gitleaks on fixture dirs and generated bundles; TruffleHog on private local red-team corpus when network verification is safe. | Tiny tier cannot depend on multi-runtime scanner services to claim simplicity. |
-| Phase 2 red-team | Internal library plus optional offline Presidio adapter for PII-heavy text/image fixtures. | Gitleaks, TruffleHog, detect-secrets, Presidio, GitHub pattern watchlist, and custom canary corpus. | This is where A6 can earn broader source coverage. |
+| Phase 0 bundle eval | Internal Rust sanitizer plus a small curated canary corpus. | Run Gitleaks and/or Betterleaks plus detect-secrets over generated fixtures; manually inspect Presidio-style PII cases. | Keep the eval lightweight, but prevent obvious secret leaks in arms B/C. Betterleaks validation stays disabled. |
+| Phase 1 tiny tier | Internal Rust redaction library is mandatory. No Python/Go sidecar in the request path. | Gitleaks/Betterleaks on fixture dirs and generated bundles; TruffleHog on private local red-team corpus when network verification is safe. | Tiny tier cannot depend on multi-runtime scanner services to claim simplicity. |
+| Phase 2 red-team | Internal library plus optional offline Presidio adapter for PII-heavy text/image fixtures. | Gitleaks, Betterleaks, TruffleHog, detect-secrets, Presidio, GitHub pattern watchlist, and custom canary corpus. | This is where A6 can earn broader source coverage and decide whether Betterleaks replaces Gitleaks as the primary static comparator. |
 | Phase 3 enterprise/pilots | Same runtime library; optional policy pack imports from customer secret-scanning tools. | Customer scanners can validate exported bundle fixtures. | Enterprise integration should validate Parallax, not replace its default-deny core. |
 
 ## Detector Catalog
@@ -196,7 +206,7 @@ The A6 detector gate passes only when:
 | --- | --- |
 | Canary leaks | Zero expected canary values appear in agent-visible JSON or Markdown. |
 | Raw refs | No default agent/API/MCP response dereferences raw refs. |
-| Cross-tool check | Gitleaks and detect-secrets do not find unredacted secrets in committed generated fixtures. |
+| Cross-tool check | Gitleaks and/or Betterleaks plus detect-secrets do not find unredacted secrets in committed generated fixtures. |
 | Verification check | TruffleHog is run only on approved local/private red-team fixtures; any verified live secret in output fails the gate and triggers rotation. |
 | PII check | Presidio-style fixtures pass for the project-supported PII classes, but misses do not override default-deny source policy. |
 | False positives | Redaction does not remove stack frame, span, issue, route, test, or command evidence needed by the A1 bundle eval. |
@@ -227,6 +237,9 @@ a different surface.
 
 - [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
   defines the A6 policy and red-team gate this toolchain implements.
+- [Redaction toolchain Betterleaks recheck](redaction-toolchain-betterleaks-recheck.md)
+  moves Betterleaks into the tracked comparator set while keeping validation
+  disabled by default.
 - [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) defines the
   run artifacts that prove the toolchain does not leak seeded canaries and still
   preserves minimum debug usefulness.
