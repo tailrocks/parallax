@@ -35,8 +35,11 @@ and normalization of agent execution traces.
 | [Codex hooks](https://developers.openai.com/codex/hooks) | Hooks expose structured JSON with `session_id`, `transcript_path`, `cwd`, `hook_event_name`, `model`, `turn_id`, and `permission_mode` for session, tool, prompt, permission, subagent, compaction, and stop events. The docs warn that transcript format is not a stable hook interface and that tool interception is incomplete for some shell and non-shell paths. They also document managed hooks, plugin-bundled hooks, and command-only handler support. | Codex capture can be structured, but transcripts must stay raw refs; hook gaps must be measured against wrapper, repo diff/hash, or other independent evidence; and every hook claim must record hook source and trust mode. |
 | [Codex CLI](https://developers.openai.com/codex/cli), [non-interactive mode](https://developers.openai.com/codex/noninteractive), and local `codex --help` / `codex exec --help` | Codex CLI is a local command-line agent surface and supports repo work, file edits, command execution, and automation workflows. Current official docs say `codex exec --json` emits JSONL events such as `thread.started`, `turn.started`, `turn.completed`, `turn.failed`, `item.*`, and `error`; item types include agent messages, reasoning, command executions, file changes, MCP tool calls, web searches, and plan updates. Local `0.133.0` help shows `--ephemeral`, plugin management, `mcp-server`, and dangerous approval/sandbox and hook-trust bypass flags. | Codex needs separate claim rows for interactive hooks, non-interactive JSONL event/item taxonomy, plugin-provided surfaces, Codex-as-MCP-server, and policy-sensitive dangerous flags. |
 | [Codex MCP](https://developers.openai.com/codex/mcp) | Codex supports local stdio MCP servers, Streamable HTTP servers, bearer-token env vars, OAuth login/logout for supported HTTP servers, static or environment HTTP headers, `enabled_tools`, `disabled_tools`, default and per-tool approval modes, OAuth callback overrides, plugin-provided MCP servers, and `codex mcp-server` as a stdio server for other clients. | Codex MCP config is both secret-bearing and policy-bearing. Agent-session fixture rows must record transport, token/header source, OAuth mode, enabled/disabled tool lists, approval mode, and plugin/server origin before MCP tool-call rows are treated as safe or comparable. |
-| [Claude Code monitoring](https://code.claude.com/docs/en/monitoring-usage) | Claude Code exports opt-in OpenTelemetry metrics, logs/events, and optional beta traces; prompt text, tool details, tool content, and raw API bodies are disabled by default and require explicit flags. It does not pass generic `OTEL_*` exporter variables to subprocesses, but when tracing is active Bash/PowerShell inherit `TRACEPARENT`. | Claude Code is the strongest native OTel target, but content capture must remain opt-in/redacted and subprocess coverage must distinguish trace-context inheritance from full telemetry-exporter inheritance. |
-| [Claude Code CLI reference](https://code.claude.com/docs/en/cli-usage) and local `claude --help` | Current docs and local `2.1.150` help show `--output-format stream-json` in print mode, `--include-hook-events` for hook lifecycle events in that stream, `--include-partial-messages`, stream JSON input, replayed user messages, session IDs, permission modes, and MCP config flags. | Claude stream JSON is a separate non-interactive structured adapter claim. It can support fixture automation and hook-event validation, but it must not be counted as interactive OTel coverage or as default-safe prompt/tool-content capture. |
+| [Claude Code monitoring](https://code.claude.com/docs/en/monitoring-usage) | Claude Code exports opt-in OpenTelemetry metrics, logs/events, and optional beta traces; prompt text, tool details, tool content, and raw API bodies are disabled by default and require explicit flags. It records session/tool/API/token/cost/MCP/plugin activity, does not pass generic `OTEL_*` exporter variables to Bash, hooks, MCP servers, or language servers, but active tracing injects `TRACEPARENT` into Bash/PowerShell. In `-p`/Agent SDK mode it can accept inbound `TRACEPARENT`/`TRACESTATE`; interactive sessions ignore inbound trace context. | Claude Code is the strongest native OTel target, but content capture must remain opt-in/redacted, plugin and MCP inventory must be recorded, and subprocess coverage must distinguish trace-context inheritance from full telemetry-exporter inheritance. |
+| [Claude Code CLI reference](https://code.claude.com/docs/en/cli-usage), [programmatic usage](https://code.claude.com/docs/en/headless), and local `claude --help` | Current docs and local `2.1.150` help show `--output-format stream-json` in print mode, `--include-hook-events`, `--include-partial-messages`, stream JSON input, replayed user messages, session IDs, resume/fork/from-PR flags, `--no-session-persistence`, `--bare`, permission modes, tool allow/deny/restrict flags, plugin dirs/URLs, MCP config, strict MCP config, background-agent defaults, and `claude mcp serve`. Bare mode skips auto-discovery of hooks, skills, plugins, MCP servers, auto memory, and `CLAUDE.md`; the docs say it is recommended for scripted calls and may become the default for `-p` later. | Claude stream JSON is a separate non-interactive structured adapter claim. It can support fixture automation and hook-event validation, but it must not be counted as interactive OTel coverage or as default-safe prompt/tool-content capture. Bare/no-persistence/scripted modes must be stored because they can suppress evidence and change replay/resume behavior. |
+| [Claude Code hooks](https://code.claude.com/docs/en/hooks) | Hooks cover session start/end, setup/instructions, user prompts, tool use, permission requests/denials, subagents/tasks, stop/failure, compaction, config/cwd/file changes, worktrees, notifications, and MCP elicitation. Handlers can be command, HTTP, MCP tool, prompt, or agent. `PreToolUse` can allow, deny, ask, defer, and mutate tool input; some hooks can persist environment through `CLAUDE_ENV_FILE`; `PostCompact` can expose a compaction summary. | Hook rows must prove event-class coverage and record handler type, source, decision, mutation, persisted environment, compaction-summary policy, and whether hooks were disabled by bare mode or settings. Hooks are a control-plane surface, not just observation. |
+| [Claude Code MCP docs](https://code.claude.com/docs/en/mcp) | Claude Code supports local, project, user, plugin, and claude.ai MCP sources with precedence rules; stdio, SSE, and HTTP servers; OAuth metadata/scopes; dynamic `headersHelper` commands; MCP prompts/resources; elicitation; output limits through `MAX_MCP_OUTPUT_TOKENS` and `_meta["anthropic/maxResultSizeChars"]`; `claude mcp serve`; and managed MCP allow/deny controls. Project/local `headersHelper` commands run only after workspace trust. | MCP tool-call rows need server scope, transport, auth/header source, OAuth scopes, output-limit behavior, elicitation hooks, duplicate/source precedence, workspace trust, and Claude-as-MCP-server state before cross-agent MCP comparisons are claimable. |
+| [Claude Code settings](https://code.claude.com/docs/en/settings), [permission modes](https://code.claude.com/docs/en/permission-modes), [plugins](https://code.claude.com/docs/en/plugins-reference), and [agent view](https://code.claude.com/docs/en/agent-view) | Settings precedence is managed, command line, local, project, then user; managed settings cannot be overridden, while array settings such as permissions merge across scopes. Permission modes include `default`, `acceptEdits`, `plan`, `auto`, `dontAsk`, and `bypassPermissions`. Plugins can contribute skills, agents, hooks, MCP servers, LSP servers, monitors, Bash executables, and limited plugin settings. `claude agents --json` exposes live background sessions for scripting, and dispatched agents can inherit settings/plugins/MCP defaults. | Claude fixtures must snapshot effective settings sources, permission mode, plugin component inventory, background-agent mode, and plugin load errors, or the same "Claude Code" claim will hide materially different context and security behavior. |
 | [Amp manual](https://ampcode.com/manual) | Amp supports streaming JSON output in `--execute` mode for programmatic integration and real-time conversation monitoring; optional thinking blocks extend the schema and are not Claude Code compatible. `--stream-json-input` supports multi-message stdin and a `steer` marker. The same manual documents TypeScript plugins, project/system/global plugin locations, lifecycle events such as `session.start`, `agent.start`, `tool.call`, `tool.result`, and `agent.end`, plugin activation for both interactive sessions and `amp --execute` runs, and explicitly notes there is no `session.end` event. Amp does not ask before running tools by default; `amp.permissions`, `amp.guardedFiles.allowlist`, or `amp.dangerouslyAllowAll=false` activate an internal permissions plugin. | Amp should be measured through both plugin-event fixtures and non-interactive stream fixtures. Thinking blocks, stdin messages, `steer` messages, and image/base64 payloads are sensitive input modes, not default-safe capture. Plugin events are a stronger interactive capture surface than the prior wrapper/thread-ref assumption, but still need payload, permissions, and version proof. |
 | [OpenCode CLI](https://opencode.ai/docs/cli/) | OpenCode supports `run --format json` raw JSON events, `run --attach` against a `serve` backend, session continuation/forking, `session list --format json`, export JSON with `--sanitize`, headless `serve` API with optional basic auth, ACP over nd-JSON, stats, and permission/thinking flags. | OpenCode is a strong JSON/export/plugin/API/protocol adapter target; `--sanitize` is helpful but does not replace Parallax redaction, and `--thinking`, `--dangerously-skip-permissions`, server attach URL, basic-auth credential source, CORS, host/port, and mDNS settings must be recorded as sensitive run configuration. |
 | [OpenCode plugins](https://opencode.ai/docs/plugins/) | Plugins expose event families for command, file, installation, LSP, message, permission, server, session, todo, shell, tool, and TUI behavior. `tool.execute.before` can mutate tool arguments; `shell.env` can inject environment variables. | OpenCode can provide deep structured events without terminal parsing, but support must be proven per enabled event class, and fixtures must separate observer-only plugins from plugins that mutate tool calls, environment, or TUI behavior. |
@@ -53,6 +56,7 @@ Use these levels in `claim-ledger.jsonl`:
 | `not_measured` | No current run exists. | "Agent-session tracing design exists; results pending." |
 | `fixture_harness_ready` | Repeatable tasks and fixture repos exist for the target agents. | "Agent-session tracing fixture harness prepared." |
 | `claude_otel_ingest_supported` | Claude Code OTel metrics/logs/events/traces ingest and normalize for a dated configuration. | "Claude Code OTel session events normalize for the tested version/config." |
+| `claude_hooks_supported` | Claude Code hook lifecycle/control events normalize for a dated configuration without hiding handler source, decisions, mutation, or environment persistence. | "Claude Code hook events normalize for the tested version/config." |
 | `claude_stream_json_supported` | Claude Code print-mode `stream-json` events, with hook lifecycle events when enabled, normalize for a dated version/config. | "Claude Code stream JSON sessions normalize for the tested version/config." |
 | `codex_hooks_supported` | Codex hook events normalize for a dated CLI/config without relying on transcript parsing as the source of truth. | "Codex hook events normalize for the tested version/config." |
 | `codex_exec_json_supported` | Codex non-interactive `exec --json` JSONL events normalize for a dated CLI/config. | "Codex exec JSONL sessions normalize for the tested version/config." |
@@ -176,6 +180,37 @@ approves a redacted synthetic fixture.
       "approval_modes": [],
       "plugin_server_origins": []
     },
+    "claude_config": {
+      "mode": "interactive|print|background_agent|agent_view|mcp_server|unknown",
+      "output_format": "text|json|stream-json|null",
+      "input_format": "text|stream-json|null",
+      "bare_mode": false,
+      "no_session_persistence": false,
+      "session_resume_mode": "new|continue|resume|fork|from_pr|unknown",
+      "settings_sources": [],
+      "managed_settings_present": false,
+      "settings_array_merge_observed": false,
+      "permission_mode": "default|acceptEdits|plan|auto|dontAsk|bypassPermissions|unknown",
+      "allow_dangerously_skip_permissions": false,
+      "dangerously_skip_permissions": false,
+      "allowed_tools": [],
+      "disallowed_tools": [],
+      "tools_restricted": false,
+      "plugin_sources": [],
+      "plugin_components_enabled": [],
+      "plugin_load_errors": [],
+      "hook_handler_types": [],
+      "hook_mutates_tool_input": false,
+      "hook_persists_environment": false,
+      "mcp_scope_sources": [],
+      "mcp_strict_config": false,
+      "mcp_headers_helper_present": false,
+      "mcp_oauth_scopes_pinned": false,
+      "mcp_output_limit_tokens": null,
+      "claude_mcp_serve": false,
+      "traceparent_inbound": false,
+      "traceparent_outbound": false
+    },
     "opencode_config": {
       "run_format": "default|json",
       "attach_url": null,
@@ -206,7 +241,7 @@ approves a redacted synthetic fixture.
   "event_id": "agt_evt_001",
   "tool": "codex",
   "fixture_task_id": "task_bugfix_001",
-  "source_event_type": "SessionStart|PreToolUse|tool.execution|message.updated|session.start|agent.start|tool.call|tool.result|agent.end|command.executed|file.edited|permission.asked|permission.replied|session.created|session.idle|shell.env|tool.execute.before|tool.execute.after|thread.started|turn.started|turn.completed|turn.failed|item.started|item.updated|item.completed|error|stream_json_object|ndjson_object|unknown",
+  "source_event_type": "SessionStart|SessionEnd|PreToolUse|PostToolUse|PermissionRequest|PermissionDenied|Notification|UserPromptSubmit|Stop|SubagentStop|PreCompact|PostCompact|Elicitation|ElicitationResult|CwdChanged|FileChanged|WorktreeCreate|WorktreeRemove|system_init|system_plugin_install|system_api_retry|tool.execution|message.updated|session.start|agent.start|tool.call|tool.result|agent.end|command.executed|file.edited|permission.asked|permission.replied|session.created|session.idle|shell.env|tool.execute.before|tool.execute.after|thread.started|turn.started|turn.completed|turn.failed|item.started|item.updated|item.completed|error|stream_json_object|ndjson_object|unknown",
   "source_item_type": "agent_message|reasoning|command_execution|file_change|mcp_tool_call|web_search|plan_update|null",
   "source_event_class": "hook|plugin|otel|run_json|json_export|stream_json|jsonl|server_api|acp|wrapper",
   "source_event_schema": "docs-checked-YYYY-MM-DD",
@@ -272,7 +307,7 @@ approves a redacted synthetic fixture.
 {
   "tool": "amp",
   "fixture_task_id": "task_research_001",
-  "event_class": "thinking_block|tool_output|permission_decision|subagent|raw_transcript|uncovered_hook_tool_path|plugin_event_disabled|source_schema_changed",
+  "event_class": "thinking_block|tool_output|permission_decision|subagent|raw_transcript|uncovered_hook_tool_path|bare_mode_suppressed_surface|no_session_persistence|plugin_load_error|hook_mutated_tool_input|hook_persisted_environment|mcp_output_truncated|settings_source_unknown|plugin_event_disabled|source_schema_changed",
   "lossiness_reason": "source_not_exposed|redacted|raw_ref_only|unsupported|parse_failed|unstable_format",
   "count": 0,
   "user_visible_warning": "Thinking blocks disabled by policy.",
@@ -382,12 +417,39 @@ approves a redacted synthetic fixture.
   runs unless the redaction suite explicitly tests them.
 - Claude Code subprocess propagation must be counted precisely: active tracing
   can inject `TRACEPARENT` into Bash/PowerShell, but generic `OTEL_*` exporter
-  variables are not inherited by spawned subprocesses by default.
+  variables are not inherited by Bash, hooks, MCP servers, or language servers
+  by default. Inbound `TRACEPARENT`/`TRACESTATE` applies to `-p`/Agent SDK
+  mode only, not ordinary interactive sessions.
 - Claude Code stream JSON claims apply to `claude -p --output-format
   stream-json` and must record whether `--include-hook-events`,
   `--include-partial-messages`, stream input, replayed user messages, or
   content-bearing flags were enabled. This claim does not prove interactive OTel
   coverage and cannot imply prompt/tool-content safety without redaction rows.
+- Claude Code `--bare` claims must record which normally discovered surfaces
+  were suppressed: hooks, skills, plugins, MCP servers, auto memory, and
+  `CLAUDE.md`. A bare scripted run cannot prove ordinary interactive context or
+  hook/MCP coverage unless those surfaces are explicitly re-added by flags.
+- Claude Code `--no-session-persistence` claims must record that sessions cannot
+  be resumed from disk and that transcript/resume-based evidence is unavailable
+  or raw-ref-only for that run.
+- Claude Code hook claims apply per event class and handler type. Rows must
+  record whether the handler was command, HTTP, MCP tool, prompt, or agent;
+  whether it allowed, denied, asked, deferred, or mutated a tool call; whether
+  it persisted environment through `CLAUDE_ENV_FILE`; and whether compaction
+  summaries or elicitation payloads were raw-ref-only.
+- Claude Code settings/plugin claims must record effective setting sources and
+  precedence: managed, command line, local, project, user, plus array-merge
+  behavior for permissions. Plugin rows must list enabled component classes
+  such as skills, agents, hooks, MCP, LSP, monitors, Bash `PATH` executables,
+  and supported plugin settings, plus plugin load errors.
+- Claude Code MCP session claims must record server scope and precedence, local
+  versus project versus user versus plugin versus claude.ai source, transport,
+  static headers or `headersHelper` source, OAuth metadata/scopes, output-limit
+  settings, workspace-trust requirement, managed MCP allow/deny controls, and
+  whether the run exposed `claude mcp serve`.
+- Claude Code background-agent claims must record whether the session came from
+  `claude agents --json`, `--bg`, agent view, or a dispatched agent, and which
+  model, effort, permission, settings, plugin, and MCP defaults were applied.
 - Codex `transcript_path` is a raw ref. Hook events are the claimable structured
   source, but hook support proves structured hook normalization rather than
   complete shell/file side-effect coverage unless wrapper, repo-diff, or
