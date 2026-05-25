@@ -940,6 +940,31 @@ For anchored reads it's a wash (both fast); projections win scan-heavy multi-ord
 at a storage cost. Reinforces the read-path/cost picture; no verdict flip. GB-scale
 projection-scan vs index-lookup latency owed to harness.
 
+### Run 29 — 2026-05-25 — Deletes + mutations (corrections / GDPR-erase / update)
+
+Backs `deletes-and-mutations.md` (pass 51). Smoke.
+
+**ClickHouse:**
+- Lightweight `DELETE FROM del_test WHERE id<50000` (plain table) → 100k→50k rows;
+  `system.mutations` = **`UPDATE _row_exists = 0 WHERE id<50000`**, part `all_1_1_0`→
+  `all_1_1_0_2` (a `_row_exists` **mask**, not a surviving-row rewrite). GA-ish,
+  default-on (`lightweight_deletes_sync=2`).
+- Lightweight `UPDATE upd_test SET v='new'` → **rejected**: "Lightweight updates …
+  supported only for tables with materialized `_block_number` column … enable
+  `enable_block_number_column=1`." Settings `enable_lightweight_update=1` +
+  `allow_experimental_lightweight_update=1` default-on but **experimental + per-table
+  setup**; else `UPDATE` = heavy `ALTER UPDATE` part rewrite.
+
+**GreptimeDB:** `DELETE FROM gt_del WHERE k='b'` → row **immediately** gone from
+queries (`['a','c']`), no compaction forced (tombstone + read-filter, pass 39). UPDATE =
+re-insert `(PK,ts)` → dedup last-wins (cheap upsert, GA).
+
+**Claim status:** **DELETE ≈ parity** — ClickHouse lightweight delete (mask, default)
+caught up to GreptimeDB tombstone; both read-immediate. **UPDATE → GreptimeDB** — GA
+zero-setup upsert vs ClickHouse heavy rewrite (lightweight update experimental +
+per-table block-number column). Reinforces LSM-native correction ergonomics; updates
+the divergence. GB-scale rewrite-vs-mask-vs-tombstone cost owed to harness.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
