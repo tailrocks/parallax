@@ -246,6 +246,17 @@ advantage becomes central and the choice flips — accepting the PromQL/OTLP lay
 as the cost of doing business. This is the single most important thing the larger
 benchmark must settle.
 
+**Condition (b) now has scale evidence (Run 141, 5M warm tier):** GreptimeDB's heavy
+*analytical* queries **cross the 300 ms gate at 5M** (metric-agg 315–1021 ms, dynamic-attr JSON
+330 ms, in-DB join 659 ms) and the scan gaps **widen with scale** (unindexed scan ~4×@1M →
+~10×@5M) while ClickHouse stays fast (~20 ms). So an **analytics-/ad-hoc-scan-dominated mix
+already favours ClickHouse at 5M** — (b) is trending confirmed; the GB–TB *cold* magnitude is the
+last piece owed to the sized/server harness. **Crucially, (a) still does NOT hold for Parallax:**
+the **anchored/keyed hot path stays interactive at 5M** (anchored ~14 ms, last-value ~10 ms,
+time-range ~13 ms — all ≪ gate), so the dominant evidence-bundle workload keeps the GreptimeDB
+recommendation. The flip is real *only if the real query mix turns out analytics-dominated* — which
+the workload-mix question (the operator's to answer) decides.
+
 **Historical update (Run 12, measured at 5M logs, both indexed; warm-re-verified Run 38;
 superseded by Runs 48-49):** condition (b) once looked **partly confirmed** — ClickHouse
 full-text log search appeared **~18×** faster (7 ms vs 129 ms) and full count-by-`level`
