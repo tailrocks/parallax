@@ -6020,6 +6020,46 @@ Two consequences for the verdict, both now source-level:
 `:158-191`, `Join` `:207`) + `.../merge_scan.rs` (`struct MergeScanExec` `:135`, `execute` region RPC
 loop). No local containers touched. Wrote up in `distributed-and-scaling.md` (new "Read fan-out" §).
 
+### Run 149 — 2026-05-25 — SOURCE+LIVE (gentle): continuous aggregation — GT `CREATE FLOW` vs CH Materialized Views — the agg-gap escape hatch; both close recurring rollups
+
+**Context.** Host→container HTTP was **down** this pass (`curl localhost:4000/8123` → exit 7 / HTTP
+000) though `docker ps` shows both **healthy** with ports mapped — an env port-forward fault, not a
+container fault. Worked around it with **`docker exec`** (queries the server from inside the
+container). NOTE: this likely means Run 148's "stables empty" read was a *connection* fail, not empty
+tables. No benchmark run (host path down + concurrent agents `codex`+`claude` editing market/competitor
+docs); gentle source+exec-verify pass.
+
+**Pass target.** Ground the **agg-gap closability** mechanism (DQ6): both engines pre-compute recurring
+rollups so dashboards skip the raw-scan aggregation the verdict concedes GT is ~2× slower at
+(`query-execution-engine.md`). Source = `src/flow` @v1.0.2; live = catalog/engine presence.
+
+**Source + live:**
+- **GT Flow** (`src/flow/src/{lib,engine,batching_mode,server}.rs`): a dataflow engine — `CREATE FLOW
+  … AS SELECT … GROUP BY` → incrementally-maintained **sink table**. Two modes: **streaming**
+  (`compute.rs`/`StreamingEngine`, incremental operators) + **batching** (`batching_mode.rs`:
+  *"time-window-aware normal query triggered when new data arrives"*, `experimental_min_refresh_duration`,
+  `query_timeout` 10 min). Runs in a dedicated **Flownode** role. **Live (exec):**
+  `information_schema.tables` has `flows` → `total_rows:1` on v1.0.2 standalone (feature present/GA).
+- **CH Materialized Views** (live, exec): `system.table_engines` has **`MaterializedView`**;
+  `allow_experimental_refreshable_materialized_view = 1` (**on by default**). Insert-triggered MV
+  (runs per inserted block → always-fresh incremental, decade-mature) + refreshable MV (periodic
+  re-exec, CH's analog to GT batching mode).
+
+**Verdict — defuses the agg-gap, doesn't differentiate.** Both engines close the *recurring*-rollup
+regime (dashboards/SLOs/timelines): define the rollup once, query the small pre-agg table, the raw-scan
+gap never applies. So **the agg-gap bites only genuinely ad-hoc analytics**, not dashboards — narrows
+the verdict concession. Small **maturity** edge to ClickHouse (insert-triggered MV is battle-tested +
+always-fresh; GT batching knobs are `experimental_*`, streaming is the mature GT path). GT's Flownode
+scales as its own tier (fits the topology-change scaling story). Neither wins decisively; the agg-gap
+is "a rollup away from moot" on both sides. Wrote up in new note `continuous-aggregation-and-rollups.md`.
+
+**Reproduce.** `docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql --data-urlencode
+"sql=SELECT table_name FROM information_schema.tables WHERE table_name LIKE '%flow%'"` → `flows`.
+`docker exec parallax-bench-clickhouse-1 clickhouse-client -q "SELECT name FROM system.table_engines
+WHERE name LIKE '%MaterializedView%'; SELECT value FROM system.settings WHERE
+name='allow_experimental_refreshable_materialized_view'"` → `MaterializedView` / `1`. Source via
+`gh api ".../src/flow/src/lib.rs?ref=v1.0.2"` etc. (Use `docker exec` — host port-forward was down.)
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
