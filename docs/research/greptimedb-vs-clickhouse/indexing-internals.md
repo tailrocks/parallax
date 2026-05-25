@@ -2,7 +2,8 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 43. The storage half of checklist #3: **how each engine stores its
+Status: pass 43 + pass 78 (index-cache asymmetry source-checked: inverted/bloom/vector
+cached in-memory, **tantivy full-text not** — part of the ~18× gap). The storage half of checklist #3: **how each engine stores its
 secondary/skip indexes on disk, what they can skip, and the honest paradox** that
 GreptimeDB's *richer* index toolkit still lost full-text search ~18× (Run 12). The
 read-path note covers *what each index lets the engine skip*; this is the **on-disk
@@ -71,7 +72,16 @@ integration does** (ties to `query-execution-engine.md`):
   both inside the fast C++ pipeline, on 65k-row blocks.
 - **GreptimeDB** loads the Puffin tantivy/inverted blob, evaluates it, maps the hits
   back to row groups, then DataFusion scans/materializes — a *more precise* index but a
-  *younger, multi-step* end-to-end path with more per-query overhead.
+  *younger, multi-step* end-to-end path with more per-query overhead. **Cache asymmetry
+  (pass 78 source):** the **inverted**, **bloom**, and **vector** indexes have **in-memory
+  caches** (`cache/index/{inverted_index,bloom_filter_index,vector_index}.rs`) + an
+  index-application result cache (`result_cache.rs`) — so the inverted path stays warm (why
+  anchored lookup is competitive). But there is **no `FulltextIndexCache`**: the **tantivy**
+  full-text variant re-opens a Lucene-style directory through a file/dir cache
+  (`SstPuffinDir`, `dir_cache_hit/miss`) per query (`fulltext_index/applier.rs`), heavier than
+  the cached in-memory FST path. The cheaper **bloom** full-text variant (`INDEX_BLOB_TYPE_BLOOM`)
+  *does* reuse `BloomFilterIndexCache`. So part of the ~18× full-text gap is this missing
+  in-memory tantivy cache, not just scan-engine maturity (`greptimedb-parity-roadmap.md` gap #1).
 - For the **anchored point lookup**, ClickHouse's `ORDER BY` **sort-key locality**
   (primary.cidx) beats *any* secondary index: the rows are physically contiguous, so it
   reads one granule and needs no separate index load. GreptimeDB's inverted index helps
@@ -118,7 +128,10 @@ execution integration, not index design. Honest mechanism win for the analysis.
 - GreptimeDB: `src/mito2/src/sst/index/{puffin_manager,inverted_index,fulltext_index,bloom_filter}.rs`
   (blob types `greptime-inverted-index-v1`, `greptime-fulltext-index-v1`/`-bloom`,
   `greptime-bloom-filter-v1`); `src/index` Cargo (`fst`, `roaring 0.10`, `tantivy 0.24`,
-  `fastbloom 0.8`). Live (Run 22): `<uuid>.puffin` beside `<uuid>.parquet`.
+  `fastbloom 0.8`). Live (Run 22): `<uuid>.puffin` beside `<uuid>.parquet`. Cache (pass 78):
+  `src/mito2/src/cache/index/{inverted_index,bloom_filter_index,vector_index,result_cache}.rs`
+  (no `fulltext_index`); `src/mito2/src/sst/index/fulltext_index/applier.rs` (tantivy via
+  `SstPuffinDir` dir-cache; bloom variant via `BloomFilterIndexCache`).
 - ClickHouse: `src/Storages/MergeTree/MergeTreeIndex{BloomFilter,BloomFilterText,
   ConditionText,Granularity}.*`; `GRANULARITY × index_granularity(8192)`. Live (Run 22):
   `primary.cidx` + `skp_idx_<name>.idx`/`.cmrk4` per part.

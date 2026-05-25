@@ -2,7 +2,8 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 76 (new) + pass 77 (gaps #2/#3 **source-verified** against v1.0.2). Answers
+Status: pass 76 (new) + pass 77 (gaps #2/#3 source-verified) + pass 78 (gap #1
+**source-corrected** — the cost is tantivy-cache-specific, not "FST reload"). Answers
 the operator question: GreptimeDB wins Parallax on *fit*
 (`verdict-which-to-choose.md`), but ClickHouse is genuinely ahead on a few capabilities —
 **what would GreptimeDB have to implement, against its actual internals, to be the
@@ -32,11 +33,20 @@ page index) and post-decode-filters rows, but has **no arrow `RowFilter`**, so t
 is *wiring an arrow primitive that already exists*, not inventing late materialization. Both are
 integration, exactly as the thesis predicts.
 
+**Pass-78 source check corrected gap #1** (drift caught in this roadmap's own first draft):
+GreptimeDB **already** in-memory-caches the inverted, bloom, and vector indexes + an
+index-application result cache (`cache/index/`), so "warm-cache the FST" was already done —
+the residual full-text cost is **tantivy-specific** (no `FulltextIndexCache`; the tantivy
+applier re-opens a Lucene dir via a file/dir cache per query). Still an integration gap, but a
+narrower and more accurate one — and it surfaces a **Tier-A lever**: prefer the already-cached
+*bloom* full-text variant where exact phrase isn't required. The correction is itself the
+method working: source beats reasoning.
+
 ## The gaps and what closes each
 
 | # | ClickHouse advantage | Mechanism (why CH wins) | What GreptimeDB implements — against its real structure | Tier | Gap kind |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **Full-text log search ~18× (warm, Run 12/38)** | Coarse `text` posting-list prune **inside** the C++ pipeline, then vectorized `hasToken` confirm on 65k-row blocks — index lookup + confirm are one fast path. | **Fuse the tantivy hit-set into the scan.** GreptimeDB already has the richer index (Puffin `greptime-fulltext-index-v1`, tantivy 0.24); the cost is the load-blob → apply → map-to-row-group → DataFusion-scan round trip. Implement: (a) keep the FST/posting-lists **warm-cached** (avoid per-query Puffin blob reload); (b) push the tantivy row/segment hit-set directly into a Parquet **row-selection** the scan node consumes without re-materializing. Files: `src/mito2/src/sst/index/fulltext_index.rs` (applier), the mito2 Parquet reader, the DataFusion scan node. | **B** | integration |
+| 1 | **Full-text log search ~18× (warm, Run 12/38)** | Coarse `text` posting-list prune **inside** the C++ pipeline, then vectorized `hasToken` confirm on 65k-row blocks — index lookup + confirm are one fast path. | **Cache the tantivy reader + fuse its hit-set into a row-selection.** Source-corrected (pass 78): GreptimeDB already in-memory-caches the **inverted**, **bloom**, and **vector** indexes (`cache/index/{inverted_index,bloom_filter_index,vector_index}.rs`) + an index-application result cache (`result_cache.rs`) — so "warm-cache the FST" is **already done** for the inverted path (why anchored inverted lookup is competitive, Run 6). The full-text gap is **tantivy-specific**: there is **no `FulltextIndexCache`** in `cache/index/`; the tantivy applier opens a Lucene-style directory via a **file/dir cache** (`SstPuffinDir`, `dir_cache_hit/miss`) and re-opens segment readers per query, then DataFusion scans. Implement: (a) an **in-memory tantivy reader/segment cache** (parallel to `InvertedIndexCache`) so the Lucene index stays warm; (b) feed the tantivy hit-set into the arrow `RowFilter` row-selection from gap #3 so only survivors materialize. **Tier-A lever:** for log search not needing exact phrase, prefer the **bloom full-text variant** (`INDEX_BLOB_TYPE_BLOOM`) — it already uses `BloomFilterIndexCache`. Files: `src/mito2/src/sst/index/fulltext_index/applier.rs`, `cache/index/`. | **A** (bloom variant) / **B** (tantivy cache) | integration |
 | 2 | **Generic scan/aggregate throughput ~2–4×** | 65,409-row blocks (8× DataFusion's 8,192) + **LLVM-JIT** expressions/aggregation + bespoke SIMD kernels + specialized adaptive hash tables. | (a) **Raise the `RecordBatch` size** in `SessionConfig` — **source-confirmed (pass 77): `state.rs:126-128` sets only `with_target_partitions`, never `batch_size`, so DataFusion's 8,192 default holds** → raise toward 32–64k so vectors amortize overhead and feed SIMD; (b) **expression + aggregation codegen** — DataFusion's is young/narrow vs LLVM JIT; (c) **specialized SIMD aggregation** (two-level hash for high-card, fixed-width-key kernels). Mostly **upstream DataFusion** — GreptimeDB inherits as DF improves, or contributes. | **B** | integration (upstream DataFusion) |
 | 3 | **Late materialization (PREWHERE)** | Decodes cheap filter columns first → row mask → decodes wide columns only for surviving rows. | **Add column-staged late materialization to the mito2 reader.** Source-confirmed (pass 77): GreptimeDB already **prunes** row-groups/pages (`RowGroupSelection` from Puffin fulltext/inverted indexes + the Parquet **page index**, `reader.rs`) and then **post-decode**-filters rows (`PruneReader::precise_filter`, `read/prune.rs:119`) — so within a surviving row-group it decodes **all projected columns before dropping rows**. There is **no arrow `RowFilter`** in the reader (grep = 0) → no column-staging. Fix: wire the pushed-down predicate into arrow's **`RowFilter`** (`ParquetRecordBatchReaderBuilder::with_row_filter`, which arrow-rs already provides) so filter columns decode first, build a selection, and wide/`Json` columns materialize only for survivors. File: `src/mito2/src/sst/parquet/reader.rs`. **Arrow ships the primitive → integration, not a new algorithm.** | **B** | integration |
 | 4 | **Dynamic-attribute path queries (JSON)** | `JSON` type stores each path as a **typed columnar subcolumn** → `attributes.user` reads one subcolumn. GreptimeDB `Json` is a **binary blob** (jsonb) + `json_get_*` per-row parse (`schema-evolution-and-dynamic-columns.md`). | **Shred JSON paths into Parquet subcolumns.** Adopt the emerging Parquet **Variant/shredding** layout: at flush, write hot/declared attribute paths as their own typed Parquet columns; push `attributes.k` access down to a subcolumn scan instead of a per-row blob parse. Files: a shredded column type + mito2 SST writer + DataFusion pushdown. **Biggest storage-format change here** — borders on design, but Parquet's variant work makes it integration, not a rewrite. | **B** | integration / format |
@@ -100,5 +110,10 @@ first which gaps Parallax's real query mix actually hits before investing in Tie
   (`RowGroupSelection` + `PageIndexPolicy` + `prune_row_groups_by_{fulltext,inverted}_index`;
   **no `RowFilter`**); `src/mito2/src/read/prune.rs:119` (`PruneReader::precise_filter` =
   post-decode row filtering).
+- Source (pass 78, v1.0.2): `src/mito2/src/cache/index/` = `{inverted_index, bloom_filter_index,
+  vector_index, result_cache}.rs` (**no `fulltext_index` cache**); `src/mito2/src/cache.rs`
+  (`InvertedIndexCache`/`BloomFilterIndexCache`/`VectorIndexCache`/`PuffinMetadataCache`);
+  `src/mito2/src/sst/index/fulltext_index/applier.rs` (`TantivyFulltextIndexSearcher` over
+  `SstPuffinDir` + `dir_cache_hit/miss`; bloom variant uses `BloomFilterIndexCacheRef`).
 - Decision context: `verdict-which-to-choose.md`. Loop target: `prompts/greptimedb-vs-clickhouse-internals.md`
   ("Closing The Gap").
