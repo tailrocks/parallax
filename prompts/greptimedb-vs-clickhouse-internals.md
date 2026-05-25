@@ -111,6 +111,10 @@ demands it, and update the README and `PROJECT_STRUCTURE.md` when you do):
   signal, and the retention-cost consequence.
 - `distributed-and-scaling.md` — single-node ceiling and the horizontal-scale
   design of each.
+- `greptimedb-implementation.md` — the concrete Parallax-on-GreptimeDB storage
+  design: full schema, ingest path, and exact retrieval queries (see below).
+- `clickhouse-implementation.md` — the concrete Parallax-on-ClickHouse storage
+  design: full schema, ingest path, and exact retrieval queries (see below).
 - `per-signal-verdict.md` — the scenario matrix: metrics vs logs vs traces vs
   evidence-bundle correlation, who wins each and the mechanism why.
 - `verdict-which-to-choose.md` — the final synthesized decision (see below).
@@ -272,6 +276,49 @@ covering at least:
 For each cell: name the winner, the mechanism, the scenario qualifiers
 (cardinality, window, hot/cold cache, single-node/scaled), and the confidence
 (architecture-reasoned vs benchmark-confirmed).
+
+---
+
+# Concrete Implementation Design Per System
+
+The comparison is not complete until each candidate has a concrete, buildable
+Parallax storage design written down — so the choice is "we know exactly how we
+would build it on either", not an abstraction. Produce one design document per
+system (`greptimedb-implementation.md` and `clickhouse-implementation.md`), each
+answering: *if Parallax stored its data in this system, what is the structure and
+how do we get the data back out?*
+
+Each implementation document must specify, for the full Parallax signal set
+(error events, spans, logs, metrics, deploy markers, CLI invocations, agent
+actions, frontend events):
+
+- **Schema / structure.** The complete table design in that system's real DDL:
+  table engine / table type, the time/sort/primary key and why it is ordered that
+  way, tag vs field columns, per-column types and compression codecs, JSON/Map vs
+  flat columns for dynamic OTLP attributes, partitioning, TTL/retention, and any
+  rollup/materialized structures (materialized views / projections /
+  AggregatingMergeTree for ClickHouse; metric engine, append mode, logical→physical
+  tables for GreptimeDB). Justify each choice from the engine's internals — the
+  schema must exploit how that engine actually stores and skips data.
+- **Ingest path.** How each signal lands: OTLP and Prometheus remote write for
+  GreptimeDB; the insert/`Map`/materialized-view path (and async inserts) for
+  ClickHouse — and how schema choices affect ingest-to-queryable freshness.
+- **Retrieval.** The exact queries Parallax runs to get data back, in that
+  system's real dialect: the evidence-bundle/correlation set (mirror Q1–Q6 in
+  `storage-benchmark-prototype.md` — trace-context fetch, issue/fingerprint
+  history, release-regression diff, cross-tier frontend↔backend join,
+  high-cardinality filter, and the composite bundle), plus how each query uses the
+  schema's keys and indexes, and where it must fall back to a scan.
+- **Object-storage and retention layout.** The S3-mode configuration and the
+  hot/cold tiering for cheap long retention with re-readable history.
+- **Operational shape.** What must run for a Tier-1 single-node deployment and how
+  the same schema survives scale-out.
+
+Build on, do not duplicate, the seed DDL and Q1–Q6 already in
+`storage-benchmark-prototype.md`; expand them into a complete storage design and
+keep the two consistent (the benchmark runs what these documents specify). Put the
+two designs side by side so the structural differences — and what each makes easy
+or hard for Parallax retrieval — are obvious.
 
 ---
 

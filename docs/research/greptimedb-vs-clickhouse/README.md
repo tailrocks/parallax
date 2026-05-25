@@ -71,6 +71,8 @@ These are produced and grown by the loop; this index is updated as they land.
 | `read-path-indexing-and-execution.md` | Query planning, indexing, execution, scan-vs-skip, joins. | pending |
 | `compression-and-cost.md` | Layout, codecs, compression by signal, retention-cost consequence. | pending |
 | `distributed-and-scaling.md` | Single-node ceiling and horizontal-scale design of each. | pending |
+| `greptimedb-implementation.md` | Concrete Parallax-on-GreptimeDB design: full schema, ingest path, exact retrieval queries, object-storage/retention layout. | pending |
+| `clickhouse-implementation.md` | Concrete Parallax-on-ClickHouse design: full schema, ingest path, exact retrieval queries, object-storage/retention layout. | pending |
 | `per-signal-verdict.md` | Scenario matrix: metrics vs logs vs traces vs evidence-bundle correlation. | pending |
 | `verdict-which-to-choose.md` | Final synthesized decision and the mechanism-level reasoning. | pending |
 
