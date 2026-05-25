@@ -29,7 +29,7 @@ not inferred from this design alone.
 | --- | --- |
 | [MCP server overview](https://modelcontextprotocol.io/specification/2025-11-25/server/index) | MCP exposes prompts, resources, and tools; tools are model-controlled while resources are application-controlled. This maps cleanly to Parallax's split between bounded context resources and explicit investigation tools. |
 | [MCP tools specification](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) | Tools have JSON Schema input and optional output schemas, support structured content, can advertise task-support metadata, and carry security requirements for input validation, access control, rate limits, output sanitization, user confirmation for sensitive operations, and audit logging. Bundle-returning Parallax tools should use `structuredContent` with an output schema, not text-only JSON, and should mark task support as forbidden for the first context adapter. |
-| [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization) | Remote MCP requires real OAuth-style security posture: resource-bound tokens, audience validation, secure token storage, HTTPS, localhost/HTTPS redirects, PKCE for public clients, and no token passthrough. |
+| [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization) | Authorization is optional overall, but HTTP-based transports that support it should follow the spec. The current spec requires protected-resource metadata, resource indicators in authorization and token requests, token audience validation by MCP servers, secure token storage, HTTPS, localhost/HTTPS redirect checks, PKCE for public clients, and no token passthrough. Stdio transports should not use this OAuth flow and should retrieve credentials from the environment. |
 | [MCP security best practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices) | The official guidance favors least-privilege scopes, targeted elevation, precise scope challenges, correlation IDs, and avoiding wildcard or omnibus scopes. |
 | [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/) | MCP calls should be observable as MCP-specific spans and metrics; MCP does not yet define its own standard trace-context propagation, so instrumentation needs explicit propagation in message metadata. |
 | [OpenAI Docs MCP](https://developers.openai.com/learn/docs-mcp) | Codex, VS Code/Copilot Agent mode, Cursor, and Claude Code can consume MCP servers; OpenAI's own docs server uses MCP as the cross-client integration surface. |
@@ -38,7 +38,9 @@ not inferred from this design alone.
 
 Version note: the official MCP pages checked for this pass show
 `2025-11-25` as the latest specification revision. Do not cite or implement a
-future-dated spec revision until the official site publishes it as current.
+future-dated spec revision until the official site publishes it as current. The
+OpenTelemetry semantic-convention page checked in the same pass still shows
+`1.41.0`, with MCP conventions marked development-stage.
 
 ## Decision
 
@@ -212,9 +214,9 @@ for context retrieval and deterministic checks, not production mutation.
 
 | Rule | Requirement |
 | --- | --- |
-| Scope model | Use small read scopes first. No wildcard scope, no `admin`, no bundled future privileges. |
-| Remote auth | Use HTTPS, resource/audience validation, secure token storage, short-lived tokens, and PKCE where applicable. |
-| Stdio/local auth | Treat local stdio MCP as local code execution. Require explicit install/trust and never auto-enable from a repo. |
+| Scope model | Use small read scopes first. No wildcard scope, no `admin`, no bundled future privileges. Emit precise scope challenges, accept down-scoped tokens, and audit elevation attempts. |
+| Remote auth | Use HTTPS, protected-resource metadata, resource indicators in authorization and token requests, audience validation, secure token storage, short-lived tokens, PKCE where applicable, and token-passthrough denial. |
+| Stdio/local auth | Treat local stdio MCP as local code execution. The OAuth authorization spec does not apply to stdio; require explicit install/trust, retrieve credentials only from approved local configuration or environment, never log them, and never auto-enable from a repo. |
 | Tool schemas | Every tool has a closed JSON Schema input. Bundle-returning tools have an output schema for structured results. |
 | Server-initiated capabilities | Disable sampling, elicitation, and task-augmented execution in the first context server. Audit any `tools/list_changed` notification or dynamic catalog change. |
 | Output limits | Return bounded summaries plus resource refs; do not inline unbounded logs, traces, terminal output, or transcripts. |
@@ -258,6 +260,8 @@ MCP should not ship until these tests pass:
 | Projection equivalence | CLI, HTTP, and MCP return the same canonical JSON hash for the same request. |
 | Client fixture | The same local server is callable from at least Codex and Claude Code using official MCP configuration paths. |
 | Scope fixture | Calls without `evidence:read` fail closed; raw refs require `evidence:read_sensitive`. |
+| Remote auth fixture | Streamable HTTP proves protected-resource metadata, resource indicators in authorization and token requests, MCP-server audience validation, PKCE S256 for public clients, HTTPS policy, and token-passthrough denial. |
+| Local stdio fixture | Stdio server startup requires explicit local trust, reads only approved credential sources, redacts credentials from logs/audit rows, and cannot be auto-enabled by a repository checkout. |
 | Redaction fixture | Seeded secrets in logs, CLI output, agent transcripts, and frontend breadcrumbs do not appear in MCP output. |
 | Source-field fixture | Eval/corpus-derived bundles preserve `source_field_policy.status = pass`, policy hash, and zero violations across CLI, HTTP, and MCP. |
 | Output budget | Oversized bundles return summary + refs, not unbounded text. |

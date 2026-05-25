@@ -30,7 +30,7 @@ The central rule:
 | --- | --- | --- |
 | [MCP server overview](https://modelcontextprotocol.io/specification/2025-11-25/server/index) | MCP servers expose prompts, resources, and tools, with tools as model-controlled operations and resources as application-controlled context. | Parallax should expose evidence bundles as resources and narrow tools, not generic automation power. |
 | [MCP tools specification](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) | Tools are model-controlled, should keep a human in the loop, use JSON Schema input, optional output schemas, structured content, annotations, error results, optional task-support metadata, and security requirements around validation, access control, rate limiting, sanitization, confirmation, and audit logging. | Every Parallax MCP tool needs a closed schema, bounded output, audit row, and explicit denial of task-augmented execution unless a later fixture proves it safe. |
-| [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization) | Remote MCP uses OAuth-style authorization with protected resource metadata, resource indicators, audience validation, HTTPS, redirects, PKCE, secure token handling, and explicit token-passthrough prohibitions. | Remote Parallax MCP cannot be a bearer-token side door into evidence; resource indicator, audience, PKCE, and no-token-passthrough behavior need their own rows. |
+| [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization) | Authorization is optional for MCP overall; HTTP-based transports that support it should follow the spec, while stdio should retrieve credentials from the environment instead of using the HTTP authorization flow. Remote MCP uses OAuth-style authorization with protected-resource metadata, resource indicators in authorization and token requests, audience validation, HTTPS, redirects, PKCE, secure token handling, and explicit token-passthrough prohibitions. | Remote Parallax MCP cannot be a bearer-token side door into evidence; protected-resource metadata, resource indicators, audience, PKCE, and no-token-passthrough behavior need their own rows. Local stdio trust and credential-source behavior must be measured separately. |
 | [MCP security best practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices) | Official guidance emphasizes least privilege, precise scope challenges, resource indicators, token audience validation, correlation IDs, and avoiding broad scopes. | The first MCP server must start read-only and deny wildcard/admin scopes. |
 | [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/) | MCP client/server spans, JSON-RPC request IDs, transport values, tool/resource/prompt attributes, session metrics, `elicitation/create`, `sampling/createMessage`, `notifications/tools/list_changed`, and provisional `_meta` trace propagation are defined with development-stage status. | MCP calls and server-initiated capability attempts must be observable and normalized into Parallax audit/action rows without treating development-stage semconv names as stable storage fields. |
 | [OpenAI Docs MCP](https://developers.openai.com/learn/docs-mcp) | OpenAI documents MCP as a docs integration surface for Codex and other agent clients. | Cross-client MCP is a distribution requirement, not a unique moat. |
@@ -76,6 +76,7 @@ docs/research/agent-access-surface-runs/<run_id>/mcp-results.jsonl
 docs/research/agent-access-surface-runs/<run_id>/capability-results.jsonl
 docs/research/agent-access-surface-runs/<run_id>/scope-results.jsonl
 docs/research/agent-access-surface-runs/<run_id>/auth-results.jsonl
+docs/research/agent-access-surface-runs/<run_id>/stdio-trust-results.jsonl
 docs/research/agent-access-surface-runs/<run_id>/redaction-results.jsonl
 docs/research/agent-access-surface-runs/<run_id>/source-field-results.jsonl
 docs/research/agent-access-surface-runs/<run_id>/output-budget-results.jsonl
@@ -209,12 +210,34 @@ combination does not carry over to another.
   "case_id": "remote_mcp_resource_indicator",
   "transport": "streamable-http",
   "principal": "agent-readonly",
-  "resource_parameter_present": true,
+  "protected_resource_metadata_present": true,
+  "resource_parameter_in_authorization_request": true,
+  "resource_parameter_in_token_request": true,
   "token_audience_validated": true,
+  "token_audience_bound_to_mcp_server": true,
   "pkce_s256_required": true,
   "token_passthrough_denied": true,
   "https_required": true,
   "localhost_redirect_policy_checked": true,
+  "precise_scope_challenge": true,
+  "downscoped_token_accepted": true,
+  "status": "pass|fail",
+  "audit_row_emitted": true
+}
+```
+
+### Local Stdio Trust Result Row
+
+```json
+{
+  "case_id": "local_stdio_trust",
+  "transport": "stdio",
+  "client": "codex|claude-code",
+  "explicit_install_trust_required": true,
+  "repo_checkout_auto_enable_denied": true,
+  "approved_credential_sources": ["environment", "local_config"],
+  "ambient_token_forwarding_denied": true,
+  "credential_values_logged": false,
   "status": "pass|fail",
   "audit_row_emitted": true
 }
@@ -323,9 +346,14 @@ combination does not carry over to another.
   approval paths are tested and audited.
 - No cross-client claim unless at least Codex and Claude Code pass the same
   fixture suite.
-- No remote MCP claim unless resource indicators, token audience validation,
-  PKCE S256, HTTPS, localhost redirect policy, and token-passthrough denial are
-  tested separately from local stdio mode.
+- No remote MCP claim unless protected-resource metadata, resource indicators
+  in authorization and token requests, token audience validation, PKCE S256,
+  HTTPS, localhost redirect policy, precise scope challenges, down-scoping
+  tolerance, and token-passthrough denial are tested separately from local
+  stdio mode.
+- No local stdio MCP claim unless explicit install/trust, approved credential
+  sources, no repository auto-enable, no ambient-token forwarding, and
+  credential log redaction are proven for the tested client.
 - No prompt-injection safety claim unless malicious telemetry, issue text, PR
   text, logs, and transcripts fail to change tool policy, scopes, windows,
   redaction, or output limits.
