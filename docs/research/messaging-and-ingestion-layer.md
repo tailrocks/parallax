@@ -123,6 +123,12 @@ to be rewritten later.
 
 ## Candidate Comparison
 
+Version freshness rule: future stream benchmarks must compare the latest
+reasonably available stable/public version of each candidate as of the benchmark
+date. Older Jepsen reports, vendor benchmarks, or release notes are useful
+signals, but they must be labeled historical if newer releases have materially
+changed durability, clustering, performance, or licensing.
+
 | Candidate | Runtime | License / source posture | Strong fit | Main concern | Current role |
 | --- | --- | --- | --- | --- | --- |
 | Apache Iggy | Rust | Apache project, incubating | Best architectural fit: Rust, append-only log, partitions, consumer groups, single binary, low-latency design. | Clustering is still being hardened; public performance evidence is young; defaults may not fit tiny deployments. | First durable-stream prototype. |

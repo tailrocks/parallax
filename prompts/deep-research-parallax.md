@@ -190,6 +190,13 @@ right way the first time.
 
 Comparison is part of the research, and it has two halves.
 
+Version freshness rule: every comparison must use the latest reasonably
+available stable/public version of each candidate as of the research date. Do
+not compare a current project against an older major release, stale benchmark,
+old architecture doc, or outdated feature matrix unless the point is explicitly
+historical. When versions matter, state the version or release date being
+compared and call out if a source is stale.
+
 1. Study how systems are designed. Read public benchmarks and, more importantly,
    the architecture and design docs behind each candidate: data layout, ingest
    path, query path, indexing, compaction, retention, replication, and

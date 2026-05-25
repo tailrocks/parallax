@@ -60,6 +60,12 @@ two candidates are close, Rust wins.
 Rank candidates against Parallax's purpose, not a general leaderboard, in this
 order:
 
+Version freshness rule: compare the latest reasonably available stable/public
+version of every candidate as of the research date. Do not use stale benchmarks,
+old major releases, or outdated feature matrices as current evidence unless they
+are explicitly labeled historical. When versions materially affect the result,
+record the exact version or release date in the benchmark notes.
+
 1. **Speed — time to see real data.** When a production error fires, how fast can
    we pull everything correlated to that moment (metrics, traces, spans, logs)?
    Measure ingest-to-queryable latency (freshness) and evidence-bundle query
@@ -280,4 +286,3 @@ ClickHouse should remain preferred if:
 
 Everything else is watch-list or sanity-check material until it proves it is a
 database-level alternative rather than an observability platform.
-

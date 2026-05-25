@@ -27,6 +27,7 @@ idea becomes sharper.
 - [GreptimeDB storage evaluation](docs/research/greptimedb-storage-evaluation.md)
 - [Observability storage benchmark plan](docs/research/observability-storage-benchmark-plan.md)
 - [Messaging and ingestion layer](docs/research/messaging-and-ingestion-layer.md)
+- [Causal reconstruction and agent safety](docs/research/causal-reconstruction-and-agent-safety.md)
 - [Repository structure](PROJECT_STRUCTURE.md)
 - [Agent instructions](AGENTS.md)
 
