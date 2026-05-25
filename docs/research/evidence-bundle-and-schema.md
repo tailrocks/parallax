@@ -327,6 +327,9 @@ it survives contact with real data:
 - [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) — the
   source detail for `cli_invocation`, `agent_session`, `agent_action`, and audit
   edges.
+- [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
+  — the additive frontend node types (`frontend_session`, `user_step`,
+  `frontend_error`, `route_view`, `frontend_release`) and cross-tier edges.
 - [Verdict](verdict.md) — why the open schema and portable bundle are the moat.
 
 ## Bottom Line
