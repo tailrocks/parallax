@@ -250,6 +250,35 @@ Full analysis in [`write-path-and-ingestion.md`](write-path-and-ingestion.md).
   GreptimeDB's LSM memtable absorbs small writes natively. Favors GreptimeDB for
   streaming small-batch telemetry.
 
+### Run 6 — 2026-05-25 — B2: GreptimeDB `trace_id INVERTED INDEX` validation
+
+Tests `benchmarking-the-differences.md` B2: does adding `trace_id INVERTED INDEX`
+to GreptimeDB spans close the Run-1 trace-lookup gap? Built `spans_idx` (same 1M
+spans, `trace_id STRING INVERTED INDEX`, `append_mode`), flushed (index → Puffin),
+re-measured `WHERE trace_id = ?` (warm, min of 3). Parity: 14 rows on all.
+
+| Table | trace lookup | vs |
+| --- | --- | --- |
+| GreptimeDB `spans_idx` (INVERTED INDEX) | **8 ms** | the fix |
+| GreptimeDB `spans` (no index, Run-1 baseline) | 14 ms | un-indexed |
+| ClickHouse `spans` (`ORDER BY (trace_id, ts)`) | **2 ms** | sort-prefix seek |
+
+**Reading (honest):** the inverted index **~halved** GreptimeDB's trace lookup
+(14→8 ms) — the fix **helps and is confirmed directionally**. But it did **not**
+reach ClickHouse parity (still ~4×). Since GreptimeDB's `execution_time_ms` is its
+own *server-side* figure (excludes HTTP transport), the residual gap is **real
+fixed query-setup overhead** (DataFusion planning + `MergeScanExec` region-scan
+setup), not a measurement artifact — at 1M cache-resident rows that fixed floor
+(~8 ms) dominates, below which an index cannot push. ClickHouse's leaner native
+path floors lower (~2 ms).
+
+**B2 status: partially confirmed.** Index helps; parity not reached *at smoke
+scale*. The index's value (pruning) should matter more at larger scale where
+actual scanning — not the fixed planning floor — dominates; **re-test at `small`+
+and via the GreptimeDB MySQL native protocol** (lower per-query overhead than HTTP)
+before concluding. Does not change the verdict (trace lookup is fast enough in
+absolute terms — 8 ms — for anchored bundle assembly).
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

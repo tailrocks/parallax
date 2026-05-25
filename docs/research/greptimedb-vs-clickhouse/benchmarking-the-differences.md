@@ -40,8 +40,11 @@ Legend: **Runnable now** = expressible in the current prototype/`bench/compose.y
 - **Pass/fail:** GreptimeDB indexed lookup within ~2× of ClickHouse → confirms the
   schema fix; if still ≫ → inverted index insufficient, escalate.
 - **Prereq:** rebuild GreptimeDB `spans` with `trace_id INVERTED INDEX`.
-- **Status:** **Runnable now** (single-node, existing dataset) — cheapest high-value
-  next run.
+- **Status:** **DONE (Run 6, partially confirmed).** Inverted index cut trace
+  lookup 14→8 ms (~2×) but did not reach ClickHouse parity (2 ms) at smoke — the
+  residual is GreptimeDB's fixed query-setup floor (DataFusion + MergeScan), not
+  index quality. 8 ms is fine in absolute terms for anchored bundles. Re-test at
+  `small`+ and via the MySQL native protocol to isolate scan vs fixed overhead.
 
 ## B3 — Evidence-bundle Q1/Q4 anchored join at scale
 
