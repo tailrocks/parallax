@@ -135,7 +135,7 @@ Related research:
 - [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md)
 - [Self-hosted observability architecture](self-hosted-observability-architecture.md)
 - [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md)
-- [Metadata store benchmark plan](metadata-store-benchmark-plan.md)
+- [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md)
 - [Messaging and ingestion layer](messaging-and-ingestion-layer.md)
 - [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
 - [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md)

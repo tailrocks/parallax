@@ -349,7 +349,7 @@ clickhouse| small |           |        |        |        |         |            
   — the rationale, scope rule, axes, and decision criteria this prototype runs.
 - [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md) — candidate
   architecture detail.
-- [Metadata store benchmark plan](metadata-store-benchmark-plan.md) — the Turso
+- [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md) — the Turso
   vs Postgres harness, to be made runnable the same way.
 - [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)
   — Q6 assembles this object; the query workload exists to serve it.

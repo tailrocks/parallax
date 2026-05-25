@@ -126,7 +126,7 @@ If two or more trigger, reopen the verdict.
 - [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
   — blast-radius and causality-overclaim mitigations.
 - [Storage benchmark prototype](storage-benchmark-prototype.md) and
-  [Metadata store benchmark plan](metadata-store-benchmark-plan.md) — how the
+  [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md) — how the
   stack assumptions get tested.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) — the A1/A3
   value-and-moat claims.
