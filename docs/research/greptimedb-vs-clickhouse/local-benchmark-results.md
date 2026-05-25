@@ -6322,6 +6322,34 @@ fingerprint ORDER BY count(*) DESC LIMIT 3"` (+ `last_value(message ORDER BY ts)
 `row_number() OVER (PARTITION BY trace_id ORDER BY duration_ms DESC)`). CH: same via
 `clickhouse-client` with `argMax(message,ts)`. Both return identical rollup/ranking.
 
+### Run 157 — 2026-05-25 — LIVE re-verify (exec, real 5M `logs_b1`): full-text index-pruning mechanism holds (selective→both prune, broad→scan-bound); no drift
+
+**Context.** Network isolation persists (exec-only). Rotated the slice to the **full-text log search**
+claim (a verdict flip-trigger: broad-term log search → ClickHouse). Found `logs_b1` already loaded at
+**5,000,000 rows** on both stables (GT `message` FULLTEXT bloom/English/fpr0.01; CH `message` `text`
+index `idx_msg`). Plan-level (`EXPLAIN`/`EXPLAIN indexes=1`) — 4-build-exempt. Re-pin unchanged.
+
+**Re-verified (mechanism, not timing):**
+- **Selective** (UUID fragment `e3b74f33`, **1 match in 5M**): **both prune.** GT bloom FULLTEXT →
+  `EXPLAIN ANALYZE` reads **~51,200 rows** (bloom granularity 10240 ≈ 5 blocks) then filters to 1; CH
+  `idx_msg` → **`Granules 1/611`** (~8,192 rows). Both tiny reads → ~tie (consistent Run 51/52/78).
+- **Broad** (`timeout` 698,955; `503` 232,730 — ≥4.6% density): **neither prunes** — every 8192-row
+  granule contains matches → CH `Granules 611/611`, GT `EXPLAIN ANALYZE` scans **5,000,000**. Scan-bound
+  → CH's vectorized engine wins (consistent Run 133's ~12× broad-term).
+- **Granularity nuance:** CH prunes tighter on selective (8,192 vs GT's ~51,200) — the slight CH edge on
+  selective full-text; both sub-perceptible.
+
+**Verdict — no drift; the full-text mechanism reproduces at 5M.** Selective token → both indexes prune
+hard (~tie); broad term → scan-bound on both → ClickHouse vectorized scan wins. The flip-trigger
+(broad-term log analytics → ClickHouse) holds; selective/keyed log lookup is a tie. Updated
+`per-signal-verdict.md` Logs·full-text(selective) row. **Timing** re-verify (4-build) still owed (network).
+
+**Reproduce.** GT: `docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql
+--data-urlencode "sql=EXPLAIN ANALYZE SELECT count(*) FROM logs_b1 WHERE matches_term(message,'e3b74f33')"`
+→ ~51,200 rows read (vs 5,000,000 for `'timeout'`). CH: `docker exec parallax-bench-clickhouse-1
+clickhouse-client -q "EXPLAIN indexes=1 SELECT count() FROM logs_b1 WHERE hasToken(message,'e3b74f33')"`
+→ `Granules 1/611` (vs `611/611` for `'timeout'`). (exec; host port down.)
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
