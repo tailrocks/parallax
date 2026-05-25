@@ -133,6 +133,7 @@ or CI contract yet.
 | `docs/research/deploy-change-context-ledger.md` | Result-ledger contract for release-regression and "what changed?" claims: provider source snapshot, claim levels, run artifacts, row schemas, expiry triggers, and allowed product wording. |
 | `docs/research/redaction-detector-toolchain.md` | A6 detector/toolchain decision: use a Rust default-deny runtime redaction engine, with Gitleaks, Betterleaks, TruffleHog, detect-secrets, Presidio, and GitHub patterns as offline validators and red-team comparators. |
 | `docs/research/redaction-toolchain-betterleaks-recheck.md` | Focused A6 external-scanner drift check: Betterleaks as active MIT-licensed comparator candidate, Gitleaks feature-freeze implication, offline/no-network validation policy, and why runtime redaction remains internal. |
+| `docs/research/a6-synthetic-canary-fixture-corpus.md` | Concrete A6/A1 canary fixture corpus spec: minimum Phase 0 fixture classes, public/private commit policy for provider-shaped raw values, manifest schema, projection targets, scanner expectations, and pass/fail rules. |
 | `docs/research/a6-redaction-red-team-ledger.md` | A6 result-ledger contract: red-team run manifests, seeded surface fixture rows, scanner comparisons, projection audits, usefulness audits, repair rows, claim levels, and freshness rules. |
 | `docs/research/a7-scope-discipline-ledger.md` | A7 result-ledger contract: phase budgets, component/dependency/feature rows, admission rules, warning triggers, and scope claim levels for keeping the tiny tier buildable. |
 

@@ -243,6 +243,9 @@ a different surface.
 - [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) defines the
   run artifacts that prove the toolchain does not leak seeded canaries and still
   preserves minimum debug usefulness.
+- [A6 synthetic canary fixture corpus](a6-synthetic-canary-fixture-corpus.md)
+  defines the minimum fixture classes and commit policy for public redaction
+  tests.
 - [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md)
   supplies the highest-risk streaming output fixture surface.
 - [CLI trace safety ledger](cli-trace-safety-ledger.md) records the CLI-specific

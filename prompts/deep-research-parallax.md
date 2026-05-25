@@ -1078,7 +1078,9 @@ source-aware, default-deny redaction path for runtime bundles, while external
 secret/PII scanners serve as offline validators, red-team comparators, and
 fixture corpus references. Track active scanner replacements such as Betterleaks
 separately from Gitleaks, and keep network, credential-verification, and
-LLM-assisted validation disabled by default for A6 fixtures.
+LLM-assisted validation disabled by default for A6 fixtures. Keep public canary
+fixtures useful but safe: commit manifests, redacted outputs, generator recipes,
+and hashes, not raw provider-shaped token values unless explicitly reviewed.
 
 The key question is not "which LLM tracing product is best?" The key question is
 what technical patterns Parallax should reuse, and where existing tools stop

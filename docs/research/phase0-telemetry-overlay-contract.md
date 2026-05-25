@@ -219,7 +219,9 @@ These rules are part of the evaluation, not optional hygiene:
    contexts.
 7. Do not use an LLM to parse, summarize, rank, or redact overlay evidence.
 8. Include seeded secrets/canaries in at least one safe field and prove they are
-   absent from agent-visible files.
+   absent from agent-visible files. Use the
+   [A6 synthetic canary fixture corpus](a6-synthetic-canary-fixture-corpus.md)
+   for fixture classes and public/private commit boundaries.
 9. Preserve missing evidence instead of filling it with plausible defaults.
 10. Commit artifact hashes and provenance labels for every public task.
 11. Compute `schema_ref`, post-redaction `canonical_hash`, and

@@ -24,6 +24,10 @@ only by a committed run artifact showing:
 - external scanners did not find unredacted secrets in generated outputs;
 - redaction did not erase the minimum evidence needed for bundle usefulness.
 
+The companion [A6 synthetic canary fixture corpus](a6-synthetic-canary-fixture-corpus.md)
+defines the minimum Phase 0 fixture set and the public/private boundary for raw
+provider-shaped canary values.
+
 ## Current Primary-Source Checks
 
 Current sources support a layered, auditable gate rather than a single magic

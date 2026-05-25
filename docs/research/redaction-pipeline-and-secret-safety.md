@@ -36,6 +36,8 @@ references as offline validators, not as blocking tiny-tier runtime
 dependencies.
 The result-ledger contract for proving this gate is in
 [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md).
+The first public/private canary corpus boundary is specified in
+[A6 synthetic canary fixture corpus](a6-synthetic-canary-fixture-corpus.md).
 
 ## Current Primary-Source Checks
 
@@ -366,6 +368,9 @@ production secrets. Therefore:
 - [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) — defines the
   run artifacts, fixture rows, projection audits, claim levels, and freshness
   rules that make A6 pass/fail claims auditable.
+- [A6 synthetic canary fixture corpus](a6-synthetic-canary-fixture-corpus.md)
+  — defines which canary manifests, redacted outputs, hashes, and generator
+  recipes are public, and which provider-shaped raw values stay private.
 - [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
   — redaction is a precondition for safe read-only agent context.
 - [Production database evidence access gate](production-database-evidence-access.md)

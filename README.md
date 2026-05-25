@@ -103,6 +103,7 @@ Code `/loop` runbook.
 - [Redaction pipeline and secret safety](docs/research/redaction-pipeline-and-secret-safety.md)
 - [Redaction detector toolchain](docs/research/redaction-detector-toolchain.md)
 - [Redaction toolchain Betterleaks recheck](docs/research/redaction-toolchain-betterleaks-recheck.md)
+- [A6 synthetic canary fixture corpus](docs/research/a6-synthetic-canary-fixture-corpus.md)
 - [A6 redaction red-team ledger](docs/research/a6-redaction-red-team-ledger.md)
 - [A7 scope discipline ledger](docs/research/a7-scope-discipline-ledger.md)
 - [Causal reconstruction and agent safety](docs/research/causal-reconstruction-and-agent-safety.md)

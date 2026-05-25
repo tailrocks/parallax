@@ -144,7 +144,7 @@ Minimum overlay per task:
 | Metrics / timings | Capture duration, retry count, exit code, memory/time limits, and relevant test counts. | Metrics are optional if not causally useful, but timing helps compare agent flailing. |
 | Release/change context | Record base commit, issue URL, task source, dataset version, and resolving PR/commit hashes. | Resolving PR/commit URLs and gold patch hashes can be in private or audit manifests, not in agent context. |
 | Source-field policy | Classify every source field before building Arm A/B/C. | Resolving PR/commit URLs, hints, parser source, hidden verifier IDs, LLM metadata, and gold artifacts stay out of agent-visible artifacts by default. |
-| Redaction report | Run the same seeded canary/redaction policy used by the bundle schema docs. | A task without a redaction report is invalid. |
+| Redaction report | Run the same seeded canary/redaction policy used by the bundle schema docs and [A6 synthetic canary fixture corpus](a6-synthetic-canary-fixture-corpus.md). | A task without a redaction report is invalid. |
 
 All overlay artifacts must carry provenance:
 
