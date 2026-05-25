@@ -28,7 +28,7 @@ benchmark reproducible.
 | Rustrak | [`@rustrak/server@0.2.5`](https://github.com/AbianS/rustrak/releases/tag/%40rustrak/server%400.2.5), published 2026-05-21. Generic [`releases/latest`](https://github.com/AbianS/rustrak/releases/latest) currently resolves to `docs@0.1.16`, so the server package must be pinned explicitly. | README/docs SQLite-default Docker Compose for server + UI; server-only SQLite Docker path; Postgres image for production. | Default quickstart is 2 containers (`server`, `ui`) with SQLite volume; production example adds Postgres. Docker Hub metadata shows `abians7/rustrak-server:v0.2.5` last updated 2026-05-21 with amd64/arm64 images around 16-17 MB; UI images are much larger. The README claims around 50 MB server memory, sub-50 ms P99 ingestion, 10k+ events/s, no Redis, and no complex infrastructure. | Rust-first Sentry-compatible lightweight tracking exists, but the benchmark must treat monorepo/package release streams carefully and keep memory/latency/throughput as unmeasured vendor claims. Rustrak also ships an MCP package, so Parallax's agent differentiation must be the citable bundle and outcome graph, not MCP existence. |
 | Traceway | [`backend/v1.7.27`](https://github.com/tracewayapp/traceway/releases/tag/backend/v1.7.27), published 2026-05-22; latest checked `main` commit [`38b8d385`](https://github.com/tracewayapp/traceway/commit/38b8d385fbc610d45879d4a1bf3907c8434e8ed9). | Docker Compose, all-in-one container, minimal external-db image, SQLite image/Compose, and embedded Go mode for local/dev. | Root Compose declares 3 services (`traceway`, `clickhouse`, `postgres`). All-in-one hides ClickHouse and Postgres inside one container. SQLite mode is a single Alpine container with two SQLite files plus local blobs under `/data`, optional S3 for source maps/session recordings/AI traces, and retention knobs. Embedded mode runs inside a Go process with SQLite and is documented as development-only. Image-size and signed-image claims are documented but unmeasured in this pass. | Traceway pressures the OTLP-native, frontend/session replay, AI tracing, and "no Collector" parts of the roadmap. It is not a Sentry-envelope migration path yet, and deployment scoring must separate visible services from bundled subsystems and SQLite persistence semantics. |
 | GoSnag | No GitHub release/tag at check time; pin `main` commit [`418b8b1`](https://github.com/darkspock/gosnag/commit/418b8b107e274bfaab3f905510ddd274173d216b), dated 2026-04-17, or the latest commit at benchmark time. | Docker Compose quickstart. | `main` Docker Compose declares 2 services (`gosnag`, `db`) and `DATABASE_URL` is required. README describes a single Go binary with embedded React UI and migrations, plus PostgreSQL; Dockerfile builds with Node 20 and Go 1.25 into Alpine. | GoSnag combines Sentry error-event ingest, AI RCA/triage features, tickets, GitHub/Jira, and a documented management MCP server. The Parallax gap is OTLP context, read-only evidence bundles, and fix/outcome feedback, not "AI over errors." |
-| Urgentry | [`v0.2.12`](https://github.com/urgentry/urgentry/releases/tag/v0.2.12), published 2026-05-22. | Tiny one-binary path and split self-hosted path. | Tiny mode is one binary with SQLite; self-hosted mode splits roles over PostgreSQL, MinIO, Valkey, and NATS. README publishes benchmark claims against self-hosted Sentry 26.3.1. | Urgentry is not OSI-open, but it is a serious simplicity and benchmark-methodology baseline. Include it whenever Parallax claims "simpler than self-hosted Sentry." |
+| Urgentry | [`v0.2.12`](https://github.com/urgentry/urgentry/releases/tag/v0.2.12), published 2026-05-22; latest checked `main` commit [`ccc0ff8`](https://github.com/urgentry/urgentry/commit/ccc0ff815ec8b19d3b7c820b95bc3d539414e145). | Tiny one-binary path and split self-hosted path. | Tiny mode is one binary with SQLite. Self-hosted mode splits `api`, `ingest`, `worker`, and `scheduler` roles over PostgreSQL, MinIO, Valkey, and NATS; Compose also includes bootstrap/helper services and optional ClickHouse. README/docs publish benchmark claims against self-hosted Sentry 26.3.1 over a narrow envelope-ingest workload. | Urgentry is not OSI-open, but it is a serious simplicity, Sentry-protocol breadth, and benchmark-methodology baseline. Include it whenever Parallax claims "simpler than self-hosted Sentry"; keep performance numbers as vendor claims until reproduced. |
 
 ## Source-Check Commands
 
@@ -61,6 +61,8 @@ curl -Ls -o /dev/null -w '%{url_effective}\n' \
 
 curl -Ls -o /dev/null -w '%{url_effective}\n' \
   https://github.com/urgentry/urgentry/releases/latest
+
+git ls-remote --heads --tags https://github.com/urgentry/urgentry.git
 ```
 
 For Compose-based installs, count services from the exact tested tag:
@@ -79,6 +81,9 @@ curl -Ls https://raw.githubusercontent.com/tracewayapp/traceway/main/docker-comp
   yq '.services | keys | .[]'
 
 curl -Ls https://raw.githubusercontent.com/darkspock/gosnag/main/docker-compose.yml |
+  yq '.services | keys | .[]'
+
+curl -Ls https://raw.githubusercontent.com/urgentry/urgentry/main/deploy/compose/docker-compose.yml |
   yq '.services | keys | .[]'
 ```
 
@@ -186,6 +191,7 @@ works.
 - [GoSnag Sentry AI MCP recheck](gosnag-sentry-ai-mcp-recheck.md)
 - [Urgentry README](https://github.com/urgentry/urgentry)
 - [Urgentry v0.2.12 release](https://github.com/urgentry/urgentry/releases/tag/v0.2.12)
+- [Urgentry Sentry Tiny Benchmark Recheck](urgentry-sentry-tiny-benchmark-recheck.md)
 
 ## Bottom Line
 

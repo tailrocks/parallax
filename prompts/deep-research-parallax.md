@@ -1013,7 +1013,13 @@ that pressure the migration and simplicity claims from below:
   and MCP is management/write-shaped, so watch OTLP context, stable releases,
   read-only evidence bundles, full Sentry item handling, projection hashes, and
   action/outcome audit)
-- Urgentry
+- Urgentry (FSL source-available, Go, Sentry-compatible replacement posture,
+  Tiny one-binary SQLite mode, split self-hosted mode over PostgreSQL/MinIO/
+  Valkey/NATS, source-confirmed broad envelope side effects, OTLP HTTP/JSON
+  traces/logs/metrics with protobuf rejected in checked source, vendor benchmark
+  claims against self-hosted Sentry, no checked MCP, and stub-like Autofix API;
+  watch OSI-open licensing, independent benchmark artifacts, OTLP protobuf/gRPC,
+  read-only evidence bundles, and real action/outcome audit)
 
 For these, watch specifically for Sentry SDK/envelope compatibility, OTLP
 logs/traces/metrics correlation, low-resource setup, evidence-bundle export,

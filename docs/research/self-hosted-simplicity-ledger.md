@@ -336,8 +336,9 @@ Claim ledger row:
   for observability systems.
 - Measure lightweight challengers by role, not as one interchangeable column:
   Bugsink for mature Sentry-compatible simplicity, Rustrak for Rust-first
-  Sentry-compatible + MCP shape, Traceway for OTLP-native embedded mode, Urgentry
-  for vendor benchmark claims, and GoSnag as a low-maturity feature warning.
+  Sentry-compatible + MCP shape, Traceway for OTLP-native embedded mode,
+  Urgentry for broad Sentry item handling plus vendor benchmark claims, and
+  GoSnag as a low-maturity feature warning.
 - Pin product code, image tags, docs hashes, and Compose files. Do not use
   estimates in the scorecard.
 - Pin the correct release stream. For monorepos or package-specific releases,
@@ -434,7 +435,8 @@ Avoid:
 - "Air-gapped ready" unless the run used an air-gapped fixture.
 - "Self-hosted claim" without naming the host profile, versions, and workload.
 - "Urgentry benchmark beaten" or similar wording before the benchmark artifact
-  reproduces the vendor claim under the shared protocol.
+  reproduces the vendor claim under the shared protocol and the workload scope
+  is shown to match the claimed comparison.
 
 ## Relationship To Other Research
 
