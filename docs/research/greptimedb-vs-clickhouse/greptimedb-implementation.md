@@ -48,6 +48,11 @@ Pin: GreptimeDB `v1.0.2` (`0ef5451`). DDL features confirmed in
    Combined with a wrong (high-card) PK, the naive `PK(span_id)+default` is ~80× slower than
    the correct `PK(service,name)+append`. Reserve dedup mode for genuine upsert signals with a
    LOW-card key (issue status, deploy markers, metric last-value).** Append also loads ~1.2× faster.
+   **Refined (Run 115): the dedup penalty scales with SERIES COUNT (merge boundaries), not rows —
+   it is cheap when rows-per-series is high (metrics: 40k series / ~200 rows each → ~110 ms agg over
+   8M) and catastrophic only when rows-per-series ≈ 1 (per-event ids → 1M single-row series). So
+   dedup/`last_non_null` is FINE for the metric engine (label-set PK = moderate series, many points)
+   — the gotcha is confined to using append_mode on EVENT tables, which this principle requires.**
 4. **`FULLTEXT INDEX`** on free-text (`message`) for log/error search.
 5. **Metrics via the metric engine** (logical→physical) + OTLP/Prom remote write →
    native PromQL (Run 3 capability win).

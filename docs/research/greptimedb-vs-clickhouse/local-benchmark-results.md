@@ -4763,6 +4763,46 @@ This is a real Parallax design decision: which write mode + PK for which signal.
 append_mode='true'`, load same 1M; `SELECT svc, count(*), avg(dur) GROUP BY svc` warm ×8 → ~1220 /
 ~76 / ~15 ms. Drop after.
 
+### Run 115 — 2026-05-25 — REFINES Run 114: the dedup-scan penalty scales with SERIES COUNT (merge boundaries), not rows — so dedup is cheap for metric labels (40k series ~110 ms) but catastrophic for per-event ids (1M series ~1220 ms). Validates the metric-engine adopt decision.
+
+**Pass target.** Run 114 found `PK(span_id)+dedup` ~16× slower scans. Does the native **metric
+engine** (which uses `merge_mode='last_non_null'`, a dedup variant) suffer the same? Isolate what
+the dedup penalty actually scales with.
+
+**Environment.** GreptimeDB `v1.0.2` (re-pinned live — no bump). Two DEFAULT-dedup mito tables,
+full-scan agg, warm. *(Native `ENGINE=metric` physical table can't be hand-created — `__tsid` is a
+reserved internal column; the engine auto-manages it. So tested the dedup mechanism on plain mito
+tables at two series cardinalities.)*
+
+| Table | rows | series (distinct PK) | rows/series | mode | full-scan agg | per-row |
+| --- | --- | --- | --- | --- | --- | --- |
+| `metrics_hc` `PK(service,instance)` | 8,000,000 | **40,000** | ~200 | default dedup | **~110 ms** | 0.014 µs |
+| `gt_dd` `PK(span_id)` (Run 114) | 1,000,000 | **1,000,000** | ~1 | default dedup | **~1220 ms** | 1.22 µs |
+
+**Verdict — the dedup penalty scales with SERIES COUNT, not row count. Sharpens the Run-114 rule + validates metric-engine ADOPT.**
+
+- **The `DedupReader` cost is per-series-merge-boundary, not per-row:** `metrics_hc` (40k series, ~200
+  rows each) aggregates 8M rows in ~110 ms under dedup — **cheap** — while `gt_dd` (1M series, ~1 row
+  each) takes ~1220 ms for only 1M rows — **~87× worse per-row.** The difference is **series count**:
+  1M single-row series = 1M tiny sorted runs to merge; 40k series with 200 points each = few merge
+  boundaries relative to the data.
+- **Refined blueprint rule:** dedup mode (default / `last_non_null`) is **cheap when rows-per-series
+  is high** (metric series accumulate many points over time) and **catastrophic when rows-per-series
+  ≈ 1** (per-event ids like `span_id`/`trace_id`, where every value is ~unique). So:
+  - **Metrics → dedup/`last_non_null` is FINE** (labels = moderate series, many points each). **This
+    validates "ADOPT the native metric engine"** — its `__tsid` label-set PK is exactly the
+    high-rows-per-series shape where dedup is cheap. The Run-114 gotcha does **not** threaten the
+    metric path.
+  - **Events (spans/logs/traces) → `append_mode='true'` mandatory** (per-event id ⇒ ~1 row/series ⇒
+    dedup catastrophic). Keep high-card anchors as indexed columns, not the PK (Run 114).
+- **Decision relevance:** removes a worry the Run-114 finding could have raised about the metric
+  engine. Metrics-on-GreptimeDB (the strongest fit pillar) is safe under its native dedup-like merge;
+  the penalty is confined to the wrong schema for *event* signals, which the blueprint already avoids.
+
+**Reproduce.** Compare a DEFAULT-dedup table with **few series / many rows each** (e.g. `PK(service,
+instance)`, 40k series, 8M rows → ~110 ms agg) vs **many series / ~1 row each** (`PK(span_id)`, 1M
+series, 1M rows → ~1220 ms, Run 114). The gap tracks series count, not rows.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
