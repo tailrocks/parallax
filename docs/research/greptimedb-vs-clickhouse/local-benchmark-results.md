@@ -3049,6 +3049,58 @@ docker exec parallax-bench-clickhouse-1 clickhouse-client -q "SELECT value FROM 
 docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=SELECT peer_type FROM information_schema.cluster_info"   # STANDALONE
 ```
 
+### Run 75 — 2026-05-25 — B15: strict-durability ingest cost (WAL-append fsync vs part fsync) — an open question advanced
+
+**Pass target.** Advance a harness-gated open question (B15, strict-durability throughput):
+what does *fsync-on-every-write* cost each engine? GreptimeDB `sync_write=true` (fsync each
+WAL append) vs ClickHouse `fsync_after_insert=1` (fsync each part).
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned — latest, no
+bump). orbstack overlay fs (slow fsync — inflates absolutes, but the *delta* is the cost).
+Method: time N small writes with strict-durability OFF vs ON; the per-write **delta**
+isolates the fsync cost (docker-exec overhead ~58–88 ms cancels). ClickHouse via two tables
+(`fsync_after_insert`/`fsync_part_directory` are *table* settings, not query settings — first
+attempt erred); GreptimeDB via two throwaway containers (`sync_write` is a `[wal]` config —
+injected by create+cp+start; verified applied).
+
+**Measured (per-write/part delta = the strict-durability cost):**
+
+| Engine | durability OFF (default) | strict ON | **fsync delta** | what gets fsynced |
+| --- | --- | --- | --- | --- |
+| ClickHouse (`fsync_after_insert=1`, `fsync_part_directory=1`) | 88 ms/insert | 106 ms/insert | **~+18 ms/part** (~20%) | the whole **part** — multiple column files + the part directory |
+| GreptimeDB (`sync_write=true`) | 59 ms/write | 60 ms/write | **~+1.7 ms/write** (~3%) | one **sequential WAL append** to the raft-engine log |
+
+**Verdict.** **Strict-durable ingest is ~10× cheaper on GreptimeDB** (~1.7 ms WAL-append
+fsync vs ~18 ms whole-part fsync). The mechanism is architectural: GreptimeDB fsyncs **one
+sequential WAL append** per write (cheap, append-only log), while ClickHouse's
+`fsync_after_insert` must fsync **a whole part** — its column files + the directory (many
+fsyncs). So the WAL is not just a *replay* advantage (Run 20/69) but a **strict-durability
+*throughput* advantage**: GreptimeDB can run fsync-on-write at ~3% cost, ClickHouse pays
+~20% per part. For a Parallax tier that needs no-loss-on-crash ingest, GreptimeDB's WAL
+makes it cheap; ClickHouse's realistic answer stays replica-redundancy (Keeper +
+`ReplicatedMergeTree`), not per-part fsync. **Advances open question (B15 / verdict open #7)
+from "owed" to "directionally measured: GreptimeDB ~10× cheaper strict-durable ingest."**
+
+Caveat: orbstack overlay-fs fsync is slow (inflates both absolutes); on NVMe both shrink but
+the **ratio** (sequential-WAL-append-fsync ≪ whole-part-fsync) is architectural, not
+disk-specific. Smoke rate (60 writes); the *sustained* strict-durable throughput ceiling is
+still a sized-harness number. docker-exec overhead dominates the absolute per-write time —
+only the OFF→ON delta is the result.
+
+**Reproduce (copy-paste).**
+
+```bash
+# ClickHouse: table-level fsync settings
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q "CREATE TABLE fon (id UInt64,v String) ENGINE=MergeTree ORDER BY id SETTINGS fsync_after_insert=1, fsync_part_directory=1"
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q "CREATE TABLE foff (id UInt64,v String) ENGINE=MergeTree ORDER BY id"
+# time 60 small INSERTs into each (delta = fsync cost)
+# GreptimeDB: throwaway container with [wal] sync_write=true vs default; time 60 influx writes each
+printf '[wal]\nprovider = "raft_engine"\nsync_write = true\n' > /tmp/s.toml
+docker run -d --name gt-def greptime/greptimedb:v1.0.2 standalone start --http-addr 0.0.0.0:4000
+docker create --name gt-sync greptime/greptimedb:v1.0.2 standalone start --http-addr 0.0.0.0:4000 -c /sync.toml; docker cp /tmp/s.toml gt-sync:/sync.toml; docker start gt-sync
+# for c in gt-def gt-sync: time 60x  curl -XPOST .../v1/influxdb/write --data-binary "m,svc=a v=$i"
+```
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

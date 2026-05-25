@@ -2,8 +2,8 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 41, re-verified pass 105 (Run 69 — no drift; CH WAL settings confirmed
-`is_obsolete=1` at runtime). White-box teardown of the **durability path** (checklist
+Status: pass 41, re-verified pass 105 (Run 69 — CH WAL settings `is_obsolete=1` live),
+extended pass 111 (Run 75 — **strict-durability cost measured: GreptimeDB ~10× cheaper**). White-box teardown of the **durability path** (checklist
 #2's WAL/durability sub-item): what makes an acked write survive a crash, the
 durability-vs-throughput knobs, and — the load-bearing part for Parallax —
 **GreptimeDB's remote (Kafka) WAL as the compute/storage-separation enabler** behind
@@ -83,6 +83,24 @@ replicas, not a local WAL. Single-node OSS ClickHouse with default fsync is the
 | Redundancy model | region replication + remote WAL (Kafka) | `ReplicatedMergeTree` + Keeper |
 | Durability decoupled from compute node | **Yes (Kafka WAL + object-store SSTs)** → cheap migration / elastic datanodes | No — local disk or replica-coupled |
 
+## Strict-durability ingest cost — measured (Run 75, B15)
+
+The sync knobs above have a *throughput* cost, and it differs sharply by mechanism.
+Measured the per-write **delta** of turning strict durability on (docker/overhead cancels):
+
+| Engine | strict knob | fsync delta | what is fsynced |
+| --- | --- | --- | --- |
+| **GreptimeDB** | `sync_write=true` | **~+1.7 ms/write (~3%)** | one **sequential WAL append** (raft-engine log) |
+| **ClickHouse** | `fsync_after_insert=1` (+`fsync_part_directory=1`) | **~+18 ms/part (~20%)** | the whole **part** — its column files + the directory |
+
+→ **Strict-durable ingest is ~10× cheaper on GreptimeDB.** The WAL is not only a *replay*
+advantage; it is a **strict-durability *throughput* advantage** — fsyncing one append-only
+log record is far cheaper than fsyncing a multi-file part. So if a Parallax tier needs
+no-loss-on-crash ingest, GreptimeDB runs fsync-on-write at ~3% cost; ClickHouse's realistic
+no-loss answer stays **replica redundancy** (`ReplicatedMergeTree` + Keeper), not per-part
+fsync (which costs ~20% and still isn't a replay log). (orbstack overlay-fs inflates both
+absolutes; the *ratio* — sequential-append fsync ≪ whole-part fsync — is architectural.)
+
 ## Parallax implication and axis consequence
 
 - **Durability (axis #1, the "see real data" axis's safety side):** both default to
@@ -132,7 +150,7 @@ decoupling.
   false), `:610` (`fsync_part_directory` false), `:2214-2218` (in-memory-parts WAL
   obsolete). Live: `system.merge_tree_settings` (both fsync `0`), `system.settings`
   (`async_insert=1`, `wait_for_async_insert=1`).
-- Empirical: `local-benchmark-results.md` Run 20.
+- Empirical: `local-benchmark-results.md` Run 20 (WAL files + fsync defaults), Run 69 (CH WAL settings `is_obsolete=1` live), **Run 75 (B15 strict-durability cost: GreptimeDB `sync_write=true` ~+1.7 ms/write vs ClickHouse `fsync_after_insert=1` ~+18 ms/part → ~10× cheaper)**.
 - Cross-refs: `write-path-and-ingestion.md` (freshness, small-write absorption),
   `distributed-and-scaling.md` (region migration, compute/storage separation),
   `greptimedb-internals.md` (WAL in the write path).

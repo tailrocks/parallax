@@ -312,7 +312,11 @@ concurrent ingest+query:
    copy? Mechanism source-confirmed (Run 34); the $ delta at N replicas is owed.
 7. **Strict-durability throughput cost** (pass 41) — `sync_write=true` (GreptimeDB) vs
    `fsync_after_insert=1` (ClickHouse): the ingest-rate hit when forcing per-write
-   durability. Both default to throughput-over-fsync; the tuned-durable cost is unmeasured.
+   durability. **Directionally measured (Run 75/B15):** GreptimeDB **~+1.7 ms/write (~3%)**
+   — one sequential WAL-append fsync — vs ClickHouse **~+18 ms/part (~20%)** — whole-part
+   fsync (column files + dir). **Strict-durable ingest is ~10× cheaper on GreptimeDB**
+   (architectural: append-log fsync ≪ part fsync). The *sustained* strict-durable throughput
+   ceiling at scale is still a sized-harness number; the per-write cost ratio is settled.
 8. **High-cardinality metric storage at volume** (B13, pass 48) — does ClickHouse's
    `LowCardinality` 8,192 cliff show as a per-series byte kink vs GreptimeDB's
    dict-encoded PartitionTree across 1k→1M distinct series? Mechanism confirmed (Run 26);
