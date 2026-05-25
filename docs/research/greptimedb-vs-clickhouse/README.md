@@ -2,7 +2,13 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: in progress (produced by an indefinite research loop).
+Status: in progress (produced by an indefinite research loop). All planned notes
+now drafted (passes 1–14); the loop continues **deepening** — executing the
+targeted benchmark cases (`benchmarking-the-differences.md`: B2 trace-id index,
+B1 cold GB–TB scan, B7/B10 cost, B8 concurrent freshness, B11 multi-node) and
+sharpening the verdict as their numbers land. Provisional verdict: **GreptimeDB on
+fit** (metrics-native + ingest/freshness ergonomics + horizontal scaling + Rust),
+**not on raw speed** (ClickHouse leads log/trace query latency).
 
 ## Purpose
 
@@ -83,7 +89,7 @@ These are produced and grown by the loop; this index is updated as they land.
 | `greptimedb-implementation.md` | Concrete Parallax-on-GreptimeDB design: full schema, ingest path, exact retrieval queries, object-storage/retention layout. | drafted (pass 12: full buildable DDL for all 8 signals — trace_id INVERTED INDEX (Run-1 fix), append_mode, FULLTEXT on message, metric engine + PromQL, JSON attrs, ttl/object-store; Q1–Q6 in dialect; standalone→cluster same schema. DDL syntax source-verified) |
 | `clickhouse-implementation.md` | Concrete Parallax-on-ClickHouse design: full schema, ingest path, exact retrieval queries, object-storage/retention layout. | drafted (pass 13: full buildable DDL for all 8 signals — ORDER BY keys + per-column codecs (Gorilla/DoubleDelta/LowCardinality), native text index + bloom_filter for trace_id, JSON attrs, AggregatingMergeTree+MV for metrics, S3-disk TTL tiering; Q1–Q6; replaceability cost = OTLP collector + PromQL→SQL layer + manual sharding. async_insert/JSON/text-index source-verified) |
 | `per-signal-verdict.md` | Scenario matrix: metrics vs logs vs traces vs evidence-bundle correlation. | drafted (pass 7: full matrix synthesizing passes 1-6 — ClickHouse leads logs/traces/anchored-bundle latency, GreptimeDB wins metrics/PromQL capability + ties metric agg; cost/scaling cells open; honest read = hypothesis not holding on raw latency, GreptimeDB's edge is metrics-native + object-store fit) |
-| `benchmarking-the-differences.md` | Per-difference targeted benchmark design (hypothesis, workload, metric, pass/fail, prerequisites); routes runnable cases into the benchmark prototype. | pending |
+| `benchmarking-the-differences.md` | Per-difference targeted benchmark design (hypothesis, workload, metric, pass/fail, prerequisites); routes runnable cases into the benchmark prototype. | drafted (pass 14: 11 targeted cases B1–B11 from all prior findings, prioritized; B2 trace-id-index runnable now, B1 cold GB–TB scan = the verdict flip-trigger; harness-gap list routed to the prototype) |
 | `local-benchmark-results.md` | Empirical log of local Docker runs: env, pinned image tags, dataset, queries, measured numbers, and which published claim each run confirms or refutes. | drafted (pass 4 Run 1: spans smoke, parity PASS, trace-lookup schema asymmetry; pass 5 Run 2: evidence-bundle Q1/Q4 join parity PASS + EXPLAIN plans confirm PREWHERE/granule-skip + partitioned-hash + anchor-constant pushdown on both → join algo not a differentiator for anchored queries; pass 6 Run 3: metrics — PromQL-native on GreptimeDB vs absent on ClickHouse (capability gap), metric agg within 1.3× (16 vs 12 ms), float compression redo pending; bigger/cold tiers pending) |
 | `verdict-which-to-choose.md` | Final synthesized decision and the mechanism-level reasoning. | drafted v1 (pass 11: recommends **GreptimeDB on FIT not speed** — hypothesis "fastest" refuted (ClickHouse faster on log/trace latency), GreptimeDB chosen for metrics-native + ingest/freshness ergonomics + horizontal-scaling + object-store + Rust; both replaceability answers + flip-trigger + benchmark veto questions; sharpen as impl/cold-scale runs land) |
 
