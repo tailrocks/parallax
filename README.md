@@ -95,6 +95,7 @@ Code `/loop` runbook.
 - [Rust stacktrace grouping ledger](docs/research/rust-stacktrace-grouping-ledger.md)
 - [Frontend collection and cross-tier correlation](docs/research/frontend-collection-and-cross-tier-correlation.md)
 - [Frontend capture safety ledger](docs/research/frontend-capture-safety-ledger.md)
+- [Frontend browser ingest profile recheck](docs/research/frontend-browser-ingest-profile-recheck.md)
 - [Correlation reliability on real telemetry gate](docs/research/correlation-reliability-real-telemetry-gate.md)
 - [A4 correlation reliability ledger](docs/research/a4-correlation-reliability-ledger.md)
 - [Deploy, change, and issue-tracker context](docs/research/deploy-change-and-issue-context.md)

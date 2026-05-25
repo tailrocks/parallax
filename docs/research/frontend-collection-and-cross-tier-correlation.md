@@ -27,6 +27,12 @@ defines the browser/route run artifacts, source-map rows, CORS/propagation
 checks, privacy canaries, overhead budgets, replay policy, and claim levels
 required before this architecture becomes product wording.
 
+The focused
+[frontend browser ingest profile recheck](frontend-browser-ingest-profile-recheck.md)
+separates browser telemetry from the backend OTLP transport profile: browser
+OTLP is HTTP-only (`http/protobuf` preferred, HTTP/JSON optional), while gRPC is
+expected unsupported in browser builds.
+
 ## Current Primary-Source Checks
 
 The frontend direction rests on current official docs, not only vendor blog
@@ -67,6 +73,11 @@ Browser OTLP export must use OTLP/HTTP JSON or protobuf; gRPC is not a browser
 option. Put Parallax or a reverse proxy in front of any collector-compatible
 endpoint to enforce origin allowlists, DSN/project auth, request size limits,
 rate limits, and redaction.
+
+Treat this as a separate browser ingest profile, not as a weakening of the
+backend OTLP baseline. Backend/server OTLP still needs gRPC and HTTP/protobuf;
+browser clients must prove HTTP/protobuf or explicitly labeled HTTP/JSON over a
+CORS/CSP-safe endpoint.
 
 ## Cross-Tier Trace Propagation (The Core)
 
@@ -248,6 +259,9 @@ with row-level proof captured by the
 - [Frontend capture safety ledger](frontend-capture-safety-ledger.md) — the
   browser-side result contract for source maps, CORS, breadcrumbs, privacy,
   export reliability, overhead, replay refs, and projection safety.
+- [Frontend browser ingest profile recheck](frontend-browser-ingest-profile-recheck.md)
+  — current browser Sentry/OTel package and transport-profile recheck; separates
+  browser HTTP-only ingest from backend OTLP gRPC/protobuf requirements.
 
 ## Sources
 
@@ -257,6 +271,7 @@ Primary sources:
 - [OpenTelemetry JavaScript exporters](https://opentelemetry.io/docs/languages/js/exporters/)
 - [OpenTelemetry fetch instrumentation config](https://open-telemetry.github.io/opentelemetry-js/interfaces/_opentelemetry_instrumentation-fetch.FetchInstrumentationConfig.html)
 - [OpenTelemetry browser resource semantic conventions](https://opentelemetry.io/docs/specs/semconv/resource/browser/)
+- [Frontend browser ingest profile recheck](frontend-browser-ingest-profile-recheck.md)
 - [W3C Trace Context](https://www.w3.org/TR/trace-context/)
 - [Sentry JavaScript trace propagation](https://docs.sentry.io/platforms/javascript/guides/capacitor/tracing/trace-propagation/)
 - [Sentry JavaScript trace propagation targets](https://docs.sentry.io/platforms/javascript/configuration/environments/#tracepropagationtargets)

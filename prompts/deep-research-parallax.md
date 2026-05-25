@@ -301,6 +301,10 @@ Research must answer, specifically:
   Sentry browser envelope, source maps for symbolication, session/breadcrumb
   capture, optional session replay, and Real User Monitoring (RUM) signals — and
   what is essential versus nice-to-have;
+- the browser-specific ingest profile: browser OTLP is HTTP-only
+  (`http/protobuf` preferred, HTTP/JSON optional), OTLP/gRPC is expected
+  unsupported, and CSP/CORS/public-ingest controls must be tested separately
+  from backend/server OTLP transport fixtures;
 - how to propagate and join trace context across the frontend↔backend boundary so
   a frontend error links to the exact backend spans/logs/errors it caused or was
   caused by;

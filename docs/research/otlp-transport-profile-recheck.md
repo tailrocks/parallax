@@ -27,6 +27,13 @@ OTLP/HTTP JSON is useful and the official Collector receiver supports it, but
 it should remain an explicitly labeled optional path for Parallax v0. A JSON-only
 receiver is not enough for "OTLP-native" Parallax wording.
 
+Browser/frontend telemetry is the explicit exception to the gRPC baseline. The
+[frontend browser ingest profile recheck](frontend-browser-ingest-profile-recheck.md)
+keeps browser OTLP HTTP-only because official OpenTelemetry JavaScript docs say
+browser apps cannot use OTLP/gRPC. That exception does not weaken the
+server/backend OTLP-native claim; it prevents tests from treating expected
+browser gRPC failure as a frontend capture defect.
+
 The second important fix is endpoint URL construction. The OTLP exporter spec
 does not treat all endpoint environment variables the same way. A generic
 `OTEL_EXPORTER_OTLP_ENDPOINT=http://host:4318` lets exporters construct
@@ -61,6 +68,7 @@ gate must test both, and Parallax docs must tell users to include `/v1/traces`,
 | `grpc` | Required. | Needed for Collector and many SDK deployments. |
 | `http/protobuf` | Required. | Official exporter default direction and easiest direct HTTP path. |
 | `http/json` | Optional, explicitly labeled. | Useful for curl/debug and parity with Traceway/Collector behavior, but not sufficient alone. |
+| Browser OTLP | Separate frontend profile. | Browser builds use HTTP/protobuf or HTTP/JSON only; gRPC negative fixtures are expected. |
 | Profiles | Out of scope. | OTLP profiles are development-stage in the checked spec/docs. |
 | Custom base paths | Optional alias only. | Standard `/v1/{signal}` paths must work first; aliases must not replace them. |
 
@@ -146,6 +154,7 @@ Reopen this note if:
 - [Rotel README](https://github.com/rotel-dev/rotel)
 - [Traceway OTLP/AI/replay recheck](traceway-otlp-ai-replay-recheck.md)
 - [Urgentry Sentry/Tiny/benchmark recheck](urgentry-sentry-tiny-benchmark-recheck.md)
+- [Frontend browser ingest profile recheck](frontend-browser-ingest-profile-recheck.md)
 
 ## Bottom Line
 

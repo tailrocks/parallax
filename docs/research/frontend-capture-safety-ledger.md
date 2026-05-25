@@ -13,6 +13,11 @@ the result artifacts, row schemas, claim levels, and expiry rules required
 before Parallax can say frontend capture is safe, source-mapped, low-overhead, or
 usable for frontend-to-backend reconstruction.
 
+The focused
+[frontend browser ingest profile recheck](frontend-browser-ingest-profile-recheck.md)
+adds the current browser transport boundary: browser OTLP is HTTP-only and must
+be proven separately from backend/server gRPC requirements.
+
 Current status: **not measured**. The repository has a frontend capture design
 and A4 continuation gate, but no dated browser/build/route run artifacts. Until
 those results exist, Parallax should describe frontend capture as planned and
@@ -42,6 +47,7 @@ those anchors.
 | npm package version snapshot ([Sentry browser](https://www.npmjs.com/package/@sentry/browser), [Sentry React](https://www.npmjs.com/package/@sentry/react), [OTel web SDK](https://www.npmjs.com/package/@opentelemetry/sdk-trace-web), [OTel fetch](https://www.npmjs.com/package/@opentelemetry/instrumentation-fetch), [OTel OTLP HTTP](https://www.npmjs.com/package/@opentelemetry/exporter-trace-otlp-http)) | `npm view` on 2026-05-25 reported `@sentry/browser` `10.53.1`, `@sentry/react` `10.53.1`, `@opentelemetry/sdk-trace-web` `2.7.1`, `@opentelemetry/instrumentation-fetch` `0.218.0`, and OTLP HTTP trace exporters `0.218.0`. | Every run must persist the exact package versions from the lockfile or registry snapshot; docs pages can lag package releases. |
 | [OpenTelemetry JavaScript browser guide](https://opentelemetry.io/docs/languages/js/getting-started/browser/) | Browser traces use `@opentelemetry/sdk-trace-web` plus browser instrumentations such as document-load; the guide warns browser client instrumentation is experimental and mostly unspecified. | Parallax can use OTel JS for spans, but browser support must be tested per SDK and browser matrix before product wording. |
 | [OpenTelemetry JavaScript exporters](https://opentelemetry.io/docs/languages/js/exporters/) | Browser deployments cannot use OTLP/gRPC; they must use OTLP HTTP/JSON or HTTP/protobuf, handle CSP and CORS, and may require a collector reachable from public browsers. | Parallax should use a narrow browser ingest/proxy endpoint with origin, size, rate, auth, path, and redaction controls instead of exposing a broad collector. |
+| [Frontend browser ingest profile recheck](frontend-browser-ingest-profile-recheck.md) | Current package recheck found no version drift from the 2026-05-25 ledger snapshot and verified published OTel `0.218.0` fetch/XHR propagation controls plus browser HTTP/JSON and HTTP/protobuf exporter builds. | Add browser-specific transport/CORS fixtures; do not apply backend gRPC-required OTLP wording to browser clients. |
 | [OpenTelemetry fetch instrumentation](https://open-telemetry.github.io/opentelemetry-js/modules/_opentelemetry_instrumentation-fetch.html) | Fetch instrumentation exposes config such as `requestHook`, `ignoreUrls`, and propagation-related options. | Propagation and redaction need explicit allowlists and hooks; raw URLs/body-like fields must not leak by default. |
 | [W3C Trace Context](https://www.w3.org/TR/trace-context/) | W3C recommends wide deployment of `traceparent`/`tracestate`; `traceparent` carries portable trace identity and tools must propagate it to avoid broken traces. | Frontend-to-backend joins should use W3C trace context when using OTel paths and record propagation failures as missing evidence. |
 | [OpenTelemetry baggage](https://opentelemetry.io/docs/concepts/signals/baggage/) | Baggage can propagate arbitrary key/value context, and official docs warn sensitive baggage can reach unintended resources such as third-party APIs. | Session correlation must use allowlisted opaque values; raw user/account IDs, emails, tokens, or third-party baggage propagation fail the browser safety gate. |
@@ -151,6 +157,8 @@ operator explicitly approves a private retained artifact.
     "mode": "same_origin_tunnel|signed_project_token|dsn_public_key|reverse_proxy",
     "public_collector_exposed": false,
     "accepted_paths": ["/v1/traces", "/api/parallax/browser-ingest"],
+    "allowed_browser_transports": ["http/protobuf", "http/json"],
+    "grpc_negative_fixture_required": true,
     "cors_policy_ref": "cors-results.jsonl",
     "csp_policy_ref": "ingest-endpoint-results.jsonl"
   },
@@ -199,6 +207,9 @@ operator explicitly approves a private retained artifact.
   "browser": "chromium",
   "sentry_enabled": true,
   "otel_enabled": true,
+  "browser_otlp_transport": "http/protobuf|http/json|none",
+  "browser_otlp_content_type": "application/x-protobuf|application/json|none",
+  "browser_grpc_attempted": false,
   "trace_propagation_targets": ["https://api.example.test"],
   "third_party_propagation_denied": true,
   "before_send_configured": true,
