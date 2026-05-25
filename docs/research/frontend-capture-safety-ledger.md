@@ -18,6 +18,11 @@ The focused
 adds the current browser transport boundary: browser OTLP is HTTP-only and must
 be proven separately from backend/server gRPC requirements.
 
+The focused
+[frontend Replay and source-map privacy recheck](frontend-replay-sourcemap-privacy-recheck.md)
+adds the current Replay package-provenance and source-artifact boundary: Replay
+and source maps are raw/reference surfaces, not agent-visible defaults.
+
 Current status: **not measured**. The repository has a frontend capture design
 and A4 continuation gate, but no dated browser/build/route run artifacts. Until
 those results exist, Parallax should describe frontend capture as planned and
@@ -48,6 +53,7 @@ those anchors.
 | [OpenTelemetry JavaScript browser guide](https://opentelemetry.io/docs/languages/js/getting-started/browser/) | Browser traces use `@opentelemetry/sdk-trace-web` plus browser instrumentations such as document-load; the guide warns browser client instrumentation is experimental and mostly unspecified. | Parallax can use OTel JS for spans, but browser support must be tested per SDK and browser matrix before product wording. |
 | [OpenTelemetry JavaScript exporters](https://opentelemetry.io/docs/languages/js/exporters/) | Browser deployments cannot use OTLP/gRPC; they must use OTLP HTTP/JSON or HTTP/protobuf, handle CSP and CORS, and may require a collector reachable from public browsers. | Parallax should use a narrow browser ingest/proxy endpoint with origin, size, rate, auth, path, and redaction controls instead of exposing a broad collector. |
 | [Frontend browser ingest profile recheck](frontend-browser-ingest-profile-recheck.md) | Current package recheck found no version drift from the 2026-05-25 ledger snapshot and verified published OTel `0.218.0` fetch/XHR propagation controls plus browser HTTP/JSON and HTTP/protobuf exporter builds. | Add browser-specific transport/CORS fixtures; do not apply backend gRPC-required OTLP wording to browser clients. |
+| [Frontend Replay and source-map privacy recheck](frontend-replay-sourcemap-privacy-recheck.md) | `npm view` on 2026-05-25 found current Sentry JS `10.53.1`; `@sentry/browser` pulls `@sentry-internal/replay` and `@sentry-internal/replay-canvas` `10.53.1`, while standalone `@sentry/replay` remains `7.116.0` from 2025-11-25. | Run manifests must record Replay package provenance and cannot cite stale standalone `@sentry/replay` as current v10 behavior unless the app lockfile actually includes it. |
 | [OpenTelemetry fetch instrumentation](https://open-telemetry.github.io/opentelemetry-js/modules/_opentelemetry_instrumentation-fetch.html) | Fetch instrumentation exposes config such as `requestHook`, `ignoreUrls`, and propagation-related options. | Propagation and redaction need explicit allowlists and hooks; raw URLs/body-like fields must not leak by default. |
 | [W3C Trace Context](https://www.w3.org/TR/trace-context/) | W3C recommends wide deployment of `traceparent`/`tracestate`; `traceparent` carries portable trace identity and tools must propagate it to avoid broken traces. | Frontend-to-backend joins should use W3C trace context when using OTel paths and record propagation failures as missing evidence. |
 | [OpenTelemetry baggage](https://opentelemetry.io/docs/concepts/signals/baggage/) | Baggage can propagate arbitrary key/value context, and official docs warn sensitive baggage can reach unintended resources such as third-party APIs. | Session correlation must use allowlisted opaque values; raw user/account IDs, emails, tokens, or third-party baggage propagation fail the browser safety gate. |
@@ -132,9 +138,13 @@ operator explicitly approves a private retained artifact.
     "instrumentation_xhr": "x.y.z"
   },
   "sentry_js_version": "x.y.z",
+  "sentry_replay_package_source": "@sentry/browser_internal|@sentry/replay_standalone|none|other",
   "package_version_snapshot": {
     "@sentry/browser": "x.y.z",
     "@sentry/react": "x.y.z",
+    "@sentry-internal/replay": "x.y.z|not_present",
+    "@sentry-internal/replay-canvas": "x.y.z|not_present",
+    "@sentry/replay": "x.y.z|not_present",
     "@opentelemetry/sdk-trace-web": "x.y.z",
     "@opentelemetry/instrumentation-fetch": "x.y.z",
     "@opentelemetry/exporter-trace-otlp-http": "x.y.z",
@@ -153,6 +163,11 @@ operator explicitly approves a private retained artifact.
   "canonical_bundle_hash_algorithm": "sha256 over RFC8785 canonical JSON after frontend redaction",
   "mcp_output_schema_required": true,
   "source_map_identity_version": "debug-id-like-vN",
+  "source_maps_public_accessible": false,
+  "source_content_agent_visible": false,
+  "replay_agent_visible_default": false,
+  "replay_network_detail_policy": "disabled|allowlist|vendor_default",
+  "replay_masking_config_hash": "sha256:...",
   "frontend_ingest_endpoint": {
     "mode": "same_origin_tunnel|signed_project_token|dsn_public_key|reverse_proxy",
     "public_collector_exposed": false,
@@ -217,6 +232,9 @@ operator explicitly approves a private retained artifact.
   "before_send_span_configured": true,
   "max_breadcrumbs": 50,
   "replay_default": "disabled|on_error|full_session",
+  "sentry_replay_package_source": "@sentry/browser_internal|@sentry/replay_standalone|none|other",
+  "sentry_internal_replay_version": "x.y.z|not_present",
+  "standalone_sentry_replay_version": "x.y.z|not_present",
   "send_default_pii": false,
   "http_headers_capture_policy": "deny_all|allowlist|vendor_default",
   "url_query_capture_policy": "drop|redact|vendor_default",
@@ -361,7 +379,7 @@ operator explicitly approves a private retained artifact.
 {
   "route_id": "checkout-error-001",
   "browser": "chromium",
-  "surface": "dom_text|form_input|url_query|request_url|referrer_url|console|breadcrumb|network_header|network_body|user_context|replay",
+  "surface": "dom_text|form_input|url_query|request_url|referrer_url|console|breadcrumb|network_header|network_body|user_context|replay|source_map|source_content",
   "capture_mode": "metadata|redacted_excerpt|raw_ref|replay_ref_opt_in",
   "seeded_canaries": 20,
   "canonical_json_leaks": 0,
@@ -441,15 +459,21 @@ operator explicitly approves a private retained artifact.
   "route_id": "checkout-error-001",
   "browser": "chromium",
   "replay_enabled": true,
+  "sentry_replay_package_source": "@sentry/browser_internal|@sentry/replay_standalone|none|other",
+  "sentry_internal_replay_version": "x.y.z|not_present",
+  "standalone_sentry_replay_version": "x.y.z|not_present",
   "trigger": "on_error|full_session|manual",
   "mask_all_text": true,
   "mask_all_inputs": true,
   "block_all_media": true,
   "network_bodies_enabled": false,
+  "network_detail_allowlist_count": 0,
   "safe_selector_allowlist_count": 0,
   "raw_dom_leak_count": 0,
   "raw_input_leak_count": 0,
   "raw_media_leak_count": 0,
+  "raw_network_body_leak_count": 0,
+  "replay_segment_agent_visible": false,
   "agent_bundle_dereference_blocked": true,
   "pass": true
 }
@@ -535,9 +559,16 @@ operator explicitly approves a private retained artifact.
   URLs, request/response bodies, form values, raw console messages, raw DOM text,
   or replay segments in agent-visible bundles. Vendor SDK defaults are not
   enough; the run must record the explicit capture policy for each surface.
+- A run that mentions Sentry Replay must record Replay provenance:
+  `@sentry/browser` internal Replay dependency, standalone `@sentry/replay`, or
+  another package/source. Standalone `@sentry/replay` cannot be treated as the
+  current Sentry JS v10 Replay source unless the app lockfile includes it.
 - Replay is never tiny-tier default. It can become claimable only as an opt-in
   raw/ref surface after masking, network-body, retention, overhead, and
   dereference-denial rows pass.
+- Source maps and `sourcesContent` are raw source artifacts. They may support
+  server-side symbolication, but public source-map access, source content in
+  canonical bundles, or agent-default dereference fails the source-map gate.
 - Browser export reliability is best-effort. Dropped, blocked, sampled, offline,
   adblocked, and CSP/CORS-failed events must be counted or surfaced as
   missing-evidence; they cannot be hidden by only counting received events.
@@ -634,8 +665,14 @@ Mark affected claims `claim_expired` when:
   defines the default-deny frontend privacy posture used by this ledger.
 - [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) remains the
   broader redaction veto before frontend evidence becomes agent-visible.
+- [A6 synthetic canary fixture corpus](a6-synthetic-canary-fixture-corpus.md)
+  defines the seeded frontend canaries for Replay, source maps, URL/query,
+  referrer, console, headers, and network-body surfaces.
 - [Redaction detector toolchain](redaction-detector-toolchain.md) defines the
   scanner and canary comparators used for browser privacy rows.
+- [Frontend Replay and source-map privacy recheck](frontend-replay-sourcemap-privacy-recheck.md)
+  defines the Replay package-provenance fields and source-artifact negative
+  fixtures required by this ledger.
 - [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)
   must expose frontend nodes, redaction reports, source-field policy status,
   source-map status, replay refs, and missing-evidence warnings without leaking

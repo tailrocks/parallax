@@ -33,6 +33,13 @@ separates browser telemetry from the backend OTLP transport profile: browser
 OTLP is HTTP-only (`http/protobuf` preferred, HTTP/JSON optional), while gRPC is
 expected unsupported in browser builds.
 
+The focused
+[frontend Replay and source-map privacy recheck](frontend-replay-sourcemap-privacy-recheck.md)
+narrows the Replay/source-artifact boundary: current Sentry JS v10 Replay
+provenance comes through `@sentry/browser` internal packages, standalone
+`@sentry/replay` is stale unless a lockfile includes it, and Replay/source maps
+are raw refs rather than agent-visible defaults.
+
 ## Current Primary-Source Checks
 
 The frontend direction rests on current official docs, not only vendor blog
@@ -50,6 +57,7 @@ examples:
 | Source maps | Sentry's current source-map flow uses artifact bundles and Debug IDs to bind minified JavaScript to source maps without path guessing. | Parallax should adopt a Debug-ID-like source-map identity, keyed to frontend release/build, stored privately in object storage. |
 | Browser privacy defaults | Sentry's JavaScript data-collected docs say cookies, logged-in user identity, user IP, client-side request bodies, and response bodies are not sent by default, but HTTP request/response headers, full request URLs, full query strings, referrer URLs, and console logs/breadcrumbs may be collected; Replay masks text/images/user input by default and network bodies are opt-in. | Do not rely on vendor defaults as the Parallax safety boundary; record explicit header, URL/query, referrer, console, body, replay, and user-context capture policies before browser evidence becomes agent-visible. |
 | Replay privacy | Sentry Replay defaults to masking DOM text/user input/images and makes network request/response bodies opt-in. | Replay is a useful reference but must be opt-in, masked by default, and outside the tiny tier. |
+| Replay package provenance | The current npm snapshot shows `@sentry/browser` `10.53.1` depending on `@sentry-internal/replay` `10.53.1`, while standalone `@sentry/replay` remains `7.116.0`. | Record the actual app lockfile and Replay package source before citing Replay defaults; do not use stale standalone package metadata as current v10 evidence. |
 | Browser semantic attributes | OpenTelemetry browser resource semantic conventions are still development-stage for most `browser.*` fields; `user_agent.original` is stable/recommended. | Store browser attributes, but keep the schema additive and versioned. |
 
 ## Collection Method
@@ -65,7 +73,7 @@ errors) on the frontend, because the browser ecosystem already speaks both.
 | Route / view context | Essential | SPA router hook → span/attribute | Current route, component, and feature flags at error time. |
 | Frontend release/build | Essential | build-time injected release + build id | Joinable to, but distinct from, backend release. |
 | Web Vitals / RUM | Nice-to-have | `web-vitals` → OTLP metrics | LCP/INP/CLS for latency-class user issues; not needed for error reconstruction. |
-| Session replay | Nice-to-have (opt-in) | rrweb-style DOM recording (Sentry Replay is the GA reference) | High value for humans, heavy on privacy and bytes; opt-in, masked by default, later tier. |
+| Session replay | Nice-to-have (opt-in) | rrweb-style DOM recording (Sentry Replay is the GA reference; record package provenance from the actual lockfile) | High value for humans, heavy on privacy and bytes; opt-in, masked by default, later tier. |
 
 Recommendation: tiny tier ships error + fetch/XHR spans + breadcrumbs + route +
 release + `traceparent` propagation. Web Vitals and replay are later, opt-in.
@@ -172,6 +180,9 @@ Frontend stacks are minified and useless raw. Mirror the Rust debuginfo story
   to the browser;
 - **never serve source maps from a public URL** — they expose source. Store them
   in Parallax's object storage behind auth, like backend debug info.
+- do not expose raw source maps, `sourcesContent`, or source context to agents by
+  default; agent-visible bundles should contain symbolicated frames, artifact
+  identity, and non-dereferenceable refs unless scoped operator approval exists.
 
 Sentry's current artifact-bundle model is the right reference: bind minified
 source and source map by a Debug ID rather than relying only on path matching.
@@ -187,6 +198,9 @@ tokens, DOM content, user identity. Privacy must be designed in, not bolted on:
 - **Replay masking by default.** If replay is enabled, mask all text and block
   media by default; unmask only explicitly safe selectors. (Sentry Replay's
   mask-by-default model is the reference.)
+- **Replay as ref, not context.** Replay segments are opt-in raw refs. Agents
+  should receive metadata, redaction reports, and blocked refs by default, not
+  replay content.
 - **Network redaction.** Strip auth headers and redact request/response bodies in
   breadcrumbs and spans; allowlist safe fields.
 - **Browser metadata redaction.** Strip or redact full request URLs, query
@@ -262,6 +276,8 @@ with row-level proof captured by the
 - [Frontend browser ingest profile recheck](frontend-browser-ingest-profile-recheck.md)
   — current browser Sentry/OTel package and transport-profile recheck; separates
   browser HTTP-only ingest from backend OTLP gRPC/protobuf requirements.
+- [Frontend Replay and source-map privacy recheck](frontend-replay-sourcemap-privacy-recheck.md)
+  — current Replay package provenance and source-artifact raw-ref boundary.
 
 ## Sources
 
@@ -272,12 +288,17 @@ Primary sources:
 - [OpenTelemetry fetch instrumentation config](https://open-telemetry.github.io/opentelemetry-js/interfaces/_opentelemetry_instrumentation-fetch.FetchInstrumentationConfig.html)
 - [OpenTelemetry browser resource semantic conventions](https://opentelemetry.io/docs/specs/semconv/resource/browser/)
 - [Frontend browser ingest profile recheck](frontend-browser-ingest-profile-recheck.md)
+- [Frontend Replay and source-map privacy recheck](frontend-replay-sourcemap-privacy-recheck.md)
 - [W3C Trace Context](https://www.w3.org/TR/trace-context/)
 - [Sentry JavaScript trace propagation](https://docs.sentry.io/platforms/javascript/guides/capacitor/tracing/trace-propagation/)
 - [Sentry JavaScript trace propagation targets](https://docs.sentry.io/platforms/javascript/configuration/environments/#tracepropagationtargets)
 - [Sentry JavaScript breadcrumbs](https://docs.sentry.io/platforms/javascript/guides/svelte/enriching-events/breadcrumbs/)
 - [Sentry source-map artifact bundles and Debug IDs](https://docs.sentry.io/platforms/javascript/guides/cloudflare/sourcemaps/troubleshooting_js/artifact-bundles/)
 - [Sentry JavaScript data collected and Replay privacy defaults](https://docs.sentry.io/platforms/javascript/guides/react/data-management/data-collected)
+- [Sentry Session Replay privacy](https://docs.sentry.io/platforms/javascript/session-replay/privacy/)
+- [Sentry Session Replay configuration](https://docs.sentry.io/platforms/javascript/session-replay/configuration/)
+- [npm `@sentry/browser`](https://www.npmjs.com/package/@sentry/browser)
+- [npm `@sentry/replay`](https://www.npmjs.com/package/@sentry/replay)
 
 Secondary implementation references:
 

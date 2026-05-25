@@ -36,13 +36,18 @@ Narrow the transport claim:
 
 The current package recheck did not find version drift from the ledger snapshot:
 `@sentry/browser` and `@sentry/react` are still `10.53.1`; OTel web SDK remains
-`2.7.1`; OTel fetch/XHR and OTLP HTTP exporters remain `0.218.0`.
+`2.7.1`; OTel fetch/XHR and OTLP HTTP exporters remain `0.218.0`. A follow-up
+[frontend Replay and source-map privacy recheck](frontend-replay-sourcemap-privacy-recheck.md)
+adds one important package nuance: `@sentry/browser` `10.53.1` contains internal
+Replay packages at `10.53.1`, while standalone `@sentry/replay` is still
+`7.116.0`; record which path an actual app uses.
 
 ## Current Primary-Source Snapshot
 
 | Source | Current signal checked 2026-05-25 | Parallax implication |
 | --- | --- | --- |
 | npm registry for `@sentry/browser` and `@sentry/react` | `npm view` reports `10.53.1`, modified 2026-05-12. | Keep pinning exact Sentry JS package versions in every browser run; docs pages can lag package releases. |
+| [Frontend Replay and source-map privacy recheck](frontend-replay-sourcemap-privacy-recheck.md) | `@sentry/browser` `10.53.1` depends on `@sentry-internal/replay` `10.53.1`; standalone `@sentry/replay` is `7.116.0`, modified 2025-11-25. | Replay package provenance is a manifest field, not an assumption. Do not use stale standalone package metadata for current v10 Replay behavior unless the lockfile includes it. |
 | npm registry for `@opentelemetry/sdk-trace-web` | `npm view` reports `2.7.1`, modified 2026-05-01. | Browser trace fixtures should record OTel JS core/web SDK separately from instrumentation package versions. |
 | npm registry for `@opentelemetry/instrumentation-fetch`, `@opentelemetry/instrumentation-xml-http-request`, and OTLP HTTP trace exporters | `npm view` reports `0.218.0` for fetch, XHR, HTTP/JSON, HTTP/protobuf, and gRPC exporter packages; HTTP exporter packages modified 2026-05-13. | Run manifests need the full package matrix; exporter and instrumentation packages are on the experimental `0.x` line even when the web SDK is `2.x`. |
 | [OpenTelemetry JavaScript browser guide](https://opentelemetry.io/docs/languages/js/getting-started/browser/) | The official browser guide uses `@opentelemetry/sdk-trace-web` and document-load instrumentation for browser spans. | OTel JS remains the right reference path for browser spans, but browser support must be fixture-proven per package/browser matrix. |
@@ -67,7 +72,7 @@ The current package recheck did not find version drift from the ledger snapshot:
 | CORS | Explicit preflight allowlist for trace/context/export headers and content type. | Missing CORS is a missing-evidence condition, not proof that no backend continuation happened. |
 | CSP | `connect-src` must include the browser ingest endpoint. | Export reliability claim fails if CSP blocks telemetry. |
 | Source maps | Private Debug-ID-like artifact identity, no public `.map` files, no source contents in agent bundles by default. | Source-mapped claim requires private artifact tests and public-map negative tests. |
-| Replay | Opt-in, masked by default, reference-only in bundles unless separately approved. | Replay is outside the tiny tier and outside agent-visible defaults. |
+| Replay | Opt-in, masked by default, reference-only in bundles unless separately approved; manifest records the actual Replay package source. | Replay is outside the tiny tier and outside agent-visible defaults. |
 
 ## Fixture Additions
 
@@ -121,6 +126,7 @@ Reopen this note if:
 - [OpenTelemetry fetch instrumentation config](https://open-telemetry.github.io/opentelemetry-js/interfaces/_opentelemetry_instrumentation-fetch.FetchInstrumentationConfig.html)
 - [OpenTelemetry XHR instrumentation config](https://open-telemetry.github.io/opentelemetry-js/interfaces/_opentelemetry_instrumentation-xml-http-request.XMLHttpRequestInstrumentationConfig.html)
 - [OpenTelemetry Protocol Exporter spec](https://opentelemetry.io/docs/specs/otel/protocol/exporter/)
+- [Frontend Replay and source-map privacy recheck](frontend-replay-sourcemap-privacy-recheck.md)
 - [npm `@sentry/browser`](https://www.npmjs.com/package/@sentry/browser)
 - [npm `@sentry/react`](https://www.npmjs.com/package/@sentry/react)
 - [npm `@opentelemetry/sdk-trace-web`](https://www.npmjs.com/package/@opentelemetry/sdk-trace-web)

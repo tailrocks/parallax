@@ -62,6 +62,21 @@ Phase 0 can use generated fixture values, but each value must have a stable
 fixture ID and a `raw_value_hash`. If a value is provider-shaped, keep it out of
 git unless the operator explicitly approves committing it.
 
+## Frontend Surface Expansion Fixtures
+
+Frontend Replay and source maps are raw/reference surfaces, so the expansion
+corpus should add these fixtures before any browser capture claim can become
+agent-visible:
+
+| Fixture ID | Surface | Canary class | Placement | Expected action |
+| --- | --- | --- | --- | --- |
+| `frontend_replay_dom_text_001` | Replay | DOM text canary | replay segment or masked replay metadata | Mask or block; canonical/projection outputs contain no raw DOM text. |
+| `frontend_replay_input_001` | Replay | Form/input canary | input event, form field, or selector path | Mask or block before replay ref or summary output. |
+| `frontend_replay_network_body_001` | Replay/network detail | Request/response body canary | opt-in network detail capture fixture | Disabled by default; allowlist fixtures must still redact projections. |
+| `frontend_sourcemap_sources_content_001` | Source map | Raw source content | `sourcesContent` or uploaded source artifact | Server-side symbolication only; no source content in agent-visible evidence. |
+| `frontend_sourcemap_public_negative_001` | Deployed build | Public source-map access | `.js.map` URL or equivalent asset path | Public fetch/access denied; source-map claim fails if accessible. |
+| `frontend_url_referrer_console_001` | Browser metadata | URL/query/referrer/console canary | request URL, query string, referrer, console breadcrumb | Strip or redact before canonical JSON, Markdown, CLI, HTTP, and MCP outputs. |
+
 ## Public Fixture Layout
 
 Use this future layout:
@@ -209,6 +224,9 @@ The task can count only when:
 - [A1 Hugging Face row hash procedure](a1-huggingface-row-hash-procedure.md)
   defines source-row hash and field-policy inputs that canary source-field
   fixtures must respect.
+- [Frontend Replay and source-map privacy recheck](frontend-replay-sourcemap-privacy-recheck.md)
+  defines Replay/source-map canaries that must exist before browser evidence
+  can become agent-visible.
 
 ## Sources
 
@@ -220,6 +238,7 @@ The task can count only when:
 - [RFC 8785 JSON Canonicalization Scheme](https://www.rfc-editor.org/rfc/rfc8785.html)
 - [OWASP Logging Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html)
 - [Redaction toolchain Betterleaks recheck](redaction-toolchain-betterleaks-recheck.md)
+- [Frontend Replay and source-map privacy recheck](frontend-replay-sourcemap-privacy-recheck.md)
 
 ## Bottom Line
 

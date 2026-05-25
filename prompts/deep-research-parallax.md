@@ -311,6 +311,11 @@ Research must answer, specifically:
 - privacy: the frontend carries heavy PII and user content, so redaction,
   consent, and data-minimization for breadcrumbs, state, replay, and logs are
   harder here and must be designed in;
+- replay, source maps, `sourcesContent`, network bodies, console text, URLs, and
+  referrers are not agent-visible defaults. Treat Replay and source maps as
+  opt-in/raw reference surfaces unless current fixtures prove masking,
+  source-artifact privacy, projection safety, package provenance, and scoped
+  dereference controls;
 - the evidence bundle and schema must extend to frontend nodes (session, user
   step/breadcrumb, frontend error, route/view, frontend release) and cross-tier
   edges, without breaking the open schema.
