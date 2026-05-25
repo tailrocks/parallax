@@ -8,8 +8,11 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 127 local runs + B1–B15 cases. Recent: **Run 127 —
-trace-explorer "slow error spans"** query (find+rank slowest errored spans): CH ~10 ms / GT ~24 ms (~2.4×), both
+cold/first-run measurement showed). 25 mechanism notes + 128 local runs + B1–B15 cases. Recent: **Run 128 — pins
+RE-VERIFIED via release pages** (not just asserted): GreptimeDB v1.0.2 = latest stable (v1.1.0 is nightly-only, not GA),
+ClickHouse v26.5.1.882 = highest feature line (later-dated 26.2/26.3/26.4 tags are older-line LTS backports); both
+current, no bump. Future trigger: GreptimeDB v1.1 GA (Q2 — JSON Type v2 narrows the dynamic-attr gap) = re-pin + re-run
+104/96/122. **Run 127 — trace-explorer "slow error spans"** query (find+rank slowest errored spans): CH ~10 ms / GT ~24 ms (~2.4×), both
 interactive — completes trace-query coverage (anchored waterfall ~18 ms + this search ~24 ms); every core Parallax view
 across all four signals is now confirmed sub-perceptible on GreptimeDB. **Run 126 — native metric engine**: physical table (`greptime_timestamp`/`greptime_value`) creates cleanly, but logical tables are
 AUTO-created via Prometheus remote-write/OTLP ingestion, NOT hand-DDL (explicit `ENGINE=metric WITH(on_physical_table=)`

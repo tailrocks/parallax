@@ -5282,6 +5282,48 @@ CH `--time`, GT `execution_time_ms`, warm ×8.
 **Reproduce.** `SELECT trace_id, service, name, duration_ms FROM spans WHERE status='error' AND
 duration_ms > 100 ORDER BY duration_ms DESC LIMIT 50` (498 match), warm ×8 → CH ~10 ms / GT ~24 ms.
 
+### Run 128 — 2026-05-25 — Pins RE-VERIFIED against the release pages (not just asserted): GT v1.0.2 = latest stable, CH v26.5.1.882 = highest feature line; both current, no bump. v1.1 GA is the material future trigger.
+
+**Pass target.** The brief mandates re-pinning each pass; I'd been *asserting* "no bump" without
+actually checking. Verify the latest releases against the authoritative source (GitHub releases),
+since a newer stable — especially **GreptimeDB v1.1 GA** (roadmap Q2: JSON Type v2, vector index,
+metric-engine optimization) — would be materially DQ6-relevant.
+
+**Method.** `gh api` release lists for both repos (2026-05-25).
+
+**GreptimeDB releases (latest first):**
+- `v1.1.0-nightly-20260525` (today) — **PRERELEASE / nightly**, not GA.
+- `v1.0.0-nightly-20260518` — nightly.
+- **`v1.0.2` (2026-05-14) — latest STABLE** ← our pin. ✓
+- `v1.0.1` (2026-04-23) — stable.
+→ **v1.0.2 is the current GA; v1.1 exists only as nightlies** (active dev, GA approaching per the Q2
+roadmap). Pin correct.
+
+**ClickHouse stable releases (latest first):**
+- `v26.3.12.3-lts` (2026-05-22), `v26.3.11.36-lts`, `v26.2.19.43-stable`, `v26.4.3.37-stable`
+  (2026-05-20) — **all LOWER feature lines** (26.2/26.3/26.4 = older-line LTS/backport patches, dated
+  later but feature-behind).
+- **`v26.5.1.882-stable` (2026-05-21)** ← our pin = the **highest *feature* line** (26.5.x). ✓
+→ The later *dates* on 26.2/26.3/26.4 are LTS patch backports, not newer features; **26.5.1.882
+remains the newest feature release.** Pin correct.
+
+**Verdict — both pins current, no bump. Re-verified against the release pages, not assumed.**
+
+- GreptimeDB **v1.0.2** and ClickHouse **v26.5.1.882** are confirmed the current/highest stable on
+  each side as of 2026-05-25. The whole comparison record (Runs 1–127) stands on current versions.
+- **Future re-pin/re-research trigger flagged: GreptimeDB v1.1 GA** (Q2 2026, currently nightly-only).
+  When it ships GA it brings roadmap items directly relevant to open gaps — **JSON Type v2
+  (field-level index → narrows the Run-104 dynamic-attr ~57× gap, parity #4)**, vector index + AI
+  functions, metric-engine optimization, remote compaction/indexing. On the v1.1-GA bump, re-run:
+  Run 104 (dynamic-attr JSON), Run 96/113 (metric agg — metric-engine opt), Run 121/122 (prefilter
+  scope), and re-pin. Until then, v1.0.2 is the basis.
+- **ClickHouse:** watch the 26.x line for the `TimeSeries`/PromQL experimental flag flipping to
+  default (DQ3 trajectory, Run 120) on each feature bump.
+
+**Reproduce.** `gh api "repos/GreptimeTeam/greptimedb/releases?per_page=8"` (v1.0.2 newest stable,
+v1.1 nightly-only); `gh api "repos/ClickHouse/ClickHouse/releases?per_page=12" --jq 'select(.prerelease==false)'`
+(26.5.1.882 highest feature; 26.2/26.3/26.4 = later-dated LTS backports).
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
