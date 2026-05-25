@@ -60,8 +60,8 @@ redacted, citable evidence bundles and action/outcome audit.
 | Component | Latest checked version | Release date | Notes |
 | --- | --- | --- | --- |
 | OpenTelemetry spec docs | OTel `1.57.0`, OTLP `1.10.0`, Semantic Conventions `1.41.0` | Checked 2026-05-25 | OTLP is stable for traces, metrics, and logs; profiles remain development-stage. |
-| OpenTelemetry Collector core/source | `v0.153.0` | 2026-05-25 | Latest core/source release checked from GitHub release metadata; it has moved ahead of the runnable distribution. |
-| OpenTelemetry Collector distribution | `v0.152.1` | 2026-05-20 | Latest official distribution/binary release checked from GitHub release metadata. Treat this separately from core/source for conformance. |
+| OpenTelemetry Collector core/source | `v0.153.0` | 2026-05-25 | Latest core/source release checked from GitHub release page, `/releases/latest` redirect, and tag ref; it has moved ahead of the runnable distribution. |
+| OpenTelemetry Collector distribution | `v0.152.1` | 2026-05-20 | Latest official distribution/binary release checked from `/releases/latest` redirect and tag ref. The matching stable `v0.153.0` collector-releases page still returned 404 while nightly `v0.153.0` tags were visible. Treat this separately from core/source for conformance. |
 | OpenTelemetry Collector Contrib | `v0.152.0` | 2026-05-11 | Contrib carries its own distribution/version line with core Collector plus a wider component set; track separately from latest core/source. |
 | OpenTelemetry Rust | `opentelemetry-0.32.0` | 2026-05-09 | Rust traces, metrics, and logs are all listed as beta by the official Rust docs. |
 | Rotel | `v0.2.2` | 2026-05-04 | Rust-native OTEL collector alternative; promising, but early. |

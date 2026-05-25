@@ -40,8 +40,8 @@ The central rule:
 | [OpenTelemetry metrics data model](https://opentelemetry.io/docs/specs/otel/metrics/data-model/) | The metrics model is stable and explicitly preserves metric semantics across transformations, including temporality and stream identity. | Parallax must not merge incompatible streams or drop temporality/monotonicity. |
 | [OpenTelemetry trace API](https://opentelemetry.io/docs/specs/otel/trace/api/) | Spans carry parent/child relations, span kind, attributes, links, events, status, start/end timestamps, trace ID, and span ID. | These fields are the core lifecycle evidence for bundles. |
 | [Collector configuration](https://opentelemetry.io/docs/collector/configuration/) | Collector configs define receivers, processors, exporters, connectors, extensions, and service pipelines. Configuring a component does not enable it until a pipeline references it. OTLP defaults use `4317` and `4318`. | Equivalence results must include config hashes and declared processor transforms. |
-| [Collector core v0.153.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.153.0) | Current checked core/source release is `v0.153.0`, published on 2026-05-25. It stabilizes several feature gates, including pdata/proto encoding and ref-counting behavior, and fixes a Snappy memory-corruption issue in gRPC config. Its release body points to collector-releases `v0.153.0` for binaries, but that stable release tag returned 404 in the follow-up check. | Core/source drift can affect payload handling, pdata semantics, compression, or config interpretation. Fixture runs must record Collector source/core separately from the runnable distribution and must not infer a runnable binary from core release notes alone. |
-| [Collector distribution v0.152.1](https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.152.1) | The official distribution/binary releases API still reported `v0.152.1` on 2026-05-25 while core/source had moved to `v0.153.0`; the stable `v0.153.0` release tag and HTML page returned 404, while the tag list showed only `v0.153.0-nightly.*` tags. The `v0.152.1` line had request-body/decompression fixes and a `pcommon.Value.AsString` behavior change: map/slice values no longer HTML-escape `<`, `>`, and `&`. | Compatibility claims should name the tested binary distribution, release resolution source, and the core/source line. Conformance must preserve typed AnyValue/log-body semantics and not rely on string-rendered equality for redaction or row identity. Nightly distribution tests are development evidence, not stable Collector-equivalence proof. |
+| [Collector core v0.153.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.153.0) | Current checked core/source release is `v0.153.0`, published on 2026-05-25. The GitHub release page and `/releases/latest` redirect resolve to `v0.153.0`, and `git ls-remote` shows tag `c013d5846b82e502d373d6e8424236612b85ed1c`. Its release body points to collector-releases `v0.153.0` for binaries, but that stable release tag still returned 404 in the follow-up check. | Core/source drift can affect payload handling, pdata semantics, compression, or config interpretation. Fixture runs must record Collector source/core separately from the runnable distribution and must not infer a runnable binary from core release notes alone. |
+| [Collector distribution v0.152.1](https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.152.1) | The official distribution/binary `/releases/latest` redirect still resolved to `v0.152.1` on 2026-05-25 while core/source had moved to `v0.153.0`; `git ls-remote` shows tag `853ddb2dbfab1a0cd6b43b808334fbb4cfc6160d`. The stable `v0.153.0` release page returned 404, while the tag list showed only `v0.153.0-nightly.*` tags. Unauthenticated GitHub API calls returned 403 during this pass, so the source snapshot used release redirects, HTML status, and tag refs instead of API-only latest resolution. The `v0.152.1` line had request-body/decompression fixes and a `pcommon.Value.AsString` behavior change: map/slice values no longer HTML-escape `<`, `>`, and `&`. | Compatibility claims should name the tested binary distribution, release resolution source, and the core/source line. Conformance must preserve typed AnyValue/log-body semantics and not rely on string-rendered equality for redaction or row identity. Nightly distribution tests are development evidence, not stable Collector-equivalence proof. |
 | [Collector Contrib v0.152.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.152.0) | Current checked Contrib release is `v0.152.0`, released on 2026-05-11, with broad processor/receiver/exporter changes. | Contrib is the realistic production distribution for many deployments; it needs its own fixture row. |
 | [OpenTelemetry Rust 0.32.0](https://docs.rs/crate/opentelemetry/latest) and [opentelemetry-otlp 0.32.0 changelog](https://docs.rs/crate/opentelemetry-otlp/latest/source/CHANGELOG.md) | Docs.rs resolves `opentelemetry` to `0.32.0`; `opentelemetry-otlp` 0.32.0 adds per-signal protocol env vars and OTLP partial-success handling. | Rust fixtures should cover per-signal protocol settings and server partial-success responses. |
 | [Rotel v0.2.2](https://github.com/rotel-dev/rotel/releases/tag/v0.2.2) and [Rotel README](https://github.com/rotel-dev/rotel) | Rotel is a Rust OpenTelemetry collector alternative with default OTLP gRPC `4317`, HTTP `4318`, `/v1/traces`, `/v1/metrics`, `/v1/logs`, gzip export, retries/timeouts, and multiple exporters. | Rotel is a useful smoke/eval path, but it is still pre-1.0 and should not replace official Collector equivalence. |
@@ -130,9 +130,11 @@ Each `manifest.json` should include:
     "opentelemetry_rust": "0.32.0",
     "opentelemetry_otlp": "0.32.0",
     "collector_core_source": "0.153.0",
+    "collector_core_resolution": "releases_latest_redirect=v0.153.0; tag_ref=c013d5846b82e502d373d6e8424236612b85ed1c; github_api_status=403_unauthenticated",
     "collector_distribution": "0.152.1",
-    "collector_distribution_resolution": "releases_latest=v0.152.1; stable_v0.153.0_release_tag_404; v0.153.0-nightly_tags_visible",
+    "collector_distribution_resolution": "releases_latest_redirect=v0.152.1; tag_ref=853ddb2dbfab1a0cd6b43b808334fbb4cfc6160d; stable_v0.153.0_release_tag_404; v0.153.0-nightly_tags_visible; github_api_status=403_unauthenticated",
     "collector_contrib": "0.152.0",
+    "collector_contrib_resolution": "releases_latest_redirect=v0.152.0; tag_ref=fd4d5188f6bc33e6c90329ff7caa1df62c6c543d",
     "rotel": "0.2.2"
   },
   "transports": ["grpc", "http/protobuf"],
@@ -172,6 +174,10 @@ and storage mapping. A pass in one combination does not carry over to another.
   "intermediary": "none|collector-core|collector-contrib|rotel",
   "intermediary_source_version": "0.153.0|null",
   "intermediary_distribution_version": "0.152.1|null",
+  "intermediary_resolution_method": "release_redirect|release_page|git_ls_remote|api|manual",
+  "intermediary_release_url_effective": "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.152.1|null",
+  "intermediary_release_http_status": 200,
+  "intermediary_tag_ref": "853ddb2dbfab1a0cd6b43b808334fbb4cfc6160d|null",
   "config_hash": "sha256:<hex>",
   "request_hash": "sha256:<hex>",
   "target_level": "direct_rust_traces"
@@ -227,6 +233,9 @@ and storage mapping. A pass in one combination does not carry over to another.
   "intermediary_version": "0.152.1",
   "intermediary_source_version": "0.153.0",
   "intermediary_distribution_version": "0.152.1",
+  "intermediary_resolution_method": "release_redirect+git_ls_remote",
+  "intermediary_release_http_status": 200,
+  "intermediary_tag_ref": "853ddb2dbfab1a0cd6b43b808334fbb4cfc6160d",
   "config_hash": "sha256:<hex>",
   "equivalent": true,
   "allowed_differences": ["batch_reorder"],
