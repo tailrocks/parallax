@@ -19,6 +19,11 @@ trait so candidates swap behind one interface, a deterministic dataset generator
 per-candidate DDL, the exact evidence-bundle/correlation queries, and the
 measurement protocol for each metric.
 
+The focused proof gate for mixed-load freshness and Q6 bundle latency is
+[Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md).
+Treat that gate as the first storage-speed pass before using smoke-run timings
+as architectural evidence.
+
 Pinned candidate versions for the first run (update at run time per the
 version-freshness rule):
 

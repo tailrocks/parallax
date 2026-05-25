@@ -135,6 +135,7 @@ Related research:
 - [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md)
 - [Self-hosted observability architecture](self-hosted-observability-architecture.md)
 - [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md)
+- [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md)
 - [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md)
 - [Turso metadata production readiness](turso-metadata-production-readiness.md)
 - [Messaging and ingestion layer](messaging-and-ingestion-layer.md)
@@ -661,9 +662,12 @@ candidate versions:
 ### Storage
 
 - GreptimeDB versus ClickHouse on Parallax-shaped datasets.
-- Ingest-to-queryable latency under concurrent writes.
+- Ingest-to-queryable latency under concurrent writes, with the initial proof
+  gate in
+  [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md).
 - Evidence-bundle query latency by issue, trace, release window, and metric
-  anomaly.
+  anomaly, with the initial proof gate in
+  [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md).
 - Retained size and object-storage cost for 7, 30, and 90 days.
 - High-cardinality labels and attributes.
 - Cold-cache and hot-cache behavior.

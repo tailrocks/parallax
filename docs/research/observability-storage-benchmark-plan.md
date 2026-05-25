@@ -22,7 +22,9 @@ storage engine underneath the platform.
 > per-candidate DDL, the exact query SQL, the measurement protocol, and numeric
 > decision gates — lives in
 > [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md). The
-> benchmark prototype has veto power over the default storage choice.
+> benchmark prototype has veto power over the default storage choice. The first
+> mixed-load speed gate is specified in
+> [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md).
 
 ## Scope Rule
 

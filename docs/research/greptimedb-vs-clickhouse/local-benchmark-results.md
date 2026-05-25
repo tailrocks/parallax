@@ -227,8 +227,9 @@ realistic metric shapes** before any cost conclusion.
    between cold runs.
 2. **Matched-codec GreptimeDB schema** (or accept defaults on both) for a fair
    size/cost comparison.
-3. **Add the signals + the join**: load `logs` + `error_events`, run Q1/Q4
-   evidence-bundle joins by `trace_id` — the query that decides the choice.
+3. **Full mixed-load Q6 gate**: run the
+   [storage freshness and bundle latency gate](../storage-freshness-and-bundle-latency-gate.md)
+   with all bundle signals, per-signal freshness probes, and concurrent ingest.
 4. **Metrics float compression with realistic shapes** (flat gauges, monotonic
    counters, repeated values) to actually exercise Gorilla/DoubleDelta vs
    GreptimeDB Parquet — Run 3's random-walk data was incompressible. (PromQL
