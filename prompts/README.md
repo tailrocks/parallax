@@ -13,9 +13,10 @@ OpenCode) so a piece of work runs the same way every time.
 
 ## Current preferred mode
 
-Run `prompts/deep-research-parallax.md` as an indefinite re-verification loop.
-The goal is not one final report. The goal is to keep improving the quality,
-trustworthiness, and completeness of the research record.
+Run `prompts/deep-research-parallax.md` as an indefinite re-verification loop
+with `/goal`. The goal is not one final report. The goal is to keep improving
+the quality, trustworthiness, and completeness of the research record until the
+operator stops or replaces the research program.
 
 Each pass should treat existing `docs/research/` findings as theories:
 
@@ -34,6 +35,29 @@ when they exist, and mark benchmark-dependent claims as unproven until measured.
 
 ## How to run a prompt
 
+### Command choice
+
+Use `/goal` when the agent should keep working turn after turn toward a durable
+condition. This is the default for long-running research in this repo. The best
+goal prompt names the brief to follow, the per-pass proof of progress, the
+constraints, and the stop condition.
+
+Use Claude Code `/loop` when you specifically want a scheduled re-trigger inside
+an open Claude Code session. Prefer a fixed interval for research loops where the
+agent has previously stopped too early. `/loop` is session-scoped: it requires
+Claude Code to keep running, is restored only while unexpired, and recurring
+tasks expire after about seven days.
+
+Do not wrap `/goal` inside `/loop`. Pick one runner for a session.
+
+Verified command references, checked 2026-05-25:
+
+- [OpenAI Codex `/goal` use case](https://developers.openai.com/codex/use-cases/follow-goals)
+- [OpenAI Codex CLI slash commands](https://developers.openai.com/codex/cli/slash-commands)
+- [OpenAI Codex app commands](https://developers.openai.com/codex/app/commands)
+- [Claude Code `/goal`](https://code.claude.com/docs/en/goal)
+- [Claude Code `/loop` scheduled prompts](https://code.claude.com/docs/en/scheduled-tasks)
+
 ### 1. As a one-off
 
 Open the agent and hand it the file as the task — paste the contents, attach the
@@ -41,20 +65,19 @@ file, or reference the path (for example `@prompts/deep-research-parallax.md` in
 Claude Code). Use this for a targeted pass only. For the main Parallax research
 program, prefer the indefinite modes below.
 
-### 2. `/goal` — indefinite
+### 2. `/goal` — preferred long-running research mode
 
-Use `/goal` in Codex or Claude Code with an explicit never-finished research
-instruction. `/goal` is the cross-tool long-running command; the stop condition
-for the ordinary research program is operator intervention:
-
-For Codex specifically, current official Codex CLI and app docs list `/goal` for
-persistent long-running goals. They do not list `/run` or `/go` as the documented
-slash command for this workflow. If `/goal` is hidden in Codex, enable the
-feature first:
+Use `/goal` in Codex or Claude Code with an explicit research contract. For
+Codex, enable goals first if the command is hidden:
 
 ```sh
 codex features enable goals
 ```
+
+The goal condition should not be a loose backlog. Point the agent at the prompt
+file, define one pass as the unit of work, require a commit and push for each
+durable update, and say that only the operator can stop or replace the research
+program.
 
 ```text
 /goal Follow prompts/deep-research-parallax.md as the active indefinite
@@ -76,17 +99,19 @@ storage or infrastructure performance differences unless explicitly asked; use
 the separate benchmark agent's artifacts when they exist and mark unmeasured
 claims as unproven.
 
-Never declare the research complete on your own. Keep going until the operator
-explicitly stops the goal, replaces it, or says the research program is complete.
+After each pass, surface what changed, what evidence was checked, and what gap is
+next so the goal evaluator can see progress from the transcript. Never declare
+the research complete on your own. Keep going until the operator explicitly stops
+the goal, replaces it, or says the research program is complete.
 ```
 
-### 3. Claude Code `/loop` — scheduled indefinite
+### 3. Claude Code `/loop` — scheduled research re-trigger
 
 Use Claude Code `/loop` with a fixed interval for the never-stop behavior.
 `/loop` is Claude Code-only. The interval is a re-trigger beat, not a freshness
-requirement. If the scheduler coalesces while a pass is running, `5m` keeps the
-loop close to continuous; if overlapping work or cost becomes a problem, raise it
-to `15m` or `30m`.
+requirement. If the scheduler waits while a pass is running, `5m` keeps the loop
+close to continuous; if overlapping work or cost becomes a problem, raise it to
+`15m` or `30m`.
 
 ```text
 /loop 5m Follow prompts/deep-research-parallax.md as the active indefinite
@@ -113,15 +138,17 @@ explicitly stops the loop, replaces it, or says the research program is complete
 
 Notes:
 
-- `/loop` tasks auto-expire after about 7 days and stop if the session closes
-  (they resume on `--resume` while unexpired). Relaunch for a longer program.
+- `/loop` tasks auto-expire after about seven days and stop if the session closes
+  unless the unexpired session is resumed. Relaunch for a longer program.
 - Do not wrap `/goal` inside `/loop` for this open-ended research. Pick one
   runner: `/goal` in Codex or Claude Code, or Claude Code `/loop`.
 
-### 4. Bounded `/goal` — fixed deliverables only
+### 4. Bounded `/goal` — fixed deliverables
 
-Use a bounded `/goal` only when the desired stop condition is explicit, such as
-creating the first verdict or refreshing one named research area:
+Use a bounded `/goal` when the desired stop condition is explicit, such as
+creating the first verdict or refreshing one named research area. Make the
+completion condition measurable and require the agent to show the proof in the
+transcript:
 
 ```text
 /goal Execute prompts/deep-research-parallax.md. Phase 1 first: deliver a

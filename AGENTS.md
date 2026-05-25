@@ -99,6 +99,11 @@ must be compared, update the relevant prompt under `prompts/` in the same
 change if a future `/goal` or `/loop` run would otherwise repeat stale
 instructions.
 
+Research run instructions should use supported long-running commands only:
+`/goal` for condition-driven continuation and Claude Code `/loop` for scheduled
+repeat prompts. Do not document unsupported command aliases in runbooks or prompt
+examples.
+
 If a prompt does not need an update after such clarification, say why in the
 final response.
 

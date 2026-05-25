@@ -51,17 +51,21 @@ in the generated notes.
 
 # Run Mode
 
-This brief is meant to run indefinitely. It never self-completes — it runs
-deepening passes until the operator stops it by hand. Treat it as continuous: do
-not converge on a single deliverable and stop.
+This brief is meant to run indefinitely. Start it with `/goal` in Codex or
+Claude Code for normal long-running research. Use Claude Code `/loop` only when
+a scheduled re-trigger is desired. It never self-completes — it runs deepening
+and re-verification passes until the operator stops or replaces it. Treat it as
+continuous: do not converge on a single deliverable and stop.
 
 Run passes back to back (nothing external is being watched, so there is no reason
 to idle between them). Each pass picks the single highest-value unanswered
 internals question, researches it against primary sources and source code, writes
 or revises one focused note under `docs/research/greptimedb-vs-clickhouse/`, then
-commits and pushes per [`AGENTS.md`](../AGENTS.md). Do not declare the comparison
-"done" just because the
-output files exist; keep deepening until told to stop.
+commits and pushes per [`AGENTS.md`](../AGENTS.md). Each pass must surface the
+pass target, versions checked, evidence produced, files changed, commit pushed,
+remaining uncertainty, and next gap so the run controller can see that the
+research is still making progress. Do not declare the comparison "done" just
+because the output files exist; keep deepening until told to stop.
 
 ---
 
