@@ -30,7 +30,7 @@ not inferred from this gate alone.
 | [PostgreSQL 18 row security](https://www.postgresql.org/docs/current/ddl-rowsecurity.html) | Row-Level Security can restrict which rows are visible or mutable; when enabled without policies it defaults to no visible/modifiable rows, but owners and `BYPASSRLS` roles bypass it. RLS policies can also create race/covert-channel concerns when they depend on other tables. |
 | [PostgreSQL 18 read-only transactions](https://www.postgresql.org/docs/current/sql-set-transaction.html) | `READ ONLY` transactions disallow ordinary DML and DDL, but PostgreSQL explicitly treats it as a high-level notion, not a complete "no writes to disk" guarantee. It is a guardrail, not the whole safety model. |
 | [PostgreSQL 18 SELECT](https://www.postgresql.org/docs/current/sql-select.html) | A `SELECT` needs column privileges, and locking forms such as `FOR UPDATE` require extra privileges. Parallax should avoid lock-taking forms and require bounded read-only statements. |
-| [OpenTelemetry database semantic conventions](https://opentelemetry.io/docs/specs/semconv/db/database-spans/) | OTel captures database operation metadata, query summaries, returned rows, DB system names, and optional query text/parameters. This is the first database evidence path before any direct production connector. |
+| [OpenTelemetry database semantic conventions](https://opentelemetry.io/docs/specs/semconv/db/database-spans/) | OTel database spans are stable unless otherwise specified. `db.query.summary` is intended to stay low-cardinality and avoid dynamic/sensitive data, non-parameterized `db.query.text` should be sanitized before default collection, and `db.query.parameter.<key>` is opt-in/development-stage. Tier 0 evidence should therefore prefer summaries, operation names, status codes, returned rows, and errors; query text and parameters need explicit policy before agent projection. |
 | [OWASP SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html) | OWASP favors parameterized queries, safely implemented stored procedures, allow-list validation for identifiers, and least privilege. Parallax query templates should follow this rather than exposing free-form SQL. |
 | [OWASP Top 10 for LLM Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/) | Prompt injection, sensitive information disclosure, insecure plugin design, and excessive agency directly apply when an agent can request database evidence. |
 | [NSA MCP security design considerations](https://www.nsa.gov/Portals/75/documents/Cybersecurity/CSI_MCP_SECURITY.pdf?ver=bmgiSbNQLP6Z_GiWtRt6bg%3D%3D) | NSA's May 2026 guidance warns that MCP-style agent tooling depends on implementation discipline around dynamic tool invocation, implicit trust, token/session handling, and context sharing. Database evidence tools need stronger constraints than generic observability queries. |
@@ -70,8 +70,11 @@ Unsafe by default:
 - arbitrary free-form SQL from an agent;
 - raw customer rows;
 - prompt-injected query text from logs/issues;
+- unsanitized `db.query.text` in agent-visible bundles;
 - query parameter values such as email, token, account id, session id, address,
   payment, or message body;
+- `db.query.parameter.<key>` values in agent-visible bundles by default;
+- raw explain plans or plan text with literals;
 - database exports, backups, and dumps;
 - lock-taking reads such as `FOR UPDATE`;
 - write, DDL, migration, deploy, rollback, vacuum, copy, or extension commands.
@@ -90,6 +93,8 @@ Direct database evidence access must satisfy all of these:
 | Identifier allowlist | Table, column, index, and sort identifiers come from template metadata, not user strings. |
 | Limits | Every template has row, byte, time, and cardinality limits. |
 | Redaction | Query output passes the normal Parallax redaction pipeline and includes a redaction report. |
+| Source-field policy | Synthetic, benchmark, evaluation, or corpus fixtures prove provenance/source status before they influence DB evidence claims. |
+| Projection safety | Agent-visible JSON/Markdown carries policy status and missing-evidence flags, not dereferenced raw rows, query parameters, raw query text, or plan text. |
 | Audit | Every request records actor, tool, template id, parameters hash, result shape, redaction policy, bundle id, and denied/allowed decision. |
 | No mutation | DML, DDL, locking reads, copy/export, functions with side effects, and maintenance commands are rejected before reaching the database. |
 
@@ -129,12 +134,19 @@ limits:
   max_rows: 20
   timeout_ms: 1000
   max_bytes: 32768
+telemetry:
+  otel_db_semconv: "1.41.0"
+  query_text_policy: static_template_or_sanitized_only
+  parameter_capture_policy: hash_only
 redaction:
   output_policy: db-evidence-v1
+  source_field_policy: phase0-source-field-policy-v1
   raw_values: deny
 bundle_projection:
   include_rows: true
   include_raw_sql: false
+  include_query_parameters: false
+  raw_ref_policy: deny_dereference_by_default
 ```
 
 The template id and version must appear in the evidence bundle so a reviewer can
@@ -173,7 +185,13 @@ Add a database evidence node only after the output is redacted:
   "row_count": 8,
   "byte_count": 4096,
   "duration_ms": 73,
+  "query_text_policy": "static_template_only",
+  "parameter_capture_policy": "hash_only",
   "redaction_report_ref": "redact_456",
+  "source_field_policy_ref": "source_policy_789",
+  "raw_ref_policy": "deny_dereference_by_default",
+  "query_text_visible": false,
+  "query_parameter_values_visible": false,
   "raw_ref": null
 }
 ```
@@ -199,7 +217,10 @@ Direct database evidence access passes only if all checks pass:
 | Template parser | Only registered templates run; free-form SQL, stacked statements, comments that alter semantics, and dynamic identifiers are rejected. |
 | Read-only runtime | Every query runs in a read-only transaction with statement timeout and cancellation. |
 | Limit proof | Row, byte, time, and cardinality limits are enforced even when the query would return more. |
+| Telemetry DB span policy | Tier 0 spans use low-cardinality summaries; query text is absent, static-template-only, or sanitized; parameter values are absent from agent-visible output by default. |
 | Redaction proof | Seeded secrets and PII in table rows, parameters, query text, errors, and plan output do not appear in agent-visible JSON or Markdown. |
+| Source-field proof | Synthetic, benchmark, evaluation, and corpus fixture rows pass source-field policy before projection claims pass; direct telemetry/template rows record an explicit not-applicable reason when no mixed source is present. |
+| Projection proof | CLI, HTTP, and MCP projections carry redaction and source-field policy status and do not dereference raw rows, query text, query parameters, plan text, transcripts, or incident-note refs by default. |
 | Audit proof | Allowed and denied attempts emit audit rows linked to actor, investigation, template id, bundle id, and policy version. |
 | RLS proof | Tenant/project scoping works for positive and negative fixtures; owner/superuser/BYPASSRLS roles are rejected. |
 | Prompt-injection proof | Malicious issue text, log lines, table names, and row values cannot change template choice, parameters, scope, or output policy. |
@@ -214,6 +235,8 @@ If the gate fails:
 
 - keep Tier 2 disabled;
 - rely on OTel DB spans, errors, migrations, and deploy refs;
+- keep query text, query parameters, raw rows, and plan text out of
+  agent-visible bundles unless a narrower policy explicitly passes;
 - expose database evidence as "missing" in bundles;
 - keep direct DB queries human-only outside Parallax;
 - do not market database-backed autonomous debugging.
@@ -234,7 +257,8 @@ investigation extension, not an agent default.
 - [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
   rejects generic SQL tools in the context server.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) should carry
-  database evidence nodes, edges, and redaction refs only after this gate passes.
+  database evidence nodes, edges, redaction refs, and source-field policy refs
+  only after this gate passes.
 - [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md)
   should treat direct database evidence as a safety-gated extension, not a tiny
   tier requirement.
@@ -243,5 +267,6 @@ investigation extension, not an agent default.
 
 Database context is valuable, but it is not worth turning Parallax into an
 agent-controlled SQL console. The safe path is telemetry-derived DB evidence
-first, schema/metadata second, and tightly scoped read-only query templates only
-after privilege, redaction, audit, and prompt-injection gates pass.
+with explicit query-text/parameter policy first, schema/metadata second, and
+tightly scoped read-only query templates only after privilege, redaction,
+source-field, projection, audit, and prompt-injection gates pass.

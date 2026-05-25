@@ -31,17 +31,19 @@ Central rule:
 
 > No agent-visible direct database evidence claim until Tier 2 template fixtures
 > prove least privilege, RLS/view scoping, read-only runtime, parser/allowlist,
-> limits, redaction, audit, prompt-injection resistance, and failure wording.
+> limits, redaction, source-field policy, projection raw-ref denial, audit,
+> prompt-injection resistance, and failure wording.
 
 ## Current Source Snapshot
 
 | Source | Ledger consequence |
 | --- | --- |
+| [PostgreSQL 18 current documentation](https://www.postgresql.org/docs/current/) | The current docs page is PostgreSQL 18 and the site notes PostgreSQL 18.4 was released on 2026-05-14. Run manifests must record exact server version, not only the major docs version. |
 | [PostgreSQL 18 privileges](https://www.postgresql.org/docs/current/ddl-priv.html) | The connector role proof must show no owner, superuser, grant-option, DML, DDL, `MAINTAIN`, or broad schema privileges. `SELECT` alone is not enough because it can still expose sensitive rows and supports export-like paths such as `COPY TO`. |
 | [PostgreSQL 18 row security](https://www.postgresql.org/docs/current/ddl-rowsecurity.html) | RLS proof must verify positive and negative tenant/project fixtures and prove the evidence role is not a table owner, superuser, or `BYPASSRLS` role. |
 | [PostgreSQL 18 read-only transactions](https://www.postgresql.org/docs/current/sql-set-transaction.html) | Read-only transactions are required as a runtime guardrail, but they do not replace privilege proof, template parsing, RLS, output limits, or redaction. |
 | [PostgreSQL 18 SELECT](https://www.postgresql.org/docs/current/sql-select.html) | The parser must reject lock-taking reads such as `FOR UPDATE`/`FOR SHARE`, dynamic identifiers, `SELECT *`, stacked statements, and unbounded scans. |
-| [OpenTelemetry database semantic conventions](https://opentelemetry.io/docs/specs/semconv/db/database-spans/) | DB spans, operation names, summaries, row counts, errors, and latency are Tier 0 database evidence before any direct connector exists. |
+| [OpenTelemetry database semantic conventions](https://opentelemetry.io/docs/specs/semconv/db/database-spans/) | DB spans are stable unless otherwise specified; `db.query.summary` should be low-cardinality and not dynamic/sensitive, non-parameterized `db.query.text` should not be collected by default unless sanitized, and `db.query.parameter.<key>` is opt-in/development-stage. Tier 0 database evidence should prefer summaries, operation names, status codes, row counts, and errors; query text and parameters need explicit policy rows before agent projection. |
 | [OWASP SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html) | Templates must use typed parameters, allow-listed identifiers, and least privilege; free-form SQL cannot count as safe database evidence. |
 | [OWASP Top 10 for LLM Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/) | Prompt injection, sensitive information disclosure, insecure tool design, and excessive agency are direct fixture categories for database evidence. |
 | [NSA MCP security design considerations](https://www.nsa.gov/Portals/75/documents/Cybersecurity/CSI_MCP_SECURITY.pdf?ver=bmgiSbNQLP6Z_GiWtRt6bg%3D%3D) | Dynamic tool invocation, implicit trust, token/session handling, context sharing, and tool-description risk make direct DB templates stricter than ordinary evidence-bundle projection. |
@@ -59,7 +61,8 @@ Central rule:
 | `redacted_db_output` | Direct query results can pass the redaction gate. | Seeded PII/secrets in rows, parameters, errors, and plan text are absent from JSON and Markdown output. |
 | `audited_db_evidence` | Allowed and denied attempts are traceable. | Audit rows link actor, principal, investigation, template id, role, parameter hash, policy versions, bundle id, and allow/deny decision. |
 | `tier2_template_safe` | Direct read-only templates pass the full Tier 2 gate for one tested policy set. | Parser, privilege, runtime, limits, RLS/view, redaction, prompt-injection, audit, and failure-wording fixtures all pass. |
-| `agent_visible_db_evidence` | Agent-visible bundles may include direct DB evidence for the tested templates. | `tier2_template_safe` plus CLI/HTTP/MCP projection-equivalence and bundle-redaction checks pass. |
+| `projection_safe` | Agent-visible JSON and Markdown carry redaction reports, source-field policy status, missing-evidence flags, and no raw row/query/parameter dereference. | Bundle projection rows pass for the tested templates and surfaces. |
+| `agent_visible_db_evidence` | Agent-visible bundles may include direct DB evidence for the tested templates. | `tier2_template_safe` plus CLI/HTTP/MCP projection-equivalence, source-field, and bundle-redaction/projection checks pass. |
 | `claim_expired` | A prior claim is stale. | Refresh trigger fired or max age elapsed. |
 | `claim_failed` | A required fixture failed. | Any write/DDL/lock/export succeeds, any secret leaks, any scope bypass succeeds, or unsafe wording reaches a bundle. |
 
@@ -79,13 +82,16 @@ Each run stores immutable artifacts under:
 docs/research/production-database-evidence-runs/<run_id>/manifest.json
 docs/research/production-database-evidence-runs/<run_id>/template-manifests/*.yaml
 docs/research/production-database-evidence-runs/<run_id>/privilege-results.jsonl
+docs/research/production-database-evidence-runs/<run_id>/telemetry-db-span-results.jsonl
 docs/research/production-database-evidence-runs/<run_id>/rls-results.jsonl
 docs/research/production-database-evidence-runs/<run_id>/parser-results.jsonl
 docs/research/production-database-evidence-runs/<run_id>/runtime-results.jsonl
 docs/research/production-database-evidence-runs/<run_id>/limit-results.jsonl
 docs/research/production-database-evidence-runs/<run_id>/redaction-results.jsonl
+docs/research/production-database-evidence-runs/<run_id>/source-field-policy-results.jsonl
 docs/research/production-database-evidence-runs/<run_id>/prompt-injection-results.jsonl
 docs/research/production-database-evidence-runs/<run_id>/audit-results.jsonl
+docs/research/production-database-evidence-runs/<run_id>/raw-ref-manifest.jsonl
 docs/research/production-database-evidence-runs/<run_id>/bundle-projection-results.jsonl
 docs/research/production-database-evidence-runs/<run_id>/claim-ledger.jsonl
 docs/research/production-database-evidence-runs/<run_id>/hashes.sha256
@@ -113,9 +119,13 @@ comparable:
   "policies": {
     "auth_policy_version": "auth-vN",
     "redaction_policy_version": "a6-default-deny-vN",
+    "source_field_policy_version": "phase0-source-field-policy-vN",
     "template_policy_version": "db-template-vN",
     "audit_schema_version": "audit-vN",
-    "bundle_schema_version": "0.1.0"
+    "bundle_schema_version": "0.1.0",
+    "projection_schema_version": "db-evidence-projection-vN",
+    "otel_db_semconv_version": "1.41.0",
+    "raw_ref_policy": "raw_rows_query_parameters_and_plans_not_agent_visible_by_default"
   },
   "template_manifest_hashes": ["sha256:<hex>"],
   "fixture_hashes": {
@@ -140,9 +150,30 @@ Template manifest row:
   "allowed_identifiers_hash": "sha256:<hex>",
   "required_role": "parallax_evidence",
   "raw_values_allowed": false,
+  "query_text_policy": "static_template_only|sanitized_summary_only",
+  "parameter_capture_policy": "hash_only|deny_values",
+  "projection_policy": "aggregate_rows_only",
   "max_rows": 20,
   "max_bytes": 32768,
   "timeout_ms": 1000
+}
+```
+
+Telemetry DB span result row:
+
+```json
+{
+  "check": "telemetry_db_span_policy",
+  "span_id": "span_123",
+  "db_system_name": "postgresql",
+  "db_query_summary_present": true,
+  "db_query_text_present": false,
+  "db_query_text_sanitized": true,
+  "db_query_parameter_values_present": false,
+  "db_response_status_code_present": true,
+  "db_response_returned_rows_present": true,
+  "redaction_report_hash": "sha256:<hex>",
+  "result": "pass"
 }
 ```
 
@@ -219,6 +250,22 @@ Redaction result row:
 }
 ```
 
+Source-field policy result row:
+
+```json
+{
+  "check": "db_source_field_policy",
+  "source_kind": "direct_database_template|telemetry_span|synthetic_fixture|benchmark_fixture|corpus_fixture",
+  "source_field_policy_status": "pass|fail|not_applicable",
+  "source_field_policy_version": "phase0-source-field-policy-vN",
+  "source_field_policy_hash": "sha256:<hex>",
+  "denied_zone_count": 0,
+  "violation_count": 0,
+  "not_applicable_reason": "direct telemetry/template source without mixed eval/corpus source rows",
+  "result": "pass"
+}
+```
+
 Prompt-injection result row:
 
 ```json
@@ -257,8 +304,13 @@ Bundle projection row:
   "json_hash": "sha256:<hex>",
   "markdown_hash": "sha256:<hex>",
   "redaction_report_present": true,
+  "source_field_policy_status": "pass|fail|not_applicable",
   "missing_evidence_on_denial": true,
   "unsafe_raw_ref_exposed": false,
+  "raw_ref_dereferenced": false,
+  "raw_row_values_visible": false,
+  "query_parameter_values_visible": false,
+  "plan_text_visible": false,
   "result": "pass"
 }
 ```
@@ -288,8 +340,17 @@ Claim ledger row:
   `BYPASSRLS`, or can see negative-tenant/project rows.
 - No raw row exposure by default. Query output must be aggregated, bounded,
   redacted, and represented with a redaction report.
+- No `db.query.parameter.<key>` values or unsanitized `db.query.text` in
+  agent-visible bundles by default. Tier 0 DB telemetry claims must record
+  whether query text is absent, static, sanitized, or denied.
+- Synthetic, benchmark, or corpus-derived DB evidence runs require
+  `source_field_policy_status: pass` before projection claims can pass. Direct
+  telemetry/template sources may use `not_applicable` only when no mixed
+  eval/corpus source rows are present.
 - No agent-visible DB evidence unless missing, denied, or unsafe data is
   explicitly represented as `db_evidence_missing`.
+- Agent-visible projections must not dereference raw row, raw query, raw
+  parameter, plan-text, transcript, or incident-note refs by default.
 - DB evidence can support or contradict hypotheses; it does not become a root
   cause by itself.
 - A pass is scoped to the database system/version, role, templates, policies,
@@ -302,8 +363,10 @@ Mark the claim `claim_expired` and rerun when any of these changes:
 - PostgreSQL version, privilege behavior, RLS policy behavior, transaction
   behavior, extension set, or supported database engine.
 - Template parser, template manifests, identifier allowlists, role/grants,
-  views/RLS policies, redaction policy, auth policy, audit schema, bundle
-  schema, or agent surface.
+  views/RLS policies, redaction policy, source-field policy, auth policy, audit
+  schema, bundle schema, projection schema, or agent surface.
+- OpenTelemetry DB semantic conventions, database query-text/parameter capture
+  guidance, or instrumentation stability mode changes.
 - OWASP LLM, OWASP SQL injection, MCP, or NSA-style agent-tooling guidance that
   materially changes the threat model.
 - Any seeded secret/PII canary, prompt-injection case, or negative-scope case is
@@ -337,6 +400,8 @@ Avoid:
 - "Free-form SQL for agents."
 - "Direct root-cause analysis from database rows."
 - "Production database access is enabled by default."
+- "Safe DB query text/parameters" without query-text, parameter, redaction, and
+  projection rows.
 
 ## Relationship To Other Research
 
@@ -347,7 +412,7 @@ Avoid:
   every database-evidence claim.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) carries
   database evidence as bounded nodes, edges, missing-evidence flags, and
-  redaction refs only after this ledger permits the claim.
+  redaction/source-field refs only after this ledger permits the claim.
 - [Agent access surface safety ledger](agent-access-surface-safety-ledger.md)
   ensures CLI, HTTP, and MCP expose the same redacted database evidence.
 - [Deploy/change context ledger](deploy-change-context-ledger.md) supplies the
@@ -361,5 +426,6 @@ Avoid:
 
 Production database evidence is claimable only as a measured, scoped capability.
 Until this ledger is green, Parallax can use telemetry-derived database context
-and mark direct database evidence as missing; it cannot claim that agents can
-see production database evidence safely.
+with strict query-text/parameter policy and mark direct database evidence as
+missing; it cannot claim that agents can see production database evidence
+safely.
