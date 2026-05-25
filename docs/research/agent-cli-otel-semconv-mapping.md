@@ -199,6 +199,9 @@ interoperability possible; it does not replace the evidence contract.
   defines the Codex, Claude Code, Amp, and OpenCode adapter gate.
 - [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
   defines the read-only MCP context surface and projection-equivalence rule.
+- [Agent access surface safety ledger](agent-access-surface-safety-ledger.md)
+  owns claim levels for MCP client fixtures, audit spans, redaction, and
+  projection-equivalence results.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
   normalized nodes and audit edges that semconv-derived rows feed.
 - [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md)

@@ -19,6 +19,10 @@ The contract is not "three different products." It is one evidence-bundle JSON
 object, one redaction policy, one authorization model, and three transports:
 HTTP API, CLI, and MCP.
 
+Results and product-claim status should be published through the
+[Agent access surface safety ledger](agent-access-surface-safety-ledger.md),
+not inferred from this design alone.
+
 ## Current Primary Sources
 
 | Source | What matters for Parallax |
@@ -265,6 +269,9 @@ If these fail, keep CLI/API available and do not claim MCP safety.
   is the reason generic SQL tools stay out of the context server.
 - [Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md)
   defines how MCP spans and tool calls become stable Parallax audit rows.
+- [Agent access surface safety ledger](agent-access-surface-safety-ledger.md)
+  turns projection-equivalence, client, scope, redaction, output-budget,
+  negative-tool, and audit fixtures into claim levels.
 - [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md)
   keeps MCP out of the tiny tier until the bundle and safety contracts are
   strong enough.

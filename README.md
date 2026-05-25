@@ -67,6 +67,7 @@ idea becomes sharper.
 - [Agent session tracing across real tools](docs/research/agent-session-tracing-real-tools.md)
 - [CLI trace overhead and redaction](docs/research/cli-trace-overhead-and-redaction.md)
 - [Agent access surface: CLI, HTTP API, and MCP](docs/research/agent-access-surface-cli-api-mcp.md)
+- [Agent access surface safety ledger](docs/research/agent-access-surface-safety-ledger.md)
 - [Fixer component and outcome loop](docs/research/fixer-component-and-outcome-loop.md)
 - [Production database evidence access gate](docs/research/production-database-evidence-access.md)
 - [Agent observability technical review](docs/research/agent-observability-technical-review.md)

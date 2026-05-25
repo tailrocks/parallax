@@ -108,7 +108,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Redaction/privacy/agent exposure safety | [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md), [Redaction detector toolchain](redaction-detector-toolchain.md), [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md), [Production database evidence access gate](production-database-evidence-access.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md), [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md), [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) |
 | Evidence bundle and open schema | [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md), [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md), [Bundle-value evaluation](bundle-value-evaluation.md), [Bundle-value seed corpus](bundle-value-seed-corpus.md), [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md), [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md), [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md) |
 | Core architecture | [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Technical implementation concept](technical-implementation-concept.md) |
-| CLI/API/MCP philosophy | [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md), [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md), [Technical implementation concept](technical-implementation-concept.md) |
+| CLI/API/MCP philosophy | [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md), [Agent access surface safety ledger](agent-access-surface-safety-ledger.md), [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md), [Technical implementation concept](technical-implementation-concept.md) |
 | Critical strategic questions | [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md), this document |
 | Final implementation blueprint | [Technical implementation concept](technical-implementation-concept.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md) |
 
@@ -209,7 +209,9 @@ Technical proof gates:
     [Turso metadata production readiness](turso-metadata-production-readiness.md).
 13. CLI/HTTP/MCP projection equivalence and read-only MCP safety, specified
     further in
-    [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md).
+    [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
+    and made claimable through the
+    [Agent access surface safety ledger](agent-access-surface-safety-ledger.md).
 14. Production database evidence access safety, specified further in
     [Production database evidence access gate](production-database-evidence-access.md).
 15. OTLP receiver conformance and direct-SDK/Collector/Rotel normalization

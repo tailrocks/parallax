@@ -152,6 +152,8 @@ Related research:
 - [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md)
 - [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
 - [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md)
+- [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
+- [Agent access surface safety ledger](agent-access-surface-safety-ledger.md)
 - [Agent observability technical review](agent-observability-technical-review.md)
 - [Strategic verdict and research coverage](strategic-verdict-and-research-coverage.md)
 - [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md)

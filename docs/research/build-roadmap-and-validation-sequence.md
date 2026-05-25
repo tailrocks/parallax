@@ -184,6 +184,9 @@ Build only enough to generate the bundle automatically and repeatably:
   OTLP-native product wording.
 - [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
   — the focused answer to the CLI-versus-MCP access-surface question.
+- [Agent access surface safety ledger](agent-access-surface-safety-ledger.md)
+  — the claim-level contract for CLI/HTTP/MCP projection equivalence and
+  read-only MCP safety.
 - [Production database evidence access gate](production-database-evidence-access.md)
   — the safety gate before direct production database evidence enters bundles.
 - [Technical implementation concept](technical-implementation-concept.md) — the
