@@ -2116,6 +2116,59 @@ bench/s3/run-s3-stack.sh down
 Caveat: warm-ish latency noise; the *counts and bytes* are the result. 1M-span
 single-node smoke; at-scale selective-cold egress owed to the sized harness.
 
+### Run 56 — 2026-05-25 — Q6 composite evidence-bundle re-verified (the core verdict pillar)
+
+**Pass target.** Rotate off object-store onto the **single most load-bearing claim**:
+"Parallax's anchored evidence-bundle hot path is **not latency-bound** on either
+engine." Last measured Run 16 (~pass 40); re-verify the composite Q6 (= Q1 + Q2 + Q3
+for one anchor) against the live containers to confirm it still reproduces.
+
+**Environment.** Main `bench/compose.yml` stack, local disk. GreptimeDB `v1.0.2`
+(`0ef5451`), ClickHouse `v26.5.1.882` (`5b96a8d8`). Versions re-pinned this pass —
+latest, no bump. Warm, min-of-7. Tables: spans/spans_idx (1M), logs (214k),
+error_events (2,226). **Anchor:** `trace_id=3fb2d84c0a2032fa7681cde05c2051e9`,
+`project=parallax`, `fingerprint=fp-000`, `release=v1.7.0` (prev `v1.6.0`).
+
+**Correctness parity (Q1 bundle): PASS** — both return 14 spans + 3 logs + 1 error.
+
+**Measured (warm, min of 7):**
+
+| Sub-query | ClickHouse | GreptimeDB | mechanism |
+| --- | --- | --- | --- |
+| Q1 trace_context (UNION spans+logs+errors by `trace_id`) | **5 ms** | **21 ms** | GreptimeDB dominated by the `spans_idx` inverted-index `trace_id` lookup floor; CH by `ORDER BY (trace_id,ts)` sparse-index seek |
+| Q2 issue_context (`min/max/count` by project+fingerprint) | 2 ms | 3 ms | small keyed agg on error_events — fast on both |
+| Q3 release_regression (`NOT IN` anti-join across releases) | 3 ms | 6 ms | sub-query anti-join on 2.2k rows — fast on both |
+| **Q6 composite (Q1+Q2+Q3)** | **~10 ms** | **~30 ms** | — |
+
+**Verdict.** **Q6 reproduces — no drift.** Run 16 was CH 10 ms / GT 33 ms; Run 56 is
+CH ~10 ms / GT ~30 ms. Both are **far under the 300 ms interactive gate**
+(`storage-benchmark-prototype.md`), so the **"anchored evidence-bundle not
+latency-bound on either" pillar HOLDS** — re-verified at current versions. The ~3×
+CH/GT ratio also holds, and the source is isolated: it is **entirely Q1's `trace_id`
+retrieval floor** (CH sort-key seek 5 ms vs GreptimeDB inverted-index ~21 ms — the
+same fixed inverted-lookup floor seen in Runs 1/6/50), **not** the correlation/assembly
+itself — Q2+Q3 (the join/aggregate "bundle assembly" work) are ~tie and tiny on both
+(2–3 ms vs 3–6 ms). So for Parallax the dominant evidence-bundle query is decided by
+anchor-retrieval latency, and both deliver it instantly; the correlation join is not a
+differentiator (consistent with Run 2/Run 30 EXPLAIN: both prune the anchor before
+joining). Status: **confirmed, stable across ~16 runs.**
+
+**Reproduce (copy-paste).**
+
+```bash
+T=3fb2d84c0a2032fa7681cde05c2051e9
+# ClickHouse Q1/Q2/Q3 (warm, --time, FORMAT Null)
+docker exec parallax-bench-clickhouse-1 clickhouse-client --time -q "SELECT 'span' k,span_id,CAST(duration_ms AS String) v,status m FROM spans WHERE trace_id='$T' UNION ALL SELECT 'log',span_id,level,message FROM logs WHERE trace_id='$T' UNION ALL SELECT 'error',span_id,error_type,message FROM error_events WHERE trace_id='$T' FORMAT Null"
+docker exec parallax-bench-clickhouse-1 clickhouse-client --time -q "SELECT min(ts),max(ts),count() FROM error_events WHERE project='parallax' AND fingerprint='fp-000' FORMAT Null"
+docker exec parallax-bench-clickhouse-1 clickhouse-client --time -q "SELECT fingerprint FROM error_events WHERE project='parallax' AND release='v1.7.0' AND fingerprint NOT IN (SELECT fingerprint FROM error_events WHERE project='parallax' AND release='v1.6.0') GROUP BY fingerprint FORMAT Null"
+# GreptimeDB: same SQL via /v1/sql (spans_idx for Q1), read execution_time_ms
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=SELECT 'span' AS k,span_id,CAST(duration_ms AS STRING) AS v,status AS m FROM spans_idx WHERE trace_id='$T' UNION ALL SELECT 'log',span_id,level,message FROM logs WHERE trace_id='$T' UNION ALL SELECT 'error',span_id,error_type,message FROM error_events WHERE trace_id='$T'"
+```
+
+Caveat: warm cache-resident smoke (≤1M rows); these are minimum-latency floors, not
+at-scale. The *not-latency-bound* conclusion is robust at this scale; cold GB–TB is the
+harness's job.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
