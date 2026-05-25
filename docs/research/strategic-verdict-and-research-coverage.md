@@ -90,7 +90,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Market and product thesis | [Project thesis](project-thesis.md), [Market landscape](market-landscape.md), [Open self-hosted competitor watch](open-self-hosted-competitor-watch.md), [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md) |
 | Evaluation lens and benchmark methodology | [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md), [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md), [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Messaging and ingestion layer](messaging-and-ingestion-layer.md) |
 | Language/runtime filter and Rust preference | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md), [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md), [Technical implementation concept](technical-implementation-concept.md) |
-| Messaging/streaming | [Messaging and ingestion layer](messaging-and-ingestion-layer.md) |
+| Messaging/streaming | [Messaging and ingestion layer](messaging-and-ingestion-layer.md), [Ingest log replay and backpressure gate](ingest-log-replay-and-backpressure-gate.md) |
 | Unified observability storage | [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md) |
 | Metadata store | [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md), [Turso metadata production readiness](turso-metadata-production-readiness.md), [Technical implementation concept](technical-implementation-concept.md) |
 | OpenTelemetry | [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md) |
@@ -132,7 +132,9 @@ The research validates direction, not performance claims. These must be tested:
 1. GreptimeDB ingest-to-queryable freshness for mixed logs/traces/metrics/errors.
 2. Evidence-bundle query latency under concurrent ingest.
 3. GreptimeDB versus ClickHouse storage size and object-storage cost.
-4. Iggy replay and backpressure behavior versus local WAL and NATS/Redpanda.
+4. Iggy replay and backpressure behavior versus local WAL and NATS/Redpanda,
+   specified further in
+   [Ingest log replay and backpressure gate](ingest-log-replay-and-backpressure-gate.md).
 5. Sentry envelope compatibility across real SDKs, starting with the
    [Sentry SDK fixture gate](sentry-sdk-fixture-compatibility.md).
 6. Rust stacktrace grouping stability across release/debug-info variants,

@@ -40,6 +40,10 @@ raw accepted telemetry is append-only, idempotent, replayable, and processor
 agnostic. The first implementation can be a local WAL. Iggy can replace that WAL
 when the product actually needs a broker.
 
+The concrete replay, backpressure, durability-mode, and fault-test gate for this
+decision is specified in
+[Ingest log replay and backpressure gate](ingest-log-replay-and-backpressure-gate.md).
+
 ## What The Stream Layer Must Do
 
 The stream is not a generic "Kafka because observability" component. It earns

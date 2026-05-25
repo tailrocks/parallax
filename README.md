@@ -37,6 +37,7 @@ idea becomes sharper.
 - [Metadata store benchmark plan and prototype](docs/research/metadata-store-benchmark-plan.md)
 - [Turso metadata production readiness](docs/research/turso-metadata-production-readiness.md)
 - [Messaging and ingestion layer](docs/research/messaging-and-ingestion-layer.md)
+- [Ingest log replay and backpressure gate](docs/research/ingest-log-replay-and-backpressure-gate.md)
 - [Rust data collection and instrumentation](docs/research/rust-data-collection-and-instrumentation.md)
 - [Rust stacktrace grouping and symbolication](docs/research/rust-stacktrace-grouping-and-symbolication.md)
 - [Frontend collection and cross-tier correlation](docs/research/frontend-collection-and-cross-tier-correlation.md)

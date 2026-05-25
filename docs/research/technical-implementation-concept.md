@@ -138,6 +138,7 @@ Related research:
 - [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md)
 - [Turso metadata production readiness](turso-metadata-production-readiness.md)
 - [Messaging and ingestion layer](messaging-and-ingestion-layer.md)
+- [Ingest log replay and backpressure gate](ingest-log-replay-and-backpressure-gate.md)
 - [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
 - [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md)
 - [Flaky test investigation and replay](flaky-test-investigation-and-replay.md)
@@ -669,7 +670,8 @@ candidate versions:
 
 ### Stream
 
-- local WAL versus Iggy.
+- local WAL versus Iggy, with the replay/backpressure gate in
+  [Ingest log replay and backpressure gate](ingest-log-replay-and-backpressure-gate.md).
 - producer ack latency and crash durability.
 - replay throughput.
 - worker restart and consumer group behavior.
