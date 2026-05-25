@@ -45,6 +45,7 @@ Sources:
 - [Turso libSQL overview](https://docs.turso.tech/libsql)
 - [Turso database export](https://docs.turso.tech/cli/db/export)
 - [Turso point-in-time recovery](https://docs.turso.tech/features/point-in-time-recovery)
+- [Turso metadata production readiness](turso-metadata-production-readiness.md)
 - [PostgreSQL pgbench](https://www.postgresql.org/docs/current/pgbench.html)
 - [PostgreSQL concurrency control](https://www.postgresql.org/docs/current/mvcc.html)
 - [PostgreSQL pg_dump](https://www.postgresql.org/docs/current/app-pgdump.html)
@@ -59,6 +60,12 @@ This benchmark should not ask whether Turso can store high-volume telemetry. It
 should ask whether Turso is good enough for product state and audit records while
 keeping Parallax simpler and more Rust-native than a mandatory Postgres
 deployment.
+
+The focused production-readiness interpretation is in
+[Turso metadata production readiness](turso-metadata-production-readiness.md).
+That note separates local embedded Turso, optional Turso Sync/Cloud behavior,
+and Postgres fallback so the benchmark does not import cloud guarantees into the
+self-hosted tiny profile by accident.
 
 ## Candidate Roles
 
@@ -354,6 +361,11 @@ prototype must run destructive checks in disposable temp directories/containers:
 | Backup/restore | Use local file copy where safe plus Turso export/PITR path when using Turso Cloud. Verify row counts and checksums. | Use `pg_dump`/`pg_restore`; verify row counts and checksums. |
 | Migration rollback | Fail a migration halfway and confirm old API can still read or cleanly abort. | Same; include `CREATE INDEX CONCURRENTLY` path. |
 | Turso-to-Postgres fallback | Export logical rows and import into Postgres adapter; run all Q queries unchanged through trait. | N/A, target side. |
+
+Additional Turso-specific gates are defined in
+[Turso metadata production readiness](turso-metadata-production-readiness.md):
+MVCC conflict retries, CDC/MVCC incompatibility, sync last-push-wins behavior,
+checkpoint policy, Cloud PITR restore gaps, and production fallback triggers.
 
 Invariants:
 

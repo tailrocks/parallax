@@ -92,7 +92,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Language/runtime filter and Rust preference | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md), [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md), [Technical implementation concept](technical-implementation-concept.md) |
 | Messaging/streaming | [Messaging and ingestion layer](messaging-and-ingestion-layer.md) |
 | Unified observability storage | [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md) |
-| Metadata store | [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md), [Technical implementation concept](technical-implementation-concept.md) |
+| Metadata store | [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md), [Turso metadata production readiness](turso-metadata-production-readiness.md), [Technical implementation concept](technical-implementation-concept.md) |
 | OpenTelemetry | [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md) |
 | Sentry-compatible ingestion | [Sentry-compatible ingestion](sentry-compatible-ingestion.md), [Sentry SDK fixture compatibility gate](sentry-sdk-fixture-compatibility.md) |
 | Collection method and eBPF tradeoff | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md) |
@@ -148,7 +148,8 @@ The research validates direction, not performance claims. These must be tested:
     OpenCode runs.
 11. Turso correctness, backup/restore, concurrency, migration, and fallback
     behavior for metadata, agent session state, CLI invocation state, outcomes,
-    and audit records.
+    and audit records, specified further in
+    [Turso metadata production readiness](turso-metadata-production-readiness.md).
 
 ## First Prototype Gate
 

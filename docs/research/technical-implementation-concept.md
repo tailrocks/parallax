@@ -136,6 +136,7 @@ Related research:
 - [Self-hosted observability architecture](self-hosted-observability-architecture.md)
 - [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md)
 - [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md)
+- [Turso metadata production readiness](turso-metadata-production-readiness.md)
 - [Messaging and ingestion layer](messaging-and-ingestion-layer.md)
 - [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
 - [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md)
@@ -154,13 +155,21 @@ Metadata-store source:
 Use the `tursodatabase/turso` engine for the embedded metadata slot, not the old
 C SQLite default. As of 2026-05 Turso Database is still pre-1.0 (latest stable
 `v0.6.1`, 2026-05-22) and the repository still carries an explicit beta warning;
-replication and backup/restore are not yet documented, and the team states it
-does not yet meet SQLite-level reliability. This is an operator-chosen default,
-not a maturity claim: Parallax must pair it with its own backup path and the
-[metadata-store benchmark](metadata-store-benchmark-plan.md) before relying on it
-for large production installs, and Postgres remains the scale-out fallback the
-moment Turso fails those gates. Treat the metadata slot as the most likely place
-the named stack changes under benchmarking.
+Turso Cloud has separate documented durability, PITR, export, and sync behavior,
+but those managed-cloud guarantees do not prove the embedded local store is safe
+under Parallax crash, backup, migration, and audit workloads. This is an
+operator-chosen default, not a maturity claim: Parallax must pair it with its
+own backup path and the [metadata-store benchmark](metadata-store-benchmark-plan.md)
+before relying on it for large production installs, and Postgres remains the
+scale-out fallback the moment Turso fails those gates. Treat the metadata slot
+as the most likely place the named stack changes under benchmarking.
+
+The current Turso-specific production gate is stricter than "it runs locally":
+[Turso metadata production readiness](turso-metadata-production-readiness.md)
+separates local embedded Turso from Turso Sync/Cloud behavior, requires MVCC
+conflict/retry tests, treats CDC and MVCC as mutually exclusive for the audit
+path, and keeps Postgres as an active fallback until backup/restore and
+migration rollback are proven.
 
 ## Why This Is The Right First System
 

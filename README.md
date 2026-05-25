@@ -35,6 +35,7 @@ idea becomes sharper.
 - [Storage benchmark prototype (runnable)](docs/research/storage-benchmark-prototype.md)
 - [Retention cost model](docs/research/retention-cost-model.md)
 - [Metadata store benchmark plan and prototype](docs/research/metadata-store-benchmark-plan.md)
+- [Turso metadata production readiness](docs/research/turso-metadata-production-readiness.md)
 - [Messaging and ingestion layer](docs/research/messaging-and-ingestion-layer.md)
 - [Rust data collection and instrumentation](docs/research/rust-data-collection-and-instrumentation.md)
 - [Rust stacktrace grouping and symbolication](docs/research/rust-stacktrace-grouping-and-symbolication.md)
