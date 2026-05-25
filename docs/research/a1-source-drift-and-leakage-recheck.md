@@ -21,27 +21,31 @@ The concrete full-row retrieval and hashing workflow is specified in
 
 ## Verdict
 
-No drift was found in the five already-pinned source SHAs or row counts on
-2026-05-25. The weak claim was not freshness; it was source governance.
+No drift was found in the covered pinned source SHAs or row counts on
+2026-05-25. A same-day follow-up API recheck again found the same SWE-bench-Live
+and Nebius dataset set, the same source SHAs, the same split counts, and
+`first-rows.truncated=true` for each checked preview. The weak claim was not
+freshness; it was source governance.
 
 The A1 source rule is now:
 
-> Treat each public dataset as a versioned task source with an explicit role.
-> Hugging Face `first-rows` previews are useful for schema inspection, but they
-> are not sufficient row-hash evidence when `truncated=true`. Selected task rows
-> need full-row fetches from the pinned dataset revision before field policy,
-> redaction, and agent-visible projection hashes are computed.
+> Treat each public dataset as a versioned task source with an explicit role,
+> license, visibility/gating state, and exact revision. Hugging Face `first-rows`
+> previews are useful for schema inspection, but they are not sufficient row-hash
+> evidence when `truncated=true`. Selected task rows need full-row fetches from
+> the pinned dataset revision before field policy, redaction, and agent-visible
+> projection hashes are computed.
 
 ## Current Source Snapshot
 
 | Source | Current API state | A1 source role |
 | --- | --- | --- |
-| [SWE-bench-Live/MultiLang](https://huggingface.co/datasets/SWE-bench-Live/MultiLang) | SHA `608f7ae9ab8ea1f9f0d030fe04562cf6bd1a0c8b`; last modified `2026-05-16T02:18:12Z`; 743 rows across C 37, C++ 74, Go 138, JS 93, Rust 94, Java 109, TS 111, C# 87; `partial=false`; `first-rows` returned `truncated=true`. | `seed_candidate`, especially Rust and fresh multilingual slices. |
-| [SWE-bench-Live/OS-bench](https://huggingface.co/datasets/SWE-bench-Live/OS-bench) | SHA `53ccce58d8ca4d1273755658d68d4643afadb7de`; last modified `2026-05-23T02:25:29Z`; 126 rows in `windows2linux`, 0 rows in `linux2windows`; `partial=false`; `first-rows` returned `truncated=true`. | `supplemental_cli_platform`; record the zero-row split. |
-| [SWE-bench-Live/Windows](https://huggingface.co/datasets/SWE-bench-Live/Windows) | SHA `ac8b120eaf36957da1884dde9f71fd28ed632487`; last modified `2026-05-14T14:42:33Z`; 61 `test` rows; `partial=false`; `first-rows` returned `truncated=true`. | `supplemental_cli_platform`; not production telemetry. |
-| [SWE-bench-Live/SWE-bench-Live](https://huggingface.co/datasets/SWE-bench-Live/SWE-bench-Live) | SHA `a637bd46829f3132e12938c8a0ca93173a977b8e`; last modified `2025-09-18T07:36:47Z`; 3,688 rows across `test` 1000, `lite` 300, `verified` 500, `full` 1888; MIT; public; `first-rows` returned `truncated=true`. | `harness_shakeout` or Python-only supplement; not the Rust-first default seed. |
-| [nebius/SWE-rebench-V2](https://huggingface.co/datasets/nebius/SWE-rebench-V2) | SHA `475dd5e8703bb5fb22dd3c60b5d038b019eba1e0`; last modified `2026-05-12T14:00:30Z`; 32,079 train rows; `partial=false`; `first-rows` returned `truncated=true`. | `expansion_only` after inspected seed tasks. |
-| [nebius/SWE-rebench-V2-PRs](https://huggingface.co/datasets/nebius/SWE-rebench-V2-PRs) | SHA `40faf2c1bb160de625f3c3270ac9d62ea45f3f9c`; last modified `2026-03-03T09:41:05Z`; 126,300 train rows; `partial=false`; `first-rows` returned `truncated=true`; preview schema includes `meta.llm_metadata`. | `expansion_only_high_risk`; do not use as a seed source. |
+| [SWE-bench-Live/MultiLang](https://huggingface.co/datasets/SWE-bench-Live/MultiLang) | SHA `608f7ae9ab8ea1f9f0d030fe04562cf6bd1a0c8b`; last modified `2026-05-16T02:18:12Z`; license tag `mit`; `private=false`, `disabled=false`, `gated=false`; 743 rows across C 37, C++ 74, Go 138, JS 93, Rust 94, Java 109, TS 111, C# 87; `partial=false`; `first-rows` returned `truncated=true`. | `seed_candidate`, especially Rust and fresh multilingual slices. |
+| [SWE-bench-Live/OS-bench](https://huggingface.co/datasets/SWE-bench-Live/OS-bench) | SHA `53ccce58d8ca4d1273755658d68d4643afadb7de`; last modified `2026-05-23T02:25:29Z`; license tag `cc-by-4.0`; `private=false`, `disabled=false`, `gated=false`; 126 rows in `windows2linux`, 0 rows in `linux2windows`; `partial=false`; `first-rows` returned `truncated=true`. | `supplemental_cli_platform`; record the zero-row split and license separately from MIT seed sources. |
+| [SWE-bench-Live/Windows](https://huggingface.co/datasets/SWE-bench-Live/Windows) | SHA `ac8b120eaf36957da1884dde9f71fd28ed632487`; last modified `2026-05-14T14:42:33Z`; license tag `mit`; `private=false`, `disabled=false`, `gated=false`; 61 `test` rows; `partial=false`; `first-rows` returned `truncated=true`. | `supplemental_cli_platform`; not production telemetry. |
+| [SWE-bench-Live/SWE-bench-Live](https://huggingface.co/datasets/SWE-bench-Live/SWE-bench-Live) | SHA `a637bd46829f3132e12938c8a0ca93173a977b8e`; last modified `2025-09-18T07:36:47Z`; license tag `mit`; `private=false`, `disabled=false`, `gated=false`; 3,688 rows across `test` 1000, `lite` 300, `verified` 500, `full` 1888; `first-rows` returned `truncated=true`. | `harness_shakeout` or Python-only supplement; not the Rust-first default seed. |
+| [nebius/SWE-rebench-V2](https://huggingface.co/datasets/nebius/SWE-rebench-V2) | SHA `475dd5e8703bb5fb22dd3c60b5d038b019eba1e0`; last modified `2026-05-12T14:00:30Z`; license tag `cc-by-4.0`; `private=false`, `disabled=false`, `gated=false`; 32,079 train rows; `partial=false`; `first-rows` returned `truncated=true`. | `expansion_only` after inspected seed tasks; keep license and generated-source status visible. |
+| [nebius/SWE-rebench-V2-PRs](https://huggingface.co/datasets/nebius/SWE-rebench-V2-PRs) | SHA `40faf2c1bb160de625f3c3270ac9d62ea45f3f9c`; last modified `2026-03-03T09:41:05Z`; license tag `cc-by-4.0`; `private=false`, `disabled=false`, `gated=false`; 126,300 train rows; `partial=false`; `first-rows` returned `truncated=true`; preview schema includes `meta.llm_metadata`. | `expansion_only_high_risk`; do not use as a seed source. |
 
 The current [SWE-bench-Live org API](https://huggingface.co/api/datasets?author=SWE-bench-Live&search=SWE-bench-Live)
 lists only the four SWE-bench-Live datasets above. The current Nebius search
@@ -86,6 +90,13 @@ record:
   "source_role": "seed_candidate",
   "hf_dataset_sha": "608f7ae9ab8ea1f9f0d030fe04562cf6bd1a0c8b",
   "hf_last_modified": "2026-05-16T02:18:12Z",
+  "source_license": "mit",
+  "source_visibility": {
+    "private": false,
+    "gated": false,
+    "disabled": false
+  },
+  "hub_tags": ["license:mit", "size_categories:n<1K", "format:parquet"],
   "datasets_server_size_checked_at": "2026-05-25T00:00:00Z",
   "datasets_server_size_partial": false,
   "row_count": 743,
@@ -123,6 +134,7 @@ Recheck this note before using it if:
 
 - any dataset SHA, license tag, privacy flag, row count, split count, or feature
   list changes;
+- any source becomes gated, private, disabled, deleted, or re-licensed;
 - Hugging Face `first-rows` behavior changes or stops reporting truncation for
   a source used by A1;
 - A1 selects a new task source or a new split not covered here;

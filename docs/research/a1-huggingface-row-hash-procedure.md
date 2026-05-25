@@ -129,6 +129,13 @@ Add these fields to `source.json` for Hugging Face task rows:
 ```json
 {
   "selected_row_fetch_method": "hf_revision_load_dataset",
+  "source_license": "mit",
+  "source_visibility": {
+    "private": false,
+    "gated": false,
+    "disabled": false
+  },
+  "hub_tags": ["license:mit", "size_categories:n<1K", "format:parquet"],
   "selected_row_fetch_ref": {
     "library": "datasets",
     "library_version": "x.y.z",

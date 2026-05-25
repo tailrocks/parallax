@@ -211,6 +211,13 @@ as durable prose; exact model IDs live here because they change over time.
       "hf_dataset_sha": "608f7ae9ab8ea1f9f0d030fe04562cf6bd1a0c8b",
       "dataset_revision": "hf-revision-or-commit",
       "checked_at": "2026-05-25T00:00:00Z",
+      "source_license": "mit",
+      "source_visibility": {
+        "private": false,
+        "gated": false,
+        "disabled": false
+      },
+      "hub_tags": ["license:mit", "size_categories:n<1K", "format:parquet"],
       "row_count": 743,
       "split_counts": {"rust": 94},
       "features_hash": "sha256:<hex>",
