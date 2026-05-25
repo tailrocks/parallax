@@ -620,6 +620,57 @@ rests on the *fit* pillars (metrics-native, ingest ergonomics, cost, scaling), n
 on bundle-assembly speed. (Smoke scale; warm. The composite at `small`+ cold and
 under concurrent ingest is the prototype's to settle.)
 
+### Run 17 — 2026-05-25 — TTL eviction cost: rewrite-survivors vs whole-file drop
+
+Confirms the `retention-and-ttl.md` mechanism (pass 36) with measured numbers. Env:
+same pinned stack (GreptimeDB `v1.0.2`, ClickHouse `v26.5.1.882`), laptop smoke,
+isolated throwaway tables. Loaded one mixed part/region of 1M (CH) / 20 (GT) rows,
+half/all expired, forced eviction, read the engine's own accounting.
+
+**ClickHouse — `system.part_log` (the headline, quantified).** One mixed part (1M
+rows, half 5-days-old vs `TTL ts + INTERVAL 1 DAY`), default vs tuned table:
+
+| table | TTL event (`merge_reason`) | read_rows | result_rows | read | written |
+| --- | --- | --- | --- | --- | --- |
+| `ret_default` (default `ttl_only_drop_parts=0`) | **`TTLDeleteMerge`** | **1,000,000** | **500,000** | 114 MiB | **50 MiB** |
+| `ret_drop` (`ttl_only_drop_parts=1` + `PARTITION BY toYYYYMMDD`) | **`TTLDropMerge`** | 16,384 | **0** | 1.9 MiB | **572 B** |
+
+→ Default TTL **read the whole 1M-row part and rewrote the 500k survivors** (50 MiB
+written) just to evict the other half — measured write-amplification. Tuned dropped
+the expired *partition* whole: `read_rows`=16,384 is a single granule (metadata),
+`result_rows`=0, nothing rewritten. ClickHouse's own `merge_reason` enum names the
+two paths (`TTLDeleteMerge` = rewrite vs `TTLDropMerge` = whole-part drop) — exactly
+the pass-36 split, now numeric.
+
+**GreptimeDB — whole-SST drop + multi-stage TTL filter.** With `ttl='5s'`: insert 20
+rows → `ADMIN flush_table` → **1 SST** on disk → wait 7s (rows age out) →
+`ADMIN compact_table` → **0 SSTs** (the Parquet file physically deleted; `count(*)`=0).
+No rewritten/merged file appears — the expired SST is *dropped*, not re-emitted.
+Separately, with `ttl='1d'` + 5-days-old rows: the old rows were **never queryable**
+(`SELECT` returned only fresh rows *before* any compaction) **and never persisted to
+a durable SST** (flush of already-expired rows produced no SST), and the surviving
+fresh SST was **byte-identical** (same filename + 2877 B) before and after compaction
+— i.e. no rewrite. So GreptimeDB applies TTL at **three** points: read-path filter
+(immediate), flush (skips already-expired rows), and compaction (whole-SST physical
+drop). Only the last reclaims storage; the first two are free.
+
+**Two refinements to pass 36:**
+
+1. **ClickHouse `merge_with_ttl_timeout`=4h is a *repeat* floor, not an initial
+   delay.** The first TTL eviction fired within seconds of insert (the merge selector
+   picked it up immediately); the 4h only throttles *re-checking the same data*. So
+   "≥4h granularity" was too pessimistic — first eviction is prompt.
+2. **GreptimeDB's TTL is cheaper than even "whole-SST drop" implies**: already-expired
+   data is filtered at read and dropped at flush, so it often costs *zero* durable
+   writes — the compaction drop only handles data that aged out *after* being written.
+
+**Claim status:** pass-36 retention mechanism → **confirmed (measured)**. Default
+ClickHouse TTL = rewrite-survivors write-amp; tuned = whole-part drop; GreptimeDB =
+whole-SST drop with no rewrite. Cost-axis (#2) retention sub-cell: GreptimeDB cheap by
+default, ClickHouse cheap **iff** `PARTITION BY` time + `ttl_only_drop_parts=1`.
+(Smoke scale; the write-amp *magnitude* at production volume + sustained churn is the
+prototype's to settle.)
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

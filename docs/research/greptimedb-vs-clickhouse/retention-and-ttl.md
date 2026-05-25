@@ -149,18 +149,24 @@ directional only.
 
 ## Honest caveats
 
-- **Both are background-gated, not instant.** GreptimeDB drops at the next compaction
-  past TTL; ClickHouse at the next TTL merge (≥4h apart). Neither guarantees
-  to-the-second eviction — relevant only if Parallax has a hard compliance-delete SLA
-  (it doesn't, for telemetry).
+- **Background-gated, but the first eviction is prompt.** Both physically drop on a
+  background pass, not to-the-second. But `merge_with_ttl_timeout`=4h is a *repeat*
+  floor (re-checking the same data), **not** an initial delay — Run 17 saw ClickHouse
+  evict within seconds of insert. GreptimeDB additionally filters expired rows on the
+  **read path** immediately and drops already-expired rows at **flush**, so query
+  results never show expired data even before the compaction drop. Relevant only if
+  Parallax had a hard compliance-delete SLA (it doesn't, for telemetry).
 - **TTL MOVE (tiering) is a separate axis** from TTL DELETE and is covered in
   `caching-and-cold-warm.md` / `compression-and-cost.md`: ClickHouse `TTL … TO DISK
   's3'` moves cold parts to object storage (a rewrite/move), whereas GreptimeDB is
   object-store-native and uses the read cache instead of explicit tiering. This note
   is about *deletion*, not tiering.
-- **Not yet measured.** This is a source-confirmed mechanism teardown. A measured run
-  (load past-dated data beyond TTL, trigger compaction/merge, observe bytes
-  written/objects deleted) would quantify the write-amp gap — owed to the harness.
+- **Measured (Run 17, smoke).** ClickHouse `system.part_log`: default TTL =
+  `TTLDeleteMerge` read 1M rows / rewrote 500k survivors (50 MiB written) to evict
+  half; tuned (`ttl_only_drop_parts=1`+partition) = `TTLDropMerge`, 0 rows rewritten.
+  GreptimeDB `ttl='5s'`: 1 SST → 0 after aging + `ADMIN compact_table` (Parquet
+  deleted, no rewrite file). The mechanism is confirmed numerically; the write-amp
+  *magnitude at production volume + sustained churn* is still the prototype's to settle.
 
 ## Source / evidence
 
