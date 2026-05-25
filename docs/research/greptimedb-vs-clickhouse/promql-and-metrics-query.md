@@ -2,10 +2,11 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 44. The PromQL planning path (a GreptimeDB system-lead) **and** a
-required re-verification of the verdict's load-bearing claim that "ClickHouse has no
-PromQL." Metrics/PromQL nativeness is the verdict's #1 GreptimeDB advantage, so a
-version-drift here is decision-critical. Source + live (Run 23).
+Status: pass 44 (capability/maturity) + pass 72 (PromQL **speed** characterization, Run 44).
+The PromQL planning path (a GreptimeDB system-lead) **and** a required re-verification of the
+verdict's load-bearing claim that "ClickHouse has no PromQL." Metrics/PromQL nativeness is the
+verdict's #1 GreptimeDB advantage, so a version-drift here is decision-critical. Source + live
+(Runs 23, 24, 44).
 
 **Headline correction:** the old "ClickHouse has **no** PromQL, needs an external
 PromQL→SQL layer" is **outdated as of ClickHouse 26.x**. ClickHouse now ships
@@ -80,7 +81,16 @@ ClickHouse **has gained** PromQL, but it is experimental and off by default:
 - **Speed is still separate:** GreptimeDB's PromQL *capability* win never implied a
   *speed* win — SQL aggregation at volume still favors ClickHouse, **~2× warm** (Run 37;
   corrected from the ~10× of Run 11, which was a cold/first-run artifact — larger cold).
-  PromQL is about expressing the query, not running it fastest.
+  PromQL is about expressing the query, not running it fastest. **Run 44 makes this
+  concrete and stronger: GreptimeDB's own PromQL path is ~5× slower than its own SQL path
+  at high cardinality** (40k series: PromQL `avg by(service)` ≈590 ms vs SQL ≈120 ms vs CH
+  SQL ≈65 ms). Mechanism: the PromQL planner must `SeriesDivide`/`SeriesNormalize` (sort +
+  partition the full scan by series) before instant/range manipulation, a **near-fixed
+  ~530 ms setup** — a single-step instant eval (~535 ms) costs almost as much as a 20-step
+  range (~590 ms), proving the cost is series-normalization, not per-step. SQL's streaming
+  hash-agg skips it. So for raw metric-agg *latency*: **CH SQL > GT SQL > GT PromQL**; even
+  GreptimeDB's fastest metric path is SQL, and PromQL is the *expressiveness* tool
+  (range vectors, `rate`/`irate`, lookback), "fast enough" but never the speed leader.
 
 ## Axis consequence
 
@@ -143,6 +153,8 @@ and real (pass 45). This is the precise shape of the metrics-pillar advantage no
   `timeSeries*` table functions; settings `allow_experimental_time_series_table`
   (default 0), `allow_experimental_time_series_aggregate_functions`,
   `promql_database`/`promql_table`/`promql_evaluation_time`. Live (Run 23).
-- Empirical: `local-benchmark-results.md` Run 23; Run 3/11 (metric agg speed, separate).
+- Empirical: `local-benchmark-results.md` Run 23 (capability), Run 24 (maturity), Run 3/11/37
+  (SQL metric-agg speed), **Run 44 (native PromQL path ~5× slower than GT SQL at 40k series;
+  `SeriesNormalize` fixed-setup mechanism)**.
 - Cross-refs: `per-signal-verdict.md`, `verdict-which-to-choose.md`,
   `write-path-and-ingestion.md` (ingest side), `query-execution-engine.md` (speed).

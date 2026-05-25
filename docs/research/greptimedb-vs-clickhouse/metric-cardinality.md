@@ -88,6 +88,10 @@ High cardinality splits across axes — both true, different things:
   regardless of the storage model. So "GreptimeDB handles high cardinality better" is
   about **modeling/storage**, not **aggregation latency** — the operator hypothesis
   ("GreptimeDB fastest") still does **not** hold for metric *aggregation speed*.
+  **And it does not hold even via GreptimeDB's own PromQL path** (Run 44): the native
+  PromQL planner is ~5× slower than GreptimeDB's *own* SQL at 40k series (≈590 vs ≈120 ms),
+  because `SeriesDivide`/`SeriesNormalize` pays a near-fixed series-sort setup a streaming
+  SQL hash-agg avoids. Ordering for raw metric-agg latency: **CH SQL > GT SQL > GT PromQL**.
 
 For Parallax: if metrics carry genuinely high-cardinality labels, GreptimeDB's model
 avoids the schema-tuning cliff and is the more ergonomic, cost-stable fit; if the

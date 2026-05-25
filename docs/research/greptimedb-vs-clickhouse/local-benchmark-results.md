@@ -1347,6 +1347,53 @@ softened by trivial manual backfill); ClickHouse's MV+AggregatingMergeTree is mo
 Neither moves the verdict. Cleanup: dropped both rollups + flow/MV and the probe rows;
 both base tables back to 864000.
 
+### Run 44 — High-cardinality metric agg via GreptimeDB's NATIVE PromQL path (the twice-owed run)
+
+Closes the item Runs 11 & 37 both flagged owed: every metric-agg number so far used SQL
+`GROUP BY` (ClickHouse's home turf); none exercised **GreptimeDB's native PromQL planner**
+— the verdict's actual #1 metrics pillar. Question: does the PromQL path deliver a *speed*
+benefit at high cardinality, or is it purely capability? Env: same containers, `metrics_hc`
+(8M rows, **40 svc × 1000 inst = 40k series**, ~100 min span, `value` FIELD). All warm
+(resident ~5 h). GT via `TQL EVAL`; result sizes verified equal (800 points = 40 svc × 20
+steps). Same-session re-measure of the SQL bars for a self-consistent comparison.
+
+| Path | Query | Warm (min of 3) |
+| --- | --- | --- |
+| **ClickHouse SQL** | `avg(value) … GROUP BY service, 5-min bucket` | **~62–78 ms** |
+| **GreptimeDB SQL** | same (`date_bin('5 minutes')`) | **~120 ms** (≈ Run 37's 107) |
+| **GreptimeDB PromQL** | `TQL EVAL (…,'5m') avg by (service) (metrics_hc)` (20 steps) | **~580–647 ms** |
+| GreptimeDB PromQL, **single instant** | `TQL EVAL (t,t,'5m') avg by (service) (…)` (1 step) | **~528–545 ms** |
+| GreptimeDB PromQL, **rate()** | `… avg by (service) (rate(metrics_hc[5m]))` | **~661–693 ms** |
+
+**Finding — GreptimeDB's own PromQL path is ~5× slower than its own SQL path** (and ~9× the
+CH SQL bar) at high cardinality. The mechanism is the **kicker**: the **single-step instant
+eval (~535 ms) is nearly as expensive as the full 20-step range (~590 ms)** → the cost is
+**not** per-step; it is a **near-fixed series-normalization setup**. GreptimeDB's PromQL
+planner must `SeriesDivide`/`SeriesNormalize` — sort + partition the entire scanned input by
+series — before applying the instant/range manipulation (`promql-and-metrics-query.md`
+planner nodes). Over 40k series × 8M rows that sort/partition is the dominant ~530 ms,
+incurred once regardless of step count. The SQL path (120 ms) avoids it: a streaming
+vectorized hash-aggregation needs no per-series sort. `rate()` is the same setup + range
+extrapolation (~670 ms).
+
+**Consequence (sharpens the verdict's #1 pillar, does not flip it):** the metrics → GreptimeDB
+case is **capability/ergonomics, NOT speed — now confirmed harder**. For raw metric-aggregation
+*latency* at volume the ordering is **CH SQL (≈65 ms) > GT SQL (≈120 ms) > GT PromQL (≈590 ms)**.
+Even GreptimeDB's *fastest* metric path is SQL, not PromQL; PromQL's value is **expressiveness**
+(range vectors, `rate`/`irate`, lookback, step alignment — things SQL can't say natively), and
+it is "fast enough" (sub-second on 8M/40k-series smoke), not a speed leader. So "metrics →
+GreptimeDB" rests entirely on GA PromQL ergonomics + native multi-protocol ingest + the
+metric-engine *storage* model, never on query speed.
+
+**Honest caveats:** (1) `metrics_hc` is a **plain table** queried via PromQL, not the metric
+engine's logical→physical wide table — but the PromQL *planner* (and its `SeriesNormalize`
+cost) is identical either way; the metric engine changes *storage/ingest* layout, not this
+query path (`metric-cardinality.md`). (2) ClickHouse's experimental PromQL (`TimeSeries` engine)
+can't be compared here — it needs remote-write ingest and won't query an existing `MergeTree`
+table (Run 23/24), so the only practical CH metric-agg path is SQL. (3) Smoke scale; the
+fixed series-normalization cost should grow with series count — a cold/larger-tier run is owed
+to the harness. (4) GT first-call was 219 ms (cold/plan) vs 120 ms warm — warm used throughout.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
