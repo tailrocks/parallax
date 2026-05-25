@@ -46,6 +46,9 @@ Do not compete as a generic AI SRE over every signal. Compete as the system that
 turns production errors, traces, logs, deploys, CI runs, and repo intent into a
 bounded failure dossier an agent can safely act on.
 
+The current trigger ledger for this market is
+[Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md).
+
 ## Current Product Signals
 
 | Product / system | What exists now | Strategic implication |
@@ -82,6 +85,7 @@ Sources:
 - [Microsoft RCACopilot](https://www.microsoft.com/en-us/research/publication/automatic-root-cause-analysis-via-large-language-models-for-cloud-incidents/)
 - [Google: Debugging Incidents in Google's Distributed Systems](https://research.google/pubs/debugging-incidents-in-googles-distributed-systems/)
 - [Amazon Builders' Library: instrumenting distributed systems](https://aws.amazon.com/builders-library/instrumenting-distributed-systems-for-operational-visibility/)
+- [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md)
 
 ## What The Industry Is Really Building
 

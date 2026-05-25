@@ -23,6 +23,9 @@ A second, narrower competitor class now has its own watchlist:
 That note tracks Bugsink, Rustrak, Traceway, GoSnag, and Urgentry because they
 pressure the Sentry-compatible migration and low-ops claims from below.
 
+The current trigger-hit status for both watchlists lives in the
+[Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md).
+
 ## Current Verdict
 
 None of the three closes the Parallax wedge today, but the window is narrow.
@@ -42,8 +45,9 @@ Sentry-compatible error ingest
 
 OpenObserve is closest on storage/runtime fit. SigNoz is closest on open
 agent-native MCP. Coroot is closest on zero-code infrastructure visibility and
-AI RCA. None currently combines Sentry-envelope migration, portable evidence
-bundle/schema, and coding-agent/CLI side-effect audit.
+now has an official MCP endpoint. None currently combines Sentry-envelope
+migration, portable evidence bundle/schema, and coding-agent/CLI side-effect
+audit.
 
 ## Competitor Matrix
 
@@ -51,7 +55,7 @@ bundle/schema, and coding-agent/CLI side-effect audit.
 | --- | --- | --- | --- |
 | OpenObserve | Rust, object-storage-oriented, self-hostable observability platform with OTLP ingest, RUM/source maps, Enterprise AI SRE Agent, AI Assistant, incident/RCA workflow, and MCP/tool validation in SRE agent setup. | AI features are Enterprise-gated; current ingestion docs emphasize OTLP/log APIs/Prometheus/etc., not Sentry envelopes; no portable evidence-bundle schema or coding-agent action audit. | Very high. |
 | SigNoz | Open self-hostable MCP server, agent-native positioning, Claude Code/Codex/Cursor/Gemini integration, traces/logs/metrics/topology/deploy history through agent clients. | Go + ClickHouse stack; query/tool interface rather than deterministic evidence bundle; no Sentry envelope ingestion in current docs; no Parallax-style CLI/agent side-effect audit. | High. |
-| Coroot | Apache-2.0 OSS, eBPF zero-instrumentation, metrics/logs/traces/profiles, service map, deployment tracking, AI RCA through Enterprise or Cloud integration for Community users. | eBPF spans can be incomplete and lack app-level Rust panic/error-chain semantics; AI RCA is not purely OSS/local in Community; no Sentry migration path, portable evidence bundle, or coding-agent action audit in official docs. | Medium-high. |
+| Coroot | Apache-2.0 OSS, eBPF zero-instrumentation, metrics/logs/traces/profiles, service map, deployment tracking, official MCP endpoint, and AI RCA through Enterprise or Cloud integration for Community users. | eBPF spans can be incomplete and lack app-level Rust panic/error-chain semantics; AI RCA is not purely OSS/local in Community; no Sentry migration path, portable evidence bundle, or coding-agent action audit in official docs. | High. |
 
 ## OpenObserve
 
@@ -154,6 +158,9 @@ Coroot is the strongest zero-instrumentation competitor:
 - OpenTelemetry-compatible eBPF spans for uninstrumented services.
 - Built-in inspections, SLOs, deployment tracking, cost monitoring, and
   predefined operational knowledge.
+- Official MCP endpoint that exposes topology, alerts, incidents, traces, logs,
+  metrics, and project selection to Claude Code, Cursor, Codex, and other MCP
+  clients.
 - AI-powered RCA in Enterprise, or through Coroot Cloud integration for
   Community users.
 
@@ -172,18 +179,19 @@ get a service map and RCA without changing code.
    That is not the same as fully local, open, agent-consumable evidence.
 3. **Migration and bundle gap.** Coroot is not a Sentry-compatible error
    migration path and does not expose a Parallax-style portable evidence bundle.
-4. **Agent action audit.** Coroot explains production systems; it does not
-   appear, in official docs checked here, to reconstruct coding-agent file,
-   command, test, patch, PR, and outcome chains.
+4. **MCP is now real, but action audit is still missing.** Coroot exposes
+   observability data to agents through MCP. It still does not appear, in
+   official docs checked here, to reconstruct coding-agent file, command, test,
+   patch, PR, and outcome chains.
 
 ### Watch Triggers
 
 Reopen the Parallax competitive read if Coroot:
 
-- ships official MCP/agent tools over Coroot data;
 - makes AI RCA fully local/open in Community Edition;
 - adds Sentry-compatible error ingestion and grouping;
 - adds agent action audit or fix outcome feedback;
+- makes MCP outputs citable as portable evidence bundles with redaction reports;
 - proves eBPF plus OTEL can cover enough app-level error semantics to weaken the
   need for Rust-first SDK capture.
 
@@ -237,5 +245,6 @@ Coroot:
 - [Coroot GitHub repository](https://github.com/coroot/coroot)
 - [Coroot product site](https://coroot.com/)
 - [Coroot AI RCA overview](https://docs.coroot.com/ai/overview/)
+- [Coroot MCP server](https://docs.coroot.com/mcp/overview/)
 - [Coroot eBPF-based tracing](https://docs.coroot.com/tracing/ebpf-based-tracing/)
 - [Coroot node-agent configuration](https://docs.coroot.com/configuration/coroot-node-agent)

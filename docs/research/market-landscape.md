@@ -52,7 +52,9 @@ ingestion, a deterministic evidence graph, portable bundles, CLI + read-only MCP
 and CLI/coding-agent action audit — plus the failure/fix corpus that compounds
 with use. No single competitor occupies that intersection today, but OpenObserve
 and SigNoz could close their gaps within 6–12 months, so speed matters. See
-[Verdict](verdict.md) for the GO/NO-GO decision built on this read.
+[Verdict](verdict.md) for the GO/NO-GO decision built on this read. The
+[agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md)
+tracks trigger hits and public-wording boundaries as these sources change.
 
 Sources for this update:
 
@@ -62,6 +64,7 @@ Sources for this update:
 - [SigNoz MCP server](https://signoz.io/changelog/2026-05-01-introducing-the-signoz-mcp-server-r5iwnkpxtsz88akwt6abqddn/)
 - [Sentry self-hosted vs cloud](https://sentry.io/resources/self-hosted-vs-cloud/)
 - [Grafana Assistant self-managed docs](https://grafana.com/docs/grafana-cloud/machine-learning/assistant/self-managed/)
+- [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md)
 
 ## High-Level Competitive Map
 

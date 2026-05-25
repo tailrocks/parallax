@@ -188,6 +188,9 @@ The ongoing competitor watch now has two layers:
 2. Lightweight Sentry-compatible or OTel-native challengers: Bugsink, Rustrak,
    Traceway, GoSnag, Urgentry.
 
+Current trigger-hit and drift statuses across both layers live in the
+[Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md).
+
 Reopen the Parallax wedge if any lightweight challenger combines:
 
 - Sentry SDK/envelope migration;
