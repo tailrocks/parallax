@@ -36,6 +36,7 @@ result rows and claim levels required before this becomes product wording.
 | [Codex MCP](https://developers.openai.com/codex/mcp) | Codex supports MCP servers in CLI and IDE clients, including local stdio and remote HTTP servers. Parallax can provide a read-only MCP context surface, but MCP configuration also introduces tokens, headers, and tool-call audit needs. |
 | [OpenAI agent-improvement cookbook](https://developers.openai.com/cookbook/examples/agents_sdk/agent_improvement_loop) | OpenAI's own agent-improvement loop starts from traces, adds feedback, converts expectations into evals, and produces a Codex-ready handoff. That validates Parallax's "trace -> feedback -> eval -> better agent work" loop. |
 | [Claude Code monitoring](https://code.claude.com/docs/en/monitoring-usage) | Claude Code has the strongest first-party telemetry posture: opt-in OTel metrics/logs/events and beta traces. It records sessions, tool activity, API calls, costs, tokens, commits, PRs, active time, and MCP activity. Prompt text, tool details, tool content, and raw API bodies are disabled by default and require explicit flags. Generic `OTEL_*` exporter variables are not passed to spawned subprocesses, but active tracing injects `TRACEPARENT` into Bash/PowerShell. |
+| [Claude Code CLI reference](https://code.claude.com/docs/en/cli-usage) and local `claude --help` | Current docs and local `2.1.150` help show `--output-format stream-json` for print mode and `--include-hook-events` to include hook lifecycle events in that stream. | Claude Code has a second structured adapter surface besides OTel, but it is a print-mode stream claim, not proof of full interactive session tracing or full tool-content capture. |
 | [Amp manual](https://ampcode.com/manual) | Amp exposes threads, subagents, AGENTS.md loading, MCP, execute mode, non-interactive use, streaming JSON for programmatic integration, and TypeScript plugins. The manual documents plugin events for the thread/session lifecycle and tool calls/results, and says plugins apply to both interactive `amp` sessions and `amp --execute` runs. It does not show a first-party OTel surface, so Parallax should treat Amp as a plugin-plus-streaming-JSON adapter target, not only a wrapper/import target. |
 | [OpenCode CLI](https://opencode.ai/docs/cli/) | OpenCode exposes session IDs, continuation/forking, `run --format json` raw JSON events, `session list --format json`, `export` with a `--sanitize` flag, token/cost stats, a headless `serve` HTTP API, and `acp` over nd-JSON. It also has `--thinking` and `--dangerously-skip-permissions` flags that must be recorded as sensitive capture/policy state. This is a strong import, live-adapter, and protocol target. |
 | [OpenCode plugins](https://opencode.ai/docs/plugins/) | OpenCode plugins can hook `command.executed`, `file.edited`, message, permission, session, `shell.env`, and `tool.execute.before/after` events. That makes OpenCode a strong open tool to instrument deeply without parsing terminal output, but fixture runs still need class-by-class proof that enabled plugin events were observed and normalized. |
@@ -48,7 +49,7 @@ Instead, build adapters into one normalized session schema.
 
 | Agent | Best initial adapter | Capture strength | Main gaps |
 | --- | --- | --- | --- |
-| Claude Code | Native OTel logs/events/traces into Parallax ingest. | Strongest first-party signal: sessions, tools, API requests, costs, tokens, commits, PRs, MCP, identity, and optional traces. | Traces are beta; raw prompt/tool content is intentionally off by default; subprocess telemetry needs precise handling because `TRACEPARENT` can propagate while generic OTEL exporter variables do not. |
+| Claude Code | Native OTel logs/events/traces into Parallax ingest, plus `-p --output-format stream-json --include-hook-events` as a separate non-interactive adapter. | Strongest first-party signal: sessions, tools, API requests, costs, tokens, commits, PRs, MCP, identity, optional traces, and a structured print-mode stream for scripted fixture runs. | Traces are beta; raw prompt/tool content is intentionally off by default; stream JSON is print-mode/non-interactive coverage; subprocess telemetry needs precise handling because `TRACEPARENT` can propagate while generic OTEL exporter variables do not. |
 | Codex | Hook adapter plus Parallax CLI wrapper, repo diff/hash observation, and raw transcript refs. | Strong lifecycle/tool/permission signals, session IDs, model, cwd, subagents, and MCP tool inputs. | Transcript format is not stable; hook interception is incomplete for some tool paths; no first-party OTel export in the checked docs. |
 | Amp | Plugin-event adapter plus streaming JSON adapter for execute mode, thread refs, and CLI wrapper. | Stronger than previously assumed: plugin events cover session/agent lifecycle plus tool calls/results, while streaming JSON gives a programmatic non-interactive stream. | Manual does not show native OTel; no documented `session.end`; plugin safety/version drift and event payload coverage need fixture proof; permissions are broad by default unless configured or enforced by plugins. |
 | OpenCode | `run --format json`, `export --sanitize`, plugin hooks, `serve` HTTP API, and ACP adapter. | Strong open adapter path: raw JSON events, session export/list, plugins for session/tool/file/permission events, and nd-JSON protocol mode. | Need fixture tests to prove run JSON, export JSON, plugin hooks, ACP, permission flags, thinking capture, and sanitation quality separately across versions. |
@@ -79,6 +80,28 @@ The Codex adapter must therefore report:
 - observed hook classes and normalized rows;
 - side effects seen by wrapper or repo observation but not by hooks;
 - transcript use as `raw_ref_only`, never as the stable structured source.
+
+### Claude Stream JSON Is A Separate Adapter
+
+Claude Code's OTel path remains the primary interactive capture surface, but
+current CLI docs and local help expose a structured non-interactive stream:
+`claude -p --output-format stream-json`, with `--include-hook-events` to include
+hook lifecycle events in that stream. Parallax should treat this like Amp's
+streaming JSON: useful for fixture tasks, scripted runs, and adapter validation,
+but not a substitute for the OTel claim.
+
+The Claude stream adapter must report:
+
+- exact `claude --version`, CLI reference snapshot date, and flags used;
+- whether the run used `--print`, `--output-format stream-json`,
+  `--include-hook-events`, `--include-partial-messages`, `--input-format
+  stream-json`, or `--replay-user-messages`;
+- which hook lifecycle events appeared in the stream and which OTel events/spans
+  were also present when telemetry was enabled;
+- whether prompt bodies, partial message chunks, hook payloads, and tool
+  details stayed structural, redacted, or raw-ref-only;
+- that stream support is a non-interactive adapter claim unless a separate
+  interactive capture surface proves equivalent coverage.
 
 ### Amp Plugins Are A Primary Adapter Surface
 
@@ -301,7 +324,8 @@ Fail or narrow if:
 
 1. Build a neutral `agent_session` importer and lossiness report.
 2. Implement Claude Code OTel ingest first because it is native and
-   OpenTelemetry-shaped.
+   OpenTelemetry-shaped; add the Claude stream-json adapter as a fixture and
+   non-interactive validation surface, not as a replacement for OTel.
 3. Implement Codex hook ingestion next, paired with a Parallax CLI wrapper and
    repo diff/hash capture, because Codex is already part of the Parallax
    operator workflow and exposes structured hook events.
