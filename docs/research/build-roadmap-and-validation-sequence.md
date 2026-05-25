@@ -57,7 +57,9 @@ assumption. Failing a gate sends you back, not forward.
   [user interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
   and [A2 interview evidence ledger](a2-interview-evidence-ledger.md) so the
   result is scored by past behavior, redacted evidence rows, and concrete
-  commitments, not compliments.
+  commitments, not compliments. Any budget, support, hosted, fixer, or
+  enterprise-ops signal also feeds the
+  [business model validation ledger](business-model-validation-ledger.md).
 - **Gate:** hand-bundle beats raw-dump on fix quality (A1) **and** ≥a handful of
   teams would genuinely deploy (A2). If both fail, **stop or pivot** — this is the
   cheapest NO-GO and the most valuable possible outcome to learn now.
@@ -109,7 +111,8 @@ Build only enough to generate the bundle automatically and repeatably:
 ### Phase 4 — Value capture and the feedback loop
 
 - The separate **fixer** component (PR proposals) — the commercial seam from
-  [business model](business-model-and-economics.md).
+  [business model](business-model-and-economics.md), measured through the
+  [business model validation ledger](business-model-validation-ledger.md).
 - Accepted/rejected-fix outcome capture → the failure/fix corpus (A3 moat).
 - Use the [fixer component and outcome loop](fixer-component-and-outcome-loop.md)
   contract so opened PRs are not counted as successful fixes until review,
@@ -122,6 +125,7 @@ Build only enough to generate the bundle automatically and repeatably:
 | --- | --- | --- |
 | A1 bundle value | Phase 0 (hand), re-check Phase 1 (auto) | [manual bundle + eval](bundle-value-phase0-runbook.md), days |
 | A2 real users | Phase 0 | [20 scored deployment-intent interviews](user-interview-and-deployment-intent-gate.md) plus the [redacted A2 evidence ledger](a2-interview-evidence-ledger.md) |
+| Business value capture | Phase 0 signal capture → Phase 4 conversion | [business model validation ledger](business-model-validation-ledger.md): budget, hosted, fixer, enterprise ops, support/services, conversion, and paid-pilot rows |
 | A6 redaction trust | Phase 2 | [red-team ledger](a6-redaction-red-team-ledger.md) over seeded fixtures plus real-data pilot |
 | A5 stack holds | Phase 2 | [A5 stack decision ledger](a5-stack-decision-ledger.md), rolling up storage/metadata/ingest/setup gates |
 | A4 correlation reliable | Phase 1–2 | [strong-edge prevalence on real telemetry](correlation-reliability-real-telemetry-gate.md) plus the [A4 result ledger](a4-correlation-reliability-ledger.md) |
@@ -156,6 +160,9 @@ Build only enough to generate the bundle automatically and repeatably:
   — the A2 demand-validation runbook for Phase 0.
 - [A2 interview evidence ledger](a2-interview-evidence-ledger.md) — the
   privacy-preserving public artifact that makes the A2 result auditable.
+- [Business model validation ledger](business-model-validation-ledger.md) — the
+  claim-level contract for adoption, budget, hosted, fixer, enterprise ops,
+  support/services, conversion, and paid-pilot evidence.
 - [Repo-intent value ledger](repo-intent-value-ledger.md) — the paired eval for
   whether docs, decisions, tasks, roadmap, and agent instructions improve bundle
   value without weakening runtime-only degraded mode.
@@ -204,7 +211,9 @@ Build only enough to generate the bundle automatically and repeatably:
   component detail each phase builds.
 - [Storage benchmark prototype](storage-benchmark-prototype.md),
   [retention cost model](retention-cost-model.md) — Phase 2 gates.
-- [Business model](business-model-and-economics.md) — Phase 4 value capture.
+- [Business model](business-model-and-economics.md) and
+  [business model validation ledger](business-model-validation-ledger.md) —
+  Phase 4 value capture and the result rows required before it is claimable.
 - [Fixer component and outcome loop](fixer-component-and-outcome-loop.md) —
   Phase 4 fixer boundary, outcome schema, and autonomy gates.
 

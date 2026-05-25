@@ -70,7 +70,7 @@ and "Lik" are H/M/L.
 | --- | --- | --- | --- | --- | --- |
 | Distribution failure — nobody adopts self-hosted OSS | Market | H | M | Low installs/stars/issues after launch; no inbound from non-operator teams | Lead with the painkiller (Sentry-compatible migration, one-binary tiny tier); make the [self-hosted simplicity ledger](self-hosted-simplicity-ledger.md) the launch proof; consider a hosted option later despite self-host ethos |
 | Wedge closes (OpenObserve free-tier agent / SigNoz Sentry ingest / lightweight Sentry-compatible challengers) | Market | H | M | Competitor release notes; [market-landscape](market-landscape.md), [open self-hosted competitor watch](open-self-hosted-competitor-watch.md), and [lightweight Sentry-compatible competitor watch](lightweight-sentry-compatible-competitor-watch.md) targets | Ship the *combination* fast; bank the schema/corpus before they close it; the verdict's competitive-window section |
-| No monetization path for OSS self-hosted | Business | H | M | Adoption without revenue; no one upgrades | Seams identified in [business model and economics](business-model-and-economics.md): hosting, the autonomous fixer, enterprise ops add-ons, support — none gating the open differentiator. Risk narrowed, not closed: all depend on adoption (A2/A3). |
+| No monetization path for OSS self-hosted | Business | H | M | Adoption without revenue; no one upgrades | Seams identified in [business model and economics](business-model-and-economics.md): hosting, the autonomous fixer, enterprise ops add-ons, support — none gating the open differentiator. Risk narrowed, not closed: all depend on adoption (A2/A3) and must be measured through the [business model validation ledger](business-model-validation-ledger.md). |
 | Bundle adds no fix-quality lift over raw context | Technical/Product | H | M | A1 eval shows flat delta | Pivot value to retention/cost + audit if RCA lift is weak; the engine is still useful as cheap evidence store |
 | Causality overclaim erodes trust | Product/Safety | M | M | Users catch confident-wrong root causes | Ship confidence + missing-evidence + contradictions; never assert single root cause (already the design stance) |
 | Agent blast radius — a bad autonomous change | Safety | H | L–M | Any data-mutating fix; one revert incident | Read-only context first; no production mutation in core; scoped/audited tools; [agent safety](causal-reconstruction-and-agent-safety.md) |
@@ -116,6 +116,9 @@ If two or more trigger, reopen the verdict.
 - External adoption of the open bundle schema by even one unrelated tool.
 - A1 eval showing a clear fix-quality lift on real issues.
 - A paying or sustaining channel that does not betray the self-hosted ethos.
+  This must be recorded in the
+  [business model validation ledger](business-model-validation-ledger.md), not
+  inferred from adoption alone.
 - Storage/metadata benchmarks passing on real Parallax-shaped data.
 
 ## Relationship To Other Research
@@ -158,6 +161,9 @@ If two or more trigger, reopen the verdict.
 - [A2 interview evidence ledger](a2-interview-evidence-ledger.md) — the
   redacted result artifact that keeps A2 auditable without committing raw
   private notes.
+- [Business model validation ledger](business-model-validation-ledger.md) — the
+  claim-control artifact for hosted, fixer, enterprise ops, support/services,
+  conversion, paid-pilot, and no-budget contradiction evidence.
 
 ## Bottom Line
 

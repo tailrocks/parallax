@@ -76,6 +76,7 @@ is execution and distribution, not the trend.
 
 - The **open evidence schema becomes a de facto standard** other tools/agents
   build against (the moat that compounds — [business model](business-model-and-economics.md),
+  [business model validation ledger](business-model-validation-ledger.md),
   [schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)).
 - The **failure/fix corpus** accumulates enough that Parallax's bundles measurably
   improve agent outcomes over time (the data moat — [bundle-value eval](bundle-value-evaluation.md)).
@@ -109,6 +110,9 @@ gates, and let the platform emerge from adoption — do not assert it.
 - [Risks and the bear case](risks-and-bear-case.md) — A1/A2/A3 that gate each stage.
 - [Business model](business-model-and-economics.md) — schema-as-standard and
   corpus as the platform's economic engine.
+- [Business model validation ledger](business-model-validation-ledger.md) — the
+  result rows required before hosted, fixer, enterprise ops, support/services,
+  or paid-pilot seams can be treated as validated.
 - [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
   — the concrete A3 adoption/corpus thresholds before platform claims are earned.
 - [AI-native observability](ai-native-observability-and-incident-intelligence.md)

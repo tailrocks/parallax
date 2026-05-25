@@ -51,6 +51,10 @@ Internal sources:
   puts A2 in Phase 0 before storage benchmarking.
 - [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) can use
   interview participants who consent to provide anonymized incidents.
+- [Business model validation ledger](business-model-validation-ledger.md) consumes
+  redacted budget, hosted, fixer, enterprise-ops, support/services, and
+  paid-pilot signals from these interviews without treating adoption alone as
+  revenue evidence.
 
 ## Why The Existing Gate Needs A Ledger
 

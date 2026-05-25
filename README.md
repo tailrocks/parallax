@@ -24,6 +24,7 @@ idea becomes sharper.
 - [Go / no-go verdict](docs/research/verdict.md)
 - [Risks and the bear case](docs/research/risks-and-bear-case.md)
 - [Business model and economics](docs/research/business-model-and-economics.md)
+- [Business model validation ledger](docs/research/business-model-validation-ledger.md)
 - [Repo-intent dependence](docs/research/repo-intent-dependence.md)
 - [Repo-intent value ledger](docs/research/repo-intent-value-ledger.md)
 - [User interview and deployment intent gate](docs/research/user-interview-and-deployment-intent-gate.md)

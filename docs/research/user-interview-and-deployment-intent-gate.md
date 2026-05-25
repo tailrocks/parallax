@@ -44,6 +44,9 @@ Internal sources:
 - [Business model and economics](business-model-and-economics.md) says adoption,
   not revenue, is the first metric, but the business still needs a later hosting,
   fixer, enterprise ops, support, or sponsorship seam.
+- [Business model validation ledger](business-model-validation-ledger.md) defines
+  how any budget, support, hosted, fixer, enterprise-ops, or paid-pilot signal
+  becomes a claimable business-model result.
 - [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) can reuse
   interview participants who are willing to provide real or anonymized incidents.
 - [A2 interview evidence ledger](a2-interview-evidence-ledger.md) defines the
@@ -221,6 +224,10 @@ claim is valid unless the redacted ledger and aggregate summary are committed.
   into [Bundle-value Phase 0](bundle-value-phase0-runbook.md).
 - A3 schema moat: teams willing to adopt or critique the open bundle schema are
   the first non-operator schema signal.
+- Business-model validation: any concrete budget, support, hosted, fixer,
+  enterprise-ops, or paid-pilot signal feeds the
+  [business model validation ledger](business-model-validation-ledger.md), but
+  adoption alone does not prove revenue.
 - A6 redaction: objections and constraints feed
   [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md).
 - Roadmap order: if A2 is weak, do not let storage benchmarks create false

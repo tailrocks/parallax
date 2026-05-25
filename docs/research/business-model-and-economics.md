@@ -14,6 +14,9 @@ the *product*; this asks whether there is a *business*, and how it can exist
 without betraying the operator's open-source and self-hosting ethos.
 
 It is opinionated and current (licensing models rechecked 2026-05-25).
+The companion [business model validation ledger](business-model-validation-ledger.md)
+defines the result rows and claim levels required before any of these seams can
+be called validated.
 
 ## Is The Category Company-Sized?
 
@@ -151,6 +154,9 @@ Sources: [Sentry FSL announcement](https://blog.sentry.io/introducing-the-functi
   [user interview and deployment intent gate](user-interview-and-deployment-intent-gate.md);
   A3 now has a concrete
   [schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md).
+  Payment, paid-pilot, hosted, fixer, enterprise-ops, and support claims must
+  pass through the
+  [business model validation ledger](business-model-validation-ledger.md).
 - It sharpens the boundary decision: the Parallax-stores / separate-fixer split
   is not only an architecture choice, it is the **primary value-capture seam** —
   another reason to keep that boundary clean.
@@ -164,12 +170,20 @@ Sources: [Sentry FSL announcement](https://blog.sentry.io/introducing-the-functi
   Validate that with the
   [user interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
   before treating hosting, fixer, support, or enterprise ops as real seams.
+- If interviews or conversion experiments show adoption interest without any
+  budget, payment, support, hosted, fixer, or enterprise-ops signal, record that
+  as `claim_failed` or `claim_expired` in the
+  [business model validation ledger](business-model-validation-ledger.md) and
+  reopen the bear-case monetization risk.
 
 ## Relationship To Other Research
 
 - [Verdict](verdict.md) — company-sized question and the open-wedge thesis.
 - [Risks and the bear case](risks-and-bear-case.md) — the monetization and
   distribution risks this narrows.
+- [Business model validation ledger](business-model-validation-ledger.md) — the
+  result contract and claim levels for turning plausible seams into measured
+  value-capture claims.
 - [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
   — the A2 gate that determines whether adoption beyond the operator is real.
 - [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
@@ -186,7 +200,9 @@ Sources: [Sentry FSL announcement](https://blog.sentry.io/introducing-the-functi
 There is a plausible business, but it is a slow open-source infrastructure
 business, not a fast SaaS one. License the core Apache-2.0 (CLA to keep AGPL in
 reserve), keep the evidence/agent differentiator open forever, and capture value
-through hosting, the autonomous fixer, enterprise ops add-ons, and support. The
-one fatal move would be gating the agent/evidence layer — that is the competitor
-weakness Parallax exists to exploit. Adoption, not revenue, is the metric that
-decides whether this becomes a company.
+through hosting, the autonomous fixer, enterprise ops add-ons, and support only
+after the validation ledger records specific payment or sustainability evidence.
+The one fatal move would be gating the agent/evidence layer — that is the
+competitor weakness Parallax exists to exploit. Adoption, not revenue, is the
+metric that decides whether this becomes a company, until the ledger proves a
+specific paid seam.

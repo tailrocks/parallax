@@ -228,6 +228,9 @@ storage forward before the tiny evidence engine proves value.
 
 - [Business model and economics](business-model-and-economics.md) identifies the
   fixer as a value-capture seam; this note defines the technical seam.
+- [Business model validation ledger](business-model-validation-ledger.md) defines
+  when fixer interest, paid pilots, or conversion rows are strong enough to call
+  the fixer a validated value-capture seam.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
   bundle and audit edges consumed by the fixer.
 - [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) defines
