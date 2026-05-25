@@ -112,11 +112,13 @@ Build only enough to generate the bundle automatically and repeatably:
 
 - The separate **fixer** component (PR proposals) — the commercial seam from
   [business model](business-model-and-economics.md), measured through the
-  [business model validation ledger](business-model-validation-ledger.md).
+  [fixer outcome ledger](fixer-outcome-ledger.md) before any value claim feeds
+  the [business model validation ledger](business-model-validation-ledger.md).
 - Accepted/rejected-fix outcome capture → the failure/fix corpus (A3 moat).
 - Use the [fixer component and outcome loop](fixer-component-and-outcome-loop.md)
-  contract so opened PRs are not counted as successful fixes until review,
-  validation, and recurrence evidence support that label.
+  contract and [fixer outcome ledger](fixer-outcome-ledger.md) so opened PRs are
+  not counted as successful fixes until review, validation, and recurrence
+  evidence support that label.
 - **Gate:** fixes cite evidence, record outcomes, and feed recurrence back.
 
 ## Assumption → Phase Map
@@ -216,6 +218,9 @@ Build only enough to generate the bundle automatically and repeatably:
   Phase 4 value capture and the result rows required before it is claimable.
 - [Fixer component and outcome loop](fixer-component-and-outcome-loop.md) —
   Phase 4 fixer boundary, outcome schema, and autonomy gates.
+- [Fixer outcome ledger](fixer-outcome-ledger.md) — Phase 4 result rows and
+  claim levels for bundle handoff, PR creation, CI, review, merge/revert,
+  recurrence, evidence citation, and allowed fixer wording.
 
 ## Bottom Line
 

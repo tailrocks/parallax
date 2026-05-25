@@ -351,6 +351,8 @@ Mark affected claims `claim_expired` when:
   whether agent-session evidence can become agent-visible.
 - [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)
   defines the target `agent_session`, `agent_action`, and audit edges.
+- [Fixer outcome ledger](fixer-outcome-ledger.md) consumes linked agent-session
+  rows when measuring fixer runs, PRs, checks, review, and recurrence outcomes.
 
 ## Bottom Line
 

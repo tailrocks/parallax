@@ -280,6 +280,9 @@ If a ledger is stale at a checkpoint, A3 remains unproven.
   `external_review`, `producer_integration`, and `consumer_integration` rows.
 - [Fixer component and outcome loop](fixer-component-and-outcome-loop.md)
   supplies later accepted/rejected fix outcomes.
+- [Fixer outcome ledger](fixer-outcome-ledger.md) controls when those
+  accepted/rejected/edited/reverted/recurrence rows are measured enough to feed
+  the corpus.
 
 ## Bottom Line
 

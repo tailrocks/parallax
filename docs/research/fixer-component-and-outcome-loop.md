@@ -231,6 +231,9 @@ storage forward before the tiny evidence engine proves value.
 - [Business model validation ledger](business-model-validation-ledger.md) defines
   when fixer interest, paid pilots, or conversion rows are strong enough to call
   the fixer a validated value-capture seam.
+- [Fixer outcome ledger](fixer-outcome-ledger.md) defines the dated result rows,
+  claim levels, and wording rules required before opened PRs, accepted fixes,
+  or fixer feedback loops become claimable.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
   bundle and audit edges consumed by the fixer.
 - [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) defines

@@ -102,7 +102,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Flaky-test investigation | [CI failure context MVP](ci-failure-context-mvp.md), [Flaky test investigation and replay](flaky-test-investigation-and-replay.md) |
 | Deploy/change/issue tracker context | [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md), [Deploy/change context ledger](deploy-change-context-ledger.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md), [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md) |
 | Agent and CLI execution tracing | [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md), [Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md), [Agent session tracing ledger](agent-session-tracing-ledger.md), [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md), [CLI trace safety ledger](cli-trace-safety-ledger.md) |
-| Fixer and outcome loop | [Fixer component and outcome loop](fixer-component-and-outcome-loop.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md), [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md) |
+| Fixer and outcome loop | [Fixer component and outcome loop](fixer-component-and-outcome-loop.md), [Fixer outcome ledger](fixer-outcome-ledger.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md), [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md) |
 | Agent-observability technical references | [Agent observability technical review](agent-observability-technical-review.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md) |
 | Frontend collection and cross-tier correlation | [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md), [Frontend capture safety ledger](frontend-capture-safety-ledger.md), [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md), [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Storage benchmark prototype](storage-benchmark-prototype.md) |
 | Redaction/privacy/agent exposure safety | [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md), [Redaction detector toolchain](redaction-detector-toolchain.md), [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md), [Production database evidence access gate](production-database-evidence-access.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md), [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md), [CLI trace safety ledger](cli-trace-safety-ledger.md), [Frontend capture safety ledger](frontend-capture-safety-ledger.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md), [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) |
@@ -241,6 +241,10 @@ Technical proof gates:
     [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md)
     and made claimable through the
     [Deploy/change context ledger](deploy-change-context-ledger.md).
+17. Separate fixer outcome quality from PR creation, specified further in
+    [Fixer component and outcome loop](fixer-component-and-outcome-loop.md)
+    and made claimable only through the
+    [Fixer outcome ledger](fixer-outcome-ledger.md).
 
 ## First Prototype Gate
 
@@ -270,7 +274,8 @@ Acceptance criteria:
 - agent output cites evidence and says "inconclusive" when evidence is weak.
 - fixer or agent PR workflows write outcome records instead of treating opened
   pull requests as successful fixes; see the
-  [fixer component and outcome loop](fixer-component-and-outcome-loop.md).
+  [fixer component and outcome loop](fixer-component-and-outcome-loop.md) and
+  [fixer outcome ledger](fixer-outcome-ledger.md).
 
 ## Final Position
 

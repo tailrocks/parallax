@@ -29,7 +29,7 @@ This ledger is a business claim-control artifact, not a pricing page.
 | [Grafana licensing](https://grafana.com/licensing/) and [Grafana Enterprise license docs](https://grafana.com/docs/grafana/latest/administration/enterprise-licensing/) | Grafana keeps an open core while selling hosted and Enterprise capabilities such as premium plugins, advanced security, reporting, RBAC, and support through a license. | Ops and governance features are legitimate paid seams when they do not gate the core evidence engine. |
 | [OpenObserve pricing](https://openobserve.ai/pricing/) and [OpenObserve enterprise features](https://openobserve.ai/docs/features/enterprise/) | OpenObserve monetizes cloud usage and enterprise/security/ops features, and also lists AI observability features in paid/enterprise contexts. | OpenObserve reinforces the ops-feature seam, but Parallax should not copy AI/evidence gating because the open agent-context layer is the wedge. |
 | [GitLab pricing](https://about.gitlab.com/pricing/) | GitLab publicly frames tiering around a buyer-based open-core model and supports GitLab.com, Self-Managed, and Dedicated offerings. | Open-core can scale, but tier boundaries need discipline; Parallax should tie paid tiers to buyer-owned ops/outcome problems, not the developer-facing evidence format. |
-| [A2 interview evidence ledger](a2-interview-evidence-ledger.md), [schema adoption/corpus ledger](a3-schema-adoption-corpus-ledger.md), and [fixer component](fixer-component-and-outcome-loop.md) | The repo already has contracts for demand evidence, schema/corpus evidence, and fixer outcome rows. | Business validation should reuse those artifacts instead of inventing a parallel founder-memory process. |
+| [A2 interview evidence ledger](a2-interview-evidence-ledger.md), [schema adoption/corpus ledger](a3-schema-adoption-corpus-ledger.md), [fixer component](fixer-component-and-outcome-loop.md), and [fixer outcome ledger](fixer-outcome-ledger.md) | The repo already has contracts for demand evidence, schema/corpus evidence, fixer boundaries, and fixer outcome rows. | Business validation should reuse those artifacts instead of inventing a parallel founder-memory process. |
 
 ## Claim Levels
 
@@ -254,8 +254,10 @@ Reopen this ledger when:
   and [A2 interview evidence ledger](a2-interview-evidence-ledger.md) provide the
   first source rows for deployment and budget evidence.
 - [Fixer component and outcome loop](fixer-component-and-outcome-loop.md)
-  defines the paid fixer seam and the outcome rows needed before it can be
-  commercialized.
+  defines the paid fixer seam.
+- [Fixer outcome ledger](fixer-outcome-ledger.md) defines the specific outcome
+  rows needed before the fixer seam can be commercialized or counted as a
+  validated value-capture claim.
 - [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
   and [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md)
   determine whether adoption/corpus gravity exists before broad business claims.

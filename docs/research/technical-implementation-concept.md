@@ -84,7 +84,9 @@ The fixer component owns repository checkout, agent orchestration, patch
 generation, test execution, and pull-request creation. Parallax records those
 actions as evidence after the fixer performs them.
 The detailed fixer request/outcome contract and autonomy gates are specified in
-[Fixer component and outcome loop](fixer-component-and-outcome-loop.md).
+[Fixer component and outcome loop](fixer-component-and-outcome-loop.md), and
+the result rows required before fixer claims become measurable are specified in
+[Fixer outcome ledger](fixer-outcome-ledger.md).
 
 Access decision:
 
