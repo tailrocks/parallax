@@ -199,7 +199,8 @@ But both could close their gap inside 6–12 months. The consequence: **the moat
 cannot be any single feature.** It must be the assets that compound with usage
 and are hard to copy from a standing start —
 
-1. the failure/fix corpus and accepted-fix feedback loop;
+1. the failure/fixer-outcome corpus, if outcome rows prove more than PR
+   creation;
 2. the open evidence schema and portable bundle format as a standard others
    build on;
 3. runtime-plus-repo-intent linkage;
@@ -246,7 +247,8 @@ It is open enough for:
 - CLI and adapter-proven agent-session observability;
 - safe CLI/HTTP context retrieval first, with MCP only after the access-surface
   gate;
-- accepted-fix feedback loop.
+- fixer outcome feedback loop after review, merge/revert, and recurrence rows
+  exist.
 
 ## Phase 2 Gate
 
@@ -260,6 +262,7 @@ Parallax stores and serves evidence
   -> read-only MCP projects the same context after safety gates
   -> separate fixer component pulls Parallax + repository context
   -> coding agent proposes or opens a PR
+  -> fixer writes outcome rows back; PR creation is not proof of fix
 ```
 
 Parallax itself must not become the fixer. It is the context engine.

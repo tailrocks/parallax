@@ -120,7 +120,7 @@ Access decision:
 | OTLP/gRPC | `tonic` + `prost` receiver for OTLP/gRPC; `axum` route for OTLP/HTTP. | Dedicated `parallax-ingest` nodes. | Regional ingest tiers with collector compatibility and overload control. |
 | App collection | Rust `tracing`, `tracing-error`, `opentelemetry-otlp`, and fixture-gated Sentry envelope Rust panic/error capture. | Add SDK fixtures for more languages through Sentry envelope `event` compatibility and OTLP. | Collector/agent integrations, sampling policy, tenant routing. |
 | CLI tracing | `parallax` CLI built with `clap`; wrapper/subcommand mode records structural command metadata, sanitized args/env/cwd, stdout/stderr policy refs, exit code, and overhead metrics. | CI and deploy systems call CLI with project token and redaction policy after the [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) gate passes. | Organization-wide CLI/agent gateway and policy templates. |
-| Agent-session tracing | Normalized `agent_session` / `agent_action` schema fed by bounded adapters for native OTel, hooks/plugins, JSONL or stream JSON, exports, server/API protocols, wrappers, and raw refs. | Fixer component and real-tool adapters source session traces with per-tool/version/config coverage, lossiness, redaction, and projection rows in the ledger. | Multi-agent session graph with policy, review, and accepted-fix feedback loops. |
+| Agent-session tracing | Normalized `agent_session` / `agent_action` schema fed by bounded adapters for native OTel, hooks/plugins, JSONL or stream JSON, exports, server/API protocols, wrappers, and raw refs. | Fixer component and real-tool adapters source session traces with per-tool/version/config coverage, lossiness, redaction, and projection rows in the ledger. | Multi-agent session graph with policy, review, and fixer outcome feedback loops after ledger gates. |
 | Stream / buffer | Local append-only WAL/outbox segment files. | Apache Iggy standalone when replay, backpressure, or worker separation is needed. | Iggy cluster or storage-backed stream fallback if Iggy fails scale tests. |
 | Observability storage | GreptimeDB standalone on local disk. | GreptimeDB standalone with S3/object storage. | GreptimeDB distributed with object storage; ClickHouse fallback cluster if benchmarks force it. |
 | Metadata store | Turso Database for prototype projects, DSNs, policies, issue state, audit, agent sessions, CLI invocations, and outcomes. | Turso with benchmarked backup/restore and concurrency gates; Postgres production fallback if those fail. | Postgres fallback for production or large multi-node metadata if Turso fails production gates. |
@@ -227,7 +227,9 @@ Rust service panics or emits error
   -> Parallax groups the error
   -> Parallax fetches same-trace logs/spans/metrics and deploy/change context
   -> Parallax builds a bounded evidence bundle
-  -> coding agent receives bundle and opens a fix PR or proposal PR
+  -> separate fixer/coding agent receives bundle and may open a proposal or
+     draft PR
+  -> outcome rows decide whether the fix helped
 ```
 
 That is narrower than "AI observability" but much more buildable.

@@ -77,8 +77,8 @@ storage tests.
 | Hidden operational problems? | Cardinality, schema evolution, object-storage cost, backpressure, retries/duplicates, symbol files, tenant isolation, upgrade path, source/release mapping. |
 | Scaling bottlenecks? | Ingest-to-queryable freshness, trace/log joins, high-cardinality attributes, stream replay, GreptimeDB/ClickHouse compaction, evidence-bundle query fanout. |
 | Commodity parts? | OTLP ingestion, natural-language summaries, basic log search, dashboards, anomaly alerts, generic chat assistant. |
-| Moat? | Failure corpus, accepted-fix feedback, open evidence schema, Rust capture quality, repo intent integration, safe agent policy. |
-| True moat category? | Evidence graph plus failure/fix feedback loop. Agent integration matters, but only if grounded in evidence. |
+| Moat? | Failure/fixer-outcome corpus with accepted, rejected, reverted, and recurrence rows; open evidence schema; Rust capture quality; repo intent integration; safe agent policy. |
+| True moat category? | Evidence graph plus measured fixer outcome loop. Agent integration matters, but only if grounded in evidence. |
 | Does AI change architecture? | Yes. It shifts priority from dashboards to machine-readable context, evidence edges, APIs, and MCP tools. |
 | Can agents open correct PRs? | Sometimes. High for clear app errors and deterministic CI failures; low for data corruption, privacy, infra outages, broad multi-service incidents. |
 | Is lifecycle reconstruction achievable? | Partially. Strong for traced request/workflow/test lifecycles; weak for arbitrary true root cause without topology, change data, and counterfactual evidence. |
