@@ -38,6 +38,7 @@ idea becomes sharper.
 - [Messaging and ingestion layer](docs/research/messaging-and-ingestion-layer.md)
 - [Rust data collection and instrumentation](docs/research/rust-data-collection-and-instrumentation.md)
 - [Frontend collection and cross-tier correlation](docs/research/frontend-collection-and-cross-tier-correlation.md)
+- [Redaction pipeline and secret safety](docs/research/redaction-pipeline-and-secret-safety.md)
 - [Causal reconstruction and agent safety](docs/research/causal-reconstruction-and-agent-safety.md)
 - [AI-native observability and incident intelligence](docs/research/ai-native-observability-and-incident-intelligence.md)
 - [Flaky test investigation and replay](docs/research/flaky-test-investigation-and-replay.md)

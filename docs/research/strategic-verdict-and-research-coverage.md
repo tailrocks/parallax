@@ -80,7 +80,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Can agents open correct PRs? | Sometimes. High for clear app errors and deterministic CI failures; low for data corruption, privacy, infra outages, broad multi-service incidents. |
 | Is lifecycle reconstruction achievable? | Partially. Strong for traced request/workflow/test lifecycles; weak for arbitrary true root cause without topology, change data, and counterfactual evidence. |
 | Monorepo dependency? | Context-rich repos make Parallax much stronger. Without docs/tasks/decisions, Parallax still helps with runtime evidence but loses the "why" layer. |
-| Agent data access danger? | Major risk. Use read-only scoped templates, redaction, limits, just-in-time grants, audit logs, and no production mutation in MVP. |
+| Agent data access danger? | Major risk. Use read-only scoped templates, default-deny redaction, limits, just-in-time grants, audit logs, and no production mutation in MVP. |
 | Why trace agents? | Agents will become a primary system interface. Teams need audit, observability, and question-answering over agent actions, not only final outputs. |
 
 ## Prompt Coverage Map
@@ -102,6 +102,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Agent and CLI execution tracing | [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) |
 | Agent-observability technical references | [Agent observability technical review](agent-observability-technical-review.md) |
 | Frontend collection and cross-tier correlation | [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Storage benchmark prototype](storage-benchmark-prototype.md) |
+| Redaction/privacy/agent exposure safety | [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md), [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) |
 | Evidence bundle and open schema | [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Bundle-value evaluation](bundle-value-evaluation.md) |
 | Core architecture | [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Technical implementation concept](technical-implementation-concept.md) |
 | CLI/API/MCP philosophy | [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md), [Technical implementation concept](technical-implementation-concept.md) |
@@ -136,7 +137,8 @@ The research validates direction, not performance claims. These must be tested:
 6. Rust stacktrace grouping stability across release/debug-info variants.
 7. Agent fix quality with bounded Parallax bundles versus raw Sentry/CI context.
 8. Redaction quality for logs, events, attachments, database query output, and
-   agent prompt bundles.
+   agent prompt bundles; the [redaction pipeline](redaction-pipeline-and-secret-safety.md)
+   has veto power before agent exposure.
 9. CLI trace capture overhead and secret redaction for args, env, config,
    stdout, and stderr.
 10. Agent-session tracing value across real Codex, Claude Code, Amp, and

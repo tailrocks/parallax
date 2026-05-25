@@ -54,7 +54,7 @@ the earliest cheap test.
 | A3 | The open schema + failure corpus becomes a compounding moat. | Moat needs adoption first; without users there is no corpus and no schema gravity (chicken-and-egg). | Track external adoption of the bundle schema within N months of release; zero adopters = no moat forming. |
 | A4 | Deterministic cross-signal correlation is reliable in real, messy telemetry. | Missing trace IDs, sampling, broken CORS propagation, clock skew make joins partial; "evidence graph" degrades to "time-window guess." | Run the correlation queries on real production telemetry (not the generator); measure how often strong edges actually exist. |
 | A5 | The chosen stack holds (GreptimeDB speed/cost, Turso reliability, Iggy where used). | GreptimeDB may miss freshness/cost gates; Turso is pre-1.0 with no documented backup/replication; Iggy has no clustering. | The [storage benchmark prototype](storage-benchmark-prototype.md) and [metadata benchmark](metadata-store-benchmark-plan.md); run before committing. |
-| A6 | Redaction can be made trustworthy enough to expose evidence to agents/third-party models. | One PII/secret leak in a bundle destroys the data-ownership value prop; frontend PII makes this harder. | Red-team the redaction on real logs/CLI args/frontend sessions; measure leak rate. |
+| A6 | Redaction can be made trustworthy enough to expose evidence to agents/third-party models. | One PII/secret leak in a bundle destroys the data-ownership value prop; frontend PII makes this harder. | Use the [redaction pipeline](redaction-pipeline-and-secret-safety.md): default-deny source policy, seeded canaries, JSON/Markdown output scans, and real-data red-team before any agent exposure. |
 | A7 | The component scope is buildable by the team that exists. | The surface is very large; a small team risks many half-built layers. | Honest milestone test: can the tiny tier (error + OTLP + grouping + one bundle + CLI) ship and be excellent before anything else starts? |
 
 A1, A2, and A3 are the existential ones. A1 is product value; A2 is distribution;
@@ -74,7 +74,7 @@ and "Lik" are H/M/L.
 | Bundle adds no fix-quality lift over raw context | Technical/Product | H | M | A1 eval shows flat delta | Pivot value to retention/cost + audit if RCA lift is weak; the engine is still useful as cheap evidence store |
 | Causality overclaim erodes trust | Product/Safety | M | M | Users catch confident-wrong root causes | Ship confidence + missing-evidence + contradictions; never assert single root cause (already the design stance) |
 | Agent blast radius — a bad autonomous change | Safety | H | L–M | Any data-mutating fix; one revert incident | Read-only context first; no production mutation in core; scoped/audited tools; [agent safety](causal-reconstruction-and-agent-safety.md) |
-| Redaction leak of PII/secrets | Safety | H | L | Red-team finds leak; user report | Default-deny, redaction report per bundle, red-team gate before any agent exposure |
+| Redaction leak of PII/secrets | Safety | H | L | Red-team finds leak; user report | Default-deny, redaction report per bundle, [redaction red-team gate](redaction-pipeline-and-secret-safety.md) before any agent exposure |
 | Scope sprawl — many half-built layers | Execution | H | M | Tiny tier not excellent before tier 2 work starts | Hard sequencing: tiny tier must win on simplicity before broadening; reject feature creep |
 | Storage/stack gate failure | Technical | M | M | Benchmark misses freshness/cost gates | Storage abstraction lets ClickHouse/Postgres/NATS substitute; benchmark has veto power |
 | Founder-market fit only (n=1) | Market | H | M | Value resonates only with operator's exact workflow | External user interviews; treat monorepo-intent dependence (Q13) as a narrowing risk, not a given |
@@ -127,6 +127,8 @@ If two or more trigger, reopen the verdict.
   the competitive-erosion risks.
 - [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
   — blast-radius and causality-overclaim mitigations.
+- [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
+  — the A6 default-deny redaction architecture, bundle report, and red-team gate.
 - [Storage benchmark prototype](storage-benchmark-prototype.md) and
   [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md) — how the
   stack assumptions get tested.

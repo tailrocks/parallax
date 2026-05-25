@@ -52,6 +52,7 @@ or CI contract yet.
 | `docs/research/metadata-store-benchmark-plan.md` | Turso-first benchmark plan and runnable prototype spec for product metadata, agent session state, CLI invocation state, audit records, crash/restore tests, and Postgres fallback gates. |
 | `docs/research/messaging-and-ingestion-layer.md` | Stream and ingest-layer evaluation for Apache Iggy, Redpanda, NATS JetStream, and brokerless startup deployments. |
 | `docs/research/causal-reconstruction-and-agent-safety.md` | Evidence-graph, causal reconstruction, agent autonomy, MCP, and production-data safety analysis. |
+| `docs/research/redaction-pipeline-and-secret-safety.md` | A6 redaction-trust plan: source-specific minimization, default-deny ingest policy, detector/output passes, redaction report fields, and red-team gate before agent exposure. |
 | `docs/research/ai-native-observability-and-incident-intelligence.md` | Current AI-native observability, incident-intelligence, agent workflow, strategic positioning, and product-wedge synthesis. |
 | `docs/research/flaky-test-investigation-and-replay.md` | Flaky-test detection, history, clustering, retry/replay, reproducer, agent-fixability, and wedge analysis. |
 | `docs/research/agent-and-cli-execution-tracing.md` | Coding-agent session tracing, CLI application tracing, OpenTelemetry GenAI/MCP/CLI mapping, market room, data model, and unified execution graph analysis. |

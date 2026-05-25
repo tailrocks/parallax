@@ -224,7 +224,9 @@ Mandatory. Shape:
 Redaction at build time is what makes the bundle safe to hand to an agent or
 paste into a third-party model. CLI invocation args/env and log excerpts are the
 highest-risk fields (see
-[Agent and CLI execution tracing](agent-and-cli-execution-tracing.md)).
+[Agent and CLI execution tracing](agent-and-cli-execution-tracing.md)). The
+trust model and red-team gate for this object are specified in
+[Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md).
 
 ## Worked Example (Abbreviated)
 
@@ -311,7 +313,9 @@ it survives contact with real data:
 2. Can bundles stay bounded (size/token budget) while still carrying enough
    evidence for high-confidence application-error fixes?
 3. Is `redaction_report` trustworthy across logs, CLI args/env, attachments, and
-   agent prompt material?
+   agent prompt material? See the
+   [redaction pipeline](redaction-pipeline-and-secret-safety.md) for the
+   required default-deny policy and red-team gate.
 4. Do `strength` tiers correspond to real predictive value, or are `medium`
    edges noise?
 5. Is the schema stable enough that an external tool built on `v0.1` keeps
@@ -330,6 +334,9 @@ it survives contact with real data:
 - [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
   — the additive frontend node types (`frontend_session`, `user_step`,
   `frontend_error`, `route_view`, `frontend_release`) and cross-tier edges.
+- [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
+  — the source-specific policy and eval gate that makes `redaction_report`
+  enforceable rather than decorative.
 - [Verdict](verdict.md) — why the open schema and portable bundle are the moat.
 
 ## Bottom Line
