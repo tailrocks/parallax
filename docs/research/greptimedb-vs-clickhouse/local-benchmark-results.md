@@ -5567,6 +5567,39 @@ with matched-row count × scale); selective single-token search stays ~tie.
 **Reproduce.** `gh api ".../flat_format.rs?ref=v1.0.2"` → module doc: "store both encoded primary key
 and raw key columns; two additional internal columns `__primary_key`/`__sequence`/`__op_type`."
 
+### Run 135 — 2026-05-25 — Latency-percentile panel (p99 / p50-p95-p99 by service): CH ~11 ms / GT ~21–28 ms (~2–2.5×), both interactive; GT's `approx_percentile_cont` scales with percentile count, CH computes them in one pass
+
+**Pass target.** Model the **latency-SLO panel** — `quantile(0.99)(duration) GROUP BY service`, a core
+APM view not yet benchmarked. Stable bench (GT v1.0.2 vs CH 26.5; nightlies ~flat per Run 131).
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned live — no bump). `spans`
+1M / 12 services. CH `quantile(0.99)(duration_ms)`; GT `approx_percentile_cont(duration_ms,0.99)`.
+Both return ~115 (values match). Warm.
+
+| Panel | ClickHouse | GreptimeDB | Ratio |
+| --- | --- | --- | --- |
+| **Single p99** by service | ~11 ms | ~21 ms | ~1.9× |
+| **p50 + p95 + p99** by service | ~11 ms | ~28 ms | ~2.5× |
+
+**Verdict — interactive on both; GT's multi-percentile cost scales, CH's doesn't.**
+
+- Single p99: ~1.9× (scan-agg class). Both ≪ 300 ms.
+- **Multi-quantile (p50/p95/p99, the common SLO panel): CH stays ~11 ms (computes all three in ONE
+  pass), GreptimeDB rises to ~28 ms** — `approx_percentile_cont` is invoked **per percentile** with no
+  shared sketch, so 3 percentiles ≈ 3× the single-percentile cost. ClickHouse's `quantile`/`quantiles`
+  family shares the digest across percentiles. So a p50/p95/p99 panel is ~2.5× on GreptimeDB
+  (~28 ms) — still interactive, but the gap grows with the number of percentiles requested.
+- **Blueprint note:** for a multi-percentile latency panel on GreptimeDB, prefer **`quantiles`-style
+  single-call** if available, or a **Flow-maintained sketch / continuous aggregate** (pre-compute the
+  percentiles), rather than N separate `approx_percentile_cont` calls — otherwise the panel cost
+  scales with the percentile count. For a single p99 SLO it's ~21 ms, fine.
+- **Decision relevance:** the latency-SLO panel joins the "interactive on GreptimeDB, ~2–2.5× CH"
+  cohort (metric panels, issue-list, trace-explorer). No verdict change; one more core APM view
+  confirmed sub-perceptible on GreptimeDB.
+
+**Reproduce.** `SELECT service, quantile(0.99)(duration_ms) FROM spans GROUP BY service` (CH ~11 ms)
+vs `… approx_percentile_cont(duration_ms,0.99) …` (GT ~21 ms); add p50+p95 → CH ~11 ms / GT ~28 ms.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

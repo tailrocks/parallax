@@ -8,8 +8,10 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 134 local runs + B1–B15 cases. Recent: **Run 134 — SOURCE:
-Flat SST** (v1.0 GA): stores tag/PK columns as RAW dictionary-encoded columns alongside the encoded composite key, so
+cold/first-run measurement showed). 25 mechanism notes + 135 local runs + B1–B15 cases. Recent: **Run 135 —
+latency-percentile panel** (p99 by service): CH ~11 ms / GT ~21 ms (~1.9×); the p50/p95/p99 panel = CH ~11 ms (one pass)
+/ GT ~28 ms (~2.5×, GT's approx_percentile_cont scales per-percentile, no shared sketch) — both interactive; blueprint:
+use a single-call/Flow-sketch for multi-percentile panels on GT. **Run 134 — SOURCE: Flat SST** (v1.0 GA): stores tag/PK columns as RAW dictionary-encoded columns alongside the encoded composite key, so
 tag-keyed group-by/filter reads the raw column directly (no per-row composite-key decode) — the foundation behind the
 prefilter (Run 121) + the tag-keyed agg improvements; dedup cost unchanged. **Run 133 — reconciled the broad-term full-text gap**: ~12× REPRODUCES on the canonical logs_b1 (5M, 699k matches: CH ~7 ms / GT ~85 ms, scan-
 bound); Run-131's ~1.5× was a different corpus + CH tokenbf index (not comparable). Canonical broad-term gap = ~12×;
