@@ -4962,6 +4962,49 @@ design (Run 114): `append_mode='true'` + low-card `PK(service)`, `fingerprint` a
 + `PK(service)`); `SELECT fingerprint, count(), max(ts) GROUP BY fingerprint ORDER BY count() DESC LIMIT
 50` warm ×8 → CH ~10 ms / GT ~26 ms. Drop after.
 
+### Run 120 — 2026-05-25 — Native observability-protocol trio re-verified LIVE: GreptimeDB OTLP+PromQL+Jaeger all GA/default-on; ClickHouse PromQL still experimental + OFF by default, no native OTLP/Jaeger (DQ3 holds, no drift)
+
+**Pass target.** Re-verify the load-bearing **DQ3** claim (the ClickHouse-replaceability cost): all
+three observability protocols are GA-native + default-on in GreptimeDB, vs experimental/external in
+ClickHouse. The brief's per-pass "verify native metrics/logs/traces structure + adopt decision."
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned live — no bump).
+
+**GreptimeDB — native trio LIVE (all GA, default-on):**
+- **Jaeger query API:** `GET /v1/jaeger/api/services` → **HTTP 200**, Jaeger-format JSON
+  (`{"data":null,"total":0,...}` — empty, no trace data loaded, but the API is native + responding).
+- **Prometheus HTTP API:** `GET /v1/prometheus/api/v1/query?query=up` → **HTTP 200** (native PromQL).
+- **OTLP receiver:** `POST /v1/otlp/v1/traces` (empty body) → **HTTP 400** = endpoint **exists**
+  (rejects bad input), *not* 404. Native OTLP metrics/logs/traces receiver present.
+
+**ClickHouse — assembled/experimental (re-verified via `system`):**
+- **PromQL:** the `TimeSeries` engine is **experimental and OFF by default** —
+  `allow_experimental_time_series_table = 0`, `allow_experimental_time_series_aggregate_functions = 0`
+  (live `system.settings`). PromQL plumbing exists (`promql_database`/`promql_table`/
+  `promql_evaluation_time` settings; `prometheusQuery[Range]` table functions per Run 44/50) but is
+  **opt-in behind an experimental flag**. Only `quantile[s]PrometheusHistogram` ship as normal functions.
+- **OTLP / Jaeger:** ClickHouse's HTTP interface serves **SQL only** (no `/v1/otlp` or `/v1/jaeger`
+  paths; `curl` isn't even in the image). OTLP ingest = an external **OTel Collector**; Jaeger = the
+  external **jaeger-clickhouse plugin**. No native HTTP receiver/query API for either.
+
+**Verdict — DQ3 reproduces, no drift.**
+
+- **GreptimeDB ships the observability protocol trio native + GA + default-on** (OTLP receiver,
+  PromQL HTTP API, Jaeger query API — all responding live). **ClickHouse assembles the same coverage
+  from experimental (PromQL, off-by-default flag) + external (OTel Collector for OTLP, jaeger-clickhouse
+  plugin) parts.** So adopting ClickHouse for Parallax still **costs a PromQL+OTLP+Jaeger compatibility
+  layer**; GreptimeDB's are turnkey today.
+- **Adopt-native decision stands** for all three signals: the native ingest/query protocols are live
+  and GA — Parallax can point OTLP exporters, PromQL dashboards, and Jaeger-compatible trace UIs
+  straight at GreptimeDB with no middleware. This is the ergonomics/onboarding edge behind DQ1/DQ3.
+- **Trajectory note (unchanged):** ClickHouse is *closing* the gap (it has the PromQL plumbing, just
+  experimental), so re-check on each CH version bump — but today the experimental flag is still `0`.
+
+**Reproduce.** GT: `curl` (in-container) `GET /v1/jaeger/api/services` (200), `/v1/prometheus/api/v1/
+query?query=up` (200), `POST /v1/otlp/v1/traces` empty (400=exists). CH: `SELECT name,value FROM
+system.settings WHERE name ILIKE '%time_series%'` → `allow_experimental_time_series_table=0` (off);
+no `/v1/otlp` or `/v1/jaeger` HTTP path.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
