@@ -34,7 +34,8 @@ The lightweight end of the same pressure is tracked in
 | [MCP server overview](https://modelcontextprotocol.io/specification/2025-11-25/server/index) | MCP exposes prompts, resources, and tools; tools are model-controlled while resources are application-controlled. This maps cleanly to Parallax's split between bounded context resources and explicit investigation tools. |
 | [MCP tools specification](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) | Tools have JSON Schema input and optional output schemas, support structured content, can advertise task-support metadata, and carry security requirements for input validation, access control, rate limits, output sanitization, user confirmation for sensitive operations, and audit logging. Bundle-returning Parallax tools should use `structuredContent` with an output schema, not text-only JSON, and should mark task support as forbidden for the first context adapter. |
 | [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization) | Authorization is optional overall, but HTTP-based transports that support it should follow the spec. The current spec requires protected-resource metadata, resource indicators in authorization and token requests, token audience validation by MCP servers, secure token storage, HTTPS, localhost/HTTPS redirect checks, PKCE for public clients, and no token passthrough. Stdio transports should not use this OAuth flow and should retrieve credentials from the environment. |
-| [MCP draft changelog](https://modelcontextprotocol.io/specification/draft/changelog) and [SEP index](https://modelcontextprotocol.io/seps) | The official site still labels `2025-11-25` as latest, but the draft and final/accepted SEPs point to material protocol drift: stateless/sessionless Streamable HTTP, no `Mcp-Session-Id`, `server/discover`, `subscriptions/listen`, deterministic/cacheable list results, standard MCP request headers, `_meta` trace context, roots/sampling/logging deprecation, and a tasks extension outside core. | Do not implement draft behavior as a stable requirement yet, but do make the shipping gate version-aware. Parallax MCP must avoid protocol-level session dependence and record which stable or draft semantics each fixture exercised. |
+| [MCP draft changelog](https://modelcontextprotocol.io/specification/draft/changelog) and [SEP index](https://modelcontextprotocol.io/seps) | The official site still labels `2025-11-25` as latest, but the draft and final/accepted SEPs point to material protocol drift: stateless/sessionless Streamable HTTP, no `Mcp-Session-Id`, `server/discover`, `subscriptions/listen`, deterministic/cacheable list results, standard MCP request headers, `_meta` trace context, roots/sampling/logging deprecation, and a tasks extension outside core. Do not implement draft behavior as a stable requirement yet, but do make the shipping gate version-aware. Parallax MCP must avoid protocol-level session dependence and record which stable or draft semantics each fixture exercised. |
+| [MCP 2026 roadmap](https://blog.modelcontextprotocol.io/posts/2026-mcp-roadmap/) | The March 2026 roadmap says the current spec release came out in November 2025 and no newer version has been cut. It sets 2026 priorities around transport scalability, agent communication, governance maturation, and enterprise readiness; "on the horizon" items include triggers/event-driven updates, streamed/reference-based result types, deeper security/authorization, and extensions. This confirms `2025-11-25` remains current while making protocol churn strategically relevant. Parallax should treat roadmap items as refresh triggers and fixture-design pressure, not as stable implementation requirements. |
 | [MCP security best practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices) | The official guidance favors least-privilege scopes, targeted elevation, precise scope challenges, correlation IDs, and avoiding wildcard or omnibus scopes. |
 | [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/) | MCP calls should be observable as MCP-specific spans and metrics. The current OTel page still marks MCP conventions development-stage and recommends `_meta` trace context while saying official MCP guidance should take precedence when available. |
 | [OpenAI Docs MCP](https://developers.openai.com/learn/docs-mcp) | Codex, VS Code/Copilot Agent mode, Cursor, and Claude Code can consume MCP servers; OpenAI's own docs server uses MCP as the cross-client integration surface. |
@@ -43,15 +44,17 @@ The lightweight end of the same pressure is tracked in
 | [NSA MCP security design considerations](https://www.nsa.gov/Portals/75/documents/Cybersecurity/CSI_MCP_SECURITY.pdf?ver=bmgiSbNQLP6Z_GiWtRt6bg%3D%3D) | As of May 2026, NSA describes MCP as widely adopted but security-maturing, with risks around dynamic tool invocation, implicit trust, context sharing, serialization, token/session handling, overbroad tools, and unauthorized servers. |
 
 Version note: the official MCP pages checked for this pass show
-`2025-11-25` as the latest specification revision. Do not cite or implement a
-future-dated spec revision until the official site publishes it as current.
-However, the draft changelog and SEP index are now important watch inputs because
-the next revision could change transport/session assumptions and make `_meta`
-trace context official. The OpenTelemetry semantic-convention page checked in
-the same pass still shows `1.41.0`, with MCP conventions marked
-development-stage; its examples still use `mcp.protocol.version = "2025-06-18"`,
-so Parallax should record observed MCP handshake/spec versions separately from
-the semconv example version.
+`2025-11-25` as the latest specification revision, and the March 2026 MCP
+roadmap says no newer spec version has been cut since the November 2025 release.
+Do not cite or implement a future-dated spec revision until the official site
+publishes it as current. However, the draft changelog, SEP index, and roadmap
+are now important watch inputs because the next revision could change
+transport/session assumptions, discovery, result-reference behavior, enterprise
+auth/gateway expectations, and `_meta` trace context. The OpenTelemetry
+semantic-convention page checked in the same pass still shows `1.41.0`, with
+MCP conventions marked development-stage; its examples still use
+`mcp.protocol.version = "2025-06-18"`, so Parallax should record observed MCP
+handshake/spec versions separately from the semconv example version.
 
 ## 2026-05-25 Access-Boundary Recheck
 
@@ -61,6 +64,11 @@ claim:
 - The official MCP site labels `2025-11-25` as latest. The tools spec still
   supports `structuredContent`, optional `outputSchema`, `tools/list_changed`,
   and tool-level `taskSupport` with `forbidden` as the default value.
+- The 2026 roadmap confirms no newer stable spec release, but it also confirms
+  that production MCP pressure is moving toward transport scalability, agent
+  communication, governance delegation, enterprise audit/SSO/gateway/config
+  portability, and possible reference-based result types. These are fixture
+  refresh triggers, not Phase 1 feature scope.
 - The official draft is not yet the stable spec, but it is strategically
   relevant: it removes protocol-level sessions, adds explicit discovery,
   changes change-notification shape, standardizes cache/list hints, deprecates
