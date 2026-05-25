@@ -2,8 +2,10 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 38. White-box teardown of how each engine absorbs **evolving OTLP
-attributes** — the checklist's "schema / dynamic columns" item. This is
+Status: pass 38, extended pass 97 (Run 61: dynamic-attr path query **measured** —
+CH ~13× via typed subcolumn, + a GROUP BY casting wrinkle). White-box teardown of how
+each engine absorbs **evolving OTLP attributes** — the checklist's "schema / dynamic
+columns" item. This is
 decision-relevant because Parallax ingests OTLP, whose attribute set drifts (a new
 span/log attribute appears whenever a customer adds one); the storage layer cannot
 run a migration per new field. Three sub-questions: (1) what does a manual `ALTER …
@@ -69,6 +71,23 @@ faster path for queryable attributes is **not** its JSON type but its schema-on-
 "fast dynamic attributes" by different routes: ClickHouse via columnar JSON
 subcolumns; GreptimeDB via auto-grown typed columns.
 
+**Measured (Run 61, 100k rows, JSON attrs `{user_id, tenant}`, matched shape):**
+
+| Query | ClickHouse (JSON subcolumn) | GreptimeDB (`json_get_string` blob parse) |
+| --- | --- | --- |
+| filter `tenant='t3'` | **~6 ms** (`EXPLAIN`: `attrs.tenant Dynamic` subcolumn input) | **~78 ms** (per-row blob parse) → **~13× slower** |
+| group-by `tenant` | **~5 ms** — *but* requires a **type cast** `attrs.tenant.:String` (raw `attrs.tenant` in `GROUP BY` **errors**: `Variant/Dynamic not allowed in GROUP BY keys`) | **~79 ms**, `json_get_string(...)` groups directly (plain `String`) |
+| storage | 1.00 MiB | 1.10 MiB (≈ tie at 100k) |
+
+So the ClickHouse dynamic-attr **query** edge is real and large (~13× on filter), **but
+two-sided**: its JSON subcolumns are `Dynamic`-typed, so aggregation needs an explicit
+`.:Type` cast (or `allow_suspicious_types_in_group_by=1`) — an ergonomics wrinkle
+GreptimeDB's plain-`String` `json_get_*` avoids (at the cost of speed). Storage is a
+tie at this scale. **GreptimeDB's intended fast path is not the blob** — it's promoting
+a hot attribute to a typed column / `SKIPPING INDEX` (§2, impl principle 6), which is
+columnar like ClickHouse but **manual** vs ClickHouse's **automatic** per-path
+subcolumns.
+
 ## High-cardinality consequence (the cost/ops catch)
 
 - **GreptimeDB auto-add risk: column explosion.** If attribute *keys* are unbounded
@@ -91,8 +110,13 @@ JSON column costs to query.
   appear as typed columns. ClickHouse needs the JSON column (no ALTER) or a managed
   ALTER pipeline. **Edge: GreptimeDB**, for zero-touch OTLP drift.
 - **Dynamic-attribute query speed:** if Parallax queries arbitrary attributes by path,
-  ClickHouse's columnar JSON subcolumns beat GreptimeDB's blob-parse `json_get_*`.
-  **Edge: ClickHouse**, for path queries over a JSON attribute column.
+  ClickHouse's columnar JSON subcolumns beat GreptimeDB's blob-parse `json_get_*` —
+  **measured ~13× on a path filter (6 ms vs 78 ms, Run 61)**. **Edge: ClickHouse**,
+  for path queries over a JSON attribute column — *but* its subcolumns are
+  `Dynamic`-typed (a `.:Type` cast needed for GROUP BY), and GreptimeDB closes the gap
+  for *known* hot attributes by promoting them to typed columns (automatic-CH vs
+  manual-GreptimeDB). Matters only if Parallax filters/aggregates by *unpredictable*
+  attribute paths at volume; for a *fixed* set of hot attributes both reach columnar speed.
 - **Cost:** neither ALTER rewrites data (both metadata-only, measured/​confirmed), so
   schema change is not a cost axis; the cost risk is GreptimeDB column-explosion vs
   ClickHouse `max_dynamic_paths` overflow — both managed by the same "JSON for
@@ -128,4 +152,5 @@ reinforces, not flips, the standing verdict.
   `JSONAllPathsWithTypes` + `attributes.path` subcolumn read.
 - Cross-refs: `write-path-and-ingestion.md` (pass 33 schema-on-write/native ingest),
   `greptimedb-implementation.md` / `clickhouse-implementation.md` (the `attributes
-  JSON` choice), `local-benchmark-results.md` (Run 18).
+  JSON` choice), `local-benchmark-results.md` (Run 18; Run 61 — dynamic-attr path query
+  ~13× + GROUP BY `Dynamic`-cast wrinkle).

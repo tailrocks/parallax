@@ -2421,6 +2421,70 @@ b=$(date +%s.%N); docker run --rm --network $NET mysql:8 mysql -h parallax-bench
 docker exec parallax-bench-greptimedb-1 curl -s -w 'WALL=%{time_total}' localhost:4000/v1/sql?db=public --data-urlencode "sql=$QA"   # exec vs wall
 ```
 
+### Run 61 — 2026-05-25 — Dynamic-attribute JSON path query (the "ClickHouse wins dynamic attrs" edge, now a number)
+
+**Pass target.** Rotate onto stale subsystem #10 (schema/dynamic columns, Run 18 ~pass
+38). Run 18 established the *mechanism* (ClickHouse JSON = typed columnar subcolumns;
+GreptimeDB JSON = binary blob) but no latency. Measure the dynamic-attribute **path
+query** — the load-bearing "dynamic-attr → ClickHouse" verdict edge.
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned
+— latest, no bump). Both: a `JSON` column `attrs` over **100k rows**, `{user_id (unique),
+tenant}`. **Matched shape, not identical bytes**: ClickHouse built from `numbers(100000)`
+(tenant `t0–t9`, 10 buckets); GreptimeDB built from `logs_b1` `span_id` (tenant = `t`+first
+hex char, 16 buckets). Both scan all 100k and extract the path, so the extraction *work*
+is comparable; the filter match-count differs (CH `t3`=10000, GreptimeDB `t3`=6253) —
+documented, immaterial to the per-row-parse cost being measured.
+
+**Measured (warm, min of 7 / 3):**
+
+| Query | ClickHouse (JSON subcolumn) | GreptimeDB (`json_get_string`, blob) |
+| --- | --- | --- |
+| filter `tenant='t3'` | **~6 ms** | **~78 ms** → **~13× slower** |
+| group-by `tenant` | **~5 ms** (needs cast `attrs.tenant.:String`) | **~79 ms** (plain `String`, no cast) |
+| storage (100k) | **1.00 MiB** | **1.10 MiB** (≈ tie) |
+
+`EXPLAIN actions=1` on ClickHouse confirms a **subcolumn read**: `INPUT: attrs.tenant
+Dynamic` + `equals(attrs.tenant, 't3')` — it reads only the `tenant` path, not the whole
+document. GreptimeDB's `json_get_string(attrs,'tenant')` parses each row's JSON blob.
+
+**The comparison logic & verdict.**
+
+- **ClickHouse wins dynamic-attr path queries ~13×** (6 ms vs 78 ms) — the columnar
+  typed-subcolumn JSON reads only the queried path; GreptimeDB blob-parses every row.
+  Confirms + **quantifies** the Run-18 mechanism. Real edge **if Parallax filters/groups
+  by unpredictable attribute paths at volume.**
+- **Two-sided (fairness):** ClickHouse's subcolumns are **`Dynamic`-typed** → a raw
+  `GROUP BY attrs.tenant` **errors** (`Variant/Dynamic not allowed in GROUP BY keys`);
+  needs `attrs.tenant.:String` (then 5 ms) or `allow_suspicious_types_in_group_by=1`. An
+  aggregation ergonomics wrinkle GreptimeDB's plain-`String` `json_get_*` avoids (slow but
+  no cast). Storage is a **tie** at 100k (1.00 vs 1.10 MiB) — the columnar split doesn't
+  cost extra here.
+- **GreptimeDB's intended fast path is NOT the blob** — it is promoting a *known* hot
+  attribute to a typed column / `SKIPPING INDEX` (impl principle 6), columnar like
+  ClickHouse but **manual** (you choose which) vs ClickHouse's **automatic** per-path
+  subcolumns. So for a *fixed* set of hot attrs both reach columnar speed; the ClickHouse
+  edge is specifically for **ad-hoc/unpredictable** attribute paths. Status: edge
+  **confirmed + quantified (~13×), with the casting and promote-on-demand caveats.**
+  Reinforces, does not flip, the verdict.
+
+Caveat: 100k warm smoke; matched-shape not identical bytes; the gap likely grows at more
+rows (per-row parse scales). At-volume dynamic-attr query is owed to the harness if it
+becomes a Parallax hot path.
+
+**Reproduce (copy-paste).**
+
+```bash
+docker exec parallax-bench-clickhouse-1 clickhouse-client --multiquery -q "CREATE TABLE js_ch (id UInt32, attrs JSON) ENGINE=MergeTree ORDER BY id; INSERT INTO js_ch SELECT number, concat('{\"user_id\":\"u',toString(number),'\",\"tenant\":\"t',toString(number%10),'\"}') FROM numbers(100000); OPTIMIZE TABLE js_ch FINAL;"
+docker exec parallax-bench-clickhouse-1 clickhouse-client --time -q "SELECT count() FROM js_ch WHERE attrs.tenant='t3' FORMAT Null"
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q "EXPLAIN actions=1 SELECT count() FROM js_ch WHERE attrs.tenant='t3'"   # attrs.tenant subcolumn
+docker exec parallax-bench-clickhouse-1 clickhouse-client --time -q "SELECT attrs.tenant.:String t,count() FROM js_ch GROUP BY t FORMAT Null"   # cast required
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=CREATE TABLE js_gt (ts TIMESTAMP(3) TIME INDEX, attrs JSON) WITH (append_mode='true')"
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=INSERT INTO js_gt SELECT ts, CONCAT('{\"user_id\":\"', span_id, '\",\"tenant\":\"t', SUBSTR(span_id,1,1), '\"}') FROM logs_b1 LIMIT 100000"
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=SELECT count(*) FROM js_gt WHERE json_get_string(attrs,'tenant')='t3'"   # execution_time_ms
+# cleanup: DROP TABLE js_ch / js_gt
+```
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
