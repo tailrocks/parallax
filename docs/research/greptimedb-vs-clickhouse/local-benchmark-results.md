@@ -2807,6 +2807,48 @@ docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public 
 docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=WITH RECURSIVE t AS (SELECT sid,0 AS d FROM tree_gt WHERE pid='' UNION ALL SELECT c.sid,t.d+1 FROM tree_gt c JOIN t ON c.pid=t.sid) SELECT count(*) FROM t"   # Schema error: project index out of bounds
 ```
 
+### Run 69 — 2026-05-25 — WAL/durability re-verified: GreptimeDB has one, ClickHouse's is obsolete (live)
+
+**Pass target.** Re-verify the durability/scaling pillar — "GreptimeDB has a replayable
+WAL (Kafka decouples durability → scaling enabler); ClickHouse MergeTree has no functional
+WAL" (Run 20 ~pass 41).
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned —
+latest, no bump).
+
+**Verified live:**
+
+| Check | Result |
+| --- | --- |
+| GreptimeDB WAL present | `/greptimedb_data/wal/*.raftlog` — 11 raft-engine segments, **~1.4 GB** (grows with writes, purged after flush). The replayable WAL is active. |
+| ClickHouse WAL settings status | `system.merge_tree_settings`: `in_memory_parts_enable_wal` and `write_ahead_log_max_bytes` both **`is_obsolete = 1`** (+ `min_rows_for_compact_part` obsolete). |
+| ClickHouse part types | only **`Compact` (39) / `Wide` (20)** — **no `InMemory`** part type (the feature the WAL served is gone). |
+| ClickHouse WAL files on disk | `find /var/lib/clickhouse -name '*wal*'` → **none**. |
+| ClickHouse fsync defaults | `fsync_after_insert=0`, `fsync_part_directory=0` (throughput-over-durability). |
+
+**Verdict.** **No drift — pillar confirmed + precisely sourced.** GreptimeDB has a real,
+active replayable WAL (raft-engine local; Kafka remote decouples durability from the
+datanode = the compute/storage-separation behind the scaling verdict). ClickHouse has
+**no functional WAL** — the lingering `in_memory_parts_enable_wal`/`write_ahead_log_*`
+settings are runtime-flagged **`is_obsolete=1`** (the in-memory-parts feature is removed:
+no `InMemory` parts, no WAL files), and durability is the un-fsynced part write
+(`fsync_after_insert=0`), with crash-safety delegated to `ReplicatedMergeTree`+Keeper.
+Both default throughput-over-fsync; **only GreptimeDB has a replay log.** Status:
+**confirmed.** (Strengthens Run 20's source cite with live `is_obsolete=1` + part-type +
+no-wal-file evidence.)
+
+Caveat: durability is mechanism/config-verified, not crash-tested (a real crash-recovery
+benchmark is harness territory).
+
+**Reproduce.**
+
+```bash
+docker exec parallax-bench-greptimedb-1 sh -c 'ls -la /greptimedb_data/wal; du -sh /greptimedb_data/wal'
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q "SELECT name,is_obsolete FROM system.merge_tree_settings WHERE name IN ('in_memory_parts_enable_wal','write_ahead_log_max_bytes')"
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q "SELECT part_type,count() FROM system.parts WHERE active GROUP BY part_type"
+docker exec parallax-bench-clickhouse-1 sh -c "find /var/lib/clickhouse -name '*wal*'"
+```
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

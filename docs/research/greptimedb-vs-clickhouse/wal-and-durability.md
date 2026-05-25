@@ -2,11 +2,12 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 41. White-box teardown of the **durability path** (checklist #2's
-WAL/durability sub-item): what makes an acked write survive a crash, the
+Status: pass 41, re-verified pass 105 (Run 69 — no drift; CH WAL settings confirmed
+`is_obsolete=1` at runtime). White-box teardown of the **durability path** (checklist
+#2's WAL/durability sub-item): what makes an acked write survive a crash, the
 durability-vs-throughput knobs, and — the load-bearing part for Parallax —
 **GreptimeDB's remote (Kafka) WAL as the compute/storage-separation enabler** behind
-the horizontal-scaling story. Source-confirmed + live config-checked (Run 20).
+the horizontal-scaling story. Source-confirmed + live config-checked (Runs 20, 69).
 
 Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d8`),
 re-confirmed latest stable 2026-05-25.
@@ -22,9 +23,10 @@ Every write goes to a **WAL before the memtable** (`src/log-store`). Two provide
   `sync_period: Option<Duration>` (periodic group fsync). **Default `sync_write =
   false`** — so out of the box GreptimeDB does *not* fsync per write; it group-commits
   / relies on periodic + OS flush, trading strict durability for throughput (and you
-  can set `sync_write=true` for fsync-on-every-write). **Live (Run 20):** the running
-  standalone holds `…/wal/0000000000000001.raftlog …` segments ~128–137 MiB each —
-  the local raft-engine WAL is active.
+  can set `sync_write=true` for fsync-on-every-write). **Live (Run 20, re-confirmed Run 69):** the running
+  standalone holds `…/wal/00000000000000NN.raftlog` segments ~128–134 MiB each (Run 69:
+  11 segments, ~1.4 GB total — grows with writes, purged after flush) — the local
+  raft-engine WAL is active.
 - **Remote: Kafka** (`common/wal/src/config/kafka/datanode.rs`). Each region's WAL is
   produced to Kafka (`max_batch_bytes` 1 MiB to fit Kafka's default message cap,
   `auto_create_topics`, topic/replication config). **Durability becomes Kafka's
@@ -45,8 +47,12 @@ sync knob guarantees). The WAL is the replay log.
 
 ClickHouse MergeTree has **no active write-ahead log**. The old in-memory-parts WAL
 (`in_memory_parts_enable_wal`, `write_ahead_log_*`) is **obsolete** in 26.x
-(`MergeTreeSettings.cpp:2214-2218` `MAKE_OBSOLETE_MERGE_TREE_SETTING`). Durability is
-the **part write itself**, and fsync is **off by default**:
+(`MergeTreeSettings.cpp:2214-2218` `MAKE_OBSOLETE_MERGE_TREE_SETTING`). **Re-verified
+live (Run 69):** `system.merge_tree_settings` reports `in_memory_parts_enable_wal` and
+`write_ahead_log_max_bytes` with **`is_obsolete = 1`**; active parts are only `Compact`
+(39) / `Wide` (20) — **no `InMemory` part type** — and a `find` for `*wal*` under
+`/var/lib/clickhouse` returns **nothing**. So the WAL machinery is a dead vestige, not a
+functional log. Durability is the **part write itself**, and fsync is **off by default**:
 
 - `fsync_after_insert = false` (`MergeTreeSettings.cpp:606`; doc: *"Significantly
   decreases performance of inserts"*) — the new part is written to the OS page cache
