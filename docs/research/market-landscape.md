@@ -55,9 +55,11 @@ material shifts have happened, and they narrow the wedge without closing it:
    is GA but closed and SaaS-only, and is confirmed not available to self-hosted
    Sentry. That exclusion is Parallax's clearest opening.
 3. **Incumbents partially closed the self-host gap, but not the air-gap.**
-   Grafana Assistant is now on-prem and free for OSS Grafana, but the on-prem
-   build still requires a Grafana Cloud account for the LLM connection, and it is
-   dashboard/assistant-first, not portable evidence bundles.
+   Grafana Assistant now runs inside self-managed Grafana only by connecting to a
+   Grafana Cloud stack. The Assistant backend, usage limits, and billing stay in
+   Cloud, and current on-prem docs exclude investigations, investigation memory,
+   CLI auth tokens, and Grafana Cloud MCP connections. This validates Grafana
+   agent surfaces without giving Parallax's target user a local evidence engine.
 
 Net: the agent-native-observability category went from emerging to table stakes
 between 05-11 and 05-25. Parallax's defensibility is therefore the *combination*
@@ -95,6 +97,9 @@ Current source checks for this update:
 - [Coroot editions](https://coroot.com/editions)
 - [Coroot AI RCA](https://docs.coroot.com/ai/overview/)
 - [Coroot MCP server](https://docs.coroot.com/mcp/overview/)
+- [Grafana Assistant self-managed docs](https://grafana.com/docs/grafana/latest/administration/assistant/)
+- [Grafana Assistant CLI docs](https://grafana.com/docs/grafana-cloud/machine-learning/assistant/guides/cli/)
+- [Grafana Assistant MCP server docs](https://grafana.com/docs/grafana-cloud/machine-learning/assistant/configure/mcp-servers/)
 - [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md)
 
 ## High-Level Competitive Map
@@ -105,7 +110,7 @@ Current source checks for this update:
 | Datadog Bits AI SRE | Autonomous SRE / incident agent | Always-on alert investigation, RCA in minutes, parallel hypothesis testing, evidence-backed conclusions, suggested code fixes, chat, Slack/Jira/ServiceNow/GitHub integrations. | Very high for production incidents. |
 | Datadog Watchdog RCA | Built-in AI RCA | Datadog AI engine for automated alerts, insights, and RCA across the platform; APM anomaly RCA and causal relationships between symptoms. | High for teams already on Datadog. |
 | Datadog Test Optimization + Bits AI Dev Agent | CI/test reliability and automated fixes | Instruments and traces tests, identifies flaky tests, correlates tests with infra/log/network context, surfaces root cause, and uses Bits AI Dev Agent to generate verified PR fixes. | Very high for the flaky-test wedge. |
-| Grafana Assistant | Observability assistant / SRE agent | AI assistant in Grafana Cloud and connected self-managed Grafana; query/dashboard assistance, incident investigations, Knowledge Graph, Slack/Teams/API/MCP/CLI surfaces. | High for Grafana/LGTM users. |
+| Grafana Assistant | Observability assistant / SRE agent | AI assistant in Grafana Cloud and Cloud-backed self-managed Grafana; query/dashboard assistance, Knowledge Graph, Slack/Teams/API/MCP/CLI surfaces. CLI is public preview and can connect local projects for read-only file access by default, with optional approved terminal access. | High for Grafana/LGTM users, but not local/air-gapped. |
 | Coroot | eBPF observability + AI RCA | Uses eBPF to collect metrics, logs, traces, profiles, events; Community includes agentic-ready MCP; Enterprise/Cloud adds AI RCA that explains what broke, why, and how to fix it. | High for infrastructure/service RCA and agent-access pressure, lower for Sentry migration and coding-agent action audit. |
 | OpenObserve "Observability 3.0" | Open Rust observability store + AI SRE agent | Rust, single-binary, object-storage-native, AGPL self-hostable; late-Apr-2026 launch added an AI SRE agent, AI Assistant, LLM observability, and MCP. AI SRE/MCP require Enterprise edition/license; public pages conflict on whether Self-Hosted Enterprise is free up to `50` or `200 GB/day`. Checked docs show OTLP ingestion, not a Sentry-envelope path. | Very high on storage/runtime fit; the closest open competitor. Saved (for now) by Enterprise-tier AI/MCP surfaces, broad write-capable MCP, missing Sentry ingest, and no checked portable bundle/action-audit contract. |
 | SigNoz agent-native | Open OTLP observability + agent MCP | Go + ClickHouse, OSS self-hostable; May-2026 shipped an open self-hostable MCP server, trace-ID RCA, and agent skills for Claude Code/Cursor/Codex. Landing page claims an "open investigation format," but this pass found no versioned schema or portable artifact in checked docs; no Sentry envelope error-event ingest path. | High on agent-native direction; fails the Rust/no-JVM-store profile and lacks a proven Parallax-style evidence-bundle/outcome abstraction. |
@@ -227,12 +232,27 @@ assistant for query generation, dashboard creation, incident investigation,
 signal correlation, and SRE-agent workflows. It can be reached from Slack,
 Teams, API, MCP, and the gcx CLI.
 
+Current docs keep the air-gap caveat. Grafana Assistant on-premise requires both
+a self-hosted Grafana deployment and a Grafana Cloud stack with Assistant
+enabled; the Assistant backend, usage limits, and billing stay in the Cloud
+stack. The on-premise feature set excludes Assistant investigations and related
+memory, infrastructure memory, Grafana Cloud MCP connections, CLI auth tokens,
+SQL table discovery, automations, sandbox settings, and anonymous Assistant
+access. The CLI is public preview, can run one-off prompts in scripts, and can
+connect local projects so Assistant can read files; terminal access is optional
+and approval-gated. Grafana Assistant MCP integrations support remote MCP servers
+only, can drive external systems, and Grafana explicitly puts security, data
+access, and tool-action responsibility on the operator.
+
 Grafana's advantage is the LGTM ecosystem and the installed base of teams
 already using Grafana for dashboards, logs, traces, and metrics.
 
-Source:
+Sources:
 
 - [Grafana Assistant product page](https://grafana.com/products/cloud/ai-assistant/)
+- [Grafana Assistant self-managed docs](https://grafana.com/docs/grafana/latest/administration/assistant/)
+- [Grafana Assistant CLI docs](https://grafana.com/docs/grafana-cloud/machine-learning/assistant/guides/cli/)
+- [Grafana Assistant MCP server docs](https://grafana.com/docs/grafana-cloud/machine-learning/assistant/configure/mcp-servers/)
 
 ### Coroot
 
