@@ -74,26 +74,54 @@ prior conclusions is expected; stopping shallow or early is not.
 The Phase 1 verdict and Phase 2 blueprint are gates, not the end of the research
 program.
 
-For open-ended `/goal` runs, keep this prompt active as an indefinite research
-brief after the verdict and blueprint exist. Do not mark the goal complete merely
-because `docs/research/verdict.md` and
-`docs/research/technical-implementation-concept.md` exist. Continue in repeated
-passes until the operator explicitly stops the goal, replaces it, or says the
-research program is complete.
+For open-ended Codex `run` / `go` runs or Claude Code `/loop` runs, keep this
+prompt active as an indefinite research brief after the verdict and blueprint
+exist. Do not mark the goal complete merely because `docs/research/verdict.md`
+and `docs/research/technical-implementation-concept.md` exist. Continue in
+repeated passes until the operator explicitly stops the goal, replaces it, or
+says the research program is complete.
+
+Treat every existing finding in `docs/research/` as a theory, not a settled
+fact. The job of each pass is not to defend prior work. The job is to re-check
+what is already written, reconsider whether it still serves the Parallax goal,
+find what is missing, and improve the trustworthiness of the repository's
+research record.
 
 Each pass should:
 
 1. Re-read this prompt and the current `docs/research/` state.
-2. Identify the weakest, least-proven, most stale, or most strategically
-   important claim.
-3. Check current primary sources and current project docs before relying on old
-   conclusions.
-4. Add or revise a focused, source-linked Markdown note under `docs/research/`.
-5. Update this prompt, `README.md`, and `PROJECT_STRUCTURE.md` when durable
+2. Build a short pass target from the weakest, least-proven, most stale, most
+   strategically important, or most suspicious claim.
+3. Re-research that claim from current primary sources and current project docs;
+   use secondary sources only as leads or context.
+4. Reconsider the claim against the actual Parallax goal: an AI-native runtime
+   evidence/context engine, not a dashboard clone and not a generic observability
+   survey.
+5. Decide whether the old claim should be kept, narrowed, strengthened,
+   replaced, demoted to an open question, or removed.
+6. Research adjacent missing material that is clearly important to the goal and
+   absent from the current notes.
+7. Add or revise a focused, source-linked Markdown note under `docs/research/`.
+8. Label uncertainty plainly: source freshness, version checked, evidence class,
+   assumptions, unresolved questions, and what would falsify the claim.
+9. Update this prompt, `README.md`, and `PROJECT_STRUCTURE.md` when durable
    direction or repository shape changes.
-6. Commit and push each durable research section.
-7. Move to the next highest-value research gap instead of declaring the overall
+10. Commit and push each durable research section.
+11. Move to the next highest-value research gap instead of declaring the overall
    program finished.
+
+Prioritize research quality over volume. Prefer a smaller note with precise
+sources, dates, versions, and a clear confidence level over a broad synthesis
+that cannot be audited. When a prior note lacks primary-source support, current
+version checks, or a falsification path, treat that weakness as a research gap.
+
+Benchmark boundary for this prompt: do not spend ordinary indefinite research
+passes benchmarking performance differences between storage or infrastructure
+candidates. A separate benchmark-focused agent may own those measurements. This
+prompt should maintain the benchmark questions, quality bars, evidence contracts,
+and interpretation rules; it should consume and scrutinize benchmark results when
+they exist, but not duplicate the benchmark agent's work unless the operator
+explicitly asks for a benchmark pass.
 
 Keep challenging the GO verdict, storage choice, API boundary, CLI/MCP access
 surface, scaling tiers, frontend direction, agent/CLI tracing model, safety
@@ -395,22 +423,35 @@ historical. When versions matter, state the version or release date being
 compared and call out if a source is stale. This applies to every named
 candidate, including Aduce if it is compared in future research.
 
+Ownership boundary: routine runs of this prompt should not try to be the
+benchmarking agent. Their job is to define and protect the benchmark standard,
+verify the trustworthiness of benchmark inputs, check whether benchmark results
+actually answer the Parallax-shaped question, and update conclusions when
+external benchmark artifacts land. Do not turn an ordinary deep-research pass
+into a storage or infrastructure benchmark run unless the operator explicitly
+assigns that pass. If a conclusion depends on benchmark evidence that does not
+exist yet, label it as unproven and point to the required benchmark artifact
+instead of filling the gap with vendor claims.
+
 1. Study how systems are designed. Read public benchmarks and, more importantly,
    the architecture and design docs behind each candidate: data layout, ingest
    path, query path, indexing, compaction, retention, replication, and
    clustering model. Public benchmarks are a starting signal, not the verdict —
    most are vendor-published and measure the workload that flatters the vendor.
 
-2. Build a prototype of our own benchmark, do not only describe one. The
-   research must produce a concrete, runnable evaluation harness — not just a
-   plan — that measures each storage candidate (GreptimeDB, ClickHouse, and any
-   other in-scope system) against THIS system's purpose, not a general-purpose
-   leaderboard. A system can be excellent for the job it was designed for and
-   still be wrong for us. The question is never "which system is best in general"
-   — it is "which system is best designed for OUR purpose."
+2. Maintain the benchmark prototype contract, do not only describe one. The
+   broader research program must have a concrete, runnable evaluation harness
+   that measures each storage candidate (GreptimeDB, ClickHouse, and any other
+   in-scope system) against THIS system's purpose, not a general-purpose
+   leaderboard. A benchmark-focused agent may own the execution work. This prompt
+   owns the standards: what the benchmark must measure, whether its methodology
+   is trustworthy, and whether its results justify changing Parallax's technical
+   direction. A system can be excellent for the job it was designed for and still
+   be wrong for us. The question is never "which system is best in general" — it
+   is "which system is best designed for OUR purpose."
 
-   The benchmark prototype is a required deliverable and must be specific enough
-   to run, including:
+   The benchmark prototype contract is a required artifact and must be specific
+   enough to run, including:
    - a representative dataset and a generator for it: mixed error events, OTLP
      logs/traces/metrics, deploy markers, CI/CLI/agent traces, and frontend
      sessions, at realistic cardinality and trace-linkage;
@@ -427,9 +468,10 @@ candidate, including Aduce if it is compared in future research.
 
    The storage benchmark has veto power over the default storage choice: no
    storage winner is declared until the prototype is run against the latest
-   stable versions. Grow `docs/research/observability-storage-benchmark-plan.md`
-   from a plan into this runnable prototype spec, and keep the metadata-store
-   benchmark aligned the same way.
+   stable versions. Keep `docs/research/observability-storage-benchmark-plan.md`,
+   `docs/research/storage-benchmark-prototype.md`, and the metadata-store
+   benchmark aligned with this contract, and consume benchmark-agent results when
+   they land.
 
 Judge every candidate on these axes, in priority order:
 
@@ -1174,13 +1216,15 @@ Deliver, with reasoning tied to the evaluation lens and the benchmark axes:
   flow from event to evidence bundle, the event/error data model, deterministic
   grouping and correlation approach, agent/CLI trace model, audit graph, and
   where causal/lifecycle reconstruction happens.
-- A runnable benchmark prototype for evaluating and comparing storage systems
+- A maintained benchmark contract for evaluating and comparing storage systems
   (GreptimeDB, ClickHouse, and any other in-scope candidate) against the Parallax
   goal: dataset + generator, per-candidate schema/DDL, the exact
   evidence-bundle/correlation queries, the freshness/latency/cost/size metrics,
   and a reproducible harness with the candidate behind a storage abstraction.
-  This is a deliverable, not a description, and it has veto power over the default
-  storage choice (see "Benchmarking and Comparison Methodology").
+  The benchmark harness and its results have veto power over the default storage
+  choice (see "Benchmarking and Comparison Methodology"), but ordinary
+  indefinite research passes should update the contract or interpret benchmark
+  artifacts rather than duplicate the separate benchmark agent's execution work.
 - Tradeoffs and the rejected alternatives, so the choice is defensible.
 
 ## Scaling Trajectory: Three Tiers, Startups First

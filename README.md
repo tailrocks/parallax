@@ -19,8 +19,31 @@ This repository is in research and product-discovery mode. Expect fast
 iteration on `main`, plain Markdown notes, and frequent restructuring as the
 idea becomes sharper.
 
+## Indefinite Research Runs
+
+The preferred research workflow is an indefinite re-verification loop over
+[`prompts/deep-research-parallax.md`](prompts/deep-research-parallax.md), run
+through Codex `run` / `go` or Claude Code `/loop`.
+
+Treat every existing note under `docs/research/` as a theory until current
+primary-source evidence supports it. Each pass should re-check a weak, stale,
+important, or suspicious claim; reconsider it against the Parallax goal; add
+missing important research; update the relevant Markdown; commit; push; and then
+continue to the next gap.
+
+The ordinary deep-research loop should focus on quality, trustworthiness,
+current source verification, explicit uncertainty, and falsification criteria.
+Do not spend those passes benchmarking storage or infrastructure performance
+differences; use separate benchmark-agent artifacts when they exist and mark
+benchmark-dependent claims as unproven until measured.
+
+See [`prompts/README.md`](prompts/README.md) for the exact Codex and Claude Code
+commands to keep the research running indefinitely.
+
 ## Start Here
 
+- [Research prompt runbook](prompts/README.md)
+- [Deep research prompt](prompts/deep-research-parallax.md)
 - [Go / no-go verdict](docs/research/verdict.md)
 - [Risks and the bear case](docs/research/risks-and-bear-case.md)
 - [Business model and economics](docs/research/business-model-and-economics.md)

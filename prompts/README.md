@@ -8,8 +8,29 @@ OpenCode) so a piece of work runs the same way every time.
 
 | File | Purpose |
 | --- | --- |
-| `deep-research-parallax.md` | Deep, critical research brief that validates the Parallax direction and must end in a concrete technical implementation concept (which system, which storage, how to build it). |
+| `deep-research-parallax.md` | Deep, critical research brief that validates, re-verifies, and extends the Parallax direction indefinitely; every prior finding is treated as a hypothesis until current evidence supports it. |
 | `greptimedb-vs-clickhouse-internals.md` | Never-ending `/loop` brief for the under-the-hood GreptimeDB vs ClickHouse comparison: read the source, explain which design decisions make each fast or slow per signal, decide which to build Parallax on, and (when one wins but lacks features) map what the winner must implement to close the gap. Writes to `docs/research/greptimedb-vs-clickhouse/`. |
+
+## Current preferred mode
+
+Run `prompts/deep-research-parallax.md` as an indefinite re-verification loop.
+The goal is not one final report. The goal is to keep improving the quality,
+trustworthiness, and completeness of the research record.
+
+Each pass should treat existing `docs/research/` findings as theories:
+
+1. Re-read the prompt and current research notes.
+2. Pick the weakest, stalest, least-proven, most strategically important, or
+   most suspicious claim.
+3. Re-check current primary sources and current project docs.
+4. Reconsider whether the claim still makes sense for Parallax's actual goal.
+5. Update or replace the note, add missing important research, commit, push, and
+   continue to the next gap.
+
+Routine deep-research passes should not benchmark storage or infrastructure
+performance differences. A separate benchmark-focused agent can own those runs.
+This prompt should maintain benchmark standards, scrutinize benchmark artifacts
+when they exist, and mark benchmark-dependent claims as unproven until measured.
 
 ## How to run a prompt
 
@@ -17,14 +38,77 @@ OpenCode) so a piece of work runs the same way every time.
 
 Open the agent and hand it the file as the task — paste the contents, attach the
 file, or reference the path (for example `@prompts/deep-research-parallax.md` in
-Claude Code). The agent works the brief and writes findings to `docs/research/`.
+Claude Code). Use this for a targeted pass only. For the main Parallax research
+program, prefer the indefinite modes below.
 
-### 2. As a goal (`/goal`) — recommended
+### 2. Codex run/go — indefinite
 
-`/goal` makes the agent treat the prompt as an objective and keep working across
-turns until a completion condition is met. This is the recommended way to run a
-long research session: give it a high completion bar and it keeps going on its
-own until the bar is reached, then stops — no wasted runs afterward.
+Use Codex's long-running `run` / `go` flow with an explicit never-finished
+research instruction:
+
+```text
+Run/go prompts/deep-research-parallax.md indefinitely.
+
+Treat every existing docs/research finding as a theory, not a settled fact.
+Each pass: re-read the prompt and current docs/research state; pick the weakest,
+stalest, least-proven, most strategically important, or most suspicious claim;
+re-research it from current primary sources; reconsider whether it still serves
+Parallax's goal as an AI-native runtime evidence/context engine; update or
+replace the focused Markdown note; add important missing research; update durable
+prompt/README/PROJECT_STRUCTURE docs when needed; commit and push; then continue
+to the next highest-value gap.
+
+Focus on research quality, source trustworthiness, current versions, explicit
+uncertainty, and falsification criteria. Do not spend this run benchmarking
+storage or infrastructure performance differences unless explicitly asked; use
+the separate benchmark agent's artifacts when they exist and mark unmeasured
+claims as unproven.
+
+Do not mark the run complete until the operator explicitly stops it, replaces it,
+or says the research program is complete.
+```
+
+### 3. Claude Code `/loop` — indefinite
+
+Use `/loop` with a fixed interval for the never-stop behavior. The interval is a
+re-trigger beat, not a freshness requirement. If the scheduler coalesces while a
+pass is running, `5m` keeps the loop close to continuous; if overlapping work or
+cost becomes a problem, raise it to `15m` or `30m`.
+
+```text
+/loop 5m Follow prompts/deep-research-parallax.md as the active indefinite
+research brief.
+
+Treat every existing docs/research finding as a theory, not a settled fact.
+Each pass: re-read the prompt and current docs/research state; pick the weakest,
+stalest, least-proven, most strategically important, or most suspicious claim;
+re-research it from current primary sources; reconsider whether it still serves
+Parallax's goal as an AI-native runtime evidence/context engine; update or
+replace the focused Markdown note; add important missing research; update durable
+prompt/README/PROJECT_STRUCTURE docs when needed; commit and push; then continue
+to the next highest-value gap.
+
+Focus on research quality, source trustworthiness, current versions, explicit
+uncertainty, and falsification criteria. Do not spend this loop benchmarking
+storage or infrastructure performance differences unless explicitly asked; use
+the separate benchmark agent's artifacts when they exist and mark unmeasured
+claims as unproven.
+
+Never declare the research complete on your own. Keep going until the operator
+explicitly stops the loop, replaces it, or says the research program is complete.
+```
+
+Notes:
+
+- `/loop` tasks auto-expire after about 7 days and stop if the session closes
+  (they resume on `--resume` while unexpired). Relaunch for a longer program.
+- Do not wrap `/goal` inside `/loop` for this open-ended research. Pick one
+  runner: Codex `run` / `go` or Claude Code `/loop`.
+
+### 4. Bounded `/goal` — fixed deliverables only
+
+Use a bounded `/goal` only when the desired stop condition is explicit, such as
+creating the first verdict or refreshing one named research area:
 
 ```text
 /goal Execute prompts/deep-research-parallax.md. Phase 1 first: deliver a
@@ -37,55 +121,9 @@ layer. Research deeply across many passes; commit and push each durable section;
 do not stop shallow or early.
 ```
 
-To get MORE results rather than fewer, the lever is the completion condition, not
-the command: a sharp, demanding bar ("done only when the verdict exists and, if
-GO, the blueprint covers API, boundary + MCP decision, all three tiers, and a
-per-layer stack") keeps the agent grinding through many passes. A vague goal
-("research Parallax") lets it declare victory early — avoid that.
-
-For an ongoing research program that should keep working after the verdict and
-blueprint exist, use an open-ended completion condition:
-
-```text
-/goal Continue deep research on prompts/deep-research-parallax.md indefinitely.
-
-Keep treating the prompt as the active research brief. Do not stop after one
-synthesis or one document. Work in repeated passes: re-read the prompt and
-current docs/research state, identify the weakest or stalest claim, research
-current primary sources, update focused Markdown notes, update durable prompt or
-repo-shape docs when needed, commit and push each durable section, then continue
-to the next highest-value research gap.
-
-Do not mark the goal complete merely because docs/research/verdict.md or
-docs/research/technical-implementation-concept.md exists. Keep the goal active
-until I explicitly stop it, replace it, or say the research program is complete.
-```
-
-### 3. On a loop (`/loop`)
-
-`/loop` re-runs a prompt on an interval (or self-paced) and never self-completes —
-you stop it by hand when the picture is clear enough. Use it when you want
-endless deepening passes rather than convergence on a fixed deliverable:
-
-```text
-# self-paced: the agent keeps starting fresh passes until you stop it
-/loop prompts/deep-research-parallax.md
-
-# fixed interval: re-run every 30 minutes (only if you want pauses between passes)
-/loop 30m prompts/deep-research-parallax.md
-```
-
-Notes:
-
-- Omit the interval to let the model self-pace (back-to-back passes, no idle
-  waits — right for research, since nothing external is being watched). Pass an
-  interval only if you want breathing room to review between passes.
-- `/loop` tasks auto-expire after about 7 days, and stop if the session closes
-  (they resume on `--resume` while unexpired).
-- Do NOT wrap `/goal` inside `/loop` for this open-ended research. `/goal`
-  already self-completes, so `/loop /goal ...` just restarts a finished goal —
-  redundant. Pick one: `/goal` to converge on the verdict + blueprint and stop,
-  or `/loop` for endless passes you end by hand.
+A vague bounded goal like "research Parallax" lets an agent declare victory
+early. For indefinite improvement, use Codex `run` / `go` or Claude Code
+`/loop` instead.
 
 ### Running the GreptimeDB vs ClickHouse internals comparison
 
@@ -150,10 +188,11 @@ Note `/loop` runs auto-expire after about 7 days and stop when the session close
 ## Output
 
 Running these prompts should produce source-linked Markdown under
-`docs/research/`, following the repo conventions in `AGENTS.md`. The deep-research
-prompt specifically must end in a technical implementation concept: which system
-per layer, which default storage and why, and the best way to build it, with a
-startup-first deployment and a horizontal scale-out path.
+`docs/research/`, following the repo conventions in `AGENTS.md`. The
+deep-research prompt still has gated deliverables — the GO / NO-GO verdict and,
+if GO, the technical implementation concept — but the ongoing research program
+does not end when those files exist. Later passes should keep re-verifying,
+narrowing, replacing, and extending the research record.
 
 ## Prompt maintenance
 
