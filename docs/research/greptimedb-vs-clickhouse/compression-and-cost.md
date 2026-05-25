@@ -3,7 +3,8 @@
 <!-- markdownlint-disable MD013 -->
 
 Status: pass 8, extended passes 88–89 (Runs 51–52: full-text index storage cost,
-inverted + bloom-vs-bloom). The cost axis (#2). Combines the codec mechanisms from the internals notes with **measured
+inverted + bloom-vs-bloom) + pass 109 (Run 73: per-column codec ratios re-verified,
+exact, no drift). The cost axis (#2). Combines the codec mechanisms from the internals notes with **measured
 per-table/per-column sizes** from the live Docker candidates, then ties to retention
 $. Builds on `local-benchmark-results.md`.
 
@@ -49,14 +50,22 @@ compression is per-column-pattern:
   near-incompressible output on noisy mantissas, so ClickHouse fell back to bulk
   ZSTD and lost to Parquet+ZSTD).
 
-### Per-column proof (ClickHouse `metrics_real`)
+### Per-column proof (ClickHouse `metrics_real`) — re-verified Run 73, exact reproduction
 
 | Column | Codec | Compressed | Raw | Ratio |
 | --- | --- | --- | --- | --- |
-| `gauge` | Gorilla, ZSTD | 84.7 KiB | 6.59 MiB | **78×** |
+| `gauge` | Gorilla, ZSTD | 84.7 KiB | 6.59 MiB | **79.7×** |
 | `counter` | DoubleDelta, ZSTD | 922 KiB | 6.59 MiB | 7.3× |
 | `ts` | DoubleDelta, ZSTD | 10.1 KiB | 6.59 MiB | 668× (regular 30 s step) |
-| `service`/`instance` | LowCardinality | ~4–10 KiB | 0.85 MiB | dictionary |
+| `service` | LowCardinality | 4.2 KiB | 845 KiB | 199× (dictionary) |
+| `instance` | LowCardinality | 10.0 KiB | 846 KiB | 85× (dictionary) |
+
+**Re-verified live (Run 73, ~pass 8 → pass 109, no drift):** every ratio reproduces
+(gauge 79.7× ≈ the original 78×, counter 7.3× exact, ts 668× exact). **Table total: CH
+1.09 MiB vs GreptimeDB 1.89 MiB → CH ~1.7× smaller** on this *tuned-numeric* table —
+reproduces Run 4 exactly. So "ClickHouse wins hand-tuned numeric columns (Gorilla flat
+gauge, DoubleDelta monotonic counter)" is **stable**; GreptimeDB's automatic Parquet+ZSTD
+wins the dict-friendly + noisy-float patterns (Run 10) — the per-column-pattern wash holds.
 
 ## Realistic-cardinality logs (Run 10 — resolves the synthetic caveat)
 

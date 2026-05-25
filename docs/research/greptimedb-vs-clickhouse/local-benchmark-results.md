@@ -2976,6 +2976,40 @@ docker exec parallax-bench-clickhouse-1 sh -c "ls -la '$P' | grep skp_idx"   # .
 docker exec parallax-bench-clickhouse-1 sh -c "ls '$P' | wc -l"   # 37
 ```
 
+### Run 73 — 2026-05-25 — Per-column codec compression re-verified (the stalest numeric claim, exact)
+
+**Pass target.** Re-verify the oldest load-bearing numeric claim — ClickHouse's per-column
+codec ratios (Run 4 ~pass 8: gauge Gorilla 78×, counter DoubleDelta 7.3×) behind "CH wins
+tuned numeric columns" + the per-pattern compression wash.
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned —
+latest, no bump). `metrics_real` (864k rows, counter+gauge), `system.parts_columns`.
+
+**Measured (CH per-column, reproduces Run 4):**
+
+| Column | Codec | Compressed | Ratio (Run 4 → Run 73) |
+| --- | --- | --- | --- |
+| `gauge` | Gorilla, ZSTD | 84.7 KiB | 78× → **79.7×** |
+| `counter` | DoubleDelta, ZSTD | 922 KiB | 7.3× → **7.3×** (exact) |
+| `ts` | DoubleDelta, ZSTD | 10.1 KiB | 668× → **668×** (exact) |
+| `service` | LowCardinality | 4.2 KiB | dict → **199×** |
+| `instance` | LowCardinality | 10.0 KiB | dict → **85×** |
+
+**Table total:** CH **1.09 MiB** vs GreptimeDB **1.89 MiB** → **CH ~1.7× smaller** on this
+tuned-numeric table (reproduces Run 4's 1.09 vs 1.9 exactly).
+
+**Verdict.** **No drift — exact reproduction at ~pass 109.** ClickHouse's hand-tuned codecs
+hit the same ratios (Gorilla ~80× on flat gauge, DoubleDelta 7.3× on monotonic counter, 668×
+on regular-step ts, LowCardinality 85–199× on low-card strings), and it stays ~1.7× smaller
+than GreptimeDB on the tuned-numeric metrics table. "CH wins hand-tuned numeric columns" is
+**stable**; the per-pattern wash holds (GreptimeDB's automatic Parquet+ZSTD wins dict-friendly
++ noisy-float, Run 10). Confirms the cost-axis note. Status: **confirmed.**
+
+Caveat: `metrics_real` is synthetic (regular 30 s step → the 668× ts is best-case); real
+jittered timestamps compress less. The *direction* (CH tuned-numeric edge) is robust.
+
+**Reproduce.** `docker exec parallax-bench-clickhouse-1 clickhouse-client -q "SELECT column, formatReadableSize(sum(column_data_compressed_bytes)), round(sum(column_data_uncompressed_bytes)/sum(column_data_compressed_bytes),1) ratio FROM system.parts_columns WHERE active AND table='metrics_real' GROUP BY column ORDER BY 2 DESC"` vs GreptimeDB `information_schema.region_statistics` `sst_size` for `metrics_real`.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
