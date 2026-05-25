@@ -3785,6 +3785,52 @@ Caveat: PromQL timed by curl wall (in-container, HTTP ~negligible per Run 60) vs
 **Reproduce.** GreptimeDB SQL `SELECT service,avg(value) FROM metrics_hc GROUP BY service`
 (~104 ms) vs `GET /v1/prometheus/api/v1/query?query=avg by(service)(metrics_hc)&time=…` (~550 ms).
 
+### Run 93 — 2026-05-25 — Often-run single-user queries: recent-logs tail + metric panel refresh (fair = ~2.6×; two artifacts caught)
+
+**Pass target.** Round out "what the single user actually feels" with two common
+debugging queries not yet isolated: the **recent-logs tail** and the **metric panel
+refresh** — directly relevant to the live verdict reconsideration.
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned —
+latest, no bump). `logs_b1` (5M), `metrics_hc` (8M / 40k series, ts span ~1h40m).
+
+**Measured (warm):**
+
+| Query | ClickHouse | GreptimeDB | ratio |
+| --- | --- | --- | --- |
+| Recent-logs tail (`service='svc-0' ORDER BY ts DESC LIMIT 100`) | ~3 ms | ~15 ms | ~5× (both interactive) |
+| Metric panel refresh — **literal** time bound (Grafana-realistic), `ts >= '…03:19:30'` (4.84M rows, 40 services) | **~36 ms** | **~93 ms** | **~2.6×** |
+| Metric panel refresh — `max(ts) - INTERVAL` **subquery** form | ~52 ms | **~1100 ms** | ~21× ⚠ artifact |
+
+**Two artifacts caught (honesty):**
+
+1. A first attempt showed "GreptimeDB ~0–2 ms" — a **0-row glitch**: `WHERE ts >= (SELECT
+   max(ts) FROM metrics_hc) - 3600000` is invalid on a GreptimeDB `TIMESTAMP` (integer
+   subtraction, not `INTERVAL`) → empty result, ~0 ms of nothing. **Not a win.**
+2. The corrected **subquery** form (`… - INTERVAL '1 hour'`) ran in **~1100 ms** on
+   GreptimeDB vs ~52 ms on ClickHouse (~21×) — but that is a **query-shape artifact**: the
+   uncorrelated `max(ts)` subquery is **not folded/pushed** by GreptimeDB's optimizer
+   (same family as the join-pushdown gap, Run 81), so it pays ~12× over the literal form;
+   ClickHouse folds it. Grafana sends **literal** time bounds, so the **fair** number is the
+   literal form.
+
+**Verdict — no surprise; metrics story holds.** Fairly measured (literal bound, how
+dashboards actually query), the metric panel refresh is **CH ~36 ms vs GreptimeDB ~93 ms =
+~2.6×** — the same ~2–3× metric-aggregation gap (Run 67). So **ClickHouse is faster on the
+common dashboard metric query too**; there is **no GreptimeDB metric-speed win** (reinforces
+"metrics→GreptimeDB = capability/PromQL-native, not speed"). Recent-logs tail is ~5× but both
+sub-20 ms (interactive). **New GreptimeDB gotcha for the blueprint:** use **literal /
+app-computed time bounds**, not a `max(ts)` subquery, in metric-panel queries — GreptimeDB
+doesn't fold the subquery (~12× penalty). Status: **two artifacts corrected; fair metric-panel
+= ~2.6× CH; verdict unchanged.**
+
+Caveat: warm cache-resident smoke; ~60%-of-data window so neither pruned dramatically. The
+subquery-fold gap is a GreptimeDB optimizer wrinkle (cf. Run 81 join-pushdown).
+
+**Reproduce.** Metric panel: `… WHERE ts >= '<literal>' GROUP BY service` on both (CH ~36 ms /
+GreptimeDB ~93 ms); the `… >= (SELECT max(ts) …) - INTERVAL '1 hour'` subquery form is ~1100 ms
+on GreptimeDB (artifact — use a literal).
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

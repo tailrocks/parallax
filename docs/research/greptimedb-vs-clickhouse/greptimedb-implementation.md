@@ -259,8 +259,11 @@ SELECT count(*) FROM spans
 
 -- Q6 bundle = Q1 + Q2 + Q3 for the anchor, assembled client-side.
 
--- Metrics (native PromQL, not SQL):
---   GET /v1/prometheus/api/v1/query_range?query=avg by (service)(http_req_latency)&start=&end=&step=
+-- Metrics: PromQL for Grafana panels (literal start/end), BUT use SQL for HOT aggregations
+--   (Run 92: GreptimeDB SQL ~5x faster than its own PromQL). GET /v1/prometheus/api/v1/query_range?query=avg by (service)(http_req_latency)&start=&end=&step=
+--   ⚠ For a SQL metric panel, pass a LITERAL/app-computed time bound — NOT a `max(ts)` subquery:
+--   `WHERE ts >= '<start>'` is ~93 ms; `WHERE ts >= (SELECT max(ts) …) - INTERVAL '1 hour'` is
+--   ~1100 ms (~12x — GreptimeDB doesn't fold the uncorrelated subquery, Run 93). ClickHouse folds it.
 ```
 
 Key/index usage: **Q1** uses the `trace_id` inverted index (the UNION's per-table
