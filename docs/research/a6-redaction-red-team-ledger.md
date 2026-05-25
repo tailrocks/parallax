@@ -19,6 +19,8 @@ only by a committed run artifact showing:
   MCP output;
 - detector failures failed closed;
 - raw refs were not dereferenced by default;
+- source-field policies kept runner-private, grader-private, and default
+  triage-private fields out of agent-visible projections;
 - external scanners did not find unredacted secrets in generated outputs;
 - redaction did not erase the minimum evidence needed for bundle usefulness.
 
@@ -76,6 +78,7 @@ docs/research/redaction-red-team-runs/<run_id>/manifest.json
 docs/research/redaction-red-team-runs/<run_id>/surface-fixture-ledger.jsonl
 docs/research/redaction-red-team-runs/<run_id>/scanner-comparison.jsonl
 docs/research/redaction-red-team-runs/<run_id>/projection-audit.jsonl
+docs/research/redaction-red-team-runs/<run_id>/source-field-policy-audit.jsonl
 docs/research/redaction-red-team-runs/<run_id>/usefulness-audit.jsonl
 docs/research/redaction-red-team-runs/<run_id>/repair-ledger.jsonl
 docs/research/redaction-red-team-runs/<run_id>/hashes.sha256
@@ -98,6 +101,10 @@ Each run gets exactly one manifest:
   "research_date": "2026-05-25",
   "dataset_kind": "synthetic_canary",
   "policy_version": "redact-v1",
+  "source_field_policy_version": "phase0-source-field-policy-v1",
+  "source_field_policy_refs": [
+    "docs/research/bundle-value-eval/tasks/<task_id>/source-field-policy.json"
+  ],
   "bundle_schema_version": "evidence-bundle-v0",
   "surfaces": ["sentry_event", "otlp_log", "ci_log", "cli_invocation", "agent_session"],
   "projections": ["bundle_json", "bundle_markdown", "cli_output", "http_api", "mcp_tool_result"],
@@ -139,6 +146,8 @@ Every seeded fixture gets one row in `surface-fixture-ledger.jsonl`:
   "fixture_id": "cli_stdout_database_url_001",
   "surface": "cli_stdout",
   "source_shape": "bounded_stderr_excerpt",
+  "source_field_zone": "agent_visible_seed",
+  "agent_visible_expected": true,
   "canary_classes": ["postgres_connection_string", "password", "repo_path_user_fragment"],
   "encoding_variants": ["plain", "shell_quoted", "json_escaped"],
   "expected_actions": [
@@ -203,6 +212,8 @@ Projection rows prove that the safe internal bundle did not leak when rendered:
   "bundle_id": "fixture_bundle_001",
   "projection": "bundle_markdown",
   "output_hash": "sha256:...",
+  "source_field_policy_hash": "sha256:...",
+  "source_field_policy_violations": 0,
   "final_scanner_status": "pass",
   "canary_leaks": 0,
   "raw_refs_expanded": 0,
@@ -214,6 +225,42 @@ Projection rows prove that the safe internal bundle did not leak when rendered:
 
 Every public output path needs coverage: JSON, Markdown, CLI, HTTP API, MCP tool
 result, and any model prompt wrapper.
+
+## Source Field Policy Audit Row
+
+A6 also records semantic field-policy isolation for eval/corpus sources. These
+rows catch leaks that secret scanners cannot classify, such as gold patches,
+hidden verifier IDs, generated hints, parser source, resolving commit URLs, or
+LLM metadata.
+
+```json
+{
+  "schema_version": "a6-source-field-policy-audit-v1",
+  "run_id": "a6-2026-05-25-phase1-canary",
+  "task_id": "swe-live-rust-example",
+  "policy_ref": "tasks/swe-live-rust-example/source-field-policy.json",
+  "policy_hash": "sha256:...",
+  "projection": "bundle_json",
+  "checked_zones": ["runner_private", "grader_private", "triage_private"],
+  "agent_visible_denied_field_count": 0,
+  "denied_fields_found": [],
+  "allowed_private_derivations": [
+    {
+      "field": "test_cmds",
+      "zone": "runner_private",
+      "derivation": "sanitized_command_identity",
+      "reason": "Harness command identity needed for failure reproduction."
+    }
+  ],
+  "verdict": "pass"
+}
+```
+
+`allowed_private_derivations` must describe derived, sanitized facts, not raw
+field inclusion. A row with any raw `grader_private` content, any raw
+`runner_private` harness internals beyond pre-approved sanitized identity, or
+any default `triage_private` field in agent-visible output fails the run even if
+all canary and external scanner checks pass.
 
 ## Usefulness Audit Row
 
@@ -264,6 +311,9 @@ When a red-team run finds a leak or usefulness failure, record the repair:
 ## Counting Rules
 
 - A seeded canary leak in any agent-visible projection fails the run.
+- A source-field policy violation in any agent-visible projection fails the run.
+  Redaction cannot rescue a forbidden field that should never have entered the
+  projection.
 - A detector timeout, crash, or parser error passes only if the affected field is
   stripped, converted to `ref_only`, or the bundle is blocked.
 - A raw ref is safe only when the default projection contains the ref metadata,
@@ -291,6 +341,7 @@ Cover each supported surface with at least these canary classes:
 | Agent session | prompt secret, tool input secret, shell output secret, MCP response secret, generated Markdown leak. |
 | Frontend | form-like value, DOM text, console log, network body, replay/screenshot metadata. |
 | Database evidence | row value PII, credential-like config row, SQL error with connection string, export-like result. |
+| A1/eval source fields | gold patch, test patch, fail/pass verifier IDs, generated hints, parser source, resolving commit URL, LLM metadata. |
 
 Each class should appear in multiple encodings: plain text, JSON escaped,
 URL-encoded, shell quoted, multiline, base64-like where realistic, Markdown
@@ -307,7 +358,7 @@ Use these claim levels in `redaction-red-team-results.md`:
 | `cli_ci_bundle_pass` | CLI and CI surfaces pass safety and usefulness fixtures. | "CLI/CI excerpts are agent-visible only after redaction tests pass." |
 | `frontend_metadata_only_pass` | Frontend metadata/error fixtures pass, but replay/raw DOM remains out of scope. | "Frontend metadata is redaction-tested; replay remains opt-in and gated." |
 | `agent_session_metadata_pass` | Agent/session structural metadata passes, but full prompts/tool outputs remain raw refs. | "Agent traces expose metadata and redacted excerpts, not full transcripts by default." |
-| `agent_visible_mixed_pass` | All claimed default surfaces pass zero-canary-leak and usefulness gates. | "Agent-visible bundles are red-team tested for the configured surfaces." |
+| `agent_visible_mixed_pass` | All claimed default surfaces pass zero-canary-leak, source-field-isolation, and usefulness gates. | "Agent-visible bundles are red-team tested for the configured surfaces." |
 | `fail_closed_only` | Leaks are avoided only by stripping/ref-only behavior that loses required usefulness. | "Safe metadata-only mode; no agent-visible rich excerpts." |
 | `claim_expired` | A previous pass is stale or invalidated by a rerun trigger. | "Previously tested; rerun required." |
 
@@ -319,6 +370,7 @@ surfaces and projections actually covered by the current run.
 Rerun A6 when any of these change:
 
 - redaction policy version;
+- source-field policy version or source task field schema;
 - evidence bundle schema or projection renderer;
 - runtime detector/parser version;
 - external scanner major version or GitHub pattern snapshot;
@@ -348,6 +400,8 @@ unaffected narrower level.
 - [Frontend capture safety ledger](frontend-capture-safety-ledger.md) defines
   browser/replay-specific privacy rows that A6 can veto before frontend evidence
   becomes agent-visible.
+- [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md)
+  defines source-field zones that A6 must audit before A1 bundles can count.
 - [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
   depends on A6 because bundle-value evals should not reward unsafe raw context.
 
@@ -355,6 +409,6 @@ unaffected narrower level.
 
 A6 can pass only with reproducible red-team artifacts. The required claim is not
 "we scrub secrets"; it is "for these surfaces and projections, seeded canaries
-did not leak, detector failures failed closed, raw refs stayed refs, usefulness
-was preserved, and the claim expires when the capture or redaction surface
-changes."
+did not leak, forbidden source fields stayed out, detector failures failed
+closed, raw refs stayed refs, usefulness was preserved, and the claim expires
+when the capture, source-field, or redaction surface changes."

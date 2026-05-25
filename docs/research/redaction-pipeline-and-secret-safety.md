@@ -19,6 +19,15 @@ events, OTLP attributes, browser breadcrumbs, CI logs, CLI args/env,
 stdout/stderr, agent prompts/tool outputs, attachments, and database query
 results — to trust one regex pass.
 
+2026-05-25 correction: redaction is also not enough to protect A1 eval
+integrity. The [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md)
+now requires `source-field-policy.json` to separate `agent_visible_seed`,
+`runner_private`, `grader_private`, `triage_private`, and `public_audit`
+source fields. A6 must consume that policy as a hard pre-redaction gate. A
+scanner can miss no secrets and still fail if an agent-visible projection
+contains a gold patch, hidden verifier ID, generated hint, parser source, or
+resolving commit URL that the source-field policy forbids.
+
 The concrete detector/toolchain decision is now split into
 [Redaction detector toolchain](redaction-detector-toolchain.md): Parallax should
 own a Rust, source-aware, default-deny runtime redaction engine and use
@@ -61,6 +70,7 @@ function.
 ```text
 capture source
   -> source-side minimization when available
+  -> source-field policy gate for eval/corpus rows
   -> ingest normalization and default-deny field policy
   -> detector pass over accepted fields and raw refs
   -> storage with policy_version and raw_access_policy
@@ -82,7 +92,26 @@ Prefer not collecting sensitive data:
 This stage cannot be trusted alone because user code, framework integrations,
 third-party SDKs, shells, and test tools can still emit secrets.
 
-### Stage 2: Ingest Default-Deny Policy
+### Stage 2: Source-Field And Ingest Default-Deny Policy
+
+For generated eval/corpus inputs, apply the source-field policy before normal
+redaction:
+
+- `agent_visible_seed` fields can enter agent-visible bundle candidates after
+  leakage review.
+- `runner_private` fields can drive harness execution and parsing, but only
+  sanitized command identity or aggregate status can appear in agent context.
+- `grader_private` fields can be hashed for audit, but patch, test patch,
+  hidden verifier, fixed commit, and resolving PR/commit content cannot enter
+  Arm A/B/C or model prompts.
+- `triage_private` fields are denied by default. Promotion requires a recorded
+  reason and contamination-tier downgrade.
+- `public_audit` fields can appear in manifests and hashes, but prompt/bundle
+  inclusion still needs an arm-specific reason.
+
+This policy is semantic isolation, not PII detection. Treat a violation as a
+bundle-safety failure even when detectors, canary scans, and external scanners
+all pass.
 
 The ingest gateway should normalize each source into typed fields and apply
 field policy before high-volume storage:
@@ -153,6 +182,11 @@ object:
 {
   "policy_version": "redact-v1",
   "policy_mode": "default-deny",
+  "source_field_policy": {
+    "version": "phase0-source-field-policy-v1",
+    "hash": "sha256:...",
+    "violations": 0
+  },
   "input_surfaces": ["sentry_event", "otlp_span", "ci_log", "cli_invocation"],
   "rules_applied": ["auth-header-strip", "provider-secret-detector", "pii-email", "hmac-low-entropy-id"],
   "removed": [
@@ -179,7 +213,8 @@ object:
 ```
 
 The report must be machine-readable so evals can reject unsafe bundles
-automatically.
+automatically. For A1-style eval rows, `source_field_policy.violations > 0`
+blocks the result even when `known_secret_matches = 0`.
 
 ## Red-Team Gate
 
@@ -194,6 +229,7 @@ freshness rules are defined in the
 | Dual rendering scan | Both JSON bundle and Markdown projection scan clean. |
 | Raw-ref isolation | Raw refs are not dereferenced in default agent/API/MCP output. |
 | Detector failure mode | If a detector errors, unsafe fields are stripped and the bundle reports `manual_review_required` or fails closed. |
+| Source-field isolation | `runner_private`, `grader_private`, and default `triage_private` fields do not appear in agent-visible projections. |
 | Regression fixture | The seeded corpus runs in CI for every policy/schema change. |
 | Real-data pilot | Operator-owned real logs/CI/CLI/frontend sessions run through the same suite before external users. |
 | False-positive review | Redaction must not erase the minimum evidence needed for A1 bundle-value evals. |
@@ -242,6 +278,9 @@ production secrets. Therefore:
   mitigation and falsification plan.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) — this note
   expands the mandatory `redaction_report`.
+- [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md) —
+  defines the A1 source-field policy that A6 must enforce before scanner-based
+  redaction.
 - [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
   — frontend privacy remains the hardest PII surface and should stay opt-in.
 - [Frontend capture safety ledger](frontend-capture-safety-ledger.md) — the
