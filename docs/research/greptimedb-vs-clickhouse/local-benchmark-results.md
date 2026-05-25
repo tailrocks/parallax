@@ -2244,6 +2244,65 @@ docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public 
 
 Caveat: structure is exact (DDL); traces native schema unverified (protobuf-only ingest).
 
+### Run 58 — 2026-05-25 — Unindexed-scan engine gap re-verified + characterized (CH vectorized wins; magnitude is row-dependent, corrects Run 31)
+
+**Pass target.** Re-verify the strongest **honest counterexample** to the operator
+hypothesis — "ClickHouse is genuinely faster on unindexed/ad-hoc scans" (Run 31:
+unindexed `span_id` full scan, CH 10 ms / GT 95 ms ~10×, ~pass 53). Rotate the slice
+onto it and characterize the gap across scan size.
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned
+this pass — latest, no bump). Warm, min-of-7. `span_id` is **unindexed on both**
+(CH `spans ORDER BY (trace_id,ts)`; GreptimeDB `spans_idx` indexes only `trace_id`),
+so the predicate forces a **full scan** on both (CH `EXPLAIN`: `Granules 123/123`).
+Correctness parity: each filter returns 1 row on both.
+
+**Measured (warm):**
+
+| Scan | rows | ClickHouse | GreptimeDB | ratio | mechanism |
+| --- | --- | --- | --- | --- | --- |
+| filtered count `WHERE span_id=…` (spans) | 1M | **2 ms** | **15 ms** | ~7× | pure full scan + predicate |
+| filtered count `WHERE span_id=…` (logs_b1) | 5M | **3 ms** | **43 ms** | ~14× | pure full scan + predicate |
+| full aggregate `sum(value)` (metrics_hc) | 8M | **29 ms** | **91 ms** | ~3× | scan + aggregate |
+
+**The comparison logic & verdict.**
+
+- **Direction CONFIRMED:** ClickHouse's vectorized C++ engine (65,409-row blocks, SIMD
+  predicate eval, `query-execution-engine.md`) wins every unindexed scan — the honest
+  counterexample to "GreptimeDB fastest" **holds**. For ad-hoc/scan analytics ClickHouse
+  is genuinely faster.
+- **Magnitude CORRECTED — it is row-count-dependent throughput, not a fixed ~10×:** the
+  pure-scan gap **widens with rows scanned** (~7× at 1M → ~14× at 5M), exactly what a
+  per-row throughput difference predicts; the **aggregate** gap is **narrower (~3×)**
+  because the `sum` work (done by both) dilutes the scan-speed difference. So "CH ~10×
+  on scans" should be stated as "**CH faster on unindexed scans, ratio scales with scan
+  width (~3× agg-bound up to ~14× scan-bound at these sizes), and grows at GB-scale**."
+- **Run 31's specific "GT 95 ms / ~10×" does NOT reproduce** — the same 1M unindexed
+  `span_id` scan is now **GT 15 ms** (`execution_time_ms`, warm). The 95 ms was almost
+  certainly the **HTTP wall-clock floor** (~40 ms, see Run 40 correction) and/or a
+  cold/uncompacted `spans` state, not engine scan time. **Status: scan-gap direction
+  confirmed; magnitude re-characterized; the stale 95 ms artifact retired.**
+- **Scale caveat (unchanged):** these are 1–8M warm cache-resident floors. The
+  *decision-relevant* scan gap is GB–TB **cold**, where CH's throughput advantage should
+  be largest — still owed to the sized harness (B1). At interactive smoke scale even
+  GreptimeDB's "slow" scan is 15–91 ms (sub-perceptible); the gap matters for heavy
+  ad-hoc analytics, not the anchored hot path (which is index-served, Run 56).
+
+**Reproduce (copy-paste).**
+
+```bash
+SP=$(docker exec parallax-bench-clickhouse-1 clickhouse-client -q "SELECT span_id FROM spans LIMIT 1")
+docker exec parallax-bench-clickhouse-1 clickhouse-client --time -q "SELECT count() FROM spans WHERE span_id='$SP' FORMAT Null"
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q "EXPLAIN indexes=1 SELECT count() FROM spans WHERE span_id='$SP'"   # Granules 123/123 = full scan
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=SELECT count(*) FROM spans_idx WHERE span_id='$SP'"   # execution_time_ms
+docker exec parallax-bench-clickhouse-1 clickhouse-client --time -q "SELECT sum(value) FROM metrics_hc FORMAT Null"
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=SELECT sum(value) FROM metrics_hc"
+```
+
+Caveat: warm smoke; GreptimeDB timed by server `execution_time_ms` (excludes HTTP),
+ClickHouse by `--time` — the row-dependent *direction* is the robust result, not a
+precise cross-engine ratio.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

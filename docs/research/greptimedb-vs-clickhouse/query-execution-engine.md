@@ -5,8 +5,9 @@
 Status: pass 42 + pass 77 (read-path late-materialization mechanism source-verified:
 `PruneReader::precise_filter` post-decode, no arrow `RowFilter`) + pass 88 (corrected the
 full-text attribution: the Run-12 "~18×" was a config artifact, not the engine — the engine
-gap is real only for broad-term/heavy-agg, Runs 48–49). The execution-engine half
-of checklist #4 (the read-path note covers
+gap is real only for broad-term/heavy-agg, Runs 48–49) + pass 95 (**scan gap measured
+row-dependent, Run 58** — ~7× @1M → ~14× @5M scan-bound, ~3× @8M agg-bound). The
+execution-engine half of checklist #4 (the read-path note covers
 planning / predicate pushdown / skip-vs-scan / joins; this is the *engine that runs
 the plan*). It is the mechanism **behind the measured throughput gaps** — ClickHouse
 **~2× on warm metric aggregation** at 40k series (Run 37; corrected from the ~10× of
@@ -91,6 +92,16 @@ vectorization; **(4)** specialized aggregation hash tables; **(5)** PREWHERE lat
 materialization. None is an *architectural flaw* in GreptimeDB — it is the accumulated
 micro-optimization lead of a C++ analytical engine over a younger Rust/Arrow one.
 
+**Measured scaling (Run 58) — the gap is row-dependent, not a fixed ratio.** Re-verifying
+unindexed full scans: a pure filtered count grows **~7× at 1M → ~14× at 5M** (CH 2→3 ms,
+GreptimeDB 15→43 ms) — a per-row *throughput* difference, so it widens with scan width —
+while a full `sum` over 8M is only **~3×** (CH 29 ms / GreptimeDB 91 ms) because the
+aggregate work both engines do dilutes the scan-speed delta. So state the engine gap as
+**"scales with scan width (~3× agg-bound up to ~14× scan-bound at 1–8M warm, larger at
+GB-scale cold)"**, not a single multiplier. *(This also retired the stale Run 31 "GT 95 ms
+/ ~10×" anchored-scan figure — the same 1M scan reproduces at 15 ms; the 95 ms was an
+HTTP-wall/cold artifact, per the Run 40 correction.)*
+
 ## Axis consequence
 
 - **Speed (axis #1):** ClickHouse's engine is faster on **heavy scans and
@@ -137,6 +148,8 @@ is anchored, not scan-bound.
   `src/mito2/src/sst/parquet/reader.rs` (`RowGroupSelection` + page index pruning, no arrow
   `RowFilter`), `src/mito2/src/read/prune.rs:119` (`PruneReader::precise_filter` = post-decode).
 - Empirical anchors: `local-benchmark-results.md` Run 11 (metric agg ~10×), Run 12
-  (full-text ~18×), Run 16 (anchored Q6 not throughput-bound), Run 21 (this pass).
+  (full-text ~18×), Run 16/56 (anchored Q6 not throughput-bound), Run 21, **Run 58
+  (unindexed-scan gap row-dependent: ~7× @1M → ~14× @5M scan-bound, ~3× @8M agg-bound;
+  retired Run 31's 95 ms artifact)**.
 - Cross-refs: `read-path-indexing-and-execution.md` (planning/PREWHERE/skip/joins),
   `per-signal-verdict.md`, `greptimedb-internals.md` (DataFusion/PromQL).
