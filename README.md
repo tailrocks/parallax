@@ -29,6 +29,7 @@ idea becomes sharper.
 - [Messaging and ingestion layer](docs/research/messaging-and-ingestion-layer.md)
 - [Causal reconstruction and agent safety](docs/research/causal-reconstruction-and-agent-safety.md)
 - [Technical implementation concept](docs/research/technical-implementation-concept.md)
+- [Sentry-compatible ingestion](docs/research/sentry-compatible-ingestion.md)
 - [Repository structure](PROJECT_STRUCTURE.md)
 - [Agent instructions](AGENTS.md)
 
