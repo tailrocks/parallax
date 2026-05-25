@@ -136,17 +136,23 @@ decided less by "who compresses spans 1.3× better" and more by:
    OpenDAL-native with a default local read cache (`greptimedb-internals.md`);
    ClickHouse uses an S3 disk under a storage policy with TTL-move tiering. For
    cheap, re-readable long retention GreptimeDB's design is the more direct fit.
-   **Measured (Runs 8–9), same MinIO, 1M spans:** GreptimeDB **4 objects / 37 MiB**
-   vs ClickHouse **74 objects / 63 MiB**. ClickHouse's Wide part writes **one S3
-   object per column** (+ marks/metadata) → ~18× more objects → many more GET/PUT
-   requests on a cold read; GreptimeDB writes a few large Parquet objects →
-   request-efficient. **This is the concrete object-store-economics advantage** for
-   GreptimeDB (per-request pricing dominates object-store bills for a re-read-heavy
-   engine). Nuance: ClickHouse's *active logical* data was actually smaller (31.82
-   vs 37 MiB — tuned codecs), but its raw S3 usage (63 MiB) was inflated by
-   un-garbage-collected merge parts (async S3 cleanup) — transient space
-   amplification GreptimeDB's flush model avoids. Request-count-during-query is the
-   only remaining refinement.
+   **Measured (Runs 8–9, re-verified Run 54), same MinIO, 1M spans:** GreptimeDB
+   **3 objects / 21 MiB** vs ClickHouse **74 objects / 57 MiB** (Run 54 — the **74
+   reproduced exactly** vs Run 9; ~**25× fewer** objects for GreptimeDB). ClickHouse's
+   Wide part writes **one S3 object per column** (+ marks/metadata) **per part** →
+   ~18–20 objects for even a single active part, ×N parts until merge-GC; GreptimeDB
+   writes **one Parquet SST** (+ manifest) per flush → a handful. So **even fully
+   GC'd** it is ~3 vs ~18–20 (~6–7×); the 74 includes transient un-GC'd merge parts
+   (S3 lazy cleanup — `OPTIMIZE FINAL` left 2 parts). **This is the concrete
+   object-store-economics advantage** for GreptimeDB (per-request pricing dominates a
+   re-read-heavy bill). **Size-order nuance updated (Run 54):** on the anchored
+   `PRIMARY KEY(trace_id)` schema Parallax actually wants, GreptimeDB's active logical
+   data (21.8 MiB) is now **smaller** than ClickHouse's (28.9 MiB) — *reversing* the
+   Run-1 local-disk order (CH 28.9 < GT 38 under `PK(service,name)`), because
+   trace_id-sorting clusters the high-card hex columns for better Parquet
+   dict/RLE+ZSTD. So GreptimeDB is both fewer-objects *and* smaller here. **The only
+   remaining refinement is request-count on a cold read** (GET/LIST per query — B10),
+   which fewer objects strongly implies but does not directly measure.
 2. **Compute per ingested GB and per query** — not yet measured (CPU/RSS sampling
    pending; the harness protocol covers it).
 3. **Tiered retention**: both can keep hot data local and cold on object store;

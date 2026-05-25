@@ -8,7 +8,7 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 53 local runs + B1–B15 cases. Recent: Run 44 closed the twice-owed
+cold/first-run measurement showed). 25 mechanism notes + 54 local runs + B1–B15 cases. Recent: Run 44 closed the twice-owed
 metrics item (GreptimeDB's *native PromQL* path is ~5× slower than its own SQL at 40k series
 — a `SeriesNormalize` fixed-setup cost, so metrics→GreptimeDB is capability, never speed);
 Runs 45–46 **built both implementation schemas live** (the "buildable design" bar) —
@@ -63,7 +63,7 @@ number the internals cannot explain is a flag that one of them is wrong.
 
 ## Version pins (re-check and bump every pass)
 
-As of 2026-05-25 (re-verified through pass 88 — pins still current; GreptimeDB
+As of 2026-05-25 (re-verified through pass 91 — pins still current; GreptimeDB
 `v1.1.0`/`v1.0.0` newer tags are nightly-only, GA stays `v1.0.2`; ClickHouse
 `v26.5.1.882-stable` still the latest stable *feature* line — later-dated
 `v26.2.19.43`/`v26.4.3.37` are lower-line LTS/backport patches, not higher):

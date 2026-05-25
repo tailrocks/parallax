@@ -1945,6 +1945,80 @@ Caveat: warm smoke, unmatched load (see caveats). The *direction* (neither block
 point lookup immune, scan absorbs contention) is robust; precise penalty ratios await
 matched-rate harness runs.
 
+### Run 54 — 2026-05-25 — Object-store object-count re-verified (the cost-axis pillar), + a size-order reversal
+
+**Pass target.** Re-verify the stalest verdict-critical claim: GreptimeDB writes
+~order-of-magnitude fewer S3 objects than ClickHouse (Runs 8–9, ~pass 18–19:
+GreptimeDB 4 obj / 37 MiB vs ClickHouse 74 obj / 63 MiB for 1M spans) — the
+load-bearing evidence behind the "object-store-native economics" recommendation, since
+per-request pricing dominates a re-read-heavy bill.
+
+**Environment.** Brought up the isolated S3 stack `bench/s3/run-s3-stack.sh up` (MinIO
++ GreptimeDB(S3) + ClickHouse(S3) on net `pbench-s3`, separate from the main local-disk
+stack). GreptimeDB `v1.0.2` (`[storage] type=S3`), ClickHouse `v26.5.1.882`
+(`storage_policy='s3only'`, s3 disk). Versions re-pinned this pass — both latest, no
+bump. **Dataset:** the identical 1M-span set dumped from the main ClickHouse `spans`
+(`FORMAT CSVWithNames`, 8 cols, ~129 MB) and loaded into *both* S3 instances (CH
+`INSERT … FROM INFILE … CSVWithNames`; GreptimeDB `COPY … WITH(FORMAT='CSV')`). Both
+verified `count()=1,000,000`. GreptimeDB `PRIMARY KEY(trace_id)`, CH `ORDER BY
+(trace_id, ts)`.
+
+**Measured (MinIO `mc ls --recursive | wc -l` + `mc du`, after GreptimeDB
+`flush_table` / ClickHouse `OPTIMIZE FINAL`):**
+
+| | object count | raw S3 bytes | active logical | active parts |
+| --- | --- | --- | --- | --- |
+| **GreptimeDB** | **3 objects** | 21 MiB | 21.8 MiB (1 SST) | 1 region/SST |
+| **ClickHouse** | **74 objects** | 57 MiB | **28.9 MiB** (1 active part) | 1 active (+1 un-GC'd → 2 total) |
+
+**The comparison logic & verdict.**
+
+- **Object count CONFIRMED — reproduces strongly.** ClickHouse **74 objects** is
+  *identical* to Run 9; GreptimeDB **3** (Run 8 was 4 — one fewer
+  metadata/manifest object now). Ratio **~25× fewer** (Run 9 was ~18× at 4 vs 74).
+  Mechanism unchanged: ClickHouse **Wide parts write one S3 object per column** (8
+  cols) + `.mrk`/checksums/metadata **per part** → ~18–20 objects for a single active
+  part, ×N parts until merge-GC; GreptimeDB writes **one Parquet SST** (+ manifest)
+  per flush → a handful of objects. **Even fully GC'd** (active part only) ClickHouse
+  is ~18–20 objects vs GreptimeDB 3 → still ~6–7×; the 74 includes transient un-GC'd
+  merge parts (S3 lazy cleanup — `OPTIMIZE FINAL` left 2 parts on object store).
+  **Status: confirmed.** This is the concrete object-store request-efficiency edge for
+  GreptimeDB (fewer GET/PUT/LIST on cold reads).
+- **New nuance — size order REVERSED vs local disk.** Active logical: **GreptimeDB
+  21.8 MiB < ClickHouse 28.9 MiB** (GreptimeDB ~25% smaller) — *opposite* to Run 1
+  (local disk, `PK(service,name)`: CH 28.9 < GreptimeDB 38). Cause: `PRIMARY
+  KEY(trace_id)` sorts the data by `trace_id`, clustering the high-cardinality hex
+  `trace_id`/`span_id`/`parent_span_id` columns so Parquet dictionary/RLE + ZSTD
+  compress them far better than the `service`-sorted layout did. Confirms the
+  "compression is sort-order/pattern dependent, not a blanket engine win" finding
+  (`compression-and-cost.md`): GreptimeDB on its anchored-retrieval schema (trace_id PK,
+  which Parallax wants anyway) is also the smaller *and* the more object-efficient on S3.
+- ClickHouse active size (28.9 MiB) is *byte-for-byte* the main-stack local-disk spans
+  size (Run 1) — the s3 disk stores the same compressed column files, just as S3 objects.
+
+**Caveat / owed.** Object COUNT is measured; the **request-count on a cold read**
+(GET/LIST per query) is the number that actually prices a re-read-heavy engine — still
+owed (B10, `mc admin trace` / MinIO audit). Fewer objects strongly implies fewer GETs
+but is not the same measurement. Single-node smoke, 1M rows.
+
+**Reproduce (copy-paste).**
+
+```bash
+bench/s3/run-s3-stack.sh up
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q "SELECT * FROM spans FORMAT CSVWithNames" > /tmp/spans.csv
+docker cp /tmp/spans.csv pbench-ch-s3:/spans.csv; docker cp /tmp/spans.csv pbench-gt-s3:/spans.csv
+docker exec pbench-ch-s3 clickhouse-client -q "CREATE TABLE spans (ts DateTime64(3) CODEC(DoubleDelta,ZSTD(1)), trace_id String, span_id String, parent_span_id String, service LowCardinality(String), name LowCardinality(String), duration_ms Float64, status LowCardinality(String)) ENGINE=MergeTree ORDER BY (trace_id, ts) SETTINGS storage_policy='s3only'"
+docker exec pbench-ch-s3 clickhouse-client -q "INSERT INTO spans FROM INFILE '/spans.csv' FORMAT CSVWithNames"; docker exec pbench-ch-s3 clickhouse-client -q "OPTIMIZE TABLE spans FINAL"
+docker exec pbench-gt-s3 curl -s "http://localhost:4000/v1/sql?db=public" --data-urlencode 'sql=CREATE TABLE spans ("ts" TIMESTAMP(3) TIME INDEX,"trace_id" STRING,"span_id" STRING,"parent_span_id" STRING,"service" STRING,"name" STRING,"duration_ms" DOUBLE,"status" STRING, PRIMARY KEY("trace_id"))'
+docker exec pbench-gt-s3 curl -s "http://localhost:4000/v1/sql?db=public" --data-urlencode "sql=COPY spans FROM '/spans.csv' WITH (FORMAT='CSV')"
+docker exec pbench-gt-s3 curl -s "http://localhost:4000/v1/sql?db=public" --data-urlencode "sql=ADMIN flush_table('spans')"
+docker run --rm --network pbench-s3 --entrypoint sh minio/mc:latest -c "mc alias set m http://pbench-minio:9000 minioadmin minioadmin; echo GT:; mc ls --recursive m/greptimedb/data/|wc -l; mc du m/greptimedb/data/; echo CH:; mc ls --recursive m/greptimedb/clickhouse/|wc -l; mc du m/greptimedb/clickhouse/"
+bench/s3/run-s3-stack.sh down
+```
+
+Caveat: warm smoke, 1M spans single-node. Object counts exact; cold-read request
+counts (the real $ driver) still owed (B10).
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
