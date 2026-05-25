@@ -525,8 +525,10 @@ GreptimeDB's RC2 **"100× TopK"** (dynamic filter pushdown into the Mito scan, b
 runtime dynamic filters**) is present in our `v1.0.2` — `ORDER BY … LIMIT 10` on 1M = ~20 ms, not a
 full sort. **Flat SST** (v1.0 GA default) is a shipped high-cardinality scan-format redesign (write
 ~4×, TSBS query latency up to ~10×). And **JSON Type v2** (field-level index / dynamic fields) is
-**roadmap-committed for v1.1 / Q2 2026** — directly narrowing #4 (the dynamic-attr gap that *widened*
-to ~57× at Run 104). **Honest caveat:** #2's JIT/SIMD, #3 PREWHERE, #5 projections, #8 join-pushdown
+**roadmap-committed for v1.1 / Q2 2026** — directly narrowing #4 (the dynamic-attr gap, **~8–12× with
+the typed-subcolumn cast** — Runs 129/130; the ~57× at Run 104 was ClickHouse 26.5's lax no-cast path,
+removed in 26.6; GT v1.1-nightly shows no change yet, so JSON Type v2's win is still owed to v1.1 GA).
+**Honest caveat:** #2's JIT/SIMD, #3 PREWHERE, #5 projections, #8 join-pushdown
 are **not** explicit GreptimeDB-roadmap line items — they ride upstream DataFusion + opportunistic
 release wins (as TopK did). Engineering, not physics — but partly community-paced, not solely
 GreptimeDB-owned.

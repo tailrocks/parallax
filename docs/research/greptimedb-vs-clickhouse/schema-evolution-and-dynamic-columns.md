@@ -3,8 +3,11 @@
 <!-- markdownlint-disable MD013 -->
 
 Status: pass 38, extended pass 97 (Run 61: dynamic-attr path query **measured** —
-CH ~13× via typed subcolumn, + a GROUP BY casting wrinkle) + **Run 104 (dynamic-attr gap WIDENED to
-~57× as CH's new JSON subcolumn matured)** + **Run 110 (schema-on-write re-verified, no drift: GT
+CH ~13× via typed subcolumn, + a GROUP BY casting wrinkle) + **Run 104 (gap appeared ~57× — SUPERSEDED)**
++ **Runs 129/130 (CORRECTED: the dynamic-attr gap is ~8–12× with the `.:Int64` typed-subcolumn cast —
+the fair/enforced form; the ~57× was ClickHouse 26.5's *lax no-cast* GROUP BY path (~1 ms), which 26.6
+REMOVES (`Code 44` — cast required, ~5–7 ms). GT json_get_int ~48–60 ms on both v1.0.2 + v1.1-nightly.
+So state it ~8–12× typed-cast, up to ~57× only on the deprecated 26.5 no-cast path)** + **Run 110 (schema-on-write re-verified, no drift: GT
 InfluxDB-line write of a new tag+field auto-adds `region`+`humidity` columns, HTTP 204, old rows
 NULL-backfilled; ClickHouse `INSERT` with an unknown column → `Code: 16 NO_SUCH_COLUMN_IN_TABLE`,
 needs ALTER or a JSON column)**. White-box teardown of how
