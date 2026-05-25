@@ -22,9 +22,11 @@ be called validated.
 
 Yes, the category is — the open-self-hosted slice is smaller and slower.
 
-- Sentry reports ~$128M ARR, 130k+ orgs, 4M developers, and is the most-used
-  observability vendor as of May 2026. Error monitoring + context is a
-  company-sized category, empirically.
+- Sentry's own Fair Source post says it had passed 100,000 cloud customers and
+  $100M in annual revenue. That is enough primary evidence to treat error
+  monitoring plus context as a company-sized category. Third-party ARR and
+  vendor-share estimates can be useful context, but they are not primary-source
+  proof and should not carry the thesis.
 - But Sentry monetizes overwhelmingly through **cloud**, not self-hosting. The
   segment Parallax leads with — open, self-hosted, data-owned — is precisely the
   segment that is hardest to monetize. So "the category is big" does not imply
@@ -36,8 +38,15 @@ entered through its least-monetizable door. That is survivable only if the free
 tier drives the adoption that builds the schema/corpus moat, and value capture
 comes from layers the self-hosting ethos does not forbid (below).
 
-Sources: [Sentry business breakdown](https://research.contrary.com/company/sentry),
-[Observability vendor share](https://ramp.com/vendors/categories/observability).
+Primary sources checked on 2026-05-25: [Sentry Fair Source post](https://blog.sentry.io/sentry-is-now-fair-source/),
+[Sentry FSL announcement](https://blog.sentry.io/introducing-the-functional-source-license-freedom-without-free-riding/),
+[Grafana Enterprise docs](https://grafana.com/docs/grafana/latest/introduction/grafana-enterprise/),
+[Grafana pricing](https://grafana.com/pricing/),
+[OpenObserve pricing](https://openobserve.ai/pricing/),
+[OpenObserve enterprise features](https://openobserve.ai/docs/features/enterprise/),
+and [GitLab pricing](https://about.gitlab.com/pricing/). Secondary market
+estimates such as private-company ARR breakdowns or card-spend vendor share
+should be labeled as leads only.
 
 ## The Core Tension
 
@@ -123,16 +132,15 @@ and outcomes*, not on *access to the differentiator*.
 
 | Vendor | License | How it monetizes | Lesson for Parallax |
 | --- | --- | --- | --- |
-| Sentry | FSL (Fair Source, →OSS after 2y) | Cloud + non-compete license; ~$128M ARR | Cloud is the real revenue; the license protects it. Parallax rejects FSL on ethos but copies "cloud is the business." |
-| Grafana | AGPL core + proprietary Enterprise + Cloud | Open-core ops features + hosted | Gate *ops* features, not the core engine. Good template. |
-| OpenObserve | AGPL + Self-Hosted Enterprise | Free to 200 GB/day; SSO/RBAC/audit + **AI agent** gated | Copy the ops gating; **do NOT copy the agent gating** — that is the weakness Parallax beats. |
-| GitLab (reference) | Open core (MIT core) | Tiered proprietary features | Open-core works at scale, but tier boundaries are a constant fight. |
+| Sentry | FSL / Fair Source (delayed open-source publication) | Cloud business; Sentry says it passed 100k cloud customers and $100M annual revenue. | Cloud is the real revenue; the license protects it. Parallax rejects FSL on ethos but copies "cloud is the business." |
+| Grafana | AGPL core + proprietary Enterprise + Cloud | Enterprise docs list SAML/enhanced LDAP/protected roles, auditing, usage insights, recorded queries, Vault integration, and premium data sources; Cloud is separately priced. | Gate *ops* features, not the core engine. Good template. |
+| OpenObserve | AGPL + Self-Hosted Enterprise | Pricing now says Self-Hosted Enterprise is free up to 50 GB/day and includes SSO/RBAC/audit/redaction; the Enterprise plan lists AI SRE Agent, AI Assistant, and AI-powered observability. | Copy the ops gating; **do NOT copy the agent gating** — that is the weakness Parallax beats. |
+| GitLab (reference) | Open core / buyer-based tiering | Pricing offers GitLab.com, Self-Managed, and Dedicated; paid tiers/add-ons include governance, security, compute/storage, and Duo Agent Platform credits. | Open-core works at scale, but tier boundaries are a constant fight. |
 
-Sources: [Sentry FSL announcement](https://blog.sentry.io/introducing-the-functional-source-license-freedom-without-free-riding/),
-[Sentry is now Fair Source](https://blog.sentry.io/sentry-is-now-fair-source/),
-[Grafana 2026 license](https://techradar.info/is-grafana-fully-open-source-the-truth-behind-the-2026-license/),
-[OpenObserve AGPL move](https://openobserve.ai/blog/what-are-apache-gpl-and-agpl-licenses-and-why-openobserve-moved-from-apache-to-agpl/),
-[Open source vs open core](https://oneuptime.com/blog/post/2026-03-03-open-source-vs-open-core-whats-the-difference/view).
+These rows are anchored to primary vendor pages where possible. Blog posts about
+licensing history and third-party business estimates can remain useful leads,
+but the durable business-model note should not depend on them for current
+pricing, revenue, or tier claims.
 
 ## Honest Reality
 
