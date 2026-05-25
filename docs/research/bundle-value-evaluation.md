@@ -25,7 +25,7 @@ any other doc until this runs.
 
 Current coding-agent benchmarks evaluate fixing from **repository context only**:
 
-- SWE-bench (Princeton): real GitHub issue → reproduce bug, find root cause,
+- SWE-bench (Princeton): real GitHub issue -> reproduce bug, find root cause,
   write fix, keep tests green.
 - SWE-bench Verified (human-cleaned subset), SWE-bench Pro (Scale AI, 1,865
   multi-language tasks), SWE Atlas (RCA, codebase QnA, test writing), SWE-bench-CL
@@ -33,17 +33,36 @@ Current coding-agent benchmarks evaluate fixing from **repository context only**
 
 Every one of these gives the agent the **repo and an issue description**. None
 provides production **telemetry** — logs, traces, metrics, error events, deploy
-context — at the moment of failure. So the entire field has measured "can an
-agent fix from code + issue text," and **nobody has measured whether runtime
-evidence adds value on top of that**. That is precisely Parallax's bet, and it is
-currently unproven by anyone. This is both the risk (no prior signal) and the
-opportunity (a telemetry-augmented eval would be novel and is the natural moat
-artifact).
+context — at the moment of failure. So the field mostly measures "can an agent
+fix from code + issue text," not "does runtime evidence make the fix better."
+That is precisely Parallax's bet, and it is currently unproven by any mainstream
+benchmark. This is both the risk (no prior signal) and the opportunity (a
+telemetry-augmented eval would be novel and is the natural moat artifact).
 
-Sources: [SWE-bench explained](https://www.morphllm.com/swe-benchmark),
-[SWE-bench Pro (Scale)](https://www.morphllm.com/swe-bench-pro),
-[SWE Atlas](https://scale.com/blog/swe-atlas-complete),
-[UTBoost: rigorous SWE-bench evaluation](https://arxiv.org/pdf/2506.09289).
+Current benchmark reality:
+
+| Benchmark / source | What it measures | Parallax gap |
+| --- | --- | --- |
+| SWE-bench / ICLR 2024 | Issue/PR pairs from GitHub, evaluated by repository tests. | No production telemetry, deploy context, traces, logs, or agent evidence bundle. |
+| SWE-bench Verified | 500 human-validated SWE-bench samples. | Still repo + issue context; OpenAI later warned Verified no longer measures frontier coding capability well because test flaws and benchmark saturation became material. |
+| SWE-bench Pro | Longer-horizon software-engineering tasks, 1,865 tasks, multi-language. | Better task difficulty, but still not a telemetry-value benchmark. |
+| SWE Atlas | Codebase Q&A, test writing, and refactoring workflows; includes root-cause-style questions. | Measures repository investigation, not runtime evidence added to fix generation. |
+| SWE-bench-Live | Fresher live GitHub issues to reduce contamination. | Valuable for freshness, but still not evidence-bundle-vs-raw-telemetry. |
+
+Primary sources:
+
+- [SWE-bench Princeton announcement](https://pli.princeton.edu/blog/2023/swe-bench-can-language-models-resolve-real-world-github-issues)
+- [SWE-bench ICLR 2024 paper](https://proceedings.iclr.cc/paper_files/paper/2024/file/edac78c3e300629acfe6cbe9ca88fb84-Paper-Conference.pdf)
+- [SWE-bench official leaderboards](https://www.swebench.com/)
+- [SWE-bench Verified announcement](https://openai.com/index/introducing-swe-bench-verified/)
+- [OpenAI on why SWE-bench Verified no longer measures frontier coding capabilities](https://openai.com/index/why-we-no-longer-evaluate-swe-bench-verified/)
+- [SWE-bench Pro paper page](https://labs.scale.com/papers/swe_bench_pro)
+- [SWE Atlas paper page](https://labs.scale.com/papers/sweatlas)
+- [SWE-bench-Live](https://swe-bench-live.github.io/)
+
+Secondary methodology reference:
+
+- [UTBoost: rigorous SWE-bench evaluation](https://arxiv.org/pdf/2506.09289)
 
 ## Hypothesis And Arms
 
@@ -111,6 +130,11 @@ that wins only by being bigger is exposed.
 - **Same agent scaffold** across arms; only the injected context differs.
 - **Held-out hidden tests** for grading so the agent cannot game the visible test.
 - Pre-register the decision gate below before looking at results.
+
+Because SWE-bench Verified is now publicly questioned even by OpenAI, do not use
+one benchmark family as the only evidence. The Parallax experiment should treat
+telemetry-augmented SWE-bench as a scaling scaffold, then check the result on
+fresh/live tasks and a fault-injected reference app.
 
 ## Decision Gate
 
