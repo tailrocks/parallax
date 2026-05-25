@@ -166,10 +166,15 @@ CREATE TABLE greptime_physical_metrics (
   ts             TIMESTAMP TIME INDEX,
   greptime_value DOUBLE
 ) ENGINE = metric WITH ("physical_metric_table" = '');
--- logical metric tables are created on ingest (or explicitly):
---   CREATE TABLE http_req_latency (ts TIMESTAMP TIME INDEX, greptime_value DOUBLE,
---     "service" STRING PRIMARY KEY) ENGINE = metric
---     WITH (on_physical_table = 'greptime_physical_metrics');
+-- logical metric tables: AUTO-create them via OTLP / Prometheus remote-write ingestion —
+-- NOT by hand. Run 126: the physical table creates cleanly, but explicit logical-table DDL
+-- (CREATE TABLE … ENGINE=metric WITH(on_physical_table=…)) is finicky about the time/value
+-- column mapping (errors "Adding field column … to physical table", table not found). Let
+-- the ingestion path map metric-name→logical table, labels→PK tags, value→greptime_value.
+--   -- explicit form (finicky, avoid; prefer ingestion):
+--   -- CREATE TABLE http_req_latency (ts TIMESTAMP TIME INDEX, greptime_value DOUBLE,
+--   --   "service" STRING PRIMARY KEY) ENGINE = metric
+--   --   WITH (on_physical_table = 'greptime_physical_metrics');
 
 -- 5. Deploy markers (low volume; release timeline)
 CREATE TABLE deploy_markers (

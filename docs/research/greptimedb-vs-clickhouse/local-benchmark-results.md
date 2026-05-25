@@ -5212,6 +5212,45 @@ toward GreptimeDB? If yes, JIT is the lever GreptimeDB lacks (DataFusion codegen
 compile_aggregate_expressions=0, compile_expressions=0` → ~31 ms (vs ~29 ms JIT-on); still ~3.7× GT's
 ~116 ms. JIT toggle barely moves CH; the gap is engine maturity (SIMD/hash-agg), not JIT.
 
+### Run 126 — 2026-05-25 — Native metric-engine: physical table creates cleanly, but logical tables are AUTO-created via metric ingestion (Prometheus remote-write/OTLP), not hand-DDL — an adopt-native operational nuance
+
+**Pass target.** Directly exercise the **native metric engine** (`ENGINE=metric`, the `__tsid`
+physical layout) — the headline adopt-native-metrics recommendation, tested only via plain-mito
+tables this session (Runs 96/113/115). Validate the engine + its DDL path.
+
+**Environment.** GreptimeDB `v1.0.2` (re-pinned live — no bump).
+
+**Findings:**
+- **Physical metric table creates cleanly:** `CREATE TABLE phys_metrics (greptime_timestamp
+  TIMESTAMP(3) TIME INDEX, greptime_value DOUBLE) ENGINE=metric WITH ('physical_metric_table'='')` →
+  CREATED; `DESC` shows the engine-managed `greptime_timestamp` + `greptime_value` base (the
+  shared physical table that many logical metrics will write into via `__tsid`).
+- **Explicit logical-table DDL is finicky / failed:** `CREATE TABLE cpu_usage (ts … , val DOUBLE,
+  host STRING PRIMARY KEY) ENGINE=metric WITH ('on_physical_table'='phys_metrics')` →
+  **"Adding field column val/ts to physical table"** then the table is **not found** on insert. The
+  engine mis-maps an arbitrary `ts`/`val` column set — it expects the logical table's time/value to
+  map to `greptime_timestamp`/`greptime_value`, and the explicit-DDL mapping didn't take.
+
+**Verdict — metric engine works via the INGESTION path; manual logical DDL is the wrong way. Blueprint nuance.**
+
+- **The native metric engine's logical tables are designed to be AUTO-created by metric ingestion**
+  (Prometheus remote-write / OTLP metrics), which maps metric-name → logical table, labels → PK tags,
+  value → `greptime_value`, timestamp → `greptime_timestamp` automatically. Hand-writing `CREATE TABLE
+  … ENGINE=metric WITH(on_physical_table=)` is finicky about column mapping and not the intended path.
+- **Adopt-native-metrics (confirms + refines Runs 57/85):** point **Prometheus remote-write / OTLP
+  metrics** at GreptimeDB and the metric engine **auto-provisions** the physical + logical tables and
+  the `__tsid` layout — do **NOT** hand-write metric-engine logical tables. (Plain-mito metric tables,
+  as used in Runs 96/113/115 for benchmarking, are a separate path; the *native* metric path is
+  ingestion-driven.) This is the turnkey ingestion ergonomics behind DQ1's metrics-native pillar.
+- **No query-behavior change:** the metric engine runs the same DataFusion query path, so the
+  metric-panel latencies (Runs 96/109/113) and the dedup-cheap-at-moderate-series finding (Run 115)
+  carry over; the engine adds multi-metric **storage sharing** (`__tsid`), not different query speed.
+
+**Reproduce.** Physical: `CREATE TABLE phys_metrics (greptime_timestamp TIMESTAMP(3) TIME INDEX,
+greptime_value DOUBLE) ENGINE=metric WITH ('physical_metric_table'='')` (works). Logical metrics:
+provision via Prometheus remote-write / OTLP ingestion (auto), not manual `ENGINE=metric` DDL
+(finicky). Drop `phys_metrics` after.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

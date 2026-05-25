@@ -8,8 +8,11 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 125 local runs + B1–B15 cases. Recent: **Run 125 — agg gap
-is NOT JIT either**: CH with compile_aggregate_expressions=0 is still ~3.7× faster than GT (~31 vs ~116 ms; JIT-off was
+cold/first-run measurement showed). 25 mechanism notes + 126 local runs + B1–B15 cases. Recent: **Run 126 — native
+metric engine**: physical table (`greptime_timestamp`/`greptime_value`) creates cleanly, but logical tables are
+AUTO-created via Prometheus remote-write/OTLP ingestion, NOT hand-DDL (explicit `ENGINE=metric WITH(on_physical_table=)`
+is finicky about time/value column mapping) — adopt-native-metrics nuance: use the ingestion path to auto-provision.
+**Run 125 — agg gap is NOT JIT either**: CH with compile_aggregate_expressions=0 is still ~3.7× faster than GT (~31 vs ~116 ms; JIT-off was
 even faster on a heavy agg). So the ~2–3× metric-agg gap is NEITHER batch (124) NOR JIT (125) — it's diffuse vectorized-
 execution maturity (SIMD kernels + hash-agg), the slowest-closing gap (no single PR; accrues as DataFusion's core
 matures). Engineering not physics, but the longest timeline. **Run 124 CORRECTED parity #2**: lowering ClickHouse's max_block_size to GreptimeDB's 8192 barely changed CH's agg (~37→~38 ms) and CH is
