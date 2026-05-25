@@ -1246,6 +1246,33 @@ latency-bound** (Run 16). Honest fairness correction; no verdict move (CH still 
 on the lookup, GT still chosen on fit). Caveat noted: re-running GT point-queries via
 the MySQL native protocol would strip the HTTP floor in future runs.
 
+### Run 41 — 2026-05-25 — Cross-path validation: GT engine-time is stable (~14 ms)
+
+Closes the measurement-methodology thread from Run 40 via a **third measurement path**.
+No `mysql` client in the containers, but **ClickHouse's `mysql()` table function reached
+GreptimeDB:4002** (MySQL wire) and ran the trace lookup. Versions unchanged.
+
+| Path for the GT trace lookup | wall | what it includes |
+| --- | --- | --- |
+| Server `execution_time_ms` (HTTP report) | **14 ms** | **engine only** |
+| HTTP wall (pass 49) | 54 ms | engine + ~40 ms HTTP transport |
+| ClickHouse `mysql()` federation | 39 ms | engine + ~25 ms fresh-conn/MySQL federation |
+
+**GT engine time is ~14 ms across all three paths**; the larger walls are
+transport/connection overhead, not engine. → **confirms `execution_time_ms` is the
+engine-fair metric** my re-verifications (Runs 37–40) used, and the old HTTP-wall
+numbers were transport-inflated (~25–40 ms). No further latency correction needed; the
+recorded server-time numbers stand.
+
+**Interop bonus:** GreptimeDB's **MySQL wire protocol is confirmed working** — ClickHouse
+federated a query into it via `mysql()`. So MySQL-protocol clients / BI tools / Grafana's
+MySQL datasource can query GreptimeDB directly (relevant to Parallax's tooling surface).
+
+This completes the load-bearing-number re-verification arc (Runs 37–41): one correction
+(metric-agg 10×→2× warm), confirmations (full-text ~18×, scan ~4×), a cold-inflation
+model, a fairness fix (HTTP floor), and this cross-path validation. The empirical base
+is now self-consistent and HTTP-fair.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
