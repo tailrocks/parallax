@@ -8,8 +8,11 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 116 local runs + B1–B15 cases. Recent: **Run 116 re-verified
-freshness** — both visible-on-write (5/5 trials each, no flush barrier): GT from the LSM memtable, CH on insert-ack; a
+cold/first-run measurement showed). 25 mechanism notes + 117 local runs + B1–B15 cases. Recent: **Run 117 — SOURCE +
+live** grounded the Run-114 dedup gotcha in GreptimeDB v1.0.2 code (`flat_merge`/`seq_scan.rs:224`): the penalty is
+per-series-boundary work in the merge/dedup of overlapping sorted runs, concentrated in the unflushed MEMTABLE — a
+high-card-PK dedup table scans ~1235 ms while memtable-resident but ~28 ms once flushed to a single SST (~44×). So it
+hits HOT/recent data (what observability queries most); append_mode is the universal fix. **Run 116 re-verified freshness** — both visible-on-write (5/5 trials each, no flush barrier): GT from the LSM memtable, CH on insert-ack; a
 tie, not a decision axis (default sync path; async batching on either side trades freshness for throughput). **Run 115 refined the Run-114 dedup gotcha** — the penalty scales with SERIES COUNT (merge boundaries) not rows: cheap for metric labels (40k
 series / ~200 rows each → ~110 ms) and catastrophic only for per-event ids (1M single-row series → ~1220 ms), so
 dedup/`last_non_null` is FINE for the metric engine (validates "ADOPT native metric engine"); the gotcha is confined to

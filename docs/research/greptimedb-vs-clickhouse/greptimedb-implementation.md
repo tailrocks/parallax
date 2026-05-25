@@ -53,6 +53,13 @@ Pin: GreptimeDB `v1.0.2` (`0ef5451`). DDL features confirmed in
    8M) and catastrophic only when rows-per-series ≈ 1 (per-event ids → 1M single-row series). So
    dedup/`last_non_null` is FINE for the metric engine (label-set PK = moderate series, many points)
    — the gotcha is confined to using append_mode on EVENT tables, which this principle requires.**
+   **Source + mechanism (Run 117, GreptimeDB v1.0.2): the penalty is per-series-boundary work in the
+   merge/dedup of OVERLAPPING sorted runs (`flat_merge.rs` — cheap passthrough only when `hot.len()==1`;
+   `append_mode` skips the dedup reader at `seq_scan.rs:224`). It is concentrated in the unflushed
+   MEMTABLE — a fresh `PK(span_id)` dedup table scans ~1235 ms while memtable-resident (`sst_num=0`) but
+   ~28 ms once flushed+compacted to a single SST (~44×). So on a high-card-PK dedup table the penalty
+   hits the HOT/recent (memtable) window — exactly what observability queries hit most — and append_mode
+   is the only fix that works in all states.**
 4. **`FULLTEXT INDEX`** on free-text (`message`) for log/error search.
 5. **Metrics via the metric engine** (logical→physical) + OTLP/Prom remote write →
    native PromQL (Run 3 capability win).

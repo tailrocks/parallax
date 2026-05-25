@@ -4836,6 +4836,54 @@ Method: insert a uniquely-marked row via the default sync path, then **immediate
 **Reproduce.** Insert a uniquely-marked row (`now()`, default sync path), immediately `SELECT count()
 WHERE marker='…'` → 1 on both, every trial. Drop scratch after.
 
+### Run 117 — 2026-05-25 — SOURCE + live: the Run-114 dedup catastrophe is a MEMTABLE scan over 1M series — flushing to a single SST drops it ~1235 ms → ~28 ms (~44×). Confirms `flat_merge` single-run passthrough; append_mode is the universal fix.
+
+**Pass target.** Deepen Run 114/115 against the **GreptimeDB v1.0.2 source** (the brief: read the
+source, not the marketing) + live-confirm the mechanism. Why is `PK(span_id)+dedup` ~16× slower, and
+is it overlap-gated?
+
+**Source (v1.0.2, file:line).** A `Batch` = rows for ONE primary key / series (`read.rs:78-102`); SST
+data sorted by `(pk, ts, seq desc)` (`flat_format.rs:26,134`). `FlatMergeReader` heap-merges sorted
+runs: **`can_fetch_batch()` is true only when `hot.len()==1`** → cheap whole-batch passthrough
+(`flat_merge.rs:349-351,712`); else row-by-row interleave with per-row `(pk,ts,seq)` compares
+(`:480-485,732`). Dedup runs *after* merge; `append_mode='true'` **skips the dedup reader entirely** —
+`let dedup = !append_mode` (`seq_scan.rs:224`) — and sets `pre_filter_mode=All` (`scan_region.rs:1381`).
+So cost is **per-series-boundary work during merge/dedup of OVERLAPPING sorted runs**, ≈ series count
+only because rows-per-series≈1.
+
+**Live test (rebuilt `gt_dd` = `PK(span_id)`, dedup, 1M from spans_idx):**
+
+| State | sst_num | scan-agg (GROUP BY svc) |
+| --- | --- | --- |
+| Freshly loaded (memtable-resident) | **0** | **~1235 ms** |
+| `compact_table` with sst_num=0 | 0 | **no-op** (~1255 ms — nothing to compact) |
+| **`flush_table` → SST, then compact** | **1** | **~28 ms (~44× faster)** |
+
+**Verdict — the catastrophe is the MEMTABLE dedup scan; flushing to a single sorted run resolves it. Refines Run 114.**
+
+- **The ~1235 ms was the unflushed MEMTABLE scan** over 1M single-row series (the PartitionTree
+  memtable + dedup pays per-series cost across 1M boundaries). My first `compact_table` was a **no-op**
+  (data still in memtable, `sst_num=0` — nothing to compact). After **`flush_table`** (memtable→1 SST)
+  + compact, the table is a **single sorted run** → `hot.len()==1` → whole-batch passthrough → dedup
+  fast-path → **~28 ms**. This empirically confirms the source's overlap-gated mechanism.
+- **Decision-relevant nuance (sharper than Run 114):** the dedup penalty on a high-card PK is a
+  **hot/recent-data cost** — it bites the *memtable-resident* (just-ingested) rows hardest, which in
+  observability is **exactly the data you query most** (recent traces/logs). It resolves once data
+  flushes + compacts to a single run, but for a continuously-ingested table there is always a
+  memtable + recent un-compacted SSTs holding the hot window. So the penalty is real for the hot path,
+  not just a cold-storage artifact.
+- **`append_mode='true'` is the universal fix** — it skips the dedup reader (`seq_scan.rs:224`)
+  regardless of memtable/SST state or run overlap, so recent high-card event data scans fast too. This
+  **strengthens the Run-114 rule** (append_mode mandatory for high-card event signals) with the
+  mechanism: you're avoiding the per-series memtable/merge dedup work on hot data.
+- **Metrics unaffected (Run 115 holds):** moderate series count (40k, many rows each) → few merge
+  boundaries → cheap dedup even in the memtable; the metric engine's `last_non_null` is safe.
+
+**Reproduce.** Build `PK(span_id)+dedup`, load 1M; scan ~1235 ms (memtable, `sst_num=0`). `ADMIN
+flush_table` then `compact_table` → `sst_num=1`; re-scan ~28 ms. `append_mode='true'` avoids the
+penalty in all states. Source: `src/mito2/src/read/{read.rs,flat_merge.rs,flat_dedup.rs,seq_scan.rs,
+scan_region.rs}`, `sst/parquet/flat_format.rs` @ v1.0.2.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
