@@ -6413,6 +6413,36 @@ information_schema.region_statistics WHERE region_rows>900000"` (map table_id vi
 table,sum(bytes_on_disk),sum(rows) FROM system.parts WHERE active GROUP BY table"`. (exec; host port
 down.)
 
+### Run 160 — 2026-05-25 — LIVE build (exec): the concrete Sentry-style grouped-error rollup on ClickHouse (AggregatingMergeTree + MV) — computes correctly; incremental caveat
+
+**Context.** Network isolation persists (exec-only). Made the operator's new **grouped-error**
+requirement concrete: built the Sentry-style rollup live on ClickHouse `error_events` (2226 rows, tiny).
+Re-pin unchanged (GT GA v1.0.2).
+
+**Built (CH):** `AggregatingMergeTree ge_roll(fingerprint, n=AggregateFunction(count),
+first_seen=min, last_seen=max, latest=argMax(message,ts))` + `MATERIALIZED VIEW ge_mv TO ge_roll AS
+SELECT fingerprint, countState(), minState(ts), maxState(ts), argMaxState(message,ts) ... GROUP BY
+fingerprint`. Read via `countMerge/minMerge/maxMerge/argMaxMerge`.
+
+**Result — computes correctly:** `-Merge` read returned the right rollup (`fp-135` → count 21,
+first/last seen, latest "boom"), matching the query-time aggregate (Run 156). So the grouped-error
+*aggregate* is cleanly expressible on ClickHouse (`-State` on insert via MV → `-Merge` on read).
+GreptimeDB does it via `Flow` (Run 149) or query-time `last_value(... ORDER BY ts)` (Run 156). **Both
+columnar engines build the rollup; only the mutable workflow state (status/assignee) needs the
+relational store** (Turso/Postgres, `platform-fit-and-alternatives.md`).
+
+**Honest caveat:** a quick incremental test (insert one new `fp-135` error → expect MV to bump
+count/last_seen) did NOT reflect immediately — almost certainly `async_insert=1` (default) buffering the
+single row + I dropped the rollup before it flushed. So *incremental-on-insert* freshness = the
+**documented** MV behavior, **not freshly re-confirmed**; rollup *correctness* IS confirmed (backfill +
+`-Merge`). Cleaned up: dropped `ge_mv`/`ge_roll` + reverted the test insert (`ALTER TABLE … DELETE`).
+
+**Reproduce.** `docker exec parallax-bench-clickhouse-1 clickhouse-client -q "CREATE TABLE ge_roll(...)
+ENGINE=AggregatingMergeTree ORDER BY fingerprint; CREATE MATERIALIZED VIEW ge_mv TO ge_roll AS SELECT
+fingerprint, countState(), minState(ts), maxState(ts), argMaxState(message,ts) FROM error_events GROUP
+BY fingerprint; INSERT INTO ge_roll SELECT ...(backfill); SELECT fingerprint, countMerge(n), ...
+FROM ge_roll GROUP BY fingerprint"`. (exec; host port down.)
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

@@ -96,6 +96,42 @@ Live-verified: `system.table_engines` has `MaterializedView`; `allow_experimenta
   rollup" away from being moot. Net: a small **maturity** edge to ClickHouse on rollup tooling;
   neither side wins decisively.
 
+## The concrete grouped-error rollup (Sentry-style) — built live, Run 160
+
+Making the abstract rollup concrete for Parallax's grouped-error requirement (the *aggregate* part of
+"grouped errors"; the mutable workflow state lives in the relational store — `platform-fit-and-alternatives.md`).
+Built the Sentry-style rollup live on ClickHouse (`error_events`, via `docker exec`):
+
+```sql
+CREATE TABLE ge_roll (
+  fingerprint String,
+  n          AggregateFunction(count),
+  first_seen AggregateFunction(min, DateTime64(3)),
+  last_seen  AggregateFunction(max, DateTime64(3)),
+  latest     AggregateFunction(argMax, String, DateTime64(3))
+) ENGINE=AggregatingMergeTree ORDER BY fingerprint;
+
+CREATE MATERIALIZED VIEW ge_mv TO ge_roll AS
+SELECT fingerprint, countState() n, minState(ts) first_seen,
+       maxState(ts) last_seen, argMaxState(message, ts) latest
+FROM error_events GROUP BY fingerprint;
+-- read: countMerge(n), minMerge(first_seen), maxMerge(last_seen), argMaxMerge(latest)
+```
+
+**Computes correctly** — the `-Merge` read returned the right rollup (e.g. `fp-135` → count 21,
+first/last seen, latest message), matching the query-time aggregate (Run 156). So the Sentry-style
+grouped-error rollup is **cleanly expressible on ClickHouse** via `AggregatingMergeTree` partial states
+(`-State` on insert via the MV → `-Merge` on read). **GreptimeDB** does the same two ways: a `Flow`
+(streaming/batching, Run 149) into a sink table, **or** query-time `count`/`min`/`max`/`last_value(…
+ORDER BY ts)` (Run 156, also correct). So both columnar engines build the grouped-error *aggregate*;
+only the *mutable workflow state* (status/assignee) needs the relational store (Turso/Postgres).
+
+*Honest caveat:* a quick live incremental-insert test (insert one new `fp-135` error → expect the MV to
+bump count/last_seen) did **not** reflect immediately — almost certainly `async_insert=1` (default-on)
+buffering the single row, and I dropped the rollup before it flushed. So the *incremental-on-insert*
+freshness is the **documented** MV behavior, **not freshly re-confirmed** here; the rollup *correctness*
+(via backfill + `-Merge`) is confirmed. Test objects were dropped + the test insert reverted.
+
 ## Honest caveats
 
 - **Not benchmarked here.** This grounds the *mechanism + availability* (source + live catalog), not
