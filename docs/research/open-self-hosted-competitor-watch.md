@@ -40,7 +40,7 @@ Sentry-compatible error ingest
 + deterministic evidence graph
 + CLI and read-only MCP
 + CLI/coding-agent action audit
-+ accepted-fix feedback loop
++ accepted/rejected/reverted fixer outcome loop
 ```
 
 OpenObserve is closest on storage/runtime fit. SigNoz is closest on open
@@ -53,8 +53,8 @@ audit.
 
 | Competitor | Current strongest fit | Current Parallax gap | Threat level |
 | --- | --- | --- | --- |
-| OpenObserve | Rust, object-storage-oriented, self-hostable observability platform with OTLP ingest, RUM/source maps, Enterprise AI SRE Agent, AI Assistant, incident/RCA workflow, and Enterprise MCP with broad query/admin tools. | AI/MCP features are Enterprise-gated; current ingestion docs emphasize OTLP/log APIs/Prometheus/etc., not Sentry envelopes; MCP is not a narrow read-only bundle surface; no portable evidence-bundle schema or coding-agent action audit. | Very high. |
-| SigNoz | Open self-hostable MCP server, agent-native positioning, Claude Code/Codex/Cursor/Gemini integration, traces/logs/metrics/topology/deploy history through agent clients, and MCP tools for alerts/dashboards/views/channels. | Go + ClickHouse stack; query/management interface rather than deterministic evidence bundle; no Sentry envelope ingestion in current docs; no Parallax-style CLI/agent side-effect audit. | High. |
+| OpenObserve | Rust, object-storage-oriented, self-hostable observability platform with OTLP ingest, RUM/source maps, Enterprise AI SRE Agent, AI Assistant, incident/RCA workflow, and Enterprise MCP with broad query/admin tools. | AI/MCP features are Enterprise-gated; public pages conflict on the free Self-Hosted Enterprise allowance (`50 GB/day` on pricing, `200 GB/day` on the homepage FAQ); current ingestion docs emphasize OTLP/log APIs/Prometheus/etc., not Sentry envelopes; MCP is not a narrow read-only bundle surface; no portable evidence-bundle schema or coding-agent action audit. | Very high. |
+| SigNoz | Open self-hostable MCP server, agent-native positioning, Claude Code/Codex/Cursor/Gemini integration, traces/logs/metrics/topology/deploy history through agent clients, a marketing claim around an "open investigation format," and MCP tools for alerts/dashboards/views/channels. | Go + ClickHouse stack; checked docs do not expose the claimed investigation format as a schema or portable artifact; query/management interface rather than deterministic evidence bundle; no Sentry envelope ingestion in current docs; no Parallax-style CLI/agent side-effect audit. | High. |
 | Coroot | Apache-2.0 OSS, eBPF zero-instrumentation, metrics/logs/traces/profiles, service map, deployment tracking, current `1.20.2` release, Community MCP, Community `resolve_alerts`, and Enterprise/Cloud AI RCA. | eBPF spans can be incomplete and lack app-level Rust panic/error-chain semantics; AI RCA is not purely OSS/local in Community; MCP is OAuth/RBAC-scoped but still not purely read-only; no Sentry migration path, portable evidence bundle, or coding-agent action audit in official docs. | High. |
 
 ## OpenObserve
@@ -82,7 +82,9 @@ more than any broad incumbent does.
 1. **Agent gating.** The SRE Agent docs say it powers AI-driven features in
    OpenObserve Enterprise and list an Enterprise license as a prerequisite.
    Parallax should not gate the evidence/MCP layer if the open schema is meant
-   to become the moat.
+   to become the moat. Treat the exact free Self-Hosted Enterprise allowance as
+   unresolved until OpenObserve reconciles the checked `50 GB/day` pricing page
+   with the `200 GB/day` homepage FAQ.
 2. **Sentry migration.** Current ingestion docs show OTLP, log APIs, Prometheus,
    Telegraf, syslog, forwarders, and language examples. They do not show a
    Sentry envelope compatibility path.
@@ -104,7 +106,7 @@ Reopen the Parallax competitive read if OpenObserve:
 - adds Sentry envelope ingestion or Sentry SDK drop-in migration;
 - exports portable investigation bundles with redaction and query manifests;
 - adds coding-agent session or shell/CLI action audit;
-- publishes accepted-fix feedback loops or PR-generating workflows.
+- publishes measured fixer outcome loops or PR-generating workflows.
 
 ## SigNoz
 
@@ -118,6 +120,8 @@ SigNoz is the closest open agent-native threat:
   Gemini CLI, Windsurf, Zed, VS Code / GitHub Copilot, and others.
 - Agent-native product language: telemetry inside the coding-agent workflow,
   not only dashboards.
+- A public landing-page claim that the "open investigation format" SigNoz uses
+  can become a team standard.
 - Architecture centered on OpenTelemetry and ClickHouse.
 - Recent docs for observing Claude Code itself with OpenTelemetry logs and
   metrics, including terminal/MCP connection/cost fields.
@@ -135,9 +139,12 @@ and structured APIs.
 2. **No Sentry envelope path.** Current docs center on OpenTelemetry/ClickHouse.
    There is no clear Sentry SDK envelope migration path in the public docs
    checked for this pass.
-3. **No evidence-bundle contract.** SigNoz MCP gives agents query access to
-   observability data. Parallax's bet is that a pre-correlated, citable,
-   redacted bundle beats asking the agent to assemble context itself.
+3. **No checked evidence-bundle contract.** SigNoz MCP gives agents query access
+   to observability data and the landing page now claims an open investigation
+   format, but this pass did not find a source-linked schema, canonical artifact,
+   redaction report, query manifest, raw-ref policy, or outcome-row contract.
+   Parallax's bet is that a pre-correlated, citable, redacted bundle beats asking
+   the agent to assemble context itself.
 4. **MCP power boundary.** SigNoz MCP includes management tools. That is useful,
    but it is not the same product surface as a least-privilege, read-only,
    citable evidence bundle.
@@ -152,6 +159,8 @@ Reopen the Parallax competitive read if SigNoz:
 
 - adds Sentry-compatible ingestion or a Sentry migration guide;
 - introduces portable incident/evidence bundles;
+- publishes the claimed open investigation format as a versioned schema or
+  portable artifact;
 - adds deterministic evidence edges and missing-evidence reports;
 - connects MCP queries to PR/fix outcome feedback;
 - reduces ClickHouse/self-hosting operational weight enough that Parallax's
@@ -244,7 +253,7 @@ The watchlist changes the product priority:
    generic observability platforms are least likely to model correctly.
 5. Re-check this watchlist every ongoing research pass. If OpenObserve or SigNoz
    closes Sentry migration plus bundle export, the Parallax wedge must narrow
-   further to agent action audit and failure/fix corpus.
+   further to agent action audit and measured fixer-outcome corpus.
 6. Re-check the
    [lightweight Sentry-compatible watchlist](lightweight-sentry-compatible-competitor-watch.md)
    before making any "simpler than Sentry" or "drop-in Sentry-compatible" claim.

@@ -979,10 +979,12 @@ Direct open / self-hosted competitors to track every run (these sit closest to
 the Parallax wedge and must be re-checked for whether they have closed the gap on
 open + self-hosted + agent-native + evidence bundles + Sentry-compatible ingest):
 - OpenObserve (Rust, object-storage, AGPL; AI SRE agent + MCP, currently
-  Enterprise-gated, OTLP-only — watch whether the agent layer moves into the
-  free tier or Sentry ingest is added)
-- SigNoz (Go/ClickHouse; open self-hostable agent-native MCP — watch for a
-  lighter footprint, Sentry ingest, or an evidence-graph/bundle abstraction)
+  Enterprise-gated with conflicting public free Self-Hosted Enterprise allowance
+  claims, OTLP-only — watch whether the agent layer moves into the free tier or
+  Sentry ingest is added)
+- SigNoz (Go/ClickHouse; open self-hostable agent-native MCP and a marketing
+  claim around an "open investigation format" — watch for a lighter footprint,
+  Sentry ingest, or a source-linked evidence-graph/bundle schema)
 - Coroot (eBPF, Go; self-hosted AI RCA)
 
 Also track lightweight Sentry-compatible or OTLP-native self-hosted challengers
@@ -1027,8 +1029,8 @@ For each relevant tool, research:
   queue, object storage, workers, OTLP endpoint;
 - redaction/privacy controls and whether full prompts, args, tool outputs, and
   logs are opt-in or default;
-- evaluation loop: scores, human review, datasets, experiments, accepted-fix
-  feedback, production recurrence;
+- evaluation loop: scores, human review, datasets, experiments, measured fixer
+  outcomes, production recurrence;
 - self-hosting complexity and operational profile;
 - whether it can audit coding-agent side effects such as files read/written,
   shell commands, DB actions, deploys, tests, patches, PRs, and outcomes.

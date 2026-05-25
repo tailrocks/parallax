@@ -44,12 +44,13 @@ material shifts have happened, and they narrow the wedge without closing it:
    surface, with Enterprise/Cloud-gated AI RCA. These are the first
    non-incumbent open projects to approach Parallax's exact niche. They are
    saved-against only by gaps: OpenObserve's AI SRE and MCP surfaces require
-   Enterprise edition/license even though Self-Hosted Enterprise is currently
-   advertised as free up to 50 GB/day, and the checked ingestion path is OTLP
-   rather than Sentry envelopes; SigNoz is Go/ClickHouse with no Sentry ingest
-   and no evidence-graph/bundle abstraction; Coroot has no Sentry migration or
-   coding-agent action audit and its local AI RCA is not in the Community OSS
-   tier.
+   Enterprise edition/license even though public pages now conflict on the free
+   Self-Hosted Enterprise allowance (`50 GB/day` on pricing versus `200 GB/day`
+   on the homepage FAQ), and the checked ingestion path is OTLP rather than
+   Sentry envelopes; SigNoz is Go/ClickHouse with no Sentry ingest, and its
+   claimed "open investigation format" did not have a checked schema/artifact
+   behind it in this pass; Coroot has no Sentry migration or coding-agent action
+   audit and its local AI RCA is not in the Community OSS tier.
 2. **The dominant error tracker paywalls its AI from self-hosters.** Sentry Seer
    is GA but closed and SaaS-only, and is confirmed not available to self-hosted
    Sentry. That exclusion is Parallax's clearest opening.
@@ -63,7 +64,7 @@ between 05-11 and 05-25. Parallax's defensibility is therefore the *combination*
 shipped as one open, self-hosted, Rust-light package — tested Sentry-envelope
 error ingest + conformance-gated OTLP ingestion, a deterministic evidence graph,
 portable bundles, CLI + read-only MCP, and CLI/coding-agent action audit — plus
-the failure/fix corpus that compounds with use. No single competitor occupies
+the measured fixer-outcome corpus that compounds with use. No single competitor occupies
 that intersection today, but OpenObserve and SigNoz could close their gaps
 within 6–12 months, so speed matters. See
 [Verdict](verdict.md) for the GO/NO-GO decision built on this read. The
@@ -79,6 +80,7 @@ Current source checks for this update:
 - [Datadog Bits AI Dev Agent](https://www.datadoghq.com/blog/bits-ai-dev-agent/)
 - [Grafana Assistant self-hosted docs](https://grafana.com/docs/grafana/latest/administration/assistant/)
 - [OpenObserve pricing](https://openobserve.ai/pricing/)
+- [OpenObserve homepage](https://openobserve.ai/)
 - [OpenObserve enterprise features](https://openobserve.ai/docs/features/enterprise/)
 - [OpenObserve SRE agent setup](https://openobserve.ai/docs/administration/deployment/sre-agent-setup-guide/)
 - [OpenObserve MCP docs](https://openobserve.ai/docs/integration/ai/mcp/)
@@ -103,8 +105,8 @@ Current source checks for this update:
 | Datadog Test Optimization + Bits AI Dev Agent | CI/test reliability and automated fixes | Instruments and traces tests, identifies flaky tests, correlates tests with infra/log/network context, surfaces root cause, and uses Bits AI Dev Agent to generate verified PR fixes. | Very high for the flaky-test wedge. |
 | Grafana Assistant | Observability assistant / SRE agent | AI assistant in Grafana Cloud and connected self-managed Grafana; query/dashboard assistance, incident investigations, Knowledge Graph, Slack/Teams/API/MCP/CLI surfaces. | High for Grafana/LGTM users. |
 | Coroot | eBPF observability + AI RCA | Uses eBPF to collect metrics, logs, traces, profiles, events; Community includes agentic-ready MCP; Enterprise/Cloud adds AI RCA that explains what broke, why, and how to fix it. | High for infrastructure/service RCA and agent-access pressure, lower for Sentry migration and coding-agent action audit. |
-| OpenObserve "Observability 3.0" | Open Rust observability store + AI SRE agent | Rust, single-binary, object-storage-native, AGPL self-hostable; late-Apr-2026 launch added an AI SRE agent, AI Assistant, LLM observability, and MCP. AI SRE/MCP require Enterprise edition/license; Self-Hosted Enterprise is currently advertised as free up to 50 GB/day. Checked docs show OTLP ingestion, not a Sentry-envelope path. | Very high on storage/runtime fit; the closest open competitor. Saved (for now) by Enterprise-tier AI/MCP surfaces, broad write-capable MCP, and missing Sentry ingest. |
-| SigNoz agent-native | Open OTLP observability + agent MCP | Go + ClickHouse, OSS self-hostable; May-2026 shipped an open self-hostable MCP server, trace-ID RCA, and agent skills for Claude Code/Cursor/Codex. Query interface, not a deterministic evidence graph/bundle; no Sentry envelope error-event ingest path. | High on agent-native direction; fails the Rust/no-JVM-store profile and lacks the evidence-bundle abstraction. |
+| OpenObserve "Observability 3.0" | Open Rust observability store + AI SRE agent | Rust, single-binary, object-storage-native, AGPL self-hostable; late-Apr-2026 launch added an AI SRE agent, AI Assistant, LLM observability, and MCP. AI SRE/MCP require Enterprise edition/license; public pages conflict on whether Self-Hosted Enterprise is free up to `50` or `200 GB/day`. Checked docs show OTLP ingestion, not a Sentry-envelope path. | Very high on storage/runtime fit; the closest open competitor. Saved (for now) by Enterprise-tier AI/MCP surfaces, broad write-capable MCP, missing Sentry ingest, and no checked portable bundle/action-audit contract. |
+| SigNoz agent-native | Open OTLP observability + agent MCP | Go + ClickHouse, OSS self-hostable; May-2026 shipped an open self-hostable MCP server, trace-ID RCA, and agent skills for Claude Code/Cursor/Codex. Landing page claims an "open investigation format," but this pass found no versioned schema or portable artifact in checked docs; no Sentry envelope error-event ingest path. | High on agent-native direction; fails the Rust/no-JVM-store profile and lacks a proven Parallax-style evidence-bundle/outcome abstraction. |
 | New Relic iRCA | Causal RCA | Preview product using topology graph, causal models, and path-based ranking to identify probable root cause. | High for New Relic customers. |
 | Dynatrace Davis / Dynatrace Intelligence | Causal AI RCA | Longstanding causal topology RCA over captured and ingested data; ranks root cause contributors and combines connected anomalies. | High in enterprise AIOps. |
 | Splunk AI Assistant in Observability Cloud | Observability GenAI assistant | Natural-language investigations, RCA over APM, infra, DB, RUM, logs, suggested actions, SignalFlow generation. | High for Splunk/AppDynamics users. |
