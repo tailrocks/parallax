@@ -44,6 +44,7 @@ or CI contract yet.
 | `docs/research/repo-intent-dependence.md` | Strategic question 13: how much Parallax depends on a context-rich monorepo. Decomposes value into a runtime-evidence floor (no monorepo needed) and an opt-in repo-intent multiplier; degraded mode is the common case the product must serve. |
 | `docs/research/business-model-and-economics.md` | Economic/business-model analysis: is the category company-sized, licensing options (Apache-2.0 recommended), and value-capture seams (hosting, the fixer, enterprise ops add-ons) that do not gate the open differentiator. |
 | `docs/research/user-interview-and-deployment-intent-gate.md` | A2 validation runbook: target interview slices, past-behavior question bank, scoring rubric, deployment/data/budget commitment tests, and pass/continue/kill criteria for proving demand beyond the operator. |
+| `docs/research/schema-adoption-and-corpus-moat-gate.md` | A3 validation gate: canonical schema/conformance artifacts, adoption-clock thresholds, failure/fix corpus events, compatibility policy, and moat-claim limits. |
 | `docs/research/market-landscape.md` | Market research. |
 | `docs/research/open-self-hosted-competitor-watch.md` | Focused watchlist for OpenObserve, SigNoz, and Coroot: current primary-source posture, remaining Parallax gaps, and trigger conditions that would reopen the GO verdict. |
 | `docs/research/self-hosted-observability-architecture.md` | Architecture research for the Sentry-compatible, OpenTelemetry-native self-hosted observability direction. |

@@ -51,7 +51,7 @@ the earliest cheap test.
 | --- | --- | --- | --- |
 | A1 | A bounded evidence bundle makes an agent's fix materially better than raw Sentry/CI context. | Frontier models may already fix well from raw stack + repo; the bundle may add latency, not accuracy. | Offline eval: same issues, agent with bundle vs raw context; measure fix-correctness delta with the [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md). Kill criterion 3 in the verdict. |
 | A2 | Enough teams want self-hosted + open + low-ops to form a user base. | The self-hosting segment may be small and structurally non-paying; paying teams pick SaaS. | Run the [user interview and deployment intent gate](user-interview-and-deployment-intent-gate.md): talk to 20 target teams, score concrete pain/deployment/data/budget commitments, and reject compliments as validation. |
-| A3 | The open schema + failure corpus becomes a compounding moat. | Moat needs adoption first; without users there is no corpus and no schema gravity (chicken-and-egg). | Track external adoption of the bundle schema within N months of release; zero adopters = no moat forming. |
+| A3 | The open schema + failure corpus becomes a compounding moat. | Moat needs adoption first; without users there is no corpus and no schema gravity (chicken-and-egg). | Run the [schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md): publish machine-readable schema/conformance artifacts, track external integrations, and require labeled outcome data before claiming a corpus moat. |
 | A4 | Deterministic cross-signal correlation is reliable in real, messy telemetry. | Missing trace IDs, sampling, broken CORS propagation, clock skew make joins partial; "evidence graph" degrades to "time-window guess." | Run the correlation queries on real production telemetry (not the generator); measure how often strong edges actually exist. |
 | A5 | The chosen stack holds (GreptimeDB speed/cost, Turso reliability, Iggy where used). | GreptimeDB may miss freshness/cost gates; Turso Database is still beta/not production-ready even though Turso Cloud has separate durability/PITR guarantees; Iggy has no clustering. | The [storage benchmark prototype](storage-benchmark-prototype.md), [metadata benchmark](metadata-store-benchmark-plan.md), and [Turso production-readiness gate](turso-metadata-production-readiness.md); run before committing. |
 | A6 | Redaction can be made trustworthy enough to expose evidence to agents/third-party models. | One PII/secret leak in a bundle destroys the data-ownership value prop; frontend PII makes this harder. | Use the [redaction pipeline](redaction-pipeline-and-secret-safety.md): default-deny source policy, seeded canaries, JSON/Markdown output scans, and real-data red-team before any agent exposure. |
@@ -134,6 +134,8 @@ If two or more trigger, reopen the verdict.
   stack assumptions get tested.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) — the A1/A3
   value-and-moat claims.
+- [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
+  — the A3 adoption clock, conformance, and corpus thresholds.
 - [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
   — the A2 runbook for testing demand beyond the operator.
 

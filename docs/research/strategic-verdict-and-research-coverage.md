@@ -87,7 +87,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 
 | Prompt area | Repository evidence |
 | --- | --- |
-| Market and product thesis | [Project thesis](project-thesis.md), [Market landscape](market-landscape.md), [Open self-hosted competitor watch](open-self-hosted-competitor-watch.md), [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md), [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md) |
+| Market and product thesis | [Project thesis](project-thesis.md), [Market landscape](market-landscape.md), [Open self-hosted competitor watch](open-self-hosted-competitor-watch.md), [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md), [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md), [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md) |
 | Evaluation lens and benchmark methodology | [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md), [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md), [Storage size and object cost gate](storage-size-and-object-cost-gate.md), [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md), [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Messaging and ingestion layer](messaging-and-ingestion-layer.md) |
 | Language/runtime filter and Rust preference | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md), [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md), [Technical implementation concept](technical-implementation-concept.md) |
 | Messaging/streaming | [Messaging and ingestion layer](messaging-and-ingestion-layer.md), [Ingest log replay and backpressure gate](ingest-log-replay-and-backpressure-gate.md) |
@@ -103,7 +103,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Agent-observability technical references | [Agent observability technical review](agent-observability-technical-review.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md) |
 | Frontend collection and cross-tier correlation | [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Storage benchmark prototype](storage-benchmark-prototype.md) |
 | Redaction/privacy/agent exposure safety | [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md), [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md), [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) |
-| Evidence bundle and open schema | [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Bundle-value evaluation](bundle-value-evaluation.md), [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) |
+| Evidence bundle and open schema | [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md), [Bundle-value evaluation](bundle-value-evaluation.md), [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) |
 | Core architecture | [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Technical implementation concept](technical-implementation-concept.md) |
 | CLI/API/MCP philosophy | [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md), [Technical implementation concept](technical-implementation-concept.md) |
 | Critical strategic questions | [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md), this document |
@@ -134,6 +134,8 @@ Market/product gates:
 
 - A2 real-user demand beyond the operator, using the
   [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md).
+- A3 schema/corpus moat, using the
+  [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md).
 
 Technical proof gates:
 

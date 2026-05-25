@@ -73,8 +73,10 @@ Build only enough to generate the bundle automatically and repeatably:
 - Validate [retention cost](retention-cost-model.md) on real data; pick the
   object store (R2/B2 vs S3 per the egress finding).
 - Redaction red-team (A6) before any third-party-model exposure.
-- Publish the [open evidence schema](evidence-bundle-and-schema.md) → starts the
-  A3 adoption clock.
+- Publish the [open evidence schema](evidence-bundle-and-schema.md) with the
+  machine-readable artifacts and conformance suite required by the
+  [schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
+  → starts the A3 adoption clock.
 - **Gate:** storage gates pass (freshness/latency/cost) or ClickHouse substitutes;
   redaction leak rate acceptable.
 
@@ -103,7 +105,7 @@ Build only enough to generate the bundle automatically and repeatably:
 | A6 redaction trust | Phase 2 | red-team on real data |
 | A5 stack holds | Phase 2 | storage/metadata benchmarks |
 | A4 correlation reliable | Phase 1–2 | strong-edge prevalence on real telemetry |
-| A3 schema/corpus moat | Phase 2 (publish) → Phase 4 (corpus) | external adoption tracking |
+| A3 schema/corpus moat | Phase 2 (publish) → Phase 4 (corpus) | [schema conformance + external adoption + outcome corpus](schema-adoption-and-corpus-moat-gate.md) |
 | A7 scope discipline | enforced by phase order | tiny tier excellent before breadth |
 
 ## What This Sequence Refuses To Do
@@ -125,6 +127,8 @@ Build only enough to generate the bundle automatically and repeatably:
   paired run against raw telemetry dumps.
 - [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
   — the A2 demand-validation runbook for Phase 0.
+- [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
+  — the A3 conformance/adoption/corpus runbook for Phase 2 onward.
 - [Technical implementation concept](technical-implementation-concept.md) — the
   component detail each phase builds.
 - [Storage benchmark prototype](storage-benchmark-prototype.md),

@@ -323,7 +323,9 @@ it survives contact with real data:
 4. Do `strength` tiers correspond to real predictive value, or are `medium`
    edges noise?
 5. Is the schema stable enough that an external tool built on `v0.1` keeps
-   working across two minor revisions?
+   working across two minor revisions? The concrete conformance artifacts,
+   adoption-clock thresholds, and corpus requirements are specified in the
+   [schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md).
 
 ## Relationship To Other Research
 
@@ -347,6 +349,9 @@ it survives contact with real data:
   — the source-specific policy and eval gate that makes `redaction_report`
   enforceable rather than decorative.
 - [Verdict](verdict.md) — why the open schema and portable bundle are the moat.
+- [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
+  — the A3 gate that decides whether the schema becomes external leverage and
+  whether the failure/fix corpus is large enough to call a moat.
 
 ## Bottom Line
 

@@ -75,7 +75,8 @@ is execution and distribution, not the trend.
 ## What Would Make It Genuinely Important (vs Merely Useful)
 
 - The **open evidence schema becomes a de facto standard** other tools/agents
-  build against (the moat that compounds — [business model](business-model-and-economics.md)).
+  build against (the moat that compounds — [business model](business-model-and-economics.md),
+  [schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)).
 - The **failure/fix corpus** accumulates enough that Parallax's bundles measurably
   improve agent outcomes over time (the data moat — [bundle-value eval](bundle-value-evaluation.md)).
 - **Audit-of-agents** becomes a compliance/trust necessity as autonomous changes
@@ -108,5 +109,7 @@ gates, and let the platform emerge from adoption — do not assert it.
 - [Risks and the bear case](risks-and-bear-case.md) — A1/A2/A3 that gate each stage.
 - [Business model](business-model-and-economics.md) — schema-as-standard and
   corpus as the platform's economic engine.
+- [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
+  — the concrete A3 adoption/corpus thresholds before platform claims are earned.
 - [AI-native observability](ai-native-observability-and-incident-intelligence.md)
   — the agent-native trend tailwind.

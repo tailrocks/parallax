@@ -147,7 +147,8 @@ Sources: [Sentry FSL announcement](https://blog.sentry.io/introducing-the-functi
   there are legitimate seams (cloud, fixer, ops add-ons, support), but they all
   depend on adoption that is unproven. A2 now has a concrete
   [user interview and deployment intent gate](user-interview-and-deployment-intent-gate.md);
-  A3 remains gated on schema adoption.
+  A3 now has a concrete
+  [schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md).
 - It sharpens the boundary decision: the Parallax-stores / separate-fixer split
   is not only an architecture choice, it is the **primary value-capture seam** —
   another reason to keep that boundary clean.
@@ -169,6 +170,8 @@ Sources: [Sentry FSL announcement](https://blog.sentry.io/introducing-the-functi
   distribution risks this narrows.
 - [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
   — the A2 gate that determines whether adoption beyond the operator is real.
+- [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
+  — the A3 gate that determines whether schema/corpus gravity is real.
 - [Market landscape](market-landscape.md) — OpenObserve's agent-gating weakness
   that Parallax must not replicate.
 - [Technical implementation concept](technical-implementation-concept.md) — the
