@@ -231,6 +231,11 @@ Rust-first normalization rules:
 - capture both physical backtrace and `SpanTrace` when available;
 - keep grouping versioned so future changes do not silently regroup history.
 
+The focused Rust grouping proof gate, including the proposed `rust-stack-v1`
+algorithm, debuginfo policy, symbolication status fields, and fixture matrix, is
+defined in
+[Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md).
+
 Harder future targets:
 
 - JavaScript source maps;

@@ -37,6 +37,7 @@ idea becomes sharper.
 - [Metadata store benchmark plan and prototype](docs/research/metadata-store-benchmark-plan.md)
 - [Messaging and ingestion layer](docs/research/messaging-and-ingestion-layer.md)
 - [Rust data collection and instrumentation](docs/research/rust-data-collection-and-instrumentation.md)
+- [Rust stacktrace grouping and symbolication](docs/research/rust-stacktrace-grouping-and-symbolication.md)
 - [Frontend collection and cross-tier correlation](docs/research/frontend-collection-and-cross-tier-correlation.md)
 - [Redaction pipeline and secret safety](docs/research/redaction-pipeline-and-secret-safety.md)
 - [Causal reconstruction and agent safety](docs/research/causal-reconstruction-and-agent-safety.md)

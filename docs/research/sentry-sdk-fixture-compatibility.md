@@ -41,7 +41,7 @@ Use levels so the product language is honest:
 | L0 parser | Accepts syntactically valid envelopes, handles unknown item types safely, and returns stable accept/reject behavior. | "Envelope endpoint." |
 | L1 Rust error events | Current Rust SDK panic/error/message/tracing event envelopes normalize into Parallax `error_event` rows. | "Sentry-compatible Rust error ingestion." |
 | L2 trace correlation | Rust SDK events carrying Sentry trace context join to OTLP spans/logs in bundles. | "Sentry errors linked to traces." |
-| L3 grouping stability | Same fixture corpus produces stable Parallax fingerprints across parser releases. | "Deterministic Parallax grouping." |
+| L3 grouping stability | Same fixture corpus plus Rust rebuild/debuginfo variants produces stable versioned Parallax fingerprints. | "Deterministic Parallax grouping." |
 | L4 multi-SDK smoke | Go and browser JavaScript error-event envelopes parse and normalize core fields. | "Sentry SDK-compatible error ingestion." |
 | L5 broad parity | Multiple SDK languages, attachments, transactions, profiles/replay/session behavior, and server-side grouping parity. | Do not claim for MVP. |
 
@@ -176,6 +176,9 @@ Pass criteria for v0:
 - malformed or oversized payloads fail before expensive normalization;
 - normalized snapshots are stable and reviewable;
 - grouping snapshots are versioned and deterministic;
+- Rust stacktrace grouping fixtures from
+  [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md)
+  pass before the L3 product claim is used;
 - duplicate event IDs are idempotent;
 - redaction fixtures leak zero seeded canaries into agent-visible JSON/Markdown;
 - a trace-context fixture joins to an OTLP span/log row in the evidence bundle.
@@ -213,6 +216,8 @@ This keeps Parallax narrow, testable, and defensible.
   turns its compatibility section into a fixture gate.
 - [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md)
   - the Rust SDK scenarios come from the chosen collection path.
+- [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md)
+  - the L3 grouping-stability gate and Rust-specific fixture extensions.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) - fixture
   outputs must flow into the bundle contract.
 - [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
