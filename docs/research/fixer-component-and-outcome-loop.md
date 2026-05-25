@@ -16,7 +16,7 @@ This note defines that boundary:
 > Parallax core must not become the fixer. The first product contract is an
 > evidence-bundle and outcome-record contract. A separate fixer component may
 > consume bundles, run a coding agent, draft a patch or pull request, and write
-> session/outcome evidence back to Parallax.
+> session/outcome evidence back to Parallax with measured adapter provenance.
 
 The strategic implication is also blunt: opening PRs is no longer scarce. Sentry
 Seer, GitHub Copilot cloud agent, and OpenHands already do it. The defensible
@@ -43,9 +43,9 @@ improves future evidence selection."
 
 | Component | Owns | Must not own |
 | --- | --- | --- |
-| Parallax core | Ingest, storage, redaction, grouping, correlation, evidence bundle, raw refs, query manifest, agent-session trace ingestion, fixer outcome records. | Repository checkout, patch generation, branch push, PR creation, merge, rollback, deploy, production mutation. |
+| Parallax core | Ingest, storage, redaction, grouping, correlation, evidence bundle, raw refs, query manifest, measured agent-session trace ingestion, fixer outcome records. | Repository checkout, patch generation, branch push, PR creation, merge, rollback, deploy, production mutation. |
 | Access surface | Read-only CLI/API/MCP bundle retrieval, deterministic hypothesis checks, scoped raw-ref reads. | Generic shell, SQL, deploy, rollback, or write tools. |
-| Fixer component | Repo checkout, coding-agent orchestration, patch proposal, branch/PR creation, test execution, validation summary, human-review handoff. | Bypassing Parallax redaction/bundle limits, mutating production, merging without human policy, hiding session traces. |
+| Fixer component | Repo checkout, coding-agent orchestration, patch proposal, branch/PR creation, test execution, validation summary, human-review handoff. | Bypassing Parallax redaction/bundle limits, mutating production, merging without human policy, hiding session traces or adapter lossiness. |
 | Coding agent | Code reasoning, file edits, tests, patch generation, PR text. | Deciding evidence provenance or redaction policy; writing back outcome truth without validation. |
 | GitHub/GitLab/etc. | Branches, commits, PRs/MRs, review, CI, merge metadata. | Being the only source of runtime failure context or fix-effect recurrence. |
 
@@ -110,6 +110,15 @@ The fixer writes back an append-only outcome record, not a vague "fixed" flag:
   "bundle_id": "bndl_01J...",
   "fixer_run_id": "fixrun_01J...",
   "agent_session_id": "ags_01J...",
+  "agent_session_linkage": {
+    "adapter_name": "parallax-codex-hooks",
+    "adapter_version": "0.1.0",
+    "capture_surface": "hooks|otel|plugin|stream_json|jsonl|provider_task_ref|unknown",
+    "adapter_claim_level": "codex_hooks_supported|claude_otel_ingest_supported|provider_task_link_only|unknown",
+    "lossiness_report_ref": "agent-session-run/lossiness-results.jsonl#fixrun_01J",
+    "redaction_report_ref": "agent-session-run/redaction-results.jsonl#fixrun_01J",
+    "projection_safe": true
+  },
   "provider_agent_task": {
     "provider": "github_agent_tasks|none",
     "api_version": "2026-03-10",
@@ -190,7 +199,8 @@ The fixer should not ship before these gates pass:
 | Validation | Required tests/builds are run or explicitly reported as unavailable; logs are stored as refs. |
 | Repo permission | Fixer can create a branch and draft PR only; no direct push to protected branches, merge, deploy, or production mutation. |
 | Provider-task linkage | If the fixer uses GitHub Agent Tasks, or an equivalent hosted agent API, the outcome records task id, API version, preview/stability status, task state, model, session count, artifacts, and permission mode. |
-| Outcome writeback | Every run writes an agent session trace and outcome record, including failure, timeout, and no-op cases. |
+| Agent-session linkage | If the fixer claims a session-trace arm, the linked agent session records exact tool/version/config, adapter, capture surface, lossiness, redaction, projection, and raw-ref status. Provider task `session_count` is not enough. |
+| Outcome writeback | Every run writes an outcome record, including failure, timeout, and no-op cases. Session trace claims require the agent-session linkage gate above. |
 | Human review | Draft PRs request a human reviewer and carry a clear "agent generated" marker. |
 | Recurrence tracking | Merged fixes create a follow-up watch window before Parallax marks `fix_addressed_issue` as strong. |
 
@@ -238,7 +248,8 @@ This prevents the classic bad metric: counting opened PRs as successful fixes.
 2. In Phase 1, expose bundles through CLI/API and define the outcome record
    schema even if no fixer exists.
 3. In Phase 2, build a local fixer harness for evals only: consume bundle, run
-   agent, produce patch, write session/outcome record.
+   agent, produce patch, write outcome record, and link measured agent-session
+   evidence when the session-trace arm is enabled.
 4. In Phase 3, allow draft PR creation through one repository provider with
    explicit least-privilege permissions.
 5. In Phase 4, commercialize the fixer only if A1/A2/A3 and redaction gates hold.
@@ -260,6 +271,9 @@ storage forward before the tiny evidence engine proves value.
   bundle and audit edges consumed by the fixer.
 - [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) defines
   the session/action trace data that a fixer must emit back to Parallax.
+- [Agent session tracing ledger](agent-session-tracing-ledger.md) defines the
+  per-tool, per-capture-surface evidence required before a fixer run can claim
+  to include measured agent-session tracing.
 - [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
   keeps the first Parallax MCP server read-only; fixer write/proposal tools are
   later and separate.
