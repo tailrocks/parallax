@@ -35,6 +35,7 @@ improves future evidence selection."
 | [GitHub Agentic Workflows assign-to-copilot](https://github.github.com/gh-aw/reference/assign-to-copilot/) | Workflow automation can assign Copilot to issues/PRs, route cross-repository PR creation, and requires fine-grained PAT permissions for assignment. | The fixer needs explicit repo/branch/permission policy. Cross-repo issue-to-code routing is real and must be captured in outcome records. |
 | [GitHub Copilot for Jira preview](https://github.blog/changelog/2026-03-05-github-copilot-coding-agent-for-jira-is-now-in-public-preview/) | Jira issues can be assigned to Copilot; Copilot implements changes, opens draft PRs, posts updates, asks clarifying questions, and follows existing review/approval rules. | Issue tracker -> agent -> PR is becoming a standard integration flow. Parallax should store the evidence trail across tracker, repo, CI, agent, and runtime recurrence. |
 | [OpenHands GitHub Action](https://docs.openhands.dev/openhands/usage/run-openhands/github-action) | OpenHands can be triggered from issues via label or mention, attempts resolution, opens a PR, and supports iterative feedback through comments and review threads. | Open-source fixer patterns exist. Parallax should not hard-code one fixer; it should define an adapter/event contract. |
+| [MCP 2025-11-25 tools spec](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) and [RFC 8785 JCS](https://www.rfc-editor.org/rfc/rfc8785.html) | MCP tools can return `structuredContent` validated by `outputSchema`; JCS gives JSON a deterministic hashable representation. | A read-only fixer handoff must be a schema-bound, canonical, cross-surface projection rather than an ad hoc Markdown prompt. |
 | [Where Do AI Coding Agents Fail?](https://arxiv.org/abs/2601.15195) | A 2026 study of 33k agent-authored PRs reports that documentation/CI/build tasks merge more successfully, while performance and bug-fix tasks perform worst; failed PRs often touch more files, fail CI, or suffer review/alignment problems. | Parallax should gate autonomy by task class, evidence strength, patch size, touched files, and validation status. Bug-fix PRs are exactly where evidence matters most and success is hardest. |
 | [Collaborator or Assistant?](https://arxiv.org/abs/2605.08017) | Analysis of 29,585 PR lifecycles finds collaborator tools initiate and carry PR work, but terminal merge authority remains overwhelmingly human. | Parallax should model human review/merge as first-class outcome evidence. Auto-merge is not part of the MVP. |
 | [Why Are AI Agent Involved Fix PRs Unmerged?](https://arxiv.org/abs/2602.00164) | Current research focuses on fix-related agent PR integration outcomes, latency, and blockers. | The moat data is not just generated patches; it is accepted/rejected/reverted/slow/unmerged outcomes with evidence context. |
@@ -90,7 +91,11 @@ Parallax returns a normal evidence bundle plus a `fixer_context` block:
 | Field | Meaning |
 | --- | --- |
 | `bundle_id` | Immutable context object consumed by the fixer. |
-| `bundle_hash` | Canonical hash for replay and projection equivalence. |
+| `schema_ref` | Schema URI plus schema hash for the bundle contract. |
+| `canonical_bundle_hash` | JCS-style canonical hash for replay and projection equivalence. |
+| `projection_manifest_hash` | Hash of the projection manifest used for Markdown, CLI, HTTP, and MCP views. |
+| `mcp_output_schema_ref` | Output schema used when the bundle is served through MCP `structuredContent`. |
+| `access` | Raw-access policy and expiry copied from the evidence bundle. |
 | `source_field_policy_status` | Provenance/source-field status for eval, corpus, benchmark, or mixed-source bundles. |
 | `raw_ref_policy` | Whether raw refs are denied, listed only, or human-readable under a sensitive-read approval. |
 | `evidence_strength_summary` | Counts of strong/medium/weak/inferred edges. |
@@ -115,6 +120,11 @@ The fixer writes back an append-only outcome record, not a vague "fixed" flag:
     "adapter_version": "0.1.0",
     "capture_surface": "hooks|otel|plugin|stream_json|jsonl|provider_task_ref|unknown",
     "adapter_claim_level": "codex_hooks_supported|claude_otel_ingest_supported|provider_task_link_only|unknown",
+    "canonical_session_bundle_hash": "sha256:<hex>|not_applicable",
+    "projection_manifest_hash": "sha256:<hex>|not_applicable",
+    "projection_equivalence_pass": true,
+    "mcp_structured_content_valid": true,
+    "safety_fields_only_in_meta": false,
     "lossiness_report_ref": "agent-session-run/lossiness-results.jsonl#fixrun_01J",
     "redaction_report_ref": "agent-session-run/redaction-results.jsonl#fixrun_01J",
     "projection_safe": true
@@ -177,8 +187,8 @@ non-recurrence. Parallax should model that sequence, not collapse it.
 | --- | --- | --- |
 | `L0 observe` | Store issue, telemetry, bundle, and human investigation notes. | Any valid bundle. |
 | `L1 diagnose` | Produce evidence-cited diagnosis and next checks. | Strong or medium evidence, or explicit inconclusive output. |
-| `L2 propose_patch` | Produce patch diff or PR plan, no branch push. | A1 bundle-value gate positive for this failure class; redaction passed; tests identified. |
-| `L3 draft_pr` | Create branch and draft PR, or start a provider task that creates a draft PR artifact, then request human review. | Same as L2 plus repo permission policy, validation commands, provider API policy if used, patch-size limits, and no missing critical evidence. |
+| `L2 propose_patch` | Produce patch diff or PR plan, no branch push. | A1 bundle-value gate positive for this failure class; A6 redaction passed; canonical bundle/projection hashes present; tests identified. |
+| `L3 draft_pr` | Create branch and draft PR, or start a provider task that creates a draft PR artifact, then request human review. | Same as L2 plus repo permission policy, validation commands, provider API policy if used, patch-size limits, exact head-SHA check linkage, and no missing critical evidence. |
 | `L4 auto_pr` | Automatically open PR for high-actionability issues. | Later only; requires per-project setting, actionability threshold, passing validation, and rollback/revert tracking. |
 | `L5 auto_merge/deploy` | Merge or deploy without human approval. | Out of scope for Parallax MVP and should remain rejected until a separate production-control safety program exists. |
 
@@ -193,13 +203,13 @@ The fixer should not ship before these gates pass:
 | --- | --- |
 | A1 bundle value | Bundles beat raw telemetry dumps for the target failure class, or the product claim is narrowed to audit/retention. |
 | Redaction | The [redaction pipeline](redaction-pipeline-and-secret-safety.md) and [detector toolchain](redaction-detector-toolchain.md) pass on generated bundle, raw dump, validation-log, and agent-session fixtures. |
-| Source-field and projection | Eval/corpus-derived bundles preserve source-field policy status, redaction reports, missing-evidence flags, and raw-ref denial into fixer-visible inputs and PR text. |
+| Source-field and projection | Eval/corpus-derived bundles preserve source-field policy status, redaction reports, missing-evidence flags, raw-ref denial, canonical bundle hash, and projection manifest across bundle JSON, Markdown, CLI, HTTP, and MCP `structuredContent`; MCP output validates against `outputSchema`; safety fields are not only in `_meta` or PR prose. |
 | Evidence citation | Every material claim in the diagnosis/PR body cites bundle evidence refs or says evidence is missing. |
 | Patch limits | Draft PRs obey max files/lines/touched services and reject broad rewrites by default. |
 | Validation | Required tests/builds are run or explicitly reported as unavailable; logs are stored as refs. |
 | Repo permission | Fixer can create a branch and draft PR only; no direct push to protected branches, merge, deploy, or production mutation. |
 | Provider-task linkage | If the fixer uses GitHub Agent Tasks, or an equivalent hosted agent API, the outcome records task id, API version, preview/stability status, task state, model, session count, artifacts, and permission mode. |
-| Agent-session linkage | If the fixer claims a session-trace arm, the linked agent session records exact tool/version/config, adapter, capture surface, lossiness, redaction, projection, and raw-ref status. Provider task `session_count` is not enough. |
+| Agent-session linkage | If the fixer claims a session-trace arm, the linked agent session records exact tool/version/config, adapter, capture surface, canonical session bundle hash, projection manifest hash, lossiness, redaction, projection, MCP structured-output status, and raw-ref status. Provider task `session_count` is not enough. |
 | Outcome writeback | Every run writes an outcome record, including failure, timeout, and no-op cases. Session trace claims require the agent-session linkage gate above. |
 | Human review | Draft PRs request a human reviewer and carry a clear "agent generated" marker. |
 | Recurrence tracking | Merged fixes create a follow-up watch window before Parallax marks `fix_addressed_issue` as strong. |
@@ -286,5 +296,5 @@ storage forward before the tiny evidence engine proves value.
 
 The fixer is strategically important but should stay outside Parallax core. PR
 creation is already becoming a platform commodity. Parallax's defensible role is
-to make each fixer run evidence-cited, redacted, auditable, measurable, and tied
-to accepted/rejected/reverted runtime outcomes.
+to make each fixer run evidence-cited, canonical, redacted, auditable,
+measurable, and tied to accepted/rejected/reverted runtime outcomes.

@@ -21,9 +21,11 @@ The central rule:
 > loop", "autonomous fix outcome learning", or "fixer business seam validated"
 > claim without dated result rows linking evidence bundle -> fixer run -> agent
 > session, with exact tool/version/config, adapter, capture surface, lossiness,
-> redaction, source-field, projection, and raw-ref status -> provider agent task
-> when used -> patch/branch/PR -> CI/checks -> review/merge/revert/recurrence
-> -> human or policy verdict.
+> redaction, source-field, schema ref, canonical hash, projection manifest,
+> CLI/API/MCP projection equivalence, MCP `structuredContent`/`outputSchema`
+> validation, and raw-ref status -> provider agent task when used ->
+> patch/branch/PR -> CI/checks -> review/merge/revert/recurrence -> human or
+> policy verdict.
 
 Parallax itself still does not fix. This ledger measures the separate fixer
 component and the outcome records that flow back into Parallax.
@@ -41,6 +43,8 @@ component and the outcome records that flow back into Parallax.
 | [GitHub Agent Tasks REST API](https://docs.github.com/en/rest/agent-tasks/agent-tasks) | GitHub exposes public-preview endpoints to start and manage Copilot cloud-agent tasks. Task rows include states, session count, and pull-request artifacts; the start endpoint accepts a prompt, model, `create_pull_request`, and `base_ref`, with "Agent tasks" permissions. | If the fixer delegates to Copilot through GitHub, Parallax must record provider task id, task state, selected model, preview status, artifact PR refs, and permission mode. A provider task is still not a fix-success signal. |
 | [GitHub Copilot coding agent](https://docs.github.com/en/copilot/concepts/about-copilot-coding-agent) and [Copilot PR review guidance](https://docs.github.com/copilot/how-tos/agents/copilot-coding-agent/reviewing-a-pull-request-created-by-copilot) | Copilot can work through the pull-request workflow. Current review guidance says Copilot PRs need thorough review, required approval may need another reviewer, and Actions workflows do not run automatically by default when Copilot pushes changes unless approved or configured. | Human governance and workflow approval are first-class outcome states. Parallax should model autonomy levels and never treat L3 draft PR creation or provider-task completion as L4/L5 completion. |
 | [Sentry Seer issue-fix API](https://docs.sentry.io/api/seer/start-seer-issue-fix/) and [Seer product docs](https://docs.sentry.io/product/ai-in-sentry/seer) | Seer can run issue-fix workflows through root cause, solution, code changes, and open PR, using Sentry telemetry and connected code repositories. | "Issue -> code changes -> PR" is already incumbent behavior. The Parallax differentiator must be evidence citation, redaction, audit, and outcome feedback. |
+| [MCP 2025-11-25 tools spec](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) and [base protocol](https://modelcontextprotocol.io/specification/2025-11-25/basic) | Tools may define `outputSchema`; structured results are returned in `structuredContent`; servers must conform when an output schema exists and clients should validate it. `_meta` is reserved protocol metadata. | Fixer MCP handoff rows must validate structured outputs against an output schema. Safety-critical fields cannot live only in text or `_meta`. |
+| [RFC 8785 JSON Canonicalization Scheme](https://www.rfc-editor.org/rfc/rfc8785.html) | JCS defines a deterministic, hashable JSON representation using strict JSON serialization, I-JSON constraints, and deterministic property sorting. | Bundle, projection, and session hashes need a named canonicalization method before equality claims across CLI, HTTP, MCP, and fixture files are meaningful. |
 | [Where Do AI Coding Agents Fail?](https://arxiv.org/abs/2601.15195) | A large-scale study of agent-authored PRs reports failures tied to task class, change size, CI, and review/alignment problems. | The ledger must stratify by failure class, patch size, touched files, CI status, and review outcome instead of reporting one aggregate PR-open metric. |
 | [Collaborator or Assistant?](https://arxiv.org/abs/2605.08017) | A PR lifecycle study finds agents can initiate and carry PR work while merge governance remains predominantly human. | Outcome rows must separate operational agency from terminal approval authority. |
 | [Why Are AI Agent Involved Fix PRs Unmerged?](https://arxiv.org/abs/2602.00164) and [Why Are Agentic Pull Requests Merged or Rejected?](https://arxiv.org/abs/2605.22534) | Recent PR studies focus on integration outcomes, unmerged fix PR blockers, review interactions, and why raw merge/rejection labels can mislead. | A useful corpus needs reviewer rationale, workflow blockers, recurrence, and inconclusive states, not just merged versus closed. |
@@ -54,12 +58,12 @@ scope.
 | --- | --- | --- |
 | `not_measured` | No run artifacts exist. Current status. | "Fixer outcome loop is designed but not run-proven." |
 | `fixture_harness_ready` | Repeatable task matrix, fixture repos, redaction fixtures, expected checks, and scoring protocol exist. | "Fixer outcome fixture harness prepared." |
-| `bundle_handoff_supported` | Fixer consumes immutable Parallax bundles with manifest, query report, redaction report, source-field policy, missing evidence, and raw-ref policy. | "Fixer bundle handoff works for the tested task set." |
+| `bundle_handoff_supported` | Fixer consumes immutable Parallax bundles with `schema_ref`, canonical bundle hash, manifest, query report, redaction report, source-field policy, missing evidence, projection manifest, access policy, and raw-ref policy. | "Fixer bundle handoff works for the tested task set." |
 | `fixer_run_record_supported` | Every run records status, policy, autonomy level, tool scopes, provider API version, optional provider task ID, agent session ID, and failure/no-op/timeout cases. | "Fixer runs are recorded for the tested task set." |
-| `agent_session_linkage_pass` | Every run using an agent-session arm links to a dated agent-session ledger row with tool binary/version/config, adapter name/version, capture surface, source schema snapshot, lossiness, redaction, source-field policy, projection status, and raw-ref policy. | "Fixer runs link measured agent-session evidence for tested tasks." |
+| `agent_session_linkage_pass` | Every run using an agent-session arm links to a dated agent-session ledger row with tool binary/version/config, adapter name/version, capture surface, source schema snapshot, canonical session bundle hash, projection manifest hash, lossiness, redaction, source-field policy, projection status, and raw-ref policy. | "Fixer runs link measured agent-session evidence for tested tasks." |
 | `pr_creation_supported` | Separate fixer can create branches and draft PRs for allowed tasks with least-privilege repo policy. | "Separate fixer can open draft PRs for tested tasks." |
 | `provider_agent_task_linkage_pass` | Copilot/GitHub Agent Tasks or similar provider-task runs are linked to task state, model, session count, artifacts, PR refs, and API preview/stability status. | "Provider agent-task linkage is recorded for tested tasks." |
-| `source_field_projection_pass` | Eval/corpus-derived bundle projections preserve source-field policy status, redaction reports, missing-evidence flags, and raw-ref denial into fixer-visible inputs. | "Fixer-visible inputs preserve safety fields for tested tasks." |
+| `source_field_projection_pass` | Eval/corpus-derived bundle projections preserve source-field policy status, redaction reports, missing-evidence flags, raw-ref denial, canonical bundle hash, projection manifest hash, CLI/HTTP/MCP equivalence, and MCP `structuredContent` validation into fixer-visible inputs. | "Fixer-visible inputs preserve safety fields for tested tasks." |
 | `evidence_citation_pass` | Every material diagnosis or PR-body claim cites bundle evidence refs or explicitly names missing evidence. | "Fixer output cites evidence for the tested tasks." |
 | `ci_check_linkage_pass` | Required tests/checks are linked to exact head SHAs and conclusions, including skipped/failed/stale/rerun cases. | "Fixer PRs link CI/check evidence for the tested tasks." |
 | `human_review_outcome_pass` | Human review state, edits, requested changes, close reasons, and verdict are recorded. | "Human review outcomes are recorded for tested fixer PRs." |
@@ -134,10 +138,28 @@ raw refs unless the operator explicitly approves redacted fixtures.
   "provider_agent_task_used": false,
   "source_repo_commit": "<git-sha>",
   "evidence_bundle_schema_version": "bundle-v0",
+  "bundle_schema_ref": {
+    "uri": "schema://parallax/evidence-bundle/v0",
+    "hash": "sha256:<hex>",
+    "canonicalization": "jcs-rfc8785"
+  },
+  "canonical_bundle_hash_required": true,
   "agent_session_schema_version": "agent-session-v0",
   "redaction_policy_version": "a6-default-deny-vN",
   "source_field_policy_version": "phase0-source-field-policy-vN",
   "projection_schema_version": "fixer-projection-vN",
+  "projection_manifest_required": true,
+  "projection_surfaces_required": [
+    "bundle_json",
+    "bundle_markdown",
+    "cli_output",
+    "http_api",
+    "mcp_structuredContent"
+  ],
+  "mcp_output_schema_required": true,
+  "a1_gate_scope": "failure_class_current|not_required_for_L1|missing",
+  "a4_correlation_claim_level": "not_measured|a4_gate_pass|claim_expired",
+  "a6_redaction_claim_level": "not_measured|a6_gate_pass|claim_expired",
   "raw_ref_policy": "deny_dereference_by_default",
   "autonomy_level_requested": "L1|L2|L3|L4",
   "autonomy_level_max_allowed": "L1|L2|L3",
@@ -180,6 +202,14 @@ raw refs unless the operator explicitly approves redacted fixtures.
   "bundle_id": "bndl_001",
   "task_id": "fix_task_001",
   "bundle_schema_version": "bundle-v0",
+  "schema_ref": "schema://parallax/evidence-bundle/v0",
+  "schema_ref_hash": "sha256:<hex>",
+  "canonicalization": "jcs-rfc8785",
+  "canonical_bundle_hash": "sha256:<hex>",
+  "access": {
+    "raw_access_policy": "deny|scoped-read",
+    "expires_at": "2026-05-25T00:00:00Z|null"
+  },
   "query_manifest_present": true,
   "redaction_report_present": true,
   "source_field_policy_status": "pass|fail|not_applicable",
@@ -190,7 +220,19 @@ raw refs unless the operator explicitly approves redacted fixtures.
   "raw_ref_dereferenced": false,
   "agent_visible_leak_count": 0,
   "allowed_raw_refs": [],
+  "projection_manifest_hash": "sha256:<hex>",
+  "projection_surfaces_checked": [
+    "bundle_json",
+    "bundle_markdown",
+    "cli_output",
+    "http_api",
+    "mcp_structuredContent"
+  ],
+  "projection_equivalence_pass": true,
   "projection_equivalence_hash": "sha256:<hex>",
+  "mcp_structured_content_hash": "sha256:<hex>|not_used",
+  "mcp_output_schema_valid": "true|false|not_used",
+  "safety_fields_only_in_meta": false,
   "handoff_to_agent_success": true,
   "failure_reason": null
 }
@@ -256,6 +298,11 @@ raw refs unless the operator explicitly approves redacted fixtures.
   "source_schema_snapshot": "docs-checked-YYYY-MM-DD|provider-api-YYYY-MM-DD|unknown",
   "source_config_ref": "raw://agent-config-snapshot",
   "adapter_claim_level": "codex_hooks_supported|codex_exec_json_supported|claude_otel_ingest_supported|claude_stream_json_supported|amp_plugin_supported|amp_stream_json_supported|opencode_run_json_supported|opencode_export_supported|opencode_plugin_supported|opencode_acp_supported|provider_task_link_only|unknown",
+  "canonical_session_bundle_hash": "sha256:<hex>|not_applicable",
+  "projection_manifest_hash": "sha256:<hex>|not_applicable",
+  "projection_equivalence_pass": true,
+  "mcp_structured_content_valid": true,
+  "safety_fields_only_in_meta": false,
   "command_count": 4,
   "file_edit_count": 2,
   "test_count": 1,
@@ -372,6 +419,8 @@ raw refs unless the operator explicitly approves redacted fixtures.
   "claims_with_evidence_refs": 8,
   "unsupported_claim_count": 0,
   "wrong_evidence_ref_count": 0,
+  "canonical_bundle_hash_cited": true,
+  "projection_manifest_hash_cited": true,
   "query_manifest_cited": true,
   "missing_evidence_cited": true,
   "source_field_policy_cited": true,
@@ -391,6 +440,10 @@ raw refs unless the operator explicitly approves redacted fixtures.
   "raw_ref_access_granted": false,
   "raw_ref_dereferenced": false,
   "source_field_policy_status": "pass|fail|not_applicable",
+  "canonical_bundle_hash_present": true,
+  "projection_hash_mismatch": false,
+  "mcp_structured_output_invalid": false,
+  "safety_fields_only_in_meta": false,
   "provider_api_preview_used": false,
   "agent_visible_leak_count": 0,
   "scope_limit_violation": false,
@@ -422,6 +475,15 @@ raw refs unless the operator explicitly approves redacted fixtures.
 - Fix success requires human-correct or merged status, passing required checks,
   no policy/safety failure, and recurrence/revert follow-up for the configured
   window.
+- Fixer-visible bundle handoff fails unless the bundle includes `schema_ref`,
+  `schema_ref_hash`, `canonical_bundle_hash`, `projection_manifest_hash`,
+  `access`, `redaction_report`, `source_field_policy`, and `missing_evidence`.
+- CLI, HTTP, MCP, Markdown, and persisted JSON projections must carry the same
+  canonical bundle hash and projection manifest hash for the same task scope.
+- MCP handoff counts only when `structuredContent` validates against the
+  declared `outputSchema`; text-only MCP output is PR plumbing evidence at most.
+- Safety-critical fields do not count if they appear only in MCP `_meta`, PR
+  body comments, descriptions, or unvalidated free text.
 - Draft proposal, patch diff, draft PR, non-draft PR, merge, and deployment are
   separate autonomy levels.
 - Any agent-visible secret leak fails the run regardless of PR quality.
@@ -445,6 +507,15 @@ raw refs unless the operator explicitly approves redacted fixtures.
   missing lossiness/redaction/projection rows can count as PR plumbing evidence
   only. It cannot support session-trace value, outcome-feedback-loop, or
   multi-agent tracing claims.
+- A `parallax_bundle_plus_session_trace` arm cannot count unless the linked
+  agent-session row has `projection_safe: true`, matching canonical session
+  bundle and projection-manifest hashes, and no raw-transcript/tool-payload
+  dereference outside policy.
+- L2/L3 autonomy rows cannot count for a failure class unless A1 bundle-value
+  evidence is current for that class, or the run is explicitly scoped as
+  offline/experimental and barred from product claims.
+- A6 redaction and A4 correlation claim levels must be current before fixer
+  outputs are used as agent-visible proof or correlation-success evidence.
 - Public-preview provider APIs can support fixture evidence only when the run
   records preview status, API version, and expiry. They cannot support broad
   stable-product wording.
@@ -478,9 +549,12 @@ Current claim level: not_measured
 | Metric | Current | Threshold for L3 draft PR support | Status |
 | --- | ---: | ---: | --- |
 | Fixture tasks | 0 | >=10 | Pending |
+| Canonical bundle handoff pass rate | 0% | 100% | Pending |
 | Bundle handoff pass rate | 0% | 100% | Pending |
 | Agent-visible canary leaks | 0 | 0 | Pending |
 | Source-field/projection pass rate | 0% | 100% | Pending |
+| Projection equivalence failures | 0 | 0 | Pending |
+| MCP structured output validation failures | 0 | 0 | Pending |
 | Agent session linkage pass rate | 0% | 100% when session-trace arm is used | Pending |
 | Provider agent-task linkage rate | 0% | 100% when provider tasks are used | Pending |
 | Evidence-citation pass rate | 0% | >=95% | Pending |
@@ -525,8 +599,9 @@ Allowed after `agent_session_linkage_pass`:
 
 Allowed after `source_field_projection_pass`:
 
-> Fixer-visible inputs preserve source-field, redaction, missing-evidence, and
-> raw-ref policy fields for tested tasks.
+> Fixer-visible inputs preserve source-field, redaction, missing-evidence,
+> canonical-hash, projection-manifest, MCP structured-output, and raw-ref policy
+> fields for tested tasks.
 
 Allowed after `human_review_outcome_pass`:
 
@@ -562,7 +637,8 @@ Mark affected claims `claim_expired` when:
 - branch protection, rulesets, required checks, or repository permission policy
   changes;
 - Parallax bundle schema, fixer outcome schema, agent-session schema,
-  source-field policy, projection schema, raw-ref policy, or redaction policy
+  source-field policy, projection schema, projection surface list, MCP
+  output schema, canonicalization method, raw-ref policy, or redaction policy
   changes;
 - the fixer model, agent product, prompt, tool policy, or task matrix changes;
 - 90 days pass since the last run during discovery;
@@ -593,5 +669,6 @@ Mark affected claims `claim_expired` when:
 
 The fixer loop is only defensible if it is measured past the PR-open event.
 Parallax's role is to make the evidence handoff and outcome trail auditable:
-bundle, agent session, patch, CI, review, merge, revert, recurrence, and human
-verdict. Until those rows exist, the honest claim is design, not capability.
+canonical bundle, validated projection, agent session, patch, CI, review, merge,
+revert, recurrence, and human verdict. Until those rows exist, the honest claim
+is design, not capability.
