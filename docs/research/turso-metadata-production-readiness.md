@@ -26,7 +26,7 @@ proven on Parallax metadata workloads.
 
 | Source | What matters for Parallax |
 | --- | --- |
-| [Turso Database GitHub repository](https://github.com/tursodatabase/turso) | Latest non-prerelease checked by GitHub API is `v0.6.1` published 2026-05-22. The README still marks Turso Database beta, says to use caution with production data and backups, and says Turso Database is not ready for production use while libSQL is production ready. |
+| [Turso Database GitHub repository](https://github.com/tursodatabase/turso), [v0.6.1 release](https://github.com/tursodatabase/turso/releases/tag/v0.6.1), and [v0.7.0-pre.3 release](https://github.com/tursodatabase/turso/releases/tag/v0.7.0-pre.3) | Latest non-prerelease checked by GitHub API is `v0.6.1` published 2026-05-22; newest checked pre-release is `v0.7.0-pre.3`, also published 2026-05-22. The README still marks Turso Database beta, says to use caution with production data and backups, and says Turso Database is not ready for production use while libSQL is production ready. | Production-readiness claims must pin stable versus pre-release tracks. A pre-release can be used for investigation, but it cannot satisfy the default metadata-store gate unless the same result is rerun on a stable release or explicitly accepted as a prototype-only risk. |
 | [Turso Rust SDK reference](https://docs.turso.tech/sdk/rust/reference) | New Rust projects should use the `turso` crate for local/embedded database and sync. The newer engine supports MVCC concurrent writes and push/pull sync; `libsql` remains the remote/existing-codebase option. |
 | [Turso concurrent writes](https://docs.turso.tech/tursodb/concurrent-writes) | Default configuration allows one writer. MVCC requires `PRAGMA journal_mode = 'mvcc'` and `BEGIN CONCURRENT`; conflicting same-row transactions must roll back and retry. Parallax must own retry policy and hot-row contention tests. |
 | [Turso CDC](https://docs.turso.tech/tursodb/cdc) | CDC records data changes, but it cannot be used together with MVCC on the same connection. Parallax cannot rely on CDC as the primary audit trail if it also depends on MVCC concurrent writes. |
@@ -138,6 +138,7 @@ parallax-metadata-bench
 The report should include:
 
 - Turso version and crate version;
+- release track (`stable` or `pre-release`) and exact Git tag;
 - whether MVCC was enabled;
 - whether sync was enabled;
 - host filesystem and crash method;

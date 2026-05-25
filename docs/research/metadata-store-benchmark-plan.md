@@ -29,6 +29,10 @@ As of 2026-05-25:
 
 - The `tursodatabase/turso` repository describes Turso Database as an
   in-process SQL database written in Rust and compatible with SQLite.
+- GitHub release metadata checked on 2026-05-25 shows `v0.6.1` as the latest
+  non-prerelease and `v0.7.0-pre.3` as the newest pre-release. Benchmark results
+  must record the exact tag and whether the run used a stable or pre-release
+  track.
 - The public README marks Turso Database beta and warns to use caution with
   production data and backups.
 - Public docs distinguish legacy libSQL embedded replicas from newer Turso
@@ -40,6 +44,8 @@ As of 2026-05-25:
 Sources:
 
 - [Turso Database GitHub repository](https://github.com/tursodatabase/turso)
+- [Turso v0.6.1 release](https://github.com/tursodatabase/turso/releases/tag/v0.6.1)
+- [Turso v0.7.0-pre.3 release](https://github.com/tursodatabase/turso/releases/tag/v0.7.0-pre.3)
 - [Turso Rust quickstart](https://docs.turso.tech/sdk/rust/quickstart)
 - [Turso embedded replicas](https://docs.turso.tech/features/embedded-replicas/introduction)
 - [Turso libSQL overview](https://docs.turso.tech/libsql)
@@ -408,6 +414,9 @@ Turso remains the default only if it passes these gates:
 - schema migrations are deterministic and testable;
 - data can be exported or migrated to Postgres without changing Parallax's API;
 - beta status risk is documented and acceptable for the chosen release stage.
+- production/default claims use a non-prerelease Turso tag, or explicitly label
+  the result prototype-only if a pre-release was used to investigate an upcoming
+  behavior change.
 
 Postgres becomes the default only if Turso fails correctness, backup/restore,
 concurrency, migration, or operational-safety gates.

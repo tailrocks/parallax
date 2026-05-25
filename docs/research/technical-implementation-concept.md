@@ -177,10 +177,13 @@ Related research:
 Metadata-store source:
 
 - [Turso Database GitHub repository](https://github.com/tursodatabase/turso)
+- [Turso v0.6.1 release](https://github.com/tursodatabase/turso/releases/tag/v0.6.1)
+- [Turso v0.7.0-pre.3 release](https://github.com/tursodatabase/turso/releases/tag/v0.7.0-pre.3)
 
 Use the `tursodatabase/turso` engine for the embedded metadata slot, not the old
-C SQLite default. As of 2026-05 Turso Database is still pre-1.0 (latest stable
-`v0.6.1`, 2026-05-22) and the repository still carries an explicit beta warning;
+C SQLite default. As of 2026-05 Turso Database is still pre-1.0 (latest
+non-prerelease checked `v0.6.1`, 2026-05-22; newest checked pre-release
+`v0.7.0-pre.3`) and the repository still carries an explicit beta warning;
 Turso Cloud has separate documented durability, PITR, export, and sync behavior,
 but those managed-cloud guarantees do not prove the embedded local store is safe
 under Parallax crash, backup, migration, and audit workloads. This is an
@@ -188,7 +191,10 @@ operator-chosen default, not a maturity claim: Parallax must pair it with its
 own backup path and the [metadata-store benchmark](metadata-store-benchmark-plan.md)
 before relying on it for large production installs, and Postgres remains the
 scale-out fallback the moment Turso fails those gates. Treat the metadata slot
-as the most likely place the named stack changes under benchmarking.
+as the most likely place the named stack changes under benchmarking. Metadata
+benchmarks must record whether they use a stable or pre-release Turso tag; a
+pre-release result can inform development but should not satisfy production
+default claims without a stable rerun.
 
 The current Turso-specific production gate is stricter than "it runs locally":
 [Turso metadata production readiness](turso-metadata-production-readiness.md)
