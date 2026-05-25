@@ -23,9 +23,17 @@ The concrete full-row retrieval and hashing workflow is specified in
 
 No drift was found in the covered pinned source SHAs or row counts on
 2026-05-25. A same-day follow-up API recheck again found the same SWE-bench-Live
-and Nebius dataset set, the same source SHAs, the same split counts, and
+and Nebius V2 source SHAs, the same split counts, and
 `first-rows.truncated=true` for each checked preview. The weak claim was not
 freshness; it was source governance.
+
+The follow-up did find one adjacent source that this note had not named:
+`nebius/SWE-rebench`, the older automated SWE-rebench dataset. It is not a
+trajectory or leaderboard dataset, so it should not be excluded for the same
+reason as solved-run/result sources. It should still be treated as
+`expansion_only_legacy_high_risk`: useful as historical context or later
+expansion material only after the smaller seed proves the source-field policy,
+and superseded for first-pass source selection by SWE-rebench V2.
 
 The A1 source rule is now:
 
@@ -46,15 +54,17 @@ The A1 source rule is now:
 | [SWE-bench-Live/SWE-bench-Live](https://huggingface.co/datasets/SWE-bench-Live/SWE-bench-Live) | SHA `a637bd46829f3132e12938c8a0ca93173a977b8e`; last modified `2025-09-18T07:36:47Z`; license tag `mit`; `private=false`, `disabled=false`, `gated=false`; 3,688 rows across `test` 1000, `lite` 300, `verified` 500, `full` 1888; `first-rows` returned `truncated=true`. | `harness_shakeout` or Python-only supplement; not the Rust-first default seed. |
 | [nebius/SWE-rebench-V2](https://huggingface.co/datasets/nebius/SWE-rebench-V2) | SHA `475dd5e8703bb5fb22dd3c60b5d038b019eba1e0`; last modified `2026-05-12T14:00:30Z`; license tag `cc-by-4.0`; `private=false`, `disabled=false`, `gated=false`; 32,079 train rows; `partial=false`; `first-rows` returned `truncated=true`. | `expansion_only` after inspected seed tasks; keep license and generated-source status visible. |
 | [nebius/SWE-rebench-V2-PRs](https://huggingface.co/datasets/nebius/SWE-rebench-V2-PRs) | SHA `40faf2c1bb160de625f3c3270ac9d62ea45f3f9c`; last modified `2026-03-03T09:41:05Z`; license tag `cc-by-4.0`; `private=false`, `disabled=false`, `gated=false`; 126,300 train rows; `partial=false`; `first-rows` returned `truncated=true`; preview schema includes `meta.llm_metadata`. | `expansion_only_high_risk`; do not use as a seed source. |
+| [nebius/SWE-rebench](https://huggingface.co/datasets/nebius/SWE-rebench) | SHA `89cdfbab4ab1bd8f5a658bb212d1b63624f4f881`; last modified `2025-12-23T19:41:57Z`; license tag `cc-by-4.0`; `private=false`, `disabled=false`, `gated=false`; 27,878 rows across `test` 21,336 and `filtered` 6,542; `partial=false`; `first-rows` on `filtered` returned `truncated=true`; README describes a fully automated issue/PR harvesting pipeline with LLM-derived setup and task-quality fields. | `expansion_only_legacy_high_risk`; do not use as a Phase 0 seed when V2 and smaller fresh sources exist. |
 
 The current [SWE-bench-Live org API](https://huggingface.co/api/datasets?author=SWE-bench-Live&search=SWE-bench-Live)
 lists only the four SWE-bench-Live datasets above. The current Nebius search
-also lists [SWE-rebench OpenHands trajectories](https://huggingface.co/datasets/nebius/SWE-rebench-openhands-trajectories)
+also lists [SWE-rebench](https://huggingface.co/datasets/nebius/SWE-rebench),
+[SWE-rebench OpenHands trajectories](https://huggingface.co/datasets/nebius/SWE-rebench-openhands-trajectories),
 and [SWE-rebench leaderboard](https://huggingface.co/datasets/nebius/SWE-rebench-leaderboard).
-Those should be `excluded_leakage_source` for A1 task selection because
-trajectory and result datasets can reveal solved paths, tool actions, model
-behavior, or benchmark outcomes. They may inform contamination tests, not task
-prompts.
+The older SWE-rebench dataset is expansion-only legacy material. The trajectory
+and leaderboard datasets should be `excluded_leakage_source` for A1 task
+selection because they can reveal solved paths, tool actions, model behavior, or
+benchmark outcomes. They may inform contamination tests, not task prompts.
 
 ## Leakage Findings
 
@@ -76,8 +86,11 @@ Field policy also needs to extend past obvious gold artifacts:
 
 The PR-scale SWE-rebench source is the riskiest expansion source because its
 schema combines issue text with `hints_text`, `interface`, `install_config`,
-`meta`, and `meta.llm_metadata`. A1 can mine it later, but only after a smaller
-seed run proves the source-field policy and full-row hashing workflow.
+`meta`, and `meta.llm_metadata`. The older SWE-rebench dataset has related
+automated-pipeline risk: `hints_text`, `install_config`, `meta`, environment
+fields, Docker/image fields, gold patches, and verifier lists all need the same
+quarantine posture. A1 can mine these later, but only after a smaller seed run
+proves the source-field policy and full-row hashing workflow.
 
 ## Required Snapshot Method
 
@@ -125,6 +138,9 @@ normalizing field order and before separating `agent_visible_seed`,
   Python supplement, but it should not displace Rust-first coverage.
 - SWE-rebench V2 remains scale-out material; SWE-rebench V2 PRs is high-risk
   expansion material, not a first seed.
+- The older `nebius/SWE-rebench` dataset is now explicitly classified as
+  `expansion_only_legacy_high_risk`, not a seed source. Prefer V2 or smaller
+  fresh sources unless a later experiment needs historical comparison.
 - OpenHands trajectory and leaderboard datasets are excluded from task-source
   use because they are too close to solved-run/result evidence.
 
@@ -162,6 +178,10 @@ Recheck this note before using it if:
 - [Hugging Face dataset API: SWE-rebench V2 PRs](https://huggingface.co/api/datasets/nebius/SWE-rebench-V2-PRs)
 - [Datasets-server size: SWE-rebench V2 PRs](https://datasets-server.huggingface.co/size?dataset=nebius/SWE-rebench-V2-PRs)
 - [Datasets-server first rows: SWE-rebench V2 PRs](https://datasets-server.huggingface.co/first-rows?dataset=nebius%2FSWE-rebench-V2-PRs&config=default&split=train)
+- [Hugging Face dataset API: SWE-rebench](https://huggingface.co/api/datasets/nebius/SWE-rebench)
+- [Datasets-server size: SWE-rebench](https://datasets-server.huggingface.co/size?dataset=nebius/SWE-rebench)
+- [Datasets-server first rows: SWE-rebench filtered](https://datasets-server.huggingface.co/first-rows?dataset=nebius%2FSWE-rebench&config=default&split=filtered)
+- [SWE-rebench dataset card](https://huggingface.co/datasets/nebius/SWE-rebench)
 - [Hugging Face API search: SWE-bench-Live org datasets](https://huggingface.co/api/datasets?author=SWE-bench-Live&search=SWE-bench-Live)
 - [Hugging Face API search: Nebius SWE-rebench datasets](https://huggingface.co/api/datasets?author=nebius&search=SWE-rebench)
 

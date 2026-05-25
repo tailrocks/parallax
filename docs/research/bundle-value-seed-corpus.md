@@ -41,6 +41,7 @@ method is defined in
 | [SWE-bench Multilingual](https://www.swebench.com/multilingual) | 300 curated tasks across 42 repositories and 9 languages, including Rust; tasks follow SWE-bench issue/PR/test format and are designed to run quickly. | Small and high quality, but no runtime evidence. Useful as the first Rust/system seed, not a complete Parallax corpus. |
 | [Multi-SWE-bench](https://github.com/multi-swe-bench/multi-swe-bench) | 1,632 issue-resolution tasks across Java, TypeScript, JavaScript, Go, Rust, C, and C++, with open data, code, and environments. | Larger multilingual pool; quality and environment friction must be checked per task before inclusion. |
 | [SWE-rebench V2 paper](https://arxiv.org/abs/2602.23866), [dataset collection](https://huggingface.co/collections/nebius/swe-rebench-v2), [main dataset](https://huggingface.co/datasets/nebius/SWE-rebench-V2), and [PR-scale dataset](https://huggingface.co/datasets/nebius/SWE-rebench-V2-PRs) | Language-agnostic pipeline for harvesting executable real-world SWE tasks. The current main dataset viewer shows 32.1k rows, with the card specifying 32,079 samples across 20 languages; fields include base commit, image name, language, license, patch, test patch, fail-to-pass/pass-to-pass tests, install config, and LLM metadata. The PR-scale dataset shows 126k rows and a quick-start length of 126,300. | Best for expansion or training-scale corpus work after the seed run, not as the first headline A1 source. The scale is attractive, but the seed should prefer smaller, inspectable tasks before relying on automatically collected/generated problem statements and metadata-filtered rows. |
+| [SWE-rebench legacy dataset](https://huggingface.co/datasets/nebius/SWE-rebench) | Current API check shows 27,878 rows across `test` 21,336 and `filtered` 6,542, with CC-BY-4.0 license and automated collection/LLM-derived setup fields. | `expansion_only_legacy_high_risk`; V2 supersedes it for new A1 source selection, and it carries the same patch/test/hint/install/meta quarantine requirements. |
 | [BugsJS](https://bugsjs.github.io/) | 453 validated JavaScript bugs with bug reports, isolated bug/fix/test revisions, and a Docker-backed framework. Good for server-side JS and frontend-adjacent failure shapes. | Historical and not agent-benchmark-native; use as a controlled supplemental source, not the headline freshness source. |
 | [CrashAnalysis dataset](https://crashanalysis.github.io/Dataset-CrashAnalysis) | Thousands of exception stack traces, including GitHub-linked reports. Useful for stacktrace-shape and crash-report realism. | Access is gated and many issues are historical Android cases; it lacks the clean issue/fix/test/verifier contract needed for Phase 0 headline tasks. |
 
@@ -57,6 +58,7 @@ SHAs to freeze are:
 | `SWE-bench-Live/SWE-bench-Live` | `a637bd46829f3132e12938c8a0ca93173a977b8e` | 3,688 Python-only rows; `test` 1000, `lite` 300, `verified` 500, `full` 1888. |
 | `nebius/SWE-rebench-V2` | `475dd5e8703bb5fb22dd3c60b5d038b019eba1e0` | 32,079 rows in `train`. |
 | `nebius/SWE-rebench-V2-PRs` | `40faf2c1bb160de625f3c3270ac9d62ea45f3f9c` | 126,300 rows in `train`. |
+| `nebius/SWE-rebench` | `89cdfbab4ab1bd8f5a658bb212d1b63624f4f881` | 27,878 rows; `test` 21,336 and `filtered` 6,542. |
 
 Any future A1 run must recheck these before task selection. A row-count match is
 not enough if the dataset SHA or feature list changed. A `first-rows` preview is
@@ -72,6 +74,7 @@ Use these source roles in the seed manifest:
 | `harness_shakeout` | Useful to debug the harness without changing the Rust-first seed shape. Current example: Python-only SWE-bench-Live. |
 | `expansion_only` | Useful after the seed run proves source policy and overlay generation. Current example: SWE-rebench V2. |
 | `expansion_only_high_risk` | Large or PR-scale source with LLM/generated metadata that requires strict quarantine. Current example: SWE-rebench V2 PRs. |
+| `expansion_only_legacy_high_risk` | Older automated source superseded by a newer source, useful only for historical comparison or later scale-out after seed policy proof. Current example: SWE-rebench legacy. |
 | `excluded_leakage_source` | Trajectory, leaderboard, result, solved-run, or agent-action datasets that should not become task prompts. Current examples: SWE-rebench OpenHands trajectories and SWE-rebench leaderboard. |
 
 ## Seed Corpus Shape
