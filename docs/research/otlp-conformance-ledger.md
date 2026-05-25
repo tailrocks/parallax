@@ -22,7 +22,10 @@ The central rule:
 
 > No public "OTLP-native" claim without a dated protocol/version matrix,
 > direct-SDK results, Collector equivalence results, normalized row snapshots,
-> partial-success/retry behavior, and explicit unsupported-field outcomes.
+> canonical bundle and evidence-edge hashes, projection manifests,
+> CLI/HTTP/MCP projection-equivalence results, MCP `structuredContent` /
+> `outputSchema` validation, partial-success/retry behavior, and explicit
+> unsupported-field outcomes.
 
 ## Current Source Snapshot
 
@@ -41,6 +44,8 @@ The central rule:
 | [OpenTelemetry Rust 0.32.0](https://docs.rs/crate/opentelemetry/latest) and [opentelemetry-otlp 0.32.0 changelog](https://docs.rs/crate/opentelemetry-otlp/latest/source/CHANGELOG.md) | Docs.rs resolves `opentelemetry` to `0.32.0`; `opentelemetry-otlp` 0.32.0 adds per-signal protocol env vars and OTLP partial-success handling. | Rust fixtures should cover per-signal protocol settings and server partial-success responses. |
 | [Rotel v0.2.2](https://github.com/rotel-dev/rotel/releases/tag/v0.2.2) and [Rotel README](https://github.com/rotel-dev/rotel) | Rotel is a Rust OpenTelemetry collector alternative with default OTLP gRPC `4317`, HTTP `4318`, `/v1/traces`, `/v1/metrics`, `/v1/logs`, gzip export, retries/timeouts, and multiple exporters. | Rotel is a useful smoke/eval path, but it is still pre-1.0 and should not replace official Collector equivalence. |
 | [GreptimeDB OTLP docs](https://docs.greptime.com/user-guide/ingest-data/for-observability/opentelemetry/) | GreptimeDB supports OTLP/HTTP, but metric ingestion can rename metric/label names, keep only selected resource attributes by default, discard scope attributes by default, and currently does not support ExponentialHistogram. | Parallax must own evidence semantics before storage or prove storage mapping preserves all evidence-critical fields. |
+| [MCP tools 2025-11-25](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) and [MCP base protocol 2025-11-25](https://modelcontextprotocol.io/specification/2025-11-25/basic/index) | Tool results can carry JSON `structuredContent`; tools can declare `outputSchema`; MCP uses JSON Schema 2020-12 by default; `_meta` is reserved protocol metadata. | OTLP-derived evidence served to agents must be canonical structured JSON, not text-only output, and safety-critical fields cannot be hidden only in `_meta`. |
+| [RFC 8785 JSON Canonicalization Scheme](https://www.rfc-editor.org/rfc/rfc8785.html) | JCS defines deterministic JSON serialization for repeatable hashing/signing. | Bundle and projection equivalence should use canonical JSON hashes, not renderer-specific byte output. |
 
 ## Claim Levels
 
@@ -50,11 +55,11 @@ The central rule:
 | `endpoint_smoke` | OTLP/gRPC and OTLP/HTTP protobuf endpoints accept simple valid payloads and reject malformed payloads deterministically. | "OTLP endpoint prototype." |
 | `direct_rust_traces` | Current OpenTelemetry Rust trace fixtures reach Parallax directly over gRPC and HTTP/protobuf and normalize into span rows. | "Rust OTLP trace ingestion." |
 | `direct_rust_three_signal` | Current OpenTelemetry Rust traces, logs, and metrics reach Parallax directly and normalize into queryable rows. | "Rust OTLP traces, logs, and metrics ingestion." |
-| `otel_semantics_preserved` | Direct fixtures preserve resource, scope, trace/span IDs, span links/events/status, log bodies/severity, metric stream identity, temporality, histograms, and attributes. | "OTLP telemetry semantics preserved for the tested subset." |
+| `otel_semantics_preserved` | Direct fixtures preserve resource, scope, trace/span IDs, span links/events/status, log bodies/severity, metric stream identity, temporality, histograms, attributes, canonical evidence-edge hashes, canonical bundle hashes, and projection manifests. | "OTLP telemetry semantics preserved for the tested subset." |
 | `collector_core_equivalent` | Official Collector distribution forwarding produces equivalent normalized rows and bundle edges for the tested subset, with the Collector source/core version recorded separately, except declared processor changes. | "Collector-compatible OTLP ingestion." |
 | `collector_contrib_equivalent` | Collector Contrib forwarding produces equivalent normalized rows for recommended Contrib processors/components. | "Collector Contrib-compatible for the tested pipeline." |
 | `rotel_smoke_equivalent` | Rotel forwarding preserves the tested subset or documented differences are non-blocking. | "Rotel-compatible smoke tested." |
-| `production_otlp_ingest` | Redaction, batching, retries, partial success, duplicate delivery, overload, WAL durability, and storage-failure behavior pass under mixed load. | "Production-ready OTLP ingestion for the tested subset." |
+| `production_otlp_ingest` | Redaction, batching, retries, partial success, duplicate delivery, overload, WAL durability, storage-failure behavior, canonical projection equivalence, and MCP structured-output validation pass under mixed load. | "Production-ready OTLP ingestion for the tested subset." |
 | `claim_expired` | A spec/proto/SDK/Collector/Rotel/storage mapping/redaction/parser version changed or the freshness window elapsed. | "OTLP result expired; rerun required." |
 | `claim_failed` | A fixture run failed any required gate for the advertised level. | No claim for the affected signal/path/version. |
 
@@ -79,6 +84,8 @@ docs/research/otlp-conformance-runs/<run_id>/anyvalue-rendering-results.jsonl
 docs/research/otlp-conformance-runs/<run_id>/partial-success-results.jsonl
 docs/research/otlp-conformance-runs/<run_id>/retry-overload-results.jsonl
 docs/research/otlp-conformance-runs/<run_id>/redaction-results.jsonl
+docs/research/otlp-conformance-runs/<run_id>/bundle-projection-results.jsonl
+docs/research/otlp-conformance-runs/<run_id>/mcp-structured-output-results.jsonl
 docs/research/otlp-conformance-runs/<run_id>/claim-ledger.jsonl
 docs/research/otlp-conformance-runs/<run_id>/hashes.sha256
 ```
@@ -98,6 +105,21 @@ Each `manifest.json` should include:
   "parallax_parser_commit": "<git-sha>",
   "parallax_normalizer_version": "otlp-normalizer-vN",
   "redaction_policy_version": "a6-default-deny-vN",
+  "bundle_schema_ref": {
+    "uri": "schema://parallax/evidence-bundle/v0",
+    "hash": "sha256:<hex>",
+    "canonicalization": "jcs-rfc8785"
+  },
+  "canonical_bundle_hash_required": true,
+  "projection_manifest_required": true,
+  "projection_surfaces_required": [
+    "bundle_json",
+    "bundle_markdown",
+    "cli_output",
+    "http_api",
+    "mcp_structuredContent"
+  ],
+  "mcp_output_schema_required": true,
   "source_snapshot": {
     "otel_spec": "1.57.0",
     "otlp_spec": "1.10.0",
@@ -183,6 +205,9 @@ and storage mapping. A pass in one combination does not carry over to another.
   "span_events_preserved": true,
   "status_preserved": true,
   "attribute_count": 42,
+  "evidence_edge_hash": "sha256:<hex>",
+  "canonical_bundle_hash": "sha256:<hex>",
+  "projection_manifest_hash": "sha256:<hex>",
   "intentional_drops": []
 }
 ```
@@ -284,6 +309,40 @@ and storage mapping. A pass in one combination does not carry over to another.
 }
 ```
 
+### Bundle Projection Result Row
+
+```json
+{
+  "fixture_id": "trace_links_events",
+  "signal": "traces",
+  "schema_ref_hash": "sha256:<hex>",
+  "canonical_bundle_hash": "sha256:<hex>",
+  "evidence_edge_hashes": ["sha256:<hex>"],
+  "projection_surface": "bundle_json|bundle_markdown|cli_output|http_api|mcp_structuredContent",
+  "projection_manifest_hash": "sha256:<hex>",
+  "projection_equivalence_hash": "sha256:<hex>",
+  "projection_equivalence_pass": true,
+  "raw_payload_ref_dereferenced": false,
+  "agent_visible_pass": true
+}
+```
+
+### MCP Structured Output Result Row
+
+```json
+{
+  "fixture_id": "log_complex_body",
+  "tool_name": "parallax_issue_context",
+  "mcp_spec": "2025-11-25",
+  "output_schema_hash": "sha256:<hex>",
+  "structured_content_hash": "sha256:<hex>",
+  "structured_content_valid": true,
+  "text_content_is_projection": true,
+  "safety_fields_only_in_meta": false,
+  "agent_visible_pass": true
+}
+```
+
 ### Claim Ledger Row
 
 ```json
@@ -297,6 +356,10 @@ and storage mapping. A pass in one combination does not carry over to another.
     "collector_core_source": "0.153.0",
     "collector_distribution": "0.152.1"
   },
+  "bundle_schema_ref_hash": "sha256:<hex>",
+  "canonical_bundle_hash": "sha256:<hex>",
+  "projection_manifest_hash": "sha256:<hex>",
+  "mcp_output_schema_valid": true,
   "product_wording": "Collector-compatible OTLP ingestion for the tested subset.",
   "required_caveats": ["profiles not supported", "HTTP/JSON optional"],
   "expires_at": "YYYY-MM-DD"
@@ -307,6 +370,21 @@ and storage mapping. A pass in one combination does not carry over to another.
 
 - No "OTLP-native" claim without a dated protocol, proto, SDK, Collector, and
   normalizer matrix.
+- No agent-visible OTLP evidence claim without schema refs, canonical bundle
+  hashes, evidence-edge hashes, projection manifests, and access-surface result
+  rows for the advertised surfaces.
+- CLI JSON, HTTP API JSON, MCP `structuredContent`, Markdown, and persisted
+  bundle JSON must agree through canonical hashes for the same fixture. Markdown
+  is a projection, not the source of truth.
+- MCP counts only when the tool declares an `outputSchema` and returns
+  schema-valid `structuredContent`. Text-only MCP output is not agent-ready
+  OTLP evidence.
+- Safety-critical fields, redaction status, source-field policy status, and
+  missing-evidence reports cannot live only in MCP `_meta`; they must be present
+  in the canonical bundle or the projection fails.
+- Raw OTLP requests and Collector payload refs are denied by default for
+  agent-visible projections. A projection result must prove it did not
+  dereference raw payload refs.
 - The Collector matrix must separate core/source release, runnable distribution
   binary, Contrib distribution, embedded core lineage when known, and config
   hash. A pass on one axis does not imply a pass on another.
@@ -336,6 +414,8 @@ and storage mapping. A pass in one combination does not carry over to another.
   conformance run proves that every evidence-critical field survives the mapping.
 - Redaction must pass for resource attributes, scope attributes, log bodies, and
   signal attributes before any output is exposed to agents.
+- A4 correlation and A6 redaction gates must be current before OTLP trace/log
+  joins can count as cross-system reconstruction evidence for agents.
 
 ## Refresh Triggers
 
@@ -349,6 +429,8 @@ change:
 - Rotel release changes for any Rotel-related claim;
 - Parallax parser, normalizer, evidence schema, storage mapping, or WAL
   durability policy changes;
+- canonicalization method, bundle schema, projection manifest format, MCP output
+  schema, access policy, or advertised projection surfaces change;
 - GreptimeDB OTLP mapping changes for fields Parallax depends on;
 - redaction policy changes;
 - 90 days pass since the last run.
@@ -368,7 +450,8 @@ Allowed after `production_otlp_ingest`:
 
 > Production-ready OTLP ingestion for the tested subset, including direct SDK
 > and Collector paths, partial success, retries, overload behavior, duplicate
-> delivery, redaction, and WAL durability.
+> delivery, redaction, WAL durability, canonical projection equivalence, and MCP
+> structured-output validation.
 
 Avoid:
 
@@ -401,6 +484,7 @@ OTLP is the right telemetry substrate, but "OTLP-native" is a conformance claim.
 The first honest target is:
 
 > current OpenTelemetry Rust traces, logs, and metrics ingested directly and
-> through the official Collector with equivalent normalized evidence rows.
+> through the official Collector with equivalent normalized evidence rows,
+> evidence edges, canonical bundles, and agent-facing projections.
 
 Everything broader waits for dated fixture results.

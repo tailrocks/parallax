@@ -15,7 +15,8 @@ The product claim is not "we have an endpoint on port 4318." The claim is:
 
 > A supported OTLP payload sent directly to Parallax, through the official
 > OpenTelemetry Collector, or through Rotel produces equivalent normalized
-> evidence rows and bundle edges, modulo explicit pipeline transformations.
+> evidence rows, bundle edges, canonical bundles, and agent-facing projections,
+> modulo explicit pipeline transformations.
 
 If this gate fails, Parallax can still ingest OTLP experimentally, but it should
 not call the path OTLP-native.
@@ -40,6 +41,8 @@ fixture design alone.
 | [OpenTelemetry Rust 0.32.0](https://github.com/open-telemetry/opentelemetry-rust/releases/tag/opentelemetry-0.32.0) | Latest Rust release checked. Rust SDK fixtures are the first direct-SDK path because Parallax is Rust-first. |
 | [Rotel v0.2.2](https://github.com/rotel-dev/rotel/releases/tag/v0.2.2) and [Rotel README](https://github.com/rotel-dev/rotel) | Rotel supports metrics/logs/traces, OTLP gRPC, OTLP HTTP/protobuf, OTLP HTTP/JSON, OTLP export, batching, retries, and resource attributes, with default receiver paths on `4317`/`4318`. It is promising but early and must be a smoke/eval path, not the compatibility baseline. |
 | [GreptimeDB OTLP docs](https://docs.greptime.com/user-guide/ingest-data/for-observability/opentelemetry/) | GreptimeDB can consume OTLP/HTTP, but its metric mapping can rename metrics/labels and discard some resource/scope attributes by default in Prometheus-compatible mode. Parallax must own normalization before storage or configure storage ingestion deliberately. |
+| [MCP tools 2025-11-25](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) and [MCP base protocol 2025-11-25](https://modelcontextprotocol.io/specification/2025-11-25/basic/index) | Tool results can include schema-validated `structuredContent`; MCP uses JSON Schema 2020-12 by default; `_meta` is reserved metadata. OTLP evidence served through MCP must be canonical structured JSON, not text-only output, and safety-critical fields cannot be hidden only in `_meta`. |
+| [RFC 8785 JSON Canonicalization Scheme](https://www.rfc-editor.org/rfc/rfc8785.html) | JCS provides deterministic JSON serialization for repeatable hashing. Bundle and projection equality should use canonical JSON hashes rather than renderer-specific text. |
 
 ## Compatibility Levels
 
@@ -69,6 +72,8 @@ fixture app / sdk version / signal scenario
   -> Rotel -> Parallax
   -> raw payload hash + normalized row snapshots
   -> bundle edge snapshots
+  -> canonical evidence bundle snapshot
+  -> CLI/API/MCP projection-equivalence snapshots
 ```
 
 Each fixture directory should record:
@@ -84,6 +89,11 @@ Each fixture directory should record:
 - expected accepted and rejected counts;
 - normalized row snapshot;
 - evidence-edge snapshot;
+- schema ref and schema hash for the bundle produced from the fixture;
+- canonical bundle hash and evidence-edge hashes;
+- projection manifest hash for JSON, Markdown, CLI, HTTP API, and MCP surfaces;
+- MCP output-schema hash and structured-content validation result when the
+  projection surface is MCP;
 - redaction report snapshot when attributes/log bodies include canaries.
 
 ## Fixture Matrix
@@ -128,6 +138,16 @@ Equivalence should be set-based, not byte-for-byte:
   value.
 - Raw payload refs should record both the received Parallax payload and, when
   available, the original SDK payload before an intermediary changed it.
+- Canonical bundle hashes and evidence-edge hashes must match across direct,
+  Collector, Collector Contrib, and Rotel paths for the same semantic fixture,
+  except for declared processor transformations.
+- CLI JSON, HTTP API JSON, MCP `structuredContent`, Markdown, and stored bundle
+  JSON are projections of the same canonical bundle. A renderer-only match does
+  not prove equivalence.
+- MCP projections must validate `structuredContent` against the declared
+  `outputSchema`. Text-only MCP output cannot prove agent-ready OTLP evidence.
+- Redaction status, source-field policy status, and missing-evidence reports
+  must be present in canonical structured content, not only in MCP `_meta`.
 
 The normalized row identity should be derived from signal semantics:
 
@@ -238,6 +258,12 @@ Pass only when:
   differences are documented and not product-blocking;
 - direct and Collector paths produce equivalent normalized rows and evidence
   edges;
+- direct, Collector, Collector Contrib, and Rotel paths produce matching
+  canonical bundle and evidence-edge hashes for supported, untransformed fields;
+- CLI, HTTP API, Markdown, and MCP projections validate against the projection
+  manifest and match the canonical bundle hash for the same fixture;
+- MCP tool output declares an output schema and returns schema-valid
+  `structuredContent`;
 - `trace_id`, `span_id`, `service.name`, `service.version`, deployment
   environment, resource attrs, scope attrs, and metric temporality are not lost;
 - nested log bodies and attributes preserve typed `AnyValue` semantics, and
@@ -245,6 +271,8 @@ Pass only when:
   rendering;
 - redaction canaries in attributes, log bodies, and resource fields are removed
   from agent-visible JSON/Markdown;
+- raw OTLP request refs and Collector payload refs remain referenced but are not
+  dereferenced into agent-visible projections by default;
 - retry, partial success, and duplicate delivery behavior is deterministic.
 
 Fail or narrow the claim if:
@@ -256,6 +284,11 @@ Fail or narrow the claim if:
 - logs with trace context fail to join spans;
 - GreptimeDB's OTLP mapping drops evidence-critical fields and Parallax has no
   normalization layer to compensate;
+- canonical bundle hashes or projection-equivalence hashes diverge for
+  undeclared reasons;
+- MCP returns only text or hides safety-critical fields only in `_meta`;
+- raw payload bytes become visible to agent surfaces without an explicit
+  read-sensitive approval path;
 - partial-success responses cause SDK/Collector retry loops or duplicate rows;
 - unsupported payloads are silently accepted and then disappear.
 
@@ -264,7 +297,8 @@ Fail or narrow the claim if:
 The honest first release wording should be:
 
 > OTLP-native for a tested subset of current Rust SDK traces, logs, and metrics,
-> with direct SDK and official Collector equivalence.
+> with direct SDK and official Collector equivalence, canonical bundle
+> projection, and MCP structured-output validation.
 
 Avoid:
 
@@ -295,5 +329,6 @@ This keeps the tiny tier simple while making the production Collector path real.
 
 OTLP is the right protocol substrate, but OTLP-native is a conformance claim.
 Parallax should earn it with direct-SDK, Collector, Collector Contrib, and Rotel
-fixtures that prove equivalent normalized evidence. Otherwise it risks building
-another "accepts protobuf" endpoint that loses the exact fields agents need.
+fixtures that prove equivalent normalized evidence, canonical bundles, and
+agent-facing projections. Otherwise it risks building another "accepts protobuf"
+endpoint that loses the exact fields agents need after ingest.
