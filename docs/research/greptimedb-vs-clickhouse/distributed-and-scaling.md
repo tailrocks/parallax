@@ -2,11 +2,12 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 10. The scaling axis — single-node ceiling and **horizontal**
-scale-out (the operator's primary scaling concern: startups on a tiny single node
-that grow to big-company horizontal scale as a *topology change, not a rewrite*).
-Mostly architecture-reasoned from source + RFCs; flagged where a real multi-node
-run is still owed.
+Status: pass 10, mechanism re-verified live pass 110 (Run 74). The scaling axis —
+single-node ceiling and **horizontal** scale-out (the operator's primary scaling
+concern: startups on a tiny single node that grow to big-company horizontal scale as a
+*topology change, not a rewrite*). Mostly architecture-reasoned from source + RFCs;
+the single-node-checkable mechanism claims are now **runtime-confirmed (Run 74)**; the
+multi-node *hold* (does p95 stay flat as nodes are added) is still harness-gated.
 
 Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d8`).
 
@@ -31,6 +32,31 @@ up further. The decision is about what happens **when one box is not enough**.
 | Compute/storage separation | **Yes, practical**: object store (OpenDAL) + remote WAL (Kafka) make datanodes hold little durable local state → regions migrate cheaply, datanodes are near-elastic. | **OSS: no.** `SharedMergeTree` (elastic, compute/storage-separated, auto-scaling) is **ClickHouse Cloud proprietary — not in OSS** (confirmed: no `SharedMergeTree` in `src/Storages`). OSS is shared-nothing shard+replica. |
 | Replication / consensus | Metasrv (Raft-based metadata) + region replication; remote WAL via Kafka. | `ReplicatedMergeTree` + **ClickHouse Keeper (Raft)** per replica set. |
 | Read fan-out | Frontend (stateless, scale freely) → `MergeScanExec` fans sub-plans to region datanodes (`src/query/src/dist_plan`). | `Distributed` engine fans the query to shards, merges on the initiator. Read scaling across replicas via **`max_parallel_replicas`** — still **experimental** in 26.x (`allow_experimental_parallel_reading_from_replicas=0` default). |
+
+## Live mechanism re-verification (Run 74)
+
+The single-node-checkable scale-out claims, confirmed at runtime on ClickHouse 26.5:
+
+- **`SharedMergeTree` is not in OSS** — `CREATE TABLE … ENGINE=SharedMergeTree` →
+  **`Unknown table engine SharedMergeTree (UNKNOWN_STORAGE)`**. So the elastic,
+  compute/storage-separated, auto-scaling engine that *would* match GreptimeDB's
+  object-store-native model is **Cloud-proprietary**; OSS scale-out stays shared-nothing
+  shard+replica.
+- **`ReplicatedMergeTree` requires a Keeper** — creating one without ZooKeeper/Keeper →
+  **`Can't create replicated table without ZooKeeper (NO_ZOOKEEPER)`**. So OSS HA needs a
+  separate Keeper/ZooKeeper coordinator stood up alongside.
+- **Zero-copy replication is off by default** — `allow_remote_fs_zero_copy_replication = 0`
+  (live), so OSS replicas each keep a **full** S3 copy by default (the 1× vs N× S3 economics,
+  Run 34) — and the source flags it "not ready"/experimental.
+- **GreptimeDB here is `STANDALONE`** — `information_schema.cluster_info` reports one
+  `STANDALONE` peer (all roles in one binary). The distributed Frontend/Datanode/Metasrv
+  split + region rebalance is cluster-mode (multi-node), not exercised single-node — its
+  *hold* is the harness-gated open question.
+
+Net: the **OSS-ClickHouse-scale-out-is-manual** side of the verdict (no SharedMergeTree,
+Keeper-coupled replication, N× S3 copies) is now runtime-confirmed, not just source-read;
+GreptimeDB's designed-in region/Metasrv model still needs a multi-node run to confirm the
+*hold* (below).
 
 ## The decisive difference for Parallax's growth path
 

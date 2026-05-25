@@ -3010,6 +3010,45 @@ jittered timestamps compress less. The *direction* (CH tuned-numeric edge) is ro
 
 **Reproduce.** `docker exec parallax-bench-clickhouse-1 clickhouse-client -q "SELECT column, formatReadableSize(sum(column_data_compressed_bytes)), round(sum(column_data_uncompressed_bytes)/sum(column_data_compressed_bytes),1) ratio FROM system.parts_columns WHERE active AND table='metrics_real' GROUP BY column ORDER BY 2 DESC"` vs GreptimeDB `information_schema.region_statistics` `sst_size` for `metrics_real`.
 
+### Run 74 — 2026-05-25 — Distributed/scaling mechanism re-verified live (the OSS-scale-out-is-manual side)
+
+**Pass target.** Rotate onto the last un-rotated slice (distributed/scaling, Run 34 ~pass
+57). Multi-node *hold* is harness-gated, but the single-node-checkable scale-out mechanism
+claims can be runtime-confirmed.
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned —
+latest, no bump).
+
+**Verified live:**
+
+| Claim | Result |
+| --- | --- |
+| `SharedMergeTree` is Cloud-only (not in OSS) | `CREATE … ENGINE=SharedMergeTree` → **`Unknown table engine SharedMergeTree (UNKNOWN_STORAGE)`** |
+| `ReplicatedMergeTree` needs Keeper | `CREATE … ENGINE=ReplicatedMergeTree(...)` (no Keeper) → **`Can't create replicated table without ZooKeeper (NO_ZOOKEEPER)`** |
+| Zero-copy replication off by default | `allow_remote_fs_zero_copy_replication = 0` (→ N× S3 copies, Run 34) |
+| GreptimeDB single-node mode | `information_schema.cluster_info` = one **`STANDALONE`** peer (all roles in one binary; cluster split is multi-node) |
+
+**Verdict.** **No drift — the OSS-ClickHouse-scale-out-is-manual claims are runtime-confirmed.**
+OSS ClickHouse has **no SharedMergeTree** (the elastic compute/storage-separated engine is
+Cloud-proprietary), its HA `ReplicatedMergeTree` **requires a separate Keeper**, and zero-copy
+replication is **off by default** (each replica a full S3 copy). So OSS horizontal scale-out =
+manual sharding + Keeper + N× storage. GreptimeDB's designed-in region/Metasrv/object-store-shared
+model (1× S3, region rebalance, Run 34/57) is the "topology change not rewrite" answer — but its
+multi-node **hold** (p95 flat as nodes added) stays **harness-gated** (can't test on one standalone
+node). Status: **mechanism confirmed; multi-node hold owed to the harness.**
+
+Caveat: this confirms *capability/architecture* (what OSS lacks), not a multi-node performance run —
+the scaling *hold* is the standing open question #4 in `verdict-which-to-choose.md`.
+
+**Reproduce.**
+
+```bash
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q "CREATE TABLE smt (id UInt32) ENGINE=SharedMergeTree ORDER BY id"   # UNKNOWN_STORAGE
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q "CREATE TABLE rmt (id UInt32) ENGINE=ReplicatedMergeTree('/x','r1') ORDER BY id"   # NO_ZOOKEEPER
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q "SELECT value FROM system.merge_tree_settings WHERE name='allow_remote_fs_zero_copy_replication'"   # 0
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=SELECT peer_type FROM information_schema.cluster_info"   # STANDALONE
+```
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
