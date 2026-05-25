@@ -137,11 +137,14 @@ mechanism analysis, per the repo research conventions.
    At the start of every pass, check for a newer stable release of each system and
    bump to it before comparing; if one side has shipped a new version, upgrade the
    comparison rather than reusing an old number. Record the exact version and the
-   source commit SHA you read in every note. Starting pins (re-check and bump at
-   run time): GreptimeDB `v1.0.2` (GA 2026-05-14), ClickHouse latest stable
-   (`25.x` — pin the exact patch). Never analyze an old major against a current one
-   unless the point is explicitly historical, and never carry forward a stale
-   benchmark or claim as current — re-verify it against the latest version.
+   source commit SHA you read in every note. Current pins (re-verified 2026-05-25,
+   still latest — re-check and bump at run time): GreptimeDB `v1.0.2` (GA 2026-05-14;
+   `v1.1.0` is nightly-only, not GA), ClickHouse `v26.5.1.882-stable` (the newest stable
+   *feature* line — pin the exact patch; note newer-dated `26.x-lts`/`26.2/26.3` tags are
+   backport/LTS patches of older lines, not higher than 26.5). *(Brief was authored at
+   ClickHouse `25.x`; bumped through the loop to 26.5.)* Never analyze an old major
+   against a current one unless the point is explicitly historical, and never carry
+   forward a stale benchmark or claim as current — re-verify it against the latest version.
 
 2. **Clone the source and read it.** The repos are open:
    - GreptimeDB (Rust): <https://github.com/GreptimeTeam/greptimedb>
