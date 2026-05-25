@@ -49,7 +49,7 @@ those anchors.
 | [Sentry breadcrumbs](https://docs.sentry.io/platforms/javascript/guides/svelte/enriching-events/breadcrumbs/) | Browser SDKs automatically record clicks, key presses, XHR/fetch requests, console calls, and location changes; `beforeBreadcrumb` can modify or discard breadcrumbs. | Breadcrumbs are high-value but high-risk; run artifacts must prove value-shape capture and redaction before agent exposure. |
 | [Sentry artifact bundles and Debug IDs](https://docs.sentry.io/platforms/javascript/guides/cloudflare/sourcemaps/troubleshooting_js/artifact-bundles/) | Artifact bundles bind minified files and source maps by Debug ID instead of relying on paths; retention and release association are explicit. | Parallax should use Debug-ID-like source-map identity and test missing/mismatched/private source maps directly. |
 | [Sentry source-map upload warning](https://docs.sentry.io/platforms/javascript/guides/tanstackstart-react/sourcemaps/uploading/esbuild) | Sentry warns generated source maps can expose source and recommends denying public `.js.map` access or deleting maps after upload. | A source-mapped claim fails if the build deploys public source maps or if agents can dereference source-map/source-content refs by default. |
-| [Sentry JavaScript data collected](https://docs.sentry.io/platforms/javascript/guides/react/data-management/data-collected) | Sentry documents privacy-relevant defaults: cookies and user identity are not sent by default, request URLs and query strings are sent, request/response bodies are generally not sent by default, Replay masks text/images/user input by default, and network detail bodies are opt-in. | Parallax should keep frontend capture metadata-first, make replay/network bodies opt-in, redact URL/query values before projection, and seed PII canaries across every browser surface. |
+| [Sentry JavaScript data collected](https://docs.sentry.io/platforms/javascript/guides/react/data-management/data-collected) | Sentry documents privacy-relevant defaults: cookies, logged-in user identity, user IP, client-side request bodies, and response bodies are not sent by default; HTTP request/response headers, full request URLs, full query strings, referrer URLs, and console logs/breadcrumbs may be collected; Replay masks text/images/user input by default and network detail bodies are opt-in. The docs page package detail can lag npm (`10.11.0` shown while npm reports `10.53.1` for `@sentry/react`). | Parallax should keep frontend capture metadata-first, make replay/network bodies opt-in, deny or allowlist headers, redact URL/query/referrer/console values before projection, seed PII canaries across every browser surface, and record docs-vs-registry version drift. |
 | [OpenTelemetry browser resource semconv](https://opentelemetry.io/docs/specs/semconv/resource/browser/) | Browser resource conventions are development-stage except `user_agent.original`, which is stable/recommended; some fields should be unset if client hints are unavailable. | Store semconv version and avoid treating browser attributes as stable product schema. |
 
 ## Claim Levels
@@ -131,6 +131,9 @@ operator explicitly approves a private retained artifact.
     "@opentelemetry/exporter-trace-otlp-http": "x.y.z",
     "@opentelemetry/exporter-trace-otlp-proto": "x.y.z"
   },
+  "docs_package_version_snapshot": {
+    "sentry_react_docs_package_detail": "x.y.z|unknown"
+  },
   "redaction_policy_version": "a6-default-deny-vN",
   "source_field_policy_version": "phase0-source-field-policy-vN",
   "source_map_identity_version": "debug-id-like-vN",
@@ -193,6 +196,11 @@ operator explicitly approves a private retained artifact.
   "before_send_span_configured": true,
   "max_breadcrumbs": 50,
   "replay_default": "disabled|on_error|full_session",
+  "send_default_pii": false,
+  "http_headers_capture_policy": "deny_all|allowlist|vendor_default",
+  "url_query_capture_policy": "drop|redact|vendor_default",
+  "referrer_capture_policy": "drop|redact|vendor_default",
+  "console_breadcrumb_policy": "drop|redact|vendor_default",
   "network_bodies_default": "disabled",
   "pass": true
 }
@@ -213,7 +221,9 @@ operator explicitly approves a private retained artifact.
   "trace_id_present": true,
   "span_id_present": true,
   "raw_user_identity_present": false,
+  "raw_request_headers_present": false,
   "raw_query_string_present": false,
+  "raw_referrer_present": false,
   "pass": true
 }
 ```
@@ -327,7 +337,7 @@ operator explicitly approves a private retained artifact.
 {
   "route_id": "checkout-error-001",
   "browser": "chromium",
-  "surface": "dom_text|form_input|url_query|console|breadcrumb|network_header|network_body|user_context|replay",
+  "surface": "dom_text|form_input|url_query|request_url|referrer_url|console|breadcrumb|network_header|network_body|user_context|replay",
   "capture_mode": "metadata|redacted_excerpt|raw_ref|replay_ref_opt_in",
   "seeded_canaries": 20,
   "json_projection_leaks": 0,
@@ -483,8 +493,10 @@ operator explicitly approves a private retained artifact.
 - Breadcrumbs count only when they preserve event shape without raw DOM text,
   form values, raw query strings, or unfiltered console content.
 - Default frontend capture must be metadata-first: no cookies, raw user identity,
-  auth headers, request/response bodies, form values, raw DOM text, or replay
-  segments in agent-visible bundles.
+  auth headers, raw request/response headers, full URLs, query strings, referrer
+  URLs, request/response bodies, form values, raw console messages, raw DOM text,
+  or replay segments in agent-visible bundles. Vendor SDK defaults are not
+  enough; the run must record the explicit capture policy for each surface.
 - Replay is never tiny-tier default. It can become claimable only as an opt-in
   raw/ref surface after masking, network-body, retention, overhead, and
   dereference-denial rows pass.
@@ -541,6 +553,8 @@ Mark affected claims `claim_expired` when:
 
 - OpenTelemetry JS, Sentry JS, browser instrumentations, or browser support
   matrix changes;
+- npm registry versions and SDK docs package-detail versions diverge or move
+  materially enough to change setup/config assumptions;
 - OpenTelemetry browser, HTTP, trace, or resource semantic conventions change
   materially;
 - source-map upload, Debug-ID-like identity, bundler, minifier, release, or

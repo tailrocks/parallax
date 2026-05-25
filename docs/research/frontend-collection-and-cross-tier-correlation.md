@@ -41,6 +41,7 @@ examples:
 | Sentry browser tracing | Sentry's JS tracing docs use `tracePropagationTargets` and propagate `sentry-trace` plus `baggage`; they explicitly warn JavaScript apps need those headers in the CORS allowlist. | For Sentry-compatible frontend errors, preserve Sentry trace context and bridge it into the Parallax correlation model. |
 | Breadcrumbs | Sentry's browser SDK records automatic breadcrumbs for UI events, XHR/fetch, console calls, and location changes, with hooks for filtering or dropping them. | Breadcrumbs are essential, but Parallax must filter and redact at capture and bundle-build time. |
 | Source maps | Sentry's current source-map flow uses artifact bundles and Debug IDs to bind minified JavaScript to source maps without path guessing. | Parallax should adopt a Debug-ID-like source-map identity, keyed to frontend release/build, stored privately in object storage. |
+| Browser privacy defaults | Sentry's JavaScript data-collected docs say cookies, logged-in user identity, user IP, client-side request bodies, and response bodies are not sent by default, but HTTP request/response headers, full request URLs, full query strings, referrer URLs, and console logs/breadcrumbs may be collected; Replay masks text/images/user input by default and network bodies are opt-in. | Do not rely on vendor defaults as the Parallax safety boundary; record explicit header, URL/query, referrer, console, body, replay, and user-context capture policies before browser evidence becomes agent-visible. |
 | Replay privacy | Sentry Replay defaults to masking DOM text/user input/images and makes network request/response bodies opt-in. | Replay is a useful reference but must be opt-in, masked by default, and outside the tiny tier. |
 | Browser semantic attributes | OpenTelemetry browser resource semantic conventions are still development-stage for most `browser.*` fields; `user_agent.original` is stable/recommended. | Store browser attributes, but keep the schema additive and versioned. |
 
@@ -174,6 +175,10 @@ tokens, DOM content, user identity. Privacy must be designed in, not bolted on:
   mask-by-default model is the reference.)
 - **Network redaction.** Strip auth headers and redact request/response bodies in
   breadcrumbs and spans; allowlist safe fields.
+- **Browser metadata redaction.** Strip or redact full request URLs, query
+  strings, referrer URLs, raw request/response headers, and raw console messages;
+  vendor SDK defaults are not enough because several of these metadata surfaces
+  may be collected even when bodies and logged-in identity are not.
 - **Consent and DNT.** Honor consent state and Do-Not-Track; gate replay/RUM on
   consent; record the consent state in the `frontend_session` node.
 - **Data minimization + retention.** Shorter retention for replay/session data;
