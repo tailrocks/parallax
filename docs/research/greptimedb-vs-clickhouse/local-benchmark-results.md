@@ -4509,6 +4509,47 @@ ts-DESC tail. Query = `WHERE service='svc-8' ORDER BY ts DESC LIMIT 100`. Warm �
 `logs_b1` (`append_mode`); run `WHERE service='svc-8' ORDER BY ts DESC LIMIT 100` warm ×8 on each.
 Expect ~30 vs ~27 ms. Drop both after.
 
+### Run 109 — 2026-05-25 — Last-value / "current value" stat-panel query: GreptimeDB WINS ~2.4× (GT ~17 ms / CH ~41 ms) — time-sorted layout beats argMax full-scan; the vendor "GT loses lastpoint" does NOT carry to ClickHouse
+
+**Pass target.** Model the **"current value" stat-panel** query (every dashboard's single-stat /
+gauge: latest value per series) — very common, single-user. Also test a vendor-audit lead: the
+TimescaleDB benchmark showed GreptimeDB *losing* "lastpoint" 8.7× to TimescaleDB — does that
+last-value weakness also show vs ClickHouse?
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned live — no bump).
+`metrics_hc` 8M rows / 40 svc / 40k series, parity. Query = current value per service over the
+window. CH `argMax(value, ts)`; GT `last_value(value ORDER BY ts)` — same semantics (value at max
+ts per group). Warm ×8.
+
+| Engine | warm reps (ms) | median |
+| --- | --- | --- |
+| ClickHouse `argMax(value, ts)` | `48 39 37 49 44 44 37 41` | **~41 ms** |
+| GreptimeDB `last_value(value ORDER BY ts)` | `23 15 21 16 19 17 17 15` | **~17 ms** |
+| **Winner** | | **GreptimeDB ~2.4×** |
+
+**Verdict — a GreptimeDB WIN on a common metric query; refines "CH always faster."**
+
+- **GreptimeDB is ~2.4× FASTER on last-value** (17 vs 41 ms). Mechanism: GreptimeDB's data is
+  physically sorted by `(PK…, ts)`, so "latest value per series" is a cheap **tail read** of each
+  series run; ClickHouse's `argMax` must **full-scan 8M rows** tracking max-ts state per group. This
+  is the time-series-native layout paying off — a genuine GreptimeDB metric-query win, not just fit.
+- **Corrects a naive reading of the vendor audit:** GreptimeDB *losing* lastpoint **to TimescaleDB**
+  (Run 106 / their TSBS) does **NOT** mean it loses lastpoint to ClickHouse — vs ClickHouse on this
+  metric last-value it **wins**. Different rival, different layout (TimescaleDB is a row-store with a
+  last-point optimization; ClickHouse's `argMax` has no such shortcut). So "GreptimeDB slow on
+  point/last-value" is **engine-relative** — true vs a tuned TSDB, false vs ClickHouse here.
+- **Decision relevance:** the "current value" stat panel is one of the most common dashboard
+  queries; GreptimeDB serving it ~2.4× faster than ClickHouse (both ≪ 300 ms) is a small but real
+  point in GreptimeDB's favour on the metrics axis — alongside the cardinality-insensitive ingest
+  (Runs 84/101) and high-card storage crossover (Run 100). Adds nuance to DQ1: metrics→GreptimeDB is
+  *mostly* capability/ergonomics, but **last-value is also a speed win**.
+- **Adopt-native (metrics):** unchanged/strengthened — the native metric engine's time-sorted layout
+  is exactly what makes last-value cheap; ADOPT stands.
+
+**Reproduce.** On `metrics_hc` (8M/40-svc): CH `SELECT service, argMax(value, ts) FROM metrics_hc
+GROUP BY service`; GT `SELECT service, last_value(value ORDER BY ts) FROM metrics_hc GROUP BY
+service`. Warm ×8. Expect GT ~17 ms / CH ~41 ms.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
