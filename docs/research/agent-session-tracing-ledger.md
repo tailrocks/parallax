@@ -31,7 +31,7 @@ and normalization of agent execution traces.
 
 | Source | Current check | Parallax implication |
 | --- | --- | --- |
-| Local tool version probe | `--version` checks in this workspace on 2026-05-25 returned Codex CLI `0.133.0`, Claude Code `2.1.150`, Amp `0.0.1779639467-g6d0650` released 2026-05-24, and OpenCode `1.15.10`. | Real runs must store the exact tool binary path, version output, and docs snapshot date; agent surfaces change too quickly for product-level claims without version evidence. |
+| Local tool version probe | `command -v` plus `--version` checks in this workspace on 2026-05-25 found `/home/agent/.local/bin/codex` with Codex CLI `0.133.0`, `/home/agent/.local/bin/claude` with Claude Code `2.1.150`, `/home/agent/.local/bin/amp` with raw output `0.0.1779639467-g6d0650 (released 2026-05-24T16:17:47.000Z, 20h ago)`, and `/home/agent/.opencode/bin/opencode` with OpenCode `1.15.10`. | Real runs must store the exact tool binary path, raw version output, normalized version/release fields, and docs snapshot date. Relative age strings such as `20h ago` are not durable freshness evidence. |
 | [Codex hooks](https://developers.openai.com/codex/hooks) | Hooks expose structured JSON with `session_id`, `transcript_path`, `cwd`, `hook_event_name`, `model`, `turn_id`, and `permission_mode` for session, tool, prompt, permission, subagent, compaction, and stop events. The docs warn that transcript format is not a stable hook interface and that tool interception is incomplete for some shell and non-shell paths. | Codex capture can be structured, but transcripts must stay raw refs and hook gaps must be measured against wrapper, repo diff/hash, or other independent evidence. |
 | [Codex CLI](https://developers.openai.com/codex/cli) | Codex CLI is a local command-line agent surface and supports repo work, file edits, command execution, and automation workflows. | Codex is a first adapter target because it runs where Parallax can observe local repo, shell, and file evidence. |
 | [Claude Code monitoring](https://code.claude.com/docs/en/monitoring-usage) | Claude Code exports opt-in OpenTelemetry metrics, logs/events, and optional beta traces; prompt text, tool details, tool content, and raw API bodies are disabled by default and require explicit flags. It does not pass generic `OTEL_*` exporter variables to subprocesses, but when tracing is active Bash/PowerShell inherit `TRACEPARENT`. | Claude Code is the strongest native OTel target, but content capture must remain opt-in/redacted and subprocess coverage must distinguish trace-context inheritance from full telemetry-exporter inheritance. |
@@ -323,6 +323,9 @@ approves a redacted synthetic fixture.
 - Claims above `fixture_harness_ready` require a resolved tool version and
   binary/package source. `tool_version: unknown` can only support exploratory
   design notes.
+- Version probes must preserve raw output and normalized fields separately.
+  Relative strings emitted by CLIs, such as "20h ago", cannot be used as
+  durable freshness evidence after the run date.
 - A transcript/export can support audit, but cannot be the only source for a
   structured tracing claim if the tool documents it as unstable.
 - Claude Code content-bearing telemetry gates must remain disabled for default
