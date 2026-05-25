@@ -81,9 +81,10 @@ tuning-dependent wash" conclusion on realistic data, with one operational nuance
 ## What actually decides Parallax's storage cost
 
 Local-disk size deltas of 1.3–1.9× are **second-order** for Parallax. The
-[retention cost model](../retention-cost-model.md) already shows object-storage
-retention is ~100× cheaper than ingest-priced SaaS, and that egress pricing
-(R2/B2 vs S3) dominates a re-read-heavy context engine. So the cost axis is
+[retention cost framing](retention-and-ttl.md) points to object-storage retention
+being far cheaper than ingest-priced SaaS (a marketing-grade comparison, not a
+GreptimeDB-vs-ClickHouse result), and egress pricing (R2/B2 vs S3) dominating a
+re-read-heavy context engine. So the cost axis is
 decided less by "who compresses spans 1.3× better" and more by:
 
 1. **Object-storage-native vs object-storage-as-policy.** GreptimeDB is
@@ -135,4 +136,4 @@ decided less by "who compresses spans 1.3× better" and more by:
 - GreptimeDB compression: `src/mito2/src/sst/parquet/writer.rs:36,391,433` (Parquet + ZSTD; no per-column codec DDL).
 - ClickHouse codecs: `src/Compression/CompressionCodec*.cpp` (`clickhouse-internals.md`).
 - Measured sizes: `local-benchmark-results.md` Run 1/3 + this pass (`system.parts`, `system.parts_columns`, GreptimeDB per-`table_id` `du`).
-- Retention $: `../retention-cost-model.md`.
+- Retention $ + TTL expiry mechanism: `retention-and-ttl.md`.

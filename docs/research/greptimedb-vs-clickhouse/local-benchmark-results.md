@@ -332,7 +332,7 @@ don't reach the orbstack daemon.)
    "object-store-native" claim (vs ClickHouse's S3-disk-under-a-policy).
 2. **Few, large objects (4 for 1M rows)** → **request-efficient on S3**: fewer
    GET/PUT/LIST, so lower per-request cost amplification — the thing that dominates
-   object-store bills for a re-read-heavy engine (`retention-cost-model.md`).
+   object-store bills for a re-read-heavy engine (`retention-and-ttl.md`).
    ClickHouse Wide parts store **one object per column per part** → many more,
    smaller objects → more requests; this is the contrast to measure next.
 

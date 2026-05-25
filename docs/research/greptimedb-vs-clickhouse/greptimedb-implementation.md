@@ -217,9 +217,11 @@ cache_path = "/var/cache/greptimedb"   # local read cache in front of S3 (defaul
 ```
 
 - Hot data served from the local read cache; cold re-reads hit S3 (cost in
-  `retention-cost-model.md`).
+  `compression-and-cost.md` / `caching-and-cold-warm.md`).
 - Per-table `ttl` expires old data; longer `ttl` on `error_events`/`deploy_markers`
-  (issue history) than on high-volume `spans`/`logs`.
+  (issue history) than on high-volume `spans`/`logs`. TTL expiry is a **whole-SST
+  drop** (TWCS time-windowing → no rewrite); mechanism + ClickHouse contrast in
+  `retention-and-ttl.md`.
 - Time-window compaction (TWCS) keeps recent windows tight for fast recent-time
   queries.
 

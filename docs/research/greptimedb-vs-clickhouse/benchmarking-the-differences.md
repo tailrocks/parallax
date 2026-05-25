@@ -178,8 +178,8 @@ Legend: **Runnable now** = expressible in the current prototype/`bench/compose.y
 
 - **Hypothesis / mechanism:** GreptimeDB is object-store-native (OpenDAL + default
   read cache); ClickHouse uses an S3 disk under a storage policy with TTL-move
-  tiering. Cost tracks retained bytes × price + egost on cold re-read
-  (`compression-and-cost.md`, `retention-cost-model.md`).
+  tiering. Cost tracks retained bytes × price + egress on cold re-read
+  (`compression-and-cost.md`, `retention-and-ttl.md`).
 - **Workload:** bring up MinIO (add to `bench/compose.yml`); GreptimeDB `[storage]
   type=S3` + ClickHouse `s3` disk policy; ingest `small` tier; run cold-cache Q1–Q6.
 - **Record:** retained object bytes per signal; S3 GET/PUT/LIST counts during ingest

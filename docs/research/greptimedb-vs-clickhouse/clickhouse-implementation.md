@@ -46,7 +46,9 @@ CREATE TABLE spans (
   attributes JSON
 ) ENGINE = MergeTree
 ORDER BY (trace_id, ts)
-TTL toDateTime(ts) + INTERVAL 30 DAY;
+PARTITION BY toYYYYMMDD(ts)              -- align parts to a day so TTL drops whole parts
+TTL toDateTime(ts) + INTERVAL 30 DAY
+SETTINGS ttl_only_drop_parts = 1;        -- whole-part drop, no row-level rewrite (see retention-and-ttl.md)
 
 -- 2. Logs — service-ordered; text index for search; bloom for trace lookup
 CREATE TABLE logs (
@@ -202,6 +204,13 @@ SETTINGS storage_policy = 'hot_cold';
   **off by default** and fragile — leave off.)
 - This is more configuration than GreptimeDB's object-store-native default
   (`compression-and-cost.md`), and S3 is a *disk under a policy*, not the home.
+- **Retention must be partition-aligned.** Every table above needs `PARTITION BY
+  toYYYYMMDD(ts)` (coarser — `toYYYYMM(ts)` — for the 400d `AggregatingMergeTree`
+  rollup) **plus** `SETTINGS ttl_only_drop_parts = 1`, so TTL DELETE drops whole parts
+  instead of rewriting surviving rows on every TTL merge. Without it ClickHouse defaults
+  to **row-level** expiry (write-amp ∝ surviving data). GreptimeDB needs no equivalent
+  tuning — TWCS time-windows make expiry a whole-SST drop by default. Mechanism +
+  source in `retention-and-ttl.md`.
 
 ## Operational shape
 
