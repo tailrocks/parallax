@@ -489,6 +489,36 @@ For each capability where the rejected system (ClickHouse) is genuinely ahead, s
   not redesign. Keep testing whether each gap is integration-level (good news) or a true
   architectural limit (which would weaken the recommendation).
 
+## How to write `greptimedb-parity-roadmap.md` (the format this loop must keep)
+
+This is a **dedicated, standalone file** — the one place that answers "what can GreptimeDB
+improve, why, and how." It must be **detailed, specific, and code-oriented**, not a
+one-line table. Keep a short summary table at the top for scanning, but **every
+improvement gets its own full section** with this structure:
+
+- **Borrowed concept (from which system).** Name the *concept* the improvement borrows —
+  almost always something ClickHouse already does (PREWHERE late materialization, 65k-row
+  blocks, LLVM-JIT expression/aggregation, the `text` posting-list scan integration,
+  typed-subcolumn JSON, projections). State it as a portable idea, not "copy ClickHouse":
+  *what is the mechanism that makes it work, and is it general (Parquet/Arrow/DataFusion)
+  or ClickHouse-specific?* If a concept comes from a third system or a paper, say so.
+- **What** — the concrete capability to add to GreptimeDB, in one sentence.
+- **Why** — the mechanism gap and the measured/estimated impact, tied to an axis and a
+  Parallax query shape. Quote the run number.
+- **How — code-oriented and specific.** Map it onto GreptimeDB's *actual* structure: name
+  the crate/file/function that changes (`src/mito2/...`, `src/query/...`), the existing
+  primitive to wire in (e.g. arrow `RowFilter`, a DataFusion `SessionConfig` field, a new
+  `cache/index` member), and the concrete steps. Cite the source you read (file + the
+  pinned version). "Add `with_row_filter` to the mito2 reader" beats "make it faster."
+- **Tier (A/B/C)** and **design-vs-integration**, as above.
+- **Value here** — what it buys Parallax specifically, and whether it is worth it given the
+  anchored hot path (often: only if the workload is log-search/scan-heavy).
+
+When brainstorming a new improvement, always start from "what does the other system do as a
+*concept*, and how would that concept land in GreptimeDB's mito2/DataFusion/Puffin/OpenDAL
+structure to provide value here" — borrow the idea, adapt it to the real internals, prove
+it is integration not redesign (or flag it if it is redesign).
+
 The point is decision-useful: tell the operator exactly what it costs to make GreptimeDB
 the unambiguous choice for every Parallax query shape, and which of those costs they pay
 in their own schema vs. by contributing upstream. (A hybrid GreptimeDB+ClickHouse split is
