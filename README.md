@@ -26,6 +26,7 @@ idea becomes sharper.
 - [CI failure context MVP](docs/research/ci-failure-context-mvp.md)
 - [GreptimeDB storage evaluation](docs/research/greptimedb-storage-evaluation.md)
 - [Observability storage benchmark plan](docs/research/observability-storage-benchmark-plan.md)
+- [Messaging and ingestion layer](docs/research/messaging-and-ingestion-layer.md)
 - [Repository structure](PROJECT_STRUCTURE.md)
 - [Agent instructions](AGENTS.md)
 
