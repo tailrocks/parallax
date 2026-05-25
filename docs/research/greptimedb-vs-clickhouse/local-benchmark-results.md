@@ -3668,6 +3668,44 @@ INSERT-SELECT baseline (the region-routing overhead is the directional point).
 count (16 vs 1), `GROUP BY service` `execution_time_ms` (~17 vs ~12 ms), anchored lookup
 (Run 87: 11 vs 39 ms).
 
+### Run 90 — 2026-05-25 — PREWHERE applies but its benefit is conditional (not a blanket selective-scan win)
+
+**Pass target.** Re-verify ClickHouse's PREWHERE late-materialization (Run 2) — a
+CH-favourable read-path mechanism — and quantify its actual benefit (balance the recent
+GreptimeDB-deep passes).
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned —
+latest, no bump). `logs_b1` (5M; `ORDER BY (service, ts)`, `message` wide String).
+
+**Verified:**
+
+- **PREWHERE applies** — `EXPLAIN actions=1 SELECT message … WHERE service='svc-0' AND
+  level='ERROR'` → `Prewhere filter column: and(level, service) (removed)`. The filter is
+  moved ahead of the `message` read. ✓ mechanism present at 26.5.
+- **But latency ON vs OFF is a TIE, and read_bytes is IDENTICAL** (`optimize_move_to_prewhere`
+  1 vs 0): on `WHERE level='ERROR'` (~600k of 5M, ~12%, evenly distributed) both read
+  **301.56 MiB / 5,000,000 rows** and ran ~80 ms. **PREWHERE skipped nothing** — because
+  `level='ERROR'` leaves survivors in *every* granule, so `message` is read for every granule
+  regardless.
+
+**Verdict — PREWHERE is real but its benefit is conditional; don't overstate it.** Late
+materialization only helps when the filter **empties whole granules** (so the wide column's
+reads are skipped for those granules) — i.e. low/clustered selectivity — and most visibly at
+**cold/disk-bound** scale (skipping *disk* reads). At a 12%-evenly-distributed filter on
+cache-resident smoke it is a **no-op** (read_bytes identical). The smoke-scale selective-scan
+pruning is really the **sort-key granule-skip** (`service` in `ORDER BY` → only svc-0's
+granules read), with PREWHERE secondary. So ClickHouse's "selective-scan edge" = granule-skip
+(sort key) + PREWHERE-when-it-empties-granules + the vectorized scan over survivors; PREWHERE
+alone is not a blanket win. **Refines (doesn't overstate) the CH read-path advantage.**
+Status: **PREWHERE mechanism re-verified; benefit characterized as conditional.**
+
+Caveat: warm cache-resident 5M — PREWHERE's *disk*-read-skipping benefit is a cold/at-scale
+effect the smoke tier can't show; the granule-emptying condition is the other gate.
+
+**Reproduce.** `EXPLAIN actions=1 SELECT message FROM logs_b1 WHERE level='ERROR'` (shows
+Prewhere); compare `read_bytes` in `system.query_log` for `optimize_move_to_prewhere=1` vs `0`
+(identical at 12% even selectivity).
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

@@ -2,10 +2,13 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 3. Query planning, predicate pushdown, the scan-vs-skip decision,
+Status: pass 3, corrected pass 122 (Runs 81/82/90 — the join-pushdown + PREWHERE claims
+re-measured). Query planning, predicate pushdown, the scan-vs-skip decision,
 vectorized execution, and — most important for Parallax — the **join strategy**
 for cross-signal evidence-bundle correlation. Builds on `greptimedb-internals.md`
-and `clickhouse-internals.md`.
+and `clickhouse-internals.md`. **Pass 122 corrected two over-claims: GreptimeDB does
+NOT push a static left-side `WHERE` into an indexed join-input scan (full-scans, Run
+81/82), and ClickHouse PREWHERE only skips reads when it empties whole granules (Run 90).**
 
 ## Version pins
 
@@ -19,7 +22,7 @@ and `clickhouse-internals.md`.
 | Stage | GreptimeDB | ClickHouse |
 | --- | --- | --- |
 | **Planner** | SQL/PromQL → DataFusion `LogicalPlan` → physical plan. PromQL has a **native planner** (`src/promql`, `range_select`, `extension_plan`), not SQL emulation. | SQL → AST → `InterpreterSelectQuery` → `QueryPlan` → `Processors` pipeline. No GA PromQL (experimental `prometheusQuery[Range]` via the `TimeSeries` engine, pass 44). |
-| **Predicate pushdown** | DataFusion pushes filters down to the region scan; **dynamic filter pushdown reaches the region scan** (`src/query/src/datafusion.rs:959` test `test_join_dynamic_filter_pushdown_reaches_region_scan`). | `KeyCondition` turns `WHERE` on key columns into mark ranges; **PREWHERE** moves filters to a filter-columns-first read step (`optimize_move_to_prewhere=true`, `Settings.cpp:890`). |
+| **Predicate pushdown** | DataFusion pushes filters to the region scan; **dynamic (runtime build-side) filter pushdown reaches the region scan** (`datafusion.rs:959` test). **⚠ But a *static* left-side equality `WHERE` on a join input is NOT applied via the inverted index — it lands as a post-scan `FilterExec` over a full scan** (Runs 81/82, `output_rows: 1M`); standalone `WHERE` prunes, join-input does not. | `KeyCondition` turns `WHERE` on key columns into mark ranges; **PREWHERE** moves filters to a filter-columns-first step (`optimize_move_to_prewhere=true`) — *applies, but only skips reads when it empties whole granules* (Run 90: no-op at 12%-even selectivity). |
 | **Scan/skip unit** | Parquet **row group = 102,400 rows** (`DEFAULT_ROW_GROUP_SIZE`); skip via time-range → index → row-group min/max stats → page index. | **Granule = 8,192 rows** (`index_granularity`, adaptive 10 MB); skip via sparse primary index → skip indexes → mark ranges. |
 | **Execution** | **DataFusion / Arrow** vectorized operators (Rust). | **`Processors`** pull-based vectorized pipeline, hand-tuned C++ + SIMD. |
 | **Parallelism** | DataFusion partitions + `RepartitionExec`; distributed via `MergeScanExec` fan-out to regions (`src/query/src/dist_plan`). | Multiple streams across parts/granules; distributed via `Distributed` engine fan-out. |
@@ -94,15 +97,20 @@ planner output on Q4 confirmed the algorithms *and corrected the framing*:
 - ClickHouse picks `SpillingHashJoin(ConcurrentHashJoin)` with `FillRightFirst`;
   GreptimeDB picks `HashJoinExec: mode=Partitioned` with `RepartitionExec` — both
   as predicted.
-- **But both engines propagate the anchor `trace_id` constant to *both* join
-  inputs** (ClickHouse via PREWHERE → spans pruned to `Granules: 1`; GreptimeDB via
-  `FilterExec` on both `MergeScanExec` scans). So the earlier worry that
-  ClickHouse's broadcast join "builds the whole right side" is **wrong for a
-  constant-anchored join** — it prunes the right side first.
-- **Therefore the join algorithm is not a differentiator for Parallax's
-  evidence-bundle queries**, which are always anchored on a `trace_id`/
-  `fingerprint`. Both prune to a tiny working set before joining. What matters is
-  **key placement** so the anchor prunes cheaply (Run 1: ClickHouse 2 ms vs
+- **Anchor propagation differs by engine — CORRECTED (Runs 81/82).** ClickHouse pushes
+  the `trace_id` constant *into the scan* via PREWHERE → spans pruned to `Granules: 1`
+  (≈4 ms). **GreptimeDB does NOT** — `EXPLAIN ANALYZE` shows the `spans_idx` scan
+  `output_rows: 1,000,000` (a **full scan**) with a `FilterExec` *above* it; the inverted
+  index is **not consulted for a join input**, so the anchor is applied *post*-scan
+  (~54 ms). So the earlier "both prune the right side first" was wrong for GreptimeDB.
+  Fix: pre-filter the left side in a subquery (forces the index prune, ~21 ms) or assemble
+  app-side (Parallax's pattern). Parity Improvement #8.
+- **So for a *direct in-DB* anchored join the algorithm is not the differentiator, but the
+  predicate-pushdown-into-the-indexed-scan is** — ClickHouse prunes, GreptimeDB full-scans
+  unless rewritten. For Parallax's evidence-bundle queries (anchored on `trace_id`/
+  `fingerprint`), the safe pattern is per-signal `WHERE trace_id=?` (each index-pruned) +
+  app-side join. What matters is **key placement + pushdown** so the anchor prunes cheaply
+  (Run 1: ClickHouse 2 ms vs
   GreptimeDB 16 ms on the un-keyed `trace_id` lookup). The large↔large join
   scenario where partitioned-vs-broadcast would matter is one Parallax does not run
   for bundle assembly — so it drops in priority.
