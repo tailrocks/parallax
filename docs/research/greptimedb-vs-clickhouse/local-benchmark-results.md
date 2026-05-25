@@ -6292,6 +6292,36 @@ system.disks; SELECT policy_name FROM system.storage_policies"` → `default Loc
 `system.table_functions` `s3` + `storage_policy` settings). Network diag: `curl 127.0.0.1:4000/health`
 → 000 from agent shell (exec→200) = capsule network isolation.
 
+### Run 156 — 2026-05-25 — LIVE capability check (exec): is "ClickHouse wins build-on-top" a SQL-capability gap or an ecosystem gap? → ecosystem, not capability (parity on grouped-error rollup + window fns)
+
+**Context.** Network isolation persists (exec-only). Decision-relevant under the proxy reframe: the
+verdict weights "build-on-top ecosystem" as a central ClickHouse win — tested whether GreptimeDB can
+even *express* Parallax's core analytical patterns (esp. the new grouped-error requirement), or whether
+the gap is purely ecosystem. Capability/correctness test (not timing) → 4-build-exempt. Re-pin
+unchanged (GT GA v1.0.2; nightly v1.1.0-nightly-20260525).
+
+**Live (exec, both stable containers, prior-run data):**
+- **Grouped-error rollup** (Sentry-style: `fingerprint → count, min(ts) first_seen, max(ts) last_seen,
+  latest message`): **parity, identical results.** CH `argMax(message,ts)`; GT
+  `last_value(message ORDER BY ts)` — different dialect, same answer (both `fp-135`, n=21, matching
+  first/last, latest="boom").
+- **Evidence-bundle window ranking** (`row_number() OVER (PARTITION BY trace_id ORDER BY duration_ms
+  DESC)`): **parity, identical** (both 59.46→1, 48.583→2, 43.545→3).
+
+**Verdict — build-on-top is an ECOSYSTEM gap, not a SQL-capability gap.** Both columnar engines express
+the grouped-error rollup AND the evidence-bundle window queries correctly. So ClickHouse's "build on
+top" edge = the *ecosystem* (de-facto obs backend, integrations, MV maturity, SigNoz/HyperDX/ClickStack
+network effect, function breadth), not query expressibility. Consequences: (1) GreptimeDB is **not
+capability-blocked** for the new grouped-error requirement (rollup computes fine); (2) the columnar
+choice rests on retrieval speed + ecosystem + cost, not on whether the analytical queries run (they do,
+on both). Updated `platform-fit-and-alternatives.md` (new "build-on-top capability vs ecosystem" §).
+
+**Reproduce.** GT: `docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql
+--data-urlencode "sql=SELECT fingerprint,count(*),min(ts),max(ts) FROM error_events GROUP BY
+fingerprint ORDER BY count(*) DESC LIMIT 3"` (+ `last_value(message ORDER BY ts)`; window:
+`row_number() OVER (PARTITION BY trace_id ORDER BY duration_ms DESC)`). CH: same via
+`clickhouse-client` with `argMax(message,ts)`. Both return identical rollup/ranking.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

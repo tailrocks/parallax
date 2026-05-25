@@ -189,6 +189,31 @@ the tool (Sentry's replacements-consumer scar tissue is the warning). Note Turso
 lineage, C + a Rust rewrite) passes the language filter; this is consistent with the existing decision,
 not a new dependency.
 
+## Is "ClickHouse wins build-on-top" a SQL-capability gap or an ecosystem gap? (live, Run 156)
+
+The re-score weights "build-on-top ecosystem" as a central ClickHouse win. Tested whether that's a
+**query-capability** gap (can GreptimeDB even express Parallax's core analytical patterns?) or an
+**ecosystem/maturity** gap. Live, via `docker exec`, both engines on the same prior-run data:
+
+- **Grouped-error rollup** (the Sentry-style aggregate — fingerprint → count, first_seen, last_seen,
+  latest message): **parity, identical results.** ClickHouse uses `argMax(message, ts)`; GreptimeDB uses
+  `last_value(message ORDER BY ts)` — different dialect, same answer (both returned `fp-135`, count 21,
+  matching first/last timestamps).
+- **Evidence-bundle window ranking** (`row_number() OVER (PARTITION BY trace_id ORDER BY duration_ms
+  DESC)` — "slowest spans in this trace"): **parity, identical results** (both ranked 59.46→1,
+  48.583→2, 43.545→3).
+
+**Conclusion: the build-on-top advantage is ecosystem/maturity, NOT a SQL-capability gap for Parallax's
+queries.** Both columnar engines express the grouped-error rollup *and* the evidence-bundle window
+queries correctly. So ClickHouse's "build on top" edge is the *ecosystem* (de-facto obs backend,
+integrations, MV maturity, the SigNoz/HyperDX/ClickStack network effect, exotic function breadth), not
+that GreptimeDB can't run the queries. **Two decision consequences:** (1) GreptimeDB is **not
+capability-blocked** for the new grouped-error requirement — the rollup computes fine on it; (2) the
+columnar choice (CH vs GT) is therefore decided by **retrieval speed + ecosystem + cost**, not by
+whether Parallax's analytical queries are expressible (they are, on both). The grouped-error
+*aggregate* runs on either columnar engine; only the *mutable workflow state* needs the relational
+store (above).
+
 ## Bottom line (practical fit, as asked — not raw speed)
 
 1. **Behind the Parallax proxy, ClickHouse is the stronger default store** — it wins the two axes the
