@@ -1864,6 +1864,87 @@ Caveat: warm, cache-resident smoke; sizes are exact metadata. Bloom sizing depen
 distinct-token count, so the size *tie* generalizes (it's fpr math); the precise MiB
 scales with corpus token cardinality.
 
+### Run 53 — 2026-05-25 — Concurrent ingest+query penalty, re-verified (the production state)
+
+**Pass target.** Rotate off cost/full-text onto the verdict's **#1 axis: does query
+latency hold under concurrent ingest?** Re-verify Run 13's load-bearing "neither
+engine blocks reads on ingest" (Run 13 measured CH 1.55× / GT 1.38× at 11M rows,
+~40 passes ago) against the live containers at higher write pressure.
+
+**Environment.** GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882`
+(`5b96a8d8`), `bench/compose.yml` local disk. Versions re-pinned this pass — both
+still latest GA/stable, no bump. Tables: `metrics_hc` (8M, scan-agg query),
+`spans`/`spans_idx` (1M, anchored point lookup). Warm.
+
+**Method.** Each engine tested **in isolation** (one engine ingesting+querying itself
+at a time — avoids cross-engine host-CPU confounding). Baseline = query ×7 median
+with no ingest. Then a background loop ran `INSERT INTO ingest_load SELECT … LIMIT
+200000` back-to-back for ~24 s while the same query ran ×10 (median). `ingest_load`
+is a spans-shaped scratch table (CH `AS spans`; GreptimeDB 7-col, `PRIMARY KEY(trace_id)`).
+Penalty = during-ingest median ÷ baseline median.
+
+| Query | Engine | baseline | during ingest | **penalty** |
+| --- | --- | --- | --- | --- |
+| metric-agg (`GROUP BY service` over 8M) | ClickHouse | 32 ms | 36 ms | **1.13×** |
+| metric-agg | GreptimeDB | 100 ms | 119 ms | **1.19×** |
+| anchored lookup (`trace_id=…`) | ClickHouse | 2 ms | 2 ms | **1.0×** |
+| anchored lookup | GreptimeDB | 13 ms | 15 ms | **1.15×** |
+
+**Achieved write load during the window (NOT matched — see caveat):**
+
+| Engine | batches ×200k | submitted rows | ~rows/s | write-path state after |
+| --- | --- | --- | --- | --- |
+| ClickHouse | 173 | 34.6M (all retained) | **~1.44M/s** | **17 active parts** (merges paced it — no part explosion) |
+| GreptimeDB | 68 | 13.6M submitted | ~567k/s submitted | **1 SST + 538 MiB memtable** (LSM absorbed; deduped to ~3.7M retained, PK=trace_id) |
+
+**The comparison logic & verdict.**
+
+- **Confirmed: neither engine blocks reads under concurrent ingest.** All penalties
+  are **1.0–1.19×**, well under the ≤2× gate — *tighter* than Run 13's 1.38–1.55×.
+  The load-bearing "stays queryable under load" claim **still reproduces.** Status:
+  **confirmed** (re-verified, drift = penalties even lower at this scale).
+- **Mechanism, per query shape:** the **anchored point lookup is ~immune** (CH 1.0×
+  index seek; GT 1.15× index seek) — Parallax's *hot path stays flat even under
+  ingest*, reinforcing the "anchored bundle not latency-bound" verdict pillar. The
+  **scan-agg absorbs the contention** (CH 1.13×, GT 1.19×) because it shares CPU with
+  background merge (CH) / memtable+dedup work (GT).
+- **ClickHouse degraded slightly *less* while under ~2.5× heavier achieved write
+  load** (1.44M vs 567k rows/s) — its vectorized scan + paced merges (17 parts, no
+  explosion) handled concurrency at least as well as GreptimeDB's LSM here. But the
+  loads were **not matched**, so this is *not* a clean head-to-head penalty ratio —
+  only each engine vs its own baseline is apples-to-apples.
+
+**Fairness caveats (honesty).**
+
+1. **Loads not matched.** `INSERT…SELECT` is server-side and throttle-free, so each
+   engine ran as fast as it could — CH pushed more rows/s. A clean penalty *comparison*
+   needs both throttled to an identical rows/s. **Routed to the harness** (add a
+   rate-limited concurrent-load generator).
+2. **GreptimeDB deduped on ingest** (`PRIMARY KEY(trace_id)`, same 200k rows re-read
+   each batch → last-row-wins overwrite), so retained ≠ submitted; the *write work*
+   (parse + memtable + dedup) still applied as load, but rows/s is "submitted", not
+   "net new".
+3. Single-node laptop smoke, warm. Directional; cold + sized + matched-rate concurrency
+   is the harness's job.
+
+**Reproduce (copy-paste).**
+
+```bash
+# scratch ingest targets
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q "CREATE TABLE ingest_load AS spans"
+docker exec parallax-bench-greptimedb-1 curl -s "http://localhost:4000/v1/sql?db=public" --data-urlencode 'sql=CREATE TABLE ingest_load ("trace_id" STRING,"span_id" STRING,"service" STRING,"name" STRING,"ts" TIMESTAMP(3) TIME INDEX,"duration_ms" DOUBLE,"status" STRING, PRIMARY KEY("trace_id"))'
+# CH: background ingest ~24s, foreground query x10 (repeat for GreptimeDB via HTTP /v1/sql)
+( end=$((SECONDS+24)); while [ $SECONDS -lt $end ]; do docker exec parallax-bench-clickhouse-1 clickhouse-client -q "INSERT INTO ingest_load SELECT * FROM spans LIMIT 200000"; done ) &
+for i in $(seq 10); do docker exec parallax-bench-clickhouse-1 clickhouse-client --time -q "SELECT service,avg(value) FROM metrics_hc GROUP BY service FORMAT Null"; done
+wait
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q "DROP TABLE ingest_load"
+docker exec parallax-bench-greptimedb-1 curl -s "http://localhost:4000/v1/sql?db=public" --data-urlencode 'sql=DROP TABLE ingest_load'
+```
+
+Caveat: warm smoke, unmatched load (see caveats). The *direction* (neither blocks,
+point lookup immune, scan absorbs contention) is robust; precise penalty ratios await
+matched-rate harness runs.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

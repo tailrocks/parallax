@@ -2,10 +2,11 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 9. The top evaluation axis: **ingest → durable → queryable**, and
-exactly when written data becomes visible (freshness). Combines the write-path
-mechanisms from the internals notes with an empirical freshness/throughput probe
-(`local-benchmark-results.md` Run 5).
+Status: pass 9, extended pass 90 (Run 53: concurrent ingest+query). The top
+evaluation axis: **ingest → durable → queryable**, and exactly when written data
+becomes visible (freshness). Combines the write-path mechanisms from the internals
+notes with empirical freshness/throughput/concurrency probes
+(`local-benchmark-results.md` Runs 5, 53).
 
 Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d8`).
 
@@ -123,6 +124,29 @@ ClickHouse ~1.55× faster on this bulk CSV load, but the measurement bases diffe
 Tier-1 Parallax deployment. The throughput ranking is *inconclusive* pending a
 matched-protocol, concurrent ingest+query run.
 
+## Concurrent ingest+query — does query latency hold under load? (Run 53)
+
+The production state is ingest *and* query at the same time. Measured each engine's
+query latency under a ~24 s sustained background ingest (`INSERT…SELECT 200k`
+back-to-back), penalty = during-ingest median ÷ baseline:
+
+| Query shape | ClickHouse | GreptimeDB |
+| --- | --- | --- |
+| anchored point lookup (`trace_id=…`) | 2→2 ms (**1.0×**) | 13→15 ms (**1.15×**) |
+| scan-agg (`GROUP BY service`, 8M) | 32→36 ms (**1.13×**) | 100→119 ms (**1.19×**) |
+| achieved write load | ~1.44M rows/s, 17 active parts (no explosion) | ~567k rows/s submitted, 1 SST + 538 MiB memtable |
+
+**Neither engine blocks reads on ingest** — all penalties 1.0–1.19×, *tighter* than
+Run 13's 1.38–1.55×. Mechanism: the **anchored point lookup is ~immune** on both (index
+seek doesn't compete with the write path) — so Parallax's *hot path stays flat even
+under concurrent ingest*; the **scan-agg absorbs the contention** (shares CPU with CH
+background merges / GreptimeDB memtable+dedup). ClickHouse degraded *less* while under
+~2.5× heavier achieved load — but the loads were **not matched** (`INSERT…SELECT` is
+throttle-free; GreptimeDB also deduped, PK=`trace_id`), so this is each-engine-vs-its-own-
+baseline, not a clean head-to-head ratio. Matched-rate concurrency is routed to the
+harness. (Reinforces the "anchored bundle not latency-bound" verdict pillar — it holds
+under load too.)
+
 ## Ingest protocols (capability)
 
 | | GreptimeDB | ClickHouse |
@@ -164,6 +188,7 @@ protocol a collector/SDK speaks, not a JSON shortcut.
 | Ingest-to-queryable latency | **Tie** — both visible-on-write, sub-second, no flush barrier. | smoke + arch |
 | Small high-frequency writes | **GreptimeDB** — LSM memtable absorbs them; ClickHouse needs batching/async-insert to avoid part explosion. | arch (well-known CH failure mode) |
 | Bulk ingest throughput | ClickHouse ~1.55× here, but both >1M rows/s; inconclusive at smoke. | smoke |
+| Query latency under concurrent ingest | **Neither blocks** (1.0–1.19× penalty, Run 53); anchored hot path ~immune on both. | smoke (unmatched load) |
 | Native OTLP / Prom ingest | **GreptimeDB** — native; ClickHouse needs a collector. | arch |
 
 **Net:** freshness latency does not separate the engines (both fresh-on-write).
@@ -176,8 +201,10 @@ metrics — and it is axis #1.
 ## What still needs measuring
 
 - **Concurrent ingest+query freshness** (the harness protocol: stamp `t_emit`,
-  poll every 50 ms until visible, p50/p95/p99 under mixed load) — the real axis-1
-  number; not yet run.
+  poll every 50 ms until visible, p50/p95/p99 under mixed load). Query *latency*
+  under load is measured (Run 53: neither blocks, 1.0–1.19×); the *freshness*
+  number under load (visibility lag while ingesting) is still owed, as is the
+  **matched-rate** penalty comparison (Run 53's loads were not throttled equal).
 - **ClickHouse part-explosion threshold** empirically (small-insert rate until
   "too many parts") vs GreptimeDB steady-state under the same rate.
 - Confirm whether `async_insert=1` is the genuine ClickHouse 26.x server default.
@@ -186,4 +213,4 @@ metrics — and it is axis #1.
 
 - GreptimeDB write path: `src/mito2/src/{worker.rs,region_write_ctx.rs,flush.rs}`, WAL `src/log-store/src/lib.rs`; visibility via `committed_sequence` (`src/mito2/src/lib.rs`).
 - ClickHouse write path: part creation in `src/Storages/MergeTree/`; async insert `src/Interpreters/AsynchronousInsertQueue.cpp`; `parts_to_throw_insert` in `MergeTreeSettings`.
-- Empirical: `local-benchmark-results.md` Run 5.
+- Empirical: `local-benchmark-results.md` Run 5 (freshness/bulk), Run 53 (concurrent ingest+query latency penalty).
