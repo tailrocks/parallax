@@ -43,6 +43,17 @@ The operator's requirement is **small→large as a topology change, not a rewrit
   rebalances. With object storage + remote WAL, datanodes approach stateless, so
   scale-out is closer to "add capacity" than "re-architect." **This is exactly the
   topology-change-not-rewrite property the operator wants.**
+  - **Migration mechanism confirmed in source (pass 34):** the region-migration
+    procedure (`src/meta-srv/src/procedure/region_migration/`) is **flush_leader →
+    downgrade_leader → open_candidate → upgrade_candidate → close_downgraded** — a
+    sequence with **no bulk data-transfer step** (its elapsed-time metrics track
+    only flush/downgrade/open/upgrade). It flushes the source region to make its
+    data durable in shared storage, then the target datanode **opens the same region
+    from storage (manifest + SSTs)** and takes over leadership. So migration is
+    **ownership reassignment + reopen, not a data copy** — **cheap specifically when
+    backed by shared object storage** (the SSTs are already in S3; the target lazy-
+    loads them). On local-disk-only storage this property weakens (the target must
+    obtain the files). This is the load-bearing mechanism behind cheap rebalancing.
 - **ClickHouse OSS scale-out is operator-driven and front-loaded.** You must choose
   the shard count and sharding key up front; there is no automatic resharding in
   OSS, so outgrowing the initial shard layout is a manual, disruptive data-movement
@@ -96,5 +107,5 @@ favors GreptimeDB for Parallax's startups→big-companies trajectory.
 
 ## Source / evidence
 
-- GreptimeDB: `src/partition/src/{splitter,multi_dim,manager}.rs`; RFCs `2023-11-07-region-migration`, `2025-06-20-repartition`, `2025-07-23-global-gc-worker`; dist plan `src/query/src/dist_plan` (`MergeScanExec`); remote WAL `src/log-store/src/kafka`.
+- GreptimeDB: `src/partition/src/{splitter,multi_dim,manager}.rs`; **region-migration procedure `src/meta-srv/src/procedure/region_migration/` (flush_leader → downgrade → open_candidate → upgrade → close; no bulk-copy step)**; RFCs `2023-11-07-region-migration`, `2025-06-20-repartition`, `2025-07-23-global-gc-worker`; dist plan `src/query/src/dist_plan` (`MergeScanExec`); remote WAL `src/log-store/src/kafka`.
 - ClickHouse: `src/Storages/StorageDistributed.cpp`, `src/Storages/StorageReplicatedMergeTree.cpp`, `src/Coordination/Keeper*`; `max_parallel_replicas`/`allow_experimental_parallel_reading_from_replicas` (`src/Core/Settings.cpp:7308`); **no** `SharedMergeTree` in `src/Storages` (Cloud-only).
