@@ -149,6 +149,15 @@ is anchored, not scan-bound.
   are the empirical anchor.
 - ClickHouse JIT has a warm-up (`min_count_to_compile_expression=3`) — the first few
   executions are interpreted; irrelevant for repeated query shapes (Parallax's case).
+- **The ~2–3× metric-agg gap is NEITHER batch size NOR JIT (Runs 124/125, empirically isolated):**
+  ClickHouse at GreptimeDB's 8,192 block size is still ~3× faster (Run 124), and ClickHouse with
+  `compile_aggregate_expressions=0` is still ~3.7× faster (Run 125 — JIT off was even *faster* on a
+  heavy 5-aggregate query). So the gap is the **diffuse, cumulative maturity of the vectorized
+  execution core** — bespoke SIMD aggregation kernels, cache-efficient/adaptive hash tables, tight
+  C++ scan+group loops — not any single tunable. **It is the slowest-closing gap** (no single PR;
+  accrues only as the DataFusion execution core matures upstream), unlike the SST-layer wins
+  GreptimeDB shipped itself (prefilter/TopK/Flat-SST). Engineering, not physics — but the longest
+  timeline.
 - GreptimeDB pushes scan+aggregate into the region (`MergeScanExec`), so at multi-node
   scale the execution parallelism story is also a distribution story (owed to a
   cluster run).

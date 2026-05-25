@@ -5174,6 +5174,44 @@ CH `--time`, warm ×6, varying `SETTINGS max_block_size`.
 on ClickHouse for N ∈ {65536, 8192, 2048} → ~37/38/43 ms (≈flat); GreptimeDB fixed ~116 ms. The ~3×
 gap is independent of block size.
 
+### Run 125 — 2026-05-25 — Agg gap is NOT JIT either: CH with `compile_aggregate_expressions=0` stays ~3× faster than GT. NOT batch (124), NOT JIT (125) → diffuse vectorized-execution maturity, the slowest-closing gap.
+
+**Pass target.** Run 124 ruled out batch size as the agg-gap lever. Isolate the next suspect: **JIT**.
+ClickHouse JIT-compiles aggregation (`compile_aggregate_expressions`). Disable it — does CH slow
+toward GreptimeDB? If yes, JIT is the lever GreptimeDB lacks (DataFusion codegen).
+
+**Environment.** ClickHouse `v26.5.1.882` / GreptimeDB `v1.0.2` (re-pinned live — no bump).
+`metrics_hc` 8M / 40k series. CH `--time`, warm ×5–6.
+
+| Query | CH JIT on | CH JIT off | GT (Run 96) |
+| --- | --- | --- | --- |
+| `avg(value) GROUP BY service` | ~29 ms | ~31 ms | ~116 ms |
+| heavy `sum+avg+min+max+quantile(0.99)` | ~51 ms | **~45 ms (off faster)** | — |
+
+**Verdict — JIT is NOT the lever; the agg gap is diffuse engine maturity (SIMD kernels + hash-agg), the slowest-closing gap.**
+
+- **ClickHouse with JIT OFF (`compile_aggregate_expressions=0, compile_expressions=0`) is still ~31 ms
+  on avg-by-service — ~3.7× faster than GreptimeDB's ~116 ms.** On the heavier 5-aggregate query, JIT
+  *off* was even slightly *faster* (~45 vs ~51 ms — JIT's compile overhead doesn't pay off at this
+  size). So **JIT contributes ~nothing to CH's agg advantage here.**
+- **Combined with Run 124 (batch size = non-lever):** the ~2–3× metric-agg gap is **neither batch size
+  NOR JIT.** It is the **diffuse, cumulative maturity of ClickHouse's vectorized execution** — bespoke
+  **SIMD aggregation kernels, cache-efficient/adaptive hash tables, tight C++ scan+group loops** — the
+  "decade-tuned engine," not any single tunable feature.
+- **This is the hardest kind of gap to close + the honest ceiling on the DQ6 thesis:** there's **no
+  single PR or config** that closes it — GreptimeDB/DataFusion must accumulate the same breadth of
+  kernel-level optimization over years. It is still **engineering, not physics** (DataFusion is on the
+  same vectorized-columnar-over-Arrow trajectory), but it is the **slowest-converging** gap of all —
+  unlike the SST-layer wins GreptimeDB shipped itself (prefilter/TopK/Flat-SST), this one accrues only
+  as the DataFusion *execution core* matures upstream.
+- **Decision relevance:** sharpens "metrics = capability not speed" — the speed deficit on aggregation
+  is the **deepest, longest-timeline** gap, not a quick fix. For Parallax it remains a non-issue (~2–3×,
+  every metric panel interactive — Run 113), but do not assume the agg gap narrows on any near horizon.
+
+**Reproduce.** CH `SELECT service, avg(value) FROM metrics_hc GROUP BY service SETTINGS
+compile_aggregate_expressions=0, compile_expressions=0` → ~31 ms (vs ~29 ms JIT-on); still ~3.7× GT's
+~116 ms. JIT toggle barely moves CH; the gap is engine maturity (SIMD/hash-agg), not JIT.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
