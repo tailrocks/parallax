@@ -29,10 +29,10 @@ The central rule:
 | Source | Current check | Why it matters |
 | --- | --- | --- |
 | [MCP server overview](https://modelcontextprotocol.io/specification/2025-11-25/server/index) | MCP servers expose prompts, resources, and tools, with tools as model-controlled operations and resources as application-controlled context. | Parallax should expose evidence bundles as resources and narrow tools, not generic automation power. |
-| [MCP tools specification](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) | Tools use JSON Schema input, optional output schemas, structured content, annotations, error results, and security requirements around validation, access control, rate limiting, sanitization, confirmation, and audit logging. | Every Parallax MCP tool needs a closed schema, bounded output, and audit row. |
-| [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization) | Remote MCP uses OAuth-style authorization with protected resource metadata, resource indicators, audience validation, HTTPS, redirects, PKCE, and secure token handling. | Remote Parallax MCP cannot be a bearer-token side door into evidence. |
+| [MCP tools specification](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) | Tools are model-controlled, should keep a human in the loop, use JSON Schema input, optional output schemas, structured content, annotations, error results, optional task-support metadata, and security requirements around validation, access control, rate limiting, sanitization, confirmation, and audit logging. | Every Parallax MCP tool needs a closed schema, bounded output, audit row, and explicit denial of task-augmented execution unless a later fixture proves it safe. |
+| [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization) | Remote MCP uses OAuth-style authorization with protected resource metadata, resource indicators, audience validation, HTTPS, redirects, PKCE, secure token handling, and explicit token-passthrough prohibitions. | Remote Parallax MCP cannot be a bearer-token side door into evidence; resource indicator, audience, PKCE, and no-token-passthrough behavior need their own rows. |
 | [MCP security best practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices) | Official guidance emphasizes least privilege, precise scope challenges, resource indicators, token audience validation, correlation IDs, and avoiding broad scopes. | The first MCP server must start read-only and deny wildcard/admin scopes. |
-| [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/) | MCP client/server spans, JSON-RPC request IDs, transport values, tool/resource/prompt attributes, session metrics, and provisional `_meta` trace propagation are defined. | MCP calls must be observable and normalized into Parallax audit/action rows. |
+| [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/) | MCP client/server spans, JSON-RPC request IDs, transport values, tool/resource/prompt attributes, session metrics, `elicitation/create`, `sampling/createMessage`, `notifications/tools/list_changed`, and provisional `_meta` trace propagation are defined with development-stage status. | MCP calls and server-initiated capability attempts must be observable and normalized into Parallax audit/action rows without treating development-stage semconv names as stable storage fields. |
 | [OpenAI Docs MCP](https://developers.openai.com/learn/docs-mcp) | OpenAI documents MCP as a docs integration surface for Codex and other agent clients. | Cross-client MCP is a distribution requirement, not a unique moat. |
 | [Claude Code MCP docs](https://code.claude.com/docs/en/mcp) | Claude Code supports MCP servers, resources, OAuth callback configuration, dynamic headers, output limits, and workspace trust concerns. | Client fixtures must test real agent clients and output-budget behavior. |
 | [NSA MCP security design considerations](https://www.nsa.gov/Portals/75/documents/Cybersecurity/CSI_MCP_SECURITY.pdf?ver=bmgiSbNQLP6Z_GiWtRt6bg%3D%3D) | NSA's May 2026 guidance treats MCP as widely adopted but security-maturing, with risks around dynamic tool invocation, implicit trust, context sharing, serialization, token/session handling, overbroad tools, and unauthorized servers. | The safe path is a narrow read-only adapter over canonical bundles, not a broad production-control toolset. |
@@ -73,7 +73,9 @@ docs/research/agent-access-surface-runs/<run_id>/canonical-bundles/<case_id>.jso
 docs/research/agent-access-surface-runs/<run_id>/cli-results.jsonl
 docs/research/agent-access-surface-runs/<run_id>/http-results.jsonl
 docs/research/agent-access-surface-runs/<run_id>/mcp-results.jsonl
+docs/research/agent-access-surface-runs/<run_id>/capability-results.jsonl
 docs/research/agent-access-surface-runs/<run_id>/scope-results.jsonl
+docs/research/agent-access-surface-runs/<run_id>/auth-results.jsonl
 docs/research/agent-access-surface-runs/<run_id>/redaction-results.jsonl
 docs/research/agent-access-surface-runs/<run_id>/source-field-results.jsonl
 docs/research/agent-access-surface-runs/<run_id>/output-budget-results.jsonl
@@ -111,6 +113,8 @@ Each `manifest.json` should include:
   "surfaces": ["cli", "http", "mcp"],
   "clients": ["codex", "claude-code"],
   "transport_modes": ["stdio", "streamable-http"],
+  "mcp_features_allowed": ["tools", "resources"],
+  "mcp_features_denied": ["sampling", "elicitation", "task-augmented execution for context tools"],
   "notes": []
 }
 ```
@@ -160,7 +164,26 @@ combination does not carry over to another.
   "all_tools_have_input_schema": true,
   "bundle_tools_have_output_schema": true,
   "structured_content_schema_valid": true,
+  "task_support_for_context_tools": "forbidden",
+  "annotations_treated_as_untrusted": true,
+  "tools_list_changed_notifications_audited": true,
   "all_context_tools_read_only": true
+}
+```
+
+### MCP Capability Result Row
+
+```json
+{
+  "case_id": "sampling_denied",
+  "client": "codex",
+  "server_feature": "sampling|elicitation|task_support|tools_list_changed",
+  "requested_or_observed": true,
+  "allowed": false,
+  "status": "pass|fail",
+  "audit_row_emitted": true,
+  "otel_mcp_span_present": true,
+  "notes": "First Parallax MCP server allows tools/resources only."
 }
 ```
 
@@ -176,6 +199,24 @@ combination does not carry over to another.
   "status_code": "permission_denied",
   "audit_row_emitted": true,
   "correlation_id": "corr_123"
+}
+```
+
+### Authorization Result Row
+
+```json
+{
+  "case_id": "remote_mcp_resource_indicator",
+  "transport": "streamable-http",
+  "principal": "agent-readonly",
+  "resource_parameter_present": true,
+  "token_audience_validated": true,
+  "pkce_s256_required": true,
+  "token_passthrough_denied": true,
+  "https_required": true,
+  "localhost_redirect_policy_checked": true,
+  "status": "pass|fail",
+  "audit_row_emitted": true
 }
 ```
 
@@ -270,6 +311,9 @@ combination does not carry over to another.
   and MCP for the same authorized request.
 - No schema-safe MCP claim unless bundle-returning tools have output schemas and
   valid `structuredContent`; Markdown/text alone is a projection.
+- No read-only context claim if sampling, elicitation, task-augmented execution,
+  or unreviewed `tools/list_changed` behavior can expand what the server asks of
+  the client or model during a context request.
 - No "safe MCP" claim unless negative tools are absent: no generic shell, SQL,
   deploy, rollback, delete, or broad production-control tools.
 - No eval/corpus-derived bundle claim unless `source_field_policy_status` is
@@ -279,7 +323,8 @@ combination does not carry over to another.
   approval paths are tested and audited.
 - No cross-client claim unless at least Codex and Claude Code pass the same
   fixture suite.
-- No remote MCP claim unless OAuth/resource/audience/PKCE/HTTPS behavior is
+- No remote MCP claim unless resource indicators, token audience validation,
+  PKCE S256, HTTPS, localhost redirect policy, and token-passthrough denial are
   tested separately from local stdio mode.
 - No prompt-injection safety claim unless malicious telemetry, issue text, PR
   text, logs, and transcripts fail to change tool policy, scopes, windows,
@@ -297,6 +342,8 @@ Rerun the matrix and mark affected claims `claim_expired` when any of these
 change:
 
 - MCP specification, authorization guidance, or security guidance changes;
+- MCP task-augmented execution, sampling, elicitation, or dynamic tool-list
+  behavior changes;
 - OpenTelemetry semantic conventions or MCP semantic conventions change;
 - Codex, Claude Code, Cursor, VS Code/Copilot, or other claimed clients change
   MCP configuration, output limits, auth, or resource behavior;

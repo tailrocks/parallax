@@ -28,8 +28,8 @@ not inferred from this design alone.
 | Source | What matters for Parallax |
 | --- | --- |
 | [MCP server overview](https://modelcontextprotocol.io/specification/2025-11-25/server/index) | MCP exposes prompts, resources, and tools; tools are model-controlled while resources are application-controlled. This maps cleanly to Parallax's split between bounded context resources and explicit investigation tools. |
-| [MCP tools specification](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) | Tools have JSON Schema input and optional output schemas, support structured content, and carry security requirements for input validation, access control, rate limits, output sanitization, user confirmation for sensitive operations, and audit logging. Bundle-returning Parallax tools should use `structuredContent` with an output schema, not text-only JSON. |
-| [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization) | Remote MCP requires real OAuth-style security posture: resource-bound tokens, audience validation, secure token storage, HTTPS, localhost/HTTPS redirects, and PKCE for public clients. |
+| [MCP tools specification](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) | Tools have JSON Schema input and optional output schemas, support structured content, can advertise task-support metadata, and carry security requirements for input validation, access control, rate limits, output sanitization, user confirmation for sensitive operations, and audit logging. Bundle-returning Parallax tools should use `structuredContent` with an output schema, not text-only JSON, and should mark task support as forbidden for the first context adapter. |
+| [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization) | Remote MCP requires real OAuth-style security posture: resource-bound tokens, audience validation, secure token storage, HTTPS, localhost/HTTPS redirects, PKCE for public clients, and no token passthrough. |
 | [MCP security best practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices) | The official guidance favors least-privilege scopes, targeted elevation, precise scope challenges, correlation IDs, and avoiding wildcard or omnibus scopes. |
 | [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/) | MCP calls should be observable as MCP-specific spans and metrics; MCP does not yet define its own standard trace-context propagation, so instrumentation needs explicit propagation in message metadata. |
 | [OpenAI Docs MCP](https://developers.openai.com/learn/docs-mcp) | Codex, VS Code/Copilot Agent mode, Cursor, and Claude Code can consume MCP servers; OpenAI's own docs server uses MCP as the cross-client integration surface. |
@@ -102,7 +102,9 @@ What MCP adds:
 
 The first MCP server should be a read-only context adapter, not an automation
 control plane. It should make Parallax evidence easy for agents to request, but
-it should not give agents generic system power.
+it should not give agents generic system power. The first server should expose
+tools and resources only; sampling, elicitation, and task-augmented execution are
+future surfaces that need separate safety fixtures.
 
 ## Why MCP Must Not Be First
 
@@ -214,6 +216,7 @@ for context retrieval and deterministic checks, not production mutation.
 | Remote auth | Use HTTPS, resource/audience validation, secure token storage, short-lived tokens, and PKCE where applicable. |
 | Stdio/local auth | Treat local stdio MCP as local code execution. Require explicit install/trust and never auto-enable from a repo. |
 | Tool schemas | Every tool has a closed JSON Schema input. Bundle-returning tools have an output schema for structured results. |
+| Server-initiated capabilities | Disable sampling, elicitation, and task-augmented execution in the first context server. Audit any `tools/list_changed` notification or dynamic catalog change. |
 | Output limits | Return bounded summaries plus resource refs; do not inline unbounded logs, traces, terminal output, or transcripts. |
 | Redaction and source-field policy | Run the same redaction pipeline as CLI/API, and include `redaction_report.source_field_policy` in agent-visible responses. |
 | Prompt injection | Treat telemetry, issues, PRs, logs, and transcripts as untrusted data; never let tool output redefine policy. |
@@ -260,6 +263,7 @@ MCP should not ship until these tests pass:
 | Output budget | Oversized bundles return summary + refs, not unbounded text. |
 | Audit fixture | Every MCP call emits an audit row and OpenTelemetry span with caller, tool, scopes, bundle id, status, and redaction policy. |
 | Negative tool catalog | Generic shell, SQL, deploy, rollback, and delete tools are absent. |
+| Capability fixture | Sampling, elicitation, task-augmented execution, and unreviewed tool-list changes are denied or audited for the read-only context server. |
 
 If these fail, keep CLI/API available and do not claim MCP safety.
 
