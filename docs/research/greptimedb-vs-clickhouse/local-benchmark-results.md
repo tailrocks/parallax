@@ -671,6 +671,35 @@ default, ClickHouse cheap **iff** `PARTITION BY` time + `ttl_only_drop_parts=1`.
 (Smoke scale; the write-amp *magnitude* at production volume + sustained churn is the
 prototype's to settle.)
 
+### Run 18 — 2026-05-25 — Schema evolution: auto-add vs ALTER vs JSON
+
+Backs `schema-evolution-and-dynamic-columns.md` (pass 38). Same pinned stack, smoke.
+
+**ClickHouse** (`se_test`, 1M-row part):
+
+- `ALTER TABLE … ADD COLUMN b String DEFAULT 'x'` → **0.005 s**; part `all_1_1_0`
+  byte-identical (3.85 MiB) + same `modification_time` before/after → **metadata-only,
+  no rewrite** (matches `AlterCommands.cpp` `isRequireMutationStage`=false).
+- `INSERT … (ts,a,c)` with undeclared `c` → **server exception** (no schema-on-write).
+- `JSON` column: inserted `{k1:1}`, `{k2:"v",k3:true}` → `JSONAllPathsWithTypes` =
+  `('k1','Int64'),('k2','String'),('k3','Bool')` (each path a **typed subcolumn**);
+  `attributes.k2` returns `v` reading only that subcolumn.
+
+**GreptimeDB** (`weather`, InfluxDB line protocol):
+
+- write `weather,location=us temp=82` → table `(location, temp, greptime_timestamp)`.
+- write `weather,location=us,city=nyc temp=80,humidity=30,wind=5` → **auto-added
+  `city`(tag→PK), `humidity`,`wind`(field→DOUBLE)**; first row reads `NULL` for them
+  (schema-on-read, no rewrite). Confirms `create_or_alter_tables_on_demand`.
+- `Json` column: `DESC` = `attrs Json`; queried `json_get_string(attrs,'k2')` →
+  per-row blob parse (single binary column, not per-path subcolumns).
+
+**Claim status:** both `ADD COLUMN` metadata-only → **confirmed**; GreptimeDB
+schema-on-write auto-evolution → **confirmed (live)**; ClickHouse no-auto-schema →
+**confirmed**; JSON storage models (CH columnar subcolumns vs GT binary blob) →
+**confirmed**. Ingest-ergonomics edge GreptimeDB; dynamic-attr path-query edge
+ClickHouse. Smoke; column-explosion threshold + JSON query speed at volume owed.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
