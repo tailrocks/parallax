@@ -44,7 +44,7 @@ fallback trigger that would change the default.
 
 The focused
 [storage benchmark artifact interpretation](storage-benchmark-artifact-interpretation.md)
-consumes the separate benchmark agent's Runs 140-145 without rerunning them.
+consumes the separate benchmark agent's Runs 140-146 without rerunning them.
 Those artifacts are useful A5 inputs, but they do not create an A5 pass:
 
 - `bench/four-way/` is reproducible local benchmark code: four storage builds,
@@ -68,9 +68,16 @@ Those artifacts are useful A5 inputs, but they do not create an A5 pass:
   finished quickly, did not freeze the laptop, and every query stayed
   interactive. It also confirms that 100k is fixed-overhead-dominated and cannot
   replace the 1M/5M canonical comparison.
+- Run 146 reads GreptimeDB `v1.0.2` raft-engine WAL source and source-grounds
+  Run 75's strict-durability delta: local strict writes append a raft-engine
+  `LogBatch` and pass `sync_write` into the write call, while `sync_period`
+  provides a periodic sync path. This supports GreptimeDB's durability fit, but
+  it is not a crash/restart loss test and does not pin ClickHouse replication or
+  fsync alternatives.
 - They do not include mixed native ingest, Q6 p95/p99, stale-bundle rate,
-  object-store request/egress/cost rows, ClickHouse LTS, metadata, ingest-log,
-  setup, restart, redaction, or end-to-end integration rows.
+  object-store request/egress/cost rows, ClickHouse LTS, storage crash/restart
+  loss counts under declared durability modes, metadata, ingest-log, setup,
+  restart, redaction, or end-to-end integration rows.
 
 So A5 remains unpassed. The current storage stance is "GreptimeDB remains a
 prototype-fit candidate for the anchored hot path; ClickHouse is the measured
@@ -329,6 +336,7 @@ instead of weakening the product claim.
 | --- | --- | --- |
 | Storage speed | Freshness p95 or Q6 p95 misses threshold under mixed ingest. | Switch to ClickHouse if it passes, or narrow MVP signal retention. |
 | Storage schema | GreptimeDB dedup/`last_non_null` metric tables exceed query budgets, depend on compaction state, or span many TWCS windows for scrape-style unique metrics. | Use append-mode metric tables where `(series, ts)` uniqueness is guaranteed; reserve dedup for correction/upsert semantics. |
+| Storage durability | The selected storage candidate loses acknowledged evidence under its declared durability mode, or strict durability makes ingest/freshness miss budget. | Change durability settings, add replication/remote WAL, or switch candidate/profile. |
 | Storage cost | Retained bytes/object count/provider costs exceed budget without offsetting simplicity. | Change schema/retention or switch object-store/candidate. |
 | Metadata | Turso/local metadata fails crash, backup/restore, contention, or migration gates. | Use Postgres for production metadata; keep Turso only for prototype/tiny if safe. |
 | Ingest log | Local WAL loses acknowledged data or cannot backpressure before disk risk. | Add Iggy/NATS/Redpanda profile or reject the target workload. |
