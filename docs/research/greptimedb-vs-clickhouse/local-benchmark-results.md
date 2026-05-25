@@ -3750,6 +3750,41 @@ not single-node-testable.
 
 **Reproduce.** `SELECT name,value,is_obsolete FROM system.merge_tree_settings WHERE name LIKE '%zero_copy%'` → `allow_remote_fs_zero_copy_replication=0`, not obsolete, + the `disable_*` guardrails.
 
+### Run 92 — 2026-05-25 — GreptimeDB PromQL vs its own SQL re-verified (~5×, "capability not speed")
+
+**Pass target.** Re-verify the load-bearing metrics nuance (Run 44): GreptimeDB's native
+PromQL path is **~5× slower than its own SQL** at high series cardinality — so metrics→
+GreptimeDB is a *capability* win (Grafana-native PromQL), not a speed one; use SQL for hot
+aggregations (a Tier-A parity insight).
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned —
+latest, no bump). `metrics_hc` (8M rows, 40k series). Same `avg by service`.
+
+**Measured (warm):**
+
+| GreptimeDB path | latency |
+| --- | --- |
+| **SQL** `SELECT service, avg(value) … GROUP BY service` | **~104 ms** (`execution_time_ms`) |
+| **PromQL** instant `avg by(service)(metrics_hc)` | **~550 ms** (curl wall ≈ server, HTTP ~negligible Run 60) |
+| PromQL range (2 h / 60 s step) | ~700 ms |
+
+**Verdict — reproduces Run 44, no drift.** GreptimeDB native PromQL (~550 ms) is **~5×
+slower than GreptimeDB SQL (~104 ms)** for the identical aggregation — the
+`SeriesNormalize` / per-series PromQL-planner fixed cost over 40k series (`promql-and-metrics-query.md`).
+So **metrics → GreptimeDB is a *capability* win (PromQL over the standard Prometheus HTTP
+API, drop-in Grafana datasource), never a *speed* win**: GreptimeDB's *own SQL* beats its
+PromQL ~5×, and ClickHouse SQL beats GreptimeDB SQL ~2–3× warm (Run 67). For **hot** metric
+aggregations the Tier-A move is **SQL, not PromQL**, on GreptimeDB; reserve PromQL for
+Grafana compatibility / ad-hoc PromQL. Status: **confirmed; metrics verdict (capability, not
+speed) holds.**
+
+Caveat: PromQL timed by curl wall (in-container, HTTP ~negligible per Run 60) vs SQL
+`execution_time_ms` — the ~5× direction is robust (Run 44 measured it server-side too). Warm
+8M/40k-series smoke.
+
+**Reproduce.** GreptimeDB SQL `SELECT service,avg(value) FROM metrics_hc GROUP BY service`
+(~104 ms) vs `GET /v1/prometheus/api/v1/query?query=avg by(service)(metrics_hc)&time=…` (~550 ms).
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
