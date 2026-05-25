@@ -1010,9 +1010,11 @@ open + self-hosted + agent-native + evidence bundles + Sentry-compatible ingest)
   claims, OTLP-only; AI SRE now uses evidence-chain/audit-trail language —
   watch whether the agent layer moves into the free tier, Sentry ingest is
   added, or the evidence-chain view becomes a versioned/exportable bundle)
-- SigNoz (Go/ClickHouse; open self-hostable agent-native MCP and a marketing
-  claim around an "open investigation format" — watch for a lighter footprint,
-  Sentry ingest, or a source-linked evidence-graph/bundle schema)
+- SigNoz (Go/ClickHouse; open self-hostable agent-native MCP, a marketing claim
+  around an "open investigation format," and a documented postmortem
+  evidence-pack workflow — watch for a lighter footprint, Sentry ingest, or the
+  evidence-pack/open-format material becoming a source-linked, validator-backed,
+  replayable evidence-graph/bundle schema)
 - Coroot (eBPF, Go; Community MCP; AI RCA is Enterprise or Coroot
   Cloud-connected for Community users — watch whether fully local/open AI RCA,
   Sentry ingest, evidence bundles, or action/outcome audit appear)

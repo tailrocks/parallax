@@ -176,7 +176,7 @@ That honesty is a strength, not a limitation.
 | Datadog Bits AI SRE / Dev Agent | Hypothesis-driven investigations, incident-to-code handoff, flaky-test autofix, and agent eval infrastructure are the enterprise direction. Datadog's eval-platform write-up is the clearest incumbent proof that world snapshots, noisy labels, score history, `pass@k`, model-refresh checks, and full-set regression runs are required to trust an SRE agent. | Closed, SaaS-only, and tied to Datadog data gravity. Dev Agent is still Preview in current docs, has product-specific enablement, and does not publish an open raw-dump-vs-bundle eval, self-hosted result ledger, or portable evidence-bundle standard. |
 | Grafana Assistant | Agent access through CLI/API/MCP surfaces is now normal. | Self-managed Grafana OSS/Enterprise can use Assistant only by connecting to a Grafana Cloud stack; the backend, usage limits, and billing stay in Cloud, and current on-prem docs exclude investigations, investigation memory, CLI auth tokens, and Grafana Cloud MCP connections. CLI is public preview and can read local files through a tunnel. This is not air-gapped, and it is dashboard/assistant-first rather than portable evidence bundles. |
 | OpenObserve "Observability 3.0" (late Apr 2026) | An open, Rust, single-binary, object-storage observability store *with* an AI SRE agent + MCP is now real and self-hostable, and its AI SRE page now pressures the evidence-bundle story with evidence-chain/audit-trail language. | The closest thing to a wedge-killer on storage/runtime fit, saved by current gaps: AI SRE/MCP require Enterprise edition/license while public pages conflict on the free Self-Hosted Enterprise allowance, the MCP surface is broad and write-capable rather than a bounded read-only evidence bundle, checked ingestion docs show OTLP rather than a Sentry-envelope path, and no versioned/exportable evidence schema was found. |
-| SigNoz agent-native (May 2026) | Open, self-hostable MCP server + trace-ID RCA shipping in OSS validates the agent-native direction loudly. | Go + ClickHouse (fails the runtime filter and carries the heavy store Parallax escapes), a query/management interface rather than a checked deterministic evidence graph / portable bundle, an unproven landing-page claim around an "open investigation format," and **no Sentry envelope error-event ingest path**. |
+| SigNoz agent-native (May 2026) | Open, self-hostable MCP server + trace-ID RCA shipping in OSS validates the agent-native direction loudly; current docs also show a postmortem evidence-pack workflow. | Go + ClickHouse (fails the runtime filter and carries the heavy store Parallax escapes), a query/management interface rather than a checked deterministic evidence graph / portable bundle, an open-investigation-format claim and evidence-pack workflow with no checked versioned schema, validator, replayable export, or portable artifact, and **no Sentry envelope error-event ingest path**. |
 | Dynatrace / New Relic / Splunk | Topology-aware RCA is enterprise table stakes. | Enterprise suite gravity, not open small-team self-hosting or agent-readable bundle portability. |
 | LangSmith / Langfuse / Phoenix / Braintrust / AgentOps / similar | Agent and LLM traces are important. | They usually observe LLM app execution, not the full chain from production error to deploy, CLI side effect, coding-agent patch, CI validation, and outcome. |
 | CI autofix and flaky-test tools | Failure bundles and PR automation are valuable. | They usually start at CI/test evidence, not production Sentry/OTLP context plus runtime evidence graph. |
@@ -199,7 +199,8 @@ Enterprise edition/license, its source-conflicted Self-Hosted Enterprise
 allowance weakens a simple paywall claim, its AI SRE evidence-chain language is
 not yet a versioned/exportable schema, and checked docs still show no Sentry
 ingest; SigNoz is Go/ClickHouse with no Sentry ingest and no checked
-evidence-graph/bundle abstraction behind its "open investigation format" claim.
+evidence-graph/bundle abstraction behind its "open investigation format" claim
+or postmortem evidence-pack workflow.
 But both could close their gap inside 6–12 months. The consequence: **the moat
 cannot be any single feature.** It must be the assets that compound with usage
 and are hard to copy from a standing start —
@@ -234,6 +235,7 @@ Current source checks for this competitive-window claim:
 - [Sentry MCP 0.35.0 release](https://github.com/getsentry/sentry-mcp/releases/tag/0.35.0)
 - [Sentry MCP and Seer self-hosted recheck](sentry-mcp-seer-self-hosted-recheck.md)
 - [SigNoz agent-native observability](https://signoz.io/agent-native-observability/)
+- [SigNoz Postmortem Evidence Pack](https://signoz.io/docs/ai/use-cases/postmortem-evidence-pack/)
 - [SigNoz MCP server](https://signoz.io/docs/ai/signoz-mcp-server/)
 
 ## Market Verdict
