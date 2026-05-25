@@ -46,6 +46,7 @@ or CI contract yet.
 | `docs/research/greptimedb-storage-evaluation.md` | Storage-layer evaluation for GreptimeDB, ClickHouse, and observability backends. |
 | `docs/research/observability-storage-benchmark-plan.md` | Database-only benchmark plan for observability storage candidates (rationale, axes, decision criteria). |
 | `docs/research/storage-benchmark-prototype.md` | Runnable storage-benchmark harness spec: `StorageAdapter` trait, seeded dataset generator, per-candidate DDL, exact evidence-bundle/correlation queries, measurement protocol, and numeric decision gates. Has veto power over the default storage choice. |
+| `docs/research/retention-cost-model.md` | Quantified retention cost math (object-store pricing, per-signal compression, 3-tier worked model); finds object-storage retention is ~100× cheaper than ingest-priced SaaS and that egress pricing favors R2/B2 over S3 for a re-read-heavy context engine. |
 | `docs/research/metadata-store-benchmark-plan.md` | Turso-first benchmark plan and runnable prototype spec for product metadata, agent session state, CLI invocation state, audit records, crash/restore tests, and Postgres fallback gates. |
 | `docs/research/messaging-and-ingestion-layer.md` | Stream and ingest-layer evaluation for Apache Iggy, Redpanda, NATS JetStream, and brokerless startup deployments. |
 | `docs/research/causal-reconstruction-and-agent-safety.md` | Evidence-graph, causal reconstruction, agent autonomy, MCP, and production-data safety analysis. |

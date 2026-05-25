@@ -31,6 +31,7 @@ idea becomes sharper.
 - [GreptimeDB storage evaluation](docs/research/greptimedb-storage-evaluation.md)
 - [Observability storage benchmark plan](docs/research/observability-storage-benchmark-plan.md)
 - [Storage benchmark prototype (runnable)](docs/research/storage-benchmark-prototype.md)
+- [Retention cost model](docs/research/retention-cost-model.md)
 - [Metadata store benchmark plan and prototype](docs/research/metadata-store-benchmark-plan.md)
 - [Messaging and ingestion layer](docs/research/messaging-and-ingestion-layer.md)
 - [Rust data collection and instrumentation](docs/research/rust-data-collection-and-instrumentation.md)
