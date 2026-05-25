@@ -84,14 +84,20 @@ above predicts the divergence direction; the *magnitude* is owed to those runs.
 
 A distinction worth pinning: everything above is **data/index caching** (blocks, marks,
 index pages) — both engines have rich stacks there. ClickHouse *also* has a true
-**query-result cache** (`use_query_cache`, **off by default**; `query_cache_ttl=60` s;
-`enable_reads_from_query_cache=1` — Run 35): a repeated **identical** `SELECT` returns
-the cached *result* and **skips execution entirely** (no re-scan, no re-aggregate).
-GreptimeDB has **no query-result cache** — its `src/mito2/src/cache/` stack is
-file/index/manifest/write caches plus an *index-probe* `index/result_cache.rs` (caches
-which rows an index match yields, **not** the final query result). So a repeated query
-on GreptimeDB always **re-executes**, just on warm data/index caches (live, Run 35: a
-repeat went 66 → 4 ms — that's data-cache warmth, not result-caching).
+**whole-query-result cache** (`use_query_cache`, **off by default**; `query_cache_ttl=60`
+s; `enable_reads_from_query_cache=1` — Run 35): a repeated **identical** `SELECT` returns
+the cached *result* and **skips execution entirely** (no re-scan, no re-aggregate, no
+re-plan). **Correction (pass 61, from the v1.0.2 changelog review):** GreptimeDB is *not*
+"no result cache" as first stated — it has a **partition-range scan-result cache**
+(`src/mito2/src/read/range_cache.rs` — "partition range scan result cache", keyed by a
+fingerprint of the scan-request fields, reused across queries that scan the same range)
+**plus** the index-probe `index/result_cache.rs`. The difference is **granularity**:
+ClickHouse caches the **whole query's result** (full execution skip on a hit); GreptimeDB
+caches **scan-range results** (skips the scan I/O+decode for matching ranges, but still
+re-plans + re-aggregates). So GreptimeDB accelerates repeated scans of the same ranges,
+not a whole-query skip. (v1.0.2 fixed a correctness bug — PR #8105 — where the range
+cache could reuse a stale result under `merge_mode` + an `OR` filter on the time index;
+the pinned version has the fix.)
 
 Consequence (speed, axis #1): for **repeated identical** queries — a Grafana panel
 refreshing the same metric/SQL every N seconds — ClickHouse's result cache can skip the
@@ -104,6 +110,6 @@ hot-path differentiator. Does **not** move the verdict.
 
 ## Source / evidence
 
-- GreptimeDB caches: `src/mito2/src/cache/{write_cache,file_cache,manifest_cache,index}.rs` (incl. index-probe `index/result_cache.rs` — not a query-result cache); defaults `src/mito2/src/config.rs:204-207` (sst_meta 128 MB, vector 512 MB, page 512 MB, selector-result 512 MB); object-store read cache `src/object-store/src/config.rs:318-340` (default on); **no query-result cache** (Run 35).
+- GreptimeDB caches: `src/mito2/src/cache/{write_cache,file_cache,manifest_cache,index}.rs` (incl. index-probe `index/result_cache.rs`) + **partition-range scan-result cache `src/mito2/src/read/range_cache.rs`** (scan-range results, fingerprint-keyed; v1.0.2 PR #8105 fixed a merge_mode+OR-time-filter correctness bug); defaults `src/mito2/src/config.rs:204-207` (sst_meta 128 MB, vector 512 MB, page 512 MB, selector-result 512 MB); object-store read cache `src/object-store/src/config.rs:318-340` (default on); **no whole-query-result cache** (vs ClickHouse `query_cache`) — Runs 35–36.
 - ClickHouse caches: `src/Core/ServerSettings.cpp:496-588,1574` (mark/uncompressed/index/query cache + prewarm); defaults `src/Core/Defines.h:85,88` (mark 5 GiB, uncompressed 0 MiB = off).
 - Ties to `local-benchmark-results.md` Runs 8–9 (object layout), `public-performance-claims.md` (JSONBench cold-run), `benchmarking-the-differences.md` B1/B10/B12.

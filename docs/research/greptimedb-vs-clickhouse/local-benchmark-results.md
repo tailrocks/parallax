@@ -1100,6 +1100,34 @@ queries (off-by-default result cache); GreptimeDB always re-executes on warm cac
 Modest CH edge for repeated dashboard refreshes; **near-zero hit on Parallax's anchored,
 unique-key bundle queries** → not a hot-path differentiator, no verdict move.
 
+### Run 36 — 2026-05-25 — Changelog review of pinned versions (method #4) + a self-correction
+
+Maintenance pass: systematically reviewed the **release changelogs** of the pinned
+versions (not just settings/source) for perf-relevant changes that could affect
+load-bearing findings. Versions unchanged (GreptimeDB v1.0.2 latest; ClickHouse
+v26.5.1.882, no 26.6/27.x).
+
+**GreptimeDB v1.0.2 release notes — two relevant items:**
+
+1. **Self-correction to Run 35 (pass 60).** PR #8105 ("range result cache could reuse a
+   previous query's result under `merge_mode` + `OR` time-filter") revealed GreptimeDB
+   **does** have a result-level cache — `src/mito2/src/read/range_cache.rs`, a
+   **partition-range scan-result cache** (fingerprint-keyed, reused across queries
+   scanning the same range). My Run-35 "no query-result cache" was imprecise: the
+   accurate statement is **no *whole-query* result cache** (ClickHouse `query_cache`
+   skips full execution on a hit) but GreptimeDB **has a scan-range result cache** (skips
+   scan I/O+decode for matching ranges, still re-plans+re-aggregates). Corrected in
+   `caching-and-cold-warm.md`. (Pinned v1.0.2 has the correctness fix.)
+2. **PromQL perf #7926:** time-range pushdown now works for non-ms time precision
+   (`Timestamp(ns)`/`(us)`) — previously bounded PromQL on sub-ms tables fell back to
+   full SST scan. Doesn't affect Parallax (its `greptime_timestamp` is ms), but confirms
+   the pinned version includes active PromQL pushdown work; no finding invalidated.
+
+**No finding invalidated by the changelog review.** ClickHouse pin has no newer stable;
+GreptimeDB pin's notes are bug-fixes + a sub-ms PromQL pushdown + the range-cache fix —
+none change the verdict. Net: a real accuracy correction (range cache) caught by the
+method-#4 changelog sweep, not padding.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
