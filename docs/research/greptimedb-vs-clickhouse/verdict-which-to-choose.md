@@ -313,13 +313,16 @@ and dynamic-attr JSON (#4) is the **Parquet Variant/shredding** direction — so
 closing work is *already in flight by others*, and GreptimeDB inherits it on a dependency
 bump. **ClickHouse's raw-speed lead is therefore a depreciating asset, not a moat.**
 
-**Live-verified gap-closing, not just theory (Run 106, `vendor-claims-audit.md`):** GreptimeDB's
-RC2 **"100× TopK"** — dynamic filter pushdown into the Mito scan, built on **DataFusion runtime
-dynamic filters** — is **present in our v1.0.2** (`ORDER BY … LIMIT 10` on 1M = GT ~20 ms, not a
-~100 ms+ full sort; ~3× CH, both ≪ 300 ms). And **Flat SST** (v1.0 GA default: write ~4×, query
-latency up to ~10× on high-cardinality TSBS) is a shipped scan-format redesign. These are concrete
-proof the engineering path works — gaps close via the DataFusion stack exactly as the thesis
-predicts. **Honest caveat (the 2026 roadmap tempers the thesis):** the *specific* remaining gaps —
+**Live/source-verified gap-closing, not just theory — now THREE shipped examples:** (1) RC2
+**"100× TopK"** — dynamic filter pushdown into the Mito scan via **DataFusion runtime dynamic
+filters** — **present in our v1.0.2** (`ORDER BY … LIMIT 10` on 1M = GT ~20 ms, not a ~100 ms+ full
+sort; Run 106). (2) **Flat SST** (v1.0 GA default: write ~4×, query latency up to ~10× on high-card
+TSBS) — shipped scan-format redesign. (3) **`prefilter.rs` — PREWHERE-style late materialization**
+(parity-roadmap #3, which was "missing" at pass-77): v1.0.2 shipped GreptimeDB's own prefilter
+framework ("read filter columns first → refined row selection → read the rest"), **wired into the
+Flat read path**, PK/partition-scoped so far (Run 121, source-confirmed). Three of the scan-engine
+parity gaps closing in shipped GreptimeDB Rust — concrete proof the engineering path works exactly
+as the thesis predicts. **Honest caveat (the 2026 roadmap tempers the thesis):** the *specific* remaining gaps —
 JIT/SIMD, PREWHERE, join-input pushdown, projections — are **not GreptimeDB-roadmap-committed line
 items**; they ride **upstream DataFusion** + opportunistic release wins (as TopK/Flat-SST did). So
 the gaps are engineering not physics, but the delivery path is "DataFusion upstream + GreptimeDB

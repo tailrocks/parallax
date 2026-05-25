@@ -8,8 +8,11 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 120 local runs + B1–B15 cases. Recent: **Run 120 re-verified
-the native observability-protocol trio LIVE** (DQ3): GreptimeDB OTLP receiver (HTTP 400=exists) + PromQL API (200) +
+cold/first-run measurement showed). 25 mechanism notes + 121 local runs + B1–B15 cases. Recent: **Run 121 — SOURCE
+gap-closing**: GreptimeDB v1.0.2 shipped `prefilter.rs`, a PREWHERE-style late-materialization framework (parity #3 was
+"missing" at pass-77, now PARTIALLY CLOSED — PK/partition-scoped, wired into the Flat read path). Third source-confirmed
+shipped scan-engine gap-closing (after TopK + Flat SST) — validates the DQ6 "closable in Rust, being closed" thesis.
+**Run 120 re-verified the native observability-protocol trio LIVE** (DQ3): GreptimeDB OTLP receiver (HTTP 400=exists) + PromQL API (200) +
 Jaeger query API (200) all GA/default-on, vs ClickHouse PromQL still experimental + OFF by default
 (`allow_experimental_time_series_table=0`) with OTLP collector-only + Jaeger external-plugin — adopting CH still costs a
 PromQL+OTLP+Jaeger compat layer; GT's are turnkey. **Run 119 — issue-list query** (Sentry-style group-errors-by-fingerprint, the #1 error-tracker view): CH ~10 ms / GT ~26 ms (~2.6×, scan-agg

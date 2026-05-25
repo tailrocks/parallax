@@ -5005,6 +5005,51 @@ query?query=up` (200), `POST /v1/otlp/v1/traces` empty (400=exists). CH: `SELECT
 system.settings WHERE name ILIKE '%time_series%'` → `allow_experimental_time_series_table=0` (off);
 no `/v1/otlp` or `/v1/jaeger` HTTP path.
 
+### Run 121 — 2026-05-25 — SOURCE gap-closing: GreptimeDB v1.0.2 SHIPPED a prefilter (PREWHERE-style late-materialization) framework — parity #3 was "missing" at pass-77, now PARTIALLY CLOSED (PK/partition-scoped, wired into Flat read path)
+
+**Pass target.** Source-check whether GreptimeDB v1.0.2 closed parity-roadmap **#3 (PREWHERE / late
+materialization)** — which at pass-77 was "no arrow `RowFilter`, no column-staging, missing." Tracks
+the DQ6 "gaps are closable / being closed in Rust" thesis.
+
+**Method.** Read GreptimeDB source at tag **v1.0.2** via `gh api` (repo `GreptimeTeam/greptimedb`).
+
+**Findings (file:line):**
+- **NEW file `src/mito2/src/sst/parquet/prefilter.rs`** (absent from the pass-77 file list). Its own
+  module doc (`:15-18`): *"Prefilter optimization reduces I/O by reading only a subset of columns
+  first (the prefilter phase), applying filters to compute a refined row selection, then reading the
+  remaining columns with the refined selection."* — **this is exactly PREWHERE / late
+  materialization** (decode cheap filter columns → row mask → decode the rest only for survivors).
+- **It is GreptimeDB's OWN framework, not arrow `RowFilter`** (grep `with_row_filter`/`RowFilter` in
+  `reader.rs`/`async_reader.rs`/`row_group.rs` = 0). Built around `PrefilterContext` /
+  `PrefilterContextBuilder` / `prefilter_flat_batch_by_primary_key`.
+- **Wired into the read path (active, not dormant):** `file_range.rs:267-269,387-391` —
+  `has_flat_primary_key_prefilter()`, `pre_filter_mode()`; the cache strategy adapts because "Flat PK
+  prefilter makes the input stream predicate-dependent."
+- **Current scope = primary-key / partition-column predicates** (`is_usable_primary_key_filter`,
+  `:145-147`: "parquet prefilter always supports predicates on the partition column"). Part of the new
+  **Flat SST** format (Run 106/117). So it's late-materialization for the PK/partition case — not yet
+  confirmed for arbitrary wide non-key columns (the fully-general PREWHERE).
+
+**Verdict — parity #3 is PARTIALLY CLOSED in shipped v1.0.2; second source-confirmed gap-closing example.**
+
+- **Correct the parity-roadmap #3 status from "missing" to "partially shipped":** the
+  late-materialization *mechanism* now exists and is **active** in GreptimeDB v1.0.2 (its own prefilter
+  framework, wired into the Flat read path), scoped to **PK/partition-column predicates**. The
+  remaining piece is general arbitrary-column PREWHERE; the infrastructure is in place.
+- **Strong DQ6 evidence (alongside Run 106 TopK):** this is the **second** scan-engine parity gap
+  confirmed closing in *shipped* GreptimeDB code (TopK dynamic-filter pushdown + now prefilter/late-
+  materialization). Both are GreptimeDB's own Rust on the Flat SST / DataFusion path — exactly the
+  "engineering, not physics; closable in Rust" thesis, now with two shipped instances. The operator's
+  long-term bet is being validated by the project's actual velocity.
+- **Decision relevance:** narrows the "ClickHouse is faster on selective wide-row scans" edge (parity
+  #3) — GreptimeDB is actively building the late-materialization it lacked. Re-benchmark the PREWHERE
+  case (Run 90) on a PK/partition-prefiltered table to quantify the gain (owed; the mechanism is now
+  present to measure).
+
+**Reproduce.** `gh api "repos/GreptimeTeam/greptimedb/contents/src/mito2/src/sst/parquet?ref=v1.0.2"`
+→ `prefilter.rs` present; decode + read its module doc (late-materialization) + `is_usable_primary_key_filter`
+(PK/partition scope) + `file_range.rs` `has_flat_primary_key_prefilter` (wired). No `RowFilter` in the readers.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
