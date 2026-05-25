@@ -30,6 +30,7 @@ or CI contract yet.
 | --- | --- |
 | `docs/` | Documentation and research notes. No generated docs UI yet. |
 | `docs/research/` | Market, product, and strategy research. |
+| `docs/research/greptimedb-vs-clickhouse/` | Deep under-the-hood GreptimeDB vs ClickHouse internals comparison, produced by an indefinite research loop. |
 | `prompts/` | Reusable research and agent prompts. |
 
 ## Research Documents
@@ -48,6 +49,7 @@ or CI contract yet.
 | `docs/research/greptimedb-storage-evaluation.md` | Storage-layer evaluation for GreptimeDB, ClickHouse, and observability backends. |
 | `docs/research/observability-storage-benchmark-plan.md` | Database-only benchmark plan for observability storage candidates (rationale, axes, decision criteria). |
 | `docs/research/storage-benchmark-prototype.md` | Runnable storage-benchmark harness spec: `StorageAdapter` trait, seeded dataset generator, per-candidate DDL, exact evidence-bundle/correlation queries, measurement protocol, and numeric decision gates. Has veto power over the default storage choice. |
+| `docs/research/greptimedb-vs-clickhouse/` | White-box internals comparison of GreptimeDB and ClickHouse: source-level teardown of write/read paths, indexing, compaction, compression, execution, and the distributed model, mapped to per-signal speed/cost/scaling and a build decision. Produced by an indefinite `/loop`. |
 | `docs/research/retention-cost-model.md` | Quantified retention cost math (object-store pricing, per-signal compression, 3-tier worked model); finds object-storage retention is ~100× cheaper than ingest-priced SaaS and that egress pricing favors R2/B2 over S3 for a re-read-heavy context engine. |
 | `docs/research/metadata-store-benchmark-plan.md` | Turso-first benchmark plan and runnable prototype spec for product metadata, agent session state, CLI invocation state, audit records, crash/restore tests, and Postgres fallback gates. |
 | `docs/research/messaging-and-ingestion-layer.md` | Stream and ingest-layer evaluation for Apache Iggy, Redpanda, NATS JetStream, and brokerless startup deployments. |
@@ -75,6 +77,7 @@ or CI contract yet.
 | --- | --- |
 | `prompts/README.md` | How to use the prompts in this folder (one-off, `/goal`, `/loop`). |
 | `prompts/deep-research-parallax.md` | Deep research brief for validating the AI-native debugging/investigation direction. |
+| `prompts/greptimedb-vs-clickhouse-internals.md` | Never-ending `/loop` brief for the under-the-hood GreptimeDB vs ClickHouse comparison; writes to `docs/research/greptimedb-vs-clickhouse/`. |
 
 ## Update Rule
 
