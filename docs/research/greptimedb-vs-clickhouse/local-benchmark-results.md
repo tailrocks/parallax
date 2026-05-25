@@ -5664,6 +5664,38 @@ artifact — settles to ~13 ms, no 26.6 regression).
 **Reproduce.** `SELECT trace_id, count(), avg(duration_ms) FROM spans1m GROUP BY trace_id ORDER BY
 count() DESC LIMIT 50` on all 4 → GT ~21 / CH ~13 ms. Re-run CH ×10 to clear warmup outliers.
 
+### Run 138 — 2026-05-25 — Time-range scan 4-way (the fundamental observability primitive): CH ~3 ms / GT ~5–9 ms (~2×, both time-prune); GT-nightly ~40% faster than stable
+
+**Pass target.** Benchmark the **time-range scan** (`WHERE ts BETWEEN …`) — the primitive under every
+observability query. Tests time-index pruning. All four builds (rule). Note: built a fresh
+ts-**varying** table `tsr` (1M over ~1000 s) because `spans1m`'s ClickHouse `ts` is a constant insert
+artifact; `tsr` is **time-optimized on both** (GT `TIME INDEX`, CH `ORDER BY ts`) — fair footing.
+
+**Environment.** GT v1.0.2 + v1.1.0-nightly / CH v26.5.1.882 + v26.6.1.127-head. Window = last 10%
+(100k of 1M). Median warm.
+
+| Query | GT-stable | GT-nightly | CH-stable | CH-head |
+| --- | ---: | ---: | ---: | ---: |
+| Time-range count (100k window) | 9 | 5 | 3 | 3 |
+| Time-range agg (window + GROUP BY svc) | 10 | 6 | 4 | 5 |
+
+**Verdict — both prune time well; CH ~2× faster; NOT a GreptimeDB win; GT-nightly notably improved.**
+
+- **CH ~3 ms / GT ~5–9 ms (~2×).** With both engines laid out for time (CH `ORDER BY ts` granule
+  pruning, GT `TIME INDEX`), the time-range scan prunes efficiently on both — ClickHouse's granule
+  skip is ~2× faster, but both are tiny + interactive. The earlier hypothesis that GreptimeDB's
+  time-nativeness would *win* the range scan does **not** hold once ClickHouse is `ORDER BY ts`
+  (its natural time layout) — fair footing, CH still edges it. *(If CH were `ORDER BY` a non-time key
+  — like `spans1m`'s `(trace_id,ts)` — its ts-range would scan more; but the right time-series CH
+  layout is `ORDER BY ts`, which this tests.)*
+- **GT-nightly ~40% faster than GT-stable** (count 5 vs 9, agg 6 vs 10) — a real, consistent v1.1
+  improvement on time-range pruning (adds to the v1.1 pattern: aggs ~20–30%, time-range ~40%, no
+  regressions). CH-head ≈ CH-stable.
+- All ≪ 300 ms — interactive on every build. Added to the four-way matrix.
+
+**Reproduce.** Build `tsr` (1M, ts = `1716000000000+n` ms varying; CH `ORDER BY ts`, GT `TIME INDEX`);
+`SELECT count() WHERE ts BETWEEN <t1> AND <t2>` (100k window) → GT ~5–9 / CH ~3 ms. All 4 builds.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
