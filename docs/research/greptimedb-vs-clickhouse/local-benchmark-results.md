@@ -3299,6 +3299,56 @@ throughput, cold). Both sub-15 ms here — not interactive-perceptible.
 
 **Reproduce.** `docker exec …clickhouse… --time -q "SELECT count() FROM logs_b1 WHERE service='svc-0' AND level='ERROR' FORMAT Null"` (~4 ms) / `… WHERE level='ERROR' …` (~6 ms); GreptimeDB same via `/v1/sql` `execution_time_ms` (~5 ms / ~12 ms); `EXPLAIN indexes=1` on CH → `Granules 51/611`.
 
+### Run 81 — 2026-05-25 — Q4 cross-tier join: GreptimeDB does NOT push the anchor into the join (corrects Run 30)
+
+**Pass target.** Re-verify Q4 (cross-tier `spans LEFT JOIN error_events` anchored on
+`trace_id`; Run 30: CH 5 ms / GT 59 ms, claimed "both prune the anchor before joining, GT
+gap = HTTP floor + repartition artifact"). Check the GT number + plan with the validated
+`execution_time_ms` basis (Run 60).
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned —
+latest, no bump). Anchor `trace_id=3fb2d84c…` (14 spans, 1 error). CH `spans`, GT `spans_idx`.
+
+**Measured (warm):** correctness 14 rows / 1 matched error, both.
+
+| Form | ClickHouse | GreptimeDB |
+| --- | --- | --- |
+| Q4 direct `LEFT JOIN` (WHERE on left `trace_id`) | **~4 ms** | **~54 ms** |
+| GreptimeDB Q4 with **subquery pre-filter** (`FROM (SELECT * … WHERE trace_id=…) s LEFT JOIN …`) | — | **~21 ms** |
+
+**`EXPLAIN ANALYZE` — the mechanism (corrects Run 30):**
+
+- **GreptimeDB direct join: `UnorderedScan` on `spans_idx` `output_rows: 1,000,000`** — it
+  **full-scans all 1M spans**; the `WHERE s.trace_id='X'` is **NOT pushed into the
+  left-table scan** (the inverted index is not applied inside the join plan). That is the
+  ~54 ms (a 1M-row scan + join), **not** an HTTP/repartition artifact (this is server-side
+  `execution_time_ms`, fair per Run 60).
+- **GreptimeDB subquery rewrite: scan `output_rows: 14`** — pre-filtering the left table
+  forces the inverted-index prune → ~21 ms (still has the index-lookup floor + join, ~5×
+  CH).
+- **ClickHouse direct join prunes automatically** (Run 30 EXPLAIN: `Granules 1` + PREWHERE
+  `trace_id`) → ~4 ms.
+
+**Verdict — CORRECTS Run 30.** Run 30's "both anchor-prune-before-join; GT gap = HTTP floor
++ 10-way repartition of a toy input" is **wrong for GreptimeDB**: GreptimeDB's optimizer
+**does not push a left-side equality filter through a LEFT JOIN into the indexed scan**, so
+it **full-scans the 1M-row left table** (~54 ms, ~13× CH). It is a genuine **predicate-
+pushdown-into-join optimizer limitation**, not a measurement artifact. **Workarounds:**
+(a) pre-filter the left table in a subquery → forces the prune (~21 ms, ~2.5× better);
+(b) Parallax's app-side correlation — anchored fetch each signal (Q1, ~15–21 ms) + join in
+the app — avoids the in-DB join entirely. ClickHouse handles the direct join fine (~4 ms).
+So **cross-tier correlation as a direct in-DB join favours ClickHouse** (auto-prune); for
+GreptimeDB, rewrite or assemble app-side. Both stay < the 300 ms gate, but this is a real
+~5–13× gap and a corrected mechanism. Status: **corrected; GreptimeDB join-pushdown gap is a
+new parity-roadmap candidate.**
+
+Caveat: 1M-row left table smoke; the gap scales with the un-pruned left-table size (worse at
+volume) — exactly why the subquery rewrite / app-side join matters.
+
+**Reproduce.** `EXPLAIN ANALYZE` the direct join on GreptimeDB (`spans_idx` scan
+`output_rows: 1000000`) vs the subquery form (`output_rows: 14`); CH `--time` direct join
+~4 ms.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
