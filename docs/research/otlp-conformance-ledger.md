@@ -35,7 +35,8 @@ The central rule:
 | [OpenTelemetry metrics data model](https://opentelemetry.io/docs/specs/otel/metrics/data-model/) | The metrics model is stable and explicitly preserves metric semantics across transformations, including temporality and stream identity. | Parallax must not merge incompatible streams or drop temporality/monotonicity. |
 | [OpenTelemetry trace API](https://opentelemetry.io/docs/specs/otel/trace/api/) | Spans carry parent/child relations, span kind, attributes, links, events, status, start/end timestamps, trace ID, and span ID. | These fields are the core lifecycle evidence for bundles. |
 | [Collector configuration](https://opentelemetry.io/docs/collector/configuration/) | Collector configs define receivers, processors, exporters, connectors, extensions, and service pipelines. Configuring a component does not enable it until a pipeline references it. OTLP defaults use `4317` and `4318`. | Equivalence results must include config hashes and declared processor transforms. |
-| [Collector releases v0.152.1](https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.152.1) and [Collector core v0.152.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.152.1) | Current checked official distribution release is `v0.152.1`. The core changelog includes request-body/decompression fixes and a `pcommon.Value.AsString` behavior change: map/slice values no longer HTML-escape `<`, `>`, and `&`. | This is the core Collector baseline for compatibility claims. Conformance must preserve typed AnyValue/log-body semantics and not rely on string-rendered equality for redaction or row identity. |
+| [Collector core v0.153.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.153.0) | Current checked core/source release is `v0.153.0`, published on 2026-05-25. It stabilizes several feature gates, including pdata/proto encoding and ref-counting behavior, and fixes a Snappy memory-corruption issue in gRPC config. | Core/source drift can affect payload handling, pdata semantics, compression, or config interpretation. Fixture runs must record Collector source/core separately from the runnable distribution. |
+| [Collector distribution v0.152.1](https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.152.1) | The official distribution/binary releases API still reported `v0.152.1` on 2026-05-25 while core/source had moved to `v0.153.0`. The `v0.152.1` line had request-body/decompression fixes and a `pcommon.Value.AsString` behavior change: map/slice values no longer HTML-escape `<`, `>`, and `&`. | Compatibility claims should name the tested binary distribution and the core/source line. Conformance must preserve typed AnyValue/log-body semantics and not rely on string-rendered equality for redaction or row identity. |
 | [Collector Contrib v0.152.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.152.0) | Current checked Contrib release is `v0.152.0`, released on 2026-05-11, with broad processor/receiver/exporter changes. | Contrib is the realistic production distribution for many deployments; it needs its own fixture row. |
 | [OpenTelemetry Rust 0.32.0](https://docs.rs/crate/opentelemetry/latest) and [opentelemetry-otlp 0.32.0 changelog](https://docs.rs/crate/opentelemetry-otlp/latest/source/CHANGELOG.md) | Docs.rs resolves `opentelemetry` to `0.32.0`; `opentelemetry-otlp` 0.32.0 adds per-signal protocol env vars and OTLP partial-success handling. | Rust fixtures should cover per-signal protocol settings and server partial-success responses. |
 | [Rotel v0.2.2](https://github.com/rotel-dev/rotel/releases/tag/v0.2.2) and [Rotel README](https://github.com/rotel-dev/rotel) | Rotel is a Rust OpenTelemetry collector alternative with default OTLP gRPC `4317`, HTTP `4318`, `/v1/traces`, `/v1/metrics`, `/v1/logs`, gzip export, retries/timeouts, and multiple exporters. | Rotel is a useful smoke/eval path, but it is still pre-1.0 and should not replace official Collector equivalence. |
@@ -50,7 +51,7 @@ The central rule:
 | `direct_rust_traces` | Current OpenTelemetry Rust trace fixtures reach Parallax directly over gRPC and HTTP/protobuf and normalize into span rows. | "Rust OTLP trace ingestion." |
 | `direct_rust_three_signal` | Current OpenTelemetry Rust traces, logs, and metrics reach Parallax directly and normalize into queryable rows. | "Rust OTLP traces, logs, and metrics ingestion." |
 | `otel_semantics_preserved` | Direct fixtures preserve resource, scope, trace/span IDs, span links/events/status, log bodies/severity, metric stream identity, temporality, histograms, and attributes. | "OTLP telemetry semantics preserved for the tested subset." |
-| `collector_core_equivalent` | Official Collector core forwarding produces equivalent normalized rows and bundle edges for the tested subset, except declared processor changes. | "Collector-compatible OTLP ingestion." |
+| `collector_core_equivalent` | Official Collector distribution forwarding produces equivalent normalized rows and bundle edges for the tested subset, with the Collector source/core version recorded separately, except declared processor changes. | "Collector-compatible OTLP ingestion." |
 | `collector_contrib_equivalent` | Collector Contrib forwarding produces equivalent normalized rows for recommended Contrib processors/components. | "Collector Contrib-compatible for the tested pipeline." |
 | `rotel_smoke_equivalent` | Rotel forwarding preserves the tested subset or documented differences are non-blocking. | "Rotel-compatible smoke tested." |
 | `production_otlp_ingest` | Redaction, batching, retries, partial success, duplicate delivery, overload, WAL durability, and storage-failure behavior pass under mixed load. | "Production-ready OTLP ingestion for the tested subset." |
@@ -104,13 +105,19 @@ Each `manifest.json` should include:
     "opentelemetry_proto": "1.10.0",
     "opentelemetry_rust": "0.32.0",
     "opentelemetry_otlp": "0.32.0",
-    "collector_core": "0.152.1",
+    "collector_core_source": "0.153.0",
+    "collector_distribution": "0.152.1",
     "collector_contrib": "0.152.0",
     "rotel": "0.2.2"
   },
   "transports": ["grpc", "http/protobuf"],
   "optional_transports": ["http/json"],
   "intermediaries": ["none", "collector-core", "collector-contrib", "rotel"],
+  "intermediary_version_axes": {
+    "collector_core": ["source_release", "distribution_binary"],
+    "collector_contrib": ["contrib_distribution", "embedded_core"],
+    "rotel": ["release"]
+  },
   "storage_mapping": "parallax-owned-normalization",
   "size_limits": {},
   "durability_policy": "ack_after_wal",
@@ -137,6 +144,8 @@ and storage mapping. A pass in one combination does not carry over to another.
   "runtime": "rustc <version>",
   "transport": "grpc|http/protobuf",
   "intermediary": "none|collector-core|collector-contrib|rotel",
+  "intermediary_source_version": "0.153.0|null",
+  "intermediary_distribution_version": "0.152.1|null",
   "config_hash": "sha256:<hex>",
   "request_hash": "sha256:<hex>",
   "target_level": "direct_rust_traces"
@@ -186,6 +195,8 @@ and storage mapping. A pass in one combination does not carry over to another.
   "direct_request_hash": "sha256:<hex>",
   "intermediary": "collector-core",
   "intermediary_version": "0.152.1",
+  "intermediary_source_version": "0.153.0",
+  "intermediary_distribution_version": "0.152.1",
   "config_hash": "sha256:<hex>",
   "equivalent": true,
   "allowed_differences": ["batch_reorder"],
@@ -283,7 +294,8 @@ and storage mapping. A pass in one combination does not carry over to another.
   "version_matrix": {
     "otlp_spec": "1.10.0",
     "opentelemetry_rust": "0.32.0",
-    "collector_core": "0.152.1"
+    "collector_core_source": "0.153.0",
+    "collector_distribution": "0.152.1"
   },
   "product_wording": "Collector-compatible OTLP ingestion for the tested subset.",
   "required_caveats": ["profiles not supported", "HTTP/JSON optional"],
@@ -295,8 +307,12 @@ and storage mapping. A pass in one combination does not carry over to another.
 
 - No "OTLP-native" claim without a dated protocol, proto, SDK, Collector, and
   normalizer matrix.
-- No "Collector-compatible" claim until official Collector core equivalence
-  passes for the advertised signal subset.
+- The Collector matrix must separate core/source release, runnable distribution
+  binary, Contrib distribution, embedded core lineage when known, and config
+  hash. A pass on one axis does not imply a pass on another.
+- No "Collector-compatible" claim until the official Collector distribution
+  equivalence run passes for the advertised signal subset, with Collector
+  core/source lineage recorded.
 - No "Collector replacement" wording. Parallax supports direct OTLP and
   Collector paths; it does not replace Collector processors, receivers, routing,
   or deployment patterns.
@@ -328,7 +344,8 @@ change:
 
 - OpenTelemetry spec, OTLP spec, proto, or semantic-convention version changes;
 - supported OpenTelemetry Rust or `opentelemetry-otlp` release changes;
-- official Collector core or Collector Contrib release changes;
+- official Collector core/source release, Collector distribution/binary release,
+  embedded Contrib core lineage, or Collector Contrib release changes;
 - Rotel release changes for any Rotel-related claim;
 - Parallax parser, normalizer, evidence schema, storage mapping, or WAL
   durability policy changes;

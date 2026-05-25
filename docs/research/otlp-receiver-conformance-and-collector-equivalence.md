@@ -34,7 +34,8 @@ fixture design alone.
 | [OpenTelemetry metrics data model](https://opentelemetry.io/docs/specs/otel/metrics/data-model/) | Metric stream identity includes resource attributes, instrumentation scope, metric name, data point type, unit, temporality, and monotonicity. Attribute sets identify individual streams. Parallax must not flatten this into ambiguous rows. |
 | [OpenTelemetry trace API](https://opentelemetry.io/docs/specs/otel/trace/api/) | Spans, links, events, status, attributes, span context, trace ID, and span ID are the core lifecycle evidence for Parallax correlation. |
 | [OpenTelemetry Collector configuration](https://opentelemetry.io/docs/collector/configuration/) | Collector configs are receiver/processor/exporter/connectors plus service pipelines. Defining a receiver does not enable it until a pipeline references it. Standard OTLP examples use gRPC `4317` and HTTP `4318`. |
-| [OpenTelemetry Collector v0.152.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.152.1) | Latest official Collector release checked for this pass. Its changelog includes request-body/decompression fixes and a `pcommon.Value.AsString` behavior change for map/slice values. | It is the compatibility reference for production OTLP pipelines. Parallax fixtures must preserve typed AnyValue semantics rather than treating string rendering as the canonical value. |
+| [OpenTelemetry Collector core v0.153.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.153.0) | Latest core/source release checked on 2026-05-25. It stabilizes several feature gates including pdata/proto encoding and ref-counting behavior, and fixes a Snappy memory-corruption issue in gRPC config. | Treat Collector source/core version as a separate compatibility axis from the runnable distribution. Payload, pdata, compression, and config behavior changes should trigger fixture reruns. |
+| [OpenTelemetry Collector distribution v0.152.1](https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.152.1) | Latest official distribution/binary release returned by the releases API on 2026-05-25, even though core/source has moved to `v0.153.0`. | A conformance manifest must record the exact runnable Collector binary distribution separately from the core/source release; do not claim current Collector equivalence from only one axis. |
 | [OpenTelemetry Collector Contrib v0.152.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.152.0) | Contrib is the realistic production distribution for broader processors/receivers/exporters. Parallax should verify both core and contrib where pipeline components differ. |
 | [OpenTelemetry Rust 0.32.0](https://github.com/open-telemetry/opentelemetry-rust/releases/tag/opentelemetry-0.32.0) | Latest Rust release checked. Rust SDK fixtures are the first direct-SDK path because Parallax is Rust-first. |
 | [Rotel v0.2.2](https://github.com/rotel-dev/rotel/releases/tag/v0.2.2) and [Rotel README](https://github.com/rotel-dev/rotel) | Rotel supports metrics/logs/traces, OTLP gRPC, OTLP HTTP/protobuf, OTLP HTTP/JSON, OTLP export, batching, retries, and resource attributes, with default receiver paths on `4317`/`4318`. It is promising but early and must be a smoke/eval path, not the compatibility baseline. |
@@ -76,6 +77,8 @@ Each fixture directory should record:
 - runtime version;
 - transport (`grpc`, `http/protobuf`, optional `http/json`);
 - intermediary (`none`, `collector-core`, `collector-contrib`, `rotel`);
+- intermediary source/core version and runnable binary/distribution version when
+  they differ;
 - Collector/Rotel config;
 - raw request hash before and after intermediary;
 - expected accepted and rejected counts;
@@ -226,7 +229,9 @@ Pass only when:
 
 - current OpenTelemetry Rust fixtures pass over OTLP/gRPC and OTLP/HTTP
   protobuf;
-- the same fixture set passes through official Collector `v0.152.1`;
+- the same fixture set passes through the latest checked official Collector
+  distribution, with the Collector core/source version recorded separately when
+  it has moved ahead of the runnable distribution;
 - the same fixture set passes through Collector Contrib `v0.152.0` for the
   configured components Parallax recommends;
 - Rotel `v0.2.2` smoke fixtures pass for the supported subset or any
