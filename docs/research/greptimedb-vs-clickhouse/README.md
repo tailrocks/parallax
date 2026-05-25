@@ -8,8 +8,10 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 126 local runs + B1–B15 cases. Recent: **Run 126 — native
-metric engine**: physical table (`greptime_timestamp`/`greptime_value`) creates cleanly, but logical tables are
+cold/first-run measurement showed). 25 mechanism notes + 127 local runs + B1–B15 cases. Recent: **Run 127 —
+trace-explorer "slow error spans"** query (find+rank slowest errored spans): CH ~10 ms / GT ~24 ms (~2.4×), both
+interactive — completes trace-query coverage (anchored waterfall ~18 ms + this search ~24 ms); every core Parallax view
+across all four signals is now confirmed sub-perceptible on GreptimeDB. **Run 126 — native metric engine**: physical table (`greptime_timestamp`/`greptime_value`) creates cleanly, but logical tables are
 AUTO-created via Prometheus remote-write/OTLP ingestion, NOT hand-DDL (explicit `ENGINE=metric WITH(on_physical_table=)`
 is finicky about time/value column mapping) — adopt-native-metrics nuance: use the ingestion path to auto-provision.
 **Run 125 — agg gap is NOT JIT either**: CH with compile_aggregate_expressions=0 is still ~3.7× faster than GT (~31 vs ~116 ms; JIT-off was

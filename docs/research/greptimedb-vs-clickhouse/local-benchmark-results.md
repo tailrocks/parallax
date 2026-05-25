@@ -5251,6 +5251,37 @@ greptime_value DOUBLE) ENGINE=metric WITH ('physical_metric_table'='')` (works).
 provision via Prometheus remote-write / OTLP ingestion (auto), not manual `ENGINE=metric` DDL
 (finicky). Drop `phys_metrics` after.
 
+### Run 127 — 2026-05-25 — Trace-explorer "slow error spans" query: CH ~10 ms / GT ~24 ms (~2.4×), both interactive — completes trace-query coverage (waterfall + search)
+
+**Pass target.** Model the **trace-explorer / APM search** query — "find the slowest errored spans"
+(`WHERE status='error' AND duration > X ORDER BY duration DESC LIMIT 50`) — distinct from the anchored
+waterfall (Run 97); a core APM view, not yet modeled.
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned live — no bump). `spans`/
+`spans_idx` 1M (status ok 970k / error 30k; duration p99 ~113). Query matches **498 rows** (error +
+duration>100), top-50 by duration. Neither engine indexes status/duration → selective scan + sort.
+CH `--time`, GT `execution_time_ms`, warm ×8.
+
+| Engine | warm reps (ms) | median |
+| --- | --- | --- |
+| ClickHouse | `9 11 9 11 9 11 9 9` | **~10 ms** |
+| GreptimeDB | `148 25 29 24 25 23 21 23` | **~24 ms** |
+| **Ratio** | | **~2.4×** |
+
+**Verdict — both interactive; trace-query coverage complete.**
+
+- The trace-explorer filter (multi-predicate selective scan + top-50 sort, 498 of 1M) is CH ~10 ms /
+  GT ~24 ms (~2.4×), both ≪ 300 ms — the usual scan-agg class. GreptimeDB finds + ranks the slow
+  error spans in ~24 ms; instant for the user.
+- **Completes the trace-query coverage:** anchored waterfall (Run 97, ~18 ms) + trace-explorer search
+  (~24 ms) — both interactive on GreptimeDB. Combined with the issue list (Run 119), log explorer
+  (Run 107), evidence bundle (Run 99), and metric panels (Runs 96/109/113), **every core Parallax
+  view across all four signals is sub-perceptible on GreptimeDB** (CH ~2–7× faster on the analytical
+  shapes, never crossing the interactive gate). No verdict change — reaffirms "fit not speed."
+
+**Reproduce.** `SELECT trace_id, service, name, duration_ms FROM spans WHERE status='error' AND
+duration_ms > 100 ORDER BY duration_ms DESC LIMIT 50` (498 match), warm ×8 → CH ~10 ms / GT ~24 ms.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
