@@ -116,6 +116,9 @@ Current source checks for this update:
 - [Coroot AI RCA configuration](https://docs.coroot.com/ai/configuration/)
 - [Coroot Cloud integration](https://docs.coroot.com/ai/coroot-cloud/)
 - [Coroot MCP server](https://docs.coroot.com/mcp/overview/)
+- [Coroot MCP source](https://github.com/coroot/coroot/blob/main/api/mcp.go)
+- [Coroot RCA source](https://github.com/coroot/coroot/blob/main/api/rca.go)
+- [Coroot Cloud RCA source](https://github.com/coroot/coroot/blob/main/cloud/rca.go)
 - [Coroot MCP and AI RCA recheck](coroot-mcp-ai-rca-recheck.md)
 - [Grafana Assistant self-managed docs](https://grafana.com/docs/grafana/latest/administration/assistant/)
 - [Grafana Assistant CLI docs](https://grafana.com/docs/grafana-cloud/machine-learning/assistant/guides/cli/)
@@ -131,7 +134,7 @@ Current source checks for this update:
 | Datadog Watchdog RCA | Built-in AI RCA | Datadog AI engine for automated alerts, insights, and RCA across the platform; APM anomaly RCA and causal relationships between symptoms. | High for teams already on Datadog. |
 | Datadog Test Optimization + Bits AI Dev Agent | CI/test reliability and automated fixes | Instruments and traces tests, identifies flaky tests, correlates tests with infra/log/network context, surfaces root cause, and uses Bits AI Dev Agent to generate verified PR fixes. | Very high for the flaky-test wedge. |
 | Grafana Assistant | Observability assistant / SRE agent | AI assistant in Grafana Cloud and Cloud-backed self-managed Grafana; query/dashboard assistance, Knowledge Graph, Slack/Teams/API/MCP/CLI surfaces. CLI is public preview and can connect local projects for read-only file access by default, with optional approved terminal access. | High for Grafana/LGTM users, but not local/air-gapped. |
-| Coroot | eBPF observability + AI RCA | Uses eBPF to collect metrics, logs, traces, profiles, events; Community includes agentic-ready MCP; Enterprise/Cloud adds AI RCA that explains what broke, why, and how to fix it. | High for infrastructure/service RCA and agent-access pressure, lower for Sentry migration and coding-agent action audit. |
+| Coroot | eBPF observability + AI RCA | Uses eBPF to collect metrics, logs, traces, profiles, events; Community includes agentic-ready MCP with read-only annotations on most telemetry tools and a mutating `resolve_alerts` tool; Enterprise/Cloud adds AI RCA that explains what broke, why, and how to fix it. | High for infrastructure/service RCA and agent-access pressure, lower for Sentry migration, portable evidence bundles, fully local/open Community RCA, and coding-agent action audit. |
 | OpenObserve "Observability 3.0" | Open Rust observability store + AI SRE agent | Rust, single-binary, object-storage-native, AGPL self-hostable; late-Apr-2026 launch added an AI SRE agent, AI Assistant, LLM observability, and MCP. AI SRE/MCP require Enterprise edition/license; public pages conflict on whether Self-Hosted Enterprise is free up to `50` or `200 GB/day`; the AI SRE page now uses evidence-chain/audit-trail language. Checked docs show OTLP ingestion, not a Sentry-envelope path. | Very high on storage/runtime fit; the closest open competitor. Saved (for now) by Enterprise-tier AI/MCP surfaces, broad write-capable MCP, missing Sentry ingest, and no checked portable bundle/schema/action-audit contract. |
 | SigNoz agent-native | Open OTLP observability + agent MCP | Go + ClickHouse, OSS self-hostable; May-2026 shipped an open self-hostable MCP server, trace-ID RCA, and agent skills for Claude Code/Cursor/Codex. Landing page claims an "open investigation format," and docs now include a postmortem evidence-pack workflow, but the focused 2026-05-25 check found no versioned schema, validator, replayable export, or portable artifact in checked docs/README/tree/release sources; no Sentry envelope error-event ingest path. | High on agent-native direction; fails the Rust/no-JVM-store profile and lacks a proven Parallax-style evidence-bundle/outcome abstraction. |
 | New Relic iRCA | Causal RCA | Preview product using topology graph, causal models, and path-based ranking to identify probable root cause. | High for New Relic customers. |
@@ -316,11 +319,14 @@ listed as free forever, self-hosted, without monitored-infrastructure limits,
 and includes agentic-ready MCP, while AI RCA and agentic anomaly investigation
 are Enterprise features, or available to Community users through Coroot Cloud
 credits. The MCP endpoint uses OAuth 2.0 and server-side authorization, exposes
-topology, incidents, traces, logs, metrics, and includes the mutating Community
-`resolve_alerts` tool. Its weakness relative to Parallax is not "no agent
-surface" anymore; it is no Sentry envelope error-event migration, no portable
-evidence bundle/schema, no coding-agent command/file/test/patch/PR outcome
-audit, and no fully local open RCA in Community.
+topology, incidents, traces, logs, metrics, uses read-only annotations on most
+telemetry tools, and includes the mutating Community `resolve_alerts` tool.
+Source also shows the Cloud RCA path posts a compressed request containing
+metrics, Kubernetes events, deployments, and selected traces to Coroot Cloud.
+Its weakness relative to Parallax is not "no agent surface" anymore; it is no
+Sentry envelope error-event migration, no portable evidence bundle/schema, no
+coding-agent command/file/test/patch/PR outcome audit, and no fully local open
+RCA in Community.
 
 Source:
 

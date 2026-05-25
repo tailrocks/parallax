@@ -62,7 +62,7 @@ audit.
 | --- | --- | --- | --- |
 | OpenObserve | Rust, object-storage-oriented, self-hostable observability platform with OTLP ingest, RUM/source maps, Enterprise AI SRE Agent, AI Assistant, incident/RCA workflow, evidence-chain/audit-trail product language, and Enterprise MCP with broad query/admin tools. | AI/MCP features are Enterprise-tier rather than plain AGPL Community; public pages conflict on the free Self-Hosted Enterprise allowance (`50 GB/day` in pricing/license docs, `200 GB/day` on the homepage FAQ); current ingestion docs emphasize OTLP/log APIs/Prometheus/etc., not Sentry envelopes; MCP is not a narrow read-only bundle surface; no checked portable evidence-bundle schema or coding-agent action audit. | Very high. |
 | SigNoz | Open self-hostable MCP server, agent-native positioning, Claude Code/Codex/Cursor/Gemini integration, traces/logs/metrics/topology/deploy history through agent clients, a landing-page claim around an "open investigation format," a documented postmortem evidence-pack use case, and MCP tools for alerts/dashboards/views/channels. | Go + ClickHouse stack; the 2026-05-25 focused check found an evidence-pack workflow but not a published schema, validator, replayable export, or portable artifact; query/management interface rather than deterministic evidence bundle; no Sentry envelope ingestion in current docs; no Parallax-style CLI/agent side-effect audit. | High. |
-| Coroot | Apache-2.0 OSS, eBPF zero-instrumentation, metrics/logs/traces/profiles, service map, deployment tracking, current `1.20.2` release, Community MCP, Community `resolve_alerts`, and Enterprise/Cloud AI RCA. | eBPF spans can be incomplete and lack app-level Rust panic/error-chain semantics; AI RCA is not purely OSS/local in Community; MCP is OAuth/RBAC-scoped but still not purely read-only; no Sentry migration path, portable evidence bundle, or coding-agent action audit in official docs. | High. |
+| Coroot | Apache-2.0 OSS, eBPF zero-instrumentation, metrics/logs/traces/profiles, service map, deployment tracking, current `1.20.2` release, Community MCP with read-only annotations on most telemetry tools, Community `resolve_alerts`, and Enterprise/Cloud AI RCA. | eBPF spans can be incomplete and lack app-level Rust panic/error-chain semantics; AI RCA is not purely OSS/local in Community; MCP is OAuth/RBAC-scoped but still not purely read-only because alert resolution mutates state; no Sentry migration path, portable evidence bundle, or coding-agent action audit in official docs/source. | High. |
 
 ## OpenObserve
 
@@ -219,13 +219,17 @@ Coroot is the strongest zero-instrumentation competitor:
 - MCP uses streamable HTTP transport, OAuth 2.0, and server-side authorization
   with the user's Coroot permissions. This is a stronger safety posture than an
   unauthenticated local tool, but it is still a live-production query surface
-  and Community includes the mutating `resolve_alerts` tool.
+  and Community includes the mutating `resolve_alerts` tool. Source now confirms
+  most telemetry tools are annotated read-only, while `resolve_alerts` is
+  non-read-only, requires alert-edit permission, and sends notifications.
 - Enterprise `investigate_anomaly` follows the dependency graph, checks
   saturation, deploys, downstream errors, slow databases, log spikes, and
   profile shifts, then hands a focused diagnosis to an LLM; with an incident
   key, Coroot persists that RCA onto the incident.
 - AI-powered RCA in Enterprise, or through Coroot Cloud integration for
-  Community users.
+  Community users. Source shows the Cloud path posts a compressed RCA request
+  containing metrics, Kubernetes events, deployments, and selected traces to the
+  cloud integration endpoint.
 
 Coroot is dangerous because it attacks adoption friction: install an agent and
 get a service map and RCA without changing code.
@@ -243,10 +247,11 @@ get a service map and RCA without changing code.
 3. **Migration and bundle gap.** Coroot is not a Sentry-compatible error
    migration path and does not expose a Parallax-style portable evidence bundle.
 4. **MCP safety is better than broad admin MCP, but still not Parallax's bundle
-   contract.** OAuth and server-side authorization help, but the tool set still
-   lets an agent query raw production telemetry and resolve alerts. Parallax's
-   first MCP surface should instead expose bounded, redacted, citable bundles
-   and write only audit/outcome records.
+   contract.** OAuth, server-side authorization, and read-only annotations on
+   most telemetry tools help, but the tool set still lets an agent query raw
+   production telemetry and resolve alerts. Parallax's first MCP surface should
+   instead expose bounded, redacted, citable bundles and write only audit/outcome
+   records.
 5. **Action audit is still missing.** Coroot exposes observability data to
    agents through MCP and can resolve alerts, but it still does not appear, in
    official docs checked here, to reconstruct coding-agent file, command, test,
@@ -260,6 +265,8 @@ Reopen the Parallax competitive read if Coroot:
 - adds Sentry-compatible error ingestion and grouping;
 - adds agent action audit or fix outcome feedback;
 - makes MCP outputs citable as portable evidence bundles with redaction reports;
+- publishes a Cloud/Enterprise RCA data-boundary contract with replayable local
+  artifacts, redaction reports, and raw refs;
 - proves eBPF plus OTEL can cover enough app-level error semantics to weaken the
   need for Rust-first SDK capture.
 
@@ -324,6 +331,9 @@ Coroot:
 - [Coroot MCP and AI RCA recheck](coroot-mcp-ai-rca-recheck.md)
 - [Coroot GitHub repository](https://github.com/coroot/coroot)
 - [Coroot 1.20.2 release](https://github.com/coroot/coroot/releases/tag/v1.20.2)
+- [Coroot MCP source](https://github.com/coroot/coroot/blob/main/api/mcp.go)
+- [Coroot RCA source](https://github.com/coroot/coroot/blob/main/api/rca.go)
+- [Coroot Cloud RCA source](https://github.com/coroot/coroot/blob/main/cloud/rca.go)
 - [Coroot product site](https://coroot.com/)
 - [Coroot compare editions](https://coroot.com/editions)
 - [Coroot AI RCA overview](https://docs.coroot.com/ai/overview/)
