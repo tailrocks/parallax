@@ -918,6 +918,28 @@ tree assembly; in-DB recursive CTE is a **capability tie** (DataFusion gives Gre
 recursion for free). Reinforces, doesn't move, the verdict. Clean-tree recursion-depth
 latency owed to harness.
 
+### Run 28 — 2026-05-25 — ClickHouse projections vs GreptimeDB index (access paths)
+
+Backs `projections-and-access-paths.md` (pass 50). Smoke.
+
+**ClickHouse:** `proj_test ORDER BY (trace_id, ts)` + `PROJECTION p_service (SELECT *
+ORDER BY service)`, 500k rows. `EXPLAIN indexes=1` for `WHERE service='svc5'` →
+**`ReadFromMergeTree (p_service)`** — optimizer transparently picked the projection
+(not the base trace_id order). One table, two access paths. **Storage ~doubles:**
+`system.parts` total 4.07 MiB vs `system.projection_parts` 2.07 MiB → the normal
+projection is a near-full second copy.
+
+**GreptimeDB:** **no projection feature** — parser rejects `PROJECTION` ("Cannot use
+keyword 'PROJECTION' as column name"). Multi-access = secondary indexes
+(inverted/skipping/fulltext), row-positions at index size, no second physical copy.
+
+**Claim status:** ClickHouse projections = a real capability for **scan-by-alternate-
+ordering** (no GreptimeDB equivalent), at **~2× storage per normal projection**.
+GreptimeDB's inverted index is leaner for **anchored point/filter** (Parallax's shape).
+For anchored reads it's a wash (both fast); projections win scan-heavy multi-ordering
+at a storage cost. Reinforces the read-path/cost picture; no verdict flip. GB-scale
+projection-scan vs index-lookup latency owed to harness.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
