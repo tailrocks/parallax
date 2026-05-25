@@ -10,12 +10,13 @@ row-dependent, Run 58** — ~7× @1M → ~14× @5M scan-bound, ~3× @8M agg-boun
 execution-engine half of checklist #4 (the read-path note covers
 planning / predicate pushdown / skip-vs-scan / joins; this is the *engine that runs
 the plan*). It is the mechanism **behind the measured throughput gaps** — ClickHouse
-**~2× on warm metric aggregation** at 40k series (Run 37; corrected from the ~10× of
+**~2–3× on warm metric aggregation** at 40k series (shape-dependent: ~3× flat group-by,
+~2× compute-heavier bucketed panel — Runs 37/67/96; corrected from the ~10× of
 Run 11, which was a cold/first-run GreptimeDB scan) and on **broad-term** full-text /
 scan (the Run-12 "~18×" was a `matches()`-on-bloom config artifact — selective is ~2×,
 Runs 48–49; the engine gap is real only for broad-term scans). The verdict has called
 this "a decade-tuned C++ vectorized engine"; this
-note makes that concrete, against source + live settings (Run 21). *(The ~2× warm
+note makes that concrete, against source + live settings (Run 21). *(The ~2–3× warm
 agg gap fits this mechanism — 8× block + JIT + SIMD — far better than the old ~10×,
 which the cold-cache explanation resolves.)*
 
@@ -81,7 +82,7 @@ OLAP scan/aggregate **throughput bar**.
 ## Why ClickHouse wins scan/aggregate throughput (ties to Runs 11–12)
 
 **Correction (Runs 37, 48–49) — these gaps are narrower than first measured.** The metric-agg
-gap is **~2× warm** (Run 37; the ~10× was cold). The full-text "~18×" (Run 12) was **not the
+gap is **~2–3× warm** (Runs 37/67/96, shape-dependent; the ~10× was cold). The full-text "~18×" (Run 12) was **not the
 engine at all** — it was a backend/function artifact (`matches()` on a `backend='bloom'` index
 full-scans; with the correct pairing selective full-text is ~6–8 ms, ~2× CH — Runs 48–49). The
 engine gap shows for real on **broad-term** full-text (~12×, scanning the matched set) and
@@ -101,6 +102,17 @@ aggregate work both engines do dilutes the scan-speed delta. So state the engine
 GB-scale cold)"**, not a single multiplier. *(This also retired the stale Run 31 "GT 95 ms
 / ~10×" anchored-scan figure — the same 1M scan reproduces at 15 ms; the 95 ms was an
 HTTP-wall/cold artifact, per the Run 40 correction.)*
+
+**Also per-row-compute-dependent, not only scan-width (Run 96).** Re-verifying the metric
+dashboard panel on `metrics_hc` (8M/40k-series): a **flat `avg by service`** (40 groups,
+L1-resident hash table) is **~3.0× warm** (CH ~38 ms / GT ~116 ms — pure scan-throughput
+bound, so ClickHouse's 65k-block+SIMD scan dominates), but the realistic **time-bucketed
+line chart** `avg per 1-min bucket × service` (4,000 groups + a `date_bin`/`toStartOfMinute`
+scalar per row) **narrows to ~2.0×** (CH ~63 ms / GT ~126 ms). Mechanism: the added per-row
+bucket compute and the 100× larger hash table are work *both* engines pay comparably, diluting
+ClickHouse's scan-throughput edge. So ~2–3× is the scan-bound *ceiling*; compute-heavier
+aggregations trend toward ~2×. Both panels stay **sub-300 ms warm on GreptimeDB** — interactive
+either way, so the gap is real but not user-perceptible on single-user dashboard refreshes.
 
 ## Axis consequence
 

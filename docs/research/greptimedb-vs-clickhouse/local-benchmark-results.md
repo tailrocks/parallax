@@ -3930,6 +3930,64 @@ dedup, the Run-94 confound removed).
 `append_mode='true'` + `PARTITION ON COLUMNS("trace_id")` (clause order above); run the anchored
 lookup warm ×10. Cleanup: `DROP TABLE spans_big` on both, `rm /tmp/sbig.csv /tmp/trbig.txt`.
 
+### Run 96 — 2026-05-25 — Metric dashboard panels re-verified: agg-gap holds (~2–3× warm) AND is query-shape-dependent (gap narrows as per-row compute grows)
+
+**Pass target.** Re-verify the load-bearing **metric-aggregation warm gap** (~2–3×, Run 37/67)
+on the often-run *single-user dashboard panel* — does it still reproduce on the current
+containers, and how does it behave on the realistic time-bucketed line-chart shape (not just
+the flat group-by)?
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned live — latest stable,
+no bump). `metrics_hc` = **8,000,000 rows / 40 services / ~40k series** (service×instance), both
+engines, identical data (parity re-confirmed: same count + service count). `value` Float64 (CH
+`Gorilla(8),ZSTD`; GT auto Parquet). Method: CH server elapsed via `clickhouse-client --time`
+(in-container loopback ~0); GT `execution_time_ms` (server-side) — both engine-time, transport
+excluded; warm (containers up 11 h, query repeated).
+
+**Panel A — flat "avg by service" (Run 67 shape, 40 groups), warm reps (ms):**
+
+| Engine | reps | warm median | vs Run 67 |
+| --- | --- | --- | --- |
+| ClickHouse | `58 43 32 35 39 33 34 39 38 38` | **~38 ms** | matches (Run 67 CH 32) |
+| GreptimeDB | `131 111 101 104 118 185 162 135 111 114` | **~116 ms** | matches (Run 67 GT 99) |
+| **Ratio** | | **~3.0×** | **reproduces ~2–3× warm** |
+
+**Panel B — time-bucketed line chart `avg per 1-min bucket × service` (4,000 groups; CH
+`toStartOfMinute`, GT `date_bin('1 minute'::INTERVAL, ts)`), warm reps (ms):**
+
+| Engine | reps | warm median |
+| --- | --- | --- |
+| ClickHouse | `64 70 62 67 59 54 69 59` | **~63 ms** |
+| GreptimeDB | `127 128 127 125 154 114 120 111` | **~126 ms** |
+| **Ratio** | | **~2.0×** |
+
+**Verdict — agg-gap reproduces, and the new finding is that it is query-shape-dependent.**
+
+- **The ~2–3× warm metric-agg gap holds** on current containers (Panel A ~3.0× = Run 67 exactly).
+  The load-bearing "GreptimeDB is not faster, even on metrics" claim **re-verified, no drift**.
+- **New nuance: the gap NARROWS from ~3× (flat) to ~2× (bucketed) as per-row compute grows.**
+  Mechanism (consistent with `query-execution-engine.md`): ClickHouse's edge is its vectorized
+  **scan + hash-agg throughput** (65k-row blocks + JIT + SIMD). Panel A's hash table is tiny (40
+  groups, L1-resident) so the bottleneck is *pure scan throughput* → ClickHouse's strength
+  dominates (~3×). Panel B adds a `date_bin`/`toStartOfMinute` scalar per row **and** a 100×
+  bigger hash table (4,000 groups); that added work is more *comparable* across engines (both pay
+  the bucket compute), diluting ClickHouse's scan-throughput edge to ~2×. So the often-quoted
+  "~2–3×" is real but it is the *ceiling* for scan-bound aggregation; compute-heavier panels
+  close toward ~2×.
+- **Both panels are sub-300 ms warm on GreptimeDB** (116 / 126 ms) — **interactive on either
+  engine.** This reaffirms "fit not speed": even the heaviest common dashboard refresh is well
+  inside the interactive gate on GreptimeDB, so the agg-gap costs nothing perceptible on the
+  single-user panel; it would matter only for very large ad-hoc aggregations (DQ5 flip trigger).
+- **Adopt-native (metrics):** unchanged — these used a plain mito table; the native **metric
+  engine** (`ENGINE=metric`) runs the *same* DataFusion agg path, so the panel latencies apply to
+  the ADOPT-native design too (the `__tsid` layout is an ingest/cardinality win, not an agg-speed
+  one — Run 84). Decision stands: **ADOPT native metric engine** for Parallax metrics.
+
+**Reproduce.** On `metrics_hc` (8M/40-svc): Panel A `SELECT service, avg(value) FROM metrics_hc
+GROUP BY service`; Panel B CH `SELECT toStartOfMinute(ts) m, service, avg(value) ... GROUP BY
+m,service`, GT `date_bin('1 minute'::INTERVAL, ts)`. Warm ×8–10; CH `--time`, GT
+`execution_time_ms`. Expect CH ~38/63 ms, GT ~116/126 ms (~3×/~2×).
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

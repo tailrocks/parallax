@@ -8,8 +8,10 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 95 local runs + B1–B15 cases. Recent: **Run 95 closed the
-anchored-tie-at-scale question** — a clean 5M-*distinct*-trace partitioned test: GreptimeDB anchored lookup ~7 ms warm
+cold/first-run measurement showed). 25 mechanism notes + 96 local runs + B1–B15 cases. Recent: **Run 96 re-verified the
+metric-agg warm gap** (~3× flat `avg by service`, ~2× the realistic bucketed line-chart panel — the gap is
+query-shape-dependent: scan-bound ~3× ceiling, compute-heavier panels trend to ~2×; both sub-300 ms warm on GreptimeDB,
+interactive either way). **Run 95 closed the anchored-tie-at-scale question** — a clean 5M-*distinct*-trace partitioned test: GreptimeDB anchored lookup ~7 ms warm
 (flat-to-faster than 1M) vs ClickHouse ~3 ms, both ≪ the 300 ms gate, so the tie does not widen with scale. **The
 verdict now also carries DQ6 — the long-term *investment* decision** (is the speed gap closable or a physics wall?):
 the parity-roadmap's per-gap physics-wall test finds *no* architectural wall (7/8 engineering, #6 time-only, #5 a
