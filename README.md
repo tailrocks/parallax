@@ -44,6 +44,7 @@ idea becomes sharper.
 - [Agent observability technical review](docs/research/agent-observability-technical-review.md)
 - [Bundle-value evaluation](docs/research/bundle-value-evaluation.md)
 - [Build roadmap and validation sequence](docs/research/build-roadmap-and-validation-sequence.md)
+- [Future platform direction](docs/research/future-platform-direction.md)
 - [Evidence bundle and open schema specification](docs/research/evidence-bundle-and-schema.md)
 - [Strategic verdict and research coverage](docs/research/strategic-verdict-and-research-coverage.md)
 - [Technical implementation concept](docs/research/technical-implementation-concept.md)
