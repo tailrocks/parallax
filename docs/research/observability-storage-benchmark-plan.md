@@ -25,6 +25,8 @@ storage engine underneath the platform.
 > benchmark prototype has veto power over the default storage choice. The first
 > mixed-load speed gate is specified in
 > [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md).
+> The first retained-size and object-cost gate is specified in
+> [Storage size and object cost gate](storage-size-and-object-cost-gate.md).
 
 ## Scope Rule
 

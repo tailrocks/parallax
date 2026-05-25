@@ -24,6 +24,12 @@ The focused proof gate for mixed-load freshness and Q6 bundle latency is
 Treat that gate as the first storage-speed pass before using smoke-run timings
 as architectural evidence.
 
+The focused proof gate for retained size, per-signal compression, object-store
+requests, cache dependency, and provider cost projection is
+[Storage size and object cost gate](storage-size-and-object-cost-gate.md).
+Treat that gate as the first storage-cost pass before quoting retention numbers
+externally.
+
 Pinned candidate versions for the first run (update at run time per the
 version-freshness rule):
 

@@ -237,8 +237,10 @@ object-store $ (MinIO) still unmeasured.
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
    vectorized-engine + granule-skip mechanisms actually bite. Drop OS page cache
    between cold runs.
-2. **Matched-codec GreptimeDB schema** (or accept defaults on both) for a fair
-   size/cost comparison.
+2. **Matched-codec/object-cost gate**: run the
+   [storage size and object cost gate](../storage-size-and-object-cost-gate.md)
+   so retained bytes, object counts, request costs, cache needs, and egress are
+   measured rather than inferred from the tiny local-disk smoke result.
 3. **Full mixed-load Q6 gate**: run the
    [storage freshness and bundle latency gate](../storage-freshness-and-bundle-latency-gate.md)
    with all bundle signals, per-signal freshness probes, and concurrent ingest.
@@ -247,7 +249,9 @@ object-store $ (MinIO) still unmeasured.
    GreptimeDB Parquet — Run 3's random-walk data was incompressible. (PromQL
    nativeness + aggregation latency already done in Run 3.)
 5. **Fairer GreptimeDB timing** via the MySQL native protocol, not HTTP.
-6. **Object-storage path** (MinIO) for both — add to `bench/compose.yml`.
+6. **Object-storage path** (MinIO) for both — add to `bench/compose.yml`; cost
+   interpretation belongs to the
+   [storage size and object cost gate](../storage-size-and-object-cost-gate.md).
 
 These route into `benchmarking-the-differences.md` (case design) and the runnable
 `parallax-bench` harness (`storage-benchmark-prototype.md`), which owns the real veto.

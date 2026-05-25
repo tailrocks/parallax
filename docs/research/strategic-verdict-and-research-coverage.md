@@ -88,10 +88,10 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Prompt area | Repository evidence |
 | --- | --- |
 | Market and product thesis | [Project thesis](project-thesis.md), [Market landscape](market-landscape.md), [Open self-hosted competitor watch](open-self-hosted-competitor-watch.md), [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md) |
-| Evaluation lens and benchmark methodology | [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md), [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md), [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md), [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Messaging and ingestion layer](messaging-and-ingestion-layer.md) |
+| Evaluation lens and benchmark methodology | [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md), [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md), [Storage size and object cost gate](storage-size-and-object-cost-gate.md), [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md), [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Messaging and ingestion layer](messaging-and-ingestion-layer.md) |
 | Language/runtime filter and Rust preference | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md), [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md), [Technical implementation concept](technical-implementation-concept.md) |
 | Messaging/streaming | [Messaging and ingestion layer](messaging-and-ingestion-layer.md), [Ingest log replay and backpressure gate](ingest-log-replay-and-backpressure-gate.md) |
-| Unified observability storage | [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md), [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md) |
+| Unified observability storage | [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md), [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md), [Storage size and object cost gate](storage-size-and-object-cost-gate.md) |
 | Metadata store | [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md), [Turso metadata production readiness](turso-metadata-production-readiness.md), [Technical implementation concept](technical-implementation-concept.md) |
 | OpenTelemetry | [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md) |
 | Sentry-compatible ingestion | [Sentry-compatible ingestion](sentry-compatible-ingestion.md), [Sentry SDK fixture compatibility gate](sentry-sdk-fixture-compatibility.md) |
@@ -134,7 +134,9 @@ The research validates direction, not performance claims. These must be tested:
    [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md).
 2. Evidence-bundle query latency under concurrent ingest, specified further in
    [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md).
-3. GreptimeDB versus ClickHouse storage size and object-storage cost.
+3. GreptimeDB versus ClickHouse storage size and object-storage cost, specified
+   further in
+   [Storage size and object cost gate](storage-size-and-object-cost-gate.md).
 4. Iggy replay and backpressure behavior versus local WAL and NATS/Redpanda,
    specified further in
    [Ingest log replay and backpressure gate](ingest-log-replay-and-backpressure-gate.md).

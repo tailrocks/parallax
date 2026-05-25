@@ -140,13 +140,16 @@ exactly why a cost-conscious self-hoster defects from per-GB SaaS.
 - **Tiny tier:** local disk (tens of GB at 90 days) — object storage is optional
   until volume or durability needs grow.
 - Feed real per-signal compression ratios and request/egress counts from the
-  [storage benchmark prototype](storage-benchmark-prototype.md) back into this
-  model before quoting any number externally.
+  [storage size and object cost gate](storage-size-and-object-cost-gate.md) back
+  into this model before quoting any number externally.
 
 ## Relationship To Other Research
 
 - [Storage benchmark prototype](storage-benchmark-prototype.md) — measures the
   compression ratios, request counts, and object-store costs this model assumes.
+- [Storage size and object cost gate](storage-size-and-object-cost-gate.md) —
+  specifies the pass/fail gate and provider-cost projection for those
+  measurements.
 - [Business model and economics](business-model-and-economics.md) — the ~100×
   retention-cost advantage is the cost-ownership selling point.
 - [Technical implementation concept](technical-implementation-concept.md) — the

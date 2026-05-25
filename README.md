@@ -34,6 +34,7 @@ idea becomes sharper.
 - [Observability storage benchmark plan](docs/research/observability-storage-benchmark-plan.md)
 - [Storage benchmark prototype (runnable)](docs/research/storage-benchmark-prototype.md)
 - [Storage freshness and bundle latency gate](docs/research/storage-freshness-and-bundle-latency-gate.md)
+- [Storage size and object cost gate](docs/research/storage-size-and-object-cost-gate.md)
 - [Retention cost model](docs/research/retention-cost-model.md)
 - [Metadata store benchmark plan and prototype](docs/research/metadata-store-benchmark-plan.md)
 - [Turso metadata production readiness](docs/research/turso-metadata-production-readiness.md)

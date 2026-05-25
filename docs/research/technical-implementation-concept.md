@@ -136,6 +136,7 @@ Related research:
 - [Self-hosted observability architecture](self-hosted-observability-architecture.md)
 - [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md)
 - [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md)
+- [Storage size and object cost gate](storage-size-and-object-cost-gate.md)
 - [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md)
 - [Turso metadata production readiness](turso-metadata-production-readiness.md)
 - [Messaging and ingestion layer](messaging-and-ingestion-layer.md)
@@ -668,7 +669,9 @@ candidate versions:
 - Evidence-bundle query latency by issue, trace, release window, and metric
   anomaly, with the initial proof gate in
   [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md).
-- Retained size and object-storage cost for 7, 30, and 90 days.
+- Retained size and object-storage cost for 7, 30, and 90 days, with the
+  initial proof gate in
+  [Storage size and object cost gate](storage-size-and-object-cost-gate.md).
 - High-cardinality labels and attributes.
 - Cold-cache and hot-cache behavior.
 
