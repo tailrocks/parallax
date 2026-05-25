@@ -33,7 +33,7 @@ debugging.
 | Does Parallax solve it? | **Partially, and that is enough.** Parallax can solve context assembly, evidence retention, correlation, issue grouping, and agent-safe bundle generation. It cannot prove all root causes from telemetry alone, and it should never claim omniscient RCA. |
 | Are there direct competitors? | **Yes.** Sentry Seer and Datadog Bits AI SRE are direct for production debugging. Grafana Assistant is direct for observability-agent workflows. LangSmith/Langfuse/Phoenix/Braintrust/AgentOps-style systems are adjacent for agent/LLM execution telemetry. CI/autofix products are direct for test and pipeline failures. |
 | Do competitors leave room? | **Yes, narrowly.** They mostly optimize inside their own observability or LLM-app platform. Parallax can win only if it is simpler to self-host, exposes an open evidence schema, gives CLI/MCP/API access from day one, stores agent and CLI side effects, and produces portable bundles rather than product-bound answers. |
-| Is this just a Sentry/Grafana/Datadog feature? | **Generic AI investigation is a feature.** A low-resource, Rust-first, self-hostable context store with Sentry-compatible migration, OTLP-native ingestion, adapter-backed CLI/agent audit records, and portable evidence bundles is a product wedge. |
+| Is this just a Sentry/Grafana/Datadog feature? | **Generic AI investigation is a feature.** A low-resource, Rust-first, self-hostable context store with Sentry-compatible migration, conformance-gated OTLP ingestion, adapter-backed CLI/agent audit records, and portable evidence bundles is a product wedge. |
 | Does the market make sense? | **Yes, with discipline.** AI is making software faster to write and riskier to operate without audit trails. The market is crowded, but the crowding validates the shift from dashboards to evidence-backed investigation. The opportunity is not "better AI"; it is owning the evidence contract agents use. |
 
 ## Why This Is A GO
@@ -86,7 +86,7 @@ suite. It should compete on the evidence substrate:
 - self-hosted and low-resource operation;
 - Rust-first capture quality;
 - Sentry-compatible migration path;
-- OpenTelemetry-native correlation;
+- OpenTelemetry-based correlation with OTLP conformance gates;
 - first-class CLI invocation traces;
 - coding-agent session records only where tested adapters preserve source,
   projection, and lossiness provenance;
@@ -102,7 +102,7 @@ The architecture is plausible with current open-source components:
 | Layer | Gate decision | Evidence |
 | --- | --- | --- |
 | Error compatibility | Support the Sentry envelope event path, not the whole Sentry product. | Sentry envelopes are the modern SDK ingestion format, and Relay is a useful Rust reference without copying its Kafka/Snuba architecture. |
-| Telemetry standard | Use OpenTelemetry as the native telemetry protocol. | OTLP is stable for traces, metrics, and logs, and gives shared `trace_id`, `span_id`, resource, and semantic-convention context. |
+| Telemetry standard | Use OpenTelemetry as the native telemetry protocol. | OTLP `1.10.0` is stable for traces, metrics, and logs, and gives shared `trace_id`, `span_id`, resource, and semantic-convention context. This proves the wire substrate, not agent readiness: public OTLP claims require the conformance ledger, canonical bundle/projection checks, and MCP structured-output validation. |
 | Observability store | Start with GreptimeDB as the v0.1 prototype default, benchmark against exact ClickHouse stable/LTS tracks. | GreptimeDB targets metrics, logs, and traces in one observability engine, with native OpenTelemetry support and object-storage-oriented deployment. It reached **v1.0 GA in April 2026** and latest stable checked is `v1.0.2`, so the first build is no longer a bet on an unreleased database. It is still not a proven production winner: trace docs remain experimental, and the storage freshness, bundle-latency, object-cost, and operational-complexity gates keep veto power. |
 | Stream | Start with local WAL; add Apache Iggy only when replay/burst separation matters. | Iggy is Rust-native, persistent, append-oriented, and explicitly designed for low-latency message streaming. |
 | Metadata | Start with local Turso Database for prototype/tiny metadata; keep Postgres as an active production and scale-out fallback. | Latest non-prerelease checked is `v0.6.1`; `v0.7.0-pre.3` exists but is a prerelease. Turso is Rust-written and SQLite-compatible, but still beta/production-caution in the repository README, so crash, backup/restore, concurrency, migration, and fallback gates are mandatory before any production-default claim. |
@@ -239,7 +239,7 @@ It is open enough for:
 - open-source evidence bundle format;
 - low-resource self-hosted deployment;
 - Sentry-compatible error migration;
-- OTLP-native correlation;
+- OTLP-backed correlation only after conformance and projection gates pass;
 - Rust-first capture and stacktrace quality;
 - CLI and adapter-proven agent-session observability;
 - safe MCP/API/CLI context retrieval;

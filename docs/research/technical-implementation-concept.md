@@ -20,13 +20,13 @@ as historical evidence.
 
 Build Parallax as:
 
-> A Rust-first, Sentry-compatible, OpenTelemetry-native execution context system
-> for services, CLI apps, CI runs, and coding agents that stores observability
-> evidence in GreptimeDB, starts product metadata in local Turso Database, keeps
-> Postgres as the production fallback until metadata gates pass, and exposes
-> bounded schema-bound evidence bundles through a CLI and HTTP API, with a later
-> read-only MCP adapter once the canonical bundle and projection contracts are
-> stable.
+> A Rust-first, Sentry-compatible, OpenTelemetry-compatible execution context
+> system for services, CLI apps, CI runs, and coding agents that stores
+> observability evidence in GreptimeDB, starts product metadata in local Turso
+> Database, keeps Postgres as the production fallback until metadata gates pass,
+> and exposes bounded schema-bound evidence bundles through a CLI and HTTP API,
+> with a later read-only MCP adapter once the canonical bundle and projection
+> contracts are stable.
 
 The first product should beat self-hosted Sentry on operational simplicity. It
 should not start as a full observability dashboard or autonomous production SRE.

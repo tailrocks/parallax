@@ -71,7 +71,7 @@ storage tests.
 | --- | --- |
 | Company-sized? | Yes, if framed as context/evidence layer for autonomous software maintenance. No, if framed as generic AI RCA. |
 | Just a Sentry/Grafana feature? | Generic AI investigation is a feature. Self-hosted Rust-first evidence bundles plus open schema plus agent workflow can be a product. |
-| Market too crowded? | Broad market is crowded. Narrow wedge remains: Sentry-compatible, OTLP-native, self-hosted execution context for services, CI, CLIs, and coding agents. |
+| Market too crowded? | Broad market is crowded. Narrow wedge remains: Sentry-compatible, OTLP-conformance-gated, self-hosted execution context for services, CI, CLIs, and coding agents. |
 | Hardest technical problems? | High-quality error grouping, cross-signal joins, symbolication, missing-data handling, causal graph modeling, retention cost, redaction, safe agent tools. |
 | Hidden operational problems? | Cardinality, schema evolution, object-storage cost, backpressure, retries/duplicates, symbol files, tenant isolation, upgrade path, source/release mapping. |
 | Scaling bottlenecks? | Ingest-to-queryable freshness, trace/log joins, high-cardinality attributes, stream replay, GreptimeDB/ClickHouse compaction, evidence-bundle query fanout. |
