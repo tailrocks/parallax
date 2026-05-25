@@ -30,12 +30,12 @@ and normalization of agent execution traces.
 
 | Source | Current check | Parallax implication |
 | --- | --- | --- |
-| [Codex hooks](https://developers.openai.com/codex/hooks) | Hooks expose structured JSON with `session_id`, `transcript_path`, `cwd`, `hook_event_name`, `model`, `turn_id`, and `permission_mode` for session, tool, prompt, permission, subagent, compaction, and stop events. The docs warn that transcript format is not a stable hook interface. | Codex capture can be structured, but transcripts must stay raw refs and cannot be the only proof source. |
+| [Codex hooks](https://developers.openai.com/codex/hooks) | Hooks expose structured JSON with `session_id`, `transcript_path`, `cwd`, `hook_event_name`, `model`, `turn_id`, and `permission_mode` for session, tool, prompt, permission, subagent, compaction, and stop events. The docs warn that transcript format is not a stable hook interface and that tool interception is incomplete for some shell and non-shell paths. | Codex capture can be structured, but transcripts must stay raw refs and hook gaps must be measured against wrapper, repo diff/hash, or other independent evidence. |
 | [Codex CLI](https://developers.openai.com/codex/cli) | Codex CLI is a local command-line agent surface and supports repo work, file edits, command execution, and automation workflows. | Codex is a first adapter target because it runs where Parallax can observe local repo, shell, and file evidence. |
 | [Claude Code monitoring](https://code.claude.com/docs/en/monitoring-usage) | Claude Code exports opt-in OpenTelemetry metrics, logs/events, and optional traces; prompt text, tool details, tool content, and raw API bodies are disabled by default and require explicit flags. It also documents identity, tool, MCP, cost/token, and audit events. | Claude Code is the strongest native OTel target, but content capture must remain opt-in and redacted. |
 | [Amp manual](https://ampcode.com/manual) | Amp supports streaming JSON output in `--execute` mode for programmatic integration and real-time conversation monitoring; optional thinking blocks extend the schema. | Amp can be measured through non-interactive stream fixtures first; thinking blocks are sensitive opt-in, not default capture. |
 | [OpenCode CLI](https://opencode.ai/docs/cli/) | OpenCode supports `run --format json`, session continuation/forking, session list JSON, export JSON with `--sanitize`, headless `serve`, ACP, and permission flags. | OpenCode is a strong JSON/export/plugin adapter target; `--sanitize` is helpful but does not replace Parallax redaction. |
-| [OpenCode plugins](https://opencode.ai/docs/plugins/) | Plugins expose command, file, message, permission, server, session, shell, tool, and other events. | OpenCode can provide deep structured events without terminal parsing. |
+| [OpenCode plugins](https://opencode.ai/docs/plugins/) | Plugins expose command, file, message, permission, server, session, shell, tool, TUI, and other events. | OpenCode can provide deep structured events without terminal parsing, but support must be proven per enabled event class. |
 | [OpenTelemetry semantic conventions 1.41.0](https://opentelemetry.io/docs/specs/semconv/) | Current semconv catalog includes GenAI, MCP, CLI, process, CI/CD, VCS, exception, and test areas. | Adapters should record source semantic-convention versions instead of hard-coding unstable span shapes into Parallax storage. |
 | [OpenTelemetry GenAI agent spans](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/), [MCP](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/), and [CLI spans](https://opentelemetry.io/docs/specs/semconv/cli/cli-spans/) | GenAI and MCP conventions are useful ingestion vocabulary; CLI conventions define short-lived command spans and exit/error semantics. | OTel-native sources feed normalized Parallax rows, but raw spans are not the durable product schema. |
 
@@ -118,7 +118,9 @@ approves a redacted synthetic fixture.
   "config": {
     "content_capture": "structural|redacted_excerpt|raw_ref",
     "thinking_capture": "disabled|raw_ref|redacted_excerpt",
-    "subprocess_trace_propagation": "none|traceparent|wrapper"
+    "subprocess_trace_propagation": "none|traceparent|wrapper",
+    "expected_event_classes": ["SessionStart", "PreToolUse", "PostToolUse"],
+    "coverage_denominator_source": "native_events|wrapper_observation|repo_diff|manual_fixture"
   },
   "claim_target": "codex_hooks_supported"
 }
@@ -132,8 +134,12 @@ approves a redacted synthetic fixture.
   "tool": "codex",
   "fixture_task_id": "task_bugfix_001",
   "source_event_type": "SessionStart|PreToolUse|tool.execution|message.updated|stream_json_object|unknown",
+  "source_event_class": "hook|plugin|otel|json_export|stream_json|wrapper",
+  "source_event_schema": "docs-checked-YYYY-MM-DD",
   "source_event_hash": "sha256:<hex>",
   "accepted": true,
+  "maps_to_action_kind": "tool_call|shell_command|file_edit|permission_decision|null",
+  "coverage_gap": false,
   "normalized_row_refs": ["agent_session:sess_001"],
   "raw_ref_only": false,
   "parse_error": null,
@@ -168,6 +174,10 @@ approves a redacted synthetic fixture.
 {
   "fixture_task_id": "task_bugfix_001",
   "tool": "opencode",
+  "expected_event_classes": ["command", "file", "permission", "session", "shell", "tool"],
+  "observed_event_classes": ["session", "tool", "shell"],
+  "uncovered_side_effects": [],
+  "coverage_denominator_source": "plugin_events+wrapper_observation",
   "surface_tool_calls": 10,
   "mapped_tool_calls": 9,
   "surface_shell_commands": 3,
@@ -186,7 +196,7 @@ approves a redacted synthetic fixture.
 {
   "tool": "amp",
   "fixture_task_id": "task_research_001",
-  "event_class": "thinking_block|tool_output|permission_decision|subagent|raw_transcript",
+  "event_class": "thinking_block|tool_output|permission_decision|subagent|raw_transcript|uncovered_hook_tool_path|plugin_event_disabled|source_schema_changed",
   "lossiness_reason": "source_not_exposed|redacted|raw_ref_only|unsupported|parse_failed|unstable_format",
   "count": 0,
   "user_visible_warning": "Thinking blocks disabled by policy.",
@@ -249,11 +259,18 @@ approves a redacted synthetic fixture.
 - Claude Code content-bearing telemetry gates must remain disabled for default
   runs unless the redaction suite explicitly tests them.
 - Codex `transcript_path` is a raw ref. Hook events are the claimable structured
-  source.
+  source, but hook support proves structured hook normalization rather than
+  complete shell/file side-effect coverage unless wrapper, repo-diff, or
+  equivalent independent evidence rows also pass.
 - Amp streaming JSON claims apply to `--execute --stream-json` unless a stronger
   interactive adapter is separately tested.
 - OpenCode `--sanitize` is a source feature, not Parallax redaction proof.
   Parallax redaction must still pass on normalized projections.
+- OpenCode plugin support requires coverage rows for enabled event classes.
+  JSON/export rows alone do not prove live side-effect coverage.
+- Coverage denominators must come from native events, wrapper observation, repo
+  diff/hash evidence, or manual fixture expectations. Do not calculate coverage
+  only from events the adapter happened to see.
 - `multi_agent_trace_supported` requires at least one native OTel path and at
   least one non-OTel structured path.
 - No claim may depend on hidden chain-of-thought or private model reasoning.
