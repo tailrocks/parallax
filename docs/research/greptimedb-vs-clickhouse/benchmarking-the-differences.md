@@ -200,6 +200,28 @@ Legend: **Runnable now** = expressible in the current prototype/`bench/compose.y
 - **Prereq:** multi-node compose for both; orchestration. **Heaviest** case.
 - **Status:** Needs harness ext. Axis-3, lower priority than single-node settle.
 
+## B12 — Reproduce the JSONBench cold-run result (object-store, 1B-doc regime)
+
+- **Hypothesis / mechanism:** GreptimeDB reportedly ranks **#1 on cold run** in
+  ClickHouse's own JSONBench (1B JSON docs) — its object-store-native Parquet layout
+  (few large objects, Run 9) + cold reads beats ClickHouse's S3-disk many-small-
+  objects path in the **cold / object-store / wide-semi-structured** regime
+  (`public-performance-claims.md` claim #6). **This is the regime closest to
+  Parallax's actual retention re-reads**, the opposite of the hot in-cache scans my
+  B1/B5 measured.
+- **Workload:** JSONBench-style 1B (or scaled-down, e.g. 50–100M) JSON/wide-event
+  docs on object storage (MinIO), **cold cache**, the JSONBench query set; both
+  engines S3-backed.
+- **Record:** cold-run per-query latency p50/p95; object GET count per query; warm
+  vs cold delta.
+- **Pass/fail:** does GreptimeDB's cold-object-store advantage reproduce
+  independently? If yes, it **materially strengthens the verdict for Parallax's
+  cold re-read pattern** (flips the "ClickHouse wins at volume" reading for the
+  *cold* regime).
+- **Prereq:** JSONBench dataset + queries; MinIO; both in S3 mode; cold-cache control.
+- **Status:** **proposed, high priority** — the one public claim most worth
+  independently reproducing; my local runs only covered hot/warm.
+
 ## Priority order (what to run next)
 
 1. **B2** (GreptimeDB inverted-index trace lookup) — runnable now, cheap, validates

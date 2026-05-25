@@ -151,8 +151,16 @@ anchored retrieval) — it is now the load-bearing question, not the engine spee
 `storage-benchmark-prototype.md` must settle, at `small`+ tier, cold cache,
 concurrent ingest+query:
 
+0. **Reproduce the JSONBench cold-run result** (public-claims pass 22): GreptimeDB
+   reportedly ranks #1 on ClickHouse's own JSONBench cold run at 1B docs. **This
+   cold / object-store / wide-record regime is the one Parallax actually lives in**
+   (evidence-bundle re-reads from cheap object storage), the *opposite* of the hot
+   in-cache scans my B1/B5 measured (where ClickHouse won). If it reproduces, it
+   **strengthens** the GreptimeDB verdict for Parallax's real access pattern.
+   Highest-priority reproduction (`public-performance-claims.md`, B12).
 1. **Cold-cache GB–TB log/trace scan gap** — how much slower is GreptimeDB really,
-   beyond the cache-resident smoke floor? (Could flip Q5.)
+   beyond the cache-resident smoke floor? (Could flip Q5.) NB: my B1/B5 were
+   warm/hot; the *cold* regime may behave oppositely (see #0).
 2. **Object-store $ on equal footing** (MinIO): retained bytes, GET/PUT/LIST, cold-
    read egress — is GreptimeDB's object-store-native economics a real cost win?
    **Partly answered (Runs 8–9): yes on object count (4 vs 74, ~18× fewer requests
