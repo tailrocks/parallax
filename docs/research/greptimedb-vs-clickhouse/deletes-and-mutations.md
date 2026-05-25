@@ -2,7 +2,9 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 51. The "mutations" ClickHouse system-lead + the delete path on both —
+Status: pass 51, re-verified + sharpened pass 102 (Run 66 — DELETE parity reproduces;
+GreptimeDB has **no `UPDATE` statement**, update is (PK,ts)-keyed upsert). The "mutations"
+ClickHouse system-lead + the delete path on both —
 i.e. how each engine handles **deleting and updating already-written data**.
 Decision-relevant for Parallax: append-mostly, but occasionally needs a **GDPR erase**
 (remove one user's telemetry), a **bad-batch correction**, or an **issue-status
@@ -22,7 +24,15 @@ re-confirmed latest stable 2026-05-25.
 - **UPDATE** = re-insert the same `(primary key, ts)` with new values → the dedup
   strategy (`last_row`/`last_non_null`, pass 39) makes the latest write win at read. So
   an update is just an **upsert** — another cheap LSM write, correct at read, GA, no
-  special setup.
+  special setup. **Precise (Run 66): there is NO `UPDATE` DML statement** — `UPDATE … SET
+  … WHERE` returns *"SQL statement is not supported"*. The overwrite is **(PK, ts)-keyed**:
+  re-inserting `(id=1, ts=1000, 'sameTS')` overwrote the row (→ `sameTS`), but re-inserting
+  with a **new** ts `(id=1, ts=2000, 'newTS')` produced **two versions** (`[1000,'sameTS'],
+  [2000,'newTS']`) — time-series semantics, not a relational in-place update. So for a
+  Parallax current-state signal (issue status), "update" means **either** re-write the same
+  `(PK, ts)` **or** append a new ts and query the latest (`MAX(ts)` / dedup) — never an
+  `UPDATE` statement. This is simpler than ClickHouse's mutation but is an append/upsert
+  model, not row-update.
 
 Both correction operations ride the same LSM + read-dedup machinery as ordinary writes
 and TTL — uniformly cheap, immediate at read, purged at compaction.
@@ -53,7 +63,7 @@ rows/columns) — write-amp ∝ data touched. Two lighter paths now exist:
 | Operation | GreptimeDB | ClickHouse |
 | --- | --- | --- |
 | DELETE | tombstone (LSM) → read-filter (`filter_deleted`) → compaction purge | lightweight `DELETE FROM` = `_row_exists=0` mask (GA, default) → read-filter → merge purge; or heavy `ALTER DELETE` rewrite |
-| UPDATE | re-insert `(PK,ts)` → dedup last-wins (**upsert, GA, cheap**) | `ALTER UPDATE` = **full part rewrite**; lightweight `UPDATE` exists but **experimental + needs `enable_block_number_column=1`** |
+| UPDATE | **no `UPDATE` statement** (Run 66); re-insert same `(PK,ts)` → dedup last-wins (**upsert, GA, cheap**); new ts = new version | `ALTER UPDATE` = **full part rewrite**; lightweight `UPDATE` exists but **experimental + needs `enable_block_number_column=1`** (live-rejected, Run 29/66) |
 | Cost (delete) | cheap write + read-filter | cheap-ish mask mutation (lightweight) / rewrite (heavy) |
 | Cost (update) | **cheap upsert** | **rewrite** (or experimental lightweight w/ setup) |
 | Correct-now at read | yes | lightweight delete yes (mask); heavy mutation async |
@@ -103,7 +113,10 @@ rows/columns) — write-amp ∝ data touched. Two lighter paths now exist:
 
 - GreptimeDB: `DELETE FROM` → tombstone + `DedupReader.filter_deleted`
   (`src/mito2/src/read/dedup.rs`, pass 39); UPDATE = upsert via `merge_mode`. Live
-  (Run 29): delete immediate at read, no compaction.
+  (Run 29): delete immediate at read, no compaction. Live (Run 66): DELETE parity
+  re-verified (CH lightweight 100k→50k mask vs GT tombstone, both read-immediate); **no
+  `UPDATE` statement ("SQL statement is not supported"); (PK,ts) overwrite confirmed —
+  same ts overwrites, new ts = new version**.
 - ClickHouse: lightweight `DELETE FROM` → `system.mutations` `UPDATE _row_exists=0`,
   part `_2` bump (Run 29); `lightweight_deletes_sync=2`; `enable_lightweight_update=1` +
   `allow_experimental_lightweight_update=1` but requires `enable_block_number_column=1`

@@ -2683,6 +2683,48 @@ re-reads would justify the build.
 
 **Reproduce.** `docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=CREATE TABLE t (ts TIMESTAMP(3) TIME INDEX, tid STRING, PRIMARY KEY(tid)) WITH (order_by='tid')"` → error.
 
+### Run 66 — 2026-05-25 — Deletes/mutations re-verified + UPDATE-statement precision
+
+**Pass target.** Rotate onto stale slice (deletes/mutations, Run 29 ~pass 51). Re-verify
+"DELETE ≈ parity (both read-immediate); UPDATE → GreptimeDB" and pin down GreptimeDB's
+exact UPDATE capability.
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned —
+latest, no bump).
+
+**Measured / verified:**
+
+| Operation | ClickHouse | GreptimeDB |
+| --- | --- | --- |
+| DELETE read-immediacy | `DELETE FROM del_ch WHERE id<50000` → plain `count()` **50000 immediately** (lightweight mask; part `all_1_1_0`→`all_1_1_0_2`, 100k physical rows masked) | `DELETE FROM del_gt WHERE id=2` → plain SELECT **`[1],[3],[4]` immediately** (tombstone + `filter_deleted`, no compaction) |
+| UPDATE statement | `ALTER UPDATE` (heavy rewrite) GA; **lightweight `UPDATE` rejected**: *"Lightweight updates are not supported … only for tables with materialized `_block_number`"* (gated, Run 29 reproduces) | **NO `UPDATE` statement** — *"SQL statement is not supported"* |
+| UPDATE via upsert (GreptimeDB) | — | re-insert **same `(id=1, ts=1000)`** → overwrote (`sameTS`); re-insert **new `ts=2000`** → **two versions** `[1000,'sameTS'],[2000,'newTS']` (time-series, not in-place) |
+
+**Verdict.** **DELETE = parity reproduced** — both read-immediate (CH `_row_exists` mask,
+GreptimeDB tombstone+`filter_deleted`); the old "CH deletes are expensive rewrites"
+critique stays softened. **UPDATE → GreptimeDB, with a sharpened nuance:** GreptimeDB has
+**no `UPDATE` DML at all** — correction is INSERT-upsert, and the overwrite is **(PK, ts)-keyed**
+(same ts overwrites; a new ts is a new time-series version). So a Parallax "current-state"
+update is modeled as *re-write the same `(PK, ts)`* or *append + query latest* — simpler
+and cheaper than ClickHouse's gated/heavy update, but it is an **append/upsert model, not a
+relational row-update**. ClickHouse lightweight UPDATE still experimental + per-table-gated
+(reproduces Run 29). Status: **confirmed + sharpened.** Reinforces the LSM-native correction
+ergonomics theme; doesn't move the verdict (corrections are occasional for append-mostly
+Parallax).
+
+Caveat: small smoke (2-row update semantics, 100k delete); the rewrite-vs-mask-vs-tombstone
+cost at GB scale is owed to the harness.
+
+**Reproduce (copy-paste).**
+
+```bash
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q "CREATE TABLE del_ch (id UInt32, v String) ENGINE=MergeTree ORDER BY id"; docker exec parallax-bench-clickhouse-1 clickhouse-client -q "INSERT INTO del_ch SELECT number,'x' FROM numbers(100000)"
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q "DELETE FROM del_ch WHERE id<50000"; docker exec parallax-bench-clickhouse-1 clickhouse-client -q "SELECT count() FROM del_ch"   # 50000
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode 'sql=CREATE TABLE upd_gt (ts TIMESTAMP(3) TIME INDEX, "id" BIGINT, v STRING, PRIMARY KEY("id"))'
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode 'sql=UPDATE upd_gt SET v='"'"'x'"'"' WHERE "id"=1'   # "SQL statement is not supported"
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode 'sql=INSERT INTO upd_gt VALUES (1000,1,'"'"'a'"'"'),(1000,1,'"'"'b'"'"')'   # same (id,ts) -> b wins
+```
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
