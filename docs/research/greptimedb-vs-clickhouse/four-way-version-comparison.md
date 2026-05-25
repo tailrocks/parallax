@@ -20,35 +20,41 @@ Warm, **median of 5 reps**. GT = `execution_time_ms`; CH = `clickhouse-client --
 
 Median ms, lower = faster. **Faster** = which engine wins this query (both interactive — every cell
 ≪ 300 ms). **Details** links the curated mechanism note + the reproducible run(s) in the run log.
+**Numbers below are produced by the reproducible harness [`bench/four-way/`](../../bench/four-way/) at
+`N = 1,000,000` rows per table (uniform; `gen.sh` enforces a 50,000 minimum), median of 8 warm reps,
+Run 140.** Re-run with `docker compose -f bench/compose.yml up -d && bench/four-way/gen.sh &&
+bench/four-way/bench.sh`.
 
 | Query (Parallax view) | GT v1.0.2 | GT v1.1-nightly | CH 26.5 | CH 26.6-head | Faster | Details |
 | --- | ---: | ---: | ---: | ---: | --- | --- |
-| **Anchored lookup** (`trace_id`, evidence-bundle hot path) | 8 | 7 | 3 | 2 | CH ~3× (both ≪ gate) | [read-path](read-path-indexing-and-execution.md) · [Runs 16/95/99/130/131](local-benchmark-results.md) |
-| **Unindexed scan** (`span_id` point, full scan) | 18 | 13 | 4 | 3 | CH ~4× | [exec-engine](query-execution-engine.md) · [Runs 102/130/131](local-benchmark-results.md) |
-| **TopK** (`ORDER BY duration LIMIT 10`) | 6 | 7 | 6 | 4 | ~tie | [exec-engine](query-execution-engine.md) · [Runs 106/131](local-benchmark-results.md) |
-| **Trace-explorer** (`status=error AND dur>250` + sort) | 13 | 16 | 8 | 10 | CH ~1.6× | [trace-tree](trace-span-tree.md) · [Runs 127/131](local-benchmark-results.md) |
-| **Metric-agg flat** (`avg(val) GROUP BY service`) | 23 | 18 | 13 | 11 | CH ~1.6× | [exec-engine](query-execution-engine.md) · [Runs 96/124/125/131](local-benchmark-results.md) |
-| **Metric bucketed line** (1-min `date_bin`) | 31 | 23 | 17 | 15 | CH ~1.5× | [exec-engine](query-execution-engine.md) · [Runs 96/131](local-benchmark-results.md) |
-| **Counter-rate panel** (5-min `max-min(counter)`) | 35 | 25 | 23 | 19 | CH ~1.3× | [promql/metrics](promql-and-metrics-query.md) · [Runs 113/131](local-benchmark-results.md) |
-| **Last-value** ("current value" per series) | **5** | **5** | 10 | 11 | **GT ~2×** | [exec-engine](query-execution-engine.md) · [Runs 109/131](local-benchmark-results.md) |
-| **Latency p99 by service** (`quantile(0.99)`) | 15 | 12 | 8 | 8 | CH ~1.5–2× | [exec-engine](query-execution-engine.md) · [Run 135](local-benchmark-results.md) |
-| **Count-distinct** (`trace_id`, 70k of 1M) | 20 | 22 | 12 | 13 | CH ~1.7× | [exec-engine](query-execution-engine.md) · [Run 136](local-benchmark-results.md) |
-| **Count-distinct high-card** (`span_id`, 1M unique, exact) | 33 | 30 | 37 | 36 | **GT ~ties/wins** (CH approx `uniq` ~10ms) | [exec-engine](query-execution-engine.md) · [Run 136](local-benchmark-results.md) |
-| **High-group agg** (`GROUP BY trace_id`, 70k groups + top-50) | 21 | 21 | 14 | 13 | CH ~1.5× (no GT cliff) | [exec-engine](query-execution-engine.md) · [Run 137](local-benchmark-results.md) |
-| **Time-range scan** (`WHERE ts BETWEEN`, 100k window) | 9 | 5 | 3 | 3 | CH ~2× (both time-prune) | [read-path](read-path-indexing-and-execution.md) · [Run 138](local-benchmark-results.md) |
-| **Full-text selective** (exact token, 1 row) | 7 | 8 | 9 | 7 | ~tie | [indexing](indexing-internals.md) · [Runs 98/131](local-benchmark-results.md) |
-| **Full-text broad** (~143k matches, this corpus) | 24 | 24 | 16 | 16 | CH ~1.5× *here*; **~12× canonical** | [indexing](indexing-internals.md) · [Runs 98/131/133](local-benchmark-results.md) |
-| **Log-tail** (`service` + `ts DESC LIMIT 100`) | 17 | 13 | 3 | 3 | CH ~5× | [per-signal](per-signal-verdict.md) · [Runs 107/131](local-benchmark-results.md) |
-| **Issue-list** (`GROUP BY fingerprint` + top-50) | 16 | 13 | 7 | 9 | CH ~1.8× | [verdict DQ1](verdict-which-to-choose.md) · [Runs 119/131](local-benchmark-results.md) |
-| **Dynamic-attr JSON** (path GROUP BY, typed cast) | 48 | 48 | 5 | 5 | CH ~10× | [schema-evolution](schema-evolution-and-dynamic-columns.md) · [Runs 104/129/131](local-benchmark-results.md) |
-| **Cross-tier join** (anchored `spans ⋈ errs`) | 65 | 36 | 3 | 3 | CH ~12–20× | [read-path](read-path-indexing-and-execution.md) · [Runs 81/103/131](local-benchmark-results.md) |
+| **Anchored lookup** (`trace_id`, evidence-bundle hot path) | 10 | 8 | 3 | 3 | CH ~3× (both ≪ gate) | [read-path](read-path-indexing-and-execution.md) · [Runs 99/131/140](local-benchmark-results.md) |
+| **Unindexed scan** (`span_id` point, full scan) | 19 | 12 | 4 | 4 | CH ~4× | [exec-engine](query-execution-engine.md) · [Runs 102/140](local-benchmark-results.md) |
+| **TopK** (`ORDER BY duration LIMIT 10`) | 14 | 10 | 8 | 7 | CH ~1.5× | [exec-engine](query-execution-engine.md) · [Runs 106/140](local-benchmark-results.md) |
+| **Trace-explorer** (`status=error AND dur>250` + sort) | 19 | 11 | 14 | 13 | ~tie/CH ~1.2× | [trace-tree](trace-span-tree.md) · [Runs 127/140](local-benchmark-results.md) |
+| **Metric-agg flat** (`avg(val) GROUP BY service`) | 21 | 17 | 9 | 9 | CH ~2× | [exec-engine](query-execution-engine.md) · [Runs 96/124/125/140](local-benchmark-results.md) |
+| **Metric bucketed line** (1-min `date_bin`) | 23 | 17 | 13 | 12 | CH ~1.5× | [exec-engine](query-execution-engine.md) · [Runs 96/140](local-benchmark-results.md) |
+| **Counter-rate panel** (5-min `max-min(counter)`) | 19 | 16 | 13 | 12 | CH ~1.3× | [promql/metrics](promql-and-metrics-query.md) · [Runs 113/140](local-benchmark-results.md) |
+| **Last-value** ("current value" per series) | **5** | **4** | 6 | 6 | **GT ~1.3×** | [exec-engine](query-execution-engine.md) · [Runs 109/140](local-benchmark-results.md) |
+| **Latency p99 by service** (`quantile(0.99)`) | 16 | 12 | 9 | 8 | CH ~1.7× | [exec-engine](query-execution-engine.md) · [Runs 135/140](local-benchmark-results.md) |
+| **Count-distinct** (`trace_id`, 70k of 1M) | 23 | 21 | 17 | 19 | CH ~1.2× | [exec-engine](query-execution-engine.md) · [Runs 136/140](local-benchmark-results.md) |
+| **Count-distinct high-card** (`span_id`, 1M unique, exact) | 54 | 62 | 66 | 43 | **~tie** (CH approx `uniq` faster) | [exec-engine](query-execution-engine.md) · [Runs 136/140](local-benchmark-results.md) |
+| **High-group agg** (`GROUP BY trace_id`, 70k groups + top-50) | 33 | 28 | 19 | 19 | CH ~1.5× (no GT cliff) | [exec-engine](query-execution-engine.md) · [Runs 137/140](local-benchmark-results.md) |
+| **Time-range scan** (`WHERE ts BETWEEN`, 100k window) | 10 | 4 | 3 | 3 | CH ~2× (both time-prune) | [read-path](read-path-indexing-and-execution.md) · [Runs 138/140](local-benchmark-results.md) |
+| **Latency histogram** (`count by duration bucket`, 30 buckets) | 19 | 12 | 6 | 7 | CH ~2× | [exec-engine](query-execution-engine.md) · [Runs 139/140](local-benchmark-results.md) |
+| **Full-text selective** (exact token, 1 row) | 6 | 6 | 7 | 7 | ~tie | [indexing](indexing-internals.md) · [Runs 98/140](local-benchmark-results.md) |
+| **Full-text broad** (~143k matches, this corpus) | 18 | 15 | 14 | 14 | CH ~1.3× *here*; **~12× canonical** | [indexing](indexing-internals.md) · [Runs 98/133/140](local-benchmark-results.md) |
+| **Log-tail** (`service` + `ts DESC LIMIT 100`) | 16 | 13 | 3 | 3 | CH ~5× | [per-signal](per-signal-verdict.md) · [Runs 107/140](local-benchmark-results.md) |
+| **Issue-list** (`GROUP BY fingerprint` + top-50) | 21 | 12 | 6 | 6 | CH ~2–3× | [verdict DQ1](verdict-which-to-choose.md) · [Runs 119/140](local-benchmark-results.md) |
+| **Dynamic-attr JSON** (path GROUP BY, typed cast) | 91 | 92 | 6 | 7 | CH ~14× (scan-bound, grows w/ rows) | [schema-evolution](schema-evolution-and-dynamic-columns.md) · [Runs 104/129/140](local-benchmark-results.md) |
+| **Cross-tier join** (anchored `spans ⋈ errs`) | 59 | 36 | 3 | 4 | CH ~15–20× | [read-path](read-path-indexing-and-execution.md) · [Runs 81/103/140](local-benchmark-results.md) |
 | **Ingest** (`INSERT…SELECT` 1M; *not* native path) | 719 | 623 | 201 | 170 | CH ~3.5× (synthetic) | [write-path](write-path-and-ingestion.md) · [Runs 101/132](local-benchmark-results.md) |
 | **Storage** (1M rows, compressed) | 2.0 MiB | 2.0 MiB | 1.69 MiB | 1.69 MiB | CH ~1.2× | [compression/cost](compression-and-cost.md) · [Runs 100/132](local-benchmark-results.md) |
 | **Cardinality-insensitive ingest** (GT append, 12 vs 1M series) | 527/457 | 489/401 | n/a | n/a | **GT (flat/cap-free)** | [metric-cardinality](metric-cardinality.md) · [Runs 84/101/132](local-benchmark-results.md) |
 
-*(All data 1–2M rows, warm, median-of-5. Absolute numbers scale with data size — the **ratios** and
-**cross-build deltas** are the signal. **Every query cell is ≪ the 300 ms interactive gate** on all
-four builds. Click a row's Details for the mechanism write-up + the reproducible run.)*
+*(All query rows: **N = 1,000,000 rows per table** (uniform, ≥50k enforced), warm, **median of 8**,
+via `bench/four-way`. Absolute ms have run-to-run noise (~±30%, 4 containers contend); the **ratios**
+and **cross-build deltas** are the signal. **Every query cell is ≪ the 300 ms interactive gate** on
+all four builds. Click a row's Details for the mechanism write-up + the reproducible run.)*
 
 *Broad-term full-text caveat (Run 133): the ~1.5× shown is on this synthetic corpus + a `tokenbf_v1`
 index. On the **canonical full-text bench** (`logs_b1`, 5M rows, 699k matches) the broad-term gap is

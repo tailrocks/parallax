@@ -8,10 +8,12 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 138 local runs + B1–B15 cases. Recent: **Run 138 —
-time-range scan 4-way** (`WHERE ts BETWEEN`, the fundamental primitive): CH ~3 ms / GT ~5–9 ms (~2×) — both time-prune
-well (GT TIME INDEX, CH ORDER BY ts), not a GT win; GT-nightly ~40% faster than stable (real v1.1 time-range
-improvement), all ≪ 300 ms. **Run 137 — high-group-count agg 4-way** (`GROUP BY trace_id`, 70k groups): GT 21 / CH ~13 ms (~1.5×) — no high-group cliff on
+cold/first-run measurement showed). 25 mechanism notes + 140 local runs + B1–B15 cases. Recent: **Runs 139–140 —
+REPRODUCIBLE 4-way harness** (`bench/four-way/`): every benchmark now stored as code — `compose.yml` (4 builds: GT
+v1.0.2+v1.1-nightly, CH 26.5+head) + `gen.sh` (6 tables, **N=1M, ≥50k enforced**) + `bench.sh` (20 queries × 4 builds,
+median-of-8); the full matrix in `four-way-version-comparison.md` reproduces from it. Confirms the record at a
+meaningful tier (all 1M rows); GT-nightly consistently equal-or-faster than stable, CH-head flat, all ≪ 300 ms. Earlier:
+**Run 138 — time-range scan** (CH ~3 / GT ~5–9 ms, both time-prune; GT-nightly ~40% faster). **Run 137 — high-group-count agg 4-way** (`GROUP BY trace_id`, 70k groups): GT 21 / CH ~13 ms (~1.5×) — no high-group cliff on
 GreptimeDB (the group-by path is well-behaved, unlike the dedup high-card-PK path); nightlies ≈ stables (CH-head's
 initial 26 ms was a warmup/contention artifact, re-verified to ~13 ms). **Run 136 — count-distinct / cardinality panel 4-way**: low-card distinct CH ~1.7× (GT 20 / CH 12 ms) but high-card EXACT distinct
 GreptimeDB ties/wins (1M unique: GT 30–33 / CH 36–37 ms; CH approx `uniq` HLL ~10 ms fastest); nightlies ≈ stables, all

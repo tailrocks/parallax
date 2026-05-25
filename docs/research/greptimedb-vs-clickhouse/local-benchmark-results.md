@@ -5696,6 +5696,51 @@ artifact; `tsr` is **time-optimized on both** (GT `TIME INDEX`, CH `ORDER BY ts`
 **Reproduce.** Build `tsr` (1M, ts = `1716000000000+n` ms varying; CH `ORDER BY ts`, GT `TIME INDEX`);
 `SELECT count() WHERE ts BETWEEN <t1> AND <t2>` (100k window) → GT ~5–9 / CH ~3 ms. All 4 builds.
 
+### Run 139 — 2026-05-25 — Latency histogram (heatmap panel) 4-way: CH ~5–7 ms / GT ~10–12 ms (~2×), both interactive; GT-nightly ~15% faster
+
+**Pass target.** Latency-distribution histogram (`count by duration bucket` — the heatmap panel), a
+distinct common APM view. All four builds (rule), standing `spans1m` (1M, duration 0–300 → 30 buckets).
+
+| Query | GT-stable | GT-nightly | CH-stable | CH-head |
+| --- | ---: | ---: | ---: | ---: |
+| Latency histogram (`floor(dur/10)*10`, 30 buckets) | 12 | 10 | 5 | 7 |
+
+**Verdict — ~2× CH (scan-agg class), both interactive; GT-nightly modestly faster.** Computed-bucket
+group-by; GT ~10–12 ms / CH ~5–7 ms, both ≪ 300 ms. GT-nightly ~15% faster than stable (fits the v1.1
+pattern). Added to the four-way matrix.
+
+**Reproduce.** `SELECT floor(duration_ms/10)*10 b, count() FROM spans1m GROUP BY b ORDER BY b` on all 4.
+
+### Run 140 — 2026-05-25 — REPRODUCIBLE 4-way harness (`bench/four-way/`): all 20 queries × 4 builds at N=1,000,000 (≥50k enforced), median-of-8, stored as code
+
+**Pass target.** Operator: benchmarks must use a **meaningful data size (≥50k)** and be **stored as
+code** (reproducible scripts: spawn data, run, verify) — a preliminary check that re-runs on a server
+later. Built the harness + ran it end-to-end.
+
+**Deliverable — `bench/four-way/`:**
+- `bench/compose.yml` — all **four** builds (GT v1.0.2 + v1.1-nightly, CH 26.5 + head).
+- `bench/four-way/gen.sh` — generates 6 tables (spans1m, m2m, logs1m, sj, errs, tsr) identically on
+  all four via `range()`/`numbers()`; **`N` defaults to 1,000,000 and is enforced ≥ 50,000**; GT
+  flushed for settled reads.
+- `bench/four-way/bench.sh` — runs all 20 queries × 4 builds, prints the median matrix.
+- `bench/four-way/README.md` — usage, the data-size policy, the schema/query table.
+
+**Result (N=1M, median-of-8 — the matrix now in `four-way-version-comparison.md`):** confirms the
+whole record. ClickHouse faster on most (anchored ~3×, scan ~4×, log-tail ~5×, dynamic-attr JSON
+~14×, in-DB join ~15–20×, aggs ~1.5–2×); **GreptimeDB wins/ties last-value + selective full-text +
+high-card exact count-distinct**; everything ≪ 300 ms on all four. **GT-nightly consistently
+equal-or-faster than GT-stable** (anchored 10→8, unindexed 19→12, topk 14→10, trace-explorer 19→11,
+issue-list 21→12, cross-join 59→36, time-range 10→4) — no regressions; the v1.1 modest-broad-improvement
+pattern holds at clean N=1M. CH-head ≈ CH-stable.
+
+**Data-size confirmation (operator's check):** every query ran on **1,000,000 rows** — 20× the 50k
+floor `gen.sh` enforces. No small-portion benchmarks; the numbers are trustworthy at this tier.
+(Larger tiers: `N=5000000 bench/four-way/gen.sh`.)
+
+**Reproduce.** `docker compose -f bench/compose.yml up -d && bench/four-way/gen.sh &&
+bench/four-way/bench.sh`. (This run used the live containers via `GT_NIGHTLY=gt-nightly CH_HEAD=ch-head`
+overrides; the compose names are the defaults.)
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

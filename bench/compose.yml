@@ -1,39 +1,61 @@
-# Parallax storage-benchmark candidates, pinned to the versions under analysis.
-# Smoke tier: local disk only (object-storage/MinIO path added when that pass runs).
-# Referenced by docs/research/storage-benchmark-prototype.md and
-# docs/research/greptimedb-vs-clickhouse/local-benchmark-results.md.
+# Parallax storage-benchmark candidates — the FOUR builds the comparison runs on.
+# Rule (AGENTS.md "Benchmarking Rule"): every benchmark runs on all four —
+# GreptimeDB stable + nightly, ClickHouse stable (non-LTS) + nightly (head).
+# Referenced by docs/research/greptimedb-vs-clickhouse/{local-benchmark-results,four-way-version-comparison}.md
+# and bench/four-way/{gen,bench}.sh.
 #
 # Bring up:   docker compose -f bench/compose.yml up -d
 # Tear down:  docker compose -f bench/compose.yml down -v
+# Re-pin nightlies: bump the *-nightly / :head tags below (they roll daily) and re-run gen.sh.
 name: parallax-bench
 
 services:
+  # 1. GreptimeDB — latest STABLE (production-OK)
   greptimedb:
     image: greptime/greptimedb:v1.0.2
     command: >
       standalone start
-      --http-addr 0.0.0.0:4000
-      --rpc-bind-addr 0.0.0.0:4001
-      --mysql-addr 0.0.0.0:4002
-      --postgres-addr 0.0.0.0:4003
-    ports:
-      - "4000:4000"   # HTTP API
-      - "4002:4002"   # MySQL wire
+      --http-addr 0.0.0.0:4000 --rpc-bind-addr 0.0.0.0:4001
+      --mysql-addr 0.0.0.0:4002 --postgres-addr 0.0.0.0:4003
+    ports: ["4000:4000", "4002:4002"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
       interval: 3s
       timeout: 2s
       retries: 20
 
+  # 2. GreptimeDB — latest NIGHTLY (v1.1, unreleased). Bump the dated tag as it rolls.
+  greptimedb-nightly:
+    image: greptime/greptimedb:v1.1.0-nightly-20260525
+    command: >
+      standalone start
+      --http-addr 0.0.0.0:4000 --rpc-bind-addr 0.0.0.0:4001
+      --mysql-addr 0.0.0.0:4002 --postgres-addr 0.0.0.0:4003
+    ports: ["4100:4000", "4102:4002"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 3s
+      timeout: 2s
+      retries: 20
+
+  # 3. ClickHouse — latest STABLE feature line (NOT LTS)
   clickhouse:
     image: clickhouse/clickhouse-server:26.5.1.882
-    ports:
-      - "8123:8123"   # HTTP API
-      - "9000:9000"   # native protocol
+    ports: ["8123:8123", "9000:9000"]
     ulimits:
-      nofile:
-        soft: 262144
-        hard: 262144
+      nofile: { soft: 262144, hard: 262144 }
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 20
+
+  # 4. ClickHouse — latest NIGHTLY (head, currently 26.6.x)
+  clickhouse-head:
+    image: clickhouse/clickhouse-server:head
+    ports: ["8124:8123", "9001:9000"]
+    ulimits:
+      nofile: { soft: 262144, hard: 262144 }
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
       interval: 3s
