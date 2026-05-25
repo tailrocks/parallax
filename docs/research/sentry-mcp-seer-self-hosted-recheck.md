@@ -22,14 +22,15 @@ Keep:
   root-cause analysis, solution planning, code changes, PR creation, and external
   coding-agent handoff are real workflows;
 - Sentry MCP makes agent access to Sentry data table stakes;
-- current sources still do not prove hosted-Seer parity for self-hosted Sentry;
+- current self-hosted docs now explicitly exclude Seer and other AI/ML features
+  from self-hosted Sentry because those components are closed source;
 - Parallax's sharper gap is the open, portable, redacted evidence bundle plus
   action/outcome ledger, not "Sentry has no AI."
 
 Remove or avoid:
 
-- categorical wording that Seer is "confirmed not available" to self-hosted
-  Sentry;
+- treating the current self-hosted Seer exclusion as a permanent technical
+  impossibility or proof that Sentry will never ship a self-hosted AI path;
 - categorical wording that Sentry MCP self-hosted use always requires write
   scopes;
 - any implication that "MCP exists" closes or proves the Parallax agent surface.
@@ -43,24 +44,26 @@ Remove or avoid:
 | [Seer Issue Fix API](https://docs.sentry.io/api/seer/start-seer-issue-fix/) | The API can identify root cause, propose a solution, generate code changes, and create a PR. Stop points are `root_cause`, `solution`, `code_changes`, and `open_pr`; runs are asynchronous. | The separate-fixer workflow is incumbent behavior. Parallax must differentiate below the fixer: evidence contract, redaction, provenance, and outcome rows. |
 | [sentry-mcp README](https://github.com/getsentry/sentry-mcp) and [`0.35.0` release](https://github.com/getsentry/sentry-mcp/releases/tag/0.35.0) | Latest release checked is `0.35.0`, published 2026-05-21. The README says Sentry MCP is primarily for human-in-the-loop coding agents. It supports remote MCP, Claude Code plugin/subagent use, and stdio. The README calls stdio a work-in-progress path for self-hosted Sentry; AI-powered search needs OpenAI or Anthropic configuration; self-hosted instances may need unsupported Seer skills disabled; the README setup path lists `project:write`, `team:write`, and `event:write`. | Sentry MCP is real and important. It is not proof of self-hosted hosted-Seer parity, canonical evidence-bundle projection, redaction reports, or read-only-by-default safety. |
 | [sentry-mcp stdio testing guide](https://github.com/getsentry/sentry-mcp/blob/master/docs/testing-stdio.md) | The testing guide documents full-function scopes including write scopes, but also states read-only testing can use `org:read`, `project:read`, `team:read`, and `event:read`. The guide shows stdio self-hosted configs and example output with 20 tools available. | Narrow the old scope claim. Sentry documents a read-only testing path, but Parallax still cannot count this as a read-only-safe agent surface until tool availability, projection equivalence, redaction, and fixture behavior are proven. |
-| [Self-hosted Sentry docs](https://develop.sentry.dev/self-hosted/) and [`26.5.0` release](https://github.com/getsentry/self-hosted/releases/tag/26.5.0) | Latest self-hosted release checked is `26.5.0`, published 2026-05-18. Current docs describe a Docker Compose/bash setup, minimum and recommended resources, errors-only beta, feature-complete mode, single-node service caveats, FSL licensing, and a feature-complete list including traces, profiles, replays, uptime, metrics, feedback, and crons. The feature-complete list does not mention Seer/AI. The `26.5.0` compose file declares 72 services. | The current primary sources do not prove self-hosted Seer parity. They also do not support the stronger old wording that all Seer/AI exclusion is explicitly confirmed in the self-hosted docs. Keep the claim as "not currently proven available." |
+| [Self-hosted Sentry docs](https://develop.sentry.dev/self-hosted/) and [`26.5.0` release](https://github.com/getsentry/self-hosted/releases/tag/26.5.0) | Latest self-hosted release checked is `26.5.0`, published 2026-05-18. Current docs describe a Docker Compose/bash setup, minimum and recommended resources, errors-only beta, feature-complete mode, single-node service caveats, FSL licensing, and a feature-complete list including traces, profiles, replays, uptime, metrics, feedback, and crons. They now explicitly list Seer and other AI/ML features as unavailable on self-hosted Sentry because those components are closed source. The `26.5.0` compose file declares 72 services. | The self-hosted Seer gap is now explicit in current primary docs, not merely unproven. Keep the claim tied to current docs and avoid implying Sentry cannot change this later. |
 
 ## Product Impact
 
 The Sentry wedge should now be worded as:
 
 > Sentry's hosted Seer/Autofix path validates the issue-to-fix workflow. Current
-> self-hosted and MCP sources do not prove hosted-Seer parity for self-hosted
-> Sentry, and Sentry MCP does not publish Parallax-style portable, redacted,
-> citable evidence bundles or outcome ledgers.
+> self-hosted docs explicitly exclude Seer and other AI/ML features from
+> self-hosted Sentry, and Sentry MCP does not publish Parallax-style portable,
+> redacted, citable evidence bundles or outcome ledgers.
 
-This is still strategically important. It just avoids making the self-hosted
-claim do more work than the current sources support.
+This is still strategically important. It just keeps the self-hosted claim tied
+to current Sentry docs instead of turning it into a future-proof guarantee.
 
 ## Falsification Criteria
 
 Revisit the verdict and drift ledger if Sentry publishes any of the following:
 
+- removal or reversal of the current self-hosted docs exclusion for Seer and
+  other AI/ML features;
 - self-hosted Seer/Autofix parity with local or customer-selected LLM providers;
 - self-hosted Seer Agent support with documented access controls below
   organization-wide telemetry;
