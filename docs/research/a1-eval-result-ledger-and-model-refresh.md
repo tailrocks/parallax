@@ -48,6 +48,15 @@ Outside sources checked for this pass:
   commercial splits; it is a better current coding benchmark reference but still
   does not isolate runtime telemetry or evidence-bundle value
   ([Scale Labs](https://labs.scale.com/papers/swe_bench_pro)).
+- SWE-rebench V2 is current and large enough to matter for later expansion: the
+  arXiv paper reports a language-agnostic pipeline with 32,000+ executable tasks
+  across 20 languages and 3,600+ repositories, plus a larger PR-scale release.
+  The current Hugging Face collection lists a 32.1k-row main dataset and a
+  126k-row PR-scale dataset. That makes it useful for expansion or training-scale
+  corpus work, but the first A1 seed should still prefer smaller, inspectable
+  sources before relying on automatically collected/generated task rows
+  ([arXiv](https://arxiv.org/abs/2602.23866),
+  [collection](https://huggingface.co/collections/nebius/swe-rebench-v2)).
 - Terminal-Bench publishes agent-terminal tasks and includes an explicit
   training-contamination canary on the public site, a good reminder that
   benchmark artifacts need leakage checks
