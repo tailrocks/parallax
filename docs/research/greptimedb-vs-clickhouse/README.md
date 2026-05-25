@@ -3,7 +3,7 @@
 <!-- markdownlint-disable MD013 -->
 
 Status: produced by an indefinite research loop; **white-box analysis comprehensive
-(through pass ~71)**. All 10 checklist subsystems + every named ClickHouse/GreptimeDB
+(through pass ~75)**. All 10 checklist subsystems + every named ClickHouse/GreptimeDB
 lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; the 9
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified

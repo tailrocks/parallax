@@ -2,18 +2,20 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: standing decision, continually sharpened (current through **pass 58**).
+Status: standing decision, continually sharpened (current through **pass 75**).
 Synthesizes the internals teardowns (all 10 subsystems + rollup, retention,
 schema-evolution, dedup, WAL/durability, execution-engine, indexing, PromQL, metric
 cardinality, span-tree, projections, deletes/mutations, async-insert, zero-copy
-replication), the per-signal matrix, Docker Runs 1–34, and public-claims triangulation.
+replication), the per-signal matrix, Docker Runs 1–46, and public-claims triangulation.
 The runnable `storage-benchmark-prototype.md` holds final veto; this verdict states the
 mechanism-grounded recommendation and the triggers that would flip it. **The white-box
 smoke comparison is now comprehensive** — all 10 checklist subsystems, every named
 ClickHouse/GreptimeDB lead, the Q1–Q6 evidence-bundle set, and all 9 public claims are
-covered; the remaining open questions are **harness-gated** (scale/cold/multi-node),
-listed below. Pins re-verified current through pass 58 (no newer stable
-on either side: GreptimeDB v1.1.0 is nightly-only; ClickHouse 26.5.x is the highest line).
+covered; **both implementation designs are now verified buildable live** (Runs 45–46); the
+remaining open questions are **harness-gated** (scale/cold/multi-node), listed below. Pins
+re-verified current through pass 75 (no newer stable on either side: GreptimeDB v1.1.0 is
+nightly-only; ClickHouse 26.5.x is the highest *feature* line — newer-dated 26.3/26.4 tags
+are older-line LTS/backport patches).
 
 Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d8`).
 
@@ -51,13 +53,17 @@ where ClickHouse leads but which Parallax's anchored pattern rarely hits.
   query speed**: at 40k series / 8M rows ClickHouse's SQL aggregation is **~2× faster
   warm** (Run 37: CH 50 ms vs GT 107 ms — **corrected down from the ~10× of Run 11,
   which was a cold/first-run GreptimeDB scan, not the warm gap**; cold-regime gap is
-  larger). GreptimeDB ties only on **freshness** (both visible-on-write, Run 5). So even
-  on
+  larger). **Hardened further (Run 44): even GreptimeDB's *own* native PromQL path is
+  ~5× slower than its own SQL** (`avg by(service)` ≈590 ms vs ≈120 ms vs CH SQL ≈65 ms) —
+  the PromQL planner pays a near-fixed `SeriesDivide`/`SeriesNormalize` series-sort setup
+  (a single-step instant eval costs as much as a 20-step range) that a streaming SQL
+  hash-agg avoids. So the raw metric-agg ordering is **CH SQL > GT SQL > GT PromQL**.
+  GreptimeDB ties only on **freshness** (both visible-on-write, Run 5). So even on
   metrics, "GreptimeDB fastest" is false for aggregation *latency at volume* — it
-  wins on PromQL **maturity/ergonomics** (GA, default-on) vs ClickHouse's
-  **experimental** 26.x PromQL (`TimeSeries` engine, off by default) — a real lead,
-  but narrower than the old "ClickHouse has no PromQL" framing (corrected pass 44,
-  `promql-and-metrics-query.md`).
+  wins on PromQL **maturity/ergonomics** (GA, default-on, the expressiveness of range
+  vectors/`rate`/lookback) vs ClickHouse's **experimental** 26.x PromQL (`TimeSeries`
+  engine, off by default) — a real lead, but narrower than the old "ClickHouse has no
+  PromQL" framing (corrected pass 44, `promql-and-metrics-query.md`).
 
 So the ordering "GreptimeDB fastest, then ClickHouse" does not hold for the
 analytical query shapes; it inverts. The design decisions that cause it: ClickHouse
@@ -96,8 +102,9 @@ storage*, accepting a younger DataFusion scan engine.
 ## Decision question 3 — can ClickHouse replace GreptimeDB for Parallax?
 
 **Yes, technically** — it stored every Parallax signal and returned identical
-evidence bundles (Runs 1–4 parity PASS). But three design decisions impose real
-cost:
+evidence bundles (Runs 1–4 parity PASS), and the **full ClickHouse schema is now
+verified buildable on 26.5.1** (Run 46 — JSON/codecs/`text` index/AggregatingMergeTree
+MV all build; one `text`-tokenizer fix). But three design decisions impose real cost:
 
 1. **Observability protocols are experimental or external, not GA-native.** All three
    are **GA-native + default-on in GreptimeDB** (OTLP metrics/logs/traces Run 25; PromQL
@@ -134,7 +141,10 @@ the gap over time, the *present state* still favors GreptimeDB for shipping toda
 
 ## Decision question 4 — can GreptimeDB replace ClickHouse for Parallax?
 
-**Yes** — it stored every signal and ran Q1–Q6 with identical results. The cost:
+**Yes** — it stored every signal and ran Q1–Q6 with identical results, and the **full
+GreptimeDB schema is verified buildable on v1.0.2** (Run 45 — `INVERTED`/`FULLTEXT`/
+`SKIPPING` indexes + metric engine all build, after quoting 7 reserved-keyword columns
+and dropping the metric-table's empty `PRIMARY KEY ()`). The cost:
 
 1. **Slower heavy log/trace analytics** (younger DataFusion engine, coarser
    granule, no PREWHERE-equivalent late materialization yet). **But Parallax's
@@ -271,7 +281,9 @@ ships a new mechanism — re-checked each pass).
   `promql-and-metrics-query.md`, `metric-cardinality.md`, `trace-span-tree.md`,
   `projections-and-access-paths.md`, `deletes-and-mutations.md`.
 - Matrix: `per-signal-verdict.md`. Empirical: `local-benchmark-results.md`
-  (Runs 1–34). Public claims: `public-performance-claims.md`. Targeted cases:
+  (Runs 1–46; recent: 37 metric-agg ~2× warm, 43 rollup live, 44 native-PromQL ~5×
+  slower than GT SQL, 45–46 both impl schemas built live). Public claims:
+  `public-performance-claims.md`. Targeted cases:
   `benchmarking-the-differences.md` (B1–B15; B14 multi-replica S3 cost, B15
   strict-durability throughput added pass 59 as harness-handoff specs for open Q#6/#7).
 - Build designs: `greptimedb-implementation.md`, `clickhouse-implementation.md`.
