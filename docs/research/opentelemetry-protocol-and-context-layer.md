@@ -26,10 +26,16 @@ and trace context, and interoperate cleanly with upstream OpenTelemetry
 Collectors. It should not make the Collector mandatory for the tiny deployment.
 The product value belongs above OTEL: Sentry-compatible error grouping,
 stacktrace normalization, release regression analysis, evidence graph building,
-and bounded MCP/API context bundles for humans and coding agents.
+and schema-bound, canonical context bundles for humans and coding agents across
+CLI, HTTP, and MCP projections.
 
 The product-claim boundary for "OTLP-native" and "Collector-compatible" is the
 [OTLP conformance ledger](otlp-conformance-ledger.md).
+Stored OTLP rows are necessary but not sufficient for Parallax's agent claim:
+OTLP-derived evidence becomes agent-ready only after the
+[evidence bundle schema](evidence-bundle-and-schema.md), canonical hashes,
+projection manifests, redaction reports, and access-surface equivalence gates
+pass.
 
 In one sentence:
 
@@ -46,6 +52,8 @@ In one sentence:
 | OpenTelemetry Collector Contrib | `v0.152.0` | 2026-05-11 | Contrib carries its own distribution/version line with core Collector plus a wider component set; track separately from latest core/source. |
 | OpenTelemetry Rust | `opentelemetry-0.32.0` | 2026-05-09 | Rust traces, metrics, and logs are all listed as beta by the official Rust docs. |
 | Rotel | `v0.2.2` | 2026-05-04 | Rust-native OTEL collector alternative; promising, but early. |
+| MCP specification | `2025-11-25` | Checked 2026-05-25 | MCP tool outputs can carry schema-validated `structuredContent`; text/Markdown should remain projections of canonical bundle JSON. |
+| JSON canonicalization | RFC 8785 JCS | June 2020 | Use deterministic JSON hashes for bundle/projection equality instead of renderer-specific output. |
 
 Sources:
 
@@ -59,6 +67,9 @@ Sources:
 - [Rotel docs](https://rotel.dev/)
 - [Rotel v0.2.2 release](https://github.com/rotel-dev/rotel/releases/tag/v0.2.2)
 - [OpenTelemetry Rust 0.32.0 release](https://github.com/open-telemetry/opentelemetry-rust/releases/tag/opentelemetry-0.32.0)
+- [MCP tools specification 2025-11-25](https://modelcontextprotocol.io/specification/2025-11-25/server/tools)
+- [RFC 8785 JSON Canonicalization Scheme](https://www.rfc-editor.org/rfc/rfc8785.html)
+- [Evidence bundle and open schema](evidence-bundle-and-schema.md)
 - [OTLP conformance ledger](otlp-conformance-ledger.md)
 
 ## Is OTEL Becoming The Universal Protocol Layer?
@@ -113,6 +124,8 @@ Parallax still needs its own logic for:
   `metric_anomaly_near_release`, and `deploy_precedes_regression`.
 - Bounded context bundles for coding agents, with redaction and least-privilege
   query scopes.
+- Canonical evidence bundles, projection manifests, MCP output schemas, or
+  proof that CLI/HTTP/MCP surfaces preserve the same agent-visible context.
 - Human issue workflow: assignment, status, notes, suppressions, regressions,
   and audit history.
 
@@ -350,12 +363,19 @@ Before claiming OTEL-native support, Parallax should pass these tests:
   and temporary storage failure.
 - Verify that Collector and direct-SDK ingestion produce equivalent normalized
   evidence rows.
+- Verify that OTLP-derived rows assemble into schema-valid evidence bundles with
+  canonical bundle hashes, evidence-edge hashes, projection manifests, and
+  equivalent CLI/HTTP/MCP outputs before using them in agent-facing claims.
 - Benchmark latest Rotel versus latest official Collector for the Parallax
   quickstart and Lambda/serverless cases before recommending it.
 
 The detailed fixture matrix and pass/fail semantics for these claims are
 specified in
 [OTLP receiver conformance and Collector equivalence](otlp-receiver-conformance-and-collector-equivalence.md).
+The access-surface projection and MCP structured-output requirements are
+specified in
+[Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
+and enforced through the OTLP conformance ledger for OTLP-derived evidence.
 
 ## Bottom Line
 
@@ -363,5 +383,7 @@ OpenTelemetry is becoming the universal observability protocol layer. Parallax
 should embrace that rather than compete with it.
 
 The durable product wedge is the layer above OTEL: taking traces, logs, metrics,
-Sentry-style errors, deploys, commits, and CI evidence, then producing a trusted
-debugging context that a human or coding agent can act on.
+Sentry-style errors, deploys, commits, and CI evidence, then producing a
+schema-valid, canonical, redacted debugging context that a human or coding agent
+can act on. Without that bundle/projection proof, Parallax has only an ingest
+claim, not an AI-native context-engine claim.

@@ -23,8 +23,9 @@ Build Parallax as:
 > A Rust-first, Sentry-compatible, OpenTelemetry-native execution context system
 > for services, CLI apps, CI runs, and coding agents that stores observability
 > evidence in GreptimeDB, keeps product metadata in Turso, and exposes bounded
-> evidence bundles through a CLI and HTTP API, with a later read-only MCP
-> adapter once the bundle contract is stable.
+> schema-bound evidence bundles through a CLI and HTTP API, with a later
+> read-only MCP adapter once the canonical bundle and projection contracts are
+> stable.
 
 The first product should beat self-hosted Sentry on operational simplicity. It
 should not start as a full observability dashboard or autonomous production SRE.
@@ -63,6 +64,10 @@ Support **both OpenTelemetry and Sentry**, with different jobs:
 Do not invent a new telemetry wire protocol. OTLP is the wire format for
 logs/traces/metrics. Sentry envelopes are the wire format for error migration.
 Parallax's unique API is the context bundle and evidence graph above them.
+Normalized telemetry rows are not themselves the agent-facing product; they
+become claimable agent context only when they assemble into schema-valid
+evidence bundles with canonical hashes, projection manifests, redaction reports,
+and matching CLI/HTTP/MCP projections.
 
 ### Component Boundary And Agent Access
 
@@ -98,6 +103,9 @@ Access decision:
   earliest local prototype and Phase 1 proof. MCP becomes the right first-class
   agent integration once the bundle API, authorization model, audit rows, and
   redaction gates are stable. Keep the MCP adapter thin and read-only.
+- **Projection equivalence before agent claims:** CLI JSON, HTTP JSON, MCP
+  `structuredContent`, and Markdown must be projections of the same canonical
+  bundle. Text-only MCP output or renderer-only equivalence does not count.
 - **No generic mutation tools:** no `run_sql`, `run_shell`, production deploy,
   rollback, or database mutation tools in Parallax core.
 
@@ -536,8 +544,8 @@ It should not receive unlimited logs or direct production credentials.
 The agent surface has three concrete forms:
 
 1. CLI commands for shell-native agents and CI.
-2. HTTP API for stable service-to-service integration and the canonical context
-   contract.
+2. HTTP API for stable service-to-service integration and the canonical
+   schema-bound context contract.
 3. MCP tools later for first-class agent clients.
 
 The CLI is the first usable surface. MCP should not be required for Phase 1,
@@ -546,7 +554,9 @@ stable. The focused decision is captured in
 [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md):
 canonical HTTP API first, day-one CLI, and then a read-only MCP adapter once A7
 scope discipline and A6 redaction safety are green. All surfaces must call the
-same authorization, redaction, and bundle-building code.
+same authorization, redaction, and bundle-building code, and every agent-visible
+surface must expose the same canonical bundle hash plus projection manifest for
+the same anchor, principal, schema version, and redaction policy.
 
 First CLI commands:
 
@@ -592,6 +602,9 @@ future-dated spec revision until the official site publishes it as current. MCP
 is supported by the major checked agent clients (Claude Code, Codex, Cursor,
 and Copilot/VS Code), which is why a read-only MCP context adapter is the right
 later agent-native surface alongside the CLI.
+Bundle-returning MCP tools must declare an output schema and return the bundle
+as `structuredContent`; text content is only a bounded Markdown compatibility
+projection.
 
 Sources:
 
