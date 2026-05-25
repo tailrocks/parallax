@@ -4263,6 +4263,44 @@ no bump). `spans`/`spans_idx` = 1M rows, parity. `span_id` is **unindexed on bot
 `SELECT status,count() GROUP BY status` (~5.5/13 ms); `SELECT service,avg(duration_ms) GROUP BY
 service` (~7/15 ms). Warm ×8–10; CH `--time`, GT `execution_time_ms`.
 
+### Run 103 — 2026-05-25 — Cross-tier in-DB join pushdown re-verified: CH prunes ~3 ms, GT full-scans ~53 ms (~17×), subquery-prefilter workaround ~19 ms (Run 81 reproduces, no drift)
+
+**Pass target.** Re-verify the load-bearing **cross-tier in-DB join** result (Run 81, parity-roadmap
+#8, verdict DQ2): ClickHouse pushes an anchored equality filter through a join into the scan and
+prunes; GreptimeDB does **not**, full-scanning the join input — and the Tier-A subquery-prefilter /
+app-side workaround neutralises it. Hold this ClickHouse *win* (and the GT optimizer gap) to the bar.
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned live — latest stable, no
+bump). `spans`/`spans_idx` 1M (trace_id INVERTED on GT), `error_events` 2,226. Anchored trace
+`3fb2d84c…` = 14 spans + 1 error. Query = `spans ⋈ error_events ON trace_id WHERE
+s.trace_id='X'`. Method: CH `--time`, GT `execution_time_ms`, warm.
+
+| Query | latency (warm) | vs CH | mechanism |
+| --- | --- | --- | --- |
+| **CH** direct INNER join (anchored) | `12 3 3 3 3 3 4 3 3 3` → **~3 ms** | 1× | pushes `trace_id='X'` into the scan → prunes before join (`Granules 1` + PREWHERE) |
+| **GT** direct INNER join | `155 57 52 51 54 49 53 52 62 54` → **~53 ms** | **~17×** | does **not** push the filter into the `spans_idx` scan → **full-scans 1M** (Run 81 EXPLAIN `output_rows: 1,000,000`); filter lands as a post-scan `FilterExec` |
+| **GT** subquery-prefilter workaround | `21 18 16 19 19 18 19 18 21 20` → **~19 ms** | ~6× | `FROM (SELECT * FROM spans_idx WHERE trace_id='X') s …` lands the filter as the scan's own → inverted index prunes to 14 rows, then joins |
+
+**Verdict — Run 81 reproduces exactly, no drift. The gap is a join-pushdown optimizer limitation, neutralised by the workaround.**
+
+- **ClickHouse wins the *direct* in-DB cross-tier join (~17×: 3 ms vs 53 ms)** by pushing the
+  anchor into the scan; **GreptimeDB full-scans the join input** because its optimizer does not push
+  a join-input equality predicate to the `TableScan` as an index-eligible filter (parity-roadmap #8,
+  Tier-A workaround / Tier-B optimizer fix). Mechanism unchanged from Run 81.
+- **The subquery-prefilter workaround cuts GT to ~19 ms (~3× faster than the direct join)** — the
+  inverted index prunes the spans side to 14 rows before the join. The residual ~6× vs CH is the
+  join + HTTP overhead on a tiny row set, **all ≪ the 300 ms gate**.
+- **Parallax is unaffected on the hot path:** evidence-bundle assembly is **app-side correlation**
+  (anchored fetch each signal + join in the app — Q6 = Q1+Q2+Q3, Run 99 ~16 ms), not an in-DB join.
+  So this CH win bites only if Parallax adds *direct in-DB cross-tier joins*; the designed pattern
+  sidesteps it. No verdict change; carry the "don't rely on GT join-input pushdown — pre-filter or
+  correlate app-side" note into the blueprint.
+
+**Reproduce.** Find a trace_id in both spans+error_events; CH `SELECT count() FROM spans s JOIN
+error_events e ON s.trace_id=e.trace_id WHERE s.trace_id='X'` (~3 ms); GT same on `spans_idx`
+(~53 ms, full-scan); GT subquery `FROM (SELECT * FROM spans_idx WHERE trace_id='X') s JOIN …`
+(~19 ms, pruned). Warm ×10.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

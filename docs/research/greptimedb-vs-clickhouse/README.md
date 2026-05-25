@@ -8,8 +8,10 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 102 local runs + B1–B15 cases. Recent: **Run 102 re-verified
-the unindexed/ad-hoc scan gap warm** — ~2–5× shape-dependent at 1M (point-filter ~5×, full-scan aggregation ~2×), NOT
+cold/first-run measurement showed). 25 mechanism notes + 103 local runs + B1–B15 cases. Recent: **Run 103 re-verified
+the cross-tier in-DB join pushdown** — CH prunes the anchor through the join (~3 ms) while GT full-scans the input
+(~53 ms, ~17×, parity-roadmap #8 optimizer gap); the subquery-prefilter workaround cuts GT to ~19 ms, and Parallax's
+app-side correlation sidesteps it entirely (all ≪ 300 ms; Run 81 reproduces). **Run 102 re-verified the unindexed/ad-hoc scan gap warm** — ~2–5× shape-dependent at 1M (point-filter ~5×, full-scan aggregation ~2×), NOT
 Run 31's ~10× which was cold/HTTP-wall inflated (confirms the Run 40 correction); all ≪ 300 ms at 1M, so the DQ5
 flip trigger needs GB–TB cold scale, not just an ad-hoc shape. **Run 101 re-verified ingest cardinality-insensitivity** — going 12→1M distinct series, GreptimeDB ingest slows only ~1.16× (≈flat) vs
 ClickHouse ~1.53× (plain String) / ~2.6× (idiomatic LowCardinality, Run 84); GT has no cardinality knob to mis-size
