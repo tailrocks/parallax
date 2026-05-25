@@ -118,7 +118,10 @@ Every node: `{ "id", "type", "ts" (when applicable), "summary", "data", "refs" }
 | `metric_window` | Metric series slice / anomaly. | `metric`, `labels`, `baseline`, `observed`, `delta`, `anomaly`, `time_range` |
 | `release` | Release/version marker. | `version`, `commit_sha`, `published_at`, `predecessor_version` |
 | `deploy` | Deploy/change event. | `deploy_id`, `release`, `started_at`, `finished_at`, `actor`, `targets` |
-| `code_change` | Commit / PR / diff region. | `commit_sha`, `pr_url?`, `files[]`, `authors`, `changed_symbols?` |
+| `deployment_status` | One deploy status transition. | `deploy_id`, `state`, `environment`, `log_url?`, `target_url?`, `created_at` |
+| `code_change` | Commit / PR / diff region. | `repo`, `base_sha?`, `head_sha`, `commit_sha?`, `pr_url?`, `files[]`, `files_complete`, `authors`, `changed_symbols?` |
+| `work_item` | GitHub/Linear/Jira issue or ticket context. | `provider`, `key`, `title`, `status`, `url`, `labels[]`, `linked_prs[]`, `linked_commits[]`, `description_ref?` |
+| `check_run` | CI/check validation for a commit. | `provider`, `run_id`, `commit_sha`, `status`, `conclusion?`, `workflow`, `log_ref?` |
 | `ci_run` | CI pipeline execution. | `provider`, `run_id`, `workflow`, `status`, `commit_sha`, `branch`, `started_at`, `jobs[]` |
 | `test_case` | One test and its history. | `suite`, `name`, `status`, `retries`, `pass_fail_history`, `first_failed_commit?`, `flaky_score?` |
 | `cli_invocation` | First-class CLI execution. | `command`, `subcommand`, `args_sanitized`, `cwd`, `repo`, `branch`, `commit`, `exit_code`, `duration_ms`, `stdout_ref`, `stderr_ref`, `child_processes[]`, `side_effects[]` |
@@ -155,6 +158,10 @@ Correlation edges:
 | `metric_anomaly_on_path` | Metric anomaly on the trace's service path. | medium |
 | `deploy_preceded_issue` | Deploy in window before first occurrence. | medium |
 | `code_change_touched_frame` | Changed file/symbol matches a top in-app frame. | medium |
+| `event_observed_in_release` | Error event explicitly carries a release/version. | strong |
+| `deploy_contains_commit` | Deploy/release records exact deployed commit. | strong |
+| `check_validated_commit` | CI/check run validated the commit. | strong |
+| `work_item_linked_pr` | Issue tracker is linked to PR by provider event or text convention. | strong/medium |
 | `temporal_proximity` | Co-occurred in window, no stronger link. | weak |
 
 Audit edges (the agent/CLI accountability layer):
@@ -352,6 +359,9 @@ it survives contact with real data:
 - [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
   — the additive frontend node types (`frontend_session`, `user_step`,
   `frontend_error`, `route_view`, `frontend_release`) and cross-tier edges.
+- [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md)
+  tightens the release/deploy/code-change/work-item nodes, edge strengths, and
+  missing-evidence categories.
 - [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
   — the source-specific policy and eval gate that makes `redaction_report`
   enforceable rather than decorative.

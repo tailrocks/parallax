@@ -49,6 +49,7 @@ idea becomes sharper.
 - [Rust stacktrace grouping and symbolication](docs/research/rust-stacktrace-grouping-and-symbolication.md)
 - [Frontend collection and cross-tier correlation](docs/research/frontend-collection-and-cross-tier-correlation.md)
 - [Correlation reliability on real telemetry gate](docs/research/correlation-reliability-real-telemetry-gate.md)
+- [Deploy, change, and issue-tracker context](docs/research/deploy-change-and-issue-context.md)
 - [Redaction pipeline and secret safety](docs/research/redaction-pipeline-and-secret-safety.md)
 - [Redaction detector toolchain](docs/research/redaction-detector-toolchain.md)
 - [Causal reconstruction and agent safety](docs/research/causal-reconstruction-and-agent-safety.md)

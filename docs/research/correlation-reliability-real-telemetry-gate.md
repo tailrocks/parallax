@@ -91,6 +91,9 @@ telemetry and metadata stores. Do not backfill synthetic links for the audit.
 | `async_link_rate` | Fraction of queue/background workflow anchors with span links or explicit message/job IDs. |
 | `release_context_rate` | Fraction of anchors attachable to release/version/commit metadata. |
 | `deploy_context_rate` | Fraction attachable to a deploy marker or rollout window. |
+| `release_commit_rate` | Fraction of release markers with exact commit SHA or source revision. |
+| `deploy_success_status_rate` | Fraction of deploy markers with terminal success/failure/error status. |
+| `compare_base_rate` | Fraction of release/deploy windows with predecessor base available for code-change comparison. |
 | `strong_edge_count_p50` | Median count of deterministic strong edges per bundle. |
 | `weak_only_bundle_rate` | Fraction of bundles with no strong or medium edges. |
 | `false_strong_edge_rate` | Manual-audit rate where a strong edge is structurally present but semantically wrong because of instrumentation bugs. |
@@ -103,7 +106,14 @@ Expected missing-evidence categories:
 - `missing_log_trace_context`
 - `missing_backend_continuation`
 - `missing_release`
+- `missing_release_commit`
 - `missing_deploy`
+- `missing_deploy_status`
+- `missing_deploy_environment`
+- `missing_predecessor_release`
+- `missing_compare_base`
+- `pr_file_list_truncated`
+- `missing_issue_tracker_link`
 - `missing_source_map`
 - `missing_async_link`
 - `sampled_out_trace`
@@ -235,6 +245,8 @@ telemetry. Do not use generator-perfect data to pass A4.
   can recruit teams with real incidents for the audit.
 - [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md)
   defines the base trace/log/resource fields.
+- [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md)
+  defines the release/deploy/code-change/work-item edge semantics measured here.
 
 ## Bottom Line
 

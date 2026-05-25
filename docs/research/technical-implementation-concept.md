@@ -154,6 +154,7 @@ Related research:
 - [Strategic verdict and research coverage](strategic-verdict-and-research-coverage.md)
 - [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md)
 - [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)
+- [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md)
 
 Metadata-store source:
 
@@ -198,7 +199,7 @@ Rust service panics or emits error
   -> OpenTelemetry sends traces/logs/metrics
   -> CLI or agent execution trace records bounded local work when applicable
   -> Parallax groups the error
-  -> Parallax fetches same-trace logs/spans/metrics and deploy context
+  -> Parallax fetches same-trace logs/spans/metrics and deploy/change context
   -> Parallax builds a bounded evidence bundle
   -> coding agent receives bundle and opens a fix PR or proposal PR
 ```
