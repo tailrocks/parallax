@@ -407,6 +407,42 @@ messages).
 **GreptimeDB-favored out-of-the-box**. Reinforces the pass-8 "compression is a
 tuning-dependent wash" conclusion with realistic data, plus the defaults nuance.
 
+### Run 11 — 2026-05-25 — B5: high-cardinality metrics (40k series, 8M rows)
+
+Re-ran the metric path at the prototype's real cardinality (40 services × 1000
+instances = **40,000 series**, 200 points each = 8M rows), vs Run 3's 1,200 series.
+Plain time-series table on both (not the metric engine / PromQL path).
+
+| Measure | ClickHouse | GreptimeDB |
+| --- | --- | --- |
+| Bulk ingest 8M rows | 0.669 s (~12M rows/s) | 2.98 s (~2.7M rows/s) |
+| Retained size | 57.42 MiB | 62 MiB |
+| **`avg by service`, 5-min buckets (SQL group-by)** | **65 ms** | **638 ms (~10×)** |
+| single-series lookup | 3 ms | 9 ms |
+
+**Significant refinement of the metrics finding.** At 1,200 series (Run 3) the SQL
+range-aggregation was a near-tie (16 vs 12 ms); at **40k series / 8M rows it is
+~10× in ClickHouse's favour** (65 vs 638 ms), and ClickHouse ingested ~4.5× faster.
+This is **predicted by the internals** — ClickHouse's decade-tuned vectorized C++
+group-by over a columnar scan is the throughput bar (`clickhouse-internals.md`),
+and Run-3's near-tie was a **small-scale / cache-resident artifact** (the
+fixed-overhead floor, not throughput). At real volume the scan-aggregate engine
+gap shows.
+
+**Consequence (sharpens the verdict's metrics pillar):** GreptimeDB's metrics
+advantage is **PromQL-nativeness + native ingest (capability), NOT aggregation
+speed at volume.** For heavy metric *analytics* at scale, ClickHouse is materially
+faster (~10×) — it just can't speak PromQL. So "metrics → GreptimeDB" holds **only
+on the capability/ingest axis**, not on raw query latency at volume.
+
+Caveat: this is the SQL group-by (ClickHouse's core strength), not GreptimeDB's
+native PromQL planner or the metric engine (logical→physical) — a PromQL-path run
++ the metric engine could differ and is owed. But for SQL-shape metric aggregation,
+the volume result is clear. Also a **preview of B1**: at 8M rows ClickHouse's scan
+engine already shows ~10×; the cold GB–TB log/trace scan likely shows it larger.
+
+**B5 status: done** (SQL aggregation); PromQL-path + metric-engine high-card run owed.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

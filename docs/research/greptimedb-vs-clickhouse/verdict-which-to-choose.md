@@ -31,9 +31,12 @@ and the honest correction to the operator hypothesis below makes that explicit.
   `LowCardinality`, and a decade-tuned C++ vectorized engine with lower fixed
   per-query overhead (Runs 1–2; `read-path-indexing-and-execution.md`,
   `clickhouse-internals.md`).
-- GreptimeDB is **fastest/best only on metrics** (PromQL-native capability +
-  competitive aggregation latency, Run 3) and ties on **freshness** (both
-  visible-on-write, Run 5).
+- GreptimeDB's metrics edge is **PromQL-native *capability* + native ingest, not
+  query speed**: at 40k series / 8M rows ClickHouse's SQL aggregation was **~10×
+  faster** (Run 11; Run-3's near-tie was a 1,200-series small-scale artifact).
+  GreptimeDB ties only on **freshness** (both visible-on-write, Run 5). So even on
+  metrics, "GreptimeDB fastest" is false for aggregation *latency at volume* — it
+  wins on PromQL nativeness, which ClickHouse lacks entirely.
 
 So the ordering "GreptimeDB fastest, then ClickHouse" does not hold for the
 analytical query shapes; it inverts. The design decisions that cause it: ClickHouse

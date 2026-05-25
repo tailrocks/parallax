@@ -86,7 +86,12 @@ Legend: **Runnable now** = expressible in the current prototype/`bench/compose.y
 - **Pass/fail:** GreptimeDB within ~1.5× on agg latency *and* PromQL-native →
   confirms the metrics advantage is real and not just capability.
 - **Prereq:** high-cardinality metric generator (prototype has `metrics_series`).
-- **Status:** Runnable now (smoke done); Needs harness ext. for 40k-series tier.
+- **Status:** **DONE (Run 11) — refined against the hypothesis.** At 40k series /
+  8M rows the SQL `avg by service` aggregation was **ClickHouse 65 ms vs GreptimeDB
+  638 ms (~10×)** (Run-3's near-tie at 1,200 series was a small-scale artifact).
+  GreptimeDB's metrics advantage is **PromQL-capability + ingest, not aggregation
+  speed at volume**. Owed: native-PromQL-path + metric-engine high-card run (could
+  differ from the plain-table SQL group-by measured here).
 
 ## B6 — Float-metric compression with realistic shapes
 
