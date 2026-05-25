@@ -5604,6 +5604,37 @@ stables (GT-nightly marginally faster). Added to `four-way-version-comparison.md
 **Reproduce.** `SELECT service, quantile(0.99)(duration_ms) FROM spans GROUP BY service` (CH ~11 ms)
 vs `… approx_percentile_cont(duration_ms,0.99) …` (GT ~21 ms); add p50+p95 → CH ~11 ms / GT ~28 ms.
 
+### Run 136 — 2026-05-25 — count-distinct / cardinality panel 4-way: low-card CH ~1.7×, but high-card EXACT distinct GreptimeDB ties/wins; CH approx `uniq` (HLL) fastest
+
+**Pass target.** Model the **cardinality panel** (`count(distinct …)` — "unique traces / users / error
+types"), a distinct-aggregation shape not yet benchmarked. All four builds (per the standing rule), on
+the standing `spans1m` (1M).
+
+**Environment.** GT v1.0.2 + v1.1.0-nightly / CH v26.5.1.882 + v26.6.1.127-head (re-pinned; nightly tag
+unchanged). `count(distinct)` (exact) both engines + CH approx `uniq` (HLL). Median of 6 warm.
+
+| Query | GT-stable | GT-nightly | CH-stable | CH-head |
+| --- | ---: | ---: | ---: | ---: |
+| `count(distinct trace_id)` (70k of 1M) | 20 | 22 | 12 | 13 |
+| `count(distinct span_id)` (1M unique, exact) | 33 | 30 | 37 | 36 |
+| CH approx `uniq(trace_id)` (HLL) | — | — | 10 | 9 |
+
+**Verdict — cardinality-dependent; GreptimeDB ties/wins exact high-card distinct; CH approx is fastest.**
+
+- **Low-cardinality distinct (70k): ClickHouse ~1.7×** (12–13 vs 20–22 ms).
+- **High-cardinality EXACT distinct (1M unique): GreptimeDB ties/wins** (30–33 vs CH 36–37 ms) —
+  GreptimeDB's hash-distinct scales to 1M unique as well as (slightly better than) ClickHouse's exact
+  `uniqExact`. A genuine GreptimeDB-competitive aggregation (adds to last-value as a GT win/tie).
+- **ClickHouse approx `uniq` (HyperLogLog) ~10 ms is fastest** — but approximate. If a cardinality
+  panel tolerates approximation (most "unique count" dashboards do), CH's `uniq` wins; for exact
+  high-card counts the engines tie.
+- **Nightlies ≈ stables** on both (GT-n 22/30 ≈ GT-s 20/33; CH-h 13/36 ≈ CH-s 12/37) — no version
+  change, per the established pattern.
+- **All ≪ 300 ms** — interactive on every build. Adds the cardinality panel to the four-way matrix.
+
+**Reproduce.** `SELECT count(distinct trace_id) FROM spans1m` (70k → GT ~20 / CH ~12 ms);
+`count(distinct span_id)` (1M → GT ~31 / CH ~37 ms); CH `uniq(trace_id)` (HLL ~10 ms, approx). All 4 builds.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

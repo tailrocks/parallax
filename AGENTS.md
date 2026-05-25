@@ -90,6 +90,26 @@ Market and product research should be concise, sourced, and easy to extend.
 - When a new finding changes the repo shape, update
   [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) in the same change.
 
+## Benchmarking Rule (four builds, always)
+
+Every performance benchmark in the GreptimeDB-vs-ClickHouse research must be measured on **all four
+builds**, never stable-only and never a two-way:
+
+1. **GreptimeDB — latest stable** (e.g. `v1.0.2`).
+2. **GreptimeDB — latest nightly** (e.g. `v1.1.0-nightly-YYYYMMDD`).
+3. **ClickHouse — latest stable feature line, NOT LTS** (e.g. `v26.5.1.882-stable`). Always the
+   newest feature release; never an LTS/backport line.
+4. **ClickHouse — latest nightly** (`clickhouse/clickhouse-server:head`).
+
+Keep the two nightly containers standing alongside the bench stables so any benchmark hits all four
+without a re-spin; build identical data on all four (`range()` on GreptimeDB / `numbers()` on
+ClickHouse). Re-pull + rebuild when a new nightly tag drops. **Every benchmark must update the
+consolidated matrix [`docs/research/greptimedb-vs-clickhouse/four-way-version-comparison.md`](docs/research/greptimedb-vs-clickhouse/four-way-version-comparison.md)** (every query × 4 builds, a *Faster*
+column, per-query *Details* links to the mechanism note + the reproducible run in
+`local-benchmark-results.md`). A stable-only number is not the result; the four-build row is. The
+operator-facing detail of this rule also lives in the loop brief
+[`prompts/greptimedb-vs-clickhouse-internals.md`](prompts/greptimedb-vs-clickhouse-internals.md).
+
 ## Research Prompt Maintenance
 
 Research prompts are durable operator intent, not disposable one-off inputs.
