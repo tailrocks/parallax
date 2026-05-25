@@ -6511,6 +6511,36 @@ rows, same ts/value; GT load `FROM range(0,200000,1)` (quote identifiers; `range
 `FROM numbers(200000)`; flush/`OPTIMIZE FINAL`; compare `sst_size` (GT `region_statistics`) vs
 `sum(bytes_on_disk)` (CH `system.parts`). Delta hi−lo / 49000 = bytes/series. (exec; host port down.)
 
+### Run 163 — 2026-05-25 — LIVE re-verify (exec): dedup/upsert semantics (Run 19) — no drift + clarified the dedup-MODEL distinction
+
+**Context.** Rotated the slice to the latest-state/upsert semantics (Run 19) — decision-relevant: it's
+why mutable workflow state → the relational store (metadata-store split). Tiny test on both via exec,
+cleaned up. Re-pin unchanged.
+
+**Re-verified (corrected my own first attempt):**
+- **ClickHouse `ReplacingMergeTree(ts) ORDER BY k`:** insert two versions of `k='issue-1'` → plain
+  `SELECT` returns **2 rows** (dups), `SELECT … FINAL` → **1 row** (latest v=20). Eventual dedup (Run 19
+  reproduces).
+- **GreptimeDB:** an exact `(PK,ts)` duplicate (same `k` AND same `ts`, different `v`) → plain `SELECT`
+  returns **1 row** (last_row kept v=20) **at read, no FINAL**. Latest-state across different ts via
+  `last_value(v ORDER BY ts)` → 99.
+- **My first attempt was unfair** (varied `ts` on GreptimeDB → 2 distinct time-points, correctly kept;
+  CH's `ORDER BY k` dedups by `k` alone). Caught + corrected. **Lesson: the two have DIFFERENT dedup
+  *models*, not just timing** — CH `ReplacingMergeTree` = **upsert table** (one row per ORDER-BY key,
+  eventual at merge/FINAL); GreptimeDB = **time series** (keeps `(PK,ts)` points, dedups only exact
+  `(PK,ts)` dups at read; latest-state via `last_value`).
+
+**Verdict — no drift; reinforces the metadata decision.** "Latest state" (issue status, metric
+last-value, deploy marker) is correct-by-default at read on GreptimeDB but needs `FINAL`/`argMax` on
+ClickHouse. This is the load-bearing reason mutable/latest-state workflow data belongs in the relational
+store (Turso/Postgres), and why the grouped-error rollup on CH uses `argMax`/`AggregatingMergeTree`
+(Run 160), not plain `ReplacingMergeTree`+`FINAL`. Updated `dedup-and-update-semantics.md`.
+
+**Reproduce.** CH: `CREATE TABLE dd(k String,v Int32,ts DateTime64(3)) ENGINE=ReplacingMergeTree(ts)
+ORDER BY k`; insert 2 versions of one `k`; `SELECT count()` (=2) vs `SELECT count() FINAL` (=1). GT:
+`CREATE TABLE dd("k" STRING,"v" INT,"ts" TIMESTAMP(3) TIME INDEX, PRIMARY KEY("k"))`; insert two rows
+with **same `(k,ts)`** different `v` → `SELECT count()` =1 (read-time dedup). (exec; host port down.)
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

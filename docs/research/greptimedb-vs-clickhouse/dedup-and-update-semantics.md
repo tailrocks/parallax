@@ -2,7 +2,16 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 39, re-verified pass 96 (Run 59 — reproduces; partial-upsert loss proven).
+Status: pass 39, re-verified pass 96 (Run 59 — reproduces; partial-upsert loss proven) + **Run 163
+(live exec re-verify, no drift): CH `ReplacingMergeTree(ts) ORDER BY k` → plain SELECT shows **2 dup
+rows** until `FINAL` (→1, latest); GreptimeDB exact-`(PK,ts)`-dup → plain SELECT **1 row at READ** (no
+FINAL), and latest-state-per-key via `last_value(v ORDER BY ts)`. **Clarified the dedup-MODEL distinction
+(not just timing):** ClickHouse `ReplacingMergeTree` is an **upsert table** — one row per `ORDER BY`
+key, latest version, deduped *eventually* at merge/`FINAL`; GreptimeDB is a **time series** — keeps
+`(PK, ts)` points, deduping only *exact* `(PK,ts)` duplicates at read, with latest-state read via
+`last_value`. So "latest state" (issue status / metric last-value / deploy marker) is correct-by-default
+at read on GreptimeDB but needs `FINAL`/`argMax` on ClickHouse — reinforcing the metadata-store split
+(mutable workflow state → relational store, `platform-fit-and-alternatives.md`)).
 White-box teardown of how each engine handles **duplicate keys and
 updates** — when a row with an existing key is overwritten, and what a query sees.
 Decision-relevant because several Parallax signals are *upsert-shaped*: the **current
