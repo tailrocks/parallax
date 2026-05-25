@@ -117,6 +117,9 @@ demands it, and update the README and `PROJECT_STRUCTURE.md` when you do):
   design: full schema, ingest path, and exact retrieval queries (see below).
 - `per-signal-verdict.md` — the scenario matrix: metrics vs logs vs traces vs
   evidence-bundle correlation, who wins each and the mechanism why.
+- `benchmarking-the-differences.md` — for each mechanism-level difference found,
+  the targeted benchmark to measure it for Parallax usage and what we must have to
+  run it (see below); routes runnable cases into `storage-benchmark-prototype.md`.
 - `verdict-which-to-choose.md` — the final synthesized decision (see below).
 
 Keep each note source-linked and concise. Prefer comparison tables plus short
@@ -319,6 +322,44 @@ Build on, do not duplicate, the seed DDL and Q1–Q6 already in
 keep the two consistent (the benchmark runs what these documents specify). Put the
 two designs side by side so the structural differences — and what each makes easy
 or hard for Parallax retrieval — are obvious.
+
+---
+
+# Benchmarking The Differences (What To Measure And What We Need)
+
+A mechanism-level difference is only a real advantage if it shows up under
+Parallax's usage. So whenever a pass finds a difference that plausibly moves
+speed, cost, or scaling, it must also design the targeted benchmark that would
+prove or disprove the advantage — not just assert it. Capture these in
+`benchmarking-the-differences.md`.
+
+For each difference worth measuring, specify:
+
+- **The hypothesis and the mechanism.** "GreptimeDB's metric engine should beat
+  ClickHouse on high-cardinality PromQL range queries because …", tied to the data
+  structure from the internals notes.
+- **The targeted workload.** The specific signal, query shape, cardinality, time
+  window, cache state (cold/warm), and concurrency (write-only vs ingest+query)
+  that isolates this one difference — a micro-benchmark, not a general scan.
+- **What to record.** The metric tied to an axis: ingest-to-queryable freshness,
+  per-class query latency (p50/p95/p99), retained size and compression by signal,
+  object-store request/egress count, CPU/RSS per phase, or the single-node
+  breaking point — using the measurement protocol already defined in
+  `storage-benchmark-prototype.md`.
+- **The pass/fail or comparison criterion.** What result confirms the advantage,
+  what falsifies it, and what counts as "close enough to not matter for Parallax".
+- **What we must have to run it.** The concrete prerequisites: pinned versions, a
+  dataset shape and the generator knobs that produce it (cardinality, linkage,
+  signal mix), object store (MinIO/S3), hardware/resource profile, the schema/DDL
+  under test, the exact queries, and any instrumentation the harness still needs.
+  Call out anything the current harness cannot yet measure and what to add.
+
+Keep this consistent with, and routed into, the runnable harness: this document
+proposes and refines the cases; `storage-benchmark-prototype.md` is where they
+become runnable and holds veto power over the storage choice. New cases discovered
+here should be folded back into that prototype (and its generator/queries
+extended) rather than forked into a parallel benchmark. Distinguish what is
+**already runnable there** from what is a **proposed new case**.
 
 ---
 
