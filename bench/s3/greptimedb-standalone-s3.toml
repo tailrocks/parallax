@@ -1,0 +1,12 @@
+# GreptimeDB standalone storage config for the object-store benchmark path.
+# Throwaway local MinIO credentials only — NOT secrets. Local benchmark use only.
+# Proven working in local-benchmark-results.md Run 8.
+[storage]
+type = "S3"
+bucket = "greptimedb"
+root = "data"
+access_key_id = "minioadmin"
+secret_access_key = "minioadmin"
+endpoint = "http://pbench-minio:9000"
+region = "us-east-1"
+enable_virtual_host_style = false

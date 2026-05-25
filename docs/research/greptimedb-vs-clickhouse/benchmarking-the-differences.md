@@ -223,8 +223,13 @@ Legend: **Runnable now** = expressible in the current prototype/`bench/compose.y
   cold re-read pattern** (flips the "ClickHouse wins at volume" reading for the
   *cold* regime).
 - **Prereq:** JSONBench dataset + queries; MinIO; both in S3 mode; cold-cache control.
+  The **object-store stack is now committed and reproducible**: `bench/s3/run-s3-stack.sh up`
+  brings up MinIO + GreptimeDB(S3) + ClickHouse(S3) (proven Runs 8–9) — so B10
+  request-counts and B12 cold reads start from a one-command base; what's still
+  needed is the JSONBench dataset/queries + cold-cache eviction + `mc admin trace`
+  request counting.
 - **Status:** **proposed, high priority** — the one public claim most worth
-  independently reproducing; my local runs only covered hot/warm.
+  independently reproducing; my local runs only covered hot/warm. Stack ready.
 
 ## Priority order (what to run next)
 

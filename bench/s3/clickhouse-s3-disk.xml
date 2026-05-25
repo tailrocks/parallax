@@ -1,0 +1,22 @@
+<!-- ClickHouse s3 disk + storage policy for the object-store benchmark path.
+     Throwaway local MinIO credentials only — NOT secrets. Local benchmark use only.
+     Proven working in local-benchmark-results.md Run 9.
+     Mount/copy into /etc/clickhouse-server/config.d/ then use
+     SETTINGS storage_policy='s3only' on the table. -->
+<clickhouse>
+  <storage_configuration>
+    <disks>
+      <s3disk>
+        <type>s3</type>
+        <endpoint>http://pbench-minio:9000/greptimedb/clickhouse/</endpoint>
+        <access_key_id>minioadmin</access_key_id>
+        <secret_access_key>minioadmin</secret_access_key>
+      </s3disk>
+    </disks>
+    <policies>
+      <s3only>
+        <volumes><main><disk>s3disk</disk></main></volumes>
+      </s3only>
+    </policies>
+  </storage_configuration>
+</clickhouse>
