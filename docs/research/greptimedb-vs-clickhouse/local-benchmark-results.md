@@ -6215,6 +6215,48 @@ compare on **practical fit, not raw speed**. Web research used (host-port still 
 prompts updated (`greptimedb-vs-clickhouse-internals.md` DQ7/DQ8 + practical-fit framing;
 `deep-research-parallax.md` proxy-lens pointer). No containers touched.
 
+### Run 154 — 2026-05-25 — LIVE re-verify (via exec, host-port still down): the join-pushdown gap (Run 81) reproduces + is isolated sharper — GT index prunes a plain filter, only the JOIN defeats pushdown
+
+**Context.** First *live* query re-verification in ~10 passes (host-port down since Run 149; used
+`docker exec` + the GT/CH stable containers' existing prior-run data — `spans_idx`/`spans` 1M,
+`error_events` ~2.2k). PLAN inspection (`EXPLAIN ANALYZE` / `EXPLAIN indexes=1`), **not a timing
+benchmark** — so the 4-build rule doesn't apply (re-verifying a load-bearing claim against live Docker,
+per the brief). Re-pin unchanged (GT GA v1.0.2; nightly v1.1.0-nightly-20260525).
+
+**Pass target.** Rotate the slice to the **cross-tier join pushdown gap** (Run 30→81: GT full-scans the
+left side through a `LEFT JOIN`; CH prunes). Decision-relevant post-proxy-reframe: it's why Parallax
+does app-side correlation, and the proxy doesn't fix in-DB joins.
+
+**Re-verified (sample `trace_id='3fb2d84c0a2032fa7681cde05c2051e9'`, present in both tables):**
+- **A) GT plain filter** `SELECT count(*) FROM spans_idx WHERE trace_id='X'` → scan does **NOT** read
+  1,000,000 (the `trace_id` INVERTED INDEX **prunes**). So the index works for a plain filter.
+- **C) GT direct join** `spans_idx s LEFT JOIN error_events e ON s.trace_id=e.trace_id WHERE
+  s.trace_id='X'` → the `spans_idx` scan reads **1,000,000** (`EXPLAIN ANALYZE` `output_rows: 1000000`),
+  then a post-scan `FilterExec`→14. **The predicate is NOT pushed into the indexed scan through the
+  join.** Run 81 reproduces.
+- **B) GT subquery-prefilter** `FROM (SELECT * FROM spans_idx WHERE trace_id='X') s LEFT JOIN …` → no
+  1M scan (**prunes**). Workaround still works.
+- **CH contrast** (`spans` `ORDER BY (trace_id,ts)`): `EXPLAIN indexes=1` → **`Granules 1/123`**;
+  actual `read_rows = 10,418` (one granule region). CH pushes `trace_id='X'` into the MergeTree read.
+
+**Verdict — reproduces, and isolated more precisely than Run 81.** It is NOT that GreptimeDB's index
+fails — a plain filter prunes fine (A). It is specifically that the optimizer does **not propagate the
+equality predicate into the indexed left-side scan *through the `LEFT JOIN`*** (C: 1M scanned),
+consistent with Run 148 (`Join=NonCommutative`). ClickHouse prunes the same join (`Granules 1/123`,
+~10k rows). **Decision relevance (proxy lens):** the in-DB join is a GT weakness, but Parallax's
+**anchored per-signal fetch prunes on BOTH engines** (A proves GT prunes a keyed filter), so app-side
+correlation sidesteps it — a "don't naive-join in GT" design note, not a blocker. Minor reinforcement
+of ClickHouse's retrieval edge (no workaround needed), non-decisive. Updated `per-signal-verdict.md` Q4
+row.
+
+**Reproduce.** `docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql --data-urlencode
+"sql=EXPLAIN ANALYZE SELECT count(*) FROM spans_idx s LEFT JOIN error_events e ON
+s.trace_id=e.trace_id WHERE s.trace_id='<id>'"` → look for `output_rows: 1000000` on the spans_idx
+scan; compare the plain-filter + subquery-prefilter forms. CH: `docker exec parallax-bench-clickhouse-1
+clickhouse-client -q "EXPLAIN indexes=1 SELECT count(*) FROM spans s LEFT JOIN error_events e ON
+s.trace_id=e.trace_id WHERE s.trace_id='<id>'"` → `Granules 1/123`. (Use `docker exec`; host port down.)
+Timing re-verify (4-build) owed when the host port-forward is restored.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
