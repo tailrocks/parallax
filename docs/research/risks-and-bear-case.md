@@ -138,6 +138,9 @@ If two or more trigger, reopen the verdict.
   — the A3 adoption clock, conformance, and corpus thresholds.
 - [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
   — the A2 runbook for testing demand beyond the operator.
+- [A2 interview evidence ledger](a2-interview-evidence-ledger.md) — the
+  redacted result artifact that keeps A2 auditable without committing raw
+  private notes.
 
 ## Bottom Line
 

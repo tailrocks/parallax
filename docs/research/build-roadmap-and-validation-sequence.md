@@ -53,8 +53,9 @@ assumption. Failing a gate sends you back, not forward.
 - Interview ~20 target teams across the A2 slices: would they deploy? would they
   pay or sustain it? what is their actual debugging pain? Use the
   [user interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
-  so the result is scored by past behavior and concrete commitments, not
-  compliments.
+  and [A2 interview evidence ledger](a2-interview-evidence-ledger.md) so the
+  result is scored by past behavior, redacted evidence rows, and concrete
+  commitments, not compliments.
 - **Gate:** hand-bundle beats raw-dump on fix quality (A1) **and** ≥a handful of
   teams would genuinely deploy (A2). If both fail, **stop or pivot** — this is the
   cheapest NO-GO and the most valuable possible outcome to learn now.
@@ -113,7 +114,7 @@ Build only enough to generate the bundle automatically and repeatably:
 | Assumption (bear case) | Tested in | Cheapest test |
 | --- | --- | --- |
 | A1 bundle value | Phase 0 (hand), re-check Phase 1 (auto) | [manual bundle + eval](bundle-value-phase0-runbook.md), days |
-| A2 real users | Phase 0 | [20 scored deployment-intent interviews](user-interview-and-deployment-intent-gate.md) |
+| A2 real users | Phase 0 | [20 scored deployment-intent interviews](user-interview-and-deployment-intent-gate.md) plus the [redacted A2 evidence ledger](a2-interview-evidence-ledger.md) |
 | A6 redaction trust | Phase 2 | red-team on real data |
 | A5 stack holds | Phase 2 | storage/metadata benchmarks |
 | A4 correlation reliable | Phase 1–2 | [strong-edge prevalence on real telemetry](correlation-reliability-real-telemetry-gate.md) |
@@ -143,6 +144,8 @@ Build only enough to generate the bundle automatically and repeatably:
   run.
 - [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
   — the A2 demand-validation runbook for Phase 0.
+- [A2 interview evidence ledger](a2-interview-evidence-ledger.md) — the
+  privacy-preserving public artifact that makes the A2 result auditable.
 - [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
   — the A3 conformance/adoption/corpus runbook for Phase 2 onward.
 - [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md)

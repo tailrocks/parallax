@@ -26,6 +26,7 @@ idea becomes sharper.
 - [Business model and economics](docs/research/business-model-and-economics.md)
 - [Repo-intent dependence](docs/research/repo-intent-dependence.md)
 - [User interview and deployment intent gate](docs/research/user-interview-and-deployment-intent-gate.md)
+- [A2 interview evidence ledger](docs/research/a2-interview-evidence-ledger.md)
 - [Schema adoption and corpus moat gate](docs/research/schema-adoption-and-corpus-moat-gate.md)
 - [Self-hosted simplicity gate](docs/research/self-hosted-simplicity-gate.md)
 - [Self-hosted deployment baseline inventory](docs/research/self-hosted-deployment-baseline-inventory.md)

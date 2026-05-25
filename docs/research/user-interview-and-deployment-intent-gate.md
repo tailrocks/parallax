@@ -18,7 +18,9 @@ question bank, scoring rubric, commitment tests, and kill criteria.
 
 The goal is not to collect compliments. The goal is to discover whether teams
 have the pain, have tried to solve it, can deploy a self-hosted evidence engine,
-can expose the needed data safely, and will make a concrete commitment.
+can expose the needed data safely, and will make a concrete commitment. The
+companion [A2 interview evidence ledger](a2-interview-evidence-ledger.md)
+defines how raw calls become redacted, auditable repo evidence.
 
 ## Source Posture
 
@@ -44,6 +46,9 @@ Internal sources:
   fixer, enterprise ops, support, or sponsorship seam.
 - [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) can reuse
   interview participants who are willing to provide real or anonymized incidents.
+- [A2 interview evidence ledger](a2-interview-evidence-ledger.md) defines the
+  redacted result artifact, commitment ladder, evidence classes, and bias
+  controls for the 20-call run.
 
 ## Hypotheses To Test
 
@@ -178,7 +183,10 @@ teams and zero sustainability signal means the research has not escaped n=1.
 ## Data Capture Template
 
 Store interview notes as private or redacted Markdown until participants consent
-to inclusion. Recommended fields:
+to inclusion. Raw notes are not the public artifact; use the
+[A2 interview evidence ledger](a2-interview-evidence-ledger.md) to create the
+committed, redacted result rows and aggregate A2 decision summary. Recommended
+raw-note fields:
 
 ```text
 date:
@@ -202,7 +210,8 @@ permission_to_quote: no|anonymous|named
 
 Public repo notes should avoid company names, secrets, customer data, and
 incident details unless explicitly permitted. Aggregate findings can be
-committed under `docs/research/`; raw notes may need to stay private.
+committed under `docs/research/`; raw notes may need to stay private. No A2 pass
+claim is valid unless the redacted ledger and aggregate summary are committed.
 
 ## How This Feeds Other Gates
 
