@@ -140,6 +140,7 @@ Related research:
 - [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
 - [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md)
 - [Flaky test investigation and replay](flaky-test-investigation-and-replay.md)
+- [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
 - [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md)
 - [Agent observability technical review](agent-observability-technical-review.md)
 - [Strategic verdict and research coverage](strategic-verdict-and-research-coverage.md)

@@ -22,6 +22,23 @@ Rust/Go/Zig/C++/C filter. Nothing here adds a JS dependency to the Parallax core
 Version-freshness note: frontend SDK versions move fast. Pin exact SDK versions at
 build time; this document fixes the architecture, not specific minor versions.
 
+## Current Primary-Source Checks
+
+The frontend direction rests on current official docs, not only vendor blog
+examples:
+
+| Area | Current source signal | Parallax implication |
+| --- | --- | --- |
+| Browser tracing | OpenTelemetry's browser guide uses `@opentelemetry/sdk-trace-web` and browser instrumentations such as document-load; OpenTelemetry JS targets browser and Node.js but does not publish a fixed supported-browser list. | Treat browser OTel as viable for traces, but pin SDK versions and keep compatibility tests for target browsers. |
+| Browser export | OpenTelemetry's JS exporter docs say browser apps cannot use OTLP/gRPC and must use OTLP/HTTP JSON or protobuf. They also call out CSP, CORS, and the risk of exposing a collector publicly. | Parallax frontend ingest should expose a narrow OTLP/HTTP-compatible web endpoint or reverse-proxied collector path, never a broad unauthenticated collector. |
+| Trace propagation | W3C Trace Context defines `traceparent`/`tracestate` as the standard cross-system trace context, with `traceparent` carrying trace identity in a portable format. | Frontend-to-backend joins should use W3C trace context for OTEL paths. |
+| Fetch instrumentation | OpenTelemetry's fetch instrumentation config includes `propagateTraceHeaderCorsUrls`, request hooks, ignored URLs, and custom span attributes. | Propagation must be allowlisted by first-party API domain; do not leak trace headers to arbitrary third parties. |
+| Sentry browser tracing | Sentry's JS tracing docs use `tracePropagationTargets` and propagate `sentry-trace` plus `baggage`; they explicitly warn JavaScript apps need those headers in the CORS allowlist. | For Sentry-compatible frontend errors, preserve Sentry trace context and bridge it into the Parallax correlation model. |
+| Breadcrumbs | Sentry's browser SDK records automatic breadcrumbs for UI events, XHR/fetch, console calls, and location changes, with hooks for filtering or dropping them. | Breadcrumbs are essential, but Parallax must filter and redact at capture and bundle-build time. |
+| Source maps | Sentry's current source-map flow uses artifact bundles and Debug IDs to bind minified JavaScript to source maps without path guessing. | Parallax should adopt a Debug-ID-like source-map identity, keyed to frontend release/build, stored privately in object storage. |
+| Replay privacy | Sentry Replay defaults to masking DOM text/user input/images and makes network request/response bodies opt-in. | Replay is a useful reference but must be opt-in, masked by default, and outside the tiny tier. |
+| Browser semantic attributes | OpenTelemetry browser resource semantic conventions are still development-stage for most `browser.*` fields; `user_agent.original` is stable/recommended. | Store browser attributes, but keep the schema additive and versioned. |
+
 ## Collection Method
 
 Mirror the backend's dual-API decision (OTLP for telemetry, Sentry envelope for
@@ -39,6 +56,10 @@ errors) on the frontend, because the browser ecosystem already speaks both.
 
 Recommendation: tiny tier ships error + fetch/XHR spans + breadcrumbs + route +
 release + `traceparent` propagation. Web Vitals and replay are later, opt-in.
+Browser OTLP export must use OTLP/HTTP JSON or protobuf; gRPC is not a browser
+option. Put Parallax or a reverse proxy in front of any collector-compatible
+endpoint to enforce origin allowlists, DSN/project auth, request size limits,
+rate limits, and redaction.
 
 ## Cross-Tier Trace Propagation (The Core)
 
@@ -57,7 +78,8 @@ fails silently if any one is missing:
 
 ```text
 browser fetch(/api/checkout)
-  ── traceparent: 00-<trace_id>-<span_id>-01 ──▶ API gateway (CORS allows traceparent)
+  -- traceparent: 00-<trace_id>-<span_id>-01 --> API gateway
+       CORS allows traceparent/tracestate/baggage
        backend service extracts context, continues same trace_id
          emits spans/logs/errors under the same trace
 Parallax joins: frontend_error.trace_id == backend spans.trace_id
@@ -124,12 +146,16 @@ fraction of frontend sessions into backend traces.
 Frontend stacks are minified and useless raw. Mirror the Rust debuginfo story
 ([Rust data collection](rust-data-collection-and-instrumentation.md)):
 
-- upload source maps at build time, keyed by `frontend_release` + `build_id`
-  (debug-id style), to Parallax object storage;
+- upload source maps at build time, keyed by `frontend_release` + `build_id` +
+  a Debug-ID-like artifact identifier, to Parallax object storage;
 - symbolicate frontend errors server-side at ingest/enrich, never ship source maps
   to the browser;
 - **never serve source maps from a public URL** — they expose source. Store them
   in Parallax's object storage behind auth, like backend debug info.
+
+Sentry's current artifact-bundle model is the right reference: bind minified
+source and source map by a Debug ID rather than relying only on path matching.
+Parallax should copy the idea, not the Sentry product dependency.
 
 ## Privacy (The Hardest Part)
 
@@ -196,10 +222,20 @@ cross-tier join on one frontend↔backend path before broadening.
 
 ## Sources
 
-- [OpenTelemetry browser instrumentation for RUM](https://oneuptime.com/blog/post/2026-02-06-opentelemetry-browser-instrumentation-real-user-monitoring/view)
-- [Context propagation browser to server](https://oneuptime.com/blog/post/2026-02-06-context-propagation-browser-to-server-traces/view)
-- [Tracing cross-origin API requests with OpenTelemetry](https://oneuptime.com/blog/post/2026-02-06-trace-cross-origin-api-requests-opentelemetry/view)
+Primary sources:
+
+- [OpenTelemetry JavaScript browser getting started](https://opentelemetry.io/docs/languages/js/getting-started/browser/)
+- [OpenTelemetry JavaScript exporters](https://opentelemetry.io/docs/languages/js/exporters/)
+- [OpenTelemetry fetch instrumentation config](https://open-telemetry.github.io/opentelemetry-js/interfaces/_opentelemetry_instrumentation-fetch.FetchInstrumentationConfig.html)
+- [OpenTelemetry browser resource semantic conventions](https://opentelemetry.io/docs/specs/semconv/resource/browser/)
+- [W3C Trace Context](https://www.w3.org/TR/trace-context/)
+- [Sentry JavaScript trace propagation](https://docs.sentry.io/platforms/javascript/guides/capacitor/tracing/trace-propagation/)
+- [Sentry JavaScript trace propagation targets](https://docs.sentry.io/platforms/javascript/configuration/environments/#tracepropagationtargets)
+- [Sentry JavaScript breadcrumbs](https://docs.sentry.io/platforms/javascript/guides/svelte/enriching-events/breadcrumbs/)
+- [Sentry source-map artifact bundles and Debug IDs](https://docs.sentry.io/platforms/javascript/guides/cloudflare/sourcemaps/troubleshooting_js/artifact-bundles/)
+- [Sentry Session Replay setup and privacy defaults](https://docs.sentry.dev/platforms/javascript/session-replay/)
+
+Secondary implementation references:
+
 - [Propagating OTel context from browser to backend (Tracetest)](https://tracetest.io/blog/propagating-the-opentelemetry-context-from-the-browser-to-the-backend)
 - [OpenTelemetry JS trace context propagation (Uptrace)](https://uptrace.dev/get/opentelemetry-js/propagation)
-- [Sentry Session Replay setup](https://docs.sentry.io/platforms/javascript/session-replay/)
-- [Sentry Session Replay product](https://sentry.io/product/session-replay/)
