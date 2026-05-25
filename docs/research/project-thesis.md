@@ -10,13 +10,35 @@
 
 **Purpose:** share with engineers, founders, investors, and observability/SRE practitioners to collect critical feedback.
 
+**Current research status, 2026-05-25:** the maintained verdict is **GO only for
+the narrow version**: a Rust-first, self-hostable runtime evidence/context
+engine that accepts Sentry-compatible errors, OTLP telemetry, CLI invocation
+traces, and tested coding-agent session records, then serves schema-valid,
+redacted evidence bundles. Do not read this thesis as a claim for a generic AI
+RCA chatbot, a full dashboard suite, or autonomous production mutation. The
+current storage posture is also narrower than early drafts: GreptimeDB is the
+v0.1 prototype default, but ClickHouse remains the exact-version benchmark
+fallback and storage claims stay unproven until freshness, bundle-latency,
+object-cost, and operational gates pass.
+
+Maintained follow-ups:
+
+- [Parallax Go / No-Go Verdict](verdict.md)
+- [Technical implementation concept](technical-implementation-concept.md)
+- [Storage benchmark prototype](storage-benchmark-prototype.md)
+- [OTLP conformance ledger](otlp-conformance-ledger.md)
+- [Evidence bundle and open schema](evidence-bundle-and-schema.md)
+
 ---
 
 # 1. Executive Summary
 
 Project Parallax is an early product thesis:
 
-> **Build an open-source, AI-native debugging system that explains why failures happen, using unified observability data — starting with a CLI-first workflow and expanding into UI, incident workflows, and production debugging.**
+> **Build an open-source, AI-native debugging system that reconstructs the best
+> available evidence around failures, using unified observability and execution
+> data — starting with a CLI/API evidence-bundle workflow and expanding only
+> after the bundle, redaction, and storage gates prove out.**
 > 
 
 The core insight is simple:
@@ -33,9 +55,14 @@ Modern engineering teams already collect huge amounts of data:
 
 But during real debugging, engineers still manually jump between Sentry, Grafana, Kibana, Jaeger, CI logs, GitHub, and Linear/Jira.
 
-Project Parallax aims to turn these fragmented signals into a structured investigation context that both humans and AI agents can use.
+Project Parallax aims to turn these fragmented signals into structured,
+schema-bound investigation context that both humans and AI agents can use.
 
-The initial product wedge is likely **flaky test investigation**, then expansion into **production incident/error investigation**.
+The initial validation wedge is an evidence-bundle evaluation: prove that a
+bounded bundle helps a human or coding agent investigate better than raw
+telemetry dumps. Flaky-test investigation remains a useful low-risk wedge, but
+the maintained build direction now also includes Sentry-compatible error
+migration, OTLP telemetry, CLI traces, and tested agent-session adapters.
 
 ---
 
@@ -186,13 +213,26 @@ Greptime has also written about unified observability with native OpenTelemetry 
 
 Source: [Greptime — OpenTelemetry Traces Integration with GreptimeDB](https://greptime.com/tech-content/2025-07-17-opentelemetry-traces-integration-with-greptimedb)
 
-Greptime has also published benchmarks comparing log query performance, including against ClickHouse, which supports the rationale for choosing GreptimeDB as a fast, purpose-built backend for unified observability storage.
+GreptimeDB reached `v1.0.2` as the latest stable release checked on
+2026-05-25. Its GA status reduces unreleased-database risk, but its trace
+read/write docs still mark trace support as experimental, and vendor-published
+benchmarks do not prove Parallax's evidence-bundle workload. The current
+research position is: GreptimeDB is the prototype default because the
+architecture fits metrics/logs/traces, PromQL, SQL, OTLP, and object-storage
+retention, while ClickHouse remains the mature fallback until the benchmark
+gates settle speed, cost, and operations.
 
-Source: [Greptime — Log benchmark: GreptimeDB vs others](https://greptime.com/blogs/2025-03-10-log-benchmark-greptimedb)
+Sources: [GreptimeDB v1.0.2 release](https://github.com/GreptimeTeam/greptimedb/releases/tag/v1.0.2),
+[GreptimeDB trace read/write docs](https://docs.greptime.com/user-guide/traces/read-write/),
+[Storage benchmark prototype](storage-benchmark-prototype.md),
+[Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md),
+[Storage size and object cost gate](storage-size-and-object-cost-gate.md)
 
 Conclusion:
 
-> **Storage is converging. The next opportunity is the product layer that turns unified data into explanations.**
+> **Storage is converging, but storage fit is not the product. The opportunity is
+> the evidence layer that turns unified data into schema-valid, redacted,
+> citable context.**
 > 
 
 ---
@@ -215,9 +255,9 @@ Project Parallax collects related context
     ↓
 It groups and summarizes relevant logs, traces, metrics, CI data, and deploy changes
     ↓
-It generates an explanation with evidence
+It builds a bounded evidence bundle and ranked hypotheses with citations
     ↓
-It gives the engineer or AI agent actionable next steps
+It gives the engineer or AI agent actionable next steps, or says evidence is inconclusive
 ```
 
 Example CLI commands:

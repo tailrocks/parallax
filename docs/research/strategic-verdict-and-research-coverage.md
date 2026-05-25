@@ -54,15 +54,16 @@ Rust service / CLI / coding agent
   -> CLI invocation trace ingest and tested agent-session adapter ingest
   -> Parallax Rust ingest gateway
   -> local WAL for tiny mode
-  -> GreptimeDB for observability evidence
+  -> GreptimeDB prototype default for observability evidence
   -> Turso for metadata/product state
   -> deterministic grouping/correlation/evidence graph
   -> API/MCP context bundle
 ```
 
 Add Apache Iggy only when replay, burst buffering, or worker separation is worth
-the extra process. Keep ClickHouse as the latest-version benchmark fallback if
-GreptimeDB fails Parallax-shaped storage tests.
+the extra process. Keep ClickHouse as an exact-version benchmark fallback, with
+feature-stable and LTS tracks pinned, if GreptimeDB fails Parallax-shaped
+storage tests.
 
 ## Direct Answers To Strategic Questions
 
@@ -121,7 +122,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | External protocols | Sentry envelopes and OTLP HTTP/gRPC. |
 | Ingest | Rust `parallax-ingest` gateway. |
 | Stream | No external broker for tiny mode; Apache Iggy for durable profile. |
-| Observability storage | GreptimeDB default v0.1; ClickHouse benchmark fallback. |
+| Observability storage | GreptimeDB prototype default v0.1; ClickHouse feature-stable/LTS benchmark fallback. |
 | Metadata | Turso for tiny/local metadata and product state; Postgres only as scale-out fallback. |
 | Processing | Rust workers, deterministic normalization/grouping/correlation before AI. |
 | Context model | Typed evidence graph in tables first. |

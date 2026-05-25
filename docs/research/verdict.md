@@ -103,7 +103,7 @@ The architecture is plausible with current open-source components:
 | --- | --- | --- |
 | Error compatibility | Support the Sentry envelope event path, not the whole Sentry product. | Sentry envelopes are the modern SDK ingestion format, and Relay is a useful Rust reference without copying its Kafka/Snuba architecture. |
 | Telemetry standard | Use OpenTelemetry as the native telemetry protocol. | OTLP is stable for traces, metrics, and logs, and gives shared `trace_id`, `span_id`, resource, and semantic-convention context. |
-| Observability store | Start with GreptimeDB, benchmark against ClickHouse. | GreptimeDB targets metrics, logs, and traces in one observability engine, with native OpenTelemetry support and object-storage-oriented deployment. It reached **v1.0 GA in April 2026**, so the storage layer is now production-grade rather than a bet on a beta database. |
+| Observability store | Start with GreptimeDB as the v0.1 prototype default, benchmark against exact ClickHouse stable/LTS tracks. | GreptimeDB targets metrics, logs, and traces in one observability engine, with native OpenTelemetry support and object-storage-oriented deployment. It reached **v1.0 GA in April 2026** and latest stable checked is `v1.0.2`, so the first build is no longer a bet on an unreleased database. It is still not a proven production winner: trace docs remain experimental, and the storage freshness, bundle-latency, object-cost, and operational-complexity gates keep veto power. |
 | Stream | Start with local WAL; add Apache Iggy only when replay/burst separation matters. | Iggy is Rust-native, persistent, append-oriented, and explicitly designed for low-latency message streaming. |
 | Metadata | Start with Turso, keep Postgres as fallback. | Turso is Rust-written and SQLite-compatible, but still beta, so benchmark and backup gates are mandatory. |
 | Agent surface | CLI first, MCP required for first-class agent UX, HTTP API underneath. | Coding agents can call CLIs today, but MCP has become the standard tool discovery/invocation surface and has explicit auth/security requirements. |
@@ -115,6 +115,8 @@ Sources:
 - [OpenTelemetry OTLP specification](https://opentelemetry.io/docs/specs/otlp/)
 - [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/)
 - [GreptimeDB docs](https://docs.greptime.com/)
+- [GreptimeDB v1.0.2 release](https://github.com/GreptimeTeam/greptimedb/releases/tag/v1.0.2)
+- [GreptimeDB trace read/write docs](https://docs.greptime.com/user-guide/traces/read-write/)
 - [Apache Iggy docs](https://iggy.apache.org/docs/)
 - [Turso Database repository](https://github.com/tursodatabase/turso)
 - [MCP specification 2025-11-25](https://modelcontextprotocol.io/specification/2025-11-25)
