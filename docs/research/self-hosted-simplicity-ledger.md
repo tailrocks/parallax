@@ -35,7 +35,7 @@ Central rule:
 | [GreptimeDB standalone](https://docs.greptime.com/getting-started/installation/greptimedb-standalone/) | GreptimeDB is acceptable in the tiny tier only while it remains one standalone storage process with clear local persistence. |
 | [Turso local development](https://docs.turso.tech/local-development) and [libSQL](https://github.com/tursodatabase/libsql) | Metadata must work as an embedded/local file or local libSQL path; required hosted Turso or Postgres would fail the tiny-tier claim. |
 | [Rustrak server 0.2.5 release](https://github.com/AbianS/rustrak/releases/tag/%40rustrak/server%400.2.5) and [Rustrak latest release](https://github.com/AbianS/rustrak/releases/latest) | Rustrak is a monorepo with package-specific release tags; `releases/latest` currently resolves to `docs@0.1.16`, not the server package. Baseline refresh must record component-specific release streams, not only a generic latest URL. |
-| [Traceway backend v1.7.27 release](https://github.com/tracewayapp/traceway/releases/tag/backend/v1.7.27), [GoSnag main commits](https://github.com/darkspock/gosnag/commits/main/), and [Urgentry v0.2.12 release](https://github.com/urgentry/urgentry/releases/tag/v0.2.12) | Lightweight challengers are versioning differently: component releases, no-release moving `main`, and published tiny/split deployment modes. The comparison ledger must mark release-stream confidence and moving-target risk per competitor. |
+| [Traceway backend v1.7.27 release](https://github.com/tracewayapp/traceway/releases/tag/backend/v1.7.27), [GoSnag main commit](https://github.com/darkspock/gosnag/commit/418b8b107e274bfaab3f905510ddd274173d216b), and [Urgentry v0.2.12 release](https://github.com/urgentry/urgentry/releases/tag/v0.2.12) | Lightweight challengers are versioning differently: component releases, no-release moving `main`, and published tiny/split deployment modes. The comparison ledger must mark release-stream confidence, exact `source_ref`, tag commit, artifact hash, and moving-target risk per competitor. Release-tag rows must not borrow service counts from `main` after the release. |
 | [Self-hosted deployment baseline inventory](self-hosted-deployment-baseline-inventory.md) | This is the current baseline manifest. Measured runs must refresh it before claiming results because release tags, docs, release-note action items, and service graphs move quickly. |
 
 ## Claim Levels
@@ -126,9 +126,9 @@ run.
     {"system": "openobserve", "version": "v0.90.2", "release_stream": "openobserve"},
     {"system": "bugsink", "version": "2.2.1", "release_stream": "bugsink"},
     {"system": "rustrak", "version": "@rustrak/server@0.2.5", "release_stream": "server_package"},
-    {"system": "traceway", "version": "backend/v1.7.27", "release_stream": "backend"},
-    {"system": "gosnag", "version": "418b8b1", "release_stream": "main_no_release"},
-    {"system": "urgentry", "version": "v0.2.12", "release_stream": "urgentry"}
+    {"system": "traceway", "version": "backend/v1.7.27", "release_stream": "backend", "source_ref": "backend/v1.7.27", "source_commit": "28a4e5666da85f125dbfaf5e681c09b359b5d177"},
+    {"system": "gosnag", "version": "418b8b107e274bfaab3f905510ddd274173d216b", "release_stream": "main_no_release", "source_ref": "418b8b107e274bfaab3f905510ddd274173d216b", "moving_target": true},
+    {"system": "urgentry", "version": "v0.2.12", "release_stream": "urgentry", "source_ref": "v0.2.12", "source_commit": "8d706b3cdd4653351578df9521b24bfd4da6a6d5"}
   ],
   "policies": {
     "redaction_policy": "a6-default-deny-vN",
@@ -150,11 +150,14 @@ Source snapshot row:
   "latest_url_effective": "https://github.com/getsentry/self-hosted/releases/tag/26.5.0",
   "release_stream": "self-hosted",
   "resolved_version": "26.5.0",
+  "source_ref": "26.5.0",
+  "source_commit": "<tag-or-commit-sha>",
   "resolved_at": "2026-05-25T13:00:00Z",
   "install_doc_url": "https://develop.sentry.dev/self-hosted/",
   "artifact_hash": "sha256:<hex>",
   "release_note_action_items": 0,
   "release_note_security_notes": 0,
+  "service_source": "release_tag|commit_sha|moving_main",
   "moving_target": false,
   "result": "pass"
 }

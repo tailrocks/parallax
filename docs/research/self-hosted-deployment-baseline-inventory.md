@@ -17,6 +17,12 @@ The result rows and product-claim status should be published through the
 This is not the full benchmark result. It is the manifest that makes the full
 benchmark reproducible.
 
+Ref-integrity recheck, 2026-05-25: service counts below were rechecked from
+exact release tags or commit SHAs. Do not use mutable `main` files for measured
+service counts when a release tag exists. `main` is acceptable only for a
+no-release project such as GoSnag, and then only with the full commit SHA and
+moving-target risk recorded.
+
 ## Current Baseline Snapshot
 
 | System | Current pin checked | Official path to test | Declared service shape | Immediate Parallax implication |
@@ -26,9 +32,9 @@ benchmark reproducible.
 | OpenObserve | [`v0.90.2`](https://github.com/openobserve/openobserve/releases/tag/v0.90.2), published 2026-05-22. | Single Docker container or binary quickstart. | Single-binary/container path for local single-node operation; HA deployment splits roles later. | OpenObserve is the strongest Rust/self-hosted simplicity pressure test. Parallax must justify every extra default process with Sentry compatibility or evidence-bundle value. |
 | Bugsink | [`2.2.1`](https://github.com/bugsink/bugsink/releases/tag/2.2.1), published 2026-05-22. | Docker quickstart, settings, and installation docs. | Throwaway Docker quickstart is a single container with SQLite and no persistence. For retained Docker data, docs recommend an external MySQL database; PostgreSQL can probably work but is not extensively tested in the Docker guide. Settings docs call SQLite the default production-ready database outside the Docker-volume caveat and explain that Docker volumes are not recommended for SQLite WAL mode. | Error-only Sentry-compatible simplicity is already available, but the benchmark must separate demo startup from persistent deployment. Parallax must not present "change the DSN and self-host" as a moat. |
 | Rustrak | [`@rustrak/server@0.2.5`](https://github.com/AbianS/rustrak/releases/tag/%40rustrak/server%400.2.5), published 2026-05-21. Generic [`releases/latest`](https://github.com/AbianS/rustrak/releases/latest) currently resolves to `docs@0.1.16`, so the server package must be pinned explicitly. | README/docs SQLite-default Docker Compose for server + UI; server-only SQLite Docker path; Postgres image for production. | Default quickstart is 2 containers (`server`, `ui`) with SQLite volume; production example adds Postgres. Docker Hub metadata shows `abians7/rustrak-server:v0.2.5` last updated 2026-05-21 with amd64/arm64 images around 16-17 MB; UI images are much larger. The README claims around 50 MB server memory, sub-50 ms P99 ingestion, 10k+ events/s, no Redis, and no complex infrastructure. | Rust-first Sentry-compatible lightweight tracking exists, but the benchmark must treat monorepo/package release streams carefully and keep memory/latency/throughput as unmeasured vendor claims. Rustrak also ships an MCP package, so Parallax's agent differentiation must be the citable bundle and outcome graph, not MCP existence. |
-| Traceway | [`backend/v1.7.27`](https://github.com/tracewayapp/traceway/releases/tag/backend/v1.7.27), published 2026-05-22; latest checked `main` commit [`38b8d385`](https://github.com/tracewayapp/traceway/commit/38b8d385fbc610d45879d4a1bf3907c8434e8ed9). | Docker Compose, all-in-one container, minimal external-db image, SQLite image/Compose, and embedded Go mode for local/dev. | Root Compose declares 3 services (`traceway`, `clickhouse`, `postgres`). All-in-one hides ClickHouse and Postgres inside one container. SQLite mode is a single Alpine container with two SQLite files plus local blobs under `/data`, optional S3 for source maps/session recordings/AI traces, and retention knobs. Embedded mode runs inside a Go process with SQLite and is documented as development-only. Image-size and signed-image claims are documented but unmeasured in this pass. | Traceway pressures the OTLP-native, frontend/session replay, AI tracing, and "no Collector" parts of the roadmap. It is not a Sentry-envelope migration path yet, and deployment scoring must separate visible services from bundled subsystems and SQLite persistence semantics. |
-| GoSnag | No GitHub release/tag at check time; pin `main` commit [`418b8b1`](https://github.com/darkspock/gosnag/commit/418b8b107e274bfaab3f905510ddd274173d216b), dated 2026-04-17, or the latest commit at benchmark time. | Docker Compose quickstart. | `main` Docker Compose declares 2 services (`gosnag`, `db`) and `DATABASE_URL` is required. README describes a single Go binary with embedded React UI and migrations, plus PostgreSQL; Dockerfile builds with Node 20 and Go 1.25 into Alpine. | GoSnag combines Sentry error-event ingest, AI RCA/triage features, tickets, GitHub/Jira, and a documented management MCP server. The Parallax gap is OTLP context, read-only evidence bundles, and fix/outcome feedback, not "AI over errors." |
-| Urgentry | [`v0.2.12`](https://github.com/urgentry/urgentry/releases/tag/v0.2.12), published 2026-05-22; latest checked `main` commit [`ccc0ff8`](https://github.com/urgentry/urgentry/commit/ccc0ff815ec8b19d3b7c820b95bc3d539414e145). | Tiny one-binary path and split self-hosted path. | Tiny mode is one binary with SQLite. Self-hosted mode splits `api`, `ingest`, `worker`, and `scheduler` roles over PostgreSQL, MinIO, Valkey, and NATS; Compose also includes bootstrap/helper services and optional ClickHouse. README/docs publish benchmark claims against self-hosted Sentry 26.3.1 over a narrow envelope-ingest workload. | Urgentry is not OSI-open, but it is a serious simplicity, Sentry-protocol breadth, and benchmark-methodology baseline. Include it whenever Parallax claims "simpler than self-hosted Sentry"; keep performance numbers as vendor claims until reproduced. |
+| Traceway | [`backend/v1.7.27`](https://github.com/tracewayapp/traceway/releases/tag/backend/v1.7.27), published 2026-05-22; tag commit [`28a4e56`](https://github.com/tracewayapp/traceway/commit/28a4e5666da85f125dbfaf5e681c09b359b5d177); latest checked `main` commit [`38b8d385`](https://github.com/tracewayapp/traceway/commit/38b8d385fbc610d45879d4a1bf3907c8434e8ed9). | Docker Compose, all-in-one container, minimal external-db image, SQLite image/Compose, and embedded Go mode for local/dev. | Release-tag root Compose declares 3 services (`traceway`, `clickhouse`, `postgres`). Release-tag SQLite Compose declares 1 service (`traceway`). All-in-one hides ClickHouse and Postgres inside one container. SQLite mode is a single Alpine container with two SQLite files plus local blobs under `/data`, optional S3 for source maps/session recordings/AI traces, and retention knobs. Embedded mode runs inside a Go process with SQLite and is documented as development-only. Image-size and signed-image claims are documented but unmeasured in this pass. | Traceway pressures the OTLP-native, frontend/session replay, AI tracing, and "no Collector" parts of the roadmap. It is not a Sentry-envelope migration path yet, and deployment scoring must separate visible services from bundled subsystems and SQLite persistence semantics. Because `main` has commits after the release, measured counts must use the release tag unless the benchmark explicitly tests moving `main`. |
+| GoSnag | No GitHub release/tag at check time; `releases/latest` redirects to the releases index, not a tag. Pin `main` commit [`418b8b107e274bfaab3f905510ddd274173d216b`](https://github.com/darkspock/gosnag/commit/418b8b107e274bfaab3f905510ddd274173d216b), dated 2026-04-17, or the latest commit at benchmark time. | Docker Compose quickstart. | The pinned commit's Docker Compose declares 2 services (`gosnag`, `db`) and `DATABASE_URL` is required. README describes a single Go binary with embedded React UI and migrations, plus PostgreSQL; Dockerfile builds with Node 20 and Go 1.25 into Alpine. | GoSnag combines Sentry error-event ingest, AI RCA/triage features, tickets, GitHub/Jira, and a documented management MCP server. The Parallax gap is OTLP context, read-only evidence bundles, and fix/outcome feedback, not "AI over errors." Until a release appears, GoSnag remains a moving-target baseline and cannot support release-stable comparison wording. |
+| Urgentry | [`v0.2.12`](https://github.com/urgentry/urgentry/releases/tag/v0.2.12), published 2026-05-22; annotated tag dereferences to commit [`8d706b3`](https://github.com/urgentry/urgentry/commit/8d706b3cdd4653351578df9521b24bfd4da6a6d5); latest checked `main` commit [`ccc0ff8`](https://github.com/urgentry/urgentry/commit/ccc0ff815ec8b19d3b7c820b95bc3d539414e145). | Tiny one-binary path and split self-hosted path. | Tiny mode is one binary with SQLite. Release-tag self-hosted Compose declares 11 services: PostgreSQL, MinIO, Valkey, NATS, two bootstrap/helper services, four Urgentry roles (`api`, `ingest`, `worker`, `scheduler`), and optional ClickHouse under the `columnar` profile. README/docs publish benchmark claims against self-hosted Sentry 26.3.1 over a narrow envelope-ingest workload. | Urgentry is not OSI-open, but it is a serious simplicity, Sentry-protocol breadth, and benchmark-methodology baseline. Include it whenever Parallax claims "simpler than self-hosted Sentry"; keep performance numbers as vendor claims until reproduced. Because `main` has commits after the release, measured counts must use the release tag unless the benchmark explicitly tests moving `main`. |
 
 ## Source-Check Commands
 
@@ -62,10 +68,24 @@ curl -Ls -o /dev/null -w '%{url_effective}\n' \
 curl -Ls -o /dev/null -w '%{url_effective}\n' \
   https://github.com/urgentry/urgentry/releases/latest
 
+curl -Ls -o /dev/null -w '%{http_code} %{url_effective}\n' \
+  https://github.com/darkspock/gosnag/releases/latest
+
+git ls-remote --tags https://github.com/tracewayapp/traceway.git \
+  'refs/tags/backend/v1.7.27*'
+
+git ls-remote https://github.com/tracewayapp/traceway.git refs/heads/main
+
 git ls-remote --heads --tags https://github.com/urgentry/urgentry.git
+
+git ls-remote https://github.com/darkspock/gosnag.git refs/heads/main
 ```
 
-For Compose-based installs, count services from the exact tested tag:
+For Compose-based installs, count services from the exact tested tag or commit,
+not from `main` unless the project has no release tag. Slash-containing tags
+such as Traceway's `backend/v1.7.27` can be resolved through GitHub's contents
+API with `?ref=backend/v1.7.27` if a raw-file client cannot disambiguate the
+ref.
 
 ```sh
 curl -Ls https://raw.githubusercontent.com/getsentry/self-hosted/26.5.0/docker-compose.yml |
@@ -74,16 +94,16 @@ curl -Ls https://raw.githubusercontent.com/getsentry/self-hosted/26.5.0/docker-c
 curl -Ls https://raw.githubusercontent.com/SigNoz/signoz/v0.125.1/deploy/docker/docker-compose.yaml |
   yq '.services | keys | .[]'
 
-curl -Ls https://raw.githubusercontent.com/tracewayapp/traceway/main/docker-compose.yml |
+curl -Ls https://raw.githubusercontent.com/tracewayapp/traceway/backend/v1.7.27/docker-compose.yml |
   yq '.services | keys | .[]'
 
-curl -Ls https://raw.githubusercontent.com/tracewayapp/traceway/main/docker-compose.sqlite.yml |
+curl -Ls https://raw.githubusercontent.com/tracewayapp/traceway/backend/v1.7.27/docker-compose.sqlite.yml |
   yq '.services | keys | .[]'
 
-curl -Ls https://raw.githubusercontent.com/darkspock/gosnag/main/docker-compose.yml |
+curl -Ls https://raw.githubusercontent.com/darkspock/gosnag/418b8b107e274bfaab3f905510ddd274173d216b/docker-compose.yml |
   yq '.services | keys | .[]'
 
-curl -Ls https://raw.githubusercontent.com/urgentry/urgentry/main/deploy/compose/docker-compose.yml |
+curl -Ls https://raw.githubusercontent.com/urgentry/urgentry/v0.2.12/deploy/compose/docker-compose.yml |
   yq '.services | keys | .[]'
 ```
 
@@ -103,23 +123,27 @@ unpinned moving target unless a release appears before the measured run.
 2. **Pin the measured release stream, not only "latest."** Monorepos and
    componentized projects can have package-specific tags where the generic latest
    release belongs to docs or another component. No-release projects such as
-   GoSnag remain moving targets until pinned to a commit.
-3. **Record release-note action items.** Manual pre-install steps, added
+   GoSnag remain moving targets until pinned to a full commit SHA.
+3. **Never count services from floating `main` when a release exists.** Traceway
+   and Urgentry both had `main` commits after the current release when this pass
+   ran. `main` is useful as a drift signal, but release comparisons must use the
+   tested tag unless the scorecard explicitly labels the row `moving_main`.
+4. **Record release-note action items.** Manual pre-install steps, added
    containers, default-secret warnings, unsupported self-hosted features, and
    security caveats are part of operator-visible deployment complexity even
    before a VM benchmark measures wall-clock time.
-4. **Separate throwaway from persistent quickstart.** Bugsink's single-container
+5. **Separate throwaway from persistent quickstart.** Bugsink's single-container
    Docker quickstart is excellent for evaluation, but persistent data and backup
    behavior must be measured separately. The same rule applies to every SQLite
    default.
-5. **Count helper/init services honestly.** Init containers and migrators are
+6. **Count helper/init services honestly.** Init containers and migrators are
    not long-running services, but they are operator-visible complexity and should
    be recorded separately from steady-state containers.
-6. **Measure first useful output, not first web page.** For Sentry-like products,
+7. **Measure first useful output, not first web page.** For Sentry-like products,
    first useful output is a captured error issue. For Parallax, it is
    `parallax issue context <issue-id>` returning the first redacted evidence
    bundle with missing-data warnings.
-7. **Record agent/MCP posture separately from deployment simplicity.** Sentry,
+8. **Record agent/MCP posture separately from deployment simplicity.** Sentry,
    Rustrak, and GoSnag now have MCP surfaces. MCP presence should not improve a
    deployment score unless it is safe, read-only where appropriate, citable, and
    connected to outcome records.

@@ -24,6 +24,9 @@ The source-linked version pins, install paths, and service-shape notes for this
 gate now live in
 [Self-hosted deployment baseline inventory](self-hosted-deployment-baseline-inventory.md).
 Use that note as the measurement manifest and refresh it before each real run.
+For released competitors, service counts and service names must come from the
+exact tested release tag or tag commit, not from floating `main`. Use `main`
+only for no-release projects and record the full commit SHA.
 
 | System | Current official posture | Operational read for Parallax |
 | --- | --- | --- |
@@ -85,7 +88,7 @@ and Parallax tiny tier.
 
 1. Start from a fresh Ubuntu LTS VM with Docker installed and no product data.
 2. Pin the exact version, commit, or image tag being tested.
-3. Record release-stream confidence, release-note action items, new
+3. Record release-stream confidence, exact source ref/commit, release-note action items, new
    services/containers, default-secret warnings, and unsupported self-hosted
    features before running the install.
 4. Follow the official install path without private knowledge.
