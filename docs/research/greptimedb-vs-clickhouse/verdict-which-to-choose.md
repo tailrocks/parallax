@@ -2,13 +2,14 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: standing decision, continually sharpened (current through pass 40).
-Synthesizes the internals teardowns (all 10 subsystems + rollup + retention,
-schema-evolution, dedup), the per-signal matrix, Docker Runs 1–19, and public-claims
-triangulation. The runnable `storage-benchmark-prototype.md` holds final veto; this
-verdict states the mechanism-grounded recommendation and the triggers that would flip
-it. Pins re-verified current through pass 40 (no newer stable on either side:
-GreptimeDB v1.1.0 is nightly-only; ClickHouse 26.5.x is the highest line).
+Status: standing decision, continually sharpened (current through **pass 52**).
+Synthesizes the internals teardowns (all 10 subsystems + rollup, retention,
+schema-evolution, dedup, WAL/durability, execution-engine, indexing, PromQL, metric
+cardinality, span-tree, projections, deletes/mutations), the per-signal matrix, Docker
+Runs 1–29, and public-claims triangulation. The runnable `storage-benchmark-prototype.md`
+holds final veto; this verdict states the mechanism-grounded recommendation and the
+triggers that would flip it. Pins re-verified current through pass 52 (no newer stable
+on either side: GreptimeDB v1.1.0 is nightly-only; ClickHouse 26.5.x is the highest line).
 
 Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d8`).
 
@@ -70,6 +71,8 @@ storage*, accepting a younger DataFusion scan engine.
 | **Retention cost** | TTL = **whole-SST drop** (TWCS time-windowing → no read/rewrite; `compactor.rs:581`); ClickHouse default `ttl_only_drop_parts=0` **rewrites survivors** (Run 17: read 1M / rewrote 500k) unless tuned (`PARTITION BY` time + `ttl_only_drop_parts=1`). Cheap-by-default vs cheap-if-configured. | source+measured (Run 17) |
 | **Object-storage-native** | OpenDAL default + read cache; cheap re-readable retention first-class. Fewer *total* objects (4 vs 74, Runs 8–9) → wins full-scan cold reads. Cold GET cost is query-shape-dependent (measured both ways): full scan GreptimeDB fewer (26 vs 57, Run 15 — wins the JSONBench regime); **anchored lookup ClickHouse fewer (5 vs 22, Run 14)** — Parallax's pattern. Read cache → warm re-reads local on both. | measured (layout + cold GETs both shapes) |
 | **Durability / crash safety** | Has a **replayable WAL** (raft-engine local, tunable `sync_write`; or **Kafka remote → durability decoupled from the datanode**, the same mechanism that makes migration cheap). ClickHouse MergeTree has **no WAL** (obsolete in 26.x) — durability = unsynced part-on-disk (`fsync_after_insert=0`) + replicas; a single-node crash loses unflushed parts. | source+live (Run 20) |
+| **High-cardinality metric *storage*** | Metric engine `__tsid` (label-set hash) over a shared physical wide table + PartitionTree memtable (dict-encoded label sets, no per-series cap) — high cardinality is the design center. ClickHouse `LowCardinality` dict **caps at 8,192** then falls back to plain (the cliff); needs `ORDER BY` care or the experimental TimeSeries engine. *(Aggregation latency is the reverse — ClickHouse ~10×, Run 11.)* | source+live (Run 26) |
+| **Corrections (UPDATE) / upsert** | UPDATE = re-insert `(PK,ts)` → dedup last-wins = a **cheap GA upsert**, no setup; ClickHouse UPDATE = heavy `ALTER UPDATE` part rewrite (lightweight update is experimental + needs a per-table block-number column). DELETE is ~parity (both read-filtered). | source+live (Run 29) |
 | Freshness | Visible-on-write (tie with ClickHouse, not a win). | smoke |
 
 ## Decision question 2 — where is ClickHouse genuinely better, and why?
@@ -81,6 +84,7 @@ storage*, accepting a younger DataFusion scan engine.
 | **Vertical single-node ceiling** | Saturates many cores + NVMe on one big box. | arch |
 | **Per-column codec tuning** | Hand-picked `DoubleDelta`/`Gorilla`/etc. (counter 7.3×, gauge 78×, Run 4). | smoke (Run 4) |
 | **Dynamic-attribute path queries** | `JSON` type stores each path as a **typed columnar subcolumn** (`attributes.k` reads only that subcolumn); GreptimeDB `Json` is a binary blob + `json_get_*` per-row parse. Faster for querying arbitrary OTLP attributes by path at volume. | source+measured (Run 18) |
+| **Multi-ordering scans (projections)** | A **projection** stores a 2nd physical `ORDER BY` inside each part, optimizer-picked transparently → fast sequential scans on an alternate key (e.g. `service`-time *and* `trace_id`) from one table. GreptimeDB has no equivalent (indexes give positions, not a 2nd physical order). Cost: ~2× storage per normal projection (Run 28). | source+live (Run 28) |
 | Query latency at smoke scale | Won every non-metric query (2–4 ms vs 9–54 ms) — but cache-resident, fixed-overhead-dominated. | smoke |
 
 ## Decision question 3 — can ClickHouse replace GreptimeDB for Parallax?
@@ -103,6 +107,20 @@ cost:
 
 → ClickHouse can replace GreptimeDB **at the cost of** a PromQL+OTLP compatibility
 layer, a sharding/ops burden, and an ingest-batching layer.
+
+**Trajectory (passes 44–51) — the gaps are narrowing, mostly experimentally.**
+ClickHouse 26.x is *actively* closing the observability gaps: it added PromQL
+(`prometheusQuery[Range]`, pass 44), Prometheus remote-write (TimeSeries engine),
+lightweight `DELETE` (GA-default mask, pass 51), and an experimental lightweight
+`UPDATE` (pass 51) — all things earlier framed as "absent." But the pattern is
+consistent: each lands **experimental and/or setup-gated** (TimeSeries off by default,
+PromQL limited to `rate`/`delta`/`increase`, lightweight update needs a per-table
+block-number column), while OTLP ingest is **still collector-only** (pass 46). So the
+replaceability *cost is trending down* — but today it is "depend on experimental
+metrics/correction paths" rather than "GA-native," and **GreptimeDB's are GA now**.
+This is a live trend to re-evaluate on every ClickHouse version bump (the method's
+per-pass re-check exists for exactly this); the *direction* favors ClickHouse closing
+the gap over time, the *present state* still favors GreptimeDB for shipping today.
 
 ## Decision question 4 — can GreptimeDB replace ClickHouse for Parallax?
 
@@ -208,9 +226,12 @@ concurrent ingest+query:
   `compression-and-cost.md`, `distributed-and-scaling.md`,
   `compaction-and-merge.md`, `caching-and-cold-warm.md`,
   `rollup-and-continuous-aggregation.md`, `retention-and-ttl.md`,
-  `schema-evolution-and-dynamic-columns.md`, `dedup-and-update-semantics.md`.
+  `schema-evolution-and-dynamic-columns.md`, `dedup-and-update-semantics.md`,
+  `wal-and-durability.md`, `query-execution-engine.md`, `indexing-internals.md`,
+  `promql-and-metrics-query.md`, `metric-cardinality.md`, `trace-span-tree.md`,
+  `projections-and-access-paths.md`, `deletes-and-mutations.md`.
 - Matrix: `per-signal-verdict.md`. Empirical: `local-benchmark-results.md`
-  (Runs 1–19). Public claims: `public-performance-claims.md`. Targeted cases:
-  `benchmarking-the-differences.md` (B1–B12).
+  (Runs 1–29). Public claims: `public-performance-claims.md`. Targeted cases:
+  `benchmarking-the-differences.md` (B1–B13).
 - Build designs: `greptimedb-implementation.md`, `clickhouse-implementation.md`.
 - Reproducible object-store stack: `bench/s3/`.
