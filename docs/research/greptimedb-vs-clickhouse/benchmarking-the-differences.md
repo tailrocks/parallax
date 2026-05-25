@@ -28,12 +28,16 @@ Legend: **Runnable now** = expressible in the current prototype/`bench/compose.y
   enough" for Parallax; if >3× → ClickHouse's read-path edge is *material* and,
   combined with a log-search-dominated query mix, **flips the verdict** (Q5).
 - **Prereq:** `small`+ tier with realistic log text; cold-cache harness step.
-- **Status:** **DONE at medium-warm (Run 12).** 5M realistic logs, both with text
-  indexes: **full-text search ClickHouse 7 ms vs GreptimeDB 130 ms (~18×)**, full
-  scan ~4×, but **selective keyed filter a tie** (4 vs 5 ms). Flip-trigger
-  confirmed: log-search-at-volume strongly favors ClickHouse; anchored/keyed access
-  does not. True cold GB–TB (drop OS cache, 25–50 GB) owed to the full harness —
-  expected to widen the gap.
+- **Status:** **DONE at medium-warm (Runs 12, 48–49).** 5M realistic logs, both
+  text-indexed. **Run 12's "~18×" was corrected by Runs 48–49 to a backend/function
+  artifact:** `matches()` on a `backend='bloom'` index doesn't push to the index →
+  full-scans 5M (~130–150 ms). With the **correct pairing** GreptimeDB prunes (EXPLAIN
+  `output_rows: 1`): tantivy+`matches()` **~6 ms**, bloom+`matches_term()` **~8 ms**, vs
+  ClickHouse `hasToken` **~3 ms** = **~2× selective, both sub-perceptible** — not 18×. The
+  **selective keyed filter** is a tie (4 vs 5 ms). So the flip-trigger **narrows**: only
+  **broad-term** full-text (many matches → scan the matched set, ~12×) favors ClickHouse;
+  selective/anchored access does not. True cold GB–TB (drop OS cache, 25–50 GB) owed to the
+  full harness — expected to widen only the broad-term/scan case.
 
 ## B2 — `trace_id` point lookup with the GreptimeDB inverted-index fix
 
