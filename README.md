@@ -104,6 +104,7 @@ Code `/loop` runbook.
 - [CLI trace safety ledger](docs/research/cli-trace-safety-ledger.md)
 - [Agent access surface: CLI, HTTP API, and MCP](docs/research/agent-access-surface-cli-api-mcp.md)
 - [Agent access surface safety ledger](docs/research/agent-access-surface-safety-ledger.md)
+- [MCP power boundary competitor check](docs/research/mcp-power-boundary-competitor-check.md)
 - [Fixer component and outcome loop](docs/research/fixer-component-and-outcome-loop.md)
 - [Fixer outcome ledger](docs/research/fixer-outcome-ledger.md)
 - [Production database evidence access gate](docs/research/production-database-evidence-access.md)

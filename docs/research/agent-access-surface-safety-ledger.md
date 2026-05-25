@@ -38,6 +38,7 @@ The central rule:
 | [Claude Code MCP docs](https://code.claude.com/docs/en/mcp) and local `claude mcp --help` on `2.1.150` | Claude Code supports local, project, user, plugin, claude.ai connector, and managed MCP sources with source precedence. Current docs define project `.mcp.json` approval, environment expansion in command/args/env/url/headers, OAuth callback/client credentials/metadata override/scope pinning, dynamic `headersHelper` commands gated by workspace trust, output warning and limit behavior, per-tool `_meta["anthropic/maxResultSizeChars"]`, and `claude mcp serve`. Local help confirms stdio/SSE/HTTP, headers, env vars, scope, client credentials, callback port, and warns that `mcp get`/`list` skip the workspace trust dialog and spawn stdio servers for health checks. | Claude Code client fixtures must record configuration source, precedence, auth/header source, output-budget behavior, workspace trust, health-check side effects, and whether Claude-as-MCP-server is in play. Cross-client MCP safety is not proven by a generic "Claude supports MCP" row. |
 | [NSA MCP security design considerations](https://www.nsa.gov/Portals/75/documents/Cybersecurity/CSI_MCP_SECURITY.pdf?ver=bmgiSbNQLP6Z_GiWtRt6bg%3D%3D) | NSA's May 2026 guidance treats MCP as widely adopted but security-maturing, with risks around dynamic tool invocation, implicit trust, context sharing, serialization, token/session handling, overbroad tools, and unauthorized servers. | The safe path is a narrow read-only adapter over canonical bundles, not a broad production-control toolset. |
 | [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md) | MCP is already present in Sentry-adjacent, Grafana, SigNoz, Coroot, Rustrak, and GoSnag-like surfaces. | Parallax must prove safer evidence semantics, not merely MCP availability. |
+| [MCP power boundary competitor check](mcp-power-boundary-competitor-check.md) | Current primary docs for Sentry, Grafana, OpenObserve, SigNoz, and Coroot show MCP surfaces ranging from coding-agent read/query to broad management, alert resolution, incident creation, ticket/Slack actions, or persisted RCA. | "Read-only" must exclude production/project mutation tools, not only generic shell and SQL tools. |
 
 Updated implication from the A1/A6 source-field pass: projection equivalence now
 means preserving the full canonical bundle safety contract, not just producing a
@@ -165,6 +166,7 @@ combination does not carry over to another.
   ],
   "resource_prefixes": ["parallax://bundles/", "parallax://evidence/"],
   "forbidden_tools_present": [],
+  "forbidden_tool_classes_present": [],
   "all_tools_have_input_schema": true,
   "bundle_tools_have_output_schema": true,
   "structured_content_schema_valid": true,
@@ -410,6 +412,14 @@ output-budget decisions even when they call the same Parallax MCP server.
   the client or model during a context request.
 - No "safe MCP" claim unless negative tools are absent: no generic shell, SQL,
   deploy, rollback, delete, or broad production-control tools.
+- No read-only context claim if the first context server includes alert,
+  dashboard, saved-view, stream, sourcemap, role, user, organization, pipeline,
+  notification-channel, incident, ticket, or search-job create/update/delete
+  tools.
+- No read-only context claim if the first context server can resolve or suppress
+  alerts, send notifications, create incidents, update tickets, or persist RCA
+  onto a production incident. Append-only Parallax audit/outcome rows are a
+  separate allowed write only after their own fixtures pass.
 - No eval/corpus-derived bundle claim unless `source_field_policy_status` is
   `pass`, the policy hash is present, and violations are zero across CLI, HTTP,
   and MCP.
@@ -541,6 +551,9 @@ Avoid:
   appear through CLI, HTTP, or MCP.
 - [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md)
   explains why MCP availability alone is no longer differentiating.
+- [MCP power boundary competitor check](mcp-power-boundary-competitor-check.md)
+  records the current competitor tool-power matrix behind the negative-tool and
+  management-tool rules.
 
 ## Bottom Line
 

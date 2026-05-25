@@ -127,6 +127,7 @@ Sources:
 - [MCP specification 2025-11-25](https://modelcontextprotocol.io/specification/2025-11-25)
 - [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)
 - [MCP security best practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)
+- [MCP power boundary competitor check](mcp-power-boundary-competitor-check.md)
 
 ## What Parallax Actually Solves
 

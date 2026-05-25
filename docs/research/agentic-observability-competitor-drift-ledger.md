@@ -23,6 +23,9 @@ Sentry-compatible error migration
 
 Current status: **wedge under pressure, not closed**.
 
+The MCP tool-power comparison behind this ledger now has a dedicated note:
+[MCP power boundary competitor check](mcp-power-boundary-competitor-check.md).
+
 The material follow-up in this pass is that the MCP surface has shifted from
 "present or absent" to "what kind of tool power does it expose?" Sentry now has
 a purpose-built MCP server for coding agents; SigNoz, OpenObserve, and Coroot
@@ -116,6 +119,10 @@ Current aggregate level: `wedge_under_pressure`.
   read-only evidence-bundle MCP. Management tools can create, update, or resolve
   things; Parallax's first agent surface should expose bounded evidence and write
   only outcome records.
+- Keep the first Parallax context server free of alert/dashboard/user/role/
+  pipeline/notification/incident/ticket CRUD, alert resolution, notification
+  sends, and persisted RCA writes. Those belong in later automation/control
+  surfaces if fixture results justify them.
 - Treat agent observability as table stakes once SigNoz can ingest Claude Code
   telemetry. Parallax must capture decisions, files, commands, approvals, tests,
   patches, PRs, recurrence, and reversions, not only token/cost/tool metrics.

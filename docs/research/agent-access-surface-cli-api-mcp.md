@@ -22,6 +22,8 @@ HTTP API, CLI, and MCP.
 Results and product-claim status should be published through the
 [Agent access surface safety ledger](agent-access-surface-safety-ledger.md),
 not inferred from this design alone.
+The competitor pressure behind the read-only boundary is tracked in
+[MCP power boundary competitor check](mcp-power-boundary-competitor-check.md).
 
 ## Current Primary Sources
 
@@ -207,6 +209,11 @@ Rejected in the context server:
 - `rollback`
 - `delete_data`
 - generic database query tools
+- alert/dashboard/view/role/user/organization/pipeline/notification-channel
+  create/update/delete tools
+- incident/ticket creation or updates
+- alert resolution, suppression, or notification-sending tools
+- persisted RCA writes
 
 Those are separate automation-control problems. Parallax's first MCP server is
 for context retrieval and deterministic checks, not production mutation.
@@ -268,6 +275,7 @@ MCP should not ship until these tests pass:
 | Output budget | Oversized bundles return summary + refs, not unbounded text, and remain within both Parallax's own budget and the tested client's MCP output behavior. |
 | Audit fixture | Every MCP call emits an audit row and OpenTelemetry span with caller, tool, scopes, bundle id, status, and redaction policy. |
 | Negative tool catalog | Generic shell, SQL, deploy, rollback, and delete tools are absent. |
+| Management-tool catalog | Alert, dashboard, role, user, pipeline, notification, incident, ticket, saved-view, stream, sourcemap, and search-job create/update/delete tools are absent from the context server. |
 | Capability fixture | Sampling, elicitation, task-augmented execution, and unreviewed tool-list changes are denied or audited for the read-only context server. |
 
 If these fail, keep CLI/API available and do not claim MCP safety.
@@ -289,6 +297,9 @@ If these fail, keep CLI/API available and do not claim MCP safety.
 - [Agent access surface safety ledger](agent-access-surface-safety-ledger.md)
   turns projection-equivalence, client, scope, redaction, output-budget,
   negative-tool, and audit fixtures into claim levels.
+- [MCP power boundary competitor check](mcp-power-boundary-competitor-check.md)
+  records why competitor query/management MCP catalogs should not pull the first
+  Parallax context adapter into production-control scope.
 - [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md)
   keeps MCP out of the tiny tier until the bundle and safety contracts are
   strong enough.
