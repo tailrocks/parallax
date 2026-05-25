@@ -2,11 +2,20 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 44 (capability/maturity) + pass 72 (PromQL **speed** characterization, Run 44).
-The PromQL planning path (a GreptimeDB system-lead) **and** a required re-verification of the
-verdict's load-bearing claim that "ClickHouse has no PromQL." Metrics/PromQL nativeness is the
-verdict's #1 GreptimeDB advantage, so a version-drift here is decision-critical. Source + live
-(Runs 23, 24, 44).
+Status: pass 44 (capability/maturity) + pass 72 (PromQL **speed** characterization, Run 44)
++ pass 98 (**re-verified live, no drift, Run 62**). The PromQL planning path (a GreptimeDB
+system-lead) **and** a required re-verification of the verdict's load-bearing claim that
+"ClickHouse has no PromQL." Metrics/PromQL nativeness is the verdict's #1 GreptimeDB
+advantage, so a version-drift here is decision-critical. Source + live (Runs 23, 24, 44, 62).
+
+**Re-verification (Run 62, v1.0.2 / 26.5.1.882 — pillar STABLE):** GreptimeDB PromQL
+still GA + zero-setup — `/v1/prometheus/api/v1/query?query=avg(metrics_hc)` returned a
+real vector (`50.77`) and `TQL EVAL` a real value (`49.98`) against a **plain `mito`
+table** (no metric-engine table needed). ClickHouse unchanged: `allow_experimental_time_series_table=0`
+(off by default); `prometheusQuery`/`prometheusQueryRange` exist; the `TimeSeries` engine
+is creatable with the flag but **`INSERT`/`SELECT` still "not supported by storage
+TimeSeries yet"** (NOT_IMPLEMENTED, reproduces Run 24) — ingest remote-write-only, query
+table-function-only. The "GA-ergonomic vs experimental-setup-gated" gap holds exactly.
 
 **Headline correction:** the old "ClickHouse has **no** PromQL, needs an external
 PromQL→SQL layer" is **outdated as of ClickHouse 26.x**. ClickHouse now ships

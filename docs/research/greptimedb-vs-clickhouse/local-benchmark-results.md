@@ -2485,6 +2485,50 @@ docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public 
 # cleanup: DROP TABLE js_ch / js_gt
 ```
 
+### Run 62 — 2026-05-25 — PromQL/metrics-native re-verified (the verdict's #1 pillar, no drift)
+
+**Pass target.** Re-verify the verdict's load-bearing capability claim — "metrics/PromQL
+**GA-native** on GreptimeDB vs **experimental** on ClickHouse" (Runs 23/24/44, ~17 passes
+stale). A version-drift here (e.g. ClickHouse promoting `TimeSeries` to stable, or
+GreptimeDB PromQL regressing) is decision-critical, so re-check live.
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned —
+latest, no bump).
+
+**Measured / verified:**
+
+| Check | GreptimeDB | ClickHouse |
+| --- | --- | --- |
+| PromQL zero-setup, real value | `/v1/prometheus/api/v1/query?query=avg(metrics_hc)` → `success`, `50.77`; `TQL EVAL … avg(metrics_hc)` → `49.98` — on a **plain `mito` table**, no metric-engine table needed | n/a (no PromQL HTTP endpoint) |
+| Experimental gate | PromQL GA + default-on | `allow_experimental_time_series_table=0` (off by default) |
+| PromQL compute path | native planner (`InstantManipulate`/`RangeManipulate`/…) | `prometheusQuery`/`prometheusQueryRange` table functions exist |
+| `TimeSeries` engine ingest/query | n/a | created with flag, but **`INSERT` → "not supported by storage TimeSeries yet"**, **`SELECT` → "not supported … yet"** (NOT_IMPLEMENTED) → ingest **remote-write-only**, query **table-function-only** |
+
+**Verdict.** **No drift — pillar STABLE.** GreptimeDB PromQL is GA, default-on, served
+over the standard Prometheus HTTP API (drop-in Grafana datasource), on plain tables.
+ClickHouse PromQL is a **real shipping capability** (experimental-counts-as-stable: the
+functions exist and the engine is creatable) but **maturity-gated and ergonomically
+constrained** — off by default, no direct `INSERT`/`SELECT` on the `TimeSeries` engine
+(reproduces Run 24 exactly at 26.5), feed via remote-write only, query via table
+functions only. So the gap remains **"GA-ergonomic (GreptimeDB) vs
+experimental-off-by-default-setup-heavy (ClickHouse)", not present-vs-absent** — exactly
+as Runs 23/24/44 found. Status: **confirmed, the metrics-native recommendation basis
+holds at current versions.**
+
+Caveat: capability/ergonomics check, not a speed run (PromQL speed was Run 44: GreptimeDB
+native PromQL ~5× slower than its own SQL at 40k series — a `SeriesNormalize` fixed cost,
+so metrics→GreptimeDB is a *capability/ergonomics* win, never a raw-speed one).
+
+**Reproduce (copy-paste).**
+
+```bash
+docker exec parallax-bench-greptimedb-1 curl -s "http://localhost:4000/v1/prometheus/api/v1/query" --data-urlencode "query=avg(metrics_hc)" --data-urlencode "time=2024-05-18T03:00:00Z"
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=TQL EVAL (1716000000,1716000000,'60s') avg(metrics_hc)"
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q "SELECT value FROM system.settings WHERE name='allow_experimental_time_series_table'"   # 0
+docker exec parallax-bench-clickhouse-1 clickhouse-client --allow_experimental_time_series_table=1 -q "CREATE TABLE ts_probe ENGINE=TimeSeries; INSERT INTO ts_probe(metric_name,tags,timestamp,value) VALUES ('m',map('s','a'),now(),1.0)"   # INSERT not supported yet
+docker exec parallax-bench-clickhouse-1 clickhouse-client --allow_experimental_time_series_table=1 -q "DROP TABLE ts_probe"
+```
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
