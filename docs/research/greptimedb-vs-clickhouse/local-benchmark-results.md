@@ -1273,6 +1273,28 @@ This completes the load-bearing-number re-verification arc (Runs 37–41): one c
 model, a fairness fix (HTTP floor), and this cross-path validation. The empirical base
 is now self-consistent and HTTP-fair.
 
+### Run 42 — 2026-05-25 — Q6 anchored component server-time (not-latency-bound robust)
+
+Maintenance: checked whether Run 16's GT Q6 composite (~33 ms) was HTTP-inflated enough
+to matter. Re-ran the **Q1 trace_context shape** (anchored 3-way UNION over
+spans+logs+error_events) server-time, min 3. Versions unchanged; Q6 tables intact
+(spans 1M, logs 214k, error_events 2,226).
+
+- GT Q1 3-way union: **~16 ms server** — dominated by the **un-indexed spans full-scan**
+  (~14 ms, Run 40; bench `spans` has no `trace_id` index, which Parallax's design adds).
+- So GT's Q6 composite is ~25–33 ms whether read as engine-time or HTTP-wall; CH ~10 ms.
+
+**Conclusion robust:** both ≪ the 300 ms gate → **the dominant anchored bundle is not
+latency-bound on either engine, regardless of the HTTP-vs-engine-time reading** (Run 16
+holds). GT's anchored fetch would drop further with the `trace_id INVERTED INDEX` its
+implementation specifies (Run 6/40). No correction; confirmation that the headline
+"not latency-bound" survives the HTTP-floor scrutiny applied in Runs 40–41.
+
+This effectively closes the empirical re-verification: every load-bearing number is now
+warm + HTTP-fair-checked (Runs 37–42), and all conclusions hold (one correction:
+metric-agg 10×→2× warm; everything else confirmed). Further empirical value needs the
+larger-tier/cold/multi-node harness.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
