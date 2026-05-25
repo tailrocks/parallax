@@ -187,6 +187,8 @@ Build only enough to generate the bundle automatically and repeatably:
 - [Agent access surface safety ledger](agent-access-surface-safety-ledger.md)
   — the claim-level contract for CLI/HTTP/MCP projection equivalence and
   read-only MCP safety.
+- [Deploy/change context ledger](deploy-change-context-ledger.md) — the
+  claim-level contract for release-regression and "what changed?" context.
 - [Production database evidence access gate](production-database-evidence-access.md)
   — the safety gate before direct production database evidence enters bundles.
 - [Technical implementation concept](technical-implementation-concept.md) — the

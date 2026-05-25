@@ -100,7 +100,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Rust applications first | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md), [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md), [Technical implementation concept](technical-implementation-concept.md) |
 | AI-native observability | [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md), [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md) |
 | Flaky-test investigation | [CI failure context MVP](ci-failure-context-mvp.md), [Flaky test investigation and replay](flaky-test-investigation-and-replay.md) |
-| Deploy/change/issue tracker context | [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md), [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md) |
+| Deploy/change/issue tracker context | [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md), [Deploy/change context ledger](deploy-change-context-ledger.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md), [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md) |
 | Agent and CLI execution tracing | [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md), [Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md), [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) |
 | Fixer and outcome loop | [Fixer component and outcome loop](fixer-component-and-outcome-loop.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md), [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md) |
 | Agent-observability technical references | [Agent observability technical review](agent-observability-technical-review.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md) |
@@ -221,7 +221,9 @@ Technical proof gates:
     [OTLP conformance ledger](otlp-conformance-ledger.md).
 16. Release/deploy/code-change/work-item context completeness and edge strength,
     specified further in
-    [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md).
+    [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md)
+    and made claimable through the
+    [Deploy/change context ledger](deploy-change-context-ledger.md).
 
 ## First Prototype Gate
 

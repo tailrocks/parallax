@@ -19,6 +19,10 @@ This note defines the contract:
 > CI, and issue-tracker records, attach them to telemetry by stable identifiers
 > first, and downgrade everything else to explicit medium/weak hypotheses.
 
+Results and product-claim status should be published through the
+[Deploy/change context ledger](deploy-change-context-ledger.md), not inferred
+from this design alone.
+
 ## Current Primary-Source Checks
 
 | Source | What it shows | Parallax implication |
@@ -233,6 +237,9 @@ Failure consequences:
 
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
   nodes and edges this note tightens.
+- [Deploy/change context ledger](deploy-change-context-ledger.md) turns provider
+  ingestion, completeness, edge-strength, missing-evidence, and redaction runs
+  into claim levels and allowed product wording.
 - [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md)
   already measures `release_context_rate` and `deploy_context_rate`; this note
   defines the ingestion and edge semantics behind those metrics.

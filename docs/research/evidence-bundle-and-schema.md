@@ -242,6 +242,12 @@ trust model and red-team gate for this object are specified in
 with run-level proof defined in the
 [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md).
 
+Release/deploy/code-change/work-item claim status is not proven by node presence
+alone; the [Deploy/change context ledger](deploy-change-context-ledger.md)
+defines the provider completeness, edge-strength, missing-evidence, and
+redaction rows required before bundles can claim release-regression or "what
+changed?" context.
+
 ## Worked Example (Abbreviated)
 
 The deterministic-context proof point from the implementation concept, as a real

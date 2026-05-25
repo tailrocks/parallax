@@ -161,6 +161,7 @@ Related research:
 - [OTLP conformance ledger](otlp-conformance-ledger.md)
 - [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)
 - [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md)
+- [Deploy/change context ledger](deploy-change-context-ledger.md)
 
 Metadata-store source:
 

@@ -55,6 +55,7 @@ idea becomes sharper.
 - [Correlation reliability on real telemetry gate](docs/research/correlation-reliability-real-telemetry-gate.md)
 - [A4 correlation reliability ledger](docs/research/a4-correlation-reliability-ledger.md)
 - [Deploy, change, and issue-tracker context](docs/research/deploy-change-and-issue-context.md)
+- [Deploy/change context ledger](docs/research/deploy-change-context-ledger.md)
 - [Redaction pipeline and secret safety](docs/research/redaction-pipeline-and-secret-safety.md)
 - [Redaction detector toolchain](docs/research/redaction-detector-toolchain.md)
 - [A6 redaction red-team ledger](docs/research/a6-redaction-red-team-ledger.md)
