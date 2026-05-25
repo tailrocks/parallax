@@ -255,3 +255,10 @@ Reverse this GO if prototype evidence shows any of the following:
 6. The first deployment is not meaningfully simpler than self-hosted Sentry.
 
 Until those kill criteria trigger, the correct decision is **GO**.
+
+For the maintained adversarial counterweight to this verdict — the steelmanned
+NO-GO case, the load-bearing-assumption register, and a full risk matrix — see
+[Risks and the bear case](risks-and-bear-case.md). The bear case argues the real
+danger is distribution and monetization, not feasibility, and names the market
+assumptions (bundle value, real users, schema adoption) to validate before the
+comfortable engineering work.

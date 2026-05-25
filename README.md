@@ -22,6 +22,7 @@ idea becomes sharper.
 ## Start Here
 
 - [Go / no-go verdict](docs/research/verdict.md)
+- [Risks and the bear case](docs/research/risks-and-bear-case.md)
 - [Project thesis](docs/research/project-thesis.md)
 - [Market landscape](docs/research/market-landscape.md)
 - [Self-hosted observability architecture](docs/research/self-hosted-observability-architecture.md)
