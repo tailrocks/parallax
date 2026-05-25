@@ -8,8 +8,11 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 128 local runs + B1–B15 cases. Recent: **Run 128 — pins
-RE-VERIFIED via release pages** (not just asserted): GreptimeDB v1.0.2 = latest stable (v1.1.0 is nightly-only, not GA),
+cold/first-run measurement showed). 25 mechanism notes + 129 local runs + B1–B15 cases. Recent: **Run 129 — 4-WAY
+NIGHTLY comparison** (operator-requested): GT v1.1.0-nightly + CH 26.6-head vs the v1.0.2/26.5 stables. GT v1.1 ~25%
+faster flushed metric-agg (~18 vs ~24 ms @2M), NO JSON-attr change (~56 ms); CH 26.6 perf-flat but now ENFORCES the
+typed-subcolumn cast in GROUP BY — correcting Run 104's dynamic-attr ~57× to **~8×** (the ~57× was 26.5's lax no-cast
+path). Nightlies don't move the headline; verdict holds. **Run 128 — pins RE-VERIFIED via release pages** (not just asserted): GreptimeDB v1.0.2 = latest stable (v1.1.0 is nightly-only, not GA),
 ClickHouse v26.5.1.882 = highest feature line (later-dated 26.2/26.3/26.4 tags are older-line LTS backports); both
 current, no bump. Future trigger: GreptimeDB v1.1 GA (Q2 — JSON Type v2 narrows the dynamic-attr gap) = re-pin + re-run
 104/96/122. **Run 127 — trace-explorer "slow error spans"** query (find+rank slowest errored spans): CH ~10 ms / GT ~24 ms (~2.4×), both

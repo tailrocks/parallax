@@ -5324,6 +5324,64 @@ remains the newest feature release.** Pin correct.
 v1.1 nightly-only); `gh api "repos/ClickHouse/ClickHouse/releases?per_page=12" --jq 'select(.prerelease==false)'`
 (26.5.1.882 highest feature; 26.2/26.3/26.4 = later-dated LTS backports).
 
+### Run 129 — 2026-05-25 — 4-WAY nightly comparison (operator-requested): GT v1.1.0-nightly + CH 26.6-head vs the v1.0.2 / 26.5 stables. GT v1.1 ~25% faster metric-agg (flushed), NO JSON-attr change; CH 26.6 enforces the typed-subcolumn cast (correcting Run 104's ~57× → ~8×)
+
+**Pass target.** Operator: run the **latest GreptimeDB nightly (v1.1, unreleased)** + **latest
+ClickHouse non-LTS / nightly** and compare all-around vs the production stables, to see what each
+nightly improves. Pulled + ran two NEW standalone containers (the v1.0.2 / 26.5.1.882 bench left
+untouched).
+
+**Builds (4-way), all live:**
+- GT-stable **v1.0.2** (bench, :4000) · GT-nightly **v1.1.0** (`v1.1.0-nightly-20260525`, :4100)
+- CH-stable **v26.5.1.882** (bench) · CH-head **v26.6.1.127** (`clickhouse:head`, :8124) — both
+  non-LTS, head = the unreleased 26.6 nightly.
+
+**(A) Dynamic-attr JSON path GROUP BY** (Run 104 shape; 200k rows, `json_get_int`/typed subcolumn):
+
+| Build | latency | note |
+| --- | --- | --- |
+| GT-stable v1.0.2 | ~56 ms | jsonb per-row parse |
+| **GT-nightly v1.1.0** | **~56 ms** | **NO CHANGE** — v1.1 "JSON Type v2" not (yet) helping the `json_get_int` GROUP BY path |
+| CH-stable v26.5 (`.:Int64` cast) | ~7 ms | typed subcolumn |
+| CH-head v26.6 (`.:Int64` cast) | ~7 ms | no change |
+| CH-head v26.6 (NO cast) | **rejected — `Code 44`** | 26.6 **enforces** the cast (`Variant/Dynamic not allowed in GROUP BY`); 26.5 was lax (~1 ms) |
+
+**(B) Metric-agg `avg(val) GROUP BY service`** (fresh 2M rows / 40k series, same on all 4):
+
+| Build | memtable-resident (dedup) | **flushed (clean scan-agg)** |
+| --- | --- | --- |
+| GT-stable v1.0.2 | ~500 ms | **~24 ms** |
+| **GT-nightly v1.1.0** | ~595 ms | **~18 ms (~25% FASTER than stable)** |
+| CH-stable v26.5 | — | **~9 ms** |
+| CH-head v26.6 | — | ~10 ms (no change) |
+
+**Verdict — modest GT v1.1 agg win; no JSON win; a Run-104 correction from CH 26.6's stricter rule.**
+
+- **GT v1.1 nightly improves the (flushed) metric-agg ~25%** (~18 vs ~24 ms @2M) — likely the
+  Flat-SST / metric-engine optimizations on the v1.1 roadmap. Narrows the GT-vs-CH agg gap to ~2× @2M
+  (CH ~9 ms). Real but modest; does NOT close it (consistent with Run 124/125: the core throughput gap
+  is diffuse engine maturity, slow-moving). The **memtable-dedup penalty (Run 117) is unchanged** on
+  v1.1 (~500–595 ms fresh on both) — `append_mode` still mandatory for high-card event tables.
+- **GT v1.1 does NOT change the dynamic-attr JSON path** (~56 ms, same as v1.0.2) — the roadmap's JSON
+  Type v2 isn't measurably helping the `json_get_int` GROUP BY in the 20260525 nightly. The Run-104
+  gap on GreptimeDB's side stands.
+- **CH 26.6 correction to Run 104:** 26.6 **enforces** the typed-subcolumn cast in GROUP BY (`Code 44`),
+  which 26.5 allowed implicitly (~1 ms). With the **required** `.:Int64` cast, CH is **~7 ms**, so the
+  fair dynamic-attr gap is **GT ~56 ms / CH ~7 ms = ~8×**, NOT the ~57× Run 104 reported off 26.5's lax
+  ~1 ms no-cast path. **Correct the dynamic-attr gap to ~8× (typed-subcolumn, the enforced/idiomatic
+  form); the ~57× was a 26.5-only artifact.** Either way GT is slower and v1.1 doesn't change it.
+- **CH 26.6-head shows no perf change** vs 26.5 on these queries (the agg/JSON numbers match) — the
+  visible 26.6 delta is the stricter Dynamic-in-GROUP-BY enforcement, not speed.
+- **Net for the operator:** the nightlies don't move the headline picture — GT v1.1 gives a small agg
+  speedup (~25%, flushed) and no JSON-attr change; CH 26.6 is perf-flat + stricter. The verdict (fit
+  not speed; agg gap diffuse/slow-closing) holds. Re-run on **GT v1.1 GA** when it ships (JSON Type v2
+  may land properly then).
+
+**Reproduce.** `docker run greptime/greptimedb:v1.1.0-nightly-20260525 standalone start …` (:4100) +
+`docker run clickhouse/clickhouse-server:head` (:8124). Build the Run-104 JSON table (via `range()` /
+`numbers()`) + a 2M/40k metric table on each; JSON GROUP BY (CH needs `.:Int64` cast in 26.6); metric
+`avg GROUP BY service` (flush GT first for the clean number). Expect the table above.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
