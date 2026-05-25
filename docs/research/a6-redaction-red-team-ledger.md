@@ -345,6 +345,9 @@ unaffected narrower level.
 - [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) and
   [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
   provide high-risk fixture surfaces.
+- [Frontend capture safety ledger](frontend-capture-safety-ledger.md) defines
+  browser/replay-specific privacy rows that A6 can veto before frontend evidence
+  becomes agent-visible.
 - [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
   depends on A6 because bundle-value evals should not reward unsafe raw context.
 

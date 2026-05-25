@@ -22,6 +22,11 @@ Rust/Go/Zig/C++/C filter. Nothing here adds a JS dependency to the Parallax core
 Version-freshness note: frontend SDK versions move fast. Pin exact SDK versions at
 build time; this document fixes the architecture, not specific minor versions.
 
+The companion [frontend capture safety ledger](frontend-capture-safety-ledger.md)
+defines the browser/route run artifacts, source-map rows, CORS/propagation
+checks, privacy canaries, overhead budgets, replay policy, and claim levels
+required before this architecture becomes product wording.
+
 ## Current Primary-Source Checks
 
 The frontend direction rests on current official docs, not only vendor blog
@@ -229,6 +234,9 @@ with row-level proof captured by the
 - [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md)
   — the run artifact schema that proves frontend continuation rates came from
   real anchors, not generator-perfect traces.
+- [Frontend capture safety ledger](frontend-capture-safety-ledger.md) — the
+  browser-side result contract for source maps, CORS, breadcrumbs, privacy,
+  export reliability, overhead, replay refs, and projection safety.
 
 ## Sources
 

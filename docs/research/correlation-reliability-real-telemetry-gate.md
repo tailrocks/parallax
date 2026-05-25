@@ -60,6 +60,9 @@ Internal sources:
 - [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
   identifies CORS, sampling coherence, and browser gaps as the cross-tier failure
   modes.
+- [Frontend capture safety ledger](frontend-capture-safety-ledger.md) defines
+  the browser/route, source-map, CORS, privacy, export, and projection rows that
+  must be fresh before frontend anchors can support product wording.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) already
   distinguishes strong, medium, weak, and inferred edges.
 
@@ -244,6 +247,9 @@ data to pass A4.
   defines the edge-strength model this gate measures.
 - [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
   defines the browser-to-backend propagation path and its failure modes.
+- [Frontend capture safety ledger](frontend-capture-safety-ledger.md) defines
+  the browser-side source-map, CORS, privacy, export, overhead, and projection
+  rows consumed by frontend correlation claims.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
   edge and missing-evidence fields that must be audited.
 - [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md)

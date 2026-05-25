@@ -149,6 +149,7 @@ Related research:
 - [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md)
 - [Flaky test investigation and replay](flaky-test-investigation-and-replay.md)
 - [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
+- [Frontend capture safety ledger](frontend-capture-safety-ledger.md)
 - [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md)
 - [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
 - [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md)

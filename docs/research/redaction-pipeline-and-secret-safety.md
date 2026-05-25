@@ -244,6 +244,9 @@ production secrets. Therefore:
   expands the mandatory `redaction_report`.
 - [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
   — frontend privacy remains the hardest PII surface and should stay opt-in.
+- [Frontend capture safety ledger](frontend-capture-safety-ledger.md) — the
+  claim ledger for proving browser breadcrumbs, route metadata, source-map
+  status, replay refs, and agent-visible projections do not leak seeded PII.
 - [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) — CLI
   args/env/stdout/stderr and agent prompts/tool outputs require ref-first
   capture.

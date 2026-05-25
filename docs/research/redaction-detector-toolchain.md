@@ -198,6 +198,9 @@ a different surface.
   supplies prompt/tool-output redaction fixtures.
 - [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
   supplies browser and replay privacy fixtures.
+- [Frontend capture safety ledger](frontend-capture-safety-ledger.md) records
+  browser-specific privacy canary, breadcrumb, replay, projection, and overhead
+  rows for those fixtures.
 - [Production database evidence access gate](production-database-evidence-access.md)
   supplies database-output and SQL-error fixtures.
 - [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) must use this

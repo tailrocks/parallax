@@ -54,6 +54,9 @@ Internal sources:
   defines the metrics and pass/fail thresholds.
 - [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
   defines browser-to-backend propagation and CORS failure modes.
+- [Frontend capture safety ledger](frontend-capture-safety-ledger.md) supplies
+  browser-side source-map, CORS, privacy, export, overhead, and projection rows
+  consumed by frontend correlation claims.
 - [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md)
   defines release, deploy, code-change, and work-item edge strengths.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines
