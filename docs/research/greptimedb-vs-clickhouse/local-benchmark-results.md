@@ -3416,6 +3416,43 @@ OTLP/Prom ingest (`write-path-and-ingestion.md`), not freshness latency. Status:
 **Reproduce.** `INSERT INTO t VALUES (…)` then immediately `SELECT count() FROM t WHERE …`
 on each — count=1 on both, no flush.
 
+### Run 84 — 2026-05-25 — High-card INGEST rate: GreptimeDB cardinality-insensitive, ClickHouse ~2.6× (closes high-card)
+
+**Pass target.** The last owed high-card piece: does extreme series cardinality slow *ingest*
+more on one engine? GreptimeDB's PartitionTree/metric engine is claimed "built for high-card
+ingest" — measure it.
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned — latest, no
+bump). Ingest 1M rows at **1k** vs **1M** distinct series. CH: `INSERT SELECT numbers(1M)`
+server-side (`--time`, min of 3). GreptimeDB: `COPY` the same CSV (wall + `execution_time_ms`).
+The comparable metric is each engine's **own 1k→1M slowdown** (method difference cancels).
+
+**Measured:**
+
+| Engine | 1k-series ingest | 1M-series ingest | **cardinality slowdown** |
+| --- | --- | --- | --- |
+| ClickHouse (`INSERT SELECT`, server) | ~0.11 s | ~0.28 s | **~2.6×** |
+| GreptimeDB (`COPY`, exec_time_ms) | 357 ms | 381 ms | **~1.07× (flat)** |
+
+**Verdict — closes the high-card picture.** **GreptimeDB ingest is cardinality-INSENSITIVE**
+(1k→1M series: 357→381 ms, ~7% — the PartitionTree memtable absorbs 1M distinct series with
+negligible slowdown, no `LowCardinality`-style cap or `ORDER BY` re-tuning). **ClickHouse
+ingest slows ~2.6×** at extreme cardinality (`LowCardinality` dict overflow + many more
+distinct `ORDER BY` keys → more granule boundaries / dict + part management). So the
+"GreptimeDB is built for high-cardinality *ingest*" claim is **confirmed with a number** —
+its high-card edge is real and largest on the **ingest** axis. **Full high-card picture now:**
+ingest → **GreptimeDB** (cardinality-insensitive vs CH 2.6×); storage → **crossover** (CH wins
+≤200k, GreptimeDB wins ~1M, Run 79); aggregation latency → **ClickHouse** (~2–3×, Run 67);
+operability (no cap) → **GreptimeDB**. Status: **high-card complete across all axes.**
+
+Caveat: GreptimeDB COPY (wall+parse) vs CH INSERT-SELECT (server) — not cross-comparable on
+absolutes; the *within-engine* 1k→1M slowdown ratio is the result (each engine's own baseline
+cancels the method). 1M-row smoke; the slowdown ratios should hold/sharpen at volume.
+
+**Reproduce.** CH `INSERT INTO t SELECT 'svc-'||toString(number%N), … FROM numbers(1000000)`
+`--time` for N∈{1000, 1000000}; GreptimeDB `COPY` the dumped CSVs, compare each engine's
+1M/1k time ratio.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

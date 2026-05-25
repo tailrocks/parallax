@@ -127,8 +127,12 @@ High cardinality splits across axes — both true, different things:
   ClickHouse on a plain table (Run 76).* The metric engine
   + PartitionTree are designed so high-cardinality series are rows in a shared,
   dict-encoded, sharded structure with no `LowCardinality`-style cap and label-set
-  hashing built in — **so the GreptimeDB edge is "no cardinality cap / no `ORDER BY`
-  tuning to manage."** On *bytes* the winner is **cardinality-dependent (Runs 76–79):** CH
+  hashing built in. **Ingest rate confirms it (Run 84): GreptimeDB ingest is
+  cardinality-INSENSITIVE** — 1M rows at 1k vs 1M distinct series took 357 → 381 ms (**~1.07×,
+  flat**), while **ClickHouse ingest slowed ~2.6×** (0.11 → 0.28 s) as `LowCardinality`
+  overflowed + `ORDER BY` keys multiplied. So GreptimeDB's clearest high-card win is the
+  **ingest axis** (cap-free, ~flat with cardinality). On *bytes* the winner is
+  **cardinality-dependent (Runs 76–79):** CH
   `LowCardinality` wins low–mid (1k ~1.12×, 200k ~1.24×) but **GreptimeDB wins at ~1M
   unique series ~1.34×** (CH `LowCardinality` blows up to 16.51 MiB all-unique vs GT 12.36)
   — the very-high-cardinality regime GreptimeDB targets. ClickHouse works but needs
