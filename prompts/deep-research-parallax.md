@@ -38,6 +38,39 @@ future autonomous runs continue from the latest operator decisions.
 
 ---
 
+# Primary Objective and Research Sequence
+
+Run this research in two phases. Do not jump to implementation before the first
+phase has a defensible answer.
+
+## Phase 1 — Go / No-Go (answer this first)
+
+The first deliverable is a clear verdict on whether Parallax is worth building at
+all. Answer, with evidence and an engineer's skepticism:
+
+- Is the problem real and painful, or only assumed?
+- Does this approach actually solve it, or only reframe it?
+- Who are the direct competitors, and where exactly do they fall short for this
+  goal?
+- Does it make sense in the market and technically — or is it just a feature of
+  Sentry / Grafana / Datadog?
+
+Write the verdict to `docs/research/verdict.md` as an explicit GO or NO-GO with
+the reasoning behind it. Do not soften the call. If the honest answer is NO-GO,
+say so and explain why — that is a valid and useful outcome.
+
+## Phase 2 — Implementation blueprint (only if Phase 1 is GO)
+
+If, and only if, Phase 1 concludes GO, continue into the full technical
+implementation concept defined under "Required Output" below: the API decision,
+the component boundary, the three implementation tiers, and a named stack per
+layer. Phase 2 is where the bulk of the deep technical research lives.
+
+Keep questioning the idea across multiple passes. Going deeper and challenging
+prior conclusions is expected; stopping shallow or early is not.
+
+---
+
 # Project Vision and Overall Target
 
 This is the north star the whole research serves. Everything is moving to an
@@ -103,6 +136,29 @@ without hand-holding:
 That is the point of the approach: with enough structured context, the agent
 makes the call and brings evidence, instead of asking a human to gather context
 first.
+
+## Separation of concerns: Parallax stores, a separate agent fixes
+
+Be precise about the component boundary, because it shapes the whole design:
+
+- Parallax itself does NOT fix issues. Parallax is the system that stores and
+  serves the data — the runtime evidence and context engine. Its job is
+  ingestion, storage, correlation, and handing back the right context.
+- A separate component (playing a Sentry-like role) sits on top: it pulls the
+  relevant evidence from Parallax, pulls the source code from the repository,
+  connects to a coding agent, and opens the pull request as the fix. The fix
+  itself happens inside the agent, which is already very capable.
+- For the agent to do this it must reach Parallax for context. The first access
+  path is the CLI — a coding agent already operates through CLI commands, so
+  Parallax must expose its evidence through a CLI from the start.
+- Whether Parallax also needs a dedicated MCP server, or whether the CLI is
+  enough for an agent to consume context, is an open question this research must
+  answer directly. Treat the MCP-server decision as a focused research item, not
+  an afterthought.
+
+So the layering is: Parallax (store and serve context) → access surface (CLI,
+and maybe MCP) → separate fixer component → coding agent → pull request. Keep
+Parallax scoped to evidence and context; keep fixing in the agent layer.
 
 ## Confirmed extension: observe agents and CLI work too
 
@@ -961,28 +1017,38 @@ Deliver, with reasoning tied to the evaluation lens and the benchmark axes:
   for this purpose — including the object-storage / S3 story.
 - What metadata store to use, with Turso as the preferred default and Postgres
   only as a scale-out fallback if Turso fails the technical gates.
+- The API decision: whether to follow the OpenTelemetry standard, the Sentry
+  standard, or both — and concretely what the API must support, how it behaves,
+  what data it stores, and how that data is stored. Do not leave this abstract.
+- The component boundary and agent access path: state plainly that Parallax
+  stores and serves evidence while a separate component plus a coding agent
+  performs the fix, and decide the access surface — CLI first, and whether a
+  dedicated MCP server is actually required or the CLI is sufficient.
 - The technical view of the best way to implement it: component diagram, data
   flow from event to evidence bundle, the event/error data model, deterministic
   grouping and correlation approach, agent/CLI trace model, audit graph, and
   where causal/lifecycle reconstruction happens.
 - Tradeoffs and the rejected alternatives, so the choice is defensible.
 
-## Scaling Trajectory: Startups First, Big Companies Later
+## Scaling Trajectory: Three Tiers, Startups First
 
-Treat scale as a trajectory, not a single target.
+Treat scale as a trajectory with three explicit tiers, and design so moving
+between them is a configuration and topology change, not a rewrite:
 
-- Basic point (now): optimize for startups and small teams — a tiny, single-node,
-  low-resource, cheap-to-run deployment that beats self-hosted Sentry on
-  simplicity. This is where the first version must win.
-- Future direction: the same system must scale horizontally to big-company
-  volumes later. This will be used by large companies eventually, so the
-  architecture, data model, and interfaces must not paint us into a single-node
-  corner.
+- Tier 1 — Simple (now, the priority): a tiny, single-node, low-resource,
+  cheap-to-run deployment that beats self-hosted Sentry on simplicity. This is
+  where the first version must win — startups and small teams.
+- Tier 2 — Scalable: the same system handling meaningful growth in signal volume
+  and query load by scaling out the seams (stream, storage, stateless
+  processors) without changing the core design.
+- Tier 3 — Very scalable: big-company horizontal scale to large volumes, with
+  the architecture, data model, and interfaces proven not to paint us into a
+  single-node corner.
 
-The implementation concept must show both: the smallest viable deployment AND a
-credible horizontal scale-out path to large volumes, with the seams (stream,
-storage, stateless processors) identified up front. Design the small system so
-the large one is a configuration and topology change, not a rewrite.
+The implementation concept must show all three: the smallest viable deployment,
+the scale-out story, and the large-volume path — with the seams identified up
+front so the small system grows into the large one by topology change, not a
+rewrite.
 
 ---
 

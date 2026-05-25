@@ -18,35 +18,55 @@ Open the agent and hand it the file as the task — paste the contents, attach t
 file, or reference the path (for example `@prompts/deep-research-parallax.md` in
 Claude Code). The agent works the brief and writes findings to `docs/research/`.
 
-### 2. As a goal (`/goal`)
+### 2. As a goal (`/goal`) — recommended
 
-When you want the agent to treat the prompt as its objective and drive toward it
-autonomously, run it through your goal command and point it at the file:
+`/goal` makes the agent treat the prompt as an objective and keep working across
+turns until a completion condition is met. This is the recommended way to run a
+long research session: give it a high completion bar and it keeps going on its
+own until the bar is reached, then stops — no wasted runs afterward.
 
 ```text
-/goal prompts/deep-research-parallax.md
+/goal Execute prompts/deep-research-parallax.md. Phase 1 first: deliver a
+GO / NO-GO verdict to docs/research/verdict.md (real problem? solves it?
+competitors? market sense?). Phase 2, only if GO: complete the implementation
+blueprint — API standard (OpenTelemetry vs Sentry: what to support, store, how),
+the Parallax-stores / separate-agent-fixes boundary with the CLI-vs-MCP decision,
+three scaling tiers (simple / scalable / very scalable), and a named stack per
+layer. Research deeply across many passes; commit and push each durable section;
+do not stop shallow or early.
 ```
 
-The agent adopts the prompt as the goal, does the research, and produces the
-deliverables the prompt asks for (research notes plus the implementation
-concept).
+To get MORE results rather than fewer, the lever is the completion condition, not
+the command: a sharp, demanding bar ("done only when the verdict exists and, if
+GO, the blueprint covers API, boundary + MCP decision, all three tiers, and a
+per-layer stack") keeps the agent grinding through many passes. A vague goal
+("research Parallax") lets it declare victory early — avoid that.
 
 ### 3. On a loop (`/loop`)
 
-`/loop` runs a prompt or command repeatedly so long research can iterate without
-re-invoking it by hand:
+`/loop` re-runs a prompt on an interval (or self-paced) and never self-completes —
+you stop it by hand when the picture is clear enough. Use it when you want
+endless deepening passes rather than convergence on a fixed deliverable:
 
 ```text
-# self-paced: the agent decides when to continue each iteration
-/loop /goal prompts/deep-research-parallax.md
+# self-paced: the agent keeps starting fresh passes until you stop it
+/loop prompts/deep-research-parallax.md
 
-# fixed interval: re-run every 30 minutes
-/loop 30m /goal prompts/deep-research-parallax.md
+# fixed interval: re-run every 30 minutes (only if you want pauses between passes)
+/loop 30m prompts/deep-research-parallax.md
 ```
 
-Omit the interval to let the model self-pace; pass one (for example `30m`) to run
-on a fixed schedule. Use this for research that benefits from multiple passes —
-the agent extends and sharpens the notes under `docs/research/` over time.
+Notes:
+
+- Omit the interval to let the model self-pace (back-to-back passes, no idle
+  waits — right for research, since nothing external is being watched). Pass an
+  interval only if you want breathing room to review between passes.
+- `/loop` tasks auto-expire after about 7 days, and stop if the session closes
+  (they resume on `--resume` while unexpired).
+- Do NOT wrap `/goal` inside `/loop` for this open-ended research. `/goal`
+  already self-completes, so `/loop /goal ...` just restarts a finished goal —
+  redundant. Pick one: `/goal` to converge on the verdict + blueprint and stop,
+  or `/loop` for endless passes you end by hand.
 
 ## Output
 
