@@ -6479,6 +6479,38 @@ Memory saved (storage-cost-thesis-and-hybrid). No containers touched.
 **Reproduce.** Synthesis from web (ClickHouse S3 cold-read + distributed-cache docs; GreptimeDB S3-native
 + cost blogs) + internal Runs 91/155/159 + `retention-cost-model.md` pricing. See `storage-cost-and-tiering.md` sources.
 
+### Run 162 — 2026-05-25 — LIVE (exec, small load 200k×2): cardinality-cliff STORAGE re-verify — no cliff, per-added-series cost ~parity; reconciles the "cardinality-insensitive" narrative
+
+**Context.** Filled the gap flagged in Runs 159/161 (metrics_hc was only 1000-card, under CH's 8192
+`LowCardinality` cap). Loaded high-card (50k distinct instance) + low-card (1k) twins, 200k rows each,
+on both stables via exec (small data, laptop-safe; only the distinct-count is high). Storage measure
+(non-timing). Cleaned up all 4 test tables after (GT back to 11 baseline tables). Re-pin unchanged.
+
+**Isolated cardinality (same 200k rows/ts/value, only `instance` distinct count varies):**
+| | low-card (1k) | high-card (50k) | growth |
+| --- | --- | --- | --- |
+| ClickHouse `LowCardinality` | 228 KB | 916 KB | **~4.0×** |
+| GreptimeDB plain mito (PK service,instance) | 25.9 KB | 791 KB | ~30.5× |
+
+- **No storage cliff:** ClickHouse grew only **~4×** for **50×** more distinct values (≫ the 8,192 cap)
+  — graceful, re-confirms Run 76.
+- **Per-added-series cost ~parity:** `(hi−lo)/49k` = **CH ~14.0 vs GT ~15.6 bytes/series** — neither has
+  a storage edge on the cardinality *dimension itself*.
+- **CAVEAT (don't overclaim):** the low-card *absolutes* were inflated in GT's favour by a synthetic
+  over-compressible `value=n%100` + sequential `ts` (GT crushed low-card to 25.9 KB = 0.13 B/row). The
+  robust signals are the **per-series delta (~parity)** + **no cliff** — NOT the 8.8× low-card absolute.
+
+**Reconciliation (corrects an oversimplification).** "GreptimeDB cardinality-insensitive" = **ingest
+throughput (Run 84, flat) + no hard cap (vs CH 8,192 dict)**, NOT storage density. Storage is
+cardinality-dependent on BOTH; the winner is set by the other columns' compressibility + the
+extreme-cardinality crossover (Run 79: GT wins only past ~1M all-unique series), not a GT per-series
+storage advantage. Updated `metric-cardinality.md` (Run 76/79 section).
+
+**Reproduce.** Both: create lo/hi metric tables (instance = `'inst-'||(n%1000)` vs `(n%50000)`), 200k
+rows, same ts/value; GT load `FROM range(0,200000,1)` (quote identifiers; `range` col = `value`), CH
+`FROM numbers(200000)`; flush/`OPTIMIZE FINAL`; compare `sst_size` (GT `region_statistics`) vs
+`sum(bytes_on_disk)` (CH `system.parts`). Delta hi−lo / 49000 = bytes/series. (exec; host port down.)
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

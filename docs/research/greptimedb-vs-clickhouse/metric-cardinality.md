@@ -148,6 +148,21 @@ Two findings:
   storage + multi-metric consolidation — not moderate-cardinality bytes (CH) or agg latency
   (CH, Run 67).**
 
+**Re-verified Run 162 (exec, 200k rows, isolated cardinality 1k→50k distinct `instance`): no storage
+cliff; per-added-series cost ~parity.** Loaded low-card (1k) vs high-card (50k) twins, same rows/ts/
+value, only `instance` cardinality differing. ClickHouse `LowCardinality` grew **228 KB → 916 KB (~4×)**
+for 50× more distinct values — **graceful, no explosion** (re-confirms the Run-76 finding). The
+**marginal cost per added distinct series is ~parity: ClickHouse ~14.0 vs GreptimeDB ~15.6 bytes/series**
+— so neither holds a storage edge on the cardinality *dimension itself*. (Caveat: this run's *absolute*
+low-card numbers were inflated in GreptimeDB's favour by a synthetic over-compressible `value = n%100` +
+sequential `ts` — GT crushed the low-card table to 25.9 KB; do not read the low-card absolute as a clean
+storage claim. The robust signal is the **per-series delta (~parity)** + **no cliff**, consistent with
+Run 79's cardinality-dependent crossover.) **Reconciles the narrative: "GreptimeDB cardinality-
+insensitive" is about INGEST THROUGHPUT (Run 84, flat) + NO HARD CAP (vs CH's 8,192 dict), NOT storage
+density — storage is cardinality-dependent on both, with the winner set by the other columns'
+compressibility + the extreme-cardinality crossover (Run 79), not by a GreptimeDB per-series storage
+advantage.**
+
 ## Side by side
 
 | | GreptimeDB (metric engine) | ClickHouse (MergeTree) |
