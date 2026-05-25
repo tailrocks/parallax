@@ -76,7 +76,7 @@ per-query overhead.
 | **Speed — query latency** | ClickHouse leads logs/traces/bundle; GreptimeDB leads metrics (PromQL) + ties metric agg. | smoke |
 | **Speed — freshness** | **Tie** (measured Run 5): both visible-on-write, sub-second, no flush barrier. GreptimeDB write-path *edge*: LSM absorbs small high-frequency writes (no ClickHouse part-explosion / "too many parts") + native OTLP/Prom ingest. | smoke+arch |
 | **Cost** | Measured (pass 8): compression is a **pattern-dependent wash**, no blanket winner — ClickHouse wins tuned counters/gauges/high-card strings, GreptimeDB wins dict-friendly + noisy floats. Not a strong differentiator. Object-store $ (MinIO) still unproven. | smoke (compression); cost-$ open |
-| **Scaling** | Open. GreptimeDB region model (designed-in) vs ClickHouse manual sharding. | arch |
+| **Scaling** | **Split** (pass 10): ClickHouse wins vertical single-node ceiling; **GreptimeDB wins horizontal** (operator's primary) — region model + Metasrv rebalance + repartition + compute/storage separation vs ClickHouse OSS manual sharding (SharedMergeTree Cloud-only). | arch (multi-node run owed) |
 
 ## Bottom line (provisional, will sharpen in the verdict)
 
