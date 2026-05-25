@@ -34,8 +34,9 @@ The lightweight end of the same pressure is tracked in
 | [MCP server overview](https://modelcontextprotocol.io/specification/2025-11-25/server/index) | MCP exposes prompts, resources, and tools; tools are model-controlled while resources are application-controlled. This maps cleanly to Parallax's split between bounded context resources and explicit investigation tools. |
 | [MCP tools specification](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) | Tools have JSON Schema input and optional output schemas, support structured content, can advertise task-support metadata, and carry security requirements for input validation, access control, rate limits, output sanitization, user confirmation for sensitive operations, and audit logging. Bundle-returning Parallax tools should use `structuredContent` with an output schema, not text-only JSON, and should mark task support as forbidden for the first context adapter. |
 | [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization) | Authorization is optional overall, but HTTP-based transports that support it should follow the spec. The current spec requires protected-resource metadata, resource indicators in authorization and token requests, token audience validation by MCP servers, secure token storage, HTTPS, localhost/HTTPS redirect checks, PKCE for public clients, and no token passthrough. Stdio transports should not use this OAuth flow and should retrieve credentials from the environment. |
+| [MCP draft changelog](https://modelcontextprotocol.io/specification/draft/changelog) and [SEP index](https://modelcontextprotocol.io/seps) | The official site still labels `2025-11-25` as latest, but the draft and final/accepted SEPs point to material protocol drift: stateless/sessionless Streamable HTTP, no `Mcp-Session-Id`, `server/discover`, `subscriptions/listen`, deterministic/cacheable list results, standard MCP request headers, `_meta` trace context, roots/sampling/logging deprecation, and a tasks extension outside core. | Do not implement draft behavior as a stable requirement yet, but do make the shipping gate version-aware. Parallax MCP must avoid protocol-level session dependence and record which stable or draft semantics each fixture exercised. |
 | [MCP security best practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices) | The official guidance favors least-privilege scopes, targeted elevation, precise scope challenges, correlation IDs, and avoiding wildcard or omnibus scopes. |
-| [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/) | MCP calls should be observable as MCP-specific spans and metrics; MCP does not yet define its own standard trace-context propagation, so instrumentation needs explicit propagation in message metadata. |
+| [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/) | MCP calls should be observable as MCP-specific spans and metrics. The current OTel page still marks MCP conventions development-stage and recommends `_meta` trace context while saying official MCP guidance should take precedence when available. |
 | [OpenAI Docs MCP](https://developers.openai.com/learn/docs-mcp) | Codex, VS Code/Copilot Agent mode, Cursor, and Claude Code can consume MCP servers; OpenAI's own docs server uses MCP as the cross-client integration surface. |
 | [Codex MCP](https://developers.openai.com/codex/mcp), [Codex MCP server guide](https://developers.openai.com/codex/guides/agents-sdk), [Codex config reference](https://developers.openai.com/codex/config-reference), and local `codex 0.133.0` help | Codex supports MCP in the CLI and IDE extension. Current docs put MCP config in `~/.codex/config.toml` or project-scoped `.codex/config.toml` for trusted projects; support stdio and Streamable HTTP; distinguish fixed `env`, whitelisted `env_vars` with local/remote source, remote stdio placement, bearer-token env vars, static and env HTTP headers, startup/tool timeouts, enabled/required servers, enabled/disabled tools, default and per-tool approval modes, OAuth resource/scopes/callback URL/port/credential store, and plugin-provided MCP servers. Codex can also run as a stdio MCP server exposing `codex` and `codex-reply` tools with approval-policy, sandbox, config, cwd, model, and profile controls. Local help confirms `codex mcp add` supports stdio `--env`, HTTP `--url`, `--bearer-token-env-var`, and `codex mcp-server --strict-config`. |
 | [Claude Code MCP docs](https://code.claude.com/docs/en/mcp) and local `claude mcp --help` on `2.1.150` | Claude Code supports local, project, user, plugin, claude.ai connector, and managed MCP sources. Current docs define source precedence, project `.mcp.json` approval, environment expansion in command/args/env/url/headers, OAuth callback/client credentials/metadata override/scope pinning, dynamic `headersHelper` commands gated by workspace trust, output warnings and limits, per-tool `_meta["anthropic/maxResultSizeChars"]`, and `claude mcp serve`. Local help confirms `add` supports stdio/SSE/HTTP, headers, env vars, scope, client credentials, callback port, and warns that `mcp get`/`list` skip the workspace trust dialog and spawn stdio servers for health checks. |
@@ -43,11 +44,14 @@ The lightweight end of the same pressure is tracked in
 
 Version note: the official MCP pages checked for this pass show
 `2025-11-25` as the latest specification revision. Do not cite or implement a
-future-dated spec revision until the official site publishes it as current. The
-OpenTelemetry semantic-convention page checked in the same pass still shows
-`1.41.0`, with MCP conventions marked development-stage; its examples still use
-`mcp.protocol.version = "2025-06-18"`, so Parallax should record observed MCP
-handshake versions separately from the semconv example version.
+future-dated spec revision until the official site publishes it as current.
+However, the draft changelog and SEP index are now important watch inputs because
+the next revision could change transport/session assumptions and make `_meta`
+trace context official. The OpenTelemetry semantic-convention page checked in
+the same pass still shows `1.41.0`, with MCP conventions marked
+development-stage; its examples still use `mcp.protocol.version = "2025-06-18"`,
+so Parallax should record observed MCP handshake/spec versions separately from
+the semconv example version.
 
 ## 2026-05-25 Access-Boundary Recheck
 
@@ -57,6 +61,12 @@ claim:
 - The official MCP site labels `2025-11-25` as latest. The tools spec still
   supports `structuredContent`, optional `outputSchema`, `tools/list_changed`,
   and tool-level `taskSupport` with `forbidden` as the default value.
+- The official draft is not yet the stable spec, but it is strategically
+  relevant: it removes protocol-level sessions, adds explicit discovery,
+  changes change-notification shape, standardizes cache/list hints, deprecates
+  roots/sampling/logging, moves tasks into an extension, and documents `_meta`
+  trace propagation. A Parallax MCP adapter should be written and tested so a
+  future spec bump changes transport glue, not the evidence-bundle contract.
 - The authorization spec still makes remote MCP an auth/security project, not a
   simple bearer-token tunnel: protected-resource metadata, resource indicators,
   audience validation, PKCE S256, HTTPS/localhost redirect rules, and token
@@ -256,12 +266,13 @@ for context retrieval and deterministic checks, not production mutation.
 | Remote auth | Use HTTPS, protected-resource metadata, resource indicators in authorization and token requests, audience validation, secure token storage, short-lived tokens, PKCE where applicable, and token-passthrough denial. |
 | Stdio/local auth | Treat local stdio MCP as local code execution. The OAuth authorization spec does not apply to stdio; require explicit install/trust, retrieve credentials only from approved local configuration or environment, never log them, and never auto-enable from a repo. |
 | Tool schemas | Every tool has a closed JSON Schema input. Bundle-returning tools have an output schema for structured results. |
-| Server-initiated capabilities | Disable sampling, elicitation, and task-augmented execution in the first context server. Audit any `tools/list_changed` notification or dynamic catalog change. |
+| Protocol drift | Record stable spec version, observed protocol version, and any draft/SEP feature under test. Do not depend on protocol-level sessions or `Mcp-Session-Id`; use explicit, auditable state handles when state is unavoidable. |
+| Server-initiated capabilities | Disable roots, sampling, elicitation, multi-round-trip (MRTR) input requests, and task-augmented execution in the first context server. Audit stable `tools/list_changed` behavior and draft-style `subscriptions/listen`/catalog changes separately. |
 | Output limits | Return bounded summaries plus resource refs; do not inline unbounded logs, traces, terminal output, or transcripts. |
 | Redaction and source-field policy | Run the same redaction pipeline as CLI/API, and include `redaction_report.source_field_policy` in agent-visible responses. |
 | Prompt injection | Treat telemetry, issues, PRs, logs, and transcripts as untrusted data; never let tool output redefine policy. |
 | Audit | Emit an audit event and OpenTelemetry MCP span for every tool call, denied call, elevation request, and raw-ref access. |
-| Trace context | Propagate request trace context through MCP metadata where supported, and link MCP spans back to bundle/evidence refs. |
+| Trace context | Propagate W3C trace context through MCP `_meta` where supported, record whether it comes from OTel recommendation or draft/SEP-414 semantics, and link MCP spans back to bundle/evidence refs. |
 | Errors | Return structured, self-correctable errors for invalid windows, missing scopes, missing evidence, and oversized requests. |
 
 MCP spans should be normalized through
@@ -306,7 +317,8 @@ MCP should not ship until these tests pass:
 | Audit fixture | Every MCP call emits an audit row and OpenTelemetry span with caller, tool, scopes, bundle id, status, and redaction policy. |
 | Negative tool catalog | Generic shell, SQL, deploy, rollback, and delete tools are absent. |
 | Management-tool catalog | Alert, dashboard, role, user, pipeline, notification, incident, ticket, saved-view, stream, sourcemap, and search-job create/update/delete tools are absent from the context server. |
-| Capability fixture | Sampling, elicitation, task-augmented execution, and unreviewed tool-list changes are denied or audited for the read-only context server. |
+| Protocol-drift fixture | Fixture records latest-stable spec, observed protocol version, no session-id dependence, deterministic/cacheable list behavior where supported, and explicit handling for draft-only features. |
+| Capability fixture | Roots, sampling, elicitation, multi-round-trip (MRTR) input requests, task-augmented execution, and unreviewed catalog changes are denied or audited for the read-only context server. |
 
 If these fail, keep CLI/API available and do not claim MCP safety.
 

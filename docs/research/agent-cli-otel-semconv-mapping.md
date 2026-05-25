@@ -29,7 +29,8 @@ or vendor-specific trace shapes become the product schema.
 | [OpenTelemetry semantic conventions 1.41.0](https://opentelemetry.io/docs/specs/semconv/) | GenAI, MCP, CLI, process, CI/CD, VCS, exception, and test areas are present in the current semantic convention catalog. | Parallax can reuse OTel names for ingestion and adapter tests, but should not require every source to emit every convention. |
 | [OpenTelemetry GenAI agent spans](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/) | GenAI agent conventions are development-stage; existing instrumentations should not change emitted convention versions by default and may use `OTEL_SEMCONV_STABILITY_OPT_IN=gen_ai_latest_experimental`. They define operations such as `create_agent`, `invoke_agent`, `invoke_workflow`, and `execute_tool`. | Every normalized record must store `semconv_version` and `stability_opt_in`. Missing those fields means the adapter result is useful but not proof of stable interoperability. |
 | [OpenTelemetry GenAI client spans](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/) | Client spans include provider/model attributes, token usage, finish reasons, error type, and opt-in content fields such as input/output messages, system instructions, and tool definitions. | Token/cost/status fields are safe defaults. Prompts, outputs, system instructions, and tool definitions remain raw refs or disabled unless explicitly enabled and redacted. |
-| [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/) | MCP instrumentation defines client/server spans, method names, JSON-RPC request IDs, tool/prompt/resource attributes, session metrics, and transport values. MCP itself does not yet define a standard trace-context mechanism; OTel recommends `params._meta` while warning that this may change. | Parallax should propagate `traceparent` through MCP `_meta` when available, but must treat that path as provisional and test it per client/server pair. |
+| [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/) | MCP instrumentation defines client/server spans, method names, JSON-RPC request IDs, tool/prompt/resource attributes, session metrics, and transport values. The page still marks MCP conventions development-stage and recommends `params._meta` trace context while saying official MCP guidance should win when available. | Parallax should propagate `traceparent` through MCP `_meta` when available, but must record whether the source is OTel recommendation, stable MCP, or draft/SEP-414 semantics and test it per client/server pair. |
+| [MCP draft changelog](https://modelcontextprotocol.io/specification/draft/changelog) and [SEP index](https://modelcontextprotocol.io/seps) | Latest stable remains `2025-11-25`, but the draft documents `_meta` trace-context keys and larger protocol drift such as stateless/sessionless transport, discovery, subscriptions, deterministic/cacheable lists, roots/sampling/logging deprecation, and task extension movement. | Store observed MCP spec/protocol version separately from OTel semconv version. Do not let session metrics or draft-only fields become Parallax storage keys until the stable spec and client behavior catch up. |
 | [OpenTelemetry CLI spans](https://opentelemetry.io/docs/specs/semconv/cli/cli-spans/) | CLI spans model short-lived command execution and require executable name, exit code, PID, and `error.type` on non-zero exits. Command args should not be collected by default without sanitization. | `cli_invocation` should always store structural command identity and exit/error status; raw argv is denied by default. |
 | [OpenTelemetry process resource conventions](https://opentelemetry.io/docs/specs/semconv/resource/process/) | Process args, command line, interactive flag, cgroup, parent PID, and working directory are opt-in. The spec says to prefer `process.command_args` and fall back to `process.command` plus `process.args_count` when args cannot be safely collected. | Parallax should store command family and arg count even when args are redacted, preserving audit value without secret exposure. |
 | [OpenTelemetry CI/CD spans](https://opentelemetry.io/docs/specs/semconv/cicd/cicd-spans/) | CI/CD spans model pipeline runs and task runs with results such as success, failure, timeout, skipped, cancellation, and error. | Agent-run tests and validation commands should normalize to the same result vocabulary as CI jobs. |
@@ -132,14 +133,17 @@ redacted ref is needed. It should not silently expand to full prompt/tool data.
 
 ## MCP Trace Propagation
 
-Until MCP standardizes trace-context propagation:
+Until the latest stable MCP spec and tested clients converge on trace-context
+propagation:
 
 - inject W3C `traceparent` and `tracestate` into MCP `params._meta` when the
   client/server supports it;
 - extract `_meta.traceparent` as the remote parent for MCP server spans;
 - link ambient context when the server already has one;
 - never put secrets or authorization tokens into trace metadata;
-- include `mcp_trace_context_provisional=true` in adapter metadata.
+- include `mcp_trace_context_source=otel_recommendation|mcp_stable|mcp_draft`
+  and keep `mcp_trace_context_provisional=true` unless the current stable MCP
+  spec and tested client/server pair both support the same behavior.
 
 Gate:
 

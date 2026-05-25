@@ -31,8 +31,9 @@ The central rule:
 | [MCP server overview](https://modelcontextprotocol.io/specification/2025-11-25/server/index) | MCP servers expose prompts, resources, and tools, with tools as model-controlled operations and resources as application-controlled context. | Parallax should expose evidence bundles as resources and narrow tools, not generic automation power. |
 | [MCP tools specification](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) | Tools are model-controlled, should keep a human in the loop, use JSON Schema input, optional output schemas, structured content, annotations, error results, optional task-support metadata, and security requirements around validation, access control, rate limiting, sanitization, confirmation, and audit logging. | Every Parallax MCP tool needs a closed schema, bounded output, audit row, and explicit denial of task-augmented execution unless a later fixture proves it safe. |
 | [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization) | Authorization is optional for MCP overall; HTTP-based transports that support it should follow the spec, while stdio should retrieve credentials from the environment instead of using the HTTP authorization flow. Remote MCP uses OAuth-style authorization with protected-resource metadata, resource indicators in authorization and token requests, audience validation, HTTPS, redirects, PKCE, secure token handling, and explicit token-passthrough prohibitions. | Remote Parallax MCP cannot be a bearer-token side door into evidence; protected-resource metadata, resource indicators, audience, PKCE, and no-token-passthrough behavior need their own rows. Local stdio trust and credential-source behavior must be measured separately. |
+| [MCP draft changelog](https://modelcontextprotocol.io/specification/draft/changelog) and [SEP index](https://modelcontextprotocol.io/seps) | Latest stable remains `2025-11-25`, but the draft and final/accepted SEPs show likely next-revision changes: sessionless/stateless transport, `server/discover`, `subscriptions/listen`, deterministic/cacheable lists, standard MCP request headers, `_meta` trace context, roots/sampling/logging deprecation, and tasks as an extension. | Access-surface fixtures must record stable-vs-draft semantics, avoid `Mcp-Session-Id` dependence, and deny or separately gate task, multi-round-trip (MRTR), and server-initiated features. |
 | [MCP security best practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices) | Official guidance emphasizes least privilege, precise scope challenges, resource indicators, token audience validation, correlation IDs, and avoiding broad scopes. | The first MCP server must start read-only and deny wildcard/admin scopes. |
-| [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/) | MCP client/server spans, JSON-RPC request IDs, transport values, tool/resource/prompt attributes, session metrics, `elicitation/create`, `sampling/createMessage`, `notifications/tools/list_changed`, and provisional `_meta` trace propagation are defined with development-stage status. | MCP calls and server-initiated capability attempts must be observable and normalized into Parallax audit/action rows without treating development-stage semconv names as stable storage fields. |
+| [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/) | MCP client/server spans, JSON-RPC request IDs, transport values, tool/resource/prompt attributes, session metrics, `elicitation/create`, `sampling/createMessage`, `notifications/tools/list_changed`, and `_meta` trace propagation are defined with development-stage status. The OTel page says to prioritize official MCP guidance if it lands. | MCP calls and server-initiated capability attempts must be observable and normalized into Parallax audit/action rows without treating development-stage semconv names as stable storage fields. |
 | [OpenAI Docs MCP](https://developers.openai.com/learn/docs-mcp) | OpenAI documents MCP as a docs integration surface for Codex and other agent clients. | Cross-client MCP is a distribution requirement, not a unique moat. |
 | [Codex MCP](https://developers.openai.com/codex/mcp), [Codex MCP server guide](https://developers.openai.com/codex/guides/agents-sdk), [Codex config reference](https://developers.openai.com/codex/config-reference), and local `codex 0.133.0` help | Codex supports MCP in the CLI and IDE extension with shared `config.toml` configuration. Current docs cover user and trusted-project config paths, stdio and Streamable HTTP, fixed `env`, whitelisted `env_vars` with local/remote source, remote stdio placement, bearer-token env vars, static/env HTTP headers, startup/tool timeouts, enabled/required servers, enabled/disabled tools, default and per-tool approval modes, OAuth resource/scopes/callback URL/port/credential store, and plugin-provided MCP servers. Codex can also run as a stdio MCP server exposing `codex` and `codex-reply` tools with approval-policy, sandbox, config, cwd, model, and profile controls. Local help confirms `codex mcp add` and `codex mcp-server --strict-config` flags. | Codex client fixtures must record config path/trust, local versus remote env/header sources, OAuth resource/scope/callback behavior, tool approval policy, plugin origin, required-server startup behavior, and Codex-as-MCP-server topology. A Codex MCP success does not by itself prove a safe read-only Parallax context surface. |
 | [Claude Code MCP docs](https://code.claude.com/docs/en/mcp) and local `claude mcp --help` on `2.1.150` | Claude Code supports local, project, user, plugin, claude.ai connector, and managed MCP sources with source precedence. Current docs define project `.mcp.json` approval, environment expansion in command/args/env/url/headers, OAuth callback/client credentials/metadata override/scope pinning, dynamic `headersHelper` commands gated by workspace trust, output warning and limit behavior, per-tool `_meta["anthropic/maxResultSizeChars"]`, and `claude mcp serve`. Local help confirms stdio/SSE/HTTP, headers, env vars, scope, client credentials, callback port, and warns that `mcp get`/`list` skip the workspace trust dialog and spawn stdio servers for health checks. | Claude Code client fixtures must record configuration source, precedence, auth/header source, output-budget behavior, workspace trust, health-check side effects, and whether Claude-as-MCP-server is in play. Cross-client MCP safety is not proven by a generic "Claude supports MCP" row. |
@@ -111,6 +112,7 @@ Each `manifest.json` should include:
   "source_snapshot": {
     "mcp_spec": "2025-11-25",
     "mcp_spec_latest_label_checked": "2025-11-25 (latest on official site)",
+    "mcp_draft_watch": "draft_changelog_checked; sessionless/stateless, server/discover, subscriptions/listen, cacheable lists, trace_context_meta, tasks_extension",
     "otel_semconv": "1.41.0",
     "otel_mcp_semconv_status": "development",
     "otel_mcp_example_protocol_version": "2025-06-18",
@@ -122,7 +124,7 @@ Each `manifest.json` should include:
   "clients": ["codex", "claude-code"],
   "transport_modes": ["stdio", "streamable-http"],
   "mcp_features_allowed": ["tools", "resources"],
-  "mcp_features_denied": ["sampling", "elicitation", "task-augmented execution for context tools"],
+  "mcp_features_denied": ["roots", "sampling", "elicitation", "mrtr_input_requests", "task-augmented execution for context tools", "mcp_tasks_extension"],
   "client_config_matrix": ["codex:stdio", "codex:streamable-http", "claude-code:stdio", "claude-code:http"],
   "notes": []
 }
@@ -418,6 +420,12 @@ output-budget decisions even when they call the same Parallax MCP server.
 - No read-only context claim if sampling, elicitation, task-augmented execution,
   or unreviewed `tools/list_changed` behavior can expand what the server asks of
   the client or model during a context request.
+- No read-only context claim if the adapter depends on protocol-level sessions
+  or `Mcp-Session-Id`. Any cross-request state must use explicit server-minted
+  handles that appear in audit rows and projection-equivalence fixtures.
+- No draft-protocol claim unless `server/discover`, standard MCP request
+  headers, deterministic/cacheable list results, `subscriptions/listen`, and
+  `_meta` trace-context behavior are either tested or explicitly out of scope.
 - No "safe MCP" claim unless negative tools are absent: no generic shell, SQL,
   deploy, rollback, delete, or broad production-control tools.
 - No read-only context claim if the first context server includes alert,
@@ -500,8 +508,9 @@ Rerun the matrix and mark affected claims `claim_expired` when any of these
 change:
 
 - MCP specification, authorization guidance, or security guidance changes;
-- MCP task-augmented execution, sampling, elicitation, or dynamic tool-list
-  behavior changes;
+- MCP task-augmented execution, roots, sampling, elicitation,
+  multi-round-trip input requests, list/subscription, session/state, or dynamic
+  tool-catalog behavior changes;
 - OpenTelemetry semantic conventions or MCP semantic conventions change;
 - Codex, Claude Code, Cursor, VS Code/Copilot, or other claimed clients change
   MCP configuration, output limits, auth, or resource behavior;
