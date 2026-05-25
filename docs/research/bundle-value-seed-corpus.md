@@ -29,6 +29,7 @@ telemetry problem. Parallax must generate or attach the telemetry leg itself.
 | --- | --- | --- |
 | [SWE-bench dataset docs](https://www.swebench.com/SWE-bench/guides/datasets/) | Standard task fields include repository, issue URL, PR URL, base commit, gold patch, test patch, fail-to-pass tests, and pass-to-pass tests. This is the right manifest shape for issue/fix/test tasks. | No runtime telemetry, trace, log, deploy, redaction, or evidence-bundle artifacts. |
 | [SWE-bench-Live GitHub](https://github.com/microsoft/SWE-bench-Live) and [SWE-bench-Live Hugging Face org](https://huggingface.co/SWE-bench-Live) | Live benchmark infrastructure now includes MultiLang and Windows datasets; the May 16, 2026 update reports 743 MultiLang tasks across 6 languages and 381 repos, plus instance-level Docker images and evaluation commands. The org page shows active dataset updates. | Strong freshness and execution harness, but still issue-to-patch, not telemetry-to-patch. |
+| [SWE-bench-Live OS-bench](https://huggingface.co/datasets/SWE-bench-Live/OS-bench) | Fresh cross-platform migration dataset from the same org. The current viewer shows 127 `windows2linux` rows with `patch`, `test_patch`, `FAIL_TO_PASS`, `PASS_TO_PASS`, Docker image, build/test/print commands, log parser, language, difficulty, and repository metadata. | Useful for a CLI/OS/systems slice, but it is a public generated benchmark, not wild production telemetry or a replacement for issue-resolution tasks. |
 | [SWE-bench Multilingual](https://www.swebench.com/multilingual) | 300 curated tasks across 42 repositories and 9 languages, including Rust; tasks follow SWE-bench issue/PR/test format and are designed to run quickly. | Small and high quality, but no runtime evidence. Useful as the first Rust/system seed, not a complete Parallax corpus. |
 | [Multi-SWE-bench](https://github.com/multi-swe-bench/multi-swe-bench) | 1,632 issue-resolution tasks across Java, TypeScript, JavaScript, Go, Rust, C, and C++, with open data, code, and environments. | Larger multilingual pool; quality and environment friction must be checked per task before inclusion. |
 | [SWE-rebench V2 paper](https://arxiv.org/abs/2602.23866) and [dataset collection](https://huggingface.co/collections/nebius/swe-rebench-v2) | A language-agnostic pipeline with 32,000+ executable tasks across 20 languages and 3,600+ repositories, plus a Hugging Face dataset updated in 2026. | Best for expansion after the seed run. The first corpus should prefer smaller, inspectable, high-quality tasks before using a very large automatically collected set. |
@@ -51,11 +52,19 @@ Recommended seed mix:
 | Rust/systems tasks | 4 | SWE-bench Multilingual Rust, SWE-bench-Live MultiLang Rust, Multi-SWE-bench Rust | Parallax is Rust-first; this tests stack/error shapes closest to the first product. |
 | Fresh multilingual tasks | 4 | SWE-bench-Live MultiLang | Keeps contamination and stale-fixture risk lower than old benchmark pools. |
 | JS/TS user-facing or server tasks | 2 | SWE-bench Multilingual JS/TS, Multi-SWE-bench JS/TS, BugsJS | Frontend and browser/server JS errors are part of the prompt, but should not dominate the Rust-first seed. |
-| Synthetic cross-tier or CLI tasks | 2 | Parallax reference app / fault injection | Supplies the telemetry shapes public datasets lack: frontend-to-backend traces, CLI invocation traces, and known side effects. |
+| Synthetic cross-tier or CLI tasks | 2 | Parallax reference app / fault injection; optionally one SWE-bench-Live OS-bench task | Supplies the telemetry shapes public datasets lack: frontend-to-backend traces, CLI invocation traces, and known side effects. OS-bench can add a fresh CLI/OS migration failure, but it remains public benchmark evidence. |
 
 Operator-private incidents can replace at most two public tasks in the first
 run, but label them separately and exclude them from public claims unless the
 artifacts can be safely shared or independently audited.
+
+Use OS-bench conservatively. It can replace at most one of the first two
+synthetic/CLI slots unless the run is explicitly an OS/CLI slice. Treat its
+`patch`, `test_patch`, `log_parser`, and generated problem statement as
+contamination-sensitive grader or source metadata; agent arms should see only
+the allowed issue text plus the derived overlay artifacts. If an OS-bench task's
+statement over-specifies the implementation, keep it for harness debugging or
+score its diagnosis separately from wild-bug root-cause accuracy.
 
 ## Task Eligibility
 

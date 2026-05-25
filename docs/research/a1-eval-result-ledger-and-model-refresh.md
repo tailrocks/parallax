@@ -29,6 +29,12 @@ Outside sources checked for this pass:
 - SWE-bench-Live is explicitly designed around recent issue-resolution tasks and
   says it plans monthly dataset updates for fresher, more contamination-resistant
   evaluation ([SWE-bench-Live](https://swe-bench-live.github.io/)).
+- SWE-bench-Live's Hugging Face org now also lists OS-bench, a fresh
+  cross-platform migration dataset with Docker images, build/test commands,
+  log parsers, patches, and test fields. It is useful as a supplemental CLI/OS
+  slice, but because it is public and generated, it should be reported
+  separately from wild issue-resolution tasks
+  ([OS-bench](https://huggingface.co/datasets/SWE-bench-Live/OS-bench)).
 - The official SWE-bench leaderboard reports resolved rate, cost, step limits,
   benchmark variants, model release date, and scaffold filtering, which is a
   useful result-shape reference even though SWE-bench itself lacks telemetry
@@ -202,6 +208,13 @@ Report task contamination risk explicitly:
 | T2 held-out or private audited | Operator/private or partner task with public redacted hashes and reviewer audit. | Yes; strong but watch n=1 bias. |
 | T3 post-snapshot synthetic fault | Fault-injected reference task authored after model snapshot, with hidden verifier. | Yes for contamination resistance; weaker for wild-bug realism. |
 | T4 production telemetry | Real incident with known fix and redacted, auditable evidence bundle. | Strongest for production claim if privacy permits audit. |
+
+Public generated benchmark tasks such as OS-bench should normally be recorded as
+T1 only when the task/update clearly post-dates the model snapshot or the
+provider's likely training cutoff. Otherwise downgrade them to T0 for the A1
+gate. Do not promote an external public generated task to T3 unless Parallax
+controls the hidden fault/verifier and can prove it was inaccessible before the
+run.
 
 A public A1 pass should not rely on one tier. The first credible pass needs:
 
