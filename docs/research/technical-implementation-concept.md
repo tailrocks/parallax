@@ -741,7 +741,8 @@ candidate versions:
   and result ledger in
   [Agent session tracing ledger](agent-session-tracing-ledger.md);
 - CLI redaction and overhead for args, env, config, stdout, and stderr, with
-  the initial gate in [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md);
+  the initial gate in [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md)
+  and result ledger in [CLI trace safety ledger](cli-trace-safety-ledger.md);
 - A6 detector/runtime redaction architecture, with Parallax owning a Rust
   default-deny runtime engine and using external scanners only as offline
   validators, in [Redaction detector toolchain](redaction-detector-toolchain.md);

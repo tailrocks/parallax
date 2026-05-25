@@ -209,6 +209,9 @@ interoperability possible; it does not replace the evidence contract.
   normalized nodes and audit edges that semconv-derived rows feed.
 - [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md)
   owns the command args/env/stdout/stderr safety gate.
+- [CLI trace safety ledger](cli-trace-safety-ledger.md) owns the result rows and
+  claim levels for default-ready CLI capture, redacted excerpts, raw refs,
+  child-process policy, and projection safety.
 - [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md)
   owns the general OTLP receiver and Collector/Rotel compatibility story.
 

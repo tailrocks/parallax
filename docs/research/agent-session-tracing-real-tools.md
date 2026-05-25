@@ -268,6 +268,8 @@ observability interface.
   defines the `agent_session`, `agent_action`, and audit edge targets.
 - [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md)
   supplies the shell-command policy used inside agent sessions.
+- [CLI trace safety ledger](cli-trace-safety-ledger.md) supplies the claimable
+  shell-command safety rows for agent-session runs that include CLI execution.
 - [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
   is the veto gate before agent-session evidence becomes agent-visible.
 - [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) is the nearest

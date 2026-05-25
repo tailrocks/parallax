@@ -327,6 +327,9 @@ The default-on safety and performance gate for this model is specified in
 [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md):
 structural capture is the default, redacted excerpts require canary and
 overhead tests, and full raw args/env/output are opt-in refs only.
+The [CLI trace safety ledger](cli-trace-safety-ledger.md) defines the dated
+result rows and claim levels required before Parallax can say structural CLI
+tracing is default-ready or redacted excerpts are safe.
 The OpenTelemetry-to-Parallax field mapping, semconv versioning, GenAI/MCP
 deduplication, and lossiness gates are specified in
 [Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md).

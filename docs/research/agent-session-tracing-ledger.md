@@ -344,6 +344,9 @@ Mark affected claims `claim_expired` when:
   defines how native OTel GenAI/MCP/CLI spans map into stable Parallax rows.
 - [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md)
   supplies the shell-command policy used inside agent sessions.
+- [CLI trace safety ledger](cli-trace-safety-ledger.md) supplies the
+  shell-command result rows, claim levels, and expiry rules consumed by
+  agent-session runs.
 - [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) controls
   whether agent-session evidence can become agent-visible.
 - [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)

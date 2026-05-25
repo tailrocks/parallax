@@ -22,6 +22,10 @@ output excerpts require a separate proof gate. Full raw args, environment,
 stdout, stderr, and config content are opt-in raw refs with scoped access,
 audit, and retention limits.
 
+The companion [CLI trace safety ledger](cli-trace-safety-ledger.md) defines the
+result artifacts, row schemas, claim levels, and expiry rules required before
+these capture modes can become product claims.
+
 ## Current Primary-Source Checks
 
 | Source | What matters for Parallax |
@@ -211,6 +215,9 @@ failures without making secret exposure part of the default value proposition.
 - [Agent session tracing ledger](agent-session-tracing-ledger.md) consumes
   command/edit coverage, redaction, and overhead rows for shell commands inside
   coding-agent sessions.
+- [CLI trace safety ledger](cli-trace-safety-ledger.md) turns this proof gate
+  into auditable workload runs, claim levels, projection checks, raw-ref policy
+  rows, and expiry triggers.
 - [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
   defines the global default-deny redaction pipeline and red-team gate.
 - [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)

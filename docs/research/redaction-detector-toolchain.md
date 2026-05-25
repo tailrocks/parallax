@@ -192,6 +192,8 @@ a different surface.
   preserves minimum debug usefulness.
 - [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md)
   supplies the highest-risk streaming output fixture surface.
+- [CLI trace safety ledger](cli-trace-safety-ledger.md) records the CLI-specific
+  canary, projection, and overhead rows that make that surface claimable.
 - [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
   supplies prompt/tool-output redaction fixtures.
 - [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
