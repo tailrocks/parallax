@@ -22,7 +22,8 @@ The central rule:
 
 > No release-regression or "what changed?" claim without exact release,
 > deployment, commit, CI/check, PR/file, and work-item evidence rates, plus
-> missing-evidence rows and edge-strength audits.
+> missing-evidence rows, edge-strength audits, source-field policy status,
+> redaction reports, and agent-visible projection checks.
 
 ## Current Source Snapshot
 
@@ -53,8 +54,9 @@ The central rule:
 | `work_item_links_ingested` | GitHub/Linear/Jira work-item links ingest with machine-vs-text link strength and redacted text refs. | "Work-item links attached as context for tested providers." |
 | `edge_strength_audited` | Strong/medium/weak/inferred deploy/change edges are audited against raw provider refs, completeness flags, and missing-evidence rows. | "Deploy/change evidence strengths audited for tested anchors." |
 | `release_regression_context` | Release, deploy, commit-window, PR/file, CI/check, and missing-evidence rates meet thresholds for production error anchors. | "Release-regression context for the tested services and providers." |
-| `what_changed_context` | The bundle can answer likely change candidates with cited release/deploy/code/work-item edges and explicit missing-evidence blockers. | "Evidence-backed 'what changed?' context for the tested subset." |
-| `claim_expired` | Provider API behavior, source version/header, schema, edge rules, redaction policy, or freshness window changed. | "Deploy/change context result expired; rerun required." |
+| `projection_safe` | Agent-visible bundle projections include edge strength, missing-evidence blockers, redaction reports, source-field policy status, and raw-ref denial. | "Deploy/change projections are safe for the tested subset." |
+| `what_changed_context` | The bundle can answer likely change candidates with cited release/deploy/code/work-item edges, explicit missing-evidence blockers, and no raw text/log dereference. | "Evidence-backed 'what changed?' context for the tested subset." |
+| `claim_expired` | Provider API behavior, source version/header, schema, edge rules, redaction/source-field/projection policy, or freshness window changed. | "Deploy/change context result expired; rerun required." |
 | `claim_failed` | A required gate fails for the advertised level. | No claim for the affected provider/surface/edge. |
 
 Initial Parallax level: `not_measured`.
@@ -74,7 +76,9 @@ docs/research/deploy-change-context-runs/<run_id>/ci-check-results.jsonl
 docs/research/deploy-change-context-runs/<run_id>/work-item-results.jsonl
 docs/research/deploy-change-context-runs/<run_id>/edge-audit-results.jsonl
 docs/research/deploy-change-context-runs/<run_id>/missing-evidence-results.jsonl
+docs/research/deploy-change-context-runs/<run_id>/raw-ref-manifest.jsonl
 docs/research/deploy-change-context-runs/<run_id>/redaction-results.jsonl
+docs/research/deploy-change-context-runs/<run_id>/source-field-policy-results.jsonl
 docs/research/deploy-change-context-runs/<run_id>/bundle-projection-results.jsonl
 docs/research/deploy-change-context-runs/<run_id>/claim-ledger.jsonl
 docs/research/deploy-change-context-runs/<run_id>/hashes.sha256
@@ -95,6 +99,8 @@ Each `manifest.json` should include:
   "bundle_schema_version": "parallax-bundle-vN",
   "edge_rules_version": "deploy-change-edges-vN",
   "redaction_policy_version": "a6-default-deny-vN",
+  "source_field_policy_version": "phase0-source-field-policy-vN",
+  "raw_ref_policy": "provider_text_logs_notes_ref_only_by_default",
   "source_snapshot": {
     "github_rest_request_header": "2026-03-10",
     "github_rest_docs_api_version": "2022-11-28",
@@ -109,6 +115,7 @@ Each `manifest.json` should include:
   "providers": ["github", "sentry", "linear", "jira", "otel-cicd"],
   "anchor_types": ["issue", "error_event", "trace"],
   "environments": ["production", "staging"],
+  "projection_formats": ["json", "markdown"],
   "notes": []
 }
 ```
@@ -201,6 +208,9 @@ does not carry over to another.
   "linked_commits": ["9d1f..."],
   "link_strength": "machine|text|unknown",
   "description_mode": "summary_only|ref_only|denied",
+  "raw_text_ref_count": 0,
+  "agent_visible_text_mode": "metadata_only|redacted_summary|denied",
+  "source_field_policy_status": "pass|fail|not_applicable",
   "unknown_or_rejected_links": []
 }
 ```
@@ -217,6 +227,8 @@ does not carry over to another.
   "expected_strength": "medium",
   "raw_refs": ["github:deployment:42", "github:deployment_status:77"],
   "supporting_fields": ["environment", "commit_sha", "terminal_state"],
+  "contradicting_fields": [],
+  "causality_claim_made": false,
   "missing_evidence": [],
   "audit_status": "pass|fail"
 }
@@ -235,6 +247,58 @@ does not carry over to another.
 }
 ```
 
+### Redaction Result Row
+
+```json
+{
+  "anchor_id": "issue_123",
+  "surface": "issue_title|issue_description|issue_comment|deploy_log|release_note|pr_body|provider_payload",
+  "seeded_canaries": 12,
+  "json_projection_leaks": 0,
+  "markdown_projection_leaks": 0,
+  "raw_ref_leaks": 0,
+  "redaction_policy_version": "a6-default-deny-vN",
+  "redaction_report_hash": "sha256:<hex>",
+  "agent_visible_pass": true
+}
+```
+
+### Source Field Policy Result Row
+
+```json
+{
+  "anchor_id": "issue_123",
+  "provider": "github|sentry|linear|jira|otel-cicd",
+  "source_kind": "direct_provider_api|synthetic_fixture|benchmark_fixture|corpus_fixture",
+  "source_field_policy_status": "pass|fail|not_applicable",
+  "source_field_policy_version": "phase0-source-field-policy-vN",
+  "source_field_policy_hash": "sha256:<hex>",
+  "denied_zone_count": 0,
+  "violation_count": 0,
+  "not_applicable_reason": "direct provider API without mixed eval/corpus source rows"
+}
+```
+
+### Bundle Projection Result Row
+
+```json
+{
+  "anchor_id": "issue_123",
+  "projection_format": "json|markdown",
+  "redaction_report_present": true,
+  "source_field_policy_status": "pass|fail|not_applicable",
+  "missing_evidence_present": true,
+  "edge_strength_visible": true,
+  "raw_issue_text_ref_count": 1,
+  "raw_deploy_log_ref_count": 1,
+  "raw_provider_payload_ref_count": 2,
+  "raw_ref_dereferenced": false,
+  "seeded_canary_leaks": 0,
+  "causality_overclaim_count": 0,
+  "agent_visible_pass": true
+}
+```
+
 ### Claim Ledger Row
 
 ```json
@@ -248,7 +312,10 @@ does not carry over to another.
     "github_rest_unversioned_default": "2022-11-28",
     "otel_semconv": "1.41.0",
     "bundle_schema": "parallax-bundle-vN",
-    "edge_rules": "deploy-change-edges-vN"
+    "edge_rules": "deploy-change-edges-vN",
+    "redaction_policy": "a6-default-deny-vN",
+    "source_field_policy": "phase0-source-field-policy-vN",
+    "projection_schema": "bundle-projection-vN"
   },
   "product_wording": "Release-regression context for the tested services and providers.",
   "required_caveats": ["linkage is not causality", "text-only work-item links are weak"],
@@ -273,6 +340,13 @@ does not carry over to another.
   linked to a deployment or release.
 - Provider text fields, issue descriptions, comments, deploy logs, and release
   notes are untrusted and redacted/ref-only by default.
+- Raw provider events, issue text, PR text, deploy logs, and release notes may
+  be retained as raw refs for audit, but agent-visible projections must not
+  dereference them by default.
+- Synthetic, benchmark, or corpus-derived deploy/change runs require
+  `source_field_policy_status: pass` before redaction or projection claims can
+  pass. Direct provider API runs may use `not_applicable` only when no mixed
+  eval/corpus source rows are present.
 - OTel CICD spans are adapter input. Because the CICD conventions are
   development-stage, they cannot be the only proof for a durable Parallax schema
   claim.
@@ -295,7 +369,8 @@ change:
 - OpenTelemetry semantic conventions, CICD conventions, resource version fields,
   or VCS fields change;
 - Parallax bundle schema, deploy/change node shape, edge-strength rules,
-  redaction policy, or provider adapters change;
+  redaction policy, source-field policy, projection schema, or provider adapters
+  change;
 - a new provider is included in product wording;
 - 60 days pass since the last run.
 
@@ -324,14 +399,15 @@ Avoid:
 - "PR touched the file, so it caused the issue";
 - "full GitHub/Linear/Jira context" without provider, scope, and freshness
   caveats.
+- "safe issue/deploy text" without redaction, source-field, and projection rows.
 
 ## Relationship To Other Research
 
 - [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md)
   defines ingestion and edge semantics this ledger turns into claim levels.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
-  release, deploy, deployment-status, code-change, work-item, and check-run
-  nodes this ledger audits.
+  release, deploy, deployment-status, code-change, work-item, check-run,
+  redaction report, and source-field policy fields this ledger audits.
 - [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md)
   and [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md)
   measure whether these edges survive real telemetry.

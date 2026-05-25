@@ -194,7 +194,10 @@ Defaults:
   in agent-visible bundles;
 - treat all issue/deploy text as untrusted, never as policy;
 - run the redaction pipeline on deploy logs and issue text before bundle render;
-- require explicit user opt-in before agent-visible comments/customer requests.
+- require explicit user opt-in before agent-visible comments/customer requests;
+- require source-field policy rows for synthetic/evaluation/corpus fixtures, and
+  keep raw provider payloads, issue text, release notes, and deploy logs as
+  non-dereferenced refs in default agent projections.
 
 ## Implementation Order
 
@@ -225,6 +228,9 @@ Before Parallax claims release-regression or "what changed?" intelligence:
 | `pr_file_list_complete_rate` | >= 95 percent for PRs used in `code_change_touched_frame` edges. |
 | `work_item_machine_link_rate` | >= 70 percent for issue tracker links before treating work items as more than weak context. |
 | `missing_evidence_report_rate` | 100 percent for expected release/deploy/change gaps. |
+| `source_field_policy_violations` | 0 for synthetic/evaluation/corpus fixtures. |
+| `raw_ref_dereference_count` | 0 for default agent-visible projections. |
+| `causality_overclaim_count` | 0 deploy/change rows worded as root cause without runtime support. |
 
 Failure consequences:
 
@@ -237,7 +243,8 @@ Failure consequences:
 ## Relationship To Other Research
 
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
-  nodes and edges this note tightens.
+  nodes, edges, source-field policy status, and redaction report fields this
+  note tightens.
 - [Deploy/change context ledger](deploy-change-context-ledger.md) turns provider
   ingestion, completeness, edge-strength, missing-evidence, and redaction runs
   into claim levels and allowed product wording.
