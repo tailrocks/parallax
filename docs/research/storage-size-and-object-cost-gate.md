@@ -53,16 +53,25 @@ candidates, but not a cost winner:
   for Parallax's full data mix
   ([TWCS picker source](https://github.com/GreptimeTeam/greptimedb/blob/v1.0.2/src/mito2/src/compaction/twcs.rs),
   [compactor source](https://github.com/GreptimeTeam/greptimedb/blob/v1.0.2/src/mito2/src/compaction/compactor.rs)).
-- Cloudflare R2 pricing lists Standard storage at `$0.015 / GB-month`,
-  operation fees, and free egress
+- Cloudflare R2 pricing, last updated 2026-04-21 and checked 2026-05-25, lists
+  Standard storage at `$0.015 / GB-month`, Class A operations at
+  `$4.50 / million requests`, Class B operations at `$0.36 / million requests`,
+  and free direct egress
   ([Cloudflare R2 pricing](https://developers.cloudflare.com/r2/pricing/)).
-- Backblaze B2 pricing lists free egress up to 3x average monthly storage and
-  `$0.01/GB` after that unless traffic goes through listed CDN/compute partners
+- Backblaze B2 pricing checked 2026-05-25 lists pay-as-you-go storage starting
+  at `$6.95 / TB / month`, free transactions, free egress up to 3x average
+  monthly storage, and `$0.01/GB` after that unless traffic goes through listed
+  CDN/compute partners
   ([Backblaze B2 pricing](https://www.backblaze.com/cloud-storage/pricing)).
-- AWS S3 pricing separates storage, request/retrieval, and data-transfer costs;
-  its own examples show internet data-transfer-out charges can materially exceed
-  request costs for read-heavy usage
-  ([AWS S3 pricing](https://aws.amazon.com/s3/pricing/)).
+- AWS S3 pricing separates storage, request/retrieval, and data-transfer costs.
+  The official AWS Price List API checked 2026-05-25 for `us-east-1` lists S3
+  Standard first-50-TB storage at `$0.023 / GB-month`, PUT/COPY/POST/LIST at
+  `$0.005 / 1,000`, GET/all-other requests at `$0.004 / 10,000`, and AWS data
+  transfer out to the internet starting at `$0.09 / GB` for the first 10 TB
+  beyond the global free tier
+  ([AWS S3 pricing](https://aws.amazon.com/s3/pricing/),
+  [Amazon S3 price list API](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonS3/current/us-east-1/index.json),
+  [AWS data-transfer price list API](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSDataTransfer/current/us-east-1/index.json)).
 
 Conclusion: object storage is available for both candidate engines. The actual
 decision is workload-specific and must be measured with identical generated
@@ -194,7 +203,7 @@ Use these initial gates until measured runs justify calibration:
 | --- | --- |
 | Cost comparison | GreptimeDB retained size plus modeled object-store cost is <= 1.2x ClickHouse on small tier, or GreptimeDB must win enough speed/operability to justify the premium. |
 | Compression | Report by signal; blended ratio below 5x is a schema/data-shape failure requiring investigation. |
-| Object fanout | Request costs under the 20 percent re-read model must stay below storage cost for R2/B2 and below 2x storage cost for S3. |
+| Object fanout | Request costs under the 20 percent re-read model must stay below storage cost for R2 and below 2x storage cost for S3; for B2's current free-transaction model, object fanout is still a latency and provider-portability warning. |
 | Object size | Average retained object size below 8 MiB after compaction is a warning; below 1 MiB is a failure unless request costs remain negligible. |
 | Cache dependency | Warm-query pass must record the local cache size needed; if cache cost exceeds object-store savings, local SSD may be the better tier. |
 | Query/cost coupling | Any size/cost winner that fails the [storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md) cannot become the default. |
@@ -203,7 +212,9 @@ Provider-specific read-cost gates:
 
 - R2 or B2 should be the recommended self-hosted object-store target if Parallax
   routinely re-reads more than 10 percent of retained data per month outside the
-  storage provider's free/co-located path.
+  storage provider's free/co-located path. B2 currently advertises free
+  transactions, so object fanout is mainly a latency/portability risk there, not
+  a published request-fee risk.
 - S3 is acceptable when compute is co-located in the same AWS region and measured
   transfer costs are near zero; otherwise S3 egress must be explicitly shown in
   the deployment cost table.

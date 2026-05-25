@@ -15,7 +15,8 @@ Parallax **re-reads** history to build agent context, **object-store egress
 pricing matters as much as storage pricing**, which changes the recommended
 backend.
 
-Numbers are 2026 list prices; treat as order-of-magnitude, not quotes.
+Numbers are current list prices checked on 2026-05-25; treat as
+order-of-magnitude planning inputs, not quotes.
 
 ## Inputs
 
@@ -25,7 +26,7 @@ Object storage (per GB-month storage, plus egress):
 | --- | --- | --- | --- |
 | AWS S3 Standard | ~$0.023 | ~$0.09/GB | Egress is the killer for re-read-heavy workloads. |
 | Cloudflare R2 | ~$0.015 | **$0** | Zero egress — ideal for re-extracting history. |
-| Backblaze B2 | ~$0.006 | free up to 3× stored/mo, then ~$0.01/GB | Cheapest storage + generous egress. |
+| Backblaze B2 | ~$0.00695 | free up to 3× stored/mo, then ~$0.01/GB | Cheapest storage + generous egress; public page also says transactions are free. |
 
 Compression (observability data, columnar + ZSTD + delta/Gorilla timestamps):
 
@@ -42,9 +43,12 @@ on generic data; observability columns with delta encodings push the blended
 figure higher. Calibrate per real data in the
 [storage benchmark prototype](storage-benchmark-prototype.md).
 
-Sources: [Backblaze pricing comparison](https://www.backblaze.com/cloud-storage/pricing),
+Sources:
+[Backblaze B2 pricing](https://www.backblaze.com/cloud-storage/pricing),
 [Cloudflare R2 pricing](https://developers.cloudflare.com/r2/pricing/),
-[S3 real cost analysis](https://leanopstech.com/blog/aws-s3-pricing-2026/),
+[AWS S3 pricing](https://aws.amazon.com/s3/pricing/),
+[Amazon S3 price list API](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonS3/current/us-east-1/index.json),
+[AWS data-transfer price list API](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSDataTransfer/current/us-east-1/index.json),
 [ClickHouse compression](https://clickhouse.com/docs/data-compression/compression-in-clickhouse),
 [Observe per-GB pricing](https://www.observeinc.com/pricing).
 
@@ -62,14 +66,14 @@ Monthly **storage** cost at 90-day retention:
 
 | Tier | 90-day stored | S3 | R2 | B2 |
 | --- | --- | --- | --- | --- |
-| Tiny | 18 GB | ~$0.41 | ~$0.27 | ~$0.11 |
-| Small–mid | 450 GB | ~$10.35 | ~$6.75 | ~$2.70 |
-| Large | 9 TB | ~$207 | ~$135 | ~$54 |
+| Tiny | 18 GB | ~$0.41 | ~$0.27 | ~$0.13 |
+| Small–mid | 450 GB | ~$10.35 | ~$6.75 | ~$3.13 |
+| Large | 9 TB | ~$207 | ~$135 | ~$62.55 |
 
-The headline: **90 days of real, mixed telemetry costs single-digit dollars per
-month for a small team, and ~$50–200/month even at 1 TB/day ingest.** That is the
-"keep history without cost anxiety" belief, quantified and true — on object
-storage with good compression.
+The headline: **90 days of real, mixed telemetry costs single-digit to low-tens
+of dollars per month for a small team, and ~$60–200/month even at 1 TB/day
+ingest.** That is the "keep history without cost anxiety" belief, quantified
+and true — on object storage with good compression.
 
 ## The Egress Finding (Non-Obvious)
 
@@ -82,7 +86,7 @@ agent/human context (450 GB × 20% = 90 GB/mo):
 | --- | --- | --- | --- |
 | S3 | ~$10.35 | ~$8.10 | ~$18.45 |
 | R2 | ~$6.75 | $0 | ~$6.75 |
-| B2 | ~$2.70 | free (under 3×) | ~$2.70 |
+| B2 | ~$3.13 | free (under 3×) | ~$3.13 |
 
 Egress nearly doubles the S3 bill and scales with how *useful* Parallax is (more
 agent investigations = more reads). For a re-read-heavy context engine, **prefer
@@ -113,10 +117,12 @@ exactly why a cost-conscious self-hoster defects from per-GB SaaS.
 
 ## Hidden Costs And Honest Caveats
 
-- **Request costs.** Object stores charge per PUT/GET. Writing many tiny segments
-  or reading many tiny objects can make requests dominate storage at low volume.
-  Mitigate: batch into larger segments/parts; this is a real GreptimeDB/ClickHouse
-  object-store tuning parameter, not free.
+- **Request costs.** R2 and S3 charge per PUT/GET-class operation; B2's current
+  public pay-as-you-go page says transactions are free. Writing many tiny
+  segments or reading many tiny objects can still make requests dominate storage
+  on R2/S3 and can hurt latency/provider portability even on B2. Mitigate: batch
+  into larger segments/parts; this is a real GreptimeDB/ClickHouse object-store
+  tuning parameter, not free.
 - **Compute is not counted here.** Ingest, compaction, and query CPU/RAM run on a
   VM whose cost is separate. At the tiny/small tiers this is one cheap box; the
   storage math is the easy part.
@@ -160,8 +166,9 @@ exactly why a cost-conscious self-hoster defects from per-GB SaaS.
 ## Bottom Line
 
 Keeping months of real telemetry is cheap — single-digit to low-hundreds of
-dollars per month across tiny-to-large tiers on compressed object storage, ~100×
-under ingest-priced SaaS. The one design correction this analysis forces:
+dollars per month across tiny-to-large tiers on compressed object storage, still
+roughly two orders of magnitude under ingest-priced SaaS. The one design
+correction this analysis forces:
 because Parallax re-reads history to build context, choose a zero/low-egress
 object store or co-locate compute, or S3 egress quietly taxes the product's own
 usefulness.
