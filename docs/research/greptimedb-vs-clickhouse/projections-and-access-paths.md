@@ -2,12 +2,15 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 50. ClickHouse **projections** (a ClickHouse system-lead, not yet
-dissected — pass 27 covered MVs + AggregatingMergeTree, not projections) and the
-question they answer: *how do you serve more than one access path from a single
-table?* This recurs throughout the loop — ClickHouse `ORDER BY (trace_id, ts)` wins
-trace lookups but a `(service, ts)` scan wants a different order; GreptimeDB's seed PK
-`(service, name)` leaves `trace_id` un-keyed (Run 1/6). Source + live (Run 28).
+Status: pass 50, re-verified pass 107 (Run 71 — reproduces; storage ~1.9×, optimizer
+picks the projection, GreptimeDB still rejects `PROJECTION`). ClickHouse **projections**
+(a ClickHouse system-lead) and the question they answer: *how do you serve more than one
+access path from a single table?* This recurs throughout the loop — ClickHouse `ORDER BY
+(trace_id, ts)` wins trace lookups but a `(service, ts)` scan wants a different order;
+GreptimeDB's seed PK `(service, name)` leaves `trace_id` un-keyed (Run 1/6). Source + live
+(Runs 28, 71). **Projections are also the mechanism that would close the Run-63
+cold-anchored-read gap** (a `trace_id`-ordered projection clusters the anchor at ~2×
+storage) — the alternate-physical-order GreptimeDB structurally lacks.
 
 Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d8`),
 re-confirmed latest stable 2026-05-25.
@@ -74,6 +77,16 @@ The two mechanisms optimize different alternate-access shapes:
   (an index yields scattered row positions, not a contiguous scan). Parallax does this
   *less* (its reads are anchored), but where it matters, projections are a real
   ClickHouse capability with no GreptimeDB equivalent — at the ~2× storage cost.
+- **Cold-anchored-read clustering (the Run-63 link):** projections are *also* how
+  ClickHouse could give a *second* anchor-clustered physical order without disturbing the
+  base order — and clustering by the anchor is exactly what makes a **cold** `trace_id`
+  read cheap (Run 55/63: clustered reads prune to ~1 row group / ~294 KiB vs scattered
+  whole-SST ~23 MiB). GreptimeDB has neither the projection nor a sort-key decoupled from
+  series identity (Run 65), so it cannot get that cold-read clustering for the anchor
+  without making `trace_id` the PK (→ series blowup). So the storage-vs-locality tradeoff
+  projections embody is the same lever behind the cold-egress edge — ClickHouse can pay
+  ~2× storage for anchor locality; GreptimeDB structurally cannot (parity #5, footnote-
+  priority since the persistent cache keeps the warm path fast).
 
 So projections are a genuine ClickHouse strength for **multi-ordering scan workloads**,
 bought with storage; GreptimeDB's index model is leaner for **anchored multi-access**,
@@ -111,9 +124,11 @@ feel different when you need a second access path.
 
 - ClickHouse: `PROJECTION` DDL; `system.parts` (4.07 MiB total) vs
   `system.projection_parts` (2.07 MiB) — Run 28; `EXPLAIN indexes=1` →
-  `ReadFromMergeTree (p_service)` (optimizer picks the projection).
-- GreptimeDB: no `PROJECTION` (parser rejects, Run 28); secondary-index model in
-  `indexing-internals.md`.
+  `ReadFromMergeTree (p_service)` (optimizer picks the projection). **Re-verified Run 71:**
+  storage 2.41 MiB (no projection) → 4.52 MiB (with) = **~1.9×**; `EXPLAIN indexes=1` for
+  the alternate-key filter → `ReadFromMergeTree (p_b)` Granules 1/62 (2 ms vs 4 ms unindexed).
+- GreptimeDB: no `PROJECTION` (parser rejects — Run 28, re-verified Run 71: *"Cannot use
+  keyword 'PROJECTION'"*); secondary-index model in `indexing-internals.md`.
 - Cross-refs: `read-path-indexing-and-execution.md` (ORDER BY / skip),
   `indexing-internals.md` (GT inverted index vs CH sort-key/projection),
   `rollup-and-continuous-aggregation.md` (aggregate projections vs MV),

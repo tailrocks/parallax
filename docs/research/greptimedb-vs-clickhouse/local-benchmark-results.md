@@ -2891,6 +2891,40 @@ docker exec parallax-bench-clickhouse-1 clickhouse-client --multiquery -q "CREAT
 docker exec parallax-bench-clickhouse-1 clickhouse-client -q "SELECT t,svc,avgMerge(avg_state),sum(n) FROM mv_sink GROUP BY t,svc ORDER BY t,svc"
 ```
 
+### Run 71 — 2026-05-25 — Projections re-verified (~1.9× storage, optimizer-picked) + Run-63 link
+
+**Pass target.** Rotate onto projections/access-paths (Run 28 ~pass 50). Re-verify "CH
+projection = 2nd physical ORDER BY, optimizer-picked, ~2× storage; GreptimeDB has none."
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned —
+latest, no bump). 500k rows; base `ORDER BY (a,ts)`, projection `p_b (ORDER BY b)`.
+
+**Measured:**
+
+| Check | Result |
+| --- | --- |
+| Storage no-projection | **2.41 MiB** |
+| Storage with-projection | **4.52 MiB** → **~1.9×** (projection is a near-full 2nd copy; matches Run 28's 2→4 MiB) |
+| Optimizer picks projection for `WHERE b=…` | `EXPLAIN indexes=1` → **`ReadFromMergeTree (p_b)` Granules 1/62** (transparent) |
+| Latency (b-filter) | 2 ms with projection vs 4 ms without (alternate-key scan accelerated) |
+| GreptimeDB `PROJECTION` DDL | **rejected** — *"Cannot use keyword 'PROJECTION'"* (no equivalent) |
+
+**Verdict.** **Reproduces Run 28, no drift.** ClickHouse projections give a second physical
+`ORDER BY` inside each part, optimizer-transparently chosen, at **~1.9× storage**;
+GreptimeDB has no projection (uses secondary indexes = row positions, not a 2nd physical
+order). **Link to Run 63 (cold reads):** a `trace_id`-ordered projection is exactly how
+ClickHouse *could* also get anchor-clustering for cheap cold selective reads — the
+alternate-physical-order GreptimeDB structurally lacks (PK=sort=series identity, Run 65).
+So projections are the storage-vs-locality lever behind both the multi-ordering-scan edge
+**and** the cold-egress edge: ClickHouse can pay ~2× storage for anchor locality,
+GreptimeDB cannot. Parallax's anchored pattern doesn't need a 2nd scan order, and its
+GreptimeDB inverted index is leaner for anchored point/filter — so **neither moves the
+verdict** (parity #5 footnote). Status: **confirmed.**
+
+Caveat: 500k smoke; scan-with-projection vs index-lookup at GB scale unmeasured.
+
+**Reproduce.** `CREATE TABLE proj_yes (a String,b String,ts DateTime,v UInt64, PROJECTION p_b (SELECT * ORDER BY b)) ENGINE=MergeTree ORDER BY (a,ts)` + `INSERT … numbers(500000)` + `EXPLAIN indexes=1 SELECT count() FROM proj_yes WHERE b='b500'` (→ ReadFromMergeTree(p_b)); GreptimeDB `CREATE TABLE … PROJECTION …` → rejected.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
