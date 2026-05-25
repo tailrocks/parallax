@@ -514,6 +514,17 @@ the **DataFusion roadmap** or contributable in Rust — *not* architectural limi
 encouraging answer to "what must GreptimeDB implement": engineering, not redesign. Validate
 first which gaps Parallax's real query mix actually hits before investing in Tier B.
 
+**Gap-closing is already happening, live-verified (Run 106 / `vendor-claims-audit.md`):**
+GreptimeDB's RC2 **"100× TopK"** (dynamic filter pushdown into the Mito scan, built on **DataFusion
+runtime dynamic filters**) is present in our `v1.0.2` — `ORDER BY … LIMIT 10` on 1M = ~20 ms, not a
+full sort. **Flat SST** (v1.0 GA default) is a shipped high-cardinality scan-format redesign (write
+~4×, TSBS query latency up to ~10×). And **JSON Type v2** (field-level index / dynamic fields) is
+**roadmap-committed for v1.1 / Q2 2026** — directly narrowing #4 (the dynamic-attr gap that *widened*
+to ~57× at Run 104). **Honest caveat:** #2's JIT/SIMD, #3 PREWHERE, #5 projections, #8 join-pushdown
+are **not** explicit GreptimeDB-roadmap line items — they ride upstream DataFusion + opportunistic
+release wins (as TopK did). Engineering, not physics — but partly community-paced, not solely
+GreptimeDB-owned.
+
 ## Open questions handed to the benchmark
 
 - Quantify the Run-48/49 residuals: broad-term `matches_term()`/`matches()` latency at

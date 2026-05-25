@@ -2,7 +2,14 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 24, extended pass 92 (**B10 measured, Run 55**). The cache hierarchy of
+Status: pass 24, extended pass 92 (**B10 measured, Run 55**) + **Run 106 vendor-audit correction:
+GreptimeDB has a *disk* independent index-file cache (since v1.0.0-beta.1) *in addition to* the
+in-memory inverted/bloom/vector + index-result caches (`cache/index/`) documented here** — it
+caches index files pulled from object storage to local disk, preloaded newest-first on startup,
+default ~20% of the write cache, tunable via `index_cache_percent`. So GreptimeDB's cold-tier index
+story is slightly stronger than this note recorded: index lookups on cold/evicted data hit a local
+**disk** copy, not just a re-fetch from S3. (Source: greptime.com index-cache guide, cross-checked in
+`vendor-claims-audit.md`.) The cache hierarchy of
 each engine and **why cold-cache and warm-cache performance diverge** — the dimension
 my local runs (all warm, cache-resident at ≤5M rows) could not measure, and the
 mechanism behind the cold-object-store regime the verdict now hinges on (JSONBench

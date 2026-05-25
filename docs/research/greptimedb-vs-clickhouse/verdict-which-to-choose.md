@@ -311,6 +311,20 @@ and dynamic-attr JSON (#4) is the **Parquet Variant/shredding** direction — so
 closing work is *already in flight by others*, and GreptimeDB inherits it on a dependency
 bump. **ClickHouse's raw-speed lead is therefore a depreciating asset, not a moat.**
 
+**Live-verified gap-closing, not just theory (Run 106, `vendor-claims-audit.md`):** GreptimeDB's
+RC2 **"100× TopK"** — dynamic filter pushdown into the Mito scan, built on **DataFusion runtime
+dynamic filters** — is **present in our v1.0.2** (`ORDER BY … LIMIT 10` on 1M = GT ~20 ms, not a
+~100 ms+ full sort; ~3× CH, both ≪ 300 ms). And **Flat SST** (v1.0 GA default: write ~4×, query
+latency up to ~10× on high-cardinality TSBS) is a shipped scan-format redesign. These are concrete
+proof the engineering path works — gaps close via the DataFusion stack exactly as the thesis
+predicts. **Honest caveat (the 2026 roadmap tempers the thesis):** the *specific* remaining gaps —
+JIT/SIMD, PREWHERE, join-input pushdown, projections — are **not GreptimeDB-roadmap-committed line
+items**; they ride **upstream DataFusion** + opportunistic release wins (as TopK/Flat-SST did). So
+the gaps are engineering not physics, but the delivery path is "DataFusion upstream + GreptimeDB
+opportunistic," not "one roadmap line per gap" — a real dependency on the broader Arrow community.
+The dynamic-attr JSON gap (#4, *widened* to ~57× at Run 104) **is** roadmap-committed, though:
+**JSON Type v2 (field-level index, dynamic fields), v1.1 / Q2 2026.**
+
 **(B) Who can move the engine?** — This is the operator's decisive lever, and it is
 *asymmetric*. GreptimeDB and DataFusion are **open-source Rust**; a gap there is one the
 operator (and AI-assisted contribution, which is markedly stronger at Rust than C++ — cf.

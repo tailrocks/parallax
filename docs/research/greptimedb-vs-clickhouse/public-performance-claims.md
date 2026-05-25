@@ -3,7 +3,13 @@
 <!-- markdownlint-disable MD013 -->
 
 Status: pass 22, **re-verified pass 47**, full-text claim corrected passes 86-87 /
-Runs 48-49 (Method step #4). Gathers the public
+Runs 48-49 + **Run 106 (vendor-page audit, `vendor-claims-audit.md`)** — audited
+`greptime.com/compare/click_house` + 15 blogs: the compare page sells GT on fit/storage/economics/
+native-protocols and **never claims raw-analytical-speed superiority** (the one thing our data would
+refute); the log-monitoring blog *concedes* CH is faster on keyword search; the ingestion benchmark
+independently confirms our cardinality-insensitivity win on v1.0 GA. **Correction logged: OTel-Arrow
+is Phase-2 / experimental, NOT GA** — only baseline OTLP (HTTP/gRPC) metrics/logs/traces is GA, so
+do not cite OTel-Arrow as a shipped advantage. (Method step #4). Gathers the public
 performance claims for both systems and rates each against the **source code**, the
 **local Docker runs** (Runs 1–25), and a periodic web re-sweep. Ratings: *confirmed
 (my runs)*, *confirmed (code)*, *workload-specific*, *vendor-reported (not re-run
