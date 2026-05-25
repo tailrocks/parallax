@@ -119,22 +119,25 @@ never-stop behavior, so prefer it here.
 The interval is not about data freshness. This loop watches nothing external — the
 source and releases of GreptimeDB and ClickHouse move on a weeks horizon, not
 minute to minute — so no interval makes the data newer. The interval is purely the
-re-trigger beat. Pick one a little longer than a single deep pass takes
-(clone/read source, verify claims, write and commit a note) so passes don't pile
-up:
+re-trigger beat. The configured cadence for this loop is `5m`, chosen to keep it
+as continuous as possible and to re-fire quickly if a pass ever stops early:
 
 ```text
-/loop 30m Follow prompts/greptimedb-vs-clickhouse-internals.md as the active
+/loop 5m Follow prompts/greptimedb-vs-clickhouse-internals.md as the active
 research brief. Never stop — each pass, deepen one subsystem against the source
-code, verify performance claims, write or update one focused note under
-docs/research/greptimedb-vs-clickhouse/, commit and push it, then continue to the
-next gap. Do not declare the comparison done.
+code, verify performance claims (local Docker run where useful), write or update
+one focused note under docs/research/greptimedb-vs-clickhouse/, commit and push
+it, then continue to the next gap. Do not declare the comparison done.
 ```
 
-- `30m` is a good default; use `1h` to spread token spend. Passes that include a
-  local Docker benchmark run take longer, so lean toward `30m`–`1h` for those.
-- Avoid sub-pass intervals (a few minutes, e.g. `5m`): a deep pass outlasts them,
-  so fires just queue or overlap — no benefit, and nothing is fresher.
+- Because one deep pass — read source, verify claims, optional local Docker run,
+  write and commit a note — outlasts five minutes, the extra fires coalesce: the
+  loop runs effectively back-to-back, not literally every five minutes. The `5m`
+  setting mainly guarantees a prompt re-fire after any early stop.
+- Caveat to watch: this assumes the scheduler coalesces fires while a pass is
+  still running. If you see overlapping passes (racing commits, two Docker stacks
+  on the same ports), raise the interval to `15m`–`30m`. Token spend is also higher
+  at `5m`; raise it to spread cost.
 - Each fire re-reads the brief and the current `docs/research/greptimedb-vs-clickhouse/`
   state and continues from the next gap, so a fresh re-trigger loses no progress.
 - Re-pin versions and re-check public claims about every 1–2 weeks (or when either
