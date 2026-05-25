@@ -5382,6 +5382,51 @@ untouched).
 `numbers()`) + a 2M/40k metric table on each; JSON GROUP BY (CH needs `.:Int64` cast in 26.6); metric
 `avg GROUP BY service` (flush GT first for the clean number). Expect the table above.
 
+### Run 130 — 2026-05-25 — COMPREHENSIVE 4-way re-check (operator-requested): all load-bearing speed findings across GT v1.0.2 / GT v1.1-nightly / CH 26.5 / CH 26.6-head. Nightlies ≈ stables; GT-vs-CH gaps unchanged; verdict holds on all four.
+
+**Pass target.** Operator: re-check **all** the performance findings across the four builds. Re-spun
+the GT-nightly (v1.1.0) + CH-head (26.6.1.127) containers, built **identical fresh data on all four**
+(spans1m 1M via `range()`/`numbers()`, m2m 2M/40k-series, sj 200k JSON), GT tables flushed for
+settled-state reads. Warm ×6. GT `execution_time_ms`, CH `--time`.
+
+| Query | GT-stable v1.0.2 | GT-nightly v1.1.0 | CH-stable 26.5 | CH-head 26.6 |
+| --- | --- | --- | --- | --- |
+| **Anchored lookup** `WHERE trace_id=` (15 rows, inverted) | ~8 ms | ~13 ms | ~2 ms | ~2 ms |
+| **Unindexed scan** `WHERE span_id=` (1 of 1M) | ~13 ms | ~13 ms | ~2–3 ms | ~2–3 ms |
+| **Metric-agg** `avg(val) GROUP BY service` (2M) | ~20 ms | ~18 ms | ~10 ms | ~9 ms |
+| **Dynamic-attr JSON** GROUP BY path (200k) | ~57 ms | ~48 ms | ~5 ms* | ~5 ms* |
+
+*\*CH with the `.:Int64` typed-subcolumn cast (26.6 enforces it; 26.5 also accepts the lax no-cast
+path at ~1 ms).*
+
+**Verdict — the whole record holds across all four builds; nightlies ≈ their stables.**
+
+- **GT-nightly v1.1.0 ≈ GT-stable v1.0.2** on every query — differences are within run-to-run noise
+  (agg ~18 vs ~20 ms, JSON ~48 vs ~57 ms, anchored ~13 vs ~8 ms). **No clear, reproducible v1.1 perf
+  change.** *(Corrects Run 129's "~25% faster agg" — at this clean 4-way it's ~equal/within noise, not
+  a reliable win; the JSON path is maybe ~15% faster on v1.1 but also noise-band.)* v1.1's headline
+  roadmap items (JSON Type v2, metric-engine opt) do not yet show a measurable query speedup in the
+  20260525 nightly.
+- **CH-head 26.6 ≈ CH-stable 26.5** on every query — no perf change; the only 26.6 delta is the
+  stricter `Dynamic`-in-GROUP-BY enforcement (correctness, not speed; Run 129).
+- **The GT-vs-CH gaps are UNCHANGED across nightly/stable:** anchored ~4–6×, unindexed scan ~5×,
+  metric-agg ~2×, dynamic-attr JSON ~10× (with the cast). The relative picture — and therefore the
+  verdict (fit not speed; CH faster on analytics; every Parallax query interactive on GreptimeDB) —
+  **holds identically on all four builds.** No build-specific surprise.
+- **Dynamic-attr gap settled at ~10× (typed-cast):** GT ~48–57 ms / CH ~5 ms with the `.:Int64` cast
+  (the enforced/fair form). The Run-104 ~57× was 26.5's lax no-cast ~1 ms path (still works on 26.5,
+  removed in 26.6). State the dynamic-attr gap as **~8–12× (typed-subcolumn), up to ~57× only on the
+  deprecated 26.5 no-cast path.**
+
+**Net for the operator:** re-checked across all four versions, the findings are **stable** — neither
+nightly moves performance materially vs its stable, and the GreptimeDB-vs-ClickHouse gaps (and the
+verdict) are identical on all four. The next genuine re-test is **GT v1.1 GA** (JSON Type v2 may land
+properly) and any CH 26.6 GA.
+
+**Reproduce.** Re-spin `greptime/greptimedb:v1.1.0-nightly-20260525` (:4100) + `clickhouse:head`
+(:8124); build spans1m (1M, trace_id 70k-card) + m2m (2M/40k) + sj (200k JSON) identically via
+`range()`/`numbers()`; flush GT; run the four queries warm ×6 across all four. Expect the table above.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

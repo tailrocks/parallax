@@ -8,8 +8,11 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 129 local runs + B1–B15 cases. Recent: **Run 129 — 4-WAY
-NIGHTLY comparison** (operator-requested): GT v1.1.0-nightly + CH 26.6-head vs the v1.0.2/26.5 stables. GT v1.1 ~25%
+cold/first-run measurement showed). 25 mechanism notes + 130 local runs + B1–B15 cases. Recent: **Run 130 —
+COMPREHENSIVE 4-way re-check** (operator-requested, all load-bearing speed findings across GT v1.0.2 / v1.1-nightly /
+CH 26.5 / 26.6-head on identical fresh data): **nightlies ≈ their stables** (within noise — no clear v1.1/26.6 perf
+change; corrects Run 129's "~25% agg" to within-noise), and the GT-vs-CH gaps (anchored ~4–6×, scan ~5×, agg ~2×,
+JSON ~10× with the cast) are IDENTICAL on all four — verdict holds on every build. **Run 129 — 4-WAY NIGHTLY comparison** (operator-requested): GT v1.1.0-nightly + CH 26.6-head vs the v1.0.2/26.5 stables. GT v1.1 ~25%
 faster flushed metric-agg (~18 vs ~24 ms @2M), NO JSON-attr change (~56 ms); CH 26.6 perf-flat but now ENFORCES the
 typed-subcolumn cast in GROUP BY — correcting Run 104's dynamic-attr ~57× to **~8×** (the ~57× was 26.5's lax no-cast
 path). Nightlies don't move the headline; verdict holds. **Run 128 — pins RE-VERIFIED via release pages** (not just asserted): GreptimeDB v1.0.2 = latest stable (v1.1.0 is nightly-only, not GA),
