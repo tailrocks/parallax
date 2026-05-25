@@ -30,8 +30,9 @@ The defensible version is:
 
 > An open-source, Rust-first, self-hostable execution context engine that
 > accepts Sentry-compatible errors, OTLP telemetry, CLI invocation traces, and
-> coding-agent session traces, builds deterministic evidence graphs, and serves
-> bounded context bundles to humans and coding agents through API/MCP.
+> coding-agent session records from tested capture adapters, builds
+> deterministic evidence graphs, and serves bounded context bundles to humans
+> and coding agents through API/MCP.
 
 That version can become the intelligence layer between telemetry systems, CI,
 CLI tools, deploys, issue trackers, repos, and autonomous coding agents.
@@ -50,7 +51,7 @@ Build this first:
 Rust service / CLI / coding agent
   -> Sentry-compatible envelope ingest
   -> OTLP logs/traces/metrics ingest
-  -> CLI invocation and agent-session trace ingest
+  -> CLI invocation trace ingest and tested agent-session adapter ingest
   -> Parallax Rust ingest gateway
   -> local WAL for tiny mode
   -> GreptimeDB for observability evidence
@@ -211,7 +212,7 @@ Technical proof gates:
    [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) and
    made claimable through the
    [CLI trace safety ledger](cli-trace-safety-ledger.md).
-11. Agent-session tracing value across real Codex, Claude Code, Amp, and
+11. Agent-session capture value across real Codex, Claude Code, Amp, and
     OpenCode runs, specified further in
     [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
     and made claimable through the

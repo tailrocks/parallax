@@ -12,8 +12,8 @@ Build Parallax, but only as the narrow version:
 
 > An open-source, Rust-first, self-hostable execution context engine that accepts
 > Sentry-compatible errors, OpenTelemetry telemetry, CLI invocation traces, and
-> coding-agent session traces, then stores and serves bounded evidence bundles
-> for humans and agents.
+> coding-agent session records from tested capture adapters, then stores and
+> serves bounded evidence bundles for humans and agents.
 
 Do not build the broad version:
 
@@ -31,9 +31,9 @@ debugging.
 | --- | --- |
 | Is the problem real? | **Yes.** The problem is not "no one has dashboards." The problem is that production debugging, CI debugging, CLI execution, and coding-agent work produce fragmented evidence that humans and agents must manually reconstruct. Public product direction from Datadog Bits AI SRE, Sentry Seer, Grafana Assistant, and others validates this pain. |
 | Does Parallax solve it? | **Partially, and that is enough.** Parallax can solve context assembly, evidence retention, correlation, issue grouping, and agent-safe bundle generation. It cannot prove all root causes from telemetry alone, and it should never claim omniscient RCA. |
-| Are there direct competitors? | **Yes.** Sentry Seer and Datadog Bits AI SRE are direct for production debugging. Grafana Assistant is direct for observability-agent workflows. LangSmith/Langfuse/Phoenix/Braintrust/AgentOps-style systems are adjacent for agent tracing. CI/autofix products are direct for test and pipeline failures. |
+| Are there direct competitors? | **Yes.** Sentry Seer and Datadog Bits AI SRE are direct for production debugging. Grafana Assistant is direct for observability-agent workflows. LangSmith/Langfuse/Phoenix/Braintrust/AgentOps-style systems are adjacent for agent/LLM execution telemetry. CI/autofix products are direct for test and pipeline failures. |
 | Do competitors leave room? | **Yes, narrowly.** They mostly optimize inside their own observability or LLM-app platform. Parallax can win only if it is simpler to self-host, exposes an open evidence schema, gives CLI/MCP/API access from day one, stores agent and CLI side effects, and produces portable bundles rather than product-bound answers. |
-| Is this just a Sentry/Grafana/Datadog feature? | **Generic AI investigation is a feature.** A low-resource, Rust-first, self-hostable context store with Sentry-compatible migration, OTLP-native ingestion, CLI/agent audit traces, and portable evidence bundles is a product wedge. |
+| Is this just a Sentry/Grafana/Datadog feature? | **Generic AI investigation is a feature.** A low-resource, Rust-first, self-hostable context store with Sentry-compatible migration, OTLP-native ingestion, adapter-backed CLI/agent audit records, and portable evidence bundles is a product wedge. |
 | Does the market make sense? | **Yes, with discipline.** AI is making software faster to write and riskier to operate without audit trails. The market is crowded, but the crowding validates the shift from dashboards to evidence-backed investigation. The opportunity is not "better AI"; it is owning the evidence contract agents use. |
 
 ## Why This Is A GO
@@ -88,7 +88,8 @@ suite. It should compete on the evidence substrate:
 - Sentry-compatible migration path;
 - OpenTelemetry-native correlation;
 - first-class CLI invocation traces;
-- first-class coding-agent session traces;
+- coding-agent session records only where tested adapters preserve source,
+  projection, and lossiness provenance;
 - portable JSON/Markdown evidence bundles;
 - read-only CLI/MCP/API tools with tight scope.
 
@@ -164,7 +165,7 @@ That honesty is a strength, not a limitation.
 | Sentry Seer | Production error AI debugging and PR generation are real workflows. | GA but closed-source, SaaS-only, and confirmed **not available to self-hosted Sentry** (2026-05). The dominant error tracker paywalls its AI away from exactly the self-hosting, data-ownership audience Parallax targets. This is the single clearest opening. |
 | Datadog Bits AI SRE / Dev Agent | Hypothesis-driven investigations and flaky-test autofix are the enterprise direction. | Closed, expensive, SaaS-only, and tied to Datadog data gravity. Dev Agent (flaky-test autofix) is still public Preview. Not an open, self-hosted Rust context engine or portable evidence-bundle standard. |
 | Grafana Assistant | Agent access through CLI/API/MCP surfaces is now normal. | Now on-prem and free for OSS Grafana (Apr 2026) but **still requires a Grafana Cloud account for the LLM connection** — not air-gapped — and is dashboard/assistant-first, not portable evidence bundles. LGTM-shaped, not evidence-engine-shaped. |
-| OpenObserve "Observability 3.0" (late Apr 2026) | An open, Rust, single-binary, object-storage observability store *with* an AI SRE agent + MCP is now real and self-hostable. | The closest thing to a wedge-killer on storage/runtime fit, saved by two gaps: the **AI SRE agent and Assistant are Enterprise-license-gated, not in the free AGPL tier**, and ingestion is **OTLP-only with no Sentry-envelope path**. The open + self-hosted + agent combination does not exist for free in one product yet. |
+| OpenObserve "Observability 3.0" (late Apr 2026) | An open, Rust, single-binary, object-storage observability store *with* an AI SRE agent + MCP is now real and self-hostable. | The closest thing to a wedge-killer on storage/runtime fit, saved by three current gaps: AI SRE/MCP require Enterprise edition/license while Self-Hosted Enterprise is advertised as free up to 50 GB/day, the MCP surface is broad and write-capable rather than a bounded read-only evidence bundle, and checked ingestion docs show OTLP rather than a Sentry-envelope path. |
 | SigNoz agent-native (May 2026) | Open, self-hostable MCP server + trace-ID RCA shipping in OSS validates the agent-native direction loudly. | Go + ClickHouse (fails the runtime filter and carries the heavy store Parallax escapes), a query interface rather than a deterministic evidence graph / portable bundle, and **no Sentry-compatible ingestion**. |
 | Dynatrace / New Relic / Splunk | Topology-aware RCA is enterprise table stakes. | Enterprise suite gravity, not open small-team self-hosting or agent-readable bundle portability. |
 | LangSmith / Langfuse / Phoenix / Braintrust / AgentOps / similar | Agent and LLM traces are important. | They usually observe LLM app execution, not the full chain from production error to deploy, CLI side effect, coding-agent patch, CI validation, and outcome. |
@@ -179,12 +180,13 @@ toward Parallax's exact space: OpenObserve shipped an AI SRE agent + MCP on a
 Rust, object-storage, AGPL-self-hostable base, and SigNoz shipped an open,
 self-hostable agent-native MCP server.
 
-Neither closes the wedge today — OpenObserve gates its agent behind an Enterprise
-license and has no Sentry ingest; SigNoz is Go/ClickHouse with no Sentry ingest
-and no evidence-graph/bundle abstraction. But both could close their gap inside
-6–12 months. The consequence: **the moat cannot be any single feature.** It must
-be the assets that compound with usage and are hard to copy from a standing
-start —
+Neither closes the wedge today — OpenObserve's AI SRE/MCP surfaces require
+Enterprise edition/license, its Self-Hosted Enterprise allowance weakens a
+simple paywall claim, and checked docs still show no Sentry ingest; SigNoz is
+Go/ClickHouse with no Sentry ingest and no evidence-graph/bundle abstraction.
+But both could close their gap inside 6–12 months. The consequence: **the moat
+cannot be any single feature.** It must be the assets that compound with usage
+and are hard to copy from a standing start —
 
 1. the failure/fix corpus and accepted-fix feedback loop;
 2. the open evidence schema and portable bundle format as a standard others
@@ -198,6 +200,15 @@ category fully commoditizes. If an open competitor ships the full combination
 (open + self-hosted + Rust-light + Sentry-compatible + evidence bundles) before
 Parallax has adoption and a corpus, revisit this verdict — that is the live path
 to NO-GO.
+
+Current source checks for this competitive-window claim:
+
+- [OpenObserve pricing](https://openobserve.ai/pricing/)
+- [OpenObserve SRE Agent setup](https://openobserve.ai/docs/administration/deployment/sre-agent-setup-guide/)
+- [OpenObserve MCP docs](https://openobserve.ai/docs/integration/ai/mcp/)
+- [OpenObserve OTLP ingestion docs](https://openobserve.ai/docs/ingestion/logs/otlp/)
+- [SigNoz agent-native observability](https://signoz.io/agent-native-observability/)
+- [SigNoz MCP server](https://signoz.io/docs/ai/signoz-mcp-server/)
 
 ## Market Verdict
 
@@ -219,7 +230,7 @@ It is open enough for:
 - Sentry-compatible error migration;
 - OTLP-native correlation;
 - Rust-first capture and stacktrace quality;
-- CLI and agent-session observability;
+- CLI and adapter-proven agent-session observability;
 - safe MCP/API/CLI context retrieval;
 - accepted-fix feedback loop.
 
@@ -250,8 +261,9 @@ Reverse this GO if prototype evidence shows any of the following:
    context in controlled tests. The experiment that decides this is designed in
    [Bundle-value evaluation](bundle-value-evaluation.md) — note its raw-telemetry-dump
    control: the bundle must beat a raw dump, not just repo-only context.
-4. CLI and agent-session tracing produces too much sensitive data to redact
-   safely.
+4. CLI and agent-session capture produces too much sensitive data to redact
+   safely, or tested adapters cannot preserve source/projection/lossiness
+   provenance.
 5. MCP/API access cannot be made least-privilege, auditable, and read-only by
    default.
 6. The first deployment fails the
