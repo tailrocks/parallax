@@ -208,6 +208,9 @@ failures without making secret exposure part of the default value proposition.
 
 - [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) defines
   the strategic reason and first-pass CLI trace model.
+- [Agent session tracing ledger](agent-session-tracing-ledger.md) consumes
+  command/edit coverage, redaction, and overhead rows for shell commands inside
+  coding-agent sessions.
 - [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
   defines the global default-deny redaction pipeline and red-team gate.
 - [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)

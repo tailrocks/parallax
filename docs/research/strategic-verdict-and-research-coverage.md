@@ -101,7 +101,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | AI-native observability | [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md), [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md) |
 | Flaky-test investigation | [CI failure context MVP](ci-failure-context-mvp.md), [Flaky test investigation and replay](flaky-test-investigation-and-replay.md) |
 | Deploy/change/issue tracker context | [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md), [Deploy/change context ledger](deploy-change-context-ledger.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md), [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md) |
-| Agent and CLI execution tracing | [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md), [Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md), [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) |
+| Agent and CLI execution tracing | [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md), [Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md), [Agent session tracing ledger](agent-session-tracing-ledger.md), [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) |
 | Fixer and outcome loop | [Fixer component and outcome loop](fixer-component-and-outcome-loop.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md), [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md) |
 | Agent-observability technical references | [Agent observability technical review](agent-observability-technical-review.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md) |
 | Frontend collection and cross-tier correlation | [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md), [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md), [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Storage benchmark prototype](storage-benchmark-prototype.md) |
@@ -211,7 +211,9 @@ Technical proof gates:
    [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md).
 11. Agent-session tracing value across real Codex, Claude Code, Amp, and
     OpenCode runs, specified further in
-    [Agent session tracing across real tools](agent-session-tracing-real-tools.md),
+    [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
+    and made claimable through the
+    [Agent session tracing ledger](agent-session-tracing-ledger.md),
     with OpenTelemetry GenAI/MCP/CLI normalization specified in
     [Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md).
 12. Turso correctness, backup/restore, concurrency, migration, and fallback

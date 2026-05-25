@@ -737,7 +737,9 @@ candidate versions:
 
 - coding-agent session schema across Codex, Claude Code, Amp, and OpenCode,
   with the initial adapter/value gate in
-  [Agent session tracing across real tools](agent-session-tracing-real-tools.md);
+  [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
+  and result ledger in
+  [Agent session tracing ledger](agent-session-tracing-ledger.md);
 - CLI redaction and overhead for args, env, config, stdout, and stderr, with
   the initial gate in [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md);
 - A6 detector/runtime redaction architecture, with Parallax owning a Rust

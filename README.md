@@ -70,6 +70,7 @@ idea becomes sharper.
 - [Agent and CLI execution tracing](docs/research/agent-and-cli-execution-tracing.md)
 - [Agent and CLI OTel semantic-convention mapping](docs/research/agent-cli-otel-semconv-mapping.md)
 - [Agent session tracing across real tools](docs/research/agent-session-tracing-real-tools.md)
+- [Agent session tracing ledger](docs/research/agent-session-tracing-ledger.md)
 - [CLI trace overhead and redaction](docs/research/cli-trace-overhead-and-redaction.md)
 - [Agent access surface: CLI, HTTP API, and MCP](docs/research/agent-access-surface-cli-api-mcp.md)
 - [Agent access surface safety ledger](docs/research/agent-access-surface-safety-ledger.md)

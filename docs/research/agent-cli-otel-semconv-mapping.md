@@ -197,6 +197,9 @@ interoperability possible; it does not replace the evidence contract.
   why services, CI, CLI tools, and coding agents belong in one execution graph.
 - [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
   defines the Codex, Claude Code, Amp, and OpenCode adapter gate.
+- [Agent session tracing ledger](agent-session-tracing-ledger.md) defines the
+  result rows and claim levels for per-tool adapter coverage, lossiness,
+  redaction, overhead, and audit-value comparisons.
 - [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
   defines the read-only MCP context surface and projection-equivalence rule.
 - [Agent access surface safety ledger](agent-access-surface-safety-ledger.md)

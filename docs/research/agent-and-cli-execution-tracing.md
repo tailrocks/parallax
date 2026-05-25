@@ -330,6 +330,8 @@ overhead tests, and full raw args/env/output are opt-in refs only.
 The OpenTelemetry-to-Parallax field mapping, semconv versioning, GenAI/MCP
 deduplication, and lossiness gates are specified in
 [Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md).
+Real-tool adapter results and claim levels are specified in the
+[agent session tracing ledger](agent-session-tracing-ledger.md).
 
 ## Why CLI Tracing Is Strategically Useful
 

@@ -22,7 +22,9 @@ Decision: **agent-session tracing is viable, but only as a lossy normalized
 execution audit, not as complete access to hidden reasoning or every raw token.**
 The useful product is "what context, tools, files, commands, permissions,
 patches, tests, and outcomes were visible", not "what the model secretly
-thought."
+thought." The companion
+[agent session tracing ledger](agent-session-tracing-ledger.md) defines the
+result rows and claim levels required before this becomes product wording.
 
 ## Current Primary-Source Checks
 
@@ -151,6 +153,9 @@ not only trust the source tool's built-in masking.
 The proof gate is not "can we ingest events?" It is "does normalized session
 tracing answer audit and improvement questions better than raw transcripts or
 no trace?"
+Results and claim status belong in the
+[agent session tracing ledger](agent-session-tracing-ledger.md), not in this
+design note.
 
 ### Dataset
 
@@ -254,6 +259,9 @@ observability interface.
 - [Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md)
   defines how native OTel GenAI/MCP/CLI spans become stable Parallax rows without
   treating development-stage conventions as the storage schema.
+- [Agent session tracing ledger](agent-session-tracing-ledger.md) turns this
+  adapter strategy into a tool/version matrix, coverage/lossiness rows,
+  redaction results, audit-value comparisons, and claim levels.
 - [Agent observability technical review](agent-observability-technical-review.md)
   surveys the broader LLM/agent observability market and technical patterns.
 - [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)
