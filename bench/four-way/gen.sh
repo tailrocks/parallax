@@ -3,13 +3,15 @@
 # Data is generated natively in-engine (GreptimeDB range(), ClickHouse numbers()) — no CSV transport,
 # fully reproducible. Tables: spans1m, m2m, logs1m, sj, errs, tsr (see docs/.../four-way-version-comparison.md).
 #
-# Usage:   bench/four-way/gen.sh            # default N=1_000_000 rows
-#          N=5000000 bench/four-way/gen.sh  # bigger tier
+# Usage:   bench/four-way/gen.sh            # LOCAL default N=100_000 (small + meaningful, laptop-safe)
+#          N=5000000 bench/four-way/gen.sh  # SERVER tier (do NOT run big N on a laptop — it freezes)
 # Prereq:  docker compose -f bench/compose.yml up -d   (all four builds healthy)
-# Row-size policy (operator): keep N meaningful — minimum 50_000; default 1_000_000.
+# Row-size policy (operator): N must be meaningful (minimum 50_000). LOCAL preliminary checks use a
+#   SMALL tier (default 100_000); the proper large-scale test runs on the SERVER (N=5M+), not the Mac.
+#   Big N on a laptop (4 DB containers + millions of rows) freezes the machine — keep local runs small.
 set -euo pipefail
 
-N="${N:-1000000}"
+N="${N:-100000}"
 (( N >= 50000 )) || { echo "N must be >= 50000 (meaningful tier); got $N" >&2; exit 1; }
 
 GT_STABLE="${GT_STABLE:-parallax-bench-greptimedb-1}"

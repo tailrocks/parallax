@@ -101,9 +101,12 @@ builds**, never stable-only and never a two-way:
    newest feature release; never an LTS/backport line.
 4. **ClickHouse — latest nightly** (`clickhouse/clickhouse-server:head`).
 
-Keep the two nightly containers standing alongside the bench stables so any benchmark hits all four
-without a re-spin; build identical data on all four (`range()` on GreptimeDB / `numbers()` on
-ClickHouse). Re-pull + rebuild when a new nightly tag drops. **Every benchmark must update the
+**Two tiers — local small, server large.** On a laptop run a **small but meaningful preliminary** tier
+(default `N=100,000`, minimum 50,000) — big `N` (millions) with four DB containers freezes a MacBook.
+The **detailed, large-scale** test (`N=5,000,000`+) runs on a **server**, not the dev machine. Don't
+keep all four containers standing with big data on a laptop: `docker start` the nightlies → `gen.sh`
+(small) → `bench.sh` → `docker stop` the nightlies. Build identical data on all four (`range()` on
+GreptimeDB / `numbers()` on ClickHouse). Re-pull + rebuild when a new nightly tag drops. **Every benchmark must update the
 consolidated matrix [`docs/research/greptimedb-vs-clickhouse/four-way-version-comparison.md`](docs/research/greptimedb-vs-clickhouse/four-way-version-comparison.md)** (every query × 4 builds, a *Faster*
 column, per-query *Details* links to the mechanism note + the reproducible run in
 `local-benchmark-results.md`). A stable-only number is not the result; the four-build row is. The

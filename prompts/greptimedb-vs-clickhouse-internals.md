@@ -532,9 +532,13 @@ never stable-only, never a 2-way:
 3. **ClickHouse — latest stable feature line, NOT LTS** (currently `v26.5.1.882-stable`).
 4. **ClickHouse — latest nightly** (`clickhouse/clickhouse-server:head`, currently `v26.6.x`).
 
-Keep the two nightly containers **standing** (GT-nightly :4100, CH-head :8124) alongside the bench
-stables so any benchmark can hit all four without a re-spin; build identical data on all four via
-`range()` (GT) / `numbers()` (CH). On a new nightly tag (nightlies roll daily) re-pull + rebuild.
+**Two tiers — local SMALL (preliminary), server LARGE (detailed, on request only).** On the laptop,
+run a **small but meaningful** tier — default `N=100,000` (min 50,000). **Do NOT run millions-scale
+locally** — four DB containers + millions of rows **freezes the operator's MacBook**. The proper
+large-scale test (`N=5,000,000`+) runs on a **server**, and **only when the operator explicitly asks**
+— do not launch it locally on your own. **Don't keep all four containers standing with big data on the
+laptop:** `docker start` the nightlies → `gen.sh` (small) → `bench.sh` → `docker stop` the nightlies.
+Build identical data on all four via `range()` (GT) / `numbers()` (CH). On a new nightly tag re-pull.
 **Every benchmark must also update [`four-way-version-comparison.md`](../docs/research/greptimedb-vs-clickhouse/four-way-version-comparison.md)** — the single consolidated matrix (every query × 4 builds,
 a *Faster* column, per-query *Details* links to the mechanism note + run). Always re-pin the latest
 stable + nightly of both at the start of a benchmarking pass. Do **not** record a stable-only number

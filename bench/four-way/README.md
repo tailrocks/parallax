@@ -25,11 +25,21 @@ Tunables (env): `N` = rows per table (gen.sh; **minimum 50,000**, default **1,00
 warm reps per query (bench.sh, default 6). Container-name overrides: `GT_STABLE`, `GT_NIGHTLY`,
 `CH_STABLE`, `CH_HEAD` (default to the compose names).
 
-## Data-size policy
+## Data-size policy — LOCAL small (preliminary), SERVER large (detailed)
 
-**No small-portion benchmarks.** `gen.sh` enforces `N >= 50,000` and defaults to **1,000,000** rows
-per table so every number is a meaningful measurement, not a toy. All six tables are built at the same
-`N` for an internally consistent matrix.
+Two tiers:
+- **LOCAL (laptop): small but meaningful — default `N=100,000`** (≥50,000 enforced). This is a
+  **preliminary comparison only**. Running big `N` (millions) with 4 DB containers **freezes a
+  MacBook** — don't. Keep local runs small; tear the nightly containers down between runs.
+- **SERVER: large, detailed — `N=5,000,000`+`** (`N=5000000 bench/four-way/gen.sh`). The proper
+  performance test runs on a server with headroom, not the dev laptop.
+
+`gen.sh` enforces `N >= 50,000` (no toy benchmarks) and builds all six tables at the same `N` for an
+internally consistent matrix. Absolute ms at the small local tier are fixed-overhead-dominated — the
+**cross-build ratios** are the preliminary signal; trust absolute numbers from the server tier.
+
+**Laptop caution:** do NOT keep all four containers standing with big data on a laptop. For a local
+check: `docker start` the nightlies → `gen.sh` (small) → `bench.sh` → `docker stop` the nightlies.
 
 ## What's generated (`gen.sh`) — natively, no CSV transport
 

@@ -5824,6 +5824,27 @@ scrape-style metrics. **(B)** is a v1.1-nightly caveat to watch, not a v1.0.2-st
 **Reproduce.** Build `m2m_ap` = `m2m` with `append_mode='true'` (INSERT…SELECT); `SELECT service,
 avg(val) GROUP BY service` on both @5M → dedup ~314/867 ms (stable/nightly), append ~40/26 ms.
 
+### Run 143 — 2026-05-25 — Benchmark-tier policy: LOCAL = small meaningful (default 100k); SERVER = large (5M+), on request only. + the dedup-agg penalty is COMPACTION-TRANSIENT (314→~60 ms forced-compacted)
+
+**Why.** The 5M-row × 4-container run (Runs 141/142) **froze the operator's MacBook**. Policy fix
+(now in `bench/four-way/gen.sh` default, `README.md`, `AGENTS.md`, the loop brief, memory):
+- **LOCAL (laptop): small meaningful PRELIMINARY tier — `gen.sh` default `N=100,000`** (min 50,000
+  enforced). **Never run millions-scale locally** (freezes the Mac). Don't keep all four containers
+  standing with big data; start nightlies → `gen.sh` small → `bench.sh` → stop nightlies + drop tables.
+- **SERVER: large detailed tier (`N=5M+`) — only when the operator explicitly asks**, not launched
+  locally on my own. The big numbers come from the server; local is a directional preliminary.
+
+**Addendum to the Run-141/142 dedup finding (one cheap check before un-freezing):** forced compaction
+on the 5M dedup `m2m` dropped its agg from ~314 ms to **~60 ms** (GT-stable) — so the dedup-agg
+penalty is **largely compaction-transient** (confirms Run 117's single-/few-run passthrough at scale),
+not permanent. A *settled/compacted* dedup metric table aggregates fine (~60 ms); the ~314 ms was the
+less-compacted state, ~867 ms the v1.1-nightly regressed-dedup state. **Append-mode still wins (~40 ms,
+Run 142) and avoids the compaction dependence + the v1.1 regression** — so the blueprint nuance holds
+(append for scrape-style metrics), now with the caveat that compacted-dedup is also acceptable (~60 ms).
+
+**Action taken:** dropped all 5M tables on all four; stopped the two nightly containers (freed RAM);
+bench back to the two light stables. Future local 4-build checks use `N=100,000`.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
