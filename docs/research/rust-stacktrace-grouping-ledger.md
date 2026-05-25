@@ -39,7 +39,12 @@ Rust envelopes can parse and normalize before Rust grouping is proven.
 | [rustc codegen options](https://doc.rust-lang.org/rustc/codegen-options/index.html) | Frame-pointer and unwind-table defaults depend on target, while flags can force them; `panic=immediate-abort` does not call panic hooks. | The run manifest must pin target triple, panic strategy, and stack-walking knobs because grouping stability and capture viability are target-sensitive. |
 | [rustc symbol mangling](https://doc.rust-lang.org/stable/rustc/symbol-mangling/index.html) | Rust symbol names are mangled for linker uniqueness; tooling may need demangling; rustc supports multiple mangling versions. | Store raw, demangled, and normalized symbols. Do not assume one mangling version or one compiler release. |
 | [Sentry issue grouping](https://docs.sentry.io/concepts/data-management/event-grouping/) | Sentry versions grouping algorithms, considers fingerprint first, then stack trace, exception, and message, and uses in-app frames when available. | Parallax should copy the versioning discipline and client-fingerprint precedence, not claim exact Sentry grouping parity. |
-| [Sentry debug identifiers](https://docs.sentry.io/platforms/flutter/data-management/debug-files/identifiers/) | Sentry distinguishes code identifiers from debug identifiers and uses debug IDs to locate matching debug companions. | Parallax should record build/debug IDs and symbol-file matching results as evidence, but not include build IDs in the logical issue identity. |
+| [Sentry Native debug information files](https://docs.sentry.io/platforms/native/data-management/debug-files/) | Debug information files provide function names, source paths, line numbers, source context, and sometimes variable-placement evidence; Sentry needs access to app and system-library files for full symbolication and its uploaded debug files use time-to-idle retention. | The ledger must separate Parallax evidence-retention policy from Sentry's retention model and should not treat debug metadata as durable source evidence until the matching file inventory is recorded. |
+| [Sentry debug file formats](https://docs.sentry.io/platforms/native/data-management/debug-files/file-formats/) | Debug information, symbol tables, source code bundles, and unwind information are distinct. Symbol tables are function-name fallbacks and do not provide file/line or inline-frame quality. | Fixture rows must distinguish `full`, `function_only`, `missing_line`, and source-context availability instead of using one symbolicated boolean. |
+| [Sentry debug identifiers](https://docs.sentry.io/platforms/native/data-management/debug-files/identifiers/) | Sentry distinguishes code IDs from debug IDs; native events list loaded images with debug identifiers, and ELF debug IDs are derived from the GNU build ID/code ID. | Parallax should record code ID, debug ID, object name, and match status as evidence dimensions, but not include build/debug IDs in the logical issue identity. |
+| [Sentry debug-file uploads](https://docs.sentry.io/platforms/native/data-management/debug-files/upload/) and [source context](https://docs.sentry.io/platforms/native/data-management/debug-files/source-context/) | Sentry recommends uploading debug files before deploy; later uploads can take time to affect new reports and existing events are not reprocessed. Source context for compiled applications requires uploaded source bundles. | Parallax must either prove late-symbol reprocessing or mark old events degraded; source context must pass source-field and redaction policy before entering agent bundles. |
+| [Sentry Symbolicator](https://getsentry.github.io/symbolicator/), [lookup strategy](https://getsentry.github.io/symbolicator/advanced/symbol-lookup/), and [system architecture](https://getsentry.github.io/symbolicator/advanced/system-architecture/) | Symbolicator resolves function names, file locations, and source context; it computes code/debug identifiers, looks up files across sources, ranks debug/unwind files over symbol-table fallbacks, and caches downloaded objects plus derived symbol caches. | Ledger rows need symbol source, matched-file provenance, quality ranking, and cache/source status so agents can tell full evidence from fallback evidence. |
+| [Symbolicator source bundles](https://getsentry.github.io/symbolicator/advanced/source-bundles/) | Source bundles are ZIP archives with manifests containing code ID, debug ID, object name, architecture, and original source paths. | Source snippets and paths are source-derived evidence; they require source-field policy checks and redaction before agent-visible projection. |
 | [sentry Rust crate 0.48.2](https://docs.rs/sentry/0.48.2/sentry/) and [feature flags](https://docs.rs/crate/sentry/0.48.2/features) | Docs.rs currently resolves the explicit crate page to `0.48.2`; default features include backtrace, contexts, panic capture, transport, debug-image metadata, and release health. | The first fixture target remains current Sentry Rust SDK panic/error envelopes, but runs must record exact feature flags because `tracing`, `anyhow`, and OpenTelemetry are opt-in. |
 | [sentry-panic 0.48.2](https://docs.rs/sentry-panic/0.48.2/sentry_panic/), [sentry-backtrace 0.48.2](https://docs.rs/sentry-backtrace/0.48.2/sentry_backtrace/), and [sentry-debug-images 0.48.2](https://docs.rs/sentry-debug-images/0.48.2/sentry_debug_images/) | The subcrates separately install a panic handler, convert/process stacktraces, and attach loaded-library metadata. | Result rows must identify which capture integration produced panic, stack, and loaded-image evidence; one SDK envelope is not enough proof. |
 
@@ -78,8 +83,10 @@ docs/research/rust-stacktrace-grouping-runs/<run_id>/capture-path-results.jsonl
 docs/research/rust-stacktrace-grouping-runs/<run_id>/build-variant-results.jsonl
 docs/research/rust-stacktrace-grouping-runs/<run_id>/frame-normalization-results.jsonl
 docs/research/rust-stacktrace-grouping-runs/<run_id>/fingerprint-results.jsonl
+docs/research/rust-stacktrace-grouping-runs/<run_id>/debug-file-inventory.jsonl
 docs/research/rust-stacktrace-grouping-runs/<run_id>/symbolication-results.jsonl
 docs/research/rust-stacktrace-grouping-runs/<run_id>/false-split-merge-audit.jsonl
+docs/research/rust-stacktrace-grouping-runs/<run_id>/source-context-policy-results.jsonl
 docs/research/rust-stacktrace-grouping-runs/<run_id>/source-field-policy-audit.jsonl
 docs/research/rust-stacktrace-grouping-runs/<run_id>/claim-ledger.jsonl
 docs/research/rust-stacktrace-grouping-runs/<run_id>/hashes.sha256
@@ -106,6 +113,9 @@ Each `manifest.json` should pin the moving parts:
   "cargo_version": "cargo <version>",
   "target_triples": ["x86_64-unknown-linux-gnu"],
   "profiles": ["release_default", "line_tables_only", "full_debuginfo", "split_debuginfo", "stripped_no_symbols"],
+  "symbol_sources": ["in_event", "uploaded_debug_file", "symbol_server", "source_bundle", "none"],
+  "symbolicator_reference_snapshot": "getsentry/symbolicator docs checked YYYY-MM-DD",
+  "debug_file_inventory_ref": "debug-file-inventory.jsonl",
   "codegen_knobs": {
     "force_frame_pointers": "default|enabled|disabled",
     "force_unwind_tables": "default|enabled|disabled",
@@ -118,6 +128,7 @@ Each `manifest.json` should pin the moving parts:
   },
   "redaction_policy_version": "a6-default-deny-vN",
   "source_field_policy_version": "phase0-source-field-policy-vN",
+  "source_context_policy_version": "phase0-source-context-policy-vN",
   "fixture_count": 0,
   "notes": []
 }
@@ -193,7 +204,10 @@ fingerprint checks.
   "frame_count": 12,
   "in_app_frame_count": 3,
   "file_line_available": true,
+  "code_id_present": true,
   "debug_id_present": true,
+  "debug_file_uploaded": true,
+  "source_bundle_uploaded": false,
   "symbolication_input_quality": "full|line_tables|function_only|unsymbolicated"
 }
 ```
@@ -239,14 +253,42 @@ fingerprint checks.
 ```json
 {
   "fixture_id": "rust_stripped_no_symbols",
+  "symbolication_source": "in_event|uploaded_debug_file|symbol_server|source_bundle|none",
+  "symbolication_input_quality": "full|line_tables|function_only|unsymbolicated",
   "build_id": "sha256-or-platform-id",
+  "code_id": "native-code-id-or-null",
   "debug_id": "uuid-or-derived-id",
+  "object_name": "binary-or-library-name",
   "debug_file_status": "not_required|matched|missing|mismatch|unsupported",
+  "matched_debug_file_ref": "debug-file-inventory.jsonl#row-id-or-null",
   "symbolication_status": "full|function_only|missing_line|unsymbolicated|failed|unknown",
+  "source_context_status": "available|policy_denied|redacted|missing|not_requested",
+  "source_bundle_ref": "debug-file-inventory.jsonl#row-id-or-null",
+  "late_symbol_upload_reprocess_status": "not_needed|reprocessed|not_reprocessed|unsupported|unknown",
   "fabricated_precision": false,
   "agent_visible_warning": "Missing line information; grouping confidence is low.",
   "source_field_policy_status": "pass|fail|not_applicable",
   "safe_for_agent_bundle": true
+}
+```
+
+### Debug File Inventory Row
+
+```json
+{
+  "debug_file_row_id": "dfi_001",
+  "fixture_id": "rust_same_panic_split_debuginfo",
+  "file_kind": "executable|debug_companion|symbol_table|unwind|source_bundle",
+  "source": "uploaded_fixture|symbol_server_fixture|in_event",
+  "object_name": "checkout-service",
+  "architecture": "x86_64",
+  "code_id": "native-code-id-or-null",
+  "debug_id": "uuid-or-derived-id",
+  "quality_tags": ["debug", "symtab", "unwind", "sources"],
+  "uploaded_before_event": true,
+  "retention_policy": "fixture|parallax-symbol-retention-vN",
+  "content_hash": "sha256:<hex>",
+  "source_paths_policy_status": "pass|fail|not_applicable"
 }
 ```
 
@@ -258,7 +300,7 @@ fingerprint checks.
   "bundle_projection": "cli_json|cli_markdown|http_json|mcp_structured_content",
   "source_field_policy_version": "phase0-source-field-policy-vN",
   "source_field_policy_hash": "sha256:<hex>",
-  "checked_fields": ["frame.vars", "breadcrumbs.data", "tags", "contexts.trace", "span.attributes"],
+  "checked_fields": ["frame.vars", "frame.context_line", "source_context.lines", "source_context.paths", "breadcrumbs.data", "tags", "contexts.trace", "span.attributes"],
   "denied_field_count": 0,
   "leaked_denied_fields": [],
   "redaction_report_ref": "sha256:<hex>",
@@ -312,6 +354,15 @@ fingerprint checks.
   `rust-stack-v1` result.
 - Build IDs, debug IDs, release, environment, host, deploy ID, and commit are
   evidence dimensions, not default issue-identity dimensions.
+- `debug_meta` or loaded-image presence is lookup evidence only. Full
+  symbolication requires a matched debug companion, in-event file/line evidence,
+  or a documented symbol-server result with provenance.
+- Source bundles and source context are source-derived evidence. They must pass
+  source-field and redaction policy before any agent-visible projection can show
+  source paths, context lines, or snippets.
+- A late debug-file or source-bundle upload must either produce a dated
+  reprocess result or leave prior events in degraded status. Do not silently
+  upgrade historical grouping confidence.
 - Ordinary line-number churn must not split an issue by itself. Panic anchors or
   source-location macros may use line data only if fixtures prove the behavior.
 - A stripped binary without matching debug companions can pass only as
@@ -348,10 +399,13 @@ Current claim level: not_measured
 | Rebuild-stability failures | 0 | 0 | Pending |
 | Debug-variant stability failures | 0 | 0 | Pending |
 | Capture-path failures | 0 | 0 | Pending |
+| Debug ID / code ID match failures | 0 | 0 | Pending |
+| Late-symbol reprocess unknowns | 0 | 0 | Pending |
 | False-split audit failures | 0 | 0 | Pending |
 | False-merge audit failures | 0 | 0 | Pending |
 | Fabricated symbolication precision | 0 | 0 | Pending |
 | Agent-visible redaction leaks | 0 | 0 | Pending |
+| Source-context policy leaks | 0 | 0 | Pending |
 | Source-field policy leaks | 0 | 0 | Pending |
 
 ## Matrix Coverage
@@ -393,6 +447,8 @@ Mark affected claims `claim_expired` when:
   or symbol-mangling behavior changes;
 - Sentry Rust SDK feature defaults, `sentry-panic`, `sentry-backtrace`, or
   `sentry-debug-images` behavior changes;
+- Symbolicator, Sentry CLI debug-file/source-bundle behavior, symbol-server
+  lookup, or debug-file retention policy changes;
 - `rust-stack-v1` normalization changes;
 - redaction or source-field policy changes for stack/breadcrumb/span fields;
 - a new Rust async/runtime pattern causes false splits or false merges;

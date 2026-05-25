@@ -32,9 +32,12 @@ the result rows and claim levels required before this becomes a product claim.
 | [rustc codegen options](https://doc.rust-lang.org/rustc/codegen-options/index.html) | `force-frame-pointers` and `force-unwind-tables` are target-dependent durability knobs for stack walking and unwinding; defaults vary by target. The `panic` codegen option also includes `immediate-abort`, which does not call panic hooks. |
 | [rustc symbol mangling](https://doc.rust-lang.org/rustc/symbol-mangling/index.html) | Rust symbols are mangled for linker uniqueness and may need demangling for tooling. The mangling version can vary, so Parallax should store raw and demangled function material and normalize only conservatively. |
 | [Sentry issue grouping](https://docs.sentry.io/concepts/data-management/event-grouping/) | Sentry considers custom `fingerprint` first, then stack trace, exception, then message. Stacktrace grouping primarily uses frames associated with the application and normalized frame material. Grouping algorithm versions matter because grouping changes should not silently rewrite old issues. |
-| [Sentry debug files](https://docs.sentry.io/platforms/flutter/data-management/debug-files/) | Debug files carry function names, source paths, line numbers, source context, and variable placement; Sentry needs access to application and system-library debug files for fully symbolicated crash reports. |
-| [Sentry debug file formats](https://docs.sentry.io/platforms/flutter/data-management/debug-files/file-formats/) | Debug information, symbol tables, source bundles, and unwind information are distinct. Symbol tables can recover function names as a fallback but do not provide file/line or inline-frame quality. ELF release builds commonly strip debug info into companion files. |
-| [Sentry debug identifiers](https://docs.sentry.io/platforms/flutter/data-management/debug-files/identifiers/) | Native crash reports and debug files are matched by code/debug identifiers. For ELF, Sentry uses GNU build identifiers to compute debug identifiers; missing or mismatched IDs weaken symbolication. |
+| [Sentry Native debug information files](https://docs.sentry.io/platforms/native/data-management/debug-files/) | Debug files can provide original function names, source paths, line numbers, source context, and variable placement. Sentry requires access to application and system-library debug files for fully symbolicated crash reports, and its own retention is time-to-idle. Parallax must treat debug-file retention as part of the evidence-retention contract, not an incidental upload. |
+| [Sentry debug file formats](https://docs.sentry.io/platforms/native/data-management/debug-files/file-formats/) | Sentry distinguishes debug information, symbol tables, source code, and unwind information. Symbol tables can recover function names, but not inline functions, filenames, or line numbers; source bundles are a separate `sources` artifact. |
+| [Sentry debug identifiers](https://docs.sentry.io/platforms/native/data-management/debug-files/identifiers/) | Sentry distinguishes code identifiers for binaries/libraries from debug identifiers for debug companions; for ELF, the debug ID is derived from the GNU build ID/code ID. Parallax fixtures must record both IDs and the match status. |
+| [Sentry debug-file uploads](https://docs.sentry.io/platforms/native/data-management/debug-files/upload/) and [source context](https://docs.sentry.io/platforms/native/data-management/debug-files/source-context/) | Sentry recommends uploading debug files before deploy; later uploads may take time to affect new reports and existing events are not reprocessed. Source context for compiled apps requires source bundles alongside debug info. Parallax must decide whether it reprocesses older events when symbols arrive and must run source context through source-field/redaction gates before agent exposure. |
+| [Sentry Symbolicator](https://getsentry.github.io/symbolicator/) and [lookup strategy](https://getsentry.github.io/symbolicator/advanced/symbol-lookup/) | Symbolicator resolves function names, file locations, and source context in native and JavaScript stack traces. Its lookup flow computes code/debug IDs, searches sources, chooses the best file, and treats debug information, symbol tables, unwind data, and source bundles as different evidence qualities. |
+| [Symbolicator system architecture](https://getsentry.github.io/symbolicator/advanced/system-architecture/) and [source bundles](https://getsentry.github.io/symbolicator/advanced/source-bundles/) | Symbolicator ranks debug/unwind files above symbol-table fallbacks, caches downloaded objects and derived symbol caches, and source bundles are ZIP archives with a manifest containing code ID, debug ID, object name, architecture, and original source paths. Parallax should record symbol source/cache/provenance and protect source paths/snippets as sensitive source-derived fields. |
 | [sentry Rust crate 0.48.2](https://docs.rs/sentry/0.48.2/sentry/) and [feature flags](https://docs.rs/crate/sentry/0.48.2/features) | The current Rust SDK default features include `backtrace`, `contexts`, `panic`, `transport`, `debug-images`, and release health. Optional `anyhow`, `tracing`, and OpenTelemetry integrations require explicit features/setup. |
 | [sentry-panic 0.48.2](https://docs.rs/sentry-panic/0.48.2/sentry_panic/), [sentry-backtrace 0.48.2](https://docs.rs/sentry-backtrace/0.48.2/sentry_backtrace/), and [sentry-debug-images 0.48.2](https://docs.rs/sentry-debug-images/0.48.2/sentry_debug_images/) | The panic integration installs a panic handler and forwards to the prior hook; the backtrace crate converts and processes stacktraces; the debug-images integration attaches loaded-library metadata to events. Parallax fixtures must prove which integration produced each signal instead of treating "Sentry Rust event" as one opaque capture path. |
 | [sentry-tracing 0.48.2](https://docs.rs/sentry-tracing/0.48.2/sentry_tracing/) | `tracing` error events can become Sentry events, breadcrumbs, logs, and spans; structured fields can become context fields or tags. Spans and breadcrumbs give causal context, but they should support grouping rather than replace physical stack identity. |
@@ -49,6 +52,10 @@ Parallax v0 should compute its own grouping fingerprint after normalization:
 - store the exact normalized grouping material beside every event;
 - store the algorithm version and confidence;
 - never silently regroup historical issues when the algorithm changes.
+- treat `debug_meta` / loaded-image metadata as lookup evidence, not proof that
+  the event is already symbolicated;
+- record the symbolication source, matched debug-file identity, source-context
+  status, and whether late symbol uploads triggered reprocessing.
 
 Release, environment, host, build ID, and commit should **not** be part of the
 grouping identity. They are regression-window and symbolication dimensions. If
@@ -81,6 +88,12 @@ Policy requirements:
 - distinguish function-only symbol table fallback from full file/line
   symbolication;
 - retain enough raw frame material to re-run grouping after a normalizer fix.
+- keep debug files/source bundles for at least the telemetry and release
+  rollback window Parallax claims to support; Sentry's time-to-idle retention is
+  a useful reference, not automatically sufficient for Parallax's historical
+  evidence goal;
+- expose source context to agents only when source-field policy and A6 redaction
+  pass for the exact bundle projection.
 
 ## Capture Path Policy
 
@@ -97,8 +110,11 @@ must preserve the chain that produced the grouping material:
    and unwind-table settings, and whether the build path can produce a stack at
    all. `panic=immediate-abort` should be a negative fixture because panic hooks
    are not called.
-4. **Debug-image signal**: whether `debug_meta` and loaded images were emitted,
-   and whether the matching debug companion/source bundle was found.
+4. **Debug-image and symbolication signal**: whether `debug_meta` and loaded
+   images were emitted; which code/debug IDs were present; whether a matching
+   debug companion, symbol table, unwind file, or source bundle was found; which
+   source provided it; and whether symbolication used uploaded files, a symbol
+   server, or no server-side lookup.
 5. **Agent-visible signal**: whether frame context, breadcrumbs, tags, span
    fields, and source snippets passed the A6 redaction pipeline and the A1
    source-field policy before entering a bundle.
@@ -212,6 +228,11 @@ passes:
 | No in-app frames | Use all frames with low confidence and warnings. |
 | Explicit Sentry fingerprint | Client fingerprint wins and is recorded as `fingerprint_source = client`. |
 | Missing build/debug ID | Event accepted, symbolication warning stored, no server-side symbol lookup assumed. |
+| Matching debug companion uploaded before event | Full symbolication only if code/debug ID match, file/line evidence appears, and result provenance is recorded. |
+| Debug companion uploaded after event | Event starts degraded; any later improvement requires an explicit reprocess result and original grouping assignment audit. |
+| Debug ID mismatch | No full symbolication claim; mismatch recorded without fabricating file/line precision. |
+| Symbol-table-only fallback | Function names may appear, but fixture remains lower confidence because file/line and inline-frame data are missing. |
+| Source bundle matched | Source context is linked, but not agent-visible until source-field policy and redaction pass for context lines and paths. |
 | `panic=abort` with Sentry panic hook | Panic event captured if the hook fires; process termination path recorded; grouping confidence depends on captured frames and location. |
 | `panic=immediate-abort` / no hook path | No Sentry panic event should be assumed; fixture should fail any capture-path claim if Parallax still advertises panic grouping for this build. |
 | `Backtrace::capture` disabled by env | Stack absent or disabled status recorded; no high-confidence grouping unless another capture path supplies frames. |
@@ -230,8 +251,12 @@ This proof gate is closed only when:
 - unrelated app functions do not merge;
 - missing debuginfo creates explicit low-confidence grouping, not fabricated
   source precision;
+- loaded-image metadata is separated from actual symbolication results and debug
+  companion/source bundle match status;
 - capture path, panic strategy, SDK features, backtrace environment, and
   debug-image presence are recorded for every fixture;
+- late debug-file uploads either have a measured reprocess path or remain
+  degraded for existing events;
 - `panic=immediate-abort`, missing hooks, disabled backtraces, and disabled
   debug images are negative fixtures with explicit degraded or failed claims;
 - all grouping material can be reprocessed under `rust-stack-v2` without losing
@@ -262,6 +287,11 @@ The normalized error-event model should add:
 | `frame.in_app_reason` | Why Parallax treated the frame as app/non-app. |
 | `frame.symbolication_status` | Full/function-only/missing-line/unsymbolicated/etc. |
 | `frame.build_id` / `frame.debug_id` | Link to loaded image and debug-file inventory. |
+| `frame.code_id` | Native binary/library identifier used for lookup when present. |
+| `symbolication_source` | `in_event`, `uploaded_debug_file`, `symbol_server`, `source_bundle`, or `none`. |
+| `debug_file_match_status` | `matched`, `missing`, `mismatch`, `not_required`, or `unknown`. |
+| `source_context_status` | `available`, `policy_denied`, `redacted`, `missing`, or `not_requested`. |
+| `symbolication_reprocess_status` | Whether a late symbol/source upload reprocessed existing evidence. |
 
 ## Relationship To Other Research
 
