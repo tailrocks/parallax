@@ -39,10 +39,14 @@ material shifts have happened, and they narrow the wedge without closing it:
    "Observability 3.0" (late Apr 2026): a Rust, single-binary, object-storage,
    AGPL-self-hostable store with an AI SRE agent + MCP. SigNoz shipped
    agent-native observability with an open, self-hostable MCP server (May 2026).
-   These are the first non-incumbent open projects to approach Parallax's exact
-   niche. Both are saved-against only by gaps: OpenObserve gates its agent behind
-   an Enterprise license and ingests OTLP-only (no Sentry envelopes); SigNoz is
-   Go/ClickHouse with no Sentry ingest and no evidence-graph/bundle abstraction.
+   Coroot Community also now makes agentic-ready MCP a first-class self-hosted
+   surface, with Enterprise/Cloud-gated AI RCA. These are the first
+   non-incumbent open projects to approach Parallax's exact niche. They are
+   saved-against only by gaps: OpenObserve gates its agent behind an Enterprise
+   license and ingests OTLP-only (no Sentry envelopes); SigNoz is Go/ClickHouse
+   with no Sentry ingest and no evidence-graph/bundle abstraction; Coroot has
+   no Sentry migration or coding-agent action audit and its local AI RCA is not
+   in the Community OSS tier.
 2. **The dominant error tracker paywalls its AI from self-hosters.** Sentry Seer
    is GA but closed and SaaS-only, and is confirmed not available to self-hosted
    Sentry. That exclusion is Parallax's clearest opening.
@@ -76,6 +80,9 @@ Current source checks for this update:
 - [SigNoz agent-native observability](https://signoz.io/agent-native-observability/)
 - [SigNoz MCP server](https://signoz.io/docs/ai/signoz-mcp-server/)
 - [SigNoz Claude Code monitoring](https://signoz.io/docs/claude-code-monitoring/)
+- [Coroot 1.20.2 release](https://github.com/coroot/coroot/releases/tag/v1.20.2)
+- [Coroot product site](https://coroot.com/)
+- [Coroot editions](https://coroot.com/editions)
 - [Coroot AI RCA](https://docs.coroot.com/ai/overview/)
 - [Coroot MCP server](https://docs.coroot.com/mcp/overview/)
 - [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md)
@@ -89,7 +96,7 @@ Current source checks for this update:
 | Datadog Watchdog RCA | Built-in AI RCA | Datadog AI engine for automated alerts, insights, and RCA across the platform; APM anomaly RCA and causal relationships between symptoms. | High for teams already on Datadog. |
 | Datadog Test Optimization + Bits AI Dev Agent | CI/test reliability and automated fixes | Instruments and traces tests, identifies flaky tests, correlates tests with infra/log/network context, surfaces root cause, and uses Bits AI Dev Agent to generate verified PR fixes. | Very high for the flaky-test wedge. |
 | Grafana Assistant | Observability assistant / SRE agent | AI assistant in Grafana Cloud and connected self-managed Grafana; query/dashboard assistance, incident investigations, Knowledge Graph, Slack/Teams/API/MCP/CLI surfaces. | High for Grafana/LGTM users. |
-| Coroot | eBPF observability + AI RCA | Uses eBPF to collect metrics, logs, traces, profiles, events; AI explains what broke, why, and how to fix it; self-hosted-friendly posture. | High for infrastructure/service RCA, lower for CI. |
+| Coroot | eBPF observability + AI RCA | Uses eBPF to collect metrics, logs, traces, profiles, events; Community includes agentic-ready MCP; Enterprise/Cloud adds AI RCA that explains what broke, why, and how to fix it. | High for infrastructure/service RCA and agent-access pressure, lower for Sentry migration and coding-agent action audit. |
 | OpenObserve "Observability 3.0" | Open Rust observability store + AI SRE agent | Rust, single-binary, object-storage-native, AGPL self-hostable; late-Apr-2026 launch added an AI SRE agent, AI Assistant, LLM observability, and MCP. AI agent/Assistant are Enterprise-license-gated, not in the free AGPL tier. OTLP-only ingestion, no Sentry-envelope path. | Very high on storage/runtime fit; the closest open competitor. Saved (for now) by the Enterprise gate and missing Sentry ingest. |
 | SigNoz agent-native | Open OTLP observability + agent MCP | Go + ClickHouse, OSS self-hostable; May-2026 shipped an open self-hostable MCP server, trace-ID RCA, and agent skills for Claude Code/Cursor/Codex. Query interface, not a deterministic evidence graph/bundle; no Sentry-compatible ingestion. | High on agent-native direction; fails the Rust/no-JVM-store profile and lacks the evidence-bundle abstraction. |
 | New Relic iRCA | Causal RCA | Preview product using topology graph, causal models, and path-based ranking to identify probable root cause. | High for New Relic customers. |
@@ -215,12 +222,23 @@ to fix it. It emphasizes self-hosting and keeping data in the customer's
 environment.
 
 Coroot's advantage is simple infrastructure/service observability with low setup
-friction. Its weakness relative to Parallax is that it is production
-observability-oriented, not CI/flaky-test/context-bundle-oriented.
+friction. The 2026-05-25 refresh sharpens this: Community Edition includes
+agentic-ready MCP, while AI RCA and agentic anomaly investigation are Enterprise
+features, or available to Community users through Coroot Cloud credits. The MCP
+endpoint uses OAuth 2.0 and server-side authorization, exposes topology,
+incidents, traces, logs, metrics, and includes the mutating Community
+`resolve_alerts` tool. Its weakness relative to Parallax is not "no agent
+surface" anymore; it is no Sentry-compatible migration, no portable evidence
+bundle/schema, no coding-agent command/file/test/patch/PR outcome audit, and no
+fully local open RCA in Community.
 
 Source:
 
-- [Coroot product page](https://coroot.ai/)
+- [Coroot product page](https://coroot.com/)
+- [Coroot 1.20.2 release](https://github.com/coroot/coroot/releases/tag/v1.20.2)
+- [Coroot editions](https://coroot.com/editions)
+- [Coroot MCP server](https://docs.coroot.com/mcp/overview/)
+- [Coroot AI RCA overview](https://docs.coroot.com/ai/overview/)
 
 ### New Relic iRCA
 

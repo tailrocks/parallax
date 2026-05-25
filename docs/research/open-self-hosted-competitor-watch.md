@@ -55,7 +55,7 @@ audit.
 | --- | --- | --- | --- |
 | OpenObserve | Rust, object-storage-oriented, self-hostable observability platform with OTLP ingest, RUM/source maps, Enterprise AI SRE Agent, AI Assistant, incident/RCA workflow, and Enterprise MCP with broad query/admin tools. | AI/MCP features are Enterprise-gated; current ingestion docs emphasize OTLP/log APIs/Prometheus/etc., not Sentry envelopes; MCP is not a narrow read-only bundle surface; no portable evidence-bundle schema or coding-agent action audit. | Very high. |
 | SigNoz | Open self-hostable MCP server, agent-native positioning, Claude Code/Codex/Cursor/Gemini integration, traces/logs/metrics/topology/deploy history through agent clients, and MCP tools for alerts/dashboards/views/channels. | Go + ClickHouse stack; query/management interface rather than deterministic evidence bundle; no Sentry envelope ingestion in current docs; no Parallax-style CLI/agent side-effect audit. | High. |
-| Coroot | Apache-2.0 OSS, eBPF zero-instrumentation, metrics/logs/traces/profiles, service map, deployment tracking, official MCP endpoint, Community `resolve_alerts`, and AI RCA through Enterprise or Cloud integration for Community users. | eBPF spans can be incomplete and lack app-level Rust panic/error-chain semantics; AI RCA is not purely OSS/local in Community; MCP is not purely read-only; no Sentry migration path, portable evidence bundle, or coding-agent action audit in official docs. | High. |
+| Coroot | Apache-2.0 OSS, eBPF zero-instrumentation, metrics/logs/traces/profiles, service map, deployment tracking, current `1.20.2` release, Community MCP, Community `resolve_alerts`, and Enterprise/Cloud AI RCA. | eBPF spans can be incomplete and lack app-level Rust panic/error-chain semantics; AI RCA is not purely OSS/local in Community; MCP is OAuth/RBAC-scoped but still not purely read-only; no Sentry migration path, portable evidence bundle, or coding-agent action audit in official docs. | High. |
 
 ## OpenObserve
 
@@ -164,6 +164,8 @@ Reopen the Parallax competitive read if SigNoz:
 Coroot is the strongest zero-instrumentation competitor:
 
 - Apache-2.0 OSS core.
+- Latest checked GitHub release: `1.20.2` on 2026-05-06, with roughly 7.7k
+  GitHub stars at source-check time.
 - eBPF-based metrics, logs, traces, profiles, and service map.
 - OpenTelemetry-compatible eBPF spans for uninstrumented services.
 - Built-in inspections, SLOs, deployment tracking, cost monitoring, and
@@ -171,8 +173,17 @@ Coroot is the strongest zero-instrumentation competitor:
 - Official MCP endpoint that exposes topology, alerts, incidents, traces, logs,
   metrics, and project selection to Claude Code, Cursor, Codex, and other MCP
   clients.
-- Community MCP tool for resolving alerts, plus Enterprise `investigate_anomaly`
-  for graph-guided RCA.
+- Community Edition includes the agentic-ready MCP surface; Enterprise adds
+  AI-powered RCA and agentic anomaly investigation at the listed $1 per
+  monitored CPU core/month price point.
+- MCP uses streamable HTTP transport, OAuth 2.0, and server-side authorization
+  with the user's Coroot permissions. This is a stronger safety posture than an
+  unauthenticated local tool, but it is still a live-production query surface
+  and Community includes the mutating `resolve_alerts` tool.
+- Enterprise `investigate_anomaly` follows the dependency graph, checks
+  saturation, deploys, downstream errors, slow databases, log spikes, and
+  profile shifts, then hands a focused diagnosis to an LLM; with an incident
+  key, Coroot persists that RCA onto the incident.
 - AI-powered RCA in Enterprise, or through Coroot Cloud integration for
   Community users.
 
@@ -187,14 +198,19 @@ get a service map and RCA without changing code.
    in-process Rust panic messages, typed error chains, `tracing` fields, release
    context, and source-level stack semantics.
 2. **AI availability.** Official docs say AI RCA is Enterprise or available to
-   Community through Coroot Cloud integration with limited free investigations.
-   That is not the same as fully local, open, agent-consumable evidence.
+   Community through Coroot Cloud integration with 10 free investigations per
+   month. That is not the same as fully local, open, agent-consumable evidence.
 3. **Migration and bundle gap.** Coroot is not a Sentry-compatible error
    migration path and does not expose a Parallax-style portable evidence bundle.
-4. **MCP is now real, but action audit is still missing.** Coroot exposes
-   observability data to agents through MCP and can resolve alerts, but it still
-   does not appear, in official docs checked here, to reconstruct coding-agent
-   file, command, test, patch, PR, and outcome chains.
+4. **MCP safety is better than broad admin MCP, but still not Parallax's bundle
+   contract.** OAuth and server-side authorization help, but the tool set still
+   lets an agent query raw production telemetry and resolve alerts. Parallax's
+   first MCP surface should instead expose bounded, redacted, citable bundles
+   and write only audit/outcome records.
+5. **Action audit is still missing.** Coroot exposes observability data to
+   agents through MCP and can resolve alerts, but it still does not appear, in
+   official docs checked here, to reconstruct coding-agent file, command, test,
+   patch, PR, and outcome chains.
 
 ### Watch Triggers
 
@@ -255,8 +271,12 @@ SigNoz:
 Coroot:
 
 - [Coroot GitHub repository](https://github.com/coroot/coroot)
+- [Coroot 1.20.2 release](https://github.com/coroot/coroot/releases/tag/v1.20.2)
 - [Coroot product site](https://coroot.com/)
+- [Coroot compare editions](https://coroot.com/editions)
 - [Coroot AI RCA overview](https://docs.coroot.com/ai/overview/)
+- [Coroot AI RCA configuration](https://docs.coroot.com/ai/configuration/)
+- [Coroot Cloud integration](https://docs.coroot.com/ai/coroot-cloud/)
 - [Coroot MCP server](https://docs.coroot.com/mcp/overview/)
 - [Coroot eBPF-based tracing](https://docs.coroot.com/tracing/ebpf-based-tracing/)
 - [Coroot node-agent configuration](https://docs.coroot.com/configuration/coroot-node-agent)
