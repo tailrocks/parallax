@@ -236,7 +236,9 @@ Rust-first normalization rules:
 The focused Rust grouping proof gate, including the proposed `rust-stack-v1`
 algorithm, debuginfo policy, symbolication status fields, and fixture matrix, is
 defined in
-[Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md).
+[Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md),
+with result rows and claim levels controlled by the
+[Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md).
 
 Harder future targets:
 
@@ -461,4 +463,6 @@ self-hosted Sentry service graph.
 
 Related:
 [Sentry SDK fixture compatibility gate](sentry-sdk-fixture-compatibility.md) and
-[Sentry SDK compatibility ledger](sentry-sdk-compatibility-ledger.md).
+[Sentry SDK compatibility ledger](sentry-sdk-compatibility-ledger.md). Rust
+grouping stability is the narrower subclaim controlled by the
+[Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md).

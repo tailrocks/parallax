@@ -18,7 +18,9 @@ SDK happens to emit.**
 The v0 target is not Sentry grouping parity. The target is a deterministic
 `rust-stack-v1` fingerprint that keeps the same logical Rust bug grouped across
 rebuilds and debuginfo layouts, while recording enough grouping material to
-audit false splits and false merges later.
+audit false splits and false merges later. The companion
+[Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md) defines
+the result rows and claim levels required before this becomes a product claim.
 
 ## Current Primary-Source Checks
 
@@ -197,6 +199,10 @@ This proof gate is closed only when:
 - all grouping material can be reprocessed under `rust-stack-v2` without losing
   the original `rust-stack-v1` issue assignment.
 
+Results must be published through the
+[Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md); otherwise
+the claim remains `not_measured`.
+
 ## Schema Additions
 
 The normalized error-event model should add:
@@ -223,6 +229,9 @@ The normalized error-event model should add:
   envelope/event subset and first deterministic grouping path.
 - [Sentry SDK fixture compatibility gate](sentry-sdk-fixture-compatibility.md)
   supplies the SDK-generated fixture harness this gate should extend.
+- [Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md) turns
+  this gate's fixture matrix into claim levels, result rows, refresh triggers,
+  and product wording.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) should expose
   `grouping_confidence`, symbolication warnings, and redaction status to agents.
 - [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
@@ -235,4 +244,5 @@ versioned grouping, conservative Rust symbol normalization, mandatory debuginfo
 policy, per-frame symbolication status, and a fixture matrix that tries to break
 the grouping algorithm before users do.
 
-Do not ship "deterministic grouping" as a claim until this gate passes.
+Do not ship "deterministic grouping" as a claim until this gate passes and the
+ledger records a fresh `rust_grouping_stable` result.

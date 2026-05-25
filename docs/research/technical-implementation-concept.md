@@ -718,6 +718,10 @@ candidate versions:
 
 ### Agent Context
 
+- Rust stacktrace grouping and symbolication stability, with the proof gate in
+  [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md)
+  and claim levels in
+  [Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md);
 - bundle size limits;
 - redaction quality;
 - prompt-injection resistance;

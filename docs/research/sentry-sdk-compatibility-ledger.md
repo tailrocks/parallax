@@ -282,7 +282,9 @@ Always link the matrix. Avoid unqualified claims such as:
 - [Sentry-compatible ingestion](sentry-compatible-ingestion.md) - defines the
   ingest boundary and unsupported item policy.
 - [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md)
-  - controls the Rust grouping-stability subclaim.
+  and [Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md)
+  - control the Rust grouping-stability subclaim and the result rows needed for
+  `rust_grouping_stable`.
 - [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) - controls
   whether fixture output may enter agent-visible bundles.
 - [OTLP receiver conformance and Collector equivalence](otlp-receiver-conformance-and-collector-equivalence.md)

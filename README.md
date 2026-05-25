@@ -54,6 +54,7 @@ idea becomes sharper.
 - [A5 stack decision ledger](docs/research/a5-stack-decision-ledger.md)
 - [Rust data collection and instrumentation](docs/research/rust-data-collection-and-instrumentation.md)
 - [Rust stacktrace grouping and symbolication](docs/research/rust-stacktrace-grouping-and-symbolication.md)
+- [Rust stacktrace grouping ledger](docs/research/rust-stacktrace-grouping-ledger.md)
 - [Frontend collection and cross-tier correlation](docs/research/frontend-collection-and-cross-tier-correlation.md)
 - [Correlation reliability on real telemetry gate](docs/research/correlation-reliability-real-telemetry-gate.md)
 - [A4 correlation reliability ledger](docs/research/a4-correlation-reliability-ledger.md)

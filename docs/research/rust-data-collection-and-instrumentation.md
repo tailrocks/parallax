@@ -193,7 +193,9 @@ Sources:
 - [std::backtrace](https://doc.rust-lang.org/std/backtrace/index.html)
 
 The focused grouping and symbolication gate is defined in
-[Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md).
+[Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md),
+and its claimable result rows are defined in the
+[Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md).
 
 ## How This Fits the Parallax Pipeline
 
@@ -220,13 +222,17 @@ into the same storage — not a replacement for any of the in-process capture.
 1. Server-side symbolication: store split debuginfo keyed by build id, or require
    line-tables in the shipped binary? What is the retention cost of debuginfo?
    See the proof-gate policy in
-   [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md).
+   [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md)
+   and the claim ledger in
+   [Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md).
 2. How exactly do we stitch Sentry-style error events to OTLP `trace_id`/
    `span_id` so an error opens directly into its trace?
 3. Rust frame normalization for stable grouping across releases (hash suffixes,
    generics, monomorphization, panic location) — now specified as
    `rust-stack-v1` in
-   [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md).
+   [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md)
+   and measured through
+   [Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md).
 4. PII and secrets in span fields / error context: redaction defaults for
    self-hosted teams.
 5. Async backtraces: `tracing` span context (`SpanTrace`) is often more useful

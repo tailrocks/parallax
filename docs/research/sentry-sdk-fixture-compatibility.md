@@ -224,7 +224,9 @@ This keeps Parallax narrow, testable, and defensible.
 - [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md)
   - the Rust SDK scenarios come from the chosen collection path.
 - [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md)
-  - the L3 grouping-stability gate and Rust-specific fixture extensions.
+  and [Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md)
+  - the L3 grouping-stability gate, Rust-specific fixture extensions, and
+  claimable result rows.
 - [Evidence bundle and open schema](evidence-bundle-and-schema.md) - fixture
   outputs must flow into the bundle contract.
 - [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
