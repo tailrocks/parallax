@@ -775,6 +775,30 @@ GreptimeDB trades raw kernel speed for DataFusion extensibility (PromQL, metric
 engine). Anchored Q6 stays not-throughput-bound (Run 16). Isolated micro-benchmark of
 each knob owed to harness.
 
+### Run 22 — 2026-05-25 — Index file formats (live confirmation)
+
+Backs `indexing-internals.md` (pass 43). On-disk index format check, smoke.
+
+**GreptimeDB** (table with `INVERTED`+`FULLTEXT`+`SKIPPING` index, flushed): the SST
+produced a **`.puffin` sidecar with the same UUID as the `.parquet`** —
+`6e4627ae….parquet` + `6e4627ae….puffin`. All indexes live as named blobs in that one
+Puffin file (`greptime-inverted-index-v1` FST+roaring, `greptime-fulltext-index-v1`
+tantivy / `-bloom`, `greptime-bloom-filter-v1`).
+
+**ClickHouse** (table with `bloom_filter`+`tokenbf_v1`+`set` skip indexes): per-part
+files `primary.cidx` (sparse primary) + **one `skp_idx_<name>.idx` + `.cmrk4` per skip
+index** (`skp_idx_i_tid.idx` 530 B, `skp_idx_i_msg.idx` 3.79 KiB, `skp_idx_i_lvl.idx`
+37 B). `GRANULARITY N` = coarse, one entry per N×8192-row granules.
+
+**Claim status:** GreptimeDB's index *toolkit* is richer/more precise (FST+roaring
+inverted = true secondary index; tantivy = Lucene-class full-text) → **confirmed**;
+ClickHouse skip indexes are coarse granule-pruners → **confirmed**. **Paradox
+reconciled:** richer index ≠ faster — ClickHouse still won full-text ~18× (Run 12) and
+anchored lookup (Run 6) because *index↔vectorized-scan integration + sort-key locality*
+dominate index-format richness (ties `query-execution-engine.md`). Not a verdict flip;
+corrects the tempting "richer index → faster" inference. Index-build cost + cold-scale
+search latency owed to harness.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
