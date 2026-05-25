@@ -40,7 +40,7 @@ The lightweight end of the same pressure is tracked in
 | [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/) | MCP calls should be observable as MCP-specific spans and metrics. The current OTel page still marks MCP conventions development-stage and recommends `_meta` trace context while saying official MCP guidance should take precedence when available. |
 | [OpenAI Docs MCP](https://developers.openai.com/learn/docs-mcp) | Codex, VS Code/Copilot Agent mode, Cursor, and Claude Code can consume MCP servers; OpenAI's own docs server uses MCP as the cross-client integration surface. |
 | [Codex MCP](https://developers.openai.com/codex/mcp), [Codex MCP server guide](https://developers.openai.com/codex/guides/agents-sdk), [Codex config reference](https://developers.openai.com/codex/config-reference), and local `codex 0.133.0` help | Codex supports MCP in the CLI and IDE extension. Current docs put MCP config in `~/.codex/config.toml` or project-scoped `.codex/config.toml` for trusted projects; support stdio and Streamable HTTP; distinguish fixed `env`, whitelisted `env_vars` with local/remote source, remote stdio placement, bearer-token env vars, static and env HTTP headers, startup/tool timeouts, enabled/required servers, enabled/disabled tools, default and per-tool approval modes, OAuth resource/scopes/callback URL/port/credential store, and plugin-provided MCP servers. Codex can also run as a stdio MCP server exposing `codex` and `codex-reply` tools with approval-policy, sandbox, config, cwd, model, and profile controls. Local help confirms `codex mcp add` supports stdio `--env`, HTTP `--url`, `--bearer-token-env-var`, and `codex mcp-server --strict-config`. |
-| [Claude Code MCP docs](https://code.claude.com/docs/en/mcp) and local `claude mcp --help` on `2.1.150` | Claude Code supports local, project, user, plugin, claude.ai connector, and managed MCP sources. Current docs define source precedence, project `.mcp.json` approval, environment expansion in command/args/env/url/headers, OAuth callback/client credentials/metadata override/scope pinning, dynamic `headersHelper` commands gated by workspace trust, output warnings and limits, per-tool `_meta["anthropic/maxResultSizeChars"]`, and `claude mcp serve`. Local help confirms `add` supports stdio/SSE/HTTP, headers, env vars, scope, client credentials, callback port, and warns that `mcp get`/`list` skip the workspace trust dialog and spawn stdio servers for health checks. |
+| [Claude Code MCP docs](https://code.claude.com/docs/en/mcp) and local `claude mcp --help` on `2.1.150` | Claude Code supports local, project, user, plugin, claude.ai connector, and managed MCP sources. Current docs define source precedence, project `.mcp.json` approval, environment expansion in command/args/env/url/headers, OAuth callback/client credentials/metadata override/scope pinning, dynamic `headersHelper` commands gated by workspace trust, output warnings and limits, per-tool `_meta["anthropic/maxResultSizeChars"]`, tool-search deferral enabled by default, and `claude mcp serve`. Local help confirms `add` supports stdio/SSE/HTTP, headers, env vars, scope, client credentials, callback port, and warns that `mcp get`/`list` skip the workspace trust dialog and spawn stdio servers for health checks. |
 | [NSA MCP security design considerations](https://www.nsa.gov/Portals/75/documents/Cybersecurity/CSI_MCP_SECURITY.pdf?ver=bmgiSbNQLP6Z_GiWtRt6bg%3D%3D) | As of May 2026, NSA describes MCP as widely adopted but security-maturing, with risks around dynamic tool invocation, implicit trust, context sharing, serialization, token/session handling, overbroad tools, and unauthorized servers. |
 
 Version note: the official MCP pages checked for this pass show
@@ -83,6 +83,12 @@ claim:
   and MCP-server modes, but their configuration/trust surfaces differ enough
   that a cross-client claim needs explicit rows rather than a generic "MCP
   works" assertion.
+- Claude Code's current docs say Tool Search is enabled by default and can defer
+  MCP tools instead of loading every schema into the model context upfront.
+  Cross-client fixtures therefore need a discovery row: Parallax tool names,
+  descriptions, server instructions, and resource links must be findable through
+  client-specific deferred discovery, not only present in a raw `tools/list`
+  response.
 - The lightweight competitor pass found Rustrak and GoSnag MCP surfaces in small
   error trackers. That falsifies any weak claim that "Parallax has MCP" is a
   moat. It does not falsify the read-only boundary because those checked
@@ -145,6 +151,7 @@ per-agent glue.
 What MCP adds:
 
 - standard tool discovery through `tools/list`;
+- client-specific deferred discovery and tool search when supported;
 - JSON Schema input contracts for each context tool;
 - optional output schemas and structured tool results;
 - resource links for raw or expanded evidence that should not be dumped inline;
@@ -274,6 +281,7 @@ for context retrieval and deterministic checks, not production mutation.
 | Remote auth | Use HTTPS, protected-resource metadata, resource indicators in authorization and token requests, audience validation, secure token storage, short-lived tokens, PKCE where applicable, and token-passthrough denial. |
 | Stdio/local auth | Treat local stdio MCP as local code execution. The OAuth authorization spec does not apply to stdio; require explicit install/trust, retrieve credentials only from approved local configuration or environment, never log them, and never auto-enable from a repo. |
 | Tool schemas | Every tool has a closed JSON Schema input. Bundle-returning tools have an output schema for structured results. |
+| Tool discovery | Tool names, descriptions, server instructions, resource names, and negative-tool catalog checks must pass both direct `tools/list` inspection and client-specific deferred discovery such as Claude Code Tool Search. |
 | Protocol drift | Record stable spec version, observed protocol version, and any draft/SEP feature under test. Do not depend on protocol-level sessions or `Mcp-Session-Id`; use explicit, auditable state handles when state is unavoidable. |
 | Server-initiated capabilities | Disable roots, sampling, elicitation, multi-round-trip (MRTR) input requests, and task-augmented execution in the first context server. Audit stable `tools/list_changed` behavior and draft-style `subscriptions/listen`/catalog changes separately. |
 | Output limits | Return bounded summaries plus resource refs; do not inline unbounded logs, traces, terminal output, or transcripts. |
@@ -316,6 +324,7 @@ MCP should not ship until these tests pass:
 | --- | --- |
 | Projection equivalence | CLI, HTTP, and MCP return the same canonical JSON hash for the same request. |
 | Client fixture | The same local server is callable from at least Codex and Claude Code using official MCP configuration paths, with each client's config source, server precedence, auth/header source, output-budget behavior, and local trust prompts recorded. |
+| Tool-discovery fixture | Direct `tools/list`, resource listing, client tool search, deferred-tool loading, server instructions, and negative-tool absence are all recorded for each claimed client. |
 | Scope fixture | Calls without `evidence:read` fail closed; raw refs require `evidence:read_sensitive`. |
 | Remote auth fixture | Streamable HTTP proves protected-resource metadata, resource indicators in authorization and token requests, MCP-server audience validation, PKCE S256 for public clients, HTTPS policy, and token-passthrough denial. |
 | Local stdio fixture | Stdio server startup requires explicit local trust, reads only approved credential sources, redacts credentials from logs/audit rows, and cannot be auto-enabled by a repository checkout. |

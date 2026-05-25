@@ -37,7 +37,7 @@ The central rule:
 | [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/) | MCP client/server spans, JSON-RPC request IDs, transport values, tool/resource/prompt attributes, session metrics, `elicitation/create`, `sampling/createMessage`, `notifications/tools/list_changed`, and `_meta` trace propagation are defined with development-stage status. The OTel page says to prioritize official MCP guidance if it lands. | MCP calls and server-initiated capability attempts must be observable and normalized into Parallax audit/action rows without treating development-stage semconv names as stable storage fields. |
 | [OpenAI Docs MCP](https://developers.openai.com/learn/docs-mcp) | OpenAI documents MCP as a docs integration surface for Codex and other agent clients. | Cross-client MCP is a distribution requirement, not a unique moat. |
 | [Codex MCP](https://developers.openai.com/codex/mcp), [Codex MCP server guide](https://developers.openai.com/codex/guides/agents-sdk), [Codex config reference](https://developers.openai.com/codex/config-reference), and local `codex 0.133.0` help | Codex supports MCP in the CLI and IDE extension with shared `config.toml` configuration. Current docs cover user and trusted-project config paths, stdio and Streamable HTTP, fixed `env`, whitelisted `env_vars` with local/remote source, remote stdio placement, bearer-token env vars, static/env HTTP headers, startup/tool timeouts, enabled/required servers, enabled/disabled tools, default and per-tool approval modes, OAuth resource/scopes/callback URL/port/credential store, and plugin-provided MCP servers. Codex can also run as a stdio MCP server exposing `codex` and `codex-reply` tools with approval-policy, sandbox, config, cwd, model, and profile controls. Local help confirms `codex mcp add` and `codex mcp-server --strict-config` flags. | Codex client fixtures must record config path/trust, local versus remote env/header sources, OAuth resource/scope/callback behavior, tool approval policy, plugin origin, required-server startup behavior, and Codex-as-MCP-server topology. A Codex MCP success does not by itself prove a safe read-only Parallax context surface. |
-| [Claude Code MCP docs](https://code.claude.com/docs/en/mcp) and local `claude mcp --help` on `2.1.150` | Claude Code supports local, project, user, plugin, claude.ai connector, and managed MCP sources with source precedence. Current docs define project `.mcp.json` approval, environment expansion in command/args/env/url/headers, OAuth callback/client credentials/metadata override/scope pinning, dynamic `headersHelper` commands gated by workspace trust, output warning and limit behavior, per-tool `_meta["anthropic/maxResultSizeChars"]`, and `claude mcp serve`. Local help confirms stdio/SSE/HTTP, headers, env vars, scope, client credentials, callback port, and warns that `mcp get`/`list` skip the workspace trust dialog and spawn stdio servers for health checks. | Claude Code client fixtures must record configuration source, precedence, auth/header source, output-budget behavior, workspace trust, health-check side effects, and whether Claude-as-MCP-server is in play. Cross-client MCP safety is not proven by a generic "Claude supports MCP" row. |
+| [Claude Code MCP docs](https://code.claude.com/docs/en/mcp) and local `claude mcp --help` on `2.1.150` | Claude Code supports local, project, user, plugin, claude.ai connector, and managed MCP sources with source precedence. Current docs define project `.mcp.json` approval, environment expansion in command/args/env/url/headers, OAuth callback/client credentials/metadata override/scope pinning, dynamic `headersHelper` commands gated by workspace trust, output warning and limit behavior, per-tool `_meta["anthropic/maxResultSizeChars"]`, Tool Search enabled by default with deferred tool loading, and `claude mcp serve`. Local help confirms stdio/SSE/HTTP, headers, env vars, scope, client credentials, callback port, and warns that `mcp get`/`list` skip the workspace trust dialog and spawn stdio servers for health checks. | Claude Code client fixtures must record configuration source, precedence, auth/header source, output-budget behavior, workspace trust, health-check side effects, deferred tool discovery/tool-search behavior, and whether Claude-as-MCP-server is in play. Cross-client MCP safety is not proven by a generic "Claude supports MCP" row or by raw `tools/list` availability alone. |
 | [NSA MCP security design considerations](https://www.nsa.gov/Portals/75/documents/Cybersecurity/CSI_MCP_SECURITY.pdf?ver=bmgiSbNQLP6Z_GiWtRt6bg%3D%3D) | NSA's May 2026 guidance treats MCP as widely adopted but security-maturing, with risks around dynamic tool invocation, implicit trust, context sharing, serialization, token/session handling, overbroad tools, and unauthorized servers. | The safe path is a narrow read-only adapter over canonical bundles, not a broad production-control toolset. |
 | [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md) | MCP is already present in Sentry-adjacent, Grafana, SigNoz, Coroot, Rustrak, and GoSnag-like surfaces. | Parallax must prove safer evidence semantics, not merely MCP availability. |
 | [MCP power boundary competitor check](mcp-power-boundary-competitor-check.md) | Current primary docs for Sentry, Grafana, OpenObserve, SigNoz, and Coroot show MCP surfaces ranging from coding-agent read/query to broad management, alert resolution, incident creation, ticket/Slack actions, or persisted RCA. | "Read-only" must exclude production/project mutation tools, not only generic shell and SQL tools. |
@@ -120,6 +120,7 @@ Each `manifest.json` should include:
     "otel_mcp_example_protocol_version": "2025-06-18",
     "codex_client": "<version-or-snapshot>",
     "claude_code_client": "<version-or-snapshot>",
+    "claude_code_tool_search": "default_enabled_checked_2026-05-25",
     "lightweight_mcp_watch": "rustrak_gosnag_management_raw_event_mcp_checked_2026-05-25"
   },
   "surfaces": ["cli", "http", "mcp"],
@@ -181,6 +182,9 @@ combination does not carry over to another.
   "task_support_for_context_tools": "forbidden",
   "annotations_treated_as_untrusted": true,
   "tools_list_changed_notifications_audited": true,
+  "server_instructions_present": true,
+  "tool_search_discovery_passed": true,
+  "deferred_tool_catalog_observed": false,
   "all_context_tools_read_only": true
 }
 ```
@@ -210,6 +214,10 @@ combination does not carry over to another.
   "client_output_warning_threshold_tokens": 10000,
   "client_output_limit_tokens": 25000,
   "tool_meta_max_result_size_chars": null,
+  "tool_search_enabled": true,
+  "tool_search_mode": "default|auto|disabled|unknown",
+  "deferred_tool_catalog_observed": true,
+  "tool_search_or_wait_tool_observed": "ToolSearch|WaitForMcpServers|none|unknown",
   "tool_result_persisted_to_disk": false,
   "claude_mcp_serve_exposed": false,
   "codex_config": {
@@ -447,6 +455,12 @@ output-budget decisions even when they call the same Parallax MCP server.
   fixture suite and publish client configuration rows. The rows must identify
   transport, config source, source precedence, auth/header source, output-limit
   behavior, and any client-specific server/tool hiding.
+- No cross-client discovery claim unless each claimed client proves both raw
+  catalog visibility and its normal deferred-discovery path. For Claude Code,
+  record Tool Search mode, whether tools were deferred, whether server
+  instructions and tool descriptions were sufficient to find the Parallax
+  context tools, and whether forbidden tools stayed absent from the discoverable
+  catalog.
 - No remote MCP claim unless protected-resource metadata, resource indicators
   in authorization and token requests, token audience validation, PKCE S256,
   HTTPS, localhost redirect policy, precise scope challenges, down-scoping
@@ -519,7 +533,8 @@ change:
   to affect fixture expectations;
 - OpenTelemetry semantic conventions or MCP semantic conventions change;
 - Codex, Claude Code, Cursor, VS Code/Copilot, or other claimed clients change
-  MCP configuration, output limits, auth, or resource behavior;
+  MCP configuration, output limits, auth, resource behavior, tool-search
+  behavior, or deferred-catalog behavior;
 - a lightweight Sentry-compatible or OTLP-native competitor ships a read-only,
   redacted, schema-bound MCP evidence bundle with projection-equivalence hashes;
 - Parallax bundle schema, redaction policy, auth policy, audit schema, or tool
