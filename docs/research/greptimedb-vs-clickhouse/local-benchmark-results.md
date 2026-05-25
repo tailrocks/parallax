@@ -3453,6 +3453,41 @@ cancels the method). 1M-row smoke; the slowdown ratios should hold/sharpen at vo
 `--time` for N∈{1000, 1000000}; GreptimeDB `COPY` the dumped CSVs, compare each engine's
 1M/1k time ratio.
 
+### Run 85 — 2026-05-25 — Reserved-keyword scan: GreptimeDB rejects ~28/42 observability column names, ClickHouse 1
+
+**Pass target.** A DDL-ergonomics gap repeatedly hit (Run 45: 7 reserved; Run 83: `id`).
+Systematically scan Parallax's likely column names against each parser → the complete
+quoting list for the buildable blueprint.
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned — latest, no
+bump). `CREATE TABLE … (col STRING)` per candidate; "reserved" = parser rejects unquoted.
+
+**Measured (42 Parallax-relevant names tested):**
+
+| Engine | rejected unquoted | examples |
+| --- | --- | --- |
+| **GreptimeDB** | **~28 / 42** | `id, value, timestamp, user, name, status, level, message, service, release, url, method, count, type, source, target, date, start, end, key, index, group, order, table, version, event, action, result` |
+| **ClickHouse** | **1 / 28** (same set) | only `index` |
+
+GreptimeDB **not** reserved: `host, duration, environment, project, fingerprint, error_type,
+span_id, trace_id, kind, attributes, labels, tags, time`.
+
+**Verdict.** **A real DDL-ergonomics papercut for GreptimeDB.** Most common observability
+column names — `value`, `timestamp`, `user`, `status`, `level`, `message`, `service`,
+`name`, `id`, `type`, `source`, `target`, `event`, `action`, `result`, `method`, `url` — are
+**reserved keywords** in GreptimeDB v1.0.2 and must be quoted (`"value"`); ClickHouse accepts
+**all but `index`** unquoted. **Not a blocker** (quoting works — the whole blueprint built
+live, Run 45), but Parallax's GreptimeDB DDL must **quote column identifiers defensively**,
+while ClickHouse's DDL is cleaner. A small ClickHouse authoring-ergonomics edge, offsetting
+GreptimeDB's *ingest* ergonomics edges (native protocols, schema-on-write, cap-free high-card).
+Corrects the blueprint's incomplete "7 reserved" note → the full set. Status: **logged;
+blueprint quoting rule fixed.**
+
+Caveat: tested 42 names; GreptimeDB's full reserved list is larger (it inherits SQL-standard
++ DataFusion keywords). Rule of thumb for the blueprint: **quote every column identifier.**
+
+**Reproduce.** `for col in value timestamp user status …; do CREATE TABLE t (ts TIMESTAMP TIME INDEX, $col STRING); done` on each — GreptimeDB errors "Cannot use keyword '$col'" on ~28; ClickHouse only on `index`.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

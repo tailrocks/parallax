@@ -70,10 +70,15 @@ auto-makes". This is a real ergonomics edge for GreptimeDB on the ingest/onboard
 ## Schema (real DDL)
 
 ```sql
--- NOTE: service, name, status, level, release, url, message are RESERVED keywords in
--- GreptimeDB v1.0.2's SQL parser and MUST be quoted ("col" or `col`) in DDL — verified
--- live (Run 45). Bench tables carry a bare `service` column only because the ingest
--- protocols (OTLP/InfluxDB line) auto-create schema outside the SQL parser.
+-- NOTE: GreptimeDB v1.0.2 reserves a BROAD keyword set — Run 85 found ~28/42 common
+-- observability column names rejected unquoted: id, value, timestamp, user, name, status,
+-- level, message, service, release, url, method, count, type, source, target, date, start,
+-- end, key, index, group, order, table, version, event, action, result (ClickHouse rejects
+-- only `index` of these). RULE: **quote every column identifier** ("col") in GreptimeDB DDL
+-- — it is the safe default given how many observability names are reserved. (Not reserved:
+-- host, duration, environment, project, fingerprint, error_type, span_id, trace_id,
+-- attributes, time.) Bench tables carry a bare `service` only because the ingest protocols
+-- (OTLP/InfluxDB line) auto-create schema outside the SQL parser. Verified live (Runs 45, 85).
 
 -- 1. Spans (anchored by trace_id; append-only)
 CREATE TABLE spans (
