@@ -51,9 +51,11 @@ language the operator will invest in. Full reasoning in **Decision question 6** 
 **The "fit not speed" thesis is now anchored on the query that matters most.** Pass
 35 measured the full anchored evidence-bundle composite (Q6 = Q1+Q2+Q3, Run 16): CH
 ~10 ms vs GreptimeDB ~33 ms, **both far under the 300 ms gate** — so for Parallax's
-dominant retrieval, **engine choice is not latency-bound**. The decision therefore
-rests on the *fit* pillars below (metrics-native, ingest/upsert ergonomics, retention
-cost, scaling), exactly where GreptimeDB leads — not on the analytical-scan latency
+dominant retrieval, **engine choice is not latency-bound**. **Re-verified Run 99 (no drift,
+numbers better): CH ~5 ms / GT ~16 ms** on the 3-signal bundle for one trace_id (warmer
+containers; same ~3× ratio, both still ≪ 300 ms) — the load-bearing anchor reproduces. The
+decision therefore rests on the *fit* pillars below (metrics-native, ingest/upsert ergonomics,
+retention cost, scaling), exactly where GreptimeDB leads — not on the analytical-scan latency
 where ClickHouse leads but which Parallax's anchored pattern rarely hits.
 
 ## The operator hypothesis, tested honestly

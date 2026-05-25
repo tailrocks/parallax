@@ -8,8 +8,10 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 98 local runs + B1–B15 cases. Recent: **Run 98 re-verified
-full-text log search end-to-end** (selective exact-term ~3× competitive: CH ~3 ms / GT ~10 ms via bloom+`matches_term`;
+cold/first-run measurement showed). 25 mechanism notes + 99 local runs + B1–B15 cases. Recent: **Run 99 re-verified THE
+load-bearing anchor** — the Q6 evidence-bundle composite (all signals for one trace_id) is still not latency-bound on
+either engine: CH ~5 ms / GT ~16 ms warm, both ≪ 300 ms (faster than Run 16's 10/33, same ~3× ratio, no drift) — the
+"fit not speed" thesis holds. **Run 98 re-verified full-text log search end-to-end** (selective exact-term ~3× competitive: CH ~3 ms / GT ~10 ms via bloom+`matches_term`;
 the ~18× `matches()`-on-bloom artifact still full-scans ~155 ms; broad-term ~12× scan-bound — Runs 48–49 reproduce, no
 drift; adopt-native-logs = ADOPT structure + ADD message fulltext, carry the pairing rule). **Run 97 re-verified the
 trace-waterfall hot path** (flat span fetch CH ~3 ms / GT ~18–20 ms warm, both ≪ 300 ms; in-DB table-self-join recursive

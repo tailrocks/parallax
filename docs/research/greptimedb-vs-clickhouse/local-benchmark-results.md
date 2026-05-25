@@ -4090,6 +4090,56 @@ CH `SELECT count() WHERE hasToken(message,'<tok>')` vs GT `… WHERE matches_ter
 (expect ~3 / ~10 ms). GT `matches(message,'<tok>')` on the bloom index → ~155 ms full scan (the
 artifact). Broad: `'timeout'` → CH ~7 ms / GT ~88 ms (~12×). Warm ×5–10.
 
+### Run 99 — 2026-05-25 — THE load-bearing anchor re-verified: Q6 evidence-bundle composite still not latency-bound on either (CH ~5 ms / GT ~16 ms, both ≪ 300 ms; faster than Run 16, no drift)
+
+**Pass target.** Re-verify the single most load-bearing claim of the whole verdict — the one the
+entire "**fit, not speed**" thesis rests on: Parallax's *dominant* query, the **anchored
+evidence-bundle assembly** (fetch every signal for one `trace_id`), is **not latency-bound on
+either engine** (Run 16: CH ~10 ms / GT ~33 ms, both ≪ the 300 ms interactive gate). If this
+ever stops reproducing, the verdict's foundation weakens.
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned live — latest stable,
+no bump). Signal tables, parity re-confirmed: `spans`/`spans_idx` 1M (trace_id INVERTED on GT,
+`ORDER BY(trace_id,ts)` on CH), `logs` 214,287, `error_events` 2,226. Bundle for one trace_id
+present in all three signals (`b1a36ee6…`) = **18 rows** (14 spans + errors + logs). Method: CH
+`--time`, GT `execution_time_ms`, warm.
+
+**Q6 composite** — the normalized 3-signal bundle, one query (app would fan these out in parallel;
+the UNION is the conservative single-round-trip sum):
+
+```sql
+SELECT ts,'span'  k, name    d FROM spans      WHERE trace_id='b1a36ee6…'
+UNION ALL SELECT ts,'error' k, message d FROM error_events WHERE trace_id='b1a36ee6…'
+UNION ALL SELECT ts,'log'   k, message d FROM logs         WHERE trace_id='b1a36ee6…'
+ORDER BY ts
+```
+
+| Engine | warm reps (ms) | warm median | vs Run 16 |
+| --- | --- | --- | --- |
+| ClickHouse | `7 5 5 4 5 4 5 5 5 4` | **~5 ms** | faster (Run 16 ~10 ms) |
+| GreptimeDB | `94 16 16 17 18 13 19 18 13 12` | **~16 ms** | faster (Run 16 ~33 ms) |
+| **Ratio** | | **~3×** | tie holds, both ≪ 300 ms |
+
+**Verdict — the load-bearing anchor reproduces; no drift, and the absolute numbers are better.**
+
+- **Q6 evidence-bundle assembly is NOT latency-bound on either engine** — CH ~5 ms / GT ~16 ms,
+  both **≪ the 300 ms interactive gate**. The whole-bundle round trip is sub-perceptible on
+  GreptimeDB. This is the query the entire product is built on, and the "fit, not speed" thesis
+  stands: ClickHouse's ~3× engine edge buys **nothing perceptible** on the dominant retrieval.
+- **Both faster than Run 16** (CH 10→5, GT 33→16) — warmer containers (12 h uptime, OS page cache
+  hot) + the GT first-rep ~94 ms cold artifact warming to ~16 ms (the now-familiar cold/warm
+  divergence, not a regression). The ~3× ratio is unchanged.
+- **GreptimeDB pruned spans via the `trace_id` INVERTED index** (14 of 1M); `logs`/`error_events`
+  are small enough that even an un-indexed `trace_id` scan is cheap here. **At GB-scale logs the
+  blueprint's `trace_id` index on logs matters** — already in the adopt-native-logs design (Run 98:
+  ADOPT structure + ADD trace_id/message index). Carry it.
+- **Adopt-native:** the bundle spans all three native signal tables (metrics/logs/traces each carry
+  `trace_id`), assembled **app-side** — works on the native schemas (Runs 86/98). ADOPT stands.
+
+**Reproduce.** Find a trace_id in all three signals (`SELECT trace_id FROM spans WHERE trace_id IN
+(SELECT trace_id FROM logs) AND trace_id IN (SELECT trace_id FROM error_events) LIMIT 1`); run the
+UNION-ALL composite above (GT uses `spans_idx`), warm ×10. Expect CH ~5 ms / GT ~16 ms, both ≪ 300.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
