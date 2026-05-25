@@ -41,6 +41,7 @@ The central rule:
 | [Sentry trace propagation](https://develop.sentry.dev/sdk/foundations/trace-propagation/) | Sentry trace propagation uses `sentry-trace` and `baggage`; SDKs can optionally emit W3C `traceparent` for OpenTelemetry interop. | Compatibility is only valuable for Parallax if Sentry error context can join to OTLP traces/logs. |
 | [Sentry Relay repository](https://github.com/getsentry/relay) | Relay remains the closest Rust ingestion reference, but it is a gateway/processing system rather than a tiny Parallax dependency. | Use Relay as a reference oracle where useful, not as the operational architecture. |
 | [MCP 2025-11-25 tools spec](https://modelcontextprotocol.io/specification/2025-11-25/server/tools), [MCP base protocol](https://modelcontextprotocol.io/specification/2025-11-25/basic), and [RFC 8785 JCS](https://www.rfc-editor.org/rfc/rfc8785.html) | MCP tools can return `structuredContent` validated by `outputSchema`; MCP reserves `_meta` for protocol metadata; JCS provides a deterministic JSON representation suitable for hashes. | Sentry fixture outputs cannot be considered agent-ready unless bundle projections are structured, schema-valid, and hash-equivalent across access surfaces. |
+| [Sentry envelope item policy recheck](sentry-envelope-item-policy-recheck.md) | Current Rust, JavaScript, Go, and Python SDK/protocol sources expose different envelope item sets. JavaScript `@sentry/core` `10.53.1` includes profile chunks, replay, span, log, metric, trace metric, raw security, feedback, and client-report item families; Go `v0.46.2` exposes client-report/log/trace-metric constants; Python `2.60.0` emits profile/profile-chunk/check-in/session items. | Fixture scope must include tolerant event-first parsing and explicit unsupported-item outcomes beyond Rust `sentry-types`' current modeled set. |
 | [Bugsink Sentry SDK compatibility](https://www.bugsink.com/sentry-sdk-compatible/), [Bugsink simplicity recheck](bugsink-sentry-compatible-simplicity-recheck.md), [Rustrak recheck](rustrak-sentry-mcp-protocol-recheck.md), [Urgentry](https://urgentry.com/), and [Urgentry recheck](urgentry-sentry-tiny-benchmark-recheck.md) | Lightweight competitors publicly use DSN-change or drop-in Sentry replacement language. Bugsink's current docs explicitly frame migration as keeping the SDK and updating the DSN. Rustrak is Rust-first and envelope-focused, but its own drift report says non-event Sentry items such as sessions, transactions, client reports, attachments, and spans are not stored. Urgentry goes the other direction: source confirms broader side-effect handling for transactions, sessions, replays, profiles, client reports, check-ins, attachments, and metrics. | Parallax needs more precise evidence and wording; simple compatibility language is already crowded, and "Sentry-compatible" must distinguish error-event envelopes, explicit unsupported-item outcomes, and broad Sentry replacement behavior. |
 
 ## 2026-05-25 Freshness Pass
@@ -50,25 +51,43 @@ real fixture results.
 
 Result: **no package-version drift found** from the current ledger snapshot, and
 the Sentry Rust item model remains non-exhaustive with `log` and `trace_metric`
-container items. This does **not** advance Parallax beyond `not_measured`.
-Registry freshness proves only that the source snapshot is current; it does not
-prove parser, normalization, grouping, redaction, idempotency, trace-correlation,
-canonical-bundle, projection-equivalence, MCP structured-output, or
-unsupported-item behavior.
+container items. The same-day item-policy recheck expands the unsupported-item
+fixture set beyond Rust because JavaScript, Go, and Python SDK sources expose
+additional item families. This does **not** advance Parallax beyond
+`not_measured`. Registry freshness proves only that the source snapshot is
+current; it does not prove parser, normalization, grouping, redaction,
+idempotency, trace-correlation, canonical-bundle, projection-equivalence, MCP
+structured-output, or unsupported-item behavior.
 
 | Package/model | Primary source checked | Current version or model | Registry/source timestamp | Implication |
 | --- | --- | --- | --- | --- |
 | Rust `sentry` | [crates.io API](https://crates.io/api/v1/crates/sentry) | `0.48.2` | crate updated `2026-05-11T09:10:36.368466Z` | No SDK-version drift from the existing Rust fixture target. |
-| Rust `sentry-types` | [crates.io API](https://crates.io/api/v1/crates/sentry-types) and [docs.rs envelope source](https://docs.rs/sentry-types/latest/src/sentry_types/protocol/envelope.rs.html) | `0.48.2`; envelope/item enums are non-exhaustive; modeled items still include `event`, `session`, `sessions`, `transaction`, `attachment`, `check_in`, `log`, and `trace_metric`. | crate updated `2026-05-11T09:08:58.215870Z` | Fixture matrix still needs `log`, `trace_metric`, and unknown future-item outcomes before any multi-SDK smoke claim. |
+| Rust `sentry-types` | [crates.io API](https://crates.io/api/v1/crates/sentry-types) and [docs.rs envelope source](https://docs.rs/sentry-types/latest/src/sentry_types/protocol/envelope.rs.html) | `0.48.2`; envelope/item enums are non-exhaustive; modeled items still include `event`, `session`, `sessions`, `transaction`, `attachment`, `check_in`, `log`, and `trace_metric`. | crate updated `2026-05-11T09:08:58.215870Z` | Rust fixtures still need `log`, `trace_metric`, and unknown future-item outcomes, but Rust's modeled set is not enough for multi-SDK item safety. |
 | JavaScript `@sentry/browser` | [npm registry](https://registry.npmjs.org/@sentry%2fbrowser) | `10.53.1` | package modified `2026-05-12T17:07:50.879Z`; version published `2026-05-12T17:07:50.769Z` | Browser smoke remains a later L4 target, not v0 proof. |
 | JavaScript `@sentry/node` | [npm registry](https://registry.npmjs.org/@sentry%2fnode) | `10.53.1` | package modified `2026-05-12T17:07:53.853Z`; version published `2026-05-12T17:07:53.694Z` | Node remains optional smoke only if migration demand needs it. |
 | JavaScript `@sentry/react` | [npm registry](https://registry.npmjs.org/@sentry%2freact) | `10.53.1` | package modified `2026-05-12T17:08:04.434Z`; version published `2026-05-12T17:08:04.309Z` | React belongs in the source snapshot because frontend capture is a roadmap branch, but it does not change the Rust-first v0 target. |
 | Go `sentry-go` | [Go module proxy](https://proxy.golang.org/github.com/getsentry/sentry-go/@latest) | `v0.46.2` | module timestamp `2026-05-04T09:47:49Z`; tag hash `1d2598e7580f52f201f06ce6b5d819c11a977f4c` | Go smoke remains a later L4 target after Rust L1/L2 pass. |
 | Python `sentry-sdk` | [PyPI JSON](https://pypi.org/pypi/sentry-sdk/json) | `2.60.0` | upload `2026-05-13T13:34:52.516271Z` | Python remains smoke/adoption research, not part of the first compatibility claim. |
 
-Freshness conclusion: keep the version matrix, keep the item-drift fixture
-requirements, and keep public wording at **planned Sentry-compatible ingestion**
-until real SDK-generated envelopes pass the ledger.
+Freshness conclusion: keep the version matrix, incorporate the broader
+unsupported-item fixture requirements from the item-policy recheck, and keep
+public wording at **planned Sentry-compatible ingestion** until real
+SDK-generated envelopes pass the ledger.
+
+## 2026-05-25 Item-Policy Recheck
+
+Pass target: falsify whether the current fixture scope can stay Rust/error-event
+only after Urgentry and current SDK sources show broader envelope item families.
+
+Result: **fixture scope widened, product scope not widened**. Parallax should
+remain event-first for v0, but `unsupported-item-results.jsonl` must cover
+cross-SDK item families including `client_report`, `check_in`, `profile`,
+`profile_chunk`, replay items, span containers, logs, metrics, trace metrics,
+raw security, legacy/competitor-observed `statsd`, and unknown future items.
+The parser contract must prove a valid `event` item is not poisoned by
+unsupported side items.
+
+See [Sentry envelope item policy recheck](sentry-envelope-item-policy-recheck.md).
 
 ## Claim Levels
 
@@ -151,7 +170,7 @@ Each `manifest.json` should include:
     "sentry-go": "v0.46.2",
     "sentry-sdk-python": "2.60.0"
   },
-  "envelope_item_model_snapshot": ["event", "session", "sessions", "transaction", "attachment", "check_in", "log", "trace_metric", "unknown_future_item"],
+  "envelope_item_model_snapshot": ["event", "transaction", "attachment", "session", "sessions", "client_report", "check_in", "user_report", "feedback", "profile", "profile_chunk", "replay_event", "replay_recording", "span", "log", "metric", "trace_metric", "raw_security", "statsd_legacy_or_competitor", "unknown_future_item"],
   "endpoint": "POST /api/<project_id>/envelope/",
   "unsupported_item_policy": "explicit_outcome",
   "size_limits": {},
@@ -293,13 +312,15 @@ with one grouping/redaction version does not automatically carry over to another
 ```json
 {
   "fixture_id": "rust_log_container",
-  "item_type": "log|trace_metric|attachment|session|profile|replay_recording|unknown_future_item",
+  "item_type": "client_report|check_in|log|metric|trace_metric|span|attachment|session|profile|profile_chunk|replay_recording|raw_security|statsd_legacy_or_competitor|unknown_future_item",
   "item_present": true,
   "event_item_present": true,
   "event_processing_poisoned": false,
-  "outcome": "accepted_event_only|metadata_only|rejected_with_outcome|unsupported_ref_only",
+  "outcome": "accepted_event_only|metadata_only|retry_safe_drop_with_outcome|unsupported_ref_only|hard_reject_malformed",
   "retry_safe": true,
   "agent_visible_payload": false,
+  "raw_ref_retained": false,
+  "response_status": 202,
   "notes": []
 }
 ```

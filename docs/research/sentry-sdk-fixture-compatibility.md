@@ -38,6 +38,7 @@ inferred from this fixture design alone.
 | [Sentry Relay repository](https://github.com/getsentry/relay) | Relay is the real Rust reference gateway, but processing mode performs full normalization/filtering/rate limiting and produces events into Kafka; its integration tests require Redis/Kafka. Parallax should use Relay as a compatibility reference, not copy its operational shape. |
 | [Sentry distributed tracing SDK spec](https://develop.sentry.dev/sdk/telemetry/traces/distributed-tracing) | Sentry propagates `sentry-trace` and `baggage`, with optional W3C `traceparent` for OpenTelemetry interop. Parallax must map `contexts.trace` and propagated headers into OTLP trace joins. |
 | [MCP 2025-11-25 tools spec](https://modelcontextprotocol.io/specification/2025-11-25/server/tools), [MCP base protocol](https://modelcontextprotocol.io/specification/2025-11-25/basic), and [RFC 8785 JCS](https://www.rfc-editor.org/rfc/rfc8785.html) | MCP tools can return schema-valid `structuredContent`; MCP reserves `_meta` for protocol metadata; JCS provides deterministic JSON for hashing. Fixture outputs must prove the same redacted Sentry evidence bundle survives bundle JSON, Markdown, CLI, HTTP, and MCP projections. |
+| [Sentry envelope item policy recheck](sentry-envelope-item-policy-recheck.md) | Current Rust, JavaScript, Go, and Python SDK/protocol sources expose different item sets. JavaScript and Python are broader than current Rust `sentry-types`, and Go exposes `client_report`, `log`, and `trace_metric` item constants. | The fixture gate must test tolerant event-first parsing plus explicit unsupported-item outcomes across SDKs, not only Rust's current modeled item set. |
 
 ## Compatibility Levels
 
@@ -112,6 +113,18 @@ seeded PII/secret canaries from
 | `rust_log_trace_metric_containers` | `log` and `trace_metric` envelope container items plus an event. | Current container items are explicitly outcome-recorded; they do not poison error-event processing or leak unsupported payloads to agents. |
 | `rust_attachment_disabled` | Event plus attachment item. | Attachment rejected or metadata-only according to v0 policy; no raw attachment in agent bundle. |
 
+## Cross-SDK Unsupported-Item Fixture Subset
+
+Run these before claiming `sentry_sdk_compatible_error_ingest`, even though v0
+does not support the item payloads as product features:
+
+| Fixture | Source SDK | Must prove |
+| --- | --- | --- |
+| `go_event_plus_client_report` | `sentry-go` `v0.46.2` | `client_report` is outcome-recorded, retry-safe, and not agent-visible. |
+| `js_event_plus_profile_replay_span_log_metric` | `@sentry/core` / JS SDK `10.53.1` | JS-only broader item families are classified and safely dropped/deferred. |
+| `python_profile_chunk_checkin_session` | `sentry-sdk` `2.60.0` | Profile/profile-chunk/check-in/session items produce explicit outcomes. |
+| `unsupported_only_envelope` | Synthetic plus one real SDK where possible | Unsupported-only envelopes do not create issues and do not trigger unsafe retries. |
+
 This matrix is enough to validate the first product wedge without pretending to
 support browser replay, profiling, release health, or full cross-language
 grouping.
@@ -144,8 +157,9 @@ Use a two-layer approach:
 
 Reasons:
 
-- Sentry item names and item containers are evolving (`log`, `trace_metric`,
-  profile chunks, and future item types).
+- Sentry item names and item containers are evolving (`log`, `metric`,
+  `trace_metric`, `span`, `client_report`, `raw_security`, profile chunks, and
+  future item types).
 - Relay's schema is the closest thing to the real ingestion contract.
 - Parallax should keep unknown fields/items forward-compatible without turning
   unknown data into agent-visible context.
@@ -190,8 +204,9 @@ Pass criteria for v0:
   JSON;
 - `event` item envelopes parse with and without optional item `length`;
 - unsupported items do not poison supported `event` processing;
-- `log`, `trace_metric`, attachment, session, replay/profile-like, and unknown
-  items have explicit outcomes and are not agent-visible by default;
+- `client_report`, `check_in`, `log`, `metric`, `trace_metric`, `span`,
+  attachment, session, replay/profile-like, raw-security, and unknown items have
+  explicit outcomes and are not agent-visible by default;
 - malformed or oversized payloads fail before expensive normalization;
 - normalized snapshots are stable and reviewable;
 - grouping snapshots are versioned and deterministic;
@@ -250,6 +265,9 @@ This keeps Parallax narrow, testable, and defensible.
 
 - [Sentry-compatible ingestion](sentry-compatible-ingestion.md) - this note
   turns its compatibility section into a fixture gate.
+- [Sentry envelope item policy recheck](sentry-envelope-item-policy-recheck.md)
+  - keeps the parser/item policy explicit across current Rust, JavaScript, Go,
+  and Python SDK item surfaces.
 - [Sentry SDK compatibility ledger](sentry-sdk-compatibility-ledger.md) - turns
   fixture runs into claim levels, row schemas, expiry triggers, and allowed
   product wording.

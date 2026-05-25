@@ -881,6 +881,8 @@ What opportunities remain ABOVE OTEL?
 
 Research:
 - Sentry SDK protocol
+- Sentry envelope item models, tolerant parsing, and explicit unsupported-item
+  outcome policy
 - Relay architecture
 - grouping algorithms
 - issue fingerprinting

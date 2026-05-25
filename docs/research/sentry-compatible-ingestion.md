@@ -120,21 +120,35 @@ fixtures, not hand-written JSON. The focused fixture strategy is specified in
 [Sentry SDK fixture compatibility gate](sentry-sdk-fixture-compatibility.md).
 The result and product-wording contract is the
 [Sentry SDK compatibility ledger](sentry-sdk-compatibility-ledger.md).
+The current cross-SDK item-policy refresh is captured in
+[Sentry envelope item policy recheck](sentry-envelope-item-policy-recheck.md).
 
 ## Envelope Item Support
 
-Start with a strict item policy.
+Start with a strict support policy and a tolerant parser.
+
+Do not let unsupported side items poison a valid supported `event` item. A
+strict typed parser such as current `sentry-types` is useful as an oracle, but
+the production ingress path needs to classify unknown item headers and produce
+explicit unsupported outcomes without making unsupported payloads agent-visible.
 
 | Item | v0 decision | Reason |
 | --- | --- | --- |
 | `event` | Support first. | Core error-event object and main compatibility value. |
-| `transaction` | Parse later for correlation only. | OTLP should be the primary trace path. |
+| `transaction` | Unsupported/deferred outcome first; parse later for correlation only if fixtures justify it. | OTLP should be the primary trace path. |
 | `attachment` | Metadata-only first, bounded storage later. | Attachments are useful but dangerous for cost and secrets. |
-| `session` | Drop with explicit outcome. | Release health is not in the MVP. |
-| `replay_event` / `replay_recording` | Reject. | Session replay is a massive storage and privacy surface. |
-| `profile` | Reject. | Profiling is later and should likely come through OTEL/profiling-specific design. |
-| `log` / `trace_metric` / Sentry span containers | Explicit unsupported outcome first; prefer OTLP for normalized telemetry. | Current `sentry-types` models `log` and `trace_metric` containers, but Parallax should not chase Sentry-specific telemetry extensions when OTEL is the core protocol. |
-| Unknown item | Store bounded raw reference and drop normalized processing. | Preserves forward-compat debugging without pretending support. |
+| `session` / `sessions` | Drop with explicit outcome. | Release health is not in the MVP. |
+| `client_report` | Internal telemetry outcome only. | Useful for SDK drop accounting later, not agent context now. |
+| `check_in` | Unsupported/deferred monitor outcome. | Cron monitor support is outside v0. |
+| `user_report` / `feedback` | Deferred feedback outcome; metadata only if linked safely. | Human feedback can contain PII. |
+| `replay_event` / `replay_recording` | Unsupported/deferred replay outcome. | Session replay is a massive storage and privacy surface. |
+| `profile` / `profile_chunk` | Unsupported/deferred profiling outcome. | Profiling is later and should likely come through OTEL/profiling-specific design. |
+| `span` / streamed span containers | Explicit unsupported outcome first; prefer OTLP. | Sentry spans should not replace OTLP trace conformance in v0. |
+| `log` | Explicit unsupported outcome first; prefer OTLP logs. | Sentry log envelopes are current in JS/Go/Rust surfaces, but OTLP is the normalized evidence path. |
+| `metric` / `trace_metric` | Explicit unsupported outcome first; prefer OTLP metrics. | Avoid a second metrics protocol before OTLP conformance is proven. |
+| `raw_security` | Reject or unsupported security outcome. | Security reports need their own trust/redaction model. |
+| `statsd` | Legacy/competitor-observed unsupported metric outcome. | Keep retry-safe behavior without claiming support. |
+| Unknown item | Store bounded raw reference only if policy allows and drop normalized processing. | Preserves forward-compat debugging without pretending support. |
 
 The important compatibility behavior is not accepting every item. It is failing
 predictably, returning useful status/rate-limit behavior, preserving enough raw
