@@ -37,7 +37,7 @@ and normalization of agent execution traces.
 | [Codex MCP](https://developers.openai.com/codex/mcp) | Codex supports local stdio MCP servers, Streamable HTTP servers, bearer-token env vars, OAuth login/logout for supported HTTP servers, static or environment HTTP headers, `enabled_tools`, `disabled_tools`, default and per-tool approval modes, OAuth callback overrides, plugin-provided MCP servers, and `codex mcp-server` as a stdio server for other clients. | Codex MCP config is both secret-bearing and policy-bearing. Agent-session fixture rows must record transport, token/header source, OAuth mode, enabled/disabled tool lists, approval mode, and plugin/server origin before MCP tool-call rows are treated as safe or comparable. |
 | [Claude Code monitoring](https://code.claude.com/docs/en/monitoring-usage) | Claude Code exports opt-in OpenTelemetry metrics, logs/events, and optional beta traces; prompt text, tool details, tool content, and raw API bodies are disabled by default and require explicit flags. It does not pass generic `OTEL_*` exporter variables to subprocesses, but when tracing is active Bash/PowerShell inherit `TRACEPARENT`. | Claude Code is the strongest native OTel target, but content capture must remain opt-in/redacted and subprocess coverage must distinguish trace-context inheritance from full telemetry-exporter inheritance. |
 | [Claude Code CLI reference](https://code.claude.com/docs/en/cli-usage) and local `claude --help` | Current docs and local `2.1.150` help show `--output-format stream-json` in print mode, `--include-hook-events` for hook lifecycle events in that stream, `--include-partial-messages`, stream JSON input, replayed user messages, session IDs, permission modes, and MCP config flags. | Claude stream JSON is a separate non-interactive structured adapter claim. It can support fixture automation and hook-event validation, but it must not be counted as interactive OTel coverage or as default-safe prompt/tool-content capture. |
-| [Amp manual](https://ampcode.com/manual) | Amp supports streaming JSON output in `--execute` mode for programmatic integration and real-time conversation monitoring; optional thinking blocks extend the schema. The same manual documents TypeScript plugins, project/system/global plugin locations, lifecycle events such as `session.start`, `agent.start`, `tool.call`, `tool.result`, and `agent.end`, and plugin activation for both interactive sessions and `amp --execute` runs. | Amp should be measured through both plugin-event fixtures and non-interactive stream fixtures. Thinking blocks are sensitive opt-in, not default capture. Plugin events are a stronger interactive capture surface than the prior wrapper/thread-ref assumption, but still need payload and version proof. |
+| [Amp manual](https://ampcode.com/manual) | Amp supports streaming JSON output in `--execute` mode for programmatic integration and real-time conversation monitoring; optional thinking blocks extend the schema and are not Claude Code compatible. `--stream-json-input` supports multi-message stdin and a `steer` marker. The same manual documents TypeScript plugins, project/system/global plugin locations, lifecycle events such as `session.start`, `agent.start`, `tool.call`, `tool.result`, and `agent.end`, plugin activation for both interactive sessions and `amp --execute` runs, and explicitly notes there is no `session.end` event. Amp does not ask before running tools by default; `amp.permissions`, `amp.guardedFiles.allowlist`, or `amp.dangerouslyAllowAll=false` activate an internal permissions plugin. | Amp should be measured through both plugin-event fixtures and non-interactive stream fixtures. Thinking blocks, stdin messages, `steer` messages, and image/base64 payloads are sensitive input modes, not default-safe capture. Plugin events are a stronger interactive capture surface than the prior wrapper/thread-ref assumption, but still need payload, permissions, and version proof. |
 | [OpenCode CLI](https://opencode.ai/docs/cli/) | OpenCode supports `run --format json` raw JSON events, session continuation/forking, `session list --format json`, export JSON with `--sanitize`, headless `serve`, ACP over nd-JSON, stats, and permission/thinking flags. | OpenCode is a strong JSON/export/plugin/API/protocol adapter target; `--sanitize` is helpful but does not replace Parallax redaction, and `--thinking` / `--dangerously-skip-permissions` must be recorded as sensitive run configuration. |
 | [OpenCode plugins](https://opencode.ai/docs/plugins/) | Plugins expose documented event names including `command.executed`, `file.edited`, `permission.asked`, `permission.replied`, `session.*`, `shell.env`, `tool.execute.before`, and `tool.execute.after`. | OpenCode can provide deep structured events without terminal parsing, but support must be proven per enabled event class and must not be inferred from run JSON or export JSON alone. |
 | [OpenTelemetry semantic conventions 1.41.0](https://opentelemetry.io/docs/specs/semconv/) | Current semconv catalog includes GenAI, MCP, CLI, process, CI/CD, VCS, exception, and test areas. | Adapters should record source semantic-convention versions instead of hard-coding unstable span shapes into Parallax storage. |
@@ -155,6 +155,17 @@ approves a redacted synthetic fixture.
     "hook_source": "none|user|project|managed|plugin|mixed",
     "hook_trust_mode": "persisted|bypassed|not_applicable|unknown",
     "plugin_hooks_enabled": false,
+    "amp_config": {
+      "mode": "smart|deep|rush|large|unknown",
+      "stream_json": false,
+      "stream_json_input": false,
+      "stream_json_thinking": false,
+      "steer_messages_present": false,
+      "permission_settings_present": false,
+      "guarded_files_allowlist_present": false,
+      "dangerously_allow_all": false,
+      "plugin_decision_actions_observed": []
+    },
     "mcp_config": {
       "servers_configured": [],
       "transport_modes": [],
@@ -376,12 +387,18 @@ approves a redacted synthetic fixture.
   modes, token/header sources, OAuth mode, enabled/disabled tool lists,
   default/per-tool approval modes, plugin-provided server origins, and whether
   the run used `codex mcp-server` as a stdio server.
-- Amp streaming JSON claims apply to `--execute --stream-json`.
+- Amp streaming JSON claims apply to `--execute --stream-json`; they must
+  record whether `--stream-json-input`, `--stream-json-thinking`, queued
+  `steer` messages, image/base64 payloads, or stdin closure behavior were part
+  of the fixture.
 - Amp plugin claims apply per plugin location, activation mode, event class, and
   run mode. A plugin fixture must cover interactive and/or `--execute` separately
   and must not infer `session.end` support from the documented lifecycle, because
-  the manual calls out `session.start` but does not document a `session.end`
-  event.
+  the manual explicitly says there is no `session.end` event.
+- Amp permission claims must record whether default no-approval behavior,
+  `amp.permissions`, `amp.guardedFiles.allowlist`,
+  `amp.dangerouslyAllowAll=false`, or custom plugin decisions produced
+  `allow`, `reject-and-continue`, `modify`, or `synthesize` outcomes.
 - OpenCode `--sanitize` is a source feature, not Parallax redaction proof.
   Parallax redaction must still pass on normalized projections.
 - OpenCode plugin support requires coverage rows for enabled event classes.
