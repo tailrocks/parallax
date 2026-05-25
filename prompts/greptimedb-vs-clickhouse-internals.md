@@ -39,8 +39,9 @@ either the benchmark or the analysis is wrong — flag that explicitly.
 
 # Prompt Maintenance Rule
 
-This prompt is durable operator intent for `/loop` runs, not a disposable input.
-When the operator clarifies the comparison target, names a new subsystem to
+This prompt is durable operator intent for repeated research runs, not a
+disposable input. When the operator clarifies the comparison target, names a new
+subsystem to
 dissect, changes the evaluation criteria, pins a different version, or confirms a
 finding, update this file in the same change if a future run would otherwise use
 stale instructions. Do not keep important direction changes only in chat or only
@@ -48,21 +49,18 @@ in the generated notes.
 
 ---
 
-# How To Run
+# Run Mode
 
-This is a `/loop` brief. It never self-completes — it runs deepening passes until
-the operator stops it by hand.
+This brief is meant to run indefinitely. It never self-completes — it runs
+deepening passes until the operator stops it by hand. Treat it as continuous: do
+not converge on a single deliverable and stop.
 
-```text
-/loop prompts/greptimedb-vs-clickhouse-internals.md
-```
-
-Self-paced (no interval): the agent starts the next pass as soon as one finishes,
-because nothing external is being watched. Each pass picks the single
-highest-value unanswered internals question, researches it against primary
-sources and source code, writes or revises one focused note under
-`docs/research/greptimedb-vs-clickhouse/`, then commits and pushes per
-[`AGENTS.md`](../AGENTS.md). Do not declare the comparison "done" just because the
+Run passes back to back (nothing external is being watched, so there is no reason
+to idle between them). Each pass picks the single highest-value unanswered
+internals question, researches it against primary sources and source code, writes
+or revises one focused note under `docs/research/greptimedb-vs-clickhouse/`, then
+commits and pushes per [`AGENTS.md`](../AGENTS.md). Do not declare the comparison
+"done" just because the
 output files exist; keep deepening until told to stop.
 
 ---
@@ -146,10 +144,27 @@ mechanism analysis, per the repo research conventions.
    load-bearing claims against the actual code. When a doc and the code disagree,
    trust the code and note the discrepancy.
 
-4. **Predict, then check against the benchmark.** Where the runnable benchmark
+4. **Gather the public performance claims, then verify each against the code.**
+   Search the internet for what each project says about its own speed and what
+   others have measured: vendor benchmark posts, "X is faster than Y" claims,
+   engineering blogs, conference talks, design RFCs and proposals, release notes
+   and changelogs (especially performance work — new index types, codec changes,
+   execution-engine rewrites, compaction or merge improvements), GitHub issues and
+   PRs that landed an optimization, and independent third-party benchmarks. For
+   every claim that matters, do not record it as fact — trace it to the mechanism
+   in the source that would produce it, and rate it:
+   *confirmed by code*, *plausible but unverified*, *contradicted by code*, or
+   *workload-specific (true only under stated conditions)*. A claim that cannot be
+   located in the implementation is a marketing assertion, not evidence. Note the
+   claim's date and the version it referred to (claims go stale as both projects
+   ship improvements — re-check against the current pinned version).
+
+5. **Predict, then check against the benchmark.** Where the runnable benchmark
    (`storage-benchmark-prototype.md`) has produced numbers, the internals analysis
    must explain them. Where it has not, state the internals-based prediction so a
-   later benchmark run can confirm or falsify it.
+   later benchmark run can confirm or falsify it. When a public claim, the code
+   reasoning, and the benchmark disagree, that three-way conflict is a top-priority
+   finding — resolve it or flag it loudly.
 
 ---
 
