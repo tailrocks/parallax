@@ -818,6 +818,16 @@ Research companies/products/projects like:
 - Meta observability tooling
 - Amazon incident tooling
 
+Direct open / self-hosted competitors to track every run (these sit closest to
+the Parallax wedge and must be re-checked for whether they have closed the gap on
+open + self-hosted + agent-native + evidence bundles + Sentry-compatible ingest):
+- OpenObserve (Rust, object-storage, AGPL; AI SRE agent + MCP, currently
+  Enterprise-gated, OTLP-only — watch whether the agent layer moves into the
+  free tier or Sentry ingest is added)
+- SigNoz (Go/ClickHouse; open self-hostable agent-native MCP — watch for a
+  lighter footprint, Sentry ingest, or an evidence-graph/bundle abstraction)
+- Coroot (eBPF, Go; self-hosted AI RCA)
+
 Also perform a technical review of similar tools that provide observability for
 agents and use them as references, not as a final product definition. Compare
 their latest public/stable versions and focus on implementation details:
