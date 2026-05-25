@@ -2,7 +2,8 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 39. White-box teardown of how each engine handles **duplicate keys and
+Status: pass 39, re-verified pass 96 (Run 59 — reproduces; partial-upsert loss proven).
+White-box teardown of how each engine handles **duplicate keys and
 updates** — when a row with an existing key is overwritten, and what a query sees.
 Decision-relevant because several Parallax signals are *upsert-shaped*: the **current
 status of an issue/fingerprint** (Q2 issue-history wants the latest), **deploy
@@ -61,11 +62,25 @@ read time. Consequences:
   deleted (`ReplacingSortedAlgorithm.cpp:58` honors `is_deleted_column`), but only at
   merge/FINAL — same eventual semantics.
 
-**Measured (Run 19):** two inserts of key=1 (ver 1 then 2) = two parts. Plain
-`SELECT` returned **both** rows (`old` and `new`); `SELECT … FINAL` returned **one**
-(`new`, ver=2 wins); after `OPTIMIZE TABLE … FINAL` the plain `SELECT` collapsed to
-one. (Timing was 0.002 s for both plain and FINAL at this 2-row scale — the FINAL
-overhead only shows at scale with many covering parts; not a smoke-scale signal.)
+**Measured (Run 19, re-verified Run 59):** two inserts of `(k='a', ts)` (v=10 then
+v=20) = two parts. Plain `SELECT` returned **both** rows (10 and 20); `SELECT … FINAL`
+returned **one** (v=20 wins); after `OPTIMIZE TABLE … FINAL` the plain `SELECT`
+collapsed to one — **reproduces unchanged**.
+
+**Partial-upsert loss proven (Run 59) — the sharp capability gap.** Two partial writes
+to the same key, `('x', a=10, b=NULL)` then `('x', a=NULL, b='hello')`:
+
+- **GreptimeDB `last_non_null`** plain `SELECT` → **`a=10, b='hello'`** (per-field merge).
+- **ClickHouse `ReplacingMergeTree` `… FINAL`** → **`a=NULL, b='hello'`** — the **`a=10`
+  is LOST.** RMT keeps the *last whole row*, not a per-field merge, so a field set only in
+  the earlier insert is discarded. To get GreptimeDB's per-field result, ClickHouse needs
+  `AggregatingMergeTree` with an `argMax(col, ts)`-per-column schema (explicit `-State`
+  columns + a materialized view) — real ceremony, not a table option.
+
+This matters for Parallax signals updated by *multiple partial events* (an issue row whose
+status, assignee, and last-seen arrive from different writes; a span enriched by
+late-arriving attributes): GreptimeDB merges them with one `merge_mode='last_non_null'`
+option; ClickHouse RMT silently drops the un-latest fields.
 
 **Fairness note:** modern ClickHouse has made `FINAL` much cheaper (parallel final,
 skipping already-merged parts, `do_not_merge_across_partitions_select_final`), and the
@@ -123,7 +138,7 @@ burden**, where GreptimeDB makes it the default.
 - ClickHouse: `src/Processors/Merges/Algorithms/ReplacingSortedAlgorithm.cpp`
   (merge-time dedup; `is_deleted`/`version`/`cleanup` at :37–68); `FINAL` applies the
   same algorithm at read.
-- Live: `local-benchmark-results.md` Run 19.
+- Live: `local-benchmark-results.md` Run 19, Run 59 (re-verified; partial-upsert loss proven — RMT `FINAL` returns `a=NULL` vs GreptimeDB `last_non_null` `a=10`).
 - Cross-refs: `write-path-and-ingestion.md` (append_mode, schema-on-write
   `merge_mode='last_non_null'`), `compaction-and-merge.md`, `per-signal-verdict.md`
   (Q2 issue-history).

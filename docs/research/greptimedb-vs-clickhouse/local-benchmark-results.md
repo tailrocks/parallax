@@ -2303,6 +2303,57 @@ Caveat: warm smoke; GreptimeDB timed by server `execution_time_ms` (excludes HTT
 ClickHouse by `--time` — the row-dependent *direction* is the robust result, not a
 precise cross-engine ratio.
 
+### Run 59 — 2026-05-25 — Dedup/upsert semantics re-verified + partial-upsert loss proven
+
+**Pass target.** Rotate onto a stale **correctness/ergonomics** claim (not latency):
+"GreptimeDB is correct-by-default on upsert (read-time dedup); ClickHouse needs
+`FINAL`" + "GreptimeDB `last_non_null` does partial upsert ClickHouse RMT can't"
+(Run 19, ~pass 39). Re-verify live.
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned
+this pass — latest, no bump).
+
+**(A) Read-time dedup vs merge-time — reproduces:**
+
+| Action | GreptimeDB (`PRIMARY KEY(k)`, default `last_row`) | ClickHouse (`ReplacingMergeTree ORDER BY (k,ts)`) |
+| --- | --- | --- |
+| insert `(a,ts,10)` then `(a,ts,20)`, plain `SELECT` | **1 row, v=20** (read-time dedup, no keyword) | **2 rows (10, 20)** — NOT deduped |
+| force correct | nothing needed | `SELECT … FINAL` → **1 row, v=20** |
+
+**(B) Partial upsert — the capability gap, now proven concretely:** two partial writes
+to key `x` — `(a=10, b=NULL)` then `(a=NULL, b='hello')`:
+
+| Engine | result | mechanism |
+| --- | --- | --- |
+| **GreptimeDB** `merge_mode='last_non_null'` | **`a=10, b='hello'`** (per-field merge) | `DedupReader` `merge_last_non_null` (`read/dedup.rs:420`) |
+| **ClickHouse** `ReplacingMergeTree … FINAL` | **`a=NULL, b='hello'`** — **`a=10` LOST** | RMT keeps the last *whole* row, no per-field merge |
+
+**Verdict.** Run 19 **reproduces unchanged**: GreptimeDB dedups at read (plain query
+always correct), ClickHouse RMT shows duplicates until `FINAL`/merge. **Run 59 adds the
+concrete partial-upsert proof** the note previously asserted: RMT `FINAL` **discards a
+field** set only in an earlier insert (`a=10`→`NULL`), while GreptimeDB `last_non_null`
+merges per-field. To match GreptimeDB, ClickHouse needs `AggregatingMergeTree` +
+`argMax(col, ts)`-per-column + a materialized view — real ceremony vs one table option.
+**Status: confirmed; capability gap proven, not just asserted.** Reinforces the
+"upsert ergonomics + correctness-by-default → GreptimeDB" pillar for Parallax's
+partial-update signals (issue status/assignee/last-seen from different events; late
+span attribute enrichment). Does not move the raw-scan/log verdicts.
+
+Caveat: 2-row smoke — proves *semantics*, not the `FINAL`-cost-at-scale crossover (owed).
+
+**Reproduce (copy-paste).**
+
+```bash
+# GreptimeDB partial upsert
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=CREATE TABLE upsert_gt (k STRING, ts TIMESTAMP(3) TIME INDEX, a BIGINT, b STRING, PRIMARY KEY(k)) WITH (merge_mode='last_non_null')"
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=INSERT INTO upsert_gt VALUES ('x',1000,10,NULL)"
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=INSERT INTO upsert_gt VALUES ('x',1000,NULL,'hello')"
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=SELECT k,a,b FROM upsert_gt WHERE k='x'"   # a=10,b=hello
+# ClickHouse RMT (loses a=10)
+docker exec parallax-bench-clickhouse-1 clickhouse-client --multiquery -q "CREATE TABLE upsert_ch (k String, ts DateTime64(3), a Nullable(Int64), b Nullable(String)) ENGINE=ReplacingMergeTree ORDER BY (k,ts); INSERT INTO upsert_ch VALUES ('x',toDateTime64(1,3),10,NULL); INSERT INTO upsert_ch VALUES ('x',toDateTime64(1,3),NULL,'hello');"
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q "SELECT k,a,b FROM upsert_ch FINAL WHERE k='x'"   # a=NULL,b=hello
+```
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
