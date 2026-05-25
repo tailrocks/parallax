@@ -3266,6 +3266,39 @@ many series counts at larger row volume) is the harness extension.
 {1000, 200000} and `'svc-'||toString(number)` for all-unique; `OPTIMIZE FINAL`; compare
 `system.parts` bytes vs GreptimeDB `region_statistics.sst_size` after CSV-load + compact.
 
+### Run 80 — 2026-05-25 — Logs selective filter re-verified + refined (keyed = tie, broad = CH ~2×)
+
+**Pass target.** Re-verify the logs-signal selective-filter claim (Run 1: CH 3 ms vs GT
+9 ms) on the bigger keyed table, and characterize how it varies with selectivity/keying.
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned —
+latest, no bump). `logs_b1` (5M; 12 services × 3 levels). CH `ORDER BY (service, ts)`,
+GreptimeDB `PRIMARY KEY (service, level)` — **both key the filter columns** (unlike Run 1's
+original `logs` table, where GreptimeDB left them un-keyed).
+
+**Measured (warm):**
+
+| Filter | rows matched | ClickHouse | GreptimeDB | ratio |
+| --- | --- | --- | --- | --- |
+| `service='svc-0' AND level='ERROR'` (selective, keyed) | 50,096 / 5M | **~4 ms** | **~5 ms** | **~tie** (CH prunes 51/611 granules) |
+| `level='ERROR'` (broader, level not sort-prefix) | 599,916 / 5M | **~6 ms** | **~12 ms** | **~2× CH** |
+
+**Verdict — refines Run 1.** The Run-1 "CH 3 ms vs GT 9 ms" log-filter gap was a
+**key-placement** effect (the original `logs` table left GreptimeDB's filter columns
+un-keyed → scan). On `logs_b1`, where **both engines key `service`(+`level`)**, a highly
+selective keyed filter is a **near-tie** (CH 4 ms / GT 5 ms — both prune to the keyed
+range). The gap **reappears as the filter broadens** (level-only, 600k rows: CH ~6 ms vs GT
+~12 ms, ~2×) — once many rows match, ClickHouse's vectorized scan over the matched set wins
+(consistent with the scan-engine findings, Run 58). So: **keyed + highly-selective log
+filter = tie; broad/scan-heavy log filter = ClickHouse ~2×.** The "CH wins logs" claim is
+specifically the *broad-scan / un-keyed* case, not the anchored/keyed selective one.
+Status: **confirmed + refined.**
+
+Caveat: warm 5M smoke; the ratio at the broad end should grow with row volume (scan
+throughput, cold). Both sub-15 ms here — not interactive-perceptible.
+
+**Reproduce.** `docker exec …clickhouse… --time -q "SELECT count() FROM logs_b1 WHERE service='svc-0' AND level='ERROR' FORMAT Null"` (~4 ms) / `… WHERE level='ERROR' …` (~6 ms); GreptimeDB same via `/v1/sql` `execution_time_ms` (~5 ms / ~12 ms); `EXPLAIN indexes=1` on CH → `Granules 51/611`.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
