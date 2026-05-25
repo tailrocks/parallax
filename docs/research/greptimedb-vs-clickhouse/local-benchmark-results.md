@@ -4226,6 +4226,43 @@ span_id` (1,000,000 distinct). Same 1M rows both cases; CH `ORDER BY (series, ts
 `execution_time_ms`. Expect GT ~1.16× low→high, CH ~1.53× (String) / ~2.6× (LowCardinality). Drop
 `ing_lc`/`ing_hc` after.
 
+### Run 102 — 2026-05-25 — Unindexed/ad-hoc scan gap re-verified warm: ~2–5× shape-dependent (NOT Run 31's ~10×, which was cold), all ≪ 300 ms at 1M
+
+**Pass target.** Re-verify the **unindexed-scan gap** (Q5, Run 31) — the scan-engine difference
+that underlies the DQ5 flip trigger ("if Parallax's mix is ad-hoc-scan-dominated, ClickHouse's
+read-path edge becomes central"). Run 31 reported ~10× but Run 40 flagged that figure as
+cold/HTTP-wall inflated; re-measure warm and refine the multiplier honestly.
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned live — latest stable,
+no bump). `spans`/`spans_idx` = 1M rows, parity. `span_id` is **unindexed on both** (CH `ORDER BY
+(trace_id,ts)`; GT only `trace_id` INVERTED) → these are true full-scans. Method: CH `--time`, GT
+`execution_time_ms`, warm.
+
+| Scan shape | ClickHouse | GreptimeDB | Ratio |
+| --- | --- | --- | --- |
+| **Point filter** `count() WHERE span_id='X'` (selective, scan-bound) | `9 3 2 3 4 4 2 2 2 3` → **~3 ms** | `105 20 20 19 14 17 15 17 13 13` → **~15 ms** | **~5×** |
+| **Full scan + group** `status, count() GROUP BY status` | `7 5 6 5 6 6 4 6` → **~5.5 ms** | `19 14 12 14 11 13 13 10` → **~13 ms** | **~2.3×** |
+| **Full scan + agg** `service, avg(duration_ms) GROUP BY service` | `10 8 7 8 7 6 7 5` → **~7 ms** | `17 23 20 14 14 13 18 13` → **~15 ms** | **~2.1×** |
+
+**Verdict — Run 31's ~10× was cold; warm the gap is ~2–5× and shape-dependent. Correction stands.**
+
+- **The unindexed-scan gap is ~2–5× warm, not ~10×.** The pure point-filter scan is widest (~5×:
+  CH's vectorized decode-and-compare on one column is its strongest case), and it **compresses to
+  ~2×** as aggregation/grouping work is added (consistent with Run 96 — added per-row compute both
+  engines pay dilutes ClickHouse's scan-throughput edge). Confirms the Run 40 correction (Run 31's
+  GT 95 ms was a cold/HTTP-wall artifact; warm GT full-scan is ~13–15 ms).
+- **All shapes are ≪ the 300 ms gate at 1M** — even *ad-hoc, unindexed* scans are interactive on
+  GreptimeDB at this scale. So the DQ5 flip trigger does **not** fire on latency at 1M; it requires
+  **GB–TB cold scale**, where the gap widens (Run 58: ~3× agg-bound → ~14× scan-bound at 5M, larger
+  cold) **and** a scan-dominated workload. The "~10×" should not be quoted as the warm gap.
+- **No verdict change, but the DQ5 number needs updating** (verdict cites Q5 ~10×): the honest warm
+  figure is ~2–5× at 1M; the scan-engine gap is real and routes to parity-roadmap #2, but it is not
+  a hot-path concern for Parallax's *anchored* pattern (which prunes via index — Run 99).
+
+**Reproduce.** On `spans` (1M, `span_id` unindexed): `SELECT count() WHERE span_id='<id>'` (~3/15 ms);
+`SELECT status,count() GROUP BY status` (~5.5/13 ms); `SELECT service,avg(duration_ms) GROUP BY
+service` (~7/15 ms). Warm ×8–10; CH `--time`, GT `execution_time_ms`.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

@@ -193,8 +193,10 @@ ad-hoc large-scale log/trace search.
 Run 16; Q4 cross-tier join Run 30; Q5 high-card filter Run 31). Pattern: the
 **anchored** bundle queries (Q1–Q4, Q6) are *not latency-bound* on either engine
 (both ≪ the 300 ms gate); the only place ClickHouse pulls clearly ahead is the
-**unindexed scan** shape (Q5 ~10×, and ad-hoc log search Run 12) — which Parallax
-avoids by anchoring and indexing. So "GreptimeDB slower" is real **only** for
+**unindexed scan** shape (Q5 — **re-verified warm Run 102: ~2–5× shape-dependent**, not the
+~10× Run 31 reported, which was cold/HTTP-wall inflated; ~5× pure point-filter scan compressing
+to ~2× once aggregation work is added; all ≪ 300 ms at 1M; plus ad-hoc log search Run 12) — which
+Parallax avoids by anchoring and indexing. So "GreptimeDB slower" is real **only** for
 scan-shaped queries Parallax does not run on the hot path.
 
 ## Decision question 5 — which to choose
