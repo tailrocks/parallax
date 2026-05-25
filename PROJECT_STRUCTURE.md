@@ -98,6 +98,7 @@ or CI contract yet.
 | `docs/research/a4-correlation-reliability-ledger.md` | A4 result-ledger contract: run manifests, per-anchor rows, manual audit rows, instrumentation repairs, claim levels, and freshness rules for proving real-telemetry correlation claims. |
 | `docs/research/deploy-change-and-issue-context.md` | Contract for release/deploy/code-change/work-item evidence: GitHub/Sentry/Linear/Jira sources, normalized nodes, edge-strength rules, missing evidence, privacy defaults, and proof gates. |
 | `docs/research/redaction-detector-toolchain.md` | A6 detector/toolchain decision: use a Rust default-deny runtime redaction engine, with Gitleaks, TruffleHog, detect-secrets, Presidio, and GitHub patterns as offline validators and red-team comparators. |
+| `docs/research/a6-redaction-red-team-ledger.md` | A6 result-ledger contract: red-team run manifests, seeded surface fixture rows, scanner comparisons, projection audits, usefulness audits, repair rows, claim levels, and freshness rules. |
 
 ## Prompts
 

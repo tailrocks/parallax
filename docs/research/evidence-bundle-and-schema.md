@@ -238,7 +238,9 @@ highest-risk fields (see
 [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) and
 [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md)). The
 trust model and red-team gate for this object are specified in
-[Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md).
+[Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md),
+with run-level proof defined in the
+[A6 redaction red-team ledger](a6-redaction-red-team-ledger.md).
 
 ## Worked Example (Abbreviated)
 
@@ -372,6 +374,9 @@ it survives contact with real data:
 - [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
   — the source-specific policy and eval gate that makes `redaction_report`
   enforceable rather than decorative.
+- [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) — the result
+  ledger that proves redaction reports are backed by canary, scanner, projection,
+  and usefulness audits.
 - [Verdict](verdict.md) — why the open schema and portable bundle are the moat.
 - [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
   — the A3 gate that decides whether the schema becomes external leverage and

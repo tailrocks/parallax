@@ -118,7 +118,7 @@ Build only enough to generate the bundle automatically and repeatably:
 | --- | --- | --- |
 | A1 bundle value | Phase 0 (hand), re-check Phase 1 (auto) | [manual bundle + eval](bundle-value-phase0-runbook.md), days |
 | A2 real users | Phase 0 | [20 scored deployment-intent interviews](user-interview-and-deployment-intent-gate.md) plus the [redacted A2 evidence ledger](a2-interview-evidence-ledger.md) |
-| A6 redaction trust | Phase 2 | red-team on real data |
+| A6 redaction trust | Phase 2 | [red-team ledger](a6-redaction-red-team-ledger.md) over seeded fixtures plus real-data pilot |
 | A5 stack holds | Phase 2 | storage/metadata benchmarks |
 | A4 correlation reliable | Phase 1–2 | [strong-edge prevalence on real telemetry](correlation-reliability-real-telemetry-gate.md) plus the [A4 result ledger](a4-correlation-reliability-ledger.md) |
 | A3 schema/corpus moat | Phase 2 (publish) → Phase 4 (corpus) | [schema conformance + external adoption + outcome corpus](schema-adoption-and-corpus-moat-gate.md) |
@@ -162,6 +162,10 @@ Build only enough to generate the bundle automatically and repeatably:
 - [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md) —
   the run manifest, per-anchor rows, manual audit rows, claim levels, and
   freshness rules for making A4 pass/fail claims auditable.
+- [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) — the
+  redaction result artifact for seeded canary leaks, scanner comparisons,
+  projection audits, usefulness preservation, and claim freshness before agent
+  exposure.
 - [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
   — the focused answer to the CLI-versus-MCP access-surface question.
 - [Production database evidence access gate](production-database-evidence-access.md)

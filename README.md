@@ -55,6 +55,7 @@ idea becomes sharper.
 - [Deploy, change, and issue-tracker context](docs/research/deploy-change-and-issue-context.md)
 - [Redaction pipeline and secret safety](docs/research/redaction-pipeline-and-secret-safety.md)
 - [Redaction detector toolchain](docs/research/redaction-detector-toolchain.md)
+- [A6 redaction red-team ledger](docs/research/a6-redaction-red-team-ledger.md)
 - [Causal reconstruction and agent safety](docs/research/causal-reconstruction-and-agent-safety.md)
 - [AI-native observability and incident intelligence](docs/research/ai-native-observability-and-incident-intelligence.md)
 - [Flaky test investigation and replay](docs/research/flaky-test-investigation-and-replay.md)

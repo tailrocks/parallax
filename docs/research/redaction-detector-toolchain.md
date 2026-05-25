@@ -187,6 +187,9 @@ a different surface.
 
 - [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
   defines the A6 policy and red-team gate this toolchain implements.
+- [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) defines the
+  run artifacts that prove the toolchain does not leak seeded canaries and still
+  preserves minimum debug usefulness.
 - [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md)
   supplies the highest-risk streaming output fixture surface.
 - [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
