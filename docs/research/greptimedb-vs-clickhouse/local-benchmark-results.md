@@ -6443,6 +6443,42 @@ fingerprint, countState(), minState(ts), maxState(ts), argMaxState(message,ts) F
 BY fingerprint; INSERT INTO ge_roll SELECT ...(backfill); SELECT fingerprint, countMerge(n), ...
 FROM ge_roll GROUP BY fingerprint"`. (exec; host port down.)
 
+### Run 161 — 2026-05-25 — STRATEGY (operator redirect): storage-architecture thesis verified + cost made a co-equal axis + the hot/cold hybrid evaluated
+
+**Context.** Operator: verify "ClickHouse = performance/server-first, GreptimeDB = S3/cost-first
+(store-everything-cheaply)"; compare on **cost** not just speed; evaluate a **CH-live + GT-historical
+hybrid**. Web-research + accumulated evidence (no benchmark; network-blocked + this is architecture/cost
+synthesis). Re-pin unchanged.
+
+**Thesis VERIFIED (with one correction).** ClickHouse: performance-first, local SSD/NVMe locality +
+vectorized engine; **real S3 cold-read penalty** (cold 10–500 ms vs warm cache ~250 µs ≈ ~2000×,
+latency-bound) → S3 is a **cold tier** in OSS (hot-cold tiering is CH's own recommended S3 pattern), HA
+= **N× copies**. GreptimeDB: **S3-native** (SSTs → object store at **1× shared copy** + local hot cache,
+near-stateless elastic compute). *Correction:* CH is **not "broken" on S3** — tier-vs-native; local
+cache hides hot reads, ClickHouse Cloud's 2026 distributed cache largely closes the gap at a $ premium.
+
+**Cost numbers:** S3 $0.023/GB ≈ **3.5× cheaper** than EBS gp3 $0.08/GB (10 PB: ~$210k vs ~$820k/mo);
+Glacier $0.001 ≈ 80× for archive. Stack `(3.5× block-vs-S3) × (N× vs 1× replication) × (GT ~1.5× denser
+metrics+logs, Run 159)` = GreptimeDB's large cost edge on the **bulk/historical** tier.
+
+**Which for what:** **ClickHouse optimizes time-to-answer on hot data** (pay compute + premium storage +
+N× → fastest queries); **GreptimeDB optimizes $/GB on deep data** (S3-native 1×, cheaper+denser, fewer/
+elastic servers → store everything cheaply).
+
+**Hybrid (CH live + GT historical):** coherent — cross-engine hot-cold; CH's hot speed + GT's 1×-S3 cold
+cost; Parallax proxy routes by age. But **doubles ops** (2 engines + roll-over + cross-boundary query
+federation) vs the anti-complexity goal. **Recommendation: Phase-2 cost optimization, not Day-1** —
+start single-engine with internal hot/cold tiering; adopt the hybrid when sized $ justify the 2nd
+engine. Proxy enables it later without a rewrite.
+
+**Actions.** New note `storage-cost-and-tiering.md`. Benchmark prompt (`greptimedb-vs-clickhouse-internals.md`)
+reframed: **cost is now a co-equal first-class axis** (4 components: $/GB×replication, compute-for-SLA,
+cold-read GET/egress, ops) + the storage thesis + the hybrid question; Evaluation-Axes #2 elevated.
+Memory saved (storage-cost-thesis-and-hybrid). No containers touched.
+
+**Reproduce.** Synthesis from web (ClickHouse S3 cold-read + distributed-cache docs; GreptimeDB S3-native
++ cost blogs) + internal Runs 91/155/159 + `retention-cost-model.md` pricing. See `storage-cost-and-tiering.md` sources.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

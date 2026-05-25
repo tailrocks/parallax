@@ -467,6 +467,52 @@ extended) rather than forked into a parallel benchmark. Distinguish what is
 
 ---
 
+# Cost Is A First-Class Axis — Measure $ Alongside Speed (operator, 2026-05-25)
+
+We have mostly measured **performance**. The operator wants the **cost** to run each system measured
+too — so the final decision weighs **time-to-answer against cost-to-run**. Every speed number should
+carry its **$ context**: *"X ms at $Y/GB-month on Z compute,"* not a bare latency.
+
+**The storage-architecture thesis (verified — `storage-cost-and-tiering.md`, Run 161):**
+- **ClickHouse is performance-first / local-storage-centric.** Speed comes from attached SSD/NVMe
+  locality + sparse index + vectorized C++. On object storage there is a **real cold-read penalty**
+  (cold S3 ~10–500 ms vs warm cache ~250 µs ≈ ~2000×; latency-bound), so S3 in OSS ClickHouse is a
+  **cold tier** (hot-cold tiering is ClickHouse's own recommended S3 pattern), and OSS HA still keeps
+  **N× copies**. (ClickHouse Cloud's distributed cache largely closes the S3 gap at a $ premium.)
+- **GreptimeDB is S3-native / cost-first.** SSTs flush directly to object storage at **1× shared copy**
+  with a local hot cache and near-stateless, elastic compute — built to store a lot cheaply and read
+  back as fast as cache + the (younger) engine allow.
+- *Correction to avoid overstating:* ClickHouse is **not "broken" on S3** — it is tier-vs-native; the
+  real OSS issues are cold-read latency on uncached data + N× replication, not inability.
+
+**Measure these cost components (per benchmark, alongside latency):**
+1. **$/GB retained** = on-disk size (per signal — densities differ, metrics/logs favour GreptimeDB,
+   traces favour ClickHouse) × storage-class price (S3 ~$0.023/GB ≈ 3.5× cheaper than EBS gp3 ~$0.08/GB)
+   × **replication factor (1× GreptimeDB vs N× OSS ClickHouse)**.
+2. **Compute footprint for the SLA** — instance count/size to hold the latency target, and whether it
+   must be **always-on** (ClickHouse hot tier) or can be **elastic/scale-to-low** (GreptimeDB near-
+   stateless). The cost of the SLA, not just the SLA.
+3. **Cold-read cost** — latency **and** S3 GET/egress for re-reading historical data (Parallax re-reads
+   history for AI context; egress can dominate — R2 zero-egress matters, `retention-cost-model.md`).
+4. **Operational cost** — what must run (ClickHouse Keeper + manual resharding; GreptimeDB metasrv +
+   optional Kafka), or the managed-cloud premium.
+
+**Which system for what (state this in the verdict):** **ClickHouse optimizes time-to-answer on hot
+data** (pay more compute + premium hot storage + N× copies → fastest queries); **GreptimeDB optimizes
+$/GB on deep data** (S3-native 1×, ~3.5× cheaper medium, denser on metrics+logs, fewer/elastic servers →
+store everything cheaply, read back via cache/engine).
+
+**The hybrid question (evaluate, don't assume):** Parallax could run **ClickHouse for live/hot data +
+GreptimeDB for cold/historical** (roll CH→GT by age; the proxy routes queries by time range). It's the
+cross-engine version of ClickHouse's own hot-cold pattern, getting CH's best hot speed + GT's best cold
+cost — but it **doubles operational surface** (two engines + a roll-over pipeline + cross-boundary query
+federation) against the anti-complexity goal. Benchmark it as `CH(hot window) + GT(historical) +
+federation` **vs** single-engine internal tiering, at a realistic hot:cold ratio. Treat the hybrid as a
+**Phase-2 cost optimization** the proxy enables without a rewrite — not a Day-1 default. Decide on the
+sized $ numbers.
+
+---
+
 # How To Benchmark — Production Realism Over Scoreboard Optics
 
 Benchmarks here exist to predict the **real Parallax user's experience**, not to
@@ -822,8 +868,17 @@ mechanism by its consequence on these axes, in this order:
 1. **Speed — time to see real data.** Ingest-to-queryable freshness, and query
    latency for the evidence-bundle/correlation patterns under concurrent
    ingest+query — not generic scans.
-2. **Cost — storage size and money.** Retained size and compression by signal,
-   object-vs-local economics, compute per ingested GB and per query class.
+2. **Cost — money to run, co-equal with speed (operator, 2026-05-25).** Not just
+   storage size — the **full run cost**, weighed *against* speed in the final
+   decision ("X ms at $Y/GB-mo on Z compute"). Measure the four components: (a)
+   **$/GB retained** = per-signal on-disk size × storage-class price (S3 ~$0.023/GB
+   ≈ 3.5× cheaper than EBS gp3 ~$0.08/GB) × **replication (1× GreptimeDB vs N× OSS
+   ClickHouse)**; (b) **compute footprint for the SLA** (always-on ClickHouse hot tier
+   vs elastic near-stateless GreptimeDB); (c) **cold-read cost** (S3 GET/egress on
+   history re-reads); (d) **operational** (Keeper/resharding vs metasrv/Kafka, or the
+   managed-cloud premium). The storage-architecture thesis (`storage-cost-and-tiering.md`):
+   **ClickHouse optimizes time-to-answer on hot data (performance-first, local/premium
+   storage); GreptimeDB optimizes $/GB on deep data (S3-native, store-everything-cheaply).**
 3. **Scaling — horizontal first.** Single-node ceiling, scale-out difficulty, and
    whether performance holds as parallel servers are added. Horizontal scaling is
    primary; vertical-only is a flagged limitation.
