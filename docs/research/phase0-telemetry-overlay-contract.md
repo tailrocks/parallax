@@ -33,6 +33,9 @@ date.
 | [SWE-bench dataset docs](https://www.swebench.com/SWE-bench/guides/datasets/) | Task instances carry repo, issue URL, PR URL, base commit, gold patch, test patch, fail-to-pass tests, and pass-to-pass tests. | The overlay harness must treat `patch` and `test_patch` as private grader inputs, not context-builder inputs. |
 | [SWE-bench evaluation guide](https://www.swebench.com/SWE-bench/guides/evaluation/) | Evaluation applies generated patches in a containerized Docker environment and reports per-instance resolved results and logs. | Phase 0 should reuse the containerized pre-fix workspace model, but add telemetry capture around the failing command and agent run. |
 | [SWE-bench Docker setup](https://www.swebench.com/SWE-bench/guides/docker_setup/) | SWE-bench isolation has real resource cost: large disk needs, cache levels, and worker-count tradeoffs. | The overlay runbook must record container image/cache/resource settings because telemetry differences can come from harness resource pressure. |
+| [SWE-bench-Live MultiLang](https://huggingface.co/datasets/SWE-bench-Live/MultiLang) | Current rows expose fields beyond the issue/fix/test minimum: `patch`, `test_patch`, `problem_statement`, `hints_text`, `all_hints_text`, `commit_urls`, `commit_url`, rebuild/test/print commands, `log_parser`, fail-to-pass/pass-to-pass tests, and `docker_image`. | The overlay must use a source-field policy. Runner fields can drive the harness, but hints, resolving commit URLs, patches, test patches, and verifier IDs cannot silently become agent context. |
+| [SWE-bench-Live OS-bench](https://huggingface.co/datasets/SWE-bench-Live/OS-bench) | Current rows expose patch/test fields, Docker image, rebuild/test/print commands, log parser, migration direction, difficulty, and metadata for a generated cross-platform migration task. | OS/CLI tasks are useful, but the generated statement, parser, and patch/test metadata are contamination-sensitive. Use them for harness and grading only unless an allowlist explicitly marks a field agent-visible. |
+| [SWE-rebench V2](https://huggingface.co/datasets/nebius/SWE-rebench-V2) and [SWE-rebench V2 PRs](https://huggingface.co/datasets/nebius/SWE-rebench-V2-PRs) | Current rows include scale-friendly fields such as `install_config`, `interface`, `pr_description`, `problem_statement`, `meta`, `llm_metadata`, patches, test patches, and fail/pass test IDs. The PR-scale set exposes long `hints_text` and generated task metadata. | Large automatically collected corpora require stricter field-level quarantine than small curated tasks. LLM metadata, generated interfaces, hints, and PR descriptions must be audited before use and should not feed hypotheses by default. |
 | [Terminal-Bench](https://www.tbench.ai/) | Terminal-Bench measures agents in terminal environments and publishes task/verifier style examples; it also includes a public canary warning against training contamination. | Parallax Phase 0 should borrow the task/verifier discipline and include contamination/leakage canaries in committed artifacts. |
 | [OpenTelemetry semantic conventions 1.41.0](https://opentelemetry.io/docs/specs/semconv/) | OTel provides common semantic attributes across traces, metrics, logs, events, CLI, CI/CD, process, exception, and VCS domains. | The overlay should use OTel names where possible, while marking development-status conventions as provisional. |
 | [OpenTelemetry CLI spans](https://opentelemetry.io/docs/specs/semconv/cli/cli-spans/) | CLI span conventions require executable name, exit code, PID, and `error.type` for non-zero exits; command args are recommended but should not be collected by default without sanitization. | Phase 0 command telemetry must capture exit/error status and sanitized args, never raw argv by default. |
@@ -53,6 +56,40 @@ The overlay is an **eval fixture**, not a product pipeline:
 | Can raw dump and bundle use different evidence? | No. They must derive from the same normalized overlay artifact. |
 | Can perfect trace IDs be invented? | Only as harness span IDs with `observed_from_harness`; never claim production-grade trace linkage. |
 | Can missing production telemetry be hidden? | No. Missing spans, SDK events, deploys, frontend breadcrumbs, or metrics appear in `missing_evidence`. |
+
+## Source Field Policy
+
+Modern SWE task rows mix fields with very different roles: issue text, runner
+commands, hidden verifier IDs, gold patches, generated hints, and metadata
+produced by LLM-based filters can all live in one dataset record. Phase 0 must
+therefore produce an explicit source-field policy before any arm artifact is
+generated.
+
+Use these zones:
+
+| Zone | Examples | Agent-visible? | Rule |
+| --- | --- | --- | --- |
+| `agent_visible_seed` | Reviewed issue title/body or `problem_statement`, base repo identity, public package version, failure anchor captured from the pre-fix run. | Yes | Only after a leakage review confirms the field does not contain gold patch text, resolving commit text, post-fix comments, or implementation-specific grader knowledge. |
+| `runner_private` | `docker_image`, `rebuild_cmds`, `test_cmds`, `print_cmds`, `install_config`, `log_parser`, cache/resource settings. | No, except sanitized command identity in telemetry rows. | Allowed to run and parse the harness. The parser body and exact hidden test command internals are not agent context. |
+| `grader_private` | `patch`, `test_patch`, `FAIL_TO_PASS`, `PASS_TO_PASS`, hidden verifier output, fixed commit hash, resolving PR/commit URLs. | No | Hash for audit, but keep content and direct resolving links out of Arm A/B/C. |
+| `triage_private` | `hints_text`, `all_hints_text`, PR discussion text, `interface`, `meta`, `llm_metadata`, difficulty labels, model/filter quality flags. | No by default | May help select or reject tasks. If promoted to context, pre-register why and downgrade the contamination tier. |
+| `public_audit` | Dataset name, source version/check date, task ID, repo, base commit, language, license, artifact hashes. | Yes in manifests; not necessarily in prompts. | Safe for committed audit artifacts, but agent prompts should receive only what the selected arm needs. |
+
+Every task directory must include `source-field-policy.json` or an equivalent
+section in `provenance.md` that records, for each source field:
+
+```json
+{
+  "field": "hints_text",
+  "zone": "triage_private",
+  "agent_visible": false,
+  "reason": "May contain implementation hints or post-issue discussion.",
+  "hash_recorded": true
+}
+```
+
+This is now a no-cheat dependency. If the source-field policy is missing, the
+task can debug the harness but cannot count toward A1.
 
 The Phase 0 claim should read:
 
@@ -88,6 +125,7 @@ docs/research/bundle-value-eval/tasks/<task_id>/
   arm-b-raw-dump.md
   arm-c-bundle.json
   arm-c-bundle.md
+  source-field-policy.json
   provenance.md
   hashes.sha256
   grader-private.sha256
@@ -104,6 +142,7 @@ Artifact meanings:
 | `refs/*.txt` | Usually yes if redacted | Bounded stdout/stderr/harness excerpts with line numbers. |
 | `arm-b-raw-dump.md` | Yes | Token-budgeted raw dump generated from `normalized.jsonl`. |
 | `arm-c-bundle.*` | Yes | Product-arm bundle generated from the same `normalized.jsonl`. |
+| `source-field-policy.json` | Yes | Field-level allow/deny policy separating agent-visible, runner-private, grader-private, triage-private, and audit-only fields. |
 | `grader-private.sha256` | Yes | Hashes of gold patch/test patch/verifier-only files, not the files. |
 
 Private raw artifacts can exist outside the repo, but committed public artifacts
@@ -115,15 +154,15 @@ The overlay should produce these families when available:
 
 | Family | Required fields | Notes |
 | --- | --- | --- |
-| `task_manifest` | `task_id`, `source`, `source_version`, `repo`, `base_commit`, `issue_url?`, `pr_url?`, `language`, `license_review` | No gold patch text. |
-| `test_run` | `command_ref`, `started_at`, `finished_at`, `exit_code`, `result`, `fail_to_pass_refs[]`, `pass_to_pass_refs[]` | The harness can name verifier IDs, not leak test patch content. |
+| `task_manifest` | `task_id`, `source`, `source_version`, `repo`, `base_commit`, `issue_url?`, `language`, `license_review`, `source_field_policy_ref` | No gold patch text or resolving PR/commit URL in agent-visible projections. |
+| `test_run` | `command_ref`, `started_at`, `finished_at`, `exit_code`, `result`, `verifier_ref_hashes[]` | The harness can hash verifier IDs, not leak test patch content or exact hidden verifier names into agent context. |
 | `process_span` | `span_id`, `parent_span_id?`, `executable`, `args_sanitized`, `cwd_ref`, `pid?`, `exit_code`, `error_type?`, `duration_ms` | Follow OTel CLI/process semantics; raw args are denied by default. |
 | `ci_task_span` | `pipeline_name`, `task_name`, `task_run_id`, `result`, `error_type?`, `url_ref?` | Even a local failing command can be represented as one CI-like task. |
 | `exception_event` | `error_type`, `message`, `stack_frames[]`, `handled?`, `trace_id?`, `span_id?`, `provenance` | `reconstructed_from_test_output` is weaker than SDK-observed. |
 | `log_record` | `timestamp?`, `observed_timestamp`, `severity`, `body_ref`, `line_range`, `trace_id?`, `span_id?`, `attributes` | Preserve line refs instead of copying long output into bundles. |
 | `metric_sample` | `name`, `value`, `unit`, `time_range`, `attributes` | Keep to timings, retry counts, memory/time limits unless task data supports more. |
 | `release_marker` | `version`, `repo`, `base_commit`, `environment`, `source` | For public tasks, this is usually harness release context. |
-| `change_marker` | `repo`, `base_commit`, `issue_url?`, `pr_url?`, `dataset_instance_id`, `fixed_patch_hash?` | Patch hash stays private-facing or grader-only. |
+| `change_marker` | `repo`, `base_commit`, `issue_url?`, `dataset_instance_id`, `fixed_patch_hash?`, `resolving_ref_hash?` | Patch hash and resolving PR/commit refs stay private-facing or grader-only unless pre-registered as public audit metadata. |
 | `redaction_finding` | `policy_version`, `field`, `finding_type`, `action`, `canary?` | Seeded canary findings are mandatory. |
 
 ## Provenance Labels
@@ -147,18 +186,21 @@ hypothesis, not as production causality.
 
 These rules are part of the evaluation, not optional hygiene:
 
-1. Build `raw.ndjson` and `normalized.jsonl` before generating any agent arm.
-2. Hash and freeze `normalized.jsonl` before creating Arm B or Arm C.
-3. Generate Arm B first using a fixed truncation rule.
-4. Generate Arm C from the same normalized rows and refs; no extra evidence.
-5. Keep gold patch, test patch, and hidden verifier output out of all agent
+1. Write and freeze the source-field policy before reading source fields into
+   any arm artifact.
+2. Build `raw.ndjson` and `normalized.jsonl` before generating any agent arm.
+3. Hash and freeze `normalized.jsonl` before creating Arm B or Arm C.
+4. Generate Arm B first using a fixed truncation rule.
+5. Generate Arm C from the same normalized rows and refs; no extra evidence.
+6. Keep gold patch, test patch, resolving PR/commit URLs, hints, LLM metadata,
+   parser source, hidden verifier IDs, and hidden verifier output out of all agent
    contexts.
-6. Do not use an LLM to parse, summarize, rank, or redact overlay evidence.
-7. Include seeded secrets/canaries in at least one safe field and prove they are
+7. Do not use an LLM to parse, summarize, rank, or redact overlay evidence.
+8. Include seeded secrets/canaries in at least one safe field and prove they are
    absent from agent-visible files.
-8. Preserve missing evidence instead of filling it with plausible defaults.
-9. Commit artifact hashes and provenance labels for every public task.
-10. If a human manually repairs a malformed record, record the edit in
+9. Preserve missing evidence instead of filling it with plausible defaults.
+10. Commit artifact hashes and provenance labels for every public task.
+11. If a human manually repairs a malformed record, record the edit in
     `provenance.md` before any agent run.
 
 If any no-cheat rule fails, the task can be used for harness debugging but not
@@ -241,6 +283,7 @@ The overlay corpus is acceptable for Phase 0 only if:
 | Evidence parity | 100 percent of Arm C evidence rows are present in Arm B's source overlay, even if Arm B truncates presentation. |
 | Hash freeze | `normalized.jsonl`, Arm B, and Arm C hashes are recorded before agent runs. |
 | Gold isolation | Zero gold patch/test patch lines appear in Arm A/B/C artifacts. |
+| Source-field isolation | 100 percent of source fields are classified, and zero `runner_private`, `grader_private`, or default `triage_private` fields appear in agent-visible artifacts. |
 | Redaction | Zero seeded secrets or PII canaries appear in agent-visible artifacts. |
 | Provenance coverage | 100 percent of records carry provenance labels. |
 | Missing evidence | 100 percent of absent production-grade signals are represented as `missing_evidence`. |
@@ -251,6 +294,8 @@ Failure consequences:
 
 - If evidence parity fails, discard the task for A1.
 - If gold isolation fails, discard the task and rotate the canary.
+- If source-field isolation fails, discard the task for A1 and repair the field
+  policy before reusing that source.
 - If reproducibility fails, keep the task only as a harness-debugging case.
 - If provenance is mostly reconstructed, report the task under
   `reconstructed_overlay`, not `runtime_overlay`.

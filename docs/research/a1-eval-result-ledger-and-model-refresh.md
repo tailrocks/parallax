@@ -113,7 +113,7 @@ docs/research/bundle-value-eval/
 | `preregistration.md` | Yes | Task list, arms, model families, budgets, scoring, and decision rule before results are inspected. |
 | `result-ledger.md` | Yes | Current gate status, claim level, expiry date, and links to all run IDs. |
 | `run-manifest.json` | Yes | Exact run configuration, model snapshots, scaffold commit, task-set hash, bundle template version, redaction policy, and token ceilings. |
-| `task-set.json` | Yes | Public task IDs, source, freshness tier, language, provenance, and inclusion/exclusion reason. |
+| `task-set.json` | Yes | Public task IDs, source, freshness tier, language, provenance, source-field policy hash, and inclusion/exclusion reason. |
 | `model-snapshots.json` | Yes | Exact provider model IDs and API parameters used for that run. |
 | `arm-results.jsonl` | Yes | One row per task/arm/model/seed outcome. |
 | `scorecards.md` | Yes | Blind grading notes, root-cause accuracy, evidence-grounding counts, and patch-quality notes. |
@@ -191,8 +191,10 @@ task/arm/model/seed attempt:
   "seed": 1,
   "context_hash": "sha256:...",
   "normalized_overlay_hash": "sha256:...",
+  "source_field_policy_hash": "sha256:...",
   "evidence_parity_passed": true,
   "gold_isolation_passed": true,
+  "source_field_isolation_passed": true,
   "redaction_passed": true,
   "resolved": false,
   "root_cause_grade": "correct|partial|wrong|unsupported|not_applicable",
@@ -209,7 +211,8 @@ task/arm/model/seed attempt:
 ```
 
 No result row counts toward A1 if `evidence_parity_passed`,
-`gold_isolation_passed`, or `redaction_passed` is false.
+`gold_isolation_passed`, `source_field_isolation_passed`, or
+`redaction_passed` is false.
 
 ## Contamination Tiers
 

@@ -79,6 +79,8 @@ Each task must have:
 - Sentry-style error event or CI failure event;
 - logs, traces/spans, metrics or timings where relevant;
 - release/commit context;
+- source-field policy separating agent-visible context from runner-private,
+  grader-private, and triage-private fields;
 - redaction report;
 - token-counted raw telemetry dump;
 - token-counted Parallax bundle;
@@ -211,6 +213,7 @@ docs/research/bundle-value-eval/
   preregistration.md
   result-ledger.md
   tasks/<task_id>/task.md
+  tasks/<task_id>/source-field-policy.json
   tasks/<task_id>/arm-a-context.md
   tasks/<task_id>/arm-b-raw-dump.md
   tasks/<task_id>/arm-c-bundle.json

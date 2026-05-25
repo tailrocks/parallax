@@ -79,10 +79,13 @@ A task can enter the seed corpus only if all of these are true:
 | Telemetry overlay possible | The harness can collect a Sentry-style event or CI failure event, stdout/stderr logs, span/timing data, and release/commit context without changing the target fix. |
 | Gold patch hidden | The context builder may use issue metadata and failing output, but the agent arm must not see the gold patch or test patch content except through the verifier. |
 | License/publicness | The task artifacts can be committed as redacted manifests, hashes, and generated telemetry fixtures. |
+| Source-field isolation | The task has a source-field policy that separates agent-visible issue/failure context from runner-private, grader-private, and triage-private fields. |
 
 Reject tasks when the fix depends on a private service, network flakiness, huge
 dependency downloads, non-deterministic timing, multiple unrelated PR changes,
-or manual UI steps that cannot be scripted.
+manual UI steps that cannot be scripted, or a source row whose issue/problem
+statement cannot be separated cleanly from gold patch, resolving commit, hidden
+test, generated hint, or LLM-filter metadata.
 
 ## Telemetry Overlay
 
@@ -100,7 +103,8 @@ Minimum overlay per task:
 | Trace / span tree | Instrument the task runner as root span; add child spans for setup, failing command, selected test, subprocesses, and relevant app calls where feasible. | For most public tasks, this is harness telemetry, not production telemetry. Say so in the bundle. |
 | Logs | Capture bounded stdout/stderr, test logs, and app logs with stable line refs. | Raw dump arm and bundle arm must use the same underlying logs. |
 | Metrics / timings | Capture duration, retry count, exit code, memory/time limits, and relevant test counts. | Metrics are optional if not causally useful, but timing helps compare agent flailing. |
-| Release/change context | Record base commit, issue URL, PR URL, task source, dataset version, and known fixed commit/patch hash. | The gold patch hash can be in the private grader manifest, not in the agent context. |
+| Release/change context | Record base commit, issue URL, task source, dataset version, and resolving PR/commit hashes. | Resolving PR/commit URLs and gold patch hashes can be in private or audit manifests, not in agent context. |
+| Source-field policy | Classify every source field before building Arm A/B/C. | Resolving PR/commit URLs, hints, parser source, hidden verifier IDs, LLM metadata, and gold artifacts stay out of agent-visible artifacts by default. |
 | Redaction report | Run the same seeded canary/redaction policy used by the bundle schema docs. | A task without a redaction report is invalid. |
 
 All overlay artifacts must carry provenance:
@@ -139,6 +143,7 @@ docs/research/bundle-value-eval/
   manifest.md
   tasks/<task_id>/task.md
   tasks/<task_id>/source.json
+  tasks/<task_id>/source-field-policy.json
   tasks/<task_id>/telemetry/raw.ndjson
   tasks/<task_id>/telemetry/redaction-report.json
   tasks/<task_id>/arm-a-context.md
@@ -158,12 +163,12 @@ docs/research/bundle-value-eval/
   "repo": "owner/repo",
   "base_commit": "...",
   "issue_url": "https://github.com/owner/repo/issues/123",
-  "pr_url": "https://github.com/owner/repo/pull/456",
+  "resolving_ref_hash": "sha256:...",
   "language": "Rust",
   "failure_anchor": "panic|exception|assertion|cli_exit|http_error",
   "telemetry_provenance": ["reconstructed_from_harness"],
   "license_review": "public source; generated redacted artifacts only",
-  "excluded_gold_artifacts": ["patch", "test_patch"]
+  "excluded_gold_artifacts": ["patch", "test_patch", "FAIL_TO_PASS", "PASS_TO_PASS", "commit_url", "commit_urls", "hints_text", "all_hints_text", "log_parser", "interface", "meta", "llm_metadata"]
 }
 ```
 
