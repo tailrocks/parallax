@@ -30,7 +30,11 @@ and schema-bound, canonical context bundles for humans and coding agents across
 CLI, HTTP, and MCP projections.
 
 The product-claim boundary for "OTLP-native" and "Collector-compatible" is the
-[OTLP conformance ledger](otlp-conformance-ledger.md).
+[OTLP conformance ledger](otlp-conformance-ledger.md). The focused
+[OTLP transport profile recheck](otlp-transport-profile-recheck.md) sharpens the
+baseline transport claim: Parallax should require `grpc` and `http/protobuf`,
+label `http/json` as optional, and test SDK endpoint URL construction before
+using broad OTLP wording.
 Stored OTLP rows are necessary but not sufficient for Parallax's agent claim:
 OTLP-derived evidence becomes agent-ready only after the
 [evidence bundle schema](evidence-bundle-and-schema.md), canonical hashes,
@@ -68,6 +72,7 @@ Sources:
 
 - [OpenTelemetry overview](https://opentelemetry.io/docs/specs/otel/overview/)
 - [OTLP specification](https://opentelemetry.io/docs/specs/otlp/)
+- [OpenTelemetry Protocol Exporter spec](https://opentelemetry.io/docs/specs/otel/protocol/exporter/)
 - [OpenTelemetry resource semantic conventions](https://opentelemetry.io/docs/specs/semconv/resource/)
 - [OpenTelemetry Rust docs](https://opentelemetry.io/docs/languages/rust/)
 - [OpenTelemetry Collector core v0.153.0 release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.153.0)
@@ -206,7 +211,12 @@ Parallax's OTLP receiver should implement:
 - OTLP/gRPC on `4317`.
 - OTLP/HTTP on `4318`.
 - HTTP paths `/v1/traces`, `/v1/metrics`, and `/v1/logs`.
-- Binary protobuf first; JSON protobuf as a compatibility path.
+- Required transports: `grpc` and `http/protobuf`.
+- JSON protobuf as an explicitly labeled optional compatibility path; a
+  JSON-only receiver is not enough for Parallax's OTLP-native claim.
+- SDK endpoint URL construction fixtures, because generic
+  `OTEL_EXPORTER_OTLP_ENDPOINT` and per-signal endpoint variables build paths
+  differently.
 - Gzip request handling.
 - Partial-success responses where accepted and rejected records differ.
 - `HTTP 400` for permanently bad payloads so clients do not retry invalid data.

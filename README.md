@@ -136,6 +136,7 @@ Code `/loop` runbook.
 - [Sentry SDK fixture compatibility gate](docs/research/sentry-sdk-fixture-compatibility.md)
 - [Sentry SDK compatibility ledger](docs/research/sentry-sdk-compatibility-ledger.md)
 - [OpenTelemetry protocol and context layer](docs/research/opentelemetry-protocol-and-context-layer.md)
+- [OTLP transport profile recheck](docs/research/otlp-transport-profile-recheck.md)
 - [OTLP receiver conformance and Collector equivalence](docs/research/otlp-receiver-conformance-and-collector-equivalence.md)
 - [OTLP conformance ledger](docs/research/otlp-conformance-ledger.md)
 - [Repository structure](PROJECT_STRUCTURE.md)

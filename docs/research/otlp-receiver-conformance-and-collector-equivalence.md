@@ -24,12 +24,16 @@ not call the path OTLP-native.
 Results and product-claim status should be published through the
 [OTLP conformance ledger](otlp-conformance-ledger.md), not inferred from this
 fixture design alone.
+The focused [OTLP transport profile recheck](otlp-transport-profile-recheck.md)
+defines the required transport baseline and endpoint URL construction fixtures.
 
 ## Current Primary-Source Checks
 
 | Source | What matters for Parallax |
 | --- | --- |
 | [OTLP specification 1.10.0](https://opentelemetry.io/docs/specs/otlp/) | OTLP defines encoding, transport, delivery, partial-success behavior, retryable errors, and HTTP/gRPC paths. Partial success is not a retry signal; retryable overload should use the documented retry behavior. |
+| [OpenTelemetry Protocol Exporter spec](https://opentelemetry.io/docs/specs/otel/protocol/exporter/) | Exporter protocols are `grpc`, `http/protobuf`, and `http/json`; SDKs should support both `grpc` and `http/protobuf`, may support `http/json`, and build HTTP paths differently for generic versus per-signal endpoint variables. |
+| [OTLP transport profile recheck](otlp-transport-profile-recheck.md) | Current primary-source pass confirmed no version drift, but tightened Parallax's claim boundary: require `grpc` and `http/protobuf`, label `http/json` optional, and test endpoint URL construction. |
 | [OpenTelemetry proto v1.10.0](https://github.com/open-telemetry/opentelemetry-proto/releases/tag/v1.10.0) | Trace, log, and metric export responses carry per-signal `partial_success` fields with rejected span/log/data-point counts and human-readable error messages. |
 | [OpenTelemetry logs data model](https://opentelemetry.io/docs/specs/otel/logs/data-model/) | Logs carry timestamp/observed timestamp, severity, body, attributes, resource/scope context, and optional trace/span correlation. If `SpanId` is present, `TraceId` should be present too. |
 | [OpenTelemetry metrics data model](https://opentelemetry.io/docs/specs/otel/metrics/data-model/) | Metric stream identity includes resource attributes, instrumentation scope, metric name, data point type, unit, temporality, and monotonicity. Attribute sets identify individual streams. Parallax must not flatten this into ambiguous rows. |
@@ -48,7 +52,7 @@ fixture design alone.
 
 | Level | Meaning | Product wording |
 | --- | --- | --- |
-| L0 endpoint | OTLP/gRPC `4317`, OTLP/HTTP `4318`, `/v1/traces`, `/v1/logs`, `/v1/metrics`, binary protobuf, gzip, size limits, and stable error responses work. | "OTLP endpoint." |
+| L0 endpoint | OTLP/gRPC `4317`, OTLP/HTTP `4318`, `/v1/traces`, `/v1/logs`, `/v1/metrics`, `grpc`, `http/protobuf`, gzip, size limits, endpoint URL construction behavior, and stable error responses work. HTTP/JSON is optional and labeled. | "OTLP endpoint." |
 | L1 direct Rust SDK | Current OpenTelemetry Rust traces, logs, and metrics reach Parallax directly and normalize into queryable rows. | "Rust OTLP ingestion." |
 | L2 signal semantics | Trace, log, and metric fixtures preserve resource, scope, trace/span IDs, status, links/events, log bodies, metric temporality, histograms, and attributes. | "OTLP-native telemetry ingestion." |
 | L3 Collector equivalence | Same fixtures through official Collector and Collector Contrib produce equivalent normalized rows, except declared processor-added/removed fields. | "Collector-compatible OTLP ingestion." |
@@ -67,6 +71,7 @@ protobuf blobs:
 fixture app / sdk version / signal scenario
   -> direct OTLP/gRPC to Parallax
   -> direct OTLP/HTTP protobuf to Parallax
+  -> optional direct OTLP/HTTP JSON to Parallax
   -> OpenTelemetry Collector -> Parallax
   -> Collector Contrib -> Parallax
   -> Rotel -> Parallax
@@ -116,7 +121,10 @@ Each fixture directory should record:
 | `collector_resource_enrichment` | Resource processor additions are recorded as pipeline-added evidence, not mistaken for SDK-origin fields. |
 | `rotel_forward` | Rotel forwarding preserves supported signal fields for the same fixture subset. |
 | `gzip_http` | Compressed OTLP/HTTP requests work and obey the same body-size and decode limits. |
-| `json_http_optional` | OTLP/HTTP JSON works only if explicitly supported; otherwise rejected with clear non-retryable behavior. |
+| `endpoint_generic_http_appends_paths` | Generic `OTEL_EXPORTER_OTLP_ENDPOINT=http://host:4318` constructs `/v1/traces`, `/v1/metrics`, and `/v1/logs` for HTTP exporters. |
+| `endpoint_signal_http_explicit_paths` | Per-signal endpoint variables work when the `/v1/{signal}` path is explicit. |
+| `endpoint_signal_http_missing_path` | Per-signal endpoint variables without a path hit `/` and receive a clear non-retryable config error, not ambiguous data loss. |
+| `json_http_optional` | OTLP/HTTP JSON works only if explicitly supported; otherwise rejected with clear non-retryable behavior and product wording says JSON is unsupported. |
 | `malformed_payload` | Invalid protobuf/JSON fails before expensive processing and does not poison subsequent requests. |
 | `partial_reject` | Oversized or policy-rejected records return correct partial-success counts and messages. |
 | `storage_unavailable` | Temporary storage/WAL outage returns retryable overload behavior without accepting data that is not durable. |
@@ -234,7 +242,9 @@ Parallax's OTLP receiver should expose and test:
 | --- | --- |
 | Ports | gRPC `4317`; HTTP `4318`. |
 | Paths | `/v1/traces`, `/v1/logs`, `/v1/metrics`; optional base-path alias only if documented. |
-| Content types | `application/x-protobuf` required; JSON protobuf optional and explicitly labeled. |
+| Transport profile | `grpc` and `http/protobuf` required; `http/json` optional and explicitly labeled. |
+| Content types | `application/x-protobuf` required for HTTP/protobuf; `application/json` only if the optional JSON path is supported. |
+| Endpoint URL construction | Generic and per-signal OTLP endpoint variables are tested because per-signal HTTP endpoints are used as-is. |
 | Compression | gzip for HTTP and gRPC where SDKs/collectors use it. |
 | Payload limits | Reject oversized requests before full decode. |
 | Partial success | Accepted records are durable; rejected counts are accurate; sender should not retry accepted records. |
@@ -249,6 +259,10 @@ Pass only when:
 
 - current OpenTelemetry Rust fixtures pass over OTLP/gRPC and OTLP/HTTP
   protobuf;
+- endpoint URL construction fixtures pass for generic endpoints, explicit
+  per-signal paths, and documented missing-path failures;
+- OTLP/HTTP JSON either passes as an explicitly supported optional path or
+  fails with a clear non-retryable unsupported-content result;
 - the same fixture set passes through the latest checked official Collector
   distribution, with the Collector core/source version recorded separately when
   it has moved ahead of the runnable distribution;

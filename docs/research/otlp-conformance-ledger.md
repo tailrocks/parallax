@@ -33,6 +33,8 @@ The central rule:
 | --- | --- | --- |
 | [OpenTelemetry specs page](https://opentelemetry.io/docs/specs/) | The docs currently list OpenTelemetry Specification `1.57.0`, OTLP Specification `1.10.0`, and semantic conventions `1.41.0`. | Result runs must pin which spec and semantic-convention versions the claim was tested against. |
 | [OTLP specification 1.10.0](https://opentelemetry.io/docs/specs/otlp/) | OTLP is stable for traces, metrics, and logs, development-stage for profiles; it defines gRPC and HTTP transports, protobuf payloads, gzip support, partial success, bad-data behavior, retryable status codes, and interoperability rules. | The receiver gate must test protocol behavior, not only decode success. |
+| [OpenTelemetry Protocol Exporter spec](https://opentelemetry.io/docs/specs/otel/protocol/exporter/) | Exporter protocol values are `grpc`, `http/protobuf`, and `http/json`. SDKs should support both `grpc` and `http/protobuf`, may support `http/json`, and construct HTTP paths differently for generic versus per-signal endpoint variables. | The ledger must include transport-profile and endpoint URL construction rows, not just payload-decoding rows. |
+| [OTLP transport profile recheck](otlp-transport-profile-recheck.md) | Current recheck found no source-version drift, but tightened the claim boundary around required `grpc` and `http/protobuf`, optional `http/json`, endpoint URL construction fixtures, and JSON-only competitor caveats. | A JSON-only endpoint cannot advance Parallax beyond an experimental/partial OTLP claim. |
 | [OpenTelemetry proto v1.10.0](https://github.com/open-telemetry/opentelemetry-proto/releases/tag/v1.10.0) | The protobuf release is the schema baseline for export request/response messages. | Parallax parser and fixture generators must pin proto versions separately from SDK versions. |
 | [OpenTelemetry logs data model](https://opentelemetry.io/docs/specs/otel/logs/data-model/) | Logs carry timestamp, observed timestamp, trace/span context, severity, body, resource, instrumentation scope, and attributes. If `SpanId` is present, `TraceId` should also be present. | Log rows must preserve trace joins and structured bodies instead of flattening logs into lossy text. |
 | [OpenTelemetry metrics data model](https://opentelemetry.io/docs/specs/otel/metrics/data-model/) | The metrics model is stable and explicitly preserves metric semantics across transformations, including temporality and stream identity. | Parallax must not merge incompatible streams or drop temporality/monotonicity. |
@@ -52,7 +54,7 @@ The central rule:
 | Level | Meaning | Allowed wording |
 | --- | --- | --- |
 | `not_measured` | No current fixture run exists. | "OTLP-native ingestion is planned." |
-| `endpoint_smoke` | OTLP/gRPC and OTLP/HTTP protobuf endpoints accept simple valid payloads and reject malformed payloads deterministically. | "OTLP endpoint prototype." |
+| `endpoint_smoke` | OTLP/gRPC and OTLP/HTTP protobuf endpoints accept simple valid payloads, endpoint URL construction fixtures behave as documented, and malformed/unsupported payloads fail deterministically. HTTP/JSON is optional and labeled. | "OTLP endpoint prototype." |
 | `direct_rust_traces` | Current OpenTelemetry Rust trace fixtures reach Parallax directly over gRPC and HTTP/protobuf and normalize into span rows. | "Rust OTLP trace ingestion." |
 | `direct_rust_three_signal` | Current OpenTelemetry Rust traces, logs, and metrics reach Parallax directly and normalize into queryable rows. | "Rust OTLP traces, logs, and metrics ingestion." |
 | `otel_semantics_preserved` | Direct fixtures preserve resource, scope, trace/span IDs, span links/events/status, log bodies/severity, metric stream identity, temporality, histograms, attributes, canonical evidence-edge hashes, canonical bundle hashes, and projection manifests. | "OTLP telemetry semantics preserved for the tested subset." |
@@ -134,6 +136,7 @@ Each `manifest.json` should include:
   },
   "transports": ["grpc", "http/protobuf"],
   "optional_transports": ["http/json"],
+  "endpoint_url_construction_required": true,
   "intermediaries": ["none", "collector-core", "collector-contrib", "rotel"],
   "intermediary_version_axes": {
     "collector_core": ["source_release", "distribution_binary"],
@@ -181,6 +184,7 @@ and storage mapping. A pass in one combination does not carry over to another.
   "fixture_id": "gzip_http",
   "transport": "http/protobuf",
   "path": "/v1/traces",
+  "endpoint_env_mode": "generic|per_signal_explicit_path|per_signal_missing_path",
   "content_type": "application/x-protobuf",
   "compression": "gzip",
   "accepted": true,
@@ -370,6 +374,12 @@ and storage mapping. A pass in one combination does not carry over to another.
 
 - No "OTLP-native" claim without a dated protocol, proto, SDK, Collector, and
   normalizer matrix.
+- Baseline transport support means both `grpc` and `http/protobuf` pass for the
+  tested signals. `http/json` is optional and must be named separately.
+- A JSON-only endpoint is not enough for an OTLP-native or Collector-compatible
+  Parallax claim.
+- Generic and per-signal OTLP endpoint environment variable behavior must be
+  tested because per-signal HTTP endpoints are used as-is by the exporter spec.
 - No agent-visible OTLP evidence claim without schema refs, canonical bundle
   hashes, evidence-edge hashes, projection manifests, and access-surface result
   rows for the advertised surfaces.
@@ -457,6 +467,7 @@ Avoid:
 
 - "full OpenTelemetry backend";
 - "supports all OTLP data";
+- "OTLP-native" for JSON-only ingest;
 - "Collector replacement";
 - "OTLP-native" without a run matrix;
 - "Rotel-compatible" beyond the exact Rotel fixture subset.

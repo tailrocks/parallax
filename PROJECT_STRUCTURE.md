@@ -117,6 +117,7 @@ or CI contract yet.
 | `docs/research/sentry-sdk-fixture-compatibility.md` | Fixture-driven Sentry compatibility gate: current SDK-generated envelopes, Rust-first fixture matrix, parser oracle strategy, normalization snapshots, and honest product wording. |
 | `docs/research/sentry-sdk-compatibility-ledger.md` | Result-ledger contract for Sentry SDK compatibility claims: claim levels, fixture-run artifacts, row schemas, expiry triggers, and allowed product wording. |
 | `docs/research/opentelemetry-protocol-and-context-layer.md` | Focused OpenTelemetry protocol, OTLP endpoint, Collector, Rotel, semantic context, scaling, and above-OTEL product opportunity analysis. |
+| `docs/research/otlp-transport-profile-recheck.md` | Focused OTLP transport-profile recheck: required gRPC and HTTP/protobuf baseline, optional HTTP/JSON status, endpoint URL construction fixtures, retry semantics, and JSON-only competitor caveats. |
 | `docs/research/otlp-receiver-conformance-and-collector-equivalence.md` | Fixture and conformance gate for OTLP-native claims: direct Rust SDK, official Collector, Collector Contrib, and Rotel equivalence over normalized Parallax evidence rows. |
 | `docs/research/otlp-conformance-ledger.md` | Result-ledger contract for OTLP-native and Collector-compatible claims: protocol/version matrix, run artifacts, row schemas, expiry triggers, and allowed product wording. |
 | `docs/research/rust-data-collection-and-instrumentation.md` | Rust-first data-collection decision (SDK/OTLP vs eBPF) and error-capture data model. |

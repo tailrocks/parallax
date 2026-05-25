@@ -863,6 +863,8 @@ Research:
 - OTEL collector pipelines
 - ingest pipelines
 - OTLP protocol internals
+- OTLP transport profiles, endpoint URL construction, and JSON-vs-protobuf
+  claim boundaries
 - scaling patterns
 - production deployment architectures
 - Rust-native collectors, especially Rotel (https://rotel.dev/,
