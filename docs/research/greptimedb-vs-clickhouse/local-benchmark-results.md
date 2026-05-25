@@ -965,6 +965,28 @@ zero-setup upsert vs ClickHouse heavy rewrite (lightweight update experimental +
 per-table block-number column). Reinforces LSM-native correction ergonomics; updates
 the divergence. GB-scale rewrite-vs-mask-vs-tombstone cost owed to harness.
 
+### Run 30 — 2026-05-25 — Q4 cross-tier frontend↔backend join (anchored)
+
+Backs the evidence-bundle verdict (the brief's Q4). Completes the Q1–Q6 smoke set
+(Q1/Q2/Q3 = Run 16; Q4 here). New `frontend_events` table (one event per trace),
+joined to `spans` on `trace_id`, anchored on one trace (14 spans). Smoke.
+
+- **ClickHouse: 5 ms.** `EXPLAIN` — both sides prune to the anchor via
+  `ORDER BY (trace_id, ts)` sort-key locality: `frontend_events` **Granules 1/9**,
+  `spans` **Granules 1/123**, plus a 26.x **`BuildRuntimeFilter`** on the join key.
+  `Join (FillRightFirst)` over the tiny pruned inputs.
+- **GreptimeDB: 59 ms** (HTTP-measured, ~50 ms fixed floor). `EXPLAIN` — anchor
+  `trace_id=X` **Filter pushed to BOTH inputs** (frontend_events + spans), then
+  `HashJoinExec mode=Partitioned` + `RepartitionExec Hash([trace_id], 10)`.
+- Result parity: **14 rows both** (1 frontend event × 14 backend spans).
+
+**Claim status:** confirms pass-5 framing with measurement — **anchored cross-tier
+join is NOT join-algorithm-decided**; both engines propagate the anchor constant to
+both inputs and join a tiny set. The gap is the familiar fixed overhead (CH sort-key
+locality + runtime filter; GT HTTP floor + 10-way repartition of a toy input, a
+small-scale artifact). Part of the not-latency-bound bundle (Run 16). Reinforces, does
+not move, the verdict. Un-anchored large↔large join (B4) still owed.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
