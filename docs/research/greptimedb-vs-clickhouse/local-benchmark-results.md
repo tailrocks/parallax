@@ -6106,6 +6106,43 @@ column_name FROM information_schema.columns WHERE table_name='phy'` → union+`_
 Source: `gh api ".../src/metric-engine/src/lib.rs?ref=v1.0.2"`. (Use `docker exec`; host port-forward
 down.)
 
+### Run 151 — 2026-05-25 — SOURCE+LIVE (gentle): native log ingestion = the built-in pipeline (ETL) engine — `greptime_identity` JSON→auto-schema live-proven (adopt-native-logs)
+
+**Context.** Host→container HTTP still **down** (exec path fine). Completes the native-structure trio
+the brief asks for: metrics (Run 150), now **logs**; traces partially done (Jaeger query API Run 32/86).
+No benchmark; gentle source + live-ingest-verify via `docker exec`. Re-pin: GT GA still v1.0.2, latest
+tag `v1.1.0-nightly-20260525` (prerelease) — v1.1 still not GA, unchanged.
+
+**Pass target.** Source-ground + live-verify GreptimeDB's **native log ingestion pipeline** — the
+adopt-native-logs backbone (does GT need an external log processor, or is the ETL built in?).
+
+**Source (`src/pipeline/src/{lib,etl,manager,dispatcher}.rs` @v1.0.2):** a pipeline = **`processors`**
+(parse/extract: dissect, regex, date, gsub…) + **`transforms`** (parsed fields → typed columns), YAML
+(`etl.rs`). Built-ins (`manager.rs`): **`greptime_identity`** (`GREPTIME_INTERNAL_IDENTITY_PIPELINE_NAME`
+— JSON logs → auto-schema, no authoring) + an internal **trace pipeline**
+(`GREPTIME_INTERNAL_TRACE_PIPELINE_V1_NAME`); `dispatcher.rs`/`tablesuffix.rs` route by content. So
+the log-parsing ETL is **in the database**, not an external tier.
+
+**Live (exec): identity pipeline auto-schema + schema-on-write.** `POST
+/v1/events/logs?table=nativelog_demo&pipeline_name=greptime_identity` with two JSON logs → table
+**auto-created**, inferred schema **`[greptime_timestamp timestamp(9), latency_ms bigint, level string,
+msg string, service string]`** (`latency_ms` typed numeric, auto time index); both rows queryable. A
+third log with a **new `trace_id`** field → `trace_id` column **auto-added** (schema-on-write). Dropped
+`nativelog_demo` after.
+
+**Verdict — adopt-native logs is a GreptimeDB edge.** GT parses heterogeneous logs into typed,
+queryable columns with zero up-front modelling and self-evolving schema, **no external Vector/Fluent
+Bit/OTel-transform tier.** ClickHouse has rich input *formats* but **no in-db log-parsing pipeline** →
+an external collector parses+inserts and the table is generally pre-created (the `JSON` type is the
+closest dynamic option, with the Run-129 GROUP-BY cast quirks). Ingest-ergonomics edge to GT; does not
+change query speed. Wrote up in `write-path-and-ingestion.md` (new "Native log ingestion" §).
+
+**Reproduce.** `docker exec parallax-bench-greptimedb-1 curl -s -XPOST
+'localhost:4000/v1/events/logs?db=public&table=nativelog_demo&pipeline_name=greptime_identity' -H
+'Content-Type: application/json' -d '[{"level":"ERROR","service":"api","msg":"x","latency_ms":512}]'`
+then `SELECT column_name,data_type FROM information_schema.columns WHERE table_name='nativelog_demo'`.
+Source: `gh api ".../src/pipeline/src/lib.rs?ref=v1.0.2"`. (Use `docker exec`; host port-forward down.)
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

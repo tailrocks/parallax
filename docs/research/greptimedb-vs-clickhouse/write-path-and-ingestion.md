@@ -2,7 +2,11 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 9, extended pass 90 (Run 53: concurrent ingest+query). The top
+Status: pass 9, extended pass 90 (Run 53: concurrent ingest+query) + **Run 151 (SOURCE+LIVE: native
+log ingestion = the built-in `src/pipeline` ETL engine — processors+transforms; `greptime_identity`
+zero-config JSON→auto-schema live-verified, types inferred + new field auto-adds a column; ClickHouse
+has no in-db log-parsing pipeline → needs an external collector + pre-modelled schema. Adopt-native
+logs edge to GreptimeDB)**. The top
 evaluation axis: **ingest → durable → queryable**, and exactly when written data
 becomes visible (freshness). Combines the write-path mechanisms from the internals
 notes with empirical freshness/throughput/concurrency probes
@@ -183,6 +187,38 @@ protobuf-only** — JSON is explicitly rejected (`src/servers/src/http/otlp.rs:8
 `UnsupportedJsonContentType`); in practice an OTel Collector/SDK emits protobuf, so
 this is fine, but you cannot hand-POST OTLP JSON. So "native OTLP" = the binary
 protocol a collector/SDK speaks, not a JSON shortcut.
+
+## Native log ingestion — the built-in pipeline (ETL) engine (source + live, Run 151)
+
+The logs side of "adopt native": GreptimeDB ships a **pipeline engine** (`src/pipeline`) — an
+in-database ETL that parses incoming logs into typed columns, so you do **not** need an external
+Vector/Logstash/Fluent Bit/OTel-transform layer in front. A pipeline = **`processors`** (parse/extract
+— dissect, regex, date, gsub, …) + **`transforms`** (map parsed fields → typed table columns),
+defined in YAML (`etl.rs`). Two built-ins are exposed (`manager.rs`):
+
+- **`greptime_identity`** — the zero-config path: POST JSON logs, each field becomes a column,
+  schema auto-created and **auto-evolved**, no pipeline authoring.
+- **An internal trace pipeline** (`GREPTIME_INTERNAL_TRACE_PIPELINE_V1_NAME`) — OTLP traces also flow
+  through a pipeline to their table; plus `dispatcher.rs`/`tablesuffix.rs` for content-based dynamic
+  table routing.
+
+**Live-verified (Run 151, via `docker exec`):** `POST /v1/events/logs?table=nativelog_demo&pipeline_name=greptime_identity`
+with two JSON log objects → the table **auto-created** with an inferred schema:
+`greptime_timestamp timestamp(9)` (auto time index), **`latency_ms bigint`** (numeric *inferred*, not
+string), `level`/`msg`/`service` `string`. Both rows queryable immediately. Then a third log carrying a
+**new** `trace_id` field → the `trace_id` column was **auto-added** (schema-on-write confirmed). So
+unstructured/semi-structured logs land as typed, queryable columns with zero up-front modelling and
+self-evolving schema.
+
+**vs ClickHouse — no in-database ingest pipeline.** ClickHouse has rich *input formats* but **no
+built-in log-parsing ETL**: to turn raw/unstructured logs into columns you run an **external**
+processor (Vector, Fluent Bit, OTel Collector, ClickStack) that parses and inserts, **and** the target
+table generally must exist first (no schema-on-write; the new `JSON` type is the closest dynamic
+option but you still create the table and inherit the GROUP-BY `.:Type` cast quirks, Run 129). So for
+logs, GreptimeDB is **adopt-native** (built-in pipeline + identity + schema-on-write), ClickHouse is
+**adopt-with-a-pipeline-tier** (external collector + pre-modelled schema). For Parallax — where logs
+arrive in heterogeneous shapes and the value is *not* having to pre-model every field — this is a real
+ingest-ergonomics edge to GreptimeDB (it does not change query speed; see `query-execution-engine.md`).
 
 ## Freshness/write-path verdict (axis #1)
 
