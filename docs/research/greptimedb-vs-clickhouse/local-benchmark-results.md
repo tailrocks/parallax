@@ -6617,6 +6617,27 @@ also dropped the rollup quickly). Base ingest freshness is a tie, unaffected. Up
 k; INSERT INTO fr VALUES('a',1); SELECT count() FROM fr"` → 1. GT: create + insert + `SELECT count()`
 (no flush) → 1. (exec; host port down.)
 
+### Run 167 — 2026-05-25 — LIVE re-verify (exec): delete/redaction semantics (Run 29/66) — no drift + GDPR physical-removal nuance
+
+**Context.** Rotated to deletes — decision-relevant for the operator's stated **redaction / GDPR
+right-to-be-forgotten** requirement. Re-pin unchanged.
+
+**Re-verified (no drift):** GreptimeDB `DELETE FROM rd WHERE k='u1'` → `affectedrows 1`, row gone from
+queries. ClickHouse `ALTER TABLE rd DELETE WHERE k='u1' SETTINGS mutations_sync=1` → row gone; also
+lightweight `DELETE FROM rd WHERE k='u3'` (GA) → row gone. Both delete row-level. Reproduces Run 29/66.
+
+**GDPR-compliance nuance (the useful add).** By default **both delete LOGICALLY first** (GreptimeDB
+tombstone → read-filter; ClickHouse lightweight `_row_exists=0` mask → read-filter); **physical** removal
+is deferred to compaction/merge. Query-invisible instantly on both, but physically present until purge.
+For a *guaranteed physical-erasure deadline* you must **force** it: GreptimeDB `ADMIN compact_table` (or
+TWCS), ClickHouse `OPTIMIZE … FINAL` or heavy `ALTER DELETE` (immediate part rewrite). **Parallax's
+redaction path should force compaction, not rely on the lazy default purge.** Updated
+`deletes-and-mutations.md`.
+
+**Reproduce.** GT: `DELETE FROM rd WHERE k='u1'` then `SELECT count(*)`. CH: `ALTER TABLE rd DELETE
+WHERE k='u1' SETTINGS mutations_sync=1` (or `DELETE FROM rd WHERE k=…`) then `SELECT count()`. (exec;
+host port down.)
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

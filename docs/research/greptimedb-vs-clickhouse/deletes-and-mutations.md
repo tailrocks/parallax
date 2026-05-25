@@ -2,8 +2,15 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 51, re-verified + sharpened pass 102 (Run 66 — DELETE parity reproduces;
-GreptimeDB has **no `UPDATE` statement**, update is (PK,ts)-keyed upsert). The "mutations"
+Status: pass 51, re-verified + sharpened pass 102 (Run 66) + **re-verified Run 167 (exec, no drift):
+GreptimeDB `DELETE FROM … WHERE k=…` (affectedrows 1); ClickHouse both `ALTER … DELETE` (sync mutation,
+part rewrite) and lightweight `DELETE FROM` (GA mask) remove the row. **GDPR-compliance nuance:** by
+default *both* delete **logically** first (GreptimeDB tombstone → read-filter; ClickHouse lightweight
+`_row_exists=0` mask → read-filter), with **physical** removal deferred to compaction/merge. So for a
+*guaranteed physical-erasure deadline* (right-to-be-forgotten) you must **force** it — GreptimeDB
+`ADMIN compact_table` (or wait for TWCS), ClickHouse `OPTIMIZE … FINAL` / heavy `ALTER DELETE` (rewrites
+immediately). The data is query-invisible instantly on both; physically gone only after that step. Plan
+the redaction path to force compaction, not rely on the default lazy purge.** The "mutations"
 ClickHouse system-lead + the delete path on both —
 i.e. how each engine handles **deleting and updating already-written data**.
 Decision-relevant for Parallax: append-mostly, but occasionally needs a **GDPR erase**
