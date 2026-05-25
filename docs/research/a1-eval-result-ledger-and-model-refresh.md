@@ -67,6 +67,17 @@ Outside sources checked for this pass:
   training-contamination canary on the public site, a good reminder that
   benchmark artifacts need leakage checks
   ([Terminal-Bench](https://www.tbench.ai/)).
+- Datadog's Bits AI SRE eval-platform write-up is the most relevant public
+  incumbent methodology source for incident-agent evaluation. It describes
+  reconstructed investigation world snapshots, isolated scenario data layers,
+  noisy environments with red herrings, segmentation by technology/problem/
+  monitor/difficulty, stored per-scenario scores, `pass@k`, weekly full-set
+  regression runs, feedback-derived labels, and full-label-set model-refresh
+  checks. It is a methodology benchmark, not proof of Parallax value, because it
+  does not publish portable bundles, a raw-dump-vs-bundle arm, public task rows,
+  or an open result ledger
+  ([Datadog](https://www.datadoghq.com/blog/engineering/bits-ai-eval-platform/),
+  [Datadog note](datadog-bits-ai-eval-loop.md)).
 - MCP `2025-11-25` separates human-readable tool text from JSON
   `structuredContent`, and RFC 8785/JCS gives a deterministic JSON
   canonicalization target. Arm C/D rows must therefore prove the agent saw a
@@ -111,6 +122,8 @@ docs/research/bundle-value-eval/
     run-manifest.json
     task-set.json
     benchmark-source-snapshot.json
+    investigation-world-snapshots.jsonl
+    noise-manifest.jsonl
     model-snapshots.json
     arm-results.jsonl
     projection-audit.jsonl
@@ -129,6 +142,8 @@ docs/research/bundle-value-eval/
 | `run-manifest.json` | Yes | Exact run configuration, model snapshots, scaffold commit, task-set hash, bundle template version, redaction policy, and token ceilings. |
 | `task-set.json` | Yes | Public task IDs, source, freshness tier, language, provenance, source-field policy hash, and inclusion/exclusion reason. |
 | `benchmark-source-snapshot.json` | Yes | Dataset revisions, row counts, split counts, last-updated/checked timestamps, and source-field quarantine summary for every public task source. |
+| `investigation-world-snapshots.jsonl` | Yes | One frozen normalized world per task: evidence rows, topology/deploy/source links, raw-ref hashes, evidence completeness, and source-field policy status. |
+| `noise-manifest.jsonl` | Yes | Distractor evidence included in the raw and bundle arms: unrelated but plausible services, logs, spans, alerts, deploys, and rationale for inclusion. |
 | `model-snapshots.json` | Yes | Exact provider model IDs and API parameters used for that run. |
 | `arm-results.jsonl` | Yes | One row per task/arm/model/seed outcome. |
 | `projection-audit.jsonl` | Yes | Canonical bundle hash, projection manifest, CLI/HTTP/MCP equivalence, and MCP `structuredContent` validation for agent-visible bundle arms. |
@@ -189,6 +204,12 @@ as durable prose; exact model IDs live here because they change over time.
       "source_field_policy_hash": "sha256:<hex>"
     }
   ],
+  "world_snapshot": {
+    "snapshot_manifest_hash": "sha256:<hex>",
+    "noise_manifest_hash": "sha256:<hex>",
+    "distractor_policy": "include_plausible_unrelated_context",
+    "raw_dump_and_bundle_derive_from_same_snapshot": true
+  },
   "models": [
     {
       "provider": "provider-name",

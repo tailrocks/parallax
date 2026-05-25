@@ -82,6 +82,9 @@ Current source checks for this update:
 - [Sentry MCP 0.35.0 release](https://github.com/getsentry/sentry-mcp/releases/tag/0.35.0)
 - [Datadog Bits AI SRE investigation docs](https://docs.datadoghq.com/bits_ai/bits_ai_sre/investigate_issues/)
 - [Datadog Bits AI Dev Agent](https://www.datadoghq.com/blog/bits-ai-dev-agent/)
+- [Datadog Bits AI SRE eval platform](https://www.datadoghq.com/blog/engineering/bits-ai-eval-platform/)
+- [Datadog Bits AI Dev Agent docs](https://docs.datadoghq.com/bits_ai/bits_ai_dev_agent/)
+- [Datadog Flaky Tests Management docs](https://docs.datadoghq.com/tests/flaky_management/)
 - [Grafana Assistant self-hosted docs](https://grafana.com/docs/grafana/latest/administration/assistant/)
 - [OpenObserve pricing](https://openobserve.ai/pricing/)
 - [OpenObserve homepage](https://openobserve.ai/)
@@ -146,11 +149,22 @@ Implication: Datadog is not just adding a chatbot. It is building an agent that
 uses its telemetry data gravity, topology, change events, source metadata, and
 workflow integrations.
 
+The 2026-05-25 refresh adds a stronger Datadog lesson: the agent needs an eval
+platform, not only a prompt. Datadog's engineering write-up says its Bits AI SRE
+evaluation system reconstructs investigation world snapshots, isolates scenarios
+at the data layer, injects realistic noise and red herrings, stores scores per
+scenario and run, segments by technology/problem/monitor/difficulty, tracks
+`pass@k`, runs the full eval set weekly, and reruns new model releases against
+the full label set before trusting them. That directly validates Parallax's A1
+result-ledger requirement, while also raising the bar: a Parallax bundle-value
+claim must be an auditable eval result, not a market narrative.
+
 Sources:
 
 - [Datadog Bits AI SRE product page](https://www.datadoghq.com/product/ai/bits-ai-sre/)
 - [Datadog Bits AI SRE investigation docs](https://docs.datadoghq.com/bits_ai/bits_ai_sre/investigate_issues/)
 - [Datadog Bits AI SRE launch blog](https://www.datadoghq.com/blog/bits-ai-sre/)
+- [Datadog Bits AI SRE eval platform](https://www.datadoghq.com/blog/engineering/bits-ai-eval-platform/)
 
 ### 2. Watchdog RCA
 
@@ -185,13 +199,26 @@ Test Optimization and Bits AI Dev Agent. Their stated flow is:
 4. Bits AI Dev Agent generates a verified code fix as a draft PR.
 
 Implication: the original Parallax flaky-test wedge directly overlaps with
-Datadog's emerging product direction.
+Datadog's product direction. Current docs sharpen this beyond a blog claim:
+Bits AI Dev Agent is still marked Preview, but it now spans Error Tracking,
+Trace Explorer, Code Security, Test Optimization, Continuous Profiler, and
+Containers; it creates code sessions, integrates with GitHub, opens draft PRs,
+uses CI logs and developer feedback, supports auto-push without auto-merge, and
+ingests repository instruction files including `AGENTS.md`. Flaky-test fixes are
+also still Preview and gated by thresholds for failure rate, wasted time, failed
+pipelines, default-branch flaking, and fields such as `@error.message` and
+`@test.source.file`.
 
 Sources:
 
 - [Datadog Test Optimization product page](https://www.datadoghq.com/product/test-optimization/)
 - [Datadog flaky test docs](https://docs.datadoghq.com/tests/flaky_tests/)
 - [Datadog Bits AI Dev Agent and Test Optimization blog](https://www.datadoghq.com/blog/bits-ai-test-optimization/)
+- [Datadog Bits AI Dev Agent docs](https://docs.datadoghq.com/bits_ai/bits_ai_dev_agent/)
+- [Datadog Bits AI Dev Agent setup docs](https://docs.datadoghq.com/bits_ai/bits_ai_dev_agent/setup/)
+- [Datadog Flaky Tests Management docs](https://docs.datadoghq.com/tests/flaky_management/)
+- [Datadog Bits AI SRE take-action docs](https://docs.datadoghq.com/bits_ai/bits_ai_sre/take_action/)
+- [Datadog Bits AI eval loop note](datadog-bits-ai-eval-loop.md)
 
 ## Other Important Competitors
 

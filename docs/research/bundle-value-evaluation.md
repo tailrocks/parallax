@@ -71,6 +71,13 @@ Primary sources:
 Secondary methodology reference:
 
 - [UTBoost: rigorous SWE-bench evaluation](https://arxiv.org/pdf/2506.09289)
+- [Datadog Bits AI SRE eval platform](https://www.datadoghq.com/blog/engineering/bits-ai-eval-platform/) -
+  useful industry methodology for incident-agent evals: world snapshots, noisy
+  reconstructed environments, segmentation, score history, `pass@k`, weekly
+  full-set regression runs, feedback-derived labels, and model-refresh checks.
+  This source validates the need for A1 rigor, but it does not validate
+  Parallax's bundle-value claim because Datadog does not publish a raw-dump-vs-
+  bundle arm, open schema, public task rows, or self-hosted result ledger.
 
 ## Hypothesis And Arms
 
@@ -159,6 +166,13 @@ Because SWE-bench Verified is now publicly questioned even by OpenAI, do not use
 one benchmark family as the only evidence. The Parallax experiment should treat
 telemetry-augmented SWE-bench as a scaling scaffold, then check the result on
 fresh/live tasks and a fault-injected reference app.
+
+The Datadog Bits AI SRE eval-platform source adds one more required control:
+the raw dump and bundle arms need realistic distractors. A clean bundle that only
+contains root-cause evidence is an open-book exam. Each task snapshot should
+therefore include a `noise_manifest` with unrelated but plausible spans, logs,
+alerts, deploys, services, and errors, plus the reason each distractor was
+included. Arm B and Arm C must derive from the same frozen noisy world snapshot.
 
 ## Decision Gate
 

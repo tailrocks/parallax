@@ -109,6 +109,7 @@ Code `/loop` runbook.
 - [Production database evidence ledger](docs/research/production-database-evidence-ledger.md)
 - [Agent observability technical review](docs/research/agent-observability-technical-review.md)
 - [Bundle-value evaluation](docs/research/bundle-value-evaluation.md)
+- [Datadog Bits AI eval loop](docs/research/datadog-bits-ai-eval-loop.md)
 - [Bundle-value seed corpus](docs/research/bundle-value-seed-corpus.md)
 - [Phase 0 telemetry overlay contract](docs/research/phase0-telemetry-overlay-contract.md)
 - [A1 eval result ledger and model refresh](docs/research/a1-eval-result-ledger-and-model-refresh.md)
