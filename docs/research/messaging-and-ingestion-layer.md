@@ -185,17 +185,32 @@ Iggy's physical model maps directly to that job.
 
 ### Why It May Not Fit Yet
 
-Iggy is still an Apache Incubator project, and the latest 2026 release notes
-show that clustering is actively being hardened rather than already boring
-infrastructure. Version 0.7.0 laid VSR consensus foundations; version 0.8.0
-continued the clustering path with a wire-protocol rewrite, shard crate,
-persistent metadata WAL, and related hardening.
+Hard current status (rechecked 2026-05-25): **Iggy runs as a single node today.
+It has no production multi-node clustering or replication.** Clustering based on
+Viewstamped Replication (VSR) is under active development — the core consensus
+protocol, view-change mechanism, deterministic timeouts, and a network simulator
+exist — but it is explicitly **not production-ready**, and `v0.8.0` ships only the
+*groundwork* for multi-node (TwoHalves buffer, aligned-buffer memory pool,
+sans-IO frame codec, VSR type consolidation, persistent WAL journal) that the
+server does not yet use for replication. Iggy is also still in the Apache
+Incubator (entered 2025-02; latest releases `v0.7.0` 2026-02-24, `v0.8.0`
+2026-04-22).
+
+The consequence for Parallax is concrete and changes a prior conclusion: **Tier 3
+horizontal durability cannot depend on Iggy yet**, because a single-node stream is
+a single point of failure with no replicated partitions or failover. Iggy is a
+fine *single-node durable* stream (Tier 2), but the Tier 3 clustered-durable
+stream must be NATS JetStream (Go, mature clustering) or Redpanda (C++, Raft) —
+or a storage-backed/object-store stream — until Iggy ships and proves VSR
+clustering. Keep Iggy behind the `IngestLog` abstraction precisely so this
+Tier-3 substitution is a config change, not a rewrite.
 
 Sources:
 
 - [Apache Iggy 0.7.0 release](https://iggy.apache.org/blogs/2026/02/24/release-0.7.0/)
 - [Apache Iggy 0.8.0 release](https://iggy.apache.org/blogs/2026/04/22/release-0.8.0/)
-- [Apache Iggy downloads](https://iggy.apache.org/downloads)
+- [Iggy clustering status (issue #2562)](https://github.com/apache/iggy/issues/2562)
+- [Apache Iggy incubation status](https://incubator.apache.org/projects/iggy.html)
 
 Risks to test before making it a default dependency:
 
@@ -418,7 +433,9 @@ This is the first place Iggy should appear in the default architecture.
 
 ```text
 parallax-ingest x N
-iggy cluster or fallback durable stream
+clustered durable stream: NATS JetStream or Redpanda
+  (NOT an Iggy cluster yet — Iggy has no production clustering as of 2026-05;
+   adopt Iggy here only once VSR clustering ships and passes the fault tests)
 normalizer workers x N
 grouping workers x N
 context-index workers x N
@@ -427,7 +444,10 @@ postgres metadata
 object storage
 ```
 
-Goal: horizontal scaling without rewriting event contracts.
+Goal: horizontal scaling without rewriting event contracts. Because the
+`IngestLog` abstraction is the same across tiers, swapping the Tier 3 stream
+(NATS/Redpanda today, Iggy when its clustering is proven) is a deployment change,
+not an event-contract change.
 
 The ingest gateway must remain stateless except for authentication/cache. All
 durable state belongs in the stream, observability storage, metadata store, or
