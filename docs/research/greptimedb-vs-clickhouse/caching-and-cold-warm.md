@@ -80,8 +80,30 @@ above predicts the divergence direction; the *magnitude* is owed to those runs.
 | Cache memory footprint / tuning | ~tie, different shape | CH one big mark cache (5 GB) vs GreptimeDB several smaller purpose caches. | arch |
 | Index-lookup caching | both | CH index_mark_cache; GreptimeDB inverted/bloom/vector + result cache. | arch |
 
+## Query-result cache — the one layer ClickHouse has, GreptimeDB doesn't (pass 60, footnote)
+
+A distinction worth pinning: everything above is **data/index caching** (blocks, marks,
+index pages) — both engines have rich stacks there. ClickHouse *also* has a true
+**query-result cache** (`use_query_cache`, **off by default**; `query_cache_ttl=60` s;
+`enable_reads_from_query_cache=1` — Run 35): a repeated **identical** `SELECT` returns
+the cached *result* and **skips execution entirely** (no re-scan, no re-aggregate).
+GreptimeDB has **no query-result cache** — its `src/mito2/src/cache/` stack is
+file/index/manifest/write caches plus an *index-probe* `index/result_cache.rs` (caches
+which rows an index match yields, **not** the final query result). So a repeated query
+on GreptimeDB always **re-executes**, just on warm data/index caches (live, Run 35: a
+repeat went 66 → 4 ms — that's data-cache warmth, not result-caching).
+
+Consequence (speed, axis #1): for **repeated identical** queries — a Grafana panel
+refreshing the same metric/SQL every N seconds — ClickHouse's result cache can skip the
+re-aggregation CPU; GreptimeDB re-aggregates each time on warm data (pass 20's agg cost
+applies per refresh). **But a footnote for Parallax:** the dominant pattern is *anchored*
+evidence-bundle queries on **unique** `trace_id`/`fingerprint` anchors → near-zero
+result-cache hit rate, and dashboard clients usually cache at the panel level anyway. A
+modest ClickHouse edge for repeated-identical-query dashboards, off-by-default, not a
+hot-path differentiator. Does **not** move the verdict.
+
 ## Source / evidence
 
-- GreptimeDB caches: `src/mito2/src/cache/{write_cache,file_cache,manifest_cache,index}.rs`; defaults `src/mito2/src/config.rs:204-207` (sst_meta 128 MB, vector 512 MB, page 512 MB, selector-result 512 MB); object-store read cache `src/object-store/src/config.rs:318-340` (default on).
+- GreptimeDB caches: `src/mito2/src/cache/{write_cache,file_cache,manifest_cache,index}.rs` (incl. index-probe `index/result_cache.rs` — not a query-result cache); defaults `src/mito2/src/config.rs:204-207` (sst_meta 128 MB, vector 512 MB, page 512 MB, selector-result 512 MB); object-store read cache `src/object-store/src/config.rs:318-340` (default on); **no query-result cache** (Run 35).
 - ClickHouse caches: `src/Core/ServerSettings.cpp:496-588,1574` (mark/uncompressed/index/query cache + prewarm); defaults `src/Core/Defines.h:85,88` (mark 5 GiB, uncompressed 0 MiB = off).
 - Ties to `local-benchmark-results.md` Runs 8–9 (object layout), `public-performance-claims.md` (JSONBench cold-run), `benchmarking-the-differences.md` B1/B10/B12.

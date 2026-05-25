@@ -1081,6 +1081,25 @@ N× cost, not-production-ready zero-copy, or Cloud. Reinforces the object-store-
 edge on the replication dimension (cost #2 + scaling #3). Arch + ClickHouse's own
 source warning; multi-replica S3 cost measurement owed to harness.
 
+### Run 35 — 2026-05-25 — Query-result cache (footnote-level caching layer)
+
+Backs `caching-and-cold-warm.md` (pass 60). Completes the caching-layer comparison
+(data/index caches done pass 24; this is the query-*result* layer). Version re-confirmed
+(GreptimeDB v1.0.2, ClickHouse v26.5.1.882 — no bump).
+
+- **ClickHouse:** has a query-result cache. `use_query_cache=0` (off by default),
+  `query_cache_ttl=60` s, `enable_reads_from_query_cache=1` (live). On a hit a repeated
+  identical SELECT returns the cached result and **skips execution**.
+- **GreptimeDB:** **no query-result cache.** `src/mito2/src/cache/` = file/index/manifest/
+  write caches + an *index-probe* `index/result_cache.rs` (caches index-match rows, not
+  the final result). A repeated query re-executes on warm data (live: 66 → 4 ms = data-
+  cache warmth, not result-caching).
+
+**Claim status:** footnote. ClickHouse can skip re-execution on repeated-identical
+queries (off-by-default result cache); GreptimeDB always re-executes on warm caches.
+Modest CH edge for repeated dashboard refreshes; **near-zero hit on Parallax's anchored,
+unique-key bundle queries** → not a hot-path differentiator, no verdict move.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
