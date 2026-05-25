@@ -43,8 +43,10 @@ The result-ledger contract for proving this gate is in
 | [Sentry SDK sensitive-data docs](https://docs.sentry.io/platforms/javascript/guides/nextjs/data-management/sensitive-data/) | Sentry recommends SDK-side scrubbing with `beforeSend` so sensitive data never leaves the local environment, plus server-side scrubbing as a storage safeguard. It explicitly calls out stack locals, breadcrumbs, user context, HTTP query strings, transaction names, and HTTP spans as sensitive-data paths. |
 | [Sentry data scrubbing overview](https://docs.sentry.io/security-legal-pii/scrubbing/) | Sentry treats server-side scrubbing, advanced scrubbing, attachment scrubbing, and replay privacy as separate controls. Parallax should likewise split controls by surface instead of claiming one global scrubber. |
 | [OpenTelemetry Collector processors](https://opentelemetry.io/docs/collector/components/processor/) | The Collector has transform/enrichment processors and a contrib/K8s Redaction Processor. As of the current docs, redaction is beta for traces and alpha for metrics/logs, so Parallax should support Collector-side redaction but not outsource bundle safety to it. |
-| [OpenTelemetry redaction processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/redactionprocessor/README.md) | The processor is designed to fail closed with `allowed_keys`, can mask blocked values, can hash with HMAC, and can emit redaction audit attributes. This maps well to Parallax ingest policy and bundle `redaction_report`, but it covers only telemetry attributes that pass through that processor. |
+| [OpenTelemetry redaction processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/redactionprocessor/README.md) | The processor is designed to fail closed with `allowed_keys`, can mask blocked values, recommends HMAC for low-entropy data, can emit redaction audit attributes, and now documents URL/database-query sanitizers. This maps well to Parallax ingest policy and bundle `redaction_report`, but it covers only telemetry attributes that pass through that processor. |
 | [OpenTelemetry common `AnyValue`](https://opentelemetry.io/docs/specs/otel/common/#anyvalue) | OTLP values can be scalars, bytes, arrays, and key/value lists. Parallax must redact the typed tree before converting a value to text or Markdown. |
+| [MCP tools specification `2025-11-25`](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) | MCP tool results can contain both text content and JSON `structuredContent`; when an `outputSchema` is provided, servers must conform to it and clients should validate it. Parallax redaction safety must therefore scan and hash the canonical `structuredContent`, not only the text block. |
+| [RFC 8785 JSON Canonicalization Scheme](https://www.rfc-editor.org/rfc/rfc8785.html) | JCS defines a hashable JSON representation using I-JSON constraints and deterministic property sorting. Redaction reports and projection hashes should be computed after redaction over canonical JSON so CLI, HTTP, file, and MCP outputs can be compared. |
 | [GitHub Actions log masking](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#masking-a-value-in-a-log) and [Actions secrets](https://docs.github.com/en/actions/concepts/security/secrets) | GitHub can mask values in logs, but `add-mask` must happen before output and GitHub states transformed secret redaction is not guaranteed. Parallax must treat CI logs/artifacts as hostile, even when they came from GitHub. |
 | [GitHub secret scanning patterns](https://docs.github.com/en/code-security/reference/secret-security/supported-secret-scanning-patterns) | GitHub documents generic, AI-detected, and provider-specific pattern categories, with hundreds of provider patterns. Parallax should reuse a maintained pattern corpus for tests and canaries rather than inventing all patterns manually. |
 | [OWASP Logging Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html) | OWASP says access tokens, passwords, connection strings, encryption keys, payment data, sensitive PII, illegal-to-collect data, and opt-out data should usually be removed, masked, sanitized, hashed, or encrypted; it also requires verification and access controls for logs. |
@@ -78,6 +80,8 @@ capture source
   -> storage with policy_version and raw_access_policy
   -> bundle builder redaction pass
   -> redaction_report and residual_risk
+  -> schema validation and canonical bundle hashing
+  -> projection_manifest hashing for JSON/Markdown/CLI/HTTP/MCP
   -> agent/API/MCP output scanner
 ```
 
@@ -162,17 +166,47 @@ The bundle builder should emit deterministic excerpts only after:
 2. source-specific parsing;
 3. secret/PII detection;
 4. replacement/hashing;
-5. a final output scanner over the JSON and Markdown renderings.
+5. schema validation;
+6. canonical JSON hashing;
+7. a final output scanner over the canonical JSON and every projection.
 
 ### Stage 5: Output Guard
 
 Every API, CLI, MCP, and third-party-model output must pass through the same
-final scanner. This catches accidental leaks from:
+final scanner. The scanner target is the exact canonical JSON object plus the
+exact projection bytes that the caller or model receives. This catches
+accidental leaks from:
 
 - Markdown projection bugs;
 - model-generated summaries that copied raw material;
 - tool responses embedded inside agent-session evidence;
 - newly added fields not covered by older bundle schema tests.
+
+### Stage 6: Canonical Projection Gate
+
+The newer [evidence bundle schema contract](evidence-bundle-and-schema.md)
+turns redaction from a text-rendering property into a canonical-bundle property.
+Before a bundle can be exposed to an agent, API caller, CLI user, MCP client, or
+eval/corpus row:
+
+- the canonical bundle JSON must include `schema_ref`, `canonical_hash`,
+  `projection_manifest`, `redaction_report`, `source_field_policy`, `access`,
+  and raw-ref policy fields;
+- `canonical_hash` must be computed after source-field filtering, redaction,
+  and residual-risk labeling;
+- every JSON, Markdown, CLI, HTTP, ZIP, model-prompt, and MCP projection must be
+  derived from the canonical JSON and recorded in `projection_manifest`;
+- MCP bundle tools must declare an `outputSchema` matching `schema_ref.uri` and
+  return the canonical object in `structuredContent`;
+- `_meta`, tool annotations, descriptions, or text-only JSON can duplicate
+  hashes or give hints, but cannot be the only place safety fields appear;
+- if a projection hash differs from the manifest, if `structuredContent` is
+  missing for a bundle-returning MCP tool, or if a leak appears only in a
+  rendered projection, the A6 run fails.
+
+This is stricter than "scan JSON and Markdown." Redaction must hold for the
+canonical object and for every consumer-visible projection, otherwise a safe
+stored bundle can still become an unsafe agent prompt.
 
 ## Required Redaction Report
 
@@ -188,6 +222,27 @@ object:
     "version": "phase0-source-field-policy-v1",
     "hash": "sha256:...",
     "violations": 0
+  },
+  "bundle_schema_ref": {
+    "uri": "https://parallax.dev/schemas/evidence-bundle/v0.json",
+    "hash": "sha256:...",
+    "canonicalization": "jcs-rfc8785"
+  },
+  "canonical_bundle_hash": "sha256:...",
+  "projection_manifest": {
+    "bundle_json": {
+      "hash": "sha256:...",
+      "scanner_status": "pass"
+    },
+    "bundle_markdown": {
+      "hash": "sha256:...",
+      "scanner_status": "pass"
+    },
+    "mcp_structuredContent": {
+      "hash": "sha256:...",
+      "output_schema_id": "https://parallax.dev/schemas/evidence-bundle/v0.json",
+      "scanner_status": "pass"
+    }
   },
   "input_surfaces": ["sentry_event", "otlp_span", "ci_log", "cli_invocation"],
   "rules_applied": ["auth-header-strip", "provider-secret-detector", "pii-email", "hmac-low-entropy-id"],
@@ -216,7 +271,9 @@ object:
 
 The report must be machine-readable so evals can reject unsafe bundles
 automatically. For A1-style eval rows, `source_field_policy.violations > 0`
-blocks the result even when `known_secret_matches = 0`.
+blocks the result even when `known_secret_matches = 0`. A report that lacks
+`bundle_schema_ref`, `canonical_bundle_hash`, or per-projection scanner status
+is incomplete for agent-visible claims.
 
 ## Red-Team Gate
 
@@ -228,7 +285,9 @@ freshness rules are defined in the
 | Gate | Required result |
 | --- | --- |
 | Seeded secret corpus | Canary tokens, provider token examples, private keys, DB URLs, JWTs, cookies, auth headers, emails, phone numbers, IPs, user names, path-sensitive data, and payment-like numbers are seeded across every supported surface. |
-| Dual rendering scan | Both JSON bundle and Markdown projection scan clean. |
+| Dual rendering scan | Canonical bundle JSON and Markdown projection scan clean. |
+| Projection manifest | Every CLI, HTTP, MCP, model-prompt, and file projection has a hash in `projection_manifest` and derives from the canonical bundle hash. |
+| MCP structured output | Bundle-returning MCP tools validate `structuredContent` against the bundle `outputSchema`; text-only MCP output is a projection, not proof of schema-safe redaction. |
 | Raw-ref isolation | Raw refs are not dereferenced in default agent/API/MCP output. |
 | Detector failure mode | If a detector errors, unsafe fields are stripped and the bundle reports `manual_review_required` or fails closed. |
 | Source-field isolation | `runner_private`, `grader_private`, and default `triage_private` fields do not appear in agent-visible projections. |
@@ -236,9 +295,10 @@ freshness rules are defined in the
 | Real-data pilot | Operator-owned real logs/CI/CLI/frontend sessions run through the same suite before external users. |
 | False-positive review | Redaction must not erase the minimum evidence needed for A1 bundle-value evals. |
 
-Initial acceptance criterion: **zero known seeded canary leaks** in agent-visible
-JSON and Markdown. This does not prove no leaks exist, but anything weaker is
-not compatible with the data-ownership value prop.
+Initial acceptance criterion: **zero known seeded canary leaks** in canonical
+bundle JSON, MCP `structuredContent`, and every agent-visible projection. This
+does not prove no leaks exist, but anything weaker is not compatible with the
+data-ownership value prop.
 
 ## Kill And Narrowing Criteria
 

@@ -45,6 +45,16 @@ scrubber:
   key/value lists; Parallax must inspect the typed value tree before string or
   Markdown rendering
   ([OpenTelemetry common `AnyValue`](https://opentelemetry.io/docs/specs/otel/common/#anyvalue)).
+- MCP `2025-11-25` tool results can return JSON `structuredContent` alongside
+  text content, and an advertised `outputSchema` makes server conformance and
+  client validation part of the contract. A6 must therefore test the canonical
+  structured output, not only the human-readable text projection
+  ([MCP tools specification](https://modelcontextprotocol.io/specification/2025-11-25/server/tools)).
+- RFC 8785/JCS constrains JSON to a deterministic, hashable representation.
+  A6 projection rows should bind scanner results to the canonical bundle hash so
+  JSON, Markdown, CLI, HTTP, and MCP outputs can be compared without trusting
+  renderer-specific formatting
+  ([RFC 8785](https://www.rfc-editor.org/rfc/rfc8785.html)).
 - GitHub Actions masking requires registering each value before it appears in
   logs; CI logs must still be treated as hostile text
   ([GitHub Actions masking](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#masking-a-value-in-a-log)).
@@ -57,18 +67,22 @@ scrubber:
   should be excluded or protected; it also says data from other trust zones must
   be treated as untrusted
   ([OWASP Logging Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html)).
-- Gitleaks `v8.30.1` is the latest release checked and can scan git history,
+- Gitleaks `v8.30.1` is the latest-release redirect checked on 2026-05-25
+  and can scan git history,
   directories/files, and stdin with configurable rules and baselines, making it a
   good fixture-output comparator
   ([Gitleaks v8.30.1](https://github.com/gitleaks/gitleaks/releases/tag/v8.30.1)).
-- detect-secrets `v1.5.0` supports baselines, plugin configuration, staged-file
-  hooks, and audit workflows, making it useful for "new secret" regression checks
+- detect-secrets `v1.5.0` is the latest-release redirect checked on 2026-05-25
+  and supports baselines, plugin configuration, staged-file hooks, and audit
+  workflows, making it useful for "new secret" regression checks
   ([Yelp detect-secrets v1.5.0](https://github.com/Yelp/detect-secrets/releases/tag/v1.5.0)).
-- TruffleHog `v3.95.3` can return verified credential findings across
+- TruffleHog `v3.95.3` is the latest-release redirect checked on 2026-05-25
+  and can return verified credential findings across
   repositories and other stores, but verification can create network/privacy
   side effects and should stay out of the default runtime path
   ([TruffleHog v3.95.3](https://github.com/trufflesecurity/trufflehog/releases/tag/v3.95.3)).
-- Presidio explicitly warns that automated PII detection cannot guarantee that
+- Presidio `2.2.362` is the latest-release redirect checked on 2026-05-25
+  and explicitly warns that automated PII detection cannot guarantee that
   all sensitive information is found, so PII scanners are comparators and
   optional offline processors, not the only safety control
   ([Microsoft Presidio 2.2.362](https://github.com/microsoft/presidio/releases/tag/2.2.362)).
@@ -111,6 +125,14 @@ Each run gets exactly one manifest:
     "docs/research/bundle-value-eval/tasks/<task_id>/source-field-policy.json"
   ],
   "bundle_schema_version": "evidence-bundle-v0",
+  "bundle_schema_ref": {
+    "uri": "https://parallax.dev/schemas/evidence-bundle/v0.json",
+    "hash": "sha256:...",
+    "canonicalization": "jcs-rfc8785"
+  },
+  "canonical_bundle_hash_algorithm": "sha256 over RFC8785 canonical JSON after redaction",
+  "projection_manifest_required": true,
+  "mcp_output_schema_required": true,
   "surfaces": [
     "sentry_event",
     "otlp_log",
@@ -167,6 +189,15 @@ Every seeded fixture gets one row in `surface-fixture-ledger.jsonl`:
   "agent_visible_expected": true,
   "raw_ref_policy": "metadata_only|ref_only|deny_dereference",
   "projection_targets": ["bundle_json", "bundle_markdown", "cli_output", "http_api", "mcp_tool_result"],
+  "schema_ref_hash": "sha256:...",
+  "canonical_bundle_hash": "sha256:...",
+  "projection_manifest_hashes": {
+    "bundle_json": "sha256:...",
+    "bundle_markdown": "sha256:...",
+    "cli_output": "sha256:...",
+    "http_api": "sha256:...",
+    "mcp_structuredContent": "sha256:..."
+  },
   "canary_classes": ["postgres_connection_string", "password", "repo_path_user_fragment"],
   "encoding_variants": ["plain", "shell_quoted", "json_escaped"],
   "expected_actions": [
@@ -187,6 +218,9 @@ Every seeded fixture gets one row in `surface-fixture-ledger.jsonl`:
   "cli_output_leak_count": 0,
   "http_api_leak_count": 0,
   "mcp_tool_result_leak_count": 0,
+  "mcp_structured_content_hash": "sha256:...",
+  "mcp_output_schema_valid": true,
+  "safety_fields_only_in_meta": false,
   "redaction_report_complete": true,
   "raw_ref_dereferenced": false,
   "detector_failure_mode": "not_applicable"
@@ -231,8 +265,15 @@ Projection rows prove that the safe internal bundle did not leak when rendered:
   "bundle_id": "fixture_bundle_001",
   "projection": "bundle_markdown",
   "output_hash": "sha256:...",
+  "schema_ref_hash": "sha256:...",
+  "canonical_bundle_hash": "sha256:...",
+  "projection_manifest_hash": "sha256:...",
+  "projection_derives_from_canonical": true,
   "source_field_policy_hash": "sha256:...",
   "source_field_policy_violations": 0,
+  "mcp_structured_content_hash": null,
+  "mcp_output_schema_valid": null,
+  "safety_fields_only_in_meta": false,
   "final_scanner_status": "pass",
   "canary_leaks": 0,
   "raw_refs_expanded": 0,
@@ -330,6 +371,21 @@ When a red-team run finds a leak or usefulness failure, record the repair:
 ## Counting Rules
 
 - A seeded canary leak in any agent-visible projection fails the run.
+- A run cannot pass unless the canonical bundle includes `schema_ref`,
+  `canonical_hash`, `projection_manifest`, `redaction_report`,
+  `source_field_policy`, `access`, and raw-ref policy fields.
+- `canonical_bundle_hash` is computed only after source-field filtering,
+  redaction, residual-risk labeling, and schema validation.
+- Every projection must derive from the canonical bundle and match its
+  `projection_manifest` hash. Hash mismatch, missing projection row, or an
+  unscanned projection fails the run.
+- MCP bundle output counts only when `structuredContent` validates against the
+  evidence-bundle `outputSchema` and carries the same canonical hash as the CLI
+  and HTTP result. Text-only MCP JSON or Markdown is a projection, not proof of
+  schema-safe redaction.
+- Safety fields that appear only in MCP `_meta`, tool annotations, descriptions,
+  or model-prompt wrapper metadata do not count. They must be present in the
+  canonical bundle JSON.
 - A source-field policy violation in any agent-visible projection fails the run.
   Redaction cannot rescue a forbidden field that should never have entered the
   projection.
@@ -379,7 +435,7 @@ Use these claim levels in `redaction-red-team-results.md`:
 | `frontend_metadata_only_pass` | Frontend metadata/error fixtures pass, but replay/raw DOM remains out of scope. | "Frontend metadata is redaction-tested; replay remains opt-in and gated." |
 | `agent_session_metadata_pass` | Agent/session structural metadata passes, but full prompts/tool outputs remain raw refs. | "Agent traces expose metadata and redacted excerpts, not full transcripts by default." |
 | `structured_provider_projection_pass` | OTLP typed values, deploy/change provider payloads, deployment review comments, database query text/parameters, and raw-ref projections pass for the tested subset. | "Structured telemetry and provider evidence are redaction-tested for the configured projections." |
-| `agent_visible_mixed_pass` | All claimed default surfaces pass zero-canary-leak, source-field-isolation, and usefulness gates. | "Agent-visible bundles are red-team tested for the configured surfaces." |
+| `agent_visible_mixed_pass` | All claimed default surfaces pass zero-canary-leak, source-field-isolation, canonical-hash, projection-manifest, MCP structured-output, and usefulness gates. | "Agent-visible bundles are red-team tested for the configured surfaces." |
 | `fail_closed_only` | Leaks are avoided only by stripping/ref-only behavior that loses required usefulness. | "Safe metadata-only mode; no agent-visible rich excerpts." |
 | `claim_expired` | A previous pass is stale or invalidated by a rerun trigger. | "Previously tested; rerun required." |
 
@@ -392,7 +448,8 @@ Rerun A6 when any of these change:
 
 - redaction policy version;
 - source-field policy version or source task field schema;
-- evidence bundle schema or projection renderer;
+- evidence bundle schema, canonicalization method, canonical hash procedure, or
+  projection renderer;
 - runtime detector/parser version;
 - external scanner major version or GitHub pattern snapshot;
 - Sentry, OpenTelemetry, CLI, frontend, agent, or database capture surface;
@@ -401,6 +458,7 @@ Rerun A6 when any of these change:
   policy, or database query-text/parameter policy;
 - raw-ref policy or authorization model;
 - new MCP/HTTP/CLI output path;
+- MCP `outputSchema`, `structuredContent`, or `_meta` behavior changes;
 - new model-prompt wrapper that embeds bundle content;
 - a real pilot finds an unclassified secret or PII class;
 - 90 days pass after a public agent-visible safety claim.
@@ -432,7 +490,9 @@ unaffected narrower level.
 ## Bottom Line
 
 A6 can pass only with reproducible red-team artifacts. The required claim is not
-"we scrub secrets"; it is "for these surfaces and projections, seeded canaries
-did not leak, forbidden source fields stayed out, detector failures failed
-closed, raw refs stayed refs, usefulness was preserved, and the claim expires
-when the capture, source-field, or redaction surface changes."
+"we scrub secrets"; it is "for these canonical bundles, surfaces, and
+projections, seeded canaries did not leak, forbidden source fields stayed out,
+detector failures failed closed, raw refs stayed refs, MCP structured output
+validated against the bundle schema, usefulness was preserved, and the claim
+expires when the capture, source-field, schema, projection, or redaction surface
+changes."
