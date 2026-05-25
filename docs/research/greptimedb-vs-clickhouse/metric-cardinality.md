@@ -83,7 +83,7 @@ High cardinality splits across axes — both true, different things:
   dict-encoded, sharded structure with no `LowCardinality`-style cap and label-set
   hashing built in. ClickHouse works but needs deliberate `ORDER BY` design and hits
   the 8,192 dict cliff on wild label values.
-- **Aggregation *speed* at volume: ClickHouse (Run 11, ~10× at 40k series / 8M rows).**
+- **Aggregation *speed* at volume: ClickHouse (~2× warm, Run 37; corrected from ~10×).**
   The vectorized C++ engine (`query-execution-engine.md`) out-aggregates DataFusion
   regardless of the storage model. So "GreptimeDB handles high cardinality better" is
   about **modeling/storage**, not **aggregation latency** — the operator hypothesis
@@ -121,7 +121,7 @@ a speed win.
 - ClickHouse: `low_cardinality_max_dictionary_size = 8192` (`Core/Settings.cpp:3889`,
   "writes in an ordinary method" past the cap) — **live-confirmed Run 26**;
   `TimeSeries` engine (pass 44) as the experimental closer-to-GreptimeDB option.
-- Empirical: Run 11 (agg speed ~10×), Run 26 (LowCardinality cap live).
+- Empirical: Run 11/37 (agg speed — **~2× warm**, corrected from ~10× cold), Run 26 (LowCardinality cap live).
 - Cross-refs: `greptimedb-internals.md` (metric engine physical layout, pass 32),
   `query-execution-engine.md` (why CH aggregates faster), `per-signal-verdict.md`
   (metrics rows), `compression-and-cost.md`.

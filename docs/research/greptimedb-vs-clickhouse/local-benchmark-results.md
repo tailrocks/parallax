@@ -1128,6 +1128,37 @@ GreptimeDB pin's notes are bug-fixes + a sub-ms PromQL pushdown + the range-cach
 none change the verdict. Net: a real accuracy correction (range cache) caught by the
 method-#4 changelog sweep, not padding.
 
+### Run 37 — 2026-05-25 — Re-verify Run 11 metric-agg → the "~10×" was cold; warm is ~2×
+
+Maintenance re-verification of the most load-bearing measured claim (ClickHouse ~10×
+metric aggregation, the result that refutes the operator hypothesis on agg speed).
+Re-ran Run 11's **exact** query (`avg by service, 5-min buckets`) on the intact
+`metrics_hc` (8M rows / 40k series), both **warm** (data resident ~5 h). Versions
+unchanged.
+
+| | ClickHouse | GreptimeDB | ratio |
+| --- | --- | --- | --- |
+| Run 11 (pass 20) | 65 ms | **638 ms** | ~10× |
+| **Run 37 (warm, min of 3)** | **50 ms** | **107 ms** (server `execution_time_ms`) | **~2×** |
+
+ClickHouse is consistent (50–65 ms); **GreptimeDB went 638 → 107 ms (~6× faster than
+Run 11)**. The result is only 800 rows, so HTTP transfer can't explain it → **Run 11's
+638 ms was a cold/first-run GreptimeDB measurement** (taken right after the 2.98 s
+ingest, caches cold → full SST scan + decode), not the warm steady-state. **Warm, the
+SQL metric-agg gap is ~2×, not ~10×.** This also fits the mechanism better: the pass-42
+exec-engine edge (8× block + JIT + SIMD) predicts a ~2–3× warm gap, not 10× — the 10×
+was always suspiciously large for the mechanism, and the cold-cache explanation
+resolves it.
+
+**Correction (honest, load-bearing):** the "ClickHouse ~10× on metric aggregation"
+claim is **warm-overstated** — warm steady-state is **~2×**; the ~10× reflected a
+**cold/first-run** GreptimeDB scan (a valid *cold-regime* data point, but it was
+labeled as the general agg gap). Updated per-signal-verdict, verdict, and
+metric-cardinality. Net: ClickHouse still wins SQL metric agg (vectorized engine,
+pass 42) but by **~2× warm**, materially narrower than stated — slightly strengthens
+GreptimeDB's position (does not flip the verdict). Cold-regime agg gap (larger) ties to
+`caching-and-cold-warm.md`; the precise cold number is owed to the cold-tier harness.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

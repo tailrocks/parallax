@@ -48,9 +48,11 @@ where ClickHouse leads but which Parallax's anchored pattern rarely hits.
   per-query overhead (Runs 1–2; `read-path-indexing-and-execution.md`,
   `clickhouse-internals.md`).
 - GreptimeDB's metrics edge is **PromQL-native *capability* + native ingest, not
-  query speed**: at 40k series / 8M rows ClickHouse's SQL aggregation was **~10×
-  faster** (Run 11; Run-3's near-tie was a 1,200-series small-scale artifact).
-  GreptimeDB ties only on **freshness** (both visible-on-write, Run 5). So even on
+  query speed**: at 40k series / 8M rows ClickHouse's SQL aggregation is **~2× faster
+  warm** (Run 37: CH 50 ms vs GT 107 ms — **corrected down from the ~10× of Run 11,
+  which was a cold/first-run GreptimeDB scan, not the warm gap**; cold-regime gap is
+  larger). GreptimeDB ties only on **freshness** (both visible-on-write, Run 5). So even
+  on
   metrics, "GreptimeDB fastest" is false for aggregation *latency at volume* — it
   wins on PromQL **maturity/ergonomics** (GA, default-on) vs ClickHouse's
   **experimental** 26.x PromQL (`TimeSeries` engine, off by default) — a real lead,
@@ -75,7 +77,7 @@ storage*, accepting a younger DataFusion scan engine.
 | **Retention cost** | TTL = **whole-SST drop** (TWCS time-windowing → no read/rewrite; `compactor.rs:581`); ClickHouse default `ttl_only_drop_parts=0` **rewrites survivors** (Run 17: read 1M / rewrote 500k) unless tuned (`PARTITION BY` time + `ttl_only_drop_parts=1`). Cheap-by-default vs cheap-if-configured. | source+measured (Run 17) |
 | **Object-storage-native** | OpenDAL default + read cache; cheap re-readable retention first-class. Fewer *total* objects (4 vs 74, Runs 8–9) → wins full-scan cold reads. Cold GET cost is query-shape-dependent (measured both ways): full scan GreptimeDB fewer (26 vs 57, Run 15 — wins the JSONBench regime); **anchored lookup ClickHouse fewer (5 vs 22, Run 14)** — Parallax's pattern. Read cache → warm re-reads local on both. | measured (layout + cold GETs both shapes) |
 | **Durability / crash safety** | Has a **replayable WAL** (raft-engine local, tunable `sync_write`; or **Kafka remote → durability decoupled from the datanode**, the same mechanism that makes migration cheap). ClickHouse MergeTree has **no WAL** (obsolete in 26.x) — durability = unsynced part-on-disk (`fsync_after_insert=0`) + replicas; a single-node crash loses unflushed parts. | source+live (Run 20) |
-| **High-cardinality metric *storage*** | Metric engine `__tsid` (label-set hash) over a shared physical wide table + PartitionTree memtable (dict-encoded label sets, no per-series cap) — high cardinality is the design center. ClickHouse `LowCardinality` dict **caps at 8,192** then falls back to plain (the cliff); needs `ORDER BY` care or the experimental TimeSeries engine. *(Aggregation latency is the reverse — ClickHouse ~10×, Run 11.)* | source+live (Run 26) |
+| **High-cardinality metric *storage*** | Metric engine `__tsid` (label-set hash) over a shared physical wide table + PartitionTree memtable (dict-encoded label sets, no per-series cap) — high cardinality is the design center. ClickHouse `LowCardinality` dict **caps at 8,192** then falls back to plain (the cliff); needs `ORDER BY` care or the experimental TimeSeries engine. *(Aggregation latency is the reverse — ClickHouse ~2× warm, Run 37; was ~10× cold.)* | source+live (Run 26) |
 | **Corrections (UPDATE) / upsert** | UPDATE = re-insert `(PK,ts)` → dedup last-wins = a **cheap GA upsert**, no setup; ClickHouse UPDATE = heavy `ALTER UPDATE` part rewrite (lightweight update is experimental + needs a per-table block-number column). DELETE is ~parity (both read-filtered). | source+live (Run 29) |
 | Freshness | Visible-on-write (tie with ClickHouse, not a win). | smoke |
 

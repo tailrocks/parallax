@@ -5,9 +5,12 @@
 Status: pass 42. The execution-engine half of checklist #4 (the read-path note covers
 planning / predicate pushdown / skip-vs-scan / joins; this is the *engine that runs
 the plan*). It is the mechanism **behind the measured throughput gaps** — ClickHouse
-~10× on metric aggregation at 40k series (Run 11) and ~18× on full-text log search
+**~2× on warm metric aggregation** at 40k series (Run 37; corrected from the ~10× of
+Run 11, which was a cold/first-run GreptimeDB scan) and ~18× on full-text log search
 (Run 12). The verdict has called this "a decade-tuned C++ vectorized engine"; this
-note makes that concrete, against source + live settings (Run 21).
+note makes that concrete, against source + live settings (Run 21). *(The ~2× warm
+agg gap fits this mechanism — 8× block + JIT + SIMD — far better than the old ~10×,
+which the cold-cache explanation resolves.)*
 
 Pins: GreptimeDB `v1.0.2` (`0ef5451`, **DataFusion `=52.1`**), ClickHouse
 `v26.5.1.882-stable` (`5b96a8d8`), re-confirmed latest stable 2026-05-25.
