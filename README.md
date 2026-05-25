@@ -84,6 +84,7 @@ idea becomes sharper.
 - [Sentry SDK compatibility ledger](docs/research/sentry-sdk-compatibility-ledger.md)
 - [OpenTelemetry protocol and context layer](docs/research/opentelemetry-protocol-and-context-layer.md)
 - [OTLP receiver conformance and Collector equivalence](docs/research/otlp-receiver-conformance-and-collector-equivalence.md)
+- [OTLP conformance ledger](docs/research/otlp-conformance-ledger.md)
 - [Repository structure](PROJECT_STRUCTURE.md)
 - [Agent instructions](AGENTS.md)
 

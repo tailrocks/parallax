@@ -20,6 +20,10 @@ The product claim is not "we have an endpoint on port 4318." The claim is:
 If this gate fails, Parallax can still ingest OTLP experimentally, but it should
 not call the path OTLP-native.
 
+Results and product-claim status should be published through the
+[OTLP conformance ledger](otlp-conformance-ledger.md), not inferred from this
+fixture design alone.
+
 ## Current Primary-Source Checks
 
 | Source | What matters for Parallax |
@@ -264,6 +268,8 @@ This keeps the tiny tier simple while making the production Collector path real.
 
 - [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md)
   makes the protocol decision; this note defines the conformance proof.
+- [OTLP conformance ledger](otlp-conformance-ledger.md) turns conformance runs
+  into claim levels, row schemas, expiry triggers, and allowed product wording.
 - [Self-hosted simplicity gate](self-hosted-simplicity-gate.md) requires OTLP
   ingestion without an external Collector in the tiny tier.
 - [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md)

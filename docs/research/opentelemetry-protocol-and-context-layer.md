@@ -28,6 +28,9 @@ The product value belongs above OTEL: Sentry-compatible error grouping,
 stacktrace normalization, release regression analysis, evidence graph building,
 and bounded MCP/API context bundles for humans and coding agents.
 
+The product-claim boundary for "OTLP-native" and "Collector-compatible" is the
+[OTLP conformance ledger](otlp-conformance-ledger.md).
+
 In one sentence:
 
 > OTEL should be the wire format and context substrate; Parallax should be the
@@ -54,6 +57,7 @@ Sources:
 - [Rotel docs](https://rotel.dev/)
 - [Rotel v0.2.2 release](https://github.com/rotel-dev/rotel/releases/tag/v0.2.2)
 - [OpenTelemetry Rust 0.32.0 release](https://github.com/open-telemetry/opentelemetry-rust/releases/tag/opentelemetry-0.32.0)
+- [OTLP conformance ledger](otlp-conformance-ledger.md)
 
 ## Is OTEL Becoming The Universal Protocol Layer?
 

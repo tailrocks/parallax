@@ -155,6 +155,8 @@ Related research:
 - [Agent observability technical review](agent-observability-technical-review.md)
 - [Strategic verdict and research coverage](strategic-verdict-and-research-coverage.md)
 - [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md)
+- [OTLP receiver conformance and Collector equivalence](otlp-receiver-conformance-and-collector-equivalence.md)
+- [OTLP conformance ledger](otlp-conformance-ledger.md)
 - [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)
 - [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md)
 

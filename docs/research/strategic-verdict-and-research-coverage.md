@@ -93,7 +93,7 @@ GreptimeDB fails Parallax-shaped storage tests.
 | Messaging/streaming | [Messaging and ingestion layer](messaging-and-ingestion-layer.md), [Ingest log replay and backpressure gate](ingest-log-replay-and-backpressure-gate.md) |
 | Unified observability storage | [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md), [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md), [Storage size and object cost gate](storage-size-and-object-cost-gate.md), [A5 stack decision ledger](a5-stack-decision-ledger.md) |
 | Metadata store | [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md), [Turso metadata production readiness](turso-metadata-production-readiness.md), [Technical implementation concept](technical-implementation-concept.md) |
-| OpenTelemetry | [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md), [OTLP receiver conformance and Collector equivalence](otlp-receiver-conformance-and-collector-equivalence.md) |
+| OpenTelemetry | [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md), [OTLP receiver conformance and Collector equivalence](otlp-receiver-conformance-and-collector-equivalence.md), [OTLP conformance ledger](otlp-conformance-ledger.md) |
 | Sentry-compatible ingestion | [Sentry-compatible ingestion](sentry-compatible-ingestion.md), [Sentry SDK fixture compatibility gate](sentry-sdk-fixture-compatibility.md), [Sentry SDK compatibility ledger](sentry-sdk-compatibility-ledger.md) |
 | Self-hosted operational simplicity | [Self-hosted simplicity gate](self-hosted-simplicity-gate.md), [Self-hosted deployment baseline inventory](self-hosted-deployment-baseline-inventory.md), [A7 scope discipline ledger](a7-scope-discipline-ledger.md), [Lightweight Sentry-compatible competitor watch](lightweight-sentry-compatible-competitor-watch.md), [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md) |
 | Collection method and eBPF tradeoff | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md) |
@@ -214,7 +214,9 @@ Technical proof gates:
     [Production database evidence access gate](production-database-evidence-access.md).
 15. OTLP receiver conformance and direct-SDK/Collector/Rotel normalization
     equivalence, specified further in
-    [OTLP receiver conformance and Collector equivalence](otlp-receiver-conformance-and-collector-equivalence.md).
+    [OTLP receiver conformance and Collector equivalence](otlp-receiver-conformance-and-collector-equivalence.md)
+    and made claimable through the
+    [OTLP conformance ledger](otlp-conformance-ledger.md).
 16. Release/deploy/code-change/work-item context completeness and edge strength,
     specified further in
     [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md).

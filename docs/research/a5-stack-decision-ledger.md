@@ -332,6 +332,8 @@ Expired results stay useful as history, but the decision row must move to
   owns metadata maturity and fallback rows.
 - [Ingest log replay and backpressure gate](ingest-log-replay-and-backpressure-gate.md)
   owns stream/WAL durability, replay, and backpressure rows.
+- [OTLP conformance ledger](otlp-conformance-ledger.md) owns direct-SDK,
+  Collector, and Rotel integration claim rows.
 - [Self-hosted simplicity gate](self-hosted-simplicity-gate.md) owns setup and
   operator-burden rows.
 - [Strategic verdict and research coverage](strategic-verdict-and-research-coverage.md)
