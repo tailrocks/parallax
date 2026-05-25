@@ -8,8 +8,11 @@ lead are torn down against source; the Q1–Q6 evidence-bundle set is measured; 
 public claims are triangulated (the "ClickHouse has no PromQL" one was caught drifting —
 26.x added experimental PromQL); and the load-bearing latency numbers were re-verified
 warm + HTTP-fair (one correction: the metric-agg gap is **~2× warm**, not the ~10× a
-cold/first-run measurement showed). 25 mechanism notes + 110 local runs + B1–B15 cases. Recent: **Run 110 re-verified
-schema-on-write / OTLP-drift** — GreptimeDB InfluxDB-line write of a new tag+field auto-adds the columns (HTTP 204,
+cold/first-run measurement showed). 25 mechanism notes + 111 local runs + B1–B15 cases. Recent: **Run 111 refined
+retention/TTL** — narrower gap than "CH always rewrites": ClickHouse drops a *fully-expired* part cheaply (verified),
+rewriting only a *boundary* part (expired+live mixed) or a non-time-ordered part, so time-ordered ingestion is cheap on
+both; GreptimeDB's edge is zero-config TWCS vs CH cheap-when-time-partitioned (blueprint already does it), and GT TTL
+purge is eventual/background not on-demand. **Run 110 re-verified schema-on-write / OTLP-drift** — GreptimeDB InfluxDB-line write of a new tag+field auto-adds the columns (HTTP 204,
 zero migration, old rows NULL-backfilled) while ClickHouse rejects unknown-column inserts (`Code: 16
 NO_SUCH_COLUMN_IN_TABLE`, needs ALTER or a JSON column with the ~13–57× query penalty); a real GT ingest-ergonomics win
 for drifting telemetry. **Run 109 — GreptimeDB WINS the last-value/"current value" stat-panel query** ~2.4× (GT ~17 ms / CH ~41 ms): time-sorted layout makes

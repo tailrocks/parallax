@@ -4592,6 +4592,53 @@ ingest path); ClickHouse via SQL `INSERT`.
 the auto-added columns, old rows NULL. CH: `CREATE TABLE (ts,host,temp)`, then `INSERT … (…,humidity)`
 → `Code: 16 NO_SUCH_COLUMN_IN_TABLE`. Drop `drift_test` after.
 
+### Run 111 — 2026-05-25 — Retention/TTL REFINED: ClickHouse drops fully-expired parts cheaply (rewrite only at boundary/mixed parts) + GreptimeDB TTL purge is eventual/background — the cost gap is narrower than Run 17's worst-case framing
+
+**Pass target.** Re-verify the GreptimeDB "cheap-by-default retention" pillar (Run 17: GT whole-SST
+drop vs CH rewrite-survivors). Test the mechanism on both rather than trust the prior framing.
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned live — 13 h up, no bump).
+
+**ClickHouse (TTL `ts + INTERVAL 1 SECOND`, `merge_with_ttl_timeout=0`):**
+- Inserted 100k EXPIRED (2 h-old) in one INSERT + 100k LIVE (future) in another → **two parts**.
+  Count *before* any OPTIMIZE = **100,000** → the **fully-expired part was already dropped in the
+  background, the live part untouched (NO rewrite).** `OPTIMIZE FINAL` → still 100k live.
+- So **CH drops a *fully-expired* part cheaply** (whole-part drop), *not* a rewrite. The Run-17
+  "read 1M / rewrote 500k" cost applies to a part that **straddles the TTL boundary** (expired + live
+  rows mixed in one part) — then CH must rewrite it to drop the expired subset.
+
+**GreptimeDB (`ttl='1s'`, `append_mode`):**
+- Inserted 100k rows with ts ~2 **years** past (TTL-expired by a wide margin). Count = 100,000.
+- `ADMIN compact_table('ttl_gt')` returned success (0) — but count **stayed 100,000** after +2 s.
+  **GreptimeDB's TTL purge is EVENTUAL/background** (a scheduled job), **not forced by an on-demand
+  compaction.** The whole-SST-drop *mechanism* stands (Run 17 + source `compactor.rs:581`), but the
+  *timing* is background, not immediate.
+
+**Verdict — refines Run 17; the retention-cost gap is NARROWER than first framed.**
+
+- **Both engines drop *fully-expired* time-chunks cheaply** (CH whole-part drop, verified; GT
+  whole-SST drop, mechanism-confirmed) — for **time-ordered** observability ingestion (data arrives
+  in time order → old parts/SSTs become fully expired), retention is **cheap on both**. CH's rewrite
+  cost (Run 17) is the **boundary part** case (a part straddling the TTL cutoff), not all retention.
+- **GreptimeDB's real edge is "cheap-by-default, zero config":** TWCS auto-time-windows SSTs so
+  expired windows drop whole with no tuning. **ClickHouse needs the config the blueprint already
+  specifies** — `ORDER BY ts` (time-ordered parts) + ideally `PARTITION BY` time + `ttl_only_drop_
+  parts=1` — to get the same cheap whole-part/partition drop. So: GT cheap-by-default; CH
+  cheap-when-time-partitioned (which you do anyway). **Correct the "CH always rewrites survivors"
+  overclaim** — it rewrites only the boundary part, or any part where expired+live are mixed (e.g.
+  no time-ordering).
+- **New small finding:** GreptimeDB TTL purge is **eventual** (background-scheduled), so freshly-aged
+  data lingers until the purge job runs; not an on-demand operation. Fine for retention (eventual is
+  expected) but note it — you can't force-reclaim instantly via `compact_table`.
+- **Decision relevance:** the "cheap retention" GT pillar is **real but narrower** — it's an
+  *ergonomics/zero-config* win, not a 2× cost gap, once ClickHouse is time-partitioned (which the
+  Parallax CH blueprint already is). Tempers DQ1's retention row.
+
+**Reproduce.** CH: `TTL ts+INTERVAL 1 SECOND`, insert an all-expired part + a live part separately →
+expired part drops whole (count = live, no rewrite); to see the rewrite, interleave expired+live in
+ONE part (`ORDER BY v`, single INSERT) at the boundary. GT: `WITH(ttl='1s')`, insert old rows;
+`ADMIN compact_table` does NOT force the purge (eventual/background). Drop scratch after.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

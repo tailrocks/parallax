@@ -3,7 +3,11 @@
 <!-- markdownlint-disable MD013 -->
 
 Status: pass 36, re-verified + refined pass 100 (Run 64 — both ClickHouse TTL merge
-paths measured live; GreptimeDB read-time TTL filter confirmed). White-box teardown of
+paths measured live; GreptimeDB read-time TTL filter confirmed) + **Run 111 (refined: CH drops a
+*fully-expired* part cheaply (whole-part drop, verified) — the rewrite cost is only a *boundary*
+part with expired+live mixed, or a non-time-ordered part; for time-ordered ingestion both engines
+are cheap, GT's edge is zero-config TWCS vs CH cheap-when-time-partitioned; GT TTL purge is
+eventual/background, not forced by `compact_table`)**. White-box teardown of
 the **TTL expiry mechanism** in each engine
 — *when* old data is dropped, and *what it costs* to drop it. This is a first-class
 lever for an observability product: Parallax keeps every signal on a retention
