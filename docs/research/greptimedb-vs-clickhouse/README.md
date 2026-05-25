@@ -82,7 +82,7 @@ These are produced and grown by the loop; this index is updated as they land.
 | File | Scope | Status |
 | --- | --- | --- |
 | `README.md` | Index, method, version pins, status. | seeded |
-| `greptimedb-internals.md` | GreptimeDB architecture and code-path teardown. | drafted (pass 1: topology + mito2 storage engine; deeper read-path/compaction/index/metric-engine dives pending) |
+| `greptimedb-internals.md` | GreptimeDB architecture and code-path teardown. | drafted (pass 1: topology + mito2 storage engine; pass 32: metric-engine logical→physical layout confirmed live — `__table_id`/`__tsid` + label-column union in one physical region set, avoids per-metric region explosion) |
 | `clickhouse-internals.md` | ClickHouse architecture and code-path teardown. | drafted (pass 2: topology + MergeTree part/granule/mark, skip indexes, codecs, merge variants; deeper KeyCondition/merge-selector/text-index/S3-cache dives pending) |
 | `write-path-and-ingestion.md` | Ingest → durable → queryable, both systems, with the freshness consequence. | drafted (pass 9 + Run 5: freshness = tie (both visible-on-write, no flush barrier); GreptimeDB write-path edge = LSM absorbs small writes (no ClickHouse part-explosion) + native OTLP/Prom ingest; bulk throughput both >1M rows/s; concurrent freshness pending) |
 | `read-path-indexing-and-execution.md` | Query planning, indexing, execution, scan-vs-skip, joins. | drafted (pass 3: pushdown, scan/skip order, PREWHERE vs row-group pruning, join strategy; pass 5: join verdict corrected by Run 2 EXPLAIN — both engines prune the anchor before joining, so join algo is not a differentiator for anchored evidence-bundle queries) |

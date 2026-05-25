@@ -115,6 +115,31 @@ MitoEngine
 | **Schema / dynamic** | Tag (primary-key) columns + field columns + a time index column; JSON datatype (RFC `2024-08-06`). **Metric engine** maps many logical metric tables onto one shared physical wide table (RFC `2023-07-10`, `src/metric-engine`). | Metric engine avoids one-region-per-metric explosion for high-cardinality metrics. Dynamic OTLP attributes → tag columns or JSON; cost tradeoff pending in the implementation note. |
 | **Distributed** | Frontend / Datanode / Metasrv; region migration (RFC `2023-11-07`), repartition (RFC `2025-06-20`). | Scale-out designed in: regions are the shard unit, Metasrv places/moves them. Remote WAL makes migration cheap. |
 
+## Metric engine — physical layout (confirmed live, pass 32)
+
+The metric engine's logical→physical mapping was **empirically confirmed** on the
+pinned build (not just RFC-reasoned). Creating a physical table
+(`ENGINE=metric WITH ("physical_metric_table"="")`) then several logical metric
+tables on it (`ENGINE=metric WITH ("on_physical_table"="phy")`), each with a
+different label set, produced **one physical table whose columns are the UNION of
+all logical tables' label columns plus two internal columns**:
+
+```text
+phy_metrics columns:  __table_id  __tsid  <union of all label cols>  ts  val
+                      ^^^^^^^^^^  ^^^^^^
+   __table_id = which logical metric a row belongs to
+   __tsid     = series id (hash of that row's label values)
+```
+
+So N logical "metrics" (each its own queryable table with its own labels) live in
+**one physical region set**, distinguished by `__table_id`, with labels stored
+sparsely (a row only fills its metric's label columns). This is the mechanism that
+**avoids one-region-per-metric explosion** at high metric-*name* cardinality
+(Prometheus-style fleets with thousands of distinct metrics) — confirmed, not
+inferred. ClickHouse's analog is a single hand-modelled wide table keyed by
+`(metric, labels_hash, ts)` with a `Map` for labels; GreptimeDB auto-manages the
+mapping *and* exposes each metric as its own table (cleaner API + native PromQL).
+
 ## Append mode (logs)
 
 `append_mode` is a per-region option (`src/mito2/src/compaction/window.rs:249`,
