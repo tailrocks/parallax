@@ -5741,6 +5741,56 @@ floor `gen.sh` enforces. No small-portion benchmarks; the numbers are trustworth
 bench/four-way/bench.sh`. (This run used the live containers via `GT_NIGHTLY=gt-nightly CH_HEAD=ch-head`
 overrides; the compose names are the defaults.)
 
+### Run 141 — 2026-05-25 — 5M tier (100× the 50k floor) via the harness: gaps differentiate sharply; GT heavy-analytical crosses 300 ms; anchored hot path holds; ⚠ v1.1-nightly DEDUP-agg regression (~2.5×)
+
+**Pass target.** Operator wants numbers trustworthy at a *meaningful* tier — at 1M everything is
+fixed-overhead-dominated (~tens of ms). Re-ran the harness at **N=5,000,000** (100× the 50k floor) to
+see how the gaps scale. `bench/four-way/gen.sh` (84 s) + `bench.sh` (median-of-6), all four builds.
+
+**5M matrix (median ms; selected — full in `four-way-version-comparison.md` scale section):**
+
+| Query | GT-stable | GT-nightly | CH-stable | CH-head | vs 1M |
+| --- | ---: | ---: | ---: | ---: | --- |
+| anchored-lookup | 14 | 15 | 5 | 6 | flat (hot path holds) |
+| last-value | 10 | 8 | 20 | 16 | **GT still wins** |
+| time-range-scan | 19 | 13 | 10 | 6 | scales gently |
+| unindexed-scan | 41 | 24 | 3 | 3 | **CH ~10–13×** (widened from ~4×) |
+| metric-agg-flat | **315** | **782** | 20 | 21 | **GT over gate; ⚠ nightly 2.5× SLOWER** |
+| metric-bucketed | 396 | 859 | 32 | 33 | GT over gate; nightly slower |
+| counter-rate | 520 | 1021 | 64 | 32 | GT over gate; nightly slower |
+| dynamic-attr-json | 330 | 320 | 14 | 24 | **GT over gate (~15–23×)** |
+| cross-tier-join | 659 | 192 | 9 | 7 | GT over gate (~25–80×); nightly 3.4× faster |
+| count-distinct-highcard | 243 | 192 | 189 | 167 | ~tie, both near gate |
+| fulltext-broad | 73 | 68 | 31 | 31 | ~2.3× |
+| high-group-agg | 74 | 70 | 45 | 37 | ~1.6× |
+
+**Verdict — scale is the trust signal: the picture changes meaningfully at 5M.**
+
+1. **Anchored hot path HOLDS at scale** — anchored lookup ~14 ms, last-value ~10 ms (GT still wins),
+   time-range ~13–19 ms, all ≪ 300 ms. **The "fit not speed" dominant-query thesis survives 5M** —
+   Parallax's keyed/recent retrieval stays interactive on GreptimeDB.
+2. **GreptimeDB's HEAVY ANALYTICAL queries CROSS the 300 ms gate at 5M** — metric-aggs (315–1021 ms),
+   dynamic-attr JSON (330 ms), cross-tier in-DB join (659 ms stable), count-distinct-highcard (~243 ms).
+   ClickHouse stays fast (metric-agg ~20 ms). **The scan/agg gaps WIDEN at scale** (unindexed scan
+   ~4×→~10×) — the DQ5 flip-trigger territory is real: *ad-hoc analytics at GB scale is where
+   ClickHouse's engine pulls decisively ahead* and GreptimeDB stops being interactive. Parallax avoids
+   this by anchoring; a analytics-heavy workload would feel it.
+3. **⚠ v1.1-nightly DEDUP-table aggregation REGRESSION (~2.5×) at 5M** — `metric-agg-flat` GT-stable
+   **315 ms** vs GT-nightly **782 ms** (bucketed 396 vs 859, rate 520 vs 1021); **persists after
+   `compact_table`** (both sst_num=2, so not just overlapping-runs state). It is **dedup-path-specific**:
+   the append-mode `spans1m` aggs at 5M show GT-nightly *equal-or-faster* (high-group 74→70, histogram
+   37→23), so v1.1 only regresses the **dedup** (`PK(service,instance)` default-merge) aggregation at
+   scale. Since the **metric engine uses dedup-like `last_non_null`**, this could touch the metrics
+   path — flag for confirmation on **v1.1 GA** (it's a nightly; may be fixed pre-GA). *(At 1M the
+   regression was invisible — nightly looked faster; only the 5M tier surfaced it. Validates the
+   operator's "benchmark at a meaningful size" instinct.)*
+4. **GT-nightly join win amplifies** (cross-tier 659→192, ~3.4×) — v1.1 helps the join path even as it
+   hurts the dedup-agg path. Uneven.
+
+**Reproduce.** `N=5000000 bench/four-way/gen.sh && bench/four-way/bench.sh`. For the v1.1 dedup
+regression: `metric-agg-flat` on `m2m` (dedup) → GT-stable ~315 / GT-nightly ~782 ms; same query on
+an `append_mode` copy → both fast → isolates it to the dedup path.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

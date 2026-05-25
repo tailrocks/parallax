@@ -62,10 +62,42 @@ index. On the **canonical full-text bench** (`logs_b1`, 5M rows, 699k matches) t
 matched-row set × scale. Use ~12× as the load-bearing broad-term number; selective full-text stays a
 ~tie either way.*
 
+## Scale check — N=5,000,000 (Run 141): the gaps differentiate; pick the tier that matches your trust bar
+
+At 1M everything is fixed-overhead-dominated (~tens of ms); **5M is where the picture separates.**
+
+| Query (5M) | GT-stable | GT-nightly | CH-stable | CH-head | note |
+| --- | ---: | ---: | ---: | ---: | --- |
+| anchored-lookup | 14 | 15 | 5 | 6 | **hot path holds ≪ gate** |
+| last-value | 10 | 8 | 20 | 16 | **GT still wins** |
+| time-range-scan | 19 | 13 | 10 | 6 | scales gently |
+| unindexed-scan | 41 | 24 | 3 | 3 | CH ~10–13× (widened) |
+| metric-agg-flat | **315** | **782 ⚠** | 20 | 21 | GT **over 300 ms**; nightly regressed |
+| counter-rate | 520 | **1021 ⚠** | 64 | 32 | GT over gate |
+| dynamic-attr-json | 330 | 320 | 14 | 24 | GT over gate (~15–23×) |
+| cross-tier-join | 659 | 192 | 9 | 7 | GT over gate; nightly 3.4× faster |
+| count-distinct-highcard | 243 | 192 | 189 | 167 | ~tie, both near gate |
+
+**Two scale takeaways:** (1) **GreptimeDB's anchored/keyed hot path stays interactive at 5M**
+(anchored ~14 ms, last-value ~10 ms, time-range ~13 ms) — *the "fit not speed" thesis survives
+scale*. (2) **GreptimeDB's heavy *analytical* queries cross the 300 ms gate at 5M** (metric-aggs,
+JSON, in-DB join, high-card distinct) while ClickHouse stays fast — the scan/agg gaps **widen with
+scale**, confirming the DQ5 flip-trigger (analytics-/ad-hoc-dominated workloads favour ClickHouse at
+GB scale; Parallax sidesteps this by anchoring).
+
+**⚠ v1.1-nightly regression flag (5M, dedup path only):** on the **dedup** `m2m` table, GT-nightly
+metric-agg is **~2.5× SLOWER than GT-stable** (315→782 ms flat; 520→1021 rate) — and it **persists
+after compaction** (both sst_num=2), so it is not a transient-state artifact. It is **dedup-specific**:
+append-mode `spans1m` aggs at 5M show GT-nightly *equal-or-faster*. Since the metric engine uses
+dedup-like `last_non_null`, **re-test on GreptimeDB v1.1 GA** before relying on it for metrics at
+scale. (Invisible at 1M — only the 5M tier surfaced it.)
+
 ## What this says — version by version
 
-**1. GT-nightly v1.1.0 vs GT-stable v1.0.2 — a modest, broad improvement; no regressions.**
-GT-nightly is **equal-or-faster on every query**, consistently so on the heavier ones:
+**1. GT-nightly v1.1.0 vs GT-stable v1.0.2 — a modest broad improvement at 1M, but a dedup-agg REGRESSION at 5M.**
+At **1M**, GT-nightly is equal-or-faster on every query; at **5M** that holds for append-mode tables
+but it **regresses ~2.5× on the dedup-table aggregation** (metric-agg `m2m`, flag above) — so "no
+regressions" is true only at small scale. At 1M the heavier ones:
 - Metric aggregations **~20–30% faster** (flat 23→18, bucketed 31→23, rate 35→25).
 - Cross-tier join **~1.8× faster** (65→36 ms) — though still far from CH's pushdown (3 ms).
 - Unindexed scan, log-tail, issue-list slightly faster; anchored/TopK/full-text/JSON/last-value ≈ equal.
