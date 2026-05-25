@@ -2,27 +2,33 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: 2026-05-11
+Research date: 2026-05-25
 
 ## Executive Summary
 
-The broad Project Parallax thesis is validated, but the generic market is already
-crowded. "AI root cause analysis" is now a mainstream observability feature, not
-a future white space. Sentry, Datadog, Grafana, New Relic, Dynatrace, Splunk, and
-Coroot all have explicit RCA or AI investigation products. The flaky-test wedge
-is also competitive: Datadog, Trunk, BuildPulse, CloudBees, and several CI
-autofix startups already target flaky test detection, grouping, quarantine, root
-cause analysis, and PR generation.
+The broad Project Parallax thesis is validated, but the generic market is
+already crowded. "AI root cause analysis" is now a mainstream observability
+feature, not a future white space. Sentry, Datadog, Grafana, New Relic,
+Dynatrace, Splunk, Coroot, OpenObserve, and SigNoz now have explicit RCA,
+AI-assistant, AI-agent, MCP, or agent-native observability products.
 
 The realistic opening for Parallax is narrower:
 
-> Open-source, CLI-first failure context for CI failures and flaky tests, built
-> to produce portable evidence bundles for humans and coding agents.
+> Open-source, Rust-first, self-hostable execution context for production
+> errors, OTLP telemetry, CLI runs, CI runs, and coding-agent sessions, built to
+> produce portable, redacted evidence bundles and outcome records for humans and
+> agents.
 
 Parallax should not position as a full observability platform or generic SRE
-agent. It should focus on developer-owned workflows where teams can start from
-JUnit XML, CI logs, GitHub metadata, retries, changed files, and local context
-without adopting a whole monitoring stack.
+agent. It should focus on the evidence substrate incumbents expose only inside
+their own platforms: Sentry-compatible error migration, OTLP correlation,
+deterministic evidence graphs, CLI/API/MCP context bundles, agent/CLI
+side-effect audit, and accepted/rejected/reverted fix outcomes.
+
+This corrects the original 2026-05-11 market read. CI failures and flaky tests
+remain a useful evaluation domain, but they are no longer the primary product
+position. Datadog, Sentry, and CI-autofix startups moved too directly into CI
+and PR repair for that to be the whole wedge.
 
 ## 2026-05-25 Update
 
@@ -56,14 +62,22 @@ and SigNoz could close their gaps within 6–12 months, so speed matters. See
 [agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md)
 tracks trigger hits and public-wording boundaries as these sources change.
 
-Sources for this update:
+Current source checks for this update:
 
-- [OpenObserve SRE agent setup](https://openobserve.ai/docs/sre-agent-setup-guide/)
+- [Sentry Seer docs](https://docs.sentry.io/product/ai-in-sentry/seer)
+- [Sentry Seer issue-fix API](https://docs.sentry.io/api/seer/start-seer-issue-fix/)
+- [Self-hosted Sentry docs](https://develop.sentry.dev/self-hosted)
+- [Datadog Bits AI SRE investigation docs](https://docs.datadoghq.com/bits_ai/bits_ai_sre/investigate_issues/)
+- [Datadog Bits AI Dev Agent](https://www.datadoghq.com/blog/bits-ai-dev-agent/)
+- [Grafana Assistant self-hosted docs](https://grafana.com/docs/grafana/latest/administration/assistant/)
+- [OpenObserve SRE agent setup](https://openobserve.ai/docs/administration/deployment/sre-agent-setup-guide/)
+- [OpenObserve MCP docs](https://openobserve.ai/docs/integration/ai/mcp/)
 - [OpenObserve enterprise license](https://openobserve.ai/enterprise-license/)
-- [SigNoz agent-native observability](https://signoz.io/blog/introducing-agent-native-observability/)
-- [SigNoz MCP server](https://signoz.io/changelog/2026-05-01-introducing-the-signoz-mcp-server-r5iwnkpxtsz88akwt6abqddn/)
-- [Sentry self-hosted vs cloud](https://sentry.io/resources/self-hosted-vs-cloud/)
-- [Grafana Assistant self-managed docs](https://grafana.com/docs/grafana-cloud/machine-learning/assistant/self-managed/)
+- [SigNoz agent-native observability](https://signoz.io/agent-native-observability/)
+- [SigNoz MCP server](https://signoz.io/docs/signoz-mcp-server/)
+- [SigNoz Claude Code monitoring](https://signoz.io/docs/claude-code-monitoring/)
+- [Coroot AI RCA](https://docs.coroot.com/ai/overview/)
+- [Coroot MCP server](https://docs.coroot.com/mcp/overview/)
 - [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md)
 
 ## High-Level Competitive Map
@@ -245,8 +259,9 @@ Source:
 BuildPulse is a CI observability platform for flaky tests. It detects flaky
 tests, tracks metrics, reports and notifications, supports PR bots,
 quarantining, API access, and enterprise features. It starts from JUnit XML/test
-reports plus CI integrations. This overlaps strongly with a Parallax MVP that
-starts from JUnit XML and CI logs.
+reports plus CI integrations. This overlaps with Parallax's A1 evaluation
+domain and any later CI bundle surface, but it is not the current whole-product
+wedge.
 
 Source:
 
@@ -301,9 +316,12 @@ Sources:
 2. RCA needs evidence, not just an LLM answer.
 3. The winning products use existing telemetry, topology, code, and workflow
    context.
-4. CI/flaky-test pain is real enough to support dedicated products.
+4. CI/flaky-test pain is real enough to support dedicated products, but it is a
+   submarket rather than Parallax's whole wedge.
 5. Agent workflows are becoming a normal product surface: Slack, PRs, IDEs,
    MCP, API, and CLI.
+6. Open/self-hosted projects now compete on agent access, not only hosted
+   incumbents.
 
 ### What is not defensible by itself
 
@@ -313,61 +331,77 @@ Sources:
 4. "Open source Sentry/Datadog with AI" as a first product.
 5. "LLM explains logs" without deterministic evidence gathering and replayable
    investigation context.
+6. "MCP support" as a moat.
+7. "CLI-first CI bundles" as the whole product story.
 
 ## Recommended Parallax Positioning
 
-Parallax should narrow to the workflow incumbents do not own cleanly:
+Parallax should narrow to the evidence contract incumbents do not own cleanly:
 
-> Parallax is an open-source CLI and GitHub Action that builds portable,
-> evidence-backed failure context for CI failures and flaky tests, designed for
-> humans and coding agents.
+> Parallax is an open-source, Rust-first execution context engine that ingests
+> Sentry-compatible errors and OTLP telemetry, traces CLI and coding-agent work,
+> and serves portable evidence bundles that agents can cite, audit, and feed
+> back into fix-outcome records.
 
-This positioning avoids directly competing with Sentry, Datadog, and Grafana on
-full production observability. It also avoids trying to beat Trunk or BuildPulse
-as a dashboard-first flaky-test management system.
+This positioning still avoids competing with Sentry, Datadog, Grafana,
+OpenObserve, SigNoz, or Coroot on broad dashboard coverage. It also avoids
+trying to beat Trunk, BuildPulse, or Datadog Test Optimization as a
+dashboard-first flaky-test management system.
 
 The differentiator should be:
 
-1. CLI-first and local-first.
-2. Works from files teams already have: JUnit XML, CI logs, Playwright traces,
-   retry metadata, GitHub run metadata, git history.
-3. Produces a portable "failure bundle" that can be attached to GitHub issues,
-   pasted into Claude/Codex/Cursor, or consumed by agents.
-4. Evidence-first: raw excerpts, fingerprints, previous occurrences,
-   pass/fail/retry history, changed files, owners, and confidence.
-5. Open and hackable: teams can inspect and extend parsers, classifiers, and
-   bundle format.
+1. Sentry-compatible error migration for teams that cannot or will not use
+   hosted Sentry Seer.
+2. OTLP-native traces, logs, and metrics correlation without building another
+   dashboard suite.
+3. A portable bundle/schema with redaction report, query manifest, evidence
+   refs, edge strengths, missing-evidence flags, and raw refs.
+4. CLI first, canonical HTTP API underneath, and read-only MCP once projection
+   equivalence and safety gates pass.
+5. First-class CLI and coding-agent action audit: commands, files, tools, tests,
+   patches, PRs, reviews, reverts, and recurrence.
+6. Open result ledgers for bundle value, self-hosted simplicity, redaction,
+   correlation, agent tracing, access-surface safety, and fixer outcomes.
 
 ## MVP Direction
 
-The first product should be small:
+The first product should still be small, but it should be the tiny evidence
+engine rather than a CI-only tool:
 
 ```text
-parallax ingest junit.xml --log ci.log
-parallax test list --flaky
-parallax explain test_name
-parallax bundle --github-run <run_id>
+parallax ingest sentry-envelope <event.json>
+parallax ingest otlp <trace-or-log-fixture>
+parallax issue context <issue-id>
+parallax bundle show <bundle-id> --format markdown
+parallax agent-session import <session-ref>
 ```
 
 The first useful output:
 
-1. Likely flaky vs likely regression.
-2. Failure fingerprint.
-3. Previous pass/fail/retry history.
-4. First-seen commit/window.
-5. Related failures in the same run.
-6. Changed files near the test or code under test.
-7. CODEOWNERS or likely owner.
-8. Evidence-backed hypothesis.
-9. Agent-ready prompt/context bundle.
+1. Deterministic error grouping.
+2. Trace/log/release/deploy context around the event.
+3. Evidence refs with source, timestamp, and confidence.
+4. Redaction report and raw-ref boundary.
+5. Missing-evidence report instead of invented causality.
+6. Agent-ready JSON/Markdown bundle through CLI/API.
+7. Optional CI, CLI, or coding-agent session links when present.
+8. Outcome hooks for diagnosis, patch proposal, PR, review, revert, and
+   recurrence.
+
+CI failures and flaky tests remain useful seed tasks for the
+[Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md), because they
+have objective tests and reproducible artifacts. They should not define the
+whole market position.
 
 ## Core Strategic Question
 
 The critical test is not "can Parallax explain failures?" Many products claim
 that. The critical test is:
 
-> Can Parallax become the easiest open-source way to hand a coding agent the
-> right failure context without adopting a full observability platform?
+> Can Parallax become the easiest open-source way to hand a coding agent a
+> bounded, redacted, citable evidence bundle from production, CI, CLI, and agent
+> traces without adopting a full observability platform?
 
-If yes, Parallax can have a wedge. If no, Sentry, Datadog, Grafana, Trunk, and
-BuildPulse already cover too much of the obvious surface area.
+If yes, Parallax can have a wedge. If no, Sentry, Datadog, Grafana,
+OpenObserve, SigNoz, Coroot, Trunk, BuildPulse, and CI-autofix products already
+cover too much of the obvious surface area.
