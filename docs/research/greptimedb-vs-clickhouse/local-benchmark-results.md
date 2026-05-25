@@ -2595,6 +2595,63 @@ docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public 
 docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=DROP TABLE spans_tidpk"
 ```
 
+### Run 64 — 2026-05-25 — TTL/retention re-verified: both ClickHouse merge paths + GreptimeDB read-time filter
+
+**Pass target.** Rotate onto stale cost-axis subsystem #5 (retention/TTL, Run 17 ~pass
+37). Re-verify the load-bearing claim "GreptimeDB whole-SST drop (no rewrite) vs
+ClickHouse row-rewrite TTL" on controlled tables, and characterize *when* ClickHouse
+rewrites vs drops.
+
+**Environment.** Main stack, GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned —
+latest, no bump). ClickHouse tables: `TTL ts + INTERVAL 1 HOUR`, `ttl_only_drop_parts=0`
+(default), `merge_with_ttl_timeout=0` (eager). Rows with `ts = now()-1 DAY` are immediately
+expired.
+
+**Measured (`system.part_log`):**
+
+| Case | ClickHouse `merge_reason` | read_rows | rows written | meaning |
+| --- | --- | --- | --- | --- |
+| Wholly-expired part (separate insert) | **`TTLDropMerge`** | 16,384 | **0** | whole part dropped, **no rewrite** — even at default settings |
+| Mixed expired+alive part (one insert, 50/50) | **`TTLDeleteMerge`** | **1,000,000** | **500,000** | part **read in full, rewritten** with survivors → write-amp ∝ survivors |
+
+GreptimeDB (`ttl='1h'`, 500k rows loaded with year-old `ts`): **0 live rows
+*immediately*, before any compaction** — TTL is a **read-time filter** (expired rows
+invisible at query/flush, `compactor.rs:581` whole-SST drop on compaction, no rewrite).
+`region_statistics` SST stayed 0 (the all-expired data never materialized as live SSTs).
+
+**The comparison logic & verdict.**
+
+- **Re-verifies Run 17 + refines it:** ClickHouse's TTL rewrite penalty (`TTLDeleteMerge`,
+  read 1M / write 500k confirmed) hits **only parts that mix expired+alive rows** — a
+  **wholly-expired part drops wholesale (`TTLDropMerge`, 0 rewritten) even at default
+  `ttl_only_drop_parts=0`.** So the "row-level rewrite" cost is specifically a
+  **boundary-part** cost, and how often it occurs depends on whether parts are
+  time-aligned (which `PARTITION BY` time fixes).
+- **GreptimeDB avoids it by construction:** TWCS time-windows SSTs → expiry is whole-SST
+  (no mixed SST to rewrite) **and** TTL is read-time (expired invisible immediately, not
+  waiting for the drop). ClickHouse expired rows stay physically present + queryable until
+  the TTL merge runs (≥ `merge_with_ttl_timeout`, 4h default; 0 here only because forced).
+- **Net (cost axis):** equal *capability*, unequal *defaults* — GreptimeDB cheap retention
+  with zero tuning; ClickHouse cheap **if** `PARTITION BY` time + `ttl_only_drop_parts=1`,
+  else boundary-part rewrites. Confirms the retention-cost edge to GreptimeDB **as an
+  ergonomics/defaults edge**, not a capability gap. Status: **confirmed + refined.**
+
+Caveat: smoke (1M rows), `merge_with_ttl_timeout=0` forces eager TTL (production default
+4h); the write-amp *magnitude* at retention volume is owed to the harness.
+
+**Reproduce (copy-paste).**
+
+```bash
+# CH mixed-part rewrite
+docker exec parallax-bench-clickhouse-1 clickhouse-client --multiquery -q "CREATE TABLE ttl_mix (ts DateTime, v UInt64) ENGINE=MergeTree ORDER BY v TTL ts + INTERVAL 1 HOUR SETTINGS ttl_only_drop_parts=0, merge_with_ttl_timeout=0; INSERT INTO ttl_mix SELECT if(number%2=0, now()-INTERVAL 1 DAY, now()), number FROM numbers(1000000);"
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q "OPTIMIZE TABLE ttl_mix FINAL"; docker exec parallax-bench-clickhouse-1 clickhouse-client -q "SYSTEM FLUSH LOGS"
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q "SELECT merge_reason, read_rows, rows FROM system.part_log WHERE table='ttl_mix' AND event_type='MergeParts' ORDER BY event_time DESC LIMIT 2"   # TTLDeleteMerge 1000000 -> 500000
+# GT read-time TTL filter
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=CREATE TABLE ttl_gt (ts TIMESTAMP(3) TIME INDEX, v BIGINT) WITH (ttl='1h', append_mode='true')"
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=INSERT INTO ttl_gt SELECT ts, 1 FROM logs_b1 LIMIT 500000"
+docker exec parallax-bench-greptimedb-1 curl -s localhost:4000/v1/sql?db=public --data-urlencode "sql=SELECT count(*) FROM ttl_gt"   # 0 immediately (read-time TTL)
+```
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

@@ -2,7 +2,9 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 36. White-box teardown of the **TTL expiry mechanism** in each engine
+Status: pass 36, re-verified + refined pass 100 (Run 64 — both ClickHouse TTL merge
+paths measured live; GreptimeDB read-time TTL filter confirmed). White-box teardown of
+the **TTL expiry mechanism** in each engine
 — *when* old data is dropped, and *what it costs* to drop it. This is a first-class
 lever for an observability product: Parallax keeps every signal on a retention
 window (spans 30d, logs 30d, metrics 90d–400d, issue history long), and at steady
@@ -102,6 +104,30 @@ GreptimeDB gets cheap retention **by default** because its storage is already
 time-windowed; ClickHouse gets it **only when explicitly partitioned by time and told
 to drop parts**. Equal *capability*, unequal *defaults* — and defaults are what a
 team actually runs.
+
+### Measured live — both ClickHouse merge paths observed (Run 64, re-verifies + refines Run 17)
+
+On a default-TTL table (`ttl_only_drop_parts=0`, `merge_with_ttl_timeout=0`), `part_log`
+shows ClickHouse takes **two different paths depending on whether a part is wholly or
+partially expired**:
+
+- **Wholly-expired part → `TTLDropMerge`, `read_rows` small, `rows=0` written** — a whole
+  part of all-expired rows is **dropped wholesale, no survivor rewrite**, *even at default
+  settings*. (When expired and alive rows land in *separate* parts — the time-ordered
+  ingest case — old parts age out cheaply.)
+- **Mixed expired+alive part → `TTLDeleteMerge`, `read_rows: 1,000,000`, `rows: 500,000`** —
+  a part straddling the TTL cutoff is **read in full and rewritten with only the 500k
+  survivors** → write-amplification ∝ survivors, exactly as the row-level mechanism predicts.
+
+So the refinement to Run 17: ClickHouse's TTL rewrite penalty bites **only on
+boundary/mixed parts**, not on all expiry — wholly-expired parts drop cheap regardless.
+Whether parts are wholly-vs-partially expired depends on time-alignment, which is exactly
+what `PARTITION BY` time fixes. **GreptimeDB sidesteps this entirely**: TWCS time-windows
+SSTs so expiry is whole-SST by construction (no mixed SST to rewrite), **and** its TTL is
+also a **read-time filter** — in Run 64 a 500k-row load with year-old timestamps (past a
+`ttl='1h'`) showed **0 live rows immediately, before any compaction** (expired rows are
+filtered at read/flush, not waiting for the drop). ClickHouse expired rows remain
+physically present (and queryable without `FINAL`-like filtering) until the TTL merge runs.
 
 ## Parallax implication (and a DDL correction)
 
