@@ -53,8 +53,8 @@ gate must test both, and Parallax docs must tell users to include `/v1/traces`,
 | [Collector OTLP receiver README](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md) | The receiver is stable for traces, metrics, and logs, alpha for profiles, supports gRPC or HTTP, defaults to `localhost:4317` and `localhost:4318`, and can receive HTTP/JSON with configurable per-signal paths. | Collector equivalence should include both standard ports and path behavior. JSON support is a useful comparison point, not a v0 product requirement by itself. |
 | [Collector configuration docs](https://opentelemetry.io/docs/collector/configuration/) | Defining a receiver does not enable it; the receiver must be referenced by a service pipeline. The example OTLP receiver uses gRPC `4317` and HTTP `4318`. | Fixture manifests need config hashes and must distinguish configured components from enabled pipelines. |
 | [OpenTelemetry proto v1.10.0](https://github.com/open-telemetry/opentelemetry-proto/releases/tag/v1.10.0) | Latest proto release checked by the GitHub API remains `v1.10.0`, published 2026-03-09. | Parser/schema fixtures should keep pinning proto separately from SDK and Collector versions. |
-| [Collector core v0.153.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.153.0) | Latest core/source release checked by the GitHub API remains `v0.153.0`, published 2026-05-25. | Core/source drift is still a separate axis from runnable distribution binaries. |
-| [Collector distribution v0.152.1](https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.152.1) | The collector-releases API still returned `v0.152.1` as the latest visible binary distribution on 2026-05-25, while core/source is `v0.153.0`. A `v0.153.0` distribution tag was not visible through the tag endpoint in this check. | Do not claim current Collector equivalence from core/source alone. The manifest must pin the actual runnable binary. |
+| [Collector core v0.153.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.153.0) | Latest core/source release checked by the GitHub API remains `v0.153.0`, published 2026-05-25. Its release body points readers to collector-releases `v0.153.0` for binaries, but the release-tag endpoint and GitHub HTML URL for that stable distribution tag still returned 404 in this follow-up check. | Core/source drift is still a separate axis from runnable distribution binaries. Do not treat a core release-note link as proof that the matching distribution binary exists. |
+| [Collector distribution v0.152.1](https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.152.1) | The collector-releases API still returned `v0.152.1` as the latest visible binary distribution on 2026-05-25, while core/source is `v0.153.0`. A `v0.153.0` stable distribution release tag was not visible through the release-tag endpoint or HTML page; the repository tag list showed `v0.153.0-nightly.*` tags only. | Do not claim current Collector equivalence from core/source alone. The manifest must pin the actual runnable binary and record whether it used a stable distribution release or a nightly tag. |
 | [Collector Contrib v0.152.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.152.0) | Latest Contrib release checked remains `v0.152.0`, published 2026-05-11. | Contrib remains its own compatibility axis. |
 | [opentelemetry crate](https://crates.io/crates/opentelemetry) and [opentelemetry-otlp crate](https://crates.io/crates/opentelemetry-otlp) | crates.io still reports `0.32.0` for both, updated 2026-05-08. | Rust fixtures remain the first direct SDK path; no Rust crate drift found. |
 | [Rotel v0.2.2](https://github.com/rotel-dev/rotel/releases/tag/v0.2.2) and [Rotel README](https://github.com/rotel-dev/rotel) | Latest Rotel release remains `v0.2.2`. README says the receiver supports gRPC, HTTP/protobuf, and HTTP/JSON; default receiver ports are `4317` and `4318`. | Rotel smoke should test the same transport profile, but Rotel remains pre-1.0 and not the baseline. |
@@ -71,6 +71,26 @@ gate must test both, and Parallax docs must tell users to include `/v1/traces`,
 | Browser OTLP | Separate frontend profile. | Browser builds use HTTP/protobuf or HTTP/JSON only; gRPC negative fixtures are expected. |
 | Profiles | Out of scope. | OTLP profiles are development-stage in the checked spec/docs. |
 | Custom base paths | Optional alias only. | Standard `/v1/{signal}` paths must work first; aliases must not replace them. |
+
+## 2026-05-25 Collector Release-Axis Follow-Up
+
+This follow-up keeps the existing version matrix but tightens how Parallax reads
+Collector releases:
+
+- `open-telemetry/opentelemetry-collector` `v0.153.0` exists and is the latest
+  checked core/source release.
+- The core release body points to
+  `open-telemetry/opentelemetry-collector-releases/releases/tag/v0.153.0` for
+  images and binaries.
+- The collector-releases API and HTML page still returned 404 for that stable
+  tag, while `/releases/latest` returned `v0.152.1`.
+- The collector-releases tag list showed `v0.153.0-nightly.*` tags, not a stable
+  `v0.153.0` release tag.
+
+Implication: the OTLP conformance manifest needs a distinct
+`collector_distribution_resolution` field. A nightly Collector binary can inform
+development, but it cannot satisfy the stable Collector-equivalence claim unless
+the run is explicitly labeled nightly and rerun on the stable distribution.
 
 ## Endpoint URL Construction Fixtures
 
