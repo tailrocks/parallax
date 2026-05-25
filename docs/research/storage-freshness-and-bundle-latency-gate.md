@@ -55,6 +55,15 @@ settle the performance question:
   ([raft-engine log store source](https://github.com/GreptimeTeam/greptimedb/blob/v1.0.2/src/log-store/src/raft_engine/log_store.rs),
   [raft-engine config source](https://github.com/GreptimeTeam/greptimedb/blob/v1.0.2/src/common/wal/src/config/raft_engine.rs),
   [Kafka WAL config source](https://github.com/GreptimeTeam/greptimedb/blob/v1.0.2/src/common/wal/src/config/kafka/datanode.rs)).
+- GreptimeDB `v1.0.2` PartitionTree memtable source uses a primary-key
+  dictionary and shard-local key indexes; its default dictionary memory is
+  `min(total_memory / 8, 512 MiB)`. This source-grounds the local
+  cardinality-insensitive ingest result, but the freshness gate still must
+  measure native metric ingestion, dictionary memory, flush pressure, and Q6
+  latency under high-cardinality metric labels
+  ([PartitionTree source](https://github.com/GreptimeTeam/greptimedb/blob/v1.0.2/src/mito2/src/memtable/partition_tree.rs),
+  [PartitionTree dictionary source](https://github.com/GreptimeTeam/greptimedb/blob/v1.0.2/src/mito2/src/memtable/partition_tree/dict.rs),
+  [PartitionTree shard-builder source](https://github.com/GreptimeTeam/greptimedb/blob/v1.0.2/src/mito2/src/memtable/partition_tree/shard_builder.rs)).
 - ClickHouse insert docs say async inserts buffer data in memory and flush when
   size, time, or query-count thresholds fire; if async inserts are used, the
   recommended safe mode is `async_insert=1,wait_for_async_insert=1`, while
@@ -97,6 +106,7 @@ are useful but intentionally narrow:
 | Run 144: GreptimeDB TWCS source read | Time-window compaction explains why forced compaction can help within-window state while many-window tables still require cross-window dedup merging; expired SSTs can be removed without merging survivors. | Native metric-engine/Prometheus path under v1.1 GA, server-tier many-window metrics, and object-store request/cold-read economics. |
 | Run 145: four-way 100k local warm | The `N=100000` local default is laptop-safe and all 20 query shapes stay interactive on all four builds. | Meaningful magnitude, v1.1 dedup regression, 300 ms analytical crossover, mixed native ingest, cold/object-store behavior. |
 | Run 146: GreptimeDB WAL source read | GreptimeDB strict local durability is an append-log sync path, with `sync_write` on write and `sync_period` as a group-sync lever. | Mixed native ingest with strict durability, crash/restart loss counts, Kafka WAL mode, or a ClickHouse replicated/fsync alternative. |
+| Run 147: GreptimeDB PartitionTree source read | Primary-key dictionary and shard-local key indexes explain the measured high-cardinality ingest flatness. | Native Prometheus/OTLP metric ingest, dictionary memory, flush pressure, mixed-load Q6 latency, and aggregation speed. |
 
 The useful correction from Run 2 is now part of this gate: Parallax bundle
 queries are anchored, so key/index placement and per-anchor pruning matter more
@@ -250,6 +260,9 @@ Every run should write a `results.json` entry with at least:
   "durability_mode": "sync_write=false|sync_write=true|sync_period=<duration>|kafka_wal|fsync_after_insert|replicated_mergetree",
   "dataset_tier": "small",
   "dataset_seed": 42,
+  "metric_series_count": 0,
+  "metric_label_distinct_counts": {},
+  "partition_tree_dictionary_bytes": 0,
   "ingest_rate_rows_per_second": 0,
   "query_workers": 4,
   "freshness_ms": {

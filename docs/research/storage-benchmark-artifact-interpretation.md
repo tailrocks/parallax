@@ -7,7 +7,7 @@ Research date: 2026-05-25
 ## Pass Target
 
 Consume the separate benchmark agent's new artifacts without running another
-storage benchmark. The goal is to decide what Runs 140-146 prove, what they
+storage benchmark. The goal is to decide what Runs 140-147 prove, what they
 falsify, which source-read mechanism claims they strengthen, and which
 product/storage claims must stay unproven until the full storage gates run.
 
@@ -23,10 +23,13 @@ product/storage claims must stay unproven until the full storage gates run.
 | Commit `a6107e3` | Consolidation note | The storage verdict's DQ6 section now carries the 5M `v1.1.0-nightly-20260525` dedup-aggregation regression instead of preserving the stale "no regressions" wording from the 1M tier. |
 | Commit `5d97084` | Local 100k preliminary validation | Run 145 docs showing the new `N=100000` local default completes without freezing the laptop and keeps all 20 four-way queries interactive, but compresses gaps enough that it is directional only. |
 | Commit `72c6498` | Primary-source code read + Run 146 docs | GreptimeDB `v1.0.2` raft-engine WAL source: appends entries as `LogBatch`, forwards `sync_write` into the raft-engine write call, and runs a periodic sync task over `engine.sync()`. |
+| Commit `0926606` | Primary-source code read + Run 147 docs | GreptimeDB `v1.0.2` PartitionTree memtable source: primary-key dictionary, shard builder, per-shard key indexing, and memory-budgeted `fork_dictionary_bytes`; ClickHouse `LowCardinality` source setting caps shared dictionaries at 8192 rows before ordinary encoding. |
 | `bench/four-way/gen.sh` | Reproducibility source | Generates six logical tables in-engine across all four builds; now defaults `N=100000`; rejects `N < 50000`; flushes GreptimeDB tables. |
 | `bench/four-way/bench.sh` | Reproducibility source | Runs the 20-query matrix; `REPS` defaults to 6 and must be recorded per run when docs cite medians. |
 | GreptimeDB TWCS source | Primary source | `TwcsPicker` groups files into compaction windows by max timestamp; `WindowedCompactionPicker` splits strict-window compaction by file time spans; the compactor removes expired SSTs even when merge output fails. |
 | GreptimeDB raft-engine WAL source | Primary source | `RaftEngineLogStore` owns `sync_write`, `sync_period`, and the raft-engine handle; writes convert entries into a `LogBatch` and call `engine.write(&mut batch, self.sync_write)`, while `SyncWalTaskFunction` calls `engine.sync()`. |
+| GreptimeDB PartitionTree source | Primary source | `PartitionTreeMemtable` uses a partition tree with `dict`, `partition`, `shard`, and `shard_builder`; `KeyDictBuilder` maps encoded primary keys to compact key indexes; default dictionary memory is capped by `min(total_memory / 8, 512 MiB)`. |
+| ClickHouse `LowCardinality` setting source | Primary source | `low_cardinality_max_dictionary_size` defaults to 8192 rows; values beyond the dictionary limit are written in the ordinary method. |
 | GitHub release APIs | Current release-track check | GreptimeDB latest GA remains `v1.0.2` published 2026-05-14; ClickHouse latest release endpoint currently returns LTS `v26.3.12.3-lts`, while the benchmarked feature-stable line remains `v26.5.1.882-stable`. |
 
 ## What The Artifacts Prove
@@ -89,6 +92,17 @@ product/storage claims must stay unproven until the full storage gates run.
    that strict local durability fsyncs an append-log path rather than a
    multi-file part. It does not replace crash/restart testing or a mixed native
    ingest run.
+10. **GreptimeDB's cardinality-insensitive ingest claim is now
+    source-grounded.** Runs 84 and 101 measured GreptimeDB ingest as nearly flat
+    as distinct metric series rose, while ClickHouse slowed on high-cardinality
+    labels. Run 147 explains the GreptimeDB side: the PartitionTree memtable
+    dictionary-encodes primary keys/label sets and writes rows through shard
+    indexes rather than storing every label string per row. It also confirms the
+    ClickHouse caveat from source: `LowCardinality` has a default shared
+    dictionary cap of 8192 rows before ordinary encoding. This strengthens the
+    metrics-ingest ergonomics thesis; it does not prove aggregation latency,
+    native Prometheus/OTLP freshness, or memory pressure at production
+    cardinality.
 
 ## What The Artifacts Do Not Prove
 
@@ -99,6 +113,9 @@ gate, storage cost gate, or A5 stack decision ledger:
 - no cold-cache/drop-cache comparison under the full Q1-Q6 bundle workload;
 - no native OTLP/Prometheus ingest path comparison for queryable freshness;
 - no mixed ingest+query p95/p99, stale bundle rate, or Q6 p95 result rows;
+- no high-cardinality native metric ingest run that records distinct series,
+  PartitionTree dictionary memory, flush pressure, compaction behavior, and
+  query p95/p99 under concurrent bundle reads;
 - no storage durability fault test showing acknowledged rows survive
   crash/restart under the declared GreptimeDB `sync_write`/`sync_period` mode
   or the declared ClickHouse fsync/replication mode;
@@ -109,8 +126,9 @@ gate, storage cost gate, or A5 stack decision ledger:
 - no production hardware profile. Runs 140-143 and 145 are local Docker
   warm-cache artifacts, with four containers sharing a host and different timing
   bases by engine; Run 143 explicitly demotes large local runs and moves
-  `N=5000000+` to an operator-requested server tier. Runs 144 and 146 are
-  source-read mechanism evidence, not new timing, cost, or fault-injection runs.
+  `N=5000000+` to an operator-requested server tier. Runs 144, 146, and 147 are
+  source-read mechanism evidence, not new timing, cost, ingest, or
+  fault-injection runs.
 
 Therefore, these artifacts can support `smoke_only` storage evidence and schema
 decisions. They cannot produce `greptime_prototype_default`,
@@ -124,6 +142,7 @@ decisions. They cannot produce `greptime_prototype_default`,
 | "Every query is below the 300 ms gate." | "Every 100k/1M warm query is below the gate; at 5M, GreptimeDB heavy analytics cross the gate while anchored/keyed hot paths remain interactive. Server-tier runs own future large absolute numbers." |
 | "Metrics should use GreptimeDB dedup/metric mode by default." | "Use append mode for scrape-style unique metrics when aggregation is load-bearing; reserve dedup/`last_non_null` for true correction/upsert semantics, and measure compaction-state plus TWCS-window-count sensitivity." |
 | "Strict durability is only a smoke timing claim." | "Run 75 timing is now source-grounded in GreptimeDB's append-log sync path, but A5 still needs a version-pinned durability-mode run that records `sync_write`, `sync_period`, ClickHouse fsync/replication settings, crash/restart loss counts, and mixed-ingest p95/p99." |
+| "GreptimeDB high-cardinality ingest is only a local smoke result." | "Runs 84/101 are now source-grounded by the PartitionTree primary-key dictionary, but A5 still needs native metric ingestion with series-count, dictionary-memory, flush-pressure, and mixed-query rows." |
 | "Benchmark confirms GreptimeDB as the default." | "Benchmark confirms GreptimeDB remains plausible for Parallax's anchored hot path, while ClickHouse is the fallback/default for analytics-heavy usage until the full gates decide." |
 
 ## Decision Impact
@@ -140,6 +159,10 @@ default. The new evidence strengthens both sides:
   profile because the source-backed strict path is an append-log sync, but A5
   must still pin durability settings and run crash/restart loss tests before the
   product can claim strict durability.
+- GreptimeDB's metric-ingest fit is stronger for high-cardinality labels because
+  the source-backed PartitionTree dictionary explains the measured flat ingest
+  curve. This is a metric-ingest ergonomics win, not an aggregation-speed win;
+  ClickHouse remains the safer fallback for heavy analytical metric scans.
 - Future storage docs should separate local preliminary (`N=100000` default),
   historical 1M/5M local warm artifacts, operator-requested server large-tier,
   small-tier cold/object-store, and A5 stack-proof claims. Run 145 belongs in
@@ -156,6 +179,9 @@ default. The new evidence strengthens both sides:
 - Run 146 source-grounds the WAL sync path, but it does not prove the durability
   contract under process crash, OS crash, object-store mode, Kafka WAL mode, or
   mixed ingest with concurrent bundle queries.
+- Run 147 source-grounds the high-cardinality ingest mechanism, but it does not
+  prove native Prometheus remote-write/OTLP behavior, production dictionary
+  memory limits, or the Q6 bundle latency impact of high-cardinality metrics.
 - Object-store economics and cold selective reads are still the cost decision's
   highest-risk gap.
 
@@ -182,18 +208,23 @@ ClickHouse's scan efficiency?**
 - [GreptimeDB `v1.0.2` raft-engine WAL log store source](https://github.com/GreptimeTeam/greptimedb/blob/v1.0.2/src/log-store/src/raft_engine/log_store.rs)
 - [GreptimeDB `v1.0.2` raft-engine WAL config source](https://github.com/GreptimeTeam/greptimedb/blob/v1.0.2/src/common/wal/src/config/raft_engine.rs)
 - [GreptimeDB `v1.0.2` Kafka WAL datanode config source](https://github.com/GreptimeTeam/greptimedb/blob/v1.0.2/src/common/wal/src/config/kafka/datanode.rs)
+- [GreptimeDB `v1.0.2` PartitionTree memtable source](https://github.com/GreptimeTeam/greptimedb/blob/v1.0.2/src/mito2/src/memtable/partition_tree.rs)
+- [GreptimeDB `v1.0.2` PartitionTree dictionary source](https://github.com/GreptimeTeam/greptimedb/blob/v1.0.2/src/mito2/src/memtable/partition_tree/dict.rs)
+- [GreptimeDB `v1.0.2` PartitionTree shard-builder source](https://github.com/GreptimeTeam/greptimedb/blob/v1.0.2/src/mito2/src/memtable/partition_tree/shard_builder.rs)
+- [ClickHouse `v26.5.1.882-stable` settings source](https://github.com/ClickHouse/ClickHouse/blob/v26.5.1.882-stable/src/Core/Settings.cpp)
 - [GreptimeDB `v1.0.2` release](https://github.com/GreptimeTeam/greptimedb/releases/tag/v1.0.2)
 - [ClickHouse `v26.5.1.882-stable` release](https://github.com/ClickHouse/ClickHouse/releases/tag/v26.5.1.882-stable)
 - [ClickHouse `v26.3.12.3-lts` release](https://github.com/ClickHouse/ClickHouse/releases/tag/v26.3.12.3-lts)
 
 ## Bottom Line
 
-Runs 140-146 made the storage evidence better and less comfortable. The anchored
+Runs 140-147 made the storage evidence better and less comfortable. The anchored
 Parallax hot path still supports the GreptimeDB fit thesis, but the 5M results
 prove that analytics-heavy usage is a ClickHouse-shaped workload and that
 GreptimeDB table mode, compaction state, and TWCS window count can dominate
 version choice. Run 145 confirms the laptop-safe smoke tier, but also reinforces
-why small local timings are directional only. Runs 144 and 146 now source-ground
-two GreptimeDB mechanism claims, TTL window drops and append-log durability, but
-they are still mechanism evidence. Treat the new benchmark code and source-read
-evidence as strong smoke/schema guidance, not as an A5 pass.
+why small local timings are directional only. Runs 144, 146, and 147 now
+source-ground three GreptimeDB mechanism claims: TTL window drops, append-log
+durability, and cardinality-insensitive metric ingest. They are still mechanism
+evidence. Treat the new benchmark code and source-read evidence as strong
+smoke/schema guidance, not as an A5 pass.

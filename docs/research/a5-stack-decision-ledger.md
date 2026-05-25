@@ -44,7 +44,7 @@ fallback trigger that would change the default.
 
 The focused
 [storage benchmark artifact interpretation](storage-benchmark-artifact-interpretation.md)
-consumes the separate benchmark agent's Runs 140-146 without rerunning them.
+consumes the separate benchmark agent's Runs 140-147 without rerunning them.
 Those artifacts are useful A5 inputs, but they do not create an A5 pass:
 
 - `bench/four-way/` is reproducible local benchmark code: four storage builds,
@@ -74,10 +74,18 @@ Those artifacts are useful A5 inputs, but they do not create an A5 pass:
   provides a periodic sync path. This supports GreptimeDB's durability fit, but
   it is not a crash/restart loss test and does not pin ClickHouse replication or
   fsync alternatives.
+- Run 147 reads GreptimeDB `v1.0.2` PartitionTree memtable source and
+  source-grounds Runs 84/101: high-cardinality metric ingest is helped by a
+  primary-key dictionary and shard-local key indexes rather than by per-row label
+  storage. It also checks the ClickHouse `LowCardinality` source setting whose
+  default dictionary cap is 8192 rows. This strengthens GreptimeDB's
+  metric-ingest ergonomics claim, but not aggregation speed or mixed-load bundle
+  latency.
 - They do not include mixed native ingest, Q6 p95/p99, stale-bundle rate,
   object-store request/egress/cost rows, ClickHouse LTS, storage crash/restart
-  loss counts under declared durability modes, metadata, ingest-log, setup,
-  restart, redaction, or end-to-end integration rows.
+  loss counts under declared durability modes, high-cardinality native metric
+  ingest memory/flush rows, metadata, ingest-log, setup, restart, redaction, or
+  end-to-end integration rows.
 
 So A5 remains unpassed. The current storage stance is "GreptimeDB remains a
 prototype-fit candidate for the anchored hot path; ClickHouse is the measured
