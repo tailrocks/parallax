@@ -56,6 +56,7 @@ idea becomes sharper.
 - [AI-native observability and incident intelligence](docs/research/ai-native-observability-and-incident-intelligence.md)
 - [Flaky test investigation and replay](docs/research/flaky-test-investigation-and-replay.md)
 - [Agent and CLI execution tracing](docs/research/agent-and-cli-execution-tracing.md)
+- [Agent and CLI OTel semantic-convention mapping](docs/research/agent-cli-otel-semconv-mapping.md)
 - [Agent session tracing across real tools](docs/research/agent-session-tracing-real-tools.md)
 - [CLI trace overhead and redaction](docs/research/cli-trace-overhead-and-redaction.md)
 - [Agent access surface: CLI, HTTP API, and MCP](docs/research/agent-access-surface-cli-api-mcp.md)

@@ -216,6 +216,12 @@ for context retrieval and deterministic checks, not production mutation.
 | Trace context | Propagate request trace context through MCP metadata where supported, and link MCP spans back to bundle/evidence refs. |
 | Errors | Return structured, self-correctable errors for invalid windows, missing scopes, missing evidence, and oversized requests. |
 
+MCP spans should be normalized through
+[Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md)
+so `tools/call` client/server spans, JSON-RPC request IDs, and provisional
+`params._meta` trace context produce one audited `agent_action` rather than
+double-counted tool activity.
+
 ## Implementation Order
 
 1. **Phase 0:** no product surface needed. Hand-built bundles can be passed as
@@ -257,6 +263,8 @@ If these fail, keep CLI/API available and do not claim MCP safety.
   remains the gate for every agent-visible surface.
 - [Production database evidence access gate](production-database-evidence-access.md)
   is the reason generic SQL tools stay out of the context server.
+- [Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md)
+  defines how MCP spans and tool calls become stable Parallax audit rows.
 - [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md)
   keeps MCP out of the tiny tier until the bundle and safety contracts are
   strong enough.

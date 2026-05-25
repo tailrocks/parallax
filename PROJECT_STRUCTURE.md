@@ -69,6 +69,7 @@ or CI contract yet.
 | `docs/research/ai-native-observability-and-incident-intelligence.md` | Current AI-native observability, incident-intelligence, agent workflow, strategic positioning, and product-wedge synthesis. |
 | `docs/research/flaky-test-investigation-and-replay.md` | Flaky-test detection, history, clustering, retry/replay, reproducer, agent-fixability, and wedge analysis. |
 | `docs/research/agent-and-cli-execution-tracing.md` | Coding-agent session tracing, CLI application tracing, OpenTelemetry GenAI/MCP/CLI mapping, market room, data model, and unified execution graph analysis. |
+| `docs/research/agent-cli-otel-semconv-mapping.md` | Contract for mapping OpenTelemetry GenAI, MCP, CLI, process, and CI/CD semantic conventions into stable Parallax agent/session/CLI rows, with versioning, content-capture levels, deduplication, trace propagation, and lossiness gates. |
 | `docs/research/agent-session-tracing-real-tools.md` | Proof gate for agent-session tracing across Codex, Claude Code, Amp, and OpenCode: adapter surfaces, normalized schema, redaction defaults, value-eval matrix, and pass/fail criteria. |
 | `docs/research/cli-trace-overhead-and-redaction.md` | Proof gate for default-on CLI tracing: structural capture policy, args/env/config/stdout/stderr redaction, canary fixtures, overhead budgets, and failure criteria. |
 | `docs/research/agent-access-surface-cli-api-mcp.md` | Focused decision on the agent access surface: canonical HTTP API, day-one CLI, read-only MCP adapter, security rules, implementation order, and MCP shipping gate. |

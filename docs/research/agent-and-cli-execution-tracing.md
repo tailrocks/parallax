@@ -327,6 +327,9 @@ The default-on safety and performance gate for this model is specified in
 [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md):
 structural capture is the default, redacted excerpts require canary and
 overhead tests, and full raw args/env/output are opt-in refs only.
+The OpenTelemetry-to-Parallax field mapping, semconv versioning, GenAI/MCP
+deduplication, and lossiness gates are specified in
+[Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md).
 
 ## Why CLI Tracing Is Strategically Useful
 
@@ -396,7 +399,10 @@ Near-term sequence:
 4. Add generic agent-session ingestion once the local schema works, with the
    real-tool adapter gate in
    [Agent session tracing across real tools](agent-session-tracing-real-tools.md).
-5. Use agent outcome feedback to improve evidence ranking and autonomy policy.
+5. Map OTel GenAI/MCP/CLI input through the
+   [Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md)
+   instead of storing raw OTel spans as the durable schema.
+6. Use agent outcome feedback to improve evidence ranking and autonomy policy.
 
 This makes the "agent context engine" claim more defensible: Parallax observes
 not only failing software, but also the agent that acts on the failure.

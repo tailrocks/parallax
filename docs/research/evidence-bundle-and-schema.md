@@ -125,8 +125,8 @@ Every node: `{ "id", "type", "ts" (when applicable), "summary", "data", "refs" }
 | `ci_run` | CI pipeline execution. | `provider`, `run_id`, `workflow`, `status`, `commit_sha`, `branch`, `started_at`, `jobs[]` |
 | `test_case` | One test and its history. | `suite`, `name`, `status`, `retries`, `pass_fail_history`, `first_failed_commit?`, `flaky_score?` |
 | `cli_invocation` | First-class CLI execution. | `command`, `subcommand`, `args_sanitized`, `cwd`, `repo`, `branch`, `commit`, `exit_code`, `duration_ms`, `stdout_ref`, `stderr_ref`, `child_processes[]`, `side_effects[]` |
-| `agent_session` | Coding-agent run. | `agent_product`, `started_at`, `ended_at`, `status`, `prompt_refs`, `bundles_used[]`, `outcome` |
-| `agent_action` | One action inside a session. | `kind` (model_call/tool_call/shell/file_edit/test/pr/approval), `target`, `result_ref`, `ts`, `confidence?` |
+| `agent_session` | Coding-agent run. | `agent_product`, `agent_version`, `adapter_name`, `semconv_version?`, `started_at`, `ended_at`, `status`, `prompt_refs`, `bundles_used[]`, `lossiness_report_ref`, `outcome` |
+| `agent_action` | One action inside a session. | `kind` (model_call/tool_call/mcp_tool_call/shell/file_read/file_edit/test/pr/approval), `target`, `status`, `input_policy?`, `output_policy?`, `result_ref`, `ts`, `confidence?`, `lossiness[]` |
 | `hypothesis` | A candidate cause (see below). | `statement`, `confidence`, `supporting[]`, `contradicting[]`, `checks[]` |
 
 Frame shape inside `error_event.stack` (oldest→newest), matching the Rust-first
@@ -170,6 +170,7 @@ Audit edges (the agent/CLI accountability layer):
 | --- | --- |
 | `agent_used_bundle` | Session consumed a specific bundle. |
 | `agent_ran_command` | Session invoked a CLI/shell command. |
+| `agent_called_tool` | Session invoked a model, MCP, API, or other typed tool. |
 | `command_spawned_process` | CLI command spawned a child / CI step. |
 | `command_touched_resource` | Command touched a file, DB object, queue, deploy target, or API. |
 | `agent_changed_file` | Agent produced a patch touching a file. |
@@ -349,6 +350,9 @@ it survives contact with real data:
 - [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) — the
   source detail for `cli_invocation`, `agent_session`, `agent_action`, and audit
   edges.
+- [Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md)
+  — how OpenTelemetry GenAI/MCP/CLI/process/CI spans feed these stable nodes
+  without turning development-stage semconv fields into the storage contract.
 - [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
   — the real Codex, Claude Code, Amp, and OpenCode adapter gate for
   `agent_session` and `agent_action` nodes.

@@ -53,6 +53,11 @@ Instead, build adapters into one normalized session schema.
 The common product rule: **native surfaces are preferred, but Parallax never
 depends on hidden model reasoning or unstable transcript formats for its core
 audit claim.**
+For tools that emit OpenTelemetry-shaped agent, MCP, or CLI spans, adapters must
+follow the
+[Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md)
+so development-stage semantic conventions feed stable Parallax rows with
+explicit lossiness reports.
 
 ## Normalized Session Schema
 
@@ -246,6 +251,9 @@ observability interface.
 
 - [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) defines
   why coding-agent sessions are first-class execution evidence.
+- [Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md)
+  defines how native OTel GenAI/MCP/CLI spans become stable Parallax rows without
+  treating development-stage conventions as the storage schema.
 - [Agent observability technical review](agent-observability-technical-review.md)
   surveys the broader LLM/agent observability market and technical patterns.
 - [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)
