@@ -279,6 +279,37 @@ and via the GreptimeDB MySQL native protocol** (lower per-query overhead than HT
 before concluding. Does not change the verdict (trace lookup is fast enough in
 absolute terms — 8 ms — for anchored bundle assembly).
 
+### Run 7 — 2026-05-25 — B9: small-write part behaviour (self-correction)
+
+Tested `benchmarking-the-differences.md` B9: does ClickHouse's one-part-per-INSERT
+cause part-explosion on small writes vs GreptimeDB's memtable? Drove 300 single-row
+INSERTs (async_insert=0) into ClickHouse; 100 into GreptimeDB.
+
+| Observation | Result |
+| --- | --- |
+| ClickHouse `NewPart` events (part_log) | **300** — confirms **one part per INSERT** |
+| ClickHouse merge events | 61 — background merges ran concurrently |
+| ClickHouse **active** parts after | **1** (300 → merged down) |
+| `parts_to_throw_insert` default | **3000** |
+| GreptimeDB 100 inserts | absorbed in memtable → 1 SST on flush (no per-insert files) |
+
+**Self-correction to passes 9/14.** The mechanism is real (ClickHouse *does* create
+one part per insert), **but background merges collapse bounded bursts aggressively**
+(300 parts → 1 active), and the throw guard is far away (3000). So "too many parts"
+is a **sustained-rate** failure — insert rate persistently exceeding merge
+throughput — **not** a per-insert problem, and `async_insert` (default on in 26.x)
+mitigates it further. My pass-9 framing overstated it.
+
+**Refined claim:** GreptimeDB's memtable-absorption write-path advantage is **real
+but narrower** — it matters for *sustained* high-frequency tiny writes that outpace
+ClickHouse's merge rate (where ClickHouse needs async-insert/batching tuning and
+GreptimeDB does not). For bounded/moderate small-write bursts, ClickHouse copes via
+merges + async insert. Confirming the *sustained* failure needs a rate-ramp test
+(insert faster than merges keep up until 3000) — proposed for the harness.
+
+**B9 status: done, refined** (mechanism confirmed; severity downgraded to a
+sustained-rate concern).
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

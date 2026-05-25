@@ -58,6 +58,17 @@ The mechanism that *does* differ and matters for Parallax:
 writes — ClickHouse needs a batching strategy to stay healthy, GreptimeDB does
 not. For bulk/batched ingest both are fine (below).
 
+**Refinement (Run 7, B9 — measured).** The part-per-insert mechanism is real
+(ClickHouse logged 300 `NewPart` events for 300 single-row inserts), **but
+background merges collapse bounded bursts aggressively** (300 parts → 1 active via
+61 merges) and the `parts_to_throw_insert` guard is far off (**3000**). So "too
+many parts" is a **sustained-rate** failure (insert rate persistently > merge
+throughput), **not** a per-insert problem, and `async_insert` (default on in 26.x)
+mitigates it. The GreptimeDB advantage here is therefore **real but narrower than
+first stated**: it matters under *sustained* tiny-write rates that outpace
+ClickHouse's merges — for bounded/moderate bursts ClickHouse copes. (This walks
+back the original strength of this claim; honest correction.)
+
 ## Bulk ingest throughput (Run 5, smoke)
 
 | Engine | 1M spans load | ~rows/s | Measurement |

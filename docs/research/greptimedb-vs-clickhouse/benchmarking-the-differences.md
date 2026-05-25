@@ -142,8 +142,13 @@ Legend: **Runnable now** = expressible in the current prototype/`bench/compose.y
   GreptimeDB SST/memtable behavior at the same rate.
 - **Pass/fail:** confirms GreptimeDB ingests Parallax's streaming small-batch shape
   without a batching layer; quantifies the ClickHouse batching requirement.
-- **Prereq:** small-write load mode.
-- **Status:** Needs harness ext. (small-write driver).
+- **Prereq:** small-write load mode (a **rate-ramp**: insert faster than merges
+  keep up until parts approach 3000).
+- **Status:** **DONE (Run 7), refined.** Mechanism confirmed (300 inserts = 300
+  `NewPart` events) but background merges collapsed 300→1 active and the guard is
+  3000, so the explosion is a **sustained-rate** failure, not per-insert; default
+  `async_insert` mitigates. GreptimeDB advantage real but narrower. A sustained
+  rate-ramp is still owed to prove the actual throw threshold under load.
 
 ## B10 — Object-storage economics (MinIO), both engines
 
