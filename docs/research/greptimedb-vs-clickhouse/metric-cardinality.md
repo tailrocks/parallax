@@ -2,7 +2,9 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 48. The *partitioning/storage consequence* of high series cardinality —
+Status: pass 48, extended pass 112 (Run 76 — high-card storage measured at 200k series;
+`LowCardinality` cliff refined to *graceful*; metric-engine `__tsid` storage owed). The
+*partitioning/storage consequence* of high series cardinality —
 GreptimeDB lead #6 ("logical metric tables → physical wide table, and the partitioning
 consequence for high-cardinality metrics"). Pass 32 confirmed the logical→physical
 layout; pass 20 (Run 11) measured high-card *aggregation speed*. This note is the
@@ -62,6 +64,34 @@ GreptimeDB's `__tsid` model** — but it is experimental + off by default, so th
 for high-cardinality metrics today is "design the `ORDER BY` carefully and respect the
 `LowCardinality` cap."
 
+## Measured storage at 200k distinct series (Run 76 — refines the "cliff")
+
+1M rows, **200,000 distinct series**, identical data both engines:
+
+| Table | total on disk | `series` column |
+| --- | --- | --- |
+| ClickHouse `LowCardinality(String)` | **9.64 MiB** | 1.53 MiB |
+| ClickHouse `String` (plain) | 10.11 MiB | 1.99 MiB |
+| GreptimeDB plain mito table (`series` PK) | **11.99 MiB** | — |
+
+Two refinements:
+
+- **The `LowCardinality` "cliff" is *graceful*, not a storage explosion.** At 200k
+  distinct (≫ the 8,192 dict cap), `LowCardinality` is **still smaller than plain
+  `String`** (col 1.53 vs 1.99 MiB; total 9.64 vs 10.11). So overflowing the dict means
+  *losing the peak dict-encoding benefit*, **not** regressing below `String` — especially
+  with the column sorted in `ORDER BY` (per-granule locality) + ZSTD. The cliff is a
+  *don't-expect-magic* caveat, not a footgun that inflates storage.
+- **On a *plain* table, ClickHouse wins high-card series *storage* (~1.24×):** CH
+  `LowCardinality` 9.64 MiB vs GreptimeDB plain-table 11.99 MiB. Consistent with the
+  tuned-codec-on-high-card-strings edge (Run 1). **⚠ But this is NOT GreptimeDB's
+  high-card path** — it is a plain mito table storing `series` as a full string. The
+  **metric engine** stores series as a u64 `__tsid` hash (not the `'svc-N'` string), which
+  could be markedly more compact; the metric-engine high-card storage comparison is
+  **owed** (the physical `ENGINE=metric` table creates, but loading 200k series via logical
+  tables / OTLP is the follow-up). So "CH wins high-card storage" holds for a plain GT
+  table; the metric-engine `__tsid` path may narrow or flip it.
+
 ## Side by side
 
 | | GreptimeDB (metric engine) | ClickHouse (MergeTree) |
@@ -78,10 +108,15 @@ for high-cardinality metrics today is "design the `ORDER BY` carefully and respe
 
 High cardinality splits across axes — both true, different things:
 
-- **Storage / ingest ergonomics (cost + operability): GreptimeDB.** The metric engine
+- **Ingest ergonomics (operability): GreptimeDB** — *but raw storage actually favors
+  ClickHouse on a plain table (Run 76).* The metric engine
   + PartitionTree are designed so high-cardinality series are rows in a shared,
   dict-encoded, sharded structure with no `LowCardinality`-style cap and label-set
-  hashing built in. ClickHouse works but needs deliberate `ORDER BY` design and hits
+  hashing built in — **so the GreptimeDB edge is "no cardinality cap / no `ORDER BY`
+  tuning to manage," not smaller bytes.** Measured (Run 76), CH `LowCardinality` is
+  ~1.24× *smaller* than a GreptimeDB plain table at 200k series (the metric-engine
+  `__tsid` storage is the owed fair test). ClickHouse works but needs deliberate `ORDER
+  BY` design and hits
   the 8,192 dict cliff on wild label values.
 - **Aggregation *speed* at volume: ClickHouse (~2× warm, Run 37; corrected from ~10×).**
   The vectorized C++ engine (`query-execution-engine.md`) out-aggregates DataFusion

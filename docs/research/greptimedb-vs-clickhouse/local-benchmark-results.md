@@ -3101,6 +3101,52 @@ docker create --name gt-sync greptime/greptimedb:v1.0.2 standalone start --http-
 # for c in gt-def gt-sync: time 60x  curl -XPOST .../v1/influxdb/write --data-binary "m,svc=a v=$i"
 ```
 
+### Run 76 — 2026-05-25 — B13: high-cardinality metric storage (200k series) + the LowCardinality cliff refined
+
+**Pass target.** Advance B13 (sized high-card metric storage, open Q #8): does ClickHouse's
+`LowCardinality` 8,192-dict cliff (Run 26) inflate storage at high series count vs
+GreptimeDB? Generate 200k distinct series, compare.
+
+**Environment.** GreptimeDB `v1.0.2` / ClickHouse `v26.5.1.882` (re-pinned — latest, no
+bump). 1M rows, `series` with **200,000 distinct values** (`'svc-'||number%200000`),
+identical data both engines (CH-generated, CSV-loaded into GreptimeDB).
+
+**Measured (total on disk, OPTIMIZE/compact):**
+
+| Table | total | `series` column |
+| --- | --- | --- |
+| ClickHouse `LowCardinality(String)` | **9.64 MiB** | 1.53 MiB |
+| ClickHouse `String` (plain) | 10.11 MiB | 1.99 MiB |
+| GreptimeDB plain mito table (`series` PK) | **11.99 MiB** | — |
+
+**Verdict — two findings, one caveat.**
+
+- **The `LowCardinality` "cliff" is GRACEFUL, not a storage explosion (refines Run 26).**
+  At 200k distinct (≫ the 8,192 dict cap), `LowCardinality` is **still smaller than plain
+  `String`** (col 1.53 vs 1.99 MiB; total 9.64 vs 10.11). Overflowing the dict = *losing
+  the peak dict benefit*, not regressing below `String` (helped by `ORDER BY series`
+  per-granule locality + ZSTD). So "the cliff" is a don't-expect-magic caveat, not a
+  storage footgun.
+- **On a *plain* table, ClickHouse wins high-card series storage ~1.24×** (LC 9.64 vs GT
+  11.99 MiB) — consistent with the tuned-codec-on-high-card-strings edge (Run 1).
+- **⚠ Caveat — NOT GreptimeDB's high-card path.** The GT table stored `series` as a full
+  string; the **metric engine** identifies series by a u64 `__tsid` hash (not the
+  `'svc-N'` string), potentially far more compact. The metric-engine high-card storage
+  comparison is **owed** (physical `ENGINE=metric` table creates; loading 200k series via
+  logical tables/OTLP is the follow-up). So this measures *plain-table* GT, likely
+  overstating GT's high-card storage.
+
+**Net:** refines the verdict's "high-card → GreptimeDB" to: **ingest ergonomics** (no
+cardinality cap, no `ORDER BY` tuning) → GreptimeDB; **raw plain-table storage** →
+ClickHouse `LowCardinality` (~1.24×); **aggregation latency** → ClickHouse (Run 26); the
+metric-engine `__tsid` storage is the owed tiebreaker. Status: **B13 partially advanced
+(plain-table storage measured + cliff refined; metric-engine path owed).**
+
+Caveat: 200k series / 1M rows smoke; metric-engine path owed; CH ORDER BY series gives it
+sorted-column locality (fair — it's the recommended high-card schema).
+
+**Reproduce.** CH `CREATE TABLE hc_lc (series LowCardinality(String), ts DateTime, val Float64) ENGINE=MergeTree ORDER BY (series,ts)` + `INSERT … 'svc-'||toString(number%200000) … numbers(1000000)`; dump `FORMAT CSVWithNames`, `COPY` into GreptimeDB `hc_gt (series STRING, ts_ms TIMESTAMP(3) TIME INDEX, val DOUBLE, PRIMARY KEY(series))`; compare `system.parts` vs `region_statistics`.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the
