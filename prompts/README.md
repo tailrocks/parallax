@@ -107,6 +107,31 @@ since the brief is self-contained — the explicit wording above just makes the
 never-stop intent unmistakable. Do not use `/goal` here, because the brief is
 designed to keep going rather than reach a fixed deliverable.
 
+#### How often to trigger it
+
+Default to **self-paced (no interval)**. This loop watches nothing external — the
+source code and releases of GreptimeDB and ClickHouse change on a weeks horizon,
+not minute to minute — so a polling interval buys no fresher data. Frequency here
+only controls review cadence and token spend, not freshness. Back-to-back passes
+accumulate depth fastest, and each pass already commits a durable note, so
+progress is saved continuously and a long unattended run loses nothing if the
+session ends.
+
+Add an interval only for human reasons, and keep it long:
+
+- `/loop 1h …` or `/loop 4h …` if you want checkpoints to review each pass before
+  the next, or to spread token spend across the day.
+- Do **not** use short intervals (seconds/minutes): one deep subsystem pass —
+  clone/read source, verify claims, write and commit a note — takes longer than
+  that, so a short interval just runs effectively back-to-back anyway and cannot
+  make the source any newer.
+- Re-pin versions and re-check public claims about every 1–2 weeks (or when either
+  project ships a new stable release); that is the only cadence on which the
+  underlying facts actually move.
+
+Note `/loop` runs auto-expire after about 7 days and stop when the session closes
+(they resume with `--resume` while unexpired); relaunch for a longer program.
+
 ## Output
 
 Running these prompts should produce source-linked Markdown under
