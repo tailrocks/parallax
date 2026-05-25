@@ -103,10 +103,20 @@ Build only enough to generate the bundle automatically and repeatably:
   single-node; NATS/Redpanda reserved for Tier-3 clustering per
   [messaging](messaging-and-ingestion-layer.md)).
 - Add the read-only MCP adapter specified in
-  [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md),
-  then CLI-invocation + coding-agent session tracing, then frontend collection
-  ([frontend](frontend-collection-and-cross-tier-correlation.md)).
-- **Gate:** scale-out changes topology, not the event/bundle contract.
+  [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md).
+- Add CLI-invocation tracing only after the
+  [CLI trace safety ledger](cli-trace-safety-ledger.md) passes the relevant
+  capture/redaction/overhead level.
+- Add coding-agent session tracing surface by surface, not as one generic
+  feature: Claude OTel and `stream-json`, Codex hooks and `exec --json` JSONL,
+  Amp plugins and streaming JSON, and OpenCode run JSON/export/plugin/server/API
+  and ACP all require separate rows in the
+  [Agent session tracing ledger](agent-session-tracing-ledger.md).
+- Add frontend collection after the privacy and cross-tier gates in
+  [frontend collection](frontend-collection-and-cross-tier-correlation.md).
+- **Gate:** scale-out changes topology, not the event/bundle contract; no agent
+  tracing wording goes beyond the exact adapter/version/config claim level the
+  ledger has passed.
 
 ### Phase 4 — Value capture and the feedback loop
 
@@ -132,6 +142,7 @@ Build only enough to generate the bundle automatically and repeatably:
 | A5 stack holds | Phase 2 | [A5 stack decision ledger](a5-stack-decision-ledger.md), rolling up storage/metadata/ingest/setup gates |
 | A4 correlation reliable | Phase 1–2 | [strong-edge prevalence on real telemetry](correlation-reliability-real-telemetry-gate.md) plus the [A4 result ledger](a4-correlation-reliability-ledger.md) |
 | A3 schema/corpus moat | Phase 2 (publish) → Phase 4 (corpus) | [schema conformance + external adoption + outcome corpus](schema-adoption-and-corpus-moat-gate.md) |
+| Coding-agent trace audit value | Phase 3 | [agent-session tracing ledger](agent-session-tracing-ledger.md): dated tool/version/config matrix, at least one native OTel adapter and one non-OTel structured adapter, lossiness, redaction, projection, overhead, and audit-value rows |
 | A7 scope discipline | enforced by phase order | [A7 scope discipline ledger](a7-scope-discipline-ledger.md) stays green and the tiny tier passes the [self-hosted simplicity gate](self-hosted-simplicity-gate.md) with claim status in the [self-hosted simplicity ledger](self-hosted-simplicity-ledger.md) before breadth |
 
 ## What This Sequence Refuses To Do
@@ -139,6 +150,8 @@ Build only enough to generate the bundle automatically and repeatably:
 - Build the storage layer for months before testing A1. (Most common failure
   mode for infra-minded founders; the bear case's "comfortable engineering" trap.)
 - Add frontend, MCP, fixer, or Tier-3 before the tiny tier is excellent (A7).
+- Treat "coding-agent tracing" as one roadmap milestone or product claim before
+  per-surface fixture rows exist.
 - Claim bundle value publicly before the
   [Phase 0 bundle eval](bundle-value-phase0-runbook.md) and Phase 1 automated
   evidence exist.
@@ -202,6 +215,15 @@ Build only enough to generate the bundle automatically and repeatably:
 - [Agent access surface safety ledger](agent-access-surface-safety-ledger.md)
   — the claim-level contract for CLI/HTTP/MCP projection equivalence and
   read-only MCP safety.
+- [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) — why
+  CLI invocations and coding-agent sessions belong in the execution graph.
+- [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
+  and [Agent session tracing ledger](agent-session-tracing-ledger.md) — the
+  per-tool, per-capture-surface fixture contract before agent-session tracing is
+  product wording.
+- [CLI trace safety ledger](cli-trace-safety-ledger.md) — the claim-level
+  contract for default-ready CLI capture, redacted excerpts, raw refs,
+  child-process policy, and projection safety.
 - [Deploy/change context ledger](deploy-change-context-ledger.md) — the
   claim-level contract for release-regression and "what changed?" context.
 - [Production database evidence access gate](production-database-evidence-access.md)
