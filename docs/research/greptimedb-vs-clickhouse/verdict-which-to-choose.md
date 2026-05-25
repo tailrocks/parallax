@@ -2,10 +2,11 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: standing decision, continually sharpened (current through **pass 86**; pass 86 /
-Run 48 **materially narrowed the full-text gap** — the ~18× was a query-form artifact
-(`matches()` on a bloom-backed index full-scans; `matches_term()` prunes → selective
-exact-term is ~2–3×, not 18× — see the flip-trigger correction below).
+Status: standing decision, continually sharpened (current through **pass 87**; passes 86–87 /
+Runs 48–49 **dissolved most of the full-text gap** — the ~18× was a backend/function
+misconfiguration: with the correct pairing, selective full-text is ~6 ms (tantivy+`matches`)
+and ~8 ms (bloom+`matches_term`) vs ClickHouse ~3 ms; residual is broad-term analytics only —
+see the flip-trigger correction below).
 Synthesizes the internals teardowns (all 10 subsystems + rollup, retention,
 schema-evolution, dedup, WAL/durability, execution-engine, indexing, PromQL, metric
 cardinality, span-tree, projections, deletes/mutations, async-insert, zero-copy
@@ -250,6 +251,17 @@ index (use the tantivy backend for that case), or (b) broad-term scans matching 
 trigger**: the verdict's one big ClickHouse win shrinks to "query-syntax/phrase log search
 or broad-term analytics," not the everyday exact-term incident grep. Detail in
 `local-benchmark-results.md` Run 48 + `greptimedb-parity-roadmap.md` #1.
+
+**Closed (Run 49): the query-syntax path is also fast.** A tantivy-backed index makes
+`matches()` (query syntax) **prune** — selective ~6 ms warm (EXPLAIN `output_rows: 1`), vs
+the ~150 ms full-scan on a bloom index. So **both** selective full-text paths are
+sub-perceptible with the correct backend: **tantivy + `matches()` ~6 ms**, **bloom +
+`matches_term()` ~8 ms**, vs ClickHouse ~3 ms (~2×). The ~18× was **100 % a backend/function
+misconfiguration**, not a full-text-maturity gap. **Net: ClickHouse's log-search advantage
+dissolves for interactive/selective search on both query types; the only residual is
+broad-term analytics (scan engine).** Parallax guidance: tantivy backend for query-syntax,
+bloom for exact-term grep — both fast. This is the strongest narrowing yet of the verdict's
+one large ClickHouse win.
 
 ## Open questions handed to the benchmark (veto power)
 

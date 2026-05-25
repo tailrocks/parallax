@@ -1515,6 +1515,42 @@ Sharpens the verdict + parity-roadmap #1; updated both. No data changed (read-on
 query-syntax search (vs exact-term). The right Parallax choice is **bloom + `matches_term` for
 exact-term incident grep**; tantivy only if phrase/relevance search is needed.
 
+### Run 49 — Tantivy backend: `matches()` query-syntax search prunes (~6 ms) — the gap is fully a pairing issue
+
+Answers the question Run 48 left owed: does the **tantivy** fulltext backend make `matches()`
+(query-syntax) prune, or is query-syntax log search a real gap? Built a tantivy-backed copy
+(`logs_tantivy`, `message FULLTEXT INDEX WITH(backend='tantivy')`, 1M rows from `logs_b1`,
+flushed), warm. Dropped after.
+
+| Query on tantivy backend | Result | EXPLAIN scan `output_rows` | Latency (warm) |
+| --- | --- | --- | --- |
+| `matches('ae119f2b')` selective (1 match) | **pruned** | **1** | **~6 ms** |
+| `matches('users')` broad (66,493 matches) | scales | (many) | ~26 ms |
+
+**Finding — the full-text picture is now definitive and the ~18× is fully explained as a
+pairing artifact:**
+
+| backend × function | selective behavior | selective latency |
+| --- | --- | --- |
+| **tantivy + `matches()`** (query syntax) | **prunes** (Run 49) | **~6 ms** |
+| **bloom + `matches_term()`** (exact term) | **prunes** (Run 48) | **~8 ms** |
+| **bloom + `matches()`** (MISMATCH) | **full-scans 5M** (Run 48) | ~150 ms ← the Run-12 ~18× |
+| ClickHouse `hasToken`/`text` | prunes | ~3 ms |
+
+So **with the correct backend for the query type, GreptimeDB selective full-text search is
+~6–8 ms (~2× ClickHouse, both sub-perceptible) — on *both* query-syntax and exact-term paths.**
+The reported ~18× (Run 12) was 100 % a backend/function misconfiguration (`matches()` on a
+bloom index), **not** a fundamental full-text gap. The only residual ClickHouse log advantage
+is **broad-term scans matching many rows** (analytics → scan engine, Improvement #2), not
+interactive incident search.
+
+**Consequence:** the verdict's one big ClickHouse win (log search) **dissolves for the
+interactive/selective case on both query types** given correct backend choice; updated the
+verdict + roadmap #1 accordingly. Parallax guidance: **tantivy backend for query-syntax/phrase
+log search, bloom backend for exact-term grep** — both ~6–8 ms. Caveat: smoke (1M tantivy / 5M
+bloom), `count(*)` shape; cold-cache GB-scale still owed to the harness. Cleanup: `logs_tantivy`
+dropped; bench data untouched.
+
 ## Next runs (to make the numbers mean something)
 
 1. **Bigger tier** (`small` ≈ 25–50 GB, cold cache) so scans exceed cache and the

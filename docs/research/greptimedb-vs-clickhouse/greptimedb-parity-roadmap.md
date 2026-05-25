@@ -19,7 +19,9 @@ the fulltext index apply is ~0.15 ms / ~0.1 % of the query → the ~18× is the 
 so #1's primary lever is the scan engine (#2/#3), the tantivy cache is second-order) + pass 86
 (**Run 48 — the ~18× was a query-form artifact**: `matches()` on a `backend='bloom'` index
 full-scans; `matches_term()` prunes → selective exact-term is **~8 ms / ~2–3×**, not 18×. #1
-downgraded to a Tier-A usage fix; verdict flip-trigger narrowed). This is **the dedicated,
+downgraded to a Tier-A usage fix; verdict flip-trigger narrowed) + pass 87 (**Run 49**: tantivy
+backend `matches()` **also prunes** ~6 ms → query-syntax path fast too; full-text gap is fully
+a backend/function pairing artifact, residual = broad-term analytics only). This is **the dedicated,
 standalone file** answering "what can GreptimeDB improve, why, and how" — the summary table
 scans, the detailed sections below carry the code-oriented specifics. Answers the operator
 question: GreptimeDB wins Parallax on *fit*
@@ -53,12 +55,22 @@ integration, exactly as the thesis predicts.
 
 **Pass-78 source check corrected gap #1** (drift caught in this roadmap's own first draft):
 GreptimeDB **already** in-memory-caches the inverted, bloom, and vector indexes + an
-index-application result cache (`cache/index/`), so "warm-cache the FST" was already done —
-the residual full-text cost is **tantivy-specific** (no `FulltextIndexCache`; the tantivy
-applier re-opens a Lucene dir via a file/dir cache per query). Still an integration gap, but a
-narrower and more accurate one — and it surfaces a **Tier-A lever**: prefer the already-cached
-*bloom* full-text variant where exact phrase isn't required. The correction is itself the
-method working: source beats reasoning.
+index-application result cache (`cache/index/`), so "warm-cache the FST" was already done.
+The residual cost was thought to be tantivy-specific, because there is no dedicated
+`FulltextIndexCache`, but Run 47 then showed the fulltext index apply itself was sub-ms.
+
+**Pass-86 live check corrected the user-level impact again:** Run 48 showed the benchmarked
+`logs_b1` table used `backend='bloom'`, while Run 12/38 queried it with `matches()` — the
+tantivy query-syntax function, not the exact-term bloom path. That combination full-scans
+5M rows. With the correct pairing, `matches_term()` + bloom, GreptimeDB prunes to the single
+matching row and returns selective exact-term search in ~8 ms warm (~2-3× ClickHouse, both
+sub-perceptible). **Pass-87 / Run 49 closed the last piece:** a tantivy-backed index makes
+`matches()` (query syntax) **prune** too — selective ~6 ms warm (EXPLAIN `output_rows: 1`). So
+**both** selective full-text paths are fast with the correct backend (tantivy+`matches` ~6 ms,
+bloom+`matches_term` ~8 ms), and the ~18× was **100 % a backend/function misconfiguration**.
+The only residual is **broad-term scans that match many rows** (scan engine, #2). This moves #1
+from "engine work required for incident grep" to "usage/schema guard only; scan-engine work
+solely if broad-term log analytics is common."
 
 ## User-first ranking — does any of this actually make GreptimeDB the clear winner?
 
@@ -104,7 +116,7 @@ only if that fraction is high. Anything else is mechanism elegance without user 
 
 | # | ClickHouse advantage | Mechanism (why CH wins) | What GreptimeDB implements — against its real structure | Tier | Gap kind |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **Full-text log search ~18× (warm, Run 12/38)** | Coarse `text` posting-list prune **inside** the C++ pipeline, then vectorized `hasToken` confirm on 65k-row blocks — index lookup + confirm are one fast path. | **Cache the tantivy reader + fuse its hit-set into a row-selection.** Source-corrected (pass 78): GreptimeDB already in-memory-caches the **inverted**, **bloom**, and **vector** indexes (`cache/index/{inverted_index,bloom_filter_index,vector_index}.rs`) + an index-application result cache (`result_cache.rs`) — so "warm-cache the FST" is **already done** for the inverted path (why anchored inverted lookup is competitive, Run 6). The full-text gap is **tantivy-specific**: there is **no `FulltextIndexCache`** in `cache/index/`; the tantivy applier opens a Lucene-style directory via a **file/dir cache** (`SstPuffinDir`, `dir_cache_hit/miss`) and re-opens segment readers per query, then DataFusion scans. Implement: (a) an **in-memory tantivy reader/segment cache** (parallel to `InvertedIndexCache`) so the Lucene index stays warm; (b) feed the tantivy hit-set into the arrow `RowFilter` row-selection from gap #3 so only survivors materialize. **Tier-A lever:** for log search not needing exact phrase, prefer the **bloom full-text variant** (`INDEX_BLOB_TYPE_BLOOM`) — it already uses `BloomFilterIndexCache`. Files: `src/mito2/src/sst/index/fulltext_index/applier.rs`, `cache/index/`. | **A** (bloom variant) / **B** (tantivy cache) | integration |
+| 1 | **Log search gap narrowed by Run 48** | ClickHouse still has a fast integrated `text`/`hasToken` path, but the old ~18× GreptimeDB result was `matches()` on a bloom-backed index, which full-scanned. Correct exact-term pairing (`matches_term()` + bloom) prunes and returns ~8 ms warm. | **First fix usage, then measure residuals.** Document Parallax log-search DDL/query rules: bloom backend + `matches_term()` for exact request-id/token grep; tantivy backend + `matches()` only for query-syntax/phrase/relevance search. Add planner/UX guardrails so a bloom index is not queried through the non-pruning function. Broad-term scans still route to #2 scan-engine work; sparse query-syntax paths may benefit from index→scan fusion via arrow `RowFilter`. A dedicated `FulltextIndexCache` is not a current priority because Run 47 measured index apply at ~0.15 ms. | **A** (usage/schema guard) / **B** (broad scan + fusion) | usage / integration |
 | 2 | **Generic scan/aggregate throughput ~2–4×** | 65,409-row blocks (8× DataFusion's 8,192) + **LLVM-JIT** expressions/aggregation + bespoke SIMD kernels + specialized adaptive hash tables. | (a) **Raise the `RecordBatch` size** in `SessionConfig` — **source-confirmed (pass 77): `state.rs:126-128` sets only `with_target_partitions`, never `batch_size`, so DataFusion's 8,192 default holds** → raise toward 32–64k so vectors amortize overhead and feed SIMD; (b) **expression + aggregation codegen** — DataFusion's is young/narrow vs LLVM JIT; (c) **specialized SIMD aggregation** (two-level hash for high-card, fixed-width-key kernels). Mostly **upstream DataFusion** — GreptimeDB inherits as DF improves, or contributes. | **B** | integration (upstream DataFusion) |
 | 3 | **Late materialization (PREWHERE)** | Decodes cheap filter columns first → row mask → decodes wide columns only for surviving rows. | **Add column-staged late materialization to the mito2 reader.** Source-confirmed (pass 77): GreptimeDB already **prunes** row-groups/pages (`RowGroupSelection` from Puffin fulltext/inverted indexes + the Parquet **page index**, `reader.rs`) and then **post-decode**-filters rows (`PruneReader::precise_filter`, `read/prune.rs:119`) — so within a surviving row-group it decodes **all projected columns before dropping rows**. There is **no arrow `RowFilter`** in the reader (grep = 0) → no column-staging. Fix: wire the pushed-down predicate into arrow's **`RowFilter`** (`ParquetRecordBatchReaderBuilder::with_row_filter`, which arrow-rs already provides) so filter columns decode first, build a selection, and wide/`Json` columns materialize only for survivors. File: `src/mito2/src/sst/parquet/reader.rs`. **Arrow ships the primitive → integration, not a new algorithm.** | **B** | integration |
 | 4 | **Dynamic-attribute path queries (JSON)** | `JSON` type stores each path as a **typed columnar subcolumn** → `attributes.user` reads one subcolumn. GreptimeDB `Json` is a **binary blob** (jsonb) + `json_get_*` per-row parse (`schema-evolution-and-dynamic-columns.md`). | **Shred JSON paths into Parquet subcolumns.** Adopt the emerging Parquet **Variant/shredding** layout: at flush, write hot/declared attribute paths as their own typed Parquet columns; push `attributes.k` access down to a subcolumn scan instead of a per-row blob parse. Files: a shredded column type + mito2 SST writer + DataFusion pushdown. **Biggest storage-format change here** — borders on design, but Parquet's variant work makes it integration, not a rewrite. | **B** | integration / format |
@@ -119,7 +131,7 @@ Each improvement is framed as: a **concept borrowed** from the system that does 
 (mito2 region engine, DataFusion `=52.1`, Puffin index, OpenDAL) to provide value for
 Parallax. Source read at GreptimeDB `v1.0.2` (`0ef5451`).
 
-### Improvement 1 — In-memory tantivy full-text cache + hit-set→row-selection fusion
+### Improvement 1 — Full-text query/backend selection + hit-set→row-selection fusion
 
 - **Borrowed concept (ClickHouse):** the `text` index isn't just *stored* well — its
   posting-list lookup and the `hasToken` confirmation run **in the same vectorized
@@ -142,8 +154,9 @@ Parallax. Source read at GreptimeDB `v1.0.2` (`0ef5451`).
 - **How — reordered by Run-48 impact:** (1) **Tier-A usage fix (no engine change, the real
   answer for the user story):** for exact-term incident grep, use **`matches_term()` + the
   `bloom` backend** — already ~8 ms, competitive with ClickHouse. (2) For **query-syntax/phrase**
-  search, use the **tantivy backend** (`backend='fulltext'`) so `matches()` prunes via tantivy
-  (owed: a direct tantivy-backend latency run to quantify). (3) **Broad-term** scans (~12×) are
+  search, use the **tantivy backend** (`backend='tantivy'`) — **Run 49 confirms `matches()`
+  prunes there** (selective ~6 ms warm, EXPLAIN `output_rows: 1`), also competitive; no longer
+  an open question. (3) **Broad-term** scans (~12×) are
   the scan engine (Improvement #2: bigger batches/JIT). (4) Index→scan fusion
   (`src/mito2/src/sst/index/fulltext_index/applier.rs` → arrow `RowFilter`) still helps sparse
   matches. A dedicated `FulltextIndexCache` is moot — the apply is already sub-ms.
@@ -354,7 +367,8 @@ Parallax. Source read at GreptimeDB `v1.0.2` (`0ef5451`).
 - **Tier A — close it in Parallax today, no engine change.** Index `trace_id`/`fingerprint`
   (Run 45 design), **Flow pre-aggregation** for dashboards (Run 43, ~5–6× read speedup,
   neutralizes the ~2× SQL-agg gap), **SQL not PromQL** for hot aggregations (Run 44: GT SQL
-  ~5× faster than GT's own PromQL), FULLTEXT-index + anchored log search, and the Flow
+  ~5× faster than GT's own PromQL), bloom fulltext + `matches_term()` for exact-term log
+  search, and the Flow
   alternate-ordering workaround (#5a). **This already makes GreptimeDB a clear winner for
   Parallax's *anchored* workload** — the gaps below only bite on heavy *ad-hoc* analytics.
 - **Tier B — contribute upstream (Rust, open-source) to win *all* cases.** Items 1–5 (and
@@ -388,8 +402,8 @@ first which gaps Parallax's real query mix actually hits before investing in Tie
 
 ## Open questions handed to the benchmark
 
-- Quantify the post-Tier-A residual: with FULLTEXT + warm index cache, how much of the ~18×
-  log-search gap remains? (Owed to a tuned re-run; `benchmarking-the-differences.md`.)
+- Quantify the Run-48 residuals: direct `backend='fulltext'`/tantivy `matches()` phrase and
+  query-syntax latency, plus broad-term `matches_term()` latency at larger/cold scale.
 - Does raising the DataFusion batch size in `SessionConfig` measurably narrow the ~2× agg
   gap at 40k series? (A cheap local probe — propose as a new case.)
 - JSON-shredding payoff: attribute-path query latency, blob-parse vs subcolumn — at volume.
@@ -403,8 +417,10 @@ first which gaps Parallax's real query mix actually hits before investing in Tie
 - Empirical: `local-benchmark-results.md` Runs 11/12/37/38 (the gaps), 43 (Flow), 44 (PromQL
   vs SQL), 45 (GreptimeDB schema build), 47 (full-text gap = post-index scan, not the index
   apply — index apply ~0.15 ms via `greptime_index_apply_elapsed{type=fulltext_index}`),
-  **48 (`matches()` on a `backend='bloom'` index full-scans 5M, EXPLAIN `output_rows: 5000000`;
-  `matches_term()` prunes, `output_rows: 1` → selective exact-term ~8 ms / ~2–3× CH, not 18×)**.
+  48 (`matches()` on a `backend='bloom'` index full-scans 5M, EXPLAIN `output_rows: 5000000`;
+  `matches_term()` prunes, `output_rows: 1` → selective exact-term ~8 ms / ~2–3× CH, not 18×),
+  **49 (tantivy backend `matches()` prunes too, `output_rows: 1`, selective ~6 ms — both
+  full-text paths fast with correct backend; ~18× was 100% a pairing artifact)**.
 - Source (pass 77, v1.0.2): `src/query/src/query_engine/state.rs:126-128` (SessionConfig =
   `with_target_partitions` only, no `batch_size`); `src/mito2/src/sst/parquet/reader.rs`
   (`RowGroupSelection` + `PageIndexPolicy` + `prune_row_groups_by_{fulltext,inverted}_index`;
