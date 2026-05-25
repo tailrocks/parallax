@@ -117,6 +117,19 @@ Access decision:
 The stack deliberately keeps Tier 1 small while preserving the seams needed for
 Tier 2 and Tier 3.
 
+Two version-freshness caveats on this table as of 2026-05:
+
+- **Apache Iggy has no clustering yet.** Iggy is still in the Apache Incubator
+  (latest `server-0.8.0`, 2026-04-22) and is **single-node only**; replication
+  via Viewstamped Replication is in progress but not yet used by the server. So
+  the Tier 3 "Iggy cluster" cell is a future target, not a shipping capability.
+  Tier 3 must assume the storage-backed stream fallback until Iggy ships and
+  proves clustering; do not design Tier 3 around Iggy HA that does not exist.
+- **Rotel is alpha.** A Rust OTLP collector (Rotel, `v0.2.x`) is attractive but
+  pre-1.0; the conservative collector default is the OpenTelemetry Collector
+  (Go, allowed by the runtime filter) until Rotel reaches 1.0. Treat Rotel as an
+  optional high-performance hop, not load-bearing infrastructure.
+
 Related research:
 
 - [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md)
@@ -137,10 +150,15 @@ Metadata-store source:
 - [Turso Database GitHub repository](https://github.com/tursodatabase/turso)
 
 Use the `tursodatabase/turso` engine for the embedded metadata slot, not the old
-C SQLite default. The repository currently describes Turso Database as a
-Rust-written, SQLite-compatible in-process SQL database and marks it beta, so
-Parallax should pair this choice with backups and a metadata-store benchmark
-before relying on it for large production installs.
+C SQLite default. As of 2026-05 Turso Database is still pre-1.0 (latest stable
+`v0.6.1`, 2026-05-22) and the repository still carries an explicit beta warning;
+replication and backup/restore are not yet documented, and the team states it
+does not yet meet SQLite-level reliability. This is an operator-chosen default,
+not a maturity claim: Parallax must pair it with its own backup path and the
+[metadata-store benchmark](metadata-store-benchmark-plan.md) before relying on it
+for large production installs, and Postgres remains the scale-out fallback the
+moment Turso fails those gates. Treat the metadata slot as the most likely place
+the named stack changes under benchmarking.
 
 ## Why This Is The Right First System
 
@@ -173,10 +191,19 @@ That is narrower than "AI observability" but much more buildable.
 
 Use **GreptimeDB** as the default v0.1 observability store.
 
-This is an opinionated default, not a claim that GreptimeDB has already beaten
-ClickHouse on every workload. The storage benchmark still has veto power. But
-the first prototype should optimize for architectural fit rather than inherited
-incumbency.
+GreptimeDB reached **v1.0 GA in April 2026** (latest `v1.0.2`, 2026-05-14), with
+stable APIs, a unified engine for metrics/logs/traces on object storage, and
+SQL + PromQL + native OTLP ingestion. This removes the largest risk that existed
+in earlier passes, when it was still beta: the storage layer is now a
+production-grade choice, not a bet on an unreleased database. Distributed mode
+(Frontend/Datanode/Metasrv with region failover and online repartition) is real
+but younger than standalone, so the storage benchmark still applies to the
+scale-out tiers.
+
+This remains an opinionated default, not a claim that GreptimeDB has already
+beaten ClickHouse on every workload. The storage benchmark still has veto power.
+But the first prototype should optimize for architectural fit rather than
+inherited incumbency.
 
 ### Why GreptimeDB Wins The First Build
 
@@ -514,9 +541,17 @@ First MCP tools:
 | `parallax_agent_session_show` | Return agent-session timeline, tools, files, tests, patch refs, and outcome. |
 | `parallax_cli_invocation_show` | Return sanitized CLI invocation evidence and side-effect refs. |
 
+Build the MCP server against the current stable spec revision **2025-11-25**.
+A later revision (2026-07-28) is in release-candidate state as of the research
+date and is not final; do not adopt its breaking changes yet. MCP is now
+effectively universal across coding-agent clients (Claude Code, Codex, Cursor,
+Gemini CLI, Copilot/VS Code), which is why a read-only MCP context server is the
+right agent-native surface alongside the CLI.
+
 Sources:
 
-- [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization)
+- [MCP specification 2025-11-25](https://modelcontextprotocol.io/specification/2025-11-25)
+- [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)
 - [MCP security best practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)
 - [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/)
 
