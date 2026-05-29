@@ -12,6 +12,7 @@ kept separate because each is an executable contract on its own.
 
 ## Eval design and runbook
 - [bundle-value-evaluation.md](bundle-value-evaluation.md) — experiment design for the existential claim: arms (including the raw-telemetry-dump control), dataset options, metrics, and the decision gate.
+- [runtime-dependence-and-raw-baseline.md](runtime-dependence-and-raw-baseline.md) — **fair-test sharpening (2026-05-29)**: the runtime-dependence bug taxonomy (R0 repo-logic … R3 cross-tier), a steelmanned **agentic-raw** baseline (B′), and a per-class decision gate so A1 decisively answers "does the bundle beat raw context?"
 - [bundle-value-phase0-runbook.md](bundle-value-phase0-runbook.md) — concrete first-pass runbook: task mix, arms, artifact contract, agent-run protocol, scoring, analysis, and continue/kill thresholds.
 - [phase0-telemetry-overlay-contract.md](phase0-telemetry-overlay-contract.md) — deterministic telemetry-overlay artifact contract: provenance labels, no-cheat rules, normalized rows, raw-vs-bundle evidence parity, redaction, pass/fail gates.
 
