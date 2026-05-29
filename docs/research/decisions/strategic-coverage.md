@@ -2,7 +2,13 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: 2026-05-25
+Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
+
+> **Decision record — strategic synthesis and coverage map.** Status: GO (narrow), tying the
+> research notes into one verdict and mapping every prompt area to its evidence. The current
+> open proof gates are enumerated in "What Is Still Unproven" below. See
+> [go-no-go.md](go-no-go.md) for the verdict, [risks-and-bear-case.md](risks-and-bear-case.md)
+> for the bear case, and [storage-engine.md](storage-engine.md) for the engine decision.
 
 ## Purpose
 

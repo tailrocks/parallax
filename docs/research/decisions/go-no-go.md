@@ -2,7 +2,15 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: 2026-05-25
+Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
+
+> **Decision record — Status: GO (narrow product).** Build the open-source, Rust-first,
+> self-hosted execution-context engine; do **not** build the generic AI-RCA chatbot,
+> dashboard suite, or autonomous SRE. Reverse only if a kill criterion (below) triggers.
+> The storage engine is a separate decision — current lean **GreptimeDB, not settled** —
+> see [storage-engine.md](storage-engine.md). The adversarial counterweight is
+> [risks-and-bear-case.md](risks-and-bear-case.md); the synthesis + coverage map is
+> [strategic-coverage.md](strategic-coverage.md). Full gate answers and evidence follow.
 
 ## Verdict
 
@@ -106,7 +114,7 @@ The architecture is plausible with current open-source components:
 | --- | --- | --- |
 | Error compatibility | Support the Sentry envelope `event` path, not the whole Sentry product. | Current registry checks still show Rust `sentry`/`sentry-types` `0.48.2`, JS SDKs `10.53.1`, Go `v0.46.2`, and Python `2.60.0`; "Sentry-compatible" remains only a target until those SDK-generated fixtures pass parser, normalization, grouping, redaction, projection, and unsupported-item gates. |
 | Telemetry standard | Use OpenTelemetry as the native telemetry protocol. | OTLP `1.10.0` is stable for traces, metrics, and logs, and gives shared `trace_id`, `span_id`, resource, and semantic-convention context. This proves the wire substrate, not agent readiness: public OTLP claims require the conformance ledger, canonical bundle/projection checks, and MCP structured-output validation. |
-| Observability store | Keep ClickHouse and GreptimeDB behind a storage adapter; current proxy-lens lean is ClickHouse as the pragmatic columnar default, with GreptimeDB retained for the metrics-cardinality, self-hosted 1x object-storage, and auto-rebalance bet. | GreptimeDB reached **v1.0 GA in April 2026** and latest stable checked is `v1.0.2`, but Runs 153-170 re-weight the decision because Parallax owns OTLP/routing/conversion. ClickHouse now leads the default lean on retrieval speed and build-on-top ecosystem; GreptimeDB remains strategically relevant on cost/cardinality/PromQL/scale-out. The storage freshness, bundle-latency, object-cost, and operational-complexity gates keep veto power. |
+| Observability store | Keep ClickHouse and GreptimeDB behind a storage adapter; **current lean GreptimeDB, not settled** — full reasoning in [storage-engine.md](storage-engine.md). | GreptimeDB reached **v1.0 GA in April 2026** (latest stable checked `v1.0.2`). The proxy lens (Parallax owns OTLP/routing/conversion, Runs 153-170) once leaned ClickHouse on retrieval speed + build-on-top ecosystem; but the **resolved anchored-retrieval query mix (operator 2026-05-29)** takes ClickHouse's scan-speed lead off Parallax's hot path (both engines serve the anchored bundle ≪300 ms at every tested scale), so the decision now turns on cost + Rust, where GreptimeDB leads. ClickHouse stays the fallback and wins heavy analytical scans/cardinality/PromQL ecosystem. The storage freshness, bundle-latency, object-cost, and operational-complexity gates keep veto power. |
 | Stream | Start with local WAL; add Apache Iggy only when replay/burst separation matters. | Iggy is Rust-native, persistent, append-oriented, and explicitly designed for low-latency message streaming. |
 | Metadata | Start with local Turso Database for prototype/tiny metadata; keep Postgres as an active production and scale-out fallback. | Latest non-prerelease checked is `v0.6.1`; `v0.7.0-pre.3` exists but is a prerelease. Turso is Rust-written and SQLite-compatible, but still beta/production-caution in the repository README, so crash, backup/restore, concurrency, migration, and fallback gates are mandatory before any production-default claim. |
 | Agent surface | CLI and HTTP first; read-only MCP only after the access-surface safety gate. | Coding agents can call CLIs today, but MCP has become the standard tool discovery/invocation surface and has explicit auth/security requirements. Do not claim first-class agent-native access until MCP projects the same canonical bundle as CLI/API and passes read-only, redaction, output-budget, and audit fixtures. |

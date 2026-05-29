@@ -2,7 +2,16 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: 2026-05-25
+Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
+
+> **Decision record — A5 stack decision (roll-up).** Status: **open — no A5 pass yet.** Rule:
+> no single component benchmark creates an A5 pass; A5 passes only when one run manifest proves
+> the selected profile end-to-end with pinned versions/settings and a named fallback trigger.
+> Current stack lean: observability store GreptimeDB (not settled — see
+> [storage-engine.md](storage-engine.md)) with ClickHouse fallback; metadata Turso-first with
+> Postgres fallback (see [metadata-store.md](metadata-store.md)); local WAL with an optional
+> Apache Iggy stream. The source checks, benchmark-artifact status, claim levels, and fallback
+> triggers follow.
 
 ## Purpose
 

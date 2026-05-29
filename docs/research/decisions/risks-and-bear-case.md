@@ -2,7 +2,13 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: 2026-05-25
+Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
+
+> **Decision record — adversarial counterweight to [go-no-go.md](go-no-go.md).** Status: the GO
+> survives the bear case. The real danger is **distribution, monetization, and scope
+> discipline**, not feasibility. Load-bearing assumptions A1 (bundle value), A2 (real users),
+> and A3 (schema adoption) are the things to validate next. The steelmanned NO-GO case, the
+> assumption register, the risk matrix, and the NO-GO/strengthen triggers follow.
 
 ## Purpose
 
