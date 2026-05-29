@@ -45,6 +45,7 @@ This directory is the research record behind Parallax. It is organized so a read
 - [overview.md](architecture/overview.md) — the Sentry-compatible, OpenTelemetry-native self-hosted architecture.
 - [evidence-bundle-schema.md](architecture/evidence-bundle-schema.md) — the `v0` portable evidence-bundle and open schema (the named moat artifact).
 - [causal-reconstruction.md](architecture/causal-reconstruction.md) — evidence-graph, causal reconstruction, and agent-safety analysis.
+- [agent-trust-boundary-and-prompt-injection.md](architecture/agent-trust-boundary-and-prompt-injection.md) — prompt injection via attacker-controlled telemetry (inject-*in*, vs A6 redaction's leak-*out*): the threat and the trust-boundary design constraints it forces.
 - [build-roadmap.md](architecture/build-roadmap.md) — de-risking build sequence with go/no-go gates tied to bear-case assumptions.
 
 ### `capture/` — how each signal is collected and made safe
