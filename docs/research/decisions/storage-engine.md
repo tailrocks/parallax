@@ -77,6 +77,7 @@ ClickHouse's read-path advantage becomes central.
 - Query mix is **resolved** (anchored-retrieval-dominant); the remaining finalizers are the sized cost
   numbers and the self-host-vs-managed-cloud call, not another query-shape model.
 - Re-pin versions and re-verify load-bearing claims on each new stable release (GreptimeDB v1.1 GA next).
+- **Re-verified 2026-05-29 (GitHub releases, primary source):** GreptimeDB latest GA `v1.0.2`; `v1.1.0` is still **nightly-only** (`v1.1.0-nightly-20260525`), so the v1.1-GA trigger above has **not fired**. ClickHouse latest stable feature line `v26.5.1.882-stable` (26.2/26.3/26.4 later-dated tags are lower LTS/backport lines). No drift — pins current.
 
 ## Related records
 

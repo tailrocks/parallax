@@ -9,6 +9,7 @@ decision and the "what must close to finalize" list are in
 
 Pins (re-verify each pass): GreptimeDB `v1.0.2` (GA 2026-05-14, `0ef5451`); ClickHouse
 `v26.5.1.882-stable` (`5b96a8d8`). v1.1.0 is nightly-only; 26.5.x is the latest stable *feature* line.
+**Re-verified 2026-05-29 (GitHub releases): no drift — GreptimeDB v1.1 still nightly-only (no GA), ClickHouse 26.5 still the highest stable feature line.**
 
 ## Headline
 
