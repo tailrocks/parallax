@@ -1891,6 +1891,8 @@ fully local/open RCA, Sentry ingest, evidence bundles, and action/outcome audit.
 ## SigNoz Open Investigation Format Check
 _Provenance: merged verbatim from `signoz-open-investigation-format-check.md` (2026-05-29 restructure)._
 
+> **Re-verified 2026-05-29 (primary sources): no material drift.** Errors still arrive as **OpenTelemetry exception span-events**, not a Sentry-envelope ingest path — the bear-case "SigNoz adds Sentry ingest" trigger has **not fired**; SigNoz stays OTel-native (Go/ClickHouse). No checked versioned/portable evidence-bundle schema surfaced behind the "open investigation format" framing.
+
 ### SigNoz Open Investigation Format Check
 
 _(Shared note — see the Open Self-Hosted Competitor Watch section above.)_
