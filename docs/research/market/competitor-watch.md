@@ -951,6 +951,8 @@ dashboard breadth.
 ## OpenObserve AI/MCP Enterprise Recheck
 _Provenance: merged verbatim from `openobserve-ai-mcp-enterprise-recheck.md` (2026-05-29 restructure)._
 
+> **Re-verified 2026-05-29 (primary sources): no material drift.** Ingestion docs still show OTLP + Elasticsearch-bulk-API + log forwarders and **no Sentry-envelope endpoint** (Parallax's Sentry-migration wedge holds); AI SRE Agent + AI Assistant present; free Self-Hosted Enterprise (50 GB/day) lists SSO/RBAC/audit/redaction but **AI-SRE/MCP free-tier gating remains source-conflicted** (same caveat below); **no versioned/exportable evidence schema** found. The verdict's NO-GO competitive-window trigger has not fired.
+
 ### OpenObserve AI/MCP Enterprise Recheck
 
 _(Shared note — see the Open Self-Hosted Competitor Watch section above.)_
