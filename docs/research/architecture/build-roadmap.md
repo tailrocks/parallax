@@ -26,10 +26,14 @@ You do **not** need the Parallax engine to test Parallax's core claim.
 A1 ("a bundle helps an agent fix better than raw context") can be falsified in
 days with a **hand-assembled bundle**: take a handful of real incidents, manually
 build the evidence bundle a finished Parallax *would* produce, and run the
-[bundle-value eval](../validation/a1-bundle-value/bundle-value-evaluation.md) arms (repo-only vs raw-dump vs
-hand-bundle) against a coding agent. If a hand-built bundle does not beat a raw
-telemetry dump, no amount of GreptimeDB tuning will save the product. This is
-the cheapest possible test of the most important assumption — do it first.
+[bundle-value eval](../validation/a1-bundle-value/bundle-value-evaluation.md) arms against a coding agent.
+Per the [fair-test design](../validation/a1-bundle-value/runtime-dependence-and-raw-baseline.md), the
+decisive control is **B′ agentic-raw** (the agent with read tools over an *uncorrelated* telemetry
+store), not a static dump — because capable 2026 agents already retrieve from raw telemetry — and the
+decisive claim is on **runtime-dependent bugs (classes R1–R3)**, not repo-logic bugs (R0) the agent
+fixes from the repo alone. If a hand-built bundle does not beat agentic-raw on runtime-dependent
+tasks, no amount of GreptimeDB tuning will save the product. This is the cheapest possible test of the
+most important assumption — do it first.
 
 Likewise A2 ("real users beyond the operator") is tested by **talking to 20
 teams**, not by building. Both existential checks cost days and zero
@@ -51,7 +55,8 @@ assumption. Failing a gate sends you back, not forward.
   raw-dump and bundle arms share the same frozen evidence, then publish results
   through the
   [A1 eval result ledger and model refresh](../validation/a1-bundle-value/a1-eval-result-ledger-and-model-refresh.md).
-- Run the bundle-value eval (arms A/B/C) with these manual bundles, ≥2 models.
+- Label each seed task by runtime-dependence class (R0 repo-logic … R3 cross-tier) and keep the corpus **≥60% R1–R3**, per the [fair-test design](../validation/a1-bundle-value/runtime-dependence-and-raw-baseline.md).
+- Run the bundle-value eval (arms A/B/**B′ agentic-raw**/C/D) with these manual bundles, ≥2 models; report R0 and R1–R3 **separately**.
 - Interview ~20 target teams across the A2 slices: would they deploy? would they
   pay or sustain it? what is their actual debugging pain? Use the
   [user interview and deployment intent gate](../validation/a2-user-demand.md)
@@ -60,9 +65,13 @@ assumption. Failing a gate sends you back, not forward.
   commitments, not compliments. Any budget, support, hosted, fixer, or
   enterprise-ops signal also feeds the
   [business model validation ledger](../validation/business-model.md).
-- **Gate:** hand-bundle beats raw-dump on fix quality (A1) **and** ≥a handful of
-  teams would genuinely deploy (A2). If both fail, **stop or pivot** — this is the
-  cheapest NO-GO and the most valuable possible outcome to learn now.
+- **Gate:** on runtime-dependent tasks (R1–R3), hand-bundle beats **agentic-raw (B′)** on fix quality
+  at equal-or-lower cost (A1) **and** ≥a handful of teams would genuinely deploy (A2). If both fail,
+  **stop or pivot** — this is the cheapest NO-GO and the most valuable possible outcome to learn now.
+  (Per the [2026-05-29 skeptical re-assessment](../decisions/skeptical-reassessment-2026-05.md), A1-vs-raw
+  is now the #1 existential gate; lead the product on the **air-gap / no-phone-home** wedge and sequence
+  the paying tier — managed cloud + enterprise-ops — after A1, per
+  [monetization-and-paying-segment.md](../validation/monetization-and-paying-segment.md).)
 
 ### Phase 1 — Tiny tier that makes bundles real (the MVP)
 
