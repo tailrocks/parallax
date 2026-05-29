@@ -38,6 +38,41 @@ additive compatibility and explicit stability labels. Until Parallax implements
 a concrete canonicalization and validation command, projection-equivalence and
 schema-adoption claims remain unproven.
 
+## Schema strategy: profile over existing standards, do not invent (2026-05-29)
+
+> **Decision: define the evidence bundle as a PROFILE / composition over standards Parallax already
+> ingests, not a clean-room new schema.** The moat is the **correlation + redaction + hypothesis-ranking
+> engine and being the *recognized* open bundle** — not the container format. This directly lowers the
+> schema-commoditization risk ([research-agenda](../research-agenda.md) item 3): a bespoke "just JSON"
+> format is cloned overnight, but *the* profile that binds OTel ↔ error-grouping ↔ incident-shape is
+> hard to displace.
+
+**Reuse map (compose, don't reinvent):**
+
+| Layer | Reuse | What it gives |
+| --- | --- | --- |
+| Envelope | **CloudEvents**-style (`id`/`source`/`type`/`specversion`/`time` + a `dataschema` URI to the versioned schema) | Portable transport + schema-reference + versioning discipline |
+| Signals | **OpenTelemetry** data model + semconv + OTel **Events**; correlation via **W3C Trace Context** (`trace_id`/`span_id`) | The raw correlated traces/logs/metrics, zero re-instrumentation |
+| Error layer | **Sentry**-style grouping/fingerprint semantics | Deterministic error grouping the ecosystem already understands |
+| Overall shape | **OCSF Incident Finding** shape (correlated findings + observables/enrichments + verdict/confidence + remediation), adapted from security to software-failure | The closest standardized "correlated-evidence-with-a-verdict" precedent |
+| Versioning | **SchemaVer** (MODEL-REVISION-ADDITION) + **JSON Schema 2020-12** + **RFC 8785** canonicalization (already targeted) | Diffable/hashable/signable, schema-appropriate semver |
+
+**Invent only the genuinely-missing objects** (these are the original contribution, absent from every
+standard above): **deploy/code-change context**, the **CLI/agent action log**, the **redaction report**,
+**ranked hypotheses**, and the **per-field trust tier** required by
+[agent-trust-boundary-and-prompt-injection.md](agent-trust-boundary-and-prompt-injection.md).
+
+**Precedent:** **SARIF** is the model — an open JSON schema for *tool output that agents/IDEs consume*
+(GitHub code-scanning, CodeQL, SonarQube); OCSF and CloudEvents won their categories by
+profiling/enveloping, not inventing. A net-new format wins only when no adjacent standard exists, which
+is **not** Parallax's situation (OTel/Sentry/OCSF already cover its sub-layers).
+
+**Biggest risk of this path:** strategic dependency — by aligning you ride the OTel/Sentry/OCSF roadmaps,
+and the same incumbents (or an OTel SIG) could absorb the "bundle" layer themselves; a Feb-2026
+Hacker News "incident bundle for AI/agent failures" tool already exists (prior art; schema formality
+unconfirmed — verify, and it is a market-watch item). **Mitigation:** move fast to own the spec +
+governance + the failure/fix-outcome corpus — the assets a profile cannot be cloned out of.
+
 ## Current Artifact Boundary
 
 As of this re-check, the repository contains a Markdown schema draft, not a
