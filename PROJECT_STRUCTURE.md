@@ -50,7 +50,8 @@ The decisions front door is [`docs/research/decisions/`](docs/research/decisions
 settled question has exactly one ADR (conclusion first, linking to its evidence), and the
 still-open proof gates are enumerated in
 [`decisions/strategic-coverage.md`](docs/research/decisions/strategic-coverage.md) and the
-relevant `validation/` notes.
+relevant `validation/` notes. The prioritized, decision-moving research backlog (what to research
+and compare next, ranked) is [`docs/research/research-agenda.md`](docs/research/research-agenda.md).
 
 | Area | Where |
 | --- | --- |

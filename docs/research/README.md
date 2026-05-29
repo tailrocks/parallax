@@ -20,6 +20,7 @@ This directory is the research record behind Parallax. It is organized so a read
 | Why GreptimeDB lean? | Hot path is *anchored* evidence-bundle retrieval (all signals for one `trace_id`/`fingerprint`) — both engines are interactive (≪300 ms) there, so ClickHouse's scan-speed lead is off the hot path; the decision turns on cost + Rust, where GreptimeDB leads. | [decisions/storage-engine.md](decisions/storage-engine.md) |
 | What's still open before the engine is settled? | Sized $/GB cost on a server tier, cold-read latency from object storage, the self-host-vs-managed-cloud call, and a re-test on GreptimeDB v1.1 GA. | [decisions/storage-engine.md](decisions/storage-engine.md) |
 | How is it built? | Three deployment tiers, one event/bundle contract; ingest → normalize → group → correlate → evidence-graph → CLI/HTTP/MCP. | [architecture/implementation-concept.md](architecture/implementation-concept.md) |
+| What still needs research? | Ranked, cheapest-to-kill-first: A1 (bundle beats raw) and monetization are the two gates the GO rests on. | [research-agenda.md](research-agenda.md) |
 
 ## Map
 
