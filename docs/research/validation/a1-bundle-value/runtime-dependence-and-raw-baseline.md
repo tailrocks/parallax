@@ -101,6 +101,34 @@ B′, a hand-or-script-assembled bundle for C, and agent runs scored on hidden t
 B′ on runtime-dependent bugs, **stop before** the storage, stream, and schema work. If it can, that
 result is itself the moat-seed and the strongest possible GO evidence.
 
+## Part 4 — Fault catalog (how to source R1–R3 tasks)
+
+Off-the-shelf SWE datasets are R0-heavy, so the runtime-dependent corpus comes mostly from **fault
+injection on the reference app** (shared generator with the [storage benchmark](../../storage/benchmark-plan.md))
+and the operator's own incidents. Each fault is a task whose fix is known by construction; inject it,
+capture real telemetry, and the bundle's job is to surface the cause the repo alone cannot. Every fault
+ships with a `noise_manifest` of plausible distractors so neither arm gets an open-book exam.
+
+| Fault (class) | Inject (reference app) | Telemetry emitted | Why repo-alone fails | What the bundle must surface |
+| --- | --- | --- | --- | --- |
+| Memory leak → OOMKill (R2) | Unbounded cache/accumulation under load | RSS metric climb, `OOMKilled` event, restart, pre-kill latency spike | Code path looks correct; the limit + growth are runtime | Memory-trend metric + OOM event + the implicated allocation site/deploy |
+| CPU saturation / throttling (R2) | Hot loop / N+1 under traffic shape | CPU-at-limit, throttle metric, latency tail | Static code gives no load signal | CPU metric + slow span + the hot path |
+| Pool / FD exhaustion (R2) | Leak a connection / unbounded concurrency | pool-wait spans, "too many open files", connection timeouts | Per-call code is correct; exhaustion is cumulative runtime | Pool-wait trend + the leaking call site |
+| Dependency saturation / downstream 5xx (R2/R3) | Throttle or fault a downstream service | downstream span errors/latency, retry storm, breaker open | The bug is *not in this repo* — it's a dependency | Downstream span tree + error correlation + which dependency |
+| Config / env drift (R2) | Wrong value in one environment | error only in env X; config-value attribute differs | Code is correct; the value is runtime/config | The differing config/env attribute across deploys |
+| Deploy-correlated regression (R1/R2) | Ship a bad change behind a release marker | error-rate step at the release marker | Which deploy + that it is deploy-correlated is runtime | release/deploy edge + error-rate change-point + the diff |
+| Concurrency / race (R2) | Interleave shared-state writes under load | intermittent errors, interleaved spans | Hard to see statically; only manifests under timing | Trace interleaving + the contended resource |
+| Data-shape / cardinality blowup (R2) | Feed a skewed input distribution | slow only for certain inputs; high-card metric | Code is fine for typical input | The input distribution + the slow query/loop |
+| Frontend→backend root cause (R3) | Frontend error caused by a backend span N hops away | linked frontend + backend spans via `trace_id` | Frontend repo has no view of the backend cause | Cross-tier trace continuation to the backend span |
+| Cross-service cascade (R3) | Saturate service C; surfaces as error in A | multi-service span tree, propagated latency | A's repo looks fine; cause is in C | Span tree locating C as the origin |
+| Async / queue-decoupled cause (R3) | Bad message enqueued upstream | producer/consumer linked by span links | Consumer code is correct; cause is the producer | Span-link chain back to the enqueue site |
+
+Expected pattern: on these tasks **C (bundle) > B′ (agentic-raw) > A (repo-only)** if correlation is
+real — B′ *can* in principle retrieve the same raw signals, so the bundle's win must come from
+**doing the correlation the agent would otherwise have to do itself** (and often gets wrong or skips
+under a tool/time budget). If C ≈ B′ here, the correlation adds no value over agent-driven retrieval —
+the decisive negative result.
+
 ## Relationship to other research
 
 - [bundle-value-evaluation.md](bundle-value-evaluation.md) — the parent design; this adds the class
