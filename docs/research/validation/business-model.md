@@ -2,6 +2,14 @@
 
 > Parallax leads with the open, self-hosted, data-owned slice — structurally the least-monetizable door into a category that is nonetheless company-sized (Sentry's own Fair Source post reports 100k+ cloud customers and $100M+ annual revenue, but it monetizes overwhelmingly through cloud, not self-hosting). The decided licensing position is Apache-2.0 for the core (with a lightweight CLA keeping AGPL in reserve), FSL/Fair Source rejected as ethos-incompatible at t=0; the non-negotiable is never gating the agent/evidence differentiator, because that exact gap (OpenObserve gates its AI SRE agent behind Enterprise) is the wedge Parallax exists to exploit. Four legitimate value-capture seams are named but unproven: hosted/managed Parallax, the separate fixer/agent-orchestration product, enterprise ops add-ons (SSO/SAML, RBAC, multi-tenancy, audit/compliance, retention, backup/DR, support/SLA), and support/services/certification. Adoption — not revenue — is the leading metric for the first phase, and the bear case's "no monetization path" risk is narrowed, not eliminated. The open gate: none of these seams may be called `value_capture_validated` until the validation ledger records redacted result rows showing deployment, budget/payment, conversion, or paid-pilot evidence — at least one paid pilot, signed order/contract, paid support agreement, LOI with budget owner, or hosted conversion — and none may be created by gating the open evidence/agent layer.
 
+> **See also (2026-05-29):** [monetization-and-paying-segment.md](monetization-and-paying-segment.md)
+> sizes the paying buyer (the hard-boundary air-gap/classified/sovereign self-hoster, not the
+> cost-driven one) and details the monetization shape (open core + gated enterprise-ops + managed
+> cloud + outcome-priced fixer). It surfaces an **open licensing trade-off**: the fork-resistance
+> playbook favors **AGPLv3**, which differs from this note's current **Apache-2.0** decision — resolve
+> deliberately, commit once. It also tightens the bear case: the paying base is a niche-within-a-niche,
+> shrinking at the commodity end as FedRAMP-High SaaS + sovereign clouds absorb most regulated workloads.
+
 This note consolidates the following previously-separate research files, each preserved in full below:
 
 - `business-model-and-economics.md`
