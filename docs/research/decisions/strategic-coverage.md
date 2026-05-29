@@ -61,7 +61,7 @@ Rust service / CLI / coding agent
   -> CLI invocation trace ingest and tested agent-session adapter ingest
   -> Parallax Rust ingest gateway
   -> local WAL for tiny mode
-  -> columnar storage adapter (ClickHouse lean / GreptimeDB branch)
+  -> columnar storage adapter (GreptimeDB lean / ClickHouse fallback)
   -> Turso prototype metadata / Postgres production fallback
   -> deterministic grouping/correlation/evidence graph
   -> API context bundle / later read-only MCP projection
@@ -69,9 +69,10 @@ Rust service / CLI / coding agent
 
 Add Apache Iggy only when replay, burst buffering, or worker separation is worth
 the extra process. Keep ClickHouse and GreptimeDB runnable behind the storage
-adapter; the current proxy-lens lean is ClickHouse, while GreptimeDB remains the
-cost/cardinality/auto-rebalance branch until Parallax-shaped storage gates
-settle the default.
+adapter; the current lean is **GreptimeDB (not yet settled)** — the resolved
+anchored-retrieval query mix takes ClickHouse's scan-speed lead off the hot
+path, so cost + Rust decide — with ClickHouse the fallback until Parallax-shaped
+storage gates settle it (see [storage-engine.md](storage-engine.md)).
 
 ## Direct Answers To Strategic Questions
 
@@ -130,7 +131,7 @@ settle the default.
 | External protocols | Sentry envelope `event` subset and OTLP HTTP/gRPC. |
 | Ingest | Rust `parallax-ingest` gateway. |
 | Stream | No external broker for tiny mode; Apache Iggy for durable profile. |
-| Observability storage | Storage adapter with ClickHouse pragmatic lean and GreptimeDB cost/cardinality branch until A5 gates decide. |
+| Observability storage | Storage adapter; current lean GreptimeDB (not settled, see [storage-engine.md](storage-engine.md)), ClickHouse fallback, until A5 gates decide. |
 | Metadata | Turso Database for prototype/tiny local metadata; Postgres remains the production and scale-out fallback until Turso passes the production-readiness gate. |
 | Processing | Rust workers, deterministic normalization/grouping/correlation before AI. |
 | Context model | Typed evidence graph in tables first. |

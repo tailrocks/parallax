@@ -18,10 +18,11 @@ schema-valid, redacted evidence bundles. Do not read this thesis as a claim for
 a generic AI RCA chatbot, a full dashboard suite, or autonomous production
 mutation. The
 current storage posture is also narrower than early drafts: the observability
-store stays behind a ClickHouse/GreptimeDB adapter, the current proxy-lens lean
-is ClickHouse, GreptimeDB remains the cost/cardinality/auto-rebalance branch,
-and storage claims stay unproven until freshness, bundle-latency, object-cost,
-and operational gates pass.
+store stays behind a ClickHouse/GreptimeDB adapter, the **current lean is
+GreptimeDB (not yet settled)** with ClickHouse the fallback (see
+[storage engine decision](../decisions/storage-engine.md)), and storage claims
+stay unproven until freshness, bundle-latency, object-cost, and operational
+gates pass.
 
 Maintained follow-ups:
 
@@ -219,10 +220,12 @@ GreptimeDB reached `v1.0.2` as the latest stable release checked on
 2026-05-25. Its GA status reduces unreleased-database risk, but its trace
 read/write docs still mark trace support as experimental, and vendor-published
 benchmarks do not prove Parallax's evidence-bundle workload. The current
-research position is: ClickHouse is the pragmatic proxy-lens lean for retrieval
-speed and build-on-top ecosystem, while GreptimeDB stays alive for PromQL,
-object-storage economics, high-cardinality metrics, and auto-rebalance until
-the benchmark gates settle speed, cost, and operations.
+research position is: **current lean GreptimeDB, not yet settled** — with the
+anchored-retrieval query mix resolved (operator 2026-05-29), ClickHouse's
+retrieval-speed lead is off Parallax's hot path, so the decision turns on cost +
+Rust where GreptimeDB leads; ClickHouse remains the fallback (faster analytics,
+build-on-top ecosystem) until the benchmark gates settle speed, cost, and
+operations. Full reasoning: [storage engine decision](../decisions/storage-engine.md).
 
 Sources: [GreptimeDB v1.0.2 release](https://github.com/GreptimeTeam/greptimedb/releases/tag/v1.0.2),
 [GreptimeDB trace read/write docs](https://docs.greptime.com/user-guide/traces/read-write/),
