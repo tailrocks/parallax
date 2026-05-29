@@ -15,9 +15,9 @@ and how the storage-engine question is decided.** Every other note under
 `docs/research/` is supporting evidence for the positions stated here. When this brief
 and an old note disagree, this brief is the intent; reconcile the note.
 
-For a long-running research/restructure pass, run it with `/goal` (preferred) or Claude
-Code `/loop`, using the runbook in [`prompts/README.md`](README.md). **Running this brief
-now means performing the restructure mission in Part 4** — committing and pushing as you go.
+Running this brief means **performing the restructure mission in Part 4** — committing and
+pushing as you go. For how to run any prompt in this folder, see
+[`prompts/README.md`](README.md).
 
 ---
 
@@ -331,12 +331,21 @@ docs/research/
 
 ## Part 5 — Deliverables this brief should keep producing
 
+All "how to build" output is a **technical product specification — not source code.**
+Describe components, their responsibilities, data flows, interfaces, decisions, and
+trade-offs. No code snippets; implementation code lives in the build repository, not in this
+research record.
+
 1. **Clarity on what to build:** the narrow evidence/context engine of Part 2, in three
    tiers, with the strict "Parallax is not the fixer" boundary.
-2. **Clarity on how to build it:** Rust (`tracing`/`opentelemetry-otlp`/`axum`/`tonic`),
-   storage behind a `StorageAdapter` (current lean GreptimeDB per Part 3 — still open;
-   ClickHouse the proven fallback), Turso metadata (Postgres fallback), local WAL → optional
-   Iggy, deterministic grouping + evidence graph before any AI step.
+2. **Clarity on how to build it (as a technical product):** the components and what each is
+   responsible for — the ingest gateway (Sentry-envelope + OTLP), the
+   normalize → group → correlate → evidence-graph pipeline, the columnar telemetry store
+   behind a `StorageAdapter` (current lean GreptimeDB per Part 3, still open; ClickHouse the
+   fallback), the relational metadata store (Turso, Postgres fallback), the local WAL and
+   optional stream, and the CLI/HTTP/MCP context surface — plus the data flow, the interfaces
+   between them, and the trade-offs. Explain *what each piece does and how the pieces fit*,
+   and name technology choices at the component level; do not write code.
 3. **A finalized storage decision** once the sized cost numbers land (query mix already
    known: anchored).
 4. **A clean, navigable research record** per Part 4.
