@@ -1,10 +1,21 @@
-# Storage Size and Object Cost Gate
+# Storage Size and Object-Store Cost
+
+> Object storage is available for both candidate engines (GreptimeDB and ClickHouse), but the storage-cost winner is still an open, workload-specific gate: it must be measured with identical generated data, fair schema tuning (no tuned ClickHouse codecs vs. unexamined GreptimeDB defaults), and provider-specific request/egress modeling across AWS S3, Cloudflare R2, and Backblaze B2. What is already decided is the economics: compressed object-storage retention is cheap — single-digit to low-hundreds of dollars per month from the tiny to large tier at 90-day retention, roughly 100x (two orders of magnitude) under ingest-priced SaaS such as Observe (~$0.49/GB) or SigNoz Cloud (~$0.30/GB). The non-obvious design finding, also decided, is that because Parallax re-reads history to build agent context, object-store egress pricing matters as much as storage pricing, so self-hosted deployments should default to a zero/low-egress store (R2 or B2) or co-locate compute rather than generic S3. Still open and gated by runnable benchmark measurement: per-signal compression ratios on real Parallax data, object counts, PUT/GET/LIST request costs, cold-read bytes, compaction amplification, local cache size, and the resulting provider cost projection — plus the cost-comparison pass target (GreptimeDB retained size + modeled object cost <= 1.2x ClickHouse on the small tier, or a clear speed/operability win) and the coupling rule that any size/cost winner failing the storage freshness and bundle-latency gate cannot become the default. Local smoke numbers (ClickHouse 28.9 MiB vs. GreptimeDB SST 38 MiB for 1M spans) are a warning, not a verdict, because that schema comparison was unfair. Provider list prices are current as of 2026-05-25 and are order-of-magnitude planning inputs, not quotes.
+
+This note consolidates the following previously-separate research files, each preserved in full below:
+
+- `storage-size-and-object-cost-gate.md`
+- `retention-cost-model.md`
+
+## Storage Size and Object Cost Gate
+
+_Provenance: merged verbatim from `storage-size-and-object-cost-gate.md` (2026-05-29 restructure)._
 
 <!-- markdownlint-disable MD013 -->
 
 Research date: 2026-05-25
 
-## Purpose
+### Purpose
 
 This is the proof gate for the remaining storage-cost claim:
 
@@ -19,7 +30,7 @@ re-read history.
 This gate turns the cost claim into a runnable benchmark extension for
 [Storage benchmark prototype](storage-benchmark-prototype.md).
 
-## Current Source Posture
+### Current Source Posture
 
 As of 2026-05-25, primary docs support object-storage testing for both storage
 candidates, but not a cost winner:
@@ -77,7 +88,7 @@ Conclusion: object storage is available for both candidate engines. The actual
 decision is workload-specific and must be measured with identical generated
 data, fair schema tuning, and provider-specific request/egress modeling.
 
-## What Existing Research Already Shows
+### What Existing Research Already Shows
 
 | Existing note | Useful evidence | Missing proof |
 | --- | --- | --- |
@@ -89,7 +100,7 @@ data, fair schema tuning, and provider-specific request/egress modeling.
 The local size result is a warning, not a verdict. It says schema/codecs can
 move cost enough to change the decision.
 
-## Measurement Definitions
+### Measurement Definitions
 
 Record size and object-store metrics separately; do not collapse them into one
 "GB stored" number:
@@ -126,7 +137,7 @@ monthly_cost =
 Keep provider rates in each result file because pricing changes. The benchmark
 must record the source URL and date for AWS S3, Cloudflare R2, and Backblaze B2.
 
-## Workload Shape
+### Workload Shape
 
 Run the same `smoke` -> `small` -> `medium` progression as the storage benchmark,
 but make cost visible after each phase:
@@ -149,9 +160,9 @@ Dataset requirements:
 - CLI and agent rows with bounded stdout/stderr excerpts plus object refs for
   larger payloads.
 
-## Candidate-Specific Rules
+### Candidate-Specific Rules
 
-### GreptimeDB
+#### GreptimeDB
 
 Run at least:
 
@@ -165,7 +176,7 @@ anchor/cost-optimized variant. If index maintenance materially increases object
 bytes or request counts, report that as part of the storage choice rather than a
 separate concern.
 
-### ClickHouse
+#### ClickHouse
 
 Run at least:
 
@@ -195,7 +206,7 @@ Run or explicitly exclude two ClickHouse release tracks:
 GreptimeDB gets the same fairness rule: do not compare ClickHouse tuned codecs
 against unexamined GreptimeDB defaults and then call it an engine verdict.
 
-## Pass Targets
+### Pass Targets
 
 Use these initial gates until measured runs justify calibration:
 
@@ -219,7 +230,7 @@ Provider-specific read-cost gates:
   transfer costs are near zero; otherwise S3 egress must be explicitly shown in
   the deployment cost table.
 
-## Result Record
+### Result Record
 
 Every result should include a cost section like:
 
@@ -272,7 +283,7 @@ greptime  | s3           | base   |             |       |         |            |
 clickhouse| s3_mt        | tuned  |             |       |         |            |       |            |         |         |         |
 ```
 
-## Decision Consequences
+### Decision Consequences
 
 - If GreptimeDB is within the cost target and passes the speed gates, keep it as
   the v0.1 default.
@@ -289,7 +300,7 @@ clickhouse| s3_mt        | tuned  |             |       |         |            |
 - If the object-store run fails freshness or Q6 latency, object storage remains
   a cold-retention tier, not the hot query tier.
 
-## Harness Additions
+### Harness Additions
 
 Add these to `parallax-bench` before quoting storage-cost numbers:
 
@@ -305,7 +316,7 @@ Add these to `parallax-bench` before quoting storage-cost numbers:
 - cost report that models 7, 30, and 90 day retention with 0, 10, 20, and 50
   percent monthly re-read rates.
 
-## Related Research
+### Related Research
 
 - [Retention cost model](retention-cost-model.md)
 - [Storage benchmark prototype](storage-benchmark-prototype.md)
@@ -317,3 +328,180 @@ Add these to `parallax-bench` before quoting storage-cost numbers:
 - [A5 stack decision ledger](a5-stack-decision-ledger.md) consumes this gate's
   retained-size, object-count, provider-pricing, and cache-dependency rows
   before any storage result can become a stack default.
+
+## Retention Cost Model
+
+_Provenance: merged verbatim from `retention-cost-model.md` (2026-05-29 restructure)._
+
+_(Shared note — see the Storage Size and Object Cost Gate section above.)_
+
+Research date: 2026-05-25
+
+### Purpose
+
+The prompt's cost axis explicitly asks for "retention math: cost to keep N days
+or weeks of real data," and the core belief is that cheap, durable retention is
+"close to a requirement, because the value depends on being able to keep and
+re-extract history without cost anxiety." The corpus argued this qualitatively;
+this note quantifies it, and produces one non-obvious design finding: because
+Parallax **re-reads** history to build agent context, **object-store egress
+pricing matters as much as storage pricing**, which changes the recommended
+backend.
+
+Numbers are current list prices checked on 2026-05-25; treat as
+order-of-magnitude planning inputs, not quotes.
+
+### Inputs
+
+Object storage (per GB-month storage, plus egress):
+
+| Backend | Storage $/GB-mo | Egress | Note |
+| --- | --- | --- | --- |
+| AWS S3 Standard | ~$0.023 | ~$0.09/GB | Egress is the killer for re-read-heavy workloads. |
+| Cloudflare R2 | ~$0.015 | **$0** | Zero egress — ideal for re-extracting history. |
+| Backblaze B2 | ~$0.00695 | free up to 3× stored/mo, then ~$0.01/GB | Cheapest storage + generous egress; public page also says transactions are free. |
+
+Compression (observability data, columnar + ZSTD + delta/Gorilla timestamps):
+
+| Signal | Typical ratio | Note |
+| --- | --- | --- |
+| Metrics | 10–50× | Delta/Gorilla on regular series compress extremely well. |
+| Logs | 5–12× | ZSTD(3) on structured logs; repetitive fields help. |
+| Traces/spans | 5–10× | Many short attributes; trace/span IDs compress modestly. |
+| Error events | 3–6× | Stacktraces/messages are text-heavy and varied. |
+
+Blended assumption used below: **~10× compression** across a mixed
+log/trace/metric/error workload. ZSTD(1) gives 3–4×, ZSTD(3) 4–5×, ZSTD(9) 6–8×
+on generic data; observability columns with delta encodings push the blended
+figure higher. Calibrate per real data in the
+[storage benchmark prototype](storage-benchmark-prototype.md).
+
+Sources:
+[Backblaze B2 pricing](https://www.backblaze.com/cloud-storage/pricing),
+[Cloudflare R2 pricing](https://developers.cloudflare.com/r2/pricing/),
+[AWS S3 pricing](https://aws.amazon.com/s3/pricing/),
+[Amazon S3 price list API](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonS3/current/us-east-1/index.json),
+[AWS data-transfer price list API](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSDataTransfer/current/us-east-1/index.json),
+[ClickHouse compression](https://clickhouse.com/docs/data-compression/compression-in-clickhouse),
+[Observe per-GB pricing](https://www.observeinc.com/pricing).
+
+### Worked Model
+
+Stored/day = ingest/day ÷ 10 (compression). Retained = stored/day × days.
+
+| Tier | Ingest/day (uncompressed) | Stored/day (~10×) | 30-day stored | 90-day stored |
+| --- | --- | --- | --- | --- |
+| Tiny (startup) | 2 GB | 0.2 GB | 6 GB | 18 GB |
+| Small–mid team | 50 GB | 5 GB | 150 GB | 450 GB |
+| Large | 1 TB | 100 GB | 3 TB | 9 TB |
+
+Monthly **storage** cost at 90-day retention:
+
+| Tier | 90-day stored | S3 | R2 | B2 |
+| --- | --- | --- | --- | --- |
+| Tiny | 18 GB | ~$0.41 | ~$0.27 | ~$0.13 |
+| Small–mid | 450 GB | ~$10.35 | ~$6.75 | ~$3.13 |
+| Large | 9 TB | ~$207 | ~$135 | ~$62.55 |
+
+The headline: **90 days of real, mixed telemetry costs single-digit to low-tens
+of dollars per month for a small team, and ~$60–200/month even at 1 TB/day
+ingest.** That is the "keep history without cost anxiety" belief, quantified
+and true — on object storage with good compression.
+
+### The Egress Finding (Non-Obvious)
+
+Parallax's value is **re-extracting** history to assemble evidence bundles. That
+is read traffic, and if compute is not co-located with storage, reads become
+egress. Model the small–mid tier re-reading 20% of retained data per month for
+agent/human context (450 GB × 20% = 90 GB/mo):
+
+| Backend | Storage/mo | Egress/mo (90 GB) | Total |
+| --- | --- | --- | --- |
+| S3 | ~$10.35 | ~$8.10 | ~$18.45 |
+| R2 | ~$6.75 | $0 | ~$6.75 |
+| B2 | ~$3.13 | free (under 3×) | ~$3.13 |
+
+Egress nearly doubles the S3 bill and scales with how *useful* Parallax is (more
+agent investigations = more reads). For a re-read-heavy context engine, **prefer
+zero/low-egress object stores (R2, B2)** for self-hosted deployments, or
+**co-locate query compute with the bucket** so reads never egress. This is a real
+design input the qualitative docs missed: the cheaper-storage/cheaper-egress
+providers are strictly better for *this* workload than S3, and the operator's
+self-hosting ethos makes provider choice fully in their control.
+
+### Contrast With Ingest-Priced SaaS (Quantifies The Wedge)
+
+Cloud observability prices on **ingest**, not retention. At the small–mid tier
+(50 GB/day = ~1,500 GB/month ingested):
+
+- Observe-style logs at ~$0.49/GB ingested → ~$735/month for logs alone.
+- SigNoz Cloud at ~$0.30/GB → ~$450/month.
+
+Versus Parallax self-hosted retention at **single-digit dollars/month** for the
+same data kept 90 days (compute extra, but on a cheap VM). The retention-cost
+advantage is roughly **two orders of magnitude**. This is the concrete economic
+core of the "self-hosted, no cost anxiety, keep everything" thesis and a direct
+input to [business model and economics](business-model-and-economics.md): the
+selling point is cost ownership, and the number is ~100× on retention.
+
+Caveat: this compares Parallax *retention* cost to SaaS *ingest* pricing — not
+apples-to-apples on features, and it excludes Parallax's own compute. But it is
+exactly why a cost-conscious self-hoster defects from per-GB SaaS.
+
+### Hidden Costs And Honest Caveats
+
+- **Request costs.** R2 and S3 charge per PUT/GET-class operation; B2's current
+  public pay-as-you-go page says transactions are free. Writing many tiny
+  segments or reading many tiny objects can still make requests dominate storage
+  on R2/S3 and can hurt latency/provider portability even on B2. Mitigate: batch
+  into larger segments/parts; this is a real GreptimeDB/ClickHouse object-store
+  tuning parameter, not free.
+- **Compute is not counted here.** Ingest, compaction, and query CPU/RAM run on a
+  VM whose cost is separate. At the tiny/small tiers this is one cheap box; the
+  storage math is the easy part.
+- **Compaction read/write amplification.** Background compaction re-reads and
+  re-writes data; on S3 that is more requests (and egress if cross-region).
+- **Compression ratio is workload-specific.** 10× is a planning assumption;
+  high-cardinality attribute-heavy traces compress worse, regular metrics far
+  better. The benchmark must measure per-signal ratios on real data.
+- **Hot cache.** Acceptable query latency on object storage usually needs a local
+  SSD cache; that cache is a cost and a freshness/latency factor (the storage
+  benchmark's cold-vs-hot axis).
+
+### Recommendation
+
+- **Object-storage-first retention** is correct and cheap; it makes long
+  retention a non-issue economically, which is the precondition for the AI-context
+  value. Confirmed.
+- For self-hosted deployments, **default to a zero/low-egress object store
+  (Cloudflare R2 or Backblaze B2) or co-located compute**, not S3, because
+  Parallax's read pattern turns S3 egress into a usage-scaling tax.
+- **Tiny tier:** local disk (tens of GB at 90 days) — object storage is optional
+  until volume or durability needs grow.
+- Feed real per-signal compression ratios and request/egress counts from the
+  [storage size and object cost gate](storage-size-and-object-cost-gate.md) back
+  into this model before quoting any number externally.
+
+### Relationship To Other Research
+
+- [Storage benchmark prototype](storage-benchmark-prototype.md) — measures the
+  compression ratios, request counts, and object-store costs this model assumes.
+- [Storage size and object cost gate](storage-size-and-object-cost-gate.md) —
+  specifies the pass/fail gate and provider-cost projection for those
+  measurements.
+- [Business model and economics](business-model-and-economics.md) — the ~100×
+  retention-cost advantage is the cost-ownership selling point.
+- [Technical implementation concept](technical-implementation-concept.md) — the
+  GreptimeDB object-storage decision this quantifies.
+- [Verdict](verdict.md) — the "cheap durable retention" precondition for the AI
+  context thesis.
+
+### Bottom Line
+
+Keeping months of real telemetry is cheap — single-digit to low-hundreds of
+dollars per month across tiny-to-large tiers on compressed object storage, still
+roughly two orders of magnitude under ingest-priced SaaS. The one design
+correction this analysis forces:
+because Parallax re-reads history to build context, choose a zero/low-egress
+object store or co-locate compute, or S3 egress quietly taxes the product's own
+usefulness.
