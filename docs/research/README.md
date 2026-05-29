@@ -32,6 +32,7 @@ This directory is the research record behind Parallax. It is organized so a read
 - [go-no-go.md](decisions/go-no-go.md) — the GO / NO-GO gate for whether Parallax is worth building.
 - [strategic-coverage.md](decisions/strategic-coverage.md) — strategic verdict, prompt-coverage map, key decisions, open proof gates.
 - [risks-and-bear-case.md](decisions/risks-and-bear-case.md) — steelmanned NO-GO case, load-bearing assumptions, NO-GO/strengthen triggers.
+- [skeptical-reassessment-2026-05.md](decisions/skeptical-reassessment-2026-05.md) — dated whole-concept stress-test: what still makes sense, what must be built, what benefit actually competes (A1 elevated to #1; monetization structural).
 - [storage-engine.md](decisions/storage-engine.md) — GreptimeDB vs ClickHouse: the one-page current verdict (full record in [storage/greptimedb-vs-clickhouse/](storage/greptimedb-vs-clickhouse/)).
 - [stack-decision.md](decisions/stack-decision.md) — A5 stack-decision: rolls storage/metadata/ingest/setup gates into stack claim levels and fallback triggers.
 - [metadata-store.md](decisions/metadata-store.md) — relational metadata store: Turso-first, Postgres fallback (evidence in [storage/metadata/](storage/metadata/)).

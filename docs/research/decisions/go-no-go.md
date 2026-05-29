@@ -11,6 +11,11 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > see [storage-engine.md](storage-engine.md). The adversarial counterweight is
 > [risks-and-bear-case.md](risks-and-bear-case.md); the synthesis + coverage map is
 > [strategic-coverage.md](strategic-coverage.md). Full gate answers and evidence follow.
+>
+> **2026-05-29 skeptical re-assessment** ([skeptical-reassessment-2026-05.md](skeptical-reassessment-2026-05.md)):
+> GO survives but narrower — the technical wedge is still unoccupied, but "Sentry migration" and
+> "simpler than Sentry" are no longer differentiators, **A1 (bundle beats raw context) is now the #1
+> existential gate**, and open self-hosted is structurally non-paying (plan a managed/enterprise tier).
 
 ## Verdict
 

@@ -10,6 +10,17 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > and A3 (schema adoption) are the things to validate next. The steelmanned NO-GO case, the
 > assumption register, the risk matrix, and the NO-GO/strengthen triggers follow.
 
+> **2026-05-29 update — fresh skeptical re-research sharpens two assumptions** (full note +
+> sources: [skeptical-reassessment-2026-05.md](skeptical-reassessment-2026-05.md)):
+> **A1 is now the #1 existential risk, above storage** — frontier coding agents score ~88–94% on
+> SWE-bench Verified from a *raw* bash harness and GA SRE agents (Datadog Bits, AWS DevOps Agent)
+> already do RCA from raw telemetry+repo, so a bounded bundle must be *proven* to beat raw context
+> or the schema moat collapses. **Monetization is confirmed structurally hard** — every
+> OSS-observability survivor (Grafana, SigNoz, OpenObserve, Quickwit) monetized via managed
+> cloud / enterprise-gating, not the self-hosted core; plan that pivot up front. Also: "Sentry
+> migration" and "simpler than Sentry" are no longer differentiators (Rustrak/GlitchTip/Bugsink
+> ship them). The durable moat narrows to the **failure/fix-outcome corpus**.
+
 ## Purpose
 
 [verdict.md](go-no-go.md) says GO. This document is the deliberate counterweight:
