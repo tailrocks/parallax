@@ -20,9 +20,10 @@ monetization shape grounded in 2026 primary sources.
 > Enterprise self-hosted ~$25k–150k/yr ACV; Elastic built Cloud Connect to protect a regulated
 > on-prem base; paid air-gapped Splunk-on-SIPRNet and GitLab gov SKUs) **and prefer open source**
 > (77% important / 61% essential, Grafana 2026 survey). The viable monetization is the survivors'
-> playbook, **planned up front, not bolted on**: a **deliberately-chosen, never-switched open-core
-> license** (the repo's current **Apache-2.0** vs the playbook's fork-resistant **AGPLv3** is an open
-> trade-off, below), a production-complete open core (including evidence-bundle *generation*) + a
+> playbook, **planned up front, not bolted on**: **Apache-2.0 for the core, kept consistent — no
+> relicensing** (operator decision, 2026-05-29; accept the weaker fork-defense and lean on the
+> corpus + managed cloud + best-operator position as the moat, not license copyleft), a
+> production-complete open core (including evidence-bundle *generation*) + a
 > **gated enterprise-ops module** + **managed cloud as the primary
 > revenue motion** + an **outcome-priced fixer** add-on. The honest caveat: this paying base is a
 > **niche-within-a-niche and shrinking at the commodity end** as FedRAMP-High SaaS and in-region
@@ -73,17 +74,18 @@ commodity end.
 
 ## 2. Monetization shape (the survivors' playbook, applied)
 
-1. **Pick the license once, up front, and never relicense.** The relicensing graveyard is consistent —
-   Elastic→SSPL forked **OpenSearch**, HashiCorp→BSL forked **OpenTofu**, Redis→SSPL forked **Valkey**,
-   each within weeks and hyperscaler-backed; re-adding AGPL later did **not** win users back. **Open
-   trade-off to resolve before launch:** the repo's current decision is **Apache-2.0**
-   (maximal openness, [business-model.md](business-model.md)) — which gives the *weakest* defense if a
-   hyperscaler reselling Parallax as managed SaaS is the feared outcome; the playbook's fork-resistant
-   choice is **AGPLv3** (Grafana's 2021 path — copyleft enough to deter naked SaaS rehosting, did
-   **not** trigger a fork, still OSI-legitimate). Decide Apache-2.0-vs-AGPLv3 deliberately; whichever is
-   chosen, **commit once** — the trust-burning act is the *later switch*. (Note: Apache-2.0 keeps the
-   evidence/agent differentiator maximally adoptable — the corpus precondition — which is the repo's
-   stated reason; weigh that against hyperscaler-capture risk.)
+1. **License: Apache-2.0 for the core, kept consistent — RESOLVED (operator, 2026-05-29).** The
+   relicensing graveyard is the reason consistency matters — Elastic→SSPL forked **OpenSearch**,
+   HashiCorp→BSL forked **OpenTofu**, Redis→SSPL forked **Valkey**, each within weeks and
+   hyperscaler-backed, and re-adding AGPL later did **not** win users back. The operator has chosen
+   **Apache-2.0 and will not relicense**, prioritizing maximal openness and keeping the evidence/agent
+   differentiator maximally adoptable (the corpus precondition). **Accepted trade-off:** Apache-2.0
+   gives the *weakest* defense if a hyperscaler reselling Parallax as managed SaaS is the feared
+   outcome (no copyleft source-disclosure deterrent, unlike Grafana's AGPLv3). **Mitigation:** the moat
+   is the **failure/fix-outcome corpus + managed cloud + being the best operator of the product**, not
+   license copyleft — so the defense does not depend on the license. A CLA may be kept for contribution
+   provenance, but **not** as a path to a future relicense (consistency is the operator's stated
+   preference).
 2. **Keep open and production-complete for one team:** full Sentry-envelope + OTLP ingest, storage,
    query, dashboards/alerting, single-node/small-cluster, and **evidence-bundle generation + the open
    schema** (the wedge must be in the open core, or adoption — the corpus's precondition — never comes).

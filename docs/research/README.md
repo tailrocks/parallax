@@ -75,7 +75,7 @@ This directory is the research record behind Parallax. It is organized so a read
 - [a7-scope.md](validation/a7-scope.md) — A7: scope-discipline ledger keeping the tiny tier buildable.
 - [self-hosted-simplicity.md](validation/self-hosted-simplicity.md) — operational proof that the tiny tier is simpler than self-hosted Sentry (gate + baseline inventory + ledger).
 - [business-model.md](validation/business-model.md) — business-model/economics analysis + validation ledger.
-- [monetization-and-paying-segment.md](validation/monetization-and-paying-segment.md) — the paying buyer (hard-boundary/air-gap/sovereign self-hoster) sized, and the monetization shape (AGPLv3 open core + gated enterprise-ops + managed cloud + outcome-priced fixer).
+- [monetization-and-paying-segment.md](validation/monetization-and-paying-segment.md) — the paying buyer (hard-boundary/air-gap/sovereign self-hoster) sized, and the monetization shape (Apache-2.0 open core + gated enterprise-ops + managed cloud + outcome-priced fixer).
 - [repo-intent.md](validation/repo-intent.md) — how much Parallax depends on a context-rich repo (runtime floor vs intent multiplier) + ledger.
 
 > A4 lives in [capture/correlation.md](capture/correlation.md), A5 in [decisions/stack-decision.md](decisions/stack-decision.md), A6 in [capture/redaction.md](capture/redaction.md).
