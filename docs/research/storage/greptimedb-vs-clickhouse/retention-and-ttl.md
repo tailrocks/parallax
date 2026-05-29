@@ -19,7 +19,7 @@ state the dominant background cost is **expiring old data**, not ingesting new. 
 question is not "can it TTL" (both can) but **"does expiry rewrite surviving data or
 just drop whole files,"** because that decides retention write-amplification and
 object-storage churn. Absorbs the retention-cost references the comparison notes
-left dangling. (The repo-wide `docs/research/retention-cost-model.md` cost gate is a
+left dangling. (The repo-wide `docs/research/storage/size-and-object-cost.md` cost gate is a
 separate, broader artifact — not this note.)
 
 Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d8`).

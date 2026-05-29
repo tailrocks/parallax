@@ -10,7 +10,7 @@ OpenCode) so a piece of work runs the same way every time.
 | --- | --- |
 | `parallax-vision-and-restructure.md` | North-star brief: the product vision, the GreptimeDB-vs-ClickHouse decision rule, and the explicit research-record restructure mission. Hand this to an agent as the top-level task. |
 | `deep-research-parallax.md` | Deep, critical research brief that validates, re-verifies, and extends the Parallax direction indefinitely; every prior finding is treated as a hypothesis until current evidence supports it. |
-| `greptimedb-vs-clickhouse-internals.md` | Never-ending `/goal` or Claude Code `/loop` brief for the under-the-hood GreptimeDB vs ClickHouse comparison: read the source, explain which design decisions make each fast or slow per signal, re-verify every claim against the live Docker stack with production-realistic, no-tricks, reproducible benchmarks, check each system's native out-of-the-box metrics/logs/traces structure (adopt-native vs custom), decide which to build Parallax on, and (when one wins but lacks features) map what the winner must implement to close the gap. Writes to `docs/research/greptimedb-vs-clickhouse/`. |
+| `greptimedb-vs-clickhouse-internals.md` | Never-ending `/goal` or Claude Code `/loop` brief for the under-the-hood GreptimeDB vs ClickHouse comparison: read the source, explain which design decisions make each fast or slow per signal, re-verify every claim against the live Docker stack with production-realistic, no-tricks, reproducible benchmarks, check each system's native out-of-the-box metrics/logs/traces structure (adopt-native vs custom), decide which to build Parallax on, and (when one wins but lacks features) map what the winner must implement to close the gap. Writes to `docs/research/storage/greptimedb-vs-clickhouse/`. |
 
 ## Running the vision + restructure brief
 
@@ -159,7 +159,7 @@ transcript:
 
 ```text
 /goal Execute prompts/deep-research-parallax.md. Phase 1 first: deliver a
-GO / NO-GO verdict to docs/research/verdict.md (real problem? solves it?
+GO / NO-GO verdict to docs/research/decisions/go-no-go.md (real problem? solves it?
 competitors? market sense?). Phase 2, only if GO: complete the implementation
 blueprint — API standard (OpenTelemetry vs Sentry: what to support, store, how),
 the Parallax-stores / separate-agent-fixes boundary with the CLI-vs-MCP decision,
@@ -189,7 +189,7 @@ claims with production-realistic, no-tricks benchmarks logged under the
 reproducibility contract (so I can re-run them by hand), verify each system's
 native out-of-the-box metrics/logs/traces structure and the adopt-native-vs-custom
 decision, write or update one focused note under
-docs/research/greptimedb-vs-clickhouse/, commit and push it, then continue to the
+docs/research/storage/greptimedb-vs-clickhouse/, commit and push it, then continue to the
 next gap. Do not declare the comparison done.
 ```
 
@@ -205,7 +205,7 @@ against the source code, verify performance claims with production-realistic,
 no-tricks benchmarks logged under the reproducibility contract (so I can re-run them
 by hand), verify each system's native out-of-the-box metrics/logs/traces structure
 and the adopt-native-vs-custom decision, write or update one focused note under
-docs/research/greptimedb-vs-clickhouse/, commit and push it, then continue to the
+docs/research/storage/greptimedb-vs-clickhouse/, commit and push it, then continue to the
 next gap. Do not declare the comparison done; keep going until I stop you by hand.
 ```
 
@@ -241,7 +241,7 @@ experimental features count as stable) and log each run to
 local-benchmark-results.md under the reproducibility contract so I can re-run it by
 hand. Also verify each system's native out-of-the-box metrics/logs/traces structure
 and the adopt-native-vs-custom decision. Write or update one focused note under
-docs/research/greptimedb-vs-clickhouse/, commit and push, continue to the next gap.
+docs/research/storage/greptimedb-vs-clickhouse/, commit and push, continue to the next gap.
 Do not declare the comparison done.
 ```
 
@@ -253,7 +253,7 @@ Do not declare the comparison done.
   still running. If you see overlapping passes (racing commits, two Docker stacks
   on the same ports), raise the interval to `15m`–`30m`. Token spend is also higher
   at `5m`; raise it to spread cost.
-- Each fire re-reads the brief and the current `docs/research/greptimedb-vs-clickhouse/`
+- Each fire re-reads the brief and the current `docs/research/storage/greptimedb-vs-clickhouse/`
   state and continues from the next gap, so a fresh re-trigger loses no progress.
 - Re-pin versions and re-check public claims about every 1–2 weeks (or when either
   project ships a new stable release); that is the only cadence on which the

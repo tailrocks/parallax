@@ -61,7 +61,7 @@ signals — `greptimedb-implementation.md` principles 2/3; Runs 114/117).
 
 ## What's measured (`bench.sh`) — 20 queries
 
-Every query in [`../../docs/research/greptimedb-vs-clickhouse/four-way-version-comparison.md`](../../docs/research/greptimedb-vs-clickhouse/four-way-version-comparison.md): anchored lookup, unindexed scan, TopK,
+Every query in [`../../docs/research/storage/greptimedb-vs-clickhouse/four-way-version-comparison.md`](../../docs/research/storage/greptimedb-vs-clickhouse/four-way-version-comparison.md): anchored lookup, unindexed scan, TopK,
 trace-explorer, high-group agg, count-distinct (low/high card), latency histogram, metric-agg
 (flat/bucketed/rate/last-value/p99), full-text (selective/broad), log-tail, issue-list, dynamic-attr
 JSON, cross-tier join, time-range scan. Per-engine SQL where dialects differ (`count(*)`/`count()`,

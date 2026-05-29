@@ -894,7 +894,7 @@ results file with this shape:
   "drift_level": "trigger_hit",
   "parallax_impact": "MCP is no longer a Coroot gap; retain Sentry migration, bundle, and action audit as differentiators.",
   "required_doc_updates": [
-    "docs/research/open-self-hosted-competitor-watch.md"
+    "docs/research/market/competitor-watch.md"
   ]
 }
 ```

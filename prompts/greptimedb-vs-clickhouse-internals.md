@@ -18,12 +18,12 @@ slow for a specific signal type.*
 Three documents already exist and must not be duplicated. This loop sits one
 layer deeper than all of them:
 
-- [`docs/research/greptimedb-storage-evaluation.md`](../docs/research/greptimedb-storage-evaluation.md)
+- [`docs/research/storage/evaluation.md`](../docs/research/storage/evaluation.md)
   is a strategy/fit evaluation (open source, maturity, metrics-native posture,
   risks). It reasons *about* the systems, not *inside* them.
-- [`docs/research/observability-storage-benchmark-plan.md`](../docs/research/observability-storage-benchmark-plan.md)
+- [`docs/research/storage/benchmark-plan.md`](../docs/research/storage/benchmark-plan.md)
   defines *what to measure and why*.
-- [`docs/research/storage-benchmark-prototype.md`](../docs/research/storage-benchmark-prototype.md)
+- [`docs/research/storage/benchmark-plan.md`](../docs/research/storage/benchmark-plan.md)
   is the runnable, black-box harness that produces numbers and holds **veto
   power** over the default storage choice.
 
@@ -58,7 +58,7 @@ continuous: do not converge on a single deliverable and stop.
 Run passes back to back (nothing external is being watched, so there is no reason
 to idle between them). Each pass picks the single highest-value unanswered
 internals question, researches it against primary sources and source code, writes
-or revises one focused note under `docs/research/greptimedb-vs-clickhouse/`, then
+or revises one focused note under `docs/research/storage/greptimedb-vs-clickhouse/`, then
 commits and pushes per [`AGENTS.md`](../AGENTS.md). Each pass must surface the
 pass target, versions checked, evidence produced, files changed, commit pushed,
 remaining uncertainty, and next gap so the run controller can see that the
@@ -111,7 +111,7 @@ and conversion, and writes to whatever backend it chooses.** Consequences this l
   columnar store (ClickHouse or GreptimeDB); **Sentry-style grouped errors + metadata (mutable,
   relational, OLTP) → Postgres**; cold tier → object storage. Do not force mutable issue state into the
   columnar engine (Sentry's ClickHouse "replacements consumer" is the warning). See
-  [`platform-fit-and-alternatives.md`](../docs/research/greptimedb-vs-clickhouse/platform-fit-and-alternatives.md).
+  [`platform-fit-and-alternatives.md`](../docs/research/storage/greptimedb-vs-clickhouse/platform-fit-and-alternatives.md).
 
 Net standing lean under the proxy: **ClickHouse is the pragmatic default**; GreptimeDB is the choice
 only for the metrics-cardinality/PromQL · self-hosted-1×-S3-economics · mandatory-auto-rebalance bet.
@@ -156,7 +156,7 @@ What this rule does and does not change:
 All output goes under a dedicated subfolder:
 
 ```text
-docs/research/greptimedb-vs-clickhouse/
+docs/research/storage/greptimedb-vs-clickhouse/
 ```
 
 The subfolder `README.md` is the index and method log — keep it current. Grow the
@@ -612,7 +612,7 @@ large-scale test (`N=5,000,000`+) runs on a **server**, and **only when the oper
 — do not launch it locally on your own. **Don't keep all four containers standing with big data on the
 laptop:** `docker start` the nightlies → `gen.sh` (small) → `bench.sh` → `docker stop` the nightlies.
 Build identical data on all four via `range()` (GT) / `numbers()` (CH). On a new nightly tag re-pull.
-**Every benchmark must also update [`four-way-version-comparison.md`](../docs/research/greptimedb-vs-clickhouse/four-way-version-comparison.md)** — the single consolidated matrix (every query × 4 builds,
+**Every benchmark must also update [`four-way-version-comparison.md`](../docs/research/storage/greptimedb-vs-clickhouse/four-way-version-comparison.md)** — the single consolidated matrix (every query × 4 builds,
 a *Faster* column, per-query *Details* links to the mechanism note + run). Always re-pin the latest
 stable + nightly of both at the start of a benchmarking pass. Do **not** record a stable-only number
 as the result; the four-build row is the result.
@@ -692,7 +692,7 @@ The loop must drive toward an explicit, defensible answer to all of these, in
    remains (retrieval speed + build-on-top ecosystem + cost/scaling/cardinality). Current standing
    answer: the proxy tilts the default to **ClickHouse**; GreptimeDB stays for the metrics-cardinality /
    self-hosted-1×-S3 / mandatory-auto-rebalance bet. Keep this honest and flip on contrary evidence.
-   (See [`platform-fit-and-alternatives.md`](../docs/research/greptimedb-vs-clickhouse/platform-fit-and-alternatives.md).)
+   (See [`platform-fit-and-alternatives.md`](../docs/research/storage/greptimedb-vs-clickhouse/platform-fit-and-alternatives.md).)
 8. **Where do grouped errors + metadata live?** Sentry-style grouped errors (fingerprint → first/last
    seen, count, status, assignee) are **mutable, relational, low-volume OLTP** — neither ClickHouse nor
    GreptimeDB handles that well (Sentry uses Postgres + a ClickHouse "replacements consumer" to fake
@@ -892,7 +892,7 @@ not a headline.
 Each pass:
 
 1. Re-read this prompt and the current state of
-   `docs/research/greptimedb-vs-clickhouse/`.
+   `docs/research/storage/greptimedb-vs-clickhouse/`.
 2. **Re-verify before deepening — treat every existing comparison statement as a
    theory, not a settled fact.** Re-pin the versions (Method #1). Then re-check the
    most load-bearing, most-suspicious, or stalest existing claims against the *live*

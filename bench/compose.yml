@@ -1,7 +1,7 @@
 # Parallax storage-benchmark candidates — the FOUR builds the comparison runs on.
 # Rule (AGENTS.md "Benchmarking Rule"): every benchmark runs on all four —
 # GreptimeDB stable + nightly, ClickHouse stable (non-LTS) + nightly (head).
-# Referenced by docs/research/greptimedb-vs-clickhouse/{local-benchmark-results,four-way-version-comparison}.md
+# Referenced by docs/research/storage/greptimedb-vs-clickhouse/{local-benchmark-results,four-way-version-comparison}.md
 # and bench/four-way/{gen,bench}.sh.
 #
 # Bring up:   docker compose -f bench/compose.yml up -d

@@ -55,7 +55,7 @@ all. Answer, with evidence and an engineer's skepticism:
 - Does it make sense in the market and technically — or is it just a feature of
   Sentry / Grafana / Datadog?
 
-Write the verdict to `docs/research/verdict.md` as an explicit GO or NO-GO with
+Write the verdict to `docs/research/decisions/go-no-go.md` as an explicit GO or NO-GO with
 the reasoning behind it. Do not soften the call. If the honest answer is NO-GO,
 say so and explain why — that is a valid and useful outcome.
 
@@ -76,7 +76,7 @@ program.
 
 Keep this prompt active as an indefinite research brief after the verdict and blueprint
 exist. Do not mark the run complete merely because
-`docs/research/verdict.md` and `docs/research/technical-implementation-concept.md`
+`docs/research/decisions/go-no-go.md` and `docs/research/architecture/implementation-concept.md`
 exist. Continue in repeated passes until the operator explicitly stops the run,
 replaces it, or says the research program is complete.
 
@@ -490,8 +490,8 @@ instead of filling the gap with vendor claims.
 
    The storage benchmark has veto power over the default storage choice: no
    storage winner is declared until the prototype is run against the latest
-   stable versions. Keep `docs/research/observability-storage-benchmark-plan.md`,
-   `docs/research/storage-benchmark-prototype.md`, and the metadata-store
+   stable versions. Keep `docs/research/storage/benchmark-plan.md`,
+   `docs/research/storage/benchmark-plan.md`, and the metadata-store
    benchmark aligned with this contract, and consume benchmark-agent results when
    they land.
 
@@ -889,7 +889,7 @@ is the pragmatic default; GreptimeDB for the metrics-cardinality / self-hosted-1
 mandatory-auto-rebalance bet.** GreptimeDB's slower heavy-query speed is an *engine* gap (closable), not
 a consequence of object storage; its cost advantage (fewer always-on servers, cheap S3) is the
 *architecture* and is its strongest surviving argument. Full reasoning + the alternatives survey:
-[`docs/research/greptimedb-vs-clickhouse/platform-fit-and-alternatives.md`](../docs/research/greptimedb-vs-clickhouse/platform-fit-and-alternatives.md).
+[`docs/research/storage/greptimedb-vs-clickhouse/platform-fit-and-alternatives.md`](../docs/research/storage/greptimedb-vs-clickhouse/platform-fit-and-alternatives.md).
 
 ---
 

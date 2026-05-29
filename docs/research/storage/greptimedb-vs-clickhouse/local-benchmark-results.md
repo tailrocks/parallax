@@ -6718,7 +6718,7 @@ any other cruft (dead links, more dups, count drift). Re-pin unchanged (GT GA v1
 **Verdict — repo health good.** No dead links, no further duplicates, dedup clean; count corrected.
 No research-content change. (Meta/trustworthiness pass, not a benchmark.)
 
-**Reproduce.** `ls docs/research/greptimedb-vs-clickhouse/*.md | wc -l` (=34); dead-link check:
+**Reproduce.** `ls docs/research/storage/greptimedb-vs-clickhouse/*.md | wc -l` (=34); dead-link check:
 `grep -rhoE '[a-z0-9-]+\.md' <subdir>/*.md | sort -u` then test each `-f`.
 
 ### Run 171 — 2026-05-25 — projection re-verify (no drift) + verdict consistency fix + gap ledger (operator asked "what have we missed?")

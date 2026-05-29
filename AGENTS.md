@@ -109,7 +109,7 @@ The **detailed, large-scale** test (`N=5,000,000`+) runs on a **server**, not th
 keep all four containers standing with big data on a laptop: `docker start` the nightlies → `gen.sh`
 (small) → `bench.sh` → `docker stop` the nightlies. Build identical data on all four (`range()` on
 GreptimeDB / `numbers()` on ClickHouse). Re-pull + rebuild when a new nightly tag drops. **Every benchmark must update the
-consolidated matrix [`docs/research/greptimedb-vs-clickhouse/four-way-version-comparison.md`](docs/research/greptimedb-vs-clickhouse/four-way-version-comparison.md)** (every query × 4 builds, a *Faster*
+consolidated matrix [`docs/research/storage/greptimedb-vs-clickhouse/four-way-version-comparison.md`](docs/research/storage/greptimedb-vs-clickhouse/four-way-version-comparison.md)** (every query × 4 builds, a *Faster*
 column, per-query *Details* links to the mechanism note + the reproducible run in
 `local-benchmark-results.md`). A stable-only number is not the result; the four-build row is. The
 operator-facing detail of this rule also lives in the loop brief

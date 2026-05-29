@@ -29,115 +29,39 @@ or CI contract yet.
 | Path | Purpose |
 | --- | --- |
 | `docs/` | Documentation and research notes. No generated docs UI yet. |
-| `docs/research/` | Market, product, and strategy research. |
-| `docs/research/greptimedb-vs-clickhouse/` | Deep under-the-hood GreptimeDB vs ClickHouse internals comparison, produced by an indefinite research loop. |
+| `docs/research/` | Market, product, and strategy research, grouped by topic. The canonical per-note index is [`docs/research/README.md`](docs/research/README.md). |
+| `docs/research/00-vision/` | Why this product: thesis, platform direction, AI-native observability synthesis. |
+| `docs/research/decisions/` | ADR-style decision records — current truth, conclusion first (go/no-go, strategic coverage, risks, storage engine, stack decision, metadata store, agent access surface, fixer boundary). |
+| `docs/research/architecture/` | How the pieces fit: implementation concept, overview, evidence-bundle schema, causal reconstruction, build roadmap. |
+| `docs/research/capture/` | How each signal is collected and made safe: rust, frontend, sentry-ingest, otlp, agent/CLI tracing, deploy/change context, CI/flaky tests, production-DB evidence, correlation (A4), redaction (A6). |
+| `docs/research/storage/` | Telemetry-store evaluation, benchmark plan, freshness/latency and size/object-cost gates, plus `metadata/` and `streaming/` evidence subdirs. |
+| `docs/research/storage/greptimedb-vs-clickhouse/` | Deep white-box GreptimeDB vs ClickHouse internals comparison: one-page verdict, run-log, 30+ mechanism notes, the four-build version matrix, and benchmarks. Produced by an indefinite `/goal` or Claude Code `/loop`. |
+| `docs/research/validation/` | A1–A7 assumption gates and ledgers (A1 bundle-value subdir, A2 user demand, A3 schema/corpus, A7 scope, self-hosted simplicity, business model, repo intent). |
+| `docs/research/market/` | Market landscape and the consolidated competitor watch. |
+| `docs/research/reference/` | External technical reviews. |
 | `prompts/` | Reusable research and agent prompts. |
-| `bench/` | Local storage-benchmark scaffolding: pinned `compose.yml` for GreptimeDB + ClickHouse smoke runs. Generated datasets/results are gitignored; only compose/scripts are tracked. Consistent with `docs/research/storage-benchmark-prototype.md`. |
+| `bench/` | Local storage-benchmark scaffolding: pinned `compose.yml` for GreptimeDB + ClickHouse smoke runs. Generated datasets/results are gitignored; only compose/scripts are tracked. Consistent with [`docs/research/storage/benchmark-plan.md`](docs/research/storage/benchmark-plan.md). |
 
-## Research Documents
+## Research Record
 
-| Path | Purpose |
+The research is grouped by topic under `docs/research/`. For the full,
+conclusion-first per-note index, see [`docs/research/README.md`](docs/research/README.md).
+The decisions front door is [`docs/research/decisions/`](docs/research/decisions/): each
+settled question has exactly one ADR (conclusion first, linking to its evidence), and the
+still-open proof gates are enumerated in
+[`decisions/strategic-coverage.md`](docs/research/decisions/strategic-coverage.md) and the
+relevant `validation/` notes.
+
+| Area | Where |
 | --- | --- |
-| `docs/research/project-thesis.md` | Original thesis. |
-| `docs/research/verdict.md` | Phase 1 GO / NO-GO gate for whether Parallax is worth building. |
-| `docs/research/risks-and-bear-case.md` | Adversarial counterweight to the verdict: steelmanned NO-GO case, load-bearing-assumption register, risk matrix, and NO-GO/strengthen triggers. |
-| `docs/research/repo-intent-dependence.md` | Strategic question 13: how much Parallax depends on a context-rich monorepo. Decomposes value into a runtime-evidence floor (no monorepo needed) and an opt-in repo-intent multiplier; degraded mode is the common case the product must serve. |
-| `docs/research/repo-intent-value-ledger.md` | Result-ledger contract for measuring repo-held intent as an optional multiplier: runtime-only degraded mode, intent-node projection, paired C1-vs-C0 eval arms, stale/conflict fixtures, redaction, and allowed wording. |
-| `docs/research/business-model-and-economics.md` | Economic/business-model analysis: is the category company-sized, licensing options (Apache-2.0 recommended), and value-capture seams (hosting, the fixer, enterprise ops add-ons) that do not gate the open differentiator. |
-| `docs/research/business-model-validation-ledger.md` | Result-ledger contract for business-model claims: adoption, deployment, hosted, fixer, enterprise ops, support/services, conversion, and paid-pilot evidence needed before value-capture seams can be called validated. |
-| `docs/research/user-interview-and-deployment-intent-gate.md` | A2 validation runbook: target interview slices, past-behavior question bank, scoring rubric, deployment/data/budget commitment tests, and pass/continue/kill criteria for proving demand beyond the operator. |
-| `docs/research/a2-interview-evidence-ledger.md` | A2 evidence-ledger contract: redacted result schema, artifact boundary, evidence classes, commitment ladder, and bias controls for making deployment-intent interviews auditable without committing raw private notes. |
-| `docs/research/schema-adoption-and-corpus-moat-gate.md` | A3 validation gate: canonical schema/conformance artifacts, adoption-clock thresholds, failure/fixer-outcome corpus events, compatibility policy, and moat-claim limits. |
-| `docs/research/a3-schema-adoption-corpus-ledger.md` | A3 schema-adoption and corpus ledger: public event schemas, counting rules, claim levels, and refresh cadence for reviews, integrations, conformance runs, compatibility decisions, and outcome rows. |
-| `docs/research/self-hosted-simplicity-gate.md` | Operational proof gate for kill criterion 6: measure Phase 1 tiny-tier setup against current self-hosted Sentry, SigNoz, OpenObserve, GreptimeDB, and Turso/libSQL baselines. |
-| `docs/research/self-hosted-deployment-baseline-inventory.md` | Source-linked version and deployment-shape manifest for the self-hosted simplicity benchmark: Sentry, SigNoz, OpenObserve, Bugsink, Rustrak, Traceway, GoSnag, and Urgentry. |
-| `docs/research/self-hosted-simplicity-ledger.md` | Result-ledger contract for tiny-tier self-hosting claims: clean-VM run artifacts, install timing, service/resource rows, ingest smoke, restart, backup/restore, upgrade, redaction, and allowed product wording. |
-| `docs/research/market-landscape.md` | Market research. |
-| `docs/research/open-self-hosted-competitor-watch.md` | Focused watchlist for OpenObserve, SigNoz, and Coroot: current primary-source posture, remaining Parallax gaps, and trigger conditions that would reopen the GO verdict. |
-| `docs/research/openobserve-ai-mcp-enterprise-recheck.md` | Focused recheck of OpenObserve AI SRE, AI Assistant, MCP, Enterprise gating, source-conflicted free Self-Hosted Enterprise allowance, OTLP overlap, and remaining Parallax evidence-bundle/Sentry-migration gaps. |
-| `docs/research/lightweight-sentry-compatible-competitor-watch.md` | Focused watchlist for Bugsink, Rustrak, Traceway, GoSnag, and Urgentry: lightweight Sentry-compatible or OTLP-native self-hosted challengers that pressure Parallax's migration and simplicity claims. |
-| `docs/research/lightweight-error-tracker-mcp-boundary-check.md` | Focused MCP/agent-surface check for lightweight error trackers: Rustrak and GoSnag management/write/raw-event MCP tools versus Parallax's intended read-only evidence-bundle boundary. |
-| `docs/research/bugsink-sentry-compatible-simplicity-recheck.md` | Focused recheck of Bugsink's Sentry SDK/DSN migration, Docker/SQLite/persistent deployment nuance, PolyForm Shield license posture, third-party MCP adapters, and remaining Parallax OTLP/bundle/action-audit gaps. |
-| `docs/research/rustrak-sentry-mcp-protocol-recheck.md` | Focused recheck of Rustrak's Rust/Actix Sentry-envelope ingest, SQLite/Postgres deployment shape, Docker image metadata, `@rustrak/mcp` management/raw-event tools, Sentry protocol drift workflow, and remaining Parallax evidence-bundle/action-audit gaps. |
-| `docs/research/traceway-otlp-ai-replay-recheck.md` | Focused recheck of Traceway's OTLP/HTTP ingest, trace/log/metric conversion source, AI trace promotion, session replay/native protocol, SQLite/all-in-one/embedded deployment modes, integration skills, and remaining Parallax Sentry-migration/bundle/action-audit gaps. |
-| `docs/research/gosnag-sentry-ai-mcp-recheck.md` | Focused recheck of GoSnag's Sentry event ingest, AI RCA/triage workflows, management-shaped MCP server, Postgres deployment path, no-release maturity risk, and remaining Parallax OTLP/evidence-bundle/action-audit gaps. |
-| `docs/research/urgentry-sentry-tiny-benchmark-recheck.md` | Focused recheck of Urgentry's Sentry-compatible ingest breadth, OTLP HTTP/JSON limit, Tiny and split self-hosted modes, vendor benchmark claims, FSL license posture, stub-like Autofix surface, and remaining Parallax open evidence-bundle/action-audit gaps. |
-| `docs/research/agentic-observability-competitor-drift-ledger.md` | Market-drift ledger for agentic observability competitors: current source snapshot, drift levels, trigger-hit rows, refresh triggers, and public wording boundaries. |
-| `docs/research/sentry-mcp-seer-self-hosted-recheck.md` | Focused recheck of Sentry Seer, Autofix, sentry-mcp, and self-hosted Sentry sources: hosted-Seer pressure, explicit current self-hosted AI/ML exclusion, read-only stdio-scope nuance, and Parallax's remaining evidence-bundle gap. |
-| `docs/research/signoz-open-investigation-format-check.md` | Focused falsification note for SigNoz's "open investigation format" claim: current primary-source posture, evidence checked, A3 schema-counting rule, and watch triggers. |
-| `docs/research/coroot-mcp-ai-rca-recheck.md` | Focused recheck of Coroot Community MCP, Enterprise/Cloud AI RCA, OAuth/RBAC MCP safety, eBPF trace limits, self-hosted deployment shape, and remaining Parallax Sentry/bundle/action-audit gaps. |
-| `docs/research/self-hosted-observability-architecture.md` | Architecture research for the Sentry-compatible, OpenTelemetry-native self-hosted observability direction. |
-| `docs/research/ci-failure-context-mvp.md` | MVP research for GitHub Actions failure-context bundles. |
-| `docs/research/greptimedb-storage-evaluation.md` | Storage-layer evaluation for GreptimeDB, ClickHouse, and observability backends. |
-| `docs/research/observability-storage-benchmark-plan.md` | Database-only benchmark plan for observability storage candidates (rationale, axes, decision criteria). |
-| `docs/research/storage-benchmark-prototype.md` | Runnable storage-benchmark harness spec: `StorageAdapter` trait, seeded dataset generator, per-candidate DDL, exact evidence-bundle/correlation queries, measurement protocol, and numeric decision gates. Has veto power over the default storage choice. |
-| `docs/research/storage-benchmark-artifact-interpretation.md` | Focused interpretation of the separate benchmark agent's current `bench/four-way` artifacts and source reads: what Runs 140-147 prove, what remains unmeasured, and why they count as smoke/schema evidence rather than an A5 stack pass. |
-| `docs/research/storage-freshness-and-bundle-latency-gate.md` | Proof gate for mixed-load ingest-to-queryable freshness and Q6 evidence-bundle latency under concurrent ingest; specifies timing definitions, per-signal probes, pass targets, and storage-default consequences. |
-| `docs/research/storage-size-and-object-cost-gate.md` | Proof gate for retained size, per-signal compression, object-store request/egress cost, cache dependency, and provider cost projection across GreptimeDB and ClickHouse. |
-| `docs/research/greptimedb-vs-clickhouse/` | White-box internals comparison of GreptimeDB and ClickHouse: source-level teardown of write/read paths, indexing, compaction, compression, execution, and the distributed model, mapped to per-signal speed/cost/scaling, a build decision, and a gap-closing implementation roadmap for the chosen engine. Produced by an indefinite `/goal` or Claude Code `/loop`. |
-| `docs/research/retention-cost-model.md` | Quantified retention cost math (object-store pricing, per-signal compression, 3-tier worked model); finds object-storage retention is ~100× cheaper than ingest-priced SaaS and that egress pricing favors R2/B2 over S3 for a re-read-heavy context engine. |
-| `docs/research/metadata-store-benchmark-plan.md` | Turso-first benchmark plan and runnable prototype spec for product metadata, agent session state, CLI invocation state, audit records, crash/restore tests, and Postgres fallback gates. |
-| `docs/research/turso-metadata-production-readiness.md` | Turso metadata production-readiness gate: current Turso source posture, local-vs-cloud distinction, MVCC conflict/CDC/sync constraints, backup/restore requirements, and Postgres fallback triggers. |
-| `docs/research/messaging-and-ingestion-layer.md` | Stream and ingest-layer evaluation for Apache Iggy, Redpanda, NATS JetStream, and brokerless startup deployments. |
-| `docs/research/ingest-log-replay-and-backpressure-gate.md` | Proof gate for the append-only ingest log: local WAL versus Iggy/NATS/Redpanda replay, backpressure, durability modes, fault tests, and pass/fail criteria. |
-| `docs/research/a5-stack-decision-ledger.md` | A5 stack-decision result contract: roll up storage speed/cost, metadata, ingest-log, setup, and integration gates into explicit stack claim levels and fallback triggers. |
-| `docs/research/causal-reconstruction-and-agent-safety.md` | Evidence-graph, causal reconstruction, agent autonomy, MCP, and production-data safety analysis. |
-| `docs/research/redaction-pipeline-and-secret-safety.md` | A6 redaction-trust plan: source-specific minimization, default-deny ingest policy, detector/output passes, redaction report fields, and red-team gate before agent exposure. |
-| `docs/research/rust-stacktrace-grouping-and-symbolication.md` | Rust grouping proof gate: debuginfo policy, symbolication status, conservative frame normalization, `rust-stack-v1` fingerprinting, and fixture matrix for grouping stability across rebuild/debug-info variants. |
-| `docs/research/rust-stacktrace-grouping-ledger.md` | Result-ledger contract for Rust grouping claims: fixture runs, build/debuginfo variants, frame normalization, fingerprint stability, symbolication degradation, false split/merge audits, claim expiry, and allowed wording. |
-| `docs/research/ai-native-observability-and-incident-intelligence.md` | Current AI-native observability, incident-intelligence, agent workflow, strategic positioning, and product-wedge synthesis. |
-| `docs/research/flaky-test-investigation-and-replay.md` | Flaky-test detection, history, clustering, retry/replay, reproducer, agent-fixability, and wedge analysis. |
-| `docs/research/agent-and-cli-execution-tracing.md` | Coding-agent session tracing, CLI application tracing, OpenTelemetry GenAI/MCP/CLI mapping, market room, data model, and unified execution graph analysis. |
-| `docs/research/agent-cli-otel-semconv-mapping.md` | Contract for mapping OpenTelemetry GenAI, MCP, CLI, process, and CI/CD semantic conventions into stable Parallax agent/session/CLI rows, with versioning, content-capture levels, deduplication, trace propagation, and lossiness gates. |
-| `docs/research/agent-session-tracing-real-tools.md` | Proof gate for agent-session tracing across Codex, Claude Code, Amp, and OpenCode: adapter surfaces, normalized schema, redaction defaults, value-eval matrix, and pass/fail criteria. |
-| `docs/research/agent-session-tracing-ledger.md` | Result-ledger contract for agent-session tracing claims: tool/version matrix, adapter events, normalized sessions, coverage, lossiness, redaction, overhead, audit-value comparison, expiry triggers, and allowed wording. |
-| `docs/research/cli-trace-overhead-and-redaction.md` | Proof gate for default-on CLI tracing: structural capture policy, args/env/config/stdout/stderr redaction, canary fixtures, overhead budgets, and failure criteria. |
-| `docs/research/cli-trace-safety-ledger.md` | Result-ledger contract for CLI tracing claims: workload manifests, field-policy rows, redaction canaries, overhead, stdout/stderr, child-process, panic/error, projection, raw-ref policy, expiry triggers, and allowed wording. |
-| `docs/research/agent-access-surface-cli-api-mcp.md` | Focused decision on the agent access surface: canonical HTTP API, day-one CLI, read-only MCP adapter, security rules, implementation order, and MCP shipping gate. |
-| `docs/research/agent-access-surface-safety-ledger.md` | Result-ledger contract for CLI/HTTP/MCP projection equivalence and read-only MCP safety claims: claim levels, run artifacts, row schemas, expiry triggers, and allowed product wording. |
-| `docs/research/mcp-power-boundary-competitor-check.md` | Primary-source competitor check for MCP tool power: Sentry, Grafana, OpenObserve, SigNoz, and Coroot query/management/RCA surfaces and why Parallax's first MCP server should remain read-only evidence context. |
-| `docs/research/fixer-component-and-outcome-loop.md` | Boundary and contract for the separate fixer component: evidence-bundle request, patch/PR autonomy levels, outcome records, gates, and why PR creation is commodity while outcome feedback is moat-bearing. |
-| `docs/research/fixer-outcome-ledger.md` | Result-ledger contract for separate fixer claims: bundle handoff, fixer run records, agent-session linkage, patch/PR creation, CI/checks, review, merge/revert/recurrence, evidence citation, policy safety, claim levels, and allowed wording. |
-| `docs/research/production-database-evidence-access.md` | Safety gate for treating production databases as evidence sources: telemetry-first DB context, read-only query templates, least privilege, RLS/views, redaction, audit, and no generic SQL tools. |
-| `docs/research/production-database-evidence-ledger.md` | Result-ledger contract for production database evidence claims: claim levels, run artifacts, row schemas, least-privilege/RLS/redaction/audit fixtures, expiry triggers, and allowed product wording. |
-| `docs/research/agent-observability-technical-review.md` | Technical review of current agent-observability tools, instrumentation patterns, storage/eval/redaction lessons, and the Parallax-specific audit gap. |
-| `docs/research/strategic-verdict-and-research-coverage.md` | Final strategic verdict, prompt coverage map, key decisions, unresolved proof gates, and prototype acceptance criteria. |
-| `docs/research/technical-implementation-concept.md` | Opinionated end-to-end blueprint with named component choices, deployment profiles, data flow, and rejected alternatives. |
-| `docs/research/build-roadmap-and-validation-sequence.md` | De-risking build sequence: phases ordered to kill the project cheapest-first, with go/no-go gates tied to bear-case assumptions (validate A1 bundle value and A2 users before the storage benchmark). |
-| `docs/research/future-platform-direction.md` | Disciplined answer to the Final Goal: the platform/intelligence-layer outcome as an earned, gated, three-stage emergence from the narrow evidence-engine wedge — sound as an evidence engine, flawed only if launched as a day-one platform. |
-| `docs/research/evidence-bundle-and-schema.md` | Concrete `v0` spec for the portable evidence bundle and open evidence schema (envelope, node/edge catalog, hypothesis/confidence model, redaction report, versioning) — the named moat artifact. |
-| `docs/research/bundle-value-evaluation.md` | Experiment design for the existential claim (kill criterion 3 / assumption A1): does a Parallax bundle beat raw context for agent fix quality? Arms incl. a raw-telemetry-dump control, dataset options, metrics, and the decision gate. |
-| `docs/research/datadog-bits-ai-eval-loop.md` | Primary-source refresh on Datadog Bits AI SRE and Dev Agent: eval-platform lessons for A1 world snapshots, noise manifests, segmentation, score history, model-refresh runs, and why Datadog validates methodology but not Parallax bundle value. |
-| `docs/research/bundle-value-seed-corpus.md` | Seed-corpus selection note for the A1 bundle-value eval: current executable SWE-style task sources, task eligibility gates, telemetry overlay requirements, and manifest shape before running Phase 0. |
-| `docs/research/a1-task-source-freeze-check.md` | Focused A1 task-source freshness and pinning note: Hugging Face dataset SHAs, row/split counts, field quarantine, and manifest requirements for SWE-bench-Live and SWE-rebench sources. |
-| `docs/research/a1-source-drift-and-leakage-recheck.md` | Focused A1 task-source source-governance recheck: current Hugging Face source roles, preview truncation limits, Python-only classification, full selected-row hashing, and exclusion of trajectory/leaderboard/result datasets from task-source use. |
-| `docs/research/a1-huggingface-row-hash-procedure.md` | Concrete A1 procedure for Hugging Face-backed tasks: pinned revision metadata, stable row identity, `load_dataset`/pinned file retrieval, deterministic JSON canonicalization, field-policy hashes, and pass/fail rules for row evidence. |
-| `docs/research/phase0-telemetry-overlay-contract.md` | Deterministic telemetry-overlay artifact contract for the A1 Phase 0 eval: provenance labels, no-cheat rules, normalized rows, raw-vs-bundle evidence parity, redaction, and pass/fail gates. |
-| `docs/research/a1-eval-result-ledger-and-model-refresh.md` | A1 result-ledger and refresh policy: public run manifests, model snapshots, contamination tiers, per-arm result rows, claim levels, and expiry/rerun triggers for bundle-value claims. |
-| `docs/research/bundle-value-phase0-runbook.md` | Concrete first-pass A1 runbook: task mix, arms, artifact contract, agent-run protocol, scoring, analysis, and continue/kill thresholds for testing bundles against raw telemetry dumps. |
-| `docs/research/sentry-compatible-ingestion.md` | Focused Sentry envelope, Relay, grouping, fingerprinting, stacktrace normalization, and event pipeline analysis for Parallax ingestion. |
-| `docs/research/sentry-envelope-item-policy-recheck.md` | Focused recheck of current Rust/JS/Go/Python Sentry envelope item models and the Parallax policy for tolerant event-first parsing, unsupported-item outcomes, retry-safe responses, and non-agent-visible unsupported payloads. |
-| `docs/research/sentry-sdk-fixture-compatibility.md` | Fixture-driven Sentry compatibility gate: current SDK-generated envelopes, Rust-first fixture matrix, parser oracle strategy, normalization snapshots, and honest product wording. |
-| `docs/research/sentry-sdk-compatibility-ledger.md` | Result-ledger contract for Sentry SDK compatibility claims: claim levels, fixture-run artifacts, row schemas, expiry triggers, and allowed product wording. |
-| `docs/research/opentelemetry-protocol-and-context-layer.md` | Focused OpenTelemetry protocol, OTLP endpoint, Collector, Rotel, semantic context, scaling, and above-OTEL product opportunity analysis. |
-| `docs/research/otlp-transport-profile-recheck.md` | Focused OTLP transport-profile recheck: required gRPC and HTTP/protobuf baseline, optional HTTP/JSON status, endpoint URL construction fixtures, retry semantics, and JSON-only competitor caveats. |
-| `docs/research/otlp-receiver-conformance-and-collector-equivalence.md` | Fixture and conformance gate for OTLP-native claims: direct Rust SDK, official Collector, Collector Contrib, and Rotel equivalence over normalized Parallax evidence rows. |
-| `docs/research/otlp-conformance-ledger.md` | Result-ledger contract for OTLP-native and Collector-compatible claims: protocol/version matrix, run artifacts, row schemas, expiry triggers, and allowed product wording. |
-| `docs/research/rust-data-collection-and-instrumentation.md` | Rust-first data-collection decision (SDK/OTLP vs eBPF) and error-capture data model. |
-| `docs/research/rust-capture-fidelity-recheck.md` | Focused Rust capture-fidelity recheck: current Sentry/tracing/OpenTelemetry/error crate versions, feature/env/build/panic-strategy gates, log appender requirement, and eBPF supplemental boundary. |
-| `docs/research/frontend-collection-and-cross-tier-correlation.md` | Frontend (browser JS/TS) collection method, cross-tier frontend↔backend trace propagation, schema extension (frontend nodes/edges), source-map symbolication, and the frontend privacy problem. |
-| `docs/research/frontend-capture-safety-ledger.md` | Result-ledger contract for frontend capture claims: browser/route matrix, SDK config, source maps, CORS/trace propagation, breadcrumbs, privacy canaries, export reliability, overhead, replay opt-in policy, projection safety, expiry triggers, and allowed wording. |
-| `docs/research/frontend-browser-ingest-profile-recheck.md` | Focused browser ingest-profile recheck: current Sentry/OTel JS package versions, browser HTTP-only OTLP boundary, CORS/CSP/public-ingest controls, source-map/replay safety, and frontend ledger fixture additions. |
-| `docs/research/frontend-replay-sourcemap-privacy-recheck.md` | Focused frontend privacy recheck for Sentry Replay package provenance, opt-in Replay refs, source-map/`sourcesContent` raw-artifact boundaries, browser metadata canaries, and ledger manifest additions. |
-| `docs/research/correlation-reliability-real-telemetry-gate.md` | A4 validation gate for real telemetry: strong-edge prevalence, trace/log/release/deploy coverage, frontend continuation, async links, false-strong-edge audit, and missing-evidence reporting. |
-| `docs/research/a4-correlation-reliability-ledger.md` | A4 result-ledger contract: run manifests, per-anchor rows, manual audit rows, instrumentation repairs, claim levels, and freshness rules for proving real-telemetry correlation claims. |
-| `docs/research/deploy-change-and-issue-context.md` | Contract for release/deploy/code-change/work-item evidence: GitHub/Sentry/Linear/Jira sources, normalized nodes, edge-strength rules, missing evidence, privacy defaults, and proof gates. |
-| `docs/research/deploy-change-context-ledger.md` | Result-ledger contract for release-regression and "what changed?" claims: provider source snapshot, claim levels, run artifacts, row schemas, expiry triggers, and allowed product wording. |
-| `docs/research/redaction-detector-toolchain.md` | A6 detector/toolchain decision: use a Rust default-deny runtime redaction engine, with Gitleaks, Betterleaks, TruffleHog, detect-secrets, Presidio, and GitHub patterns as offline validators and red-team comparators. |
-| `docs/research/redaction-toolchain-betterleaks-recheck.md` | Focused A6 external-scanner drift check: Betterleaks as active MIT-licensed comparator candidate, Gitleaks feature-freeze implication, offline/no-network validation policy, and why runtime redaction remains internal. |
-| `docs/research/a6-synthetic-canary-fixture-corpus.md` | Concrete A6/A1 canary fixture corpus spec: minimum Phase 0 fixture classes, public/private commit policy for provider-shaped raw values, manifest schema, projection targets, scanner expectations, and pass/fail rules. |
-| `docs/research/a6-redaction-red-team-ledger.md` | A6 result-ledger contract: red-team run manifests, seeded surface fixture rows, scanner comparisons, projection audits, usefulness audits, repair rows, claim levels, and freshness rules. |
-| `docs/research/a7-scope-discipline-ledger.md` | A7 result-ledger contract: phase budgets, component/dependency/feature rows, admission rules, warning triggers, and scope claim levels for keeping the tiny tier buildable. |
+| Vision and thesis | [`00-vision/`](docs/research/00-vision/) |
+| Decisions (ADRs) | [`decisions/`](docs/research/decisions/) |
+| Architecture | [`architecture/`](docs/research/architecture/) |
+| Signal capture and safety | [`capture/`](docs/research/capture/) |
+| Storage and the engine sub-study | [`storage/`](docs/research/storage/) |
+| Assumption validation (A1–A7) | [`validation/`](docs/research/validation/) |
+| Market and competitors | [`market/`](docs/research/market/) |
+| External reference | [`reference/`](docs/research/reference/) |
 
 ## Prompts
 
@@ -146,9 +70,9 @@ or CI contract yet.
 | `prompts/README.md` | How to use the prompts in this folder (one-off, `/goal`, `/loop`). |
 | `prompts/AGENTS.md` | Authoring rule for this folder: prompt files stay goal-only and runnable; run-mechanics and how-to-use live in `prompts/README.md`. |
 | `prompts/CLAUDE.md` | Thin pointer to `prompts/AGENTS.md`. |
-| `prompts/parallax-vision-and-restructure.md` | North-star brief: product vision, the GreptimeDB-vs-ClickHouse decision rule, and the explicit research-record restructure mission. |
+| `prompts/parallax-vision-and-restructure.md` | North-star brief: product vision, the GreptimeDB-vs-ClickHouse decision rule, and the research-record restructure mission. |
 | `prompts/deep-research-parallax.md` | Deep research brief for validating the AI-native debugging/investigation direction. |
-| `prompts/greptimedb-vs-clickhouse-internals.md` | Never-ending `/goal` or Claude Code `/loop` brief for the under-the-hood GreptimeDB vs ClickHouse comparison; writes to `docs/research/greptimedb-vs-clickhouse/`. |
+| `prompts/greptimedb-vs-clickhouse-internals.md` | Never-ending `/goal` or Claude Code `/loop` brief for the under-the-hood GreptimeDB vs ClickHouse comparison; writes to `docs/research/storage/greptimedb-vs-clickhouse/`. |
 
 ## Update Rule
 

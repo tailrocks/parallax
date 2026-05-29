@@ -122,7 +122,7 @@ Three deployment tiers, same event/bundle contract throughout:
 
 This is the question the operator most wants answered. It is also the **single
 most-researched question in this repo** (≈170 benchmark runs, full source-level teardown
-of both engines under `docs/research/greptimedb-vs-clickhouse/`, all load-bearing claims
+of both engines under `docs/research/storage/greptimedb-vs-clickhouse/`, all load-bearing claims
 re-verified, versions current as of 2026-05-29). It is **not** under-researched. It has
 converged to a **conditional decision**, and the agent's job is to keep it honest, not to
 re-run the whole loop.

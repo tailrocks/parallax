@@ -3,7 +3,7 @@
 Reproducible MinIO + GreptimeDB(S3) + ClickHouse(S3) stack for the object-storage
 path of the GreptimeDB-vs-ClickHouse comparison (cost axis: retained object bytes,
 object count, cold-read GET/PUT/LIST). Proven in
-`../../docs/research/greptimedb-vs-clickhouse/local-benchmark-results.md` Runs 8–9
+`../../docs/research/storage/greptimedb-vs-clickhouse/local-benchmark-results.md` Runs 8–9
 (GreptimeDB 4 objects / 37 MiB vs ClickHouse 74 objects / 63 MiB for 1M spans).
 
 ```bash
@@ -24,4 +24,4 @@ benchmark only. Pinned image tags match the version pins in the comparison READM
 bump them together. This is the home of the remaining object-store cases:
 **B10** (request-count instrumentation via `mc admin trace` / MinIO audit) and
 **B12** (JSONBench-style cold object-store reads) in
-`../../docs/research/greptimedb-vs-clickhouse/benchmarking-the-differences.md`.
+`../../docs/research/storage/greptimedb-vs-clickhouse/benchmarking-the-differences.md`.

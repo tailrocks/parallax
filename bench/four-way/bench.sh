@@ -51,4 +51,4 @@ row "dynamic-attr-json(cast)"            "SELECT json_get_int(\"attributes\",'ht
 row "cross-tier-join(anchored)"          "SELECT count(*) FROM spans1m s JOIN errs e ON s.trace_id=e.trace_id WHERE s.trace_id='t12345'"        "SELECT count() FROM spans1m s JOIN errs e ON s.trace_id=e.trace_id WHERE s.trace_id='t12345'"
 row "time-range-scan(100k window)"       "SELECT count(*) FROM tsr WHERE ts BETWEEN 1716000900000::timestamp_ms AND 1716001000000::timestamp_ms" "SELECT count() FROM tsr WHERE ts BETWEEN fromUnixTimestamp64Milli(1716000900000) AND fromUnixTimestamp64Milli(1716001000000)"
 echo "-------------------------------------------------------------------------------------------------"
-echo "Update docs/research/greptimedb-vs-clickhouse/four-way-version-comparison.md with these medians."
+echo "Update docs/research/storage/greptimedb-vs-clickhouse/four-way-version-comparison.md with these medians."
