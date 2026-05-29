@@ -10,6 +10,14 @@ This note consolidates the following previously-separate research files, each pr
 - `a6-synthetic-canary-fixture-corpus.md`
 - `a6-redaction-red-team-ledger.md`
 
+> **Open A6 roadmap gap (2026-05-29):** A6 below is a *pre-exposure* (leak-out at
+> bundle time) pipeline. Grafana Tempo v3.0.0 ships a complementary *retroactive*
+> control — `TraceRedactor` + `tempo-cli redact` can scrub a secret from an
+> already-persisted trace/block on demand. Parallax needs the same as a distinct
+> capability (post-incident purge / right-to-erasure over stored evidence), not
+> covered by the runtime pipeline. See
+> [Grafana Tempo v3.0.0 architecture review](../reference/grafana-tempo-v3-architecture-review.md) (Borrow 3).
+
 ## Redaction Pipeline and Secret Safety
 
 _Provenance: merged verbatim from `redaction-pipeline-and-secret-safety.md` (2026-05-29 restructure)._

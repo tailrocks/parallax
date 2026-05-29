@@ -88,6 +88,7 @@ This directory is the research record behind Parallax. It is organized so a read
 
 ### `reference/`
 - [agent-observability-review.md](reference/agent-observability-review.md) — technical review of current agent-observability tools and the Parallax-specific gap.
+- [grafana-tempo-v3-architecture-review.md](reference/grafana-tempo-v3-architecture-review.md) — Tempo v3.0.0 (Kafka-log write path, vParquet5, TraceQL Metrics GA, retroactive redaction) reviewed as an architectural reference: three borrows, not a wedge competitor.
 
 ## Conventions
 
