@@ -90,37 +90,37 @@ settle the default.
 | Can agents open correct PRs? | Sometimes. High for clear app errors and deterministic CI failures; low for data corruption, privacy, infra outages, broad multi-service incidents. |
 | Is lifecycle reconstruction achievable? | Partially. Strong for traced request/workflow/test lifecycles; weak for arbitrary true root cause without topology, change data, and counterfactual evidence. |
 | Monorepo dependency? | Context-rich repos make Parallax much stronger. Without docs/tasks/decisions, Parallax still helps with runtime evidence but loses the "why" layer. |
-| Agent data access danger? | Major risk. Use read-only scoped templates, default-deny redaction, limits, just-in-time grants, audit logs, and no production mutation in MVP; see the [production database evidence access gate](production-database-evidence-access.md). |
+| Agent data access danger? | Major risk. Use read-only scoped templates, default-deny redaction, limits, just-in-time grants, audit logs, and no production mutation in MVP; see the [production database evidence access gate](../capture/production-db-evidence.md). |
 | Why trace agents? | Agents will become a primary system interface. Teams need audit, observability, and question-answering over agent actions, not only final outputs. |
 
 ## Prompt Coverage Map
 
 | Prompt area | Repository evidence |
 | --- | --- |
-| Market and product thesis | [Project thesis](project-thesis.md), [Market landscape](market-landscape.md), [Open self-hosted competitor watch](open-self-hosted-competitor-watch.md), [Lightweight Sentry-compatible competitor watch](lightweight-sentry-compatible-competitor-watch.md), [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md), [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md), [Repo-intent dependence](repo-intent-dependence.md), [Repo-intent value ledger](repo-intent-value-ledger.md), [Business model and economics](business-model-and-economics.md), [Business model validation ledger](business-model-validation-ledger.md), [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md), [A2 interview evidence ledger](a2-interview-evidence-ledger.md), [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md), [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md) |
-| Evaluation lens and benchmark methodology | [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md), [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md), [Storage size and object cost gate](storage-size-and-object-cost-gate.md), [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md), [A5 stack decision ledger](a5-stack-decision-ledger.md), [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Messaging and ingestion layer](messaging-and-ingestion-layer.md) |
-| Language/runtime filter and Rust preference | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md), [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md), [Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md), [Technical implementation concept](technical-implementation-concept.md) |
-| Messaging/streaming | [Messaging and ingestion layer](messaging-and-ingestion-layer.md), [Ingest log replay and backpressure gate](ingest-log-replay-and-backpressure-gate.md) |
-| Unified observability storage | [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md), [Observability storage benchmark plan](observability-storage-benchmark-plan.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md), [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md), [Storage size and object cost gate](storage-size-and-object-cost-gate.md), [A5 stack decision ledger](a5-stack-decision-ledger.md) |
-| Metadata store | [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md), [Turso metadata production readiness](turso-metadata-production-readiness.md), [Technical implementation concept](technical-implementation-concept.md) |
-| OpenTelemetry | [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md), [OTLP receiver conformance and Collector equivalence](otlp-receiver-conformance-and-collector-equivalence.md), [OTLP conformance ledger](otlp-conformance-ledger.md) |
-| Sentry envelope compatibility | [Sentry-compatible ingestion](sentry-compatible-ingestion.md), [Sentry SDK fixture compatibility gate](sentry-sdk-fixture-compatibility.md), [Sentry SDK compatibility ledger](sentry-sdk-compatibility-ledger.md) |
-| Self-hosted operational simplicity | [Self-hosted simplicity gate](self-hosted-simplicity-gate.md), [Self-hosted deployment baseline inventory](self-hosted-deployment-baseline-inventory.md), [Self-hosted simplicity ledger](self-hosted-simplicity-ledger.md), [A7 scope discipline ledger](a7-scope-discipline-ledger.md), [Lightweight Sentry-compatible competitor watch](lightweight-sentry-compatible-competitor-watch.md), [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md) |
-| Collection method and eBPF tradeoff | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md) |
-| Rust applications first | [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md), [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md), [Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md), [Technical implementation concept](technical-implementation-concept.md) |
-| AI-native observability | [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md), [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md) |
-| Flaky-test investigation | [CI failure context MVP](ci-failure-context-mvp.md), [Flaky test investigation and replay](flaky-test-investigation-and-replay.md) |
-| Deploy/change/issue tracker context | [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md), [Deploy/change context ledger](deploy-change-context-ledger.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md), [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md) |
-| Agent and CLI execution tracing | [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md), [Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md), [Agent session tracing ledger](agent-session-tracing-ledger.md), [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md), [CLI trace safety ledger](cli-trace-safety-ledger.md) |
-| Fixer and outcome loop | [Fixer component and outcome loop](fixer-component-and-outcome-loop.md), [Fixer outcome ledger](fixer-outcome-ledger.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md), [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md) |
-| Agent-observability technical references | [Agent observability technical review](agent-observability-technical-review.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md) |
-| Frontend collection and cross-tier correlation | [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md), [Frontend capture safety ledger](frontend-capture-safety-ledger.md), [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md), [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Storage benchmark prototype](storage-benchmark-prototype.md) |
-| Redaction/privacy/agent exposure safety | [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md), [Redaction detector toolchain](redaction-detector-toolchain.md), [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md), [Production database evidence access gate](production-database-evidence-access.md), [Agent session tracing across real tools](agent-session-tracing-real-tools.md), [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md), [CLI trace safety ledger](cli-trace-safety-ledger.md), [Frontend capture safety ledger](frontend-capture-safety-ledger.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md), [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) |
-| Evidence bundle and open schema | [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md), [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md), [Bundle-value evaluation](bundle-value-evaluation.md), [Bundle-value seed corpus](bundle-value-seed-corpus.md), [A1 task source freeze check](a1-task-source-freeze-check.md), [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md), [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md), [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md) |
-| Core architecture | [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Technical implementation concept](technical-implementation-concept.md) |
-| CLI/API/MCP philosophy | [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md), [Agent access surface safety ledger](agent-access-surface-safety-ledger.md), [Self-hosted observability architecture](self-hosted-observability-architecture.md), [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md), [Technical implementation concept](technical-implementation-concept.md) |
-| Critical strategic questions | [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md), this document |
-| Final implementation blueprint | [Technical implementation concept](technical-implementation-concept.md), [Evidence bundle and open schema specification](evidence-bundle-and-schema.md), [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md) |
+| Market and product thesis | [Project thesis](../00-vision/thesis.md), [Market landscape](../market/landscape.md), [Open self-hosted competitor watch](../market/competitor-watch.md), [Lightweight Sentry-compatible competitor watch](../market/competitor-watch.md), [Agentic observability competitor drift ledger](../market/competitor-watch.md), [AI-native observability and incident intelligence](../00-vision/ai-native-observability.md), [Repo-intent dependence](../validation/repo-intent.md), [Repo-intent value ledger](../validation/repo-intent.md), [Business model and economics](../validation/business-model.md), [Business model validation ledger](../validation/business-model.md), [User interview and deployment intent gate](../validation/a2-user-demand.md), [A2 interview evidence ledger](../validation/a2-user-demand.md), [Schema adoption and corpus moat gate](../validation/a3-schema-corpus.md), [A3 schema adoption and corpus ledger](../validation/a3-schema-corpus.md) |
+| Evaluation lens and benchmark methodology | [Observability storage benchmark plan](../storage/benchmark-plan.md), [Storage benchmark prototype (runnable)](../storage/benchmark-plan.md), [Storage freshness and bundle latency gate](../storage/freshness-and-latency.md), [Storage size and object cost gate](../storage/size-and-object-cost.md), [Metadata store benchmark plan and prototype](../storage/metadata/metadata-store-benchmark-plan.md), [A5 stack decision ledger](stack-decision.md), [GreptimeDB storage evaluation](../storage/evaluation.md), [Messaging and ingestion layer](../storage/streaming/messaging-and-ingestion-layer.md) |
+| Language/runtime filter and Rust preference | [Rust data collection and instrumentation](../capture/rust.md), [Rust stacktrace grouping and symbolication](../capture/rust.md), [Rust stacktrace grouping ledger](../capture/rust.md), [Technical implementation concept](../architecture/implementation-concept.md) |
+| Messaging/streaming | [Messaging and ingestion layer](../storage/streaming/messaging-and-ingestion-layer.md), [Ingest log replay and backpressure gate](../storage/streaming/ingest-log-replay-and-backpressure-gate.md) |
+| Unified observability storage | [GreptimeDB storage evaluation](../storage/evaluation.md), [Observability storage benchmark plan](../storage/benchmark-plan.md), [Storage benchmark prototype (runnable)](../storage/benchmark-plan.md), [Storage freshness and bundle latency gate](../storage/freshness-and-latency.md), [Storage size and object cost gate](../storage/size-and-object-cost.md), [A5 stack decision ledger](stack-decision.md) |
+| Metadata store | [Metadata store benchmark plan and prototype](../storage/metadata/metadata-store-benchmark-plan.md), [Turso metadata production readiness](../storage/metadata/turso-metadata-production-readiness.md), [Technical implementation concept](../architecture/implementation-concept.md) |
+| OpenTelemetry | [OpenTelemetry protocol and context layer](../capture/otlp.md), [OTLP receiver conformance and Collector equivalence](../capture/otlp.md), [OTLP conformance ledger](../capture/otlp.md) |
+| Sentry envelope compatibility | [Sentry-compatible ingestion](../capture/sentry-ingest.md), [Sentry SDK fixture compatibility gate](../capture/sentry-ingest.md), [Sentry SDK compatibility ledger](../capture/sentry-ingest.md) |
+| Self-hosted operational simplicity | [Self-hosted simplicity gate](../validation/self-hosted-simplicity.md), [Self-hosted deployment baseline inventory](../validation/self-hosted-simplicity.md), [Self-hosted simplicity ledger](../validation/self-hosted-simplicity.md), [A7 scope discipline ledger](../validation/a7-scope.md), [Lightweight Sentry-compatible competitor watch](../market/competitor-watch.md), [Self-hosted observability architecture](../architecture/overview.md), [Build roadmap and validation sequence](../architecture/build-roadmap.md) |
+| Collection method and eBPF tradeoff | [Rust data collection and instrumentation](../capture/rust.md) |
+| Rust applications first | [Rust data collection and instrumentation](../capture/rust.md), [Rust stacktrace grouping and symbolication](../capture/rust.md), [Rust stacktrace grouping ledger](../capture/rust.md), [Technical implementation concept](../architecture/implementation-concept.md) |
+| AI-native observability | [AI-native observability and incident intelligence](../00-vision/ai-native-observability.md), [Causal reconstruction and agent safety](../architecture/causal-reconstruction.md) |
+| Flaky-test investigation | [CI failure context MVP](../capture/ci-and-flaky-tests.md), [Flaky test investigation and replay](../capture/ci-and-flaky-tests.md) |
+| Deploy/change/issue tracker context | [Deploy, change, and issue-tracker context](../capture/deploy-change-context.md), [Deploy/change context ledger](../capture/deploy-change-context.md), [Evidence bundle and open schema specification](../architecture/evidence-bundle-schema.md), [Correlation reliability on real telemetry gate](../capture/correlation.md), [A4 correlation reliability ledger](../capture/correlation.md) |
+| Agent and CLI execution tracing | [Agent and CLI execution tracing](../capture/agent-cli-tracing.md), [Agent and CLI OTel semantic-convention mapping](../capture/agent-cli-tracing.md), [Agent session tracing across real tools](../capture/agent-cli-tracing.md), [Agent session tracing ledger](../capture/agent-cli-tracing.md), [CLI trace overhead and redaction](../capture/agent-cli-tracing.md), [CLI trace safety ledger](../capture/agent-cli-tracing.md) |
+| Fixer and outcome loop | [Fixer component and outcome loop](fixer-boundary.md), [Fixer outcome ledger](fixer-boundary.md), [Evidence bundle and open schema specification](../architecture/evidence-bundle-schema.md), [Agent and CLI execution tracing](../capture/agent-cli-tracing.md), [Schema adoption and corpus moat gate](../validation/a3-schema-corpus.md) |
+| Agent-observability technical references | [Agent observability technical review](../reference/agent-observability-review.md), [Agent session tracing across real tools](../capture/agent-cli-tracing.md) |
+| Frontend collection and cross-tier correlation | [Frontend collection and cross-tier correlation](../capture/frontend.md), [Frontend capture safety ledger](../capture/frontend.md), [Correlation reliability on real telemetry gate](../capture/correlation.md), [A4 correlation reliability ledger](../capture/correlation.md), [Evidence bundle and open schema specification](../architecture/evidence-bundle-schema.md), [Storage benchmark prototype](../storage/benchmark-plan.md) |
+| Redaction/privacy/agent exposure safety | [Redaction pipeline and secret safety](../capture/redaction.md), [Redaction detector toolchain](../capture/redaction.md), [A6 redaction red-team ledger](../capture/redaction.md), [Production database evidence access gate](../capture/production-db-evidence.md), [Agent session tracing across real tools](../capture/agent-cli-tracing.md), [CLI trace overhead and redaction](../capture/agent-cli-tracing.md), [CLI trace safety ledger](../capture/agent-cli-tracing.md), [Frontend capture safety ledger](../capture/frontend.md), [Evidence bundle and open schema specification](../architecture/evidence-bundle-schema.md), [Frontend collection and cross-tier correlation](../capture/frontend.md), [Agent and CLI execution tracing](../capture/agent-cli-tracing.md) |
+| Evidence bundle and open schema | [Evidence bundle and open schema specification](../architecture/evidence-bundle-schema.md), [Schema adoption and corpus moat gate](../validation/a3-schema-corpus.md), [A3 schema adoption and corpus ledger](../validation/a3-schema-corpus.md), [Bundle-value evaluation](../validation/a1-bundle-value/bundle-value-evaluation.md), [Bundle-value seed corpus](../validation/a1-bundle-value/bundle-value-seed-corpus.md), [A1 task source freeze check](../validation/a1-bundle-value/a1-task-source-freeze-check.md), [Phase 0 telemetry overlay contract](../validation/a1-bundle-value/phase0-telemetry-overlay-contract.md), [Bundle-value Phase 0 runbook](../validation/a1-bundle-value/bundle-value-phase0-runbook.md), [A1 eval result ledger and model refresh](../validation/a1-bundle-value/a1-eval-result-ledger-and-model-refresh.md) |
+| Core architecture | [Self-hosted observability architecture](../architecture/overview.md), [Technical implementation concept](../architecture/implementation-concept.md) |
+| CLI/API/MCP philosophy | [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface.md), [Agent access surface safety ledger](agent-access-surface.md), [Self-hosted observability architecture](../architecture/overview.md), [Causal reconstruction and agent safety](../architecture/causal-reconstruction.md), [Technical implementation concept](../architecture/implementation-concept.md) |
+| Critical strategic questions | [AI-native observability and incident intelligence](../00-vision/ai-native-observability.md), this document |
+| Final implementation blueprint | [Technical implementation concept](../architecture/implementation-concept.md), [Evidence bundle and open schema specification](../architecture/evidence-bundle-schema.md), [Storage benchmark prototype (runnable)](../storage/benchmark-plan.md) |
 
 ## Key Decisions
 
@@ -146,115 +146,115 @@ be tested:
 Market/product gates:
 
 - A2 real-user demand beyond the operator, using the
-  [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
-  and [A2 interview evidence ledger](a2-interview-evidence-ledger.md).
+  [User interview and deployment intent gate](../validation/a2-user-demand.md)
+  and [A2 interview evidence ledger](../validation/a2-user-demand.md).
 - Business-model validation for hosted, fixer, enterprise ops, support/services,
   conversion, and paid-pilot seams, using the
-  [business model validation ledger](business-model-validation-ledger.md).
+  [business model validation ledger](../validation/business-model.md).
 - Repo-intent dependence and degraded-mode breadth, using
-  [Repo-intent dependence](repo-intent-dependence.md) and
-  [Repo-intent value ledger](repo-intent-value-ledger.md). Runtime-only bundles
+  [Repo-intent dependence](../validation/repo-intent.md) and
+  [Repo-intent value ledger](../validation/repo-intent.md). Runtime-only bundles
   must remain useful for teams without curated docs, decisions, or roadmap.
 - A3 schema/corpus moat, using the
-  [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
-  and [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md).
+  [Schema adoption and corpus moat gate](../validation/a3-schema-corpus.md)
+  and [A3 schema adoption and corpus ledger](../validation/a3-schema-corpus.md).
 
 Technical proof gates:
 
 - A5 stack-decision roll-up across storage speed/cost, metadata, ingest-log,
   setup, and integration rows, specified in the
-  [A5 stack decision ledger](a5-stack-decision-ledger.md). This ledger controls
+  [A5 stack decision ledger](stack-decision.md). This ledger controls
   when component benchmarks are allowed to become stack-default claims.
 
 - A7 scope-discipline roll-up across component inventory, dependency rows,
   feature intake, interface surfaces, and phase budgets, specified in the
-  [A7 scope discipline ledger](a7-scope-discipline-ledger.md). This ledger
+  [A7 scope discipline ledger](../validation/a7-scope.md). This ledger
   controls when roadmap breadth is allowed to enter active build scope.
 
 - Deterministic cross-signal correlation reliability on real telemetry,
   specified further in the
-  [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md)
+  [Correlation reliability on real telemetry gate](../capture/correlation.md)
   and made auditable by the
-  [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md).
+  [A4 correlation reliability ledger](../capture/correlation.md).
 
 1. GreptimeDB ingest-to-queryable freshness for mixed logs/traces/metrics/errors,
    specified further in
-   [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md).
+   [Storage freshness and bundle latency gate](../storage/freshness-and-latency.md).
 2. Evidence-bundle query latency under concurrent ingest, specified further in
-   [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md).
+   [Storage freshness and bundle latency gate](../storage/freshness-and-latency.md).
 3. GreptimeDB versus ClickHouse storage size and object-storage cost, specified
    further in
-   [Storage size and object cost gate](storage-size-and-object-cost-gate.md).
+   [Storage size and object cost gate](../storage/size-and-object-cost.md).
 4. Iggy replay and backpressure behavior versus local WAL and NATS/Redpanda,
    specified further in
-   [Ingest log replay and backpressure gate](ingest-log-replay-and-backpressure-gate.md).
+   [Ingest log replay and backpressure gate](../storage/streaming/ingest-log-replay-and-backpressure-gate.md).
 5. Sentry envelope compatibility across real SDKs, starting with the
-   [Sentry SDK fixture gate](sentry-sdk-fixture-compatibility.md) and made
+   [Sentry SDK fixture gate](../capture/sentry-ingest.md) and made
    claimable only through the
-   [Sentry SDK compatibility ledger](sentry-sdk-compatibility-ledger.md).
+   [Sentry SDK compatibility ledger](../capture/sentry-ingest.md).
 6. Phase 1 setup simplicity versus current Sentry, SigNoz, and OpenObserve
    baselines, specified further in the
-   [Self-hosted simplicity gate](self-hosted-simplicity-gate.md) and made
+   [Self-hosted simplicity gate](../validation/self-hosted-simplicity.md) and made
    claimable through the
-   [Self-hosted simplicity ledger](self-hosted-simplicity-ledger.md).
+   [Self-hosted simplicity ledger](../validation/self-hosted-simplicity.md).
 7. Rust stacktrace grouping stability across release/debug-info variants,
    specified as a proof gate in
-   [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md)
+   [Rust stacktrace grouping and symbolication](../capture/rust.md)
    and made claimable through the
-   [Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md).
+   [Rust stacktrace grouping ledger](../capture/rust.md).
 8. Agent fix quality with bounded Parallax bundles versus raw Sentry/CI context,
    with the first task-source selection specified in the
-   [Bundle-value seed corpus](bundle-value-seed-corpus.md), the no-cheat
+   [Bundle-value seed corpus](../validation/a1-bundle-value/bundle-value-seed-corpus.md), the no-cheat
    telemetry overlay specified in
-   [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md),
+   [Phase 0 telemetry overlay contract](../validation/a1-bundle-value/phase0-telemetry-overlay-contract.md),
    the first runnable pass specified in
-   [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md), and the
+   [Bundle-value Phase 0 runbook](../validation/a1-bundle-value/bundle-value-phase0-runbook.md), and the
    claim ledger specified in
-   [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md).
+   [A1 eval result ledger and model refresh](../validation/a1-bundle-value/a1-eval-result-ledger-and-model-refresh.md).
 9. Redaction quality for logs, events, attachments, database query output, and
-   agent prompt bundles; the [redaction pipeline](redaction-pipeline-and-secret-safety.md)
-   and [redaction detector toolchain](redaction-detector-toolchain.md) have veto
+   agent prompt bundles; the [redaction pipeline](../capture/redaction.md)
+   and [redaction detector toolchain](../capture/redaction.md) have veto
    power before agent exposure, with auditable results specified in the
-   [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md).
+   [A6 redaction red-team ledger](../capture/redaction.md).
 10. CLI trace capture overhead and secret redaction for args, env, config,
    stdout, and stderr, specified further in
-   [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) and
+   [CLI trace overhead and redaction](../capture/agent-cli-tracing.md) and
    made claimable through the
-   [CLI trace safety ledger](cli-trace-safety-ledger.md).
+   [CLI trace safety ledger](../capture/agent-cli-tracing.md).
 11. Agent-session capture value across real Codex, Claude Code, Amp, and
     OpenCode runs, specified further in
-    [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
+    [Agent session tracing across real tools](../capture/agent-cli-tracing.md)
     and made claimable through the
-    [Agent session tracing ledger](agent-session-tracing-ledger.md),
+    [Agent session tracing ledger](../capture/agent-cli-tracing.md),
     with OpenTelemetry GenAI/MCP/CLI normalization specified in
-    [Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md).
+    [Agent and CLI OTel semantic-convention mapping](../capture/agent-cli-tracing.md).
 12. Turso correctness, backup/restore, concurrency, migration, and fallback
     behavior for metadata, agent session state, CLI invocation state, outcomes,
     and audit records, specified further in
-    [Turso metadata production readiness](turso-metadata-production-readiness.md).
+    [Turso metadata production readiness](../storage/metadata/turso-metadata-production-readiness.md).
 13. CLI/HTTP/MCP projection equivalence and read-only MCP safety, specified
     further in
-    [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
+    [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface.md)
     and made claimable through the
-    [Agent access surface safety ledger](agent-access-surface-safety-ledger.md).
+    [Agent access surface safety ledger](agent-access-surface.md).
 14. Production database evidence access safety, specified further in
-    [Production database evidence access gate](production-database-evidence-access.md)
+    [Production database evidence access gate](../capture/production-db-evidence.md)
     and made claimable through the
-    [Production database evidence ledger](production-database-evidence-ledger.md).
+    [Production database evidence ledger](../capture/production-db-evidence.md).
 15. OTLP receiver conformance and direct-SDK/Collector/Rotel normalization
     equivalence, specified further in
-    [OTLP receiver conformance and Collector equivalence](otlp-receiver-conformance-and-collector-equivalence.md)
+    [OTLP receiver conformance and Collector equivalence](../capture/otlp.md)
     and made claimable through the
-    [OTLP conformance ledger](otlp-conformance-ledger.md).
+    [OTLP conformance ledger](../capture/otlp.md).
 16. Release/deploy/code-change/work-item context completeness and edge strength,
     specified further in
-    [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md)
+    [Deploy, change, and issue-tracker context](../capture/deploy-change-context.md)
     and made claimable through the
-    [Deploy/change context ledger](deploy-change-context-ledger.md).
+    [Deploy/change context ledger](../capture/deploy-change-context.md).
 17. Separate fixer outcome quality from PR creation, specified further in
-    [Fixer component and outcome loop](fixer-component-and-outcome-loop.md)
+    [Fixer component and outcome loop](fixer-boundary.md)
     and made claimable only through the
-    [Fixer outcome ledger](fixer-outcome-ledger.md).
+    [Fixer outcome ledger](fixer-boundary.md).
 
 ## First Prototype Gate
 
@@ -284,8 +284,8 @@ Acceptance criteria:
 - agent output cites evidence and says "inconclusive" when evidence is weak.
 - fixer or agent PR workflows write outcome records instead of treating opened
   pull requests as successful fixes; see the
-  [fixer component and outcome loop](fixer-component-and-outcome-loop.md) and
-  [fixer outcome ledger](fixer-outcome-ledger.md).
+  [fixer component and outcome loop](fixer-boundary.md) and
+  [fixer outcome ledger](fixer-boundary.md).
 
 ## Final Position
 

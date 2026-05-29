@@ -30,7 +30,7 @@ This note defines the contract:
 > first, and downgrade everything else to explicit medium/weak hypotheses.
 
 Results and product-claim status should be published through the
-[Deploy/change context ledger](deploy-change-context-ledger.md), not inferred
+[Deploy/change context ledger](deploy-change-context.md), not inferred
 from this design alone.
 
 ### Current Primary-Source Checks
@@ -286,20 +286,20 @@ Failure consequences:
 
 ### Relationship To Other Research
 
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md) defines the
   nodes, edges, source-field policy status, and redaction report fields this
   note tightens.
-- [Deploy/change context ledger](deploy-change-context-ledger.md) turns provider
+- [Deploy/change context ledger](deploy-change-context.md) turns provider
   ingestion, completeness, edge-strength, missing-evidence, and redaction runs
   into claim levels and allowed product wording.
-- [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md)
+- [Correlation reliability on real telemetry gate](correlation.md)
   already measures `release_context_rate` and `deploy_context_rate`; this note
   defines the ingestion and edge semantics behind those metrics.
-- [Technical implementation concept](technical-implementation-concept.md)
+- [Technical implementation concept](../architecture/implementation-concept.md)
   includes release/deploy context in the first useful loop.
-- [Fixer component and outcome loop](fixer-component-and-outcome-loop.md) later
+- [Fixer component and outcome loop](../decisions/fixer-boundary.md) later
   consumes PR/commit/deploy outcome records, but does not own deploy mutation.
-- [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
+- [Redaction pipeline and secret safety](redaction.md)
   has veto power over issue text and deploy logs before agent exposure.
 
 ### Bottom Line
@@ -322,9 +322,9 @@ Research date: 2026-05-25
 
 This ledger turns "what changed?" and release-regression context into auditable
 claim levels. It consumes the ingestion and edge-strength design in
-[Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md)
+[Deploy, change, and issue-tracker context](deploy-change-context.md)
 and the bundle node/edge contract in
-[Evidence bundle and open schema](evidence-bundle-and-schema.md).
+[Evidence bundle and open schema](../architecture/evidence-bundle-schema.md).
 
 Current status: **not measured**. Parallax has a deploy/change data model and
 edge-strength rules, but no real provider ingestion run, backfill run,
@@ -844,18 +844,18 @@ Avoid:
 
 ### Relationship To Other Research
 
-- [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md)
+- [Deploy, change, and issue-tracker context](deploy-change-context.md)
   defines ingestion and edge semantics this ledger turns into claim levels.
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md) defines the
   release, deploy, deployment-status, code-change, work-item, check-run,
   redaction report, and source-field policy fields this ledger audits.
-- [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md)
-  and [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md)
+- [Correlation reliability on real telemetry gate](correlation.md)
+  and [A4 correlation reliability ledger](correlation.md)
   measure whether these edges survive real telemetry.
-- [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
-  and [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) have veto
+- [Redaction pipeline and secret safety](redaction.md)
+  and [A6 redaction red-team ledger](redaction.md) have veto
   power over issue text, deploy logs, release notes, and PR text in bundles.
-- [Fixer component and outcome loop](fixer-component-and-outcome-loop.md)
+- [Fixer component and outcome loop](../decisions/fixer-boundary.md)
   consumes code-change and outcome records after the evidence path is proven.
 
 ### Bottom Line

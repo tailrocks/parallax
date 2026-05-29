@@ -17,15 +17,15 @@ Research date: 2026-05-25
 
 ### Purpose
 
-This note closes a gap the [bear case](risks-and-bear-case.md) flagged as a
+This note closes a gap the [bear case](../decisions/risks-and-bear-case.md) flagged as a
 top-severity, unsolved risk ("no monetization path for OSS self-hosted") and
 answers the prompt's "economic/business implications" ask and strategic question
-1 ("is this a company-sized opportunity?"). The [verdict](verdict.md) is GO on
+1 ("is this a company-sized opportunity?"). The [verdict](../decisions/go-no-go.md) is GO on
 the *product*; this asks whether there is a *business*, and how it can exist
 without betraying the operator's open-source and self-hosting ethos.
 
 It is opinionated and current (licensing models rechecked 2026-05-25).
-The companion [business model validation ledger](business-model-validation-ledger.md)
+The companion [business model validation ledger](business-model.md)
 defines the result rows and claim levels required before any of these seams can
 be called validated.
 
@@ -56,7 +56,7 @@ Primary sources checked on 2026-05-25: [Sentry Fair Source post](https://blog.se
 [OpenObserve pricing](https://openobserve.ai/pricing/),
 [OpenObserve homepage](https://openobserve.ai/),
 [OpenObserve enterprise features](https://openobserve.ai/docs/features/enterprise/),
-[OpenObserve AI/MCP Enterprise recheck](openobserve-ai-mcp-enterprise-recheck.md),
+[OpenObserve AI/MCP Enterprise recheck](../market/competitor-watch.md),
 and [GitLab pricing](https://about.gitlab.com/pricing/). Secondary market
 estimates such as private-company ARR breakdowns or card-spend vendor share
 should be labeled as leads only.
@@ -76,7 +76,7 @@ agent-contributable, and (b) capture value somewhere other than the open core �
 
 ### The Non-Negotiable: Do Not Gate The Agent/Evidence Layer
 
-The [verdict](verdict.md) and [market landscape](market-landscape.md) found that
+The [verdict](../decisions/go-no-go.md) and [market landscape](../market/landscape.md) found that
 the entire Parallax wedge is that the **open + self-hosted + agent-native +
 evidence-bundle** combination does not exist for free in one product — and that
 OpenObserve's specific weakness is that it **gates its AI SRE agent behind an
@@ -116,7 +116,7 @@ Four revenue seams, none of which gate the open evidence/agent differentiator:
    a coding agent, and opens PRs** is where autonomous value is captured. This is
    a natural commercial layer *on top of* the open engine — it monetizes the
    outcome (fixes) without gating the evidence. Clean open-core seam. The
-   [fixer component and outcome loop](fixer-component-and-outcome-loop.md)
+   [fixer component and outcome loop](../decisions/fixer-boundary.md)
    defines the technical contract and outcome records for this seam.
 3. **Enterprise operations add-ons** that are not the differentiator: SSO/SAML,
    fine-grained RBAC, multi-tenancy, audit export/compliance, long-retention
@@ -172,12 +172,12 @@ pricing, revenue, or tier claims.
 - The bear case's "no monetization path" risk is **narrowed, not eliminated**:
   there are legitimate seams (cloud, fixer, ops add-ons, support), but they all
   depend on adoption that is unproven. A2 now has a concrete
-  [user interview and deployment intent gate](user-interview-and-deployment-intent-gate.md);
+  [user interview and deployment intent gate](a2-user-demand.md);
   A3 now has a concrete
-  [schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md).
+  [schema adoption and corpus moat gate](a3-schema-corpus.md).
   Payment, paid-pilot, hosted, fixer, enterprise-ops, and support claims must
   pass through the
-  [business model validation ledger](business-model-validation-ledger.md).
+  [business model validation ledger](business-model.md).
 - It sharpens the boundary decision: the Parallax-stores / separate-fixer split
   is not only an architecture choice, it is the **primary value-capture seam** —
   another reason to keep that boundary clean.
@@ -189,31 +189,31 @@ pricing, revenue, or tier claims.
   disproven — fold back to the bear case's NO-GO triggers.
 - If adoption itself never materializes (bear case A2), monetization is moot.
   Validate that with the
-  [user interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
+  [user interview and deployment intent gate](a2-user-demand.md)
   before treating hosting, fixer, support, or enterprise ops as real seams.
 - If interviews or conversion experiments show adoption interest without any
   budget, payment, support, hosted, fixer, or enterprise-ops signal, record that
   as `claim_failed` or `claim_expired` in the
-  [business model validation ledger](business-model-validation-ledger.md) and
+  [business model validation ledger](business-model.md) and
   reopen the bear-case monetization risk.
 
 ### Relationship To Other Research
 
-- [Verdict](verdict.md) — company-sized question and the open-wedge thesis.
-- [Risks and the bear case](risks-and-bear-case.md) — the monetization and
+- [Verdict](../decisions/go-no-go.md) — company-sized question and the open-wedge thesis.
+- [Risks and the bear case](../decisions/risks-and-bear-case.md) — the monetization and
   distribution risks this narrows.
-- [Business model validation ledger](business-model-validation-ledger.md) — the
+- [Business model validation ledger](business-model.md) — the
   result contract and claim levels for turning plausible seams into measured
   value-capture claims.
-- [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
+- [User interview and deployment intent gate](a2-user-demand.md)
   — the A2 gate that determines whether adoption beyond the operator is real.
-- [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
+- [Schema adoption and corpus moat gate](a3-schema-corpus.md)
   — the A3 gate that determines whether schema/corpus gravity is real.
-- [Market landscape](market-landscape.md) — OpenObserve's agent-gating weakness
+- [Market landscape](../market/landscape.md) — OpenObserve's agent-gating weakness
   that Parallax must not replicate.
-- [Technical implementation concept](technical-implementation-concept.md) — the
+- [Technical implementation concept](../architecture/implementation-concept.md) — the
   Parallax/fixer boundary that doubles as the value-capture seam.
-- [Fixer component and outcome loop](fixer-component-and-outcome-loop.md) —
+- [Fixer component and outcome loop](../decisions/fixer-boundary.md) —
   separates the open evidence engine from the paid PR/fix orchestration seam.
 
 ### Bottom Line
@@ -238,7 +238,7 @@ Research date: 2026-05-25
 
 ### Purpose
 
-[Business model and economics](business-model-and-economics.md) identifies
+[Business model and economics](business-model.md) identifies
 plausible value-capture seams: hosted Parallax, the separate fixer, enterprise
 ops add-ons, support/services, and sponsorship. This ledger defines the missing
 result contract for proving those seams without turning a plausible business
@@ -259,9 +259,9 @@ This ledger is a business claim-control artifact, not a pricing page.
 | --- | --- | --- |
 | [Sentry FSL announcement](https://blog.sentry.io/introducing-the-functional-source-license-freedom-without-free-riding/) and [Sentry Fair Source post](https://blog.sentry.io/sentry-is-now-fair-source/) | Sentry uses source-available licensing to protect a SaaS business while still permitting internal use and delayed open-source release; Sentry reported 100k+ cloud customers and $100M+ annual revenue in the Fair Source post. | Cloud revenue is a proven observability pattern, but FSL/Fair Source conflicts with Parallax's open-source-first ethos. Copy the hosted convenience seam, not the source-available license. |
 | [Grafana licensing](https://grafana.com/licensing/) and [Grafana Enterprise license docs](https://grafana.com/docs/grafana/latest/administration/enterprise-licensing/) | Grafana keeps an open core while selling hosted and Enterprise capabilities such as premium plugins, advanced security, reporting, RBAC, and support through a license. | Ops and governance features are legitimate paid seams when they do not gate the core evidence engine. |
-| [OpenObserve pricing](https://openobserve.ai/pricing/), [homepage](https://openobserve.ai/), [enterprise features](https://openobserve.ai/docs/features/enterprise/), and [AI/MCP Enterprise recheck](openobserve-ai-mcp-enterprise-recheck.md) | OpenObserve monetizes cloud usage and enterprise/security/ops features, lists AI observability features in Enterprise contexts, and has source-conflicted public free Self-Hosted Enterprise allowance claims (`50 GB/day` in pricing/docs versus `200 GB/day` on the homepage FAQ). | OpenObserve reinforces the ops-feature seam, but Parallax should not copy AI/evidence gating because the open agent-context layer is the wedge. Treat self-hosted allowance figures as source-conflicted until reconciled. |
+| [OpenObserve pricing](https://openobserve.ai/pricing/), [homepage](https://openobserve.ai/), [enterprise features](https://openobserve.ai/docs/features/enterprise/), and [AI/MCP Enterprise recheck](../market/competitor-watch.md) | OpenObserve monetizes cloud usage and enterprise/security/ops features, lists AI observability features in Enterprise contexts, and has source-conflicted public free Self-Hosted Enterprise allowance claims (`50 GB/day` in pricing/docs versus `200 GB/day` on the homepage FAQ). | OpenObserve reinforces the ops-feature seam, but Parallax should not copy AI/evidence gating because the open agent-context layer is the wedge. Treat self-hosted allowance figures as source-conflicted until reconciled. |
 | [GitLab pricing](https://about.gitlab.com/pricing/) | GitLab publicly frames tiering around a buyer-based open-core model and supports GitLab.com, Self-Managed, and Dedicated offerings. | Open-core can scale, but tier boundaries need discipline; Parallax should tie paid tiers to buyer-owned ops/outcome problems, not the developer-facing evidence format. |
-| [A2 interview evidence ledger](a2-interview-evidence-ledger.md), [schema adoption/corpus ledger](a3-schema-adoption-corpus-ledger.md), [fixer component](fixer-component-and-outcome-loop.md), and [fixer outcome ledger](fixer-outcome-ledger.md) | The repo already has contracts for demand evidence, schema/corpus evidence, fixer boundaries, and fixer outcome rows. | Business validation should reuse those artifacts instead of inventing a parallel founder-memory process. |
+| [A2 interview evidence ledger](a2-user-demand.md), [schema adoption/corpus ledger](a3-schema-corpus.md), [fixer component](../decisions/fixer-boundary.md), and [fixer outcome ledger](../decisions/fixer-boundary.md) | The repo already has contracts for demand evidence, schema/corpus evidence, fixer boundaries, and fixer outcome rows. | Business validation should reuse those artifacts instead of inventing a parallel founder-memory process. |
 
 ### Claim Levels
 
@@ -487,22 +487,22 @@ Reopen this ledger when:
 
 ### Relationship To Other Research
 
-- [Business model and economics](business-model-and-economics.md) names the
+- [Business model and economics](business-model.md) names the
   value-capture seams; this ledger controls when they become measured claims.
-- [Risks and the bear case](risks-and-bear-case.md) keeps "no monetization path"
+- [Risks and the bear case](../decisions/risks-and-bear-case.md) keeps "no monetization path"
   open until this ledger records payment or sustainability evidence.
-- [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
-  and [A2 interview evidence ledger](a2-interview-evidence-ledger.md) provide the
+- [User interview and deployment intent gate](a2-user-demand.md)
+  and [A2 interview evidence ledger](a2-user-demand.md) provide the
   first source rows for deployment and budget evidence.
-- [Fixer component and outcome loop](fixer-component-and-outcome-loop.md)
+- [Fixer component and outcome loop](../decisions/fixer-boundary.md)
   defines the paid fixer seam.
-- [Fixer outcome ledger](fixer-outcome-ledger.md) defines the specific outcome
+- [Fixer outcome ledger](../decisions/fixer-boundary.md) defines the specific outcome
   rows needed before the fixer seam can be commercialized or counted as a
   validated value-capture claim.
-- [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
-  and [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md)
+- [Schema adoption and corpus moat gate](a3-schema-corpus.md)
+  and [A3 schema adoption and corpus ledger](a3-schema-corpus.md)
   determine whether adoption/corpus gravity exists before broad business claims.
-- [Self-hosted simplicity ledger](self-hosted-simplicity-ledger.md) provides the
+- [Self-hosted simplicity ledger](self-hosted-simplicity.md) provides the
   operational evidence that the free/open core is attractive enough to seed the
   funnel without hiding the differentiator behind a paid tier.
 

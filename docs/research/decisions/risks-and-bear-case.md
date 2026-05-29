@@ -12,7 +12,7 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 
 ## Purpose
 
-[verdict.md](verdict.md) says GO. This document is the deliberate counterweight:
+[verdict.md](go-no-go.md) says GO. This document is the deliberate counterweight:
 the strongest honest case that Parallax fails or should not be built, the
 load-bearing assumptions the GO depends on, and a risk register. The prompt
 demands aggressive challenge ("tell me what is naive, what is strategically
@@ -56,13 +56,13 @@ the earliest cheap test.
 
 | # | Assumption the GO rests on | Why it might be false | Earliest cheap falsification |
 | --- | --- | --- | --- |
-| A1 | A bounded evidence bundle makes an agent's fix materially better than raw Sentry/CI context. | Frontier models may already fix well from raw stack + repo; the bundle may add latency, not accuracy; stale public benchmarks can be contaminated. | Offline eval: same issues, agent with bundle vs raw context; measure fix-correctness delta with the [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md), then publish the [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md). Kill criterion 3 in the verdict. |
-| A2 | Enough teams want self-hosted + open + low-ops to form a user base. | The self-hosting segment may be small and structurally non-paying; paying teams pick SaaS. | Run the [user interview and deployment intent gate](user-interview-and-deployment-intent-gate.md): talk to 20 target teams, score concrete pain/deployment/data/budget commitments, and reject compliments as validation. |
-| A3 | The open schema + failure corpus becomes a compounding moat. | Moat needs adoption first; without users there is no corpus and no schema gravity (chicken-and-egg). | Run the [schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md) and [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md): publish machine-readable schema/conformance artifacts, track external integrations, and require labeled outcome data before claiming a corpus moat. |
-| A4 | Deterministic cross-signal correlation is reliable in real, messy telemetry. | Missing trace IDs, sampling, broken CORS propagation, clock skew make joins partial; "evidence graph" degrades to "time-window guess." | Run the [correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md) and publish the [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md): measure strong-edge prevalence, false strong edges, frontend continuation, async links, and missing-evidence reporting on real telemetry with per-anchor audit rows. |
-| A5 | The chosen stack holds (GreptimeDB speed/cost, Turso metadata correctness/backup path, Iggy where used). | GreptimeDB may miss freshness/cost gates; Turso Database is still beta/not production-ready even though Turso Cloud has separate durability/PITR guarantees; Iggy has no clustering. | The [A5 stack decision ledger](a5-stack-decision-ledger.md) rolls up the [storage benchmark prototype](storage-benchmark-prototype.md), storage freshness/cost gates, [metadata benchmark](metadata-store-benchmark-plan.md), [Turso production-readiness gate](turso-metadata-production-readiness.md), ingest-log gate, and [self-hosted simplicity ledger](self-hosted-simplicity-ledger.md) before any stack claim. |
-| A6 | Redaction can be made trustworthy enough to expose evidence to agents/third-party models. | One PII/secret leak in a bundle destroys the data-ownership value prop; frontend PII makes this harder. | Use the [redaction pipeline](redaction-pipeline-and-secret-safety.md), [detector toolchain](redaction-detector-toolchain.md), and [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md): default-deny source policy, seeded canaries, JSON/Markdown/output scans, scanner comparisons, usefulness audits, and real-data red-team before any agent exposure. |
-| A7 | The component scope is buildable by the team that exists. | The surface is very large; a small team risks many half-built layers. | Use the [A7 scope discipline ledger](a7-scope-discipline-ledger.md): every component, dependency, protocol, surface, and feature addition must fit the current phase budget before the tiny tier broadens beyond error + OTLP + grouping + one bundle + CLI/API. |
+| A1 | A bounded evidence bundle makes an agent's fix materially better than raw Sentry/CI context. | Frontier models may already fix well from raw stack + repo; the bundle may add latency, not accuracy; stale public benchmarks can be contaminated. | Offline eval: same issues, agent with bundle vs raw context; measure fix-correctness delta with the [Bundle-value Phase 0 runbook](../validation/a1-bundle-value/bundle-value-phase0-runbook.md), then publish the [A1 eval result ledger and model refresh](../validation/a1-bundle-value/a1-eval-result-ledger-and-model-refresh.md). Kill criterion 3 in the verdict. |
+| A2 | Enough teams want self-hosted + open + low-ops to form a user base. | The self-hosting segment may be small and structurally non-paying; paying teams pick SaaS. | Run the [user interview and deployment intent gate](../validation/a2-user-demand.md): talk to 20 target teams, score concrete pain/deployment/data/budget commitments, and reject compliments as validation. |
+| A3 | The open schema + failure corpus becomes a compounding moat. | Moat needs adoption first; without users there is no corpus and no schema gravity (chicken-and-egg). | Run the [schema adoption and corpus moat gate](../validation/a3-schema-corpus.md) and [A3 schema adoption and corpus ledger](../validation/a3-schema-corpus.md): publish machine-readable schema/conformance artifacts, track external integrations, and require labeled outcome data before claiming a corpus moat. |
+| A4 | Deterministic cross-signal correlation is reliable in real, messy telemetry. | Missing trace IDs, sampling, broken CORS propagation, clock skew make joins partial; "evidence graph" degrades to "time-window guess." | Run the [correlation reliability on real telemetry gate](../capture/correlation.md) and publish the [A4 correlation reliability ledger](../capture/correlation.md): measure strong-edge prevalence, false strong edges, frontend continuation, async links, and missing-evidence reporting on real telemetry with per-anchor audit rows. |
+| A5 | The chosen stack holds (GreptimeDB speed/cost, Turso metadata correctness/backup path, Iggy where used). | GreptimeDB may miss freshness/cost gates; Turso Database is still beta/not production-ready even though Turso Cloud has separate durability/PITR guarantees; Iggy has no clustering. | The [A5 stack decision ledger](stack-decision.md) rolls up the [storage benchmark prototype](../storage/benchmark-plan.md), storage freshness/cost gates, [metadata benchmark](../storage/metadata/metadata-store-benchmark-plan.md), [Turso production-readiness gate](../storage/metadata/turso-metadata-production-readiness.md), ingest-log gate, and [self-hosted simplicity ledger](../validation/self-hosted-simplicity.md) before any stack claim. |
+| A6 | Redaction can be made trustworthy enough to expose evidence to agents/third-party models. | One PII/secret leak in a bundle destroys the data-ownership value prop; frontend PII makes this harder. | Use the [redaction pipeline](../capture/redaction.md), [detector toolchain](../capture/redaction.md), and [A6 redaction red-team ledger](../capture/redaction.md): default-deny source policy, seeded canaries, JSON/Markdown/output scans, scanner comparisons, usefulness audits, and real-data red-team before any agent exposure. |
+| A7 | The component scope is buildable by the team that exists. | The surface is very large; a small team risks many half-built layers. | Use the [A7 scope discipline ledger](../validation/a7-scope.md): every component, dependency, protocol, surface, and feature addition must fit the current phase budget before the tiny tier broadens beyond error + OTLP + grouping + one bundle + CLI/API. |
 
 A1, A2, and A3 are the existential ones. A1 is product value; A2 is distribution;
 A3 is durability. Technical assumptions (A4–A7) are real but more testable and
@@ -75,16 +75,16 @@ and "Lik" are H/M/L.
 
 | Risk | Category | Sev | Lik | Early signal | Mitigation / link |
 | --- | --- | --- | --- | --- | --- |
-| Distribution failure — nobody adopts self-hosted OSS | Market | H | M | Low installs/stars/issues after launch; no inbound from non-operator teams | Lead with the painkiller (Sentry-compatible migration, one-binary tiny tier); make the [self-hosted simplicity ledger](self-hosted-simplicity-ledger.md) the launch proof; consider a hosted option later despite self-host ethos |
-| Wedge closes (OpenObserve free-tier agent / SigNoz Sentry ingest / lightweight Sentry-compatible challengers) | Market | H | M | Competitor release notes; [market-landscape](market-landscape.md), [open self-hosted competitor watch](open-self-hosted-competitor-watch.md), and [lightweight Sentry-compatible competitor watch](lightweight-sentry-compatible-competitor-watch.md) targets | Ship the *combination* fast; bank the schema/corpus before they close it; the verdict's competitive-window section |
-| No monetization path for OSS self-hosted | Business | H | M | Adoption without revenue; no one upgrades | Seams identified in [business model and economics](business-model-and-economics.md): hosting, the autonomous fixer, enterprise ops add-ons, support — none gating the open differentiator. Risk narrowed, not closed: all depend on adoption (A2/A3) and must be measured through the [business model validation ledger](business-model-validation-ledger.md). |
+| Distribution failure — nobody adopts self-hosted OSS | Market | H | M | Low installs/stars/issues after launch; no inbound from non-operator teams | Lead with the painkiller (Sentry-compatible migration, one-binary tiny tier); make the [self-hosted simplicity ledger](../validation/self-hosted-simplicity.md) the launch proof; consider a hosted option later despite self-host ethos |
+| Wedge closes (OpenObserve free-tier agent / SigNoz Sentry ingest / lightweight Sentry-compatible challengers) | Market | H | M | Competitor release notes; [market-landscape](../market/landscape.md), [open self-hosted competitor watch](../market/competitor-watch.md), and [lightweight Sentry-compatible competitor watch](../market/competitor-watch.md) targets | Ship the *combination* fast; bank the schema/corpus before they close it; the verdict's competitive-window section |
+| No monetization path for OSS self-hosted | Business | H | M | Adoption without revenue; no one upgrades | Seams identified in [business model and economics](../validation/business-model.md): hosting, the autonomous fixer, enterprise ops add-ons, support — none gating the open differentiator. Risk narrowed, not closed: all depend on adoption (A2/A3) and must be measured through the [business model validation ledger](../validation/business-model.md). |
 | Bundle adds no fix-quality lift over raw context | Technical/Product | H | M | A1 eval shows flat delta | Pivot value to retention/cost + audit if RCA lift is weak; the engine is still useful as cheap evidence store |
 | Causality overclaim erodes trust | Product/Safety | M | M | Users catch confident-wrong root causes | Ship confidence + missing-evidence + contradictions; never assert single root cause (already the design stance) |
-| Agent blast radius — a bad autonomous change | Safety | H | L–M | Any data-mutating fix; one revert incident | Read-only context first; no production mutation in core; scoped/audited tools; [agent safety](causal-reconstruction-and-agent-safety.md) |
-| Redaction leak of PII/secrets | Safety | H | L | Red-team finds leak; user report | Default-deny, redaction report per bundle, [redaction red-team gate](redaction-pipeline-and-secret-safety.md), and [A6 red-team ledger](a6-redaction-red-team-ledger.md) before any agent exposure |
+| Agent blast radius — a bad autonomous change | Safety | H | L–M | Any data-mutating fix; one revert incident | Read-only context first; no production mutation in core; scoped/audited tools; [agent safety](../architecture/causal-reconstruction.md) |
+| Redaction leak of PII/secrets | Safety | H | L | Red-team finds leak; user report | Default-deny, redaction report per bundle, [redaction red-team gate](../capture/redaction.md), and [A6 red-team ledger](../capture/redaction.md) before any agent exposure |
 | Scope sprawl — many half-built layers | Execution | H | M | Tiny tier not excellent before tier 2 work starts | Hard sequencing: tiny tier must win on simplicity before broadening; reject feature creep |
 | Storage/stack gate failure | Technical | M | M | Benchmark misses freshness/cost gates | Storage abstraction lets ClickHouse/Postgres/NATS substitute; benchmark has veto power |
-| Founder-market fit only (n=1) | Market | H | M | Value resonates only with operator's exact workflow | External user interviews; treat monorepo-intent dependence (Q13) as a narrowing risk, not a given; measure degraded mode through the [repo-intent value ledger](repo-intent-value-ledger.md) |
+| Founder-market fit only (n=1) | Market | H | M | Value resonates only with operator's exact workflow | External user interviews; treat monorepo-intent dependence (Q13) as a narrowing risk, not a given; measure degraded mode through the [repo-intent value ledger](../validation/repo-intent.md) |
 | Frontend cross-tier join unreliable in practice | Technical | M | M | A4 shows strong edges rare on real data | Treat frontend capture as best-effort; flag missing continuation; do not market guaranteed reconstruction |
 
 ## Where The Bear Case Is Weak (Why GO Still Holds)
@@ -124,51 +124,51 @@ If two or more trigger, reopen the verdict.
 - A1 eval showing a clear fix-quality lift on real issues.
 - A paying or sustaining channel that does not betray the self-hosted ethos.
   This must be recorded in the
-  [business model validation ledger](business-model-validation-ledger.md), not
+  [business model validation ledger](../validation/business-model.md), not
   inferred from adoption alone.
 - Storage/metadata benchmarks passing on real Parallax-shaped data.
 
 ## Relationship To Other Research
 
-- [Verdict](verdict.md) — the GO this stress-tests; its kill criteria and
+- [Verdict](go-no-go.md) — the GO this stress-tests; its kill criteria and
   competitive window are the spine of this register.
-- [Market landscape](market-landscape.md) and
-  [Open self-hosted competitor watch](open-self-hosted-competitor-watch.md) —
+- [Market landscape](../market/landscape.md) and
+  [Open self-hosted competitor watch](../market/competitor-watch.md) —
   the competitive-erosion risks.
-- [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
+- [Causal reconstruction and agent safety](../architecture/causal-reconstruction.md)
   — blast-radius and causality-overclaim mitigations.
-- [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
+- [Redaction pipeline and secret safety](../capture/redaction.md)
   — the A6 default-deny redaction architecture, bundle report, and red-team gate.
-- [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) — the public
+- [A6 redaction red-team ledger](../capture/redaction.md) — the public
   red-team result artifact for proving seeded canaries do not leak and useful
   evidence survives redaction.
-- [Storage benchmark prototype](storage-benchmark-prototype.md) and
-  [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md) — how the
+- [Storage benchmark prototype](../storage/benchmark-plan.md) and
+  [Metadata store benchmark plan and prototype](../storage/metadata/metadata-store-benchmark-plan.md) — how the
   stack assumptions get tested.
-- [A5 stack decision ledger](a5-stack-decision-ledger.md) — the umbrella result
+- [A5 stack decision ledger](stack-decision.md) — the umbrella result
   contract for turning storage, metadata, ingest-log, setup, and integration
   gates into explicit stack claim levels.
-- [A7 scope discipline ledger](a7-scope-discipline-ledger.md) — the scope
+- [A7 scope discipline ledger](../validation/a7-scope.md) — the scope
   control contract for keeping Phase 1 buildable before frontend, MCP, fixer,
   HA, and broad observability-suite work enter active scope.
-- [Sentry SDK compatibility ledger](sentry-sdk-compatibility-ledger.md) — the
+- [Sentry SDK compatibility ledger](../capture/sentry-ingest.md) — the
   claim-control contract for avoiding broad Sentry-compatible wording before
   real SDK fixture results exist.
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) — the A1/A3
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md) — the A1/A3
   value-and-moat claims.
-- [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
+- [A1 eval result ledger and model refresh](../validation/a1-bundle-value/a1-eval-result-ledger-and-model-refresh.md)
   — the A1 public result artifact, contamination tiers, and expiry policy.
-- [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
+- [Schema adoption and corpus moat gate](../validation/a3-schema-corpus.md)
   — the A3 adoption clock, conformance, and corpus thresholds.
-- [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md)
+- [A3 schema adoption and corpus ledger](../validation/a3-schema-corpus.md)
   — the A3 public event ledger for reviews, integrations, compatibility, and
   corpus-outcome rows.
-- [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
+- [User interview and deployment intent gate](../validation/a2-user-demand.md)
   — the A2 runbook for testing demand beyond the operator.
-- [A2 interview evidence ledger](a2-interview-evidence-ledger.md) — the
+- [A2 interview evidence ledger](../validation/a2-user-demand.md) — the
   redacted result artifact that keeps A2 auditable without committing raw
   private notes.
-- [Business model validation ledger](business-model-validation-ledger.md) — the
+- [Business model validation ledger](../validation/business-model.md) — the
   claim-control artifact for hosted, fixer, enterprise ops, support/services,
   conversion, paid-pilot, and no-budget contradiction evidence.
 

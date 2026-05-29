@@ -52,7 +52,7 @@ fallback trigger that would change the default.
 ## Current Benchmark Artifact Status
 
 The focused
-[storage benchmark artifact interpretation](storage-benchmark-artifact-interpretation.md)
+[storage benchmark artifact interpretation](../storage/benchmark-plan.md)
 consumes the separate benchmark agent's Runs 140-158 without rerunning them.
 Those artifacts are useful A5 inputs, but they do not create an A5 pass:
 
@@ -175,7 +175,7 @@ Each component result row should contain `run_id`, `component`, `candidate`,
 ### Storage Speed
 
 Owned by
-[Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md).
+[Storage freshness and bundle latency gate](../storage/freshness-and-latency.md).
 
 Required fields:
 
@@ -193,7 +193,7 @@ Required fields:
 ### Storage Cost
 
 Owned by
-[Storage size and object cost gate](storage-size-and-object-cost-gate.md).
+[Storage size and object cost gate](../storage/size-and-object-cost.md).
 
 Required fields:
 
@@ -212,8 +212,8 @@ Required fields:
 ### Metadata Store
 
 Owned by
-[Metadata store benchmark plan](metadata-store-benchmark-plan.md) and
-[Turso metadata production readiness](turso-metadata-production-readiness.md).
+[Metadata store benchmark plan](../storage/metadata/metadata-store-benchmark-plan.md) and
+[Turso metadata production readiness](../storage/metadata/turso-metadata-production-readiness.md).
 
 Required fields:
 
@@ -232,7 +232,7 @@ Required fields:
 ### Ingest Log
 
 Owned by
-[Ingest log replay and backpressure gate](ingest-log-replay-and-backpressure-gate.md).
+[Ingest log replay and backpressure gate](../storage/streaming/ingest-log-replay-and-backpressure-gate.md).
 
 Required fields:
 
@@ -252,7 +252,7 @@ Required fields:
 ### Setup And Operations
 
 Owned by
-[Self-hosted simplicity gate](self-hosted-simplicity-gate.md).
+[Self-hosted simplicity gate](../validation/self-hosted-simplicity.md).
 
 Required fields:
 
@@ -406,27 +406,27 @@ Expired results stay useful as history, but the decision row must move to
 
 - [Risks and bear case](risks-and-bear-case.md) owns assumption A5. This ledger
   supplies the result contract for that assumption.
-- [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md)
+- [Build roadmap and validation sequence](../architecture/build-roadmap.md)
   places A5 in Phase 2 after A1/A2 have earned the engineering investment.
-- [Storage benchmark prototype](storage-benchmark-prototype.md) owns the shared
+- [Storage benchmark prototype](../storage/benchmark-plan.md) owns the shared
   harness and candidate storage adapter model.
-- [Storage benchmark artifact interpretation](storage-benchmark-artifact-interpretation.md)
+- [Storage benchmark artifact interpretation](../storage/benchmark-plan.md)
   classifies the current `bench/four-way` local artifacts as `smoke_only`
   evidence and lists what remains unmeasured before A5 can pass.
-- [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md)
+- [Storage freshness and bundle latency gate](../storage/freshness-and-latency.md)
   owns speed/freshness rows.
-- [Storage size and object cost gate](storage-size-and-object-cost-gate.md)
+- [Storage size and object cost gate](../storage/size-and-object-cost.md)
   owns storage cost rows.
-- [Turso metadata production readiness](turso-metadata-production-readiness.md)
+- [Turso metadata production readiness](../storage/metadata/turso-metadata-production-readiness.md)
   owns metadata maturity and fallback rows.
-- [Ingest log replay and backpressure gate](ingest-log-replay-and-backpressure-gate.md)
+- [Ingest log replay and backpressure gate](../storage/streaming/ingest-log-replay-and-backpressure-gate.md)
   owns stream/WAL durability, replay, and backpressure rows.
-- [OTLP conformance ledger](otlp-conformance-ledger.md) owns direct-SDK,
+- [OTLP conformance ledger](../capture/otlp.md) owns direct-SDK,
   Collector, and Rotel integration claim rows.
-- [Self-hosted simplicity gate](self-hosted-simplicity-gate.md) owns setup and
-  operator-burden thresholds; [Self-hosted simplicity ledger](self-hosted-simplicity-ledger.md)
+- [Self-hosted simplicity gate](../validation/self-hosted-simplicity.md) owns setup and
+  operator-burden thresholds; [Self-hosted simplicity ledger](../validation/self-hosted-simplicity.md)
   owns the clean-VM result rows and tiny-tier wording.
-- [Strategic verdict and research coverage](strategic-verdict-and-research-coverage.md)
+- [Strategic verdict and research coverage](strategic-coverage.md)
   should treat this as the A5 stack-proof umbrella, not another component gate.
 
 ## Bottom Line

@@ -149,9 +149,9 @@ still `1.41.0`, and the GenAI agent, GenAI client, MCP, and CLI pages are still
 development-stage. That makes OTel useful ingestion vocabulary, not proof that
 real coding-agent tools emit a complete or stable trace. Parallax should map
 OTel spans through the
-[Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md)
+[Agent and CLI OTel semantic-convention mapping](agent-cli-tracing.md)
 and measure real Codex, Claude Code, Amp, and OpenCode adapters through the
-[agent session tracing ledger](agent-session-tracing-ledger.md).
+[agent session tracing ledger](agent-cli-tracing.md).
 
 Follow-up source check on 2026-05-25: OTel CLI spans require process exit code
 and define non-zero exit as an error, while command args are not default-safe
@@ -391,17 +391,17 @@ This makes Parallax useful for local tools, deploy tools, migration tools,
 developer CLIs, and agent-invoked commands.
 
 The default-on safety and performance gate for this model is specified in
-[CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md):
+[CLI trace overhead and redaction](agent-cli-tracing.md):
 structural capture is the default, redacted excerpts require canary and
 overhead tests, and full raw args/env/output are opt-in refs only.
-The [CLI trace safety ledger](cli-trace-safety-ledger.md) defines the dated
+The [CLI trace safety ledger](agent-cli-tracing.md) defines the dated
 result rows and claim levels required before Parallax can say structural CLI
 tracing is default-ready or redacted excerpts are safe.
 The OpenTelemetry-to-Parallax field mapping, semconv versioning, GenAI/MCP
 deduplication, and lossiness gates are specified in
-[Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md).
+[Agent and CLI OTel semantic-convention mapping](agent-cli-tracing.md).
 Real-tool adapter results and claim levels are specified in the
-[agent session tracing ledger](agent-session-tracing-ledger.md).
+[agent session tracing ledger](agent-cli-tracing.md).
 
 ### Why CLI Tracing Is Strategically Useful
 
@@ -473,9 +473,9 @@ Near-term sequence:
 4. Add real-tool agent-session ingestion surface by surface, with separate
    native OTel, hook/plugin, JSONL/stream JSON, export/API/ACP, wrapper, and
    raw-ref claims controlled by the real-tool adapter gate in
-   [Agent session tracing across real tools](agent-session-tracing-real-tools.md).
+   [Agent session tracing across real tools](agent-cli-tracing.md).
 5. Map OTel GenAI/MCP/CLI input through the
-   [Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md)
+   [Agent and CLI OTel semantic-convention mapping](agent-cli-tracing.md)
    instead of storing raw OTel spans as the durable schema.
 6. Use agent outcome feedback to improve evidence ranking and autonomy policy.
 
@@ -701,26 +701,26 @@ interoperability possible; it does not replace the evidence contract.
 
 ### Relationship To Other Research
 
-- [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) defines
+- [Agent and CLI execution tracing](agent-cli-tracing.md) defines
   why services, CI, CLI tools, and coding agents belong in one execution graph.
-- [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
+- [Agent session tracing across real tools](agent-cli-tracing.md)
   defines the Codex, Claude Code, Amp, and OpenCode adapter gate.
-- [Agent session tracing ledger](agent-session-tracing-ledger.md) defines the
+- [Agent session tracing ledger](agent-cli-tracing.md) defines the
   result rows and claim levels for per-tool adapter coverage, lossiness,
   redaction, overhead, and audit-value comparisons.
-- [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
+- [Agent access surface: CLI, HTTP API, and MCP](../decisions/agent-access-surface.md)
   defines the read-only MCP context surface and projection-equivalence rule.
-- [Agent access surface safety ledger](agent-access-surface-safety-ledger.md)
+- [Agent access surface safety ledger](../decisions/agent-access-surface.md)
   owns claim levels for MCP client fixtures, audit spans, redaction, and
   projection-equivalence results.
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md) defines the
   normalized nodes and audit edges that semconv-derived rows feed.
-- [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md)
+- [CLI trace overhead and redaction](agent-cli-tracing.md)
   owns the command args/env/stdout/stderr safety gate.
-- [CLI trace safety ledger](cli-trace-safety-ledger.md) owns the result rows and
+- [CLI trace safety ledger](agent-cli-tracing.md) owns the result rows and
   claim levels for default-ready CLI capture, redacted excerpts, raw refs,
   child-process policy, and projection safety.
-- [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md)
+- [OpenTelemetry protocol and context layer](otlp.md)
   owns the general OTLP receiver and Collector/Rotel compatibility story.
 
 ### Bottom Line
@@ -741,7 +741,7 @@ Research date: 2026-05-25
 ### Purpose
 
 This note closes proof gate 10 from
-[Strategic verdict and research coverage](strategic-verdict-and-research-coverage.md):
+[Strategic verdict and research coverage](../decisions/strategic-coverage.md):
 
 > Agent-session tracing value across real Codex, Claude Code, Amp, and OpenCode
 > runs.
@@ -757,7 +757,7 @@ execution audit, not as complete access to hidden reasoning or every raw token.*
 The useful product is "what context, tools, files, commands, permissions,
 patches, tests, and outcomes were visible", not "what the model secretly
 thought." The companion
-[agent session tracing ledger](agent-session-tracing-ledger.md) defines the
+[agent session tracing ledger](agent-cli-tracing.md) defines the
 result rows and claim levels required before this becomes product wording.
 
 ### Current Primary-Source Checks
@@ -797,7 +797,7 @@ depends on hidden model reasoning or unstable transcript formats for its core
 audit claim.**
 For tools that emit OpenTelemetry-shaped agent, MCP, or CLI spans, adapters must
 follow the
-[Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md)
+[Agent and CLI OTel semantic-convention mapping](agent-cli-tracing.md)
 so development-stage semantic conventions feed stable Parallax rows with
 explicit lossiness reports.
 
@@ -1053,13 +1053,13 @@ Default Parallax capture:
 - file paths by policy, patch hashes, and bounded redacted diffs only when
   enabled;
 - shell commands through the same policy as
-  [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md);
+  [CLI trace overhead and redaction](agent-cli-tracing.md);
 - full transcript/export/session JSON as raw refs only, with short TTL and audit;
 - model reasoning/thinking content excluded unless the source tool exposes it
   and the project explicitly allows it.
 
 Agent-visible bundles must pass the
-[redaction pipeline](redaction-pipeline-and-secret-safety.md) after normalization,
+[redaction pipeline](redaction.md) after normalization,
 not only trust the source tool's built-in masking. Synthetic and evaluation
 fixture runs must also carry a passing source-field policy row before any
 projection is claimable. The safe projection is the canonical bundle JSON with
@@ -1073,7 +1073,7 @@ The proof gate is not "can we ingest events?" It is "does normalized session
 tracing answer audit and improvement questions better than raw transcripts or
 no trace?"
 Results and claim status belong in the
-[agent session tracing ledger](agent-session-tracing-ledger.md), not in this
+[agent session tracing ledger](agent-cli-tracing.md), not in this
 design note.
 
 #### Dataset
@@ -1186,26 +1186,26 @@ observability interface.
 
 ### Relationship To Other Research
 
-- [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) defines
+- [Agent and CLI execution tracing](agent-cli-tracing.md) defines
   why coding-agent sessions are first-class execution evidence.
-- [Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md)
+- [Agent and CLI OTel semantic-convention mapping](agent-cli-tracing.md)
   defines how native OTel GenAI/MCP/CLI spans become stable Parallax rows without
   treating development-stage conventions as the storage schema.
-- [Agent session tracing ledger](agent-session-tracing-ledger.md) turns this
+- [Agent session tracing ledger](agent-cli-tracing.md) turns this
   adapter strategy into a tool/version matrix, coverage/lossiness rows,
   redaction results, audit-value comparisons, and claim levels.
-- [Agent observability technical review](agent-observability-technical-review.md)
+- [Agent observability technical review](../reference/agent-observability-review.md)
   surveys the broader LLM/agent observability market and technical patterns.
-- [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)
+- [Evidence bundle and open schema specification](../architecture/evidence-bundle-schema.md)
   defines the `agent_session`, `agent_action`, source-field policy status,
   redaction report, and audit edge targets.
-- [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md)
+- [CLI trace overhead and redaction](agent-cli-tracing.md)
   supplies the shell-command policy used inside agent sessions.
-- [CLI trace safety ledger](cli-trace-safety-ledger.md) supplies the claimable
+- [CLI trace safety ledger](agent-cli-tracing.md) supplies the claimable
   shell-command safety rows for agent-session runs that include CLI execution.
-- [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
+- [Redaction pipeline and secret safety](redaction.md)
   is the veto gate before agent-session evidence becomes agent-visible.
-- [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) is the nearest
+- [Bundle-value Phase 0 runbook](../validation/a1-bundle-value/bundle-value-phase0-runbook.md) is the nearest
   existing experiment shape for measuring whether better context improves agent
   output.
 
@@ -1227,7 +1227,7 @@ Research date: 2026-05-25
 
 ### Purpose
 
-[Agent session tracing across real tools](agent-session-tracing-real-tools.md)
+[Agent session tracing across real tools](agent-cli-tracing.md)
 defines the adapter strategy for Codex, Claude Code, Amp, and OpenCode. This
 ledger defines the result artifacts and claim levels required before Parallax
 can say it supports agent-session tracing across real coding agents.
@@ -1245,7 +1245,7 @@ The central rule:
 > structured-output validation, overhead rows, and an audit-value comparison.
 
 This ledger is separate from the
-[agent access surface safety ledger](agent-access-surface-safety-ledger.md): that
+[agent access surface safety ledger](../decisions/agent-access-surface.md): that
 ledger controls safe CLI/API/MCP context retrieval; this one controls ingestion
 and normalization of agent execution traces.
 
@@ -1959,23 +1959,23 @@ Mark affected claims `claim_expired` when:
 
 ### Relationship To Other Research
 
-- [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
+- [Agent session tracing across real tools](agent-cli-tracing.md)
   defines the adapter strategy this ledger measures.
-- [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) explains
+- [Agent and CLI execution tracing](agent-cli-tracing.md) explains
   why agent sessions belong in the execution graph.
-- [Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md)
+- [Agent and CLI OTel semantic-convention mapping](agent-cli-tracing.md)
   defines how native OTel GenAI/MCP/CLI spans map into stable Parallax rows.
-- [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md)
+- [CLI trace overhead and redaction](agent-cli-tracing.md)
   supplies the shell-command policy used inside agent sessions.
-- [CLI trace safety ledger](cli-trace-safety-ledger.md) supplies the
+- [CLI trace safety ledger](agent-cli-tracing.md) supplies the
   shell-command result rows, claim levels, and expiry rules consumed by
   agent-session runs.
-- [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) controls
+- [A6 redaction red-team ledger](redaction.md) controls
   whether agent-session evidence can become agent-visible.
-- [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)
+- [Evidence bundle and open schema specification](../architecture/evidence-bundle-schema.md)
   defines the target `agent_session`, `agent_action`, source-field policy
   status, redaction report, and audit edges.
-- [Fixer outcome ledger](fixer-outcome-ledger.md) consumes linked agent-session
+- [Fixer outcome ledger](../decisions/fixer-boundary.md) consumes linked agent-session
   rows when measuring fixer runs, PRs, checks, review, and recurrence outcomes.
 
 ### Bottom Line
@@ -1997,7 +1997,7 @@ Research date: 2026-05-25
 ### Purpose
 
 This note closes proof gate 9 from
-[Strategic verdict and research coverage](strategic-verdict-and-research-coverage.md):
+[Strategic verdict and research coverage](../decisions/strategic-coverage.md):
 
 > CLI trace capture overhead and secret redaction for args, env, config, stdout,
 > and stderr.
@@ -2012,7 +2012,7 @@ output excerpts require a separate proof gate. Full raw args, environment,
 stdout, stderr, and config content are opt-in raw refs with scoped access,
 audit, and retention limits.
 
-The companion [CLI trace safety ledger](cli-trace-safety-ledger.md) defines the
+The companion [CLI trace safety ledger](agent-cli-tracing.md) defines the
 result artifacts, row schemas, claim levels, and expiry rules required before
 these capture modes can become product claims.
 
@@ -2200,21 +2200,21 @@ failures without making secret exposure part of the default value proposition.
 
 ### Relationship To Other Research
 
-- [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) defines
+- [Agent and CLI execution tracing](agent-cli-tracing.md) defines
   the strategic reason and first-pass CLI trace model.
-- [Agent session tracing ledger](agent-session-tracing-ledger.md) consumes
+- [Agent session tracing ledger](agent-cli-tracing.md) consumes
   command/edit coverage, redaction, and overhead rows for shell commands inside
   coding-agent sessions.
-- [CLI trace safety ledger](cli-trace-safety-ledger.md) turns this proof gate
+- [CLI trace safety ledger](agent-cli-tracing.md) turns this proof gate
   into auditable workload runs, claim levels, projection checks, raw-ref policy
   rows, and expiry triggers.
-- [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
+- [Redaction pipeline and secret safety](redaction.md)
   defines the global default-deny redaction pipeline and red-team gate.
-- [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)
+- [Evidence bundle and open schema specification](../architecture/evidence-bundle-schema.md)
   must carry `redaction_report`, raw refs, and the CLI node fields used here.
-- [Technical implementation concept](technical-implementation-concept.md)
+- [Technical implementation concept](../architecture/implementation-concept.md)
   should treat this note as the CLI default-on safety gate.
-- [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) should not use
+- [Bundle-value Phase 0 runbook](../validation/a1-bundle-value/bundle-value-phase0-runbook.md) should not use
   raw CLI output in agent arms unless this gate has passed for that fixture set.
 
 ### Bottom Line
@@ -2232,7 +2232,7 @@ Research date: 2026-05-25
 
 ### Purpose
 
-[CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md)
+[CLI trace overhead and redaction](agent-cli-tracing.md)
 defines the proof gate for default-on CLI tracing. This ledger defines the
 result artifacts, row schemas, claim levels, and expiry rules required before
 Parallax can say CLI tracing is safe, low-overhead, or default-ready.
@@ -2250,7 +2250,7 @@ The central rule:
 > flush/shutdown cost, and agent-visible projections.
 
 This ledger is deliberately narrower than the
-[agent session tracing ledger](agent-session-tracing-ledger.md): this one owns
+[agent session tracing ledger](agent-cli-tracing.md): this one owns
 CLI invocation safety. Agent-session runs consume these rows for shell commands.
 
 ### Current Source Snapshot
@@ -2544,7 +2544,7 @@ commands at or above 100 ms, percentage overhead decides it.
 - `raw_ref` is never a default capture mode and is never dereferenced into
   agent-visible bundles by default.
 - Agent shell commands use this CLI policy plus the
-  [agent session tracing ledger](agent-session-tracing-ledger.md) redaction,
+  [agent session tracing ledger](agent-cli-tracing.md) redaction,
   lossiness, and audit-value rows.
 
 ### Product Wording
@@ -2595,24 +2595,24 @@ Mark affected claims `claim_expired` when:
 
 ### Relationship To Other Research
 
-- [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md)
+- [CLI trace overhead and redaction](agent-cli-tracing.md)
   defines the capture modes, field policy, canary matrix, and initial budgets
   this ledger turns into result rows.
-- [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md)
+- [Agent and CLI execution tracing](agent-cli-tracing.md)
   defines why CLI invocations belong in the execution graph.
-- [Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md)
+- [Agent and CLI OTel semantic-convention mapping](agent-cli-tracing.md)
   defines how OTel CLI/process/CI spans feed stable Parallax rows.
-- [Agent session tracing ledger](agent-session-tracing-ledger.md) consumes this
+- [Agent session tracing ledger](agent-cli-tracing.md) consumes this
   ledger's shell-command safety results for coding-agent sessions.
-- [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) remains the
+- [A6 redaction red-team ledger](redaction.md) remains the
   broader redaction veto; this ledger specializes it for CLI surfaces and
   overhead budgets.
-- [Redaction detector toolchain](redaction-detector-toolchain.md) defines the
+- [Redaction detector toolchain](redaction.md) defines the
   runtime and offline scanners used by CLI canary rows.
-- [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)
+- [Evidence bundle and open schema specification](../architecture/evidence-bundle-schema.md)
   must expose CLI redaction reports, raw-ref policy, overhead evidence, and
   missing-evidence warnings without leaking denied fields.
-- [Technical implementation concept](technical-implementation-concept.md)
+- [Technical implementation concept](../architecture/implementation-concept.md)
   should treat this ledger as the claim boundary for default-on CLI tracing.
 
 ### Bottom Line

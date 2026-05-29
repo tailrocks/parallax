@@ -22,7 +22,7 @@ to separate causes from symptoms.
 
 The proof gate for whether those strong edges are common enough in real telemetry
 is
-[Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md).
+[Correlation reliability on real telemetry gate](../capture/correlation.md).
 
 The product implication:
 
@@ -402,9 +402,9 @@ Recommended policy:
 
 The agent should see summaries and bounded result sets unless a human explicitly
 opens a wider view. The focused gate for this boundary is
-[Production database evidence access gate](production-database-evidence-access.md),
+[Production database evidence access gate](../capture/production-db-evidence.md),
 and the measurable claim contract is the
-[Production database evidence ledger](production-database-evidence-ledger.md).
+[Production database evidence ledger](../capture/production-db-evidence.md).
 
 ## MCP and API Safety
 
@@ -413,7 +413,7 @@ becomes a generic production-control plane. The MCP spec now has authorization
 and security guidance, and OpenTelemetry has MCP semantic conventions, which
 means Parallax can make the agent surface observable from day one. The focused
 CLI/API/MCP decision is captured in
-[Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md).
+[Agent access surface: CLI, HTTP API, and MCP](../decisions/agent-access-surface.md).
 
 Sources:
 
@@ -580,6 +580,6 @@ around a dashboard and not around an untrusted LLM reading unbounded telemetry.
 
 Related proof gate:
 
-- [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md)
+- [Correlation reliability on real telemetry gate](../capture/correlation.md)
   — A4 measurement plan for strong edges, false strong edges, frontend
   continuation, async links, and missing-evidence reporting.

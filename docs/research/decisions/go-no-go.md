@@ -70,7 +70,7 @@ Sources:
 
 - [Datadog Bits AI SRE investigation docs](https://docs.datadoghq.com/bits_ai/bits_ai_sre/investigate_issues/)
 - [Datadog Bits AI SRE eval platform](https://www.datadoghq.com/blog/engineering/bits-ai-eval-platform/)
-- [Datadog Bits AI eval loop note](datadog-bits-ai-eval-loop.md)
+- [Datadog Bits AI eval loop note](../validation/a1-bundle-value/datadog-bits-ai-eval-loop.md)
 - [Sentry Seer docs](https://docs.sentry.io/product/ai-in-sentry/seer/)
 - [Sentry Seer Issue Fix API](https://docs.sentry.io/api/seer/start-seer-issue-fix/)
 - [Grafana Assistant CLI docs](https://grafana.com/docs/grafana-cloud/machine-learning/assistant/guides/cli/)
@@ -135,7 +135,7 @@ Sources:
 - [MCP specification 2025-11-25](https://modelcontextprotocol.io/specification/2025-11-25)
 - [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)
 - [MCP security best practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)
-- [MCP power boundary competitor check](mcp-power-boundary-competitor-check.md)
+- [MCP power boundary competitor check](../market/competitor-watch.md)
 
 ## What Parallax Actually Solves
 
@@ -236,12 +236,12 @@ Current source checks for this competitive-window claim:
 - [OpenObserve AI SRE product page](https://openobserve.ai/ai-sre/)
 - [OpenObserve MCP docs](https://openobserve.ai/docs/integration/ai/mcp/)
 - [OpenObserve OTLP ingestion docs](https://openobserve.ai/docs/ingestion/logs/otlp/)
-- [OpenObserve AI/MCP Enterprise recheck](openobserve-ai-mcp-enterprise-recheck.md)
+- [OpenObserve AI/MCP Enterprise recheck](../market/competitor-watch.md)
 - [Self-hosted Sentry docs](https://develop.sentry.dev/self-hosted/)
 - [Sentry MCP service](https://mcp.sentry.dev/)
 - [Sentry MCP repository](https://github.com/getsentry/sentry-mcp)
 - [Sentry MCP 0.35.0 release](https://github.com/getsentry/sentry-mcp/releases/tag/0.35.0)
-- [Sentry MCP and Seer self-hosted recheck](sentry-mcp-seer-self-hosted-recheck.md)
+- [Sentry MCP and Seer self-hosted recheck](../market/competitor-watch.md)
 - [SigNoz agent-native observability](https://signoz.io/agent-native-observability/)
 - [SigNoz Postmortem Evidence Pack](https://signoz.io/docs/ai/use-cases/postmortem-evidence-pack/)
 - [SigNoz MCP server](https://signoz.io/docs/ai/signoz-mcp-server/)
@@ -299,7 +299,7 @@ Reverse this GO if prototype evidence shows any of the following:
    acceptable freshness, latency, and storage cost.
 3. Agent bundles do not improve diagnosis or patch quality over raw Sentry/CI
    context in controlled tests. The experiment that decides this is designed in
-   [Bundle-value evaluation](bundle-value-evaluation.md) — note its raw-telemetry-dump
+   [Bundle-value evaluation](../validation/a1-bundle-value/bundle-value-evaluation.md) — note its raw-telemetry-dump
    control: the bundle must beat a raw dump, not just repo-only context.
 4. CLI and agent-session capture produces too much sensitive data to redact
    safely, or tested adapters cannot preserve source/projection/lossiness
@@ -307,8 +307,8 @@ Reverse this GO if prototype evidence shows any of the following:
 5. MCP/API access cannot be made least-privilege, auditable, and read-only by
    default.
 6. The first deployment fails the
-   [self-hosted simplicity gate](self-hosted-simplicity-gate.md), cannot pass
-   the [self-hosted simplicity ledger](self-hosted-simplicity-ledger.md), and is
+   [self-hosted simplicity gate](../validation/self-hosted-simplicity.md), cannot pass
+   the [self-hosted simplicity ledger](../validation/self-hosted-simplicity.md), and is
    not meaningfully simpler than self-hosted Sentry.
 
 Until those kill criteria trigger, the correct decision is **GO**.

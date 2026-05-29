@@ -30,7 +30,7 @@ shapes everything downstream.
 > zero-instrumentation infrastructure signal, never as the primary error path.
 
 The current capture-feature/version matrix and fixture additions are tracked in
-[Rust capture fidelity recheck](rust-capture-fidelity-recheck.md). The important
+[Rust capture fidelity recheck](rust.md). The important
 update from that pass is that Parallax should not claim "Rust errors are
 agent-ready" from a single SDK init: Sentry feature flags, `tracing-error`
 `ErrorLayer`, OpenTelemetry log appender setup, backtrace environment, panic
@@ -179,7 +179,7 @@ Sources:
 
 - [std::backtrace](https://doc.rust-lang.org/std/backtrace/index.html)
 - [docs.rs/sentry](https://docs.rs/sentry/latest/sentry/)
-- [Rust capture fidelity recheck](rust-capture-fidelity-recheck.md)
+- [Rust capture fidelity recheck](rust.md)
 - [Sentry Rust platform docs](https://docs.sentry.io/platforms/rust/)
 - [docs.rs/tracing-error](https://docs.rs/tracing-error/latest/tracing_error/)
 - [docs.rs/tracing-opentelemetry](https://docs.rs/tracing-opentelemetry)
@@ -211,7 +211,7 @@ This fieldset is consistent with the Sentry-inspired event model already drafted
 in the architecture research, so a Sentry-compatible ingest layer maps onto it
 directly.
 
-Related: [self-hosted-observability-architecture.md](self-hosted-observability-architecture.md).
+Related: [self-hosted-observability-architecture.md](../architecture/overview.md).
 
 ### Debuginfo Policy (Mandatory)
 
@@ -230,9 +230,9 @@ Sources:
 - [std::backtrace](https://doc.rust-lang.org/std/backtrace/index.html)
 
 The focused grouping and symbolication gate is defined in
-[Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md),
+[Rust stacktrace grouping and symbolication](rust.md),
 and its claimable result rows are defined in the
-[Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md).
+[Rust stacktrace grouping ledger](rust.md).
 
 ### How This Fits the Parallax Pipeline
 
@@ -259,17 +259,17 @@ into the same storage — not a replacement for any of the in-process capture.
 1. Server-side symbolication: store split debuginfo keyed by build id, or require
    line-tables in the shipped binary? What is the retention cost of debuginfo?
    See the proof-gate policy in
-   [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md)
+   [Rust stacktrace grouping and symbolication](rust.md)
    and the claim ledger in
-   [Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md).
+   [Rust stacktrace grouping ledger](rust.md).
 2. How exactly do we stitch Sentry-style error events to OTLP `trace_id`/
    `span_id` so an error opens directly into its trace?
 3. Rust frame normalization for stable grouping across releases (hash suffixes,
    generics, monomorphization, panic location) — now specified as
    `rust-stack-v1` in
-   [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md)
+   [Rust stacktrace grouping and symbolication](rust.md)
    and measured through
-   [Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md).
+   [Rust stacktrace grouping ledger](rust.md).
 4. PII and secrets in span fields / error context: redaction defaults for
    self-hosted teams.
 5. Async backtraces: `tracing` span context (`SpanTrace`) is often more useful
@@ -483,7 +483,7 @@ Research date: 2026-05-25
 ### Purpose
 
 This note tightens proof gate #6 from
-[Strategic verdict and research coverage](strategic-verdict-and-research-coverage.md):
+[Strategic verdict and research coverage](../decisions/strategic-coverage.md):
 
 > Rust stacktrace grouping stability across release/debug-info variants.
 
@@ -495,7 +495,7 @@ The v0 target is not Sentry grouping parity. The target is a deterministic
 `rust-stack-v1` fingerprint that keeps the same logical Rust bug grouped across
 rebuilds and debuginfo layouts, while recording enough grouping material to
 audit false splits and false merges later. The companion
-[Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md) defines
+[Rust stacktrace grouping ledger](rust.md) defines
 the result rows and claim levels required before this becomes a product claim.
 
 ### Current Primary-Source Checks
@@ -515,7 +515,7 @@ the result rows and claim levels required before this becomes a product claim.
 | [Sentry Symbolicator](https://getsentry.github.io/symbolicator/) and [lookup strategy](https://getsentry.github.io/symbolicator/advanced/symbol-lookup/) | Symbolicator resolves function names, file locations, and source context in native and JavaScript stack traces. Its lookup flow computes code/debug IDs, searches sources, chooses the best file, and treats debug information, symbol tables, unwind data, and source bundles as different evidence qualities. |
 | [Symbolicator system architecture](https://getsentry.github.io/symbolicator/advanced/system-architecture/) and [source bundles](https://getsentry.github.io/symbolicator/advanced/source-bundles/) | Symbolicator ranks debug/unwind files above symbol-table fallbacks, caches downloaded objects and derived symbol caches, and source bundles are ZIP archives with a manifest containing code ID, debug ID, object name, architecture, and original source paths. Parallax should record symbol source/cache/provenance and protect source paths/snippets as sensitive source-derived fields. |
 | [sentry Rust crate 0.48.2](https://docs.rs/sentry/0.48.2/sentry/) and [feature flags](https://docs.rs/crate/sentry/0.48.2/features) | The current Rust SDK default features include `backtrace`, `contexts`, `panic`, `transport`, `debug-images`, and release health. Optional `anyhow`, `tracing`, and OpenTelemetry integrations require explicit features/setup. |
-| [Rust capture fidelity recheck](rust-capture-fidelity-recheck.md) | Current capture pass pins `tracing` `0.1.44`, `tracing-error` `0.2.1`, `tracing-opentelemetry` `0.33.0`, `opentelemetry`/`opentelemetry-otlp`/`opentelemetry-appender-tracing` `0.32.0`, `anyhow` `1.0.102`, `eyre` `0.6.12`, and `color-eyre` `0.6.5`; it also defines missing-layer and panic-strategy negative fixtures. |
+| [Rust capture fidelity recheck](rust.md) | Current capture pass pins `tracing` `0.1.44`, `tracing-error` `0.2.1`, `tracing-opentelemetry` `0.33.0`, `opentelemetry`/`opentelemetry-otlp`/`opentelemetry-appender-tracing` `0.32.0`, `anyhow` `1.0.102`, `eyre` `0.6.12`, and `color-eyre` `0.6.5`; it also defines missing-layer and panic-strategy negative fixtures. |
 | [sentry-panic 0.48.2](https://docs.rs/sentry-panic/0.48.2/sentry_panic/), [sentry-backtrace 0.48.2](https://docs.rs/sentry-backtrace/0.48.2/sentry_backtrace/), and [sentry-debug-images 0.48.2](https://docs.rs/sentry-debug-images/0.48.2/sentry_debug_images/) | The panic integration installs a panic handler and forwards to the prior hook; the backtrace crate converts and processes stacktraces; the debug-images integration attaches loaded-library metadata to events. Parallax fixtures must prove which integration produced each signal instead of treating "Sentry Rust event" as one opaque capture path. |
 | [sentry-tracing 0.48.2](https://docs.rs/sentry-tracing/0.48.2/sentry_tracing/) | `tracing` error events can become Sentry events, breadcrumbs, logs, and spans; structured fields can become context fields or tags. Spans and breadcrumbs give causal context, but they should support grouping rather than replace physical stack identity. |
 | [tracing-error](https://docs.rs/tracing-error/latest/tracing_error/) | `SpanTrace` captures logical span context at the error site. It is orthogonal to a call-stack backtrace and is especially useful across async boundaries. |
@@ -740,7 +740,7 @@ This proof gate is closed only when:
   the original `rust-stack-v1` issue assignment.
 
 Results must be published through the
-[Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md); otherwise
+[Rust stacktrace grouping ledger](rust.md); otherwise
 the claim remains `not_measured`.
 
 ### Schema Additions
@@ -772,21 +772,21 @@ The normalized error-event model should add:
 
 ### Relationship To Other Research
 
-- [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md)
+- [Rust data collection and instrumentation](rust.md)
   defines why in-process Rust error capture and debuginfo are mandatory.
-- [Sentry-compatible ingestion](sentry-compatible-ingestion.md) defines the
+- [Sentry-compatible ingestion](sentry-ingest.md) defines the
   envelope/event subset and first deterministic grouping path.
-- [Sentry SDK fixture compatibility gate](sentry-sdk-fixture-compatibility.md)
+- [Sentry SDK fixture compatibility gate](sentry-ingest.md)
   supplies the SDK-generated fixture harness this gate should extend.
-- [Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md) turns
+- [Rust stacktrace grouping ledger](rust.md) turns
   this gate's fixture matrix into claim levels, result rows, refresh triggers,
   and product wording.
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) should expose
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md) should expose
   `grouping_confidence`, symbolication warnings, and redaction status to agents.
-- [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
+- [Redaction pipeline and secret safety](redaction.md)
   still has veto power over stack locals, breadcrumbs, tags, and span fields.
-- [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md)
-  and [A1 eval result ledger](a1-eval-result-ledger-and-model-refresh.md)
+- [Phase 0 telemetry overlay contract](../validation/a1-bundle-value/phase0-telemetry-overlay-contract.md)
+  and [A1 eval result ledger](../validation/a1-bundle-value/a1-eval-result-ledger-and-model-refresh.md)
   define the source-field isolation policy that decides whether fixture-derived
   frame/source/context fields can appear in agent-visible bundles at all.
 
@@ -810,7 +810,7 @@ Research date: 2026-05-25
 
 ### Purpose
 
-[Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md)
+[Rust stacktrace grouping and symbolication](rust.md)
 defines the `rust-stack-v1` grouping design, debuginfo policy, symbolication
 status fields, and fixture matrix. This ledger defines the result artifacts and
 claim levels required before Parallax can say Rust grouping is deterministic,
@@ -830,7 +830,7 @@ The central rule:
 > grouping-version stability.
 
 This ledger is narrower than the
-[Sentry SDK compatibility ledger](sentry-sdk-compatibility-ledger.md): Sentry
+[Sentry SDK compatibility ledger](sentry-ingest.md): Sentry
 Rust envelopes can parse and normalize before Rust grouping is proven.
 
 ### Current Source Snapshot
@@ -850,7 +850,7 @@ Rust envelopes can parse and normalize before Rust grouping is proven.
 | [Sentry Symbolicator](https://getsentry.github.io/symbolicator/), [lookup strategy](https://getsentry.github.io/symbolicator/advanced/symbol-lookup/), and [system architecture](https://getsentry.github.io/symbolicator/advanced/system-architecture/) | Symbolicator resolves function names, file locations, and source context; it computes code/debug identifiers, looks up files across sources, ranks debug/unwind files over symbol-table fallbacks, and caches downloaded objects plus derived symbol caches. | Ledger rows need symbol source, matched-file provenance, quality ranking, and cache/source status so agents can tell full evidence from fallback evidence. |
 | [Symbolicator source bundles](https://getsentry.github.io/symbolicator/advanced/source-bundles/) | Source bundles are ZIP archives with manifests containing code ID, debug ID, object name, architecture, and original source paths. | Source snippets and paths are source-derived evidence; they require source-field policy checks and redaction before agent-visible projection. |
 | [sentry Rust crate 0.48.2](https://docs.rs/sentry/0.48.2/sentry/) and [feature flags](https://docs.rs/crate/sentry/0.48.2/features) | Docs.rs currently resolves the explicit crate page to `0.48.2`; default features include backtrace, contexts, panic capture, transport, debug-image metadata, and release health. | The first fixture target remains current Sentry Rust SDK panic/error envelopes, but runs must record exact feature flags because `tracing`, `anyhow`, and OpenTelemetry are opt-in. |
-| [Rust capture fidelity recheck](rust-capture-fidelity-recheck.md) | Current capture pass pins the broader Rust capture layer: `tracing` `0.1.44`, `tracing-error` `0.2.1`, `tracing-opentelemetry` `0.33.0`, `opentelemetry`/`opentelemetry-otlp`/`opentelemetry-appender-tracing` `0.32.0`, `anyhow` `1.0.102`, `eyre` `0.6.12`, and `color-eyre` `0.6.5`. | Grouping claims need capture-layer version rows too; a Sentry envelope alone does not prove span traces, OTLP logs, or `anyhow`/`eyre` chains. |
+| [Rust capture fidelity recheck](rust.md) | Current capture pass pins the broader Rust capture layer: `tracing` `0.1.44`, `tracing-error` `0.2.1`, `tracing-opentelemetry` `0.33.0`, `opentelemetry`/`opentelemetry-otlp`/`opentelemetry-appender-tracing` `0.32.0`, `anyhow` `1.0.102`, `eyre` `0.6.12`, and `color-eyre` `0.6.5`. | Grouping claims need capture-layer version rows too; a Sentry envelope alone does not prove span traces, OTLP logs, or `anyhow`/`eyre` chains. |
 | [sentry-panic 0.48.2](https://docs.rs/sentry-panic/0.48.2/sentry_panic/), [sentry-backtrace 0.48.2](https://docs.rs/sentry-backtrace/0.48.2/sentry_backtrace/), and [sentry-debug-images 0.48.2](https://docs.rs/sentry-debug-images/0.48.2/sentry_debug_images/) | The subcrates separately install a panic handler, convert/process stacktraces, and attach loaded-library metadata. | Result rows must identify which capture integration produced panic, stack, and loaded-image evidence; one SDK envelope is not enough proof. |
 
 ### Claim Levels
@@ -1272,17 +1272,17 @@ Mark affected claims `claim_expired` when:
 
 ### Relationship To Other Research
 
-- [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md)
+- [Rust stacktrace grouping and symbolication](rust.md)
   defines the `rust-stack-v1` design this ledger measures.
-- [Sentry SDK fixture compatibility gate](sentry-sdk-fixture-compatibility.md)
+- [Sentry SDK fixture compatibility gate](sentry-ingest.md)
   supplies the Rust SDK envelope fixtures extended by this ledger.
-- [Sentry SDK compatibility ledger](sentry-sdk-compatibility-ledger.md) consumes
+- [Sentry SDK compatibility ledger](sentry-ingest.md) consumes
   this ledger for the L3 `rust_grouping_stable` compatibility subclaim.
-- [Sentry-compatible ingestion](sentry-compatible-ingestion.md) defines where
+- [Sentry-compatible ingestion](sentry-ingest.md) defines where
   grouping sits in the ingest pipeline.
-- [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md)
+- [Rust data collection and instrumentation](rust.md)
   defines why Rust in-process capture and debuginfo policy are mandatory.
-- [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) controls
+- [A6 redaction red-team ledger](redaction.md) controls
   whether stack, breadcrumb, tag, and span context can enter agent-visible
   bundles.
 

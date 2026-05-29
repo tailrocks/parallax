@@ -8,7 +8,7 @@ Research date: 2026-05-25
 
 This note turns [Bundle-value evaluation](bundle-value-evaluation.md) into a
 cheap first runbook for proof gate #7 from
-[Strategic verdict and research coverage](strategic-verdict-and-research-coverage.md):
+[Strategic verdict and research coverage](../../decisions/strategic-coverage.md):
 
 > Agent fix quality with bounded Parallax bundles versus raw Sentry/CI context.
 
@@ -243,7 +243,7 @@ Do not commit private raw telemetry or secrets. Commit synthetic fixtures,
 redacted canonical JSON, projection manifests, redacted Markdown, hashes,
 manifests, and result summaries. Put private raw artifacts behind the same
 raw-access policy described in
-[Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md).
+[Redaction pipeline and secret safety](../../capture/redaction.md).
 
 ## Relationship To Other Research
 
@@ -260,13 +260,13 @@ raw-access policy described in
 - [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
   defines the committed result ledger, model snapshot, contamination tiers, and
   refresh triggers that keep A1 claims current.
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
+- [Evidence bundle and open schema](../../architecture/evidence-bundle-schema.md) defines the
   artifact Arm C must use.
-- [Risks and bear case](risks-and-bear-case.md) names A1 as existential; this is
+- [Risks and bear case](../../decisions/risks-and-bear-case.md) names A1 as existential; this is
   the cheapest falsification path.
-- [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md)
+- [Build roadmap and validation sequence](../../architecture/build-roadmap.md)
   puts this in Phase 0 before deep storage work.
-- [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
+- [Redaction pipeline and secret safety](../../capture/redaction.md)
   governs all raw telemetry and agent-visible artifacts.
 
 ## Bottom Line

@@ -6,11 +6,11 @@ Research date: 2026-05-25
 
 ## Purpose
 
-The [technical implementation concept](technical-implementation-concept.md) says
+The [technical implementation concept](implementation-concept.md) says
 *what* to build. This says *in what order*, and the order is chosen to **kill the
 project as cheaply as possible** if it is going to die. It synthesizes the
-[verdict](verdict.md), the [bear case](risks-and-bear-case.md), the
-[bundle-value evaluation](bundle-value-evaluation.md), and the benchmark specs
+[verdict](../decisions/go-no-go.md), the [bear case](../decisions/risks-and-bear-case.md), the
+[bundle-value evaluation](../validation/a1-bundle-value/bundle-value-evaluation.md), and the benchmark specs
 into one de-risking sequence with explicit go/no-go gates.
 
 The governing principle, taken straight from the bear case: **validate the
@@ -26,7 +26,7 @@ You do **not** need the Parallax engine to test Parallax's core claim.
 A1 ("a bundle helps an agent fix better than raw context") can be falsified in
 days with a **hand-assembled bundle**: take a handful of real incidents, manually
 build the evidence bundle a finished Parallax *would* produce, and run the
-[bundle-value eval](bundle-value-evaluation.md) arms (repo-only vs raw-dump vs
+[bundle-value eval](../validation/a1-bundle-value/bundle-value-evaluation.md) arms (repo-only vs raw-dump vs
 hand-bundle) against a coding agent. If a hand-built bundle does not beat a raw
 telemetry dump, no amount of GreptimeDB tuning will save the product. This is
 the cheapest possible test of the most important assumption — do it first.
@@ -37,29 +37,29 @@ infrastructure.
 
 ## Phases And Gates
 
-Each phase has an exit gate tied to a [bear-case](risks-and-bear-case.md)
+Each phase has an exit gate tied to a [bear-case](../decisions/risks-and-bear-case.md)
 assumption. Failing a gate sends you back, not forward.
 
 ### Phase 0 — Validate the killers (days, ~no build)
 
 - Hand-assemble evidence bundles for 10–12 seed tasks selected through the
-  [bundle-value seed corpus](bundle-value-seed-corpus.md): current executable
+  [bundle-value seed corpus](../validation/a1-bundle-value/bundle-value-seed-corpus.md): current executable
   SWE-style issue/fix/test tasks plus generated Parallax telemetry overlays,
   with operator/public incidents only when they pass the same gates. Generate
   those overlays through the
-  [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md) so
+  [Phase 0 telemetry overlay contract](../validation/a1-bundle-value/phase0-telemetry-overlay-contract.md) so
   raw-dump and bundle arms share the same frozen evidence, then publish results
   through the
-  [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md).
+  [A1 eval result ledger and model refresh](../validation/a1-bundle-value/a1-eval-result-ledger-and-model-refresh.md).
 - Run the bundle-value eval (arms A/B/C) with these manual bundles, ≥2 models.
 - Interview ~20 target teams across the A2 slices: would they deploy? would they
   pay or sustain it? what is their actual debugging pain? Use the
-  [user interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
-  and [A2 interview evidence ledger](a2-interview-evidence-ledger.md) so the
+  [user interview and deployment intent gate](../validation/a2-user-demand.md)
+  and [A2 interview evidence ledger](../validation/a2-user-demand.md) so the
   result is scored by past behavior, redacted evidence rows, and concrete
   commitments, not compliments. Any budget, support, hosted, fixer, or
   enterprise-ops signal also feeds the
-  [business model validation ledger](business-model-validation-ledger.md).
+  [business model validation ledger](../validation/business-model.md).
 - **Gate:** hand-bundle beats raw-dump on fix quality (A1) **and** ≥a handful of
   teams would genuinely deploy (A2). If both fail, **stop or pivot** — this is the
   cheapest NO-GO and the most valuable possible outcome to learn now.
@@ -70,9 +70,9 @@ Build only enough to generate the bundle automatically and repeatably:
 
 - Sentry-envelope + OTLP ingest (subset), deterministic Rust-focused grouping,
   with compatibility claims controlled by the
-  [Sentry SDK compatibility ledger](sentry-sdk-compatibility-ledger.md).
+  [Sentry SDK compatibility ledger](../capture/sentry-ingest.md).
 - Direct-SDK and Collector OTLP claim levels controlled by the
-  [OTLP conformance ledger](otlp-conformance-ledger.md).
+  [OTLP conformance ledger](../capture/otlp.md).
 - Same-trace correlation → one real `issue context` bundle.
 - Columnar storage adapter with ClickHouse and GreptimeDB profiles, Turso
   metadata, local WAL, single binary.
@@ -80,20 +80,20 @@ Build only enough to generate the bundle automatically and repeatably:
 - **Gate:** the auto-generated bundle reproduces the Phase-0 hand-bundle quality
   (re-run A1 on real pipeline output); tiny-tier setup is meaningfully simpler
   than self-hosted Sentry (<=15 min) under the
-  [self-hosted simplicity gate](self-hosted-simplicity-gate.md). This is the
+  [self-hosted simplicity gate](../validation/self-hosted-simplicity.md). This is the
   "simpler than Sentry" proof.
 
 ### Phase 2 — Prove the engine and start the moat clock
 
-- Run the [storage benchmark prototype](storage-benchmark-prototype.md)
+- Run the [storage benchmark prototype](../storage/benchmark-plan.md)
   (GreptimeDB vs ClickHouse) — now justified, because bundles have proven value.
-- Validate [retention cost](retention-cost-model.md) on real data; pick the
+- Validate [retention cost](../storage/size-and-object-cost.md) on real data; pick the
   object store (R2/B2 vs S3 per the egress finding).
 - Redaction red-team (A6) before any third-party-model exposure.
-- Publish the [open evidence schema](evidence-bundle-and-schema.md) with the
+- Publish the [open evidence schema](evidence-bundle-schema.md) with the
   machine-readable artifacts and conformance suite required by the
-  [schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
-  and [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md)
+  [schema adoption and corpus moat gate](../validation/a3-schema-corpus.md)
+  and [A3 schema adoption and corpus ledger](../validation/a3-schema-corpus.md)
   → starts the A3 adoption clock.
 - **Gate:** storage gates pass (freshness/latency/cost) or ClickHouse substitutes;
   redaction leak rate acceptable.
@@ -102,19 +102,19 @@ Build only enough to generate the bundle automatically and repeatably:
 
 - Tier-2 topology (split ingest/workers, object storage, optional Iggy
   single-node; NATS/Redpanda reserved for Tier-3 clustering per
-  [messaging](messaging-and-ingestion-layer.md)).
+  [messaging](../storage/streaming/messaging-and-ingestion-layer.md)).
 - Add the read-only MCP adapter specified in
-  [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md).
+  [Agent access surface: CLI, HTTP API, and MCP](../decisions/agent-access-surface.md).
 - Add CLI-invocation tracing only after the
-  [CLI trace safety ledger](cli-trace-safety-ledger.md) passes the relevant
+  [CLI trace safety ledger](../capture/agent-cli-tracing.md) passes the relevant
   capture/redaction/overhead level.
 - Add coding-agent session tracing surface by surface, not as one generic
   feature: Claude OTel and `stream-json`, Codex hooks and `exec --json` JSONL,
   Amp plugins and streaming JSON, and OpenCode run JSON/export/plugin/server/API
   and ACP all require separate rows in the
-  [Agent session tracing ledger](agent-session-tracing-ledger.md).
+  [Agent session tracing ledger](../capture/agent-cli-tracing.md).
 - Add frontend collection after the privacy and cross-tier gates in
-  [frontend collection](frontend-collection-and-cross-tier-correlation.md).
+  [frontend collection](../capture/frontend.md).
 - **Gate:** scale-out changes topology, not the event/bundle contract; no agent
   tracing wording goes beyond the exact adapter/version/config claim level the
   ledger has passed.
@@ -122,13 +122,13 @@ Build only enough to generate the bundle automatically and repeatably:
 ### Phase 4 — Value capture and the feedback loop
 
 - The separate **fixer** component (PR proposals) — the commercial seam from
-  [business model](business-model-and-economics.md), measured through the
-  [fixer outcome ledger](fixer-outcome-ledger.md) before any value claim feeds
-  the [business model validation ledger](business-model-validation-ledger.md).
+  [business model](../validation/business-model.md), measured through the
+  [fixer outcome ledger](../decisions/fixer-boundary.md) before any value claim feeds
+  the [business model validation ledger](../validation/business-model.md).
 - Accepted/rejected/reverted fixer outcome capture -> the
   failure/fixer-outcome corpus (A3 moat).
-- Use the [fixer component and outcome loop](fixer-component-and-outcome-loop.md)
-  contract and [fixer outcome ledger](fixer-outcome-ledger.md) so opened PRs are
+- Use the [fixer component and outcome loop](../decisions/fixer-boundary.md)
+  contract and [fixer outcome ledger](../decisions/fixer-boundary.md) so opened PRs are
   not counted as successful fixes until review, validation, and recurrence
   evidence support that label.
 - **Gate:** fixes cite evidence, record outcomes, and feed recurrence back.
@@ -137,15 +137,15 @@ Build only enough to generate the bundle automatically and repeatably:
 
 | Assumption (bear case) | Tested in | Cheapest test |
 | --- | --- | --- |
-| A1 bundle value | Phase 0 (hand), re-check Phase 1 (auto) | [manual bundle + eval](bundle-value-phase0-runbook.md), days |
-| A2 real users | Phase 0 | [20 scored deployment-intent interviews](user-interview-and-deployment-intent-gate.md) plus the [redacted A2 evidence ledger](a2-interview-evidence-ledger.md) |
-| Business value capture | Phase 0 signal capture → Phase 4 conversion | [business model validation ledger](business-model-validation-ledger.md): budget, hosted, fixer, enterprise ops, support/services, conversion, and paid-pilot rows |
-| A6 redaction trust | Phase 2 | [red-team ledger](a6-redaction-red-team-ledger.md) over seeded fixtures plus real-data pilot |
-| A5 stack holds | Phase 2 | [A5 stack decision ledger](a5-stack-decision-ledger.md), rolling up storage/metadata/ingest/setup gates |
-| A4 correlation reliable | Phase 1–2 | [strong-edge prevalence on real telemetry](correlation-reliability-real-telemetry-gate.md) plus the [A4 result ledger](a4-correlation-reliability-ledger.md) |
-| A3 schema/corpus moat | Phase 2 (publish) → Phase 4 (corpus) | [schema conformance + external adoption + outcome corpus](schema-adoption-and-corpus-moat-gate.md) |
-| Coding-agent trace audit value | Phase 3 | [agent-session tracing ledger](agent-session-tracing-ledger.md): dated tool/version/config matrix, at least one native OTel adapter and one non-OTel structured adapter, lossiness, redaction, projection, overhead, and audit-value rows |
-| A7 scope discipline | enforced by phase order | [A7 scope discipline ledger](a7-scope-discipline-ledger.md) stays green and the tiny tier passes the [self-hosted simplicity gate](self-hosted-simplicity-gate.md) with claim status in the [self-hosted simplicity ledger](self-hosted-simplicity-ledger.md) before breadth |
+| A1 bundle value | Phase 0 (hand), re-check Phase 1 (auto) | [manual bundle + eval](../validation/a1-bundle-value/bundle-value-phase0-runbook.md), days |
+| A2 real users | Phase 0 | [20 scored deployment-intent interviews](../validation/a2-user-demand.md) plus the [redacted A2 evidence ledger](../validation/a2-user-demand.md) |
+| Business value capture | Phase 0 signal capture → Phase 4 conversion | [business model validation ledger](../validation/business-model.md): budget, hosted, fixer, enterprise ops, support/services, conversion, and paid-pilot rows |
+| A6 redaction trust | Phase 2 | [red-team ledger](../capture/redaction.md) over seeded fixtures plus real-data pilot |
+| A5 stack holds | Phase 2 | [A5 stack decision ledger](../decisions/stack-decision.md), rolling up storage/metadata/ingest/setup gates |
+| A4 correlation reliable | Phase 1–2 | [strong-edge prevalence on real telemetry](../capture/correlation.md) plus the [A4 result ledger](../capture/correlation.md) |
+| A3 schema/corpus moat | Phase 2 (publish) → Phase 4 (corpus) | [schema conformance + external adoption + outcome corpus](../validation/a3-schema-corpus.md) |
+| Coding-agent trace audit value | Phase 3 | [agent-session tracing ledger](../capture/agent-cli-tracing.md): dated tool/version/config matrix, at least one native OTel adapter and one non-OTel structured adapter, lossiness, redaction, projection, overhead, and audit-value rows |
+| A7 scope discipline | enforced by phase order | [A7 scope discipline ledger](../validation/a7-scope.md) stays green and the tiny tier passes the [self-hosted simplicity gate](../validation/self-hosted-simplicity.md) with claim status in the [self-hosted simplicity ledger](../validation/self-hosted-simplicity.md) before breadth |
 
 ## What This Sequence Refuses To Do
 
@@ -155,94 +155,94 @@ Build only enough to generate the bundle automatically and repeatably:
 - Treat "coding-agent tracing" as one roadmap milestone or product claim before
   per-surface fixture rows exist.
 - Claim bundle value publicly before the
-  [Phase 0 bundle eval](bundle-value-phase0-runbook.md) and Phase 1 automated
+  [Phase 0 bundle eval](../validation/a1-bundle-value/bundle-value-phase0-runbook.md) and Phase 1 automated
   evidence exist.
 - Bet Tier-3 on Iggy clustering that does not exist yet.
 
 ## Relationship To Other Research
 
-- [Verdict](verdict.md) and [risks/bear case](risks-and-bear-case.md) — the GO and
+- [Verdict](../decisions/go-no-go.md) and [risks/bear case](../decisions/risks-and-bear-case.md) — the GO and
   the assumptions this sequences.
-- [Bundle-value evaluation](bundle-value-evaluation.md) — the Phase 0/1 gate.
-- [Bundle-value seed corpus](bundle-value-seed-corpus.md) and
-  [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) — the first
+- [Bundle-value evaluation](../validation/a1-bundle-value/bundle-value-evaluation.md) — the Phase 0/1 gate.
+- [Bundle-value seed corpus](../validation/a1-bundle-value/bundle-value-seed-corpus.md) and
+  [Bundle-value Phase 0 runbook](../validation/a1-bundle-value/bundle-value-phase0-runbook.md) — the first
   task-source selection and paired run against raw telemetry dumps.
-- [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md) —
+- [Phase 0 telemetry overlay contract](../validation/a1-bundle-value/phase0-telemetry-overlay-contract.md) —
   the no-cheat artifact contract for the telemetry overlay used by that paired
   run.
-- [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
+- [A1 eval result ledger and model refresh](../validation/a1-bundle-value/a1-eval-result-ledger-and-model-refresh.md)
   — the public A1 result artifact and refresh policy for avoiding stale or
   contaminated bundle-value claims.
-- [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
+- [User interview and deployment intent gate](../validation/a2-user-demand.md)
   — the A2 demand-validation runbook for Phase 0.
-- [A2 interview evidence ledger](a2-interview-evidence-ledger.md) — the
+- [A2 interview evidence ledger](../validation/a2-user-demand.md) — the
   privacy-preserving public artifact that makes the A2 result auditable.
-- [Business model validation ledger](business-model-validation-ledger.md) — the
+- [Business model validation ledger](../validation/business-model.md) — the
   claim-level contract for adoption, budget, hosted, fixer, enterprise ops,
   support/services, conversion, and paid-pilot evidence.
-- [Repo-intent value ledger](repo-intent-value-ledger.md) — the paired eval for
+- [Repo-intent value ledger](../validation/repo-intent.md) — the paired eval for
   whether docs, decisions, tasks, roadmap, and agent instructions improve bundle
   value without weakening runtime-only degraded mode.
-- [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
+- [Schema adoption and corpus moat gate](../validation/a3-schema-corpus.md)
   — the A3 conformance/adoption/corpus runbook for Phase 2 onward.
-- [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md)
+- [A3 schema adoption and corpus ledger](../validation/a3-schema-corpus.md)
   — the public event ledger for schema reviews, integrations, conformance runs,
   compatibility decisions, and outcome-corpus rows.
-- [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md)
+- [Correlation reliability on real telemetry gate](../capture/correlation.md)
   — the A4 strong-edge prevalence gate for Phase 1/2 real telemetry.
-- [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md) —
+- [A4 correlation reliability ledger](../capture/correlation.md) —
   the run manifest, per-anchor rows, manual audit rows, claim levels, and
   freshness rules for making A4 pass/fail claims auditable.
-- [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) — the
+- [A6 redaction red-team ledger](../capture/redaction.md) — the
   redaction result artifact for seeded canary leaks, scanner comparisons,
   projection audits, usefulness preservation, and claim freshness before agent
   exposure.
-- [A5 stack decision ledger](a5-stack-decision-ledger.md) — the Phase 2 umbrella
+- [A5 stack decision ledger](../decisions/stack-decision.md) — the Phase 2 umbrella
   result contract for turning component benchmarks into stack defaults or
   fallback decisions.
-- [A7 scope discipline ledger](a7-scope-discipline-ledger.md) — the phase budget
+- [A7 scope discipline ledger](../validation/a7-scope.md) — the phase budget
   and feature-admission contract that prevents broad roadmap work from entering
   Phase 1 before the tiny bundle proof.
-- [Self-hosted simplicity ledger](self-hosted-simplicity-ledger.md) — the
+- [Self-hosted simplicity ledger](../validation/self-hosted-simplicity.md) — the
   clean-VM run artifact for install time, service/resource budget, ingest smoke,
   restart durability, backup/restore, upgrade, and redaction proof.
-- [Sentry SDK compatibility ledger](sentry-sdk-compatibility-ledger.md) — the
+- [Sentry SDK compatibility ledger](../capture/sentry-ingest.md) — the
   claim-level contract for turning real SDK fixture runs into allowed
   Sentry-compatible product wording.
-- [OTLP conformance ledger](otlp-conformance-ledger.md) — the claim-level
+- [OTLP conformance ledger](../capture/otlp.md) — the claim-level
   contract for turning direct-SDK and Collector fixture runs into allowed
   OTLP-native product wording.
-- [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
+- [Agent access surface: CLI, HTTP API, and MCP](../decisions/agent-access-surface.md)
   — the focused answer to the CLI-versus-MCP access-surface question.
-- [Agent access surface safety ledger](agent-access-surface-safety-ledger.md)
+- [Agent access surface safety ledger](../decisions/agent-access-surface.md)
   — the claim-level contract for CLI/HTTP/MCP projection equivalence and
   read-only MCP safety.
-- [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) — why
+- [Agent and CLI execution tracing](../capture/agent-cli-tracing.md) — why
   CLI invocations and coding-agent sessions belong in the execution graph.
-- [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
-  and [Agent session tracing ledger](agent-session-tracing-ledger.md) — the
+- [Agent session tracing across real tools](../capture/agent-cli-tracing.md)
+  and [Agent session tracing ledger](../capture/agent-cli-tracing.md) — the
   per-tool, per-capture-surface fixture contract before agent-session tracing is
   product wording.
-- [CLI trace safety ledger](cli-trace-safety-ledger.md) — the claim-level
+- [CLI trace safety ledger](../capture/agent-cli-tracing.md) — the claim-level
   contract for default-ready CLI capture, redacted excerpts, raw refs,
   child-process policy, and projection safety.
-- [Deploy/change context ledger](deploy-change-context-ledger.md) — the
+- [Deploy/change context ledger](../capture/deploy-change-context.md) — the
   claim-level contract for release-regression and "what changed?" context.
-- [Production database evidence access gate](production-database-evidence-access.md)
+- [Production database evidence access gate](../capture/production-db-evidence.md)
   — the safety gate before direct production database evidence enters bundles.
-- [Production database evidence ledger](production-database-evidence-ledger.md)
+- [Production database evidence ledger](../capture/production-db-evidence.md)
   — the claim-level contract for proving least privilege, RLS/view scoping,
   template parsing, redaction, audit, and projection safety.
-- [Technical implementation concept](technical-implementation-concept.md) — the
+- [Technical implementation concept](implementation-concept.md) — the
   component detail each phase builds.
-- [Storage benchmark prototype](storage-benchmark-prototype.md),
-  [retention cost model](retention-cost-model.md) — Phase 2 gates.
-- [Business model](business-model-and-economics.md) and
-  [business model validation ledger](business-model-validation-ledger.md) —
+- [Storage benchmark prototype](../storage/benchmark-plan.md),
+  [retention cost model](../storage/size-and-object-cost.md) — Phase 2 gates.
+- [Business model](../validation/business-model.md) and
+  [business model validation ledger](../validation/business-model.md) —
   Phase 4 value capture and the result rows required before it is claimable.
-- [Fixer component and outcome loop](fixer-component-and-outcome-loop.md) —
+- [Fixer component and outcome loop](../decisions/fixer-boundary.md) —
   Phase 4 fixer boundary, outcome schema, and autonomy gates.
-- [Fixer outcome ledger](fixer-outcome-ledger.md) — Phase 4 result rows and
+- [Fixer outcome ledger](../decisions/fixer-boundary.md) — Phase 4 result rows and
   claim levels for bundle handoff, PR creation, CI, review, merge/revert,
   recurrence, evidence citation, and allowed fixer wording.
 

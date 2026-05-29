@@ -35,19 +35,19 @@ Rust/Go/Zig/C++/C filter. Nothing here adds a JS dependency to the Parallax core
 Version-freshness note: frontend SDK versions move fast. Pin exact SDK versions at
 build time; this document fixes the architecture, not specific minor versions.
 
-The companion [frontend capture safety ledger](frontend-capture-safety-ledger.md)
+The companion [frontend capture safety ledger](frontend.md)
 defines the browser/route run artifacts, source-map rows, CORS/propagation
 checks, privacy canaries, overhead budgets, replay policy, and claim levels
 required before this architecture becomes product wording.
 
 The focused
-[frontend browser ingest profile recheck](frontend-browser-ingest-profile-recheck.md)
+[frontend browser ingest profile recheck](frontend.md)
 separates browser telemetry from the backend OTLP transport profile: browser
 OTLP is HTTP-only (`http/protobuf` preferred, HTTP/JSON optional), while gRPC is
 expected unsupported in browser builds.
 
 The focused
-[frontend Replay and source-map privacy recheck](frontend-replay-sourcemap-privacy-recheck.md)
+[frontend Replay and source-map privacy recheck](frontend.md)
 narrows the Replay/source-artifact boundary: current Sentry JS v10 Replay
 provenance comes through `@sentry/browser` internal packages, standalone
 `@sentry/replay` is stale unless a lockfile includes it, and Replay/source maps
@@ -146,7 +146,7 @@ Hard parts to design around:
 
 ### Schema Extension
 
-Extends [the evidence bundle schema](evidence-bundle-and-schema.md) additively —
+Extends [the evidence bundle schema](../architecture/evidence-bundle-schema.md) additively —
 new node types and cross-tier edges, no breaking change.
 
 New node types:
@@ -178,14 +178,14 @@ The "how did we get to this user-facing error" query crosses the boundary: from 
 `frontend_error`, take its `trace_id`, fetch the frontend session's preceding
 user-steps, and follow `frontend_request_to_span` into the backend spans/logs/
 errors on the same trace. This is benchmark query **Q4 `cross_tier`** in
-[the storage benchmark prototype](storage-benchmark-prototype.md) — frontend
+[the storage benchmark prototype](../storage/benchmark-plan.md) — frontend
 collection is exactly why that query exists, and why the dataset generator links a
 fraction of frontend sessions into backend traces.
 
 ### Source-Map Symbolication
 
 Frontend stacks are minified and useless raw. Mirror the Rust debuginfo story
-([Rust data collection](rust-data-collection-and-instrumentation.md)):
+([Rust data collection](rust.md)):
 
 - upload source maps at build time, keyed by `frontend_release` + `build_id` +
   a Debug-ID-like artifact identifier, to Parallax object storage;
@@ -261,35 +261,35 @@ propagation + bounded breadcrumbs + route/release context, joined to backend by
 `trace_id`. Defer: session replay, Web Vitals dashboards, full RUM. Prove the
 cross-tier join on one frontend↔backend path before broadening. The real-data
 pass/fail threshold for that claim lives in
-[Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md),
+[Correlation reliability on real telemetry gate](correlation.md),
 with row-level proof captured by the
-[A4 correlation reliability ledger](a4-correlation-reliability-ledger.md).
+[A4 correlation reliability ledger](correlation.md).
 
 ### Relationship To Other Research
 
-- [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)
+- [Evidence bundle and open schema specification](../architecture/evidence-bundle-schema.md)
   — the schema this extends.
-- [Storage benchmark prototype](storage-benchmark-prototype.md) — the cross-tier
+- [Storage benchmark prototype](../storage/benchmark-plan.md) — the cross-tier
   query (Q4) and the frontend-linked dataset.
-- [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md)
+- [Rust data collection and instrumentation](rust.md)
   — the backend capture analog and the symbolication pattern.
-- [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md)
+- [OpenTelemetry protocol and context layer](otlp.md)
   — OTLP and propagation foundation.
-- [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
+- [Causal reconstruction and agent safety](../architecture/causal-reconstruction.md)
   — how cross-tier edges and missing-evidence flags feed safe agent reasoning.
-- [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md)
+- [Correlation reliability on real telemetry gate](correlation.md)
   — the A4 gate for real frontend-backend continuation and missing-evidence
   reporting.
-- [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md)
+- [A4 correlation reliability ledger](correlation.md)
   — the run artifact schema that proves frontend continuation rates came from
   real anchors, not generator-perfect traces.
-- [Frontend capture safety ledger](frontend-capture-safety-ledger.md) — the
+- [Frontend capture safety ledger](frontend.md) — the
   browser-side result contract for source maps, CORS, breadcrumbs, privacy,
   export reliability, overhead, replay refs, and projection safety.
-- [Frontend browser ingest profile recheck](frontend-browser-ingest-profile-recheck.md)
+- [Frontend browser ingest profile recheck](frontend.md)
   — current browser Sentry/OTel package and transport-profile recheck; separates
   browser HTTP-only ingest from backend OTLP gRPC/protobuf requirements.
-- [Frontend Replay and source-map privacy recheck](frontend-replay-sourcemap-privacy-recheck.md)
+- [Frontend Replay and source-map privacy recheck](frontend.md)
   — current Replay package provenance and source-artifact raw-ref boundary.
 
 ### Sources
@@ -300,8 +300,8 @@ Primary sources:
 - [OpenTelemetry JavaScript exporters](https://opentelemetry.io/docs/languages/js/exporters/)
 - [OpenTelemetry fetch instrumentation config](https://open-telemetry.github.io/opentelemetry-js/interfaces/_opentelemetry_instrumentation-fetch.FetchInstrumentationConfig.html)
 - [OpenTelemetry browser resource semantic conventions](https://opentelemetry.io/docs/specs/semconv/resource/browser/)
-- [Frontend browser ingest profile recheck](frontend-browser-ingest-profile-recheck.md)
-- [Frontend Replay and source-map privacy recheck](frontend-replay-sourcemap-privacy-recheck.md)
+- [Frontend browser ingest profile recheck](frontend.md)
+- [Frontend Replay and source-map privacy recheck](frontend.md)
 - [W3C Trace Context](https://www.w3.org/TR/trace-context/)
 - [Sentry JavaScript trace propagation](https://docs.sentry.io/platforms/javascript/guides/capacitor/tracing/trace-propagation/)
 - [Sentry JavaScript trace propagation targets](https://docs.sentry.io/platforms/javascript/configuration/environments/#tracepropagationtargets)
@@ -326,7 +326,7 @@ _(Shared note — see the Frontend Collection and Cross-Tier Correlation section
 
 ### Purpose
 
-[Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
+[Frontend collection and cross-tier correlation](frontend.md)
 defines the architecture for browser error capture, breadcrumbs, source maps,
 frontend-to-backend trace propagation, and privacy controls. This ledger defines
 the result artifacts, row schemas, claim levels, and expiry rules required
@@ -334,12 +334,12 @@ before Parallax can say frontend capture is safe, source-mapped, low-overhead, o
 usable for frontend-to-backend reconstruction.
 
 The focused
-[frontend browser ingest profile recheck](frontend-browser-ingest-profile-recheck.md)
+[frontend browser ingest profile recheck](frontend.md)
 adds the current browser transport boundary: browser OTLP is HTTP-only and must
 be proven separately from backend/server gRPC requirements.
 
 The focused
-[frontend Replay and source-map privacy recheck](frontend-replay-sourcemap-privacy-recheck.md)
+[frontend Replay and source-map privacy recheck](frontend.md)
 adds the current Replay package-provenance and source-artifact boundary: Replay
 and source maps are raw/reference surfaces, not agent-visible defaults.
 
@@ -360,7 +360,7 @@ The central rule:
 > manifest, and agent-visible projections including MCP `structuredContent`.
 
 This ledger is separate from the
-[A4 correlation reliability ledger](a4-correlation-reliability-ledger.md): A4
+[A4 correlation reliability ledger](correlation.md): A4
 measures whether real anchors link across signals; this ledger measures whether
 the browser capture surface itself is safe and configured well enough to create
 those anchors.
@@ -372,8 +372,8 @@ those anchors.
 | npm package version snapshot ([Sentry browser](https://www.npmjs.com/package/@sentry/browser), [Sentry React](https://www.npmjs.com/package/@sentry/react), [OTel web SDK](https://www.npmjs.com/package/@opentelemetry/sdk-trace-web), [OTel fetch](https://www.npmjs.com/package/@opentelemetry/instrumentation-fetch), [OTel OTLP HTTP](https://www.npmjs.com/package/@opentelemetry/exporter-trace-otlp-http)) | `npm view` on 2026-05-25 reported `@sentry/browser` `10.53.1`, `@sentry/react` `10.53.1`, `@opentelemetry/sdk-trace-web` `2.7.1`, `@opentelemetry/instrumentation-fetch` `0.218.0`, and OTLP HTTP trace exporters `0.218.0`. | Every run must persist the exact package versions from the lockfile or registry snapshot; docs pages can lag package releases. |
 | [OpenTelemetry JavaScript browser guide](https://opentelemetry.io/docs/languages/js/getting-started/browser/) | Browser traces use `@opentelemetry/sdk-trace-web` plus browser instrumentations such as document-load; the guide warns browser client instrumentation is experimental and mostly unspecified. | Parallax can use OTel JS for spans, but browser support must be tested per SDK and browser matrix before product wording. |
 | [OpenTelemetry JavaScript exporters](https://opentelemetry.io/docs/languages/js/exporters/) | Browser deployments cannot use OTLP/gRPC; they must use OTLP HTTP/JSON or HTTP/protobuf, handle CSP and CORS, and may require a collector reachable from public browsers. | Parallax should use a narrow browser ingest/proxy endpoint with origin, size, rate, auth, path, and redaction controls instead of exposing a broad collector. |
-| [Frontend browser ingest profile recheck](frontend-browser-ingest-profile-recheck.md) | Current package recheck found no version drift from the 2026-05-25 ledger snapshot and verified published OTel `0.218.0` fetch/XHR propagation controls plus browser HTTP/JSON and HTTP/protobuf exporter builds. | Add browser-specific transport/CORS fixtures; do not apply backend gRPC-required OTLP wording to browser clients. |
-| [Frontend Replay and source-map privacy recheck](frontend-replay-sourcemap-privacy-recheck.md) | `npm view` on 2026-05-25 found current Sentry JS `10.53.1`; `@sentry/browser` pulls `@sentry-internal/replay` and `@sentry-internal/replay-canvas` `10.53.1`, while standalone `@sentry/replay` remains `7.116.0` from 2025-11-25. | Run manifests must record Replay package provenance and cannot cite stale standalone `@sentry/replay` as current v10 behavior unless the app lockfile actually includes it. |
+| [Frontend browser ingest profile recheck](frontend.md) | Current package recheck found no version drift from the 2026-05-25 ledger snapshot and verified published OTel `0.218.0` fetch/XHR propagation controls plus browser HTTP/JSON and HTTP/protobuf exporter builds. | Add browser-specific transport/CORS fixtures; do not apply backend gRPC-required OTLP wording to browser clients. |
+| [Frontend Replay and source-map privacy recheck](frontend.md) | `npm view` on 2026-05-25 found current Sentry JS `10.53.1`; `@sentry/browser` pulls `@sentry-internal/replay` and `@sentry-internal/replay-canvas` `10.53.1`, while standalone `@sentry/replay` remains `7.116.0` from 2025-11-25. | Run manifests must record Replay package provenance and cannot cite stale standalone `@sentry/replay` as current v10 behavior unless the app lockfile actually includes it. |
 | [OpenTelemetry fetch instrumentation](https://open-telemetry.github.io/opentelemetry-js/modules/_opentelemetry_instrumentation-fetch.html) | Fetch instrumentation exposes config such as `requestHook`, `ignoreUrls`, and propagation-related options. | Propagation and redaction need explicit allowlists and hooks; raw URLs/body-like fields must not leak by default. |
 | [W3C Trace Context](https://www.w3.org/TR/trace-context/) | W3C recommends wide deployment of `traceparent`/`tracestate`; `traceparent` carries portable trace identity and tools must propagate it to avoid broken traces. | Frontend-to-backend joins should use W3C trace context when using OTel paths and record propagation failures as missing evidence. |
 | [OpenTelemetry baggage](https://opentelemetry.io/docs/concepts/signals/baggage/) | Baggage can propagate arbitrary key/value context, and official docs warn sensitive baggage can reach unintended resources such as third-party APIs. | Session correlation must use allowlisted opaque values; raw user/account IDs, emails, tokens, or third-party baggage propagation fail the browser safety gate. |
@@ -973,34 +973,34 @@ Mark affected claims `claim_expired` when:
 
 ### Relationship To Other Research
 
-- [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
+- [Frontend collection and cross-tier correlation](frontend.md)
   defines the browser capture and cross-tier architecture this ledger measures.
-- [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md)
+- [Correlation reliability on real telemetry gate](correlation.md)
   consumes continuation and missing-evidence rows when deciding whether A4
   frontend-to-backend reconstruction can pass.
-- [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md)
+- [A4 correlation reliability ledger](correlation.md)
   owns real-anchor correlation claim levels; this ledger supplies browser-side
   capture, source-map, CORS, and privacy rows.
-- [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
+- [Redaction pipeline and secret safety](redaction.md)
   defines the default-deny frontend privacy posture used by this ledger.
-- [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) remains the
+- [A6 redaction red-team ledger](redaction.md) remains the
   broader redaction veto before frontend evidence becomes agent-visible.
-- [A6 synthetic canary fixture corpus](a6-synthetic-canary-fixture-corpus.md)
+- [A6 synthetic canary fixture corpus](redaction.md)
   defines the seeded frontend canaries for Replay, source maps, URL/query,
   referrer, console, headers, and network-body surfaces.
-- [Redaction detector toolchain](redaction-detector-toolchain.md) defines the
+- [Redaction detector toolchain](redaction.md) defines the
   scanner and canary comparators used for browser privacy rows.
-- [Frontend Replay and source-map privacy recheck](frontend-replay-sourcemap-privacy-recheck.md)
+- [Frontend Replay and source-map privacy recheck](frontend.md)
   defines the Replay package-provenance fields and source-artifact negative
   fixtures required by this ledger.
-- [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)
+- [Evidence bundle and open schema specification](../architecture/evidence-bundle-schema.md)
   must expose frontend nodes, redaction reports, source-field policy status,
   source-map status, replay refs, and missing-evidence warnings without leaking
   denied fields.
-- [Storage benchmark prototype](storage-benchmark-prototype.md) includes Q4
+- [Storage benchmark prototype](../storage/benchmark-plan.md) includes Q4
   `cross_tier`; this ledger defines the capture proof behind that generated
   shape.
-- [Technical implementation concept](technical-implementation-concept.md)
+- [Technical implementation concept](../architecture/implementation-concept.md)
   should treat this ledger as the claim boundary for frontend capture.
 
 ### Bottom Line
@@ -1053,7 +1053,7 @@ Narrow the transport claim:
 The current package recheck did not find version drift from the ledger snapshot:
 `@sentry/browser` and `@sentry/react` are still `10.53.1`; OTel web SDK remains
 `2.7.1`; OTel fetch/XHR and OTLP HTTP exporters remain `0.218.0`. A follow-up
-[frontend Replay and source-map privacy recheck](frontend-replay-sourcemap-privacy-recheck.md)
+[frontend Replay and source-map privacy recheck](frontend.md)
 adds one important package nuance: `@sentry/browser` `10.53.1` contains internal
 Replay packages at `10.53.1`, while standalone `@sentry/replay` is still
 `7.116.0`; record which path an actual app uses.
@@ -1063,7 +1063,7 @@ Replay packages at `10.53.1`, while standalone `@sentry/replay` is still
 | Source | Current signal checked 2026-05-25 | Parallax implication |
 | --- | --- | --- |
 | npm registry for `@sentry/browser` and `@sentry/react` | `npm view` reports `10.53.1`, modified 2026-05-12. | Keep pinning exact Sentry JS package versions in every browser run; docs pages can lag package releases. |
-| [Frontend Replay and source-map privacy recheck](frontend-replay-sourcemap-privacy-recheck.md) | `@sentry/browser` `10.53.1` depends on `@sentry-internal/replay` `10.53.1`; standalone `@sentry/replay` is `7.116.0`, modified 2025-11-25. | Replay package provenance is a manifest field, not an assumption. Do not use stale standalone package metadata for current v10 Replay behavior unless the lockfile includes it. |
+| [Frontend Replay and source-map privacy recheck](frontend.md) | `@sentry/browser` `10.53.1` depends on `@sentry-internal/replay` `10.53.1`; standalone `@sentry/replay` is `7.116.0`, modified 2025-11-25. | Replay package provenance is a manifest field, not an assumption. Do not use stale standalone package metadata for current v10 Replay behavior unless the lockfile includes it. |
 | npm registry for `@opentelemetry/sdk-trace-web` | `npm view` reports `2.7.1`, modified 2026-05-01. | Browser trace fixtures should record OTel JS core/web SDK separately from instrumentation package versions. |
 | npm registry for `@opentelemetry/instrumentation-fetch`, `@opentelemetry/instrumentation-xml-http-request`, and OTLP HTTP trace exporters | `npm view` reports `0.218.0` for fetch, XHR, HTTP/JSON, HTTP/protobuf, and gRPC exporter packages; HTTP exporter packages modified 2026-05-13. | Run manifests need the full package matrix; exporter and instrumentation packages are on the experimental `0.x` line even when the web SDK is `2.x`. |
 | [OpenTelemetry JavaScript browser guide](https://opentelemetry.io/docs/languages/js/getting-started/browser/) | The official browser guide uses `@opentelemetry/sdk-trace-web` and document-load instrumentation for browser spans. | OTel JS remains the right reference path for browser spans, but browser support must be fixture-proven per package/browser matrix. |
@@ -1142,7 +1142,7 @@ Reopen this note if:
 - [OpenTelemetry fetch instrumentation config](https://open-telemetry.github.io/opentelemetry-js/interfaces/_opentelemetry_instrumentation-fetch.FetchInstrumentationConfig.html)
 - [OpenTelemetry XHR instrumentation config](https://open-telemetry.github.io/opentelemetry-js/interfaces/_opentelemetry_instrumentation-xml-http-request.XMLHttpRequestInstrumentationConfig.html)
 - [OpenTelemetry Protocol Exporter spec](https://opentelemetry.io/docs/specs/otel/protocol/exporter/)
-- [Frontend Replay and source-map privacy recheck](frontend-replay-sourcemap-privacy-recheck.md)
+- [Frontend Replay and source-map privacy recheck](frontend.md)
 - [npm `@sentry/browser`](https://www.npmjs.com/package/@sentry/browser)
 - [npm `@sentry/react`](https://www.npmjs.com/package/@sentry/react)
 - [npm `@opentelemetry/sdk-trace-web`](https://www.npmjs.com/package/@opentelemetry/sdk-trace-web)
@@ -1214,7 +1214,7 @@ retention, projection hashes, and raw-ref access controls.
 | [Sentry Session Replay privacy](https://docs.sentry.io/platforms/javascript/session-replay/privacy/) and [configuration](https://docs.sentry.io/platforms/javascript/session-replay/configuration/) | Replay has masking/blocking controls and network-detail options; network bodies become a separate allowlist decision. | Replay can be claimable only after masking, selector allowlist, network body, retention, overhead, and projection rows pass. |
 | [Sentry source-map upload guidance](https://docs.sentry.io/platforms/javascript/guides/tanstackstart-react/sourcemaps/uploading/esbuild/) | Sentry warns source maps can expose source and recommends denying `.js.map` access or deleting maps after upload. | A source-map claim fails if public map access works or if source content reaches agent-visible bundles by default. |
 | [Sentry artifact bundles and Debug IDs](https://docs.sentry.io/platforms/javascript/guides/cloudflare/sourcemaps/troubleshooting_js/artifact-bundles/) | Debug IDs bind minified files and source maps without path-only matching. | Parallax should keep Debug-ID-like identity, private storage, and negative fixtures for missing/mismatched/public maps. |
-| [A6 synthetic canary fixture corpus](a6-synthetic-canary-fixture-corpus.md) | The current corpus covers generic frontend expansion but does not yet name Replay/source-map specific canaries. | Add frontend canary classes for Replay segments, source-map refs, `sourcesContent`, URL/query/referrer, headers, console, DOM text, and network bodies. |
+| [A6 synthetic canary fixture corpus](redaction.md) | The current corpus covers generic frontend expansion but does not yet name Replay/source-map specific canaries. | Add frontend canary classes for Replay segments, source-map refs, `sourcesContent`, URL/query/referrer, headers, console, DOM text, and network bodies. |
 
 ### Required Ledger Tightening
 
@@ -1315,7 +1315,7 @@ Reopen this note if:
 - [Sentry Session Replay configuration](https://docs.sentry.io/platforms/javascript/session-replay/configuration/)
 - [Sentry source-map upload guidance](https://docs.sentry.io/platforms/javascript/guides/tanstackstart-react/sourcemaps/uploading/esbuild/)
 - [Sentry artifact bundles and Debug IDs](https://docs.sentry.io/platforms/javascript/guides/cloudflare/sourcemaps/troubleshooting_js/artifact-bundles/)
-- [A6 synthetic canary fixture corpus](a6-synthetic-canary-fixture-corpus.md)
+- [A6 synthetic canary fixture corpus](redaction.md)
 
 ### Bottom Line
 

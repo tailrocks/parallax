@@ -14,7 +14,7 @@ Docker smoke runs did not prove:
 2. Evidence-bundle query latency under concurrent ingest.
 
 This document narrows those claims into a runnable gate for
-[Storage benchmark prototype](storage-benchmark-prototype.md). The existing smoke
+[Storage benchmark prototype](benchmark-plan.md). The existing smoke
 runs confirmed row-count correctness, key-placement sensitivity, anchored join
 plans, and GreptimeDB PromQL nativeness. They did not prove that freshly ingested
 production evidence becomes visible quickly enough while the system is also
@@ -152,7 +152,7 @@ Run `smoke` first for correctness, then `small` for the first decision gate:
 | Signal mix | spans, logs, metrics, error events, deploy markers, frontend events, CLI invocations, and agent actions. |
 
 The query workload is the existing `QueryClass` set from
-[Storage benchmark prototype](storage-benchmark-prototype.md):
+[Storage benchmark prototype](benchmark-plan.md):
 
 - Q1 `trace_context`
 - Q2 `issue_context`
@@ -226,7 +226,7 @@ the bundle queries. The existing smoke run already showed that unindexed
 ## Pass Targets
 
 Use the initial numeric gates from
-[Storage benchmark prototype](storage-benchmark-prototype.md) until real small
+[Storage benchmark prototype](benchmark-plan.md) until real small
 runs justify calibration:
 
 | Gate | Target |
@@ -326,12 +326,12 @@ verdict:
 
 ## Related Research
 
-- [Storage benchmark prototype](storage-benchmark-prototype.md)
-- [Storage benchmark artifact interpretation](storage-benchmark-artifact-interpretation.md)
-- [Observability storage benchmark plan](observability-storage-benchmark-plan.md)
-- [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md)
+- [Storage benchmark prototype](benchmark-plan.md)
+- [Storage benchmark artifact interpretation](benchmark-plan.md)
+- [Observability storage benchmark plan](benchmark-plan.md)
+- [GreptimeDB storage evaluation](evaluation.md)
 - [GreptimeDB vs ClickHouse local benchmark results](greptimedb-vs-clickhouse/local-benchmark-results.md)
-- [A5 stack decision ledger](a5-stack-decision-ledger.md) consumes this gate's
+- [A5 stack decision ledger](../decisions/stack-decision.md) consumes this gate's
   freshness and Q6 latency rows before any storage result can become a stack
   default.
-- [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)
+- [Evidence bundle and open schema specification](../architecture/evidence-bundle-schema.md)

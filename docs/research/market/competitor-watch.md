@@ -43,19 +43,19 @@ needing incumbent cloud data gravity. This note is the current watchlist and the
 trigger list for reopening the GO verdict.
 
 A second, narrower competitor class now has its own watchlist:
-[Lightweight Sentry-compatible competitor watch](lightweight-sentry-compatible-competitor-watch.md).
+[Lightweight Sentry-compatible competitor watch](competitor-watch.md).
 That note tracks Bugsink, Rustrak, Traceway, GoSnag, and Urgentry because they
 pressure the Sentry-compatible migration and low-ops claims from below.
 
 The current trigger-hit status for both watchlists lives in the
-[Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md).
+[Agentic observability competitor drift ledger](competitor-watch.md).
 OpenObserve's current AI/MCP Enterprise posture now has a focused source check:
-[OpenObserve AI/MCP Enterprise recheck](openobserve-ai-mcp-enterprise-recheck.md).
+[OpenObserve AI/MCP Enterprise recheck](competitor-watch.md).
 Coroot's Community MCP and Enterprise/Cloud AI RCA posture now has a focused
 source check:
-[Coroot MCP and AI RCA recheck](coroot-mcp-ai-rca-recheck.md).
+[Coroot MCP and AI RCA recheck](competitor-watch.md).
 The SigNoz open-investigation-format claim now has a focused falsification note:
-[SigNoz open investigation format check](signoz-open-investigation-format-check.md).
+[SigNoz open investigation format check](competitor-watch.md).
 
 #### Current Verdict
 
@@ -206,7 +206,7 @@ and structured APIs.
    redaction report, query manifest, raw-ref policy, or outcome-row contract.
    Parallax's bet is that a pre-correlated, citable, redacted bundle beats asking
    the agent to assemble context itself. See
-   [SigNoz open investigation format check](signoz-open-investigation-format-check.md).
+   [SigNoz open investigation format check](competitor-watch.md).
 4. **MCP power boundary.** SigNoz MCP includes management tools. That is useful,
    but it is not the same product surface as a least-privilege, read-only,
    citable evidence bundle.
@@ -329,14 +329,14 @@ The watchlist changes the product priority:
    closes Sentry migration plus bundle export, the Parallax wedge must narrow
    further to agent action audit and measured fixer-outcome corpus.
 6. Re-check the
-   [lightweight Sentry-compatible watchlist](lightweight-sentry-compatible-competitor-watch.md)
+   [lightweight Sentry-compatible watchlist](competitor-watch.md)
    before making any "simpler than Sentry" or "drop-in Sentry-compatible" claim.
 
 #### Sources
 
 OpenObserve:
 
-- [OpenObserve AI/MCP Enterprise recheck](openobserve-ai-mcp-enterprise-recheck.md)
+- [OpenObserve AI/MCP Enterprise recheck](competitor-watch.md)
 - [OpenObserve homepage](https://openobserve.ai/)
 - [OpenObserve pricing](https://openobserve.ai/pricing/)
 - [OpenObserve enterprise features](https://openobserve.ai/docs/features/enterprise/)
@@ -356,7 +356,7 @@ SigNoz:
 - [SigNoz agent-native blog](https://signoz.io/blog/introducing-agent-native-observability/)
 - [SigNoz Postmortem Evidence Pack](https://signoz.io/docs/ai/use-cases/postmortem-evidence-pack/)
 - [SigNoz MCP server docs](https://signoz.io/docs/ai/signoz-mcp-server/)
-- [SigNoz open investigation format check](signoz-open-investigation-format-check.md)
+- [SigNoz open investigation format check](competitor-watch.md)
 - [SigNoz AI tools and skills](https://signoz.io/docs/ai/overview/)
 - [SigNoz agent skills repository](https://github.com/SigNoz/agent-skills)
 - [SigNoz architecture docs](https://signoz.io/docs/architecture/)
@@ -364,7 +364,7 @@ SigNoz:
 
 Coroot:
 
-- [Coroot MCP and AI RCA recheck](coroot-mcp-ai-rca-recheck.md)
+- [Coroot MCP and AI RCA recheck](competitor-watch.md)
 - [Coroot GitHub repository](https://github.com/coroot/coroot)
 - [Coroot 1.20.2 release](https://github.com/coroot/coroot/releases/tag/v1.20.2)
 - [Coroot MCP source](https://github.com/coroot/coroot/blob/main/api/mcp.go)
@@ -393,7 +393,7 @@ Research date: 2026-05-25
 
 #### Purpose
 
-The existing [open self-hosted competitor watch](open-self-hosted-competitor-watch.md)
+The existing [open self-hosted competitor watch](competitor-watch.md)
 tracks broad observability platforms that could close the open + self-hosted +
 agent-native wedge. This note tracks a narrower and more immediate competitor
 class:
@@ -434,20 +434,20 @@ claim. Parallax must lead with evidence bundles and agent-safe context, not only
 with a lighter Sentry replacement.
 
 The focused
-[lightweight error-tracker MCP boundary check](lightweight-error-tracker-mcp-boundary-check.md)
+[lightweight error-tracker MCP boundary check](competitor-watch.md)
 adds the agent-surface detail: Rustrak and GoSnag now prove that MCP can appear
 inside small error trackers, but their checked tools are management/write/raw
 event surfaces rather than read-only, redacted evidence bundles.
 The Bugsink low-ops/Sentry-compatibility claim now has a focused recheck:
-[Bugsink Sentry-compatible simplicity recheck](bugsink-sentry-compatible-simplicity-recheck.md).
+[Bugsink Sentry-compatible simplicity recheck](competitor-watch.md).
 The Rustrak Rust/Sentry/MCP/protocol claim now has a focused recheck:
-[Rustrak Sentry MCP protocol recheck](rustrak-sentry-mcp-protocol-recheck.md).
+[Rustrak Sentry MCP protocol recheck](competitor-watch.md).
 The Traceway OTLP/AI/session-replay claim now has a focused recheck:
-[Traceway OTLP AI Replay Recheck](traceway-otlp-ai-replay-recheck.md).
+[Traceway OTLP AI Replay Recheck](competitor-watch.md).
 The GoSnag Sentry/AI/MCP claim now has a focused source-level recheck:
-[GoSnag Sentry AI MCP Recheck](gosnag-sentry-ai-mcp-recheck.md).
+[GoSnag Sentry AI MCP Recheck](competitor-watch.md).
 The Urgentry Sentry/Tiny/benchmark claim now has a focused source-level recheck:
-[Urgentry Sentry Tiny Benchmark Recheck](urgentry-sentry-tiny-benchmark-recheck.md).
+[Urgentry Sentry Tiny Benchmark Recheck](competitor-watch.md).
 
 #### Current Matrix
 
@@ -488,7 +488,7 @@ The official Bugsink docs and repository still do not present first-party MCP or
 AI agent features, but a small third-party `bugsink-mcp` package now exists on
 npm at `1.0.0` under MIT. Treat that as ecosystem pressure, not as Bugsink
 first-party agent-surface closure. See
-[Bugsink Sentry-compatible simplicity recheck](bugsink-sentry-compatible-simplicity-recheck.md).
+[Bugsink Sentry-compatible simplicity recheck](competitor-watch.md).
 
 Implication: Parallax cannot treat Sentry compatibility plus low ops as a unique
 position. Bugsink already owns much of that error-tracking-only story and is
@@ -523,7 +523,7 @@ stored. Second, current `main` contains an unreleased `.claude`/BMad Sentry
 protocol agent workflow. That is repo-maintenance tooling rather than a
 product-facing runtime feature, but it is a warning that Rustrak is
 operationalizing compatibility research. See
-[Rustrak Sentry MCP protocol recheck](rustrak-sentry-mcp-protocol-recheck.md).
+[Rustrak Sentry MCP protocol recheck](competitor-watch.md).
 
 Implication: Rust-first lightweight Sentry-compatible error tracking now exists
 as a live open project. Parallax should not frame itself as "Rustrak plus more
@@ -554,7 +554,7 @@ is three services (`traceway`, `clickhouse`, `postgres`); all-in-one hides
 ClickHouse and Postgres inside one container; SQLite mode is a single Alpine
 container with two SQLite files plus blobs under `/data`; embedded mode runs a
 development server inside a Go process. See
-[Traceway OTLP AI Replay Recheck](traceway-otlp-ai-replay-recheck.md).
+[Traceway OTLP AI Replay Recheck](competitor-watch.md).
 
 Implication: Traceway pressures the OTLP-native and frontend/session-replay
 parts of the roadmap. If it adds Sentry SDK migration, read-only evidence-bundle
@@ -580,7 +580,7 @@ OpenAI/Groq and Bedrock, while direct Anthropic/Ollama support was not found in
 the checked switch; `.env.example` omits the README's AI variables; and the MCP
 server mutates project, issue, alert, tag, and ticket state through Bearer-token
 API calls. See
-[GoSnag Sentry AI MCP Recheck](gosnag-sentry-ai-mcp-recheck.md).
+[GoSnag Sentry AI MCP Recheck](competitor-watch.md).
 
 Implication: "AI over Sentry-compatible self-hosted errors" is not enough. If
 Parallax does not own the runtime/CI/CLI/agent evidence graph and citable bundle
@@ -606,7 +606,7 @@ transactions, sessions, replay, profiles, client reports, check-ins,
 attachments, and metric buckets. Tiny mode is one process with a SQLite data
 directory; split self-hosted mode runs `api`, `ingest`, `worker`, and
 `scheduler` roles over PostgreSQL, MinIO, Valkey, and NATS. See
-[Urgentry Sentry Tiny Benchmark Recheck](urgentry-sentry-tiny-benchmark-recheck.md).
+[Urgentry Sentry Tiny Benchmark Recheck](competitor-watch.md).
 
 The limits are equally important. Checked OTLP handlers reject protobuf and no
 gRPC receiver was found. No MCP surface was found in checked README/docs/source.
@@ -617,7 +617,7 @@ Sentry comparison numbers remain vendor claims until benchmark-agent artifacts
 reproduce or reject them.
 
 Implication: Urgentry should be included in the
-[self-hosted simplicity gate](self-hosted-simplicity-gate.md) comparison if
+[self-hosted simplicity gate](../validation/self-hosted-simplicity.md) comparison if
 Parallax makes public low-ops claims. It can beat Parallax's "simpler Sentry"
 story even if it does not beat the open/evidence/agent story. It also raises the
 bar for Sentry item handling: Parallax can still target a narrower MVP, but it
@@ -638,7 +638,7 @@ Watch triggers:
 1. **Sentry-compatible migration is a requirement, not a moat.** Bugsink,
    Rustrak, GoSnag, and Urgentry all attack that path.
 2. **Low-ops setup is a gate, not a differentiator.** The
-   [self-hosted simplicity gate](self-hosted-simplicity-gate.md) must compare
+   [self-hosted simplicity gate](../validation/self-hosted-simplicity.md) must compare
    Parallax against lightweight alternatives, not only self-hosted Sentry.
 3. **Rust helps, but does not decide the market.** Rustrak proves Rust is
    available for lightweight error tracking. Traceway and GoSnag prove Go
@@ -665,9 +665,9 @@ The ongoing competitor watch now has two layers:
    Traceway, GoSnag, Urgentry.
 
 Current trigger-hit and drift statuses across both layers live in the
-[Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md).
+[Agentic observability competitor drift ledger](competitor-watch.md).
 Agent-surface detail for the lightweight layer lives in the
-[lightweight error-tracker MCP boundary check](lightweight-error-tracker-mcp-boundary-check.md).
+[lightweight error-tracker MCP boundary check](competitor-watch.md).
 
 Reopen the Parallax wedge if any lightweight challenger combines:
 
@@ -687,22 +687,22 @@ Reopen the Parallax wedge if any lightweight challenger combines:
 - [Bugsink settings](https://www.bugsink.com/docs/settings/)
 - [Bugsink 2.2.1 release](https://github.com/bugsink/bugsink/releases/tag/2.2.1)
 - [Bugsink GitHub repository](https://github.com/bugsink/bugsink)
-- [Bugsink Sentry-compatible simplicity recheck](bugsink-sentry-compatible-simplicity-recheck.md)
+- [Bugsink Sentry-compatible simplicity recheck](competitor-watch.md)
 - [`bugsink-mcp` package](https://www.npmjs.com/package/bugsink-mcp)
 - [`j-shelfwood/bugsink-mcp`](https://github.com/j-shelfwood/bugsink-mcp)
 - [Rustrak GitHub repository](https://github.com/AbianS/rustrak)
 - [Rustrak MCP package](https://www.npmjs.com/package/@rustrak/mcp)
 - [Rustrak Docker Hub](https://hub.docker.com/r/abians7/rustrak-server)
-- [Rustrak Sentry MCP protocol recheck](rustrak-sentry-mcp-protocol-recheck.md)
+- [Rustrak Sentry MCP protocol recheck](competitor-watch.md)
 - [Traceway GitHub repository](https://github.com/tracewayapp/traceway)
 - [Traceway embedded mode](https://docs.tracewayapp.com/learn/embedded-mode)
-- [Traceway OTLP AI Replay Recheck](traceway-otlp-ai-replay-recheck.md)
+- [Traceway OTLP AI Replay Recheck](competitor-watch.md)
 - [GoSnag GitHub repository](https://github.com/darkspock/gosnag)
-- [GoSnag Sentry AI MCP Recheck](gosnag-sentry-ai-mcp-recheck.md)
+- [GoSnag Sentry AI MCP Recheck](competitor-watch.md)
 - [Sentry MCP repository](https://github.com/getsentry/sentry-mcp)
 - [Urgentry product site](https://urgentry.com/)
 - [Urgentry GitHub repository](https://github.com/urgentry/urgentry)
-- [Urgentry Sentry Tiny Benchmark Recheck](urgentry-sentry-tiny-benchmark-recheck.md)
+- [Urgentry Sentry Tiny Benchmark Recheck](competitor-watch.md)
 
 #### Bottom Line
 
@@ -745,11 +745,11 @@ Sentry-compatible error migration
 Current status: **wedge under pressure, not closed**.
 
 The MCP tool-power comparison behind this ledger now has a dedicated note:
-[MCP power boundary competitor check](mcp-power-boundary-competitor-check.md).
+[MCP power boundary competitor check](competitor-watch.md).
 The lightweight error-tracker MCP subset now has a focused note too:
-[Lightweight error-tracker MCP boundary check](lightweight-error-tracker-mcp-boundary-check.md).
+[Lightweight error-tracker MCP boundary check](competitor-watch.md).
 The Sentry-specific Seer/MCP/self-hosted posture has its own recheck:
-[Sentry MCP and Seer self-hosted recheck](sentry-mcp-seer-self-hosted-recheck.md).
+[Sentry MCP and Seer self-hosted recheck](competitor-watch.md).
 
 The material follow-up in this pass is that the MCP surface has shifted from
 "present or absent" to "what kind of tool power does it expose?" Sentry now has
@@ -782,18 +782,18 @@ lands.
 | [Sentry Seer docs](https://docs.sentry.io/product/ai-in-sentry/seer) and [Seer issue-fix API](https://docs.sentry.io/api/seer/start-seer-issue-fix/) | Seer uses Sentry issue context, tracing, logs, profiles, and code context; the issue-fix API can stop at root cause, solution, code changes, or open PR. The API requires `event:admin` or `event:write`. | Sentry owns the production-error agent path for hosted Sentry users, but its issue-fix path is a privileged control surface. Parallax's first agent surface should remain read-only evidence retrieval; PR-opening fix orchestration belongs above it. |
 | [Sentry MCP service](https://mcp.sentry.dev/), [sentry-mcp repository](https://github.com/getsentry/sentry-mcp), [sentry-mcp stdio testing guide](https://github.com/getsentry/sentry-mcp/blob/main/docs/testing-stdio.md), and [sentry-mcp `0.35.0` release](https://github.com/getsentry/sentry-mcp/releases/tag/0.35.0) | Sentry's MCP server is designed for human-in-the-loop coding agents, offers a remote hosted service, a Claude Code plugin/subagent path, and a stdio transport for self-hosted Sentry. The checked README calls stdio work in progress; AI-powered search tools require an OpenAI or Anthropic provider; self-hosted instances may need to disable unsupported Seer skills. The README setup path lists project/team/event write scopes, while the stdio testing guide also documents a read-only testing scope set. Latest checked release: `0.35.0` on 2026-05-21; release redirect returned HTTP `200`, and tag ref `fc04542e24472f00b639f2d591dfc111fa855158` was visible. | Sentry has an agent-facing MCP path in addition to Seer, but self-hosted MCP is not hosted-Seer parity. Read-only testing support narrows the old scope objection; Parallax still needs projection-equivalent, redacted, citable bundles and action/outcome audit. |
 | [Self-hosted Sentry docs](https://develop.sentry.dev/self-hosted/), [self-hosted `26.5.0` release](https://github.com/getsentry/self-hosted/releases/tag/26.5.0), and [`26.5.0` Docker Compose](https://github.com/getsentry/self-hosted/blob/26.5.0/docker-compose.yml) | Current self-hosted docs list feature-complete Sentry features such as traces, profiles, replays, uptime, metrics, feedback, and crons, and explicitly list Seer and other AI/ML features as unavailable because those components are closed source. The sentry-mcp README separately says some features like Seer may not be available on self-hosted instances. Self-hosted Sentry still has a large Docker Compose footprint: `26.5.0` declares 72 services. Latest checked release: `26.5.0` on 2026-05-18; release redirect returned HTTP `200`, and tag ref `aed5b2037e74c771bfe476dbdbeb80420ef4a3d8` was visible. | The self-hosted Seer gap is now explicit in current Sentry docs, not merely unproven. Treat that as an opening, but keep it tied to current docs rather than a permanent impossibility claim. The low-ops benchmark remains relevant. |
-| [Datadog Bits AI SRE eval platform](https://www.datadoghq.com/blog/engineering/bits-ai-eval-platform/) and [Datadog Bits AI eval loop note](datadog-bits-ai-eval-loop.md) | Datadog evaluates agent investigations with reconstructed world snapshots, isolated scenario data layers, representative labels, noisy red-herring environments, segmentation, stored per-scenario scores, `pass@k`, weekly full-set regression runs, feedback-derived labels, and model-refresh checks. | Datadog is industrializing the exact feedback/eval loop Parallax wants for bundle value and corpus moat claims. This raises the A1 bar: Parallax needs frozen noisy world snapshots, open result ledgers, and raw-dump-vs-bundle parity, not only a private "agent seemed better" eval. |
+| [Datadog Bits AI SRE eval platform](https://www.datadoghq.com/blog/engineering/bits-ai-eval-platform/) and [Datadog Bits AI eval loop note](../validation/a1-bundle-value/datadog-bits-ai-eval-loop.md) | Datadog evaluates agent investigations with reconstructed world snapshots, isolated scenario data layers, representative labels, noisy red-herring environments, segmentation, stored per-scenario scores, `pass@k`, weekly full-set regression runs, feedback-derived labels, and model-refresh checks. | Datadog is industrializing the exact feedback/eval loop Parallax wants for bundle value and corpus moat claims. This raises the A1 bar: Parallax needs frozen noisy world snapshots, open result ledgers, and raw-dump-vs-bundle parity, not only a private "agent seemed better" eval. |
 | [Grafana Assistant CLI](https://grafana.com/docs/grafana-cloud/machine-learning/assistant/guides/cli/) and [self-hosted Grafana Assistant](https://grafana.com/docs/grafana/latest/administration/assistant/) | Grafana Assistant CLI is public preview and can connect local projects so Assistant can read local files; terminal access can be enabled with approvals. Grafana v13 supports Assistant on-premise in self-hosted Grafana only by connecting to a Grafana Cloud stack; the Assistant backend, usage limits, and billing stay in Cloud. On-premise currently lacks investigations, investigation memory, infrastructure memory, Grafana Cloud MCP connections, CLI auth tokens, SQL table discovery, automations, sandbox settings, and anonymous Assistant access. | Grafana validates CLI/MCP/local-context agent surfaces but leaves air-gapped/local-first room. Do not describe this as free local Assistant for OSS Grafana. |
 | [Grafana Assistant MCP docs](https://grafana.com/docs/grafana-cloud/machine-learning/assistant/configure/mcp-servers/) | Grafana Assistant can connect remote MCP servers and skills for incident investigation, issue/code lookups, ticket creation, Slack notifications, and other actions. Local MCP servers are not supported; operators are responsible for server security, reliability, data access, least-privilege tokens, and tool-call review. | Read-only scoping, redaction, and audit are product requirements, not implementation details. Grafana's MCP posture is useful but deliberately broader than Parallax's intended read-only evidence-bundle adapter. |
-| [OpenObserve homepage](https://openobserve.ai/), [pricing](https://openobserve.ai/pricing/), [enterprise features](https://openobserve.ai/docs/features/enterprise/), [license/pricing docs](https://openobserve.ai/docs/enterprise-setup/license-and-pricing/), [SRE Agent setup](https://openobserve.ai/docs/enterprise-setup/sre-agent/), [AI SRE product page](https://openobserve.ai/ai-sre/), [MCP docs](https://openobserve.ai/docs/integration/ai/mcp/), [OTLP docs](https://openobserve.ai/docs/ingestion/logs/otlp/), [OpenObserve `v0.90.2` release](https://github.com/openobserve/openobserve/releases/tag/v0.90.2), [docs search index](https://openobserve.ai/docs/search/search_index.json), and [OpenObserve AI/MCP Enterprise recheck](openobserve-ai-mcp-enterprise-recheck.md) | Pricing, enterprise-feature, and license docs say Self-Hosted Enterprise is free up to `50 GB/day`; license docs also describe a no-key `10 GB/day` threshold; the homepage FAQ instead says Self-Hosted Enterprise is free up to `200 GB/day`. The pricing page says AI features are preview/credit based. The SRE Agent setup requires an OpenObserve Enterprise license, AI provider key, and `O2_AI_ENABLED=true`; setup docs cover direct and gateway provider paths. The AI SRE product page claims OpenAI-compatible/self-hosted endpoint support and now uses evidence-chain/audit-trail language around incident RCA. OpenObserve MCP is Enterprise-only; its MCP catalog includes natural-language queries plus broad create/update/delete/admin tools for alerts, dashboards, roles, streams, functions, KV, org/system settings, pipelines, users, ingestion, and search jobs. OpenObserve also supports OTLP/HTTP and OTLP/gRPC for logs, metrics, and traces. Latest-release redirect still resolves to `v0.90.2`; tag ref `308208f35c0a5d42da9f0e1798188cbbf46373fb`. Current docs-search index returned zero exact matches for `sentry` and Parallax-style portable evidence-bundle/export terms. | OpenObserve is still the closest Rust/object-storage threat. Do not overstate this as a simple paywall because Self-Hosted Enterprise has a free allowance and public pages conflict on the exact limit; the sharper gap is that AI/MCP are Enterprise-tier surfaces and the public MCP shape is broad/write-capable rather than Parallax's intended read-only portable evidence-bundle surface. Treat the AI SRE evidence-chain language as a watch trigger until a versioned/exportable schema appears. |
-| [SigNoz agent-native observability](https://signoz.io/agent-native-observability/), [SigNoz Postmortem Evidence Pack](https://signoz.io/docs/ai/use-cases/postmortem-evidence-pack/), [SigNoz on-call lifecycle MCP blog](https://signoz.io/blog/automating-oncall-lifecycle-signoz-mcp/), [SigNoz MCP server](https://signoz.io/docs/ai/signoz-mcp-server/), [`SigNoz/agent-skills`](https://github.com/SigNoz/agent-skills), [`signoz-investigating-alerts`](https://github.com/SigNoz/agent-skills/blob/main/plugins/signoz/skills/signoz-investigating-alerts/SKILL.md), [`signoz-mcp-server` `v0.4.1` release](https://github.com/SigNoz/signoz-mcp-server/releases/tag/v0.4.1), [SigNoz `v0.125.1` release](https://github.com/SigNoz/signoz/releases/tag/v0.125.1), and [SigNoz open investigation format check](signoz-open-investigation-format-check.md) | SigNoz positions observability inside coding agents, claims an "open investigation format," publishes postmortem evidence-pack and on-call lifecycle workflows, supports hosted plus self-hosted MCP, and now packages official agent skills. `signoz-investigating-alerts` is a read-only three-tier alert RCA playbook with required output sections, query-citation guardrails, and evals. The current MCP tool list still covers metrics, traces, logs, docs, alerts, dashboards, saved views, and notification channels, including create/update/delete tools for several resource types. The 2026-05-25 focused refresh found stronger workflow/playbook evidence, but not a versioned schema, validator-backed replayable export, or portable artifact in checked docs/README/source scans/release sources. Latest checked releases remain `signoz-mcp-server` `v0.4.1` on 2026-05-21, tag ref `8a6bb34ea75775bbe678594219bc21a5babd8721`, and `signoz` `v0.125.1` on 2026-05-20, tag ref `fb3e316ce906c36cdb20cd4900e58f2a43804d7a`. SigNoz `main` had a same-day 2026-05-25 push. | SigNoz directly attacks the "agent-native observability" story and is now packaging standardizable investigation workflows, but this remains unproven as A3 closure until the format is source-linked, versioned, and auditable. Parallax must distinguish assistant-generated reports, skills, and query/management MCP from read-only evidence bundles with schema, redaction, raw-ref, and outcome semantics. |
+| [OpenObserve homepage](https://openobserve.ai/), [pricing](https://openobserve.ai/pricing/), [enterprise features](https://openobserve.ai/docs/features/enterprise/), [license/pricing docs](https://openobserve.ai/docs/enterprise-setup/license-and-pricing/), [SRE Agent setup](https://openobserve.ai/docs/enterprise-setup/sre-agent/), [AI SRE product page](https://openobserve.ai/ai-sre/), [MCP docs](https://openobserve.ai/docs/integration/ai/mcp/), [OTLP docs](https://openobserve.ai/docs/ingestion/logs/otlp/), [OpenObserve `v0.90.2` release](https://github.com/openobserve/openobserve/releases/tag/v0.90.2), [docs search index](https://openobserve.ai/docs/search/search_index.json), and [OpenObserve AI/MCP Enterprise recheck](competitor-watch.md) | Pricing, enterprise-feature, and license docs say Self-Hosted Enterprise is free up to `50 GB/day`; license docs also describe a no-key `10 GB/day` threshold; the homepage FAQ instead says Self-Hosted Enterprise is free up to `200 GB/day`. The pricing page says AI features are preview/credit based. The SRE Agent setup requires an OpenObserve Enterprise license, AI provider key, and `O2_AI_ENABLED=true`; setup docs cover direct and gateway provider paths. The AI SRE product page claims OpenAI-compatible/self-hosted endpoint support and now uses evidence-chain/audit-trail language around incident RCA. OpenObserve MCP is Enterprise-only; its MCP catalog includes natural-language queries plus broad create/update/delete/admin tools for alerts, dashboards, roles, streams, functions, KV, org/system settings, pipelines, users, ingestion, and search jobs. OpenObserve also supports OTLP/HTTP and OTLP/gRPC for logs, metrics, and traces. Latest-release redirect still resolves to `v0.90.2`; tag ref `308208f35c0a5d42da9f0e1798188cbbf46373fb`. Current docs-search index returned zero exact matches for `sentry` and Parallax-style portable evidence-bundle/export terms. | OpenObserve is still the closest Rust/object-storage threat. Do not overstate this as a simple paywall because Self-Hosted Enterprise has a free allowance and public pages conflict on the exact limit; the sharper gap is that AI/MCP are Enterprise-tier surfaces and the public MCP shape is broad/write-capable rather than Parallax's intended read-only portable evidence-bundle surface. Treat the AI SRE evidence-chain language as a watch trigger until a versioned/exportable schema appears. |
+| [SigNoz agent-native observability](https://signoz.io/agent-native-observability/), [SigNoz Postmortem Evidence Pack](https://signoz.io/docs/ai/use-cases/postmortem-evidence-pack/), [SigNoz on-call lifecycle MCP blog](https://signoz.io/blog/automating-oncall-lifecycle-signoz-mcp/), [SigNoz MCP server](https://signoz.io/docs/ai/signoz-mcp-server/), [`SigNoz/agent-skills`](https://github.com/SigNoz/agent-skills), [`signoz-investigating-alerts`](https://github.com/SigNoz/agent-skills/blob/main/plugins/signoz/skills/signoz-investigating-alerts/SKILL.md), [`signoz-mcp-server` `v0.4.1` release](https://github.com/SigNoz/signoz-mcp-server/releases/tag/v0.4.1), [SigNoz `v0.125.1` release](https://github.com/SigNoz/signoz/releases/tag/v0.125.1), and [SigNoz open investigation format check](competitor-watch.md) | SigNoz positions observability inside coding agents, claims an "open investigation format," publishes postmortem evidence-pack and on-call lifecycle workflows, supports hosted plus self-hosted MCP, and now packages official agent skills. `signoz-investigating-alerts` is a read-only three-tier alert RCA playbook with required output sections, query-citation guardrails, and evals. The current MCP tool list still covers metrics, traces, logs, docs, alerts, dashboards, saved views, and notification channels, including create/update/delete tools for several resource types. The 2026-05-25 focused refresh found stronger workflow/playbook evidence, but not a versioned schema, validator-backed replayable export, or portable artifact in checked docs/README/source scans/release sources. Latest checked releases remain `signoz-mcp-server` `v0.4.1` on 2026-05-21, tag ref `8a6bb34ea75775bbe678594219bc21a5babd8721`, and `signoz` `v0.125.1` on 2026-05-20, tag ref `fb3e316ce906c36cdb20cd4900e58f2a43804d7a`. SigNoz `main` had a same-day 2026-05-25 push. | SigNoz directly attacks the "agent-native observability" story and is now packaging standardizable investigation workflows, but this remains unproven as A3 closure until the format is source-linked, versioned, and auditable. Parallax must distinguish assistant-generated reports, skills, and query/management MCP from read-only evidence bundles with schema, redaction, raw-ref, and outcome semantics. |
 | [SigNoz Claude Code monitoring](https://signoz.io/docs/claude-code-monitoring/) | SigNoz documents Claude Code OpenTelemetry export with logs/metrics and prompt-level correlation fields. | Agent telemetry is no longer a distant niche; Parallax needs the richer action/outcome graph. |
-| [Coroot `v1.20.2` release](https://github.com/coroot/coroot/releases/tag/v1.20.2), [Coroot AI RCA](https://docs.coroot.com/ai/overview/), [AI configuration](https://docs.coroot.com/ai/configuration/), [Coroot Cloud integration](https://docs.coroot.com/ai/coroot-cloud/), [Coroot editions](https://coroot.com/editions), [Coroot MCP](https://docs.coroot.com/mcp/overview/), [MCP source](https://github.com/coroot/coroot/blob/main/api/mcp.go), [RCA source](https://github.com/coroot/coroot/blob/main/api/rca.go), [Cloud RCA source](https://github.com/coroot/coroot/blob/main/cloud/rca.go), [Coroot architecture](https://docs.coroot.com/installation/architecture/), [Coroot eBPF tracing](https://docs.coroot.com/tracing/ebpf-based-tracing/), and [Coroot MCP and AI RCA recheck](coroot-mcp-ai-rca-recheck.md) | Coroot `v1.20.2` remains the latest checked release and added the MCP server on 2026-05-06; GitHub metadata showed a 2026-05-22 push. Coroot Community is listed as free forever, self-hosted, no monitored-infrastructure limit, and includes agentic-ready MCP; Enterprise adds AI RCA and agentic anomaly investigation at $1 per monitored CPU core/month. Community can connect to Coroot Cloud for 10 free RCA investigations/month. The MCP endpoint uses streamable HTTP, OAuth 2.0, and server-side authorization, exposes topology/alerts/incidents/traces/logs/metrics, includes Community `resolve_alerts`, and adds Enterprise `investigate_anomaly`; source confirms most telemetry tools are read-only annotated, `resolve_alerts` is non-read-only and alert-edit gated, and RCA is persisted onto incidents. Cloud RCA source posts a compressed request with metrics/events/deployments/traces to the cloud integration. eBPF traces may not provide complete traces. | Coroot's agent surface is now a serious self-hosted baseline, but still lacks Parallax's Sentry migration, portable evidence-bundle/schema, coding-agent side-effect audit, and fully local/open RCA in Community. |
-| [Bugsink docs](https://www.bugsink.com/docs/), [Bugsink repository](https://github.com/bugsink/bugsink), [Bugsink `2.2.1` release](https://github.com/bugsink/bugsink/releases/tag/2.2.1), [`bugsink-mcp` package](https://www.npmjs.com/package/bugsink-mcp), and [Bugsink simplicity recheck](bugsink-sentry-compatible-simplicity-recheck.md) | Bugsink is self-hosted error tracking compatible with the Sentry SDK; current docs claim DSN migration and a low-ops deployment shape. The recheck narrows "single container/SQLite" into throwaway Docker, persistent Docker database, and non-container SQLite cases. GitHub metadata checked on 2026-05-25 shows latest release `2.2.1` on 2026-05-22 with roughly 1.8k stars; the release improves the canonical API. No first-party Bugsink MCP was found in official docs, but third-party `bugsink-mcp` now has an npm `1.0.0` MIT package. | Low-ops Sentry compatibility is not unique, and Bugsink is active enough to be a real simplicity baseline. Ecosystem MCP pressure means Parallax should not rely on "Bugsink data cannot be exposed to agents" as a durable claim. |
-| [Rustrak repository](https://github.com/AbianS/rustrak), [`@rustrak/mcp`](https://www.npmjs.com/package/@rustrak/mcp), [Rustrak Sentry MCP protocol recheck](rustrak-sentry-mcp-protocol-recheck.md), and [lightweight MCP boundary check](lightweight-error-tracker-mcp-boundary-check.md) | Rustrak is Rust/Actix, Sentry SDK compatible for modern envelope error events, SQLite-by-default, small-footprint, GPL-3.0, and ships `@rustrak/mcp` for AI assistant integration. GitHub metadata checked on 2026-05-25 shows activity the same day, latest visible release `docs@0.1.16`, server release `@rustrak/server@0.2.5`, roughly 43 stars, and npm `@rustrak/mcp` `0.1.2`; the MCP tool surface includes management/destructive/token/raw-event access. A 2026-05-22 unreleased `feat: sentry agent` commit adds repo-maintenance Sentry protocol agent workflow files, not a product-facing runtime feature. | Rust plus Sentry compatibility plus MCP is already a live lightweight competitor shape, though still early maturity. Its MCP posture reinforces Parallax's read-only bundle boundary rather than closing it; its own drift report also confirms non-event Sentry items are not stored. |
-| [Traceway repository](https://github.com/tracewayapp/traceway), [OTLP route source](https://github.com/tracewayapp/traceway/blob/main/backend/app/controllers/routes.go), [AI tracing docs](https://docs.tracewayapp.com/learn/ai-tracing), [SQLite docs](https://docs.tracewayapp.com/server/sqlite), [integration skills](https://github.com/tracewayapp/traceway/tree/main/skills), and [Traceway recheck](traceway-otlp-ai-replay-recheck.md) | Traceway is MIT, OpenTelemetry-native, self-hosted, and combines OTLP/HTTP logs/traces/metrics, OTel exceptions, native `/api/report` session replay/RUM, and AI trace promotion from `gen_ai.*`. GitHub metadata checked on 2026-05-25 shows latest backend release `backend/v1.7.27` on 2026-05-22, repo push on 2026-05-25, latest `main` commit `38b8d385`, and roughly 817 stars. SQLite mode is a single container with two SQLite files plus blobs under `/data`; embedded mode runs a development server inside a Go process. Integration skills exist, but no MCP server or Sentry-compatible ingest path was found in checked sources. | Traceway pressures OTLP/frontend/replay/AI tracing and low-friction local/self-hosted deployment. It narrows Parallax wording around OTLP-native context but does not close Sentry migration, evidence-bundle, read-only agent surface, or coding-agent action/outcome audit. |
-| [GoSnag repository](https://github.com/darkspock/gosnag), [MCP source](https://github.com/darkspock/gosnag/blob/main/mcp/src/index.ts), [ingest handler](https://github.com/darkspock/gosnag/blob/main/internal/ingest/handler.go), [AI provider source](https://github.com/darkspock/gosnag/blob/main/internal/ai/provider.go), and [GoSnag recheck](gosnag-sentry-ai-mcp-recheck.md) | GoSnag is a self-hosted Sentry-compatible service with source-confirmed `/store/` and `/envelope/` error-event ingest, raw event JSON storage, AI RCA/merge/deploy/ticket/priority/tag/alert workflows, and an MCP server exposing project, issue, alert, tag, ticket, and user management tools. GitHub metadata checked on 2026-05-25 shows no tagged release, roughly 8 stars, last push on 2026-04-17, and latest checked `main` commit `418b8b1`; the MCP implementation uses Bearer-token API calls and includes create/update/delete or workflow-changing tools. Source ignores Sentry transactions, sessions, and client reports; the provider switch confirms OpenAI-compatible OpenAI/Groq and Bedrock, not direct Anthropic/Ollama. | MCP and AI over issue management are already present in small Sentry-compatible tools, but GoSnag should be treated as a capability warning rather than a mature baseline. The remaining gap is OTLP context, citable/redacted evidence bundles, read-only projections, and action/outcome audit. |
-| [Urgentry site](https://urgentry.com/), [Urgentry repository](https://github.com/urgentry/urgentry), and [Urgentry recheck](urgentry-sentry-tiny-benchmark-recheck.md) | Urgentry claims DSN-only migration from Sentry, Tiny mode, one-binary startup, traces/replay/profiling/logs, and benchmark comparisons against self-hosted Sentry; source confirms broad store/envelope/minidump/security/OTLP HTTP JSON ingest and envelope side effects for transactions, sessions, replay, profiles, client reports, check-ins, attachments, and metrics. Checked OTLP rejects protobuf; no MCP was found; Autofix is deterministic/stub-like. GitHub metadata checked on 2026-05-25 shows latest release `v0.2.12` on 2026-05-22, latest checked `main` commit `ccc0ff8`, and roughly 55 stars. | Urgentry pressures "simpler than self-hosted Sentry" and broad Sentry-protocol coverage even if it does not satisfy the open-source or agent-evidence thesis; treat performance numbers as vendor claims until reproduced by benchmark artifacts. |
+| [Coroot `v1.20.2` release](https://github.com/coroot/coroot/releases/tag/v1.20.2), [Coroot AI RCA](https://docs.coroot.com/ai/overview/), [AI configuration](https://docs.coroot.com/ai/configuration/), [Coroot Cloud integration](https://docs.coroot.com/ai/coroot-cloud/), [Coroot editions](https://coroot.com/editions), [Coroot MCP](https://docs.coroot.com/mcp/overview/), [MCP source](https://github.com/coroot/coroot/blob/main/api/mcp.go), [RCA source](https://github.com/coroot/coroot/blob/main/api/rca.go), [Cloud RCA source](https://github.com/coroot/coroot/blob/main/cloud/rca.go), [Coroot architecture](https://docs.coroot.com/installation/architecture/), [Coroot eBPF tracing](https://docs.coroot.com/tracing/ebpf-based-tracing/), and [Coroot MCP and AI RCA recheck](competitor-watch.md) | Coroot `v1.20.2` remains the latest checked release and added the MCP server on 2026-05-06; GitHub metadata showed a 2026-05-22 push. Coroot Community is listed as free forever, self-hosted, no monitored-infrastructure limit, and includes agentic-ready MCP; Enterprise adds AI RCA and agentic anomaly investigation at $1 per monitored CPU core/month. Community can connect to Coroot Cloud for 10 free RCA investigations/month. The MCP endpoint uses streamable HTTP, OAuth 2.0, and server-side authorization, exposes topology/alerts/incidents/traces/logs/metrics, includes Community `resolve_alerts`, and adds Enterprise `investigate_anomaly`; source confirms most telemetry tools are read-only annotated, `resolve_alerts` is non-read-only and alert-edit gated, and RCA is persisted onto incidents. Cloud RCA source posts a compressed request with metrics/events/deployments/traces to the cloud integration. eBPF traces may not provide complete traces. | Coroot's agent surface is now a serious self-hosted baseline, but still lacks Parallax's Sentry migration, portable evidence-bundle/schema, coding-agent side-effect audit, and fully local/open RCA in Community. |
+| [Bugsink docs](https://www.bugsink.com/docs/), [Bugsink repository](https://github.com/bugsink/bugsink), [Bugsink `2.2.1` release](https://github.com/bugsink/bugsink/releases/tag/2.2.1), [`bugsink-mcp` package](https://www.npmjs.com/package/bugsink-mcp), and [Bugsink simplicity recheck](competitor-watch.md) | Bugsink is self-hosted error tracking compatible with the Sentry SDK; current docs claim DSN migration and a low-ops deployment shape. The recheck narrows "single container/SQLite" into throwaway Docker, persistent Docker database, and non-container SQLite cases. GitHub metadata checked on 2026-05-25 shows latest release `2.2.1` on 2026-05-22 with roughly 1.8k stars; the release improves the canonical API. No first-party Bugsink MCP was found in official docs, but third-party `bugsink-mcp` now has an npm `1.0.0` MIT package. | Low-ops Sentry compatibility is not unique, and Bugsink is active enough to be a real simplicity baseline. Ecosystem MCP pressure means Parallax should not rely on "Bugsink data cannot be exposed to agents" as a durable claim. |
+| [Rustrak repository](https://github.com/AbianS/rustrak), [`@rustrak/mcp`](https://www.npmjs.com/package/@rustrak/mcp), [Rustrak Sentry MCP protocol recheck](competitor-watch.md), and [lightweight MCP boundary check](competitor-watch.md) | Rustrak is Rust/Actix, Sentry SDK compatible for modern envelope error events, SQLite-by-default, small-footprint, GPL-3.0, and ships `@rustrak/mcp` for AI assistant integration. GitHub metadata checked on 2026-05-25 shows activity the same day, latest visible release `docs@0.1.16`, server release `@rustrak/server@0.2.5`, roughly 43 stars, and npm `@rustrak/mcp` `0.1.2`; the MCP tool surface includes management/destructive/token/raw-event access. A 2026-05-22 unreleased `feat: sentry agent` commit adds repo-maintenance Sentry protocol agent workflow files, not a product-facing runtime feature. | Rust plus Sentry compatibility plus MCP is already a live lightweight competitor shape, though still early maturity. Its MCP posture reinforces Parallax's read-only bundle boundary rather than closing it; its own drift report also confirms non-event Sentry items are not stored. |
+| [Traceway repository](https://github.com/tracewayapp/traceway), [OTLP route source](https://github.com/tracewayapp/traceway/blob/main/backend/app/controllers/routes.go), [AI tracing docs](https://docs.tracewayapp.com/learn/ai-tracing), [SQLite docs](https://docs.tracewayapp.com/server/sqlite), [integration skills](https://github.com/tracewayapp/traceway/tree/main/skills), and [Traceway recheck](competitor-watch.md) | Traceway is MIT, OpenTelemetry-native, self-hosted, and combines OTLP/HTTP logs/traces/metrics, OTel exceptions, native `/api/report` session replay/RUM, and AI trace promotion from `gen_ai.*`. GitHub metadata checked on 2026-05-25 shows latest backend release `backend/v1.7.27` on 2026-05-22, repo push on 2026-05-25, latest `main` commit `38b8d385`, and roughly 817 stars. SQLite mode is a single container with two SQLite files plus blobs under `/data`; embedded mode runs a development server inside a Go process. Integration skills exist, but no MCP server or Sentry-compatible ingest path was found in checked sources. | Traceway pressures OTLP/frontend/replay/AI tracing and low-friction local/self-hosted deployment. It narrows Parallax wording around OTLP-native context but does not close Sentry migration, evidence-bundle, read-only agent surface, or coding-agent action/outcome audit. |
+| [GoSnag repository](https://github.com/darkspock/gosnag), [MCP source](https://github.com/darkspock/gosnag/blob/main/mcp/src/index.ts), [ingest handler](https://github.com/darkspock/gosnag/blob/main/internal/ingest/handler.go), [AI provider source](https://github.com/darkspock/gosnag/blob/main/internal/ai/provider.go), and [GoSnag recheck](competitor-watch.md) | GoSnag is a self-hosted Sentry-compatible service with source-confirmed `/store/` and `/envelope/` error-event ingest, raw event JSON storage, AI RCA/merge/deploy/ticket/priority/tag/alert workflows, and an MCP server exposing project, issue, alert, tag, ticket, and user management tools. GitHub metadata checked on 2026-05-25 shows no tagged release, roughly 8 stars, last push on 2026-04-17, and latest checked `main` commit `418b8b1`; the MCP implementation uses Bearer-token API calls and includes create/update/delete or workflow-changing tools. Source ignores Sentry transactions, sessions, and client reports; the provider switch confirms OpenAI-compatible OpenAI/Groq and Bedrock, not direct Anthropic/Ollama. | MCP and AI over issue management are already present in small Sentry-compatible tools, but GoSnag should be treated as a capability warning rather than a mature baseline. The remaining gap is OTLP context, citable/redacted evidence bundles, read-only projections, and action/outcome audit. |
+| [Urgentry site](https://urgentry.com/), [Urgentry repository](https://github.com/urgentry/urgentry), and [Urgentry recheck](competitor-watch.md) | Urgentry claims DSN-only migration from Sentry, Tiny mode, one-binary startup, traces/replay/profiling/logs, and benchmark comparisons against self-hosted Sentry; source confirms broad store/envelope/minidump/security/OTLP HTTP JSON ingest and envelope side effects for transactions, sessions, replay, profiles, client reports, check-ins, attachments, and metrics. Checked OTLP rejects protobuf; no MCP was found; Autofix is deterministic/stub-like. GitHub metadata checked on 2026-05-25 shows latest release `v0.2.12` on 2026-05-22, latest checked `main` commit `ccc0ff8`, and roughly 55 stars. | Urgentry pressures "simpler than self-hosted Sentry" and broad Sentry-protocol coverage even if it does not satisfy the open-source or agent-evidence thesis; treat performance numbers as vendor claims until reproduced by benchmark artifacts. |
 
 #### Drift Levels
 
@@ -2090,7 +2090,7 @@ Research date: 2026-05-25
 
 #### Purpose
 
-The [lightweight Sentry-compatible competitor watch](lightweight-sentry-compatible-competitor-watch.md)
+The [lightweight Sentry-compatible competitor watch](competitor-watch.md)
 already shows that "simpler than self-hosted Sentry" is crowded. This note
 checks a narrower question:
 
@@ -2141,10 +2141,10 @@ do not publish:
 | Source | Evidence checked | Freshness |
 | --- | --- | --- |
 | [Bugsink release](https://github.com/bugsink/bugsink/releases/tag/2.2.1), [self-hosting page](https://www.bugsink.com/built-to-self-host/), [Sentry-SDK compatibility page](https://www.bugsink.com/sentry-sdk-compatible/), [license](https://github.com/bugsink/bugsink/blob/main/LICENSE), [`bugsink-mcp` package](https://www.npmjs.com/package/bugsink-mcp), [`draded/bugsink-mcp`](https://github.com/draded/bugsink-mcp), and [`j-shelfwood/bugsink-mcp`](https://github.com/j-shelfwood/bugsink-mcp) | Single-container/SQLite/no-queue posture, Sentry SDK compatibility, no first-party MCP/AI agent surface in official docs, PolyForm Shield license posture, and small third-party Bugsink MCP adapters with issue/event/stacktrace query tools. | Bugsink release `2.2.1` published 2026-05-22; `bugsink-mcp` npm package checked at `1.0.0`; `draded/bugsink-mcp` has 0 stars/no releases; `j-shelfwood/bugsink-mcp` has 6 stars/no releases and last push 2026-01-12. |
-| [Rustrak repository](https://github.com/AbianS/rustrak), [`@rustrak/mcp` npm package](https://www.npmjs.com/package/@rustrak/mcp), [MCP package README](https://github.com/AbianS/rustrak/tree/main/packages/mcp), [MCP issue tools source](https://github.com/AbianS/rustrak/blob/main/packages/mcp/src/tools/issues.ts), and [Rustrak recheck](rustrak-sentry-mcp-protocol-recheck.md) | Rust/Actix Sentry-compatible tracker, SQLite/Postgres deployment, `@rustrak/mcp` `0.1.2`, project/issue/event/token/alert tools, destructive issue and token operations, raw Sentry-envelope event access, and unreleased repo-maintenance Sentry protocol agent workflow. | Repo pushed 2026-05-25; generic latest release `docs@0.1.16` and server release `@rustrak/server@0.2.5` published 2026-05-21; npm `@rustrak/mcp` checked at `0.1.2`. |
-| [Traceway repository](https://github.com/tracewayapp/traceway), [OTLP route source](https://github.com/tracewayapp/traceway/blob/main/backend/app/controllers/routes.go), [integration skills](https://github.com/tracewayapp/traceway/tree/main/skills), and [Traceway recheck](traceway-otlp-ai-replay-recheck.md) | MIT, direct OTLP/HTTP logs/traces/metrics, native `/api/report` for sessions/recordings, AI trace conversion from `gen_ai.*`, SQLite/all-in-one/minimal/embedded deployment modes, integration-instruction skills, and no checked MCP or Sentry-compatible ingest path. | Backend release `backend/v1.7.27` published 2026-05-22; repo pushed 2026-05-25; latest checked `main` commit `38b8d385`. |
-| [GoSnag repository](https://github.com/darkspock/gosnag), [GoSnag MCP source](https://github.com/darkspock/gosnag/blob/main/mcp/src/index.ts), [GoSnag MCP package file](https://github.com/darkspock/gosnag/blob/main/mcp/package.json), and [GoSnag recheck](gosnag-sentry-ai-mcp-recheck.md) | Sentry `/store/` and `/envelope/` error-event ingest, AI RCA/triage source, Bearer-token MCP server, management tools for projects/issues/alerts/tags/tickets/users, no tagged GitHub release, and no Parallax-style evidence-bundle contract. | Repo pushed 2026-04-17; no latest release found in GitHub API; `mcp/package.json` version `1.0.0`; latest checked `main` commit `418b8b1`. |
-| [Urgentry repository](https://github.com/urgentry/urgentry), [release](https://github.com/urgentry/urgentry/releases/tag/v0.2.12), [license](https://github.com/urgentry/urgentry/blob/main/LICENSE), and [Urgentry recheck](urgentry-sentry-tiny-benchmark-recheck.md) | DSN migration, Tiny one-binary SQLite mode, split PostgreSQL/MinIO/Valkey/NATS mode, broad envelope side effects, OTLP HTTP/JSON with protobuf rejected, benchmark claims, FSL source-available license, no checked MCP surface, and deterministic/stub-like Autofix output. | Release `v0.2.12` published 2026-05-22; latest checked `main` commit `ccc0ff8` dated 2026-05-22. |
+| [Rustrak repository](https://github.com/AbianS/rustrak), [`@rustrak/mcp` npm package](https://www.npmjs.com/package/@rustrak/mcp), [MCP package README](https://github.com/AbianS/rustrak/tree/main/packages/mcp), [MCP issue tools source](https://github.com/AbianS/rustrak/blob/main/packages/mcp/src/tools/issues.ts), and [Rustrak recheck](competitor-watch.md) | Rust/Actix Sentry-compatible tracker, SQLite/Postgres deployment, `@rustrak/mcp` `0.1.2`, project/issue/event/token/alert tools, destructive issue and token operations, raw Sentry-envelope event access, and unreleased repo-maintenance Sentry protocol agent workflow. | Repo pushed 2026-05-25; generic latest release `docs@0.1.16` and server release `@rustrak/server@0.2.5` published 2026-05-21; npm `@rustrak/mcp` checked at `0.1.2`. |
+| [Traceway repository](https://github.com/tracewayapp/traceway), [OTLP route source](https://github.com/tracewayapp/traceway/blob/main/backend/app/controllers/routes.go), [integration skills](https://github.com/tracewayapp/traceway/tree/main/skills), and [Traceway recheck](competitor-watch.md) | MIT, direct OTLP/HTTP logs/traces/metrics, native `/api/report` for sessions/recordings, AI trace conversion from `gen_ai.*`, SQLite/all-in-one/minimal/embedded deployment modes, integration-instruction skills, and no checked MCP or Sentry-compatible ingest path. | Backend release `backend/v1.7.27` published 2026-05-22; repo pushed 2026-05-25; latest checked `main` commit `38b8d385`. |
+| [GoSnag repository](https://github.com/darkspock/gosnag), [GoSnag MCP source](https://github.com/darkspock/gosnag/blob/main/mcp/src/index.ts), [GoSnag MCP package file](https://github.com/darkspock/gosnag/blob/main/mcp/package.json), and [GoSnag recheck](competitor-watch.md) | Sentry `/store/` and `/envelope/` error-event ingest, AI RCA/triage source, Bearer-token MCP server, management tools for projects/issues/alerts/tags/tickets/users, no tagged GitHub release, and no Parallax-style evidence-bundle contract. | Repo pushed 2026-04-17; no latest release found in GitHub API; `mcp/package.json` version `1.0.0`; latest checked `main` commit `418b8b1`. |
+| [Urgentry repository](https://github.com/urgentry/urgentry), [release](https://github.com/urgentry/urgentry/releases/tag/v0.2.12), [license](https://github.com/urgentry/urgentry/blob/main/LICENSE), and [Urgentry recheck](competitor-watch.md) | DSN migration, Tiny one-binary SQLite mode, split PostgreSQL/MinIO/Valkey/NATS mode, broad envelope side effects, OTLP HTTP/JSON with protobuf rejected, benchmark claims, FSL source-available license, no checked MCP surface, and deterministic/stub-like Autofix output. | Release `v0.2.12` published 2026-05-22; latest checked `main` commit `ccc0ff8` dated 2026-05-22. |
 
 #### Counting Rules
 
@@ -2241,8 +2241,8 @@ Parallax's first read-only evidence context adapter.
 | [Sentry MCP repository](https://github.com/getsentry/sentry-mcp), [Sentry MCP stdio testing guide](https://github.com/getsentry/sentry-mcp/blob/master/docs/testing-stdio.md), and [Sentry MCP releases](https://github.com/getsentry/sentry-mcp/releases) | Sentry says its MCP service targets human-in-the-loop coding agents rather than every Sentry API. The checked release page shows `0.35.0` on 2026-05-21. The README describes stdio for self-hosted Sentry as work in progress, lists setup scopes including `project:write`, `team:write`, and `event:write`, and says AI-powered search needs OpenAI or Anthropic provider configuration. The stdio testing guide also documents a read-only testing scope set: `org:read`, `project:read`, `team:read`, and `event:read`. | Sentry is not simply a broad admin MCP, and the old "no documented read-only path" objection is too strong. Parallax should still not claim MCP parity until it proves read-only tool availability, projection equivalence, redaction, and bundle output under those narrower scopes. |
 | [Grafana Assistant MCP servers](https://grafana.com/docs/grafana-cloud/machine-learning/assistant/configure/mcp-servers/) and [Grafana Incident/Sift MCP guide](https://grafana.com/docs/grafana/latest/developer-resources/mcp/guides/use-grafana-incident-and-sift/) | Grafana Assistant supports only remote MCP servers, requires operators to trust connected servers and review tool calls, and frames MCP around issue/code lookup, ticket creation, Slack notifications, and similar actions. The Incident/Sift guide separates Viewer read operations from Editor write operations such as creating incidents, adding incident activity, and running Sift analyses that create investigations. | Grafana validates a human-approved action model. Parallax's first surface should be a context server, not an incident/ticket/action automation server. |
 | [OpenObserve MCP docs](https://openobserve.ai/docs/integration/ai/mcp/) | OpenObserve documents a large MCP catalog with many create/update/delete/admin operations. Checked tool categories include alerts, authorization roles, dashboards, folders, functions, KV, organizations/settings, pipelines, search jobs, service accounts, sourcemaps, streams, and users, with destructive tools marked. It recommends a dedicated MCP user, secret handling, credential rotation, and client-side confirmation when possible. | OpenObserve is the clearest evidence that agentic observability MCP can become a management plane. Parallax must avoid copying that shape for the first context adapter. |
-| [SigNoz MCP server docs](https://signoz.io/docs/ai/signoz-mcp-server/) and [SigNoz open investigation format check](signoz-open-investigation-format-check.md) | SigNoz exposes hosted and self-hosted MCP. The checked README/docs list metrics/logs/traces/query tools plus create/update/delete operations for alerts, dashboards, saved views, and notification channels, and a raw Query Builder tool. | SigNoz proves open self-hosted MCP is table stakes. Its tool shape is query plus management, not Parallax-style read-only bundle projection. |
-| [Coroot MCP overview](https://docs.coroot.com/mcp/overview/), [Coroot releases](https://github.com/coroot/coroot/releases), and [Coroot MCP and AI RCA recheck](coroot-mcp-ai-rca-recheck.md) | Coroot's latest checked release page shows `1.20.2` as latest and includes the MCP server. The MCP docs use OAuth 2.0 and server-side RBAC; Community tools expose topology, alerts, incidents, traces, logs, metrics, raw telemetry, `select_project`, and `resolve_alerts`. Enterprise adds `investigate_anomaly`, which can persist RCA onto an incident when an incident key is supplied. | Coroot has a stronger auth story than many MCP examples, but it still mixes live production query, alert resolution, and persisted RCA. Treat it as a serious baseline, not as proof Parallax should add write tools early. |
+| [SigNoz MCP server docs](https://signoz.io/docs/ai/signoz-mcp-server/) and [SigNoz open investigation format check](competitor-watch.md) | SigNoz exposes hosted and self-hosted MCP. The checked README/docs list metrics/logs/traces/query tools plus create/update/delete operations for alerts, dashboards, saved views, and notification channels, and a raw Query Builder tool. | SigNoz proves open self-hosted MCP is table stakes. Its tool shape is query plus management, not Parallax-style read-only bundle projection. |
+| [Coroot MCP overview](https://docs.coroot.com/mcp/overview/), [Coroot releases](https://github.com/coroot/coroot/releases), and [Coroot MCP and AI RCA recheck](competitor-watch.md) | Coroot's latest checked release page shows `1.20.2` as latest and includes the MCP server. The MCP docs use OAuth 2.0 and server-side RBAC; Community tools expose topology, alerts, incidents, traces, logs, metrics, raw telemetry, `select_project`, and `resolve_alerts`. Enterprise adds `investigate_anomaly`, which can persist RCA onto an incident when an incident key is supplied. | Coroot has a stronger auth story than many MCP examples, but it still mixes live production query, alert resolution, and persisted RCA. Treat it as a serious baseline, not as proof Parallax should add write tools early. |
 
 GitHub REST release checks for several repositories were rate-limited during this
 pass, so this note does not replace the existing release-version rows in the
@@ -2250,7 +2250,7 @@ competitor drift ledger. The claims above are about documented MCP tool power,
 not about a new release-recency audit.
 
 The same boundary now applies below the large observability-suite tier. The
-[Lightweight error-tracker MCP boundary check](lightweight-error-tracker-mcp-boundary-check.md)
+[Lightweight error-tracker MCP boundary check](competitor-watch.md)
 found Rustrak and GoSnag MCP surfaces in small error trackers, including
 project/issue/event/token/alert/ticket/user management and raw Sentry-envelope
 event access. That makes MCP availability a table-stakes feature, not a moat,

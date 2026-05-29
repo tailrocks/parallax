@@ -31,7 +31,7 @@ active span.
 This gate measures whether Parallax's evidence graph has enough strong edges in
 real telemetry to justify the product claim. If it fails, Parallax can still be a
 useful error/context store, but it must stop promising lifecycle reconstruction.
-The [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md)
+The [A4 correlation reliability ledger](correlation.md)
 defines the row-level result artifact required before any aggregate result can
 count as proof.
 
@@ -75,16 +75,16 @@ show why it must be measured:
 
 Internal sources:
 
-- [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
+- [Causal reconstruction and agent safety](../architecture/causal-reconstruction.md)
   says time correlation is weak and deterministic edges must be labeled.
-- [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
+- [Frontend collection and cross-tier correlation](frontend.md)
   identifies CORS, sampling coherence, and browser gaps as the cross-tier failure
   modes.
-- [Frontend capture safety ledger](frontend-capture-safety-ledger.md) defines
+- [Frontend capture safety ledger](frontend.md) defines
   the browser/route, source-map, CORS, privacy, export, canonical hash,
   projection-manifest, and MCP structured-output rows that must be fresh before
   frontend anchors can support product wording.
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) already
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md) already
   distinguishes strong, medium, weak, and inferred edges, and requires
   `schema_ref`, `canonical_hash`, `projection_manifest`, and access fields for
   agent-visible CLI/API/MCP bundles.
@@ -93,7 +93,7 @@ Internal sources:
 
 Run this against real or pilot telemetry, not the generator. Start with
 operator-owned services, then design partners from the
-[user interview gate](user-interview-and-deployment-intent-gate.md).
+[user interview gate](../validation/a2-user-demand.md).
 
 Measure by anchor class:
 
@@ -270,7 +270,7 @@ where instrumentation, setup diagnostics, and honest product wording must change
 Store aggregate results in a Markdown note and machine-readable JSON. The row
 schema, run manifest, manual audit rows, instrumentation repair rows, claim
 levels, and refresh rules are defined in the
-[A4 correlation reliability ledger](a4-correlation-reliability-ledger.md).
+[A4 correlation reliability ledger](correlation.md).
 
 ```json
 {
@@ -305,24 +305,24 @@ data to pass A4.
 
 ### Relationship To Other Research
 
-- [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
+- [Causal reconstruction and agent safety](../architecture/causal-reconstruction.md)
   defines the edge-strength model this gate measures.
-- [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
+- [Frontend collection and cross-tier correlation](frontend.md)
   defines the browser-to-backend propagation path and its failure modes.
-- [Frontend capture safety ledger](frontend-capture-safety-ledger.md) defines
+- [Frontend capture safety ledger](frontend.md) defines
   the browser-side source-map, CORS, privacy, export, overhead, canonical hash,
   and projection rows consumed by frontend correlation claims.
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md) defines the
   edge and missing-evidence fields that must be audited.
-- [A4 correlation reliability ledger](a4-correlation-reliability-ledger.md)
+- [A4 correlation reliability ledger](correlation.md)
   defines the public run artifacts, row schemas, claim levels, and refresh rules.
-- [Bundle-value evaluation](bundle-value-evaluation.md) depends on this gate: an
+- [Bundle-value evaluation](../validation/a1-bundle-value/bundle-value-evaluation.md) depends on this gate: an
   agent eval over unrealistically perfect links would overstate the product.
-- [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
+- [User interview and deployment intent gate](../validation/a2-user-demand.md)
   can recruit teams with real incidents for the audit.
-- [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md)
+- [OpenTelemetry protocol and context layer](otlp.md)
   defines the base trace/log/resource fields.
-- [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md)
+- [Deploy, change, and issue-tracker context](deploy-change-context.md)
   defines the release/deploy/code-change/work-item edge semantics measured here.
 
 ### Bottom Line
@@ -344,7 +344,7 @@ Research date: 2026-05-25
 
 ### Purpose
 
-The [correlation reliability gate](correlation-reliability-real-telemetry-gate.md)
+The [correlation reliability gate](correlation.md)
 defines the metrics for bear-case assumption A4:
 
 > Deterministic cross-signal correlation is reliable in real, messy telemetry.
@@ -402,16 +402,16 @@ has to keep the evidence granular:
 
 Internal sources:
 
-- [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md)
+- [Correlation reliability on real telemetry gate](correlation.md)
   defines the metrics and pass/fail thresholds.
-- [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
+- [Frontend collection and cross-tier correlation](frontend.md)
   defines browser-to-backend propagation and CORS failure modes.
-- [Frontend capture safety ledger](frontend-capture-safety-ledger.md) supplies
+- [Frontend capture safety ledger](frontend.md) supplies
   browser-side source-map, CORS, privacy, export, overhead, and projection rows
   consumed by frontend correlation claims.
-- [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md)
+- [Deploy, change, and issue-tracker context](deploy-change-context.md)
   defines release, deploy, code-change, and work-item edge strengths.
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md) defines
   strong, medium, weak, inferred, and missing-evidence fields.
 
 ### Why A Ledger Is Required
@@ -759,16 +759,16 @@ unaffected narrower level.
 
 ### Relationship To Other Research
 
-- [Risks and bear case](risks-and-bear-case.md) treats A4 as one of the
+- [Risks and bear case](../decisions/risks-and-bear-case.md) treats A4 as one of the
   load-bearing technical assumptions.
-- [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md)
+- [Build roadmap and validation sequence](../architecture/build-roadmap.md)
   puts A4 in Phase 1-2 after the market and bundle-value killers.
-- [Strategic verdict and research coverage](strategic-verdict-and-research-coverage.md)
+- [Strategic verdict and research coverage](../decisions/strategic-coverage.md)
   lists A4 as a still-unproven technical proof gate.
-- [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
+- [A1 eval result ledger and model refresh](../validation/a1-bundle-value/a1-eval-result-ledger-and-model-refresh.md)
   is the equivalent proof artifact for bundle-value claims.
-- [A2 interview evidence ledger](a2-interview-evidence-ledger.md) and
-  [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md)
+- [A2 interview evidence ledger](../validation/a2-user-demand.md) and
+  [A3 schema adoption and corpus ledger](../validation/a3-schema-corpus.md)
   follow the same pattern: future claims need committed evidence rows, not only
   narrative confidence.
 

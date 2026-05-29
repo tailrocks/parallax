@@ -47,7 +47,7 @@ turns production errors, traces, logs, deploys, CI runs, and repo intent into a
 bounded failure dossier an agent can safely act on.
 
 The current trigger ledger for this market is
-[Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md).
+[Agentic observability competitor drift ledger](../market/competitor-watch.md).
 
 ## Current Product Signals
 
@@ -85,7 +85,7 @@ Sources:
 - [Microsoft RCACopilot](https://www.microsoft.com/en-us/research/publication/automatic-root-cause-analysis-via-large-language-models-for-cloud-incidents/)
 - [Google: Debugging Incidents in Google's Distributed Systems](https://research.google/pubs/debugging-incidents-in-googles-distributed-systems/)
 - [Amazon Builders' Library: instrumenting distributed systems](https://aws.amazon.com/builders-library/instrumenting-distributed-systems-for-operational-visibility/)
-- [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md)
+- [Agentic observability competitor drift ledger](../market/competitor-watch.md)
 
 ## What The Industry Is Really Building
 
@@ -332,7 +332,7 @@ Possible moat order:
    boundaries matter more as agents become autonomous.
 
 The runtime-plus-repo-intent moat is only claimable through the
-[Repo-intent value ledger](repo-intent-value-ledger.md), because it must improve
+[Repo-intent value ledger](../validation/repo-intent.md), because it must improve
 agent work without making runtime-only degraded mode too weak.
 
 Telemetry storage alone is not a moat.

@@ -6755,11 +6755,11 @@ comparison itself is settled + re-verified.
    vectorized-engine + granule-skip mechanisms actually bite. Drop OS page cache
    between cold runs.
 2. **Matched-codec/object-cost gate**: run the
-   [storage size and object cost gate](../storage-size-and-object-cost-gate.md)
+   [storage size and object cost gate](../size-and-object-cost.md)
    so retained bytes, object counts, request costs, cache needs, and egress are
    measured rather than inferred from the tiny local-disk smoke result.
 3. **Full mixed-load Q6 gate**: run the
-   [storage freshness and bundle latency gate](../storage-freshness-and-bundle-latency-gate.md)
+   [storage freshness and bundle latency gate](../freshness-and-latency.md)
    with all bundle signals, per-signal freshness probes, and concurrent ingest.
 4. **Metrics float compression with realistic shapes** (flat gauges, monotonic
    counters, repeated values) to actually exercise Gorilla/DoubleDelta vs
@@ -6768,7 +6768,7 @@ comparison itself is settled + re-verified.
 5. **Fairer GreptimeDB timing** via the MySQL native protocol, not HTTP.
 6. **Object-storage path** (MinIO) for both — add to `bench/compose.yml`; cost
    interpretation belongs to the
-   [storage size and object cost gate](../storage-size-and-object-cost-gate.md).
+   [storage size and object cost gate](../size-and-object-cost.md).
 
 These route into `benchmarking-the-differences.md` (case design) and the runnable
 `parallax-bench` harness (`storage-benchmark-prototype.md`), which owns the real veto.

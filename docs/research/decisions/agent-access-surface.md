@@ -31,12 +31,12 @@ object, one redaction policy, one authorization model, and three transports:
 HTTP API, CLI, and MCP.
 
 Results and product-claim status should be published through the
-[Agent access surface safety ledger](agent-access-surface-safety-ledger.md),
+[Agent access surface safety ledger](agent-access-surface.md),
 not inferred from this design alone.
 The competitor pressure behind the read-only boundary is tracked in
-[MCP power boundary competitor check](mcp-power-boundary-competitor-check.md).
+[MCP power boundary competitor check](../market/competitor-watch.md).
 The lightweight end of the same pressure is tracked in
-[Lightweight error-tracker MCP boundary check](lightweight-error-tracker-mcp-boundary-check.md).
+[Lightweight error-tracker MCP boundary check](../market/competitor-watch.md).
 
 ### Current Primary Sources
 
@@ -318,7 +318,7 @@ for context retrieval and deterministic checks, not production mutation.
 | Errors | Return structured, self-correctable errors for invalid windows, missing scopes, missing evidence, and oversized requests. |
 
 MCP spans should be normalized through
-[Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md)
+[Agent and CLI OTel semantic-convention mapping](../capture/agent-cli-tracing.md)
 so `tools/call` client/server spans, JSON-RPC request IDs, and provisional
 `params._meta` trace context produce one audited `agent_action` rather than
 double-counted tool activity.
@@ -369,28 +369,28 @@ If these fail, keep CLI/API available and do not claim MCP safety.
 
 ### Relationship To Other Research
 
-- [Technical implementation concept](technical-implementation-concept.md) owns
+- [Technical implementation concept](../architecture/implementation-concept.md) owns
   the end-to-end architecture this decision plugs into.
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md) defines the
   canonical JSON object that every surface must emit.
-- [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
+- [Causal reconstruction and agent safety](../architecture/causal-reconstruction.md)
   defines the safety posture and rejects generic production-control tools.
-- [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
+- [Redaction pipeline and secret safety](../capture/redaction.md)
   remains the gate for every agent-visible surface.
-- [Production database evidence access gate](production-database-evidence-access.md)
+- [Production database evidence access gate](../capture/production-db-evidence.md)
   is the reason generic SQL tools stay out of the context server.
-- [Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md)
+- [Agent and CLI OTel semantic-convention mapping](../capture/agent-cli-tracing.md)
   defines how MCP spans and tool calls become stable Parallax audit rows.
-- [Agent access surface safety ledger](agent-access-surface-safety-ledger.md)
+- [Agent access surface safety ledger](agent-access-surface.md)
   turns projection-equivalence, client, scope, redaction, output-budget,
   negative-tool, and audit fixtures into claim levels.
-- [MCP power boundary competitor check](mcp-power-boundary-competitor-check.md)
+- [MCP power boundary competitor check](../market/competitor-watch.md)
   records why competitor query/management MCP catalogs should not pull the first
   Parallax context adapter into production-control scope.
-- [Lightweight error-tracker MCP boundary check](lightweight-error-tracker-mcp-boundary-check.md)
+- [Lightweight error-tracker MCP boundary check](../market/competitor-watch.md)
   records why Rustrak/GoSnag-style MCP availability at the lightweight end makes
   MCP table stakes rather than a moat.
-- [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md)
+- [Build roadmap and validation sequence](../architecture/build-roadmap.md)
   keeps MCP out of the tiny tier until the bundle and safety contracts are
   strong enough.
 
@@ -415,9 +415,9 @@ Research date: 2026-05-25
 
 This ledger turns the CLI/HTTP/MCP access-surface decision into auditable claim
 levels. It consumes the design in
-[Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
+[Agent access surface: CLI, HTTP API, and MCP](agent-access-surface.md)
 and the normalization contract in
-[Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md).
+[Agent and CLI OTel semantic-convention mapping](../capture/agent-cli-tracing.md).
 
 Current status: **not measured**. Parallax has an access-surface design, but no
 implementation, projection-equivalence run, MCP client fixture, redaction run,
@@ -447,9 +447,9 @@ The central rule:
 | [Codex MCP](https://developers.openai.com/codex/mcp), [Codex MCP server guide](https://developers.openai.com/codex/guides/agents-sdk), [Codex config reference](https://developers.openai.com/codex/config-reference), and local `codex 0.133.0` help | Codex supports MCP in the CLI and IDE extension with shared `config.toml` configuration. Current docs cover user and trusted-project config paths, stdio and Streamable HTTP, fixed `env`, whitelisted `env_vars` with local/remote source, remote stdio placement, bearer-token env vars, static/env HTTP headers, startup/tool timeouts, enabled/required servers, enabled/disabled tools, default and per-tool approval modes, OAuth resource/scopes/callback URL/port/credential store, granular `approval_policy.granular.mcp_elicitations`, plugin-provided MCP servers, and memory controls including `features.memories`, `memories.generate_memories`, `memories.use_memories`, and `memories.disable_on_external_context`. Codex can also run as a stdio MCP server exposing `codex` and `codex-reply` tools with approval-policy, sandbox, config, cwd, model, and profile controls. Local help confirms `codex mcp add` and `codex mcp-server --strict-config` flags. | Codex client fixtures must record config path/trust, local versus remote env/header sources, OAuth resource/scope/callback behavior, tool approval policy, MCP elicitation behavior, external-context memory behavior, plugin origin, required-server startup behavior, and Codex-as-MCP-server topology. A Codex MCP success does not by itself prove a safe read-only Parallax context surface. |
 | [Claude Code MCP docs](https://code.claude.com/docs/en/mcp) and local `claude mcp --help` on `2.1.150` | Claude Code supports local, project, user, plugin, claude.ai connector, and managed MCP sources with source precedence. Current docs define project `.mcp.json` approval, environment expansion in command/args/env/url/headers, OAuth callback/client credentials/metadata override/scope pinning, dynamic `headersHelper` commands gated by workspace trust, output warning and limit behavior, per-tool `_meta["anthropic/maxResultSizeChars"]`, resource `@` mentions that auto-fetch resources as attachments, Tool Search enabled by default with deferred tool loading, and `claude mcp serve`. Local help confirms stdio/SSE/HTTP, headers, env vars, scope, client credentials, callback port, and warns that `mcp get`/`list` skip the workspace trust dialog and spawn stdio servers for health checks. | Claude Code client fixtures must record configuration source, precedence, auth/header source, output-budget behavior, resource auto-fetch behavior, workspace trust, health-check side effects, deferred tool discovery/tool-search behavior, and whether Claude-as-MCP-server is in play. Cross-client MCP safety is not proven by a generic "Claude supports MCP" row or by raw `tools/list` availability alone. |
 | [NSA MCP security design considerations](https://www.nsa.gov/Portals/75/documents/Cybersecurity/CSI_MCP_SECURITY.pdf?ver=bmgiSbNQLP6Z_GiWtRt6bg%3D%3D) | NSA's May 2026 guidance treats MCP as widely adopted but security-maturing, with risks around dynamic tool invocation, implicit trust, context sharing, serialization, token/session handling, overbroad tools, and unauthorized servers. | The safe path is a narrow read-only adapter over canonical bundles, not a broad production-control toolset. |
-| [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md) | MCP is already present in Sentry-adjacent, Grafana, SigNoz, Coroot, Rustrak, and GoSnag-like surfaces. | Parallax must prove safer evidence semantics, not merely MCP availability. |
-| [MCP power boundary competitor check](mcp-power-boundary-competitor-check.md) | Current primary docs for Sentry, Grafana, OpenObserve, SigNoz, and Coroot show MCP surfaces ranging from coding-agent read/query to broad management, alert resolution, incident creation, ticket/Slack actions, or persisted RCA. | "Read-only" must exclude production/project mutation tools, not only generic shell and SQL tools. |
-| [Lightweight error-tracker MCP boundary check](lightweight-error-tracker-mcp-boundary-check.md) and [GoSnag Sentry AI MCP recheck](gosnag-sentry-ai-mcp-recheck.md) | Current primary docs/source for Rustrak and GoSnag show MCP surfaces in small Sentry-compatible trackers, including project/issue/event/token/alert/ticket/user management and raw Sentry-envelope or recent-event access. GoSnag's checked MCP is a Bearer-token management API wrapper over projects/issues/alerts/tags/tickets/users. | MCP availability is now table stakes even for lightweight competitors. Parallax's claim must be read-only, redacted, canonical bundle projection plus audit/outcome semantics, not "has MCP." |
+| [Agentic observability competitor drift ledger](../market/competitor-watch.md) | MCP is already present in Sentry-adjacent, Grafana, SigNoz, Coroot, Rustrak, and GoSnag-like surfaces. | Parallax must prove safer evidence semantics, not merely MCP availability. |
+| [MCP power boundary competitor check](../market/competitor-watch.md) | Current primary docs for Sentry, Grafana, OpenObserve, SigNoz, and Coroot show MCP surfaces ranging from coding-agent read/query to broad management, alert resolution, incident creation, ticket/Slack actions, or persisted RCA. | "Read-only" must exclude production/project mutation tools, not only generic shell and SQL tools. |
+| [Lightweight error-tracker MCP boundary check](../market/competitor-watch.md) and [GoSnag Sentry AI MCP recheck](../market/competitor-watch.md) | Current primary docs/source for Rustrak and GoSnag show MCP surfaces in small Sentry-compatible trackers, including project/issue/event/token/alert/ticket/user management and raw Sentry-envelope or recent-event access. GoSnag's checked MCP is a Bearer-token management API wrapper over projects/issues/alerts/tags/tickets/users. | MCP availability is now table stakes even for lightweight competitors. Parallax's claim must be read-only, redacted, canonical bundle projection plus audit/outcome semantics, not "has MCP." |
 
 Updated implication from the A1/A6 source-field pass: projection equivalence now
 means preserving the full canonical bundle safety contract, not just producing a
@@ -1072,23 +1072,23 @@ Avoid:
 
 ### Relationship To Other Research
 
-- [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
+- [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface.md)
   makes the access-surface decision this ledger turns into claim levels.
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md) defines the
   canonical bundle whose hash must match across surfaces.
-- [Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md)
+- [Agent and CLI OTel semantic-convention mapping](../capture/agent-cli-tracing.md)
   owns MCP span normalization and action/audit deduplication.
-- [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
-  and [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) have veto
+- [Redaction pipeline and secret safety](../capture/redaction.md)
+  and [A6 redaction red-team ledger](../capture/redaction.md) have veto
   power before any agent-visible claim, including source-field preservation.
-- [Production database evidence access gate](production-database-evidence-access.md)
+- [Production database evidence access gate](../capture/production-db-evidence.md)
   keeps generic SQL tools out of the context server.
-- [Production database evidence ledger](production-database-evidence-ledger.md)
+- [Production database evidence ledger](../capture/production-db-evidence.md)
   defines the stricter claim contract before any direct database evidence can
   appear through CLI, HTTP, or MCP.
-- [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md)
+- [Agentic observability competitor drift ledger](../market/competitor-watch.md)
   explains why MCP availability alone is no longer differentiating.
-- [MCP power boundary competitor check](mcp-power-boundary-competitor-check.md)
+- [MCP power boundary competitor check](../market/competitor-watch.md)
   records the current competitor tool-power matrix behind the negative-tool and
   management-tool rules.
 

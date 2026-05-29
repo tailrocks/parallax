@@ -22,7 +22,7 @@ one-line table cells: the vision assumes a context-rich monorepo (code **plus**
 docs, design decisions, tasks, roadmap). How much of Parallax's value actually
 depends on that, and what happens for the large majority of teams that do not work
 that way? This matters because the answer sizes the addressable market and is the
-sharpest edge of the founder-market-fit risk in the [bear case](risks-and-bear-case.md)
+sharpest edge of the founder-market-fit risk in the [bear case](../decisions/risks-and-bear-case.md)
 (A2 / n=1).
 
 ### The Value Decomposes Into Two Separable Layers
@@ -46,7 +46,7 @@ prerequisite.** If Parallax's pitch requires the monorepo+intent setup, its
 market collapses to teams that work exactly like the operator — which is the
 n=1 founder-market-fit trap.
 The result contract for proving or narrowing this claim is the
-[Repo-intent value ledger](repo-intent-value-ledger.md).
+[Repo-intent value ledger](repo-intent.md).
 
 ### Degraded Mode (Teams Without Repo-Intent)
 
@@ -57,7 +57,7 @@ experience must still be excellent:
   detection, and bounded bundles.
 - A coding agent fixes from **code + runtime evidence** — and SWE-bench shows
   agents already fix real bugs from code alone, so code + telemetry is a strong
-  floor (see [bundle-value evaluation](bundle-value-evaluation.md)).
+  floor (see [bundle-value evaluation](a1-bundle-value/bundle-value-evaluation.md)).
 - What they lose is only the "why" layer: the agent may not know a piece of code
   exists to satisfy a constraint it cannot see. That is a real but bounded loss,
   and it degrades gracefully — the bundle simply omits intent edges rather than
@@ -89,7 +89,7 @@ available.
 ### Implication For The Bundle-Value Eval
 
 This question is empirically testable and should be an arm in the
-[bundle-value evaluation](bundle-value-evaluation.md): run the agent with
+[bundle-value evaluation](a1-bundle-value/bundle-value-evaluation.md): run the agent with
 **bundle + repo-intent** vs **bundle + code only (no intent)**. The delta
 measures how much repo-intent actually buys. Two outcomes:
 
@@ -113,16 +113,16 @@ advantage rather than presume it.
 
 ### Relationship To Other Research
 
-- [Verdict](verdict.md) — Q13 row this expands; the GO depends on broad
+- [Verdict](../decisions/go-no-go.md) — Q13 row this expands; the GO depends on broad
   addressable market, i.e. on degraded mode being good.
-- [Risks and the bear case](risks-and-bear-case.md) — A2 / founder-market-fit;
+- [Risks and the bear case](../decisions/risks-and-bear-case.md) — A2 / founder-market-fit;
   repo-intent dependence is the sharpest form of that risk.
-- [Bundle-value evaluation](bundle-value-evaluation.md) — add the
+- [Bundle-value evaluation](a1-bundle-value/bundle-value-evaluation.md) — add the
   intent-vs-no-intent arm proposed here.
-- [Repo-intent value ledger](repo-intent-value-ledger.md) — defines the paired
+- [Repo-intent value ledger](repo-intent.md) — defines the paired
   runtime-only versus runtime-plus-intent result rows, claim levels, and
   stale/conflicting-intent fixtures.
-- [AI-native observability](ai-native-observability-and-incident-intelligence.md)
+- [AI-native observability](../00-vision/ai-native-observability.md)
   — repo-intent linkage as a differentiator vs telemetry-only products.
 
 ## Repo-Intent Value Ledger
@@ -135,7 +135,7 @@ Research date: 2026-05-25
 
 ### Purpose
 
-[Repo-intent dependence and the degraded mode](repo-intent-dependence.md)
+[Repo-intent dependence and the degraded mode](repo-intent.md)
 defines the strategic claim:
 
 > Runtime evidence is the product floor; repo-held intent is an opt-in
@@ -165,8 +165,8 @@ Central rule:
 | [OpenAI Codex introduction](https://openai.com/index/introducing-codex/) | OpenAI says Codex can be guided by `AGENTS.md` files placed in a repository, and that configured dev environments, reliable tests, and clear documentation improve agent performance. | `AGENTS.md` should be indexed as a cross-agent instruction source, but any lift claim still needs paired outcome rows; instruction presence alone is not fix-correctness evidence. |
 | [On the Impact of AGENTS.md Files on the Efficiency of AI Coding Agents](https://arxiv.org/abs/2601.20404) | Early empirical evidence associates AGENTS.md files with lower median runtime and output-token use, but not with a proven fix-correctness lift. Parallax should measure outcome quality separately from efficiency. |
 | [On the Use of Agentic Coding Manifests](https://arxiv.org/abs/2509.14744) | Agent manifests commonly contain operational commands, implementation notes, and architecture. That maps to Parallax intent nodes, but also shows why content quality and structure matter. |
-| [Bundle-value evaluation](bundle-value-evaluation.md) | The A1 eval already measures bundle value. Repo-intent should be a paired sub-study, not a replacement for the raw-telemetry control. |
-| [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md) | Model drift and task contamination also apply to repo-intent claims; every claim needs expiry and rerun triggers. |
+| [Bundle-value evaluation](a1-bundle-value/bundle-value-evaluation.md) | The A1 eval already measures bundle value. Repo-intent should be a paired sub-study, not a replacement for the raw-telemetry control. |
+| [A1 eval result ledger and model refresh](a1-bundle-value/a1-eval-result-ledger-and-model-refresh.md) | Model drift and task contamination also apply to repo-intent claims; every claim needs expiry and rerun triggers. |
 
 ### Claim Levels
 
@@ -498,17 +498,17 @@ Avoid:
 
 ### Relationship To Other Research
 
-- [Repo-intent dependence and the degraded mode](repo-intent-dependence.md)
+- [Repo-intent dependence and the degraded mode](repo-intent.md)
   defines the strategic floor/multiplier split this ledger measures.
-- [Bundle-value evaluation](bundle-value-evaluation.md) owns the main A1 arms;
+- [Bundle-value evaluation](a1-bundle-value/bundle-value-evaluation.md) owns the main A1 arms;
   this ledger is a paired sub-study under the Parallax-bundle arm.
-- [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
+- [A1 eval result ledger and model refresh](a1-bundle-value/a1-eval-result-ledger-and-model-refresh.md)
   supplies model snapshot, contamination, and expiry rules.
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) should carry
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md) should carry
   intent nodes and edges only as additive, source-cited context.
-- [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
+- [Redaction pipeline and secret safety](../capture/redaction.md)
   controls private docs, issue text, and agent instruction excerpts.
-- [A2 interview evidence ledger](a2-interview-evidence-ledger.md) should record
+- [A2 interview evidence ledger](a2-user-demand.md) should record
   whether target users actually maintain docs, decisions, tasks, and roadmap in
   forms Parallax can use.
 

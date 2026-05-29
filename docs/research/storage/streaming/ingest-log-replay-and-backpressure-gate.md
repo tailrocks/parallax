@@ -7,7 +7,7 @@ Research date: 2026-05-25
 ## Purpose
 
 This note tightens proof gate 4 from
-[Strategic verdict and research coverage](strategic-verdict-and-research-coverage.md):
+[Strategic verdict and research coverage](../../decisions/strategic-coverage.md):
 
 > Iggy replay and backpressure behavior versus local WAL and NATS/Redpanda.
 
@@ -212,16 +212,16 @@ The architecture should make these claims, and no stronger ones:
 
 - [Messaging and ingestion layer](messaging-and-ingestion-layer.md) is the broad
   stream-layer evaluation this gate operationalizes.
-- [Technical implementation concept](technical-implementation-concept.md) should
+- [Technical implementation concept](../../architecture/implementation-concept.md) should
   keep local WAL in the tiny profile and Iggy behind `IngestLog`.
-- [Sentry-compatible ingestion](sentry-compatible-ingestion.md) depends on this
+- [Sentry-compatible ingestion](../../capture/sentry-ingest.md) depends on this
   gate for raw-envelope durability and replay.
-- [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md)
+- [OpenTelemetry protocol and context layer](../../capture/otlp.md)
   depends on this gate for OTLP batch replay and backpressure.
-- [Storage benchmark prototype](storage-benchmark-prototype.md) is separate:
+- [Storage benchmark prototype](../benchmark-plan.md) is separate:
   databases own long retention; this gate owns short raw replay and processor
   fan-out.
-- [A5 stack decision ledger](a5-stack-decision-ledger.md) consumes this gate's
+- [A5 stack decision ledger](../../decisions/stack-decision.md) consumes this gate's
   local-WAL/Iggy/NATS/Redpanda rows before any ingest-log result can become a
   tiny, durable-single, or clustered stack default.
 

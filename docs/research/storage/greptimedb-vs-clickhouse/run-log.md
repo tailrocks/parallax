@@ -189,7 +189,7 @@ level of the actual implementation rather than marketing:
 > evidence-bundle correlation) — which should we build on, and why?
 
 It is driven by the loop brief
-[`prompts/greptimedb-vs-clickhouse-internals.md`](../../../prompts/greptimedb-vs-clickhouse-internals.md),
+[`prompts/greptimedb-vs-clickhouse-internals.md`](../../../../prompts/greptimedb-vs-clickhouse-internals.md),
 which runs indefinitely and deepens these notes one subsystem at a time until the
 operator stops it.
 
@@ -198,11 +198,11 @@ operator stops it.
 This is the **white-box** layer. It explains the *why* behind the *what* the other
 documents establish:
 
-- [`../greptimedb-storage-evaluation.md`](../greptimedb-storage-evaluation.md) —
+- [`../greptimedb-storage-evaluation.md`](../evaluation.md) —
   strategy/fit evaluation (reasons *about* the systems).
-- [`../observability-storage-benchmark-plan.md`](../observability-storage-benchmark-plan.md)
+- [`../observability-storage-benchmark-plan.md`](../benchmark-plan.md)
   — what to measure and why.
-- [`../storage-benchmark-prototype.md`](../storage-benchmark-prototype.md) — the
+- [`../storage-benchmark-prototype.md`](../benchmark-plan.md) — the
   runnable black-box harness that produces numbers and holds veto power over the
   default storage choice.
 

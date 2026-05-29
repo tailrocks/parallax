@@ -7,7 +7,7 @@ Research date: 2026-05-25
 ## Purpose
 
 This note turns assumption A7 from
-[Risks and the bear case](risks-and-bear-case.md) into an auditable scope
+[Risks and the bear case](../decisions/risks-and-bear-case.md) into an auditable scope
 control ledger:
 
 > The component scope is buildable by the team that exists.
@@ -34,8 +34,8 @@ exists to keep the first build narrow enough to reach a useful evidence bundle.
 | [OpenObserve getting-started docs](https://openobserve.ai/docs/getting-started/) | OpenObserve has a credible single-node self-hosted binary/container path. Parallax's tiny tier must be at least this easy for its narrower job. |
 | [OpenObserve architecture docs](https://openobserve.ai/docs/architecture/) | OpenObserve HA splits into router, querier, ingester, compactor, and alertmanager, with NATS and object storage. That supports Parallax's tiered design: scale-out is a later topology, not the first build. |
 | [Bugsink Docker install docs](https://www.bugsink.com/docs/docker-install/) | Bugsink can start as one Docker container and is Sentry SDK compatible, but persistent Docker deployments need external database care. It pressures the Sentry-compatible migration wedge. |
-| [Urgentry recheck](urgentry-sentry-tiny-benchmark-recheck.md), [homepage/docs](https://urgentry.com/), and [repository](https://github.com/urgentry/urgentry) | Urgentry markets tiny mode, binary install, Sentry SDK DSN migration, session replay, profiling, logs, and benchmark claims. Source confirms broader-than-error envelope side effects and OTLP HTTP/JSON routes, while protobuf OTLP is rejected and no MCP/real fixer loop was found. It is source-available rather than open-source, but it raises the bar for "tiny Sentry replacement" simplicity and warns against vague Sentry-compatibility claims. |
-| [Traceway OTLP/AI/replay recheck](traceway-otlp-ai-replay-recheck.md), [embedded mode](https://docs.tracewayapp.com/learn/embedded-mode), and [SQLite mode](https://docs.tracewayapp.com/server/sqlite) | Traceway can run an embedded development server inside a Go process and can also run a single SQLite container with two SQLite files plus blobs under `/data`. This pressures Parallax's local developer experience and tiny-tier persistence story. |
+| [Urgentry recheck](../market/competitor-watch.md), [homepage/docs](https://urgentry.com/), and [repository](https://github.com/urgentry/urgentry) | Urgentry markets tiny mode, binary install, Sentry SDK DSN migration, session replay, profiling, logs, and benchmark claims. Source confirms broader-than-error envelope side effects and OTLP HTTP/JSON routes, while protobuf OTLP is rejected and no MCP/real fixer loop was found. It is source-available rather than open-source, but it raises the bar for "tiny Sentry replacement" simplicity and warns against vague Sentry-compatibility claims. |
+| [Traceway OTLP/AI/replay recheck](../market/competitor-watch.md), [embedded mode](https://docs.tracewayapp.com/learn/embedded-mode), and [SQLite mode](https://docs.tracewayapp.com/server/sqlite) | Traceway can run an embedded development server inside a Go process and can also run a single SQLite container with two SQLite files plus blobs under `/data`. This pressures Parallax's local developer experience and tiny-tier persistence story. |
 | [Traceway all-in-one container](https://docs.tracewayapp.com/server/all-in-one) and [Docker signatures](https://github.com/tracewayapp/traceway/blob/main/DOCKER_SIGNATURES.md) | Traceway offers one container bundling backend, ClickHouse, and Postgres, plus signed image variants. Even when internals are heavier, competitors can hide setup complexity behind one artifact. Parallax should count both services and hidden bundled subsystems and should not turn image-size/docs claims into measured performance claims. |
 
 ## What A7 Measures
@@ -102,7 +102,7 @@ The Phase 1 product budget is intentionally narrow:
 | --- | --- |
 | First useful command | `parallax issue context <issue-id>` returns one evidence bundle. |
 | Required services | `parallax-server`, one storage process, and embedded/local metadata. Local WAL is a directory, not a service. |
-| Service ceiling | Maximum 3 long-running services, matching the [self-hosted simplicity gate](self-hosted-simplicity-gate.md). |
+| Service ceiling | Maximum 3 long-running services, matching the [self-hosted simplicity gate](self-hosted-simplicity.md). |
 | Required protocols | Scoped Sentry envelope ingest and scoped OTLP ingest. |
 | Required surfaces | CLI plus canonical HTTP context API. Minimal UI is optional only if it does not delay the CLI/API proof. |
 | Required signals | Error event, stack frames, release/environment, same-trace spans, nearby logs, missing-evidence report, redaction report. Metrics enter only if cheap through the same path. |
@@ -269,29 +269,29 @@ Default decisions:
 
 ## Relationship To Other Research
 
-- [Risks and bear case](risks-and-bear-case.md) owns assumption A7. This ledger
+- [Risks and bear case](../decisions/risks-and-bear-case.md) owns assumption A7. This ledger
   supplies the scope-counting contract.
-- [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md)
+- [Build roadmap and validation sequence](../architecture/build-roadmap.md)
   supplies the phase order A7 enforces.
-- [Self-hosted simplicity gate](self-hosted-simplicity-gate.md) supplies the
+- [Self-hosted simplicity gate](self-hosted-simplicity.md) supplies the
   deployment/service-count budget for the tiny tier, while the
-  [Self-hosted simplicity ledger](self-hosted-simplicity-ledger.md) defines the
+  [Self-hosted simplicity ledger](self-hosted-simplicity.md) defines the
   clean-VM run rows and claim levels.
-- [A5 stack decision ledger](a5-stack-decision-ledger.md) owns stack-default
+- [A5 stack decision ledger](../decisions/stack-decision.md) owns stack-default
   claims; A7 owns whether those stack choices keep the product buildable.
-- [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
+- [Agent access surface: CLI, HTTP API, and MCP](../decisions/agent-access-surface.md)
   is the main source for deferring MCP until the CLI/API contract is proven.
-- [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
-  and [Agent session tracing ledger](agent-session-tracing-ledger.md) are the
+- [Agent session tracing across real tools](../capture/agent-cli-tracing.md)
+  and [Agent session tracing ledger](../capture/agent-cli-tracing.md) are the
   main sources for treating agent-session tracing as a per-tool,
   per-capture-surface fixture program rather than a single feature.
-- [CLI trace safety ledger](cli-trace-safety-ledger.md) owns the admission gate
+- [CLI trace safety ledger](../capture/agent-cli-tracing.md) owns the admission gate
   for CLI structural capture, redacted excerpts, raw refs, child-process policy,
   and projection safety.
-- [Fixer component and outcome loop](fixer-component-and-outcome-loop.md) keeps
+- [Fixer component and outcome loop](../decisions/fixer-boundary.md) keeps
   fix PR work outside the Parallax core until the evidence contract and outcome
   loop are ready.
-- [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
+- [Frontend collection and cross-tier correlation](../capture/frontend.md)
   is a later expansion unless A4/A6 prove it can be narrow and safe.
 
 ## Bottom Line

@@ -213,7 +213,7 @@ The fixer should not ship before these gates pass:
 | Gate | Pass condition |
 | --- | --- |
 | A1 bundle value | Bundles beat raw telemetry dumps for the target failure class, or the product claim is narrowed to audit/retention. |
-| Redaction | The [redaction pipeline](redaction-pipeline-and-secret-safety.md) and [detector toolchain](redaction-detector-toolchain.md) pass on generated bundle, raw dump, validation-log, and agent-session fixtures. |
+| Redaction | The [redaction pipeline](../capture/redaction.md) and [detector toolchain](../capture/redaction.md) pass on generated bundle, raw dump, validation-log, and agent-session fixtures. |
 | Source-field and projection | Eval/corpus-derived bundles preserve source-field policy status, redaction reports, missing-evidence flags, raw-ref denial, canonical bundle hash, and projection manifest across bundle JSON, Markdown, CLI, HTTP, and MCP `structuredContent`; MCP output validates against `outputSchema`; safety fields are not only in `_meta` or PR prose. |
 | Evidence citation | Every material claim in the diagnosis/PR body cites bundle evidence refs or says evidence is missing. |
 | Patch limits | Draft PRs obey max files/lines/touched services and reject broad rewrites by default. |
@@ -280,27 +280,27 @@ storage forward before the tiny evidence engine proves value.
 
 ### Relationship To Other Research
 
-- [Business model and economics](business-model-and-economics.md) identifies the
+- [Business model and economics](../validation/business-model.md) identifies the
   fixer as a value-capture seam; this note defines the technical seam.
-- [Business model validation ledger](business-model-validation-ledger.md) defines
+- [Business model validation ledger](../validation/business-model.md) defines
   when fixer interest, paid pilots, or conversion rows are strong enough to call
   the fixer a validated value-capture seam.
-- [Fixer outcome ledger](fixer-outcome-ledger.md) defines the dated result rows,
+- [Fixer outcome ledger](fixer-boundary.md) defines the dated result rows,
   claim levels, and wording rules required before opened PRs, fix outcomes, or
   fixer feedback loops become claimable.
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md) defines the
   bundle and audit edges consumed by the fixer.
-- [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) defines
+- [Agent and CLI execution tracing](../capture/agent-cli-tracing.md) defines
   the session/action trace data that a fixer must emit back to Parallax.
-- [Agent session tracing ledger](agent-session-tracing-ledger.md) defines the
+- [Agent session tracing ledger](../capture/agent-cli-tracing.md) defines the
   per-tool, per-capture-surface evidence required before a fixer run can claim
   to include measured agent-session tracing.
-- [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
+- [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface.md)
   keeps the first Parallax MCP server read-only; fixer write/proposal tools are
   later and separate.
-- [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md)
+- [Build roadmap and validation sequence](../architecture/build-roadmap.md)
   keeps the fixer in Phase 4 after A1/A2/A3 and redaction gates.
-- [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
+- [Schema adoption and corpus moat gate](../validation/a3-schema-corpus.md)
   depends on accepted/rejected/reverted outcome records to become real.
 
 ### Bottom Line
@@ -318,7 +318,7 @@ _(Shared note — see the Fixer Component and Outcome Loop section above.)_
 
 ### Purpose
 
-[Fixer component and outcome loop](fixer-component-and-outcome-loop.md) defines
+[Fixer component and outcome loop](fixer-boundary.md) defines
 the boundary: Parallax stores and serves evidence, while a separate fixer
 component may use that evidence to drive a coding agent and create a patch or
 pull request. This ledger defines the missing result contract for proving that
@@ -842,7 +842,7 @@ raw refs unless the operator explicitly approves redacted fixtures.
   merge, revert, or recurrence; append the new state.
 - The business-model fixer seam cannot be validated from PR creation alone. It
   needs fixer outcome rows plus payment/budget signal rows in the
-  [business model validation ledger](business-model-validation-ledger.md).
+  [business model validation ledger](../validation/business-model.md).
 - No auto-merge belongs in early Parallax scope.
 
 ### Initial Results Template
@@ -959,22 +959,22 @@ Mark affected claims `claim_expired` when:
 
 ### Relationship To Other Research
 
-- [Fixer component and outcome loop](fixer-component-and-outcome-loop.md)
+- [Fixer component and outcome loop](fixer-boundary.md)
   defines the boundary and outcome schema this ledger measures.
-- [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)
+- [Evidence bundle and open schema specification](../architecture/evidence-bundle-schema.md)
   defines `agent_opened_pr`, `validation_checked_patch`,
   `fix_addressed_issue`, and `fix_worsened_issue` edges consumed here.
-- [Agent session tracing ledger](agent-session-tracing-ledger.md) measures the
+- [Agent session tracing ledger](../capture/agent-cli-tracing.md) measures the
   agent-session rows this ledger links to fixer runs.
-- [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
+- [A1 eval result ledger and model refresh](../validation/a1-bundle-value/a1-eval-result-ledger-and-model-refresh.md)
   controls whether bundles improve fix quality versus raw context.
-- [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md)
+- [A3 schema adoption and corpus ledger](../validation/a3-schema-corpus.md)
   consumes accepted/rejected/reverted outcome rows as corpus events.
-- [Business model validation ledger](business-model-validation-ledger.md)
+- [Business model validation ledger](../validation/business-model.md)
   controls when fixer outcome evidence can become a value-capture claim.
-- [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) has veto power
+- [A6 redaction red-team ledger](../capture/redaction.md) has veto power
   before any fixer output becomes agent-visible.
-- [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md)
+- [Build roadmap and validation sequence](../architecture/build-roadmap.md)
   keeps the fixer in Phase 4 after A1/A2/A3/A6 gates.
 
 ### Bottom Line

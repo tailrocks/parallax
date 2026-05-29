@@ -30,7 +30,7 @@ The first product claim should be "Parallax can show database-related evidence"
 from traces, errors, logs, migrations, deploys, and safe query templates. It
 should not be "agents can query production."
 Results and product-claim status should be published through the
-[Production database evidence ledger](production-database-evidence-ledger.md),
+[Production database evidence ledger](production-db-evidence.md),
 not inferred from this gate alone.
 
 ### Current Primary Sources
@@ -266,19 +266,19 @@ investigation extension, not an agent default.
 
 ### Relationship To Other Research
 
-- [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
+- [Causal reconstruction and agent safety](../architecture/causal-reconstruction.md)
   defines the autonomy ladder and keeps database mutation out of scope.
-- [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
+- [Redaction pipeline and secret safety](redaction.md)
   owns the output policy for query results and raw refs.
-- [Production database evidence ledger](production-database-evidence-ledger.md)
+- [Production database evidence ledger](production-db-evidence.md)
   defines the result artifacts, claim levels, expiry triggers, and product
   wording that make this gate measurable.
-- [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
+- [Agent access surface: CLI, HTTP API, and MCP](../decisions/agent-access-surface.md)
   rejects generic SQL tools in the context server.
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) should carry
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md) should carry
   database evidence nodes, edges, redaction refs, and source-field policy refs
   only after this gate passes.
-- [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md)
+- [Build roadmap and validation sequence](../architecture/build-roadmap.md)
   should treat direct database evidence as a safety-gated extension, not a tiny
   tier requirement.
 
@@ -301,7 +301,7 @@ Research date: 2026-05-25
 ### Purpose
 
 This ledger turns the
-[Production database evidence access gate](production-database-evidence-access.md)
+[Production database evidence access gate](production-db-evidence.md)
 into auditable claim levels. The gate defines what safe direct database evidence
 access must look like; this ledger defines the run artifacts, row schemas,
 counting rules, expiry triggers, and product wording needed before Parallax can
@@ -311,14 +311,14 @@ Current status: `not_measured`.
 
 Consumes:
 
-- [Production database evidence access gate](production-database-evidence-access.md)
+- [Production database evidence access gate](production-db-evidence.md)
   for the access model and Tier 2 safety gate.
-- [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
-  and [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) for output
+- [Redaction pipeline and secret safety](redaction.md)
+  and [A6 redaction red-team ledger](redaction.md) for output
   safety.
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) for bundle
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md) for bundle
   nodes, edges, missing-evidence flags, raw refs, and redaction reports.
-- [Agent access surface safety ledger](agent-access-surface-safety-ledger.md)
+- [Agent access surface safety ledger](../decisions/agent-access-surface.md)
   for CLI/HTTP/MCP projection equivalence and negative-tool fixtures.
 
 Central rule:
@@ -739,20 +739,20 @@ Avoid:
 
 ### Relationship To Other Research
 
-- [Production database evidence access gate](production-database-evidence-access.md)
+- [Production database evidence access gate](production-db-evidence.md)
   defines the safety requirements that this ledger measures.
-- [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
-  and [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) can veto
+- [Redaction pipeline and secret safety](redaction.md)
+  and [A6 redaction red-team ledger](redaction.md) can veto
   every database-evidence claim.
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) carries
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md) carries
   database evidence as bounded nodes, edges, missing-evidence flags, and
   redaction/source-field refs only after this ledger permits the claim.
-- [Agent access surface safety ledger](agent-access-surface-safety-ledger.md)
+- [Agent access surface safety ledger](../decisions/agent-access-surface.md)
   ensures CLI, HTTP, and MCP expose the same redacted database evidence.
-- [Deploy/change context ledger](deploy-change-context-ledger.md) supplies the
+- [Deploy/change context ledger](deploy-change-context.md) supplies the
   release, deploy, commit, and work-item context that database evidence can
   support or contradict.
-- [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
+- [Causal reconstruction and agent safety](../architecture/causal-reconstruction.md)
   owns the autonomy boundary: database evidence informs hypotheses, while
   production mutation remains out of scope.
 

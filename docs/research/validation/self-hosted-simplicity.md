@@ -18,7 +18,7 @@ Research date: 2026-05-25
 
 ### Purpose
 
-This operationalizes kill criterion 6 from the [verdict](verdict.md): the first
+This operationalizes kill criterion 6 from the [verdict](../decisions/go-no-go.md): the first
 Parallax deployment must be meaningfully simpler than self-hosted Sentry.
 "Simpler" is not a brand claim. It is a measured Phase 1 gate.
 
@@ -28,13 +28,13 @@ operational shape. If Parallax needs a broker, multiple product services, a
 separate relational database, and complex background workers before it can emit
 one useful issue context bundle, the self-hosted wedge is not real.
 Result rows, claim levels, and product wording for this gate live in the
-[Self-hosted simplicity ledger](self-hosted-simplicity-ledger.md).
+[Self-hosted simplicity ledger](self-hosted-simplicity.md).
 
 ### Current Baselines
 
 The source-linked version pins, install paths, and service-shape notes for this
 gate now live in
-[Self-hosted deployment baseline inventory](self-hosted-deployment-baseline-inventory.md).
+[Self-hosted deployment baseline inventory](self-hosted-simplicity.md).
 Use that note as the measurement manifest and refresh it before each real run.
 For released competitors, service counts and service names must come from the
 exact tested release tag or tag commit, not from floating `main`. Use `main`
@@ -59,7 +59,7 @@ Sources:
 - [SigNoz architecture docs](https://signoz.io/docs/architecture/)
 - [OpenObserve quickstart](https://openobserve.ai/docs/getting-started/)
 - [OpenObserve architecture docs](https://openobserve.ai/docs/architecture/)
-- [Self-hosted deployment baseline inventory](self-hosted-deployment-baseline-inventory.md)
+- [Self-hosted deployment baseline inventory](self-hosted-simplicity.md)
 - [GreptimeDB standalone install docs](https://docs.greptime.com/getting-started/installation/greptimedb-standalone/)
 - [Turso local development docs](https://docs.turso.tech/local-development)
 - [libSQL repository](https://github.com/tursodatabase/libsql)
@@ -95,7 +95,7 @@ Not allowed in the default tiny tier:
 
 Run the same protocol for Sentry self-hosted, SigNoz Docker, OpenObserve
 single-node, the named lightweight challengers from the
-[deployment baseline inventory](self-hosted-deployment-baseline-inventory.md),
+[deployment baseline inventory](self-hosted-simplicity.md),
 and Parallax tiny tier.
 
 1. Start from a fresh Ubuntu LTS VM with Docker installed and no product data.
@@ -143,7 +143,7 @@ warnings.
 | Minimum demo resources | Works on a 2 vCPU / 4 GB RAM VM for the tiny sample workload, with documented headroom limits. | If the tiny sample needs Sentry-class resources, Parallax loses its low-ops promise. |
 | Commands and config | One install command or one `compose.yml`, one generated config file, one admin token, visible DSN and OTLP endpoints. | If setup needs hidden tribal knowledge, the gate fails even if the services start. |
 | Sentry migration proof | Existing Sentry Rust SDK can send an error event by changing DSN only, within the scoped envelope-event subset. | If SDK compatibility needs app rewrites, the migration wedge weakens. |
-| OTLP proof | OTLP HTTP/gRPC path accepts the sample trace/log/metric without deploying a separate collector and matches the [OTLP receiver conformance gate](otlp-receiver-conformance-and-collector-equivalence.md) for the supported subset. | If an external collector is mandatory for the tiny tier, document why or defer the claim. |
+| OTLP proof | OTLP HTTP/gRPC path accepts the sample trace/log/metric without deploying a separate collector and matches the [OTLP receiver conformance gate](../capture/otlp.md) for the supported subset. | If an external collector is mandatory for the tiny tier, document why or defer the claim. |
 | Restart durability | Stop/start all services without losing the event, issue grouping, trace link, and raw reference. | Data loss on ordinary restart blocks Phase 1. |
 | Backup/restore clarity | A documented local snapshot/export restores into a clean instance in <=10 minutes for the sample data. | If backup requires custom database expertise, the tiny tier is not operator-simple. |
 | Upgrade path | One binary/image replacement plus explicit migrations and rollback notes. | If upgrades resemble a bespoke multi-service migration, the Sentry comparison becomes unfavorable. |
@@ -155,7 +155,7 @@ warnings.
 Use this scorecard in Phase 1 docs and release notes. Do not fill it with
 estimates; fill it only after running the protocol above.
 The current version and deployment-shape manifest is
-[Self-hosted deployment baseline inventory](self-hosted-deployment-baseline-inventory.md).
+[Self-hosted deployment baseline inventory](self-hosted-simplicity.md).
 
 | Metric | Sentry self-hosted | SigNoz Docker | OpenObserve single-node | Bugsink | Rustrak | Traceway | GoSnag | Urgentry | Parallax tiny tier |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -181,11 +181,11 @@ The current version and deployment-shape manifest is
 2. Metadata should be embedded/local by default. Postgres or hosted Turso can be
    a later production profile, not the first proof.
 3. The local WAL/outbox is the default durability boundary. Iggy/NATS/Redpanda
-   only enter after the [ingest replay gate](ingest-log-replay-and-backpressure-gate.md)
+   only enter after the [ingest replay gate](../storage/streaming/ingest-log-replay-and-backpressure-gate.md)
    proves the extra service is worth it.
 4. MCP must not be a separate tiny-tier service. The day-one agent surface is the
    CLI and HTTP API described in
-   [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md).
+   [Agent access surface: CLI, HTTP API, and MCP](../decisions/agent-access-surface.md).
 5. OpenObserve is the simplicity pressure test. If Parallax is less simple than
    OpenObserve while claiming a narrower first product, the architecture needs
    another cut.
@@ -211,13 +211,13 @@ Phase 1 should stop or narrow if any of these happen:
 The standard is not "as full-featured as Sentry." The standard is "much easier
 to self-host for the first useful Sentry-compatible, OTLP-native issue context."
 
-Related competitive check: [Lightweight Sentry-compatible competitor watch](lightweight-sentry-compatible-competitor-watch.md).
+Related competitive check: [Lightweight Sentry-compatible competitor watch](../market/competitor-watch.md).
 
-Related scope check: [A7 scope discipline ledger](a7-scope-discipline-ledger.md)
+Related scope check: [A7 scope discipline ledger](a7-scope.md)
 owns the feature, dependency, protocol, and service-count rows that must stay
 green before this simplicity gate can support a Phase 1 claim.
 
-Related result contract: [Self-hosted simplicity ledger](self-hosted-simplicity-ledger.md)
+Related result contract: [Self-hosted simplicity ledger](self-hosted-simplicity.md)
 defines the clean-VM run artifacts, row schemas, expiry triggers, and allowed
 wording before any public simplicity claim.
 
@@ -231,13 +231,13 @@ Research date: 2026-05-25
 
 ### Purpose
 
-The [self-hosted simplicity gate](self-hosted-simplicity-gate.md) defines the
+The [self-hosted simplicity gate](self-hosted-simplicity.md) defines the
 measurement protocol, but its scorecard is intentionally empty until the full VM
 run happens. This note is the source-linked baseline inventory for that run: the
 current versions to pin, official install path to follow, service shape to
 expect, and caveats that prevent apples-to-oranges claims.
 The result rows and product-claim status should be published through the
-[Self-hosted simplicity ledger](self-hosted-simplicity-ledger.md).
+[Self-hosted simplicity ledger](self-hosted-simplicity.md).
 
 This is not the full benchmark result. It is the manifest that makes the full
 benchmark reproducible.
@@ -399,16 +399,16 @@ works.
 
 ### Relationship To Other Research
 
-- [Self-hosted simplicity gate](self-hosted-simplicity-gate.md) owns the full
+- [Self-hosted simplicity gate](self-hosted-simplicity.md) owns the full
   benchmark protocol and scorecard.
-- [Self-hosted simplicity ledger](self-hosted-simplicity-ledger.md) defines the
+- [Self-hosted simplicity ledger](self-hosted-simplicity.md) defines the
   run artifacts, row schemas, claim levels, and expiry rules for using this
   inventory in product claims.
-- [Lightweight Sentry-compatible competitor watch](lightweight-sentry-compatible-competitor-watch.md)
+- [Lightweight Sentry-compatible competitor watch](../market/competitor-watch.md)
   tracks the projects that make this baseline necessary.
-- [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
+- [Agent access surface: CLI, HTTP API, and MCP](../decisions/agent-access-surface.md)
   explains why Parallax's first MCP posture must be read-only and bundle-based.
-- [Fixer component and outcome loop](fixer-component-and-outcome-loop.md) keeps
+- [Fixer component and outcome loop](../decisions/fixer-boundary.md) keeps
   PR/fix automation outside core and requires outcome writeback.
 
 ### Sources
@@ -429,18 +429,18 @@ works.
 - [Rustrak README](https://github.com/AbianS/rustrak)
 - [Rustrak server 0.2.5 release](https://github.com/AbianS/rustrak/releases/tag/%40rustrak/server%400.2.5)
 - [Rustrak MCP package](https://www.npmjs.com/package/@rustrak/mcp)
-- [Rustrak Sentry MCP protocol recheck](rustrak-sentry-mcp-protocol-recheck.md)
+- [Rustrak Sentry MCP protocol recheck](../market/competitor-watch.md)
 - [Traceway README](https://github.com/tracewayapp/traceway)
 - [Traceway backend v1.7.27 release](https://github.com/tracewayapp/traceway/releases/tag/backend/v1.7.27)
 - [Traceway SQLite deployment](https://docs.tracewayapp.com/server/sqlite)
 - [Traceway Docker image signatures](https://github.com/tracewayapp/traceway/blob/main/DOCKER_SIGNATURES.md)
-- [Traceway OTLP AI Replay Recheck](traceway-otlp-ai-replay-recheck.md)
+- [Traceway OTLP AI Replay Recheck](../market/competitor-watch.md)
 - [GoSnag README](https://github.com/darkspock/gosnag)
 - [GoSnag main commit checked](https://github.com/darkspock/gosnag/commit/418b8b107e274bfaab3f905510ddd274173d216b)
-- [GoSnag Sentry AI MCP recheck](gosnag-sentry-ai-mcp-recheck.md)
+- [GoSnag Sentry AI MCP recheck](../market/competitor-watch.md)
 - [Urgentry README](https://github.com/urgentry/urgentry)
 - [Urgentry v0.2.12 release](https://github.com/urgentry/urgentry/releases/tag/v0.2.12)
-- [Urgentry Sentry Tiny Benchmark Recheck](urgentry-sentry-tiny-benchmark-recheck.md)
+- [Urgentry Sentry Tiny Benchmark Recheck](../market/competitor-watch.md)
 
 ### Bottom Line
 
@@ -461,9 +461,9 @@ Research date: 2026-05-25
 ### Purpose
 
 This ledger turns the
-[Self-hosted simplicity gate](self-hosted-simplicity-gate.md) into auditable
+[Self-hosted simplicity gate](self-hosted-simplicity.md) into auditable
 claim levels. The gate defines what to measure; the
-[Self-hosted deployment baseline inventory](self-hosted-deployment-baseline-inventory.md)
+[Self-hosted deployment baseline inventory](self-hosted-simplicity.md)
 pins the competitor versions and service shapes to refresh; this ledger defines
 the run artifacts, row schemas, counting rules, expiry triggers, and product
 wording before Parallax can claim a simple self-hosted tiny tier.
@@ -490,7 +490,7 @@ Central rule:
 | [Turso local development](https://docs.turso.tech/local-development) and [libSQL](https://github.com/tursodatabase/libsql) | Metadata must work as an embedded/local file or local libSQL path; required hosted Turso or Postgres would fail the tiny-tier claim. |
 | [Rustrak server 0.2.5 release](https://github.com/AbianS/rustrak/releases/tag/%40rustrak/server%400.2.5) and [Rustrak latest release](https://github.com/AbianS/rustrak/releases/latest) | Rustrak is a monorepo with package-specific release tags; `releases/latest` currently resolves to `docs@0.1.16`, not the server package. Baseline refresh must record component-specific release streams, not only a generic latest URL. |
 | [Traceway backend v1.7.27 release](https://github.com/tracewayapp/traceway/releases/tag/backend/v1.7.27), [GoSnag main commit](https://github.com/darkspock/gosnag/commit/418b8b107e274bfaab3f905510ddd274173d216b), and [Urgentry v0.2.12 release](https://github.com/urgentry/urgentry/releases/tag/v0.2.12) | Lightweight challengers are versioning differently: component releases, no-release moving `main`, and published tiny/split deployment modes. The comparison ledger must mark release-stream confidence, exact `source_ref`, tag commit, artifact hash, and moving-target risk per competitor. Release-tag rows must not borrow service counts from `main` after the release. |
-| [Self-hosted deployment baseline inventory](self-hosted-deployment-baseline-inventory.md) | This is the current baseline manifest. Measured runs must refresh it before claiming results because release tags, docs, release-note action items, and service graphs move quickly. |
+| [Self-hosted deployment baseline inventory](self-hosted-simplicity.md) | This is the current baseline manifest. Measured runs must refresh it before claiming results because release tags, docs, release-note action items, and service graphs move quickly. |
 
 ### Claim Levels
 
@@ -897,19 +897,19 @@ Avoid:
 
 ### Relationship To Other Research
 
-- [Self-hosted simplicity gate](self-hosted-simplicity-gate.md) defines the
+- [Self-hosted simplicity gate](self-hosted-simplicity.md) defines the
   measurement protocol and pass/fail thresholds.
-- [Self-hosted deployment baseline inventory](self-hosted-deployment-baseline-inventory.md)
+- [Self-hosted deployment baseline inventory](self-hosted-simplicity.md)
   supplies the current version and service-shape manifest that each run must
   refresh.
-- [A7 scope discipline ledger](a7-scope-discipline-ledger.md) uses service count
+- [A7 scope discipline ledger](a7-scope.md) uses service count
   and dependency rows to keep the tiny tier from drifting.
-- [A5 stack decision ledger](a5-stack-decision-ledger.md) consumes the deployment
+- [A5 stack decision ledger](../decisions/stack-decision.md) consumes the deployment
   result before making stack-default claims.
-- [Sentry SDK compatibility ledger](sentry-sdk-compatibility-ledger.md) and
-  [OTLP conformance ledger](otlp-conformance-ledger.md) provide the protocol
+- [Sentry SDK compatibility ledger](../capture/sentry-ingest.md) and
+  [OTLP conformance ledger](../capture/otlp.md) provide the protocol
   claims used by ingest smoke rows.
-- [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) controls when
+- [A6 redaction red-team ledger](../capture/redaction.md) controls when
   redaction smoke can become an agent-visible safety claim.
 
 ### Bottom Line

@@ -28,7 +28,7 @@ local cache size, compaction amplification, and egress when agent bundle queries
 re-read history.
 
 This gate turns the cost claim into a runnable benchmark extension for
-[Storage benchmark prototype](storage-benchmark-prototype.md).
+[Storage benchmark prototype](benchmark-plan.md).
 
 ### Current Source Posture
 
@@ -92,10 +92,10 @@ data, fair schema tuning, and provider-specific request/egress modeling.
 
 | Existing note | Useful evidence | Missing proof |
 | --- | --- | --- |
-| [Retention cost model](retention-cost-model.md) | Shows compressed object storage can make 30-90 day retention cheap, and that egress is the hidden read-heavy cost. | Uses assumed compression/request rates, not measured Parallax data. |
+| [Retention cost model](size-and-object-cost.md) | Shows compressed object storage can make 30-90 day retention cheap, and that egress is the hidden read-heavy cost. | Uses assumed compression/request rates, not measured Parallax data. |
 | [Local benchmark results](greptimedb-vs-clickhouse/local-benchmark-results.md) | Run 1 measured ClickHouse at 28.9 MiB and GreptimeDB SST at 38 MiB for 1M spans. | The schema comparison was unfair: ClickHouse had tuned codecs; GreptimeDB used defaults. No object storage or request counts. |
-| [Storage benchmark artifact interpretation](storage-benchmark-artifact-interpretation.md) | Run 144 source-read confirms GreptimeDB's expired-SST removal path is structural under TWCS. | Does not measure provider request counts, cold-read bytes, compaction amplification, or ClickHouse tuned partition/drop behavior for the full Parallax dataset. |
-| [Storage benchmark prototype](storage-benchmark-prototype.md) | Defines retained size, compression, and object-store request metrics. | Does not yet spell out the cost gate, source pricing inputs, or failure consequences. |
+| [Storage benchmark artifact interpretation](benchmark-plan.md) | Run 144 source-read confirms GreptimeDB's expired-SST removal path is structural under TWCS. | Does not measure provider request counts, cold-read bytes, compaction amplification, or ClickHouse tuned partition/drop behavior for the full Parallax dataset. |
+| [Storage benchmark prototype](benchmark-plan.md) | Defines retained size, compression, and object-store request metrics. | Does not yet spell out the cost gate, source pricing inputs, or failure consequences. |
 
 The local size result is a warning, not a verdict. It says schema/codecs can
 move cost enough to change the decision.
@@ -217,7 +217,7 @@ Use these initial gates until measured runs justify calibration:
 | Object fanout | Request costs under the 20 percent re-read model must stay below storage cost for R2 and below 2x storage cost for S3; for B2's current free-transaction model, object fanout is still a latency and provider-portability warning. |
 | Object size | Average retained object size below 8 MiB after compaction is a warning; below 1 MiB is a failure unless request costs remain negligible. |
 | Cache dependency | Warm-query pass must record the local cache size needed; if cache cost exceeds object-store savings, local SSD may be the better tier. |
-| Query/cost coupling | Any size/cost winner that fails the [storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md) cannot become the default. |
+| Query/cost coupling | Any size/cost winner that fails the [storage freshness and bundle latency gate](freshness-and-latency.md) cannot become the default. |
 
 Provider-specific read-cost gates:
 
@@ -318,14 +318,14 @@ Add these to `parallax-bench` before quoting storage-cost numbers:
 
 ### Related Research
 
-- [Retention cost model](retention-cost-model.md)
-- [Storage benchmark prototype](storage-benchmark-prototype.md)
-- [Storage benchmark artifact interpretation](storage-benchmark-artifact-interpretation.md)
-- [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md)
-- [Observability storage benchmark plan](observability-storage-benchmark-plan.md)
-- [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md)
+- [Retention cost model](size-and-object-cost.md)
+- [Storage benchmark prototype](benchmark-plan.md)
+- [Storage benchmark artifact interpretation](benchmark-plan.md)
+- [Storage freshness and bundle latency gate](freshness-and-latency.md)
+- [Observability storage benchmark plan](benchmark-plan.md)
+- [GreptimeDB storage evaluation](evaluation.md)
 - [GreptimeDB vs ClickHouse local benchmark results](greptimedb-vs-clickhouse/local-benchmark-results.md)
-- [A5 stack decision ledger](a5-stack-decision-ledger.md) consumes this gate's
+- [A5 stack decision ledger](../decisions/stack-decision.md) consumes this gate's
   retained-size, object-count, provider-pricing, and cache-dependency rows
   before any storage result can become a stack default.
 
@@ -374,7 +374,7 @@ Blended assumption used below: **~10× compression** across a mixed
 log/trace/metric/error workload. ZSTD(1) gives 3–4×, ZSTD(3) 4–5×, ZSTD(9) 6–8×
 on generic data; observability columns with delta encodings push the blended
 figure higher. Calibrate per real data in the
-[storage benchmark prototype](storage-benchmark-prototype.md).
+[storage benchmark prototype](benchmark-plan.md).
 
 Sources:
 [Backblaze B2 pricing](https://www.backblaze.com/cloud-storage/pricing),
@@ -441,7 +441,7 @@ Versus Parallax self-hosted retention at **single-digit dollars/month** for the
 same data kept 90 days (compute extra, but on a cheap VM). The retention-cost
 advantage is roughly **two orders of magnitude**. This is the concrete economic
 core of the "self-hosted, no cost anxiety, keep everything" thesis and a direct
-input to [business model and economics](business-model-and-economics.md): the
+input to [business model and economics](../validation/business-model.md): the
 selling point is cost ownership, and the number is ~100× on retention.
 
 Caveat: this compares Parallax *retention* cost to SaaS *ingest* pricing — not
@@ -479,21 +479,21 @@ exactly why a cost-conscious self-hoster defects from per-GB SaaS.
 - **Tiny tier:** local disk (tens of GB at 90 days) — object storage is optional
   until volume or durability needs grow.
 - Feed real per-signal compression ratios and request/egress counts from the
-  [storage size and object cost gate](storage-size-and-object-cost-gate.md) back
+  [storage size and object cost gate](size-and-object-cost.md) back
   into this model before quoting any number externally.
 
 ### Relationship To Other Research
 
-- [Storage benchmark prototype](storage-benchmark-prototype.md) — measures the
+- [Storage benchmark prototype](benchmark-plan.md) — measures the
   compression ratios, request counts, and object-store costs this model assumes.
-- [Storage size and object cost gate](storage-size-and-object-cost-gate.md) —
+- [Storage size and object cost gate](size-and-object-cost.md) —
   specifies the pass/fail gate and provider-cost projection for those
   measurements.
-- [Business model and economics](business-model-and-economics.md) — the ~100×
+- [Business model and economics](../validation/business-model.md) — the ~100×
   retention-cost advantage is the cost-ownership selling point.
-- [Technical implementation concept](technical-implementation-concept.md) — the
+- [Technical implementation concept](../architecture/implementation-concept.md) — the
   GreptimeDB object-storage decision this quantifies.
-- [Verdict](verdict.md) — the "cheap durable retention" precondition for the AI
+- [Verdict](../decisions/go-no-go.md) — the "cheap durable retention" precondition for the AI
   context thesis.
 
 ### Bottom Line

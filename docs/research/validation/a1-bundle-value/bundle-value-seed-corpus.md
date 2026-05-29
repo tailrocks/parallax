@@ -147,7 +147,7 @@ Minimum overlay per task:
 | Metrics / timings | Capture duration, retry count, exit code, memory/time limits, and relevant test counts. | Metrics are optional if not causally useful, but timing helps compare agent flailing. |
 | Release/change context | Record base commit, issue URL, task source, dataset version, and resolving PR/commit hashes. | Resolving PR/commit URLs and gold patch hashes can be in private or audit manifests, not in agent context. |
 | Source-field policy | Classify every source field before building Arm A/B/C. | Resolving PR/commit URLs, hints, parser source, hidden verifier IDs, LLM metadata, and gold artifacts stay out of agent-visible artifacts by default. |
-| Redaction report | Run the same seeded canary/redaction policy used by the bundle schema docs and [A6 synthetic canary fixture corpus](a6-synthetic-canary-fixture-corpus.md). | A task without a redaction report is invalid. |
+| Redaction report | Run the same seeded canary/redaction policy used by the bundle schema docs and [A6 synthetic canary fixture corpus](../../capture/redaction.md). | A task without a redaction report is invalid. |
 
 All overlay artifacts must carry provenance:
 
@@ -271,12 +271,12 @@ bundle lift.
 - [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md)
   defines the overlay artifact set, provenance labels, no-cheat rules, and
   parity gates required before a task can count toward A1.
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
+- [Evidence bundle and open schema](../../architecture/evidence-bundle-schema.md) defines the
   bundle artifact generated for arm C.
-- [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
+- [Schema adoption and corpus moat gate](../a3-schema-corpus.md)
   becomes more credible if the seed corpus is public, reproducible, and
   conformance-tested.
-- [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md)
+- [Build roadmap and validation sequence](../../architecture/build-roadmap.md)
   keeps A1 before storage and stream work.
 
 ## Bottom Line

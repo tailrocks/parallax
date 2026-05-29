@@ -22,7 +22,7 @@ This operationalizes bear-case assumption A2:
 > Enough teams want self-hosted + open + low-ops Parallax to form a real user
 > base.
 
-The existing [Build roadmap](build-roadmap-and-validation-sequence.md) says to
+The existing [Build roadmap](../architecture/build-roadmap.md) says to
 talk to about 20 teams before investing deeply in storage and stream work. This
 document turns that into a concrete gate: target segments, interview protocol,
 question bank, scoring rubric, commitment tests, and kill criteria.
@@ -30,7 +30,7 @@ question bank, scoring rubric, commitment tests, and kill criteria.
 The goal is not to collect compliments. The goal is to discover whether teams
 have the pain, have tried to solve it, can deploy a self-hosted evidence engine,
 can expose the needed data safely, and will make a concrete commitment. The
-companion [A2 interview evidence ledger](a2-interview-evidence-ledger.md)
+companion [A2 interview evidence ledger](a2-user-demand.md)
 defines how raw calls become redacted, auditable repo evidence.
 
 ### Source Posture
@@ -60,18 +60,18 @@ Two outside references shape the protocol:
 
 Internal sources:
 
-- [Risks and the bear case](risks-and-bear-case.md) makes A2 existential and
+- [Risks and the bear case](../decisions/risks-and-bear-case.md) makes A2 existential and
   gives the current NO-GO trigger: 20 interviews yielding fewer than 3 teams who
   would deploy and 0 who would fund/sustain it.
-- [Business model and economics](business-model-and-economics.md) says adoption,
+- [Business model and economics](business-model.md) says adoption,
   not revenue, is the first metric, but the business still needs a later hosting,
   fixer, enterprise ops, support, or sponsorship seam.
-- [Business model validation ledger](business-model-validation-ledger.md) defines
+- [Business model validation ledger](business-model.md) defines
   how any budget, support, hosted, fixer, enterprise-ops, or paid-pilot signal
   becomes a claimable business-model result.
-- [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) can reuse
+- [Bundle-value Phase 0 runbook](a1-bundle-value/bundle-value-phase0-runbook.md) can reuse
   interview participants who are willing to provide real or anonymized incidents.
-- [A2 interview evidence ledger](a2-interview-evidence-ledger.md) defines the
+- [A2 interview evidence ledger](a2-user-demand.md) defines the
   redacted result artifact, commitment ladder, evidence classes, and bias
   controls for the 20-call run.
 
@@ -106,9 +106,9 @@ Do not interview 20 copies of the operator. Split the first 20 across slices:
 
 A strong signal from only the Rust-heavy slice is not enough. That would
 reinforce the founder-market-fit risk in
-[Repo-intent dependence](repo-intent-dependence.md) and should be measured
+[Repo-intent dependence](repo-intent.md) and should be measured
 against the degraded-mode rows in
-[Repo-intent value ledger](repo-intent-value-ledger.md).
+[Repo-intent value ledger](repo-intent.md).
 
 Broad AI coding-tool usage is not an A2 signal by itself. It only justifies
 including agent-heavy teams in the sample. A2 signal requires an observed
@@ -216,7 +216,7 @@ teams and zero sustainability signal means the research has not escaped n=1.
 
 Store interview notes as private or redacted Markdown until participants consent
 to inclusion. Raw notes are not the public artifact; use the
-[A2 interview evidence ledger](a2-interview-evidence-ledger.md) to create the
+[A2 interview evidence ledger](a2-user-demand.md) to create the
 committed, redacted result rows and aggregate A2 decision summary. Recommended
 raw-note fields:
 
@@ -252,15 +252,15 @@ claim is valid unless the redacted ledger and aggregate summary are committed.
 ### How This Feeds Other Gates
 
 - A1 bundle-value eval: recruit teams willing to share anonymized real incidents
-  into [Bundle-value Phase 0](bundle-value-phase0-runbook.md).
+  into [Bundle-value Phase 0](a1-bundle-value/bundle-value-phase0-runbook.md).
 - A3 schema moat: teams willing to adopt or critique the open bundle schema are
   the first non-operator schema signal.
 - Business-model validation: any concrete budget, support, hosted, fixer,
   enterprise-ops, or paid-pilot signal feeds the
-  [business model validation ledger](business-model-validation-ledger.md), but
+  [business model validation ledger](business-model.md), but
   adoption alone does not prove revenue.
 - A6 redaction: objections and constraints feed
-  [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md).
+  [Redaction pipeline and secret safety](../capture/redaction.md).
 - Roadmap order: if A2 is weak, do not let storage benchmarks create false
   progress.
 
@@ -281,7 +281,7 @@ Research date: 2026-05-25
 
 ### Purpose
 
-The [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
+The [User interview and deployment intent gate](a2-user-demand.md)
 defines who to interview, what to ask, and how to score each call. This note
 defines the missing execution artifact: a privacy-preserving evidence ledger
 that turns those calls into auditable A2 evidence without committing raw private
@@ -345,14 +345,14 @@ Outside sources checked for this pass:
 
 Internal sources:
 
-- [Risks and the bear case](risks-and-bear-case.md) makes A2 existential and
+- [Risks and the bear case](../decisions/risks-and-bear-case.md) makes A2 existential and
   says the GO flips if 20 interviews produce fewer than three deploy-ready teams
   and zero sustainability signal.
-- [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md)
+- [Build roadmap and validation sequence](../architecture/build-roadmap.md)
   puts A2 in Phase 0 before storage benchmarking.
-- [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) can use
+- [Bundle-value Phase 0 runbook](a1-bundle-value/bundle-value-phase0-runbook.md) can use
   interview participants who consent to provide anonymized incidents.
-- [Business model validation ledger](business-model-validation-ledger.md) consumes
+- [Business model validation ledger](business-model.md) consumes
   redacted budget, hosted, fixer, enterprise-ops, support/services, and
   paid-pilot signals from these interviews without treating adoption alone as
   revenue evidence.
@@ -576,12 +576,12 @@ The interim decision must use the existing A2 outcomes:
 ### Relationship To Other Gates
 
 - A1 bundle-value eval: Level 3 anonymized incident commitments become candidate
-  incidents for the [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md).
+  incidents for the [Bundle-value Phase 0 runbook](a1-bundle-value/bundle-value-phase0-runbook.md).
 - A3 schema moat: teams willing to critique or adopt the schema become the first
   non-operator schema-adoption prospects.
 - A6 redaction: every data-access refusal or redaction blocker becomes input to
-  [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
-  and [Redaction detector toolchain](redaction-detector-toolchain.md).
+  [Redaction pipeline and secret safety](../capture/redaction.md)
+  and [Redaction detector toolchain](../capture/redaction.md).
 - Roadmap: if the ledger cannot produce auditable A2 evidence, storage
   benchmarks remain premature no matter how attractive the technical work is.
 

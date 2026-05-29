@@ -7,7 +7,7 @@ Research date: 2026-05-25
 ## Purpose
 
 This designs the single most important experiment for the whole project. The
-[verdict](verdict.md) makes it kill criterion 3 and the [bear case](risks-and-bear-case.md)
+[verdict](../../decisions/go-no-go.md) makes it kill criterion 3 and the [bear case](../../decisions/risks-and-bear-case.md)
 makes it load-bearing assumption A1:
 
 > A bounded Parallax evidence bundle makes a coding agent's diagnosis and fix
@@ -91,7 +91,7 @@ Four arms, same agent, same model, same repo access, only the context differs:
 | --- | --- | --- |
 | **A. Repo-only (control)** | Repo + issue/error title + stack trace. | The SWE-bench-style baseline. Beating this proves runtime evidence helps at all. |
 | **B. Raw telemetry dump** | Repo + stack + an unbounded-ish dump of logs/spans/metrics in the time window. | "More data" control. Beating this proves the **bundling/correlation**, not mere data access, is the value. |
-| **C. Parallax bundle** | Repo + the bounded, correlated, redacted [evidence bundle](evidence-bundle-and-schema.md) with hypotheses. | The product. |
+| **C. Parallax bundle** | Repo + the bounded, correlated, redacted [evidence bundle](../../architecture/evidence-bundle-schema.md) with hypotheses. | The product. |
 | **D. Bundle minus hypotheses** | Arm C without the ranked hypothesis block. | Isolates whether value is the **correlated evidence** or the **ranking**. |
 
 The decisive comparison is **C vs B**, not C vs A. If C only beats A but ties B,
@@ -100,7 +100,7 @@ and the correlation/bundle moat is weak. C must beat B to justify Parallax.
 
 Repo-held intent is a paired sub-study, not a replacement for the main A1 arms:
 split Arm C into runtime-only and runtime-plus-intent variants as defined in the
-[Repo-intent value ledger](repo-intent-value-ledger.md). That measures whether
+[Repo-intent value ledger](../repo-intent.md). That measures whether
 docs, decisions, tasks, roadmap, or agent instruction files add value without
 making degraded runtime-only mode too weak.
 
@@ -119,7 +119,7 @@ worst-to-best on realism:
    fix commit" pairs. Pro: real telemetry. Con: small N, n=1 bias (bear case A2),
    labeling effort.
 3. **Reference app + fault injection.** A seeded multi-service app (the same
-   generator family as the [storage benchmark](storage-benchmark-prototype.md)),
+   generator family as the [storage benchmark](../../storage/benchmark-plan.md)),
    inject known faults, capture real telemetry, the fix is known by construction.
    Pro: real telemetry + known fix + cross-tier frontend↔backend cases. Con:
    faults may be less representative than wild bugs.
@@ -206,10 +206,10 @@ Outcomes and what they mean:
 
 ## Relationship To Other Research
 
-- [Verdict](verdict.md) — kill criterion 3, which this operationalizes.
-- [Risks and the bear case](risks-and-bear-case.md) — assumption A1 (and A3,
+- [Verdict](../../decisions/go-no-go.md) — kill criterion 3, which this operationalizes.
+- [Risks and the bear case](../../decisions/risks-and-bear-case.md) — assumption A1 (and A3,
   since a positive result is what makes the schema worth adopting).
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) — the artifact
+- [Evidence bundle and open schema](../../architecture/evidence-bundle-schema.md) — the artifact
   under test (arm C/D).
 - [Bundle-value Phase 0 evaluation runbook](bundle-value-phase0-runbook.md) —
   the concrete first pass to run before a full benchmark corpus exists.
@@ -221,15 +221,15 @@ Outcomes and what they mean:
 - [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
   — defines the public result artifact, model snapshot, contamination tiers, and
   expiry rules for A1 claims.
-- [Repo-intent value ledger](repo-intent-value-ledger.md) — defines the paired
+- [Repo-intent value ledger](../repo-intent.md) — defines the paired
   runtime-only versus runtime-plus-intent sub-study under the Parallax-bundle
   arm.
 - [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md) —
   freezes the normalized overlay artifact, provenance labels, and no-cheat rules
   used to derive raw-dump and bundle arms from the same evidence.
-- [Storage benchmark prototype](storage-benchmark-prototype.md) — shares the
+- [Storage benchmark prototype](../../storage/benchmark-plan.md) — shares the
   seeded dataset/reference-app generator for dataset option (3).
-- [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
+- [Causal reconstruction and agent safety](../../architecture/causal-reconstruction.md)
   — calibration/unsupported-claim metrics feed the safety model.
 
 ## Bottom Line

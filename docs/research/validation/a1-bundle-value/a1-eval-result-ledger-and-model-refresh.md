@@ -432,7 +432,7 @@ False-positive triggers:
 
 Repo-intent sub-study results should be linked from the same A1 run only when
 they use the same task/model/scaffold snapshots. The paired rows and claim
-levels live in [Repo-intent value ledger](repo-intent-value-ledger.md), because
+levels live in [Repo-intent value ledger](../repo-intent.md), because
 repo-intent can improve constraint adherence while still failing broad-market
 degraded-mode requirements.
 

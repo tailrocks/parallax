@@ -130,11 +130,11 @@ The gateway must validate:
 
 For SDK compatibility, Parallax should use real SDK-generated envelopes in
 fixtures, not hand-written JSON. The focused fixture strategy is specified in
-[Sentry SDK fixture compatibility gate](sentry-sdk-fixture-compatibility.md).
+[Sentry SDK fixture compatibility gate](sentry-ingest.md).
 The result and product-wording contract is the
-[Sentry SDK compatibility ledger](sentry-sdk-compatibility-ledger.md).
+[Sentry SDK compatibility ledger](sentry-ingest.md).
 The current cross-SDK item-policy refresh is captured in
-[Sentry envelope item policy recheck](sentry-envelope-item-policy-recheck.md).
+[Sentry envelope item policy recheck](sentry-ingest.md).
 
 ### Envelope Item Support
 
@@ -264,9 +264,9 @@ Rust-first normalization rules:
 The focused Rust grouping proof gate, including the proposed `rust-stack-v1`
 algorithm, debuginfo policy, symbolication status fields, and fixture matrix, is
 defined in
-[Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md),
+[Rust stacktrace grouping and symbolication](rust.md),
 with result rows and claim levels controlled by the
-[Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md).
+[Rust stacktrace grouping ledger](rust.md).
 
 Harder future targets:
 
@@ -461,7 +461,7 @@ context is easy to over-share.
 ### Compatibility Test Matrix
 
 This table is the short version. The full SDK-generated fixture gate is
-[Sentry SDK fixture compatibility](sentry-sdk-fixture-compatibility.md).
+[Sentry SDK fixture compatibility](sentry-ingest.md).
 
 | Test | Expected result |
 | --- | --- |
@@ -501,10 +501,10 @@ That path gives Parallax the useful part of Sentry without recreating the
 self-hosted Sentry service graph.
 
 Related:
-[Sentry SDK fixture compatibility gate](sentry-sdk-fixture-compatibility.md) and
-[Sentry SDK compatibility ledger](sentry-sdk-compatibility-ledger.md). Rust
+[Sentry SDK fixture compatibility gate](sentry-ingest.md) and
+[Sentry SDK compatibility ledger](sentry-ingest.md). Rust
 grouping stability is the narrower subclaim controlled by the
-[Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md).
+[Rust stacktrace grouping ledger](rust.md).
 
 ## Sentry Envelope Item Policy Recheck
 
@@ -644,7 +644,7 @@ Reopen the v0 compatibility target if:
 - [`@sentry/core` npm package](https://www.npmjs.com/package/@sentry/core)
 - [`sentry-go` module](https://pkg.go.dev/github.com/getsentry/sentry-go@v0.46.2/internal/protocol)
 - [sentry-python envelope source](https://getsentry.github.io/sentry-python/_modules/sentry_sdk/envelope.html)
-- [Urgentry Sentry Tiny Benchmark Recheck](urgentry-sentry-tiny-benchmark-recheck.md)
+- [Urgentry Sentry Tiny Benchmark Recheck](../market/competitor-watch.md)
 
 ### Bottom Line
 
@@ -668,7 +668,7 @@ ingestion. That claim is useful only if real Sentry SDKs can send useful data to
 Parallax without surprising users.
 
 This note tightens proof gate #5 from
-[Strategic verdict and research coverage](strategic-verdict-and-research-coverage.md):
+[Strategic verdict and research coverage](../decisions/strategic-coverage.md):
 
 > Sentry envelope compatibility across real SDKs.
 
@@ -678,7 +678,7 @@ redaction, idempotency, trace-correlation, canonical bundle, projection
 equivalence, and MCP structured-output checks.**
 
 Results and product-claim status should be published through the
-[Sentry SDK compatibility ledger](sentry-sdk-compatibility-ledger.md), not
+[Sentry SDK compatibility ledger](sentry-ingest.md), not
 inferred from this fixture design alone.
 
 ### Current Primary-Source Checks
@@ -695,7 +695,7 @@ inferred from this fixture design alone.
 | [Sentry Relay repository](https://github.com/getsentry/relay) | Relay is the real Rust reference gateway, but processing mode performs full normalization/filtering/rate limiting and produces events into Kafka; its integration tests require Redis/Kafka. Parallax should use Relay as a compatibility reference, not copy its operational shape. |
 | [Sentry distributed tracing SDK spec](https://develop.sentry.dev/sdk/telemetry/traces/distributed-tracing) | Sentry propagates `sentry-trace` and `baggage`, with optional W3C `traceparent` for OpenTelemetry interop. Parallax must map `contexts.trace` and propagated headers into OTLP trace joins. |
 | [MCP 2025-11-25 tools spec](https://modelcontextprotocol.io/specification/2025-11-25/server/tools), [MCP base protocol](https://modelcontextprotocol.io/specification/2025-11-25/basic), and [RFC 8785 JCS](https://www.rfc-editor.org/rfc/rfc8785.html) | MCP tools can return schema-valid `structuredContent`; MCP reserves `_meta` for protocol metadata; JCS provides deterministic JSON for hashing. Fixture outputs must prove the same redacted Sentry evidence bundle survives bundle JSON, Markdown, CLI, HTTP, and MCP projections. |
-| [Sentry envelope item policy recheck](sentry-envelope-item-policy-recheck.md) | Current Rust, JavaScript, Go, and Python SDK/protocol sources expose different item sets. JavaScript and Python are broader than current Rust `sentry-types`, and Go exposes `client_report`, `log`, and `trace_metric` item constants. | The fixture gate must test tolerant event-first parsing plus explicit unsupported-item outcomes across SDKs, not only Rust's current modeled item set. |
+| [Sentry envelope item policy recheck](sentry-ingest.md) | Current Rust, JavaScript, Go, and Python SDK/protocol sources expose different item sets. JavaScript and Python are broader than current Rust `sentry-types`, and Go exposes `client_report`, `log`, and `trace_metric` item constants. | The fixture gate must test tolerant event-first parsing plus explicit unsupported-item outcomes across SDKs, not only Rust's current modeled item set. |
 
 ### Compatibility Levels
 
@@ -751,7 +751,7 @@ Every fixture directory should record:
 
 Do not store live production envelopes as test fixtures. Use synthetic apps with
 seeded PII/secret canaries from
-[Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md).
+[Redaction pipeline and secret safety](redaction.md).
 
 ### Rust-First Fixture Matrix
 
@@ -868,7 +868,7 @@ Pass criteria for v0:
 - normalized snapshots are stable and reviewable;
 - grouping snapshots are versioned and deterministic;
 - Rust stacktrace grouping fixtures from
-  [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md)
+  [Rust stacktrace grouping and symbolication](rust.md)
   pass before the L3 product claim is used;
 - duplicate event IDs are idempotent;
 - redaction fixtures leak zero seeded canaries into agent-visible JSON/Markdown;
@@ -920,25 +920,25 @@ This keeps Parallax narrow, testable, and defensible.
 
 ### Relationship To Other Research
 
-- [Sentry-compatible ingestion](sentry-compatible-ingestion.md) - this note
+- [Sentry-compatible ingestion](sentry-ingest.md) - this note
   turns its compatibility section into a fixture gate.
-- [Sentry envelope item policy recheck](sentry-envelope-item-policy-recheck.md)
+- [Sentry envelope item policy recheck](sentry-ingest.md)
   - keeps the parser/item policy explicit across current Rust, JavaScript, Go,
   and Python SDK item surfaces.
-- [Sentry SDK compatibility ledger](sentry-sdk-compatibility-ledger.md) - turns
+- [Sentry SDK compatibility ledger](sentry-ingest.md) - turns
   fixture runs into claim levels, row schemas, expiry triggers, and allowed
   product wording.
-- [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md)
+- [Rust data collection and instrumentation](rust.md)
   - the Rust SDK scenarios come from the chosen collection path.
-- [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md)
-  and [Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md)
+- [Rust stacktrace grouping and symbolication](rust.md)
+  and [Rust stacktrace grouping ledger](rust.md)
   - the L3 grouping-stability gate, Rust-specific fixture extensions, and
   claimable result rows.
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) - fixture
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md) - fixture
   outputs must flow into the bundle contract.
-- [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
+- [Redaction pipeline and secret safety](redaction.md)
   - every fixture corpus should include seeded redaction canaries.
-- [Strategic verdict and research coverage](strategic-verdict-and-research-coverage.md)
+- [Strategic verdict and research coverage](../decisions/strategic-coverage.md)
   - this addresses unproven gate #5.
 
 ### Bottom Line
@@ -961,9 +961,9 @@ Research date: 2026-05-25
 
 This ledger turns "Sentry-compatible" from broad product language into an
 auditable claim. It consumes the fixture gate in
-[Sentry SDK fixture compatibility gate](sentry-sdk-fixture-compatibility.md) and
+[Sentry SDK fixture compatibility gate](sentry-ingest.md) and
 the ingestion design in
-[Sentry-compatible ingestion](sentry-compatible-ingestion.md).
+[Sentry-compatible ingestion](sentry-ingest.md).
 
 Current status: **not measured**. The repository has a compatibility strategy and
 fixture design, but it does not yet have SDK-generated fixture results. Until
@@ -994,8 +994,8 @@ The central rule:
 | [Sentry trace propagation](https://develop.sentry.dev/sdk/foundations/trace-propagation/) | Sentry trace propagation uses `sentry-trace` and `baggage`; SDKs can optionally emit W3C `traceparent` for OpenTelemetry interop. | Compatibility is only valuable for Parallax if Sentry error context can join to OTLP traces/logs. |
 | [Sentry Relay repository](https://github.com/getsentry/relay) | Relay remains the closest Rust ingestion reference, but it is a gateway/processing system rather than a tiny Parallax dependency. | Use Relay as a reference oracle where useful, not as the operational architecture. |
 | [MCP 2025-11-25 tools spec](https://modelcontextprotocol.io/specification/2025-11-25/server/tools), [MCP base protocol](https://modelcontextprotocol.io/specification/2025-11-25/basic), and [RFC 8785 JCS](https://www.rfc-editor.org/rfc/rfc8785.html) | MCP tools can return `structuredContent` validated by `outputSchema`; MCP reserves `_meta` for protocol metadata; JCS provides a deterministic JSON representation suitable for hashes. | Sentry fixture outputs cannot be considered agent-ready unless bundle projections are structured, schema-valid, and hash-equivalent across access surfaces. |
-| [Sentry envelope item policy recheck](sentry-envelope-item-policy-recheck.md) | Current Rust, JavaScript, Go, and Python SDK/protocol sources expose different envelope item sets. JavaScript `@sentry/core` `10.53.1` includes profile chunks, replay, span, log, metric, trace metric, raw security, feedback, and client-report item families; Go `v0.46.2` exposes client-report/log/trace-metric constants; Python `2.60.0` emits profile/profile-chunk/check-in/session items. | Fixture scope must include tolerant event-first parsing and explicit unsupported-item outcomes beyond Rust `sentry-types`' current modeled set. |
-| [Bugsink Sentry SDK compatibility](https://www.bugsink.com/sentry-sdk-compatible/), [Bugsink simplicity recheck](bugsink-sentry-compatible-simplicity-recheck.md), [Rustrak recheck](rustrak-sentry-mcp-protocol-recheck.md), [Urgentry](https://urgentry.com/), and [Urgentry recheck](urgentry-sentry-tiny-benchmark-recheck.md) | Lightweight competitors publicly use DSN-change or drop-in Sentry replacement language. Bugsink's current docs explicitly frame migration as keeping the SDK and updating the DSN. Rustrak is Rust-first and envelope-focused, but its own drift report says non-event Sentry items such as sessions, transactions, client reports, attachments, and spans are not stored. Urgentry goes the other direction: source confirms broader side-effect handling for transactions, sessions, replays, profiles, client reports, check-ins, attachments, and metrics. | Parallax needs more precise evidence and wording; simple compatibility language is already crowded, and "Sentry-compatible" must distinguish error-event envelopes, explicit unsupported-item outcomes, and broad Sentry replacement behavior. |
+| [Sentry envelope item policy recheck](sentry-ingest.md) | Current Rust, JavaScript, Go, and Python SDK/protocol sources expose different envelope item sets. JavaScript `@sentry/core` `10.53.1` includes profile chunks, replay, span, log, metric, trace metric, raw security, feedback, and client-report item families; Go `v0.46.2` exposes client-report/log/trace-metric constants; Python `2.60.0` emits profile/profile-chunk/check-in/session items. | Fixture scope must include tolerant event-first parsing and explicit unsupported-item outcomes beyond Rust `sentry-types`' current modeled set. |
+| [Bugsink Sentry SDK compatibility](https://www.bugsink.com/sentry-sdk-compatible/), [Bugsink simplicity recheck](../market/competitor-watch.md), [Rustrak recheck](../market/competitor-watch.md), [Urgentry](https://urgentry.com/), and [Urgentry recheck](../market/competitor-watch.md) | Lightweight competitors publicly use DSN-change or drop-in Sentry replacement language. Bugsink's current docs explicitly frame migration as keeping the SDK and updating the DSN. Rustrak is Rust-first and envelope-focused, but its own drift report says non-event Sentry items such as sessions, transactions, client reports, attachments, and spans are not stored. Urgentry goes the other direction: source confirms broader side-effect handling for transactions, sessions, replays, profiles, client reports, check-ins, attachments, and metrics. | Parallax needs more precise evidence and wording; simple compatibility language is already crowded, and "Sentry-compatible" must distinguish error-event envelopes, explicit unsupported-item outcomes, and broad Sentry replacement behavior. |
 
 ### 2026-05-25 Freshness Pass
 
@@ -1043,7 +1043,7 @@ raw security, legacy/competitor-observed `statsd`, and unknown future items.
 The parser contract must prove a valid `event` item is not poisoned by
 unsupported side items.
 
-See [Sentry envelope item policy recheck](sentry-envelope-item-policy-recheck.md).
+See [Sentry envelope item policy recheck](sentry-ingest.md).
 
 ### Claim Levels
 
@@ -1410,22 +1410,22 @@ Avoid unqualified claims such as:
 
 ### Relationship To Other Research
 
-- [Sentry SDK fixture compatibility gate](sentry-sdk-fixture-compatibility.md) -
+- [Sentry SDK fixture compatibility gate](sentry-ingest.md) -
   defines the fixture scenarios this ledger turns into result rows.
-- [Sentry-compatible ingestion](sentry-compatible-ingestion.md) - defines the
+- [Sentry-compatible ingestion](sentry-ingest.md) - defines the
   ingest boundary and unsupported item policy.
-- [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md)
-  and [Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md)
+- [Rust stacktrace grouping and symbolication](rust.md)
+  and [Rust stacktrace grouping ledger](rust.md)
   - control the Rust grouping-stability subclaim and the result rows needed for
   `rust_grouping_stable`.
-- [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) - controls
+- [A6 redaction red-team ledger](redaction.md) - controls
   whether fixture output may enter agent-visible bundles.
-- [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)
+- [Evidence bundle and open schema specification](../architecture/evidence-bundle-schema.md)
   - defines the source-field policy and redaction report fields that
   compatibility projections must carry.
-- [OTLP receiver conformance and Collector equivalence](otlp-receiver-conformance-and-collector-equivalence.md)
+- [OTLP receiver conformance and Collector equivalence](otlp.md)
   - pairs with the trace-correlation rows for mixed Sentry/OTLP evidence.
-- [Lightweight Sentry-compatible competitor watch](lightweight-sentry-compatible-competitor-watch.md)
+- [Lightweight Sentry-compatible competitor watch](../market/competitor-watch.md)
   - explains why compatibility must be precise and evidence-backed.
 
 ### Bottom Line

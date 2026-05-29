@@ -43,14 +43,14 @@ and schema-bound, canonical context bundles for humans and coding agents across
 CLI, HTTP, and MCP projections.
 
 The product-claim boundary for "OTLP-native" and "Collector-compatible" is the
-[OTLP conformance ledger](otlp-conformance-ledger.md). The focused
-[OTLP transport profile recheck](otlp-transport-profile-recheck.md) sharpens the
+[OTLP conformance ledger](otlp.md). The focused
+[OTLP transport profile recheck](otlp.md) sharpens the
 baseline transport claim: Parallax should require `grpc` and `http/protobuf`,
 label `http/json` as optional, and test SDK endpoint URL construction before
 using broad OTLP wording.
 Stored OTLP rows are necessary but not sufficient for Parallax's agent claim:
 OTLP-derived evidence becomes agent-ready only after the
-[evidence bundle schema](evidence-bundle-and-schema.md), canonical hashes,
+[evidence bundle schema](../architecture/evidence-bundle-schema.md), canonical hashes,
 projection manifests, redaction reports, and access-surface equivalence gates
 pass.
 
@@ -60,7 +60,7 @@ In one sentence:
 > investigation, grouping, and agent-context layer above it.
 
 Current competitor pressure strengthens this boundary. The focused
-[Traceway OTLP/AI/replay recheck](traceway-otlp-ai-replay-recheck.md) found an
+[Traceway OTLP/AI/replay recheck](../market/competitor-watch.md) found an
 active MIT project with direct OTLP/HTTP traces, metrics, and logs; OTel
 exception-to-issue conversion; trace-linked logs; AI trace promotion from
 `gen_ai.*`; native session-replay protocol; and SQLite/all-in-one/embedded
@@ -96,8 +96,8 @@ Sources:
 - [OpenTelemetry Rust 0.32.0 release](https://github.com/open-telemetry/opentelemetry-rust/releases/tag/opentelemetry-0.32.0)
 - [MCP tools specification 2025-11-25](https://modelcontextprotocol.io/specification/2025-11-25/server/tools)
 - [RFC 8785 JSON Canonicalization Scheme](https://www.rfc-editor.org/rfc/rfc8785.html)
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md)
-- [OTLP conformance ledger](otlp-conformance-ledger.md)
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md)
+- [OTLP conformance ledger](otlp.md)
 
 ### Is OTEL Becoming The Universal Protocol Layer?
 
@@ -403,10 +403,10 @@ Before claiming OTEL-native support, Parallax should pass these tests:
 
 The detailed fixture matrix and pass/fail semantics for these claims are
 specified in
-[OTLP receiver conformance and Collector equivalence](otlp-receiver-conformance-and-collector-equivalence.md).
+[OTLP receiver conformance and Collector equivalence](otlp.md).
 The access-surface projection and MCP structured-output requirements are
 specified in
-[Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
+[Agent access surface: CLI, HTTP API, and MCP](../decisions/agent-access-surface.md)
 and enforced through the OTLP conformance ledger for OTLP-derived evidence.
 
 ### Bottom Line
@@ -450,7 +450,7 @@ it should remain an explicitly labeled optional path for Parallax v0. A JSON-onl
 receiver is not enough for "OTLP-native" Parallax wording.
 
 Browser/frontend telemetry is the explicit exception to the gRPC baseline. The
-[frontend browser ingest profile recheck](frontend-browser-ingest-profile-recheck.md)
+[frontend browser ingest profile recheck](frontend.md)
 keeps browser OTLP HTTP-only because official OpenTelemetry JavaScript docs say
 browser apps cannot use OTLP/gRPC. That exception does not weaken the
 server/backend OTLP-native claim; it prevents tests from treating expected
@@ -480,8 +480,8 @@ gate must test both, and Parallax docs must tell users to include `/v1/traces`,
 | [Collector Contrib v0.152.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.152.0) | Latest Contrib release checked remains `v0.152.0`, published 2026-05-11. | Contrib remains its own compatibility axis. |
 | [opentelemetry crate](https://crates.io/crates/opentelemetry) and [opentelemetry-otlp crate](https://crates.io/crates/opentelemetry-otlp) | crates.io still reports `0.32.0` for both, updated 2026-05-08. | Rust fixtures remain the first direct SDK path; no Rust crate drift found. |
 | [Rotel v0.2.2](https://github.com/rotel-dev/rotel/releases/tag/v0.2.2) and [Rotel README](https://github.com/rotel-dev/rotel) | Latest Rotel release remains `v0.2.2`. README says the receiver supports gRPC, HTTP/protobuf, and HTTP/JSON; default receiver ports are `4317` and `4318`. | Rotel smoke should test the same transport profile, but Rotel remains pre-1.0 and not the baseline. |
-| [Traceway recheck](traceway-otlp-ai-replay-recheck.md) | Current Traceway evidence shows OTLP/HTTP routes for traces, metrics, and logs that accept protobuf or JSON under `/api/otel`. | Direct OTLP/HTTP is table stakes, but Traceway's base path makes standard-path and endpoint-construction tests important. |
-| [Urgentry recheck](urgentry-sentry-tiny-benchmark-recheck.md) | Current Urgentry source-level recheck found OTLP HTTP/JSON routes and explicit protobuf rejection in checked source. | Treat JSON-only OTLP as a compatibility caveat, not as equivalent to Parallax's desired OTLP-native claim. |
+| [Traceway recheck](../market/competitor-watch.md) | Current Traceway evidence shows OTLP/HTTP routes for traces, metrics, and logs that accept protobuf or JSON under `/api/otel`. | Direct OTLP/HTTP is table stakes, but Traceway's base path makes standard-path and endpoint-construction tests important. |
+| [Urgentry recheck](../market/competitor-watch.md) | Current Urgentry source-level recheck found OTLP HTTP/JSON routes and explicit protobuf rejection in checked source. | Treat JSON-only OTLP as a compatibility caveat, not as equivalent to Parallax's desired OTLP-native claim. |
 
 ### Required Transport Profile
 
@@ -599,9 +599,9 @@ Reopen this note if:
 - [opentelemetry-otlp crate](https://crates.io/crates/opentelemetry-otlp)
 - [Rotel v0.2.2 release](https://github.com/rotel-dev/rotel/releases/tag/v0.2.2)
 - [Rotel README](https://github.com/rotel-dev/rotel)
-- [Traceway OTLP/AI/replay recheck](traceway-otlp-ai-replay-recheck.md)
-- [Urgentry Sentry/Tiny/benchmark recheck](urgentry-sentry-tiny-benchmark-recheck.md)
-- [Frontend browser ingest profile recheck](frontend-browser-ingest-profile-recheck.md)
+- [Traceway OTLP/AI/replay recheck](../market/competitor-watch.md)
+- [Urgentry Sentry/Tiny/benchmark recheck](../market/competitor-watch.md)
+- [Frontend browser ingest profile recheck](frontend.md)
 
 ### Bottom Line
 
@@ -619,7 +619,7 @@ _(Shared note — see the OpenTelemetry Protocol and Context Layer (strategy) se
 
 ### Purpose
 
-[OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md)
+[OpenTelemetry protocol and context layer](otlp.md)
 sets the direction: Parallax should accept OTLP directly and support upstream
 Collectors without making a Collector mandatory for the tiny tier. This note
 turns that into a proof gate.
@@ -635,9 +635,9 @@ If this gate fails, Parallax can still ingest OTLP experimentally, but it should
 not call the path OTLP-native.
 
 Results and product-claim status should be published through the
-[OTLP conformance ledger](otlp-conformance-ledger.md), not inferred from this
+[OTLP conformance ledger](otlp.md), not inferred from this
 fixture design alone.
-The focused [OTLP transport profile recheck](otlp-transport-profile-recheck.md)
+The focused [OTLP transport profile recheck](otlp.md)
 defines the required transport baseline and endpoint URL construction fixtures.
 
 ### Current Primary-Source Checks
@@ -646,7 +646,7 @@ defines the required transport baseline and endpoint URL construction fixtures.
 | --- | --- |
 | [OTLP specification 1.10.0](https://opentelemetry.io/docs/specs/otlp/) | OTLP defines encoding, transport, delivery, partial-success behavior, retryable errors, and HTTP/gRPC paths. Partial success is not a retry signal; retryable overload should use the documented retry behavior. |
 | [OpenTelemetry Protocol Exporter spec](https://opentelemetry.io/docs/specs/otel/protocol/exporter/) | Exporter protocols are `grpc`, `http/protobuf`, and `http/json`; SDKs should support both `grpc` and `http/protobuf`, may support `http/json`, and build HTTP paths differently for generic versus per-signal endpoint variables. |
-| [OTLP transport profile recheck](otlp-transport-profile-recheck.md) | Current primary-source pass confirmed no version drift, but tightened Parallax's claim boundary: require `grpc` and `http/protobuf`, label `http/json` optional, and test endpoint URL construction. |
+| [OTLP transport profile recheck](otlp.md) | Current primary-source pass confirmed no version drift, but tightened Parallax's claim boundary: require `grpc` and `http/protobuf`, label `http/json` optional, and test endpoint URL construction. |
 | [OpenTelemetry proto v1.10.0](https://github.com/open-telemetry/opentelemetry-proto/releases/tag/v1.10.0) | Trace, log, and metric export responses carry per-signal `partial_success` fields with rejected span/log/data-point counts and human-readable error messages. |
 | [OpenTelemetry logs data model](https://opentelemetry.io/docs/specs/otel/logs/data-model/) | Logs carry timestamp/observed timestamp, severity, body, attributes, resource/scope context, and optional trace/span correlation. If `SpanId` is present, `TraceId` should be present too. |
 | [OpenTelemetry metrics data model](https://opentelemetry.io/docs/specs/otel/metrics/data-model/) | Metric stream identity includes resource attributes, instrumentation scope, metric name, data point type, unit, temporality, and monotonicity. Attribute sets identify individual streams. Parallax must not flatten this into ambiguous rows. |
@@ -941,17 +941,17 @@ This keeps the tiny tier simple while making the production Collector path real.
 
 ### Relationship To Other Research
 
-- [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md)
+- [OpenTelemetry protocol and context layer](otlp.md)
   makes the protocol decision; this note defines the conformance proof.
-- [OTLP conformance ledger](otlp-conformance-ledger.md) turns conformance runs
+- [OTLP conformance ledger](otlp.md) turns conformance runs
   into claim levels, row schemas, expiry triggers, and allowed product wording.
-- [Self-hosted simplicity gate](self-hosted-simplicity-gate.md) requires OTLP
+- [Self-hosted simplicity gate](../validation/self-hosted-simplicity.md) requires OTLP
   ingestion without an external Collector in the tiny tier.
-- [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md)
+- [Storage freshness and bundle latency gate](../storage/freshness-and-latency.md)
   measures whether accepted OTLP becomes queryable fast enough.
-- [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
+- [Redaction pipeline and secret safety](redaction.md)
   has veto power over OTLP attributes and log bodies before agent exposure.
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) consumes the
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md) consumes the
   normalized rows and evidence edges this gate protects.
 
 ### Bottom Line
@@ -972,9 +972,9 @@ _(Shared note — see the OpenTelemetry Protocol and Context Layer (strategy) se
 
 This ledger turns "OTLP-native" and "Collector-compatible" into auditable
 claims. It consumes the proof gate in
-[OTLP receiver conformance and Collector equivalence](otlp-receiver-conformance-and-collector-equivalence.md)
+[OTLP receiver conformance and Collector equivalence](otlp.md)
 and the protocol decision in
-[OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md).
+[OpenTelemetry protocol and context layer](otlp.md).
 
 Current status: **not measured**. The repository has an OTLP strategy and
 fixture design, but it does not yet have direct-SDK, Collector, Collector
@@ -998,7 +998,7 @@ The central rule:
 | [OpenTelemetry specs page](https://opentelemetry.io/docs/specs/) | The docs currently list OpenTelemetry Specification `1.57.0`, OTLP Specification `1.10.0`, and semantic conventions `1.41.0`. | Result runs must pin which spec and semantic-convention versions the claim was tested against. |
 | [OTLP specification 1.10.0](https://opentelemetry.io/docs/specs/otlp/) | OTLP is stable for traces, metrics, and logs, development-stage for profiles; it defines gRPC and HTTP transports, protobuf payloads, gzip support, partial success, bad-data behavior, retryable status codes, and interoperability rules. | The receiver gate must test protocol behavior, not only decode success. |
 | [OpenTelemetry Protocol Exporter spec](https://opentelemetry.io/docs/specs/otel/protocol/exporter/) | Exporter protocol values are `grpc`, `http/protobuf`, and `http/json`. SDKs should support both `grpc` and `http/protobuf`, may support `http/json`, and construct HTTP paths differently for generic versus per-signal endpoint variables. | The ledger must include transport-profile and endpoint URL construction rows, not just payload-decoding rows. |
-| [OTLP transport profile recheck](otlp-transport-profile-recheck.md) | Current recheck found no source-version drift, but tightened the claim boundary around required `grpc` and `http/protobuf`, optional `http/json`, endpoint URL construction fixtures, and JSON-only competitor caveats. | A JSON-only endpoint cannot advance Parallax beyond an experimental/partial OTLP claim. |
+| [OTLP transport profile recheck](otlp.md) | Current recheck found no source-version drift, but tightened the claim boundary around required `grpc` and `http/protobuf`, optional `http/json`, endpoint URL construction fixtures, and JSON-only competitor caveats. | A JSON-only endpoint cannot advance Parallax beyond an experimental/partial OTLP claim. |
 | [OpenTelemetry proto v1.10.0](https://github.com/open-telemetry/opentelemetry-proto/releases/tag/v1.10.0) | The protobuf release is the schema baseline for export request/response messages. | Parallax parser and fixture generators must pin proto versions separately from SDK versions. |
 | [OpenTelemetry logs data model](https://opentelemetry.io/docs/specs/otel/logs/data-model/) | Logs carry timestamp, observed timestamp, trace/span context, severity, body, resource, instrumentation scope, and attributes. If `SpanId` is present, `TraceId` should also be present. | Log rows must preserve trace joins and structured bodies instead of flattening logs into lossy text. |
 | [OpenTelemetry metrics data model](https://opentelemetry.io/docs/specs/otel/metrics/data-model/) | The metrics model is stable and explicitly preserves metric semantics across transformations, including temporality and stream identity. | Parallax must not merge incompatible streams or drop temporality/monotonicity. |
@@ -1448,19 +1448,19 @@ Avoid:
 
 ### Relationship To Other Research
 
-- [OTLP receiver conformance and Collector equivalence](otlp-receiver-conformance-and-collector-equivalence.md)
+- [OTLP receiver conformance and Collector equivalence](otlp.md)
   defines the fixture scenarios this ledger turns into result rows.
-- [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md)
+- [OpenTelemetry protocol and context layer](otlp.md)
   makes the protocol and Collector/direct-ingest decision.
-- [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md)
+- [Storage freshness and bundle latency gate](../storage/freshness-and-latency.md)
   measures whether accepted OTLP becomes queryable fast enough.
-- [Storage size and object cost gate](storage-size-and-object-cost-gate.md)
+- [Storage size and object cost gate](../storage/size-and-object-cost.md)
   checks retained size and cost for the normalized signal rows.
-- [A5 stack decision ledger](a5-stack-decision-ledger.md) should treat this
+- [A5 stack decision ledger](../decisions/stack-decision.md) should treat this
   ledger as the OTLP integration input for any stack-default claim.
-- [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) controls
+- [A6 redaction red-team ledger](redaction.md) controls
   agent-visible safety for OTLP attributes and log bodies.
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) consumes the
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md) consumes the
   normalized rows and edges protected here.
 
 ### Bottom Line

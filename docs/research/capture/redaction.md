@@ -21,7 +21,7 @@ Research date: 2026-05-25
 ### Purpose
 
 This note de-risks assumption A6 from
-[Risks and the bear case](risks-and-bear-case.md):
+[Risks and the bear case](../decisions/risks-and-bear-case.md):
 
 > Redaction can be made trustworthy enough to expose evidence to agents and
 > third-party models.
@@ -34,7 +34,7 @@ stdout/stderr, agent prompts/tool outputs, attachments, and database query
 results — to trust one regex pass.
 
 2026-05-25 correction: redaction is also not enough to protect A1 eval
-integrity. The [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md)
+integrity. The [Phase 0 telemetry overlay contract](../validation/a1-bundle-value/phase0-telemetry-overlay-contract.md)
 now requires `source-field-policy.json` to separate `agent_visible_seed`,
 `runner_private`, `grader_private`, `triage_private`, and `public_audit`
 source fields. A6 must consume that policy as a hard pre-redaction gate. A
@@ -43,15 +43,15 @@ contains a gold patch, hidden verifier ID, generated hint, parser source, or
 resolving commit URL that the source-field policy forbids.
 
 The concrete detector/toolchain decision is now split into
-[Redaction detector toolchain](redaction-detector-toolchain.md): Parallax should
+[Redaction detector toolchain](redaction.md): Parallax should
 own a Rust, source-aware, default-deny runtime redaction engine and use
 Gitleaks, Betterleaks, TruffleHog, detect-secrets, Presidio, and GitHub pattern
 references as offline validators, not as blocking tiny-tier runtime
 dependencies.
 The result-ledger contract for proving this gate is in
-[A6 redaction red-team ledger](a6-redaction-red-team-ledger.md).
+[A6 redaction red-team ledger](redaction.md).
 The first public/private canary corpus boundary is specified in
-[A6 synthetic canary fixture corpus](a6-synthetic-canary-fixture-corpus.md).
+[A6 synthetic canary fixture corpus](redaction.md).
 
 ### Current Primary-Source Checks
 
@@ -85,7 +85,7 @@ The first public/private canary corpus boundary is specified in
 | MCP resources and client retention | Resource list/read output, `@` resource attachments, fuzzy-searchable resource paths, client-persisted oversized output, local attachments, and memory generation from MCP context. | Treat resources as agent-visible projections; raw refs deny without sensitive scope; high-sensitivity evidence must be excluded from client memory or persisted only as redacted bounded artifacts. |
 | Deploy/change provider records | Webhook/API payloads, deployment review comments, release notes, PR/issue text, deploy logs, environment URLs. | Store provider payloads and long text as raw refs by default; project structural fields and redacted summaries only after A6 provider-payload fixtures pass. |
 | Attachments and raw evidence | Crash dumps, screenshots, replay blobs, log files, test artifacts, database exports. | Metadata-only v0; later storage requires type-specific scanner, size cap, and manual/project-level enablement. |
-| Database query output | Row values, customer data, credentials in config tables, query text, parameters, plan text, export-like queries. | Read-only templates, row/column policy, aggregate/summarize first, never raw table dumps in agent bundles; see the [production database evidence access gate](production-database-evidence-access.md). |
+| Database query output | Row values, customer data, credentials in config tables, query text, parameters, plan text, export-like queries. | Read-only templates, row/column policy, aggregate/summarize first, never raw table dumps in agent bundles; see the [production database evidence access gate](production-db-evidence.md). |
 
 ### Pipeline Decision
 
@@ -209,7 +209,7 @@ accidental leaks from:
 
 #### Stage 6: Canonical Projection Gate
 
-The newer [evidence bundle schema contract](evidence-bundle-and-schema.md)
+The newer [evidence bundle schema contract](../architecture/evidence-bundle-schema.md)
 turns redaction from a text-rendering property into a canonical-bundle property.
 Before a bundle can be exposed to an agent, API caller, CLI user, MCP client, or
 eval/corpus row:
@@ -242,7 +242,7 @@ stored bundle can still become an unsafe agent prompt.
 
 ### Required Redaction Report
 
-The existing [evidence bundle spec](evidence-bundle-and-schema.md) already
+The existing [evidence bundle spec](../architecture/evidence-bundle-schema.md) already
 requires `redaction_report`. A6 needs the report to be more than a decorative
 object:
 
@@ -312,7 +312,7 @@ is incomplete for agent-visible claims.
 Before any agent/third-party-model exposure, Parallax needs a reproducible
 redaction eval suite. The run artifacts, row schemas, claim levels, and
 freshness rules are defined in the
-[A6 redaction red-team ledger](a6-redaction-red-team-ledger.md).
+[A6 redaction red-team ledger](redaction.md).
 
 | Gate | Required result |
 | --- | --- |
@@ -370,44 +370,44 @@ production secrets. Therefore:
 
 ### Relationship To Other Research
 
-- [Risks and the bear case](risks-and-bear-case.md) — this is the concrete A6
+- [Risks and the bear case](../decisions/risks-and-bear-case.md) — this is the concrete A6
   mitigation and falsification plan.
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) — this note
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md) — this note
   expands the mandatory `redaction_report`.
-- [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md) —
+- [Phase 0 telemetry overlay contract](../validation/a1-bundle-value/phase0-telemetry-overlay-contract.md) —
   defines the A1 source-field policy that A6 must enforce before scanner-based
   redaction.
-- [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
+- [Frontend collection and cross-tier correlation](frontend.md)
   — frontend privacy remains the hardest PII surface and should stay opt-in.
-- [Frontend capture safety ledger](frontend-capture-safety-ledger.md) — the
+- [Frontend capture safety ledger](frontend.md) — the
   claim ledger for proving browser breadcrumbs, route metadata, source-map
   status, replay refs, and agent-visible projections do not leak seeded PII.
-- [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) — CLI
+- [Agent and CLI execution tracing](agent-cli-tracing.md) — CLI
   args/env/stdout/stderr and agent prompts/tool outputs require ref-first
   capture.
-- [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
+- [Agent session tracing across real tools](agent-cli-tracing.md)
   — extends the prompt/tool/transcript raw-ref policy across Codex, Claude Code,
   Amp, and OpenCode adapters.
-- [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) —
+- [CLI trace overhead and redaction](agent-cli-tracing.md) —
   expands CLI-specific args/env/config/stdout/stderr policy, canary fixtures,
   and overhead gates before default-on capture.
-- [Redaction detector toolchain](redaction-detector-toolchain.md) — chooses the
+- [Redaction detector toolchain](redaction.md) — chooses the
   runtime detector architecture and external scanner role for A6.
-- [Redaction toolchain Betterleaks recheck](redaction-toolchain-betterleaks-recheck.md)
+- [Redaction toolchain Betterleaks recheck](redaction.md)
   — updates the external scanner set now that Betterleaks is active, while
   keeping network and LLM validation out of the default path.
-- [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) — defines the
+- [A6 redaction red-team ledger](redaction.md) — defines the
   run artifacts, fixture rows, projection audits, claim levels, and freshness
   rules that make A6 pass/fail claims auditable.
-- [A6 synthetic canary fixture corpus](a6-synthetic-canary-fixture-corpus.md)
+- [A6 synthetic canary fixture corpus](redaction.md)
   — defines which canary manifests, redacted outputs, hashes, and generator
   recipes are public, and which provider-shaped raw values stay private.
-- [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
+- [Causal reconstruction and agent safety](../architecture/causal-reconstruction.md)
   — redaction is a precondition for safe read-only agent context.
-- [Production database evidence access gate](production-database-evidence-access.md)
+- [Production database evidence access gate](production-db-evidence.md)
   — turns database query output into a read-only, template-driven, redacted, and
   audited evidence source.
-- [Production database evidence ledger](production-database-evidence-ledger.md)
+- [Production database evidence ledger](production-db-evidence.md)
   — defines when direct database evidence can be claimed after seeded secrets,
   prompt injection, RLS scope, limits, and audit fixtures pass.
 
@@ -428,7 +428,7 @@ Research date: 2026-05-25
 
 ### Purpose
 
-The [redaction pipeline](redaction-pipeline-and-secret-safety.md) establishes the
+The [redaction pipeline](redaction.md) establishes the
 A6 policy: default-deny capture, source-specific minimization, detector passes,
 and a red-team gate before agent exposure. This note answers the implementation
 question it leaves open:
@@ -450,7 +450,7 @@ evidence while producing bounded bundles quickly. Git-repo secret scanners and
 PII anonymizers are useful references, but they do not directly provide a
 low-latency, source-aware, evidence-bundle-safe runtime.
 
-The companion [redaction toolchain Betterleaks recheck](redaction-toolchain-betterleaks-recheck.md)
+The companion [redaction toolchain Betterleaks recheck](redaction.md)
 updates the external scanner boundary: Betterleaks is now an active comparator
 candidate, but its network, credential-verification, and LLM-validation features
 must be disabled by default for A6 fixture runs.
@@ -662,34 +662,34 @@ a different surface.
 
 ### Relationship To Other Research (Detector Toolchain)
 
-- [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
+- [Redaction pipeline and secret safety](redaction.md)
   defines the A6 policy and red-team gate this toolchain implements.
-- [Redaction toolchain Betterleaks recheck](redaction-toolchain-betterleaks-recheck.md)
+- [Redaction toolchain Betterleaks recheck](redaction.md)
   moves Betterleaks into the tracked comparator set while keeping validation
   disabled by default.
-- [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) defines the
+- [A6 redaction red-team ledger](redaction.md) defines the
   run artifacts that prove the toolchain does not leak seeded canaries and still
   preserves minimum debug usefulness.
-- [A6 synthetic canary fixture corpus](a6-synthetic-canary-fixture-corpus.md)
+- [A6 synthetic canary fixture corpus](redaction.md)
   defines the minimum fixture classes and commit policy for public redaction
   tests.
-- [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md)
+- [CLI trace overhead and redaction](agent-cli-tracing.md)
   supplies the highest-risk streaming output fixture surface.
-- [CLI trace safety ledger](cli-trace-safety-ledger.md) records the CLI-specific
+- [CLI trace safety ledger](agent-cli-tracing.md) records the CLI-specific
   canary, projection, and overhead rows that make that surface claimable.
-- [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
+- [Agent session tracing across real tools](agent-cli-tracing.md)
   supplies prompt/tool-output redaction fixtures.
-- [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
+- [Frontend collection and cross-tier correlation](frontend.md)
   supplies browser and replay privacy fixtures.
-- [Frontend capture safety ledger](frontend-capture-safety-ledger.md) records
+- [Frontend capture safety ledger](frontend.md) records
   browser-specific privacy canary, breadcrumb, replay, projection, and overhead
   rows for those fixtures.
-- [Production database evidence access gate](production-database-evidence-access.md)
+- [Production database evidence access gate](production-db-evidence.md)
   supplies database-output and SQL-error fixtures.
-- [Deploy/change context ledger](deploy-change-context-ledger.md) supplies
+- [Deploy/change context ledger](deploy-change-context.md) supplies
   provider payload, deployment review, release note, PR/issue text, and deploy
   log fixtures.
-- [Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md) must use this
+- [Bundle-value Phase 0 runbook](../validation/a1-bundle-value/bundle-value-phase0-runbook.md) must use this
   toolchain before exposing any generated bundle or raw dump to an agent.
 
 ### Bottom Line (Detector Toolchain)
@@ -871,7 +871,7 @@ This note defines the minimum synthetic canary corpus for A1/A6:
 | [Codex config reference](https://developers.openai.com/codex/config-reference) | Fixture manifests should record Codex MCP elicitation and memory settings when Codex is part of the tested client matrix, because MCP-derived context may otherwise become retained client state. |
 | [RFC 8785 JCS](https://www.rfc-editor.org/rfc/rfc8785.html) | Expected finding rows and projection hashes should use deterministic canonical JSON. |
 | [OWASP Logging Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html) | The corpus should cover access tokens, passwords, connection strings, encryption keys, payment-like values, sensitive PII, and untrusted cross-zone data. |
-| [Betterleaks recheck](redaction-toolchain-betterleaks-recheck.md) | External scanner fixtures should record network/validation/LLM mode; comparator scans must run offline by default. |
+| [Betterleaks recheck](redaction.md) | External scanner fixtures should record network/validation/LLM mode; comparator scans must run offline by default. |
 
 ### Corpus Tiers
 
@@ -1058,18 +1058,18 @@ The task can count only when:
 
 ### Relationship To Other Research (Canary Fixture Corpus)
 
-- [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md)
+- [Phase 0 telemetry overlay contract](../validation/a1-bundle-value/phase0-telemetry-overlay-contract.md)
   requires seeded canaries before an A1 task can count.
-- [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) defines the
+- [A6 redaction red-team ledger](redaction.md) defines the
   result rows that record canary, scanner, projection, and usefulness outcomes.
-- [Redaction detector toolchain](redaction-detector-toolchain.md) defines the
+- [Redaction detector toolchain](redaction.md) defines the
   runtime detector and external scanner roles.
-- [Redaction toolchain Betterleaks recheck](redaction-toolchain-betterleaks-recheck.md)
+- [Redaction toolchain Betterleaks recheck](redaction.md)
   defines the Betterleaks no-network/no-validation default.
-- [A1 Hugging Face row hash procedure](a1-huggingface-row-hash-procedure.md)
+- [A1 Hugging Face row hash procedure](../validation/a1-bundle-value/a1-huggingface-row-hash-procedure.md)
   defines source-row hash and field-policy inputs that canary source-field
   fixtures must respect.
-- [Frontend Replay and source-map privacy recheck](frontend-replay-sourcemap-privacy-recheck.md)
+- [Frontend Replay and source-map privacy recheck](frontend.md)
   defines Replay/source-map canaries that must exist before browser evidence
   can become agent-visible.
 
@@ -1082,8 +1082,8 @@ The task can count only when:
 - [MCP tools specification `2025-11-25`](https://modelcontextprotocol.io/specification/2025-11-25/server/tools)
 - [RFC 8785 JSON Canonicalization Scheme](https://www.rfc-editor.org/rfc/rfc8785.html)
 - [OWASP Logging Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html)
-- [Redaction toolchain Betterleaks recheck](redaction-toolchain-betterleaks-recheck.md)
-- [Frontend Replay and source-map privacy recheck](frontend-replay-sourcemap-privacy-recheck.md)
+- [Redaction toolchain Betterleaks recheck](redaction.md)
+- [Frontend Replay and source-map privacy recheck](frontend.md)
 
 ### Bottom Line (Canary Fixture Corpus)
 
@@ -1102,8 +1102,8 @@ Research date: 2026-05-25
 
 ### Purpose
 
-The [redaction pipeline](redaction-pipeline-and-secret-safety.md) and
-[detector toolchain](redaction-detector-toolchain.md) define the A6 strategy:
+The [redaction pipeline](redaction.md) and
+[detector toolchain](redaction.md) define the A6 strategy:
 default-deny capture, source-specific minimization, detector passes, and no
 agent exposure until redaction has been red-team tested.
 
@@ -1124,7 +1124,7 @@ only by a committed run artifact showing:
 - external scanners did not find unredacted secrets in generated outputs;
 - redaction did not erase the minimum evidence needed for bundle usefulness.
 
-The companion [A6 synthetic canary fixture corpus](a6-synthetic-canary-fixture-corpus.md)
+The companion [A6 synthetic canary fixture corpus](redaction.md)
 defines the minimum Phase 0 fixture set and the public/private boundary for raw
 provider-shaped canary values.
 
@@ -1724,23 +1724,23 @@ unaffected narrower level.
 
 ### Relationship To Other Research (Red-Team Ledger)
 
-- [Risks and bear case](risks-and-bear-case.md) identifies A6 as a load-bearing
+- [Risks and bear case](../decisions/risks-and-bear-case.md) identifies A6 as a load-bearing
   assumption for data ownership and agent exposure.
-- [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
+- [Redaction pipeline and secret safety](redaction.md)
   defines the default-deny policy and red-team gate this ledger records.
-- [Redaction detector toolchain](redaction-detector-toolchain.md) defines the
+- [Redaction detector toolchain](redaction.md) defines the
   runtime and offline scanner architecture this ledger tests.
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) requires
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md) requires
   `redaction_report` on every agent-visible bundle.
-- [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) and
-  [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
+- [CLI trace overhead and redaction](agent-cli-tracing.md) and
+  [Agent session tracing across real tools](agent-cli-tracing.md)
   provide high-risk fixture surfaces.
-- [Frontend capture safety ledger](frontend-capture-safety-ledger.md) defines
+- [Frontend capture safety ledger](frontend.md) defines
   browser/replay-specific privacy rows that A6 can veto before frontend evidence
   becomes agent-visible.
-- [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md)
+- [Phase 0 telemetry overlay contract](../validation/a1-bundle-value/phase0-telemetry-overlay-contract.md)
   defines source-field zones that A6 must audit before A1 bundles can count.
-- [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
+- [A1 eval result ledger and model refresh](../validation/a1-bundle-value/a1-eval-result-ledger-and-model-refresh.md)
   depends on A6 because bundle-value evals should not reward unsafe raw context.
 
 ### Bottom Line (Red-Team Ledger)

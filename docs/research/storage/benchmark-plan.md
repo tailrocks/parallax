@@ -33,12 +33,12 @@ storage engine underneath the platform.
 > `parallax-bench`, the `StorageAdapter` trait, the seeded dataset generator,
 > per-candidate DDL, the exact query SQL, the measurement protocol, and numeric
 > decision gates — lives in
-> [Storage benchmark prototype (runnable)](storage-benchmark-prototype.md). The
+> [Storage benchmark prototype (runnable)](benchmark-plan.md). The
 > benchmark prototype has veto power over the default storage choice. The first
 > mixed-load speed gate is specified in
-> [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md).
+> [Storage freshness and bundle latency gate](freshness-and-latency.md).
 > The first retained-size and object-cost gate is specified in
-> [Storage size and object cost gate](storage-size-and-object-cost-gate.md).
+> [Storage size and object cost gate](size-and-object-cost.md).
 
 ### Scope Rule
 
@@ -336,7 +336,7 @@ Research date: 2026-05-25
 ### Purpose
 
 This is the runnable realization of
-[Observability storage benchmark plan](observability-storage-benchmark-plan.md).
+[Observability storage benchmark plan](benchmark-plan.md).
 The plan says *what* to measure and *why*; this document specifies a concrete
 harness someone can build and run to compare storage candidates against the
 Parallax goal, and it has **veto power** over the default storage choice: no
@@ -349,24 +349,24 @@ per-candidate DDL, the exact evidence-bundle/correlation queries, and the
 measurement protocol for each metric.
 
 The focused proof gate for mixed-load freshness and Q6 bundle latency is
-[Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md).
+[Storage freshness and bundle latency gate](freshness-and-latency.md).
 Treat that gate as the first storage-speed pass before using smoke-run timings
 as architectural evidence.
 
 The focused proof gate for retained size, per-signal compression, object-store
 requests, cache dependency, and provider cost projection is
-[Storage size and object cost gate](storage-size-and-object-cost-gate.md).
+[Storage size and object cost gate](size-and-object-cost.md).
 Treat that gate as the first storage-cost pass before quoting retention numbers
 externally.
 
 The storage result does not, by itself, prove assumption A5. The
-[A5 stack decision ledger](a5-stack-decision-ledger.md) decides when storage
+[A5 stack decision ledger](../decisions/stack-decision.md) decides when storage
 speed/cost rows can roll up with metadata, ingest-log, setup, and integration
 rows into a stack-default claim.
 
 The current checked-in `bench/four-way/` harness is a useful preliminary local
 artifact, not this full prototype. See
-[Storage benchmark artifact interpretation](storage-benchmark-artifact-interpretation.md):
+[Storage benchmark artifact interpretation](benchmark-plan.md):
 Runs 140-147 store the four-build benchmark as code, define and validate the
 local/server tier split, tighten schema guidance, and source-read GreptimeDB
 TWCS/TTL, raft-engine WAL durability, and PartitionTree high-cardinality ingest
@@ -635,7 +635,7 @@ SELECT s.service, s.name, s.duration_ms, e.error_type, e.message
 attribute (`user`/`tenant`) over a window — degradation probe.
 
 **Q6 `bundle` (Bundle):** the composite — run Q1+Q2+Q3 for one anchor and
-assemble the [evidence bundle](evidence-bundle-and-schema.md); time end-to-end.
+assemble the [evidence bundle](../architecture/evidence-bundle-schema.md); time end-to-end.
 
 ### Metrics And How They Are Measured
 
@@ -719,16 +719,16 @@ clickhouse| small |           |        |        |        |         |            
 
 ### Relationship To Other Research
 
-- [Observability storage benchmark plan](observability-storage-benchmark-plan.md)
+- [Observability storage benchmark plan](benchmark-plan.md)
   — the rationale, scope rule, axes, and decision criteria this prototype runs.
-- [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md) — candidate
+- [GreptimeDB storage evaluation](evaluation.md) — candidate
   architecture detail.
-- [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md) — the Turso
+- [Metadata store benchmark plan and prototype](metadata/metadata-store-benchmark-plan.md) — the Turso
   vs Postgres harness, to be made runnable the same way.
-- [Storage benchmark artifact interpretation](storage-benchmark-artifact-interpretation.md)
+- [Storage benchmark artifact interpretation](benchmark-plan.md)
   — how to read the current `bench/four-way` local artifacts without promoting
   them to an A5 storage-default result.
-- [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)
+- [Evidence bundle and open schema specification](../architecture/evidence-bundle-schema.md)
   — Q6 assembles this object; the query workload exists to serve it.
 
 ### Bottom Line
@@ -1019,11 +1019,11 @@ cost beat ClickHouse's object-storage-capable profile?**
 
 - [Local benchmark results](greptimedb-vs-clickhouse/local-benchmark-results.md)
 - [Four-way version comparison](greptimedb-vs-clickhouse/four-way-version-comparison.md)
-- [Four-way benchmark harness](../../bench/four-way/README.md)
-- [A5 stack decision ledger](a5-stack-decision-ledger.md)
-- [Storage benchmark prototype](storage-benchmark-prototype.md)
-- [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md)
-- [Storage size and object cost gate](storage-size-and-object-cost-gate.md)
+- [Four-way benchmark harness](../../../bench/four-way/README.md)
+- [A5 stack decision ledger](../decisions/stack-decision.md)
+- [Storage benchmark prototype](benchmark-plan.md)
+- [Storage freshness and bundle latency gate](freshness-and-latency.md)
+- [Storage size and object cost gate](size-and-object-cost.md)
 - [GreptimeDB `v1.0.2` TWCS picker source](https://github.com/GreptimeTeam/greptimedb/blob/v1.0.2/src/mito2/src/compaction/twcs.rs)
 - [GreptimeDB `v1.0.2` compactor source](https://github.com/GreptimeTeam/greptimedb/blob/v1.0.2/src/mito2/src/compaction/compactor.rs)
 - [GreptimeDB `v1.0.2` raft-engine WAL log store source](https://github.com/GreptimeTeam/greptimedb/blob/v1.0.2/src/log-store/src/raft_engine/log_store.rs)

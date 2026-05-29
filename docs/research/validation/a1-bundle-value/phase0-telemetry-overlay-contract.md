@@ -220,7 +220,7 @@ These rules are part of the evaluation, not optional hygiene:
 7. Do not use an LLM to parse, summarize, rank, or redact overlay evidence.
 8. Include seeded secrets/canaries in at least one safe field and prove they are
    absent from agent-visible files. Use the
-   [A6 synthetic canary fixture corpus](a6-synthetic-canary-fixture-corpus.md)
+   [A6 synthetic canary fixture corpus](../../capture/redaction.md)
    for fixture classes and public/private commit boundaries.
 9. Preserve missing evidence instead of filling it with plausible defaults.
 10. Commit artifact hashes and provenance labels for every public task.
@@ -360,11 +360,11 @@ Failure consequences:
 - [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
   defines how overlay hashes, no-cheat gates, and contamination labels are
   carried into the public A1 result artifact.
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines Arm C
+- [Evidence bundle and open schema](../../architecture/evidence-bundle-schema.md) defines Arm C
   once the overlay rows are transformed into nodes and edges.
-- [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
+- [Redaction pipeline and secret safety](../../capture/redaction.md)
   owns the policy used before artifacts become agent-visible.
-- [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md)
+- [Deploy, change, and issue-tracker context](../../capture/deploy-change-context.md)
   defines how release/change/work-item records should be labeled and downgraded
   when they are only harness metadata.
 

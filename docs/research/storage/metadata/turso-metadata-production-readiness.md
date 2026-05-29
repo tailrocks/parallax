@@ -7,7 +7,7 @@ Research date: 2026-05-25
 ## Purpose
 
 This note tightens proof gate #11 from
-[Strategic verdict and research coverage](strategic-verdict-and-research-coverage.md):
+[Strategic verdict and research coverage](../../decisions/strategic-coverage.md):
 
 > Turso correctness, backup/restore, concurrency, migration, and fallback
 > behavior for metadata, agent session state, CLI invocation state, outcomes,
@@ -155,15 +155,15 @@ The report should include:
 - [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md)
   remains the runnable benchmark spec. This note adds the production-readiness
   gate and current Turso source interpretation.
-- [Technical implementation concept](technical-implementation-concept.md)
+- [Technical implementation concept](../../architecture/implementation-concept.md)
   should continue to name Turso as the first implementation while keeping
   Postgres as an active fallback.
-- [Risks and bear case](risks-and-bear-case.md) should treat this gate as part
+- [Risks and bear case](../../decisions/risks-and-bear-case.md) should treat this gate as part
   of A5: the chosen stack holds.
-- [A5 stack decision ledger](a5-stack-decision-ledger.md) consumes this gate's
+- [A5 stack decision ledger](../../decisions/stack-decision.md) consumes this gate's
   metadata rows and decides whether Turso is only a prototype metadata default
   or whether Postgres must be the production fallback/default.
-- [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) depends
+- [Agent and CLI execution tracing](../../capture/agent-cli-tracing.md) depends
   on this metadata store for auditability and outcome state.
 
 ## Bottom Line

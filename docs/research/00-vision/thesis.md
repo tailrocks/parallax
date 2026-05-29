@@ -25,11 +25,11 @@ and operational gates pass.
 
 Maintained follow-ups:
 
-- [Parallax Go / No-Go Verdict](verdict.md)
-- [Technical implementation concept](technical-implementation-concept.md)
-- [Storage benchmark prototype](storage-benchmark-prototype.md)
-- [OTLP conformance ledger](otlp-conformance-ledger.md)
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md)
+- [Parallax Go / No-Go Verdict](../decisions/go-no-go.md)
+- [Technical implementation concept](../architecture/implementation-concept.md)
+- [Storage benchmark prototype](../storage/benchmark-plan.md)
+- [OTLP conformance ledger](../capture/otlp.md)
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md)
 
 ---
 
@@ -226,9 +226,9 @@ the benchmark gates settle speed, cost, and operations.
 
 Sources: [GreptimeDB v1.0.2 release](https://github.com/GreptimeTeam/greptimedb/releases/tag/v1.0.2),
 [GreptimeDB trace read/write docs](https://docs.greptime.com/user-guide/traces/read-write/),
-[Storage benchmark prototype](storage-benchmark-prototype.md),
-[Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md),
-[Storage size and object cost gate](storage-size-and-object-cost-gate.md)
+[Storage benchmark prototype](../storage/benchmark-plan.md),
+[Storage freshness and bundle latency gate](../storage/freshness-and-latency.md),
+[Storage size and object cost gate](../storage/size-and-object-cost.md)
 
 Conclusion:
 

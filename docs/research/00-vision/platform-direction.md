@@ -16,12 +16,12 @@ fundamentally flawed?
 The operator explicitly does not want shallow startup advice, so this is
 disciplined and conditional: the platform outcome is a *possible emergent result
 of the narrow wedge winning first*, never a starting claim. Each stage is gated on
-prior assumptions holding ([bear case](risks-and-bear-case.md) A1/A2/A3).
+prior assumptions holding ([bear case](../decisions/risks-and-bear-case.md) A1/A2/A3).
 
 ## Is It Fundamentally Flawed? No — But The Platform Framing Is, As A Starting Point
 
 - As an **evidence engine** (the floor), the idea is sound and buildable today
-  ([verdict](verdict.md) GO).
+  ([verdict](../decisions/go-no-go.md) GO).
 - As a **starting pitch of "the intelligence layer between everything,"** it is
   flawed — that is the generic-AI-RCA trap the verdict rejects: too broad,
   absorbable by incumbents, unprovable, and unsafe.
@@ -38,7 +38,7 @@ Sentry-compatible + OTLP ingest, deterministic grouping/correlation, bounded
 bundles, CLI + read-only MCP, cheap object-storage retention. Value to one team,
 no network effects required. **Gate to proceed:** bundle-value (A1) proven and a
 real user base beyond the operator (A2). See
-[build roadmap](build-roadmap-and-validation-sequence.md).
+[build roadmap](../architecture/build-roadmap.md).
 
 ### Stage 2 — Investigation and audit layer
 
@@ -46,7 +46,7 @@ The evidence graph plus first-class CLI/coding-agent/CI tracing becomes a team's
 **system of record for "what happened across the system, and what agents did to
 it."** This is the differentiated middle: not just errors, but the audited causal
 chain across services, CI, CLI, deploys, and agent actions
-([agent/CLI tracing](agent-and-cli-execution-tracing.md)). Still single-team
+([agent/CLI tracing](../capture/agent-cli-tracing.md)). Still single-team
 value; the audit-of-agents angle strengthens as more work runs through agents.
 **Gate:** correlation reliable on real data (A4), redaction trustworthy (A6),
 the fixer + outcome loop working.
@@ -68,19 +68,19 @@ and operations work is moving through agents**, and agents need machine-readable
 context and leave action trails that must be audited. As that share grows, a
 context-and-audit substrate becomes more valuable, not less — and the incumbents'
 agents are closed/SaaS-tilted, leaving the open/self-hosted substrate slot open
-(see [AI-native observability](ai-native-observability-and-incident-intelligence.md),
-[market landscape](market-landscape.md)). The direction rides this trend; the risk
+(see [AI-native observability](ai-native-observability.md),
+[market landscape](../market/landscape.md)). The direction rides this trend; the risk
 is execution and distribution, not the trend.
 
 ## What Would Make It Genuinely Important (vs Merely Useful)
 
 - The **open evidence schema becomes a de facto standard** other tools/agents
-  build against (the moat that compounds — [business model](business-model-and-economics.md),
-  [business model validation ledger](business-model-validation-ledger.md),
-  [schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)).
+  build against (the moat that compounds — [business model](../validation/business-model.md),
+  [business model validation ledger](../validation/business-model.md),
+  [schema adoption and corpus moat gate](../validation/a3-schema-corpus.md)).
 - The **failure/fixer-outcome corpus** accumulates enough that Parallax's bundles
   measurably improve agent outcomes over time (the data moat —
-  [bundle-value eval](bundle-value-evaluation.md)).
+  [bundle-value eval](../validation/a1-bundle-value/bundle-value-evaluation.md)).
 - **Audit-of-agents** becomes a compliance/trust necessity as autonomous changes
   become normal, and Parallax is the open answer.
 
@@ -105,16 +105,16 @@ gates, and let the platform emerge from adoption — do not assert it.
 
 ## Relationship To Other Research
 
-- [Verdict](verdict.md) — the GO this builds forward from.
-- [Build roadmap](build-roadmap-and-validation-sequence.md) — the gated sequence
+- [Verdict](../decisions/go-no-go.md) — the GO this builds forward from.
+- [Build roadmap](../architecture/build-roadmap.md) — the gated sequence
   these stages map onto.
-- [Risks and the bear case](risks-and-bear-case.md) — A1/A2/A3 that gate each stage.
-- [Business model](business-model-and-economics.md) — schema-as-standard and
+- [Risks and the bear case](../decisions/risks-and-bear-case.md) — A1/A2/A3 that gate each stage.
+- [Business model](../validation/business-model.md) — schema-as-standard and
   corpus as the platform's economic engine.
-- [Business model validation ledger](business-model-validation-ledger.md) — the
+- [Business model validation ledger](../validation/business-model.md) — the
   result rows required before hosted, fixer, enterprise ops, support/services,
   or paid-pilot seams can be treated as validated.
-- [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
+- [Schema adoption and corpus moat gate](../validation/a3-schema-corpus.md)
   — the concrete A3 adoption/corpus thresholds before platform claims are earned.
-- [AI-native observability](ai-native-observability-and-incident-intelligence.md)
+- [AI-native observability](ai-native-observability.md)
   — the agent-native trend tailwind.

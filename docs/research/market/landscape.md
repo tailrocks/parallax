@@ -77,8 +77,8 @@ portable bundles, CLI + read-only MCP, and CLI/coding-agent action audit — plu
 the measured fixer-outcome corpus that compounds with use. No single competitor occupies
 that intersection today, but OpenObserve and SigNoz could close their gaps
 within 6–12 months, so speed matters. See
-[Verdict](verdict.md) for the GO/NO-GO decision built on this read. The
-[agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md)
+[Verdict](../decisions/go-no-go.md) for the GO/NO-GO decision built on this read. The
+[agentic observability competitor drift ledger](competitor-watch.md)
 tracks trigger hits and public-wording boundaries as these sources change.
 
 Current source checks for this update:
@@ -102,13 +102,13 @@ Current source checks for this update:
 - [OpenObserve AI SRE product page](https://openobserve.ai/ai-sre/)
 - [OpenObserve MCP docs](https://openobserve.ai/docs/integration/ai/mcp/)
 - [OpenObserve OTLP ingestion docs](https://openobserve.ai/docs/ingestion/logs/otlp/)
-- [OpenObserve AI/MCP Enterprise recheck](openobserve-ai-mcp-enterprise-recheck.md)
+- [OpenObserve AI/MCP Enterprise recheck](competitor-watch.md)
 - [SigNoz agent-native observability](https://signoz.io/agent-native-observability/)
 - [SigNoz Postmortem Evidence Pack](https://signoz.io/docs/ai/use-cases/postmortem-evidence-pack/)
 - [SigNoz MCP server](https://signoz.io/docs/ai/signoz-mcp-server/)
 - [SigNoz agent skills repository](https://github.com/SigNoz/agent-skills)
 - [SigNoz Claude Code monitoring](https://signoz.io/docs/claude-code-monitoring/)
-- [SigNoz open investigation format check](signoz-open-investigation-format-check.md)
+- [SigNoz open investigation format check](competitor-watch.md)
 - [Coroot 1.20.2 release](https://github.com/coroot/coroot/releases/tag/v1.20.2)
 - [Coroot product site](https://coroot.com/)
 - [Coroot editions](https://coroot.com/editions)
@@ -119,11 +119,11 @@ Current source checks for this update:
 - [Coroot MCP source](https://github.com/coroot/coroot/blob/main/api/mcp.go)
 - [Coroot RCA source](https://github.com/coroot/coroot/blob/main/api/rca.go)
 - [Coroot Cloud RCA source](https://github.com/coroot/coroot/blob/main/cloud/rca.go)
-- [Coroot MCP and AI RCA recheck](coroot-mcp-ai-rca-recheck.md)
+- [Coroot MCP and AI RCA recheck](competitor-watch.md)
 - [Grafana Assistant self-managed docs](https://grafana.com/docs/grafana/latest/administration/assistant/)
 - [Grafana Assistant CLI docs](https://grafana.com/docs/grafana-cloud/machine-learning/assistant/guides/cli/)
 - [Grafana Assistant MCP server docs](https://grafana.com/docs/grafana-cloud/machine-learning/assistant/configure/mcp-servers/)
-- [Agentic observability competitor drift ledger](agentic-observability-competitor-drift-ledger.md)
+- [Agentic observability competitor drift ledger](competitor-watch.md)
 
 ## High-Level Competitive Map
 
@@ -238,7 +238,7 @@ Sources:
 - [Datadog Bits AI Dev Agent setup docs](https://docs.datadoghq.com/bits_ai/bits_ai_dev_agent/setup/)
 - [Datadog Flaky Tests Management docs](https://docs.datadoghq.com/tests/flaky_management/)
 - [Datadog Bits AI SRE take-action docs](https://docs.datadoghq.com/bits_ai/bits_ai_sre/take_action/)
-- [Datadog Bits AI eval loop note](datadog-bits-ai-eval-loop.md)
+- [Datadog Bits AI eval loop note](../validation/a1-bundle-value/datadog-bits-ai-eval-loop.md)
 
 ## Other Important Competitors
 
@@ -271,7 +271,7 @@ Sources:
 - [Sentry Seer product page](https://sentry.io/product/seer/)
 - [Sentry Seer GA changelog](https://sentry.io/changelog/seer-sentrys-ai-debugger-is-generally-available/)
 - [Self-hosted Sentry docs](https://develop.sentry.dev/self-hosted/)
-- [Sentry MCP and Seer self-hosted recheck](sentry-mcp-seer-self-hosted-recheck.md)
+- [Sentry MCP and Seer self-hosted recheck](competitor-watch.md)
 - [Sentry MCP README](https://github.com/getsentry/sentry-mcp)
 - [Sentry MCP 0.35.0 release](https://github.com/getsentry/sentry-mcp/releases/tag/0.35.0)
 
@@ -335,7 +335,7 @@ Source:
 - [Coroot editions](https://coroot.com/editions)
 - [Coroot MCP server](https://docs.coroot.com/mcp/overview/)
 - [Coroot AI RCA overview](https://docs.coroot.com/ai/overview/)
-- [Coroot MCP and AI RCA recheck](coroot-mcp-ai-rca-recheck.md)
+- [Coroot MCP and AI RCA recheck](competitor-watch.md)
 
 ### New Relic iRCA
 
@@ -508,7 +508,7 @@ The first useful output:
    recurrence.
 
 CI failures and flaky tests remain useful seed tasks for the
-[Bundle-value Phase 0 runbook](bundle-value-phase0-runbook.md), because they
+[Bundle-value Phase 0 runbook](../validation/a1-bundle-value/bundle-value-phase0-runbook.md), because they
 have objective tests and reproducible artifacts. They should not define the
 whole market position.
 

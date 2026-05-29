@@ -9,17 +9,17 @@ Research date: 2026-05-25
 This document specifies the **Parallax evidence bundle** — the portable,
 versioned, machine-readable object that Parallax serves to humans and coding
 agents — and the **open evidence schema** behind it. The
-[Go / No-Go verdict](verdict.md) names the open evidence schema and the portable
+[Go / No-Go verdict](../decisions/go-no-go.md) names the open evidence schema and the portable
 bundle format as the primary defensible moat: a feature can be copied in a
 release, but a schema that other tools and agents build against becomes leverage
 that compounds. This is the concrete spec that turns that claim into something
 buildable.
 The adoption and corpus moat claim is not proven by this spec alone; the
-[A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md)
+[A3 schema adoption and corpus ledger](../validation/a3-schema-corpus.md)
 defines how external use and outcome data must be recorded.
 
 It elevates the data-model tables scattered across
-[Technical implementation concept](technical-implementation-concept.md) (error
+[Technical implementation concept](implementation-concept.md) (error
 event model, CLI invocation row, agent session row, audit graph edges,
 correlation layers) into one coherent, externally consumable contract. The
 implementation concept says *what Parallax stores*; this document says *what
@@ -46,7 +46,7 @@ released evidence-bundle schema. A local artifact scan found no
 validator command, no canonicalizer command, no projection-equivalence harness,
 and no MCP `outputSchema` fixture. The current claim level is therefore
 `schema_draft` only, matching the
-[A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md).
+[A3 schema adoption and corpus ledger](../validation/a3-schema-corpus.md).
 
 Do not treat the examples below as validator-backed artifacts. Until the
 missing artifacts exist, Parallax cannot claim an adoption clock, schema
@@ -196,7 +196,7 @@ Every node: `{ "id", "type", "ts" (when applicable), "summary", "data", "refs" }
 
 Frame shape inside `error_event.stack` (oldest→newest), matching the Rust-first
 capture story in
-[Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md):
+[Rust data collection and instrumentation](../capture/rust.md):
 
 ```json
 { "crate": "checkout", "module": "discount", "function": "apply",
@@ -221,7 +221,7 @@ evidence must carry enough fields for a reviewer to answer:
 Do not let a bundle turn "Codex hook event normalized" into "Codex session
 traced" or "Claude OTel event normalized" into "Claude `stream-json` traced."
 Those are separate capture-surface claims controlled by the
-[Agent session tracing ledger](agent-session-tracing-ledger.md). If provenance,
+[Agent session tracing ledger](../capture/agent-cli-tracing.md). If provenance,
 lossiness, or projection-safety fields are missing, the node may remain as
 debugging context, but it cannot support a product claim, measured fix outcome,
 or external schema-adoption result.
@@ -327,12 +327,12 @@ Mandatory. Shape:
 Redaction at build time is what makes the bundle safe to hand to an agent or
 paste into a third-party model. CLI invocation args/env and log excerpts are the
 highest-risk fields (see
-[Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) and
-[CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md)). The
+[Agent and CLI execution tracing](../capture/agent-cli-tracing.md) and
+[CLI trace overhead and redaction](../capture/agent-cli-tracing.md)). The
 trust model and red-team gate for this object are specified in
-[Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md),
+[Redaction pipeline and secret safety](../capture/redaction.md),
 with run-level proof defined in the
-[A6 redaction red-team ledger](a6-redaction-red-team-ledger.md).
+[A6 redaction red-team ledger](../capture/redaction.md).
 
 `source_field_policy.status` is `pass`, `fail`, or `not_applicable`.
 `not_applicable` is acceptable for direct production telemetry that does not
@@ -343,7 +343,7 @@ exist for debugging but is invalid for agent exposure and cannot count toward
 A1/A3 claims.
 
 Release/deploy/code-change/work-item claim status is not proven by node presence
-alone; the [Deploy/change context ledger](deploy-change-context-ledger.md)
+alone; the [Deploy/change context ledger](../capture/deploy-change-context.md)
 defines the provider completeness, edge-strength, missing-evidence, and
 redaction rows required before bundles can claim release-regression or "what
 changed?" context.
@@ -408,7 +408,7 @@ rule set 4 ms earlier in the same trace, see the regression began at release
 
 The same bundle object is returned by all three agent surfaces (one contract,
 three transports), per the focused
-[agent access surface decision](agent-access-surface-cli-api-mcp.md):
+[agent access surface decision](../decisions/agent-access-surface.md):
 
 - **CLI:** `parallax issue context iss_8b21 --window 10m --format json|markdown`
 - **HTTP:** `GET /api/projects/:project/issues/:issue_id/context?window=10m`
@@ -476,24 +476,24 @@ This is a draft contract. The benchmark and prototype gates that decide whether
 it survives contact with real data:
 
 1. Does the bundle improve agent fix/diagnosis quality versus raw Sentry/CI
-   context? (The core moat claim — see kill criterion 3 in [verdict](verdict.md)
-   and the first runnable [Phase 0 runbook](bundle-value-phase0-runbook.md).)
+   context? (The core moat claim — see kill criterion 3 in [verdict](../decisions/go-no-go.md)
+   and the first runnable [Phase 0 runbook](../validation/a1-bundle-value/bundle-value-phase0-runbook.md).)
 2. Can bundles stay bounded (size/token budget) while still carrying enough
    evidence for high-confidence application-error fixes?
 3. Is `redaction_report` trustworthy across logs, CLI args/env, attachments,
    source-field policy, and agent prompt material? See the
-   [redaction pipeline](redaction-pipeline-and-secret-safety.md) for the
+   [redaction pipeline](../capture/redaction.md) for the
    required default-deny policy and red-team gate, and the
-   [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) gate
+   [CLI trace overhead and redaction](../capture/agent-cli-tracing.md) gate
    for CLI-specific canaries and overhead budgets.
 4. Do `strength` tiers correspond to real predictive value, or are `medium`
    edges noise? The real-telemetry strong-edge prevalence and false-strong-edge
    audit are specified in the
-   [correlation reliability gate](correlation-reliability-real-telemetry-gate.md).
+   [correlation reliability gate](../capture/correlation.md).
 5. Is the schema stable enough that an external tool built on `v0.1` keeps
    working across two minor revisions? The concrete conformance artifacts,
    adoption-clock thresholds, and corpus requirements are specified in the
-   [schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md).
+   [schema adoption and corpus moat gate](../validation/a3-schema-corpus.md).
 6. Do CLI, HTTP, and MCP surfaces produce byte-equivalent canonical JSON for the
    same anchor, with Markdown/text renderings provably derived from that object?
    MCP text-only output is not enough for schema adoption or corpus claims.
@@ -508,46 +508,46 @@ it survives contact with real data:
 
 ## Relationship To Other Research
 
-- [Technical implementation concept](technical-implementation-concept.md) — the
+- [Technical implementation concept](implementation-concept.md) — the
   storage-side data model this contract is projected from, and the data-flow that
   builds it.
-- [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
+- [Causal reconstruction and agent safety](causal-reconstruction.md)
   — how edges, confidence, and missing-data feed safe agent behavior.
-- [Correlation reliability on real telemetry gate](correlation-reliability-real-telemetry-gate.md)
+- [Correlation reliability on real telemetry gate](../capture/correlation.md)
   — the A4 gate that measures whether edge strengths hold on real data.
-- [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md) — the
+- [Agent and CLI execution tracing](../capture/agent-cli-tracing.md) — the
   source detail for `cli_invocation`, `agent_session`, `agent_action`, and audit
   edges.
-- [Agent and CLI OTel semantic-convention mapping](agent-cli-otel-semconv-mapping.md)
+- [Agent and CLI OTel semantic-convention mapping](../capture/agent-cli-tracing.md)
   — how OpenTelemetry GenAI/MCP/CLI/process/CI spans feed these stable nodes
   without turning development-stage semconv fields into the storage contract.
-- [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
+- [Agent session tracing across real tools](../capture/agent-cli-tracing.md)
   — the real Codex, Claude Code, Amp, and OpenCode adapter gate for
   `agent_session` and `agent_action` nodes.
-- [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) — the
+- [CLI trace overhead and redaction](../capture/agent-cli-tracing.md) — the
   default-on safety and overhead gate for CLI invocation nodes.
-- [Production database evidence access gate](production-database-evidence-access.md)
+- [Production database evidence access gate](../capture/production-db-evidence.md)
   defines when database evidence nodes can enter agent-visible bundles.
-- [Production database evidence ledger](production-database-evidence-ledger.md)
+- [Production database evidence ledger](../capture/production-db-evidence.md)
   defines when direct database evidence claims are measured, fresh, and safe
   enough to project into JSON and Markdown bundles.
-- [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
+- [Frontend collection and cross-tier correlation](../capture/frontend.md)
   — the additive frontend node types (`frontend_session`, `user_step`,
   `frontend_error`, `route_view`, `frontend_release`) and cross-tier edges.
-- [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md)
+- [Deploy, change, and issue-tracker context](../capture/deploy-change-context.md)
   tightens the release/deploy/code-change/work-item nodes, edge strengths, and
   missing-evidence categories.
-- [Repo-intent value ledger](repo-intent-value-ledger.md) defines when optional
+- [Repo-intent value ledger](../validation/repo-intent.md) defines when optional
   docs, decisions, roadmap, task, and agent-instruction intent nodes can be
   treated as a measured bundle multiplier.
-- [Redaction pipeline and secret safety](redaction-pipeline-and-secret-safety.md)
+- [Redaction pipeline and secret safety](../capture/redaction.md)
   — the source-specific policy and eval gate that makes `redaction_report`
   enforceable rather than decorative.
-- [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) — the result
+- [A6 redaction red-team ledger](../capture/redaction.md) — the result
   ledger that proves redaction reports are backed by canary, scanner, projection,
   source-field policy, and usefulness audits.
-- [Verdict](verdict.md) — why the open schema and portable bundle are the moat.
-- [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
+- [Verdict](../decisions/go-no-go.md) — why the open schema and portable bundle are the moat.
+- [Schema adoption and corpus moat gate](../validation/a3-schema-corpus.md)
   — the A3 gate that decides whether the schema becomes external leverage and
   whether the failure/fixer-outcome corpus is large enough to call a moat.
 

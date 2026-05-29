@@ -22,7 +22,7 @@ This operationalizes bear-case assumption A3:
 > The open evidence schema plus failure/fixer-outcome corpus becomes a
 > compounding moat.
 
-The repo already defines a `v0` [Evidence bundle and open schema](evidence-bundle-and-schema.md).
+The repo already defines a `v0` [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md).
 That is necessary but not sufficient. A schema is not a moat because it exists in
 Markdown; it becomes leverage only when external tools can validate against it,
 agents can consume it consistently, contributors can extend it without breaking
@@ -32,7 +32,7 @@ into a corpus.
 This gate defines the adoption clock, conformance artifacts, compatibility
 rules, corpus events, and NO-GO conditions for A3.
 The companion
-[A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md)
+[A3 schema adoption and corpus ledger](a3-schema-corpus.md)
 defines the public event ledger that decides what actually counts.
 
 ### Source Posture
@@ -63,7 +63,7 @@ Current primary references reinforce three rules:
   format," but the 2026-05-25 focused check found no published schema or
   portable artifact in the checked landing page, MCP docs, MCP README, or
   release metadata
-  ([SigNoz open investigation format check](signoz-open-investigation-format-check.md)).
+  ([SigNoz open investigation format check](../market/competitor-watch.md)).
   Product-language claims therefore do not start the A3 clock. Only
   machine-readable schemas, fixtures, validators, compatibility rules, and
   artifact exports count.
@@ -77,15 +77,15 @@ triage-private fields.
 
 Internal sources:
 
-- [Risks and the bear case](risks-and-bear-case.md) makes A3 existential: without
+- [Risks and the bear case](../decisions/risks-and-bear-case.md) makes A3 existential: without
   adoption there is no schema gravity, and without usage there is no failure/fix
   corpus.
-- [Future platform direction](future-platform-direction.md) says the platform
+- [Future platform direction](../00-vision/platform-direction.md) says the platform
   outcome is earned only if the open schema is adopted and the corpus compounds.
-- [Business model and economics](business-model-and-economics.md) says adoption,
+- [Business model and economics](business-model.md) says adoption,
   not early revenue, is the first metric because schema/corpus gravity is the
   moat-building mechanism.
-- [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md)
+- [A3 schema adoption and corpus ledger](a3-schema-corpus.md)
   defines the public schema-adoption and corpus-outcome event rows, count rules,
   claim levels, and refresh cadence.
 
@@ -234,24 +234,24 @@ Also add a `docs/research/schema-adoption-results.md` once external feedback or
 integration attempts exist. That file should record dates, external actors,
 integration type, compatibility issues, and whether each event counts toward the
 A3 clock, following the event schema in the
-[A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md).
+[A3 schema adoption and corpus ledger](a3-schema-corpus.md).
 Add `docs/research/corpus-outcome-results.md` once bundles produce
 accepted/rejected/inconclusive outcome labels.
 
 ### Relationship To Other Research
 
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md) defines the
   current `v0` contract this gate makes testable.
-- [A3 schema adoption and corpus ledger](a3-schema-adoption-corpus-ledger.md)
+- [A3 schema adoption and corpus ledger](a3-schema-corpus.md)
   defines the event ledger and claim labels for schema gravity and corpus growth.
-- [Risks and the bear case](risks-and-bear-case.md) names A3 as existential.
-- [Build roadmap](build-roadmap-and-validation-sequence.md) starts the adoption
+- [Risks and the bear case](../decisions/risks-and-bear-case.md) names A3 as existential.
+- [Build roadmap](../architecture/build-roadmap.md) starts the adoption
   clock in Phase 2 and records accepted/rejected fix outcomes in Phase 4.
-- [Business model and economics](business-model-and-economics.md) relies on
+- [Business model and economics](business-model.md) relies on
   schema/corpus adoption as the open-source moat-building path.
-- [Bundle-value evaluation](bundle-value-evaluation.md) defines the A1 result
+- [Bundle-value evaluation](a1-bundle-value/bundle-value-evaluation.md) defines the A1 result
   that makes the schema worth adopting.
-- [User interview and deployment intent gate](user-interview-and-deployment-intent-gate.md)
+- [User interview and deployment intent gate](a2-user-demand.md)
   can recruit the first design partners who review or pilot the schema.
 
 ### Bottom Line
@@ -271,7 +271,7 @@ Research date: 2026-05-25
 
 ### Purpose
 
-The [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
+The [Schema adoption and corpus moat gate](a3-schema-corpus.md)
 defines what A3 must prove:
 
 > The open evidence schema plus failure/fixer-outcome corpus becomes a
@@ -324,18 +324,18 @@ Outside sources checked for this pass:
 
 Internal sources:
 
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md) defines the
   current `v0` bundle draft.
-- [Risks and the bear case](risks-and-bear-case.md) says A3 is existential
+- [Risks and the bear case](../decisions/risks-and-bear-case.md) says A3 is existential
   because the schema/corpus moat fails without adoption.
-- [Build roadmap and validation sequence](build-roadmap-and-validation-sequence.md)
+- [Build roadmap and validation sequence](../architecture/build-roadmap.md)
   starts the schema-adoption clock in Phase 2 and feeds outcome data in Phase 4.
-- [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
+- [A1 eval result ledger and model refresh](a1-bundle-value/a1-eval-result-ledger-and-model-refresh.md)
   defines the first outcome-style result ledger that can seed early corpus
   events.
-- [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) now requires
+- [A6 redaction red-team ledger](../capture/redaction.md) now requires
   source-field policy audit rows for agent-visible eval/corpus projections.
-- [A2 interview evidence ledger](a2-interview-evidence-ledger.md) defines the
+- [A2 interview evidence ledger](a2-user-demand.md) defines the
   design-partner signal that can seed external schema review.
 
 ### Current Claim Boundary
@@ -597,19 +597,19 @@ If a ledger is stale at a checkpoint, A3 remains unproven.
 
 ### Relationship To Other Research
 
-- [Schema adoption and corpus moat gate](schema-adoption-and-corpus-moat-gate.md)
+- [Schema adoption and corpus moat gate](a3-schema-corpus.md)
   defines the thresholds; this note defines the event ledger.
-- [Evidence bundle and open schema](evidence-bundle-and-schema.md) defines the
+- [Evidence bundle and open schema](../architecture/evidence-bundle-schema.md) defines the
   bundle contract events validate against.
-- [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
+- [A1 eval result ledger and model refresh](a1-bundle-value/a1-eval-result-ledger-and-model-refresh.md)
   can seed early `outcome_labeled` rows.
-- [A6 redaction red-team ledger](a6-redaction-red-team-ledger.md) defines the
+- [A6 redaction red-team ledger](../capture/redaction.md) defines the
   source-field and redaction proof that corpus rows must preserve.
-- [A2 interview evidence ledger](a2-interview-evidence-ledger.md) can seed early
+- [A2 interview evidence ledger](a2-user-demand.md) can seed early
   `external_review`, `producer_integration`, and `consumer_integration` rows.
-- [Fixer component and outcome loop](fixer-component-and-outcome-loop.md)
+- [Fixer component and outcome loop](../decisions/fixer-boundary.md)
   supplies later accepted/rejected fix outcomes.
-- [Fixer outcome ledger](fixer-outcome-ledger.md) controls when those
+- [Fixer outcome ledger](../decisions/fixer-boundary.md) controls when those
   accepted/rejected/edited/reverted/recurrence rows are measured enough to feed
   the corpus.
 

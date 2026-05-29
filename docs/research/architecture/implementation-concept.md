@@ -54,7 +54,7 @@ should not start as a full observability dashboard or autonomous production SRE.
 ## Phase 2 Blueprint Decisions
 
 This section locks the decisions required after the GO verdict in
-[Parallax Go / No-Go Verdict](verdict.md).
+[Parallax Go / No-Go Verdict](../decisions/go-no-go.md).
 
 ### API Standard Decision
 
@@ -94,9 +94,9 @@ The fixer component owns repository checkout, agent orchestration, patch
 generation, test execution, and pull-request creation. Parallax records those
 actions as evidence after the fixer performs them.
 The detailed fixer request/outcome contract and autonomy gates are specified in
-[Fixer component and outcome loop](fixer-component-and-outcome-loop.md), and
+[Fixer component and outcome loop](../decisions/fixer-boundary.md), and
 the result rows required before fixer claims become measurable are specified in
-[Fixer outcome ledger](fixer-outcome-ledger.md).
+[Fixer outcome ledger](../decisions/fixer-boundary.md).
 
 Access decision:
 
@@ -122,7 +122,7 @@ Access decision:
 | HTTP API | `axum` REST/JSON service in `parallax-server`. | Separate `parallax-api` nodes behind a load balancer. | Horizontally scaled `parallax-api` fleet. |
 | OTLP/gRPC | `tonic` + `prost` receiver for OTLP/gRPC; `axum` route for OTLP/HTTP. | Dedicated `parallax-ingest` nodes. | Regional ingest tiers with collector compatibility and overload control. |
 | App collection | Rust `tracing`, `tracing-error`, `opentelemetry-otlp`, and fixture-gated Sentry envelope Rust panic/error capture. | Add SDK fixtures for more languages through Sentry envelope `event` compatibility and OTLP. | Collector/agent integrations, sampling policy, tenant routing. |
-| CLI tracing | `parallax` CLI built with `clap`; wrapper/subcommand mode records structural command metadata, sanitized args/env/cwd, stdout/stderr policy refs, exit code, and overhead metrics. | CI and deploy systems call CLI with project token and redaction policy after the [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md) gate passes. | Organization-wide CLI/agent gateway and policy templates. |
+| CLI tracing | `parallax` CLI built with `clap`; wrapper/subcommand mode records structural command metadata, sanitized args/env/cwd, stdout/stderr policy refs, exit code, and overhead metrics. | CI and deploy systems call CLI with project token and redaction policy after the [CLI trace overhead and redaction](../capture/agent-cli-tracing.md) gate passes. | Organization-wide CLI/agent gateway and policy templates. |
 | Agent-session tracing | Normalized `agent_session` / `agent_action` schema fed by bounded adapters for native OTel, hooks/plugins, JSONL or stream JSON, exports, server/API protocols, wrappers, and raw refs. | Fixer component and real-tool adapters source session traces with per-tool/version/config coverage, lossiness, redaction, and projection rows in the ledger. | Multi-agent session graph with policy, review, and fixer outcome feedback loops after ledger gates. |
 | Stream / buffer | Local append-only WAL/outbox segment files. | Apache Iggy standalone when replay, backpressure, or worker separation is needed. | Iggy cluster or storage-backed stream fallback if Iggy fails scale tests. |
 | Observability storage | Storage adapter with ClickHouse and GreptimeDB profiles; use ClickHouse for the pragmatic proxy-lens default if implementation starts now. | ClickHouse hot tier or GreptimeDB S3-native profile depending on freshness/cost gates. | ClickHouse cluster, GreptimeDB distributed/object-storage profile, or a later hot/cold split only if A5 cost and latency gates justify the added operations. |
@@ -150,34 +150,34 @@ Two version-freshness caveats on this table as of 2026-05:
 
 Related research:
 
-- [Rust data collection and instrumentation](rust-data-collection-and-instrumentation.md)
-- [Self-hosted observability architecture](self-hosted-observability-architecture.md)
-- [GreptimeDB storage evaluation](greptimedb-storage-evaluation.md)
-- [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md)
-- [Storage size and object cost gate](storage-size-and-object-cost-gate.md)
-- [Metadata store benchmark plan and prototype](metadata-store-benchmark-plan.md)
-- [Turso metadata production readiness](turso-metadata-production-readiness.md)
-- [Messaging and ingestion layer](messaging-and-ingestion-layer.md)
-- [Ingest log replay and backpressure gate](ingest-log-replay-and-backpressure-gate.md)
-- [A7 scope discipline ledger](a7-scope-discipline-ledger.md)
-- [Causal reconstruction and agent safety](causal-reconstruction-and-agent-safety.md)
-- [AI-native observability and incident intelligence](ai-native-observability-and-incident-intelligence.md)
-- [Flaky test investigation and replay](flaky-test-investigation-and-replay.md)
-- [Frontend collection and cross-tier correlation](frontend-collection-and-cross-tier-correlation.md)
-- [Frontend capture safety ledger](frontend-capture-safety-ledger.md)
-- [Agent and CLI execution tracing](agent-and-cli-execution-tracing.md)
-- [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
-- [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md)
-- [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
-- [Agent access surface safety ledger](agent-access-surface-safety-ledger.md)
-- [Agent observability technical review](agent-observability-technical-review.md)
-- [Strategic verdict and research coverage](strategic-verdict-and-research-coverage.md)
-- [OpenTelemetry protocol and context layer](opentelemetry-protocol-and-context-layer.md)
-- [OTLP receiver conformance and Collector equivalence](otlp-receiver-conformance-and-collector-equivalence.md)
-- [OTLP conformance ledger](otlp-conformance-ledger.md)
-- [Evidence bundle and open schema specification](evidence-bundle-and-schema.md)
-- [Deploy, change, and issue-tracker context](deploy-change-and-issue-context.md)
-- [Deploy/change context ledger](deploy-change-context-ledger.md)
+- [Rust data collection and instrumentation](../capture/rust.md)
+- [Self-hosted observability architecture](overview.md)
+- [GreptimeDB storage evaluation](../storage/evaluation.md)
+- [Storage freshness and bundle latency gate](../storage/freshness-and-latency.md)
+- [Storage size and object cost gate](../storage/size-and-object-cost.md)
+- [Metadata store benchmark plan and prototype](../storage/metadata/metadata-store-benchmark-plan.md)
+- [Turso metadata production readiness](../storage/metadata/turso-metadata-production-readiness.md)
+- [Messaging and ingestion layer](../storage/streaming/messaging-and-ingestion-layer.md)
+- [Ingest log replay and backpressure gate](../storage/streaming/ingest-log-replay-and-backpressure-gate.md)
+- [A7 scope discipline ledger](../validation/a7-scope.md)
+- [Causal reconstruction and agent safety](causal-reconstruction.md)
+- [AI-native observability and incident intelligence](../00-vision/ai-native-observability.md)
+- [Flaky test investigation and replay](../capture/ci-and-flaky-tests.md)
+- [Frontend collection and cross-tier correlation](../capture/frontend.md)
+- [Frontend capture safety ledger](../capture/frontend.md)
+- [Agent and CLI execution tracing](../capture/agent-cli-tracing.md)
+- [Agent session tracing across real tools](../capture/agent-cli-tracing.md)
+- [CLI trace overhead and redaction](../capture/agent-cli-tracing.md)
+- [Agent access surface: CLI, HTTP API, and MCP](../decisions/agent-access-surface.md)
+- [Agent access surface safety ledger](../decisions/agent-access-surface.md)
+- [Agent observability technical review](../reference/agent-observability-review.md)
+- [Strategic verdict and research coverage](../decisions/strategic-coverage.md)
+- [OpenTelemetry protocol and context layer](../capture/otlp.md)
+- [OTLP receiver conformance and Collector equivalence](../capture/otlp.md)
+- [OTLP conformance ledger](../capture/otlp.md)
+- [Evidence bundle and open schema specification](evidence-bundle-schema.md)
+- [Deploy, change, and issue-tracker context](../capture/deploy-change-context.md)
+- [Deploy/change context ledger](../capture/deploy-change-context.md)
 
 Metadata-store source:
 
@@ -196,7 +196,7 @@ Turso Cloud has separate documented durability, PITR, export, and sync behavior,
 but those managed-cloud guarantees do not prove the embedded local store is safe
 under Parallax crash, backup, migration, and audit workloads. This is an
 operator-chosen default, not a maturity claim: Parallax must pair it with its
-own backup path and the [metadata-store benchmark](metadata-store-benchmark-plan.md)
+own backup path and the [metadata-store benchmark](../storage/metadata/metadata-store-benchmark-plan.md)
 before relying on it for large production installs, and Postgres remains the
 scale-out fallback the moment Turso fails those gates. Treat the metadata slot
 as the most likely place the named stack changes under benchmarking. Metadata
@@ -205,7 +205,7 @@ pre-release result can inform development but should not satisfy production
 default claims without a stable rerun.
 
 The current Turso-specific production gate is stricter than "it runs locally":
-[Turso metadata production readiness](turso-metadata-production-readiness.md)
+[Turso metadata production readiness](../storage/metadata/turso-metadata-production-readiness.md)
 separates local embedded Turso from Turso Sync/Cloud behavior, requires MVCC
 conflict/retry tests, treats CDC and MVCC as mutually exclusive for the audit
 path, and keeps Postgres as an active fallback until backup/restore and
@@ -290,9 +290,9 @@ Current source anchors:
 - [ClickHouse v26.5.1.882-stable release](https://github.com/ClickHouse/ClickHouse/releases/tag/v26.5.1.882-stable)
 - [ClickHouse v26.3.12.3-lts release](https://github.com/ClickHouse/ClickHouse/releases/tag/v26.3.12.3-lts)
 - [ClickHouse production version guidance](https://clickhouse.com/docs/faq/operations/production#how-to-choose-between-clickhouse-releases)
-- [Storage benchmark artifact interpretation](storage-benchmark-artifact-interpretation.md)
-- [Platform fit and alternatives](greptimedb-vs-clickhouse/platform-fit-and-alternatives.md)
-- [Storage architecture, cost, and tiering](greptimedb-vs-clickhouse/storage-cost-and-tiering.md)
+- [Storage benchmark artifact interpretation](../storage/benchmark-plan.md)
+- [Platform fit and alternatives](../storage/greptimedb-vs-clickhouse/platform-fit-and-alternatives.md)
+- [Storage architecture, cost, and tiering](../storage/greptimedb-vs-clickhouse/storage-cost-and-tiering.md)
 
 ## Component Diagram
 
@@ -457,7 +457,7 @@ are separate from `codex exec --json` JSONL and plugin/managed hook surfaces;
 Amp plugin events are separate from execute-mode streaming JSON; and OpenCode
 run JSON, export JSON, plugin hooks, server/API, and ACP surfaces are separate.
 Product wording must point to the dated tool/version/config matrix in the
-[Agent session tracing ledger](agent-session-tracing-ledger.md), not to generic
+[Agent session tracing ledger](../capture/agent-cli-tracing.md), not to generic
 "agent tracing" support.
 
 ### Audit Graph Edges
@@ -560,7 +560,7 @@ The agent surface has three concrete forms:
 The CLI is the first usable surface. MCP should not be required for Phase 1,
 because that would add protocol and security scope before the bundle contract is
 stable. The focused decision is captured in
-[Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md):
+[Agent access surface: CLI, HTTP API, and MCP](../decisions/agent-access-surface.md):
 canonical HTTP API first, day-one CLI, and then a read-only MCP adapter once A7
 scope discipline and A6 redaction safety are green. All surfaces must call the
 same authorization, redaction, and bundle-building code, and every agent-visible
@@ -617,7 +617,7 @@ projection.
 
 Sources:
 
-- [Agent access surface: CLI, HTTP API, and MCP](agent-access-surface-cli-api-mcp.md)
+- [Agent access surface: CLI, HTTP API, and MCP](../decisions/agent-access-surface.md)
 - [MCP specification 2025-11-25](https://modelcontextprotocol.io/specification/2025-11-25)
 - [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)
 - [MCP security best practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)
@@ -656,8 +656,8 @@ Properties:
 
 This is the product that proves Parallax can be simpler than Sentry.
 That proof is measured by the
-[self-hosted simplicity gate](self-hosted-simplicity-gate.md) and made claimable
-through the [self-hosted simplicity ledger](self-hosted-simplicity-ledger.md),
+[self-hosted simplicity gate](../validation/self-hosted-simplicity.md) and made claimable
+through the [self-hosted simplicity ledger](../validation/self-hosted-simplicity.md),
 not assumed from the component diagram.
 
 ### Tier 2: Scalable
@@ -724,20 +724,20 @@ candidate versions:
 - GreptimeDB versus ClickHouse on Parallax-shaped datasets.
 - Ingest-to-queryable latency under concurrent writes, with the initial proof
   gate in
-  [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md).
+  [Storage freshness and bundle latency gate](../storage/freshness-and-latency.md).
 - Evidence-bundle query latency by issue, trace, release window, and metric
   anomaly, with the initial proof gate in
-  [Storage freshness and bundle latency gate](storage-freshness-and-bundle-latency-gate.md).
+  [Storage freshness and bundle latency gate](../storage/freshness-and-latency.md).
 - Retained size and object-storage cost for 7, 30, and 90 days, with the
   initial proof gate in
-  [Storage size and object cost gate](storage-size-and-object-cost-gate.md).
+  [Storage size and object cost gate](../storage/size-and-object-cost.md).
 - High-cardinality labels and attributes.
 - Cold-cache and hot-cache behavior.
 
 ### Stream
 
 - local WAL versus Iggy, with the replay/backpressure gate in
-  [Ingest log replay and backpressure gate](ingest-log-replay-and-backpressure-gate.md).
+  [Ingest log replay and backpressure gate](../storage/streaming/ingest-log-replay-and-backpressure-gate.md).
 - producer ack latency and crash durability.
 - replay throughput.
 - worker restart and consumer group behavior.
@@ -755,18 +755,18 @@ candidate versions:
 ### Agent Context
 
 - Rust stacktrace grouping and symbolication stability, with the proof gate in
-  [Rust stacktrace grouping and symbolication](rust-stacktrace-grouping-and-symbolication.md)
+  [Rust stacktrace grouping and symbolication](../capture/rust.md)
   and claim levels in
-  [Rust stacktrace grouping ledger](rust-stacktrace-grouping-ledger.md);
+  [Rust stacktrace grouping ledger](../capture/rust.md);
 - bundle size limits;
 - redaction quality;
 - prompt-injection resistance;
 - evidence citation completeness;
 - "inconclusive" behavior when data is missing;
 - production database evidence safety, with the initial gate in
-  [Production database evidence access gate](production-database-evidence-access.md)
+  [Production database evidence access gate](../capture/production-db-evidence.md)
   and the claim ledger in
-  [Production database evidence ledger](production-database-evidence-ledger.md);
+  [Production database evidence ledger](../capture/production-db-evidence.md);
 - PR correctness rate by failure class.
 
 ### Agent And CLI Execution
@@ -774,15 +774,15 @@ candidate versions:
 - adapter claims across native OTel, hooks/plugins, JSONL and stream JSON,
   export/API/ACP, wrapper, and raw-ref surfaces across Codex, Claude Code, Amp,
   and OpenCode, with the initial adapter/value gate in
-  [Agent session tracing across real tools](agent-session-tracing-real-tools.md)
+  [Agent session tracing across real tools](../capture/agent-cli-tracing.md)
   and result ledger in
-  [Agent session tracing ledger](agent-session-tracing-ledger.md);
+  [Agent session tracing ledger](../capture/agent-cli-tracing.md);
 - CLI redaction and overhead for args, env, config, stdout, and stderr, with
-  the initial gate in [CLI trace overhead and redaction](cli-trace-overhead-and-redaction.md)
-  and result ledger in [CLI trace safety ledger](cli-trace-safety-ledger.md);
+  the initial gate in [CLI trace overhead and redaction](../capture/agent-cli-tracing.md)
+  and result ledger in [CLI trace safety ledger](../capture/agent-cli-tracing.md);
 - A6 detector/runtime redaction architecture, with Parallax owning a Rust
   default-deny runtime engine and using external scanners only as offline
-  validators, in [Redaction detector toolchain](redaction-detector-toolchain.md);
+  validators, in [Redaction detector toolchain](../capture/redaction.md);
 - agent-session query latency when linked to production events and CI runs;
 - outcome feedback quality for accepted, edited, rejected, and reverted fixes.
 
