@@ -1,10 +1,139 @@
-# Repo-Intent Value Ledger
+# Repo-Intent Dependence
+
+> Strategic question 13 asks how much Parallax depends on the operator's context-rich monorepo (code plus docs, design decisions, tasks, roadmap). The decided answer is that value splits into two separable layers: a **runtime-evidence floor** (error grouping, correlation, evidence bundles, traces, retention) that needs only telemetry plus source code and no monorepo, and an opt-in **repo-intent multiplier** (linking failures to *why the code is the way it is*) that is additive and never a prerequisite. The strategic rule is fixed — the product must be fully valuable on the runtime floor alone, with degraded mode (teams with code + telemetry but no curated intent) treated as the common case the product is designed for, and repo-intent offered as opt-in enrichment that also seeds a moat telemetry-only competitors cannot match. What remains an open gate is the empirical size of the multiplier: the repo-intent value ledger is at status `not_measured`, and no "why layer" or moat claim is allowed until paired `C1_runtime_plus_intent` vs `C0_runtime_bundle` runs show repo-held intent improves constraint-aware diagnosis or patch quality without hiding degraded-mode weakness, leaking private docs, increasing unsupported claims, or treating agent instruction files (`AGENTS.md`, `CLAUDE.md`, Copilot instructions) as enforced policy rather than source-cited, scoped, possibly-stale context. Pre-registered thresholds (e.g. C1 lifts constraint adherence by ≥10pp or cuts unsupported claims by ≥15% without lowering resolved rate; C0 stays within 80% of C1) and stale/conflict, redaction, and projection fixtures gate every claim level and the allowed product wording.
+
+This note consolidates the following previously-separate research files, each preserved in full below:
+
+- `repo-intent-dependence.md`
+- `repo-intent-value-ledger.md`
+
+## Repo-Intent Dependence and the Degraded Mode
+
+_Provenance: merged verbatim from `repo-intent-dependence.md` (2026-05-29 restructure)._
 
 <!-- markdownlint-disable MD013 -->
 
 Research date: 2026-05-25
 
-## Purpose
+### Purpose
+
+Answer strategic question 13 directly, because the corpus has only handled it in
+one-line table cells: the vision assumes a context-rich monorepo (code **plus**
+docs, design decisions, tasks, roadmap). How much of Parallax's value actually
+depends on that, and what happens for the large majority of teams that do not work
+that way? This matters because the answer sizes the addressable market and is the
+sharpest edge of the founder-market-fit risk in the [bear case](risks-and-bear-case.md)
+(A2 / n=1).
+
+### The Value Decomposes Into Two Separable Layers
+
+Parallax's value is not one thing that needs the monorepo. It is two layers, and
+only the second needs repo-intent:
+
+1. **Runtime evidence layer (the floor).** Error grouping, cross-signal
+   correlation, evidence bundles, CLI/agent/CI traces, retention. This needs
+   **telemetry + the source code**, nothing more. Any team that emits Sentry/OTLP
+   data and has a repo gets the full floor. No monorepo, no ADRs, no task tracker
+   required.
+2. **Repo-intent layer (the multiplier).** Linking a failure to *why the code is
+   the way it is* — design decisions, ADRs, tasks, roadmap. This needs the
+   context-rich repo the vision assumes. It makes proposals better and avoids
+   "why is this here" mistakes, but it is **additive**, not required.
+
+The strategic rule that follows: **the product must be fully valuable on the
+runtime-evidence floor alone. Repo-intent is an optional multiplier, never a
+prerequisite.** If Parallax's pitch requires the monorepo+intent setup, its
+market collapses to teams that work exactly like the operator — which is the
+n=1 founder-market-fit trap.
+The result contract for proving or narrowing this claim is the
+[Repo-intent value ledger](repo-intent-value-ledger.md).
+
+### Degraded Mode (Teams Without Repo-Intent)
+
+Most teams have code + telemetry but not curated docs/decisions/tasks. Their
+experience must still be excellent:
+
+- They get grouping, correlation, trace/log/metric joins, release-regression
+  detection, and bounded bundles.
+- A coding agent fixes from **code + runtime evidence** — and SWE-bench shows
+  agents already fix real bugs from code alone, so code + telemetry is a strong
+  floor (see [bundle-value evaluation](bundle-value-evaluation.md)).
+- What they lose is only the "why" layer: the agent may not know a piece of code
+  exists to satisfy a constraint it cannot see. That is a real but bounded loss,
+  and it degrades gracefully — the bundle simply omits intent edges rather than
+  breaking.
+
+Degraded mode is the **common case**, so it is the case the product must be
+designed for. The context-rich monorepo is the power-user case.
+
+### What Repo-Intent Adds When Present (The Upside)
+
+When a team *does* keep decisions/tasks/roadmap in the repo (like the operator):
+
+- proposals can cite the decision a fix must not violate;
+- the agent can align a fix with stated intent, not just make tests pass;
+- "this code is intentional, do not "simplify" it" is knowable.
+- agent instruction files such as `AGENTS.md`, `CLAUDE.md`, and Copilot
+  instructions can expose repo-local operating intent, but they are still
+  context. They do not become policy enforcement unless hooks, settings, CI, or
+  another control enforces them outside the prose file.
+
+This is also a **moat seed**: telemetry-only competitors (Datadog, Sentry,
+OpenObserve, SigNoz) do not link runtime evidence to repo-held intent. So
+repo-intent is simultaneously something to *not depend on* (for market size) and
+something that *differentiates* (for high-context teams). Offer it as an
+opt-in enrichment: point Parallax at `docs/`, ADRs, tasks, and approved
+instruction surfaces; it adds source-cited intent nodes/edges to the bundle when
+available.
+
+### Implication For The Bundle-Value Eval
+
+This question is empirically testable and should be an arm in the
+[bundle-value evaluation](bundle-value-evaluation.md): run the agent with
+**bundle + repo-intent** vs **bundle + code only (no intent)**. The delta
+measures how much repo-intent actually buys. Two outcomes:
+
+- Small delta → degraded mode is nearly as good; market is broad; repo-intent is
+  a nice-to-have. (Good for A2.)
+- Large delta → the product leans on repo-intent; market narrows toward
+  operator-like teams; flag the founder-market-fit risk and either invest in
+  making intent capture trivial or accept the narrower wedge.
+
+Either way, do not assume; measure.
+
+### Bottom Line
+
+Parallax's runtime-evidence value does not depend on the monorepo, and it must
+not be allowed to. Build for the team that has code + telemetry and nothing else;
+treat repo-intent (docs, decisions, tasks, roadmap) as an opt-in multiplier that
+differentiates for high-context teams and seeds a moat telemetry-only tools
+cannot match. The monorepo is the operator's advantage, not the product's
+requirement — and the bundle-value eval should measure the size of that
+advantage rather than presume it.
+
+### Relationship To Other Research
+
+- [Verdict](verdict.md) — Q13 row this expands; the GO depends on broad
+  addressable market, i.e. on degraded mode being good.
+- [Risks and the bear case](risks-and-bear-case.md) — A2 / founder-market-fit;
+  repo-intent dependence is the sharpest form of that risk.
+- [Bundle-value evaluation](bundle-value-evaluation.md) — add the
+  intent-vs-no-intent arm proposed here.
+- [Repo-intent value ledger](repo-intent-value-ledger.md) — defines the paired
+  runtime-only versus runtime-plus-intent result rows, claim levels, and
+  stale/conflicting-intent fixtures.
+- [AI-native observability](ai-native-observability-and-incident-intelligence.md)
+  — repo-intent linkage as a differentiator vs telemetry-only products.
+
+## Repo-Intent Value Ledger
+
+_Provenance: merged verbatim from `repo-intent-value-ledger.md` (2026-05-29 restructure)._
+
+_(Shared note — see the Repo-Intent Dependence and the Degraded Mode section above.)_
+
+Research date: 2026-05-25
+
+### Purpose
 
 [Repo-intent dependence and the degraded mode](repo-intent-dependence.md)
 defines the strategic claim:
@@ -27,7 +156,7 @@ Central rule:
 > increasing unsupported claims, or treating agent instruction files as enforced
 > policy rather than source-cited, scoped, and potentially stale context.
 
-## Current Source Snapshot
+### Current Source Snapshot
 
 | Source | Current evidence | Ledger consequence |
 | --- | --- | --- |
@@ -39,7 +168,7 @@ Central rule:
 | [Bundle-value evaluation](bundle-value-evaluation.md) | The A1 eval already measures bundle value. Repo-intent should be a paired sub-study, not a replacement for the raw-telemetry control. |
 | [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md) | Model drift and task contamination also apply to repo-intent claims; every claim needs expiry and rerun triggers. |
 
-## Claim Levels
+### Claim Levels
 
 | Level | Meaning | Minimum evidence |
 | --- | --- | --- |
@@ -57,7 +186,7 @@ Central rule:
 
 Initial claim level: `not_measured`.
 
-## Evaluation Arms
+### Evaluation Arms
 
 Run this as a paired sub-study under A1. Keep the existing A/B/C/D A1 arms, then
 split the Parallax-bundle arm into runtime-only and runtime-plus-intent variants:
@@ -72,7 +201,7 @@ The primary comparison is `C1_runtime_plus_intent` versus
 `C0_runtime_bundle`. A useful result does not rescue Parallax if C0 is weak; the
 product must still work when intent is absent.
 
-## Result Artifacts
+### Result Artifacts
 
 The durable result index lives at:
 
@@ -104,7 +233,7 @@ Do not commit private design docs, task descriptions, issue comments, internal
 roadmap text, or full agent transcripts unless redacted and approved. Commit
 hashes, normalized intent rows, bounded excerpts, and source-class labels.
 
-## Run Manifest
+### Run Manifest
 
 ```json
 {
@@ -136,7 +265,7 @@ hashes, normalized intent rows, bounded excerpts, and source-class labels.
 }
 ```
 
-## Minimum Row Schemas
+### Minimum Row Schemas
 
 Intent source row:
 
@@ -268,7 +397,7 @@ Claim ledger row:
 }
 ```
 
-## Counting Rules
+### Counting Rules
 
 - Intent files must predate the failure, issue, or task prompt unless the row is
   explicitly marked as post-hoc and excluded from product claims.
@@ -304,7 +433,7 @@ Claim ledger row:
   the passing behavior is to surface the conflict; obeying stale prose is a
   failure.
 
-## Pass Targets
+### Pass Targets
 
 Initial thresholds:
 
@@ -320,7 +449,7 @@ Initial thresholds:
 | Conflict handling | Seeded stale/conflicting intent is reported as a conflict in 100 percent of audited cases. |
 | Safety | Zero private intent leaks and zero gold-patch leaks. |
 
-## Refresh Triggers
+### Refresh Triggers
 
 Mark the claim `claim_expired` and rerun when any of these changes:
 
@@ -339,7 +468,7 @@ Mark the claim `claim_expired` and rerun when any of these changes:
 - Ninety days pass for public claims or a new A1 run supersedes the paired
   tasks.
 
-## Product Wording
+### Product Wording
 
 Allowed before measurement:
 
@@ -367,7 +496,7 @@ Avoid:
 - "AGENTS.md enforces policy", "repo instructions are guardrails", or similar
   wording unless enforcement is proven outside the prose instruction file.
 
-## Relationship To Other Research
+### Relationship To Other Research
 
 - [Repo-intent dependence and the degraded mode](repo-intent-dependence.md)
   defines the strategic floor/multiplier split this ledger measures.
@@ -383,7 +512,7 @@ Avoid:
   whether target users actually maintain docs, decisions, tasks, and roadmap in
   forms Parallax can use.
 
-## Bottom Line
+### Bottom Line
 
 Repo intent is a promising multiplier and possible moat, but it must not become
 an untested dependency. Agent instruction files are useful context, not policy
