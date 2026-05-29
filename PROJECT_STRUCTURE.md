@@ -144,6 +144,8 @@ or CI contract yet.
 | Path | Purpose |
 | --- | --- |
 | `prompts/README.md` | How to use the prompts in this folder (one-off, `/goal`, `/loop`). |
+| `prompts/AGENTS.md` | Authoring rule for this folder: prompt files stay goal-only and runnable; run-mechanics and how-to-use live in `prompts/README.md`. |
+| `prompts/CLAUDE.md` | Thin pointer to `prompts/AGENTS.md`. |
 | `prompts/parallax-vision-and-restructure.md` | North-star brief: product vision, the GreptimeDB-vs-ClickHouse decision rule, and the explicit research-record restructure mission. |
 | `prompts/deep-research-parallax.md` | Deep research brief for validating the AI-native debugging/investigation direction. |
 | `prompts/greptimedb-vs-clickhouse-internals.md` | Never-ending `/goal` or Claude Code `/loop` brief for the under-the-hood GreptimeDB vs ClickHouse comparison; writes to `docs/research/greptimedb-vs-clickhouse/`. |

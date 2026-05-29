@@ -27,7 +27,7 @@ The research should be opinionated, technical, and evidence-based.
 
 # Prompt Maintenance Rule
 
-This prompt is a living source of operator intent for `/goal` and `/loop` runs.
+This prompt is a living source of operator intent for long-running research runs.
 When the operator clarifies the research direction, confirms a decision, changes
 evaluation criteria, adds target domains, or names tools to compare, update this
 file in the same change if future runs would otherwise use stale instructions.
@@ -74,10 +74,8 @@ prior conclusions is expected; stopping shallow or early is not.
 The Phase 1 verdict and Phase 2 blueprint are gates, not the end of the research
 program.
 
-Run this prompt with `/goal` in Codex or Claude Code for normal long-running
-research. Use Claude Code `/loop` only when a scheduled re-trigger is desired.
-In either mode, keep this prompt active as an indefinite research brief after the
-verdict and blueprint exist. Do not mark the run complete merely because
+Keep this prompt active as an indefinite research brief after the verdict and blueprint
+exist. Do not mark the run complete merely because
 `docs/research/verdict.md` and `docs/research/technical-implementation-concept.md`
 exist. Continue in repeated passes until the operator explicitly stops the run,
 replaces it, or says the research program is complete.

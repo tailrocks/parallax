@@ -51,9 +51,7 @@ in the generated notes.
 
 # Run Mode
 
-This brief is meant to run indefinitely. Start it with `/goal` in Codex or
-Claude Code for normal long-running research. Use Claude Code `/loop` only when
-a scheduled re-trigger is desired. It never self-completes — it runs deepening
+This brief is meant to run indefinitely. It never self-completes — it runs deepening
 and re-verification passes until the operator stops or replaces it. Treat it as
 continuous: do not converge on a single deliverable and stop.
 
@@ -619,7 +617,7 @@ a *Faster* column, per-query *Details* links to the mechanism note + run). Alway
 stable + nightly of both at the start of a benchmarking pass. Do **not** record a stable-only number
 as the result; the four-build row is the result.
 
-How to run it:
+How to run the benchmarks:
 
 - **Stand up the candidates in Docker.** Bring up GreptimeDB and ClickHouse (and
   MinIO for the object-storage path) from official images, pinned to the exact

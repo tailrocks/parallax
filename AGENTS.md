@@ -38,9 +38,11 @@ Durable agent rules for this repository belong in this local `AGENTS.md` file,
 not in tool-specific config files. When the operator gives a new durable rule or
 changes an existing one, update `AGENTS.md` in the same change.
 
-Current linker:
+Current linkers:
 
 - [CLAUDE.md](CLAUDE.md) contains only `@AGENTS.md`.
+- [prompts/CLAUDE.md](prompts/CLAUDE.md) contains only `@AGENTS.md` and points to the
+  prompts-folder rule in [prompts/AGENTS.md](prompts/AGENTS.md).
 
 `CLAUDE.md` must always remain a thin pointer to `AGENTS.md` only. Do not put
 real instructions in `CLAUDE.md`. If another tool needs a linker file later, add
@@ -129,6 +131,10 @@ examples.
 
 If a prompt does not need an update after such clarification, say why in the
 final response.
+
+Prompt files must also stay **runnable as-is**: keep them goal-only and never embed
+run-mechanics or "how to use" notes — those live in `prompts/README.md`. The form rule for
+prompt files is in [prompts/AGENTS.md](prompts/AGENTS.md).
 
 ## Shared Conventions
 

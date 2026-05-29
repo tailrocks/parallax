@@ -2,22 +2,11 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: north-star brief, written 2026-05-29 from the operator's own articulation of
-the goal. Parts 1–3 are durable (the vision and the decision rule). Part 4 is the
-current one-time mission (restructure the research repo); retire that section once the
-restructure lands.
-
-## How to use this file
-
-Hand this file to a coding agent (Claude Code or Codex) as the active task. It is the
-single source of truth for **what Parallax is, why it exists, how it should be built,
-and how the storage-engine question is decided.** Every other note under
-`docs/research/` is supporting evidence for the positions stated here. When this brief
-and an old note disagree, this brief is the intent; reconcile the note.
-
-Running this brief means **performing the restructure mission in Part 4** — committing and
-pushing as you go. For how to run any prompt in this folder, see
-[`prompts/README.md`](README.md).
+**Objective:** finalize the Parallax product direction and the GreptimeDB-vs-ClickHouse
+storage decision, and restructure the research record into a clean, navigable form,
+preserving every verified finding. This brief is the statement of intent; where an existing
+`docs/research/` note disagrees with it, this brief wins (reconcile the note). Parts 1–3 are
+the durable vision and decision rule; Part 4 is the current restructure mission.
 
 ---
 
