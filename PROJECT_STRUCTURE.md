@@ -38,6 +38,7 @@ or CI contract yet.
 | `docs/research/storage/greptimedb-vs-clickhouse/` | Deep white-box GreptimeDB vs ClickHouse internals comparison: one-page verdict, run-log, 30+ mechanism notes, the four-build version matrix, and benchmarks. Produced by an indefinite `/goal` or Claude Code `/loop`. |
 | `docs/research/validation/` | A1–A7 assumption gates and ledgers (A1 bundle-value subdir, A2 user demand, A3 schema/corpus, A7 scope, self-hosted simplicity, business model, repo intent). |
 | `docs/research/market/` | Market landscape and the consolidated competitor watch. |
+| `docs/research/market/maple-deep-research.md` | Deep research on Maple (maple.dev): architecture, features, UX, threat assessment, and Parallax comparison. |
 | `docs/research/reference/` | External technical reviews. |
 | `prompts/` | Reusable research and agent prompts. |
 | `bench/` | Local storage-benchmark scaffolding: pinned `compose.yml` for GreptimeDB + ClickHouse smoke runs. Generated datasets/results are gitignored; only compose/scripts are tracked. Consistent with [`docs/research/storage/benchmark-plan.md`](docs/research/storage/benchmark-plan.md). |
