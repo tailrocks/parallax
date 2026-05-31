@@ -78,7 +78,7 @@ Use these trailers:
 - Opencode:
 
   ```text
-  Co-authored-by: Opencode <noreply@opencode.ai>
+  Co-authored-by: opencode-agent[bot] <opencode-agent[bot]@users.noreply.github.com>
   ```
 
 Do not stack multiple agent trailers on one ordinary commit. If several agents
