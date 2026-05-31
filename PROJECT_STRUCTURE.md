@@ -39,7 +39,7 @@ or CI contract yet.
 | `docs/research/validation/` | A1–A7 assumption gates and ledgers (A1 bundle-value subdir, A2 user demand, A3 schema/corpus, A7 scope, self-hosted simplicity, business model, repo intent). |
 | `docs/research/market/` | Market landscape and the consolidated competitor watch. |
 | `docs/research/market/maple-deep-research.md` | Deep research on Maple (maple.dev): architecture, features, UX, threat assessment, and Parallax comparison. |
-| `docs/research/reference/` | External technical reviews. |
+| `docs/research/reference/` | External technical reviews. Includes `ai-native-debugging-tools.md` (open-source AI debugging agents, SRE agents, coding-agent observability tools). |
 | `prompts/` | Reusable research and agent prompts. |
 | `bench/` | Local storage-benchmark scaffolding: pinned `compose.yml` for GreptimeDB + ClickHouse smoke runs. Generated datasets/results are gitignored; only compose/scripts are tracked. Consistent with [`docs/research/storage/benchmark-plan.md`](docs/research/storage/benchmark-plan.md). |
 
