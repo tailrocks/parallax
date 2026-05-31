@@ -85,6 +85,8 @@ This directory is the research record behind Parallax. It is organized so a read
 ### `market/` — landscape and competitor watch
 - [landscape.md](market/landscape.md) — market research.
 - [competitor-watch.md](market/competitor-watch.md) — consolidated watch: OpenObserve, SigNoz, Coroot, Bugsink, Rustrak, Traceway, GoSnag, Urgentry, Sentry/Seer/MCP, the MCP-power boundary, and the drift ledger.
+- [alternatives-deep-analysis.md](market/alternatives-deep-analysis.md) — balanced skeptical analysis: 60+ alternatives surveyed, arguments FOR and AGAINST Parallax, empirical gates, and kill criteria.
+- [competitive-comparison-matrix.md](market/competitive-comparison-matrix.md) — quick-reference matrix of all competitors against Parallax's 8 wedge dimensions.
 
 ### `reference/`
 - [agent-observability-review.md](reference/agent-observability-review.md) — technical review of current agent-observability tools and the Parallax-specific gap.
