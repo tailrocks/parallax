@@ -75,6 +75,12 @@ Use these trailers:
   Co-authored-by: Amp <amp@ampcode.com>
   ```
 
+- Opencode:
+
+  ```text
+  Co-authored-by: Opencode <noreply@opencode.ai>
+  ```
+
 Do not stack multiple agent trailers on one ordinary commit. If several agents
 materially contribute to one change, ask the operator how to attribute it before
 committing.
