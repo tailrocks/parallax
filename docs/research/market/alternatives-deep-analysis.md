@@ -482,6 +482,10 @@ If two or more of these trigger, reopen the GO/NO-GO verdict.
 - [Business model](../validation/business-model.md)
 - [Monetization segment](../validation/monetization-and-paying-segment.md)
 
+### Wider alternatives survey (2026-05-31)
+
+- [Wider alternatives survey](wider-alternatives-survey.md) — LLM tracing tools (Langfuse 28K★, Opik 19K★, MLflow 26K★), agent memory layers (Mem0 57K★, Zep 4.6K★), SaaS alternatives (Highlight.io 9.3K★), incident management tools, OTel semconv progress, and 9 new Sentry-compatible tools.
+
 ### Fresh research (GitHub API, 2026-05-31)
 
 Current star counts, activity, and release status for all surveyed tools.
@@ -498,3 +502,10 @@ Key updates since the last survey:
 - edde746/bugs still actively maintained (daily commits)
 - Rustrak 44 stars (active, Rust + Sentry + MCP)
 - Urgentry 55 stars (active, FSL license)
+- **Langfuse 28,262 stars** (LLM observability, not production debugging)
+- **Opik 19,411 stars** (LLM observability, Apache-2.0)
+- **MLflow 26,214 stars** (AI engineering platform)
+- **Mem0 57,195 stars** (agent memory layer)
+- **Vllora 803 stars** (Rust-based agent debugging)
+- **9+ new Sentry-compatible tools** appeared May 2026 (crashbox, bugpack, etc.)
+- **OTel semconv #3448** (crash events) and **#3592** (replay-adjacent conventions) active
