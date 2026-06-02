@@ -3,6 +3,7 @@
 <!-- markdownlint-disable MD013 -->
 
 Decision date baseline: 2026-05-29 (reconciles the engine sub-study to the current operator brief).
+Operator re-affirmed focus: 2026-06-03.
 
 > **Decision — current lean GreptimeDB, NOT yet settled.** Keep **both engines behind one
 > `StorageAdapter`**; never hard-code engine magic into the schema or the evidence-bundle
@@ -12,6 +13,16 @@ Decision date baseline: 2026-05-29 (reconciles the engine sub-study to the curre
 > tested scale)** — so ClickHouse's scan-speed lead is off the hot path and the decision turns
 > on **cost + Rust + self-hosted**, where GreptimeDB leads. This is finalized only when the
 > sized cost numbers and the self-host-vs-managed-cloud call land (below).
+
+The practical build focus is therefore:
+
+> **Implement the first storage profile around GreptimeDB-shaped assumptions, while preserving the
+> ClickHouse adapter boundary.**
+
+This means Phase 1 should optimize schema, ingest buffering, retention, and bundle queries for
+GreptimeDB first, but no product contract may depend on GreptimeDB-only behavior. The bundle schema,
+context API, grouping semantics, and evidence graph must stay portable enough that ClickHouse can
+replace GreptimeDB if the remaining cost/cold-read gates flip.
 
 This is the condensed current verdict. The **full record** — ~170 benchmark runs, a source-level
 teardown of both engines, the four-build version matrix, and the per-pass history — lives in
@@ -30,6 +41,43 @@ history in [run-log.md](../storage/greptimedb-vs-clickhouse/run-log.md); cross-b
 | DQ4 | Can GreptimeDB replace ClickHouse? | **Yes** — ran Q1–Q6 with identical results; accept slower heavy ad-hoc log/trace scans. Parallax's anchored hot path is **not latency-bound** (Q6 composite ≪300 ms on both). |
 | DQ5 | Which to choose for Parallax today? | **GreptimeDB** on workload fit (metrics-native, ingest/upsert ergonomics, retention cost, scale-out) + the Rust tiebreak; ClickHouse's wins are real but less central to anchored retrieval. |
 | DQ6 | Better long-term *investment*? | **GreptimeDB** — the speed gap is **closable engineering, not a physics wall** (seven of eight advantages are pure engineering; the two heaviest ride the shared **DataFusion** scan and **Parquet-Variant** JSON roadmaps), and it is the **Rust, open-source substrate the operator can contribute to** rather than wait on (C++). |
+
+## Why the first implementation focus is GreptimeDB
+
+Parallax is not choosing the fastest analytical database in the abstract. It is choosing the first
+storage substrate for an execution-context product whose critical user action is:
+
+```text
+issue / event / trace / fingerprint
+  -> fetch related errors, spans, logs, metric windows, deploys, CLI runs, agent actions
+  -> assemble one bounded evidence bundle
+```
+
+That workload makes GreptimeDB the better first focus for five reasons:
+
+1. **The hot path is anchored, not broad.** ClickHouse's strongest advantage is broad analytical scan,
+   log search, dynamic-attribute filtering, and mature SQL throughput. Parallax's first hot path is
+   anchored bundle assembly by `trace_id`, `fingerprint`, issue, or narrow time window. Existing local
+   benchmark runs show both engines interactive on that path, so ClickHouse's speed lead does not
+   decide Phase 1.
+2. **GreptimeDB matches the observability shape.** Current GreptimeDB docs position it as a unified
+   observability database for metrics, logs, and traces, with SQL and PromQL support. That is closer
+   to Parallax's retained evidence model than a general analytical warehouse.
+3. **Metrics are evidence, not a side quest.** Parallax bundles need metric windows and anomalies beside
+   traces/logs/errors. GreptimeDB's PromQL-compatible path makes Prometheus-style metric evidence
+   easier to preserve without a separate query layer.
+4. **Retention economics matter more than peak scan speed.** Parallax's self-hosted promise depends on
+   keeping enough history that bundles remain useful without turning diagnostic data into a cost spike.
+   GreptimeDB's cloud-native, disaggregated compute/storage and object-storage-oriented design are the
+   reason it gets first focus. This is still a measured claim, not a settled fact, until the sized
+   $/GB and cold-read gates close.
+5. **Rust is a strategic tie-breaker.** GreptimeDB is the Rust engine the operator can inspect and
+   contribute to. ClickHouse is stronger and more mature in many analytical paths, but it is a C++
+   substrate. When the hot path is fast enough on both, operator-contributable Rust matters.
+
+This focus should not be misread as "ClickHouse is worse." For Parallax, ClickHouse remains the
+fallback when the workload shifts toward heavy ad-hoc analytics, broad log search, or when real
+server-tier numbers show no GreptimeDB cost/cold-read advantage.
 
 ## Why the lean is GreptimeDB even though ClickHouse is faster
 
@@ -77,7 +125,42 @@ ClickHouse's read-path advantage becomes central.
 - Query mix is **resolved** (anchored-retrieval-dominant); the remaining finalizers are the sized cost
   numbers and the self-host-vs-managed-cloud call, not another query-shape model.
 - Re-pin versions and re-verify load-bearing claims on each new stable release (GreptimeDB v1.1 GA next).
-- **Re-verified 2026-05-29 (GitHub releases, primary source):** GreptimeDB latest GA `v1.0.2`; `v1.1.0` is still **nightly-only** (`v1.1.0-nightly-20260525`), so the v1.1-GA trigger above has **not fired**. ClickHouse latest stable feature line `v26.5.1.882-stable` (26.2/26.3/26.4 later-dated tags are lower LTS/backport lines). No drift — pins current.
+- **Re-verified 2026-06-03 (official docs + GitHub releases):**
+  - GreptimeDB docs still describe a unified observability database for metrics, logs, and traces with
+    SQL and PromQL support, OpenTelemetry ingestion paths for metrics/logs/traces, and a distributed
+    architecture with region-based sharding and disaggregated compute/storage.
+  - ClickHouse docs still describe ClickHouse as a highly efficient observability storage engine with
+    strong compression and fast query response, but also state that using it as observability storage
+    requires a UI and collection framework; current OTLP usage flows through an OpenTelemetry Collector
+    exporter into ClickHouse tables.
+  - GitHub releases still show GreptimeDB latest GA `v1.0.2` (2026-05-14) with `v1.1.0-nightly-20260525`
+    as a pre-release, so the v1.1-GA retest trigger has not fired.
+  - GitHub releases still show ClickHouse `v26.5.1.882-stable` (2026-05-21) as the latest stable feature
+    line visible on the releases page, while `v26.3.12.3-lts` is marked latest by GitHub release
+    metadata because it is the LTS line.
+
+## Source anchors checked on 2026-06-03
+
+- [GreptimeDB introduction](https://docs.greptime.com/) — unified observability database for metrics,
+  logs, and traces; SQL/PromQL positioning.
+- [GreptimeDB observability ingest overview](https://docs.greptime.com/user-guide/overview) —
+  observability scenario support for metrics, logs, and traces via OpenTelemetry-related tooling.
+- [GreptimeDB HTTP / PromQL protocol](https://docs.greptime.com/user-guide/protocols/http) —
+  PromQL-compatible query surface.
+- [GreptimeDB FAQ](https://docs.greptime.com/faq-and-others/faq) — distributed system, region-based
+  sharding, unified metrics/logs/traces model, SQL + PromQL, cloud-native architecture with
+  disaggregated compute and storage.
+- [GreptimeDB releases](https://github.com/GreptimeTeam/greptimedb/releases) — current GA/pre-release
+  pin.
+- [ClickHouse observability introduction](https://clickhouse.com/docs/use-cases/observability/build-your-own/introduction) —
+  efficient observability storage, fast query response, compression, and need for UI/collection
+  framework.
+- [ClickHouse OpenTelemetry integration](https://clickhouse.com/docs/use-cases/observability/build-your-own/integrating-opentelemetry) —
+  OTLP receiver/exporter path through OpenTelemetry Collector into ClickHouse.
+- [ClickHouse observability schema design](https://clickhouse.com/docs/use-cases/observability/build-your-own/schema-design) —
+  materialized columns and table design for logs.
+- [ClickHouse releases](https://github.com/ClickHouse/ClickHouse/releases) — current stable feature/LTS
+  release pins.
 
 ## Related records
 
