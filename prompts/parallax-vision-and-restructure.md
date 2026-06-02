@@ -50,7 +50,7 @@ that context is spread across separate tools:
 
 | Signal | Tool the operator uses today | What Parallax must absorb |
 | --- | --- | --- |
-| Errors | **Sentry** (the part used most: error **grouping**, organizing by frequency, stack traces, and the surrounding error context) | Sentry-envelope error ingest, deterministic grouping, issue/fingerprint model |
+| Errors | **Sentry** (the part used most: error **grouping**, organizing by frequency, stack traces, and the surrounding error context) | OTLP-first error ingest, deterministic grouping, issue/fingerprint model; future Sentry-envelope migration adapter |
 | Logs | ELK / Loki / Kibana, Tempo-adjacent | OTLP logs, searchable, correlated by trace |
 | Metrics | Prometheus | OTLP / Prometheus metrics, PromQL-style queries |
 | Traces | Jaeger / Tempo | OTLP traces, span trees |
@@ -82,11 +82,11 @@ The repository's validated **GO** verdict is for the *narrow* product, and that
 discipline must survive contact with the ambitious vision above:
 
 > **Parallax is an open-source, Rust-first, self-hosted execution-context engine.** It
-> ingests Sentry-envelope error events and OpenTelemetry logs/traces/metrics (plus CLI and
-> coding-agent execution traces), groups errors deterministically, correlates signals into
-> a typed evidence graph, and serves **bounded, redacted, schema-valid evidence bundles**
-> to humans and coding agents over a CLI/HTTP API first, and a read-only MCP adapter after
-> safety gates.
+> ingests OpenTelemetry logs/traces/metrics/error events (plus CLI and coding-agent
+> execution traces), groups errors deterministically, correlates signals into a typed
+> evidence graph, and serves **bounded, redacted, schema-valid evidence bundles** to humans
+> and coding agents over a CLI/HTTP API first, and a read-only MCP adapter after safety
+> gates. Sentry-envelope ingest is future migration compatibility, not V1 scope.
 
 **Parallax is the context engine, not the fixer.** The automatic-fix outcome from Part 1
 is achieved by Parallax *feeding* bounded evidence bundles to a **separate** coding
@@ -108,12 +108,15 @@ capture quality + the failure/fix-outcome corpus.**
 
 Three deployment tiers, same event/bundle contract throughout:
 
-- **Tier 1 (tiny):** one `parallax-server` binary, local WAL, embedded metadata, one
-  columnar store on local disk + object storage. Must be **simpler to run than
-  self-hosted Sentry** — that is the entry wedge.
-- **Tier 2 (durable):** split ingest/worker/API, object-storage retention, optional
-  Apache Iggy stream.
-- **Tier 3 (scale-out):** horizontal ingest/workers, distributed columnar store, object
+- **Tier 1 (tiny):** one `parallax-server` binary, local WAL, embedded metadata, managed
+  local GreptimeDB on local disk, no Postgres, no cloud object storage, no queue. Must be
+  **simpler to run than self-hosted Sentry** — that is the entry wedge.
+- **Tier 2 (production single-node):** GreptimeDB server/standalone, Turso metadata until
+  production gates fail, optional Postgres fallback, optional object storage for raw
+  evidence/backups/long retention.
+- **Tier 3 (durable):** split ingest/worker/API, object-storage retention, optional
+  Apache Iggy stream for replay, backpressure, burst handling, and worker separation.
+- **Tier 4 (scale-out):** horizontal ingest/workers, distributed columnar store, object
   storage, Postgres metadata fallback.
 
 ---
@@ -254,7 +257,7 @@ docs/research/
   capture/                         # how each signal is collected + made safe
     rust.md                        ← rust-data-collection-and-instrumentation + rust-capture-fidelity-recheck + rust-stacktrace-grouping-and-symbolication + rust-stacktrace-grouping-ledger
     frontend.md                    ← frontend-collection-and-cross-tier-correlation + frontend-capture-safety-ledger + frontend-browser-ingest-profile-recheck + frontend-replay-sourcemap-privacy-recheck
-    sentry-ingest.md               ← sentry-compatible-ingestion + sentry-envelope-item-policy-recheck + sentry-sdk-fixture-compatibility + sentry-sdk-compatibility-ledger
+    sentry-ingest.md               ← future sentry-compatible-ingestion + sentry-envelope-item-policy-recheck + sentry-sdk-fixture-compatibility + sentry-sdk-compatibility-ledger
     otlp.md                        ← opentelemetry-protocol-and-context-layer + otlp-transport-profile-recheck + otlp-receiver-conformance-and-collector-equivalence + otlp-conformance-ledger
     agent-cli-tracing.md           ← agent-and-cli-execution-tracing + agent-cli-otel-semconv-mapping + agent-session-tracing-real-tools + agent-session-tracing-ledger + cli-trace-overhead-and-redaction + cli-trace-safety-ledger
     deploy-change-context.md       ← deploy-change-and-issue-context + deploy-change-context-ledger
@@ -328,7 +331,7 @@ research record.
 1. **Clarity on what to build:** the narrow evidence/context engine of Part 2, in three
    tiers, with the strict "Parallax is not the fixer" boundary.
 2. **Clarity on how to build it (as a technical product):** the components and what each is
-   responsible for — the ingest gateway (Sentry-envelope + OTLP), the
+   responsible for — the ingest gateway (OTLP first, future Sentry-envelope adapter), the
    normalize → group → correlate → evidence-graph pipeline, the columnar telemetry store
    behind a `StorageAdapter` (current lean GreptimeDB per Part 3, still open; ClickHouse the
    fallback), the relational metadata store (Turso, Postgres fallback), the local WAL and
