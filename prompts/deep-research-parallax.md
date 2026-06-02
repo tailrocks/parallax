@@ -203,6 +203,16 @@ ClickHouse, local-only storage, Turso/SQLite-like embedded storage, or another
 backend can replace or supplement it later without changing the evidence-bundle
 API. Future research should treat this as GreptimeDB-first, not GreptimeDB-only.
 
+Current "world before Parallax" framing: the baseline self-hosted stack is Sentry
+for grouped errors/issues/releases, Tempo/Jaeger-like storage for traces,
+Elasticsearch/Kibana or Loki/Grafana for logs, Prometheus for metrics, Grafana
+for cross-signal UI, and OpenTelemetry Collector/Alloy for routing. Treat
+Sentry as the strongest current error workflow, not as a full telemetry lake.
+Keep the Elasticsearch/Kibana log-object UX as an important UI reference:
+field-level search/filter/display is often more natural for logs than
+Grafana/Loki stream viewing. Parallax exists to collapse this stack into a
+smaller Rust-first evidence engine where components scale up only when needed.
+
 ## The end state
 
 Given all of this context, the expectation is that in most cases an AI can act

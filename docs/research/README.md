@@ -27,6 +27,7 @@ This directory is the research record behind Parallax. It is organized so a read
 
 ### `00-vision/` — why this product, in plain terms
 - [thesis.md](00-vision/thesis.md) — the original thesis.
+- [world-before-parallax.md](00-vision/world-before-parallax.md) — the pre-Parallax stack (Sentry + traces/logs/metrics/UI), why it exists, and what Parallax tries to collapse.
 - [platform-direction.md](00-vision/platform-direction.md) — the platform/intelligence-layer outcome as an earned, gated emergence from the narrow wedge.
 - [ai-native-observability.md](00-vision/ai-native-observability.md) — AI-native observability, incident-intelligence, and product-wedge synthesis.
 
