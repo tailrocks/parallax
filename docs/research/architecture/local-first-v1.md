@@ -68,8 +68,9 @@ V1 should expose an API because agents and tools need stable access.
 
 Preferred shape:
 
-- **gRPC first** for typed, fast local calls and generated clients.
-- **HTTP/JSON gateway** or REST endpoints for easy scripting and browser/debug use.
+- **GraphQL first** for query/exploration over runs, issues, traces, logs, metric windows, and bundles.
+- **OTLP endpoints** for telemetry ingest.
+- **Minimal health/version endpoints** for ops.
 - CLI calls the same local API rather than reimplementing query logic.
 
 This keeps the surface small:
@@ -92,9 +93,7 @@ All clients must use this API boundary:
 No product client should query GreptimeDB, Turso, Postgres, ClickHouse, or any future backend directly.
 This keeps redaction, grouping, auth, bundle projection, and backend portability in one place.
 
-If implementation cost is too high, start REST/JSON first and add gRPC when schemas stabilize. But
-typed service contracts remain the target because agents and tools benefit from explicit request and
-response types.
+The API contract is specified in [Parallax API Concept](api-concept.md).
 
 ## Local Storage Default
 

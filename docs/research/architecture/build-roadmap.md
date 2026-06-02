@@ -89,8 +89,8 @@ Build only enough to generate the bundle automatically and repeatably:
 - Storage adapter contract with local GreptimeDB profile implemented first; ClickHouse and Turso-only
   fallback remain interface targets, not Phase-1 blockers.
 - CLI (`parallax run inspect …`, `parallax run bundle …`, `parallax issue context …`) + local context
-  API; gRPC is preferred once schemas stabilize, with REST/HTTP allowed as the first implementation if
-  it moves faster.
+  API; GraphQL is the preferred query/exploration API, with OTLP for ingest and minimal health/version
+  endpoints.
 - **Gate:** the auto-generated bundle reproduces the Phase-0 hand-bundle quality
   (re-run A1 on real pipeline output); tiny-tier setup is meaningfully simpler
   than self-hosted Sentry (<=15 min) under the

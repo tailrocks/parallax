@@ -87,6 +87,9 @@ The UI must not query GreptimeDB, Turso, Postgres, ClickHouse, or any future bac
 to Parallax API only, so local, server, and future backend profiles stay compatible and all redaction,
 grouping, auth, and bundle-projection rules stay centralized.
 
+V2 should use the GraphQL query/exploration API described in
+[Parallax API Concept](api-concept.md).
+
 ## Source Anchors
 
 - [TanStack Start docs](https://tanstack.com/start/latest/docs/framework/react/overview) — full-stack

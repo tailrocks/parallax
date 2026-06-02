@@ -225,6 +225,13 @@ agents, and future MCP adapters must not query GreptimeDB, Turso, Postgres,
 ClickHouse, or any future backend directly. Direct backend access belongs only
 inside storage adapters and adapter-level tests.
 
+Current API direction: use GraphQL-first for query/exploration because Parallax
+data is graph-shaped (runs, issues, traces, spans, logs, metric windows,
+evidence bundles). Keep OTLP for raw telemetry ingest and a minimal
+Sentry-envelope endpoint for error compatibility. GraphQL must have query depth,
+complexity, pagination, and time-window limits; no arbitrary SQL/PromQL
+passthrough in V1.
+
 Current "world before Parallax" framing: the baseline self-hosted stack is Sentry
 for grouped errors/issues/releases, Tempo/Jaeger-like storage for traces,
 Elasticsearch/Kibana or Loki/Grafana for logs, Prometheus for metrics, Grafana
