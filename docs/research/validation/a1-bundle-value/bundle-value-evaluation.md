@@ -133,6 +133,11 @@ executable SWE-style datasets for the issue/fix/test leg, then add a Parallax
 telemetry overlay with honest provenance labels. Do not start by hand-picking
 random public GitHub issues unless they pass the
 [seed-corpus eligibility gates](bundle-value-seed-corpus.md).
+Failed-agent-trajectory datasets such as AgentRx are a separate source class:
+they can validate trajectory IR, invariant checks, failure-step localization,
+and agent/CLI audit taxonomy, but they do not become headline A1 fix-quality
+tasks unless they also satisfy the repo/fix/verifier/telemetry-overlay contract.
+See [AgentRx trajectory IR source check](agentrx-trajectory-ir-source-check.md).
 The overlay itself must satisfy the
 [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md) so
 the raw dump and Parallax bundle are generated from the same frozen evidence and
@@ -218,6 +223,9 @@ Outcomes and what they mean:
 - [A1 task source freeze check](a1-task-source-freeze-check.md) — pins current
   public dataset SHAs, row/split counts, and field quarantine requirements for
   the likely seed sources.
+- [AgentRx trajectory IR source check](agentrx-trajectory-ir-source-check.md) —
+  keeps failed agent trajectory sources in an auxiliary audit role, not the
+  headline software-fix task pool.
 - [A1 eval result ledger and model refresh](a1-eval-result-ledger-and-model-refresh.md)
   — defines the public result artifact, model snapshot, contamination tiers, and
   expiry rules for A1 claims.

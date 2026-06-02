@@ -70,6 +70,15 @@ Do not use SWE-bench Verified for headline Phase 0 decisions. It can shake out
 the harness, but current public evidence says it is too contaminated and test
 flawed for frontier claims.
 
+Do not count failed-agent-trajectory datasets, including AgentRx, as headline
+Phase 0 software-fix tasks unless they also provide a runnable repo snapshot,
+hidden verifier, known patch, and valid telemetry overlay. Use them instead as
+an optional **Agent Trajectory Audit** appendix: raw transcript / raw OTel-MCP
+spans versus Parallax trajectory projection plus invariant-check log, scored on
+critical failure-step localization, taxonomy correctness, unsupported claims,
+and inconclusive calibration. Keep this appendix separate from C vs B-prime
+resolved-rate results.
+
 Each task must have:
 
 - repo snapshot before the fix;
@@ -254,6 +263,9 @@ raw-access policy described in
 - [A1 task source freeze check](a1-task-source-freeze-check.md) defines the
   current public dataset SHAs, row/split counts, and feature/quarantine
   snapshots that preregistration should freeze before task selection.
+- [AgentRx trajectory IR source check](agentrx-trajectory-ir-source-check.md)
+  defines how failed agent trajectory data can inform A1's agent-audit appendix
+  without substituting for issue/fix/test tasks.
 - [Phase 0 telemetry overlay contract](phase0-telemetry-overlay-contract.md)
   defines the normalized overlay rows and raw-vs-bundle parity checks this
   runbook depends on.

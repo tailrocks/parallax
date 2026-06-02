@@ -76,6 +76,7 @@ Use these source roles in the seed manifest:
 | `expansion_only_high_risk` | Large or PR-scale source with LLM/generated metadata that requires strict quarantine. Current example: SWE-rebench V2 PRs. |
 | `expansion_only_legacy_high_risk` | Older automated source superseded by a newer source, useful only for historical comparison or later scale-out after seed policy proof. Current example: SWE-rebench legacy. |
 | `excluded_leakage_source` | Trajectory, leaderboard, result, solved-run, or agent-action datasets that should not become task prompts. Current examples: SWE-rebench OpenHands trajectories and SWE-rebench leaderboard. |
+| `trajectory_audit_source` | Failed agent trajectory data useful for Parallax agent/CLI trace schema, failure-step localization, invariant-check design, and outcome taxonomy, but not a headline software-fix task unless repo/fix/verifier/overlay gates also pass. Current example: AgentRx; see [AgentRx trajectory IR source check](agentrx-trajectory-ir-source-check.md). |
 
 ## Seed Corpus Shape
 
@@ -258,6 +259,10 @@ bundle lift.
 - [A1 task source freeze check](a1-task-source-freeze-check.md) records the
   current Hugging Face dataset SHAs, row/split counts, feature lists, and
   source-field quarantine rules that the first task manifest should start from.
+- [AgentRx trajectory IR source check](agentrx-trajectory-ir-source-check.md)
+  defines the `trajectory_audit_source` role for failed agent trajectories:
+  useful for trajectory/invariant/audit design, excluded from the headline
+  Phase 0 fix-quality corpus until it satisfies repo/fix/verifier/overlay gates.
 - [A1 source drift and leakage recheck](a1-source-drift-and-leakage-recheck.md)
   adds source roles, excludes trajectory/result datasets from task-source use,
   and requires full selected-row hashes because `first-rows` previews are

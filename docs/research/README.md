@@ -71,7 +71,7 @@ This directory is the research record behind Parallax. It is organized so a read
 - [greptimedb-vs-clickhouse/](storage/greptimedb-vs-clickhouse/) — the deep white-box engine sub-study (verdict + 30+ mechanism notes + benchmarks).
 
 ### `validation/` — the A1–A7 assumption gates and their ledgers
-- [a1-bundle-value/](validation/a1-bundle-value/) — A1: does a Parallax bundle beat raw context for agent fix quality? (eval design, seed corpus, Phase-0 runbook, ledgers).
+- [a1-bundle-value/](validation/a1-bundle-value/) — A1: does a Parallax bundle beat raw context for agent fix quality? (eval design, seed corpus, Phase-0 runbook, ledgers, AgentRx trajectory-IR source check).
 - [a2-user-demand.md](validation/a2-user-demand.md) — A2: user-interview and deployment-intent gate + evidence ledger.
 - [a3-schema-corpus.md](validation/a3-schema-corpus.md) — A3: schema-adoption and corpus-moat gate + ledger.
 - [a7-scope.md](validation/a7-scope.md) — A7: scope-discipline ledger keeping the tiny tier buildable.

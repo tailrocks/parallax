@@ -21,6 +21,7 @@ kept separate because each is an executable contract on its own.
 - [a1-task-source-freeze-check.md](a1-task-source-freeze-check.md) — task-source freshness/pinning: Hugging Face dataset SHAs, row/split counts, field quarantine, and manifest requirements (SWE-bench-Live, SWE-rebench).
 - [a1-source-drift-and-leakage-recheck.md](a1-source-drift-and-leakage-recheck.md) — source-governance recheck: HF source roles, preview-truncation limits, Python-only classification, full selected-row hashing, and exclusion of trajectory/leaderboard/result datasets.
 - [a1-huggingface-row-hash-procedure.md](a1-huggingface-row-hash-procedure.md) — concrete HF procedure: pinned revision metadata, stable row identity, `load_dataset`/pinned-file retrieval, deterministic JSON canonicalization, field-policy hashes, pass/fail rules.
+- [agentrx-trajectory-ir-source-check.md](agentrx-trajectory-ir-source-check.md) — AgentRx source check: trajectory IR and invariant checking are useful A1/audit design inputs, but AgentRx is not a direct issue/fix/test Phase 0 task source.
 
 ## Result ledger and external reference
 - [a1-eval-result-ledger-and-model-refresh.md](a1-eval-result-ledger-and-model-refresh.md) — result-ledger and refresh policy: public run manifests, model snapshots, contamination tiers, per-arm result rows, claim levels, and expiry/rerun triggers.
