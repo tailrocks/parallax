@@ -19,11 +19,12 @@ The practical server-profile focus is therefore:
 > **Implement the first production storage profile around GreptimeDB-shaped assumptions, while preserving the
 > ClickHouse adapter boundary.**
 
-This does **not** mean the first local binary must require GreptimeDB. The local-first V1 can use an
-embedded Turso/SQLite-like profile for short-lived developer runs. This page decides the high-volume
-self-hosted/server storage profile, where GreptimeDB is the first focus. No product contract may depend
-on GreptimeDB-only behavior. The bundle schema, context API, grouping semantics, and evidence graph must
-stay portable enough that ClickHouse can replace GreptimeDB if the remaining cost/cold-read gates flip.
+This does **not** mean Parallax embeds GreptimeDB into the Parallax process. The local-first V1 should
+manage a local GreptimeDB standalone binary for evidence and use Turso/SQLite-like storage for local
+metadata/grouping state. This page decides the high-volume self-hosted/server storage profile, where
+GreptimeDB is also the first focus. No product contract may depend on GreptimeDB-only behavior. The
+bundle schema, context API, grouping semantics, and evidence graph must stay portable enough that
+ClickHouse can replace GreptimeDB if the remaining cost/cold-read gates flip.
 
 This is the condensed current verdict. The **full record** — ~170 benchmark runs, a source-level
 teardown of both engines, the four-build version matrix, and the per-pass history — lives in

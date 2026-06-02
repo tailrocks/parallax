@@ -5,10 +5,10 @@
 Decision date: 2026-06-03
 
 > **Decision — V1 starts as a local-first evidence server, not as a production observability
-> cluster.** The first useful Parallax binary should run on a developer machine, store one project's
-> local runs in an embedded database, expose CLI plus API access, and let a coding agent query a
-> `run_id` for errors, logs, traces, spans, metrics, and grouped failures. GreptimeDB remains the first
-> production/scale storage profile, but it is no longer the default V1 local binary requirement.
+> cluster.** The first useful Parallax setup should run on a developer machine, manage a local
+> GreptimeDB standalone process for observability evidence, use Turso/SQLite-like storage for local
+> metadata and grouping state, expose CLI plus API access, and let a coding agent query a `run_id` for
+> errors, logs, traces, spans, metrics, and grouped failures.
 
 ## Product Job
 
@@ -31,11 +31,12 @@ This is the smallest product wedge: local debugging context for agent-assisted d
 
 ## V1 Shape
 
-V1 should be one self-contained binary:
+V1 should feel like one self-contained command, even if it manages two local binaries:
 
 ```text
 parallax serve
-  -> embedded local DB
+  -> managed local GreptimeDB standalone
+  -> embedded Turso/SQLite-like metadata DB
   -> OTLP ingest
   -> optional Sentry-event ingest adapter
   -> grouping/correlation worker
@@ -86,23 +87,36 @@ response types.
 
 ## Local Storage Default
 
-V1 local default should be embedded storage:
+V1 local default should be managed GreptimeDB plus embedded metadata storage:
 
 | Need | Local V1 answer |
 | --- | --- |
-| install simplicity | one binary plus one local data directory |
+| install simplicity | one command starts Parallax plus managed GreptimeDB |
+| observability evidence | local GreptimeDB standalone |
+| grouping/state/config | local Turso/SQLite-like file |
 | local run retention | short TTL / manual prune |
 | query scope | one developer machine, one or few projects |
 | data volume | enough for local tests and small microservice runs |
 | durability | good enough for debugging, not production compliance |
 
-Turso Database is the leading candidate because current docs describe it as an in-process SQL database
-written in Rust, compatible with SQLite, with local file and in-memory database examples. It is still
-beta, so V1 must keep a fallback path if Turso behavior is not reliable enough. Plain SQLite or another
-embedded store can substitute if needed.
+GreptimeDB is suitable locally because it runs in standalone mode as a binary (`greptime standalone
+start`) and can be installed through the Greptime Homebrew tap on macOS. Docker is optional, not
+required. Parallax should support both:
 
-The local DB may store both metadata and bounded telemetry at first. That is acceptable because local
-state is disposable and can be pruned. Production evidence storage is different.
+```text
+parallax serve --manage-greptime   # default local mode
+parallax serve --greptime-url ...  # use existing GreptimeDB
+parallax serve --no-greptime       # ultra-small fallback
+```
+
+Turso Database remains the local metadata candidate because current docs describe it as an in-process
+SQL database written in Rust, compatible with SQLite, with local file and in-memory database examples.
+It is still beta, so V1 must keep a fallback path if Turso behavior is not reliable enough. Plain
+SQLite or another embedded store can substitute if needed.
+
+The Turso-only fallback may store bounded telemetry for tiny demos/tests, but preferred V1 should not
+force Parallax to rebuild observability storage in Turso. GreptimeDB stores the evidence; Turso stores
+the local product state.
 
 ## Storage Growth Path
 
@@ -110,15 +124,15 @@ V1 local-first does not weaken the GreptimeDB decision. It clarifies tiers:
 
 | Stage | Default storage | Why |
 | --- | --- | --- |
-| V1 local | embedded Turso/SQLite-like store | one binary, no external services, local agent debugging. |
+| V1 local | managed GreptimeDB standalone + Turso/SQLite-like metadata | one-command local agent debugging with real observability storage. |
+| V1 fallback | Turso/SQLite-like only | ultra-small demos/tests when no GreptimeDB sidecar is allowed. |
 | V2 self-hosted server | GreptimeDB + metadata DB | higher telemetry volume, retained evidence, object-storage path. |
 | Production durable | GreptimeDB + Postgres + workers | grouping/state durability, retained history, production workflows. |
 | Scale-out | GreptimeDB distributed + Postgres + stream such as Apache Iggy | replay, backpressure, parallel processors. |
 
-GreptimeDB remains the first serious high-volume evidence backend because it collapses logs, traces,
-and metrics into one Rust observability store. Postgres remains the safer production relational store
-for grouping, users, projects, policies, and audit state. Apache Iggy remains optional until replay and
-parallel processing are real needs.
+GreptimeDB becomes the evidence backend from local V1 onward, not only later production. Postgres
+remains the safer production relational store for grouping, users, projects, policies, and audit state.
+Apache Iggy remains optional until replay and parallel processing are real needs.
 
 ## What Makes This Different
 
@@ -156,7 +170,8 @@ Yes. Current recheck shows the gap is narrower than the old story:
 These tools pressure Parallax. The remaining proposed gap is narrower:
 
 > local-first run-id evidence for coding agents, with Sentry-style grouping, OpenTelemetry-native
-> capture, embedded default storage, and a bundle contract that later scales to GreptimeDB/Postgres.
+> capture, managed local GreptimeDB, Turso/SQLite metadata, and a bundle contract that later scales to
+> GreptimeDB/Postgres.
 
 If OpenObserve, SigNoz, or another tool ships this exact local developer loop with a strong agent-ready
 bundle, Parallax must narrow or pivot.
@@ -167,13 +182,17 @@ bundle, Parallax must narrow or pivot.
 - no production HA;
 - no full Sentry API parity;
 - no full Grafana replacement;
-- no long-retention telemetry lake in embedded mode;
+- no long-retention telemetry lake in Turso-only fallback mode;
 - no autonomous fixer inside Parallax core.
 
 ## Source Anchors
 
 - [Turso Database repository](https://github.com/tursodatabase/turso) — in-process Rust SQL database,
   SQLite compatibility, local file and memory examples, beta caveat.
+- [Greptime Homebrew tap](https://github.com/GreptimeTeam/homebrew-greptime) — macOS install path for
+  `greptime` and standalone start command.
+- [GreptimeDB standalone docs](https://docs.greptime.com/getting-started/installation/greptimedb-standalone)
+  — binary standalone mode and local ports.
 - [Tonic repository](https://github.com/hyperium/tonic) — Rust gRPC over HTTP/2 with generated
   client/server support.
 - [OpenObserve homepage](https://openobserve.ai/) — current unified Rust observability / MCP / AI SRE

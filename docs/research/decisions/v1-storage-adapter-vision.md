@@ -4,23 +4,23 @@
 
 Decision date: 2026-06-03 · Updated after local-first clarification 2026-06-03
 
-> **Decision — V1 is local-first and adapter-extensible; GreptimeDB is the first production/server
-> profile.** The first implementation should run as one local binary with embedded storage so a
-> developer and coding agent can inspect a local `run_id` without installing an observability stack.
-> GreptimeDB remains the default high-volume self-hosted/server profile because it gives Parallax
-> unified metrics/logs/traces, OpenTelemetry-oriented ingest, SQL and PromQL, and cloud-native
-> storage/scale assumptions. The product contract still goes through a storage adapter so future
-> profiles can target embedded Turso/SQLite-like storage, GreptimeDB, ClickHouse, or another backend
-> without changing the evidence-bundle API.
+> **Decision — V1 is local-first and adapter-extensible; managed local GreptimeDB is the preferred
+> evidence store.** The first implementation should feel like one command on a developer machine:
+> Parallax manages a local GreptimeDB standalone process for observability evidence and uses
+> Turso/SQLite-like storage for local metadata/grouping state. The product contract still goes through
+> a storage adapter so future profiles can target Turso-only fallback, GreptimeDB server/cluster,
+> ClickHouse, or another backend without changing the evidence-bundle API.
 
 ## What This Means
 
 There are two different "firsts":
 
-- **First local product:** embedded Turso/SQLite-like storage, because one binary and one local data
-  directory make the agent-debugging loop usable immediately.
-- **First production storage profile:** GreptimeDB, because it is the best current fit for high-volume
-  retained observability evidence.
+- **First local product:** managed local GreptimeDB standalone for telemetry evidence plus
+  Turso/SQLite-like metadata, because this avoids rebuilding observability storage.
+- **First production storage profile:** GreptimeDB server/cluster, because it is the best current fit
+  for high-volume retained observability evidence.
+- **Fallback local product:** Turso/SQLite-like only, for ultra-small demos/tests where no GreptimeDB
+  sidecar is allowed.
 
 V1 local should store enough bounded telemetry and metadata to answer:
 
@@ -48,19 +48,25 @@ layout, object-storage internals, or PromQL-specific implementation behavior. Th
 
 The local profile should optimize for:
 
-- one binary;
-- no external database/container;
+- one command;
+- no Docker requirement;
+- managed GreptimeDB child process or existing GreptimeDB URL;
+- Turso/SQLite-like local metadata file;
 - short-lived local retention;
 - disposable/prunable run history;
 - small and medium local app stacks;
 - agent access by `run_id`.
 
-Turso Database is the leading local profile candidate because current docs describe an in-process SQL
+GreptimeDB is the preferred local evidence store because it runs as a standalone binary and the
+Greptime Homebrew tap supports `brew install greptime`; `greptime standalone start` launches local
+HTTP/RPC/MySQL/Postgres ports. Docker is optional.
+
+Turso Database is the leading local metadata candidate because current docs describe an in-process SQL
 database written in Rust, compatible with SQLite, with local file and in-memory database examples. It
 is still beta, so V1 must keep a fallback path and avoid production durability claims until gates pass.
 
 Plain SQLite or another embedded store can substitute if Turso fails local reliability, migration, or
-concurrency checks.
+concurrency checks. Turso-only telemetry storage remains a fallback, not the preferred V1 path.
 
 ## GreptimeDB Server Profile
 
@@ -112,16 +118,18 @@ Minimum storage profiles:
 
 | Profile | Role | Status |
 | --- | --- | --- |
-| `local` / `turso` | Default local V1 profile using embedded SQLite-compatible storage. | Build first for CLI/local runs. |
-| `greptimedb` | Default production/server observability storage. | Build first once local V1 graduates to server mode. |
+| `local-greptimedb` | Default local V1 evidence profile using managed GreptimeDB standalone. | Build first for CLI/local runs. |
+| `local-metadata` | Turso/SQLite-like metadata/grouping profile. | Build with local GreptimeDB profile. |
+| `local-turso-only` | Ultra-small fallback using embedded storage only. | Keep limited; do not make it main observability store. |
+| `greptimedb` | Default production/server observability storage. | Same model as local GreptimeDB, scaled up. |
 | `clickhouse` | Fallback for raw analytical speed and broad log/trace search. | Keep interface ready; implement when needed or when benchmarks flip. |
 
 ## Why Keep It Extensible
 
 Extensibility protects three real futures:
 
-1. **Local-only mode.** Developer runs Parallax fully local, with no GreptimeDB container. Embedded
-   storage handles small projects, demos, tests, local microservice runs, and personal debugging.
+1. **Local-only mode.** Developer runs Parallax fully local, with managed GreptimeDB and no Docker.
+   Turso handles grouping/state; GreptimeDB handles logs/traces/metrics.
 2. **Storage-result reversibility.** The GreptimeDB-vs-ClickHouse decision is still benchmark-gated. If
    real $/GB, cold-read, or query-mix results flip, Parallax needs a swap path.
 3. **Different deployment sizes.** Tiny local, single-node self-hosted, durable server, and scale-out
@@ -129,17 +137,17 @@ Extensibility protects three real futures:
 
 ## Non-Negotiables
 
-- V1 local implementation should be embedded-storage-shaped.
-- V1 server implementation can be GreptimeDB-shaped.
+- V1 local implementation should be managed-GreptimeDB-plus-Turso-shaped.
+- V1 server implementation should remain GreptimeDB-shaped.
 - API and evidence-bundle contract must be backend-neutral.
 - No backend-only feature may become required for bundle correctness unless the adapter contract has a
   portable fallback.
 - ClickHouse remains the explicit fallback, not a rejected engine.
-- Local/Turso-like storage is the default V1 local profile, not a production telemetry lake.
+- Turso-only storage is a fallback, not the default observability profile.
 
 ## Relationship To Existing Decisions
 
-- [Local-first V1 concept](../architecture/local-first-v1.md) explains the one-binary, `run_id`-based
+- [Local-first V1 concept](../architecture/local-first-v1.md) explains the one-command, `run_id`-based
   developer loop.
 - [Storage engine decision](storage-engine.md) explains why GreptimeDB currently beats ClickHouse for
   Parallax's first production storage focus.

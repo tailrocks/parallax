@@ -77,16 +77,17 @@ assumption. Failing a gate sends you back, not forward.
 
 Build only enough to generate the bundle automatically and repeatably:
 
-- Local-first one-binary server with embedded Turso/SQLite-like storage (fallback allowed if Turso
-  fails local reliability gates), short local retention, and `run_id` as the primary developer handle.
+- Local-first one-command server with managed local GreptimeDB standalone for observability evidence,
+  Turso/SQLite-like metadata for grouping/state, short local retention, and `run_id` as the primary
+  developer handle.
 - Sentry-envelope + OTLP ingest (subset), deterministic Rust-focused grouping,
   with compatibility claims controlled by the
   [Sentry SDK compatibility ledger](../capture/sentry-ingest.md).
 - Direct-SDK and Collector OTLP claim levels controlled by the
   [OTLP conformance ledger](../capture/otlp.md).
 - Same-trace and same-run correlation → one real `run context` / `issue context` bundle.
-- Storage adapter contract with local profile implemented first; GreptimeDB and ClickHouse profiles
-  remain interface targets, not Phase-1 blockers.
+- Storage adapter contract with local GreptimeDB profile implemented first; ClickHouse and Turso-only
+  fallback remain interface targets, not Phase-1 blockers.
 - CLI (`parallax run inspect …`, `parallax run bundle …`, `parallax issue context …`) + local context
   API; gRPC is preferred once schemas stabilize, with REST/HTTP allowed as the first implementation if
   it moves faster.
