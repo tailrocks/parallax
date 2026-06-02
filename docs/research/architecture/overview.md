@@ -5,8 +5,9 @@
 Research date: 2026-05-24
 
 Update: 2026-06-03. Sentry-compatible ingest is now a future adapter, not V1
-scope. V1 starts with OpenTelemetry/OTLP ingest for traces, logs, metrics, spans,
-and error events; see [API concept](api-concept.md) and
+scope. V1 starts with OpenTelemetry/OTLP ingest for traces, logs, and metrics;
+Parallax derives its own `error_event` rows from exception span events, span
+error status, and ERROR/FATAL logs. See [API concept](api-concept.md) and
 [Local-first V1](local-first-v1.md).
 
 ## Executive Summary
@@ -33,7 +34,7 @@ Applications
   -> Rust ingest gateway
   -> Apache Iggy durable stream
   -> Rust processors
-  -> GreptimeDB for logs/traces/metrics/error events
+  -> GreptimeDB for logs/traces/metrics/derived error events
   -> Turso metadata store for projects/issues/users
   -> simple UI + CLI + agent context API
   -> future Sentry-compatible ingest adapter
@@ -51,7 +52,7 @@ needs:
 
 | Need | Parallax stance |
 | --- | --- |
-| Keep standard telemetry setup | Accept OTLP for traces, logs, metrics, spans, and error events. |
+| Keep standard telemetry setup | Accept OTLP for traces, logs, and metrics; derive Parallax error rows from exception/error evidence. |
 | Future Sentry migration | Add Sentry envelopes and DSNs after V1 proves useful. |
 | Group recurring errors | Implement deterministic grouping first. |
 | Show what happened around an error | Correlate errors with logs, traces, metrics, releases, deploys, and host context. |
@@ -338,7 +339,7 @@ Consumers can be separated by responsibility:
 
 | Consumer | Responsibility |
 | --- | --- |
-| `event-normalizer` | Normalize OTLP error events and future Sentry envelope events into Parallax event records. |
+| `event-normalizer` | Derive Parallax error rows from OTLP exception span events, span error status, ERROR/FATAL logs, and future Sentry envelope events. |
 | `otel-normalizer` | Normalize OTLP logs/traces/metrics metadata. |
 | `grouping-worker` | Compute fingerprints and issue membership. |
 | `storage-writer` | Write normalized telemetry to GreptimeDB and metadata store. |

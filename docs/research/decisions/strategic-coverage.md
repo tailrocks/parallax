@@ -35,9 +35,9 @@ agents, and likely to overpromise causality.
 The defensible version is:
 
 > An open-source, Rust-first, self-hostable execution context engine that
-> accepts fixture-gated Sentry envelope error events, OTLP telemetry, CLI
-> invocation traces, and coding-agent session records from tested capture
-> adapters, builds
+> accepts OTLP telemetry, derives error events from exception/error evidence,
+> accepts CLI invocation traces and coding-agent session records from tested
+> capture adapters, builds
 > deterministic evidence graphs, and serves bounded context bundles to humans
 > and coding agents through API first and MCP after projection/safety gates.
 

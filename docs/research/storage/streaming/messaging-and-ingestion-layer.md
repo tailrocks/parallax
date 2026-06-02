@@ -404,8 +404,8 @@ Object storage belongs primarily behind the database/storage layer:
 
 ```text
 parallax-server
-  - HTTP Sentry envelope endpoint
   - HTTP/gRPC OTLP endpoint
+  - future HTTP Sentry envelope endpoint after V1
   - local WAL/outbox
   - in-process normalizer/grouping/storage writer
 greptimedb standalone or clickhouse

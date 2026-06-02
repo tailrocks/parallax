@@ -80,7 +80,8 @@ Build only enough to generate the bundle automatically and repeatably:
 - Local-first one-command server with managed local GreptimeDB standalone for observability evidence,
   Turso/SQLite-like metadata for grouping/state, short local retention, and `run_id` as the primary
   developer handle.
-- OTLP ingest (subset) for traces, logs, metrics, spans, and error events; deterministic Rust-focused
+- OTLP ingest (subset) for traces, logs, and metrics; derive Parallax `error_event` rows from
+  exception span events, span error status, and ERROR/FATAL logs; deterministic Rust-focused
   grouping from normalized evidence.
 - Direct-SDK and Collector OTLP claim levels controlled by the
   [OTLP conformance ledger](../capture/otlp.md).

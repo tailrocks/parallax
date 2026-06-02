@@ -1,6 +1,6 @@
 # OpenTelemetry Protocol and Context Layer
 
-> OpenTelemetry should be Parallax's native telemetry protocol layer and context substrate, while the durable product value lives above OTEL: Sentry-compatible error grouping, stacktrace normalization, release regression analysis, an evidence graph, and schema-bound canonical context bundles for humans and coding agents across CLI, HTTP, and MCP projections. The baseline transport claim is decided: Parallax must require `grpc` and `http/protobuf`, label `http/json` as explicitly optional (a JSON-only receiver is not enough for "OTLP-native" wording), test SDK endpoint URL construction, and back any "Collector-compatible" claim with a runnable Collector distribution fixture rather than a core/source release note. "OTLP-native" and "Collector-compatible" are conformance claims, not endpoint facts: they require direct-SDK, official Collector, Collector Contrib, and Rotel fixtures that produce equivalent normalized rows, canonical bundle and evidence-edge hashes, projection manifests, and MCP `structuredContent`/`outputSchema` validation. The current ledger status is **not measured** — no direct-SDK, Collector, Collector Contrib, or Rotel fixture results exist yet — so Parallax should describe OTLP support as a target or design direction, with the v0 gate being L1 + L2 + L3 (direct Rust SDK, signal semantics preserved, Collector equivalence) for a narrow signal subset. The open gates remain: running the dated fixture matrix to advance past `not_measured`, resolving the stable Collector distribution `v0.153.0` axis (core/source is `v0.153.0` while the runnable distribution `/releases/latest` still resolves to `v0.152.1`), and proving OTLP-derived evidence assembles into agent-ready bundles before any agent-facing claim.
+> OpenTelemetry should be Parallax's native telemetry protocol layer and context substrate, while the durable product value lives above OTEL: Sentry-style error grouping, stacktrace normalization, release regression analysis, an evidence graph, and schema-bound canonical context bundles for humans and coding agents across CLI, HTTP, and MCP projections. V1 should not claim a separate OpenTelemetry "error event" signal. It should receive OTLP traces, logs, and metrics, then derive Parallax `error_event` rows from span exception events, span status/`error.type`, and correlated ERROR/FATAL log records. The baseline transport claim is decided: Parallax must require `grpc` and `http/protobuf`, label `http/json` as explicitly optional (a JSON-only receiver is not enough for "OTLP-native" wording), test SDK endpoint URL construction, and back any "Collector-compatible" claim with a runnable Collector distribution fixture rather than a core/source release note. "OTLP-native" and "Collector-compatible" are conformance claims, not endpoint facts: they require direct-SDK, official Collector, Collector Contrib, and Rotel fixtures that produce equivalent normalized rows, canonical bundle and evidence-edge hashes, projection manifests, and MCP `structuredContent`/`outputSchema` validation. The current ledger status is **not measured** — no direct-SDK, Collector, Collector Contrib, or Rotel fixture results exist yet — so Parallax should describe OTLP support as a target or design direction, with the v0 gate being L1 + L2 + L3 (direct Rust SDK, signal semantics preserved, Collector equivalence) for a narrow signal subset. The open gates remain: running the dated fixture matrix to advance past `not_measured`, resolving the stable Collector distribution `v0.153.0` axis (core/source is `v0.153.0` while the runnable distribution `/releases/latest` still resolves to `v0.152.1`), and proving OTLP-derived evidence assembles into agent-ready bundles before any agent-facing claim.
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
@@ -37,10 +37,64 @@ Treat OpenTelemetry as Parallax's native telemetry protocol layer.
 Parallax should accept OTLP HTTP/gRPC directly, preserve OpenTelemetry resource
 and trace context, and interoperate cleanly with upstream OpenTelemetry
 Collectors. It should not make the Collector mandatory for the tiny deployment.
-The product value belongs above OTEL: Sentry-compatible error grouping,
+The product value belongs above OTEL: Sentry-style error grouping,
 stacktrace normalization, release regression analysis, evidence graph building,
 and schema-bound, canonical context bundles for humans and coding agents across
 CLI, HTTP, and MCP projections.
+
+### 2026-06-03 Recheck: OTLP Error Evidence Mapping
+
+**Pass target:** verify whether V1 can say "OTLP error events" after moving
+Sentry-compatible ingest out of V1.
+
+**Finding:** narrow the wording. OpenTelemetry currently has stable traces,
+metrics, logs, and baggage, with profiles still development-stage. It does not
+define a separate top-level "error event" signal. Error evidence appears inside
+existing signals:
+
+- **Span exception event.** OTel trace exception semantics say an exception is
+  recorded as an event named `exception` on the span where it occurred, with
+  `exception.message`, `exception.stacktrace`, and `exception.type`.
+- **Span status and error classification.** The trace API has `StatusCode=Error`;
+  exception examples set `error.type` alongside `recordException`.
+- **Log record severity and exception attributes.** The log data model says
+  `SeverityNumber >= 17` indicates an erroneous situation. It also supports
+  trace context fields (`TraceId`, `SpanId`) and exception attributes shared by
+  spans or logs.
+- **Standalone OTel Events.** Current semantic conventions model standalone
+  events as `LogRecord`s with an `EventName`; this convention is still
+  development-stage.
+- **Rust implementation path.** `opentelemetry-otlp` exports logs, metrics, and
+  traces; `opentelemetry-appender-tracing` routes `tracing` logs into OTel.
+
+**Decision:** V1 receives OTLP traces/logs/metrics. Parallax derives its own
+`error_event` rows from:
+
+1. span events named `exception`;
+2. spans with error status and `error.type`;
+3. OTLP log records with ERROR/FATAL severity, especially those carrying
+   `exception.*`, `trace_id`, and `span_id`;
+4. later, future Sentry envelope events normalized into the same Parallax
+   `error_event` model.
+
+**Consequence:** docs should avoid implying a fourth OTLP endpoint or signal for
+errors. `/v1/traces`, `/v1/logs`, and `/v1/metrics` are enough for V1 ingest;
+`error_event` is a Parallax normalized table/model, not an OTel signal name.
+
+**Sources checked 2026-06-03:**
+
+- [OpenTelemetry specification status](https://opentelemetry.io/docs/specs/status/) — traces/logs/metrics
+  protocol status and profiles development status.
+- [OpenTelemetry trace exceptions](https://opentelemetry.io/docs/specs/otel/trace/exceptions/) — exception
+  recording as span event named `exception`.
+- [OpenTelemetry exception attributes](https://opentelemetry.io/docs/specs/semconv/registry/attributes/exception/) —
+  stable `exception.message`, `exception.stacktrace`, and `exception.type`.
+- [OpenTelemetry logs data model](https://opentelemetry.io/docs/specs/otel/logs/data-model/) — log fields,
+  trace context fields, and ERROR/FATAL severity semantics.
+- [OpenTelemetry event semantic conventions](https://opentelemetry.io/docs/specs/semconv/general/events/) —
+  standalone events as `LogRecord`s, development-stage.
+- [OpenTelemetry Rust README](https://github.com/open-telemetry/opentelemetry-rust) —
+  `opentelemetry-otlp` for logs/metrics/traces and `opentelemetry-appender-tracing`.
 
 The product-claim boundary for "OTLP-native" and "Collector-compatible" is the
 [OTLP conformance ledger](otlp.md). The focused
@@ -165,10 +219,9 @@ Tiny single-node:
 
 ```text
 App / service
-  -> Sentry envelope endpoint
   -> OTLP HTTP/gRPC endpoint
   -> parallax-server
-       - auth and DSN validation
+       - project-token auth
        - redaction and size limits
        - OTLP decode and normalization
        - local WAL / outbox
@@ -252,7 +305,7 @@ Minimum normalized fields:
 
 | Field | Why it matters |
 | --- | --- |
-| `trace_id` | Primary join across spans, logs, and error events. |
+| `trace_id` | Primary join across spans, logs, and derived Parallax error events. |
 | `span_id` / `parent_span_id` | Places the error inside the request or job flow. |
 | `service.name` | Service identity and issue ownership. |
 | `service.version` | Release regression analysis. |
@@ -260,7 +313,7 @@ Minimum normalized fields:
 | `telemetry.sdk.language`, `telemetry.sdk.name`, `telemetry.sdk.version` | SDK behavior, compatibility, and migration debugging. |
 | Host/container/k8s/process attributes | Runtime placement and noisy-neighbor correlation. |
 | HTTP/RPC/database/messaging semantic attributes | Root-cause hints and query pivots. |
-| Exception/error semantic attributes | Bridge OTEL exceptions to Sentry-style events. |
+| Exception/error semantic attributes | Derive Parallax `error_event` rows from OTEL span events/logs. |
 
 For non-OTLP logs, Parallax should follow OTEL's stable guidance to read
 `trace_id`, `span_id`, and `trace_flags` from top-level structured fields when

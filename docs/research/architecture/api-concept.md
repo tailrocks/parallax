@@ -15,7 +15,7 @@ Parallax has three different API jobs:
 
 | Job | API | Why |
 | --- | --- | --- |
-| Telemetry ingest | OTLP HTTP/gRPC | Standard path for traces, logs, metrics, spans. |
+| Telemetry ingest | OTLP HTTP/gRPC | Standard path for traces, logs, and metrics; Parallax derives `error_event` rows from exception span events, span error status, and ERROR/FATAL logs. |
 | Error compatibility ingest | Future minimal Sentry envelope endpoint | Migration path for Sentry-style error events and grouping fields after V1 proves the OTLP/local loop. |
 | Query/exploration | GraphQL | Runs/issues/traces/logs/metrics/bundles are graph-shaped and need flexible field selection. |
 
@@ -178,6 +178,9 @@ Parallax accepts OTLP for:
 - metrics.
 
 The ingest layer normalizes data into Parallax evidence rows and writes through storage adapters.
+`error_event` is a Parallax model, not a fourth OpenTelemetry signal or endpoint. V1 derives it
+from span events named `exception`, spans with error status and `error.type`, and OTLP log records
+with ERROR/FATAL severity plus `exception.*`, `trace_id`, and `span_id` when present.
 
 ### Future Sentry Envelope
 

@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable MD013 -->
 
-> Parallax should capture Rust app-level errors in-process with Rust SDKs over OTLP plus a Sentry-compatible panic/error layer, and treat eBPF as an optional complement for zero-instrumentation infrastructure signal, never as the primary error path — because panic messages, typed/`anyhow` source chains, span attributes, and release/environment metadata exist only as in-process language constructs that a kernel-level probe cannot read. Capture is not one feature but a measured contract across `sentry` `0.48.2` features, `tracing` `0.1.44`/`tracing-error` `0.2.1`/`tracing-opentelemetry` `0.33.0`, `opentelemetry`/`opentelemetry-otlp`/`opentelemetry-appender-tracing` `0.32.0`, `anyhow` `1.0.102`/`eyre` `0.6.12`/`color-eyre` `0.6.5`, panic strategy, backtrace environment, debuginfo profile, and redaction, and that contract must be proven by fixtures before any "Rust errors are agent-ready" wording. Grouping is decided as a versioned, fixture-tested product primitive: a deterministic `rust-stack-v1` fingerprint that keeps the same logical Rust bug grouped across rebuilds and debuginfo layouts, computed after conservative Rust symbol normalization, with per-frame symbolication status and client-fingerprint precedence, and with release/environment/host/build-id/commit deliberately excluded from issue identity. A mandatory debuginfo policy (`debug = "line-tables-only"` with `strip = "none"`, or split debuginfo + server-side symbolication) is required or backtraces are worthless. The remaining open gate is measurement: the `rust-stack-v1` grouping claim is currently `not_measured`, and no "deterministic Rust grouping" claim is allowed until dated fixture runs covering capture paths, panic strategies, rebuilds, debuginfo variants, normalization, false splits/merges, client fingerprints, symbolication degradation, redaction, and source-field isolation pass and are published through the grouping ledger.
+> Parallax V1 should capture Rust app-level errors in-process with Rust `tracing`, `tracing-error`, and OpenTelemetry over OTLP, then derive Parallax-owned `error_event` rows from span exception events, span error status, and ERROR/FATAL log records. Sentry-compatible panic/error ingest is future migration compatibility, not V1 scope. Treat eBPF as an optional complement for zero-instrumentation infrastructure signal, never as the primary error path — because panic messages, typed/`anyhow` source chains, span attributes, and release/environment metadata exist only as in-process language constructs that a kernel-level probe cannot read. Capture is not one feature but a measured contract across `tracing` `0.1.44`/`tracing-error` `0.2.1`/`tracing-opentelemetry` `0.33.0`, `opentelemetry`/`opentelemetry-otlp`/`opentelemetry-appender-tracing` `0.32.0`, future `sentry` compatibility fixtures, `anyhow` `1.0.102`/`eyre` `0.6.12`/`color-eyre` `0.6.5`, panic strategy, backtrace environment, debuginfo profile, and redaction, and that contract must be proven by fixtures before any "Rust errors are agent-ready" wording. Grouping is decided as a versioned, fixture-tested product primitive: a deterministic `rust-stack-v1` fingerprint that keeps the same logical Rust bug grouped across rebuilds and debuginfo layouts, computed after conservative Rust symbol normalization, with per-frame symbolication status and client-fingerprint precedence, and with release/environment/host/build-id/commit deliberately excluded from issue identity. A mandatory debuginfo policy (`debug = "line-tables-only"` with `strip = "none"`, or split debuginfo + server-side symbolication) is required or backtraces are worthless. The remaining open gate is measurement: the `rust-stack-v1` grouping claim is currently `not_measured`, and no "deterministic Rust grouping" claim is allowed until dated fixture runs covering capture paths, panic strategies, rebuilds, debuginfo variants, normalization, false splits/merges, client fingerprints, symbolication degradation, redaction, and source-field isolation pass and are published through the grouping ledger.
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
@@ -25,8 +25,9 @@ The first product question for Parallax is not storage or UI. It is: **how do we
 get enough data out of a Rust application to explain why it failed?** The answer
 shapes everything downstream.
 
-> Capture app-level errors in-process with Rust SDKs over OTLP plus a
-> Sentry-compatible panic/error layer. Treat eBPF as an optional complement for
+> Capture app-level errors in-process with Rust `tracing`, `tracing-error`, and
+> OpenTelemetry over OTLP; derive Parallax error rows from exception span events
+> and ERROR/FATAL logs. Treat eBPF as an optional complement for
 > zero-instrumentation infrastructure signal, never as the primary error path.
 
 The current capture-feature/version matrix and fixture additions are tracked in
@@ -238,16 +239,16 @@ and its claimable result rows are defined in the
 
 ```text
 Rust app
-  -> tracing + OTLP exporter (traces/logs/metrics)
-  -> Sentry-compatible panic/error layer (error events)
-  -> Parallax ingest gateway (OTLP + Sentry envelope endpoints)
+  -> tracing + tracing-error + OTLP exporter (traces/logs/metrics)
+  -> Parallax ingest gateway (OTLP endpoints)
   -> durable stream (Apache Iggy)
-  -> processors: normalize, group, symbolicate, correlate
+  -> processors: derive error_event, normalize, group, symbolicate, correlate
   -> GreptimeDB (events/logs/spans/metrics) + metadata store
   -> context API + MCP server  (agent: primary)
   -> Sentry-like UI            (human: secondary)
 
 [optional, later] eBPF agent -> infra RED metrics, service maps, CPU profiles
+[future] Sentry-compatible panic/error layer -> same Parallax error_event model
 ```
 
 The error path and the telemetry path share the ingest gateway and stream. eBPF,
@@ -262,8 +263,8 @@ into the same storage — not a replacement for any of the in-process capture.
    [Rust stacktrace grouping and symbolication](rust.md)
    and the claim ledger in
    [Rust stacktrace grouping ledger](rust.md).
-2. How exactly do we stitch Sentry-style error events to OTLP `trace_id`/
-   `span_id` so an error opens directly into its trace?
+2. Which Rust OTLP fixture best preserves panic/error material: span exception
+   events, ERROR/FATAL log records with `exception.*`, or both?
 3. Rust frame normalization for stable grouping across releases (hash suffixes,
    generics, monomorphization, panic location) — now specified as
    `rust-stack-v1` in

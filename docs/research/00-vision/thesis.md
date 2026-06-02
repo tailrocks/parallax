@@ -12,11 +12,12 @@
 
 **Current research status, 2026-05-25:** the maintained verdict is **GO only for
 the narrow version**: a Rust-first, self-hostable runtime evidence/context
-engine that accepts fixture-gated Sentry envelope error events, OTLP telemetry,
-CLI invocation traces, and tested coding-agent session records, then serves
-schema-valid, redacted evidence bundles. Do not read this thesis as a claim for
-a generic AI RCA chatbot, a full dashboard suite, or autonomous production
-mutation. The
+engine that accepts OTLP traces/logs/metrics, derives Parallax-owned error
+events from exception spans and ERROR/FATAL logs, accepts CLI invocation traces
+and tested coding-agent session records, then serves schema-valid, redacted
+evidence bundles. Sentry-compatible ingest is future migration compatibility,
+not V1 scope. Do not read this thesis as a claim for a generic AI RCA chatbot,
+a full dashboard suite, or autonomous production mutation. The
 current storage posture is also narrower than early drafts: the observability
 store stays behind a ClickHouse/GreptimeDB adapter, the **current lean is
 GreptimeDB (not yet settled)** with ClickHouse the fallback (see
@@ -704,8 +705,9 @@ parallax test explain com.company.CheckoutTest.shouldApplyDiscount
 
 ```
 Input:
-- Sentry envelope error events
-- OpenTelemetry logs/traces/metrics
+- OpenTelemetry traces/logs/metrics
+- derived Parallax error events from exception spans and ERROR/FATAL logs
+- future Sentry envelope error events after V1
 - deploy metadata
 
 Output:

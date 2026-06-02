@@ -229,7 +229,7 @@ The smallest useful loop is:
 
 ```text
 Rust service panics or emits error
-  -> OpenTelemetry sends error event, traces, logs, and metrics
+  -> OpenTelemetry sends traces, logs, metrics, exception span events, and ERROR/FATAL logs
   -> CLI or agent execution trace records bounded local work when applicable
   -> Parallax groups the error
   -> Parallax fetches same-trace logs/spans/metrics and deploy/change context
@@ -357,7 +357,7 @@ apps / collectors / CI systems / coding agents
 ## Data Flow From Event To Evidence Bundle
 
 1. **Accept event.**
-   - V1 OTLP logs/traces/metrics/error events arrive over HTTP/gRPC.
+   - V1 OTLP traces/logs/metrics arrive over HTTP/gRPC.
    - Future Sentry envelopes may arrive at `POST /api/:project_id/envelope/`.
    - Ingest validates project token, size, and content type; future Sentry
      adapters add DSN validation.
@@ -368,7 +368,8 @@ apps / collectors / CI systems / coding agents
    - Store raw payload reference with TTL for parser recovery.
 
 3. **Normalize.**
-   - Convert OTLP error events into Parallax error-event rows.
+   - Derive Parallax `error_event` rows from OTLP exception span events, spans
+     with error status/`error.type`, and ERROR/FATAL log records.
    - Later, convert Sentry events into the same Parallax error-event rows.
    - Convert CLI invocations and coding-agent sessions into execution traces.
    - Convert OTLP spans/logs/metrics into queryable records.

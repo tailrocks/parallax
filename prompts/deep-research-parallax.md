@@ -227,8 +227,11 @@ inside storage adapters and adapter-level tests.
 
 Current API direction: use GraphQL-first for query/exploration because Parallax
 data is graph-shaped (runs, issues, traces, spans, logs, metric windows,
-evidence bundles). Keep OTLP for V1 raw telemetry ingest. Treat minimal
-Sentry-envelope ingest as future compatibility work, not V1 scope. GraphQL must have query depth,
+evidence bundles). Keep OTLP for V1 raw telemetry ingest: traces, logs, and
+metrics. Do not invent a fourth OTLP error-event endpoint or signal; derive
+Parallax `error_event` rows from span exception events, span error status/
+`error.type`, and ERROR/FATAL log records. Treat minimal Sentry-envelope ingest
+as future compatibility work, not V1 scope. GraphQL must have query depth,
 complexity, pagination, and time-window limits; no arbitrary SQL/PromQL
 passthrough in V1.
 

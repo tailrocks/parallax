@@ -109,8 +109,9 @@ and Parallax tiny tier.
 7. Record required CPU/RAM/disk recommendations and actual idle RSS/CPU.
 8. Record exposed ports, config files, required secrets, and generated
    credentials.
-9. Ingest one Sentry error event from the latest Rust Sentry SDK path, one OTLP
-   trace, one OTLP log, and one OTLP metric from a small sample app.
+9. Ingest one OTLP trace carrying an exception span event, one OTLP ERROR/FATAL
+   log carrying exception attributes, and one OTLP metric from a small sample
+   app.
 10. Query the first issue context bundle through the CLI and HTTP API.
 11. Restart all services and verify the issue, raw event, trace link, and bundle
     still exist.

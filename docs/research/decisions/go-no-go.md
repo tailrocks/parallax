@@ -24,10 +24,11 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 Build Parallax, but only as the narrow version:
 
 > An open-source, Rust-first, self-hostable execution context engine that accepts
-> fixture-gated Sentry envelope error events, OpenTelemetry telemetry, CLI
-> invocation traces, and coding-agent session records from tested capture
-> adapters, then stores and serves bounded evidence bundles for humans and
-> agents.
+> OpenTelemetry traces/logs/metrics, derives Parallax-owned error rows from
+> exception spans and ERROR/FATAL logs, accepts CLI invocation traces and
+> coding-agent session records from tested capture adapters, then stores and
+> serves bounded evidence bundles for humans and agents. Sentry-compatible ingest
+> is future migration compatibility, not V1 scope.
 
 Do not build the broad version:
 

@@ -454,10 +454,10 @@ Sources:
 Parallax should narrow to the evidence contract incumbents do not own cleanly:
 
 > Parallax is an open-source, Rust-first execution context engine that ingests
-> tested Sentry envelope error events and conformance-gated OTLP telemetry,
-> normalizes measured CLI and coding-agent work through tested capture adapters,
-> and serves portable evidence bundles that agents can cite, audit, and feed
-> back into fix-outcome records.
+> conformance-gated OTLP telemetry, derives Parallax-owned error events from
+> exception spans and ERROR/FATAL logs, normalizes measured CLI and coding-agent
+> work through tested capture adapters, and serves portable evidence bundles
+> that agents can cite, audit, and feed back into fix-outcome records.
 
 This positioning still avoids competing with Sentry, Datadog, Grafana,
 OpenObserve, SigNoz, or Coroot on broad dashboard coverage. It also avoids

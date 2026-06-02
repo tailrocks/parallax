@@ -4,12 +4,12 @@ This directory is the research record behind Parallax. It is organized so a read
 **what Parallax is, which storage engine, and why** in a few minutes, then drill into evidence.
 
 > **Parallax is an open-source, Rust-first, self-hosted execution-context engine.** It ingests
-> OpenTelemetry logs/traces/metrics/error events (plus CLI and coding-agent
-> execution traces), groups errors deterministically, correlates signals into a typed evidence
-> graph, and serves **bounded, redacted, schema-valid evidence bundles** to humans and coding
-> agents over a CLI/HTTP API first, and a read-only MCP adapter after safety gates. Parallax is
-> the **context engine, not the fixer** — a separate coding agent consumes the bundle and proposes
-> the fix.
+> OpenTelemetry traces/logs/metrics plus CLI and coding-agent execution traces, derives
+> Parallax-owned error events from exception spans and ERROR/FATAL logs, groups errors
+> deterministically, correlates signals into a typed evidence graph, and serves **bounded,
+> redacted, schema-valid evidence bundles** to humans and coding agents over a CLI/HTTP API first,
+> and a read-only MCP adapter after safety gates. Parallax is the **context engine, not the fixer**
+> — a separate coding agent consumes the bundle and proposes the fix.
 
 ## Current answers (the short version)
 
