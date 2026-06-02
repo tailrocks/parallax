@@ -17,7 +17,7 @@ This directory is the research record behind Parallax. It is organized so a read
 | --- | --- | --- |
 | Is it worth building? | **GO**, for the *narrow* evidence/context engine (not a generic RCA chatbot or autonomous SRE). | [decisions/go-no-go.md](decisions/go-no-go.md) |
 | Which storage engine? | **Current lean: GreptimeDB** (cost + Rust + self-hosted), **not yet settled**. Both engines stay behind one `StorageAdapter`; ClickHouse is the fallback and wins raw analytical speed. | [decisions/storage-engine.md](decisions/storage-engine.md) |
-| What is the V1 storage design? | **GreptimeDB-first, adapter-extensible.** Implement the first profile around GreptimeDB because it speeds V1, but keep the bundle/API contract backend-neutral for ClickHouse, local/Turso-like, or other future adapters. | [decisions/v1-storage-adapter-vision.md](decisions/v1-storage-adapter-vision.md) |
+| What is the V1 storage design? | **Local-first, adapter-extensible.** V1 local runs use embedded Turso/SQLite-like storage; GreptimeDB is the first production/server profile; bundle/API contract stays backend-neutral. | [decisions/v1-storage-adapter-vision.md](decisions/v1-storage-adapter-vision.md), [architecture/local-first-v1.md](architecture/local-first-v1.md) |
 | Why GreptimeDB lean? | Hot path is *anchored* evidence-bundle retrieval (all signals for one `trace_id`/`fingerprint`) — both engines are interactive (≪300 ms) there, so ClickHouse's scan-speed lead is off the hot path; the decision turns on cost + Rust, where GreptimeDB leads. | [decisions/storage-engine.md](decisions/storage-engine.md) |
 | What's still open before the engine is settled? | Sized $/GB cost on a server tier, cold-read latency from object storage, the self-host-vs-managed-cloud call, and a re-test on GreptimeDB v1.1 GA. | [decisions/storage-engine.md](decisions/storage-engine.md) |
 | How is it built? | Three deployment tiers, one event/bundle contract; ingest → normalize → group → correlate → evidence-graph → CLI/HTTP/MCP. | [architecture/implementation-concept.md](architecture/implementation-concept.md) |
@@ -37,7 +37,7 @@ This directory is the research record behind Parallax. It is organized so a read
 - [risks-and-bear-case.md](decisions/risks-and-bear-case.md) — steelmanned NO-GO case, load-bearing assumptions, NO-GO/strengthen triggers.
 - [skeptical-reassessment-2026-05.md](decisions/skeptical-reassessment-2026-05.md) — dated whole-concept stress-test: what still makes sense, what must be built, what benefit actually competes (A1 elevated to #1; monetization structural).
 - [storage-engine.md](decisions/storage-engine.md) — GreptimeDB vs ClickHouse: the one-page current verdict (full record in [storage/greptimedb-vs-clickhouse/](storage/greptimedb-vs-clickhouse/)).
-- [v1-storage-adapter-vision.md](decisions/v1-storage-adapter-vision.md) — V1 storage implementation stance: GreptimeDB-first for speed, backend-neutral adapter contract for future ClickHouse/local/Turso-like profiles.
+- [v1-storage-adapter-vision.md](decisions/v1-storage-adapter-vision.md) — V1 storage implementation stance: local-first embedded profile, GreptimeDB first production profile, backend-neutral adapter contract.
 - [stack-decision.md](decisions/stack-decision.md) — A5 stack-decision: rolls storage/metadata/ingest/setup gates into stack claim levels and fallback triggers.
 - [metadata-store.md](decisions/metadata-store.md) — relational metadata store: Turso-first, Postgres fallback (evidence in [storage/metadata/](storage/metadata/)).
 - [agent-access-surface.md](decisions/agent-access-surface.md) — canonical HTTP API, day-one CLI, read-only MCP after safety gates.
@@ -50,6 +50,7 @@ This directory is the research record behind Parallax. It is organized so a read
 - [causal-reconstruction.md](architecture/causal-reconstruction.md) — evidence-graph, causal reconstruction, and agent-safety analysis.
 - [agent-trust-boundary-and-prompt-injection.md](architecture/agent-trust-boundary-and-prompt-injection.md) — prompt injection via attacker-controlled telemetry (inject-*in*, vs A6 redaction's leak-*out*): the threat and the trust-boundary design constraints it forces.
 - [agent-context-integration.md](architecture/agent-context-integration.md) — how real coding agents ingest context (MCP structuredContent + token-budget caps → bounded bundle) and how to link to repo intent (reference, don't invent; the unsolved evidence→intent edge).
+- [local-first-v1.md](architecture/local-first-v1.md) — one-binary local `run_id` evidence server for agent-assisted development, with embedded storage first and GreptimeDB as server-scale profile.
 - [build-roadmap.md](architecture/build-roadmap.md) — de-risking build sequence with go/no-go gates tied to bear-case assumptions.
 
 ### `capture/` — how each signal is collected and made safe

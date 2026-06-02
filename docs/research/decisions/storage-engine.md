@@ -5,7 +5,7 @@
 Decision date baseline: 2026-05-29 (reconciles the engine sub-study to the current operator brief).
 Operator re-affirmed focus: 2026-06-03.
 
-> **Decision — current lean GreptimeDB, NOT yet settled.** Keep **both engines behind one
+> **Decision — current production/server lean GreptimeDB, NOT yet settled.** Keep **both engines behind one
 > `StorageAdapter`**; never hard-code engine magic into the schema or the evidence-bundle
 > contract. ClickHouse is the fallback and the faster raw analytical engine. The lean is
 > GreptimeDB because Parallax's hot path is *anchored* evidence-bundle retrieval (all signals
@@ -14,15 +14,16 @@ Operator re-affirmed focus: 2026-06-03.
 > on **cost + Rust + self-hosted**, where GreptimeDB leads. This is finalized only when the
 > sized cost numbers and the self-host-vs-managed-cloud call land (below).
 
-The practical build focus is therefore:
+The practical server-profile focus is therefore:
 
-> **Implement the first storage profile around GreptimeDB-shaped assumptions, while preserving the
+> **Implement the first production storage profile around GreptimeDB-shaped assumptions, while preserving the
 > ClickHouse adapter boundary.**
 
-This means Phase 1 should optimize schema, ingest buffering, retention, and bundle queries for
-GreptimeDB first, but no product contract may depend on GreptimeDB-only behavior. The bundle schema,
-context API, grouping semantics, and evidence graph must stay portable enough that ClickHouse can
-replace GreptimeDB if the remaining cost/cold-read gates flip.
+This does **not** mean the first local binary must require GreptimeDB. The local-first V1 can use an
+embedded Turso/SQLite-like profile for short-lived developer runs. This page decides the high-volume
+self-hosted/server storage profile, where GreptimeDB is the first focus. No product contract may depend
+on GreptimeDB-only behavior. The bundle schema, context API, grouping semantics, and evidence graph must
+stay portable enough that ClickHouse can replace GreptimeDB if the remaining cost/cold-read gates flip.
 
 This is the condensed current verdict. The **full record** — ~170 benchmark runs, a source-level
 teardown of both engines, the four-build version matrix, and the per-pass history — lives in
@@ -42,10 +43,10 @@ history in [run-log.md](../storage/greptimedb-vs-clickhouse/run-log.md); cross-b
 | DQ5 | Which to choose for Parallax today? | **GreptimeDB** on workload fit (metrics-native, ingest/upsert ergonomics, retention cost, scale-out) + the Rust tiebreak; ClickHouse's wins are real but less central to anchored retrieval. |
 | DQ6 | Better long-term *investment*? | **GreptimeDB** — the speed gap is **closable engineering, not a physics wall** (seven of eight advantages are pure engineering; the two heaviest ride the shared **DataFusion** scan and **Parquet-Variant** JSON roadmaps), and it is the **Rust, open-source substrate the operator can contribute to** rather than wait on (C++). |
 
-## Why the first implementation focus is GreptimeDB
+## Why the first production focus is GreptimeDB
 
 Parallax is not choosing the fastest analytical database in the abstract. It is choosing the first
-storage substrate for an execution-context product whose critical user action is:
+production/server storage substrate for an execution-context product whose critical user action is:
 
 ```text
 issue / event / trace / fingerprint
@@ -59,7 +60,7 @@ That workload makes GreptimeDB the better first focus for five reasons:
    log search, dynamic-attribute filtering, and mature SQL throughput. Parallax's first hot path is
    anchored bundle assembly by `trace_id`, `fingerprint`, issue, or narrow time window. Existing local
    benchmark runs show both engines interactive on that path, so ClickHouse's speed lead does not
-   decide Phase 1.
+   decide the server profile.
 2. **GreptimeDB matches the observability shape.** Current GreptimeDB docs position it as a unified
    observability database for metrics, logs, and traces, with SQL and PromQL support. That is closer
    to Parallax's retained evidence model than a general analytical warehouse.

@@ -1,0 +1,184 @@
+# Local-First V1 Concept
+
+<!-- markdownlint-disable MD013 -->
+
+Decision date: 2026-06-03
+
+> **Decision — V1 starts as a local-first evidence server, not as a production observability
+> cluster.** The first useful Parallax binary should run on a developer machine, store one project's
+> local runs in an embedded database, expose CLI plus API access, and let a coding agent query a
+> `run_id` for errors, logs, traces, spans, metrics, and grouped failures. GreptimeDB remains the first
+> production/scale storage profile, but it is no longer the default V1 local binary requirement.
+
+## Product Job
+
+When a developer runs a local app, tests, or several local microservices, Parallax should capture
+enough runtime state that the agent no longer needs a long human explanation.
+
+Desired loop:
+
+```text
+developer runs app/test stack
+  -> Parallax assigns run_id
+  -> apps emit traces, spans, logs, metrics, errors
+  -> Parallax groups errors and links signals
+  -> developer says: "agent, inspect run_id X"
+  -> agent queries Parallax
+  -> agent gets bounded evidence, not scattered terminal text
+```
+
+This is the smallest product wedge: local debugging context for agent-assisted development.
+
+## V1 Shape
+
+V1 should be one self-contained binary:
+
+```text
+parallax serve
+  -> embedded local DB
+  -> OTLP ingest
+  -> optional Sentry-event ingest adapter
+  -> grouping/correlation worker
+  -> CLI commands
+  -> local API server
+```
+
+Core commands:
+
+```text
+parallax run start
+parallax run list
+parallax run inspect <run_id>
+parallax run bundle <run_id>
+parallax issue list --run <run_id>
+parallax issue context <issue_id>
+```
+
+V1 output should be useful to humans and agents:
+
+- JSON bundle;
+- Markdown bundle;
+- compact terminal summary;
+- raw refs for deeper local reads.
+
+## API Surface
+
+V1 should expose an API because agents and tools need stable access.
+
+Preferred shape:
+
+- **gRPC first** for typed, fast local calls and generated clients.
+- **HTTP/JSON gateway** or REST endpoints for easy scripting and browser/debug use.
+- CLI calls the same local API rather than reimplementing query logic.
+
+This keeps the surface small:
+
+```text
+CLI
+  -> local API
+     -> bundle service
+     -> storage adapter
+```
+
+If implementation cost is too high, start REST/JSON first and add gRPC when schemas stabilize. But
+typed service contracts remain the target because agents and tools benefit from explicit request and
+response types.
+
+## Local Storage Default
+
+V1 local default should be embedded storage:
+
+| Need | Local V1 answer |
+| --- | --- |
+| install simplicity | one binary plus one local data directory |
+| local run retention | short TTL / manual prune |
+| query scope | one developer machine, one or few projects |
+| data volume | enough for local tests and small microservice runs |
+| durability | good enough for debugging, not production compliance |
+
+Turso Database is the leading candidate because current docs describe it as an in-process SQL database
+written in Rust, compatible with SQLite, with local file and in-memory database examples. It is still
+beta, so V1 must keep a fallback path if Turso behavior is not reliable enough. Plain SQLite or another
+embedded store can substitute if needed.
+
+The local DB may store both metadata and bounded telemetry at first. That is acceptable because local
+state is disposable and can be pruned. Production evidence storage is different.
+
+## Storage Growth Path
+
+V1 local-first does not weaken the GreptimeDB decision. It clarifies tiers:
+
+| Stage | Default storage | Why |
+| --- | --- | --- |
+| V1 local | embedded Turso/SQLite-like store | one binary, no external services, local agent debugging. |
+| V2 self-hosted server | GreptimeDB + metadata DB | higher telemetry volume, retained evidence, object-storage path. |
+| Production durable | GreptimeDB + Postgres + workers | grouping/state durability, retained history, production workflows. |
+| Scale-out | GreptimeDB distributed + Postgres + stream such as Apache Iggy | replay, backpressure, parallel processors. |
+
+GreptimeDB remains the first serious high-volume evidence backend because it collapses logs, traces,
+and metrics into one Rust observability store. Postgres remains the safer production relational store
+for grouping, users, projects, policies, and audit state. Apache Iggy remains optional until replay and
+parallel processing are real needs.
+
+## What Makes This Different
+
+This V1 is not another dashboard. UI is secondary.
+
+Primary interface:
+
+```text
+run_id -> evidence bundle -> agent can reason
+```
+
+Existing tools usually start from dashboards, alerting, or production observability. Parallax starts
+from local agent debugging context:
+
+- capture one run;
+- preserve runtime state;
+- group failures;
+- expose typed query surface;
+- let agent inspect exact evidence.
+
+That is why CLI/API matter before UI.
+
+## Could This Be Wrong?
+
+Yes. Current recheck shows the gap is narrower than the old story:
+
+- **OpenObserve** now markets a Rust/open-source, single-binary or Helm observability platform for
+  logs, metrics, traces, RUM, dashboards, alerts, AI SRE, and MCP. This is closest to "collapse the
+  stack."
+- **SigNoz** has open-source OpenTelemetry-native observability and now ships an MCP server for AI
+  assistants to query logs, metrics, traces, alerts, and dashboards.
+- **Rustrak** covers lightweight self-hosted Sentry-compatible error tracking and is moving toward AI
+  assistant access.
+
+These tools pressure Parallax. The remaining proposed gap is narrower:
+
+> local-first run-id evidence for coding agents, with Sentry-style grouping, OpenTelemetry-native
+> capture, embedded default storage, and a bundle contract that later scales to GreptimeDB/Postgres.
+
+If OpenObserve, SigNoz, or another tool ships this exact local developer loop with a strong agent-ready
+bundle, Parallax must narrow or pivot.
+
+## V1 Non-Goals
+
+- no full dashboard suite;
+- no production HA;
+- no full Sentry API parity;
+- no full Grafana replacement;
+- no long-retention telemetry lake in embedded mode;
+- no autonomous fixer inside Parallax core.
+
+## Source Anchors
+
+- [Turso Database repository](https://github.com/tursodatabase/turso) — in-process Rust SQL database,
+  SQLite compatibility, local file and memory examples, beta caveat.
+- [Tonic repository](https://github.com/hyperium/tonic) — Rust gRPC over HTTP/2 with generated
+  client/server support.
+- [OpenObserve homepage](https://openobserve.ai/) — current unified Rust observability / MCP / AI SRE
+  competitor pressure.
+- [SigNoz MCP changelog](https://signoz.io/changelog/2026-04-30-introducing-the-signoz-mcp-server-r5iwnkpxtsz88akwt6abqddn/)
+  — AI assistants querying observability data.
+- [Rustrak Docker image](https://hub.docker.com/r/abians7/rustrak-server) — lightweight self-hosted
+  Sentry-compatible error tracking pressure.

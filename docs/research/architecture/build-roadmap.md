@@ -77,15 +77,19 @@ assumption. Failing a gate sends you back, not forward.
 
 Build only enough to generate the bundle automatically and repeatably:
 
+- Local-first one-binary server with embedded Turso/SQLite-like storage (fallback allowed if Turso
+  fails local reliability gates), short local retention, and `run_id` as the primary developer handle.
 - Sentry-envelope + OTLP ingest (subset), deterministic Rust-focused grouping,
   with compatibility claims controlled by the
   [Sentry SDK compatibility ledger](../capture/sentry-ingest.md).
 - Direct-SDK and Collector OTLP claim levels controlled by the
   [OTLP conformance ledger](../capture/otlp.md).
-- Same-trace correlation → one real `issue context` bundle.
-- Columnar storage adapter with ClickHouse and GreptimeDB profiles, Turso
-  metadata, local WAL, single binary.
-- CLI (`parallax issue context …`) + read-only context API.
+- Same-trace and same-run correlation → one real `run context` / `issue context` bundle.
+- Storage adapter contract with local profile implemented first; GreptimeDB and ClickHouse profiles
+  remain interface targets, not Phase-1 blockers.
+- CLI (`parallax run inspect …`, `parallax run bundle …`, `parallax issue context …`) + local context
+  API; gRPC is preferred once schemas stabilize, with REST/HTTP allowed as the first implementation if
+  it moves faster.
 - **Gate:** the auto-generated bundle reproduces the Phase-0 hand-bundle quality
   (re-run A1 on real pipeline output); tiny-tier setup is meaningfully simpler
   than self-hosted Sentry (<=15 min) under the
@@ -94,8 +98,9 @@ Build only enough to generate the bundle automatically and repeatably:
 
 ### Phase 2 — Prove the engine and start the moat clock
 
-- Run the [storage benchmark prototype](../storage/benchmark-plan.md)
-  (GreptimeDB vs ClickHouse) — now justified, because bundles have proven value.
+- Implement the GreptimeDB production/server storage profile and run the
+  [storage benchmark prototype](../storage/benchmark-plan.md) (GreptimeDB vs ClickHouse) — now
+  justified, because local bundles have proven value.
 - Validate [retention cost](../storage/size-and-object-cost.md) on real data; pick the
   object store (R2/B2 vs S3 per the egress finding).
 - Redaction red-team (A6) before any third-party-model exposure.

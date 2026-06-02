@@ -195,13 +195,18 @@ got to that stage and what led to it." Cheap, durable retention matters: object
 storage / S3-style backends are close to a requirement, because the value depends
 on being able to keep and re-extract history without cost anxiety.
 
-Current V1 storage direction: design the first implementation around GreptimeDB
-as the default observability store because it gives Parallax the fastest path to
-metrics/logs/traces, OpenTelemetry-oriented ingest, SQL/PromQL, and retained
-evidence storage. Keep the product contract behind a storage adapter so
-ClickHouse, local-only storage, Turso/SQLite-like embedded storage, or another
-backend can replace or supplement it later without changing the evidence-bundle
-API. Future research should treat this as GreptimeDB-first, not GreptimeDB-only.
+Current V1 direction: design the first implementation as a local-first evidence
+server. One binary should run on a developer machine, assign a `run_id`, ingest
+local traces/spans/logs/metrics/errors from one app or several local services,
+group failures, and expose CLI plus API access so a coding agent can inspect the
+run without human context-gathering. The default local store should be embedded
+Turso/SQLite-like storage if it passes reliability gates; local state can be
+short-lived and pruned. GreptimeDB remains the first production/server
+observability profile because it gives Parallax metrics/logs/traces,
+OpenTelemetry-oriented ingest, SQL/PromQL, and retained evidence storage. Keep
+the product contract behind a storage adapter so ClickHouse, local-only storage,
+Turso/SQLite-like embedded storage, or another backend can replace or supplement
+it later without changing the evidence-bundle API.
 
 Current "world before Parallax" framing: the baseline self-hosted stack is Sentry
 for grouped errors/issues/releases, Tempo/Jaeger-like storage for traces,
