@@ -508,4 +508,4 @@ Key updates since the last survey:
 - **Mem0 57,195 stars** (agent memory layer)
 - **Vllora 803 stars** (Rust-based agent debugging)
 - **9+ new Sentry-compatible tools** appeared May 2026 (crashbox, bugpack, etc.)
-- **OTel semconv #3448** (crash events) and **#3592** (replay-adjacent conventions) active
+- **OTel semconv #3592** (replay-adjacent conventions) and **#2473** (Android crash-documentation gap) active; older #3448 crash-event reference was not confirmed in the 2026-06-02 GitHub API recheck

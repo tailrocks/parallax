@@ -24,8 +24,8 @@
    provide persistent, structured context for AI agents. If agents can query
    structured memory instead of evidence bundles, Parallax's A1 gate weakens further.
 
-3. **OTel semantic conventions are standardizing crash events and replay-adjacent
-   telemetry** (issues #3448, #3592). If OTel standardizes incident/investigation
+3. **OTel semantic conventions are standardizing replay-adjacent telemetry and
+   still have crash-event documentation gaps** (issues #3592, #2473). If OTel standardizes incident/investigation
    conventions, Parallax's schema advantage evaporates — but the timeline is 18-24
    months, and the OTel process is notoriously slow.
 
@@ -268,7 +268,7 @@ but moves slowly. Relevant open issues:
 | Issue | Title | Status | Relevance to Parallax |
 | --- | --- | --- | --- |
 | #3330 | Semantic Conventions 2026 Roadmap | Open (triage:needs-triage) | 2026 roadmap does NOT mention incident, investigation, or debugging conventions |
-| #3448 | Definition for a basic end-user app crash event | Open (active) | **Directly relevant.** Standardizing crash events across platforms. |
+| #2473 | Document Android events, including device crash | Open (triage:needs-triage) | **Relevant but weaker than previously stated.** Crash coverage is still a documentation gap, not a confirmed cross-platform crash-event standard. |
 | #3592 | Proposal: log-based replay-adjacent semantic conventions for native mobile apps | Open | Replay-style debugging conventions. Closest to "evidence bundle" concept. |
 | #3701 | Causal Span Linking for LLM-Triggered Tool Execution | Open | Causal linking for AI agents. Could eventually support evidence chains. |
 
@@ -285,8 +285,8 @@ investigation, or evidence-bundle conventions. The 2026 roadmap doesn't mention
 these concepts. The process for adding new conventions takes 12-18 months from
 proposal to stable.
 
-**Medium-term (12-24 months): Moderate threat.** If issue #3448 (crash events)
-merges and #3592 (replay-adjacent conventions) gains traction, OTel could
+**Medium-term (12-24 months): Moderate threat.** If #2473-style crash work
+turns into a cross-platform crash convention and #3592 (replay-adjacent conventions) gains traction, OTel could
 standardize enough of the "debugging evidence" space to make Parallax's custom
 schema unnecessary.
 
@@ -457,7 +457,7 @@ competition.
 | --- | --- | --- | --- | --- |
 | LLM tracing tools extend to production debugging | Langfuse, Opik | Low-medium (12-24 months) | High (kills A1 gate argument) | Yes |
 | Agent memory layers absorb evidence bundles | Mem0, Zep | Low (12-24 months) | Medium (weakens bundle wedge) | Yes |
-| OTel standardizes crash/investigation conventions | OTel semconv #3448, #3592 | Medium (18-24 months) | High (commoditizes schema) | Yes |
+| OTel standardizes crash/investigation conventions | OTel semconv #2473, #3592 | Medium (18-24 months) | High (commoditizes schema) | Yes |
 | Highlight.io adds MCP + bundle export | Highlight | Low-medium (12 months) | Medium (credible competitor) | Yes |
 | New Sentry-compatible tools proliferate | crashbox, bugpack, etc. | Already happening | Low (they stay error-only) | Yes |
 | SaaS incident tools add evidence assembly | incident.io, FireHydrant | Low (they stay SaaS) | Low (wrong market segment) | Partially known |
@@ -488,7 +488,7 @@ and fix-outcome tracking — a fundamentally different product.
 ### F8 (new): OTel standardization is slow
 
 The OTel semantic conventions process is slow (issue #3330 has been in triage since
-January 2026). Even if crash events (#3448) and replay-adjacent conventions (#3592)
+January 2026). Even if crash-event documentation gaps (#2473) and replay-adjacent conventions (#3592)
 merge, they cover only the *format* — not the *engine* (grouping, correlation,
 outcome tracking, bundle assembly). Parallax can build on top of future OTel
 conventions rather than competing against them.
@@ -525,11 +525,13 @@ stalls at the first gate.
 
 ### A11 (new): OTel semantic conventions are converging on Parallax's space
 
-Issues #3448 (crash events) and #3592 (replay-adjacent conventions) show OTel
-is moving toward standardizing debugging evidence. Even though the timeline is
-slow, the direction is clear. Parallax's custom bundle format may face an OTel
-standard within 18-24 months, making the format a commodity while the engine
-remains valuable.
+Issues #2473 (Android event documentation, including device crash) and #3592
+(replay-adjacent conventions) show OTel is moving toward adjacent debugging
+evidence, but the current 2026-06-02 recheck did not confirm the older #3448
+basic crash-event reference. The direction still matters, but crash-event
+standardization is less proven than this survey originally stated. Parallax's
+bundle format should stay OTel-compatible while treating crash/replay semantics
+as unstable adapters.
 
 ---
 
@@ -604,7 +606,7 @@ Kill Parallax if:
 ### OTel semantic-conventions issues
 
 - #3330: Semantic Conventions 2026 Roadmap (open, triage:needs-triage)
-- #3448: Definition for a basic end-user app crash event (open, active)
+- #2473: Document Android events, including device crash (open, triage:needs-triage; current replacement for the older unconfirmed #3448 crash-event reference)
 - #3592: Proposal: log-based replay-adjacent semantic conventions for native
   mobile apps (open)
 - #3701: Causal Span Linking for LLM-Triggered Tool Execution (open)

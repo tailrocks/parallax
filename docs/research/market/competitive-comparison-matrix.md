@@ -52,6 +52,12 @@ Each tool is rated against Parallax's 8 wedge dimensions:
 | **opentrace** | 15 | Go | - | ~ | - | - | + | + | - | + | ★★ Moderate |
 | **sentro** | 1 | TS | - | - | - | - | + | + | - | - | ★ Low |
 | **OTel MCP Server** | 189 | Python | - | + | - | - | ~ | + | - | - | ★★ Moderate |
+| **Syncause** | early/private | ?/Python-facing | - | ? | ~ | - | + | ~ | - | ? | ★★★ High |
+| **AgentRx** | 109 | Python | - | - | ~ | - | + | + | - | - | ★★ Moderate |
+| **Notrix Trax** | 5 | Python | - | - | ~ | - | + | + | - | - | ★★ Moderate |
+| **AgentReplay** | active | Rust core + SDKs | - | + | ~ | - | + | + | + | ~ | ★★★ High |
+
+Focused recheck: [agent-debugging-competitor-drift-2026-06-02.md](agent-debugging-competitor-drift-2026-06-02.md).
 
 ---
 
@@ -131,9 +137,10 @@ This works. It's more operational overhead. But it exists today.
 
 1. **LLM tracing tools** (Langfuse 28K★, Opik 19K★) could extend to production debugging — but show no signs of doing so today
 2. **Agent memory layers** (Mem0 57K★) are complementary — Parallax bundles could feed into them
-3. **OTel semconv** is moving toward crash events (#3448) and replay conventions (#3592) — medium-term format risk
+3. **OTel semconv** is moving toward replay-adjacent conventions (#3592) and still has open crash-documentation gaps (#2473) — medium-term format risk
 4. **Highlight.io** (9.3K★) combines session replay + error tracking — closest SaaS competitor
 5. **Sentry-compatible space** is commoditizing fast (9+ new tools in May 2026) — simplicity bar rising
+6. **Agent-debugging tools** (Syncause, AgentRx, Notrix Trax, AgentReplay) are converging on runtime facts, trajectory IR, replay, and context diffing — the agent-context claim is validated but no longer unique. Current checked OTel issue search confirms replay-adjacent issue #3592 and Android crash-documentation issue #2473; do not rely on the older unverified #3448 crash reference until rechecked.
 
 ### What remains unique to Parallax (unchanged):
 
