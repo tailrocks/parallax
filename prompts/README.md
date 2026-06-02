@@ -8,15 +8,8 @@ OpenCode) so a piece of work runs the same way every time.
 
 | File | Purpose |
 | --- | --- |
-| `parallax-vision-and-restructure.md` | North-star brief: the product vision, the GreptimeDB-vs-ClickHouse decision rule, and the explicit research-record restructure mission. Hand this to an agent as the top-level task. |
 | `deep-research-parallax.md` | Deep, critical research brief that validates, re-verifies, and extends the Parallax direction indefinitely; every prior finding is treated as a hypothesis until current evidence supports it. |
 | `greptimedb-vs-clickhouse-internals.md` | Never-ending `/goal` or Claude Code `/loop` brief for the under-the-hood GreptimeDB vs ClickHouse comparison: read the source, explain which design decisions make each fast or slow per signal, re-verify every claim against the live Docker stack with production-realistic, no-tricks, reproducible benchmarks, check each system's native out-of-the-box metrics/logs/traces structure (adopt-native vs custom), decide which to build Parallax on, and (when one wins but lacks features) map what the winner must implement to close the gap. Writes to `docs/research/storage/greptimedb-vs-clickhouse/`. |
-
-## Running the vision + restructure brief
-
-`parallax-vision-and-restructure.md` is the top-level brief. Run it as a one-off for a single
-restructure/research pass, or with `/goal` to keep refining the research record and the open
-decisions — the same run modes documented below.
 
 ## Current preferred mode
 
