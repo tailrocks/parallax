@@ -43,10 +43,14 @@ sub-study's scope, but they are "not addressed"):
 
 ## 4. Cross-cutting concerns — not addressed
 
-- **Multi-tenancy / isolation** — Parallax is SaaS-shaped (many customers/projects). How each engine
-  isolates tenants (ClickHouse per-DB/table or row-policy; GreptimeDB schemas/catalogs), and the cost of
-  isolation at scale. **Decision-relevant + completely untouched.**
-- **Auth / access control** — who can read which telemetry; the engines' RBAC vs doing it in the proxy.
+- **Multi-tenancy / isolation** — **answered at the engine layer in Run 172**:
+  ClickHouse has stronger OSS-native guardrails (grants, row policies, quotas, settings profiles);
+  GreptimeDB OSS is coarse (auth + global read/write modes), so Parallax's proxy must own tenant
+  authorization and GreptimeDB must not be user-facing without Enterprise/custom auth. Remaining work:
+  product-level tenant model and a row-policy benchmark if direct SQL/BI access becomes a requirement.
+  See `multi-tenancy-and-isolation.md`.
+- **Auth / access control** — engine layer partly answered by Run 172; remaining work is the
+  Parallax product/API permission model (projects, teams, tokens, internal analyst access).
 - **Backup / disaster recovery** — operational story for each (object-store snapshots, Keeper/metasrv
   state).
 - **Rate-limiting / quotas / ingestion protection** — the proxy's protective layer.
