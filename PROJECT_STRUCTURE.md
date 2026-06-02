@@ -33,7 +33,7 @@ or CI contract yet.
 | `docs/research/00-vision/` | Why this product: thesis, world-before-Parallax stack, platform direction, AI-native observability synthesis. |
 | `docs/research/decisions/` | ADR-style decision records — current truth, conclusion first (go/no-go, strategic coverage, risks, the dated skeptical re-assessment, storage engine, V1 storage adapter vision, stack decision, metadata store, agent access surface, fixer boundary). |
 | `docs/research/architecture/` | How the pieces fit: implementation concept, overview, evidence-bundle schema, API concept, causal reconstruction, local-first V1, simple UI V2, build roadmap. |
-| `docs/research/capture/` | How each signal is collected and made safe: rust, frontend, sentry-ingest, otlp, agent/CLI tracing, deploy/change context, CI/flaky tests, production-DB evidence, correlation (A4), redaction (A6). |
+| `docs/research/capture/` | How each signal is collected and made safe: rust, frontend, OTLP-first ingest, future sentry-ingest, agent/CLI tracing, deploy/change context, CI/flaky tests, production-DB evidence, correlation (A4), redaction (A6). |
 | `docs/research/storage/` | Telemetry-store evaluation, benchmark plan, freshness/latency and size/object-cost gates, plus `metadata/` and `streaming/` evidence subdirs. |
 | `docs/research/storage/greptimedb-vs-clickhouse/` | Deep white-box GreptimeDB vs ClickHouse internals comparison: one-page verdict, run-log, 30+ mechanism notes, the four-build version matrix, and benchmarks. Produced by an indefinite `/goal` or Claude Code `/loop`. |
 | `docs/research/validation/` | A1–A7 assumption gates and ledgers (A1 bundle-value subdir, A1 trajectory-source checks, A2 user demand, A3 schema/corpus, A7 scope, self-hosted simplicity, business model, repo intent, profitability analysis). |
@@ -41,7 +41,7 @@ or CI contract yet.
 | `docs/research/market/maple-deep-research.md` | Deep research on Maple (maple.dev): architecture, features, UX, threat assessment, and Parallax comparison. |
 | `docs/research/market/open-source-observability-tools-survey.md` | Broad survey of 37 open-source observability tools across three tiers (major platforms, established, emerging). |
 | `docs/research/reference/ai-native-debugging-tools.md` | Survey of 13 AI-native debugging, SRE agent, and coding-agent observability tools. |
-| `docs/research/capture/sentry-compatible-oss-tools.md` | Survey of 10 Sentry-compatible or Sentry-alternative open-source tools. |
+| `docs/research/capture/sentry-compatible-oss-tools.md` | Survey of 10 Sentry-compatible or Sentry-alternative open-source tools for future adapter/market tracking. |
 | `docs/research/reference/` | External technical reviews. Includes `ai-native-debugging-tools.md` (open-source AI debugging agents, SRE agents, coding-agent observability tools). |
 | `prompts/` | Reusable research and agent prompts. |
 | `bench/` | Local storage-benchmark scaffolding: pinned `compose.yml` for GreptimeDB + ClickHouse smoke runs. Generated datasets/results are gitignored; only compose/scripts are tracked. Consistent with [`docs/research/storage/benchmark-plan.md`](docs/research/storage/benchmark-plan.md). |

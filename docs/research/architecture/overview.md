@@ -4,17 +4,22 @@
 
 Research date: 2026-05-24
 
+Update: 2026-06-03. Sentry-compatible ingest is now a future adapter, not V1
+scope. V1 starts with OpenTelemetry/OTLP ingest for traces, logs, metrics, spans,
+and error events; see [API concept](api-concept.md) and
+[Local-first V1](local-first-v1.md).
+
 ## Executive Summary
 
 The stronger Parallax thesis is not CI-first debugging. It is:
 
 > Build a Rust-first, self-hosted observability and error-context system that is
-> compatible with Sentry SDK ingestion and OpenTelemetry ingestion, but is much
-> simpler and cheaper to operate than self-hosted Sentry.
+> OpenTelemetry-native first, can later add Sentry-compatible ingestion, and is
+> much simpler and cheaper to operate than self-hosted Sentry.
 
 The target user is a small engineering team that:
 
-- already uses Sentry SDKs for error capture and grouping;
+- can emit OpenTelemetry locally from Rust services, CLIs, or agents;
 - prefers self-hosting because cloud event pricing creates operational anxiety;
 - wants logs, traces, metrics, and errors correlated in one system;
 - wants enough context for a human or coding agent to fix production bugs;
@@ -24,7 +29,6 @@ The recommended architecture direction:
 
 ```text
 Applications
-  -> Sentry-compatible ingest endpoint
   -> OpenTelemetry OTLP ingest endpoint
   -> Rust ingest gateway
   -> Apache Iggy durable stream
@@ -32,11 +36,13 @@ Applications
   -> GreptimeDB for logs/traces/metrics/error events
   -> Turso metadata store for projects/issues/users
   -> simple UI + CLI + agent context API
+  -> future Sentry-compatible ingest adapter
 ```
 
 The product should not start as a full Sentry clone. It should start as a
-Sentry-compatible event receiver and context API with deterministic grouping,
-nearby telemetry lookup, and a small operational footprint.
+local OTLP evidence server and context API with deterministic grouping, nearby
+telemetry lookup, and a small operational footprint. Sentry-compatible ingestion
+becomes a migration adapter after the local loop is proven.
 
 ## Product Boundary
 
@@ -45,7 +51,8 @@ needs:
 
 | Need | Parallax stance |
 | --- | --- |
-| Keep existing SDK setup | Accept Sentry envelopes and DSNs. |
+| Keep standard telemetry setup | Accept OTLP for traces, logs, metrics, spans, and error events. |
+| Future Sentry migration | Add Sentry envelopes and DSNs after V1 proves useful. |
 | Group recurring errors | Implement deterministic grouping first. |
 | Show what happened around an error | Correlate errors with logs, traces, metrics, releases, deploys, and host context. |
 | Keep cost predictable | Self-host with bounded retention, object storage where useful, and no SaaS event quota anxiety. |
@@ -90,8 +97,9 @@ Sources:
 - [Sentry Relay developer docs](https://develop.sentry.dev/ingestion/relay/)
 
 The useful lesson is not "Sentry is wrong." It is that Sentry's architecture is
-optimized for Sentry's full cloud product. Parallax should preserve the SDK
-protocol surface while choosing a smaller internal design.
+optimized for Sentry's full cloud product. Parallax should preserve the
+Sentry-style workflow and leave room for future SDK protocol compatibility while
+choosing a smaller internal design now.
 
 The smaller design has to be proven operationally, not asserted. The Phase 1
 deployment should pass the
@@ -105,12 +113,17 @@ Only high-performance, low-resource systems languages are in scope — Rust
 (preferred), Go, Zig, C++, and C — and heavyweight managed or interpreted
 runtimes are excluded outright: Java/JVM, Python, Ruby, PHP, and similar. This is
 not stylistic. Sentry's heaviness is partly a runtime story: a JVM broker (Kafka)
-plus a large Python service graph. Parallax keeps the Sentry SDK protocol surface
-but refuses that runtime profile, which is why its stream (Apache Iggy, Rust),
-storage (GreptimeDB in Rust or ClickHouse in C++), and gateway/processors all
-stay on lean compiled runtimes.
+plus a large Python service graph. Parallax keeps the Sentry-style error workflow
+and future protocol-compatibility option, but refuses that runtime profile, which
+is why its stream (Apache Iggy, Rust), storage (GreptimeDB in Rust or ClickHouse
+in C++), and gateway/processors all stay on lean compiled runtimes.
 
-## Sentry-Compatible Ingestion
+## Future Sentry-Compatible Ingestion
+
+This section is future compatibility research, not V1 scope. V1 should not block
+on Sentry envelope compatibility. It should accept OTLP first, normalize
+OpenTelemetry signals into Parallax-owned records, and prove local run-id
+investigation before adding migration adapters.
 
 Sentry envelopes are the right compatibility target. Sentry's SDK docs define
 envelopes as the format used for ingestion, forwarding, and offline storage.
@@ -127,9 +140,9 @@ Sources:
 - [Sentry envelope format](https://develop.sentry.dev/sdk/foundations/envelopes/)
 - [Sentry event payloads](https://develop.sentry.dev/sdk/foundations/envelopes/event-payloads/)
 
-MVP support should be a deliberately small subset:
+Future adapter support should be a deliberately small subset:
 
-| Envelope item | MVP decision | Reason |
+| Envelope item | Future adapter decision | Reason |
 | --- | --- | --- |
 | `event` | Support first. | This is the core error-tracking object. |
 | `transaction` | Parse enough for correlation, then store as trace-like telemetry. | Useful context, but not required for first grouping. |
@@ -139,7 +152,7 @@ MVP support should be a deliberately small subset:
 | `profile` | Reject or drop explicitly. | Later feature. |
 | `logs` / `metrics` / `spans` | Prefer OTLP path first. | Avoid chasing every Sentry telemetry extension early. |
 
-The ingest gateway should still retain a bounded raw envelope reference for
+A future Sentry adapter should retain a bounded raw envelope reference for
 debugging parser mistakes and forward compatibility. Sentry's Relay best
 practices emphasize that protocol and API changes need forward compatibility
 and that older relays should not drop data they do not understand. Parallax can
@@ -162,7 +175,7 @@ The Parallax internal event model should be Sentry-inspired but not Sentry-owned
 | User | user ID/email/IP only if policy allows it |
 | Correlation | trace ID, span ID, transaction name, service name, deployment ID |
 | Grouping | fingerprint, grouping algorithm version, top in-app frame, normalized message |
-| Evidence refs | log window refs, trace refs, metric window refs, raw envelope ref |
+| Evidence refs | log window refs, trace refs, metric window refs, raw OTLP ref, future raw envelope ref |
 
 Sentry event payload docs require `event_id`, `timestamp`, and `platform`; they
 also encourage fields such as level, logger, transaction, server name, release,
@@ -313,19 +326,19 @@ because it avoids a JVM broker and keeps the stack Rust-centered. Its append-onl
 model also maps cleanly to ingestion replay:
 
 ```text
-sentry.raw_envelopes
 otel.raw_traces
 otel.raw_logs
 otel.raw_metrics
 parallax.normalized_events
 parallax.group_updates
+future.sentry.raw_envelopes
 ```
 
 Consumers can be separated by responsibility:
 
 | Consumer | Responsibility |
 | --- | --- |
-| `event-normalizer` | Parse Sentry envelopes into Parallax event records. |
+| `event-normalizer` | Normalize OTLP error events and future Sentry envelope events into Parallax event records. |
 | `otel-normalizer` | Normalize OTLP logs/traces/metrics metadata. |
 | `grouping-worker` | Compute fingerprints and issue membership. |
 | `storage-writer` | Write normalized telemetry to GreptimeDB and metadata store. |
@@ -387,7 +400,7 @@ blocks a larger deployment:
 
 - users;
 - projects;
-- DSNs/tokens;
+- project tokens and future DSNs;
 - issue status;
 - comments;
 - saved searches;
@@ -437,9 +450,9 @@ Core screens (Sentry-like, grouped-error oriented):
 | --- | --- |
 | Issues | Grouped errors with count, last seen, release, environment, status. |
 | Issue detail | Stack trace, recent events, correlated logs/traces/metrics, releases, agent context button. |
-| Event detail | Raw normalized event plus raw envelope reference. |
+| Event detail | Raw normalized event plus raw OTLP reference; future raw envelope reference. |
 | Trace/log context | Time-window query around an event. |
-| Project settings | DSN, retention, redaction, grouping settings. |
+| Project settings | project token, retention, redaction, grouping settings; future DSN settings. |
 
 Core CLI/API:
 
@@ -448,7 +461,7 @@ parallax issue list --project api --env prod
 parallax issue show ISSUE_ID
 parallax issue context ISSUE_ID --window 10m --format markdown
 parallax event raw EVENT_ID
-parallax project dsn PROJECT_ID
+parallax project token PROJECT_ID
 ```
 
 Agent endpoint:
@@ -484,7 +497,7 @@ broad agent pilots.
 | `parallax_issue_list` | Grouped issues for a project/environment. |
 | `parallax_issue_show` | Issue detail: stack trace, recent events, status. |
 | `parallax_issue_context` | Bounded evidence bundle (markdown or JSON). |
-| `parallax_event_raw` | Raw normalized event plus envelope reference. |
+| `parallax_event_raw` | Raw normalized event plus raw evidence reference. |
 | `parallax_test_explain` | Flaky-test evidence bundle (CI wedge). |
 
 The same evidence bundle that renders in the UI is the payload the agent reads.
@@ -543,13 +556,16 @@ later.
 
 ## MVP Sequence
 
-1. Implement a Sentry envelope parser fixture, not a server.
-2. Normalize one Rust panic event and one anyhow/eyre-style error event.
+1. Implement OTLP ingest fixtures for one Rust panic event, one anyhow/eyre-style
+   error event, logs, spans, and metrics.
+2. Normalize those records into Parallax-owned event/span/log/metric rows.
 3. Compute deterministic grouping fingerprints.
-4. Store normalized events in a local file or Turso fixture.
-5. Add a minimal HTTP endpoint compatible with Sentry SDK envelope submission.
-6. Add GreptimeDB writes for error events and nearby logs.
-7. Add OTLP logs/traces/metrics ingestion.
+4. Store normalized metadata in Turso and telemetry in managed local GreptimeDB.
+5. Add GraphQL query/exploration API and CLI commands over the same Parallax API.
+6. Add Sentry envelope parser fixtures only after the OTLP-first local loop is
+   useful.
+7. Add a minimal HTTP endpoint compatible with Sentry SDK envelope submission as
+   a future migration adapter.
 8. Add Iggy only when the direct ingest path needs replay, buffering, or
    independent processors.
 9. Build the `issue context` API before building a full UI.
@@ -561,25 +577,26 @@ This order keeps the riskiest product question first:
 
 ## Open Research Questions
 
-1. Which subset of the Sentry envelope spec is enough for Rust users?
-2. How close must the Sentry DSN/auth behavior be for existing SDKs to work
-   unchanged?
-3. What Rust stack frame normalization gives stable grouping across releases?
-4. Can GreptimeDB query logs, spans, metrics, and error events around one error
+1. What Rust stack frame normalization gives stable grouping across releases?
+2. Can GreptimeDB query logs, spans, metrics, and error events around one error
    fast enough on a small server?
-5. Does Iggy materially improve reliability versus a local WAL for the first
+3. Does Iggy materially improve reliability versus a local WAL for the first
    deployment profile?
-6. How much raw event/envelope data should be retained for debugging parser
+4. How much raw OTLP/event data should be retained for debugging parser
    mistakes without exploding storage cost?
-7. What redaction defaults are safe enough for self-hosted teams that still do
+5. What redaction defaults are safe enough for self-hosted teams that still do
    not want secrets persisted forever?
+6. Later: which subset of the Sentry envelope spec is enough for migration?
+7. Later: how close must Sentry DSN/auth behavior be for existing SDKs to work
+   unchanged?
 
 ## Current Recommendation
 
 Parallax should pivot its primary research direction to:
 
-> Sentry-compatible, OpenTelemetry-native, Rust-first self-hosted error context.
+> OpenTelemetry-native, Rust-first self-hosted error context, with
+> Sentry-compatible ingestion as a future migration adapter.
 
 The CI failure context work remains useful as an adjacent agent-context workflow,
 but it is not the first wedge if the real pain is production Rust observability
-and self-hosted Sentry replacement.
+and smaller self-hosted alternative to the Sentry-plus-Grafana-style stack.

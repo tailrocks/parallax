@@ -38,7 +38,6 @@ parallax serve
   -> managed local GreptimeDB standalone
   -> embedded Turso/SQLite-like metadata DB
   -> OTLP ingest
-  -> optional Sentry-event ingest adapter
   -> grouping/correlation worker
   -> CLI commands
   -> local API server
@@ -71,6 +70,7 @@ Preferred shape:
 - **GraphQL first** for query/exploration over runs, issues, traces, logs, metric windows, and bundles.
 - **OTLP endpoints** for telemetry ingest.
 - **Minimal health/version endpoints** for ops.
+- **Sentry-compatible ingest later**, after V1 proves the local OTLP loop.
 - CLI calls the same local API rather than reimplementing query logic.
 
 This keeps the surface small:

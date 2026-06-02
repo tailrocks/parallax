@@ -4,7 +4,7 @@ This directory is the research record behind Parallax. It is organized so a read
 **what Parallax is, which storage engine, and why** in a few minutes, then drill into evidence.
 
 > **Parallax is an open-source, Rust-first, self-hosted execution-context engine.** It ingests
-> Sentry-envelope error events and OpenTelemetry logs/traces/metrics (plus CLI and coding-agent
+> OpenTelemetry logs/traces/metrics/error events (plus CLI and coding-agent
 > execution traces), groups errors deterministically, correlates signals into a typed evidence
 > graph, and serves **bounded, redacted, schema-valid evidence bundles** to humans and coding
 > agents over a CLI/HTTP API first, and a read-only MCP adapter after safety gates. Parallax is
@@ -45,9 +45,9 @@ This directory is the research record behind Parallax. It is organized so a read
 
 ### `architecture/` — how the pieces fit
 - [implementation-concept.md](architecture/implementation-concept.md) — opinionated end-to-end blueprint with named component choices, deployment profiles, data flow, rejected alternatives.
-- [overview.md](architecture/overview.md) — the Sentry-compatible, OpenTelemetry-native self-hosted architecture.
+- [overview.md](architecture/overview.md) — the OpenTelemetry-native self-hosted architecture, with Sentry compatibility as a future adapter.
 - [evidence-bundle-schema.md](architecture/evidence-bundle-schema.md) — the `v0` portable evidence-bundle and open schema (the named moat artifact).
-- [api-concept.md](architecture/api-concept.md) — GraphQL-first query/exploration API, OTLP/Sentry ingest edges, and strict API boundary.
+- [api-concept.md](architecture/api-concept.md) — GraphQL-first query/exploration API, OTLP-first ingest, future Sentry adapter, and strict API boundary.
 - [causal-reconstruction.md](architecture/causal-reconstruction.md) — evidence-graph, causal reconstruction, and agent-safety analysis.
 - [agent-trust-boundary-and-prompt-injection.md](architecture/agent-trust-boundary-and-prompt-injection.md) — prompt injection via attacker-controlled telemetry (inject-*in*, vs A6 redaction's leak-*out*): the threat and the trust-boundary design constraints it forces.
 - [agent-context-integration.md](architecture/agent-context-integration.md) — how real coding agents ingest context (MCP structuredContent + token-budget caps → bounded bundle) and how to link to repo intent (reference, don't invent; the unsolved evidence→intent edge).
@@ -58,7 +58,7 @@ This directory is the research record behind Parallax. It is organized so a read
 ### `capture/` — how each signal is collected and made safe
 - [rust.md](capture/rust.md) — Rust data collection, capture fidelity, and stacktrace grouping/symbolication.
 - [frontend.md](capture/frontend.md) — browser collection, cross-tier correlation, source maps, and the frontend privacy problem.
-- [sentry-ingest.md](capture/sentry-ingest.md) — Sentry envelope/Relay/grouping ingest, envelope-item policy, and SDK fixture compatibility.
+- [sentry-ingest.md](capture/sentry-ingest.md) — future Sentry envelope/Relay/grouping ingest, envelope-item policy, and SDK fixture compatibility.
 - [otlp.md](capture/otlp.md) — OpenTelemetry protocol/Collector context layer, transport profile, and receiver conformance.
 - [agent-cli-tracing.md](capture/agent-cli-tracing.md) — coding-agent and CLI execution tracing, OTel semconv mapping, and trace overhead/redaction.
 - [deploy-change-context.md](capture/deploy-change-context.md) — release/deploy/code-change/work-item evidence ("what changed?").

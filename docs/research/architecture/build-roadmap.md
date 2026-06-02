@@ -80,9 +80,8 @@ Build only enough to generate the bundle automatically and repeatably:
 - Local-first one-command server with managed local GreptimeDB standalone for observability evidence,
   Turso/SQLite-like metadata for grouping/state, short local retention, and `run_id` as the primary
   developer handle.
-- Sentry-envelope + OTLP ingest (subset), deterministic Rust-focused grouping,
-  with compatibility claims controlled by the
-  [Sentry SDK compatibility ledger](../capture/sentry-ingest.md).
+- OTLP ingest (subset) for traces, logs, metrics, spans, and error events; deterministic Rust-focused
+  grouping from normalized evidence.
 - Direct-SDK and Collector OTLP claim levels controlled by the
   [OTLP conformance ledger](../capture/otlp.md).
 - Same-trace and same-run correlation → one real `run context` / `issue context` bundle.
@@ -102,6 +101,9 @@ Build only enough to generate the bundle automatically and repeatably:
 - Implement the GreptimeDB production/server storage profile and run the
   [storage benchmark prototype](../storage/benchmark-plan.md) (GreptimeDB vs ClickHouse) — now
   justified, because local bundles have proven value.
+- Add the Sentry-compatible envelope adapter only if the OTLP-first local loop is proven and Sentry
+  migration becomes the next highest-value adoption path; compatibility claims remain controlled by
+  the [Sentry SDK compatibility ledger](../capture/sentry-ingest.md).
 - Validate [retention cost](../storage/size-and-object-cost.md) on real data; pick the
   object store (R2/B2 vs S3 per the egress finding).
 - Redaction red-team (A6) before any third-party-model exposure.

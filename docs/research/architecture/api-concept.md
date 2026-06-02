@@ -4,9 +4,10 @@
 
 Decision date: 2026-06-03
 
-> **Decision — Parallax API is GraphQL-first for query/exploration, OTLP/Sentry-compatible for
-> ingest.** Product clients use Parallax API only. UI, CLI, agents, and future MCP adapters must not
-> query GreptimeDB, Turso, Postgres, ClickHouse, or any future backend directly.
+> **Decision — Parallax API is GraphQL-first for query/exploration and OTLP-first for V1 ingest.**
+> Sentry-compatible ingest is a future adapter, not V1 scope. Product clients use Parallax API only.
+> UI, CLI, agents, and future MCP adapters must not query GreptimeDB, Turso, Postgres, ClickHouse, or
+> any future backend directly.
 
 ## API Roles
 
@@ -15,7 +16,7 @@ Parallax has three different API jobs:
 | Job | API | Why |
 | --- | --- | --- |
 | Telemetry ingest | OTLP HTTP/gRPC | Standard path for traces, logs, metrics, spans. |
-| Error compatibility ingest | Minimal Sentry envelope endpoint | Migration path for Sentry-style error events and grouping fields. |
+| Error compatibility ingest | Future minimal Sentry envelope endpoint | Migration path for Sentry-style error events and grouping fields after V1 proves the OTLP/local loop. |
 | Query/exploration | GraphQL | Runs/issues/traces/logs/metrics/bundles are graph-shaped and need flexible field selection. |
 
 Keep these separate. GraphQL should not ingest raw telemetry.
@@ -54,7 +55,6 @@ GET  /graphql/ws       # later subscriptions
 POST /v1/traces        # OTLP HTTP
 POST /v1/logs          # OTLP HTTP
 POST /v1/metrics       # OTLP HTTP
-POST /api/<project_id>/envelope/  # optional Sentry-compatible event ingest
 GET  /healthz
 GET  /readyz
 GET  /version
@@ -179,15 +179,15 @@ Parallax accepts OTLP for:
 
 The ingest layer normalizes data into Parallax evidence rows and writes through storage adapters.
 
-### Sentry Envelope
+### Future Sentry Envelope
 
-Parallax may expose minimal Sentry-compatible ingest:
+Parallax may later expose minimal Sentry-compatible ingest:
 
 ```text
 POST /api/<project_id>/envelope/
 ```
 
-V1 scope:
+Future scope:
 
 - accept `event` item;
 - parse exception, stacktrace, release, environment, tags, breadcrumbs, trace context, debug metadata,
@@ -217,7 +217,7 @@ GraphQL must be safe by default:
 | CLI | GraphQL + health/version endpoints. |
 | TanStack Start UI | GraphQL only. |
 | Coding agent | GraphQL, later MCP adapter over same service methods. |
-| App telemetry | OTLP and optional Sentry envelope. |
+| App telemetry | OTLP in V1; future optional Sentry envelope adapter. |
 | Admin/ops | health/version; later limited GraphQL mutations. |
 
 ## Rust Implementation Direction

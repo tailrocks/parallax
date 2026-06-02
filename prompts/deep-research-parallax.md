@@ -227,8 +227,8 @@ inside storage adapters and adapter-level tests.
 
 Current API direction: use GraphQL-first for query/exploration because Parallax
 data is graph-shaped (runs, issues, traces, spans, logs, metric windows,
-evidence bundles). Keep OTLP for raw telemetry ingest and a minimal
-Sentry-envelope endpoint for error compatibility. GraphQL must have query depth,
+evidence bundles). Keep OTLP for V1 raw telemetry ingest. Treat minimal
+Sentry-envelope ingest as future compatibility work, not V1 scope. GraphQL must have query depth,
 complexity, pagination, and time-window limits; no arbitrary SQL/PromQL
 passthrough in V1.
 
@@ -965,9 +965,10 @@ What opportunities remain ABOVE OTEL?
 
 ---
 
-# Sentry-Compatible Ingestion
+# Future Sentry-Compatible Ingestion
 
-Research:
+Sentry is not V1 scope. Treat this as future migration/compatibility research
+after the OTLP-first local loop proves useful. Research:
 - Sentry SDK protocol
 - Sentry envelope item models, tolerant parsing, and explicit unsupported-item
   outcome policy
@@ -983,6 +984,8 @@ Questions:
 - how much value is in compatibility?
 - what parts are overengineered?
 - what parts are genuinely difficult?
+- when, if ever, does compatibility become more valuable than keeping V1
+  OTLP-only?
 
 ---
 
@@ -991,8 +994,9 @@ Questions:
 How should the system actually collect data from applications? This is a core
 open question. Research and compare:
 
-- in-process language SDKs (Sentry SDK, OpenTelemetry SDK) emitting OTLP
-- the Sentry ingestion API (envelopes)
+- in-process language SDKs emitting OTLP, especially OpenTelemetry SDKs and
+  Rust `tracing` integrations
+- the Sentry ingestion API (envelopes) only as a future migration adapter
 - the OpenTelemetry API / OTLP
 - eBPF-based, zero-instrumentation collection
 
@@ -1346,9 +1350,10 @@ Deliver, with reasoning tied to the evaluation lens and the benchmark axes:
   for this purpose — including the object-storage / S3 story.
 - What metadata store to use, with Turso as the preferred default and Postgres
   only as a scale-out fallback if Turso fails the technical gates.
-- The API decision: whether to follow the OpenTelemetry standard, the Sentry
-  standard, or both — and concretely what the API must support, how it behaves,
-  what data it stores, and how that data is stored. Do not leave this abstract.
+- The API decision: follow OpenTelemetry/OTLP for V1 ingest; treat Sentry
+  envelopes as future migration compatibility. Concretely define what V1 must
+  support, how it behaves, what data it stores, and how that data is stored. Do
+  not leave this abstract.
 - The component boundary and agent access path: state plainly that Parallax
   stores and serves evidence while a separate component plus a coding agent
   performs the fix, and decide the access surface — CLI first, and whether a
