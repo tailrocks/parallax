@@ -51,6 +51,7 @@ This directory is the research record behind Parallax. It is organized so a read
 - [agent-trust-boundary-and-prompt-injection.md](architecture/agent-trust-boundary-and-prompt-injection.md) — prompt injection via attacker-controlled telemetry (inject-*in*, vs A6 redaction's leak-*out*): the threat and the trust-boundary design constraints it forces.
 - [agent-context-integration.md](architecture/agent-context-integration.md) — how real coding agents ingest context (MCP structuredContent + token-budget caps → bounded bundle) and how to link to repo intent (reference, don't invent; the unsolved evidence→intent edge).
 - [local-first-v1.md](architecture/local-first-v1.md) — one-command local `run_id` evidence server for agent-assisted development, with managed GreptimeDB evidence and Turso metadata.
+- [simple-ui-v2.md](architecture/simple-ui-v2.md) — V2 local investigation UI using TanStack Start + shadcn/ui, covering Sentry-style issues plus Grafana/Kibana/Tempo/Prometheus-style inspection.
 - [build-roadmap.md](architecture/build-roadmap.md) — de-risking build sequence with go/no-go gates tied to bear-case assumptions.
 
 ### `capture/` — how each signal is collected and made safe

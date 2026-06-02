@@ -211,6 +211,15 @@ behind a storage adapter so ClickHouse, Turso-only storage, GreptimeDB, or
 another backend can replace or supplement it later without changing the
 evidence-bundle API.
 
+Current V2 UI direction: after CLI/API V1, add a simple local investigation UI
+using **TanStack Start + shadcn/ui**. The UI should expose what developers
+normally open Sentry/Grafana/Kibana/Tempo/Prometheus for: grouped errors, error
+frequency, full stack traces, run/release/service context, trace waterfall,
+logs with object/field inspection, metric windows, and evidence-bundle preview.
+This is not a dashboard suite; it is a human inspection layer over the same
+Parallax API agents use. Do not choose another frontend stack unless the
+operator explicitly changes this decision.
+
 Current "world before Parallax" framing: the baseline self-hosted stack is Sentry
 for grouped errors/issues/releases, Tempo/Jaeger-like storage for traces,
 Elasticsearch/Kibana or Loki/Grafana for logs, Prometheus for metrics, Grafana

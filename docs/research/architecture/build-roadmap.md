@@ -115,6 +115,10 @@ Build only enough to generate the bundle automatically and repeatably:
 
 ### Phase 3 — Scale seams and breadth
 
+- Add the simple local investigation UI specified in
+  [Simple UI V2 Concept](simple-ui-v2.md): TanStack Start + shadcn/ui over the Parallax API, with
+  Sentry-style grouped issues, stack traces, run timeline, trace waterfall, log object inspection,
+  metric windows, and bundle preview. Do not build a dashboard suite first.
 - Tier-2 topology (split ingest/workers, object storage, optional Iggy
   single-node; NATS/Redpanda reserved for Tier-3 clustering per
   [messaging](../storage/streaming/messaging-and-ingestion-layer.md)).
