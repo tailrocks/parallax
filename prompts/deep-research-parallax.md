@@ -220,6 +220,11 @@ This is not a dashboard suite; it is a human inspection layer over the same
 Parallax API agents use. Do not choose another frontend stack unless the
 operator explicitly changes this decision.
 
+API boundary rule: all product clients must use Parallax API only. CLI, UI,
+agents, and future MCP adapters must not query GreptimeDB, Turso, Postgres,
+ClickHouse, or any future backend directly. Direct backend access belongs only
+inside storage adapters and adapter-level tests.
+
 Current "world before Parallax" framing: the baseline self-hosted stack is Sentry
 for grouped errors/issues/releases, Tempo/Jaeger-like storage for traces,
 Elasticsearch/Kibana or Loki/Grafana for logs, Prometheus for metrics, Grafana

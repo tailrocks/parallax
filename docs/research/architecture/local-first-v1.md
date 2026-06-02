@@ -81,6 +81,17 @@ CLI
      -> storage adapter
 ```
 
+All clients must use this API boundary:
+
+- CLI uses Parallax API;
+- UI uses Parallax API;
+- agents use Parallax API;
+- future MCP adapter uses Parallax API;
+- tests may use storage adapters directly only at adapter-test level.
+
+No product client should query GreptimeDB, Turso, Postgres, ClickHouse, or any future backend directly.
+This keeps redaction, grouping, auth, bundle projection, and backend portability in one place.
+
 If implementation cost is too high, start REST/JSON first and add gRPC when schemas stabilize. But
 typed service contracts remain the target because agents and tools benefit from explicit request and
 response types.

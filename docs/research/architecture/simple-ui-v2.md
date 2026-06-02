@@ -83,8 +83,9 @@ TanStack Start UI
         -> GreptimeDB evidence
 ```
 
-The UI must not query GreptimeDB directly. It talks to Parallax API only, so local, server, and future
-backend profiles stay compatible.
+The UI must not query GreptimeDB, Turso, Postgres, ClickHouse, or any future backend directly. It talks
+to Parallax API only, so local, server, and future backend profiles stay compatible and all redaction,
+grouping, auth, and bundle-projection rules stay centralized.
 
 ## Source Anchors
 
