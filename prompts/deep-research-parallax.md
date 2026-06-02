@@ -195,6 +195,14 @@ got to that stage and what led to it." Cheap, durable retention matters: object
 storage / S3-style backends are close to a requirement, because the value depends
 on being able to keep and re-extract history without cost anxiety.
 
+Current V1 storage direction: design the first implementation around GreptimeDB
+as the default observability store because it gives Parallax the fastest path to
+metrics/logs/traces, OpenTelemetry-oriented ingest, SQL/PromQL, and retained
+evidence storage. Keep the product contract behind a storage adapter so
+ClickHouse, local-only storage, Turso/SQLite-like embedded storage, or another
+backend can replace or supplement it later without changing the evidence-bundle
+API. Future research should treat this as GreptimeDB-first, not GreptimeDB-only.
+
 ## The end state
 
 Given all of this context, the expectation is that in most cases an AI can act

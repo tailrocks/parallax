@@ -164,6 +164,7 @@ ClickHouse's read-path advantage becomes central.
 
 ## Related records
 
+- V1 implementation stance: [v1-storage-adapter-vision.md](v1-storage-adapter-vision.md).
 - Stack roll-up that gates this becoming a stack default: [stack-decision.md](stack-decision.md) (A5).
 - Relational metadata store (separate from the columnar engine): [metadata-store.md](metadata-store.md).
 - Parity/closability analysis and alternatives survey:
