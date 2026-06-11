@@ -9,8 +9,7 @@ repository.workspace = true
 
 [dependencies]
 anyhow = { workspace = true }
-async-graphql = { workspace = true }
-async-graphql-axum = { workspace = true }
+juniper = { workspace = true }
 axum = { workspace = true }
 parallax-api = { workspace = true }
 parallax-core = { workspace = true }

@@ -1,348 +1,399 @@
-//! Parallax GraphQL API — the V1 read surface from the implementation spec §8,
-//! resolved against the storage adapters. Every client (CLI, UI, agents) goes
-//! through this schema; none touch storage directly.
+//! Parallax GraphQL API — the V1 surface from the implementation spec §8,
+//! served by **Juniper** (operator instruction, 2026-06-12: the library he
+//! uses in his own services). Every client (CLI, UI, agents) goes through
+//! this schema; none touch storage directly.
+//!
+//! Juniper notes (per the spec's dependency table): GraphQL `Int` is i32 —
+//! counts saturate; nanosecond timestamps cross as strings; field names are
+//! auto-camelCased; cost limits are resolver-level caps in V1.
 
-use async_graphql::{ComplexObject, Context, EmptySubscription, Object, Schema, SimpleObject};
+use juniper::{EmptySubscription, FieldError, FieldResult, RootNode, graphql_object};
 use parallax_storage::adapter::TelemetryStore;
 use parallax_storage::metadata::MetadataStore;
 use parallax_storage::model;
 use std::sync::Arc;
 
-/// Nanosecond timestamps cross the API as strings (JSON numbers lose
-/// precision past 2^53).
+/// Request context: the storage adapters.
+#[derive(Clone)]
+pub struct ApiContext {
+    pub store: Arc<dyn TelemetryStore>,
+    pub metadata: Arc<MetadataStore>,
+}
+
+impl juniper::Context for ApiContext {}
+
+fn field_err(e: impl std::fmt::Display) -> FieldError {
+    FieldError::from(e.to_string())
+}
+
 fn nanos_string(nanos: u128) -> String {
     nanos.to_string()
 }
 
-#[derive(SimpleObject)]
-#[graphql(complex)]
-pub struct Issue {
-    pub fingerprint: String,
-    pub title: String,
-    pub error_type: String,
-    pub culprit: Option<String>,
-    pub service: String,
-    pub status: String,
-    pub first_seen_nanos: String,
-    pub last_seen_nanos: String,
-    pub event_count: u64,
-    pub last_trace_id: Option<String>,
+fn saturate_i32(value: u64) -> i32 {
+    i32::try_from(value).unwrap_or(i32::MAX)
 }
 
-#[ComplexObject]
+/// Resolver-level row cap (the spec's Juniper note: cost limits are
+/// resolver-level in V1; query-cost middleware is M5 hardening).
+const MAX_ROWS: usize = 500;
+
+fn clamp_limit(limit: Option<i32>, default: usize) -> usize {
+    limit
+        .map_or(default, |l| usize::try_from(l.max(0)).unwrap_or(default))
+        .min(MAX_ROWS)
+}
+
+pub struct Issue(model::Issue);
+
+#[graphql_object(context = ApiContext)]
 impl Issue {
+    fn fingerprint(&self) -> &str {
+        &self.0.fingerprint
+    }
+    fn title(&self) -> &str {
+        &self.0.title
+    }
+    fn error_type(&self) -> &str {
+        &self.0.error_type
+    }
+    fn culprit(&self) -> Option<&str> {
+        self.0.culprit.as_deref()
+    }
+    fn service(&self) -> &str {
+        &self.0.service
+    }
+    fn status(&self) -> &str {
+        &self.0.status
+    }
+    fn first_seen_nanos(&self) -> String {
+        nanos_string(self.0.first_seen_nanos)
+    }
+    fn last_seen_nanos(&self) -> String {
+        nanos_string(self.0.last_seen_nanos)
+    }
+    fn event_count(&self) -> i32 {
+        saturate_i32(self.0.event_count)
+    }
+    fn last_trace_id(&self) -> Option<&str> {
+        self.0.last_trace_id.as_deref()
+    }
+
     /// Recent occurrences of this issue, newest first.
     async fn events(
         &self,
-        ctx: &Context<'_>,
-        #[graphql(default = 50)] limit: usize,
-    ) -> async_graphql::Result<Vec<ErrorEvent>> {
-        let store = ctx.data::<Arc<dyn TelemetryStore>>()?;
-        let events = store
-            .error_events_by_fingerprint(&self.fingerprint, 0..=u128::MAX, limit.min(500))
-            .await?;
-        Ok(events.into_iter().map(ErrorEvent::from).collect())
+        context: &ApiContext,
+        limit: Option<i32>,
+    ) -> FieldResult<Vec<ErrorEvent>> {
+        let events = context
+            .store
+            .error_events_by_fingerprint(&self.0.fingerprint, 0..=u128::MAX, clamp_limit(limit, 50))
+            .await
+            .map_err(field_err)?;
+        Ok(events.into_iter().map(ErrorEvent).collect())
     }
 }
 
-impl From<model::Issue> for Issue {
-    fn from(issue: model::Issue) -> Self {
-        Self {
-            fingerprint: issue.fingerprint,
-            title: issue.title,
-            error_type: issue.error_type,
-            culprit: issue.culprit,
-            service: issue.service,
-            status: issue.status,
-            first_seen_nanos: nanos_string(issue.first_seen_nanos),
-            last_seen_nanos: nanos_string(issue.last_seen_nanos),
-            event_count: issue.event_count,
-            last_trace_id: issue.last_trace_id,
-        }
+pub struct ErrorEvent(model::ErrorEventRow);
+
+#[graphql_object(context = ApiContext)]
+impl ErrorEvent {
+    fn ts_nanos(&self) -> String {
+        nanos_string(self.0.ts_nanos)
+    }
+    fn service(&self) -> &str {
+        &self.0.service
+    }
+    fn fingerprint(&self) -> &str {
+        &self.0.fingerprint
+    }
+    fn error_type(&self) -> &str {
+        &self.0.error_type
+    }
+    fn message(&self) -> &str {
+        &self.0.message
+    }
+    fn stacktrace(&self) -> Option<&str> {
+        self.0.stacktrace.as_deref()
+    }
+    fn source(&self) -> String {
+        serde_json::to_string(&self.0.source)
+            .unwrap_or_default()
+            .trim_matches('"')
+            .to_string()
+    }
+    fn trace_id(&self) -> &str {
+        &self.0.trace_id
+    }
+    fn span_id(&self) -> &str {
+        &self.0.span_id
+    }
+    fn attributes(&self) -> String {
+        self.0.attributes.to_string()
     }
 }
 
-#[derive(SimpleObject)]
-pub struct ErrorEvent {
-    pub ts_nanos: String,
-    pub service: String,
-    pub fingerprint: String,
-    pub error_type: String,
-    pub message: String,
-    pub stacktrace: Option<String>,
-    pub source: String,
-    pub trace_id: String,
-    pub span_id: String,
-    pub attributes: String,
-}
+pub struct Span(model::SpanRow);
 
-impl From<model::ErrorEventRow> for ErrorEvent {
-    fn from(row: model::ErrorEventRow) -> Self {
-        Self {
-            ts_nanos: nanos_string(row.ts_nanos),
-            service: row.service,
-            fingerprint: row.fingerprint,
-            error_type: row.error_type,
-            message: row.message,
-            stacktrace: row.stacktrace,
-            source: serde_json::to_string(&row.source)
-                .unwrap_or_default()
-                .trim_matches('"')
-                .to_string(),
-            trace_id: row.trace_id,
-            span_id: row.span_id,
-            attributes: row.attributes.to_string(),
-        }
+#[graphql_object(context = ApiContext)]
+impl Span {
+    fn ts_nanos(&self) -> String {
+        nanos_string(self.0.ts_nanos)
+    }
+    fn service(&self) -> &str {
+        &self.0.service
+    }
+    fn trace_id(&self) -> &str {
+        &self.0.trace_id
+    }
+    fn span_id(&self) -> &str {
+        &self.0.span_id
+    }
+    fn parent_span_id(&self) -> Option<&str> {
+        self.0.parent_span_id.as_deref()
+    }
+    fn name(&self) -> &str {
+        &self.0.name
+    }
+    fn kind(&self) -> &str {
+        &self.0.kind
+    }
+    fn status_code(&self) -> &str {
+        &self.0.status_code
+    }
+    fn status_message(&self) -> &str {
+        &self.0.status_message
+    }
+    fn duration_ns(&self) -> String {
+        self.0.duration_ns.to_string()
+    }
+    fn run_id(&self) -> Option<&str> {
+        self.0.run_id.as_deref()
+    }
+    fn scope_name(&self) -> &str {
+        &self.0.scope_name
+    }
+    fn attributes(&self) -> String {
+        self.0.attributes.to_string()
+    }
+    fn resource(&self) -> String {
+        self.0.resource.to_string()
     }
 }
 
-#[derive(SimpleObject)]
-pub struct Span {
-    pub ts_nanos: String,
-    pub service: String,
-    pub trace_id: String,
-    pub span_id: String,
-    pub parent_span_id: Option<String>,
-    pub name: String,
-    pub kind: String,
-    pub status_code: String,
-    pub status_message: String,
-    pub duration_ns: String,
-    pub scope_name: String,
-    pub attributes: String,
-    pub resource: String,
-}
+pub struct LogRecord(model::LogRow);
 
-impl From<model::SpanRow> for Span {
-    fn from(row: model::SpanRow) -> Self {
-        Self {
-            ts_nanos: nanos_string(row.ts_nanos),
-            service: row.service,
-            trace_id: row.trace_id,
-            span_id: row.span_id,
-            parent_span_id: row.parent_span_id,
-            name: row.name,
-            kind: row.kind,
-            status_code: row.status_code,
-            status_message: row.status_message,
-            duration_ns: row.duration_ns.to_string(),
-            scope_name: row.scope_name,
-            attributes: row.attributes.to_string(),
-            resource: row.resource.to_string(),
-        }
+#[graphql_object(context = ApiContext)]
+impl LogRecord {
+    fn ts_nanos(&self) -> String {
+        nanos_string(self.0.ts_nanos)
+    }
+    fn service(&self) -> &str {
+        &self.0.service
+    }
+    fn severity_num(&self) -> i32 {
+        self.0.severity_num
+    }
+    fn severity_text(&self) -> &str {
+        &self.0.severity_text
+    }
+    fn body(&self) -> &str {
+        &self.0.body
+    }
+    fn trace_id(&self) -> &str {
+        &self.0.trace_id
+    }
+    fn span_id(&self) -> &str {
+        &self.0.span_id
+    }
+    fn run_id(&self) -> Option<&str> {
+        self.0.run_id.as_deref()
+    }
+    fn attributes(&self) -> String {
+        self.0.attributes.to_string()
     }
 }
 
-#[derive(SimpleObject)]
-pub struct LogRecord {
-    pub ts_nanos: String,
-    pub service: String,
-    pub severity_num: i32,
-    pub severity_text: String,
-    pub body: String,
-    pub trace_id: String,
-    pub span_id: String,
-    pub attributes: String,
-}
-
-impl From<model::LogRow> for LogRecord {
-    fn from(row: model::LogRow) -> Self {
-        Self {
-            ts_nanos: nanos_string(row.ts_nanos),
-            service: row.service,
-            severity_num: row.severity_num,
-            severity_text: row.severity_text,
-            body: row.body,
-            trace_id: row.trace_id,
-            span_id: row.span_id,
-            attributes: row.attributes.to_string(),
-        }
-    }
-}
-
-#[derive(SimpleObject)]
 pub struct Trace {
-    pub trace_id: String,
-    pub spans: Vec<Span>,
+    trace_id: String,
+    spans: Vec<model::SpanRow>,
 }
 
-#[derive(SimpleObject)]
-pub struct Run {
-    pub run_id: String,
-    pub command: Option<String>,
-    pub started_at_nanos: String,
-    pub ended_at_nanos: Option<String>,
-    pub exit_code: Option<i32>,
-    pub status: String,
-}
-
-impl From<model::RunRecord> for Run {
-    fn from(run: model::RunRecord) -> Self {
-        Self {
-            run_id: run.run_id,
-            command: run.command,
-            started_at_nanos: nanos_string(run.started_at_nanos),
-            ended_at_nanos: run.ended_at_nanos.map(nanos_string),
-            exit_code: run.exit_code,
-            status: run.status,
-        }
+#[graphql_object(context = ApiContext)]
+impl Trace {
+    fn trace_id(&self) -> &str {
+        &self.trace_id
+    }
+    fn spans(&self) -> Vec<Span> {
+        self.spans.iter().cloned().map(Span).collect()
     }
 }
 
-pub struct QueryRoot;
+pub struct Run(model::RunRecord);
 
-#[Object]
-impl QueryRoot {
-    async fn health(&self) -> &'static str {
+#[graphql_object(context = ApiContext)]
+impl Run {
+    fn run_id(&self) -> &str {
+        &self.0.run_id
+    }
+    fn command(&self) -> Option<&str> {
+        self.0.command.as_deref()
+    }
+    fn started_at_nanos(&self) -> String {
+        nanos_string(self.0.started_at_nanos)
+    }
+    fn ended_at_nanos(&self) -> Option<String> {
+        self.0.ended_at_nanos.map(nanos_string)
+    }
+    fn exit_code(&self) -> Option<i32> {
+        self.0.exit_code
+    }
+    fn status(&self) -> &str {
+        &self.0.status
+    }
+}
+
+pub struct Query;
+
+#[graphql_object(context = ApiContext)]
+impl Query {
+    fn health() -> &'static str {
         "ok"
     }
 
-    async fn version(&self) -> &'static str {
+    fn version() -> &'static str {
         env!("CARGO_PKG_VERSION")
     }
 
     /// Grouped errors, newest activity first.
     async fn issues(
-        &self,
-        ctx: &Context<'_>,
-        #[graphql(default = 50)] limit: usize,
+        context: &ApiContext,
+        limit: Option<i32>,
         status: Option<String>,
-    ) -> async_graphql::Result<Vec<Issue>> {
-        let metadata = ctx.data::<Arc<MetadataStore>>()?;
-        let issues = metadata.issues(limit.min(500)).await?;
+    ) -> FieldResult<Vec<Issue>> {
+        let issues = context
+            .metadata
+            .issues(clamp_limit(limit, 50))
+            .await
+            .map_err(field_err)?;
         Ok(issues
             .into_iter()
             .filter(|i| status.as_deref().is_none_or(|s| i.status == s))
-            .map(Issue::from)
+            .map(Issue)
             .collect())
     }
 
-    async fn issue(
-        &self,
-        ctx: &Context<'_>,
-        fingerprint: String,
-    ) -> async_graphql::Result<Option<Issue>> {
-        let metadata = ctx.data::<Arc<MetadataStore>>()?;
-        Ok(metadata
-            .issues(500)
-            .await?
+    async fn issue(context: &ApiContext, fingerprint: String) -> FieldResult<Option<Issue>> {
+        let issues = context.metadata.issues(MAX_ROWS).await.map_err(field_err)?;
+        Ok(issues
             .into_iter()
             .find(|i| i.fingerprint == fingerprint)
-            .map(Issue::from))
+            .map(Issue))
     }
 
     /// Every span of one trace, start-time ascending (cross-service).
-    async fn trace(
-        &self,
-        ctx: &Context<'_>,
-        trace_id: String,
-    ) -> async_graphql::Result<Option<Trace>> {
-        let store = ctx.data::<Arc<dyn TelemetryStore>>()?;
-        let spans = store.spans_by_trace(&trace_id).await?;
+    async fn trace(context: &ApiContext, trace_id: String) -> FieldResult<Option<Trace>> {
+        let spans = context
+            .store
+            .spans_by_trace(&trace_id)
+            .await
+            .map_err(field_err)?;
         if spans.is_empty() {
             return Ok(None);
         }
-        Ok(Some(Trace {
-            trace_id,
-            spans: spans.into_iter().map(Span::from).collect(),
-        }))
+        Ok(Some(Trace { trace_id, spans }))
     }
 
     /// Logs correlated to one trace, time ascending.
-    async fn logs_by_trace(
-        &self,
-        ctx: &Context<'_>,
-        trace_id: String,
-    ) -> async_graphql::Result<Vec<LogRecord>> {
-        let store = ctx.data::<Arc<dyn TelemetryStore>>()?;
-        Ok(store
+    async fn logs_by_trace(context: &ApiContext, trace_id: String) -> FieldResult<Vec<LogRecord>> {
+        let logs = context
+            .store
             .logs_by_trace(&trace_id)
-            .await?
-            .into_iter()
-            .map(LogRecord::from)
-            .collect())
+            .await
+            .map_err(field_err)?;
+        Ok(logs.into_iter().map(LogRecord).collect())
     }
 
-    async fn runs(
-        &self,
-        ctx: &Context<'_>,
-        #[graphql(default = 50)] limit: usize,
-    ) -> async_graphql::Result<Vec<Run>> {
-        let metadata = ctx.data::<Arc<MetadataStore>>()?;
-        Ok(metadata
-            .runs(limit.min(500))
-            .await?
-            .into_iter()
-            .map(Run::from)
-            .collect())
+    async fn runs(context: &ApiContext, limit: Option<i32>) -> FieldResult<Vec<Run>> {
+        let runs = context
+            .metadata
+            .runs(clamp_limit(limit, 50))
+            .await
+            .map_err(field_err)?;
+        Ok(runs.into_iter().map(Run).collect())
     }
 }
 
-pub struct MutationRoot;
+pub struct Mutation;
 
-#[Object]
-impl MutationRoot {
+#[graphql_object(context = ApiContext)]
+impl Mutation {
     /// Set an issue's workflow status (open | resolved).
     async fn issue_set_status(
-        &self,
-        ctx: &Context<'_>,
+        context: &ApiContext,
         fingerprint: String,
         status: String,
-    ) -> async_graphql::Result<bool> {
+    ) -> FieldResult<bool> {
         if !matches!(status.as_str(), "open" | "resolved") {
-            return Err("status must be open or resolved".into());
+            return Err(field_err("status must be open or resolved"));
         }
-        let metadata = ctx.data::<Arc<MetadataStore>>()?;
-        metadata.set_issue_status(&fingerprint, &status).await?;
+        context
+            .metadata
+            .set_issue_status(&fingerprint, &status)
+            .await
+            .map_err(field_err)?;
         Ok(true)
     }
 
-    /// Register a run (the CLI wrapper calls this before launching the
-    /// wrapped command).
+    /// Register a run (the CLI wrapper calls this before launching).
     async fn run_start(
-        &self,
-        ctx: &Context<'_>,
+        context: &ApiContext,
         run_id: String,
         command: Option<String>,
         started_at_nanos: String,
-    ) -> async_graphql::Result<bool> {
-        let metadata = ctx.data::<Arc<MetadataStore>>()?;
-        let nanos: u128 = started_at_nanos.parse().map_err(|_| "invalid nanos")?;
-        metadata
+    ) -> FieldResult<bool> {
+        let nanos: u128 = started_at_nanos
+            .parse()
+            .map_err(|_| field_err("invalid nanos"))?;
+        context
+            .metadata
             .start_run(&run_id, command.as_deref(), nanos)
-            .await?;
+            .await
+            .map_err(field_err)?;
         Ok(true)
     }
 
     /// Close a run with the wrapped command's exit code.
     async fn run_finish(
-        &self,
-        ctx: &Context<'_>,
+        context: &ApiContext,
         run_id: String,
         ended_at_nanos: String,
         exit_code: i32,
-    ) -> async_graphql::Result<bool> {
-        let metadata = ctx.data::<Arc<MetadataStore>>()?;
-        let nanos: u128 = ended_at_nanos.parse().map_err(|_| "invalid nanos")?;
-        metadata.finish_run(&run_id, nanos, exit_code).await?;
+    ) -> FieldResult<bool> {
+        let nanos: u128 = ended_at_nanos
+            .parse()
+            .map_err(|_| field_err("invalid nanos"))?;
+        context
+            .metadata
+            .finish_run(&run_id, nanos, exit_code)
+            .await
+            .map_err(field_err)?;
         Ok(true)
     }
 }
 
-pub type ParallaxSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
+pub type Schema = RootNode<Query, Mutation, EmptySubscription<ApiContext>>;
 
-/// Build the schema with the storage adapters injected and the spec §4 cost
-/// limits enforced.
-pub fn build_schema(
-    store: Arc<dyn TelemetryStore>,
-    metadata: Arc<MetadataStore>,
-    max_depth: usize,
-    max_complexity: usize,
-) -> ParallaxSchema {
-    Schema::build(QueryRoot, MutationRoot, EmptySubscription)
-        .data(store)
-        .data(metadata)
-        .limit_depth(max_depth)
-        .limit_complexity(max_complexity)
-        .finish()
+pub fn build_schema() -> Schema {
+    Schema::new(Query, Mutation, EmptySubscription::new())
+}
+
+/// Execute one GraphQL request against the schema — the whole integration
+/// layer (the server's axum handler wraps this in ~10 lines).
+pub async fn execute(
+    schema: &Schema,
+    context: &ApiContext,
+    request: juniper::http::GraphQLRequest,
+) -> juniper::http::GraphQLResponse {
+    request.execute(schema, context).await
 }

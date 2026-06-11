@@ -110,6 +110,7 @@ CREATE TABLE IF NOT EXISTS otel_spans (
   status_code       STRING,
   status_message    STRING,
   duration_ns       BIGINT,
+  run_id            STRING,
   scope_name        STRING,
   attributes        JSON,
   resource          JSON,
@@ -125,6 +126,7 @@ CREATE TABLE IF NOT EXISTS otel_logs (
   body           STRING,
   trace_id       STRING,
   span_id        STRING,
+  run_id         STRING,
   scope_name     STRING,
   attributes     JSON,
   resource       JSON,
@@ -237,7 +239,7 @@ event; the trend sparkline reads `rollups_fingerprint_minute`.
 | log `body.string_value` | `body` |
 | metric gauge/sum data points | `otel_metrics_points` (one row per point; `is_monotonic` from sum) |
 | metric histogram data points | `otel_metrics_histograms` |
-| `resource.attributes["parallax.run_id"]` | run scoping (query-time filter on `resource`) |
+| `resource.attributes["parallax.run_id"]` | **promoted to a real `run_id` column** on `otel_spans`/`otel_logs` (the key contains a dot, making JSON-path filtering fragile; a column makes run-scoped reads exact and fast) |
 
 Fingerprinting and derivation logic: graduate `poc/evidence-loop/src/{derive,fingerprint}.rs`
 verbatim semantics (both exception encodings; normalization rules; 16-hex fingerprint).

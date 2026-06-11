@@ -83,6 +83,32 @@ impl TelemetryStore for MemoryStore {
         Ok(spans)
     }
 
+    async fn spans_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<SpanRow>> {
+        let mut spans: Vec<SpanRow> = self
+            .lock()
+            .spans
+            .iter()
+            .filter(|s| s.run_id.as_deref() == Some(run_id))
+            .cloned()
+            .collect();
+        spans.sort_by_key(|s| s.ts_nanos);
+        spans.truncate(limit);
+        Ok(spans)
+    }
+
+    async fn logs_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<LogRow>> {
+        let mut logs: Vec<LogRow> = self
+            .lock()
+            .logs
+            .iter()
+            .filter(|l| l.run_id.as_deref() == Some(run_id))
+            .cloned()
+            .collect();
+        logs.sort_by_key(|l| l.ts_nanos);
+        logs.truncate(limit);
+        Ok(logs)
+    }
+
     async fn logs_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<LogRow>> {
         let mut logs: Vec<LogRow> = self
             .lock()

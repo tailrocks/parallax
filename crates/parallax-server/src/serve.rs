@@ -6,9 +6,11 @@ use crate::config::Config;
 use crate::otlp_grpc::OtlpGrpc;
 use crate::otlp_http;
 use crate::worker::{self, IngestSender, Worker};
-use async_graphql_axum::GraphQL;
+use axum::Json;
 use axum::Router;
-use axum::routing::{get, post_service};
+use axum::extract::State;
+use axum::routing::{get, post};
+use parallax_api::{ApiContext, Schema as ParallaxSchema};
 use parallax_storage::adapter::TelemetryStore;
 use parallax_storage::memory::MemoryStore;
 use parallax_storage::metadata::MetadataStore;
@@ -53,6 +55,20 @@ async fn connect_greptime(url: &str, config: &Config) -> anyhow::Result<Arc<dyn 
         )
         .await?;
     Ok(Arc::new(store))
+}
+
+#[derive(Clone)]
+struct GraphQlState {
+    schema: Arc<ParallaxSchema>,
+    context: Arc<ApiContext>,
+}
+
+/// The hand-rolled Juniper-over-axum handler (spec §2 note).
+async fn graphql_handler(
+    State(state): State<GraphQlState>,
+    Json(request): Json<juniper::http::GraphQLRequest>,
+) -> Json<juniper::http::GraphQLResponse> {
+    Json(request.execute(&state.schema, &state.context).await)
 }
 
 /// Shared state handed to both OTLP transports.
@@ -109,16 +125,21 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
     let mut tasks = Vec::new();
     tasks.push(tokio::spawn(worker.run(receiver)));
 
-    let schema = parallax_api::build_schema(
-        store.clone(),
-        metadata.clone(),
-        config.limits.graphql_max_depth,
-        config.limits.graphql_max_complexity,
-    );
+    let graphql_state = GraphQlState {
+        schema: Arc::new(parallax_api::build_schema()),
+        context: Arc::new(ApiContext {
+            store: store.clone(),
+            metadata: metadata.clone(),
+        }),
+    };
     let api_router = Router::new()
         .route("/health", get(|| async { "ok" }))
         .route("/version", get(|| async { env!("CARGO_PKG_VERSION") }))
-        .route_service("/graphql", post_service(GraphQL::new(schema)))
+        .merge(
+            Router::new()
+                .route("/graphql", post(graphql_handler))
+                .with_state(graphql_state),
+        )
         .merge(otlp_http::router(ingest.clone()));
 
     let bind = &config.server.bind;

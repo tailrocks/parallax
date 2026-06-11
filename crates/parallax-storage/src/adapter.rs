@@ -14,6 +14,10 @@ pub trait TelemetryStore: Send + Sync {
 
     /// Anchored read: every span of one trace, start-time ascending.
     async fn spans_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<SpanRow>>;
+    /// Run-scoped read: every span tagged with one `parallax.run_id`.
+    async fn spans_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<SpanRow>>;
+    /// Run-scoped read: every log tagged with one `parallax.run_id`.
+    async fn logs_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<LogRow>>;
     /// Anchored read: every log of one trace, time ascending.
     async fn logs_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<LogRow>>;
     /// Error events for a fingerprint within a time range, newest first.

@@ -92,6 +92,7 @@ pub fn normalize_traces(request: &ExportTraceServiceRequest) -> Vec<SpanRow> {
             .map(|r| r.attributes.as_slice())
             .unwrap_or(&[]);
         let service = service_name(resource_attrs);
+        let run_id = attr_str(resource_attrs, "parallax.run_id").map(str::to_string);
         let resource_json = attributes_to_json(resource_attrs);
         for ss in &rs.scope_spans {
             let scope_name = ss
@@ -120,6 +121,7 @@ pub fn normalize_traces(request: &ExportTraceServiceRequest) -> Vec<SpanRow> {
                         span.end_time_unix_nano
                             .saturating_sub(span.start_time_unix_nano),
                     ),
+                    run_id: run_id.clone(),
                     scope_name: scope_name.clone(),
                     attributes: attributes_to_json(&span.attributes),
                     resource: resource_json.clone(),
@@ -139,6 +141,7 @@ pub fn normalize_logs(request: &ExportLogsServiceRequest) -> Vec<LogRow> {
             .map(|r| r.attributes.as_slice())
             .unwrap_or(&[]);
         let service = service_name(resource_attrs);
+        let run_id = attr_str(resource_attrs, "parallax.run_id").map(str::to_string);
         let resource_json = attributes_to_json(resource_attrs);
         for sl in &rl.scope_logs {
             let scope_name = sl
@@ -168,6 +171,7 @@ pub fn normalize_logs(request: &ExportLogsServiceRequest) -> Vec<LogRow> {
                     body,
                     trace_id: hex(&record.trace_id),
                     span_id: hex(&record.span_id),
+                    run_id: run_id.clone(),
                     scope_name: scope_name.clone(),
                     attributes: attributes_to_json(&record.attributes),
                     resource: resource_json.clone(),
