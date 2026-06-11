@@ -5,6 +5,7 @@
 //! redacted evidence bundles with canonical hashes out. No network, no
 //! database, no wall clock — byte-identical output from identical fixtures.
 
+pub mod bound;
 pub mod budget;
 pub mod bundle;
 pub mod deploy;
@@ -14,6 +15,7 @@ pub mod fingerprint;
 pub mod learn;
 pub mod otlp;
 pub mod redact;
+pub mod spike;
 
 use anyhow::Context;
 

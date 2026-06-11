@@ -67,16 +67,28 @@ What it proves, end to end, with no network, database, or wall clock:
     ([a3-schema-corpus.md](../../docs/research/validation/a3-schema-corpus.md));
     the production schema versioning policy lives there.
 
+14. **Token-budget bounding** — `bound_bundle(bundle, 10_000)` enforces the
+    bounded-bundle product rule (agent-context-integration's ~10K default):
+    oldest log lines drop first, then stacktrace tails; every trim is recorded
+    in `missing_evidence`; anchor-critical nodes (error events, spans, deploy)
+    are never dropped; the canonical hash is recomputed; bounding is
+    idempotent and under-budget bundles pass through untouched.
+15. **Frequency-spike trigger kernel** — `frequency_spike(counts, …)` is the
+    EWMA predicate from the trigger taxonomy: spike when the latest bucket
+    exceeds k× the trailing baseline AND an absolute min-count floor (so
+    near-zero baselines don't dispatch on noise); cold starts return
+    insufficient-baseline (that's `new_fingerprint` territory).
+
 With this, **all six loop stages have an executable kernel**: Detect (triggers),
-Context (bundle), Dispatch (budget + payload), Fix (external by ADR — contracts
-only), Validate (recurrence), Learn (weights + budget feedback), and the
-outward contract is machine-checkable.
+Context (bounded bundle), Dispatch (budget + payload), Fix (external by ADR —
+contracts only), Validate (recurrence), Learn (weights + budget feedback), and
+the outward contract is machine-checkable.
 
 Run:
 
 ```bash
 cd poc/evidence-loop
-cargo test          # the fifteen property tests
+cargo test          # the eighteen property tests
 cargo run           # prints derivation/bundle/dispatch/learner summary, writes out/*.json
 ```
 

@@ -12,12 +12,18 @@
 //! 6. The Reconciler recurrence kernel returns the right verdict for the
 //!    recurred / silent / window-open cases.
 
+use evidence_loop_poc::bound::{bound_bundle, BoundReport, DEFAULT_MAX_TOKENS};
 use evidence_loop_poc::budget::{compute_budget, OutcomeRow, OutcomesData};
+use evidence_loop_poc::bundle::Node;
 use evidence_loop_poc::deploy::{reconcile_recurrence, RecurrenceVerdict};
 use evidence_loop_poc::derive::ErrorSource;
 use evidence_loop_poc::dispatch::build_fix_candidate;
 use evidence_loop_poc::learn::{apply_edge_weights, compute_edge_weights};
 use evidence_loop_poc::run_pipeline;
+use evidence_loop_poc::spike::{
+    frequency_spike, SpikeVerdict, DEFAULT_EWMA_ALPHA, DEFAULT_K, DEFAULT_MIN_BASELINE_BUCKETS,
+    DEFAULT_MIN_COUNT,
+};
 
 const TRACE: &str = include_str!("../fixtures/otlp-trace.json");
 const LOGS: &str = include_str!("../fixtures/otlp-logs.json");
@@ -364,4 +370,101 @@ fn emitted_artifacts_validate_against_published_schemas() {
         crippled.as_object_mut().unwrap().remove("redaction_report");
         assert!(!bundle_validator.is_valid(&crippled), "schema must require redaction_report");
     }
+}
+
+#[test]
+fn frequency_spike_kernel_verdicts() {
+    let check = |counts: &[u64]| {
+        frequency_spike(counts, DEFAULT_K, DEFAULT_EWMA_ALPHA, DEFAULT_MIN_BASELINE_BUCKETS, DEFAULT_MIN_COUNT)
+    };
+
+    // Flat traffic: never a spike.
+    assert_eq!(check(&[10, 10, 10, 10, 10, 10, 10]), SpikeVerdict::NoSpike);
+
+    // 10x jump over a ~2.5/bucket baseline: spike.
+    match check(&[2, 3, 2, 3, 2, 3, 30]) {
+        SpikeVerdict::Spike { latest, baseline_ewma_milli } => {
+            assert_eq!(latest, 30);
+            assert!(baseline_ewma_milli < 4_000, "baseline must stay near the quiet rate");
+        }
+        other => panic!("expected spike, got {other:?}"),
+    }
+
+    // Near-zero baseline + tiny absolute count: the min-count floor holds
+    // (4 events after a quiet stretch is noise, not an incident).
+    assert_eq!(check(&[0, 0, 0, 0, 0, 0, 4]), SpikeVerdict::NoSpike);
+
+    // Cold start: not enough history to claim a baseline.
+    assert_eq!(check(&[5, 50]), SpikeVerdict::InsufficientBaseline);
+}
+
+#[test]
+fn bundles_are_bounded_to_the_token_budget() {
+    let out = run_pipeline("proj_checkout", TRACE, LOGS, Some(DEPLOYS)).unwrap();
+    let mut bundle = out
+        .bundles
+        .into_iter()
+        .find(|b| b.edges.iter().any(|e| e.r#type == "same_fingerprint"))
+        .unwrap();
+
+    // Inflate the log window far past the budget.
+    let original_lines = bundle
+        .nodes
+        .iter()
+        .find_map(|n| match n {
+            Node::LogWindow { lines, .. } => Some(lines.len()),
+            _ => None,
+        })
+        .unwrap();
+    for node in bundle.nodes.iter_mut() {
+        if let Node::LogWindow { lines, .. } = node {
+            for i in 0..3000 {
+                lines.push(format!(
+                    "1781430543{i:06} INFO synthetic breadcrumb line {i} for token inflation"
+                ));
+            }
+        }
+    }
+
+    let report = bound_bundle(&mut bundle, DEFAULT_MAX_TOKENS);
+    assert!(report.before_tokens > DEFAULT_MAX_TOKENS);
+    assert!(report.after_tokens <= DEFAULT_MAX_TOKENS, "bundle must fit the budget");
+    assert!(report.dropped_log_lines > 0);
+    assert!(
+        bundle.missing_evidence.iter().any(|m| m.contains("token budget")),
+        "every trim must be explicit missing evidence"
+    );
+
+    // Anchor-critical nodes survive: error events, spans, and the deploy are
+    // never bounded out.
+    let error_events =
+        bundle.nodes.iter().filter(|n| matches!(n, Node::ErrorEvent { .. })).count();
+    let deploys = bundle.nodes.iter().filter(|n| matches!(n, Node::Deploy { .. })).count();
+    assert_eq!(error_events, 2);
+    assert_eq!(deploys, 1);
+    assert_eq!(original_lines, 4, "fixture sanity: log window starts with four lines");
+
+    // Idempotent: bounding a bounded bundle drops nothing further.
+    let second = bound_bundle(&mut bundle, DEFAULT_MAX_TOKENS);
+    assert_eq!(
+        second,
+        BoundReport {
+            before_tokens: second.before_tokens,
+            after_tokens: second.after_tokens,
+            dropped_log_lines: 0,
+            truncated_stacktraces: 0
+        }
+    );
+    assert_eq!(second.before_tokens, second.after_tokens);
+}
+
+#[test]
+fn small_bundles_pass_through_bounding_unchanged() {
+    let out = run_pipeline("proj_checkout", TRACE, LOGS, Some(DEPLOYS)).unwrap();
+    let mut bundle = out.bundles.into_iter().next().unwrap();
+    let hash_before = bundle.canonical_hash.clone();
+    let report = bound_bundle(&mut bundle, DEFAULT_MAX_TOKENS);
+    assert_eq!(report.dropped_log_lines, 0);
+    assert_eq!(report.truncated_stacktraces, 0);
+    assert_eq!(bundle.canonical_hash, hash_before, "under-budget bundle must be untouched");
 }

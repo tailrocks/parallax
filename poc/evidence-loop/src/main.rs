@@ -42,6 +42,24 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
+    // Bound every bundle to the default agent token budget.
+    for b in &mut output.bundles {
+        let report = evidence_loop_poc::bound::bound_bundle(
+            b,
+            evidence_loop_poc::bound::DEFAULT_MAX_TOKENS,
+        );
+        if report.dropped_log_lines > 0 || report.truncated_stacktraces > 0 {
+            println!(
+                "bounded {}: {} -> {} tokens (dropped {} log lines, truncated {} stacktraces)",
+                b.bundle_id,
+                report.before_tokens,
+                report.after_tokens,
+                report.dropped_log_lines,
+                report.truncated_stacktraces
+            );
+        }
+    }
+
     let out_dir = PathBuf::from("out");
     fs::create_dir_all(&out_dir)?;
     println!("bundles: {}", output.bundles.len());
