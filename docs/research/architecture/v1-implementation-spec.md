@@ -62,6 +62,17 @@ measurements); intern repeated strings (`service`, names) behind `Arc<str>` in t
 rows; batch adapter inserts by size and time window. Every perf claim still goes through
 measured gate rows — this section sets the design posture, not numbers.
 
+## 2b. UI delivery (decided against the real build, 2026-06-12)
+
+TanStack Start builds in **SPA mode** (`tanstackStart({ spa: { enabled: true } })`) producing
+`ui/dist/client/` with `_shell.html` + assets; route loaders run client-side against the
+same-origin `/graphql` (the dev server proxies it to :4000, so dev and prod behave alike). The
+server mounts the dist directory as the API listener's fallback service (`ServeDir` with the
+shell as fallback) — autodetected at `ui/dist/client` for dev checkouts, overridable via
+`[server].ui_dist`, API-only with a hint when absent. **Release packaging embeds the same dist
+into the binary behind an `embed-ui` cargo feature (rust-embed) at M-packaging** — disk serving
+is the dev/default path, embedding is the distribution path.
+
 ## 3. Ports and process layout (collision fix)
 
 GreptimeDB standalone defaults to :4000–:4003, colliding with the planned Parallax API port.
