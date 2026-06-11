@@ -471,7 +471,7 @@ impl TelemetryStore for GreptimeStore {
             })
             .collect();
         if agg == MetricAgg::Rate {
-            series = crate::memory::rate_from_buckets(&series, step_secs as u128 * 1_000_000_000);
+            series = crate::memory::rate_from_buckets(&series, step_secs * 1_000_000_000);
         }
         Ok(series)
     }

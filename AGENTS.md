@@ -22,6 +22,11 @@ structure quickly.
   small, runnable, test-covered proofs of designed mechanisms. PoC code is not
   product code and supports no product claims; keep each PoC scoped to the
   mechanism it verifies.
+- Engineering standards (operator, 2026-06-12): cargo-nextest is the test
+  runner; cargo fmt and clippy run strict (zero warnings); follow the latest
+  recommended practices of every ecosystem touched (Rust, TypeScript, React,
+  TanStack, shadcn). Inside Parallax, ingest is zero-copy by design: decode
+  once, move ownership forward, never clone telemetry on the hot path.
 - Version policy (operator, 2026-06-12): always use the latest stable versions
   everywhere — crates, engines, UI dependencies, toolchains. Version tables in
   docs are known-compatible floors, not freezes; when implementing, resolve

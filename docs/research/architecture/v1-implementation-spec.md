@@ -16,7 +16,13 @@ resolvers; Parallax only consumes whatever spans arrive.
 
 - Rust edition 2024; toolchain pinned via `rust-toolchain.toml` (current stable; 1.96 at spec
   time). Workspace at repo root: `crates/*` + `ui/` + existing `poc/` (frozen).
-- Lints: `cargo clippy --workspace --all-targets -- -D warnings`; `cargo fmt --check` in CI.
+- Lints: `cargo clippy --workspace --all-targets -- -D warnings`; `cargo fmt --check` in CI —
+  both strict, zero tolerated warnings (operator rule, 2026-06-12).
+- Test runner: **cargo-nextest** (`cargo nextest run --workspace`; operator rule, 2026-06-12).
+  The gated real-engine test stays behind nextest's ignored filter.
+- Modernity rule (operator, 2026-06-12): follow the latest recommended practices of every
+  ecosystem touched — Rust (current idioms, edition 2024), TypeScript/React/TanStack/shadcn
+  (their current official guidance) — re-checked whenever a layer is touched.
 - Errors: `thiserror` in library crates, `anyhow` at binary edges. No `unwrap()` outside tests.
 - Tests: unit beside code; integration tests under `crates/parallax-server/tests/` driven by
   **real SDK emission** (tracing + opentelemetry-otlp) against an in-process server with the
@@ -45,6 +51,16 @@ exists for a required piece.
 | Core | serde/serde_json, sha2, regex, anyhow/thiserror |
 | Engine | **GreptimeDB latest stable** (1.0.2 at spec time; supervisor resolves latest stable at install, records the resolved version in config and the release manifest) |
 | UI | latest `@tanstack/react-start`, latest shadcn CLI/components (Base UI variant), latest Recharts via shadcn charts |
+
+## 2a. Performance principles (operator rule, 2026-06-12)
+
+Ingest is the hot path: **decode once, never clone, move ownership forward.** OTLP requests are
+decoded from the wire once; receivers spool by reference and *move* the decoded request into the
+worker channel (no `.clone()` on the hot path). Backlogged perf work, in order: spool raw
+protobuf bytes instead of re-serializing to NDJSON (debuggability trade — revisit at M5 with
+measurements); intern repeated strings (`service`, names) behind `Arc<str>` in the normalized
+rows; batch adapter inserts by size and time window. Every perf claim still goes through
+measured gate rows — this section sets the design posture, not numbers.
 
 ## 3. Ports and process layout (collision fix)
 

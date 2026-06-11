@@ -37,11 +37,12 @@ export function ParallaxShell({ children }: { children: React.ReactNode }) {
               <SidebarMenu>
                 {NAV.map((item) => (
                   <SidebarMenuItem key={item.to}>
+                    {/* Base UI composition: render prop, not asChild. */}
                     <SidebarMenuButton
-                      asChild
+                      render={<Link to={item.to} />}
                       isActive={pathname.startsWith(item.to)}
                     >
-                      <Link to={item.to}>{item.label}</Link>
+                      {item.label}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
