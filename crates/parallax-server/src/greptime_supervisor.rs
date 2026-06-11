@@ -18,8 +18,56 @@ pub struct GreptimeSupervisor {
     binary: PathBuf,
     data_home: PathBuf,
     log_path: PathBuf,
+    pid_path: PathBuf,
     pub http_url: String,
     task: Option<tokio::task::JoinHandle<()>>,
+}
+
+/// Kill a leftover engine child recorded in the pidfile (a previous serve
+/// died without cleanup). Only kills a process that is verifiably a
+/// greptime binary, then waits briefly for its ports to release.
+async fn reap_stale_child(pid_path: &Path) {
+    let Some(pid) = std::fs::read_to_string(pid_path)
+        .ok()
+        .and_then(|s| s.trim().parse::<u32>().ok())
+    else {
+        return;
+    };
+    let command = std::process::Command::new("ps")
+        .args(["-p", &pid.to_string(), "-o", "command="])
+        .output()
+        .ok()
+        .map(|o| String::from_utf8_lossy(&o.stdout).into_owned())
+        .unwrap_or_default();
+    if command.contains("greptime") {
+        tracing::warn!("reaping stale greptime child (pid {pid}) from a previous serve");
+        let _ = std::process::Command::new("kill")
+            .args(["-9", &pid.to_string()])
+            .status();
+        // Give the OS a moment to release the listeners.
+        for _ in 0..40 {
+            if std::net::TcpListener::bind(("127.0.0.1", GREPTIME_HTTP_PORT)).is_ok() {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+    }
+    let _ = std::fs::remove_file(pid_path);
+}
+
+/// The engine ports must be free before spawning; a foreign listener means
+/// we would supervise one process but query another.
+fn preflight_port_free(port: u16) -> anyhow::Result<()> {
+    match std::net::TcpListener::bind(("127.0.0.1", port)) {
+        Ok(listener) => {
+            drop(listener);
+            Ok(())
+        }
+        Err(_) => anyhow::bail!(
+            "port {port} is already in use by another process — a foreign GreptimeDB or \
+             another parallax serve? Stop it or run `parallax doctor`."
+        ),
+    }
 }
 
 fn host_target() -> anyhow::Result<&'static str> {
@@ -142,16 +190,25 @@ pub async fn ensure_binary(
 
 impl GreptimeSupervisor {
     /// Spawn the child and wait until /health answers (or time out).
+    /// Before spawning: reap a stale child from a previous serve that died
+    /// without cleanup (pidfile), then verify the engine ports are actually
+    /// free — otherwise this serve would health-check a foreign engine with
+    /// the wrong data dir while its own child crash-loops.
     pub async fn start(binary: PathBuf, data_dir: &Path) -> anyhow::Result<Self> {
         let data_home = data_dir.join("greptime-data");
         std::fs::create_dir_all(&data_home)?;
         let log_path = data_dir.join("greptime.log");
+        let pid_path = data_dir.join("greptime.pid");
         let http_url = format!("http://127.0.0.1:{GREPTIME_HTTP_PORT}");
+
+        reap_stale_child(&pid_path).await;
+        preflight_port_free(GREPTIME_HTTP_PORT)?;
 
         let mut supervisor = Self {
             binary,
             data_home,
             log_path,
+            pid_path,
             http_url: http_url.clone(),
             task: None,
         };
@@ -182,6 +239,11 @@ impl GreptimeSupervisor {
             .stderr(Stdio::from(log))
             .kill_on_drop(true)
             .spawn()?;
+        // The pidfile lets the NEXT serve reap this child if we die without
+        // running shutdown (SIGKILL, crash) — kill_on_drop cannot fire then.
+        if let Some(pid) = child.id() {
+            let _ = std::fs::write(&self.pid_path, pid.to_string());
+        }
         Ok(child)
     }
 
@@ -190,6 +252,7 @@ impl GreptimeSupervisor {
         let binary = self.binary.clone();
         let data_home = self.data_home.clone();
         let log_path = self.log_path.clone();
+        let pid_path = self.pid_path.clone();
         self.task = Some(tokio::spawn(async move {
             let mut fast_failures = 0u32;
             loop {
@@ -214,6 +277,7 @@ impl GreptimeSupervisor {
                     binary: binary.clone(),
                     data_home: data_home.clone(),
                     log_path: log_path.clone(),
+                    pid_path: pid_path.clone(),
                     http_url: String::new(),
                     task: None,
                 }
@@ -250,7 +314,9 @@ impl GreptimeSupervisor {
 
     pub fn stop(&self) {
         if let Some(task) = &self.task {
+            // Aborting the monitor drops the Child; kill_on_drop kills it.
             task.abort();
         }
+        let _ = std::fs::remove_file(&self.pid_path);
     }
 }

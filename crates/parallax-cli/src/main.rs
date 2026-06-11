@@ -134,7 +134,14 @@ async fn main() -> anyhow::Result<()> {
                 otlp_http = %handle.otlp_http_addr,
                 "parallax serve running; Ctrl-C to stop"
             );
-            tokio::signal::ctrl_c().await?;
+            // SIGTERM must also shut down cleanly — dying without cleanup
+            // orphans the managed engine child on its ports.
+            let mut sigterm =
+                tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
+            tokio::select! {
+                _ = tokio::signal::ctrl_c() => {},
+                _ = sigterm.recv() => {},
+            }
             handle.shutdown();
             Ok(())
         }

@@ -389,7 +389,14 @@ piped). `issue context` defaults to `md` (agent-facing). Exit codes: 0 ok, 1 err
 2. Write child config (ports 24000–24003, data dir, `--rpc-bind-addr 127.0.0.1`).
 3. Spawn `greptime standalone start -c …`; health = HTTP `/health` on 24000 with timeout;
    restart with backoff on crash; stop on `parallax serve` shutdown.
-4. `doctor` reports: binary path + version + checksum status, child pid/health, port checks,
+4. **Orphan safety** (verified 2026-06-12 — a SIGKILLed serve leaves the child alive on the
+   engine ports, and the next serve would otherwise health-check that foreign-data-dir orphan
+   while its own child crash-loops): the supervisor writes `<data_dir>/greptime.pid` on every
+   (re)spawn; on start it reaps a still-alive pidfile process (only if `ps` confirms it is a
+   greptime binary), then preflight-binds port 24000 and refuses to start if a foreign
+   listener holds it. `parallax serve` handles SIGTERM as cleanly as Ctrl-C; the pidfile is
+   removed on clean shutdown.
+5. `doctor` reports: binary path + version + checksum status, child pid/health, port checks,
    data-dir size per table, spool backlog.
 
 ## 12. What stays out of this spec on purpose
