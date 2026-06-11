@@ -2190,7 +2190,11 @@ dependencies = [
  "anyhow",
  "clap",
  "parallax-server",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
  "tokio",
+ "toml",
  "tracing",
  "tracing-subscriber",
 ]

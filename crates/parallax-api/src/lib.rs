@@ -296,6 +296,37 @@ impl MutationRoot {
         metadata.set_issue_status(&fingerprint, &status).await?;
         Ok(true)
     }
+
+    /// Register a run (the CLI wrapper calls this before launching the
+    /// wrapped command).
+    async fn run_start(
+        &self,
+        ctx: &Context<'_>,
+        run_id: String,
+        command: Option<String>,
+        started_at_nanos: String,
+    ) -> async_graphql::Result<bool> {
+        let metadata = ctx.data::<Arc<MetadataStore>>()?;
+        let nanos: u128 = started_at_nanos.parse().map_err(|_| "invalid nanos")?;
+        metadata
+            .start_run(&run_id, command.as_deref(), nanos)
+            .await?;
+        Ok(true)
+    }
+
+    /// Close a run with the wrapped command's exit code.
+    async fn run_finish(
+        &self,
+        ctx: &Context<'_>,
+        run_id: String,
+        ended_at_nanos: String,
+        exit_code: i32,
+    ) -> async_graphql::Result<bool> {
+        let metadata = ctx.data::<Arc<MetadataStore>>()?;
+        let nanos: u128 = ended_at_nanos.parse().map_err(|_| "invalid nanos")?;
+        metadata.finish_run(&run_id, nanos, exit_code).await?;
+        Ok(true)
+    }
 }
 
 pub type ParallaxSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
