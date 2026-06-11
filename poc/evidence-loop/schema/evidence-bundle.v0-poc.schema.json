@@ -35,10 +35,24 @@
       "type": "object",
       "required": ["type", "fingerprint", "service_name"],
       "properties": {
-        "type": { "type": "string", "enum": ["issue"] },
-        "fingerprint": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
+        "type": { "type": "string", "enum": ["issue", "run"] },
+        "fingerprint": { "type": "string", "minLength": 1 },
         "service_name": { "type": "string", "minLength": 1 }
-      }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "type": { "const": "issue" },
+            "fingerprint": { "pattern": "^[0-9a-f]{16}$" }
+          }
+        },
+        {
+          "properties": {
+            "type": { "const": "run" },
+            "fingerprint": { "pattern": "^run_.+$" }
+          }
+        }
+      ]
     },
     "trigger": {
       "type": "object",
@@ -51,7 +65,8 @@
             "frequency_spike",
             "deploy_adjacent_regression",
             "fix_regression",
-            "slo_breach"
+            "slo_breach",
+            "manual"
           ]
         },
         "dispatch_eligible": { "type": "boolean" }
@@ -103,6 +118,16 @@
               "vcs_sha",
               "environment",
               "finished_at_unix_nano"
+            ]
+          },
+          {
+            "properties": { "node_type": { "const": "cli_invocation" } },
+            "required": [
+              "node_type",
+              "id",
+              "service_name",
+              "command_line",
+              "span_id"
             ]
           }
         ]

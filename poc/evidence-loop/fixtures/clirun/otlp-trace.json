@@ -1,0 +1,55 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          { "key": "service.name", "value": { "stringValue": "jackin" } },
+          { "key": "service.version", "value": { "stringValue": "0.9.3" } },
+          { "key": "deployment.environment.name", "value": { "stringValue": "local" } },
+          { "key": "parallax.run_id", "value": { "stringValue": "run_7f3a" } }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": { "name": "jackin::cli" },
+          "spans": [
+            {
+              "traceId": "9c2e7b4f01d8a6335e9f12ab34cd56ef",
+              "spanId": "c1d2e3f405060708",
+              "name": "jackin run --agents 3",
+              "kind": 1,
+              "startTimeUnixNano": "1781432000000000000",
+              "endTimeUnixNano": "1781432045000000000",
+              "status": { "code": "STATUS_CODE_ERROR", "message": "process exited with code 101" },
+              "attributes": [
+                { "key": "process.command_line", "value": { "stringValue": "jackin run --agents 3 --isolation docker" } },
+                { "key": "process.exit_code", "value": { "stringValue": "101" } }
+              ],
+              "events": [
+                {
+                  "name": "exception",
+                  "timeUnixNano": "1781432044900000000",
+                  "attributes": [
+                    { "key": "exception.type", "value": { "stringValue": "core::panicking::panic" } },
+                    { "key": "exception.message", "value": { "stringValue": "multiplexer pane state desynced: pane 2 has dirty rows 14..31 after split resize" } },
+                    { "key": "exception.stacktrace", "value": { "stringValue": "jackin::mux::render_pane at src/mux/render.rs:233\njackin::mux::handle_resize at src/mux/layout.rs:88\njackin::cli::run at src/cli.rs:41" } }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "9c2e7b4f01d8a6335e9f12ab34cd56ef",
+              "spanId": "d9e8f7a6b5c40312",
+              "parentSpanId": "c1d2e3f405060708",
+              "name": "mux.render",
+              "kind": 1,
+              "startTimeUnixNano": "1781432044000000000",
+              "endTimeUnixNano": "1781432044800000000",
+              "status": { "code": "STATUS_CODE_OK" }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

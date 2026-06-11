@@ -1,0 +1,44 @@
+{
+  "resourceLogs": [
+    {
+      "resource": {
+        "attributes": [
+          { "key": "service.name", "value": { "stringValue": "jackin" } },
+          { "key": "service.version", "value": { "stringValue": "0.9.3" } },
+          { "key": "parallax.run_id", "value": { "stringValue": "run_7f3a" } }
+        ]
+      },
+      "scopeLogs": [
+        {
+          "scope": { "name": "jackin::mux" },
+          "logRecords": [
+            {
+              "timeUnixNano": "1781432043000000000",
+              "severityNumber": 5,
+              "severityText": "DEBUG",
+              "body": { "stringValue": "split resize requested: layout 2x2 -> 1x3, panes [0,1,2]" },
+              "traceId": "9c2e7b4f01d8a6335e9f12ab34cd56ef",
+              "spanId": "c1d2e3f405060708"
+            },
+            {
+              "timeUnixNano": "1781432044500000000",
+              "severityNumber": 5,
+              "severityText": "DEBUG",
+              "body": { "stringValue": "render_pane(2): expected viewport 80x24, scrollback offset 312" },
+              "traceId": "9c2e7b4f01d8a6335e9f12ab34cd56ef",
+              "spanId": "d9e8f7a6b5c40312"
+            },
+            {
+              "timeUnixNano": "1781432044950000000",
+              "severityNumber": 17,
+              "severityText": "ERROR",
+              "body": { "stringValue": "pane 2 dirty-row accounting mismatch: expected clean after flush, found rows 14..31 dirty" },
+              "traceId": "9c2e7b4f01d8a6335e9f12ab34cd56ef",
+              "spanId": "c1d2e3f405060708"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -92,6 +92,15 @@ What it proves, end to end, with no network, database, or wall clock:
     log window interleaving browser breadcrumb-style logs with backend logs —
     "how did the user reach this error" answered across the tier boundary,
     schema-valid. Run it: `cargo run -- fixtures/crosstier`.
+18. **CLI runs as first-class evidence + the run-anchored bundle** — the
+    `fixtures/clirun/` scenario is the operator's Jackin multiplexer panic: a
+    root span carrying `process.command_line`/`process.exit_code` becomes a
+    `cli_invocation` evidence node with a strong `error_in_invocation` edge
+    from the panic; `build_run_bundle` assembles the local-first
+    `parallax run inspect` shape — anchored on `parallax.run_id` (anchor type
+    `run`, trigger `manual`, never dispatch-eligible), DEBUG logs explaining
+    the dirty-pane state included. Unknown run ids return nothing;
+    run-anchored bundles validate against the published schema.
 
 With this, **all six loop stages have an executable kernel**: Detect (triggers),
 Context (bounded bundle), Dispatch (budget + payload), Fix (external by ADR —

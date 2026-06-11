@@ -484,6 +484,76 @@ fn one_bundle_spans_frontend_and_backend_tiers() {
 }
 
 #[test]
+fn run_anchored_bundle_treats_cli_invocation_as_first_class_evidence() {
+    // The local-first `parallax run inspect` shape: a CLI run (the operator's
+    // Jackin multiplexer panic) anchored by parallax.run_id, with the
+    // invocation itself as an evidence node.
+    let trace_json = include_str!("../fixtures/clirun/otlp-trace.json");
+    let logs_json = include_str!("../fixtures/clirun/otlp-logs.json");
+    let out = run_pipeline("proj_jackin", trace_json, logs_json, None).unwrap();
+
+    let trace: evidence_loop_poc::otlp::TraceData = serde_json::from_str(trace_json).unwrap();
+    let logs: evidence_loop_poc::otlp::LogsData = serde_json::from_str(logs_json).unwrap();
+    let bundle = evidence_loop_poc::bundle::build_run_bundle(
+        "proj_jackin",
+        &trace,
+        &logs,
+        &out.error_events,
+        "run_7f3a",
+    )
+    .expect("run bundle for a known run id");
+
+    assert_eq!(bundle.anchor.r#type, "run");
+    assert_eq!(bundle.anchor.fingerprint, "run_7f3a");
+    assert_eq!(bundle.anchor.service_name, "jackin");
+    assert_eq!(bundle.trigger.r#type, "manual");
+    assert!(!bundle.trigger.dispatch_eligible, "run inspection is pull, not dispatch");
+
+    // The invocation is an evidence node with command line and exit code,
+    // and the panic links to it with a strong edge.
+    let invocation = bundle
+        .nodes
+        .iter()
+        .find_map(|n| match n {
+            Node::CliInvocation { command_line, exit_code, .. } => {
+                Some((command_line.clone(), exit_code.clone()))
+            }
+            _ => None,
+        })
+        .expect("cli_invocation node present");
+    assert_eq!(invocation.0, "jackin run --agents 3 --isolation docker");
+    assert_eq!(invocation.1.as_deref(), Some("101"));
+    assert!(bundle.edges.iter().any(|e| e.r#type == "error_in_invocation" && e.strength == "strong"));
+
+    // Debug logs that explain the dirty-pane state are in the window — the
+    // audit trail of what happened and why.
+    let lines = bundle
+        .nodes
+        .iter()
+        .find_map(|n| match n {
+            Node::LogWindow { lines, .. } => Some(lines),
+            _ => None,
+        })
+        .unwrap();
+    assert!(lines.iter().any(|l| l.contains("dirty-row accounting mismatch")));
+
+    // Unknown run ids return None; run bundles validate against the schema.
+    assert!(evidence_loop_poc::bundle::build_run_bundle(
+        "proj_jackin", &trace, &logs, &out.error_events, "run_nope"
+    )
+    .is_none());
+    let schema: serde_json::Value =
+        serde_json::from_str(include_str!("../schema/evidence-bundle.v0-poc.schema.json")).unwrap();
+    let validator = jsonschema::validator_for(&schema).unwrap();
+    let bundle_json = serde_json::to_value(&bundle).unwrap();
+    assert!(
+        validator.is_valid(&bundle_json),
+        "run bundle must validate: {:?}",
+        validator.iter_errors(&bundle_json).map(|e| e.to_string()).collect::<Vec<_>>()
+    );
+}
+
+#[test]
 fn rollup_buckets_fixture_events_and_feeds_the_spike_chain() {
     // Fixture events: all three land in the same 1-minute bucket; two
     // fingerprints (converged exception group of 2, plain ERROR log of 1).

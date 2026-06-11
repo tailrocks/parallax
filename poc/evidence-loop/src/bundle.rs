@@ -95,6 +95,14 @@ pub enum Node {
         environment: String,
         finished_at_unix_nano: String,
     },
+    #[serde(rename = "cli_invocation")]
+    CliInvocation {
+        id: String,
+        service_name: String,
+        command_line: String,
+        exit_code: Option<String>,
+        span_id: String,
+    },
 }
 
 #[derive(Debug, Serialize)]
@@ -123,6 +131,31 @@ pub fn build_bundles(
         .collect()
 }
 
+/// Push error-event nodes (redacted) for `events`, returning their node ids.
+fn push_error_nodes(
+    events: &[&ErrorEvent],
+    id_prefix: &str,
+    nodes: &mut Vec<Node>,
+    report: &mut RedactionReport,
+) -> Vec<String> {
+    let mut error_node_ids = Vec::new();
+    for (i, ev) in events.iter().enumerate() {
+        let id = format!("err_{id_prefix}_{i}");
+        nodes.push(Node::ErrorEvent {
+            id: id.clone(),
+            source: ev.source.clone(),
+            error_type: ev.error_type.clone(),
+            message: redact_string(&ev.message, report),
+            stacktrace: ev.stacktrace.as_deref().map(|s| redact_string(s, report)),
+            trace_id: ev.trace_id.clone(),
+            span_id: ev.span_id.clone(),
+            time_unix_nano: ev.time_unix_nano.clone(),
+        });
+        error_node_ids.push(id);
+    }
+    error_node_ids
+}
+
 fn build_bundle(
     project: &str,
     trace: &TraceData,
@@ -138,23 +171,7 @@ fn build_bundle(
 
     let mut nodes = Vec::new();
     let mut edges = Vec::new();
-
-    // Error-event nodes (redacted).
-    let mut error_node_ids = Vec::new();
-    for (i, ev) in events.iter().enumerate() {
-        let id = format!("err_{fp}_{i}");
-        nodes.push(Node::ErrorEvent {
-            id: id.clone(),
-            source: ev.source.clone(),
-            error_type: ev.error_type.clone(),
-            message: redact_string(&ev.message, &mut report),
-            stacktrace: ev.stacktrace.as_deref().map(|s| redact_string(s, &mut report)),
-            trace_id: ev.trace_id.clone(),
-            span_id: ev.span_id.clone(),
-            time_unix_nano: ev.time_unix_nano.clone(),
-        });
-        error_node_ids.push(id);
-    }
+    let error_node_ids = push_error_nodes(&events, fp, &mut nodes, &mut report);
 
     // Spans of the anchoring trace — across every emitting service/tier —
     // plus error_in_span edges and span_child_of topology edges. Cross-tier
@@ -191,6 +208,28 @@ fn build_bundle(
                     duration_nano: end.saturating_sub(start),
                 });
                 span_ids_in_bundle.push((span.span_id.clone(), span.parent_span_id.clone()));
+                // CLI invocations are first-class execution evidence: a span
+                // carrying process.command_line becomes a cli_invocation node.
+                if let Some(command_line) = attr(&span.attributes, "process.command_line") {
+                    let inv_id = format!("cli_{}", span.span_id);
+                    nodes.push(Node::CliInvocation {
+                        id: inv_id.clone(),
+                        service_name: span_service.clone(),
+                        command_line: command_line.to_string(),
+                        exit_code: attr(&span.attributes, "process.exit_code").map(str::to_string),
+                        span_id: span.span_id.clone(),
+                    });
+                    for (ev, err_id) in events.iter().zip(&error_node_ids) {
+                        if ev.span_id == span.span_id {
+                            edges.push(Edge {
+                                r#type: "error_in_invocation".to_string(),
+                                from: err_id.clone(),
+                                to: inv_id.clone(),
+                                strength: "strong".to_string(),
+                            });
+                        }
+                    }
+                }
                 for (ev, err_id) in events.iter().zip(&error_node_ids) {
                     if ev.span_id == span.span_id {
                         edges.push(Edge {
@@ -339,6 +378,191 @@ fn build_bundle(
     let hash = canonical_hash(&bundle);
     bundle.canonical_hash = Some(hash);
     bundle
+}
+
+/// Run-anchored bundle: everything one `parallax.run_id` produced — the
+/// local-first `parallax run inspect` shape. Anchored on the run, not a
+/// fingerprint; trigger is `manual` (human/agent-requested) and never
+/// dispatch-eligible. Returns None when the run id is unknown.
+pub fn build_run_bundle(
+    project: &str,
+    trace: &TraceData,
+    logs: &LogsData,
+    all_events: &[ErrorEvent],
+    run_id: &str,
+) -> Option<Bundle> {
+    use std::collections::BTreeSet;
+    let mut report = RedactionReport::new();
+
+    // Trace ids and anchoring service under this run id (resource-tagged).
+    let mut run_trace_ids: BTreeSet<String> = BTreeSet::new();
+    let mut service = "unknown".to_string();
+    for rs in &trace.resource_spans {
+        let tagged = rs
+            .resource
+            .as_ref()
+            .and_then(|r| attr(&r.attributes, "parallax.run_id"))
+            .is_some_and(|id| id == run_id);
+        if !tagged {
+            continue;
+        }
+        if let Some(name) = rs.resource.as_ref().and_then(|r| attr(&r.attributes, "service.name")) {
+            service = name.to_string();
+        }
+        for ss in &rs.scope_spans {
+            for span in &ss.spans {
+                run_trace_ids.insert(span.trace_id.clone());
+            }
+        }
+    }
+    if run_trace_ids.is_empty() {
+        return None;
+    }
+
+    let events: Vec<&ErrorEvent> =
+        all_events.iter().filter(|e| run_trace_ids.contains(&e.trace_id)).collect();
+
+    let mut nodes = Vec::new();
+    let mut edges = Vec::new();
+    let error_node_ids = push_error_nodes(&events, run_id, &mut nodes, &mut report);
+
+    let mut span_ids_in_bundle: Vec<(String, Option<String>)> = Vec::new();
+    for rs in &trace.resource_spans {
+        let span_service = rs
+            .resource
+            .as_ref()
+            .and_then(|r| attr(&r.attributes, "service.name"))
+            .unwrap_or("unknown")
+            .to_string();
+        for ss in &rs.scope_spans {
+            for span in &ss.spans {
+                if !run_trace_ids.contains(&span.trace_id) {
+                    continue;
+                }
+                let id = format!("span_{}", span.span_id);
+                let start: u128 = span.start_time_unix_nano.parse().unwrap_or(0);
+                let end: u128 = span.end_time_unix_nano.parse().unwrap_or(start);
+                nodes.push(Node::Span {
+                    id: id.clone(),
+                    name: span.name.clone(),
+                    service_name: span_service.clone(),
+                    trace_id: span.trace_id.clone(),
+                    span_id: span.span_id.clone(),
+                    parent_span_id: span.parent_span_id.clone(),
+                    status_code: span
+                        .status
+                        .as_ref()
+                        .map(|s| s.code.clone())
+                        .unwrap_or_else(|| "STATUS_CODE_UNSET".to_string()),
+                    duration_nano: end.saturating_sub(start),
+                });
+                span_ids_in_bundle.push((span.span_id.clone(), span.parent_span_id.clone()));
+                if let Some(command_line) = attr(&span.attributes, "process.command_line") {
+                    let inv_id = format!("cli_{}", span.span_id);
+                    nodes.push(Node::CliInvocation {
+                        id: inv_id.clone(),
+                        service_name: span_service.clone(),
+                        command_line: command_line.to_string(),
+                        exit_code: attr(&span.attributes, "process.exit_code").map(str::to_string),
+                        span_id: span.span_id.clone(),
+                    });
+                    for (ev, err_id) in events.iter().zip(&error_node_ids) {
+                        if ev.span_id == span.span_id {
+                            edges.push(Edge {
+                                r#type: "error_in_invocation".to_string(),
+                                from: err_id.clone(),
+                                to: inv_id.clone(),
+                                strength: "strong".to_string(),
+                            });
+                        }
+                    }
+                }
+                for (ev, err_id) in events.iter().zip(&error_node_ids) {
+                    if ev.span_id == span.span_id {
+                        edges.push(Edge {
+                            r#type: "error_in_span".to_string(),
+                            from: err_id.clone(),
+                            to: id.clone(),
+                            strength: "strong".to_string(),
+                        });
+                    }
+                }
+            }
+        }
+    }
+    for (span_id, parent) in &span_ids_in_bundle {
+        if let Some(parent_id) = parent {
+            if span_ids_in_bundle.iter().any(|(s, _)| s == parent_id) {
+                edges.push(Edge {
+                    r#type: "span_child_of".to_string(),
+                    from: format!("span_{span_id}"),
+                    to: format!("span_{parent_id}"),
+                    strength: "strong".to_string(),
+                });
+            }
+        }
+    }
+
+    let mut lines = Vec::new();
+    for rl in &logs.resource_logs {
+        let log_service = rl
+            .resource
+            .as_ref()
+            .and_then(|r| attr(&r.attributes, "service.name"))
+            .unwrap_or("unknown");
+        for sl in &rl.scope_logs {
+            for rec in &sl.log_records {
+                if !run_trace_ids.contains(&rec.trace_id) {
+                    continue;
+                }
+                let body = rec.body.as_ref().and_then(|b| b.as_str()).unwrap_or("");
+                lines.push(redact_string(
+                    &format!("{} {} [{}] {}", rec.time_unix_nano, rec.severity_text, log_service, body),
+                    &mut report,
+                ));
+            }
+        }
+    }
+    if !lines.is_empty() {
+        let first_trace = run_trace_ids.iter().next().cloned().unwrap_or_default();
+        let id = format!("logwin_{run_id}");
+        nodes.push(Node::LogWindow { id: id.clone(), trace_id: first_trace.clone(), lines });
+        edges.push(Edge {
+            r#type: "log_in_trace".to_string(),
+            from: id,
+            to: format!("trace_{first_trace}"),
+            strength: "strong".to_string(),
+        });
+    }
+
+    let generated_at = latest_timestamp(all_events);
+    let mut bundle = Bundle {
+        schema_version: SCHEMA_VERSION.to_string(),
+        bundle_id: format!("bndl_{run_id}"),
+        generated_at_unix_nano: generated_at,
+        generator: Generator {
+            name: "evidence-loop-poc".to_string(),
+            version: env!("CARGO_PKG_VERSION").to_string(),
+        },
+        project: project.to_string(),
+        anchor: Anchor {
+            r#type: "run".to_string(),
+            fingerprint: run_id.to_string(),
+            service_name: service,
+        },
+        trigger: Trigger { r#type: "manual".to_string(), dispatch_eligible: false },
+        nodes,
+        edges,
+        missing_evidence: vec![
+            "no metric windows in fixtures".to_string(),
+            "deploy adjacency not evaluated for run-anchored bundles".to_string(),
+        ],
+        redaction_report: report,
+        canonical_hash: None,
+    };
+    let hash = canonical_hash(&bundle);
+    bundle.canonical_hash = Some(hash);
+    Some(bundle)
 }
 
 fn latest_timestamp(events: &[ErrorEvent]) -> String {
