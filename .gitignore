@@ -1,1 +1,6 @@
 .DS_Store
+
+# Rust PoC build artifacts and generated output
+poc/**/target/
+poc/**/out/
+poc/**/Cargo.lock

@@ -1,0 +1,61 @@
+{
+  "resourceLogs": [
+    {
+      "resource": {
+        "attributes": [
+          { "key": "service.name", "value": { "stringValue": "checkout" } },
+          { "key": "service.version", "value": { "stringValue": "1.42.0" } },
+          { "key": "deployment.environment.name", "value": { "stringValue": "production" } }
+        ]
+      },
+      "scopeLogs": [
+        {
+          "scope": { "name": "checkout::payment" },
+          "logRecords": [
+            {
+              "timeUnixNano": "1781430540250000000",
+              "severityNumber": 9,
+              "severityText": "INFO",
+              "body": { "stringValue": "starting payment authorization for order 12345" },
+              "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+              "spanId": "53995c3f42cd8ad8"
+            },
+            {
+              "timeUnixNano": "1781430541500000000",
+              "severityNumber": 13,
+              "severityText": "WARN",
+              "body": { "stringValue": "redis attempt 3 of 4 failed, retrying in 250ms" },
+              "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+              "spanId": "53995c3f42cd8ad8"
+            },
+            {
+              "timeUnixNano": "1781430542995000000",
+              "severityNumber": 17,
+              "severityText": "ERROR",
+              "body": { "stringValue": "payment authorization failed: connection timed out after 2000ms; debug ctx auth=Bearer abc123secrettoken aws_key=AKIAIOSFODNN7EXAMPLE user=jane.doe@example.com" },
+              "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+              "spanId": "53995c3f42cd8ad8",
+              "attributes": [
+                { "key": "order.id", "value": { "stringValue": "12345" } }
+              ]
+            },
+            {
+              "timeUnixNano": "1781430543050000000",
+              "severityNumber": 17,
+              "severityText": "ERROR",
+              "body": { "stringValue": "exception" },
+              "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+              "spanId": "53995c3f42cd8ad8",
+              "attributes": [
+                { "key": "event.name", "value": { "stringValue": "exception" } },
+                { "key": "exception.type", "value": { "stringValue": "redis::ConnectionTimeout" } },
+                { "key": "exception.message", "value": { "stringValue": "timed out connecting to redis://cache-7:6379 after 2000ms (attempt 4)" } },
+                { "key": "exception.stacktrace", "value": { "stringValue": "checkout::payment::authorize at src/payment.rs:184\ncheckout::http::handle_checkout at src/http.rs:77" } }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
