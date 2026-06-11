@@ -90,6 +90,14 @@ language-agnostic by standard, so Java exceptions, Go errors, or browser events 
 way. (Capture *depth* stays Rust-first per scope; the engine and infra stay Rust. Telemetry
 **sources** are polyglot by design — same clarification as the frontend-as-source rule.)
 
+**Rung 2, sharpened (operator statement #4): one binary, deployment profiles.** The old world
+made a growing startup assemble and operate Sentry + Grafana + Loki + a trace store + a metrics
+stack — and "they always never do this properly." Parallax replaces that with **one binary plus a
+profile**: `--profile local` for the laptop, `--profile cloud` for the server — where the cloud
+profile adapts to the environment (which cloud, object-storage-backed retention, cloud-suited
+defaults) instead of making the operator design a deployment. You are not "managing Sentry"; you
+are running one thing that was designed to run in the cloud from the start.
+
 **Rung 3 — the big company.** Bugs are not fixed the day they fire; they are fixed next month or
 next quarter. That makes **retention economics** the product feature: object storage as the only
 copy, hot/cold tiering, pre-aggregation, evidence pinning so bundle-cited raw slices outlive TTL
@@ -100,10 +108,17 @@ Local-first is not a toy tier: if GreptimeDB serves everything from laptop to cl
 engine runs the whole ladder — which is exactly the current lean
 ([storage-engine.md](../decisions/storage-engine.md)).
 
-## 5. Rung-1 lifecycles: how local development actually plays out
+**Priority (operator statement #4): rungs 1 and 2 are the first-priority audiences.** The local
+developer and the deployed startup are who Parallax must win first. Rung 3 is not a focus to
+build *for* yet — it is a constraint to design *under*: horizontal scalability and cheap
+infrastructure are baked in from the start so the same product carries a team from small startup
+to the largest company by topology change, never by rewrite.
 
-Operator statement #3 (2026-06-11) gave the concrete usage stories for rung 1. They are the
-product's first reality, so they are recorded here verbatim-in-substance:
+## 5. Lifecycles: how the priority audiences actually use Parallax
+
+Operator statements #3 and #4 (2026-06-11) gave the concrete usage stories for the two priority
+audiences. They are the product's first reality, so they are recorded here
+verbatim-in-substance:
 
 **Lifecycle 1 — the feature-development loop.** The developer runs Parallax locally as the
 telemetry server; their application sends logs, metrics, and traces over OTLP while they build.
@@ -137,6 +152,32 @@ development — the blind "no, you still didn't fix it" iteration — because th
 guessing and starts measuring. It is also why `missing_evidence` is a load-bearing schema field,
 not a politeness: it is the machine-readable signal that drives gap-closing.
 
+**Lifecycle 4 — the trace-ID complaint loop (rung 2).** The startup has deployed its
+microservices with Parallax as the ecosystem's observability source of truth; everything emits
+OTLP exactly as in the local workflow. A user hits an error on the website. The application
+**surfaces the trace ID to the user** — printed on the error page or one click away (an
+integration convention, see
+[integration-contract.md](../architecture/integration-contract.md)). Support asks one question:
+"can you give me the trace ID?" The developer hands it to the agent: "user complained about X,
+here is the trace ID — analyze it and figure out the fix." The agent walks the whole user
+workflow through the Parallax CLI/API — what the user did, which services the request crossed,
+where it failed — and proposes the fix or opens the PR.
+
+Two boundaries inside this lifecycle, both operator-confirmed:
+
+- **Production database state is a side-channel, not a Parallax feature.** When telemetry is not
+  enough, the agent may ask the *developer* for read-only production-database access to inspect
+  state. That grant flows between developer and agent directly — Parallax stays the
+  traces/logs/metrics/observability layer and never proxies raw database access (consistent with
+  [production-db-evidence.md](../capture/production-db-evidence.md) and the access-surface
+  rejection of generic SQL tools).
+- **The UI is the human trust surface for agent fixes.** The developer reviews the agent's PR,
+  opens the Parallax UI (a Sentry-like website over the same API), checks the charts, metrics,
+  and logs the fix claims to address, and concludes "the agent was right — this fix makes
+  sense." Human verification of agent work is a first-class workflow
+  ([simple-ui-v2.md](../architecture/simple-ui-v2.md)), which is also why `human_review` is a
+  required field in the outcome records.
+
 ## 6. Who this is for (personas)
 
 | Persona | What they get | Which rung |
@@ -159,5 +200,14 @@ Operator statement #3 (2026-06-11) adds the three rung-1 lifecycles (§5): the f
 loop, the QA verification loop, and the reproduce-and-instrument loop — including the
 breadcrumbs example as the concrete Sentry-gap-filler criterion, and the agent-led
 instrumentation gap-closing mechanic that makes `missing_evidence` a load-bearing field.
+
+Operator statement #4 (2026-06-11) adds: the **one-binary-plus-profile** deployment model
+(`--profile local|cloud`, cloud-adapted defaults) replacing the assemble-a-Sentry-Grafana-Loki
+stack ritual (§4); the **trace-ID complaint loop** as lifecycle 4, including the surface-the-
+trace-ID-to-users integration convention (§5); the operator-confirmed boundary that **production
+database state is a developer↔agent side-channel, never a Parallax feature** (§5); the **UI as
+the human trust surface** for verifying agent fixes (§5); and the priority ruling that **rungs 1
+and 2 are the first-priority audiences**, with rung-3 scalability as a design constraint rather
+than a build focus (§4).
 
 Nothing here changes the fixer boundary, the gates, or the claim-wording discipline.

@@ -335,6 +335,26 @@ tracing/logging itself, asks the human to reproduce once more, then diagnoses.
 Research should treat missing_evidence as a load-bearing, machine-actionable
 field and keep validating that these three loops are served by the V1 surface.
 
+Rung-2 lifecycle and priorities (operator, 2026-06-11): the deployed-startup
+workflow is the fourth lifecycle. Deployment is one binary plus a profile
+(`--profile local|cloud`), where the cloud profile adapts to the environment
+(cloud detection, object-storage-backed retention, cloud-suited defaults) so a
+growing startup runs one well-designed cloud-native system instead of
+assembling Sentry + Grafana + Loki and "never doing it properly". Applications
+follow the surface-the-trace-ID-to-users convention (error pages expose the
+trace ID); a user complaint then reduces to one pasted trace ID, and the agent
+reconstructs the whole user workflow through the Parallax CLI/API and proposes
+the fix or PR. Two confirmed boundaries: production-database state is a
+read-only side-channel granted by the developer to the agent directly —
+Parallax stays the traces/logs/metrics layer and never proxies database
+access; and the UI is the human trust surface where the developer verifies the
+agent's fix against the charts, metrics, and logs (human_review stays a
+required outcome field). Priority ruling: rungs 1 and 2 (local developer,
+deployed startup) are the first-priority audiences; rung-3 horizontal
+scalability and cheap infrastructure are design constraints from day one, not
+a build focus. Keep these user stories current in
+docs/research/00-vision/problem-audience-product-shape.md.
+
 ## Separation of concerns: Parallax stores, a separate agent fixes
 
 Be precise about the component boundary, because it shapes the whole design:

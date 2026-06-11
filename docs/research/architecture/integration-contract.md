@@ -78,6 +78,15 @@ Auth: per-project ingest token, sent as OTLP metadata/header
 config. Multi-tenancy boundaries are an open design item tracked in
 [api-concept.md](api-concept.md).
 
+**Surface the trace ID to end users.** The convention that powers the rung-2 complaint loop
+([lifecycle 4](../00-vision/problem-audience-product-shape.md)): error responses and error pages
+expose the current trace ID — printed on the page, in a "copy error reference" control, or in an
+error toast — so a user who hits a bug can hand support one token instead of a reproduction
+essay. Server-side this is trivial (the active span's trace ID into the error response body or a
+`traceresponse`-style header); browser-side the W3C `traceparent` the frontend already propagates
+is the same identifier. One pasted trace ID later, the agent reconstructs the entire user
+workflow from Parallax.
+
 ## 2. Deploy systems: the deploy event
 
 Two equivalent paths; both normalize to the same `deploy`/`release` nodes of
