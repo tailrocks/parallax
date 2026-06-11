@@ -22,13 +22,15 @@ structure quickly.
   small, runnable, test-covered proofs of designed mechanisms. PoC code is not
   product code and supports no product claims; keep each PoC scoped to the
   mechanism it verifies.
-- License and attribution (operator, 2026-06-11): every artifact that declares
-  a license (crate metadata, schemas, examples, future product code) declares
-  **Apache-2.0**, and the company name used in examples, attribution, and
-  metadata is **Tailrocks** (e.g. `github.com/tailrocks/...` in fixtures, not
-  `acme`). The repository-level `LICENSE` (proprietary while the research repo
-  is private) is a separate operator decision; do not change it without an
-  explicit operator instruction naming that file.
+- License and attribution (operator, 2026-06-11; extended 2026-06-12): the
+  **entire repository is Apache-2.0** — the root `LICENSE` carries the
+  canonical Apache-2.0 text and `NOTICE` the copyright line. Every artifact
+  that declares a license (crate metadata, schemas, examples, future product
+  code) declares **Apache-2.0**, and the company name used in examples,
+  attribution, and metadata is **Tailrocks** (e.g. `github.com/tailrocks/...`
+  in fixtures, not `acme`). License ≠ visibility: the repository stays private
+  until the operator publishes it, and pre-release access follows
+  [REPOSITORY_PROTECTION.md](REPOSITORY_PROTECTION.md).
 
 ## Branching and Pull Requests
 

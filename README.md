@@ -1,11 +1,10 @@
 # Parallax
 
-> Proprietary and confidential. Copyright (c) 2026 Tailrocks Pte. Ltd. All
-> rights reserved. This private repository is owned by Tailrocks Pte. Ltd. Do
-> not copy, publish, distribute, disclose, or use its contents outside
-> Tailrocks Pte. Ltd. without prior written permission. See [LICENSE](LICENSE)
-> and [NOTICE](NOTICE). See [REPOSITORY_PROTECTION.md](REPOSITORY_PROTECTION.md)
-> before sharing access outside Tailrocks Pte. Ltd.
+> Copyright (c) 2026 Tailrocks Pte. Ltd. Licensed under the
+> [Apache License, Version 2.0](LICENSE) — see [LICENSE](LICENSE) and
+> [NOTICE](NOTICE). The repository is currently private while the project is
+> pre-release; see [REPOSITORY_PROTECTION.md](REPOSITORY_PROTECTION.md) before
+> sharing access outside Tailrocks Pte. Ltd.
 
 Parallax is an early research project exploring an open-source, Rust-first,
 self-hosted observability and debugging system for production errors, logs,

@@ -1,14 +1,16 @@
 # Contributing
 
-This is a private Tailrocks Pte. Ltd. research repository. It is not accepting
-public contributions.
+This is a private Tailrocks Pte. Ltd. repository, licensed under the
+[Apache License, Version 2.0](LICENSE). It is not accepting public
+contributions while the project is pre-release.
+
+Contributions made with pre-release access are accepted under the Apache
+License, Version 2.0: per Section 5 of the license, any contribution
+intentionally submitted for inclusion is licensed under Apache-2.0, with no
+additional terms or conditions (inbound = outbound).
 
 Do not submit confidential, proprietary, customer, employer, or third-party
-material unless you have written authority to provide it to Tailrocks Pte. Ltd.
-and to assign or license it under terms approved by Tailrocks Pte. Ltd.
+material unless you have written authority to provide it under Apache-2.0.
 
-External comments, suggestions, reviews, edits, or other contributions are not
-accepted unless they are covered by a separate written agreement with Tailrocks
-Pte. Ltd. That agreement must define confidentiality, intellectual-property
-assignment or licensing, publication rights, and permitted use.
-
+External pre-release reviews remain governed by the reviewer-agreement process
+in [REPOSITORY_PROTECTION.md](REPOSITORY_PROTECTION.md).
