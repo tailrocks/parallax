@@ -4,6 +4,7 @@
 
 mod client;
 mod commands;
+mod doctor;
 
 use clap::{Parser, Subcommand};
 use client::{Client, resolve_url};
@@ -45,6 +46,19 @@ enum Command {
     Trace {
         #[command(subcommand)]
         command: TraceCommand,
+    },
+    /// Diagnose the local install (server, engine, spool, sizes).
+    Doctor,
+    /// Reclaim spool space now (telemetry TTLs are engine-managed).
+    Prune,
+    /// Remove the Parallax data directory.
+    Uninstall {
+        /// Actually delete the data directory.
+        #[arg(long)]
+        purge: bool,
+        /// Skip the confirmation.
+        #[arg(long)]
+        yes: bool,
     },
 }
 
@@ -147,5 +161,8 @@ async fn main() -> anyhow::Result<()> {
                 commands::trace_inspect(&client()?, &trace_id).await
             }
         },
+        Command::Doctor => doctor::doctor().await,
+        Command::Prune => doctor::prune(),
+        Command::Uninstall { purge, yes } => doctor::uninstall(purge, yes),
     }
 }

@@ -38,7 +38,7 @@ exists for a required piece.
 | --- | --- |
 | Runtime | tokio 1.x, axum 0.8, tonic 0.14, tower 0.5 |
 | OTel ingest types | opentelemetry-proto 0.32 (`gen-tonic`, `with-serde`) |
-| GraphQL server | async-graphql 7.2 + async-graphql-axum |
+| GraphQL server | **Juniper 0.17** (operator instruction, 2026-06-12 — the library he uses in his own services; replaces async-graphql). Axum integration is a ~20-line hand-rolled handler (`juniper::http::GraphQLRequest` → `execute` → JSON), avoiding integration-crate version skew. GraphQL `Int` is i32: counts cross the API saturated to i32. Schema-level depth/complexity enforcement is not built into Juniper — resolver-level limit caps apply now; query-cost middleware is M5 hardening. |
 | Metadata | turso (latest; feature-flag fallback: rusqlite) |
 | GreptimeDB client | SQL over HTTP API (reqwest) — no native client dependency in V1 |
 | CLI | clap 4 |
