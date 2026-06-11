@@ -9,8 +9,8 @@ Parallax is in research and product-discovery mode. The repository should stay
 simple: root-level project rules, a README, and Markdown research notes under
 `docs/`.
 
-There is no docs UI, application source tree, package manager, release process,
-or CI contract yet.
+V1 implementation is underway under `crates/` (authorized 2026-06-12); there
+is no release process or CI contract yet.
 
 ## Root Files
 
@@ -45,7 +45,8 @@ or CI contract yet.
 | `docs/research/reference/` | External technical reviews. Includes `ai-native-debugging-tools.md` (open-source AI debugging agents, SRE agents, coding-agent observability tools). |
 | `prompts/` | Reusable research and agent prompts. |
 | `bench/` | Local storage-benchmark scaffolding: pinned `compose.yml` for GreptimeDB + ClickHouse smoke runs. Generated datasets/results are gitignored; only compose/scripts are tracked. Consistent with [`docs/research/storage/benchmark-plan.md`](docs/research/storage/benchmark-plan.md). |
-| `poc/` | Concept-proving Rust code (operator-approved 2026-06-11). Small, runnable, test-covered proofs of designed mechanisms — not product code, no product claims. First artifact: `poc/evidence-loop/` (OTLP JSON → derived error events → fingerprint → trigger → redacted evidence bundle with canonical hash). |
+| `poc/` | Concept-proving Rust code (operator-approved 2026-06-11). Small, runnable, test-covered proofs of designed mechanisms — not product code, no product claims. First artifact: `poc/evidence-loop/` (OTLP JSON → derived error events → fingerprint → trigger → redacted evidence bundle with canonical hash). Frozen as the concept reference; logic graduates into `crates/` by copy-and-adapt. |
+| `crates/` | The V1 product workspace (Rust, edition 2024): `parallax-cli` (the installed `parallax` binary), `parallax-server` (OTLP ingest, API host, workers, engine supervision), `parallax-core` (derivation/fingerprinting/bundles), `parallax-storage` (spool + storage adapters), `parallax-api` (GraphQL schema), `parallax-proto` (OTLP types). Contracts in [`docs/research/architecture/v1-implementation-spec.md`](docs/research/architecture/v1-implementation-spec.md); brief in [`prompts/v1-implementation.md`](prompts/v1-implementation.md). |
 
 ## Research Record
 

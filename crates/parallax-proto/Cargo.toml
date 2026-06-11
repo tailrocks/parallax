@@ -1,0 +1,17 @@
+[package]
+name = "parallax-proto"
+description = "OTLP protocol types for Parallax (re-exported opentelemetry-proto)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+opentelemetry-proto = { version = "0.32", features = [
+    "gen-tonic",
+    "trace",
+    "logs",
+    "metrics",
+    "with-serde",
+] }

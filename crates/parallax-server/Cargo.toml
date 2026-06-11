@@ -1,0 +1,34 @@
+[package]
+name = "parallax-server"
+description = "Parallax server: OTLP ingest, workers, API host, engine supervision"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+async-graphql = { workspace = true }
+async-graphql-axum = { workspace = true }
+axum = { workspace = true }
+parallax-api = { workspace = true }
+parallax-core = { workspace = true }
+parallax-proto = { workspace = true }
+parallax-storage = { workspace = true }
+prost = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+toml = { workspace = true }
+tokio-stream = { workspace = true }
+tonic = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+opentelemetry = "0.32"
+opentelemetry-otlp = { version = "0.32", features = ["grpc-tonic", "logs", "trace", "metrics"] }
+opentelemetry_sdk = "0.32"
+reqwest = { workspace = true }
+tempfile = "3"

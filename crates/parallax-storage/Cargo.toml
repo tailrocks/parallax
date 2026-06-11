@@ -1,0 +1,16 @@
+[package]
+name = "parallax-storage"
+description = "Parallax storage adapters: GreptimeDB, Turso metadata, in-memory"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+parallax-proto = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }

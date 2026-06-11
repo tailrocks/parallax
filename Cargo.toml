@@ -1,0 +1,49 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/parallax-cli",
+    "crates/parallax-core",
+    "crates/parallax-api",
+    "crates/parallax-proto",
+    "crates/parallax-server",
+    "crates/parallax-storage",
+]
+exclude = ["poc/evidence-loop"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+authors = ["Tailrocks"]
+repository = "https://github.com/tailrocks/parallax"
+
+[workspace.dependencies]
+parallax-api = { path = "crates/parallax-api" }
+parallax-core = { path = "crates/parallax-core" }
+parallax-proto = { path = "crates/parallax-proto" }
+parallax-server = { path = "crates/parallax-server" }
+parallax-storage = { path = "crates/parallax-storage" }
+
+anyhow = "1"
+async-graphql = "7"
+async-graphql-axum = "7"
+axum = "0.8"
+clap = { version = "4", features = ["derive"] }
+dirs = "6"
+prost = "0.14"
+regex = "1"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+thiserror = "2"
+tokio = { version = "1", features = ["full"] }
+tokio-stream = { version = "0.1", features = ["net"] }
+toml = "0.9"
+tonic = "0.14"
+tower = "0.5"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[workspace.lints.clippy]
+unwrap_used = "warn"

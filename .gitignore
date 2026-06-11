@@ -4,3 +4,6 @@
 poc/**/target/
 poc/**/out/
 poc/**/Cargo.lock
+
+# Rust workspace
+/target

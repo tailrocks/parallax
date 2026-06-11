@@ -1,0 +1,16 @@
+[package]
+name = "parallax-core"
+description = "Parallax domain logic: derivation, fingerprinting, grouping, bundles"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+parallax-proto = { workspace = true }
+regex = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+thiserror = { workspace = true }
