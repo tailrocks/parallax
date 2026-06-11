@@ -124,6 +124,12 @@ future nice-to-have**: its schemas and contracts stay versioned so the loop rema
 but no fix-loop components are built until goals 1 and 2 are achieved. The concrete milestone
 plan is [architecture/v1-build-plan.md](../architecture/v1-build-plan.md).
 
+**Version boundary (operator statement #6, 2026-06-12): V1 = the self-sufficient local
+machine.** V1 solves goal 1 completely — one binary, one command, everything on the laptop, no
+network or second system required — per the exhaustive inventory in
+[architecture/v1-scope.md](../architecture/v1-scope.md). Goal 2 (server profiles) opens V2 with
+unchanged importance.
+
 ## 5. Lifecycles: how the priority audiences actually use Parallax
 
 Operator statements #3 and #4 (2026-06-11) gave the concrete usage stories for the two priority

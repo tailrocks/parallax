@@ -17,6 +17,11 @@ kernels ([poc-evidence-loop-coverage.md](poc-evidence-loop-coverage.md)).
 > versioned so the loop remains reachable), but no fix-loop components are built until goals 1
 > and 2 are achieved. The [north star](../00-vision/north-star-autonomous-fix-loop.md) is the
 > ceiling, not the schedule.
+>
+> **Version boundary (statement #6, 2026-06-12):** **V1 = the self-sufficient local machine** —
+> milestones M0–M2 plus the packaging/self-sufficiency slice, exhaustively inventoried in
+> [v1-scope.md](v1-scope.md). The server profiles (M3) open **V2**. Goal 2 keeps its co-equal
+> importance; it ships as the next version, not the first.
 
 ## 1. What done looks like (the two dogfood tests)
 
