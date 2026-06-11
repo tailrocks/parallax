@@ -39,20 +39,22 @@ impl OtlpGrpc {
         MetricsServiceServer::new(self.clone())
     }
 
-    async fn accept<T: serde::Serialize>(
+    /// Spool by reference, then MOVE the decoded request into the worker
+    /// queue — the request is decoded once and never cloned (zero-copy rule).
+    async fn spool_then_queue<T: serde::Serialize>(
         &self,
         signal: Signal,
-        request: &T,
-        item: IngestItem,
+        request: T,
+        to_item: impl FnOnce(T) -> IngestItem,
     ) -> Result<(), Status> {
         self.state
             .spool
-            .append(signal, request)
+            .append(signal, &request)
             .await
             .map_err(|e| Status::internal(format!("spool write failed: {e}")))?;
         self.state
             .sender
-            .send(item)
+            .send(to_item(request))
             .await
             .map_err(|_| Status::internal("ingest worker unavailable"))
     }
@@ -65,12 +67,8 @@ impl TraceService for OtlpGrpc {
         request: Request<ExportTraceServiceRequest>,
     ) -> Result<Response<ExportTraceServiceResponse>, Status> {
         let request = request.into_inner();
-        self.accept(
-            Signal::Traces,
-            &request,
-            IngestItem::Traces(request.clone()),
-        )
-        .await?;
+        self.spool_then_queue(Signal::Traces, request, IngestItem::Traces)
+            .await?;
         Ok(Response::new(ExportTraceServiceResponse {
             partial_success: None,
         }))
@@ -84,7 +82,7 @@ impl LogsService for OtlpGrpc {
         request: Request<ExportLogsServiceRequest>,
     ) -> Result<Response<ExportLogsServiceResponse>, Status> {
         let request = request.into_inner();
-        self.accept(Signal::Logs, &request, IngestItem::Logs(request.clone()))
+        self.spool_then_queue(Signal::Logs, request, IngestItem::Logs)
             .await?;
         Ok(Response::new(ExportLogsServiceResponse {
             partial_success: None,
@@ -99,12 +97,8 @@ impl MetricsService for OtlpGrpc {
         request: Request<ExportMetricsServiceRequest>,
     ) -> Result<Response<ExportMetricsServiceResponse>, Status> {
         let request = request.into_inner();
-        self.accept(
-            Signal::Metrics,
-            &request,
-            IngestItem::Metrics(request.clone()),
-        )
-        .await?;
+        self.spool_then_queue(Signal::Metrics, request, IngestItem::Metrics)
+            .await?;
         Ok(Response::new(ExportMetricsServiceResponse {
             partial_success: None,
         }))

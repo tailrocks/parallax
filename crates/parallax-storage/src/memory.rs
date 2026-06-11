@@ -6,6 +6,55 @@ use crate::model::*;
 use std::ops::RangeInclusive;
 use std::sync::Mutex;
 
+/// Per-second rate from bucketed counter sums (monotonic resets clamp to 0).
+pub(crate) fn rate_from_buckets(series: &[SeriesPoint], step_nanos: u128) -> Vec<SeriesPoint> {
+    let step_secs = step_nanos as f64 / 1e9;
+    series
+        .windows(2)
+        .map(|w| SeriesPoint {
+            ts_nanos: w[1].ts_nanos,
+            value: ((w[1].value - w[0].value).max(0.0)) / step_secs,
+        })
+        .collect()
+}
+
+/// Linear-interpolated quantile from merged explicit-bounds histograms.
+pub(crate) fn quantile_from_histograms(rows: &[HistogramRow], q: f64) -> f64 {
+    let Some(first) = rows.first() else {
+        return 0.0;
+    };
+    let bounds = &first.bounds;
+    let mut counts = vec![0u64; bounds.len() + 1];
+    for row in rows {
+        for (i, c) in row.bucket_counts.iter().enumerate() {
+            if let Some(slot) = counts.get_mut(i) {
+                *slot += c;
+            }
+        }
+    }
+    let total: u64 = counts.iter().sum();
+    if total == 0 {
+        return 0.0;
+    }
+    let target = q.clamp(0.0, 1.0) * total as f64;
+    let mut cumulative = 0u64;
+    for (i, count) in counts.iter().enumerate() {
+        let next = cumulative + count;
+        if next as f64 >= target {
+            let lower = if i == 0 { 0.0 } else { bounds[i - 1] };
+            let upper = bounds.get(i).copied().unwrap_or(lower);
+            let within = if *count == 0 {
+                0.0
+            } else {
+                (target - cumulative as f64) / *count as f64
+            };
+            return lower + (upper - lower) * within;
+        }
+        cumulative = next;
+    }
+    bounds.last().copied().unwrap_or(0.0)
+}
+
 #[derive(Default)]
 pub struct MemoryStore {
     inner: Mutex<Inner>,
@@ -119,6 +168,100 @@ impl TelemetryStore for MemoryStore {
             .collect();
         logs.sort_by_key(|l| l.ts_nanos);
         Ok(logs)
+    }
+
+    async fn metric_names(&self) -> anyhow::Result<Vec<String>> {
+        let inner = self.lock();
+        let mut names: Vec<String> = inner
+            .metric_points
+            .iter()
+            .map(|p| p.name.clone())
+            .chain(inner.histograms.iter().map(|h| h.name.clone()))
+            .collect();
+        names.sort();
+        names.dedup();
+        Ok(names)
+    }
+
+    async fn service_names(&self) -> anyhow::Result<Vec<String>> {
+        let inner = self.lock();
+        let mut names: Vec<String> = inner
+            .metric_points
+            .iter()
+            .map(|p| p.service.clone())
+            .chain(inner.spans.iter().map(|s| s.service.clone()))
+            .collect();
+        names.sort();
+        names.dedup();
+        Ok(names)
+    }
+
+    async fn metric_series(
+        &self,
+        name: &str,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+        agg: MetricAgg,
+    ) -> anyhow::Result<Vec<SeriesPoint>> {
+        let step = step_nanos.max(1);
+        let mut buckets: std::collections::BTreeMap<u128, Vec<f64>> = Default::default();
+        for point in self.lock().metric_points.iter().filter(|p| {
+            p.name == name
+                && service.is_none_or(|svc| p.service == svc)
+                && range.contains(&p.ts_nanos)
+        }) {
+            buckets
+                .entry((point.ts_nanos / step) * step)
+                .or_default()
+                .push(point.value);
+        }
+        let mut series: Vec<SeriesPoint> = buckets
+            .into_iter()
+            .map(|(ts_nanos, values)| {
+                let value = match agg {
+                    MetricAgg::Avg => values.iter().sum::<f64>() / values.len() as f64,
+                    MetricAgg::Min => values.iter().copied().fold(f64::INFINITY, f64::min),
+                    MetricAgg::Max => values.iter().copied().fold(f64::NEG_INFINITY, f64::max),
+                    // RATE starts from the per-bucket max of the counter.
+                    MetricAgg::Sum | MetricAgg::Rate => values.iter().sum::<f64>(),
+                };
+                SeriesPoint { ts_nanos, value }
+            })
+            .collect();
+        if agg == MetricAgg::Rate {
+            series = rate_from_buckets(&series, step);
+        }
+        Ok(series)
+    }
+
+    async fn histogram_quantile(
+        &self,
+        name: &str,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+        q: f64,
+    ) -> anyhow::Result<Vec<SeriesPoint>> {
+        let step = step_nanos.max(1);
+        let mut buckets: std::collections::BTreeMap<u128, Vec<HistogramRow>> = Default::default();
+        for row in self.lock().histograms.iter().filter(|h| {
+            h.name == name
+                && service.is_none_or(|svc| h.service == svc)
+                && range.contains(&h.ts_nanos)
+        }) {
+            buckets
+                .entry((row.ts_nanos / step) * step)
+                .or_default()
+                .push(row.clone());
+        }
+        Ok(buckets
+            .into_iter()
+            .map(|(ts_nanos, rows)| SeriesPoint {
+                ts_nanos,
+                value: quantile_from_histograms(&rows, q),
+            })
+            .collect())
     }
 
     async fn error_events_by_fingerprint(

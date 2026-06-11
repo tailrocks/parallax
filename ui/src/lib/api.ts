@@ -1,8 +1,12 @@
 // The UI's only data path: GraphQL against the Parallax API (same-origin —
 // the vite dev proxy and the embedded prod build both serve /graphql).
 
+// Loaders are isomorphic (run on server AND client): relative URLs only work
+// in the browser, so SSR/loader calls target the API directly.
+const BASE = typeof window === "undefined" ? "http://127.0.0.1:4000" : ""
+
 export async function graphql<T>(query: string): Promise<T> {
-  const response = await fetch("/graphql", {
+  const response = await fetch(`${BASE}/graphql`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ query }),

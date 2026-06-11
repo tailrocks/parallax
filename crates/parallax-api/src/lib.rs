@@ -11,6 +11,7 @@ use juniper::{EmptySubscription, FieldError, FieldResult, RootNode, graphql_obje
 use parallax_storage::adapter::TelemetryStore;
 use parallax_storage::metadata::MetadataStore;
 use parallax_storage::model;
+use parallax_storage::model::{MetricAgg, SeriesPoint};
 use std::sync::Arc;
 
 /// Request context: the storage adapters.
@@ -253,6 +254,53 @@ impl Run {
     }
 }
 
+pub struct Point(SeriesPoint);
+
+#[graphql_object(context = ApiContext)]
+impl Point {
+    fn ts_nanos(&self) -> String {
+        nanos_string(self.0.ts_nanos)
+    }
+    fn value(&self) -> f64 {
+        self.0.value
+    }
+}
+
+pub struct Dashboard(model::Dashboard);
+
+#[graphql_object(context = ApiContext)]
+impl Dashboard {
+    fn id(&self) -> &str {
+        &self.0.id
+    }
+    fn name(&self) -> &str {
+        &self.0.name
+    }
+    /// Widget layout as a JSON string:
+    /// [{metric, agg, chart, title, quantile?}].
+    fn layout(&self) -> &str {
+        &self.0.layout
+    }
+    fn updated_at_nanos(&self) -> String {
+        nanos_string(self.0.updated_at_nanos)
+    }
+}
+
+fn parse_range(from_nanos: &str, to_nanos: &str) -> juniper::FieldResult<(u128, u128)> {
+    let from: u128 = from_nanos
+        .parse()
+        .map_err(|_| field_err("invalid fromNanos"))?;
+    let to: u128 = to_nanos.parse().map_err(|_| field_err("invalid toNanos"))?;
+    if from > to {
+        return Err(field_err("fromNanos must be <= toNanos"));
+    }
+    Ok((from, to))
+}
+
+fn step_nanos(step_seconds: Option<i32>) -> u128 {
+    u128::try_from(step_seconds.unwrap_or(60).max(1)).unwrap_or(60) * 1_000_000_000
+}
+
 pub struct Query;
 
 #[graphql_object(context = ApiContext)]
@@ -352,6 +400,75 @@ impl Query {
         Ok(logs.into_iter().map(LogRecord).collect())
     }
 
+    /// Distinct metric names seen by the store (drives the dashboard builder).
+    async fn metric_names(context: &ApiContext) -> FieldResult<Vec<String>> {
+        context.store.metric_names().await.map_err(field_err)
+    }
+
+    /// Distinct service names (drives the service-overview selector).
+    async fn services(context: &ApiContext) -> FieldResult<Vec<String>> {
+        context.store.service_names().await.map_err(field_err)
+    }
+
+    /// Aggregated series for a point metric (gauge/sum); agg one of
+    /// avg|min|max|sum|rate.
+    async fn metric_series(
+        context: &ApiContext,
+        name: String,
+        from_nanos: String,
+        to_nanos: String,
+        service: Option<String>,
+        step_seconds: Option<i32>,
+        agg: Option<String>,
+    ) -> FieldResult<Vec<Point>> {
+        let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+        let agg = MetricAgg::parse(agg.as_deref().unwrap_or("avg"))
+            .ok_or_else(|| field_err("agg must be avg|min|max|sum|rate"))?;
+        let series = context
+            .store
+            .metric_series(
+                &name,
+                service.as_deref(),
+                from..=to,
+                step_nanos(step_seconds),
+                agg,
+            )
+            .await
+            .map_err(field_err)?;
+        Ok(series.into_iter().map(Point).collect())
+    }
+
+    /// Approximate quantile series from a histogram metric (q in 0..=1).
+    async fn histogram_quantile(
+        context: &ApiContext,
+        name: String,
+        from_nanos: String,
+        to_nanos: String,
+        q: f64,
+        service: Option<String>,
+        step_seconds: Option<i32>,
+    ) -> FieldResult<Vec<Point>> {
+        let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+        let series = context
+            .store
+            .histogram_quantile(
+                &name,
+                service.as_deref(),
+                from..=to,
+                step_nanos(step_seconds),
+                q,
+            )
+            .await
+            .map_err(field_err)?;
+        Ok(series.into_iter().map(Point).collect())
+    }
+
+    /// Saved user dashboards, most recently updated first.
+    async fn dashboards(context: &ApiContext) -> FieldResult<Vec<Dashboard>> {
+        let dashboards = context.metadata.dashboards().await.map_err(field_err)?;
+        Ok(dashboards.into_iter().map(Dashboard).collect())
+    }
+
     async fn runs(context: &ApiContext, limit: Option<i32>) -> FieldResult<Vec<Run>> {
         let runs = context
             .metadata
@@ -399,6 +516,39 @@ impl Mutation {
             .await
             .map_err(field_err)?;
         Ok(true)
+    }
+
+    /// Create or update a user dashboard; returns its id.
+    async fn dashboard_save(
+        context: &ApiContext,
+        name: String,
+        layout: String,
+        id: Option<String>,
+    ) -> FieldResult<String> {
+        // Layout must at least be valid JSON; widget semantics are the UI's.
+        if serde_json::from_str::<serde_json::Value>(&layout).is_err() {
+            return Err(field_err("layout must be valid JSON"));
+        }
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let id = id.unwrap_or_else(|| format!("dash_{now:x}"));
+        context
+            .metadata
+            .dashboard_save(&id, &name, &layout, now)
+            .await
+            .map_err(field_err)?;
+        Ok(id)
+    }
+
+    /// Delete a user dashboard.
+    async fn dashboard_delete(context: &ApiContext, id: String) -> FieldResult<bool> {
+        context
+            .metadata
+            .dashboard_delete(&id)
+            .await
+            .map_err(field_err)
     }
 
     /// Close a run with the wrapped command's exit code.

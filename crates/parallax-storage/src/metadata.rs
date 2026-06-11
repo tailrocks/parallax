@@ -1,7 +1,7 @@
 //! The metadata store: mutable product state (issues, runs, dashboards,
 //! settings) per implementation spec §6. Turso is the engine.
 
-use crate::model::{Issue, RunRecord};
+use crate::model::{Dashboard, Issue, RunRecord};
 use std::path::Path;
 use turso::Value;
 
@@ -204,6 +204,59 @@ impl MetadataStore {
             });
         }
         Ok(runs)
+    }
+}
+
+impl MetadataStore {
+    pub async fn dashboard_save(
+        &self,
+        id: &str,
+        name: &str,
+        layout: &str,
+        now_nanos: u128,
+    ) -> anyhow::Result<()> {
+        let millis = nanos_to_millis(now_nanos);
+        self.conn
+            .execute(
+                "INSERT INTO dashboards (id, name, layout, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?4)
+                 ON CONFLICT(id) DO UPDATE SET
+                   name = excluded.name, layout = excluded.layout,
+                   updated_at = excluded.updated_at",
+                (id, name, layout, millis),
+            )
+            .await?;
+        Ok(())
+    }
+
+    pub async fn dashboard_delete(&self, id: &str) -> anyhow::Result<bool> {
+        let affected = self
+            .conn
+            .execute("DELETE FROM dashboards WHERE id = ?1", (id,))
+            .await?;
+        Ok(affected > 0)
+    }
+
+    pub async fn dashboards(&self) -> anyhow::Result<Vec<Dashboard>> {
+        let mut rows = self
+            .conn
+            .query(
+                "SELECT id, name, layout, created_at, updated_at
+                 FROM dashboards ORDER BY updated_at DESC",
+                (),
+            )
+            .await?;
+        let mut dashboards = Vec::new();
+        while let Some(row) = rows.next().await? {
+            dashboards.push(Dashboard {
+                id: text(&row, 0),
+                name: text(&row, 1),
+                layout: text(&row, 2),
+                created_at_nanos: millis_to_nanos(integer(&row, 3)),
+                updated_at_nanos: millis_to_nanos(integer(&row, 4)),
+            });
+        }
+        Ok(dashboards)
     }
 }
 

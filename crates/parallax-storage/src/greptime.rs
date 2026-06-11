@@ -410,6 +410,124 @@ impl TelemetryStore for GreptimeStore {
             .await
     }
 
+    async fn metric_names(&self) -> anyhow::Result<Vec<String>> {
+        let rows = self
+            .sql(
+                r#"SELECT DISTINCT "name" FROM otel_metrics_points
+                   UNION SELECT DISTINCT "name" FROM otel_metrics_histograms
+                   ORDER BY "name""#,
+            )
+            .await?;
+        Ok(rows.iter().map(|r| str_at(r, 0)).collect())
+    }
+
+    async fn service_names(&self) -> anyhow::Result<Vec<String>> {
+        let rows = self
+            .sql(
+                r#"SELECT DISTINCT "service" FROM otel_metrics_points
+                   UNION SELECT DISTINCT "service" FROM otel_spans
+                   ORDER BY "service""#,
+            )
+            .await?;
+        Ok(rows.iter().map(|r| str_at(r, 0)).collect())
+    }
+
+    async fn metric_series(
+        &self,
+        name: &str,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+        agg: MetricAgg,
+    ) -> anyhow::Result<Vec<SeriesPoint>> {
+        let step_secs = (step_nanos / 1_000_000_000).max(1);
+        let sql_agg = match agg {
+            MetricAgg::Avg => "avg",
+            MetricAgg::Min => "min",
+            MetricAgg::Max => "max",
+            MetricAgg::Sum | MetricAgg::Rate => "sum",
+        };
+        let service_clause = service
+            .map(|svc| format!(r#" AND "service" = '{}'"#, escape(svc)))
+            .unwrap_or_default();
+        let rows = self
+            .sql(&format!(
+                r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "ts") AS BIGINT)
+                          AS "bucket_ms", {sql_agg}("value") AS "agg_value"
+                   FROM otel_metrics_points
+                   WHERE "name" = '{}'{service_clause}
+                     AND "ts" >= {} AND "ts" <= {}
+                   GROUP BY "bucket_ms" ORDER BY "bucket_ms""#,
+                escape(name),
+                range.start() / 1_000_000,
+                range.end() / 1_000_000,
+            ))
+            .await?;
+        let mut series: Vec<SeriesPoint> = rows
+            .iter()
+            .map(|row| SeriesPoint {
+                ts_nanos: u128_at(row, 0) * 1_000_000,
+                value: row.get(1).and_then(|v| v.as_f64()).unwrap_or(0.0),
+            })
+            .collect();
+        if agg == MetricAgg::Rate {
+            series = crate::memory::rate_from_buckets(&series, step_secs as u128 * 1_000_000_000);
+        }
+        Ok(series)
+    }
+
+    async fn histogram_quantile(
+        &self,
+        name: &str,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+        q: f64,
+    ) -> anyhow::Result<Vec<SeriesPoint>> {
+        let service_clause = service
+            .map(|svc| format!(r#" AND "service" = '{}'"#, escape(svc)))
+            .unwrap_or_default();
+        let rows = self
+            .sql(&format!(
+                r#"SELECT CAST("ts" AS BIGINT) AS "ts_ms", "count", "sum",
+                          json_to_string("bucket_counts"), json_to_string("bounds")
+                   FROM otel_metrics_histograms
+                   WHERE "name" = '{}'{service_clause}
+                     AND "ts" >= {} AND "ts" <= {}
+                   ORDER BY "ts" ASC"#,
+                escape(name),
+                range.start() / 1_000_000,
+                range.end() / 1_000_000,
+            ))
+            .await?;
+        let step = step_nanos.max(1);
+        let mut buckets: std::collections::BTreeMap<u128, Vec<HistogramRow>> = Default::default();
+        for row in &rows {
+            let ts_nanos = u128_at(row, 0) * 1_000_000;
+            let histogram = HistogramRow {
+                ts_nanos,
+                service: String::new(),
+                name: name.to_string(),
+                count: row.get(1).and_then(|v| v.as_u64()).unwrap_or(0),
+                sum: row.get(2).and_then(|v| v.as_f64()).unwrap_or(0.0),
+                bucket_counts: serde_json::from_value(json_at(row, 3)).unwrap_or_default(),
+                bounds: serde_json::from_value(json_at(row, 4)).unwrap_or_default(),
+                attributes: serde_json::Value::Null,
+            };
+            buckets
+                .entry((ts_nanos / step) * step)
+                .or_default()
+                .push(histogram);
+        }
+        Ok(buckets
+            .into_iter()
+            .map(|(ts_nanos, rows)| SeriesPoint {
+                ts_nanos,
+                value: crate::memory::quantile_from_histograms(&rows, q),
+            })
+            .collect())
+    }
+
     async fn error_events_by_fingerprint(
         &self,
         fingerprint: &str,

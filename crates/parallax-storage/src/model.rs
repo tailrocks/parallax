@@ -106,3 +106,44 @@ pub struct RunRecord {
     pub exit_code: Option<i32>,
     pub status: String,
 }
+
+/// One aggregated point of a metric series.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct SeriesPoint {
+    pub ts_nanos: u128,
+    pub value: f64,
+}
+
+/// Aggregations for metric series (RATE applies to monotonic sums: per-second
+/// delta of the bucketed sum).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MetricAgg {
+    Avg,
+    Min,
+    Max,
+    Sum,
+    Rate,
+}
+
+impl MetricAgg {
+    pub fn parse(s: &str) -> Option<Self> {
+        Some(match s.to_ascii_lowercase().as_str() {
+            "avg" => Self::Avg,
+            "min" => Self::Min,
+            "max" => Self::Max,
+            "sum" => Self::Sum,
+            "rate" => Self::Rate,
+            _ => return None,
+        })
+    }
+}
+
+/// Saved user dashboard (metadata store).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Dashboard {
+    pub id: String,
+    pub name: String,
+    pub layout: String,
+    pub created_at_nanos: u128,
+    pub updated_at_nanos: u128,
+}
