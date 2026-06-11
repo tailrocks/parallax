@@ -4,9 +4,7 @@
 
 use opentelemetry::KeyValue;
 use opentelemetry::logs::{AnyValue, LogRecord as _, Logger as _, LoggerProvider as _, Severity};
-use opentelemetry::trace::{
-    Span as _, SpanContext, Status, TraceContextExt, Tracer as _, TracerProvider as _,
-};
+use opentelemetry::trace::{Span as _, SpanContext, Status, Tracer as _, TracerProvider as _};
 use opentelemetry_otlp::WithExportConfig;
 use parallax_server::Config;
 use std::time::Duration;
