@@ -206,6 +206,57 @@ pub async fn issue_context(client: &Client, fingerprint: &str) -> anyhow::Result
     Ok(())
 }
 
+/// `parallax logs --trace <id> | --run <id> [--grep <substr>]`.
+pub async fn logs(
+    client: &Client,
+    trace: Option<&str>,
+    run: Option<&str>,
+    grep: Option<&str>,
+) -> anyhow::Result<()> {
+    let (field, query) = match (trace, run) {
+        (Some(trace_id), _) => (
+            "logsByTrace",
+            format!(
+                r#"{{ logsByTrace(traceId: "{}") {{ tsNanos service severityText body }} }}"#,
+                gql_str(trace_id)
+            ),
+        ),
+        (None, Some(run_id)) => (
+            "logsByRun",
+            format!(
+                r#"{{ logsByRun(runId: "{}") {{ tsNanos service severityText body }} }}"#,
+                gql_str(run_id)
+            ),
+        ),
+        (None, None) => anyhow::bail!("pass --trace <id> or --run <id>"),
+    };
+    let response = client.graphql(&query).await?;
+    let logs = response
+        .pointer(&format!("/data/{field}"))
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let mut shown = 0usize;
+    for log in &logs {
+        let body = log["body"].as_str().unwrap_or("");
+        if grep.is_some_and(|g| !body.contains(g)) {
+            continue;
+        }
+        println!(
+            "{:<10} [{}] {} {}",
+            relative(log["tsNanos"].as_str().unwrap_or("0")),
+            log["service"].as_str().unwrap_or("-"),
+            log["severityText"].as_str().unwrap_or("-"),
+            body,
+        );
+        shown += 1;
+    }
+    if shown == 0 {
+        println!("no matching logs");
+    }
+    Ok(())
+}
+
 pub async fn trace_inspect(client: &Client, trace_id: &str) -> anyhow::Result<()> {
     let response = client
         .graphql(&format!(

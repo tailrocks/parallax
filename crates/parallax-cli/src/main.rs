@@ -47,6 +47,18 @@ enum Command {
         #[command(subcommand)]
         command: TraceCommand,
     },
+    /// Correlated logs for a trace or a run.
+    Logs {
+        /// Trace id to fetch logs for.
+        #[arg(long, conflicts_with = "run", required_unless_present = "run")]
+        trace: Option<String>,
+        /// Run id to fetch logs for.
+        #[arg(long)]
+        run: Option<String>,
+        /// Only lines whose body contains this substring.
+        #[arg(long)]
+        grep: Option<String>,
+    },
     /// Diagnose the local install (server, engine, spool, sizes).
     Doctor,
     /// Reclaim spool space now (telemetry TTLs are engine-managed).
@@ -161,6 +173,15 @@ async fn main() -> anyhow::Result<()> {
                 commands::trace_inspect(&client()?, &trace_id).await
             }
         },
+        Command::Logs { trace, run, grep } => {
+            commands::logs(
+                &client()?,
+                trace.as_deref(),
+                run.as_deref(),
+                grep.as_deref(),
+            )
+            .await
+        }
         Command::Doctor => doctor::doctor().await,
         Command::Prune => doctor::prune(),
         Command::Uninstall { purge, yes } => doctor::uninstall(purge, yes),
