@@ -355,6 +355,27 @@ scalability and cheap infrastructure are design constraints from day one, not
 a build focus. Keep these user stories current in
 docs/research/00-vision/problem-audience-product-shape.md.
 
+V1 scope and stack (operator, 2026-06-12, statements #6–#7): V1 is the
+self-sufficient local machine — one Homebrew/static binary, managed local
+GreptimeDB (checksum-pinned auto-download), Turso metadata, OTLP ingest, the
+run model with wrapper mode, the CLI, the GraphQL API, **and the web UI** (the
+UI moved into V1: Sentry-grade issue list/detail with trend sparklines, tags,
+stack traces, context and SDK info; predefined service dashboards — historical
+CPU/memory, HTTP/gRPC rate and latency — plus user-defined dashboards composed
+from any metric the apps send; trace lookup by trace_id and run_id; full
+chart→window→event→trace→logs interactivity; no authentication in V1). UI
+stack rules: TanStack Start + shadcn/ui on Base UI, the default theme as-is,
+shadcn charts and blocks reused wholesale. The capture targets are the
+operator's concrete stack: Ratatui TUI apps, a CLI driving Docker over the
+socket (bollard), tonic gRPC microservices (some axum HTTP), Juniper GraphQL
+with DataLoaders, **tokio-postgres and the official `clickhouse` crate (not
+sqlx)**, Redis, lapin/RabbitMQ — with the verified per-layer emission matrix
+and version-lockstep table maintained in
+docs/research/capture/rust-stack-instrumentation.md. Research passes should
+keep that matrix current against crate releases (otel-rust traces are still
+beta; lockstep breaks easily) and keep the V1 inventory in
+docs/research/architecture/v1-scope.md honest.
+
 Build-order ruling (operator, 2026-06-11, statement #5): the build focus is
 goal 1 (local-machine visibility — slightly first; the operator uses it daily
 on his own Rust tools and is user #1) and goal 2 (the same binary with a cloud

@@ -22,6 +22,13 @@ kernels ([poc-evidence-loop-coverage.md](poc-evidence-loop-coverage.md)).
 > milestones M0–M2 plus the packaging/self-sufficiency slice, exhaustively inventoried in
 > [v1-scope.md](v1-scope.md). The server profiles (M3) open **V2**. Goal 2 keeps its co-equal
 > importance; it ships as the next version, not the first.
+>
+> **Statement #7 (same day) pulls the web UI into V1**: the UI slice of M4 (Issues, dashboards
+> incl. user-defined, trace lookup, logs, runs — spec in [simple-ui-v2.md](simple-ui-v2.md))
+> becomes a V1 milestone **M2.5-UI** between M2 and packaging; M4's detect-lite trigger
+> machinery stays V2. Capture targets are the operator's concrete stack per
+> [rust-stack-instrumentation.md](../capture/rust-stack-instrumentation.md) (tokio-postgres and
+> the official `clickhouse` crate — not sqlx).
 
 ## 1. What done looks like (the two dogfood tests)
 

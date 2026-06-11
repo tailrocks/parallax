@@ -6,8 +6,15 @@ Research date: 2026-06-12. Operator statement #6 recorded 2026-06-12: **V1 solve
 local-development problem, completely and self-sufficiently, on one machine.** The server
 profile moves to V2. This note is the exhaustive V1 inventory — what ships, what is deliberately
 out, and everything required to make the local experience need nothing beyond the laptop.
-Milestone mapping: **V1 = M0 + M1 + M2 of the [build plan](v1-build-plan.md), plus the
-packaging/self-sufficiency slice**; M3+ (server/cloud profiles) becomes the V2 line.
+**Revised same day for statement #7: the web UI is V1 scope** (Sentry-grade issues, service +
+**custom** dashboards, trace lookup, full interactivity — specified in
+[simple-ui-v2.md](simple-ui-v2.md)), and the capture targets are the operator's concrete stack —
+Ratatui TUI, bollard Docker CLI, tonic gRPC microservices, axum HTTP, Juniper GraphQL +
+DataLoaders, **tokio-postgres** and the official **`clickhouse`** crate, Redis, lapin/RabbitMQ —
+with the verified emission matrix in
+[capture/rust-stack-instrumentation.md](../capture/rust-stack-instrumentation.md).
+Milestone mapping: **V1 = M0 + M1 + M2 + the UI milestone, plus the packaging/self-sufficiency
+slice**; M3+ (server/cloud profiles) becomes the V2 line.
 
 > **V1 in one sentence.** A developer installs one tool, runs one command, points any app at it
 > with standard OTel env vars, and from that moment every run, panic, log, trace, and metric on
@@ -23,6 +30,23 @@ grouped issue with trace + logs + metric window within ~5 seconds; `parallax iss
 yields the bundle; his agent fixes the bug from that context alone; cold install → first
 evidence in under 15 minutes. Plus the lifecycle-3 loop: when evidence is missing, the bundle's
 `missing_evidence` + instrumentation suggestions tell the agent what to add.
+
+Statement #7 adds the stack-shaped scenarios V1 must pass on the operator's real systems:
+
+1. **Cross-service gRPC trace**: a request crossing two tonic microservices (and an axum edge)
+   arrives as one trace; the UI waterfall shows both services; `parallax trace inspect
+   <trace_id>` returns it.
+2. **Database visibility**: tokio-postgres and `clickhouse` wrapper spans show query text,
+   operation, and duration in the waterfall span detail.
+3. **GraphQL visibility**: Juniper operation + resolver spans (and a DataLoader batch span)
+   answer "how each part was generated and how long".
+4. **The visual→agent handoff**: the operator sees an error trend in the UI, clicks into the
+   window, opens one event's trace, copies the trace/run ID, and hands it to the agent — which
+   pulls the full picture via the CLI.
+5. **Custom dashboard**: a metric the operator's app emits is composed into a saved custom
+   dashboard page and renders historically.
+6. **TUI run**: a `parallax run start -- jackin …` session captures the run with OTLP-only
+   logging (no stdout corruption).
 
 ## 2. In scope — the V1 inventory
 
@@ -95,6 +119,21 @@ parallax uninstall --purge
 The CLI talks only to the local API (GraphQL/HTTP on `:4000`); `--context` plumbing exists but
 V1 ships with the implicit `local` context only.
 
+### 2.5a The web UI (statement #7 — V1 scope)
+
+Specified in [simple-ui-v2.md](simple-ui-v2.md); served by `parallax serve` as an embedded
+static build (one binary, one URL, **no auth in V1**). The V1 pages: **Issues** (Sentry-grade
+list + detail: trend sparkline, events count, age/first/last seen, tags, stack trace, message,
+context, SDK/dependency info); **Dashboards** — predefined service overview (historical CPU/
+memory, HTTP/gRPC rate + latency percentiles, error rate) **plus user-defined dashboards built
+from any metric the apps send** (metric picker → aggregation → chart type → saved grid;
+statement #7b); **Traces** — lookup by pasted `trace_id` and by `run_id`, cross-service
+waterfall with span attributes (`db.query.text`, resolver/DataLoader spans); **Logs** (object
+view); **Runs**. Interactivity rule: every chart is a filter, every entity links to its
+neighbors (error chart → window → events → trace → span → logs). Stack rules: TanStack Start +
+shadcn/ui **on Base UI**, default theme as-is, shadcn charts (Recharts v3) and blocks reused
+wholesale.
+
 ### 2.6 The API (V1 surface)
 
 GraphQL read API (runs, issues, traces, logs, metric windows, bundles) with depth/complexity/
@@ -120,7 +159,7 @@ encodings).
 | Out | Where it lives |
 | --- | --- |
 | Server + cloud profiles, tokens/auth, remote contexts | V2 — build plan M3 ([deployment map](deployment-architecture-map.md) angles B/C) |
-| Web UI | V2 ([simple-ui-v2.md](simple-ui-v2.md)) — V1 is CLI/API + Markdown bundles |
+| ~~Web UI~~ | **Moved into V1** by statement #7 (§2.5a); only the fix-review screen stays deferred with the fixer rails |
 | MCP adapter | Gated ([agent-access-surface.md](../decisions/agent-access-surface.md)); CLI is the V1 agent path |
 | Sentry envelope ingest | Future adapter ([sentry-ingest.md](../capture/sentry-ingest.md)) |
 | Trigger/dispatch machinery, autonomy budgets, fixer rails, outcome ledger | Deferred nice-to-have (statement #5); schemas stay versioned |
@@ -132,7 +171,14 @@ encodings).
 
 1. **Crates** (per the [build plan](v1-build-plan.md) layout): `parallax-server`, `parallax-core`
    (graduating the 21 PoC kernels), `parallax-storage` (greptime + turso + memory adapters),
-   `parallax-api`, `parallax-proto`, `parallax-cli`.
+   `parallax-api`, `parallax-proto`, `parallax-cli` — plus the `ui/` TanStack Start app embedded
+   into the server build.
+1a. **Capture documentation for the operator's stack** — the
+   [instrumentation matrix](../capture/rust-stack-instrumentation.md): one shared telemetry-init
+   pattern; middleware picks for tonic/axum; the manual-wrapper recipes for tokio-postgres,
+   `clickhouse` (with its 0.15+ trace-context propagation feature), redis, lapin, Juniper
+   resolvers and DataLoaders; TUI OTLP-only logging; the version-lockstep table maintained per
+   release.
 2. **Engine supervision**: spawn/health/restart of `greptime standalone`, pinned version,
    checksum-verified auto-download, PATH/brew detection. (Top V1 risk — first M1 spike.)
 3. **Packaging**: brew tap (`tailrocks/tap`), static release binaries (macOS arm64 first — the

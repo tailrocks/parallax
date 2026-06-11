@@ -1,115 +1,123 @@
-# Simple UI V2 Concept
+# Parallax UI Concept (V1)
 
 <!-- markdownlint-disable MD013 -->
 
-Decision date: 2026-06-03
+Decision date: 2026-06-03; **revised 2026-06-12 (operator statement #7): the UI is V1 scope.**
+The earlier staging ("V2 adds a simple local UI after CLI/API V1") is superseded — the operator
+ruled the UI very important and part of V1, alongside CLI and API, with **no authentication in
+V1** (local, single-user; auth arrives with the server profiles). The filename keeps its
+historical name; this is the V1 UI specification.
 
-> **Decision — V2 adds a simple local UI after CLI/API V1.** V1 stays CLI/API-first for agent
-> evidence. V2 adds a lightweight web UI so a developer can see the same grouped errors, stack traces,
-> logs, traces, spans, and metrics locally without installing Sentry, Grafana, Kibana, Tempo, Loki, or
-> Prometheus. The required frontend stack is **TanStack Start + shadcn/ui**.
+> **Decision.** V1 ships a local web UI over the same Parallax API the CLI and agents use. It is
+> an investigation console, not a dashboard suite: Sentry-grade grouped issues, standard service
+> dashboards plus **user-defined dashboards built from whatever metrics the apps send**, trace
+> lookup and waterfalls, and fully interactive cross-navigation (chart → time window → errors →
+> event → trace → logs). Stack: **TanStack Start + shadcn/ui on Base UI, default theme as-is,
+> shadcn charts and blocks reused wholesale.**
 
-## Why UI Exists
+## Required Tech Stack (verified 2026-06-12)
 
-CLI/API is best for agents. Humans still need visual inspection:
+| Choice | Rule | Verified state |
+| --- | --- | --- |
+| Framework | **TanStack Start** | API-stable RC (officially "feature-complete, preparing 1.0"; `@tanstack/react-start` 1.168.x, lockstep with Router 1.x). Server functions/route loaders fetch from the local GraphQL API server-side; TanStack Query hydration built in. |
+| Components | **shadcn/ui on Base UI** (operator instruction) | Official since Dec 2025 (`npx shadcn create`, Base UI variant; full per-component Base UI docs since Jan 2026; Base UI 1.0 shipped 2025-12-11, `@base-ui/react`, by MUI's team incl. ex-Radix founder). Same import surface as Radix variant. |
+| Theme | **Default theme as-is** — no customization | Coherent instruction: Vega style + Neutral base, OKLCH CSS variables, built-in light/dark, dedicated `--sidebar-*` and `--chart-1..5` token sets — the default already themes exactly the sidebar+charts surfaces a dashboard needs. |
+| Charts | **shadcn chart components only** | Built on **Recharts v3**; Area/Bar/Line/Pie/Radar/Radial + tooltip variants (~10 copy-paste variants each at ui.shadcn.com/charts). Sparklines = axis-stripped line/area. Colors via `--chart-N` tokens. |
+| Blocks/pages | **Reuse shadcn blocks** | `dashboard-01` (sidebar + header + SectionCards + interactive area chart + DataTable) is the app shell starting point; data tables on **TanStack Table** per the official data-table guide (sorting, filtering, pagination, row actions — the issue list). |
+| Install | `shadcn init` against the TanStack Start template | First-class: `pnpm dlx shadcn@latest init -t start` (Tailwind + `@/*` alias preconfigured). |
 
-- what errors grouped together;
-- full stack trace and frames;
-- error frequency over time;
-- affected runs/releases/services;
-- trace waterfall;
-- logs around a trace/span/error;
-- metric windows around a failure;
-- raw evidence refs and bundle preview.
+The industry-standard look is the point: reuse, don't redesign.
 
-So V2 UI is not a dashboard suite. It is a local investigation console over the same evidence bundle
-API.
+## V1 Screens
 
-## Required Tech Stack
+### Issues (the Sentry-page requirement, statement #7)
 
-Use:
+List view — one row per grouped error, columns matching what the operator uses daily in Sentry:
 
-- **TanStack Start** for the web app framework, routing, server functions, and type-safe data loading.
-- **shadcn/ui** for accessible, owned source components built with Tailwind/Radix patterns.
-
-Reasons:
-
-- good AI/developer ergonomics;
-- modern React stack;
-- source-owned UI components, not opaque vendor widgets;
-- easy to keep UI compact and operational, not marketing-heavy;
-- works with local Parallax API and future server deployments.
-
-## V2 Screens
-
-Minimum UI:
-
-| Screen | Purpose |
+| Column | Content |
 | --- | --- |
-| Runs | list local `run_id`s, service count, error count, log/span/metric counts, status, duration. |
-| Run detail | timeline of errors, logs, spans, metrics; bundle/export buttons. |
-| Issues | grouped errors like Sentry: title, fingerprint, count, first/last seen, affected runs/services. |
-| Issue detail | full stack trace, occurrences, breadcrumbs/log windows, linked spans, metric windows. |
-| Trace detail | waterfall view, span list, errors/logs attached to spans. |
-| Logs | Kibana-inspired object inspection: fields, filters, search, selected columns. |
-| Metrics | small Prometheus-like metric windows around selected run/issue/trace. |
-| Bundle preview | exact JSON/Markdown evidence sent to agent. |
+| Issue | error type + normalized message (culprit frame beneath) |
+| Trend | sparkline of recent occurrence counts (rollups) — clicking opens the issue with the trend expanded |
+| Events | total count, clickable |
+| Age / First seen | relative + absolute |
+| Last seen | relative, sorted-by default |
+| Tags | top tags chips (service, environment, release) |
 
-## 2026-06-11 Addendum — The Human Trust Surface
+Filters: project, service, environment, time range, status (open/resolved), tag values, free-text
+over message. Sort: last seen, first seen, events, trend.
 
-Operator statement #4 (recorded in
-[problem-audience-product-shape.md](../00-vision/problem-audience-product-shape.md) §5,
-lifecycle 4) makes two human workflows first-class that the screen list above did not name:
+Detail view: full **stack trace** (frames, file:line), the **message**, the **occurrence trend
+chart** (clickable time brush → the events in that window), first/last seen, counts, **tags
+table** (value distribution per tag), **context sections** — runtime/OS/process from resource
+attributes, **SDK and dependency info** where the SDK reports it (`telemetry.sdk.*`, build
+attrs), recent breadcrumb-style log window — and the jump links: → trace waterfall of any
+occurrence, → logs around it, → `parallax issue context` CLI snippet to hand the agent.
 
-| Screen | Purpose |
-| --- | --- |
-| Trace lookup | The lifecycle-4 entry point: paste the trace ID a user reported from an error page, land directly on the cross-tier trace view (browser → backend), with the linked issue, logs, and metric windows one click away. |
-| Fix review | The trust surface for agent fixes: an issue's outcome records (PR link, validation results, review state, recurrence window) rendered beside the bundle's ranked hypotheses and the evidence they cite, plus the before/after error-rate rollup — so the developer can conclude "the agent was right, this fix makes sense" from evidence, not vibes. Feeds the required `human_review` outcome field. |
+### Dashboards
 
-Boundary unchanged: the UI **verifies** agent work; it never **drives** it. No fixer controls,
-no dispatch buttons, no production mutation in V2 — consistent with the
-[fixer boundary](../decisions/fixer-boundary.md) and the read-only
-[agent access surface](../decisions/agent-access-surface.md). The UI is a window over the same
-canonical API everything else uses.
+1. **Service overview (predefined):** per service — historical **CPU and memory** charts
+   (process metrics feed), **HTTP/gRPC request rate and duration** (p50/p95/p99 from the
+   middleware histograms), error rate from rollups. The "what Grafana would show" page, zero
+   setup.
+2. **Custom dashboards (operator requirement, statement #7b):** the user composes their own
+   pages from **any metric their apps send** — pick a metric by name (autocomplete from stored
+   metric names), choose chart type (shadcn chart variants), label it, place it on a grid; saved
+   to the metadata store, listed in the sidebar. V1 keeps it deliberately simple: metric +
+   aggregation + group-by-attribute + chart type. No alerting, no sharing, no templating —
+   that is the entire builder.
 
-## UX References
+### Traces
 
-Borrow what works:
+- **Lookup** by pasted `trace_id` (the lifecycle-4 entry) and **by `run_id`** — both first-class
+  (statement #7b), mirrored by `parallax trace inspect <trace_id>` and
+  `parallax run inspect <run_id>` in the CLI.
+- Waterfall: span tree across services (cross-service via shared trace), durations, status;
+  span detail pane shows attributes — **including `db.query.text`/`db.operation.name` spans
+  from the Postgres/ClickHouse wrappers and Juniper resolver/DataLoader spans**
+  ([rust-stack-instrumentation.md](../capture/rust-stack-instrumentation.md)) — plus the span's
+  logs and errors.
 
-- **Sentry:** grouped issue workflow, frequency, stack trace, release/run context.
-- **Kibana:** log object inspection, field filtering, selected-column view.
-- **Grafana:** cross-signal linking and compact charts.
-- **Tempo:** trace waterfall.
-- **Prometheus:** metric windows and PromQL-shaped thinking.
+### Logs
 
-Do not copy full scope:
+Kibana-style object inspection: fields, filters, search, selected columns; scoped by trace, run,
+service, or time window.
 
-- no dashboard-builder;
-- no alert-rule UI in V2;
-- no user/team admin unless needed for local auth;
-- no production incident suite;
-- no autonomous fixer UI.
+### Runs
+
+The local `run_id` list (status, error count, duration) → run detail (timeline of errors, logs,
+spans, metric windows; bundle preview/export).
+
+## Interactivity rule (the correlation requirement)
+
+Everything is a link; every chart is a filter. The flows that must work in V1:
+
+```text
+error-rate chart → brush a time window → events in that window → one event
+  → its trace waterfall → a span → that span's logs/attributes
+issue trend → click a spike → occurrences in the spike → trace
+dashboard chart (any metric) → brush window → "errors in this window" cross-link
+trace span (db.query.text) → copy query; trace → "open in CLI" snippet for the agent
+```
+
+The UI's job in the agent era (statement #7): the human *sees* the anomaly visually, then hands
+the agent the reference — trace ID, run ID, issue ID — and the agent pulls the same data through
+the CLI/API. The UI and the agent read one source of truth.
 
 ## Architecture
 
-```text
-TanStack Start UI
-  -> Parallax local API
-     -> bundle/query services
-        -> Turso metadata
-        -> GreptimeDB evidence
-```
+TanStack Start app in `ui/` (per the [build plan](v1-build-plan.md)); route loaders/server
+functions call the local GraphQL API on `:4000`; no direct storage access (the API boundary is
+absolute); no auth in V1 (loopback assumption); served by `parallax serve` (embedded static
+build) so V1 stays one binary + one URL.
 
-The UI must not query GreptimeDB, Turso, Postgres, ClickHouse, or any future backend directly. It talks
-to Parallax API only, so local, server, and future backend profiles stay compatible and all redaction,
-grouping, auth, and bundle-projection rules stay centralized.
+## Non-goals (V1)
 
-V2 should use the GraphQL query/exploration API described in
-[Parallax API Concept](api-concept.md).
+Alerting UI; multi-user/orgs/auth; dashboard sharing/templating; full Grafana parity; session
+replay; the fix-review screen (waits for outcome data to exist — deferred with the fixer rails);
+uptime/crons. The **2026-06-11 trust-surface addendum** (trace lookup, fix review) is folded in
+above: trace lookup ships in V1; fix review stays deferred.
 
-## Source Anchors
+## UX References
 
-- [TanStack Start docs](https://tanstack.com/start/latest/docs/framework/react/overview) — full-stack
-  React framework powered by TanStack Router, server functions, routing/data loading.
-- [shadcn/ui docs](https://ui.shadcn.com/) — accessible source-owned components, Tailwind/Radix,
-  installable through CLI into the app.
+Sentry (issue grouping/detail — the explicit model), Kibana (log object view), Grafana
+(cross-signal dashboards), Tempo/Jaeger (waterfall), Prometheus (metric windows).
