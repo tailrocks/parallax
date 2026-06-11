@@ -8,6 +8,7 @@ release builds can only improve these numbers).
 | --- | --- | --- | --- |
 | Cold setup: install → serving | < 15 min | ~12 s first `parallax serve` (141 MB engine download 5.3 s on a home connection + checksum + bootstrap ~6 s), plus the install itself (`cargo install` minutes, brew seconds) | **pass** |
 | Ingest-to-queryable, error span → GraphQL-visible trace | ≤ 5 s p95 | **p50 4 ms · p95 10 ms · max 60 ms** over 20 runs | **pass** |
+| Real panic → grouped issue visible (scope §1 promise) | ~5 s | **32 ms** through the panic-hook → OTLP-log path to a GraphQL-visible issue | **pass** |
 | Bundle assembly, warm | ≤ 300 ms | **p50 8 ms · p95 9 ms · max 9 ms** over 10 runs | **pass** |
 | Canary leaks through redaction-lite on its fixtures | zero | zero (`m2_bundle` asserts the bearer + AWS-key canaries never reach the bundle JSON or Markdown) | **pass** |
 

@@ -118,7 +118,9 @@ async fn main() {
     let mut record = logger.create_log_record();
     record.set_severity_number(Severity::Fatal);
     record.set_severity_text("FATAL");
-    record.set_body(AnyValue::from("panicked: checkout total overflowed at row 4242"));
+    record.set_body(AnyValue::from(
+        "panicked: checkout total overflowed at row 4242",
+    ));
     record.add_attribute("exception.type", "panic");
     record.add_attribute("exception.message", "checkout total overflowed at row 4242");
     record.add_attribute(
