@@ -25,16 +25,34 @@ pub struct ServerHandle {
     pub spool: Arc<Spool>,
     pub store: Arc<dyn TelemetryStore>,
     pub metadata: Arc<MetadataStore>,
+    supervisor: Option<crate::greptime_supervisor::GreptimeSupervisor>,
     tasks: Vec<JoinHandle<()>>,
 }
 
 impl ServerHandle {
-    /// Abort all listener tasks (test teardown / shutdown path).
+    /// Abort all listener tasks (test teardown / shutdown path). The managed
+    /// engine child dies with its kill-on-drop handle.
     pub fn shutdown(&self) {
+        if let Some(supervisor) = &self.supervisor {
+            supervisor.stop();
+        }
         for task in &self.tasks {
             task.abort();
         }
     }
+}
+
+async fn connect_greptime(url: &str, config: &Config) -> anyhow::Result<Arc<dyn TelemetryStore>> {
+    let store = parallax_storage::greptime::GreptimeStore::connect(url).await?;
+    store
+        .bootstrap(
+            &config.retention.traces_ttl,
+            &config.retention.logs_ttl,
+            &config.retention.metrics_ttl,
+            &config.retention.error_events_ttl,
+        )
+        .await?;
+    Ok(Arc::new(store))
 }
 
 /// Shared state handed to both OTLP transports.
@@ -47,13 +65,39 @@ pub struct IngestState {
 /// Start every listener plus the ingest worker. Port 0 means "pick a free
 /// port" (tests); bound addresses are reported in the handle.
 ///
-/// M1 storage: in-memory telemetry store + Turso metadata. The GreptimeDB
-/// adapter replaces the memory store behind the same trait in the next slice.
+/// Storage mode (config `[storage] mode`): `managed` supervises a local
+/// GreptimeDB standalone child on the shifted ports; `external` uses
+/// `greptime_url`; `none` keeps telemetry in the bounded in-memory store.
 pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
     let data_dir = config.data_dir();
     std::fs::create_dir_all(&data_dir)?;
     let spool = Arc::new(Spool::open(data_dir.join("spool"))?);
-    let store: Arc<dyn TelemetryStore> = Arc::new(MemoryStore::new());
+
+    let mut supervisor = None;
+    let store: Arc<dyn TelemetryStore> = match config.storage.mode.as_str() {
+        "none" => Arc::new(MemoryStore::new()),
+        "external" => {
+            let url = &config.storage.greptime_url;
+            anyhow::ensure!(
+                !url.is_empty(),
+                "storage.mode=external requires greptime_url"
+            );
+            connect_greptime(url, config).await?
+        }
+        _ => {
+            let binary = crate::greptime_supervisor::ensure_binary(
+                &data_dir.join("bin"),
+                &config.storage.greptime_version,
+                true,
+            )
+            .await?;
+            let started =
+                crate::greptime_supervisor::GreptimeSupervisor::start(binary, &data_dir).await?;
+            let url = started.http_url.clone();
+            supervisor = Some(started);
+            connect_greptime(&url, config).await?
+        }
+    };
     let metadata = Arc::new(MetadataStore::open(data_dir.join("meta.db")).await?);
 
     let (sender, receiver) = worker::channel(1024);
@@ -119,6 +163,7 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
         spool,
         store,
         metadata,
+        supervisor,
         tasks,
     })
 }

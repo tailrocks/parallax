@@ -17,7 +17,9 @@ parallax-core = { workspace = true }
 parallax-proto = { workspace = true }
 parallax-storage = { workspace = true }
 prost = { workspace = true }
+reqwest = { workspace = true }
 serde = { workspace = true }
+sha2 = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }

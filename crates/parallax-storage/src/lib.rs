@@ -5,6 +5,7 @@
 //! metadata store for mutable product state, and the NDJSON ingest spool.
 
 pub mod adapter;
+pub mod greptime;
 pub mod memory;
 pub mod metadata;
 pub mod model;

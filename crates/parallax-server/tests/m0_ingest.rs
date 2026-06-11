@@ -17,6 +17,7 @@ fn test_config(data_dir: &std::path::Path) -> Config {
     config.server.api_port = 0;
     config.server.otlp_grpc_port = 0;
     config.server.otlp_http_port = 0;
+    config.storage.mode = "none".to_string();
     config.storage.data_dir = data_dir.to_string_lossy().into_owned();
     config
 }

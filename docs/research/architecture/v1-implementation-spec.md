@@ -90,6 +90,14 @@ locality; high-cardinality identifiers (`trace_id`) as fields with an inverted i
 available; attribute maps as `JSON` columns with hot keys promoted to real columns; TTL from
 config interpolated into `WITH (ttl = …)`.
 
+**Learned against the real engine (2026-06-12, v1.0.2):** every identifier is double-quoted —
+`service`, `name`, `value`, `count`, `sum`, `source` are reserved words in GreptimeDB's parser;
+JSON values insert via `parse_json('…')` and read back via `json_to_string(…)`; `CAST("ts" AS
+BIGINT)` in projections must be aliased (DataFusion unique-name rule); the HTTP SQL API returns
+`{"output":[…]}` on success (no `code` field) and `{"code":…,"error":…}` on failure; the
+`.sha256sum` release asset is a bare hash. The DDL below is normative as written; the adapter
+applies the quoting.
+
 ```sql
 CREATE TABLE IF NOT EXISTS otel_spans (
   ts                TIMESTAMP(9) NOT NULL,
@@ -324,10 +332,10 @@ piped). `issue context` defaults to `md` (agent-facing). Exit codes: 0 ok, 1 err
 
 ## 11. GreptimeDB supervision contract
 
-1. Resolve binary: `storage.mode=managed` → look in `~/.parallax/bin/greptime`, then `$PATH`;
-   if absent, prompt once (`--yes` skips) and download the pinned release for the host triple
-   from GitHub releases, verify sha256 (shipped in Parallax's release manifest), install to
-   `~/.parallax/bin/`.
+1. Resolve binary: `storage.mode=managed` → look in `<data_dir>/bin/greptime`, then `$PATH`;
+   if absent, download the release for the host triple from GitHub releases (resolving
+   `latest` via the API, **falling back to the pinned floor version when the API is
+   unreachable**), verify the bare-hash `.sha256sum`, install to `<data_dir>/bin/`.
 2. Write child config (ports 24000–24003, data dir, `--rpc-bind-addr 127.0.0.1`).
 3. Spawn `greptime standalone start -c …`; health = HTTP `/health` on 24000 with timeout;
    restart with backoff on crash; stop on `parallax serve` shutdown.
