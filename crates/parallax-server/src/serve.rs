@@ -109,7 +109,12 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
     let mut tasks = Vec::new();
     tasks.push(tokio::spawn(worker.run(receiver)));
 
-    let schema = parallax_api::build_schema();
+    let schema = parallax_api::build_schema(
+        store.clone(),
+        metadata.clone(),
+        config.limits.graphql_max_depth,
+        config.limits.graphql_max_complexity,
+    );
     let api_router = Router::new()
         .route("/health", get(|| async { "ok" }))
         .route("/version", get(|| async { env!("CARGO_PKG_VERSION") }))
