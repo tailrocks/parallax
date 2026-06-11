@@ -154,6 +154,12 @@ not A6 pass); raw-ref TTL + evidence pinning for bundle-cited slices.
 
 *Exit:* the first dated ledger rows in the repository come from running software, not design.
 
+**Status 2026-06-12: measured.** The first gate rows are in
+[v1-gates-report.md](v1-gates-report.md) — setup/freshness/bundle-latency/canary
+all pass with large margins (`m5_gates` gated test reproduces them). The
+remaining M5 items (real detector library replacing redaction-lite, raw-ref
+TTL/evidence pinning) stay open.
+
 ### M6+ — Parked until goals 1+2 are achieved (operator statement #5)
 
 Read-only MCP (after access-surface gates); Sentry envelope adapter (fixture-gated, breadcrumbs
