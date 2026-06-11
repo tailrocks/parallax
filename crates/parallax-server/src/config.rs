@@ -19,6 +19,9 @@ pub struct ServerConfig {
     pub api_port: u16,
     pub otlp_grpc_port: u16,
     pub otlp_http_port: u16,
+    /// Directory of the built UI (SPA shell + assets). Empty = autodetect
+    /// (./ui/dist/client for dev checkouts); missing dir = API-only mode.
+    pub ui_dist: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -56,6 +59,7 @@ impl Default for ServerConfig {
             api_port: 4000,
             otlp_grpc_port: 4317,
             otlp_http_port: 4318,
+            ui_dist: String::new(),
         }
     }
 }

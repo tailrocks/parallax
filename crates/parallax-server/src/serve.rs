@@ -142,6 +142,29 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
         )
         .merge(otlp_http::router(ingest.clone()));
 
+    // The embedded UI: serve the SPA build (assets + _shell.html fallback)
+    // when a dist directory is present; otherwise stay API-only with a hint.
+    let ui_dist = if config.server.ui_dist.is_empty() {
+        ["ui/dist/client", "../ui/dist/client"]
+            .iter()
+            .map(std::path::PathBuf::from)
+            .find(|p| p.join("_shell.html").exists())
+    } else {
+        Some(std::path::PathBuf::from(&config.server.ui_dist))
+    };
+    let api_router = match ui_dist {
+        Some(dist) if dist.join("_shell.html").exists() => {
+            tracing::info!("serving UI from {}", dist.display());
+            let shell = tower_http::services::ServeFile::new(dist.join("_shell.html"));
+            let files = tower_http::services::ServeDir::new(&dist).fallback(shell);
+            api_router.fallback_service(files)
+        }
+        _ => api_router.fallback(axum::routing::get(|| async {
+            "Parallax API is running. UI build not found — run `pnpm build` in ui/ \
+             or set [server].ui_dist in config.toml."
+        })),
+    };
+
     let bind = &config.server.bind;
     let api_listener = TcpListener::bind((bind.as_str(), config.server.api_port)).await?;
     let api_addr = api_listener.local_addr()?;
