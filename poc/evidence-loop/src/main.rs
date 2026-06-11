@@ -42,6 +42,11 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
+    // Rank hypotheses over each bundle's evidence graph.
+    for b in &mut output.bundles {
+        evidence_loop_poc::hypothesis::attach_hypotheses(b);
+    }
+
     // Bound every bundle to the default agent token budget.
     for b in &mut output.bundles {
         let report = evidence_loop_poc::bound::bound_bundle(

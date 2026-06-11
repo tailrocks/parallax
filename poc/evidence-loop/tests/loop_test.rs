@@ -484,6 +484,82 @@ fn one_bundle_spans_frontend_and_backend_tiers() {
 }
 
 #[test]
+fn hypotheses_are_ranked_evidence_cited_and_honest() {
+    use evidence_loop_poc::agent::{
+        attach_agent_evidence, AgentSessionsData, SESSION_RELEVANCE_WINDOW_NANOS,
+    };
+    use evidence_loop_poc::hypothesis::attach_hypotheses;
+    let sessions: AgentSessionsData =
+        serde_json::from_str(include_str!("../fixtures/agent-sessions.json")).unwrap();
+
+    // Full evidence: agent edit + SHA-matched deploy + dependency-shaped
+    // error. Top hypothesis must be the agent-change regression, high
+    // confidence, citing the strong edges it stands on.
+    let out = run_pipeline("proj_checkout", TRACE, LOGS, Some(DEPLOYS)).unwrap();
+    let mut bundle = out
+        .bundles
+        .into_iter()
+        .find(|b| b.edges.iter().any(|e| e.r#type == "same_fingerprint"))
+        .unwrap();
+    attach_agent_evidence(&mut bundle, &sessions.sessions, SESSION_RELEVANCE_WINDOW_NANOS);
+    attach_hypotheses(&mut bundle);
+
+    let kinds: Vec<&str> = bundle.hypotheses.iter().map(|h| h.kind.as_str()).collect();
+    assert_eq!(kinds, ["agent_change_regression", "deploy_regression", "dependency_failure"]);
+    assert_eq!(bundle.hypotheses[0].confidence, "high");
+    assert!(bundle.hypotheses[0].statement.contains("src/payment.rs"));
+    assert!(bundle.hypotheses[0].statement.contains("1.42.0"));
+    for h in &bundle.hypotheses {
+        assert!(!h.evidence_refs.is_empty(), "every hypothesis must cite evidence");
+        assert!(h.evidence_refs.iter().all(|r| r.starts_with("node:") || r.starts_with("edge:")));
+    }
+    assert!(bundle.hypotheses[0]
+        .evidence_refs
+        .iter()
+        .any(|r| r.starts_with("edge:agent_edited_failing_file:")));
+
+    // Same scenario without agent evidence: deploy regression leads.
+    let out = run_pipeline("proj_checkout", TRACE, LOGS, Some(DEPLOYS)).unwrap();
+    let mut bundle = out
+        .bundles
+        .into_iter()
+        .find(|b| b.edges.iter().any(|e| e.r#type == "same_fingerprint"))
+        .unwrap();
+    attach_hypotheses(&mut bundle);
+    assert_eq!(bundle.hypotheses[0].kind, "deploy_regression");
+
+    // The Jackin run bundle: a panic with no deploy, no agent, no
+    // dependency-shaped message — the honest verdict is inconclusive,
+    // pointing at missing_evidence for what to instrument next.
+    let trace_json = include_str!("../fixtures/clirun/otlp-trace.json");
+    let logs_json = include_str!("../fixtures/clirun/otlp-logs.json");
+    let out = run_pipeline("proj_jackin", trace_json, logs_json, None).unwrap();
+    let trace: evidence_loop_poc::otlp::TraceData = serde_json::from_str(trace_json).unwrap();
+    let logs: evidence_loop_poc::otlp::LogsData = serde_json::from_str(logs_json).unwrap();
+    let mut run_bundle = evidence_loop_poc::bundle::build_run_bundle(
+        "proj_jackin", &trace, &logs, &out.error_events, "run_7f3a",
+    )
+    .unwrap();
+    attach_hypotheses(&mut run_bundle);
+    assert_eq!(run_bundle.hypotheses.len(), 1);
+    assert_eq!(run_bundle.hypotheses[0].kind, "insufficient_evidence");
+
+    // Determinism + schema validity with hypotheses present.
+    let h1 = serde_json::to_string(&bundle.hypotheses).unwrap();
+    attach_hypotheses(&mut bundle);
+    assert_eq!(h1, serde_json::to_string(&bundle.hypotheses).unwrap());
+    let schema: serde_json::Value =
+        serde_json::from_str(include_str!("../schema/evidence-bundle.v0-poc.schema.json")).unwrap();
+    let validator = jsonschema::validator_for(&schema).unwrap();
+    let bundle_json = serde_json::to_value(&bundle).unwrap();
+    assert!(
+        validator.is_valid(&bundle_json),
+        "hypothesis-bearing bundle must validate: {:?}",
+        validator.iter_errors(&bundle_json).map(|e| e.to_string()).collect::<Vec<_>>()
+    );
+}
+
+#[test]
 fn agent_session_evidence_links_edit_to_deploy_to_error() {
     use evidence_loop_poc::agent::{
         attach_agent_evidence, AgentSessionsData, SESSION_RELEVANCE_WINDOW_NANOS,

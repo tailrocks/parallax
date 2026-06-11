@@ -14,6 +14,7 @@
     "trigger",
     "nodes",
     "edges",
+    "hypotheses",
     "missing_evidence",
     "redaction_report",
     "canonical_hash"
@@ -167,6 +168,32 @@
           "from": { "type": "string", "minLength": 1 },
           "to": { "type": "string", "minLength": 1 },
           "strength": { "type": "string", "enum": ["strong", "medium", "weak", "inferred"] }
+        }
+      }
+    },
+    "hypotheses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "statement", "confidence", "evidence_refs"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "agent_change_regression",
+              "deploy_regression",
+              "dependency_failure",
+              "insufficient_evidence"
+            ]
+          },
+          "statement": { "type": "string", "minLength": 1 },
+          "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+          "evidence_refs": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "pattern": "^(node|edge):" }
+          }
         }
       }
     },

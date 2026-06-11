@@ -113,10 +113,22 @@ What it proves, end to end, with no network, database, or wall clock:
     details pass redaction; "what did the agent do before this incident" is
     now answerable from the bundle.
 
+20. **Ranked hypotheses with citations** — `attach_hypotheses` is the
+    explanation layer: deterministic rules over the typed evidence graph emit
+    ranked hypotheses (`agent_change_regression` high → `deploy_regression` →
+    `dependency_failure`), every one citing the `node:`/`edge:` refs it stands
+    on (schema enforces ≥1 ref). With full evidence the top hypothesis reads
+    "an agent-authored change to src/payment.rs, shipped in release 1.42.0,
+    likely introduced redis::ConnectionTimeout" — cited by the
+    `agent_edited_failing_file` edge. When the graph supports nothing (the
+    Jackin panic: no deploy, no agent, no dependency shape), the verdict is an
+    honest `insufficient_evidence` pointing at `missing_evidence`. No model at
+    this layer: an LLM may narrate these, never invent them.
+
 With this, **all six loop stages have an executable kernel**: Detect (triggers),
-Context (bounded bundle), Dispatch (budget + payload), Fix (external by ADR —
-contracts only), Validate (recurrence), Learn (weights + budget feedback), and
-the outward contract is machine-checkable.
+Context (bounded bundle + ranked hypotheses), Dispatch (budget + payload), Fix
+(external by ADR — contracts only), Validate (recurrence), Learn (weights +
+budget feedback), and the outward contract is machine-checkable.
 
 Run:
 

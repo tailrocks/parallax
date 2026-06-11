@@ -32,6 +32,9 @@ pub struct Bundle {
     pub trigger: Trigger,
     pub nodes: Vec<Node>,
     pub edges: Vec<Edge>,
+    /// Ranked, evidence-cited hypotheses. Populated by
+    /// `hypothesis::attach_hypotheses`; empty until then.
+    pub hypotheses: Vec<crate::hypothesis::Hypothesis>,
     pub missing_evidence: Vec<String>,
     pub redaction_report: RedactionReport,
     pub canonical_hash: Option<String>,
@@ -388,6 +391,7 @@ fn build_bundle(
         },
         nodes,
         edges,
+        hypotheses: Vec::new(),
         missing_evidence,
         redaction_report: report,
         canonical_hash: None,
@@ -571,6 +575,7 @@ pub fn build_run_bundle(
         trigger: Trigger { r#type: "manual".to_string(), dispatch_eligible: false },
         nodes,
         edges,
+        hypotheses: Vec::new(),
         missing_evidence: vec![
             "no metric windows in fixtures".to_string(),
             "deploy adjacency not evaluated for run-anchored bundles".to_string(),
