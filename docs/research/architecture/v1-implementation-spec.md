@@ -187,6 +187,20 @@ CREATE TABLE IF NOT EXISTS rollups_fingerprint_minute (
 Adapter queries are plain SQL over the HTTP API; every engine-specific statement lives in
 `parallax-storage`'s greptime module only.
 
+**Why not GreptimeDB's native OTLP tables** (`opentelemetry_traces`, pipeline-fed
+`opentelemetry_logs`, one-table-per-metric): GreptimeDB can ingest OTLP directly at
+`/v1/otlp/...` and auto-create its own layouts, but Parallax deliberately does not use that
+path. Parallax **is** the OTLP receiver (the proxy-lens architecture decision, 2026-05-25):
+ingest flows through Parallax's derivation/grouping/run-scoping workers, and the adapter writes
+the tables above. What this buys: an **engine-portable schema** (the ClickHouse fallback gets
+the identical layout through its own adapter), the `run_id` column and other Parallax semantics
+as first-class columns, and one stable contract behind `StorageAdapter`. What it costs: we
+forgo Greptime's built-in trace view/Jaeger-compatible query layer and its
+PromQL-ergonomic per-metric tables — V1 charts query our single metrics tables with SQL
+aggregates instead. Revisit-trigger: if V2 wants PromQL compatibility, a parallel write into
+Greptime's native metric model (or its OTLP metrics endpoint) can be added inside the greptime
+adapter without touching the product contract.
+
 ## 6. Turso (metadata) DDL
 
 ```sql
