@@ -25,12 +25,23 @@ What it proves, end to end, with no network, database, or wall clock:
 6. **Canonical hashing** — sorted-key compact JSON (JCS-lite; no float values
    in this PoC) hashed with SHA-256, computed with the hash field absent;
    identical fixtures yield identical hashes.
+7. **Deploy-adjacency trigger escalation** — a `parallax.deploy.v0` deploy
+   event within the 30-minute window escalates the trigger from
+   `new_fingerprint` to `deploy_adjacent_regression`, adds the deploy node,
+   and upgrades the `deploy_preceded_issue` edge to **strong** when the
+   deployed `vcs_sha` matches the service's `vcs.ref.head.revision`; an
+   out-of-window deploy does not escalate and the gap is listed in
+   `missing_evidence`.
+8. **Reconciler recurrence kernel** — `reconcile_recurrence(fix_deploy,
+   event_times, window, horizon)` returns `Recurred` / `Silent` / `WindowOpen`
+   with an explicit observation horizon instead of a wall clock, covering the
+   fix-held, fix-failed, and verdict-pending cases of the Validate stage.
 
 Run:
 
 ```bash
 cd poc/evidence-loop
-cargo test          # the five property tests
+cargo test          # the eight property tests
 cargo run           # prints derivation/bundle summary, writes out/*.json
 ```
 

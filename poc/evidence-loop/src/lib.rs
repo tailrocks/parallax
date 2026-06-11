@@ -6,6 +6,7 @@
 //! database, no wall clock — byte-identical output from identical fixtures.
 
 pub mod bundle;
+pub mod deploy;
 pub mod derive;
 pub mod fingerprint;
 pub mod otlp;
@@ -18,15 +19,29 @@ pub struct PipelineOutput {
     pub bundles: Vec<bundle::Bundle>,
 }
 
-/// Run the whole pipeline on OTLP/JSON trace + logs payloads.
-pub fn run_pipeline(project: &str, trace_json: &str, logs_json: &str) -> anyhow::Result<PipelineOutput> {
+/// Run the whole pipeline on OTLP/JSON trace + logs payloads, optionally with
+/// `parallax.deploy.v0` deploy events for trigger escalation.
+pub fn run_pipeline(
+    project: &str,
+    trace_json: &str,
+    logs_json: &str,
+    deploys_json: Option<&str>,
+) -> anyhow::Result<PipelineOutput> {
     let trace: otlp::TraceData =
         serde_json::from_str(trace_json).context("parsing OTLP trace JSON")?;
     let logs: otlp::LogsData = serde_json::from_str(logs_json).context("parsing OTLP logs JSON")?;
+    let deploys = match deploys_json {
+        Some(json) => {
+            serde_json::from_str::<deploy::DeploysData>(json)
+                .context("parsing deploy events JSON")?
+                .deploys
+        }
+        None => Vec::new(),
+    };
 
     let mut error_events = derive::derive_from_trace(&trace);
     error_events.extend(derive::derive_from_logs(&logs));
 
-    let bundles = bundle::build_bundles(project, &trace, &logs, &error_events);
+    let bundles = bundle::build_bundles(project, &trace, &logs, &deploys, &error_events);
     Ok(PipelineOutput { error_events, bundles })
 }

@@ -199,4 +199,6 @@ T+9d    Learner: backend_error accept-rate updates; deploy-edge weight reinforce
 - [Build roadmap](build-roadmap.md) — unchanged phases; Detect/Dispatch/Reconcile/Learn land as
   Phase-3/4 work, but their schemas are versioned with the core so V1 does not paint them out.
 - PoC: [`poc/evidence-loop/`](../../../poc/evidence-loop/) proves the offline data plane of
-  Detect→Context (derivation, fingerprint, trigger, bundle, redaction, canonical hash).
+  Detect→Context (derivation, fingerprint, trigger, bundle, redaction, canonical hash), the
+  `deploy_adjacent_regression` trigger with SHA-match strength upgrade (Stage 1), and the
+  Reconciler's recurrence kernel (Recurred/Silent/WindowOpen, Stage 5).

@@ -13,8 +13,9 @@ fn main() -> anyhow::Result<()> {
         .with_context(|| format!("reading {}/otlp-trace.json", fixtures.display()))?;
     let logs_json = fs::read_to_string(fixtures.join("otlp-logs.json"))
         .with_context(|| format!("reading {}/otlp-logs.json", fixtures.display()))?;
+    let deploys_json = fs::read_to_string(fixtures.join("deploy-events.json")).ok();
 
-    let output = run_pipeline("proj_checkout", &trace_json, &logs_json)?;
+    let output = run_pipeline("proj_checkout", &trace_json, &logs_json, deploys_json.as_deref())?;
 
     println!("derived error events: {}", output.error_events.len());
     for ev in &output.error_events {

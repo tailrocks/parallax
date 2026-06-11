@@ -9,8 +9,9 @@
 //! values, so RFC 8785 number formatting edge cases do not arise), SHA-256,
 //! computed with the `canonical_hash` field absent.
 
+use crate::deploy::{find_adjacent_deploy, DeployEvent, ADJACENCY_WINDOW_NANOS};
 use crate::derive::{ErrorEvent, ErrorSource};
-use crate::otlp::{LogsData, TraceData};
+use crate::otlp::{attr, LogsData, TraceData};
 use crate::redact::{redact_string, RedactionReport};
 use serde::Serialize;
 use serde_json::Value;
@@ -85,6 +86,14 @@ pub enum Node {
         trace_id: String,
         lines: Vec<String>,
     },
+    #[serde(rename = "deploy")]
+    Deploy {
+        id: String,
+        release: String,
+        vcs_sha: String,
+        environment: String,
+        finished_at_unix_nano: String,
+    },
 }
 
 #[derive(Debug, Serialize)]
@@ -100,6 +109,7 @@ pub fn build_bundles(
     project: &str,
     trace: &TraceData,
     logs: &LogsData,
+    deploys: &[DeployEvent],
     error_events: &[ErrorEvent],
 ) -> Vec<Bundle> {
     let mut fingerprints: Vec<String> = error_events.iter().map(|e| e.fingerprint.clone()).collect();
@@ -108,7 +118,7 @@ pub fn build_bundles(
 
     fingerprints
         .iter()
-        .map(|fp| build_bundle(project, trace, logs, error_events, fp))
+        .map(|fp| build_bundle(project, trace, logs, deploys, error_events, fp))
         .collect()
 }
 
@@ -116,6 +126,7 @@ fn build_bundle(
     project: &str,
     trace: &TraceData,
     logs: &LogsData,
+    deploys: &[DeployEvent],
     all_events: &[ErrorEvent],
     fp: &str,
 ) -> Bundle {
@@ -219,6 +230,52 @@ fn build_bundle(
         });
     }
 
+    // Deploy adjacency: escalates the trigger and adds a deploy node. Edge is
+    // strong when the deployed SHA matches the erroring service's
+    // vcs.ref.head.revision resource attribute, medium on time adjacency alone
+    // (strength tiers per docs/research/capture/deploy-change-context.md).
+    let first_error_nanos = events
+        .iter()
+        .map(|e| e.time_unix_nano.parse::<u128>().unwrap_or(0))
+        .min()
+        .unwrap_or(0);
+    let adjacent_deploy = find_adjacent_deploy(deploys, first_error_nanos, ADJACENCY_WINDOW_NANOS);
+    let mut missing_evidence = vec!["no metric windows in fixtures".to_string()];
+    if let Some(deploy) = adjacent_deploy {
+        let id = format!("deploy_{}", deploy.release);
+        let resource_revision = trace
+            .resource_spans
+            .first()
+            .and_then(|rs| rs.resource.as_ref())
+            .and_then(|r| attr(&r.attributes, "vcs.ref.head.revision"));
+        let strength = if resource_revision == Some(deploy.vcs_sha.as_str()) {
+            "strong"
+        } else {
+            "medium"
+        };
+        nodes.push(Node::Deploy {
+            id: id.clone(),
+            release: deploy.release.clone(),
+            vcs_sha: deploy.vcs_sha.clone(),
+            environment: deploy.environment.clone(),
+            finished_at_unix_nano: deploy.finished_at_unix_nano.clone(),
+        });
+        edges.push(Edge {
+            r#type: "deploy_preceded_issue".to_string(),
+            from: id,
+            to: error_node_ids[0].clone(),
+            strength: strength.to_string(),
+        });
+    } else {
+        missing_evidence
+            .push("no deploy event within adjacency window (deploy_adjacent_regression not evaluable)".to_string());
+    }
+    let trigger_type = if adjacent_deploy.is_some() {
+        "deploy_adjacent_regression"
+    } else {
+        "new_fingerprint"
+    };
+
     let generated_at = latest_timestamp(all_events);
     let mut bundle = Bundle {
         schema_version: SCHEMA_VERSION.to_string(),
@@ -235,16 +292,14 @@ fn build_bundle(
             service_name: anchor_event.service_name.clone(),
         },
         trigger: Trigger {
-            // PoC baseline is empty, so every fingerprint is new.
-            r#type: "new_fingerprint".to_string(),
+            // PoC baseline is empty, so every fingerprint is at least new;
+            // deploy adjacency escalates it.
+            r#type: trigger_type.to_string(),
             dispatch_eligible: true,
         },
         nodes,
         edges,
-        missing_evidence: vec![
-            "no metric windows in fixtures".to_string(),
-            "no deploy event in fixtures (deploy_adjacent_regression not evaluable)".to_string(),
-        ],
+        missing_evidence,
         redaction_report: report,
         canonical_hash: None,
     };

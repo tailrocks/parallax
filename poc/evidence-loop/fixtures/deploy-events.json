@@ -1,0 +1,22 @@
+{
+  "deploys": [
+    {
+      "schema": "parallax.deploy.v0",
+      "project_id": "proj_checkout",
+      "release": "1.41.9",
+      "vcs_sha": "0000aaaa1111bbbb2222cccc3333dddd4444eeee",
+      "environment": "production",
+      "status": "succeeded",
+      "finished_at_unix_nano": "1781340000000000000"
+    },
+    {
+      "schema": "parallax.deploy.v0",
+      "project_id": "proj_checkout",
+      "release": "1.42.0",
+      "vcs_sha": "abc123def4567890abc123def4567890abc123de",
+      "environment": "production",
+      "status": "succeeded",
+      "finished_at_unix_nano": "1781430000000000000"
+    }
+  ]
+}
