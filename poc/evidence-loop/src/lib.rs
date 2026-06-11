@@ -14,6 +14,7 @@ pub mod derive;
 pub mod dispatch;
 pub mod fingerprint;
 pub mod hypothesis;
+pub mod instrument;
 pub mod learn;
 pub mod otlp;
 pub mod redact;

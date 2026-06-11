@@ -484,6 +484,60 @@ fn one_bundle_spans_frontend_and_backend_tiers() {
 }
 
 #[test]
+fn instrumentation_suggestions_make_gap_closing_machine_actionable() {
+    use evidence_loop_poc::instrument::suggest_instrumentation;
+
+    // The Jackin run bundle misses metrics: the agent gets a concrete,
+    // convention-referenced TODO instead of prose.
+    let trace_json = include_str!("../fixtures/clirun/otlp-trace.json");
+    let logs_json = include_str!("../fixtures/clirun/otlp-logs.json");
+    let out = run_pipeline("proj_jackin", trace_json, logs_json, None).unwrap();
+    let trace: evidence_loop_poc::otlp::TraceData = serde_json::from_str(trace_json).unwrap();
+    let logs: evidence_loop_poc::otlp::LogsData = serde_json::from_str(logs_json).unwrap();
+    let run_bundle = evidence_loop_poc::bundle::build_run_bundle(
+        "proj_jackin", &trace, &logs, &out.error_events, "run_7f3a",
+    )
+    .unwrap();
+    let report = suggest_instrumentation(&run_bundle);
+    assert!(report
+        .suggestions
+        .iter()
+        .any(|s| s.gap.contains("no metric windows") && s.convention_ref.contains("integration-contract")));
+    assert!(report.unmapped_gaps.is_empty(), "informational entries are skipped, not unmapped");
+
+    // Main scenario without a deploy fixture: the deploy-event gap maps to
+    // the parallax.deploy.v0 convention.
+    let out = run_pipeline("proj_checkout", TRACE, LOGS, None).unwrap();
+    let bundle = &out.bundles[0];
+    let report = suggest_instrumentation(bundle);
+    assert!(report.suggestions.iter().any(|s| s.suggestion.contains("parallax.deploy.v0")));
+
+    // A medium deploy edge (time adjacency, SHA mismatch) yields the
+    // build-stamping recipe that upgrades it to strong.
+    let mismatched_deploy = r#"{ "deploys": [ {
+        "schema": "parallax.deploy.v0", "project_id": "proj_checkout",
+        "release": "1.42.0", "vcs_sha": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+        "environment": "production", "status": "succeeded",
+        "finished_at_unix_nano": "1781430000000000000" } ] }"#;
+    let out = run_pipeline("proj_checkout", TRACE, LOGS, Some(mismatched_deploy)).unwrap();
+    let bundle = &out.bundles[0];
+    assert!(bundle
+        .edges
+        .iter()
+        .any(|e| e.r#type == "deploy_preceded_issue" && e.strength == "medium"));
+    let report = suggest_instrumentation(bundle);
+    assert!(report
+        .suggestions
+        .iter()
+        .any(|s| s.suggestion.contains("vcs.ref.head.revision")));
+
+    // Deterministic.
+    let a = serde_json::to_string(&suggest_instrumentation(bundle)).unwrap();
+    let b = serde_json::to_string(&suggest_instrumentation(bundle)).unwrap();
+    assert_eq!(a, b);
+}
+
+#[test]
 fn hypotheses_are_ranked_evidence_cited_and_honest() {
     use evidence_loop_poc::agent::{
         attach_agent_evidence, AgentSessionsData, SESSION_RELEVANCE_WINDOW_NANOS,

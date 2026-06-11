@@ -124,6 +124,16 @@ What it proves, end to end, with no network, database, or wall clock:
     Jackin panic: no deploy, no agent, no dependency shape), the verdict is an
     honest `insufficient_evidence` pointing at `missing_evidence`. No model at
     this layer: an LLM may narrate these, never invent them.
+21. **Instrumentation suggestions (the gap-closing half of lifecycle 3)** —
+    `suggest_instrumentation` turns `missing_evidence` entries and
+    graph-derived gaps into structured, convention-referenced TODOs: missing
+    metrics → add the OTLP metrics exporter; missing deploy events → emit
+    `parallax.deploy.v0`; a medium deploy edge (SHA mismatch) → stamp
+    `vcs.ref.head.revision` at build time so the edge upgrades to strong;
+    missing trace-correlated logs → bridge the log appender through
+    tracing-opentelemetry. Unmapped gaps are surfaced, never dropped — the
+    agent gets machine-actionable instructions for what to instrument before
+    asking the human to reproduce once more.
 
 With this, **all six loop stages have an executable kernel**: Detect (triggers),
 Context (bounded bundle + ranked hypotheses), Dispatch (budget + payload), Fix
