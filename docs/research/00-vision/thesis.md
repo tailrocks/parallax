@@ -25,6 +25,18 @@ GreptimeDB (not yet settled)** with ClickHouse the fallback (see
 stay unproven until freshness, bundle-latency, object-cost, and operational
 gates pass.
 
+**Wedge update, 2026-06-12 (operator statements #3–#5):** this thesis's "flaky test
+investigation first" recommendation is superseded. The current first product is the
+**local-first `run_id` evidence server for agent-assisted development** (the developer on a dev
+machine is user #1), followed by the same binary on a server — see
+[problem-audience-product-shape.md](problem-audience-product-shape.md) and the
+[V1 build plan](../architecture/v1-build-plan.md). Flaky-test/CI investigation remains a future
+capture area ([ci-and-flaky-tests.md](../capture/ci-and-flaky-tests.md)), not the entry wedge.
+The same statements also defer autonomous fixing to a future nice-to-have, and the "build
+direction includes Sentry envelope migration" phrasing below should be read per
+[sentry-ingest.md](../capture/sentry-ingest.md): a future, fixture-gated adapter, never V1
+scope. The rest of this document is preserved as the original idea-validation record.
+
 Maintained follow-ups:
 
 - [Parallax Go / No-Go Verdict](../decisions/go-no-go.md)

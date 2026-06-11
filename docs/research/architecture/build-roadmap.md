@@ -19,6 +19,16 @@ before the comfortable engineering (the storage benchmark).** The storage
 benchmark is the fun problem; it is not the dangerous one. Do the scary,
 cheap experiments first.
 
+> **Alignment note (operator statement #5, 2026-06-11).** The gates in this sequence govern
+> **market claims and further-investment framing**, not the operator's own tool. The operator
+> ruled that goals 1+2 — local visibility and the server profile, per the
+> [V1 build plan](v1-build-plan.md) — are built now for operator-as-user-#1, in parallel with
+> these gates, with autonomous fixing deferred to a future nice-to-have. The two tracks feed
+> each other: the build's M2 bundle output is the Arm-C generator the Phase-0 A1 eval needs, and
+> A1/A2 still decide what may be *claimed* and whether the market product gets further
+> investment. Phase numbering below is unchanged; read "build nothing until the gate passes" as
+> "claim nothing and invest no further market effort until the gate passes."
+
 ## The One Insight That Reorders Everything
 
 You do **not** need the Parallax engine to test Parallax's core claim.

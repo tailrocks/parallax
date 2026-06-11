@@ -113,9 +113,12 @@ and conversion, and writes to whatever backend it chooses.** Consequences this l
   columnar engine (Sentry's ClickHouse "replacements consumer" is the warning). See
   [`platform-fit-and-alternatives.md`](../docs/research/storage/greptimedb-vs-clickhouse/platform-fit-and-alternatives.md).
 
-Net standing lean under the proxy: **ClickHouse is the pragmatic default**; GreptimeDB is the choice
-only for the metrics-cardinality/PromQL · self-hosted-1×-S3-economics · mandatory-auto-rebalance bet.
-Keep testing this honestly — flip it if the mechanism evidence says so.
+Net standing lean (superseding the earlier ClickHouse-default reading of the proxy lens;
+resolved 2026-05-29, operator re-affirmed 2026-06-11): **GreptimeDB** — the anchored-retrieval
+query mix puts ClickHouse's scan-speed lead off the hot path, so the decision turns on cost +
+Rust + self-hosted economics; ClickHouse stays the fallback behind the same `StorageAdapter`.
+The benchmark program's job is unchanged: keep testing this honestly — the sized cost and
+cold-read gates remain the finalizers, and the mechanism evidence flips the lean if it says so.
 
 ## Count Experimental As Stable — Judge On Mechanism And Trajectory
 

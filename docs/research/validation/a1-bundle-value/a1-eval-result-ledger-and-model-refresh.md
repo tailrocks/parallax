@@ -34,7 +34,9 @@ Outside sources checked for this pass:
   ([SWE-bench-Live](https://swe-bench-live.github.io/),
   [MultiLang](https://huggingface.co/datasets/SWE-bench-Live/MultiLang)).
 - SWE-bench-Live's Hugging Face org now lists four datasets and shows recent
-  activity: OS-bench (126 rows), MultiLang (743 rows), Windows (61 rows), and
+  activity: OS-bench (126 rows at the 2026-05-25 check; **drifted to 63 rows on
+  2026-06-09** — see the [freeze check](a1-task-source-freeze-check.md)
+  re-verification), MultiLang (743 rows), Windows (61 rows), and
   the Python-only SWE-bench-Live set. The official site says the benchmark plans
   monthly updates and notes a February 2026 Windows-specific task release. The
   Windows viewer exposes the same high-risk fields as other SWE-style sources

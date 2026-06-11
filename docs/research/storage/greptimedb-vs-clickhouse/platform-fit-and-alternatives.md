@@ -107,6 +107,15 @@ the storage model — it's the engine, and it's closable.
 
 ## Skeptical re-score: under the proxy lens, ClickHouse is the stronger default
 
+> **Superseded as the standing lean (2026-05-29; operator re-affirmed 2026-06-11).** This
+> section's conclusion held while the query mix was unresolved. The operator then resolved the
+> mix as **anchored-bundle-retrieval-dominant**, which moves ClickHouse's retrieval-speed lead
+> off the hot path and turns the decision on cost + Rust — where GreptimeDB leads. The current
+> lean is **GreptimeDB**, ClickHouse the fallback; see
+> [decisions/storage-engine.md](../../decisions/storage-engine.md). The analysis below remains
+> valid as the answer to a different question ("what if the mix were analytics-dominated?") and
+> as the documented flip condition.
+
 Being skeptical, as asked: **once ingest ergonomics are removed from the scorecard, the case for
 GreptimeDB narrows to a specific bet, and ClickHouse becomes the pragmatic default for Parallax.**
 

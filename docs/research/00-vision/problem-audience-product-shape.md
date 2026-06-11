@@ -93,10 +93,12 @@ way. (Capture *depth* stays Rust-first per scope; the engine and infra stay Rust
 **Rung 2, sharpened (operator statement #4): one binary, deployment profiles.** The old world
 made a growing startup assemble and operate Sentry + Grafana + Loki + a trace store + a metrics
 stack — and "they always never do this properly." Parallax replaces that with **one binary plus a
-profile**: `--profile local` for the laptop, `--profile cloud` for the server — where the cloud
-profile adapts to the environment (which cloud, object-storage-backed retention, cloud-suited
-defaults) instead of making the operator design a deployment. You are not "managing Sentry"; you
-are running one thing that was designed to run in the cloud from the start.
+profile** — refined into the three-profile family `local | server | cloud` in the
+[deployment architecture map](../architecture/deployment-architecture-map.md): `local` for the
+laptop, `server` for your own hardware, `cloud` adapting to the environment (which cloud,
+object-storage-backed retention, cloud-suited defaults) instead of making the operator design a
+deployment. You are not "managing Sentry"; you are running one thing that was designed to run in
+the cloud from the start.
 
 **Rung 3 — the big company.** Bugs are not fixed the day they fire; they are fixed next month or
 next quarter. That makes **retention economics** the product feature: object storage as the only
