@@ -301,6 +301,27 @@ fn step_nanos(step_seconds: Option<i32>) -> u128 {
     u128::try_from(step_seconds.unwrap_or(60).max(1)).unwrap_or(60) * 1_000_000_000
 }
 
+pub struct BundleOut {
+    json: String,
+    markdown: String,
+    canonical_hash: String,
+}
+
+#[graphql_object(context = ApiContext)]
+impl BundleOut {
+    /// The bundle as canonical JSON.
+    fn json(&self) -> &str {
+        &self.json
+    }
+    /// The agent-facing Markdown projection.
+    fn markdown(&self) -> &str {
+        &self.markdown
+    }
+    fn canonical_hash(&self) -> &str {
+        &self.canonical_hash
+    }
+}
+
 pub struct Query;
 
 #[graphql_object(context = ApiContext)]
@@ -398,6 +419,57 @@ impl Query {
             .await
             .map_err(field_err)?;
         Ok(logs.into_iter().map(LogRecord).collect())
+    }
+
+    /// The bounded, redacted, hypothesis-ranked evidence bundle for an issue
+    /// — the agent handoff artifact.
+    async fn bundle(
+        context: &ApiContext,
+        fingerprint: String,
+        max_tokens: Option<i32>,
+    ) -> FieldResult<Option<BundleOut>> {
+        let issues = context.metadata.issues(MAX_ROWS).await.map_err(field_err)?;
+        let Some(issue) = issues.into_iter().find(|i| i.fingerprint == fingerprint) else {
+            return Ok(None);
+        };
+        let events = context
+            .store
+            .error_events_by_fingerprint(&fingerprint, 0..=u128::MAX, 5)
+            .await
+            .map_err(field_err)?;
+        let (trace_spans, trace_logs) = match issue.last_trace_id.as_deref() {
+            Some(trace_id) => (
+                context
+                    .store
+                    .spans_by_trace(trace_id)
+                    .await
+                    .map_err(field_err)?,
+                context
+                    .store
+                    .logs_by_trace(trace_id)
+                    .await
+                    .map_err(field_err)?,
+            ),
+            None => (Vec::new(), Vec::new()),
+        };
+        let max_tokens = usize::try_from(max_tokens.unwrap_or(10_000).max(500)).unwrap_or(10_000);
+        let bundle = parallax_core::bundle::assemble(
+            parallax_core::bundle::BundleInputs {
+                issue,
+                events,
+                trace_spans,
+                trace_logs,
+            },
+            max_tokens,
+        );
+        let markdown = parallax_core::bundle::to_markdown(&bundle);
+        let canonical_hash = bundle.canonical_hash.clone().unwrap_or_default();
+        let json = serde_json::to_string_pretty(&bundle).map_err(field_err)?;
+        Ok(Some(BundleOut {
+            json,
+            markdown,
+            canonical_hash,
+        }))
     }
 
     /// Distinct metric names seen by the store (drives the dashboard builder).

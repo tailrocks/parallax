@@ -10,5 +10,6 @@ repository.workspace = true
 [dependencies]
 anyhow = { workspace = true }
 juniper = { workspace = true }
+parallax-core = { workspace = true }
 parallax-storage = { workspace = true }
 serde_json = { workspace = true }

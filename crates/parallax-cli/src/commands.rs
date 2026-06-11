@@ -187,92 +187,21 @@ pub async fn issue_list(client: &Client, status: Option<&str>) -> anyhow::Result
     Ok(())
 }
 
-/// `parallax issue context <fingerprint>` — the agent handoff: a Markdown
-/// evidence view of the issue (events, stacktrace, trace, correlated logs).
+/// `parallax issue context <fingerprint>` — the agent handoff: the bounded,
+/// redacted, hypothesis-ranked evidence bundle, rendered by the server.
 pub async fn issue_context(client: &Client, fingerprint: &str) -> anyhow::Result<()> {
     let response = client
         .graphql(&format!(
-            r#"{{ issue(fingerprint: "{}") {{
-                 title errorType culprit service status eventCount
-                 firstSeenNanos lastSeenNanos lastTraceId
-                 events(limit: 5) {{ tsNanos message stacktrace source traceId spanId }}
-               }} }}"#,
+            r#"{{ bundle(fingerprint: "{}") {{ markdown canonicalHash }} }}"#,
             gql_str(fingerprint)
         ))
         .await?;
-    let Some(issue) = response.pointer("/data/issue").filter(|v| !v.is_null()) else {
+    let Some(bundle) = response.pointer("/data/bundle").filter(|v| !v.is_null()) else {
         anyhow::bail!("issue {fingerprint} not found");
     };
-
-    println!("# {}", issue["title"].as_str().unwrap_or(fingerprint));
-    println!();
-    println!("- fingerprint: `{fingerprint}`");
-    println!("- service: {}", issue["service"].as_str().unwrap_or("-"));
-    println!("- status: {}", issue["status"].as_str().unwrap_or("-"));
-    println!(
-        "- occurrences: {} (first {}, last {})",
-        issue["eventCount"].as_u64().unwrap_or(0),
-        relative(issue["firstSeenNanos"].as_str().unwrap_or("0")),
-        relative(issue["lastSeenNanos"].as_str().unwrap_or("0")),
-    );
-    if let Some(culprit) = issue["culprit"].as_str() {
-        println!("- culprit: `{culprit}`");
-    }
-
-    let events = issue["events"].as_array().cloned().unwrap_or_default();
-    if let Some(latest) = events.first() {
-        println!(
-            "\n## Latest event ({})",
-            relative(latest["tsNanos"].as_str().unwrap_or("0"))
-        );
-        println!("\n{}", latest["message"].as_str().unwrap_or(""));
-        if let Some(stack) = latest["stacktrace"].as_str() {
-            println!("\n```\n{stack}\n```");
-        }
-    }
-
-    // Trace + correlated logs for the latest occurrence.
-    if let Some(trace_id) = issue["lastTraceId"].as_str() {
-        let detail = client
-            .graphql(&format!(
-                r#"{{ trace(traceId: "{0}") {{ spans {{ name service statusCode durationNs }} }}
-                     logsByTrace(traceId: "{0}") {{ severityText body }} }}"#,
-                gql_str(trace_id)
-            ))
-            .await?;
-        println!("\n## Trace `{trace_id}`");
-        if let Some(spans) = detail
-            .pointer("/data/trace/spans")
-            .and_then(|v| v.as_array())
-        {
-            for span in spans {
-                let micros = span["durationNs"]
-                    .as_str()
-                    .and_then(|d| d.parse::<u128>().ok())
-                    .unwrap_or(0)
-                    / 1_000;
-                println!(
-                    "- [{}] {} — {} ({micros}µs)",
-                    span["service"].as_str().unwrap_or("-"),
-                    span["name"].as_str().unwrap_or("-"),
-                    span["statusCode"].as_str().unwrap_or("-"),
-                );
-            }
-        }
-        if let Some(logs) = detail
-            .pointer("/data/logsByTrace")
-            .and_then(|v| v.as_array())
-            && !logs.is_empty()
-        {
-            println!("\n## Correlated logs");
-            for log in logs {
-                println!(
-                    "- {} {}",
-                    log["severityText"].as_str().unwrap_or("-"),
-                    log["body"].as_str().unwrap_or(""),
-                );
-            }
-        }
+    println!("{}", bundle["markdown"].as_str().unwrap_or(""));
+    if let Some(hash) = bundle["canonicalHash"].as_str() {
+        println!("\n---\nbundle: {hash}");
     }
     Ok(())
 }

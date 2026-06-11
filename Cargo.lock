@@ -2042,6 +2042,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "juniper",
+ "parallax-core",
  "parallax-storage",
  "serde_json",
 ]
