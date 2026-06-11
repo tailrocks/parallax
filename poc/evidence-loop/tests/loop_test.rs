@@ -12,13 +12,20 @@
 //! 6. The Reconciler recurrence kernel returns the right verdict for the
 //!    recurred / silent / window-open cases.
 
+use evidence_loop_poc::budget::{compute_budget, OutcomeRow, OutcomesData};
 use evidence_loop_poc::deploy::{reconcile_recurrence, RecurrenceVerdict};
 use evidence_loop_poc::derive::ErrorSource;
+use evidence_loop_poc::dispatch::build_fix_candidate;
 use evidence_loop_poc::run_pipeline;
 
 const TRACE: &str = include_str!("../fixtures/otlp-trace.json");
 const LOGS: &str = include_str!("../fixtures/otlp-logs.json");
 const DEPLOYS: &str = include_str!("../fixtures/deploy-events.json");
+const OUTCOMES: &str = include_str!("../fixtures/outcome-rows.json");
+
+fn outcome_rows() -> Vec<OutcomeRow> {
+    serde_json::from_str::<OutcomesData>(OUTCOMES).unwrap().outcomes
+}
 
 #[test]
 fn derives_error_events_from_spans_and_logs() {
@@ -160,4 +167,79 @@ fn recurrence_kernel_returns_all_three_verdicts() {
     // Pre-deploy events never count as recurrence.
     let verdict = reconcile_recurrence(fix_deploy, &[999_999, 1_000_000], window, 1_001_000);
     assert_eq!(verdict, RecurrenceVerdict::Silent, "events at or before the deploy are the original bug");
+}
+
+#[test]
+fn autonomy_budget_is_earned_from_outcomes() {
+    let rows = outcome_rows();
+
+    // backend_error: 12 rows, accepted_rate (8 + 0.5*2)/12 = 0.75, zero
+    // reverts — earns L2. One recurrence (rate 0.083 > 0.05) blocks L3:
+    // draft-PR autonomy must be earned with clean recurrence windows.
+    let backend = compute_budget(&rows, "backend_error");
+    assert_eq!(backend.max_level, "L2_propose_patch");
+    assert_eq!(backend.basis.runs, 12);
+    assert_eq!(backend.basis.accepted_rate, "0.750");
+
+    // frontend_error: only 2 rows — below the L2 sample floor, stays L1.
+    let frontend = compute_budget(&rows, "frontend_error");
+    assert_eq!(frontend.max_level, "L1_diagnose");
+
+    // Unknown class: no history, starts at L1.
+    let unknown = compute_budget(&rows, "deploy_regression");
+    assert_eq!(unknown.max_level, "L1_diagnose");
+}
+
+#[test]
+fn clean_history_earns_l3_and_redaction_failure_caps_at_l1() {
+    let clean: Vec<OutcomeRow> = (0..12)
+        .map(|i| OutcomeRow {
+            outcome_id: format!("fixout_clean_{i}"),
+            failure_class: "backend_error".to_string(),
+            autonomy_level: "L2".to_string(),
+            classification: "accepted".to_string(),
+            merged: true,
+            recurrence: "no".to_string(),
+            redaction_failure: false,
+        })
+        .collect();
+    assert_eq!(compute_budget(&clean, "backend_error").max_level, "L3_draft_pr");
+
+    // One redaction failure in the window caps the whole class at L1
+    // regardless of accept rate.
+    let mut tainted = clean;
+    tainted[0].redaction_failure = true;
+    assert_eq!(compute_budget(&tainted, "backend_error").max_level, "L1_diagnose");
+}
+
+#[test]
+fn fix_candidate_payload_is_deterministic_and_carries_budget() {
+    let out = run_pipeline("proj_checkout", TRACE, LOGS, Some(DEPLOYS)).unwrap();
+    let rows = outcome_rows();
+    let bundle = &out.bundles[0];
+
+    let make = || {
+        build_fix_candidate(
+            bundle,
+            compute_budget(&rows, "backend_error"),
+            vec!["cargo test -p checkout".to_string()],
+        )
+    };
+    let a = serde_json::to_string(&make()).unwrap();
+    let b = serde_json::to_string(&make()).unwrap();
+    assert_eq!(a, b, "identical bundle + history must produce identical payloads");
+
+    let candidate = make();
+    assert_eq!(candidate.event_type, "parallax.fix_candidate.v0");
+    assert_eq!(candidate.trigger, "deploy_adjacent_regression");
+    assert_eq!(candidate.autonomy_budget.max_level, "L2_propose_patch");
+    assert_eq!(
+        candidate.idempotency_key,
+        format!("iss_{}:{}", bundle.anchor.fingerprint, bundle.bundle_id)
+    );
+    assert!(candidate.canonical_bundle_hash.starts_with("sha256:"));
+    assert!(
+        !a.contains("\"nodes\""),
+        "payload must reference the bundle, never inline its nodes"
+    );
 }

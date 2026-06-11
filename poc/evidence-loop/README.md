@@ -36,13 +36,23 @@ What it proves, end to end, with no network, database, or wall clock:
    event_times, window, horizon)` returns `Recurred` / `Silent` / `WindowOpen`
    with an explicit observation horizon instead of a wall clock, covering the
    fix-held, fix-failed, and verdict-pending cases of the Validate stage.
+9. **Earned autonomy budget** — `compute_budget(outcome_rows, failure_class)`
+   implements the v0 promotion policy (L2: n≥5, accept≥0.6, zero reverts;
+   L3: n≥10, accept≥0.7, revert+recurrence ≤0.05; edited = half credit; any
+   redaction failure caps at L1; L4/L5 never emitted). The fixture history
+   earns L2 and is blocked from L3 by one recurrence — autonomy comes from
+   outcomes, not configuration.
+10. **Dispatch payload** — `parallax.fix_candidate.v0` wake event per bundle:
+    references the bundle (never inlines it), carries the computed budget,
+    canonical bundle hash, required validation, a stable idempotency key, and
+    a telemetry-anchored expiry. Byte-deterministic.
 
 Run:
 
 ```bash
 cd poc/evidence-loop
-cargo test          # the eight property tests
-cargo run           # prints derivation/bundle summary, writes out/*.json
+cargo test          # the eleven property tests
+cargo run           # prints derivation/bundle/dispatch summary, writes out/*.json
 ```
 
 The schema here is `bundle-v0-poc`, a reduced shape of the real contract in

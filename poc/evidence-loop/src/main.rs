@@ -1,4 +1,6 @@
 use anyhow::Context;
+use evidence_loop_poc::budget::{compute_budget, OutcomesData};
+use evidence_loop_poc::dispatch::build_fix_candidate;
 use evidence_loop_poc::run_pipeline;
 use std::fs;
 use std::path::PathBuf;
@@ -40,6 +42,32 @@ fn main() -> anyhow::Result<()> {
             b.redaction_report.total(),
             b.canonical_hash.as_deref().unwrap_or("-")
         );
+    }
+
+    // Dispatch: compute the autonomy budget from outcome history (if fixture
+    // present) and emit one fix_candidate wake payload per bundle.
+    if let Ok(outcomes_json) = fs::read_to_string(fixtures.join("outcome-rows.json")) {
+        let outcomes: OutcomesData =
+            serde_json::from_str(&outcomes_json).context("parsing outcome rows JSON")?;
+        println!("fix candidates:");
+        for b in &output.bundles {
+            let budget = compute_budget(&outcomes.outcomes, "backend_error");
+            let candidate = build_fix_candidate(
+                b,
+                budget,
+                vec!["cargo test -p checkout".to_string()],
+            );
+            let path = out_dir.join(format!("fix-candidate-{}.json", b.anchor.fingerprint));
+            fs::write(&path, serde_json::to_string_pretty(&candidate)?)?;
+            println!(
+                "  {} issue={} trigger={} budget={} key={}",
+                path.display(),
+                candidate.issue_id,
+                candidate.trigger,
+                candidate.autonomy_budget.max_level,
+                candidate.idempotency_key
+            );
+        }
     }
     Ok(())
 }
