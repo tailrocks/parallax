@@ -8,10 +8,16 @@ could kill the project before the comfortable engineering). The full per-assumpt
 (A1–A7 and the conformance ledgers) lives in
 [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md); this
 file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed. Last
-updated 2026-06-11 (post vision-statements #1–#4, the autonomous-fix-loop/integration-contract
+updated 2026-06-11 (post vision-statements #1–#5, the autonomous-fix-loop/integration-contract
 concept docs, and the `poc/evidence-loop` kernels — see the
 [PoC coverage map](architecture/poc-evidence-loop-coverage.md); the ranking below did not change:
 A1 and A2 still carry the GO).
+
+**Build-priority note (statement #5):** the operator's build focus is goals 1+2 — local
+visibility and the server profile, per [architecture/v1-build-plan.md](architecture/v1-build-plan.md)
+— with autonomous fixing deferred to nice-to-have. Building for operator-as-user-#1 proceeds in
+parallel with, and does not substitute for, the A1/A2 market gates below; M2's bundle output is
+the Arm-C generator A1 needs, so the tracks feed each other.
 
 ## Priority queue
 

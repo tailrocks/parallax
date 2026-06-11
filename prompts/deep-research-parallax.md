@@ -355,6 +355,18 @@ scalability and cheap infrastructure are design constraints from day one, not
 a build focus. Keep these user stories current in
 docs/research/00-vision/problem-audience-product-shape.md.
 
+Build-order ruling (operator, 2026-06-11, statement #5): the build focus is
+goal 1 (local-machine visibility — slightly first; the operator uses it daily
+on his own Rust tools and is user #1) and goal 2 (the same binary with a cloud
+profile on a server, analyzing his existing deployed Rust services), treated
+as co-equal top priorities. Autonomous fixing is explicitly a future
+nice-to-have: keep its schemas, contracts, and design pressure current (the
+north star remains the ceiling), but do not pull fix-loop components
+(dispatch, reconciler, learner, fixer rails, autonomy budgets) into the build
+until goals 1 and 2 are achieved. The concrete milestone plan is
+docs/research/architecture/v1-build-plan.md; research passes should keep that
+plan honest against the decided stack, the gates, and new evidence.
+
 ## Separation of concerns: Parallax stores, a separate agent fixes
 
 Be precise about the component boundary, because it shapes the whole design:

@@ -144,6 +144,16 @@ The no-trade-off rule, operationalized: when a design forces a pairwise choice, 
 smell, not a decision to make. The third vertex must come from **architecture** (what is hot, what
 is pinned, what is pre-aggregated) — never from "pay more" or "keep less evidence."
 
+## 4a. Build-order note (operator statement #5, 2026-06-11)
+
+The north star is the **ceiling, not the schedule**. Statement #5 explicitly demotes autonomous
+fixing to a future nice-to-have: the build focuses on visibility for the two priority audiences
+(local developer, deployed services), and fix-loop components (Dispatcher, Reconciler, Learner,
+fixer rails) stay unbuilt until those goals land. What survives of this document in the near
+term is its *design pressure*: the schemas, outcome contracts, evidence pinning, and autonomy
+vocabulary remain versioned in the contract so the summit stays reachable when the operator
+returns to it. Build plan: [architecture/v1-build-plan.md](../architecture/v1-build-plan.md).
+
 ## 5. What this changes in the repository (and what it does not)
 
 **Does not change:** the GO-narrow verdict, the build phases and gates

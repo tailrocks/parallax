@@ -36,7 +36,8 @@ reach "what is Parallax, which storage engine, and why" in a few minutes:
 
 - **[Research index](docs/research/README.md)** — the navigable map (vision, decisions, architecture, capture, storage, validation, market, reference) with a "current answers" table.
 - **[Problem, audience, and product shape](docs/research/00-vision/problem-audience-product-shape.md)** — what Parallax solves, who it is for (developer on a dev machine first), and the shape: best of three worlds (OTel collect, Sentry organize, Grafana understand), agent-first, CLI + API + UI over one canonical API.
-- **[North star: the autonomous fix loop](docs/research/00-vision/north-star-autonomous-fix-loop.md)** — the named moonshot (earned autonomy, the impossible triangle) and how it coexists with the narrow wedge.
+- **[North star: the autonomous fix loop](docs/research/00-vision/north-star-autonomous-fix-loop.md)** — the named moonshot (earned autonomy, the impossible triangle) and how it coexists with the narrow wedge. Build-order note: the moonshot is the ceiling, not the schedule.
+- **[V1 build plan](docs/research/architecture/v1-build-plan.md)** — what gets built and how: goals 1+2 (local visibility slightly first, then the server profile), crate layout, milestones M0–M6 with dogfood exit criteria; autonomous fixing parked at the schema level.
 - **[Go / no-go verdict](docs/research/decisions/go-no-go.md)** — GO, for the narrow evidence/context engine.
 - **[Storage engine decision](docs/research/decisions/storage-engine.md)** — current lean GreptimeDB (not yet settled), ClickHouse fallback, both behind a `StorageAdapter`.
 - **[Risks and the bear case](docs/research/decisions/risks-and-bear-case.md)** — the adversarial counterweight.

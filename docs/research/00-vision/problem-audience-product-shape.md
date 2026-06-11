@@ -114,6 +114,14 @@ build *for* yet — it is a constraint to design *under*: horizontal scalability
 infrastructure are baked in from the start so the same product carries a team from small startup
 to the largest company by topology change, never by rewrite.
 
+**Priority sharpened (operator statement #5, 2026-06-11): build the visibility tool; defer the
+fixer.** Goals 1 (local-machine visibility — slightly first, the operator uses it daily on his
+own Rust tools) and 2 (the same binary deployed on a server, analyzing his existing deployed
+services) are co-equal top priorities and the entire build focus. **Autonomous fixing is a
+future nice-to-have**: its schemas and contracts stay versioned so the loop remains reachable,
+but no fix-loop components are built until goals 1 and 2 are achieved. The concrete milestone
+plan is [architecture/v1-build-plan.md](../architecture/v1-build-plan.md).
+
 ## 5. Lifecycles: how the priority audiences actually use Parallax
 
 Operator statements #3 and #4 (2026-06-11) gave the concrete usage stories for the two priority
@@ -200,6 +208,12 @@ Operator statement #3 (2026-06-11) adds the three rung-1 lifecycles (§5): the f
 loop, the QA verification loop, and the reproduce-and-instrument loop — including the
 breadcrumbs example as the concrete Sentry-gap-filler criterion, and the agent-led
 instrumentation gap-closing mechanic that makes `missing_evidence` a load-bearing field.
+
+Operator statement #5 (2026-06-11) adds the build-order ruling: goals 1 and 2 (local visibility,
+then the same tool on a server) are the co-equal top priorities with local slightly first;
+**autonomous fixing is demoted to a future nice-to-have** — schemas stay versioned, components
+stay unbuilt until goals 1 and 2 land. See
+[architecture/v1-build-plan.md](../architecture/v1-build-plan.md).
 
 Operator statement #4 (2026-06-11) adds: the **one-binary-plus-profile** deployment model
 (`--profile local|cloud`, cloud-adapted defaults) replacing the assemble-a-Sentry-Grafana-Loki
