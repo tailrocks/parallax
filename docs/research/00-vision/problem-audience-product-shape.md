@@ -100,7 +100,44 @@ Local-first is not a toy tier: if GreptimeDB serves everything from laptop to cl
 engine runs the whole ladder — which is exactly the current lean
 ([storage-engine.md](../decisions/storage-engine.md)).
 
-## 5. Who this is for (personas)
+## 5. Rung-1 lifecycles: how local development actually plays out
+
+Operator statement #3 (2026-06-11) gave the concrete usage stories for rung 1. They are the
+product's first reality, so they are recorded here verbatim-in-substance:
+
+**Lifecycle 1 — the feature-development loop.** The developer runs Parallax locally as the
+telemetry server; their application sends logs, metrics, and traces over OTLP while they build.
+When a Rust test fails or behaves oddly, the coding agent pulls the run's telemetry and usually
+fixes it unaided — agents are smart enough once they can see the runtime facts. The Sentry
+protocol enters only where OTLP genuinely cannot express something. The operator's own example is
+the right one: **breadcrumbs**. OpenTelemetry has no first-class breadcrumb signal — an
+interaction trail can be approximated with log records (and span events are deprecated toward
+log-based events), but Sentry's breadcrumb model (typed, categorized, auto-collected by SDKs) is
+richer today. That is exactly the gap-filler criterion that keeps the future Sentry adapter on
+the roadmap ([capture/sentry-ingest.md](../capture/sentry-ingest.md)) without ever making it the
+primary path.
+
+**Lifecycle 2 — the QA verification loop.** A human (developer-as-QA or QA engineer) exercises a
+finished feature — clicking through it, driving a TUI/CLI — and reports what feels wrong in
+*behavioral* terms: "I did this, and that's not right; fix it." The agent translates the
+complaint into evidence by pulling the interaction's runs, traces, and logs from Parallax instead
+of interrogating the human for details they cannot articulate.
+
+**Lifecycle 3 — the reproduce-and-instrument loop.** From the operator's own tool, Jackin (runs
+multiple coding agents in isolated Docker containers with its own terminal multiplexer): the
+multiplexer sometimes renders a dirty screen state. A bug like that is *hard to describe* to an
+agent but *easy to point at*: "I just saw it — check this `run_id`/`trace_id`." The agent pulls
+the debug information through CLI/MCP and diagnoses immediately — **if** the app followed good
+observability practice. When it didn't, the loop has a second gear that turns the bundle's
+`missing_evidence` report into action: the agent sees what instrumentation was absent, **adds the
+tracing/debug logging itself**, asks the human to reproduce the glitch once more ("just tell me
+when you see it"), and then extracts the now-complete evidence. Observe → notice the gap →
+instrument → reproduce → diagnose. This kills the most expensive loop in agent-assisted
+development — the blind "no, you still didn't fix it" iteration — because the agent stops
+guessing and starts measuring. It is also why `missing_evidence` is a load-bearing schema field,
+not a politeness: it is the machine-readable signal that drives gap-closing.
+
+## 6. Who this is for (personas)
 
 | Persona | What they get | Which rung |
 | --- | --- | --- |
@@ -109,12 +146,18 @@ engine runs the whole ladder — which is exactly the current lean
 | **Team/SRE operating services** | Self-hosted, low-ops alternative to the five-tool stack; kubectl-style remote access; Sentry-grade issue workflow without 72 containers | 2 |
 | **Hard-boundary organization** (air-gap, sovereign, compliance) | The paying segment: data ownership, open schema, audit-grade evidence and outcome records ([monetization-and-paying-segment.md](../validation/monetization-and-paying-segment.md)) | 3 |
 
-## 6. What this note adds to the record
+## 7. What this note adds to the record
 
 Relative to the prior vision notes, operator statement #2 (2026-06-11) contributes: the
 **best-of-three-worlds** formulation (§2); the **three-surfaces-one-API** product shape with the
 **kubectl context model** for the CLI (§3); the **audience ladder with local-dev-first priority**
 made explicit (§4); the **polyglot-sources clarification** (OTLP ingest accepts any language SDK;
 Rust-first remains the capture-depth and engine rule) (§4); and the **standing documentation
-duty** — keep problem/audience/who-for sharp in every revision (header). Nothing here changes the
-fixer boundary, the gates, or the claim-wording discipline.
+duty** — keep problem/audience/who-for sharp in every revision (header).
+
+Operator statement #3 (2026-06-11) adds the three rung-1 lifecycles (§5): the feature-development
+loop, the QA verification loop, and the reproduce-and-instrument loop — including the
+breadcrumbs example as the concrete Sentry-gap-filler criterion, and the agent-led
+instrumentation gap-closing mechanic that makes `missing_evidence` a load-bearing field.
+
+Nothing here changes the fixer boundary, the gates, or the claim-wording discipline.

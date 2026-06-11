@@ -318,6 +318,23 @@ Standing documentation duty: every research pass that changes the answer to
 `docs/research/00-vision/problem-audience-product-shape.md` in the same
 change, keeping that front-door framing current and sharp.
 
+Rung-1 lifecycles (operator, 2026-06-11): local development plays out as three
+loops — (1) feature development: the app streams OTLP logs/metrics/traces to a
+local Parallax while building; the agent pulls run telemetry and fixes failing
+tests mostly unaided; the Sentry protocol matters only where OTLP cannot
+express something (concrete example: breadcrumbs — OTel has no first-class
+breadcrumb signal, so Sentry's richer breadcrumb model is the gap-filler
+criterion for the future adapter); (2) QA verification: a human exercises the
+feature (UI/TUI/CLI) and reports what is wrong behaviorally; the agent
+translates the complaint into runs/traces/logs instead of interrogating the
+human; (3) reproduce-and-instrument: visually obvious but hard-to-describe
+bugs (the operator's Jackin multiplexer dirty-screen example) are pointed at
+by run_id/trace_id; the agent pulls debug evidence via CLI/MCP, and when
+instrumentation is insufficient it reads missing_evidence, adds the missing
+tracing/logging itself, asks the human to reproduce once more, then diagnoses.
+Research should treat missing_evidence as a load-bearing, machine-actionable
+field and keep validating that these three loops are served by the V1 surface.
+
 ## Separation of concerns: Parallax stores, a separate agent fixes
 
 Be precise about the component boundary, because it shapes the whole design:

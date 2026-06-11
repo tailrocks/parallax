@@ -57,6 +57,12 @@ Unchanged: anchored bundle assembly per
 created by a trigger records its `trigger_ref`, so "why did the system look at this at all" is
 part of the evidence chain.
 
+`missing_evidence` has two consumers, not one: it keeps the fixer honest (blockers to autonomy),
+and in local development it drives the **reproduce-and-instrument loop** — the agent reads what
+instrumentation was absent, adds it to the app, asks the human to reproduce once more, and
+diagnoses from the now-complete evidence
+([lifecycle 3](../00-vision/problem-audience-product-shape.md)).
+
 ## Stage 3 — Dispatch (new design surface)
 
 The wake mechanism — how a fixer learns there is work. Four transports, one contract:
