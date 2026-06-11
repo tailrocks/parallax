@@ -29,6 +29,15 @@ hypotheses) graduate from `poc/evidence-loop/` per
 `docs/research/architecture/poc-evidence-loop-coverage.md` — copy-and-adapt the logic with
 tests; leave `poc/` itself frozen.
 
+## Version policy (operator, 2026-06-12)
+
+Always use the **latest stable versions everywhere** — crates, the GreptimeDB engine, TanStack
+Start, shadcn components, toolchain. The implementation spec's dependency table is a
+known-compatible floor, not a freeze: resolve the latest **mutually-compatible** stable set at
+start (the OTel ecosystem moves in lockstep release trains — never mix trains), update the
+spec's table to the resolved set in the same commit, and repeat the resolution whenever
+dependencies are touched.
+
 ## Constraints
 
 - One canonical API: CLI and UI consume the GraphQL/HTTP API only; nothing but

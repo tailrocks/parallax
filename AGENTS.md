@@ -22,6 +22,11 @@ structure quickly.
   small, runnable, test-covered proofs of designed mechanisms. PoC code is not
   product code and supports no product claims; keep each PoC scoped to the
   mechanism it verifies.
+- Version policy (operator, 2026-06-12): always use the latest stable versions
+  everywhere — crates, engines, UI dependencies, toolchains. Version tables in
+  docs are known-compatible floors, not freezes; when implementing, resolve
+  the latest mutually-compatible stable set and update the table in the same
+  commit.
 - V1 implementation is authorized (operator, 2026-06-12): product code lands
   under `crates/` (Cargo workspace) and `ui/` (TanStack Start app), following
   [docs/research/architecture/v1-implementation-spec.md](docs/research/architecture/v1-implementation-spec.md)

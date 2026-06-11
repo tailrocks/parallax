@@ -24,18 +24,27 @@ resolvers; Parallax only consumes whatever spans arrive.
 - Logging: the server uses `tracing` itself; never exports its own telemetry to itself by
   default (loop guard).
 
-## 2. Pinned dependency set (V1.0; re-verify each release)
+## 2. Dependency versions — policy: always latest (operator, 2026-06-12)
 
-| Area | Crate @ version |
+**Rule: use the latest stable version of everything, everywhere.** The table below is NOT a
+freeze — it is the **known-mutually-compatible floor verified on 2026-06-12**. At implementation
+start (and on every later dependency touch) the agent resolves the **latest mutually-compatible
+stable set** — "latest" in the OTel ecosystem means the matched release train (otel core ⇄
+tracing-opentelemetry ⇄ middleware crates move in lockstep; never mix trains) — and **updates
+this table to the resolved set in the same commit**. Pre-release/RC versions only when no stable
+exists for a required piece.
+
+| Area | Compatible floor (2026-06-12) |
 | --- | --- |
-| Runtime | tokio 1.x (latest), axum 0.8, tonic 0.14, tower 0.5 |
+| Runtime | tokio 1.x, axum 0.8, tonic 0.14, tower 0.5 |
 | OTel ingest types | opentelemetry-proto 0.32 (`gen-tonic`, `with-serde`) |
 | GraphQL server | async-graphql 7.2 + async-graphql-axum |
-| Metadata | turso latest 0.6-line (feature-flag fallback: rusqlite) |
-| GreptimeDB client | SQL over HTTP API (reqwest 0.12) — no native client dependency in V1 |
+| Metadata | turso (latest; feature-flag fallback: rusqlite) |
+| GreptimeDB client | SQL over HTTP API (reqwest) — no native client dependency in V1 |
 | CLI | clap 4 |
 | Core | serde/serde_json, sha2, regex, anyhow/thiserror |
-| Engine pin | **GreptimeDB v1.0.2** (re-pin on v1.1 GA) |
+| Engine | **GreptimeDB latest stable** (1.0.2 at spec time; supervisor resolves latest stable at install, records the resolved version in config and the release manifest) |
+| UI | latest `@tanstack/react-start`, latest shadcn CLI/components (Base UI variant), latest Recharts via shadcn charts |
 
 ## 3. Ports and process layout (collision fix)
 
@@ -59,7 +68,7 @@ otlp_http_port = 4318
 [storage]
 mode = "managed"             # managed | external | none
 greptime_url = ""            # used when mode = "external"
-greptime_version = "1.0.2"   # managed pin
+greptime_version = "latest"  # resolves to latest stable at install; resolved version recorded here
 data_dir = "~/.parallax"
 
 [retention]
