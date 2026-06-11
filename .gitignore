@@ -7,3 +7,10 @@ poc/**/Cargo.lock
 
 # Rust workspace
 /target
+
+# UI build artifacts
+ui/node_modules/
+ui/.tanstack/
+ui/.nitro/
+ui/.output/
+ui/dist/
