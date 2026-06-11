@@ -71,18 +71,17 @@ impl Worker {
             return Ok(());
         }
         for event in &errors {
-            self.metadata
-                .upsert_issue_occurrence(
-                    &event.fingerprint,
-                    &derive::issue_title(&event.error_type, &event.message),
-                    &event.error_type,
-                    derive::culprit(event.stacktrace.as_deref()).as_deref(),
-                    &event.service,
-                    event.ts_nanos,
-                    (!event.trace_id.is_empty() && event.trace_id.chars().any(|c| c != '0'))
-                        .then_some(event.trace_id.as_str()),
-                )
-                .await?;
+            let occurrence = parallax_storage::metadata::IssueOccurrence {
+                fingerprint: &event.fingerprint,
+                title: derive::issue_title(&event.error_type, &event.message),
+                error_type: &event.error_type,
+                culprit: derive::culprit(event.stacktrace.as_deref()),
+                service: &event.service,
+                ts_nanos: event.ts_nanos,
+                trace_id: (!event.trace_id.is_empty() && event.trace_id.chars().any(|c| c != '0'))
+                    .then_some(event.trace_id.as_str()),
+            };
+            self.metadata.upsert_issue_occurrence(&occurrence).await?;
         }
         self.store.write_error_events(errors).await?;
         Ok(())

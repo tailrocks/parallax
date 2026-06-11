@@ -48,6 +48,17 @@ fn millis_to_nanos(millis: i64) -> u128 {
     u128::try_from(millis.max(0)).unwrap_or(0) * 1_000_000
 }
 
+/// One derived error occurrence, ready for issue upsert.
+pub struct IssueOccurrence<'a> {
+    pub fingerprint: &'a str,
+    pub title: String,
+    pub error_type: &'a str,
+    pub culprit: Option<String>,
+    pub service: &'a str,
+    pub ts_nanos: u128,
+    pub trace_id: Option<&'a str>,
+}
+
 pub struct MetadataStore {
     conn: turso::Connection,
 }
@@ -67,15 +78,9 @@ impl MetadataStore {
     /// Record one more occurrence of a fingerprint (insert or update).
     pub async fn upsert_issue_occurrence(
         &self,
-        fingerprint: &str,
-        title: &str,
-        error_type: &str,
-        culprit: Option<&str>,
-        service: &str,
-        ts_nanos: u128,
-        trace_id: Option<&str>,
+        occurrence: &IssueOccurrence<'_>,
     ) -> anyhow::Result<()> {
-        let millis = nanos_to_millis(ts_nanos);
+        let millis = nanos_to_millis(occurrence.ts_nanos);
         self.conn
             .execute(
                 "INSERT INTO issues
@@ -87,13 +92,13 @@ impl MetadataStore {
                    event_count = event_count + 1,
                    last_trace_id = COALESCE(excluded.last_trace_id, last_trace_id)",
                 (
-                    fingerprint,
-                    title,
-                    error_type,
-                    culprit.map(str::to_string),
-                    service,
+                    occurrence.fingerprint,
+                    occurrence.title.as_str(),
+                    occurrence.error_type,
+                    occurrence.culprit.clone(),
+                    occurrence.service,
                     millis,
-                    trace_id.map(str::to_string),
+                    occurrence.trace_id.map(str::to_string),
                 ),
             )
             .await?;

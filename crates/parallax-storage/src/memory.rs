@@ -108,7 +108,7 @@ impl TelemetryStore for MemoryStore {
             .filter(|e| e.fingerprint == fingerprint && range.contains(&e.ts_nanos))
             .cloned()
             .collect();
-        events.sort_by(|a, b| b.ts_nanos.cmp(&a.ts_nanos));
+        events.sort_by_key(|e| std::cmp::Reverse(e.ts_nanos));
         events.truncate(limit);
         Ok(events)
     }
