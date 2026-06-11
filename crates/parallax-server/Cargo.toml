@@ -33,3 +33,4 @@ opentelemetry-otlp = { version = "0.32", features = ["grpc-tonic", "logs", "trac
 opentelemetry_sdk = "0.32"
 reqwest = { workspace = true }
 tempfile = "3"
+tracing-subscriber = { workspace = true }

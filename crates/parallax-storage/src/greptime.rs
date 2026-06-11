@@ -53,9 +53,9 @@ impl GreptimeStore {
             format!(
                 r#"CREATE TABLE IF NOT EXISTS otel_spans (
                    "ts" TIMESTAMP(9) NOT NULL, "service" STRING, "trace_id" STRING,
-                   "span_id" STRING, "parent_span_id" STRING, "run_id" STRING, "name" STRING, "kind" STRING,
+                   "span_id" STRING, "parent_span_id" STRING, "name" STRING, "kind" STRING,
                    "status_code" STRING, "status_message" STRING, "duration_ns" BIGINT,
-                   "scope_name" STRING, "attributes" JSON, "resource" JSON,
+                   "run_id" STRING, "scope_name" STRING, "attributes" JSON, "resource" JSON,
                    TIME INDEX ("ts"), PRIMARY KEY ("service")
                  ) WITH (ttl = '{traces_ttl}')"#
             ),
@@ -149,6 +149,73 @@ impl GreptimeStore {
         );
         self.sql(&sql).await?;
         Ok(())
+    }
+
+    async fn select_spans(
+        &self,
+        where_clause: &str,
+        limit_clause: &str,
+    ) -> anyhow::Result<Vec<SpanRow>> {
+        let rows = self
+            .sql(&format!(
+                r#"SELECT CAST("ts" AS BIGINT) AS "ts_nanos", "service", "trace_id", "span_id",
+                          "parent_span_id", "name", "kind", "status_code",
+                          "status_message", "duration_ns", "run_id", "scope_name",
+                          json_to_string("attributes"), json_to_string("resource")
+                   FROM otel_spans WHERE {where_clause} ORDER BY "ts" ASC{limit_clause}"#
+            ))
+            .await?;
+        Ok(rows
+            .iter()
+            .map(|row| SpanRow {
+                ts_nanos: u128_at(row, 0),
+                service: str_at(row, 1),
+                trace_id: str_at(row, 2),
+                span_id: str_at(row, 3),
+                parent_span_id: opt_str_at(row, 4),
+                name: str_at(row, 5),
+                kind: str_at(row, 6),
+                status_code: str_at(row, 7),
+                status_message: str_at(row, 8),
+                duration_ns: u128_at(row, 9),
+                run_id: opt_str_at(row, 10),
+                scope_name: str_at(row, 11),
+                attributes: json_at(row, 12),
+                resource: json_at(row, 13),
+            })
+            .collect())
+    }
+
+    async fn select_logs(
+        &self,
+        where_clause: &str,
+        limit_clause: &str,
+    ) -> anyhow::Result<Vec<LogRow>> {
+        let rows = self
+            .sql(&format!(
+                r#"SELECT CAST("ts" AS BIGINT) AS "ts_nanos", "service", "severity_num",
+                          "severity_text", "body", "trace_id", "span_id", "run_id",
+                          "scope_name", json_to_string("attributes"),
+                          json_to_string("resource")
+                   FROM otel_logs WHERE {where_clause} ORDER BY "ts" ASC{limit_clause}"#
+            ))
+            .await?;
+        Ok(rows
+            .iter()
+            .map(|row| LogRow {
+                ts_nanos: u128_at(row, 0),
+                service: str_at(row, 1),
+                severity_num: row.get(2).and_then(|v| v.as_i64()).unwrap_or(0) as i32,
+                severity_text: str_at(row, 3),
+                body: str_at(row, 4),
+                trace_id: str_at(row, 5),
+                span_id: str_at(row, 6),
+                run_id: opt_str_at(row, 7),
+                scope_name: str_at(row, 8),
+                attributes: json_at(row, 9),
+                resource: json_at(row, 10),
+            })
+            .collect())
     }
 }
 
@@ -318,63 +385,29 @@ impl TelemetryStore for GreptimeStore {
     }
 
     async fn spans_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<SpanRow>> {
-        let rows = self
-            .sql(&format!(
-                r#"SELECT CAST("ts" AS BIGINT) AS "ts_nanos", "service", "trace_id", "span_id",
-                          "parent_span_id", "run_id", "name", "kind", "status_code",
-                          "status_message", "duration_ns", "scope_name",
-                          json_to_string("attributes"), json_to_string("resource")
-                   FROM otel_spans WHERE "trace_id" = '{}' ORDER BY "ts" ASC"#,
-                escape(trace_id)
-            ))
-            .await?;
-        Ok(rows
-            .iter()
-            .map(|row| SpanRow {
-                ts_nanos: u128_at(row, 0),
-                service: str_at(row, 1),
-                trace_id: str_at(row, 2),
-                span_id: str_at(row, 3),
-                parent_span_id: opt_str_at(row, 4),
-                run_id: opt_str_at(row, 5),
-                name: str_at(row, 6),
-                kind: str_at(row, 7),
-                status_code: str_at(row, 8),
-                status_message: str_at(row, 9),
-                duration_ns: u128_at(row, 10),
-                scope_name: str_at(row, 11),
-                attributes: json_at(row, 12),
-                resource: json_at(row, 13),
-            })
-            .collect())
+        self.select_spans(&format!(r#""trace_id" = '{}'"#, escape(trace_id)), "")
+            .await
+    }
+
+    async fn spans_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<SpanRow>> {
+        self.select_spans(
+            &format!(r#""run_id" = '{}'"#, escape(run_id)),
+            &format!(" LIMIT {limit}"),
+        )
+        .await
+    }
+
+    async fn logs_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<LogRow>> {
+        self.select_logs(
+            &format!(r#""run_id" = '{}'"#, escape(run_id)),
+            &format!(" LIMIT {limit}"),
+        )
+        .await
     }
 
     async fn logs_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<LogRow>> {
-        let rows = self
-            .sql(&format!(
-                r#"SELECT CAST("ts" AS BIGINT) AS "ts_nanos", "service", "severity_num", "severity_text",
-                          "body", "trace_id", "span_id", "run_id", "scope_name",
-                          json_to_string("attributes"), json_to_string("resource")
-                   FROM otel_logs WHERE "trace_id" = '{}' ORDER BY "ts" ASC"#,
-                escape(trace_id)
-            ))
-            .await?;
-        Ok(rows
-            .iter()
-            .map(|row| LogRow {
-                ts_nanos: u128_at(row, 0),
-                service: str_at(row, 1),
-                severity_num: row.get(2).and_then(|v| v.as_i64()).unwrap_or(0) as i32,
-                severity_text: str_at(row, 3),
-                body: str_at(row, 4),
-                trace_id: str_at(row, 5),
-                span_id: str_at(row, 6),
-                run_id: opt_str_at(row, 7),
-                scope_name: str_at(row, 8),
-                attributes: json_at(row, 9),
-                resource: json_at(row, 10),
-            })
-            .collect())
+        self.select_logs(&format!(r#""trace_id" = '{}'"#, escape(trace_id)), "")
+            .await
     }
 
     async fn error_events_by_fingerprint(

@@ -314,6 +314,44 @@ impl Query {
         Ok(logs.into_iter().map(LogRecord).collect())
     }
 
+    /// Traces produced by one run (grouped from its run-tagged spans).
+    async fn traces_by_run(
+        context: &ApiContext,
+        run_id: String,
+        limit: Option<i32>,
+    ) -> FieldResult<Vec<Trace>> {
+        let spans = context
+            .store
+            .spans_by_run(&run_id, clamp_limit(limit, 200))
+            .await
+            .map_err(field_err)?;
+        let mut by_trace: Vec<(String, Vec<model::SpanRow>)> = Vec::new();
+        for span in spans {
+            match by_trace.iter_mut().find(|(t, _)| *t == span.trace_id) {
+                Some((_, group)) => group.push(span),
+                None => by_trace.push((span.trace_id.clone(), vec![span])),
+            }
+        }
+        Ok(by_trace
+            .into_iter()
+            .map(|(trace_id, spans)| Trace { trace_id, spans })
+            .collect())
+    }
+
+    /// Logs produced by one run.
+    async fn logs_by_run(
+        context: &ApiContext,
+        run_id: String,
+        limit: Option<i32>,
+    ) -> FieldResult<Vec<LogRecord>> {
+        let logs = context
+            .store
+            .logs_by_run(&run_id, clamp_limit(limit, 500))
+            .await
+            .map_err(field_err)?;
+        Ok(logs.into_iter().map(LogRecord).collect())
+    }
+
     async fn runs(context: &ApiContext, limit: Option<i32>) -> FieldResult<Vec<Run>> {
         let runs = context
             .metadata

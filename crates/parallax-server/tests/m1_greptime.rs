@@ -14,6 +14,9 @@ use std::time::Duration;
 #[tokio::test(flavor = "multi_thread")]
 #[ignore = "downloads and runs a real GreptimeDB; run with --ignored"]
 async fn managed_engine_roundtrip() {
+    let _ = tracing_subscriber::fmt()
+        .with_env_filter("parallax_server=debug")
+        .try_init();
     // Cache the engine binary across test runs (and reuse an existing
     // ~/.parallax/bin install when present) to avoid re-downloading 140MB.
     let cache_bin = std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join("greptime-bin");

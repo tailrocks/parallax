@@ -177,5 +177,54 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
         Some("resolved")
     );
 
+    // Run-scoped reads: a span emitted under a parallax.run_id resource
+    // attribute is reachable through tracesByRun.
+    let run_exporter = opentelemetry_otlp::SpanExporter::builder()
+        .with_tonic()
+        .with_endpoint(format!("http://{}", handle.otlp_grpc_addr))
+        .build()
+        .expect("run span exporter");
+    let run_provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
+        .with_batch_exporter(run_exporter)
+        .with_resource(
+            opentelemetry_sdk::Resource::builder()
+                .with_attributes([
+                    KeyValue::new("service.name", "m2-run-service"),
+                    KeyValue::new("parallax.run_id", "run_m2test"),
+                ])
+                .build(),
+        )
+        .build();
+    let run_tracer = run_provider.tracer("m2-run");
+    let mut run_span = run_tracer.start("inside.the.run");
+    run_span.end();
+    run_provider.force_flush().expect("run flush");
+
+    let mut run_traces = serde_json::Value::Null;
+    for _ in 0..50 {
+        let response = graphql(
+            &client,
+            handle.api_addr,
+            r#"{ tracesByRun(runId: "run_m2test") { traceId spans { name runId } } }"#,
+        )
+        .await;
+        if response
+            .pointer("/data/tracesByRun/0/spans/0/name")
+            .and_then(|v| v.as_str())
+            == Some("inside.the.run")
+        {
+            run_traces = response;
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+    assert_eq!(
+        run_traces
+            .pointer("/data/tracesByRun/0/spans/0/runId")
+            .and_then(|v| v.as_str()),
+        Some("run_m2test"),
+        "run-tagged span reachable through tracesByRun: {run_traces}"
+    );
+
     handle.shutdown();
 }
