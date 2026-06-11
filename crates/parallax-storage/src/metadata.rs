@@ -60,7 +60,9 @@ pub struct IssueOccurrence<'a> {
 }
 
 pub struct MetadataStore {
-    conn: turso::Connection,
+    /// Turso forbids concurrent statement use on one connection; the worker
+    /// upserts while the API reads, so every operation takes this lock.
+    conn: tokio::sync::Mutex<turso::Connection>,
 }
 
 impl MetadataStore {
@@ -72,7 +74,9 @@ impl MetadataStore {
         for statement in SCHEMA.split(';').map(str::trim).filter(|s| !s.is_empty()) {
             conn.execute(statement, ()).await?;
         }
-        Ok(Self { conn })
+        Ok(Self {
+            conn: tokio::sync::Mutex::new(conn),
+        })
     }
 
     /// Record one more occurrence of a fingerprint (insert or update).
@@ -82,6 +86,8 @@ impl MetadataStore {
     ) -> anyhow::Result<()> {
         let millis = nanos_to_millis(occurrence.ts_nanos);
         self.conn
+            .lock()
+            .await
             .execute(
                 "INSERT INTO issues
                    (fingerprint, title, error_type, culprit, service,
@@ -106,8 +112,8 @@ impl MetadataStore {
     }
 
     pub async fn issues(&self, limit: usize) -> anyhow::Result<Vec<Issue>> {
-        let mut rows = self
-            .conn
+        let conn = self.conn.lock().await;
+        let mut rows = conn
             .query(
                 "SELECT fingerprint, title, error_type, culprit, service, status,
                         first_seen, last_seen, event_count, last_trace_id
@@ -135,6 +141,8 @@ impl MetadataStore {
 
     pub async fn set_issue_status(&self, fingerprint: &str, status: &str) -> anyhow::Result<()> {
         self.conn
+            .lock()
+            .await
             .execute(
                 "UPDATE issues SET status = ?2 WHERE fingerprint = ?1",
                 (fingerprint, status),
@@ -150,6 +158,8 @@ impl MetadataStore {
         started_at_nanos: u128,
     ) -> anyhow::Result<()> {
         self.conn
+            .lock()
+            .await
             .execute(
                 "INSERT OR REPLACE INTO runs (run_id, command, started_at, status)
                  VALUES (?1, ?2, ?3, 'running')",
@@ -170,6 +180,8 @@ impl MetadataStore {
         exit_code: i32,
     ) -> anyhow::Result<()> {
         self.conn
+            .lock()
+            .await
             .execute(
                 "UPDATE runs SET ended_at = ?2, exit_code = ?3, status = 'finished'
                  WHERE run_id = ?1",
@@ -184,8 +196,8 @@ impl MetadataStore {
     }
 
     pub async fn runs(&self, limit: usize) -> anyhow::Result<Vec<RunRecord>> {
-        let mut rows = self
-            .conn
+        let conn = self.conn.lock().await;
+        let mut rows = conn
             .query(
                 "SELECT run_id, command, started_at, ended_at, exit_code, status
                  FROM runs ORDER BY started_at DESC LIMIT ?1",
@@ -217,6 +229,8 @@ impl MetadataStore {
     ) -> anyhow::Result<()> {
         let millis = nanos_to_millis(now_nanos);
         self.conn
+            .lock()
+            .await
             .execute(
                 "INSERT INTO dashboards (id, name, layout, created_at, updated_at)
                  VALUES (?1, ?2, ?3, ?4, ?4)
@@ -232,14 +246,16 @@ impl MetadataStore {
     pub async fn dashboard_delete(&self, id: &str) -> anyhow::Result<bool> {
         let affected = self
             .conn
+            .lock()
+            .await
             .execute("DELETE FROM dashboards WHERE id = ?1", (id,))
             .await?;
         Ok(affected > 0)
     }
 
     pub async fn dashboards(&self) -> anyhow::Result<Vec<Dashboard>> {
-        let mut rows = self
-            .conn
+        let conn = self.conn.lock().await;
+        let mut rows = conn
             .query(
                 "SELECT id, name, layout, created_at, updated_at
                  FROM dashboards ORDER BY updated_at DESC",
