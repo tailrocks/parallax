@@ -240,9 +240,7 @@ async fn measure_m5_gates() {
         percentile(&latencies_millis, 0.95),
         latencies_millis.last().expect("non-empty"),
     );
-    println!(
-        "real panic -> grouped issue visible: {panic_visible_millis} ms (gate: ~5000)"
-    );
+    println!("real panic -> grouped issue visible: {panic_visible_millis} ms (gate: ~5000)");
     println!(
         "warm bundle assembly over {} runs: p50 {} ms, p95 {} ms, max {} ms (gate: <= 300 warm)",
         bundle_millis.len(),
