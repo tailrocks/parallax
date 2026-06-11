@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { graphql, type LogRecord, type Span } from "@/lib/api"
+import { graphql } from "@/lib/api"
+import type { LogRecord, Span } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -9,7 +10,7 @@ export const Route = createFileRoute("/traces/$traceId")({
       `{ trace(traceId: "${params.traceId}") {
            spans { tsNanos service name kind statusCode durationNs spanId parentSpanId }
          }
-         logsByTrace(traceId: "${params.traceId}") { tsNanos service severityText body } }`,
+         logsByTrace(traceId: "${params.traceId}") { tsNanos service severityText body } }`
     ),
   component: TracePage,
 })
@@ -24,7 +25,7 @@ function TracePage() {
   const spans = trace.spans
   const start = Math.min(...spans.map((s) => Number(s.tsNanos)))
   const end = Math.max(
-    ...spans.map((s) => Number(s.tsNanos) + Number(s.durationNs)),
+    ...spans.map((s) => Number(s.tsNanos) + Number(s.durationNs))
   )
   const total = Math.max(1, end - start)
 
@@ -42,10 +43,7 @@ function TracePage() {
         <CardContent className="space-y-1.5">
           {spans.map((span) => {
             const offset = ((Number(span.tsNanos) - start) / total) * 100
-            const width = Math.max(
-              0.5,
-              (Number(span.durationNs) / total) * 100,
-            )
+            const width = Math.max(0.5, (Number(span.durationNs) / total) * 100)
             const failed = span.statusCode === "STATUS_CODE_ERROR"
             return (
               <div key={span.spanId} className="space-y-0.5">
@@ -56,7 +54,7 @@ function TracePage() {
                     </Badge>
                     {span.name}
                   </span>
-                  <span className="shrink-0 tabular-nums text-muted-foreground">
+                  <span className="shrink-0 text-muted-foreground tabular-nums">
                     {(Number(span.durationNs) / 1e6).toFixed(2)}ms
                   </span>
                 </div>

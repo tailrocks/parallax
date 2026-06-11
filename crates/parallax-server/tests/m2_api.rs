@@ -127,6 +127,26 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
     assert_eq!(events[0]["traceId"], trace_id.as_str());
     assert_eq!(events[0]["source"], "span_exception");
 
+    // Trend rollup reaches the sparkline query.
+    let response = graphql(
+        &client,
+        handle.api_addr,
+        &format!(r#"{{ issueTrend(fingerprint: "{fingerprint}") {{ tsNanos count }} }}"#),
+    )
+    .await;
+    let trend = response
+        .pointer("/data/issueTrend")
+        .and_then(|v| v.as_array())
+        .expect("trend array");
+    assert_eq!(
+        trend
+            .iter()
+            .map(|p| p["count"].as_i64().unwrap_or(0))
+            .sum::<i64>(),
+        1,
+        "one occurrence counted in the trend: {trend:?}"
+    );
+
     // Trace and correlated logs.
     let response = graphql(
         &client,

@@ -1,5 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router"
-import { graphql, relativeTime, type Issue } from "@/lib/api"
+import { graphql, relativeTime } from "@/lib/api"
+import type { Issue } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import {
   Table,
@@ -12,10 +13,22 @@ import {
 
 export const Route = createFileRoute("/issues/")({
   loader: () =>
-    graphql<{ issues: Issue[] }>(
-      `{ issues { fingerprint title errorType culprit service status
-                  firstSeenNanos lastSeenNanos eventCount lastTraceId } }`,
-    ),
+    graphql<{ issues: Issue[] }>(`
+      {
+        issues {
+          fingerprint
+          title
+          errorType
+          culprit
+          service
+          status
+          firstSeenNanos
+          lastSeenNanos
+          eventCount
+          lastTraceId
+        }
+      }
+    `),
   component: IssuesPage,
 })
 
@@ -69,7 +82,9 @@ function IssuesPage() {
                 </TableCell>
                 <TableCell>
                   <Badge
-                    variant={issue.status === "open" ? "destructive" : "secondary"}
+                    variant={
+                      issue.status === "open" ? "destructive" : "secondary"
+                    }
                   >
                     {issue.status}
                   </Badge>

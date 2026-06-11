@@ -1,13 +1,23 @@
 import { createFileRoute, notFound } from "@tanstack/react-router"
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  XAxis,
+  YAxis,
+} from "recharts"
 import { graphql, gqlString } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  type ChartConfig,
 } from "@/components/ui/chart"
+import type { ChartConfig } from "@/components/ui/chart"
 
 interface Widget {
   metric: string
@@ -30,7 +40,15 @@ export const Route = createFileRoute("/dashboards/$dashboardId")({
   loader: async ({ params }) => {
     const { dashboards } = await graphql<{
       dashboards: { id: string; name: string; layout: string }[]
-    }>(`{ dashboards { id name layout } }`)
+    }>(`
+      {
+        dashboards {
+          id
+          name
+          layout
+        }
+      }
+    `)
     const dashboard = dashboards.find((d) => d.id === params.dashboardId)
     if (!dashboard) throw notFound()
 
@@ -43,7 +61,7 @@ export const Route = createFileRoute("/dashboards/$dashboardId")({
         const { metricSeries } = await graphql<{ metricSeries: SeriesPoint[] }>(
           `{ metricSeries(name: "${gqlString(widget.metric)}",
                fromNanos: "${fromNanos}", toNanos: "${nowNanos}",
-               agg: "${gqlString(widget.agg)}") { tsNanos value } }`,
+               agg: "${gqlString(widget.agg)}") { tsNanos value } }`
         )
         return {
           widget,
@@ -52,7 +70,7 @@ export const Route = createFileRoute("/dashboards/$dashboardId")({
             value: p.value,
           })),
         }
-      }),
+      })
     )
     return { name: dashboard.name, data }
   },
@@ -67,7 +85,7 @@ function parseLayout(layout: string): Widget[] {
       (w): w is Widget =>
         typeof w === "object" &&
         w !== null &&
-        typeof (w as Widget).metric === "string",
+        typeof (w as Widget).metric === "string"
     )
   } catch {
     return []

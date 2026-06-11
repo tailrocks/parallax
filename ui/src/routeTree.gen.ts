@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ServicesRouteImport } from './routes/services'
 import { Route as RunsRouteImport } from './routes/runs'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TracesIndexRouteImport } from './routes/traces.index'
@@ -18,6 +19,11 @@ import { Route as TracesTraceIdRouteImport } from './routes/traces.$traceId'
 import { Route as IssuesFingerprintRouteImport } from './routes/issues.$fingerprint'
 import { Route as DashboardsDashboardIdRouteImport } from './routes/dashboards.$dashboardId'
 
+const ServicesRoute = ServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RunsRoute = RunsRouteImport.update({
   id: '/runs',
   path: '/runs',
@@ -62,6 +68,7 @@ const DashboardsDashboardIdRoute = DashboardsDashboardIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/runs': typeof RunsRoute
+  '/services': typeof ServicesRoute
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
@@ -72,6 +79,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/runs': typeof RunsRoute
+  '/services': typeof ServicesRoute
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
@@ -83,6 +91,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/runs': typeof RunsRoute
+  '/services': typeof ServicesRoute
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
@@ -95,6 +104,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/runs'
+    | '/services'
     | '/dashboards/$dashboardId'
     | '/issues/$fingerprint'
     | '/traces/$traceId'
@@ -105,6 +115,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/runs'
+    | '/services'
     | '/dashboards/$dashboardId'
     | '/issues/$fingerprint'
     | '/traces/$traceId'
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/runs'
+    | '/services'
     | '/dashboards/$dashboardId'
     | '/issues/$fingerprint'
     | '/traces/$traceId'
@@ -126,6 +138,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   RunsRoute: typeof RunsRoute
+  ServicesRoute: typeof ServicesRoute
   DashboardsDashboardIdRoute: typeof DashboardsDashboardIdRoute
   IssuesFingerprintRoute: typeof IssuesFingerprintRoute
   TracesTraceIdRoute: typeof TracesTraceIdRoute
@@ -136,6 +149,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/services': {
+      id: '/services'
+      path: '/services'
+      fullPath: '/services'
+      preLoaderRoute: typeof ServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/runs': {
       id: '/runs'
       path: '/runs'
@@ -198,6 +218,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   RunsRoute: RunsRoute,
+  ServicesRoute: ServicesRoute,
   DashboardsDashboardIdRoute: DashboardsDashboardIdRoute,
   IssuesFingerprintRoute: IssuesFingerprintRoute,
   TracesTraceIdRoute: TracesTraceIdRoute,

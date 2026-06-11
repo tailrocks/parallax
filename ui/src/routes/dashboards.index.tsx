@@ -30,9 +30,16 @@ const CHARTS = ["line", "area", "bar"] as const
 
 export const Route = createFileRoute("/dashboards/")({
   loader: () =>
-    graphql<{ dashboards: Dashboard[]; metricNames: string[] }>(
-      `{ dashboards { id name layout } metricNames }`,
-    ),
+    graphql<{ dashboards: Dashboard[]; metricNames: string[] }>(`
+      {
+        dashboards {
+          id
+          name
+          layout
+        }
+        metricNames
+      }
+    `),
   component: DashboardsPage,
 })
 
@@ -56,7 +63,7 @@ function DashboardsPage() {
     try {
       await graphql<{ dashboardSave: string }>(
         `mutation { dashboardSave(name: "${gqlString(name)}",
-           layout: "${gqlString(JSON.stringify([widget]))}") }`,
+           layout: "${gqlString(JSON.stringify([widget]))}") }`
       )
       setName("")
       await router.invalidate()

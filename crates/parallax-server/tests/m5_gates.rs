@@ -122,6 +122,73 @@ async fn measure_m5_gates() {
     }
     latencies_millis.sort_unstable();
 
+    // Gate: a real panic becomes a grouped issue in ~5 s. The documented
+    // capture path (capture/rust.md): a panic hook emits an OTLP log record
+    // carrying exception.* attributes; derivation groups it. catch_unwind
+    // keeps the harness alive — the panic itself is real.
+    let log_exporter = opentelemetry_otlp::LogExporter::builder()
+        .with_tonic()
+        .with_endpoint(format!("http://{}", handle.otlp_grpc_addr))
+        .build()
+        .expect("log exporter");
+    let logger_provider = opentelemetry_sdk::logs::SdkLoggerProvider::builder()
+        .with_batch_exporter(log_exporter)
+        .with_resource(
+            opentelemetry_sdk::Resource::builder()
+                .with_attributes([opentelemetry::KeyValue::new("service.name", "gate-bench")])
+                .build(),
+        )
+        .build();
+    {
+        use opentelemetry::logs::{AnyValue, LogRecord as _, Logger as _, LoggerProvider as _};
+        let logger = logger_provider.logger("panic-hook");
+        let panic_info = std::panic::catch_unwind(|| {
+            panic!("checkout total overflowed at row 4242");
+        })
+        .expect_err("the panic is real");
+        let message = panic_info
+            .downcast_ref::<&str>()
+            .map(|s| (*s).to_string())
+            .or_else(|| panic_info.downcast_ref::<String>().cloned())
+            .unwrap_or_else(|| "panic".to_string());
+        let mut record = logger.create_log_record();
+        record.set_severity_number(opentelemetry::logs::Severity::Fatal);
+        record.set_severity_text("FATAL");
+        record.set_body(AnyValue::from(message.clone()));
+        record.add_attribute("exception.type", "panic");
+        record.add_attribute("exception.message", message);
+        record.add_attribute(
+            "exception.stacktrace",
+            "gate::bench::checkout at src/bench.rs:99",
+        );
+        logger.emit(record);
+    }
+    let panic_t0 = Instant::now();
+    logger_provider.force_flush().expect("log flush");
+    let panic_visible_millis = loop {
+        let response: serde_json::Value = client
+            .post(format!("http://{}/graphql", handle.api_addr))
+            .json(&serde_json::json!({"query": "{ issues { errorType } }"}))
+            .send()
+            .await
+            .expect("issues request")
+            .json()
+            .await
+            .expect("issues json");
+        if response
+            .pointer("/data/issues")
+            .and_then(|v| v.as_array())
+            .is_some_and(|a| a.iter().any(|i| i["errorType"] == "panic"))
+        {
+            break panic_t0.elapsed().as_millis();
+        }
+        assert!(
+            panic_t0.elapsed() < Duration::from_secs(30),
+            "panic issue not grouped within 30s"
+        );
+        tokio::time::sleep(Duration::from_millis(25)).await;
+    };
+
     // Gate: bundle assembly ≤ 300ms warm. First call warms; then ten timed.
     let issues: serde_json::Value = client
         .post(format!("http://{}/graphql", handle.api_addr))
@@ -172,6 +239,9 @@ async fn measure_m5_gates() {
         percentile(&latencies_millis, 0.50),
         percentile(&latencies_millis, 0.95),
         latencies_millis.last().expect("non-empty"),
+    );
+    println!(
+        "real panic -> grouped issue visible: {panic_visible_millis} ms (gate: ~5000)"
     );
     println!(
         "warm bundle assembly over {} runs: p50 {} ms, p95 {} ms, max {} ms (gate: <= 300 warm)",

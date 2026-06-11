@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator"
 const NAV = [
   { to: "/issues", label: "Issues" },
   { to: "/traces", label: "Traces" },
+  { to: "/services", label: "Services" },
   { to: "/runs", label: "Runs" },
   { to: "/dashboards", label: "Dashboards" },
 ] as const

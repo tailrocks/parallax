@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { graphql, relativeTime, type Run } from "@/lib/api"
+import { graphql, relativeTime } from "@/lib/api"
+import type { Run } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import {
   Table,
@@ -12,9 +13,17 @@ import {
 
 export const Route = createFileRoute("/runs")({
   loader: () =>
-    graphql<{ runs: Run[] }>(
-      `{ runs { runId command status exitCode startedAtNanos } }`,
-    ),
+    graphql<{ runs: Run[] }>(`
+      {
+        runs {
+          runId
+          command
+          status
+          exitCode
+          startedAtNanos
+        }
+      }
+    `),
   component: RunsPage,
 })
 
@@ -48,7 +57,9 @@ function RunsPage() {
                 </TableCell>
                 <TableCell>
                   <Badge
-                    variant={run.status === "finished" ? "secondary" : "outline"}
+                    variant={
+                      run.status === "finished" ? "secondary" : "outline"
+                    }
                   >
                     {run.status}
                   </Badge>
