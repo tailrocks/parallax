@@ -1,5 +1,25 @@
 # Competitor Watch
 
+> **2026-06-11 update (post-DASH drift):** Datadog DASH (June 9–10, 2026) is the largest competitive
+> movement since the 2026-06-02 recheck: **Bits Code is GA** (fix generation embedded wherever Datadog
+> surfaces a problem — Error Tracking, APM, profiler, security), with **Bits Remediation**, **Bits
+> Infrastructure Operations**, and **Bits Release** in preview (auto-executing *pre-approved*
+> infra/runbook actions; release-regression fix generation)
+> ([DASH roundup](https://www.datadoghq.com/blog/dash-2026-new-feature-roundup-keynote/)). Sentry's
+> June 8 changelog documents 10 new API endpoints (tracing, profiling, attachments) explicitly framed
+> for "automated, self-healing workflows with Sentry," after May 27's **AI-Detected Issues GA**
+> (issues created from trace/log analysis, not only errors) and May 14's Seer→GitHub-Copilot fix
+> handoff ([changelog](https://sentry.io/changelog/)). New Relic **Knowledge** went GA May 25
+> (telemetry fused with incident history/runbooks as SRE-agent context); Honeycomb shipped Canvas
+> auto-investigations (May 12, proposes but does not execute); Coralogix raised $200M Series F
+> (June 3). **The line that has not moved:** no vendor ships auto-detect → auto-PR → auto-merge for
+> application code — Datadog states Bits AI Dev "never merges or deploys without human intervention,"
+> Sentry stops at auto-opened PRs, GitLab's "ready-to-merge" MRs leave humans deciding. Closed-loop
+> execution exists only for pre-approved infra actions. Parallax reading: the L2/L3 commodity race is
+> accelerating (detection from telemetry is now also commoditizing), while the earned-autonomy
+> substrate — open outcome records, recurrence verdicts, per-class autonomy budgets — remains
+> unclaimed; see [north-star-autonomous-fix-loop.md](../00-vision/north-star-autonomous-fix-loop.md).
+
 > **2026-06-02 update:** Syncause, AgentRx, Notrix Trax, AgentReplay, and OpenTelemetry MCP/replay/crash convention drift now have a focused recheck at
 > [`agent-debugging-competitor-drift-2026-06-02.md`](agent-debugging-competitor-drift-2026-06-02.md).
 > Verdict: agent-debugging tools validate the runtime-facts thesis but narrow the

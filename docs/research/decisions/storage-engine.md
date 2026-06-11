@@ -3,7 +3,7 @@
 <!-- markdownlint-disable MD013 -->
 
 Decision date baseline: 2026-05-29 (reconciles the engine sub-study to the current operator brief).
-Operator re-affirmed focus: 2026-06-03.
+Operator re-affirmed focus: 2026-06-03. Operator re-affirmed harder: 2026-06-11 (see below).
 
 > **Decision — current production/server lean GreptimeDB, NOT yet settled.** Keep **both engines behind one
 > `StorageAdapter`**; never hard-code engine magic into the schema or the evidence-bundle
@@ -96,6 +96,33 @@ Two lenses once reached opposite defaults; the resolved query mix breaks the tie
   broad ad-hoc analytics. On that path **both engines are interactive at every tested scale**, so
   ClickHouse's raw-speed lead is **not decisive for Parallax**. The decision therefore turns on
   **cost + Rust**, where GreptimeDB leads — not on analytical-scan speed, where ClickHouse leads.
+
+## Operator re-affirmation 2026-06-11 (with reality checks)
+
+The operator restated the lean with more conviction: GreptimeDB as the engine to invest in because
+it is Rust, already built around the columnar/object-storage concepts ClickHouse proves, and —
+since AI agents contribute best to Rust codebases — whatever it still misses versus ClickHouse can
+be added over time ("absorb the gap upstream") until one engine serves everything in one place.
+This strengthens DQ6 (long-term investment) and is consistent with the
+[parity roadmap](../storage/greptimedb-vs-clickhouse/greptimedb-parity-roadmap.md). It does **not**
+close the cost/cold-read finalizer gates below, and three reality checks bound the
+"AI-extends-it-upstream" strategy (checked 2026-06-11):
+
+1. **Upstream is gated.** GreptimeDB requires a CLA and has an explicit AI-assisted-PR policy:
+   authors must understand changes end-to-end, "AI dump" PRs may be closed unreviewed, and review
+   capacity is stated as "very limited" ([CONTRIBUTING.md](https://github.com/GreptimeTeam/greptimedb/blob/main/CONTRIBUTING.md)).
+   Development is overwhelmingly core-team (~136 contributors, external PRs a small share). The
+   strategy is therefore *high-quality AI-assisted contributions with human ownership* — with a
+   fork as the hedge, which Apache-2.0 permits.
+2. **OSS/Enterprise split matters for the loop.** Triggers/alerting, RBAC, audit logging, and
+   read replicas are Enterprise-only ([enterprise docs](https://docs.greptime.com/enterprise/overview/)).
+   Parallax must own detection/dispatch in its own workers regardless of engine — which the
+   adapter boundary already requires.
+3. **Release cadence wobble.** v1.1 GA has not shipped (stable remains v1.0.2, 2026-05-14); the
+   nightly line stalled at `v1.1.0-nightly-20260525` while the repo stays highly active — a
+   publishing gap, not a dev stall, but the v1.1-GA retest trigger has still not fired. Dynamic
+   JSON ("JSON2") is the headline in-flight v1.1 feature (merged PRs May–June 2026), which is the
+   exact gap behind ClickHouse's ~8× dynamic-attribute win.
 
 ## What must close before this is settled
 

@@ -35,6 +35,7 @@ The research record lives under [`docs/research/`](docs/research/) and is organi
 reach "what is Parallax, which storage engine, and why" in a few minutes:
 
 - **[Research index](docs/research/README.md)** — the navigable map (vision, decisions, architecture, capture, storage, validation, market, reference) with a "current answers" table.
+- **[North star: the autonomous fix loop](docs/research/00-vision/north-star-autonomous-fix-loop.md)** — the named moonshot (earned autonomy, the impossible triangle) and how it coexists with the narrow wedge.
 - **[Go / no-go verdict](docs/research/decisions/go-no-go.md)** — GO, for the narrow evidence/context engine.
 - **[Storage engine decision](docs/research/decisions/storage-engine.md)** — current lean GreptimeDB (not yet settled), ClickHouse fallback, both behind a `StorageAdapter`.
 - **[Risks and the bear case](docs/research/decisions/risks-and-bear-case.md)** — the adversarial counterweight.
@@ -72,8 +73,11 @@ Code `/loop` runbook.
 
 The current recommended wedge is:
 
-1. Start with Sentry-compatible error ingestion for Rust services and CLI apps.
-2. Add OpenTelemetry logs, traces, and metrics correlation.
+1. Start OpenTelemetry-native: ingest OTLP traces, logs, and metrics from Rust
+   services and CLI apps, and derive Parallax-owned error events from exception
+   spans and ERROR/FATAL logs.
+2. Treat Sentry-compatible error ingestion as a future migration adapter, not
+   V1 scope.
 3. Store high-volume observability data in a simple self-hosted backend behind a
    `StorageAdapter`; current lean is GreptimeDB (see the
    [storage engine decision](docs/research/decisions/storage-engine.md)), with

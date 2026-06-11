@@ -30,9 +30,9 @@ or CI contract yet.
 | --- | --- |
 | `docs/` | Documentation and research notes. No generated docs UI yet. |
 | `docs/research/` | Market, product, and strategy research, grouped by topic. The canonical per-note index is [`docs/research/README.md`](docs/research/README.md). |
-| `docs/research/00-vision/` | Why this product: thesis, world-before-Parallax stack, platform direction, AI-native observability synthesis. |
+| `docs/research/00-vision/` | Why this product: the north-star autonomous fix loop + impossible triangle, thesis, world-before-Parallax stack, platform direction, AI-native observability synthesis. |
 | `docs/research/decisions/` | ADR-style decision records — current truth, conclusion first (go/no-go, strategic coverage, risks, the dated skeptical re-assessment, storage engine, V1 storage adapter vision, stack decision, metadata store, agent access surface, fixer boundary). |
-| `docs/research/architecture/` | How the pieces fit: implementation concept, overview, evidence-bundle schema, API concept, causal reconstruction, local-first V1, simple UI V2, build roadmap. |
+| `docs/research/architecture/` | How the pieces fit: implementation concept, overview, evidence-bundle schema, API concept, causal reconstruction, local-first V1, simple UI V2, build roadmap, autonomous fix loop, integration contract. |
 | `docs/research/capture/` | How each signal is collected and made safe: rust, frontend, OTLP-first ingest, future sentry-ingest, agent/CLI tracing, deploy/change context, CI/flaky tests, production-DB evidence, correlation (A4), redaction (A6). |
 | `docs/research/storage/` | Telemetry-store evaluation, benchmark plan, freshness/latency and size/object-cost gates, plus `metadata/` and `streaming/` evidence subdirs. |
 | `docs/research/storage/greptimedb-vs-clickhouse/` | Deep white-box GreptimeDB vs ClickHouse internals comparison: one-page verdict, run-log, 30+ mechanism notes, the four-build version matrix, and benchmarks. Produced by an indefinite `/goal` or Claude Code `/loop`. |
@@ -45,6 +45,7 @@ or CI contract yet.
 | `docs/research/reference/` | External technical reviews. Includes `ai-native-debugging-tools.md` (open-source AI debugging agents, SRE agents, coding-agent observability tools). |
 | `prompts/` | Reusable research and agent prompts. |
 | `bench/` | Local storage-benchmark scaffolding: pinned `compose.yml` for GreptimeDB + ClickHouse smoke runs. Generated datasets/results are gitignored; only compose/scripts are tracked. Consistent with [`docs/research/storage/benchmark-plan.md`](docs/research/storage/benchmark-plan.md). |
+| `poc/` | Concept-proving Rust code (operator-approved 2026-06-11). Small, runnable, test-covered proofs of designed mechanisms — not product code, no product claims. First artifact: `poc/evidence-loop/` (OTLP JSON → derived error events → fingerprint → trigger → redacted evidence bundle with canonical hash). |
 
 ## Research Record
 

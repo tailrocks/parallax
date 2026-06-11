@@ -259,6 +259,31 @@ That is the point of the approach: with enough structured context, the agent
 makes the call and brings evidence, instead of asking a human to gather context
 first.
 
+## The north star beyond the end state (operator, 2026-06-11)
+
+The PR-without-hand-holding end state is the milestone, not the summit. The
+named north star is the full autonomous fix loop: Detect (telemetry-driven
+triggers) → Context (bounded evidence bundle) → Dispatch (wake a fixer under an
+earned autonomy budget) → Fix (separate fixer + coding agent) → Validate
+(CI/merge/deploy/recurrence linkage) → Learn (outcomes adjust evidence selection
+and autonomy budgets). Autonomy is **earned from measured outcome history per
+failure class**, never claimed from model capability; auto-merge (L4/L5)
+territory is reachable only through accumulated accepted/merged/clean-recurrence
+records. As of June 2026 no vendor ships closed-loop application-code fixing —
+everyone stops at auto-opened PRs — and the research position is that the
+missing piece is exactly the evidence + outcome substrate Parallax builds.
+
+Three goals must hold simultaneously, without conceptual trade-offs (the
+"impossible triangle"): top analytics performance on the anchored hot path,
+lowest possible storage cost (object storage, hot/cold tiering, pre-aggregation
+on ingest, evidence pinning so bundle-cited raw slices survive TTL), and
+complete evidence for autonomous fixing. When a design forces a pairwise
+choice, treat it as a design smell and find the architecture that bends the
+third constraint. Research passes should keep challenging whether the loop
+stages (trigger taxonomy, dispatch/wake contract, recurrence reconciliation,
+outcome-fed learning) and the triangle mechanisms are sound, and verify the
+no-closed-loop competitive claim against current vendor capabilities.
+
 ## Separation of concerns: Parallax stores, a separate agent fixes
 
 Be precise about the component boundary, because it shapes the whole design:
@@ -934,9 +959,15 @@ picking the telemetry store: "the DB speaks OTLP/PromQL/Jaeger natively / schema
 mattering because Parallax supplies those APIs and translates (the proof: SigNoz/Uptrace/HyperDX/
 ClickStack all front ClickHouse with exactly such a layer). Judge the telemetry store on **practical
 fit, not raw speed**: retrieval speed + build-on-top ecosystem (ClickHouse leads) vs object-store
-economics + metrics cardinality + auto-rebalance (GreptimeDB leads). Current standing lean: **ClickHouse
-is the pragmatic default; GreptimeDB for the metrics-cardinality / self-hosted-1×-S3-economics /
-mandatory-auto-rebalance bet.** GreptimeDB's slower heavy-query speed is an *engine* gap (closable), not
+economics + metrics cardinality + auto-rebalance (GreptimeDB leads). Current standing lean
+(superseding this lens's earlier ClickHouse-default reading; reconciled 2026-05-29, operator
+re-affirmed 2026-06-11): **GreptimeDB** — the resolved anchored-retrieval query mix puts
+ClickHouse's scan-speed lead off the hot path, so the decision turns on cost + Rust + self-hosted
+economics, where GreptimeDB leads; ClickHouse stays the fallback behind the same `StorageAdapter`
+until the sized cost and cold-read gates settle it. The operator additionally treats GreptimeDB as
+the long-term investment: Rust, AI-contributable, with missing ClickHouse-class capabilities
+absorbable upstream over time (bounded by GreptimeDB's CLA and AI-assisted-PR policy; fork is the
+hedge). GreptimeDB's slower heavy-query speed is an *engine* gap (closable), not
 a consequence of object storage; its cost advantage (fewer always-on servers, cheap S3) is the
 *architecture* and is its strongest surviving argument. Full reasoning + the alternatives survey:
 [`docs/research/storage/greptimedb-vs-clickhouse/platform-fit-and-alternatives.md`](../docs/research/storage/greptimedb-vs-clickhouse/platform-fit-and-alternatives.md).
