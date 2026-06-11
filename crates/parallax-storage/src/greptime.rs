@@ -230,6 +230,13 @@ fn opt_str_at(row: &[serde_json::Value], index: usize) -> Option<String> {
     row.get(index).and_then(|v| v.as_str()).map(str::to_string)
 }
 
+/// Clamp a u128 time bound to what the engine's TIMESTAMP cast accepts
+/// (i64); open-ended `..=u128::MAX` ranges otherwise fail query planning
+/// ("Casting value to Timestamp is invalid").
+fn sql_ts(bound: u128) -> i64 {
+    i64::try_from(bound).unwrap_or(i64::MAX)
+}
+
 fn u128_at(row: &[serde_json::Value], index: usize) -> u128 {
     row.get(index)
         .and_then(|v| v.as_u64())
@@ -459,8 +466,8 @@ impl TelemetryStore for GreptimeStore {
                      AND "ts" >= {} AND "ts" <= {}
                    GROUP BY "bucket_ms" ORDER BY "bucket_ms""#,
                 escape(name),
-                range.start() / 1_000_000,
-                range.end() / 1_000_000,
+                sql_ts(range.start() / 1_000_000),
+                sql_ts(range.end() / 1_000_000),
             ))
             .await?;
         let mut series: Vec<SeriesPoint> = rows
@@ -496,8 +503,8 @@ impl TelemetryStore for GreptimeStore {
                      AND "ts" >= {} AND "ts" <= {}
                    ORDER BY "ts" ASC"#,
                 escape(name),
-                range.start() / 1_000_000,
-                range.end() / 1_000_000,
+                sql_ts(range.start() / 1_000_000),
+                sql_ts(range.end() / 1_000_000),
             ))
             .await?;
         let step = step_nanos.max(1);
@@ -542,8 +549,8 @@ impl TelemetryStore for GreptimeStore {
                    FROM error_events WHERE "fingerprint" = '{}' AND "ts" >= {} AND "ts" <= {}
                    ORDER BY "ts" DESC LIMIT {limit}"#,
                 escape(fingerprint),
-                range.start(),
-                range.end()
+                sql_ts(*range.start()),
+                sql_ts(*range.end())
             ))
             .await?;
         Ok(rows
