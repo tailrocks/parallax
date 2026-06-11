@@ -250,6 +250,47 @@ docs/research/bundle-value-eval/
 Do not commit private raw telemetry. Commit public/generated fixtures, redacted
 projections, hashes, manifests, and summaries.
 
+## Pre-registered selection procedure (2026-06-11)
+
+Recorded **before any candidate row has been read**, so task selection cannot be cherry-picked
+toward bundle-friendly cases. Selection that deviates from this procedure must say so in the
+manifest, with the reason.
+
+**Composition (12 tasks; ≥60% R1–R3 with R2 largest, per the
+[runtime-dependence note](runtime-dependence-and-raw-baseline.md)):**
+
+| Class | Count | Source |
+| --- | --- | --- |
+| R0 repo-logic (floor, reported separately) | 3 | `SWE-bench-Live/MultiLang` Rust split |
+| R1 runtime-disambiguated | 3 | `SWE-bench-Live/MultiLang` Rust split |
+| R2 runtime-only cause | 4 | Fault injection on the reference app: pool exhaustion, deploy-correlated regression, resource exhaustion, config/env drift — one each |
+| R3 cross-signal / cross-tier | 2 | Fault injection: browser→backend cross-tier, cross-service release correlation |
+
+**R0/R1 selection from the pinned split** (`608f7ae9…`, Rust 94, re-verified 2026-06-11):
+
+1. Order all 94 rows by `sha256(instance_id)` ascending — a deterministic, content-blind walk
+   order.
+2. Walk in that order. For each row, classify R0 vs R1 **from the problem statement and repo
+   context only, blind to the gold patch and test patch** (the quarantined fields stay
+   quarantined during classification).
+3. Accept the row into its class if it passes the task-eligibility gates above (runnable
+   environment, isolated fix, deterministic verifier, observable failure); otherwise record the
+   skip with a one-line reason.
+4. Stop when both quotas (3 + 3) are filled. If the walk exhausts all 94 rows before a quota
+   fills, record the shortfall in the manifest — never relax a gate silently to fill a quota.
+
+**R2/R3 fault injection:** faults are drawn from the catalog named in the composition table and
+implemented on the reference app before any agent run; each injected task records its fault
+recipe so the failure is reproducible. The PoC scenarios
+(`poc/evidence-loop/fixtures/`) are the overlay shape templates for these classes, per the
+[PoC scenario seed](#poc-scenario-seed-2026-06-11) note.
+
+**Audit trail:** every accepted row gets the `source.json` fields above, including
+`full_selected_row_hash` from the pinned-revision fetch procedure
+([row-hash procedure](a1-huggingface-row-hash-procedure.md)); every skipped row appears in a
+`selection-log.jsonl` with its skip reason. The walk order, quotas, and rubric are fixed by this
+section as of 2026-06-11.
+
 ## Decision
 
 The next A1 step is not "build storage." It is:
