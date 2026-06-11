@@ -18,7 +18,7 @@ fn main() -> anyhow::Result<()> {
         .with_context(|| format!("reading {}/otlp-logs.json", fixtures.display()))?;
     let deploys_json = fs::read_to_string(fixtures.join("deploy-events.json")).ok();
 
-    let output = run_pipeline("proj_checkout", &trace_json, &logs_json, deploys_json.as_deref())?;
+    let mut output = run_pipeline("proj_checkout", &trace_json, &logs_json, deploys_json.as_deref())?;
 
     println!("derived error events: {}", output.error_events.len());
     for ev in &output.error_events {
@@ -26,6 +26,20 @@ fn main() -> anyhow::Result<()> {
             "  [{}] {:?} {} fp={}",
             ev.span_id, ev.source, ev.error_type, ev.fingerprint
         );
+    }
+
+    // Learn first, so the learned weights can order bundle edges before the
+    // bundles are written out.
+    let outcomes = fs::read_to_string(fixtures.join("outcome-rows.json"))
+        .ok()
+        .map(|json| serde_json::from_str::<OutcomesData>(&json))
+        .transpose()
+        .context("parsing outcome rows JSON")?;
+    if let Some(outcomes) = &outcomes {
+        let learner = compute_edge_weights(&outcomes.outcomes);
+        for b in &mut output.bundles {
+            evidence_loop_poc::learn::apply_edge_weights(b, &learner);
+        }
     }
 
     let out_dir = PathBuf::from("out");
@@ -47,9 +61,7 @@ fn main() -> anyhow::Result<()> {
 
     // Dispatch: compute the autonomy budget from outcome history (if fixture
     // present) and emit one fix_candidate wake payload per bundle.
-    if let Ok(outcomes_json) = fs::read_to_string(fixtures.join("outcome-rows.json")) {
-        let outcomes: OutcomesData =
-            serde_json::from_str(&outcomes_json).context("parsing outcome rows JSON")?;
+    if let Some(outcomes) = &outcomes {
         println!("fix candidates:");
         for b in &output.bundles {
             let budget = compute_budget(&outcomes.outcomes, "backend_error");

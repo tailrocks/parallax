@@ -16,7 +16,7 @@ use evidence_loop_poc::budget::{compute_budget, OutcomeRow, OutcomesData};
 use evidence_loop_poc::deploy::{reconcile_recurrence, RecurrenceVerdict};
 use evidence_loop_poc::derive::ErrorSource;
 use evidence_loop_poc::dispatch::build_fix_candidate;
-use evidence_loop_poc::learn::compute_edge_weights;
+use evidence_loop_poc::learn::{apply_edge_weights, compute_edge_weights};
 use evidence_loop_poc::run_pipeline;
 
 const TRACE: &str = include_str!("../fixtures/otlp-trace.json");
@@ -298,4 +298,70 @@ fn appending_an_outcome_row_changes_the_policy() {
         "L1_diagnose",
         "one reverted fix must demote the class until trust is re-earned"
     );
+}
+
+#[test]
+fn learned_weights_reorder_bundle_edges() {
+    let out = run_pipeline("proj_checkout", TRACE, LOGS, Some(DEPLOYS)).unwrap();
+    let report = compute_edge_weights(&outcome_rows());
+    let mut bundle = out
+        .bundles
+        .into_iter()
+        .find(|b| b.edges.iter().any(|e| e.r#type == "same_fingerprint"))
+        .expect("the exception bundle");
+
+    apply_edge_weights(&mut bundle, &report);
+
+    // Fixture lifts: error_in_span 1.231 > deploy_preceded_issue 1.190 >
+    // log_in_trace 1.164 > same_fingerprint (uncited, defaults 1.0).
+    assert_eq!(bundle.edges.first().unwrap().r#type, "error_in_span");
+    assert_eq!(bundle.edges.last().unwrap().r#type, "same_fingerprint");
+
+    // Hash is recomputed over the reordered artifact and stays deterministic.
+    let h1 = bundle.canonical_hash.clone().unwrap();
+    apply_edge_weights(&mut bundle, &report);
+    assert_eq!(bundle.canonical_hash.unwrap(), h1);
+    assert!(h1.starts_with("sha256:"));
+}
+
+#[test]
+fn emitted_artifacts_validate_against_published_schemas() {
+    let bundle_schema: serde_json::Value =
+        serde_json::from_str(include_str!("../schema/evidence-bundle.v0-poc.schema.json")).unwrap();
+    let candidate_schema: serde_json::Value =
+        serde_json::from_str(include_str!("../schema/fix-candidate.v0.schema.json")).unwrap();
+    let bundle_validator = jsonschema::validator_for(&bundle_schema).unwrap();
+    let candidate_validator = jsonschema::validator_for(&candidate_schema).unwrap();
+
+    let out = run_pipeline("proj_checkout", TRACE, LOGS, Some(DEPLOYS)).unwrap();
+    let rows = outcome_rows();
+    for bundle in &out.bundles {
+        let bundle_json = serde_json::to_value(bundle).unwrap();
+        assert!(
+            bundle_validator.is_valid(&bundle_json),
+            "bundle must validate: {:?}",
+            bundle_validator.iter_errors(&bundle_json).map(|e| e.to_string()).collect::<Vec<_>>()
+        );
+
+        let candidate = build_fix_candidate(
+            bundle,
+            compute_budget(&rows, "backend_error"),
+            vec!["cargo test -p checkout".to_string()],
+        );
+        let candidate_json = serde_json::to_value(&candidate).unwrap();
+        assert!(
+            candidate_validator.is_valid(&candidate_json),
+            "fix_candidate must validate: {:?}",
+            candidate_validator
+                .iter_errors(&candidate_json)
+                .map(|e| e.to_string())
+                .collect::<Vec<_>>()
+        );
+
+        // Negative control: dropping a safety-critical field must fail
+        // validation — the schema actually guards the contract.
+        let mut crippled = bundle_json.clone();
+        crippled.as_object_mut().unwrap().remove("redaction_report");
+        assert!(!bundle_validator.is_valid(&crippled), "schema must require redaction_report");
+    }
 }

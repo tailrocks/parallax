@@ -55,15 +55,28 @@ What it proves, end to end, with no network, database, or wall clock:
     API — outcome rows demonstrably alter a policy decision, which is the
     fixer-outcome-ledger definition of "learning".
 
+12. **Weights→retrieval wiring** — `apply_edge_weights(bundle, report)`
+    reorders bundle edges by learned lift (highest first, unknown types 1.0,
+    stable tie-break) and recomputes the canonical hash, so the learner's
+    output demonstrably changes what an agent reads first.
+13. **Published machine-readable schemas** — [`schema/`](schema/) holds JSON
+    Schema (draft 2020-12) for `parallax.fix_candidate.v0` and
+    `bundle-v0-poc`; tests validate every emitted artifact against them and
+    assert a negative control (dropping `redaction_report` fails validation).
+    These are draft artifacts for the A3 schema-adoption gate
+    ([a3-schema-corpus.md](../../docs/research/validation/a3-schema-corpus.md));
+    the production schema versioning policy lives there.
+
 With this, **all six loop stages have an executable kernel**: Detect (triggers),
 Context (bundle), Dispatch (budget + payload), Fix (external by ADR — contracts
-only), Validate (recurrence), Learn (weights + budget feedback).
+only), Validate (recurrence), Learn (weights + budget feedback), and the
+outward contract is machine-checkable.
 
 Run:
 
 ```bash
 cd poc/evidence-loop
-cargo test          # the thirteen property tests
+cargo test          # the fifteen property tests
 cargo run           # prints derivation/bundle/dispatch/learner summary, writes out/*.json
 ```
 

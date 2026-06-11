@@ -204,4 +204,6 @@ T+9d    Learner: backend_error accept-rate updates; deploy-edge weight reinforce
   upgrade (Stage 1), the earned autonomy budget + `parallax.fix_candidate.v0` dispatch payload
   (Stage 3), the Reconciler's recurrence kernel (Stage 5), and the Learner: outcome-citation
   edge weights plus the loop-closure property that appending a reverted outcome row demotes the
-  class budget L2→L1 through the same public API (Stage 6).
+  class budget L2→L1 through the same public API (Stage 6). Learned weights are wired back into
+  bundle edge ordering, and both outward payloads ship draft JSON Schemas (`poc/evidence-loop/schema/`)
+  that every emitted artifact validates against in tests — the first machine-checkable A3 artifact.

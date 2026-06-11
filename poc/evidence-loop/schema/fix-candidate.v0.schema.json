@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tailrocks/parallax/schema/fix-candidate.v0.schema.json",
+  "title": "parallax.fix_candidate.v0",
+  "description": "Dispatch wake payload: tells a fixer there is work, under an earned autonomy budget. References the evidence bundle, never inlines it. Draft PoC artifact; the production schema versioning policy is governed by the A3 schema gate.",
+  "type": "object",
+  "required": [
+    "event_type",
+    "project_id",
+    "issue_id",
+    "trigger",
+    "bundle_ref",
+    "canonical_bundle_hash",
+    "autonomy_budget",
+    "required_validation",
+    "expires_at_unix_nano",
+    "idempotency_key"
+  ],
+  "properties": {
+    "event_type": { "const": "parallax.fix_candidate.v0" },
+    "project_id": { "type": "string", "minLength": 1 },
+    "issue_id": { "type": "string", "minLength": 1 },
+    "trigger": {
+      "type": "string",
+      "enum": [
+        "new_fingerprint",
+        "frequency_spike",
+        "deploy_adjacent_regression",
+        "fix_regression",
+        "slo_breach"
+      ]
+    },
+    "bundle_ref": { "type": "string", "minLength": 1 },
+    "canonical_bundle_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "autonomy_budget": {
+      "type": "object",
+      "required": ["failure_class", "max_level", "basis"],
+      "properties": {
+        "failure_class": { "type": "string", "minLength": 1 },
+        "max_level": {
+          "type": "string",
+          "enum": ["L1_diagnose", "L2_propose_patch", "L3_draft_pr"]
+        },
+        "basis": {
+          "type": "object",
+          "required": [
+            "runs",
+            "accepted_rate",
+            "revert_rate",
+            "recurrence_rate",
+            "redaction_failures",
+            "policy_version"
+          ],
+          "properties": {
+            "runs": { "type": "integer", "minimum": 0 },
+            "accepted_rate": { "type": "string", "pattern": "^[0-9]+\\.[0-9]{3}$" },
+            "revert_rate": { "type": "string", "pattern": "^[0-9]+\\.[0-9]{3}$" },
+            "recurrence_rate": { "type": "string", "pattern": "^[0-9]+\\.[0-9]{3}$" },
+            "redaction_failures": { "type": "integer", "minimum": 0 },
+            "policy_version": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "required_validation": { "type": "array", "items": { "type": "string" } },
+    "expires_at_unix_nano": { "type": "string", "pattern": "^[0-9]+$" },
+    "idempotency_key": { "type": "string", "minLength": 1 }
+  }
+}

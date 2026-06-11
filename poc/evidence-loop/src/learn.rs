@@ -12,6 +12,7 @@
 //! report that references the exact outcome rows it was computed from.
 
 use crate::budget::OutcomeRow;
+use crate::bundle::{canonical_hash, Bundle};
 use serde::Serialize;
 use std::collections::BTreeMap;
 
@@ -89,4 +90,27 @@ pub fn compute_edge_weights(rows: &[OutcomeRow]) -> LearnerReport {
         weights,
         basis_outcome_ids: rows.iter().map(|r| r.outcome_id.clone()).collect(),
     }
+}
+
+/// The weights→retrieval hook: reorder a bundle's edges by learned lift
+/// (highest first; unknown edge types default to 1.0), then recompute the
+/// canonical hash so the reordered artifact stays hash-consistent. Stable
+/// tie-break by (type, from) keeps output deterministic.
+pub fn apply_edge_weights(bundle: &mut Bundle, report: &LearnerReport) {
+    let lift_of = |edge_type: &str| -> f64 {
+        report
+            .weights
+            .get(edge_type)
+            .and_then(|w| w.lift.parse::<f64>().ok())
+            .unwrap_or(1.0)
+    };
+    bundle.edges.sort_by(|a, b| {
+        lift_of(&b.r#type)
+            .partial_cmp(&lift_of(&a.r#type))
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| a.r#type.cmp(&b.r#type))
+            .then_with(|| a.from.cmp(&b.from))
+    });
+    let hash = canonical_hash(bundle);
+    bundle.canonical_hash = Some(hash);
 }
