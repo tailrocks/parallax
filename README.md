@@ -28,6 +28,16 @@ This repository is in research and product-discovery mode. Expect fast
 iteration on `main`, plain Markdown notes, and frequent restructuring as the
 idea becomes sharper.
 
+## Using It
+
+The V1 implementation (workspace under [`crates/`](crates/), web UI under
+[`ui/`](ui/)) is usable today on the local profile:
+
+- **[Quickstart](docs/guide/quickstart.md)** — install → serve → connect a Rust app → first evidence bundle.
+- **[CLI reference](docs/guide/cli.md)** — every `parallax` command.
+- **[Agent how-to](docs/guide/agent-howto.md)** — point your coding agent at `parallax issue context`.
+- **[Conventions](docs/guide/conventions.md)** — resource attributes, `parallax.run_id`, exception encodings, DB wrapper spans.
+
 ## Start Here
 
 The research record lives under [`docs/research/`](docs/research/) and is organized so you can
