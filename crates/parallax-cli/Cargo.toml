@@ -11,6 +11,11 @@ repository.workspace = true
 name = "parallax"
 path = "src/main.rs"
 
+[features]
+# Single-binary release: serve the web UI from assets compiled in at build
+# time (scripts/release.sh builds ui/ first, then enables this).
+embed-ui = ["parallax-server/embed-ui"]
+
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true }

@@ -27,6 +27,13 @@ tokio-stream = { workspace = true }
 tonic = { workspace = true }
 tower-http = { workspace = true }
 tracing = { workspace = true }
+rust-embed = { workspace = true, optional = true }
+mime_guess = { workspace = true, optional = true }
+
+[features]
+# Compile the built web UI (ui/dist/client) into the binary for single-file
+# distribution. Requires `pnpm build` in ui/ first; scripts/release.sh does.
+embed-ui = ["dep:rust-embed", "dep:mime_guess"]
 
 [dev-dependencies]
 opentelemetry = "0.32"

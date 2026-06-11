@@ -142,8 +142,9 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
         )
         .merge(otlp_http::router(ingest.clone()));
 
-    // The embedded UI: serve the SPA build (assets + _shell.html fallback)
-    // when a dist directory is present; otherwise stay API-only with a hint.
+    // The UI, by preference: an on-disk SPA build (assets + _shell.html
+    // fallback), then assets embedded at compile time (release builds with
+    // the `embed-ui` feature), then API-only with a hint.
     let ui_dist = if config.server.ui_dist.is_empty() {
         ["ui/dist/client", "../ui/dist/client"]
             .iter()
@@ -159,10 +160,7 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
             let files = tower_http::services::ServeDir::new(&dist).fallback(shell);
             api_router.fallback_service(files)
         }
-        _ => api_router.fallback(axum::routing::get(|| async {
-            "Parallax API is running. UI build not found — run `pnpm build` in ui/ \
-             or set [server].ui_dist in config.toml."
-        })),
+        _ => embedded_ui::fallback(api_router),
     };
 
     let bind = &config.server.bind;
@@ -215,4 +213,50 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
         supervisor,
         tasks,
     })
+}
+
+/// The compile-time-embedded UI (release builds with `embed-ui`). Without
+/// the feature this degrades to the API-only hint.
+mod embedded_ui {
+    use axum::Router;
+
+    #[cfg(feature = "embed-ui")]
+    #[derive(rust_embed::RustEmbed)]
+    #[folder = "../../ui/dist/client"]
+    struct Assets;
+
+    #[cfg(feature = "embed-ui")]
+    pub(super) fn fallback(router: Router) -> Router {
+        use axum::http::{StatusCode, header};
+        use axum::response::IntoResponse;
+        tracing::info!("serving UI embedded in the binary");
+        router.fallback(axum::routing::get(|uri: axum::http::Uri| async move {
+            // Unmatched paths fall through to the SPA shell (client routing).
+            let mut path = uri.path().trim_start_matches('/');
+            let mut asset = Assets::get(path);
+            if asset.is_none() {
+                path = "_shell.html";
+                asset = Assets::get(path);
+            }
+            match asset {
+                Some(content) => {
+                    let mime = mime_guess::from_path(path).first_or_octet_stream();
+                    (
+                        [(header::CONTENT_TYPE, mime.as_ref().to_string())],
+                        content.data.into_owned(),
+                    )
+                        .into_response()
+                }
+                None => (StatusCode::NOT_FOUND, "not found").into_response(),
+            }
+        }))
+    }
+
+    #[cfg(not(feature = "embed-ui"))]
+    pub(super) fn fallback(router: Router) -> Router {
+        router.fallback(axum::routing::get(|| async {
+            "Parallax API is running. UI build not found — run `pnpm build` in ui/ \
+             or set [server].ui_dist in config.toml."
+        }))
+    }
 }
