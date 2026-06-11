@@ -284,6 +284,40 @@ stages (trigger taxonomy, dispatch/wake contract, recurrence reconciliation,
 outcome-fed learning) and the triangle mechanisms are sound, and verify the
 no-closed-loop competitive claim against current vendor capabilities.
 
+## Product shape and audience (operator, 2026-06-11)
+
+The concept combines the best of three worlds, agent-first: OpenTelemetry as
+the standard for how data is collected; Sentry as the model for how collected
+failures are organized into grouped, workflow-ready issues; Grafana as the
+model for how humans see across signals and understand what is going on. The
+same evidence serves AI (bounded bundles, full picture for fix decisions) and
+people (a UI, eventually, to know what is happening).
+
+The platform ships three surfaces over ONE canonical API: a CLI, the server
+API, and a UI. CLI and UI are clients of the same API — never direct storage
+readers. The CLI follows the kubectl model: the server can be deployed
+anywhere, and from a desktop you connect by context (local or remote) and get
+the whole picture; a coding agent drives the same CLI/API against a remote
+server to analyze errors, logs, and traces and propose fixes.
+
+Audience ladder, in priority order: (1) a developer on a dev machine — local
+first; connect your app via standard OTel, find the bug you just introduced;
+this is the wedge and the operator is user #1; (2) a team with a deployed
+server, reached remotely via the kubectl-style CLI by humans and agents;
+(3) big companies at horizontal scale, where bugs are fixed next month and
+retention economics (object storage, tiering, evidence pinning) become the
+product feature. Storage path: simple local storage first, GreptimeDB as the
+extended/server profile — and if GreptimeDB serves everything from laptop to
+cluster, one engine runs the whole ladder. Telemetry sources are polyglot by
+the OTLP standard (Java exceptions, Go errors, browser events all arrive the
+same way); Rust-first remains the capture-depth priority and the engine/infra
+language filter is unchanged.
+
+Standing documentation duty: every research pass that changes the answer to
+"what problem, what audience, who is this for" must update
+`docs/research/00-vision/problem-audience-product-shape.md` in the same
+change, keeping that front-door framing current and sharp.
+
 ## Separation of concerns: Parallax stores, a separate agent fixes
 
 Be precise about the component boundary, because it shapes the whole design:

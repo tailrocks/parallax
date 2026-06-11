@@ -48,6 +48,12 @@ Recorded as durable intent, condensed from the operator's own words:
 7. **Three goals at once, no conceptual trade-offs:** top analytics performance, lowest possible
    cost, and complete evidence. The "impossible triangle" below. The instruction is explicit: do
    not accept pairwise compromises; find the architecture that bends the third constraint.
+8. **Best of three worlds, three surfaces, local-dev first** (statement #2, same day): combine
+   OpenTelemetry's collection standard, Sentry's issue organization, and Grafana's cross-signal
+   understanding in one agent-first platform; ship CLI + API + UI where everything is a client of
+   one canonical API (kubectl-style remote CLI contexts); the first user is a developer on a dev
+   machine, scaling to big companies by topology, not rewrite. Full framing:
+   [problem-audience-product-shape.md](problem-audience-product-shape.md).
 
 ## 2. Why the summit is unclaimed (market evidence, June 2026)
 

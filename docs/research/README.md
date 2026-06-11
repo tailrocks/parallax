@@ -26,6 +26,7 @@ This directory is the research record behind Parallax. It is organized so a read
 ## Map
 
 ### `00-vision/` — why this product, in plain terms
+- [problem-audience-product-shape.md](00-vision/problem-audience-product-shape.md) — the front door: what problem Parallax solves, who it is for (audience ladder, local-dev first), and the product shape (best of three worlds — OTel/Sentry/Grafana concepts, agent-first; CLI + API + UI as clients of one canonical API, kubectl-style remote CLI).
 - [north-star-autonomous-fix-loop.md](00-vision/north-star-autonomous-fix-loop.md) — the named moonshot (operator, 2026-06-11): the autonomous fix loop, earned autonomy via outcome-fed budgets, and the impossible triangle (performance + cost + complete evidence).
 - [thesis.md](00-vision/thesis.md) — the original thesis.
 - [world-before-parallax.md](00-vision/world-before-parallax.md) — the pre-Parallax stack (Sentry + traces/logs/metrics/UI), why it exists, and what Parallax tries to collapse.
