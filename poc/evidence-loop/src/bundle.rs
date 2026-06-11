@@ -103,6 +103,24 @@ pub enum Node {
         exit_code: Option<String>,
         span_id: String,
     },
+    #[serde(rename = "agent_session")]
+    AgentSession {
+        id: String,
+        tool: String,
+        repo: String,
+        vcs_sha: String,
+        started_at_unix_nano: String,
+        ended_at_unix_nano: String,
+    },
+    #[serde(rename = "agent_action")]
+    AgentAction {
+        id: String,
+        session_id: String,
+        seq: u32,
+        action_type: String,
+        target: String,
+        detail: String,
+    },
 }
 
 #[derive(Debug, Serialize)]

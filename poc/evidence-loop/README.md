@@ -101,6 +101,17 @@ What it proves, end to end, with no network, database, or wall clock:
     `run`, trigger `manual`, never dispatch-eligible), DEBUG logs explaining
     the dirty-pane state included. Unknown run ids return nothing;
     run-anchored bundles validate against the published schema.
+19. **Agent sessions as evidence** — `attach_agent_evidence` joins normalized
+    agent-session records (tool, repo, produced commit, ordered action log)
+    into a bundle when the session ended inside the relevance window. The
+    fixture proves the causality chain in edges: the agent's
+    `file_edit src/payment.rs` action → its session → the deploy carrying the
+    session's commit (`agent_session_produced_change`, strong via SHA
+    equality) → the error — plus the sharpest edge,
+    `agent_edited_failing_file` (strong: the edited path appears in the
+    failing stacktrace). Out-of-window/other-repo sessions stay out; action
+    details pass redaction; "what did the agent do before this incident" is
+    now answerable from the bundle.
 
 With this, **all six loop stages have an executable kernel**: Detect (triggers),
 Context (bounded bundle), Dispatch (budget + payload), Fix (external by ADR —

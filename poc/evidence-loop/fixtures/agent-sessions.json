@@ -1,0 +1,29 @@
+{
+  "sessions": [
+    {
+      "session_id": "ags_42",
+      "tool": "claude_code",
+      "started_at_unix_nano": "1781429000000000000",
+      "ended_at_unix_nano": "1781429900000000000",
+      "repo": "https://github.com/tailrocks/checkout",
+      "vcs_sha": "abc123def4567890abc123def4567890abc123de",
+      "actions": [
+        { "seq": 1, "action_type": "file_read", "target": "src/payment.rs", "detail": "inspected retry handling in payment.authorize" },
+        { "seq": 2, "action_type": "file_edit", "target": "src/payment.rs", "detail": "raised redis retry budget from 2 to 4 attempts, kept 2000ms timeout" },
+        { "seq": 3, "action_type": "command", "target": "cargo test -p checkout", "detail": "exit 0, 84 tests passed" },
+        { "seq": 4, "action_type": "patch", "target": "PR #455", "detail": "opened draft PR: tune payment retry budget" }
+      ]
+    },
+    {
+      "session_id": "ags_43",
+      "tool": "codex",
+      "started_at_unix_nano": "1781100000000000000",
+      "ended_at_unix_nano": "1781100900000000000",
+      "repo": "https://github.com/tailrocks/website",
+      "vcs_sha": "ffff0000ffff0000ffff0000ffff0000ffff0000",
+      "actions": [
+        { "seq": 1, "action_type": "file_edit", "target": "src/pages/landing.tsx", "detail": "unrelated landing page copy change days earlier" }
+      ]
+    }
+  ]
+}

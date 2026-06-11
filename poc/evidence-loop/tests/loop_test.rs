@@ -484,6 +484,66 @@ fn one_bundle_spans_frontend_and_backend_tiers() {
 }
 
 #[test]
+fn agent_session_evidence_links_edit_to_deploy_to_error() {
+    use evidence_loop_poc::agent::{
+        attach_agent_evidence, AgentSessionsData, SESSION_RELEVANCE_WINDOW_NANOS,
+    };
+    let sessions: AgentSessionsData =
+        serde_json::from_str(include_str!("../fixtures/agent-sessions.json")).unwrap();
+
+    let out = run_pipeline("proj_checkout", TRACE, LOGS, Some(DEPLOYS)).unwrap();
+    let mut bundle = out
+        .bundles
+        .into_iter()
+        .find(|b| b.edges.iter().any(|e| e.r#type == "same_fingerprint"))
+        .unwrap();
+
+    let attached =
+        attach_agent_evidence(&mut bundle, &sessions.sessions, SESSION_RELEVANCE_WINDOW_NANOS);
+    // ags_42 ended ~10 minutes before the error: attached. ags_43 (different
+    // repo, days earlier) is outside the window: not attached.
+    assert_eq!(attached, 1);
+    assert!(!serde_json::to_string(&bundle).unwrap().contains("ags_43"));
+
+    // The causality chain, in edges:
+    // agent_action(file_edit src/payment.rs) -> session -> deploy (SHA match)
+    // -> issue, plus the sharpest edge: the agent edited the exact file in
+    // the failing stacktrace.
+    assert!(bundle.edges.iter().any(
+        |e| e.r#type == "agent_session_produced_change" && e.strength == "strong"
+    ));
+    assert!(bundle.edges.iter().any(
+        |e| e.r#type == "agent_edited_failing_file" && e.strength == "strong"
+    ));
+    assert!(bundle.edges.iter().any(
+        |e| e.r#type == "agent_session_preceded_issue" && e.strength == "medium"
+    ));
+
+    // The action log is in the bundle: what the agent read, edited, ran, and
+    // opened — the audit trail.
+    let action_types: Vec<&str> = bundle
+        .nodes
+        .iter()
+        .filter_map(|n| match n {
+            Node::AgentAction { action_type, .. } => Some(action_type.as_str()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(action_types, ["file_read", "file_edit", "command", "patch"]);
+
+    // Still schema-valid with the two new node types.
+    let schema: serde_json::Value =
+        serde_json::from_str(include_str!("../schema/evidence-bundle.v0-poc.schema.json")).unwrap();
+    let validator = jsonschema::validator_for(&schema).unwrap();
+    let bundle_json = serde_json::to_value(&bundle).unwrap();
+    assert!(
+        validator.is_valid(&bundle_json),
+        "agent-evidence bundle must validate: {:?}",
+        validator.iter_errors(&bundle_json).map(|e| e.to_string()).collect::<Vec<_>>()
+    );
+}
+
+#[test]
 fn run_anchored_bundle_treats_cli_invocation_as_first_class_evidence() {
     // The local-first `parallax run inspect` shape: a CLI run (the operator's
     // Jackin multiplexer panic) anchored by parallax.run_id, with the

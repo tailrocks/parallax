@@ -129,6 +129,30 @@
               "command_line",
               "span_id"
             ]
+          },
+          {
+            "properties": { "node_type": { "const": "agent_session" } },
+            "required": [
+              "node_type",
+              "id",
+              "tool",
+              "repo",
+              "vcs_sha",
+              "started_at_unix_nano",
+              "ended_at_unix_nano"
+            ]
+          },
+          {
+            "properties": { "node_type": { "const": "agent_action" } },
+            "required": [
+              "node_type",
+              "id",
+              "session_id",
+              "seq",
+              "action_type",
+              "target",
+              "detail"
+            ]
           }
         ]
       }

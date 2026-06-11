@@ -5,6 +5,7 @@
 //! redacted evidence bundles with canonical hashes out. No network, no
 //! database, no wall clock — byte-identical output from identical fixtures.
 
+pub mod agent;
 pub mod bound;
 pub mod budget;
 pub mod bundle;
