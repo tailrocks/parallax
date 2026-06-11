@@ -45,6 +45,7 @@ async fn main() {
     let gateway = tracer_provider("api-gateway", &endpoint);
     let checkout = tracer_provider("checkout", &endpoint);
     let mut last_trace = String::new();
+    let mut last_span_context: Option<SpanContext> = None;
     for attempt in 0..3 {
         let gateway_tracer = gateway.tracer("gateway");
         let mut client_span = gateway_tracer
@@ -98,6 +99,7 @@ async fn main() {
             ],
         );
         server_span.set_status(Status::error("deadline exceeded"));
+        last_span_context = Some(server_span.span_context().clone());
         server_span.end();
         client_span.end();
     }
@@ -127,11 +129,17 @@ async fn main() {
         "exception.stacktrace",
         "checkout::cart::total at src/cart.rs:99",
     );
+    if let Some(ctx) = &last_span_context {
+        record.set_trace_context(ctx.trace_id(), ctx.span_id(), None);
+    }
     logger.emit(record);
     let mut info = logger.create_log_record();
     info.set_severity_number(Severity::Info);
     info.set_severity_text("INFO");
     info.set_body(AnyValue::from("retrying payment authorization"));
+    if let Some(ctx) = &last_span_context {
+        info.set_trace_context(ctx.trace_id(), ctx.span_id(), None);
+    }
     logger.emit(info);
     logger_provider.force_flush().expect("log flush");
 

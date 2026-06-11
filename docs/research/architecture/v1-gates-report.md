@@ -28,6 +28,33 @@ cargo nextest run -p parallax-server --test m2_bundle
 rm -rf /tmp/plx-cold && parallax serve --config <config with data_dir=/tmp/plx-cold>
 ```
 
+## Live acceptance verification (2026-06-12, same machine)
+
+Beyond the latency gates, the scope's operational promises were exercised
+against a running `parallax serve` on the real ports with a fresh data dir:
+
+- **All UI pages functional** (headless Chrome over the embedded SPA, zero
+  console errors): issues list (grouping, culprit, counts) → issue detail
+  (trend sparkline from `issueTrend`, stacktrace, occurrences, trace link,
+  agent-handoff command) → trace waterfall with **correlated logs** (FATAL +
+  INFO under the spans) → trace lookup by pasted ID → service overview
+  (latency percentile chart from a real histogram) → dashboards (created
+  "checkout ops" through the UI form; the chart renders the user-sent
+  `checkout.queue.depth`) → runs (wrapper run listed with exit code).
+- **CLI agent handoff** on the same data: `parallax issue context` printed
+  the panic issue's bundle (identity, culprit, cross-service trace).
+- **doctor / prune / uninstall to spec**: doctor reported data-dir size, API
+  + engine health, server and engine versions, spool backlog, engine-data /
+  metadata sizes; prune reclaimed and reported; uninstall refused without
+  `--purge`, prompted without `--yes`, then deleted the data dir.
+- **Supervision orphan safety**: SIGKILLing serve orphaned the engine child
+  (ppid 1); the next serve logged `reaping stale greptime child`, killed it,
+  and started a fresh supervised child. SIGTERM now shuts down as cleanly as
+  Ctrl-C (no surviving child, pidfile removed). This scenario was found —
+  and is now prevented — by this verification run.
+- Demo data for all of the above comes from
+  `cargo run -p parallax-server --example seed`.
+
 ## Honest caveats
 
 - The latency gates were measured through the in-process test harness
