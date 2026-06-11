@@ -173,6 +173,11 @@ encodings).
    (graduating the 21 PoC kernels), `parallax-storage` (greptime + turso + memory adapters),
    `parallax-api`, `parallax-proto`, `parallax-cli` — plus the `ui/` TanStack Start app embedded
    into the server build.
+0. **The concrete contracts** — [v1-implementation-spec.md](v1-implementation-spec.md):
+   storage DDL (GreptimeDB + Turso), the OTLP→column mapping, the GraphQL SDL, ports (managed
+   GreptimeDB child shifted to 24000–24003 to avoid the :4000 collision), `config.toml` keys,
+   pinned dependencies, the supervision contract, workspace conventions. The implementing
+   agent's entry point is [prompts/v1-implementation.md](../../../prompts/v1-implementation.md).
 1a. **Capture documentation for the operator's stack** — the
    [instrumentation matrix](../capture/rust-stack-instrumentation.md): one shared telemetry-init
    pattern; middleware picks for tonic/axum; the manual-wrapper recipes for tokio-postgres,

@@ -10,6 +10,7 @@ OpenCode) so a piece of work runs the same way every time.
 | --- | --- |
 | `deep-research-parallax.md` | Deep, critical research brief that validates, re-verifies, and extends the Parallax direction indefinitely; every prior finding is treated as a hypothesis until current evidence supports it. |
 | `greptimedb-vs-clickhouse-internals.md` | Never-ending `/goal` or Claude Code `/loop` brief for the under-the-hood GreptimeDB vs ClickHouse comparison: read the source, explain which design decisions make each fast or slow per signal, re-verify every claim against the live Docker stack with production-realistic, no-tricks, reproducible benchmarks, check each system's native out-of-the-box metrics/logs/traces structure (adopt-native vs custom), decide which to build Parallax on, and (when one wins but lacks features) map what the winner must implement to close the gap. Writes to `docs/research/storage/greptimedb-vs-clickhouse/`. |
+| `v1-implementation.md` | `/goal` brief that implements Parallax V1 end-to-end from the authoritative docs (v1-scope → v1-build-plan → v1-implementation-spec → UI spec → instrumentation matrix), milestone by milestone (M0→M2.5-UI→packaging), with the v1-scope acceptance scenarios as the stop condition. Run it as: `/goal Follow prompts/v1-implementation.md until the stop condition is met.` |
 
 ## Current preferred mode
 

@@ -22,6 +22,12 @@ structure quickly.
   small, runnable, test-covered proofs of designed mechanisms. PoC code is not
   product code and supports no product claims; keep each PoC scoped to the
   mechanism it verifies.
+- V1 implementation is authorized (operator, 2026-06-12): product code lands
+  under `crates/` (Cargo workspace) and `ui/` (TanStack Start app), following
+  [docs/research/architecture/v1-implementation-spec.md](docs/research/architecture/v1-implementation-spec.md)
+  and the [v1-implementation prompt](prompts/v1-implementation.md). Contract
+  changes go to the implementation spec first, then code; update
+  `PROJECT_STRUCTURE.md` when the directories appear.
 - License and attribution (operator, 2026-06-11; extended 2026-06-12): the
   **entire repository is Apache-2.0** — the root `LICENSE` carries the
   canonical Apache-2.0 text and `NOTICE` the copyright line. Every artifact

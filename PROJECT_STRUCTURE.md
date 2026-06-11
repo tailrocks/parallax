@@ -78,6 +78,7 @@ and compare next, ranked) is [`docs/research/research-agenda.md`](docs/research/
 | `prompts/CLAUDE.md` | Thin pointer to `prompts/AGENTS.md`. |
 | `prompts/deep-research-parallax.md` | Deep research brief for validating the AI-native debugging/investigation direction. |
 | `prompts/greptimedb-vs-clickhouse-internals.md` | Never-ending `/goal` or Claude Code `/loop` brief for the under-the-hood GreptimeDB vs ClickHouse comparison; writes to `docs/research/storage/greptimedb-vs-clickhouse/`. |
+| `prompts/v1-implementation.md` | `/goal` brief implementing Parallax V1 end-to-end from the authoritative docs, milestone by milestone, with the v1-scope acceptance scenarios as the stop condition. |
 
 ## Update Rule
 
