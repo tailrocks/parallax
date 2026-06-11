@@ -28,6 +28,21 @@ The exact pinned-row procedure lives in
 No row-count drift was found from the current A1 notes for the checked datasets.
 The missing piece was not a changed count; it was insufficient pinning detail.
 
+### Re-verification 2026-06-11 — one source drifted
+
+HF API re-check (revision SHA + datasets-server `/size`, cross-checked with `/info` for the
+drifted set): **five of six datasets are byte-identical to the 2026-05-25 snapshot** (SHAs,
+totals, and per-split counts match; the MultiLang Rust slice is unchanged at 94).
+**`SWE-bench-Live/OS-bench` drifted:** new revision `f4a36f778524de13c545f8720d95bfed76ee42e7`
+pushed 2026-06-09; rows **126 → 63** (`windows2linux` 63, `linux2windows` still 0). This is
+exactly the moving-source behavior the pinned-revision rule exists for.
+
+Consequence for the seed manifest: nothing was selected from OS-bench before the drift, so
+**select from the new revision and pin `f4a36f77…` going forward**; loading the old
+`53ccce58…` revision explicitly remains possible only if a historical comparison ever needs the
+126-row composition. Any note citing "OS-bench 126 rows" as a current fact is stale as of
+2026-06-09; the table below remains the frozen 2026-05-25 snapshot, not a current claim.
+
 | Dataset | HF API SHA | Last modified | Size snapshot | Phase 0 use |
 | --- | --- | --- | --- | --- |
 | [SWE-bench-Live/MultiLang](https://huggingface.co/datasets/SWE-bench-Live/MultiLang) | `608f7ae9ab8ea1f9f0d030fe04562cf6bd1a0c8b` | `2026-05-16T02:18:12Z` | 743 rows, 20 columns. Splits: C 37, C++ 74, Go 138, JS 93, Rust 94, Java 109, TS 111, C# 87. `partial=false`. | Best first public seed source because it is fresh, executable, multilingual, and includes a real Rust slice. |

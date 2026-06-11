@@ -53,7 +53,7 @@ SHAs to freeze are:
 | Dataset | SHA | Row/split snapshot |
 | --- | --- | --- |
 | `SWE-bench-Live/MultiLang` | `608f7ae9ab8ea1f9f0d030fe04562cf6bd1a0c8b` | 743 rows; Rust 94, Go 138, JS 93, TS 111, C 37, C++ 74, Java 109, C# 87. |
-| `SWE-bench-Live/OS-bench` | `53ccce58d8ca4d1273755658d68d4643afadb7de` | 126 rows; `windows2linux` 126, `linux2windows` 0. |
+| `SWE-bench-Live/OS-bench` | `53ccce58d8ca4d1273755658d68d4643afadb7de` — **drifted 2026-06-09**; re-pin to `f4a36f778524de13c545f8720d95bfed76ee42e7` (see [freeze check](a1-task-source-freeze-check.md) re-verification) | Frozen: 126 rows. Current: 63 rows; `windows2linux` 63, `linux2windows` 0. |
 | `SWE-bench-Live/Windows` | `ac8b120eaf36957da1884dde9f71fd28ed632487` | 61 rows in `test`. |
 | `SWE-bench-Live/SWE-bench-Live` | `a637bd46829f3132e12938c8a0ca93173a977b8e` | 3,688 Python-only rows; `test` 1000, `lite` 300, `verified` 500, `full` 1888. |
 | `nebius/SWE-rebench-V2` | `475dd5e8703bb5fb22dd3c60b5d038b019eba1e0` | 32,079 rows in `train`. |
