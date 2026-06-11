@@ -160,6 +160,28 @@ The Phase 0 report must separate results on real telemetry, harness-generated
 telemetry, and synthetic fault-injection telemetry. A win on reconstructed
 telemetry is a reason to continue; it is not a public production-telemetry claim.
 
+### PoC scenario seed (2026-06-11)
+
+[`poc/evidence-loop/`](../../../../poc/evidence-loop/) now contributes two things to the overlay
+work, with the claim boundaries of the
+[PoC coverage map](../../architecture/poc-evidence-loop-coverage.md):
+
+1. **Overlay shape templates.** Its three fixture scenarios are exactly the overlay shapes the
+   table above asks for — a deploy-adjacent backend exception with converging encodings, a
+   cross-tier browser→backend failure on one W3C trace, and a CLI-run panic with
+   `process.command_line`/exit-code evidence — each spanning the four evidence classes
+   (service telemetry, deploys, CLI runs, agent sessions). New overlay authors should start from
+   these JSON shapes rather than invent structures.
+2. **An executable Arm-C assembler.** The PoC turns OTLP JSON + deploy events + agent-session
+   records into bounded, redacted, hypothesis-ranked, schema-valid bundles deterministically —
+   the Arm C (bundle) artifact generator for overlay tasks, replacing hand-assembly drift.
+
+Boundaries: every PoC fixture is hand-written, so anything built on them carries provenance
+`reconstructed_from_harness` at best until the wrapper captures real SDK output; and the PoC
+scenarios are **overlay templates, not tasks** — they have no pre-fix repo, gold fix, or
+verifier, so they do not satisfy the task-eligibility rules above and cannot enter the seed
+manifest themselves.
+
 ## Bundle Construction Discipline
 
 The raw-dump arm and bundle arm must be built from exactly the same evidence.
