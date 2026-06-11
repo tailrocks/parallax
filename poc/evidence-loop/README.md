@@ -46,13 +46,25 @@ What it proves, end to end, with no network, database, or wall clock:
     references the bundle (never inlines it), carries the computed budget,
     canonical bundle hash, required validation, a stable idempotency key, and
     a telemetry-anchored expiry. Byte-deterministic.
+11. **Learner kernel** — `compute_edge_weights(outcome_rows)` turns evidence
+    citations from outcome rows into Laplace-smoothed accept-rate lifts per
+    edge type (fixture: `deploy_preceded_issue` lift 1.19, `temporal_proximity`
+    0.36), with a report referencing the exact basis outcome IDs (dated-row
+    rule). Loop closure is asserted directly: appending one reverted outcome
+    row demotes the class budget from L2 back to L1 through the same public
+    API — outcome rows demonstrably alter a policy decision, which is the
+    fixer-outcome-ledger definition of "learning".
+
+With this, **all six loop stages have an executable kernel**: Detect (triggers),
+Context (bundle), Dispatch (budget + payload), Fix (external by ADR — contracts
+only), Validate (recurrence), Learn (weights + budget feedback).
 
 Run:
 
 ```bash
 cd poc/evidence-loop
-cargo test          # the eleven property tests
-cargo run           # prints derivation/bundle/dispatch summary, writes out/*.json
+cargo test          # the thirteen property tests
+cargo run           # prints derivation/bundle/dispatch/learner summary, writes out/*.json
 ```
 
 The schema here is `bundle-v0-poc`, a reduced shape of the real contract in

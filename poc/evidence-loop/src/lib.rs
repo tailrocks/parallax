@@ -11,6 +11,7 @@ pub mod deploy;
 pub mod derive;
 pub mod dispatch;
 pub mod fingerprint;
+pub mod learn;
 pub mod otlp;
 pub mod redact;
 

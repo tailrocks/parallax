@@ -1,6 +1,7 @@
 use anyhow::Context;
 use evidence_loop_poc::budget::{compute_budget, OutcomesData};
 use evidence_loop_poc::dispatch::build_fix_candidate;
+use evidence_loop_poc::learn::compute_edge_weights;
 use evidence_loop_poc::run_pipeline;
 use std::fs;
 use std::path::PathBuf;
@@ -67,6 +68,15 @@ fn main() -> anyhow::Result<()> {
                 candidate.autonomy_budget.max_level,
                 candidate.idempotency_key
             );
+        }
+
+        // Learn: outcome citations re-weight evidence selection.
+        let learner = compute_edge_weights(&outcomes.outcomes);
+        let path = out_dir.join("learner-report.json");
+        fs::write(&path, serde_json::to_string_pretty(&learner)?)?;
+        println!("learner report: {}", path.display());
+        for (edge_type, w) in &learner.weights {
+            println!("  {edge_type}: cited_in={} lift={}", w.cited_in, w.lift);
         }
     }
     Ok(())

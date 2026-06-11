@@ -25,7 +25,7 @@ pub struct OutcomesData {
     pub outcomes: Vec<OutcomeRow>,
 }
 
-/// Subset of the fixer outcome ledger row that the budget consumes.
+/// Subset of the fixer outcome ledger row that the budget and learner consume.
 #[derive(Debug, Clone, Deserialize)]
 pub struct OutcomeRow {
     pub outcome_id: String,
@@ -38,6 +38,10 @@ pub struct OutcomeRow {
     /// yes | no | unknown
     pub recurrence: String,
     pub redaction_failure: bool,
+    /// Edge types the fixer's diagnosis/PR body cited from the bundle
+    /// (evidence-citation gate). Consumed by the learner.
+    #[serde(default)]
+    pub cited_edge_types: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]

@@ -16,6 +16,7 @@ use evidence_loop_poc::budget::{compute_budget, OutcomeRow, OutcomesData};
 use evidence_loop_poc::deploy::{reconcile_recurrence, RecurrenceVerdict};
 use evidence_loop_poc::derive::ErrorSource;
 use evidence_loop_poc::dispatch::build_fix_candidate;
+use evidence_loop_poc::learn::compute_edge_weights;
 use evidence_loop_poc::run_pipeline;
 
 const TRACE: &str = include_str!("../fixtures/otlp-trace.json");
@@ -201,6 +202,7 @@ fn clean_history_earns_l3_and_redaction_failure_caps_at_l1() {
             merged: true,
             recurrence: "no".to_string(),
             redaction_failure: false,
+            cited_edge_types: vec!["error_in_span".to_string()],
         })
         .collect();
     assert_eq!(compute_budget(&clean, "backend_error").max_level, "L3_draft_pr");
@@ -241,5 +243,59 @@ fn fix_candidate_payload_is_deterministic_and_carries_budget() {
     assert!(
         !a.contains("\"nodes\""),
         "payload must reference the bundle, never inline its nodes"
+    );
+}
+
+#[test]
+fn learner_weights_edges_by_outcome_citations() {
+    let report = compute_edge_weights(&outcome_rows());
+
+    let deploy = &report.weights["deploy_preceded_issue"];
+    let temporal = &report.weights["temporal_proximity"];
+    let deploy_lift: f64 = deploy.lift.parse().unwrap();
+    let temporal_lift: f64 = temporal.lift.parse().unwrap();
+
+    assert!(
+        deploy_lift > 1.0,
+        "edge type cited by accepted fixes must gain weight, got {deploy_lift}"
+    );
+    assert!(
+        temporal_lift < 1.0,
+        "edge type cited only by rejected/inconclusive fixes must lose weight, got {temporal_lift}"
+    );
+    assert!(deploy_lift > temporal_lift);
+
+    // Dated-row rule: the adjustment references the outcomes that caused it.
+    assert_eq!(report.basis_outcome_ids.len(), 14);
+    assert!(report.basis_outcome_ids.contains(&"fixout_001".to_string()));
+
+    // Deterministic.
+    let a = serde_json::to_string(&compute_edge_weights(&outcome_rows())).unwrap();
+    let b = serde_json::to_string(&compute_edge_weights(&outcome_rows())).unwrap();
+    assert_eq!(a, b);
+}
+
+#[test]
+fn appending_an_outcome_row_changes_the_policy() {
+    // The loop-closure property: outcome rows demonstrably alter a policy
+    // decision through the same public API — no special learning path.
+    let mut rows = outcome_rows();
+    assert_eq!(compute_budget(&rows, "backend_error").max_level, "L2_propose_patch");
+
+    rows.push(OutcomeRow {
+        outcome_id: "fixout_015".to_string(),
+        failure_class: "backend_error".to_string(),
+        autonomy_level: "L2".to_string(),
+        classification: "reverted".to_string(),
+        merged: true,
+        recurrence: "yes".to_string(),
+        redaction_failure: false,
+        cited_edge_types: vec!["error_in_span".to_string()],
+    });
+
+    assert_eq!(
+        compute_budget(&rows, "backend_error").max_level,
+        "L1_diagnose",
+        "one reverted fix must demote the class until trust is re-earned"
     );
 }

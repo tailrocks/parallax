@@ -1,18 +1,18 @@
 {
   "outcomes": [
-    { "outcome_id": "fixout_001", "failure_class": "backend_error", "autonomy_level": "L2", "classification": "accepted", "merged": true, "recurrence": "no", "redaction_failure": false },
-    { "outcome_id": "fixout_002", "failure_class": "backend_error", "autonomy_level": "L2", "classification": "accepted", "merged": true, "recurrence": "no", "redaction_failure": false },
-    { "outcome_id": "fixout_003", "failure_class": "backend_error", "autonomy_level": "L2", "classification": "accepted", "merged": true, "recurrence": "no", "redaction_failure": false },
-    { "outcome_id": "fixout_004", "failure_class": "backend_error", "autonomy_level": "L1", "classification": "accepted", "merged": true, "recurrence": "no", "redaction_failure": false },
-    { "outcome_id": "fixout_005", "failure_class": "backend_error", "autonomy_level": "L2", "classification": "accepted", "merged": true, "recurrence": "no", "redaction_failure": false },
-    { "outcome_id": "fixout_006", "failure_class": "backend_error", "autonomy_level": "L2", "classification": "accepted", "merged": true, "recurrence": "no", "redaction_failure": false },
-    { "outcome_id": "fixout_007", "failure_class": "backend_error", "autonomy_level": "L2", "classification": "accepted", "merged": true, "recurrence": "no", "redaction_failure": false },
-    { "outcome_id": "fixout_008", "failure_class": "backend_error", "autonomy_level": "L2", "classification": "accepted", "merged": true, "recurrence": "yes", "redaction_failure": false },
-    { "outcome_id": "fixout_009", "failure_class": "backend_error", "autonomy_level": "L2", "classification": "edited", "merged": true, "recurrence": "no", "redaction_failure": false },
-    { "outcome_id": "fixout_010", "failure_class": "backend_error", "autonomy_level": "L2", "classification": "edited", "merged": true, "recurrence": "no", "redaction_failure": false },
-    { "outcome_id": "fixout_011", "failure_class": "backend_error", "autonomy_level": "L1", "classification": "rejected", "merged": false, "recurrence": "unknown", "redaction_failure": false },
-    { "outcome_id": "fixout_012", "failure_class": "backend_error", "autonomy_level": "L1", "classification": "inconclusive", "merged": false, "recurrence": "unknown", "redaction_failure": false },
-    { "outcome_id": "fixout_013", "failure_class": "frontend_error", "autonomy_level": "L1", "classification": "accepted", "merged": true, "recurrence": "no", "redaction_failure": false },
-    { "outcome_id": "fixout_014", "failure_class": "frontend_error", "autonomy_level": "L1", "classification": "rejected", "merged": false, "recurrence": "unknown", "redaction_failure": false }
+    { "outcome_id": "fixout_001", "failure_class": "backend_error", "autonomy_level": "L2", "classification": "accepted", "merged": true, "recurrence": "no", "redaction_failure": false, "cited_edge_types": ["error_in_span", "deploy_preceded_issue"] },
+    { "outcome_id": "fixout_002", "failure_class": "backend_error", "autonomy_level": "L2", "classification": "accepted", "merged": true, "recurrence": "no", "redaction_failure": false, "cited_edge_types": ["error_in_span", "deploy_preceded_issue"] },
+    { "outcome_id": "fixout_003", "failure_class": "backend_error", "autonomy_level": "L2", "classification": "accepted", "merged": true, "recurrence": "no", "redaction_failure": false, "cited_edge_types": ["error_in_span", "deploy_preceded_issue", "log_in_trace"] },
+    { "outcome_id": "fixout_004", "failure_class": "backend_error", "autonomy_level": "L1", "classification": "accepted", "merged": true, "recurrence": "no", "redaction_failure": false, "cited_edge_types": ["error_in_span", "log_in_trace"] },
+    { "outcome_id": "fixout_005", "failure_class": "backend_error", "autonomy_level": "L2", "classification": "accepted", "merged": true, "recurrence": "no", "redaction_failure": false, "cited_edge_types": ["error_in_span", "deploy_preceded_issue"] },
+    { "outcome_id": "fixout_006", "failure_class": "backend_error", "autonomy_level": "L2", "classification": "accepted", "merged": true, "recurrence": "no", "redaction_failure": false, "cited_edge_types": ["error_in_span", "deploy_preceded_issue", "log_in_trace"] },
+    { "outcome_id": "fixout_007", "failure_class": "backend_error", "autonomy_level": "L2", "classification": "accepted", "merged": true, "recurrence": "no", "redaction_failure": false, "cited_edge_types": ["error_in_span", "deploy_preceded_issue"] },
+    { "outcome_id": "fixout_008", "failure_class": "backend_error", "autonomy_level": "L2", "classification": "accepted", "merged": true, "recurrence": "yes", "redaction_failure": false, "cited_edge_types": ["error_in_span", "deploy_preceded_issue"] },
+    { "outcome_id": "fixout_009", "failure_class": "backend_error", "autonomy_level": "L2", "classification": "edited", "merged": true, "recurrence": "no", "redaction_failure": false, "cited_edge_types": ["error_in_span", "deploy_preceded_issue"] },
+    { "outcome_id": "fixout_010", "failure_class": "backend_error", "autonomy_level": "L2", "classification": "edited", "merged": true, "recurrence": "no", "redaction_failure": false, "cited_edge_types": ["error_in_span", "deploy_preceded_issue"] },
+    { "outcome_id": "fixout_011", "failure_class": "backend_error", "autonomy_level": "L1", "classification": "rejected", "merged": false, "recurrence": "unknown", "redaction_failure": false, "cited_edge_types": ["temporal_proximity"] },
+    { "outcome_id": "fixout_012", "failure_class": "backend_error", "autonomy_level": "L1", "classification": "inconclusive", "merged": false, "recurrence": "unknown", "redaction_failure": false, "cited_edge_types": ["temporal_proximity"] },
+    { "outcome_id": "fixout_013", "failure_class": "frontend_error", "autonomy_level": "L1", "classification": "accepted", "merged": true, "recurrence": "no", "redaction_failure": false, "cited_edge_types": ["error_in_span"] },
+    { "outcome_id": "fixout_014", "failure_class": "frontend_error", "autonomy_level": "L1", "classification": "rejected", "merged": false, "recurrence": "unknown", "redaction_failure": false, "cited_edge_types": [] }
   ]
 }
