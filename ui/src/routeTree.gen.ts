@@ -10,21 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RunsRouteImport } from './routes/runs'
-import { Route as DashboardsRouteImport } from './routes/dashboards'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TracesIndexRouteImport } from './routes/traces.index'
 import { Route as IssuesIndexRouteImport } from './routes/issues.index'
+import { Route as DashboardsIndexRouteImport } from './routes/dashboards.index'
 import { Route as TracesTraceIdRouteImport } from './routes/traces.$traceId'
 import { Route as IssuesFingerprintRouteImport } from './routes/issues.$fingerprint'
+import { Route as DashboardsDashboardIdRouteImport } from './routes/dashboards.$dashboardId'
 
 const RunsRoute = RunsRouteImport.update({
   id: '/runs',
   path: '/runs',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardsRoute = DashboardsRouteImport.update({
-  id: '/dashboards',
-  path: '/dashboards',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -42,6 +38,11 @@ const IssuesIndexRoute = IssuesIndexRouteImport.update({
   path: '/issues/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardsIndexRoute = DashboardsIndexRouteImport.update({
+  id: '/dashboards/',
+  path: '/dashboards/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TracesTraceIdRoute = TracesTraceIdRouteImport.update({
   id: '/traces/$traceId',
   path: '/traces/$traceId',
@@ -52,32 +53,40 @@ const IssuesFingerprintRoute = IssuesFingerprintRouteImport.update({
   path: '/issues/$fingerprint',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardsDashboardIdRoute = DashboardsDashboardIdRouteImport.update({
+  id: '/dashboards/$dashboardId',
+  path: '/dashboards/$dashboardId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/dashboards': typeof DashboardsRoute
   '/runs': typeof RunsRoute
+  '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
+  '/dashboards/': typeof DashboardsIndexRoute
   '/issues/': typeof IssuesIndexRoute
   '/traces/': typeof TracesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/dashboards': typeof DashboardsRoute
   '/runs': typeof RunsRoute
+  '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
+  '/dashboards': typeof DashboardsIndexRoute
   '/issues': typeof IssuesIndexRoute
   '/traces': typeof TracesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/dashboards': typeof DashboardsRoute
   '/runs': typeof RunsRoute
+  '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
+  '/dashboards/': typeof DashboardsIndexRoute
   '/issues/': typeof IssuesIndexRoute
   '/traces/': typeof TracesIndexRoute
 }
@@ -85,38 +94,42 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/dashboards'
     | '/runs'
+    | '/dashboards/$dashboardId'
     | '/issues/$fingerprint'
     | '/traces/$traceId'
+    | '/dashboards/'
     | '/issues/'
     | '/traces/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/dashboards'
     | '/runs'
+    | '/dashboards/$dashboardId'
     | '/issues/$fingerprint'
     | '/traces/$traceId'
+    | '/dashboards'
     | '/issues'
     | '/traces'
   id:
     | '__root__'
     | '/'
-    | '/dashboards'
     | '/runs'
+    | '/dashboards/$dashboardId'
     | '/issues/$fingerprint'
     | '/traces/$traceId'
+    | '/dashboards/'
     | '/issues/'
     | '/traces/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DashboardsRoute: typeof DashboardsRoute
   RunsRoute: typeof RunsRoute
+  DashboardsDashboardIdRoute: typeof DashboardsDashboardIdRoute
   IssuesFingerprintRoute: typeof IssuesFingerprintRoute
   TracesTraceIdRoute: typeof TracesTraceIdRoute
+  DashboardsIndexRoute: typeof DashboardsIndexRoute
   IssuesIndexRoute: typeof IssuesIndexRoute
   TracesIndexRoute: typeof TracesIndexRoute
 }
@@ -128,13 +141,6 @@ declare module '@tanstack/react-router' {
       path: '/runs'
       fullPath: '/runs'
       preLoaderRoute: typeof RunsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboards': {
-      id: '/dashboards'
-      path: '/dashboards'
-      fullPath: '/dashboards'
-      preLoaderRoute: typeof DashboardsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -158,6 +164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IssuesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboards/': {
+      id: '/dashboards/'
+      path: '/dashboards'
+      fullPath: '/dashboards/'
+      preLoaderRoute: typeof DashboardsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/traces/$traceId': {
       id: '/traces/$traceId'
       path: '/traces/$traceId'
@@ -172,15 +185,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IssuesFingerprintRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboards/$dashboardId': {
+      id: '/dashboards/$dashboardId'
+      path: '/dashboards/$dashboardId'
+      fullPath: '/dashboards/$dashboardId'
+      preLoaderRoute: typeof DashboardsDashboardIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DashboardsRoute: DashboardsRoute,
   RunsRoute: RunsRoute,
+  DashboardsDashboardIdRoute: DashboardsDashboardIdRoute,
   IssuesFingerprintRoute: IssuesFingerprintRoute,
   TracesTraceIdRoute: TracesTraceIdRoute,
+  DashboardsIndexRoute: DashboardsIndexRoute,
   IssuesIndexRoute: IssuesIndexRoute,
   TracesIndexRoute: TracesIndexRoute,
 }

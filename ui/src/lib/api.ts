@@ -24,6 +24,11 @@ export async function graphql<T>(query: string): Promise<T> {
   return body.data
 }
 
+/** Escape a value for inclusion inside a GraphQL double-quoted literal. */
+export function gqlString(value: string): string {
+  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')
+}
+
 export function relativeTime(nanosString: string): string {
   const nanos = Number(nanosString)
   if (!Number.isFinite(nanos) || nanos <= 0) return "-"
