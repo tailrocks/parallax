@@ -78,6 +78,12 @@ What it proves, end to end, with no network, database, or wall clock:
     exceeds k× the trailing baseline AND an absolute min-count floor (so
     near-zero baselines don't dispatch on noise); cold starts return
     insufficient-baseline (that's `new_fingerprint` territory).
+16. **Pre-aggregation rollup (the cost vertex in miniature)** — `RollupStore`
+    buckets error events into (fingerprint, minute) counters at write time;
+    `spike_check` runs the full Detect chain raw events → rollup →
+    zero-filled dense series → spike verdict. The test suite asserts the
+    triangle's cost argument directly: 5,000 raw events compress >100× into
+    the rollup the Detector actually reads.
 
 With this, **all six loop stages have an executable kernel**: Detect (triggers),
 Context (bounded bundle), Dispatch (budget + payload), Fix (external by ADR —

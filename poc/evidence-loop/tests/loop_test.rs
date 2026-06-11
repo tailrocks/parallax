@@ -19,11 +19,26 @@ use evidence_loop_poc::deploy::{reconcile_recurrence, RecurrenceVerdict};
 use evidence_loop_poc::derive::ErrorSource;
 use evidence_loop_poc::dispatch::build_fix_candidate;
 use evidence_loop_poc::learn::{apply_edge_weights, compute_edge_weights};
+use evidence_loop_poc::rollup::{spike_check, RollupStore, DEFAULT_BUCKET_NANOS};
 use evidence_loop_poc::run_pipeline;
 use evidence_loop_poc::spike::{
     frequency_spike, SpikeVerdict, DEFAULT_EWMA_ALPHA, DEFAULT_K, DEFAULT_MIN_BASELINE_BUCKETS,
     DEFAULT_MIN_COUNT,
 };
+
+fn synthetic_event(fingerprint: &str, time_unix_nano: u128) -> evidence_loop_poc::derive::ErrorEvent {
+    evidence_loop_poc::derive::ErrorEvent {
+        source: ErrorSource::LogRecord,
+        error_type: "log_error".to_string(),
+        message: "synthetic".to_string(),
+        stacktrace: None,
+        trace_id: "00000000000000000000000000000000".to_string(),
+        span_id: "0000000000000000".to_string(),
+        time_unix_nano: time_unix_nano.to_string(),
+        service_name: "checkout".to_string(),
+        fingerprint: fingerprint.to_string(),
+    }
+}
 
 const TRACE: &str = include_str!("../fixtures/otlp-trace.json");
 const LOGS: &str = include_str!("../fixtures/otlp-logs.json");
@@ -396,6 +411,63 @@ fn frequency_spike_kernel_verdicts() {
 
     // Cold start: not enough history to claim a baseline.
     assert_eq!(check(&[5, 50]), SpikeVerdict::InsufficientBaseline);
+}
+
+#[test]
+fn rollup_buckets_fixture_events_and_feeds_the_spike_chain() {
+    // Fixture events: all three land in the same 1-minute bucket; two
+    // fingerprints (converged exception group of 2, plain ERROR log of 1).
+    let out = run_pipeline("proj_checkout", TRACE, LOGS, None).unwrap();
+    let store = RollupStore::from_events(&out.error_events, DEFAULT_BUCKET_NANOS);
+    assert_eq!(store.counts.len(), 2);
+    let totals: Vec<u64> = store.counts.keys().map(|fp| store.total(fp)).collect();
+    assert_eq!(totals.iter().sum::<u64>(), 3);
+
+    // Full Detect chain on a synthetic history: 6 quiet 1-minute buckets
+    // (~3/min) then a 30-event burst → spike. Zero-filled gaps included.
+    let base: u128 = 1_781_430_000_000_000_000;
+    let mut events = Vec::new();
+    for bucket in 0..6u128 {
+        for i in 0..3u128 {
+            events.push(synthetic_event("fp_burst", base + bucket * DEFAULT_BUCKET_NANOS + i));
+        }
+    }
+    for i in 0..30u128 {
+        events.push(synthetic_event("fp_burst", base + 6 * DEFAULT_BUCKET_NANOS + i));
+    }
+    let store = RollupStore::from_events(&events, DEFAULT_BUCKET_NANOS);
+    assert_eq!(store.dense_series("fp_burst"), vec![3, 3, 3, 3, 3, 3, 30]);
+    match spike_check(&store, "fp_burst", DEFAULT_K, DEFAULT_EWMA_ALPHA, DEFAULT_MIN_BASELINE_BUCKETS, DEFAULT_MIN_COUNT) {
+        SpikeVerdict::Spike { latest, .. } => assert_eq!(latest, 30),
+        other => panic!("expected spike from the rollup chain, got {other:?}"),
+    }
+
+    // Zero-fill: events only in buckets 0 and 5 → six-element series.
+    let sparse = vec![
+        synthetic_event("fp_sparse", base),
+        synthetic_event("fp_sparse", base + 5 * DEFAULT_BUCKET_NANOS),
+    ];
+    let store = RollupStore::from_events(&sparse, DEFAULT_BUCKET_NANOS);
+    assert_eq!(store.dense_series("fp_sparse"), vec![1, 0, 0, 0, 0, 1]);
+}
+
+#[test]
+fn rollup_is_the_cost_vertex_in_miniature() {
+    // 5,000 raw events vs their rollup: the Detector reads the aggregate, so
+    // detection cost stays flat while raw volume grows. >100x size ratio.
+    let base: u128 = 1_781_430_000_000_000_000;
+    let events: Vec<_> = (0..5_000u128)
+        .map(|i| synthetic_event("fp_volume", base + (i % 8) * DEFAULT_BUCKET_NANOS + i))
+        .collect();
+    let store = RollupStore::from_events(&events, DEFAULT_BUCKET_NANOS);
+
+    let raw_bytes = serde_json::to_string(&events).unwrap().len();
+    let rollup_bytes = serde_json::to_string(&store).unwrap().len();
+    assert!(
+        raw_bytes > rollup_bytes * 100,
+        "rollup must compress detection input >100x (raw {raw_bytes}B vs rollup {rollup_bytes}B)"
+    );
+    assert_eq!(store.total("fp_volume"), 5_000);
 }
 
 #[test]

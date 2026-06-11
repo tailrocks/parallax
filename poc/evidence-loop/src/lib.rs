@@ -15,6 +15,7 @@ pub mod fingerprint;
 pub mod learn;
 pub mod otlp;
 pub mod redact;
+pub mod rollup;
 pub mod spike;
 
 use anyhow::Context;

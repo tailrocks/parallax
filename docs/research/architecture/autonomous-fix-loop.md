@@ -157,7 +157,9 @@ Loop completeness must not bankrupt retention. Three mechanisms, designed togeth
 2. **Pre-aggregation on ingest.** Fingerprint counters, per-(service, env, release) error rates,
    and metric downsamples are computed at write time (engine continuous-aggregation/flow where
    portable, Parallax worker otherwise). The Detector and the UI read aggregates; raw data is for
-   bundles. This is what keeps the interactive vertex cheap.
+   bundles. This is what keeps the interactive vertex cheap. The PoC's `RollupStore` kernel
+   demonstrates the mechanism: 5,000 raw events compress >100× into the counter series the spike
+   trigger evaluates (asserted in the test suite).
 3. **Evidence pinning (new rule).** At bundle creation, every raw slice the bundle cites (spans,
    log windows, metric windows) is copied into the bundle's durable storage alongside the bundle
    JSON. TTL eviction then never breaks an audit trail: the fix that merged in March is still
