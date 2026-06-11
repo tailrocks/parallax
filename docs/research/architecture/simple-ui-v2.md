@@ -55,6 +55,23 @@ Minimum UI:
 | Metrics | small Prometheus-like metric windows around selected run/issue/trace. |
 | Bundle preview | exact JSON/Markdown evidence sent to agent. |
 
+## 2026-06-11 Addendum — The Human Trust Surface
+
+Operator statement #4 (recorded in
+[problem-audience-product-shape.md](../00-vision/problem-audience-product-shape.md) §5,
+lifecycle 4) makes two human workflows first-class that the screen list above did not name:
+
+| Screen | Purpose |
+| --- | --- |
+| Trace lookup | The lifecycle-4 entry point: paste the trace ID a user reported from an error page, land directly on the cross-tier trace view (browser → backend), with the linked issue, logs, and metric windows one click away. |
+| Fix review | The trust surface for agent fixes: an issue's outcome records (PR link, validation results, review state, recurrence window) rendered beside the bundle's ranked hypotheses and the evidence they cite, plus the before/after error-rate rollup — so the developer can conclude "the agent was right, this fix makes sense" from evidence, not vibes. Feeds the required `human_review` outcome field. |
+
+Boundary unchanged: the UI **verifies** agent work; it never **drives** it. No fixer controls,
+no dispatch buttons, no production mutation in V2 — consistent with the
+[fixer boundary](../decisions/fixer-boundary.md) and the read-only
+[agent access surface](../decisions/agent-access-surface.md). The UI is a window over the same
+canonical API everything else uses.
+
 ## UX References
 
 Borrow what works:
