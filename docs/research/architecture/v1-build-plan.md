@@ -106,9 +106,13 @@ default); JSON/Markdown/terminal bundle projections sharing one canonical hash.
 service from `parallax issue context` output alone. This is also where SDK-generated fixtures
 replace hand-written ones in tests, feeding the A1 overlay tooling.
 
-### M3 — The server profile (Goal 2 lands here)
+### M3 — The server profiles (Goal 2 lands here)
 
-`--profile cloud`: external GreptimeDB URL + object-storage-backed engine config passthrough,
+`--profile server` (own hardware: local-SSD GreptimeDB, Turso-or-Postgres metadata) and
+`--profile cloud` (object-storage-backed GreptimeDB, managed-Postgres recommendation) ship as
+presets of one server-side family — the full three-angle picture is the
+[deployment architecture map](deployment-architecture-map.md). Concretely:
+external GreptimeDB URL + object-storage-backed engine config passthrough,
 per-project ingest tokens (`x-parallax-project-token`) and API tokens, Postgres as the metadata
 option when Turso gates aren't met; deploy-events endpoint (`parallax.deploy.v0`); CLI remote
 contexts (`parallax context add prod --url … --token …`); retention TTLs per signal.
