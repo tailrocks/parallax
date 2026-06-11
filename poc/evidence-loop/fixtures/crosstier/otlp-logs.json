@@ -1,0 +1,66 @@
+{
+  "resourceLogs": [
+    {
+      "resource": {
+        "attributes": [
+          { "key": "service.name", "value": { "stringValue": "web-frontend" } },
+          { "key": "service.version", "value": { "stringValue": "3.7.1" } }
+        ]
+      },
+      "scopeLogs": [
+        {
+          "scope": { "name": "browser::console" },
+          "logRecords": [
+            {
+              "timeUnixNano": "1781431200100000000",
+              "severityNumber": 9,
+              "severityText": "INFO",
+              "body": { "stringValue": "user clicked Checkout on /cart, submitting order form" },
+              "traceId": "7af3d1c0aa14b29e44a1b6d20f8e3c55",
+              "spanId": "a1b2c3d4e5f60718"
+            },
+            {
+              "timeUnixNano": "1781431203450000000",
+              "severityNumber": 17,
+              "severityText": "ERROR",
+              "body": { "stringValue": "checkout request failed with status 500, showing error toast with trace reference" },
+              "traceId": "7af3d1c0aa14b29e44a1b6d20f8e3c55",
+              "spanId": "a1b2c3d4e5f60718"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          { "key": "service.name", "value": { "stringValue": "checkout" } },
+          { "key": "service.version", "value": { "stringValue": "1.42.0" } }
+        ]
+      },
+      "scopeLogs": [
+        {
+          "scope": { "name": "checkout::db" },
+          "logRecords": [
+            {
+              "timeUnixNano": "1781431201000000000",
+              "severityNumber": 13,
+              "severityText": "WARN",
+              "body": { "stringValue": "db pool at capacity 20/20, waiter queue depth 7" },
+              "traceId": "7af3d1c0aa14b29e44a1b6d20f8e3c55",
+              "spanId": "b8c9d0e1f2030415"
+            },
+            {
+              "timeUnixNano": "1781431203260000000",
+              "severityNumber": 17,
+              "severityText": "ERROR",
+              "body": { "stringValue": "failed to acquire db connection for order insert: pool timed out after 3000ms" },
+              "traceId": "7af3d1c0aa14b29e44a1b6d20f8e3c55",
+              "spanId": "b8c9d0e1f2030415"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

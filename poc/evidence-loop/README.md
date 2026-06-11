@@ -84,6 +84,14 @@ What it proves, end to end, with no network, database, or wall clock:
     zero-filled dense series → spike verdict. The test suite asserts the
     triangle's cost argument directly: 5,000 raw events compress >100× into
     the rollup the Detector actually reads.
+17. **Cross-tier reconstruction** — the `fixtures/crosstier/` scenario: a
+    browser span (`web-frontend`) and the backend span it caused (`checkout`)
+    share one W3C trace; the bundle anchored on the backend exception contains
+    span nodes from **both services**, a strong `span_child_of` edge from the
+    backend SERVER span to its browser CLIENT parent, and one service-tagged
+    log window interleaving browser breadcrumb-style logs with backend logs —
+    "how did the user reach this error" answered across the tier boundary,
+    schema-valid. Run it: `cargo run -- fixtures/crosstier`.
 
 With this, **all six loop stages have an executable kernel**: Detect (triggers),
 Context (bounded bundle), Dispatch (budget + payload), Fix (external by ADR —

@@ -74,6 +74,7 @@ pub enum Node {
     Span {
         id: String,
         name: String,
+        service_name: String,
         trace_id: String,
         span_id: String,
         parent_span_id: Option<String>,
@@ -155,8 +156,18 @@ fn build_bundle(
         error_node_ids.push(id);
     }
 
-    // Spans of the anchoring trace, plus error_in_span edges.
+    // Spans of the anchoring trace — across every emitting service/tier —
+    // plus error_in_span edges and span_child_of topology edges. Cross-tier
+    // reconstruction works because the browser and the backend share one
+    // trace_id; the bundle simply includes both resources' spans.
+    let mut span_ids_in_bundle: Vec<(String, Option<String>)> = Vec::new();
     for rs in &trace.resource_spans {
+        let span_service = rs
+            .resource
+            .as_ref()
+            .and_then(|r| attr(&r.attributes, "service.name"))
+            .unwrap_or("unknown")
+            .to_string();
         for ss in &rs.scope_spans {
             for span in &ss.spans {
                 if span.trace_id != trace_id {
@@ -168,6 +179,7 @@ fn build_bundle(
                 nodes.push(Node::Span {
                     id: id.clone(),
                     name: span.name.clone(),
+                    service_name: span_service.clone(),
                     trace_id: span.trace_id.clone(),
                     span_id: span.span_id.clone(),
                     parent_span_id: span.parent_span_id.clone(),
@@ -178,6 +190,7 @@ fn build_bundle(
                         .unwrap_or_else(|| "STATUS_CODE_UNSET".to_string()),
                     duration_nano: end.saturating_sub(start),
                 });
+                span_ids_in_bundle.push((span.span_id.clone(), span.parent_span_id.clone()));
                 for (ev, err_id) in events.iter().zip(&error_node_ids) {
                     if ev.span_id == span.span_id {
                         edges.push(Edge {
@@ -191,10 +204,29 @@ fn build_bundle(
             }
         }
     }
+    for (span_id, parent) in &span_ids_in_bundle {
+        if let Some(parent_id) = parent {
+            if span_ids_in_bundle.iter().any(|(s, _)| s == parent_id) {
+                edges.push(Edge {
+                    r#type: "span_child_of".to_string(),
+                    from: format!("span_{span_id}"),
+                    to: format!("span_{parent_id}"),
+                    strength: "strong".to_string(),
+                });
+            }
+        }
+    }
 
-    // Log window for the anchoring trace (redacted), strong edge via trace_id.
+    // Log window for the anchoring trace (redacted), strong edge via
+    // trace_id. Lines are service-tagged so a cross-tier window reads
+    // coherently: browser breadcrumbs and backend logs interleave.
     let mut lines = Vec::new();
     for rl in &logs.resource_logs {
+        let log_service = rl
+            .resource
+            .as_ref()
+            .and_then(|r| attr(&r.attributes, "service.name"))
+            .unwrap_or("unknown");
         for sl in &rl.scope_logs {
             for rec in &sl.log_records {
                 if rec.trace_id != trace_id {
@@ -202,7 +234,7 @@ fn build_bundle(
                 }
                 let body = rec.body.as_ref().and_then(|b| b.as_str()).unwrap_or("");
                 lines.push(redact_string(
-                    &format!("{} {} {}", rec.time_unix_nano, rec.severity_text, body),
+                    &format!("{} {} [{}] {}", rec.time_unix_nano, rec.severity_text, log_service, body),
                     &mut report,
                 ));
             }

@@ -334,9 +334,15 @@ fn learned_weights_reorder_bundle_edges() {
     apply_edge_weights(&mut bundle, &report);
 
     // Fixture lifts: error_in_span 1.231 > deploy_preceded_issue 1.190 >
-    // log_in_trace 1.164 > same_fingerprint (uncited, defaults 1.0).
+    // log_in_trace 1.164 > uncited types at the default 1.0
+    // (same_fingerprint, span_child_of — alphabetical tie-break puts
+    // span_child_of last).
     assert_eq!(bundle.edges.first().unwrap().r#type, "error_in_span");
-    assert_eq!(bundle.edges.last().unwrap().r#type, "same_fingerprint");
+    assert_eq!(bundle.edges.last().unwrap().r#type, "span_child_of");
+    let positions: Vec<&str> = bundle.edges.iter().map(|e| e.r#type.as_str()).collect();
+    let pos_of = |t: &str| positions.iter().position(|x| *x == t).unwrap();
+    assert!(pos_of("deploy_preceded_issue") < pos_of("log_in_trace"));
+    assert!(pos_of("log_in_trace") < pos_of("same_fingerprint"));
 
     // Hash is recomputed over the reordered artifact and stays deterministic.
     let h1 = bundle.canonical_hash.clone().unwrap();
@@ -411,6 +417,70 @@ fn frequency_spike_kernel_verdicts() {
 
     // Cold start: not enough history to claim a baseline.
     assert_eq!(check(&[5, 50]), SpikeVerdict::InsufficientBaseline);
+}
+
+#[test]
+fn one_bundle_spans_frontend_and_backend_tiers() {
+    // The cross-tier claim: a user-facing browser error and the backend
+    // failure that caused it share one trace, so one bundle reconstructs the
+    // whole path. Browser span (web-frontend) -> backend span (checkout),
+    // exception in the backend, logs from both tiers.
+    let trace = include_str!("../fixtures/crosstier/otlp-trace.json");
+    let logs = include_str!("../fixtures/crosstier/otlp-logs.json");
+    let out = run_pipeline("proj_checkout", trace, logs, None).unwrap();
+
+    let backend_fp = out
+        .error_events
+        .iter()
+        .find(|e| e.error_type == "sqlx::PoolTimedOut")
+        .expect("backend exception derived")
+        .fingerprint
+        .clone();
+    let bundle = out
+        .bundles
+        .iter()
+        .find(|b| b.anchor.fingerprint == backend_fp)
+        .expect("bundle anchored on the backend exception");
+
+    // Span nodes from BOTH services in one bundle.
+    let services: std::collections::BTreeSet<&str> = bundle
+        .nodes
+        .iter()
+        .filter_map(|n| match n {
+            Node::Span { service_name, .. } => Some(service_name.as_str()),
+            _ => None,
+        })
+        .collect();
+    assert!(services.contains("web-frontend") && services.contains("checkout"));
+
+    // The cross-tier topology edge: backend SERVER span is a child of the
+    // browser CLIENT span, linked strong via W3C trace context.
+    assert!(
+        bundle.edges.iter().any(|e| e.r#type == "span_child_of"
+            && e.from == "span_b8c9d0e1f2030415"
+            && e.to == "span_a1b2c3d4e5f60718"
+            && e.strength == "strong"),
+        "backend span must link to its browser parent span"
+    );
+
+    // One log window interleaves both tiers, service-tagged.
+    let log_lines = bundle
+        .nodes
+        .iter()
+        .find_map(|n| match n {
+            Node::LogWindow { lines, .. } => Some(lines),
+            _ => None,
+        })
+        .expect("log window present");
+    assert!(log_lines.iter().any(|l| l.contains("[web-frontend]")));
+    assert!(log_lines.iter().any(|l| l.contains("[checkout]")));
+
+    // Cross-tier bundles still validate against the published schema.
+    let schema: serde_json::Value =
+        serde_json::from_str(include_str!("../schema/evidence-bundle.v0-poc.schema.json")).unwrap();
+    let validator = jsonschema::validator_for(&schema).unwrap();
+    let bundle_json = serde_json::to_value(bundle).unwrap();
+    assert!(validator.is_valid(&bundle_json));
 }
 
 #[test]
