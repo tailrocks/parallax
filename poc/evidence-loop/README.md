@@ -130,6 +130,12 @@ Context (bounded bundle + ranked hypotheses), Dispatch (budget + payload), Fix
 (external by ADR — contracts only), Validate (recurrence), Learn (weights +
 budget feedback), and the outward contract is machine-checkable.
 
+**Claim discipline:** an executable kernel is not a gate pass. The mapping from
+each mechanism to the ledger that still governs product claims (all
+`not_measured`), what this PoC deliberately does not prove, and the graduation
+path live in
+[docs/research/architecture/poc-evidence-loop-coverage.md](../../docs/research/architecture/poc-evidence-loop-coverage.md).
+
 Run:
 
 ```bash
