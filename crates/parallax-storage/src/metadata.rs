@@ -1,7 +1,7 @@
 //! The metadata store: mutable product state (issues, runs, dashboards,
 //! settings) per implementation spec §6. Turso is the engine.
 
-use crate::model::{Dashboard, Issue, RunRecord};
+use crate::model::{Dashboard, Issue, RunRecord, TrendPoint};
 use std::path::Path;
 use turso::Value;
 
@@ -35,7 +35,16 @@ CREATE TABLE IF NOT EXISTS dashboards (
   updated_at  INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS settings ( key TEXT PRIMARY KEY, value TEXT NOT NULL );
+CREATE TABLE IF NOT EXISTS issue_buckets (
+  fingerprint TEXT NOT NULL,
+  bucket_ts   INTEGER NOT NULL,
+  count       INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (fingerprint, bucket_ts)
+);
 ";
+
+/// Trend rollups count occurrences per fingerprint per minute.
+const BUCKET_MILLIS: i64 = 60_000;
 
 /// Nanosecond timestamps are stored as INTEGER milliseconds in the metadata
 /// store (SQLite-class integers are i64; nanos since 1970 overflow in 2262 as
@@ -85,11 +94,9 @@ impl MetadataStore {
         occurrence: &IssueOccurrence<'_>,
     ) -> anyhow::Result<()> {
         let millis = nanos_to_millis(occurrence.ts_nanos);
-        self.conn
-            .lock()
-            .await
-            .execute(
-                "INSERT INTO issues
+        let conn = self.conn.lock().await;
+        conn.execute(
+            "INSERT INTO issues
                    (fingerprint, title, error_type, culprit, service,
                     first_seen, last_seen, event_count, last_trace_id)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6, 1, ?7)
@@ -97,18 +104,57 @@ impl MetadataStore {
                    last_seen = MAX(last_seen, excluded.last_seen),
                    event_count = event_count + 1,
                    last_trace_id = COALESCE(excluded.last_trace_id, last_trace_id)",
-                (
-                    occurrence.fingerprint,
-                    occurrence.title.as_str(),
-                    occurrence.error_type,
-                    occurrence.culprit.clone(),
-                    occurrence.service,
-                    millis,
-                    occurrence.trace_id.map(str::to_string),
-                ),
+            (
+                occurrence.fingerprint,
+                occurrence.title.as_str(),
+                occurrence.error_type,
+                occurrence.culprit.clone(),
+                occurrence.service,
+                millis,
+                occurrence.trace_id.map(str::to_string),
+            ),
+        )
+        .await?;
+        conn.execute(
+            "INSERT INTO issue_buckets (fingerprint, bucket_ts, count)
+             VALUES (?1, ?2, 1)
+             ON CONFLICT(fingerprint, bucket_ts) DO UPDATE SET count = count + 1",
+            (
+                occurrence.fingerprint,
+                millis / BUCKET_MILLIS * BUCKET_MILLIS,
+            ),
+        )
+        .await?;
+        Ok(())
+    }
+
+    /// Occurrence counts per step bucket since a timestamp, oldest first.
+    /// Rollups are minute-grained; coarser steps are summed in SQL.
+    pub async fn issue_trend(
+        &self,
+        fingerprint: &str,
+        since_nanos: u128,
+        step_seconds: u32,
+    ) -> anyhow::Result<Vec<TrendPoint>> {
+        let step_millis = i64::from(step_seconds.max(60)) * 1_000;
+        let conn = self.conn.lock().await;
+        let mut rows = conn
+            .query(
+                "SELECT bucket_ts / ?3 * ?3 AS step_ts, SUM(count)
+                 FROM issue_buckets
+                 WHERE fingerprint = ?1 AND bucket_ts >= ?2
+                 GROUP BY step_ts ORDER BY step_ts ASC",
+                (fingerprint, nanos_to_millis(since_nanos), step_millis),
             )
             .await?;
-        Ok(())
+        let mut points = Vec::new();
+        while let Some(row) = rows.next().await? {
+            points.push(TrendPoint {
+                ts_nanos: millis_to_nanos(integer(&row, 0)),
+                count: u64::try_from(integer(&row, 1)).unwrap_or(0),
+            });
+        }
+        Ok(points)
     }
 
     pub async fn issues(&self, limit: usize) -> anyhow::Result<Vec<Issue>> {

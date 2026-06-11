@@ -128,5 +128,17 @@ async fn error_telemetry_becomes_a_grouped_issue() {
         .expect("error events read");
     assert_eq!(events.len(), 2);
 
+    // Rollups: both occurrences counted into the trend.
+    let trend = handle
+        .metadata
+        .issue_trend(&exception_issue.fingerprint, 0, 60)
+        .await
+        .expect("trend read");
+    assert_eq!(
+        trend.iter().map(|p| p.count).sum::<u64>(),
+        2,
+        "trend rollup counts both occurrences: {trend:?}"
+    );
+
     handle.shutdown();
 }

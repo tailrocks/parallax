@@ -260,10 +260,17 @@ CREATE TABLE IF NOT EXISTS dashboards (
   updated_at  INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS settings ( key TEXT PRIMARY KEY, value TEXT NOT NULL );
+CREATE TABLE IF NOT EXISTS issue_buckets (
+  fingerprint TEXT NOT NULL,
+  bucket_ts   INTEGER NOT NULL,   -- minute-aligned unix millis
+  count       INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (fingerprint, bucket_ts)
+);
 ```
 
 Counters (`event_count`, `last_seen`) are updated by the ingest worker on each derived error
-event; the trend sparkline reads `rollups_fingerprint_minute`.
+event; the same upsert increments the minute-grained `issue_buckets` rollup that feeds the
+trend sparkline (`issueTrend` sums it into coarser steps in SQL).
 
 ## 7. OTLP → storage mapping (the load-bearing rows)
 
@@ -301,7 +308,7 @@ type Query {
   logs(filter: LogFilter!, limit: Int = 500): [LogRecord!]!
   metricNames(prefix: String): [String!]!
   metricSeries(name: String!, range: TimeRange!, groupBy: String, agg: Agg = AVG, stepSeconds: Int = 60): [Series!]!
-  issueTrend(fingerprint: ID!, range: TimeRange!): [TrendPoint!]!
+  issueTrend(fingerprint: ID!, hours: Int = 24, stepSeconds: Int = 3600): [TrendPoint!]!
   bundle(anchor: BundleAnchor!): Bundle!
   dashboards: [Dashboard!]!
   dashboard(id: ID!): Dashboard

@@ -266,6 +266,18 @@ impl Point {
     }
 }
 
+pub struct TrendPoint(model::TrendPoint);
+
+#[graphql_object(context = ApiContext)]
+impl TrendPoint {
+    fn ts_nanos(&self) -> String {
+        nanos_string(self.0.ts_nanos)
+    }
+    fn count(&self) -> i32 {
+        i32::try_from(self.0.count).unwrap_or(i32::MAX)
+    }
+}
+
 pub struct Dashboard(model::Dashboard);
 
 #[graphql_object(context = ApiContext)]
@@ -358,6 +370,29 @@ impl Query {
             .into_iter()
             .find(|i| i.fingerprint == fingerprint)
             .map(Issue))
+    }
+
+    /// Occurrence counts per bucket for one issue's sparkline, oldest
+    /// first. Defaults: the last 24 hours in one-hour buckets.
+    async fn issue_trend(
+        context: &ApiContext,
+        fingerprint: String,
+        hours: Option<i32>,
+        step_seconds: Option<i32>,
+    ) -> FieldResult<Vec<TrendPoint>> {
+        let hours = u64::try_from(hours.unwrap_or(24).clamp(1, 24 * 30)).unwrap_or(24);
+        let step = u32::try_from(step_seconds.unwrap_or(3600).clamp(60, 86_400)).unwrap_or(3600);
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_err(field_err)?
+            .as_nanos();
+        let since = now.saturating_sub(u128::from(hours) * 3_600_000_000_000);
+        let points = context
+            .metadata
+            .issue_trend(&fingerprint, since, step)
+            .await
+            .map_err(field_err)?;
+        Ok(points.into_iter().map(TrendPoint).collect())
     }
 
     /// Every span of one trace, start-time ascending (cross-service).

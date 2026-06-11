@@ -147,3 +147,10 @@ pub struct Dashboard {
     pub created_at_nanos: u128,
     pub updated_at_nanos: u128,
 }
+
+/// One bucket of an issue's occurrence trend (metadata store rollup).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TrendPoint {
+    pub ts_nanos: u128,
+    pub count: u64,
+}
