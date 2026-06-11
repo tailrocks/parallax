@@ -193,7 +193,8 @@ encodings).
 5. **Docs** from §2.8.
 6. **Gate rows V1 must produce** (M5 slice, measured on the local profile): setup <15 min,
    ingest-to-queryable ≤5 s p95, bundle assembly ≤300 ms warm, zero canary leaks from the
-   redaction-lite set on its fixtures.
+   redaction-lite set on its fixtures. **Measured 2026-06-12 — all four pass**; numbers,
+   reproduction commands, and caveats in the [gates report](v1-gates-report.md).
 
 ## 5. V1 risks
 
