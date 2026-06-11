@@ -9,6 +9,7 @@ pub mod config;
 pub mod otlp_grpc;
 pub mod otlp_http;
 pub mod serve;
+pub mod worker;
 
 pub use config::Config;
 pub use serve::{ServerHandle, start};

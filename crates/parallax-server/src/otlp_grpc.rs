@@ -1,5 +1,9 @@
 //! OTLP/gRPC receivers (:4317): trace, logs, and metrics collector services.
+//! Each accepted request is spooled (durability) then queued for the ingest
+//! worker (processing) before acknowledgement.
 
+use crate::serve::IngestState;
+use crate::worker::IngestItem;
 use parallax_proto::collector_logs::logs_service_server::{LogsService, LogsServiceServer};
 use parallax_proto::collector_logs::{ExportLogsServiceRequest, ExportLogsServiceResponse};
 use parallax_proto::collector_metrics::metrics_service_server::{
@@ -10,18 +14,17 @@ use parallax_proto::collector_metrics::{
 };
 use parallax_proto::collector_trace::trace_service_server::{TraceService, TraceServiceServer};
 use parallax_proto::collector_trace::{ExportTraceServiceRequest, ExportTraceServiceResponse};
-use parallax_storage::spool::{Signal, Spool};
-use std::sync::Arc;
+use parallax_storage::spool::Signal;
 use tonic::{Request, Response, Status};
 
 #[derive(Clone)]
 pub struct OtlpGrpc {
-    spool: Arc<Spool>,
+    state: IngestState,
 }
 
 impl OtlpGrpc {
-    pub fn new(spool: Arc<Spool>) -> Self {
-        Self { spool }
+    pub fn new(state: IngestState) -> Self {
+        Self { state }
     }
 
     pub fn trace_service(&self) -> TraceServiceServer<Self> {
@@ -36,15 +39,22 @@ impl OtlpGrpc {
         MetricsServiceServer::new(self.clone())
     }
 
-    async fn spool_or_status<T: serde::Serialize>(
+    async fn accept<T: serde::Serialize>(
         &self,
         signal: Signal,
         request: &T,
+        item: IngestItem,
     ) -> Result<(), Status> {
-        self.spool
+        self.state
+            .spool
             .append(signal, request)
             .await
-            .map_err(|e| Status::internal(format!("spool write failed: {e}")))
+            .map_err(|e| Status::internal(format!("spool write failed: {e}")))?;
+        self.state
+            .sender
+            .send(item)
+            .await
+            .map_err(|_| Status::internal("ingest worker unavailable"))
     }
 }
 
@@ -54,8 +64,13 @@ impl TraceService for OtlpGrpc {
         &self,
         request: Request<ExportTraceServiceRequest>,
     ) -> Result<Response<ExportTraceServiceResponse>, Status> {
-        self.spool_or_status(Signal::Traces, request.get_ref())
-            .await?;
+        let request = request.into_inner();
+        self.accept(
+            Signal::Traces,
+            &request,
+            IngestItem::Traces(request.clone()),
+        )
+        .await?;
         Ok(Response::new(ExportTraceServiceResponse {
             partial_success: None,
         }))
@@ -68,7 +83,8 @@ impl LogsService for OtlpGrpc {
         &self,
         request: Request<ExportLogsServiceRequest>,
     ) -> Result<Response<ExportLogsServiceResponse>, Status> {
-        self.spool_or_status(Signal::Logs, request.get_ref())
+        let request = request.into_inner();
+        self.accept(Signal::Logs, &request, IngestItem::Logs(request.clone()))
             .await?;
         Ok(Response::new(ExportLogsServiceResponse {
             partial_success: None,
@@ -82,8 +98,13 @@ impl MetricsService for OtlpGrpc {
         &self,
         request: Request<ExportMetricsServiceRequest>,
     ) -> Result<Response<ExportMetricsServiceResponse>, Status> {
-        self.spool_or_status(Signal::Metrics, request.get_ref())
-            .await?;
+        let request = request.into_inner();
+        self.accept(
+            Signal::Metrics,
+            &request,
+            IngestItem::Metrics(request.clone()),
+        )
+        .await?;
         Ok(Response::new(ExportMetricsServiceResponse {
             partial_success: None,
         }))

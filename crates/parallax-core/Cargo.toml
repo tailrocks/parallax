@@ -9,6 +9,7 @@ repository.workspace = true
 
 [dependencies]
 parallax-proto = { workspace = true }
+parallax-storage = { workspace = true }
 regex = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

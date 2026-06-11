@@ -5,4 +5,6 @@
 //! hypotheses) onto the real OTLP protocol types. Filled milestone by
 //! milestone; M0 ships the crate skeleton.
 
+pub mod derive;
 pub mod fingerprint;
+pub mod normalize;

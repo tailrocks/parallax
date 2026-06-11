@@ -1,7 +1,11 @@
 //! Parallax storage adapters.
 //!
-//! Everything engine-specific lives behind the adapter boundary defined here.
-//! M0 ships the spool (NDJSON write-ahead landing zone for raw OTLP export
-//! requests); the GreptimeDB, Turso, and in-memory adapters arrive in M1.
+//! Everything engine-specific lives behind the adapter boundary defined here:
+//! the `TelemetryStore` trait (in-memory now, GreptimeDB next), the Turso
+//! metadata store for mutable product state, and the NDJSON ingest spool.
 
+pub mod adapter;
+pub mod memory;
+pub mod metadata;
+pub mod model;
 pub mod spool;
