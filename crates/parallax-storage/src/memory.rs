@@ -516,6 +516,13 @@ impl TelemetryStore for MemoryStore {
             .collect())
     }
 
+    async fn raw_sql(&self, _query: &str) -> anyhow::Result<crate::adapter::SqlResult> {
+        anyhow::bail!(
+            "raw SQL needs the GreptimeDB engine; the in-memory store \
+             (storage.mode = \"none\") has no SQL surface"
+        )
+    }
+
     async fn log_count_series(
         &self,
         service: Option<&str>,

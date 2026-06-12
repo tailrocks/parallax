@@ -89,3 +89,22 @@ export interface Run {
   exitCode: number | null
   startedAtNanos: string
 }
+
+export interface ObservedRun {
+  runId: string
+  service: string
+  firstNanos: string
+  lastNanos: string
+  spanCount: number
+  logCount: number
+}
+
+export interface TraceSummary {
+  traceId: string
+  rootName: string
+  service: string
+  startNanos: string
+  durationNs: string
+  spanCount: number
+  hasError: boolean
+}

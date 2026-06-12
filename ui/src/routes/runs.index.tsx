@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { Link, createFileRoute } from "@tanstack/react-router"
 import { graphql, relativeTime } from "@/lib/api"
-import type { Run } from "@/lib/api"
+import type { ObservedRun, Run } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import {
   Table,
@@ -11,9 +11,21 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
-export const Route = createFileRoute("/runs")({
-  loader: () =>
-    graphql<{ runs: Run[] }>(`
+interface RunRow {
+  runId: string
+  source: string
+  detail: string
+  status: string
+  exitCode: number | null
+  lastNanos: string
+}
+
+export const Route = createFileRoute("/runs/")({
+  loader: async () => {
+    const { runs, observedRuns } = await graphql<{
+      runs: Run[]
+      observedRuns: ObservedRun[]
+    }>(`
       {
         runs {
           runId
@@ -22,38 +34,88 @@ export const Route = createFileRoute("/runs")({
           exitCode
           startedAtNanos
         }
+        observedRuns {
+          runId
+          service
+          firstNanos
+          lastNanos
+          spanCount
+          logCount
+        }
       }
-    `),
+    `)
+    // One list: wrapper-registered runs win on id collision; everything an
+    // external tool exported under parallax.run_id still shows up.
+    const rows = new Map<string, RunRow>()
+    for (const run of observedRuns) {
+      rows.set(run.runId, {
+        runId: run.runId,
+        source: run.service,
+        detail: `${run.spanCount} span(s) · ${run.logCount} log(s)`,
+        status: "observed",
+        exitCode: null,
+        lastNanos: run.lastNanos,
+      })
+    }
+    for (const run of runs) {
+      const observed = rows.get(run.runId)
+      rows.set(run.runId, {
+        runId: run.runId,
+        source: "wrapper",
+        detail: run.command ?? observed?.detail ?? "—",
+        status: run.status,
+        exitCode: run.exitCode,
+        lastNanos: observed?.lastNanos ?? run.startedAtNanos,
+      })
+    }
+    const merged = [...rows.values()].sort((a, b) =>
+      Number(BigInt(b.lastNanos) - BigInt(a.lastNanos)),
+    )
+    return { merged }
+  },
   component: RunsPage,
 })
 
 function RunsPage() {
-  const { runs } = Route.useLoaderData()
+  const { merged } = Route.useLoaderData()
   return (
     <div className="space-y-4">
       <h1 className="text-lg font-semibold">Runs</h1>
-      {runs.length === 0 ? (
+      {merged.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          No runs yet — wrap a command:{" "}
-          <code>parallax run start -- cargo test</code>
+          No runs yet — wrap a command (
+          <code>parallax run start -- cargo test</code>) or point any tool
+          exporting a <code>parallax.run_id</code> at this server.
         </p>
       ) : (
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Run</TableHead>
-              <TableHead>Command</TableHead>
+              <TableHead>Source</TableHead>
+              <TableHead>Command / activity</TableHead>
               <TableHead className="w-28">Status</TableHead>
               <TableHead className="w-20 text-right">Exit</TableHead>
-              <TableHead className="w-28">Started</TableHead>
+              <TableHead className="w-28">Last seen</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {runs.map((run) => (
+            {merged.map((run) => (
               <TableRow key={run.runId}>
-                <TableCell className="font-mono text-xs">{run.runId}</TableCell>
+                <TableCell className="font-mono text-xs">
+                  <Link
+                    to="/runs/$runId"
+                    params={{ runId: run.runId }}
+                    className="underline underline-offset-4"
+                  >
+                    {run.runId}
+                  </Link>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline">{run.source}</Badge>
+                </TableCell>
                 <TableCell className="max-w-md truncate">
-                  {run.command ?? "—"}
+                  {run.detail}
                 </TableCell>
                 <TableCell>
                   <Badge
@@ -67,7 +129,7 @@ function RunsPage() {
                 <TableCell className="text-right tabular-nums">
                   {run.exitCode ?? "—"}
                 </TableCell>
-                <TableCell>{relativeTime(run.startedAtNanos)}</TableCell>
+                <TableCell>{relativeTime(run.lastNanos)}</TableCell>
               </TableRow>
             ))}
           </TableBody>

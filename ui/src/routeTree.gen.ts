@@ -10,12 +10,14 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ServicesRouteImport } from './routes/services'
-import { Route as RunsRouteImport } from './routes/runs'
+import { Route as LogsRouteImport } from './routes/logs'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TracesIndexRouteImport } from './routes/traces.index'
+import { Route as RunsIndexRouteImport } from './routes/runs.index'
 import { Route as IssuesIndexRouteImport } from './routes/issues.index'
 import { Route as DashboardsIndexRouteImport } from './routes/dashboards.index'
 import { Route as TracesTraceIdRouteImport } from './routes/traces.$traceId'
+import { Route as RunsRunIdRouteImport } from './routes/runs.$runId'
 import { Route as IssuesFingerprintRouteImport } from './routes/issues.$fingerprint'
 import { Route as DashboardsDashboardIdRouteImport } from './routes/dashboards.$dashboardId'
 
@@ -24,9 +26,9 @@ const ServicesRoute = ServicesRouteImport.update({
   path: '/services',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RunsRoute = RunsRouteImport.update({
-  id: '/runs',
-  path: '/runs',
+const LogsRoute = LogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -37,6 +39,11 @@ const IndexRoute = IndexRouteImport.update({
 const TracesIndexRoute = TracesIndexRouteImport.update({
   id: '/traces/',
   path: '/traces/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RunsIndexRoute = RunsIndexRouteImport.update({
+  id: '/runs/',
+  path: '/runs/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IssuesIndexRoute = IssuesIndexRouteImport.update({
@@ -54,6 +61,11 @@ const TracesTraceIdRoute = TracesTraceIdRouteImport.update({
   path: '/traces/$traceId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RunsRunIdRoute = RunsRunIdRouteImport.update({
+  id: '/runs/$runId',
+  path: '/runs/$runId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IssuesFingerprintRoute = IssuesFingerprintRouteImport.update({
   id: '/issues/$fingerprint',
   path: '/issues/$fingerprint',
@@ -67,83 +79,97 @@ const DashboardsDashboardIdRoute = DashboardsDashboardIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/runs': typeof RunsRoute
+  '/logs': typeof LogsRoute
   '/services': typeof ServicesRoute
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
+  '/runs/$runId': typeof RunsRunIdRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
   '/dashboards/': typeof DashboardsIndexRoute
   '/issues/': typeof IssuesIndexRoute
+  '/runs/': typeof RunsIndexRoute
   '/traces/': typeof TracesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/runs': typeof RunsRoute
+  '/logs': typeof LogsRoute
   '/services': typeof ServicesRoute
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
+  '/runs/$runId': typeof RunsRunIdRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
   '/dashboards': typeof DashboardsIndexRoute
   '/issues': typeof IssuesIndexRoute
+  '/runs': typeof RunsIndexRoute
   '/traces': typeof TracesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/runs': typeof RunsRoute
+  '/logs': typeof LogsRoute
   '/services': typeof ServicesRoute
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
+  '/runs/$runId': typeof RunsRunIdRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
   '/dashboards/': typeof DashboardsIndexRoute
   '/issues/': typeof IssuesIndexRoute
+  '/runs/': typeof RunsIndexRoute
   '/traces/': typeof TracesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/runs'
+    | '/logs'
     | '/services'
     | '/dashboards/$dashboardId'
     | '/issues/$fingerprint'
+    | '/runs/$runId'
     | '/traces/$traceId'
     | '/dashboards/'
     | '/issues/'
+    | '/runs/'
     | '/traces/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/runs'
+    | '/logs'
     | '/services'
     | '/dashboards/$dashboardId'
     | '/issues/$fingerprint'
+    | '/runs/$runId'
     | '/traces/$traceId'
     | '/dashboards'
     | '/issues'
+    | '/runs'
     | '/traces'
   id:
     | '__root__'
     | '/'
-    | '/runs'
+    | '/logs'
     | '/services'
     | '/dashboards/$dashboardId'
     | '/issues/$fingerprint'
+    | '/runs/$runId'
     | '/traces/$traceId'
     | '/dashboards/'
     | '/issues/'
+    | '/runs/'
     | '/traces/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  RunsRoute: typeof RunsRoute
+  LogsRoute: typeof LogsRoute
   ServicesRoute: typeof ServicesRoute
   DashboardsDashboardIdRoute: typeof DashboardsDashboardIdRoute
   IssuesFingerprintRoute: typeof IssuesFingerprintRoute
+  RunsRunIdRoute: typeof RunsRunIdRoute
   TracesTraceIdRoute: typeof TracesTraceIdRoute
   DashboardsIndexRoute: typeof DashboardsIndexRoute
   IssuesIndexRoute: typeof IssuesIndexRoute
+  RunsIndexRoute: typeof RunsIndexRoute
   TracesIndexRoute: typeof TracesIndexRoute
 }
 
@@ -156,11 +182,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ServicesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/runs': {
-      id: '/runs'
-      path: '/runs'
-      fullPath: '/runs'
-      preLoaderRoute: typeof RunsRouteImport
+    '/logs': {
+      id: '/logs'
+      path: '/logs'
+      fullPath: '/logs'
+      preLoaderRoute: typeof LogsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -175,6 +201,13 @@ declare module '@tanstack/react-router' {
       path: '/traces'
       fullPath: '/traces/'
       preLoaderRoute: typeof TracesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/runs/': {
+      id: '/runs/'
+      path: '/runs'
+      fullPath: '/runs/'
+      preLoaderRoute: typeof RunsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/issues/': {
@@ -198,6 +231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TracesTraceIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/runs/$runId': {
+      id: '/runs/$runId'
+      path: '/runs/$runId'
+      fullPath: '/runs/$runId'
+      preLoaderRoute: typeof RunsRunIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/issues/$fingerprint': {
       id: '/issues/$fingerprint'
       path: '/issues/$fingerprint'
@@ -217,13 +257,15 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  RunsRoute: RunsRoute,
+  LogsRoute: LogsRoute,
   ServicesRoute: ServicesRoute,
   DashboardsDashboardIdRoute: DashboardsDashboardIdRoute,
   IssuesFingerprintRoute: IssuesFingerprintRoute,
+  RunsRunIdRoute: RunsRunIdRoute,
   TracesTraceIdRoute: TracesTraceIdRoute,
   DashboardsIndexRoute: DashboardsIndexRoute,
   IssuesIndexRoute: IssuesIndexRoute,
+  RunsIndexRoute: RunsIndexRoute,
   TracesIndexRoute: TracesIndexRoute,
 }
 export const routeTree = rootRouteImport

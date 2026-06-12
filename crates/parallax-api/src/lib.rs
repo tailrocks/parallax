@@ -307,6 +307,26 @@ impl Trace {
     }
 }
 
+pub struct SqlResultOut(parallax_storage::adapter::SqlResult);
+
+#[graphql_object(context = ApiContext)]
+impl SqlResultOut {
+    fn columns(&self) -> &[String] {
+        &self.0.columns
+    }
+    /// Each row as a JSON array string (heterogeneous cell types).
+    fn rows(&self) -> Vec<String> {
+        self.0
+            .rows
+            .iter()
+            .map(|row| serde_json::Value::Array(row.clone()).to_string())
+            .collect()
+    }
+    fn row_count(&self) -> i32 {
+        i32::try_from(self.0.rows.len()).unwrap_or(i32::MAX)
+    }
+}
+
 pub struct ObservedRun(parallax_storage::adapter::ObservedRun);
 
 #[graphql_object(context = ApiContext)]
@@ -956,6 +976,33 @@ impl Query {
         logs.sort_by_key(|l| std::cmp::Reverse(l.ts_nanos));
         logs.truncate(limit);
         Ok(logs.into_iter().map(LogRecord).collect())
+    }
+
+    /// Raw read-only SQL against the telemetry engine (GreptimeDB) — the
+    /// engine's full query power over logs, traces, and metrics tables.
+    /// SELECT-shaped single statements only.
+    async fn sql(context: &ApiContext, query: String) -> FieldResult<SqlResultOut> {
+        let trimmed = query.trim();
+        let lowered = trimmed.to_ascii_lowercase();
+        let read_only = [
+            "select", "with", "show", "describe", "desc", "explain", "tql",
+        ]
+        .iter()
+        .any(|prefix| lowered.starts_with(prefix));
+        if !read_only {
+            return Err(field_err(
+                "only read-only statements are allowed (SELECT/WITH/SHOW/DESCRIBE/EXPLAIN/TQL)",
+            ));
+        }
+        if trimmed.trim_end_matches(';').contains(';') {
+            return Err(field_err("multiple statements are not allowed"));
+        }
+        let result = context
+            .store
+            .raw_sql(trimmed.trim_end_matches(';'))
+            .await
+            .map_err(field_err)?;
+        Ok(SqlResultOut(result))
     }
 
     /// Log counts per time bucket under the same filters as `logs` — the

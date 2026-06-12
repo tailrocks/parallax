@@ -69,9 +69,9 @@ export const Route = createFileRoute("/services")({
                    service: "${gqlString(service)}"`
 
     const point = (name: string, agg: string) =>
-      graphql<{ metricSeries: SeriesPoint[] }>(
-        `{ metricSeries(name: "${name}", agg: "${agg}", ${range}) { tsNanos value } }`
-      ).then((r) => r.metricSeries)
+      graphql<{ metricSeries: { points: SeriesPoint[] }[] }>(
+        `{ metricSeries(name: "${name}", agg: "${agg}", ${range}) { points { tsNanos value } } }`
+      ).then((r) => r.metricSeries[0]?.points ?? [])
     const quantiles = (name: string) =>
       Promise.all(
         LATENCY_QS.map(({ key, q }) =>

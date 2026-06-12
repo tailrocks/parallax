@@ -71,6 +71,12 @@ enum Command {
         #[arg(long, default_value_t = 100)]
         limit: u32,
     },
+    /// Run a read-only SQL query against the telemetry engine (GreptimeDB).
+    Sql {
+        /// The SELECT-shaped statement, e.g.
+        /// "SELECT * FROM otel_logs ORDER BY ts DESC LIMIT 10".
+        query: String,
+    },
     /// Diagnose the local install (server, engine, spool, sizes).
     Doctor,
     /// Reclaim spool space now (telemetry TTLs are engine-managed).
@@ -231,6 +237,7 @@ async fn main() -> anyhow::Result<()> {
             )
             .await
         }
+        Command::Sql { query } => commands::sql(&client()?, &query).await,
         Command::Doctor => doctor::doctor().await,
         Command::Prune => doctor::prune(),
         Command::Uninstall { purge, yes } => doctor::uninstall(purge, yes),

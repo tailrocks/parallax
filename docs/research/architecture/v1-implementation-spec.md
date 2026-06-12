@@ -344,6 +344,7 @@ type Query {
          maxTokens: Int = 10000): BundleOut               # exactly one anchor
   dashboards: [Dashboard!]!
   dashboard(id: String!): Dashboard
+  sql(query: String!): SqlResult!    # raw read-only engine SQL (see note)
 }
 type Mutation {
   issueSetStatus(fingerprint: String!, status: String!): Issue!   # open | resolved
@@ -387,7 +388,15 @@ type ServiceOverview { cpu: [Point!]!, memory: [Point!]!,
   requestRate: [Point!]!, latencyP50: [Point!]!, latencyP95: [Point!]!, latencyP99: [Point!]!,
   errorRate: [Point!]! }
 type BundleOut { json: String!, markdown: String!, canonicalHash: String! }
+type SqlResult { columns: [String!]!, rows: [String!]!, rowCount: Int! }  # rows are JSON arrays
 ```
+
+`sql` exposes the telemetry engine's full read query power (the logs page's
+escape hatch and the agent's power tool): one statement, gated to read-only
+prefixes (SELECT/WITH/SHOW/DESCRIBE/EXPLAIN/TQL). It is engine-dialect SQL —
+not part of the portable contract — and exists because the V1 profile is
+loopback, single-user, no-auth; the V2 server profile must revisit it behind
+authz before any non-local exposure.
 
 Pagination/row caps are resolver-level (500 rows; issue scans capped at 1000) — Juniper has no
 schema-level depth/complexity middleware; the `[limits]` config keys wait on the M5 query-cost

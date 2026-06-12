@@ -139,6 +139,43 @@ impl GreptimeStore {
         Ok(rows)
     }
 
+    /// Like [`Self::sql`], but also returns the result-set column names
+    /// (the raw-SQL surface needs a generic grid, not a fixed projection).
+    pub async fn sql_with_schema(&self, sql: &str) -> anyhow::Result<crate::adapter::SqlResult> {
+        let response: serde_json::Value = self
+            .client
+            .post(format!("{}/v1/sql?db=public", self.base_url))
+            .form(&[("sql", sql)])
+            .send()
+            .await?
+            .json()
+            .await?;
+        if let Some(error) = response.get("error").and_then(|e| e.as_str()) {
+            let code = response.get("code").and_then(|c| c.as_i64()).unwrap_or(-1);
+            anyhow::bail!("greptime sql failed (code {code}): {error}");
+        }
+        let columns = response
+            .pointer("/output/0/records/schema/column_schemas")
+            .and_then(|c| c.as_array())
+            .map(|cols| {
+                cols.iter()
+                    .filter_map(|c| c.get("name").and_then(|n| n.as_str()))
+                    .map(str::to_owned)
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        let rows = response
+            .pointer("/output/0/records/rows")
+            .and_then(|r| r.as_array())
+            .map(|rows| {
+                rows.iter()
+                    .filter_map(|row| row.as_array().cloned())
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        Ok(crate::adapter::SqlResult { columns, rows })
+    }
+
     async fn insert(&self, table: &str, columns: &str, values: Vec<String>) -> anyhow::Result<()> {
         if values.is_empty() {
             return Ok(());
@@ -267,7 +304,8 @@ fn log_filter_clauses(
                 .replace('%', "\\%")
                 .replace('_', "\\_"),
         );
-        clauses.push(format!(r#""body" LIKE '%{escaped}%' ESCAPE '\\'"#));
+        // ESCAPE takes exactly one character — a single backslash in SQL.
+        clauses.push(format!(r#""body" LIKE '%{escaped}%' ESCAPE '\'"#));
     }
     clauses
 }
@@ -917,6 +955,10 @@ impl TelemetryStore for GreptimeStore {
                 value: row.get(1).and_then(|v| v.as_f64()).unwrap_or(0.0),
             })
             .collect())
+    }
+
+    async fn raw_sql(&self, query: &str) -> anyhow::Result<crate::adapter::SqlResult> {
+        self.sql_with_schema(query).await
     }
 }
 
