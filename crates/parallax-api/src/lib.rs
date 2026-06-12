@@ -1088,7 +1088,7 @@ impl Query {
         })
     }
 
-    /// Run ids observed in telemetry (any tool exporting `parallax.run_id`
+    /// Run ids observed in telemetry (any tool exporting `parallax.run.id`
     /// — e.g. jackin'), newest activity first. Independent of wrapper
     /// registration: this is how external runs appear in the UI.
     async fn observed_runs(
@@ -1344,7 +1344,7 @@ impl Query {
     /// avg|min|max|sum|rate. With `groupBy` (an attribute key) one series
     /// per value; without it a single series with a null `groupValue`
     /// (spec §8 `metricSeries`). `runId` scopes to points whose resource
-    /// carried `parallax.run_id` (run-anchored cross-analytics).
+    /// carried `parallax.run.id` (run-anchored cross-analytics).
     #[allow(clippy::too_many_arguments)]
     async fn metric_series(
         context: &ApiContext,

@@ -52,7 +52,7 @@ re-earn under streaming ingest.
    hand-assembled bundles need — the eval corpus starts from these, replacing hand-written JSON
    with SDK-generated telemetry.
 4. **Convention rehearsal.** The integration-contract conventions (resource attributes, deploy
-   events, `parallax.run_id`, trace-ID surfacing) all got exercised by a consumer.
+   events, `parallax.run.id`, trace-ID surfacing) all got exercised by a consumer.
 
 ## Graduation path
 

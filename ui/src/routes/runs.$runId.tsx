@@ -76,7 +76,7 @@ const runMetricsConfig = {
 } satisfies ChartConfig
 
 /** Run-scoped process metrics: every point whose OTLP resource carried this
- * `parallax.run_id` — CPU and memory on the same timeline as the run's
+ * `parallax.run.id` — CPU and memory on the same timeline as the run's
  * traces and logs (cross-analytics). Hidden when the run exported none. */
 function RunMetrics({
   runId,

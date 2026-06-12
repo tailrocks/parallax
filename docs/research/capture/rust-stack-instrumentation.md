@@ -46,7 +46,7 @@ Parallax's quickstart documents:
 // deps: tracing, tracing-subscriber, tracing-opentelemetry 0.33,
 //       opentelemetry{,_sdk,-otlp,-appender-tracing,-semantic-conventions} 0.32
 let resource = /* service.name, service.version, deployment.environment.name,
-                  vcs.ref.head.revision, parallax.run_id from env */;
+                  vcs.ref.head.revision, parallax.run.id from env */;
 
 let tracer_provider = SdkTracerProvider::builder()
     .with_batch_exporter(SpanExporter::builder().with_tonic().build()?)

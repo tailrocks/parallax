@@ -177,7 +177,7 @@ CREATE TABLE IF NOT EXISTS otel_metrics_points (   -- gauges + sums
   name        STRING,
   value       DOUBLE,
   is_monotonic BOOLEAN,
-  run_id      STRING,        -- promoted parallax.run_id, like spans/logs
+  run_id      STRING,        -- promoted parallax.run.id, like spans/logs
   attributes  JSON,
   TIME INDEX (ts),
   PRIMARY KEY (service, name)
@@ -284,7 +284,7 @@ Counters (`event_count`, `last_seen`) are updated by the ingest worker on each d
 event; the same upsert increments the minute-grained `issue_buckets` rollup that feeds the
 trend sparkline (`issueTrend` sums it into coarser steps in SQL) and merges the event's scalar
 attributes into the bounded `tags` cache (`{key: {value: count}}`; ≤16 keys, ≤8 values per key,
-values ≤64 chars, `exception.*` excluded). Runs whose `parallax.run_id` first appears in
+values ≤64 chars, `exception.*` excluded). Runs whose `parallax.run.id` first appears in
 telemetry without a CLI `runStart` are auto-registered by the worker with status `external`
 (first-seen timestamp as `started_at`) so run-scoped UI/CLI lookups work for foreign run ids
 (the jackin follow-up, 2026-06-12).
@@ -304,7 +304,7 @@ telemetry without a CLI `runStart` are auto-registered by the worker with status
 | log `body.string_value` | `body` |
 | metric gauge/sum data points | `otel_metrics_points` (one row per point; `is_monotonic` from sum) |
 | metric histogram data points | `otel_metrics_histograms` |
-| `resource.attributes["parallax.run_id"]` — **aliases accepted**: `session.id`, `cicd.pipeline.run.id` (first present wins, in that order) | **promoted to a real `run_id` column** on `otel_spans`/`otel_logs`/`otel_metrics_points` (the key contains a dot, making JSON-path filtering fragile; a column makes run-scoped reads exact and fast — and puts a run's CPU/memory beside its traces and logs). No OTel standard exists for a CLI run id; `session.id` is the closest semconv concept and `cicd.pipeline.run.id` the literal "run id" — both Development-stability, hence aliases rather than the canonical key. The wrapper dual-emits `session.id` for interop. Decision + sources: [capture/run-id-standardization.md](../capture/run-id-standardization.md) |
+| `resource.attributes["parallax.run.id"]` — **aliases accepted**: `session.id`, `cicd.pipeline.run.id` (first present wins, in that order) | **promoted to a real `run_id` column** on `otel_spans`/`otel_logs`/`otel_metrics_points` (the key contains a dot, making JSON-path filtering fragile; a column makes run-scoped reads exact and fast — and puts a run's CPU/memory beside its traces and logs). No OTel standard exists for a CLI run id; `session.id` is the closest semconv concept and `cicd.pipeline.run.id` the literal "run id" — both Development-stability, hence aliases rather than the canonical key. The wrapper dual-emits `session.id` for interop. Decision + sources: [capture/run-id-standardization.md](../capture/run-id-standardization.md) |
 
 Fingerprinting and derivation logic: graduate `poc/evidence-loop/src/{derive,fingerprint}.rs`
 verbatim semantics (both exception encodings; normalization rules; 16-hex fingerprint).

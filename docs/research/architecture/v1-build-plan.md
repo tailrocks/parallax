@@ -110,7 +110,7 @@ detection, version pinning, crash restart) — first spike of the milestone.
 
 GraphQL read API over runs/issues/traces/logs/metric windows; bundle builder graduation
 (assembly + token bounding + redaction-lite + ranked hypotheses + `missing_evidence`); the run
-model (`parallax.run_id` resource attribute; `run start/list/inspect/bundle`); CLI v1
+model (`parallax.run.id` resource attribute; `run start/list/inspect/bundle`); CLI v1
 (`serve`, `run *`, `issue list/context`, `trace inspect`, `--context` plumbing with the local
 default); JSON/Markdown/terminal bundle projections sharing one canonical hash.
 

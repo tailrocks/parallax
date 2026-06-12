@@ -289,7 +289,7 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
         "absent instruments yield empty series: {response}"
     );
 
-    // Run-scoped reads: a span emitted under a parallax.run_id resource
+    // Run-scoped reads: a span emitted under a parallax.run.id resource
     // attribute is reachable through tracesByRun.
     let run_exporter = opentelemetry_otlp::SpanExporter::builder()
         .with_tonic()
@@ -302,7 +302,7 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
             opentelemetry_sdk::Resource::builder()
                 .with_attributes([
                     KeyValue::new("service.name", "m2-run-service"),
-                    KeyValue::new("parallax.run_id", "run_m2test"),
+                    KeyValue::new("parallax.run.id", "run_m2test"),
                 ])
                 .build(),
         )
@@ -384,7 +384,7 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
     );
 
     // Standard-alias run correlation (spec §7): an emitter using only the
-    // OTel `session.id` convention — no parallax.run_id — resolves to the
+    // OTel `session.id` convention — no parallax.run.id — resolves to the
     // same run model (run-id-standardization.md).
     let session_exporter = opentelemetry_otlp::SpanExporter::builder()
         .with_tonic()

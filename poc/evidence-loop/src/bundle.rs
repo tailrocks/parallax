@@ -402,7 +402,7 @@ fn build_bundle(
     bundle
 }
 
-/// Run-anchored bundle: everything one `parallax.run_id` produced — the
+/// Run-anchored bundle: everything one `parallax.run.id` produced — the
 /// local-first `parallax run inspect` shape. Anchored on the run, not a
 /// fingerprint; trigger is `manual` (human/agent-requested) and never
 /// dispatch-eligible. Returns None when the run id is unknown.
@@ -423,7 +423,7 @@ pub fn build_run_bundle(
         let tagged = rs
             .resource
             .as_ref()
-            .and_then(|r| attr(&r.attributes, "parallax.run_id"))
+            .and_then(|r| attr(&r.attributes, "parallax.run.id"))
             .is_some_and(|id| id == run_id);
         if !tagged {
             continue;

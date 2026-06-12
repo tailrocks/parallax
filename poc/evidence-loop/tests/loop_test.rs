@@ -676,7 +676,7 @@ fn agent_session_evidence_links_edit_to_deploy_to_error() {
 #[test]
 fn run_anchored_bundle_treats_cli_invocation_as_first_class_evidence() {
     // The local-first `parallax run inspect` shape: a CLI run (the operator's
-    // Jackin multiplexer panic) anchored by parallax.run_id, with the
+    // Jackin multiplexer panic) anchored by parallax.run.id, with the
     // invocation itself as an evidence node.
     let trace_json = include_str!("../fixtures/clirun/otlp-trace.json");
     let logs_json = include_str!("../fixtures/clirun/otlp-logs.json");

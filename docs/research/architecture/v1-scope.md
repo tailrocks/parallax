@@ -68,7 +68,7 @@ Statement #7 adds the stack-shaped scenarios V1 must pass on the operator's real
   a LAN (no auth in V1 — local profile is single-user by definition).
 - Both exception encodings accepted (span `exception` events and exception-as-log records).
 - Resource-attribute conventions per the [integration contract](integration-contract.md);
-  `parallax.run_id` recognized for run scoping.
+  `parallax.run.id` recognized for run scoping.
 - No Sentry endpoint, no browser-specific handling (a browser SDK posting OTLP/HTTP may work,
   but CORS/CSP support is explicitly best-effort in V1).
 
@@ -89,7 +89,7 @@ Statement #7 adds the stack-shaped scenarios V1 must pass on the operator's real
 
 ```bash
 parallax run start -- cargo test        # wrapper mode: assigns run_id, injects
-                                        # OTEL_* env + parallax.run_id, captures
+                                        # OTEL_* env + parallax.run.id, captures
                                         # exit code as a cli_invocation, ends the run
 parallax run start                      # bare mode: prints the exports to source
 parallax run list

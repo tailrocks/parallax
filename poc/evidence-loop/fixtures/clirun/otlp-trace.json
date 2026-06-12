@@ -6,7 +6,7 @@
           { "key": "service.name", "value": { "stringValue": "jackin" } },
           { "key": "service.version", "value": { "stringValue": "0.9.3" } },
           { "key": "deployment.environment.name", "value": { "stringValue": "local" } },
-          { "key": "parallax.run_id", "value": { "stringValue": "run_7f3a" } }
+          { "key": "parallax.run.id", "value": { "stringValue": "run_7f3a" } }
         ]
       },
       "scopeSpans": [

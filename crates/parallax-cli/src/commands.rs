@@ -46,7 +46,7 @@ pub async fn run_start(client: &Client, command: Vec<String>) -> anyhow::Result<
     // `session.id` rides along for OTel interop: no standard CLI run id
     // exists, session.id is the closest semconv concept, and other backends
     // correlate on it (docs/research/capture/run-id-standardization.md).
-    let resource_attrs = format!("parallax.run_id={run_id},session.id={run_id}");
+    let resource_attrs = format!("parallax.run.id={run_id},session.id={run_id}");
     if command.is_empty() {
         // Bare mode: print exports for the developer to source.
         println!("export OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4317");

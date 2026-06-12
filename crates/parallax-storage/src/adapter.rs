@@ -4,7 +4,7 @@
 use crate::model::*;
 use std::ops::RangeInclusive;
 
-/// A run id observed in telemetry (spans/logs carrying `parallax.run_id`),
+/// A run id observed in telemetry (spans/logs carrying `parallax.run.id`),
 /// whether or not the run was registered through the CLI wrapper. This is
 /// how externally-instrumented tools (e.g. jackin') appear in the runs UI.
 #[derive(Debug, Clone)]
@@ -63,9 +63,9 @@ pub trait TelemetryStore: Send + Sync {
 
     /// Anchored read: every span of one trace, start-time ascending.
     async fn spans_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<SpanRow>>;
-    /// Run-scoped read: every span tagged with one `parallax.run_id`.
+    /// Run-scoped read: every span tagged with one `parallax.run.id`.
     async fn spans_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<SpanRow>>;
-    /// Run-scoped read: every log tagged with one `parallax.run_id`.
+    /// Run-scoped read: every log tagged with one `parallax.run.id`.
     async fn logs_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<LogRow>>;
     /// Anchored read: every log of one trace, time ascending.
     async fn logs_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<LogRow>>;
@@ -74,7 +74,7 @@ pub trait TelemetryStore: Send + Sync {
     /// Distinct service names seen in metrics.
     async fn service_names(&self) -> anyhow::Result<Vec<String>>;
     /// Aggregated series for a point metric, bucketed by `step_nanos`.
-    /// `run_id` scopes to points whose resource carried `parallax.run_id`
+    /// `run_id` scopes to points whose resource carried `parallax.run.id`
     /// (run-anchored cross-analytics: CPU/memory beside a run's traces).
     async fn metric_series(
         &self,

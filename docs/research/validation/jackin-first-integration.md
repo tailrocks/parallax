@@ -44,9 +44,9 @@ GraphQL dependency — pure OTel, runtime-gated on an env var.
 - `RunDiagnostics::start` mints the run id **before** installing the
   tracing subscriber, so the OTLP resource can carry it:
   `service.name=jackin`, `service.version`, `jackin.run_id`, and
-  `parallax.run_id` (the latter skipped when a wrapper already injected one
+  `parallax.run.id` (the latter skipped when a wrapper already injected one
   via `OTEL_RESOURCE_ATTRIBUTES` — `parallax run start -- jackin …` wins).
-  Parallax promotes `parallax.run_id` to a real column, so
+  Parallax promotes `parallax.run.id` to a real column, so
   `logsByRun`/`tracesByRun` answer with jackin's own printed id.
 - **Logs**: `opentelemetry-appender-tracing` bridges every tracing event to
   an OTLP log record — jackin's diagnostics events (kind/stage/detail as
@@ -92,7 +92,7 @@ Against a live `parallax serve` (managed GreptimeDB, default ports):
 
 - **The wrapper-less path works.** A real CLI with its own run concept maps
   onto Parallax with one resource attribute — no `parallax run start`
-  required. The `parallax.run_id` promotion to a column is the load-bearing
+  required. The `parallax.run.id` promotion to a column is the load-bearing
   feature.
 - **The logs pipeline carries a real firehose** — third-party crate noise,
   hex-encoded unix-socket URLs, multi-KB debug lines — not just curated

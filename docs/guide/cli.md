@@ -14,10 +14,10 @@ server from `~/.parallax/contexts.toml` — omitted, it targets the local one.
 
 | Command | What it does |
 | --- | --- |
-| `parallax run start -- <cmd…>` | Wrapper mode: inject `OTEL_EXPORTER_OTLP_ENDPOINT` + `parallax.run_id`, run the command, propagate its exit code. |
+| `parallax run start -- <cmd…>` | Wrapper mode: inject `OTEL_EXPORTER_OTLP_ENDPOINT` + `parallax.run.id`, run the command, propagate its exit code. |
 | `parallax run start` | Bare mode: print the exports to source into your shell. |
 | `parallax run finish <run_id> <exit_code>` | Close a bare-mode run. |
-| `parallax run list` | Recent runs with status, exit code, relative start time. Runs whose `parallax.run_id` arrived in telemetry without a wrapper show status `external`. |
+| `parallax run list` | Recent runs with status, exit code, relative start time. Runs whose `parallax.run.id` arrived in telemetry without a wrapper show status `external`. |
 | `parallax run inspect <run_id>` | One run's record: status, exit code, trace/error counts, grouped issues. |
 | `parallax run bundle <run_id>` | The run-anchored evidence bundle (Markdown + canonical hash). |
 | `parallax run watch <run_id> [--level <severity>] [--grep <substr>] [--for 30s]` | Live tail of one run: new log records and finished spans interleaved (`[log]`/`[span]` prefixes) — the CLI mirror of the run page's Go live. `--for` watches a fixed window and reports per-stream match counts. |

@@ -21,9 +21,9 @@ run id. What is the standard, and how do we get to one?
 
    | Step | What | Status |
    | --- | --- | --- |
-   | 1 | `jackin.run_id` migrates to **`parallax.run_id`** as the primary key on jackin's OTLP resource (keep `jackin.run_id` as a legacy alias during the transition) | recommended to jackin', 2026-06-12 |
-   | 2 | `parallax.run_id` is the one canonical run key across Tailrocks tools — vendor-namespaced exactly as the [OTel naming guidance](https://opentelemetry.io/docs/specs/semconv/general/naming/) prescribes for concepts no convention covers | **current state** |
-   | 3 | When an OTel standard exists (ours or someone else's), it becomes an accepted ingest alias immediately, then the canonical key once it reaches stability — `parallax.run_id` demotes to the legacy alias | future, tracked here |
+   | 1 | `jackin.run_id` migrates to **`parallax.run.id`** as the primary key on jackin's OTLP resource (keep `jackin.run_id` as a legacy alias during the transition) | recommended to jackin', 2026-06-12 |
+   | 2 | `parallax.run.id` is the one canonical run key across Tailrocks tools — vendor-namespaced exactly as the [OTel naming guidance](https://opentelemetry.io/docs/specs/semconv/general/naming/) prescribes for concepts no convention covers | **current state** |
+   | 3 | When an OTel standard exists (ours or someone else's), it becomes an accepted ingest alias immediately, then the canonical key once it reaches stability — `parallax.run.id` demotes to the legacy alias | future, tracked here |
 
 ## Why the existing conventions don't fit (primary sources, checked 2026-06-12)
 
@@ -85,12 +85,12 @@ wording above. Every step gets a dated row appended here.
 ## Current implementation state (Parallax, 2026-06-12)
 
 - **Ingest aliases** (`parallax-core/normalize.rs`): run id resolves
-  `parallax.run_id` → `session.id` → `cicd.pipeline.run.id`, first present
+  `parallax.run.id` → `session.id` → `cicd.pipeline.run.id`, first present
   wins, on spans, logs, and metric points (spec §7).
 - **Wrapper dual-emit**: `parallax run start` injects
-  `OTEL_RESOURCE_ATTRIBUTES=parallax.run_id=<id>,session.id=<id>` — other
+  `OTEL_RESOURCE_ATTRIBUTES=parallax.run.id=<id>,session.id=<id>` — other
   OTel backends correlate the same run today.
 - **Guide**: [conventions.md](../../guide/conventions.md) documents the
   aliases for integrators.
-- **jackin'**: recommended to adopt `parallax.run_id` as primary (step 1 of
+- **jackin'**: recommended to adopt `parallax.run.id` as primary (step 1 of
   the ladder) and emit `session.id` alongside.

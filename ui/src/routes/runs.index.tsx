@@ -45,7 +45,7 @@ export const Route = createFileRoute("/runs/")({
       }
     `)
     // One list: wrapper-registered runs win on id collision; everything an
-    // external tool exported under parallax.run_id still shows up.
+    // external tool exported under parallax.run.id still shows up.
     const rows = new Map<string, RunRow>()
     for (const run of observedRuns) {
       rows.set(run.runId, {
@@ -85,7 +85,7 @@ function RunsPage() {
         <p className="text-sm text-muted-foreground">
           No runs yet — wrap a command (
           <code>parallax run start -- cargo test</code>) or point any tool
-          exporting a <code>parallax.run_id</code> at this server.
+          exporting a <code>parallax.run.id</code> at this server.
         </p>
       ) : (
         <Table>

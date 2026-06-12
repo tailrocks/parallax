@@ -97,7 +97,7 @@ What it proves, end to end, with no network, database, or wall clock:
     root span carrying `process.command_line`/`process.exit_code` becomes a
     `cli_invocation` evidence node with a strong `error_in_invocation` edge
     from the panic; `build_run_bundle` assembles the local-first
-    `parallax run inspect` shape — anchored on `parallax.run_id` (anchor type
+    `parallax run inspect` shape — anchored on `parallax.run.id` (anchor type
     `run`, trigger `manual`, never dispatch-eligible), DEBUG logs explaining
     the dirty-pane state included. Unknown run ids return nothing;
     run-anchored bundles validate against the published schema.
