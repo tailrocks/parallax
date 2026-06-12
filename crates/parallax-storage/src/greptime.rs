@@ -55,7 +55,8 @@ impl GreptimeStore {
                    "ts" TIMESTAMP(9) NOT NULL, "service" STRING, "trace_id" STRING,
                    "span_id" STRING, "parent_span_id" STRING, "name" STRING, "kind" STRING,
                    "status_code" STRING, "status_message" STRING, "duration_ns" BIGINT,
-                   "run_id" STRING, "scope_name" STRING, "attributes" JSON, "resource" JSON,
+                   "run_id" STRING, "scope_name" STRING, "links" JSON,
+                   "attributes" JSON, "resource" JSON,
                    TIME INDEX ("ts"), PRIMARY KEY ("service")
                  ) WITH (ttl = '{traces_ttl}')"#
             ),
@@ -104,7 +105,10 @@ impl GreptimeStore {
         }
         // Migrations for tables created before a column existed (CREATE IF
         // NOT EXISTS skips them): add and ignore the already-exists error.
-        let migrations = [r#"ALTER TABLE otel_metrics_points ADD COLUMN "run_id" STRING"#];
+        let migrations = [
+            r#"ALTER TABLE otel_metrics_points ADD COLUMN "run_id" STRING"#,
+            r#"ALTER TABLE otel_spans ADD COLUMN "links" JSON"#,
+        ];
         for statement in migrations {
             if let Err(error) = self.sql(statement).await {
                 let text = error.to_string().to_ascii_lowercase();
@@ -210,7 +214,8 @@ impl GreptimeStore {
                 r#"SELECT CAST("ts" AS BIGINT) AS "ts_nanos", "service", "trace_id", "span_id",
                           "parent_span_id", "name", "kind", "status_code",
                           "status_message", "duration_ns", "run_id", "scope_name",
-                          json_to_string("attributes"), json_to_string("resource")
+                          json_to_string("links"), json_to_string("attributes"),
+                          json_to_string("resource")
                    FROM otel_spans WHERE {where_clause} ORDER BY "ts" ASC{limit_clause}"#
             ))
             .await?;
@@ -229,8 +234,9 @@ impl GreptimeStore {
                 duration_ns: u128_at(row, 9),
                 run_id: opt_str_at(row, 10),
                 scope_name: str_at(row, 11),
-                attributes: json_at(row, 12),
-                resource: json_at(row, 13),
+                links: json_at(row, 12),
+                attributes: json_at(row, 13),
+                resource: json_at(row, 14),
             })
             .collect())
     }
@@ -346,7 +352,7 @@ impl TelemetryStore for GreptimeStore {
             .iter()
             .map(|r| {
                 format!(
-                    "({},'{}','{}','{}',{},{},'{}','{}','{}','{}',{},'{}',{},{})",
+                    "({},'{}','{}','{}',{},{},'{}','{}','{}','{}',{},'{}',{},{},{})",
                     r.ts_nanos,
                     escape(&r.service),
                     escape(&r.trace_id),
@@ -359,6 +365,7 @@ impl TelemetryStore for GreptimeStore {
                     escape(&r.status_message),
                     r.duration_ns,
                     escape(&r.scope_name),
+                    json_literal(&r.links),
                     json_literal(&r.attributes),
                     json_literal(&r.resource),
                 )
@@ -366,7 +373,7 @@ impl TelemetryStore for GreptimeStore {
             .collect();
         self.insert(
             "otel_spans",
-            "\"ts\", \"service\", \"trace_id\", \"span_id\", \"parent_span_id\", \"run_id\", \"name\", \"kind\", \"status_code\", \"status_message\", \"duration_ns\", \"scope_name\", \"attributes\", \"resource\"",
+            "\"ts\", \"service\", \"trace_id\", \"span_id\", \"parent_span_id\", \"run_id\", \"name\", \"kind\", \"status_code\", \"status_message\", \"duration_ns\", \"scope_name\", \"links\", \"attributes\", \"resource\"",
             values,
         )
         .await

@@ -17,6 +17,9 @@ pub struct SpanRow {
     pub duration_ns: u128,
     pub run_id: Option<String>,
     pub scope_name: String,
+    /// OTel span links — `[{traceId, spanId, attributes}]` — the standard
+    /// cross-trace correlation (batch/async "sub-operation" references).
+    pub links: serde_json::Value,
     pub attributes: serde_json::Value,
     pub resource: serde_json::Value,
 }

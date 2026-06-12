@@ -17,9 +17,10 @@ make the derived views sharp instead of mushy.
 `parallax.run_id` is promoted to a real column on spans, logs, and metric
 points at ingest, so run-scoped queries are exact and fast. **Standard
 aliases accepted**: when `parallax.run_id` is absent, the run id resolves
-from `session.id`, then `cicd.pipeline.run.id` — OTel has no CLI run-id
-convention, and these are the closest standards (both Development
-stability; rationale and sources in
+from `session.id`, then `cicd.pipeline.run.id`. OTel has no CLI run-id
+convention yet — these aliases are interop bridges, not the standard;
+`parallax.run_id` stays canonical until one exists (we are proposing one
+upstream — position, draft, and tracked threads in
 [run-id standardization](../research/capture/run-id-standardization.md)).
 The wrapper also emits `session.id=<run id>` so other OTel backends
 correlate the same run.

@@ -96,6 +96,24 @@ fn run_id(resource_attrs: &[KeyValue]) -> Option<String> {
         .map(str::to_string)
 }
 
+/// OTel span links → `[{traceId, spanId, attributes}]` JSON. Links are the
+/// standard cross-trace correlation: a span references spans in other
+/// traces (batch/async sub-operations) without a parent/child edge.
+fn links_to_json(links: &[parallax_proto::trace::span::Link]) -> serde_json::Value {
+    serde_json::Value::Array(
+        links
+            .iter()
+            .map(|link| {
+                serde_json::json!({
+                    "traceId": hex(&link.trace_id),
+                    "spanId": hex(&link.span_id),
+                    "attributes": attributes_to_json(&link.attributes),
+                })
+            })
+            .collect(),
+    )
+}
+
 pub fn normalize_traces(request: &ExportTraceServiceRequest) -> Vec<SpanRow> {
     let mut rows = Vec::new();
     for rs in &request.resource_spans {
@@ -136,6 +154,7 @@ pub fn normalize_traces(request: &ExportTraceServiceRequest) -> Vec<SpanRow> {
                     ),
                     run_id: run_id.clone(),
                     scope_name: scope_name.clone(),
+                    links: links_to_json(&span.links),
                     attributes: attributes_to_json(&span.attributes),
                     resource: resource_json.clone(),
                 });

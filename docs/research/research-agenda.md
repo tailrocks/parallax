@@ -51,6 +51,7 @@ the Arm-C generator A1 needs, so the tracks feed each other.
 - **Engine releases** — re-pin + re-verify load-bearing claims on each new stable (GreptimeDB v1.1 GA next; ClickHouse feature line). Last: 2026-06-11 — no GA, nightly publishing stalled at 20260525 while the repo stays active.
 - **Incumbent self-hosted AI** — Sentry Seer self-host (stated FSL intent, no date); Grafana local-inference/BYO-LLM backend; either would erode the wedge.
 - **OTel** — any move from per-signal semantics toward incident/investigation/RCA correlation.
+- **Run-id standardization (active participation, not just a watch)** — no OTel standard exists for a CLI run's cross-trace correlation id; we intend to propose one (generalize `session.id` per [semantic-conventions#2883](https://github.com/open-telemetry/semantic-conventions/issues/2883), or a `cli.run.id`) and track every thread in [capture/run-id-standardization.md](capture/run-id-standardization.md). Adopt-as-alias the moment anything lands; `parallax.run_id` stays canonical until a standard reaches stability.
 - **Coding-agent capability** — as models improve, the "raw context is enough" threat (item 1) grows; A1 must re-run across model generations.
 
 ## How this maps to the kill criteria
