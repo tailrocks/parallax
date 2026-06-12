@@ -150,6 +150,8 @@ function LogsPage() {
   const [selected, setSelected] = useState<LogDoc | null>(null)
   const [fieldSearch, setFieldSearch] = useState("")
   const [loading, setLoading] = useState(false)
+  const [olderLoading, setOlderLoading] = useState(false)
+  const [exhausted, setExhausted] = useState(false)
   // Live is explicit, never the default — a tail costs a subscription, and
   // it narrows the surface: per-row filters only, no ranges, no aggregates.
   const live = refreshSeconds === -1
@@ -199,10 +201,43 @@ function LogsPage() {
       setServices(data.services)
       setLogs(data.logs)
       setSeries(data.logCountSeries)
+      setExhausted(data.logs.length < 500)
     } finally {
       setLoading(false)
     }
   }, [service, severityMin, query, rangeMinutes])
+
+  // Cursor pagination: everything strictly older than the oldest row shown,
+  // same filters, appended below (kubectl --tail … then scroll back).
+  const loadOlder = useCallback(async () => {
+    const oldest = logs[logs.length - 1]
+    if (!oldest) return
+    setOlderLoading(true)
+    try {
+      const args = [
+        `toNanos: "${(BigInt(oldest.tsNanos) - 1n).toString()}"`,
+        rangeMinutes > 0
+          ? `fromNanos: "${(BigInt(Date.now()) - BigInt(rangeMinutes) * 60_000n) * 1_000_000n}"`
+          : "",
+        service !== "all" ? `service: "${gqlString(service)}"` : "",
+        severityMin > 0 ? `severityMin: ${severityMin}` : "",
+        query.trim() ? `query: "${gqlString(query.trim())}"` : "",
+        "limit: 500",
+      ]
+        .filter(Boolean)
+        .join(", ")
+      const data = await graphql<{ logs: LogDoc[] }>(
+        `{ logs(${args}) {
+             tsNanos service severityNum severityText body
+             traceId spanId runId scopeName attributes resource
+           } }`
+      )
+      setLogs((current) => [...current, ...data.logs])
+      if (data.logs.length < 500) setExhausted(true)
+    } finally {
+      setOlderLoading(false)
+    }
+  }, [logs, rangeMinutes, service, severityMin, query])
 
   useEffect(() => {
     void load()
@@ -450,6 +485,16 @@ function LogsPage() {
           </TableBody>
         </Table>
       )}
+
+      {!live && logs.length > 0 && !exhausted ? (
+        <Button
+          variant="outline"
+          onClick={() => void loadOlder()}
+          disabled={olderLoading}
+        >
+          {olderLoading ? "Loading…" : "Load older"}
+        </Button>
+      ) : null}
 
       <Sheet
         open={selected !== null}

@@ -18,6 +18,7 @@ interface TraceSpan {
   spanId: string
   parentSpanId: string | null
   runId: string | null
+  links: string
   attributes: string
 }
 
@@ -34,7 +35,7 @@ export const Route = createFileRoute("/traces/$traceId")({
     graphql<{ trace: { spans: TraceSpan[] } | null; logsByTrace: TraceLog[] }>(
       `{ trace(traceId: "${params.traceId}") {
            spans { tsNanos service name kind statusCode statusMessage durationNs
-                   spanId parentSpanId runId attributes }
+                   spanId parentSpanId runId links attributes }
          }
          logsByTrace(traceId: "${params.traceId}") { tsNanos service severityText body spanId } }`
     ),
@@ -48,6 +49,22 @@ function parseAttributes(json: string): [string, string][] {
       key,
       typeof v === "string" ? v : JSON.stringify(v),
     ])
+  } catch {
+    return []
+  }
+}
+
+interface SpanLink {
+  traceId: string
+  spanId: string
+}
+
+function parseLinks(json: string): SpanLink[] {
+  try {
+    const value: unknown = JSON.parse(json)
+    return Array.isArray(value)
+      ? (value as SpanLink[]).filter((link) => link.traceId)
+      : []
   } catch {
     return []
   }
@@ -68,11 +85,14 @@ function TracePage() {
   )
   const total = Math.max(1, end - start)
   const selected = spans.find((s) => s.spanId === selectedId) ?? null
-  const selectedAttributes = selected ? parseAttributes(selected.attributes) : []
+  const selectedAttributes = selected
+    ? parseAttributes(selected.attributes)
+    : []
   const dbQuery = selectedAttributes.find(([key]) => key === "db.query.text")
   const selectedLogs = selected
     ? logsByTrace.filter((log) => log.spanId === selected.spanId)
     : []
+  const selectedLinks = selected ? parseLinks(selected.links) : []
   const runId = spans.find((s) => s.runId)?.runId ?? null
 
   return (
@@ -111,9 +131,7 @@ function TracePage() {
                   <button
                     key={span.spanId}
                     type="button"
-                    onClick={() =>
-                      setSelectedId(active ? null : span.spanId)
-                    }
+                    onClick={() => setSelectedId(active ? null : span.spanId)}
                     className={`block w-full space-y-0.5 rounded px-1 py-0.5 text-left hover:bg-muted/60 ${
                       active ? "bg-muted" : ""
                     }`}
@@ -124,6 +142,11 @@ function TracePage() {
                           {span.service}
                         </Badge>
                         {span.name}
+                        {parseLinks(span.links).length > 0 ? (
+                          <Badge variant="secondary" className="ml-1">
+                            ↗ {parseLinks(span.links).length} linked
+                          </Badge>
+                        ) : null}
                       </span>
                       <span className="shrink-0 text-muted-foreground tabular-nums">
                         {(Number(span.durationNs) / 1e6).toFixed(2)}ms
@@ -238,6 +261,28 @@ function TracePage() {
               ) : (
                 <p className="text-muted-foreground">No attributes.</p>
               )}
+
+              {selectedLinks.length > 0 ? (
+                <div>
+                  <Separator className="my-2" />
+                  <p className="mb-1 font-medium text-muted-foreground">
+                    Linked traces
+                  </p>
+                  <ul className="space-y-1 font-mono">
+                    {selectedLinks.map((link) => (
+                      <li key={`${link.traceId}-${link.spanId}`}>
+                        <Link
+                          to="/traces/$traceId"
+                          params={{ traceId: link.traceId }}
+                          className="underline underline-offset-4"
+                        >
+                          {link.traceId}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
 
               {selectedLogs.length > 0 ? (
                 <div>

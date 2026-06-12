@@ -248,6 +248,11 @@ impl Span {
     fn run_id(&self) -> Option<&str> {
         self.0.run_id.as_deref()
     }
+    /// OTel span links as JSON: `[{traceId, spanId, attributes}]` — spans in
+    /// other traces this span causally references (batch/async sub-operations).
+    fn links(&self) -> String {
+        self.0.links.to_string()
+    }
     fn scope_name(&self) -> &str {
         &self.0.scope_name
     }

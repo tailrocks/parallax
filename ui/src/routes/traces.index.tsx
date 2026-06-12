@@ -92,6 +92,8 @@ function TracesPage() {
   const [spans, setSpans] = useState<SpanDoc[]>([])
   const [lookup, setLookup] = useState("")
   const [loading, setLoading] = useState(false)
+  const [olderLoading, setOlderLoading] = useState(false)
+  const [exhausted, setExhausted] = useState(false)
   const navigate = useNavigate()
   const live = refreshSeconds === -1
 
@@ -128,10 +130,46 @@ function TracesPage() {
       )
       setServices(data.services)
       setTraces(data.traces)
+      setExhausted(data.traces.length < 100)
     } finally {
       setLoading(false)
     }
   }, [service, errorsOnly, minDuration, query, rangeMinutes])
+
+  // Cursor pagination: traces strictly older than the oldest shown, same
+  // filters, appended below.
+  const loadOlder = useCallback(async () => {
+    const oldest = traces[traces.length - 1]
+    if (!oldest) return
+    setOlderLoading(true)
+    try {
+      const minDurationMs = parseDurationMs(minDuration)
+      const args = [
+        `toNanos: "${(BigInt(oldest.startNanos) - 1n).toString()}"`,
+        service !== "all" ? `service: "${gqlString(service)}"` : "",
+        rangeMinutes > 0
+          ? `fromNanos: "${(BigInt(Date.now()) - BigInt(rangeMinutes) * 60_000n) * 1_000_000n}"`
+          : "",
+        Number.isFinite(minDurationMs) && minDurationMs > 0
+          ? `minDurationMs: ${minDurationMs}`
+          : "",
+        errorsOnly ? "errorOnly: true" : "",
+        query.trim() ? `query: "${gqlString(query.trim())}"` : "",
+        "limit: 100",
+      ]
+        .filter(Boolean)
+        .join(", ")
+      const data = await graphql<{ traces: TraceSummary[] }>(
+        `{ traces(${args}) {
+             traceId rootName service startNanos durationNs spanCount hasError
+           } }`
+      )
+      setTraces((current) => [...current, ...data.traces])
+      if (data.traces.length < 100) setExhausted(true)
+    } finally {
+      setOlderLoading(false)
+    }
+  }, [traces, service, errorsOnly, minDuration, query, rangeMinutes])
 
   useEffect(() => {
     void load()
@@ -427,6 +465,15 @@ function TracesPage() {
               </TableBody>
             </Table>
           )}
+          {traces.length > 0 && !exhausted ? (
+            <Button
+              variant="outline"
+              onClick={() => void loadOlder()}
+              disabled={olderLoading}
+            >
+              {olderLoading ? "Loading…" : "Load older"}
+            </Button>
+          ) : null}
         </>
       )}
     </div>

@@ -145,11 +145,14 @@ CREATE TABLE IF NOT EXISTS otel_spans (
   duration_ns       BIGINT,
   run_id            STRING,
   scope_name        STRING,
+  links             JSON,     -- OTel span links: [{traceId, spanId, attributes}]
   attributes        JSON,
   resource          JSON,
   TIME INDEX (ts),
   PRIMARY KEY (service)
 ) WITH (ttl = '{traces_ttl}');
+-- Pre-existing installs gain links via the same ALTER-at-bootstrap
+-- migration mechanism as otel_metrics_points.run_id.
 
 CREATE TABLE IF NOT EXISTS otel_logs (
   ts             TIMESTAMP(9) NOT NULL,
@@ -380,6 +383,7 @@ type Trace { traceId: String!, spans: [Span!]! }
 type Span { tsNanos: String!, service: String!, traceId: String!, spanId: String!,
   parentSpanId: String, name: String!, kind: String!, statusCode: String!,
   statusMessage: String!, durationNs: String!, runId: String, scopeName: String!,
+  links: String!,             # OTel span links JSON: [{traceId, spanId, attributes}]
   attributes: String!, resource: String! }
 type TraceSummary { traceId: String!, rootName: String, service: String, tsNanos: String!,
   durationNs: String!, spanCount: Int!, errorCount: Int! }   # errorCount = ERROR-status spans
