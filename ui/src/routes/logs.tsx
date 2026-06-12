@@ -54,6 +54,7 @@ interface SeriesPoint {
 }
 
 const RANGES = [
+  { label: "Latest", minutes: 0 },
   { label: "Last 1 minute", minutes: 1 },
   { label: "Last 15 minutes", minutes: 15 },
   { label: "Last 30 minutes", minutes: 30 },
@@ -73,6 +74,7 @@ const SEVERITIES = [
 
 const REFRESH = [
   { label: "Refresh off", seconds: 0 },
+  { label: "Live (stream)", seconds: -1 },
   { label: "Every 5s", seconds: 5 },
   { label: "Every 15s", seconds: 15 },
   { label: "Every 60s", seconds: 60 },
@@ -240,7 +242,8 @@ function LogsPage() {
   const [severityMin, setSeverityMin] = useState<number>(0)
   const [query, setQuery] = useState("")
   const [pendingQuery, setPendingQuery] = useState("")
-  const [rangeMinutes, setRangeMinutes] = useState<number>(15)
+  // 0 = "Latest": newest rows regardless of window (kubectl --tail shape).
+  const [rangeMinutes, setRangeMinutes] = useState<number>(0)
   const [refreshSeconds, setRefreshSeconds] = useState<number>(0)
   const [logs, setLogs] = useState<LogDoc[]>([])
   const [series, setSeries] = useState<SeriesPoint[]>([])
@@ -251,18 +254,29 @@ function LogsPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
+      // "Latest" (0): newest rows with no lower bound — kubectl --tail.
+      // The histogram still needs a window; 24h backs it in that mode.
       const nowNanos = BigInt(Date.now()) * 1_000_000n
-      const fromNanos = nowNanos - BigInt(rangeMinutes) * 60_000_000_000n
-      const args = [
-        `fromNanos: "${fromNanos}"`,
-        `toNanos: "${nowNanos}"`,
+      const windowMinutes = rangeMinutes === 0 ? 1440 : rangeMinutes
+      const fromNanos = nowNanos - BigInt(windowMinutes) * 60_000_000_000n
+      const shared = [
         service !== "all" ? `service: "${gqlString(service)}"` : "",
         severityMin > 0 ? `severityMin: ${severityMin}` : "",
         query.trim() ? `query: "${gqlString(query.trim())}"` : "",
-      ]
-        .filter(Boolean)
-        .join(", ")
-      const stepSeconds = Math.max(1, Math.round((rangeMinutes * 60) / 60))
+      ].filter(Boolean)
+      const logArgs = [
+        ...(rangeMinutes === 0
+          ? []
+          : [`fromNanos: "${fromNanos}"`, `toNanos: "${nowNanos}"`]),
+        ...shared,
+        "limit: 500",
+      ].join(", ")
+      const seriesArgs = [
+        `fromNanos: "${fromNanos}"`,
+        `toNanos: "${nowNanos}"`,
+        ...shared,
+      ].join(", ")
+      const stepSeconds = Math.max(1, Math.round((windowMinutes * 60) / 60))
       const data = await graphql<{
         services: string[]
         logs: LogDoc[]
@@ -270,11 +284,11 @@ function LogsPage() {
       }>(
         `{
           services
-          logs(${args}, limit: 500) {
+          logs(${logArgs}) {
             tsNanos service severityNum severityText body
             traceId spanId runId scopeName attributes resource
           }
-          logCountSeries(${args}, stepSeconds: ${stepSeconds}) {
+          logCountSeries(${seriesArgs}, stepSeconds: ${stepSeconds}) {
             tsNanos value
           }
         }`
@@ -291,12 +305,42 @@ function LogsPage() {
     void load()
   }, [load])
 
-  // Live mode: poll on the chosen interval (Kibana-style refresh-every).
+  // Refresh-every mode: poll on the chosen interval.
   useEffect(() => {
-    if (refreshSeconds === 0) return
+    if (refreshSeconds <= 0) return
     const timer = setInterval(() => void load(), refreshSeconds * 1000)
     return () => clearInterval(timer)
   }, [refreshSeconds, load])
+
+  // Live mode (-1): tail over Server-Sent Events. Incoming batches buffer
+  // and flush every 250ms (render batching), newest first, capped at 500.
+  useEffect(() => {
+    if (refreshSeconds !== -1) return
+    const params = new URLSearchParams()
+    if (service !== "all") params.set("service", service)
+    if (severityMin > 0) params.set("severity_min", String(severityMin))
+    if (query.trim()) params.set("q", query.trim())
+    const source = new EventSource(`/v1/logs/stream?${params}`)
+    let buffer: LogDoc[] = []
+    source.onmessage = (event) => {
+      try {
+        const batch: unknown = JSON.parse(event.data as string)
+        if (Array.isArray(batch)) buffer.push(...(batch as LogDoc[]))
+      } catch {
+        // skip malformed frames
+      }
+    }
+    const flush = setInterval(() => {
+      if (buffer.length === 0) return
+      const incoming = buffer
+      buffer = []
+      setLogs((current) => [...incoming.reverse(), ...current].slice(0, 500))
+    }, 250)
+    return () => {
+      source.close()
+      clearInterval(flush)
+    }
+  }, [refreshSeconds, service, severityMin, query])
 
   const chartData = useMemo(
     () =>
@@ -454,9 +498,16 @@ function LogsPage() {
       </div>
 
       {mode === "sql" ? null : logs.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          No logs match — widen the range or drop a filter.
-        </p>
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            No logs in this window — widen the range or drop a filter.
+          </p>
+          {rangeMinutes < 1440 ? (
+            <Button variant="outline" onClick={() => setRangeMinutes(1440)}>
+              Show last 24 hours
+            </Button>
+          ) : null}
+        </div>
       ) : (
         <Table>
           <TableHeader>

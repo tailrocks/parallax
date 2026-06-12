@@ -127,7 +127,8 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
         spool: spool.clone(),
         sender,
     };
-    let worker = Worker::new(store.clone(), metadata.clone());
+    let live = crate::live::channel();
+    let worker = Worker::new(store.clone(), metadata.clone(), live.clone());
     let mut tasks = Vec::new();
     tasks.push(tokio::spawn(worker.run(receiver)));
 
@@ -141,6 +142,11 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
     let api_router = Router::new()
         .route("/health", get(|| async { "ok" }))
         .route("/version", get(|| async { env!("CARGO_PKG_VERSION") }))
+        .merge(
+            Router::new()
+                .route("/v1/logs/stream", get(crate::live::stream_logs))
+                .with_state(live),
+        )
         .merge(
             Router::new()
                 .route("/graphql", post(graphql_handler))

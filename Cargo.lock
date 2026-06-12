@@ -2090,6 +2090,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
+ "futures-core",
  "juniper",
  "mime_guess",
  "opentelemetry",
@@ -3411,6 +3412,7 @@ dependencies = [
  "futures-core",
  "pin-project-lite",
  "tokio",
+ "tokio-util",
 ]
 
 [[package]]

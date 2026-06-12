@@ -30,14 +30,22 @@ pub struct Worker {
     /// Run ids already registered this process — saves a metadata round-trip
     /// per row; `ensure_run` itself is idempotent.
     seen_runs: std::collections::HashSet<String>,
+    /// Live-tail broadcast. Publishing clones the batch only while someone
+    /// is subscribed; the hot path stays clone-free otherwise.
+    live: crate::live::LogSender,
 }
 
 impl Worker {
-    pub fn new(store: Arc<dyn TelemetryStore>, metadata: Arc<MetadataStore>) -> Self {
+    pub fn new(
+        store: Arc<dyn TelemetryStore>,
+        metadata: Arc<MetadataStore>,
+        live: crate::live::LogSender,
+    ) -> Self {
         Self {
             store,
             metadata,
             seen_runs: std::collections::HashSet::new(),
+            live,
         }
     }
 
@@ -72,6 +80,9 @@ impl Worker {
                         .filter_map(|l| l.run_id.clone().map(|run_id| (run_id, l.ts_nanos))),
                 )
                 .await?;
+                if self.live.receiver_count() > 0 {
+                    let _ = self.live.send(logs.clone().into());
+                }
                 self.store.write_logs(logs).await?;
                 self.record_errors(errors).await?;
             }

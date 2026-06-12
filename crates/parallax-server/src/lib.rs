@@ -7,6 +7,7 @@
 
 pub mod config;
 pub mod greptime_supervisor;
+pub mod live;
 pub mod otlp_grpc;
 pub mod otlp_http;
 pub mod serve;
