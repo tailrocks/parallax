@@ -158,14 +158,42 @@ pub async fn ensure_binary(
         .ok_or_else(|| anyhow::anyhow!("empty sha256sum asset"))?
         .to_lowercase();
 
-    let archive = client
+    let mut response = client
         .get(format!("{base}/{asset}.tar.gz"))
         .send()
         .await?
-        .error_for_status()?
-        .bytes()
-        .await?;
-    let actual = format!("{:x}", Sha256::digest(&archive));
+        .error_for_status()?;
+    let total_bytes = response.content_length();
+    let mut archive: Vec<u8> = Vec::with_capacity(total_bytes.unwrap_or(0) as usize);
+    let mut hasher = Sha256::new();
+    let started = std::time::Instant::now();
+    let mut last_report = std::time::Instant::now();
+    while let Some(chunk) = response.chunk().await? {
+        hasher.update(&chunk);
+        archive.extend_from_slice(&chunk);
+        if last_report.elapsed() >= Duration::from_secs(1) {
+            last_report = std::time::Instant::now();
+            let done_mb = archive.len() as f64 / 1_048_576.0;
+            let speed_mbps = done_mb / started.elapsed().as_secs_f64();
+            match total_bytes {
+                Some(total) if total > 0 => {
+                    let percent = archive.len() as f64 * 100.0 / total as f64;
+                    tracing::info!(
+                        "downloading… {done_mb:.0} / {:.0} MiB ({percent:.0}%) at {speed_mbps:.1} MiB/s",
+                        total as f64 / 1_048_576.0
+                    );
+                }
+                _ => tracing::info!("downloading… {done_mb:.0} MiB at {speed_mbps:.1} MiB/s"),
+            }
+        }
+    }
+    let done_mb = archive.len() as f64 / 1_048_576.0;
+    let elapsed = started.elapsed().as_secs_f64().max(0.001);
+    tracing::info!(
+        "downloaded {done_mb:.0} MiB in {elapsed:.1}s ({:.1} MiB/s); verifying checksum",
+        done_mb / elapsed
+    );
+    let actual = format!("{:x}", hasher.finalize());
     anyhow::ensure!(
         actual == expected,
         "GreptimeDB download checksum mismatch: expected {expected}, got {actual}"
