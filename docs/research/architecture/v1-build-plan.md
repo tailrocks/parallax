@@ -65,7 +65,7 @@ crates/
                       # assembly, bounding, redaction, hypotheses, rollups, triggers.
                       # Direct graduation target for the PoC kernels.
   parallax-storage/   # StorageAdapter trait + adapters: greptime (local standalone + server
-                      # profiles), turso metadata (rusqlite fallback behind a feature flag),
+                      # profiles), turso metadata (committed, no fallback engine),
                       # in-memory adapter for tests. No engine magic above this crate.
   parallax-api/       # async-graphql schema: Run, Issue, Trace, LogRecord, MetricWindow,
                       # EvidenceBundle; depth/complexity/pagination limits per api-concept.
@@ -95,9 +95,9 @@ proto pinning strategy; tokio task layout for receivers.
 
 ### M1 — Storage and the error model
 
-Managed GreptimeDB standalone supervisor (`--manage-greptime` default, `--greptime-url`,
-`--no-greptime` fallback, per [local-first-v1.md](local-first-v1.md)); Turso metadata file
-(rusqlite fallback flag); `StorageAdapter` v0 (write spans/logs/metrics; anchored reads by
+Managed GreptimeDB standalone supervisor (`--manage-greptime` default, `--greptime-url`
+external mode, per [local-first-v1.md](local-first-v1.md)); Turso metadata file (committed,
+no fallback engine — operator, 2026-06-12); `StorageAdapter` v0 (write spans/logs/metrics; anchored reads by
 trace_id/fingerprint/time window). Graduate from the PoC: error derivation (both exception
 encodings), fingerprinting, grouping into issue rows (metadata store owns mutable issue state —
 grouped errors are OLTP, per the metadata-store decision).
@@ -185,7 +185,7 @@ outcome contracts are already versioned, which is the whole cost of "keeping it 
 | Risk / decision | Where it bites | Plan |
 | --- | --- | --- |
 | GreptimeDB supervision UX (install, pin, restart, upgrade) | M1, goal-1 first impression | M1 spike; brew tap + direct download support; pin engine version per release |
-| Turso beta behavior under crash/backup | M1/M3 metadata | rusqlite feature-flag fallback ready; Postgres option lands in M3 anyway |
+| Turso beta behavior under crash/backup | M1/M3 metadata | fix-forward/upstream only — no fallback engine (operator, 2026-06-12); crash/backup gates stay as turso hardening checklist |
 | OTLP proto types churn | M0 | pin `opentelemetry-proto`; vendor generated code if the crate's cadence hurts |
 | GraphQL cost control | M2 | depth/complexity/pagination limits from api-concept enforced in `parallax-api` middleware from the first resolver |
 | Cloud-profile auth UX (token issuance without a UI) | M3 | CLI-issued tokens stored in metadata; UI management later |

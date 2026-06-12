@@ -33,6 +33,13 @@ structure quickly.
   bootstrap announce themselves, and serve ends with a ready banner naming
   every surface (UI URL, GraphQL, OTLP ports, storage mode, data dir).
   Applies to every future long-running surface.
+- Storage stack (operator, 2026-06-12): **GreptimeDB (telemetry) + Turso
+  (metadata) are the committed, mandatory stack — no fallback engines, ever.**
+  No rusqlite feature flag, no Postgres swap-out, no engine substitutions;
+  when an engine misbehaves, fix forward in our code or upstream. The
+  in-memory adapter exists for tests/dev harnesses only and is never a
+  product mode. Canonical record:
+  [docs/research/decisions/metadata-store.md](docs/research/decisions/metadata-store.md).
 - Version policy (operator, 2026-06-12): always use the latest stable versions
   everywhere — crates, engines, UI dependencies, toolchains. Version tables in
   docs are known-compatible floors, not freezes; when implementing, resolve

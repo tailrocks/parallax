@@ -55,7 +55,7 @@ Statement #7 adds the stack-shaped scenarios V1 must pass on the operator's real
 | Item | V1 answer |
 | --- | --- |
 | Install | `brew install tailrocks/tap/parallax` and a static binary download; `cargo install` for Rust users. One binary. |
-| GreptimeDB acquisition | Self-sufficient by default: `parallax serve` detects `greptime` on PATH or in `~/.parallax/bin/`; if absent, offers to download the **pinned** release binary (checksum-verified) into `~/.parallax/bin/` — no Docker, no manual setup. Escape hatches: `--greptime-url` (bring your own), `--no-greptime` (Turso-only bounded fallback). |
+| GreptimeDB acquisition | Self-sufficient by default: `parallax serve` detects `greptime` on PATH or in `~/.parallax/bin/`; if absent, offers to download the **pinned** release binary (checksum-verified) into `~/.parallax/bin/` — no Docker, no manual setup. Escape hatch: `--greptime-url` (bring your own GreptimeDB). **No fallback engines** (operator, 2026-06-12): GreptimeDB + Turso are the mandatory stack; `storage.mode = "none"` (in-memory) exists for tests/dev harnesses only and is not a supported product mode. |
 | Offline | Everything works with zero network after install (the only network feature is the optional engine download). No phone-home, no telemetry-about-telemetry, no account. |
 | Data layout | `~/.parallax/`: `bin/` (managed engine), `greptime-data/`, `meta.db` (Turso), `spool/` (ingest WAL), `config.toml`. One directory to back up or delete. |
 | Uninstall | `parallax uninstall --purge` removes the data dir; the binary removal is the package manager's job. Nothing else was installed. |
@@ -200,8 +200,8 @@ encodings).
 
 | Risk | Mitigation |
 | --- | --- |
-| GreptimeDB child-process UX (download size, startup time, port clashes, upgrade) | M1 spike; `doctor`; pinned versions; `--no-greptime` keeps a degraded path |
-| Turso beta under crash/concurrent CLI+server access | rusqlite feature-flag fallback; single-writer discipline through the server process |
+| GreptimeDB child-process UX (download size, startup time, port clashes, upgrade) | M1 spike; `doctor`; pinned versions; supervision is fix-forward — no fallback engine (operator, 2026-06-12) |
+| Turso beta under crash/concurrent CLI+server access | single-writer discipline through the server process; turso pitfalls regression-tested (open-statement write loss); fix-forward/upstream — no fallback engine (operator, 2026-06-12) |
 | Wrapper-mode env propagation across build tools (cargo test subprocesses) | wrapper sets env + documents per-tool notes; bare mode as fallback |
 | Redaction-lite over-claiming | label it pre-A6 everywhere it surfaces; A6 remains the gate before any agent-visible-by-default posture changes |
 | Laptop disk pressure | small TTL defaults, bounded spool, visible usage in `doctor`, `prune` |
