@@ -83,6 +83,19 @@ fn status_code_name(code: i32) -> &'static str {
     }
 }
 
+/// Resolve the run id from resource attributes. `parallax.run_id` is
+/// canonical; the standard aliases are accepted so OTel-conventional
+/// emitters correlate without Parallax-specific wiring (no OTel standard
+/// exists for a CLI run id — `session.id` is the closest concept,
+/// `cicd.pipeline.run.id` the literal "run id" semconv; see
+/// docs/research/capture/run-id-standardization.md).
+fn run_id(resource_attrs: &[KeyValue]) -> Option<String> {
+    ["parallax.run_id", "session.id", "cicd.pipeline.run.id"]
+        .iter()
+        .find_map(|key| attr_str(resource_attrs, key))
+        .map(str::to_string)
+}
+
 pub fn normalize_traces(request: &ExportTraceServiceRequest) -> Vec<SpanRow> {
     let mut rows = Vec::new();
     for rs in &request.resource_spans {
@@ -92,7 +105,7 @@ pub fn normalize_traces(request: &ExportTraceServiceRequest) -> Vec<SpanRow> {
             .map(|r| r.attributes.as_slice())
             .unwrap_or(&[]);
         let service = service_name(resource_attrs);
-        let run_id = attr_str(resource_attrs, "parallax.run_id").map(str::to_string);
+        let run_id = run_id(resource_attrs);
         let resource_json = attributes_to_json(resource_attrs);
         for ss in &rs.scope_spans {
             let scope_name = ss
@@ -141,7 +154,7 @@ pub fn normalize_logs(request: &ExportLogsServiceRequest) -> Vec<LogRow> {
             .map(|r| r.attributes.as_slice())
             .unwrap_or(&[]);
         let service = service_name(resource_attrs);
-        let run_id = attr_str(resource_attrs, "parallax.run_id").map(str::to_string);
+        let run_id = run_id(resource_attrs);
         let resource_json = attributes_to_json(resource_attrs);
         for sl in &rl.scope_logs {
             let scope_name = sl
@@ -197,7 +210,7 @@ pub fn normalize_metrics(request: &ExportMetricsServiceRequest) -> NormalizedMet
             .map(|r| r.attributes.as_slice())
             .unwrap_or(&[]);
         let service = service_name(resource_attrs);
-        let run_id = attr_str(resource_attrs, "parallax.run_id").map(str::to_string);
+        let run_id = run_id(resource_attrs);
         for sm in &rm.scope_metrics {
             for metric in &sm.metrics {
                 match &metric.data {

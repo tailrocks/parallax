@@ -75,6 +75,7 @@ This directory is the research record behind Parallax. It is organized so a read
 - [ci-and-flaky-tests.md](capture/ci-and-flaky-tests.md) — CI failure-context bundles and flaky-test detection/replay.
 - [production-db-evidence.md](capture/production-db-evidence.md) — safety gate for treating production databases as evidence sources.
 - [correlation.md](capture/correlation.md) — A4: correlation reliability on real telemetry.
+- [run-id-standardization.md](capture/run-id-standardization.md) — no OTel standard for a CLI run id exists; `parallax.run_id` stays canonical (conformant vendor namespace), `session.id`/`cicd.pipeline.run.id` accepted as ingest aliases, the wrapper dual-emits `session.id`.
 - [redaction.md](capture/redaction.md) — A6: redaction pipeline, detector toolchain, canary corpus, and red-team gate.
 
 ### `storage/` — the telemetry store and its evidence

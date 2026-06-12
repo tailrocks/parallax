@@ -12,10 +12,17 @@ make the derived views sharp instead of mushy.
 | `deployment.environment.name` | recommended | Keeps prod and staging issues apart. |
 | `vcs.ref.head.revision` | recommended | The deployed commit — stamp at build time. |
 | `vcs.repository.url.full` | recommended | Which repo a fixer gets pointed at. |
-| `parallax.run_id` | injected | Set by `parallax run start`; never set it by hand. |
+| `parallax.run_id` | injected | Set by `parallax run start`; never set it by hand. Tools with their own run concept (jackin'-style) set it directly. |
 
-`parallax.run_id` is promoted to a real column on spans and logs at ingest, so
-run-scoped queries are exact and fast.
+`parallax.run_id` is promoted to a real column on spans, logs, and metric
+points at ingest, so run-scoped queries are exact and fast. **Standard
+aliases accepted**: when `parallax.run_id` is absent, the run id resolves
+from `session.id`, then `cicd.pipeline.run.id` — OTel has no CLI run-id
+convention, and these are the closest standards (both Development
+stability; rationale and sources in
+[run-id standardization](../research/capture/run-id-standardization.md)).
+The wrapper also emits `session.id=<run id>` so other OTel backends
+correlate the same run.
 
 ## Exception encodings (both accepted, indefinitely)
 

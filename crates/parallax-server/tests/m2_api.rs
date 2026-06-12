@@ -383,6 +383,56 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
         Some(&serde_json::json!(0))
     );
 
+    // Standard-alias run correlation (spec §7): an emitter using only the
+    // OTel `session.id` convention — no parallax.run_id — resolves to the
+    // same run model (run-id-standardization.md).
+    let session_exporter = opentelemetry_otlp::SpanExporter::builder()
+        .with_tonic()
+        .with_endpoint(format!("http://{}", handle.otlp_grpc_addr))
+        .build()
+        .expect("session span exporter");
+    let session_provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
+        .with_batch_exporter(session_exporter)
+        .with_resource(
+            opentelemetry_sdk::Resource::builder()
+                .with_attributes([
+                    KeyValue::new("service.name", "m2-session-service"),
+                    KeyValue::new("session.id", "sess_0042"),
+                ])
+                .build(),
+        )
+        .build();
+    let session_tracer = session_provider.tracer("m2-session");
+    let mut session_span = session_tracer.start("inside.the.session");
+    session_span.end();
+    session_provider.force_flush().expect("session flush");
+
+    let mut session_run = serde_json::Value::Null;
+    for _ in 0..50 {
+        let response = graphql(
+            &client,
+            handle.api_addr,
+            r#"{ run(runId: "sess_0042") { runId status traceCount } }"#,
+        )
+        .await;
+        if response
+            .pointer("/data/run/traceCount")
+            .and_then(|v| v.as_i64())
+            == Some(1)
+        {
+            session_run = response;
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+    assert_eq!(
+        session_run
+            .pointer("/data/run/status")
+            .and_then(|v| v.as_str()),
+        Some("external"),
+        "session.id alias resolves to an auto-registered run: {session_run}"
+    );
+
     // Run-anchored bundle (spec §8 bundle(runId:)) renders without errors.
     let response = graphql(
         &client,

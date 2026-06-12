@@ -43,10 +43,14 @@ pub async fn run_start(client: &Client, command: Vec<String>) -> anyhow::Result<
         ))
         .await?;
 
+    // `session.id` rides along for OTel interop: no standard CLI run id
+    // exists, session.id is the closest semconv concept, and other backends
+    // correlate on it (docs/research/capture/run-id-standardization.md).
+    let resource_attrs = format!("parallax.run_id={run_id},session.id={run_id}");
     if command.is_empty() {
         // Bare mode: print exports for the developer to source.
         println!("export OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4317");
-        println!("export OTEL_RESOURCE_ATTRIBUTES=parallax.run_id={run_id}");
+        println!("export OTEL_RESOURCE_ATTRIBUTES={resource_attrs}");
         println!("# run id: {run_id}  (finish with: parallax run finish {run_id} <exit-code>)");
         return Ok(0);
     }
@@ -56,10 +60,7 @@ pub async fn run_start(client: &Client, command: Vec<String>) -> anyhow::Result<
     let status = tokio::process::Command::new(&command[0])
         .args(&command[1..])
         .env("OTEL_EXPORTER_OTLP_ENDPOINT", "http://127.0.0.1:4317")
-        .env(
-            "OTEL_RESOURCE_ATTRIBUTES",
-            format!("parallax.run_id={run_id}"),
-        )
+        .env("OTEL_RESOURCE_ATTRIBUTES", &resource_attrs)
         .status()
         .await?;
     let exit_code = status.code().unwrap_or(-1);
