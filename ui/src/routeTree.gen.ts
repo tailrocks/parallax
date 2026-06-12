@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SqlRouteImport } from './routes/sql'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as LogsRouteImport } from './routes/logs'
 import { Route as IndexRouteImport } from './routes/index'
@@ -21,6 +22,11 @@ import { Route as RunsRunIdRouteImport } from './routes/runs.$runId'
 import { Route as IssuesFingerprintRouteImport } from './routes/issues.$fingerprint'
 import { Route as DashboardsDashboardIdRouteImport } from './routes/dashboards.$dashboardId'
 
+const SqlRoute = SqlRouteImport.update({
+  id: '/sql',
+  path: '/sql',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ServicesRoute = ServicesRouteImport.update({
   id: '/services',
   path: '/services',
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/logs': typeof LogsRoute
   '/services': typeof ServicesRoute
+  '/sql': typeof SqlRoute
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
   '/runs/$runId': typeof RunsRunIdRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/logs': typeof LogsRoute
   '/services': typeof ServicesRoute
+  '/sql': typeof SqlRoute
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
   '/runs/$runId': typeof RunsRunIdRoute
@@ -108,6 +116,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/logs': typeof LogsRoute
   '/services': typeof ServicesRoute
+  '/sql': typeof SqlRoute
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
   '/runs/$runId': typeof RunsRunIdRoute
@@ -123,6 +132,7 @@ export interface FileRouteTypes {
     | '/'
     | '/logs'
     | '/services'
+    | '/sql'
     | '/dashboards/$dashboardId'
     | '/issues/$fingerprint'
     | '/runs/$runId'
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
     | '/'
     | '/logs'
     | '/services'
+    | '/sql'
     | '/dashboards/$dashboardId'
     | '/issues/$fingerprint'
     | '/runs/$runId'
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '/'
     | '/logs'
     | '/services'
+    | '/sql'
     | '/dashboards/$dashboardId'
     | '/issues/$fingerprint'
     | '/runs/$runId'
@@ -163,6 +175,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LogsRoute: typeof LogsRoute
   ServicesRoute: typeof ServicesRoute
+  SqlRoute: typeof SqlRoute
   DashboardsDashboardIdRoute: typeof DashboardsDashboardIdRoute
   IssuesFingerprintRoute: typeof IssuesFingerprintRoute
   RunsRunIdRoute: typeof RunsRunIdRoute
@@ -175,6 +188,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sql': {
+      id: '/sql'
+      path: '/sql'
+      fullPath: '/sql'
+      preLoaderRoute: typeof SqlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/services': {
       id: '/services'
       path: '/services'
@@ -259,6 +279,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LogsRoute: LogsRoute,
   ServicesRoute: ServicesRoute,
+  SqlRoute: SqlRoute,
   DashboardsDashboardIdRoute: DashboardsDashboardIdRoute,
   IssuesFingerprintRoute: IssuesFingerprintRoute,
   RunsRunIdRoute: RunsRunIdRoute,

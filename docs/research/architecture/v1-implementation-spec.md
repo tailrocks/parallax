@@ -301,7 +301,7 @@ telemetry without a CLI `runStart` are auto-registered by the worker with status
 | log `body.string_value` | `body` |
 | metric gauge/sum data points | `otel_metrics_points` (one row per point; `is_monotonic` from sum) |
 | metric histogram data points | `otel_metrics_histograms` |
-| `resource.attributes["parallax.run_id"]` | **promoted to a real `run_id` column** on `otel_spans`/`otel_logs`/`otel_metrics_points` (the key contains a dot, making JSON-path filtering fragile; a column makes run-scoped reads exact and fast — and puts a run's CPU/memory beside its traces and logs) |
+| `resource.attributes["parallax.run_id"]` — **aliases accepted**: `session.id`, `cicd.pipeline.run.id` (first present wins, in that order) | **promoted to a real `run_id` column** on `otel_spans`/`otel_logs`/`otel_metrics_points` (the key contains a dot, making JSON-path filtering fragile; a column makes run-scoped reads exact and fast — and puts a run's CPU/memory beside its traces and logs). No OTel standard exists for a CLI run id; `session.id` is the closest semconv concept and `cicd.pipeline.run.id` the literal "run id" — both Development-stability, hence aliases rather than the canonical key. The wrapper dual-emits `session.id` for interop. Decision + sources: [capture/run-id-standardization.md](../capture/run-id-standardization.md) |
 
 Fingerprinting and derivation logic: graduate `poc/evidence-loop/src/{derive,fingerprint}.rs`
 verbatim semantics (both exception encodings; normalization rules; 16-hex fingerprint).
@@ -458,6 +458,7 @@ graceful absence, surfaced through `missing_evidence`.
 | Trace view | `trace(traceId)` + `logsByTrace`; entry from paste, issue event, or a run's `tracesByRun(runId)` |
 | Traces browse | `traces(service?, fromNanos?, toNanos?, minDurationMs?, errorOnly?, query?)`; Live mode switches to the `/v1/traces/stream` span feed |
 | Logs | `logs(traceId?, runId?, service?, severityMin?, query?, …)` + `logCountSeries` histogram; Live mode switches to `/v1/logs/stream` |
+| SQL workbench | `sql(query:)` on a dedicated page: schema browser (information_schema), cross-signal example joins, ⌘⏎, localStorage history — the escape hatch from predefined pages (logs/traces/metrics/error_events in one statement) |
 | Runs | `runs` / `run(runId)` (errorCount/traceCount/issues) + `tracesByRun` + `logsByRun` + `bundle(runId:)` preview |
 
 ## 10. CLI output contract

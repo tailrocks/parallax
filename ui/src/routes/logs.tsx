@@ -82,106 +82,6 @@ const REFRESH = [
 
 export const Route = createFileRoute("/logs")({ component: LogsPage })
 
-interface SqlResult {
-  columns: string[]
-  rows: string[]
-  rowCount: number
-}
-
-/** Raw read-only SQL against the engine — the GreptimeDB power surface. */
-function SqlPanel() {
-  const [statement, setStatement] = useState(
-    "SELECT ts, service, severity_text, body FROM otel_logs ORDER BY ts DESC LIMIT 50"
-  )
-  const [result, setResult] = useState<SqlResult | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [running, setRunning] = useState(false)
-
-  async function run() {
-    setRunning(true)
-    setError(null)
-    try {
-      const data = await graphql<{ sql: SqlResult }>(
-        `{ sql(query: "${gqlString(statement)}") { columns rows rowCount } }`
-      )
-      setResult(data.sql)
-    } catch (e) {
-      setResult(null)
-      setError(e instanceof Error ? e.message : String(e))
-    } finally {
-      setRunning(false)
-    }
-  }
-
-  const parsedRows = useMemo(
-    () =>
-      (result?.rows ?? []).map((row) => {
-        try {
-          const cells: unknown = JSON.parse(row)
-          return Array.isArray(cells)
-            ? cells.map((cell) =>
-                typeof cell === "string" ? cell : JSON.stringify(cell)
-              )
-            : []
-        } catch {
-          return []
-        }
-      }),
-    [result]
-  )
-
-  return (
-    <div className="space-y-3">
-      <p className="text-xs text-muted-foreground">
-        Read-only SQL straight to GreptimeDB — tables: otel_logs, otel_spans,
-        otel_metrics_points, otel_metrics_histograms, error_events.
-      </p>
-      <textarea
-        value={statement}
-        onChange={(event) => setStatement(event.target.value)}
-        rows={4}
-        spellCheck={false}
-        className="w-full rounded-md border bg-transparent p-3 font-mono text-xs shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      />
-      <Button onClick={() => void run()} disabled={running}>
-        Run query
-      </Button>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      {result ? (
-        <div className="space-y-1 overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {result.columns.map((column) => (
-                  <TableHead key={column}>{column}</TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {parsedRows.map((cells, rowIndex) => (
-                <TableRow key={rowIndex}>
-                  {cells.map((cell, cellIndex) => (
-                    <TableCell
-                      key={cellIndex}
-                      className="max-w-md truncate font-mono text-xs"
-                      title={cell}
-                    >
-                      {cell}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <p className="text-xs text-muted-foreground">
-            {result.rowCount} row(s)
-          </p>
-        </div>
-      ) : null}
-    </div>
-  )
-}
-
 function severityVariant(num: number): "destructive" | "secondary" | "outline" {
   if (num >= 17) return "destructive"
   if (num >= 13) return "secondary"
@@ -369,34 +269,19 @@ function LogsPage() {
     )
   }, [selected, fieldSearch])
 
-  const [mode, setMode] = useState<"filters" | "sql">("filters")
-
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <h1 className="text-lg font-semibold">Logs</h1>
-        <Select
-          value={mode}
-          onValueChange={(v) => setMode(v === "sql" ? "sql" : "filters")}
-          disabled={live}
+        <Link
+          to="/sql"
+          className="text-xs text-muted-foreground underline-offset-4 hover:underline"
         >
-          <SelectTrigger className="w-32">
-            <SelectValue>{mode === "sql" ? "SQL" : "Filters"}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="filters">Filters</SelectItem>
-            <SelectItem value="sql">SQL</SelectItem>
-          </SelectContent>
-        </Select>
+          SQL workbench →
+        </Link>
       </div>
 
-      {mode === "sql" ? <SqlPanel /> : null}
-
-      <div
-        className={
-          mode === "sql" ? "hidden" : "flex flex-wrap items-center gap-2"
-        }
-      >
+      <div className="flex flex-wrap items-center gap-2">
         <Select value={service} onValueChange={(v) => setService(v ?? "all")}>
           <SelectTrigger className="w-48">
             <SelectValue>
@@ -494,7 +379,7 @@ function LogsPage() {
           severity, text) — switch off Live for ranges, the histogram, and SQL
         </p>
       ) : (
-        <div className={mode === "sql" ? "hidden" : "space-y-1"}>
+        <div className="space-y-1">
           <ChartContainer config={histogramConfig} className="h-32 w-full">
             <BarChart data={chartData} margin={{ left: 8, right: 8, top: 4 }}>
               <CartesianGrid vertical={false} />
@@ -517,7 +402,7 @@ function LogsPage() {
         </div>
       )}
 
-      {mode === "sql" ? null : logs.length === 0 ? (
+      {logs.length === 0 ? (
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">
             No logs in this window — widen the range or drop a filter.

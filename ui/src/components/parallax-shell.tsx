@@ -21,6 +21,7 @@ const NAV = [
   { to: "/services", label: "Services" },
   { to: "/runs", label: "Runs" },
   { to: "/dashboards", label: "Dashboards" },
+  { to: "/sql", label: "SQL" },
 ] as const
 
 export function ParallaxShell({ children }: { children: React.ReactNode }) {

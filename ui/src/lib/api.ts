@@ -26,7 +26,13 @@ export async function graphql<T>(query: string): Promise<T> {
 
 /** Escape a value for inclusion inside a GraphQL double-quoted literal. */
 export function gqlString(value: string): string {
-  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')
+  // GraphQL string literals cannot contain raw newlines (multi-line SQL).
+  return value
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "")
+    .replace(/\t/g, "\\t")
 }
 
 export function relativeTime(nanosString: string): string {
