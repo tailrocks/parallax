@@ -70,7 +70,8 @@ impl GreptimeStore {
             format!(
                 r#"CREATE TABLE IF NOT EXISTS otel_metrics_points (
                    "ts" TIMESTAMP(3) NOT NULL, "service" STRING, "name" STRING,
-                   "value" DOUBLE, "is_monotonic" BOOLEAN, "attributes" JSON,
+                   "value" DOUBLE, "is_monotonic" BOOLEAN, "run_id" STRING,
+                   "attributes" JSON,
                    TIME INDEX ("ts"), PRIMARY KEY ("service", "name")
                  ) WITH (ttl = '{metrics_ttl}')"#
             ),
@@ -100,6 +101,17 @@ impl GreptimeStore {
         ];
         for statement in statements {
             self.sql(&statement).await?;
+        }
+        // Migrations for tables created before a column existed (CREATE IF
+        // NOT EXISTS skips them): add and ignore the already-exists error.
+        let migrations = [r#"ALTER TABLE otel_metrics_points ADD COLUMN "run_id" STRING"#];
+        for statement in migrations {
+            if let Err(error) = self.sql(statement).await {
+                let text = error.to_string().to_ascii_lowercase();
+                if !text.contains("exist") && !text.contains("duplicate") {
+                    return Err(error);
+                }
+            }
         }
         Ok(())
     }
@@ -393,19 +405,23 @@ impl TelemetryStore for GreptimeStore {
             .iter()
             .map(|r| {
                 format!(
-                    "({},'{}','{}',{},{},{})",
+                    "({},'{}','{}',{},{},{},{})",
                     r.ts_nanos / 1_000_000, // TIMESTAMP(3): millis
                     escape(&r.service),
                     escape(&r.name),
                     r.value,
                     r.is_monotonic,
+                    r.run_id
+                        .as_deref()
+                        .map(|id| format!("'{}'", escape(id)))
+                        .unwrap_or_else(|| "NULL".into()),
                     json_literal(&r.attributes),
                 )
             })
             .collect();
         self.insert(
             "otel_metrics_points",
-            "\"ts\", \"service\", \"name\", \"value\", \"is_monotonic\", \"attributes\"",
+            "\"ts\", \"service\", \"name\", \"value\", \"is_monotonic\", \"run_id\", \"attributes\"",
             values,
         )
         .await
@@ -502,10 +518,12 @@ impl TelemetryStore for GreptimeStore {
     }
 
     async fn service_names(&self) -> anyhow::Result<Vec<String>> {
+        // Any signal makes a service real: metrics, spans, or logs.
         let rows = self
             .sql(
                 r#"SELECT DISTINCT "service" FROM otel_metrics_points
                    UNION SELECT DISTINCT "service" FROM otel_spans
+                   UNION SELECT DISTINCT "service" FROM otel_logs
                    ORDER BY "service""#,
             )
             .await?;
@@ -516,6 +534,7 @@ impl TelemetryStore for GreptimeStore {
         &self,
         name: &str,
         service: Option<&str>,
+        run_id: Option<&str>,
         range: RangeInclusive<u128>,
         step_nanos: u128,
         agg: MetricAgg,
@@ -530,12 +549,15 @@ impl TelemetryStore for GreptimeStore {
         let service_clause = service
             .map(|svc| format!(r#" AND "service" = '{}'"#, escape(svc)))
             .unwrap_or_default();
+        let run_clause = run_id
+            .map(|id| format!(r#" AND "run_id" = '{}'"#, escape(id)))
+            .unwrap_or_default();
         let rows = self
             .sql(&format!(
                 r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "ts") AS BIGINT)
                           AS "bucket_ms", {sql_agg}("value") AS "agg_value"
                    FROM otel_metrics_points
-                   WHERE "name" = '{}'{service_clause}
+                   WHERE "name" = '{}'{service_clause}{run_clause}
                      AND "ts" >= {} AND "ts" <= {}
                    GROUP BY "bucket_ms" ORDER BY "bucket_ms""#,
                 escape(name),

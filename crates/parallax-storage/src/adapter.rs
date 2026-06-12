@@ -74,10 +74,13 @@ pub trait TelemetryStore: Send + Sync {
     /// Distinct service names seen in metrics.
     async fn service_names(&self) -> anyhow::Result<Vec<String>>;
     /// Aggregated series for a point metric, bucketed by `step_nanos`.
+    /// `run_id` scopes to points whose resource carried `parallax.run_id`
+    /// (run-anchored cross-analytics: CPU/memory beside a run's traces).
     async fn metric_series(
         &self,
         name: &str,
         service: Option<&str>,
+        run_id: Option<&str>,
         range: RangeInclusive<u128>,
         step_nanos: u128,
         agg: MetricAgg,

@@ -528,6 +528,7 @@ impl ServiceOverview {
                 .metric_series(
                     name,
                     Some(&self.service),
+                    None,
                     self.from..=self.to,
                     self.step,
                     MetricAgg::Avg,
@@ -1332,7 +1333,8 @@ impl Query {
     /// Aggregated series for a point metric (gauge/sum); agg one of
     /// avg|min|max|sum|rate. With `groupBy` (an attribute key) one series
     /// per value; without it a single series with a null `groupValue`
-    /// (spec §8 `metricSeries`).
+    /// (spec §8 `metricSeries`). `runId` scopes to points whose resource
+    /// carried `parallax.run_id` (run-anchored cross-analytics).
     #[allow(clippy::too_many_arguments)]
     async fn metric_series(
         context: &ApiContext,
@@ -1340,6 +1342,7 @@ impl Query {
         from_nanos: String,
         to_nanos: String,
         service: Option<String>,
+        run_id: Option<String>,
         group_by: Option<String>,
         step_seconds: Option<i32>,
         agg: Option<String>,
@@ -1349,6 +1352,9 @@ impl Query {
             .ok_or_else(|| field_err("agg must be avg|min|max|sum|rate"))?;
         match group_by {
             Some(group_by) => {
+                if run_id.is_some() {
+                    return Err(field_err("runId with groupBy is not supported yet"));
+                }
                 let groups = context
                     .store
                     .metric_series_grouped(
@@ -1375,6 +1381,7 @@ impl Query {
                     .metric_series(
                         &name,
                         service.as_deref(),
+                        run_id.as_deref(),
                         from..=to,
                         step_nanos(step_seconds),
                         agg,

@@ -111,6 +111,23 @@ Against a live `parallax serve` (managed GreptimeDB, default ports):
   durations arrive as spans and the run summary as a log record, which
   covers the ask, but counter/gauge export (cache hits, event counts as
   real metrics) is a natural follow-up once jackin' wants charts.
+  **Closed 2026-06-12 (PR commit `97dd79b4`):** jackin' now exports gauges
+  every 5 s while the process runs — `process.cpu.utilization` (0..1
+  fraction of all cores via sysinfo), `process.memory.usage` (resident
+  bytes), and the stable tokio runtime counters
+  `tokio.runtime.{workers,alive_tasks,global_queue_depth}` — all tagged
+  with the same run-id resource attributes as the spans and logs. On the
+  Parallax side `otel_metrics_points` gained a promoted `run_id` column
+  (ALTER-migrated on existing installs), `metricSeries` takes `runId:`,
+  the services list unions all three signal tables (a logs-only or
+  metrics-only service now appears), and `/runs/$runId` shows a
+  run-scoped Process metrics card (CPU, memory, alive tasks) beside the
+  run's issues, traces, and logs — the cross-analytics view. Verified
+  live with `jackin doctor --debug` → run `jk-run-e4ba1d`: 5 gauge
+  series ingested run-tagged, `services` returned `jackin`, the run page
+  rendered all three charts (memory ≈ 25 MiB; CPU's first sysinfo sample
+  is 0 by design, so short runs chart flat — real values appear from the
+  second 5 s tick on longer runs).
 
 ## How the operator verifies (jackin' rule: every command with `--debug`)
 

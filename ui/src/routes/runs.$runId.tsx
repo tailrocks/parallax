@@ -1,8 +1,16 @@
 import { Link, createFileRoute } from "@tanstack/react-router"
+import { useEffect, useState } from "react"
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 import { graphql, gqlString, relativeTime } from "@/lib/api"
 import type { LogRecord } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart"
+import type { ChartConfig } from "@/components/ui/chart"
 
 interface RunIssue {
   fingerprint: string
@@ -17,6 +25,7 @@ interface RunRecordData {
   status: string
   exitCode: number | null
   startedAtNanos: string
+  endedAtNanos: string | null
   errorCount: number
   traceCount: number
   issues: RunIssue[]
@@ -41,7 +50,7 @@ export const Route = createFileRoute("/runs/$runId")({
       bundle: { markdown: string } | null
     }>(
       `{ run(runId: "${gqlString(params.runId)}") {
-           runId command status exitCode startedAtNanos
+           runId command status exitCode startedAtNanos endedAtNanos
            errorCount traceCount
            issues { fingerprint title status eventCount }
          }
@@ -55,6 +64,132 @@ export const Route = createFileRoute("/runs/$runId")({
     ),
   component: RunDetailPage,
 })
+
+interface MetricPoint {
+  tsNanos: string
+  value: number
+}
+
+const runMetricsConfig = {
+  value: { label: "value", color: "var(--chart-1)" },
+} satisfies ChartConfig
+
+/** Run-scoped process metrics: every point whose OTLP resource carried this
+ * `parallax.run_id` — CPU and memory on the same timeline as the run's
+ * traces and logs (cross-analytics). Hidden when the run exported none. */
+function RunMetrics({
+  runId,
+  fromNanos,
+  toNanos,
+}: {
+  runId: string
+  fromNanos: string
+  toNanos: string
+}) {
+  const [panels, setPanels] = useState<Array<{
+    title: string
+    unit: string
+    points: MetricPoint[]
+  }> | null>(null)
+
+  useEffect(() => {
+    const args = `runId: "${gqlString(runId)}", fromNanos: "${fromNanos}", toNanos: "${toNanos}", stepSeconds: 5`
+    void graphql<Record<string, Array<{ points: MetricPoint[] }>>>(
+      `{
+        cpu: metricSeries(name: "process.cpu.utilization", ${args}) { points { tsNanos value } }
+        memory: metricSeries(name: "process.memory.usage", ${args}) { points { tsNanos value } }
+        tasks: metricSeries(name: "tokio.runtime.alive_tasks", ${args}) { points { tsNanos value } }
+      }`
+    ).then((data) => {
+      setPanels([
+        {
+          title: "CPU",
+          unit: "%",
+          points: (data.cpu[0]?.points ?? []).map((p) => ({
+            tsNanos: p.tsNanos,
+            value: p.value * 100,
+          })),
+        },
+        {
+          title: "Memory",
+          unit: "MiB",
+          points: (data.memory[0]?.points ?? []).map((p) => ({
+            tsNanos: p.tsNanos,
+            value: p.value / (1024 * 1024),
+          })),
+        },
+        {
+          title: "Tokio alive tasks",
+          unit: "",
+          points: data.tasks[0]?.points ?? [],
+        },
+      ])
+    })
+  }, [runId, fromNanos, toNanos])
+
+  if (!panels || panels.every((panel) => panel.points.length === 0)) {
+    return null
+  }
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">
+          Process metrics{" "}
+          <span className="font-normal text-muted-foreground">
+            (points tagged with this run id)
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-4 md:grid-cols-3">
+          {panels
+            .filter((panel) => panel.points.length > 0)
+            .map((panel) => (
+              <div key={panel.title} className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground">
+                  {panel.title}
+                  {panel.unit ? ` (${panel.unit})` : ""}
+                </p>
+                <ChartContainer
+                  config={runMetricsConfig}
+                  className="h-24 w-full"
+                >
+                  <LineChart
+                    data={panel.points.map((p) => ({
+                      time: new Date(
+                        Number(BigInt(p.tsNanos) / 1_000_000n)
+                      ).toLocaleTimeString([], {
+                        minute: "2-digit",
+                        second: "2-digit",
+                      }),
+                      value: Number(p.value.toFixed(2)),
+                    }))}
+                    margin={{ left: 0, right: 8, top: 4 }}
+                  >
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="time"
+                      tickLine={false}
+                      axisLine={false}
+                      minTickGap={32}
+                    />
+                    <YAxis tickLine={false} axisLine={false} width={44} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Line
+                      dataKey="value"
+                      stroke="var(--color-value)"
+                      dot={false}
+                      strokeWidth={1.5}
+                    />
+                  </LineChart>
+                </ChartContainer>
+              </div>
+            ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 function RunDetailPage() {
   const { run, tracesByRun, logsByRun, bundle } = Route.useLoaderData()
@@ -87,7 +222,9 @@ function RunDetailPage() {
         <p className="text-sm text-muted-foreground">
           {run?.command ? <code className="mr-2">{run.command}</code> : null}
           {run ? `started ${relativeTime(run.startedAtNanos)} · ` : ""}
-          {run ? `${run.traceCount} trace(s) · ${run.errorCount} error(s) · ` : ""}
+          {run
+            ? `${run.traceCount} trace(s) · ${run.errorCount} error(s) · `
+            : ""}
           {logsByRun.length} log(s) · agent handoff:{" "}
           <code>parallax run bundle {runId}</code>
         </p>
@@ -98,6 +235,18 @@ function RunDetailPage() {
           Nothing recorded under this run id yet. If the run is live, telemetry
           arrives in batches — refresh in a few seconds.
         </p>
+      ) : null}
+
+      {run ? (
+        <RunMetrics
+          runId={runId}
+          fromNanos={(BigInt(run.startedAtNanos) - 30_000_000_000n).toString()}
+          toNanos={(
+            (run.endedAtNanos
+              ? BigInt(run.endedAtNanos)
+              : BigInt(Date.now()) * 1_000_000n) + 30_000_000_000n
+          ).toString()}
+        />
       ) : null}
 
       {run && run.issues.length > 0 ? (

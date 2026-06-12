@@ -201,6 +201,7 @@ impl TelemetryStore for MemoryStore {
             .iter()
             .map(|p| p.service.clone())
             .chain(inner.spans.iter().map(|s| s.service.clone()))
+            .chain(inner.logs.iter().map(|l| l.service.clone()))
             .collect();
         names.sort();
         names.dedup();
@@ -211,6 +212,7 @@ impl TelemetryStore for MemoryStore {
         &self,
         name: &str,
         service: Option<&str>,
+        run_id: Option<&str>,
         range: RangeInclusive<u128>,
         step_nanos: u128,
         agg: MetricAgg,
@@ -220,6 +222,7 @@ impl TelemetryStore for MemoryStore {
         for point in self.lock().metric_points.iter().filter(|p| {
             p.name == name
                 && service.is_none_or(|svc| p.service == svc)
+                && run_id.is_none_or(|id| p.run_id.as_deref() == Some(id))
                 && range.contains(&p.ts_nanos)
         }) {
             buckets

@@ -197,17 +197,30 @@ pub fn normalize_metrics(request: &ExportMetricsServiceRequest) -> NormalizedMet
             .map(|r| r.attributes.as_slice())
             .unwrap_or(&[]);
         let service = service_name(resource_attrs);
+        let run_id = attr_str(resource_attrs, "parallax.run_id").map(str::to_string);
         for sm in &rm.scope_metrics {
             for metric in &sm.metrics {
                 match &metric.data {
                     Some(Data::Gauge(g)) => {
                         for dp in &g.data_points {
-                            points.push(number_point(&service, &metric.name, dp, false));
+                            points.push(number_point(
+                                &service,
+                                run_id.as_deref(),
+                                &metric.name,
+                                dp,
+                                false,
+                            ));
                         }
                     }
                     Some(Data::Sum(s)) => {
                         for dp in &s.data_points {
-                            points.push(number_point(&service, &metric.name, dp, s.is_monotonic));
+                            points.push(number_point(
+                                &service,
+                                run_id.as_deref(),
+                                &metric.name,
+                                dp,
+                                s.is_monotonic,
+                            ));
                         }
                     }
                     Some(Data::Histogram(h)) => {
@@ -236,6 +249,7 @@ pub fn normalize_metrics(request: &ExportMetricsServiceRequest) -> NormalizedMet
 
 fn number_point(
     service: &str,
+    run_id: Option<&str>,
     name: &str,
     dp: &parallax_proto::metrics::NumberDataPoint,
     is_monotonic: bool,
@@ -251,6 +265,7 @@ fn number_point(
         name: name.to_string(),
         value,
         is_monotonic,
+        run_id: run_id.map(str::to_string),
         attributes: attributes_to_json(&dp.attributes),
     }
 }

@@ -174,10 +174,13 @@ CREATE TABLE IF NOT EXISTS otel_metrics_points (   -- gauges + sums
   name        STRING,
   value       DOUBLE,
   is_monotonic BOOLEAN,
+  run_id      STRING,        -- promoted parallax.run_id, like spans/logs
   attributes  JSON,
   TIME INDEX (ts),
   PRIMARY KEY (service, name)
 ) WITH (ttl = '{metrics_ttl}');
+-- Pre-existing installs gain run_id via an ALTER TABLE migration at
+-- bootstrap (the already-exists error is swallowed).
 
 CREATE TABLE IF NOT EXISTS otel_metrics_histograms (
   ts            TIMESTAMP(3) NOT NULL,
@@ -298,7 +301,7 @@ telemetry without a CLI `runStart` are auto-registered by the worker with status
 | log `body.string_value` | `body` |
 | metric gauge/sum data points | `otel_metrics_points` (one row per point; `is_monotonic` from sum) |
 | metric histogram data points | `otel_metrics_histograms` |
-| `resource.attributes["parallax.run_id"]` | **promoted to a real `run_id` column** on `otel_spans`/`otel_logs` (the key contains a dot, making JSON-path filtering fragile; a column makes run-scoped reads exact and fast) |
+| `resource.attributes["parallax.run_id"]` | **promoted to a real `run_id` column** on `otel_spans`/`otel_logs`/`otel_metrics_points` (the key contains a dot, making JSON-path filtering fragile; a column makes run-scoped reads exact and fast — and puts a run's CPU/memory beside its traces and logs) |
 
 Fingerprinting and derivation logic: graduate `poc/evidence-loop/src/{derive,fingerprint}.rs`
 verbatim semantics (both exception encodings; normalization rules; 16-hex fingerprint).
@@ -339,6 +342,7 @@ type Query {
   metricNames(prefix: String): [String!]!
   services: [String!]!
   metricSeries(name: String!, fromNanos: String!, toNanos: String!, service: String,
+               runId: String,                              # run-anchored cross-analytics
                groupBy: String, stepSeconds: Int = 60, agg: String = "avg"): [Series!]!
   histogramQuantile(name: String!, fromNanos: String!, toNanos: String!, q: Float!,
                     service: String, stepSeconds: Int = 60): [Point!]!

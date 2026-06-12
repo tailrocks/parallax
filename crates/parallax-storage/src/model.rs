@@ -43,6 +43,7 @@ pub struct MetricPointRow {
     pub name: String,
     pub value: f64,
     pub is_monotonic: bool,
+    pub run_id: Option<String>,
     pub attributes: serde_json::Value,
 }
 
