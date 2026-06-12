@@ -421,7 +421,9 @@ consumers drop batches (broadcast semantics = tail semantics). Rationale and
 sources: [live-telemetry-streaming.md](live-telemetry-streaming.md). The CLI
 mirror is `--follow` on `parallax logs`/`parallax traces`, with `--for <window>`
 to watch a fixed window and report the match count (the agent verification
-loop).
+loop). `parallax run watch <run_id>` combines both streams run-scoped
+(interleaved `[log]`/`[span]` lines), mirroring the run page's explicit
+Go-live mode (run-filtered SSE tails + 5 s metric/status repolls).
 
 Pagination/row caps are resolver-level (500 rows; issue scans capped at 1000) — Juniper has no
 schema-level depth/complexity middleware; the `[limits]` config keys wait on the M5 query-cost
@@ -430,6 +432,20 @@ middleware. `serviceOverview` resolves from well-known metric names (`process.cp
 with data wins) with graceful absence (empty series + the gap surfaced — feeds instrumentation
 suggestions). `bundle` accepts exactly one anchor: `fingerprint` (issue), `runId`
 (run-anchored: the run's traces, logs, and grouped issues), or `traceId`.
+
+**Bundle correlation sections (`metric_window`).** The bundle is the
+correlation artifact — every anchor assembles **trace + logs + metric
+windows** together (the scope §1 acceptance wording). `metric_windows[]`
+entries carry `{metric, scope ("run"|"service"), window {from_nanos,
+to_nanos, step_seconds}, points [{ts_nanos, value}], stats {min, max, avg,
+last}}` for the well-known process metrics (`process.cpu.utilization`,
+`process.memory.usage`, `tokio.runtime.alive_tasks`): run anchors use the
+run's own run-scoped points over the run's lifespan (5 s steps); issue/trace
+anchors use a ±5-minute window around the anchor event (30 s steps),
+run-scoped when the anchor's spans carry a run id, service-scoped otherwise.
+Windows are bounded (≤60 points per metric), participate in the canonical
+hash like every section, and absent instruments contribute no entry —
+graceful absence, surfaced through `missing_evidence`.
 
 ## 9. UI page → query map
 

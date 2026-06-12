@@ -80,6 +80,9 @@ enum Command {
     },
     /// Browse traces — the same filters as the UI's Traces page.
     Traces {
+        /// Run id to scope to (anchored read; other filters ignored).
+        #[arg(long)]
+        run: Option<String>,
         /// Service name to scope to.
         #[arg(long)]
         service: Option<String>,
@@ -143,6 +146,19 @@ enum RunCommand {
     Bundle { run_id: String },
     /// List recent runs.
     List,
+    /// Live tail of one run: new logs + finished spans, interleaved.
+    Watch {
+        run_id: String,
+        /// Minimum log severity: trace | debug | info | warn | error | fatal.
+        #[arg(long)]
+        level: Option<String>,
+        /// Only log lines whose body contains this substring.
+        #[arg(long, alias = "query")]
+        grep: Option<String>,
+        /// Stop after this window and report match counts, e.g. 30s, 5m.
+        #[arg(long = "for")]
+        watch_for: Option<String>,
+    },
 }
 
 #[derive(Subcommand)]
@@ -223,6 +239,21 @@ async fn main() -> anyhow::Result<()> {
             RunCommand::List => commands::run_list(&client()?).await,
             RunCommand::Inspect { run_id } => commands::run_inspect(&client()?, &run_id).await,
             RunCommand::Bundle { run_id } => commands::run_bundle(&client()?, &run_id).await,
+            RunCommand::Watch {
+                run_id,
+                level,
+                grep,
+                watch_for,
+            } => {
+                commands::run_watch(
+                    &client()?,
+                    &run_id,
+                    level.as_deref(),
+                    grep.as_deref(),
+                    watch_for.as_deref(),
+                )
+                .await
+            }
         },
         Command::Issue { command } => match command {
             IssueCommand::List { status, run } => {
@@ -275,6 +306,7 @@ async fn main() -> anyhow::Result<()> {
             }
         }
         Command::Traces {
+            run,
             service,
             min_duration,
             errors,
@@ -286,6 +318,7 @@ async fn main() -> anyhow::Result<()> {
         } => {
             let filter = commands::TracesFilter {
                 service: service.as_deref(),
+                run: run.as_deref(),
                 min_duration: min_duration.as_deref(),
                 errors_only: errors,
                 grep: grep.as_deref(),

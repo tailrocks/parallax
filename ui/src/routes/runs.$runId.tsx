@@ -4,6 +4,7 @@ import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 import { graphql, gqlString, relativeTime } from "@/lib/api"
 import type { LogRecord } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   ChartContainer,
@@ -81,10 +82,12 @@ function RunMetrics({
   runId,
   fromNanos,
   toNanos,
+  live,
 }: {
   runId: string
   fromNanos: string
   toNanos: string
+  live: boolean
 }) {
   const [panels, setPanels] = useState<Array<{
     title: string
@@ -93,39 +96,49 @@ function RunMetrics({
   }> | null>(null)
 
   useEffect(() => {
-    const args = `runId: "${gqlString(runId)}", fromNanos: "${fromNanos}", toNanos: "${toNanos}", stepSeconds: 5`
-    void graphql<Record<string, Array<{ points: MetricPoint[] }>>>(
-      `{
-        cpu: metricSeries(name: "process.cpu.utilization", ${args}) { points { tsNanos value } }
-        memory: metricSeries(name: "process.memory.usage", ${args}) { points { tsNanos value } }
-        tasks: metricSeries(name: "tokio.runtime.alive_tasks", ${args}) { points { tsNanos value } }
-      }`
-    ).then((data) => {
-      setPanels([
-        {
-          title: "CPU",
-          unit: "%",
-          points: (data.cpu[0]?.points ?? []).map((p) => ({
-            tsNanos: p.tsNanos,
-            value: p.value * 100,
-          })),
-        },
-        {
-          title: "Memory",
-          unit: "MiB",
-          points: (data.memory[0]?.points ?? []).map((p) => ({
-            tsNanos: p.tsNanos,
-            value: p.value / (1024 * 1024),
-          })),
-        },
-        {
-          title: "Tokio alive tasks",
-          unit: "",
-          points: data.tasks[0]?.points ?? [],
-        },
-      ])
-    })
-  }, [runId, fromNanos, toNanos])
+    const fetchPanels = () => {
+      // Live keeps the window's tail at "now" so new points keep arriving.
+      const to = live
+        ? ((BigInt(Date.now()) + 30_000n) * 1_000_000n).toString()
+        : toNanos
+      const args = `runId: "${gqlString(runId)}", fromNanos: "${fromNanos}", toNanos: "${to}", stepSeconds: 5`
+      void graphql<Record<string, Array<{ points: MetricPoint[] }>>>(
+        `{
+          cpu: metricSeries(name: "process.cpu.utilization", ${args}) { points { tsNanos value } }
+          memory: metricSeries(name: "process.memory.usage", ${args}) { points { tsNanos value } }
+          tasks: metricSeries(name: "tokio.runtime.alive_tasks", ${args}) { points { tsNanos value } }
+        }`
+      ).then((data) => {
+        setPanels([
+          {
+            title: "CPU",
+            unit: "%",
+            points: (data.cpu[0]?.points ?? []).map((p) => ({
+              tsNanos: p.tsNanos,
+              value: p.value * 100,
+            })),
+          },
+          {
+            title: "Memory",
+            unit: "MiB",
+            points: (data.memory[0]?.points ?? []).map((p) => ({
+              tsNanos: p.tsNanos,
+              value: p.value / (1024 * 1024),
+            })),
+          },
+          {
+            title: "Tokio alive tasks",
+            unit: "",
+            points: data.tasks[0]?.points ?? [],
+          },
+        ])
+      })
+    }
+    fetchPanels()
+    if (!live) return
+    const timer = setInterval(fetchPanels, 5000)
+    return () => clearInterval(timer)
+  }, [runId, fromNanos, toNanos, live])
 
   if (!panels || panels.every((panel) => panel.points.length === 0)) {
     return null
@@ -191,9 +204,108 @@ function RunMetrics({
   )
 }
 
+/** One finished span from the live feed (`/v1/traces/stream?run_id=…`). */
+interface LiveSpan {
+  tsNanos: string
+  service: string
+  traceId: string
+  spanId: string
+  name: string
+  statusCode: string
+  durationNs: string
+}
+
+interface LiveLog {
+  tsNanos: string
+  service: string
+  severityText: string
+  body: string
+  traceId: string
+}
+
 function RunDetailPage() {
-  const { run, tracesByRun, logsByRun, bundle } = Route.useLoaderData()
+  const {
+    run: loadedRun,
+    tracesByRun,
+    logsByRun,
+    bundle,
+  } = Route.useLoaderData()
   const { runId } = Route.useParams()
+  // Live mode: explicit, never default (a tail costs subscriptions). It
+  // streams this run's new logs and finished spans over SSE, repolls the
+  // metrics card, and refreshes the run record — the observation entrance
+  // for "is my run doing the right thing, right now".
+  const [live, setLive] = useState(false)
+  const [liveLogs, setLiveLogs] = useState<LiveLog[]>([])
+  const [liveSpans, setLiveSpans] = useState<LiveSpan[]>([])
+  const [polledRun, setPolledRun] = useState<RunRecordData | null>(null)
+  const run = polledRun ?? loadedRun
+
+  // Log tail: append newest-last (the card reads top-to-bottom).
+  useEffect(() => {
+    if (!live) return
+    const logSource = new EventSource(
+      `/v1/logs/stream?run_id=${encodeURIComponent(runId)}`
+    )
+    let logBuffer: LiveLog[] = []
+    logSource.onmessage = (event) => {
+      try {
+        const batch: unknown = JSON.parse(event.data as string)
+        if (Array.isArray(batch)) logBuffer.push(...(batch as LiveLog[]))
+      } catch {
+        // skip malformed frames
+      }
+    }
+    const spanSource = new EventSource(
+      `/v1/traces/stream?run_id=${encodeURIComponent(runId)}`
+    )
+    let spanBuffer: LiveSpan[] = []
+    spanSource.onmessage = (event) => {
+      try {
+        const batch: unknown = JSON.parse(event.data as string)
+        if (Array.isArray(batch)) spanBuffer.push(...(batch as LiveSpan[]))
+      } catch {
+        // skip malformed frames
+      }
+    }
+    const flush = setInterval(() => {
+      if (logBuffer.length > 0) {
+        const incoming = logBuffer
+        logBuffer = []
+        setLiveLogs((current) => [...current, ...incoming].slice(-300))
+      }
+      if (spanBuffer.length > 0) {
+        const incoming = spanBuffer
+        spanBuffer = []
+        setLiveSpans((current) =>
+          [...incoming.reverse(), ...current].slice(0, 300)
+        )
+      }
+    }, 250)
+    return () => {
+      logSource.close()
+      spanSource.close()
+      clearInterval(flush)
+    }
+  }, [live, runId])
+
+  // Run record poll: status flips running → finished, counts move.
+  useEffect(() => {
+    if (!live) return
+    const timer = setInterval(() => {
+      void graphql<{ run: RunRecordData | null }>(
+        `{ run(runId: "${gqlString(runId)}") {
+             runId command status exitCode startedAtNanos endedAtNanos
+             errorCount traceCount
+             issues { fingerprint title status eventCount }
+           } }`
+      ).then((data) => {
+        if (data.run) setPolledRun(data.run)
+      })
+    }, 10_000)
+    return () => clearInterval(timer)
+  }, [live, runId])
+
   const empty = !run && tracesByRun.length === 0 && logsByRun.length === 0
   return (
     <div className="space-y-4">
@@ -218,6 +330,19 @@ function RunDetailPage() {
               exit {run.exitCode}
             </Badge>
           ) : null}
+          <Button
+            size="sm"
+            variant={live ? "destructive" : "default"}
+            onClick={() => setLive((current) => !current)}
+          >
+            {live ? "Stop live" : "Go live"}
+          </Button>
+          {live ? (
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
+              streaming logs + spans · metrics every 5s
+            </span>
+          ) : null}
         </div>
         <p className="text-sm text-muted-foreground">
           {run?.command ? <code className="mr-2">{run.command}</code> : null}
@@ -225,7 +350,7 @@ function RunDetailPage() {
           {run
             ? `${run.traceCount} trace(s) · ${run.errorCount} error(s) · `
             : ""}
-          {logsByRun.length} log(s) · agent handoff:{" "}
+          {logsByRun.length + liveLogs.length} log(s) · agent handoff:{" "}
           <code>parallax run bundle {runId}</code>
         </p>
       </div>
@@ -233,7 +358,8 @@ function RunDetailPage() {
       {empty ? (
         <p className="text-sm text-muted-foreground">
           Nothing recorded under this run id yet. If the run is live, telemetry
-          arrives in batches — refresh in a few seconds.
+          arrives in batches — refresh in a few seconds, or press Go live to
+          stream it as it lands.
         </p>
       ) : null}
 
@@ -246,7 +372,48 @@ function RunDetailPage() {
               ? BigInt(run.endedAtNanos)
               : BigInt(Date.now()) * 1_000_000n) + 30_000_000_000n
           ).toString()}
+          live={live}
         />
+      ) : null}
+
+      {live && liveSpans.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">
+              Live spans{" "}
+              <span className="font-normal text-muted-foreground">
+                (newest first, as they finish)
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-1 font-mono text-xs">
+              {liveSpans.map((span, index) => (
+                <li
+                  key={`${span.spanId}-${index}`}
+                  className="flex flex-wrap items-center gap-2"
+                >
+                  <span className="shrink-0 text-muted-foreground">
+                    {relativeTime(span.tsNanos)}
+                  </span>
+                  <Link
+                    to="/traces/$traceId"
+                    params={{ traceId: span.traceId }}
+                    className="underline underline-offset-4"
+                  >
+                    {span.name}
+                  </Link>
+                  <span className="text-muted-foreground">
+                    {(Number(span.durationNs) / 1e6).toFixed(1)}ms
+                  </span>
+                  {span.statusCode === "STATUS_CODE_ERROR" ? (
+                    <Badge variant="destructive">error</Badge>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
       ) : null}
 
       {run && run.issues.length > 0 ? (
@@ -323,19 +490,19 @@ function RunDetailPage() {
         </Card>
       ) : null}
 
-      {logsByRun.length > 0 ? (
+      {logsByRun.length > 0 || liveLogs.length > 0 ? (
         <Card>
           <CardHeader>
             <CardTitle className="text-sm">
               Logs{" "}
               <span className="font-normal text-muted-foreground">
-                (newest last)
+                (newest last{live ? ", streaming" : ""})
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-1 font-mono text-xs">
-              {logsByRun.map((log, index) => (
+              {[...logsByRun, ...liveLogs].slice(-500).map((log, index) => (
                 <li key={`${log.tsNanos}-${index}`} className="flex gap-2">
                   <span className="shrink-0 text-muted-foreground">
                     {relativeTime(log.tsNanos)}

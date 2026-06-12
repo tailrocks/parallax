@@ -59,13 +59,17 @@ traces, the log stream, the process-metrics card (CPU, memory, tokio
 tasks), and the evidence bundle on one page. `jackin` also appears in the
 service selector on the Logs/Traces/Services pages.
 
+On the run page, **Go live** streams the run's new logs and finished spans
+over SSE and repolls the metrics card every 5 s — the single observation
+entrance while the run executes.
+
 CLI (what an agent runs):
 
 ```sh
+parallax run watch jk-run-e4ba1d --for 30s  # live logs + spans, then counts
 parallax run inspect jk-run-e4ba1d        # status, counts, issues
 parallax logs --run jk-run-e4ba1d         # the run's log stream
-parallax logs --service jackin --follow   # live tail while it runs
-parallax traces --service jackin --since 1h
+parallax traces --run jk-run-e4ba1d       # the run's traces
 parallax run bundle jk-run-e4ba1d         # agent handoff (Markdown)
 parallax sql "SELECT name, avg(value) FROM otel_metrics_points \
   WHERE run_id = 'jk-run-e4ba1d' GROUP BY name"

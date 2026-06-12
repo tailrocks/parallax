@@ -397,6 +397,7 @@ pub async fn logs(client: &Client, filter: LogsFilter<'_>) -> anyhow::Result<()>
 /// The CLI mirror of the UI Traces page filters.
 pub struct TracesFilter<'a> {
     pub service: Option<&'a str>,
+    pub run: Option<&'a str>,
     pub min_duration: Option<&'a str>,
     pub errors_only: bool,
     pub grep: Option<&'a str>,
@@ -423,32 +424,48 @@ fn parse_duration_ms(value: &str) -> anyhow::Result<f64> {
     }
 }
 
-/// `parallax traces [--service] [--min-duration] [--errors] [--grep] [--since] [--limit]`.
+/// `parallax traces [--run] [--service] [--min-duration] [--errors] [--grep] [--since] [--limit]`.
 pub async fn traces(client: &Client, filter: TracesFilter<'_>) -> anyhow::Result<()> {
-    let mut args: Vec<String> = Vec::new();
-    if let Some(service) = filter.service {
-        args.push(format!(r#"service: "{}""#, gql_str(service)));
-    }
-    if let Some(min) = filter.min_duration {
-        args.push(format!("minDurationMs: {}", parse_duration_ms(min)?));
-    }
-    if filter.errors_only {
-        args.push("errorOnly: true".into());
-    }
-    if let Some(needle) = filter.grep {
-        args.push(format!(r#"query: "{}""#, gql_str(needle)));
-    }
-    let from = now_nanos().saturating_sub(parse_since(filter.since)?);
-    args.push(format!(r#"fromNanos: "{from}""#));
-    args.push(format!("limit: {}", filter.limit));
-    let response = client
-        .graphql(&format!(
-            r#"{{ traces({}) {{ traceId rootName service startNanos durationNs spanCount hasError }} }}"#,
-            args.join(", ")
-        ))
-        .await?;
+    // --run anchors on the run's traces (tracesByRun); other filters are
+    // the browse query.
+    let (pointer, query) = match filter.run {
+        Some(run_id) => (
+            "/data/tracesByRun",
+            format!(
+                r#"{{ tracesByRun(runId: "{}", limit: {}) {{ traceId rootName service startNanos durationNs spanCount hasError }} }}"#,
+                gql_str(run_id),
+                filter.limit
+            ),
+        ),
+        None => {
+            let mut args: Vec<String> = Vec::new();
+            if let Some(service) = filter.service {
+                args.push(format!(r#"service: "{}""#, gql_str(service)));
+            }
+            if let Some(min) = filter.min_duration {
+                args.push(format!("minDurationMs: {}", parse_duration_ms(min)?));
+            }
+            if filter.errors_only {
+                args.push("errorOnly: true".into());
+            }
+            if let Some(needle) = filter.grep {
+                args.push(format!(r#"query: "{}""#, gql_str(needle)));
+            }
+            let from = now_nanos().saturating_sub(parse_since(filter.since)?);
+            args.push(format!(r#"fromNanos: "{from}""#));
+            args.push(format!("limit: {}", filter.limit));
+            (
+                "/data/traces",
+                format!(
+                    r#"{{ traces({}) {{ traceId rootName service startNanos durationNs spanCount hasError }} }}"#,
+                    args.join(", ")
+                ),
+            )
+        }
+    };
+    let response = client.graphql(&query).await?;
     let traces = response
-        .pointer("/data/traces")
+        .pointer(pointer)
         .and_then(|v| v.as_array())
         .cloned()
         .unwrap_or_default();
@@ -486,6 +503,7 @@ async fn tail_sse(
     client: &Client,
     path_and_query: &str,
     for_window: Option<&str>,
+    label: &str,
     print: impl Fn(&serde_json::Value),
 ) -> anyhow::Result<()> {
     use tokio_stream::StreamExt as _;
@@ -525,7 +543,7 @@ async fn tail_sse(
         }
     }
     if let Some(window) = for_window {
-        println!("-- watched {window}: {matched} matching event(s)");
+        println!("-- watched {window}: {matched} matching {label}(s)");
     }
     Ok(())
 }
@@ -557,6 +575,7 @@ pub async fn logs_follow(
         client,
         &format!("/v1/logs/stream{query}"),
         for_window,
+        "log event",
         |log| {
             println!(
                 "{:<10} [{}] {} {}",
@@ -589,31 +608,83 @@ pub async fn traces_follow(
     if let Some(needle) = filter.grep {
         params.push(("q", needle.into()));
     }
+    if let Some(run_id) = filter.run {
+        params.push(("run_id", run_id.into()));
+    }
     let query = encode_query(&params);
     tail_sse(
         client,
         &format!("/v1/traces/stream{query}"),
         for_window,
-        |span| {
-            let millis = span["durationNs"]
-                .as_str()
-                .and_then(|d| d.parse::<u128>().ok())
-                .unwrap_or(0) as f64
-                / 1e6;
-            println!(
-                "{:<10} {} [{}] {} — {millis:.1}ms {}",
-                relative(span["tsNanos"].as_str().unwrap_or("0")),
-                span["traceId"].as_str().unwrap_or("-"),
-                span["service"].as_str().unwrap_or("-"),
-                span["name"].as_str().unwrap_or("-"),
-                span["statusCode"]
-                    .as_str()
-                    .map(|s| s.trim_start_matches("STATUS_CODE_"))
-                    .unwrap_or("-"),
-            );
-        },
+        "span",
+        print_span_line,
     )
     .await
+}
+
+fn print_span_line(span: &serde_json::Value) {
+    let millis = span["durationNs"]
+        .as_str()
+        .and_then(|d| d.parse::<u128>().ok())
+        .unwrap_or(0) as f64
+        / 1e6;
+    println!(
+        "{:<10} {} [{}] {} — {millis:.1}ms {}",
+        relative(span["tsNanos"].as_str().unwrap_or("0")),
+        span["traceId"].as_str().unwrap_or("-"),
+        span["service"].as_str().unwrap_or("-"),
+        span["name"].as_str().unwrap_or("-"),
+        span["statusCode"]
+            .as_str()
+            .map(|s| s.trim_start_matches("STATUS_CODE_"))
+            .unwrap_or("-"),
+    );
+}
+
+/// `parallax run watch <run_id>` — the run-scoped combined live tail: new
+/// log records and finished spans for one run id, interleaved as they
+/// arrive (the CLI mirror of the run page's Live mode). `--for 30s` watches
+/// a fixed window and reports per-stream match counts — the agent
+/// verification loop for a specific run.
+pub async fn run_watch(
+    client: &Client,
+    run_id: &str,
+    level: Option<&str>,
+    grep: Option<&str>,
+    for_window: Option<&str>,
+) -> anyhow::Result<()> {
+    println!(
+        "watching run {run_id} — live logs + spans{}",
+        for_window
+            .map(|w| format!(" for {w}"))
+            .unwrap_or_else(|| " (Ctrl-C to stop)".into())
+    );
+    let mut log_params: Vec<(&str, String)> = vec![("run_id", run_id.into())];
+    if let Some(level) = level {
+        log_params.push(("severity_min", severity_min(level)?.to_string()));
+    }
+    if let Some(needle) = grep {
+        log_params.push(("q", needle.into()));
+    }
+    let span_params: Vec<(&str, String)> = vec![("run_id", run_id.into())];
+    let logs_path = format!("/v1/logs/stream{}", encode_query(&log_params));
+    let spans_path = format!("/v1/traces/stream{}", encode_query(&span_params));
+    let logs = tail_sse(client, &logs_path, for_window, "log event", |log| {
+        println!(
+            "[log]  {:<10} {} {}",
+            relative(log["tsNanos"].as_str().unwrap_or("0")),
+            log["severityText"].as_str().unwrap_or("-"),
+            log["body"].as_str().unwrap_or(""),
+        );
+    });
+    let spans = tail_sse(client, &spans_path, for_window, "span", |span| {
+        print!("[span] ");
+        print_span_line(span);
+    });
+    let (logs, spans) = tokio::join!(logs, spans);
+    logs?;
+    spans?;
+    Ok(())
 }
 
 fn encode_query(params: &[(&str, String)]) -> String {
