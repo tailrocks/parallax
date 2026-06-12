@@ -29,7 +29,7 @@ is no release process or CI contract yet.
 | Path | Purpose |
 | --- | --- |
 | `docs/` | Documentation and research notes. No generated docs UI yet. |
-| `docs/guide/` | User-facing V1 docs shipped per scope §2.8: quickstart, CLI reference, agent how-to, conventions. |
+| `docs/guide/` | User-facing V1 docs shipped per scope §2.8: quickstart, CLI reference, agent how-to, conventions, jackin' integration recipe. |
 | `docs/research/` | Market, product, and strategy research, grouped by topic. The canonical per-note index is [`docs/research/README.md`](docs/research/README.md). |
 | `docs/research/00-vision/` | Why this product: problem/audience/product-shape front door, the north-star autonomous fix loop + impossible triangle, thesis, world-before-Parallax stack, platform direction, AI-native observability synthesis. |
 | `docs/research/decisions/` | ADR-style decision records — current truth, conclusion first (go/no-go, strategic coverage, risks, the dated skeptical re-assessment, storage engine, V1 storage adapter vision, stack decision, metadata store, agent access surface, fixer boundary). |
