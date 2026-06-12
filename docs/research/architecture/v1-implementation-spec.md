@@ -62,6 +62,12 @@ measurements); intern repeated strings (`service`, names) behind `Arc<str>` in t
 rows; batch adapter inserts by size and time window. Every perf claim still goes through
 measured gate rows — this section sets the design posture, not numbers.
 
+**Progress visibility (operator rule, 2026-06-12).** The user never waits in silence: long
+CLI steps narrate as they happen (download progress with MiB/percent/speed, engine start,
+health, table bootstrap), and `parallax serve` ends with a human banner naming every surface —
+UI URL, GraphQL, OTLP ports, storage mode, data dir. New long-running surfaces follow the same
+rule.
+
 ## 2b. UI delivery (decided against the real build, 2026-06-12)
 
 TanStack Start builds in **SPA mode** (`tanstackStart({ spa: { enabled: true } })`) producing

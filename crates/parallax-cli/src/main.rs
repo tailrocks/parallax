@@ -128,12 +128,21 @@ async fn main() -> anyhow::Result<()> {
             let path = config.or(default_path);
             let config = parallax_server::Config::load(path.as_deref())?;
             let handle = parallax_server::start(&config).await?;
-            tracing::info!(
-                api = %handle.api_addr,
-                otlp_grpc = %handle.otlp_grpc_addr,
-                otlp_http = %handle.otlp_http_addr,
-                "parallax serve running; Ctrl-C to stop"
-            );
+            let storage = match config.storage.mode.as_str() {
+                "none" => "in-memory (degraded; data lost on exit)".to_string(),
+                "external" => format!("external GreptimeDB at {}", config.storage.greptime_url),
+                _ => "managed GreptimeDB on 127.0.0.1:24000".to_string(),
+            };
+            println!();
+            println!("  Parallax ready — Ctrl-C to stop");
+            println!();
+            println!("    UI         http://{}", handle.api_addr);
+            println!("    GraphQL    http://{}/graphql", handle.api_addr);
+            println!("    OTLP/gRPC  {}", handle.otlp_grpc_addr);
+            println!("    OTLP/HTTP  {}", handle.otlp_http_addr);
+            println!("    storage    {storage}");
+            println!("    data       {}", config.data_dir().display());
+            println!();
             // SIGTERM must also shut down cleanly — dying without cleanup
             // orphans the managed engine child on its ports.
             let mut sigterm =

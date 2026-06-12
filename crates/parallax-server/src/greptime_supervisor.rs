@@ -240,9 +240,19 @@ impl GreptimeSupervisor {
             http_url: http_url.clone(),
             task: None,
         };
+        tracing::info!(
+            "starting managed GreptimeDB (ports {GREPTIME_HTTP_PORT}–{GREPTIME_POSTGRES_PORT}, \
+             data {})",
+            supervisor.data_home.display()
+        );
+        let started = std::time::Instant::now();
         let child = supervisor.spawn()?;
         supervisor.monitor(child);
         supervisor.wait_healthy(Duration::from_secs(30)).await?;
+        tracing::info!(
+            "GreptimeDB healthy in {:.1}s",
+            started.elapsed().as_secs_f64()
+        );
         Ok(supervisor)
     }
 

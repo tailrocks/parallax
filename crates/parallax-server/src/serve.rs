@@ -98,7 +98,10 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
                 !url.is_empty(),
                 "storage.mode=external requires greptime_url"
             );
-            connect_greptime(url, config).await?
+            tracing::info!("connecting to external GreptimeDB at {url}");
+            let store = connect_greptime(url, config).await?;
+            tracing::info!("storage ready (external engine)");
+            store
         }
         _ => {
             let binary = crate::greptime_supervisor::ensure_binary(
@@ -111,7 +114,10 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
                 crate::greptime_supervisor::GreptimeSupervisor::start(binary, &data_dir).await?;
             let url = started.http_url.clone();
             supervisor = Some(started);
-            connect_greptime(&url, config).await?
+            tracing::info!("bootstrapping telemetry tables");
+            let store = connect_greptime(&url, config).await?;
+            tracing::info!("storage ready (managed engine)");
+            store
         }
     };
     let metadata = Arc::new(MetadataStore::open(data_dir.join("meta.db")).await?);

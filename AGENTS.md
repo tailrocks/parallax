@@ -27,6 +27,12 @@ structure quickly.
   recommended practices of every ecosystem touched (Rust, TypeScript, React,
   TanStack, shadcn). Inside Parallax, ingest is zero-copy by design: decode
   once, move ownership forward, never clone telemetry on the hot path.
+- Progress visibility (operator, 2026-06-12): the user must never wait in
+  silence. Every long-running CLI step narrates what is happening as it
+  happens — downloads show progress and speed, engine startup and table
+  bootstrap announce themselves, and serve ends with a ready banner naming
+  every surface (UI URL, GraphQL, OTLP ports, storage mode, data dir).
+  Applies to every future long-running surface.
 - Version policy (operator, 2026-06-12): always use the latest stable versions
   everywhere — crates, engines, UI dependencies, toolchains. Version tables in
   docs are known-compatible floors, not freezes; when implementing, resolve
