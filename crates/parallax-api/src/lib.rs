@@ -287,8 +287,14 @@ impl LogRecord {
     fn run_id(&self) -> Option<&str> {
         self.0.run_id.as_deref()
     }
+    fn scope_name(&self) -> &str {
+        &self.0.scope_name
+    }
     fn attributes(&self) -> String {
         self.0.attributes.to_string()
+    }
+    fn resource(&self) -> String {
+        self.0.resource.to_string()
     }
 }
 

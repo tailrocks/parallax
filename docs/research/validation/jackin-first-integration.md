@@ -103,6 +103,10 @@ Against a live `parallax serve` (managed GreptimeDB, default ports):
   and there is no UI search box for a pasted run id. Follow-up: a run-id
   lookup input (mirroring the trace-id lookup page) or auto-registering
   externally-seen run ids from ingest.
+  **Closed 2026-06-12:** the ingest worker now auto-registers every run id
+  first seen in telemetry (status `external`, spec §6), the runs list shows
+  them, `/runs/$runId` is a full detail page (issues, trace summaries, logs,
+  run-anchored bundle), and the traces page gained a run-id lookup.
 - **Gap found (metrics):** jackin' exports no OTLP metrics yet — stage
   durations arrive as spans and the run summary as a log record, which
   covers the ask, but counter/gauge export (cache hits, event counts as

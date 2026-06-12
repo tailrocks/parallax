@@ -376,7 +376,8 @@ type Span { tsNanos: String!, service: String!, traceId: String!, spanId: String
 type TraceSummary { traceId: String!, rootName: String, service: String, tsNanos: String!,
   durationNs: String!, spanCount: Int!, errorCount: Int! }   # errorCount = ERROR-status spans
 type LogRecord { tsNanos: String!, service: String!, severityNum: Int!, severityText: String!,
-  body: String!, traceId: String!, spanId: String!, runId: String, attributes: String! }
+  body: String!, traceId: String!, spanId: String!, runId: String, scopeName: String!,
+  attributes: String!, resource: String! }
 type Series { groupValue: String, points: [Point!]! }   # groupValue null when ungrouped
 type Point { tsNanos: String!, value: Float! }
 type TrendPoint { tsNanos: String!, count: Int! }

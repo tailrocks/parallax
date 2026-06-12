@@ -55,6 +55,30 @@ against a running `parallax serve` on the real ports with a fresh data dir:
 - Demo data for all of the above comes from
   `cargo run -p parallax-server --example seed`.
 
+### Addendum — contract-completion surfaces verified live (2026-06-12, later same day)
+
+After the spec-§8 contract completion landed, the new surfaces were exercised
+the same way (running serve, real engine + the jackin data history, headless
+Chrome, zero console errors):
+
+- **Span detail pane** on the trace waterfall: clicking the `query orders`
+  span showed `db.query.text` (`SELECT id, total FROM orders WHERE cart_id =
+  $1`), `db.operation.name`, `db.system.name`, kind, duration — acceptance
+  scenario 2's "query text in the waterfall span detail" now demonstrably
+  renders in the UI, not only in the bundle.
+- **Run model end-to-end**: `parallax run start -- …seed` → `run inspect`
+  (status, exit code, 3 traces / 4 errors, both grouped issues) →
+  `issue list --run <id>` → `run bundle <id>` (run section, issues-in-run,
+  primary issue, trace with the captured query, hypotheses) → the same run's
+  `/runs/$runId` page (record badges, issues, trace summaries, logs, bundle
+  preview). Externally-seen run ids auto-register with status `external`.
+- **Logs page** over the unified `logs` filter API with the real jackin
+  firehose (hundreds of rows) + the count histogram; a missing
+  `scopeName`/`resource` on the API's LogRecord was found by this run and
+  fixed (the page's object view selects them).
+- **Issues list** filters/sort/per-row sparkline/total and **issue detail**
+  resolve button, SDK context section, breadcrumb logs, clickable trend.
+
 ## Honest caveats
 
 - The latency gates were measured through the in-process test harness

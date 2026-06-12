@@ -1,47 +1,95 @@
 import { Link, createFileRoute } from "@tanstack/react-router"
-import { graphql, relativeTime } from "@/lib/api"
-import type { LogRecord, Span } from "@/lib/api"
+import { graphql, gqlString, relativeTime } from "@/lib/api"
+import type { LogRecord } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-interface RunTrace {
+interface RunIssue {
+  fingerprint: string
+  title: string
+  status: string
+  eventCount: number
+}
+
+interface RunRecordData {
+  runId: string
+  command: string | null
+  status: string
+  exitCode: number | null
+  startedAtNanos: string
+  errorCount: number
+  traceCount: number
+  issues: RunIssue[]
+}
+
+interface RunTraceSummary {
   traceId: string
-  spans: Span[]
+  rootName: string
+  service: string
+  startNanos: string
+  durationNs: string
+  spanCount: number
+  hasError: boolean
 }
 
 export const Route = createFileRoute("/runs/$runId")({
   loader: ({ params }) =>
-    graphql<{ tracesByRun: RunTrace[]; logsByRun: LogRecord[] }>(
-      `{ tracesByRun(runId: "${params.runId}") {
-           traceId
-           spans { tsNanos service name kind statusCode durationNs spanId parentSpanId }
+    graphql<{
+      run: RunRecordData | null
+      tracesByRun: RunTraceSummary[]
+      logsByRun: LogRecord[]
+      bundle: { markdown: string } | null
+    }>(
+      `{ run(runId: "${gqlString(params.runId)}") {
+           runId command status exitCode startedAtNanos
+           errorCount traceCount
+           issues { fingerprint title status eventCount }
          }
-         logsByRun(runId: "${params.runId}") {
+         tracesByRun(runId: "${gqlString(params.runId)}") {
+           traceId rootName service startNanos durationNs spanCount hasError
+         }
+         logsByRun(runId: "${gqlString(params.runId)}", limit: 200) {
            tsNanos service severityText body traceId
-         } }`,
+         }
+         bundle(runId: "${gqlString(params.runId)}") { markdown } }`
     ),
   component: RunDetailPage,
 })
 
-function durationMs(spans: Span[]): string {
-  const max = spans.reduce(
-    (acc, span) => Math.max(acc, Number(span.durationNs)),
-    0,
-  )
-  return (max / 1e6).toFixed(1)
-}
-
 function RunDetailPage() {
-  const { tracesByRun, logsByRun } = Route.useLoaderData()
+  const { run, tracesByRun, logsByRun, bundle } = Route.useLoaderData()
   const { runId } = Route.useParams()
-  const empty = tracesByRun.length === 0 && logsByRun.length === 0
+  const empty = !run && tracesByRun.length === 0 && logsByRun.length === 0
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <h1 className="font-mono text-lg font-semibold">{runId}</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="font-mono text-lg font-semibold">{runId}</h1>
+          {run ? (
+            <Badge
+              variant={
+                run.status === "running"
+                  ? "default"
+                  : run.status === "external"
+                    ? "outline"
+                    : "secondary"
+              }
+            >
+              {run.status}
+            </Badge>
+          ) : null}
+          {run?.exitCode != null ? (
+            <Badge variant={run.exitCode === 0 ? "secondary" : "destructive"}>
+              exit {run.exitCode}
+            </Badge>
+          ) : null}
+        </div>
         <p className="text-sm text-muted-foreground">
-          {tracesByRun.length} trace(s) · {logsByRun.length} log(s) · agent
-          handoff: <code>parallax logs --run {runId}</code>
+          {run?.command ? <code className="mr-2">{run.command}</code> : null}
+          {run ? `started ${relativeTime(run.startedAtNanos)} · ` : ""}
+          {run ? `${run.traceCount} trace(s) · ${run.errorCount} error(s) · ` : ""}
+          {logsByRun.length} log(s) · agent handoff:{" "}
+          <code>parallax run bundle {runId}</code>
         </p>
       </div>
 
@@ -52,6 +100,42 @@ function RunDetailPage() {
         </p>
       ) : null}
 
+      {run && run.issues.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Issues in this run</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm">
+              {run.issues.map((issue) => (
+                <li
+                  key={issue.fingerprint}
+                  className="flex flex-wrap items-center gap-2"
+                >
+                  <Link
+                    to="/issues/$fingerprint"
+                    params={{ fingerprint: issue.fingerprint }}
+                    className="font-medium underline underline-offset-4"
+                  >
+                    {issue.title}
+                  </Link>
+                  <Badge
+                    variant={
+                      issue.status === "open" ? "destructive" : "secondary"
+                    }
+                  >
+                    {issue.status}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {issue.eventCount} event(s)
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      ) : null}
+
       {tracesByRun.length > 0 ? (
         <Card>
           <CardHeader>
@@ -59,37 +143,32 @@ function RunDetailPage() {
           </CardHeader>
           <CardContent>
             <ul className="space-y-3">
-              {tracesByRun.map((trace) => {
-                const root =
-                  trace.spans.find((span) => !span.parentSpanId) ??
-                  trace.spans[0]
-                const failed = trace.spans.some(
-                  (span) => span.statusCode === "STATUS_CODE_ERROR",
-                )
-                return (
-                  <li
-                    key={trace.traceId}
-                    className="flex flex-wrap items-center gap-2 border-b pb-3 text-sm last:border-b-0"
+              {tracesByRun.map((trace) => (
+                <li
+                  key={trace.traceId}
+                  className="flex flex-wrap items-center gap-2 border-b pb-3 text-sm last:border-b-0"
+                >
+                  <Link
+                    to="/traces/$traceId"
+                    params={{ traceId: trace.traceId }}
+                    className="font-medium underline underline-offset-4"
                   >
-                    <Link
-                      to="/traces/$traceId"
-                      params={{ traceId: trace.traceId }}
-                      className="font-medium underline underline-offset-4"
-                    >
-                      {root?.name ?? trace.traceId}
-                    </Link>
-                    {failed ? <Badge variant="destructive">error</Badge> : null}
-                    <span className="text-xs text-muted-foreground">
-                      {trace.spans.length} span(s) · {durationMs(trace.spans)}
-                      ms ·{" "}
-                      {root ? relativeTime(root.tsNanos) : ""}
-                    </span>
-                    <code className="text-xs text-muted-foreground">
-                      {trace.traceId}
-                    </code>
-                  </li>
-                )
-              })}
+                    {trace.rootName || trace.traceId}
+                  </Link>
+                  <Badge variant="outline">{trace.service}</Badge>
+                  {trace.hasError ? (
+                    <Badge variant="destructive">error</Badge>
+                  ) : null}
+                  <span className="text-xs text-muted-foreground">
+                    {trace.spanCount} span(s) ·{" "}
+                    {(Number(trace.durationNs) / 1e6).toFixed(1)}ms ·{" "}
+                    {relativeTime(trace.startNanos)}
+                  </span>
+                  <code className="text-xs text-muted-foreground">
+                    {trace.traceId}
+                  </code>
+                </li>
+              ))}
             </ul>
           </CardContent>
         </Card>
@@ -119,6 +198,24 @@ function RunDetailPage() {
                 </li>
               ))}
             </ul>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {bundle ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">
+              Evidence bundle{" "}
+              <span className="font-normal text-muted-foreground">
+                (what <code>parallax run bundle {runId}</code> hands the agent)
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <pre className="max-h-96 overflow-auto rounded-md bg-muted p-3 text-xs leading-relaxed whitespace-pre-wrap">
+              {bundle.markdown}
+            </pre>
           </CardContent>
         </Card>
       ) : null}
