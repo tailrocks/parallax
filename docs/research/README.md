@@ -95,6 +95,7 @@ This directory is the research record behind Parallax. It is organized so a read
 - [business-model.md](validation/business-model.md) — business-model/economics analysis + validation ledger.
 - [monetization-and-paying-segment.md](validation/monetization-and-paying-segment.md) — the paying buyer (hard-boundary/air-gap/sovereign self-hoster) sized, and the monetization shape (Apache-2.0 open core + gated enterprise-ops + managed cloud + outcome-priced fixer).
 - [repo-intent.md](validation/repo-intent.md) — how much Parallax depends on a context-rich repo (runtime floor vs intent multiplier) + ledger.
+- [jackin-first-integration.md](validation/jackin-first-integration.md) — the first real CLI on Parallax: jackin' run telemetry over OTLP (design, verified end-to-end evidence, gaps found, operator verification recipe).
 
 > A4 lives in [capture/correlation.md](capture/correlation.md), A5 in [decisions/stack-decision.md](decisions/stack-decision.md), A6 in [capture/redaction.md](capture/redaction.md).
 
