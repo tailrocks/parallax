@@ -121,20 +121,17 @@ pub async fn run_list(client: &Client) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// `parallax run inspect <run_id>` — the run's record (run-scoped telemetry
-/// joins land with the adapter's run-filtered reads in the next slice).
+/// `parallax run inspect <run_id>` — the run's record plus its derived
+/// counts and grouped issues.
 pub async fn run_inspect(client: &Client, run_id: &str) -> anyhow::Result<()> {
     let response = client
-        .graphql(
-            r#"{ runs(limit: 500) { runId command status exitCode startedAtNanos endedAtNanos } }"#,
-        )
+        .graphql(&format!(
+            r#"{{ run(runId: "{}") {{ runId command status exitCode startedAtNanos endedAtNanos
+                 errorCount traceCount issues {{ fingerprint title }} }} }}"#,
+            gql_str(run_id)
+        ))
         .await?;
-    let runs = response
-        .pointer("/data/runs")
-        .and_then(|v| v.as_array())
-        .cloned()
-        .unwrap_or_default();
-    let Some(run) = runs.iter().find(|r| r["runId"] == run_id) else {
+    let Some(run) = response.pointer("/data/run").filter(|v| !v.is_null()) else {
         anyhow::bail!("run {run_id} not found");
     };
     println!("run {run_id}");
@@ -147,24 +144,81 @@ pub async fn run_inspect(client: &Client, run_id: &str) -> anyhow::Result<()> {
     if let Some(code) = run["exitCode"].as_i64() {
         println!("  exit:    {code}");
     }
-    println!("issues from this period: parallax issue list");
+    println!("  traces:  {}", run["traceCount"].as_i64().unwrap_or(0));
+    println!("  errors:  {}", run["errorCount"].as_i64().unwrap_or(0));
+    if let Some(issues) = run["issues"].as_array()
+        && !issues.is_empty()
+    {
+        println!("issues in this run:");
+        for issue in issues {
+            println!(
+                "  {}  {}",
+                issue["fingerprint"].as_str().unwrap_or("-"),
+                issue["title"].as_str().unwrap_or("-"),
+            );
+        }
+        println!("context: parallax issue context <fingerprint>");
+    }
+    println!("bundle: parallax run bundle {run_id}   traces: parallax trace inspect <trace_id>");
     Ok(())
 }
 
-pub async fn issue_list(client: &Client, status: Option<&str>) -> anyhow::Result<()> {
-    let filter = status
-        .map(|s| format!(r#"(status: "{}")"#, gql_str(s)))
-        .unwrap_or_default();
+/// `parallax run bundle <run_id>` — the run-anchored evidence bundle
+/// (scope §2.4: the run model's bundle).
+pub async fn run_bundle(client: &Client, run_id: &str) -> anyhow::Result<()> {
     let response = client
         .graphql(&format!(
-            r#"{{ issues{filter} {{ fingerprint title service status eventCount lastSeenNanos }} }}"#
+            r#"{{ bundle(runId: "{}") {{ markdown canonicalHash }} }}"#,
+            gql_str(run_id)
         ))
         .await?;
-    let issues = response
-        .pointer("/data/issues")
+    let Some(bundle) = response.pointer("/data/bundle").filter(|v| !v.is_null()) else {
+        anyhow::bail!("run {run_id} not found");
+    };
+    println!("{}", bundle["markdown"].as_str().unwrap_or(""));
+    if let Some(hash) = bundle["canonicalHash"].as_str() {
+        println!("\n---\nbundle: {hash}");
+    }
+    Ok(())
+}
+
+pub async fn issue_list(
+    client: &Client,
+    status: Option<&str>,
+    run: Option<&str>,
+) -> anyhow::Result<()> {
+    // Run scoping reads the run's issues; otherwise the filtered issue list.
+    let (pointer, query) = match run {
+        Some(run_id) => (
+            "/data/run/issues",
+            format!(
+                r#"{{ run(runId: "{}") {{ issues {{ fingerprint title service status eventCount lastSeenNanos }} }} }}"#,
+                gql_str(run_id)
+            ),
+        ),
+        None => (
+            "/data/issues/items",
+            format!(
+                r#"{{ issues{} {{ items {{ fingerprint title service status eventCount lastSeenNanos }} }} }}"#,
+                status
+                    .map(|s| format!(r#"(status: "{}")"#, gql_str(s)))
+                    .unwrap_or_default()
+            ),
+        ),
+    };
+    let response = client.graphql(&query).await?;
+    if run.is_some() && response.pointer("/data/run").is_some_and(|v| v.is_null()) {
+        anyhow::bail!("run {} not found", run.unwrap_or_default());
+    }
+    let mut issues = response
+        .pointer(pointer)
         .and_then(|v| v.as_array())
         .cloned()
         .unwrap_or_default();
+    if let Some(status) = status {
+        // The run path has no server-side status filter; apply it here.
+        issues.retain(|i| i["status"].as_str() == Some(status));
+    }
     if issues.is_empty() {
         println!("no issues — either your code is perfect or nothing is sending telemetry yet");
         return Ok(());
@@ -206,53 +260,92 @@ pub async fn issue_context(client: &Client, fingerprint: &str) -> anyhow::Result
     Ok(())
 }
 
-/// `parallax logs --trace <id> | --run <id> [--grep <substr>]`.
-pub async fn logs(
-    client: &Client,
-    trace: Option<&str>,
-    run: Option<&str>,
-    grep: Option<&str>,
-) -> anyhow::Result<()> {
-    let (field, query) = match (trace, run) {
-        (Some(trace_id), _) => (
-            "logsByTrace",
-            format!(
-                r#"{{ logsByTrace(traceId: "{}") {{ tsNanos service severityText body }} }}"#,
-                gql_str(trace_id)
-            ),
-        ),
-        (None, Some(run_id)) => (
-            "logsByRun",
-            format!(
-                r#"{{ logsByRun(runId: "{}") {{ tsNanos service severityText body }} }}"#,
-                gql_str(run_id)
-            ),
-        ),
-        (None, None) => anyhow::bail!("pass --trace <id> or --run <id>"),
+/// The CLI mirror of the UI Logs page filters — agents compose the same
+/// scoping (trace/run/service/level/text/window) in one command.
+pub struct LogsFilter<'a> {
+    pub trace: Option<&'a str>,
+    pub run: Option<&'a str>,
+    pub service: Option<&'a str>,
+    pub level: Option<&'a str>,
+    pub grep: Option<&'a str>,
+    pub since: &'a str,
+    pub limit: u32,
+}
+
+fn severity_min(level: &str) -> anyhow::Result<i32> {
+    // OTel severity number floors per level.
+    Ok(match level.to_ascii_lowercase().as_str() {
+        "trace" => 1,
+        "debug" => 5,
+        "info" => 9,
+        "warn" | "warning" => 13,
+        "error" => 17,
+        "fatal" => 21,
+        other => anyhow::bail!("unknown level '{other}' (trace|debug|info|warn|error|fatal)"),
+    })
+}
+
+fn parse_since(since: &str) -> anyhow::Result<u128> {
+    let (digits, unit) = since.split_at(since.len().saturating_sub(1));
+    let n: u128 = digits
+        .parse()
+        .map_err(|_| anyhow::anyhow!("invalid --since '{since}' (e.g. 15m, 2h, 7d)"))?;
+    let seconds = match unit {
+        "s" => n,
+        "m" => n * 60,
+        "h" => n * 3600,
+        "d" => n * 86_400,
+        _ => anyhow::bail!("invalid --since unit '{unit}' (s|m|h|d)"),
     };
-    let response = client.graphql(&query).await?;
+    Ok(seconds * 1_000_000_000)
+}
+
+/// `parallax logs [--trace|--run] [--service] [--level] [--grep] [--since] [--limit]`.
+pub async fn logs(client: &Client, filter: LogsFilter<'_>) -> anyhow::Result<()> {
+    let mut args: Vec<String> = Vec::new();
+    if let Some(trace_id) = filter.trace {
+        args.push(format!(r#"traceId: "{}""#, gql_str(trace_id)));
+    }
+    if let Some(run_id) = filter.run {
+        args.push(format!(r#"runId: "{}""#, gql_str(run_id)));
+    }
+    if let Some(service) = filter.service {
+        args.push(format!(r#"service: "{}""#, gql_str(service)));
+    }
+    if let Some(level) = filter.level {
+        args.push(format!("severityMin: {}", severity_min(level)?));
+    }
+    if let Some(needle) = filter.grep {
+        args.push(format!(r#"query: "{}""#, gql_str(needle)));
+    }
+    if filter.trace.is_none() && filter.run.is_none() {
+        let from = now_nanos().saturating_sub(parse_since(filter.since)?);
+        args.push(format!(r#"fromNanos: "{from}""#));
+    }
+    args.push(format!("limit: {}", filter.limit));
+    let response = client
+        .graphql(&format!(
+            r#"{{ logs({}) {{ tsNanos service severityText body }} }}"#,
+            args.join(", ")
+        ))
+        .await?;
     let logs = response
-        .pointer(&format!("/data/{field}"))
+        .pointer("/data/logs")
         .and_then(|v| v.as_array())
         .cloned()
         .unwrap_or_default();
-    let mut shown = 0usize;
+    if logs.is_empty() {
+        println!("no matching logs");
+        return Ok(());
+    }
     for log in &logs {
-        let body = log["body"].as_str().unwrap_or("");
-        if grep.is_some_and(|g| !body.contains(g)) {
-            continue;
-        }
         println!(
             "{:<10} [{}] {} {}",
             relative(log["tsNanos"].as_str().unwrap_or("0")),
             log["service"].as_str().unwrap_or("-"),
             log["severityText"].as_str().unwrap_or("-"),
-            body,
+            log["body"].as_str().unwrap_or(""),
         );
-        shown += 1;
-    }
-    if shown == 0 {
-        println!("no matching logs");
     }
     Ok(())
 }

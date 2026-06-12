@@ -3,7 +3,7 @@
 //! kernels) onto the live row model. The same JSON powers the GraphQL
 //! `bundle` field, the CLI's `issue context`, and the UI's bundle preview.
 
-use parallax_storage::model::{ErrorEventRow, Issue, LogRow, SpanRow};
+use parallax_storage::model::{ErrorEventRow, Issue, LogRow, RunRecord, SpanRow};
 use regex::Regex;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -17,7 +17,12 @@ pub struct Bundle {
     pub schema_version: &'static str,
     pub generator: &'static str,
     pub anchor: Anchor,
-    pub issue: IssueSummary,
+    /// The primary grouped issue — always present for issue anchors; for
+    /// run/trace anchors it is the issue behind the newest error event, when
+    /// any error occurred at all.
+    pub issue: Option<IssueSummary>,
+    /// Run context for run anchors (spec §8 `bundle(runId:)`).
+    pub run: Option<RunSection>,
     pub latest_event: Option<EventDetail>,
     pub trace: Option<TraceSection>,
     pub logs: Vec<String>,
@@ -31,7 +36,20 @@ pub struct Bundle {
 #[derive(Debug, Serialize)]
 pub struct Anchor {
     pub kind: &'static str,
-    pub fingerprint: String,
+    /// The anchoring identifier: issue fingerprint, run id, or trace id.
+    pub id: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct RunSection {
+    pub run_id: String,
+    pub command: Option<String>,
+    pub status: String,
+    pub exit_code: Option<i32>,
+    pub started_at_nanos: String,
+    pub ended_at_nanos: Option<String>,
+    /// Every grouped issue whose events fell inside this run's traces.
+    pub issues: Vec<IssueSummary>,
 }
 
 #[derive(Debug, Serialize)]
@@ -136,13 +154,41 @@ fn estimate_tokens(text: &str) -> usize {
     text.chars().count().div_ceil(4)
 }
 
+/// What the bundle is anchored to (spec §8: exactly one of issue fingerprint,
+/// run id, trace id).
+pub enum BundleAnchor {
+    Issue(Box<Issue>),
+    Run {
+        run: Box<RunRecord>,
+        /// Grouped issues whose events fell inside the run's traces.
+        issues: Vec<Issue>,
+    },
+    Trace {
+        trace_id: String,
+        issues: Vec<Issue>,
+    },
+}
+
 /// Inputs for assembly — the caller (API layer) fetches these through the
 /// storage adapters; assembly itself is pure and deterministic.
 pub struct BundleInputs {
-    pub issue: Issue,
+    pub anchor: BundleAnchor,
     pub events: Vec<ErrorEventRow>,
     pub trace_spans: Vec<SpanRow>,
     pub trace_logs: Vec<LogRow>,
+}
+
+fn issue_summary(issue: &Issue) -> IssueSummary {
+    IssueSummary {
+        title: issue.title.clone(),
+        error_type: issue.error_type.clone(),
+        culprit: issue.culprit.clone(),
+        service: issue.service.clone(),
+        status: issue.status.clone(),
+        event_count: issue.event_count,
+        first_seen_nanos: issue.first_seen_nanos.to_string(),
+        last_seen_nanos: issue.last_seen_nanos.to_string(),
+    }
 }
 
 pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
@@ -151,6 +197,58 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
         ..Default::default()
     };
     let mut missing = Vec::new();
+
+    // Resolve the anchor into its sections and the primary issue.
+    let (anchor, run_section, primary_issue) = match &inputs.anchor {
+        BundleAnchor::Issue(issue) => (
+            Anchor {
+                kind: "issue",
+                id: issue.fingerprint.clone(),
+            },
+            None,
+            Some(issue.as_ref().clone()),
+        ),
+        BundleAnchor::Run { run, issues } => {
+            let primary = inputs
+                .events
+                .first()
+                .and_then(|e| issues.iter().find(|i| i.fingerprint == e.fingerprint))
+                .or_else(|| issues.first())
+                .cloned();
+            (
+                Anchor {
+                    kind: "run",
+                    id: run.run_id.clone(),
+                },
+                Some(RunSection {
+                    run_id: run.run_id.clone(),
+                    command: run.command.clone(),
+                    status: run.status.clone(),
+                    exit_code: run.exit_code,
+                    started_at_nanos: run.started_at_nanos.to_string(),
+                    ended_at_nanos: run.ended_at_nanos.map(|n| n.to_string()),
+                    issues: issues.iter().map(issue_summary).collect(),
+                }),
+                primary,
+            )
+        }
+        BundleAnchor::Trace { trace_id, issues } => {
+            let primary = inputs
+                .events
+                .first()
+                .and_then(|e| issues.iter().find(|i| i.fingerprint == e.fingerprint))
+                .or_else(|| issues.first())
+                .cloned();
+            (
+                Anchor {
+                    kind: "trace",
+                    id: trace_id.clone(),
+                },
+                None,
+                primary,
+            )
+        }
+    };
 
     let latest_event = inputs.events.first().map(|event| EventDetail {
         ts_nanos: event.ts_nanos.to_string(),
@@ -166,7 +264,11 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
         trace_id: event.trace_id.clone(),
     });
     if inputs.events.is_empty() {
-        missing.push("no stored error events for this fingerprint (check retention)".into());
+        missing.push(match anchor.kind {
+            "run" => "no error events inside this run's traces".into(),
+            "trace" => "no error events on this trace".into(),
+            _ => "no stored error events for this fingerprint (check retention)".to_string(),
+        });
     }
 
     let trace = if inputs.trace_spans.is_empty() {
@@ -217,25 +319,19 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
         );
     }
 
-    let hypotheses = rank_hypotheses(&inputs, trace.as_ref());
+    let hypotheses = rank_hypotheses(
+        primary_issue.as_ref(),
+        &inputs.events,
+        trace.as_ref(),
+        &anchor,
+    );
 
     let mut bundle = Bundle {
         schema_version: SCHEMA_VERSION,
         generator: concat!("parallax/", env!("CARGO_PKG_VERSION")),
-        anchor: Anchor {
-            kind: "issue",
-            fingerprint: inputs.issue.fingerprint.clone(),
-        },
-        issue: IssueSummary {
-            title: inputs.issue.title.clone(),
-            error_type: inputs.issue.error_type.clone(),
-            culprit: inputs.issue.culprit.clone(),
-            service: inputs.issue.service.clone(),
-            status: inputs.issue.status.clone(),
-            event_count: inputs.issue.event_count,
-            first_seen_nanos: inputs.issue.first_seen_nanos.to_string(),
-            last_seen_nanos: inputs.issue.last_seen_nanos.to_string(),
-        },
+        anchor,
+        issue: primary_issue.as_ref().map(issue_summary),
+        run: run_section,
         latest_event,
         trace,
         logs: Vec::new(),
@@ -287,13 +383,22 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
     bundle
 }
 
-fn rank_hypotheses(inputs: &BundleInputs, trace: Option<&TraceSection>) -> Vec<Hypothesis> {
+fn rank_hypotheses(
+    primary_issue: Option<&Issue>,
+    events: &[ErrorEventRow],
+    trace: Option<&TraceSection>,
+    anchor: &Anchor,
+) -> Vec<Hypothesis> {
     let mut hypotheses = Vec::new();
-    let message = inputs
-        .events
+    let message = events
         .first()
         .map(|e| e.message.to_lowercase())
         .unwrap_or_default();
+    let anchor_evidence = format!("{} {}", anchor.kind, anchor.id);
+    let error_type = primary_issue
+        .map(|i| i.error_type.as_str())
+        .or_else(|| events.first().map(|e| e.error_type.as_str()))
+        .unwrap_or("The error");
 
     if [
         "timed out",
@@ -308,15 +413,11 @@ fn rank_hypotheses(inputs: &BundleInputs, trace: Option<&TraceSection>) -> Vec<H
         hypotheses.push(Hypothesis {
             kind: "dependency_failure",
             statement: format!(
-                "{} points at a downstream dependency timing out or saturated; check that \
-                 dependency's capacity and latency in this window.",
-                inputs.issue.error_type
+                "{error_type} points at a downstream dependency timing out or saturated; check \
+                 that dependency's capacity and latency in this window."
             ),
             confidence: "medium",
-            evidence: vec![
-                format!("latest event message"),
-                format!("issue {}", inputs.issue.fingerprint),
-            ],
+            evidence: vec!["latest event message".to_string(), anchor_evidence.clone()],
         });
     }
 
@@ -357,7 +458,7 @@ fn rank_hypotheses(inputs: &BundleInputs, trace: Option<&TraceSection>) -> Vec<H
                         missing_evidence for what to instrument next."
                 .into(),
             confidence: "low",
-            evidence: vec![format!("issue {}", inputs.issue.fingerprint)],
+            evidence: vec![anchor_evidence],
         });
     }
     hypotheses
@@ -408,16 +509,56 @@ fn canonical_hash(bundle: &Bundle) -> String {
 /// The agent-facing Markdown projection of the same bundle.
 pub fn to_markdown(bundle: &Bundle) -> String {
     let mut out = String::new();
-    out.push_str(&format!("# {}\n\n", bundle.issue.title));
-    out.push_str(&format!(
-        "- fingerprint: `{}`\n- service: {}\n- status: {}\n- occurrences: {}\n",
-        bundle.anchor.fingerprint,
-        bundle.issue.service,
-        bundle.issue.status,
-        bundle.issue.event_count
-    ));
-    if let Some(culprit) = &bundle.issue.culprit {
-        out.push_str(&format!("- culprit: `{culprit}`\n"));
+    match (&bundle.issue, bundle.anchor.kind) {
+        (Some(issue), "issue") => {
+            out.push_str(&format!("# {}\n\n", issue.title));
+            out.push_str(&format!(
+                "- fingerprint: `{}`\n- service: {}\n- status: {}\n- occurrences: {}\n",
+                bundle.anchor.id, issue.service, issue.status, issue.event_count
+            ));
+            if let Some(culprit) = &issue.culprit {
+                out.push_str(&format!("- culprit: `{culprit}`\n"));
+            }
+        }
+        _ => {
+            out.push_str(&format!(
+                "# {} `{}`\n\n",
+                match bundle.anchor.kind {
+                    "run" => "Run",
+                    "trace" => "Trace",
+                    other => other,
+                },
+                bundle.anchor.id
+            ));
+        }
+    }
+    if let Some(run) = &bundle.run {
+        if let Some(command) = &run.command {
+            out.push_str(&format!("- command: `{command}`\n"));
+        }
+        out.push_str(&format!("- status: {}\n", run.status));
+        if let Some(code) = run.exit_code {
+            out.push_str(&format!("- exit code: {code}\n"));
+        }
+        if run.issues.is_empty() {
+            out.push_str("\nNo grouped issues inside this run.\n");
+        } else {
+            out.push_str("\n## Issues in this run\n\n");
+            for issue in &run.issues {
+                out.push_str(&format!(
+                    "- {} — {} ({} occurrences, {})\n",
+                    issue.error_type, issue.title, issue.event_count, issue.status
+                ));
+            }
+        }
+    }
+    if bundle.anchor.kind != "issue"
+        && let Some(issue) = &bundle.issue
+    {
+        out.push_str(&format!(
+            "\n## Primary issue\n\n{} — {} ({} occurrences, service {})\n",
+            issue.error_type, issue.title, issue.event_count, issue.service
+        ));
     }
     if let Some(event) = &bundle.latest_event {
         out.push_str(&format!("\n## Latest event\n\n{}\n", event.message));

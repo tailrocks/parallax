@@ -2045,6 +2045,7 @@ dependencies = [
  "parallax-core",
  "parallax-storage",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]

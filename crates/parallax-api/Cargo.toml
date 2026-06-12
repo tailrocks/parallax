@@ -8,6 +8,7 @@ authors.workspace = true
 repository.workspace = true
 
 [dependencies]
+tokio = { workspace = true }
 anyhow = { workspace = true }
 juniper = { workspace = true }
 parallax-core = { workspace = true }

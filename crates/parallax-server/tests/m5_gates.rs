@@ -168,7 +168,7 @@ async fn measure_m5_gates() {
     let panic_visible_millis = loop {
         let response: serde_json::Value = client
             .post(format!("http://{}/graphql", handle.api_addr))
-            .json(&serde_json::json!({"query": "{ issues { errorType } }"}))
+            .json(&serde_json::json!({"query": "{ issues { items { errorType } } }"}))
             .send()
             .await
             .expect("issues request")
@@ -176,7 +176,7 @@ async fn measure_m5_gates() {
             .await
             .expect("issues json");
         if response
-            .pointer("/data/issues")
+            .pointer("/data/issues/items")
             .and_then(|v| v.as_array())
             .is_some_and(|a| a.iter().any(|i| i["errorType"] == "panic"))
         {
@@ -192,7 +192,7 @@ async fn measure_m5_gates() {
     // Gate: bundle assembly ≤ 300ms warm. First call warms; then ten timed.
     let issues: serde_json::Value = client
         .post(format!("http://{}/graphql", handle.api_addr))
-        .json(&serde_json::json!({"query": "{ issues { fingerprint errorType } }"}))
+        .json(&serde_json::json!({"query": "{ issues { items { fingerprint errorType } } }"}))
         .send()
         .await
         .expect("issues request")
@@ -200,7 +200,7 @@ async fn measure_m5_gates() {
         .await
         .expect("issues json");
     let fingerprint = issues
-        .pointer("/data/issues")
+        .pointer("/data/issues/items")
         .and_then(|v| v.as_array())
         .and_then(|a| a.iter().find(|i| i["errorType"] == "gate::Timeout"))
         .and_then(|i| i["fingerprint"].as_str())

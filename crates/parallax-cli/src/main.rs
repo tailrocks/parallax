@@ -47,17 +47,29 @@ enum Command {
         #[command(subcommand)]
         command: TraceCommand,
     },
-    /// Correlated logs for a trace or a run.
+    /// Browse logs — the same filters as the UI's Logs page.
     Logs {
-        /// Trace id to fetch logs for.
-        #[arg(long, conflicts_with = "run", required_unless_present = "run")]
+        /// Trace id to scope to.
+        #[arg(long, conflicts_with = "run")]
         trace: Option<String>,
-        /// Run id to fetch logs for.
+        /// Run id to scope to.
         #[arg(long)]
         run: Option<String>,
-        /// Only lines whose body contains this substring.
+        /// Service name to scope to.
         #[arg(long)]
+        service: Option<String>,
+        /// Minimum severity: trace | debug | info | warn | error | fatal.
+        #[arg(long)]
+        level: Option<String>,
+        /// Only lines whose body contains this substring.
+        #[arg(long, alias = "query")]
         grep: Option<String>,
+        /// Time window, e.g. 15m, 2h, 7d (default 15m; ignored with --trace/--run).
+        #[arg(long, default_value = "15m")]
+        since: String,
+        /// Max lines (newest first).
+        #[arg(long, default_value_t = 100)]
+        limit: u32,
     },
     /// Diagnose the local install (server, engine, spool, sizes).
     Doctor,
@@ -85,8 +97,10 @@ enum RunCommand {
     },
     /// Close a bare-mode run.
     Finish { run_id: String, exit_code: i32 },
-    /// Show one run's record.
+    /// Show one run's record (status, counts, issues).
     Inspect { run_id: String },
+    /// The run-anchored evidence bundle (Markdown).
+    Bundle { run_id: String },
     /// List recent runs.
     List,
 }
@@ -95,8 +109,12 @@ enum RunCommand {
 enum IssueCommand {
     /// List grouped errors (newest activity first).
     List {
+        /// Filter by workflow status (open | resolved).
         #[arg(long)]
         status: Option<String>,
+        /// Only issues whose events fell inside this run's traces.
+        #[arg(long)]
+        run: Option<String>,
     },
     /// The agent handoff: Markdown evidence for one issue.
     Context { fingerprint: String },
@@ -164,10 +182,11 @@ async fn main() -> anyhow::Result<()> {
             }
             RunCommand::List => commands::run_list(&client()?).await,
             RunCommand::Inspect { run_id } => commands::run_inspect(&client()?, &run_id).await,
+            RunCommand::Bundle { run_id } => commands::run_bundle(&client()?, &run_id).await,
         },
         Command::Issue { command } => match command {
-            IssueCommand::List { status } => {
-                commands::issue_list(&client()?, status.as_deref()).await
+            IssueCommand::List { status, run } => {
+                commands::issue_list(&client()?, status.as_deref(), run.as_deref()).await
             }
             IssueCommand::Context { fingerprint } => {
                 commands::issue_context(&client()?, &fingerprint).await
@@ -176,7 +195,7 @@ async fn main() -> anyhow::Result<()> {
                 let client = client()?;
                 client
                     .graphql(&format!(
-                        r#"mutation {{ issueSetStatus(fingerprint: "{}", status: "resolved") }}"#,
+                        r#"mutation {{ issueSetStatus(fingerprint: "{}", status: "resolved") {{ status }} }}"#,
                         client::gql_str(&fingerprint)
                     ))
                     .await?;
@@ -189,12 +208,26 @@ async fn main() -> anyhow::Result<()> {
                 commands::trace_inspect(&client()?, &trace_id).await
             }
         },
-        Command::Logs { trace, run, grep } => {
+        Command::Logs {
+            trace,
+            run,
+            service,
+            level,
+            grep,
+            since,
+            limit,
+        } => {
             commands::logs(
                 &client()?,
-                trace.as_deref(),
-                run.as_deref(),
-                grep.as_deref(),
+                commands::LogsFilter {
+                    trace: trace.as_deref(),
+                    run: run.as_deref(),
+                    service: service.as_deref(),
+                    level: level.as_deref(),
+                    grep: grep.as_deref(),
+                    since: &since,
+                    limit,
+                },
             )
             .await
         }

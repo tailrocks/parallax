@@ -6,6 +6,17 @@ use crate::model::*;
 use std::ops::RangeInclusive;
 use std::sync::Mutex;
 
+/// Render one attribute value for grouping — scalars only, like the tag
+/// cache; missing/nested values group under "(none)".
+pub(crate) fn group_value(attributes: &serde_json::Value, key: &str) -> String {
+    match attributes.get(key) {
+        Some(serde_json::Value::String(s)) => s.clone(),
+        Some(serde_json::Value::Bool(b)) => b.to_string(),
+        Some(serde_json::Value::Number(n)) => n.to_string(),
+        _ => "(none)".to_string(),
+    }
+}
+
 /// Per-second rate from bucketed counter sums (monotonic resets clamp to 0).
 pub(crate) fn rate_from_buckets(series: &[SeriesPoint], step_nanos: u128) -> Vec<SeriesPoint> {
     let step_secs = step_nanos as f64 / 1e9;
@@ -280,5 +291,255 @@ impl TelemetryStore for MemoryStore {
         events.sort_by_key(|e| std::cmp::Reverse(e.ts_nanos));
         events.truncate(limit);
         Ok(events)
+    }
+
+    async fn observed_runs(
+        &self,
+        limit: usize,
+    ) -> anyhow::Result<Vec<crate::adapter::ObservedRun>> {
+        let inner = self.lock();
+        let mut runs: std::collections::HashMap<String, crate::adapter::ObservedRun> =
+            std::collections::HashMap::new();
+        let mut absorb = |run_id: &Option<String>, ts: u128, service: &str, is_span: bool| {
+            let Some(run_id) = run_id.as_deref().filter(|r| !r.is_empty()) else {
+                return;
+            };
+            let entry =
+                runs.entry(run_id.to_owned())
+                    .or_insert_with(|| crate::adapter::ObservedRun {
+                        run_id: run_id.to_owned(),
+                        first_nanos: ts,
+                        last_nanos: ts,
+                        span_count: 0,
+                        log_count: 0,
+                        service: service.to_owned(),
+                    });
+            entry.first_nanos = entry.first_nanos.min(ts);
+            entry.last_nanos = entry.last_nanos.max(ts);
+            if is_span {
+                entry.span_count += 1;
+            } else {
+                entry.log_count += 1;
+            }
+        };
+        for span in &inner.spans {
+            absorb(&span.run_id, span.ts_nanos, &span.service, true);
+        }
+        for log in &inner.logs {
+            absorb(&log.run_id, log.ts_nanos, &log.service, false);
+        }
+        let mut runs: Vec<_> = runs.into_values().collect();
+        runs.sort_by_key(|r| std::cmp::Reverse(r.last_nanos));
+        runs.truncate(limit);
+        Ok(runs)
+    }
+
+    async fn recent_traces(
+        &self,
+        limit: usize,
+    ) -> anyhow::Result<Vec<crate::adapter::TraceSummary>> {
+        let inner = self.lock();
+        // Roots first (no parent); newest first.
+        let mut roots: Vec<&SpanRow> = inner
+            .spans
+            .iter()
+            .filter(|s| s.parent_span_id.as_deref().is_none_or(str::is_empty))
+            .collect();
+        roots.sort_by_key(|s| std::cmp::Reverse(s.ts_nanos));
+        roots.truncate(limit);
+        Ok(roots
+            .into_iter()
+            .map(|root| {
+                let mut span_count = 0;
+                let mut has_error = false;
+                for span in &inner.spans {
+                    if span.trace_id == root.trace_id {
+                        span_count += 1;
+                        has_error |= span.status_code == "STATUS_CODE_ERROR";
+                    }
+                }
+                crate::adapter::TraceSummary {
+                    trace_id: root.trace_id.clone(),
+                    root_name: root.name.clone(),
+                    service: root.service.clone(),
+                    start_nanos: root.ts_nanos,
+                    duration_ns: root.duration_ns,
+                    span_count,
+                    has_error,
+                }
+            })
+            .collect())
+    }
+
+    async fn error_events_by_traces(
+        &self,
+        trace_ids: &[String],
+        limit: usize,
+    ) -> anyhow::Result<Vec<ErrorEventRow>> {
+        if trace_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let mut events: Vec<ErrorEventRow> = self
+            .lock()
+            .error_events
+            .iter()
+            .filter(|e| trace_ids.contains(&e.trace_id))
+            .cloned()
+            .collect();
+        events.sort_by_key(|e| std::cmp::Reverse(e.ts_nanos));
+        events.truncate(limit);
+        Ok(events)
+    }
+
+    async fn logs_search(
+        &self,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        severity_min: Option<i32>,
+        body_contains: Option<&str>,
+        limit: usize,
+    ) -> anyhow::Result<Vec<LogRow>> {
+        let mut logs: Vec<LogRow> = self
+            .lock()
+            .logs
+            .iter()
+            .filter(|l| {
+                range.contains(&l.ts_nanos)
+                    && service.is_none_or(|svc| l.service == svc)
+                    && severity_min.is_none_or(|min| l.severity_num >= min)
+                    && body_contains.is_none_or(|needle| l.body.contains(needle))
+            })
+            .cloned()
+            .collect();
+        logs.sort_by_key(|l| std::cmp::Reverse(l.ts_nanos));
+        logs.truncate(limit);
+        Ok(logs)
+    }
+
+    async fn metric_series_grouped(
+        &self,
+        name: &str,
+        service: Option<&str>,
+        group_by: &str,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+        agg: MetricAgg,
+    ) -> anyhow::Result<Vec<(String, Vec<SeriesPoint>)>> {
+        let step = step_nanos.max(1);
+        let mut buckets: std::collections::BTreeMap<(String, u128), Vec<f64>> = Default::default();
+        for point in self.lock().metric_points.iter().filter(|p| {
+            p.name == name
+                && service.is_none_or(|svc| p.service == svc)
+                && range.contains(&p.ts_nanos)
+        }) {
+            buckets
+                .entry((
+                    group_value(&point.attributes, group_by),
+                    (point.ts_nanos / step) * step,
+                ))
+                .or_default()
+                .push(point.value);
+        }
+        let mut groups: std::collections::BTreeMap<String, Vec<SeriesPoint>> = Default::default();
+        for ((group, ts_nanos), values) in buckets {
+            let value = match agg {
+                MetricAgg::Avg => values.iter().sum::<f64>() / values.len() as f64,
+                MetricAgg::Min => values.iter().copied().fold(f64::INFINITY, f64::min),
+                MetricAgg::Max => values.iter().copied().fold(f64::NEG_INFINITY, f64::max),
+                MetricAgg::Sum | MetricAgg::Rate => values.iter().sum::<f64>(),
+            };
+            groups
+                .entry(group)
+                .or_default()
+                .push(SeriesPoint { ts_nanos, value });
+        }
+        Ok(groups
+            .into_iter()
+            .map(|(group, series)| {
+                let series = if agg == MetricAgg::Rate {
+                    rate_from_buckets(&series, step)
+                } else {
+                    series
+                };
+                (group, series)
+            })
+            .collect())
+    }
+
+    async fn histogram_count_series(
+        &self,
+        name: &str,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+    ) -> anyhow::Result<Vec<SeriesPoint>> {
+        let step = step_nanos.max(1);
+        let mut buckets: std::collections::BTreeMap<u128, u64> = Default::default();
+        for row in self.lock().histograms.iter().filter(|h| {
+            h.name == name
+                && service.is_none_or(|svc| h.service == svc)
+                && range.contains(&h.ts_nanos)
+        }) {
+            *buckets.entry((row.ts_nanos / step) * step).or_default() += row.count;
+        }
+        Ok(buckets
+            .into_iter()
+            .map(|(ts_nanos, count)| SeriesPoint {
+                ts_nanos,
+                value: count as f64,
+            })
+            .collect())
+    }
+
+    async fn error_count_series(
+        &self,
+        service: &str,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+    ) -> anyhow::Result<Vec<SeriesPoint>> {
+        let step = step_nanos.max(1);
+        let mut buckets: std::collections::BTreeMap<u128, u64> = Default::default();
+        for event in self
+            .lock()
+            .error_events
+            .iter()
+            .filter(|e| e.service == service && range.contains(&e.ts_nanos))
+        {
+            *buckets.entry((event.ts_nanos / step) * step).or_default() += 1;
+        }
+        Ok(buckets
+            .into_iter()
+            .map(|(ts_nanos, count)| SeriesPoint {
+                ts_nanos,
+                value: count as f64,
+            })
+            .collect())
+    }
+
+    async fn log_count_series(
+        &self,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        severity_min: Option<i32>,
+        body_contains: Option<&str>,
+        step_nanos: u128,
+    ) -> anyhow::Result<Vec<SeriesPoint>> {
+        let step = step_nanos.max(1);
+        let mut buckets: std::collections::BTreeMap<u128, u64> = Default::default();
+        for log in self.lock().logs.iter().filter(|l| {
+            range.contains(&l.ts_nanos)
+                && service.is_none_or(|svc| l.service == svc)
+                && severity_min.is_none_or(|min| l.severity_num >= min)
+                && body_contains.is_none_or(|needle| l.body.contains(needle))
+        }) {
+            *buckets.entry((log.ts_nanos / step) * step).or_default() += 1;
+        }
+        Ok(buckets
+            .into_iter()
+            .map(|(ts_nanos, count)| SeriesPoint {
+                ts_nanos,
+                value: count as f64,
+            })
+            .collect())
     }
 }

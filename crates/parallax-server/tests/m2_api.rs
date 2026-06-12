@@ -83,18 +83,19 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
     logger.emit(record);
     logger_provider.force_flush().expect("log flush");
 
-    // Poll GraphQL until the pipeline lands the issue.
+    // Poll GraphQL until the pipeline lands the issue (spec §8: issues
+    // returns IssueList { items, total }).
     let client = reqwest::Client::new();
     let mut fingerprint = String::new();
     for _ in 0..50 {
         let response = graphql(
             &client,
             handle.api_addr,
-            r#"{ issues { fingerprint errorType eventCount status } }"#,
+            r#"{ issues { total items { fingerprint errorType eventCount status } } }"#,
         )
         .await;
         if let Some(issue) = response
-            .pointer("/data/issues")
+            .pointer("/data/issues/items")
             .and_then(|v| v.as_array())
             .and_then(|a| a.iter().find(|i| i["errorType"] == "test::ApiSurface"))
         {
@@ -108,13 +109,36 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
     }
     assert!(!fingerprint.is_empty(), "issue visible through GraphQL");
 
-    // Issue with nested events.
+    // Filtered listing: the issue's service matches, a wrong service does
+    // not, and the search query matches the error type.
+    let response = graphql(
+        &client,
+        handle.api_addr,
+        r#"{ issues(query: "ApiSurface", sort: EVENTS) { total items { fingerprint } }
+             none: issues(service: "no-such-service") { total } }"#,
+    )
+    .await;
+    assert_eq!(
+        response
+            .pointer("/data/issues/items/0/fingerprint")
+            .and_then(|v| v.as_str()),
+        Some(fingerprint.as_str()),
+        "query filter finds the issue: {response}"
+    );
+    assert_eq!(
+        response.pointer("/data/none/total"),
+        Some(&serde_json::json!(0))
+    );
+
+    // Issue with nested events, tags cache, and latestEvent.
     let response = graphql(
         &client,
         handle.api_addr,
         &format!(
             r#"{{ issue(fingerprint: "{fingerprint}") {{
-                 title status events {{ message traceId source }}
+                 title status tags trend {{ count }}
+                 latestEvent {{ traceId }}
+                 events {{ message traceId source }}
                }} }}"#
         ),
     )
@@ -126,6 +150,28 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
     assert_eq!(events.len(), 1);
     assert_eq!(events[0]["traceId"], trace_id.as_str());
     assert_eq!(events[0]["source"], "span_exception");
+    assert_eq!(
+        response
+            .pointer("/data/issue/latestEvent/traceId")
+            .and_then(|v| v.as_str()),
+        Some(trace_id.as_str())
+    );
+    let tags: serde_json::Value = serde_json::from_str(
+        response
+            .pointer("/data/issue/tags")
+            .and_then(|v| v.as_str())
+            .expect("tags JSON string"),
+    )
+    .expect("tags parse");
+    assert!(tags.is_object(), "tags cache is a JSON object: {tags}");
+    let trend_total: i64 = response
+        .pointer("/data/issue/trend")
+        .and_then(|v| v.as_array())
+        .expect("embedded trend")
+        .iter()
+        .map(|p| p["count"].as_i64().unwrap_or(0))
+        .sum();
+    assert_eq!(trend_total, 1, "embedded per-issue trend counts the event");
 
     // Trend rollup reaches the sparkline query.
     let response = graphql(
@@ -171,18 +217,21 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
         "log correlated to the trace through the SDK context: {response}"
     );
 
-    // Mutation: resolve the issue.
+    // Mutation: resolve the issue — returns the updated Issue (spec §8).
     let response = graphql(
         &client,
         handle.api_addr,
         &format!(
-            r#"mutation {{ issueSetStatus(fingerprint: "{fingerprint}", status: "resolved") }}"#
+            r#"mutation {{ issueSetStatus(fingerprint: "{fingerprint}", status: "resolved") {{ fingerprint status }} }}"#
         ),
     )
     .await;
     assert_eq!(
-        response.pointer("/data/issueSetStatus"),
-        Some(&serde_json::json!(true))
+        response
+            .pointer("/data/issueSetStatus/status")
+            .and_then(|v| v.as_str()),
+        Some("resolved"),
+        "mutation returns the updated issue: {response}"
     );
     let response = graphql(
         &client,
@@ -195,6 +244,49 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
             .pointer("/data/issue/status")
             .and_then(|v| v.as_str()),
         Some("resolved")
+    );
+
+    // Unified logs browse (spec §8 `logs`): the correlated log is reachable
+    // by service-less severity/query filters, newest first.
+    let response = graphql(
+        &client,
+        handle.api_addr,
+        r#"{ logs(query: "failing request") { body severityText }
+             nothing: logs(query: "no-such-needle") { body } }"#,
+    )
+    .await;
+    assert_eq!(
+        response
+            .pointer("/data/logs/0/body")
+            .and_then(|v| v.as_str()),
+        Some("inside the failing request"),
+        "unified logs finds by body substring: {response}"
+    );
+    assert_eq!(
+        response
+            .pointer("/data/nothing")
+            .and_then(|v| v.as_array())
+            .map(Vec::len),
+        Some(0)
+    );
+
+    // serviceOverview answers with graceful absence (no well-known metrics
+    // were sent): empty series, not an error.
+    let response = graphql(
+        &client,
+        handle.api_addr,
+        r#"{ serviceOverview(service: "m2-run-service",
+                             fromNanos: "0", toNanos: "9223372036854775807") {
+               cpu { value } requestRate { value } errorRate { value } } }"#,
+    )
+    .await;
+    assert_eq!(
+        response
+            .pointer("/data/serviceOverview/cpu")
+            .and_then(|v| v.as_array())
+            .map(Vec::len),
+        Some(0),
+        "absent instruments yield empty series: {response}"
     );
 
     // Run-scoped reads: a span emitted under a parallax.run_id resource
@@ -225,11 +317,12 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
         let response = graphql(
             &client,
             handle.api_addr,
-            r#"{ tracesByRun(runId: "run_m2test") { traceId spans { name runId } } }"#,
+            r#"{ tracesByRun(runId: "run_m2test") {
+                   traceId rootName service spanCount hasError } }"#,
         )
         .await;
         if response
-            .pointer("/data/tracesByRun/0/spans/0/name")
+            .pointer("/data/tracesByRun/0/rootName")
             .and_then(|v| v.as_str())
             == Some("inside.the.run")
         {
@@ -240,10 +333,102 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
     }
     assert_eq!(
         run_traces
-            .pointer("/data/tracesByRun/0/spans/0/runId")
+            .pointer("/data/tracesByRun/0/service")
             .and_then(|v| v.as_str()),
-        Some("run_m2test"),
-        "run-tagged span reachable through tracesByRun: {run_traces}"
+        Some("m2-run-service"),
+        "run-tagged trace summarized through tracesByRun: {run_traces}"
+    );
+    let run_trace_id = run_traces
+        .pointer("/data/tracesByRun/0/traceId")
+        .and_then(|v| v.as_str())
+        .expect("trace id in summary")
+        .to_string();
+
+    // The summary's trace opens with full spans carrying the run id.
+    let response = graphql(
+        &client,
+        handle.api_addr,
+        &format!(r#"{{ trace(traceId: "{run_trace_id}") {{ spans {{ name runId }} }} }}"#),
+    )
+    .await;
+    assert_eq!(
+        response
+            .pointer("/data/trace/spans/0/runId")
+            .and_then(|v| v.as_str()),
+        Some("run_m2test")
+    );
+
+    // The worker auto-registered the externally-seen run id (no CLI
+    // runStart): run(runId) answers with status `external` and counts.
+    let response = graphql(
+        &client,
+        handle.api_addr,
+        r#"{ run(runId: "run_m2test") {
+               runId status errorCount traceCount issues { fingerprint } } }"#,
+    )
+    .await;
+    assert_eq!(
+        response
+            .pointer("/data/run/status")
+            .and_then(|v| v.as_str()),
+        Some("external"),
+        "externally-seen run auto-registered: {response}"
+    );
+    assert_eq!(
+        response.pointer("/data/run/traceCount"),
+        Some(&serde_json::json!(1))
+    );
+    assert_eq!(
+        response.pointer("/data/run/errorCount"),
+        Some(&serde_json::json!(0))
+    );
+
+    // Run-anchored bundle (spec §8 bundle(runId:)) renders without errors.
+    let response = graphql(
+        &client,
+        handle.api_addr,
+        r#"{ bundle(runId: "run_m2test") { markdown canonicalHash } }"#,
+    )
+    .await;
+    let markdown = response
+        .pointer("/data/bundle/markdown")
+        .and_then(|v| v.as_str())
+        .expect("run bundle markdown");
+    assert!(
+        markdown.contains("run_m2test"),
+        "run bundle names the run: {markdown}"
+    );
+    assert!(
+        markdown.contains("No grouped issues"),
+        "clean run says so: {markdown}"
+    );
+
+    // Trace-anchored bundle resolves from the same data.
+    let response = graphql(
+        &client,
+        handle.api_addr,
+        &format!(r#"{{ bundle(traceId: "{trace_id}") {{ markdown }} }}"#),
+    )
+    .await;
+    let markdown = response
+        .pointer("/data/bundle/markdown")
+        .and_then(|v| v.as_str())
+        .expect("trace bundle markdown");
+    assert!(
+        markdown.contains("api surface check"),
+        "trace bundle carries the primary issue's event: {markdown}"
+    );
+
+    // Exactly-one-anchor rule.
+    let response = graphql(
+        &client,
+        handle.api_addr,
+        r#"{ bundle(fingerprint: "a", runId: "b") { markdown } }"#,
+    )
+    .await;
+    assert!(
+        response.pointer("/errors/0").is_some(),
+        "two anchors rejected: {response}"
     );
 
     handle.shutdown();

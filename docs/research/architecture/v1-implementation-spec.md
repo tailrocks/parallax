@@ -256,12 +256,12 @@ CREATE TABLE IF NOT EXISTS runs (
   started_at  INTEGER NOT NULL,
   ended_at    INTEGER,
   exit_code   INTEGER,
-  status      TEXT NOT NULL DEFAULT 'running'   -- running | finished
+  status      TEXT NOT NULL DEFAULT 'running'   -- running | finished | external
 );
 CREATE TABLE IF NOT EXISTS dashboards (
   id          TEXT PRIMARY KEY,
   name        TEXT NOT NULL,
-  layout      TEXT NOT NULL,    -- JSON: [{metric, agg, group_by, chart, title, w, h, x, y}]
+  layout      TEXT NOT NULL,    -- JSON: [{metric, agg, chart, title, groupBy?, quantile?, w?}]
   created_at  INTEGER NOT NULL,
   updated_at  INTEGER NOT NULL
 );
@@ -276,7 +276,12 @@ CREATE TABLE IF NOT EXISTS issue_buckets (
 
 Counters (`event_count`, `last_seen`) are updated by the ingest worker on each derived error
 event; the same upsert increments the minute-grained `issue_buckets` rollup that feeds the
-trend sparkline (`issueTrend` sums it into coarser steps in SQL).
+trend sparkline (`issueTrend` sums it into coarser steps in SQL) and merges the event's scalar
+attributes into the bounded `tags` cache (`{key: {value: count}}`; ≤16 keys, ≤8 values per key,
+values ≤64 chars, `exception.*` excluded). Runs whose `parallax.run_id` first appears in
+telemetry without a CLI `runStart` are auto-registered by the worker with status `external`
+(first-seen timestamp as `started_at`) so run-scoped UI/CLI lookups work for foreign run ids
+(the jackin follow-up, 2026-06-12).
 
 ## 7. OTLP → storage mapping (the load-bearing rows)
 
@@ -298,87 +303,111 @@ trend sparkline (`issueTrend` sums it into coarser steps in SQL).
 Fingerprinting and derivation logic: graduate `poc/evidence-loop/src/{derive,fingerprint}.rs`
 verbatim semantics (both exception encodings; normalization rules; 16-hex fingerprint).
 
-## 8. GraphQL SDL (the V1 core; async-graphql implements this shape)
+## 8. GraphQL SDL (the V1 core, as implemented by Juniper)
+
+Dialect conventions (decided against the real build, 2026-06-12 — Juniper, not async-graphql):
+**nanosecond timestamps cross the API as strings** (`tsNanos`/`fromNanos`/`toNanos` — GraphQL
+`Int` is i32 and `Float` loses precision); **JSON crosses as a JSON-encoded `String!`**
+(`attributes`, `resource`, `tags`, `layout`); **filters are flat arguments**, not input
+objects (Juniper input objects buy nothing over named args for this surface); counts saturate
+to i32. Where the original draft said `Time`/`JSON` scalars and `TimeRange`/`*Filter` inputs,
+this implemented dialect is the contract.
 
 ```graphql
-scalar Time
-input TimeRange { from: Time!, to: Time! }
-
 type Query {
+  health: String!
+  version: String!
   runs(limit: Int = 50): [Run!]!
-  run(runId: ID!): Run
-  issues(filter: IssueFilter, sort: IssueSort = LAST_SEEN, limit: Int = 50, offset: Int = 0): IssueList!
-  issue(fingerprint: ID!): Issue
-  trace(traceId: ID!): Trace
-  tracesByRun(runId: ID!, limit: Int = 50): [TraceSummary!]!
-  logs(filter: LogFilter!, limit: Int = 500): [LogRecord!]!
+  run(runId: String!): Run
+  issues(service: String, status: String, query: String,
+         fromNanos: String, toNanos: String,          # window on lastSeen
+         tagKey: String, tagValue: String,
+         sort: IssueSort = LAST_SEEN, limit: Int = 50, offset: Int = 0): IssueList!
+  issue(fingerprint: String!): Issue
+  issueTrend(fingerprint: String!, hours: Int = 24, stepSeconds: Int = 3600): [TrendPoint!]!
+  trace(traceId: String!): Trace
+  tracesByRun(runId: String!, limit: Int = 200): [TraceSummary!]!
+  logs(traceId: String, runId: String, service: String,
+       fromNanos: String, toNanos: String, severityMin: Int,
+       query: String, limit: Int = 500): [LogRecord!]!   # unified browse; newest first
+  logsByTrace(traceId: String!): [LogRecord!]!           # anchored reads, time ascending
+  logsByRun(runId: String!, limit: Int = 500): [LogRecord!]!
   metricNames(prefix: String): [String!]!
-  metricSeries(name: String!, range: TimeRange!, groupBy: String, agg: Agg = AVG, stepSeconds: Int = 60): [Series!]!
-  issueTrend(fingerprint: ID!, hours: Int = 24, stepSeconds: Int = 3600): [TrendPoint!]!
-  bundle(anchor: BundleAnchor!): Bundle!
+  services: [String!]!
+  metricSeries(name: String!, fromNanos: String!, toNanos: String!, service: String,
+               groupBy: String, stepSeconds: Int = 60, agg: String = "avg"): [Series!]!
+  histogramQuantile(name: String!, fromNanos: String!, toNanos: String!, q: Float!,
+                    service: String, stepSeconds: Int = 60): [Point!]!
+  serviceOverview(service: String!, fromNanos: String!, toNanos: String!,
+                  stepSeconds: Int = 60): ServiceOverview!
+  bundle(fingerprint: String, runId: String, traceId: String,
+         maxTokens: Int = 10000): BundleOut               # exactly one anchor
   dashboards: [Dashboard!]!
-  dashboard(id: ID!): Dashboard
-  serviceOverview(service: String!, range: TimeRange!): ServiceOverview!
+  dashboard(id: String!): Dashboard
 }
 type Mutation {
-  issueSetStatus(fingerprint: ID!, status: IssueStatus!): Issue!
-  dashboardSave(input: DashboardInput!): Dashboard!
-  dashboardDelete(id: ID!): Boolean!
+  issueSetStatus(fingerprint: String!, status: String!): Issue!   # open | resolved
+  dashboardSave(name: String!, layout: String!, id: String): Dashboard!
+  dashboardDelete(id: String!): Boolean!
+  runStart(runId: String!, command: String, startedAtNanos: String!): Boolean!
+  runFinish(runId: String!, endedAtNanos: String!, exitCode: Int!): Boolean!
 }
 
-enum IssueStatus { OPEN RESOLVED }
-enum IssueSort { LAST_SEEN FIRST_SEEN EVENTS TREND }
-enum Agg { AVG MIN MAX SUM P50 P95 P99 RATE }
-input IssueFilter { service: String, status: IssueStatus, query: String, range: TimeRange, tag: TagFilter }
-input TagFilter { key: String!, value: String! }
-input LogFilter { traceId: ID, runId: ID, service: String, range: TimeRange, severityMin: Int, query: String }
-input BundleAnchor { issueFingerprint: ID, runId: ID, traceId: ID }
-input DashboardInput { id: ID, name: String!, layout: JSON! }
+enum IssueSort { LAST_SEEN FIRST_SEEN EVENTS TREND }   # TREND = last-24h occurrence sum
 
-type IssueList { items: [Issue!]!, total: Int! }
+type IssueList { items: [Issue!]!, total: Int! }   # total capped at the 1000-row scan window
 type Issue {
-  fingerprint: ID!, title: String!, errorType: String!, culprit: String,
-  service: String!, status: IssueStatus!, firstSeen: Time!, lastSeen: Time!,
-  eventCount: Int!, tags: JSON!, trend: [TrendPoint!]!,
-  latestEvent: ErrorEvent, events(limit: Int = 50, range: TimeRange): [ErrorEvent!]!
+  fingerprint: String!, title: String!, errorType: String!, culprit: String,
+  service: String!, status: String!, firstSeenNanos: String!, lastSeenNanos: String!,
+  eventCount: Int!, lastTraceId: String, tags: String!,            # JSON: {key: {value: count}}
+  trend: [TrendPoint!]!,                                           # last 24h, hourly
+  latestEvent: ErrorEvent,
+  events(limit: Int = 50, fromNanos: String, toNanos: String): [ErrorEvent!]!
 }
-type ErrorEvent { ts: Time!, errorType: String!, message: String!, stacktrace: String,
-  source: String!, traceId: ID, spanId: ID, attributes: JSON!, resource: JSON! }
-type Trace { traceId: ID!, spans: [Span!]! }
-type Span { spanId: ID!, parentSpanId: ID, service: String!, name: String!, kind: String!,
-  ts: Time!, durationNs: Float!, statusCode: String!, attributes: JSON!,
-  logs(limit: Int = 100): [LogRecord!]! }
-type TraceSummary { traceId: ID!, rootName: String, service: String, ts: Time!, durationNs: Float!, errorCount: Int! }
-type LogRecord { ts: Time!, service: String!, severityNum: Int!, severityText: String!,
-  body: String!, traceId: ID, spanId: ID, attributes: JSON! }
-type Series { groupValue: String, points: [Point!]! }
-type Point { ts: Time!, value: Float! }
-type TrendPoint { ts: Time!, count: Int! }
-type Run { runId: ID!, command: String, startedAt: Time!, endedAt: Time, exitCode: Int,
-  status: String!, errorCount: Int!, traceCount: Int!, issues: [Issue!]! }
-type Dashboard { id: ID!, name: String!, layout: JSON!, updatedAt: Time! }
+type ErrorEvent { tsNanos: String!, service: String!, fingerprint: String!, errorType: String!,
+  message: String!, stacktrace: String, source: String!, traceId: String!, spanId: String!,
+  attributes: String! }
+type Trace { traceId: String!, spans: [Span!]! }
+type Span { tsNanos: String!, service: String!, traceId: String!, spanId: String!,
+  parentSpanId: String, name: String!, kind: String!, statusCode: String!,
+  statusMessage: String!, durationNs: String!, runId: String, scopeName: String!,
+  attributes: String!, resource: String! }
+type TraceSummary { traceId: String!, rootName: String, service: String, tsNanos: String!,
+  durationNs: String!, spanCount: Int!, errorCount: Int! }   # errorCount = ERROR-status spans
+type LogRecord { tsNanos: String!, service: String!, severityNum: Int!, severityText: String!,
+  body: String!, traceId: String!, spanId: String!, runId: String, attributes: String! }
+type Series { groupValue: String, points: [Point!]! }   # groupValue null when ungrouped
+type Point { tsNanos: String!, value: Float! }
+type TrendPoint { tsNanos: String!, count: Int! }
+type Run { runId: String!, command: String, startedAtNanos: String!, endedAtNanos: String,
+  exitCode: Int, status: String!,                  # running | finished | external
+  errorCount: Int!, traceCount: Int!, issues: [Issue!]! }
+type Dashboard { id: String!, name: String!, layout: String!, updatedAtNanos: String! }
 type ServiceOverview { cpu: [Point!]!, memory: [Point!]!,
   requestRate: [Point!]!, latencyP50: [Point!]!, latencyP95: [Point!]!, latencyP99: [Point!]!,
   errorRate: [Point!]! }
-type Bundle { json: JSON!, markdown: String!, canonicalHash: String! }
+type BundleOut { json: String!, markdown: String!, canonicalHash: String! }
 ```
 
-Depth/complexity/pagination limits from §4 config, enforced in `parallax-api` middleware.
-`serviceOverview` resolves from well-known metric names (`process.cpu.*`, `process.memory.*`,
-`http.server.request.duration`, `rpc.server.duration`) with graceful absence (empty series +
-the gap surfaced — feeds instrumentation suggestions).
+Pagination/row caps are resolver-level (500 rows; issue scans capped at 1000) — Juniper has no
+schema-level depth/complexity middleware; the `[limits]` config keys wait on the M5 query-cost
+middleware. `serviceOverview` resolves from well-known metric names (`process.cpu.*`,
+`process.memory.*`, `http.server.request.duration`, `rpc.server.duration` — first candidate
+with data wins) with graceful absence (empty series + the gap surfaced — feeds instrumentation
+suggestions). `bundle` accepts exactly one anchor: `fingerprint` (issue), `runId`
+(run-anchored: the run's traces, logs, and grouped issues), or `traceId`.
 
 ## 9. UI page → query map
 
 | Page | Queries |
 | --- | --- |
-| Issues list | `issues(filter, sort)` (+ per-row `trend` already embedded) |
-| Issue detail | `issue`, `issueTrend`, `events`, `bundle(anchor:{issueFingerprint})` for the CLI snippet |
-| Service overview | `serviceOverview` |
-| Custom dashboard | `dashboards`/`dashboard` + N × `metricSeries`; builder uses `metricNames` |
-| Trace view | `trace(traceId)`; entry from paste, issue event, or `tracesByRun(runId)` |
-| Logs | `logs(filter)` |
-| Runs | `runs` / `run(runId)` |
+| Issues list | `issues(service, status, query, sort, …)` (+ per-row `trend` already embedded) |
+| Issue detail | `issue` (tags/latestEvent/events), `issueTrend`, `logsByTrace` breadcrumbs, `bundle(fingerprint:)` for the CLI snippet, `issueSetStatus` |
+| Service overview | `serviceOverview` (+ `services` for the selector) |
+| Custom dashboard | `dashboards`/`dashboard` + N × `metricSeries(groupBy?)`/`histogramQuantile`; builder uses `metricNames`; `dashboardSave`/`dashboardDelete` |
+| Trace view | `trace(traceId)` + `logsByTrace`; entry from paste, issue event, or a run's `tracesByRun(runId)` |
+| Logs | `logs(traceId?, runId?, service?, severityMin?, query?, …)` |
+| Runs | `runs` / `run(runId)` (errorCount/traceCount/issues) + `tracesByRun` + `logsByRun` + `bundle(runId:)` preview |
 
 ## 10. CLI output contract
 

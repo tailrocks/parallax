@@ -80,7 +80,7 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
     for _ in 0..50 {
         let response: serde_json::Value = client
             .post(format!("http://{}/graphql", handle.api_addr))
-            .json(&serde_json::json!({"query": "{ issues { fingerprint errorType } }"}))
+            .json(&serde_json::json!({"query": "{ issues { items { fingerprint errorType } } }"}))
             .send()
             .await
             .expect("issues request")
@@ -88,7 +88,7 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
             .await
             .expect("issues json");
         if let Some(issue) = response
-            .pointer("/data/issues")
+            .pointer("/data/issues/items")
             .and_then(|v| v.as_array())
             .and_then(|a| {
                 a.iter()

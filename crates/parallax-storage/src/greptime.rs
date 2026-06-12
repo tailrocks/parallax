@@ -237,6 +237,41 @@ fn sql_ts(bound: u128) -> i64 {
     i64::try_from(bound).unwrap_or(i64::MAX)
 }
 
+/// The shared WHERE clauses for `logs_search` and `log_count_series` — the
+/// histogram must count exactly what the table shows. Body search is `LIKE`
+/// today; a GreptimeDB FULLTEXT index + `matches_term` is the planned
+/// upgrade for large logs (spec §5 note).
+fn log_filter_clauses(
+    service: Option<&str>,
+    range: &RangeInclusive<u128>,
+    severity_min: Option<i32>,
+    body_contains: Option<&str>,
+) -> Vec<String> {
+    let mut clauses = vec![format!(
+        r#""ts" >= {} AND "ts" <= {}"#,
+        sql_ts(*range.start()),
+        sql_ts(*range.end())
+    )];
+    if let Some(service) = service {
+        clauses.push(format!(r#""service" = '{}'"#, escape(service)));
+    }
+    if let Some(min) = severity_min {
+        clauses.push(format!(r#""severity_num" >= {min}"#));
+    }
+    if let Some(needle) = body_contains {
+        // LIKE wildcards in the needle are literal for a substring search;
+        // backslash first (it is the escape char), then %, _, then quotes.
+        let escaped = escape(
+            &needle
+                .replace('\\', "\\\\")
+                .replace('%', "\\%")
+                .replace('_', "\\_"),
+        );
+        clauses.push(format!(r#""body" LIKE '%{escaped}%' ESCAPE '\\'"#));
+    }
+    clauses
+}
+
 fn u128_at(row: &[serde_json::Value], index: usize) -> u128 {
     row.get(index)
         .and_then(|v| v.as_u64())
@@ -569,5 +604,335 @@ impl TelemetryStore for GreptimeStore {
                 attributes: json_at(row, 9),
             })
             .collect())
+    }
+
+    async fn observed_runs(
+        &self,
+        limit: usize,
+    ) -> anyhow::Result<Vec<crate::adapter::ObservedRun>> {
+        let mut runs: std::collections::HashMap<String, crate::adapter::ObservedRun> =
+            std::collections::HashMap::new();
+        for (table, is_span) in [("otel_spans", true), ("otel_logs", false)] {
+            let rows = self
+                .sql(&format!(
+                    r#"SELECT "run_id", CAST(MIN("ts") AS BIGINT) AS "first_ts",
+                              CAST(MAX("ts") AS BIGINT) AS "last_ts",
+                              COUNT(*) AS "n", MAX("service") AS "svc"
+                       FROM {table} WHERE "run_id" != ''
+                       GROUP BY "run_id" ORDER BY "last_ts" DESC LIMIT {limit}"#
+                ))
+                .await?;
+            for row in &rows {
+                let run_id = str_at(row, 0);
+                if run_id.is_empty() {
+                    continue;
+                }
+                let first = u128_at(row, 1);
+                let last = u128_at(row, 2);
+                let count = u128_at(row, 3) as u64;
+                let entry =
+                    runs.entry(run_id.clone())
+                        .or_insert_with(|| crate::adapter::ObservedRun {
+                            run_id,
+                            first_nanos: first,
+                            last_nanos: last,
+                            span_count: 0,
+                            log_count: 0,
+                            service: str_at(row, 4),
+                        });
+                entry.first_nanos = entry.first_nanos.min(first);
+                entry.last_nanos = entry.last_nanos.max(last);
+                if is_span {
+                    entry.span_count += count;
+                } else {
+                    entry.log_count += count;
+                }
+            }
+        }
+        let mut runs: Vec<_> = runs.into_values().collect();
+        runs.sort_by_key(|r| std::cmp::Reverse(r.last_nanos));
+        runs.truncate(limit);
+        Ok(runs)
+    }
+
+    async fn recent_traces(
+        &self,
+        limit: usize,
+    ) -> anyhow::Result<Vec<crate::adapter::TraceSummary>> {
+        // Root spans (no parent), newest first; aggregates joined per trace.
+        let roots = self
+            .sql(&format!(
+                r#"SELECT "trace_id", "name", "service", CAST("ts" AS BIGINT) AS "ts_nanos",
+                          CAST("duration_ns" AS BIGINT) AS "dur"
+                   FROM otel_spans
+                   WHERE "parent_span_id" IS NULL OR "parent_span_id" = ''
+                   ORDER BY "ts" DESC LIMIT {limit}"#
+            ))
+            .await?;
+        if roots.is_empty() {
+            return Ok(Vec::new());
+        }
+        let id_list = roots
+            .iter()
+            .map(|row| format!("'{}'", escape(&str_at(row, 0))))
+            .collect::<Vec<_>>()
+            .join(",");
+        let aggregates = self
+            .sql(&format!(
+                r#"SELECT "trace_id", COUNT(*) AS "n",
+                          MAX(CASE WHEN "status_code" = 'STATUS_CODE_ERROR' THEN 1 ELSE 0 END) AS "err"
+                   FROM otel_spans WHERE "trace_id" IN ({id_list})
+                   GROUP BY "trace_id""#
+            ))
+            .await?;
+        let mut by_trace: std::collections::HashMap<String, (u64, bool)> =
+            std::collections::HashMap::new();
+        for row in &aggregates {
+            by_trace.insert(
+                str_at(row, 0),
+                (u128_at(row, 1) as u64, u128_at(row, 2) > 0),
+            );
+        }
+        Ok(roots
+            .iter()
+            .map(|row| {
+                let trace_id = str_at(row, 0);
+                let (span_count, has_error) =
+                    by_trace.get(&trace_id).copied().unwrap_or((1, false));
+                crate::adapter::TraceSummary {
+                    trace_id,
+                    root_name: str_at(row, 1),
+                    service: str_at(row, 2),
+                    start_nanos: u128_at(row, 3),
+                    duration_ns: u128_at(row, 4),
+                    span_count,
+                    has_error,
+                }
+            })
+            .collect())
+    }
+
+    async fn error_events_by_traces(
+        &self,
+        trace_ids: &[String],
+        limit: usize,
+    ) -> anyhow::Result<Vec<ErrorEventRow>> {
+        if trace_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let id_list = trace_ids
+            .iter()
+            .map(|t| format!("'{}'", escape(t)))
+            .collect::<Vec<_>>()
+            .join(",");
+        let rows = self
+            .sql(&format!(
+                r#"SELECT CAST("ts" AS BIGINT) AS "ts_nanos", "service", "fingerprint", "error_type",
+                          "message", "stacktrace", "source", "trace_id", "span_id",
+                          json_to_string("attributes")
+                   FROM error_events WHERE "trace_id" IN ({id_list})
+                   ORDER BY "ts" DESC LIMIT {limit}"#
+            ))
+            .await?;
+        Ok(rows.iter().map(|row| error_event_from_row(row)).collect())
+    }
+
+    async fn logs_search(
+        &self,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        severity_min: Option<i32>,
+        body_contains: Option<&str>,
+        limit: usize,
+    ) -> anyhow::Result<Vec<LogRow>> {
+        let clauses = log_filter_clauses(service, &range, severity_min, body_contains);
+        let rows = self
+            .sql(&format!(
+                r#"SELECT CAST("ts" AS BIGINT) AS "ts_nanos", "service", "severity_num",
+                          "severity_text", "body", "trace_id", "span_id", "run_id",
+                          "scope_name", json_to_string("attributes"),
+                          json_to_string("resource")
+                   FROM otel_logs WHERE {} ORDER BY "ts" DESC LIMIT {limit}"#,
+                clauses.join(" AND ")
+            ))
+            .await?;
+        Ok(rows
+            .iter()
+            .map(|row| LogRow {
+                ts_nanos: u128_at(row, 0),
+                service: str_at(row, 1),
+                severity_num: row.get(2).and_then(|v| v.as_i64()).unwrap_or(0) as i32,
+                severity_text: str_at(row, 3),
+                body: str_at(row, 4),
+                trace_id: str_at(row, 5),
+                span_id: str_at(row, 6),
+                run_id: opt_str_at(row, 7),
+                scope_name: str_at(row, 8),
+                attributes: json_at(row, 9),
+                resource: json_at(row, 10),
+            })
+            .collect())
+    }
+
+    async fn metric_series_grouped(
+        &self,
+        name: &str,
+        service: Option<&str>,
+        group_by: &str,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+        agg: MetricAgg,
+    ) -> anyhow::Result<Vec<(String, Vec<SeriesPoint>)>> {
+        let step_secs = (step_nanos / 1_000_000_000).max(1);
+        let sql_agg = match agg {
+            MetricAgg::Avg => "avg",
+            MetricAgg::Min => "min",
+            MetricAgg::Max => "max",
+            MetricAgg::Sum | MetricAgg::Rate => "sum",
+        };
+        let service_clause = service
+            .map(|svc| format!(r#" AND "service" = '{}'"#, escape(svc)))
+            .unwrap_or_default();
+        // JSON path member access; keys with dots need the quoted form.
+        let path = format!("$.\"{}\"", group_by.replace('"', ""));
+        let rows = self
+            .sql(&format!(
+                r#"SELECT COALESCE(json_get_string("attributes", '{}'), '(none)') AS "grp",
+                          CAST(date_bin(INTERVAL '{step_secs} seconds', "ts") AS BIGINT)
+                          AS "bucket_ms", {sql_agg}("value") AS "agg_value"
+                   FROM otel_metrics_points
+                   WHERE "name" = '{}'{service_clause}
+                     AND "ts" >= {} AND "ts" <= {}
+                   GROUP BY "grp", "bucket_ms" ORDER BY "grp", "bucket_ms""#,
+                escape(&path),
+                escape(name),
+                sql_ts(range.start() / 1_000_000),
+                sql_ts(range.end() / 1_000_000),
+            ))
+            .await?;
+        let mut groups: std::collections::BTreeMap<String, Vec<SeriesPoint>> = Default::default();
+        for row in &rows {
+            groups.entry(str_at(row, 0)).or_default().push(SeriesPoint {
+                ts_nanos: u128_at(row, 1) * 1_000_000,
+                value: row.get(2).and_then(|v| v.as_f64()).unwrap_or(0.0),
+            });
+        }
+        Ok(groups
+            .into_iter()
+            .map(|(group, series)| {
+                let series = if agg == MetricAgg::Rate {
+                    crate::memory::rate_from_buckets(&series, step_secs * 1_000_000_000)
+                } else {
+                    series
+                };
+                (group, series)
+            })
+            .collect())
+    }
+
+    async fn histogram_count_series(
+        &self,
+        name: &str,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+    ) -> anyhow::Result<Vec<SeriesPoint>> {
+        let step_secs = (step_nanos / 1_000_000_000).max(1);
+        let service_clause = service
+            .map(|svc| format!(r#" AND "service" = '{}'"#, escape(svc)))
+            .unwrap_or_default();
+        let rows = self
+            .sql(&format!(
+                r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "ts") AS BIGINT)
+                          AS "bucket_ms", SUM("count") AS "samples"
+                   FROM otel_metrics_histograms
+                   WHERE "name" = '{}'{service_clause}
+                     AND "ts" >= {} AND "ts" <= {}
+                   GROUP BY "bucket_ms" ORDER BY "bucket_ms""#,
+                escape(name),
+                sql_ts(range.start() / 1_000_000),
+                sql_ts(range.end() / 1_000_000),
+            ))
+            .await?;
+        Ok(rows
+            .iter()
+            .map(|row| SeriesPoint {
+                ts_nanos: u128_at(row, 0) * 1_000_000,
+                value: row.get(1).and_then(|v| v.as_f64()).unwrap_or(0.0),
+            })
+            .collect())
+    }
+
+    async fn error_count_series(
+        &self,
+        service: &str,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+    ) -> anyhow::Result<Vec<SeriesPoint>> {
+        let step_secs = (step_nanos / 1_000_000_000).max(1);
+        let rows = self
+            .sql(&format!(
+                r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "ts") AS BIGINT)
+                          AS "bucket_ns", COUNT(*) AS "n"
+                   FROM error_events
+                   WHERE "service" = '{}' AND "ts" >= {} AND "ts" <= {}
+                   GROUP BY "bucket_ns" ORDER BY "bucket_ns""#,
+                escape(service),
+                sql_ts(*range.start()),
+                sql_ts(*range.end()),
+            ))
+            .await?;
+        Ok(rows
+            .iter()
+            .map(|row| SeriesPoint {
+                ts_nanos: u128_at(row, 0),
+                value: row.get(1).and_then(|v| v.as_f64()).unwrap_or(0.0),
+            })
+            .collect())
+    }
+
+    async fn log_count_series(
+        &self,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        severity_min: Option<i32>,
+        body_contains: Option<&str>,
+        step_nanos: u128,
+    ) -> anyhow::Result<Vec<SeriesPoint>> {
+        let step_secs = (step_nanos / 1_000_000_000).max(1);
+        let clauses = log_filter_clauses(service, &range, severity_min, body_contains);
+        let rows = self
+            .sql(&format!(
+                r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "ts") AS BIGINT)
+                          AS "bucket_ns", COUNT(*) AS "n"
+                   FROM otel_logs WHERE {}
+                   GROUP BY "bucket_ns" ORDER BY "bucket_ns""#,
+                clauses.join(" AND ")
+            ))
+            .await?;
+        Ok(rows
+            .iter()
+            .map(|row| SeriesPoint {
+                ts_nanos: u128_at(row, 0),
+                value: row.get(1).and_then(|v| v.as_f64()).unwrap_or(0.0),
+            })
+            .collect())
+    }
+}
+
+/// Shared row → `ErrorEventRow` projection (fingerprint + trace-set reads).
+fn error_event_from_row(row: &[serde_json::Value]) -> ErrorEventRow {
+    ErrorEventRow {
+        ts_nanos: u128_at(row, 0),
+        service: str_at(row, 1),
+        fingerprint: str_at(row, 2),
+        error_type: str_at(row, 3),
+        message: str_at(row, 4),
+        stacktrace: opt_str_at(row, 5),
+        source: serde_json::from_value(serde_json::Value::String(str_at(row, 6)))
+            .unwrap_or(ErrorSource::LogRecord),
+        trace_id: str_at(row, 7),
+        span_id: str_at(row, 8),
+        attributes: json_at(row, 9),
     }
 }

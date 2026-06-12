@@ -216,11 +216,11 @@ async fn stack_scenarios_cross_service_db_and_graphql_spans() {
         let issues = graphql(
             &client,
             handle.api_addr,
-            r#"{ issues { fingerprint errorType } }"#,
+            r#"{ issues { items { fingerprint errorType } } }"#,
         )
         .await;
         if let Some(fp) = issues
-            .pointer("/data/issues")
+            .pointer("/data/issues/items")
             .and_then(|v| v.as_array())
             .and_then(|a| a.iter().find(|i| i["errorType"] == "tonic::Status"))
             .and_then(|i| i["fingerprint"].as_str())

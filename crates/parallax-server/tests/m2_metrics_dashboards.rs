@@ -55,7 +55,8 @@ async fn metrics_become_series_and_dashboards_roundtrip() {
         .build();
     let meter = meter_provider.meter("m2-metrics");
     let counter = meter.u64_counter("checkout.requests").build();
-    counter.add(7, &[]);
+    counter.add(7, &[opentelemetry::KeyValue::new("payment.method", "card")]);
+    counter.add(3, &[opentelemetry::KeyValue::new("payment.method", "wire")]);
     let histogram = meter.f64_histogram("checkout.duration").build();
     histogram.record(0.120, &[]);
     histogram.record(0.480, &[]);
@@ -94,20 +95,52 @@ async fn metrics_become_series_and_dashboards_roundtrip() {
         handle.api_addr,
         &format!(
             r#"{{ metricSeries(name: "checkout.requests", fromNanos: "{from}",
-                              toNanos: "{now}", agg: "sum") {{ tsNanos value }} }}"#
+                              toNanos: "{now}", agg: "sum") {{
+                   groupValue points {{ tsNanos value }} }} }}"#
         ),
     )
     .await;
+    assert_eq!(
+        series.pointer("/data/metricSeries/0/groupValue"),
+        Some(&serde_json::Value::Null),
+        "ungrouped query has a single null-group series: {series}"
+    );
     let points = series
-        .pointer("/data/metricSeries")
+        .pointer("/data/metricSeries/0/points")
         .and_then(|v| v.as_array())
         .expect("series array");
     assert!(!points.is_empty(), "counter series has points: {series}");
     assert!(
         points
             .iter()
-            .any(|p| p["value"].as_f64().unwrap_or(0.0) >= 7.0),
+            .any(|p| p["value"].as_f64().unwrap_or(0.0) >= 10.0),
         "summed counter value visible: {series}"
+    );
+
+    // groupBy splits the same metric by an attribute value (spec §8).
+    let grouped = graphql(
+        &client,
+        handle.api_addr,
+        &format!(
+            r#"{{ metricSeries(name: "checkout.requests", fromNanos: "{from}",
+                              toNanos: "{now}", agg: "sum", groupBy: "payment.method") {{
+                   groupValue points {{ value }} }} }}"#
+        ),
+    )
+    .await;
+    let groups = grouped
+        .pointer("/data/metricSeries")
+        .and_then(|v| v.as_array())
+        .expect("grouped series");
+    let mut group_values: Vec<&str> = groups
+        .iter()
+        .filter_map(|s| s["groupValue"].as_str())
+        .collect();
+    group_values.sort_unstable();
+    assert_eq!(
+        group_values,
+        ["card", "wire"],
+        "one series per attribute value: {grouped}"
     );
 
     // Histogram quantile answers (two samples; p99 ~ upper bucket).
@@ -133,24 +166,31 @@ async fn metrics_become_series_and_dashboards_roundtrip() {
         "p99 above zero: {quantile}"
     );
 
-    // Dashboards CRUD roundtrip.
+    // Dashboards CRUD roundtrip — dashboardSave returns the Dashboard
+    // object (spec §8).
     let saved = graphql(
         &client,
         handle.api_addr,
         r#"mutation { dashboardSave(name: "ops",
-             layout: "[{\"metric\":\"checkout.requests\",\"agg\":\"rate\",\"chart\":\"line\",\"title\":\"req/s\"}]") }"#,
+             layout: "[{\"metric\":\"checkout.requests\",\"agg\":\"rate\",\"chart\":\"line\",\"title\":\"req/s\"}]") { id name } }"#,
     )
     .await;
     let id = saved
-        .pointer("/data/dashboardSave")
+        .pointer("/data/dashboardSave/id")
         .and_then(|v| v.as_str())
         .expect("dashboard id")
         .to_string();
+    assert_eq!(
+        saved
+            .pointer("/data/dashboardSave/name")
+            .and_then(|v| v.as_str()),
+        Some("ops")
+    );
 
     let listed = graphql(
         &client,
         handle.api_addr,
-        r#"{ dashboards { id name layout } }"#,
+        &format!(r#"{{ dashboards {{ id name layout }} dashboard(id: "{id}") {{ name }} }}"#),
     )
     .await;
     assert_eq!(
@@ -166,11 +206,18 @@ async fn metrics_become_series_and_dashboards_roundtrip() {
             .is_some_and(|l| l.contains("checkout.requests")),
         "layout persisted: {listed}"
     );
+    assert_eq!(
+        listed
+            .pointer("/data/dashboard/name")
+            .and_then(|v| v.as_str()),
+        Some("ops"),
+        "single-dashboard lookup answers: {listed}"
+    );
 
     let invalid = graphql(
         &client,
         handle.api_addr,
-        r#"mutation { dashboardSave(name: "bad", layout: "not json") }"#,
+        r#"mutation { dashboardSave(name: "bad", layout: "not json") { id } }"#,
     )
     .await;
     assert!(

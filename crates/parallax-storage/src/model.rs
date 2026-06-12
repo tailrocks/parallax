@@ -95,6 +95,37 @@ pub struct Issue {
     pub last_seen_nanos: u128,
     pub event_count: u64,
     pub last_trace_id: Option<String>,
+    /// Bounded top-tag-values cache as JSON: `{key: {value: count}}`.
+    #[serde(default = "default_tags")]
+    pub tags: String,
+}
+
+fn default_tags() -> String {
+    "{}".to_string()
+}
+
+/// How `issues` lists are ordered (spec §8 `IssueSort`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IssueSortKey {
+    LastSeen,
+    FirstSeen,
+    Events,
+    /// Last-24h occurrence sum from the minute rollups.
+    Trend,
+}
+
+/// Filter + page window for `issues` (spec §8; flat-args dialect).
+#[derive(Debug, Clone, Default)]
+pub struct IssueQuery {
+    pub service: Option<String>,
+    pub status: Option<String>,
+    /// Substring match against title, error_type, and fingerprint.
+    pub query: Option<String>,
+    /// Window on `last_seen`.
+    pub from_nanos: Option<u128>,
+    pub to_nanos: Option<u128>,
+    pub tag_key: Option<String>,
+    pub tag_value: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
