@@ -74,6 +74,24 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
     logger.emit(record);
     logger_provider.force_flush().expect("log flush");
 
+    // A process gauge in the same window (same default-resource service) —
+    // the bundle must correlate it as a metric window.
+    use opentelemetry::metrics::MeterProvider as _;
+    let metric_exporter = opentelemetry_otlp::MetricExporter::builder()
+        .with_tonic()
+        .with_endpoint(format!("http://{}", handle.otlp_grpc_addr))
+        .build()
+        .expect("metric exporter");
+    let meter_provider = opentelemetry_sdk::metrics::SdkMeterProvider::builder()
+        .with_periodic_exporter(metric_exporter)
+        .build();
+    let gauge = meter_provider
+        .meter("m2-bundle")
+        .f64_gauge("process.cpu.utilization")
+        .build();
+    gauge.record(0.37, &[]);
+    meter_provider.force_flush().expect("metric flush");
+
     // Find the issue, then fetch its bundle.
     let client = reqwest::Client::new();
     let mut fingerprint = String::new();
@@ -162,6 +180,50 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
         "hypotheses section present"
     );
     assert!(hash.starts_with("sha256:"));
+
+    // Correlation: the same-window process gauge appears as a metric window
+    // (poll — the metric batch may land just after the issue).
+    let mut correlated = String::new();
+    for _ in 0..50 {
+        let response: serde_json::Value = client
+            .post(format!("http://{}/graphql", handle.api_addr))
+            .json(&serde_json::json!({"query": format!(
+                r#"{{ bundle(fingerprint: "{fingerprint}") {{ json markdown }} }}"#
+            )}))
+            .send()
+            .await
+            .expect("bundle request")
+            .json()
+            .await
+            .expect("bundle json");
+        let json = response
+            .pointer("/data/bundle/json")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default();
+        if json.contains("process.cpu.utilization") {
+            correlated = response
+                .pointer("/data/bundle/markdown")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string();
+            let parsed: serde_json::Value = serde_json::from_str(json).expect("bundle json parses");
+            let window = parsed
+                .pointer("/metric_windows/0")
+                .expect("metric window present");
+            assert_eq!(window["metric"], "process.cpu.utilization");
+            assert_eq!(window["scope"], "service");
+            assert!(
+                window["stats"]["last"].as_f64().unwrap_or(0.0) > 0.3,
+                "gauge value visible in stats: {window}"
+            );
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+    assert!(
+        correlated.contains("## Metric windows"),
+        "markdown carries the metric-window section: {correlated}"
+    );
 
     // Bounding: a tiny budget still yields a valid bundle that fits.
     let response: serde_json::Value = client

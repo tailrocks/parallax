@@ -6,6 +6,7 @@ import type { ErrorEvent, Issue } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { MetricStrip } from "@/components/metric-strip"
 import {
   ChartContainer,
   ChartTooltip,
@@ -31,6 +32,8 @@ interface LoaderData {
   issueTrend: TrendPoint[]
   resource: Record<string, unknown>
   breadcrumbs: BreadcrumbLog[]
+  /** Run id carried by the latest event's trace, for run-scoped metrics. */
+  traceRunId: string | null
 }
 
 export const Route = createFileRoute("/issues/$fingerprint")({
@@ -50,25 +53,28 @@ export const Route = createFileRoute("/issues/$fingerprint")({
     // the latest event's trace; breadcrumbs are that trace's logs.
     let resource: Record<string, unknown> = {}
     let breadcrumbs: BreadcrumbLog[] = []
+    let traceRunId: string | null = null
     const traceId = issue?.lastTraceId
     if (traceId) {
       try {
         const correlated = await graphql<{
-          trace: { spans: { resource: string }[] } | null
+          trace: { spans: { resource: string; runId: string | null }[] } | null
           logsByTrace: BreadcrumbLog[]
         }>(
-          `{ trace(traceId: "${gqlString(traceId)}") { spans { resource } }
+          `{ trace(traceId: "${gqlString(traceId)}") { spans { resource runId } }
              logsByTrace(traceId: "${gqlString(traceId)}") { tsNanos severityText body } }`
         )
         resource = JSON.parse(
           correlated.trace?.spans[0]?.resource ?? "{}"
         ) as Record<string, unknown>
         breadcrumbs = correlated.logsByTrace.slice(-12)
+        traceRunId =
+          correlated.trace?.spans.find((s) => s.runId)?.runId ?? null
       } catch {
         // Trace may have aged out; the issue page still renders.
       }
     }
-    return { issue, issueTrend, resource, breadcrumbs }
+    return { issue, issueTrend, resource, breadcrumbs, traceRunId }
   },
   component: IssueDetailPage,
 })
@@ -220,7 +226,8 @@ function TagsTable({ tags }: { tags: string }) {
 }
 
 function IssueDetailPage() {
-  const { issue, issueTrend, resource, breadcrumbs } = Route.useLoaderData()
+  const { issue, issueTrend, resource, breadcrumbs, traceRunId } =
+    Route.useLoaderData()
   const router = useRouter()
   const [mutating, setMutating] = useState(false)
   const [bucket, setBucket] = useState<string | null>(null)
@@ -336,6 +343,17 @@ function IssueDetailPage() {
             </div>
           </CardContent>
         </Card>
+      ) : null}
+
+      {latest ? (
+        <MetricStrip
+          title="Metrics around the latest event"
+          service={issue.service}
+          runId={traceRunId ?? undefined}
+          fromNanos={(BigInt(latest.tsNanos) - 300_000_000_000n).toString()}
+          toNanos={(BigInt(latest.tsNanos) + 300_000_000_000n).toString()}
+          stepSeconds={30}
+        />
       ) : null}
 
       <TagsTable tags={issue.tags} />

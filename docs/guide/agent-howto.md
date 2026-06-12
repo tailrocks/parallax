@@ -44,9 +44,41 @@ parallax logs --run <run_id> --grep error  # one run's noise, filtered
 
 Everything the CLI prints comes from `POST http://127.0.0.1:4000/graphql`.
 Agents that prefer structured data over rendered Markdown can query it
-directly — `bundle(fingerprint:)` returns the same evidence as canonical JSON
-plus the Markdown projection. The SDL lives in the
+directly — `bundle(fingerprint:)` (or `bundle(runId:)` / `bundle(traceId:)`)
+returns the same evidence as canonical JSON plus the Markdown projection,
+correlating the trace, its logs, and the metric windows around the anchor in
+one artifact. The SDL lives in the
 [implementation spec §8](../research/architecture/v1-implementation-spec.md).
+
+## Raw SQL — the power tool
+
+When the shaped queries aren't enough, the agent gets the telemetry engine's
+full read surface (GreptimeDB SQL over the same tables the adapters write —
+`otel_spans`, `otel_logs`, `otel_metrics_points`, `otel_metrics_histograms`,
+`error_events`):
+
+```sh
+parallax sql "SELECT \"service\", COUNT(*) FROM otel_logs \
+              WHERE \"severity_num\" >= 17 GROUP BY \"service\""
+```
+
+Same surface as the UI Logs page's SQL mode and the GraphQL `sql(query:)`
+field. Read-only (SELECT/WITH/SHOW/DESCRIBE/EXPLAIN/TQL), one statement,
+engine-dialect — quote identifiers, `run_id`/`trace_id` are plain string
+columns. Local loopback profile only; not a portable contract.
+
+## Verifying a fix — live tail
+
+After landing a change, watch for recurrence instead of polling:
+
+```sh
+parallax logs --follow --grep "checkout total overflowed" --for 60s
+parallax traces --follow --errors --service checkout --for 60s
+```
+
+`--for <window>` tails for the window, prints the match count, and exits —
+zero matches is the "fix holds" signal. The same streams back the UI Logs
+page's live mode (`/v1/logs/stream`, `/v1/traces/stream` SSE).
 
 ## What the agent must know about the data
 

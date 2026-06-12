@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { MetricStrip } from "@/components/metric-strip"
 
 interface TraceSpan {
   tsNanos: string
@@ -159,6 +160,15 @@ function TracePage() {
               </CardContent>
             </Card>
           ) : null}
+
+          <MetricStrip
+            title="Metrics around this trace"
+            service={spans[0]?.service}
+            runId={runId ?? undefined}
+            fromNanos={(BigInt(start) - 300_000_000_000n).toString()}
+            toNanos={(BigInt(end) + 300_000_000_000n).toString()}
+            stepSeconds={30}
+          />
         </div>
 
         {selected ? (

@@ -1153,8 +1153,9 @@ impl Query {
     }
 
     /// The bounded, redacted, hypothesis-ranked evidence bundle — the agent
-    /// handoff artifact. Exactly one anchor: `fingerprint` (issue), `runId`,
-    /// or `traceId` (spec §8). Null when the anchor does not exist.
+    /// handoff artifact assembling trace + logs + metric windows together.
+    /// Exactly one anchor: `fingerprint` (issue), `runId`, or `traceId`
+    /// (spec §8). Null when the anchor does not exist.
     async fn bundle(
         context: &ApiContext,
         fingerprint: Option<String>,
@@ -1171,7 +1172,7 @@ impl Query {
             ));
         }
 
-        let inputs = if let Some(fingerprint) = fingerprint {
+        let mut inputs = if let Some(fingerprint) = fingerprint {
             let Some(issue) = context
                 .metadata
                 .issue(&fingerprint)
@@ -1205,6 +1206,7 @@ impl Query {
                 events,
                 trace_spans,
                 trace_logs,
+                metric_windows: Vec::new(),
             }
         } else if let Some(run_id) = run_id {
             let Some(run) = context.metadata.run(&run_id).await.map_err(field_err)? else {
@@ -1261,6 +1263,7 @@ impl Query {
                 events,
                 trace_spans,
                 trace_logs,
+                metric_windows: Vec::new(),
             }
         } else {
             let trace_id = trace_id.unwrap_or_default();
@@ -1298,9 +1301,11 @@ impl Query {
                 events,
                 trace_spans,
                 trace_logs,
+                metric_windows: Vec::new(),
             }
         };
 
+        inputs.metric_windows = bundle_metric_windows(context, &inputs).await?;
         let bundle = parallax_core::bundle::assemble(inputs, max_tokens);
         let markdown = parallax_core::bundle::to_markdown(&bundle);
         let canonical_hash = bundle.canonical_hash.clone().unwrap_or_default();
@@ -1435,6 +1440,109 @@ impl Query {
             .map_err(field_err)?;
         Ok(runs.into_iter().map(Run::new).collect())
     }
+}
+
+/// Well-known process metrics correlated into every bundle (spec §8
+/// correlation sections).
+const BUNDLE_WINDOW_METRICS: &[&str] = &[
+    "process.cpu.utilization",
+    "process.memory.usage",
+    "tokio.runtime.alive_tasks",
+];
+
+/// Fetch the anchor's metric windows: run anchors read run-scoped points
+/// over the run's lifespan (5 s steps); issue/trace anchors read a
+/// ±5-minute window around the anchor event (30 s steps), run-scoped when
+/// the anchor's spans carry a run id, service-scoped otherwise.
+async fn bundle_metric_windows(
+    context: &ApiContext,
+    inputs: &parallax_core::bundle::BundleInputs,
+) -> FieldResult<Vec<parallax_core::bundle::MetricWindow>> {
+    use parallax_core::bundle::{BundleAnchor, MetricWindow};
+    const PAD_NANOS: u128 = 5 * 60 * 1_000_000_000;
+    let (from, to, step_seconds, run_scope, service) = match &inputs.anchor {
+        BundleAnchor::Run { run, .. } => {
+            let last_activity = inputs
+                .trace_logs
+                .iter()
+                .map(|l| l.ts_nanos)
+                .chain(
+                    inputs
+                        .trace_spans
+                        .iter()
+                        .map(|s| s.ts_nanos + s.duration_ns),
+                )
+                .max();
+            let start = run.started_at_nanos;
+            let end = run
+                .ended_at_nanos
+                .into_iter()
+                .chain(last_activity)
+                .max()
+                .unwrap_or(start);
+            (
+                start.saturating_sub(5_000_000_000),
+                end + 30_000_000_000,
+                5u32,
+                Some(run.run_id.clone()),
+                None,
+            )
+        }
+        _ => {
+            let anchor_ts = inputs
+                .events
+                .first()
+                .map(|e| e.ts_nanos)
+                .or_else(|| inputs.trace_spans.first().map(|s| s.ts_nanos));
+            let Some(anchor_ts) = anchor_ts else {
+                return Ok(Vec::new());
+            };
+            let run_id = inputs.trace_spans.iter().find_map(|s| s.run_id.clone());
+            let service = inputs
+                .trace_spans
+                .first()
+                .map(|s| s.service.clone())
+                .or_else(|| inputs.events.first().map(|e| e.service.clone()));
+            (
+                anchor_ts.saturating_sub(PAD_NANOS),
+                anchor_ts + PAD_NANOS,
+                30u32,
+                run_id,
+                service,
+            )
+        }
+    };
+    let scope = if run_scope.is_some() {
+        "run"
+    } else {
+        "service"
+    };
+    let mut windows = Vec::new();
+    for metric in BUNDLE_WINDOW_METRICS {
+        let points = context
+            .store
+            .metric_series(
+                metric,
+                service.as_deref(),
+                run_scope.as_deref(),
+                from..=to,
+                u128::from(step_seconds) * 1_000_000_000,
+                MetricAgg::Avg,
+            )
+            .await
+            .map_err(field_err)?;
+        if let Some(window) = MetricWindow::from_points(
+            *metric,
+            scope,
+            from,
+            to,
+            step_seconds,
+            points.into_iter().map(|p| (p.ts_nanos, p.value)).collect(),
+        ) {
+            windows.push(window);
+        }
+    }
+    Ok(windows)
 }
 
 pub struct Mutation;

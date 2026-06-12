@@ -25,6 +25,9 @@ pub struct Bundle {
     pub run: Option<RunSection>,
     pub latest_event: Option<EventDetail>,
     pub trace: Option<TraceSection>,
+    /// Correlated metric slices around the anchor (spec §8: trace + logs +
+    /// metric windows together).
+    pub metric_windows: Vec<MetricWindow>,
     pub logs: Vec<String>,
     pub hypotheses: Vec<Hypothesis>,
     pub missing_evidence: Vec<String>,
@@ -77,6 +80,84 @@ pub struct EventDetail {
 pub struct TraceSection {
     pub trace_id: String,
     pub spans: Vec<SpanLine>,
+}
+
+/// One correlated metric slice around the anchor — the bundle's
+/// trace+logs+**metric window** promise (spec §8 correlation sections).
+#[derive(Debug, Serialize)]
+pub struct MetricWindow {
+    pub metric: String,
+    /// "run" (points tagged with the anchor's run id) or "service".
+    pub scope: &'static str,
+    pub from_nanos: String,
+    pub to_nanos: String,
+    pub step_seconds: u32,
+    pub points: Vec<MetricPointLine>,
+    pub stats: MetricStats,
+}
+
+#[derive(Debug, Serialize)]
+pub struct MetricPointLine {
+    pub ts_nanos: String,
+    pub value: f64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct MetricStats {
+    pub min: f64,
+    pub max: f64,
+    pub avg: f64,
+    pub last: f64,
+}
+
+/// Cap per metric window — keeps the section bounded before token bounding.
+pub const METRIC_WINDOW_MAX_POINTS: usize = 60;
+
+impl MetricWindow {
+    /// Build a window from raw points (nanos, value), computing stats and
+    /// enforcing the point cap (oldest dropped first — the anchor sits at
+    /// the window's end).
+    pub fn from_points(
+        metric: impl Into<String>,
+        scope: &'static str,
+        from_nanos: u128,
+        to_nanos: u128,
+        step_seconds: u32,
+        mut points: Vec<(u128, f64)>,
+    ) -> Option<Self> {
+        if points.is_empty() {
+            return None;
+        }
+        points.sort_by_key(|(ts, _)| *ts);
+        if points.len() > METRIC_WINDOW_MAX_POINTS {
+            points.drain(..points.len() - METRIC_WINDOW_MAX_POINTS);
+        }
+        let values: Vec<f64> = points.iter().map(|(_, v)| *v).collect();
+        let min = values.iter().copied().fold(f64::INFINITY, f64::min);
+        let max = values.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+        let avg = values.iter().sum::<f64>() / values.len() as f64;
+        let last = *values.last().unwrap_or(&0.0);
+        Some(Self {
+            metric: metric.into(),
+            scope,
+            from_nanos: from_nanos.to_string(),
+            to_nanos: to_nanos.to_string(),
+            step_seconds,
+            points: points
+                .into_iter()
+                .map(|(ts, value)| MetricPointLine {
+                    ts_nanos: ts.to_string(),
+                    value,
+                })
+                .collect(),
+            stats: MetricStats {
+                min,
+                max,
+                avg,
+                last,
+            },
+        })
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -176,6 +257,9 @@ pub struct BundleInputs {
     pub events: Vec<ErrorEventRow>,
     pub trace_spans: Vec<SpanRow>,
     pub trace_logs: Vec<LogRow>,
+    /// Pre-fetched, pre-bounded metric windows (the API layer queries the
+    /// adapter; assembly stays pure).
+    pub metric_windows: Vec<MetricWindow>,
 }
 
 fn issue_summary(issue: &Issue) -> IssueSummary {
@@ -319,6 +403,14 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
         );
     }
 
+    if inputs.metric_windows.is_empty() {
+        missing.push(
+            "no process metrics in the anchor window — export process.cpu/process.memory \
+             gauges (run-tagged under the wrapper) for the cross-signal view"
+                .into(),
+        );
+    }
+
     let hypotheses = rank_hypotheses(
         primary_issue.as_ref(),
         &inputs.events,
@@ -334,6 +426,7 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
         run: run_section,
         latest_event,
         trace,
+        metric_windows: inputs.metric_windows,
         logs: Vec::new(),
         hypotheses,
         missing_evidence: missing,
@@ -576,6 +669,22 @@ pub fn to_markdown(bundle: &Bundle) -> String {
             if let Some(query) = &span.db_query {
                 out.push_str(&format!("  - query: `{query}`\n"));
             }
+        }
+    }
+    if !bundle.metric_windows.is_empty() {
+        out.push_str("\n## Metric windows\n\n");
+        for window in &bundle.metric_windows {
+            out.push_str(&format!(
+                "- {} ({}-scoped, {} points @ {}s): avg {:.4}, min {:.4}, max {:.4}, last {:.4}\n",
+                window.metric,
+                window.scope,
+                window.points.len(),
+                window.step_seconds,
+                window.stats.avg,
+                window.stats.min,
+                window.stats.max,
+                window.stats.last,
+            ));
         }
     }
     if !bundle.logs.is_empty() {

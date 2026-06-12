@@ -111,7 +111,13 @@ parallax issue context <fingerprint>
 ```
 
 `issue context` prints the evidence bundle: error identity, trace waterfall
-with database query text, correlated logs, deterministic hypotheses — bounded
-to an agent-sized token budget and redacted (redaction-lite, pre-A6). Paste it
-into your coding agent, or point the agent at the command itself — that is the
-[agent how-to](agent-howto.md).
+with database query text, correlated logs, **metric windows around the event**
+(CPU/memory/tokio gauges, run-scoped under the wrapper), deterministic
+hypotheses — bounded to an agent-sized token budget and redacted
+(redaction-lite, pre-A6). Paste it into your coding agent, or point the agent
+at the command itself — that is the [agent how-to](agent-howto.md).
+
+Two more surfaces worth knowing on day one: `parallax logs --follow`
+(kubectl-style live tail, `--for 30s` to watch a window and exit with the
+match count) and `parallax sql "<SELECT …>"` (raw read-only queries against
+the engine's tables) — both in the [CLI reference](cli.md).
