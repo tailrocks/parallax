@@ -38,6 +38,21 @@ pub struct TraceSummary {
     pub has_error: bool,
 }
 
+/// Filtered trace browse (UI Traces page / CLI `parallax traces` / GraphQL
+/// `traces`): every filter optional, applied to the root span except
+/// `error_only`, which looks at the whole trace.
+#[derive(Debug, Clone, Default)]
+pub struct TraceQuery {
+    pub service: Option<String>,
+    pub from_nanos: Option<u128>,
+    pub to_nanos: Option<u128>,
+    pub min_duration_ns: Option<u128>,
+    pub error_only: bool,
+    /// Substring of the root span name.
+    pub name_contains: Option<String>,
+    pub limit: usize,
+}
+
 #[async_trait::async_trait]
 pub trait TelemetryStore: Send + Sync {
     async fn write_spans(&self, rows: Vec<SpanRow>) -> anyhow::Result<()>;
@@ -86,7 +101,15 @@ pub trait TelemetryStore: Send + Sync {
     /// Distinct run ids seen in telemetry, most recent activity first.
     async fn observed_runs(&self, limit: usize) -> anyhow::Result<Vec<ObservedRun>>;
     /// Recent traces (root spans + aggregates), newest first.
-    async fn recent_traces(&self, limit: usize) -> anyhow::Result<Vec<TraceSummary>>;
+    async fn recent_traces(&self, limit: usize) -> anyhow::Result<Vec<TraceSummary>> {
+        self.traces_search(&TraceQuery {
+            limit,
+            ..TraceQuery::default()
+        })
+        .await
+    }
+    /// Filtered trace browse (root spans + aggregates), newest first.
+    async fn traces_search(&self, query: &TraceQuery) -> anyhow::Result<Vec<TraceSummary>>;
     /// Error events across a set of traces, newest first (run-anchored reads).
     async fn error_events_by_traces(
         &self,

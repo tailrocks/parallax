@@ -250,6 +250,9 @@ function LogsPage() {
   const [selected, setSelected] = useState<LogDoc | null>(null)
   const [fieldSearch, setFieldSearch] = useState("")
   const [loading, setLoading] = useState(false)
+  // Live is explicit, never the default — a tail costs a subscription, and
+  // it narrows the surface: per-row filters only, no ranges, no aggregates.
+  const live = refreshSeconds === -1
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -315,7 +318,7 @@ function LogsPage() {
   // Live mode (-1): tail over Server-Sent Events. Incoming batches buffer
   // and flush every 250ms (render batching), newest first, capped at 500.
   useEffect(() => {
-    if (refreshSeconds !== -1) return
+    if (!live) return
     const params = new URLSearchParams()
     if (service !== "all") params.set("service", service)
     if (severityMin > 0) params.set("severity_min", String(severityMin))
@@ -340,7 +343,7 @@ function LogsPage() {
       source.close()
       clearInterval(flush)
     }
-  }, [refreshSeconds, service, severityMin, query])
+  }, [live, service, severityMin, query])
 
   const chartData = useMemo(
     () =>
@@ -375,9 +378,10 @@ function LogsPage() {
         <Select
           value={mode}
           onValueChange={(v) => setMode(v === "sql" ? "sql" : "filters")}
+          disabled={live}
         >
           <SelectTrigger className="w-32">
-            <SelectValue />
+            <SelectValue>{mode === "sql" ? "SQL" : "Filters"}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="filters">Filters</SelectItem>
@@ -395,7 +399,9 @@ function LogsPage() {
       >
         <Select value={service} onValueChange={(v) => setService(v ?? "all")}>
           <SelectTrigger className="w-48">
-            <SelectValue placeholder="All services" />
+            <SelectValue>
+              {service === "all" ? "All services" : service}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All services</SelectItem>
@@ -411,7 +417,9 @@ function LogsPage() {
           onValueChange={(v) => setSeverityMin(Number(v ?? 0))}
         >
           <SelectTrigger className="w-36">
-            <SelectValue />
+            <SelectValue>
+              {SEVERITIES.find((s) => s.min === severityMin)?.label}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {SEVERITIES.map((s) => (
@@ -437,9 +445,12 @@ function LogsPage() {
         <Select
           value={String(rangeMinutes)}
           onValueChange={(v) => setRangeMinutes(Number(v ?? 15))}
+          disabled={live}
         >
           <SelectTrigger className="w-44">
-            <SelectValue />
+            <SelectValue>
+              {RANGES.find((r) => r.minutes === rangeMinutes)?.label}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {RANGES.map((range) => (
@@ -454,7 +465,9 @@ function LogsPage() {
           onValueChange={(v) => setRefreshSeconds(Number(v ?? 0))}
         >
           <SelectTrigger className="w-36">
-            <SelectValue />
+            <SelectValue>
+              {REFRESH.find((o) => o.seconds === refreshSeconds)?.label}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {REFRESH.map((option) => (
@@ -469,33 +482,40 @@ function LogsPage() {
             setQuery(pendingQuery)
             void load()
           }}
-          disabled={loading}
+          disabled={loading || live}
         >
           Refresh
         </Button>
       </div>
 
-      <div className={mode === "sql" ? "hidden" : "space-y-1"}>
-        <ChartContainer config={histogramConfig} className="h-32 w-full">
-          <BarChart data={chartData} margin={{ left: 8, right: 8, top: 4 }}>
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="time"
-              tickLine={false}
-              axisLine={false}
-              minTickGap={48}
-            />
-            <YAxis tickLine={false} axisLine={false} width={48} />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            <Bar dataKey="value" fill="var(--color-value)" radius={2} />
-          </BarChart>
-        </ChartContainer>
+      {live ? (
         <p className="text-xs text-muted-foreground">
-          {total.toLocaleString()} log(s) in range · showing newest{" "}
-          {logs.length}
-          {refreshSeconds > 0 ? ` · live (every ${refreshSeconds}s)` : ""}
+          live tail · {logs.length} shown · per-row filters only (service,
+          severity, text) — switch off Live for ranges, the histogram, and SQL
         </p>
-      </div>
+      ) : (
+        <div className={mode === "sql" ? "hidden" : "space-y-1"}>
+          <ChartContainer config={histogramConfig} className="h-32 w-full">
+            <BarChart data={chartData} margin={{ left: 8, right: 8, top: 4 }}>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="time"
+                tickLine={false}
+                axisLine={false}
+                minTickGap={48}
+              />
+              <YAxis tickLine={false} axisLine={false} width={48} />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar dataKey="value" fill="var(--color-value)" radius={2} />
+            </BarChart>
+          </ChartContainer>
+          <p className="text-xs text-muted-foreground">
+            {total.toLocaleString()} log(s) in range · showing newest{" "}
+            {logs.length}
+            {refreshSeconds > 0 ? ` · refreshing every ${refreshSeconds}s` : ""}
+          </p>
+        </div>
+      )}
 
       {mode === "sql" ? null : logs.length === 0 ? (
         <div className="space-y-2">

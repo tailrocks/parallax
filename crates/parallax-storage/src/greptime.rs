@@ -693,18 +693,42 @@ impl TelemetryStore for GreptimeStore {
         Ok(runs)
     }
 
-    async fn recent_traces(
+    async fn traces_search(
         &self,
-        limit: usize,
+        query: &crate::adapter::TraceQuery,
     ) -> anyhow::Result<Vec<crate::adapter::TraceSummary>> {
         // Root spans (no parent), newest first; aggregates joined per trace.
+        // `error_only` filters on the aggregate, so over-fetch roots first.
+        let mut clauses = vec![r#"("parent_span_id" IS NULL OR "parent_span_id" = '')"#.into()];
+        if let Some(service) = &query.service {
+            clauses.push(format!(r#""service" = '{}'"#, escape(service)));
+        }
+        if let Some(from) = query.from_nanos {
+            clauses.push(format!(r#""ts" >= {}"#, sql_ts(from)));
+        }
+        if let Some(to) = query.to_nanos {
+            clauses.push(format!(r#""ts" <= {}"#, sql_ts(to)));
+        }
+        if let Some(min) = query.min_duration_ns {
+            clauses.push(format!(r#""duration_ns" >= {}"#, u64::try_from(min)?));
+        }
+        if let Some(needle) = &query.name_contains {
+            let escaped = escape(needle).replace('%', r"\%").replace('_', r"\_");
+            clauses.push(format!(r#""name" LIKE '%{escaped}%' ESCAPE '\'"#));
+        }
+        let fetch = if query.error_only {
+            query.limit.saturating_mul(5).max(50)
+        } else {
+            query.limit
+        };
         let roots = self
             .sql(&format!(
                 r#"SELECT "trace_id", "name", "service", CAST("ts" AS BIGINT) AS "ts_nanos",
                           CAST("duration_ns" AS BIGINT) AS "dur"
                    FROM otel_spans
-                   WHERE "parent_span_id" IS NULL OR "parent_span_id" = ''
-                   ORDER BY "ts" DESC LIMIT {limit}"#
+                   WHERE {}
+                   ORDER BY "ts" DESC LIMIT {fetch}"#,
+                clauses.join(" AND ")
             ))
             .await?;
         if roots.is_empty() {
@@ -731,7 +755,7 @@ impl TelemetryStore for GreptimeStore {
                 (u128_at(row, 1) as u64, u128_at(row, 2) > 0),
             );
         }
-        Ok(roots
+        let mut traces: Vec<_> = roots
             .iter()
             .map(|row| {
                 let trace_id = str_at(row, 0);
@@ -747,7 +771,12 @@ impl TelemetryStore for GreptimeStore {
                     has_error,
                 }
             })
-            .collect())
+            .collect();
+        if query.error_only {
+            traces.retain(|t| t.has_error);
+        }
+        traces.truncate(query.limit);
+        Ok(traces)
     }
 
     async fn error_events_by_traces(

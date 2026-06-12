@@ -34,7 +34,9 @@ server from `~/.parallax/contexts.toml` — omitted, it targets the local one.
 | Command | What it does |
 | --- | --- |
 | `parallax trace inspect <trace_id>` | Spans (service, kind, status, duration) + correlated logs. |
+| `parallax traces [--service <name>] [--min-duration 500ms] [--errors] [--grep <substr>] [--since 15m] [--limit 50]` | Browse traces newest-first with the same filters as the UI's Traces page: root-span service/name/duration plus `--errors` for traces containing an error span. |
 | `parallax logs [--trace <id>] [--run <id>] [--service <name>] [--level <severity>] [--grep <substr>] [--since 15m] [--limit 100]` | Browse logs newest-first with the same filters as the UI's Logs page; `--trace`/`--run` scope to one trace or run. |
+| `parallax logs --follow` / `parallax traces --follow` | kubectl-style live tail over SSE with the same per-row filters (no time window — it's a tail). Add `--for 30s` to watch a fixed window, then print the match count and exit: the agent verification loop ("after my fix, does it still appear?"). |
 | `parallax sql "<SELECT …>"` | Raw read-only SQL straight to the GreptimeDB engine (logs, traces, metrics tables) — the same power surface as the UI's SQL mode. Single SELECT-shaped statements only. |
 
 ## Maintenance

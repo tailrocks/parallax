@@ -86,6 +86,28 @@ impl Client {
         }
         Ok(response)
     }
+
+    /// Open a Server-Sent Events stream (live tail endpoints).
+    pub async fn sse(&self, path_and_query: &str) -> anyhow::Result<reqwest::Response> {
+        let response = self
+            .http
+            .get(format!("{}{}", self.base_url, path_and_query))
+            .header("accept", "text/event-stream")
+            .send()
+            .await
+            .map_err(|e| {
+                anyhow::anyhow!(
+                    "cannot reach Parallax at {} ({e}); is `parallax serve` running?",
+                    self.base_url
+                )
+            })?;
+        anyhow::ensure!(
+            response.status().is_success(),
+            "stream request failed: {}",
+            response.status()
+        );
+        Ok(response)
+    }
 }
 
 /// Escape a string for inclusion inside a GraphQL double-quoted literal.

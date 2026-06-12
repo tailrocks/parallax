@@ -70,6 +70,40 @@ enum Command {
         /// Max lines (newest first).
         #[arg(long, default_value_t = 100)]
         limit: u32,
+        /// Live tail (kubectl-style): stream new matching logs as they arrive.
+        #[arg(long, short = 'f')]
+        follow: bool,
+        /// With --follow: stop after this window and report the match count
+        /// (agent verification: "does it still appear?"), e.g. 30s, 5m.
+        #[arg(long = "for", requires = "follow")]
+        follow_for: Option<String>,
+    },
+    /// Browse traces — the same filters as the UI's Traces page.
+    Traces {
+        /// Service name to scope to.
+        #[arg(long)]
+        service: Option<String>,
+        /// Only traces whose root span is at least this long, e.g. 500ms, 2s.
+        #[arg(long)]
+        min_duration: Option<String>,
+        /// Only traces containing an error span.
+        #[arg(long)]
+        errors: bool,
+        /// Only root spans whose name contains this substring.
+        #[arg(long, alias = "query")]
+        grep: Option<String>,
+        /// Time window, e.g. 15m, 2h, 7d.
+        #[arg(long, default_value = "15m")]
+        since: String,
+        /// Max traces (newest first).
+        #[arg(long, default_value_t = 50)]
+        limit: u32,
+        /// Live tail: stream finished spans matching the filters.
+        #[arg(long, short = 'f')]
+        follow: bool,
+        /// With --follow: stop after this window and report the match count.
+        #[arg(long = "for", requires = "follow")]
+        follow_for: Option<String>,
     },
     /// Run a read-only SQL query against the telemetry engine (GreptimeDB).
     Sql {
@@ -222,20 +256,47 @@ async fn main() -> anyhow::Result<()> {
             grep,
             since,
             limit,
+            follow,
+            follow_for,
         } => {
-            commands::logs(
-                &client()?,
-                commands::LogsFilter {
-                    trace: trace.as_deref(),
-                    run: run.as_deref(),
-                    service: service.as_deref(),
-                    level: level.as_deref(),
-                    grep: grep.as_deref(),
-                    since: &since,
-                    limit,
-                },
-            )
-            .await
+            let filter = commands::LogsFilter {
+                trace: trace.as_deref(),
+                run: run.as_deref(),
+                service: service.as_deref(),
+                level: level.as_deref(),
+                grep: grep.as_deref(),
+                since: &since,
+                limit,
+            };
+            if follow {
+                commands::logs_follow(&client()?, filter, follow_for.as_deref()).await
+            } else {
+                commands::logs(&client()?, filter).await
+            }
+        }
+        Command::Traces {
+            service,
+            min_duration,
+            errors,
+            grep,
+            since,
+            limit,
+            follow,
+            follow_for,
+        } => {
+            let filter = commands::TracesFilter {
+                service: service.as_deref(),
+                min_duration: min_duration.as_deref(),
+                errors_only: errors,
+                grep: grep.as_deref(),
+                since: &since,
+                limit,
+            };
+            if follow {
+                commands::traces_follow(&client()?, filter, follow_for.as_deref()).await
+            } else {
+                commands::traces(&client()?, filter).await
+            }
         }
         Command::Sql { query } => commands::sql(&client()?, &query).await,
         Command::Doctor => doctor::doctor().await,

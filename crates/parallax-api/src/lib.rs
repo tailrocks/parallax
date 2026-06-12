@@ -1110,6 +1110,47 @@ impl Query {
         Ok(traces.into_iter().map(TraceSummary).collect())
     }
 
+    /// Filtered trace browse (UI Traces page / `parallax traces`): every
+    /// filter optional; filters hit the root span except `errorOnly`,
+    /// which looks at the whole trace.
+    #[allow(clippy::too_many_arguments)]
+    async fn traces(
+        context: &ApiContext,
+        service: Option<String>,
+        from_nanos: Option<String>,
+        to_nanos: Option<String>,
+        min_duration_ms: Option<f64>,
+        error_only: Option<bool>,
+        query: Option<String>,
+        limit: Option<i32>,
+    ) -> FieldResult<Vec<TraceSummary>> {
+        let parse = |bound: Option<String>, label: &str| -> FieldResult<Option<u128>> {
+            bound
+                .map(|s| {
+                    s.parse::<u128>()
+                        .map_err(|_| field_err(format!("invalid {label}")))
+                })
+                .transpose()
+        };
+        let trace_query = parallax_storage::adapter::TraceQuery {
+            service: service.filter(|s| !s.is_empty()),
+            from_nanos: parse(from_nanos, "fromNanos")?,
+            to_nanos: parse(to_nanos, "toNanos")?,
+            min_duration_ns: min_duration_ms
+                .filter(|ms| *ms > 0.0)
+                .map(|ms| (ms * 1e6) as u128),
+            error_only: error_only.unwrap_or(false),
+            name_contains: query.filter(|q| !q.trim().is_empty()),
+            limit: clamp_limit(limit, 50),
+        };
+        let traces = context
+            .store
+            .traces_search(&trace_query)
+            .await
+            .map_err(field_err)?;
+        Ok(traces.into_iter().map(TraceSummary).collect())
+    }
+
     /// The bounded, redacted, hypothesis-ranked evidence bundle — the agent
     /// handoff artifact. Exactly one anchor: `fingerprint` (issue), `runId`,
     /// or `traceId` (spec §8). Null when the anchor does not exist.

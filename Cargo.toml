@@ -32,7 +32,7 @@ clap = { version = "4", features = ["derive"] }
 dirs = "6"
 prost = "0.14"
 regex = "1"
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "stream"] }
 rust-embed = "8"
 mime_guess = "2"
 serde = { version = "1", features = ["derive"] }
@@ -41,6 +41,7 @@ sha2 = "0.10"
 thiserror = "2"
 tokio = { version = "1", features = ["full"] }
 tokio-stream = { version = "0.1", features = ["net", "sync"] }
+urlencoding = "2"
 futures-core = "0.3"
 toml = "0.9"
 tonic = "0.14"

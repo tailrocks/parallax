@@ -394,6 +394,239 @@ pub async fn logs(client: &Client, filter: LogsFilter<'_>) -> anyhow::Result<()>
     Ok(())
 }
 
+/// The CLI mirror of the UI Traces page filters.
+pub struct TracesFilter<'a> {
+    pub service: Option<&'a str>,
+    pub min_duration: Option<&'a str>,
+    pub errors_only: bool,
+    pub grep: Option<&'a str>,
+    pub since: &'a str,
+    pub limit: u32,
+}
+
+/// "500ms" | "2s" | "1m" | bare millis ("250") → milliseconds.
+fn parse_duration_ms(value: &str) -> anyhow::Result<f64> {
+    let parse = |digits: &str, scale: f64| -> anyhow::Result<f64> {
+        digits
+            .parse::<f64>()
+            .map(|n| n * scale)
+            .map_err(|_| anyhow::anyhow!("invalid duration '{value}' (e.g. 500ms, 2s, 1m)"))
+    };
+    if let Some(digits) = value.strip_suffix("ms") {
+        parse(digits, 1.0)
+    } else if let Some(digits) = value.strip_suffix('s') {
+        parse(digits, 1_000.0)
+    } else if let Some(digits) = value.strip_suffix('m') {
+        parse(digits, 60_000.0)
+    } else {
+        parse(value, 1.0)
+    }
+}
+
+/// `parallax traces [--service] [--min-duration] [--errors] [--grep] [--since] [--limit]`.
+pub async fn traces(client: &Client, filter: TracesFilter<'_>) -> anyhow::Result<()> {
+    let mut args: Vec<String> = Vec::new();
+    if let Some(service) = filter.service {
+        args.push(format!(r#"service: "{}""#, gql_str(service)));
+    }
+    if let Some(min) = filter.min_duration {
+        args.push(format!("minDurationMs: {}", parse_duration_ms(min)?));
+    }
+    if filter.errors_only {
+        args.push("errorOnly: true".into());
+    }
+    if let Some(needle) = filter.grep {
+        args.push(format!(r#"query: "{}""#, gql_str(needle)));
+    }
+    let from = now_nanos().saturating_sub(parse_since(filter.since)?);
+    args.push(format!(r#"fromNanos: "{from}""#));
+    args.push(format!("limit: {}", filter.limit));
+    let response = client
+        .graphql(&format!(
+            r#"{{ traces({}) {{ traceId rootName service startNanos durationNs spanCount hasError }} }}"#,
+            args.join(", ")
+        ))
+        .await?;
+    let traces = response
+        .pointer("/data/traces")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    if traces.is_empty() {
+        println!("no matching traces");
+        return Ok(());
+    }
+    for trace in &traces {
+        let millis = trace["durationNs"]
+            .as_str()
+            .and_then(|d| d.parse::<u128>().ok())
+            .unwrap_or(0) as f64
+            / 1e6;
+        println!(
+            "{:<10} {} [{}] {} — {} span(s), {millis:.1}ms{}",
+            relative(trace["startNanos"].as_str().unwrap_or("0")),
+            trace["traceId"].as_str().unwrap_or("-"),
+            trace["service"].as_str().unwrap_or("-"),
+            trace["rootName"].as_str().unwrap_or("-"),
+            trace["spanCount"].as_i64().unwrap_or(0),
+            if trace["hasError"].as_bool().unwrap_or(false) {
+                ", ERROR"
+            } else {
+                ""
+            },
+        );
+    }
+    Ok(())
+}
+
+/// Tail an SSE endpoint, printing each row via `print`; `for_window`
+/// (e.g. 30s) stops after that long and reports the match count — the
+/// agent-verification mode ("watch whether it still appears").
+async fn tail_sse(
+    client: &Client,
+    path_and_query: &str,
+    for_window: Option<&str>,
+    print: impl Fn(&serde_json::Value),
+) -> anyhow::Result<()> {
+    use tokio_stream::StreamExt as _;
+    let deadline = for_window
+        .map(|w| parse_since(w).map(|nanos| (nanos / 1_000_000) as u64))
+        .transpose()?
+        .map(|millis| tokio::time::Instant::now() + std::time::Duration::from_millis(millis));
+    let response = client.sse(path_and_query).await?;
+    let mut stream = response.bytes_stream();
+    let mut pending = String::new();
+    let mut matched: u64 = 0;
+    loop {
+        let chunk = match deadline {
+            Some(deadline) => {
+                match tokio::time::timeout_at(deadline, stream.next()).await {
+                    Ok(chunk) => chunk,
+                    Err(_) => break, // window elapsed
+                }
+            }
+            None => stream.next().await,
+        };
+        let Some(chunk) = chunk else { break };
+        pending.push_str(&String::from_utf8_lossy(&chunk?));
+        // SSE frames: "data: <json>\n"; keep-alives and partial lines skipped.
+        while let Some(newline) = pending.find('\n') {
+            let line = pending[..newline].trim().to_string();
+            pending.drain(..=newline);
+            let Some(payload) = line.strip_prefix("data: ") else {
+                continue;
+            };
+            if let Ok(serde_json::Value::Array(rows)) = serde_json::from_str(payload) {
+                for row in &rows {
+                    matched += 1;
+                    print(row);
+                }
+            }
+        }
+    }
+    if let Some(window) = for_window {
+        println!("-- watched {window}: {matched} matching event(s)");
+    }
+    Ok(())
+}
+
+/// `parallax logs --follow` — kubectl-style live tail over SSE.
+pub async fn logs_follow(
+    client: &Client,
+    filter: LogsFilter<'_>,
+    for_window: Option<&str>,
+) -> anyhow::Result<()> {
+    let mut params: Vec<(&str, String)> = Vec::new();
+    if let Some(service) = filter.service {
+        params.push(("service", service.into()));
+    }
+    if let Some(level) = filter.level {
+        params.push(("severity_min", severity_min(level)?.to_string()));
+    }
+    if let Some(needle) = filter.grep {
+        params.push(("q", needle.into()));
+    }
+    if let Some(trace_id) = filter.trace {
+        params.push(("trace_id", trace_id.into()));
+    }
+    if let Some(run_id) = filter.run {
+        params.push(("run_id", run_id.into()));
+    }
+    let query = encode_query(&params);
+    tail_sse(
+        client,
+        &format!("/v1/logs/stream{query}"),
+        for_window,
+        |log| {
+            println!(
+                "{:<10} [{}] {} {}",
+                relative(log["tsNanos"].as_str().unwrap_or("0")),
+                log["service"].as_str().unwrap_or("-"),
+                log["severityText"].as_str().unwrap_or("-"),
+                log["body"].as_str().unwrap_or(""),
+            );
+        },
+    )
+    .await
+}
+
+/// `parallax traces --follow` — live finished-span feed over SSE.
+pub async fn traces_follow(
+    client: &Client,
+    filter: TracesFilter<'_>,
+    for_window: Option<&str>,
+) -> anyhow::Result<()> {
+    let mut params: Vec<(&str, String)> = Vec::new();
+    if let Some(service) = filter.service {
+        params.push(("service", service.into()));
+    }
+    if let Some(min) = filter.min_duration {
+        params.push(("min_duration_ms", parse_duration_ms(min)?.to_string()));
+    }
+    if filter.errors_only {
+        params.push(("errors_only", "true".into()));
+    }
+    if let Some(needle) = filter.grep {
+        params.push(("q", needle.into()));
+    }
+    let query = encode_query(&params);
+    tail_sse(
+        client,
+        &format!("/v1/traces/stream{query}"),
+        for_window,
+        |span| {
+            let millis = span["durationNs"]
+                .as_str()
+                .and_then(|d| d.parse::<u128>().ok())
+                .unwrap_or(0) as f64
+                / 1e6;
+            println!(
+                "{:<10} {} [{}] {} — {millis:.1}ms {}",
+                relative(span["tsNanos"].as_str().unwrap_or("0")),
+                span["traceId"].as_str().unwrap_or("-"),
+                span["service"].as_str().unwrap_or("-"),
+                span["name"].as_str().unwrap_or("-"),
+                span["statusCode"]
+                    .as_str()
+                    .map(|s| s.trim_start_matches("STATUS_CODE_"))
+                    .unwrap_or("-"),
+            );
+        },
+    )
+    .await
+}
+
+fn encode_query(params: &[(&str, String)]) -> String {
+    if params.is_empty() {
+        return String::new();
+    }
+    let encoded: Vec<String> = params
+        .iter()
+        .map(|(key, value)| format!("{key}={}", urlencoding::encode(value)))
+        .collect();
+    format!("?{}", encoded.join("&"))
+}
+
 pub async fn trace_inspect(client: &Client, trace_id: &str) -> anyhow::Result<()> {
     let response = client
         .graphql(&format!(

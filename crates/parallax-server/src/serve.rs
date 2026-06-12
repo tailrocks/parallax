@@ -127,7 +127,7 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
         spool: spool.clone(),
         sender,
     };
-    let live = crate::live::channel();
+    let live = crate::live::channels();
     let worker = Worker::new(store.clone(), metadata.clone(), live.clone());
     let mut tasks = Vec::new();
     tasks.push(tokio::spawn(worker.run(receiver)));
@@ -145,6 +145,7 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
         .merge(
             Router::new()
                 .route("/v1/logs/stream", get(crate::live::stream_logs))
+                .route("/v1/traces/stream", get(crate::live::stream_traces))
                 .with_state(live),
         )
         .merge(

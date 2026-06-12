@@ -327,6 +327,10 @@ type Query {
   issueTrend(fingerprint: String!, hours: Int = 24, stepSeconds: Int = 3600): [TrendPoint!]!
   trace(traceId: String!): Trace
   tracesByRun(runId: String!, limit: Int = 200): [TraceSummary!]!
+  traces(service: String, fromNanos: String, toNanos: String,
+         minDurationMs: Float, errorOnly: Boolean,
+         query: String, limit: Int = 50): [TraceSummary!]!  # filtered browse; root-span
+                                                            # filters, errorOnly = whole trace
   logs(traceId: String, runId: String, service: String,
        fromNanos: String, toNanos: String, severityMin: Int,
        query: String, limit: Int = 500): [LogRecord!]!   # unified browse; newest first
@@ -399,6 +403,22 @@ not part of the portable contract — and exists because the V1 profile is
 loopback, single-user, no-auth; the V2 server profile must revisit it behind
 authz before any non-local exposure.
 
+**Live tail endpoints (SSE, not GraphQL).** `GET /v1/logs/stream` and
+`GET /v1/traces/stream` on the API port serve Server-Sent Events fed by the
+ingest worker's broadcast channels (published only while subscribers exist —
+the hot path stays clone-free). Live is explicitly narrower than the polling
+queries, by design and per industry practice (Datadog Live Tail, Loki `tail`):
+**per-row predicates only, no time ranges, no aggregation, no SQL.** Filters
+are query params mirroring the polling vocabulary where it applies to a single
+row — logs: `service`, `severity_min`, `q`, `trace_id`, `run_id`; traces (a
+finished-span feed): `service`, `min_duration_ms`, `errors_only`, `q`,
+`trace_id`, `run_id`. Each SSE frame is a JSON array of matching rows; lagging
+consumers drop batches (broadcast semantics = tail semantics). Rationale and
+sources: [live-telemetry-streaming.md](live-telemetry-streaming.md). The CLI
+mirror is `--follow` on `parallax logs`/`parallax traces`, with `--for <window>`
+to watch a fixed window and report the match count (the agent verification
+loop).
+
 Pagination/row caps are resolver-level (500 rows; issue scans capped at 1000) — Juniper has no
 schema-level depth/complexity middleware; the `[limits]` config keys wait on the M5 query-cost
 middleware. `serviceOverview` resolves from well-known metric names (`process.cpu.*`,
@@ -416,7 +436,8 @@ suggestions). `bundle` accepts exactly one anchor: `fingerprint` (issue), `runId
 | Service overview | `serviceOverview` (+ `services` for the selector) |
 | Custom dashboard | `dashboards`/`dashboard` + N × `metricSeries(groupBy?)`/`histogramQuantile`; builder uses `metricNames`; `dashboardSave`/`dashboardDelete` |
 | Trace view | `trace(traceId)` + `logsByTrace`; entry from paste, issue event, or a run's `tracesByRun(runId)` |
-| Logs | `logs(traceId?, runId?, service?, severityMin?, query?, …)` |
+| Traces browse | `traces(service?, fromNanos?, toNanos?, minDurationMs?, errorOnly?, query?)`; Live mode switches to the `/v1/traces/stream` span feed |
+| Logs | `logs(traceId?, runId?, service?, severityMin?, query?, …)` + `logCountSeries` histogram; Live mode switches to `/v1/logs/stream` |
 | Runs | `runs` / `run(runId)` (errorCount/traceCount/issues) + `tracesByRun` + `logsByRun` + `bundle(runId:)` preview |
 
 ## 10. CLI output contract

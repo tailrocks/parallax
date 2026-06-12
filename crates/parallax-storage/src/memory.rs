@@ -334,20 +334,29 @@ impl TelemetryStore for MemoryStore {
         Ok(runs)
     }
 
-    async fn recent_traces(
+    async fn traces_search(
         &self,
-        limit: usize,
+        query: &crate::adapter::TraceQuery,
     ) -> anyhow::Result<Vec<crate::adapter::TraceSummary>> {
         let inner = self.lock();
-        // Roots first (no parent); newest first.
+        // Roots first (no parent); newest first; root-span filters inline.
         let mut roots: Vec<&SpanRow> = inner
             .spans
             .iter()
             .filter(|s| s.parent_span_id.as_deref().is_none_or(str::is_empty))
+            .filter(|s| query.service.as_deref().is_none_or(|svc| s.service == svc))
+            .filter(|s| query.from_nanos.is_none_or(|from| s.ts_nanos >= from))
+            .filter(|s| query.to_nanos.is_none_or(|to| s.ts_nanos <= to))
+            .filter(|s| query.min_duration_ns.is_none_or(|min| s.duration_ns >= min))
+            .filter(|s| {
+                query
+                    .name_contains
+                    .as_deref()
+                    .is_none_or(|needle| s.name.contains(needle))
+            })
             .collect();
         roots.sort_by_key(|s| std::cmp::Reverse(s.ts_nanos));
-        roots.truncate(limit);
-        Ok(roots
+        let mut traces: Vec<_> = roots
             .into_iter()
             .map(|root| {
                 let mut span_count = 0;
@@ -368,7 +377,12 @@ impl TelemetryStore for MemoryStore {
                     has_error,
                 }
             })
-            .collect())
+            .collect();
+        if query.error_only {
+            traces.retain(|t| t.has_error);
+        }
+        traces.truncate(query.limit);
+        Ok(traces)
     }
 
     async fn error_events_by_traces(
