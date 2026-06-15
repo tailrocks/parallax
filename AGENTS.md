@@ -74,8 +74,9 @@ structure quickly.
   that declares a license (crate metadata, schemas, examples, future product
   code) declares **Apache-2.0**, and the company name used in examples,
   attribution, and metadata is **Tailrocks** (e.g. `github.com/tailrocks/...`
-  in fixtures, not `acme`). License ≠ visibility: the repository stays private
-  until the operator publishes it, and pre-release access follows
+  in fixtures, not `acme`). Visibility now follows this repository's published
+  status; when the repository is public, pre-release access controls are
+  governed by public contribution and release policy in
   [REPOSITORY_PROTECTION.md](REPOSITORY_PROTECTION.md).
 
 ## Branching and Pull Requests

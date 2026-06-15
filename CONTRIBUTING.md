@@ -1,8 +1,10 @@
 # Contributing
 
-This is a private Tailrocks Pte. Ltd. repository, licensed under the
-[Apache License, Version 2.0](LICENSE). It is not accepting public
-contributions while the project is pre-release.
+This is a public Tailrocks Pte. Ltd. repository, licensed under the
+[Apache License, Version 2.0](LICENSE).
+
+Contributions are welcome during pre-release and must be submitted under the
+normal project process.
 
 Contributions made with pre-release access are accepted under the Apache
 License, Version 2.0: per Section 5 of the license, any contribution
