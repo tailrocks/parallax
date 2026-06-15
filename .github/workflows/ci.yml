@@ -74,7 +74,7 @@ jobs:
       - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
           install_args: "actionlint shellcheck"
-          github_token: ${{ secrets.GH_READONLY_TOKEN || github.token }}
+          github_token: ${{ secrets.GH_READONLY_TOKEN }}
       - run: actionlint .github/workflows/*.yml
       - run: shellcheck scripts/*.sh
 
@@ -98,7 +98,7 @@ jobs:
       - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
           install_args: "rust"
-          github_token: ${{ secrets.GH_READONLY_TOKEN || github.token }}
+          github_token: ${{ secrets.GH_READONLY_TOKEN }}
       - run: rustup component add rustfmt
       - run: cargo fmt --all -- --check
 
@@ -144,7 +144,7 @@ jobs:
       - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
           install_args: "rust"
-          github_token: ${{ secrets.GH_READONLY_TOKEN || github.token }}
+          github_token: ${{ secrets.GH_READONLY_TOKEN }}
       - name: Cache Cargo build artifacts
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
@@ -206,7 +206,7 @@ jobs:
       - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
           install_args: "rust"
-          github_token: ${{ secrets.GH_READONLY_TOKEN || github.token }}
+          github_token: ${{ secrets.GH_READONLY_TOKEN }}
       - name: Cache Cargo build artifacts
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
@@ -276,7 +276,7 @@ jobs:
       - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
           install_args: "rust cargo:cargo-nextest"
-          github_token: ${{ secrets.GH_READONLY_TOKEN || github.token }}
+          github_token: ${{ secrets.GH_READONLY_TOKEN }}
       - name: Cache Cargo build artifacts
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
@@ -306,7 +306,7 @@ jobs:
       - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
           install_args: "bun"
-          github_token: ${{ secrets.GH_READONLY_TOKEN || github.token }}
+          github_token: ${{ secrets.GH_READONLY_TOKEN }}
       - name: Cache Bun modules
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
