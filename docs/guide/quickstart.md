@@ -104,9 +104,10 @@ Full wiring for the supported stack — tonic, axum, tokio-postgres, the
 parallax run start -- cargo run
 ```
 
-The wrapper injects `OTEL_EXPORTER_OTLP_ENDPOINT` and a `parallax.run.id`
-resource attribute, then propagates your program's exit code. Everything the
-run emitted is now addressable: `parallax run list`, `parallax logs --run <id>`.
+The wrapper injects OTLP/gRPC endpoint and protocol env vars for traces,
+logs, and metrics plus a `parallax.run.id` resource attribute, then
+propagates your program's exit code. Everything the run emitted is now
+addressable: `parallax run list`, `parallax logs --run <id>`.
 
 ## 5. First bundle
 

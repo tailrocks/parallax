@@ -52,14 +52,22 @@ exports the full firehose, without it only lifecycle/errors:
 
 ```sh
 RUN_ID=18b946258b86fe20
-JACKIN_OTLP_ENDPOINT=http://127.0.0.1:4318 \
+OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4317 \
+OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:4317 \
+OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://127.0.0.1:4317 \
+OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://127.0.0.1:4317 \
+OTEL_EXPORTER_OTLP_PROTOCOL=grpc \
+OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc \
+OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=grpc \
+OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc \
 OTEL_RESOURCE_ATTRIBUTES="parallax.run.id=$RUN_ID" \
   ./target/debug/jackin console --debug
 ```
 
-`JACKIN_OTLP_ENDPOINT` wins over the standard
-`OTEL_EXPORTER_OTLP_ENDPOINT`; the wrapper sets both so jackin' reaches
-Parallax's OTLP/HTTP receiver while generic OTel SDKs can use OTLP/gRPC.
+The wrapper sets the same standard OTel variables, preferring OTLP/gRPC on
+`:4317` for every signal. Avoid `JACKIN_OTLP_ENDPOINT` for Parallax runs; it
+is a legacy jackin-specific escape hatch and can bypass the standard
+per-signal settings.
 
 ## 4. See everything under that run id
 

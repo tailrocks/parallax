@@ -14,7 +14,7 @@ server from `~/.parallax/contexts.toml` — omitted, it targets the local one.
 
 | Command | What it does |
 | --- | --- |
-| `parallax run start -- <cmd…>` | Wrapper mode: inject `OTEL_EXPORTER_OTLP_ENDPOINT` + `parallax.run.id`, run the command, propagate its exit code. |
+| `parallax run start -- <cmd…>` | Wrapper mode: inject OTLP/gRPC endpoint/protocol env vars for traces, logs, and metrics plus `parallax.run.id`, run the command, propagate its exit code. |
 | `parallax run start` | Bare mode: print the exports to source into your shell. |
 | `parallax run finish <run_id> <exit_code>` | Close a bare-mode run. |
 | `parallax run list` | Recent runs with status, exit code, relative start time. Runs whose `parallax.run.id` arrived in telemetry without a wrapper show status `external`. |
