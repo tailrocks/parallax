@@ -45,6 +45,10 @@ structure quickly.
   docs are known-compatible floors, not freezes; when implementing, resolve
   the latest mutually-compatible stable set and update the table in the same
   commit.
+- JavaScript/TypeScript tooling (operator, 2026-06-15): always use Bun through
+  mise. Do not install or use Node.js, pnpm, npm, Yarn, Deno, or Dino as the
+  project toolchain. TypeScript must stay in strictest mode (`strict` plus the
+  additional strict flags documented in `ui/AGENTS.md`).
 - V1 implementation is authorized (operator, 2026-06-12): product code lands
   under `crates/` (Cargo workspace) and `ui/` (TanStack Start app), following
   [docs/research/architecture/v1-implementation-spec.md](docs/research/architecture/v1-implementation-spec.md)

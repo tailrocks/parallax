@@ -9,8 +9,8 @@ major upgrades. The root [`AGENTS.md`](../AGENTS.md) and the
 
 1. **Strictest mode always** (operator rule): `strict` plus `noUncheckedIndexedAccess`,
    `exactOptionalPropertyTypes`, `noImplicitOverride`, `noImplicitReturns`,
-   `forceConsistentCasingInFileNames`, no unused labels/unreachable code. `pnpm exec tsc
-   --noEmit` must pass before every commit — vite build does NOT type-check.
+   `forceConsistentCasingInFileNames`, no unused labels/unreachable code. `bun run typecheck`
+   must pass before every commit — vite build does NOT type-check.
 2. Rely on router inference: derive data with `Route.useLoaderData()`/`useParams()`; never
    hand-annotate loader return types (they go stale and fight inference).
 3. Keep the template's `verbatimModuleSyntax` as shipped; there are upstream reports of it
@@ -34,7 +34,7 @@ major upgrades. The root [`AGENTS.md`](../AGENTS.md) and the
 
 ## shadcn/ui (Base UI variant)
 
-9. **Add components only via the CLI** (`pnpm dlx shadcn@latest add <name|block>`), never
+9. **Add components only via the CLI** (`bunx --bun shadcn@latest add <name|block>`), never
    hand-copy — the CLI resolves deps and applies the Base UI transforms. Compose existing
    blocks before writing custom UI.
 10. **Base UI composition uses `render={<El …/>}`, not `asChild`** (and `nativeButton={false}`

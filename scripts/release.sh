@@ -23,8 +23,8 @@ case "$target" in
 esac
 version="$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)"
 
-echo "==> UI build (pnpm)"
-(cd ui && mise exec -- pnpm install --frozen-lockfile && mise exec -- pnpm build)
+echo "==> UI build (bun)"
+(cd ui && mise exec -- bun install --frozen-lockfile && mise exec -- bun run build)
 test -f ui/dist/client/_shell.html || {
   echo "ui/dist/client/_shell.html missing after build" >&2
   exit 1

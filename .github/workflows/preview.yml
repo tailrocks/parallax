@@ -87,7 +87,7 @@ jobs:
           while IFS= read -r path; do
             [ -z "$path" ] && continue
             case "$path" in
-              .github/workflows/preview.yml|Cargo.toml|Cargo.lock|rust-toolchain.toml|crates/**|ui/package.json|ui/pnpm-lock.yaml|ui/src/**|ui/vite.config.ts)
+              .github/workflows/preview.yml|Cargo.toml|Cargo.lock|rust-toolchain.toml|crates/**|ui/package.json|ui/bun.lock|ui/src/**|ui/vite.config.ts)
                 source=true
                 ;;
             esac
@@ -160,7 +160,7 @@ jobs:
             mise-cargo-tools-${{ runner.os }}-${{ runner.arch }}-zigbuild-
       - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
-          install_args: "rust zig cargo:cargo-zigbuild cosign syft node pnpm"
+          install_args: "rust zig cargo:cargo-zigbuild cosign syft bun"
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
       - run: mise exec -- rustup target add ${{ matrix.target }}
       - name: Cache Cargo build artifacts
@@ -192,9 +192,9 @@ jobs:
         run: |
           echo "SDKROOT=/tmp/macos-sdk/MacOSX26.1.sdk" >> "$GITHUB_ENV"
           echo "MACOSX_DEPLOYMENT_TARGET=12.0" >> "$GITHUB_ENV"
-      - run: mise exec -- pnpm install --frozen-lockfile
+      - run: mise exec -- bun install --frozen-lockfile
         working-directory: ui
-      - run: mise exec -- pnpm build
+      - run: mise exec -- bun run build
         working-directory: ui
       - name: Build
         env:
