@@ -27,7 +27,7 @@ class ParallaxPreview < Formula
     end
   end
 
-  conflicts_with "tailrocks/tap/parallax", because: "preview and stable install the same binary"
+  conflicts_with "tailrocks/parallax/parallax", because: "preview and stable install the same binary"
 
   def install
     bin.install "parallax"

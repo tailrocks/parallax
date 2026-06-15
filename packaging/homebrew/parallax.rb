@@ -5,10 +5,10 @@ class Parallax < Formula
 
   disable! date: "2026-06-15", because: "parallax has not reached a stable release yet; use the rolling preview channel"
 
-  conflicts_with "tailrocks/tap/parallax-preview", because: "stable and preview install the same binary"
+  conflicts_with "tailrocks/parallax/parallax-preview", because: "stable and preview install the same binary"
 
   def install
-    odie "Stable binary releases are not available yet; install tailrocks/tap/parallax-preview"
+    odie "Stable binary releases are not available yet; install tailrocks/parallax/parallax-preview"
   end
 
   def caveats

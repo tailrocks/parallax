@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: homebrew-tap-publish
+  group: homebrew-parallax-publish
   cancel-in-progress: true
 
 jobs:
@@ -63,11 +63,11 @@ jobs:
           sha="$SOURCE_SHA"
           old_sha=""
           formula_err=""
-          if formula_body=$(curl -fsSL --max-time 30 "https://raw.githubusercontent.com/tailrocks/homebrew-tap/main/Formula/parallax-preview.rb" 2>&1); then
+          if formula_body=$(curl -fsSL --max-time 30 "https://raw.githubusercontent.com/tailrocks/homebrew-parallax/main/Formula/parallax-preview.rb" 2>&1); then
             old_sha=$(printf '%s\n' "$formula_body" | sed -n 's|^[[:space:]]*# source-sha: \([0-9a-f]\{40\}\)$|\1|p' | head -1)
           else
             formula_err="$formula_body"
-            echo "::warning::failed to fetch homebrew-tap formula: ${formula_err}; falling open"
+            echo "::warning::failed to fetch homebrew-parallax formula: ${formula_err}; falling open"
           fi
 
           if [ -n "$formula_err" ] || [ -z "$old_sha" ] || [ "$old_sha" = "$sha" ] \
@@ -322,22 +322,17 @@ jobs:
 
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
-          repository: tailrocks/homebrew-tap
+          repository: tailrocks/homebrew-parallax
           ref: main
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          path: homebrew-tap
-
-      - name: Verify preview alias
-        run: |
-          test -L homebrew-tap/Aliases/parallax@preview
-          test "$(readlink homebrew-tap/Aliases/parallax@preview)" = "../Formula/parallax-preview.rb"
+          path: homebrew-parallax
 
       - name: Extract previous preview SHA
         id: prev
         run: |
           old_sha=$(
             sed -n 's|^[[:space:]]*# source-sha: \([0-9a-f]\{40\}\)$|\1|p' \
-              homebrew-tap/Formula/parallax-preview.rb | head -1
+              homebrew-parallax/Formula/parallax-preview.rb | head -1
           )
           echo "old_sha=${old_sha}" >> "$GITHUB_OUTPUT"
 
@@ -350,7 +345,7 @@ jobs:
           LINUX_ARM64_SHA256: ${{ steps.shas.outputs.arm64_linux }}
           LINUX_X86_SHA256: ${{ steps.shas.outputs.x86_linux }}
         run: |
-          cat > homebrew-tap/Formula/parallax-preview.rb <<EOF
+          cat > homebrew-parallax/Formula/parallax-preview.rb <<EOF
           # source-sha: ${FULL_SHA}
           class ParallaxPreview < Formula
             desc "Local-first observability for agent-assisted development"
@@ -380,7 +375,7 @@ jobs:
               end
             end
 
-            conflicts_with "tailrocks/tap/parallax", because: "preview and stable install the same binary"
+            conflicts_with "tailrocks/parallax/parallax", because: "preview and stable install the same binary"
 
             def install
               bin.install "parallax"
@@ -402,7 +397,7 @@ jobs:
           EOF
 
       - name: Commit preview formula
-        working-directory: homebrew-tap
+        working-directory: homebrew-parallax
         env:
           VERSION: ${{ steps.meta.outputs.version }}
           FULL_SHA: ${{ steps.meta.outputs.full_sha }}
@@ -416,7 +411,7 @@ jobs:
             echo "Formula already current; nothing to commit."
             exit 0
           fi
-          git commit -m "parallax@preview ${VERSION}" \
+          git commit -m "parallax-preview ${VERSION}" \
             -m "Source: https://github.com/tailrocks/parallax/compare/${OLD_SHA}...${FULL_SHA}" \
             -m "Co-authored-by: Codex <codex@openai.com>"
           git push origin main
