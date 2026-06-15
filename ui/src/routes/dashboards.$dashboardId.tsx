@@ -89,13 +89,17 @@ export const Route = createFileRoute("/dashboards/$dashboardId")({
 
 function toWidgetData(widget: Widget, series: Series[]): WidgetData {
   const kept = series.slice(0, MAX_GROUPS)
-  const groups = kept.map((s, i) => s.groupValue ?? (i === 0 ? "value" : `#${i}`))
+  const groups = kept.map(
+    (s, i) => s.groupValue ?? (i === 0 ? "value" : `#${i}`)
+  )
   const byTime = new Map<string, Record<string, number | string>>()
   kept.forEach((s, index) => {
+    const group = groups[index]
+    if (!group) return
     for (const point of s.points) {
       const time = new Date(Number(point.tsNanos) / 1e6).toLocaleTimeString()
       const row = byTime.get(point.tsNanos) ?? { time }
-      row[groups[index]] = point.value
+      row[group] = point.value
       byTime.set(point.tsNanos, row)
     }
   })
@@ -271,17 +275,18 @@ function DashboardPage() {
     const next = [...draft]
     const target = index + delta
     if (target < 0 || target >= next.length) return
-    ;[next[index], next[target]] = [next[target], next[index]]
+    const current = next[index]
+    const other = next[target]
+    if (!current || !other) return
+    ;[next[index], next[target]] = [other, current]
     setDraft(next)
   }
 
   const shown = editing ? draft : widgets
-  const shownData = shown
-    .map((widget) => data.find((d) => d.widget === widget) ?? null)
-    .map(
-      (found, index) =>
-        found ?? { widget: shown[index], groups: [], rows: [] }
-    )
+  const shownData = shown.map(
+    (widget) =>
+      data.find((d) => d.widget === widget) ?? { widget, groups: [], rows: [] }
+  )
 
   return (
     <div className="space-y-4">

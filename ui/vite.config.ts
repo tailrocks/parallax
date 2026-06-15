@@ -6,7 +6,23 @@ import tailwindcss from "@tailwindcss/vite"
 
 const config = defineConfig({
   resolve: { tsconfigPaths: true },
-  plugins: [devtools(), tailwindcss(), tanstackStart({ spa: { enabled: true } }), viteReact()],
+  plugins: [
+    devtools(),
+    tailwindcss(),
+    tanstackStart({
+      prerender: {
+        enabled: false,
+        failOnError: false,
+      },
+      spa: {
+        enabled: true,
+        prerender: {
+          enabled: false,
+        },
+      },
+    }),
+    viteReact(),
+  ],
   server: {
     // Dev: forward API calls to the local parallax serve instance, so the UI
     // is same-origin in development exactly like the embedded prod build.

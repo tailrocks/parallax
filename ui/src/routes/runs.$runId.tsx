@@ -102,7 +102,9 @@ function RunMetrics({
         ? ((BigInt(Date.now()) + 30_000n) * 1_000_000n).toString()
         : toNanos
       const args = `runId: "${gqlString(runId)}", fromNanos: "${fromNanos}", toNanos: "${to}", stepSeconds: 5`
-      void graphql<Record<string, Array<{ points: MetricPoint[] }>>>(
+      void graphql<
+        Record<string, Array<{ points: MetricPoint[] }> | undefined>
+      >(
         `{
           cpu: metricSeries(name: "process.cpu.utilization", ${args}) { points { tsNanos value } }
           memory: metricSeries(name: "process.memory.usage", ${args}) { points { tsNanos value } }
@@ -113,7 +115,7 @@ function RunMetrics({
           {
             title: "CPU",
             unit: "%",
-            points: (data.cpu[0]?.points ?? []).map((p) => ({
+            points: (data.cpu?.[0]?.points ?? []).map((p) => ({
               tsNanos: p.tsNanos,
               value: p.value * 100,
             })),
@@ -121,7 +123,7 @@ function RunMetrics({
           {
             title: "Memory",
             unit: "MiB",
-            points: (data.memory[0]?.points ?? []).map((p) => ({
+            points: (data.memory?.[0]?.points ?? []).map((p) => ({
               tsNanos: p.tsNanos,
               value: p.value / (1024 * 1024),
             })),
@@ -129,7 +131,7 @@ function RunMetrics({
           {
             title: "Tokio alive tasks",
             unit: "",
-            points: data.tasks[0]?.points ?? [],
+            points: data.tasks?.[0]?.points ?? [],
           },
         ])
       })

@@ -8,8 +8,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "lint": "eslint",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx}\"",
-    "check": "prettier --check \"**/*.{ts,tsx,js,jsx}\"",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx}\" \"!src/routeTree.gen.ts\"",
+    "check": "prettier --check \"**/*.{ts,tsx,js,jsx}\" \"!src/routeTree.gen.ts\"",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

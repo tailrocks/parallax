@@ -24,7 +24,7 @@ export interface Widget {
   chart: string
   title: string
   /** Attribute key to split the series by (optional). */
-  groupBy?: string
+  groupBy?: string | undefined
   /** Grid width in columns (1 or 2). */
   w?: number
 }
@@ -111,7 +111,9 @@ export function WidgetPicker({
         <label className="text-xs text-muted-foreground">Chart</label>
         <Select
           value={value.chart}
-          onValueChange={(chart) => onChange({ ...value, chart: chart ?? "line" })}
+          onValueChange={(chart) =>
+            onChange({ ...value, chart: chart ?? "line" })
+          }
         >
           <SelectTrigger className="w-24">
             <SelectValue />
@@ -131,9 +133,16 @@ export function WidgetPicker({
         </label>
         <Input
           value={value.groupBy ?? ""}
-          onChange={(e) =>
-            onChange({ ...value, groupBy: e.target.value || undefined })
-          }
+          onChange={(e) => {
+            const groupBy = e.target.value
+            const next = { ...value }
+            if (groupBy) {
+              next.groupBy = groupBy
+            } else {
+              delete next.groupBy
+            }
+            onChange(next)
+          }}
           placeholder="e.g. payment.method"
           className="w-44"
         />

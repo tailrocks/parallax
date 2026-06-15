@@ -2,7 +2,7 @@ import { useState } from "react"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { graphql } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { MetricStrip } from "@/components/metric-strip"
@@ -102,11 +102,13 @@ function TracePage() {
           Trace <code className="text-base">{traceId}</code>
         </h1>
         {runId ? (
-          <Button asChild variant="outline" size="sm">
-            <Link to="/runs/$runId" params={{ runId }}>
-              run {runId}
-            </Link>
-          </Button>
+          <Link
+            to="/runs/$runId"
+            params={{ runId }}
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+          >
+            run {runId}
+          </Link>
         ) : null}
       </div>
       <div className={selected ? "grid gap-4 lg:grid-cols-[1fr_24rem]" : ""}>

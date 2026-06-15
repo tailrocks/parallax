@@ -68,8 +68,7 @@ export const Route = createFileRoute("/issues/$fingerprint")({
           correlated.trace?.spans[0]?.resource ?? "{}"
         ) as Record<string, unknown>
         breadcrumbs = correlated.logsByTrace.slice(-12)
-        traceRunId =
-          correlated.trace?.spans.find((s) => s.runId)?.runId ?? null
+        traceRunId = correlated.trace?.spans.find((s) => s.runId)?.runId ?? null
       } catch {
         // Trace may have aged out; the issue page still renders.
       }
@@ -118,7 +117,10 @@ function TrendChart({
             data={data}
             margin={{ left: 0, right: 0, top: 4 }}
             onClick={(state) => {
-              const ts = state.activePayload?.[0]?.payload?.tsNanos as
+              const payloadState = state as {
+                activePayload?: Array<{ payload?: { tsNanos?: unknown } }>
+              }
+              const ts = payloadState.activePayload?.[0]?.payload?.tsNanos as
                 | string
                 | undefined
               if (ts) onBucket(ts === activeBucket ? null : ts)
@@ -206,7 +208,7 @@ function TagsTable({ tags }: { tags: string }) {
             <div key={key} className="contents">
               <dt className="font-mono text-muted-foreground">{key}</dt>
               <dd className="flex flex-wrap gap-1">
-                {Object.entries(parsed[key])
+                {Object.entries(parsed[key] ?? {})
                   .sort(([, a], [, b]) => b - a)
                   .map(([value, count]) => (
                     <Badge key={value} variant="secondary">

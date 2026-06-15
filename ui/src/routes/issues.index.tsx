@@ -27,10 +27,10 @@ interface TrendPoint {
 type IssueRow = Issue & { tags: string; trend: TrendPoint[] }
 
 interface IssuesSearch {
-  q?: string
-  service?: string
-  status?: string
-  sort?: string
+  q?: string | undefined
+  service?: string | undefined
+  status?: string | undefined
+  sort?: string | undefined
 }
 
 const SORTS = ["LAST_SEEN", "FIRST_SEEN", "EVENTS", "TREND"] as const
@@ -90,12 +90,7 @@ function Sparkline({ trend }: { trend: TrendPoint[] }) {
   const width = 72
   const bar = width / 24
   return (
-    <svg
-      width={width}
-      height={18}
-      role="img"
-      aria-label="24h occurrence trend"
-    >
+    <svg width={width} height={18} role="img" aria-label="24h occurrence trend">
       {trend.slice(-24).map((point, index) => {
         const h = Math.max(1.5, (point.count / max) * 16)
         return (
@@ -157,9 +152,10 @@ function IssuesPage() {
         />
         <Select
           value={search.service ?? "all"}
-          onValueChange={(value) =>
-            update({ service: value === "all" ? undefined : value })
-          }
+          onValueChange={(value) => {
+            const service = value ?? "all"
+            update({ service: service === "all" ? undefined : service })
+          }}
         >
           <SelectTrigger className="h-8 w-44" size="sm">
             <SelectValue placeholder="All services" />
@@ -175,9 +171,10 @@ function IssuesPage() {
         </Select>
         <Select
           value={search.status ?? "all"}
-          onValueChange={(value) =>
-            update({ status: value === "all" ? undefined : value })
-          }
+          onValueChange={(value) => {
+            const status = value ?? "all"
+            update({ status: status === "all" ? undefined : status })
+          }}
         >
           <SelectTrigger className="h-8 w-32" size="sm">
             <SelectValue placeholder="Any status" />
@@ -190,9 +187,10 @@ function IssuesPage() {
         </Select>
         <Select
           value={search.sort ?? "LAST_SEEN"}
-          onValueChange={(value) =>
-            update({ sort: value === "LAST_SEEN" ? undefined : value })
-          }
+          onValueChange={(value) => {
+            const sort = value ?? "LAST_SEEN"
+            update({ sort: sort === "LAST_SEEN" ? undefined : sort })
+          }}
         >
           <SelectTrigger className="h-8 w-36" size="sm">
             <SelectValue />

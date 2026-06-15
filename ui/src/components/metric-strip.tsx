@@ -37,8 +37,8 @@ export function MetricStrip({
   stepSeconds,
 }: {
   title: string
-  service?: string
-  runId?: string
+  service?: string | undefined
+  runId?: string | undefined
   fromNanos: string
   toNanos: string
   stepSeconds: number
@@ -53,7 +53,7 @@ export function MetricStrip({
       .filter(Boolean)
       .join(", ")
     const args = `${scope ? `${scope}, ` : ""}fromNanos: "${fromNanos}", toNanos: "${toNanos}", stepSeconds: ${stepSeconds}`
-    void graphql<Record<string, Array<{ points: MetricPoint[] }>>>(
+    void graphql<Record<string, Array<{ points: MetricPoint[] }> | undefined>>(
       `{
         cpu: metricSeries(name: "process.cpu.utilization", ${args}) { points { tsNanos value } }
         memory: metricSeries(name: "process.memory.usage", ${args}) { points { tsNanos value } }
@@ -65,7 +65,7 @@ export function MetricStrip({
           {
             title: "CPU",
             unit: "%",
-            points: (data.cpu[0]?.points ?? []).map((p) => ({
+            points: (data.cpu?.[0]?.points ?? []).map((p) => ({
               tsNanos: p.tsNanos,
               value: p.value * 100,
             })),
@@ -73,7 +73,7 @@ export function MetricStrip({
           {
             title: "Memory",
             unit: "MiB",
-            points: (data.memory[0]?.points ?? []).map((p) => ({
+            points: (data.memory?.[0]?.points ?? []).map((p) => ({
               tsNanos: p.tsNanos,
               value: p.value / (1024 * 1024),
             })),
@@ -81,7 +81,7 @@ export function MetricStrip({
           {
             title: "Tokio alive tasks",
             unit: "",
-            points: data.tasks[0]?.points ?? [],
+            points: data.tasks?.[0]?.points ?? [],
           },
         ])
       })

@@ -69,7 +69,7 @@ export const Route = createFileRoute("/runs/")({
       })
     }
     const merged = [...rows.values()].sort((a, b) =>
-      Number(BigInt(b.lastNanos) - BigInt(a.lastNanos)),
+      Number(BigInt(b.lastNanos) - BigInt(a.lastNanos))
     )
     return { merged }
   },
