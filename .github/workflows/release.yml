@@ -36,6 +36,10 @@ jobs:
             version="${GITHUB_REF#refs/tags/v}"
           else
             version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
+            if [[ "$version" == *"-dev"* ]]; then
+              echo "::error::Cannot release a dev version ($version)"
+              exit 1
+            fi
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
@@ -151,6 +155,7 @@ jobs:
       - name: Build
         env:
           ZIGBUILD_TARGET: ${{ matrix.zigbuild_target }}
+          PARALLAX_VERSION_OVERRIDE: ${{ needs.check-version.outputs.version }}
         run: mise exec -- cargo zigbuild --release --locked -p parallax-cli --features embed-ui --target "$ZIGBUILD_TARGET"
       - name: Package
         env:

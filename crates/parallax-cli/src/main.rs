@@ -13,7 +13,7 @@ use std::path::PathBuf;
 #[derive(Parser)]
 #[command(
     name = "parallax",
-    version,
+    version = env!("PARALLAX_VERSION"),
     about = "Local-first observability for agent-assisted development"
 )]
 struct Cli {
