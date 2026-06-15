@@ -12,18 +12,14 @@ make the derived views sharp instead of mushy.
 | `deployment.environment.name` | recommended | Keeps prod and staging issues apart. |
 | `vcs.ref.head.revision` | recommended | The deployed commit — stamp at build time. |
 | `vcs.repository.url.full` | recommended | Which repo a fixer gets pointed at. |
-| `parallax.run.id` | injected | Set by `parallax run start`; never set it by hand. Tools with their own run concept (jackin'-style) set it directly. |
+| `parallax.run.id` | injected | Set by `parallax run start`; integrations may set exactly this key when they own the run boundary. |
 
 `parallax.run.id` is promoted to a real column on spans, logs, and metric
-points at ingest, so run-scoped queries are exact and fast. **Standard
-aliases accepted**: when `parallax.run.id` is absent, the run id resolves
-from `session.id`, then `cicd.pipeline.run.id`. OTel has no CLI run-id
-convention yet — these aliases are interop bridges, not the standard;
-`parallax.run.id` stays canonical until one exists (we are proposing one
-upstream — position, draft, and tracked threads in
-[run-id standardization](../research/capture/run-id-standardization.md)).
-The wrapper also emits `session.id=<run id>` so other OTel backends
-correlate the same run.
+points at ingest, so run-scoped queries are exact and fast. Parallax does not
+use `session.id`, `cicd.pipeline.run.id`, or tool-specific aliases as run ids:
+if `parallax.run.id` is absent, the telemetry is not run-scoped. OTel has no
+generic local CLI run-id convention yet; the reasoning and upstream tracking
+live in [run-id standardization](../research/capture/run-id-standardization.md).
 
 ## Exception encodings (both accepted, indefinitely)
 

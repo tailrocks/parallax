@@ -27,34 +27,43 @@ cargo build --bin jackin     # `otlp` is a default feature of the binary
 
 ## 3. Start jackin' connected to Parallax
 
-The exporter is off until an endpoint is set. Point it at Parallax and run
-any command — `--debug` exports the full firehose, without it only
-lifecycle/errors:
-
-```sh
-JACKIN_OTLP_ENDPOINT=http://127.0.0.1:4318 ./target/debug/jackin console --debug
-```
-
-jackin' prints the run id to save:
-
-```text
-[jackin] debug mode — save this run id to retrieve the run later:
-    jk-run-e4ba1d
-```
-
-Alternative — let the Parallax wrapper inject the endpoint and its own run
-id (no env var needed):
+Preferred: let the Parallax wrapper assign the run id, inject OTLP endpoints,
+and keep the same id for UI, logs, traces, metrics, and CLI lookup:
 
 ```sh
 parallax run start -- ./target/debug/jackin console --debug
 ```
 
+The first line is the id to use everywhere:
+
+```text
+Parallax run id: 18b946258b86fe20
+command: ./target/debug/jackin console --debug
+live: parallax run watch 18b946258b86fe20
+```
+
+jackin' should not mint a separate Parallax-facing run id under the wrapper.
+The Parallax id is the single lookup handle for Parallax pages and commands.
+
+Wrapper-less mode is still useful when testing jackin' directly. The exporter
+is off until an endpoint and run id are set. Point it at Parallax, provide the
+same run id in OTel resource attributes, and run any command — `--debug`
+exports the full firehose, without it only lifecycle/errors:
+
+```sh
+RUN_ID=18b946258b86fe20
+JACKIN_OTLP_ENDPOINT=http://127.0.0.1:4318 \
+OTEL_RESOURCE_ATTRIBUTES="parallax.run.id=$RUN_ID" \
+  ./target/debug/jackin console --debug
+```
+
 `JACKIN_OTLP_ENDPOINT` wins over the standard
-`OTEL_EXPORTER_OTLP_ENDPOINT`; the wrapper sets the standard one.
+`OTEL_EXPORTER_OTLP_ENDPOINT`; the wrapper sets both so jackin' reaches
+Parallax's OTLP/HTTP receiver while generic OTel SDKs can use OTLP/gRPC.
 
 ## 4. See everything under that run id
 
-UI: open `http://127.0.0.1:4000/runs/<run-id>` — issues, stage-timing
+UI: open `http://127.0.0.1:4000/runs/<parallax-run-id>` — issues, stage-timing
 traces, the log stream, the process-metrics card (CPU, memory, tokio
 tasks), and the evidence bundle on one page. `jackin` also appears in the
 service selector on the Logs/Traces/Services pages.
@@ -66,13 +75,13 @@ entrance while the run executes.
 CLI (what an agent runs):
 
 ```sh
-parallax run watch jk-run-e4ba1d --for 30s  # live logs + spans, then counts
-parallax run inspect jk-run-e4ba1d        # status, counts, issues
-parallax logs --run jk-run-e4ba1d         # the run's log stream
-parallax traces --run jk-run-e4ba1d       # the run's traces
-parallax run bundle jk-run-e4ba1d         # agent handoff (Markdown)
+parallax run watch 18b946258b86fe20 --for 30s  # live logs + spans, then counts
+parallax run inspect 18b946258b86fe20        # status, counts, issues
+parallax logs --run 18b946258b86fe20         # the run's log stream
+parallax traces --run 18b946258b86fe20       # the run's traces
+parallax run bundle 18b946258b86fe20         # agent handoff (Markdown)
 parallax sql "SELECT name, avg(value) FROM otel_metrics_points \
-  WHERE run_id = 'jk-run-e4ba1d' GROUP BY name"
+  WHERE run_id = '18b946258b86fe20' GROUP BY name"
 ```
 
 The same id also names the local diagnostics file jackin' keeps on its own:

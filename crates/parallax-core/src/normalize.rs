@@ -83,17 +83,10 @@ fn status_code_name(code: i32) -> &'static str {
     }
 }
 
-/// Resolve the run id from resource attributes. `parallax.run.id` is
-/// canonical; the standard aliases are accepted so OTel-conventional
-/// emitters correlate without Parallax-specific wiring (no OTel standard
-/// exists for a CLI run id — `session.id` is the closest concept,
-/// `cicd.pipeline.run.id` the literal "run id" semconv; see
-/// docs/research/capture/run-id-standardization.md).
+/// Resolve the run id from resource attributes. Parallax intentionally keeps
+/// this to one key so one wrapped command has one lookup id.
 fn run_id(resource_attrs: &[KeyValue]) -> Option<String> {
-    ["parallax.run.id", "session.id", "cicd.pipeline.run.id"]
-        .iter()
-        .find_map(|key| attr_str(resource_attrs, key))
-        .map(str::to_string)
+    attr_str(resource_attrs, "parallax.run.id").map(str::to_string)
 }
 
 /// OTel span links → `[{traceId, spanId, attributes}]` JSON. Links are the

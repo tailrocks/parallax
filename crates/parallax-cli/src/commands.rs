@@ -3,6 +3,9 @@
 use crate::client::{Client, gql_str};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+const OTLP_GRPC_ENDPOINT: &str = "http://127.0.0.1:4317";
+const OTLP_HTTP_ENDPOINT: &str = "http://127.0.0.1:4318";
+
 fn now_nanos() -> u128 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -12,7 +15,7 @@ fn now_nanos() -> u128 {
 
 fn new_run_id() -> String {
     // Time-based id is enough for a single-user local tool.
-    format!("run_{:x}", now_nanos())
+    format!("{:x}", now_nanos())
 }
 
 fn relative(nanos_str: &str) -> String {
@@ -43,23 +46,24 @@ pub async fn run_start(client: &Client, command: Vec<String>) -> anyhow::Result<
         ))
         .await?;
 
-    // `session.id` rides along for OTel interop: no standard CLI run id
-    // exists, session.id is the closest semconv concept, and other backends
-    // correlate on it (docs/research/capture/run-id-standardization.md).
-    let resource_attrs = format!("parallax.run.id={run_id},session.id={run_id}");
+    let resource_attrs = format!("parallax.run.id={run_id}");
     if command.is_empty() {
         // Bare mode: print exports for the developer to source.
-        println!("export OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4317");
+        println!("export OTEL_EXPORTER_OTLP_ENDPOINT={OTLP_GRPC_ENDPOINT}");
+        println!("export JACKIN_OTLP_ENDPOINT={OTLP_HTTP_ENDPOINT}");
         println!("export OTEL_RESOURCE_ATTRIBUTES={resource_attrs}");
         println!("# run id: {run_id}  (finish with: parallax run finish {run_id} <exit-code>)");
         return Ok(0);
     }
 
     // Wrapper mode: inject env, run the child, capture the exit code.
-    println!("run {run_id}: {}", command.join(" "));
+    println!("Parallax run id: {run_id}");
+    println!("command: {}", command.join(" "));
+    println!("live: parallax run watch {run_id}");
     let status = tokio::process::Command::new(&command[0])
         .args(&command[1..])
-        .env("OTEL_EXPORTER_OTLP_ENDPOINT", "http://127.0.0.1:4317")
+        .env("OTEL_EXPORTER_OTLP_ENDPOINT", OTLP_GRPC_ENDPOINT)
+        .env("JACKIN_OTLP_ENDPOINT", OTLP_HTTP_ENDPOINT)
         .env("OTEL_RESOURCE_ATTRIBUTES", &resource_attrs)
         .status()
         .await?;
@@ -72,7 +76,7 @@ pub async fn run_start(client: &Client, command: Vec<String>) -> anyhow::Result<
             now_nanos()
         ))
         .await?;
-    println!("run {run_id} finished with exit code {exit_code}");
+    println!("Parallax run {run_id} finished with exit code {exit_code}");
     println!("inspect: parallax run inspect {run_id}   issues: parallax issue list");
     Ok(exit_code)
 }

@@ -2,26 +2,31 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: 2026-06-12 (standing page — update on every upstream movement
+Research date: 2026-06-12; updated 2026-06-15 (standing page — update on every upstream movement
 or internal migration step). Owner question (operator): one CLI invocation
 ("a run") produces many traces, logs, and metrics; we correlate them under a
 run id. What is the standard, and how do we get to one?
 
-## Position (operator, 2026-06-12)
+## Position (operator, 2026-06-15)
 
 1. **There is no OTel standard for this concept today**, and `session.id`
    **is not what we need** — it is a client-side-application convention
-   (mobile/browser user sessions, Development stability) that we accept and
-   emit only as an **interop bridge**, not as the answer.
+   (mobile/browser user sessions, Development stability), not a local CLI
+   invocation boundary.
 2. **We want a real standard and intend to help make one.** Parallax will
    bring its run concept to the OpenTelemetry semantic-conventions
    discussion as a proposal and participate in the threads where the gap is
    already being felt (see *Upstream proposal* and *Tracking* below).
-3. **Internal standardization comes first.** The ladder:
+3. **Internal standardization is one key only.** Parallax uses
+   `parallax.run.id` and does not accept `session.id`,
+   `cicd.pipeline.run.id`, or tool-specific ids as run aliases. If
+   `parallax.run.id` is absent, telemetry is not run-scoped.
+
+Historical ladder:
 
    | Step | What | Status |
    | --- | --- | --- |
-   | 1 | `jackin.run_id` migrates to **`parallax.run.id`** as the primary key on jackin's OTLP resource (keep `jackin.run_id` as a legacy alias during the transition) | recommended to jackin', 2026-06-12 |
+   | 1 | `jackin.run_id` migrates to **`parallax.run.id`** as the only Parallax-facing OTLP resource key | updated recommendation, 2026-06-15 |
    | 2 | `parallax.run.id` is the one canonical run key across Tailrocks tools — vendor-namespaced exactly as the [OTel naming guidance](https://opentelemetry.io/docs/specs/semconv/general/naming/) prescribes for concepts no convention covers | **current state** |
    | 3 | When an OTel standard exists (ours or someone else's), it becomes an accepted ingest alias immediately, then the canonical key once it reaches stability — `parallax.run.id` demotes to the legacy alias | future, tracked here |
 
@@ -30,8 +35,8 @@ run id. What is the standard, and how do we get to one?
 | Candidate | Verdict |
 | --- | --- |
 | [CLI semconv](https://opentelemetry.io/docs/specs/semconv/cli/cli-spans/) (Development) | Defines span name `{process.executable.name}`, `process.exit.code`, `process.pid`, `process.command_args` — **no invocation/correlation id at all and no mechanism to tie one CLI execution's traces together**. This is exactly the gap; it is where the fix belongs. |
-| [`session.id`](https://opentelemetry.io/docs/specs/semconv/general/session/) (Development, opt-in) | Semantically the closest: "the period of time encompassing all activities performed by the application and the actions executed by the end user", a collection of logs/events/spans under one id across traces. But scoped to **client-side applications**; a CLI run is not a user session. Interop bridge, not the standard we need. |
-| [`cicd.pipeline.run.id`](https://opentelemetry.io/docs/specs/semconv/resource/cicd/) (Development) | The literal "run id" words in semconv — for CI/CD systems. A local interactive invocation is not a pipeline run; borrowing the namespace would misstate semantics. Alias for genuine CI emitters. |
+| [`session.id`](https://opentelemetry.io/docs/specs/semconv/general/session/) (Development, opt-in) | Semantically adjacent: a bounded collection of logs/events/spans under one id. But it is scoped to **client-side applications** and user sessions; a CLI run is not a user session. Not accepted as a Parallax run alias. |
+| [`cicd.pipeline.run.id`](https://opentelemetry.io/docs/specs/semconv/resource/cicd/) (Development) | The literal "run id" words in semconv — for CI/CD systems. A local interactive invocation is not a pipeline run; borrowing the namespace would misstate semantics. Not accepted as a Parallax run alias. |
 | [`service.instance.id`](https://opentelemetry.io/docs/specs/semconv/resource/service/) (**stable**) | Per process-instance. A wrapped run (`parallax run start -- cargo test`) spans many processes under one run id — wrong granularity. |
 
 Mechanism: resource attributes are the OTel-native carrier for
@@ -58,7 +63,8 @@ order:
    ("sessions are a generic concept… across all computing contexts, not
    just browsers"; hierarchy `session.id` > `gen_ai.conversation.id`).
    Our CLI-run case is the second independent demand for the same change —
-   that convergence is the argument.
+   that convergence is the argument. Parallax will not emit `session.id`
+   before that semantic broadening lands.
 2. **A dedicated attribute in the CLI namespace** (`cli.run.id` or
    `cli.invocation.id`) if the Session owners insist sessions stay
    user-centric: same semantics (resource-level, spans child processes,
@@ -82,15 +88,14 @@ Engagement order: (1) comment on #2883, (2) dedicated semconv issue for the
 CLI case, (3) if traction, a PR amending the session/CLI docs with the
 wording above. Every step gets a dated row appended here.
 
-## Current implementation state (Parallax, 2026-06-12)
+## Current implementation state (Parallax, 2026-06-15)
 
 - **Ingest aliases** (`parallax-core/normalize.rs`): run id resolves
-  `parallax.run.id` → `session.id` → `cicd.pipeline.run.id`, first present
-  wins, on spans, logs, and metric points (spec §7).
-- **Wrapper dual-emit**: `parallax run start` injects
-  `OTEL_RESOURCE_ATTRIBUTES=parallax.run.id=<id>,session.id=<id>` — other
-  OTel backends correlate the same run today.
+- **Ingest** (`parallax-core/normalize.rs`): run id resolves only from
+  `parallax.run.id` on spans, logs, and metric points (spec §7).
+- **Wrapper emit**: `parallax run start` injects
+  `OTEL_RESOURCE_ATTRIBUTES=parallax.run.id=<id>`.
 - **Guide**: [conventions.md](../../guide/conventions.md) documents the
-  aliases for integrators.
-- **jackin'**: recommended to adopt `parallax.run.id` as primary (step 1 of
-  the ladder) and emit `session.id` alongside.
+  single-key rule for integrators.
+- **jackin'**: recommended to adopt `parallax.run.id` as the only
+  Parallax-facing run key.

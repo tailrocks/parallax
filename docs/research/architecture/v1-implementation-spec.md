@@ -304,7 +304,7 @@ telemetry without a CLI `runStart` are auto-registered by the worker with status
 | log `body.string_value` | `body` |
 | metric gauge/sum data points | `otel_metrics_points` (one row per point; `is_monotonic` from sum) |
 | metric histogram data points | `otel_metrics_histograms` |
-| `resource.attributes["parallax.run.id"]` — **aliases accepted**: `session.id`, `cicd.pipeline.run.id` (first present wins, in that order) | **promoted to a real `run_id` column** on `otel_spans`/`otel_logs`/`otel_metrics_points` (the key contains a dot, making JSON-path filtering fragile; a column makes run-scoped reads exact and fast — and puts a run's CPU/memory beside its traces and logs). No OTel standard exists for a CLI run id; `session.id` is the closest semconv concept and `cicd.pipeline.run.id` the literal "run id" — both Development-stability, hence aliases rather than the canonical key. The wrapper dual-emits `session.id` for interop. Decision + sources: [capture/run-id-standardization.md](../capture/run-id-standardization.md) |
+| `resource.attributes["parallax.run.id"]` | **promoted to a real `run_id` column** on `otel_spans`/`otel_logs`/`otel_metrics_points` (the key contains a dot, making JSON-path filtering fragile; a column makes run-scoped reads exact and fast — and puts a run's CPU/memory beside its traces and logs). No aliases are accepted: `session.id` is a broader client-session key, and `cicd.pipeline.run.id` is scoped to CI/CD pipeline systems. Decision + sources: [capture/run-id-standardization.md](../capture/run-id-standardization.md) |
 
 Fingerprinting and derivation logic: graduate `poc/evidence-loop/src/{derive,fingerprint}.rs`
 verbatim semantics (both exception encodings; normalization rules; 16-hex fingerprint).
