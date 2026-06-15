@@ -72,7 +72,7 @@ jobs:
         with:
           install_args: "bun"
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
-      - run: mise exec -- bun install --frozen-lockfile
+      - run: mise exec -- bun install --frozen-lockfile --ignore-scripts
         working-directory: ui
       - run: mise exec -- bun run typecheck
         working-directory: ui

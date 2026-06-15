@@ -24,7 +24,7 @@ esac
 version="$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)"
 
 echo "==> UI build (bun)"
-(cd ui && mise exec -- bun install --frozen-lockfile && mise exec -- bun run build)
+(cd ui && mise exec -- bun install --frozen-lockfile --ignore-scripts && mise exec -- bun run build)
 test -f ui/dist/client/_shell.html || {
   echo "ui/dist/client/_shell.html missing after build" >&2
   exit 1
