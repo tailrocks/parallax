@@ -51,8 +51,7 @@ is no release process or CI contract yet.
 | `ui/` | The V1 web UI: TanStack Start SPA (shadcn/ui on Base UI, shadcn charts) served by `parallax serve` from `ui/dist/client` or embedded via the `embed-ui` feature. Talks only to the canonical GraphQL API. |
 | `.github/workflows/` | CI, stable release, and preview-release automation. Release workflows build binary archives with Zig/`cargo-zigbuild`; `preview.yml` publishes the rolling `preview` GitHub Release and rewrites the CI-owned `parallax-preview.rb` formula in the per-project `tailrocks/homebrew-parallax` tap. |
 | `mise.toml` | Shared tool versions for CI/release automation: cargo-nextest, cargo-zigbuild, Zig, Node, cosign, and syft. |
-| `scripts/` | Operational scripts: `release.sh` (UI build → `--features embed-ui` release binary → tarball + sha256). |
-| `packaging/` | Distribution templates and notes. `homebrew/parallax.rb` is the disabled stable formula; `homebrew/parallax-preview.rb` is the CI-owned rolling preview formula template. |
+| `scripts/` | Operational scripts: `release.sh` (UI build -> `--features embed-ui` release binary -> tarball + sha256). |
 
 ## Research Record
 

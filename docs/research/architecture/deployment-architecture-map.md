@@ -58,7 +58,7 @@ The daily-driver setup. One command; Parallax supervises everything; nothing to 
 **Setup experience:**
 
 ```bash
-brew install parallax            # or one static binary download
+brew install parallax@preview    # or one static binary download
 parallax serve                   # default --profile local --manage-greptime
 # in your app's environment:
 export OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4317

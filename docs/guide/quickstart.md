@@ -5,8 +5,15 @@ auth, no cloud. Everything below happens on your machine.
 
 ## 1. Install
 
-From the repository (Homebrew tap and prebuilt binaries follow the first
-release):
+Preview builds install from the per-project Homebrew tap:
+
+```sh
+brew tap tailrocks/parallax
+brew install parallax@preview
+parallax --version
+```
+
+For local development from the repository:
 
 ```sh
 cargo install --path crates/parallax-cli

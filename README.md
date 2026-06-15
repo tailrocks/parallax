@@ -33,8 +33,7 @@ idea becomes sharper.
 The V1 implementation (workspace under [`crates/`](crates/), web UI under
 [`ui/`](ui/)) is usable today on the local profile:
 
-- **Preview Homebrew package** — once `tailrocks/homebrew-parallax` is created
-  and the preview workflow has published its first build:
+- **Preview Homebrew package** — after the preview workflow publishes a build:
   `brew tap tailrocks/parallax` then `brew install parallax@preview`.
 - **[Quickstart](docs/guide/quickstart.md)** — install → serve → connect a Rust app → first evidence bundle.
 - **[CLI reference](docs/guide/cli.md)** — every `parallax` command.

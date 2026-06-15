@@ -44,4 +44,4 @@ tar -C "$(dirname "$bin")" -czf "${dist}/${name}.tar.gz" parallax
 (cd "$dist" && shasum -a 256 "${name}.tar.gz" | tee "${name}.tar.gz.sha256")
 
 echo "==> done: ${dist}/${name}.tar.gz"
-echo "    update packaging/homebrew/parallax.rb with the url + sha256 above"
+echo "    update tailrocks/homebrew-parallax with the url + sha256 above"
