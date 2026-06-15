@@ -49,6 +49,11 @@ structure quickly.
   mise. Do not install or use Node.js, pnpm, npm, Yarn, Deno, or Dino as the
   project toolchain. TypeScript must stay in strictest mode (`strict` plus the
   additional strict flags documented in `ui/AGENTS.md`).
+- CI/release caching (operator, 2026-06-15): follow Jackin's workflow pattern
+  for aggressive caching and stable gates: path-aware CI jobs, rustup cache,
+  Cargo registry cache, `sccache`, per-job `target` caches with main-branch
+  restore fallbacks, mise cargo-tool caches, Bun package cache, and a stable
+  aggregate required check.
 - V1 implementation is authorized (operator, 2026-06-12): product code lands
   under `crates/` (Cargo workspace) and `ui/` (TanStack Start app), following
   [docs/research/architecture/v1-implementation-spec.md](docs/research/architecture/v1-implementation-spec.md)

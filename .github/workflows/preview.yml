@@ -192,9 +192,15 @@ jobs:
         run: |
           echo "SDKROOT=/tmp/macos-sdk/MacOSX26.1.sdk" >> "$GITHUB_ENV"
           echo "MACOSX_DEPLOYMENT_TARGET=12.0" >> "$GITHUB_ENV"
-      - run: mise exec -- bun install --frozen-lockfile --ignore-scripts
+      - name: Cache Bun modules
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('ui/bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile --ignore-scripts
         working-directory: ui
-      - run: mise exec -- bun run build
+      - run: bun run build
         working-directory: ui
       - name: Build
         env:
@@ -213,6 +219,9 @@ jobs:
         uses: ./.github/actions/sign-and-attest-archive
         with:
           archive: ${{ env.archive }}
+      - name: Show sccache stats
+        if: always() && steps.sccache.outcome == 'success'
+        run: sccache --show-stats
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

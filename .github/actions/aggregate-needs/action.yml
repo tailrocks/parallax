@@ -1,0 +1,27 @@
+name: Aggregate gated job results
+description: |
+  Fail the calling job if any upstream listed in `needs:` failed or was
+  cancelled. Skipped is success, so path-aware workflows keep one stable
+  required check name.
+inputs:
+  needs-json:
+    description: JSON-serialized needs context from the calling job.
+    required: true
+  workflow-label:
+    description: Short workflow label for failure logs.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Aggregate gated job results
+      shell: bash
+      env:
+        NEEDS_RESULT: ${{ inputs.needs-json }}
+        WORKFLOW_LABEL: ${{ inputs.workflow-label }}
+      run: |
+        set -euo pipefail
+        printf '%s\n' "$NEEDS_RESULT"
+        if printf '%s' "$NEEDS_RESULT" | jq -e 'to_entries | map(.value.result) | any(. == "failure" or . == "cancelled")' >/dev/null; then
+          echo "::error::one or more gated ${WORKFLOW_LABEL} jobs failed or were cancelled"
+          exit 1
+        fi
