@@ -8,7 +8,7 @@ class Parallax < Formula
   conflicts_with "tailrocks/parallax/parallax-preview", because: "stable and preview install the same binary"
 
   def install
-    odie "Stable binary releases are not available yet; install tailrocks/parallax/parallax-preview"
+    odie "Stable binary releases are not available yet; install tailrocks/parallax/parallax@preview"
   end
 
   def caveats

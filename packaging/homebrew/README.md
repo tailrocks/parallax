@@ -6,6 +6,7 @@ Parallax follows the same Homebrew shape as Jackin:
   first stable release.
 - `Formula/parallax-preview.rb` is CI-owned and points at binary tarballs on
   the rolling `preview` GitHub Release.
+- `Aliases/parallax@preview` points to `../Formula/parallax-preview.rb`.
 - The tap repository is per project: `tailrocks/homebrew-parallax`, matching
   `tailrocks/homebrew-holla`.
 
@@ -14,10 +15,11 @@ Before enabling preview publishing, create `tailrocks/homebrew-parallax` with:
 ```text
 Formula/parallax.rb
 Formula/parallax-preview.rb
+Aliases/parallax@preview -> ../Formula/parallax-preview.rb
 ```
 
-Then configure `HOMEBREW_TAP_TOKEN` in `tailrocks/parallax`. The token needs
-contents read/write permission on `tailrocks/homebrew-parallax`.
+Then configure `GH_PARALLAX_HOMEBREW_TAP_TOKEN` in `tailrocks/parallax`. The
+token needs contents read/write permission on `tailrocks/homebrew-parallax`.
 
 Formulae must never build Parallax from source during install. Preview and
 stable release workflows build archives with Zig/`cargo-zigbuild`, publish
