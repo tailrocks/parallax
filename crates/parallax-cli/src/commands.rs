@@ -53,10 +53,12 @@ pub async fn run_start(client: &Client, command: Vec<String>) -> anyhow::Result<
         println!("export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT={OTLP_GRPC_ENDPOINT}");
         println!("export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT={OTLP_GRPC_ENDPOINT}");
         println!("export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT={OTLP_GRPC_ENDPOINT}");
+        println!("export OTEL_EXPORTER_OTLP_PROFILES_ENDPOINT={OTLP_GRPC_ENDPOINT}");
         println!("export OTEL_EXPORTER_OTLP_PROTOCOL={OTLP_GRPC_PROTOCOL}");
         println!("export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL={OTLP_GRPC_PROTOCOL}");
         println!("export OTEL_EXPORTER_OTLP_LOGS_PROTOCOL={OTLP_GRPC_PROTOCOL}");
         println!("export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL={OTLP_GRPC_PROTOCOL}");
+        println!("export OTEL_EXPORTER_OTLP_PROFILES_PROTOCOL={OTLP_GRPC_PROTOCOL}");
         println!("export OTEL_RESOURCE_ATTRIBUTES={resource_attrs}");
         println!("# run id: {run_id}  (finish with: parallax run finish {run_id} <exit-code>)");
         return Ok(0);
@@ -72,10 +74,12 @@ pub async fn run_start(client: &Client, command: Vec<String>) -> anyhow::Result<
         .env("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", OTLP_GRPC_ENDPOINT)
         .env("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", OTLP_GRPC_ENDPOINT)
         .env("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", OTLP_GRPC_ENDPOINT)
+        .env("OTEL_EXPORTER_OTLP_PROFILES_ENDPOINT", OTLP_GRPC_ENDPOINT)
         .env("OTEL_EXPORTER_OTLP_PROTOCOL", OTLP_GRPC_PROTOCOL)
         .env("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", OTLP_GRPC_PROTOCOL)
         .env("OTEL_EXPORTER_OTLP_LOGS_PROTOCOL", OTLP_GRPC_PROTOCOL)
         .env("OTEL_EXPORTER_OTLP_METRICS_PROTOCOL", OTLP_GRPC_PROTOCOL)
+        .env("OTEL_EXPORTER_OTLP_PROFILES_PROTOCOL", OTLP_GRPC_PROTOCOL)
         .env("OTEL_RESOURCE_ATTRIBUTES", &resource_attrs)
         .status()
         .await?;

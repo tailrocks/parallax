@@ -25,11 +25,11 @@ slice**; M3+ (server/cloud profiles) becomes the V2 line.
 ## 1. Acceptance (the dogfood test, unchanged)
 
 The operator connects one of his real Rust services locally with OTLP/gRPC
-endpoint/protocol env vars plus the resource-attribute conventions; a real
-panic appears as a grouped issue with trace + logs + metric window within ~5
-seconds; `parallax issue context <id>` yields the bundle; his agent fixes the
-bug from that context alone; cold install → first evidence in under 15
-minutes. Plus the lifecycle-3 loop: when evidence is missing, the bundle's
+endpoint/protocol env vars for traces, logs, metrics, and profiles plus the
+resource-attribute conventions; a real panic appears as a grouped issue with
+trace + logs + metric window within ~5 seconds; `parallax issue context <id>`
+yields the bundle; his agent fixes the bug from that context alone; cold
+install → first evidence in under 15 minutes. Plus the lifecycle-3 loop: when evidence is missing, the bundle's
 `missing_evidence` + instrumentation suggestions tell the agent what to add.
 
 Statement #7 adds the stack-shaped scenarios V1 must pass on the operator's real systems:
