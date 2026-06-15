@@ -27,6 +27,8 @@ jobs:
     outputs:
       source: ${{ steps.filter.outputs.source }}
       sha: ${{ steps.source.outputs.sha }}
+      short_sha: ${{ steps.meta.outputs.short_sha }}
+      version: ${{ steps.meta.outputs.version }}
     steps:
       - name: Resolve source SHA
         id: source
@@ -94,6 +96,40 @@ jobs:
           done <<< "$diff_files"
 
           echo "source=$source" >> "$GITHUB_OUTPUT"
+
+      - name: Compute preview metadata
+        id: meta
+        if: steps.filter.outputs.source == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          FULL_SHA: ${{ steps.source.outputs.sha }}
+        run: |
+          base_version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
+          base_version=${base_version%-dev}
+          short_sha=$(printf '%s' "$FULL_SHA" | cut -c1-7)
+          # Derive the preview counter from GitHub's server-side commit history
+          # instead of local git counts.
+          # shellcheck disable=SC2016
+          graphql_query='query($owner: String!, $name: String!, $oid: GitObjectID!) { repository(owner: $owner, name: $name) { object(oid: $oid) { ... on Commit { history(first: 1) { totalCount } } } } }'
+          commit_count=$(
+            jq -cn \
+              --arg query "$graphql_query" \
+              --arg owner "$GITHUB_REPOSITORY_OWNER" \
+              --arg name "${GITHUB_REPOSITORY#*/}" \
+              --arg oid "$FULL_SHA" \
+              '{query: $query, variables: {owner: $owner, name: $name, oid: $oid}}' |
+              curl -fsSL \
+                -H "Authorization: Bearer $GITHUB_TOKEN" \
+                -H "Content-Type: application/json" \
+                --data @- \
+                https://api.github.com/graphql |
+              jq -er '.data.repository.object.history.totalCount'
+          )
+          {
+            echo "full_sha=$FULL_SHA"
+            echo "short_sha=$short_sha"
+            echo "version=${base_version}-preview.${commit_count}+${short_sha}"
+          } >> "$GITHUB_OUTPUT"
 
   build-preview:
     needs: source-changed
@@ -205,6 +241,7 @@ jobs:
       - name: Build
         env:
           ZIGBUILD_TARGET: ${{ matrix.zigbuild_target }}
+          PARALLAX_VERSION_OVERRIDE: ${{ needs.source-changed.outputs.version }}
         run: mise exec -- cargo zigbuild --release --locked -p parallax-cli --features embed-ui --target "$ZIGBUILD_TARGET"
       - name: Package
         env:
@@ -253,31 +290,14 @@ jobs:
       - name: Compute preview metadata
         id: meta
         env:
-          GITHUB_TOKEN: ${{ github.token }}
           FULL_SHA: ${{ needs.source-changed.outputs.sha }}
+          SHORT_SHA: ${{ needs.source-changed.outputs.short_sha }}
+          VERSION: ${{ needs.source-changed.outputs.version }}
         run: |
-          base_version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
-          short_sha=$(printf '%s' "$FULL_SHA" | cut -c1-7)
-          # shellcheck disable=SC2016
-          graphql_query='query($owner: String!, $name: String!, $oid: GitObjectID!) { repository(owner: $owner, name: $name) { object(oid: $oid) { ... on Commit { history(first: 1) { totalCount } } } } }'
-          commit_count=$(
-            jq -cn \
-              --arg query "$graphql_query" \
-              --arg owner "$GITHUB_REPOSITORY_OWNER" \
-              --arg name "${GITHUB_REPOSITORY#*/}" \
-              --arg oid "$FULL_SHA" \
-              '{query: $query, variables: {owner: $owner, name: $name, oid: $oid}}' |
-              curl -fsSL \
-                -H "Authorization: Bearer $GITHUB_TOKEN" \
-                -H "Content-Type: application/json" \
-                --data @- \
-                https://api.github.com/graphql |
-              jq -er '.data.repository.object.history.totalCount'
-          )
           {
             echo "full_sha=$FULL_SHA"
-            echo "short_sha=$short_sha"
-            echo "version=${base_version}-preview.${commit_count}+${short_sha}"
+            echo "short_sha=$SHORT_SHA"
+            echo "version=$VERSION"
           } >> "$GITHUB_OUTPUT"
 
       - name: Read platform SHA256s
