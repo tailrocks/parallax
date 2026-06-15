@@ -49,8 +49,10 @@ is no release process or CI contract yet.
 | `poc/` | Concept-proving Rust code (operator-approved 2026-06-11). Small, runnable, test-covered proofs of designed mechanisms — not product code, no product claims. First artifact: `poc/evidence-loop/` (OTLP JSON → derived error events → fingerprint → trigger → redacted evidence bundle with canonical hash). Frozen as the concept reference; logic graduates into `crates/` by copy-and-adapt. |
 | `crates/` | The V1 product workspace (Rust, edition 2024): `parallax-cli` (the installed `parallax` binary), `parallax-server` (OTLP ingest, API host, workers, engine supervision), `parallax-core` (derivation/fingerprinting/bundles), `parallax-storage` (spool + storage adapters), `parallax-api` (GraphQL schema), `parallax-proto` (OTLP types). Contracts in [`docs/research/architecture/v1-implementation-spec.md`](docs/research/architecture/v1-implementation-spec.md); brief in [`prompts/v1-implementation.md`](prompts/v1-implementation.md). |
 | `ui/` | The V1 web UI: TanStack Start SPA (shadcn/ui on Base UI, shadcn charts) served by `parallax serve` from `ui/dist/client` or embedded via the `embed-ui` feature. Talks only to the canonical GraphQL API. |
+| `.github/workflows/` | CI, stable release, and preview-release automation. Release workflows build binary archives with Zig/`cargo-zigbuild`; `preview.yml` publishes the rolling `preview` GitHub Release and rewrites the CI-owned `parallax-preview.rb` formula in the Tailrocks tap. |
+| `mise.toml` | Shared tool versions for CI/release automation: cargo-nextest, cargo-zigbuild, Zig, Node, cosign, and syft. |
 | `scripts/` | Operational scripts: `release.sh` (UI build → `--features embed-ui` release binary → tarball + sha256). |
-| `packaging/` | Distribution templates: `homebrew/parallax.rb` (tap formula; url/sha256 filled per release). |
+| `packaging/` | Distribution templates and notes. `homebrew/parallax.rb` is the disabled stable formula; `homebrew/parallax-preview.rb` is the CI-owned rolling preview formula template. |
 
 ## Research Record
 

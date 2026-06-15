@@ -1,21 +1,14 @@
-# Homebrew formula template for the Tailrocks tap
-# (homebrew-tap repo: Formula/parallax.rb). Fill url/sha256 from the
-# scripts/release.sh output attached to each GitHub release.
 class Parallax < Formula
   desc "Local-first observability for agent-assisted development"
   homepage "https://github.com/tailrocks/parallax"
-  version "0.1.0"
   license "Apache-2.0"
 
-  on_macos do
-    on_arm do
-      url "https://github.com/tailrocks/parallax/releases/download/v#{version}/parallax-v#{version}-aarch64-apple-darwin.tar.gz"
-      sha256 "REPLACE_WITH_RELEASE_SHA256"
-    end
-  end
+  disable! date: "2026-06-15", because: "parallax has not reached a stable release yet; use the rolling preview channel"
+
+  conflicts_with "tailrocks/tap/parallax-preview", because: "stable and preview install the same binary"
 
   def install
-    bin.install "parallax"
+    odie "Stable binary releases are not available yet; install tailrocks/tap/parallax-preview"
   end
 
   def caveats
