@@ -2038,7 +2038,7 @@ dependencies = [
 
 [[package]]
 name = "parallax-api"
-version = "1.0.0"
+version = "0.1.0-dev"
 dependencies = [
  "anyhow",
  "juniper",
@@ -2050,7 +2050,7 @@ dependencies = [
 
 [[package]]
 name = "parallax-cli"
-version = "1.0.0"
+version = "0.1.0-dev"
 dependencies = [
  "anyhow",
  "clap",
@@ -2068,7 +2068,7 @@ dependencies = [
 
 [[package]]
 name = "parallax-core"
-version = "1.0.0"
+version = "0.1.0-dev"
 dependencies = [
  "parallax-proto",
  "parallax-storage",
@@ -2081,14 +2081,14 @@ dependencies = [
 
 [[package]]
 name = "parallax-proto"
-version = "1.0.0"
+version = "0.1.0-dev"
 dependencies = [
  "opentelemetry-proto",
 ]
 
 [[package]]
 name = "parallax-server"
-version = "1.0.0"
+version = "0.1.0-dev"
 dependencies = [
  "anyhow",
  "axum",
@@ -2121,7 +2121,7 @@ dependencies = [
 
 [[package]]
 name = "parallax-storage"
-version = "1.0.0"
+version = "0.1.0-dev"
 dependencies = [
  "anyhow",
  "async-trait",
