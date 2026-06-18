@@ -186,6 +186,70 @@ fingerprint algorithm + issue state authoritative in Parallax** for control and 
 Greptime Flows/sketches as a derived acceleration layer Parallax owns and can recompute. Greptime
 accelerates; Parallax decides.
 
+## Implementation roadmap — current code → required changes
+
+Mapped against the live code (2026-06-18). The good news: the ingest worker **already tees** —
+`worker.rs::process` normalizes *and* derives from the same OTLP request — so Q2's structure exists.
+What changes is the **write target** (custom INSERT → native OTLP forward) and the **read layer**
+(custom columns → native columns). The `TelemetryStore` *read* signatures are the stable boundary the
+GraphQL API depends on, so most of `parallax-api` is untouched.
+
+### As-is flow
+
+```text
+OTLP HTTP/gRPC (otlp_http.rs / otlp_grpc.rs)
+  → decode protobuf → spool.append → mpsc → worker.rs::process
+       Traces:  normalize_traces → SpanRow[];  derive_from_traces → errors
+                register_runs; live broadcast;  store.write_spans (INSERT custom otel_spans)
+                record_errors → metadata.upsert_issue + store.write_error_events
+       Logs:    normalize_logs → LogRow[];  derive_from_logs;  store.write_logs (INSERT otel_logs)
+       Metrics: normalize_metrics → points+histograms; store.write_metric_points/_histograms (INSERT)
+  Reads: parallax-api GraphQL → TelemetryStore read methods → SELECT custom otel_* tables
+```
+
+### Target flow
+
+```text
+OTLP in → otlp_http/grpc (keep raw Bytes alongside decoded request) → spool → mpsc → worker
+   Traces:  store.forward_traces(raw)  → POST greptime /v1/otlp/v1/traces (greptime_trace_v1)
+            + derive_from_traces → error_events (tee, unchanged)  + register_runs + live
+   Logs:    store.forward_logs(raw)    → POST /v1/otlp/v1/logs (extract-keys: parallax.run.id)
+            + derive_from_logs (tee)
+   Metrics: store.forward_metrics(raw) → POST /v1/otlp/v1/metrics (native metric engine, NO run_id tag)
+            + write run_metric_points from normalized points carrying run_id (Approach 2)
+   Reads: GraphQL → SAME TelemetryStore read signatures → SELECT native tables (new column names)
+```
+
+### Change list by file
+
+| File | Current role | Required change |
+| --- | --- | --- |
+| `parallax-storage/src/greptime.rs` | hand-rolled DDL + INSERT + custom-table SELECTs | **Largest change.** (1) `bootstrap`: drop the `otel_spans/otel_logs/otel_metrics_*` CREATE; keep CREATE for extension tables (`error_events`, `rollups_fingerprint_minute`, new `run_metric_points`). (2) Add `forward_traces/forward_logs/forward_metrics` → `POST {base_url}/v1/otlp/v1/…` with headers (`x-greptime-pipeline-name: greptime_trace_v1`, `x-greptime-log-table-name`, `x-greptime-log-extract-keys: parallax.run.id`, `x-greptime-hints: ttl=…,append_mode=true`). (3) Rewrite every read to native columns: traces `service_name`/`duration_nano`/`span_attributes.*`/`resource_attributes.*`; logs `body` + JSON attrs + extracted `parallax.run.id`; metrics → per-metric native tables (+ `information_schema.tables` for `metric_names`). (4) Add `run_metric_points` write + read. |
+| `parallax-storage/src/adapter.rs` | `TelemetryStore` trait | **Reshape the write side:** replace `write_spans/write_logs/write_metric_points/write_histograms` with `forward_traces/forward_logs/forward_metrics` (raw OTLP), add `write_run_metric_points` + a run-scoped metric read. **Read signatures stay** (API-stable). *(Sub-decision: how the in-memory test adapter satisfies a raw-OTLP write — see open impl questions.)* |
+| `parallax-server/src/worker.rs` | normalize + derive + write | Swap `store.write_*` for `store.forward_*` (pass the raw request/bytes). Keep `normalize_*` (still needed for live-tail, `register_runs`, `derive_from_logs`, and run-metric extraction). Metrics arm: forward raw **and** write `run_metric_points` from normalized points that carry `run_id`. |
+| `parallax-server/src/otlp_http.rs` / `otlp_grpc.rs` | decode → spool → queue | Keep the **original `Bytes`** next to the decoded request and hand both to the worker, so forwarding re-emits the original payload (no re-encode) — honors the zero-copy ingest rule. |
+| `parallax-core/src/normalize.rs` | OTLP → rows | Keep. `run_id` already read from resource attr `parallax.run.id` (matches Q6). Still feeds live-tail, run registration, derivation, and run-metric points. |
+| `parallax-core/src/model.rs` | row DTOs | `SpanRow`/`LogRow` remain the read/live DTO (map native query rows into them). Add `RunMetricPointRow`. |
+| `parallax-server/src/serve.rs` | calls `bootstrap` | Adjust bootstrap: native tables auto-create on first OTLP, so the `ALTER` (logs `trace_id INVERTED` + `body FULLTEXT`) must run **after** the table exists — handle ordering (pre-touch the table, or ALTER lazily/idempotently after first forward). Create extension tables up front. |
+| `parallax-api/src/lib.rs` | GraphQL resolvers | Mostly unchanged (read signatures stable). Verify metric resolvers handle per-metric native tables and that run-scoped metric queries hit `run_metric_points`. |
+| `parallax-server/src/greptime_supervisor.rs` / `config.rs` | manage local engine, TTLs | Forward target = the managed local Greptime HTTP base URL (already known). TTLs now ride `x-greptime-hints` on forward + `WITH(ttl)` on extension tables. |
+| `poc/evidence-loop/*` | frozen reference | Untouched (frozen). Update `crates` tests for the new write/read shapes. |
+
+### Open implementation questions (resolve during build)
+
+- **IQ1 — trait write shape + memory adapter.** Native forward needs the raw OTLP request; the
+  in-memory test adapter wants normalized rows. Options: (a) `forward_*` takes raw OTLP and the memory
+  adapter decodes internally; (b) keep both a normalized-write path (memory/tests) and a raw-forward
+  path (greptime). Lean (a) for one contract, but confirm test ergonomics.
+- **IQ2 — bootstrap/ALTER ordering.** Auto-created native tables don't exist until first ingest, but
+  the log indexes need `ALTER`. Decide: pre-create the native log table explicitly with our columns +
+  indexes (does Greptime then accept OTLP into it?), or ALTER idempotently right after the first
+  forward succeeds.
+- **IQ3 — zero-copy forward.** Forward the original spooled `Bytes` rather than re-encoding the decoded
+  proto (AGENTS zero-copy ingest rule). Confirm the spool already holds the exact bytes to replay.
+- **IQ4 — metric read rewrite depth.** How much of the metric read layer goes SQL-over-native vs
+  PromQL now (Q3 said SQL-first, PromQL where it helps).
+
 ## Open questions → current decisions / leans
 
 - **Q1 — Redaction (A6). DECIDED (operator, 2026-06-18): forward raw OTLP as-is, no redaction, straight
@@ -231,6 +295,24 @@ accelerates; Parallax decides.
     stays for aggregates; this is an *added* table, not a replacement. (Time-window reconstruction via
     Turso `RunRecord` start/end and span-derived metrics over native traces remain available as
     no-storage complements, but Approach 2 is the chosen primary for exact per-run metrics.)
-- **Q7 — Custom columns under auto-widening + traces GA.** Open — needs Greptime input: do `ALTER`-added
-  columns/indexes survive dynamic schema growth, and what is the traces-OTLP long-term stability story.
-  Raise on the next Greptime sync.
+- **Q7 — Questions for Ning / the GreptimeDB team (open — needs their input).** These can't be fully
+  settled from docs; ask on the next sync:
+  1. **Custom columns/indexes vs auto-widening.** If we `ALTER` an auto-created native OTLP table to add
+     an index or a Parallax column, then new OTLP attributes auto-add columns — do our manual changes
+     persist and keep working? What happens if an incoming attribute name collides with a column we
+     added?
+  2. **Indexing native logs post-create.** Is adding `trace_id INVERTED INDEX` + `body FULLTEXT` to the
+     auto-created `opentelemetry_logs` supported and stable, without breaking subsequent OTLP ingest?
+  3. **Adding Parallax columns to native traces** (e.g. `fingerprint` on `opentelemetry_traces`). Is
+     `ALTER ADD COLUMN` the blessed path? Will OTLP ingest leave an unknown-to-OTLP column alone?
+  4. **Log attribute promotion.** Confirm `X-Greptime-Log-Extract-Keys: parallax.run.id` promotes the
+     attribute to a real column, and that we can index that column.
+  5. **Traces OTLP GA/stability.** Is the `greptime_trace_v1` pipeline + `opentelemetry_traces` model
+     GA and committed long-term, with a schema-change/version policy? Safe to build a product on?
+  6. **High-cardinality metrics pattern.** Confirm Approach 2 (run_id as `SKIPPING INDEX` on a separate
+     append table, never a metric-engine tag) is the recommended way; any native per-entity high-card
+     metric mechanism we're missing?
+  7. **OTLP forward performance.** Guidance for a proxy re-emitting OTLP into `/v1/otlp/…` at volume —
+     gRPC vs HTTP, batching, compression — vs the SQL-insert path we're leaving.
+  8. **ExponentialHistogram.** Timeline for native metric-engine support (drives the Q3 fallback
+     lifetime).
