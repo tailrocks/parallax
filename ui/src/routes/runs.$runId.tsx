@@ -1,8 +1,9 @@
 import { Link, createFileRoute } from "@tanstack/react-router"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 import { graphql, gqlString, relativeTime } from "@/lib/api"
-import type { LogRecord } from "@/lib/api"
+import { LogsTable } from "@/components/logs-table"
+import type { LogDoc } from "@/components/logs-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -47,7 +48,7 @@ export const Route = createFileRoute("/runs/$runId")({
     graphql<{
       run: RunRecordData | null
       tracesByRun: RunTraceSummary[]
-      logsByRun: LogRecord[]
+      logsByRun: LogDoc[]
       bundle: { markdown: string } | null
     }>(
       `{ run(runId: "${gqlString(params.runId)}") {
@@ -59,7 +60,8 @@ export const Route = createFileRoute("/runs/$runId")({
            traceId rootName service startNanos durationNs spanCount hasError
          }
          logsByRun(runId: "${gqlString(params.runId)}", limit: 200) {
-           tsNanos service severityText body traceId
+           tsNanos service severityNum severityText body traceId spanId
+           runId scopeName attributes resource
          }
          bundle(runId: "${gqlString(params.runId)}") { markdown } }`
     ),
@@ -217,14 +219,6 @@ interface LiveSpan {
   durationNs: string
 }
 
-interface LiveLog {
-  tsNanos: string
-  service: string
-  severityText: string
-  body: string
-  traceId: string
-}
-
 function RunDetailPage() {
   const {
     run: loadedRun,
@@ -238,22 +232,37 @@ function RunDetailPage() {
   // metrics card, and refreshes the run record — the observation entrance
   // for "is my run doing the right thing, right now".
   const [live, setLive] = useState(false)
-  const [liveLogs, setLiveLogs] = useState<LiveLog[]>([])
+  const [liveLogs, setLiveLogs] = useState<LogDoc[]>([])
   const [liveSpans, setLiveSpans] = useState<LiveSpan[]>([])
   const [polledRun, setPolledRun] = useState<RunRecordData | null>(null)
   const run = polledRun ?? loadedRun
 
-  // Log tail: append newest-last (the card reads top-to-bottom).
+  // Loaded + live logs as one newest-first list for the shared logs table.
+  const runLogs = useMemo(
+    () =>
+      [...logsByRun, ...liveLogs]
+        .sort((a, b) =>
+          BigInt(a.tsNanos) < BigInt(b.tsNanos)
+            ? 1
+            : BigInt(a.tsNanos) > BigInt(b.tsNanos)
+              ? -1
+              : 0
+        )
+        .slice(0, 500),
+    [logsByRun, liveLogs]
+  )
+
+  // Log tail: newest first (every run-page surface reads newest-on-top).
   useEffect(() => {
     if (!live) return
     const logSource = new EventSource(
       `/v1/logs/stream?run_id=${encodeURIComponent(runId)}`
     )
-    let logBuffer: LiveLog[] = []
+    let logBuffer: LogDoc[] = []
     logSource.onmessage = (event) => {
       try {
         const batch: unknown = JSON.parse(event.data as string)
-        if (Array.isArray(batch)) logBuffer.push(...(batch as LiveLog[]))
+        if (Array.isArray(batch)) logBuffer.push(...(batch as LogDoc[]))
       } catch {
         // skip malformed frames
       }
@@ -274,7 +283,9 @@ function RunDetailPage() {
       if (logBuffer.length > 0) {
         const incoming = logBuffer
         logBuffer = []
-        setLiveLogs((current) => [...current, ...incoming].slice(-300))
+        setLiveLogs((current) =>
+          [...incoming.reverse(), ...current].slice(0, 300)
+        )
       }
       if (spanBuffer.length > 0) {
         const incoming = spanBuffer
@@ -492,30 +503,18 @@ function RunDetailPage() {
         </Card>
       ) : null}
 
-      {logsByRun.length > 0 || liveLogs.length > 0 ? (
+      {runLogs.length > 0 ? (
         <Card>
           <CardHeader>
             <CardTitle className="text-sm">
               Logs{" "}
               <span className="font-normal text-muted-foreground">
-                (newest last{live ? ", streaming" : ""})
+                (newest first{live ? ", streaming" : ""})
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-1 font-mono text-xs">
-              {[...logsByRun, ...liveLogs].slice(-500).map((log, index) => (
-                <li key={`${log.tsNanos}-${index}`} className="flex gap-2">
-                  <span className="shrink-0 text-muted-foreground">
-                    {relativeTime(log.tsNanos)}
-                  </span>
-                  <span className="shrink-0 font-semibold">
-                    {log.severityText}
-                  </span>
-                  <span className="break-all">{log.body}</span>
-                </li>
-              ))}
-            </ul>
+            <LogsTable logs={runLogs} />
           </CardContent>
         </Card>
       ) : null}

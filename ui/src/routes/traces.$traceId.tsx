@@ -84,13 +84,29 @@ function TracePage() {
     ...spans.map((s) => Number(s.tsNanos) + Number(s.durationNs))
   )
   const total = Math.max(1, end - start)
+  // Every run-page surface reads newest on top — the waterfall and trace logs
+  // included. Sort by the ns timestamp via BigInt (Number() loses ns precision).
+  const orderedSpans = [...spans].sort((a, b) =>
+    BigInt(a.tsNanos) < BigInt(b.tsNanos)
+      ? 1
+      : BigInt(a.tsNanos) > BigInt(b.tsNanos)
+        ? -1
+        : 0
+  )
+  const orderedLogs = [...logsByTrace].sort((a, b) =>
+    BigInt(a.tsNanos) < BigInt(b.tsNanos)
+      ? 1
+      : BigInt(a.tsNanos) > BigInt(b.tsNanos)
+        ? -1
+        : 0
+  )
   const selected = spans.find((s) => s.spanId === selectedId) ?? null
   const selectedAttributes = selected
     ? parseAttributes(selected.attributes)
     : []
   const dbQuery = selectedAttributes.find(([key]) => key === "db.query.text")
   const selectedLogs = selected
-    ? logsByTrace.filter((log) => log.spanId === selected.spanId)
+    ? orderedLogs.filter((log) => log.spanId === selected.spanId)
     : []
   const selectedLinks = selected ? parseLinks(selected.links) : []
   const runId = spans.find((s) => s.runId)?.runId ?? null
@@ -121,7 +137,7 @@ function TracePage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1.5">
-              {spans.map((span) => {
+              {orderedSpans.map((span) => {
                 const offset = ((Number(span.tsNanos) - start) / total) * 100
                 const width = Math.max(
                   0.5,
@@ -173,7 +189,7 @@ function TracePage() {
               </CardHeader>
               <CardContent>
                 <ul className="space-y-1 font-mono text-xs">
-                  {logsByTrace.map((log, index) => (
+                  {orderedLogs.map((log, index) => (
                     <li key={index} className="flex gap-2">
                       <span className="shrink-0 text-muted-foreground">
                         {log.severityText}
