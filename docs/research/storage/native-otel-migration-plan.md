@@ -174,11 +174,11 @@ so the ClickHouse profile stays reachable. Greptime accelerates; Parallax decide
   GreptimeDB. Acceptable for the self-hosted / local-first V1 (operator controls the data). **Revisit
   trigger:** a managed / multi-tenant / cloud profile re-opens this — redaction would move onto the
   forward path or to ingest-side scrubbing there.
-- **Q2 — Derivation source. LEAN: tee in-flight.** *(Explained in chat.)* The proxy already has the
-  OTLP bytes when it forwards them, so parse-and-fingerprint in the same pass (the "tee") — no second
-  round trip, no lag. The alternative, "read-back," forwards only and later *queries Greptime* to pull
-  the errors back out to fingerprint them: simpler forward path, but redundant I/O (reading what we
-  just wrote) + lag. Tee preferred unless the receiver must stay absolutely minimal.
+- **Q2 — Derivation source. DECIDED (operator, 2026-06-18): tee in-flight.** When the proxy receives
+  OTLP it does two things in one pass: (1) forward the bytes to Greptime untouched, (2) parse the same
+  bytes in memory → extract errors → fingerprint → write `error_events`. No second round trip, no lag,
+  no reading back what we just wrote. The rejected alternative ("read-back": forward only, then query
+  Greptime later to pull errors back out) was simpler on the forward path but paid redundant I/O + lag.
 - **Q3 — Metrics. LEAN: forward all three signals uniformly** (traces+logs+metrics → native OTLP
   endpoints; the thin-forward is identical for all). Migrate the *read* layer incrementally; keep an
   explicit-bucket fallback until native ExponentialHistogram lands. (Native metric tables are still
