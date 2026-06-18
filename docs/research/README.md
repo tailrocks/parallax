@@ -40,6 +40,7 @@ This directory is the research record behind Parallax. It is organized so a read
 - [skeptical-reassessment-2026-05.md](decisions/skeptical-reassessment-2026-05.md) — dated whole-concept stress-test: what still makes sense, what must be built, what benefit actually competes (A1 elevated to #1; monetization structural).
 - [storage-engine.md](decisions/storage-engine.md) — GreptimeDB vs ClickHouse: the one-page current verdict (full record in [storage/greptimedb-vs-clickhouse/](storage/greptimedb-vs-clickhouse/)).
 - [v1-storage-adapter-vision.md](decisions/v1-storage-adapter-vision.md) — V1 storage implementation stance: managed local GreptimeDB + Turso metadata, GreptimeDB production profile, backend-neutral adapter contract.
+- [native-otel-tables.md](decisions/native-otel-tables.md) — adopt GreptimeDB native OTLP tables (traces/logs/metrics), customize by `ALTER`, keep derived signals custom; what blocks native today + the path-A/B write fork; portability at the adapter API, not the physical table.
 - [stack-decision.md](decisions/stack-decision.md) — A5 stack-decision: rolls storage/metadata/ingest/setup gates into stack claim levels and fallback triggers.
 - [metadata-store.md](decisions/metadata-store.md) — relational metadata store: Turso-first, Postgres fallback (evidence in [storage/metadata/](storage/metadata/)).
 - [agent-access-surface.md](decisions/agent-access-surface.md) — canonical HTTP API, day-one CLI, read-only MCP after safety gates.

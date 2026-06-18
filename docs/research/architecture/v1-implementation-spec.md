@@ -226,19 +226,22 @@ CREATE TABLE IF NOT EXISTS rollups_fingerprint_minute (
 Adapter queries are plain SQL over the HTTP API; every engine-specific statement lives in
 `parallax-storage`'s greptime module only.
 
-**Why not GreptimeDB's native OTLP tables** (`opentelemetry_traces`, pipeline-fed
-`opentelemetry_logs`, one-table-per-metric): GreptimeDB can ingest OTLP directly at
-`/v1/otlp/...` and auto-create its own layouts, but Parallax deliberately does not use that
-path. Parallax **is** the OTLP receiver (the proxy-lens architecture decision, 2026-05-25):
-ingest flows through Parallax's derivation/grouping/run-scoping workers, and the adapter writes
-the tables above. What this buys: an **engine-portable schema** (the ClickHouse fallback gets
-the identical layout through its own adapter), the `run_id` column and other Parallax semantics
-as first-class columns, and one stable contract behind `StorageAdapter`. What it costs: we
-forgo Greptime's built-in trace view/Jaeger-compatible query layer and its
-PromQL-ergonomic per-metric tables — V1 charts query our single metrics tables with SQL
-aggregates instead. Revisit-trigger: if V2 wants PromQL compatibility, a parallel write into
-Greptime's native metric model (or its OTLP metrics endpoint) can be added inside the greptime
-adapter without touching the product contract.
+**Native OTLP tables (direction reversed 2026-06-18 — adopt native for raw signals).** The DDL
+above hand-rolls `otel_spans`/`otel_logs`/`otel_metrics_*`. The current direction is to **adopt
+GreptimeDB's native OTLP model** (`opentelemetry_traces`, `opentelemetry_logs`, one-table-per-metric
+metric engine) for the three raw signals and customize each by `ALTER`, keeping only the **derived**
+tables (`error_events`, `rollups_fingerprint_minute`) custom. Reasons: GreptimeDB's founder confirmed
+the team optimizes specifically around the native model (Slack, 2026-06-18), and the engine sub-study
+already verified the native trace model live and rated it *better* than the hand-rolled one
+([greptimedb-implementation.md](../storage/greptimedb-vs-clickhouse/greptimedb-implementation.md),
+pass 119). Parallax stays the OTLP receiver (proxy-lens, 2026-05-25) — it still derives/groups/redacts —
+but writes the processed raw signals into the native tables (lean: re-emit to GreptimeDB's
+`/v1/otlp/` endpoint so the data rides Greptime's optimizations). **Engine portability moves to the
+`StorageAdapter` API boundary, not the physical-table level** — the ClickHouse fallback (no native
+OTLP ingest) stays hand-rolled behind the same contract. Full blocker analysis, per-signal
+adopt-then-customize plan, and the path-A/B fork:
+[decisions/native-otel-tables.md](../decisions/native-otel-tables.md). The hand-rolled DDL above
+remains the current code until the native cutover is measured against it on the same corpus.
 
 ## 6. Turso (metadata) DDL
 
