@@ -80,6 +80,8 @@ This directory is the research record behind Parallax. It is organized so a read
 - [redaction.md](capture/redaction.md) — A6: redaction pipeline, detector toolchain, canary corpus, and red-team gate.
 
 ### `storage/` — the telemetry store and its evidence
+- [native-otel-migration-plan.md](storage/native-otel-migration-plan.md) — living plan to adopt GreptimeDB native OTLP tables: decisions (Q1–Q6), grouping division-of-labor, file-by-file implementation roadmap, open questions.
+- [greptimedb-team-questions.md](storage/greptimedb-team-questions.md) — detailed questions for the GreptimeDB team backing the native-OTLP adoption (review on next sync).
 - [evaluation.md](storage/evaluation.md) — storage-layer evaluation across GreptimeDB, ClickHouse, and observability backends.
 - [benchmark-plan.md](storage/benchmark-plan.md) — the database benchmark plan, runnable prototype spec, and artifact interpretation.
 - [freshness-and-latency.md](storage/freshness-and-latency.md) — ingest-to-queryable freshness and evidence-bundle latency gate.

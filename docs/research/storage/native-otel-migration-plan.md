@@ -295,24 +295,8 @@ OTLP in → otlp_http/grpc (keep raw Bytes alongside decoded request) → spool 
     stays for aggregates; this is an *added* table, not a replacement. (Time-window reconstruction via
     Turso `RunRecord` start/end and span-derived metrics over native traces remain available as
     no-storage complements, but Approach 2 is the chosen primary for exact per-run metrics.)
-- **Q7 — Questions for Ning / the GreptimeDB team (open — needs their input).** These can't be fully
-  settled from docs; ask on the next sync:
-  1. **Custom columns/indexes vs auto-widening.** If we `ALTER` an auto-created native OTLP table to add
-     an index or a Parallax column, then new OTLP attributes auto-add columns — do our manual changes
-     persist and keep working? What happens if an incoming attribute name collides with a column we
-     added?
-  2. **Indexing native logs post-create.** Is adding `trace_id INVERTED INDEX` + `body FULLTEXT` to the
-     auto-created `opentelemetry_logs` supported and stable, without breaking subsequent OTLP ingest?
-  3. **Adding Parallax columns to native traces** (e.g. `fingerprint` on `opentelemetry_traces`). Is
-     `ALTER ADD COLUMN` the blessed path? Will OTLP ingest leave an unknown-to-OTLP column alone?
-  4. **Log attribute promotion.** Confirm `X-Greptime-Log-Extract-Keys: parallax.run.id` promotes the
-     attribute to a real column, and that we can index that column.
-  5. **Traces OTLP GA/stability.** Is the `greptime_trace_v1` pipeline + `opentelemetry_traces` model
-     GA and committed long-term, with a schema-change/version policy? Safe to build a product on?
-  6. **High-cardinality metrics pattern.** Confirm Approach 2 (run_id as `SKIPPING INDEX` on a separate
-     append table, never a metric-engine tag) is the recommended way; any native per-entity high-card
-     metric mechanism we're missing?
-  7. **OTLP forward performance.** Guidance for a proxy re-emitting OTLP into `/v1/otlp/…` at volume —
-     gRPC vs HTTP, batching, compression — vs the SQL-insert path we're leaving.
-  8. **ExponentialHistogram.** Timeline for native metric-engine support (drives the Q3 fallback
-     lifetime).
+- **Q7 — Questions for the GreptimeDB team (open — needs their input).** Eight detailed questions
+  (custom columns/indexes vs schema auto-widening, indexing native logs post-create, adding Parallax
+  columns to native traces, log attribute promotion, traces OTLP GA/stability, high-card metric
+  pattern confirmation, OTLP forward performance, ExponentialHistogram timeline) live in their own
+  doc, ready to review on the next sync: **[greptimedb-team-questions.md](greptimedb-team-questions.md)**.
