@@ -132,22 +132,65 @@ Also verified: **the native OTLP API is GA/production-ready** for logs and metri
 (`greptime_trace_v1`) is documented and live-verified (Run 86) but newer — confirm long-term
 stability on the next Greptime sync (Q7).
 
-## Open questions (answer with operator, iterate)
+## Grouping: what Parallax wants vs. what GreptimeDB gives (deep map)
 
-- **Q1 — Redaction (A6).** If raw OTLP is forwarded untouched to Greptime, redaction-before-storage is
-  lost. Acceptable for V1 (redact at query/projection time, or rely on SDK-side scrubbing)? Or must the
-  forward path redact first (then it's not "untouched")?
-- **Q2 — Derivation source.** Derive `error_events`/fingerprints from the in-flight OTLP on the tee
-  (before/parallel to forwarding), or read them back from the native tables asynchronously?
-- **Q3 — Metrics now or later.** Adopt the native metric engine + PromQL in this migration, or keep the
-  custom metrics tables for V1 and migrate metrics in a later pass? (ExponentialHistogram gap + query
-  rewrite cost.)
-- **Q4 — Existing data.** Research stage → greenfield (drop custom tables, start native fresh), or write
-  a backfill/dual-write window?
-- **Q5 — ClickHouse fallback.** Native commitment is GreptimeDB-only at the physical layer. Keep the
-  `StorageAdapter` ClickHouse boundary alive (portability cost), or formally narrow V1 to GreptimeDB and
-  revisit ClickHouse later?
-- **Q6 — `run_id` access.** Confirm `parallax.run.id` lands as `resource_attributes.parallax.run.id`
-  under native flattening, and repoint all `run_id` queries to that column name.
-- **Q7 — Custom columns under auto-widening.** Confirm `ALTER`-added columns/indexes on native tables
-  survive GreptimeDB's dynamic schema growth (raise on next Greptime sync).
+Sentry-style issue tracking is a pipeline. Mapping each stage to its owner shows the clean seam:
+**GreptimeDB owns stateless aggregation math over append-only signals; Parallax owns fingerprint
+intelligence + stateful issue identity/lifecycle + bundle assembly + alerting.**
+
+| Stage | What it does | Owner | GreptimeDB mechanism / note |
+| --- | --- | --- | --- |
+| Raw store | spans / logs / metrics at rest | **Greptime** | native OTLP tables |
+| Error extraction | find exception events, error spans (`STATUS_CODE_ERROR`), ERROR/FATAL logs | **Parallax (tee)** | could be a Greptime query, but the tee already holds the bytes (one pass) |
+| Message normalization | strip variable parts → stable template | Greptime-capable; canonical in Parallax | `digest` processor (presets: numbers/uuid/ip/quoted/bracketed + regex). **Flat string only** |
+| Stacktrace fingerprint | normalize frames, in-app vs lib, top-N → key | **Parallax only** | not expressible in `digest`/SQL — the real grouping intelligence |
+| Custom grouping rules | fingerprint overrides, merge rules | **Parallax only** | app logic |
+| Fingerprint hash | template/type/frames → hash | either | SQL `sha512`; canonical algo stays in Parallax |
+| Issue identity | find-or-create issue by fingerprint, merge/unmerge | **Parallax (Turso)** | mutable OLTP — never a timeseries store |
+| Issue lifecycle | status (resolved/ignored/regressed), assign, snooze | **Parallax (Turso)** | mutable state; no native form |
+| Count / first-seen / last-seen | per fingerprint | **Greptime-capable (Flow)** | `GROUP BY fingerprint → count, min(ts), max(ts)` |
+| Trend sparkline | count per fingerprint per window | **Greptime (Flow)** | == `rollups_fingerprint_minute`, server-side |
+| Users/sessions affected | approximate unique count | **Greptime-capable** | `hll` / `approx_distinct` (HyperLogLog) |
+| Latency / percentiles per issue or span | p50/p95/p99 | **Greptime-capable** | `uddsketch` Flow **directly over `opentelemetry_traces`** (docs "extend-trace") |
+| Tag-value distribution | top values per key | **Greptime-capable** | `GROUP BY tag` (watch cardinality) |
+| Issue search / filter | by status + tags + time | **Hybrid** | state from Turso; signal filters can hit Greptime |
+| Evidence-bundle assembly | join error → spans → logs → metrics → deploys | **Parallax** | cross-signal orchestration |
+| Alerting / notify | new / regressed / threshold | **Parallax** | GreptimeDB OSS has no built-in alerting |
+
+**Where Greptime genuinely helps Parallax:** it can offload all the *counting* — issue counts, trend
+rollups, unique-users (HLL), latency percentiles (uddsketch) — as continuous Flows over the native
+tables, so Parallax doesn't re-scan to recompute aggregates. That is real leverage, not nothing.
+
+**Where the operator's instinct holds:** the *intelligence* (stacktrace fingerprinting, custom
+grouping) and the *state* (issue identity + lifecycle) must be Parallax. And — the portability rule —
+any Greptime Flow/`digest`/HLL/uddsketch use is an **adapter-level acceleration**, never the source
+of truth: the canonical fingerprint algorithm, issue state, and rollup *semantics* live in Parallax
+so the ClickHouse profile stays reachable. Greptime accelerates; Parallax decides.
+
+## Open questions → current decisions / leans
+
+- **Q1 — Redaction (A6). DECIDED (operator, 2026-06-18): forward raw OTLP as-is, no redaction, straight
+  to Greptime's OTLP API.** Consequence to record: raw telemetry is stored **unredacted at rest** in
+  GreptimeDB. Acceptable for the self-hosted / local-first V1 (operator controls the data). **Revisit
+  trigger:** a managed / multi-tenant / cloud profile re-opens this — redaction would move onto the
+  forward path or to ingest-side scrubbing there.
+- **Q2 — Derivation source. LEAN: tee in-flight.** *(Explained in chat.)* The proxy already has the
+  OTLP bytes when it forwards them, so parse-and-fingerprint in the same pass (the "tee") — no second
+  round trip, no lag. The alternative, "read-back," forwards only and later *queries Greptime* to pull
+  the errors back out to fingerprint them: simpler forward path, but redundant I/O (reading what we
+  just wrote) + lag. Tee preferred unless the receiver must stay absolutely minimal.
+- **Q3 — Metrics. LEAN: forward all three signals uniformly** (traces+logs+metrics → native OTLP
+  endpoints; the thin-forward is identical for all). Migrate the *read* layer incrementally; keep an
+  explicit-bucket fallback until native ExponentialHistogram lands. (Native metric tables are still
+  SQL-queryable, so PromQL rewrite can be gradual, not a blocker.)
+- **Q4 — Existing data. LEAN: greenfield** (research stage — drop custom tables, start native fresh; no
+  backfill).
+- **Q5 — ClickHouse fallback. LEAN: keep the `StorageAdapter` boundary** — it is the very reason the
+  proxy exists as a storage *router*. GreptimeDB is the first/only implemented profile; ClickHouse
+  stays a future hand-rolled profile behind the same contract. No product contract depends on
+  Greptime-native physical shape.
+- **Q6 — `run_id`. LEAN: use the native flattened column** `resource_attributes.parallax.run.id`;
+  repoint all `run_id` queries. (Confirm the exact name end-to-end before deleting custom DDL.)
+- **Q7 — Custom columns under auto-widening + traces GA.** Open — needs Greptime input: do `ALTER`-added
+  columns/indexes survive dynamic schema growth, and what is the traces-OTLP long-term stability story.
+  Raise on the next Greptime sync.
