@@ -5,6 +5,15 @@
 Decision date baseline: 2026-05-29 (reconciles the engine sub-study to the current operator brief).
 Operator re-affirmed focus: 2026-06-03. Operator re-affirmed harder: 2026-06-11 (see below).
 
+> **⚠ Update 2026-06-18 — V1 storage decided: GreptimeDB-only, native OTLP model.** Parallax V1 commits
+> to GreptimeDB alone and adopts its **native OTLP tables** (the proxy forwards raw OTLP straight to
+> GreptimeDB and tees in-process to derive issues into a few custom extension tables). **ClickHouse is
+> deferred** — no longer a V1 fallback and not a design constraint; revisit only if a concrete benefit
+> appears. This supersedes the "both engines behind one `StorageAdapter` / ClickHouse fallback" framing
+> in this doc **for V1 scope**; everything below stays as historical engine evidence and a future-option
+> record. Canonical: [native-otel-tables.md](native-otel-tables.md) ·
+> [native-otel-migration-plan.md](../storage/native-otel-migration-plan.md).
+
 > **Decision — current production/server lean GreptimeDB, NOT yet settled.** Keep **both engines behind one
 > `StorageAdapter`**; never hard-code engine magic into the schema or the evidence-bundle
 > contract. ClickHouse is the fallback and the faster raw analytical engine. The lean is

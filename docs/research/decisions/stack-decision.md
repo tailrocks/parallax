@@ -4,6 +4,12 @@
 
 Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 
+> **⚠ Update 2026-06-18 — V1 storage decided: GreptimeDB-only, native OTLP model.** The storage axis of
+> this ledger is settled for V1: GreptimeDB alone on its **native OTLP tables** (proxy forwards raw OTLP
+> + tees to derive issues into custom extension tables). **ClickHouse is deferred** — not a V1 fallback
+> or a design constraint. Metadata (Turso) is unchanged. Canonical:
+> [native-otel-tables.md](native-otel-tables.md) · [native-otel-migration-plan.md](../storage/native-otel-migration-plan.md).
+
 > **Decision record — A5 stack decision (roll-up).** Status: **open — no A5 pass yet.** Rule:
 > no single component benchmark creates an A5 pass; A5 passes only when one run manifest proves
 > the selected profile end-to-end with pinned versions/settings and a named fallback trigger.

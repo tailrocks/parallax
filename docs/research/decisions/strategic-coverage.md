@@ -4,6 +4,11 @@
 
 Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 
+> **⚠ Update 2026-06-18 — V1 storage decided: GreptimeDB-only, native OTLP model.** Where this doc says
+> "storage adapter, GreptimeDB lean / ClickHouse fallback," read: V1 commits to GreptimeDB alone on its
+> **native OTLP tables**; ClickHouse is deferred (not a V1 fallback or design constraint). Canonical:
+> [native-otel-tables.md](native-otel-tables.md) · [native-otel-migration-plan.md](../storage/native-otel-migration-plan.md).
+
 > **Decision record — strategic synthesis and coverage map.** Status: GO (narrow), tying the
 > research notes into one verdict and mapping every prompt area to its evidence. The current
 > open proof gates are enumerated in "What Is Still Unproven" below. See

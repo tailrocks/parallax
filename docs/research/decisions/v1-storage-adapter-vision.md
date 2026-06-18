@@ -4,6 +4,15 @@
 
 Decision date: 2026-06-03 · Updated after local-first clarification 2026-06-03
 
+> **⚠ Update 2026-06-18 — V1 is GreptimeDB-only on the native OTLP model.** Parallax V1 commits to
+> GreptimeDB alone and adopts its **native OTLP tables** (proxy forwards raw OTLP to Greptime + tees
+> in-process to derive issues into custom extension tables). **ClickHouse is deferred** — not a V1
+> fallback and not a design constraint; revisit only if a concrete benefit appears. The `StorageAdapter`
+> trait may remain (it exists, with the in-memory test adapter), but portability-to-ClickHouse is no
+> longer a constraint, so the design uses Greptime-native features freely. This supersedes the
+> "adapter-extensible, ClickHouse fallback profile" framing below for V1 scope. Canonical:
+> [native-otel-tables.md](native-otel-tables.md) · [native-otel-migration-plan.md](../storage/native-otel-migration-plan.md).
+
 > **Decision — V1 is local-first and adapter-extensible; managed local GreptimeDB is the preferred
 > evidence store.** The first implementation should feel like one command on a developer machine:
 > Parallax manages a local GreptimeDB standalone process for observability evidence and uses
