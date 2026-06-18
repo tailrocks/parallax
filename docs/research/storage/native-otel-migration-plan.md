@@ -24,8 +24,17 @@ bottom and are answered with the operator over time.
   native model (Ning Sun, Slack 2026-06-18); forwarding untouched lets Parallax inherit that roadmap
   for free, and the native OTLP API is GA/production-ready.
 - **Issue grouping (Sentry-style) is the part Parallax must own** — operator's claim, verified below.
-- **Goal of this doc:** decide exactly what migrates, what stays custom, and how — then execute the
-  migration to native models.
+- **Native-first principle (operator, 2026-06-18).** Use the native GreptimeDB approach for the
+  *entire* OpenTelemetry stack — nothing outside native for OTel signals. Only where something is
+  **genuinely not capable** of being done natively do we ask "what is the minimal extension?" — an
+  additional table or column alongside native — and even then we **extend, never replace** native.
+  Default answer to every storage question is "do it the native way."
+- **No migration, ever (operator, 2026-06-18).** Parallax is in the research state with no users (the
+  operator runs it locally, fresh data on each spawn). We freely refactor / re-implement / redefine.
+  There is **no data migration, no backfill, no dual-write, no parity-before-delete** — just rebuild
+  on the native model. This is a *refactor* plan, not a data-migration plan.
+- **Goal of this doc:** decide exactly what is native, what (if anything) must be a custom extension,
+  and how — then re-implement on native models.
 
 ## Why native (recap of the finding)
 
@@ -53,7 +62,7 @@ tables). Schema auto-grows columns from new attributes.
 | --- | --- | --- |
 | `otel_spans` (PK `service`, attrs as JSON) | `opentelemetry_traces` | **Replace.** Forward traces OTLP → endpoint. `ALTER`-add any cross-signal column we still need (`fingerprint`?). Native is strictly better here. |
 | `otel_logs` (PK `service`, attrs as JSON) | `opentelemetry_logs` | **Replace + customize.** Forward logs OTLP → endpoint, then `ALTER`-add `trace_id INVERTED INDEX` + `message/body FULLTEXT INDEX` (the one native shortfall; Run 56 = dominant bundle cost). |
-| `otel_metrics_points` + `otel_metrics_histograms` (2 unified tables, SQL aggregates) | metric engine, one table per metric (PromQL) | **Replace, with a fallback.** Forward metrics OTLP → endpoint. Rewrite chart query layer SQL→PromQL. **ExponentialHistogram gap** → keep an explicit-bucket path until native supports it. *(Open question Q3.)* |
+| `otel_metrics_points` + `otel_metrics_histograms` (2 unified tables, SQL aggregates) | metric engine, one table per metric (PromQL) | **Replace, fully native (Q3 = A).** Forward metrics OTLP → endpoint. Rewrite chart reads (native metric tables are SQL-queryable, so SQL→PromQL is gradual). **ExponentialHistogram is the one native gap** — rely on explicit-bucket histograms (OTel SDK default, fully native); add a minimal extension table *only if* exp-histograms actually appear (native-first principle). |
 | `error_events` (Parallax fingerprinting) | — none — | **Keep custom.** Product semantics, no native form. |
 | `rollups_fingerprint_minute` | — none — | **Keep custom.** Derived. |
 | Turso metadata (issues, runs, dashboards) | — none — | **Keep.** Unaffected. |
@@ -75,19 +84,21 @@ Two things this forces a decision on (Q1, Q2 below): **redaction** (if raw OTLP 
 redaction-before-storage is gone — is that acceptable, or does redaction move to query-time / opt-in?),
 and **derivation source** (derive from the in-flight OTLP on the tee, vs. read back from native tables).
 
-## Draft migration steps (subject to the open questions)
+## Build steps (greenfield — no migration, Q4)
 
-1. Add an OTLP-forward path in the greptime adapter: re-emit received traces/logs/metrics to
+1. **Delete the hand-rolled raw-signal DDL + write paths** (`otel_spans`, `otel_logs`,
+   `otel_metrics_*`) outright. No parity gate, no backfill — fresh data each spawn.
+2. Add the OTLP-forward path in the greptime adapter: re-emit received traces/logs/metrics to
    GreptimeDB's `/v1/otlp/v1/...` endpoints with the right pipeline/table headers + `x-greptime-hints`
    (ttl, append_mode).
-2. Bootstrap deviations once after first auto-create: `ALTER` native logs to add `trace_id INVERTED
+3. Bootstrap deviations once after first auto-create: `ALTER` native logs to add `trace_id INVERTED
    INDEX` + body `FULLTEXT`; `ALTER` native traces for any extra column we keep.
-3. Repoint reads (`greptime.rs` SELECTs) to native column names (`span_attributes.*`,
-   `resource_attributes.parallax.run.id`, `duration_nano`, etc.). Rewrite metric reads to PromQL.
-4. Keep `error_events` + `rollups` custom; wire derivation to the tee (Q2).
-5. Measure native vs hand-rolled anchored retrieval on the same corpus (extend the four-build matrix)
-   **before** deleting the custom span/log DDL.
-6. Delete the hand-rolled span/log/metric DDL + write paths once parity is proven.
+4. Repoint reads (`greptime.rs` SELECTs) to native column names (`span_attributes.*`,
+   `resource_attributes.parallax.run.id`, `duration_nano`, etc.). Rewrite metric reads against the
+   per-metric native tables (SQL first; PromQL where it helps).
+5. Wire the derivation tee (Q2): parse forwarded OTLP in-process → `error_events`. Keep `error_events`
+   + `rollups` as custom extension tables (native has no equivalent — native-first principle).
+6. Only if a native gap actually bites (e.g. exp-histograms): add the minimal extension table.
 
 ## Claim verification — "grouping must be Parallax; can't delegate to GreptimeDB" (2026-06-18)
 
@@ -184,12 +195,14 @@ accelerates; Parallax decides.
   bytes in memory → extract errors → fingerprint → write `error_events`. No second round trip, no lag,
   no reading back what we just wrote. The rejected alternative ("read-back": forward only, then query
   Greptime later to pull errors back out) was simpler on the forward path but paid redundant I/O + lag.
-- **Q3 — Metrics. LEAN: forward all three signals uniformly** (traces+logs+metrics → native OTLP
-  endpoints; the thin-forward is identical for all). Migrate the *read* layer incrementally; keep an
-  explicit-bucket fallback until native ExponentialHistogram lands. (Native metric tables are still
-  SQL-queryable, so PromQL rewrite can be gradual, not a blocker.)
-- **Q4 — Existing data. LEAN: greenfield** (research stage — drop custom tables, start native fresh; no
-  backfill).
+- **Q3 — Metrics. DECIDED (operator, 2026-06-18): fully native (Option A).** Forward all three signals
+  uniformly (traces+logs+metrics → native OTLP endpoints); nothing outside native for OTel. Rewrite the
+  metric read layer against per-metric native tables (SQL first, PromQL where it helps). Per the
+  native-first principle, the only native gap (ExponentialHistogram) is handled by relying on
+  explicit-bucket histograms; a minimal extension table is considered *only if* exp-histograms appear.
+- **Q4 — Existing data. DECIDED (operator, 2026-06-18): greenfield, no migration.** No users, fresh
+  data each spawn — delete custom tables and rebuild native outright. No backfill, dual-write, or
+  parity gate.
 - **Q5 — ClickHouse fallback. DECIDED (operator, 2026-06-18): do not keep ClickHouse as a boundary for
   now. Full focus on GreptimeDB.** Multi-store becomes a goal only if a concrete benefit appears — for
   now there is no clear benefit, so portability-to-ClickHouse is **not** a design constraint. The
