@@ -123,6 +123,20 @@ where we customize native tables.
 - **Why it matters.** Forwarding is now our only write path for raw signals; we want it efficient.
 - **Fallback if no.** Tune batch sizes empirically and benchmark gRPC vs HTTP ourselves.
 
+## 9. Native OTLP over gRPC (pipeline / extract-keys)
+
+- **Context.** Parallax's ingest receiver is gRPC-first for performance, but it forwards to GreptimeDB's
+  native tables over **OTLP/HTTP** because the trace pipeline (`greptime_trace_v1`) and
+  `X-Greptime-Log-Extract-Keys` are documented as HTTP headers on `/v1/otlp`. When Parallax receives
+  over gRPC it must re-encode to HTTP for the forward.
+- **Our assumption.** The native trace pipeline + log extract-keys selection is HTTP-only today.
+- **Question.** Can the native OTLP path (trace `greptime_trace_v1` pipeline selection, log
+  extract-keys, table-name) be driven over **gRPC** (e.g. via gRPC metadata), so a gRPC-first proxy can
+  forward gRPC→gRPC without re-encoding? If not now, is it on the roadmap?
+- **Why it matters.** A gRPC-native forward removes the re-encode hop on the hottest path.
+- **Fallback if no.** Keep forwarding over OTLP/HTTP (current implementation); the re-encode cost is
+  modest and off the client-facing latency path.
+
 ## 8. ExponentialHistogram support timeline
 
 - **Context.** The native metric engine does not yet support OTLP ExponentialHistogram. We will rely

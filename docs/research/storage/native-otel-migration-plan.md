@@ -23,6 +23,15 @@ bottom and are answered with the operator over time.
 - **Rationale for thin-forward to Greptime:** GreptimeDB's team optimizes specifically around the
   native model (Ning Sun, Slack 2026-06-18); forwarding untouched lets Parallax inherit that roadmap
   for free, and the native OTLP API is GA/production-ready.
+- **Transport — gRPC-first (operator, 2026-06-18).** Parallax's OTLP **ingest receiver** treats gRPC
+  as the first-class, default protocol for highest performance (HTTP/2 multiplexing, binary framing,
+  persistent connections, header compression); **HTTP/protobuf stays supported** for compatibility.
+  Both receivers already exist (`otlp_grpc.rs` :4317, `otlp_http.rs` :4318). **Caveat — the
+  storage-forward leg is HTTP-bound:** GreptimeDB's native trace pipeline (`greptime_trace_v1`) and log
+  extract-keys are selected by **HTTP headers on `/v1/otlp`**; there is no documented gRPC path that
+  selects them. So Parallax receives over gRPC (fast) but **forwards to GreptimeDB over HTTP**
+  regardless — the gRPC-received re-encode (IQ3) is therefore necessary, not waste. Open vendor
+  question on a gRPC-native forward: [greptimedb-team-questions.md](greptimedb-team-questions.md) #9.
 - **Issue grouping (Sentry-style) is the part Parallax must own** — operator's claim, verified below.
 - **Native-first principle (operator, 2026-06-18).** Use the native GreptimeDB approach for the
   *entire* OpenTelemetry stack — nothing outside native for OTel signals. Only where something is
