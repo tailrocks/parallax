@@ -2,8 +2,13 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: open · Created 2026-06-18. Detailed questions to review with the GreptimeDB team on the next
-sync. They back the native-OTLP adoption decisions in
+Status: open · Created 2026-06-18 · **Several items empirically confirmed by the 2026-06-18 spike on
+GreptimeDB v1.1.0** (see [native-otel-migration-plan.md](native-otel-migration-plan.md) → "Spike
+results"). Confirmed-by-spike: **#1, #3, #4, #5** (auto-widen-safe custom columns/indexes, indexing
+native logs post-create, adding columns to native traces, log attribute promotion). Still genuinely
+for the team: **#2** (traces GA *commitment/policy* — it works on v1.1.0), **#6** (blessing on the
+high-card pattern — it works), **#7** (forward perf), **#8** (exp-histogram timeline). Detailed
+questions to review with the GreptimeDB team on the next sync. They back the native-OTLP adoption decisions in
 [native-otel-migration-plan.md](native-otel-migration-plan.md) and
 [../decisions/native-otel-tables.md](../decisions/native-otel-tables.md). Each item states our
 context, our current assumption, the exact question, why it matters to Parallax, and our fallback if

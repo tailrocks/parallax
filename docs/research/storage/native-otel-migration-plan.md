@@ -250,6 +250,38 @@ OTLP in → otlp_http/grpc (keep raw Bytes alongside decoded request) → spool 
 - **IQ4 — metric read rewrite depth.** How much of the metric read layer goes SQL-over-native vs
   PromQL now (Q3 said SQL-first, PromQL where it helps).
 
+## Spike results (2026-06-18) — native tables de-risked end-to-end
+
+Ran a throwaway spike against an **isolated GreptimeDB v1.1.0** (the `~/.parallax/bin/greptime`
+binary on private ports + temp data dir; the running instance was untouched). Pushed real OTLP
+(traces+logs+metrics) via the OpenTelemetry SDK over HTTP to `/v1/otlp`, with the
+`greptime_trace_v1` pipeline header, `X-Greptime-Log-Extract-Keys: parallax.run.id`, and
+`parallax.run.id` in the resource. **Every load-bearing assumption held:**
+
+- **Native auto-create** ✅ — one push created `opentelemetry_traces` (+ `_services`/`_operations`),
+  `opentelemetry_logs`, and **per-metric** tables (`spike_requests_total`; the histogram split into
+  `_bucket`/`_count`/`_sum`) on the metric engine. *(Resolves **IQ2**: tables appear on first ingest,
+  so our `ALTER`s run after the first forward / idempotently — workable, no pre-create needed.)*
+- **`run_id` flattening** ✅ — traces got a real `resource_attributes.parallax.run.id` column; logs
+  got a real `parallax.run.id` column via the extract-keys header (it even joined the logs PRIMARY
+  KEY). *(Confirms Q6.)*
+- **ALTER on native tables works + persists** ✅ — `opentelemetry_logs` took `trace_id INVERTED INDEX`
+  and `body FULLTEXT INDEX`; `opentelemetry_traces` took `ADD COLUMN fingerprint`.
+- **Schema auto-widen does NOT clobber our changes** ✅ (the riskiest unknown) — a second push with a
+  new attribute added `resource_attributes.parallax.spike.extra` *and* the `fingerprint` column + the
+  log indexes were still present; `matches(body, 'spike')` FULLTEXT still returned rows afterward.
+- **`run_metric_points` (Approach 2)** ✅ — DDL valid (BLOOM `SKIPPING INDEX` on `run_id`,
+  `append_mode`), insert + read OK; `run_id` is **not** a metric-engine tag.
+- **Native reads** ✅ — trace lookup by `resource_attributes.parallax.run.id`, log FULLTEXT, and
+  per-metric table reads (`greptime_timestamp`/`greptime_value` + resource-attr tags) all work.
+
+**Implications:** IQ2 resolved. IQ1 (trait write shape) and IQ3 (zero-copy forward) remain build-time
+choices. IQ4 (metric reads) is straightforward SQL over the per-metric tables. **Engine is v1.1.0**
+(newer than the pinned v1.0.2 — version policy is latest; bump pins when implementing). **Still genuinely
+for the team** (works empirically, but their word matters): traces-OTLP GA/stability *commitment*,
+ExponentialHistogram timeline, OTLP-forward perf guidance, and a blessing on the `run_metric_points`
+pattern — see [greptimedb-team-questions.md](greptimedb-team-questions.md).
+
 ## Open questions → current decisions / leans
 
 - **Q1 — Redaction (A6). DECIDED (operator, 2026-06-18): forward raw OTLP as-is, no redaction, straight
