@@ -32,9 +32,10 @@ any OTel SDK can emit it (Rust: `tracing-opentelemetry` exposes
 
 ## What Parallax does with them (implemented 2026-06-12)
 
-- **Storage:** `otel_spans` gains a `links` JSON column
-  (`[{traceId, spanId, attributes}]`), normalized from the OTLP
-  `span.links` field; existing installs migrate via ALTER at bootstrap.
+- **Storage:** span links are read from GreptimeDB's native `opentelemetry_traces.span_links`
+  (`JSON`), which the native trace model already stores — no custom column needed. *(History: the
+  earlier hand-rolled design added a `links` JSON column to `otel_spans`; superseded by the native-OTLP
+  decision, [native-otel-tables.md](../decisions/native-otel-tables.md).)*
 - **API:** `Span.links` (JSON string) on the GraphQL `trace(traceId:)`
   read.
 - **UI:** the trace waterfall marks spans carrying links with an

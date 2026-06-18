@@ -6,6 +6,11 @@ Research date: 2026-05-25
 
 ## Executive Summary
 
+> **⚠ V1 scope update (2026-06-18):** V1 is **decided GreptimeDB-only on the native OTLP model**;
+> ClickHouse is deferred (not a V1 fallback or design constraint). The conclusion below ("ClickHouse
+> stays the fallback") is retained as the engine-study record. Canonical:
+> [../decisions/native-otel-tables.md](../decisions/native-otel-tables.md).
+
 GreptimeDB is a credible storage-layer candidate for Parallax, but the strongest
 technical argument is not that it is universally faster than every alternative.
 The stronger argument is that GreptimeDB is designed as an open-source,

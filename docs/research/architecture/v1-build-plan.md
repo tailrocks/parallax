@@ -97,10 +97,14 @@ proto pinning strategy; tokio task layout for receivers.
 
 Managed GreptimeDB standalone supervisor (`--manage-greptime` default, `--greptime-url`
 external mode, per [local-first-v1.md](local-first-v1.md)); Turso metadata file (committed,
-no fallback engine — operator, 2026-06-12); `StorageAdapter` v0 (write spans/logs/metrics; anchored reads by
-trace_id/fingerprint/time window). Graduate from the PoC: error derivation (both exception
-encodings), fingerprinting, grouping into issue rows (metadata store owns mutable issue state —
-grouped errors are OLTP, per the metadata-store decision).
+no fallback engine — operator, 2026-06-12). **Storage (decided 2026-06-18, native-OTLP):** the adapter
+**forwards raw OTLP straight to GreptimeDB's native tables** (`opentelemetry_traces`/`opentelemetry_logs`/metric
+engine) and **tees** in-process to derive issues + run-scoped metrics into custom extension tables
+(`error_events`, `rollups_fingerprint_minute`, `run_metric_points`); anchored reads by
+trace_id/fingerprint/time window run over the native tables. See
+[native-otel-tables.md](../decisions/native-otel-tables.md). Graduate from the PoC: error derivation
+(both exception encodings), fingerprinting, grouping into issue rows (metadata store owns mutable issue
+state — grouped errors are OLTP, per the metadata-store decision).
 
 *Exit:* a real panic becomes a grouped issue queryable ~5s after emit (informal freshness check;
 the formal gate row comes in M5). *Risk watched:* GreptimeDB process management UX (download/brew

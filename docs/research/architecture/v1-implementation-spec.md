@@ -226,22 +226,21 @@ CREATE TABLE IF NOT EXISTS rollups_fingerprint_minute (
 Adapter queries are plain SQL over the HTTP API; every engine-specific statement lives in
 `parallax-storage`'s greptime module only.
 
-**Native OTLP tables (direction reversed 2026-06-18 — adopt native for raw signals).** The DDL
-above hand-rolls `otel_spans`/`otel_logs`/`otel_metrics_*`. The current direction is to **adopt
-GreptimeDB's native OTLP model** (`opentelemetry_traces`, `opentelemetry_logs`, one-table-per-metric
-metric engine) for the three raw signals and customize each by `ALTER`, keeping only the **derived**
-tables (`error_events`, `rollups_fingerprint_minute`) custom. Reasons: GreptimeDB's founder confirmed
-the team optimizes specifically around the native model (Slack, 2026-06-18), and the engine sub-study
-already verified the native trace model live and rated it *better* than the hand-rolled one
-([greptimedb-implementation.md](../storage/greptimedb-vs-clickhouse/greptimedb-implementation.md),
-pass 119). Parallax stays the OTLP receiver (proxy-lens, 2026-05-25) — it still derives/groups/redacts —
-but writes the processed raw signals into the native tables (lean: re-emit to GreptimeDB's
-`/v1/otlp/` endpoint so the data rides Greptime's optimizations). **Engine portability moves to the
-`StorageAdapter` API boundary, not the physical-table level** — the ClickHouse fallback (no native
-OTLP ingest) stays hand-rolled behind the same contract. Full blocker analysis, per-signal
-adopt-then-customize plan, and the path-A/B fork:
-[decisions/native-otel-tables.md](../decisions/native-otel-tables.md). The hand-rolled DDL above
-remains the current code until the native cutover is measured against it on the same corpus.
+**⚠ Native OTLP tables — DECIDED 2026-06-18; the hand-rolled DDL below is superseded for raw signals.**
+V1 **adopts GreptimeDB's native OTLP model** (`opentelemetry_traces`, `opentelemetry_logs`,
+one-table-per-metric metric engine) for the three raw signals. The adapter **forwards raw OTLP straight
+to GreptimeDB's `/v1/otlp/` endpoints (Path A)** so native tables auto-create and ride Greptime's
+optimizations, and **tees** the same bytes in-process to derive the **custom extension** tables
+(`error_events`, `rollups_fingerprint_minute`, and `run_metric_points` for run-scoped metrics). Native
+attributes are columns (traces) / JSON (logs); `run_id` is a resource attribute →
+`resource_attributes.parallax.run.id` on traces, promoted via `X-Greptime-Log-Extract-Keys` on logs,
+and **never a metric tag** (high cardinality). `error_events`/`rollups`/`run_metric_points` stay custom
+(no native equivalent). **GreptimeDB-only** — ClickHouse is deferred (not a V1 fallback or design
+constraint). **Greenfield:** the `otel_spans`/`otel_logs`/`otel_metrics_*` DDL below is **removed**, not
+migrated (research stage, no users). Canonical decision + per-signal plan + implementation roadmap:
+[decisions/native-otel-tables.md](../decisions/native-otel-tables.md) ·
+[storage/native-otel-migration-plan.md](../storage/native-otel-migration-plan.md). The DDL block below
+is retained only as a record of the legacy shape and the extension-table definitions.
 
 ## 6. Turso (metadata) DDL
 
@@ -308,6 +307,13 @@ telemetry without a CLI `runStart` are auto-registered by the worker with status
 | metric gauge/sum data points | `otel_metrics_points` (one row per point; `is_monotonic` from sum) |
 | metric histogram data points | `otel_metrics_histograms` |
 | `resource.attributes["parallax.run.id"]` | **promoted to a real `run_id` column** on `otel_spans`/`otel_logs`/`otel_metrics_points` (the key contains a dot, making JSON-path filtering fragile; a column makes run-scoped reads exact and fast — and puts a run's CPU/memory beside its traces and logs). No aliases are accepted: `session.id` is a broader client-session key, and `cicd.pipeline.run.id` is scoped to CI/CD pipeline systems. Decision + sources: [capture/run-id-standardization.md](../capture/run-id-standardization.md) |
+
+> **⚠ 2026-06-18 (native-OTLP decision):** the right-hand custom-table targets above (`otel_spans`,
+> `otel_logs`, `otel_metrics_*`) are **superseded** — raw signals now land in GreptimeDB's native tables
+> (`opentelemetry_traces`/`opentelemetry_logs`/metric engine) via OTLP forward; run-scoped metrics go to
+> the `run_metric_points` extension; only the derived rows (`error_events`) remain custom. `run_id` is a
+> resource attribute (column on traces, extract-key column on logs, never a metric tag). See
+> [decisions/native-otel-tables.md](../decisions/native-otel-tables.md).
 
 Fingerprinting and derivation logic: graduate `poc/evidence-loop/src/{derive,fingerprint}.rs`
 verbatim semantics (both exception encodings; normalization rules; 16-hex fingerprint).

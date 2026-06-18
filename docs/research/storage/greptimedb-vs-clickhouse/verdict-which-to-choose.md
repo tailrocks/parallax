@@ -13,6 +13,11 @@ Pins (re-verify each pass): GreptimeDB `v1.0.2` (GA 2026-05-14, `0ef5451`); Clic
 
 ## Headline
 
+> **⚠ V1 scope update (2026-06-18):** Parallax V1 has **decided GreptimeDB-only on the native OTLP
+> model**; ClickHouse is deferred (not a V1 fallback or design constraint, revisit only on a concrete
+> benefit). This document remains the white-box engine comparison and the future-option record — it is
+> evidence, not the V1 decision. Canonical: [../../decisions/native-otel-tables.md](../../decisions/native-otel-tables.md).
+
 **Recommended: GreptimeDB — current lean, not yet settled.** Not because it is the fastest
 engine; it is not. ClickHouse is faster for high-volume log/trace analytics by clear,
 code-confirmed mechanisms, and the gap *widens* with scale. GreptimeDB is recommended because its

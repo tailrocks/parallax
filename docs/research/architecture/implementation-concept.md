@@ -37,6 +37,12 @@ Build Parallax as:
 The first product should beat self-hosted Sentry on operational simplicity. It
 should not start as a full observability dashboard or autonomous production SRE.
 
+> **⚠ Update 2026-06-18 — V1 storage decided: GreptimeDB-only, native OTLP model.** Where this doc says
+> "GreptimeDB-first adapter boundary with ClickHouse the fallback," read: V1 commits to GreptimeDB alone
+> on its **native OTLP tables** (proxy forwards raw OTLP + tees to derive issues into custom extension
+> tables); ClickHouse is deferred (not a V1 fallback or design constraint). Metadata (Turso) is
+> unchanged. Canonical: [native-otel-tables.md](../decisions/native-otel-tables.md).
+
 ## Layer Decisions
 
 | Layer | Recommendation | Why |
