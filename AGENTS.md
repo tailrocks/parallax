@@ -45,10 +45,26 @@ structure quickly.
   docs are known-compatible floors, not freezes; when implementing, resolve
   the latest mutually-compatible stable set and update the table in the same
   commit.
-- JavaScript/TypeScript tooling (operator, 2026-06-15): always use Bun through
-  mise. Do not install or use Node.js, pnpm, npm, Yarn, Deno, or Dino as the
-  project toolchain. TypeScript must stay in strictest mode (`strict` plus the
-  additional strict flags documented in `ui/AGENTS.md`).
+- JavaScript/TypeScript tooling — **Bun only** (operator, 2026-06-15;
+  reaffirmed 2026-06-18): **Bun (through mise) is the one and only JS/TS runtime
+  and package manager in this repository.** There is no fallback and no
+  exception.
+  - **Runtime:** Bun runs everything (dev server, scripts, tests, tooling).
+    Never use Node.js, Deno, or "Dino" as a runtime — not even to run a one-off
+    script.
+  - **Package manager:** every install, add, remove, or update goes through Bun
+    (`bun install`, `bun add`, `bun remove`, `bun update`). Never run `npm`,
+    `pnpm`, `yarn`, or any other installer — they produce a foreign
+    `node_modules` (e.g. a pnpm `.pnpm/` tree) whose native bindings break Bun's
+    build/lint (real incident 2026-06-18: a stale pnpm tree +
+    leftover `pnpm-workspace.yaml` made `rolldown`/`unrs-resolver` fail with
+    "Cannot find native binding"). If `node_modules` ever looks foreign, fix it
+    with `rm -rf node_modules && bun install`.
+  - **Lockfile:** `bun.lock` is the only lockfile. Never commit
+    `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `pnpm-workspace.yaml`,
+    `.npmrc`, or any other package-manager config; delete them on sight.
+  - TypeScript must stay in strictest mode (`strict` plus the additional strict
+    flags documented in `ui/AGENTS.md`).
 - CI/release caching (operator, 2026-06-15): follow Jackin's workflow pattern
   for aggressive caching and stable gates: path-aware CI jobs, rustup cache,
   Cargo registry cache, `sccache`, per-job `target` caches with main-branch
