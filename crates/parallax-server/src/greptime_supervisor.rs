@@ -82,10 +82,14 @@ fn host_target() -> anyhow::Result<&'static str> {
 
 /// Known-good fallback when "latest" cannot be resolved (no network to the
 /// GitHub API): the compatible floor from the implementation spec.
-const FALLBACK_VERSION: &str = "1.0.2";
+/// Native-capable floor used when the GitHub API is unreachable. Parallax's
+/// whole storage path is native-OTLP, which requires the v1.1.0 line (the
+/// `greptime_trace_v1` traces pipeline); the default pin below tracks it.
+const FALLBACK_VERSION: &str = "1.1.0";
 
-/// Resolve "latest" to a concrete release tag via the GitHub API, falling
-/// back to the pinned floor when the API is unreachable.
+/// Resolve "latest" to a concrete release tag via the GitHub API, falling back
+/// to the pinned native-capable floor when the API is unreachable. An explicit
+/// version (the default — see [`StorageConfig`]) is passed straight through.
 async fn resolve_version(version: &str) -> anyhow::Result<String> {
     if version != "latest" {
         return Ok(version.trim_start_matches('v').to_string());

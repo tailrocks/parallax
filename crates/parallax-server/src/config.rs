@@ -30,7 +30,10 @@ pub struct StorageConfig {
     /// managed | external | none
     pub mode: String,
     pub greptime_url: String,
-    /// "latest" resolves at install; the resolved version is recorded here.
+    /// Pinned GreptimeDB version to install. Defaults to the v1.1.0 line, the
+    /// floor that ships the native OTLP traces pipeline (`greptime_trace_v1`)
+    /// Parallax's storage path depends on. `"latest"` resolves the newest
+    /// GitHub stable release at install instead (see `resolve_version`).
     pub greptime_version: String,
     pub data_dir: String,
 }
@@ -69,7 +72,7 @@ impl Default for StorageConfig {
         Self {
             mode: "managed".to_string(),
             greptime_url: String::new(),
-            greptime_version: "latest".to_string(),
+            greptime_version: "1.1.0".to_string(),
             data_dir: "~/.parallax".to_string(),
         }
     }

@@ -13,14 +13,28 @@ pub struct GreptimeStore {
     traces_ttl: String,
     logs_ttl: String,
     metrics_ttl: String,
-    /// Guards the one-shot lazy `ensure_native_deviations` after first forward —
-    /// the native OTLP tables auto-create on first ingest, so the post-create
-    /// ALTERs can only land once a table exists.
-    deviations_done: AtomicBool,
+    /// Guards the one-shot lazy per-signal deviations applied after that
+    /// signal's first forward — each native OTLP table auto-creates on its own
+    /// first ingest, so its post-create ALTERs can only land once *that* table
+    /// exists. A single shared guard would be consumed by whichever signal
+    /// forwards first (e.g. traces), permanently skipping the logs deviations.
+    traces_deviations_done: AtomicBool,
+    logs_deviations_done: AtomicBool,
 }
 
 fn escape(text: &str) -> String {
     text.replace('\'', "''")
+}
+
+/// True when a SQL error is GreptimeDB reporting that the target table does not
+/// exist yet. Native OTLP tables auto-create on the first forward, so any read
+/// before the matching signal has arrived must read as empty rather than fail.
+/// Matches GreptimeDB's "Table not found" plan error (code 4001).
+fn is_missing_table(error: &anyhow::Error) -> bool {
+    error
+        .to_string()
+        .to_ascii_lowercase()
+        .contains("table not found")
 }
 
 fn json_literal(value: &serde_json::Value) -> String {
@@ -47,7 +61,8 @@ impl GreptimeStore {
             traces_ttl: traces_ttl.to_string(),
             logs_ttl: logs_ttl.to_string(),
             metrics_ttl: metrics_ttl.to_string(),
-            deviations_done: AtomicBool::new(false),
+            traces_deviations_done: AtomicBool::new(false),
+            logs_deviations_done: AtomicBool::new(false),
         };
         // Liveness probe before DDL.
         store
@@ -96,22 +111,17 @@ impl GreptimeStore {
         }
         // The native tables may not exist yet (they auto-create on first
         // forward), so try the deviations now and swallow not-found — the lazy
-        // guard re-runs them after the first successful forward.
-        self.try_native_deviations().await;
+        // per-signal guards re-run them after each signal's first forward (e.g.
+        // when a prior run already created the tables in a persistent data dir).
+        self.try_traces_deviations().await;
+        self.try_logs_deviations().await;
         Ok(())
     }
 
-    /// Apply the Parallax deviations to the native OTLP tables: a FULLTEXT index
-    /// on log bodies, an INVERTED index on log `trace_id`, and a `fingerprint`
-    /// column on traces. Idempotent — already-exists / not-found are swallowed
-    /// (the table may not exist yet at bootstrap, or the deviation may already
-    /// be applied from a prior run).
-    async fn try_native_deviations(&self) {
-        let statements = [
-            r#"ALTER TABLE opentelemetry_logs MODIFY COLUMN "trace_id" SET INVERTED INDEX"#,
-            r#"ALTER TABLE opentelemetry_logs MODIFY COLUMN "body" SET FULLTEXT INDEX"#,
-            r#"ALTER TABLE opentelemetry_traces ADD COLUMN "fingerprint" STRING"#,
-        ];
+    /// Run a batch of idempotent post-create ALTERs, swallowing the benign
+    /// "already exists" / "not found" outcomes (the table may not exist yet, or
+    /// the deviation may already be applied from a prior run).
+    async fn try_deviations(&self, statements: &[&str]) {
         for statement in statements {
             if let Err(error) = self.sql(statement).await {
                 let text = error.to_string().to_ascii_lowercase();
@@ -126,15 +136,50 @@ impl GreptimeStore {
         }
     }
 
-    /// Run [`Self::try_native_deviations`] at most once per process after a
-    /// signal forward has (likely) auto-created its native table.
-    async fn ensure_native_deviations(&self) {
+    /// Traces deviation: a `fingerprint` column for cross-signal correlation.
+    async fn try_traces_deviations(&self) {
+        self.try_deviations(&[
+            r#"ALTER TABLE opentelemetry_traces ADD COLUMN "fingerprint" STRING"#,
+        ])
+        .await;
+    }
+
+    /// Logs deviations: an INVERTED index on `trace_id` and a FULLTEXT index on
+    /// `body` (the one native shortfall), plus an explicit `parallax.run.id`
+    /// column. The run-id column is normally promoted by the
+    /// `x-greptime-log-extract-keys` header, but only when an ingested log
+    /// actually carries that resource attribute — adding it here guarantees the
+    /// column exists so run-scoped log reads never reference a missing field.
+    async fn try_logs_deviations(&self) {
+        self.try_deviations(&[
+            r#"ALTER TABLE opentelemetry_logs MODIFY COLUMN "trace_id" SET INVERTED INDEX"#,
+            r#"ALTER TABLE opentelemetry_logs MODIFY COLUMN "body" SET FULLTEXT INDEX"#,
+            r#"ALTER TABLE opentelemetry_logs ADD COLUMN "parallax.run.id" STRING"#,
+        ])
+        .await;
+    }
+
+    /// Apply the traces deviations once per process, after the first traces
+    /// forward has auto-created `opentelemetry_traces`.
+    async fn ensure_traces_deviations(&self) {
         if self
-            .deviations_done
+            .traces_deviations_done
             .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
             .is_ok()
         {
-            self.try_native_deviations().await;
+            self.try_traces_deviations().await;
+        }
+    }
+
+    /// Apply the logs deviations once per process, after the first logs forward
+    /// has auto-created `opentelemetry_logs`.
+    async fn ensure_logs_deviations(&self) {
+        if self
+            .logs_deviations_done
+            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+            .is_ok()
+        {
+            self.try_logs_deviations().await;
         }
     }
 
@@ -156,6 +201,18 @@ impl GreptimeStore {
         }
         request.body(raw).send().await?.error_for_status()?;
         Ok(())
+    }
+
+    /// Like [`Self::sql`], but tolerant of a not-yet-created native table: the
+    /// native OTLP tables (`opentelemetry_traces`/`_logs`, the per-metric engine
+    /// tables) only exist after the first forward, so a read issued before any
+    /// matching signal has arrived must read as **empty**, not error. Used by the
+    /// typed read paths; the raw-SQL surface keeps strict [`Self::sql`].
+    async fn sql_lenient(&self, sql: &str) -> anyhow::Result<Vec<Vec<serde_json::Value>>> {
+        match self.sql(sql).await {
+            Err(error) if is_missing_table(&error) => Ok(Vec::new()),
+            other => other,
+        }
     }
 
     /// Run one SQL statement; return the first result set's rows.
@@ -191,6 +248,22 @@ impl GreptimeStore {
             })
             .unwrap_or_default();
         Ok(rows)
+    }
+
+    /// [`Self::sql_with_schema`] with the not-yet-created-table tolerance of
+    /// [`Self::sql_lenient`]: returns an empty result set instead of erroring
+    /// when the native table has not auto-created yet.
+    async fn sql_with_schema_lenient(
+        &self,
+        sql: &str,
+    ) -> anyhow::Result<crate::adapter::SqlResult> {
+        match self.sql_with_schema(sql).await {
+            Err(error) if is_missing_table(&error) => Ok(crate::adapter::SqlResult {
+                columns: Vec::new(),
+                rows: Vec::new(),
+            }),
+            other => other,
+        }
     }
 
     /// Like [`Self::sql`], but also returns the result-set column names
@@ -253,7 +326,7 @@ impl GreptimeStore {
         limit_clause: &str,
     ) -> anyhow::Result<Vec<SpanRow>> {
         let result = self
-            .sql_with_schema(&format!(
+            .sql_with_schema_lenient(&format!(
                 r#"SELECT * FROM opentelemetry_traces WHERE {where_clause}{order}{limit_clause}"#
             ))
             .await?;
@@ -298,7 +371,7 @@ impl GreptimeStore {
         limit_clause: &str,
     ) -> anyhow::Result<Vec<LogRow>> {
         let rows = self
-            .sql(&format!(
+            .sql_lenient(&format!(
                 r#"SELECT CAST("timestamp" AS BIGINT) AS "ts_nanos",
                           json_get_string("resource_attributes", '$."service.name"') AS "service",
                           "severity_number", "severity_text", "body", "trace_id", "span_id",
@@ -492,7 +565,7 @@ impl TelemetryStore for GreptimeStore {
             raw,
         )
         .await?;
-        self.ensure_native_deviations().await;
+        self.ensure_traces_deviations().await;
         Ok(())
     }
 
@@ -508,7 +581,7 @@ impl TelemetryStore for GreptimeStore {
             raw,
         )
         .await?;
-        self.ensure_native_deviations().await;
+        self.ensure_logs_deviations().await;
         Ok(())
     }
 
@@ -523,7 +596,6 @@ impl TelemetryStore for GreptimeStore {
         let hints = format!("ttl={}", self.metrics_ttl);
         self.forward_otlp("v1/metrics", &[("x-greptime-hints", &hints)], raw)
             .await?;
-        self.ensure_native_deviations().await;
         // Run-scoped points (Q6, Approach 2): the metric engine cannot hold a
         // high-card `run_id` tag, so persist those points to `run_metric_points`
         // where `run_id` is an indexed column.
@@ -628,7 +700,7 @@ impl TelemetryStore for GreptimeStore {
         // Any signal makes a service real: traces' `service_name`, logs'
         // resource `service.name`, plus the run-metric extension table.
         let rows = self
-            .sql(
+            .sql_lenient(
                 r#"SELECT DISTINCT "service_name" AS "svc" FROM opentelemetry_traces
                    UNION SELECT DISTINCT
                           json_get_string("resource_attributes", '$."service.name"') AS "svc"
@@ -667,7 +739,7 @@ impl TelemetryStore for GreptimeStore {
             let service_clause = service
                 .map(|svc| format!(r#" AND "service" = '{}'"#, escape(svc)))
                 .unwrap_or_default();
-            self.sql(&format!(
+            self.sql_lenient(&format!(
                 r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "ts") AS BIGINT)
                           AS "bucket_ns", {sql_agg}("value") AS "agg_value"
                    FROM run_metric_points
@@ -684,7 +756,7 @@ impl TelemetryStore for GreptimeStore {
             let service_clause = service
                 .map(|svc| format!(r#" AND "service_name" = '{}'"#, escape(svc)))
                 .unwrap_or_default();
-            self.sql(&format!(
+            self.sql_lenient(&format!(
                 r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "greptime_timestamp") AS BIGINT)
                           AS "bucket_ms", {sql_agg}("greptime_value") AS "agg_value"
                    FROM "{}"
@@ -726,7 +798,7 @@ impl TelemetryStore for GreptimeStore {
             .map(|svc| format!(r#" AND "service_name" = '{}'"#, escape(svc)))
             .unwrap_or_default();
         let rows = self
-            .sql(&format!(
+            .sql_lenient(&format!(
                 r#"SELECT CAST("greptime_timestamp" AS BIGINT) AS "ts_ms",
                           CAST("le" AS DOUBLE) AS "le", "greptime_value" AS "cumulative"
                    FROM "{}_bucket"
@@ -832,7 +904,7 @@ impl TelemetryStore for GreptimeStore {
             ),
         ];
         for (query, is_span) in sources {
-            let rows = self.sql(&format!("{query}{limit}")).await?;
+            let rows = self.sql_lenient(&format!("{query}{limit}")).await?;
             for row in &rows {
                 let run_id = str_at(row, 0);
                 if run_id.is_empty() {
@@ -895,7 +967,7 @@ impl TelemetryStore for GreptimeStore {
             query.limit
         };
         let roots = self
-            .sql(&format!(
+            .sql_lenient(&format!(
                 r#"SELECT "trace_id", "span_name", "service_name",
                           CAST("timestamp" AS BIGINT) AS "ts_nanos",
                           CAST("duration_nano" AS BIGINT) AS "dur"
@@ -988,7 +1060,7 @@ impl TelemetryStore for GreptimeStore {
     ) -> anyhow::Result<Vec<LogRow>> {
         let clauses = log_filter_clauses(service, &range, severity_min, body_contains);
         let rows = self
-            .sql(&format!(
+            .sql_lenient(&format!(
                 r#"SELECT CAST("timestamp" AS BIGINT) AS "ts_nanos",
                           json_get_string("resource_attributes", '$."service.name"') AS "service",
                           "severity_number", "severity_text", "body", "trace_id", "span_id",
@@ -1025,7 +1097,7 @@ impl TelemetryStore for GreptimeStore {
         // to tags); group on the quoted tag column, missing → "(none)".
         let group_col = format!(r#""{}""#, group_by.replace('"', ""));
         let rows = self
-            .sql(&format!(
+            .sql_lenient(&format!(
                 r#"SELECT COALESCE(CAST({group_col} AS STRING), '(none)') AS "grp",
                           CAST(date_bin(INTERVAL '{step_secs} seconds', "greptime_timestamp") AS BIGINT)
                           AS "bucket_ms", {sql_agg}("greptime_value") AS "agg_value"
@@ -1071,7 +1143,7 @@ impl TelemetryStore for GreptimeStore {
         // native: the `<name>_count` sibling table holds the per-sample count
         // as `greptime_value`; sum it per window for the request-rate numerator.
         let rows = self
-            .sql(&format!(
+            .sql_lenient(&format!(
                 r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "greptime_timestamp") AS BIGINT)
                           AS "bucket_ms", SUM("greptime_value") AS "samples"
                    FROM "{}_count"
@@ -1130,7 +1202,7 @@ impl TelemetryStore for GreptimeStore {
         let step_secs = (step_nanos / 1_000_000_000).max(1);
         let clauses = log_filter_clauses(service, &range, severity_min, body_contains);
         let rows = self
-            .sql(&format!(
+            .sql_lenient(&format!(
                 r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "timestamp") AS BIGINT)
                           AS "bucket_ns", COUNT(*) AS "n"
                    FROM opentelemetry_logs WHERE {}

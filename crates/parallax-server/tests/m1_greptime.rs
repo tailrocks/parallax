@@ -99,7 +99,22 @@ async fn managed_engine_roundtrip() {
     assert_eq!(spans[0].name, "engine.roundtrip");
     assert_eq!(spans[0].status_code, "STATUS_CODE_ERROR");
 
-    let issues = handle.metadata.issues(10).await.expect("issues");
+    // The issue is derived and persisted to the metadata store on the same
+    // worker pass that forwards the span, but the two stores are independent —
+    // the span can become queryable in GreptimeDB a beat before the Turso
+    // upsert is visible. Poll for the grouped issue rather than assuming the
+    // span's visibility implies it.
+    let mut issues = Vec::new();
+    for _ in 0..100 {
+        issues = handle.metadata.issues(10).await.expect("issues");
+        if issues
+            .iter()
+            .any(|i| i.error_type == "test::EngineRoundtrip")
+        {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
     assert!(
         issues
             .iter()

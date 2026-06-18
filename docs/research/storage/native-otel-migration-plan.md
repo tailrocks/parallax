@@ -298,6 +298,41 @@ for the team** (works empirically, but their word matters): traces-OTLP GA/stabi
 ExponentialHistogram timeline, OTLP-forward perf guidance, and a blessing on the `run_metric_points`
 pattern — see [greptimedb-team-questions.md](greptimedb-team-questions.md).
 
+## First real-engine validation (2026-06-18)
+
+The native write/read path was run end-to-end against a **real managed GreptimeDB v1.1.0** for the
+first time since the forward landed (commit `7d50a62`) — the prior de-risk was a throwaway spike, not
+the product code. Both gated integration tests now pass against the live engine: `m1_greptime`
+(SDK → gRPC ingest → native `opentelemetry_traces` → read-back + derived issue) and `m5_gates` (perf
+gates, run in isolation: ingest-to-queryable p95 ~75–116 ms, panic→grouped-issue ~58 ms, warm bundle
+p95 ~11–13 ms — all well under gate). Three real bugs surfaced on that first run and are fixed:
+
+1. **Reads must tolerate not-yet-created native tables.** Native OTLP tables auto-create only on the
+   first forward, so any read issued before the matching signal arrives hit `Table not found` (code
+   4001) and errored instead of reading empty. Added `sql_lenient` / `sql_with_schema_lenient` (swallow
+   table-not-found → empty) and routed every native-table read through them; extension-table reads stay
+   strict (those are bootstrapped). Fixes the read-before-ingest window the `m1` poll loop exposed.
+2. **Per-signal deviation guards.** The post-create `ALTER`s were behind a *single* one-shot
+   `deviations_done` flag. Whichever signal forwarded first (traces) consumed it while the logs table
+   did not exist yet, so the **logs deviations were skipped forever** — `trace_id`/`body` indexes and
+   the promoted `parallax.run.id` column never landed, and log reads referencing that column failed
+   (`No field named "parallax.run.id"`). Split into `traces_deviations_done` / `logs_deviations_done`,
+   each applied after *its own* signal's first forward. Also **added `ALTER … ADD COLUMN
+   "parallax.run.id"` to the logs deviations** so the column always exists even when no ingested log
+   carried the run id (the extract-keys header only promotes it when present).
+3. **Cross-store eventual consistency.** The derived issue lands in Turso on the same worker pass that
+   forwards the span, but the two stores are independent — the span can become queryable in GreptimeDB
+   a beat before the Turso upsert is visible. The `m1` test now polls for the grouped issue (mirroring
+   its span poll) rather than assuming span-visibility implies it. (The write provably persists; this
+   is timing, not loss.)
+
+**Engine version — DECIDED (operator, 2026-06-18): pin v1.1.0** (the named release; the operator
+treats it as the latest usable line). The native OTLP traces pipeline (`greptime_trace_v1`) requires
+the v1.1.0 line; GitHub's `releases/latest` returns only the newest *stable* tag (v1.0.2), which
+predates it, so the default is now an explicit pin (`StorageConfig::greptime_version = "1.1.0"`,
+`FALLBACK_VERSION = "1.1.0"`) rather than `"latest"`. Bump the pin when a newer native-capable release
+ships (version table = floor, not freeze).
+
 ## Open questions → current decisions / leans
 
 - **Q1 — Redaction (A6). DECIDED (operator, 2026-06-18): forward raw OTLP as-is, no redaction, straight
