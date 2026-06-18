@@ -65,6 +65,7 @@ tables). Schema auto-grows columns from new attributes.
 | `otel_metrics_points` + `otel_metrics_histograms` (2 unified tables, SQL aggregates) | metric engine, one table per metric (PromQL) | **Replace, fully native (Q3 = A).** Forward metrics OTLP → endpoint. Rewrite chart reads (native metric tables are SQL-queryable, so SQL→PromQL is gradual). **ExponentialHistogram is the one native gap** — rely on explicit-bucket histograms (OTel SDK default, fully native); add a minimal extension table *only if* exp-histograms actually appear (native-first principle). |
 | `error_events` (Parallax fingerprinting) | — none — | **Keep custom.** Product semantics, no native form. |
 | `rollups_fingerprint_minute` | — none — | **Keep custom.** Derived. |
+| (new) run-scoped metrics | — none (metric engine can't hold run_id) — | **Add custom extension `run_metric_points`** (Approach 2, Q6): append table, `run_id STRING SKIPPING INDEX`, `append_mode='true'`, `flat` SST. Greptime's blessed high-card pattern. Metric engine stays run_id-free. |
 | Turso metadata (issues, runs, dashboards) | — none — | **Keep.** Unaffected. |
 
 ## The architecture tension to resolve first
@@ -98,7 +99,9 @@ and **derivation source** (derive from the in-flight OTLP on the tee, vs. read b
    per-metric native tables (SQL first; PromQL where it helps).
 5. Wire the derivation tee (Q2): parse forwarded OTLP in-process → `error_events`. Keep `error_events`
    + `rollups` as custom extension tables (native has no equivalent — native-first principle).
-6. Only if a native gap actually bites (e.g. exp-histograms): add the minimal extension table.
+6. Create the `run_metric_points` extension table (Q6, Approach 2) for run-scoped metrics; route
+   per-run metric points there (run_id column), keep aggregate metrics on the native metric engine.
+7. Only if a further native gap actually bites (e.g. exp-histograms): add another minimal extension.
 
 ## Claim verification — "grouping must be Parallax; can't delegate to GreptimeDB" (2026-06-18)
 
@@ -210,8 +213,24 @@ accelerates; Parallax decides.
   design is free to use Greptime-native features (Flow, `digest`, HLL, uddsketch). This reverses the
   prior "ClickHouse is the fallback" lean in [decisions/storage-engine.md](../decisions/storage-engine.md)
   and [decisions/v1-storage-adapter-vision.md](../decisions/v1-storage-adapter-vision.md) for V1 scope.
-- **Q6 — `run_id`. LEAN: use the native flattened column** `resource_attributes.parallax.run.id`;
-  repoint all `run_id` queries. (Confirm the exact name end-to-end before deleting custom DDL.)
+- **Q6 — `run_id`. DECIDED (operator, 2026-06-18).** Emit `parallax.run.id` as a **resource
+  attribute**. Per signal:
+  - **Traces:** flattens to the real column `resource_attributes.parallax.run.id` — free, queryable
+    (no problem).
+  - **Logs:** promote to a real column at ingest via `X-Greptime-Log-Extract-Keys: parallax.run.id`
+    (else it lives in the logs JSON attributes) — no problem.
+  - **Metrics:** **never put `run_id` on the metric engine** — it is high-cardinality (a new value
+    every run) and a metric tag = one series per run = cardinality explosion (own research Run
+    114/115: cost scales with series count; ~1-point series are the catastrophic 5×–80× case). The
+    metric engine carries only low-card tags (service/name).
+  - **Run-scoped metrics → Approach 2 (events table).** Add a custom append table (e.g.
+    `run_metric_points`): `ts, run_id STRING SKIPPING INDEX, service, name, value, attributes`,
+    `append_mode='true'`, `flat` SST. `run_id` is a **column, not a tag**, so high cardinality is free
+    (events behave like logs/spans). This is **GreptimeDB's own documented high-cardinality pattern**
+    (`http_logs_v4`: `request_id STRING SKIPPING INDEX`), so it honors native-first — the metric engine
+    stays for aggregates; this is an *added* table, not a replacement. (Time-window reconstruction via
+    Turso `RunRecord` start/end and span-derived metrics over native traces remain available as
+    no-storage complements, but Approach 2 is the chosen primary for exact per-run metrics.)
 - **Q7 — Custom columns under auto-widening + traces GA.** Open — needs Greptime input: do `ALTER`-added
   columns/indexes survive dynamic schema growth, and what is the traces-OTLP long-term stability story.
   Raise on the next Greptime sync.
