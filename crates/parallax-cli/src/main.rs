@@ -111,7 +111,7 @@ enum Command {
     /// Run a read-only SQL query against the telemetry engine (GreptimeDB).
     Sql {
         /// The SELECT-shaped statement, e.g.
-        /// "SELECT * FROM otel_logs ORDER BY ts DESC LIMIT 10".
+        /// "SELECT * FROM opentelemetry_logs ORDER BY timestamp DESC LIMIT 10".
         query: String,
     },
     /// Diagnose the local install (server, engine, spool, sizes).

@@ -12,10 +12,13 @@ use parallax_storage::model::ErrorEventRow;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 
+/// One queued OTLP batch: the decoded request feeds the in-process tee
+/// (normalize → derive → live → run registration) while the raw OTLP bytes are
+/// forwarded verbatim to GreptimeDB's native `/v1/otlp` endpoints.
 pub enum IngestItem {
-    Traces(ExportTraceServiceRequest),
-    Logs(ExportLogsServiceRequest),
-    Metrics(ExportMetricsServiceRequest),
+    Traces(ExportTraceServiceRequest, bytes::Bytes),
+    Logs(ExportLogsServiceRequest, bytes::Bytes),
+    Metrics(ExportMetricsServiceRequest, bytes::Bytes),
 }
 
 pub type IngestSender = mpsc::Sender<IngestItem>;
@@ -60,7 +63,7 @@ impl Worker {
 
     async fn process(&mut self, item: IngestItem) -> anyhow::Result<()> {
         match item {
-            IngestItem::Traces(request) => {
+            IngestItem::Traces(request, raw) => {
                 let spans = normalize::normalize_traces(&request);
                 let errors = derive::derive_from_traces(&request);
                 self.register_runs(
@@ -72,10 +75,10 @@ impl Worker {
                 if self.live.spans.receiver_count() > 0 {
                     let _ = self.live.spans.send(spans.clone().into());
                 }
-                self.store.write_spans(spans).await?;
+                self.store.ingest_traces(spans, raw).await?;
                 self.record_errors(errors).await?;
             }
-            IngestItem::Logs(request) => {
+            IngestItem::Logs(request, raw) => {
                 let logs = normalize::normalize_logs(&request);
                 let errors = derive::derive_from_logs(&logs);
                 self.register_runs(
@@ -86,13 +89,14 @@ impl Worker {
                 if self.live.logs.receiver_count() > 0 {
                     let _ = self.live.logs.send(logs.clone().into());
                 }
-                self.store.write_logs(logs).await?;
+                self.store.ingest_logs(logs, raw).await?;
                 self.record_errors(errors).await?;
             }
-            IngestItem::Metrics(request) => {
+            IngestItem::Metrics(request, raw) => {
                 let normalized = normalize::normalize_metrics(&request);
-                self.store.write_metric_points(normalized.points).await?;
-                self.store.write_histograms(normalized.histograms).await?;
+                self.store
+                    .ingest_metrics(normalized.points, normalized.histograms, raw)
+                    .await?;
             }
         }
         Ok(())

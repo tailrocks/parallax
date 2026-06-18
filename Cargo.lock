@@ -2092,6 +2092,7 @@ version = "0.1.0-dev"
 dependencies = [
  "anyhow",
  "axum",
+ "bytes",
  "futures-core",
  "juniper",
  "mime_guess",
@@ -2125,12 +2126,14 @@ version = "0.1.0-dev"
 dependencies = [
  "anyhow",
  "async-trait",
+ "bytes",
  "parallax-proto",
  "reqwest 0.12.28",
  "serde",
  "serde_json",
  "thiserror",
  "tokio",
+ "tracing",
  "turso",
 ]
 

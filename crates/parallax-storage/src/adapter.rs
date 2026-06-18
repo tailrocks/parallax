@@ -55,10 +55,23 @@ pub struct TraceQuery {
 
 #[async_trait::async_trait]
 pub trait TelemetryStore: Send + Sync {
-    async fn write_spans(&self, rows: Vec<SpanRow>) -> anyhow::Result<()>;
-    async fn write_logs(&self, rows: Vec<LogRow>) -> anyhow::Result<()>;
-    async fn write_metric_points(&self, rows: Vec<MetricPointRow>) -> anyhow::Result<()>;
-    async fn write_histograms(&self, rows: Vec<HistogramRow>) -> anyhow::Result<()>;
+    /// Ingest a traces batch: forward the raw OTLP bytes to GreptimeDB's native
+    /// `/v1/otlp/v1/traces` endpoint (auto-creates `opentelemetry_traces`). The
+    /// decoded `spans` are the tee — kept for the in-memory adapter and unused
+    /// by the native forward.
+    async fn ingest_traces(&self, spans: Vec<SpanRow>, raw: bytes::Bytes) -> anyhow::Result<()>;
+    /// Ingest a logs batch: forward the raw OTLP bytes to the native
+    /// `/v1/otlp/v1/logs` endpoint (auto-creates `opentelemetry_logs`).
+    async fn ingest_logs(&self, logs: Vec<LogRow>, raw: bytes::Bytes) -> anyhow::Result<()>;
+    /// Ingest a metrics batch: forward the raw OTLP bytes to the native
+    /// `/v1/otlp/v1/metrics` endpoint (per-metric metric-engine tables), then
+    /// persist the run-scoped subset of `points` into `run_metric_points`.
+    async fn ingest_metrics(
+        &self,
+        points: Vec<MetricPointRow>,
+        histograms: Vec<HistogramRow>,
+        raw: bytes::Bytes,
+    ) -> anyhow::Result<()>;
     async fn write_error_events(&self, rows: Vec<ErrorEventRow>) -> anyhow::Result<()>;
 
     /// Anchored read: every span of one trace, start-time ascending.

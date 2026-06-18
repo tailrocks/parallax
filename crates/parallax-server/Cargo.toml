@@ -11,6 +11,7 @@ repository.workspace = true
 anyhow = { workspace = true }
 juniper = { workspace = true }
 axum = { workspace = true }
+bytes = { workspace = true }
 parallax-api = { workspace = true }
 parallax-core = { workspace = true }
 parallax-proto = { workspace = true }

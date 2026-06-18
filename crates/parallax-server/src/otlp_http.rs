@@ -28,11 +28,15 @@ async fn ingest<R>(
     state: &IngestState,
     signal: Signal,
     body: Bytes,
-    to_item: impl FnOnce(R) -> IngestItem,
+    to_item: impl FnOnce(R, Bytes) -> IngestItem,
 ) -> axum::response::Response
 where
     R: Message + Default + serde::Serialize,
 {
+    // The OTLP/HTTP body is already the wire-format protobuf the native
+    // `/v1/otlp` endpoints accept — forward it verbatim (zero-copy `Bytes`
+    // clone) while decoding a copy for the in-process tee.
+    let raw = body.clone();
     let request = match R::decode(body) {
         Ok(r) => r,
         Err(e) => {
@@ -50,7 +54,7 @@ where
         )
             .into_response();
     }
-    if state.sender.send(to_item(request)).await.is_err() {
+    if state.sender.send(to_item(request, raw)).await.is_err() {
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
             "ingest worker unavailable".to_string(),

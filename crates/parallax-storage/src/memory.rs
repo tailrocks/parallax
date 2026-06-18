@@ -106,23 +106,27 @@ impl MemoryStore {
 
 #[async_trait::async_trait]
 impl TelemetryStore for MemoryStore {
-    async fn write_spans(&self, rows: Vec<SpanRow>) -> anyhow::Result<()> {
-        self.lock().spans.extend(rows);
+    // The in-memory adapter has no proto dependency, so it stores the decoded
+    // tee rows and ignores the raw OTLP bytes the native forward would use.
+    async fn ingest_traces(&self, spans: Vec<SpanRow>, _raw: bytes::Bytes) -> anyhow::Result<()> {
+        self.lock().spans.extend(spans);
         Ok(())
     }
 
-    async fn write_logs(&self, rows: Vec<LogRow>) -> anyhow::Result<()> {
-        self.lock().logs.extend(rows);
+    async fn ingest_logs(&self, logs: Vec<LogRow>, _raw: bytes::Bytes) -> anyhow::Result<()> {
+        self.lock().logs.extend(logs);
         Ok(())
     }
 
-    async fn write_metric_points(&self, rows: Vec<MetricPointRow>) -> anyhow::Result<()> {
-        self.lock().metric_points.extend(rows);
-        Ok(())
-    }
-
-    async fn write_histograms(&self, rows: Vec<HistogramRow>) -> anyhow::Result<()> {
-        self.lock().histograms.extend(rows);
+    async fn ingest_metrics(
+        &self,
+        points: Vec<MetricPointRow>,
+        histograms: Vec<HistogramRow>,
+        _raw: bytes::Bytes,
+    ) -> anyhow::Result<()> {
+        let mut inner = self.lock();
+        inner.metric_points.extend(points);
+        inner.histograms.extend(histograms);
         Ok(())
     }
 

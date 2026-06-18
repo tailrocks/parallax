@@ -15,6 +15,7 @@ use parallax_proto::collector_metrics::{
 use parallax_proto::collector_trace::trace_service_server::{TraceService, TraceServiceServer};
 use parallax_proto::collector_trace::{ExportTraceServiceRequest, ExportTraceServiceResponse};
 use parallax_storage::spool::Signal;
+use prost::Message;
 use tonic::{Request, Response, Status};
 
 #[derive(Clone)]
@@ -41,20 +42,23 @@ impl OtlpGrpc {
 
     /// Spool by reference, then MOVE the decoded request into the worker
     /// queue — the request is decoded once and never cloned (zero-copy rule).
-    async fn spool_then_queue<T: serde::Serialize>(
+    /// gRPC framing differs from OTLP/HTTP, so the OTLP payload is re-encoded
+    /// once here to produce the raw bytes the native `/v1/otlp` forward sends.
+    async fn spool_then_queue<T: serde::Serialize + Message>(
         &self,
         signal: Signal,
         request: T,
-        to_item: impl FnOnce(T) -> IngestItem,
+        to_item: impl FnOnce(T, bytes::Bytes) -> IngestItem,
     ) -> Result<(), Status> {
         self.state
             .spool
             .append(signal, &request)
             .await
             .map_err(|e| Status::internal(format!("spool write failed: {e}")))?;
+        let raw = bytes::Bytes::from(request.encode_to_vec());
         self.state
             .sender
-            .send(to_item(request))
+            .send(to_item(request, raw))
             .await
             .map_err(|_| Status::internal("ingest worker unavailable"))
     }
