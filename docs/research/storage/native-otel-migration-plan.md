@@ -326,6 +326,26 @@ p95 ~11–13 ms — all well under gate). Three real bugs surfaced on that first
    its span poll) rather than assuming span-visibility implies it. (The write provably persists; this
    is timing, not loss.)
 
+**Metrics validated live (added 2026-06-18).** A second gated test (`m2_metrics_greptime`) closes the
+one native path the first round skipped — metrics. SDK counter + histogram → native per-metric tables →
+read back over GraphQL (`metricNames` / `metricSeries` + `groupBy` / `histogramQuantile`). The read path
+is sound against the real engine: summed counter (7 + 3 visible), `greptime_timestamp` ms → ns scaling
+inside the queried window, `groupBy` over the native tag column, and the cumulative `_bucket` quantile
+math all return correct results. Two behaviors the memory adapter hid surfaced and are now pinned:
+
+- **Native metric names are Prometheus-normalized by the engine** — dots → underscores and a monotonic
+  counter gains `_total` (`checkout.requests` → `checkout_requests_total`); histograms keep the base name
+  with `_bucket`/`_count`/`_sum` siblings (`checkout.duration` → `checkout_duration`). `metric_names`
+  already surfaces these native names and reads address them as-is — consistent and **native-first
+  correct**, but user-visible: the UI lists Prometheus-style names, not the raw OTLP instrument names.
+  Attribute keys normalize the same way for tag columns (`payment.method` → `payment_method` in
+  `groupBy`). *(Open for operator: confirm surfacing native names is desired, or add a name-mapping
+  layer — note the dots→underscores normalization is lossy, so OTLP names can't be perfectly restored.)*
+- **`service_names` misses metric-only services** — it unions `opentelemetry_traces` / `opentelemetry_logs`
+  / `run_metric_points`, not the native per-metric tables, so a service that emits *only* metrics is not
+  listed. Edge case (a real service also emits traces/logs); left as a documented limitation rather than
+  coupling to the metric engine's internal physical-table layout.
+
 **Engine version — DECIDED (operator, 2026-06-18): pin v1.1.0** (the named release; the operator
 treats it as the latest usable line). The native OTLP traces pipeline (`greptime_trace_v1`) requires
 the v1.1.0 line; GitHub's `releases/latest` returns only the newest *stable* tag (v1.0.2), which
