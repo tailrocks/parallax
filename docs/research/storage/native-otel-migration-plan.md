@@ -12,12 +12,14 @@ bottom and are answered with the operator over time.
 ## Direction (operator, 2026-06-18)
 
 - **Use GreptimeDB native tables directly.** Adopt the native OTLP model for the raw signals.
-- **The proxy stays — as a storage-layer router, not just an OTLP receiver.** All telemetry goes
-  through Parallax first. The proxy *decides* per backend: for GreptimeDB it is a **very thin proxy**
-  that forwards OTLP straight through to Greptime's production-ready `/v1/otlp/` API (untouched on the
-  raw-signal path); for a future ClickHouse (or other) profile it processes/writes itself. This is
-  why the proxy is kept even though Greptime could receive OTLP directly — it preserves the
-  multi-store `StorageAdapter` boundary (GreptimeDB now, ClickHouse later).
+- **The proxy stays — but its reason is derivation, not multi-store routing.** All telemetry goes
+  through Parallax first. For GreptimeDB it is a **very thin proxy** that forwards OTLP straight to
+  Greptime's production-ready `/v1/otlp/` API (untouched on the raw-signal path) while teeing the same
+  bytes in-process to derive `error_events` (Q2). The proxy is kept even though Greptime could receive
+  OTLP directly because Parallax *is* the product entry point and the derivation tee, **not** because
+  of a multi-store boundary. ClickHouse is **deferred** (Q5): GreptimeDB is the single focus; the
+  `StorageAdapter` trait may remain (cheap, already exists, memory adapter for tests) but
+  portability-to-ClickHouse is **no longer a design constraint**.
 - **Rationale for thin-forward to Greptime:** GreptimeDB's team optimizes specifically around the
   native model (Ning Sun, Slack 2026-06-18); forwarding untouched lets Parallax inherit that roadmap
   for free, and the native OTLP API is GA/production-ready.
@@ -162,10 +164,13 @@ rollups, unique-users (HLL), latency percentiles (uddsketch) — as continuous F
 tables, so Parallax doesn't re-scan to recompute aggregates. That is real leverage, not nothing.
 
 **Where the operator's instinct holds:** the *intelligence* (stacktrace fingerprinting, custom
-grouping) and the *state* (issue identity + lifecycle) must be Parallax. And — the portability rule —
-any Greptime Flow/`digest`/HLL/uddsketch use is an **adapter-level acceleration**, never the source
-of truth: the canonical fingerprint algorithm, issue state, and rollup *semantics* live in Parallax
-so the ClickHouse profile stays reachable. Greptime accelerates; Parallax decides.
+grouping) and the *state* (issue identity + lifecycle) must be Parallax — because a timeseries store
+cannot express structured-frame fingerprinting or mutable issue state, **not** because of portability.
+With ClickHouse deferred (Q5), Greptime-native acceleration (`digest`, Flow, HLL, uddsketch) is now
+*more* freely usable — there is no second engine to hold the design back. Still, keep the **canonical
+fingerprint algorithm + issue state authoritative in Parallax** for control and correctness; treat
+Greptime Flows/sketches as a derived acceleration layer Parallax owns and can recompute. Greptime
+accelerates; Parallax decides.
 
 ## Open questions → current decisions / leans
 
@@ -185,10 +190,13 @@ so the ClickHouse profile stays reachable. Greptime accelerates; Parallax decide
   SQL-queryable, so PromQL rewrite can be gradual, not a blocker.)
 - **Q4 — Existing data. LEAN: greenfield** (research stage — drop custom tables, start native fresh; no
   backfill).
-- **Q5 — ClickHouse fallback. LEAN: keep the `StorageAdapter` boundary** — it is the very reason the
-  proxy exists as a storage *router*. GreptimeDB is the first/only implemented profile; ClickHouse
-  stays a future hand-rolled profile behind the same contract. No product contract depends on
-  Greptime-native physical shape.
+- **Q5 — ClickHouse fallback. DECIDED (operator, 2026-06-18): do not keep ClickHouse as a boundary for
+  now. Full focus on GreptimeDB.** Multi-store becomes a goal only if a concrete benefit appears — for
+  now there is no clear benefit, so portability-to-ClickHouse is **not** a design constraint. The
+  `StorageAdapter` trait may stay (it already exists, with the memory adapter for tests), but the
+  design is free to use Greptime-native features (Flow, `digest`, HLL, uddsketch). This reverses the
+  prior "ClickHouse is the fallback" lean in [decisions/storage-engine.md](../decisions/storage-engine.md)
+  and [decisions/v1-storage-adapter-vision.md](../decisions/v1-storage-adapter-vision.md) for V1 scope.
 - **Q6 — `run_id`. LEAN: use the native flattened column** `resource_attributes.parallax.run.id`;
   repoint all `run_id` queries. (Confirm the exact name end-to-end before deleting custom DDL.)
 - **Q7 — Custom columns under auto-widening + traces GA.** Open — needs Greptime input: do `ALTER`-added
