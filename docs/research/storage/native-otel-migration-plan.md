@@ -346,6 +346,15 @@ math all return correct results. Two behaviors the memory adapter hid surfaced a
   listed. Edge case (a real service also emits traces/logs); left as a documented limitation rather than
   coupling to the metric engine's internal physical-table layout.
 
+**Table inventory locked (added 2026-06-18).** A gated guard (`m1_table_inventory_greptime`) pushes all
+three signals to a real engine and `SHOW TABLES`, asserting the only Parallax-created tables are the
+three documented extensions and that no retired `otel_*` raw table reappears. Confirmed live inventory:
+`opentelemetry_traces` (+`_services`/`_operations`), `opentelemetry_logs`, the native per-metric tables
+(`<metric>` / histogram `_bucket`/`_count`/`_sum`), GreptimeDB's internal `greptime_physical_table` —
+all **native/engine-owned** — plus exactly **`error_events`, `rollups_fingerprint_minute`,
+`run_metric_points`** as the custom extensions. Every raw OTel signal lives in a native table; zero
+hand-rolled raw tables remain.
+
 **Engine version — DECIDED (operator, 2026-06-18): pin v1.1.0** (the named release; the operator
 treats it as the latest usable line). The native OTLP traces pipeline (`greptime_trace_v1`) requires
 the v1.1.0 line; GitHub's `releases/latest` returns only the newest *stable* tag (v1.0.2), which
