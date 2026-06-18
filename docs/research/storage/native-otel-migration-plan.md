@@ -235,20 +235,27 @@ OTLP in → otlp_http/grpc (keep raw Bytes alongside decoded request) → spool 
 | `parallax-server/src/greptime_supervisor.rs` / `config.rs` | manage local engine, TTLs | Forward target = the managed local Greptime HTTP base URL (already known). TTLs now ride `x-greptime-hints` on forward + `WITH(ttl)` on extension tables. |
 | `poc/evidence-loop/*` | frozen reference | Untouched (frozen). Update `crates` tests for the new write/read shapes. |
 
-### Open implementation questions (resolve during build)
+### Implementation questions — DECIDED (2026-06-18)
 
-- **IQ1 — trait write shape + memory adapter.** Native forward needs the raw OTLP request; the
-  in-memory test adapter wants normalized rows. Options: (a) `forward_*` takes raw OTLP and the memory
-  adapter decodes internally; (b) keep both a normalized-write path (memory/tests) and a raw-forward
-  path (greptime). Lean (a) for one contract, but confirm test ergonomics.
-- **IQ2 — bootstrap/ALTER ordering.** Auto-created native tables don't exist until first ingest, but
-  the log indexes need `ALTER`. Decide: pre-create the native log table explicitly with our columns +
-  indexes (does Greptime then accept OTLP into it?), or ALTER idempotently right after the first
-  forward succeeds.
-- **IQ3 — zero-copy forward.** Forward the original spooled `Bytes` rather than re-encoding the decoded
-  proto (AGENTS zero-copy ingest rule). Confirm the spool already holds the exact bytes to replay.
-- **IQ4 — metric read rewrite depth.** How much of the metric read layer goes SQL-over-native vs
-  PromQL now (Q3 said SQL-first, PromQL where it helps).
+- **IQ1 — trait write shape. DECIDED (a): one raw-OTLP contract.** The `TelemetryStore` write side
+  becomes `forward_traces(Bytes)`, `forward_logs(Bytes)`, `forward_metrics(Bytes)` — the adapter just
+  POSTs the OTLP body to GreptimeDB's `/v1/otlp/v1/...` with the right headers. Derived/Parallax-built
+  rows keep normalized-row methods: `write_error_events(rows)`, `write_run_metric_points(rows)`. The
+  in-memory test adapter decodes the bytes internally (reusing `normalize::*`) to keep row-based test
+  assertions. Read signatures are unchanged (API-stable).
+- **IQ2 — bootstrap/ALTER ordering. DECIDED (spike-confirmed):** native tables auto-create on first
+  OTLP, so do **not** pre-create them. Run the deviations (`ALTER` logs `trace_id INVERTED` + `body
+  FULLTEXT`; traces `ADD COLUMN fingerprint`) **idempotently after first forward** (swallow
+  already-exists / not-found, same mechanism the old bootstrap used). Create the *custom extension*
+  tables (`error_events`, `rollups_fingerprint_minute`, `run_metric_points`) up front at bootstrap.
+- **IQ3 — zero-copy forward. DECIDED:** the OTLP/HTTP receiver forwards the **original spooled `Bytes`
+  verbatim** (zero-copy) — they are already OTLP/HTTP protobuf, exactly what `/v1/otlp` accepts. The
+  gRPC receiver re-encodes its decoded request once (gRPC framing differs from OTLP/HTTP). The worker
+  keeps the decoded request for the tee (derive/live/run-registration); the bytes go to the adapter.
+  So `IngestItem` carries both the decoded request (for the tee) and the body `Bytes` (for forward).
+- **IQ4 — metric read depth. DECIDED:** SQL over the per-metric native tables first (columns
+  `greptime_timestamp`/`greptime_value` + resource-attr tags; `information_schema.tables` for metric
+  discovery). PromQL only where it clearly helps later. Run-scoped metric reads hit `run_metric_points`.
 
 ## Spike results (2026-06-18) — native tables de-risked end-to-end
 
