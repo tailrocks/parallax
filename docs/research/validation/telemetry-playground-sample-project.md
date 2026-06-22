@@ -17,6 +17,12 @@ All three language tiers validated to build (2026-06-23):
 - **Integrated e2e verified**: the four Rust services emit OTLP → the lab's Rotel
   → OpenObserve, and a trace search returns all four services by name
   (`checkout/pricing/inventory/recommendation`). The whole pipeline, not stdout.
+- **Cross-language gRPC verified**: Rust `checkout` (tonic) → **Java `payment`**
+  (Spring Boot 4 + spring-grpc, generated from the shared proto) returns the
+  Java-computed price; the OTel Java agent emits a proper `Pricing/Quote` SERVER
+  span (rpc semconv, via logging exporter). The Java-agent OTLP→OpenObserve
+  last-mile has an env-specific snag (documented); Rust path + Java instrumentation
+  both verified.
 - Verified scenarios: A1, A3 (async + span link), A7 (gRPC streaming), A10
   (baggage), A12, A18 (canary), A13 driver, and chaos B1/B2/B3/B5/B6/B7/B8/B9/
   B10/B11/B17. flagd, k6, compose (all services), web (`bun run build`).
