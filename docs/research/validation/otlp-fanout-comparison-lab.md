@@ -6,9 +6,12 @@ Topology: Parallax runs on the host (Homebrew); Rotel + competitor backends run
 in Docker Compose; Rotel fans out across the host↔container boundary.
 Deep review: 2026-06-22 (two passes) — every external claim verified against live
 sources and every Parallax-side claim checked against `crates/`; corrections
-folded in. Second pass corrected an over-correction (port offset + `0.0.0.0` bind
-are already config-only, BUILT). Items needing unbuilt Parallax features are
-marked **[NOT YET IMPLEMENTED]**.
+folded in. Items needing unbuilt Parallax features are marked
+**[NOT YET IMPLEMENTED]**.
+Updates 2026-06-23: added the compare-mode `parallax run start` DevEx design;
+**Maple now runs host-side as a local chDB binary (not Tinybird, not Compose)** —
+so Parallax + Maple are two host-resident local-first sinks, both reached by Rotel
+via `host.docker.internal`.
 
 ## Goal
 
@@ -33,26 +36,27 @@ container stack. Two consequences fall out of it, both handled below: (1) Rotel
 both own `4317/4318` — so Parallax's OTLP receiver is offset to `14317/14318`.
 
 ```
-        HOST (macOS, Homebrew)                 DOCKER COMPOSE (lab stack)
-  ┌───────────────────────────┐          ┌──────────────────────────────────┐
-  │ parallax (binary)         │          │  │  Rotel   │── maple:4318         │
-  │  UI/API :4000  (browser)  │          │  │ fan-out  │── otel-collector:4317│ (SigNoz)
-  │  OTLP   :14317/:14318      │          │  │          │── openobserve:5081   │
-  │  greptime child 24000-24003│          │  │ :4317/   │── nginx:80 → relay   │ (Sentry)
-  │            ▲              │  host.    │  │ :4318    │                      │
-  │ host apps / SDKs ─────────┼─►docker.──┼─►│          │                      │
-  │ parallax run start child ─┼─internal──┼─►│          │                      │
-  └────────────┼──────────────┘ (publish  │  └────┬─────┘                     │
-   emit → localhost:4317        to host)   │       └─► host.docker.internal:14317
-               └───────────────────────────────────────────────┘ → parallax OTLP
-                                           └──────────────────────────────────┘
+   HOST (macOS) — local-first sinks               DOCKER COMPOSE (lab stack)
+  ┌─────────────────────────────────┐        ┌──────────────────────────────────┐
+  │ parallax  UI :4000  OTLP :14317  │◄─┐     │  ┌──────────┐                     │
+  │           greptime 24000-24003   │  │     │  │  Rotel   │── otel-collector:4317│ (SigNoz)
+  │ maple     UI :8081  OTLP :14319  │◄─┤host.│  │ fan-out  │── openobserve:5081   │
+  │           chDB ~/.maple/data     │  │dock.│  │ :4317/   │                      │
+  │            ▲                     │  │intl │  │ :4318    │  Sentry = SEPARATE   │
+  │ host apps / SDKs ────────────────┼─►│     │  └────┬─────┘  stack on shared net │
+  │ parallax run start child ────────┼─►│     │       └─► host.docker.internal:    │
+  └──────────────┼──────────────────┘ (publish│           {14317 parallax, 14319 maple}
+   emit → localhost:4317              to host) └──────────────────────────────────┘
 ```
 
 So: **every emitter sends to one shared host address — Rotel at
-`localhost:4317/4318`**. Rotel fans out to the four backends *inside* Compose by
-service name, and back *out* to host-native Parallax via
-`host.docker.internal:14317`. Parallax is both an emitter (into Rotel) and a sink
-(out of Rotel) — it just lives on the host instead of in a container.
+`localhost:4317/4318`**. Rotel fans out to the Compose backends (SigNoz,
+OpenObserve) by service name and to Sentry (separate stack), and back *out* to the
+**two host-resident local-first sinks** — Parallax (`host.docker.internal:14317`)
+and Maple (`host.docker.internal:14319`). Parallax and Maple are both emitters
+(into Rotel) and sinks (out of Rotel); they live on the host because both are
+single-binary local-first tools (Parallax→GreptimeDB, Maple→chDB) and must run
+truly local — Maple via its **chDB binary, not Tinybird** (operator, 2026-06-23).
 
 ## Parallax-side prerequisites (what's built vs not)
 
@@ -130,7 +134,7 @@ Gonzo are out for now; both are easy to add later as extra exporter targets.
 | Backend | What it is | OTLP-native? | Local deploy | Already researched |
 |---|---|---|---|---|
 | **Parallax** | this project | yes (target) | **host (Homebrew preview tap) `parallax serve`** — not in Compose | — |
-| **Maple** | OTLP-native, ClickHouse, near-identical stack (TanStack/Bun/Turso, MCP) | yes | **build-from-source** Compose (`--build`, needs a Tinybird endpoint) **or** single Bun binary (`libchdb`/chDB) | [maple-deep-research.md](../market/maple-deep-research.md) |
+| **Maple** | OTLP-native, ClickHouse-engine, near-identical stack (TanStack/Bun/Turso, MCP) | yes | **host: single Bun binary (`libchdb`/chDB), local — NOT Tinybird, NOT compose** (operator, 2026-06-23) | [maple-deep-research.md](../market/maple-deep-research.md) |
 | **SigNoz** | OTLP-native full-stack obs, ClickHouse + bundled otel-collector | yes | git clone + `deploy/docker` compose (bundles ClickHouse + ZooKeeper) | [signoz-deep-research.md](../market/signoz-deep-research.md) |
 | **OpenObserve** | OTLP-native logs/metrics/traces, Rust, single binary | yes | Docker single container (`public.ecr.aws/zinclabs/openobserve`) | [openobserve-deep-research.md](../market/openobserve-deep-research.md) |
 | **Sentry** | error tracking + tracing | yes, OTLP **traces + logs** (no metrics), open beta | `getsentry/self-hosted` (**~72 services**, `install.sh`) | [sentry-deep-research.md](../market/sentry-deep-research.md) |
@@ -148,24 +152,27 @@ network** (Rotel + competitor backends). Rules that keep it conflict-free:
    Only Rotel publishes OTLP ports to the host. Every emitter sends to
    `localhost:4317` (gRPC) / `:4318` (HTTP). This is "that host address used
    everywhere."
-2. **Parallax (host) offsets its OTLP receiver to `14317/14318`** via
-   `config.toml` (`4317/4318` now belong to Rotel). Nothing addresses Parallax's
-   OTLP directly except Rotel, so the offset is invisible to users. Parallax
-   UI/API stays on **`4000`** (its real default), and its managed GreptimeDB
-   child uses host `127.0.0.1:24000-24003` — leave those free.
-3. **Every competitor backend keeps OTLP on the Compose network only**, reached
-   by service name. Only their **UIs** publish to host, on distinct ports.
+2. **The two host-resident local-first sinks (Parallax + Maple) offset their OTLP
+   ports** (`4317/4318` belong to Rotel). Parallax → `14317/14318` via
+   `config.toml`, UI `4000`, greptime `24000-24003`. Maple → OTLP `14319` (HTTP),
+   UI `8081`, chDB `~/.maple/data`. Nothing addresses either directly except
+   Rotel, so the offsets are invisible to users.
+3. **The Compose competitor backends (SigNoz, OpenObserve) keep OTLP on the
+   Compose network only**, reached by service name; only their **UIs** publish to
+   host. Sentry runs as its own stack (§Sentry).
 
-The cross-boundary hop: Rotel reaches host-native Parallax via
-**`host.docker.internal:14317`** (Docker Desktop macOS/Windows built-in; Linux
-add `extra_hosts: ["host.docker.internal:host-gateway"]`).
+The cross-boundary hop: Rotel reaches both host sinks via
+**`host.docker.internal`** (`:14317` Parallax, `:14319` Maple) — Docker Desktop
+macOS/Windows built-in; Linux add
+`extra_hosts: ["host.docker.internal:host-gateway"]`.
 
-> **Hard rule — Parallax MUST bind its OTLP listener on `0.0.0.0`.** This is the
-> single point of failure for the whole lab. A `127.0.0.1`-only bind is
-> definitively unreachable from a container on Linux, and unreliable on Docker
-> Desktop Mac (version-dependent). The failure is silent and asymmetric: **every
-> backend gets the trace except Parallax**, because only Parallax is reached
-> across the host bridge. Phase-1 must assert the Parallax copy arrived.
+> **Hard rule — the host sinks (Parallax AND Maple) MUST bind OTLP on `0.0.0.0`.**
+> This is the single point of failure for the whole lab. A `127.0.0.1`-only bind
+> is definitively unreachable from a container on Linux, and unreliable on Docker
+> Desktop Mac (version-dependent). The failure is silent and asymmetric: **the
+> compose backends get the trace but the host sinks don't**, because only Parallax
+> and Maple are reached across the host bridge. Phase-1 must assert both host
+> copies arrived. (Maple's binary bind flag — verify at impl.)
 
 | Where | Component | Address used by others | Notes |
 |---|---|---|---|
@@ -173,8 +180,9 @@ add `extra_hosts: ["host.docker.internal:host-gateway"]`).
 | **host** | Parallax UI / API / GraphQL | `localhost:4000` | dashboard (default `api_port`) |
 | **host** | Parallax OTLP (sink) | `host.docker.internal:14317` (from Rotel) | offset via `config.toml`; **bind `0.0.0.0`** |
 | **host** | Parallax GreptimeDB child | `127.0.0.1:24000-24003` | managed by `serve`; keep free |
-| compose | Maple UI | `localhost:8081` → container `:80` | native host port is `3471`; remap to avoid clashes |
-| compose | Maple OTLP | `maple:4318` HTTP (or `maple:4317` gRPC) internal | otel-collector receiver, **no auth** |
+| **host** | **Maple UI** (chDB binary) | `localhost:8081` | local-first binary on host, not compose |
+| **host** | **Maple OTLP (sink)** | `host.docker.internal:14319` (from Rotel) | HTTP-only; offset to avoid Rotel `4318`; **bind `0.0.0.0`** |
+| **host** | Maple chDB data | `~/.maple/data` | embedded ClickHouse (chDB), no Tinybird |
 | compose | SigNoz UI | `localhost:3301` → container `:8080` | SigNoz UI is now `:8080`; republish to `3301` on host |
 | compose | SigNoz OTLP collector | `otel-collector:4317` (internal) | **service** name is `otel-collector` (`signoz-otel-collector` is only the container_name) |
 | compose | OpenObserve UI | `localhost:5080` | `ZO_HTTP_PORT` |
@@ -228,9 +236,12 @@ where telemetry goes. Resolution precedence (highest wins):
    - `1`/`true`/`rotel` → use the configured rotel endpoint;
    - `off` → force default.
    This is exactly the "set a system environment, and Parallax sends to Rotel
-   instead of itself" model. The lab compose can emit this line for you to source
-   (see *Discoverability*).
-3. **Config file** — `~/.parallax/config.toml`:
+   instead of itself" model. **Discoverability:** the lab folder ships a
+   `lab.env` (or `docker compose ... config` helper) printing the exact
+   `export PARALLAX_OTLP_FORWARD=http://localhost:4317` line to `source`, so the
+   endpoint comes straight from the compose, not memory.
+3. **Config file** — `~/.parallax/config.toml` (**proposed keys — part of the
+   unbuilt forward feature, not yet in `config.rs`**):
    ```toml
    [run]
    otlp_forward = "http://localhost:4317"   # or "rotel"
@@ -315,20 +326,21 @@ loop).
 
 ## Docker Compose setup (what to build)
 
-Rotel-only hub. **Parallax is NOT a Compose service** — host via Homebrew. Put
-the lab under **`bench/otlp-fanout/`** (the repo already uses `bench/` for
-compose-based smoke stacks; `lab/` is not a registered top-level dir — if you
+Rotel-only hub. **Parallax and Maple are NOT Compose services** — both are
+host-resident local-first binaries (Parallax via Homebrew, Maple via its chDB
+binary). Compose holds only Rotel + SigNoz + OpenObserve (Sentry is a separate
+stack). Put the lab under **`bench/otlp-fanout/`** (the repo already uses `bench/`
+for compose-based smoke stacks; `lab/` is not a registered top-level dir — if you
 prefer `lab/`, add it to `PROJECT_STRUCTURE.md` in the same change). The folder
 holds `docker-compose.yml`, `rotel.env`, and per-backend config. `docker compose
-up`; Sentry behind a profile. Start Parallax separately on the host (see
-prerequisites).
+up`; Sentry behind a profile. Start Parallax and Maple separately on the host
+(see prerequisites / workflow step 0).
 
 ### Services (Compose only — Parallax is on the host)
 
 | Service | Image / build | Host ports | Profile | Notes |
 |---|---|---|---|---|
-| `rotel` | `streamfold/rotel` (Docker Hub, pin tag) | `4317`, `4318` | default | the only published OTLP ports; config via `rotel.env`; `extra_hosts` on Linux to reach host Parallax |
-| `maple` | **build-from-source** (`build:` per `apps/*/Dockerfile`); needs a **Tinybird endpoint** in compose mode | `8081`→`80` | default | otel-collector OTLP `4318`/`4317` internal, **no receiver auth**; UI native `3471`; metadata SQLite/libSQL |
+| `rotel` | `streamfold/rotel` (Docker Hub, pin tag) | `4317`, `4318` | default | the only published OTLP ports; config via `rotel.env`; `extra_hosts` on Linux to reach the host sinks |
 | `signoz` | `include:` SigNoz `deploy/docker` (signoz + otel-collector + clickhouse + zookeeper) | `3301`→`8080` | default | **override to unpublish its host `4317/4318`** (see Hard rule); collector service `otel-collector` |
 | `openobserve` | `public.ecr.aws/zinclabs/openobserve` (pin tag) | `5080` | default | OTLP `5081` gRPC internal; set `ZO_ROOT_USER_EMAIL`/`ZO_ROOT_USER_PASSWORD`; **ingest needs auth headers** (see `rotel.env`) |
 | `sentry-*` | `getsentry/self-hosted` (**~72 services**, `install.sh`) | `9000` (nginx) | `sentry` | **not a clean `include:` target** — run as its own stack + join Rotel to its network. OTLP via `nginx:80` → `relay:3000`. Needs feature flags + re-run `install.sh`. Pin ≥ native-OTLP (`~25.8.0`) |
@@ -357,11 +369,11 @@ ROTEL_OTLP_HTTP_ENDPOINT=0.0.0.0:4318
 # Declare every backend as an OTLP exporter
 ROTEL_EXPORTERS=parallax:otlp,maple:otlp,signoz:otlp,openobserve:otlp,sentry:otlp
 
-# Parallax is on the HOST → host.docker.internal; competitors are Compose
-# services → internal service names.
+# Parallax AND Maple are HOST local-first sinks → host.docker.internal;
+# SigNoz/OpenObserve are Compose services → internal service names.
 ROTEL_EXPORTER_PARALLAX_ENDPOINT=http://host.docker.internal:14317
 ROTEL_EXPORTER_PARALLAX_PROTOCOL=grpc
-ROTEL_EXPORTER_MAPLE_ENDPOINT=http://maple:4318
+ROTEL_EXPORTER_MAPLE_ENDPOINT=http://host.docker.internal:14319   # Maple chDB binary on host, HTTP-only
 ROTEL_EXPORTER_MAPLE_PROTOCOL=http
 ROTEL_EXPORTER_SIGNOZ_ENDPOINT=http://otel-collector:4317   # service name, not container_name
 ROTEL_EXPORTER_SIGNOZ_PROTOCOL=grpc
@@ -383,9 +395,10 @@ ROTEL_EXPORTERS_METRICS=parallax,maple,signoz,openobserve
 ```
 
 Exact env spellings were verified against `streamfold/rotel-docs` (2026-06-22);
-re-verify at the pinned Rotel version since it is pre-1.0. Maple's `:4318`
-collector has **no receiver auth** (its key-protected ingest gateway is `:3474`,
-deliberately bypassed here), so no Maple header is needed.
+re-verify at the pinned Rotel version since it is pre-1.0. Maple's **local chDB
+binary** OTLP receiver (host `14319`, HTTP) takes **no auth** in local mode
+(the key-protected ingest gateway `:3474` is a compose-mode concern and is not
+used here), so no Maple header is needed.
 
 ### Wiring rules
 
@@ -418,12 +431,16 @@ deliberately bypassed here), so no Maple header is needed.
 
 ## Comparison workflow
 
-0. Host: `brew install tailrocks/parallax/parallax-preview`; in
-   `~/.parallax/config.toml` set `bind = "0.0.0.0"`, `otlp_grpc_port = 14317`,
-   `otlp_http_port = 14318`; `parallax serve --config ~/.parallax/config.toml`
-   (UI `:4000`).
-1. `docker compose up` the lab (Rotel hub + competitor backends; Parallax already
-   up on the host).
+0. Host sinks (both local-first, both bind `0.0.0.0`):
+   - **Parallax:** `brew install tailrocks/parallax/parallax-preview`; in
+     `~/.parallax/config.toml` set `bind = "0.0.0.0"`, `otlp_grpc_port = 14317`,
+     `otlp_http_port = 14318`; `parallax serve --config ~/.parallax/config.toml`
+     (UI `:4000`).
+   - **Maple:** install the Maple chDB binary; start it with OTLP on `14319` and
+     UI on `8081`, bound `0.0.0.0` (exact flags verify at impl). Local chDB store
+     `~/.maple/data` — **no Tinybird**.
+1. `docker compose up` the lab (Rotel hub + SigNoz + OpenObserve; Parallax and
+   Maple already up on the host; Sentry via its own stack + `--profile`).
 2. `parallax run start -- <demo-app>` (child telemetry → `127.0.0.1:4317` = Rotel
    today; with the future `--otlp-forward`, any Rotel endpoint), or point any OTel
    SDK at `localhost:4317`. Optionally a scripted load generator emitting a fixed,
@@ -496,15 +513,22 @@ Sentry speaks OTLP; the lab treats it as a near-first-class target.
 ## Risks / open questions
 
 - **Two Parallax-side features are unbuilt.** Port offset and `0.0.0.0` bind are
-  already **config-only** (`otlp_grpc_port`/`otlp_http_port`/`bind` in
-  `config.toml`) — usable today. Only **configurable child-telemetry forwarding**
-  (`--otlp-forward`) and **self-telemetry** are genuinely unbuilt. The lab can run
-  end-to-end now via config + the lucky-accident hardcoded `127.0.0.1:4317`; the
-  unbuilt switches are quality-of-life, not blockers.
+  already **config-only** — usable today. **Configurable child-telemetry
+  forwarding** (`--otlp-forward`/`PARALLAX_OTLP_FORWARD`) and **self-telemetry**
+  are genuinely unbuilt. The "lucky accident" (hardcoded `127.0.0.1:4317` happens
+  to equal Rotel's published port) lets the lab run **only** in this exact port
+  arrangement, and a subtle consequence: because Parallax is offset to `14317`,
+  `run start`'s hardcoded `4317` *always* hits Rotel while the lab is up — so you
+  **cannot** send child telemetry to Parallax-only without the lab running. The
+  configurable forward is therefore not cosmetic: it's what makes compare-mode
+  *controllable* (on/off, choose endpoint) and lets `run start` work outside this
+  one port layout.
 - **Host↔container bridge fragility.** `host.docker.internal` depends on the
   runtime (Docker Desktop built-in; Linux `host-gateway` + firewall;
-  Colima/OrbStack/Podman differ). Misbehavior → "every backend has the trace
-  except Parallax." Document per-runtime setup + a phase-1 smoke assert.
+  Colima/OrbStack/Podman differ) and is now load-bearing for **two** host sinks
+  (Parallax + Maple). Misbehavior → "the Compose backends have the trace but the
+  host sinks don't." Document per-runtime setup + a phase-1 assert for both host
+  copies.
 - **Sentry quirks.** Non-standard path (version-dependent), `x-sentry-auth`,
   no OTLP metrics, open beta, ~72-container `install.sh` stack, OTLP via
   nginx→relay. Keep behind a profile; run as its own stack.
@@ -523,13 +547,14 @@ Sentry speaks OTLP; the lab treats it as a near-first-class target.
 
 ## Suggested phasing
 
-1. **Hub-only smoke** — host Parallax (offset ports, `0.0.0.0`) + Rotel + one
-   backend (Maple). Prove the host↔container bridge: emit to `localhost:4317`,
-   **assert** the copy lands in both Parallax (via `host.docker.internal:14317`)
-   and Maple. This single assert guards the lab's one fragile hop.
-2. **Core lab** — add SigNoz + OpenObserve (with `include:` port overrides + auth
-   headers). Lock the port map; build the `parallax run start --otlp-forward`
-   switch.
+1. **Host-sinks smoke** — host Parallax + host Maple (both offset ports,
+   `0.0.0.0`) + Rotel. Prove the host↔container bridge in both directions: emit to
+   `localhost:4317`, **assert** the copy lands in *both* Parallax
+   (`host.docker.internal:14317`) and Maple (`:14319`). This single assert guards
+   the lab's two fragile host hops.
+2. **Core lab** — add SigNoz + OpenObserve in Compose (with `include:` port
+   overrides + auth headers). Lock the port map; build the `parallax run start`
+   compare-mode forward (the `--otlp-forward`/`PARALLAX_OTLP_FORWARD` switch).
 3. **Full lab** — add Sentry as its own stack joined to Rotel's network; resolve
    feature flags + path version.
 4. **Fixture + diff harness** — versioned OTLP fixtures + per-backend extraction
