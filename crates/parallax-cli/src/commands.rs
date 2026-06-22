@@ -3,8 +3,142 @@
 use crate::client::{Client, gql_str};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-const OTLP_GRPC_ENDPOINT: &str = "http://127.0.0.1:4317";
+/// Default destination for child telemetry: Parallax's own OTLP receiver.
+const DEFAULT_PARALLAX_ENDPOINT: &str = "http://127.0.0.1:4317";
+/// What `--otlp-forward rotel` (and `PARALLAX_OTLP_FORWARD=rotel`) resolves to —
+/// the lab's Rotel collector published on the host.
+const DEFAULT_ROTEL_ENDPOINT: &str = "http://localhost:4317";
 const OTLP_GRPC_PROTOCOL: &str = "grpc";
+const OTLP_HTTP_PROTOCOL: &str = "http";
+
+/// Resolved compare-mode forwarding target for `run start`.
+struct Forward {
+    endpoint: String,
+    protocol: &'static str,
+    /// True when child telemetry is forwarded to a collector (Rotel) rather than
+    /// straight to Parallax — i.e. fan-out comparison mode.
+    compare: bool,
+}
+
+/// OTLP HTTP defaults to port 4318; treat anything else as gRPC.
+fn protocol_for(endpoint: &str) -> &'static str {
+    if endpoint.contains(":4318") {
+        OTLP_HTTP_PROTOCOL
+    } else {
+        OTLP_GRPC_PROTOCOL
+    }
+}
+
+/// Pure resolution of the compare-mode precedence (testable without touching the
+/// process environment): flag > `PARALLAX_OTLP_FORWARD` > a pre-existing
+/// `OTEL_EXPORTER_OTLP_ENDPOINT` (respected, not clobbered) > Parallax default.
+fn resolve_forward_from(
+    flag: Option<&str>,
+    env_forward: Option<String>,
+    env_otel: Option<String>,
+) -> anyhow::Result<Forward> {
+    if let Some(raw) = flag.map(str::to_owned).or(env_forward) {
+        let value = raw.trim();
+        let endpoint = match value.to_ascii_lowercase().as_str() {
+            "off" | "parallax" => {
+                return Ok(Forward {
+                    endpoint: DEFAULT_PARALLAX_ENDPOINT.to_string(),
+                    protocol: OTLP_GRPC_PROTOCOL,
+                    compare: false,
+                });
+            }
+            "rotel" | "1" | "true" | "on" => DEFAULT_ROTEL_ENDPOINT.to_string(),
+            _ if value.starts_with("http://") || value.starts_with("https://") => value.to_string(),
+            other => {
+                anyhow::bail!("invalid --otlp-forward '{other}' (use a URL, 'rotel', or 'off')")
+            }
+        };
+        let protocol = protocol_for(&endpoint);
+        return Ok(Forward {
+            endpoint,
+            protocol,
+            compare: true,
+        });
+    }
+    // No explicit forward: respect a pre-existing OTEL endpoint if the user set
+    // one in the environment (the idiomatic OTel escape hatch); else default.
+    if let Some(existing) = env_otel.filter(|v| !v.is_empty()) {
+        let protocol = protocol_for(&existing);
+        let compare = existing != DEFAULT_PARALLAX_ENDPOINT;
+        return Ok(Forward {
+            endpoint: existing,
+            protocol,
+            compare,
+        });
+    }
+    Ok(Forward {
+        endpoint: DEFAULT_PARALLAX_ENDPOINT.to_string(),
+        protocol: OTLP_GRPC_PROTOCOL,
+        compare: false,
+    })
+}
+
+fn resolve_forward(flag: Option<&str>) -> anyhow::Result<Forward> {
+    let env_forward = std::env::var("PARALLAX_OTLP_FORWARD")
+        .ok()
+        .filter(|v| !v.is_empty());
+    let env_otel = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").ok();
+    resolve_forward_from(flag, env_forward, env_otel)
+}
+
+/// Resource attributes injected into the child. `parallax.run.id` always; in
+/// compare mode also `parallax.lab=1` + `deployment.environment.name` so the same
+/// run is findable across every backend's UI.
+fn forward_resource_attrs(run_id: &str, compare: bool) -> String {
+    let mut attrs = format!("parallax.run.id={run_id}");
+    if compare {
+        let env = std::env::var("PARALLAX_ENV")
+            .ok()
+            .filter(|v| !v.is_empty())
+            .unwrap_or_else(|| "lab".to_string());
+        attrs.push_str(&format!(
+            ",parallax.lab=1,deployment.environment.name={env}"
+        ));
+    }
+    attrs
+}
+
+/// The full standard OTel env block (all signals + protocols + resource attrs),
+/// pointed at `endpoint`. Used identically for wrapper, bare, and dry-run modes.
+fn otel_env_pairs(endpoint: &str, protocol: &str, attrs: &str) -> Vec<(&'static str, String)> {
+    vec![
+        ("OTEL_EXPORTER_OTLP_ENDPOINT", endpoint.to_string()),
+        ("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", endpoint.to_string()),
+        ("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", endpoint.to_string()),
+        ("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", endpoint.to_string()),
+        ("OTEL_EXPORTER_OTLP_PROFILES_ENDPOINT", endpoint.to_string()),
+        ("OTEL_EXPORTER_OTLP_PROTOCOL", protocol.to_string()),
+        ("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", protocol.to_string()),
+        ("OTEL_EXPORTER_OTLP_LOGS_PROTOCOL", protocol.to_string()),
+        ("OTEL_EXPORTER_OTLP_METRICS_PROTOCOL", protocol.to_string()),
+        ("OTEL_EXPORTER_OTLP_PROFILES_PROTOCOL", protocol.to_string()),
+        ("OTEL_RESOURCE_ATTRIBUTES", attrs.to_string()),
+    ]
+}
+
+/// Best-effort reachability check for compare mode: warn (never fail) if the
+/// collector isn't accepting connections — a dead Rotel means nothing shows in
+/// any backend, including Parallax.
+async fn preflight_warn(endpoint: &str) {
+    let host_port = endpoint
+        .split("://")
+        .nth(1)
+        .and_then(|rest| rest.split('/').next())
+        .unwrap_or(endpoint);
+    let connect = tokio::net::TcpStream::connect(host_port.to_string());
+    let reachable = matches!(
+        tokio::time::timeout(std::time::Duration::from_millis(500), connect).await,
+        Ok(Ok(_))
+    );
+    if !reachable {
+        eprintln!("⚠ {endpoint} not reachable — telemetry may be dropped");
+    }
+}
 
 fn now_nanos() -> u128 {
     SystemTime::now()
@@ -30,9 +164,30 @@ fn relative(nanos_str: &str) -> String {
     }
 }
 
-/// `parallax run start [-- <command…>]`
-pub async fn run_start(client: &Client, command: Vec<String>) -> anyhow::Result<i32> {
+/// `parallax run start [--otlp-forward <target>] [--print-env] [-- <command…>]`
+///
+/// Default: child telemetry → Parallax's own receiver. Compare mode (forward set
+/// via flag or `PARALLAX_OTLP_FORWARD`): child telemetry → the collector (Rotel),
+/// which fans it out to every backend incl. Parallax for side-by-side comparison.
+pub async fn run_start(
+    client: &Client,
+    command: Vec<String>,
+    forward: Option<String>,
+    print_env: bool,
+) -> anyhow::Result<i32> {
     let run_id = new_run_id();
+    let fwd = resolve_forward(forward.as_deref())?;
+    let attrs = forward_resource_attrs(&run_id, fwd.compare);
+    let pairs = otel_env_pairs(&fwd.endpoint, fwd.protocol, &attrs);
+
+    // Dry-run: print the env we *would* inject, run nothing, record nothing.
+    if print_env && !command.is_empty() {
+        for (key, value) in &pairs {
+            println!("export {key}={value}");
+        }
+        return Ok(0);
+    }
+
     let command_str = (!command.is_empty()).then(|| command.join(" "));
     client
         .graphql(&format!(
@@ -46,20 +201,11 @@ pub async fn run_start(client: &Client, command: Vec<String>) -> anyhow::Result<
         ))
         .await?;
 
-    let resource_attrs = format!("parallax.run.id={run_id}");
     if command.is_empty() {
         // Bare mode: print exports for the developer to source.
-        println!("export OTEL_EXPORTER_OTLP_ENDPOINT={OTLP_GRPC_ENDPOINT}");
-        println!("export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT={OTLP_GRPC_ENDPOINT}");
-        println!("export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT={OTLP_GRPC_ENDPOINT}");
-        println!("export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT={OTLP_GRPC_ENDPOINT}");
-        println!("export OTEL_EXPORTER_OTLP_PROFILES_ENDPOINT={OTLP_GRPC_ENDPOINT}");
-        println!("export OTEL_EXPORTER_OTLP_PROTOCOL={OTLP_GRPC_PROTOCOL}");
-        println!("export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL={OTLP_GRPC_PROTOCOL}");
-        println!("export OTEL_EXPORTER_OTLP_LOGS_PROTOCOL={OTLP_GRPC_PROTOCOL}");
-        println!("export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL={OTLP_GRPC_PROTOCOL}");
-        println!("export OTEL_EXPORTER_OTLP_PROFILES_PROTOCOL={OTLP_GRPC_PROTOCOL}");
-        println!("export OTEL_RESOURCE_ATTRIBUTES={resource_attrs}");
+        for (key, value) in &pairs {
+            println!("export {key}={value}");
+        }
         println!("# run id: {run_id}  (finish with: parallax run finish {run_id} <exit-code>)");
         return Ok(0);
     }
@@ -67,22 +213,23 @@ pub async fn run_start(client: &Client, command: Vec<String>) -> anyhow::Result<
     // Wrapper mode: inject env, run the child, capture the exit code.
     println!("Parallax run id: {run_id}");
     println!("command: {}", command.join(" "));
+    if fwd.compare {
+        println!(
+            "telemetry → Rotel (fan-out) {}   [COMPARE MODE]",
+            fwd.endpoint
+        );
+        println!("   ↳ parallax · maple · signoz · openobserve · sentry");
+        preflight_warn(&fwd.endpoint).await;
+    } else {
+        println!("telemetry → Parallax {}", fwd.endpoint);
+    }
     println!("live: parallax run watch {run_id}");
-    let status = tokio::process::Command::new(&command[0])
-        .args(&command[1..])
-        .env("OTEL_EXPORTER_OTLP_ENDPOINT", OTLP_GRPC_ENDPOINT)
-        .env("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", OTLP_GRPC_ENDPOINT)
-        .env("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", OTLP_GRPC_ENDPOINT)
-        .env("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", OTLP_GRPC_ENDPOINT)
-        .env("OTEL_EXPORTER_OTLP_PROFILES_ENDPOINT", OTLP_GRPC_ENDPOINT)
-        .env("OTEL_EXPORTER_OTLP_PROTOCOL", OTLP_GRPC_PROTOCOL)
-        .env("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", OTLP_GRPC_PROTOCOL)
-        .env("OTEL_EXPORTER_OTLP_LOGS_PROTOCOL", OTLP_GRPC_PROTOCOL)
-        .env("OTEL_EXPORTER_OTLP_METRICS_PROTOCOL", OTLP_GRPC_PROTOCOL)
-        .env("OTEL_EXPORTER_OTLP_PROFILES_PROTOCOL", OTLP_GRPC_PROTOCOL)
-        .env("OTEL_RESOURCE_ATTRIBUTES", &resource_attrs)
-        .status()
-        .await?;
+    let mut cmd = tokio::process::Command::new(&command[0]);
+    cmd.args(&command[1..]);
+    for (key, value) in &pairs {
+        cmd.env(key, value);
+    }
+    let status = cmd.status().await?;
     let exit_code = status.code().unwrap_or(-1);
 
     client
@@ -763,4 +910,92 @@ pub async fn trace_inspect(client: &Client, trace_id: &str) -> anyhow::Result<()
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn protocol_follows_port() {
+        assert_eq!(protocol_for("http://localhost:4317"), OTLP_GRPC_PROTOCOL);
+        assert_eq!(protocol_for("http://localhost:4318"), OTLP_HTTP_PROTOCOL);
+        assert_eq!(
+            protocol_for("http://host.docker.internal:14317"),
+            OTLP_GRPC_PROTOCOL
+        );
+    }
+
+    #[test]
+    fn flag_beats_env() {
+        let fwd =
+            resolve_forward_from(Some("http://localhost:4317"), Some("off".to_string()), None)
+                .unwrap();
+        assert_eq!(fwd.endpoint, "http://localhost:4317");
+        assert!(fwd.compare);
+    }
+
+    #[test]
+    fn flag_off_forces_default() {
+        let fwd = resolve_forward_from(Some("off"), Some("rotel".to_string()), None).unwrap();
+        assert_eq!(fwd.endpoint, DEFAULT_PARALLAX_ENDPOINT);
+        assert!(!fwd.compare);
+    }
+
+    #[test]
+    fn rotel_alias_resolves() {
+        let fwd = resolve_forward_from(None, Some("rotel".to_string()), None).unwrap();
+        assert_eq!(fwd.endpoint, DEFAULT_ROTEL_ENDPOINT);
+        assert!(fwd.compare);
+    }
+
+    #[test]
+    fn explicit_url_from_env() {
+        let fwd =
+            resolve_forward_from(None, Some("http://collector:4318".to_string()), None).unwrap();
+        assert_eq!(fwd.endpoint, "http://collector:4318");
+        assert_eq!(fwd.protocol, OTLP_HTTP_PROTOCOL);
+        assert!(fwd.compare);
+    }
+
+    #[test]
+    fn respects_preexisting_otel_endpoint() {
+        let fwd =
+            resolve_forward_from(None, None, Some("http://localhost:4317".to_string())).unwrap();
+        assert_eq!(fwd.endpoint, "http://localhost:4317");
+        assert!(fwd.compare);
+    }
+
+    #[test]
+    fn default_when_nothing_set() {
+        let fwd = resolve_forward_from(None, None, None).unwrap();
+        assert_eq!(fwd.endpoint, DEFAULT_PARALLAX_ENDPOINT);
+        assert!(!fwd.compare);
+    }
+
+    #[test]
+    fn preexisting_parallax_endpoint_is_not_compare() {
+        let fwd =
+            resolve_forward_from(None, None, Some(DEFAULT_PARALLAX_ENDPOINT.to_string())).unwrap();
+        assert!(!fwd.compare);
+    }
+
+    #[test]
+    fn invalid_target_errors() {
+        assert!(resolve_forward_from(Some("nonsense"), None, None).is_err());
+    }
+
+    #[test]
+    fn compare_adds_lab_attrs() {
+        let attrs = forward_resource_attrs("abc123", true);
+        assert!(attrs.contains("parallax.run.id=abc123"));
+        assert!(attrs.contains("parallax.lab=1"));
+        assert!(attrs.contains("deployment.environment.name="));
+    }
+
+    #[test]
+    fn default_mode_run_id_only() {
+        let attrs = forward_resource_attrs("abc123", false);
+        assert_eq!(attrs, "parallax.run.id=abc123");
+    }
 }

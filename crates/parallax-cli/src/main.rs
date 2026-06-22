@@ -134,6 +134,14 @@ enum RunCommand {
     /// Start a run. With `-- <command…>`: wrapper mode (injects OTel env,
     /// captures the exit code). Without: prints exports to source.
     Start {
+        /// Compare mode: forward child telemetry to a collector instead of
+        /// Parallax. A URL, `rotel` (the configured hub), or `off`. Also settable
+        /// ambiently via `PARALLAX_OTLP_FORWARD`.
+        #[arg(long = "otlp-forward", value_name = "TARGET")]
+        otlp_forward: Option<String>,
+        /// Print the OTel env that would be injected, then exit (dry-run).
+        #[arg(long = "print-env")]
+        print_env: bool,
         /// Everything after `--` is the wrapped command.
         #[arg(last = true)]
         command: Vec<String>,
@@ -229,8 +237,13 @@ async fn main() -> anyhow::Result<()> {
             Ok(())
         }
         Command::Run { command } => match command {
-            RunCommand::Start { command } => {
-                let code = commands::run_start(&client()?, command).await?;
+            RunCommand::Start {
+                otlp_forward,
+                print_env,
+                command,
+            } => {
+                let code =
+                    commands::run_start(&client()?, command, otlp_forward, print_env).await?;
                 std::process::exit(code);
             }
             RunCommand::Finish { run_id, exit_code } => {
