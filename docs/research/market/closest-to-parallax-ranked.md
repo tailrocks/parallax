@@ -33,23 +33,28 @@ not a sum — architecture-shape and product-intent matches weigh most.
 ### 1. TMA1 — the closest thing that exists
 
 **What it is:** local-first observability for LLM/AI coding agents (cost, sessions, anomalies, conversation
-replay), `tma1-ai/tma1`, Go + JS, Apache-2.0, ~97★.
+replay), `tma1-ai/tma1`, Go + JS, Apache-2.0, ~98★, `v0.2.0-alpha7`. **Full teardown:
+[tma1-deep-research.md](tma1-deep-research.md).**
 
-**How it implements:** **embedded GreptimeDB run as a child process** (data in `~/.tma1/`), **single binary**,
-OTLP ingest on `:14318`, **7 MCP tools** including — critically — **`get_context_bundle`** and `get_anomalies`,
-wired into Claude Code / Codex / Copilot CLI.
+**How it implements:** **embedded GreptimeDB downloaded + run as a child process** (`~/.tma1/data`, native OTLP
+tables + Flow engine, `minRequiredVersion v1.0.2`), **single Go binary** with a vanilla-JS embedded dashboard,
+OTLP reverse-proxy on `:14318`, **strictly read-only 7-tool MCP** (`get_context_bundle`, `get_session_state`,
+`get_anomalies`, `get_build_status`, `get_external_changes`, `get_project_state`, `get_peer_sessions`), wired
+into Claude Code / Codex / Copilot CLI / OpenClaw.
 
-| Rust | Single binary | OTLP-native | GreptimeDB | Read-only MCP | Evidence bundle | Outcome loop | Sentry-compat |
-|---|---|---|---|---|---|---|---|
-| ❌ Go | ✅ | ✅ | ✅ same engine | 🟡 read tools | 🟡 `get_context_bundle` | ❌ | ❌ |
+| Rust | Single binary | OTLP-native | GreptimeDB | Metadata store | Read-only MCP | Versioned/redacted bundle | Outcome loop | Sentry-compat |
+|---|---|---|---|---|---|---|---|---|
+| ❌ Go | ✅ | ✅ | ✅ same engine | ❌ none (GreptimeDB-only) | ✅ | ❌ live unversioned, **unredacted** | 🟡 anomaly-resolution only | ❌ |
 
-**Why closest:** it is a **near-mirror of the Parallax architecture, already shipped** — embedded GreptimeDB +
-single binary + OTLP-in + MCP-out serving a **context bundle** to coding agents. The single most important tool
-to track. **Where Parallax still differs:** Rust (not Go); production-error debugging from real services (not
-mainly LLM-agent cost/session telemetry); derives `error_event` + fingerprinting; Sentry-compat path;
-fix-outcome loop; redaction-as-a-gate; durable Iggy stream for backpressure. **Verdict: study it deeply, treat
-as the reference competitor — but its product intent (AI-agent observability) is narrower than Parallax's
-production-incident dossier.**
+**Why closest:** a **near-mirror of the Parallax architecture, already shipped** — embedded GreptimeDB + single
+binary + OTLP-in + read-only MCP-out for coding agents. **BUT the teardown refines this:** TMA1's "context
+bundle" is the *same name, a different artifact* — a **live, unversioned, unredacted session snapshot** for
+loop continuity (`perception.Bundle`, `GeneratedAt: time.Now()`), not a redacted/versioned/portable evidence
+package. It has **no metadata store, no Sentry path, no production error-event derivation or fingerprinting, no
+redaction gate, no explicit fix-outcome ledger, no CI/deploy capture** — and is local-only (no auth/multi-tenant).
+**Verdict: the reference competitor and #1 watch target on architecture — but its product intent (dev-machine
+AI-agent observability) is narrower than Parallax's production-incident dossier, and the missing spine *widens*
+Parallax's differentiation.** Borrow its child-process GreptimeDB embedding and read-only MCP discipline.
 
 ### 2. OpenObserve — closest of the full platforms
 
