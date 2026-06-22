@@ -38,7 +38,12 @@ distinct things must be separated:
    - **Traces = open beta**, **Logs = open beta**, **Metrics = NOT supported via OTLP**
      ("Sentry does not support OTLP metrics at this time").
    - Announced open beta **2025-02-25**; still open beta as of June 2026, **not GA**.
-   - Self-hosted OTLP is **in progress** (tracking issue getsentry/self-hosted #3830), not confirmed GA.
+   - **Self-hosted OTLP has shipped** — `getsentry/self-hosted` #3830 ("Add Native OTLP
+     Ingestion") is **closed (2026-05-19)**; native OTLP ingest is available on self-hosted
+     from **~v25.8.0**, with **version-pinned setup guides for `25.8.0` and `25.10.0`** (the
+     enablement steps differ by version — pick the guide matching your release). Same scope as
+     SaaS: traces + logs, HTTP-only, no metrics, still **open beta** (not GA), not a "partial"
+     subset.
 
 **Native protocol (the real default):** the **Sentry envelope** — clients POST envelopes to **Relay**
 at `/api/<project_id>/envelope/` (older `/store/`), authenticated by a **DSN**. The envelope wraps
@@ -190,7 +195,8 @@ the error-tracking workflow (grouping, triage, Seer autofix) and has the brand +
 
 ### Watch Triggers
 
-Re-evaluate if Sentry: makes **OTLP ingest GA on self-hosted** (incl. metrics + gRPC); ships a **portable
+Re-evaluate if Sentry: takes **OTLP ingest to GA** (incl. **metrics + gRPC** — self-hosted OTLP
+already shipped in beta, so the remaining gates are GA, metrics, and gRPC); ships a **portable
 evidence/RCA artifact** with provenance/redaction/outcome semantics; adds a **fix-outcome loop** to Seer;
 or ships a genuinely **light single-binary local backend** (beyond the Spotlight dev overlay).
 
@@ -198,7 +204,8 @@ or ships a genuinely **light single-binary local backend** (beyond the Spotlight
 
 Sentry is the category-defining error-tracking incumbent: unmatched issue grouping + triage lifecycle, a
 huge SDK fleet on the envelope/DSN protocol, Seer autofix, and an official MCP. It now has **beta OTLP
-ingest (traces + logs, HTTP-only, no metrics)** — real but not native, and partial on self-hosted.
+ingest (traces + logs, HTTP-only, no metrics) on both SaaS and self-hosted** (self-hosted since ~v25.8.0,
+#3830 closed) — real but a guest path, not the native tongue. Envelope/DSN via Relay remains native.
 
 For Parallax, Sentry is the **interoperability target, not the OSS substitute**: Parallax plans to speak
 the envelope to absorb Sentry's SDKs, then add what Sentry structurally lacks — OTLP-native multi-signal
