@@ -187,48 +187,131 @@ implementation**. Invariants: *Rotel owns host `4317/4318`; Parallax-host uses
 `14317/14318` + `4000` (+ greptime `24000-24003`); backends expose only UIs on
 unique host ports; Rotel reaches Parallax via `host.docker.internal`.*
 
-## `parallax run start` → Rotel env injection **[NOT YET IMPLEMENTED]**
+## Compare mode: `parallax run start` → Rotel fan-out (DevEx design)
 
-Today (`crates/parallax-cli`): `parallax run start -- <cmd>` injects a
-**hardcoded** `http://127.0.0.1:4317` into the child's `OTEL_EXPORTER_OTLP_*`
-env. In this lab that constant already points at Rotel's published port, so child
-apps fan out today with no code change. What's missing is making the target
-**configurable** so the same toggle works against any Rotel host/port and any
-SDK.
+This is the operator's headline feature. Restating the goal in the operator's
+words: running e.g. `parallax run start -- jackin --debug` normally sends Jackin's
+telemetry **only to Parallax**. We want an **ambient setting** that flips this so
+Parallax injects **Rotel's** endpoint instead of its own — Rotel then fans the
+same stream out to **every backend including Parallax** — so you can open all five
+UIs and compare, on identical data, how each renders it and decide what to build
+into Parallax.
 
-Proposed switch (names TBD at impl):
+### What already exists (verified in `crates/parallax-cli/src/commands.rs`)
+
+`parallax run start -- <cmd>` today already does the hard parts:
+
+- mints a `run_id`, records `runStart`/`runFinish`, captures the child exit code;
+- injects the **full standard OTel env into the child** — `OTEL_EXPORTER_OTLP_ENDPOINT`
+  **plus per-signal** `_TRACES_/_LOGS_/_METRICS_/_PROFILES_ENDPOINT` and matching
+  `_PROTOCOL`s, **plus** `OTEL_RESOURCE_ATTRIBUTES=parallax.run.id=<id>`;
+- bare mode (no `-- <cmd>`) prints the same as `export` lines to `source`.
+
+The **only** thing hardcoded is the destination: a single const
+`OTLP_GRPC_ENDPOINT = "http://127.0.0.1:4317"`. So compare mode is a *small,
+surgical change* — make that destination resolvable from ambient config — not a
+new subsystem. Everything else (run-id stamping, per-signal env, standard-OTel
+approach so it works for any SDK/language, not just Parallax-aware apps) is done.
+
+### The DevEx — how the user turns it on
+
+Design goal: **the command line never has to change.** `parallax run start --
+jackin --debug` is identical whether comparing or not; an ambient setting decides
+where telemetry goes. Resolution precedence (highest wins):
+
+1. **Per-invocation flag** — `parallax run start --otlp-forward <target> -- …`.
+   `<target>` ∈ a URL · `rotel` (the configured lab hub) · `off`/`parallax`
+   (force the default even if ambient config says forward). For one-off overrides.
+2. **Global env var (the operator's primary surface)** — `PARALLAX_OTLP_FORWARD`.
+   Set it once in the shell/profile and *every* `parallax run start` forwards:
+   - a URL → use it (`PARALLAX_OTLP_FORWARD=http://localhost:4317`);
+   - `1`/`true`/`rotel` → use the configured rotel endpoint;
+   - `off` → force default.
+   This is exactly the "set a system environment, and Parallax sends to Rotel
+   instead of itself" model. The lab compose can emit this line for you to source
+   (see *Discoverability*).
+3. **Config file** — `~/.parallax/config.toml`:
+   ```toml
+   [run]
+   otlp_forward = "http://localhost:4317"   # or "rotel"
+   [lab]
+   rotel_endpoint = "http://localhost:4317" # what "rotel"/"1" resolves to
+   ```
+   Persistent across shells; the durable "this machine is a comparison rig" setting.
+4. **Respect a pre-existing child OTel endpoint** — if the environment `run start`
+   inherits *already* has `OTEL_EXPORTER_OTLP_ENDPOINT` set, **don't clobber it**.
+   This is the idiomatic OTel escape hatch: `export
+   OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317` alone already forwards to
+   Rotel, and Parallax should defer to it.
+5. **Default (today's behavior)** — inject Parallax's own receiver
+   (`http://127.0.0.1:4317`, or the configured `otlp_grpc_port`).
+
+> One value, two jobs avoided: keep "where to send" (an endpoint) separate from
+> "compare mode is on" (presence of forward). Presence of any forward setting =
+> compare mode. No separate boolean needed, though `PARALLAX_COMPARE=1` could be
+> offered as sugar for "forward to configured rotel."
+
+### What gets injected in compare mode
+
+Same env block as today, with the destination swapped to the forward endpoint and
+two extra resource attributes for cross-UI alignment:
 
 ```
-parallax run start --otlp-forward rotel -- <demo-app>
-# or: PARALLAX_OTLP_FORWARD=http://localhost:4317
+OTEL_EXPORTER_OTLP_ENDPOINT       = <forward endpoint>      # e.g. http://localhost:4317
+OTEL_EXPORTER_OTLP_{TRACES,LOGS,METRICS,PROFILES}_ENDPOINT = <forward endpoint>
+OTEL_EXPORTER_OTLP_PROTOCOL (+per-signal) = grpc            # http if endpoint is :4318
+OTEL_RESOURCE_ATTRIBUTES = parallax.run.id=<id>,parallax.lab=1,deployment.environment.name=<env>
 ```
 
-When set, inject the **standard OTEL env pointing at Rotel**:
+`parallax.run.id` (already injected) + `parallax.lab=1` make the *same run*
+findable in every backend's UI — the key to a fair side-by-side. Protocol follows
+the endpoint port (`:4317`→grpc, `:4318`→http) or an explicit
+`PARALLAX_OTLP_FORWARD_PROTOCOL`.
+
+### Banner — make the mode obvious
+
+`run start` must announce where telemetry is going (repo progress-visibility
+rule). Compare mode:
 
 ```
-OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
-OTEL_EXPORTER_OTLP_PROTOCOL=grpc
-OTEL_SERVICE_NAME=<unchanged>
-OTEL_RESOURCE_ATTRIBUTES=<unchanged + parallax.lab=1>
+Parallax run id: 1a2b3c
+command: jackin --debug
+telemetry → Rotel (fan-out) http://localhost:4317   [COMPARE MODE]
+   ↳ parallax · maple · signoz · openobserve · sentry
+live: parallax run watch 1a2b3c   ·   compare UIs: :4000 :8081 :3301 :5080 :9000
 ```
 
-Design points:
+Default mode just says `telemetry → Parallax http://127.0.0.1:4317`. The contrast
+makes it impossible to forget which mode you're in.
 
-1. **Rotel includes Parallax in its fan-out list** so the data still reaches
-   Parallax via the hub (`ROTEL_EXPORTERS_TRACES=parallax,maple,signoz,openobserve,sentry`;
-   the `parallax` exporter targets `host.docker.internal:14317`).
-2. **Use only standard `OTEL_EXPORTER_OTLP_*` env** — that is what makes the
-   toggle work for any SDK/app, not just Parallax-aware ones.
-3. **Off by default** — lab/dev affordance, gated behind the flag/env.
-4. **Tag the stream** (`parallax.lab=1`, run id) so each backend's copy is
-   identifiable across UIs. (Tagging is for *alignment*, not loop prevention —
-   see below.)
-5. **[NOT YET IMPLEMENTED] Parallax self-telemetry** — once Parallax emits its
-   own spans, route them to Rotel too. **Loop hazard:** Parallax self-telemetry →
-   Rotel → back into Parallax, whose ingest path then emits more spans → loop /
-   inflated counts. Tagging does **not** break this; suppress Parallax's own
-   ingest-path spans from the self-telemetry exporter, or don't route Parallax
-   self-telemetry back to itself.
+### Supporting DevEx details
+
+- **Dry-run / introspection.** `parallax run start --otlp-forward rotel
+  --print-env -- jackin` (or bare mode, which already prints exports) prints the
+  exact env it *would* inject without running — debug the forward without launching
+  the app. Bare mode must honor the same precedence (so
+  `PARALLAX_OTLP_FORWARD=… parallax run start` prints Rotel exports).
+- **Pre-flight reachability.** In compare mode, TCP-probe the forward endpoint and
+  **warn (don't fail)** if Rotel is down: `⚠ Rotel http://localhost:4317
+  unreachable — telemetry may be dropped`. Forwarding makes Rotel a dependency for
+  *all* backends incl. Parallax, so a silent dead hub = "nothing shows anywhere."
+- **Parallax must be in Rotel's fan-out list** so forwarding doesn't cut Parallax
+  off: `ROTEL_EXPORTERS_TRACES=parallax,maple,signoz,openobserve,sentry`, the
+  `parallax` exporter → `host.docker.internal:14317`. Forward sends the child to
+  Rotel; Rotel sends a copy back to Parallax.
+- **Standard OTel only.** Inject nothing Parallax-proprietary — that is what makes
+  the toggle work for Jackin and any other OTel app/SDK/language unchanged.
+- **Off-switch per invocation** — `--otlp-forward off` (or `PARALLAX_OTLP_FORWARD=off`)
+  forces the default endpoint even when config enables forward.
+
+### Scope note
+
+This covers **child-process** telemetry (Jackin, demo apps) — which is exactly the
+compare use case. Parallax's **own self-telemetry** is separate and **[NOT YET
+IMPLEMENTED]**; if/when it ships, route it to Rotel too, but suppress Parallax's
+ingest-path spans from its self-telemetry exporter to avoid a
+self→Rotel→self feedback loop (tagging identifies copies, it does not break the
+loop).
 
 ## Docker Compose setup (what to build)
 
