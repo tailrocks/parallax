@@ -1,0 +1,72 @@
+# OTLP Fan-Out Comparison Lab — core stack.
+#
+# Design: docs/research/validation/otlp-fanout-comparison-lab.md
+#
+# Topology: ONLY Parallax runs on the host (Homebrew). Everything else runs here
+# in Compose. Rotel is the single shared OTLP endpoint published on host
+# 4317/4318; it fans every signal out to each backend AND back to host Parallax
+# via host.docker.internal:14317.
+#
+# This base file is the CORE lab: Rotel + OpenObserve + a telemetrygen load
+# source. SigNoz and Maple are layered in via overlays (see README):
+#   docker compose -f compose.yml -f compose.signoz.yml -f compose.maple.yml up
+#
+# Pin every image tag at implementation; :latest here is a starting point.
+
+name: parallax-otlp-fanout
+
+services:
+  # The fan-out hub. The ONLY service publishing OTLP ports to the host.
+  rotel:
+    image: streamfold/rotel:latest
+    container_name: pfanout-rotel
+    restart: unless-stopped
+    env_file: rotel.env
+    ports:
+      - "4317:4317" # OTLP gRPC — the shared emit endpoint
+      - "4318:4318" # OTLP HTTP
+    extra_hosts:
+      # Reach host-resident Parallax. Built in on Docker Desktop; required on
+      # native Linux Docker.
+      - "host.docker.internal:host-gateway"
+    networks: [lab]
+
+  # OTLP-native, Rust, single binary. UI on host :5080; OTLP gRPC :5081 internal.
+  openobserve:
+    image: public.ecr.aws/zinclabs/openobserve:latest
+    container_name: pfanout-openobserve
+    restart: unless-stopped
+    environment:
+      ZO_ROOT_USER_EMAIL: "root@example.com"
+      ZO_ROOT_USER_PASSWORD: "Complexpass#123"
+      ZO_HTTP_PORT: "5080"
+      ZO_GRPC_PORT: "5081"
+    ports:
+      - "5080:5080" # UI / HTTP
+    volumes:
+      - openobserve-data:/data
+    networks: [lab]
+
+  # Synthetic OTLP load source (interim payload, operator 2026-06-23).
+  # `--profile loadgen` so it's opt-in. Sends to Rotel by service name.
+  telemetrygen:
+    image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:latest
+    container_name: pfanout-telemetrygen
+    profiles: [loadgen]
+    command:
+      - traces
+      - --otlp-endpoint=rotel:4317
+      - --otlp-insecure
+      - --rate=5
+      - --duration=30s
+      - --service=telemetrygen
+      - --otlp-attributes=parallax.lab="1"
+    depends_on: [rotel]
+    networks: [lab]
+
+volumes:
+  openobserve-data:
+
+networks:
+  lab:
+    name: parallax-otlp-fanout

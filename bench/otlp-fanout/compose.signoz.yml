@@ -1,0 +1,25 @@
+# Overlay: SigNoz (its bundled ClickHouse + ZooKeeper + otel-collector + signoz).
+#
+# SigNoz is a multi-service stack installed from its own repo. Run setup-vendor.sh
+# first to clone it into ./vendor/signoz, then:
+#   docker compose -f compose.yml -f compose.signoz.yml up
+# and enable `signoz` in rotel.env (ROTEL_EXPORTERS + per-signal lists).
+#
+# Two overrides are essential (verify against the pinned SigNoz version):
+#   1. Drop the otel-collector's host 4317/4318 publish — those belong to Rotel.
+#   2. Put otel-collector on the `lab` network so Rotel can reach it by name, and
+#      remap the SigNoz UI to host 3301.
+name: parallax-otlp-fanout
+include:
+  - path: vendor/signoz/deploy/docker/docker-compose.yaml
+services:
+  otel-collector:
+    # Unpublish SigNoz's own OTLP host ports (collision with Rotel) and join lab.
+    ports: !reset []
+    networks: [lab]
+  signoz:
+    ports: !reset
+      - "3301:8080" # SigNoz UI on host 3301 (container 8080)
+networks:
+  lab:
+    name: parallax-otlp-fanout

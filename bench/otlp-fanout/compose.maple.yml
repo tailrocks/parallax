@@ -1,0 +1,19 @@
+# Overlay: Maple as a local chDB-binary container (no Tinybird).
+# Usage: docker compose -f compose.yml -f compose.maple.yml up
+# Then enable `maple` in rotel.env (ROTEL_EXPORTERS + per-signal lists).
+name: parallax-otlp-fanout
+services:
+  maple:
+    build:
+      context: ./maple
+      args:
+        MAPLE_REF: main # pin a tag at implementation
+    container_name: pfanout-maple
+    restart: unless-stopped
+    ports:
+      - "8081:8081" # dashboard (remap as needed)
+    volumes:
+      - maple-data:/data
+    networks: [lab]
+volumes:
+  maple-data:
