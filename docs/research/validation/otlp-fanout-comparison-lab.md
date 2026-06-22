@@ -54,11 +54,11 @@ So Rotel listens on the standard `4317/4318`, and every backend is just another
 OTLP exporter in the fan-out list. Per-signal routing means we can also do
 asymmetric experiments (e.g. send logs only to OpenObserve, traces to all).
 
-> **Fallback if Rotel falls short.** Rotel is pre-1.0 (`v0.2.2`). If a specific
-> backend needs a quirky exporter Rotel lacks, drop in the **OpenTelemetry
-> Collector Contrib** as the hub instead (its pipelines fan out to multiple
-> exporters by design). Keep the lab hub swappable behind one compose service so
-> Rotel-vs-Collector is itself a comparison we get for free.
+> **Hub is Rotel, full stop** (operator, 2026-06-22). No OTel Collector Contrib
+> substitution. The lab needs a *simple* fan-out, not exotic processing — Rotel
+> at `v0.2.2` is fast enough and on-thesis (Rust, matches Parallax). If an
+> exporter detail is missing, fix forward in config or upstream, consistent with
+> the repo's no-fallback-engine ethos. Collector Contrib is not part of this lab.
 
 ## Backends in scope
 
@@ -72,7 +72,7 @@ Gonzo are out for now; both are easy to add later as extra exporter targets.
 | **Maple** | OTLP-native, ClickHouse, near-identical stack (TanStack/Bun/Turso, MCP) | yes | Docker Compose **or** single Bun binary (`libchdb`) | [maple-deep-research.md](../market/maple-deep-research.md) |
 | **SigNoz** | OTLP-native full-stack obs, ClickHouse + bundled otel-collector | yes | Docker Compose | [signoz-deep-research.md](../market/signoz-deep-research.md) |
 | **OpenObserve** | OTLP-native logs/metrics/traces, Rust, single binary | yes | Docker single container | [openobserve-deep-research.md](../market/openobserve-deep-research.md) |
-| **Sentry** | error tracking + tracing | **partial** OTLP | `getsentry/self-hosted` (heavy compose) | [sentry-deep-research.md](../market/sentry-deep-research.md) |
+| **Sentry** | error tracking + tracing | yes, OTLP **traces + logs** (no metrics) | `getsentry/self-hosted` (heavy compose) | [sentry-deep-research.md](../market/sentry-deep-research.md) |
 
 Maple is the highest-signal comparison — it is the closest thing to Parallax in
 the market (OTLP-native, ClickHouse, MCP, same UI stack), so identical input →
@@ -142,6 +142,77 @@ Key design points:
 4. **Tag the stream** (`parallax.lab=1`, run id) so each backend's copy is
    identifiable and we can line up the same trace across all five UIs.
 
+## Docker Compose setup (what to build)
+
+Rotel-only hub. One repo folder (e.g. `lab/otlp-fanout/`) holding a
+`docker-compose.yml`, a `rotel.env`, and per-backend config. Bring it up with
+`docker compose up`; Sentry stays behind a profile.
+
+### Services
+
+| Service | Image / build | Host ports | Profile | Notes |
+|---|---|---|---|---|
+| `rotel` | `rotel-dev/rotel` (pin tag) | `4317`, `4318` | default | the only published OTLP ports; all config via `rotel.env` |
+| `parallax` | build from this repo (`parallax serve`) | `8080` (UI/GraphQL) | default | OTLP `4317/4318` **internal only**; data dir volume |
+| `maple` | Maple self-host image **or** single Bun binary container | `8081` | default | OTLP `4318` internal; chDB/ClickHouse volume |
+| `signoz` | SigNoz stack (clickhouse + query-service + otel-collector + frontend) | `3301` | default | its collector OTLP `4317/4318` internal; pull SigNoz's own compose via `include:` |
+| `openobserve` | `openobserve/openobserve` (pin tag) | `5080` | default | OTLP `5081` gRPC / `5080` HTTP internal; data volume; set root user/pass env |
+| `sentry-*` | `getsentry/self-hosted` (many services) | `9000` (web) | `sentry` | huge; vendor via `include:` + profile; pin version ≥ native-OTLP release |
+
+Hard rule: **only `rotel` publishes `4317/4318` to the host.** Every backend's
+OTLP receiver stays on the compose network, reached by service name. UIs get
+unique host ports. Multi-service backends (SigNoz, Sentry) are pulled in with
+Compose `include:` rather than hand-recopying their service graphs.
+
+### Rotel fan-out config (`rotel.env`)
+
+```dotenv
+# Receivers: standard OTLP in (the one endpoint apps point at)
+ROTEL_OTLP_GRPC_ENDPOINT=0.0.0.0:4317
+ROTEL_OTLP_HTTP_ENDPOINT=0.0.0.0:4318
+
+# Declare every backend as an OTLP exporter
+ROTEL_EXPORTERS=parallax:otlp,maple:otlp,signoz:otlp,openobserve:otlp,sentry:otlp
+
+# Per-exporter endpoints (internal service names, not host ports)
+ROTEL_EXPORTER_PARALLAX_ENDPOINT=http://parallax:4317
+ROTEL_EXPORTER_PARALLAX_PROTOCOL=grpc
+ROTEL_EXPORTER_MAPLE_ENDPOINT=http://maple:4318
+ROTEL_EXPORTER_MAPLE_PROTOCOL=http
+ROTEL_EXPORTER_SIGNOZ_ENDPOINT=http://signoz-otel-collector:4317
+ROTEL_EXPORTER_SIGNOZ_PROTOCOL=grpc
+ROTEL_EXPORTER_OPENOBSERVE_ENDPOINT=http://openobserve:5081
+ROTEL_EXPORTER_OPENOBSERVE_PROTOCOL=grpc
+# Sentry: HTTP only, non-standard base path, DSN-derived auth header
+ROTEL_EXPORTER_SENTRY_ENDPOINT=http://sentry-web:9000/api/1/integration/otlp
+ROTEL_EXPORTER_SENTRY_PROTOCOL=http
+ROTEL_EXPORTER_SENTRY_CUSTOM_HEADERS=X-Sentry-Auth=<from DSN>   # verify exact env at impl
+
+# Per-signal fan-out. Sentry omitted from metrics (no OTLP metrics).
+ROTEL_EXPORTERS_TRACES=parallax,maple,signoz,openobserve,sentry
+ROTEL_EXPORTERS_LOGS=parallax,maple,signoz,openobserve,sentry
+ROTEL_EXPORTERS_METRICS=parallax,maple,signoz,openobserve
+```
+
+Exact env names (`ROTEL_OTLP_*`, `ROTEL_EXPORTER_*_CUSTOM_HEADERS`,
+OpenObserve's required auth params) must be **re-verified against the pinned
+Rotel/OpenObserve versions** at implementation — Rotel is pre-1.0 and moves.
+
+### Wiring rules
+
+- **No host OTLP port except Rotel's.** Removes the 4317/4318 collision that
+  otherwise kills the whole stack.
+- **Pin every image tag** (no `latest` ambiguity in a comparison lab — but follow
+  the repo version policy: resolve newest mutually-compatible stable and record
+  the tags in the compose).
+- **Volumes per backend** so data survives `down`/`up` for repeat inspection.
+- **`depends_on` + healthchecks** so Rotel starts after sinks are listening
+  (otherwise early spans drop).
+- **Profiles:** default = light lab (4 backends). `--profile sentry` adds Sentry.
+  `--profile loadgen` adds the fixture generator.
+- **One `.env`** at the lab root for shared knobs (image tags, root creds,
+  Sentry DSN/version).
+
 ## Comparison workflow
 
 1. `docker compose up` the lab (hub + 5 backends).
@@ -162,18 +233,43 @@ This also doubles as **OTLP conformance evidence** for the L4 "Rotel
 equivalence" gate already defined in `otlp.md`: same fixtures, Rotel hop,
 equivalent normalized rows.
 
+## Sentry OTLP — how it actually works (verified 2026-06-22)
+
+Sentry *does* speak OTLP now; the lab can treat it as a near-first-class target.
+
+- **Native OTLP ingest, open beta.** Sentry exposes a real OTLP HTTP ingest path
+  (not just an SDK that wraps OTel). Two pieces exist: (a) SDK-side OTel
+  integration (SpanProcessor/Propagator, "POTEL") that maps OTel spans to Sentry
+  data and links errors/logs to traces via an `external_propagation_context`;
+  and (b) a server **OTLP ingest endpoint** that accepts raw OTLP from any SDK or
+  collector. For the lab we only care about (b).
+- **Signals: traces + logs. No metrics** ("Sentry does not support OTLP metrics
+  at this time"). This is the one asymmetry in the fan-out — handled cleanly by
+  Rotel per-signal routing (exclude `sentry` from `ROTEL_EXPORTERS_METRICS`).
+- **Transport: OTLP/HTTP.** Endpoint paths are *non-standard*:
+  `/api/{PROJECT_ID}/integration/otlp/v1/traces` and `.../v1/logs`. Point an
+  exporter at the base `…/integration/otlp` and it appends `/v1/traces|logs` —
+  matching Rotel's OTLP/HTTP behavior. (gRPC not relied upon; use HTTP.)
+- **Auth: `X-Sentry-Auth` header derived from the project DSN** (or, when fronted
+  by a collector, the collector handles auth). Rotel's OTLP exporter must send a
+  custom header → verify Rotel's custom-header env at impl.
+- **Self-hosted has it.** `getsentry/self-hosted` issue #3830 ("Add Native OTLP
+  Ingestion") is **closed**; native OTLP shipped in self-hosted around `25.8.0`/
+  `25.10.0`. So our self-hosted Sentry can be a direct Rotel exporter target —
+  pin a self-hosted version ≥ that. Confirm exact version + whether Relay or a
+  bundled collector terminates OTLP when wiring.
+
 ## Risks / open questions
 
-- **Sentry is not cleanly OTLP-native.** Self-hosted Sentry ingests via its own
-  DSN/relay; OTLP trace support exists but is partial and evolving, and there is
-  no first-class OTLP logs/metrics path comparable to the others. Expect an
-  adapter/relay step, or accept Sentry as a *traces+errors-only* target. Confirm
-  current state before wiring. It is also the heaviest stack (~20+ containers) —
-  consider a compose **profile** so Sentry is opt-in and the light lab
-  (Parallax+Maple+SigNoz+OpenObserve) runs without it.
-- **Rotel is pre-1.0 (`v0.2.2`).** Fan-out is documented and on-thesis, but if
-  any exporter misbehaves, fall back to OTel Collector Contrib as the hub (kept
-  swappable). Re-verify Rotel's exporter set at impl — it moves fast.
+- **Sentry quirks, not blockers.** Non-standard OTLP path + `X-Sentry-Auth`
+  header + no OTLP metrics + open-beta status. All handled (base-path exporter,
+  custom header, per-signal routing). Pin a self-hosted version with native OTLP.
+  Sentry is still the **heaviest** stack (~20+ containers) → keep it behind a
+  compose **profile** so the light lab (Parallax+Maple+SigNoz+OpenObserve) runs
+  without it.
+- **Rotel is pre-1.0 (`v0.2.2`) — accepted** (operator, 2026-06-22). Simple
+  fan-out only; no Collector fallback. Re-verify Rotel's exporter/header set at
+  impl — it moves fast.
 - **Resource weight.** Five backends, several with their own ClickHouse, on one
   laptop is heavy. Mirror the benchmarking rule's two-tier idea: light default
   profile on the laptop, full set (incl. Sentry) on a server.
@@ -204,6 +300,9 @@ equivalent normalized rows.
   (multiple exporters / fan-out / per-signal routing, verified 2026-06-22)
 - [maple.dev](https://maple.dev/) · [Makisuo/maple](https://github.com/Makisuo/maple)
 - [SigNoz](https://signoz.io/) · [OpenObserve](https://openobserve.ai/) · [Sentry self-hosted](https://github.com/getsentry/self-hosted)
+- Sentry OTLP: [docs.sentry.io/concepts/otlp](https://docs.sentry.io/concepts/otlp/) ·
+  [develop.sentry.dev OTLP integration](https://develop.sentry.dev/sdk/telemetry/traces/otlp/) ·
+  [self-hosted #3830 native OTLP (closed)](https://github.com/getsentry/self-hosted/issues/3830)
 - Internal: [`docs/research/capture/otlp.md`](../capture/otlp.md),
   [`maple-deep-research.md`](../market/maple-deep-research.md),
   [`signoz-deep-research.md`](../market/signoz-deep-research.md),
