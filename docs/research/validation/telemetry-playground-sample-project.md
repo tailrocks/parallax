@@ -14,12 +14,17 @@ All three language tiers validated to build (2026-06-23):
   compile (`gradlew compileJava`, JDK 21).
 - **web** — TanStack Start + Sentry + OTel-web deps resolve under Bun; provider
   wiring TODO.
-- flagd, k6 loadgen, docker-compose (Rust services), scenarios A1/A12 in place.
+- Verified scenarios: A1 (multi-service trace), **A3 (async producer/consumer +
+  span link)**, A12 (CLI run), **A18 (canary-redaction corpus)**, **B1 (failure
+  → 502 issue)**, **B11 (latency)**, A13 (deploy-regression driver). flagd, k6,
+  compose all services, web (`bun run build`).
 
-Remaining: web provider wiring, gRPC proto codegen for payment, broker async
-branch + span links, chaos via flagd, deploy-regression + canary scenarios, and
-the full cross-language e2e trace through the running lab. Comparison is manual;
-scored harness out of scope.
+Remaining: web TanStack-router integration + the same-origin OTLP proxy; payment
+gRPC proto codegen + cross-language gRPC e2e; real Kafka broker (the in-process
+queue stands in today); the rest of the A/B catalog (exemplars, GraphQL
+subscription, streaming, RUM, profiling, the remaining chaos modes); and a full
+cross-language live trace through the running lab. Comparison is manual; scored
+harness out of scope.
 Relationship: feeds the [OTLP Fan-Out Comparison Lab](otlp-fanout-comparison-lab.md).
 The lab is the *plumbing* (one stream → many backends via Rotel); this playground
 is the *payload* — a realistic polyglot app instrumented to the maximum so every
