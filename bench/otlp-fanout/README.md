@@ -18,10 +18,12 @@ emitters ─► localhost:4317 (Rotel) ─┬─► openobserve:5081        (com
 
 ## Status
 
-- ✅ **Core (Rotel + OpenObserve)** — implemented and verified: a trace POSTed to
-  Rotel's OTLP/HTTP endpoint fans out and lands in OpenObserve (stream + WAL
-  write confirmed). The Parallax exporter targets the host; it simply retries
-  until Parallax is up (a down sink never blocks the others).
+- ✅ **Core (Rotel + OpenObserve)** — implemented and **verified end-to-end**: the
+  telemetry-playground's four Rust services emit OTLP → Rotel fans out →
+  OpenObserve, and a search returns the multi-service trace by service:
+  `checkout=25, pricing=5, inventory=5, recommendation=5` spans. The Parallax
+  exporter targets the host; it simply retries until Parallax is up (a down sink
+  never blocks the others).
 - 🟡 **SigNoz** — overlay `compose.signoz.yml` (vendored clone via
   `setup-vendor.sh`); verify port-override + network at run.
 - 🟡 **Maple** — overlay `compose.maple.yml` builds the chDB local binary from
