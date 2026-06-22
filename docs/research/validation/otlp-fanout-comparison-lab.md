@@ -238,15 +238,10 @@ where telemetry goes. Resolution precedence (highest wins):
    `lab.env` (or `docker compose ... config` helper) printing the exact
    `export PARALLAX_OTLP_FORWARD=http://localhost:4317` line to `source`, so the
    endpoint comes straight from the compose, not memory.
-3. **Config file** — `~/.parallax/config.toml` (**proposed keys — part of the
-   unbuilt forward feature, not yet in `config.rs`**):
-   ```toml
-   [run]
-   otlp_forward = "http://localhost:4317"   # or "rotel"
-   [lab]
-   rotel_endpoint = "http://localhost:4317" # what "rotel"/"1" resolves to
-   ```
-   Persistent across shells; the durable "this machine is a comparison rig" setting.
+3. **Config file** — `~/.parallax/config.toml` `[run].otlp_forward` /
+   `[lab].rotel_endpoint`. **DEFERRED (operator, 2026-06-23): v1 ships env + flag
+   ONLY** — no new `config.rs` section yet; add the config-file surface later if
+   the ambient env proves insufficient.
 4. **Respect a pre-existing child OTel endpoint** — if the environment `run start`
    inherits *already* has `OTEL_EXPORTER_OTLP_ENDPOINT` set, **don't clobber it**.
    This is the idiomatic OTel escape hatch: `export
@@ -434,11 +429,10 @@ is a Tinybird/compose-build concern, not used here), so no Maple header is neede
    (UI `:4000`).
 1. `docker compose up` the lab (Rotel hub + Maple + SigNoz + OpenObserve;
    Parallax already up on the host; Sentry behind `--profile sentry`).
-2. `parallax run start -- <demo-app>` (child telemetry → `127.0.0.1:4317` = Rotel
-   today; with the future `--otlp-forward`, any Rotel endpoint), or point any OTel
-   SDK at `localhost:4317`. Optionally a scripted load generator emitting a fixed,
-   versioned fixture set (reuse the OTLP conformance fixtures in
-   [`otlp.md`](../capture/otlp.md)).
+2. Emit telemetry into Rotel (`localhost:4317`). **Interim payload (operator,
+   2026-06-23): OTel `telemetrygen`** — synthetic traces/metrics/logs, zero app to
+   build, lights up all backends immediately. Later: `parallax run start
+   --otlp-forward rotel -- <demo-app>`, or the full playground (separate repo).
 3. Open all five UIs — Parallax `localhost:4000` (host) + Maple `:8081`, SigNoz
    `:3301`, OpenObserve `:5080`, Sentry `:9000` (Compose).
 4. For the *same* trace/error/log, **manually** open each backend's UI and
