@@ -480,6 +480,19 @@ Every read command supports `--format table|json|md` (default `table` on TTY, `j
 piped). `issue context` defaults to `md` (agent-facing). Exit codes: 0 ok, 1 error, 2 not-found.
 `run start -- <cmd>` propagates the child's exit code.
 
+**`run start` OTLP forwarding (compare mode).** `run start` injects the full
+standard OTel env (`OTEL_EXPORTER_OTLP_*` for all signals + protocols) plus
+`OTEL_RESOURCE_ATTRIBUTES=parallax.run.id=<id>` into the child. The destination is
+resolved: `--otlp-forward <url|rotel|off>` flag > `PARALLAX_OTLP_FORWARD` env >
+a pre-existing `OTEL_EXPORTER_OTLP_ENDPOINT` (respected, not clobbered) > the
+Parallax default `http://127.0.0.1:4317`. When forwarding (compare mode) the
+injected resource attrs also carry `parallax.lab=1` +
+`deployment.environment.name` (from `PARALLAX_ENV`, default `lab`) for cross-tool
+alignment; the OTLP protocol follows the endpoint port (`:4318`→http, else grpc).
+`--print-env` prints the env block and exits (dry-run). Config-file surface
+(`[run].otlp_forward`) is deferred — v1 is env + flag only. This is the lab hook
+in [`otlp-fanout-comparison-lab.md`](../validation/otlp-fanout-comparison-lab.md).
+
 ## 11. GreptimeDB supervision contract
 
 1. Resolve binary: `storage.mode=managed` → look in `<data_dir>/bin/greptime`, then `$PATH`;
