@@ -25,7 +25,7 @@ Two hard requirements shape everything:
 
 1. **Maximum fidelity.** Distributed traces, logs, metrics, exemplars, span
    links, exceptions with stack traces, profiles, RUM/web-vitals, session replay,
-   issue grouping, source maps, feature-flag context, agent/LLM spans — exercise
+   issue grouping, source maps, feature-flag context — exercise
    the whole menu.
 2. **Only our stack.** Nothing outside the locked list. Within it, latest stable
    versions and current best-practice setup.
@@ -81,7 +81,7 @@ language" approach — the operator wants distinct services. We copy its
 | **Frontend** | TypeScript + **TanStack Start** (React, Vite/Nitro) | OTel Web SDK + `@sentry/tanstackstart-react` |
 | **Backend (Rust)** | **Rust + Axum** (HTTP) + **tonic** (gRPC) services | `tracing` + `tracing-opentelemetry` + `opentelemetry-otlp` + `sentry` + `sentry-opentelemetry` |
 | **Backend (Java)** | **Spring Boot + GraphQL** and **Spring Boot + gRPC** services | OTel Java agent via **`sentry-opentelemetry-agent`** + Sentry Spring Boot starter |
-| **Client / driver** | **Rust CLI** (traffic driver, flag toggler, cron job, agent/MCP entry) | Rust stack, tuned for short-lived processes |
+| **Client / driver** | **Rust CLI** (traffic driver, flag toggler, cron job) | Rust stack, tuned for short-lived processes |
 | **Edges** | Postgres (DB spans), a message broker (producer/consumer spans + links), an OpenFeature flag daemon, a load generator | auto-instrumented per language |
 
 ## 4. Core principle: two ingest paths, run in parallel
@@ -137,8 +137,7 @@ Boutique). Distinct services; language chosen by what each best demonstrates.
    │                                        │  ├─ gRPC ─► inventory    (Rust tonic)   DB-heavy, N+1, pool contention
    │  GraphQL (browser→catalog)             │  ├─ GraphQL ─► catalog   (Java Spring GraphQL)  resolvers, subs
    │                                        │  ├─ gRPC ─► payment      (Java Spring gRPC)  JVM GC/CPU, failures
-   │  SSE/WebSocket (order status) ◄────────┤  ├─ HTTP ─► recommendation (Rust axum)  cache-leak
-   │                                        │  └─ HTTP ─► assistant    (Java Spring)  gen_ai.* + MCP tool spans
+   │  SSE/WebSocket (order status) ◄────────┤  └─ HTTP ─► recommendation (Rust axum)  cache-leak
    │                                        │
    │                                        └─ publish ─► broker (Kafka/NATS)
    │                                                          │ consume (span link)
@@ -148,7 +147,7 @@ Boutique). Distinct services; language chosen by what each best demonstrates.
    │
   flagd (OpenFeature daemon) + flag UI       loadgen (k6 / telemetrygen)
   cli (Rust, short-lived) ──HTTP──► checkout   drives traffic, toggles flags, runs cron job,
-                                               stamps parallax.run.id, drives the agent/MCP scenario
+                                               stamps parallax.run.id
   Postgres (per service)   ← DB spans everywhere
 ```
 
@@ -163,16 +162,15 @@ Boutique). Distinct services; language chosen by what each best demonstrates.
 | `catalog` | Java Spring **GraphQL** | GraphQL server (queries + **subscription**) | per-resolver/data-fetcher spans, DataLoader/N+1, GraphQL partial errors, subscription long-lived spans | resolver error, N+1 storm |
 | `payment` | Java Spring **gRPC** | gRPC server | Java gRPC server spans, JVM runtime metrics, **exemplars** (Micrometer) | **GC pauses**, high CPU, hard failure, unreachable |
 | `recommendation` | Rust axum | HTTP server, calls `catalog` | cache-backed reads | **cache leak** (exponential per-request), stampede |
-| `assistant` | Java Spring | HTTP server; LLM + **MCP** client | **`gen_ai.*` spans + token metrics**, **MCP tool-call spans** (Parallax-on-thesis) | LLM rate-limit, inaccurate response |
 | `fulfillment` | Java Spring | broker consumer; HTTP client | **CONSUMER** span + **span link** to producer; cross-language async branch | **poison message** (repeated redelivery), consumer lag |
 | `notifications` | Rust axum | HTTP server (called by Java `fulfillment`) | **reverse Java→Rust** propagation, HTTP leaf | timeout, 5xx |
 | `flagd` | OpenFeature daemon (+UI) | gRPC | feature-flag evaluation as the chaos toggle mechanism | — (the control plane) |
 | `loadgen` | k6 / `telemetrygen` | OTLP + HTTP | reproducible volume, synthetic OTLP | traffic flood |
-| `cli` | Rust (short-lived) | HTTP client | short-lived process telemetry, flush-on-exit, `process.*`, **`parallax.run.id`** stamping, cron job, agent/MCP entry | stuck/missed cron, nonzero exit |
+| `cli` | Rust (short-lived) | HTTP client | short-lived process telemetry, flush-on-exit, `process.*`, **`parallax.run.id`** stamping, cron job | stuck/missed cron, nonzero exit |
 
 This shape gives every span kind, both call directions (incl. **Java→Rust** via
 `fulfillment → notifications`), GraphQL + gRPC (unary **and** streaming) + HTTP +
-messaging + DB, an LLM/MCP branch, and a flag-driven chaos control plane.
+messaging + DB, and a flag-driven chaos control plane.
 
 ## 6. Cross-language distributed tracing
 
@@ -193,7 +191,6 @@ maturity.)
 | checkout → catalog | HTTP headers (GraphQL) | reqwest `HeaderInjector` | OTel Java agent | Rust→Java GraphQL |
 | checkout → broker → fulfillment | message headers | producer injects | consumer extracts + **span link** | async; cross-language |
 | **fulfillment → notifications** | HTTP headers | OTel Java agent | axum middleware | **reverse Java→Rust hop** |
-| assistant → LLM/MCP | HTTP / MCP | `gen_ai`/`mcp` instrumentation | — | model + tool-call spans |
 | cli → checkout | HTTP headers | reqwest injector | axum middleware | short-lived root; carries `parallax.run.id` (resource attr) |
 
 **Sentry interop:** all SDKs share one `trace_id` with OTLP — but note Sentry's
@@ -216,13 +213,7 @@ review against the thesis, evidence-bundle schema, run-id, and redaction notes):
    traces into one run? This is where Parallax should win and competitors show
    nothing. See [run-id standardization](../capture/run-id-standardization.md) +
    [agent/CLI tracing](../capture/agent-cli-tracing.md).
-2. **Agent / MCP / `gen_ai.*` telemetry.** The `assistant` service (and a CLI
-   agent driver) emit `gen_ai.*` model-call spans + token-usage metrics and
-   **MCP tool-call spans** (`mcp.method.name`, `mcp.session.id`,
-   `mcp.protocol.version`). This is the only scenario that tests whether a backend
-   renders an *agent's execution as evidence* — Parallax's core claim. (GenAI/MCP
-   semconv is **Development** stability.)
-3. **Evidence-bundle inputs (deploy / commit / CI / work-item).** Parallax's
+2. **Evidence-bundle inputs (deploy / commit / CI / work-item).** Parallax's
    product is a cross-source evidence graph ("error rate increased after release
    X"). The playground must emit not just live OTLP but **deploy/release markers,
    a commit sha, a CI run id, and a work-item ref**, and run a
@@ -230,7 +221,7 @@ review against the thesis, evidence-bundle schema, run-id, and redaction notes):
    `deploy_precedes_regression` becomes testable. Without this, the playground
    shows telemetry but cannot exercise Parallax's actual differentiator. See
    [evidence-bundle schema](../architecture/evidence-bundle-schema.md).
-4. **Seeded-canary redaction.** Not one PII field — a **canary corpus** (provider
+3. **Seeded-canary redaction.** Not one PII field — a **canary corpus** (provider
    tokens, private keys, DB URLs, JWTs, cookies, auth headers, emails, phones,
    IPs, payment-like numbers) planted across **span attributes, log bodies,
    exception messages, `db.query.text`, baggage, and the GraphQL document**, then
@@ -329,10 +320,10 @@ inline.
   **`parallax.run.id`** as a resource attribute; prefer a simple/synchronous
   exporter (or batch + guaranteed flush); **force-flush providers before exit**
   (call shutdown off the current-thread runtime to avoid the known deadlock);
-  hold the Sentry guard for the whole program. Also drives flag toggles, the cron
-  job (probabilistic success/fail/stuck), and the agent/MCP scenario.
+  hold the Sentry guard for the whole program. Also drives flag toggles and the
+  cron job (probabilistic success/fail/stuck).
 
-### Java — Spring Boot + GraphQL (`catalog`) and Spring Boot + gRPC (`payment`, `assistant`, `fulfillment`)
+### Java — Spring Boot + GraphQL (`catalog`) and Spring Boot + gRPC (`payment`, `fulfillment`)
 
 - **Spring Boot 4 GA** (4.1.x current in 2026; 3.x is maintenance). **One agent
   for both OTel and Sentry:** run **`io.sentry:sentry-opentelemetry-agent`** 8.44.x
@@ -371,8 +362,6 @@ inline.
   on the JVM (not JFR, not OTLP profiles).
 - **Resource:** `service.name` from `spring.application.name`,
   `deployment.environment.name`, `service.namespace/version/instance.id`.
-- **`assistant`:** emits `gen_ai.*` + MCP spans (set
-  `OTEL_SEMCONV_STABILITY_OPT_IN` for genai where needed).
 
 ## 9. Telemetry feature-coverage checklist
 
@@ -405,14 +394,14 @@ stability corrected per deep review):
   + `deployment.environment.name` (**Stable**); HTTP, general/network,
   **`db.system.name`/`db.query.text` (now Stable)**, **`code.*` (now Stable)** —
   exercise as stable; RPC/gRPC (**RC**); messaging, GraphQL, user/session,
-  feature-flag, GenAI/MCP (**Development**) — exercise on purpose to test how each
+  feature-flag (**Development**) — exercise on purpose to test how each
   backend handles non-frozen names. **Record the semconv version per run** so
   attribute-rename diffs are attributable to backend behavior vs semconv drift.
 - **Feature flags [Development]:** `feature_flag.*` evaluation events
   (OpenFeature OTel hooks) + Sentry OpenFeature integration — annotate traces +
   errors with active variants.
-- **Parallax-specific:** `parallax.run.id` resource attr; `gen_ai.*`/`mcp.*`
-  spans; deploy/release/commit/CI/work-item markers; seeded canary corpus.
+- **Parallax-specific:** `parallax.run.id` resource attr;
+  deploy/release/commit/CI/work-item markers; seeded canary corpus.
 
 ## 10. Feature flags + load generation (the control plane)
 
@@ -448,7 +437,6 @@ Parallax — that's expected, and flagged).
 | A8 | High request volume (`loadgen`) | Counter / Histogram / UpDownCounter; cardinality-limit overflow | Y |
 | A9 | Structured logging during a request | OTLP logs + severity + trace correlation; ECS/Logstash format on JVM | Y |
 | A10 | Baggage business context | W3C baggage (`tenant.id`,`user.tier`) surfaced downstream | Y |
-| A11 | **Agent/LLM + MCP run** (`assistant`, cli-driven) | `gen_ai.*` model spans + token metrics, **MCP tool-call spans**, agent-session-shaped trace | Y (on-thesis) |
 | A12 | **CLI run** end-to-end | short-lived process telemetry, `process.*`, flush-on-exit, **`parallax.run.id`** resource attr tying N traces into one run | Y (Parallax-distinguishing) |
 | A13 | **Deploy + regression** (release v1 clean → v2 introduces a panic) | deploy/release marker + commit sha + CI run id + work-item ref; `deploy_precedes_regression` | Y (evidence-bundle test) |
 | A14 | Feature-flag evaluation | `feature_flag.*` events on traces + Sentry flag context | Y (OTLP) + Sentry |
@@ -474,48 +462,23 @@ Parallax — that's expected, and flagged).
 | B11 | Injected latency knob (`*ServiceDelay`) | latency histograms, slow spans | Y |
 | B12 | **Canary/version failure** (`canaryFailure`) | release-health, regression-after-deploy | Y + Sentry release health |
 | B13 | Slow asset / endpoint (proxy fault) | frontend slowness, resource-timing spans | Y |
-| B14 | LLM faults (`llmRateLimit`, `llmInaccurate`) | `gen_ai.*` error spans, token metrics | Y (on-thesis) |
 | B15 | Frontend UX faults (rage-click, frustration) | RUM signals, session replay | Sentry/RUM backends |
 | B16 | Loadgen flood / traffic spike | volume metrics, sampling behavior under load | Y |
 | B17 | Cron/scheduled-job faults (success 90% / fail 5% / **stuck-missed-checkin** 5%) | CLI cron telemetry, missed-checkin | Y (Parallax cli) |
 | B18 | **Clock skew** between two services | negative/overlapping span timing — tests how each backend handles it | Y (rendering stress) |
 
-## 12. Comparison methodology + scoring rubric
+## 12. Comparison method — manual for now (scored harness DEFERRED)
 
-The central deliverable is a *defensible* cross-backend comparison, not "open five
-UIs." Required (closes the methodology gap from the review):
+**Out of scope for the build (operator, 2026-06-23): no automated comparison
+harness / scoring rubric / per-backend extraction yet.** Comparison is **manual**:
+emit a scenario, open each backend's UI, and eyeball how it renders the same data.
+That is enough to decide what features to build into Parallax.
 
-- **Deterministic input.** Pin trace/span ids + timestamps from a fixture
-  generator (reuse the otlp.md conformance fixtures); fixed seeds. Reproducible
-  re-runs are mandatory for a diff to mean anything.
-- **Per-signal scoring rubric.** For each signal, a canonical field set and a
-  scored scale **preserved / renamed / dropped / mangled**:
-
-| Signal | Canonical fields to score |
-|---|---|
-| Span | name, kind, status, parent linkage, start/end, attributes (semconv + custom) |
-| Span links | all N links present + navigable |
-| Span events | name, timestamp, attributes |
-| Exception | type, message, stacktrace frames, `error.type` |
-| Logs | severity (number+text), body, trace/span id correlation |
-| Metrics | instrument type, name, unit, attributes (stream identity), buckets |
-| Exemplars | metric bucket → trace jump works |
-| Resource | `service.*`, `deployment.environment.name`, **`parallax.run.id`** grouping |
-| Distributed | one trace_id across all hops incl. reverse + async |
-| Redaction | each canary class: raw / scrubbed |
-
-- **Extraction per backend** (read APIs): Parallax GraphQL (`:4000`), Maple
-  GraphQL (~`:3472`, verify), SigNoz query/ClickHouse SQL, OpenObserve REST
-  search (`:5080`), Sentry events/issues API. A "missing" field may be *renamed*,
-  not dropped — score accordingly.
-- **Assert the Parallax copy landed.** Every scenario must verify the Parallax
-  sink received its copy (the lab's one fragile host-bridge hop —
-  `host.docker.internal:14317`), not just "a backend."
-- **Record `semconv_version` / SDK distro** per run so rename diffs are
-  attributable to backend vs semconv drift.
-- This is **behavioral** evidence; it is **not** the otlp.md L4 conformance gate
-  (which needs hash-disciplined normalized-row/bundle/projection equality). The
-  playground feeds L4; it doesn't satisfy it.
+A future scored harness (per-signal rubric of preserved/renamed/dropped/mangled,
+per-backend read-API extraction, pinned-id fixtures, recorded `semconv_version`)
+can be added later if we want a defensible quantitative comparison — but it is
+**not** part of what we build now, and it is distinct from otlp.md's L4
+conformance gate.
 
 ## 13. Extensions / forward-looking
 
@@ -545,12 +508,11 @@ Real, current 2026 additions worth building once the core works:
 
 ## 14. Repository layout, location, and lab integration
 
-**Location decision (operator to confirm): a separate repository
-`tailrocks/parallax-telemetry-playground`** (Apache-2.0, Tailrocks-attributed).
-Rationale: it's a polyglot app (Gradle/Maven + Cargo + Bun) whose toolchains
-should not bloat the Parallax workspace, and it's a demo/comparison artifact, not
-product code. Fallback: `bench/telemetry-playground/` (the lab already lives in
-`bench/`); if chosen, add it to `PROJECT_STRUCTURE.md` in the same change.
+**Location (DECIDED, operator 2026-06-23): a separate repository
+`tailrocks/parallax-telemetry-playground`** (Apache-2.0, Tailrocks-attributed),
+**full build** (all services per the spec, not a thin slice). Rationale: polyglot
+toolchains (Gradle/Maven + Cargo + Bun) should not bloat the Parallax workspace,
+and it's a demo artifact, not product code.
 
 ```
 parallax-telemetry-playground/
@@ -563,18 +525,16 @@ parallax-telemetry-playground/
     notifications/     # Rust axum (reverse hop target)
     catalog/           # Spring Boot + GraphQL (Java)
     payment/           # Spring Boot + gRPC (Java)
-    assistant/         # Spring Boot (Java) — gen_ai + MCP
     fulfillment/       # Spring Boot consumer (Java)
-  cli/                 # Rust CLI (driver, cron, run.id, agent entry)
+  cli/                 # Rust CLI (driver, cron, run.id)
   proto/               # shared .proto (pricing/inventory/payment)
   graphql/             # shared GraphQL schema (catalog)
   flags/               # flagd config + flag UI
   loadgen/             # k6 / telemetrygen
   deploy/
     docker-compose.yml # all services + Postgres + broker + flagd; OTLP → Rotel
-    otel/              # shared resource attrs, sampling, collector OTTL/redaction
-  scenarios/           # scripts driving A1–A18 + B1–B18 with pinned ids
-  fixtures/            # pinned OTLP conformance fixtures (shared w/ otlp.md)
+    otel/              # shared resource attrs, sampling
+  scenarios/           # scripts driving A1–A18 + B1–B18
   releases/            # v1 clean, v2 regressed (for A13/B12 regression track)
   README.md
 ```
@@ -607,8 +567,8 @@ parallax-telemetry-playground/
 - **Bun OTel gaps** (TS server tier): manual spans, disable `instrumentation-fs`,
   profiling native addon won't load on Bun.
 - **Beta/alpha surfaces:** `@sentry/tanstackstart-react` (beta), OTel profiling
-  (alpha), GenAI/MCP + feature-flag + messaging + GraphQL semconv (Development),
-  eBPF OBI (pre-1.0). Pin and mark.
+  (alpha), feature-flag + messaging + GraphQL semconv (Development), eBPF OBI
+  (pre-1.0). Pin and mark.
 - **Version churn:** OTel Rust 0.32 / tracing-opentelemetry 0.33 / sentry-rust
   0.48.2 / OTel JS 2.8+0.219 / Sentry JS v10 / OTel Java agent 2.29 / Sentry Java
   8.44 / Spring Boot 4.1 / Spring gRPC 1.1 are **floors** — resolve latest
@@ -629,11 +589,11 @@ parallax-telemetry-playground/
 3. **Async + reverse + errors** — broker (`checkout`→`fulfillment`→`notifications`,
    reverse hop), span links, deliberate failures both languages, Sentry issues +
    source context; A3–A4, A15–A16, B1–B11.
-4. **Parallax-differentiators** — `parallax.run.id` (A12), agent/MCP (A11),
-   deploy+regression (A13), canary redaction (A18); the scoring rubric + extraction.
-5. **Flags, load, full chaos, full fan-out** — flagd + loadgen, all five backends
-   up, run A1–A18 + B1–B18, produce the cross-backend comparison table feeding the
-   market matrices.
+4. **Parallax-differentiators** — `parallax.run.id` (A12), deploy+regression
+   (A13), canary redaction (A18).
+5. **Flags, load, full chaos, full fan-out** — flagd + loadgen, all backends up,
+   run the scenario catalog; compare **manually** in each UI (no scored harness —
+   §12).
 
 ## 17. Sources
 
@@ -662,7 +622,6 @@ parallax-telemetry-playground/
 - Cross-cutting: [semantic conventions](https://opentelemetry.io/docs/concepts/semantic-conventions/) ·
   [span-event deprecation](https://opentelemetry.io/blog/2026/deprecating-span-events/) ·
   [OTel Profiles alpha](https://opentelemetry.io/blog/2026/profiles-alpha/) ·
-  [GenAI/MCP semconv](https://github.com/open-telemetry/semantic-conventions-genai) ·
   [eBPF OBI](https://opentelemetry.io/docs/zero-code/obi/) ·
   [feature-flag semconv](https://opentelemetry.io/docs/specs/semconv/feature-flags/) ·
   [W3C Trace Context](https://www.w3.org/TR/trace-context/) ·

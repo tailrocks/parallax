@@ -441,37 +441,22 @@ is a Tinybird/compose-build concern, not used here), so no Maple header is neede
    [`otlp.md`](../capture/otlp.md)).
 3. Open all five UIs — Parallax `localhost:4000` (host) + Maple `:8081`, SigNoz
    `:3301`, OpenObserve `:5080`, Sentry `:9000` (Compose).
-4. For the *same* trace/error/log, record per backend: what fields survived, how
-   errors were grouped, trace waterfall fidelity, log↔trace correlation, metrics
-   rollups, query ergonomics, and MCP/agent surface (Maple & Parallax). See the
-   extraction spec below — "field survival" must be defined per backend because
-   each renames/normalizes differently.
-5. Feed findings back into the market matrices
+4. For the *same* trace/error/log, **manually** open each backend's UI and
+   eyeball: what fields survived, how errors were grouped, trace waterfall
+   fidelity, log↔trace correlation, metrics rollups, query ergonomics, MCP/agent
+   surface (Maple & Parallax). A field that looks "missing" may be *renamed*, not
+   dropped.
+5. Feed observations back into the market matrices
    ([competitive-comparison-matrix.md](../market/competitive-comparison-matrix.md),
    [observability-feature-matrix.md](../market/observability-feature-matrix.md))
    and into Parallax capture/UI work.
 
-### Per-backend extraction (phase 4 must specify this)
-
-The "same trace across all UIs" diff is not free: the five backends expose
-different read APIs and normalize fields differently (e.g. GreptimeDB renames
-metric labels; Sentry maps OTel → its own model). A field that is "missing" may
-be *renamed*, not *dropped*. The harness must define, per backend, how to fetch a
-known `trace_id` and which canonical field set to compare:
-
-| Backend | Read API for a known trace_id | Normalization to watch |
-|---|---|---|
-| Parallax | GraphQL (`:4000`) | GreptimeDB column/label renames |
-| Maple | GraphQL API (~`:3472`, verify) | Tinybird/ClickHouse schema |
-| SigNoz | query API / ClickHouse SQL | OTel→ClickHouse span schema |
-| OpenObserve | REST search API (`:5080`) | stream-mapped fields |
-| Sentry | events/issues API | OTel→Sentry event model (lossy by design) |
-
-This lab produces **behavioral** evidence (what each tool keeps/shows). It is
-**not** the same as the OTLP conformance gate: otlp.md's L4 "Rotel equivalence"
-requires hash-disciplined normalized-row/bundle/projection equality from a pinned
-fixture set. The lab *shares fixtures and exercises the Rotel hop* and so feeds
-L4, but does not by itself advance the conformance ledger past `not_measured`.
+> **Scored comparison harness is DEFERRED** (operator, 2026-06-23) — no automated
+> per-backend extraction / scoring rubric / pinned-id diffing as part of this
+> build. Comparison is **manual** (open the UIs). A future harness (per-backend
+> read APIs, preserved/renamed/dropped scoring, recorded `semconv_version`) can be
+> added if we want quantitative results; it is distinct from otlp.md's L4
+> conformance gate.
 
 ## Sentry OTLP — how it actually works (verified 2026-06-22)
 
@@ -546,11 +531,14 @@ Sentry speaks OTLP; the lab treats it as a near-first-class target.
 2. **Core lab** — add SigNoz + OpenObserve in Compose (with `include:` port
    overrides + auth headers). Lock the port map; build the `parallax run start`
    compare-mode forward (the `--otlp-forward`/`PARALLAX_OTLP_FORWARD` switch).
-3. **Full lab** — add Sentry as its own stack joined to Rotel's network; resolve
-   feature flags + path version.
-4. **Fixture + diff harness** — versioned OTLP fixtures + per-backend extraction
-   (table above) tabulating field survival → feeds the market matrices.
-5. **Server tier** — move the full set to a server for sustained runs.
+3. **Full lab (Sentry, DEFERRED to this phase)** — add self-hosted Sentry as its
+   own stack joined to Rotel's network; bootstrap project/DSN, resolve feature
+   flags + path version. Sentry is the heaviest/fiddliest piece, so phases 1–2
+   stand up without it.
+4. **Server tier** — move the full set to a server for sustained runs.
+
+*(A scored fixture/diff harness is out of scope for now — comparison is manual,
+see §Comparison workflow.)*
 
 ## Sources
 
