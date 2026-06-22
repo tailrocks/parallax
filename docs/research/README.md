@@ -109,6 +109,10 @@ This directory is the research record behind Parallax. It is organized so a read
 - [alternatives-deep-analysis.md](market/alternatives-deep-analysis.md) — balanced skeptical analysis: 60+ alternatives surveyed, arguments FOR and AGAINST Parallax, empirical gates, and kill criteria.
 - [competitive-comparison-matrix.md](market/competitive-comparison-matrix.md) — quick-reference matrix of all competitors against Parallax's 8 wedge dimensions.
 - [agent-debugging-competitor-drift-2026-06-02.md](market/agent-debugging-competitor-drift-2026-06-02.md) — focused recheck of Syncause, AgentRx, Notrix Trax, AgentReplay, and OpenTelemetry MCP/replay/crash semantic-convention drift.
+- [maple-deep-research.md](market/maple-deep-research.md) — standalone deep-dive: Maple (maple.dev), FSL-1.1, OTLP-only, single-binary local mode, 10+ MCP tools.
+- [signoz-deep-research.md](market/signoz-deep-research.md) — standalone deep-dive: SigNoz, MIT-Expat core + Apache-2.0 MCP, ClickHouse, OTel-native (no Sentry path, no portable evidence schema), ~5-container local stack.
+- [openobserve-deep-research.md](market/openobserve-deep-research.md) — standalone deep-dive: OpenObserve, Rust + Parquet/DataFusion, single-binary local, OTLP-native, Enterprise-gated AI SRE/RCA + 140+-tool MCP, 10/50/200 GB-day free-tier conflict resolved.
+- [gonzo-deep-research.md](market/gonzo-deep-research.md) — standalone deep-dive: Gonzo (control-theory), MIT Go log-tail TUI, OTLP **logs-only** receiver, optional local AI — a viewer not a backend; MCP is the commercial Dstl8, not OSS Gonzo.
 
 ### `reference/`
 - [agent-observability-review.md](reference/agent-observability-review.md) — technical review of current agent-observability tools and the Parallax-specific gap.
