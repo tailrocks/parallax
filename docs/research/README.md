@@ -113,6 +113,9 @@ This directory is the research record behind Parallax. It is organized so a read
 - [signoz-deep-research.md](market/signoz-deep-research.md) — standalone deep-dive: SigNoz, MIT-Expat core + Apache-2.0 MCP, ClickHouse, OTel-native (no Sentry path, no portable evidence schema), ~5-container local stack.
 - [openobserve-deep-research.md](market/openobserve-deep-research.md) — standalone deep-dive: OpenObserve, Rust + Parquet/DataFusion, single-binary local, OTLP-native, Enterprise-gated AI SRE/RCA + 140+-tool MCP, 10/50/200 GB-day free-tier conflict resolved.
 - [gonzo-deep-research.md](market/gonzo-deep-research.md) — standalone deep-dive: Gonzo (control-theory), MIT Go log-tail TUI, OTLP **logs-only** receiver, optional local AI — a viewer not a backend; MCP is the commercial Dstl8, not OSS Gonzo.
+- [sentry-deep-research.md](market/sentry-deep-research.md) — standalone deep-dive: Sentry, the envelope incumbent Parallax interoperates with; OTLP support = beta HTTP-only traces+logs (no metrics); local run = ~20–40-container self-hosted stack vs Spotlight dev overlay; FSL, Relay/Kafka/Snuba, Seer + official MCP.
+- [coroot-deep-research.md](market/coroot-deep-research.md) — standalone deep-dive: Coroot, Apache-2.0 eBPF zero-instrumentation obs + 2-stage AI RCA; OTLP/HTTP + Prometheus, ~5-container local, safest MCP (OAuth+RBAC, 18 tools); refreshes stale ledger facts (v1.22.2 / Claude Opus 4.6).
+- [observability-feature-matrix.md](market/observability-feature-matrix.md) — **cross-tool feature matrix**: Parallax vs Maple, SigNoz, OpenObserve, Coroot, Sentry, Gonzo, feature-by-feature (ingest, signals, error workflow, local-run, AI/MCP, evidence/safety/outcomes, extras). Complements the wedge-axis comparison matrix.
 
 ### `reference/`
 - [agent-observability-review.md](reference/agent-observability-review.md) — technical review of current agent-observability tools and the Parallax-specific gap.
