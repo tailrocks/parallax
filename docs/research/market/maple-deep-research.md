@@ -20,7 +20,7 @@ Maple is an **open-source, OpenTelemetry-native observability platform** that pr
 - **Metadata:** SQLite / Turso (libSQL)
 - **Auth:** Clerk (cloud) or `self_hosted` mode with root password
 - **Deploy:** Cloudflare Workers + D1 (via Alchemy), Docker Compose (self-host), single binary (local)
-- **Monorepo:** 854 commits, 382 GitHub stars, 25 forks, 9 releases (v0.0.11 latest)
+- **Monorepo:** 854 commits, 382 GitHub stars, 25 forks (v0.0.12 latest, ~2026-06-18)
 - **SDKs:** First-party Effect SDK; standard OTLP for Node.js, Next.js, Python, Go, Rust, Java, C#, Kotlin
 - **MCP tools:** 10+ tools — `system_health`, `find_errors`, `inspect_trace`, `search_logs`, `search_traces`, etc.
 - **Pricing:** Starter $19/mo (50 GB, 14d retention), Startup $39/mo (100 GB + $0.30/GB overage, 30d), Enterprise custom
