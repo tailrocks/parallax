@@ -1,7 +1,13 @@
 # Telemetry Playground — Maximum-Fidelity OTel + Sentry Sample Stack
 
 Research date: 2026-06-23
-Status: design proposal (no code yet)
+Status: **implementation started** — repo created at
+[tailrocks/parallax-telemetry-playground](https://github.com/tailrocks/parallax-telemetry-playground).
+Rust core builds + runs (verified 2026-06-23): `playground-telemetry` (OTel +
+Sentry dual-pipeline), `proto`, `checkout`(axum)→`pricing`(tonic) distributed
+call, plus inventory/recommendation/notifications/cli. Java (catalog GraphQL,
+payment/fulfillment), web (TanStack), flagd, k6, compose, scenarios A1/A12 are
+scaffolded. Comparison is manual; scored harness out of scope.
 Relationship: feeds the [OTLP Fan-Out Comparison Lab](otlp-fanout-comparison-lab.md).
 The lab is the *plumbing* (one stream → many backends via Rotel); this playground
 is the *payload* — a realistic polyglot app instrumented to the maximum so every
