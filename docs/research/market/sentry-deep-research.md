@@ -137,6 +137,30 @@ lifecycle**; Seer autofix + official MCP; broad signal coverage; mature alerting
 standard**. Parallax's planned Sentry-envelope compatibility is the wedge to absorb Sentry's SDK fleet
 while offering OTLP-native + local-first + redaction + outcome tracking on top.
 
+## Backend & Data Flow
+
+See [backend-and-data-flow.md](backend-and-data-flow.md) for the side-by-side. Sentry is a Django monolith +
+Rust ingestion edge (Relay) + ClickHouse analytics (Snuba), the whole pipeline a **Kafka eventstream**:
+
+- **Engines:** searchable event/telemetry → **ClickHouse via Snuba**; relational metadata → **Postgres 14**
+  (+ PgBouncer); cache/quotas/rate-limits → **Redis** (+ Memcached); broker → **Kafka** (dozens of topics);
+  **nodestore** (full raw payload) → Postgres self-host / Bigtable SaaS; profiling → object storage via **Vroom**;
+  symbols → **Symbolicator** (Rust).
+- **Flow:** `SDK gzip envelope ─► /api/<id>/envelope/ ─► RELAY (Rust: validate DSN, normalize, PII-scrub, rate-limit)
+  ─► KAFKA ingest-* ─► consumers (errors→Symbolicator→grouping→nodestore; profiles→Vroom; metrics→metrics consumers)
+  ─► KAFKA eventstream ─► SNUBA CONSUMER (Rust/arroyo) ─batched INSERT─► CLICKHOUSE ─► post-process-forwarder (alerts)`.
+  Read: `Django ─► { Postgres (issues/metadata) | Snuba SnQL/MQL→ClickHouse | nodestore (full body) }`.
+- **Write/read:** Kafka partitioned **by project ID** for ordering; Snuba batches Kafka → big ClickHouse INSERTs
+  (at-least-once, ReplacingMergeTree dedup → eventually consistent). Spans now in the EAP wide-column store
+  (`spans_v3`), claimed up to 62× faster OLAP.
+- **Throughput (vendor):** Relay "hundreds of thousands req/sec" (fleet aggregate); Snuba Rust consumer ~20× vs
+  Python. No ingest-to-queryable SLA — visible lag seconds, grows under backlog.
+- **Footprint:** **the famous heaviness** — official min 4 CPU / 16 GB RAM + 16 GB swap / ≥20 GB disk (32 GB rec.);
+  **~45–50 containers** in self-hosted compose (~23 Snuba services + ~15 consumers + infra + Relay/Symbolicator/Vroom).
+- **Designed for:** high-cardinality multi-signal *application* observability with a smart edge (Relay normalizes/
+  scrubs/quotas at the boundary) + best-in-class error grouping/symbolication. **Not for:** lightweight/single-node —
+  a distributed many-service system assuming horizontal scale + dedicated ops.
+
 ## Comparison: Sentry vs Parallax
 
 | Dimension | Sentry | Parallax |

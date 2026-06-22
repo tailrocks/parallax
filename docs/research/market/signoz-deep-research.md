@@ -184,6 +184,25 @@ This is the sharpest contrast with Maple Local (single Bun binary + chDB) and Op
    not the read-only bounded evidence projection Parallax intends.
 7. **Still pre-1.0**; RBAC/audit logs not yet GA.
 
+## Backend & Data Flow
+
+See [backend-and-data-flow.md](backend-and-data-flow.md) for the side-by-side. SigNoz summary:
+
+- **Engine:** ClickHouse (mandatory) with **ZooKeeper** — note: ClickHouse Keeper is *supported* but the
+  official charts/compose have **not switched** yet (issues signoz#7002, charts#610), so ZooKeeper is the shipped
+  reality. Metadata in **SQLite/Postgres**. **No Kafka in the OSS write path** (SigNoz's Kafka feature is for
+  *monitoring a user's* Kafka, not internal infra). ClickHouse tiered storage → S3 cold tier.
+- **Flow:** `SDKs ─OTLP─► signoz-otel-collector (batch / spanmetrics / logpipeline) ─► ClickHouse (+ZooKeeper)`,
+  split at the exporter into `signoz_logs / signoz_traces / signoz_metrics`; query via the `signoz` binary
+  (builder→CH SQL, PromQL, ruler, alertmanager); OpAMP pushes pipeline config back to the collector.
+- **Write/read:** `resource_fingerprint` in ORDER BY packs same-source rows; per-column codecs (ZSTD/Gorilla/Delta/T64);
+  reads pruned by a **sparse PK index over fingerprint** (log block-scan ~100% → <1%); bloom skip-index kept only on
+  the error table — deliberately sort-key pruning over bloom-heavy log indexing.
+- **Throughput (vendor, 2023 logs-only, ~3 yr stale):** ~55,000 logs/sec; 500 GB → 207.9 GB (~2.4× compression);
+  aggregate query 0.48 s vs Elasticsearch 6.49 s. No current trace/metric numbers.
+- **Designed for:** unified high-cardinality OTLP logs/traces/metrics in one ClickHouse store at moderate scale,
+  self-hosted. **Not for:** single-binary/edge use, best-in-class full-text point lookup, or OSS Kafka backpressure.
+
 ## Comparison: SigNoz vs Parallax
 
 | Dimension | SigNoz | Parallax |

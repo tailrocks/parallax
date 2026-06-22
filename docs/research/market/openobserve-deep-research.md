@@ -54,8 +54,13 @@ architecture.
 ## Architecture
 
 - **Storage:** schema-on-read, **object-storage-native**; all telemetry written as **Apache
-  Parquet**. No inverted indexes — performance from partitioning + lightweight indexing + caching.
-  Ingest path: Memtable → Immutable → local Parquet → object storage, with WAL.
+  Parquet**. Ingest path: WAL + Memtable (Arrow) → Immutable → local Parquet → object storage.
+  - **CORRECTION (2026-06-22):** earlier notes (and the older vendor framing) said "no inverted
+    indexes." That is **outdated** — OpenObserve integrated a **tantivy inverted index** in 2024
+    (PR #4733+); a `.ttv` index file is written alongside each Parquet on object storage and is
+    **enabled by default** (`ZO_ENABLE_INVERTED_INDEX=true`, fields opt-in), plus **bloom filters**
+    for high-cardinality exact-match fields. Performance now = partition pruning + tantivy full-text +
+    bloom skip + DataFusion scan, not full scans.
 - **Query engine:** **Apache DataFusion** (Arrow), querying Parquet directly.
 - **Components:** Router, Ingester, Compactor, Querier (LEADER/WORKER split over gRPC), AlertManager.
 - **Metadata store (mode-dependent):** single-node → **SQLite**; HA/cluster → **PostgreSQL** +
@@ -191,6 +196,25 @@ marketing**, not the binding EULA limit.
 5. **AGPL core** may deter some adopters vs a permissive (Apache-2.0) competitor.
 6. **No outcome loop** — the incident workflow ends at an auto-report, not a verified-outcome /
    accepted-rejected-reverted loop.
+
+## Backend & Data Flow
+
+See [backend-and-data-flow.md](backend-and-data-flow.md) for the side-by-side. OpenObserve summary:
+
+- **Engine:** Apache **Parquet on object storage**, queried via **Apache DataFusion** — all three signals share
+  the substrate (differ only by stream schema). Metadata in **SQLite (single) / Postgres (HA)** incl. the
+  **`file_list`** Parquet catalog. **NATS** coordinator (HA only; etcd deprecated). **Single binary, zero external
+  deps** single-node.
+- **Flow:** `ingest (HTTP/OTLP gRPC) ─► ROUTER ─► INGESTER (parse, VRL, schema evolution): WAL(hourly) + Memtable(Arrow)
+  ─5s─► Parquet ─10s─► OBJECT STORE (Parquet + .ttv) ◄─ COMPACTOR (merge ≤2GB, file_list)`;
+  query: `ROUTER ─► leader QUERIER: file_list → partition prune → fan-out worker QUERIERs → tantivy .ttv + bloom skip → DataFusion scan`.
+- **Write/read:** WAL + Arrow memtable → Immutable at 256 MB → Parquet every 5 s → upload every 10 s → Compactor
+  merges to ≤2 GB. Reads partition-prune by `org/stream/Y/M/D/H` + hash + time, then use **tantivy inverted index**
+  + bloom. (See the inverted-index correction above — it is default-on now.)
+- **Throughput (vendor):** single-node ~1.8 GB/min ≈ 2.6 TB/day (~31 MB/s on M2); largest cited prod 2+ PB/day;
+  "~140×" storage-cost cut vs Elasticsearch; "1 PB scanned in ~2 s". Freshness sub-second–few seconds; durable lag ~10 s.
+- **Designed for:** cheap, high-volume, PB-scale observability where storage cost dominates — object-storage Parquet +
+  DataFusion + opt-in tantivy/bloom, single binary. **Not for:** ultra-low-latency lookups on un-indexed fields.
 
 ## Comparison: OpenObserve vs Parallax
 

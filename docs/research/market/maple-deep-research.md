@@ -275,6 +275,21 @@ Maple's primary interface is a web dashboard. The CLI exists for local mode but 
 - No mention of high-availability, clustering, or multi-region for self-hosted
 - The self-hosting setup is "planned" (Q2 2026 roadmap) — not yet documented
 
+## Backend & Data Flow
+
+See [backend-and-data-flow.md](backend-and-data-flow.md) for the side-by-side. Maple summary
+(all perf figures are vendor claims):
+
+- **Engine:** ClickHouse — **Tinybird-managed** (cloud) / **embedded chDB** (local single binary).
+  Metadata in **libSQL/Turso**. **No broker.**
+- **Flow:** `OTel SDK ─OTLP─► apps/ingest (auth, org enrich) ─► OTel Collector ─► ClickHouse (Tinybird cloud / chDB local)`;
+  query: `apps/web ─► apps/api (Effect, Tinybird proxy) ─► ClickHouse`. Metadata stays off the telemetry path.
+- **Write/read:** no Maple-level WAL — batching/flush/compaction delegated to ClickHouse MergeTree; reads are
+  columnar scans authored as Tinybird Pipes (cloud) / embedded engine (local). No inverted index.
+- **Throughput (vendor):** "12.8B rows in 198 ms" (query latency, not ingest); no published ingest rate or compression.
+- **Designed for:** ClickHouse-grade scan speed without operating ClickHouse + a genuine single-binary local story.
+  **Not for:** self-controlled engine at scale or broker-buffered backpressure — the fast path is coupled to hosted Tinybird.
+
 ## Comparison: Maple vs Parallax
 
 | Dimension | Maple | Parallax |

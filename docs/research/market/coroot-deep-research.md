@@ -124,6 +124,25 @@ Service map / dependency graph ✓ · SLO tracking + alerting ✓ · automatic a
 6. **No coding-agent/CLI action audit** and **no accepted/rejected/reverted fix-outcome loop**.
 7. **Heavier local footprint** — 5-container stack (ClickHouse + Prometheus) vs a single Rust binary.
 
+## Backend & Data Flow
+
+See [backend-and-data-flow.md](backend-and-data-flow.md) for the side-by-side. Coroot summary — it is **not a
+self-contained TSDB**, but an ingest+correlation layer in front of external engines:
+
+- **Engine (per signal):** logs/traces/profiles → **ClickHouse** (`otel_logs`, `otel_traces`, `profiling_*`);
+  metrics → **Prometheus** by default (or VictoriaMetrics/Thanos/Mimir with Remote Write Receiver). Config in
+  **SQLite/Postgres**. **No broker** (agent-side WAL buffers). No object storage in core.
+- **Flow:** agents push to central `coroot:8080`, never to the stores directly —
+  `node-agent (eBPF): metrics ─Prom RemoteWrite─► Prometheus | logs/traces ─OTLP/HTTP─► coroot ─SQL─► ClickHouse | profiles ─HTTP─► ClickHouse`;
+  `cluster-agent` adds DB metrics/schema; apps may also send OTLP straight to `coroot:8080`.
+- **Write/read:** agents buffer in local WAL (survive Coroot outage); metrics→Prometheus head/WAL/blocks;
+  logs/traces/profiles→ClickHouse MergeTree (~10× compression claim, TTL). Reads: metrics via PromQL (largely from
+  local cache), logs/traces/profiles via ClickHouse SQL. Service map / RED metrics computed by Coroot, not a graph DB.
+- **Throughput (vendor):** node-agent at 10k RPS ≈ 200m CPU (~20% of a core); sustained <0.3 cores; eBPF overhead
+  ~+15% vs SDK ~+35–38%.
+- **Designed for:** zero-instrumentation, low-overhead Kubernetes/Linux observability; ClickHouse gives cheap long
+  retention. **Not for:** being its own scalable TSDB/appliance — you operate Prometheus/VM + ClickHouse yourself.
+
 ## Comparison: Coroot vs Parallax
 
 | Dimension | Coroot | Parallax |

@@ -88,6 +88,26 @@ backend (incidents, patterns, anomalies, knowledge graph, MCP server).
   Claude Code plugin/skill.
 - **No Sentry ingestion, no redaction layer.**
 
+## Backend & Data Flow
+
+See [backend-and-data-flow.md](backend-and-data-flow.md) for the side-by-side. Gonzo's defining backend fact:
+**no persistent store — purely in-memory live analysis.**
+
+- **Engine:** in-memory **bounded ring buffer** (default 1,000 entries, `-b/--log-buffer`) + in-memory frequency
+  map (default ~10,000); oldest evicted when full. **No metadata store, no broker, no object storage, nothing
+  written to disk.**
+- **Flow:** `Inputs (stdin | file/glob --follow | Kubernetes | OTLP receiver gRPC :4317 / HTTP :4318, logs only)
+  ─► Parser (auto-detect JSON/logfmt/plaintext + custom YAML) ─► ring buffer ─► Analysis (frequency / severity /
+  Drain3 patterns / attribute discovery) ─► TUI (Bubble Tea) + embedded web "Dstl8 Lite" (~1s refresh)`;
+  optional AI on a selected entry → Anthropic/OpenAI/Ollama/LM Studio.
+- **Write/read:** parse → push to ring buffer → incrementally update frequency/severity/drain3 templates. **No WAL,
+  no flush, no compaction.** No query engine — TUI/web renders live aggregates over the in-memory window; interactive
+  filter/search over the current buffer only, no index/SQL/PromQL.
+- **Throughput:** none published; RAM bounded by design → predictable small footprint, trade-off is zero retention;
+  "real-time" = ~1 s refresh.
+- **Designed for:** interactive, ephemeral live log triage at the terminal. **Not for:** persistence, historical
+  search, long-window correlation, or trace/metric analysis — it deliberately stores nothing.
+
 ## Comparison: Gonzo vs Parallax
 
 | Dimension | Gonzo | Parallax |
