@@ -31,13 +31,14 @@ Rotel can't both own `4317/4318` — so we offset one set of ports.
         HOST (macOS, Homebrew)                 DOCKER COMPOSE (lab stack)
   ┌───────────────────────────┐          ┌──────────────────────────────────┐
   │ parallax (binary)         │          │  ┌──────────┐                     │
-  │  UI    :8080              ◄┼──────────┼──┤  Rotel   │── maple:4318        │
-  │  OTLP  :14317/:14318  ◄────┼─ host.   │  │ fan-out  │── signoz-otelcol:4317│
-  │                           │  docker.  │  │          │── openobserve:5081  │
-  │ host apps / SDKs ─────────┼─►internal─┼─►│ :4317/   │── sentry-web (OTLP) │
-  │ parallax self-telemetry ──┼──────────►┼─►│ :4318    │                     │
-  └───────────────────────────┘  (publish │  └────┬─────┘                     │
-        emit → localhost:4317     to host) │       └─► host.docker.internal:14317 → parallax
+  │  UI    :8080  (browser)   │          │  │  Rotel   │── maple:4318        │
+  │  OTLP  :14317/:14318      │          │  │ fan-out  │── signoz-otelcol:4317│
+  │            ▲              │  host.    │  │          │── openobserve:5081  │
+  │ host apps / SDKs ─────────┼─►docker.──┼─►│ :4317/   │── sentry-web (OTLP) │
+  │ parallax self-telemetry ──┼─internal──┼─►│ :4318    │                     │
+  └────────────┼──────────────┘ (publish  │  └────┬─────┘                     │
+   emit → localhost:4317        to host)   │       └─► host.docker.internal:14317
+               └───────────────────────────────────────────────┘ → parallax OTLP
                                            └──────────────────────────────────┘
 ```
 
@@ -194,17 +195,26 @@ the host (`brew install …` then `parallax serve --otlp-grpc 14317 --otlp-http
 
 | Service | Image / build | Host ports | Profile | Notes |
 |---|---|---|---|---|
-| `rotel` | `rotel-dev/rotel` (pin tag) | `4317`, `4318` | default | the only published OTLP ports; config via `rotel.env`; needs `extra_hosts` on Linux to reach host Parallax |
+| `rotel` | `streamfold/rotel` (Docker Hub, pin tag) | `4317`, `4318` | default | the only published OTLP ports; config via `rotel.env`; needs `extra_hosts` on Linux to reach host Parallax |
 | `maple` | Maple self-host image **or** single Bun binary container | `8081` | default | OTLP `4318` internal; chDB/ClickHouse volume |
-| `signoz` | SigNoz stack (clickhouse + query-service + otel-collector + frontend) | `3301` | default | its collector OTLP `4317/4318` internal; pull SigNoz's own compose via `include:` |
-| `openobserve` | `openobserve/openobserve` (pin tag) | `5080` | default | OTLP `5081` gRPC / `5080` HTTP internal; data volume; set root user/pass env |
-| `sentry-*` | `getsentry/self-hosted` (many services) | `9000` (web) | `sentry` | huge; vendor via `include:` + profile; pin version ≥ native-OTLP release |
+| `signoz` | SigNoz stack (clickhouse + signoz/query + otel-collector) | `3301` | default | `include:` SigNoz's compose, then **override to unpublish its host `4317/4318`** (see Hard rule); collector reached internally. Service/collector names drift by version (recent single-`signoz`-binary rework) — verify |
+| `openobserve` | `openobserve/openobserve` (pin tag) | `5080` | default | OTLP `5081` gRPC internal; data volume; set root user/pass env. **Ingest needs auth headers** (see `rotel.env`) |
+| `sentry-*` | `getsentry/self-hosted` (many services) | `9000` (web) | `sentry` | **not a clean `include:` target** — it's an `install.sh` that generates configs across ~20 containers. Run as its own stack + join Rotel to its network, or wire bespoke. Pin version ≥ native-OTLP (`~25.8.0`) |
+| `loadgen` | small OTel SDK / telemetrygen container | — | `loadgen` | optional fixed-fixture emitter → `rotel:4317`; pins trace/span ids for cross-UI diffing |
 
 Hard rule: **only `rotel` publishes `4317/4318` to the host.** Every competitor
 backend's OTLP receiver stays on the Compose network, reached by service name; UIs
 get unique host ports. Parallax (host) is reached *out* of Compose via
-`host.docker.internal:14317`. Multi-service backends (SigNoz, Sentry) are pulled
-in with Compose `include:` rather than hand-recopying their service graphs.
+`host.docker.internal:14317`.
+
+> **`include:` is not free — it carries upstream port mappings.** SigNoz's stock
+> compose **publishes its own `4317/4318` to the host**, which collides with
+> Rotel and breaks the rule above. When you `include:` a backend's compose, add a
+> Compose **override** that unpublishes those ports on the included services
+> (`ports: []` / drop the host side of the mapping) so only Rotel keeps host
+> `4317/4318`. The same applies to any UI/ingest port an upstream file publishes
+> that we don't want on the host. Sentry self-hosted can't be `include:`d cleanly
+> at all (see its row) — treat it as a separate stack joined on a shared network.
 
 ### Rotel fan-out config (`rotel.env`)
 
@@ -226,10 +236,15 @@ ROTEL_EXPORTER_SIGNOZ_ENDPOINT=http://signoz-otel-collector:4317
 ROTEL_EXPORTER_SIGNOZ_PROTOCOL=grpc
 ROTEL_EXPORTER_OPENOBSERVE_ENDPOINT=http://openobserve:5081
 ROTEL_EXPORTER_OPENOBSERVE_PROTOCOL=grpc
-# Sentry: HTTP only, non-standard base path, DSN-derived auth header
-ROTEL_EXPORTER_SENTRY_ENDPOINT=http://sentry-web:9000/api/1/integration/otlp
+# OpenObserve ingest REQUIRES auth + org/stream routing headers (else rejected):
+#   Authorization: Basic <base64(user:password)>, organization, stream-name
+ROTEL_EXPORTER_OPENOBSERVE_CUSTOM_HEADERS=Authorization=Basic <b64 user:pass>,organization=default,stream-name=default
+ROTEL_EXPORTER_OPENOBSERVE_TLS_INSECURE=true
+# Sentry: HTTP only, non-standard base path; project id comes from the DSN (not
+# always "1"); auth header VALUE is `sentry sentry_key=<DSN public key>`.
+ROTEL_EXPORTER_SENTRY_ENDPOINT=http://sentry-web:9000/api/<projectId>/integration/otlp
 ROTEL_EXPORTER_SENTRY_PROTOCOL=http
-ROTEL_EXPORTER_SENTRY_CUSTOM_HEADERS=X-Sentry-Auth=<from DSN>   # verify exact env at impl
+ROTEL_EXPORTER_SENTRY_CUSTOM_HEADERS=x-sentry-auth=sentry sentry_key=<DSN public key>
 
 # Per-signal fan-out. Sentry omitted from metrics (no OTLP metrics).
 ROTEL_EXPORTERS_TRACES=parallax,maple,signoz,openobserve,sentry
@@ -303,14 +318,20 @@ Sentry *does* speak OTLP now; the lab can treat it as a near-first-class target.
   `/api/{PROJECT_ID}/integration/otlp/v1/traces` and `.../v1/logs`. Point an
   exporter at the base `…/integration/otlp` and it appends `/v1/traces|logs` —
   matching Rotel's OTLP/HTTP behavior. (gRPC not relied upon; use HTTP.)
-- **Auth: `X-Sentry-Auth` header derived from the project DSN** (or, when fronted
-  by a collector, the collector handles auth). Rotel's OTLP exporter must send a
-  custom header → verify Rotel's custom-header env at impl.
+- **Auth header value is specific:** `x-sentry-auth: sentry sentry_key=<DSN
+  public key>` (not just the raw DSN). Project id in the path also comes from the
+  DSN — not always `1`. When fronted by a collector, the collector handles auth.
+  Rotel's OTLP exporter must send this custom header → verify Rotel's
+  custom-header env at impl.
 - **Self-hosted has it.** `getsentry/self-hosted` issue #3830 ("Add Native OTLP
-  Ingestion") is **closed**; native OTLP shipped in self-hosted around `25.8.0`/
-  `25.10.0`. So our self-hosted Sentry can be a direct Rotel exporter target —
-  pin a self-hosted version ≥ that. Confirm exact version + whether Relay or a
-  bundled collector terminates OTLP when wiring.
+  Ingestion") is **closed (2026-05-19)**; native OTLP shipped in self-hosted
+  ~`25.8.0` (version-pinned setup guides for `25.8.0` and `25.10.0`). Pin a
+  self-hosted version ≥ that. Confirm whether Relay or a bundled collector
+  terminates OTLP when wiring.
+- **Deployment reality:** self-hosted Sentry is **not** a clean Compose
+  `include:` target — it's an `install.sh` that generates configs across ~20
+  containers. Run it as its **own stack** and join Rotel to its network (or wire
+  bespoke); don't try to fold it into the lab compose.
 
 ## Risks / open questions
 
