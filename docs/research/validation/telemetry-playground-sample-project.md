@@ -1,13 +1,25 @@
 # Telemetry Playground — Maximum-Fidelity OTel + Sentry Sample Stack
 
 Research date: 2026-06-23
-Status: **implementation started** — repo created at
+Status: **implementation in progress** — repo:
 [tailrocks/parallax-telemetry-playground](https://github.com/tailrocks/parallax-telemetry-playground).
-Rust core builds + runs (verified 2026-06-23): `playground-telemetry` (OTel +
-Sentry dual-pipeline), `proto`, `checkout`(axum)→`pricing`(tonic) distributed
-call, plus inventory/recommendation/notifications/cli. Java (catalog GraphQL,
-payment/fulfillment), web (TanStack), flagd, k6, compose, scenarios A1/A12 are
-scaffolded. Comparison is manual; scored harness out of scope.
+All three language tiers validated to build (2026-06-23):
+- **Rust** — `playground-telemetry` (OTel + Sentry dual-pipeline), `proto`, and a
+  verified multi-service distributed call: `/checkout` (axum) fans out to
+  `pricing` (tonic gRPC) + `inventory` + `recommendation` (HTTP) in one trace
+  (`otel.kind` server/client spans, correct aggregated response). `notifications`
+  + `cli` build. `cargo build`/fmt/clippy clean.
+- **Java** — `catalog` (Spring GraphQL), `payment` (Spring Boot; gRPC codegen
+  next), `fulfillment` (Spring Kafka consumer + reverse Java→Rust hop) all
+  compile (`gradlew compileJava`, JDK 21).
+- **web** — TanStack Start + Sentry + OTel-web deps resolve under Bun; provider
+  wiring TODO.
+- flagd, k6 loadgen, docker-compose (Rust services), scenarios A1/A12 in place.
+
+Remaining: web provider wiring, gRPC proto codegen for payment, broker async
+branch + span links, chaos via flagd, deploy-regression + canary scenarios, and
+the full cross-language e2e trace through the running lab. Comparison is manual;
+scored harness out of scope.
 Relationship: feeds the [OTLP Fan-Out Comparison Lab](otlp-fanout-comparison-lab.md).
 The lab is the *plumbing* (one stream → many backends via Rotel); this playground
 is the *payload* — a realistic polyglot app instrumented to the maximum so every
