@@ -14,10 +14,12 @@ All three language tiers validated to build (2026-06-23):
   compile (`gradlew compileJava`, JDK 21).
 - **web** — TanStack Start + Sentry + OTel-web deps resolve under Bun; provider
   wiring TODO.
-- Verified scenarios: A1 (multi-service trace), **A3 (async producer/consumer +
-  span link)**, A12 (CLI run), **A18 (canary-redaction corpus)**, **B1 (failure
-  → 502 issue)**, **B11 (latency)**, A13 (deploy-regression driver). flagd, k6,
-  compose all services, web (`bun run build`).
+- **Integrated e2e verified**: the four Rust services emit OTLP → the lab's Rotel
+  → OpenObserve, and a trace search returns all four services by name
+  (`checkout/pricing/inventory/recommendation`). The whole pipeline, not stdout.
+- Verified scenarios: A1, A3 (async + span link), A7 (gRPC streaming), A10
+  (baggage), A12, A18 (canary), A13 driver, and chaos B1/B2/B3/B5/B6/B7/B8/B9/
+  B10/B11/B17. flagd, k6, compose (all services), web (`bun run build`).
 
 Remaining: web TanStack-router integration + the same-origin OTLP proxy; payment
 gRPC proto codegen + cross-language gRPC e2e; real Kafka broker (the in-process
