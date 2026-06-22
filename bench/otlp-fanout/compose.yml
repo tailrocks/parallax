@@ -41,6 +41,7 @@ services:
       ZO_ROOT_USER_PASSWORD: "Complexpass#123"
       ZO_HTTP_PORT: "5080"
       ZO_GRPC_PORT: "5081"
+      ZO_FILE_PUSH_INTERVAL: "10"  # flush WAL→searchable fast (lab)
     ports:
       - "5080:5080" # UI / HTTP
     volumes:
