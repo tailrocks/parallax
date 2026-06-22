@@ -4,9 +4,11 @@ Research date: 2026-06-22
 Status: design proposal (no code yet)
 Topology: Parallax runs on the host (Homebrew); Rotel + competitor backends run
 in Docker Compose; Rotel fans out across the host↔container boundary.
-Deep review: 2026-06-22 — every external claim verified against live sources and
-every Parallax-side claim checked against `crates/`; corrections folded in. Items
-that depend on unbuilt Parallax features are marked **[NOT YET IMPLEMENTED]**.
+Deep review: 2026-06-22 (two passes) — every external claim verified against live
+sources and every Parallax-side claim checked against `crates/`; corrections
+folded in. Second pass corrected an over-correction (port offset + `0.0.0.0` bind
+are already config-only, BUILT). Items needing unbuilt Parallax features are
+marked **[NOT YET IMPLEMENTED]**.
 
 ## Goal
 
@@ -52,17 +54,18 @@ service name, and back *out* to host-native Parallax via
 `host.docker.internal:14317`. Parallax is both an emitter (into Rotel) and a sink
 (out of Rotel) — it just lives on the host instead of in a container.
 
-## Parallax-side prerequisites (mostly NOT YET IMPLEMENTED)
+## Parallax-side prerequisites (what's built vs not)
 
-The lab assumes Parallax behaviors that the committed code does **not** ship yet
-(verified against `crates/parallax-cli` + `crates/parallax-server`,
-2026-06-22). Treat these as work to do before the lab can run as written, not as
-current behavior:
+Some lab assumptions are already config-only (BUILT); two depend on unbuilt
+Parallax features (verified against `crates/parallax-cli` +
+`crates/parallax-server`, 2026-06-22). The port offset and `0.0.0.0` bind are
+config edits you can make today — only the child-telemetry forward switch and
+self-telemetry are genuinely unbuilt:
 
 | Need | Current reality (`crates/`) | Gap |
 |---|---|---|
-| Offset OTLP ports `14317/14318` | ports come from `config.toml` keys `otlp_grpc_port` / `otlp_http_port` (default `4317/4318`); `parallax serve` takes only `--config` | **no CLI flags** — set the ports in `~/.parallax/config.toml`, not via `--otlp-grpc`/`--otlp-http` |
-| Bind OTLP on `0.0.0.0` | confirm the receiver bind address is configurable / defaults to a host-reachable interface | verify; may need a config addition |
+| Offset OTLP ports `14317/14318` | **BUILT** — `config.toml` keys `otlp_grpc_port` / `otlp_http_port` (default `4317/4318`); `parallax serve` takes only `--config` | config-only edit; **no CLI flags** (`--otlp-grpc`/`--otlp-http` don't exist) — set the ports in `~/.parallax/config.toml` |
+| Bind OTLP on `0.0.0.0` | **BUILT** — `config.toml` key `bind` (default `127.0.0.1`); `serve` binds all three listeners (api/otlp_http/otlp_grpc) to it | config-only edit; set `bind = "0.0.0.0"`. No code change needed |
 | Forward child telemetry to Rotel | `parallax run start` injects a **hardcoded** `http://127.0.0.1:4317` into the child env (`commands.rs`) | a `--otlp-forward` switch is **[NOT YET IMPLEMENTED]**. *Lucky accident:* the hardcoded `127.0.0.1:4317` already equals Rotel's published port, so child apps reach Rotel today with zero changes |
 | Parallax self-telemetry into the lab | `parallax serve` only **receives** OTLP; it does not emit its own spans/logs anywhere | self-instrumentation is **[NOT YET IMPLEMENTED]**; until built, Parallax's *own* internal traces cannot fan out |
 | Install via Homebrew | repo policy: stable formula is **disabled** pre-release; only a rolling `parallax-preview` exists | use `brew install tailrocks/parallax/parallax-preview` (or run from a local checkout), **not** `brew install parallax` |
@@ -70,8 +73,11 @@ current behavior:
 The correct invocations given today's code:
 
 ```
-# host: offset Parallax OTLP ports via config, then serve
-#   ~/.parallax/config.toml:  otlp_grpc_port = 14317 ; otlp_http_port = 14318
+# host: offset Parallax OTLP ports + bind 0.0.0.0 via config, then serve
+#   ~/.parallax/config.toml:
+#     bind = "0.0.0.0"          # default 127.0.0.1 — must be 0.0.0.0 for Rotel to reach it
+#     otlp_grpc_port = 14317
+#     otlp_http_port = 14318
 brew install tailrocks/parallax/parallax-preview
 parallax serve --config ~/.parallax/config.toml      # UI/API on :4000
 
@@ -329,9 +335,10 @@ deliberately bypassed here), so no Maple header is needed.
 
 ## Comparison workflow
 
-0. Host: `brew install tailrocks/parallax/parallax-preview`; set
-   `otlp_grpc_port=14317` / `otlp_http_port=14318` in `~/.parallax/config.toml`
-   (bind `0.0.0.0`); `parallax serve --config ~/.parallax/config.toml` (UI `:4000`).
+0. Host: `brew install tailrocks/parallax/parallax-preview`; in
+   `~/.parallax/config.toml` set `bind = "0.0.0.0"`, `otlp_grpc_port = 14317`,
+   `otlp_http_port = 14318`; `parallax serve --config ~/.parallax/config.toml`
+   (UI `:4000`).
 1. `docker compose up` the lab (Rotel hub + competitor backends; Parallax already
    up on the host).
 2. `parallax run start -- <demo-app>` (child telemetry → `127.0.0.1:4317` = Rotel
@@ -362,7 +369,7 @@ known `trace_id` and which canonical field set to compare:
 | Backend | Read API for a known trace_id | Normalization to watch |
 |---|---|---|
 | Parallax | GraphQL (`:4000`) | GreptimeDB column/label renames |
-| Maple | GraphQL API (`:3472`) | Tinybird/ClickHouse schema |
+| Maple | GraphQL API (~`:3472`, verify) | Tinybird/ClickHouse schema |
 | SigNoz | query API / ClickHouse SQL | OTel→ClickHouse span schema |
 | OpenObserve | REST search API (`:5080`) | stream-mapped fields |
 | Sentry | events/issues API | OTel→Sentry event model (lossy by design) |
@@ -405,10 +412,12 @@ Sentry speaks OTLP; the lab treats it as a near-first-class target.
 
 ## Risks / open questions
 
-- **Parallax-side features are unbuilt.** Offset OTLP ports (via config),
-  configurable child-telemetry forwarding, `0.0.0.0` bind, and self-telemetry are
-  prerequisites (see the prerequisites section). The lab can't run end-to-end
-  until at least the port-offset + `0.0.0.0` bind exist.
+- **Two Parallax-side features are unbuilt.** Port offset and `0.0.0.0` bind are
+  already **config-only** (`otlp_grpc_port`/`otlp_http_port`/`bind` in
+  `config.toml`) — usable today. Only **configurable child-telemetry forwarding**
+  (`--otlp-forward`) and **self-telemetry** are genuinely unbuilt. The lab can run
+  end-to-end now via config + the lucky-accident hardcoded `127.0.0.1:4317`; the
+  unbuilt switches are quality-of-life, not blockers.
 - **Host↔container bridge fragility.** `host.docker.internal` depends on the
   runtime (Docker Desktop built-in; Linux `host-gateway` + firewall;
   Colima/OrbStack/Podman differ). Misbehavior → "every backend has the trace
