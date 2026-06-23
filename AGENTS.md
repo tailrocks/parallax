@@ -50,12 +50,20 @@ structure quickly.
   stack (SChannel on Windows, Secure Transport / Keychain on macOS, OpenSSL on
   Linux), never a bundled rustls/webpki trust store. Rationale: trust, roots,
   and policy stay at the **system level** — no custom cert bundles or per-app TLS
-  setup to maintain. Concretely: `reqwest` uses the `native-tls` feature (not
+  setup to maintain. Concretely: `reqwest` uses a `native-tls` feature (not
   `rustls`); any crate with a TLS-backend choice selects its native-TLS feature
   (e.g. tonic `tls-native-roots`); never enable a `rustls*` feature. If a
   dependency is rustls-only upstream with no native-TLS option, keep its TLS
   surface unused (plaintext on the trusted local hop) and note it, rather than
   enabling rustls.
+  - **Cross-compiled release binaries use `native-tls-vendored`.** The release
+    CI cross-compiles the Linux targets with `cargo zigbuild`, where dynamic
+    linking against each target's system OpenSSL is impractical; the `vendored`
+    feature builds OpenSSL from source for the target. This is still OpenSSL —
+    the OS-standard native TLS implementation, reading the system CA roots at
+    runtime — and is **never rustls**. On macOS the native-tls crate uses
+    Secure Transport and ignores the vendored flag, so dev/macOS stays fully
+    system-level.
 - JavaScript/TypeScript tooling — **Bun only** (operator, 2026-06-15;
   reaffirmed 2026-06-18): **Bun (through mise) is the one and only JS/TS runtime
   and package manager in this repository.** There is no fallback and no
