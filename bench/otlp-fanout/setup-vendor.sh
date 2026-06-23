@@ -5,11 +5,12 @@ set -euo pipefail
 cd "$(dirname "$0")"
 mkdir -p vendor
 
-# Pin a release tag, NOT main (verified 2026-06-23: main and v0.129.0 both bring
-# the whole stack up, but SigNoz's otel-collector is OpAMP-managed by the SigNoz
-# server — its OTLP :4317 receiver only binds after the server pushes a config,
-# which needs the server fully onboarded; `docker compose up` alone leaves 4317
-# closed. See README "SigNoz" for the run finding.)
+# Pin a release tag, NOT main (verified end-to-end 2026-06-23 on v0.129.0:
+# Rotel -> SigNoz collector -> ClickHouse, 8 spans). SigNoz's otel-collector is
+# OpAMP-managed: its OTLP :4317 receiver binds only after the server pushes a
+# config, which the server does only after the FIRST org/admin is created. So
+# after `compose up` you must register the first user once (see README "SigNoz"
+# for the exact /api/v1/register call); `compose up` alone leaves :4317 closed.
 SIGNOZ_REF="${SIGNOZ_REF:-v0.129.0}"
 if [ ! -d vendor/signoz ]; then
   echo "cloning SigNoz ($SIGNOZ_REF) into vendor/signoz ..."

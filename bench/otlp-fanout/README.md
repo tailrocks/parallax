@@ -27,20 +27,33 @@ emitters ─► localhost:4317 (Rotel) ─┬─► openobserve:5081        (com
   was corrected to match. The Parallax exporter targets the host; it simply
   retries until Parallax is up (note: Rotel fan-out is **sequential**, so list a
   down host-Parallax sink *after* the others or it back-pressures them).
-- 🟡 **SigNoz** — overlay `compose.signoz.yml` (vendored clone via
-  `setup-vendor.sh`, pinned to `v0.129.0`). **Run live 2026-06-23** (both `main`
-  and `v0.129.0`): the full stack comes up healthy (ZooKeeper + ClickHouse +
-  migrators + signoz + collector), the overlay networking is correct (Rotel
-  resolves `otel-collector` on the shared `lab` network; host `4317/4318`
-  unpublished). **Finding:** SigNoz's `otel-collector` is **OpAMP-managed** by the
-  SigNoz server — its OTLP `:4317` receiver is *not* opened by the static
-  `otel-collector-config.yaml`; it binds only after the server pushes a config,
-  which requires the server to be fully **onboarded** (org/admin). On a fresh
-  headless `docker compose up` the collector logs repeating
-  `opamp/server_client.go` errors and `:4317` stays closed, so Rotel's `signoz`
-  exporter can't deliver yet. Net: SigNoz needs an onboarding step beyond
-  `compose up` before the fan-out lands — the OTLP hop itself is the same one
-  proven against OpenObserve.
+- ✅ **SigNoz** — overlay `compose.signoz.yml` (vendored clone via
+  `setup-vendor.sh`, pinned `v0.129.0`). **Verified end-to-end live 2026-06-23:**
+  Rotel → SigNoz `otel-collector` → ClickHouse, `signoz-smoke = 8` spans queried
+  back from `signoz_traces.distributed_signoz_index_v3`.
+
+  **One-time onboarding is required** (the key run finding): SigNoz's
+  `otel-collector` is **OpAMP-managed** by the SigNoz server — its OTLP `:4317`
+  receiver is *not* opened by the static `otel-collector-config.yaml`; it binds
+  only after the server pushes a config, and the server pushes it only after the
+  **first org/admin is created**. On a fresh `compose up` the collector loops
+  `opamp/server_client.go` errors and `:4317` stays closed. Create the first user
+  once (the SigNoz UI does this, or via API), then the collector starts its OTLP
+  receiver and Rotel delivers:
+
+  ```bash
+  # after `docker compose -f compose.yml -f compose.signoz.yml up -d` and the
+  # signoz server is healthy — register the first org+admin (OpenAccess route):
+  docker exec signoz wget -qO- --header='Content-Type: application/json' \
+    --post-data='{"name":"Admin","email":"admin@parallax.lab","password":"Complexpass#123","orgDisplayName":"Parallax Lab","orgName":"parallax"}' \
+    http://localhost:8080/api/v1/register
+  # then enable `signoz` in rotel.env (ROTEL_EXPORTERS + ROTEL_EXPORTERS_TRACES).
+  ```
+
+  (Overlay networking verified: Rotel resolves `otel-collector` on the shared
+  `lab` network; host `4317/4318` unpublished. Note: the `signoz: ports: !reset`
+  override did not publish the UI on host `3301` in this run — reach the API
+  in-container as above, or fix the publish — tracked.)
 - 🟡 **Maple** — overlay `compose.maple.yml` builds the chDB local binary from
   source (`maple/Dockerfile`); finalize the build/CMD per Maple's
   `docs/local-mode.md` (no official Linux image exists).
