@@ -39,13 +39,30 @@ all three OTLP signals** (traces + metrics via `MetricsLayer` + logs via the
 appender bridge, was traces-only); all Java + web services wired into the deploy
 compose (`Dockerfile.java`/`Dockerfile.web`).
 
-Remaining (mostly host-/SaaS-gated or operator-deferred): a full cross-language
-**live** trace through the running lab; the Sentry-envelope-only scenarios
-(A15/A16 issue lifecycle) and **profiling** (A17) need a real Sentry; Rust
-`sentry-opentelemetry` shared-trace_id wiring (a documented enhancement —
-requires using only the OTel tracing API, verifiable only against a live Sentry,
-so deferred to avoid regressing the working error-capture path); SigNoz/Maple
-overlays verify at run. Comparison is manual; scored harness out of scope.
+**A17 profiling** is now wired on the JVM tier (Sentry continuous profiling,
+async-profiler, `profile-lifecycle=trace`) — JVM-only by necessity:
+`sentry-rust` has no profiling and OTLP profiles have no Rust impl.
+
+Remaining is now **host-/SaaS-gated or a hard version blocker**, not deferred
+implementation work:
+
+- A full cross-language **live** trace through the running lab, and the
+  Sentry-envelope rendering scenarios (A15/A16 issue lifecycle, A17 flamegraph
+  view) — these are **execution/verification** against a running Docker stack +
+  a live self-hosted Sentry, which a headless sandbox can't provision (its node
+  `fetch`/undici also has no DNS). The emitting code is implemented; only the
+  cross-backend visual comparison is unrun.
+- Rust **`sentry-opentelemetry` shared-trace_id** is a **version blocker**, not a
+  soft defer: `sentry-opentelemetry` 0.48 pins `opentelemetry`/`opentelemetry_sdk`
+  **0.29**, but the workspace is on **0.30** (the doc's own floor is 0.32).
+  `SentrySpanProcessor`/`SentryPropagator` are 0.29 types and won't attach to a
+  0.30 `SdkTracerProvider`; adopting it would force a full OTel **downgrade**,
+  regressing the just-added logs/metrics pipeline and the version policy. Revisit
+  when `sentry-opentelemetry` catches up to OTel 0.30+/0.32. Until then Rust
+  Sentry issues carry their own trace_id (error capture works; cross-UI trace_id
+  alignment for the Rust tier waits on the upstream bump).
+- SigNoz/Maple overlays verify at run. Comparison is manual; scored harness out
+  of scope (operator).
 Relationship: feeds the [OTLP Fan-Out Comparison Lab](otlp-fanout-comparison-lab.md).
 The lab is the *plumbing* (one stream → many backends via Rotel); this playground
 is the *payload* — a realistic polyglot app instrumented to the maximum so every
