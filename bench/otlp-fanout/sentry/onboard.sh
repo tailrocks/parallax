@@ -42,7 +42,7 @@ Sentry onboarded.
   DSN        : ${DSN}
   Web UI     : http://localhost:9000  (login: ${EMAIL} / ${PASSWORD})
 
-# --- Wire the Rotel fan-out to Sentry (paste into rotel.env, then add `sentry`
+# --- Wire the Rotel fan-out to Sentry (paste into rotel.env, then add 'sentry'
 #     to ROTEL_EXPORTERS + the per-signal lists; traces+logs only, no metrics) ---
 ROTEL_EXPORTER_SENTRY_ENDPOINT=http://host.docker.internal:9000/api/${PROJECT_ID}/integration/otlp
 ROTEL_EXPORTER_SENTRY_PROTOCOL=http
