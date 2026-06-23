@@ -45,6 +45,17 @@ structure quickly.
   docs are known-compatible floors, not freezes; when implementing, resolve
   the latest mutually-compatible stable set and update the table in the same
   commit.
+- TLS policy — **native TLS always, never rustls** (operator, 2026-06-23):
+  everywhere we open a TLS connection, use the **operating system's native TLS**
+  stack (SChannel on Windows, Secure Transport / Keychain on macOS, OpenSSL on
+  Linux), never a bundled rustls/webpki trust store. Rationale: trust, roots,
+  and policy stay at the **system level** — no custom cert bundles or per-app TLS
+  setup to maintain. Concretely: `reqwest` uses the `native-tls` feature (not
+  `rustls`); any crate with a TLS-backend choice selects its native-TLS feature
+  (e.g. tonic `tls-native-roots`); never enable a `rustls*` feature. If a
+  dependency is rustls-only upstream with no native-TLS option, keep its TLS
+  surface unused (plaintext on the trusted local hop) and note it, rather than
+  enabling rustls.
 - JavaScript/TypeScript tooling — **Bun only** (operator, 2026-06-15;
   reaffirmed 2026-06-18): **Bun (through mise) is the one and only JS/TS runtime
   and package manager in this repository.** There is no fallback and no
