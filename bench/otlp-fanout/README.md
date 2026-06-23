@@ -18,14 +18,21 @@ emitters ─► localhost:4317 (Rotel) ─┬─► openobserve:5081        (com
 
 ## Status
 
-- ✅ **Core (Rotel + OpenObserve)** — implemented and **verified end-to-end**: the
-  telemetry-playground's four Rust services emit OTLP → Rotel fans out →
-  OpenObserve, and a search returns the multi-service trace by service:
-  `checkout=25, pricing=5, inventory=5, recommendation=5` spans. The Parallax
-  exporter targets the host; it simply retries until Parallax is up (a down sink
-  never blocks the others).
+- ✅ **Core (Rotel + OpenObserve)** — implemented and **verified end-to-end**
+  (re-verified live 2026-06-23 on the upgraded Rust stack, otel 0.32/tonic 0.14):
+  the playground's four Rust services emit OTLP → Rotel fans out → OpenObserve,
+  and a search returns the multi-service trace by service: `checkout=30,
+  pricing=6, inventory=6, recommendation=6` spans. The OpenObserve search path is
+  `/api/{org}/_search` (stream in the SQL `FROM`, with `from`/`size`) — `smoke.sh`
+  was corrected to match. The Parallax exporter targets the host; it simply
+  retries until Parallax is up (note: Rotel fan-out is **sequential**, so list a
+  down host-Parallax sink *after* the others or it back-pressures them).
 - 🟡 **SigNoz** — overlay `compose.signoz.yml` (vendored clone via
-  `setup-vendor.sh`); verify port-override + network at run.
+  `setup-vendor.sh`). **Overlay config verified** (`docker compose config`): the
+  `otel-collector` correctly ends up on **both** `lab` (reachable from Rotel) and
+  `signoz-net` (reaches ClickHouse), and its host `4317/4318` are unpublished. A
+  full stack bring-up (ClickHouse + ZooKeeper + migrators) still wants a real
+  host — the OTLP fan-out hop itself is the same one proven against OpenObserve.
 - 🟡 **Maple** — overlay `compose.maple.yml` builds the chDB local binary from
   source (`maple/Dockerfile`); finalize the build/CMD per Maple's
   `docs/local-mode.md` (no official Linux image exists).
