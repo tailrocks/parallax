@@ -2,9 +2,6 @@
 
 use crate::client::{Client, gql_str};
 use std::time::{SystemTime, UNIX_EPOCH};
-
-/// Default destination for child telemetry: Parallax's own OTLP receiver.
-const DEFAULT_PARALLAX_ENDPOINT: &str = "http://127.0.0.1:4317";
 /// What `--otlp-forward rotel` (and `PARALLAX_OTLP_FORWARD=rotel`) resolves to —
 /// the lab's Rotel collector published on the host.
 const DEFAULT_ROTEL_ENDPOINT: &str = "http://localhost:4317";
@@ -36,13 +33,14 @@ fn resolve_forward_from(
     flag: Option<&str>,
     env_forward: Option<String>,
     env_otel: Option<String>,
+    default_parallax_endpoint: &str,
 ) -> anyhow::Result<Forward> {
     if let Some(raw) = flag.map(str::to_owned).or(env_forward) {
         let value = raw.trim();
         let endpoint = match value.to_ascii_lowercase().as_str() {
             "off" | "parallax" => {
                 return Ok(Forward {
-                    endpoint: DEFAULT_PARALLAX_ENDPOINT.to_string(),
+                    endpoint: default_parallax_endpoint.to_string(),
                     protocol: OTLP_GRPC_PROTOCOL,
                     compare: false,
                 });
@@ -64,7 +62,7 @@ fn resolve_forward_from(
     // one in the environment (the idiomatic OTel escape hatch); else default.
     if let Some(existing) = env_otel.filter(|v| !v.is_empty()) {
         let protocol = protocol_for(&existing);
-        let compare = existing != DEFAULT_PARALLAX_ENDPOINT;
+        let compare = existing != default_parallax_endpoint;
         return Ok(Forward {
             endpoint: existing,
             protocol,
@@ -72,18 +70,49 @@ fn resolve_forward_from(
         });
     }
     Ok(Forward {
-        endpoint: DEFAULT_PARALLAX_ENDPOINT.to_string(),
+        endpoint: default_parallax_endpoint.to_string(),
         protocol: OTLP_GRPC_PROTOCOL,
         compare: false,
     })
 }
 
-fn resolve_forward(flag: Option<&str>) -> anyhow::Result<Forward> {
+fn resolve_forward(flag: Option<&str>, default_parallax_endpoint: &str) -> anyhow::Result<Forward> {
     let env_forward = std::env::var("PARALLAX_OTLP_FORWARD")
         .ok()
         .filter(|v| !v.is_empty());
     let env_otel = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").ok();
-    resolve_forward_from(flag, env_forward, env_otel)
+    resolve_forward_from(flag, env_forward, env_otel, default_parallax_endpoint)
+}
+
+fn endpoint_from_api_url_and_port(api_url: &str, port: u16) -> anyhow::Result<String> {
+    let url = reqwest::Url::parse(api_url)
+        .map_err(|e| anyhow::anyhow!("invalid Parallax API URL {api_url:?}: {e}"))?;
+    let scheme = url.scheme();
+    let host = url
+        .host_str()
+        .ok_or_else(|| anyhow::anyhow!("Parallax API URL {api_url:?} has no host"))?;
+    let host = if host.contains(':') && !host.starts_with('[') {
+        format!("[{host}]")
+    } else {
+        host.to_string()
+    };
+    Ok(format!("{scheme}://{host}:{port}"))
+}
+
+async fn parallax_endpoint_from_server(client: &Client) -> anyhow::Result<String> {
+    let response = client.graphql(r#"{ otlpGrpcPort }"#).await?;
+    let port = response
+        .get("data")
+        .and_then(|data| data.get("otlpGrpcPort"))
+        .and_then(serde_json::Value::as_u64)
+        .and_then(|port| u16::try_from(port).ok())
+        .filter(|port| *port != 0)
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "Parallax server did not report a valid OTLP/gRPC port; cannot inject OTLP env"
+            )
+        })?;
+    endpoint_from_api_url_and_port(client.base_url(), port)
 }
 
 /// Resource attributes injected into the child. `parallax.run.id` always; in
@@ -176,7 +205,8 @@ pub async fn run_start(
     print_env: bool,
 ) -> anyhow::Result<i32> {
     let run_id = new_run_id();
-    let fwd = resolve_forward(forward.as_deref())?;
+    let default_parallax_endpoint = parallax_endpoint_from_server(client).await?;
+    let fwd = resolve_forward(forward.as_deref(), &default_parallax_endpoint)?;
     let attrs = forward_resource_attrs(&run_id, fwd.compare);
     let pairs = otel_env_pairs(&fwd.endpoint, fwd.protocol, &attrs);
 
@@ -916,6 +946,8 @@ pub async fn trace_inspect(client: &Client, trace_id: &str) -> anyhow::Result<()
 mod tests {
     use super::*;
 
+    const CUSTOM_ENDPOINT: &str = "http://127.0.0.1:14317";
+
     #[test]
     fn protocol_follows_port() {
         assert_eq!(protocol_for("http://localhost:4317"), OTLP_GRPC_PROTOCOL);
@@ -928,31 +960,47 @@ mod tests {
 
     #[test]
     fn flag_beats_env() {
-        let fwd =
-            resolve_forward_from(Some("http://localhost:4317"), Some("off".to_string()), None)
-                .unwrap();
+        let fwd = resolve_forward_from(
+            Some("http://localhost:4317"),
+            Some("off".to_string()),
+            None,
+            CUSTOM_ENDPOINT,
+        )
+        .unwrap();
         assert_eq!(fwd.endpoint, "http://localhost:4317");
         assert!(fwd.compare);
     }
 
     #[test]
     fn flag_off_forces_default() {
-        let fwd = resolve_forward_from(Some("off"), Some("rotel".to_string()), None).unwrap();
-        assert_eq!(fwd.endpoint, DEFAULT_PARALLAX_ENDPOINT);
+        let fwd = resolve_forward_from(
+            Some("off"),
+            Some("rotel".to_string()),
+            None,
+            CUSTOM_ENDPOINT,
+        )
+        .unwrap();
+        assert_eq!(fwd.endpoint, CUSTOM_ENDPOINT);
         assert!(!fwd.compare);
     }
 
     #[test]
     fn rotel_alias_resolves() {
-        let fwd = resolve_forward_from(None, Some("rotel".to_string()), None).unwrap();
+        let fwd =
+            resolve_forward_from(None, Some("rotel".to_string()), None, CUSTOM_ENDPOINT).unwrap();
         assert_eq!(fwd.endpoint, DEFAULT_ROTEL_ENDPOINT);
         assert!(fwd.compare);
     }
 
     #[test]
     fn explicit_url_from_env() {
-        let fwd =
-            resolve_forward_from(None, Some("http://collector:4318".to_string()), None).unwrap();
+        let fwd = resolve_forward_from(
+            None,
+            Some("http://collector:4318".to_string()),
+            None,
+            CUSTOM_ENDPOINT,
+        )
+        .unwrap();
         assert_eq!(fwd.endpoint, "http://collector:4318");
         assert_eq!(fwd.protocol, OTLP_HTTP_PROTOCOL);
         assert!(fwd.compare);
@@ -960,29 +1008,63 @@ mod tests {
 
     #[test]
     fn respects_preexisting_otel_endpoint() {
-        let fwd =
-            resolve_forward_from(None, None, Some("http://localhost:4317".to_string())).unwrap();
+        let fwd = resolve_forward_from(
+            None,
+            None,
+            Some("http://localhost:4317".to_string()),
+            CUSTOM_ENDPOINT,
+        )
+        .unwrap();
         assert_eq!(fwd.endpoint, "http://localhost:4317");
         assert!(fwd.compare);
     }
 
     #[test]
     fn default_when_nothing_set() {
-        let fwd = resolve_forward_from(None, None, None).unwrap();
-        assert_eq!(fwd.endpoint, DEFAULT_PARALLAX_ENDPOINT);
+        let fwd = resolve_forward_from(None, None, None, CUSTOM_ENDPOINT).unwrap();
+        assert_eq!(fwd.endpoint, CUSTOM_ENDPOINT);
         assert!(!fwd.compare);
     }
 
     #[test]
     fn preexisting_parallax_endpoint_is_not_compare() {
-        let fwd =
-            resolve_forward_from(None, None, Some(DEFAULT_PARALLAX_ENDPOINT.to_string())).unwrap();
+        let fwd = resolve_forward_from(
+            None,
+            None,
+            Some(CUSTOM_ENDPOINT.to_string()),
+            CUSTOM_ENDPOINT,
+        )
+        .unwrap();
         assert!(!fwd.compare);
     }
 
     #[test]
     fn invalid_target_errors() {
-        assert!(resolve_forward_from(Some("nonsense"), None, None).is_err());
+        assert!(resolve_forward_from(Some("nonsense"), None, None, CUSTOM_ENDPOINT).is_err());
+    }
+
+    #[test]
+    fn endpoint_uses_api_host_and_reported_grpc_port() {
+        assert_eq!(
+            endpoint_from_api_url_and_port("http://127.0.0.1:4000", 14317).unwrap(),
+            CUSTOM_ENDPOINT
+        );
+    }
+
+    #[test]
+    fn endpoint_uses_remote_api_host_and_reported_grpc_port() {
+        assert_eq!(
+            endpoint_from_api_url_and_port("https://parallax.example.com:4000", 14317).unwrap(),
+            "https://parallax.example.com:14317"
+        );
+    }
+
+    #[test]
+    fn endpoint_brackets_ipv6_api_host() {
+        assert_eq!(
+            endpoint_from_api_url_and_port("http://[::1]:4000", 14317).unwrap(),
+            "http://[::1]:14317"
+        );
     }
 
     #[test]

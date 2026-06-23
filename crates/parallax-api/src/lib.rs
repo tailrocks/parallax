@@ -19,6 +19,7 @@ use std::sync::Arc;
 pub struct ApiContext {
     pub store: Arc<dyn TelemetryStore>,
     pub metadata: Arc<MetadataStore>,
+    pub otlp_grpc_port: u16,
 }
 
 impl juniper::Context for ApiContext {}
@@ -753,6 +754,10 @@ impl Query {
 
     fn version() -> &'static str {
         env!("CARGO_PKG_VERSION")
+    }
+
+    fn otlp_grpc_port(context: &ApiContext) -> i32 {
+        i32::from(context.otlp_grpc_port)
     }
 
     /// Grouped errors: filtered, sorted, paged (spec §8 `issues`). The

@@ -151,11 +151,24 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
     let mut tasks = Vec::new();
     tasks.push(tokio::spawn(worker.run(receiver)));
 
+    let bind = &config.server.bind;
+    let api_listener = TcpListener::bind((bind.as_str(), config.server.api_port)).await?;
+    let api_addr = api_listener.local_addr()?;
+
+    let otlp_http_listener =
+        TcpListener::bind((bind.as_str(), config.server.otlp_http_port)).await?;
+    let otlp_http_addr = otlp_http_listener.local_addr()?;
+
+    let otlp_grpc_listener =
+        TcpListener::bind((bind.as_str(), config.server.otlp_grpc_port)).await?;
+    let otlp_grpc_addr = otlp_grpc_listener.local_addr()?;
+
     let graphql_state = GraphQlState {
         schema: Arc::new(parallax_api::build_schema()),
         context: Arc::new(ApiContext {
             store: store.clone(),
             metadata: metadata.clone(),
+            otlp_grpc_port: otlp_grpc_addr.port(),
         }),
     };
     let api_router = Router::new()
@@ -195,18 +208,7 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
         _ => embedded_ui::fallback(api_router),
     };
 
-    let bind = &config.server.bind;
-    let api_listener = TcpListener::bind((bind.as_str(), config.server.api_port)).await?;
-    let api_addr = api_listener.local_addr()?;
-
-    let otlp_http_listener =
-        TcpListener::bind((bind.as_str(), config.server.otlp_http_port)).await?;
-    let otlp_http_addr = otlp_http_listener.local_addr()?;
     let otlp_http_router = otlp_http::router(ingest.clone());
-
-    let otlp_grpc_listener =
-        TcpListener::bind((bind.as_str(), config.server.otlp_grpc_port)).await?;
-    let otlp_grpc_addr = otlp_grpc_listener.local_addr()?;
     let grpc = OtlpGrpc::new(ingest);
     let grpc_server = tonic::transport::Server::builder()
         .add_service(grpc.trace_service())

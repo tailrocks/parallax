@@ -64,6 +64,10 @@ impl Client {
         }
     }
 
+    pub fn base_url(&self) -> &str {
+        &self.base_url
+    }
+
     pub async fn graphql(&self, query: &str) -> anyhow::Result<serde_json::Value> {
         let response: serde_json::Value = self
             .http

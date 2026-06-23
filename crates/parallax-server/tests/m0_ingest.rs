@@ -117,11 +117,25 @@ async fn otlp_http_and_health_endpoints_work() {
     assert_eq!(health.status(), 200);
     assert_eq!(health.text().await.expect("body"), "ok");
 
+    let client = reqwest::Client::new();
+    let graphql: serde_json::Value = client
+        .post(format!("http://{}/graphql", handle.api_addr))
+        .json(&serde_json::json!({ "query": "{ otlpGrpcPort }" }))
+        .send()
+        .await
+        .expect("graphql request")
+        .json()
+        .await
+        .expect("graphql json");
+    assert_eq!(
+        graphql["data"]["otlpGrpcPort"].as_u64(),
+        Some(u64::from(handle.otlp_grpc_addr.port()))
+    );
+
     // Raw protobuf OTLP/HTTP export against both the dedicated :4318-style
     // listener and the API listener's merged routes.
     let request = parallax_proto::collector_trace::ExportTraceServiceRequest::default();
     let body = request.encode_to_vec();
-    let client = reqwest::Client::new();
     for addr in [handle.otlp_http_addr, handle.api_addr] {
         let response = client
             .post(format!("http://{addr}/v1/traces"))
