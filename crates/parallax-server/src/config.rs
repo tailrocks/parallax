@@ -10,6 +10,7 @@ pub struct Config {
     pub storage: StorageConfig,
     pub retention: RetentionConfig,
     pub limits: LimitsConfig,
+    pub telemetry: TelemetryConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,6 +54,19 @@ pub struct LimitsConfig {
     pub bundle_max_tokens: usize,
     pub graphql_max_depth: usize,
     pub graphql_max_complexity: usize,
+}
+
+/// Self-telemetry: where `parallax serve` exports its **own** spans/logs. Empty
+/// (the default) keeps Parallax silent about itself — it only receives. Set an
+/// OTLP/gRPC endpoint (e.g. the lab's Rotel `http://localhost:4317`) and serve
+/// emits its internal telemetry there; the env var `PARALLAX_SELF_OTLP`
+/// overrides this key (`off` forces it off). The OTLP ingest receivers are
+/// suppressed from this exporter so a sink pointed back at Parallax does not
+/// re-export what it just received.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct TelemetryConfig {
+    pub self_otlp_endpoint: String,
 }
 
 impl Default for ServerConfig {

@@ -194,21 +194,50 @@ enum TraceCommand {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
-        )
-        .init();
-
     let cli = Cli::parse();
+
+    // Self-telemetry (serve only): resolve + build the OTLP export pipeline
+    // before the subscriber is installed, then attach its layers alongside the
+    // console `fmt` layer. The serve config loaded here is reused by the arm.
+    let mut serve_config: Option<parallax_server::Config> = None;
+    let mut self_telemetry: Option<parallax_server::self_telemetry::Installed> = None;
+    if let Command::Serve { config } = &cli.command {
+        let default_path = std::env::home_dir().map(|h| h.join(".parallax/config.toml"));
+        let path = config.clone().or(default_path);
+        let cfg = parallax_server::Config::load(path.as_deref())?;
+        if let Some(endpoint) = parallax_server::self_telemetry::resolve_endpoint(&cfg) {
+            self_telemetry = Some(parallax_server::self_telemetry::install(&endpoint)?);
+        }
+        serve_config = Some(cfg);
+    }
+
+    let (otel_layers, telemetry_guard, telemetry_endpoint) = match self_telemetry {
+        Some(parallax_server::self_telemetry::Installed {
+            layers,
+            guard,
+            endpoint,
+        }) => (layers, Some(guard), Some(endpoint)),
+        None => (Vec::new(), None, None),
+    };
+
+    {
+        use tracing_subscriber::Layer;
+        use tracing_subscriber::layer::SubscriberExt;
+        use tracing_subscriber::util::SubscriberInitExt;
+        let env =
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into());
+        tracing_subscriber::registry()
+            .with(otel_layers)
+            .with(tracing_subscriber::fmt::layer().with_filter(env))
+            .init();
+    }
     let client =
         || -> anyhow::Result<Client> { Ok(Client::new(resolve_url(cli.context.as_deref())?)) };
 
     match cli.command {
-        Command::Serve { config } => {
-            let default_path = std::env::home_dir().map(|h| h.join(".parallax/config.toml"));
-            let path = config.or(default_path);
-            let config = parallax_server::Config::load(path.as_deref())?;
+        Command::Serve { .. } => {
+            // Config was loaded above (to resolve self-telemetry); reuse it.
+            let config = serve_config.expect("serve config loaded above");
             let handle = parallax_server::start(&config).await?;
             let storage = match config.storage.mode.as_str() {
                 "none" => "in-memory (degraded; data lost on exit)".to_string(),
@@ -224,6 +253,12 @@ async fn main() -> anyhow::Result<()> {
             println!("    OTLP/HTTP  {}", handle.otlp_http_addr);
             println!("    storage    {storage}");
             println!("    data       {}", config.data_dir().display());
+            match &telemetry_endpoint {
+                Some(endpoint) => {
+                    println!("    self-otlp   parallax → {endpoint} (ingest path suppressed)")
+                }
+                None => println!("    self-otlp   off (set PARALLAX_SELF_OTLP to export)"),
+            }
             println!();
             // SIGTERM must also shut down cleanly — dying without cleanup
             // orphans the managed engine child on its ports.
@@ -234,6 +269,10 @@ async fn main() -> anyhow::Result<()> {
                 _ = sigterm.recv() => {},
             }
             handle.shutdown();
+            // Flush buffered self-telemetry before exit.
+            if let Some(guard) = &telemetry_guard {
+                guard.shutdown();
+            }
             Ok(())
         }
         Command::Run { command } => match command {

@@ -29,6 +29,16 @@ futures-core = { workspace = true }
 tonic = { workspace = true }
 tower-http = { workspace = true }
 tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+# Self-telemetry: `parallax serve` exports its own spans/logs over OTLP to a
+# configured collector (e.g. the lab's Rotel) — opt-in via `PARALLAX_SELF_OTLP`
+# / `[telemetry] self_otlp_endpoint`. The ingest-path is suppressed so the sink
+# does not re-export what it just received (self→Rotel→self loop).
+opentelemetry = "0.32"
+opentelemetry-otlp = { version = "0.32", features = ["grpc-tonic", "logs", "trace", "metrics"] }
+opentelemetry_sdk = "0.32"
+opentelemetry-appender-tracing = "0.32"
+tracing-opentelemetry = "0.33"
 rust-embed = { workspace = true, optional = true }
 mime_guess = { workspace = true, optional = true }
 
@@ -38,9 +48,5 @@ mime_guess = { workspace = true, optional = true }
 embed-ui = ["dep:rust-embed", "dep:mime_guess"]
 
 [dev-dependencies]
-opentelemetry = "0.32"
-opentelemetry-otlp = { version = "0.32", features = ["grpc-tonic", "logs", "trace", "metrics"] }
-opentelemetry_sdk = "0.32"
 reqwest = { workspace = true }
 tempfile = "3"
-tracing-subscriber = { workspace = true }

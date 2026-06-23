@@ -77,7 +77,7 @@ self-telemetry are genuinely unbuilt:
 | Offset OTLP ports `14317/14318` | **BUILT** — `config.toml` keys `otlp_grpc_port` / `otlp_http_port` (default `4317/4318`); `parallax serve` takes only `--config` | config-only edit; **no CLI flags** (`--otlp-grpc`/`--otlp-http` don't exist) — set the ports in `~/.parallax/config.toml` |
 | Bind OTLP on `0.0.0.0` | **BUILT** — `config.toml` key `bind` (default `127.0.0.1`); `serve` binds all three listeners (api/otlp_http/otlp_grpc) to it | config-only edit; set `bind = "0.0.0.0"`. No code change needed |
 | Forward child telemetry to Rotel | `parallax run start` injects a **hardcoded** `http://127.0.0.1:4317` into the child env (`commands.rs`) | a `--otlp-forward` switch is **[NOT YET IMPLEMENTED]**. *Lucky accident:* the hardcoded `127.0.0.1:4317` already equals Rotel's published port, so child apps reach Rotel today with zero changes |
-| Parallax self-telemetry into the lab | `parallax serve` only **receives** OTLP; it does not emit its own spans/logs anywhere | self-instrumentation is **[NOT YET IMPLEMENTED]**; until built, Parallax's *own* internal traces cannot fan out |
+| Parallax self-telemetry into the lab | **BUILT (2026-06-23)** — `parallax serve` exports its own spans/logs over OTLP/gRPC when `[telemetry] self_otlp_endpoint` / `PARALLAX_SELF_OTLP` names a collector (tagged `service.name=parallax`); the ingest receivers/worker are suppressed from that exporter so a sink fanning back to Parallax can't loop | set `PARALLAX_SELF_OTLP=http://localhost:4317` (Rotel) and add `parallax` to Rotel's exporters; off by default. Verified live: self-spans land, count stable (no loop), 0 ingest-path spans exported |
 | Install via Homebrew | repo policy: stable formula is **disabled** pre-release; only a rolling `parallax-preview` exists | use `brew install tailrocks/parallax/parallax-preview` (or run from a local checkout), **not** `brew install parallax` |
 
 The correct invocations given today's code:
@@ -315,11 +315,15 @@ makes it impossible to forget which mode you're in.
 ### Scope note
 
 This covers **child-process** telemetry (Jackin, demo apps) — which is exactly the
-compare use case. Parallax's **own self-telemetry** is separate and **[NOT YET
-IMPLEMENTED]**; if/when it ships, route it to Rotel too, but suppress Parallax's
-ingest-path spans from its self-telemetry exporter to avoid a
-self→Rotel→self feedback loop (tagging identifies copies, it does not break the
-loop).
+compare use case. Parallax's **own self-telemetry** is separate and now **BUILT
+(2026-06-23)**: `parallax serve` exports its internal spans/logs to the
+configured `PARALLAX_SELF_OTLP` endpoint (point it at Rotel to fan out beside the
+workload). The exporter suppresses Parallax's **ingest-path** spans
+(`otlp_grpc`/`otlp_http`/`worker` + transport crates), which is what actually
+breaks the self→Rotel→self loop — tagging only identifies copies, the
+target-level suppression is the loop-breaker. Verified live by exporting to
+Parallax's own receiver: self-spans land, the count holds steady (no loop), and
+zero ingest-path spans are exported.
 
 ## Docker Compose setup (what to build)
 
@@ -492,10 +496,12 @@ Sentry speaks OTLP; the lab treats it as a near-first-class target.
 
 ## Risks / open questions
 
-- **Two Parallax-side features are unbuilt.** Port offset and `0.0.0.0` bind are
-  already **config-only** — usable today. **Configurable child-telemetry
-  forwarding** (`--otlp-forward`/`PARALLAX_OTLP_FORWARD`) and **self-telemetry**
-  are genuinely unbuilt. The "lucky accident" (hardcoded `127.0.0.1:4317` happens
+- **Parallax-side features are now all built.** Port offset and `0.0.0.0` bind
+  are **config-only** — usable today. **Configurable child-telemetry forwarding**
+  (`--otlp-forward`/`PARALLAX_OTLP_FORWARD`) and **self-telemetry**
+  (`PARALLAX_SELF_OTLP`, with ingest-path suppression) are **now built + verified
+  live (2026-06-23)** — nothing on the Parallax side remains unbuilt for the lab.
+  The "lucky accident" (hardcoded `127.0.0.1:4317` happens
   to equal Rotel's published port) lets the lab run **only** in this exact port
   arrangement, and a subtle consequence: because Parallax is offset to `14317`,
   `run start`'s hardcoded `4317` *always* hits Rotel while the lab is up — so you

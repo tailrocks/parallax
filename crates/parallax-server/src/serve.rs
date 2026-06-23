@@ -69,12 +69,25 @@ struct GraphQlState {
     context: Arc<ApiContext>,
 }
 
-/// The hand-rolled Juniper-over-axum handler (spec §2 note).
+/// The hand-rolled Juniper-over-axum handler (spec §2 note). Wrapped in a
+/// `graphql.request` span so self-telemetry (when enabled) emits Parallax's own
+/// API activity — this is the recurring signal that fans out to the lab.
 async fn graphql_handler(
     State(state): State<GraphQlState>,
     Json(request): Json<juniper::http::GraphQLRequest>,
 ) -> Json<juniper::http::GraphQLResponse> {
-    Json(request.execute(&state.schema, &state.context).await)
+    use tracing::Instrument;
+    let operation = request
+        .operation_name
+        .clone()
+        .unwrap_or_else(|| "anonymous".to_string());
+    async move {
+        let response = request.execute(&state.schema, &state.context).await;
+        tracing::info!(ok = response.is_ok(), "graphql request");
+        Json(response)
+    }
+    .instrument(tracing::info_span!("graphql.request", otel.name = %operation))
+    .await
 }
 
 /// Shared state handed to both OTLP transports.

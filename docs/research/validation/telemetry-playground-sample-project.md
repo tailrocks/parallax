@@ -614,12 +614,14 @@ parallax-telemetry-playground/
 
 ## 15. Risks / open questions
 
-- **Parallax-side prerequisites** (from the lab doc): port offset + `0.0.0.0` bind
-  are config-only (built); **`parallax.run.id` child-process stamping already
-  exists** (`run start` injects `OTEL_RESOURCE_ATTRIBUTES=parallax.run.id=<id>` +
-  the full per-signal OTel env); what's unbuilt is the **compare-mode forward**
-  (the OTLP destination is a hardcoded const — make it ambient-configurable per
-  the lab's "Compare mode" DevEx section) and Parallax **self-telemetry**.
+- **Parallax-side prerequisites** (from the lab doc) are now **all built**: port
+  offset + `0.0.0.0` bind (config-only); **`parallax.run.id` child-process
+  stamping** (`run start` injects `OTEL_RESOURCE_ATTRIBUTES=parallax.run.id=<id>`
+  + the full per-signal OTel env); the **compare-mode forward**
+  (`--otlp-forward`/`PARALLAX_OTLP_FORWARD`); and **self-telemetry**
+  (`PARALLAX_SELF_OTLP` — serve exports its own spans/logs with ingest-path
+  suppression, verified live 2026-06-23). No Parallax-side prerequisite remains
+  unbuilt.
 - **Rust metric exemplars don't exist** (#3369) — exemplars come from the JVM
   tier; don't promise them from Rust or the browser.
 - **Sentry has no OTLP metrics; Java `SentrySpanProcessor` NOOPs span events** —

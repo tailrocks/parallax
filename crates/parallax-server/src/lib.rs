@@ -10,6 +10,7 @@ pub mod greptime_supervisor;
 pub mod live;
 pub mod otlp_grpc;
 pub mod otlp_http;
+pub mod self_telemetry;
 pub mod serve;
 pub mod worker;
 
