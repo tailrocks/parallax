@@ -18,7 +18,11 @@ services:
     ports: !reset []
     networks: [lab]
   signoz:
-    ports: !reset
+    # Replace (not merge) the stock `8080:8080` — 8080 collides with other lab
+    # services; publish the SigNoz UI on host 3301. `!override` swaps the whole
+    # list (a plain list merges/appends; `!reset` alone dropped it and a
+    # following list did not re-apply, leaving the UI unpublished).
+    ports: !override
       - "3301:8080" # SigNoz UI on host 3301 (container 8080)
 networks:
   lab:
