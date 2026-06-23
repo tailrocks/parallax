@@ -28,11 +28,19 @@ emitters ─► localhost:4317 (Rotel) ─┬─► openobserve:5081        (com
   retries until Parallax is up (note: Rotel fan-out is **sequential**, so list a
   down host-Parallax sink *after* the others or it back-pressures them).
 - 🟡 **SigNoz** — overlay `compose.signoz.yml` (vendored clone via
-  `setup-vendor.sh`). **Overlay config verified** (`docker compose config`): the
-  `otel-collector` correctly ends up on **both** `lab` (reachable from Rotel) and
-  `signoz-net` (reaches ClickHouse), and its host `4317/4318` are unpublished. A
-  full stack bring-up (ClickHouse + ZooKeeper + migrators) still wants a real
-  host — the OTLP fan-out hop itself is the same one proven against OpenObserve.
+  `setup-vendor.sh`, pinned to `v0.129.0`). **Run live 2026-06-23** (both `main`
+  and `v0.129.0`): the full stack comes up healthy (ZooKeeper + ClickHouse +
+  migrators + signoz + collector), the overlay networking is correct (Rotel
+  resolves `otel-collector` on the shared `lab` network; host `4317/4318`
+  unpublished). **Finding:** SigNoz's `otel-collector` is **OpAMP-managed** by the
+  SigNoz server — its OTLP `:4317` receiver is *not* opened by the static
+  `otel-collector-config.yaml`; it binds only after the server pushes a config,
+  which requires the server to be fully **onboarded** (org/admin). On a fresh
+  headless `docker compose up` the collector logs repeating
+  `opamp/server_client.go` errors and `:4317` stays closed, so Rotel's `signoz`
+  exporter can't deliver yet. Net: SigNoz needs an onboarding step beyond
+  `compose up` before the fan-out lands — the OTLP hop itself is the same one
+  proven against OpenObserve.
 - 🟡 **Maple** — overlay `compose.maple.yml` builds the chDB local binary from
   source (`maple/Dockerfile`); finalize the build/CMD per Maple's
   `docs/local-mode.md` (no official Linux image exists).
