@@ -13,6 +13,10 @@ Updates 2026-06-23: added the compare-mode `parallax run start` DevEx design;
 run in Docker Compose.** Maple runs fully local as a **chDB-binary container (not
 Tinybird)**. The only Parallax-side support needed is forwarding to the collector;
 Rotel reaches the single host sink (Parallax) via `host.docker.internal:14317`.
+**All five backends are now implemented and verified live (2026-06-23):**
+OpenObserve, SigNoz, Maple (chDB), and Sentry (v26.6.0, its own vendored stack
+reached over the host bridge `host.docker.internal:9000`). Sentry is no longer
+deferred — see `bench/otlp-fanout/sentry/`.
 
 ## Goal
 
@@ -335,7 +339,7 @@ separately on the host (see prerequisites / workflow step 0).
 | `maple` | container running Maple's **chDB single-binary** (local mode) — small image wrapping the binary; **no Tinybird** | `8081`→UI | default | OTLP `4318` HTTP internal, **no auth**; chDB data in a named volume |
 | `signoz` | `include:` SigNoz `deploy/docker` (signoz + otel-collector + clickhouse + zookeeper) | `3301`→`8080` | default | **override to unpublish its host `4317/4318`** (see Hard rule); collector service `otel-collector` |
 | `openobserve` | `public.ecr.aws/zinclabs/openobserve` (pin tag) | `5080` | default | OTLP `5081` gRPC internal; set `ZO_ROOT_USER_EMAIL`/`ZO_ROOT_USER_PASSWORD`; **ingest needs auth headers** (see `rotel.env`) |
-| `sentry-*` | `getsentry/self-hosted` (**~72 services**, `install.sh`) | `9000` (nginx) | `sentry` | **not a clean `include:` target** — run as its own stack + join Rotel to its network. OTLP via `nginx:80` → `relay:3000`. Needs feature flags + re-run `install.sh`. Pin ≥ native-OTLP (`~25.8.0`) |
+| `sentry-*` | `getsentry/self-hosted` (**~72 services**, `install.sh`) | `9000` (nginx) | own stack | **not a clean `include:` target** — runs as its **own vendored Compose stack** (`bench/otlp-fanout/sentry/setup.sh`); Rotel reaches it over the **host bridge** `host.docker.internal:9000` → nginx → relay (no network-join needed). **IMPLEMENTED + verified live 2026-06-23 on v26.6.0** (A1 OTLP ingest + A15/A16 grouping). Pin ≥ native-OTLP (`~25.8.0`); default `SENTRY_REF=26.6.0` |
 | `loadgen` | small OTel SDK / `telemetrygen` container | — | `loadgen` | optional fixed-fixture emitter → `rotel:4317`; pins trace/span ids for cross-UI diffing |
 
 Hard rule: **only `rotel` publishes `4317/4318` to the host.** Every competitor
@@ -480,7 +484,11 @@ Sentry speaks OTLP; the lab treats it as a near-first-class target.
   gained `integration/` by `25.10.0`. Pin a version and match the path.
 - **Deployment reality:** self-hosted Sentry is **~72 services** installed via
   `install.sh` that generates configs — **not** a clean Compose `include:`
-  target. Run it as its own stack and join Rotel to its network.
+  target. Run it as its own stack. **Realized (2026-06-23):** rather than joining
+  Rotel to Sentry's network, Rotel reaches the published nginx front door over
+  the **host bridge** (`host.docker.internal:9000`) — same hop Parallax uses —
+  which avoids a cross-stack network-join entirely. Implemented in
+  `bench/otlp-fanout/sentry/`.
 
 ## Risks / open questions
 
@@ -525,10 +533,13 @@ Sentry speaks OTLP; the lab treats it as a near-first-class target.
 2. **Core lab** — add SigNoz + OpenObserve in Compose (with `include:` port
    overrides + auth headers). Lock the port map; build the `parallax run start`
    compare-mode forward (the `--otlp-forward`/`PARALLAX_OTLP_FORWARD` switch).
-3. **Full lab (Sentry, DEFERRED to this phase)** — add self-hosted Sentry as its
-   own stack joined to Rotel's network; bootstrap project/DSN, resolve feature
-   flags + path version. Sentry is the heaviest/fiddliest piece, so phases 1–2
-   stand up without it.
+3. **Full lab (Sentry)** — **DONE (2026-06-23, v26.6.0):** self-hosted Sentry
+   runs as its own vendored stack via `sentry/setup.sh`; `sentry/onboard.sh`
+   bootstraps the project/DSN and prints the `rotel.env` exports; Rotel reaches
+   it over the host bridge (`host.docker.internal:9000`, no network-join);
+   `sentry/verify.sh` asserts native OTLP ingest (A1) + issue grouping
+   (A15/A16). Sentry is the heaviest/fiddliest piece, so phases 1–2 still stand
+   up without it.
 4. **Server tier** — move the full set to a server for sustained runs.
 
 *(A scored fixture/diff harness is out of scope for now — comparison is manual,

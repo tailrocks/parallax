@@ -67,8 +67,24 @@ emitters ─► localhost:4317 (Rotel) ─┬─► openobserve:5081        (com
      published on host `:8081`. (Rotel logs a cosmetic protobuf-response-decode
      warning — Maple's OTLP/HTTP *response* body isn't protobuf — but ingestion
      succeeds and spans land in chDB.)
-- ⏭ **Sentry** — deferred (heaviest: ~72-service `install.sh` stack + DSN
-  bootstrap). Wire its exporter in `rotel.env` once stood up.
+- ✅ **Sentry** — runnable, **verified end-to-end live 2026-06-23 on v26.6.0**.
+  Self-hosted Sentry is ~72 services bootstrapped by its own `install.sh` (not a
+  clean `include:` target), so it runs as its **own vendored Compose stack**
+  under `vendor/sentry` and Rotel reaches it over the **host bridge**
+  (`host.docker.internal:9000` → nginx → relay) — no network-join needed. Three
+  scripts drive it:
+  1. `sentry/setup.sh` — vendor `getsentry/self-hosted` (pinned `SENTRY_REF`,
+     default `26.6.0` ≥ native-OTLP `25.8.0`), run `install.sh` non-interactively
+     (needs bash ≥ 4.4 — `brew install bash` on macOS), `docker compose up`.
+  2. `sentry/onboard.sh` — create the admin (idempotent), read the internal
+     project DSN, and print the exact `rotel.env` exports + `SENTRY_DSN`.
+  3. `sentry/verify.sh <DSN>` — assert **A1** (native OTLP trace ingest → 200),
+     **A15** (N identical errors group into one issue), **A16** (issue
+     `times_seen` rises). Verified: OTLP ingest 200 + grouped issue.
+
+  Paste the printed exports into `rotel.env`, add `sentry` to `ROTEL_EXPORTERS`
+  + the traces/logs lists (omit from `ROTEL_EXPORTERS_METRICS` — Sentry has no
+  OTLP metrics), and restart Rotel.
 
 ## Quick start (core)
 
@@ -113,6 +129,18 @@ docker compose -f compose.yml -f compose.signoz.yml -f compose.maple.yml up -d
 Then uncomment `maple`/`signoz` in `rotel.env` (`ROTEL_EXPORTERS` + the per-signal
 lists). SigNoz UI → `http://localhost:3301`, Maple UI → `http://localhost:8081`.
 
+Sentry is its own stack (not an overlay):
+
+```bash
+./sentry/setup.sh     # vendor + install.sh + up (20-40 min first run; needs bash >= 4.4)
+./sentry/onboard.sh   # create admin, print the DSN + rotel.env exports
+./sentry/verify.sh <DSN>   # assert OTLP ingest + issue grouping (A1/A15/A16)
+```
+
+Paste the printed `ROTEL_EXPORTER_SENTRY_*` exports into `rotel.env`, add
+`sentry` to `ROTEL_EXPORTERS` + the traces/logs lists, restart Rotel. Sentry UI →
+`http://localhost:9000`.
+
 ## Files
 
 | File | Purpose |
@@ -123,6 +151,9 @@ lists). SigNoz UI → `http://localhost:3301`, Maple UI → `http://localhost:80
 | `compose.signoz.yml` / `compose.maple.yml` | backend overlays |
 | `maple/Dockerfile` | Maple chDB local-mode build (best-effort) |
 | `setup-vendor.sh` | clone SigNoz into `vendor/` |
+| `sentry/setup.sh` | vendor + install self-hosted Sentry as its own Compose stack |
+| `sentry/onboard.sh` | create admin, print DSN + `rotel.env` exports |
+| `sentry/verify.sh` | assert Sentry OTLP ingest + issue grouping (A1/A15/A16) |
 | `smoke.sh` | bring up core, drive load, assert delivery |
 
 Pin every image tag at implementation; `:latest` here is a starting point.
