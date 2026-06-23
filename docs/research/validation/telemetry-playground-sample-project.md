@@ -12,8 +12,12 @@ All three language tiers validated to build (2026-06-23):
 - **Java** — `catalog` (Spring GraphQL), `payment` (Spring Boot; gRPC codegen
   next), `fulfillment` (Spring Kafka consumer + reverse Java→Rust hop) all
   compile (`gradlew compileJava`, JDK 21).
-- **web** — TanStack Start + Sentry + OTel-web deps resolve under Bun; provider
-  wiring TODO.
+- **web** — **real TanStack Start app** (file-based routing + Nitro server), not
+  a scaffold: same-origin `/v1/traces` OTLP proxy server route → Rotel, SSR
+  `<meta name="traceparent">` handoff, OTel browser provider (fetch +
+  document-load + user-interaction) + Sentry RUM (replay, web vitals, feedback,
+  console-logs). `bun run build` (Vite client + SSR + Nitro) and `tsc --noEmit`
+  both clean.
 - **Integrated e2e verified**: the four Rust services emit OTLP → the lab's Rotel
   → OpenObserve, and a trace search returns all four services by name
   (`checkout/pricing/inventory/recommendation`). The whole pipeline, not stdout.
@@ -27,12 +31,21 @@ All three language tiers validated to build (2026-06-23):
   (baggage), A12, A18 (canary), A13 driver, and chaos B1/B2/B3/B5/B6/B7/B8/B9/
   B10/B11/B17. flagd, k6, compose (all services), web (`bun run build`).
 
-Remaining: web TanStack-router integration + the same-origin OTLP proxy; payment
-gRPC proto codegen + cross-language gRPC e2e; real Kafka broker (the in-process
-queue stands in today); the rest of the A/B catalog (exemplars, GraphQL
-subscription, streaming, RUM, profiling, the remaining chaos modes); and a full
-cross-language live trace through the running lab. Comparison is manual; scored
-harness out of scope.
+Done since: **web** is now a full TanStack Start app with the same-origin
+`/v1/traces` proxy; payment gRPC codegen + cross-language gRPC verified; real
+Kafka (Redpanda) producer/consumer; **A7 GraphQL subscription** resolver
+(`catalog`, long-lived streaming span over WebSocket); the **Rust tier now emits
+all three OTLP signals** (traces + metrics via `MetricsLayer` + logs via the
+appender bridge, was traces-only); all Java + web services wired into the deploy
+compose (`Dockerfile.java`/`Dockerfile.web`).
+
+Remaining (mostly host-/SaaS-gated or operator-deferred): a full cross-language
+**live** trace through the running lab; the Sentry-envelope-only scenarios
+(A15/A16 issue lifecycle) and **profiling** (A17) need a real Sentry; Rust
+`sentry-opentelemetry` shared-trace_id wiring (a documented enhancement —
+requires using only the OTel tracing API, verifiable only against a live Sentry,
+so deferred to avoid regressing the working error-capture path); SigNoz/Maple
+overlays verify at run. Comparison is manual; scored harness out of scope.
 Relationship: feeds the [OTLP Fan-Out Comparison Lab](otlp-fanout-comparison-lab.md).
 The lab is the *plumbing* (one stream → many backends via Rotel); this playground
 is the *payload* — a realistic polyglot app instrumented to the maximum so every
