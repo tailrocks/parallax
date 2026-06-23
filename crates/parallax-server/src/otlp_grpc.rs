@@ -16,6 +16,7 @@ use parallax_proto::collector_trace::trace_service_server::{TraceService, TraceS
 use parallax_proto::collector_trace::{ExportTraceServiceRequest, ExportTraceServiceResponse};
 use parallax_storage::spool::Signal;
 use prost::Message;
+use tonic::codec::CompressionEncoding;
 use tonic::{Request, Response, Status};
 
 #[derive(Clone)]
@@ -29,15 +30,23 @@ impl OtlpGrpc {
     }
 
     pub fn trace_service(&self) -> TraceServiceServer<Self> {
+        // Accept gzip — standard OTLP exporters (incl. Rotel) compress by
+        // default; without this tonic rejects the request as Unimplemented.
         TraceServiceServer::new(self.clone())
+            .accept_compressed(CompressionEncoding::Gzip)
+            .send_compressed(CompressionEncoding::Gzip)
     }
 
     pub fn logs_service(&self) -> LogsServiceServer<Self> {
         LogsServiceServer::new(self.clone())
+            .accept_compressed(CompressionEncoding::Gzip)
+            .send_compressed(CompressionEncoding::Gzip)
     }
 
     pub fn metrics_service(&self) -> MetricsServiceServer<Self> {
         MetricsServiceServer::new(self.clone())
+            .accept_compressed(CompressionEncoding::Gzip)
+            .send_compressed(CompressionEncoding::Gzip)
     }
 
     /// Spool by reference, then MOVE the decoded request into the worker
