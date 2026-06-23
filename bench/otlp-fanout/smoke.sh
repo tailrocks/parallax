@@ -24,13 +24,22 @@ echo "==> driving telemetry through Rotel (telemetrygen)"
   traces --otlp-endpoint=rotel:4317 --otlp-insecure --rate=10 --duration=10s --service=smoke
 
 echo "==> asserting OpenObserve received traces"
-sleep 5
+# OpenObserve's WAL→searchable flush is ZO_FILE_PUSH_INTERVAL (10s in compose).
+sleep 12
 AUTH="Basic cm9vdEBleGFtcGxlLmNvbTpDb21wbGV4cGFzcyMxMjM="
-COUNT=$(curl -fsS -H "Authorization: $AUTH" \
-  "http://localhost:5080/api/default/default/_search?type=traces" \
+# OO search endpoint is /api/{org}/_search (stream goes in the SQL FROM, NOT in
+# the path) and needs from/size or it returns 0 hits. start/end are micros.
+NOW_US=$(( $(date +%s) * 1000000 )); START_US=$(( ($(date +%s) - 3600) * 1000000 ))
+RESP=$(curl -fsS -H "Authorization: $AUTH" \
+  "http://localhost:5080/api/default/_search?type=traces" \
   -H 'Content-Type: application/json' \
-  -d '{"query":{"sql":"SELECT count(*) AS c FROM default","start_time":0,"end_time":9999999999999999}}' 2>/dev/null || echo "")
-echo "OpenObserve response: ${COUNT:-<none>}"
+  -d "{\"query\":{\"sql\":\"SELECT count(*) AS c FROM \\\"default\\\"\",\"start_time\":$START_US,\"end_time\":$NOW_US,\"from\":0,\"size\":1}}" 2>/dev/null || echo "")
+echo "OpenObserve response: ${RESP:-<none>}"
+if printf '%s' "$RESP" | grep -qE '"c":[1-9]'; then
+  echo "ASSERT PASS: OpenObserve received traces."
+else
+  echo "ASSERT FAIL: no traces in OpenObserve (check Rotel fan-out / OO ingest)." >&2
+fi
 
 # Host Parallax assert (only if Parallax is serving on the offset port).
 if curl -fsS http://localhost:4000/healthz >/dev/null 2>&1 || curl -fsS http://localhost:4000 >/dev/null 2>&1; then
