@@ -1,31 +1,30 @@
 # Maple in LOCAL mode (chDB embedded, NO Tinybird), containerized.
 #
-# Maple ships its local single-binary via a Homebrew tap (macOS only) and does
-# not publish a Linux image or binary for local mode (verified 2026-06-23), so we
-# build it from source: Bun compile + libchdb. This is the lab's known risk —
-# verify against the current Maple repo at run time; pin MAPLE_REF.
+# Maple DOES ship prebuilt local-mode bundles for Linux (x86_64 & arm64) via its
+# manual installer (maple.dev/cli/install → GitHub Releases): the bundle is the
+# `maple` binary + `libchdb.so` (embedded ClickHouse). We install that prebuilt
+# bundle rather than building from source. Pin MAPLE_VERSION to a release tag.
 #
-# Expected result: a container that runs `maple start`, exposing OTLP/HTTP on
-# 4318 and the dashboard, storing chDB data under /data.
-FROM oven/bun:1 AS build
-ARG MAPLE_REF=main
-RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-WORKDIR /src
-RUN git clone --depth 1 --branch "${MAPLE_REF}" https://github.com/Makisuo/maple.git .
-RUN bun install --frozen-lockfile || bun install
-# Build the local-mode binary. The exact target script is Maple-version-specific;
-# consult docs/local-mode.md in the repo. Common forms (uncomment the right one):
-# RUN bun run build:local
-# RUN bun build apps/cli/src/index.ts --compile --outfile /out/maple
-
-FROM oven/bun:1
-WORKDIR /app
-ENV MAPLE_DATA_DIR=/data
+# `maple start` runs OTLP/HTTP ingest + query API + UI on a SINGLE --port, and it
+# binds that port to **127.0.0.1 only** (verified 2026-06-23 — there is no
+# --host/bind flag). In the container-only lab topology Rotel lives in another
+# container, so we run Maple on an internal loopback port and front it with a
+# tiny `socat` forwarder on 0.0.0.0:4318 so `maple:4318` is reachable on the lab
+# network. `--offline` serves the bundled UI from loopback.
+FROM debian:bookworm-slim
+ARG MAPLE_VERSION=""
+ENV MAPLE_INSTALL_DIR=/opt/maple/bin \
+    MAPLE_BIN_DIR=/usr/local/bin \
+    MAPLE_DATA_DIR=/data \
+    MAPLE_NO_UPDATE_CHECK=1 \
+    MAPLE_INTERNAL_PORT=9000
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl ca-certificates libstdc++6 socat bash \
+    && rm -rf /var/lib/apt/lists/* \
+    && MAPLE_VERSION="${MAPLE_VERSION}" sh -c 'curl -fsSL https://maple.dev/cli/install | sh' \
+    && maple --version
+COPY entrypoint.sh /usr/local/bin/maple-entrypoint
+RUN chmod +x /usr/local/bin/maple-entrypoint
 VOLUME /data
 EXPOSE 4318
-# COPY --from=build /out/maple /usr/local/bin/maple
-# libchdb (embedded ClickHouse) must be present alongside the binary — copy it
-# from the build stage once the build step above is finalized.
-# CMD ["maple", "start", "--host", "0.0.0.0", "--otlp-port", "4318", "--data", "/data"]
-CMD ["bash", "-lc", "echo 'Maple local-mode container: finalize build/CMD per docs/local-mode.md' && sleep infinity"]
+CMD ["maple-entrypoint"]

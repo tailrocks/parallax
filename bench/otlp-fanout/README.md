@@ -54,9 +54,19 @@ emitters ─► localhost:4317 (Rotel) ─┬─► openobserve:5081        (com
   `lab` network; host `4317/4318` unpublished. Note: the `signoz: ports: !reset`
   override did not publish the UI on host `3301` in this run — reach the API
   in-container as above, or fix the publish — tracked.)
-- 🟡 **Maple** — overlay `compose.maple.yml` builds the chDB local binary from
-  source (`maple/Dockerfile`); finalize the build/CMD per Maple's
-  `docs/local-mode.md` (no official Linux image exists).
+- ✅ **Maple** — overlay `compose.maple.yml` (`maple/Dockerfile`). **Verified
+  end-to-end live 2026-06-23:** Rotel → `maple:4318` → embedded chDB, `maple
+  traces` returns 6 `maple-fanout` spans. Two findings, both handled in the
+  Dockerfile/entrypoint:
+  1. Maple **does** ship prebuilt Linux bundles (`maple.dev/cli/install` → GitHub
+     Releases: `maple` + `libchdb.so`), so we install that **instead of building
+     from source** (the old scaffold's assumption was wrong).
+  2. `maple start` binds OTLP + query API + dashboard to **127.0.0.1 only** (no
+     `--host` flag), so a `socat` forwarder fronts it on `0.0.0.0:4318` to make
+     `maple:4318` reachable from Rotel on the lab network. Dashboard/query API is
+     published on host `:8081`. (Rotel logs a cosmetic protobuf-response-decode
+     warning — Maple's OTLP/HTTP *response* body isn't protobuf — but ingestion
+     succeeds and spans land in chDB.)
 - ⏭ **Sentry** — deferred (heaviest: ~72-service `install.sh` stack + DSN
   bootstrap). Wire its exporter in `rotel.env` once stood up.
 

@@ -7,11 +7,15 @@ services:
     build:
       context: ./maple
       args:
-        MAPLE_REF: main # pin a tag at implementation
+        MAPLE_VERSION: "" # pin a release tag (empty = latest); installs prebuilt Linux bundle
     container_name: pfanout-maple
     restart: unless-stopped
     ports:
-      - "8081:8081" # dashboard (remap as needed)
+      # Maple serves OTLP + query API + dashboard on ONE internal port, fronted by
+      # socat on the container's :4318 (it binds loopback-only). Publish the
+      # dashboard/query API on host :8081. Rotel reaches OTLP at maple:4318 on the
+      # lab network (host OTLP belongs to Rotel only, so 4318 is not host-published).
+      - "8081:4318"
     volumes:
       - maple-data:/data
     networks: [lab]
