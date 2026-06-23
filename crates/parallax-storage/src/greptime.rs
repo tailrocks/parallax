@@ -942,24 +942,42 @@ impl TelemetryStore for GreptimeStore {
         &self,
         query: &crate::adapter::TraceQuery,
     ) -> anyhow::Result<Vec<crate::adapter::TraceSummary>> {
-        // Root spans (no parent), newest first; aggregates joined per trace.
-        // `error_only` filters on the aggregate, so over-fetch roots first.
-        let mut clauses = vec![r#"("parent_span_id" IS NULL OR "parent_span_id" = '')"#.into()];
-        if let Some(service) = &query.service {
-            clauses.push(format!(r#""service_name" = '{}'"#, escape(service)));
-        }
+        // One representative span per trace — its root (no parent), else the
+        // earliest span when no root was stored (all-INTERNAL traces) — newest
+        // first; aggregates joined per trace. `error_only` filters on the
+        // aggregate, so over-fetch first.
+        //
+        // `service` matches any trace the service **participates in** (a span
+        // of that service anywhere), not only the root — so a cross-service
+        // trace rooted at `checkout` still surfaces under `--service catalog`.
+        let participation = match &query.service {
+            Some(service) => format!(
+                r#" AND "trace_id" IN (SELECT "trace_id" FROM opentelemetry_traces WHERE "service_name" = '{}')"#,
+                escape(service)
+            ),
+            None => String::new(),
+        };
+        // Scan window — also bounds which span becomes the representative.
+        let mut scan = Vec::new();
         if let Some(from) = query.from_nanos {
-            clauses.push(format!(r#""timestamp" >= {}"#, sql_ts(from)));
+            scan.push(format!(r#""timestamp" >= {}"#, sql_ts(from)));
         }
         if let Some(to) = query.to_nanos {
-            clauses.push(format!(r#""timestamp" <= {}"#, sql_ts(to)));
+            scan.push(format!(r#""timestamp" <= {}"#, sql_ts(to)));
         }
+        let scan_where = if scan.is_empty() {
+            "1 = 1".to_string()
+        } else {
+            scan.join(" AND ")
+        };
+        // Representative-span filters, applied after the per-trace pick.
+        let mut rep = vec!["\"rn\" = 1".to_string()];
         if let Some(min) = query.min_duration_ns {
-            clauses.push(format!(r#""duration_nano" >= {}"#, u64::try_from(min)?));
+            rep.push(format!(r#""dur" >= {}"#, u64::try_from(min)?));
         }
         if let Some(needle) = &query.name_contains {
             let escaped = escape(needle).replace('%', r"\%").replace('_', r"\_");
-            clauses.push(format!(r#""span_name" LIKE '%{escaped}%' ESCAPE '\'"#));
+            rep.push(format!(r#""span_name" LIKE '%{escaped}%' ESCAPE '\'"#));
         }
         let fetch = if query.error_only {
             query.limit.saturating_mul(5).max(50)
@@ -968,13 +986,23 @@ impl TelemetryStore for GreptimeStore {
         };
         let roots = self
             .sql_lenient(&format!(
-                r#"SELECT "trace_id", "span_name", "service_name",
-                          CAST("timestamp" AS BIGINT) AS "ts_nanos",
-                          CAST("duration_nano" AS BIGINT) AS "dur"
-                   FROM opentelemetry_traces
-                   WHERE {}
-                   ORDER BY "timestamp" DESC LIMIT {fetch}"#,
-                clauses.join(" AND ")
+                r#"SELECT "trace_id", "span_name", "service_name", "ts_nanos", "dur"
+                   FROM (
+                     SELECT "trace_id", "span_name", "service_name",
+                            CAST("timestamp" AS BIGINT) AS "ts_nanos",
+                            CAST("duration_nano" AS BIGINT) AS "dur",
+                            ROW_NUMBER() OVER (
+                              PARTITION BY "trace_id"
+                              ORDER BY (CASE WHEN "parent_span_id" IS NULL OR "parent_span_id" = ''
+                                             THEN 0 ELSE 1 END) ASC,
+                                       "timestamp" ASC
+                            ) AS "rn"
+                     FROM opentelemetry_traces
+                     WHERE {scan_where}{participation}
+                   )
+                   WHERE {rep_where}
+                   ORDER BY "ts_nanos" DESC LIMIT {fetch}"#,
+                rep_where = rep.join(" AND "),
             ))
             .await?;
         if roots.is_empty() {

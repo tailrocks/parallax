@@ -78,10 +78,18 @@ After the fixes, all eight app services emit; Parallax holds spans for every one
 `pricing` 18, `fulfillment` 13, `notifications` 3) plus JVM metrics
 (`jvm_*` tables), and the same data fans to OpenObserve/SigNoz/Maple/Sentry.
 
-Open refinement: catalog's GraphQL spans arrive as `INTERNAL` with no `SERVER`
-root, so `parallax traces --service catalog` (lists by root span) shows nothing
-though the spans are stored — a Java-agent HTTP-server-span / Parallax
-trace-listing nuance to chase, not a data loss.
+~~Open refinement~~ **Fixed (2026-06-23, parallax repo):** catalog's GraphQL
+spans arrive as `INTERNAL` with no `SERVER` root, so `parallax traces --service
+catalog` (which listed by root span) showed nothing though the 21 spans were
+stored. Two changes to `traces_search` (memory + GreptimeDB adapters): (1) the
+`service` filter now matches any trace the service **participates in** (a span
+of that service anywhere), not only the root; (2) the trace's representative is
+its root span, or — when no root was stored (all-`INTERNAL` traces) — its
+**earliest span**, so such traces list instead of vanishing. Verified live
+against the running GreptimeDB: catalog had 0 root spans yet participated in 21
+traces, and the new window query returns all 21 (representative = catalog's
+earliest span) while rooted traces (e.g. `checkout`) keep their real `SERVER`
+root. Unit-tested in `memory.rs`; never was data loss.
 
 Lesson for the thesis: **the fan-out lab is itself a conformance test.** A
 backend that mishandles a *standard* exporter default (gzip) silently loses data

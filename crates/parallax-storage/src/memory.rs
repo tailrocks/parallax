@@ -346,12 +346,49 @@ impl TelemetryStore for MemoryStore {
         query: &crate::adapter::TraceQuery,
     ) -> anyhow::Result<Vec<crate::adapter::TraceSummary>> {
         let inner = self.lock();
-        // Roots first (no parent); newest first; root-span filters inline.
-        let mut roots: Vec<&SpanRow> = inner
-            .spans
-            .iter()
-            .filter(|s| s.parent_span_id.as_deref().is_none_or(str::is_empty))
-            .filter(|s| query.service.as_deref().is_none_or(|svc| s.service == svc))
+        // `service` matches any trace the service participates in (a span of
+        // that service anywhere), not only the root span.
+        let participating: Option<std::collections::HashSet<&str>> =
+            query.service.as_deref().map(|svc| {
+                inner
+                    .spans
+                    .iter()
+                    .filter(|s| s.service == svc)
+                    .map(|s| s.trace_id.as_str())
+                    .collect()
+            });
+        // Representative span per trace: the root (no parent), else — when no
+        // root was stored — the earliest span, so all-INTERNAL traces still
+        // list instead of vanishing.
+        let mut rep: std::collections::HashMap<&str, &SpanRow> = std::collections::HashMap::new();
+        for span in &inner.spans {
+            let is_root = span.parent_span_id.as_deref().is_none_or(str::is_empty);
+            match rep.get(span.trace_id.as_str()) {
+                None => {
+                    rep.insert(&span.trace_id, span);
+                }
+                Some(cur) => {
+                    let cur_root = cur.parent_span_id.as_deref().is_none_or(str::is_empty);
+                    // Prefer a root; among the same class prefer the earliest.
+                    let replace = match (cur_root, is_root) {
+                        (false, true) => true,
+                        (true, false) => false,
+                        _ => span.ts_nanos < cur.ts_nanos,
+                    };
+                    if replace {
+                        rep.insert(&span.trace_id, span);
+                    }
+                }
+            }
+        }
+        // Representative-span filters; newest first.
+        let mut roots: Vec<&SpanRow> = rep
+            .into_values()
+            .filter(|s| {
+                participating
+                    .as_ref()
+                    .is_none_or(|set| set.contains(s.trace_id.as_str()))
+            })
             .filter(|s| query.from_nanos.is_none_or(|from| s.ts_nanos >= from))
             .filter(|s| query.to_nanos.is_none_or(|to| s.ts_nanos <= to))
             .filter(|s| query.min_duration_ns.is_none_or(|min| s.duration_ns >= min))
@@ -569,5 +606,94 @@ impl TelemetryStore for MemoryStore {
                 value: count as f64,
             })
             .collect())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::adapter::{TelemetryStore, TraceQuery};
+
+    fn span(trace: &str, span_id: &str, parent: Option<&str>, service: &str, ts: u128) -> SpanRow {
+        SpanRow {
+            ts_nanos: ts,
+            service: service.into(),
+            trace_id: trace.into(),
+            span_id: span_id.into(),
+            parent_span_id: parent.map(Into::into),
+            name: format!("{service}-{span_id}"),
+            kind: "SPAN_KIND_INTERNAL".into(),
+            status_code: "STATUS_CODE_UNSET".into(),
+            status_message: String::new(),
+            duration_ns: 1_000,
+            run_id: None,
+            scope_name: String::new(),
+            links: serde_json::Value::Null,
+            attributes: serde_json::Value::Null,
+            resource: serde_json::Value::Null,
+        }
+    }
+
+    fn query(service: Option<&str>) -> TraceQuery {
+        TraceQuery {
+            service: service.map(Into::into),
+            limit: 50,
+            ..Default::default()
+        }
+    }
+
+    // A non-root span of a participating service surfaces the whole trace,
+    // represented by its real root (the cross-service `--service catalog` bug).
+    #[tokio::test]
+    async fn service_filter_matches_participation_not_just_root() {
+        let store = MemoryStore::new();
+        store
+            .ingest_traces(
+                vec![
+                    span("t1", "a", None, "checkout", 10),
+                    span("t1", "b", Some("a"), "catalog", 20),
+                ],
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+
+        let by_catalog = store.traces_search(&query(Some("catalog"))).await.unwrap();
+        assert_eq!(by_catalog.len(), 1, "catalog participates in t1");
+        assert_eq!(by_catalog[0].trace_id, "t1");
+        assert_eq!(
+            by_catalog[0].service, "checkout",
+            "summary uses the trace root, not the filtered service"
+        );
+        assert_eq!(by_catalog[0].span_count, 2);
+
+        let absent = store.traces_search(&query(Some("payment"))).await.unwrap();
+        assert!(absent.is_empty(), "payment is in no trace");
+    }
+
+    // A trace with no stored root (all spans parented elsewhere) still lists,
+    // represented by its earliest span.
+    #[tokio::test]
+    async fn rootless_trace_lists_via_earliest_span() {
+        let store = MemoryStore::new();
+        store
+            .ingest_traces(
+                vec![
+                    span("t2", "y", Some("missing-parent"), "catalog", 30),
+                    span("t2", "x", Some("missing-parent"), "catalog", 15),
+                ],
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+
+        let traces = store.traces_search(&query(None)).await.unwrap();
+        assert_eq!(traces.len(), 1);
+        assert_eq!(traces[0].trace_id, "t2");
+        assert_eq!(
+            traces[0].start_nanos, 15,
+            "earliest span represents a rootless trace"
+        );
+        assert_eq!(traces[0].span_count, 2);
     }
 }

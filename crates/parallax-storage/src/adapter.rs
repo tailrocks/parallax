@@ -39,8 +39,13 @@ pub struct TraceSummary {
 }
 
 /// Filtered trace browse (UI Traces page / CLI `parallax traces` / GraphQL
-/// `traces`): every filter optional, applied to the root span except
-/// `error_only`, which looks at the whole trace.
+/// `traces`): every filter optional. `service` matches any trace the service
+/// **participates in** (a span of that service anywhere in the trace, not only
+/// the root) — so a cross-service trace rooted at `checkout` still surfaces
+/// under `--service catalog`. `error_only` looks at the whole trace. The other
+/// filters apply to the trace's **representative span**: its root (no parent),
+/// or — when no root span was stored (e.g. all-`INTERNAL` traces) — the
+/// earliest span, so such traces still list instead of vanishing.
 #[derive(Debug, Clone, Default)]
 pub struct TraceQuery {
     pub service: Option<String>,
@@ -48,7 +53,7 @@ pub struct TraceQuery {
     pub to_nanos: Option<u128>,
     pub min_duration_ns: Option<u128>,
     pub error_only: bool,
-    /// Substring of the root span name.
+    /// Substring of the representative span name.
     pub name_contains: Option<String>,
     pub limit: usize,
 }
