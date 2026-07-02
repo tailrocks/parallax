@@ -1,9 +1,17 @@
-import { HeadContent, Scripts, createRootRoute } from "@tanstack/react-router"
-import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
-import { TanStackDevtools } from "@tanstack/react-devtools"
+import {
+  HeadContent,
+  Outlet,
+  Scripts,
+  createRootRoute,
+} from "@tanstack/react-router"
 
 import appCss from "../styles.css?url"
 import { ParallaxShell } from "@/components/parallax-shell"
+import {
+  RouteErrorPanel,
+  RouteNotFoundPanel,
+  RoutePendingPanel,
+} from "@/components/route-fallbacks"
 
 export const Route = createRootRoute({
   head: () => ({
@@ -26,14 +34,21 @@ export const Route = createRootRoute({
       },
     ],
   }),
-  notFoundComponent: () => (
-    <main className="container mx-auto p-4 pt-16">
-      <h1>404</h1>
-      <p>The requested page could not be found.</p>
-    </main>
-  ),
-  shellComponent: RootDocument,
+  errorComponent: RouteErrorPanel,
+  pendingComponent: RoutePendingPanel,
+  notFoundComponent: RouteNotFoundPanel,
+  component: RootOutlet,
 })
+
+function RootOutlet() {
+  return (
+    <RootDocument>
+      <ParallaxShell>
+        <Outlet />
+      </ParallaxShell>
+    </RootDocument>
+  )
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
@@ -42,18 +57,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <ParallaxShell>{children}</ParallaxShell>
-        <TanStackDevtools
-          config={{
-            position: "bottom-right",
-          }}
-          plugins={[
-            {
-              name: "Tanstack Router",
-              render: <TanStackRouterDevtoolsPanel />,
-            },
-          ]}
-        />
+        {children}
         <Scripts />
       </body>
     </html>

@@ -2,6 +2,7 @@ import { Link, createFileRoute } from "@tanstack/react-router"
 import { useEffect, useMemo, useState } from "react"
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 import { graphql, gqlString, relativeTime } from "@/lib/api"
+import { LiveEventStack, LiveStreamPanel } from "@/components/live-stream-panel"
 import { LogsTable } from "@/components/logs-table"
 import type { LogDoc } from "@/components/logs-table"
 import { Badge } from "@/components/ui/badge"
@@ -352,7 +353,7 @@ function RunDetailPage() {
           </Button>
           {live ? (
             <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
+              <span className="size-2 animate-pulse rounded-full bg-(--brand-green)" />
               streaming logs + spans · metrics every 5s
             </span>
           ) : null}
@@ -376,6 +377,41 @@ function RunDetailPage() {
         </p>
       ) : null}
 
+      {live ? (
+        <LiveStreamPanel
+          title="Run observation stream"
+          description="Streaming this run's logs and finished spans while the metrics window follows now."
+          count={liveLogs.length + liveSpans.length}
+          endpoint={`/v1/*/stream?run_id=${runId}`}
+          active
+        >
+          <LiveEventStack
+            items={[
+              ...liveSpans.map((span) => ({
+                id: `span-${span.spanId}-${span.tsNanos}`,
+                title: span.name,
+                meta: `${relativeTime(span.tsNanos)} · span · ${(
+                  Number(span.durationNs) / 1e6
+                ).toFixed(1)}ms`,
+                status:
+                  span.statusCode === "STATUS_CODE_ERROR"
+                    ? ("error" as const)
+                    : ("ok" as const),
+                detail: `trace ${span.traceId.slice(0, 16)}`,
+              })),
+              ...liveLogs.map((log) => ({
+                id: `log-${log.tsNanos}-${log.spanId}`,
+                title: log.body,
+                meta: `${relativeTime(log.tsNanos)} · log · ${log.severityText}`,
+                status:
+                  log.severityNum >= 17 ? ("error" as const) : ("ok" as const),
+                detail: log.traceId,
+              })),
+            ].sort((a, b) => a.id.localeCompare(b.id))}
+          />
+        </LiveStreamPanel>
+      ) : null}
+
       {run ? (
         <RunMetrics
           runId={runId}
@@ -387,46 +423,6 @@ function RunDetailPage() {
           ).toString()}
           live={live}
         />
-      ) : null}
-
-      {live && liveSpans.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">
-              Live spans{" "}
-              <span className="font-normal text-muted-foreground">
-                (newest first, as they finish)
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-1 font-mono text-xs">
-              {liveSpans.map((span, index) => (
-                <li
-                  key={`${span.spanId}-${index}`}
-                  className="flex flex-wrap items-center gap-2"
-                >
-                  <span className="shrink-0 text-muted-foreground">
-                    {relativeTime(span.tsNanos)}
-                  </span>
-                  <Link
-                    to="/traces/$traceId"
-                    params={{ traceId: span.traceId }}
-                    className="underline underline-offset-4"
-                  >
-                    {span.name}
-                  </Link>
-                  <span className="text-muted-foreground">
-                    {(Number(span.durationNs) / 1e6).toFixed(1)}ms
-                  </span>
-                  {span.statusCode === "STATUS_CODE_ERROR" ? (
-                    <Badge variant="destructive">error</Badge>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
       ) : null}
 
       {run && run.issues.length > 0 ? (

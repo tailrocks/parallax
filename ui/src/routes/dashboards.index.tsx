@@ -1,6 +1,16 @@
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router"
 import { useState } from "react"
+import {
+  BarChart3,
+  Gauge,
+  LayoutDashboard,
+  Plus,
+  Settings2,
+} from "lucide-react"
 import { graphql, gqlString } from "@/lib/api"
+import { KpiCard } from "@/components/kpi-card"
+import { PageHeading } from "@/components/page-heading"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -59,7 +69,7 @@ export function WidgetPicker({
 }) {
   return (
     <>
-      <div className="space-y-1">
+      <div className="flex flex-col gap-1">
         <label className="text-xs text-muted-foreground">Metric</label>
         <Select
           value={value.metric}
@@ -83,7 +93,7 @@ export function WidgetPicker({
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-1">
+      <div className="flex flex-col gap-1">
         <label className="text-xs text-muted-foreground">Aggregation</label>
         <Select
           value={value.agg}
@@ -107,7 +117,7 @@ export function WidgetPicker({
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-1">
+      <div className="flex flex-col gap-1">
         <label className="text-xs text-muted-foreground">Chart</label>
         <Select
           value={value.chart}
@@ -127,7 +137,7 @@ export function WidgetPicker({
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-1">
+      <div className="flex flex-col gap-1">
         <label className="text-xs text-muted-foreground">
           Group by attribute
         </label>
@@ -147,7 +157,7 @@ export function WidgetPicker({
           className="w-44"
         />
       </div>
-      <div className="space-y-1">
+      <div className="flex flex-col gap-1">
         <label className="text-xs text-muted-foreground">Width</label>
         <Select
           value={String(value.w ?? 1)}
@@ -202,16 +212,59 @@ function DashboardsPage() {
     }
   }
 
+  const chartCount = dashboards.reduce(
+    (count, dashboard) => count + safeWidgetCount(dashboard.layout),
+    0
+  )
+
   return (
-    <div className="space-y-4">
-      <h1 className="text-lg font-semibold">Dashboards</h1>
+    <div className="flex flex-col gap-4">
+      <PageHeading
+        eyebrow="Metric dashboards"
+        title="Dashboards"
+        description="Build compact telemetry views from the metrics Parallax already receives."
+      />
+
+      <div className="grid gap-3 md:grid-cols-4">
+        <KpiCard
+          icon={LayoutDashboard}
+          label="Dashboards"
+          value={dashboards.length.toLocaleString()}
+          detail="saved views"
+          tone="blue"
+        />
+        <KpiCard
+          icon={BarChart3}
+          label="Charts"
+          value={chartCount.toLocaleString()}
+          detail="configured widgets"
+          tone="orange"
+        />
+        <KpiCard
+          icon={Gauge}
+          label="Metrics"
+          value={metricNames.length.toLocaleString()}
+          detail="available series"
+          tone="green"
+        />
+        <KpiCard
+          icon={Settings2}
+          label="Builder"
+          value={widget.metric ? "Ready" : "Pick"}
+          detail={widget.metric || "choose a metric"}
+          tone="violet"
+        />
+      </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">New dashboard</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Plus />
+            New dashboard
+          </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap items-end gap-2">
-          <div className="space-y-1">
+          <div className="flex flex-col gap-1">
             <label className="text-xs text-muted-foreground">Name</label>
             <Input
               value={name}
@@ -233,21 +286,29 @@ function DashboardsPage() {
       </Card>
 
       {dashboards.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
+        <div className="parallax-panel p-6 text-sm text-muted-foreground">
           No dashboards yet — pick one of the metrics your apps already send.
-        </p>
+        </div>
       ) : (
-        <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {dashboards.map((dashboard) => (
             <li key={dashboard.id} className="relative">
               <Link
                 to="/dashboards/$dashboardId"
                 params={{ dashboardId: dashboard.id }}
-                className="block rounded-lg border p-4 pr-16 hover:bg-muted"
+                className="parallax-panel block min-h-32 p-4 pr-20 transition hover:border-primary/50 hover:bg-muted/30"
               >
-                <span className="font-medium">{dashboard.name}</span>
-                <span className="block text-xs text-muted-foreground">
-                  {safeWidgetCount(dashboard.layout)} chart(s)
+                <span className="grid size-9 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--brand-blue),transparent_18%)] text-white">
+                  <LayoutDashboard />
+                </span>
+                <span className="mt-4 block truncate font-medium">
+                  {dashboard.name}
+                </span>
+                <span className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <Badge variant="outline">
+                    {safeWidgetCount(dashboard.layout)} chart(s)
+                  </Badge>
+                  <span>last hour window</span>
                 </span>
               </Link>
               <Button

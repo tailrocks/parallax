@@ -1,10 +1,19 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useCallback, useEffect, useState } from "react"
+import {
+  AlertCircleIcon,
+  GitBranchIcon,
+  RadioIcon,
+  TimerIcon,
+} from "lucide-react"
 import { gqlString, graphql } from "@/lib/api"
 import type { TraceSummary } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { KpiCard } from "@/components/kpi-card"
+import { LiveEventStack, LiveStreamPanel } from "@/components/live-stream-panel"
+import { PageHeading } from "@/components/page-heading"
 import {
   Select,
   SelectContent,
@@ -218,35 +227,87 @@ function TracesPage() {
     }
   }, [live, service, errorsOnly, minDuration, query])
 
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-lg font-semibold">Traces</h1>
-        <form
-          className="flex gap-2"
-          onSubmit={(event) => {
-            event.preventDefault()
-            const id = lookup.trim()
-            if (id) {
-              void navigate({ to: "/traces/$traceId", params: { traceId: id } })
-            }
-          }}
-        >
-          <Input
-            value={lookup}
-            onChange={(event) => setLookup(event.target.value)}
-            placeholder="Open a trace id…"
-            className="w-72 font-mono text-xs"
-          />
-          <Button type="submit" variant="outline">
-            Open
-          </Button>
-        </form>
-      </div>
+  const traceErrors = traces.filter((trace) => trace.hasError).length
+  const spanErrors = spans.filter(
+    (span) => span.statusCode === "STATUS_CODE_ERROR"
+  ).length
 
-      <div className="flex flex-wrap items-center gap-2">
+  return (
+    <div className="grid gap-5">
+      <PageHeading
+        eyebrow="Distributed context"
+        title="Traces"
+        description="Browse completed traces, live span tails, and latency/error context per service."
+        action={
+          <form
+            className="flex gap-2"
+            onSubmit={(event) => {
+              event.preventDefault()
+              const id = lookup.trim()
+              if (id) {
+                void navigate({
+                  to: "/traces/$traceId",
+                  params: { traceId: id },
+                })
+              }
+            }}
+          >
+            <Input
+              value={lookup}
+              onChange={(event) => setLookup(event.target.value)}
+              placeholder="Open a trace id…"
+              className="h-9 w-72 rounded-full bg-background/70 font-mono text-xs"
+            />
+            <Button
+              type="submit"
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+            >
+              Open
+            </Button>
+          </form>
+        }
+      />
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <KpiCard
+          icon={GitBranchIcon}
+          label={live ? "Live spans" : "Visible traces"}
+          value={String(live ? spans.length : traces.length)}
+          detail={service === "all" ? "all services" : service}
+          tone="blue"
+          bars={
+            live ? spans.map(() => 1) : traces.map((trace) => trace.spanCount)
+          }
+        />
+        <KpiCard
+          icon={AlertCircleIcon}
+          label="Errors"
+          value={String(live ? spanErrors : traceErrors)}
+          detail={live ? "span tail" : "trace results"}
+          tone="rose"
+        />
+        <KpiCard
+          icon={TimerIcon}
+          label="Duration floor"
+          value={minDuration || "none"}
+          detail="filter"
+          tone="orange"
+        />
+        <KpiCard
+          icon={RadioIcon}
+          label="Mode"
+          value={live ? "Live" : "Query"}
+          detail={
+            refreshSeconds > 0 ? `every ${refreshSeconds}s` : "manual refresh"
+          }
+          tone={live ? "green" : "violet"}
+        />
+      </section>
+
+      <div className="parallax-panel flex flex-wrap items-center gap-2 p-3">
         <Select value={service} onValueChange={(v) => setService(v ?? "all")}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-48 rounded-full bg-background/70">
             <SelectValue>
               {service === "all" ? "All services" : service}
             </SelectValue>
@@ -264,7 +325,7 @@ function TracesPage() {
           value={errorsOnly ? "errors" : "all"}
           onValueChange={(v) => setErrorsOnly(v === "errors")}
         >
-          <SelectTrigger className="w-36">
+          <SelectTrigger className="w-36 rounded-full bg-background/70">
             <SelectValue>
               {errorsOnly ? "Errors only" : "All statuses"}
             </SelectValue>
@@ -285,7 +346,7 @@ function TracesPage() {
             value={pendingMinDuration}
             onChange={(event) => setPendingMinDuration(event.target.value)}
             placeholder="Min duration (500ms, 2s)"
-            className="w-44"
+            className="w-44 rounded-full bg-background/70"
           />
         </form>
         <form
@@ -299,6 +360,7 @@ function TracesPage() {
             value={pendingQuery}
             onChange={(event) => setPendingQuery(event.target.value)}
             placeholder="Filter span names (substring)"
+            className="rounded-full bg-background/70"
           />
         </form>
         <Select
@@ -306,7 +368,7 @@ function TracesPage() {
           onValueChange={(v) => setRangeMinutes(Number(v ?? 0))}
           disabled={live}
         >
-          <SelectTrigger className="w-44">
+          <SelectTrigger className="w-44 rounded-full bg-background/70">
             <SelectValue>
               {RANGES.find((r) => r.minutes === rangeMinutes)?.label}
             </SelectValue>
@@ -323,7 +385,7 @@ function TracesPage() {
           value={String(refreshSeconds)}
           onValueChange={(v) => setRefreshSeconds(Number(v ?? 0))}
         >
-          <SelectTrigger className="w-36">
+          <SelectTrigger className="w-36 rounded-full bg-background/70">
             <SelectValue>
               {REFRESH.find((o) => o.seconds === refreshSeconds)?.label}
             </SelectValue>
@@ -343,6 +405,7 @@ function TracesPage() {
             void load()
           }}
           disabled={loading || live}
+          className="rounded-full"
         >
           Refresh
         </Button>
@@ -350,61 +413,76 @@ function TracesPage() {
 
       {live ? (
         <>
-          <p className="text-xs text-muted-foreground">
-            live span tail · {spans.length} shown · per-row filters only
-            (service, min duration, errors, name) — switch off Live for time
-            ranges and trace aggregates
-          </p>
+          <LiveStreamPanel
+            title="Span tail"
+            description="Streaming completed spans over Server-Sent Events. Use this like a live waterfall: new tool, service, and error spans arrive at the top."
+            count={spans.length}
+            endpoint="/v1/traces/stream"
+            active
+          >
+            <LiveEventStack
+              items={spans.slice(0, 6).map((span) => ({
+                id: `${span.spanId}-${span.tsNanos}`,
+                title: span.name,
+                meta: `${formatTime(span.tsNanos)} · ${span.service} · ${formatMillis(span.durationNs)}`,
+                status:
+                  span.statusCode === "STATUS_CODE_ERROR" ? "error" : "ok",
+                detail: `trace ${span.traceId.slice(0, 16)}`,
+              }))}
+            />
+          </LiveStreamPanel>
           {spans.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
+            <p className="parallax-panel p-6 text-sm text-muted-foreground">
               Waiting for spans — they appear here the moment a service exports
               them.
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-28">Time</TableHead>
-                  <TableHead className="w-36">Service</TableHead>
-                  <TableHead>Span</TableHead>
-                  <TableHead className="w-28 text-right">Duration</TableHead>
-                  <TableHead className="w-24">Status</TableHead>
-                  <TableHead className="w-44">Trace</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {spans.map((span, index) => (
-                  <TableRow key={`${span.spanId}-${index}`}>
-                    <TableCell className="font-mono text-xs">
-                      {formatTime(span.tsNanos)}
-                    </TableCell>
-                    <TableCell className="truncate">{span.service}</TableCell>
-                    <TableCell className="max-w-md truncate">
-                      {span.name}
-                    </TableCell>
-                    <TableCell className="text-right font-mono text-xs tabular-nums">
-                      {formatMillis(span.durationNs)}
-                    </TableCell>
-                    <TableCell>
-                      {span.statusCode === "STATUS_CODE_ERROR" ? (
-                        <Badge variant="destructive">error</Badge>
-                      ) : (
-                        <Badge variant="outline">ok</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">
-                      <Link
-                        to="/traces/$traceId"
-                        params={{ traceId: span.traceId }}
-                        className="underline underline-offset-4"
-                      >
-                        {span.traceId.slice(0, 16)}…
-                      </Link>
-                    </TableCell>
+            <div className="parallax-panel overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-28">Time</TableHead>
+                    <TableHead className="w-36">Service</TableHead>
+                    <TableHead>Span</TableHead>
+                    <TableHead className="w-28 text-right">Duration</TableHead>
+                    <TableHead className="w-24">Status</TableHead>
+                    <TableHead className="w-44">Trace</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {spans.map((span, index) => (
+                    <TableRow key={`${span.spanId}-${index}`}>
+                      <TableCell className="font-mono text-xs">
+                        {formatTime(span.tsNanos)}
+                      </TableCell>
+                      <TableCell className="truncate">{span.service}</TableCell>
+                      <TableCell className="max-w-md truncate">
+                        {span.name}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-xs tabular-nums">
+                        {formatMillis(span.durationNs)}
+                      </TableCell>
+                      <TableCell>
+                        {span.statusCode === "STATUS_CODE_ERROR" ? (
+                          <Badge variant="destructive">error</Badge>
+                        ) : (
+                          <Badge variant="outline">ok</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
+                        <Link
+                          to="/traces/$traceId"
+                          params={{ traceId: span.traceId }}
+                          className="underline underline-offset-4"
+                        >
+                          {span.traceId.slice(0, 16)}…
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </>
       ) : (
@@ -414,7 +492,7 @@ function TracesPage() {
             {refreshSeconds > 0 ? ` · refreshing every ${refreshSeconds}s` : ""}
           </p>
           {traces.length === 0 ? (
-            <div className="space-y-2">
+            <div className="parallax-panel space-y-3 p-6">
               <p className="text-sm text-muted-foreground">
                 No traces in this window — widen the range or drop a filter.
               </p>
@@ -425,45 +503,49 @@ function TracesPage() {
               ) : null}
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-28">Started</TableHead>
-                  <TableHead>Root span</TableHead>
-                  <TableHead className="w-36">Service</TableHead>
-                  <TableHead className="w-20 text-right">Spans</TableHead>
-                  <TableHead className="w-28 text-right">Duration</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {traces.map((trace) => (
-                  <TableRow key={trace.traceId}>
-                    <TableCell className="font-mono text-xs">
-                      {formatTime(trace.startNanos)}
-                    </TableCell>
-                    <TableCell className="max-w-md truncate">
-                      <Link
-                        to="/traces/$traceId"
-                        params={{ traceId: trace.traceId }}
-                        className="underline underline-offset-4"
-                      >
-                        {trace.rootName}
-                      </Link>{" "}
-                      {trace.hasError ? (
-                        <Badge variant="destructive">error</Badge>
-                      ) : null}
-                    </TableCell>
-                    <TableCell className="truncate">{trace.service}</TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {trace.spanCount}
-                    </TableCell>
-                    <TableCell className="text-right font-mono text-xs tabular-nums">
-                      {formatMillis(trace.durationNs)}
-                    </TableCell>
+            <div className="parallax-panel overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-28">Started</TableHead>
+                    <TableHead>Root span</TableHead>
+                    <TableHead className="w-36">Service</TableHead>
+                    <TableHead className="w-20 text-right">Spans</TableHead>
+                    <TableHead className="w-28 text-right">Duration</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {traces.map((trace) => (
+                    <TableRow key={trace.traceId}>
+                      <TableCell className="font-mono text-xs">
+                        {formatTime(trace.startNanos)}
+                      </TableCell>
+                      <TableCell className="max-w-md truncate">
+                        <Link
+                          to="/traces/$traceId"
+                          params={{ traceId: trace.traceId }}
+                          className="underline underline-offset-4"
+                        >
+                          {trace.rootName}
+                        </Link>{" "}
+                        {trace.hasError ? (
+                          <Badge variant="destructive">error</Badge>
+                        ) : null}
+                      </TableCell>
+                      <TableCell className="truncate">
+                        {trace.service}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {trace.spanCount}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-xs tabular-nums">
+                        {formatMillis(trace.durationNs)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
           {traces.length > 0 && !exhausted ? (
             <Button

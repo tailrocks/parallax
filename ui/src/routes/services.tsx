@@ -8,7 +8,10 @@ import {
   XAxis,
   YAxis,
 } from "recharts"
+import { Activity, Cpu, Gauge, Server } from "lucide-react"
 import { graphql, gqlString } from "@/lib/api"
+import { KpiCard } from "@/components/kpi-card"
+import { PageHeading } from "@/components/page-heading"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   ChartContainer,
@@ -196,42 +199,84 @@ function ServicesPage() {
 
   if (!service) {
     return (
-      <p className="text-sm text-muted-foreground">
-        No services yet — point an app's OTLP exporter at this machine and its
+      <div className="parallax-panel p-6 text-sm text-muted-foreground">
+        No services yet. Point an app's OTLP exporter at this machine and its
         overview appears here.
-      </p>
+      </div>
     )
   }
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <h1 className="text-lg font-semibold">Service overview</h1>
-        <Select
-          value={service}
-          onValueChange={(value) =>
-            value && navigate({ search: { service: value } })
+      <PageHeading
+        eyebrow="Service telemetry"
+        title={service}
+        description="Process, HTTP, and gRPC health over the last hour."
+        action={
+          <Select
+            value={service}
+            onValueChange={(value) =>
+              value && navigate({ search: { service: value } })
+            }
+          >
+            <SelectTrigger className="w-56">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {services.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        }
+      />
+
+      <div className="grid gap-3 md:grid-cols-4">
+        <KpiCard
+          icon={Server}
+          label="Services"
+          value={services.length.toLocaleString()}
+          detail="seen by collector"
+          tone="blue"
+        />
+        <KpiCard
+          icon={Gauge}
+          label="Panels"
+          value={panels.length.toLocaleString()}
+          detail="with recent data"
+          tone="orange"
+        />
+        <KpiCard
+          icon={Cpu}
+          label="Runtime"
+          value={
+            panels.some((panel) => panel.title.includes("CPU")) ? "CPU" : "Idle"
           }
-        >
-          <SelectTrigger className="w-56">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {services.map((s) => (
-              <SelectItem key={s} value={s}>
-                {s}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          detail="process metrics"
+          tone="green"
+        />
+        <KpiCard
+          icon={Activity}
+          label="Latency"
+          value={
+            panels.some((panel) => panel.title.includes("duration"))
+              ? "Active"
+              : "No data"
+          }
+          detail="HTTP/gRPC"
+          tone="violet"
+        />
       </div>
+
       {panels.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
+        <div className="parallax-panel p-6 text-sm text-muted-foreground">
           {service} sent no overview metrics in the last hour. The predefined
           charts read the OTel semconv names process.cpu.utilization,
           process.memory.usage, http.server.request.duration and
           rpc.server.duration — wire them per the conventions page, or chart any
           custom metric from Dashboards.
-        </p>
+        </div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {panels.map((panel) => (

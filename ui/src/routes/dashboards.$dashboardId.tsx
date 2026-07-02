@@ -5,6 +5,7 @@ import {
   useNavigate,
   useRouter,
 } from "@tanstack/react-router"
+import { BarChart3, Gauge, Grid2X2, Pencil, Plus, Trash2 } from "lucide-react"
 import {
   Area,
   AreaChart,
@@ -17,6 +18,9 @@ import {
   YAxis,
 } from "recharts"
 import { graphql, gqlString } from "@/lib/api"
+import { KpiCard } from "@/components/kpi-card"
+import { PageHeading } from "@/components/page-heading"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -169,10 +173,10 @@ function WidgetChart({
           {editing ? (
             <span className="flex shrink-0 gap-1">
               <Button variant="ghost" size="sm" onClick={() => onMove(-1)}>
-                ↑
+                Up
               </Button>
               <Button variant="ghost" size="sm" onClick={() => onMove(1)}>
-                ↓
+                Down
               </Button>
               <Button
                 variant="ghost"
@@ -187,6 +191,13 @@ function WidgetChart({
         </CardTitle>
       </CardHeader>
       <CardContent>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <Badge variant="outline">{data.widget.agg}</Badge>
+          <Badge variant="secondary">{data.widget.chart}</Badge>
+          <span className="text-xs text-muted-foreground">
+            {data.rows.length.toLocaleString()} point(s)
+          </span>
+        </div>
         <ChartContainer config={config} className="h-56 w-full">
           {data.widget.chart === "bar" ? (
             <BarChart {...common}>
@@ -287,58 +298,106 @@ function DashboardPage() {
     (widget) =>
       data.find((d) => d.widget === widget) ?? { widget, groups: [], rows: [] }
   )
+  const pointCount = shownData.reduce(
+    (count, item) => count + item.rows.length,
+    0
+  )
+  const activeWidgetCount = shownData.filter(
+    (item) => item.rows.length > 0
+  ).length
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-lg font-semibold">{name}</h1>
-        <span className="flex gap-2">
-          {editing ? (
-            <>
-              <Button size="sm" onClick={() => save(draft)}>
-                Save
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setDraft(widgets)
-                  setEditing(false)
-                }}
-              >
-                Cancel
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setDraft(widgets)
-                  setEditing(true)
-                }}
-              >
-                Edit
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-destructive"
-                onClick={removeDashboard}
-              >
-                Delete
-              </Button>
-            </>
-          )}
-        </span>
+    <div className="flex flex-col gap-4">
+      <PageHeading
+        eyebrow="Dashboard"
+        title={name}
+        description="Last-hour metric view composed from saved Parallax widgets."
+        action={
+          <span className="flex gap-2">
+            {editing ? (
+              <>
+                <Button size="sm" onClick={() => save(draft)}>
+                  Save
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setDraft(widgets)
+                    setEditing(false)
+                  }}
+                >
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setDraft(widgets)
+                    setEditing(true)
+                  }}
+                >
+                  <Pencil data-icon="inline-start" />
+                  Edit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-destructive"
+                  onClick={removeDashboard}
+                >
+                  <Trash2 data-icon="inline-start" />
+                  Delete
+                </Button>
+              </>
+            )}
+          </span>
+        }
+      />
+
+      <div className="grid gap-3 md:grid-cols-4">
+        <KpiCard
+          icon={Grid2X2}
+          label="Widgets"
+          value={shown.length.toLocaleString()}
+          detail={editing ? "draft layout" : "saved layout"}
+          tone="blue"
+        />
+        <KpiCard
+          icon={Gauge}
+          label="Active"
+          value={activeWidgetCount.toLocaleString()}
+          detail="with points"
+          tone="green"
+        />
+        <KpiCard
+          icon={BarChart3}
+          label="Points"
+          value={pointCount.toLocaleString()}
+          detail="last hour"
+          tone="orange"
+        />
+        <KpiCard
+          icon={Pencil}
+          label="Mode"
+          value={editing ? "Edit" : "View"}
+          detail={editing ? "unsaved draft" : "live read"}
+          tone="violet"
+        />
       </div>
+
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       {editing ? (
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Add widget</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Plus />
+              Add widget
+            </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-wrap items-end gap-2">
             <WidgetPicker
@@ -361,15 +420,22 @@ function DashboardPage() {
       ) : null}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {shownData.map((d, index) => (
-          <WidgetChart
-            key={`${d.widget.metric}-${index}`}
-            data={d}
-            editing={editing}
-            onRemove={() => setDraft(draft.filter((_, i) => i !== index))}
-            onMove={(delta) => move(index, delta)}
-          />
-        ))}
+        {shownData.length === 0 ? (
+          <div className="parallax-panel p-6 text-sm text-muted-foreground lg:col-span-2">
+            No widgets yet. Enter edit mode and add a metric your app already
+            sends.
+          </div>
+        ) : (
+          shownData.map((d, index) => (
+            <WidgetChart
+              key={`${d.widget.metric}-${index}`}
+              data={d}
+              editing={editing}
+              onRemove={() => setDraft(draft.filter((_, i) => i !== index))}
+              onMove={(delta) => move(index, delta)}
+            />
+          ))
+        )}
       </div>
     </div>
   )

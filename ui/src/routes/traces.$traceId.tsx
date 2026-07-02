@@ -1,6 +1,9 @@
 import { useState } from "react"
 import { createFileRoute, Link } from "@tanstack/react-router"
+import { Activity, Clock3, GitBranch, ListTree } from "lucide-react"
 import { graphql } from "@/lib/api"
+import { KpiCard } from "@/components/kpi-card"
+import { PageHeading } from "@/components/page-heading"
 import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -113,27 +116,63 @@ function TracePage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 className="text-lg font-semibold">
-          Trace <code className="text-base">{traceId}</code>
-        </h1>
-        {runId ? (
-          <Link
-            to="/runs/$runId"
-            params={{ runId }}
-            className={buttonVariants({ variant: "outline", size: "sm" })}
-          >
-            run {runId}
-          </Link>
-        ) : null}
+      <PageHeading
+        eyebrow="Trace detail"
+        title={spans[0]?.name || "Trace"}
+        description={traceId}
+        action={
+          runId ? (
+            <Link
+              to="/runs/$runId"
+              params={{ runId }}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              run {runId}
+            </Link>
+          ) : null
+        }
+      />
+
+      <div className="grid gap-3 md:grid-cols-4">
+        <KpiCard
+          icon={ListTree}
+          label="Spans"
+          value={spans.length.toLocaleString()}
+          detail="waterfall rows"
+          tone="blue"
+        />
+        <KpiCard
+          icon={Clock3}
+          label="Duration"
+          value={`${(total / 1e6).toFixed(1)}ms`}
+          detail="trace envelope"
+          tone="orange"
+        />
+        <KpiCard
+          icon={Activity}
+          label="Logs"
+          value={logsByTrace.length.toLocaleString()}
+          detail="correlated events"
+          tone="green"
+        />
+        <KpiCard
+          icon={GitBranch}
+          label="Run"
+          value={runId ? "Linked" : "Detached"}
+          detail={runId?.slice(0, 16) ?? "no run id"}
+          tone="violet"
+        />
       </div>
+
       <div className={selected ? "grid gap-4 lg:grid-cols-[1fr_24rem]" : ""}>
         <div className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="text-sm">
-                {spans.length} span(s) · {(total / 1e6).toFixed(1)}ms — click a
-                span for attributes
+                Waterfall{" "}
+                <span className="font-normal text-muted-foreground">
+                  (newest first; click a span for attributes)
+                </span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1.5">
@@ -150,8 +189,8 @@ function TracePage() {
                     key={span.spanId}
                     type="button"
                     onClick={() => setSelectedId(active ? null : span.spanId)}
-                    className={`block w-full space-y-0.5 rounded px-1 py-0.5 text-left hover:bg-muted/60 ${
-                      active ? "bg-muted" : ""
+                    className={`block w-full space-y-1 rounded-xl border border-transparent px-2 py-2 text-left hover:border-border/80 hover:bg-background/70 ${
+                      active ? "border-border/80 bg-background/80" : ""
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2 text-xs">
@@ -170,9 +209,9 @@ function TracePage() {
                         {(Number(span.durationNs) / 1e6).toFixed(2)}ms
                       </span>
                     </div>
-                    <div className="h-2 w-full rounded bg-muted">
+                    <div className="h-2 w-full rounded-full bg-muted">
                       <div
-                        className={`h-2 rounded ${failed ? "bg-destructive" : "bg-primary"}`}
+                        className={`h-2 rounded-full ${failed ? "bg-(--brand-rose)" : "bg-(--brand-blue)"}`}
                         style={{ marginLeft: `${offset}%`, width: `${width}%` }}
                       />
                     </div>
@@ -185,12 +224,20 @@ function TracePage() {
           {logsByTrace.length > 0 ? (
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Correlated logs</CardTitle>
+                <CardTitle className="text-sm">
+                  Correlated logs{" "}
+                  <span className="font-normal text-muted-foreground">
+                    ({logsByTrace.length} event(s))
+                  </span>
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-1 font-mono text-xs">
                   {orderedLogs.map((log, index) => (
-                    <li key={index} className="flex gap-2">
+                    <li
+                      key={index}
+                      className="flex gap-2 rounded-xl border border-border/70 bg-background/60 px-3 py-2"
+                    >
                       <span className="shrink-0 text-muted-foreground">
                         {log.severityText}
                       </span>
@@ -253,7 +300,7 @@ function TracePage() {
                   <p className="mb-1 font-medium text-muted-foreground">
                     db.query.text
                   </p>
-                  <pre className="overflow-x-auto rounded bg-muted p-2 font-mono">
+                  <pre className="overflow-x-auto rounded-md border border-border/70 bg-background/70 p-2 font-mono">
                     {dbQuery[1]}
                   </pre>
                 </div>

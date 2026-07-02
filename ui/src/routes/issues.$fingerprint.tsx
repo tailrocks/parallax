@@ -1,12 +1,15 @@
 import { useState } from "react"
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router"
+import { AlertTriangle, Activity, Clock3, Hash } from "lucide-react"
 import { Bar, BarChart, XAxis } from "recharts"
 import { graphql, gqlString, relativeTime } from "@/lib/api"
 import type { ErrorEvent, Issue } from "@/lib/api"
+import { KpiCard } from "@/components/kpi-card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { MetricStrip } from "@/components/metric-strip"
+import { PageHeading } from "@/components/page-heading"
 import {
   ChartContainer,
   ChartTooltip,
@@ -104,9 +107,9 @@ function TrendChart({
     <Card>
       <CardHeader>
         <CardTitle className="text-sm">
-          Trend{" "}
+          Occurrence trend{" "}
           <span className="font-normal text-muted-foreground">
-            (last 24h — click a bar to filter occurrences
+            (last 24h; click a bar to filter
             {activeBucket ? "; click again to clear" : ""})
           </span>
         </CardTitle>
@@ -165,7 +168,7 @@ function ContextSections({ resource }: { resource: Record<string, unknown> }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm">Context</CardTitle>
+        <CardTitle className="text-sm">Runtime context</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-2">
         {sections.map((section) => (
@@ -275,9 +278,11 @@ function IssueDetailPage() {
 
   return (
     <div className="space-y-4">
-      <div className="space-y-1">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h1 className="text-lg font-semibold">{issue.title}</h1>
+      <PageHeading
+        eyebrow="Issue detail"
+        title={issue.title}
+        description={`${issue.service} · ${issue.culprit || "unknown culprit"}`}
+        action={
           <Button
             size="sm"
             variant={issue.status === "open" ? "default" : "outline"}
@@ -288,23 +293,50 @@ function IssueDetailPage() {
           >
             {issue.status === "open" ? "Resolve" : "Reopen"}
           </Button>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 text-sm">
-          <Badge
-            variant={issue.status === "open" ? "destructive" : "secondary"}
-          >
-            {issue.status}
-          </Badge>
-          <Badge variant="outline">{issue.service}</Badge>
-          <span className="text-muted-foreground">
-            {issue.eventCount} events · first{" "}
-            {relativeTime(issue.firstSeenNanos)} · last{" "}
-            {relativeTime(issue.lastSeenNanos)}
-          </span>
-        </div>
-        {issue.culprit ? (
-          <code className="text-xs text-muted-foreground">{issue.culprit}</code>
-        ) : null}
+        }
+      />
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant={issue.status === "open" ? "destructive" : "secondary"}>
+          {issue.status}
+        </Badge>
+        <Badge variant="outline">{issue.service}</Badge>
+        <span className="text-muted-foreground">
+          {issue.eventCount} events · first {relativeTime(issue.firstSeenNanos)}{" "}
+          · last {relativeTime(issue.lastSeenNanos)}
+        </span>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-4">
+        <KpiCard
+          icon={AlertTriangle}
+          label="Status"
+          value={issue.status}
+          detail={issue.errorType || "error"}
+          tone={issue.status === "open" ? "rose" : "green"}
+        />
+        <KpiCard
+          icon={Hash}
+          label="Events"
+          value={issue.eventCount.toLocaleString()}
+          detail="total occurrences"
+          tone="orange"
+          bars={issueTrend.map((point) => point.count)}
+        />
+        <KpiCard
+          icon={Clock3}
+          label="Last seen"
+          value={relativeTime(issue.lastSeenNanos)}
+          detail="newest event"
+          tone="blue"
+        />
+        <KpiCard
+          icon={Activity}
+          label="Trace"
+          value={issue.lastTraceId ? "Linked" : "None"}
+          detail={issue.lastTraceId?.slice(0, 12) ?? "no trace id"}
+          tone="violet"
+        />
       </div>
 
       <TrendChart
@@ -326,7 +358,7 @@ function IssueDetailPage() {
           <CardContent className="space-y-3">
             <p className="text-sm">{latest.message}</p>
             {latest.stacktrace ? (
-              <pre className="overflow-auto rounded-md bg-muted p-3 text-xs leading-relaxed">
+              <pre className="max-h-96 overflow-auto rounded-md border border-border/70 bg-background/70 p-3 text-xs leading-relaxed">
                 {latest.stacktrace}
               </pre>
             ) : null}
@@ -404,7 +436,7 @@ function IssueDetailPage() {
               {shownEvents.map((event) => (
                 <li
                   key={`${event.tsNanos}-${event.spanId}`}
-                  className="flex items-center justify-between gap-4 border-b pb-2 last:border-b-0"
+                  className="flex items-center justify-between gap-4 rounded-xl border border-border/70 bg-background/60 px-3 py-2"
                 >
                   <span className="truncate">{event.message}</span>
                   <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">

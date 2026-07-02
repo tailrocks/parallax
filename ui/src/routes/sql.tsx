@@ -1,8 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { useEffect, useMemo, useState } from "react"
+import { Database, History, Play, Table2 } from "lucide-react"
 import { gqlString, graphql } from "@/lib/api"
+import { KpiCard } from "@/components/kpi-card"
+import { PageHeading } from "@/components/page-heading"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
   TableBody,
@@ -170,59 +174,91 @@ function SqlPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-lg font-semibold">SQL</h1>
-        <p className="text-xs text-muted-foreground">
-          Read-only SQL straight to the telemetry engine (GreptimeDB) — cross
-          logs, traces, metrics, and error events in one statement. Single
-          SELECT-shaped queries; same surface as <code>parallax sql</code>.
-        </p>
+      <PageHeading
+        eyebrow="SQL workbench"
+        title="Telemetry SQL"
+        description="Read-only GreptimeDB queries across logs, traces, metrics, and error events."
+      />
+
+      <div className="grid gap-3 md:grid-cols-4">
+        <KpiCard
+          icon={Database}
+          label="Tables"
+          value={schema.size.toLocaleString()}
+          detail="public schema"
+          tone="blue"
+        />
+        <KpiCard
+          icon={Table2}
+          label="Rows"
+          value={result ? result.rowCount.toLocaleString() : "-"}
+          detail="last result"
+          tone="orange"
+        />
+        <KpiCard
+          icon={History}
+          label="History"
+          value={history.length.toLocaleString()}
+          detail="local entries"
+          tone="violet"
+        />
+        <KpiCard
+          icon={Play}
+          label="Latency"
+          value={elapsedMs != null ? `${elapsedMs.toFixed(0)}ms` : "-"}
+          detail={running ? "query running" : "round trip"}
+          tone={running ? "green" : "fuchsia"}
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[14rem_1fr]">
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">Tables</p>
-          <ul className="space-y-1 text-xs">
-            {[...schema.keys()].map((table) => (
-              <li key={table}>
-                <button
-                  type="button"
-                  className="font-mono underline-offset-4 hover:underline"
-                  onClick={() =>
-                    setOpenTable((current) =>
-                      current === table ? null : table
-                    )
-                  }
-                >
-                  {table}
-                </button>
-                {openTable === table ? (
-                  <ul className="mt-1 ml-3 space-y-0.5">
-                    {(schema.get(table) ?? []).map((column) => (
-                      <li key={column.name}>
-                        <button
-                          type="button"
-                          className="font-mono text-muted-foreground hover:text-foreground"
-                          title={column.dataType}
-                          onClick={() =>
-                            setStatement(
-                              (current) => `${current} ${column.name}`
-                            )
-                          }
-                        >
-                          {column.name}{" "}
-                          <span className="opacity-60">
-                            {column.dataType.toLowerCase()}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </div>
+        <Card className="h-fit">
+          <CardHeader>
+            <CardTitle className="text-sm">Tables</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <ul className="space-y-1 text-xs">
+              {[...schema.keys()].map((table) => (
+                <li key={table}>
+                  <button
+                    type="button"
+                    className="font-mono underline-offset-4 hover:underline"
+                    onClick={() =>
+                      setOpenTable((current) =>
+                        current === table ? null : table
+                      )
+                    }
+                  >
+                    {table}
+                  </button>
+                  {openTable === table ? (
+                    <ul className="mt-1 ml-3 space-y-0.5">
+                      {(schema.get(table) ?? []).map((column) => (
+                        <li key={column.name}>
+                          <button
+                            type="button"
+                            className="font-mono text-muted-foreground hover:text-foreground"
+                            title={column.dataType}
+                            onClick={() =>
+                              setStatement(
+                                (current) => `${current} ${column.name}`
+                              )
+                            }
+                          >
+                            {column.name}{" "}
+                            <span className="opacity-60">
+                              {column.dataType.toLowerCase()}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
 
         <div className="space-y-3">
           <textarea
@@ -237,7 +273,7 @@ function SqlPage() {
             }}
             rows={8}
             spellCheck={false}
-            className="w-full rounded-md border bg-transparent p-3 font-mono text-xs shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="min-h-52 w-full rounded-md border border-border/80 bg-background/70 p-3 font-mono text-xs shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={() => void run(statement)} disabled={running}>
@@ -287,38 +323,46 @@ function SqlPage() {
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
           {result ? (
-            <div className="space-y-1 overflow-x-auto">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Badge variant="outline">{result.rowCount} row(s)</Badge>
-                {elapsedMs != null ? (
-                  <span>{elapsedMs.toFixed(0)} ms round-trip</span>
-                ) : null}
-              </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {result.columns.map((column) => (
-                      <TableHead key={column}>{column}</TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {parsedRows.map((cells, rowIndex) => (
-                    <TableRow key={rowIndex}>
-                      {cells.map((cell, cellIndex) => (
-                        <TableCell
-                          key={cellIndex}
-                          className="max-w-md truncate font-mono text-xs"
-                          title={cell}
-                        >
-                          {cell}
-                        </TableCell>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex flex-wrap items-center gap-2 text-sm">
+                  Query result
+                  <Badge variant="outline">{result.rowCount} row(s)</Badge>
+                  {elapsedMs != null ? (
+                    <span className="text-xs font-normal text-muted-foreground">
+                      {elapsedMs.toFixed(0)} ms round-trip
+                    </span>
+                  ) : null}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="overflow-x-auto">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground"></div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      {result.columns.map((column) => (
+                        <TableHead key={column}>{column}</TableHead>
                       ))}
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {parsedRows.map((cells, rowIndex) => (
+                      <TableRow key={rowIndex}>
+                        {cells.map((cell, cellIndex) => (
+                          <TableCell
+                            key={cellIndex}
+                            className="max-w-md truncate font-mono text-xs"
+                            title={cell}
+                          >
+                            {cell}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           ) : null}
         </div>
       </div>

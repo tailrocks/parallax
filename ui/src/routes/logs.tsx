@@ -1,10 +1,19 @@
 import { Link, createFileRoute } from "@tanstack/react-router"
 import { useCallback, useEffect, useMemo, useState } from "react"
+import {
+  ActivityIcon,
+  BarChart3Icon,
+  RadioIcon,
+  ScrollTextIcon,
+} from "lucide-react"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { gqlString, graphql } from "@/lib/api"
 import { LogsTable, formatTime } from "@/components/logs-table"
 import type { LogDoc } from "@/components/logs-table"
 import { Button } from "@/components/ui/button"
+import { KpiCard } from "@/components/kpi-card"
+import { LiveEventStack, LiveStreamPanel } from "@/components/live-stream-panel"
+import { PageHeading } from "@/components/page-heading"
 import {
   ChartContainer,
   ChartTooltip,
@@ -212,21 +221,59 @@ function LogsPage() {
     () => series.reduce((acc, point) => acc + point.value, 0),
     [series]
   )
+  const errorCount = logs.filter((log) => log.severityNum >= 17).length
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <h1 className="text-lg font-semibold">Logs</h1>
-        <Link
-          to="/sql"
-          className="text-xs text-muted-foreground underline-offset-4 hover:underline"
-        >
-          SQL workbench →
-        </Link>
-      </div>
+    <div className="grid gap-5">
+      <PageHeading
+        eyebrow="Event stream"
+        title="Logs"
+        description="Newest log records, live tails, and histogram context across services."
+        action={
+          <Link
+            to="/sql"
+            className="parallax-pill inline-flex h-8 items-center px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+          >
+            SQL workbench
+          </Link>
+        }
+      />
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <KpiCard
+          icon={ScrollTextIcon}
+          label="Shown logs"
+          value={logs.length.toLocaleString()}
+          detail={service === "all" ? "all services" : service}
+          tone="blue"
+          bars={chartData.map((point) => point.value)}
+        />
+        <KpiCard
+          icon={ActivityIcon}
+          label="Errors loaded"
+          value={errorCount.toLocaleString()}
+          detail="severity >= error"
+          tone="rose"
+        />
+        <KpiCard
+          icon={BarChart3Icon}
+          label="Range total"
+          value={live ? "-" : total.toLocaleString()}
+          detail={live ? "streaming mode" : "histogram window"}
+          tone="orange"
+        />
+        <KpiCard
+          icon={RadioIcon}
+          label="Mode"
+          value={live ? "Live" : "Refresh"}
+          detail={
+            refreshSeconds > 0 ? `every ${refreshSeconds}s` : "manual refresh"
+          }
+          tone={live ? "green" : "violet"}
+        />
+      </section>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="parallax-panel flex flex-wrap items-center gap-2 p-3">
         <Select value={service} onValueChange={(v) => setService(v ?? "all")}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-48 rounded-full bg-background/70">
             <SelectValue>
               {service === "all" ? "All services" : service}
             </SelectValue>
@@ -244,7 +291,7 @@ function LogsPage() {
           value={String(severityMin)}
           onValueChange={(v) => setSeverityMin(Number(v ?? 0))}
         >
-          <SelectTrigger className="w-36">
+          <SelectTrigger className="w-36 rounded-full bg-background/70">
             <SelectValue>
               {SEVERITIES.find((s) => s.min === severityMin)?.label}
             </SelectValue>
@@ -268,6 +315,7 @@ function LogsPage() {
             value={pendingQuery}
             onChange={(event) => setPendingQuery(event.target.value)}
             placeholder="Filter log bodies (substring)"
+            className="rounded-full bg-background/70"
           />
         </form>
         <Select
@@ -275,7 +323,7 @@ function LogsPage() {
           onValueChange={(v) => setRangeMinutes(Number(v ?? 15))}
           disabled={live}
         >
-          <SelectTrigger className="w-44">
+          <SelectTrigger className="w-44 rounded-full bg-background/70">
             <SelectValue>
               {RANGES.find((r) => r.minutes === rangeMinutes)?.label}
             </SelectValue>
@@ -292,7 +340,7 @@ function LogsPage() {
           value={String(refreshSeconds)}
           onValueChange={(v) => setRefreshSeconds(Number(v ?? 0))}
         >
-          <SelectTrigger className="w-36">
+          <SelectTrigger className="w-36 rounded-full bg-background/70">
             <SelectValue>
               {REFRESH.find((o) => o.seconds === refreshSeconds)?.label}
             </SelectValue>
@@ -311,18 +359,32 @@ function LogsPage() {
             void load()
           }}
           disabled={loading || live}
+          className="rounded-full"
         >
           Refresh
         </Button>
       </div>
 
       {live ? (
-        <p className="text-xs text-muted-foreground">
-          live tail · {logs.length} shown · per-row filters only (service,
-          severity, text) — switch off Live for ranges, the histogram, and SQL
-        </p>
+        <LiveStreamPanel
+          title="Log tail"
+          description="Streaming newest log records over Server-Sent Events. Per-row filters stay active while range analytics pause."
+          count={logs.length}
+          endpoint="/v1/logs/stream"
+          active
+        >
+          <LiveEventStack
+            items={logs.slice(0, 6).map((log) => ({
+              id: `${log.tsNanos}-${log.traceId}-${log.spanId}`,
+              title: log.body,
+              meta: `${formatTime(log.tsNanos)} · ${log.service} · ${log.severityText}`,
+              status: log.severityNum >= 17 ? "error" : "ok",
+              detail: log.runId ? `run ${log.runId}` : log.traceId,
+            }))}
+          />
+        </LiveStreamPanel>
       ) : (
-        <div className="space-y-1">
+        <div className="parallax-panel space-y-2 p-4">
           <ChartContainer config={histogramConfig} className="h-32 w-full">
             <BarChart data={chartData} margin={{ left: 8, right: 8, top: 4 }}>
               <CartesianGrid vertical={false} />
@@ -346,7 +408,7 @@ function LogsPage() {
       )}
 
       {logs.length === 0 ? (
-        <div className="space-y-2">
+        <div className="parallax-panel space-y-3 p-6">
           <p className="text-sm text-muted-foreground">
             No logs in this window — widen the range or drop a filter.
           </p>
@@ -357,7 +419,9 @@ function LogsPage() {
           ) : null}
         </div>
       ) : (
-        <LogsTable logs={logs} />
+        <div className="parallax-panel overflow-hidden">
+          <LogsTable logs={logs} />
+        </div>
       )}
 
       {!live && logs.length > 0 && !exhausted ? (

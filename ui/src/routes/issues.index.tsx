@@ -1,8 +1,16 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router"
+import {
+  ActivityIcon,
+  AlertCircleIcon,
+  BoxesIcon,
+  Clock3Icon,
+} from "lucide-react"
 import { graphql, gqlString, relativeTime } from "@/lib/api"
 import type { Issue } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { KpiCard } from "@/components/kpi-card"
+import { PageHeading } from "@/components/page-heading"
 import {
   Select,
   SelectContent,
@@ -123,25 +131,88 @@ function topTags(tags: string): string[] {
   }
 }
 
+function aggregateTrend(items: IssueRow[]): number[] {
+  const buckets = new Map<string, number>()
+  for (const issue of items) {
+    for (const point of issue.trend.slice(-24)) {
+      buckets.set(
+        point.tsNanos,
+        (buckets.get(point.tsNanos) ?? 0) + point.count
+      )
+    }
+  }
+  return [...buckets.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([, count]) => count)
+}
+
 function IssuesPage() {
   const { issues, services } = Route.useLoaderData()
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const update = (patch: Partial<IssuesSearch>) =>
     navigate({ search: { ...search, ...patch } })
+  const openCount = issues.items.filter(
+    (issue) => issue.status === "open"
+  ).length
+  const eventCount = issues.items.reduce(
+    (total, issue) => total + issue.eventCount,
+    0
+  )
+  const newestIssue = issues.items[0]
+  const trendBars = aggregateTrend(issues.items)
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 className="text-lg font-semibold">Issues</h1>
-        <span className="text-sm text-muted-foreground">
-          {issues.total} matching
-        </span>
-      </div>
+    <div className="grid gap-5">
+      <PageHeading
+        eyebrow="Failure groups"
+        title="Issues"
+        description="Grouped exceptions and error logs across services, ready for human review or agent context."
+        action={
+          <span className="parallax-pill inline-flex h-8 items-center gap-2 px-3 text-xs text-muted-foreground">
+            <span className="size-1.5 rounded-full bg-(--brand-green)" />
+            Latest first
+          </span>
+        }
+      />
 
-      <div className="flex flex-wrap items-center gap-2">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <KpiCard
+          icon={AlertCircleIcon}
+          label="Matching issues"
+          value={String(issues.total)}
+          detail={`${issues.items.length} loaded`}
+          tone="rose"
+          bars={trendBars}
+        />
+        <KpiCard
+          icon={ActivityIcon}
+          label="Open loaded"
+          value={String(openCount)}
+          detail="visible result window"
+          tone="orange"
+          bars={issues.items.map((issue) => (issue.status === "open" ? 1 : 0))}
+        />
+        <KpiCard
+          icon={BoxesIcon}
+          label="Events loaded"
+          value={eventCount.toLocaleString()}
+          detail="across visible groups"
+          tone="blue"
+          bars={issues.items.map((issue) => issue.eventCount)}
+        />
+        <KpiCard
+          icon={Clock3Icon}
+          label="Freshness"
+          value={newestIssue ? relativeTime(newestIssue.lastSeenNanos) : "-"}
+          detail={newestIssue?.service ?? "no service yet"}
+          tone="green"
+        />
+      </section>
+
+      <div className="parallax-panel flex flex-wrap items-center gap-2 p-3">
         <Input
-          className="h-8 w-56"
+          className="h-9 w-64 rounded-full bg-background/70 font-mono text-xs"
           placeholder="Search title, type, fingerprint…"
           defaultValue={search.q ?? ""}
           onKeyDown={(event) => {
@@ -157,7 +228,10 @@ function IssuesPage() {
             update({ service: service === "all" ? undefined : service })
           }}
         >
-          <SelectTrigger className="h-8 w-44" size="sm">
+          <SelectTrigger
+            className="h-9 w-44 rounded-full bg-background/70"
+            size="sm"
+          >
             <SelectValue placeholder="All services" />
           </SelectTrigger>
           <SelectContent>
@@ -176,7 +250,10 @@ function IssuesPage() {
             update({ status: status === "all" ? undefined : status })
           }}
         >
-          <SelectTrigger className="h-8 w-32" size="sm">
+          <SelectTrigger
+            className="h-9 w-32 rounded-full bg-background/70"
+            size="sm"
+          >
             <SelectValue placeholder="Any status" />
           </SelectTrigger>
           <SelectContent>
@@ -192,7 +269,10 @@ function IssuesPage() {
             update({ sort: sort === "LAST_SEEN" ? undefined : sort })
           }}
         >
-          <SelectTrigger className="h-8 w-36" size="sm">
+          <SelectTrigger
+            className="h-9 w-36 rounded-full bg-background/70"
+            size="sm"
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -205,82 +285,107 @@ function IssuesPage() {
       </div>
 
       {issues.items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          {issues.total === 0 && !search.q && !search.service && !search.status
-            ? "No issues yet — connect an app with "
-            : "Nothing matches these filters. "}
+        <div className="parallax-panel p-6">
+          <p className="text-sm font-medium">
+            {issues.total === 0 &&
+            !search.q &&
+            !search.service &&
+            !search.status
+              ? "No issues ingested yet"
+              : "No issues match these filters"}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {issues.total === 0 &&
+            !search.q &&
+            !search.service &&
+            !search.status
+              ? "Connect an app to the local OTLP endpoint and Parallax will group failures here."
+              : "Loosen the query, service, status, or sort filter."}
+          </p>
           {issues.total === 0 &&
           !search.q &&
           !search.service &&
           !search.status ? (
-            <code>OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4317</code>
+            <code className="mt-4 block w-fit rounded-xl border border-border/70 bg-background/80 px-3 py-2 font-mono text-xs text-foreground">
+              OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4317
+            </code>
           ) : null}
-        </p>
+        </div>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Issue</TableHead>
-              <TableHead className="w-24">Trend</TableHead>
-              <TableHead className="w-20 text-right">Events</TableHead>
-              <TableHead className="w-28">Last seen</TableHead>
-              <TableHead className="w-28">Age</TableHead>
-              <TableHead className="w-32">Service</TableHead>
-              <TableHead className="w-24">Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {issues.items.map((issue) => (
-              <TableRow key={issue.fingerprint}>
-                <TableCell className="max-w-xl">
-                  <Link
-                    to="/issues/$fingerprint"
-                    params={{ fingerprint: issue.fingerprint }}
-                    className="block truncate font-medium hover:underline"
-                  >
-                    {issue.title}
-                  </Link>
-                  <span className="flex flex-wrap items-center gap-1">
-                    {issue.culprit ? (
-                      <span className="truncate text-xs text-muted-foreground">
-                        {issue.culprit}
-                      </span>
-                    ) : null}
-                    {topTags(issue.tags).map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant="secondary"
-                        className="max-w-40 truncate font-mono text-[10px]"
-                      >
-                        {tag}
-                      </Badge>
-                    ))}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <Sparkline trend={issue.trend} />
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {issue.eventCount}
-                </TableCell>
-                <TableCell>{relativeTime(issue.lastSeenNanos)}</TableCell>
-                <TableCell>{relativeTime(issue.firstSeenNanos)}</TableCell>
-                <TableCell>
-                  <Badge variant="outline">{issue.service}</Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      issue.status === "open" ? "destructive" : "secondary"
-                    }
-                  >
-                    {issue.status}
-                  </Badge>
-                </TableCell>
+        <div className="parallax-panel overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Issue</TableHead>
+                <TableHead className="w-24">Trend</TableHead>
+                <TableHead className="w-20 text-right">Events</TableHead>
+                <TableHead className="w-28">Last seen</TableHead>
+                <TableHead className="w-28">Age</TableHead>
+                <TableHead className="w-32">Service</TableHead>
+                <TableHead className="w-24">Status</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {issues.items.map((issue) => (
+                <TableRow key={issue.fingerprint}>
+                  <TableCell className="max-w-xl">
+                    <div className="flex items-start gap-3">
+                      <span className="mt-1 size-2 rounded-full bg-(--brand-rose)" />
+                      <div className="min-w-0">
+                        <Link
+                          to="/issues/$fingerprint"
+                          params={{ fingerprint: issue.fingerprint }}
+                          className="block truncate font-medium text-foreground hover:underline"
+                        >
+                          {issue.title}
+                        </Link>
+                        <span className="mt-1 flex flex-wrap items-center gap-1">
+                          {issue.culprit ? (
+                            <span className="truncate text-xs text-muted-foreground">
+                              {issue.culprit}
+                            </span>
+                          ) : null}
+                          {topTags(issue.tags).map((tag) => (
+                            <Badge
+                              key={tag}
+                              variant="secondary"
+                              className="max-w-40 truncate rounded-full font-mono text-[10px]"
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </span>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Sparkline trend={issue.trend} />
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {issue.eventCount}
+                  </TableCell>
+                  <TableCell>{relativeTime(issue.lastSeenNanos)}</TableCell>
+                  <TableCell>{relativeTime(issue.firstSeenNanos)}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="rounded-full">
+                      {issue.service}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        issue.status === "open" ? "destructive" : "secondary"
+                      }
+                      className="rounded-full"
+                    >
+                      {issue.status}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
     </div>
   )
