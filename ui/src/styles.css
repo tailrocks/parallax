@@ -218,7 +218,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply font-sans bg-background text-foreground selection:bg-primary/10;
+    @apply bg-background font-sans text-foreground selection:bg-primary/10;
     scrollbar-width: thin;
     scrollbar-color: gray transparent;
   }
@@ -240,34 +240,5 @@
     -webkit-text-fill-color: var(--foreground);
     caret-color: var(--foreground);
     transition: background-color 999999s ease-in-out 0s !important;
-  }
-}
-
-/* LEGACY-COMPAT - consumed by pre-redesign routes/components; removed by plan 018. */
-:root {
-  --brand-blue: #3b82f6;
-  --brand-orange: #f97316;
-  --brand-rose: #f43f5e;
-  --brand-green: #22c55e;
-  --brand-violet: #8b5cf6;
-  --brand-fuchsia: #d946ef;
-  --surface-raised: var(--card);
-  --surface-sunken: var(--muted);
-}
-
-@layer components {
-  .parallax-panel {
-    background: var(--color-card);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--custom-shadow);
-  }
-
-  .parallax-pill {
-    background: var(--color-muted);
-    border-radius: 999px;
-  }
-
-  .parallax-glow-border {
-    position: relative;
   }
 }
