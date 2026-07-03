@@ -17,11 +17,14 @@ interface MetricPoint {
 interface Panel {
   title: string
   unit: string
+  key: "cpu" | "memory" | "tasks"
   points: MetricPoint[]
 }
 
 const stripConfig = {
-  value: { label: "value", color: "var(--chart-1)" },
+  cpu: { label: "CPU", color: "var(--chart-1)" },
+  memory: { label: "Memory", color: "var(--chart-2)" },
+  tasks: { label: "Tasks", color: "var(--chart-3)" },
 } satisfies ChartConfig
 
 /** The cross-signal correlation strip: well-known process metrics in a
@@ -35,6 +38,7 @@ export function MetricStrip({
   fromNanos,
   toNanos,
   stepSeconds,
+  live = false,
 }: {
   title: string
   service?: string | undefined
@@ -42,17 +46,22 @@ export function MetricStrip({
   fromNanos: string
   toNanos: string
   stepSeconds: number
+  live?: boolean
 }) {
   const [panels, setPanels] = useState<Panel[] | null>(null)
 
   useEffect(() => {
+    const fetchPanels = () => {
+      const to = live
+        ? ((BigInt(Date.now()) + 30_000n) * 1_000_000n).toString()
+        : toNanos
     const scope = [
       runId ? `runId: "${gqlString(runId)}"` : "",
       !runId && service ? `service: "${gqlString(service)}"` : "",
     ]
       .filter(Boolean)
       .join(", ")
-    const args = `${scope ? `${scope}, ` : ""}fromNanos: "${fromNanos}", toNanos: "${toNanos}", stepSeconds: ${stepSeconds}`
+    const args = `${scope ? `${scope}, ` : ""}fromNanos: "${fromNanos}", toNanos: "${to}", stepSeconds: ${stepSeconds}`
     void graphql<Record<string, Array<{ points: MetricPoint[] }> | undefined>>(
       `{
         cpu: metricSeries(name: "process.cpu.utilization", ${args}) { points { tsNanos value } }
@@ -65,6 +74,7 @@ export function MetricStrip({
           {
             title: "CPU",
             unit: "%",
+            key: "cpu",
             points: (data.cpu?.[0]?.points ?? []).map((p) => ({
               tsNanos: p.tsNanos,
               value: p.value * 100,
@@ -73,6 +83,7 @@ export function MetricStrip({
           {
             title: "Memory",
             unit: "MiB",
+            key: "memory",
             points: (data.memory?.[0]?.points ?? []).map((p) => ({
               tsNanos: p.tsNanos,
               value: p.value / (1024 * 1024),
@@ -81,12 +92,18 @@ export function MetricStrip({
           {
             title: "Tokio alive tasks",
             unit: "",
+            key: "tasks",
             points: data.tasks?.[0]?.points ?? [],
           },
         ])
       })
       .catch(() => setPanels([]))
-  }, [service, runId, fromNanos, toNanos, stepSeconds])
+    }
+    fetchPanels()
+    if (!live) return
+    const timer = setInterval(fetchPanels, 5000)
+    return () => clearInterval(timer)
+  }, [service, runId, fromNanos, toNanos, stepSeconds, live])
 
   if (!panels || panels.every((panel) => panel.points.length === 0)) {
     return null
@@ -135,7 +152,8 @@ export function MetricStrip({
                     <ChartTooltip content={<ChartTooltipContent />} />
                     <Line
                       dataKey="value"
-                      stroke="var(--color-value)"
+                      name={panel.key}
+                      stroke={`var(--color-${panel.key})`}
                       dot={false}
                       strokeWidth={1.5}
                     />
