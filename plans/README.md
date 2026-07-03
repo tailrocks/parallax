@@ -46,6 +46,9 @@ source of truth. API extensions are in scope (plans 009-010).
 | 016 | Issues redesign (list + detail) | P1 | L | 005-008 | TODO |
 | 017 | Runs redesign | P2 | M | 005-008 | TODO |
 | 018 | Dashboards + SQL + legacy sweep | P2 | L | 005-017 | TODO |
+| 019 | Fingerprint normalization v2 (issue over-splitting) | P1 | M | — | TODO |
+| 020 | Spool retention: rotation + reaper + doctor | P1 | M | — | TODO |
+| 021 | Anchored log/span queries newest-first + severityMax | P2 | S | — | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (one-line reason) | REJECTED (one-line
 rationale) | SUPERSEDED.
@@ -63,6 +66,15 @@ rationale) | SUPERSEDED.
 - 018's Steps 1-5 need only 005-008; its Step 6 legacy sweep hard-requires 005-017 all DONE.
 - Plan 008 makes one surgical edit inside `runs.$runId.tsx` (shared MetricStrip swap);
   plan 017 rewrites that route fully — keep that order.
+- **019-021 (telemetry-quality series, added 2026-07-03)** come from the jackin❯
+  observability audit; the jackin repo's `plans/README.md` is the counterpart program.
+  Backend-only, independent of the 005-018 UI chain and of each other; they can run in
+  parallel with everything. Coordination: 021 makes `logsByRun`/`spansByRun` return the
+  newest rows and adds `severityMax` — plan 017 should default the run page to INFO+ with
+  a DEBUG/TRACE toggle on top of it, and plan 014 may expose a severity range. 019 changes
+  fingerprints forward-only — plan 016's issue list/detail should surface `error.type` /
+  `jackin.operation` facets and consume the existing `bundle(fingerprint:)` artifact for
+  its summary/cause/evidence split instead of inlining raw bodies.
 
 ## Verification baseline
 
