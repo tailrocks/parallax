@@ -40,7 +40,9 @@ major upgrades. The root [`AGENTS.md`](../AGENTS.md) and the
 10. **Base UI composition uses `render={<El …/>}`, not `asChild`** (and `nativeButton={false}`
     when a Button renders a non-button). This is the #1 migration trap.
 11. Theme only through the CSS variables in `src/styles.css` (`--background/--foreground`,
-    `--chart-1..5`, `--sidebar-*`); never inline colors. `components.json` is locked config.
+    `--chart-1..5`, `--sidebar-*`); never inline colors. The variable set is the custom
+    token system adopted 2026-07-03, and visual separation uses `--custom-shadow*` tokens,
+    not borders. `components.json` is locked config.
 12. Charts: native Recharts composed inside `ChartContainer` with a `ChartConfig`; series
     colors via `var(--color-<key>)`; the container needs a height.
 13. Tables that grow features use TanStack Table + shadcn `<Table>` split as

@@ -32,7 +32,7 @@ source of truth. API extensions are in scope (plans 009-010).
 | 002 | Dark product shell (old run) | — | M | — | SUPERSEDED by 007 |
 | 003 | Dense observability panels (old run) | — | L | — | SUPERSEDED by 011-018 |
 | 004 | Branded error/loading states (old run) | — | S | — | SUPERSEDED by 007 |
-| 005 | Reference design-token foundation | P1 | M | — | TODO |
+| 005 | Reference design-token foundation | P1 | M | — | DONE |
 | 006 | Port reference primitives + Tabler icons | P1 | L | 005 | TODO |
 | 007 | Rebuild app shell (inset, collapsible kept) | P1 | L | 005, 006 | TODO |
 | 008 | Shared console kit | P1 | L | 005-007 | TODO |

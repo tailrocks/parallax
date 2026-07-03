@@ -4,6 +4,7 @@ import {
   Scripts,
   createRootRoute,
 } from "@tanstack/react-router"
+import { ThemeProvider } from "next-themes"
 
 import appCss from "../styles.css?url"
 import { ParallaxShell } from "@/components/parallax-shell"
@@ -43,16 +44,23 @@ export const Route = createRootRoute({
 function RootOutlet() {
   return (
     <RootDocument>
-      <ParallaxShell>
-        <Outlet />
-      </ParallaxShell>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="dark"
+        enableSystem
+        disableTransitionOnChange
+      >
+        <ParallaxShell>
+          <Outlet />
+        </ParallaxShell>
+      </ThemeProvider>
     </RootDocument>
   )
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
