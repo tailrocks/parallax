@@ -1,23 +1,53 @@
-import { useState } from "react"
-import { Link, createFileRoute, useRouter } from "@tanstack/react-router"
-import { AlertTriangle, Activity, Clock3, Hash } from "lucide-react"
-import { Bar, BarChart, XAxis } from "recharts"
-import { graphql, gqlString, relativeTime } from "@/lib/api"
-import type { ErrorEvent, Issue } from "@/lib/api"
-import { KpiCard } from "@/components/kpi-card"
+import { useRef, useState } from "react"
+import {
+  Link,
+  createFileRoute,
+  useNavigate,
+  useRouter,
+} from "@tanstack/react-router"
+import {
+  IconArrowUpRight,
+  IconBug,
+  IconClock,
+  IconHash,
+  IconHistory,
+} from "@tabler/icons-react"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
+
+import { CopyButton } from "@/components/console/copy-button"
+import { EmptyState } from "@/components/console/empty-state"
+import { HeatCell } from "@/components/console/heat-cell"
+import { RangePicker } from "@/components/console/range-picker"
+import { RelativeTime } from "@/components/console/relative-time"
+import { CardSparkline, StatCard } from "@/components/console/stat-card"
+import { navItem } from "@/components/nav"
+import { PageHeader } from "@/components/page-header"
+import { MetricStrip } from "@/components/metric-strip"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { MetricStrip } from "@/components/metric-strip"
-import { PageHeading } from "@/components/page-heading"
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
+import { gqlString, graphql } from "@/lib/api"
+import type { ErrorEvent, Issue } from "@/lib/api"
+import {
+  formatCount,
+  formatDateTime,
+  formatDelta,
+  formatTimeInRange,
+} from "@/lib/format"
+import { parseStacktrace, structuredFrameCount } from "@/lib/stacktrace"
+import type { Frame } from "@/lib/stacktrace"
+import { rangeSearchSchema, resolveRangeSearch } from "@/lib/range"
+import type { ResolvedRange } from "@/lib/range"
+import { cn } from "@/lib/utils"
 
-type IssueDetail = Issue & { tags: string; events: ErrorEvent[] }
+type IssueEvent = ErrorEvent & { service: string }
+type IssueDetail = Issue & { tags: string; events: IssueEvent[] }
 
 interface TrendPoint {
   tsNanos: string
@@ -35,55 +65,284 @@ interface LoaderData {
   issueTrend: TrendPoint[]
   resource: Record<string, unknown>
   breadcrumbs: BreadcrumbLog[]
-  /** Run id carried by the latest event's trace, for run-scoped metrics. */
   traceRunId: string | null
 }
 
+const trendConfig = {
+  count: { label: "events", color: "var(--destructive)" },
+} satisfies ChartConfig
+
 export const Route = createFileRoute("/issues/$fingerprint")({
-  loader: async ({ params }): Promise<LoaderData> => {
-    const { issue, issueTrend } = await graphql<{
-      issue: IssueDetail | null
-      issueTrend: TrendPoint[]
-    }>(
-      `{ issue(fingerprint: "${params.fingerprint}") {
-           fingerprint title errorType culprit service status
-           firstSeenNanos lastSeenNanos eventCount lastTraceId tags
-           events(limit: 20) { tsNanos message stacktrace source traceId spanId attributes }
-         }
-         issueTrend(fingerprint: "${params.fingerprint}") { tsNanos count } }`
-    )
-    // Context sections (runtime/OS/process/SDK) come from the resource of
-    // the latest event's trace; breadcrumbs are that trace's logs.
-    let resource: Record<string, unknown> = {}
-    let breadcrumbs: BreadcrumbLog[] = []
-    let traceRunId: string | null = null
-    const traceId = issue?.lastTraceId
-    if (traceId) {
-      try {
-        const correlated = await graphql<{
-          trace: { spans: { resource: string; runId: string | null }[] } | null
-          logsByTrace: BreadcrumbLog[]
-        }>(
-          `{ trace(traceId: "${gqlString(traceId)}") { spans { resource runId } }
-             logsByTrace(traceId: "${gqlString(traceId)}") { tsNanos severityText body } }`
-        )
-        resource = JSON.parse(
-          correlated.trace?.spans[0]?.resource ?? "{}"
-        ) as Record<string, unknown>
-        breadcrumbs = correlated.logsByTrace.slice(-12)
-        traceRunId = correlated.trace?.spans.find((s) => s.runId)?.runId ?? null
-      } catch {
-        // Trace may have aged out; the issue page still renders.
-      }
-    }
-    return { issue, issueTrend, resource, breadcrumbs, traceRunId }
-  },
+  validateSearch: (search: Record<string, unknown>) =>
+    rangeSearchSchema.parse(search),
+  loaderDeps: ({ search }) => search,
+  loader: ({ params, deps }) =>
+    loadIssueDetail(params.fingerprint, resolveRangeSearch(deps)),
   component: IssueDetailPage,
 })
 
-const trendConfig = {
-  count: { label: "events", color: "var(--chart-1)" },
-} satisfies ChartConfig
+function rangeHours(range: ResolvedRange): number {
+  const ns = BigInt(range.toNanos) - BigInt(range.fromNanos)
+  return Math.max(1, Math.ceil(Number(ns / 3_600_000_000_000n)))
+}
+
+export async function loadIssueDetail(
+  fingerprint: string,
+  range: ResolvedRange
+): Promise<LoaderData> {
+  const escaped = gqlString(fingerprint)
+  const { issue, issueTrend } = await graphql<{
+    issue: IssueDetail | null
+    issueTrend: TrendPoint[]
+  }>(
+    `{ issue(fingerprint: "${escaped}") {
+         fingerprint title errorType culprit service status
+         firstSeenNanos lastSeenNanos eventCount lastTraceId tags
+         events(limit: 20, fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}") {
+           tsNanos service message stacktrace source traceId spanId attributes
+         }
+       }
+       issueTrend(fingerprint: "${escaped}", hours: ${rangeHours(range)}) { tsNanos count } }`
+  )
+
+  let resource: Record<string, unknown> = {}
+  let breadcrumbs: BreadcrumbLog[] = []
+  let traceRunId: string | null = null
+  const traceId = issue?.lastTraceId
+  if (traceId) {
+    try {
+      const correlated = await graphql<{
+        trace: { spans: { resource: string; runId: string | null }[] } | null
+        logsByTrace: BreadcrumbLog[]
+      }>(
+        `{ trace(traceId: "${gqlString(traceId)}") { spans { resource runId } }
+           logsByTrace(traceId: "${gqlString(traceId)}") { tsNanos severityText body } }`
+      )
+      resource = JSON.parse(
+        correlated.trace?.spans[0]?.resource ?? "{}"
+      ) as Record<string, unknown>
+      breadcrumbs = correlated.logsByTrace.slice(-12)
+      traceRunId = correlated.trace?.spans.find((s) => s.runId)?.runId ?? null
+    } catch {
+      // Trace may have aged out; issue detail still renders.
+    }
+  }
+  return { issue, issueTrend, resource, breadcrumbs, traceRunId }
+}
+
+function IssueDetailPage() {
+  const data = Route.useLoaderData()
+  const search = Route.useSearch()
+  const navigate = useNavigate({ from: Route.fullPath })
+  const range = resolveRangeSearch(search)
+  return (
+    <IssueDetailContent
+      data={data}
+      range={range}
+      onRange={(next) => navigate({ search: { range: next.key } })}
+    />
+  )
+}
+
+function issueDelta(trend: TrendPoint[]) {
+  if (trend.length < 2) return null
+  const midpoint = Math.floor(trend.length / 2)
+  const previous = trend
+    .slice(0, midpoint)
+    .reduce((sum, point) => sum + point.count, 0)
+  const current = trend
+    .slice(midpoint)
+    .reduce((sum, point) => sum + point.count, 0)
+  return formatDelta(current, previous)
+}
+
+export function IssueDetailContent({
+  data,
+  range,
+  onRange,
+}: {
+  data: LoaderData
+  range: ResolvedRange
+  onRange: (range: ResolvedRange) => void
+}) {
+  const { issue, issueTrend, resource, breadcrumbs, traceRunId } = data
+  const router = useRouter()
+  const [mutating, setMutating] = useState(false)
+  const [bucket, setBucket] = useState<string | null>(null)
+  const [bucketEvents, setBucketEvents] = useState<IssueEvent[] | null>(null)
+  const occurrencesRef = useRef<HTMLDivElement>(null)
+  const issuesBack = navItem("/issues")!
+
+  if (!issue) {
+    return (
+      <EmptyState
+        icon={IconBug}
+        title="Issue not found"
+        description="No issue matches this fingerprint."
+      />
+    )
+  }
+
+  const currentIssue = issue
+  const latest = currentIssue.events[0]
+  const shownEvents = bucketEvents ?? currentIssue.events
+  const command = `parallax issue context ${currentIssue.fingerprint}`
+
+  async function setStatus(status: "open" | "resolved") {
+    setMutating(true)
+    try {
+      await graphql(
+        `mutation { issueSetStatus(fingerprint: "${gqlString(currentIssue.fingerprint)}", status: "${status}") { status } }`
+      )
+      await router.invalidate()
+    } finally {
+      setMutating(false)
+    }
+  }
+
+  async function filterBucket(tsNanos: string | null) {
+    setBucket(tsNanos)
+    if (!tsNanos) {
+      setBucketEvents(null)
+      return
+    }
+    const from = BigInt(tsNanos)
+    const to = from + 3_600_000_000_000n
+    const { issue: scoped } = await graphql<{
+      issue: { events: IssueEvent[] } | null
+    }>(
+      `{ issue(fingerprint: "${gqlString(currentIssue.fingerprint)}") {
+           events(limit: 50, fromNanos: "${from}", toNanos: "${to}") {
+             tsNanos service message stacktrace source traceId spanId attributes
+           }
+         } }`
+    )
+    setBucketEvents(scoped?.events ?? [])
+    occurrencesRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    })
+  }
+
+  return (
+    <div className="space-y-4">
+      <PageHeader
+        back={issuesBack}
+        title={currentIssue.errorType || currentIssue.title}
+        titleTrailing={<CopyButton value={currentIssue.fingerprint} />}
+        description={currentIssue.title}
+        actions={
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={mutating}
+              onClick={() =>
+                void setStatus(
+                  currentIssue.status === "open" ? "resolved" : "open"
+                )
+              }
+            >
+              {currentIssue.status === "open" ? "Resolve" : "Reopen"}
+            </Button>
+            <RangePicker value={range} onChange={onRange} />
+          </>
+        }
+      />
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant="outline">{issue.service}</Badge>
+        <Badge variant={issue.status === "open" ? "rose" : "emerald"}>
+          {issue.status}
+        </Badge>
+        <Badge variant="secondary">
+          first <RelativeTime nanos={issue.firstSeenNanos} />
+        </Badge>
+        <Badge variant="secondary">
+          last <RelativeTime nanos={issue.lastSeenNanos} />
+        </Badge>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          icon={IconHash}
+          label="Events"
+          value={formatCount(issue.eventCount)}
+          hint="total occurrences"
+          chart={
+            <CardSparkline data={issueTrend.map((p) => ({ value: p.count }))} />
+          }
+        />
+        <StatCard
+          icon={IconClock}
+          label="First seen"
+          value={<RelativeTime nanos={issue.firstSeenNanos} />}
+          hint={formatDateTime(issue.firstSeenNanos)}
+        />
+        <StatCard
+          icon={IconHistory}
+          label="Last seen"
+          value={<RelativeTime nanos={issue.lastSeenNanos} />}
+          hint={formatDateTime(issue.lastSeenNanos)}
+        />
+        <StatCard
+          icon={IconBug}
+          label="Trend"
+          value={formatCount(
+            issueTrend.reduce((sum, point) => sum + point.count, 0)
+          )}
+          hint="selected range"
+          delta={issueDelta(issueTrend)}
+          deltaInverted
+        />
+      </div>
+
+      <TrendChart
+        trend={issueTrend}
+        onBucket={filterBucket}
+        activeBucket={bucket}
+      />
+
+      {latest ? (
+        <StacktraceCard event={latest} culprit={issue.culprit} />
+      ) : null}
+
+      {latest ? (
+        <MetricStrip
+          title="Metrics around latest event"
+          service={issue.service}
+          runId={traceRunId ?? undefined}
+          fromNanos={(BigInt(latest.tsNanos) - 300_000_000_000n).toString()}
+          toNanos={(BigInt(latest.tsNanos) + 300_000_000_000n).toString()}
+          stepSeconds={30}
+        />
+      ) : null}
+
+      <TagsTable tags={issue.tags} />
+      <ContextSections resource={resource} />
+      <Breadcrumbs logs={breadcrumbs} range={range} />
+
+      <Card>
+        <CardHeader className="flex-row items-center justify-between">
+          <CardTitle className="text-sm">Agent handoff</CardTitle>
+          <CopyButton value={command} />
+        </CardHeader>
+        <CardContent>
+          <code className="block rounded-md border bg-muted/40 p-3 font-mono text-xs">
+            {command}
+          </code>
+        </CardContent>
+      </Card>
+
+      <Occurrences
+        refEl={occurrencesRef}
+        events={shownEvents}
+        bucket={bucket}
+        range={range}
+      />
+    </div>
+  )
+}
 
 function TrendChart({
   trend,
@@ -95,30 +354,23 @@ function TrendChart({
   activeBucket: string | null
 }) {
   if (trend.length === 0) return null
-  const data = trend.map((p) => ({
-    tsNanos: p.tsNanos,
-    time: new Date(Number(p.tsNanos) / 1e6).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
+  const data = trend.map((point) => ({
+    ...point,
+    time: formatTimeInRange(point.tsNanos, {
+      fromNanos: trend[0]?.tsNanos ?? point.tsNanos,
+      toNanos: trend.at(-1)?.tsNanos ?? point.tsNanos,
     }),
-    count: p.count,
   }))
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm">
-          Occurrence trend{" "}
-          <span className="font-normal text-muted-foreground">
-            (last 24h; click a bar to filter
-            {activeBucket ? "; click again to clear" : ""})
-          </span>
-        </CardTitle>
+        <CardTitle className="text-sm">Occurrence trend</CardTitle>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={trendConfig} className="h-24 w-full">
+        <ChartContainer config={trendConfig} className="h-[180px] w-full">
           <BarChart
             data={data}
-            margin={{ left: 0, right: 0, top: 4 }}
+            margin={{ left: 8, right: 8, top: 8 }}
             onClick={(state) => {
               const payloadState = state as {
                 activePayload?: Array<{ payload?: { tsNanos?: unknown } }>
@@ -126,17 +378,19 @@ function TrendChart({
               const ts = payloadState.activePayload?.[0]?.payload?.tsNanos as
                 | string
                 | undefined
-              if (ts) onBucket(ts === activeBucket ? null : ts)
+              if (ts) void onBucket(ts === activeBucket ? null : ts)
             }}
           >
+            <CartesianGrid vertical={false} />
             <XAxis
               dataKey="time"
               tickLine={false}
               axisLine={false}
               minTickGap={48}
             />
+            <YAxis tickLine={false} axisLine={false} width={40} />
             <ChartTooltip content={<ChartTooltipContent />} />
-            <Bar dataKey="count" fill="var(--color-count)" radius={2} />
+            <Bar dataKey="count" fill="var(--color-count)" radius={3} />
           </BarChart>
         </ChartContainer>
       </CardContent>
@@ -144,7 +398,113 @@ function TrendChart({
   )
 }
 
-/** Section groups for the resource-attribute context card. */
+function StacktraceCard({
+  event,
+  culprit,
+}: {
+  event: IssueEvent
+  culprit: string | null
+}) {
+  const [showLibraries, setShowLibraries] = useState(false)
+  const frames = parseStacktrace(event.stacktrace)
+  const structured = structuredFrameCount(frames)
+  const libraryCount = frames.filter((frame) => frame.isApp === false).length
+  const visibleFrames = showLibraries
+    ? frames
+    : frames.filter((frame) => frame.isApp !== false)
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle className="text-sm">Latest event stacktrace</CardTitle>
+        {event.stacktrace ? <CopyButton value={event.stacktrace} /> : null}
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm">{event.message}</p>
+        {event.traceId ? (
+          <Link
+            to="/traces/$traceId"
+            params={{ traceId: event.traceId }}
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          >
+            Open trace {event.traceId.slice(0, 16)}
+            <IconArrowUpRight className="size-3.5" />
+          </Link>
+        ) : null}
+        {event.stacktrace && structured >= 2 ? (
+          <div className="overflow-hidden rounded-lg border">
+            {visibleFrames.map((frame, index) => (
+              <FrameRow
+                key={`${frame.raw}-${index}`}
+                frame={frame}
+                culprit={culprit}
+              />
+            ))}
+            {libraryCount > 0 ? (
+              <button
+                type="button"
+                className="w-full border-t bg-muted/30 px-3 py-2 text-left text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => setShowLibraries((value) => !value)}
+              >
+                {showLibraries ? "Hide" : "Show"} {libraryCount} library frames
+              </button>
+            ) : null}
+          </div>
+        ) : event.stacktrace ? (
+          <pre className="max-h-96 overflow-auto rounded-md border bg-muted/30 p-3 text-xs leading-relaxed">
+            {event.stacktrace}
+          </pre>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No stacktrace captured.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function FrameRow({
+  frame,
+  culprit,
+}: {
+  frame: Frame
+  culprit: string | null
+}) {
+  const highlighted =
+    Boolean(culprit) &&
+    Boolean(
+      frame.raw.includes(culprit ?? "") ||
+      frame.fn?.includes(culprit ?? "") ||
+      frame.file?.includes(culprit ?? "")
+    )
+  return (
+    <div
+      className={cn(
+        "grid gap-1 border-b px-3 py-2 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]",
+        frame.isApp === false && "text-muted-foreground",
+        frame.isApp !== false && "font-medium",
+        highlighted && "shadow-[inset_3px_0_0_rgba(244,63,94,0.85)]"
+      )}
+    >
+      <span className="truncate font-mono text-xs">
+        {frame.file ? (
+          <>
+            {frame.file}
+            {frame.line ? `:${frame.line}` : ""}
+            {frame.col ? `:${frame.col}` : ""}
+          </>
+        ) : (
+          frame.raw
+        )}
+      </span>
+      <span className="truncate text-xs text-muted-foreground">
+        {frame.fn ?? frame.raw}
+      </span>
+    </div>
+  )
+}
+
 const CONTEXT_SECTIONS: [string, (key: string) => boolean][] = [
   ["Runtime", (key) => key.startsWith("process.runtime.")],
   [
@@ -217,7 +577,7 @@ function TagsTable({ tags }: { tags: string }) {
                     <Badge key={value} variant="secondary">
                       {value}
                       <span className="ml-1 text-muted-foreground">
-                        ×{count}
+                        x{count}
                       </span>
                     </Badge>
                   ))}
@@ -230,233 +590,97 @@ function TagsTable({ tags }: { tags: string }) {
   )
 }
 
-function IssueDetailPage() {
-  const { issue, issueTrend, resource, breadcrumbs, traceRunId } =
-    Route.useLoaderData()
-  const router = useRouter()
-  const [mutating, setMutating] = useState(false)
-  const [bucket, setBucket] = useState<string | null>(null)
-  const [bucketEvents, setBucketEvents] = useState<ErrorEvent[] | null>(null)
-  if (!issue) {
-    return <p className="text-sm text-muted-foreground">Issue not found.</p>
-  }
-  const latest = issue.events[0]
-  const shownEvents = bucketEvents ?? issue.events
-
-  async function setStatus(status: "open" | "resolved") {
-    if (!issue) return
-    setMutating(true)
-    try {
-      await graphql(
-        `mutation { issueSetStatus(fingerprint: "${gqlString(issue.fingerprint)}", status: "${status}") { status } }`
-      )
-      await router.invalidate()
-    } finally {
-      setMutating(false)
-    }
-  }
-
-  async function filterBucket(tsNanos: string | null) {
-    setBucket(tsNanos)
-    if (!tsNanos || !issue) {
-      setBucketEvents(null)
-      return
-    }
-    // Trend buckets are hourly: fetch the occurrences inside the clicked one.
-    const from = BigInt(tsNanos)
-    const to = from + 3_600_000_000_000n
-    const { issue: scoped } = await graphql<{
-      issue: { events: ErrorEvent[] } | null
-    }>(
-      `{ issue(fingerprint: "${gqlString(issue.fingerprint)}") {
-           events(limit: 50, fromNanos: "${from}", toNanos: "${to}") {
-             tsNanos message stacktrace source traceId spanId attributes }
-         } }`
-    )
-    setBucketEvents(scoped?.events ?? [])
-  }
-
+function Breadcrumbs({
+  logs,
+  range,
+}: {
+  logs: BreadcrumbLog[]
+  range: ResolvedRange
+}) {
+  if (logs.length === 0) return null
   return (
-    <div className="space-y-4">
-      <PageHeading
-        eyebrow="Issue detail"
-        title={issue.title}
-        description={`${issue.service} · ${issue.culprit || "unknown culprit"}`}
-        action={
-          <Button
-            size="sm"
-            variant={issue.status === "open" ? "default" : "outline"}
-            disabled={mutating}
-            onClick={() =>
-              setStatus(issue.status === "open" ? "resolved" : "open")
-            }
-          >
-            {issue.status === "open" ? "Resolve" : "Reopen"}
-          </Button>
-        }
-      />
-
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge variant={issue.status === "open" ? "destructive" : "secondary"}>
-          {issue.status}
-        </Badge>
-        <Badge variant="outline">{issue.service}</Badge>
-        <span className="text-muted-foreground">
-          {issue.eventCount} events · first {relativeTime(issue.firstSeenNanos)}{" "}
-          · last {relativeTime(issue.lastSeenNanos)}
-        </span>
-      </div>
-
-      <div className="grid gap-3 md:grid-cols-4">
-        <KpiCard
-          icon={AlertTriangle}
-          label="Status"
-          value={issue.status}
-          detail={issue.errorType || "error"}
-          tone={issue.status === "open" ? "rose" : "green"}
-        />
-        <KpiCard
-          icon={Hash}
-          label="Events"
-          value={issue.eventCount.toLocaleString()}
-          detail="total occurrences"
-          tone="orange"
-          bars={issueTrend.map((point) => point.count)}
-        />
-        <KpiCard
-          icon={Clock3}
-          label="Last seen"
-          value={relativeTime(issue.lastSeenNanos)}
-          detail="newest event"
-          tone="blue"
-        />
-        <KpiCard
-          icon={Activity}
-          label="Trace"
-          value={issue.lastTraceId ? "Linked" : "None"}
-          detail={issue.lastTraceId?.slice(0, 12) ?? "no trace id"}
-          tone="violet"
-        />
-      </div>
-
-      <TrendChart
-        trend={issueTrend}
-        onBucket={filterBucket}
-        activeBucket={bucket}
-      />
-
-      {latest ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">
-              Latest event · {relativeTime(latest.tsNanos)} ·{" "}
-              <span className="font-normal text-muted-foreground">
-                {latest.source}
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">Logs around latest event</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ul className="space-y-1 font-mono text-xs">
+          {logs.map((log, index) => (
+            <li
+              key={`${log.tsNanos}-${index}`}
+              className="grid gap-2 sm:grid-cols-[90px_80px_1fr]"
+            >
+              <span className="text-muted-foreground">
+                {formatTimeInRange(log.tsNanos, range)}
               </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm">{latest.message}</p>
-            {latest.stacktrace ? (
-              <pre className="max-h-96 overflow-auto rounded-md border border-border/70 bg-background/70 p-3 text-xs leading-relaxed">
-                {latest.stacktrace}
-              </pre>
-            ) : null}
-            {latest.traceId ? (
-              <Link
-                to="/traces/$traceId"
-                params={{ traceId: latest.traceId }}
-                className="text-sm underline underline-offset-4"
+              <Badge variant="secondary">{log.severityText}</Badge>
+              <span className="break-all">{log.body}</span>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
+  )
+}
+
+function Occurrences({
+  refEl,
+  events,
+  bucket,
+  range,
+}: {
+  refEl: React.RefObject<HTMLDivElement | null>
+  events: IssueEvent[]
+  bucket: string | null
+  range: ResolvedRange
+}) {
+  const durations = events.map((event) => Number(event.tsNanos))
+  return (
+    <Card ref={refEl}>
+      <CardHeader>
+        <CardTitle className="text-sm">
+          Occurrences
+          {bucket ? (
+            <span className="ml-2 font-normal text-muted-foreground">
+              selected hour ({events.length})
+            </span>
+          ) : null}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {events.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No occurrences in this window.
+          </p>
+        ) : (
+          <ul className="space-y-2 text-sm">
+            {events.map((event) => (
+              <li
+                key={`${event.tsNanos}-${event.spanId}`}
+                className="grid gap-2 rounded-lg border bg-muted/20 px-3 py-2 md:grid-cols-[minmax(0,1fr)_auto]"
               >
-                Open trace {latest.traceId.slice(0, 16)}…
-              </Link>
-            ) : null}
-            <div className="text-xs text-muted-foreground">
-              Agent handoff:{" "}
-              <code>parallax issue context {issue.fingerprint}</code>
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {latest ? (
-        <MetricStrip
-          title="Metrics around the latest event"
-          service={issue.service}
-          runId={traceRunId ?? undefined}
-          fromNanos={(BigInt(latest.tsNanos) - 300_000_000_000n).toString()}
-          toNanos={(BigInt(latest.tsNanos) + 300_000_000_000n).toString()}
-          stepSeconds={30}
-        />
-      ) : null}
-
-      <TagsTable tags={issue.tags} />
-      <ContextSections resource={resource} />
-
-      {breadcrumbs.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">
-              Logs around the latest event
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-1 font-mono text-xs">
-              {breadcrumbs.map((log, index) => (
-                <li key={index} className="flex gap-2">
-                  <span className="w-14 shrink-0 text-muted-foreground">
-                    {log.severityText}
-                  </span>
-                  <span className="break-all">{log.body}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">
-            Occurrences
-            {bucket ? (
-              <span className="ml-2 font-normal text-muted-foreground">
-                in the selected hour ({shownEvents.length})
-              </span>
-            ) : null}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {shownEvents.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No occurrences in this window.
-            </p>
-          ) : (
-            <ul className="space-y-2 text-sm">
-              {shownEvents.map((event) => (
-                <li
-                  key={`${event.tsNanos}-${event.spanId}`}
-                  className="flex items-center justify-between gap-4 rounded-xl border border-border/70 bg-background/60 px-3 py-2"
-                >
-                  <span className="truncate">{event.message}</span>
-                  <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
-                    {event.traceId ? (
-                      <Link
-                        to="/traces/$traceId"
-                        params={{ traceId: event.traceId }}
-                        className="underline underline-offset-4"
-                      >
-                        trace
-                      </Link>
-                    ) : null}
-                    {relativeTime(event.tsNanos)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+                <span className="min-w-0 truncate">{event.message}</span>
+                <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+                  <HeatCell value={Number(event.tsNanos)} values={durations}>
+                    {formatTimeInRange(event.tsNanos, range)}
+                  </HeatCell>
+                  <Badge variant="outline">{event.service}</Badge>
+                  {event.traceId ? (
+                    <Link
+                      to="/traces/$traceId"
+                      params={{ traceId: event.traceId }}
+                      className="inline-flex items-center gap-1 hover:text-foreground"
+                    >
+                      trace
+                      <IconArrowUpRight className="size-3" />
+                    </Link>
+                  ) : null}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
   )
 }
