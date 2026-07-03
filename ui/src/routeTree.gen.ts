@@ -18,6 +18,7 @@ import { Route as RunsIndexRouteImport } from './routes/runs.index'
 import { Route as IssuesIndexRouteImport } from './routes/issues.index'
 import { Route as DashboardsIndexRouteImport } from './routes/dashboards.index'
 import { Route as TracesTraceIdRouteImport } from './routes/traces.$traceId'
+import { Route as ServicesServiceRouteImport } from './routes/services.$service'
 import { Route as RunsRunIdRouteImport } from './routes/runs.$runId'
 import { Route as IssuesFingerprintRouteImport } from './routes/issues.$fingerprint'
 import { Route as DashboardsDashboardIdRouteImport } from './routes/dashboards.$dashboardId'
@@ -67,6 +68,11 @@ const TracesTraceIdRoute = TracesTraceIdRouteImport.update({
   path: '/traces/$traceId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ServicesServiceRoute = ServicesServiceRouteImport.update({
+  id: '/$service',
+  path: '/$service',
+  getParentRoute: () => ServicesRoute,
+} as any)
 const RunsRunIdRoute = RunsRunIdRouteImport.update({
   id: '/runs/$runId',
   path: '/runs/$runId',
@@ -86,11 +92,12 @@ const DashboardsDashboardIdRoute = DashboardsDashboardIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/logs': typeof LogsRoute
-  '/services': typeof ServicesRoute
+  '/services': typeof ServicesRouteWithChildren
   '/sql': typeof SqlRoute
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
   '/runs/$runId': typeof RunsRunIdRoute
+  '/services/$service': typeof ServicesServiceRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
   '/dashboards/': typeof DashboardsIndexRoute
   '/issues/': typeof IssuesIndexRoute
@@ -100,11 +107,12 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/logs': typeof LogsRoute
-  '/services': typeof ServicesRoute
+  '/services': typeof ServicesRouteWithChildren
   '/sql': typeof SqlRoute
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
   '/runs/$runId': typeof RunsRunIdRoute
+  '/services/$service': typeof ServicesServiceRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
   '/dashboards': typeof DashboardsIndexRoute
   '/issues': typeof IssuesIndexRoute
@@ -115,11 +123,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/logs': typeof LogsRoute
-  '/services': typeof ServicesRoute
+  '/services': typeof ServicesRouteWithChildren
   '/sql': typeof SqlRoute
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
   '/runs/$runId': typeof RunsRunIdRoute
+  '/services/$service': typeof ServicesServiceRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
   '/dashboards/': typeof DashboardsIndexRoute
   '/issues/': typeof IssuesIndexRoute
@@ -136,6 +145,7 @@ export interface FileRouteTypes {
     | '/dashboards/$dashboardId'
     | '/issues/$fingerprint'
     | '/runs/$runId'
+    | '/services/$service'
     | '/traces/$traceId'
     | '/dashboards/'
     | '/issues/'
@@ -150,6 +160,7 @@ export interface FileRouteTypes {
     | '/dashboards/$dashboardId'
     | '/issues/$fingerprint'
     | '/runs/$runId'
+    | '/services/$service'
     | '/traces/$traceId'
     | '/dashboards'
     | '/issues'
@@ -164,6 +175,7 @@ export interface FileRouteTypes {
     | '/dashboards/$dashboardId'
     | '/issues/$fingerprint'
     | '/runs/$runId'
+    | '/services/$service'
     | '/traces/$traceId'
     | '/dashboards/'
     | '/issues/'
@@ -174,7 +186,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LogsRoute: typeof LogsRoute
-  ServicesRoute: typeof ServicesRoute
+  ServicesRoute: typeof ServicesRouteWithChildren
   SqlRoute: typeof SqlRoute
   DashboardsDashboardIdRoute: typeof DashboardsDashboardIdRoute
   IssuesFingerprintRoute: typeof IssuesFingerprintRoute
@@ -251,6 +263,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TracesTraceIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/services/$service': {
+      id: '/services/$service'
+      path: '/$service'
+      fullPath: '/services/$service'
+      preLoaderRoute: typeof ServicesServiceRouteImport
+      parentRoute: typeof ServicesRoute
+    }
     '/runs/$runId': {
       id: '/runs/$runId'
       path: '/runs/$runId'
@@ -275,10 +294,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ServicesRouteChildren {
+  ServicesServiceRoute: typeof ServicesServiceRoute
+}
+
+const ServicesRouteChildren: ServicesRouteChildren = {
+  ServicesServiceRoute: ServicesServiceRoute,
+}
+
+const ServicesRouteWithChildren = ServicesRoute._addFileChildren(
+  ServicesRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LogsRoute: LogsRoute,
-  ServicesRoute: ServicesRoute,
+  ServicesRoute: ServicesRouteWithChildren,
   SqlRoute: SqlRoute,
   DashboardsDashboardIdRoute: DashboardsDashboardIdRoute,
   IssuesFingerprintRoute: IssuesFingerprintRoute,

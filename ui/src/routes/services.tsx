@@ -1,287 +1,387 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  Line,
-  LineChart,
-  XAxis,
-  YAxis,
-} from "recharts"
-import { Activity, Cpu, Gauge, Server } from "lucide-react"
-import { graphql, gqlString } from "@/lib/api"
-import { KpiCard } from "@/components/kpi-card"
-import { PageHeading } from "@/components/page-heading"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
-import type { ChartConfig } from "@/components/ui/chart"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  Link,
+  createFileRoute,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router"
+import { IconServer, IconTerminal2 } from "@tabler/icons-react"
+import { z } from "zod"
 
-interface SeriesPoint {
-  tsNanos: string
-  value: number
+import { EmptyState } from "@/components/console/empty-state"
+import { HeatCell } from "@/components/console/heat-cell"
+import { useDelayedLoading } from "@/components/console/hooks"
+import { RangePicker } from "@/components/console/range-picker"
+import { RelativeTime } from "@/components/console/relative-time"
+import { TableSkeleton } from "@/components/console/skeletons"
+import {
+  SearchInput,
+  SortableHead,
+  Toolbar,
+  sortRows,
+} from "@/components/console/data-table"
+import { PageHeader } from "@/components/page-header"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { graphql } from "@/lib/api"
+import { formatCount, formatDurationNs, formatPercent } from "@/lib/format"
+import { rangeSearchSchema, resolveRangeSearch } from "@/lib/range"
+import type { ResolvedRange } from "@/lib/range"
+import { cn } from "@/lib/utils"
+
+export interface ServiceSummary {
+  name: string
+  lastSeenNanos: string
+  spanCount: string
+  errorCount: string
+  p95Ms: number | null
 }
 
-interface ChartPoint {
-  time: string
-  [key: string]: string | number
+export interface ServicesData {
+  serviceList: ServiceSummary[]
 }
 
-interface PanelData {
-  title: string
-  unit: string
-  series: { key: string; points: SeriesPoint[] }[]
+type ServiceSort =
+  | "name:asc"
+  | "spans:desc"
+  | "spans:asc"
+  | "errors:desc"
+  | "errors:asc"
+  | "errorRate:desc"
+  | "errorRate:asc"
+  | "p95:desc"
+  | "p95:asc"
+  | "lastSeen:desc"
+  | "lastSeen:asc"
+
+export interface ServicesSearch {
+  q?: string
+  range?: string
+  from?: string
+  to?: string
+  sort?: ServiceSort
 }
 
-// The predefined service overview (scope §2.5a): process CPU/memory plus
-// HTTP and gRPC server latency percentiles, all from OTel semconv metric
-// names. Panels render only when the service actually sends the metric.
-const LATENCY_QS = [
-  { key: "p50", q: 0.5 },
-  { key: "p95", q: 0.95 },
-  { key: "p99", q: 0.99 },
-] as const
+type ServicesSearchPatch = {
+  [K in keyof ServicesSearch]?: ServicesSearch[K] | undefined
+}
+
+const serviceSorts = new Set<ServiceSort>([
+  "name:asc",
+  "spans:desc",
+  "spans:asc",
+  "errors:desc",
+  "errors:asc",
+  "errorRate:desc",
+  "errorRate:asc",
+  "p95:desc",
+  "p95:asc",
+  "lastSeen:desc",
+  "lastSeen:asc",
+])
+
+const servicesSearchSchema = rangeSearchSchema.extend({
+  q: z.unknown().optional(),
+  sort: z.unknown().optional(),
+})
+
+export function validateServicesSearch(
+  search: Record<string, unknown>
+): ServicesSearch {
+  const parsed = servicesSearchSchema.parse(search)
+  const result: ServicesSearch = {}
+  if (typeof parsed.q === "string" && parsed.q) result.q = parsed.q
+  if (parsed.range) result.range = parsed.range
+  if (parsed.from) result.from = parsed.from
+  if (parsed.to) result.to = parsed.to
+  if (serviceSorts.has(parsed.sort as ServiceSort)) {
+    result.sort = parsed.sort as ServiceSort
+  }
+  return result
+}
+
+export function serviceErrorRate(row: ServiceSummary): number {
+  const spans = Number(row.spanCount)
+  if (!Number.isFinite(spans) || spans <= 0) return 0
+  return Number(row.errorCount) / spans
+}
+
+export function serviceHref(service: string) {
+  return `/services/${encodeURIComponent(service)}`
+}
+
+export function sortedServices(rows: ServiceSummary[], sort?: string) {
+  return sortRows(rows, sort ?? "lastSeen:desc", {
+    name: (row) => row.name.toLowerCase(),
+    spans: (row) => Number(row.spanCount),
+    errors: (row) => Number(row.errorCount),
+    errorRate: serviceErrorRate,
+    p95: (row) => row.p95Ms,
+    lastSeen: (row) => Number(row.lastSeenNanos),
+  })
+}
+
+export async function loadServices(range: ResolvedRange) {
+  return graphql<ServicesData>(`
+    {
+      serviceList(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}") {
+        name
+        lastSeenNanos
+        spanCount
+        errorCount
+        p95Ms
+      }
+    }
+  `)
+}
 
 export const Route = createFileRoute("/services")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    service: typeof search.service === "string" ? search.service : undefined,
-  }),
-  loaderDeps: ({ search }) => ({ service: search.service }),
-  loader: async ({ deps }) => {
-    const { services } = await graphql<{ services: string[] }>(`
-      {
-        services
-      }
-    `)
-    const service = deps.service ?? services[0]
-    if (!service) return { services, service: undefined, panels: [] }
-
-    const nowNanos = BigInt(Date.now()) * 1_000_000n
-    const fromNanos = nowNanos - 3_600n * 1_000_000_000n
-    const range = `fromNanos: "${fromNanos}", toNanos: "${nowNanos}",
-                   service: "${gqlString(service)}"`
-
-    const point = (name: string, agg: string) =>
-      graphql<{ metricSeries: { points: SeriesPoint[] }[] }>(
-        `{ metricSeries(name: "${name}", agg: "${agg}", ${range}) { points { tsNanos value } } }`
-      ).then((r) => r.metricSeries[0]?.points ?? [])
-    const quantiles = (name: string) =>
-      Promise.all(
-        LATENCY_QS.map(({ key, q }) =>
-          graphql<{ histogramQuantile: SeriesPoint[] }>(
-            `{ histogramQuantile(name: "${name}", q: ${q}, ${range}) { tsNanos value } }`
-          ).then((r) => ({ key, points: r.histogramQuantile }))
-        )
-      )
-
-    const [cpu, memory, http, grpc] = await Promise.all([
-      point("process.cpu.utilization", "avg"),
-      point("process.memory.usage", "avg"),
-      quantiles("http.server.request.duration"),
-      quantiles("rpc.server.duration"),
-    ])
-
-    const panels: PanelData[] = [
-      {
-        title: "CPU utilization",
-        unit: "ratio",
-        series: [{ key: "cpu", points: cpu }],
-      },
-      {
-        title: "Memory usage",
-        unit: "bytes",
-        series: [{ key: "memory", points: memory }],
-      },
-      { title: "HTTP server duration", unit: "s", series: http },
-      { title: "gRPC server duration", unit: "s", series: grpc },
-    ].filter((panel) => panel.series.some((s) => s.points.length > 0))
-
-    return { services, service, panels }
-  },
+  validateSearch: validateServicesSearch,
+  loaderDeps: ({ search }) => search,
+  loader: ({ deps }) => loadServices(resolveRangeSearch(deps)),
   component: ServicesPage,
 })
 
-function toChartData(series: PanelData["series"]): ChartPoint[] {
-  const byTime = new Map<string, ChartPoint>()
-  for (const { key, points } of series) {
-    for (const p of points) {
-      const time = new Date(Number(p.tsNanos) / 1e6).toLocaleTimeString()
-      const row = byTime.get(time) ?? { time }
-      row[key] = p.value
-      byTime.set(time, row)
+function patchSearch(current: ServicesSearch, patch: ServicesSearchPatch) {
+  const raw = { ...current, ...patch }
+  const next: ServicesSearch = {}
+  for (const key of Object.keys(raw) as Array<keyof ServicesSearch>) {
+    const value = raw[key]
+    if (value != null && value !== "") {
+      Object.assign(next, { [key]: value })
     }
   }
-  return [...byTime.values()]
+  return next
 }
 
-const PALETTE = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)"]
-
-function Panel({ panel }: { panel: PanelData }) {
-  const config: ChartConfig = Object.fromEntries(
-    panel.series.map((s, i) => [
-      s.key,
-      { label: s.key, color: PALETTE[i % PALETTE.length] ?? "var(--chart-1)" },
-    ])
-  )
-  const data = toChartData(panel.series)
-  const multi = panel.series.length > 1
-  const firstKey = panel.series[0]?.key ?? "value"
+function ServiceDot({ errored }: { errored: boolean }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm">
-          {panel.title}{" "}
-          <span className="font-normal text-muted-foreground">
-            ({panel.unit})
-          </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ChartContainer config={config} className="h-56 w-full">
-          {multi ? (
-            <LineChart data={data} margin={{ left: 8, right: 8, top: 8 }}>
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="time"
-                tickLine={false}
-                axisLine={false}
-                minTickGap={32}
-              />
-              <YAxis tickLine={false} axisLine={false} width={56} />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              {panel.series.map((s) => (
-                <Line
-                  key={s.key}
-                  dataKey={s.key}
-                  stroke={`var(--color-${s.key})`}
-                  dot={false}
-                />
-              ))}
-            </LineChart>
-          ) : (
-            <AreaChart data={data} margin={{ left: 8, right: 8, top: 8 }}>
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="time"
-                tickLine={false}
-                axisLine={false}
-                minTickGap={32}
-              />
-              <YAxis tickLine={false} axisLine={false} width={56} />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Area
-                dataKey={firstKey}
-                stroke={`var(--color-${firstKey})`}
-                fill={`var(--color-${firstKey})`}
-                fillOpacity={0.2}
-              />
-            </AreaChart>
-          )}
-        </ChartContainer>
-      </CardContent>
-    </Card>
+    <span
+      className={cn(
+        "size-2 rounded-full",
+        errored ? "bg-rose-500" : "bg-emerald-500"
+      )}
+    />
   )
 }
 
 function ServicesPage() {
-  const { services, service, panels } = Route.useLoaderData()
+  const data = Route.useLoaderData()
+  const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
+  const range = resolveRangeSearch(search)
+  const routerLoading = useRouterState({
+    select: (state) => state.status === "pending",
+  })
+  const pending = useDelayedLoading(routerLoading)
 
-  if (!service) {
-    return (
-      <div className="parallax-panel p-6 text-sm text-muted-foreground">
-        No services yet. Point an app's OTLP exporter at this machine and its
-        overview appears here.
-      </div>
-    )
-  }
+  const setSearch = (patch: ServicesSearchPatch) =>
+    navigate({ search: patchSearch(search, patch) })
+
+  return (
+    <ServicesIndexContent
+      data={data}
+      search={search}
+      range={range}
+      loading={pending}
+      onSearch={setSearch}
+    />
+  )
+}
+
+export function ServicesIndexContent({
+  data,
+  search,
+  range,
+  loading = false,
+  onSearch,
+}: {
+  data: ServicesData
+  search: ServicesSearch
+  range: ResolvedRange
+  loading?: boolean
+  onSearch: (patch: ServicesSearchPatch) => void
+}) {
+  const query = search.q?.toLowerCase() ?? ""
+  const filtered = data.serviceList.filter((row) =>
+    row.name.toLowerCase().includes(query)
+  )
+  const rows = sortedServices(filtered, search.sort)
+  const p95Values = rows
+    .map((row) => row.p95Ms)
+    .filter((value): value is number => Number.isFinite(value))
+  const errorRates = rows.map(serviceErrorRate)
+
   return (
     <div className="space-y-4">
-      <PageHeading
-        eyebrow="Service telemetry"
-        title={service}
-        description="Process, HTTP, and gRPC health over the last hour."
-        action={
-          <Select
-            value={service}
-            onValueChange={(value) =>
-              value && navigate({ search: { service: value } })
+      <PageHeader
+        icon={IconServer}
+        iconClassName="text-emerald-500"
+        title="Services"
+        description="Health index across services emitting telemetry."
+        actions={
+          <RangePicker
+            value={range}
+            onChange={(next) =>
+              onSearch({ range: next.key, from: undefined, to: undefined })
             }
-          >
-            <SelectTrigger className="w-56">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {services.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          />
         }
       />
 
-      <div className="grid gap-3 md:grid-cols-4">
-        <KpiCard
-          icon={Server}
-          label="Services"
-          value={services.length.toLocaleString()}
-          detail="seen by collector"
-          tone="blue"
+      <Toolbar className="justify-between">
+        <SearchInput
+          value={search.q ?? ""}
+          onChange={(q) => onSearch({ q })}
+          placeholder="Search services"
         />
-        <KpiCard
-          icon={Gauge}
-          label="Panels"
-          value={panels.length.toLocaleString()}
-          detail="with recent data"
-          tone="orange"
-        />
-        <KpiCard
-          icon={Cpu}
-          label="Runtime"
-          value={
-            panels.some((panel) => panel.title.includes("CPU")) ? "CPU" : "Idle"
-          }
-          detail="process metrics"
-          tone="green"
-        />
-        <KpiCard
-          icon={Activity}
-          label="Latency"
-          value={
-            panels.some((panel) => panel.title.includes("duration"))
-              ? "Active"
-              : "No data"
-          }
-          detail="HTTP/gRPC"
-          tone="violet"
-        />
-      </div>
+        <span className="text-xs text-muted-foreground">
+          {formatCount(rows.length)} of {formatCount(data.serviceList.length)}
+        </span>
+      </Toolbar>
 
-      {panels.length === 0 ? (
-        <div className="parallax-panel p-6 text-sm text-muted-foreground">
-          {service} sent no overview metrics in the last hour. The predefined
-          charts read the OTel semconv names process.cpu.utilization,
-          process.memory.usage, http.server.request.duration and
-          rpc.server.duration — wire them per the conventions page, or chart any
-          custom metric from Dashboards.
-        </div>
+      {loading ? (
+        <TableSkeleton rows={8} />
+      ) : rows.length === 0 ? (
+        <EmptyState
+          icon={IconTerminal2}
+          title="No services yet"
+          description={
+            <span>
+              Point OTLP at <code>http://127.0.0.1:4317</code>; services appear
+              after spans, logs, or metrics arrive.
+            </span>
+          }
+        />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {panels.map((panel) => (
-            <Panel key={panel.title} panel={panel} />
-          ))}
+        <div className="overflow-hidden rounded-lg border bg-card">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>
+                  <SortableHead
+                    {...(search.sort ? { sort: search.sort } : {})}
+                    sortKey="name"
+                    onSort={(sort) => onSearch({ sort: sort as ServiceSort })}
+                  >
+                    Service
+                  </SortableHead>
+                </TableHead>
+                <TableHead className="w-28 text-right">
+                  <SortableHead
+                    {...(search.sort ? { sort: search.sort } : {})}
+                    sortKey="spans"
+                    onSort={(sort) => onSearch({ sort: sort as ServiceSort })}
+                  >
+                    Spans
+                  </SortableHead>
+                </TableHead>
+                <TableHead className="w-28 text-right">
+                  <SortableHead
+                    {...(search.sort ? { sort: search.sort } : {})}
+                    sortKey="errors"
+                    onSort={(sort) => onSearch({ sort: sort as ServiceSort })}
+                  >
+                    Errors
+                  </SortableHead>
+                </TableHead>
+                <TableHead className="w-28 text-right">Error rate</TableHead>
+                <TableHead className="w-28 text-right">
+                  <SortableHead
+                    {...(search.sort ? { sort: search.sort } : {})}
+                    sortKey="p95"
+                    onSort={(sort) => onSearch({ sort: sort as ServiceSort })}
+                  >
+                    p95
+                  </SortableHead>
+                </TableHead>
+                <TableHead className="w-32 text-right">
+                  <SortableHead
+                    {...(search.sort ? { sort: search.sort } : {})}
+                    sortKey="lastSeen"
+                    onSort={(sort) => onSearch({ sort: sort as ServiceSort })}
+                  >
+                    Last seen
+                  </SortableHead>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((row) => {
+                const errors = Number(row.errorCount)
+                const rate = serviceErrorRate(row)
+                return (
+                  <TableRow
+                    key={row.name}
+                    className={cn(
+                      "cursor-pointer",
+                      errors > 0 &&
+                        "shadow-[inset_3px_0_0_rgba(244,63,94,0.85)]"
+                    )}
+                  >
+                    <TableCell>
+                      <Link
+                        to="/services/$service"
+                        params={{ service: row.name }}
+                        search={{ range: range.key }}
+                        className="flex min-w-0 items-center gap-2 font-medium"
+                      >
+                        <ServiceDot errored={errors > 0} />
+                        <span className="truncate">{row.name}</span>
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      <Link
+                        to="/traces"
+                        search={{ service: row.name }}
+                        className="hover:underline"
+                      >
+                        {formatCount(Number(row.spanCount))}
+                      </Link>
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        "text-right tabular-nums",
+                        errors > 0
+                          ? "text-rose-600 dark:text-rose-400"
+                          : "text-muted-foreground/40"
+                      )}
+                    >
+                      <Link
+                        to="/traces"
+                        search={{ service: row.name, errors: true }}
+                        className="hover:underline"
+                      >
+                        {formatCount(errors)}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <HeatCell value={rate} values={errorRates}>
+                        {formatPercent(rate)}
+                      </HeatCell>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {row.p95Ms == null ? (
+                        <span className="text-muted-foreground">-</span>
+                      ) : (
+                        <HeatCell value={row.p95Ms} values={p95Values}>
+                          {formatDurationNs(row.p95Ms * 1_000_000)}
+                        </HeatCell>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      <RelativeTime nanos={row.lastSeenNanos} />
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>
