@@ -8,7 +8,10 @@
 //! auto-camelCased; cost limits are resolver-level caps in V1.
 
 use juniper::{EmptySubscription, FieldError, FieldResult, RootNode, graphql_object};
-use parallax_storage::adapter::TelemetryStore;
+use parallax_storage::adapter::{
+    OverviewTotals, ServiceSummary as StorageServiceSummary, SpanRed as StorageSpanRed,
+    TelemetryStore,
+};
 use parallax_storage::metadata::MetadataStore;
 use parallax_storage::model;
 use parallax_storage::model::{MetricAgg, SeriesPoint};
@@ -513,6 +516,96 @@ impl Series {
     }
 }
 
+pub struct Overview(OverviewTotals);
+
+#[graphql_object(context = ApiContext)]
+impl Overview {
+    fn span_count(&self) -> String {
+        self.0.span_count.to_string()
+    }
+    fn trace_count(&self) -> String {
+        self.0.trace_count.to_string()
+    }
+    fn log_count(&self) -> String {
+        self.0.log_count.to_string()
+    }
+    fn metric_point_count(&self) -> String {
+        self.0.metric_point_count.to_string()
+    }
+    fn error_count(&self) -> String {
+        self.0.error_count.to_string()
+    }
+    fn error_rate(&self) -> f64 {
+        self.0.error_rate
+    }
+    fn active_services(&self) -> i32 {
+        saturate_i32(self.0.active_services)
+    }
+}
+
+pub struct ServiceSummary(StorageServiceSummary);
+
+#[graphql_object(context = ApiContext)]
+impl ServiceSummary {
+    fn name(&self) -> &str {
+        &self.0.name
+    }
+    fn last_seen_nanos(&self) -> String {
+        nanos_string(self.0.last_seen_nanos)
+    }
+    fn span_count(&self) -> String {
+        self.0.span_count.to_string()
+    }
+    fn error_count(&self) -> String {
+        self.0.error_count.to_string()
+    }
+    fn p95_ms(&self) -> Option<f64> {
+        self.0.p95_ms
+    }
+}
+
+pub struct SpanRed(StorageSpanRed);
+
+#[graphql_object(context = ApiContext)]
+impl SpanRed {
+    fn rate(&self) -> Vec<Point> {
+        self.0.rate.iter().copied().map(Point).collect()
+    }
+    fn error_rate(&self) -> Vec<Point> {
+        self.0.error_rate.iter().copied().map(Point).collect()
+    }
+    fn p50(&self) -> Vec<Point> {
+        self.0.p50.iter().copied().map(Point).collect()
+    }
+    fn p95(&self) -> Vec<Point> {
+        self.0.p95.iter().copied().map(Point).collect()
+    }
+    fn p99(&self) -> Vec<Point> {
+        self.0.p99.iter().copied().map(Point).collect()
+    }
+}
+
+#[derive(juniper::GraphQLEnum, Clone, Copy)]
+pub enum SignalKind {
+    Spans,
+    Traces,
+    Logs,
+    Errors,
+    MetricPoints,
+}
+
+impl From<SignalKind> for parallax_storage::adapter::SignalKind {
+    fn from(value: SignalKind) -> Self {
+        match value {
+            SignalKind::Spans => Self::Spans,
+            SignalKind::Traces => Self::Traces,
+            SignalKind::Logs => Self::Logs,
+            SignalKind::Errors => Self::Errors,
+            SignalKind::MetricPoints => Self::MetricPoints,
+        }
+    }
+}
+
 /// The predefined per-service overview (spec §8): well-known metric names,
 /// graceful absence — a missing instrument yields an empty series.
 pub struct ServiceOverview {
@@ -758,6 +851,83 @@ impl Query {
 
     fn otlp_grpc_port(context: &ApiContext) -> i32 {
         i32::from(context.otlp_grpc_port)
+    }
+
+    /// Whole-system counters for an inclusive time window. Counts are strings
+    /// so large telemetry volumes never saturate GraphQL Int.
+    async fn overview(
+        context: &ApiContext,
+        from_nanos: String,
+        to_nanos: String,
+    ) -> FieldResult<Overview> {
+        let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+        Ok(Overview(
+            context
+                .store
+                .overview_totals(from..=to)
+                .await
+                .map_err(field_err)?,
+        ))
+    }
+
+    /// Per-signal count series for overview trend charts.
+    async fn signal_count_series(
+        context: &ApiContext,
+        kind: SignalKind,
+        service: Option<String>,
+        from_nanos: String,
+        to_nanos: String,
+        step_seconds: Option<i32>,
+    ) -> FieldResult<Vec<Point>> {
+        let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+        let series = context
+            .store
+            .signal_count_series(
+                kind.into(),
+                service.as_deref().filter(|s| !s.is_empty()),
+                from..=to,
+                step_nanos(step_seconds),
+            )
+            .await
+            .map_err(field_err)?;
+        Ok(series.into_iter().map(Point).collect())
+    }
+
+    /// Service summary rows for the services index.
+    async fn service_list(
+        context: &ApiContext,
+        from_nanos: String,
+        to_nanos: String,
+    ) -> FieldResult<Vec<ServiceSummary>> {
+        let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+        let services = context
+            .store
+            .service_summaries(from..=to)
+            .await
+            .map_err(field_err)?;
+        Ok(services.into_iter().map(ServiceSummary).collect())
+    }
+
+    /// Trace-derived RED analytics; works even when a service emits no metrics.
+    async fn service_red(
+        context: &ApiContext,
+        service: Option<String>,
+        from_nanos: String,
+        to_nanos: String,
+        step_seconds: Option<i32>,
+    ) -> FieldResult<SpanRed> {
+        let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+        Ok(SpanRed(
+            context
+                .store
+                .span_red_series(
+                    service.as_deref().filter(|s| !s.is_empty()),
+                    from..=to,
+                    step_nanos(step_seconds),
+                )
+                .await
+                .map_err(field_err)?,
+        ))
     }
 
     /// Grouped errors: filtered, sorted, paged (spec §8 `issues`). The
@@ -1674,4 +1844,181 @@ pub async fn execute(
     request: juniper::http::GraphQLRequest,
 ) -> juniper::http::GraphQLResponse {
     request.execute(schema, context).await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use parallax_storage::adapter::TelemetryStore;
+    use parallax_storage::memory::MemoryStore;
+    use parallax_storage::model::{ErrorEventRow, ErrorSource, LogRow, SpanRow};
+
+    fn span(
+        service: &str,
+        trace_id: &str,
+        span_id: &str,
+        ts_nanos: u128,
+        duration_ns: u128,
+    ) -> SpanRow {
+        SpanRow {
+            ts_nanos,
+            service: service.into(),
+            trace_id: trace_id.into(),
+            span_id: span_id.into(),
+            parent_span_id: None,
+            name: "handler".into(),
+            kind: "SPAN_KIND_SERVER".into(),
+            status_code: "STATUS_CODE_UNSET".into(),
+            status_message: String::new(),
+            duration_ns,
+            run_id: None,
+            scope_name: String::new(),
+            links: serde_json::Value::Null,
+            attributes: serde_json::Value::Null,
+            resource: serde_json::Value::Null,
+        }
+    }
+
+    async fn context_with_memory(store: Arc<MemoryStore>) -> ApiContext {
+        let mut path = std::env::temp_dir();
+        path.push(format!(
+            "parallax-api-test-{}-{}.db",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let metadata = MetadataStore::open(&path).await.unwrap();
+        let _ = std::fs::remove_file(path);
+        ApiContext {
+            store,
+            metadata: Arc::new(metadata),
+            otlp_grpc_port: 4317,
+        }
+    }
+
+    #[tokio::test]
+    async fn overview_service_analytics_queries_execute_against_memory_store() {
+        let store = Arc::new(MemoryStore::new());
+        let mut errored = span("api", "t1", "b", 1_500_000_000, 30_000_000);
+        errored.status_code = "STATUS_CODE_ERROR".into();
+        store
+            .ingest_traces(
+                vec![span("api", "t1", "a", 1_000_000_000, 10_000_000), errored],
+                Default::default(),
+            )
+            .await
+            .unwrap();
+        store
+            .ingest_logs(
+                vec![LogRow {
+                    ts_nanos: 1_250_000_000,
+                    service: "api".into(),
+                    severity_num: 17,
+                    severity_text: "ERROR".into(),
+                    body: "bad".into(),
+                    trace_id: "t1".into(),
+                    span_id: "b".into(),
+                    run_id: None,
+                    scope_name: String::new(),
+                    attributes: serde_json::Value::Null,
+                    resource: serde_json::Value::Null,
+                }],
+                Default::default(),
+            )
+            .await
+            .unwrap();
+        store
+            .write_error_events(vec![ErrorEventRow {
+                ts_nanos: 1_600_000_000,
+                service: "api".into(),
+                fingerprint: "fp".into(),
+                error_type: "Error".into(),
+                message: "bad".into(),
+                stacktrace: None,
+                source: ErrorSource::SpanStatus,
+                trace_id: "t1".into(),
+                span_id: "b".into(),
+                attributes: serde_json::Value::Null,
+            }])
+            .await
+            .unwrap();
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"
+            {
+              overview(fromNanos: "0", toNanos: "2000000000") {
+                spanCount traceCount logCount errorCount errorRate activeServices
+              }
+              signalCountSeries(kind: SPANS, service: "api", fromNanos: "0", toNanos: "2000000000", stepSeconds: 1) {
+                tsNanos value
+              }
+              serviceList(fromNanos: "0", toNanos: "2000000000") {
+                name lastSeenNanos spanCount errorCount p95Ms
+              }
+              serviceRed(service: "api", fromNanos: "0", toNanos: "2000000000", stepSeconds: 1) {
+                rate { tsNanos value }
+                errorRate { value }
+                p95 { value }
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert_eq!(
+            json.pointer("/data/overview/spanCount"),
+            Some(&serde_json::json!("2"))
+        );
+        assert_eq!(
+            json.pointer("/data/overview/traceCount"),
+            Some(&serde_json::json!("1"))
+        );
+        assert_eq!(
+            json.pointer("/data/overview/logCount"),
+            Some(&serde_json::json!("1"))
+        );
+        assert_eq!(
+            json.pointer("/data/overview/errorCount"),
+            Some(&serde_json::json!("1"))
+        );
+        assert_eq!(
+            json.pointer("/data/signalCountSeries/0/tsNanos"),
+            Some(&serde_json::json!("1000000000"))
+        );
+        assert_eq!(
+            json.pointer("/data/signalCountSeries/0/value"),
+            Some(&serde_json::json!(2.0))
+        );
+        assert_eq!(
+            json.pointer("/data/serviceList/0/name"),
+            Some(&serde_json::json!("api"))
+        );
+        assert_eq!(
+            json.pointer("/data/serviceList/0/spanCount"),
+            Some(&serde_json::json!("2"))
+        );
+        assert_eq!(
+            json.pointer("/data/serviceRed/rate/0/value"),
+            Some(&serde_json::json!(2.0))
+        );
+        assert_eq!(
+            Overview(OverviewTotals {
+                span_count: i32::MAX as u64 + 1,
+                trace_count: 0,
+                log_count: 0,
+                metric_point_count: 0,
+                error_count: 0,
+                error_rate: 0.0,
+                active_services: 0,
+            })
+            .span_count(),
+            "2147483648"
+        );
+    }
 }

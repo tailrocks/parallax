@@ -1,7 +1,7 @@
 //! GreptimeDB `TelemetryStore` adapter: SQL over the HTTP API, DDL from the
 //! implementation spec §5. All engine-specific SQL lives in this module.
 
-use crate::adapter::TelemetryStore;
+use crate::adapter::{OverviewTotals, ServiceSummary, SignalKind, SpanRed, TelemetryStore};
 use crate::model::*;
 use std::ops::RangeInclusive;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -539,6 +539,22 @@ fn u128_at(row: &[serde_json::Value], index: usize) -> u128 {
         .unwrap_or(0)
 }
 
+fn f64_at(row: &[serde_json::Value], index: usize) -> f64 {
+    row.get(index).and_then(|v| v.as_f64()).unwrap_or(0.0)
+}
+
+fn trace_filter_clauses(service: Option<&str>, range: &RangeInclusive<u128>) -> Vec<String> {
+    let mut clauses = vec![format!(
+        r#""timestamp" >= {} AND "timestamp" <= {}"#,
+        sql_ts(*range.start()),
+        sql_ts(*range.end())
+    )];
+    if let Some(service) = service {
+        clauses.push(format!(r#""service_name" = '{}'"#, escape(service)));
+    }
+    clauses
+}
+
 fn json_at(row: &[serde_json::Value], index: usize) -> serde_json::Value {
     match row.get(index) {
         Some(serde_json::Value::String(s)) => {
@@ -714,6 +730,231 @@ impl TelemetryStore for GreptimeStore {
             .map(|r| str_at(r, 0))
             .filter(|s| !s.is_empty())
             .collect())
+    }
+
+    async fn overview_totals(&self, range: RangeInclusive<u128>) -> anyhow::Result<OverviewTotals> {
+        let trace_rows = self
+            .sql_lenient(&format!(
+                r#"SELECT COUNT(*) AS "spans", COUNT(DISTINCT "trace_id") AS "traces",
+                          SUM(CASE WHEN "span_status_code" = 'STATUS_CODE_ERROR' THEN 1 ELSE 0 END)
+                          AS "errors",
+                          COUNT(DISTINCT "service_name") AS "services"
+                   FROM opentelemetry_traces
+                   WHERE "timestamp" >= {} AND "timestamp" <= {}"#,
+                sql_ts(*range.start()),
+                sql_ts(*range.end()),
+            ))
+            .await?;
+        let log_rows = self
+            .sql_lenient(&format!(
+                r#"SELECT COUNT(*) AS "logs" FROM opentelemetry_logs
+                   WHERE "timestamp" >= {} AND "timestamp" <= {}"#,
+                sql_ts(*range.start()),
+                sql_ts(*range.end()),
+            ))
+            .await?;
+        let service_rows = self
+            .sql_lenient(&format!(
+                r#"SELECT COUNT(DISTINCT "svc") FROM (
+                     SELECT "service_name" AS "svc" FROM opentelemetry_traces
+                     WHERE "timestamp" >= {} AND "timestamp" <= {}
+                     UNION ALL
+                     SELECT json_get_string("resource_attributes", '$."service.name"') AS "svc"
+                     FROM opentelemetry_logs
+                     WHERE "timestamp" >= {} AND "timestamp" <= {}
+                   ) WHERE "svc" IS NOT NULL AND "svc" != ''"#,
+                sql_ts(*range.start()),
+                sql_ts(*range.end()),
+                sql_ts(*range.start()),
+                sql_ts(*range.end()),
+            ))
+            .await?;
+        let span_count = trace_rows
+            .first()
+            .map(|r| u128_at(r, 0) as u64)
+            .unwrap_or(0);
+        let trace_count = trace_rows
+            .first()
+            .map(|r| u128_at(r, 1) as u64)
+            .unwrap_or(0);
+        let error_count = trace_rows
+            .first()
+            .map(|r| u128_at(r, 2) as u64)
+            .unwrap_or(0);
+        let log_count = log_rows.first().map(|r| u128_at(r, 0) as u64).unwrap_or(0);
+        let active_services = service_rows
+            .first()
+            .map(|r| u128_at(r, 0) as u64)
+            .unwrap_or(0);
+        Ok(OverviewTotals {
+            span_count,
+            trace_count,
+            log_count,
+            // V1 gap: native metric-engine logical table fan-out has no cheap
+            // cross-table count here; trend endpoint returns empty too.
+            metric_point_count: 0,
+            error_count,
+            error_rate: if span_count == 0 {
+                0.0
+            } else {
+                error_count as f64 / span_count as f64
+            },
+            active_services,
+        })
+    }
+
+    async fn signal_count_series(
+        &self,
+        kind: SignalKind,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+    ) -> anyhow::Result<Vec<SeriesPoint>> {
+        let step_secs = (step_nanos / 1_000_000_000).max(1);
+        let rows = match kind {
+            SignalKind::Spans | SignalKind::Traces => {
+                let clauses = trace_filter_clauses(service, &range);
+                let agg = if kind == SignalKind::Traces {
+                    r#"COUNT(DISTINCT "trace_id")"#
+                } else {
+                    "COUNT(*)"
+                };
+                self.sql_lenient(&format!(
+                    r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "timestamp") AS BIGINT)
+                              AS "bucket_ns", {agg} AS "n"
+                       FROM opentelemetry_traces WHERE {}
+                       GROUP BY "bucket_ns" ORDER BY "bucket_ns""#,
+                    clauses.join(" AND "),
+                ))
+                .await?
+            }
+            SignalKind::Logs => {
+                let clauses = log_filter_clauses(service, &range, None, None);
+                self.sql_lenient(&format!(
+                    r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "timestamp") AS BIGINT)
+                              AS "bucket_ns", COUNT(*) AS "n"
+                       FROM opentelemetry_logs WHERE {}
+                       GROUP BY "bucket_ns" ORDER BY "bucket_ns""#,
+                    clauses.join(" AND "),
+                ))
+                .await?
+            }
+            SignalKind::Errors => {
+                let mut clauses = vec![format!(
+                    r#""ts" >= {} AND "ts" <= {}"#,
+                    sql_ts(*range.start()),
+                    sql_ts(*range.end())
+                )];
+                if let Some(service) = service {
+                    clauses.push(format!(r#""service" = '{}'"#, escape(service)));
+                }
+                self.sql_lenient(&format!(
+                    r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "ts") AS BIGINT)
+                              AS "bucket_ns", COUNT(*) AS "n"
+                       FROM error_events WHERE {}
+                       GROUP BY "bucket_ns" ORDER BY "bucket_ns""#,
+                    clauses.join(" AND "),
+                ))
+                .await?
+            }
+            SignalKind::MetricPoints => Vec::new(),
+        };
+        Ok(rows
+            .iter()
+            .map(|row| SeriesPoint {
+                ts_nanos: u128_at(row, 0),
+                value: f64_at(row, 1),
+            })
+            .collect())
+    }
+
+    async fn service_summaries(
+        &self,
+        range: RangeInclusive<u128>,
+    ) -> anyhow::Result<Vec<ServiceSummary>> {
+        // Latest stable GreptimeDB accepts approx_percentile_cont(col, q);
+        // verified through Parallax raw SQL for trace duration percentiles.
+        let rows = self
+            .sql_lenient(&format!(
+                r#"SELECT "service_name", CAST(MAX("timestamp") AS BIGINT) AS "last_seen",
+                          COUNT(*) AS "spans",
+                          SUM(CASE WHEN "span_status_code" = 'STATUS_CODE_ERROR' THEN 1 ELSE 0 END)
+                          AS "errors",
+                          approx_percentile_cont("duration_nano", 0.95) AS "p95_ns"
+                   FROM opentelemetry_traces
+                   WHERE "timestamp" >= {} AND "timestamp" <= {}
+                   GROUP BY "service_name" ORDER BY "last_seen" DESC"#,
+                sql_ts(*range.start()),
+                sql_ts(*range.end()),
+            ))
+            .await?;
+        Ok(rows
+            .iter()
+            .filter_map(|row| {
+                let name = str_at(row, 0);
+                (!name.is_empty()).then(|| ServiceSummary {
+                    name,
+                    last_seen_nanos: u128_at(row, 1),
+                    span_count: u128_at(row, 2) as u64,
+                    error_count: u128_at(row, 3) as u64,
+                    p95_ms: Some(f64_at(row, 4) / 1_000_000.0),
+                })
+            })
+            .collect())
+    }
+
+    async fn span_red_series(
+        &self,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+    ) -> anyhow::Result<SpanRed> {
+        let step_secs = (step_nanos / 1_000_000_000).max(1);
+        let clauses = trace_filter_clauses(service, &range);
+        // Latest stable GreptimeDB accepts approx_percentile_cont(col, q);
+        // verified through Parallax raw SQL for trace duration percentiles.
+        let rows = self
+            .sql_lenient(&format!(
+                r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "timestamp") AS BIGINT)
+                          AS "bucket_ns",
+                          COUNT(*) AS "spans",
+                          SUM(CASE WHEN "span_status_code" = 'STATUS_CODE_ERROR' THEN 1 ELSE 0 END)
+                          AS "errors",
+                          approx_percentile_cont("duration_nano", 0.50) AS "p50_ns",
+                          approx_percentile_cont("duration_nano", 0.95) AS "p95_ns",
+                          approx_percentile_cont("duration_nano", 0.99) AS "p99_ns"
+                   FROM opentelemetry_traces WHERE {}
+                   GROUP BY "bucket_ns" ORDER BY "bucket_ns""#,
+                clauses.join(" AND "),
+            ))
+            .await?;
+        let mut red = SpanRed::default();
+        for row in &rows {
+            let ts_nanos = u128_at(row, 0);
+            let spans = f64_at(row, 1);
+            let errors = f64_at(row, 2);
+            red.rate.push(SeriesPoint {
+                ts_nanos,
+                value: spans / step_secs as f64,
+            });
+            red.error_rate.push(SeriesPoint {
+                ts_nanos,
+                value: if spans == 0.0 { 0.0 } else { errors / spans },
+            });
+            red.p50.push(SeriesPoint {
+                ts_nanos,
+                value: f64_at(row, 3) / 1_000_000.0,
+            });
+            red.p95.push(SeriesPoint {
+                ts_nanos,
+                value: f64_at(row, 4) / 1_000_000.0,
+            });
+            red.p99.push(SeriesPoint {
+                ts_nanos,
+                value: f64_at(row, 5) / 1_000_000.0,
+            });
+        }
+        Ok(red)
     }
 
     async fn metric_series(

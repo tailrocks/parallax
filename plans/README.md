@@ -36,7 +36,7 @@ source of truth. API extensions are in scope (plans 009-010).
 | 006 | Port reference primitives + Tabler icons | P1 | L | 005 | DONE |
 | 007 | Rebuild app shell (inset, collapsible kept) | P1 | L | 005, 006 | DONE |
 | 008 | Shared console kit | P1 | L | 005-007 | DONE |
-| 009 | API: overview + service analytics (Rust) | P1 | L | — | TODO |
+| 009 | API: overview + service analytics (Rust) | P1 | L | — | DONE |
 | 010 | API: trace paging + span events (Rust) | P1 | M | — | TODO |
 | 011 | Traces list redesign | P1 | M | 005-008, 010 | TODO |
 | 012 | Trace waterfall redesign | P1 | L | 005-008, 010 | TODO |

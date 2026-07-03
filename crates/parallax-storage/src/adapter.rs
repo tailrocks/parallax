@@ -38,6 +38,48 @@ pub struct TraceSummary {
     pub has_error: bool,
 }
 
+/// Whole-system overview counters for one inclusive time window.
+#[derive(Debug, Clone)]
+pub struct OverviewTotals {
+    pub span_count: u64,
+    pub trace_count: u64,
+    pub log_count: u64,
+    pub metric_point_count: u64,
+    pub error_count: u64,
+    pub error_rate: f64,
+    pub active_services: u64,
+}
+
+/// Per-service summary row for the services index.
+#[derive(Debug, Clone)]
+pub struct ServiceSummary {
+    pub name: String,
+    pub last_seen_nanos: u128,
+    pub span_count: u64,
+    pub error_count: u64,
+    pub p95_ms: Option<f64>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SignalKind {
+    Spans,
+    Traces,
+    Logs,
+    Errors,
+    MetricPoints,
+}
+
+/// Trace-derived RED series. Rate is spans/second per bucket; latency values
+/// are milliseconds.
+#[derive(Debug, Clone, Default)]
+pub struct SpanRed {
+    pub rate: Vec<SeriesPoint>,
+    pub error_rate: Vec<SeriesPoint>,
+    pub p50: Vec<SeriesPoint>,
+    pub p95: Vec<SeriesPoint>,
+    pub p99: Vec<SeriesPoint>,
+}
+
 /// Filtered trace browse (UI Traces page / CLI `parallax traces` / GraphQL
 /// `traces`): every filter optional. `service` matches any trace the service
 /// **participates in** (a span of that service anywhere in the trace, not only
@@ -91,6 +133,28 @@ pub trait TelemetryStore: Send + Sync {
     async fn metric_names(&self) -> anyhow::Result<Vec<String>>;
     /// Distinct service names seen in metrics.
     async fn service_names(&self) -> anyhow::Result<Vec<String>>;
+    /// Whole-system overview counters for an inclusive time window.
+    async fn overview_totals(&self, range: RangeInclusive<u128>) -> anyhow::Result<OverviewTotals>;
+    /// Signal volume per bucket for overview trend charts.
+    async fn signal_count_series(
+        &self,
+        kind: SignalKind,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+    ) -> anyhow::Result<Vec<SeriesPoint>>;
+    /// Service summary rows for the services index.
+    async fn service_summaries(
+        &self,
+        range: RangeInclusive<u128>,
+    ) -> anyhow::Result<Vec<ServiceSummary>>;
+    /// Trace-derived RED series; works even when a service emits no metrics.
+    async fn span_red_series(
+        &self,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+    ) -> anyhow::Result<SpanRed>;
     /// Aggregated series for a point metric, bucketed by `step_nanos`.
     /// `run_id` scopes to points whose resource carried `parallax.run.id`
     /// (run-anchored cross-analytics: CPU/memory beside a run's traces).

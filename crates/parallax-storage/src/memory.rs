@@ -1,7 +1,7 @@
 //! In-memory `TelemetryStore` — the fast test adapter and the engine of the
 //! `--no-greptime` fallback's telemetry side (bounded).
 
-use crate::adapter::TelemetryStore;
+use crate::adapter::{OverviewTotals, ServiceSummary, SignalKind, SpanRed, TelemetryStore};
 use crate::model::*;
 use std::ops::RangeInclusive;
 use std::sync::Mutex;
@@ -64,6 +64,23 @@ pub(crate) fn quantile_from_histograms(rows: &[HistogramRow], q: f64) -> f64 {
         cumulative = next;
     }
     bounds.last().copied().unwrap_or(0.0)
+}
+
+fn quantile_from_sorted(values: &[u128], q: f64) -> f64 {
+    if values.is_empty() {
+        return 0.0;
+    }
+    if values.len() == 1 {
+        return values[0] as f64;
+    }
+    let pos = q.clamp(0.0, 1.0) * (values.len() - 1) as f64;
+    let lo = pos.floor() as usize;
+    let hi = pos.ceil() as usize;
+    if lo == hi {
+        return values[lo] as f64;
+    }
+    let weight = pos - lo as f64;
+    values[lo] as f64 + (values[hi] as f64 - values[lo] as f64) * weight
 }
 
 #[derive(Default)]
@@ -210,6 +227,235 @@ impl TelemetryStore for MemoryStore {
         names.sort();
         names.dedup();
         Ok(names)
+    }
+
+    async fn overview_totals(&self, range: RangeInclusive<u128>) -> anyhow::Result<OverviewTotals> {
+        let inner = self.lock();
+        let spans: Vec<&SpanRow> = inner
+            .spans
+            .iter()
+            .filter(|s| range.contains(&s.ts_nanos))
+            .collect();
+        let logs = inner
+            .logs
+            .iter()
+            .filter(|l| range.contains(&l.ts_nanos))
+            .count() as u64;
+        let metric_points = inner
+            .metric_points
+            .iter()
+            .filter(|p| range.contains(&p.ts_nanos))
+            .count() as u64
+            + inner
+                .histograms
+                .iter()
+                .filter(|h| range.contains(&h.ts_nanos))
+                .count() as u64;
+        let errors = spans
+            .iter()
+            .filter(|s| s.status_code == "STATUS_CODE_ERROR")
+            .count() as u64;
+        let trace_count = spans
+            .iter()
+            .map(|s| s.trace_id.as_str())
+            .collect::<std::collections::BTreeSet<_>>()
+            .len() as u64;
+        let active_services = spans
+            .iter()
+            .map(|s| s.service.as_str())
+            .chain(
+                inner
+                    .logs
+                    .iter()
+                    .filter(|l| range.contains(&l.ts_nanos))
+                    .map(|l| l.service.as_str()),
+            )
+            .chain(
+                inner
+                    .metric_points
+                    .iter()
+                    .filter(|p| range.contains(&p.ts_nanos))
+                    .map(|p| p.service.as_str()),
+            )
+            .chain(
+                inner
+                    .histograms
+                    .iter()
+                    .filter(|h| range.contains(&h.ts_nanos))
+                    .map(|h| h.service.as_str()),
+            )
+            .collect::<std::collections::BTreeSet<_>>()
+            .len() as u64;
+        let span_count = spans.len() as u64;
+        Ok(OverviewTotals {
+            span_count,
+            trace_count,
+            log_count: logs,
+            metric_point_count: metric_points,
+            error_count: errors,
+            error_rate: if span_count == 0 {
+                0.0
+            } else {
+                errors as f64 / span_count as f64
+            },
+            active_services,
+        })
+    }
+
+    async fn signal_count_series(
+        &self,
+        kind: SignalKind,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+    ) -> anyhow::Result<Vec<SeriesPoint>> {
+        let step = step_nanos.max(1);
+        let inner = self.lock();
+        let mut buckets: std::collections::BTreeMap<u128, u64> = Default::default();
+        match kind {
+            SignalKind::Spans => {
+                for span in inner.spans.iter().filter(|s| {
+                    range.contains(&s.ts_nanos) && service.is_none_or(|svc| s.service == svc)
+                }) {
+                    *buckets.entry((span.ts_nanos / step) * step).or_default() += 1;
+                }
+            }
+            SignalKind::Traces => {
+                let mut traces: std::collections::BTreeMap<u128, std::collections::BTreeSet<&str>> =
+                    Default::default();
+                for span in inner.spans.iter().filter(|s| {
+                    range.contains(&s.ts_nanos) && service.is_none_or(|svc| s.service == svc)
+                }) {
+                    traces
+                        .entry((span.ts_nanos / step) * step)
+                        .or_default()
+                        .insert(span.trace_id.as_str());
+                }
+                return Ok(traces
+                    .into_iter()
+                    .map(|(ts_nanos, trace_ids)| SeriesPoint {
+                        ts_nanos,
+                        value: trace_ids.len() as f64,
+                    })
+                    .collect());
+            }
+            SignalKind::Logs => {
+                for log in inner.logs.iter().filter(|l| {
+                    range.contains(&l.ts_nanos) && service.is_none_or(|svc| l.service == svc)
+                }) {
+                    *buckets.entry((log.ts_nanos / step) * step).or_default() += 1;
+                }
+            }
+            SignalKind::Errors => {
+                for event in inner.error_events.iter().filter(|e| {
+                    range.contains(&e.ts_nanos) && service.is_none_or(|svc| e.service == svc)
+                }) {
+                    *buckets.entry((event.ts_nanos / step) * step).or_default() += 1;
+                }
+            }
+            SignalKind::MetricPoints => {
+                for point in inner.metric_points.iter().filter(|p| {
+                    range.contains(&p.ts_nanos) && service.is_none_or(|svc| p.service == svc)
+                }) {
+                    *buckets.entry((point.ts_nanos / step) * step).or_default() += 1;
+                }
+                for row in inner.histograms.iter().filter(|h| {
+                    range.contains(&h.ts_nanos) && service.is_none_or(|svc| h.service == svc)
+                }) {
+                    *buckets.entry((row.ts_nanos / step) * step).or_default() += 1;
+                }
+            }
+        }
+        Ok(buckets
+            .into_iter()
+            .map(|(ts_nanos, count)| SeriesPoint {
+                ts_nanos,
+                value: count as f64,
+            })
+            .collect())
+    }
+
+    async fn service_summaries(
+        &self,
+        range: RangeInclusive<u128>,
+    ) -> anyhow::Result<Vec<ServiceSummary>> {
+        let inner = self.lock();
+        let mut by_service: std::collections::BTreeMap<&str, Vec<&SpanRow>> = Default::default();
+        for span in inner.spans.iter().filter(|s| range.contains(&s.ts_nanos)) {
+            by_service.entry(&span.service).or_default().push(span);
+        }
+        let mut summaries: Vec<_> = by_service
+            .into_iter()
+            .map(|(name, spans)| {
+                let mut durations: Vec<u128> = spans.iter().map(|s| s.duration_ns).collect();
+                durations.sort_unstable();
+                ServiceSummary {
+                    name: name.to_owned(),
+                    last_seen_nanos: spans.iter().map(|s| s.ts_nanos).max().unwrap_or(0),
+                    span_count: spans.len() as u64,
+                    error_count: spans
+                        .iter()
+                        .filter(|s| s.status_code == "STATUS_CODE_ERROR")
+                        .count() as u64,
+                    p95_ms: Some(quantile_from_sorted(&durations, 0.95) / 1_000_000.0),
+                }
+            })
+            .collect();
+        summaries.sort_by_key(|s| std::cmp::Reverse(s.last_seen_nanos));
+        Ok(summaries)
+    }
+
+    async fn span_red_series(
+        &self,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+    ) -> anyhow::Result<SpanRed> {
+        let step = step_nanos.max(1);
+        let step_secs = step as f64 / 1_000_000_000.0;
+        let inner = self.lock();
+        let mut buckets: std::collections::BTreeMap<u128, Vec<&SpanRow>> = Default::default();
+        for span in inner
+            .spans
+            .iter()
+            .filter(|s| range.contains(&s.ts_nanos) && service.is_none_or(|svc| s.service == svc))
+        {
+            buckets
+                .entry((span.ts_nanos / step) * step)
+                .or_default()
+                .push(span);
+        }
+        let mut red = SpanRed::default();
+        for (ts_nanos, spans) in buckets {
+            let count = spans.len() as f64;
+            let errors = spans
+                .iter()
+                .filter(|s| s.status_code == "STATUS_CODE_ERROR")
+                .count() as f64;
+            let mut durations: Vec<u128> = spans.iter().map(|s| s.duration_ns).collect();
+            durations.sort_unstable();
+            red.rate.push(SeriesPoint {
+                ts_nanos,
+                value: count / step_secs,
+            });
+            red.error_rate.push(SeriesPoint {
+                ts_nanos,
+                value: if count == 0.0 { 0.0 } else { errors / count },
+            });
+            red.p50.push(SeriesPoint {
+                ts_nanos,
+                value: quantile_from_sorted(&durations, 0.50) / 1_000_000.0,
+            });
+            red.p95.push(SeriesPoint {
+                ts_nanos,
+                value: quantile_from_sorted(&durations, 0.95) / 1_000_000.0,
+            });
+            red.p99.push(SeriesPoint {
+                ts_nanos,
+                value: quantile_from_sorted(&durations, 0.99) / 1_000_000.0,
+            });
+        }
+        Ok(red)
     }
 
     async fn metric_series(
@@ -634,6 +880,21 @@ mod tests {
         }
     }
 
+    fn error_event(service: &str, ts: u128) -> ErrorEventRow {
+        ErrorEventRow {
+            ts_nanos: ts,
+            service: service.into(),
+            fingerprint: format!("{service}-fp"),
+            error_type: "Error".into(),
+            message: "boom".into(),
+            stacktrace: None,
+            source: ErrorSource::SpanStatus,
+            trace_id: format!("{service}-trace"),
+            span_id: format!("{service}-span"),
+            attributes: serde_json::Value::Null,
+        }
+    }
+
     fn query(service: Option<&str>) -> TraceQuery {
         TraceQuery {
             service: service.map(Into::into),
@@ -695,5 +956,104 @@ mod tests {
             "earliest span represents a rootless trace"
         );
         assert_eq!(traces[0].span_count, 2);
+    }
+
+    #[tokio::test]
+    async fn overview_totals_and_signal_series_cover_seeded_window() {
+        let store = MemoryStore::new();
+        let mut ok = span("t1", "a", None, "api", 1_000_000_000);
+        ok.duration_ns = 1_000_000;
+        let mut err = span("t1", "b", Some("a"), "api", 1_500_000_000);
+        err.status_code = "STATUS_CODE_ERROR".into();
+        err.duration_ns = 9_000_000;
+        store
+            .ingest_traces(vec![ok, err], bytes::Bytes::new())
+            .await
+            .unwrap();
+        store
+            .ingest_logs(
+                vec![LogRow {
+                    ts_nanos: 1_250_000_000,
+                    service: "api".into(),
+                    severity_num: 17,
+                    severity_text: "ERROR".into(),
+                    body: "bad".into(),
+                    trace_id: "t1".into(),
+                    span_id: "b".into(),
+                    run_id: None,
+                    scope_name: String::new(),
+                    attributes: serde_json::Value::Null,
+                    resource: serde_json::Value::Null,
+                }],
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+        store
+            .write_error_events(vec![error_event("api", 1_600_000_000)])
+            .await
+            .unwrap();
+
+        let totals = store.overview_totals(0..=2_000_000_000).await.unwrap();
+        assert_eq!(totals.span_count, 2);
+        assert_eq!(totals.trace_count, 1);
+        assert_eq!(totals.log_count, 1);
+        assert_eq!(totals.error_count, 1);
+        assert_eq!(totals.active_services, 1);
+        assert_eq!(totals.error_rate, 0.5);
+
+        let spans = store
+            .signal_count_series(
+                SignalKind::Spans,
+                Some("api"),
+                0..=2_000_000_000,
+                1_000_000_000,
+            )
+            .await
+            .unwrap();
+        assert_eq!(spans[0].value, 2.0);
+        let errors = store
+            .signal_count_series(
+                SignalKind::Errors,
+                Some("api"),
+                0..=2_000_000_000,
+                1_000_000_000,
+            )
+            .await
+            .unwrap();
+        assert_eq!(errors[0].value, 1.0);
+    }
+
+    #[tokio::test]
+    async fn service_summaries_and_red_use_trace_durations() {
+        let store = MemoryStore::new();
+        let mut fast = span("t1", "a", None, "api", 1_000_000_000);
+        fast.duration_ns = 10_000_000;
+        let mut slow = span("t2", "b", None, "api", 1_500_000_000);
+        slow.duration_ns = 30_000_000;
+        slow.status_code = "STATUS_CODE_ERROR".into();
+        let mut other = span("t3", "c", None, "worker", 1_800_000_000);
+        other.duration_ns = 50_000_000;
+        store
+            .ingest_traces(vec![fast, slow, other], bytes::Bytes::new())
+            .await
+            .unwrap();
+
+        let summaries = store.service_summaries(0..=2_000_000_000).await.unwrap();
+        assert_eq!(summaries[0].name, "worker");
+        let api = summaries.iter().find(|s| s.name == "api").unwrap();
+        assert_eq!(api.span_count, 2);
+        assert_eq!(api.error_count, 1);
+        assert_eq!(api.p95_ms, Some(29.0));
+
+        let red = store
+            .span_red_series(Some("api"), 0..=2_000_000_000, 1_000_000_000)
+            .await
+            .unwrap();
+        assert_eq!(red.rate[0].value, 2.0);
+        assert_eq!(red.error_rate[0].value, 0.5);
+        assert_eq!(red.p50[0].value, 20.0);
+        assert_eq!(red.p95[0].value, 29.0);
+        assert_eq!(red.p99[0].value, 29.8);
     }
 }
