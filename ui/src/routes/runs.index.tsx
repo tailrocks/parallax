@@ -1,15 +1,16 @@
-import { Link, createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { IconTerminal2 } from "@tabler/icons-react"
+
+import { CopyButton } from "@/components/console/copy-button"
+import { EmptyState } from "@/components/console/empty-state"
 import {
-  ActivityIcon,
-  CheckCircle2Icon,
-  TerminalSquareIcon,
-  TimerIcon,
-} from "lucide-react"
-import { graphql, relativeTime } from "@/lib/api"
-import type { ObservedRun, Run } from "@/lib/api"
+  FilterSelect,
+  SearchInput,
+  Toolbar,
+} from "@/components/console/data-table"
+import { RelativeTime } from "@/components/console/relative-time"
+import { PageHeader } from "@/components/page-header"
 import { Badge } from "@/components/ui/badge"
-import { KpiCard } from "@/components/kpi-card"
-import { PageHeading } from "@/components/page-heading"
 import {
   Table,
   TableBody,
@@ -18,20 +19,140 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { graphql } from "@/lib/api"
+import { formatCount, formatDurationNs } from "@/lib/format"
+import { cn } from "@/lib/utils"
 
-interface RunRow {
+interface RunRecord {
   runId: string
-  source: string
-  detail: string
+  command: string | null
   status: string
   exitCode: number | null
+  startedAtNanos: string
+  endedAtNanos: string | null
+  errorCount: number
+  traceCount: number
+}
+
+interface ObservedRun {
+  runId: string
+  service: string
+  firstNanos: string
   lastNanos: string
+  spanCount: number
+  logCount: number
+}
+
+export interface RunRow {
+  runId: string
+  source: "cli" | "external"
+  command: string | null
+  service: string | null
+  status: "running" | "finished" | "external"
+  exitCode: number | null
+  startedAtNanos: string
+  endedAtNanos: string | null
+  lastNanos: string
+  errorCount: number | null
+  traceCount: number | null
+  spanCount: number
+  logCount: number
+}
+
+export interface RunsData {
+  rows: RunRow[]
+}
+
+export interface RunsSearch {
+  q?: string
+  status?: "running" | "finished" | "external"
+}
+
+type RunsSearchPatch = {
+  [K in keyof RunsSearch]?: RunsSearch[K] | undefined
+}
+
+export function durationNs(row: RunRow, now = Date.now()): string | null {
+  const start = BigInt(row.startedAtNanos)
+  const end =
+    row.status === "running"
+      ? BigInt(now) * 1_000_000n
+      : row.endedAtNanos
+        ? BigInt(row.endedAtNanos)
+        : BigInt(row.lastNanos)
+  if (end <= start) return null
+  return (end - start).toString()
+}
+
+export function statusTone(
+  row: RunRow
+): "sky" | "emerald" | "rose" | "secondary" {
+  if (row.status === "running") return "sky"
+  if (row.status === "external") return "secondary"
+  return row.exitCode === 0 ? "emerald" : "rose"
+}
+
+export function mergeRuns(
+  runs: RunRecord[],
+  observedRuns: ObservedRun[]
+): RunRow[] {
+  const rows = new Map<string, RunRow>()
+  for (const observed of observedRuns) {
+    rows.set(observed.runId, {
+      runId: observed.runId,
+      source: "external",
+      command: null,
+      service: observed.service,
+      status: "external",
+      exitCode: null,
+      startedAtNanos: observed.firstNanos,
+      endedAtNanos: observed.lastNanos,
+      lastNanos: observed.lastNanos,
+      errorCount: null,
+      traceCount: null,
+      spanCount: observed.spanCount,
+      logCount: observed.logCount,
+    })
+  }
+  for (const run of runs) {
+    const observed = rows.get(run.runId)
+    rows.set(run.runId, {
+      runId: run.runId,
+      source: "cli",
+      command: run.command,
+      service: observed?.service ?? null,
+      status: run.status === "running" ? "running" : "finished",
+      exitCode: run.exitCode,
+      startedAtNanos: run.startedAtNanos,
+      endedAtNanos: run.endedAtNanos,
+      lastNanos: observed?.lastNanos ?? run.endedAtNanos ?? run.startedAtNanos,
+      errorCount: run.errorCount,
+      traceCount: run.traceCount,
+      spanCount: observed?.spanCount ?? 0,
+      logCount: observed?.logCount ?? 0,
+    })
+  }
+  return [...rows.values()].sort((a, b) =>
+    BigInt(a.lastNanos) < BigInt(b.lastNanos) ? 1 : -1
+  )
 }
 
 export const Route = createFileRoute("/runs/")({
+  validateSearch: (search: Record<string, unknown>): RunsSearch => {
+    const result: RunsSearch = {}
+    if (typeof search.q === "string" && search.q) result.q = search.q
+    if (
+      search.status === "running" ||
+      search.status === "finished" ||
+      search.status === "external"
+    ) {
+      result.status = search.status
+    }
+    return result
+  },
   loader: async () => {
     const { runs, observedRuns } = await graphql<{
-      runs: Run[]
+      runs: RunRecord[]
       observedRuns: ObservedRun[]
     }>(`
       {
@@ -41,6 +162,9 @@ export const Route = createFileRoute("/runs/")({
           status
           exitCode
           startedAtNanos
+          endedAtNanos
+          errorCount
+          traceCount
         }
         observedRuns {
           runId
@@ -52,152 +176,192 @@ export const Route = createFileRoute("/runs/")({
         }
       }
     `)
-    // One list: wrapper-registered runs win on id collision; everything an
-    // external tool exported under parallax.run.id still shows up.
-    const rows = new Map<string, RunRow>()
-    for (const run of observedRuns) {
-      rows.set(run.runId, {
-        runId: run.runId,
-        source: run.service,
-        detail: `${run.spanCount} span(s) · ${run.logCount} log(s)`,
-        status: "observed",
-        exitCode: null,
-        lastNanos: run.lastNanos,
-      })
-    }
-    for (const run of runs) {
-      const observed = rows.get(run.runId)
-      rows.set(run.runId, {
-        runId: run.runId,
-        source: "wrapper",
-        detail: run.command ?? observed?.detail ?? "—",
-        status: run.status,
-        exitCode: run.exitCode,
-        lastNanos: observed?.lastNanos ?? run.startedAtNanos,
-      })
-    }
-    const merged = [...rows.values()].sort((a, b) =>
-      Number(BigInt(b.lastNanos) - BigInt(a.lastNanos))
-    )
-    return { merged }
+    return { rows: mergeRuns(runs, observedRuns) } satisfies RunsData
   },
   component: RunsPage,
 })
 
 function RunsPage() {
-  const { merged } = Route.useLoaderData()
-  const finished = merged.filter((run) => run.status === "finished").length
-  const observed = merged.filter((run) => run.status === "observed").length
-  const failed = merged.filter(
-    (run) => run.exitCode && run.exitCode !== 0
-  ).length
-  const last = merged[0]
+  const data = Route.useLoaderData()
+  const search = Route.useSearch()
+  const navigate = useNavigate({ from: Route.fullPath })
+  const setSearch = (patch: RunsSearchPatch) => {
+    const raw = { ...search, ...patch }
+    const next: RunsSearch = {}
+    for (const key of Object.keys(raw) as Array<keyof RunsSearch>) {
+      const value = raw[key]
+      if (value != null && value !== "") Object.assign(next, { [key]: value })
+    }
+    navigate({ search: next })
+  }
+  return (
+    <RunsContent
+      data={data}
+      search={search}
+      onSearch={setSearch}
+      onRun={(runId) => navigate({ to: "/runs/$runId", params: { runId } })}
+    />
+  )
+}
+
+export function RunsContent({
+  data,
+  search,
+  onSearch,
+  onRun,
+}: {
+  data: RunsData
+  search: RunsSearch
+  onSearch: (patch: RunsSearchPatch) => void
+  onRun: (runId: string) => void
+}) {
+  const query = search.q?.toLowerCase() ?? ""
+  const rows = data.rows.filter((row) => {
+    const matchesStatus = !search.status || row.status === search.status
+    const haystack =
+      `${row.runId} ${row.command ?? ""} ${row.service ?? ""}`.toLowerCase()
+    return matchesStatus && haystack.includes(query)
+  })
 
   return (
-    <div className="grid gap-5">
-      <PageHeading
-        eyebrow="Execution context"
+    <div className="space-y-4">
+      <PageHeader
+        icon={IconTerminal2}
+        iconClassName="text-violet-500"
         title="Runs"
-        description="CLI wrappers and externally observed run ids, unified into one context timeline."
+        description="Command and externally observed run ids with errors, duration, and last activity."
       />
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <KpiCard
-          icon={TerminalSquareIcon}
-          label="Visible runs"
-          value={String(merged.length)}
-          detail="merged wrapper + observed"
-          tone="violet"
-          bars={merged.map(() => 1)}
-        />
-        <KpiCard
-          icon={CheckCircle2Icon}
-          label="Finished"
-          value={String(finished)}
-          detail="wrapper reported"
-          tone="green"
-        />
-        <KpiCard
-          icon={ActivityIcon}
-          label="Observed only"
-          value={String(observed)}
-          detail="from telemetry"
-          tone="blue"
-        />
-        <KpiCard
-          icon={TimerIcon}
-          label="Latest"
-          value={last ? relativeTime(last.lastNanos) : "-"}
-          detail={
-            failed ? `${failed} failed exit(s)` : "no failed exits loaded"
-          }
-          tone={failed ? "rose" : "orange"}
-        />
-      </section>
-      {merged.length === 0 ? (
-        <div className="parallax-panel p-6">
-          <p className="text-sm font-medium">No runs captured yet</p>
-          <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-            Wrap a command or point any tool exporting{" "}
-            <code className="font-mono text-foreground">parallax.run.id</code>{" "}
-            at this server.
-          </p>
-          <code className="mt-4 block w-fit rounded-xl border border-border/70 bg-background/80 px-3 py-2 font-mono text-xs text-foreground">
-            parallax run start -- cargo test
-          </code>
+
+      <Toolbar className="justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <SearchInput
+            value={search.q ?? ""}
+            onChange={(q) => onSearch({ q })}
+            placeholder="Search runs"
+          />
+          <FilterSelect
+            {...(search.status ? { value: search.status } : {})}
+            onChange={(status) =>
+              onSearch({
+                status:
+                  status === "running" ||
+                  status === "finished" ||
+                  status === "external"
+                    ? status
+                    : undefined,
+              })
+            }
+            placeholder="Any status"
+            options={[
+              { value: "running", label: "Running" },
+              { value: "finished", label: "Finished" },
+              { value: "external", label: "External" },
+            ]}
+          />
         </div>
+        <span className="text-xs text-muted-foreground">
+          {formatCount(rows.length)} of {formatCount(data.rows.length)}
+        </span>
+      </Toolbar>
+
+      {rows.length === 0 ? (
+        <EmptyState
+          icon={IconTerminal2}
+          title="No runs captured yet"
+          description={
+            <span className="inline-flex items-center gap-2">
+              <code>parallax run &lt;your command&gt;</code>
+              <CopyButton value="parallax run <your command>" />
+            </span>
+          }
+        />
       ) : (
-        <div className="parallax-panel overflow-hidden">
+        <div className="overflow-hidden rounded-lg border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Run</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead>Command / activity</TableHead>
-                <TableHead className="w-28">Status</TableHead>
-                <TableHead className="w-20 text-right">Exit</TableHead>
-                <TableHead className="w-28">Last seen</TableHead>
+                <TableHead>Command</TableHead>
+                <TableHead className="w-32">Status</TableHead>
+                <TableHead className="w-24 text-right">Errors</TableHead>
+                <TableHead className="w-28 text-right">Duration</TableHead>
+                <TableHead className="w-32 text-right">Last seen</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {merged.map((run) => (
-                <TableRow key={run.runId}>
-                  <TableCell className="font-mono text-xs">
-                    <Link
-                      to="/runs/$runId"
-                      params={{ runId: run.runId }}
-                      className="text-foreground underline underline-offset-4"
+              {rows.map((row) => {
+                const errors = row.errorCount ?? 0
+                return (
+                  <TableRow
+                    key={row.runId}
+                    className={cn(
+                      "cursor-pointer",
+                      errors > 0 &&
+                        "shadow-[inset_3px_0_0_rgba(244,63,94,0.85)]"
+                    )}
+                    onClick={() => onRun(row.runId)}
+                  >
+                    <TableCell>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <code className="max-w-44 truncate text-xs">
+                          {row.runId}
+                        </code>
+                        <CopyButton value={row.runId} />
+                        <Badge variant="secondary">{row.source}</Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell className="max-w-md truncate font-mono text-xs text-muted-foreground">
+                      {row.command ?? (
+                        <span className="italic">
+                          {row.service ?? "external telemetry"}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <RunStatusBadge row={row} />
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        "text-right tabular-nums",
+                        errors > 0
+                          ? "text-rose-600 dark:text-rose-400"
+                          : "text-muted-foreground/40"
+                      )}
                     >
-                      {run.runId}
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="rounded-full">
-                      {run.source}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="max-w-md truncate">
-                    {run.detail}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        run.status === "finished" ? "secondary" : "outline"
-                      }
-                      className="rounded-full"
-                    >
-                      {run.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {run.exitCode ?? "-"}
-                  </TableCell>
-                  <TableCell>{relativeTime(run.lastNanos)}</TableCell>
-                </TableRow>
-              ))}
+                      {row.errorCount == null ? "-" : formatCount(errors)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {row.status === "running"
+                        ? "..."
+                        : durationNs(row)
+                          ? formatDurationNs(durationNs(row)!)
+                          : "-"}
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      <RelativeTime nanos={row.lastNanos} />
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </div>
       )}
     </div>
   )
+}
+
+export function RunStatusBadge({ row }: { row: RunRow }) {
+  if (row.status === "running") {
+    return (
+      <Badge variant="blue">
+        <span className="size-1.5 animate-pulse rounded-full bg-current" />
+        running
+      </Badge>
+    )
+  }
+  if (row.status === "external")
+    return <Badge variant="secondary">external</Badge>
+  if (row.exitCode === 0) return <Badge variant="emerald">finished</Badge>
+  return <Badge variant="rose">exit {row.exitCode ?? "?"}</Badge>
 }

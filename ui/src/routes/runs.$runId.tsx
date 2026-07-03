@@ -1,19 +1,51 @@
-import { Link, createFileRoute } from "@tanstack/react-router"
 import { useEffect, useMemo, useState } from "react"
-import { graphql, gqlString, relativeTime } from "@/lib/api"
+import { Link, createFileRoute } from "@tanstack/react-router"
+import {
+  IconActivity,
+  IconAlertTriangleFilled,
+  IconArrowUpRight,
+  IconDownload,
+  IconPlayerPause,
+  IconPlayerPlay,
+  IconTerminal2,
+  IconClock,
+} from "@tabler/icons-react"
+
+import { CopyButton } from "@/components/console/copy-button"
+import { EmptyState } from "@/components/console/empty-state"
+import { HeatCell } from "@/components/console/heat-cell"
+import { RelativeTime } from "@/components/console/relative-time"
+import { ScrollFade } from "@/components/console/scroll-fade"
+import { StatCard } from "@/components/console/stat-card"
 import { LiveEventStack, LiveStreamPanel } from "@/components/live-stream-panel"
 import { LogsTable } from "@/components/logs-table"
 import type { LogDoc } from "@/components/logs-table"
 import { MetricStrip } from "@/components/metric-strip"
+import { navItem } from "@/components/nav"
+import { PageHeader } from "@/components/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { gqlString, graphql } from "@/lib/api"
+import { formatCount, formatDurationNs } from "@/lib/format"
+import { cn } from "@/lib/utils"
+import { RunStatusBadge, durationNs } from "@/routes/runs.index"
+import type { RunRow } from "@/routes/runs.index"
 
 interface RunIssue {
   fingerprint: string
   title: string
   status: string
   eventCount: number
+  errorType?: string | null
 }
 
 interface RunRecordData {
@@ -38,6 +70,16 @@ interface RunTraceSummary {
   hasError: boolean
 }
 
+interface LiveSpan {
+  tsNanos: string
+  service: string
+  traceId: string
+  spanId: string
+  name: string
+  statusCode: string
+  durationNs: string
+}
+
 export const Route = createFileRoute("/runs/$runId")({
   loader: ({ params }) =>
     graphql<{
@@ -49,7 +91,7 @@ export const Route = createFileRoute("/runs/$runId")({
       `{ run(runId: "${gqlString(params.runId)}") {
            runId command status exitCode startedAtNanos endedAtNanos
            errorCount traceCount
-           issues { fingerprint title status eventCount }
+           issues { fingerprint title errorType status eventCount }
          }
          tracesByRun(runId: "${gqlString(params.runId)}") {
            traceId rootName service startNanos durationNs spanCount hasError
@@ -63,15 +105,22 @@ export const Route = createFileRoute("/runs/$runId")({
   component: RunDetailPage,
 })
 
-/** One finished span from the live feed (`/v1/traces/stream?run_id=…`). */
-interface LiveSpan {
-  tsNanos: string
-  service: string
-  traceId: string
-  spanId: string
-  name: string
-  statusCode: string
-  durationNs: string
+function runRow(run: RunRecordData, runId: string): RunRow {
+  return {
+    runId,
+    source: "cli",
+    command: run.command,
+    service: null,
+    status: run.status === "running" ? "running" : "finished",
+    exitCode: run.exitCode,
+    startedAtNanos: run.startedAtNanos,
+    endedAtNanos: run.endedAtNanos,
+    lastNanos: run.endedAtNanos ?? run.startedAtNanos,
+    errorCount: run.errorCount,
+    traceCount: run.traceCount,
+    spanCount: 0,
+    logCount: 0,
+  }
 }
 
 function RunDetailPage() {
@@ -82,17 +131,12 @@ function RunDetailPage() {
     bundle,
   } = Route.useLoaderData()
   const { runId } = Route.useParams()
-  // Live mode: explicit, never default (a tail costs subscriptions). It
-  // streams this run's new logs and finished spans over SSE, repolls the
-  // metrics card, and refreshes the run record — the observation entrance
-  // for "is my run doing the right thing, right now".
   const [live, setLive] = useState(false)
   const [liveLogs, setLiveLogs] = useState<LogDoc[]>([])
   const [liveSpans, setLiveSpans] = useState<LiveSpan[]>([])
   const [polledRun, setPolledRun] = useState<RunRecordData | null>(null)
   const run = polledRun ?? loadedRun
 
-  // Loaded + live logs as one newest-first list for the shared logs table.
   const runLogs = useMemo(
     () =>
       [...logsByRun, ...liveLogs]
@@ -107,7 +151,6 @@ function RunDetailPage() {
     [logsByRun, liveLogs]
   )
 
-  // Log tail: newest first (every run-page surface reads newest-on-top).
   useEffect(() => {
     if (!live) return
     const logSource = new EventSource(
@@ -157,7 +200,6 @@ function RunDetailPage() {
     }
   }, [live, runId])
 
-  // Run record poll: status flips running → finished, counts move.
   useEffect(() => {
     if (!live) return
     const timer = setInterval(() => {
@@ -165,7 +207,7 @@ function RunDetailPage() {
         `{ run(runId: "${gqlString(runId)}") {
              runId command status exitCode startedAtNanos endedAtNanos
              errorCount traceCount
-             issues { fingerprint title status eventCount }
+             issues { fingerprint title errorType status eventCount }
            } }`
       ).then((data) => {
         if (data.run) setPolledRun(data.run)
@@ -174,67 +216,91 @@ function RunDetailPage() {
     return () => clearInterval(timer)
   }, [live, runId])
 
-  const empty = !run && tracesByRun.length === 0 && logsByRun.length === 0
+  return (
+    <RunDetailContent
+      runId={runId}
+      run={run}
+      traces={tracesByRun}
+      logs={runLogs}
+      bundle={bundle}
+      live={live}
+      liveLogs={liveLogs}
+      liveSpans={liveSpans}
+      onLive={() => setLive((current) => !current)}
+    />
+  )
+}
+
+export function RunDetailContent({
+  runId,
+  run,
+  traces,
+  logs,
+  bundle,
+  live,
+  liveLogs,
+  liveSpans,
+  onLive,
+}: {
+  runId: string
+  run: RunRecordData | null
+  traces: RunTraceSummary[]
+  logs: LogDoc[]
+  bundle: { markdown: string } | null
+  live: boolean
+  liveLogs: LogDoc[]
+  liveSpans: LiveSpan[]
+  onLive: () => void
+}) {
+  const empty = !run && traces.length === 0 && logs.length === 0
+  const runsBack = navItem("/runs")!
+  const row = run ? runRow(run, runId) : null
+
+  if (empty) {
+    return (
+      <EmptyState
+        icon={IconTerminal2}
+        title="Run not found"
+        description="No registered run, traces, or logs exist for this run id yet."
+      />
+    )
+  }
+
   return (
     <div className="space-y-4">
-      <div className="space-y-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="font-mono text-lg font-semibold">{runId}</h1>
-          {run ? (
-            <Badge
-              variant={
-                run.status === "running"
-                  ? "default"
-                  : run.status === "external"
-                    ? "outline"
-                    : "secondary"
-              }
+      <PageHeader
+        back={runsBack}
+        title={runId}
+        titleTrailing={<CopyButton value={runId} />}
+        description={
+          run?.command ? <code>{run.command}</code> : "Observed telemetry run"
+        }
+        actions={
+          <>
+            <Button
+              size="sm"
+              variant={live ? "secondary" : "outline"}
+              onClick={onLive}
             >
-              {run.status}
-            </Badge>
-          ) : null}
-          {run?.exitCode != null ? (
-            <Badge variant={run.exitCode === 0 ? "secondary" : "destructive"}>
-              exit {run.exitCode}
-            </Badge>
-          ) : null}
-          <Button
-            size="sm"
-            variant={live ? "destructive" : "default"}
-            onClick={() => setLive((current) => !current)}
-          >
-            {live ? "Stop live" : "Go live"}
-          </Button>
-          {live ? (
-            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span className="size-2 animate-pulse rounded-full bg-(--brand-green)" />
-              streaming logs + spans · metrics every 5s
-            </span>
-          ) : null}
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {run?.command ? <code className="mr-2">{run.command}</code> : null}
-          {run ? `started ${relativeTime(run.startedAtNanos)} · ` : ""}
-          {run
-            ? `${run.traceCount} trace(s) · ${run.errorCount} error(s) · `
-            : ""}
-          {logsByRun.length + liveLogs.length} log(s) · agent handoff:{" "}
-          <code>parallax run bundle {runId}</code>
-        </p>
-      </div>
+              {live ? <IconPlayerPause /> : <IconPlayerPlay />}
+              {live ? "Following" : "Follow live"}
+              {live ? (
+                <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
+              ) : null}
+            </Button>
+            {bundle ? (
+              <DownloadBundle runId={runId} markdown={bundle.markdown} />
+            ) : null}
+          </>
+        }
+      />
 
-      {empty ? (
-        <p className="text-sm text-muted-foreground">
-          Nothing recorded under this run id yet. If the run is live, telemetry
-          arrives in batches — refresh in a few seconds, or press Go live to
-          stream it as it lands.
-        </p>
-      ) : null}
+      {run && row ? <RunStats run={run} row={row} /> : null}
 
       {live ? (
         <LiveStreamPanel
           title="Run observation stream"
-          description="Streaming this run's logs and finished spans while the metrics window follows now."
+          description="Streaming this run's logs and finished spans while metrics follow now."
           count={liveLogs.length + liveSpans.length}
           endpoint={`/v1/*/stream?run_id=${runId}`}
           active
@@ -244,9 +310,7 @@ function RunDetailPage() {
               ...liveSpans.map((span) => ({
                 id: `span-${span.spanId}-${span.tsNanos}`,
                 title: span.name,
-                meta: `${relativeTime(span.tsNanos)} · span · ${(
-                  Number(span.durationNs) / 1e6
-                ).toFixed(1)}ms`,
+                meta: `${formatDurationNs(span.durationNs)} · span · ${span.service}`,
                 status:
                   span.statusCode === "STATUS_CODE_ERROR"
                     ? ("error" as const)
@@ -256,7 +320,7 @@ function RunDetailPage() {
               ...liveLogs.map((log) => ({
                 id: `log-${log.tsNanos}-${log.spanId}`,
                 title: log.body,
-                meta: `${relativeTime(log.tsNanos)} · log · ${log.severityText}`,
+                meta: `log · ${log.severityText} · ${log.service}`,
                 status:
                   log.severityNum >= 17 ? ("error" as const) : ("ok" as const),
                 detail: log.traceId,
@@ -281,81 +345,9 @@ function RunDetailPage() {
         />
       ) : null}
 
-      {run && run.issues.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Issues in this run</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 text-sm">
-              {run.issues.map((issue) => (
-                <li
-                  key={issue.fingerprint}
-                  className="flex flex-wrap items-center gap-2"
-                >
-                  <Link
-                    to="/issues/$fingerprint"
-                    params={{ fingerprint: issue.fingerprint }}
-                    className="font-medium underline underline-offset-4"
-                  >
-                    {issue.title}
-                  </Link>
-                  <Badge
-                    variant={
-                      issue.status === "open" ? "destructive" : "secondary"
-                    }
-                  >
-                    {issue.status}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {issue.eventCount} event(s)
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {tracesByRun.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Traces</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
-              {tracesByRun.map((trace) => (
-                <li
-                  key={trace.traceId}
-                  className="flex flex-wrap items-center gap-2 border-b pb-3 text-sm last:border-b-0"
-                >
-                  <Link
-                    to="/traces/$traceId"
-                    params={{ traceId: trace.traceId }}
-                    className="font-medium underline underline-offset-4"
-                  >
-                    {trace.rootName || trace.traceId}
-                  </Link>
-                  <Badge variant="outline">{trace.service}</Badge>
-                  {trace.hasError ? (
-                    <Badge variant="destructive">error</Badge>
-                  ) : null}
-                  <span className="text-xs text-muted-foreground">
-                    {trace.spanCount} span(s) ·{" "}
-                    {(Number(trace.durationNs) / 1e6).toFixed(1)}ms ·{" "}
-                    {relativeTime(trace.startNanos)}
-                  </span>
-                  <code className="text-xs text-muted-foreground">
-                    {trace.traceId}
-                  </code>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {runLogs.length > 0 ? (
+      {run?.issues.length ? <IssuesCard issues={run.issues} /> : null}
+      {traces.length ? <TracesCard traces={traces} /> : null}
+      {logs.length ? (
         <Card>
           <CardHeader>
             <CardTitle className="text-sm">
@@ -366,28 +358,202 @@ function RunDetailPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <LogsTable logs={runLogs} />
+            <LogsTable logs={logs} />
           </CardContent>
         </Card>
       ) : null}
-
-      {bundle ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">
-              Evidence bundle{" "}
-              <span className="font-normal text-muted-foreground">
-                (what <code>parallax run bundle {runId}</code> hands the agent)
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <pre className="max-h-96 overflow-auto rounded-md bg-muted p-3 text-xs leading-relaxed whitespace-pre-wrap">
-              {bundle.markdown}
-            </pre>
-          </CardContent>
-        </Card>
-      ) : null}
+      {bundle ? <BundleCard runId={runId} markdown={bundle.markdown} /> : null}
     </div>
+  )
+}
+
+function RunStats({ run, row }: { run: RunRecordData; row: RunRow }) {
+  const duration = durationNs(row)
+  return (
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <StatCard label="Status" value={<RunStatusBadge row={row} />} />
+      <StatCard
+        icon={IconAlertTriangleFilled}
+        iconClassName="text-rose-500"
+        label="Errors"
+        value={
+          <span
+            className={cn(
+              run.errorCount > 0
+                ? "text-rose-600 dark:text-rose-400"
+                : undefined
+            )}
+          >
+            {formatCount(run.errorCount)}
+          </span>
+        }
+      />
+      <StatCard
+        icon={IconActivity}
+        label="Traces"
+        value={formatCount(run.traceCount)}
+      />
+      <StatCard
+        icon={IconClock}
+        label="Duration"
+        value={
+          row.status === "running"
+            ? "..."
+            : duration
+              ? formatDurationNs(duration)
+              : "-"
+        }
+      />
+    </div>
+  )
+}
+
+function IssuesCard({ issues }: { issues: RunIssue[] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">Issues in this run</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ul className="space-y-2 text-sm">
+          {issues.map((issue) => (
+            <li
+              key={issue.fingerprint}
+              className="grid gap-2 rounded-lg border bg-muted/20 px-3 py-2 md:grid-cols-[minmax(0,1fr)_auto]"
+            >
+              <Link
+                to="/issues/$fingerprint"
+                params={{ fingerprint: issue.fingerprint }}
+                className="min-w-0 truncate font-medium hover:underline"
+              >
+                {issue.errorType ? `${issue.errorType}: ` : ""}
+                {issue.title}
+              </Link>
+              <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Badge variant={issue.status === "open" ? "rose" : "emerald"}>
+                  {issue.status}
+                </Badge>
+                {formatCount(issue.eventCount)} events
+              </span>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
+  )
+}
+
+function TracesCard({ traces }: { traces: RunTraceSummary[] }) {
+  const durations = traces.map((trace) => Number(trace.durationNs))
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">Traces</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-hidden rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Root</TableHead>
+                <TableHead className="w-24 text-right">Spans</TableHead>
+                <TableHead className="w-32 text-right">Duration</TableHead>
+                <TableHead className="w-32 text-right">When</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {traces.map((trace) => (
+                <TableRow
+                  key={trace.traceId}
+                  className={cn(
+                    trace.hasError &&
+                      "shadow-[inset_3px_0_0_rgba(244,63,94,0.85)]"
+                  )}
+                >
+                  <TableCell>
+                    <Link
+                      to="/traces/$traceId"
+                      params={{ traceId: trace.traceId }}
+                      className="inline-flex items-center gap-1 font-medium hover:underline"
+                    >
+                      {trace.rootName || trace.traceId}
+                      <IconArrowUpRight className="size-3.5" />
+                    </Link>
+                    <div className="text-xs text-muted-foreground">
+                      {trace.service}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {formatCount(trace.spanCount)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <HeatCell
+                      value={Number(trace.durationNs)}
+                      values={durations}
+                    >
+                      {formatDurationNs(trace.durationNs)}
+                    </HeatCell>
+                  </TableCell>
+                  <TableCell className="text-right text-muted-foreground">
+                    <RelativeTime nanos={trace.startNanos} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function BundleCard({ runId, markdown }: { runId: string; markdown: string }) {
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle className="text-sm">Evidence bundle</CardTitle>
+        <div className="flex items-center gap-1">
+          <CopyButton value={markdown} />
+          <DownloadBundle runId={runId} markdown={markdown} />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <ScrollFade className="max-h-96 overflow-auto rounded-md border bg-muted/30 p-3">
+          <pre className="text-xs leading-relaxed whitespace-pre-wrap">
+            {markdown}
+          </pre>
+        </ScrollFade>
+      </CardContent>
+    </Card>
+  )
+}
+
+function DownloadBundle({
+  runId,
+  markdown,
+}: {
+  runId: string
+  markdown: string
+}) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      onClick={() => {
+        const blob = new Blob([markdown], {
+          type: "text/markdown;charset=utf-8",
+        })
+        const url = URL.createObjectURL(blob)
+        const anchor = document.createElement("a")
+        anchor.href = url
+        anchor.download = `parallax-bundle-${runId}.md`
+        anchor.click()
+        URL.revokeObjectURL(url)
+      }}
+    >
+      <IconDownload />
+      Download
+    </Button>
   )
 }
