@@ -38,7 +38,7 @@ source of truth. API extensions are in scope (plans 009-010).
 | 008 | Shared console kit | P1 | L | 005-007 | DONE |
 | 009 | API: overview + service analytics (Rust) | P1 | L | — | DONE |
 | 010 | API: trace paging + span events (Rust) | P1 | M | — | DONE |
-| 011 | Traces list redesign | P1 | M | 005-008, 010 | TODO |
+| 011 | Traces list redesign | P1 | M | 005-008, 010 | DONE |
 | 012 | Trace waterfall redesign | P1 | L | 005-008, 010 | TODO |
 | 013 | Overview landing page | P1 | M | 005-008, 009 | TODO |
 | 014 | Logs redesign (brushable histogram) | P1 | M | 005-008 | TODO |

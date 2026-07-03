@@ -1,26 +1,23 @@
-import { Link, createFileRoute, useNavigate } from "@tanstack/react-router"
-import { useCallback, useEffect, useState } from "react"
 import {
-  AlertCircleIcon,
-  GitBranchIcon,
-  RadioIcon,
-  TimerIcon,
-} from "lucide-react"
-import { gqlString, graphql } from "@/lib/api"
-import type { TraceSummary } from "@/lib/api"
+  createFileRoute,
+  useNavigate,
+  useRouter,
+  useRouterState,
+} from "@tanstack/react-router"
+import {
+  IconAffiliateFilled,
+  IconAlertTriangle,
+  IconPlayerPlayFilled,
+  IconPlayerStopFilled,
+  IconRefresh,
+} from "@tabler/icons-react"
+import { useEffect, useMemo, useState } from "react"
+import { z } from "zod"
+
+import { PageHeader } from "@/components/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { KpiCard } from "@/components/kpi-card"
-import { LiveEventStack, LiveStreamPanel } from "@/components/live-stream-panel"
-import { PageHeading } from "@/components/page-heading"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import {
   Table,
   TableBody,
@@ -29,6 +26,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  ClearFiltersButton,
+  FilterSelect,
+  SearchInput,
+  SortableHead,
+  ToggleChip,
+  pageWindow,
+  parseSortParam,
+} from "@/components/console/data-table"
+import { EmptyState } from "@/components/console/empty-state"
+import { HeatCell } from "@/components/console/heat-cell"
+import { useDelayedLoading } from "@/components/console/hooks"
+import { RangePicker } from "@/components/console/range-picker"
+import { RelativeTime } from "@/components/console/relative-time"
+import { TableSkeleton } from "@/components/console/skeletons"
+import { formatCount, formatDurationNs, formatTimeInRange } from "@/lib/format"
+import { gqlString, graphql } from "@/lib/api"
+import type { TraceSummary } from "@/lib/api"
+import { resolveRangeSearch } from "@/lib/range"
+import type { ResolvedRange } from "@/lib/range"
+import { cn } from "@/lib/utils"
 
 /** One finished span from the live feed (`/v1/traces/stream`). */
 interface SpanDoc {
@@ -42,168 +60,263 @@ interface SpanDoc {
   durationNs: string
 }
 
-const RANGES = [
-  { label: "Latest", minutes: 0 },
-  { label: "Last 1 minute", minutes: 1 },
-  { label: "Last 15 minutes", minutes: 15 },
-  { label: "Last 30 minutes", minutes: 30 },
-  { label: "Last 1 hour", minutes: 60 },
-  { label: "Last 24 hours", minutes: 1440 },
-  { label: "Last 7 days", minutes: 10080 },
-  { label: "Last 30 days", minutes: 43200 },
-] as const
+type TraceSort =
+  | "START_DESC"
+  | "DURATION_DESC"
+  | "DURATION_ASC"
+  | "SPAN_COUNT_DESC"
 
-const REFRESH = [
-  { label: "Refresh off", seconds: 0 },
-  { label: "Live (stream)", seconds: -1 },
-  { label: "Every 5s", seconds: 5 },
-  { label: "Every 15s", seconds: 15 },
-  { label: "Every 60s", seconds: 60 },
-] as const
-
-export const Route = createFileRoute("/traces/")({ component: TracesPage })
-
-function formatTime(tsNanos: string): string {
-  return new Date(Number(BigInt(tsNanos) / 1_000_000n)).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  })
+interface TracePage {
+  total: string
+  items: TraceSummary[]
 }
 
-function formatMillis(durationNs: string): string {
-  return `${(Number(durationNs) / 1e6).toFixed(1)}ms`
+export interface TracesSearch {
+  q?: string | undefined
+  service?: string | undefined
+  errors?: boolean | undefined
+  minMs?: number | undefined
+  maxMs?: number | undefined
+  sort?: TraceSort | undefined
+  page?: number | undefined
+  range?: string | undefined
+  from?: string | undefined
+  to?: string | undefined
+  live?: boolean | undefined
 }
 
-/** "500ms" | "2s" | "1m" | bare millis → milliseconds (NaN = no filter). */
-function parseDurationMs(value: string): number {
-  const v = value.trim().toLowerCase()
-  if (!v) return NaN
-  if (v.endsWith("ms")) return Number(v.slice(0, -2))
-  if (v.endsWith("s")) return Number(v.slice(0, -1)) * 1000
-  if (v.endsWith("m")) return Number(v.slice(0, -1)) * 60_000
-  return Number(v)
+const PAGE_SIZE = 25
+const SORTS: TraceSort[] = [
+  "START_DESC",
+  "DURATION_DESC",
+  "DURATION_ASC",
+  "SPAN_COUNT_DESC",
+]
+
+const traceSearchSchema = z.object({
+  q: z.unknown().optional(),
+  service: z.unknown().optional(),
+  errors: z.unknown().optional(),
+  minMs: z.unknown().optional(),
+  maxMs: z.unknown().optional(),
+  sort: z.unknown().optional(),
+  page: z.unknown().optional(),
+  range: z.unknown().optional(),
+  from: z.unknown().optional(),
+  to: z.unknown().optional(),
+  live: z.unknown().optional(),
+})
+
+export function validateTracesSearch(
+  search: Record<string, unknown>
+): TracesSearch {
+  const parsed = traceSearchSchema.parse(search)
+  const positiveNumber = (value: unknown) => {
+    const number = Number(value)
+    return Number.isFinite(number) && number > 0 ? number : undefined
+  }
+  const positiveInteger = (value: unknown) => {
+    const number = Number(value)
+    return Number.isInteger(number) && number > 0 ? number : undefined
+  }
+  const stringValue = (value: unknown) =>
+    typeof value === "string" && value ? value : undefined
+  return {
+    q: stringValue(parsed.q),
+    service: stringValue(parsed.service),
+    errors: parsed.errors === "1" || parsed.errors === true ? true : undefined,
+    minMs: positiveNumber(parsed.minMs),
+    maxMs: positiveNumber(parsed.maxMs),
+    sort: SORTS.includes(parsed.sort as TraceSort)
+      ? (parsed.sort as TraceSort)
+      : undefined,
+    page: positiveInteger(parsed.page),
+    range: stringValue(parsed.range),
+    from: stringValue(parsed.from),
+    to: stringValue(parsed.to),
+    live: parsed.live === "1" || parsed.live === true ? true : undefined,
+  }
+}
+
+type TraceSearchPatch = Partial<TracesSearch>
+
+const FILTER_KEYS = new Set<keyof TracesSearch>([
+  "q",
+  "service",
+  "errors",
+  "minMs",
+  "maxMs",
+  "range",
+  "from",
+  "to",
+  "live",
+])
+
+export function patchTracesSearch(
+  current: TracesSearch,
+  patch: TraceSearchPatch
+): TracesSearch {
+  const next: TracesSearch = { ...current, ...patch }
+  for (const key of Object.keys(next) as Array<keyof TracesSearch>) {
+    if (next[key] === "" || next[key] == null || next[key] === false) {
+      delete next[key]
+    }
+  }
+  if (
+    Object.keys(patch).some((key) => FILTER_KEYS.has(key as keyof TracesSearch))
+  ) {
+    delete next.page
+  }
+  return next
+}
+
+export function traceSortToParam(sort?: TraceSort): string | undefined {
+  switch (sort) {
+    case "DURATION_DESC":
+      return "duration:desc"
+    case "DURATION_ASC":
+      return "duration:asc"
+    case "SPAN_COUNT_DESC":
+      return "spans:desc"
+    case "START_DESC":
+      return "when:desc"
+    default:
+      return undefined
+  }
+}
+
+export function paramToTraceSort(
+  param: string | undefined
+): TraceSort | undefined {
+  const parsed = parseSortParam(param)
+  if (!parsed) return undefined
+  if (parsed.key === "duration") {
+    return parsed.direction === "asc" ? "DURATION_ASC" : "DURATION_DESC"
+  }
+  if (parsed.key === "spans" && parsed.direction === "desc")
+    return "SPAN_COUNT_DESC"
+  if (parsed.key === "when" && parsed.direction === "desc") return "START_DESC"
+  return undefined
+}
+
+function graphQlTraceArgs(search: TracesSearch, range: ResolvedRange): string {
+  const page = search.page ?? 1
+  return [
+    search.service ? `service: "${gqlString(search.service)}"` : null,
+    `fromNanos: "${range.fromNanos}"`,
+    `toNanos: "${range.toNanos}"`,
+    search.minMs ? `minDurationMs: ${search.minMs}` : null,
+    search.maxMs ? `maxDurationMs: ${search.maxMs}` : null,
+    search.errors ? "errorOnly: true" : null,
+    search.q ? `query: "${gqlString(search.q)}"` : null,
+    search.sort ? `sort: ${search.sort}` : null,
+    `limit: ${PAGE_SIZE}`,
+    `offset: ${(page - 1) * PAGE_SIZE}`,
+  ]
+    .filter(Boolean)
+    .join(", ")
+}
+
+export const Route = createFileRoute("/traces/")({
+  validateSearch: validateTracesSearch,
+  loaderDeps: ({ search }) => search,
+  loader: ({ deps }) => {
+    if (deps.live) {
+      return graphql<{ services: string[] }>(`
+        {
+          services
+        }
+      `).then((data) => ({
+        services: data.services,
+        tracesPage: { total: "0", items: [] },
+      }))
+    }
+    const range = resolveRangeSearch(deps)
+    const args = graphQlTraceArgs(deps, range)
+    return graphql<{
+      services: string[]
+      tracesPage: TracePage
+    }>(`
+      {
+        services
+        tracesPage(${args}) {
+          total
+          items {
+            traceId rootName service startNanos durationNs spanCount hasError
+          }
+        }
+      }
+    `)
+  },
+  component: TracesPage,
+})
+
+function toNumber(value: string): number {
+  const number = Number(value)
+  return Number.isFinite(number) ? number : 0
+}
+
+function liveDurationMs(search: TracesSearch): number {
+  return search.minMs && search.minMs > 0 ? search.minMs : NaN
+}
+
+function statusError(statusCode: string): boolean {
+  return statusCode === "STATUS_CODE_ERROR"
 }
 
 function TracesPage() {
-  const [services, setServices] = useState<string[]>([])
-  const [service, setService] = useState<string>("all")
-  const [errorsOnly, setErrorsOnly] = useState(false)
-  const [minDuration, setMinDuration] = useState("")
-  const [pendingMinDuration, setPendingMinDuration] = useState("")
-  const [query, setQuery] = useState("")
-  const [pendingQuery, setPendingQuery] = useState("")
-  // 0 = "Latest": newest traces regardless of window.
-  const [rangeMinutes, setRangeMinutes] = useState<number>(0)
-  // Live is explicit, never the default — a tail costs a subscription.
-  const [refreshSeconds, setRefreshSeconds] = useState<number>(0)
-  const [traces, setTraces] = useState<TraceSummary[]>([])
-  const [spans, setSpans] = useState<SpanDoc[]>([])
+  const { services, tracesPage } = Route.useLoaderData()
+  const search = Route.useSearch()
+  const navigate = useNavigate({ from: Route.fullPath })
+  const router = useRouter()
+  const pending = useRouterState({
+    select: (state) => state.status === "pending",
+  })
+  const showSkeleton = useDelayedLoading(pending)
   const [lookup, setLookup] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [olderLoading, setOlderLoading] = useState(false)
-  const [exhausted, setExhausted] = useState(false)
-  const navigate = useNavigate()
-  const live = refreshSeconds === -1
+  const [spans, setSpans] = useState<SpanDoc[]>([])
+  const live = search.live === true
+  const page = search.page ?? 1
+  const range = useMemo(
+    () => resolveRangeSearch(search),
+    [search.range, search.from, search.to]
+  )
+  const total = toNumber(tracesPage.total)
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const pages = pageWindow(page, totalPages)
+  const hasFilters = Boolean(
+    search.q ||
+    search.service ||
+    search.errors ||
+    search.minMs ||
+    search.maxMs ||
+    search.live
+  )
+  const durationValues = tracesPage.items.map((trace) =>
+    Number(trace.durationNs)
+  )
+  const liveDurationValues = spans.map((span) => Number(span.durationNs))
+  const serviceOptions = services.map((service) => ({
+    value: service,
+    label: service,
+  }))
+  const update = (patch: TraceSearchPatch, replace = true) => {
+    void navigate({ search: patchTracesSearch(search, patch), replace })
+  }
+  const sortParam = traceSortToParam(search.sort)
+  const setSortParam = (next: string | undefined) =>
+    update({ sort: paramToTraceSort(next), page: undefined })
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const nowNanos = BigInt(Date.now()) * 1_000_000n
-      const minDurationMs = parseDurationMs(minDuration)
-      const args = [
-        service !== "all" ? `service: "${gqlString(service)}"` : "",
-        rangeMinutes > 0
-          ? `fromNanos: "${nowNanos - BigInt(rangeMinutes) * 60_000_000_000n}"`
-          : "",
-        rangeMinutes > 0 ? `toNanos: "${nowNanos}"` : "",
-        Number.isFinite(minDurationMs) && minDurationMs > 0
-          ? `minDurationMs: ${minDurationMs}`
-          : "",
-        errorsOnly ? "errorOnly: true" : "",
-        query.trim() ? `query: "${gqlString(query.trim())}"` : "",
-        "limit: 100",
-      ]
-        .filter(Boolean)
-        .join(", ")
-      const data = await graphql<{
-        services: string[]
-        traces: TraceSummary[]
-      }>(
-        `{
-          services
-          traces(${args}) {
-            traceId rootName service startNanos durationNs spanCount hasError
-          }
-        }`
-      )
-      setServices(data.services)
-      setTraces(data.traces)
-      setExhausted(data.traces.length < 100)
-    } finally {
-      setLoading(false)
-    }
-  }, [service, errorsOnly, minDuration, query, rangeMinutes])
-
-  // Cursor pagination: traces strictly older than the oldest shown, same
-  // filters, appended below.
-  const loadOlder = useCallback(async () => {
-    const oldest = traces[traces.length - 1]
-    if (!oldest) return
-    setOlderLoading(true)
-    try {
-      const minDurationMs = parseDurationMs(minDuration)
-      const args = [
-        `toNanos: "${(BigInt(oldest.startNanos) - 1n).toString()}"`,
-        service !== "all" ? `service: "${gqlString(service)}"` : "",
-        rangeMinutes > 0
-          ? `fromNanos: "${(BigInt(Date.now()) - BigInt(rangeMinutes) * 60_000n) * 1_000_000n}"`
-          : "",
-        Number.isFinite(minDurationMs) && minDurationMs > 0
-          ? `minDurationMs: ${minDurationMs}`
-          : "",
-        errorsOnly ? "errorOnly: true" : "",
-        query.trim() ? `query: "${gqlString(query.trim())}"` : "",
-        "limit: 100",
-      ]
-        .filter(Boolean)
-        .join(", ")
-      const data = await graphql<{ traces: TraceSummary[] }>(
-        `{ traces(${args}) {
-             traceId rootName service startNanos durationNs spanCount hasError
-           } }`
-      )
-      setTraces((current) => [...current, ...data.traces])
-      if (data.traces.length < 100) setExhausted(true)
-    } finally {
-      setOlderLoading(false)
-    }
-  }, [traces, service, errorsOnly, minDuration, query, rangeMinutes])
-
-  useEffect(() => {
-    void load()
-  }, [load])
-
-  // Refresh-every mode: poll on the chosen interval.
-  useEffect(() => {
-    if (refreshSeconds <= 0) return
-    const timer = setInterval(() => void load(), refreshSeconds * 1000)
-    return () => clearInterval(timer)
-  }, [refreshSeconds, load])
-
-  // Live mode: a finished-span tail over SSE — per-row filters only
-  // (service, duration floor, errors, name substring); aggregates and
-  // time ranges belong to refresh mode.
   useEffect(() => {
     if (!live) return
     const params = new URLSearchParams()
-    if (service !== "all") params.set("service", service)
-    const minDurationMs = parseDurationMs(minDuration)
-    if (Number.isFinite(minDurationMs) && minDurationMs > 0) {
-      params.set("min_duration_ms", String(minDurationMs))
+    if (search.service) params.set("service", search.service)
+    const minMs = liveDurationMs(search)
+    if (Number.isFinite(minMs) && minMs > 0) {
+      params.set("min_duration_ms", String(minMs))
     }
-    if (errorsOnly) params.set("errors_only", "true")
-    if (query.trim()) params.set("q", query.trim())
+    if (search.errors) params.set("errors_only", "true")
+    if (search.q?.trim()) params.set("q", search.q.trim())
     setSpans([])
     const source = new EventSource(`/v1/traces/stream?${params}`)
     let buffer: SpanDoc[] = []
@@ -212,352 +325,357 @@ function TracesPage() {
         const batch: unknown = JSON.parse(event.data as string)
         if (Array.isArray(batch)) buffer.push(...(batch as SpanDoc[]))
       } catch {
-        // skip malformed frames
+        // Ignore malformed frames; the next valid batch will still flush.
       }
     }
     const flush = setInterval(() => {
       if (buffer.length === 0) return
       const incoming = buffer
       buffer = []
-      setSpans((current) => [...incoming.reverse(), ...current].slice(0, 500))
+      setSpans((current) => [...incoming.reverse(), ...current].slice(0, 100))
     }, 250)
     return () => {
       source.close()
       clearInterval(flush)
     }
-  }, [live, service, errorsOnly, minDuration, query])
+  }, [live, search.service, search.errors, search.minMs, search.q])
 
-  const traceErrors = traces.filter((trace) => trace.hasError).length
-  const spanErrors = spans.filter(
-    (span) => span.statusCode === "STATUS_CODE_ERROR"
-  ).length
+  const pageStart = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
+  const pageEnd = Math.min(
+    total,
+    (page - 1) * PAGE_SIZE + tracesPage.items.length
+  )
 
   return (
-    <div className="grid gap-5">
-      <PageHeading
-        eyebrow="Distributed context"
+    <div className="flex flex-col gap-4">
+      <PageHeader
+        icon={IconAffiliateFilled}
         title="Traces"
-        description="Browse completed traces, live span tails, and latency/error context per service."
-        action={
-          <form
-            className="flex gap-2"
-            onSubmit={(event) => {
-              event.preventDefault()
-              const id = lookup.trim()
-              if (id) {
-                void navigate({
-                  to: "/traces/$traceId",
-                  params: { traceId: id },
-                })
-              }
-            }}
-          >
-            <Input
-              value={lookup}
-              onChange={(event) => setLookup(event.target.value)}
-              placeholder="Open a trace id…"
-              className="h-9 w-72 rounded-full bg-background/70 font-mono text-xs"
-            />
-            <Button
-              type="submit"
-              variant="outline"
-              size="sm"
-              className="rounded-full"
+        description="Investigate distributed requests by latency, service, errors, and time."
+        actions={
+          <>
+            <form
+              className="flex items-center gap-2"
+              onSubmit={(event) => {
+                event.preventDefault()
+                const id = lookup.trim()
+                if (id) {
+                  void navigate({
+                    to: "/traces/$traceId",
+                    params: { traceId: id },
+                  })
+                }
+              }}
             >
-              Open
-            </Button>
-          </form>
-        }
-      />
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <KpiCard
-          icon={GitBranchIcon}
-          label={live ? "Live spans" : "Visible traces"}
-          value={String(live ? spans.length : traces.length)}
-          detail={service === "all" ? "all services" : service}
-          tone="blue"
-          bars={
-            live ? spans.map(() => 1) : traces.map((trace) => trace.spanCount)
-          }
-        />
-        <KpiCard
-          icon={AlertCircleIcon}
-          label="Errors"
-          value={String(live ? spanErrors : traceErrors)}
-          detail={live ? "span tail" : "trace results"}
-          tone="rose"
-        />
-        <KpiCard
-          icon={TimerIcon}
-          label="Duration floor"
-          value={minDuration || "none"}
-          detail="filter"
-          tone="orange"
-        />
-        <KpiCard
-          icon={RadioIcon}
-          label="Mode"
-          value={live ? "Live" : "Query"}
-          detail={
-            refreshSeconds > 0 ? `every ${refreshSeconds}s` : "manual refresh"
-          }
-          tone={live ? "green" : "violet"}
-        />
-      </section>
-
-      <div className="parallax-panel flex flex-wrap items-center gap-2 p-3">
-        <Select value={service} onValueChange={(v) => setService(v ?? "all")}>
-          <SelectTrigger className="w-48 rounded-full bg-background/70">
-            <SelectValue>
-              {service === "all" ? "All services" : service}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All services</SelectItem>
-            {services.map((s) => (
-              <SelectItem key={s} value={s}>
-                {s}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={errorsOnly ? "errors" : "all"}
-          onValueChange={(v) => setErrorsOnly(v === "errors")}
-        >
-          <SelectTrigger className="w-36 rounded-full bg-background/70">
-            <SelectValue>
-              {errorsOnly ? "Errors only" : "All statuses"}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="errors">Errors only</SelectItem>
-          </SelectContent>
-        </Select>
-        <form
-          className="flex gap-2"
-          onSubmit={(event) => {
-            event.preventDefault()
-            setMinDuration(pendingMinDuration)
-          }}
-        >
-          <Input
-            value={pendingMinDuration}
-            onChange={(event) => setPendingMinDuration(event.target.value)}
-            placeholder="Min duration (500ms, 2s)"
-            className="w-44 rounded-full bg-background/70"
-          />
-        </form>
-        <form
-          className="flex min-w-56 flex-1 gap-2"
-          onSubmit={(event) => {
-            event.preventDefault()
-            setQuery(pendingQuery)
-          }}
-        >
-          <Input
-            value={pendingQuery}
-            onChange={(event) => setPendingQuery(event.target.value)}
-            placeholder="Filter span names (substring)"
-            className="rounded-full bg-background/70"
-          />
-        </form>
-        <Select
-          value={String(rangeMinutes)}
-          onValueChange={(v) => setRangeMinutes(Number(v ?? 0))}
-          disabled={live}
-        >
-          <SelectTrigger className="w-44 rounded-full bg-background/70">
-            <SelectValue>
-              {RANGES.find((r) => r.minutes === rangeMinutes)?.label}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {RANGES.map((range) => (
-              <SelectItem key={range.minutes} value={String(range.minutes)}>
-                {range.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={String(refreshSeconds)}
-          onValueChange={(v) => setRefreshSeconds(Number(v ?? 0))}
-        >
-          <SelectTrigger className="w-36 rounded-full bg-background/70">
-            <SelectValue>
-              {REFRESH.find((o) => o.seconds === refreshSeconds)?.label}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {REFRESH.map((option) => (
-              <SelectItem key={option.seconds} value={String(option.seconds)}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          onClick={() => {
-            setQuery(pendingQuery)
-            setMinDuration(pendingMinDuration)
-            void load()
-          }}
-          disabled={loading || live}
-          className="rounded-full"
-        >
-          Refresh
-        </Button>
-      </div>
-
-      {live ? (
-        <>
-          <LiveStreamPanel
-            title="Span tail"
-            description="Streaming completed spans over Server-Sent Events. Use this like a live waterfall: new tool, service, and error spans arrive at the top."
-            count={spans.length}
-            endpoint="/v1/traces/stream"
-            active
-          >
-            <LiveEventStack
-              items={spans.slice(0, 6).map((span) => ({
-                id: `${span.spanId}-${span.tsNanos}`,
-                title: span.name,
-                meta: `${formatTime(span.tsNanos)} · ${span.service} · ${formatMillis(span.durationNs)}`,
-                status:
-                  span.statusCode === "STATUS_CODE_ERROR" ? "error" : "ok",
-                detail: `trace ${span.traceId.slice(0, 16)}`,
-              }))}
-            />
-          </LiveStreamPanel>
-          {spans.length === 0 ? (
-            <p className="parallax-panel p-6 text-sm text-muted-foreground">
-              Waiting for spans — they appear here the moment a service exports
-              them.
-            </p>
-          ) : (
-            <div className="parallax-panel overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-28">Time</TableHead>
-                    <TableHead className="w-36">Service</TableHead>
-                    <TableHead>Span</TableHead>
-                    <TableHead className="w-28 text-right">Duration</TableHead>
-                    <TableHead className="w-24">Status</TableHead>
-                    <TableHead className="w-44">Trace</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {spans.map((span, index) => (
-                    <TableRow key={`${span.spanId}-${index}`}>
-                      <TableCell className="font-mono text-xs">
-                        {formatTime(span.tsNanos)}
-                      </TableCell>
-                      <TableCell className="truncate">{span.service}</TableCell>
-                      <TableCell className="max-w-md truncate">
-                        {span.name}
-                      </TableCell>
-                      <TableCell className="text-right font-mono text-xs tabular-nums">
-                        {formatMillis(span.durationNs)}
-                      </TableCell>
-                      <TableCell>
-                        {span.statusCode === "STATUS_CODE_ERROR" ? (
-                          <Badge variant="destructive">error</Badge>
-                        ) : (
-                          <Badge variant="outline">ok</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">
-                        <Link
-                          to="/traces/$traceId"
-                          params={{ traceId: span.traceId }}
-                          className="underline underline-offset-4"
-                        >
-                          {span.traceId.slice(0, 16)}…
-                        </Link>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </>
-      ) : (
-        <>
-          <p className="text-xs text-muted-foreground">
-            {traces.length} trace(s) · newest first
-            {refreshSeconds > 0 ? ` · refreshing every ${refreshSeconds}s` : ""}
-          </p>
-          {traces.length === 0 ? (
-            <div className="parallax-panel space-y-3 p-6">
-              <p className="text-sm text-muted-foreground">
-                No traces in this window — widen the range or drop a filter.
-              </p>
-              {rangeMinutes !== 0 ? (
-                <Button variant="outline" onClick={() => setRangeMinutes(0)}>
-                  Show latest traces
+              <Input
+                value={lookup}
+                onChange={(event) => setLookup(event.target.value)}
+                placeholder="Open trace id"
+                className="h-8 w-64 font-mono text-xs"
+              />
+              <Button type="submit" variant="outline" size="sm">
+                Open
+              </Button>
+            </form>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant={!live ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => update({ live: undefined })}
+              >
+                <IconPlayerStopFilled />
+                Query
+              </Button>
+              <Button
+                type="button"
+                variant={live ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => update({ live: true })}
+              >
+                <IconPlayerPlayFilled />
+                Live
+              </Button>
+              {!live ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon-sm"
+                  aria-label="Refresh traces"
+                  onClick={() => void router.invalidate()}
+                >
+                  <IconRefresh />
                 </Button>
               ) : null}
             </div>
-          ) : (
-            <div className="parallax-panel overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-28">Started</TableHead>
-                    <TableHead>Root span</TableHead>
-                    <TableHead className="w-36">Service</TableHead>
-                    <TableHead className="w-20 text-right">Spans</TableHead>
-                    <TableHead className="w-28 text-right">Duration</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {traces.map((trace) => (
-                    <TableRow key={trace.traceId}>
-                      <TableCell className="font-mono text-xs">
-                        {formatTime(trace.startNanos)}
-                      </TableCell>
-                      <TableCell className="max-w-md truncate">
-                        <Link
-                          to="/traces/$traceId"
-                          params={{ traceId: trace.traceId }}
-                          className="underline underline-offset-4"
-                        >
-                          {trace.rootName}
-                        </Link>{" "}
-                        {trace.hasError ? (
-                          <Badge variant="destructive">error</Badge>
-                        ) : null}
-                      </TableCell>
-                      <TableCell className="truncate">
-                        {trace.service}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {trace.spanCount}
-                      </TableCell>
-                      <TableCell className="text-right font-mono text-xs tabular-nums">
-                        {formatMillis(trace.durationNs)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-          {traces.length > 0 && !exhausted ? (
-            <Button
-              variant="outline"
-              onClick={() => void loadOlder()}
-              disabled={olderLoading}
-            >
-              {olderLoading ? "Loading…" : "Load older"}
-            </Button>
+            <RangePicker
+              value={range}
+              onChange={(next) =>
+                update({
+                  range: next.key,
+                  from: next.fromNanos,
+                  to: next.toNanos,
+                })
+              }
+            />
+          </>
+        }
+      />
+
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <SearchInput
+            value={search.q ?? ""}
+            onChange={(value) => update({ q: value || undefined })}
+            placeholder="Search root span..."
+          />
+          <FilterSelect
+            onChange={(value) => update({ service: value })}
+            options={serviceOptions}
+            placeholder="All services"
+            {...(search.service ? { value: search.service } : {})}
+          />
+          <Input
+            value={search.minMs?.toString() ?? ""}
+            inputMode="numeric"
+            onChange={(event) =>
+              update({
+                minMs: event.target.value
+                  ? Number(event.target.value)
+                  : undefined,
+              })
+            }
+            placeholder="Min ms"
+            className="h-8 w-24"
+          />
+          <Input
+            value={search.maxMs?.toString() ?? ""}
+            inputMode="numeric"
+            onChange={(event) =>
+              update({
+                maxMs: event.target.value
+                  ? Number(event.target.value)
+                  : undefined,
+              })
+            }
+            placeholder="Max ms"
+            className="h-8 w-24"
+          />
+          <ToggleChip
+            active={Boolean(search.errors)}
+            onClick={() => update({ errors: search.errors ? undefined : true })}
+          >
+            <IconAlertTriangle />
+            Errors only
+          </ToggleChip>
+          {hasFilters ? (
+            <ClearFiltersButton
+              onClick={() =>
+                update({
+                  q: undefined,
+                  service: undefined,
+                  errors: undefined,
+                  minMs: undefined,
+                  maxMs: undefined,
+                  live: undefined,
+                })
+              }
+            />
           ) : null}
-        </>
-      )}
+          <div className="ml-auto flex items-center gap-3">
+            {live ? (
+              <Badge variant="emerald">
+                <span className="size-1.5 rounded-full bg-current motion-safe:animate-pulse" />
+                Live
+              </Badge>
+            ) : (
+              <span className="text-sm text-muted-foreground tabular-nums">
+                {formatCount(total)} {total === 1 ? "trace" : "traces"}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {showSkeleton ? (
+          <TableSkeleton rows={PAGE_SIZE} />
+        ) : live ? (
+          <TraceTable
+            rows={spans.map((span) => ({
+              traceId: span.traceId,
+              rootName: span.name,
+              service: span.service,
+              startNanos: span.tsNanos,
+              durationNs: span.durationNs,
+              spanCount: 1,
+              hasError: statusError(span.statusCode),
+            }))}
+            durationValues={liveDurationValues}
+            range={range}
+            sort={undefined}
+            onSort={() => undefined}
+            onOpen={(traceId) =>
+              void navigate({ to: "/traces/$traceId", params: { traceId } })
+            }
+          />
+        ) : tracesPage.items.length > 0 ? (
+          <>
+            <TraceTable
+              rows={tracesPage.items}
+              durationValues={durationValues}
+              range={range}
+              sort={sortParam}
+              onSort={setSortParam}
+              onOpen={(traceId) =>
+                void navigate({ to: "/traces/$traceId", params: { traceId } })
+              }
+            />
+            <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+              <span className="text-sm text-muted-foreground tabular-nums">
+                Showing {pageStart}-{pageEnd} of {formatCount(total)}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1 || pending}
+                  onClick={() => update({ page: page - 1 })}
+                >
+                  Previous
+                </Button>
+                {pages.map((item, index) =>
+                  item === "..." ? (
+                    <span
+                      key={`ellipsis-${index}`}
+                      className="px-2 text-sm text-muted-foreground"
+                    >
+                      ...
+                    </span>
+                  ) : (
+                    <Button
+                      key={item}
+                      type="button"
+                      variant={item === page ? "secondary" : "ghost"}
+                      size="sm"
+                      disabled={pending}
+                      onClick={() => update({ page: item })}
+                    >
+                      {item}
+                    </Button>
+                  )
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= totalPages || pending}
+                  onClick={() => update({ page: page + 1 })}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <EmptyState
+            icon={IconAffiliateFilled}
+            title={hasFilters ? "No matching traces" : "No traces yet"}
+            description={
+              hasFilters ? (
+                "Try a different search or clear filters."
+              ) : (
+                <span className="font-mono text-xs">
+                  OTLP/gRPC: localhost:4317 · OTLP/HTTP: localhost:4318
+                </span>
+              )
+            }
+          />
+        )}
+      </div>
     </div>
+  )
+}
+
+export function TraceTable({
+  rows,
+  durationValues,
+  range,
+  sort,
+  onSort,
+  onOpen,
+}: {
+  rows: TraceSummary[]
+  durationValues: number[]
+  range: ResolvedRange
+  sort: string | undefined
+  onSort: (next: string | undefined) => void
+  onOpen: (traceId: string) => void
+}) {
+  return (
+    <Table density="compact">
+      <TableHeader>
+        <TableRow>
+          <TableHead>Trace</TableHead>
+          <TableHead className="w-28 text-right">
+            <SortableHead sort={sort ?? ""} sortKey="spans" onSort={onSort}>
+              Spans
+            </SortableHead>
+          </TableHead>
+          <TableHead className="w-32 text-right">
+            <SortableHead sort={sort ?? ""} sortKey="duration" onSort={onSort}>
+              Duration
+            </SortableHead>
+          </TableHead>
+          <TableHead className="w-32 text-right">
+            <SortableHead sort={sort ?? ""} sortKey="when" onSort={onSort}>
+              When
+            </SortableHead>
+          </TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {rows.map((trace) => (
+          <TableRow
+            key={`${trace.traceId}-${trace.startNanos}`}
+            interactive
+            onClick={() => onOpen(trace.traceId)}
+            className={cn(
+              trace.hasError && "shadow-[inset_1px_0_0_0_var(--color-rose-500)]"
+            )}
+          >
+            <TableCell>
+              <div className="flex min-w-0 flex-col gap-1">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="truncate font-medium">{trace.rootName}</span>
+                  {trace.hasError ? <Badge variant="rose">errors</Badge> : null}
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Badge variant="outline">{trace.service || "unknown"}</Badge>
+                  <span className="font-mono">
+                    {trace.traceId.slice(0, 16)}
+                  </span>
+                </div>
+              </div>
+            </TableCell>
+            <TableCell className="text-right tabular-nums">
+              {trace.spanCount}
+            </TableCell>
+            <TableCell className="text-right">
+              <HeatCell
+                value={Number(trace.durationNs)}
+                values={durationValues}
+              >
+                {formatDurationNs(trace.durationNs)}
+              </HeatCell>
+            </TableCell>
+            <TableCell className="text-right text-muted-foreground tabular-nums">
+              <span title={formatTimeInRange(trace.startNanos, range)}>
+                <RelativeTime nanos={trace.startNanos} />
+              </span>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   )
 }
