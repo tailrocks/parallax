@@ -1,12 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { useEffect, useMemo, useState } from "react"
-import { Database, History, Play, Table2 } from "lucide-react"
-import { gqlString, graphql } from "@/lib/api"
-import { KpiCard } from "@/components/kpi-card"
-import { PageHeading } from "@/components/page-heading"
+import { useEffect, useMemo, useRef, useState } from "react"
+import {
+  IconDatabase,
+  IconHistory,
+  IconPlayerPlay,
+  IconTable,
+} from "@tabler/icons-react"
+
+import { PageHeader } from "@/components/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Kbd, KbdGroup } from "@/components/ui/kbd"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Table,
   TableBody,
@@ -15,6 +28,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { gqlString, graphql } from "@/lib/api"
+import { formatCount } from "@/lib/format"
 
 export const Route = createFileRoute("/sql")({ component: SqlPage })
 
@@ -24,20 +39,19 @@ interface SqlResult {
   rowCount: number
 }
 
-/** Cross-signal starters — the point of this page: one SQL surface over
- * logs, traces, metrics, and error events together. */
-const EXAMPLES: Array<{ label: string; sql: string }> = [
+export const EXAMPLES: Array<{ label: string; sql: string }> = [
   {
-    label: "Slow spans + their error logs (join traces ↔ logs)",
-    sql: `SELECT s.ts, s.service, s.name, s.duration_ns / 1000000 AS ms,
+    label: "Slow spans + error logs",
+    sql: `SELECT s."timestamp", s.service_name, s.span_name,
+       s.duration_nano / 1000000 AS ms,
        l.severity_text, l.body
-FROM otel_spans s
-JOIN otel_logs l ON l.trace_id = s.trace_id
-WHERE s.duration_ns > 10000000 AND l.severity_num >= 17
-ORDER BY s.ts DESC LIMIT 50`,
+FROM opentelemetry_traces s
+JOIN opentelemetry_logs l ON l.trace_id = s.trace_id
+WHERE s.duration_nano > 10000000 AND l.severity_number >= 17
+ORDER BY s."timestamp" DESC LIMIT 50`,
   },
   {
-    label: "Error events per service (last hour)",
+    label: "Error events per service",
     sql: `SELECT service, error_type, count(*) AS events
 FROM error_events
 WHERE ts >= now() - INTERVAL '1 hour'
@@ -45,28 +59,37 @@ GROUP BY service, error_type
 ORDER BY events DESC`,
   },
   {
-    label: "Log volume by severity per service",
-    sql: `SELECT service, severity_text, count(*) AS lines
-FROM otel_logs
-WHERE ts >= now() - INTERVAL '1 hour'
-GROUP BY service, severity_text
+    label: "Log volume by severity",
+    sql: `SELECT severity_text, count(*) AS lines
+FROM opentelemetry_logs
+WHERE "timestamp" >= now() - INTERVAL '1 hour'
+GROUP BY severity_text
 ORDER BY lines DESC`,
   },
   {
-    label: "Run cross-section: spans, logs, metric points for one run",
-    sql: `SELECT 'span' AS signal, count(*) AS rows FROM otel_spans WHERE run_id = 'jk-run-…'
-UNION ALL SELECT 'log', count(*) FROM otel_logs WHERE run_id = 'jk-run-…'
-UNION ALL SELECT 'metric point', count(*) FROM otel_metrics_points WHERE run_id = 'jk-run-…'`,
+    label: "Run cross-section",
+    sql: `SELECT 'span linked to run log' AS signal, count(DISTINCT s.span_id) AS rows
+FROM opentelemetry_traces s
+JOIN opentelemetry_logs l ON l.trace_id = s.trace_id
+WHERE l."parallax.run.id" = '<run-id>'
+UNION ALL
+SELECT 'log', count(*)
+FROM opentelemetry_logs
+WHERE "parallax.run.id" = '<run-id>'
+UNION ALL
+SELECT 'metric point', count(*)
+FROM run_metric_points
+WHERE run_id = '<run-id>'`,
   },
   {
-    label: "Slowest root spans (p-worst by name)",
-    sql: `SELECT name, service, count(*) AS calls,
-       max(duration_ns) / 1000000 AS worst_ms,
-       avg(duration_ns) / 1000000 AS avg_ms
-FROM otel_spans
+    label: "Slowest root spans",
+    sql: `SELECT span_name, service_name, count(*) AS calls,
+       max(duration_nano) / 1000000 AS worst_ms,
+       avg(duration_nano) / 1000000 AS avg_ms
+FROM opentelemetry_traces
 WHERE parent_span_id IS NULL OR parent_span_id = ''
-GROUP BY name, service
-ORDER BY worst_ms DESC LIMIT 25`,
+GROUP BY span_name, service_name
+ORDER BY max(duration_nano) DESC LIMIT 25`,
   },
 ]
 
@@ -74,8 +97,9 @@ const HISTORY_KEY = "parallax.sql.history"
 
 function loadHistory(): string[] {
   try {
-    const raw = localStorage.getItem(HISTORY_KEY)
-    const parsed: unknown = raw ? JSON.parse(raw) : []
+    const parsed: unknown = JSON.parse(
+      localStorage.getItem(HISTORY_KEY) ?? "[]"
+    )
     return Array.isArray(parsed) ? (parsed as string[]) : []
   } catch {
     return []
@@ -88,6 +112,7 @@ interface SchemaColumn {
 }
 
 function SqlPage() {
+  const editorRef = useRef<HTMLTextAreaElement>(null)
   const [statement, setStatement] = useState(EXAMPLES[0]?.sql ?? "")
   const [result, setResult] = useState<SqlResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -97,7 +122,6 @@ function SqlPage() {
   const [schema, setSchema] = useState<Map<string, SchemaColumn[]>>(new Map())
   const [openTable, setOpenTable] = useState<string | null>(null)
 
-  // Schema browser data: one information_schema read, grouped client-side.
   useEffect(() => {
     void graphql<{ sql: SqlResult }>(`
       {
@@ -127,6 +151,27 @@ function SqlPage() {
     })
   }, [])
 
+  function insertIdentifier(identifier: string) {
+    const textarea = editorRef.current
+    if (!textarea) {
+      setStatement((current) => `${current} ${identifier}`)
+      return
+    }
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    setStatement(
+      (current) =>
+        `${current.slice(0, start)}${identifier}${current.slice(end)}`
+    )
+    requestAnimationFrame(() => {
+      textarea.focus()
+      textarea.setSelectionRange(
+        start + identifier.length,
+        start + identifier.length
+      )
+    })
+  }
+
   async function run(sql: string) {
     setRunning(true)
     setError(null)
@@ -139,17 +184,13 @@ function SqlPage() {
       setElapsedMs(performance.now() - startedAt)
       setHistory((current) => {
         const next = [sql, ...current.filter((q) => q !== sql)].slice(0, 20)
-        try {
-          localStorage.setItem(HISTORY_KEY, JSON.stringify(next))
-        } catch {
-          // storage full/blocked: history just doesn't persist
-        }
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(next))
         return next
       })
-    } catch (e) {
+    } catch (err) {
       setResult(null)
       setElapsedMs(null)
-      setError(e instanceof Error ? e.message : String(e))
+      setError(err instanceof Error ? err.message : String(err))
     } finally {
       setRunning(false)
     }
@@ -173,194 +214,182 @@ function SqlPage() {
   )
 
   return (
-    <div className="space-y-4">
-      <PageHeading
-        eyebrow="SQL workbench"
-        title="Telemetry SQL"
-        description="Read-only GreptimeDB queries across logs, traces, metrics, and error events."
+    <div className="flex flex-col gap-4">
+      <PageHeader
+        icon={IconDatabase}
+        iconClassName="text-yellow-500"
+        title="SQL"
+        description="Read-only queries over telemetry tables."
       />
 
-      <div className="grid gap-3 md:grid-cols-4">
-        <KpiCard
-          icon={Database}
-          label="Tables"
-          value={schema.size.toLocaleString()}
-          detail="public schema"
-          tone="blue"
-        />
-        <KpiCard
-          icon={Table2}
-          label="Rows"
-          value={result ? result.rowCount.toLocaleString() : "-"}
-          detail="last result"
-          tone="orange"
-        />
-        <KpiCard
-          icon={History}
-          label="History"
-          value={history.length.toLocaleString()}
-          detail="local entries"
-          tone="violet"
-        />
-        <KpiCard
-          icon={Play}
-          label="Latency"
-          value={elapsedMs != null ? `${elapsedMs.toFixed(0)}ms` : "-"}
-          detail={running ? "query running" : "round trip"}
-          tone={running ? "green" : "fuchsia"}
-        />
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-[14rem_1fr]">
+      <div className="grid gap-4 lg:grid-cols-[16rem_1fr]">
         <Card className="h-fit">
           <CardHeader>
-            <CardTitle className="text-sm">Tables</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <IconTable />
+              Tables
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <ul className="space-y-1 text-xs">
-              {[...schema.keys()].map((table) => (
-                <li key={table}>
-                  <button
-                    type="button"
-                    className="font-mono underline-offset-4 hover:underline"
-                    onClick={() =>
-                      setOpenTable((current) =>
-                        current === table ? null : table
-                      )
-                    }
-                  >
-                    {table}
-                  </button>
-                  {openTable === table ? (
-                    <ul className="mt-1 ml-3 space-y-0.5">
-                      {(schema.get(table) ?? []).map((column) => (
-                        <li key={column.name}>
-                          <button
-                            type="button"
-                            className="font-mono text-muted-foreground hover:text-foreground"
-                            title={column.dataType}
-                            onClick={() =>
-                              setStatement(
-                                (current) => `${current} ${column.name}`
-                              )
-                            }
-                          >
-                            {column.name}{" "}
-                            <span className="opacity-60">
-                              {column.dataType.toLowerCase()}
-                            </span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
+          <CardContent>
+            <ScrollArea className="h-[520px]">
+              <ul className="flex flex-col gap-1 text-xs">
+                {[...schema.keys()].map((table) => (
+                  <li key={table}>
+                    <button
+                      type="button"
+                      className="font-mono hover:underline"
+                      onClick={() =>
+                        setOpenTable((current) =>
+                          current === table ? null : table
+                        )
+                      }
+                    >
+                      {table}
+                    </button>
+                    {openTable === table ? (
+                      <ul className="mt-1 ml-3 flex flex-col gap-0.5">
+                        {(schema.get(table) ?? []).map((column) => (
+                          <li key={column.name}>
+                            <button
+                              type="button"
+                              className="font-mono text-muted-foreground hover:text-foreground"
+                              onClick={() => insertIdentifier(column.name)}
+                            >
+                              {column.name}{" "}
+                              <span className="opacity-60">
+                                {column.dataType.toLowerCase()}
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </ScrollArea>
           </CardContent>
         </Card>
 
-        <div className="space-y-3">
-          <textarea
-            name="sql-statement"
-            value={statement}
-            onChange={(event) => setStatement(event.target.value)}
-            onKeyDown={(event) => {
-              if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-                event.preventDefault()
-                void run(statement)
-              }
-            }}
-            rows={8}
-            spellCheck={false}
-            className="min-h-52 w-full rounded-md border border-border/80 bg-background/70 p-3 font-mono text-xs shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          />
-          <div className="flex flex-wrap items-center gap-2">
-            <Button onClick={() => void run(statement)} disabled={running}>
-              Run query
-            </Button>
-            <span className="text-xs text-muted-foreground">⌘⏎ runs</span>
-            <select
-              name="sql-examples"
-              className="rounded-md border bg-transparent px-2 py-1.5 text-xs"
-              value=""
-              onChange={(event) => {
-                const example = EXAMPLES[Number(event.target.value)]
-                if (example) setStatement(example.sql)
-              }}
-            >
-              <option value="" disabled>
-                Examples (cross-signal)…
-              </option>
-              {EXAMPLES.map((example, index) => (
-                <option key={example.label} value={index}>
-                  {example.label}
-                </option>
-              ))}
-            </select>
-            {history.length > 0 ? (
-              <select
-                name="sql-history"
-                className="rounded-md border bg-transparent px-2 py-1.5 text-xs"
-                value=""
-                onChange={(event) => {
-                  const entry = history[Number(event.target.value)]
-                  if (entry) setStatement(entry)
+        <div className="flex flex-col gap-3">
+          <Card>
+            <CardHeader className="flex-row items-center justify-between">
+              <CardTitle className="text-sm">Editor</CardTitle>
+              <KbdGroup>
+                <Kbd>⌘</Kbd>
+                <Kbd>Enter</Kbd>
+              </KbdGroup>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              <textarea
+                ref={editorRef}
+                name="sql-statement"
+                value={statement}
+                onChange={(event) => setStatement(event.target.value)}
+                onKeyDown={(event) => {
+                  if (
+                    (event.metaKey || event.ctrlKey) &&
+                    event.key === "Enter"
+                  ) {
+                    event.preventDefault()
+                    void run(statement)
+                  }
                 }}
-              >
-                <option value="" disabled>
-                  History…
-                </option>
-                {history.map((entry, index) => (
-                  <option key={`${index}-${entry.slice(0, 20)}`} value={index}>
-                    {entry.replace(/\s+/g, " ").slice(0, 72)}
-                  </option>
-                ))}
-              </select>
-            ) : null}
-          </div>
-
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+                rows={9}
+                spellCheck={false}
+                className="min-h-56 w-full rounded-md border bg-background p-3 font-mono text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <Button onClick={() => void run(statement)} disabled={running}>
+                  <IconPlayerPlay />
+                  Run query
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger render={<Button variant="outline" />}>
+                    Examples
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuGroup>
+                      {EXAMPLES.map((example) => (
+                        <DropdownMenuItem
+                          key={example.label}
+                          onClick={() => setStatement(example.sql)}
+                        >
+                          {example.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                {history.length > 0 ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger render={<Button variant="outline" />}>
+                      <IconHistory />
+                      History
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuGroup>
+                        {history.map((entry, index) => (
+                          <DropdownMenuItem
+                            key={`${index}-${entry.slice(0, 20)}`}
+                            onClick={() => setStatement(entry)}
+                          >
+                            {entry.replace(/\s+/g, " ").slice(0, 72)}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : null}
+                {elapsedMs != null ? (
+                  <span className="text-xs text-muted-foreground">
+                    {elapsedMs.toFixed(0)} ms
+                  </span>
+                ) : null}
+              </div>
+              {error ? (
+                <p className="text-sm text-destructive">{error}</p>
+              ) : null}
+            </CardContent>
+          </Card>
 
           {result ? (
             <Card>
               <CardHeader>
-                <CardTitle className="flex flex-wrap items-center gap-2 text-sm">
+                <CardTitle className="flex items-center gap-2 text-sm">
                   Query result
-                  <Badge variant="outline">{result.rowCount} row(s)</Badge>
-                  {elapsedMs != null ? (
-                    <span className="text-xs font-normal text-muted-foreground">
-                      {elapsedMs.toFixed(0)} ms round-trip
-                    </span>
-                  ) : null}
+                  <Badge variant="outline">
+                    {formatCount(result.rowCount)} rows
+                  </Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="overflow-x-auto">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground"></div>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      {result.columns.map((column) => (
-                        <TableHead key={column}>{column}</TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {parsedRows.map((cells, rowIndex) => (
-                      <TableRow key={rowIndex}>
-                        {cells.map((cell, cellIndex) => (
-                          <TableCell
-                            key={cellIndex}
-                            className="max-w-md truncate font-mono text-xs"
-                            title={cell}
-                          >
-                            {cell}
-                          </TableCell>
+              <CardContent>
+                <ScrollArea className="max-h-[520px] overflow-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-card">
+                      <TableRow>
+                        {result.columns.map((column) => (
+                          <TableHead key={column}>{column}</TableHead>
                         ))}
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {parsedRows.map((cells, rowIndex) => (
+                        <TableRow key={rowIndex}>
+                          {cells.map((cell, cellIndex) => (
+                            <TableCell
+                              key={cellIndex}
+                              className="max-w-md truncate font-mono text-xs"
+                              title={cell}
+                            >
+                              {cell}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
               </CardContent>
             </Card>
           ) : null}
