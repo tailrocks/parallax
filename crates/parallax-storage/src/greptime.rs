@@ -678,7 +678,10 @@ impl TelemetryStore for GreptimeStore {
     async fn spans_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<SpanRow>> {
         self.select_spans(
             &format!(
-                r#""resource_attributes.parallax.run.id" = '{}'"#,
+                r#""trace_id" IN (
+                    SELECT DISTINCT "trace_id" FROM opentelemetry_logs
+                    WHERE "parallax.run.id" = '{}'
+                  )"#,
                 escape(run_id)
             ),
             r#" ORDER BY "timestamp" ASC"#,
@@ -1117,18 +1120,20 @@ impl TelemetryStore for GreptimeStore {
     ) -> anyhow::Result<Vec<crate::adapter::ObservedRun>> {
         let mut runs: std::collections::HashMap<String, crate::adapter::ObservedRun> =
             std::collections::HashMap::new();
-        // native: traces flatten run id to `resource_attributes.parallax.run.id`
-        // with a `service_name` column; logs promote it to `parallax.run.id`
-        // with service in the resource JSON.
+        // Native logs promote run id to `parallax.run.id`. Some GreptimeDB
+        // trace schemas do not flatten the run resource attribute to a column,
+        // so span counts derive from traces linked through run-scoped logs.
         let sources = [
             (
-                r#"SELECT "resource_attributes.parallax.run.id" AS "run_id",
-                          CAST(MIN("timestamp") AS BIGINT) AS "first_ts",
-                          CAST(MAX("timestamp") AS BIGINT) AS "last_ts",
-                          COUNT(*) AS "n", MAX("service_name") AS "svc"
-                   FROM opentelemetry_traces
-                   WHERE "resource_attributes.parallax.run.id" IS NOT NULL
-                     AND "resource_attributes.parallax.run.id" != ''
+                r#"SELECT l."parallax.run.id" AS "run_id",
+                          CAST(MIN(s."timestamp") AS BIGINT) AS "first_ts",
+                          CAST(MAX(s."timestamp") AS BIGINT) AS "last_ts",
+                          COUNT(DISTINCT s."span_id") AS "n",
+                          MAX(s."service_name") AS "svc"
+                   FROM opentelemetry_logs l
+                   JOIN opentelemetry_traces s ON s."trace_id" = l."trace_id"
+                   WHERE l."parallax.run.id" IS NOT NULL
+                     AND l."parallax.run.id" != ''
                    GROUP BY "run_id" ORDER BY "last_ts" DESC LIMIT "#,
                 true,
             ),
