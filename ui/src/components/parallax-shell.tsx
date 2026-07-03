@@ -17,9 +17,13 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { graphql } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 function isActive(pathname: string, href: string) {
@@ -46,7 +50,18 @@ function BrandMark() {
   )
 }
 
-function NavGroup({ items }: { items: readonly NavItem[] }) {
+interface DashboardNavItem {
+  id: string
+  name: string
+}
+
+function NavGroup({
+  items,
+  dashboards = [],
+}: {
+  items: readonly NavItem[]
+  dashboards?: DashboardNavItem[]
+}) {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
 
   return (
@@ -69,6 +84,32 @@ function NavGroup({ items }: { items: readonly NavItem[] }) {
               />
               <span>{item.label}</span>
             </SidebarMenuButton>
+            {item.href === "/dashboards" && dashboards.length > 0 ? (
+              <SidebarMenuSub>
+                {dashboards.slice(0, 7).map((dashboard) => (
+                  <SidebarMenuSubItem key={dashboard.id}>
+                    <SidebarMenuSubButton
+                      render={
+                        <Link
+                          to="/dashboards/$dashboardId"
+                          params={{ dashboardId: dashboard.id }}
+                        />
+                      }
+                      isActive={pathname === `/dashboards/${dashboard.id}`}
+                    >
+                      <span className="truncate">{dashboard.name}</span>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                ))}
+                {dashboards.length > 7 ? (
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton render={<Link to="/dashboards" />}>
+                      All dashboards
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                ) : null}
+              </SidebarMenuSub>
+            ) : null}
           </SidebarMenuItem>
         )
       })}
@@ -116,6 +157,25 @@ function StatusPill() {
 }
 
 export function ParallaxShell({ children }: { children: React.ReactNode }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
+  const [dashboards, setDashboards] = useState<DashboardNavItem[]>([])
+
+  useEffect(() => {
+    if (!pathname.startsWith("/dashboards")) return
+    const controller = new AbortController()
+    void graphql<{ dashboards: DashboardNavItem[] }>(`
+      {
+        dashboards {
+          id
+          name
+        }
+      }
+    `)
+      .then((data) => setDashboards(data.dashboards))
+      .catch(() => {})
+    return () => controller.abort()
+  }, [pathname])
+
   return (
     <SidebarProvider className="relative h-svh min-h-0 overflow-hidden">
       <Sidebar variant="inset" collapsible="icon">
@@ -138,7 +198,7 @@ export function ParallaxShell({ children }: { children: React.ReactNode }) {
           <SidebarGroup>
             <SidebarGroupLabel>Workspace</SidebarGroupLabel>
             <SidebarGroupContent>
-              <NavGroup items={workspaceNav} />
+              <NavGroup items={workspaceNav} dashboards={dashboards} />
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>

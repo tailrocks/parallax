@@ -1,11 +1,18 @@
-import { useState } from "react"
 import {
   createFileRoute,
   notFound,
   useNavigate,
   useRouter,
 } from "@tanstack/react-router"
-import { BarChart3, Gauge, Grid2X2, Pencil, Plus, Trash2 } from "lucide-react"
+import { useState } from "react"
+import {
+  IconArrowDown,
+  IconArrowUp,
+  IconLayoutDashboard,
+  IconPencil,
+  IconPlus,
+  IconTrash,
+} from "@tabler/icons-react"
 import {
   Area,
   AreaChart,
@@ -17,9 +24,12 @@ import {
   XAxis,
   YAxis,
 } from "recharts"
-import { graphql, gqlString } from "@/lib/api"
-import { KpiCard } from "@/components/kpi-card"
-import { PageHeading } from "@/components/page-heading"
+
+import { EmptyState } from "@/components/console/empty-state"
+import { RangePicker } from "@/components/console/range-picker"
+import { ChartLegend } from "@/components/console/trend"
+import { navItem } from "@/components/nav"
+import { PageHeader } from "@/components/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -29,7 +39,17 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
-import { WidgetPicker, emptyWidget } from "./dashboards.index"
+import { gqlString, graphql } from "@/lib/api"
+import { formatCount, formatTimeInRange } from "@/lib/format"
+import { resolveRangeSearch, rangeSearchSchema } from "@/lib/range"
+import type { ResolvedRange } from "@/lib/range"
+import { cn } from "@/lib/utils"
+import {
+  WidgetPicker,
+  emptyWidget,
+  parseLayout,
+  serializeWidgets,
+} from "./dashboards.index"
 import type { Widget } from "./dashboards.index"
 
 interface SeriesPoint {
@@ -42,7 +62,6 @@ interface Series {
   points: SeriesPoint[]
 }
 
-/** Recharts rows: one row per timestamp, one column per group. */
 interface WidgetData {
   widget: Widget
   groups: string[]
@@ -52,7 +71,11 @@ interface WidgetData {
 const MAX_GROUPS = 5
 
 export const Route = createFileRoute("/dashboards/$dashboardId")({
-  loader: async ({ params }) => {
+  validateSearch: (search: Record<string, unknown>) =>
+    rangeSearchSchema.parse(search),
+  loaderDeps: ({ search }) => search,
+  loader: async ({ params, deps }) => {
+    const range = resolveRangeSearch(deps)
     const { dashboard, metricNames } = await graphql<{
       dashboard: { id: string; name: string; layout: string } | null
       metricNames: string[]
@@ -61,23 +84,19 @@ export const Route = createFileRoute("/dashboards/$dashboardId")({
          metricNames }`
     )
     if (!dashboard) throw notFound()
-
     const widgets = parseLayout(dashboard.layout)
-    const nowNanos = BigInt(Date.now()) * 1_000_000n
-    const fromNanos = nowNanos - 3_600n * 1_000_000_000n // last hour
-
-    const data: WidgetData[] = await Promise.all(
+    const data = await Promise.all(
       widgets.map(async (widget) => {
         const { metricSeries } = await graphql<{ metricSeries: Series[] }>(
           `{ metricSeries(name: "${gqlString(widget.metric)}",
-               fromNanos: "${fromNanos}", toNanos: "${nowNanos}",
+               fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}",
                agg: "${gqlString(widget.agg)}"${
                  widget.groupBy
                    ? `, groupBy: "${gqlString(widget.groupBy)}"`
                    : ""
                }) { groupValue points { tsNanos value } } }`
         )
-        return toWidgetData(widget, metricSeries)
+        return toWidgetData(widget, metricSeries, range)
       })
     )
     return {
@@ -86,12 +105,17 @@ export const Route = createFileRoute("/dashboards/$dashboardId")({
       widgets,
       data,
       metricNames,
+      range,
     }
   },
   component: DashboardPage,
 })
 
-function toWidgetData(widget: Widget, series: Series[]): WidgetData {
+function toWidgetData(
+  widget: Widget,
+  series: Series[],
+  range: ResolvedRange
+): WidgetData {
   const kept = series.slice(0, MAX_GROUPS)
   const groups = kept.map(
     (s, i) => s.groupValue ?? (i === 0 ? "value" : `#${i}`)
@@ -101,8 +125,9 @@ function toWidgetData(widget: Widget, series: Series[]): WidgetData {
     const group = groups[index]
     if (!group) return
     for (const point of s.points) {
-      const time = new Date(Number(point.tsNanos) / 1e6).toLocaleTimeString()
-      const row = byTime.get(point.tsNanos) ?? { time }
+      const row = byTime.get(point.tsNanos) ?? {
+        time: formatTimeInRange(point.tsNanos, range),
+      }
       row[group] = point.value
       byTime.set(point.tsNanos, row)
     }
@@ -113,19 +138,153 @@ function toWidgetData(widget: Widget, series: Series[]): WidgetData {
   return { widget, groups, rows }
 }
 
-function parseLayout(layout: string): Widget[] {
-  try {
-    const parsed: unknown = JSON.parse(layout)
-    if (!Array.isArray(parsed)) return []
-    return parsed.filter(
-      (w): w is Widget =>
-        typeof w === "object" &&
-        w !== null &&
-        typeof (w as Widget).metric === "string"
+function DashboardPage() {
+  const { id, name, widgets, data, metricNames, range } = Route.useLoaderData()
+  const router = useRouter()
+  const navigate = useNavigate({ from: Route.fullPath })
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState<Widget[]>(widgets)
+  const [addition, setAddition] = useState<Widget>(emptyWidget())
+  const dashboardsBack = navItem("/dashboards")!
+
+  async function save(layout: Widget[]) {
+    await graphql(
+      `mutation { dashboardSave(name: "${gqlString(name)}",
+         layout: "${gqlString(serializeWidgets(layout))}",
+         id: "${gqlString(id)}") { id } }`
     )
-  } catch {
-    return []
+    setEditing(false)
+    await router.invalidate()
   }
+
+  async function removeDashboard() {
+    await graphql(`mutation { dashboardDelete(id: "${gqlString(id)}") }`)
+    await router.navigate({ to: "/dashboards" })
+  }
+
+  function move(index: number, delta: -1 | 1) {
+    const next = [...draft]
+    const target = index + delta
+    if (target < 0 || target >= next.length) return
+    const current = next[index]
+    const other = next[target]
+    if (!current || !other) return
+    ;[next[index], next[target]] = [other, current]
+    setDraft(next)
+  }
+
+  const shown = editing ? draft : widgets
+  const shownData = shown.map(
+    (widget) =>
+      data.find((item) => item.widget === widget) ?? {
+        widget,
+        groups: [],
+        rows: [],
+      }
+  )
+
+  return (
+    <div className="flex flex-col gap-4">
+      <PageHeader
+        back={dashboardsBack}
+        title={name}
+        actions={
+          <>
+            <RangePicker
+              value={range}
+              onChange={(next) => navigate({ search: { range: next.key } })}
+            />
+            {editing ? (
+              <>
+                <Button size="sm" onClick={() => void save(draft)}>
+                  Save
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setDraft(widgets)
+                    setEditing(false)
+                  }}
+                >
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setDraft(widgets)
+                    setEditing(true)
+                  }}
+                >
+                  <IconPencil />
+                  Edit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost-destructive"
+                  onClick={removeDashboard}
+                >
+                  <IconTrash />
+                  Delete
+                </Button>
+              </>
+            )}
+          </>
+        }
+      />
+
+      {editing ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Add widget</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap items-end gap-2">
+            <WidgetPicker
+              metricNames={metricNames}
+              value={addition}
+              onChange={setAddition}
+            />
+            <Button
+              variant="outline"
+              disabled={!addition.metric}
+              onClick={() => {
+                setDraft([...draft, addition])
+                setAddition(emptyWidget())
+              }}
+            >
+              <IconPlus />
+              Add
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        {shownData.length === 0 ? (
+          <EmptyState
+            className="lg:col-span-2"
+            icon={IconLayoutDashboard}
+            title="No widgets yet"
+            description="Enter edit mode and add a metric your app already sends."
+          />
+        ) : (
+          shownData.map((item, index) => (
+            <WidgetChart
+              key={`${item.widget.metric}-${index}`}
+              data={item}
+              editing={editing}
+              onRemove={() => setDraft(draft.filter((_, i) => i !== index))}
+              onMove={(delta) => move(index, delta)}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  )
 }
 
 function WidgetChart({
@@ -145,10 +304,7 @@ function WidgetChart({
       { label: group, color: `var(--chart-${index + 1})` },
     ])
   ) satisfies ChartConfig
-  const common = {
-    data: data.rows,
-    margin: { left: 8, right: 8, top: 8 },
-  }
+  const common = { data: data.rows, margin: { left: 8, right: 8, top: 8 } }
   const axes = (
     <>
       <CartesianGrid vertical={false} />
@@ -159,46 +315,47 @@ function WidgetChart({
   )
   const wide = (data.widget.w ?? 1) >= 2
   return (
-    <Card className={wide ? "lg:col-span-2" : ""}>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between gap-2 text-sm">
-          <span className="truncate">
-            {data.widget.title || data.widget.metric}
-            {data.widget.groupBy ? (
-              <span className="ml-1 font-normal text-muted-foreground">
-                by {data.widget.groupBy}
-              </span>
-            ) : null}
-          </span>
-          {editing ? (
-            <span className="flex shrink-0 gap-1">
-              <Button variant="ghost" size="sm" onClick={() => onMove(-1)}>
-                Up
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => onMove(1)}>
-                Down
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-destructive"
-                onClick={onRemove}
-              >
-                Remove
-              </Button>
-            </span>
-          ) : null}
+    <Card className={cn("min-h-[260px]", wide && "lg:col-span-2")}>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle className="truncate text-sm">
+          {data.widget.title || data.widget.metric}
         </CardTitle>
+        {editing ? (
+          <span className="flex gap-1">
+            <Button variant="ghost" size="icon-xs" onClick={() => onMove(-1)}>
+              <IconArrowUp />
+            </Button>
+            <Button variant="ghost" size="icon-xs" onClick={() => onMove(1)}>
+              <IconArrowDown />
+            </Button>
+            <Button
+              variant="ghost-destructive"
+              size="icon-xs"
+              onClick={onRemove}
+            >
+              <IconTrash />
+            </Button>
+          </span>
+        ) : null}
       </CardHeader>
       <CardContent>
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <Badge variant="outline">{data.widget.agg}</Badge>
           <Badge variant="secondary">{data.widget.chart}</Badge>
           <span className="text-xs text-muted-foreground">
-            {data.rows.length.toLocaleString()} point(s)
+            {formatCount(data.rows.length)} points
           </span>
+          {data.groups.length > 1 ? (
+            <ChartLegend
+              items={data.groups.map((group, index) => ({
+                key: group,
+                label: group,
+                color: `var(--chart-${index + 1})`,
+              }))}
+            />
+          ) : null}
         </div>
-        <ChartContainer config={config} className="h-56 w-full">
+        <ChartContainer config={config} className="h-[220px] w-full">
           {data.widget.chart === "bar" ? (
             <BarChart {...common}>
               {axes}
@@ -238,205 +395,7 @@ function WidgetChart({
             </LineChart>
           )}
         </ChartContainer>
-        {data.rows.length === 0 ? (
-          <p className="mt-2 text-xs text-muted-foreground">
-            No points in the last hour for {data.widget.metric}.
-          </p>
-        ) : null}
       </CardContent>
     </Card>
-  )
-}
-
-function DashboardPage() {
-  const { id, name, widgets, data, metricNames } = Route.useLoaderData()
-  const router = useRouter()
-  const navigate = useNavigate()
-  const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState<Widget[]>(widgets)
-  const [addition, setAddition] = useState<Widget>(emptyWidget())
-  const [error, setError] = useState<string | null>(null)
-
-  async function save(layout: Widget[]) {
-    setError(null)
-    try {
-      await graphql(
-        `mutation { dashboardSave(name: "${gqlString(name)}",
-           layout: "${gqlString(JSON.stringify(layout))}",
-           id: "${gqlString(id)}") { id } }`
-      )
-      setEditing(false)
-      await router.invalidate()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
-    }
-  }
-
-  async function removeDashboard() {
-    setError(null)
-    try {
-      await graphql(`mutation { dashboardDelete(id: "${gqlString(id)}") }`)
-      await navigate({ to: "/dashboards" })
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
-    }
-  }
-
-  function move(index: number, delta: -1 | 1) {
-    const next = [...draft]
-    const target = index + delta
-    if (target < 0 || target >= next.length) return
-    const current = next[index]
-    const other = next[target]
-    if (!current || !other) return
-    ;[next[index], next[target]] = [other, current]
-    setDraft(next)
-  }
-
-  const shown = editing ? draft : widgets
-  const shownData = shown.map(
-    (widget) =>
-      data.find((d) => d.widget === widget) ?? { widget, groups: [], rows: [] }
-  )
-  const pointCount = shownData.reduce(
-    (count, item) => count + item.rows.length,
-    0
-  )
-  const activeWidgetCount = shownData.filter(
-    (item) => item.rows.length > 0
-  ).length
-
-  return (
-    <div className="flex flex-col gap-4">
-      <PageHeading
-        eyebrow="Dashboard"
-        title={name}
-        description="Last-hour metric view composed from saved Parallax widgets."
-        action={
-          <span className="flex gap-2">
-            {editing ? (
-              <>
-                <Button size="sm" onClick={() => save(draft)}>
-                  Save
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setDraft(widgets)
-                    setEditing(false)
-                  }}
-                >
-                  Cancel
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setDraft(widgets)
-                    setEditing(true)
-                  }}
-                >
-                  <Pencil data-icon="inline-start" />
-                  Edit
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="text-destructive"
-                  onClick={removeDashboard}
-                >
-                  <Trash2 data-icon="inline-start" />
-                  Delete
-                </Button>
-              </>
-            )}
-          </span>
-        }
-      />
-
-      <div className="grid gap-3 md:grid-cols-4">
-        <KpiCard
-          icon={Grid2X2}
-          label="Widgets"
-          value={shown.length.toLocaleString()}
-          detail={editing ? "draft layout" : "saved layout"}
-          tone="blue"
-        />
-        <KpiCard
-          icon={Gauge}
-          label="Active"
-          value={activeWidgetCount.toLocaleString()}
-          detail="with points"
-          tone="green"
-        />
-        <KpiCard
-          icon={BarChart3}
-          label="Points"
-          value={pointCount.toLocaleString()}
-          detail="last hour"
-          tone="orange"
-        />
-        <KpiCard
-          icon={Pencil}
-          label="Mode"
-          value={editing ? "Edit" : "View"}
-          detail={editing ? "unsaved draft" : "live read"}
-          tone="violet"
-        />
-      </div>
-
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-
-      {editing ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <Plus />
-              Add widget
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-wrap items-end gap-2">
-            <WidgetPicker
-              metricNames={metricNames}
-              value={addition}
-              onChange={setAddition}
-            />
-            <Button
-              variant="outline"
-              disabled={!addition.metric}
-              onClick={() => {
-                setDraft([...draft, addition])
-                setAddition(emptyWidget())
-              }}
-            >
-              Add
-            </Button>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        {shownData.length === 0 ? (
-          <div className="parallax-panel p-6 text-sm text-muted-foreground lg:col-span-2">
-            No widgets yet. Enter edit mode and add a metric your app already
-            sends.
-          </div>
-        ) : (
-          shownData.map((d, index) => (
-            <WidgetChart
-              key={`${d.widget.metric}-${index}`}
-              data={d}
-              editing={editing}
-              onRemove={() => setDraft(draft.filter((_, i) => i !== index))}
-              onMove={(delta) => move(index, delta)}
-            />
-          ))
-        )}
-      </div>
-    </div>
   )
 }
