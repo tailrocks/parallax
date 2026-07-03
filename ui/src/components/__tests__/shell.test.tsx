@@ -58,13 +58,15 @@ describe("shell primitives", () => {
           icon: item.icon,
           ...(item.iconClassName ? { iconClassName: item.iconClassName } : {}),
         }}
-      />,
+      />
     )
 
     expect(await screen.findByRole("link", { name: item.label })).toBeTruthy()
-    expect(screen.getByRole("heading", { name: /issuesdetail/i }).className).toContain(
-      "text-base",
-    )
+    expect(
+      screen.getByRole("heading", {
+        name: new RegExp(`${item.label}detail`, "i"),
+      }).className
+    ).toContain("text-base")
   })
 
   it("defines icons for every nav item", () => {
@@ -79,7 +81,7 @@ describe("shell primitives", () => {
     renderWithRouter(
       <ParallaxShell>
         <RouteErrorPanel error={new Error("offline")} reset={() => {}} />
-      </ParallaxShell>,
+      </ParallaxShell>
     )
 
     expect(await screen.findByLabelText("Parallax home")).toBeTruthy()

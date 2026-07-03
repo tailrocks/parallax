@@ -8,6 +8,8 @@ import {
   IconBugFilled,
   IconDatabase,
   IconDatabaseFilled,
+  IconHome,
+  IconHomeFilled,
   IconLayoutDashboard,
   IconLayoutDashboardFilled,
   IconServer,
@@ -23,6 +25,14 @@ export type NavItem = {
 }
 
 export const primaryNav: NavItem[] = [
+  {
+    href: "/",
+    label: "Overview",
+    icon: IconHome,
+    activeIcon: IconHomeFilled,
+    iconClassName:
+      "bg-sky-100 dark:bg-sky-950 rounded-xl p-0.5 corner-squircle text-sky-500 shadow-[inset_0_0_0_1px_rgba(14,165,233,0.14),0_2px_6px_-2px_rgba(14,165,233,0.25)] dark:shadow-(--custom-shadow)",
+  },
   {
     href: "/issues",
     label: "Issues",

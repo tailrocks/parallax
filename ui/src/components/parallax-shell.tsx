@@ -23,13 +23,14 @@ import {
 import { cn } from "@/lib/utils"
 
 function isActive(pathname: string, href: string) {
+  if (href === "/") return pathname === "/"
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
 function BrandMark() {
   return (
     <Link
-      to="/issues"
+      to="/"
       aria-label="Parallax home"
       className="flex min-w-0 items-center gap-2 rounded-full px-1.5 text-sidebar-foreground transition-opacity hover:opacity-80"
     >
@@ -103,7 +104,7 @@ function StatusPill() {
       <span
         className={cn(
           "size-1.5 rounded-full",
-          healthy ? "bg-green-500" : "bg-rose-500",
+          healthy ? "bg-green-500" : "bg-rose-500"
         )}
       />
       <span className="font-medium text-foreground">
