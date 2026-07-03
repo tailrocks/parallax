@@ -41,7 +41,7 @@ source of truth. API extensions are in scope (plans 009-010).
 | 011 | Traces list redesign | P1 | M | 005-008, 010 | DONE |
 | 012 | Trace waterfall redesign | P1 | L | 005-008, 010 | DONE |
 | 013 | Overview landing page | P1 | M | 005-008, 009 | DONE |
-| 014 | Logs redesign (brushable histogram) | P1 | M | 005-008 | TODO |
+| 014 | Logs redesign (brushable histogram) | P1 | M | 005-008 | DONE |
 | 015 | Services index + detail (RED) | P1 | M/L | 005-008, 009 | TODO |
 | 016 | Issues redesign (list + detail) | P1 | L | 005-008 | TODO |
 | 017 | Runs redesign | P2 | M | 005-008 | TODO |

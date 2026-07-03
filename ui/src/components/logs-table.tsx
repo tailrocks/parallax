@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router"
 import { useMemo, useState } from "react"
+
+import { CopyButton } from "@/components/console/copy-button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import {
@@ -17,6 +19,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { formatDateTime, formatTimeInRange } from "@/lib/format"
+import { resolvePreset } from "@/lib/range"
+import type { ResolvedRange } from "@/lib/range"
+import { cn } from "@/lib/utils"
 
 /** One log row, with every field the doc viewer needs. Shared by the Logs page
  * and the run detail page so both render logs identically. */
@@ -34,20 +40,37 @@ export interface LogDoc {
   resource: string
 }
 
+export const OPTIONAL_LOG_COLUMNS = ["service", "trace", "scope"] as const
+export type OptionalLogColumn = (typeof OPTIONAL_LOG_COLUMNS)[number]
+
+export function parseLogColumns(
+  value: string | undefined
+): OptionalLogColumn[] {
+  if (!value) return ["service", "trace"]
+  const requested = value
+    .split(",")
+    .map((column) => column.trim())
+    .filter((column): column is OptionalLogColumn =>
+      OPTIONAL_LOG_COLUMNS.includes(column as OptionalLogColumn)
+    )
+  return Array.from(new Set(requested))
+}
+
+export function serializeLogColumns(columns: readonly OptionalLogColumn[]) {
+  return columns.length > 0 ? columns.join(",") : undefined
+}
+
 export function severityVariant(
   num: number
-): "destructive" | "secondary" | "outline" {
-  if (num >= 17) return "destructive"
-  if (num >= 13) return "secondary"
+): "rose" | "amber" | "secondary" | "outline" {
+  if (num >= 17) return "rose"
+  if (num >= 13) return "amber"
+  if (num >= 9) return "secondary"
   return "outline"
 }
 
-export function formatTime(tsNanos: string): string {
-  return new Date(Number(BigInt(tsNanos) / 1_000_000n)).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  })
+export function severityLabel(log: LogDoc) {
+  return log.severityText || (log.severityNum >= 17 ? "ERROR" : "LOG")
 }
 
 /** Flatten one log into ordered field/value rows for the doc viewer. */
@@ -57,7 +80,7 @@ function docFields(log: LogDoc): Array<[string, string]> {
       "@timestamp",
       new Date(Number(BigInt(log.tsNanos) / 1_000_000n)).toISOString(),
     ],
-    ["severity", `${log.severityText} (${log.severityNum})`],
+    ["severity", `${severityLabel(log)} (${log.severityNum})`],
     ["service.name", log.service],
     ["body", log.body],
   ]
@@ -86,12 +109,48 @@ function docFields(log: LogDoc): Array<[string, string]> {
   return rows
 }
 
-/** The shared logs table: a Time/Severity/Service/Body grid whose rows open a
- * searchable field-level document viewer. Render order is the caller's — pass
- * rows already sorted (newest first on every surface). */
-export function LogsTable({ logs }: { logs: LogDoc[] }) {
+function rawDocument(log: LogDoc) {
+  return JSON.stringify(log, null, 2)
+}
+
+function SeverityBadge({ log }: { log: LogDoc }) {
+  const fatal =
+    log.severityNum >= 21 || severityLabel(log).toUpperCase() === "FATAL"
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span
+        className={cn(
+          "size-1.5 rounded-full",
+          log.severityNum >= 17
+            ? "bg-rose-500"
+            : log.severityNum >= 13
+              ? "bg-amber-500"
+              : "bg-muted-foreground/40"
+        )}
+      />
+      <Badge
+        variant={severityVariant(log.severityNum)}
+        className={fatal ? "font-bold" : undefined}
+      >
+        {severityLabel(log)}
+      </Badge>
+    </span>
+  )
+}
+
+/** The shared logs table: compact rows whose click opens a field-level document viewer. */
+export function LogsTable({
+  logs,
+  range = resolvePreset("24h"),
+  columns = ["service", "trace"],
+}: {
+  logs: LogDoc[]
+  range?: ResolvedRange
+  columns?: OptionalLogColumn[]
+}) {
   const [selected, setSelected] = useState<LogDoc | null>(null)
   const [fieldSearch, setFieldSearch] = useState("")
+  const visible = new Set(columns)
 
   const selectedFields = useMemo(() => {
     if (!selected) return []
@@ -110,10 +169,18 @@ export function LogsTable({ logs }: { logs: LogDoc[] }) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-28">Time</TableHead>
-            <TableHead className="w-24">Severity</TableHead>
-            <TableHead className="w-36">Service</TableHead>
+            <TableHead className="w-36">Time</TableHead>
+            <TableHead className="w-28">Severity</TableHead>
+            {visible.has("service") ? (
+              <TableHead className="w-36">Service</TableHead>
+            ) : null}
             <TableHead>Body</TableHead>
+            {visible.has("trace") ? (
+              <TableHead className="w-28">Trace</TableHead>
+            ) : null}
+            {visible.has("scope") ? (
+              <TableHead className="w-36">Scope</TableHead>
+            ) : null}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -126,18 +193,41 @@ export function LogsTable({ logs }: { logs: LogDoc[] }) {
                 setFieldSearch("")
               }}
             >
-              <TableCell className="font-mono text-xs">
-                {formatTime(log.tsNanos)}
+              <TableCell className="font-mono text-xs whitespace-nowrap">
+                {formatTimeInRange(log.tsNanos, range)}
               </TableCell>
               <TableCell>
-                <Badge variant={severityVariant(log.severityNum)}>
-                  {log.severityText || "—"}
-                </Badge>
+                <SeverityBadge log={log} />
               </TableCell>
-              <TableCell className="truncate">{log.service}</TableCell>
+              {visible.has("service") ? (
+                <TableCell className="max-w-36 truncate text-muted-foreground">
+                  {log.service}
+                </TableCell>
+              ) : null}
               <TableCell className="max-w-xl truncate font-mono text-xs">
                 {log.body}
               </TableCell>
+              {visible.has("trace") ? (
+                <TableCell>
+                  {log.traceId ? (
+                    <Link
+                      to="/traces/$traceId"
+                      params={{ traceId: log.traceId }}
+                      onClick={(event) => event.stopPropagation()}
+                      className="rounded-full border border-border/70 px-2 py-1 font-mono text-[11px] text-muted-foreground hover:text-foreground"
+                    >
+                      {log.traceId.slice(0, 8)}
+                    </Link>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </TableCell>
+              ) : null}
+              {visible.has("scope") ? (
+                <TableCell className="max-w-36 truncate text-muted-foreground">
+                  {log.scopeName || "-"}
+                </TableCell>
+              ) : null}
             </TableRow>
           ))}
         </TableBody>
@@ -149,17 +239,41 @@ export function LogsTable({ logs }: { logs: LogDoc[] }) {
           if (!open) setSelected(null)
         }}
       >
-        <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
+        <SheetContent className="w-full overflow-y-auto sm:max-w-2xl">
           <SheetHeader>
-            <SheetTitle>Log document</SheetTitle>
+            <SheetTitle className="flex items-center justify-between gap-2">
+              <span>Log document</span>
+              {selected ? <CopyButton value={rawDocument(selected)} /> : null}
+            </SheetTitle>
             <SheetDescription>
               {selected
-                ? `${selected.service} · ${formatTime(selected.tsNanos)}`
+                ? `${selected.service} · ${formatDateTime(selected.tsNanos)}`
                 : ""}
             </SheetDescription>
           </SheetHeader>
           {selected ? (
-            <div className="space-y-3 px-4 pb-6">
+            <div className="flex flex-col gap-4 px-4 pb-6">
+              <div className="flex flex-wrap items-center gap-2">
+                <SeverityBadge log={selected} />
+                {selected.traceId ? (
+                  <Link
+                    to="/traces/$traceId"
+                    params={{ traceId: selected.traceId }}
+                    className="rounded-full border border-border/70 px-2 py-1 font-mono text-xs hover:bg-muted"
+                  >
+                    trace {selected.traceId.slice(0, 12)}
+                  </Link>
+                ) : null}
+                {selected.runId ? (
+                  <Link
+                    to="/runs/$runId"
+                    params={{ runId: selected.runId }}
+                    className="rounded-full border border-border/70 px-2 py-1 font-mono text-xs hover:bg-muted"
+                  >
+                    run {selected.runId.slice(0, 12)}
+                  </Link>
+                ) : null}
+              </div>
               <Input
                 value={fieldSearch}
                 onChange={(event) => setFieldSearch(event.target.value)}
@@ -175,7 +289,7 @@ export function LogsTable({ logs }: { logs: LogDoc[] }) {
                 <TableBody>
                   {selectedFields.map(([key, value]) => (
                     <TableRow key={key}>
-                      <TableCell className="align-top font-medium">
+                      <TableCell className="align-top font-mono text-xs text-muted-foreground">
                         {key}
                       </TableCell>
                       <TableCell className="font-mono text-xs break-all whitespace-pre-wrap">

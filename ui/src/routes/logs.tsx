@@ -1,25 +1,54 @@
-import { Link, createFileRoute } from "@tanstack/react-router"
-import { useCallback, useEffect, useMemo, useState } from "react"
 import {
-  ActivityIcon,
-  BarChart3Icon,
-  RadioIcon,
-  ScrollTextIcon,
-} from "lucide-react"
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { gqlString, graphql } from "@/lib/api"
-import { LogsTable, formatTime } from "@/components/logs-table"
-import type { LogDoc } from "@/components/logs-table"
+  createFileRoute,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router"
+import {
+  IconArticleFilled,
+  IconColumns,
+  IconPlayerPlayFilled,
+  IconPlayerStopFilled,
+  IconRefresh,
+  IconX,
+} from "@tabler/icons-react"
+import { useEffect, useMemo, useState } from "react"
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ReferenceArea,
+  XAxis,
+  YAxis,
+} from "recharts"
+import { z } from "zod"
+
+import { EmptyState } from "@/components/console/empty-state"
+import { useDelayedLoading } from "@/components/console/hooks"
+import { RangePicker } from "@/components/console/range-picker"
+import { TableSkeleton } from "@/components/console/skeletons"
+import {
+  LogsTable,
+  parseLogColumns,
+  serializeLogColumns,
+} from "@/components/logs-table"
+import type { LogDoc, OptionalLogColumn } from "@/components/logs-table"
+import { PageHeader } from "@/components/page-header"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { KpiCard } from "@/components/kpi-card"
-import { LiveEventStack, LiveStreamPanel } from "@/components/live-stream-panel"
-import { PageHeading } from "@/components/page-heading"
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -28,165 +57,181 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { gqlString, graphql } from "@/lib/api"
+import { formatCount, formatTimeInRange } from "@/lib/format"
+import { resolveRangeSearch } from "@/lib/range"
+import type { ResolvedRange } from "@/lib/range"
 
 interface SeriesPoint {
   tsNanos: string
   value: number
 }
 
-const RANGES = [
-  { label: "Latest", minutes: 0 },
-  { label: "Last 1 minute", minutes: 1 },
-  { label: "Last 15 minutes", minutes: 15 },
-  { label: "Last 30 minutes", minutes: 30 },
-  { label: "Last 1 hour", minutes: 60 },
-  { label: "Last 24 hours", minutes: 1440 },
-  { label: "Last 7 days", minutes: 10080 },
-  { label: "Last 30 days", minutes: 43200 },
-] as const
+interface LogsData {
+  services: string[]
+  logs: LogDoc[]
+  logCountSeries: SeriesPoint[]
+}
 
+interface LogsSearch {
+  q?: string | undefined
+  service?: string | undefined
+  sev?: number | undefined
+  range?: string | undefined
+  from?: string | undefined
+  to?: string | undefined
+  live?: boolean | undefined
+  cols?: string | undefined
+}
+
+const PAGE_SIZE = 500
 const SEVERITIES = [
-  { label: "All severities", min: 0 },
-  { label: "Debug+", min: 5 },
-  { label: "Info+", min: 9 },
-  { label: "Warn+", min: 13 },
-  { label: "Error+", min: 17 },
+  { label: "All severities", value: undefined },
+  { label: "Debug+", value: 5 },
+  { label: "Info+", value: 9 },
+  { label: "Warn+", value: 13 },
+  { label: "Error+", value: 17 },
 ] as const
 
-const REFRESH = [
-  { label: "Refresh off", seconds: 0 },
-  { label: "Live (stream)", seconds: -1 },
-  { label: "Every 5s", seconds: 5 },
-  { label: "Every 15s", seconds: 15 },
-  { label: "Every 60s", seconds: 60 },
-] as const
+const logsSearchSchema = z.object({
+  q: z.unknown().optional(),
+  service: z.unknown().optional(),
+  sev: z.unknown().optional(),
+  range: z.unknown().optional(),
+  from: z.unknown().optional(),
+  to: z.unknown().optional(),
+  live: z.unknown().optional(),
+  cols: z.unknown().optional(),
+})
 
-export const Route = createFileRoute("/logs")({ component: LogsPage })
+export function validateLogsSearch(
+  search: Record<string, unknown>
+): LogsSearch {
+  const parsed = logsSearchSchema.parse(search)
+  const severity = Number(parsed.sev)
+  return {
+    q: typeof parsed.q === "string" && parsed.q ? parsed.q : undefined,
+    service:
+      typeof parsed.service === "string" && parsed.service
+        ? parsed.service
+        : undefined,
+    sev: Number.isFinite(severity) && severity > 0 ? severity : undefined,
+    range: typeof parsed.range === "string" ? parsed.range : undefined,
+    from: typeof parsed.from === "string" ? parsed.from : undefined,
+    to: typeof parsed.to === "string" ? parsed.to : undefined,
+    live: parsed.live === "1" || parsed.live === true,
+    cols: typeof parsed.cols === "string" ? parsed.cols : undefined,
+  }
+}
 
-const histogramConfig = {
-  value: { label: "logs", color: "var(--chart-1)" },
-} satisfies ChartConfig
+export const Route = createFileRoute("/logs")({
+  validateSearch: validateLogsSearch,
+  loaderDeps: ({ search }) => search,
+  loader: ({ deps }) => loadLogs(deps),
+  component: LogsPage,
+})
+
+export function stepSecondsForRange(range: ResolvedRange): number {
+  const spanNs = BigInt(range.toNanos) - BigInt(range.fromNanos)
+  return Math.max(30, Math.round(Number(spanNs / 1_000_000_000n) / 60))
+}
+
+export function bucketWindow(
+  points: readonly SeriesPoint[],
+  index: number,
+  stepSeconds: number
+) {
+  const point = points[index]
+  if (!point) return null
+  return {
+    fromNanos: point.tsNanos,
+    toNanos: (
+      BigInt(point.tsNanos) +
+      BigInt(stepSeconds) * 1_000_000_000n
+    ).toString(),
+  }
+}
+
+export function dragWindow(
+  points: readonly SeriesPoint[],
+  start: number,
+  end: number,
+  stepSeconds: number
+) {
+  const low = Math.min(start, end)
+  const high = Math.max(start, end)
+  const from = points[low]
+  const to = bucketWindow(points, high, stepSeconds)
+  if (!from || !to) return null
+  return { fromNanos: from.tsNanos, toNanos: to.toNanos }
+}
+
+export async function loadLogs(search: LogsSearch): Promise<LogsData> {
+  const range = resolveRangeSearch(search)
+  const stepSeconds = stepSecondsForRange(range)
+  const filters = [
+    search.service ? `service: "${gqlString(search.service)}"` : "",
+    search.sev ? `severityMin: ${search.sev}` : "",
+    search.q ? `query: "${gqlString(search.q)}"` : "",
+  ].filter(Boolean)
+  if (search.live) {
+    return graphql<LogsData>(
+      `{ services logs(limit: 0) { tsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource } logCountSeries(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", stepSeconds: ${stepSeconds}) { tsNanos value } }`
+    )
+  }
+  const logArgs = [
+    `fromNanos: "${range.fromNanos}"`,
+    `toNanos: "${range.toNanos}"`,
+    ...filters,
+    `limit: ${PAGE_SIZE}`,
+  ].join(", ")
+  const seriesArgs = [
+    `fromNanos: "${range.fromNanos}"`,
+    `toNanos: "${range.toNanos}"`,
+    ...filters,
+    `stepSeconds: ${stepSeconds}`,
+  ].join(", ")
+  return graphql<LogsData>(`{
+    services
+    logs(${logArgs}) {
+      tsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource
+    }
+    logCountSeries(${seriesArgs}) { tsNanos value }
+  }`)
+}
 
 function LogsPage() {
-  const [services, setServices] = useState<string[]>([])
-  const [service, setService] = useState<string>("all")
-  const [severityMin, setSeverityMin] = useState<number>(0)
-  const [query, setQuery] = useState("")
-  const [pendingQuery, setPendingQuery] = useState("")
-  // 0 = "Latest": newest rows regardless of window (kubectl --tail shape).
-  const [rangeMinutes, setRangeMinutes] = useState<number>(0)
-  const [refreshSeconds, setRefreshSeconds] = useState<number>(0)
-  const [logs, setLogs] = useState<LogDoc[]>([])
-  const [series, setSeries] = useState<SeriesPoint[]>([])
-  const [loading, setLoading] = useState(false)
+  const data = Route.useLoaderData()
+  const search = Route.useSearch()
+  const navigate = useNavigate({ from: "/logs" })
+  const routerLoading = useRouterState({
+    select: (state) => state.status === "pending",
+  })
+  const delayedLoading = useDelayedLoading(routerLoading)
+  const range = resolveRangeSearch(search)
+  const stepSeconds = stepSecondsForRange(range)
+  const [logs, setLogs] = useState<LogDoc[]>(data.logs)
+  const [pendingQuery, setPendingQuery] = useState(search.q ?? "")
   const [olderLoading, setOlderLoading] = useState(false)
-  const [exhausted, setExhausted] = useState(false)
-  // Live is explicit, never the default — a tail costs a subscription, and
-  // it narrows the surface: per-row filters only, no ranges, no aggregates.
-  const live = refreshSeconds === -1
-
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      // "Latest" (0): newest rows with no lower bound — kubectl --tail.
-      // The histogram still needs a window; 24h backs it in that mode.
-      const nowNanos = BigInt(Date.now()) * 1_000_000n
-      const windowMinutes = rangeMinutes === 0 ? 1440 : rangeMinutes
-      const fromNanos = nowNanos - BigInt(windowMinutes) * 60_000_000_000n
-      const shared = [
-        service !== "all" ? `service: "${gqlString(service)}"` : "",
-        severityMin > 0 ? `severityMin: ${severityMin}` : "",
-        query.trim() ? `query: "${gqlString(query.trim())}"` : "",
-      ].filter(Boolean)
-      const logArgs = [
-        ...(rangeMinutes === 0
-          ? []
-          : [`fromNanos: "${fromNanos}"`, `toNanos: "${nowNanos}"`]),
-        ...shared,
-        "limit: 500",
-      ].join(", ")
-      const seriesArgs = [
-        `fromNanos: "${fromNanos}"`,
-        `toNanos: "${nowNanos}"`,
-        ...shared,
-      ].join(", ")
-      const stepSeconds = Math.max(1, Math.round((windowMinutes * 60) / 60))
-      const data = await graphql<{
-        services: string[]
-        logs: LogDoc[]
-        logCountSeries: SeriesPoint[]
-      }>(
-        `{
-          services
-          logs(${logArgs}) {
-            tsNanos service severityNum severityText body
-            traceId spanId runId scopeName attributes resource
-          }
-          logCountSeries(${seriesArgs}, stepSeconds: ${stepSeconds}) {
-            tsNanos value
-          }
-        }`
-      )
-      setServices(data.services)
-      setLogs(data.logs)
-      setSeries(data.logCountSeries)
-      setExhausted(data.logs.length < 500)
-    } finally {
-      setLoading(false)
-    }
-  }, [service, severityMin, query, rangeMinutes])
-
-  // Cursor pagination: everything strictly older than the oldest row shown,
-  // same filters, appended below (kubectl --tail … then scroll back).
-  const loadOlder = useCallback(async () => {
-    const oldest = logs[logs.length - 1]
-    if (!oldest) return
-    setOlderLoading(true)
-    try {
-      const args = [
-        `toNanos: "${(BigInt(oldest.tsNanos) - 1n).toString()}"`,
-        rangeMinutes > 0
-          ? `fromNanos: "${(BigInt(Date.now()) - BigInt(rangeMinutes) * 60_000n) * 1_000_000n}"`
-          : "",
-        service !== "all" ? `service: "${gqlString(service)}"` : "",
-        severityMin > 0 ? `severityMin: ${severityMin}` : "",
-        query.trim() ? `query: "${gqlString(query.trim())}"` : "",
-        "limit: 500",
-      ]
-        .filter(Boolean)
-        .join(", ")
-      const data = await graphql<{ logs: LogDoc[] }>(
-        `{ logs(${args}) {
-             tsNanos service severityNum severityText body
-             traceId spanId runId scopeName attributes resource
-           } }`
-      )
-      setLogs((current) => [...current, ...data.logs])
-      if (data.logs.length < 500) setExhausted(true)
-    } finally {
-      setOlderLoading(false)
-    }
-  }, [logs, rangeMinutes, service, severityMin, query])
+  const [exhausted, setExhausted] = useState(data.logs.length < PAGE_SIZE)
+  const [dragStart, setDragStart] = useState<number | null>(null)
+  const [dragEnd, setDragEnd] = useState<number | null>(null)
+  const live = search.live === true
+  const columns = parseLogColumns(search.cols)
 
   useEffect(() => {
-    void load()
-  }, [load])
+    setLogs(data.logs)
+    setExhausted(data.logs.length < PAGE_SIZE)
+  }, [data.logs])
 
-  // Refresh-every mode: poll on the chosen interval.
-  useEffect(() => {
-    if (refreshSeconds <= 0) return
-    const timer = setInterval(() => void load(), refreshSeconds * 1000)
-    return () => clearInterval(timer)
-  }, [refreshSeconds, load])
+  useEffect(() => setPendingQuery(search.q ?? ""), [search.q])
 
-  // Live mode (-1): tail over Server-Sent Events. Incoming batches buffer
-  // and flush every 250ms (render batching), newest first, capped at 500.
   useEffect(() => {
     if (!live) return
     const params = new URLSearchParams()
-    if (service !== "all") params.set("service", service)
-    if (severityMin > 0) params.set("severity_min", String(severityMin))
-    if (query.trim()) params.set("q", query.trim())
+    if (search.service) params.set("service", search.service)
+    if (search.sev) params.set("severity_min", String(search.sev))
+    if (search.q) params.set("q", search.q)
     const source = new EventSource(`/v1/logs/stream?${params}`)
     let buffer: LogDoc[] = []
     source.onmessage = (event) => {
@@ -201,105 +246,110 @@ function LogsPage() {
       if (buffer.length === 0) return
       const incoming = buffer
       buffer = []
-      setLogs((current) => [...incoming.reverse(), ...current].slice(0, 500))
+      setLogs((current) =>
+        [...incoming.reverse(), ...current].slice(0, PAGE_SIZE)
+      )
     }, 250)
     return () => {
       source.close()
       clearInterval(flush)
     }
-  }, [live, service, severityMin, query])
+  }, [live, search.service, search.sev, search.q])
 
-  const chartData = useMemo(
-    () =>
-      series.map((point) => ({
-        time: formatTime(point.tsNanos),
-        value: point.value,
-      })),
-    [series]
-  )
-  const total = useMemo(
-    () => series.reduce((acc, point) => acc + point.value, 0),
-    [series]
-  )
-  const errorCount = logs.filter((log) => log.severityNum >= 17).length
+  const update = (patch: Partial<LogsSearch>) =>
+    void navigate({
+      search: (current) => ({ ...current, ...patch }),
+    })
+
+  const setRange = (next: ResolvedRange) => {
+    update({ range: next.key, from: next.fromNanos, to: next.toNanos })
+  }
+
+  const loadOlder = async () => {
+    const oldest = logs.at(-1)
+    if (!oldest) return
+    setOlderLoading(true)
+    try {
+      const args = [
+        `fromNanos: "${range.fromNanos}"`,
+        `toNanos: "${(BigInt(oldest.tsNanos) - 1n).toString()}"`,
+        search.service ? `service: "${gqlString(search.service)}"` : "",
+        search.sev ? `severityMin: ${search.sev}` : "",
+        search.q ? `query: "${gqlString(search.q)}"` : "",
+        `limit: ${PAGE_SIZE}`,
+      ]
+        .filter(Boolean)
+        .join(", ")
+      const more = await graphql<{ logs: LogDoc[] }>(`{ logs(${args}) {
+        tsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource
+      } }`)
+      setLogs((current) => [...current, ...more.logs])
+      if (more.logs.length < PAGE_SIZE) setExhausted(true)
+    } finally {
+      setOlderLoading(false)
+    }
+  }
+
+  const total = data.logCountSeries.reduce((sum, point) => sum + point.value, 0)
+  const customWindow = search.from && search.to
+
   return (
-    <div className="grid gap-5">
-      <PageHeading
-        eyebrow="Event stream"
+    <div className="flex flex-col gap-4">
+      <PageHeader
+        icon={IconArticleFilled}
         title="Logs"
-        description="Newest log records, live tails, and histogram context across services."
-        action={
-          <Link
-            to="/sql"
-            className="parallax-pill inline-flex h-8 items-center px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-          >
-            SQL workbench
-          </Link>
+        description="Search, tail, and narrow log records by histogram window."
+        actions={
+          <>
+            <RangePicker value={range} onChange={setRange} />
+            <Button
+              type="button"
+              variant={live ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => update({ live: live ? undefined : true })}
+            >
+              {live ? <IconPlayerStopFilled /> : <IconPlayerPlayFilled />}
+              {live ? "Live" : "Query"}
+            </Button>
+          </>
         }
       />
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <KpiCard
-          icon={ScrollTextIcon}
-          label="Shown logs"
-          value={logs.length.toLocaleString()}
-          detail={service === "all" ? "all services" : service}
-          tone="blue"
-          bars={chartData.map((point) => point.value)}
-        />
-        <KpiCard
-          icon={ActivityIcon}
-          label="Errors loaded"
-          value={errorCount.toLocaleString()}
-          detail="severity >= error"
-          tone="rose"
-        />
-        <KpiCard
-          icon={BarChart3Icon}
-          label="Range total"
-          value={live ? "-" : total.toLocaleString()}
-          detail={live ? "streaming mode" : "histogram window"}
-          tone="orange"
-        />
-        <KpiCard
-          icon={RadioIcon}
-          label="Mode"
-          value={live ? "Live" : "Refresh"}
-          detail={
-            refreshSeconds > 0 ? `every ${refreshSeconds}s` : "manual refresh"
-          }
-          tone={live ? "green" : "violet"}
-        />
-      </section>
 
-      <div className="parallax-panel flex flex-wrap items-center gap-2 p-3">
-        <Select value={service} onValueChange={(v) => setService(v ?? "all")}>
-          <SelectTrigger className="w-48 rounded-full bg-background/70">
-            <SelectValue>
-              {service === "all" ? "All services" : service}
-            </SelectValue>
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-muted/20 p-3">
+        <Select
+          value={search.service ?? "all"}
+          onValueChange={(value) =>
+            update({
+              service: !value || value === "all" ? undefined : value,
+            })
+          }
+        >
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="All services" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All services</SelectItem>
-            {services.map((s) => (
-              <SelectItem key={s} value={s}>
-                {s}
+            {data.services.map((service) => (
+              <SelectItem key={service} value={service}>
+                {service}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select
-          value={String(severityMin)}
-          onValueChange={(v) => setSeverityMin(Number(v ?? 0))}
+          value={String(search.sev ?? 0)}
+          onValueChange={(value) => update({ sev: Number(value) || undefined })}
         >
-          <SelectTrigger className="w-36 rounded-full bg-background/70">
-            <SelectValue>
-              {SEVERITIES.find((s) => s.min === severityMin)?.label}
-            </SelectValue>
+          <SelectTrigger className="w-36">
+            <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {SEVERITIES.map((s) => (
-              <SelectItem key={s.min} value={String(s.min)}>
-                {s.label}
+            {SEVERITIES.map((severity) => (
+              <SelectItem
+                key={severity.value ?? 0}
+                value={String(severity.value ?? 0)}
+              >
+                {severity.label}
               </SelectItem>
             ))}
           </SelectContent>
@@ -308,131 +358,271 @@ function LogsPage() {
           className="flex min-w-64 flex-1 gap-2"
           onSubmit={(event) => {
             event.preventDefault()
-            setQuery(pendingQuery)
+            update({ q: pendingQuery.trim() || undefined })
           }}
         >
           <Input
             value={pendingQuery}
             onChange={(event) => setPendingQuery(event.target.value)}
-            placeholder="Filter log bodies (substring)"
-            className="rounded-full bg-background/70"
+            placeholder="Filter log bodies"
           />
         </form>
-        <Select
-          value={String(rangeMinutes)}
-          onValueChange={(v) => setRangeMinutes(Number(v ?? 15))}
-          disabled={live}
-        >
-          <SelectTrigger className="w-44 rounded-full bg-background/70">
-            <SelectValue>
-              {RANGES.find((r) => r.minutes === rangeMinutes)?.label}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {RANGES.map((range) => (
-              <SelectItem key={range.minutes} value={String(range.minutes)}>
-                {range.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={String(refreshSeconds)}
-          onValueChange={(v) => setRefreshSeconds(Number(v ?? 0))}
-        >
-          <SelectTrigger className="w-36 rounded-full bg-background/70">
-            <SelectValue>
-              {REFRESH.find((o) => o.seconds === refreshSeconds)?.label}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {REFRESH.map((option) => (
-              <SelectItem key={option.seconds} value={String(option.seconds)}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <ColumnMenu
+          columns={columns}
+          onChange={(next) => update({ cols: serializeLogColumns(next) })}
+        />
         <Button
-          onClick={() => {
-            setQuery(pendingQuery)
-            void load()
-          }}
-          disabled={loading || live}
-          className="rounded-full"
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => update({})}
         >
+          <IconRefresh />
           Refresh
         </Button>
       </div>
 
-      {live ? (
-        <LiveStreamPanel
-          title="Log tail"
-          description="Streaming newest log records over Server-Sent Events. Per-row filters stay active while range analytics pause."
-          count={logs.length}
-          endpoint="/v1/logs/stream"
-          active
-        >
-          <LiveEventStack
-            items={logs.slice(0, 6).map((log) => ({
-              id: `${log.tsNanos}-${log.traceId}-${log.spanId}`,
-              title: log.body,
-              meta: `${formatTime(log.tsNanos)} · ${log.service} · ${log.severityText}`,
-              status: log.severityNum >= 17 ? "error" : "ok",
-              detail: log.runId ? `run ${log.runId}` : log.traceId,
-            }))}
-          />
-        </LiveStreamPanel>
-      ) : (
-        <div className="parallax-panel space-y-2 p-4">
-          <ChartContainer config={histogramConfig} className="h-32 w-full">
-            <BarChart data={chartData} margin={{ left: 8, right: 8, top: 4 }}>
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="time"
-                tickLine={false}
-                axisLine={false}
-                minTickGap={48}
-              />
-              <YAxis tickLine={false} axisLine={false} width={48} />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Bar dataKey="value" fill="var(--color-value)" radius={2} />
-            </BarChart>
-          </ChartContainer>
-          <p className="text-xs text-muted-foreground">
-            {total.toLocaleString()} log(s) in range · showing newest{" "}
-            {logs.length}
-            {refreshSeconds > 0 ? ` · refreshing every ${refreshSeconds}s` : ""}
-          </p>
-        </div>
-      )}
+      <HistogramCard
+        live={live}
+        range={range}
+        series={data.logCountSeries}
+        stepSeconds={stepSeconds}
+        dragStart={dragStart}
+        dragEnd={dragEnd}
+        onDragStart={setDragStart}
+        onDragEnd={setDragEnd}
+        onWindow={(fromNanos, toNanos) =>
+          update({ range: "custom", from: fromNanos, to: toNanos })
+        }
+        onReset={() =>
+          update({ from: undefined, to: undefined, range: undefined })
+        }
+        customWindow={Boolean(customWindow)}
+        total={total}
+      />
 
-      {logs.length === 0 ? (
-        <div className="parallax-panel space-y-3 p-6">
-          <p className="text-sm text-muted-foreground">
-            No logs in this window — widen the range or drop a filter.
-          </p>
-          {rangeMinutes < 1440 ? (
-            <Button variant="outline" onClick={() => setRangeMinutes(1440)}>
-              Show last 24 hours
-            </Button>
+      {delayedLoading ? (
+        <TableSkeleton rows={8} />
+      ) : logs.length === 0 ? (
+        <EmptyState
+          title={
+            search.q || search.service || search.sev
+              ? "No matching logs"
+              : "No logs yet"
+          }
+          description={
+            search.q || search.service || search.sev
+              ? "Clear filters or widen the time range."
+              : "Send OTLP logs to http://127.0.0.1:4317 or run through parallax run."
+          }
+          icon={IconArticleFilled}
+          className="rounded-xl border border-dashed"
+        />
+      ) : (
+        <div className="overflow-hidden rounded-xl border border-border/70">
+          {live ? (
+            <div className="flex items-center gap-2 border-b border-border/70 px-3 py-2 text-xs">
+              <span className="size-2 animate-pulse rounded-full bg-emerald-500" />
+              <Badge variant="emerald">Live</Badge>
+              <span className="text-muted-foreground">
+                {formatCount(logs.length)} records buffered
+              </span>
+            </div>
+          ) : null}
+          <LogsTable logs={logs} range={range} columns={columns} />
+          {!live && !exhausted ? (
+            <div className="border-t border-border/70 p-2">
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() => void loadOlder()}
+                disabled={olderLoading}
+              >
+                Load older
+              </Button>
+            </div>
           ) : null}
         </div>
-      ) : (
-        <div className="parallax-panel overflow-hidden">
-          <LogsTable logs={logs} />
-        </div>
       )}
-
-      {!live && logs.length > 0 && !exhausted ? (
-        <Button
-          variant="outline"
-          onClick={() => void loadOlder()}
-          disabled={olderLoading}
-        >
-          {olderLoading ? "Loading…" : "Load older"}
-        </Button>
-      ) : null}
     </div>
+  )
+}
+
+const histogramConfig = {
+  value: { label: "logs", color: "var(--chart-2)" },
+} satisfies ChartConfig
+
+function HistogramCard({
+  live,
+  range,
+  series,
+  stepSeconds,
+  dragStart,
+  dragEnd,
+  onDragStart,
+  onDragEnd,
+  onWindow,
+  onReset,
+  customWindow,
+  total,
+}: {
+  live: boolean
+  range: ResolvedRange
+  series: SeriesPoint[]
+  stepSeconds: number
+  dragStart: number | null
+  dragEnd: number | null
+  onDragStart: (index: number | null) => void
+  onDragEnd: (index: number | null) => void
+  onWindow: (fromNanos: string, toNanos: string) => void
+  onReset: () => void
+  customWindow: boolean
+  total: number
+}) {
+  const chartData = useMemo(
+    () =>
+      series.map((point, index) => ({
+        ...point,
+        index,
+        time: formatTimeInRange(point.tsNanos, range),
+      })),
+    [series, range]
+  )
+  const referenceStart =
+    dragStart != null && dragEnd != null
+      ? chartData[Math.min(dragStart, dragEnd)]?.time
+      : undefined
+  const referenceEnd =
+    dragStart != null && dragEnd != null
+      ? chartData[Math.max(dragStart, dragEnd)]?.time
+      : undefined
+
+  const indexFromState = (state: unknown) =>
+    typeof (state as { activeTooltipIndex?: unknown }).activeTooltipIndex ===
+    "number"
+      ? (state as { activeTooltipIndex: number }).activeTooltipIndex
+      : null
+
+  return (
+    <div className="rounded-xl border border-border/70 bg-card p-4">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 className="text-sm font-medium">Log volume</h2>
+          <p className="text-xs text-muted-foreground">
+            {live
+              ? "Histogram paused while tailing live logs."
+              : `${formatCount(total)} records in window`}
+          </p>
+        </div>
+        {customWindow ? (
+          <Button type="button" variant="ghost" size="xs" onClick={onReset}>
+            <IconX />
+            Reset window
+          </Button>
+        ) : null}
+      </div>
+      <ChartContainer config={histogramConfig} className="h-[180px] w-full">
+        <BarChart
+          data={chartData}
+          margin={{ left: 8, right: 8, top: 4 }}
+          onClick={(state) => {
+            if (live) return
+            const index = indexFromState(state)
+            if (index == null) return
+            const window = bucketWindow(series, index, stepSeconds)
+            if (window) onWindow(window.fromNanos, window.toNanos)
+          }}
+          onMouseDown={(state) => {
+            if (live) return
+            onDragStart(indexFromState(state))
+            onDragEnd(indexFromState(state))
+          }}
+          onMouseMove={(state) => {
+            if (live || dragStart == null) return
+            onDragEnd(indexFromState(state))
+          }}
+          onMouseUp={() => {
+            if (live || dragStart == null || dragEnd == null) {
+              onDragStart(null)
+              onDragEnd(null)
+              return
+            }
+            const window = dragWindow(series, dragStart, dragEnd, stepSeconds)
+            onDragStart(null)
+            onDragEnd(null)
+            if (window) onWindow(window.fromNanos, window.toNanos)
+          }}
+        >
+          <CartesianGrid vertical={false} />
+          <XAxis
+            dataKey="time"
+            tickLine={false}
+            axisLine={false}
+            minTickGap={48}
+          />
+          <YAxis tickLine={false} axisLine={false} width={48} />
+          <ChartTooltip content={<ChartTooltipContent />} />
+          <Bar
+            dataKey="value"
+            fill="var(--color-value)"
+            radius={2}
+            opacity={live ? 0.35 : 1}
+          />
+          {referenceStart && referenceEnd ? (
+            <ReferenceArea
+              x1={referenceStart}
+              x2={referenceEnd}
+              fill="var(--muted-foreground)"
+              fillOpacity={0.12}
+            />
+          ) : null}
+        </BarChart>
+      </ChartContainer>
+    </div>
+  )
+}
+
+function ColumnMenu({
+  columns,
+  onChange,
+}: {
+  columns: OptionalLogColumn[]
+  onChange: (columns: OptionalLogColumn[]) => void
+}) {
+  const toggle = (column: OptionalLogColumn) => {
+    const next = columns.includes(column)
+      ? columns.filter((current) => current !== column)
+      : [...columns, column]
+    onChange(next)
+  }
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={<Button type="button" variant="outline" size="sm" />}
+      >
+        <IconColumns />
+        Columns
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuLabel>Optional columns</DropdownMenuLabel>
+        <DropdownMenuGroup>
+          {(["service", "trace", "scope"] as OptionalLogColumn[]).map(
+            (column) => (
+              <DropdownMenuCheckboxItem
+                key={column}
+                checked={columns.includes(column)}
+                onClick={(event) => {
+                  event.preventDefault()
+                  toggle(column)
+                }}
+              >
+                {column}
+              </DropdownMenuCheckboxItem>
+            )
+          )}
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
