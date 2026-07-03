@@ -147,6 +147,7 @@ pub fn normalize_traces(request: &ExportTraceServiceRequest) -> Vec<SpanRow> {
                     ),
                     run_id: run_id.clone(),
                     scope_name: scope_name.clone(),
+                    events: None,
                     links: links_to_json(&span.links),
                     attributes: attributes_to_json(&span.attributes),
                     resource: resource_json.clone(),

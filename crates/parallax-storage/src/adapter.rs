@@ -38,6 +38,23 @@ pub struct TraceSummary {
     pub has_error: bool,
 }
 
+/// Paged trace-list result. `total` is exact for in-memory; Greptime counts
+/// the same filtered representative-span result set used for the page.
+#[derive(Debug, Clone)]
+pub struct TraceList {
+    pub items: Vec<TraceSummary>,
+    pub total: u64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum TraceSort {
+    #[default]
+    StartDesc,
+    DurationDesc,
+    DurationAsc,
+    SpanCountDesc,
+}
+
 /// Whole-system overview counters for one inclusive time window.
 #[derive(Debug, Clone)]
 pub struct OverviewTotals {
@@ -94,10 +111,13 @@ pub struct TraceQuery {
     pub from_nanos: Option<u128>,
     pub to_nanos: Option<u128>,
     pub min_duration_ns: Option<u128>,
+    pub max_duration_ns: Option<u128>,
     pub error_only: bool,
     /// Substring of the representative span name.
     pub name_contains: Option<String>,
     pub limit: usize,
+    pub offset: usize,
+    pub sort: TraceSort,
 }
 
 #[async_trait::async_trait]
@@ -187,14 +207,16 @@ pub trait TelemetryStore: Send + Sync {
     async fn observed_runs(&self, limit: usize) -> anyhow::Result<Vec<ObservedRun>>;
     /// Recent traces (root spans + aggregates), newest first.
     async fn recent_traces(&self, limit: usize) -> anyhow::Result<Vec<TraceSummary>> {
-        self.traces_search(&TraceQuery {
-            limit,
-            ..TraceQuery::default()
-        })
-        .await
+        Ok(self
+            .traces_search(&TraceQuery {
+                limit,
+                ..TraceQuery::default()
+            })
+            .await?
+            .items)
     }
-    /// Filtered trace browse (root spans + aggregates), newest first.
-    async fn traces_search(&self, query: &TraceQuery) -> anyhow::Result<Vec<TraceSummary>>;
+    /// Filtered trace browse (root spans + aggregates).
+    async fn traces_search(&self, query: &TraceQuery) -> anyhow::Result<TraceList>;
     /// Error events across a set of traces, newest first (run-anchored reads).
     async fn error_events_by_traces(
         &self,

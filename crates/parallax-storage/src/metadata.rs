@@ -1,5 +1,5 @@
-//! The metadata store: mutable product state (issues, runs, dashboards,
-//! settings) per implementation spec §6. Turso is the engine.
+//! The metadata store: mutable product state (issues, runs, dashboards) per
+//! implementation spec §6. Turso is the engine.
 
 use crate::model::{Dashboard, Issue, IssueQuery, IssueSortKey, RunRecord, TrendPoint};
 use std::collections::BTreeMap;
@@ -35,7 +35,6 @@ CREATE TABLE IF NOT EXISTS dashboards (
   created_at  INTEGER NOT NULL,
   updated_at  INTEGER NOT NULL
 );
-CREATE TABLE IF NOT EXISTS settings ( key TEXT PRIMARY KEY, value TEXT NOT NULL );
 CREATE TABLE IF NOT EXISTS issue_buckets (
   fingerprint TEXT NOT NULL,
   bucket_ts   INTEGER NOT NULL,
@@ -743,27 +742,31 @@ mod tests {
     async fn update_with_open_statement_is_lost() {
         let store = MetadataStore::open(temp_db()).await.expect("open");
         let conn = store.conn.lock().await;
-        conn.execute("INSERT INTO settings (key, value) VALUES ('k', 'v1')", ())
-            .await
-            .expect("insert");
+        conn.execute(
+            "INSERT INTO dashboards (id, name, layout, created_at, updated_at)
+             VALUES ('k', 'v1', '[]', 1, 1)",
+            (),
+        )
+        .await
+        .expect("insert");
 
         // Open statement held across the UPDATE: the write is lost.
         let mut open_rows = conn
-            .query("SELECT value FROM settings WHERE key = 'k'", ())
+            .query("SELECT name FROM dashboards WHERE id = 'k'", ())
             .await
             .expect("open select");
         let _row = open_rows.next().await.expect("next").expect("row");
-        conn.execute("UPDATE settings SET value = 'lost' WHERE key = 'k'", ())
+        conn.execute("UPDATE dashboards SET name = 'lost' WHERE id = 'k'", ())
             .await
             .expect("update during open statement");
         drop(open_rows);
 
         // Statement dropped first: the write persists.
-        conn.execute("UPDATE settings SET value = 'v2' WHERE key = 'k'", ())
+        conn.execute("UPDATE dashboards SET name = 'v2' WHERE id = 'k'", ())
             .await
             .expect("update");
         let mut rows = conn
-            .query("SELECT value FROM settings WHERE key = 'k'", ())
+            .query("SELECT name FROM dashboards WHERE id = 'k'", ())
             .await
             .expect("select");
         let row = rows.next().await.expect("next").expect("row");

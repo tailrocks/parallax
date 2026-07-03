@@ -37,7 +37,7 @@ source of truth. API extensions are in scope (plans 009-010).
 | 007 | Rebuild app shell (inset, collapsible kept) | P1 | L | 005, 006 | DONE |
 | 008 | Shared console kit | P1 | L | 005-007 | DONE |
 | 009 | API: overview + service analytics (Rust) | P1 | L | — | DONE |
-| 010 | API: trace paging + span events (Rust) | P1 | M | — | TODO |
+| 010 | API: trace paging + span events (Rust) | P1 | M | — | DONE |
 | 011 | Traces list redesign | P1 | M | 005-008, 010 | TODO |
 | 012 | Trace waterfall redesign | P1 | L | 005-008, 010 | TODO |
 | 013 | Overview landing page | P1 | M | 005-008, 009 | TODO |
@@ -58,9 +58,9 @@ rationale) | SUPERSEDED.
 - 005 → 006 → 007 → 008 is a strict chain (tokens → primitives → shell → kit). Everything
   visual sits on it.
 - 009 and 010 are pure Rust, independent of the UI chain and of each other — they can run
-  **in parallel** with 005-008. Land 010 immediately before 011 (breaking-schema choice in
-  its Step 6; record the chosen query name — `traces` returning `TraceList` vs new
-  `tracesPage` — HERE when it lands: ______).
+  **in parallel** with 005-008. Land 010 immediately before 011. Plan 010 kept `traces` as
+  the legacy bare list and added `tracesPage` for `TraceList` pagination/sort/total; plan
+  011 must bind to `tracesPage`.
 - 011-017 are mutually independent once their deps are met; recommended order = table order
   (traces first: highest operator value; 012 is the single most important screen).
 - 018's Steps 1-5 need only 005-008; its Step 6 legacy sweep hard-requires 005-017 all DONE.
@@ -117,8 +117,8 @@ exactly one `Co-authored-by: Claude <noreply@anthropic.com>` trailer per agent c
   (plan 010 documents it).
 - **Copying the reference's exact nav labels/routes**: rejected — Parallax keeps its own
   IA (Issues/Traces/Logs/Services/Runs/Dashboards/SQL + new Overview).
-- **`tracesPage` vs breaking `traces`**: decision delegated to plan 010 Step 6; record the
-  outcome in Dependency notes above.
+- **`tracesPage` vs breaking `traces`**: chose `tracesPage`; `traces` remains the legacy bare
+  list for CLI/UI compatibility until consumers migrate.
 
 ## Sources
 

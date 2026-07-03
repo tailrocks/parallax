@@ -257,6 +257,10 @@ impl Span {
     fn links(&self) -> String {
         self.0.links.to_string()
     }
+    /// OTel span events as JSON: `[{name, timeUnixNano, attributes}]`.
+    fn events(&self) -> String {
+        self.0.events.clone().unwrap_or_else(|| "[]".to_string())
+    }
     fn scope_name(&self) -> &str {
         &self.0.scope_name
     }
@@ -390,6 +394,38 @@ impl TraceSummary {
     }
     fn has_error(&self) -> bool {
         self.0.has_error
+    }
+}
+
+pub struct TraceList(parallax_storage::adapter::TraceList);
+
+#[graphql_object(context = ApiContext)]
+impl TraceList {
+    fn items(&self) -> Vec<TraceSummary> {
+        self.0.items.iter().cloned().map(TraceSummary).collect()
+    }
+    /// Matching traces before paging. String avoids GraphQL Int saturation.
+    fn total(&self) -> String {
+        self.0.total.to_string()
+    }
+}
+
+#[derive(juniper::GraphQLEnum, Clone, Copy)]
+pub enum TraceSort {
+    StartDesc,
+    DurationDesc,
+    DurationAsc,
+    SpanCountDesc,
+}
+
+impl From<TraceSort> for parallax_storage::adapter::TraceSort {
+    fn from(value: TraceSort) -> Self {
+        match value {
+            TraceSort::StartDesc => Self::StartDesc,
+            TraceSort::DurationDesc => Self::DurationDesc,
+            TraceSort::DurationAsc => Self::DurationAsc,
+            TraceSort::SpanCountDesc => Self::SpanCountDesc,
+        }
     }
 }
 
@@ -1301,9 +1337,12 @@ impl Query {
         from_nanos: Option<String>,
         to_nanos: Option<String>,
         min_duration_ms: Option<f64>,
+        max_duration_ms: Option<f64>,
         error_only: Option<bool>,
         query: Option<String>,
         limit: Option<i32>,
+        offset: Option<i32>,
+        sort: Option<TraceSort>,
     ) -> FieldResult<Vec<TraceSummary>> {
         let parse = |bound: Option<String>, label: &str| -> FieldResult<Option<u128>> {
             bound
@@ -1320,16 +1359,73 @@ impl Query {
             min_duration_ns: min_duration_ms
                 .filter(|ms| *ms > 0.0)
                 .map(|ms| (ms * 1e6) as u128),
+            max_duration_ns: max_duration_ms
+                .filter(|ms| *ms > 0.0)
+                .map(|ms| (ms * 1e6) as u128),
             error_only: error_only.unwrap_or(false),
             name_contains: query.filter(|q| !q.trim().is_empty()),
             limit: clamp_limit(limit, 50),
+            offset: offset
+                .map_or(0, |value| usize::try_from(value.max(0)).unwrap_or(0))
+                .min(MAX_ROWS),
+            sort: sort.map(Into::into).unwrap_or_default(),
         };
         let traces = context
             .store
             .traces_search(&trace_query)
             .await
             .map_err(field_err)?;
-        Ok(traces.into_iter().map(TraceSummary).collect())
+        Ok(traces.items.into_iter().map(TraceSummary).collect())
+    }
+
+    /// Filtered, sorted, paged trace browse with total count for redesigned
+    /// trace list clients.
+    #[allow(clippy::too_many_arguments)]
+    async fn traces_page(
+        context: &ApiContext,
+        service: Option<String>,
+        from_nanos: Option<String>,
+        to_nanos: Option<String>,
+        min_duration_ms: Option<f64>,
+        max_duration_ms: Option<f64>,
+        error_only: Option<bool>,
+        query: Option<String>,
+        limit: Option<i32>,
+        offset: Option<i32>,
+        sort: Option<TraceSort>,
+    ) -> FieldResult<TraceList> {
+        let parse = |bound: Option<String>, label: &str| -> FieldResult<Option<u128>> {
+            bound
+                .map(|s| {
+                    s.parse::<u128>()
+                        .map_err(|_| field_err(format!("invalid {label}")))
+                })
+                .transpose()
+        };
+        let trace_query = parallax_storage::adapter::TraceQuery {
+            service: service.filter(|s| !s.is_empty()),
+            from_nanos: parse(from_nanos, "fromNanos")?,
+            to_nanos: parse(to_nanos, "toNanos")?,
+            min_duration_ns: min_duration_ms
+                .filter(|ms| *ms > 0.0)
+                .map(|ms| (ms * 1e6) as u128),
+            max_duration_ns: max_duration_ms
+                .filter(|ms| *ms > 0.0)
+                .map(|ms| (ms * 1e6) as u128),
+            error_only: error_only.unwrap_or(false),
+            name_contains: query.filter(|q| !q.trim().is_empty()),
+            limit: clamp_limit(limit, 50),
+            offset: offset
+                .map_or(0, |value| usize::try_from(value.max(0)).unwrap_or(0))
+                .min(MAX_ROWS),
+            sort: sort.map(Into::into).unwrap_or_default(),
+        };
+        let traces = context
+            .store
+            .traces_search(&trace_query)
+            .await
+            .map_err(field_err)?;
+        Ok(TraceList(traces))
     }
 
     /// The bounded, redacted, hypothesis-ranked evidence bundle — the agent
@@ -1873,6 +1969,7 @@ mod tests {
             duration_ns,
             run_id: None,
             scope_name: String::new(),
+            events: None,
             links: serde_json::Value::Null,
             attributes: serde_json::Value::Null,
             resource: serde_json::Value::Null,
@@ -2020,5 +2117,64 @@ mod tests {
             .span_count(),
             "2147483648"
         );
+    }
+
+    #[tokio::test]
+    async fn traces_page_returns_total_and_span_events_json() {
+        let store = Arc::new(MemoryStore::new());
+        let mut mid = span("api", "mid", "b", 20, 20_000_000);
+        mid.events = Some(
+            r#"[{"name":"exception","timeUnixNano":"20","attributes":{"message":"bad"}}]"#
+                .to_string(),
+        );
+        store
+            .ingest_traces(
+                vec![
+                    span("api", "fast", "a", 10, 10_000_000),
+                    mid,
+                    span("api", "slow", "c", 30, 30_000_000),
+                ],
+                Default::default(),
+            )
+            .await
+            .unwrap();
+
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"
+            {
+              tracesPage(sort: DURATION_DESC, limit: 2, offset: 1) {
+                total
+                items { traceId durationNs }
+              }
+              trace(traceId: "mid") {
+                spans { spanId events }
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert_eq!(
+            json.pointer("/data/tracesPage/total"),
+            Some(&serde_json::json!("3"))
+        );
+        assert_eq!(
+            json.pointer("/data/tracesPage/items/0/traceId"),
+            Some(&serde_json::json!("mid"))
+        );
+        assert_eq!(
+            json.pointer("/data/tracesPage/items/1/traceId"),
+            Some(&serde_json::json!("fast"))
+        );
+        let events = json
+            .pointer("/data/trace/spans/0/events")
+            .and_then(serde_json::Value::as_str)
+            .unwrap();
+        assert!(events.contains("exception"));
     }
 }

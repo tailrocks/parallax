@@ -590,7 +590,7 @@ impl TelemetryStore for MemoryStore {
     async fn traces_search(
         &self,
         query: &crate::adapter::TraceQuery,
-    ) -> anyhow::Result<Vec<crate::adapter::TraceSummary>> {
+    ) -> anyhow::Result<crate::adapter::TraceList> {
         let inner = self.lock();
         // `service` matches any trace the service participates in (a span of
         // that service anywhere), not only the root span.
@@ -628,7 +628,7 @@ impl TelemetryStore for MemoryStore {
             }
         }
         // Representative-span filters; newest first.
-        let mut roots: Vec<&SpanRow> = rep
+        let roots: Vec<&SpanRow> = rep
             .into_values()
             .filter(|s| {
                 participating
@@ -638,6 +638,7 @@ impl TelemetryStore for MemoryStore {
             .filter(|s| query.from_nanos.is_none_or(|from| s.ts_nanos >= from))
             .filter(|s| query.to_nanos.is_none_or(|to| s.ts_nanos <= to))
             .filter(|s| query.min_duration_ns.is_none_or(|min| s.duration_ns >= min))
+            .filter(|s| query.max_duration_ns.is_none_or(|max| s.duration_ns <= max))
             .filter(|s| {
                 query
                     .name_contains
@@ -645,7 +646,6 @@ impl TelemetryStore for MemoryStore {
                     .is_none_or(|needle| s.name.contains(needle))
             })
             .collect();
-        roots.sort_by_key(|s| std::cmp::Reverse(s.ts_nanos));
         let mut traces: Vec<_> = roots
             .into_iter()
             .map(|root| {
@@ -671,8 +671,25 @@ impl TelemetryStore for MemoryStore {
         if query.error_only {
             traces.retain(|t| t.has_error);
         }
-        traces.truncate(query.limit);
-        Ok(traces)
+        match query.sort {
+            crate::adapter::TraceSort::StartDesc => {
+                traces.sort_by_key(|t| std::cmp::Reverse(t.start_nanos));
+            }
+            crate::adapter::TraceSort::DurationDesc => {
+                traces.sort_by_key(|t| std::cmp::Reverse(t.duration_ns));
+            }
+            crate::adapter::TraceSort::DurationAsc => traces.sort_by_key(|t| t.duration_ns),
+            crate::adapter::TraceSort::SpanCountDesc => {
+                traces.sort_by_key(|t| std::cmp::Reverse(t.span_count));
+            }
+        }
+        let total = traces.len() as u64;
+        let items = traces
+            .into_iter()
+            .skip(query.offset)
+            .take(query.limit)
+            .collect();
+        Ok(crate::adapter::TraceList { items, total })
     }
 
     async fn error_events_by_traces(
@@ -858,7 +875,7 @@ impl TelemetryStore for MemoryStore {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::adapter::{TelemetryStore, TraceQuery};
+    use crate::adapter::{TelemetryStore, TraceQuery, TraceSort};
 
     fn span(trace: &str, span_id: &str, parent: Option<&str>, service: &str, ts: u128) -> SpanRow {
         SpanRow {
@@ -874,10 +891,24 @@ mod tests {
             duration_ns: 1_000,
             run_id: None,
             scope_name: String::new(),
+            events: None,
             links: serde_json::Value::Null,
             attributes: serde_json::Value::Null,
             resource: serde_json::Value::Null,
         }
+    }
+
+    fn span_with_duration(
+        trace: &str,
+        span_id: &str,
+        parent: Option<&str>,
+        service: &str,
+        ts: u128,
+        duration_ns: u128,
+    ) -> SpanRow {
+        let mut row = span(trace, span_id, parent, service, ts);
+        row.duration_ns = duration_ns;
+        row
     }
 
     fn error_event(service: &str, ts: u128) -> ErrorEventRow {
@@ -920,6 +951,7 @@ mod tests {
             .unwrap();
 
         let by_catalog = store.traces_search(&query(Some("catalog"))).await.unwrap();
+        let by_catalog = by_catalog.items;
         assert_eq!(by_catalog.len(), 1, "catalog participates in t1");
         assert_eq!(by_catalog[0].trace_id, "t1");
         assert_eq!(
@@ -929,7 +961,7 @@ mod tests {
         assert_eq!(by_catalog[0].span_count, 2);
 
         let absent = store.traces_search(&query(Some("payment"))).await.unwrap();
-        assert!(absent.is_empty(), "payment is in no trace");
+        assert!(absent.items.is_empty(), "payment is in no trace");
     }
 
     // A trace with no stored root (all spans parented elsewhere) still lists,
@@ -949,6 +981,7 @@ mod tests {
             .unwrap();
 
         let traces = store.traces_search(&query(None)).await.unwrap();
+        let traces = traces.items;
         assert_eq!(traces.len(), 1);
         assert_eq!(traces[0].trace_id, "t2");
         assert_eq!(
@@ -956,6 +989,56 @@ mod tests {
             "earliest span represents a rootless trace"
         );
         assert_eq!(traces[0].span_count, 2);
+    }
+
+    #[tokio::test]
+    async fn trace_search_sorts_offsets_and_filters_duration_band() {
+        let store = MemoryStore::new();
+        store
+            .ingest_traces(
+                vec![
+                    span_with_duration("fast", "a", None, "api", 10, 10),
+                    span_with_duration("mid", "b", None, "api", 20, 20),
+                    span_with_duration("slow", "c", None, "api", 30, 30),
+                    span_with_duration("wide", "d", None, "api", 40, 25),
+                    span_with_duration("wide", "e", Some("d"), "api", 45, 5),
+                ],
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+
+        let result = store
+            .traces_search(&TraceQuery {
+                min_duration_ns: Some(15),
+                max_duration_ns: Some(30),
+                sort: TraceSort::DurationDesc,
+                limit: 2,
+                offset: 1,
+                ..TraceQuery::default()
+            })
+            .await
+            .unwrap();
+        assert_eq!(result.total, 3);
+        assert_eq!(
+            result
+                .items
+                .iter()
+                .map(|t| t.trace_id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["wide", "mid"]
+        );
+
+        let by_span_count = store
+            .traces_search(&TraceQuery {
+                sort: TraceSort::SpanCountDesc,
+                limit: 1,
+                ..TraceQuery::default()
+            })
+            .await
+            .unwrap();
+        assert_eq!(by_span_count.items[0].trace_id, "wide");
+        assert_eq!(by_span_count.items[0].span_count, 2);
     }
 
     #[tokio::test]

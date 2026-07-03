@@ -1,9 +1,9 @@
 //! Gated invariant: against a real GreptimeDB, the *only* tables Parallax
-//! creates are the three documented custom extension tables — every raw OTel
+//! creates are the two documented custom extension tables — every raw OTel
 //! signal (traces, logs, metrics) lives in GreptimeDB's native auto-created
 //! tables, never a hand-rolled one. Pushes all three signals, then `SHOW
 //! TABLES` and asserts the inventory: native tables present, the extension set
-//! is exactly the three, and none of the retired `otel_*` raw tables exist.
+//! is exactly the two, and none of the retired `otel_*` raw tables exist.
 //!
 //! Run with: `cargo test -p parallax-server --test m1_table_inventory_greptime -- --ignored`
 
@@ -15,11 +15,7 @@ use std::time::Duration;
 
 /// Tables Parallax is allowed to create itself in GreptimeDB. Everything else
 /// must be a native OTLP table the engine auto-created from a forward.
-const ALLOWED_EXTENSIONS: &[&str] = &[
-    "error_events",
-    "rollups_fingerprint_minute",
-    "run_metric_points",
-];
+const ALLOWED_EXTENSIONS: &[&str] = &["error_events", "run_metric_points"];
 
 /// The retired hand-rolled raw-signal tables — must never reappear.
 const RETIRED_RAW_TABLES: &[&str] = &[

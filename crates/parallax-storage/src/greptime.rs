@@ -88,13 +88,6 @@ impl GreptimeStore {
                    TIME INDEX ("ts"), PRIMARY KEY ("service", "fingerprint")
                  ) WITH (ttl = '{error_events_ttl}')"#
             ),
-            format!(
-                r#"CREATE TABLE IF NOT EXISTS rollups_fingerprint_minute (
-                   "bucket_ts" TIMESTAMP(0) NOT NULL, "service" STRING, "fingerprint" STRING,
-                   "count" BIGINT,
-                   TIME INDEX ("bucket_ts"), PRIMARY KEY ("service", "fingerprint")
-                 ) WITH (ttl = '{error_events_ttl}')"#
-            ),
             // Run-scoped metric points (Q6, Approach 2): high-card `run_id` is a
             // SKIPPING-indexed column, not a metric-engine tag, so per-run series
             // cost nothing on the metric engine.
@@ -139,6 +132,8 @@ impl GreptimeStore {
     /// Traces deviation: a `fingerprint` column for cross-signal correlation.
     async fn try_traces_deviations(&self) {
         self.try_deviations(&[
+            // TODO(plan-010): unpopulated; filling it touches the zero-copy
+            // ingest path and is deferred to a dedicated ingest change.
             r#"ALTER TABLE opentelemetry_traces ADD COLUMN "fingerprint" STRING"#,
         ])
         .await;
@@ -338,6 +333,10 @@ impl GreptimeStore {
                 // native: `timestamp` is the span start TIME INDEX (ns);
                 // `duration_nano` is the generated duration in ns.
                 let (attributes, resource) = cols.reassemble_attrs(row);
+                let events = match cols.json("span_events", row) {
+                    serde_json::Value::Null => None,
+                    value => Some(value.to_string()),
+                };
                 SpanRow {
                     ts_nanos: cols.u128("timestamp", row),
                     service: cols.string("service_name", row),
@@ -352,6 +351,7 @@ impl GreptimeStore {
                     // native: run id flattens to a resource-attribute column.
                     run_id: cols.opt_string("resource_attributes.parallax.run.id", row),
                     scope_name: cols.string("scope_name", row),
+                    events,
                     links: cols.json("span_links", row),
                     attributes,
                     resource,
@@ -1182,11 +1182,9 @@ impl TelemetryStore for GreptimeStore {
     async fn traces_search(
         &self,
         query: &crate::adapter::TraceQuery,
-    ) -> anyhow::Result<Vec<crate::adapter::TraceSummary>> {
+    ) -> anyhow::Result<crate::adapter::TraceList> {
         // One representative span per trace — its root (no parent), else the
-        // earliest span when no root was stored (all-INTERNAL traces) — newest
-        // first; aggregates joined per trace. `error_only` filters on the
-        // aggregate, so over-fetch first.
+        // earliest span when no root was stored (all-INTERNAL traces).
         //
         // `service` matches any trace the service **participates in** (a span
         // of that service anywhere), not only the root — so a cross-service
@@ -1216,82 +1214,76 @@ impl TelemetryStore for GreptimeStore {
         if let Some(min) = query.min_duration_ns {
             rep.push(format!(r#""dur" >= {}"#, u64::try_from(min)?));
         }
+        if let Some(max) = query.max_duration_ns {
+            rep.push(format!(r#""dur" <= {}"#, u64::try_from(max)?));
+        }
         if let Some(needle) = &query.name_contains {
             let escaped = escape(needle).replace('%', r"\%").replace('_', r"\_");
             rep.push(format!(r#""span_name" LIKE '%{escaped}%' ESCAPE '\'"#));
         }
-        let fetch = if query.error_only {
-            query.limit.saturating_mul(5).max(50)
-        } else {
-            query.limit
+        if query.error_only {
+            rep.push(r#""has_error" > 0"#.to_string());
+        }
+        let order = match query.sort {
+            crate::adapter::TraceSort::StartDesc => r#""ts_nanos" DESC"#,
+            crate::adapter::TraceSort::DurationDesc => r#""dur" DESC"#,
+            crate::adapter::TraceSort::DurationAsc => r#""dur" ASC"#,
+            crate::adapter::TraceSort::SpanCountDesc => r#""span_count" DESC"#,
         };
+        let listed = format!(
+            r#"SELECT "root"."trace_id", "root"."span_name", "root"."service_name",
+                      "root"."ts_nanos", "root"."dur", "agg"."span_count",
+                      "agg"."has_error"
+               FROM (
+                 SELECT "trace_id", "span_name", "service_name",
+                        CAST("timestamp" AS BIGINT) AS "ts_nanos",
+                        CAST("duration_nano" AS BIGINT) AS "dur",
+                        ROW_NUMBER() OVER (
+                          PARTITION BY "trace_id"
+                          ORDER BY (CASE WHEN "parent_span_id" IS NULL OR "parent_span_id" = ''
+                                         THEN 0 ELSE 1 END) ASC,
+                                   "timestamp" ASC
+                        ) AS "rn"
+                 FROM opentelemetry_traces
+                 WHERE {scan_where}{participation}
+               ) AS "root"
+               JOIN (
+                 SELECT "trace_id", COUNT(*) AS "span_count",
+                        MAX(CASE WHEN "span_status_code" = 'STATUS_CODE_ERROR' THEN 1 ELSE 0 END)
+                        AS "has_error"
+                 FROM opentelemetry_traces GROUP BY "trace_id"
+               ) AS "agg" ON "root"."trace_id" = "agg"."trace_id"
+               WHERE {rep_where}"#,
+            rep_where = rep.join(" AND "),
+        );
+        let total_rows = self
+            .sql_lenient(&format!(r#"SELECT COUNT(*) AS "total" FROM ({listed})"#))
+            .await?;
         let roots = self
             .sql_lenient(&format!(
-                r#"SELECT "trace_id", "span_name", "service_name", "ts_nanos", "dur"
-                   FROM (
-                     SELECT "trace_id", "span_name", "service_name",
-                            CAST("timestamp" AS BIGINT) AS "ts_nanos",
-                            CAST("duration_nano" AS BIGINT) AS "dur",
-                            ROW_NUMBER() OVER (
-                              PARTITION BY "trace_id"
-                              ORDER BY (CASE WHEN "parent_span_id" IS NULL OR "parent_span_id" = ''
-                                             THEN 0 ELSE 1 END) ASC,
-                                       "timestamp" ASC
-                            ) AS "rn"
-                     FROM opentelemetry_traces
-                     WHERE {scan_where}{participation}
-                   )
-                   WHERE {rep_where}
-                   ORDER BY "ts_nanos" DESC LIMIT {fetch}"#,
-                rep_where = rep.join(" AND "),
+                r#"SELECT * FROM ({listed}) ORDER BY {order} LIMIT {} OFFSET {}"#,
+                query.limit, query.offset,
             ))
             .await?;
-        if roots.is_empty() {
-            return Ok(Vec::new());
-        }
-        let id_list = roots
+        let traces: Vec<_> = roots
             .iter()
-            .map(|row| format!("'{}'", escape(&str_at(row, 0))))
-            .collect::<Vec<_>>()
-            .join(",");
-        let aggregates = self
-            .sql(&format!(
-                r#"SELECT "trace_id", COUNT(*) AS "n",
-                          MAX(CASE WHEN "span_status_code" = 'STATUS_CODE_ERROR' THEN 1 ELSE 0 END) AS "err"
-                   FROM opentelemetry_traces WHERE "trace_id" IN ({id_list})
-                   GROUP BY "trace_id""#
-            ))
-            .await?;
-        let mut by_trace: std::collections::HashMap<String, (u64, bool)> =
-            std::collections::HashMap::new();
-        for row in &aggregates {
-            by_trace.insert(
-                str_at(row, 0),
-                (u128_at(row, 1) as u64, u128_at(row, 2) > 0),
-            );
-        }
-        let mut traces: Vec<_> = roots
-            .iter()
-            .map(|row| {
-                let trace_id = str_at(row, 0);
-                let (span_count, has_error) =
-                    by_trace.get(&trace_id).copied().unwrap_or((1, false));
-                crate::adapter::TraceSummary {
-                    trace_id,
-                    root_name: str_at(row, 1),
-                    service: str_at(row, 2),
-                    start_nanos: u128_at(row, 3),
-                    duration_ns: u128_at(row, 4),
-                    span_count,
-                    has_error,
-                }
+            .map(|row| crate::adapter::TraceSummary {
+                trace_id: str_at(row, 0),
+                root_name: str_at(row, 1),
+                service: str_at(row, 2),
+                start_nanos: u128_at(row, 3),
+                duration_ns: u128_at(row, 4),
+                span_count: u128_at(row, 5) as u64,
+                has_error: u128_at(row, 6) > 0,
             })
             .collect();
-        if query.error_only {
-            traces.retain(|t| t.has_error);
-        }
-        traces.truncate(query.limit);
-        Ok(traces)
+        Ok(crate::adapter::TraceList {
+            items: traces,
+            total: total_rows
+                .first()
+                .map(|r| u128_at(r, 0) as u64)
+                .unwrap_or(0),
+        })
     }
 
     async fn error_events_by_traces(
@@ -1505,7 +1497,6 @@ impl GreptimeStore {
             "opentelemetry_traces_operations",
             "opentelemetry_logs",
             "error_events",
-            "rollups_fingerprint_minute",
             "run_metric_points",
             "greptime_physical_table",
         ];

@@ -17,6 +17,9 @@ pub struct SpanRow {
     pub duration_ns: u128,
     pub run_id: Option<String>,
     pub scope_name: String,
+    /// Raw OTel span events JSON (`[{name, time_unix_nano, attributes}]`) when
+    /// the backing source projects it; absent sources default to no events.
+    pub events: Option<String>,
     /// OTel span links — `[{traceId, spanId, attributes}]` — the standard
     /// cross-trace correlation (batch/async "sub-operation" references).
     pub links: serde_json::Value,
