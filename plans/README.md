@@ -49,9 +49,41 @@ source of truth. API extensions are in scope (plans 009-010).
 | 019 | Fingerprint normalization v2 (issue over-splitting) | P1 | M | — | TODO |
 | 020 | Spool retention: rotation + reaper + doctor | P1 | M | — | TODO |
 | 021 | Anchored log/span queries newest-first + severityMax | P2 | S | — | TODO |
+| 022 | SQL surface hardening (metricSeries injection + EXPLAIN ANALYZE) | P1 | S | — | TODO |
+| 023 | Bundle redaction completeness (title/culprit/command) | P1 | S | — | TODO |
+| 024 | Enforce GraphQL depth/complexity + Host-header guard | P2 | M | — | TODO |
+| 025 | Redaction rule-set expansion (DSN/PEM/token shapes) | P2 | M | 023 | TODO |
+| 026 | Issue derivation correctness (non-error exceptions + dedup) | P1 | M | — | TODO |
+| 027 | Bundle hash stability + trace/metric budget bounding | P2 | M | — | TODO |
+| 028 | Typed span links + linkedTraces + UI causal edges | P1 | M | — | TODO |
+| 029 | Story timeline resolver + trace/run tab | P1 | M | — | TODO |
+| 030 | attributeCompare (BubbleUp) over span attributes | P2 | M | — | TODO |
+| 031 | Ecosystem service-map (trace-path graph) | P2 | L | 024 | TODO |
+| 032 | Evidence-gap detector + UI + bundle enrichment | P2 | M | — | TODO |
+| 033 | Metric exemplars end-to-end (design + thin slice) | P3 | L | — | TODO |
+| 034 | Playground execution-stack scenario (design + build) | P3 | L | 029 | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (one-line reason) | REJECTED (one-line
 rationale) | SUPERSEDED.
+
+## Observability-program series (022-034, added 2026-07-07)
+
+Derived from the audit of `docs/research/architecture/full-observability-ui-and-playground-research.md`
+(the "full-observability UI + playground" brief), written against commit `8bc3f13`. Two
+tracks:
+
+- **Audit-surfaced fixes (022-027)** — real defects the audit found while checking the
+  brief's "current signatures to preserve" claims. Highest leverage; land these first.
+  Security/correctness, mostly backend, independent of the UI chain.
+- **Brief-derived features (028-034)** — the brief's own suggested execution order
+  (span links → story → attribute compare → ecosystem → evidence gaps → exemplars →
+  playground execution stack). Each was checked feasible against the real code before
+  planning; 033/034 are design-anchored (spike first, then build).
+
+Recommended order: **022 → 023 → 026** (P1 security/correctness) first, then
+**028 → 029** (highest-value brief features, cheap because the data exists), then
+**024, 025, 027, 030, 032** as capacity allows, then the large/design items
+**031, 033, 034**. 022/023/026/028/029 are mutually independent and can run in parallel.
 
 ## Dependency notes
 
@@ -75,6 +107,49 @@ rationale) | SUPERSEDED.
   fingerprints forward-only — plan 016's issue list/detail should surface `error.type` /
   `jackin.operation` facets and consume the existing `bundle(fingerprint:)` artifact for
   its summary/cause/evidence split instead of inlining raw bodies.
+- **022-034 (observability-program series):**
+  - 025 depends on 023 (023 first routes title/culprit/command through `redact`; 025 then
+    widens the rule set so those fields benefit). 027 touches nearby bundle regions — land
+    after 023/025 to avoid rebase churn (no logical dependency).
+  - 026 is independent of 019 but both touch derivation semantics — re-run both test suites
+    after the second lands. 026 defers cross-*source* `error_type` divergence (entangled
+    with 019's structured-field work).
+  - 024 (depth/complexity guard) should land before 031 (ecosystem graph fan-out) and
+    ideally before 030 (attribute-compare fan-out); both are safe without it but cheaper to
+    reason about after.
+  - 028 (typed span links) is consumed by 031 (edge model) and 032 (producer/consumer gap
+    detection) — land 028 first if doing those.
+  - 029 (story) reuses the `bundle` resolver's input-fetch; 034 (playground execution
+    stack) depends on 029 so there is a run-story surface to render the new telemetry.
+  - 032 (evidence gaps) optionally enriches the bundle `missing_evidence`; if 027 landed,
+    keep the gap output deterministic so the canonical hash stays reproducible.
+  - Cross-repo: 034 is authored in the **playground** repo, not this one; its status row
+    still lives here.
+
+## Findings considered and rejected (022-034 audit)
+
+- **Split the 2181-line `crates/parallax-api/src/lib.rs`** (ARCH-01): real tech debt, but
+  a pure module re-org is not worth a standalone plan now — fold it in opportunistically
+  when a feature plan (028-032) adds a resolver, by placing the new resolver in a submodule.
+- **N+1 sub-resolvers on `runs`/`issues` list items** (no dataloader): real, but Juniper
+  has no built-in dataloader and the fix is entangled with a batching-layer decision; the
+  500-row cap bounds the blast radius today. Deferred; revisit if a list surface gets slow.
+- **`traces_search` unbounded whole-table aggregate** (storage PERF-01): real and worth
+  fixing, but it is pre-existing (not introduced by this program) and orthogonal to the
+  brief; tracked here so it is not re-audited, candidate for its own perf plan.
+- **OTLP payload limits rely on framework defaults**: bounded already (axum ~2MB, tonic
+  ~4MB decode); pin explicitly someday, not plan-worthy now.
+- **`Worker.seen_runs` grows unbounded**: slow leak on very long-lived servers; low
+  severity, deferred.
+- **`metric_point_count` stubbed to 0 / metric trend empty** (storage PERF-05): a
+  documented V1 gap, not a regression; deferred.
+- **Stringly-typed UI GraphQL client** (no variables/codegen): real DX debt, but the manual
+  escaper is safe today and a codegen migration is a large independent change; deferred, not
+  in this program.
+- **Causal reconstruction** (typed nodes/edges + strength tiers): confirmed research-only,
+  no code exists. Deliberately NOT planned — it is a large design item the brief itself
+  leaves open; story (029) + evidence gaps (032) + ecosystem (031) deliver the
+  near-term causal-navigation value without it.
 
 ## Verification baseline
 
