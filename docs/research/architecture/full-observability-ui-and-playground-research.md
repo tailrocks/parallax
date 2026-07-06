@@ -100,6 +100,64 @@ evidence bundle.
   `tracing` spans to OTel. Sources:
   <https://opentelemetry.io/docs/languages/rust/getting-started/> and
   <https://github.com/tokio-rs/tracing-opentelemetry>.
+- OpenTelemetry Logs Data Model is stable and defines `Timestamp`,
+  `ObservedTimestamp`, `TraceId`, `SpanId`, `TraceFlags`, `SeverityText`,
+  `SeverityNumber`, `Body`, `Resource`, `InstrumentationScope`, `Attributes`,
+  and `EventName`. It explicitly models logs and typed events from first-party,
+  third-party, and system sources. Source:
+  <https://opentelemetry.io/docs/specs/otel/logs/data-model/>.
+- OpenTelemetry Metrics Data Model is stable, supports delta/cumulative
+  temporality, transformations/reaggregation, histograms, exponential
+  histograms, and **exemplars** that attach trace/span context to metric
+  measurements. Sources:
+  <https://opentelemetry.io/docs/specs/otel/metrics/> and
+  <https://opentelemetry.io/docs/specs/otel/metrics/data-model/>.
+- OpenTelemetry browser event semantic conventions define `browser.web_vital`
+  events for Web Vitals such as CLS/LCP/INP-style measurements; status is
+  Development. Source:
+  <https://opentelemetry.io/docs/specs/semconv/browser/browser-events/>.
+- Elastic Discover is the primary Kibana data-exploration tool: search/filter,
+  field statistics, pattern analysis, individual document inspection, quick
+  visualizations, saved sessions, reports, and alerts. Source:
+  <https://www.elastic.co/docs/explore-analyze/discover>.
+- Elastic service maps rely on distributed traces and fail to draw edges when a
+  service is not instrumented or `traceparent` is not propagated; they expose
+  average duration, requests/minute, errors/minute, service-specific focus, and
+  anomaly indicators. Source:
+  <https://www.elastic.co/docs/solutions/observability/apm/service-map>.
+- Datadog Service Map and Catalog combine real-time observed dependencies,
+  service type, deploy/incident/monitor status, ownership, reliability,
+  performance, infrastructure links, and automatically discovered entities.
+  Sources: <https://docs.datadoghq.com/tracing/services/services_map/> and
+  <https://docs.datadoghq.com/internal_developer_portal/catalog/>.
+- Datadog Service Page rolls service health, monitors, Watchdog insights,
+  dependencies, out-of-box graphs, resources, deployments, error tracking,
+  traces, security, and log patterns into one service drilldown. Source:
+  <https://docs.datadoghq.com/tracing/services/service_page/>.
+- Honeycomb's differentiator is high-cardinality/high-dimensional exploration.
+  BubbleUp compares a selected anomaly against baseline across all dimensions
+  and ranks fields/values that stand out. Sources:
+  <https://docs.honeycomb.io/get-started/observability/concepts/high-cardinality>
+  and <https://docs.honeycomb.io/investigate/analyze/identify-outliers>.
+- Jaeger represents traces as DAGs via span references; its UI supports system
+  architecture graphs, deep dependency graphs, service/endpoint granularity, and
+  service performance monitoring from RED metrics. Source:
+  <https://www.jaegertracing.io/docs/1.76/features/>.
+- Grafana Tempo can generate RED/span metrics and service graphs from traces,
+  and can add exemplars so metric spikes link to representative traces. Sources:
+  <https://grafana.com/docs/tempo/latest/metrics-from-traces/> and
+  <https://grafana.com/docs/tempo/latest/metrics-from-traces/span-metrics/span-metrics-metrics-generator/>.
+- Tokio metrics exposes task and runtime metrics such as worker count, busy
+  duration, queue depth, live tasks, blocking queue depth, blocking thread
+  counts, forced yields, and I/O readiness; it is intended for production
+  metric reporting, while Tokio Console is primarily local debugging. Sources:
+  <https://docs.rs/tokio-metrics> and
+  <https://github.com/tokio-rs/tokio-metrics>.
+- Java runtime metrics in OpenTelemetry-style ecosystems include JVM heap/
+  non-heap memory, committed/init/limit, live thread count, class loading,
+  process/system CPU utilization, direct/mapped buffer counts/usage/limit, and
+  GC-related signals. Source:
+  <https://docs.datadoghq.com/opentelemetry/integrations/runtime_metrics/>.
 
 ## Current Parallax capabilities to preserve
 
@@ -735,6 +793,360 @@ Reusable components likely needed:
 - `FieldExplorer`: Kibana-like attributes sidebar.
 - `RedactionBadge/Report`: visible safety state.
 - `BundlePreview`: exact agent-visible evidence.
+
+## Second research pass: additional gaps to add
+
+This pass checked official OpenTelemetry specs plus Elastic, Datadog,
+Honeycomb, Jaeger, Grafana Tempo, Tokio, and JVM-runtime observability sources.
+The strongest missing idea is that Parallax should not merely correlate traces,
+logs, and metrics. It should make every correlation **actionable from the UI**:
+click a spike, explain the dimensions, jump to representative traces, inspect
+runtime state, see evidence quality, and save the investigation.
+
+### A. Metric exemplars: spike → exact trace, not "nearby traces"
+
+OpenTelemetry exemplars attach context to a metric measurement, commonly
+`trace_id` and `span_id`. Grafana/Tempo use this to put clickable exemplar dots
+on metric charts and jump from a latency/error spike to the representative
+trace.
+
+Parallax should add an explicit exemplar-first UX:
+
+- Every histogram/heatmap panel should render exemplar markers when the OTLP
+  metric point includes trace/span context.
+- Clicking a marker opens a compact popover:
+  - metric name, value, bucket/window;
+  - trace id / span id;
+  - service, route/op, status, run id if present;
+  - actions: open trace, open span, compare this bucket, add to bundle.
+- If no exemplars exist, the panel should show a transparent fallback:
+  "No trace exemplar attached; showing traces near this timestamp".
+- The playground should include two paired scenarios:
+  1. a latency histogram with exemplars enabled, where clicking p99 jumps to the
+     exact slow trace;
+  2. the same metric without exemplars, proving the UI clearly marks lower
+     confidence.
+
+This is critical for Grafana replacement because dashboards become investigation
+entry points, not dead charts.
+
+### B. Stable OTel logs/events model: logs as typed evidence, not text rows
+
+The OTel Logs Data Model is stable and includes trace/span/run-correlatable
+fields plus `EventName`. Parallax should treat logs in two tiers:
+
+1. **Log records:** raw/semi-structured messages with severity, body,
+   attributes, resource, trace/span id.
+2. **Typed events:** log records with `EventName` and known semantic attributes,
+   such as exceptions, browser web vitals, feature-flag evaluations, user
+   interactions, redaction detections, and lifecycle events.
+
+UI additions:
+
+- Logs page should have a **Type/Event** column separate from severity.
+- Story timeline should prefer typed events over parsing log body text.
+- Issue derivation should record whether the issue came from:
+  - span status;
+  - exception span event;
+  - exception log event;
+  - plain ERROR/FATAL log;
+  - runtime/container process exit.
+- Log detail should show:
+  - source timestamp vs observed timestamp;
+  - resource attributes;
+  - instrumentation scope;
+  - trace/span/run chips;
+  - whether body/attrs were redacted before bundle projection.
+
+Playground additions:
+
+- Java Logback/Log4j bridge path emits OTel logs with trace context.
+- Rust `tracing`/OTel appender path emits logs with trace context.
+- TypeScript frontend emits browser events and errors with trace context where
+  possible.
+- One scenario intentionally emits uncorrelated logs so Parallax can display
+  "evidence gap: log has no trace/span/run id".
+
+### C. Field statistics and pattern analysis: Kibana Discover parity, but scoped
+
+Elastic Discover's strongest idea is not its query language; it is immediate
+field understanding: top values, field statistics, patterns, saved columns, and
+document inspection. Parallax should add this pattern to spans, logs, events,
+and issues.
+
+Add a reusable **Field Explorer** drawer:
+
+- Works for logs, spans, span events, metrics attributes, issue tags, and run
+  metadata.
+- Shows for each key:
+  - type;
+  - coverage percentage in current selection;
+  - top values;
+  - approximate cardinality;
+  - semantic namespace (`http`, `rpc`, `db`, `messaging`, `graphql`, `process`,
+    `resource`, `parallax`, custom);
+  - safety status: safe, redacted, denied, high-cardinality warning.
+- Actions per value:
+  - filter include/exclude;
+  - group by;
+  - compare selected vs baseline;
+  - add/remove column;
+  - copy field path;
+  - open examples.
+
+This gives Kibana replacement behavior without making users write SQL first.
+
+### D. BubbleUp-style attribute compare: make "why" visible
+
+Honeycomb's BubbleUp compares an anomalous selection against a baseline across
+all dimensions. Parallax should implement the same mental model in a
+stack-specific way.
+
+Entry points:
+
+- drag-select a metric spike;
+- click a service-map edge with errors;
+- select failed traces on trace list;
+- open an issue spike;
+- select slow GraphQL resolver spans;
+- select failed CLI runs or agent commands;
+- select one container/session window.
+
+Output should be deterministic and inspectable:
+
+| Rank | Field | Selected | Baseline | Why useful |
+| --- | --- | --- | --- | --- |
+| 1 | `service.version` | `2.0.0` 92% | `2.0.0` 4% | likely deploy regression |
+| 2 | `graphql.field.name` | `Order.items` 88% | 11% | resolver-specific |
+| 3 | `parallax.screen.name` | `workspace-select` 81% | 7% | UI path-specific |
+| 4 | `container.image.id` | `sha256:...` 74% | 3% | capsule-specific |
+
+Guardrails:
+
+- Do not group by raw user text, prompt text, URL query, secrets, stacktrace
+  body, or high-risk baggage.
+- High-cardinality ids are allowed for **filtering and sample drilldown**, but
+  the compare UI should label them as exact identifiers, not stable categories.
+- Prefer low-cardinality semantic fields first, then expose raw/high-cardinality
+  fields behind "show exact ids".
+
+### E. Service catalog: operational ownership plus telemetry reality
+
+Datadog Catalog and Service Page show a useful pattern: a service is not only a
+node in a graph. It has owners, deploys, health, dependencies, monitors,
+resources, security signals, incidents, and out-of-box graphs.
+
+Parallax should add a local-first **Service Catalog** page/drawer:
+
+- Identity: `service.name`, namespace, version, runtime/language, framework,
+  telemetry SDK.
+- Ownership: repo/path, local workspace, team label if configured, run/source
+  that last emitted telemetry.
+- Health: RED, runtime health, open issues, failed runs, latest regression,
+  evidence gaps.
+- Dependencies:
+  - observed upstream/downstream from traces;
+  - manually declared relationships in metadata if future product needs them;
+  - missing/unknown edges caused by propagation failures.
+- Runtime/resources:
+  - processes/containers that host the service;
+  - CPU/memory/thread/task metrics;
+  - recent deploy/release/version changes.
+- Developer actions:
+  - open ecosystem focus;
+  - open service story;
+  - open traces/logs/issues/metrics;
+  - create evidence bundle for this service.
+
+Playground should include service metadata files or emitted resource attrs for
+Rust, Java, and TypeScript services so the catalog has meaningful content.
+
+### F. Topology graph levels: one-hop, transitive, endpoint, run-specific
+
+Jaeger's distinction between system architecture and deep dependency graphs is
+important. A one-hop edge graph does **not** prove full request path causality.
+
+Parallax should expose four graph modes:
+
+1. **Observed one-hop graph:** all observed direct edges in selected window.
+2. **Trace path graph:** only edges that appear together in matching traces.
+3. **Transitive/focal graph:** all downstream/upstream paths through selected
+   service, endpoint, run, screen, container, or agent.
+4. **Endpoint/resource graph:** node granularity can switch from service to
+   route/RPC method/GraphQL field/queue/topic/database/cache/container/agent.
+
+UI must label which graph mode is active. Otherwise users may infer causality
+that the data does not prove.
+
+### G. Runtime/profiling lane: explain CPU, memory, GC, Tokio starvation
+
+The original file mentions CPU/memory and runtime dashboards, but the second
+research pass found enough detail to make this a first-class design axis.
+
+Add a **Runtime** lane to service, trace, run, and story views:
+
+- Rust/Tokio:
+  - worker count;
+  - busy ratio/duration;
+  - global/local queue depth;
+  - live task count;
+  - blocking queue depth;
+  - blocking thread count;
+  - budget-forced yield count;
+  - task poll-duration histogram where available;
+  - lock contention spans/events.
+- Java/JVM:
+  - heap/non-heap usage/committed/limit;
+  - GC pause/count/time;
+  - live thread count;
+  - loaded class count;
+  - process/system CPU utilization;
+  - direct/mapped buffer usage/count/limit;
+  - Spring/GraphQL/gRPC/Kafka runtime correlations.
+- Browser/TypeScript:
+  - Web Vitals events;
+  - long tasks;
+  - route transition timing;
+  - fetch/XHR timing;
+  - user interaction latency.
+- Container/process:
+  - CPU throttling;
+  - memory limit/working set;
+  - OOM/crash/non-zero exit;
+  - file descriptors;
+  - network/disk I/O.
+
+UI behavior:
+
+- In trace view, show runtime panels for services active during the trace time
+  window, not only global service dashboards.
+- In run view, align runtime metrics with CLI/container/agent story rows.
+- In issue view, compare runtime metrics in issue windows vs baseline.
+- In bundle preview, include runtime snapshots only when they explain the
+  failure, with source metric names and time windows.
+
+Longer-term research note: OpenTelemetry has profile semantic conventions, but
+profiling support is not yet as uniformly mature as traces/logs/metrics across
+the current stack. Treat profiles as future-aligned UI slots, not required V1
+scope.
+
+### H. Frontend/session observability without full session replay dependency
+
+Grafana Frontend Observability and Sentry-style experiences emphasize user
+sessions, journeys, navigation performance, and trace links from frontend to
+backend. Parallax can capture the high-value structure without making replay a
+default dependency.
+
+Add a **User Journey** concept for browser and CLI/TUI:
+
+- Browser:
+  - route enter/exit;
+  - web vitals;
+  - user interactions;
+  - fetch/XHR spans;
+  - JS exceptions;
+  - source map / release / environment;
+  - traceparent propagation status.
+- CLI/TUI:
+  - screen enter/exit;
+  - selected list item/menu item;
+  - command submitted;
+  - background task started/completed;
+  - daemon/container/agent attach/detach;
+  - exit code.
+
+Important UX rule: call this **journey/story**, not replay, unless actual
+screen replay exists. Parallax should show structured facts and evidence; raw
+screen contents/prompts stay redacted or absent by default.
+
+### I. Investigations/cases: save the causal path, not just dashboards
+
+Elastic Cases and Grafana Explore/Notebooks show a missing workflow: users need
+to preserve an investigation state. Parallax should add a lightweight
+**Investigation** object later:
+
+- time window;
+- selected services/edges/runs/issues;
+- filters and query history;
+- pinned traces/logs/spans/metrics;
+- findings/notes;
+- evidence gaps;
+- bundle preview/export history;
+- redaction report snapshot.
+
+This is especially useful for coding agents: the UI can become a human-readable
+case file, while the bundle is the machine-readable evidence subset.
+
+### J. Telemetry quality score: show why Parallax cannot answer yet
+
+Competitive products often hide missing instrumentation. Parallax can turn it
+into a differentiator by grading evidence completeness per trace/run/service.
+
+Score dimensions:
+
+- trace continuity: parent/child and links resolve;
+- log correlation: ERROR/WARN logs have trace/span/run ids;
+- metric correlation: exemplars or time-aligned metric windows exist;
+- resource identity: service/version/environment/runtime present;
+- semantic quality: low-cardinality span names and standard attrs;
+- redaction quality: secrets masked without destroying useful context;
+- runtime coverage: process/runtime/container metrics exist;
+- frontend/backend propagation: browser trace continues into backend;
+- async coverage: producer/consumer links present.
+
+UI placement:
+
+- service catalog health card;
+- trace/run story header;
+- playground validation checklist;
+- evidence bundle preview.
+
+### K. Expanded query/API ideas from this pass
+
+Add these to the future GraphQL/query backlog:
+
+- `metricExemplars(metric, from, to, filters)` → trace/span-linked metric points.
+- `fieldStats(entity, from, to, filters)` → top values, coverage, cardinality,
+  types, safety status.
+- `topology(mode, scope, from, to)` → one-hop/path/transitive/endpoint graphs.
+- `serviceCatalog(scope)` → service identity, owners, resources, health,
+  dependencies, deploys, gaps.
+- `runtimeSnapshot(scope, from, to)` → runtime/process/container metrics aligned
+  to traces/runs/issues.
+- `investigation(id)` / `saveInvestigation(input)` → saved filters, pins,
+  bundle previews, notes.
+- `telemetryQuality(scope)` → completeness/gap scoring.
+
+Add these to potential materializations:
+
+- `metric_exemplars`: metric name/time/value/resource attrs/trace/span/run ids.
+- `field_stats_minute`: entity/key/top values/cardinality/coverage/safety.
+- `service_catalog_snapshots`: current identity/resources/ownership/health.
+- `topology_edges_minute`: graph mode, source, target, endpoint/resource attrs,
+  RED metrics, evidence quality.
+- `runtime_correlations`: runtime anomaly windows linked to traces/runs/issues.
+- `investigations`: Turso metadata for saved human investigation state.
+
+### L. Playground additions from this pass
+
+Add explicit scenarios that prove the new concepts:
+
+- **Exemplar demo:** p99 checkout latency chart contains exemplar dots that open
+  exact traces; control scenario lacks exemplars and shows lower confidence.
+- **Field explorer demo:** a log/error spike where `service.version`,
+  `graphql.field.name`, and `parallax.screen.name` stand out.
+- **Topology mode demo:** one-hop graph suggests A-B-C, while trace-path graph
+  proves only A-B and B-C occur separately; another trace proves full A→B→C.
+- **Telemetry quality demo:** missing browser traceparent, missing consumer link,
+  and uncorrelated log are all visible as evidence gaps.
+- **Runtime demo:** Tokio blocking queue/forced-yield spike aligns with slow Rust
+  service span; JVM GC pause aligns with Java GraphQL latency; container memory
+  limit aligns with process crash.
+- **Investigation demo:** saved case pins metric spike, BubbleUp comparison,
+  slow trace, error log, runtime panel, and bundle preview.
+- **Service catalog demo:** services expose version/environment/runtime/resource
+  attrs; one service has new release and rising error rate; another lacks owner
+  metadata and is visibly incomplete.
 
 ## Design principles
 
