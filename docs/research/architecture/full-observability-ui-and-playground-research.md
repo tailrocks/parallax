@@ -231,7 +231,7 @@ The playground already exercises many important cases:
 This is already better than a toy demo. The gap is that it still models mostly
 an e-commerce microservice world. Parallax needs the playground to also model
 **interactive execution systems**: host CLI → daemon → workspace/session →
-container capsule → multiplexer → multiple agents → tools/commands/files/tests.
+container → multiplexer → multiple agents → tools/commands/files/tests.
 
 ## Product goal: one intuitive causal graph
 
@@ -242,7 +242,7 @@ The UI should organize every signal around five correlated identities:
 | Service/process identity | `service.name`, `service.version`, resource attrs | Who emitted telemetry. |
 | Trace identity | `trace_id`, `span_id`, parent/links | One request/workflow causality tree/DAG. |
 | Run identity | `parallax.run.id` resource attr | One bounded CLI/session/workspace execution across many traces. |
-| User/workspace/session identity | allowlisted baggage/resource attrs, future normalized rows | Human-visible path: screen, workspace, capsule, agent session. |
+| User/workspace/session identity | allowlisted baggage/resource attrs, future normalized rows | Human-visible path: screen, workspace, container/session, agent session. |
 | Issue/fingerprint identity | Parallax fingerprint + issue metadata | Stable problem grouping across events/releases/runs. |
 
 The user should never need to know which signal has the answer. The UI should
@@ -305,7 +305,7 @@ Views:
    - host CLI;
    - daemon;
    - workspace/session;
-   - capsule/container;
+   - container/session;
    - multiplexer/session;
    - agent processes;
    - shell commands/tools/files/tests;
@@ -352,7 +352,7 @@ For a CLI/container/agent system:
 ```text
 00.000  host-cli       session start workspace=parallax
 00.014  daemon         allocated run_id=...
-00.084  docker         created capsule image=...
+00.084  docker         created container image=...
 00.310  container      attached multiplexer session
 00.442  agent-1        started model=...
 01.120  agent-1        read docs/research/architecture/...
@@ -451,7 +451,7 @@ Required UI sections:
 - Process tree: wrapper → child commands → daemon/container/agent processes.
 - Screen timeline: TUI/screen/view transitions, selected items, button presses,
   background operations.
-- Container/capsule panel: image, container id, workspace mount, attach time,
+- Container/session panel: image, container id, workspace mount, attach time,
   multiplexer session id, environment policy.
 - Agent timeline: agent start/end, prompts/context loads/tools/files/commands,
   validations, outcomes. Content redacted by default; structural facts visible.
@@ -522,13 +522,10 @@ Every service/process should set:
 - `parallax.workspace.id` only if non-sensitive/opaque; no current OTel standard
   workspace id covers Parallax's local workspace concept
 - standard container/resource identity such as `container.id`, `container.name`,
-  `oci.manifest.digest`, `host.id`, and `service.instance.id`; use
-  `parallax.capsule.id` only when the Parallax capsule is a product-level
-  session/container scope that is not identical to one concrete container
+  `oci.manifest.digest`, `host.id`, and `service.instance.id`
 - standard screen/widget attributes `app.screen.id`, `app.screen.name`,
   `app.widget.id`, and `app.widget.name` for browser/native/TUI-visible screens
-  and clicks; avoid `parallax.screen.name` unless a future Weaver overlay proves
-  that `app.screen.*` cannot express a terminal-specific concept
+  and clicks
 
 Do not put high-cardinality or PII identity in resource attributes. Use opaque
 ids, with metadata resolved inside Parallax/Turso only when allowed.
@@ -543,8 +540,8 @@ findings:
 | --- | --- | --- |
 | Generic Parallax run | `session.id` for client-side/user session; `cicd.pipeline.run.id` for CI/CD only; CLI `process.*` for one process execution | Keep `parallax.run.id` as Parallax's cross-process, cross-trace execution anchor. Also set `session.id` for real user/TUI/browser sessions and `cicd.pipeline.run.id` only for actual CI/CD pipeline runs. |
 | Workspace | `vcs.repository.url.full`, `vcs.repository.name`, `vcs.ref.head.revision`, `process.working_directory` | Keep `parallax.workspace.id` as opaque product identity. Do not use `process.working_directory` or raw paths as workspace ids by default. |
-| Capsule/session container | `container.id`, `container.name`, `container.command`, `container.command_args`, `container.command_line`, `oci.manifest.digest`, `host.id`, `service.instance.id` | Use standard container/process attrs for real containers. Keep `parallax.capsule.id` only for the higher-level Parallax capsule/session abstraction that may span container restarts, mux sessions, or multiple processes. |
-| Screen/view | `app.screen.id`, `app.screen.name`, `app.widget.id`, `app.widget.name`, events `app.screen.click`, `app.widget.click` | Prefer `app.screen.*` and `app.widget.*` for browser and TUI-visible screens/widgets. Keep custom `tui.screen.route`, `tui.panel.id`, and `tui.block.*` for terminal-specific structure not covered by OTel. Avoid `parallax.screen.name`. |
+| Container/session | `container.id`, `container.name`, `container.command`, `container.command_args`, `container.command_line`, `oci.manifest.digest`, `host.id`, `service.instance.id`, `session.id` | Use standard container/process/session attrs. Do not introduce a Parallax-specific container/session id. If one logical session spans multiple containers or restarts, link them with `session.id`, span links, and `parallax.run.id`. |
+| Screen/view | `app.screen.id`, `app.screen.name`, `app.widget.id`, `app.widget.name`, events `app.screen.click`, `app.widget.click` | Prefer `app.screen.*` and `app.widget.*` for browser and TUI-visible screens/widgets. Use custom `tui.panel.id` and `tui.block.*` only for terminal-specific structure not covered by OTel. |
 | CLI execution | CLI spans with `process.executable.name`, `process.exit.code`, `process.pid`, `process.command_args`, `process.executable.path`, `error.type` | Use standard CLI/process attrs for each command/span. Add `parallax.run.id` only to stitch many commands/processes/traces into one Parallax run. |
 
 Custom naming rule:
@@ -666,7 +663,7 @@ without referencing any specific external project in product docs:
 
 ```text
 host CLI → long-running daemon → workspace registry
-   → session start → container capsule → multiplexer
+   → session start → container → multiplexer
       → agent A / agent B
          → shell commands → app services / files / tests / git
          → errors/logs/metrics/traces
@@ -955,8 +952,8 @@ Output should be deterministic and inspectable:
 | --- | --- | --- | --- | --- |
 | 1 | `service.version` | `2.0.0` 92% | `2.0.0` 4% | likely deploy regression |
 | 2 | `graphql.field.name` | `Order.items` 88% | 11% | resolver-specific |
-| 3 | `app.screen.name` / `tui.screen.route` | `workspace-select` 81% | 7% | UI path-specific |
-| 4 | `container.image.id` | `sha256:...` 74% | 3% | capsule-specific |
+| 3 | `app.screen.id` / `app.screen.name` | `workspace-select` 81% | 7% | UI path-specific |
+| 4 | `container.image.id` | `sha256:...` 74% | 3% | container-specific |
 
 Guardrails:
 
@@ -1171,7 +1168,7 @@ Add explicit scenarios that prove the new concepts:
 - **Exemplar demo:** p99 checkout latency chart contains exemplar dots that open
   exact traces; control scenario lacks exemplars and shows lower confidence.
 - **Field explorer demo:** a log/error spike where `service.version`,
-  `graphql.field.name`, and `app.screen.name` or `tui.screen.route` stand out.
+  `graphql.field.name`, `app.screen.id`, and `app.screen.name` stand out.
 - **Topology mode demo:** one-hop graph suggests A-B-C, while trace-path graph
   proves only A-B and B-C occur separately; another trace proves full A→B→C.
 - **Telemetry quality demo:** missing browser traceparent, missing consumer link,
@@ -1513,12 +1510,12 @@ overlay, validated later through Weaver:
 
 | TUI concept | OTel primitive | Key attributes/events |
 | --- | --- | --- |
-| Whole interactive session | Root span | `parallax.run.id`, `tui.session.id`, terminal size, `$TERM`, mux type. |
-| Screen/view | Child span | `tui.screen.name`, `tui.screen.route`, enter/leave timestamps. |
+| Whole interactive session | Root span | `parallax.run.id`, `session.id`, terminal size, `$TERM`, mux type. |
+| Screen/view | Child span | `app.screen.id`, `app.screen.name`, enter/leave timestamps. |
 | Panel/pane | Child span or span event | `tui.panel.id`, `tui.panel.focused`. |
 | Visible output/work block | Child span | `tui.block.id`, `tui.block.kind`. |
 | Foreground operation | Child span of block | Normal span semantics, rendered inside block card. |
-| Background operation | Linked span or new root | Link to origin screen plus `tui.origin.screen`. |
+| Background operation | Linked span or new root | Link to origin screen plus `app.screen.id`. |
 | Keystroke/command/selection | Span event | `tui.input.kind`, redacted `tui.input.value`, `tui.target`. |
 | Focus change | Span event | `tui.focus.from`, `tui.focus.to`. |
 | Navigation | Span event plus new screen span | `tui.nav.from`, `tui.nav.to`, `tui.nav.trigger`. |
@@ -1534,7 +1531,7 @@ Rendering rule:
 Optional session recording:
 
 - Use asciicast v3-style terminal recording only when explicitly enabled.
-- Key recordings by `parallax.run.id` plus `tui.session.id`.
+- Key recordings by `parallax.run.id` plus `session.id`.
 - Story beats may offer "replay at this beat" only when recording exists.
 - Raw terminal content is never part of the default bundle; it is a redacted or
   reference-only artifact.
