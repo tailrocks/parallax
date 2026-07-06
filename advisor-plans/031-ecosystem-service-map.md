@@ -4,7 +4,7 @@
 > verification command and confirm the expected result before moving to the
 > next step. If anything in the "STOP conditions" section occurs, stop and
 > report — do not improvise. When done, update the status row for this plan
-> in `plans/README.md`.
+> in `advisor-plans/README.md`.
 >
 > **Drift check (run first)**: `git diff --stat 8bc3f13..HEAD -- crates/parallax-api/src/lib.rs crates/parallax-storage/src/adapter.rs crates/parallax-storage/src/greptime.rs crates/parallax-storage/src/memory.rs ui/src/components/nav.ts ui/package.json`
 > On excerpt mismatch, STOP.
@@ -14,7 +14,7 @@
 - **Priority**: P2
 - **Effort**: L
 - **Risk**: MED
-- **Depends on**: plans/024 (depth/complexity guard) recommended before the
+- **Depends on**: advisor-plans/024 (depth/complexity guard) recommended before the
   graph resolver ships, since graph queries fan out
 - **Category**: direction
 - **Planned at**: commit `8bc3f13`, 2026-07-07
@@ -202,9 +202,8 @@ and clicking a node/edge produces the expected link. Model on
       inspection
 - [ ] If a dep was added, it went through `bun add` and `bun.lock` is the only
       lockfile changed (no `package-lock.json`/`pnpm-lock.yaml`)
-- [ ] Reference leak check prints nothing
 - [ ] No out-of-scope files modified (`git status`)
-- [ ] `plans/README.md` status row updated
+- [ ] `advisor-plans/README.md` status row updated
 
 ## STOP conditions
 

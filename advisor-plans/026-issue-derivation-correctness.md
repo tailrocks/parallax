@@ -4,7 +4,7 @@
 > verification command and confirm the expected result before moving to the
 > next step. If anything in the "STOP conditions" section occurs, stop and
 > report — do not improvise. When done, update the status row for this plan
-> in `plans/README.md`.
+> in `advisor-plans/README.md`.
 >
 > **Drift check (run first)**: `git diff --stat 8bc3f13..HEAD -- crates/parallax-core/src/derive.rs crates/parallax-server/src/worker.rs`
 > On excerpt mismatch, STOP.
@@ -191,7 +191,7 @@ regression, cross-signal dedup, distinct-failure survival. Pattern: existing
 - [ ] A test proves an exception on a non-error span is captured
 - [ ] A test proves span+log of one failure yields one occurrence
 - [ ] No out-of-scope files modified (`git status`)
-- [ ] `plans/README.md` status row updated
+- [ ] `advisor-plans/README.md` status row updated
 
 ## STOP conditions
 

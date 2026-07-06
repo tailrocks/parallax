@@ -4,7 +4,7 @@
 > verification command and confirm the expected result before moving to the
 > next step. If anything in the "STOP conditions" section occurs, stop and
 > report — do not improvise. When done, update the status row for this plan
-> in `plans/README.md`.
+> in `advisor-plans/README.md`.
 >
 > **Drift check (run first)**: `git diff --stat 8bc3f13..HEAD -- crates/parallax-storage/src/greptime.rs crates/parallax-api/src/lib.rs`
 > If either file changed since this plan was written, compare the "Current
@@ -247,7 +247,7 @@ Machine-checkable. ALL must hold:
 - [ ] `grep -c "escape_ident" crates/parallax-storage/src/greptime.rs` ≥ 5
 - [ ] No files outside the in-scope list modified (`git status`), except the
       `adapter.rs` doc comment from Step 4
-- [ ] `plans/README.md` status row updated
+- [ ] `advisor-plans/README.md` status row updated
 
 ## STOP conditions
 
@@ -273,7 +273,7 @@ Stop and report back (do not improvise) if:
 - Deferred root fix (named per repo rule): the structural enabling condition
   is string-composed SQL. A parameterized-query client or a query-builder
   layer for GreptimeDB's HTTP API would remove the bug class; that is a
-  larger change tracked as a "considered" item in `plans/README.md`, not
+  larger change tracked as a "considered" item in `advisor-plans/README.md`, not
   done here.
 - The `sql()` guard remains lexical; engine-level read-only enforcement is
   not available in-process. If GreptimeDB grows a read-only session flag,

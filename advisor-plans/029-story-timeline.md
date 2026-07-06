@@ -4,7 +4,7 @@
 > verification command and confirm the expected result before moving to the
 > next step. If anything in the "STOP conditions" section occurs, stop and
 > report — do not improvise. When done, update the status row for this plan
-> in `plans/README.md`.
+> in `advisor-plans/README.md`.
 >
 > **Drift check (run first)**: `git diff --stat 8bc3f13..HEAD -- crates/parallax-api/src/lib.rs crates/parallax-core/src/bundle.rs ui/src/routes/traces.\$traceId.tsx ui/src/routes/runs.\$runId.tsx ui/src/components/nav.ts`
 > On excerpt mismatch, STOP.
@@ -177,9 +177,8 @@ as the default tab.
 - [ ] Story tab renders on both trace and run detail; error beats are visually
       distinct and linked (asserted by UI test)
 - [ ] Projection is deterministic (same input twice → equal output, asserted)
-- [ ] Reference leak check prints nothing
 - [ ] No out-of-scope files modified (`git status`)
-- [ ] `plans/README.md` status row updated
+- [ ] `advisor-plans/README.md` status row updated
 
 ## STOP conditions
 

@@ -4,7 +4,7 @@
 > verification command and confirm the expected result before moving to the
 > next step. If anything in the "STOP conditions" section occurs, stop and
 > report — do not improvise. When done, update the status row for this plan
-> in `plans/README.md`.
+> in `advisor-plans/README.md`.
 >
 > **Drift check (run first)**: `git diff --stat 8bc3f13..HEAD -- crates/parallax-api/src/lib.rs crates/parallax-storage/src/adapter.rs crates/parallax-storage/src/greptime.rs crates/parallax-storage/src/memory.rs`
 > On excerpt mismatch, STOP.
@@ -192,9 +192,8 @@ shipping UI now, stop after Step 4 and record the UI as a follow-up.
 - [ ] A test proves `trace_id`/`run_id`/session/user keys never appear in
       output (denylist)
 - [ ] Candidate-key count is bounded (no unbounded fan-out) — code inspection
-- [ ] Reference leak check prints nothing
 - [ ] No out-of-scope files modified (`git status`)
-- [ ] `plans/README.md` status row updated
+- [ ] `advisor-plans/README.md` status row updated
 
 ## STOP conditions
 

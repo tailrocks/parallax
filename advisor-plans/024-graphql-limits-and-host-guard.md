@@ -4,7 +4,7 @@
 > verification command and confirm the expected result before moving to the
 > next step. If anything in the "STOP conditions" section occurs, stop and
 > report — do not improvise. When done, update the status row for this plan
-> in `plans/README.md`.
+> in `advisor-plans/README.md`.
 >
 > **Drift check (run first)**: `git diff --stat 8bc3f13..HEAD -- crates/parallax-server/src/serve.rs crates/parallax-server/src/config.rs crates/parallax-api/src/lib.rs`
 > On excerpt mismatch, STOP.
@@ -190,7 +190,7 @@ store.
       runtime (`grep -n "graphql_max_depth" crates/parallax-server/src/serve.rs`
       returns a use site)
 - [ ] No out-of-scope files modified (`git status`)
-- [ ] `plans/README.md` status row updated
+- [ ] `advisor-plans/README.md` status row updated
 
 ## STOP conditions
 

@@ -4,7 +4,7 @@
 > verification command and confirm the expected result before moving to the
 > next step. If anything in the "STOP conditions" section occurs, stop and
 > report — do not improvise. When done, update the status row for this plan
-> in `plans/README.md`.
+> in `advisor-plans/README.md`.
 >
 > **Drift check (run first)**: `git diff --stat 8bc3f13..HEAD -- crates/parallax-core/src/bundle.rs crates/parallax-api/src/lib.rs ui/src/routes/traces.\$traceId.tsx`
 > On excerpt mismatch, STOP.
@@ -161,9 +161,8 @@ it calm — a gap is informative, not an error state.
 - [ ] `detect_gaps` is deterministic (same input → equal output, asserted)
 - [ ] Orphan-span detection carries the cross-service-root caveat in `detail`
 - [ ] Gap list renders in trace detail only when non-empty (asserted)
-- [ ] Reference leak check prints nothing
 - [ ] No out-of-scope files modified (`git status`)
-- [ ] `plans/README.md` status row updated
+- [ ] `advisor-plans/README.md` status row updated
 
 ## STOP conditions
 

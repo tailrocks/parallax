@@ -4,7 +4,7 @@
 > verification command and confirm the expected result before moving to the
 > next step. If anything in the "STOP conditions" section occurs, stop and
 > report — do not improvise. When done, update the status row for this plan
-> in `plans/README.md`.
+> in `advisor-plans/README.md`.
 >
 > **Drift check (run first)**: `git diff --stat f7f2c17..HEAD -- crates/parallax-core/src/fingerprint.rs crates/parallax-core/src/derive.rs crates/parallax-storage/src/metadata.rs`
 > On excerpt mismatch below, STOP.
@@ -115,7 +115,7 @@ Named per step; all in `fingerprint.rs` inline tests + one derive-level test. In
 - [ ] Distinct error types still split (test)
 - [ ] `error.type`/`jackin.operation` preferred when present (derive test)
 - [ ] Spec doc updated; fmt/clippy/nextest green
-- [ ] `plans/README.md` row updated (add plan 019 to the table)
+- [ ] `advisor-plans/README.md` row updated (add plan 019 to the table)
 
 ## STOP conditions
 

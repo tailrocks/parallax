@@ -4,7 +4,7 @@
 > verification command and confirm the expected result before moving to the
 > next step. If anything in the "STOP conditions" section occurs, stop and
 > report — do not improvise. When done, update the status row for this plan
-> in `plans/README.md`.
+> in `advisor-plans/README.md`.
 >
 > **Drift check (run first)**: `git diff --stat 8bc3f13..HEAD -- crates/parallax-core/src/bundle.rs crates/parallax-server/tests/m2_bundle.rs`
 > If either file changed, compare the "Current state" excerpts against the
@@ -185,7 +185,7 @@ Machine-checkable. ALL must hold:
 - [ ] `grep -n "run.command.clone()" crates/parallax-core/src/bundle.rs`
       returns nothing
 - [ ] No files outside the in-scope list modified (`git status`)
-- [ ] `plans/README.md` status row updated
+- [ ] `advisor-plans/README.md` status row updated
 
 ## STOP conditions
 

@@ -4,7 +4,7 @@
 > spike that produces a short design note and confirms feasibility; only then
 > do the implementation steps. If Step 1 finds the blocking assumption false,
 > STOP and report with the design note instead of implementing. Update the
-> status row in `plans/README.md` when done.
+> status row in `advisor-plans/README.md` when done.
 >
 > **Drift check (run first)**: `git diff --stat 8bc3f13..HEAD -- crates/parallax-core/src/normalize.rs crates/parallax-storage/src/greptime.rs crates/parallax-storage/src/model.rs crates/parallax-storage/src/adapter.rs crates/parallax-api/src/lib.rs`
 > On excerpt mismatch, STOP.
@@ -155,8 +155,7 @@ Recharts within `ChartContainer`; do not add a chart library.
       exist (asserted)
 - [ ] Ingest does not clone the telemetry batch to read exemplars (code
       inspection against the zero-copy rule)
-- [ ] Reference leak check prints nothing
-- [ ] `plans/README.md` status row updated
+- [ ] `advisor-plans/README.md` status row updated
 
 ## STOP conditions
 

@@ -4,7 +4,7 @@
 > verification command and confirm the expected result before moving to the
 > next step. If anything in the "STOP conditions" section occurs, stop and
 > report — do not improvise. When done, update the status row for this plan
-> in `plans/README.md`.
+> in `advisor-plans/README.md`.
 >
 > **Drift check (run first)**: `git diff --stat f7f2c17..HEAD -- crates/parallax-storage/src/greptime.rs crates/parallax-storage/src/memory.rs crates/parallax-api/src/lib.rs ui/src/routes/runs.\$runId.tsx`
 > Plans 014/017 (logs/runs redesigns) may have moved UI code — the storage/API
@@ -70,7 +70,7 @@ In `greptime.rs`: `logs_by_run` and `spans_by_run` (and any sibling `*_by_trace`
 
 ### Step 3: Coordination notes for the UI program
 
-Append to `plans/README.md` dependency notes: plan 017 (runs redesign) should (a) rely on `logsByRun` now returning the newest rows and (b) default the run page to INFO+ (`severityMin: 9`) with a DEBUG/TRACE toggle — no backend blocker remains; plan 014 (logs redesign) may expose the severity range using `severityMax`.
+Append to `advisor-plans/README.md` dependency notes: plan 017 (runs redesign) should (a) rely on `logsByRun` now returning the newest rows and (b) default the run page to INFO+ (`severityMin: 9`) with a DEBUG/TRACE toggle — no backend blocker remains; plan 014 (logs redesign) may expose the severity range using `severityMax`.
 
 **Verify**: `rtk cargo nextest run --workspace --all-targets`, fmt, clippy → green.
 
@@ -84,7 +84,7 @@ Step 1 over-limit newest-rows test (in-memory + optional Greptime-backed), Step 
 - [ ] Over-limit test proves newest rows returned (both adapters)
 - [ ] `severityMax` filters in both adapters + exposed on `logs`/`logCountSeries`
 - [ ] memory.rs parity for every touched method
-- [ ] fmt/clippy/nextest green; `plans/README.md` updated (status row + coordination notes)
+- [ ] fmt/clippy/nextest green; `advisor-plans/README.md` updated (status row + coordination notes)
 
 ## STOP conditions
 

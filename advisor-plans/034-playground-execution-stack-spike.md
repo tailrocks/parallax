@@ -4,7 +4,7 @@
 > **different repository** (the telemetry playground, not the Parallax repo).
 > Step 1 is a design spike; only build after it. If Step 1 concludes the
 > minimal shape is larger than a single service + CLI mode, STOP and report
-> the design so it can be split. Update the status row in `plans/README.md`
+> the design so it can be split. Update the status row in `advisor-plans/README.md`
 > (in the Parallax repo) when done.
 >
 > **Drift check (run first)**: in the playground repo,
@@ -17,7 +17,7 @@
 - **Priority**: P3
 - **Effort**: L
 - **Risk**: MED
-- **Depends on**: plans/029 (Story timeline) — the brief says build this
+- **Depends on**: advisor-plans/029 (Story timeline) — the brief says build this
   "after UI can visualize run stories," so the run-story surface should exist
   first to consume the new telemetry
 - **Category**: direction
@@ -166,7 +166,7 @@ real.
 - [ ] Against a local Parallax, the run's Story shows the execution beats and
       the failure variant shows an evidence gap (manual check, recorded)
 - [ ] No change made in the Parallax product repo
-- [ ] `plans/README.md` (Parallax repo) status row updated
+- [ ] `advisor-plans/README.md` (Parallax repo) status row updated
 
 ## STOP conditions
 

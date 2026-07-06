@@ -4,7 +4,7 @@
 > verification command and confirm the expected result before moving to the
 > next step. If anything in the "STOP conditions" section occurs, stop and
 > report — do not improvise. When done, update the status row for this plan
-> in `plans/README.md`.
+> in `advisor-plans/README.md`.
 >
 > **Drift check (run first)**: `git diff --stat f7f2c17..HEAD -- crates/parallax-storage/src/spool.rs crates/parallax-server/src/serve.rs crates/parallax-server/src/config.rs crates/parallax-cli/src/doctor.rs`
 > On excerpt mismatch, STOP.
@@ -99,7 +99,7 @@ Step 1 rotation tests; Step 2 reaper tests (age + total-size policies, active-fi
 - [ ] Reaper enforces both `[retention] spool_*` keys; active segment never deleted (tests)
 - [ ] `parallax doctor` shows spool caps + segment counts; `prune` clears rotated segments
 - [ ] Spec updated; fmt/clippy/nextest green
-- [ ] `plans/README.md` row added/updated for 020
+- [ ] `advisor-plans/README.md` row added/updated for 020
 
 ## STOP conditions
 

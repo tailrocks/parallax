@@ -4,7 +4,7 @@
 > verification command and confirm the expected result before moving to the
 > next step. If anything in the "STOP conditions" section occurs, stop and
 > report — do not improvise. When done, update the status row for this plan
-> in `plans/README.md`.
+> in `advisor-plans/README.md`.
 >
 > **Drift check (run first)**: `git diff --stat 8bc3f13..HEAD -- crates/parallax-api/src/lib.rs crates/parallax-storage/src/greptime.rs crates/parallax-storage/src/adapter.rs crates/parallax-storage/src/memory.rs ui/src/routes/traces.\$traceId.tsx`
 > On excerpt mismatch, STOP.
@@ -197,9 +197,8 @@ Inspector section layout already in the file.
       `[TraceSummary!]!` (grep the resolver)
 - [ ] Trace detail renders resolved link targets with service + name (asserted
       by UI test), not a bare id list
-- [ ] Reference leak check prints nothing (see `plans/README.md` §Reference)
 - [ ] No out-of-scope files modified (`git status`)
-- [ ] `plans/README.md` status row updated
+- [ ] `advisor-plans/README.md` status row updated
 
 ## STOP conditions
 

@@ -4,7 +4,7 @@
 > verification command and confirm the expected result before moving to the
 > next step. If anything in the "STOP conditions" section occurs, stop and
 > report — do not improvise. When done, update the status row for this plan
-> in `plans/README.md`.
+> in `advisor-plans/README.md`.
 >
 > **Drift check (run first)**: `git diff --stat 8bc3f13..HEAD -- crates/parallax-core/src/bundle.rs`
 > On excerpt mismatch, STOP.
@@ -14,7 +14,7 @@
 - **Priority**: P2
 - **Effort**: M
 - **Risk**: LOW-MED
-- **Depends on**: plans/023-bundle-redaction-completeness.md (land 023 first so
+- **Depends on**: advisor-plans/023-bundle-redaction-completeness.md (land 023 first so
   the new fields are already routed through `redact`)
 - **Category**: security
 - **Planned at**: commit `8bc3f13`, 2026-07-07
@@ -158,7 +158,7 @@ through `redact` already at bundle.rs:375-379).
       the number of rules added (≥ 6 rules total now)
 - [ ] No false positive on `https://example.com/path` (asserted by test)
 - [ ] No out-of-scope files modified (`git status`)
-- [ ] `plans/README.md` status row updated
+- [ ] `advisor-plans/README.md` status row updated
 
 ## STOP conditions
 

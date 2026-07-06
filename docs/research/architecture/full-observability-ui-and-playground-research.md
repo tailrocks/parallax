@@ -28,7 +28,7 @@ that absorbs the best concepts from all three:
   trace-linked errors, breadcrumbs/user steps, frontend/backend context, issue
   lifecycle.
 - **Parallax-only layer:** run-scoped CLI/coding-agent execution graph,
-  evidence-bundle preview/export, redaction report, missing-evidence detection,
+  evidence-bundle preview/export, missing-evidence detection,
   and one canonical API for UI/CLI/agents.
 
 Current Parallax already has the correct foundation: OpenTelemetry-native ingest,
@@ -70,7 +70,7 @@ evidence bundle.
   run id. Source: <https://opentelemetry.io/docs/specs/semconv/cli/cli-spans/>.
 - OpenTelemetry GraphQL server spans are development-stage; default span name is
   operation type, `graphql.operation.name` is client-provided/high-cardinality,
-  `graphql.document` is opt-in and should be redacted. Source:
+  `graphql.document` is opt-in. Source:
   <https://opentelemetry.io/docs/specs/semconv/graphql/graphql-spans/>.
 - OpenTelemetry browser instrumentation remains experimental; browser docs show
   SSR `<meta name="traceparent">` for document-load correlation and add fetch,
@@ -226,7 +226,7 @@ The playground already exercises many important cases:
 - Rust CLI driver with short-lived telemetry flush discipline.
 - Failure catalog: request failure, degraded response, retry/timeout, high CPU,
   cache leak, consumer lag, poison/dead-letter, N+1, lock contention, latency,
-  cron success/fail/stuck, canary redaction, deploy regression, clock skew.
+  cron success/fail/stuck, deploy regression, clock skew.
 
 This is already better than a toy demo. The gap is that it still models mostly
 an e-commerce microservice world. Parallax needs the playground to also model
@@ -394,7 +394,6 @@ Current waterfall is necessary but not sufficient. Add modes:
   - producer span with no consumer link;
   - consumer span with no creation context;
   - logs without trace/span id;
-  - high-cardinality or unsafe attributes redacted/dropped;
   - sampled-out children.
 
 Span drawer sections:
@@ -422,7 +421,6 @@ Logs should become an investigative object browser:
 - Surrounding logs: ±N seconds around selected log, grouped by trace/run.
 - Pattern collapse: group repetitive logs; expand on demand.
 - Error derivation marker: show if this log created an `ErrorEventRow`.
-- Redaction marker: show dropped/masked fields and reason.
 
 ### 6. Issues: Sentry-grade grouping plus OTel-native context
 
@@ -436,8 +434,8 @@ Issue detail should answer more than "stack trace + events":
 - Related logs: newest errors, span-correlated logs, uncorrelated logs in window.
 - Related runs: failed CLI/agent/container sessions with this fingerprint.
 - Regression lane: first seen in release X; resolved; reappeared in release Y.
-- Evidence-bundle preview: what a coding agent will receive, redaction report,
-  missing evidence, token size.
+- Evidence-bundle preview: what a coding agent will receive, missing
+  evidence, token size.
 
 ### 7. Runs/sessions: first-class local execution observability
 
@@ -454,7 +452,7 @@ Required UI sections:
 - Container/session panel: image, container id, workspace mount, attach time,
   multiplexer session id, environment policy.
 - Agent timeline: agent start/end, prompts/context loads/tools/files/commands,
-  validations, outcomes. Content redacted by default; structural facts visible.
+  validations, outcomes.
 - Trace list: all traces in the run, grouped by phase/screen/service.
 - Logs: current live stream plus historical search.
 - Metrics: process CPU/mem, tokio runtime, container CPU/mem/net/disk, queue
@@ -501,7 +499,6 @@ Keep SQL for advanced users, but wrap it in safe affordances:
 - Query builder for spans/logs/metrics/issues/runs.
 - Explain/preview row count before wide scans where possible.
 - Output rows link back to trace/run/issue/log/span.
-- Redaction policy applies to query results shown to agents.
 
 ## Telemetry model recommendations
 
@@ -527,8 +524,8 @@ Every service/process should set:
   `app.widget.id`, and `app.widget.name` for browser/native/TUI-visible screens
   and clicks
 
-Do not put high-cardinality or PII identity in resource attributes. Use opaque
-ids, with metadata resolved inside Parallax/Turso only when allowed.
+Do not put high-cardinality identity in resource attributes. Use opaque
+ids, with metadata resolved inside Parallax/Turso.
 
 ### Standard OTel attributes vs Parallax custom attributes
 
@@ -584,10 +581,9 @@ Span events should carry timeline details without exploding spans:
 - `retry.attempt`, `deadline.exceeded`, `fallback.used`, `degraded.response`
 - `feature_flag.evaluation`
 - `exception`
-- `redaction.canary.detected`
 
 Events should use low-cardinality names; variable values live in attributes with
-redaction/cardinality rules.
+cardinality rules.
 
 ### Span links: required for reality
 
@@ -600,24 +596,12 @@ Use links for:
 - GraphQL DataLoader batch spanning multiple resolver parents;
 - fan-in aggregation where one span summarizes multiple upstream spans;
 - retry attempts that start new traces;
-- CLI host run → container-internal trace when trust boundary creates a new
+- CLI host run → container-internal trace when a process boundary creates a new
   trace;
 - agent session → command traces;
 - external trace import or remote tool run.
 
 UI must show these as causal edges, not buried JSON.
-
-### Baggage: useful but dangerous
-
-Baggage can carry request context such as tenant tier or cart id downstream, but
-OpenTelemetry warns it can reach unintended services. Parallax guidance:
-
-- allowlist only non-sensitive keys;
-- prefer opaque ids;
-- never use raw emails, tokens, prompts, secrets, file contents;
-- strip before third-party calls unless explicitly allowed;
-- display baggage-origin and redaction status in span detail;
-- treat baggage as untrusted input.
 
 ### Logs: structured, trace-correlated, derivable
 
@@ -628,7 +612,6 @@ attributes. For Parallax issue derivation and UI:
 - `exception.type`, `exception.message`, `exception.stacktrace` should be emitted
   when available.
 - Logs without trace/span/run context should be visible as evidence gaps.
-- Log bodies and attributes need redaction before bundle projection.
 
 ### Metrics: standard names + runtime-specific feeds
 
@@ -694,7 +677,6 @@ application telemetry.
 - Partial error: GraphQL returns 200 with field-level error.
 - Subscription: long-lived span, emitted updates, disconnect/reconnect.
 - Client-supplied high-cardinality operation name to test span naming policy.
-- Redacted `graphql.document` opt-in case.
 
 #### C. gRPC scenarios
 
@@ -716,7 +698,7 @@ application telemetry.
 
 #### E. Database/cache scenarios
 
-- Postgres query spans with sanitized `db.query.text`.
+- Postgres query spans with `db.query.text`.
 - Slow query and lock wait.
 - Connection pool contention.
 - N+1 sequential query pattern.
@@ -757,14 +739,6 @@ application telemetry.
 - Issue resolved then regressed.
 - Different environment names.
 
-#### I. Redaction/safety scenarios
-
-- Canary secrets in logs/span attributes/baggage/GraphQL document/CLI args.
-- PII in URL query/referrer.
-- Prompt-injection-like telemetry body that must be treated as data, not
-  instructions.
-- Bundle preview shows redaction report and blocked raw refs.
-
 ### Playground acceptance questions
 
 The expanded playground should let a reviewer ask these questions in Parallax UI
@@ -780,7 +754,7 @@ and get an intuitive answer:
 7. Which container/agent/file/command happened before this runtime failure?
 8. Did CPU/memory/runtime metrics change before the error or after?
 9. Are there missing spans/logs/links that make the answer incomplete?
-10. What evidence bundle would be given to a coding agent, and what was redacted?
+10. What evidence bundle would be given to a coding agent?
 
 ## Parallax data/API expansion ideas
 
@@ -799,7 +773,7 @@ Add GraphQL/query concepts for:
 - `spanLinks(traceId)` → resolved linked spans/traces.
 - `metricNames/search` → custom dashboard builder autocomplete.
 - `runtimeMetrics(service|run|container)` → standard runtime panels.
-- `agentSession(runId)` → normalized agent actions, redacted content refs.
+- `agentSession(runId)` → normalized agent actions, content refs.
 
 ### Derived tables/materializations
 
@@ -825,7 +799,6 @@ Reusable components likely needed:
 - `SpanLinkGraph`: resolved links, async edges.
 - `MetricBrush`: common brush-to-filter behavior.
 - `FieldExplorer`: Kibana-like attributes sidebar.
-- `RedactionBadge/Report`: visible safety state.
 - `BundlePreview`: exact agent-visible evidence.
 
 ## Second research pass: additional gaps to add
@@ -873,7 +846,7 @@ fields plus `EventName`. Parallax should treat logs in two tiers:
    attributes, resource, trace/span id.
 2. **Typed events:** log records with `EventName` and known semantic attributes,
    such as exceptions, browser web vitals, feature-flag evaluations, user
-   interactions, redaction detections, and lifecycle events.
+   interactions, and lifecycle events.
 
 UI additions:
 
@@ -890,7 +863,6 @@ UI additions:
   - resource attributes;
   - instrumentation scope;
   - trace/span/run chips;
-  - whether body/attrs were redacted before bundle projection.
 
 Playground additions:
 
@@ -919,7 +891,6 @@ Add a reusable **Field Explorer** drawer:
   - approximate cardinality;
   - semantic namespace (`http`, `rpc`, `db`, `messaging`, `graphql`, `process`,
     `resource`, `parallax`, custom);
-  - safety status: safe, redacted, denied, high-cardinality warning.
 - Actions per value:
   - filter include/exclude;
   - group by;
@@ -957,8 +928,8 @@ Output should be deterministic and inspectable:
 
 Guardrails:
 
-- Do not group by raw user text, prompt text, URL query, secrets, stacktrace
-  body, or high-risk baggage.
+- Do not group by raw high-cardinality free-text such as URL query text or
+  stacktrace body.
 - High-cardinality ids are allowed for **filtering and sample drilldown**, but
   the compare UI should label them as exact identifiers, not stable categories.
 - Prefer low-cardinality semantic fields first, then expose raw/high-cardinality
@@ -1091,7 +1062,7 @@ Add a **User Journey** concept for browser and CLI/TUI:
 
 Important UX rule: call this **journey/story**, not replay, unless actual
 screen replay exists. Parallax should show structured facts and evidence; raw
-screen contents/prompts stay redacted or absent by default.
+screen contents stay absent by default.
 
 ### I. Investigations/cases: save the causal path, not just dashboards
 
@@ -1106,7 +1077,6 @@ to preserve an investigation state. Parallax should add a lightweight
 - findings/notes;
 - evidence gaps;
 - bundle preview/export history;
-- redaction report snapshot.
 
 This is especially useful for coding agents: the UI can become a human-readable
 case file, while the bundle is the machine-readable evidence subset.
@@ -1123,7 +1093,6 @@ Score dimensions:
 - metric correlation: exemplars or time-aligned metric windows exist;
 - resource identity: service/version/environment/runtime present;
 - semantic quality: low-cardinality span names and standard attrs;
-- redaction quality: secrets masked without destroying useful context;
 - runtime coverage: process/runtime/container metrics exist;
 - frontend/backend propagation: browser trace continues into backend;
 - async coverage: producer/consumer links present.
@@ -1218,7 +1187,7 @@ or sharper details that were not already covered by the sections above.
   - issue derivation from span status, span exception events, and ERROR/FATAL
     logs;
   - stable fingerprinting from error type, normalized message, and top frame;
-  - bounded evidence bundles with canonical hash and redaction report;
+  - bounded evidence bundles with canonical hash;
   - causal reconstruction as typed nodes/edges with strength tiers;
   - native OTLP GreptimeDB tables and `parallax.run.id` as run/session join key.
 
@@ -1280,7 +1249,7 @@ must explain these execution shapes, each with at least one playground scenario:
   controls, breadcrumb lane, brush-and-drill occurrence trend, and future suspect
   commit hooks.
 - **Logs:** add structured-field query DSL, facets, saved views, live-tail
-  virtualization, log-to-trace chips, and redaction-state badges.
+  virtualization, and log-to-trace chips.
 - **Metrics:** add PromQL/SQL code mode beside visual builder, metric math,
   template variables later, anomaly overlay, SLO/burn-rate panels, and exemplar
   trace jumps.
@@ -1296,7 +1265,7 @@ must explain these execution shapes, each with at least one playground scenario:
 - **Causal graph:** render typed nodes and strength-tier edges from causal
   reconstruction, including supporting and contradicting evidence.
 - **Evidence bundle:** later support multi-anchor bundles, typed node/edge
-  projection, MCP `outputSchema`, bundle diff, and full redaction-policy report.
+  projection, MCP `outputSchema`, and bundle diff.
 - **Global UX:** global time/environment/release/service filters, command
   palette, keyboard navigation, saved investigations, and URL state everywhere.
 
@@ -1310,7 +1279,7 @@ Use these as concrete proof cases when a future agent turns research into tasks:
 | A6b | GraphQL field-level trace | resolver tree, DataLoader, N+1. |
 | A7b | gRPC per-message events | streaming explorer and mid-stream failure. |
 | A9b | Structured-field logs | Field Explorer/facets and log query DSL. |
-| A10b | Baggage-driven branch | allowlisted baggage and business context propagation. |
+| A10b | Baggage-driven branch | baggage-carried business context propagation. |
 | A17b | Rust/JVM profiles | future span-scoped flamegraph surface. |
 | A19 | Long/wide trace | virtualization, grouping, minimap, critical path. |
 | A20 | Cross-trace causal chain | linked traces and causal graph. |
@@ -1318,7 +1287,7 @@ Use these as concrete proof cases when a future agent turns research into tasks:
 | A22 | Tokio runtime under load | runtime panels tied to slow traces. |
 | A23 | GraphQL→gRPC gateway | field tree with downstream RPC. |
 | A24 | GraphQL→GraphQL | upstream/downstream GraphQL operations. |
-| A25 | Real Postgres spans/pool metrics | DB spans, query redaction, pool contention. |
+| A25 | Real Postgres spans/pool metrics | DB spans, pool contention. |
 | A26 | Cache behavior without new infra | cache hit/miss, stampede, and leak using existing service-local cache paths. |
 | A27 | Daemon/child nested run | CLI→daemon→container/agent run timeline. |
 | A28 | Frontend RUM session | route/user-step/web-vitals/error story. |
@@ -1343,7 +1312,7 @@ Additional chaos cases:
   if Playwright already fits playground/dev-test constraints.
 - Upgrade `libs/playground-telemetry` with baggage propagator, parent-based
   ratio sampler, Tokio metrics → OTel gauges, stable semconv constants,
-  redaction-demo layer, Rust exemplar helper, and automatic `parallax.run.id`
+  Rust exemplar helper, and automatic `parallax.run.id`
   stamping.
 - Upgrade Java config with GraphQL data-fetcher spans/links, Hikari pool metrics,
   Micrometer exemplars, and optional profiler/JFR path.
@@ -1363,8 +1332,6 @@ Additional chaos cases:
 - **High-cardinality guardrails are UI constraints.** Metric group-bys should
   refuse `trace_id`, `run_id`, `user_id`, and `session_id`; those belong in
   traces/logs and filtering, not metric labels.
-- **Redaction must be visible.** Every span/log/bundle row should show raw,
-  redacted, ref-only, or hashed status plus redaction-report access.
 - **Symbolication matters.** Future issue detail needs Rust demangling, Java
   frame/source mapping, and TypeScript sourcemaps for release builds.
 - **Normalize operation names across languages.** Show raw span name plus
@@ -1403,7 +1370,7 @@ for a future UI/playground design agent because it covers these layers in order:
    trace detail, logs, issues, runs, metrics, SQL, service catalog, runtime lane,
    investigations, quality score.
 6. **What the playground must prove:** browser, GraphQL, gRPC, messaging,
-   database/cache, runtime, CLI/session/container/agent, release, redaction,
+   database/cache, runtime, CLI/session/container/agent, release,
    quality-gap, exemplar, topology, and investigation scenarios.
 7. **What API/materializations are implied:** query backlog, derived tables,
    reusable UI components, resolver ownership, and data-contract enforcement.
@@ -1459,9 +1426,9 @@ Current Parallax signatures to keep stable:
   volatile values normalized out. Exact earlier formula:
   `error_type \0 normalize(message) \0 top_frame`, with normalizers for
   `<uuid>`, `<hex>`, and `<n>`.
-- Evidence bundles are bounded, hashable, redactable, and anchorable to issue,
+- Evidence bundles are bounded, hashable, and anchorable to issue,
   run, or trace. Existing implementation is single-anchor `(issue|run|trace)`,
-  token-budgeted, `redaction-lite-v1`, canonical-hash based, and exports JSON,
+  token-budgeted, canonical-hash based, and exports JSON,
   Markdown, and clipboard snippets.
 - Causal reconstruction uses typed nodes/edges and strength tiers.
 - Native OTLP rows in GreptimeDB plus `parallax.run.id` are the correlation
@@ -1495,9 +1462,9 @@ covered or explicitly deferred:
 | --- | --- | --- |
 | HTTP | `http.request.method`, `http.route`, `url.path`, `http.response.status_code`, `server.address`, `server.port` | Route-level RED, service edges, trace filters. |
 | RPC/gRPC | `rpc.system`, `rpc.service`, `rpc.method`, `rpc.grpc.status_code`, `rpc.message.type`, `rpc.message.id` | Unary/stream trace detail and message timeline. |
-| Database | `db.system.name`, `db.namespace`, `db.collection.name`, `db.operation.name`, `db.query.summary`, safe opt-in `db.query.text`, `db.client.operation.duration`, `db.client.connection.*` | DB spans, query redaction, pool contention, runtime lane. |
+| Database | `db.system.name`, `db.namespace`, `db.collection.name`, `db.operation.name`, `db.query.summary`, opt-in `db.query.text`, `db.client.operation.duration`, `db.client.connection.*` | DB spans, pool contention, runtime lane. |
 | Messaging | `messaging.system`, `messaging.destination.name`, `messaging.operation.name`, `messaging.message.id`, `messaging.message.conversation_id`, `messaging.batch.message_count` | Producer/consumer links, batch, lag, dead-letter flows. |
-| GraphQL | `graphql.operation.type`, `graphql.operation.name`, opt-in redacted `graphql.document`, `graphql.field.name`, `graphql.field.path`, `graphql.field.type` | Field tree, N+1, DataLoader, partial errors. |
+| GraphQL | `graphql.operation.type`, `graphql.operation.name`, opt-in `graphql.document`, `graphql.field.name`, `graphql.field.path`, `graphql.field.type` | Field tree, N+1, DataLoader, partial errors. |
 | Feature flags | `feature_flag.context.id`, `feature_flag.provider_name`, `feature_flag.key`, `feature_flag.variant` | Change attribution and branch explanation. |
 | Deployment/VCS | `deployment.environment.name`, `deployment.id`, `deployment.name`, `deployment.status`, `vcs.ref.head.revision`, `vcs.ref.head.name`, `vcs.repository.url.full` | Release/deploy regressions, suspect commits, evidence bundles. |
 | Runtime/process | `process.cpu.utilization`, `process.memory.usage`, JVM metrics, Tokio metrics, container/cgroup metrics | CPU, memory, GC, task starvation, pool pressure. |
@@ -1516,7 +1483,7 @@ overlay, validated later through Weaver:
 | Visible output/work block | Child span | `tui.block.id`, `tui.block.kind`. |
 | Foreground operation | Child span of block | Normal span semantics, rendered inside block card. |
 | Background operation | Linked span or new root | Link to origin screen plus `app.screen.id`. |
-| Keystroke/command/selection | Span event | `tui.input.kind`, redacted `tui.input.value`, `tui.target`. |
+| Keystroke/command/selection | Span event | `tui.input.kind`, `tui.input.value`, `tui.target`. |
 | Focus change | Span event | `tui.focus.from`, `tui.focus.to`. |
 | Navigation | Span event plus new screen span | `tui.nav.from`, `tui.nav.to`, `tui.nav.trigger`. |
 
@@ -1533,7 +1500,7 @@ Optional session recording:
 - Use asciicast v3-style terminal recording only when explicitly enabled.
 - Key recordings by `parallax.run.id` plus `session.id`.
 - Story beats may offer "replay at this beat" only when recording exists.
-- Raw terminal content is never part of the default bundle; it is a redacted or
+- Raw terminal content is never part of the default bundle; it is a
   reference-only artifact.
 
 ### Boundary propagation contract for CLI, daemon, container, mux, and agent
@@ -1571,8 +1538,7 @@ Adopt only the stable-enough core of the GenAI/MCP conventions at first:
   `jsonrpc.request.id`, `network.transport=pipe` for stdio, and W3C context
   propagation across client/server process boundaries.
 - Content capture: prompt, message, tool I/O, and terminal input content are
-  opt-in, redacted before storage or bundle projection, and never required for
-  structural debugging.
+  opt-in and never required for structural debugging.
 - Metrics: token usage, operation duration, tool latency, validation failures,
   and exit/failure counts.
 
@@ -1602,7 +1568,7 @@ Story is deterministic data projection first, optional prose second:
    hop, agent handoff, process/container boundary, then issue/deploy boundary.
 4. Annotate slow/error beats with strongest causal edge available: pool timeout,
    GC pause, Tokio starvation, downstream error, deploy marker, propagation gap,
-   redaction gap, sampled-out trace.
+   sampled-out trace.
 5. Collapse healthy non-critical beats. Keep errors, anomalies, causal edges,
    critical-path spans, user actions, agent actions, and evidence gaps expanded.
 6. If a summarizer is later used, it can name chapters and summarize evidence,
@@ -1619,8 +1585,6 @@ BubbleUp/attribute compare:
   Jensen-Shannon divergence.
 - Prefer low-cardinality semantic fields first; allow exact identifiers for
   drilldown but label them as identifiers, not general categories.
-- Never compare raw prompts, secrets, URL query text, stacktrace bodies, or
-  denied baggage.
 
 Trace analysis:
 
@@ -1659,7 +1623,7 @@ Topology analysis:
 | Frontend/RUM | `frontendSessions`, `frontendSession`, `frontendErrors` | Session/journey metadata plus source-map refs. |
 | Agent/session | `agentSession(runId|conversationId)` | `agent_actions` in Turso, content refs elsewhere. |
 | Causal graph | `causalGraph(anchor)` | Typed node/edge cache if assembly becomes slow. |
-| Bundles | `bundleDiff`, multi-anchor `bundle`, schema version | Bundle projections plus redaction-report snapshots. |
+| Bundles | `bundleDiff`, multi-anchor `bundle`, schema version | Bundle projections. |
 | Investigations | `investigation`, `saveInvestigation` | `investigations` in Turso. |
 | Quality | `evidenceGaps`, `telemetryQuality` | `evidence_gaps` by trace/run/service. |
 
@@ -1735,8 +1699,7 @@ implementation references:
   `severity_text` and `severity_number`.
 - CLI/process spans should use `process.executable.name`, `process.exit.code`,
   `process.pid`, `process.command_args`, `process.executable.path`, and
-  `error.type`; sanitize `process.command_args` and avoid
-  `process.command_line` by default.
+  `error.type`.
 - Propagation helpers/config: `BaggagePropagator`,
   `ParentBased(TraceIdRatioBased)`, `Context::current()`, gRPC
   `MetadataInjector`, Kafka headers, RabbitMQ `BasicProperties.headers`,
@@ -1746,7 +1709,7 @@ implementation references:
   `otel.instrumentation.graphql.data-fetcher.create_or_add_link=true` for field
   spans and operation links. Also keep GraphQL concepts `graphql.request`,
   `graphql.execute`, `graphql.fetch`, `graphql.dataloader.load`,
-  `graphql.dataloader.batch.size`, `graphql.error.path`, and redacted
+  `graphql.dataloader.batch.size`, `graphql.error.path`, and
   `graphql.document`.
 - gRPC streaming details: `rpc.system="grpc"`, `rpc.message.type`,
   `rpc.message.id`, `rpc.message.compressed_size`, `rpc.grpc.status_code`,
@@ -1793,7 +1756,7 @@ implementation references:
 - Legacy implementation/source literals that were useful in the raw brainstorm:
   `parallax run start`, `pinnedContext`, `opentelemetry_traces`,
   `opentelemetry_logs`, `opentelemetry_profiles`,
-  `rollups_service_edge_minute`, `redact_then_emit`, `playground_telemetry`,
+  `rollups_service_edge_minute`, `playground_telemetry`,
   `profile-collector`, `playground daemon`, `playground enter`,
   `playground enter <session>`, `playground agent`, `POST /inventory/reserve`,
   `dev.tailrocks.checkout.CheckoutHandler#handle`, `network.peer.address`,
@@ -1818,7 +1781,6 @@ Local research constraints:
 - `docs/research/capture/agent-cli-tracing.md`
 - `docs/research/capture/run-id-standardization.md`
 - `docs/research/capture/correlation.md`
-- `docs/research/capture/redaction.md`
 - `docs/research/decisions/native-otel-tables.md`
 - `docs/research/decisions/storage-engine.md`
 - `docs/research/decisions/metadata-store.md`
@@ -1895,11 +1857,10 @@ External references retained for follow-up research:
    spans/logs/attributes one click away.
 7. **Agent parity.** If the UI can see it, the CLI/API can reference it; if an
    agent receives it, the UI can preview it.
-8. **Redaction visible by design.** Users need to know what was hidden and why.
-9. **No stack expansion by default.** Use Rust, Java, TypeScript, GreptimeDB,
+8. **No stack expansion by default.** Use Rust, Java, TypeScript, GreptimeDB,
    Turso, TanStack, shadcn, OpenTelemetry, Sentry path only where already scoped.
-10. **Local-first remains sacred.** One binary/local workflow should stay simpler
-    than self-hosted Sentry and less fragmented than Grafana+Kibana.
+9. **Local-first remains sacred.** One binary/local workflow should stay simpler
+   than self-hosted Sentry and less fragmented than Grafana+Kibana.
 
 ## Suggested future execution order
 
@@ -1932,7 +1893,6 @@ External references retained for follow-up research:
   required?
 - Which UI graph library fits the existing TanStack/shadcn constraints without
   violating repo style?
-- What exact redaction report schema should bundle preview show?
 - What is the minimum execution-stack playground that proves the CLI/container/
   agent story without building a full clone of an external tool?
 
@@ -1948,7 +1908,7 @@ Parallax should split the world by **causal question**:
 - Which path did the user/run/agent take?
 - Which components communicated?
 - Which span/log/metric proves it?
-- What evidence can safely go to an agent?
+- What evidence goes to an agent?
 
 The current codebase has enough primitives to start. The next research-backed UI
 move is an ecosystem graph plus story timeline, fed by OpenTelemetry semantics,
