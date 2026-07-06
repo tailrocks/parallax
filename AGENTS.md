@@ -13,7 +13,8 @@ structure quickly.
 
 - Prefer small, source-linked Markdown updates over heavy process.
 - Keep findings in the repository, not only in chat.
-- Commit and push findings after creating or updating research documents.
+- Always commit and push AI-agent changes after finishing them, including
+  research, docs, code, prompts, and repository-rule updates.
 - Keep research under `docs/research/` unless a topic-specific root file is a
   better fit.
 - Do not build a documentation site yet. Plain Markdown is enough for this
