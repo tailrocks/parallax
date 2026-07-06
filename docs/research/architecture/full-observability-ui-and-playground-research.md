@@ -515,14 +515,50 @@ Every service/process should set:
 - `deployment.environment.name`
 - `telemetry.sdk.language`, `telemetry.sdk.name`, `telemetry.sdk.version`
 - process/runtime attributes emitted by SDKs
-- `parallax.run.id` when run-scoped
-- `parallax.workspace.id` only if non-sensitive/opaque
-- `parallax.capsule.id` for container/session scope
-- `parallax.screen.name` only if stable low-cardinality screen identity can be
-  stamped as resource for a short-lived process; otherwise span attributes/events
+- `parallax.run.id` when run-scoped and no OTel standard run identifier matches
+  the Parallax run semantics
+- `session.id` / `session.previous_id` for client-side browser/TUI/user sessions
+  when the OTel session convention matches the meaning
+- `parallax.workspace.id` only if non-sensitive/opaque; no current OTel standard
+  workspace id covers Parallax's local workspace concept
+- standard container/resource identity such as `container.id`, `container.name`,
+  `oci.manifest.digest`, `host.id`, and `service.instance.id`; use
+  `parallax.capsule.id` only when the Parallax capsule is a product-level
+  session/container scope that is not identical to one concrete container
+- standard screen/widget attributes `app.screen.id`, `app.screen.name`,
+  `app.widget.id`, and `app.widget.name` for browser/native/TUI-visible screens
+  and clicks; avoid `parallax.screen.name` unless a future Weaver overlay proves
+  that `app.screen.*` cannot express a terminal-specific concept
 
 Do not put high-cardinality or PII identity in resource attributes. Use opaque
 ids, with metadata resolved inside Parallax/Turso only when allowed.
+
+### Standard OTel attributes vs Parallax custom attributes
+
+Use OpenTelemetry semantic conventions first, then Parallax custom attributes
+only for product concepts that the registry does not cover. Current OTel 1.43
+findings:
+
+| Concept | Standard OTel candidate | Decision for Parallax |
+| --- | --- | --- |
+| Generic Parallax run | `session.id` for client-side/user session; `cicd.pipeline.run.id` for CI/CD only; CLI `process.*` for one process execution | Keep `parallax.run.id` as Parallax's cross-process, cross-trace execution anchor. Also set `session.id` for real user/TUI/browser sessions and `cicd.pipeline.run.id` only for actual CI/CD pipeline runs. |
+| Workspace | `vcs.repository.url.full`, `vcs.repository.name`, `vcs.ref.head.revision`, `process.working_directory` | Keep `parallax.workspace.id` as opaque product identity. Do not use `process.working_directory` or raw paths as workspace ids by default. |
+| Capsule/session container | `container.id`, `container.name`, `container.command`, `container.command_args`, `container.command_line`, `oci.manifest.digest`, `host.id`, `service.instance.id` | Use standard container/process attrs for real containers. Keep `parallax.capsule.id` only for the higher-level Parallax capsule/session abstraction that may span container restarts, mux sessions, or multiple processes. |
+| Screen/view | `app.screen.id`, `app.screen.name`, `app.widget.id`, `app.widget.name`, events `app.screen.click`, `app.widget.click` | Prefer `app.screen.*` and `app.widget.*` for browser and TUI-visible screens/widgets. Keep custom `tui.screen.route`, `tui.panel.id`, and `tui.block.*` for terminal-specific structure not covered by OTel. Avoid `parallax.screen.name`. |
+| CLI execution | CLI spans with `process.executable.name`, `process.exit.code`, `process.pid`, `process.command_args`, `process.executable.path`, `error.type` | Use standard CLI/process attrs for each command/span. Add `parallax.run.id` only to stitch many commands/processes/traces into one Parallax run. |
+
+Custom naming rule:
+
+- Never create custom attributes inside standard namespaces such as `http.*`,
+  `db.*`, `messaging.*`, `container.*`, `process.*`, `app.*`, `session.*`, or
+  `otel.*`.
+- Put Parallax-only attributes under `parallax.*` or terminal-specific
+  attributes under a documented `tui.*` overlay, then validate them through a
+  future Weaver registry.
+- Custom attributes are allowed only after checking the OTel registry and
+  recording why the standard attribute is insufficient.
+- High-cardinality custom ids are allowed on traces/logs/events for filtering
+  and joining, but never as default metric labels.
 
 ### Span names: low-cardinality, human meaningful
 
@@ -919,7 +955,7 @@ Output should be deterministic and inspectable:
 | --- | --- | --- | --- | --- |
 | 1 | `service.version` | `2.0.0` 92% | `2.0.0` 4% | likely deploy regression |
 | 2 | `graphql.field.name` | `Order.items` 88% | 11% | resolver-specific |
-| 3 | `parallax.screen.name` | `workspace-select` 81% | 7% | UI path-specific |
+| 3 | `app.screen.name` / `tui.screen.route` | `workspace-select` 81% | 7% | UI path-specific |
 | 4 | `container.image.id` | `sha256:...` 74% | 3% | capsule-specific |
 
 Guardrails:
@@ -1135,7 +1171,7 @@ Add explicit scenarios that prove the new concepts:
 - **Exemplar demo:** p99 checkout latency chart contains exemplar dots that open
   exact traces; control scenario lacks exemplars and shows lower confidence.
 - **Field explorer demo:** a log/error spike where `service.version`,
-  `graphql.field.name`, and `parallax.screen.name` stand out.
+  `graphql.field.name`, and `app.screen.name` or `tui.screen.route` stand out.
 - **Topology mode demo:** one-hop graph suggests A-B-C, while trace-path graph
   proves only A-B and B-C occur separately; another trace proves full A→B→C.
 - **Telemetry quality demo:** missing browser traceparent, missing consumer link,
@@ -1320,6 +1356,10 @@ Additional chaos cases:
 - **Propagation continuity is a metric.** Show trace-context rate, validity,
   frontend/backend continuation, same-trace bundle rate, async-link rate, and
   sampled-out/missing evidence per service and edge.
+  Exact metric names from existing capture research:
+  `trace_context_rate`, `trace_context_validity_rate`,
+  `frontend_backend_continuation_rate`, `same_trace_bundle_rate`,
+  `async_link_rate`, and `compare_base_rate`.
 - **Sampling must be visible.** Show whether a trace was sampled and which policy
   applied. Playground can run 100% for normal scenarios and 10% for sampling-gap
   scenarios.
@@ -1349,6 +1389,499 @@ Additional chaos cases:
 | Pyroscope | Flamegraph as first-class signal, eventually span-scoped. |
 | Grafana Faro/Sentry RUM | Web vitals, long tasks, errors, user-step breadcrumbs. |
 | SigNoz/OpenObserve/Coroot/Maple/TMA1 | Use as pattern references only; keep Parallax stack unchanged. |
+
+## Structural adequacy audit after brainstorm import
+
+The keeper document is now detailed enough to act as the single research source
+for a future UI/playground design agent because it covers these layers in order:
+
+1. **Why:** executive thesis and product goal.
+2. **What exists:** current Parallax and playground capabilities to preserve.
+3. **What user questions matter:** causal graph, story, ecosystem, run/session,
+   issue, logs, metrics, and evidence-bundle workflows.
+4. **What data can carry it:** OpenTelemetry signal, propagation, resource,
+   span-name, span-event, link, baggage, log, metric, profile, and runtime
+   guidance.
+5. **What UI surfaces need to exist:** command center, ecosystem map, story,
+   trace detail, logs, issues, runs, metrics, SQL, service catalog, runtime lane,
+   investigations, quality score.
+6. **What the playground must prove:** browser, GraphQL, gRPC, messaging,
+   database/cache, runtime, CLI/session/container/agent, release, redaction,
+   quality-gap, exemplar, topology, and investigation scenarios.
+7. **What API/materializations are implied:** query backlog, derived tables,
+   reusable UI components, resolver ownership, and data-contract enforcement.
+8. **What remains undecided:** future execution order and implementation
+   questions.
+
+The root brainstorm still had valuable detail that the earlier consolidation
+compressed too much: exact current route/API inventory, lower-level semantic
+contracts, TUI/agent conventions, env-var propagation, Weaver/OBI research,
+algorithms, visualization primitives, and source pointers. The sections below
+preserve those details without keeping the duplicate root file.
+
+### Current UI and API inventory from the removed brainstorm
+
+Current UI routes and reusable primitives matter because future work should
+extend them instead of inventing parallel surfaces:
+
+- Routes: `/`, `/services`, `/services/$service`, `/issues`,
+  `/issues/$fingerprint`, `/traces`, `/traces/$traceId`, `/logs`, `/runs`,
+  `/runs/$runId`, `/dashboards`, `/dashboards/$id`, `/sql`.
+- Trace detail already has `TraceWaterfall`, selected span detail, attributes,
+  resource attributes, span links, span events, trace logs, run link,
+  failed-span shortcut, stacktrace parsing, `db.query.text`, and
+  `exception.stacktrace`.
+- Logs already have severity filtering, volume histogram, column toggles,
+  document viewer, and SSE live tail.
+- Runs already have live stream, metric strip, evidence-bundle preview, and
+  bundle download.
+- Dashboard/SQL surfaces already prove metric panel metadata plus read-only
+  GreptimeDB exploration.
+- Reusable primitives to reuse: `TraceWaterfall`, `LogsTable`, `MetricStrip`,
+  `LiveStreamPanel`, `StatCard`, `CardSparkline`, `PillMeter`, `DeltaBadge`,
+  `HeatCell`, `TrendChart`, `RangePicker`, data-table search/filter/sort/
+  pagination, and stack-frame parsing with app-frame classification.
+
+Current GraphQL fields to preserve as the canonical API boundary:
+
+- Queries: `overview`, `serviceList`, `serviceRed`, `issues`, `issue`,
+  `issueTrend`, `trace`, `logsByTrace`, `tracesByRun`, `logsByRun`, `logs`,
+  `sql`, `run`, `dashboard`, `serviceOverview`, `observedRuns`, `traces`,
+  `tracesPage`, `bundle`, `metricNames`, `services`, `metricSeries`,
+  `histogramQuantile`, `dashboards`, and `runs`.
+- Mutations: `issueSetStatus`, `runStart`, `runFinish`, `dashboardSave`, and
+  `dashboardDelete`.
+- Constraint: UI calls the GraphQL/API boundary only. No UI page should query
+  GreptimeDB or Turso directly.
+
+Current Parallax signatures to keep stable:
+
+- `ErrorEventRow` and `Issue` derive from span exception events, span error
+  status, ERROR/FATAL logs, and exception-as-log attributes.
+- Fingerprint is based on error type, normalized message, and top frame, with
+  volatile values normalized out. Exact earlier formula:
+  `error_type \0 normalize(message) \0 top_frame`, with normalizers for
+  `<uuid>`, `<hex>`, and `<n>`.
+- Evidence bundles are bounded, hashable, redactable, and anchorable to issue,
+  run, or trace. Existing implementation is single-anchor `(issue|run|trace)`,
+  token-budgeted, `redaction-lite-v1`, canonical-hash based, and exports JSON,
+  Markdown, and clipboard snippets.
+- Causal reconstruction uses typed nodes/edges and strength tiers.
+- Native OTLP rows in GreptimeDB plus `parallax.run.id` are the correlation
+  spine.
+
+### Known current playground absences to close
+
+The playground should not be treated as feature-complete until these gaps are
+covered or explicitly deferred:
+
+- No Docker/container-spawn or daemon/session/container topology.
+- No agent-session trace inside a container.
+- Browser-side observability is emitted but not richly displayed.
+- GraphQL field-level data-fetcher spans are not enabled by default.
+- Postgres exists but is not wired into real database-load scenarios.
+- No JVM GC/class-loading/pool scenario surface and no Rust Tokio runtime metric
+  scenario.
+- No continuous profile signal.
+- No frontend RUM journey with multi-route breadcrumbs and frustration signals.
+- No real deploy webhook ingest; regression is simulated through environment.
+- No Rust metric exemplars linked to traces.
+- No long-trace stress case for rendering.
+- No trace comparison scenario.
+- Scheduled job/cron signals exist, but no cron-specific UI treatment.
+- No metrics-cardinality explosion scenario.
+- Logs are mostly plain bodies; structured-field scenarios are still needed.
+
+### Semantic convention commitment table
+
+| Domain | Attributes/metrics to standardize | UI reason |
+| --- | --- | --- |
+| HTTP | `http.request.method`, `http.route`, `url.path`, `http.response.status_code`, `server.address`, `server.port` | Route-level RED, service edges, trace filters. |
+| RPC/gRPC | `rpc.system`, `rpc.service`, `rpc.method`, `rpc.grpc.status_code`, `rpc.message.type`, `rpc.message.id` | Unary/stream trace detail and message timeline. |
+| Database | `db.system.name`, `db.namespace`, `db.collection.name`, `db.operation.name`, `db.query.summary`, safe opt-in `db.query.text`, `db.client.operation.duration`, `db.client.connection.*` | DB spans, query redaction, pool contention, runtime lane. |
+| Messaging | `messaging.system`, `messaging.destination.name`, `messaging.operation.name`, `messaging.message.id`, `messaging.message.conversation_id`, `messaging.batch.message_count` | Producer/consumer links, batch, lag, dead-letter flows. |
+| GraphQL | `graphql.operation.type`, `graphql.operation.name`, opt-in redacted `graphql.document`, `graphql.field.name`, `graphql.field.path`, `graphql.field.type` | Field tree, N+1, DataLoader, partial errors. |
+| Feature flags | `feature_flag.context.id`, `feature_flag.provider_name`, `feature_flag.key`, `feature_flag.variant` | Change attribution and branch explanation. |
+| Deployment/VCS | `deployment.environment.name`, `deployment.id`, `deployment.name`, `deployment.status`, `vcs.ref.head.revision`, `vcs.ref.head.name`, `vcs.repository.url.full` | Release/deploy regressions, suspect commits, evidence bundles. |
+| Runtime/process | `process.cpu.utilization`, `process.memory.usage`, JVM metrics, Tokio metrics, container/cgroup metrics | CPU, memory, GC, task starvation, pool pressure. |
+| CLI/TUI/agent | `parallax.run.id`, `cli.*`, `tui.*`, adopted `gen_ai.*`, adopted `mcp.*` | Run/session/story/agent lanes. |
+
+### Detailed TUI and terminal journey model
+
+Interactive terminal workflows should use a Parallax custom semantic convention
+overlay, validated later through Weaver:
+
+| TUI concept | OTel primitive | Key attributes/events |
+| --- | --- | --- |
+| Whole interactive session | Root span | `parallax.run.id`, `tui.session.id`, terminal size, `$TERM`, mux type. |
+| Screen/view | Child span | `tui.screen.name`, `tui.screen.route`, enter/leave timestamps. |
+| Panel/pane | Child span or span event | `tui.panel.id`, `tui.panel.focused`. |
+| Visible output/work block | Child span | `tui.block.id`, `tui.block.kind`. |
+| Foreground operation | Child span of block | Normal span semantics, rendered inside block card. |
+| Background operation | Linked span or new root | Link to origin screen plus `tui.origin.screen`. |
+| Keystroke/command/selection | Span event | `tui.input.kind`, redacted `tui.input.value`, `tui.target`. |
+| Focus change | Span event | `tui.focus.from`, `tui.focus.to`. |
+| Navigation | Span event plus new screen span | `tui.nav.from`, `tui.nav.to`, `tui.nav.trigger`. |
+
+Rendering rule:
+
+- Foreground work appears inside the current screen/block story chapter.
+- Background work appears as a detached lane linked to its origin screen and can
+  outlive that screen.
+- Parallel preparation appears as concurrent sibling spans; critical-path logic
+  decides which sibling gated the outcome.
+
+Optional session recording:
+
+- Use asciicast v3-style terminal recording only when explicitly enabled.
+- Key recordings by `parallax.run.id` plus `tui.session.id`.
+- Story beats may offer "replay at this beat" only when recording exists.
+- Raw terminal content is never part of the default bundle; it is a redacted or
+  reference-only artifact.
+
+### Boundary propagation contract for CLI, daemon, container, mux, and agent
+
+The hard propagation path is not HTTP; it is process/session boundaries.
+Standardize it this way:
+
+- CLI to daemon: inject W3C `traceparent`, `tracestate`, and baggage into local
+  RPC/Unix-socket metadata.
+- Daemon to spawned process/container: set `TRACEPARENT`, `TRACESTATE`, and
+  `BAGGAGE` environment variables, plus `OTEL_EXPORTER_OTLP_ENDPOINT`, on the
+  child process.
+- Child entrypoint: extract the environment context at startup and use it as the
+  parent context for all spans.
+- Multiplexer attach: model attach/detach as spans; carry `parallax.run.id` and
+  context in the pane environment.
+- Agent process: inherit `TRACEPARENT`; its `invoke_agent` span becomes a child
+  of the container/mux context.
+
+Failure mode to deliberately test:
+
+- Missing env injection creates an orphan container or MCP/server trace.
+- Story and causal graph should render this as a broken-continuation evidence
+  gap, not hide it as "no data".
+
+### Agent and MCP observability subset
+
+Adopt only the stable-enough core of the GenAI/MCP conventions at first:
+
+- Model/client call spans: `gen_ai.operation.name`, provider, request model,
+  response model, token usage, duration, and streaming metrics when present.
+- Agent/workflow spans: `invoke_agent`, `invoke_workflow`, `execute_tool`,
+  child `invoke_agent` for sub-agents, repeated-tool loop detection.
+- MCP spans: `mcp.method.name`, `mcp.session.id`, `mcp.protocol.version`,
+  `jsonrpc.request.id`, `network.transport=pipe` for stdio, and W3C context
+  propagation across client/server process boundaries.
+- Content capture: prompt, message, tool I/O, and terminal input content are
+  opt-in, redacted before storage or bundle projection, and never required for
+  structural debugging.
+- Metrics: token usage, operation duration, tool latency, validation failures,
+  and exit/failure counts.
+
+Agent-session UI should render:
+
+- Agent trace tree: `invoke_agent` with `chat`, `execute_tool`, shell command,
+  MCP call, file read/edit, validation, and sub-agent children.
+- Thought-action-observation chapters when content capture is allowed; structural
+  step names when content is denied.
+- Token/cost/time strip per agent and per step.
+- Conversation/session grouping by conversation id or `parallax.run.id`.
+- Failure clustering by Parallax issue fingerprint extended to agent/tool
+  errors.
+- Trace-to-eval or trace-to-bundle promotion as a future evidence-bundle
+  projection.
+
+### Story assembly algorithm
+
+Story is deterministic data projection first, optional prose second:
+
+1. Collect spans, span events, span links, correlated logs, metric exemplars,
+   runtime windows, RUM route/user events, TUI events, agent spans, deploy
+   events, issues, and linked traces for the anchor.
+2. Order by `ts_nanos`, then by parent/child and span-link causality to avoid
+   clock-skew lying about order.
+3. Chapter by boundary, in priority order: browser route, TUI screen, service
+   hop, agent handoff, process/container boundary, then issue/deploy boundary.
+4. Annotate slow/error beats with strongest causal edge available: pool timeout,
+   GC pause, Tokio starvation, downstream error, deploy marker, propagation gap,
+   redaction gap, sampled-out trace.
+5. Collapse healthy non-critical beats. Keep errors, anomalies, causal edges,
+   critical-path spans, user actions, agent actions, and evidence gaps expanded.
+6. If a summarizer is later used, it can name chapters and summarize evidence,
+   but links, ordering, severity, and "why" edges must remain deterministic.
+
+### Investigation analytics algorithms
+
+BubbleUp/attribute compare:
+
+- Input: selected set S, baseline set B, candidate attributes, entity type
+  (span/log/issue/run/metric exemplar).
+- For each attribute, compute top values and counts for S and B.
+- Rank by a bounded divergence score such as top-value proportion delta or
+  Jensen-Shannon divergence.
+- Prefer low-cardinality semantic fields first; allow exact identifiers for
+  drilldown but label them as identifiers, not general categories.
+- Never compare raw prompts, secrets, URL query text, stacktrace bodies, or
+  denied baggage.
+
+Trace analysis:
+
+- `traceCompare(a,b)`: align by normalized operation name, depth, sibling order,
+  service, and kind; show added/removed spans, duration deltas, status changes,
+  and missing links.
+- `traceCriticalPath(id)`: compute the latency-gating chain with parallel
+  siblings contributing max duration, not sum; use this to keep story beats
+  expanded.
+- `aggregateTrace(op, from, to)`: group many traces of one operation by
+  normalized structure, compute p50/p95/p99 per span group, and mark how often
+  each hop is on the critical path.
+
+Topology analysis:
+
+- One-hop graph shows observed direct edges only.
+- Trace-path graph shows edges that co-occur in matching traces.
+- Transitive/focal graph expands upstream/downstream paths around one focus.
+- Endpoint/resource graph changes node granularity to route, RPC method,
+  GraphQL field, queue/topic, database/cache, container, or agent.
+- UI must label the graph mode because each mode makes different causality
+  claims.
+
+### Resolver and materialization backlog by surface
+
+| Surface | Query/API concept | Likely materialization |
+| --- | --- | --- |
+| Ecosystem map | `serviceMap` / `ecosystemGraph`, `relationship`, `topology` | `service_edges_minute`, `topology_edges_minute`. |
+| Linked traces | `linkedTraces(traceId, depth)`, `spanLinks(traceId)` | Link index extracted from span rows if JSON scans are slow. |
+| Story | `story(anchor, opts)` | Optional `story_events` for low-latency normalized rows. |
+| Trace comparison | `traceCompare`, `traceCriticalPath`, `aggregateTrace` | Aggregate trace rollups by normalized operation. |
+| Logs/fields | `logFacets`, `fieldStats` | `field_stats_minute`, body full-text/index additions. |
+| Metrics | `metricExemplars`, `heatmap`, `sloBurn` | `metric_exemplars`, runtime/anomaly windows. |
+| Runtime | `runtimeSnapshot`, `runtimeMetrics` | `runtime_metric_rollups`, `runtime_correlations`. |
+| Issues/releases | `deploys`, `releases`, `Issue.affectedReleases` | Deploy/release metadata in Turso plus issue-release joins. |
+| Frontend/RUM | `frontendSessions`, `frontendSession`, `frontendErrors` | Session/journey metadata plus source-map refs. |
+| Agent/session | `agentSession(runId|conversationId)` | `agent_actions` in Turso, content refs elsewhere. |
+| Causal graph | `causalGraph(anchor)` | Typed node/edge cache if assembly becomes slow. |
+| Bundles | `bundleDiff`, multi-anchor `bundle`, schema version | Bundle projections plus redaction-report snapshots. |
+| Investigations | `investigation`, `saveInvestigation` | `investigations` in Turso. |
+| Quality | `evidenceGaps`, `telemetryQuality` | `evidence_gaps` by trace/run/service. |
+
+### Telemetry contract enforcement with OpenTelemetry Weaver
+
+Parallax should treat telemetry names as public API:
+
+- Keep a registry under a future `semconv/` directory: OTel base conventions plus
+  a Parallax overlay for `parallax.*`, `cli.*`, `tui.*`, selected `gen_ai.*`,
+  and selected `mcp.*`.
+- Use registry checks/diffs to make telemetry schema changes reviewable.
+- Generate type-safe constants for Rust, Java, and TypeScript so playground and
+  product code use the same attribute names.
+- Run live checks against playground OTLP output to catch missing required
+  attributes, type mismatches, deprecated names, and invalid enum values.
+- Generate example signals so UI work can start before every playground scenario
+  exists.
+- Feed registry docs into future MCP/agent surfaces so attributes are
+  self-describing to humans and tools.
+
+### Optional eBPF/OBI ingest research note
+
+OTel eBPF Instrumentation/OBI is not a replacement for SDK traces. It may be a
+future optional breadth source:
+
+- Useful for zero-code RED metrics, service graph edges, HTTP/gRPC/SQL/Redis/
+  Kafka/GraphQL visibility, and automatic service-name resolution.
+- Can coexist with SDK telemetry when it detects already-instrumented processes
+  and avoids duplicate counting.
+- Weak for deep distributed tracing in complex JVM/Tokio/reactive shapes, so SDK
+  instrumentation remains the depth source for spans, links, TUI, GenAI/MCP, and
+  critical path.
+- UI must label provenance on nodes/edges/spans as `SDK` vs `eBPF`.
+- Possible future `parallax observe` onboarding mode is Linux/container-only and
+  out of V1 scope.
+
+### Visualization primitive catalog
+
+| Data shape | Preferred primitive | Parallax use |
+| --- | --- | --- |
+| Latency distribution over time | Brushable heatmap | Trace list, span duration, logs, BubbleUp entry. |
+| One request across services | Waterfall plus critical-path stroke | Trace detail and story expansion. |
+| High-volume service traffic | Service graph or Sankey/flow mode | Ecosystem map. |
+| Periodic runtime patterns | Calendar/time heatmap | Cron health, CPU/GC/task saturation. |
+| CPU/allocation/lock samples | Flamegraph/icicle, later diff mode | Profiling/runtime lane. |
+| Agent run | Trace tree or agent graph | Agent-session view. |
+| Ordered cross-signal facts | Story/narrative beats | Signature Parallax surface. |
+| Selection vs baseline | Paired mini-histograms | BubbleUp/attribute compare. |
+| Metric-to-trace | Exemplar dots | Dashboards and runtime charts. |
+| Two traces | Structural diff columns | Trace compare. |
+| Cross-trace causality | Strength-tiered node-link graph | Causal graph and linked traces. |
+
+Rule: every visual mark should be a filter, a drilldown, or a bundle candidate.
+Dead marks are research-only, not product-grade UI.
+
+### Exact technical knobs retained for future implementation
+
+These names came from the removed appendix and should survive as searchable
+implementation references:
+
+- Frontend/UI stack stays `TanStack Start + shadcn/ui on Base UI + Recharts v3`
+  and the whole UI is served by `parallax serve`. Use `@tanstack/react-virtual`
+  for high-volume trace/log/live-tail virtualization if the current table/list
+  primitives are not enough.
+- Span status/kind vocabulary to preserve in UI filters: `Unset`, `Ok`,
+  `Error`, `INTERNAL`, `CLIENT`, `SERVER`, `PRODUCER`, `CONSUMER`, plus
+  `trace_flags`, `trace_state`, `span_links`, and typed log/event `AnyValue`
+  bodies.
+- Logs data model fields to keep visible in inspectors: `Timestamp`,
+  `ObservedTimestamp`, `TraceId`, `SpanId`, `TraceFlags`, `SeverityText`,
+  `SeverityNumber`, `Body`, `Resource`, `InstrumentationScope`, `Attributes`,
+  and `EventName`; in Parallax row names this maps to fields such as
+  `severity_text` and `severity_number`.
+- CLI/process spans should use `process.executable.name`, `process.exit.code`,
+  `process.pid`, `process.command_args`, `process.executable.path`, and
+  `error.type`; sanitize `process.command_args` and avoid
+  `process.command_line` by default.
+- Propagation helpers/config: `BaggagePropagator`,
+  `ParentBased(TraceIdRatioBased)`, `Context::current()`, gRPC
+  `MetadataInjector`, Kafka headers, RabbitMQ `BasicProperties.headers`,
+  W3C `traceparent`, `tracestate`, and `baggage`.
+- GraphQL Java flags: set
+  `otel.instrumentation.graphql.data-fetcher.enabled=true` and
+  `otel.instrumentation.graphql.data-fetcher.create_or_add_link=true` for field
+  spans and operation links. Also keep GraphQL concepts `graphql.request`,
+  `graphql.execute`, `graphql.fetch`, `graphql.dataloader.load`,
+  `graphql.dataloader.batch.size`, `graphql.error.path`, and redacted
+  `graphql.document`.
+- gRPC streaming details: `rpc.system="grpc"`, `rpc.message.type`,
+  `rpc.message.id`, `rpc.message.compressed_size`, `rpc.grpc.status_code`,
+  `QuoteStream`, and `tonic-tracing-opentelemetry` are concrete playground/UI
+  references.
+- Database/pool metrics should spell out exact names where possible:
+  `db.client.operation.duration`, `db.client.connection.count`,
+  `db.client.connection.pending_requests`, `db.client.connection.timeouts`,
+  `db.client.connection.wait_time`, `db.client.connection.use_time`,
+  `db.client.connection.create_time`, `db.client.connection.idle.max`,
+  `db.client.connection.idle.min`, and `db.client.connection.max`.
+- Java runtime/config hooks: `spring-boot-starter-actuator`,
+  `hikaricp.connections.*`, `otel.instrumentation.micrometer.enabled=true`,
+  `jvm.gc.time`, `jvm.gc.count`, `jvm.threads.count`, `jvm.memory.used`,
+  `jvm.class.loaded`, `jvm.cpu.time`, and `jvm.buffer.pool.*`.
+- Rust runtime hooks: `tokio-metrics`, `RuntimeMonitor`, `TaskMonitor`,
+  `tokio.runtime.*`, `tokio.task.*`, `tokio.runtime.alive_tasks`,
+  `tokio.runtime.worker_count`, `workers_count`, `alive_tasks`,
+  `blocking_pool_depth`, `budget_forced_yield_count`,
+  `io_driver_ready_count`, `poll_count_histogram`, `schedule_wait_duration`,
+  `task.polls`, `instrumented_count`, `dropped_count`, `first_poll_delay`,
+  `total_poll_duration`, `total_schedule_duration`, `total_idle_duration`, and
+  `mean_poll_duration`.
+- Profiling placeholders: `opentelemetry_profiles`, `pprof-rs`, JFR,
+  `async-profiler`, `tracing-alloc`, `profiles(service, from, to, traceId?)`,
+  and `flamegraph(profileId, groupBy=function|file|module)`.
+- Specific future resolvers/actions: `serviceMap(from, to, env?)`,
+  `linkedTraces(traceId, depth=2)`, `agentSteps(runId)`,
+  `logFacets(query, fields[])`, `metricExemplars(name, from, to, ...)`,
+  `sloBurn(sloId, from, to)`, `traceCompare(a, b)`,
+  `traceCriticalPath(traceId)`, `bundleDiff(a, b)`, `frontendSessions(...)`,
+  `frontendSession(id)`, `frontendErrors(...)`, `profiles(service, from, to,
+  traceId?)`, `flamegraph(profileId, groupBy=function|file|module)`,
+  `bundle(fingerprint?|runId?|traceId?, maxTokens?)`, `run(runId)`,
+  `trace(traceId)`, `logs(...)`, and `metricSeries(name, runId=...)`.
+- Scenario/example literals worth preserving for future search: `?deep=6&fan=5`,
+  `?release=`, `?tenant=`, `POST /v1/deploys`, `REGRESSED`,
+  `missing_backend_continuation`, `missing_evidence: sampled_out_trace`,
+  `frontend_error_caused_by_backend`, `route_view`, `user_step`,
+  `user_interaction`, `tenant.id`, `user.tier`, `cart.id`,
+  `request.size_bytes`, `db.statement_count`, `correlation.id`,
+  `catalogPromo`, `Quote`, `QuoteStream`, `products { reviews }`, and
+  `products { id name reviews { text stars } }`.
+- Legacy implementation/source literals that were useful in the raw brainstorm:
+  `parallax run start`, `pinnedContext`, `opentelemetry_traces`,
+  `opentelemetry_logs`, `opentelemetry_profiles`,
+  `rollups_service_edge_minute`, `redact_then_emit`, `playground_telemetry`,
+  `profile-collector`, `playground daemon`, `playground enter`,
+  `playground enter <session>`, `playground agent`, `POST /inventory/reserve`,
+  `dev.tailrocks.checkout.CheckoutHandler#handle`, `network.peer.address`,
+  `peer.address`, `peer.service`, `status.code`, `otel.kind`, `otel.name`,
+  `http.server.request.duration`, `http.client.connection.*`,
+  `process.cpu.time`, `process.memory.utilization`, `db.response.status_code`,
+  `db.system.name="redis"`, `url.query`, `inferred_skew_ms`, and
+  `outcome=timeout`.
+
+### Source pointer map retained from the removed brainstorm
+
+Local research constraints:
+
+- `docs/research/architecture/simple-ui-v2.md`
+- `docs/research/architecture/api-concept.md`
+- `docs/research/architecture/causal-reconstruction.md`
+- `docs/research/architecture/evidence-bundle-schema.md`
+- `docs/research/architecture/integration-contract.md`
+- `docs/research/architecture/trace-linking.md`
+- `docs/research/capture/rust-stack-instrumentation.md`
+- `docs/research/capture/frontend.md`
+- `docs/research/capture/agent-cli-tracing.md`
+- `docs/research/capture/run-id-standardization.md`
+- `docs/research/capture/correlation.md`
+- `docs/research/capture/redaction.md`
+- `docs/research/decisions/native-otel-tables.md`
+- `docs/research/decisions/storage-engine.md`
+- `docs/research/decisions/metadata-store.md`
+- `docs/research/market/observability-feature-matrix.md`
+- `docs/research/market/backend-and-data-flow.md`
+- `docs/research/market/closest-to-parallax-ranked.md`
+- `docs/research/validation/telemetry-playground-sample-project.md`
+
+Code pointers a future agent should verify before implementation:
+
+- `ui/src/routes/traces.$traceId.tsx:65`
+- `ui/src/components/console/trace-waterfall.tsx:22`
+- `ui/src/components/logs-table.tsx`
+- `ui/src/components/metric-strip.tsx:34`
+- `ui/src/routes/runs.$runId.tsx:83`
+- `ui/src/routes/issues.$fingerprint.tsx:75`
+- `ui/src/routes/dashboards.$dashboardId.tsx:73`
+- `ui/src/routes/sql.tsx:34`
+- `crates/parallax-api/src/lib.rs:879-1926`
+- `crates/parallax-core/src/derive.rs:18`
+- `crates/parallax-core/src/fingerprint.rs:54`
+- `crates/parallax-core/src/bundle.rs:15-37`
+- `parallax-telemetry-playground/libs/playground-telemetry/src/lib.rs:61-66`
+- `parallax-telemetry-playground/libs/playground-telemetry/src/lib.rs:111-125`
+- `parallax-telemetry-playground/services/checkout/src/main.rs:27-63`
+- `parallax-telemetry-playground/services/checkout/src/main.rs:221-230`
+- `parallax-telemetry-playground/services/catalog/src/main/resources/application.yml`
+- `parallax-telemetry-playground/services/catalog/src/main/java/dev/tailrocks/catalog/CatalogApplication.java:46-92`
+- `parallax-telemetry-playground/services/catalog/src/main/java/dev/tailrocks/catalog/CatalogApplication.java:51-57`
+- `parallax-telemetry-playground/services/orders/src/main.rs:62`
+- `parallax-telemetry-playground/services/pricing/src/main.rs:38`
+- `parallax-telemetry-playground/cli/src/main.rs:45-58`
+- `parallax-telemetry-playground/web/src/telemetry.ts:23-45`
+- `parallax-telemetry-playground/web/src/routes/__root.tsx:15`
+- `parallax-telemetry-playground/deploy/docker-compose.yml`
+- `parallax-telemetry-playground/deploy/docker-compose.xlang.yml`
+
+External references retained for follow-up research:
+
+- OpenTelemetry overview, traces, logs data model, metrics data model, baggage,
+  profiles, semantic conventions, CLI spans, GraphQL spans, browser events,
+  browser JS instrumentation, GenAI, MCP, env-var context carriers, Weaver, and
+  OBI/eBPF instrumentation.
+- W3C Trace Context and W3C Baggage.
+- Grafana Explore, Tempo service graph, Tempo metrics-from-traces/exemplars, and
+  Faro browser observability.
+- Sentry Trace Explorer, distributed tracing, releases/regressions, breadcrumbs,
+  frontend sessions, and profiling.
+- Elastic Discover, service maps, and Cases.
+- Datadog Service Map, Service Catalog/Page, runtime metrics, and deploy
+  markers.
+- Honeycomb high-cardinality exploration, BubbleUp, and Agent Timeline.
+- Jaeger trace DAGs, deep dependency graphs, service performance monitoring, and
+  trace comparison.
+- Apollo Studio GraphQL field tree patterns.
+- Tokio metrics and Tokio Console.
+- Pyroscope/profile flamegraph patterns.
+- Coroot eBPF service map research.
+- AI-observability references: Langfuse, Arize Phoenix/OpenInference,
+  Braintrust, LangSmith, Galileo, MLflow, Comet Opik.
 
 ## Design principles
 
