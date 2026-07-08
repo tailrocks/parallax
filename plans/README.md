@@ -54,7 +54,7 @@ conditions, run its verification gates, and update your row when done.
 | 043 | Service catalog (identity/runtime/SDK columns + detail card) | parallax | P2 | M | demo: 036 | DONE |
 | 044 | Runtime dashboards + metric label discovery (metricLabels/Values, runtimeSnapshot, builder autocomplete) | parallax | P2 | L | demo: 045 | DONE |
 | 045 | Playground runtime scenarios (Tokio gauges, JVM pressure, container limits, Micrometer/exemplar knobs) | **[playground]** | P2 | L | 036 | DONE |
-| 046 | Field explorer phase 1 (fieldStats over span/error attrs + traces-list drawer) | parallax | P2 | M | demo: 054 | TODO |
+| 046 | Field explorer phase 1 (fieldStats over span/error attrs + traces-list drawer) | parallax | P2 | M | demo: 054 | DONE |
 | 047 | Playground GraphQL family (field spans on, N+1 contrast, partial errors, driver) | **[playground]** | P2 | M | 042, 037 | TODO |
 | 048 | Playground Postgres reality (sqlx inventory, db.* spans, pool metrics, DB scenarios) | **[playground]** | P2 | L | 036 | TODO |
 | 049 | Playground messaging + gRPC semantics (batch fan-in links, lag metric, orphan, deadlines, stream events) | **[playground]** | P2 | M | 036 | TODO |
@@ -112,6 +112,9 @@ after 038/039; 067 anytime after 036; 065 after advisor-034; 066 last
 - Paired demos: 041↔042 (releases), 043↔036 (identity attrs), 044↔045
   (runtime metrics), 046↔054 (field spike + uncorrelated log). The parallax
   side works without the pair but demos thin.
+- 046 landed span/resource attribute discovery; error-event JSON key discovery
+  stays deferred to the logs/error phase because Greptime does not expose those
+  JSON keys cheaply.
 - Cross-program: 036 overlaps advisor-plans/034 on the composite
   propagator in `libs/playground-telemetry` — whichever lands second reuses
   (both plans carry the note). 049's orphan-consumer + 054's rogue-log and

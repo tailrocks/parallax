@@ -2,11 +2,13 @@
 //! `--no-greptime` fallback's telemetry side (bounded).
 
 use crate::adapter::{
-    ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow, MAX_ROWS,
-    OverviewTotals, ReleaseWindow, RuntimeMetricSeries, SERVICE_MAP_TRACE_CAP, ServiceCatalogRow,
-    ServiceEdge, ServiceSummary, SignalKind, SpanRed, TelemetryStore,
+    ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow,
+    FIELD_KEYS_CAP, FIELD_TOP_VALUES_CAP, FieldKey, FieldSource, FieldStats, FieldValueCount,
+    MAX_ROWS, OverviewTotals, ReleaseWindow, RuntimeMetricSeries, SERVICE_MAP_TRACE_CAP,
+    ServiceCatalogRow, ServiceEdge, ServiceSummary, SignalKind, SpanRed, TelemetryStore,
     attribute_compare_key_allowed, attribute_compare_score, attribute_compare_value_allowed,
-    metric_group_label_allowed, runtime_metric_family, runtime_metric_unit,
+    field_key_identifier_like, field_key_namespace, field_value_display,
+    metric_group_label_allowed, runtime_metric_family, runtime_metric_unit, span_field_key_allowed,
 };
 use crate::model::*;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -32,6 +34,16 @@ fn scalar_attribute_value(attributes: &serde_json::Value, key: &str) -> Option<S
         _ => return None,
     };
     attribute_compare_value_allowed(&value).then_some(value)
+}
+
+fn field_scalar_value(attributes: &serde_json::Value, key: &str) -> Option<String> {
+    let value = match attributes.get(key)? {
+        serde_json::Value::String(value) => value.clone(),
+        serde_json::Value::Bool(value) => value.to_string(),
+        serde_json::Value::Number(value) => value.to_string(),
+        _ => return None,
+    };
+    field_value_display(&value)
 }
 
 fn resource_string(resource: &serde_json::Value, key: &str) -> Option<String> {
@@ -1075,6 +1087,148 @@ impl TelemetryStore for MemoryStore {
         Ok(rows)
     }
 
+    async fn span_field_keys(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<FieldKey>> {
+        let spans = self.lock().spans.clone();
+        let window: Vec<SpanRow> = spans
+            .into_iter()
+            .filter(|span| range.contains(&span.ts_nanos))
+            .collect();
+        let row_count = window.len() as u64;
+        let mut counts: BTreeMap<String, (FieldSource, u64)> = BTreeMap::new();
+
+        for span in &window {
+            if !span.service.trim().is_empty() {
+                counts
+                    .entry("resource.service.name".to_string())
+                    .and_modify(|(_, count)| *count += 1)
+                    .or_insert((FieldSource::Resource, 1));
+            }
+            if let Some(attributes) = span.attributes.as_object() {
+                for key in attributes.keys() {
+                    if !span_field_key_allowed(key) {
+                        continue;
+                    }
+                    if field_scalar_value(&span.attributes, key).is_some() {
+                        counts
+                            .entry(key.clone())
+                            .and_modify(|(_, count)| *count += 1)
+                            .or_insert((FieldSource::Span, 1));
+                    }
+                }
+            }
+            if let Some(resource) = span.resource.as_object() {
+                for key in resource.keys() {
+                    if key == "service.name" {
+                        continue;
+                    }
+                    let exposed = format!("resource.{key}");
+                    if !span_field_key_allowed(&exposed) {
+                        continue;
+                    }
+                    if field_scalar_value(&span.resource, key).is_some() {
+                        counts
+                            .entry(exposed)
+                            .and_modify(|(_, count)| *count += 1)
+                            .or_insert((FieldSource::Resource, 1));
+                    }
+                }
+            }
+        }
+
+        Ok(counts
+            .into_iter()
+            .take(FIELD_KEYS_CAP)
+            .map(|(key, (source, non_null_count))| FieldKey {
+                namespace: field_key_namespace(&key),
+                coverage: if row_count == 0 {
+                    0.0
+                } else {
+                    non_null_count as f64 / row_count as f64
+                },
+                is_identifier: field_key_identifier_like(&key),
+                key,
+                source,
+                row_count,
+                non_null_count,
+            })
+            .collect())
+    }
+
+    async fn span_field_stats(
+        &self,
+        key: &str,
+        range: RangeInclusive<u128>,
+        service: Option<&str>,
+    ) -> anyhow::Result<FieldStats> {
+        anyhow::ensure!(span_field_key_allowed(key), "invalid field key");
+        let discovered = self.span_field_keys(range.clone()).await?;
+        let Some(discovered_key) = discovered.iter().find(|field| field.key == key) else {
+            anyhow::bail!("unknown span field key");
+        };
+        let (source, raw_key) = match key.strip_prefix("resource.") {
+            Some(raw) => (FieldSource::Resource, raw),
+            None => (FieldSource::Span, key),
+        };
+
+        let spans = self.lock().spans.clone();
+        let window: Vec<SpanRow> = spans
+            .into_iter()
+            .filter(|span| {
+                range.contains(&span.ts_nanos) && service.is_none_or(|svc| span.service == svc)
+            })
+            .collect();
+        let row_count = window.len() as u64;
+        let mut values = Vec::new();
+        for span in &window {
+            let value = match source {
+                FieldSource::Span => field_scalar_value(&span.attributes, raw_key),
+                FieldSource::Resource if raw_key == "service.name" => {
+                    field_value_display(&span.service)
+                }
+                FieldSource::Resource => field_scalar_value(&span.resource, raw_key),
+            };
+            if let Some(value) = value {
+                values.push(value);
+            }
+        }
+
+        let non_null_count = values.len() as u64;
+        let capped = values.len() > MAX_ROWS;
+        let mut counts: BTreeMap<String, u64> = BTreeMap::new();
+        let mut distinct = BTreeSet::new();
+        for value in values.into_iter().take(MAX_ROWS) {
+            distinct.insert(value.clone());
+            *counts.entry(value).or_default() += 1;
+        }
+
+        let mut top_values: Vec<FieldValueCount> = counts
+            .into_iter()
+            .map(|(value, count)| FieldValueCount { value, count })
+            .collect();
+        top_values.sort_by(|a, b| b.count.cmp(&a.count).then_with(|| a.value.cmp(&b.value)));
+        top_values.truncate(FIELD_TOP_VALUES_CAP);
+        let sample_count = non_null_count.min(MAX_ROWS as u64);
+        let is_identifier = discovered_key.is_identifier
+            || (sample_count >= 20 && distinct.len() as u64 >= sample_count.saturating_sub(1));
+
+        Ok(FieldStats {
+            key: key.to_string(),
+            namespace: field_key_namespace(key),
+            source,
+            row_count,
+            non_null_count,
+            distinct_count: distinct.len() as u64,
+            coverage: if row_count == 0 {
+                0.0
+            } else {
+                non_null_count as f64 / row_count as f64
+            },
+            capped,
+            is_identifier,
+            top_values,
+        })
+    }
+
     async fn service_map(
         &self,
         range: RangeInclusive<u128>,
@@ -1480,6 +1634,75 @@ mod tests {
         let mut row = span(trace, span_id, None, service, ts);
         row.resource = resource;
         row
+    }
+
+    #[tokio::test]
+    async fn span_field_keys_and_stats_cover_span_and_resource_attrs() {
+        let store = MemoryStore::new();
+        let mut s1 = span_with_attrs(
+            "trace-1",
+            "root",
+            10,
+            serde_json::json!({
+                "http.request.method": "GET",
+                "request.id": "req-1"
+            }),
+        );
+        s1.resource = serde_json::json!({ "service.name": "checkout" });
+        let mut s2 = span_with_attrs(
+            "trace-2",
+            "root",
+            20,
+            serde_json::json!({
+                "http.request.method": "GET",
+                "request.id": "req-2"
+            }),
+        );
+        s2.resource = serde_json::json!({ "service.name": "checkout" });
+        let mut s3 = span_with_attrs(
+            "trace-3",
+            "root",
+            30,
+            serde_json::json!({
+                "http.request.method": "POST",
+                "request.id": "req-3"
+            }),
+        );
+        s3.resource = serde_json::json!({ "service.name": "checkout" });
+        let mut s4 = span("trace-4", "root", None, "checkout", 40);
+        s4.resource = serde_json::json!({ "service.name": "checkout" });
+        store
+            .ingest_traces(vec![s1, s2, s3, s4], bytes::Bytes::new())
+            .await
+            .unwrap();
+
+        let keys = store.span_field_keys(0..=100).await.unwrap();
+        let method_key = keys
+            .iter()
+            .find(|key| key.key == "http.request.method")
+            .unwrap();
+        assert_eq!(method_key.namespace, "http");
+        assert_eq!(method_key.non_null_count, 3);
+        assert!((method_key.coverage - 0.75).abs() < f64::EPSILON);
+        assert!(
+            keys.iter().any(
+                |key| key.key == "resource.service.name" && key.source == FieldSource::Resource
+            )
+        );
+        assert!(
+            keys.iter()
+                .any(|key| key.key == "request.id" && key.is_identifier)
+        );
+
+        let stats = store
+            .span_field_stats("http.request.method", 0..=100, Some("checkout"))
+            .await
+            .unwrap();
+        assert_eq!(stats.row_count, 4);
+        assert_eq!(stats.non_null_count, 3);
+        assert_eq!(stats.distinct_count, 2);
+        assert_eq!(stats.top_values[0].value, "GET");
+        assert_eq!(stats.top_values[0].count, 2);
     }
 
     #[tokio::test]

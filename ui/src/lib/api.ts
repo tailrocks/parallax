@@ -164,6 +164,34 @@ export interface AttributeCompareRow {
   score: number
 }
 
+export interface FieldKey {
+  key: string
+  namespace: string
+  source: "SPAN" | "RESOURCE"
+  rowCount: string
+  nonNullCount: string
+  coverage: number
+  isIdentifier: boolean
+}
+
+export interface FieldValueCount {
+  value: string
+  count: string
+}
+
+export interface FieldStats {
+  key: string
+  namespace: string
+  source: "SPAN" | "RESOURCE"
+  rowCount: string
+  nonNullCount: string
+  distinctCount: string
+  coverage: number
+  capped: boolean
+  isIdentifier: boolean
+  topValues: FieldValueCount[]
+}
+
 export interface MetricPoint {
   tsNanos: string
   value: number

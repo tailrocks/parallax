@@ -10,7 +10,9 @@
 use juniper::{EmptySubscription, FieldError, FieldResult, RootNode, graphql_object};
 use parallax_core::{gaps, story, trace_analysis};
 use parallax_storage::adapter::{
-    ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow as StorageAttributeCompareRow, OverviewTotals,
+    ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow as StorageAttributeCompareRow,
+    FieldKey as StorageFieldKey, FieldSource, FieldStats as StorageFieldStats,
+    FieldValueCount as StorageFieldValueCount, OverviewTotals,
     ReleaseWindow as StorageReleaseWindow, RuntimeMetricSeries as StorageRuntimeMetricSeries,
     SERVICE_MAP_TRACE_CAP, ServiceCatalogRow as StorageServiceCatalogRow,
     ServiceEdge as StorageServiceEdge, ServiceSummary as StorageServiceSummary,
@@ -665,6 +667,93 @@ impl AttributeCompareRow {
     }
     fn score(&self) -> f64 {
         self.0.score
+    }
+}
+
+fn field_source_name(source: FieldSource) -> &'static str {
+    match source {
+        FieldSource::Span => "SPAN",
+        FieldSource::Resource => "RESOURCE",
+    }
+}
+
+pub struct FieldKey(StorageFieldKey);
+
+#[graphql_object(context = ApiContext)]
+impl FieldKey {
+    fn key(&self) -> &str {
+        &self.0.key
+    }
+    fn namespace(&self) -> &str {
+        &self.0.namespace
+    }
+    fn source(&self) -> &str {
+        field_source_name(self.0.source)
+    }
+    fn row_count(&self) -> String {
+        self.0.row_count.to_string()
+    }
+    fn non_null_count(&self) -> String {
+        self.0.non_null_count.to_string()
+    }
+    fn coverage(&self) -> f64 {
+        self.0.coverage
+    }
+    fn is_identifier(&self) -> bool {
+        self.0.is_identifier
+    }
+}
+
+pub struct FieldValueCount(StorageFieldValueCount);
+
+#[graphql_object(context = ApiContext)]
+impl FieldValueCount {
+    fn value(&self) -> &str {
+        &self.0.value
+    }
+    fn count(&self) -> String {
+        self.0.count.to_string()
+    }
+}
+
+pub struct FieldStats(StorageFieldStats);
+
+#[graphql_object(context = ApiContext)]
+impl FieldStats {
+    fn key(&self) -> &str {
+        &self.0.key
+    }
+    fn namespace(&self) -> &str {
+        &self.0.namespace
+    }
+    fn source(&self) -> &str {
+        field_source_name(self.0.source)
+    }
+    fn row_count(&self) -> String {
+        self.0.row_count.to_string()
+    }
+    fn non_null_count(&self) -> String {
+        self.0.non_null_count.to_string()
+    }
+    fn distinct_count(&self) -> String {
+        self.0.distinct_count.to_string()
+    }
+    fn coverage(&self) -> f64 {
+        self.0.coverage
+    }
+    fn capped(&self) -> bool {
+        self.0.capped
+    }
+    fn is_identifier(&self) -> bool {
+        self.0.is_identifier
+    }
+    fn top_values(&self) -> Vec<FieldValueCount> {
+        self.0
+            .top_values
+            .iter()
+            .cloned()
+            .map(FieldValueCount)
+            .collect()
     }
 }
 
@@ -1838,6 +1927,44 @@ impl Query {
             .into_iter()
             .map(AttributeCompareRow)
             .collect())
+    }
+
+    /// Scalar span/resource attribute keys in a bounded time window.
+    async fn field_keys(
+        context: &ApiContext,
+        from_nanos: String,
+        to_nanos: String,
+    ) -> FieldResult<Vec<FieldKey>> {
+        let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+        Ok(context
+            .store
+            .span_field_keys(from..=to)
+            .await
+            .map_err(field_err)?
+            .into_iter()
+            .map(FieldKey)
+            .collect())
+    }
+
+    /// Bounded coverage/cardinality/top-values stats for one field key.
+    async fn field_stats(
+        context: &ApiContext,
+        key: String,
+        from_nanos: String,
+        to_nanos: String,
+        service: Option<String>,
+    ) -> FieldResult<FieldStats> {
+        let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+        let stats = context
+            .store
+            .span_field_stats(
+                key.trim(),
+                from..=to,
+                service.as_deref().filter(|service| !service.is_empty()),
+            )
+            .await
+            .map_err(field_err)?;
+        Ok(FieldStats(stats))
     }
 
     /// Unified log browse (spec §8 `logs`): every filter optional, newest
@@ -3799,6 +3926,88 @@ mod tests {
                 .and_then(|value| value.as_array())
                 .is_some_and(|rows| rows.iter().all(|row| row["key"] != "trace_id")),
             "attributeCompare denies trace_id: {json}"
+        );
+    }
+
+    #[tokio::test]
+    async fn field_explorer_resolvers_return_keys_and_stats() {
+        let store = Arc::new(MemoryStore::new());
+        let mut first = span("checkout", "field-1", "root", 10, 10);
+        first.attributes = serde_json::json!({
+            "http.request.method": "GET",
+            "request.id": "req-1"
+        });
+        first.resource = serde_json::json!({ "service.name": "checkout" });
+        let mut second = span("checkout", "field-2", "root", 20, 10);
+        second.attributes = serde_json::json!({
+            "http.request.method": "GET",
+            "request.id": "req-2"
+        });
+        second.resource = serde_json::json!({ "service.name": "checkout" });
+        let mut third = span("checkout", "field-3", "root", 30, 10);
+        third.attributes = serde_json::json!({
+            "http.request.method": "POST",
+            "request.id": "req-3"
+        });
+        third.resource = serde_json::json!({ "service.name": "checkout" });
+        store
+            .ingest_traces(vec![first, second, third], Default::default())
+            .await
+            .unwrap();
+
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"
+            {
+              fieldKeys(fromNanos: "0", toNanos: "100") {
+                key namespace source nonNullCount coverage isIdentifier
+              }
+              fieldStats(
+                key: "http.request.method"
+                fromNanos: "0"
+                toNanos: "100"
+                service: "checkout"
+              ) {
+                key rowCount nonNullCount distinctCount coverage capped isIdentifier
+                topValues { value count }
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(
+            error_messages(&json).is_empty(),
+            "field explorer query: {json}"
+        );
+        assert!(
+            json.pointer("/data/fieldKeys")
+                .and_then(|value| value.as_array())
+                .is_some_and(|keys| keys.iter().any(|key| {
+                    key["key"] == "resource.service.name" && key["source"] == "RESOURCE"
+                })),
+            "resource field exposed: {json}"
+        );
+        assert!(
+            json.pointer("/data/fieldKeys")
+                .and_then(|value| value.as_array())
+                .is_some_and(|keys| keys
+                    .iter()
+                    .any(|key| key["key"] == "request.id" && key["isIdentifier"] == true)),
+            "identifier field labeled: {json}"
+        );
+        assert_eq!(
+            json.pointer("/data/fieldStats/topValues/0/value"),
+            Some(&serde_json::json!("GET"))
+        );
+        assert_eq!(
+            json.pointer("/data/fieldStats/topValues/0/count"),
+            Some(&serde_json::json!("2"))
         );
     }
 

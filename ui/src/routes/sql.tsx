@@ -31,7 +31,16 @@ import {
 import { gqlString, graphql } from "@/lib/api"
 import { formatCount } from "@/lib/format"
 
-export const Route = createFileRoute("/sql")({ component: SqlPage })
+interface SqlSearch {
+  query?: string | undefined
+}
+
+export const Route = createFileRoute("/sql")({
+  validateSearch: (search: Record<string, unknown>): SqlSearch => ({
+    query: typeof search.query === "string" ? search.query : undefined,
+  }),
+  component: SqlPage,
+})
 
 interface SqlResult {
   columns: string[]
@@ -112,8 +121,9 @@ interface SchemaColumn {
 }
 
 function SqlPage() {
+  const search = Route.useSearch()
   const editorRef = useRef<HTMLTextAreaElement>(null)
-  const [statement, setStatement] = useState(EXAMPLES[0]?.sql ?? "")
+  const [statement, setStatement] = useState(search.query ?? EXAMPLES[0]?.sql ?? "")
   const [result, setResult] = useState<SqlResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [running, setRunning] = useState(false)
@@ -121,6 +131,12 @@ function SqlPage() {
   const [history, setHistory] = useState<string[]>(loadHistory)
   const [schema, setSchema] = useState<Map<string, SchemaColumn[]>>(new Map())
   const [openTable, setOpenTable] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (search.query) {
+      setStatement(search.query)
+    }
+  }, [search.query])
 
   useEffect(() => {
     void graphql<{ sql: SqlResult }>(`

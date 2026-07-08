@@ -2,11 +2,13 @@
 //! implementation spec §5. All engine-specific SQL lives in this module.
 
 use crate::adapter::{
-    ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow, MAX_ROWS,
-    OverviewTotals, ReleaseWindow, RuntimeMetricSeries, SERVICE_MAP_TRACE_CAP, ServiceCatalogRow,
-    ServiceEdge, ServiceSummary, SignalKind, SpanRed, TelemetryStore,
+    ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow,
+    FIELD_KEYS_CAP, FIELD_TOP_VALUES_CAP, FieldKey, FieldSource, FieldStats, FieldValueCount,
+    MAX_ROWS, OverviewTotals, ReleaseWindow, RuntimeMetricSeries, SERVICE_MAP_TRACE_CAP,
+    ServiceCatalogRow, ServiceEdge, ServiceSummary, SignalKind, SpanRed, TelemetryStore,
     attribute_compare_key_allowed, attribute_compare_score, attribute_compare_value_allowed,
-    metric_group_label_allowed, runtime_metric_family, runtime_metric_unit,
+    field_key_identifier_like, field_key_namespace, field_value_display,
+    metric_group_label_allowed, runtime_metric_family, runtime_metric_unit, span_field_key_allowed,
 };
 use crate::model::*;
 use std::collections::{BTreeMap, BTreeSet};
@@ -656,6 +658,37 @@ impl<'a> ColumnIndex<'a> {
             serde_json::Value::Object(resource),
         )
     }
+}
+
+#[derive(Debug, Clone)]
+struct SpanFieldColumn {
+    key: String,
+    column: String,
+    source: FieldSource,
+}
+
+fn span_field_column_from_name(column: &str) -> Option<SpanFieldColumn> {
+    if let Some(key) = column.strip_prefix("span_attributes.") {
+        let key = key.to_string();
+        return span_field_key_allowed(&key).then_some(SpanFieldColumn {
+            key,
+            column: column.to_string(),
+            source: FieldSource::Span,
+        });
+    }
+    if let Some(key) = column.strip_prefix("resource_attributes.") {
+        let key = format!("resource.{key}");
+        return span_field_key_allowed(&key).then_some(SpanFieldColumn {
+            key,
+            column: column.to_string(),
+            source: FieldSource::Resource,
+        });
+    }
+    None
+}
+
+fn quoted_field_column(column: &SpanFieldColumn) -> String {
+    format!(r#""{}""#, escape_ident(&column.column))
 }
 
 fn str_at(row: &[serde_json::Value], index: usize) -> String {
@@ -1926,6 +1959,161 @@ impl TelemetryStore for GreptimeStore {
         Ok(rows)
     }
 
+    async fn span_field_keys(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<FieldKey>> {
+        let mut columns = self.span_field_columns().await?;
+        columns.truncate(FIELD_KEYS_CAP);
+        if columns.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let mut projections = vec!["COUNT(*) AS \"__total\"".to_string()];
+        for (index, column) in columns.iter().enumerate() {
+            projections.push(format!(
+                r#"SUM(CASE WHEN {} IS NOT NULL THEN 1 ELSE 0 END) AS "k{index}""#,
+                quoted_field_column(column)
+            ));
+        }
+        let rows = self
+            .sql_lenient(&format!(
+                r#"SELECT {}
+                   FROM opentelemetry_traces
+                   WHERE "timestamp" >= {} AND "timestamp" <= {}"#,
+                projections.join(", "),
+                sql_ts(*range.start()),
+                sql_ts(*range.end())
+            ))
+            .await?;
+        let Some(row) = rows.first() else {
+            return Ok(Vec::new());
+        };
+        let row_count = u128_at(row, 0) as u64;
+
+        Ok(columns
+            .into_iter()
+            .enumerate()
+            .filter_map(|(index, column)| {
+                let non_null_count = u128_at(row, index + 1) as u64;
+                (non_null_count > 0).then(|| FieldKey {
+                    namespace: field_key_namespace(&column.key),
+                    coverage: if row_count == 0 {
+                        0.0
+                    } else {
+                        non_null_count as f64 / row_count as f64
+                    },
+                    is_identifier: field_key_identifier_like(&column.key),
+                    key: column.key,
+                    source: column.source,
+                    row_count,
+                    non_null_count,
+                })
+            })
+            .collect())
+    }
+
+    async fn span_field_stats(
+        &self,
+        key: &str,
+        range: RangeInclusive<u128>,
+        service: Option<&str>,
+    ) -> anyhow::Result<FieldStats> {
+        anyhow::ensure!(span_field_key_allowed(key), "invalid field key");
+        let Some(column) = self
+            .span_field_columns()
+            .await?
+            .into_iter()
+            .find(|column| column.key == key)
+        else {
+            anyhow::bail!("unknown span field key");
+        };
+        let column_ident = quoted_field_column(&column);
+        let mut clauses = vec![format!(
+            r#""timestamp" >= {} AND "timestamp" <= {}"#,
+            sql_ts(*range.start()),
+            sql_ts(*range.end())
+        )];
+        if let Some(service) = service {
+            clauses.push(format!(r#""service_name" = '{}'"#, escape(service)));
+        }
+        let base_where = clauses.join(" AND ");
+
+        let totals = self
+            .sql_lenient(&format!(
+                r#"SELECT COUNT(*) AS "total",
+                          SUM(CASE WHEN {column_ident} IS NOT NULL THEN 1 ELSE 0 END) AS "non_null"
+                   FROM opentelemetry_traces
+                   WHERE {base_where}"#
+            ))
+            .await?;
+        let row_count = totals
+            .first()
+            .map(|row| u128_at(row, 0) as u64)
+            .unwrap_or(0);
+        let non_null_count = totals
+            .first()
+            .map(|row| u128_at(row, 1) as u64)
+            .unwrap_or(0);
+        let value_expr = format!("CAST({column_ident} AS STRING)");
+        let sample_where = format!("{base_where} AND {column_ident} IS NOT NULL");
+        let sample_sql = format!(
+            r#"SELECT {value_expr} AS "value"
+               FROM opentelemetry_traces
+               WHERE {sample_where}
+               ORDER BY "timestamp" DESC
+               LIMIT {MAX_ROWS}"#
+        );
+
+        let distinct_rows = self
+            .sql_lenient(&format!(
+                r#"SELECT COUNT(DISTINCT "value") AS "distinct_count"
+                   FROM ({sample_sql}) AS "field_sample""#
+            ))
+            .await?;
+        let distinct_count = distinct_rows
+            .first()
+            .map(|row| u128_at(row, 0) as u64)
+            .unwrap_or(0);
+
+        let value_rows = self
+            .sql_lenient(&format!(
+                r#"SELECT "value", COUNT(*) AS "count"
+                   FROM ({sample_sql}) AS "field_sample"
+                   GROUP BY "value"
+                   ORDER BY "count" DESC, "value" ASC
+                   LIMIT {FIELD_TOP_VALUES_CAP}"#
+            ))
+            .await?;
+        let top_values = value_rows
+            .iter()
+            .filter_map(|row| {
+                let value = field_value_display(&str_at(row, 0))?;
+                Some(FieldValueCount {
+                    value,
+                    count: u128_at(row, 1) as u64,
+                })
+            })
+            .collect();
+        let sample_count = non_null_count.min(MAX_ROWS as u64);
+        let is_identifier = field_key_identifier_like(key)
+            || (sample_count >= 20 && distinct_count >= sample_count.saturating_sub(1));
+
+        Ok(FieldStats {
+            key: key.to_string(),
+            namespace: field_key_namespace(key),
+            source: column.source,
+            row_count,
+            non_null_count,
+            distinct_count,
+            coverage: if row_count == 0 {
+                0.0
+            } else {
+                non_null_count as f64 / row_count as f64
+            },
+            capped: non_null_count > MAX_ROWS as u64,
+            is_identifier,
+            top_values,
+        })
+    }
+
     async fn service_map(
         &self,
         range: RangeInclusive<u128>,
@@ -2270,6 +2458,30 @@ impl TelemetryStore for GreptimeStore {
 }
 
 impl GreptimeStore {
+    async fn span_field_columns(&self) -> anyhow::Result<Vec<SpanFieldColumn>> {
+        let rows = self
+            .sql(
+                r#"SELECT "column_name" FROM information_schema.columns
+                   WHERE "table_schema" = 'public'
+                     AND "table_name" = 'opentelemetry_traces'
+                     AND ("column_name" LIKE 'span_attributes.%'
+                          OR "column_name" LIKE 'resource_attributes.%')
+                   ORDER BY "column_name""#,
+            )
+            .await?;
+        let mut columns = vec![SpanFieldColumn {
+            key: "resource.service.name".to_string(),
+            column: "service_name".to_string(),
+            source: FieldSource::Resource,
+        }];
+        columns.extend(
+            rows.iter()
+                .filter_map(|row| span_field_column_from_name(&str_at(row, 0)))
+                .filter(|column| column.key != "resource.service.name"),
+        );
+        Ok(columns)
+    }
+
     async fn discover_span_attribute_keys(&self) -> anyhow::Result<BTreeSet<String>> {
         let rows = self
             .sql(
