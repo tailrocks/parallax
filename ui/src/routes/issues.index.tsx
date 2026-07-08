@@ -317,6 +317,7 @@ export function IssuesContent({
             <TableHeader>
               <TableRow>
                 <TableHead>Issue</TableHead>
+                <TableHead className="w-36">Service</TableHead>
                 <TableHead className="w-24">Trend</TableHead>
                 <TableHead className="w-24 text-right">
                   <SortableHead
@@ -367,8 +368,23 @@ export function IssuesContent({
                         >
                           {issue.errorType || issue.title}
                         </Link>
-                        <div className="truncate text-sm text-muted-foreground">
-                          {issue.title}
+                        <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                          <span className="min-w-0 truncate">
+                            {issue.title}
+                          </span>
+                          {issue.lastTraceId ? (
+                            <Link
+                              to="/traces/$traceId"
+                              params={{ traceId: issue.lastTraceId }}
+                              aria-label={`trace ${issue.lastTraceId}`}
+                              className="shrink-0"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <Badge variant="secondary" className="font-mono">
+                                trace {issue.lastTraceId.slice(0, 8)}
+                              </Badge>
+                            </Link>
+                          ) : null}
                         </div>
                         {issue.culprit ? (
                           <div className="truncate font-mono text-xs text-muted-foreground/70">
@@ -376,6 +392,19 @@ export function IssuesContent({
                           </div>
                         ) : null}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <Link
+                        to="/services/$service"
+                        params={{ service: issue.service }}
+                        search={rangeLinkSearch(range)}
+                        className="inline-flex max-w-36"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <Badge variant="outline" className="truncate">
+                          {issue.service}
+                        </Badge>
+                      </Link>
                     </TableCell>
                     <TableCell>
                       <Link

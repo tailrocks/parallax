@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router"
 import { IconTerminal2 } from "@tabler/icons-react"
 import { z } from "zod"
 
@@ -339,6 +339,7 @@ export function RunsContent({
                 <TableHead>Run</TableHead>
                 <TableHead>Command</TableHead>
                 <TableHead className="w-32">Status</TableHead>
+                <TableHead className="w-24 text-right">Traces</TableHead>
                 <TableHead className="w-24 text-right">Errors</TableHead>
                 <TableHead className="w-28 text-right">Duration</TableHead>
                 <TableHead className="w-32 text-right">Last seen</TableHead>
@@ -359,9 +360,16 @@ export function RunsContent({
                   >
                     <TableCell>
                       <div className="flex min-w-0 items-center gap-2">
-                        <code className="max-w-44 truncate text-xs">
-                          {row.runId}
-                        </code>
+                        <Link
+                          to="/runs/$runId"
+                          params={{ runId: row.runId }}
+                          className="min-w-0 hover:underline"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <code className="block max-w-44 truncate text-xs">
+                            {row.runId}
+                          </code>
+                        </Link>
                         <CopyButton value={row.runId} />
                         <Badge variant="secondary">{row.source}</Badge>
                       </div>
@@ -376,6 +384,20 @@ export function RunsContent({
                     <TableCell>
                       <RunStatusBadge row={row} />
                     </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {row.traceCount == null ? (
+                        "-"
+                      ) : (
+                        <Link
+                          to="/runs/$runId"
+                          params={{ runId: row.runId }}
+                          className="hover:underline"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          {formatCount(row.traceCount)}
+                        </Link>
+                      )}
+                    </TableCell>
                     <TableCell
                       className={cn(
                         "text-right tabular-nums",
@@ -384,7 +406,18 @@ export function RunsContent({
                           : "text-muted-foreground/40"
                       )}
                     >
-                      {row.errorCount == null ? "-" : formatCount(errors)}
+                      {row.errorCount == null ? (
+                        "-"
+                      ) : (
+                        <Link
+                          to="/runs/$runId"
+                          params={{ runId: row.runId }}
+                          className="hover:underline"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          {formatCount(errors)}
+                        </Link>
+                      )}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {row.status === "running"

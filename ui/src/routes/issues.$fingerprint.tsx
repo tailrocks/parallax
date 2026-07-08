@@ -44,6 +44,7 @@ import { parseStacktrace, structuredFrameCount } from "@/lib/stacktrace"
 import type { Frame } from "@/lib/stacktrace"
 import {
   mergeRangeSearch,
+  rangeLinkSearch,
   rangeSearchSchema,
   resolveRangeSearch,
 } from "@/lib/range"
@@ -88,6 +89,10 @@ export const Route = createFileRoute("/issues/$fingerprint")({
 function rangeHours(range: ResolvedRange): number {
   const ns = BigInt(range.toNanos) - BigInt(range.fromNanos)
   return Math.max(1, Math.ceil(Number(ns / 3_600_000_000_000n)))
+}
+
+function shortRunId(runId: string) {
+  return runId.length > 8 ? `${runId.slice(0, 8)}...` : runId
 }
 
 export async function loadIssueDetail(
@@ -268,7 +273,23 @@ export function IssueDetailContent({
       />
 
       <div className="flex flex-wrap items-center gap-2">
-        <Badge variant="outline">{issue.service}</Badge>
+        <Link
+          to="/services/$service"
+          params={{ service: issue.service }}
+          search={rangeLinkSearch(range)}
+          className="inline-flex"
+        >
+          <Badge variant="outline">{issue.service}</Badge>
+        </Link>
+        {traceRunId ? (
+          <Link
+            to="/runs/$runId"
+            params={{ runId: traceRunId }}
+            className="inline-flex"
+          >
+            <Badge variant="secondary">run {shortRunId(traceRunId)}</Badge>
+          </Link>
+        ) : null}
         <Badge variant={issue.status === "open" ? "rose" : "emerald"}>
           {issue.status}
         </Badge>

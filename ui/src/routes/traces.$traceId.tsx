@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import type { ReactNode } from "react"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import {
   IconAlertTriangle,
@@ -48,7 +49,8 @@ interface TraceLog {
 }
 
 type JsonRecord = Record<string, unknown>
-type KeyValues = Array<[string, string]>
+type KeyValues = Array<[string, ReactNode]>
+type StringKeyValues = Array<[string, string]>
 
 interface SpanLink {
   traceId: string
@@ -90,7 +92,7 @@ function parseJsonRecord(json: string): JsonRecord {
   }
 }
 
-function parseKeyValues(json: string): KeyValues {
+function parseKeyValues(json: string): StringKeyValues {
   return Object.entries(parseJsonRecord(json))
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, value]) => [
@@ -127,7 +129,7 @@ function parseEvents(json: string): SpanEvent[] {
   }
 }
 
-function valueFor(entries: KeyValues, key: string): string | null {
+function valueFor(entries: StringKeyValues, key: string): string | null {
   return entries.find(([entryKey]) => entryKey === key)?.[1] ?? null
 }
 
@@ -193,9 +195,14 @@ function TracePage() {
               </Link>
             ) : null}
             {services.map((service) => (
-              <Badge key={service} variant="outline">
-                {service}
-              </Badge>
+              <Link
+                key={service}
+                to="/services/$service"
+                params={{ service }}
+                className="inline-flex"
+              >
+                <Badge variant="outline">{service}</Badge>
+              </Link>
             ))}
           </span>
         }
@@ -481,7 +488,17 @@ function TraceInspector({
 
         <KeyValueList
           entries={[
-            ["service", selectedSpan.service],
+            [
+              "service",
+              <Link
+                key={selectedSpan.service}
+                to="/services/$service"
+                params={{ service: selectedSpan.service }}
+                className="font-mono underline underline-offset-4"
+              >
+                {selectedSpan.service}
+              </Link>,
+            ],
             ["kind", selectedSpan.kind.replace("SPAN_KIND_", "")],
             ["duration", formatDurationNs(selectedSpan.durationNs)],
             ["start", formatDateTime(selectedSpan.tsNanos)],

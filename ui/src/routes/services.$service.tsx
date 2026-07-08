@@ -3,6 +3,7 @@ import {
   IconActivityHeartbeat,
   IconAffiliate,
   IconAlertTriangleFilled,
+  IconArticle,
   IconGaugeFilled,
   IconServer,
 } from "@tabler/icons-react"
@@ -40,6 +41,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
+import { buttonVariants } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -53,6 +55,7 @@ import type { TraceSummary } from "@/lib/api"
 import { formatCount, formatDurationNs, formatPercent } from "@/lib/format"
 import {
   mergeRangeSearch,
+  rangeLinkSearch,
   rangeSearchSchema,
   resolveRangeSearch,
 } from "@/lib/range"
@@ -296,7 +299,35 @@ export function ServiceDetailContent({
       <PageHeader
         back={servicesBack}
         title={service}
-        actions={<RangePicker value={range} onChange={onRange} />}
+        actions={
+          <>
+            <Link
+              to="/traces"
+              search={{ service, ...rangeLinkSearch(range) }}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              <IconAffiliate />
+              Traces
+            </Link>
+            <Link
+              to="/logs"
+              search={{ service, ...rangeLinkSearch(range) }}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              <IconArticle />
+              Logs
+            </Link>
+            <Link
+              to="/issues"
+              search={{ service, ...rangeLinkSearch(range) }}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              <IconAlertTriangleFilled />
+              Issues
+            </Link>
+            <RangePicker value={range} onChange={onRange} />
+          </>
+        }
       />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

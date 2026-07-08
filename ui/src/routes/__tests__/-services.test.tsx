@@ -170,6 +170,29 @@ describe("Services route", () => {
     expect(screen.getByText("Error rate")).toBeTruthy()
     expect(screen.getByText("p95 latency")).toBeTruthy()
     expect(screen.queryByText("Runtime metrics")).toBeNull()
+    const tracesUrl = new URL(
+      screen.getByRole("link", { name: /traces/i }).getAttribute("href")!,
+      "http://example.test"
+    )
+    expect(tracesUrl.pathname).toBe("/traces")
+    expect(tracesUrl.searchParams.get("service")).toBe("api gateway")
+    expect(tracesUrl.searchParams.get("range")).toBe("24h")
+
+    const logsUrl = new URL(
+      screen.getByRole("link", { name: /logs/i }).getAttribute("href")!,
+      "http://example.test"
+    )
+    expect(logsUrl.pathname).toBe("/logs")
+    expect(logsUrl.searchParams.get("service")).toBe("api gateway")
+    expect(logsUrl.searchParams.get("range")).toBe("24h")
+
+    const issuesUrl = new URL(
+      screen.getByRole("link", { name: /issues/i }).getAttribute("href")!,
+      "http://example.test"
+    )
+    expect(issuesUrl.pathname).toBe("/issues")
+    expect(issuesUrl.searchParams.get("service")).toBe("api gateway")
+    expect(issuesUrl.searchParams.get("range")).toBe("24h")
     expect(
       screen
         .getByRole("link", { name: /post \/checkout/i })
