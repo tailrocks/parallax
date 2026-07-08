@@ -160,6 +160,126 @@ impl MetricWindow {
     }
 }
 
+fn estimate_bundle_tokens(bundle: &Bundle) -> usize {
+    estimate_tokens(&serde_json::to_string(bundle).unwrap_or_default())
+}
+
+fn retain_top_trace_spans(trace: &mut TraceSection, keep: usize) {
+    if keep >= trace.spans.len() {
+        return;
+    }
+    let mut ranked: Vec<usize> = (0..trace.spans.len()).collect();
+    ranked.sort_by(|&a, &b| {
+        let a_span = &trace.spans[a];
+        let b_span = &trace.spans[b];
+        let a_error = a_span.status_code.contains("ERROR");
+        let b_error = b_span.status_code.contains("ERROR");
+        b_error
+            .cmp(&a_error)
+            .then_with(|| b_span.duration_us.cmp(&a_span.duration_us))
+            .then_with(|| a.cmp(&b))
+    });
+    let mut selected = vec![false; trace.spans.len()];
+    for index in ranked.into_iter().take(keep.max(1)) {
+        selected[index] = true;
+    }
+    let spans = std::mem::take(&mut trace.spans);
+    trace.spans = spans
+        .into_iter()
+        .enumerate()
+        .filter_map(|(index, span)| selected[index].then_some(span))
+        .collect();
+}
+
+fn bound_trace_spans(bundle: &mut Bundle, max_tokens: usize) {
+    let Some(original_len) = bundle.trace.as_ref().map(|trace| trace.spans.len()) else {
+        return;
+    };
+    if original_len <= 1 {
+        return;
+    }
+    let mut keep = original_len;
+    while estimate_bundle_tokens(bundle) > max_tokens && keep > 1 {
+        keep = keep.saturating_sub((keep / 4).max(1));
+        if let Some(trace) = bundle.trace.as_mut() {
+            retain_top_trace_spans(trace, keep);
+        }
+    }
+    let final_len = bundle
+        .trace
+        .as_ref()
+        .map(|trace| trace.spans.len())
+        .unwrap_or(0);
+    let dropped = original_len.saturating_sub(final_len);
+    if dropped > 0 {
+        bundle.missing_evidence.push(format!(
+            "bounded: dropped {dropped} trace spans to fit budget"
+        ));
+    }
+}
+
+fn decimate_points(points: &mut Vec<MetricPointLine>, keep: usize) -> usize {
+    if keep >= points.len() {
+        return 0;
+    }
+    let original_len = points.len();
+    let keep = keep.max(1);
+    let mut selected = vec![false; original_len];
+    if keep == 1 {
+        selected[original_len - 1] = true;
+    } else {
+        for slot in 0..keep {
+            selected[slot * (original_len - 1) / (keep - 1)] = true;
+        }
+    }
+    let mut selected_count = selected.iter().filter(|&&keep| keep).count();
+    for keep_slot in &mut selected {
+        if selected_count >= keep {
+            break;
+        }
+        if !*keep_slot {
+            *keep_slot = true;
+            selected_count += 1;
+        }
+    }
+    let old = std::mem::take(points);
+    *points = old
+        .into_iter()
+        .enumerate()
+        .filter_map(|(index, point)| selected[index].then_some(point))
+        .collect();
+    original_len - points.len()
+}
+
+fn bound_metric_windows(bundle: &mut Bundle, max_tokens: usize) {
+    let mut dropped = 0usize;
+    loop {
+        if estimate_bundle_tokens(bundle) <= max_tokens {
+            break;
+        }
+        let mut changed = false;
+        for window in &mut bundle.metric_windows {
+            if window.points.len() <= 2 {
+                continue;
+            }
+            let keep = window
+                .points
+                .len()
+                .saturating_sub((window.points.len() / 4).max(1));
+            dropped += decimate_points(&mut window.points, keep.max(2));
+            changed = true;
+        }
+        if !changed {
+            break;
+        }
+    }
+    if dropped > 0 {
+        bundle.missing_evidence.push(format!(
+            "bounded: dropped {dropped} metric points to fit budget"
+        ));
+    }
+}
+
 #[derive(Debug, Serialize)]
 pub struct SpanLine {
     pub service: String,
@@ -508,7 +628,7 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
     logs = kept;
     bundle.logs = logs;
 
-    if used > max_tokens
+    if estimate_bundle_tokens(&bundle) > max_tokens
         && let Some(event) = bundle.latest_event.as_mut()
         && let Some(stack) = event.stacktrace.as_mut()
     {
@@ -517,8 +637,10 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
         bundle.bounded.truncated_stacktrace = true;
     }
 
-    let serialized = serde_json::to_string(&bundle).unwrap_or_default();
-    bundle.bounded.estimated_tokens = estimate_tokens(&serialized);
+    bound_trace_spans(&mut bundle, max_tokens);
+    bound_metric_windows(&mut bundle, max_tokens);
+
+    bundle.bounded.estimated_tokens = estimate_bundle_tokens(&bundle);
     bundle.canonical_hash = Some(canonical_hash(&bundle));
     bundle
 }
@@ -604,11 +726,18 @@ fn rank_hypotheses(
     hypotheses
 }
 
-/// Sorted-key compact JSON, SHA-256, hash field excluded (PoC semantics).
+/// Sorted-key compact SHA-256 over evidence fields only.
+///
+/// Covered: schema_version, anchor, issue, run, latest_event, trace,
+/// metric_windows, logs, hypotheses, missing_evidence, and redaction. Excluded:
+/// generator (build environment), bounded (per-request budget accounting), and
+/// canonical_hash itself.
 fn canonical_hash(bundle: &Bundle) -> String {
     let mut value = serde_json::to_value(bundle).unwrap_or_default();
     if let serde_json::Value::Object(map) = &mut value {
         map.remove("canonical_hash");
+        map.remove("generator");
+        map.remove("bounded");
     }
     fn canonical(value: &serde_json::Value) -> String {
         match value {
@@ -759,6 +888,116 @@ pub fn to_markdown(bundle: &Bundle) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn test_issue() -> Issue {
+        Issue {
+            fingerprint: "fp".to_string(),
+            title: "test::Boom: boom".to_string(),
+            error_type: "test::Boom".to_string(),
+            culprit: Some("top".to_string()),
+            service: "checkout".to_string(),
+            status: "open".to_string(),
+            first_seen_nanos: 1,
+            last_seen_nanos: 2,
+            event_count: 1,
+            last_trace_id: Some("trace".to_string()),
+            tags: "{}".to_string(),
+        }
+    }
+
+    fn test_event() -> ErrorEventRow {
+        ErrorEventRow {
+            ts_nanos: 2,
+            service: "checkout".to_string(),
+            fingerprint: "fp".to_string(),
+            error_type: "test::Boom".to_string(),
+            message: "boom".to_string(),
+            stacktrace: Some("top\nmiddle\nbottom\nextra".to_string()),
+            source: parallax_storage::model::ErrorSource::SpanException,
+            trace_id: "trace".to_string(),
+            span_id: "span-error".to_string(),
+            attributes: serde_json::Value::Null,
+        }
+    }
+
+    fn test_span(index: usize, error: bool, duration_us: u128) -> SpanRow {
+        SpanRow {
+            ts_nanos: index as u128,
+            service: "checkout".to_string(),
+            trace_id: "trace".to_string(),
+            span_id: format!("span-{index}"),
+            parent_span_id: None,
+            name: format!("span-{index}"),
+            kind: "SPAN_KIND_INTERNAL".to_string(),
+            status_code: if error {
+                "STATUS_CODE_ERROR".to_string()
+            } else {
+                "STATUS_CODE_UNSET".to_string()
+            },
+            status_message: String::new(),
+            duration_ns: duration_us * 1_000,
+            run_id: None,
+            scope_name: "test".to_string(),
+            events: None,
+            links: serde_json::Value::Null,
+            attributes: serde_json::Value::Null,
+            resource: serde_json::Value::Null,
+        }
+    }
+
+    fn test_inputs(spans: Vec<SpanRow>) -> BundleInputs {
+        BundleInputs {
+            anchor: BundleAnchor::Issue(Box::new(test_issue())),
+            events: vec![test_event()],
+            trace_spans: spans,
+            trace_logs: Vec::new(),
+            metric_windows: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn canonical_hash_ignores_generator() {
+        let mut left = assemble(test_inputs(vec![test_span(0, true, 10)]), 8_000);
+        let mut right = assemble(test_inputs(vec![test_span(0, true, 10)]), 8_000);
+        left.generator = "parallax/test-a";
+        right.generator = "parallax/test-b";
+
+        assert_eq!(canonical_hash(&left), canonical_hash(&right));
+    }
+
+    #[test]
+    fn large_trace_is_bounded_and_keeps_error_span() {
+        let spans = (0..400)
+            .map(|index| test_span(index, index == 123, (index as u128 + 1) * 1_000))
+            .collect();
+
+        let bundle = assemble(test_inputs(spans), 500);
+
+        let trace = bundle.trace.as_ref().expect("trace");
+        assert!(
+            trace
+                .spans
+                .iter()
+                .any(|span| span.status_code == "STATUS_CODE_ERROR"),
+            "error span survives trace bounding"
+        );
+        assert!(
+            bundle
+                .missing_evidence
+                .iter()
+                .any(|message| message.contains("dropped") && message.contains("trace spans")),
+            "trace bounding records dropped spans: {:?}",
+            bundle.missing_evidence
+        );
+        assert!(
+            bundle.bounded.estimated_tokens <= bundle.bounded.max_tokens
+                || bundle
+                    .missing_evidence
+                    .iter()
+                    .any(|message| message.contains("dropped") && message.contains("trace spans")),
+            "bundle either fits or reports trace drops"
+        );
+    }
 
     #[test]
     fn redact_masks_dsn_userinfo_and_preserves_context() {

@@ -247,6 +247,29 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
     );
     assert!(hash.starts_with("sha256:"));
 
+    let mut budget_hashes = Vec::new();
+    for max_tokens in [2_000, 8_000] {
+        let response: serde_json::Value = client
+            .post(format!("http://{}/graphql", handle.api_addr))
+            .json(&serde_json::json!({"query": format!(
+                r#"{{ bundle(fingerprint: "{fingerprint}", maxTokens: {max_tokens}) {{ canonicalHash }} }}"#
+            )}))
+            .send()
+            .await
+            .expect("budget hash request")
+            .json()
+            .await
+            .expect("budget hash json");
+        budget_hashes.push(
+            response
+                .pointer("/data/bundle/canonicalHash")
+                .and_then(|v| v.as_str())
+                .expect("budget hash")
+                .to_string(),
+        );
+    }
+    assert_eq!(budget_hashes[0], budget_hashes[1]);
+
     // Correlation: the same-window process gauge appears as a metric window
     // (poll — the metric batch may land just after the issue).
     let mut correlated = String::new();
