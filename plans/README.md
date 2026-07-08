@@ -82,7 +82,7 @@ conditions, run its verification gates, and update your row when done.
 
 | Plan | Title | Repo | Priority | Effort | Depends on | Status |
 |------|-------|------|----------|--------|------------|--------|
-| 064 | Command center v1 (shared brush hook + "what changed" top movers) | parallax | P2 | L | 038, 039 | TODO |
+| 064 | Command center v1 (shared brush hook + "what changed" top movers) | parallax | P2 | L | 038, 039 | DONE |
 | 067 | Playground cache reality (TTL cache, hit/miss metrics, stampede) | **[playground]** | P2 | M | 036; pairs 044/046 | TODO |
 | 065 | Agent-session surface (`agentSession(runId)` + tool timeline + token strip) | parallax | P3 | L | advisor-034 (producer) | TODO |
 | 066 | Semconv registry (constants both repos, env-default fix, Weaver spike) | **[both]** | P3 | L | after in-flight waves | TODO |

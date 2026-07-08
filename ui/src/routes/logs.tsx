@@ -30,6 +30,7 @@ import { EmptyState } from "@/components/console/empty-state"
 import { useDelayedLoading } from "@/components/console/hooks"
 import { RangePicker } from "@/components/console/range-picker"
 import { TableSkeleton } from "@/components/console/skeletons"
+import { useChartBrush } from "@/components/console/use-chart-brush"
 import {
   LogsTable,
   parseLogColumns,
@@ -172,37 +173,10 @@ export function stepSecondsForRange(range: ResolvedRange): number {
   return Math.max(30, Math.round(Number(spanNs / 1_000_000_000n) / 60))
 }
 
-export function bucketWindow(
-  points: readonly SeriesPoint[],
-  index: number,
-  stepSeconds: number
-) {
-  const point = points[index]
-  if (!point) return null
-  return {
-    fromNanos: point.tsNanos,
-    toNanos: (
-      BigInt(point.tsNanos) +
-      BigInt(stepSeconds) * 1_000_000_000n
-    ).toString(),
-  }
-}
-
-export function dragWindow(
-  points: readonly SeriesPoint[],
-  start: number,
-  end: number,
-  stepSeconds: number
-) {
-  const low = Math.min(start, end)
-  const high = Math.max(start, end)
-  const from = points[low]
-  const to = bucketWindow(points, high, stepSeconds)
-  if (!from || !to) return null
-  return { fromNanos: from.tsNanos, toNanos: to.toNanos }
-}
-
-export function contextWindow(anchorNanos: string, windowSeconds = 30): ResolvedRange {
+export function contextWindow(
+  anchorNanos: string,
+  windowSeconds = 30
+): ResolvedRange {
   const anchor = BigInt(anchorNanos)
   const width = BigInt(windowSeconds) * 1_000_000_000n
   const from = anchor > width ? anchor - width : 0n
@@ -214,7 +188,9 @@ export function contextWindow(anchorNanos: string, windowSeconds = 30): Resolved
 }
 
 export function parseSavedViewState(state: string): LogsSearch {
-  const params = new URLSearchParams(state.startsWith("?") ? state.slice(1) : state)
+  const params = new URLSearchParams(
+    state.startsWith("?") ? state.slice(1) : state
+  )
   const raw: Record<string, unknown> = {}
   params.forEach((value, key) => {
     raw[key] = value
@@ -238,7 +214,9 @@ function serializeLogsSearch(search: LogsSearch) {
 }
 
 export async function loadLogs(search: LogsSearch): Promise<LogsData> {
-  const range = search.anchor ? contextWindow(search.anchor) : resolveRangeSearch(search)
+  const range = search.anchor
+    ? contextWindow(search.anchor)
+    : resolveRangeSearch(search)
   const stepSeconds = stepSecondsForRange(range)
   const filters = [
     search.service ? `service: "${gqlString(search.service)}"` : "",
@@ -281,7 +259,9 @@ function LogsPage() {
     select: (state) => state.status === "pending",
   })
   const delayedLoading = useDelayedLoading(routerLoading)
-  const range = search.anchor ? contextWindow(search.anchor) : resolveRangeSearch(search)
+  const range = search.anchor
+    ? contextWindow(search.anchor)
+    : resolveRangeSearch(search)
   const stepSeconds = stepSecondsForRange(range)
   const keyedDataLogs = useMemo(() => assignLogKeys(data.logs), [data.logs])
   const [logs, setLogs] = useState<LogDoc[]>(keyedDataLogs)
@@ -289,8 +269,6 @@ function LogsPage() {
   const [olderLoading, setOlderLoading] = useState(false)
   const [olderError, setOlderError] = useState<string | null>(null)
   const [exhausted, setExhausted] = useState(data.logs.length < PAGE_SIZE)
-  const [dragStart, setDragStart] = useState<number | null>(null)
-  const [dragEnd, setDragEnd] = useState<number | null>(null)
   const [savedViews, setSavedViews] = useState(data.savedViews)
   const [viewError, setViewError] = useState<string | null>(null)
   const [saveOpen, setSaveOpen] = useState(false)
@@ -319,7 +297,8 @@ function LogsPage() {
     source.onmessage = (event) => {
       try {
         const batch: unknown = JSON.parse(event.data as string)
-        if (Array.isArray(batch)) buffer.push(...assignLogKeys(batch as LogDoc[]))
+        if (Array.isArray(batch))
+          buffer.push(...assignLogKeys(batch as LogDoc[]))
       } catch {
         // skip malformed frames
       }
@@ -534,7 +513,9 @@ function LogsPage() {
         </Button>
       </div>
 
-      {viewError ? <p className="text-sm text-destructive">{viewError}</p> : null}
+      {viewError ? (
+        <p className="text-sm text-destructive">{viewError}</p>
+      ) : null}
 
       <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
         <DialogContent>
@@ -590,10 +571,6 @@ function LogsPage() {
         range={range}
         series={data.logCountSeries}
         stepSeconds={stepSeconds}
-        dragStart={dragStart}
-        dragEnd={dragEnd}
-        onDragStart={setDragStart}
-        onDragEnd={setDragEnd}
         onWindow={(fromNanos, toNanos) =>
           update({ range: "custom", from: fromNanos, to: toNanos })
         }
@@ -670,10 +647,6 @@ function HistogramCard({
   range,
   series,
   stepSeconds,
-  dragStart,
-  dragEnd,
-  onDragStart,
-  onDragEnd,
   onWindow,
   onReset,
   customWindow,
@@ -683,10 +656,6 @@ function HistogramCard({
   range: ResolvedRange
   series: SeriesPoint[]
   stepSeconds: number
-  dragStart: number | null
-  dragEnd: number | null
-  onDragStart: (index: number | null) => void
-  onDragEnd: (index: number | null) => void
   onWindow: (fromNanos: string, toNanos: string) => void
   onReset: () => void
   customWindow: boolean
@@ -701,20 +670,13 @@ function HistogramCard({
       })),
     [series, range]
   )
-  const referenceStart =
-    dragStart != null && dragEnd != null
-      ? chartData[Math.min(dragStart, dragEnd)]?.time
-      : undefined
-  const referenceEnd =
-    dragStart != null && dragEnd != null
-      ? chartData[Math.max(dragStart, dragEnd)]?.time
-      : undefined
-
-  const indexFromState = (state: unknown) =>
-    typeof (state as { activeTooltipIndex?: unknown }).activeTooltipIndex ===
-    "number"
-      ? (state as { activeTooltipIndex: number }).activeTooltipIndex
-      : null
+  const brush = useChartBrush({
+    series: chartData,
+    stepSeconds,
+    disabled: live,
+    onWindow,
+    getReferenceValue: (point) => point.time,
+  })
 
   return (
     <div className="rounded-xl border border-border/70 bg-card p-4">
@@ -738,33 +700,7 @@ function HistogramCard({
         <BarChart
           data={chartData}
           margin={{ left: 8, right: 8, top: 4 }}
-          onClick={(state) => {
-            if (live) return
-            const index = indexFromState(state)
-            if (index == null) return
-            const window = bucketWindow(series, index, stepSeconds)
-            if (window) onWindow(window.fromNanos, window.toNanos)
-          }}
-          onMouseDown={(state) => {
-            if (live) return
-            onDragStart(indexFromState(state))
-            onDragEnd(indexFromState(state))
-          }}
-          onMouseMove={(state) => {
-            if (live || dragStart == null) return
-            onDragEnd(indexFromState(state))
-          }}
-          onMouseUp={() => {
-            if (live || dragStart == null || dragEnd == null) {
-              onDragStart(null)
-              onDragEnd(null)
-              return
-            }
-            const window = dragWindow(series, dragStart, dragEnd, stepSeconds)
-            onDragStart(null)
-            onDragEnd(null)
-            if (window) onWindow(window.fromNanos, window.toNanos)
-          }}
+          {...brush.chartHandlers}
         >
           <CartesianGrid vertical={false} />
           <XAxis
@@ -781,10 +717,10 @@ function HistogramCard({
             radius={2}
             opacity={live ? 0.35 : 1}
           />
-          {referenceStart && referenceEnd ? (
+          {brush.referenceRange ? (
             <ReferenceArea
-              x1={referenceStart}
-              x2={referenceEnd}
+              x1={brush.referenceRange.x1}
+              x2={brush.referenceRange.x2}
               fill="var(--muted-foreground)"
               fillOpacity={0.12}
             />

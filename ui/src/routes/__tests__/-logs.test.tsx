@@ -26,13 +26,12 @@ import {
   severityVariant,
 } from "@/components/logs-table"
 import type { LogDoc } from "@/components/logs-table"
+import { bucketWindow, dragWindow } from "@/components/console/use-chart-brush"
 import { formatDateTime } from "@/lib/format"
 import type { ResolvedRange } from "@/lib/range"
 import {
   SavedViewsMenu,
-  bucketWindow,
   contextWindow,
-  dragWindow,
   parseSavedViewState,
 } from "@/routes/logs"
 
