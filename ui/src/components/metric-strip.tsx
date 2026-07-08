@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 import { graphql, gqlString } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -27,6 +27,59 @@ const stripConfig = {
   tasks: { label: "Tasks", color: "var(--chart-3)" },
 } satisfies ChartConfig
 
+function isAbortError(error: unknown): boolean {
+  return (
+    error instanceof DOMException ||
+    (typeof error === "object" && error !== null && "name" in error)
+  ) && (error as { name?: unknown }).name === "AbortError"
+}
+
+function MetricPanel({ panel }: { panel: Panel }) {
+  const chartData = useMemo(
+    () =>
+      panel.points.map((p) => ({
+        time: new Date(Number(BigInt(p.tsNanos) / 1_000_000n)).toLocaleTimeString(
+          [],
+          {
+            minute: "2-digit",
+            second: "2-digit",
+          }
+        ),
+        value: Number(p.value.toFixed(2)),
+      })),
+    [panel.points]
+  )
+
+  return (
+    <div className="space-y-1">
+      <p className="text-xs font-medium text-muted-foreground">
+        {panel.title}
+        {panel.unit ? ` (${panel.unit})` : ""}
+      </p>
+      <ChartContainer config={stripConfig} className="h-24 w-full">
+        <LineChart data={chartData} margin={{ left: 0, right: 8, top: 4 }}>
+          <CartesianGrid vertical={false} />
+          <XAxis
+            dataKey="time"
+            tickLine={false}
+            axisLine={false}
+            minTickGap={32}
+          />
+          <YAxis tickLine={false} axisLine={false} width={44} />
+          <ChartTooltip content={<ChartTooltipContent />} />
+          <Line
+            dataKey="value"
+            name={panel.key}
+            stroke={`var(--color-${panel.key})`}
+            dot={false}
+            strokeWidth={1.5}
+          />
+        </LineChart>
+      </ChartContainer>
+    </div>
+  )
+}
+
 /** The cross-signal correlation strip: well-known process metrics in a
  * window around an anchor (trace, issue event, run) — run-scoped when a run
  * id is known, service-scoped otherwise. Renders nothing when the window
@@ -51,7 +104,12 @@ export function MetricStrip({
   const [panels, setPanels] = useState<Panel[] | null>(null)
 
   useEffect(() => {
+    let cancelled = false
+    let activeController: AbortController | null = null
     const fetchPanels = () => {
+      activeController?.abort()
+      const controller = new AbortController()
+      activeController = controller
       const to = live
         ? ((BigInt(Date.now()) + 30_000n) * 1_000_000n).toString()
         : toNanos
@@ -67,9 +125,11 @@ export function MetricStrip({
         cpu: metricSeries(name: "process.cpu.utilization", ${args}) { points { tsNanos value } }
         memory: metricSeries(name: "process.memory.usage", ${args}) { points { tsNanos value } }
         tasks: metricSeries(name: "tokio.runtime.alive_tasks", ${args}) { points { tsNanos value } }
-      }`
+      }`,
+      { signal: controller.signal }
     )
       .then((data) => {
+        if (cancelled || controller.signal.aborted) return
         setPanels([
           {
             title: "CPU",
@@ -97,12 +157,18 @@ export function MetricStrip({
           },
         ])
       })
-      .catch(() => setPanels([]))
+      .catch((error: unknown) => {
+        if (cancelled || isAbortError(error)) return
+        setPanels([])
+      })
     }
     fetchPanels()
-    if (!live) return
-    const timer = setInterval(fetchPanels, 5000)
-    return () => clearInterval(timer)
+    const timer = live ? setInterval(fetchPanels, 5000) : undefined
+    return () => {
+      cancelled = true
+      activeController?.abort()
+      if (timer) clearInterval(timer)
+    }
   }, [service, runId, fromNanos, toNanos, stepSeconds, live])
 
   if (!panels || panels.every((panel) => panel.points.length === 0)) {
@@ -123,43 +189,7 @@ export function MetricStrip({
           {panels
             .filter((panel) => panel.points.length > 0)
             .map((panel) => (
-              <div key={panel.title} className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground">
-                  {panel.title}
-                  {panel.unit ? ` (${panel.unit})` : ""}
-                </p>
-                <ChartContainer config={stripConfig} className="h-24 w-full">
-                  <LineChart
-                    data={panel.points.map((p) => ({
-                      time: new Date(
-                        Number(BigInt(p.tsNanos) / 1_000_000n)
-                      ).toLocaleTimeString([], {
-                        minute: "2-digit",
-                        second: "2-digit",
-                      }),
-                      value: Number(p.value.toFixed(2)),
-                    }))}
-                    margin={{ left: 0, right: 8, top: 4 }}
-                  >
-                    <CartesianGrid vertical={false} />
-                    <XAxis
-                      dataKey="time"
-                      tickLine={false}
-                      axisLine={false}
-                      minTickGap={32}
-                    />
-                    <YAxis tickLine={false} axisLine={false} width={44} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Line
-                      dataKey="value"
-                      name={panel.key}
-                      stroke={`var(--color-${panel.key})`}
-                      dot={false}
-                      strokeWidth={1.5}
-                    />
-                  </LineChart>
-                </ChartContainer>
-              </div>
+              <MetricPanel key={panel.title} panel={panel} />
             ))}
         </div>
       </CardContent>

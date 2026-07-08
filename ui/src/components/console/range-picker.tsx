@@ -1,7 +1,9 @@
+import { useState } from "react"
 import { IconCalendarEventFilled, IconChevronDown } from "@tabler/icons-react"
+import type { DateRange } from "react-day-picker"
 
-import { RANGE_PRESETS, formatRangeLabel  } from "@/lib/range"
-import type {ResolvedRange} from "@/lib/range";
+import { RANGE_PRESETS, customRange, formatRangeLabel } from "@/lib/range"
+import type { ResolvedRange } from "@/lib/range"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import {
@@ -17,6 +19,38 @@ export function RangePicker({
   value: ResolvedRange
   onChange: (value: ResolvedRange) => void
 }) {
+  const [draft, setDraft] = useState<DateRange | undefined>(undefined)
+  const defaultMonth = new Date(Number(BigInt(value.toNanos) / 1_000_000n))
+  const selectDraft = (next: DateRange | undefined) => {
+    setDraft(next)
+    if (!next?.from || !next.to) return
+    const from = new Date(
+      next.from.getFullYear(),
+      next.from.getMonth(),
+      next.from.getDate(),
+      0,
+      0,
+      0,
+      0
+    )
+    const to = new Date(
+      next.to.getFullYear(),
+      next.to.getMonth(),
+      next.to.getDate(),
+      23,
+      59,
+      59,
+      999
+    )
+    onChange(
+      customRange(
+        (BigInt(from.getTime()) * 1_000_000n).toString(),
+        (BigInt(to.getTime()) * 1_000_000n).toString()
+      )
+    )
+    setDraft(undefined)
+  }
+
   return (
     <Popover>
       <PopoverTrigger render={<Button variant="outline" />}>
@@ -44,7 +78,14 @@ export function RangePicker({
             </Button>
           ))}
         </div>
-        <Calendar mode="range" numberOfMonths={2} disabled={{ after: new Date() }} />
+        <Calendar
+          mode="range"
+          numberOfMonths={2}
+          disabled={{ after: new Date() }}
+          defaultMonth={defaultMonth}
+          selected={draft}
+          onSelect={selectDraft}
+        />
       </PopoverContent>
     </Popover>
   )

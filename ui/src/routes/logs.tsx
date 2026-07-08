@@ -59,7 +59,7 @@ import {
 } from "@/components/ui/select"
 import { gqlString, graphql } from "@/lib/api"
 import { formatCount, formatTimeInRange } from "@/lib/format"
-import { resolveRangeSearch } from "@/lib/range"
+import { resolveRangeSearch, updateRangeSearch } from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
 
 interface SeriesPoint {
@@ -92,6 +92,14 @@ const SEVERITIES = [
   { label: "Warn+", value: 13 },
   { label: "Error+", value: 17 },
 ] as const
+
+let logKeySequence = 0
+
+function assignLogKeys(logs: LogDoc[]): LogDoc[] {
+  return logs.map((log) =>
+    log._key ? log : { ...log, _key: `log-${logKeySequence++}` }
+  )
+}
 
 const logsSearchSchema = z.object({
   q: z.unknown().optional(),
@@ -210,9 +218,11 @@ function LogsPage() {
   const delayedLoading = useDelayedLoading(routerLoading)
   const range = resolveRangeSearch(search)
   const stepSeconds = stepSecondsForRange(range)
-  const [logs, setLogs] = useState<LogDoc[]>(data.logs)
+  const keyedDataLogs = useMemo(() => assignLogKeys(data.logs), [data.logs])
+  const [logs, setLogs] = useState<LogDoc[]>(keyedDataLogs)
   const [pendingQuery, setPendingQuery] = useState(search.q ?? "")
   const [olderLoading, setOlderLoading] = useState(false)
+  const [olderError, setOlderError] = useState<string | null>(null)
   const [exhausted, setExhausted] = useState(data.logs.length < PAGE_SIZE)
   const [dragStart, setDragStart] = useState<number | null>(null)
   const [dragEnd, setDragEnd] = useState<number | null>(null)
@@ -220,9 +230,9 @@ function LogsPage() {
   const columns = parseLogColumns(search.cols)
 
   useEffect(() => {
-    setLogs(data.logs)
-    setExhausted(data.logs.length < PAGE_SIZE)
-  }, [data.logs])
+    setLogs(keyedDataLogs)
+    setExhausted(keyedDataLogs.length < PAGE_SIZE)
+  }, [keyedDataLogs])
 
   useEffect(() => setPendingQuery(search.q ?? ""), [search.q])
 
@@ -237,7 +247,7 @@ function LogsPage() {
     source.onmessage = (event) => {
       try {
         const batch: unknown = JSON.parse(event.data as string)
-        if (Array.isArray(batch)) buffer.push(...(batch as LogDoc[]))
+        if (Array.isArray(batch)) buffer.push(...assignLogKeys(batch as LogDoc[]))
       } catch {
         // skip malformed frames
       }
@@ -262,13 +272,14 @@ function LogsPage() {
     })
 
   const setRange = (next: ResolvedRange) => {
-    update({ range: next.key, from: next.fromNanos, to: next.toNanos })
+    update(updateRangeSearch(next))
   }
 
   const loadOlder = async () => {
     const oldest = logs.at(-1)
     if (!oldest) return
     setOlderLoading(true)
+    setOlderError(null)
     try {
       const args = [
         `fromNanos: "${range.fromNanos}"`,
@@ -283,8 +294,10 @@ function LogsPage() {
       const more = await graphql<{ logs: LogDoc[] }>(`{ logs(${args}) {
         tsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource
       } }`)
-      setLogs((current) => [...current, ...more.logs])
+      setLogs((current) => [...current, ...assignLogKeys(more.logs)])
       if (more.logs.length < PAGE_SIZE) setExhausted(true)
+    } catch (err) {
+      setOlderError(err instanceof Error ? err.message : String(err))
     } finally {
       setOlderLoading(false)
     }
@@ -431,7 +444,10 @@ function LogsPage() {
           ) : null}
           <LogsTable logs={logs} range={range} columns={columns} />
           {!live && !exhausted ? (
-            <div className="border-t border-border/70 p-2">
+            <div className="flex flex-col gap-2 border-t border-border/70 p-2">
+              {olderError ? (
+                <p className="px-2 text-sm text-destructive">{olderError}</p>
+              ) : null}
               <Button
                 type="button"
                 variant="ghost"

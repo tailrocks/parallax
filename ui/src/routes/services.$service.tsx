@@ -3,6 +3,7 @@ import {
   IconActivityHeartbeat,
   IconAffiliate,
   IconAlertTriangleFilled,
+  IconArticle,
   IconGaugeFilled,
   IconServer,
 } from "@tabler/icons-react"
@@ -15,9 +16,10 @@ import {
   XAxis,
   YAxis,
 } from "recharts"
+import { useMemo } from "react"
 
 import { EmptyState } from "@/components/console/empty-state"
-import { HeatCell } from "@/components/console/heat-cell"
+import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
 import { RangePicker } from "@/components/console/range-picker"
 import { RelativeTime } from "@/components/console/relative-time"
 import {
@@ -40,6 +42,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
+import { buttonVariants } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -51,7 +54,12 @@ import {
 import { gqlString, graphql } from "@/lib/api"
 import type { TraceSummary } from "@/lib/api"
 import { formatCount, formatDurationNs, formatPercent } from "@/lib/format"
-import { rangeSearchSchema, resolveRangeSearch } from "@/lib/range"
+import {
+  mergeRangeSearch,
+  rangeLinkSearch,
+  rangeSearchSchema,
+  resolveRangeSearch,
+} from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
 import { cn } from "@/lib/utils"
 
@@ -243,7 +251,7 @@ function ServiceDetailPage() {
       range={range}
       onRange={(next) =>
         navigate({
-          search: { range: next.key },
+          search: (current) => mergeRangeSearch(current, next),
         })
       }
     />
@@ -292,7 +300,35 @@ export function ServiceDetailContent({
       <PageHeader
         back={servicesBack}
         title={service}
-        actions={<RangePicker value={range} onChange={onRange} />}
+        actions={
+          <>
+            <Link
+              to="/traces"
+              search={{ service, ...rangeLinkSearch(range) }}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              <IconAffiliate />
+              Traces
+            </Link>
+            <Link
+              to="/logs"
+              search={{ service, ...rangeLinkSearch(range) }}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              <IconArticle />
+              Logs
+            </Link>
+            <Link
+              to="/issues"
+              search={{ service, ...rangeLinkSearch(range) }}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              <IconAlertTriangleFilled />
+              Issues
+            </Link>
+            <RangePicker value={range} onChange={onRange} />
+          </>
+        }
       />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -537,6 +573,7 @@ function InfraBand({ overview }: { overview: ServiceOverview }) {
 
 function RecentTraces({ traces }: { traces: TraceSummary[] }) {
   const durations = traces.map((trace) => Number(trace.durationNs))
+  const scale = useMemo(() => buildHeatScale(durations), [durations])
   return (
     <Card>
       <CardHeader>
@@ -581,7 +618,7 @@ function RecentTraces({ traces }: { traces: TraceSummary[] }) {
                     <TableCell className="text-right">
                       <HeatCell
                         value={Number(trace.durationNs)}
-                        values={durations}
+                        scale={scale}
                       >
                         {formatDurationNs(trace.durationNs)}
                       </HeatCell>

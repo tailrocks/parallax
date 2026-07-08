@@ -126,9 +126,18 @@ describe("Issues route", () => {
     )
 
     expect(await screen.findByText("panic")).toBeTruthy()
+    expect(screen.getByRole("columnheader", { name: "Service" })).toBeTruthy()
+    expect(
+      screen.getByRole("link", { name: "checkout" }).getAttribute("href")
+    ).toBe("/services/checkout?range=24h")
+    expect(
+      screen.getByRole("link", { name: /trace trace-a/i }).getAttribute("href")
+    ).toBe("/traces/trace-a")
     const links = screen.getAllByRole("link")
     expect(
-      links.some((link) => link.getAttribute("href") === "/issues/panic-a")
+      links.some(
+        (link) => link.getAttribute("href") === "/issues/panic-a?range=24h"
+      )
     ).toBe(true)
   })
 

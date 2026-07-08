@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router"
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
+import { useVirtualizer } from "@tanstack/react-virtual"
 
 import { CopyButton } from "@/components/console/copy-button"
 import { Badge } from "@/components/ui/badge"
@@ -27,6 +28,7 @@ import { cn } from "@/lib/utils"
 /** One log row, with every field the doc viewer needs. Shared by the Logs page
  * and the run detail page so both render logs identically. */
 export interface LogDoc {
+  _key?: string
   tsNanos: string
   service: string
   severityNum: number
@@ -138,6 +140,13 @@ function SeverityBadge({ log }: { log: LogDoc }) {
   )
 }
 
+function logKey(log: LogDoc) {
+  return (
+    log._key ??
+    `${log.tsNanos}-${log.spanId || "no-span"}-${log.traceId || "no-trace"}-${log.body}`
+  )
+}
+
 /** The shared logs table: compact rows whose click opens a field-level document viewer. */
 export function LogsTable({
   logs,
@@ -150,7 +159,24 @@ export function LogsTable({
 }) {
   const [selected, setSelected] = useState<LogDoc | null>(null)
   const [fieldSearch, setFieldSearch] = useState("")
+  const parentRef = useRef<HTMLDivElement | null>(null)
   const visible = new Set(columns)
+  const columnCount =
+    3 + (visible.has("service") ? 1 : 0) + (visible.has("trace") ? 1 : 0) +
+    (visible.has("scope") ? 1 : 0)
+  const virtualizer = useVirtualizer({
+    count: logs.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 44,
+    overscan: 12,
+  })
+  const virtualItems = virtualizer.getVirtualItems()
+  const firstVirtual = virtualItems[0]
+  const lastVirtual = virtualItems.at(-1)
+  const paddingTop = firstVirtual?.start ?? 0
+  const paddingBottom = lastVirtual
+    ? Math.max(0, virtualizer.getTotalSize() - lastVirtual.end)
+    : 0
 
   const selectedFields = useMemo(() => {
     if (!selected) return []
@@ -164,74 +190,121 @@ export function LogsTable({
     )
   }, [selected, fieldSearch])
 
+  const headerRows = (
+    <TableRow>
+      <TableHead className="w-36">Time</TableHead>
+      <TableHead className="w-28">Severity</TableHead>
+      {visible.has("service") ? (
+        <TableHead className="w-36">Service</TableHead>
+      ) : null}
+      <TableHead>Body</TableHead>
+      {visible.has("trace") ? (
+        <TableHead className="w-28">Trace</TableHead>
+      ) : null}
+      {visible.has("scope") ? (
+        <TableHead className="w-36">Scope</TableHead>
+      ) : null}
+    </TableRow>
+  )
+  const header = <TableHeader>{headerRows}</TableHeader>
+
+  const renderRow = (log: LogDoc) => (
+    <TableRow
+      key={logKey(log)}
+      className="cursor-pointer"
+      onClick={() => {
+        setSelected(log)
+        setFieldSearch("")
+      }}
+    >
+      <TableCell className="font-mono text-xs whitespace-nowrap">
+        {formatTimeInRange(log.tsNanos, range)}
+      </TableCell>
+      <TableCell>
+        <SeverityBadge log={log} />
+      </TableCell>
+      {visible.has("service") ? (
+        <TableCell className="max-w-36 truncate text-muted-foreground">
+          {log.service}
+        </TableCell>
+      ) : null}
+      <TableCell className="max-w-xl truncate font-mono text-xs">
+        {log.body}
+      </TableCell>
+      {visible.has("trace") ? (
+        <TableCell>
+          {log.traceId ? (
+            <Link
+              to="/traces/$traceId"
+              params={{ traceId: log.traceId }}
+              onClick={(event) => event.stopPropagation()}
+              className="rounded-full border border-border/70 px-2 py-1 font-mono text-[11px] text-muted-foreground hover:text-foreground"
+            >
+              {log.traceId.slice(0, 8)}
+            </Link>
+          ) : (
+            <span className="text-muted-foreground">-</span>
+          )}
+        </TableCell>
+      ) : null}
+      {visible.has("scope") ? (
+        <TableCell className="max-w-36 truncate text-muted-foreground">
+          {log.scopeName || "-"}
+        </TableCell>
+      ) : null}
+    </TableRow>
+  )
+
+  const table =
+    logs.length > 100 ? (
+      <div
+        ref={parentRef}
+        data-slot="table-container"
+        className="relative max-h-[min(70vh,720px)] w-full overflow-auto rounded-xl corner-squircle shadow-(--custom-shadow) dark:shadow-(--custom-shadow)"
+      >
+        <table
+          data-slot="table"
+          className="w-full caption-bottom rounded-xl corner-squircle bg-card/40 text-sm shadow-(--custom-shadow) dark:shadow-(--custom-shadow)"
+        >
+          <TableHeader className="sticky top-0 z-10 bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/75">
+            {headerRows}
+          </TableHeader>
+          <TableBody>
+            {paddingTop > 0 ? (
+              <tr aria-hidden="true">
+                <td
+                  colSpan={columnCount}
+                  className="border-0 p-0"
+                  style={{ height: paddingTop }}
+                />
+              </tr>
+            ) : null}
+            {virtualItems.map((virtualItem) => {
+              const log = logs[virtualItem.index]
+              return log ? renderRow(log) : null
+            })}
+            {paddingBottom > 0 ? (
+              <tr aria-hidden="true">
+                <td
+                  colSpan={columnCount}
+                  className="border-0 p-0"
+                  style={{ height: paddingBottom }}
+                />
+              </tr>
+            ) : null}
+          </TableBody>
+        </table>
+      </div>
+    ) : (
+      <Table>
+        {header}
+        <TableBody>{logs.map(renderRow)}</TableBody>
+      </Table>
+    )
+
   return (
     <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-36">Time</TableHead>
-            <TableHead className="w-28">Severity</TableHead>
-            {visible.has("service") ? (
-              <TableHead className="w-36">Service</TableHead>
-            ) : null}
-            <TableHead>Body</TableHead>
-            {visible.has("trace") ? (
-              <TableHead className="w-28">Trace</TableHead>
-            ) : null}
-            {visible.has("scope") ? (
-              <TableHead className="w-36">Scope</TableHead>
-            ) : null}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {logs.map((log, index) => (
-            <TableRow
-              key={`${log.tsNanos}-${index}`}
-              className="cursor-pointer"
-              onClick={() => {
-                setSelected(log)
-                setFieldSearch("")
-              }}
-            >
-              <TableCell className="font-mono text-xs whitespace-nowrap">
-                {formatTimeInRange(log.tsNanos, range)}
-              </TableCell>
-              <TableCell>
-                <SeverityBadge log={log} />
-              </TableCell>
-              {visible.has("service") ? (
-                <TableCell className="max-w-36 truncate text-muted-foreground">
-                  {log.service}
-                </TableCell>
-              ) : null}
-              <TableCell className="max-w-xl truncate font-mono text-xs">
-                {log.body}
-              </TableCell>
-              {visible.has("trace") ? (
-                <TableCell>
-                  {log.traceId ? (
-                    <Link
-                      to="/traces/$traceId"
-                      params={{ traceId: log.traceId }}
-                      onClick={(event) => event.stopPropagation()}
-                      className="rounded-full border border-border/70 px-2 py-1 font-mono text-[11px] text-muted-foreground hover:text-foreground"
-                    >
-                      {log.traceId.slice(0, 8)}
-                    </Link>
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  )}
-                </TableCell>
-              ) : null}
-              {visible.has("scope") ? (
-                <TableCell className="max-w-36 truncate text-muted-foreground">
-                  {log.scopeName || "-"}
-                </TableCell>
-              ) : null}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      {table}
 
       <Sheet
         open={selected !== null}

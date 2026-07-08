@@ -8,27 +8,43 @@ const bucketClass = [
   "text-red-600 dark:text-red-400",
 ]
 
-export function percentileBucket(value: number, values: number[]) {
-  const sorted = values.filter(Number.isFinite).sort((a, b) => a - b)
-  if (!sorted.length) return 0
-  const rank = sorted.findIndex((candidate) => value <= candidate)
-  const pct = (rank < 0 ? sorted.length - 1 : rank) / Math.max(1, sorted.length - 1)
+export type HeatScale = readonly number[]
+
+export function buildHeatScale(values: readonly number[]): HeatScale {
+  return values.filter(Number.isFinite).sort((a, b) => a - b)
+}
+
+export function percentileBucket(value: number, scale: HeatScale) {
+  if (!scale.length) return 0
+  let low = 0
+  let high = scale.length - 1
+  let rank = scale.length - 1
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2)
+    if (value <= scale[mid]!) {
+      rank = mid
+      high = mid - 1
+    } else {
+      low = mid + 1
+    }
+  }
+  const pct = rank / Math.max(1, scale.length - 1)
   return Math.min(4, Math.floor(pct * 5))
 }
 
 export function HeatCell({
   value,
-  values,
+  scale,
   children = value == null ? "-" : value,
 }: {
   value: number | null | undefined
-  values: number[]
+  scale: HeatScale
   children?: React.ReactNode
 }) {
   if (value == null || !Number.isFinite(value)) {
     return <span className="text-muted-foreground">-</span>
   }
-  const bucket = percentileBucket(value, values)
+  const bucket = percentileBucket(value, scale)
   return (
     <span
       title={`Quintile ${bucket + 1}`}

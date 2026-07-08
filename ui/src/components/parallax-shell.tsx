@@ -163,14 +163,17 @@ export function ParallaxShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!pathname.startsWith("/dashboards")) return
     const controller = new AbortController()
-    void graphql<{ dashboards: DashboardNavItem[] }>(`
+    void graphql<{ dashboards: DashboardNavItem[] }>(
+      `
       {
         dashboards {
           id
           name
         }
       }
-    `)
+    `,
+      { signal: controller.signal }
+    )
       .then((data) => setDashboards(data.dashboards))
       .catch(() => {})
     return () => controller.abort()

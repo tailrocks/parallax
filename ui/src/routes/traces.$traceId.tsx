@@ -1,12 +1,15 @@
 import { useMemo, useState } from "react"
-import { createFileRoute, Link } from "@tanstack/react-router"
+import type { FormEvent, ReactNode } from "react"
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import {
   IconAlertTriangle,
   IconAffiliate,
   IconArticle,
   IconClock,
   IconExternalLink,
+  IconGitCompare,
   IconHash,
+  IconRoute,
   IconServer,
 } from "@tabler/icons-react"
 
@@ -15,16 +18,52 @@ import {
   WHOLE_TRACE_ID,
 } from "@/components/console/trace-waterfall"
 import type { WaterfallSpan } from "@/components/console/trace-waterfall"
+import { EvidenceGapsCard } from "@/components/console/evidence-gaps"
+import { StoryTimeline } from "@/components/console/story-timeline"
 import { CopyButton } from "@/components/console/copy-button"
 import { EmptyState } from "@/components/console/empty-state"
 import { PageHeader } from "@/components/page-header"
 import { MetricStrip } from "@/components/metric-strip"
 import { navItem } from "@/components/nav"
 import { Badge } from "@/components/ui/badge"
-import { buttonVariants } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import { Spinner } from "@/components/ui/spinner"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { graphql, gqlString } from "@/lib/api"
+import type {
+  CriticalPath,
+  EvidenceGap,
+  SpanLink,
+  StoryBeat,
+  TraceDiff,
+  TraceDiffSpan,
+  TraceSummary,
+} from "@/lib/api"
 import { formatDateTime, formatDurationNs } from "@/lib/format"
 import { computeWindow } from "@/lib/trace-tree"
 import { cn } from "@/lib/utils"
@@ -34,6 +73,7 @@ interface TraceSpan extends WaterfallSpan {
   traceId: string
   runId: string | null
   links: string
+  typedLinks: SpanLink[]
   events: string
   attributes: string
   resource: string
@@ -47,14 +87,18 @@ interface TraceLog {
   spanId: string
 }
 
-type JsonRecord = Record<string, unknown>
-type KeyValues = Array<[string, string]>
+type TraceDetailTab = "waterfall" | "story"
 
-interface SpanLink {
-  traceId: string
-  spanId?: string
-  attributes?: JsonRecord
+interface TraceDetailSearch {
+  tab?: TraceDetailTab | undefined
 }
+
+type JsonRecord = Record<string, unknown>
+type KeyValues = Array<[string, ReactNode]>
+type StringKeyValues = Array<[string, string]>
+
+const TRACE_DIFF_SPAN_FIELDS =
+  "spanId service name kind statusCode durationNs depth matchKey"
 
 interface SpanEvent {
   name: string
@@ -63,15 +107,31 @@ interface SpanEvent {
 }
 
 export const Route = createFileRoute("/traces/$traceId")({
+  validateSearch: (search: Record<string, unknown>): TraceDetailSearch => ({
+    tab: search.tab === "story" ? "story" : undefined,
+  }),
   loader: ({ params }) => {
     const traceId = gqlString(params.traceId)
     return graphql<{
       trace: { spans: TraceSpan[] } | null
       logsByTrace: TraceLog[]
+      linkedTraces: TraceSummary[]
+      story: StoryBeat[]
+      evidenceGaps: EvidenceGap[]
     }>(
       `{ trace(traceId: "${traceId}") {
            spans { tsNanos service traceId name kind statusCode statusMessage durationNs
-                   spanId parentSpanId runId links events attributes resource }
+                   spanId parentSpanId runId links typedLinks { traceId spanId attributes }
+                   events attributes resource }
+         }
+         linkedTraces(traceId: "${traceId}") {
+           traceId rootName service startNanos durationNs spanCount hasError
+         }
+         story(traceId: "${traceId}") {
+           tsNanos lane kind title traceId spanId severity durationNs
+         }
+         evidenceGaps(traceId: "${traceId}") {
+           kind subject detail
          }
          logsByTrace(traceId: "${traceId}") { tsNanos service severityText body spanId } }`
     )
@@ -90,27 +150,13 @@ function parseJsonRecord(json: string): JsonRecord {
   }
 }
 
-function parseKeyValues(json: string): KeyValues {
+function parseKeyValues(json: string): StringKeyValues {
   return Object.entries(parseJsonRecord(json))
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, value]) => [
       key,
       typeof value === "string" ? value : JSON.stringify(value),
     ])
-}
-
-function parseLinks(json: string): SpanLink[] {
-  try {
-    const value: unknown = JSON.parse(json)
-    return Array.isArray(value)
-      ? value.filter(
-          (link): link is SpanLink =>
-            !!link && typeof link === "object" && "traceId" in link
-        )
-      : []
-  } catch {
-    return []
-  }
 }
 
 function parseEvents(json: string): SpanEvent[] {
@@ -127,14 +173,46 @@ function parseEvents(json: string): SpanEvent[] {
   }
 }
 
-function valueFor(entries: KeyValues, key: string): string | null {
+function valueFor(entries: StringKeyValues, key: string): string | null {
   return entries.find(([entryKey]) => entryKey === key)?.[1] ?? null
 }
 
 function TracePage() {
-  const { trace, logsByTrace } = Route.useLoaderData()
+  const { trace, logsByTrace, linkedTraces, story, evidenceGaps } =
+    Route.useLoaderData()
   const { traceId } = Route.useParams()
+  const search = Route.useSearch()
+  const navigate = useNavigate({ from: Route.fullPath })
+  const activeTab: TraceDetailTab = search.tab === "story" ? "story" : "waterfall"
   const [selectedId, setSelectedId] = useState<string | null>(WHOLE_TRACE_ID)
+  const [criticalEnabled, setCriticalEnabled] = useState(false)
+  const [criticalPath, setCriticalPath] = useState<CriticalPath | null>(null)
+  const [criticalLoading, setCriticalLoading] = useState(false)
+  const [criticalError, setCriticalError] = useState<string | null>(null)
+  const [compareOpen, setCompareOpen] = useState(false)
+  const [compareTraceId, setCompareTraceId] = useState("")
+  const [compareResult, setCompareResult] = useState<TraceDiff | null>(null)
+  const [compareLoading, setCompareLoading] = useState(false)
+  const [compareError, setCompareError] = useState<string | null>(null)
+  const criticalIds = useMemo(
+    () =>
+      criticalEnabled && criticalPath
+        ? new Set(criticalPath.hops.map((hop) => hop.spanId))
+        : undefined,
+    [criticalEnabled, criticalPath]
+  )
+  const orderedLogs = useMemo(
+    () =>
+      [...logsByTrace].sort((a, b) =>
+        BigInt(a.tsNanos) < BigInt(b.tsNanos) ? 1 : -1
+      ),
+    [logsByTrace]
+  )
+  const linkedTraceById = useMemo(
+    () =>
+      new Map(linkedTraces.map((traceSummary) => [traceSummary.traceId, traceSummary])),
+    [linkedTraces]
+  )
 
   if (!trace || trace.spans.length === 0) {
     return (
@@ -159,19 +237,77 @@ function TracePage() {
   const failedSpans = spans.filter(
     (span) => span.statusCode === "STATUS_CODE_ERROR"
   )
-  const spanLinks = spans.flatMap((span) => parseLinks(span.links))
+  const spanLinks = spans.flatMap((span) => span.typedLinks)
   const spanEvents = spans.flatMap((span) => parseEvents(span.events))
-  const orderedLogs = useMemo(
-    () =>
-      [...logsByTrace].sort((a, b) =>
-        BigInt(a.tsNanos) < BigInt(b.tsNanos) ? 1 : -1
-      ),
-    [logsByTrace]
-  )
   const selectedSpan =
     selectedId && selectedId !== WHOLE_TRACE_ID
       ? (spans.find((span) => span.spanId === selectedId) ?? null)
       : null
+
+  const loadCriticalPath = async () => {
+    setCriticalLoading(true)
+    setCriticalError(null)
+    try {
+      const data = await graphql<{ traceCriticalPath: CriticalPath }>(
+        `{ traceCriticalPath(traceId: "${gqlString(traceId)}") {
+             totalGatedNs unattached
+             hops { spanId selfTimeNs gatedByChild clockSuspect }
+           } }`
+      )
+      setCriticalPath(data.traceCriticalPath)
+    } catch (error) {
+      setCriticalError(error instanceof Error ? error.message : String(error))
+    } finally {
+      setCriticalLoading(false)
+    }
+  }
+
+  const toggleCriticalPath = () => {
+    const next = !criticalEnabled
+    setCriticalEnabled(next)
+    if (next && !criticalPath && !criticalLoading) void loadCriticalPath()
+    if (!next) setCriticalError(null)
+  }
+
+  const runCompare = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const otherTraceId = compareTraceId.trim()
+    if (!otherTraceId) {
+      setCompareError("Trace id required.")
+      return
+    }
+    setCompareLoading(true)
+    setCompareError(null)
+    try {
+      const data = await graphql<{ traceCompare: TraceDiff }>(
+        `{ traceCompare(traceIdA: "${gqlString(traceId)}", traceIdB: "${gqlString(
+          otherTraceId
+        )}") {
+             added { ${TRACE_DIFF_SPAN_FIELDS} }
+             removed { ${TRACE_DIFF_SPAN_FIELDS} }
+             changed {
+               durationDeltaNs durationDeltaPct statusChanged
+               before { ${TRACE_DIFF_SPAN_FIELDS} }
+               after { ${TRACE_DIFF_SPAN_FIELDS} }
+             }
+           } }`
+      )
+      setCompareResult(data.traceCompare)
+    } catch (error) {
+      setCompareError(error instanceof Error ? error.message : String(error))
+    } finally {
+      setCompareLoading(false)
+    }
+  }
+
+  const setActiveTab = (value: string) => {
+    void navigate({
+      search: (current) => ({
+        ...current,
+        tab: value === "story" ? "story" : undefined,
+      }),
+    })
+  }
 
   return (
     <div className="space-y-4">
@@ -193,11 +329,44 @@ function TracePage() {
               </Link>
             ) : null}
             {services.map((service) => (
-              <Badge key={service} variant="outline">
-                {service}
-              </Badge>
+              <Link
+                key={service}
+                to="/services/$service"
+                params={{ service }}
+                className="inline-flex"
+              >
+                <Badge variant="outline">{service}</Badge>
+              </Link>
             ))}
           </span>
+        }
+        actions={
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant={criticalEnabled ? "secondary" : "outline"}
+              size="sm"
+              aria-pressed={criticalEnabled}
+              onClick={toggleCriticalPath}
+              disabled={criticalLoading}
+            >
+              {criticalLoading ? (
+                <Spinner data-icon="inline-start" />
+              ) : (
+                <IconRoute data-icon="inline-start" />
+              )}
+              Critical path
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setCompareOpen(true)}
+            >
+              <IconGitCompare data-icon="inline-start" />
+              Compare
+            </Button>
+          </div>
         }
       />
 
@@ -227,67 +396,147 @@ function TracePage() {
         </button>
       ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <div className="space-y-4">
+      <EvidenceGapsCard gaps={evidenceGaps} />
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="waterfall">Waterfall</TabsTrigger>
+          <TabsTrigger value="story">Story</TabsTrigger>
+        </TabsList>
+        <TabsContent value="waterfall">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Waterfall</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-3">
+                  {criticalEnabled ? (
+                    <CriticalPathSummary
+                      criticalPath={criticalPath}
+                      loading={criticalLoading}
+                      error={criticalError}
+                      totalNs={window.durationNs.toString()}
+                    />
+                  ) : null}
+                  <TraceWaterfall
+                    spans={spans}
+                    selectedId={selectedId}
+                    onSelect={setSelectedId}
+                    highlightIds={criticalIds}
+                  />
+                </CardContent>
+              </Card>
+
+              {orderedLogs.length > 0 ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">
+                      Trace logs{" "}
+                      <span className="font-normal text-muted-foreground">
+                        ({orderedLogs.length})
+                      </span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-1.5">
+                      {orderedLogs.map((log, index) => (
+                        <TraceLogRow
+                          key={`${log.tsNanos}-${index}`}
+                          log={log}
+                          onSelectSpan={setSelectedId}
+                        />
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              ) : null}
+
+              <MetricStrip
+                title="Metrics around this trace"
+                service={rootSpan.service}
+                runId={runId ?? undefined}
+                fromNanos={(window.startNs - 300_000_000_000n).toString()}
+                toNanos={(
+                  window.startNs +
+                  window.durationNs +
+                  300_000_000_000n
+                ).toString()}
+                stepSeconds={30}
+              />
+            </div>
+
+            <TraceInspector
+              traceId={traceId}
+              spans={spans}
+              selectedSpan={selectedSpan}
+              linkedTraceById={linkedTraceById}
+              logs={orderedLogs}
+              onSelectSpan={setSelectedId}
+            />
+          </div>
+        </TabsContent>
+        <TabsContent value="story">
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Waterfall</CardTitle>
+              <CardTitle className="text-sm">Story</CardTitle>
             </CardHeader>
             <CardContent>
-              <TraceWaterfall
-                spans={spans}
-                selectedId={selectedId}
-                onSelect={setSelectedId}
-              />
+              <StoryTimeline beats={story} />
             </CardContent>
           </Card>
+        </TabsContent>
+      </Tabs>
 
-          {orderedLogs.length > 0 ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">
-                  Trace logs{" "}
-                  <span className="font-normal text-muted-foreground">
-                    ({orderedLogs.length})
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-1.5">
-                  {orderedLogs.map((log, index) => (
-                    <TraceLogRow
-                      key={`${log.tsNanos}-${index}`}
-                      log={log}
-                      onSelectSpan={setSelectedId}
-                    />
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          ) : null}
-
-          <MetricStrip
-            title="Metrics around this trace"
-            service={rootSpan.service}
-            runId={runId ?? undefined}
-            fromNanos={(window.startNs - 300_000_000_000n).toString()}
-            toNanos={(
-              window.startNs +
-              window.durationNs +
-              300_000_000_000n
-            ).toString()}
-            stepSeconds={30}
-          />
-        </div>
-
-        <TraceInspector
-          traceId={traceId}
-          spans={spans}
-          selectedSpan={selectedSpan}
-          logs={orderedLogs}
-          onSelectSpan={setSelectedId}
-        />
-      </div>
+      <Sheet open={compareOpen} onOpenChange={setCompareOpen}>
+        <SheetContent className="overflow-y-auto sm:max-w-2xl">
+          <SheetHeader>
+            <SheetTitle>Compare traces</SheetTitle>
+            <SheetDescription>
+              Diff this trace against another trace id.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex flex-col gap-4 px-6 pb-6">
+            <form onSubmit={runCompare}>
+              <FieldGroup className="gap-3">
+                <Field data-invalid={compareError ? true : undefined}>
+                  <FieldLabel htmlFor="trace-compare-id">
+                    Compare with
+                  </FieldLabel>
+                  <Input
+                    id="trace-compare-id"
+                    value={compareTraceId}
+                    onChange={(event) => {
+                      setCompareTraceId(event.target.value)
+                      setCompareError(null)
+                    }}
+                    placeholder="trace id"
+                    aria-invalid={compareError ? true : undefined}
+                  />
+                  <FieldDescription>
+                    Current trace:{" "}
+                    <span className="font-mono">{traceId}</span>
+                  </FieldDescription>
+                  <FieldError>{compareError}</FieldError>
+                </Field>
+                <Button
+                  type="submit"
+                  className="w-fit"
+                  disabled={compareLoading || compareTraceId.trim().length === 0}
+                >
+                  {compareLoading ? (
+                    <Spinner data-icon="inline-start" />
+                  ) : (
+                    <IconGitCompare data-icon="inline-start" />
+                  )}
+                  Run compare
+                </Button>
+              </FieldGroup>
+            </form>
+            {compareResult ? <TraceCompareResult diff={compareResult} /> : null}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
@@ -381,16 +630,298 @@ function TraceLogRow({
   )
 }
 
+function CriticalPathSummary({
+  criticalPath,
+  loading,
+  error,
+  totalNs,
+}: {
+  criticalPath: CriticalPath | null
+  loading: boolean
+  error: string | null
+  totalNs: string
+}) {
+  if (loading) {
+    return (
+      <p className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Spinner />
+        Loading critical path
+      </p>
+    )
+  }
+  if (error) {
+    return (
+      <p className="text-sm text-destructive" role="alert">
+        {error}
+      </p>
+    )
+  }
+  if (!criticalPath) return null
+
+  const clockSuspect = criticalPath.hops.some((hop) => hop.clockSuspect)
+  return (
+    <p
+      className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground"
+      data-testid="critical-path-summary"
+    >
+      <span>
+        {criticalPath.hops.length.toLocaleString()} spans gate{" "}
+        {formatDurationNs(criticalPath.totalGatedNs)} of{" "}
+        {formatDurationNs(totalNs)} total
+      </span>
+      {criticalPath.unattached.length > 0 ? (
+        <Badge variant="outline">
+          {criticalPath.unattached.length.toLocaleString()} unattached
+        </Badge>
+      ) : null}
+      {clockSuspect ? <Badge variant="secondary">clock suspect</Badge> : null}
+    </p>
+  )
+}
+
+function statusLabel(statusCode: string): string {
+  return statusCode.replace("STATUS_CODE_", "") || "UNSET"
+}
+
+function formatSignedDurationNs(value: string): string {
+  const ns = BigInt(value)
+  const abs = ns < 0n ? -ns : ns
+  const sign = ns > 0n ? "+" : ns < 0n ? "-" : ""
+  return `${sign}${formatDurationNs(abs.toString())}`
+}
+
+function formatPctDelta(value: number): string {
+  if (!Number.isFinite(value)) return "-"
+  const sign = value > 0 ? "+" : ""
+  const abs = Math.abs(value)
+  return `${sign}${value.toFixed(abs < 10 ? 1 : 0)}%`
+}
+
+function DiffSpanSection({
+  title,
+  spans,
+  emptyLabel,
+}: {
+  title: string
+  spans: TraceDiffSpan[]
+  emptyLabel: string
+}) {
+  return (
+    <section className="flex flex-col gap-2">
+      <h3 className="text-sm font-medium">
+        {title}{" "}
+        <span className="font-normal text-muted-foreground">
+          ({spans.length.toLocaleString()})
+        </span>
+      </h3>
+      {spans.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{emptyLabel}</p>
+      ) : (
+        <Table density="compact">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Service</TableHead>
+              <TableHead align="right">Duration</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {spans.map((span) => (
+              <TableRow key={span.matchKey}>
+                <TableCell className="max-w-[16rem] truncate">
+                  {span.name}
+                </TableCell>
+                <TableCell>{span.service}</TableCell>
+                <TableCell align="right">
+                  {formatDurationNs(span.durationNs)}
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant={
+                      span.statusCode === "STATUS_CODE_ERROR"
+                        ? "rose"
+                        : "secondary"
+                    }
+                  >
+                    {statusLabel(span.statusCode)}
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </section>
+  )
+}
+
+export function TraceCompareResult({ diff }: { diff: TraceDiff }) {
+  const empty =
+    diff.added.length === 0 &&
+    diff.removed.length === 0 &&
+    diff.changed.length === 0
+
+  return (
+    <div className="flex flex-col gap-5" data-testid="trace-compare-result">
+      {empty ? (
+        <p className="text-sm text-muted-foreground">Structurally identical.</p>
+      ) : null}
+      <DiffSpanSection
+        title="Added"
+        spans={diff.added}
+        emptyLabel="No added spans."
+      />
+      <DiffSpanSection
+        title="Removed"
+        spans={diff.removed}
+        emptyLabel="No removed spans."
+      />
+      <section className="flex flex-col gap-2">
+        <h3 className="text-sm font-medium">
+          Changed{" "}
+          <span className="font-normal text-muted-foreground">
+            ({diff.changed.length.toLocaleString()})
+          </span>
+        </h3>
+        {diff.changed.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No changed spans.</p>
+        ) : (
+          <Table density="compact">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Service</TableHead>
+                <TableHead align="right">Before</TableHead>
+                <TableHead align="right">After</TableHead>
+                <TableHead align="right">Delta</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {diff.changed.map((change) => (
+                <TableRow key={change.after.matchKey}>
+                  <TableCell className="max-w-[14rem] truncate">
+                    {change.after.name}
+                  </TableCell>
+                  <TableCell>{change.after.service}</TableCell>
+                  <TableCell align="right">
+                    {formatDurationNs(change.before.durationNs)}
+                  </TableCell>
+                  <TableCell align="right">
+                    {formatDurationNs(change.after.durationNs)}
+                  </TableCell>
+                  <TableCell align="right">
+                    {formatSignedDurationNs(change.durationDeltaNs)}{" "}
+                    <span className="text-muted-foreground">
+                      ({formatPctDelta(change.durationDeltaPct)})
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    {change.statusChanged ? (
+                      <span className="flex flex-wrap gap-1">
+                        <Badge variant="outline">
+                          {statusLabel(change.before.statusCode)}
+                        </Badge>
+                        <Badge
+                          variant={
+                            change.after.statusCode === "STATUS_CODE_ERROR"
+                              ? "rose"
+                              : "secondary"
+                          }
+                        >
+                          {statusLabel(change.after.statusCode)}
+                        </Badge>
+                      </span>
+                    ) : (
+                      <Badge variant="secondary">duration</Badge>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </section>
+    </div>
+  )
+}
+
+export function LinkedTraceEdges({
+  links,
+  linkedTraceById,
+}: {
+  links: SpanLink[]
+  linkedTraceById: ReadonlyMap<string, TraceSummary>
+}) {
+  return (
+    <ul className="space-y-2">
+      {links.map((link) => {
+        const target = linkedTraceById.get(link.traceId)
+        return (
+          <li key={`${link.traceId}-${link.spanId}`}>
+            <Link
+              to="/traces/$traceId"
+              params={{ traceId: link.traceId }}
+              className="block rounded-lg border border-border/70 bg-background/60 p-2 hover:bg-muted/60"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Badge variant="outline">
+                      {target?.service ?? "unknown service"}
+                    </Badge>
+                    {target?.hasError ? (
+                      <Badge variant="rose">error</Badge>
+                    ) : null}
+                  </div>
+                  <p className="mt-1 font-medium break-words">
+                    {target?.rootName ?? "Unresolved linked trace"}
+                  </p>
+                </div>
+                <IconExternalLink className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2 font-mono text-[11px] text-muted-foreground">
+                <span>{link.traceId}</span>
+                {target ? (
+                  <>
+                    <span>{target.spanCount.toLocaleString()} spans</span>
+                    <span>{formatDurationNs(target.durationNs)}</span>
+                  </>
+                ) : null}
+              </div>
+            </Link>
+            <dl className="mt-1 grid gap-1 pl-2 font-mono text-[11px] text-muted-foreground">
+              <div className="flex gap-2">
+                <dt>span</dt>
+                <dd>{link.spanId || "-"}</dd>
+              </div>
+              {link.attributes && link.attributes !== "{}" ? (
+                <div className="flex gap-2">
+                  <dt>attributes</dt>
+                  <dd className="break-all">{link.attributes}</dd>
+                </div>
+              ) : null}
+            </dl>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
 function TraceInspector({
   traceId,
   spans,
   selectedSpan,
+  linkedTraceById,
   logs,
   onSelectSpan,
 }: {
   traceId: string
   spans: TraceSpan[]
   selectedSpan: TraceSpan | null
+  linkedTraceById: ReadonlyMap<string, TraceSummary>
   logs: TraceLog[]
   onSelectSpan: (spanId: string) => void
 }) {
@@ -438,7 +969,7 @@ function TraceInspector({
 
   const attributes = parseKeyValues(selectedSpan.attributes)
   const resource = parseKeyValues(selectedSpan.resource)
-  const links = parseLinks(selectedSpan.links)
+  const links = selectedSpan.typedLinks
   const events = parseEvents(selectedSpan.events)
   const spanLogs = logs.filter((log) => log.spanId === selectedSpan.spanId)
   const dbQuery = valueFor(attributes, "db.query.text")
@@ -481,7 +1012,17 @@ function TraceInspector({
 
         <KeyValueList
           entries={[
-            ["service", selectedSpan.service],
+            [
+              "service",
+              <Link
+                key={selectedSpan.service}
+                to="/services/$service"
+                params={{ service: selectedSpan.service }}
+                className="font-mono underline underline-offset-4"
+              >
+                {selectedSpan.service}
+              </Link>,
+            ],
             ["kind", selectedSpan.kind.replace("SPAN_KIND_", "")],
             ["duration", formatDurationNs(selectedSpan.durationNs)],
             ["start", formatDateTime(selectedSpan.tsNanos)],
@@ -546,19 +1087,15 @@ function TraceInspector({
 
         {links.length > 0 ? (
           <InspectorSection title={`Links (${links.length})`}>
-            <ul className="space-y-1 font-mono">
-              {links.map((link) => (
-                <li key={`${link.traceId}-${link.spanId ?? ""}`}>
-                  <Link
-                    to="/traces/$traceId"
-                    params={{ traceId: link.traceId }}
-                    className="underline underline-offset-4"
-                  >
-                    {link.traceId}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <LinkedTraceEdges links={links} linkedTraceById={linkedTraceById} />
+            <details className="mt-2 rounded-lg border border-border/70 bg-background/60 p-2">
+              <summary className="cursor-pointer text-muted-foreground">
+                Raw links JSON
+              </summary>
+              <pre className="mt-2 overflow-x-auto font-mono text-[11px] whitespace-pre-wrap">
+                {selectedSpan.links}
+              </pre>
+            </details>
           </InspectorSection>
         ) : null}
 

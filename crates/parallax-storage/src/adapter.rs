@@ -4,6 +4,11 @@
 use crate::model::*;
 use std::ops::RangeInclusive;
 
+pub const MAX_ROWS: usize = 500;
+pub const ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT: usize = 24;
+pub const ATTRIBUTE_COMPARE_TOP_N_CAP: usize = 50;
+pub const SERVICE_MAP_TRACE_CAP: usize = 100;
+
 /// A run id observed in telemetry (spans/logs carrying `parallax.run.id`),
 /// whether or not the run was registered through the CLI wrapper. This is
 /// how externally-instrumented tools (e.g. jackin') appear in the runs UI.
@@ -120,6 +125,136 @@ pub struct TraceQuery {
     pub sort: TraceSort,
 }
 
+/// One overrepresented span-attribute value in a selected window compared
+/// with a baseline window.
+#[derive(Debug, Clone, PartialEq)]
+pub struct AttributeCompareRow {
+    pub key: String,
+    pub value: String,
+    pub selected_count: u64,
+    pub selected_total: u64,
+    pub baseline_count: u64,
+    pub baseline_total: u64,
+    pub score: f64,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ServiceEdge {
+    pub source: String,
+    pub target: String,
+    pub call_count: u64,
+    pub error_count: u64,
+    pub p50_ms: f64,
+    pub p95_ms: f64,
+}
+
+pub fn attribute_compare_key_allowed(key: &str) -> bool {
+    let trimmed = key.trim();
+    if trimmed.is_empty() || trimmed.len() > 128 {
+        return false;
+    }
+    let lower = trimmed.to_ascii_lowercase();
+    let compact = lower.replace(['.', '-'], "_");
+    let leaf = lower.rsplit('.').next().unwrap_or(lower.as_str());
+
+    if lower.starts_with("enduser.")
+        || matches!(
+            lower.as_str(),
+            "trace.id"
+                | "span.id"
+                | "run.id"
+                | "user.id"
+                | "session.id"
+                | "enduser.id"
+                | "exception.message"
+                | "exception.stacktrace"
+                | "exception.escaped"
+                | "db.statement"
+                | "http.request.body"
+                | "http.response.body"
+                | "url.full"
+        )
+    {
+        return false;
+    }
+
+    if matches!(
+        compact.as_str(),
+        "trace_id" | "span_id" | "run_id" | "user_id" | "session_id" | "enduser_id"
+    ) {
+        return false;
+    }
+
+    if matches!(
+        leaf,
+        "id" | "token" | "password" | "secret" | "authorization"
+    ) || lower.ends_with(".id")
+        || lower.ends_with("_id")
+        || compact.contains("trace_id")
+        || compact.contains("span_id")
+        || compact.contains("run_id")
+        || compact.contains("user_id")
+        || compact.contains("session_id")
+        || lower.contains("uuid")
+        || lower.contains("guid")
+        || lower.contains("fingerprint")
+        || lower.contains("hash")
+        || lower.contains("token")
+        || lower.contains("secret")
+        || lower.contains("password")
+        || lower.contains("credential")
+        || lower.contains("authorization")
+        || lower.contains("stacktrace")
+        || lower.contains("message")
+        || lower.contains("body")
+    {
+        return false;
+    }
+
+    true
+}
+
+pub fn attribute_compare_value_allowed(value: &str) -> bool {
+    let trimmed = value.trim();
+    if trimmed.is_empty() || trimmed.len() > 128 || trimmed.chars().any(char::is_control) {
+        return false;
+    }
+    let lower = trimmed.to_ascii_lowercase();
+    let compact = lower.replace('-', "");
+    if lower.contains("-----begin")
+        || lower.contains("token")
+        || lower.contains("secret")
+        || lower.contains("password")
+        || lower.contains("authorization")
+        || lower.contains("bearer ")
+    {
+        return false;
+    }
+    if compact.len() >= 24 && compact.chars().all(|c| c.is_ascii_hexdigit()) {
+        return false;
+    }
+    true
+}
+
+pub fn attribute_compare_score(
+    selected_count: u64,
+    selected_total: u64,
+    baseline_count: u64,
+    baseline_total: u64,
+) -> f64 {
+    let selected_share = if selected_total == 0 {
+        0.0
+    } else {
+        selected_count as f64 / selected_total as f64
+    };
+    let baseline_share = if baseline_total == 0 {
+        0.0
+    } else {
+        baseline_count as f64 / baseline_total as f64
+    };
+    (selected_share - baseline_share).clamp(0.0, 1.0)
+}
+
 #[async_trait::async_trait]
 pub trait TelemetryStore: Send + Sync {
     /// Ingest a traces batch: forward the raw OTLP bytes to GreptimeDB's native
@@ -143,6 +278,9 @@ pub trait TelemetryStore: Send + Sync {
 
     /// Anchored read: every span of one trace, start-time ascending.
     async fn spans_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<SpanRow>>;
+    /// Resolve summaries for span-link target trace ids.
+    /// Returns at most one summary per id, preserving input order where possible.
+    async fn traces_by_ids(&self, trace_ids: &[String]) -> anyhow::Result<Vec<TraceSummary>>;
     /// Run-scoped read: every span tagged with one `parallax.run.id`.
     async fn spans_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<SpanRow>>;
     /// Run-scoped read: every log tagged with one `parallax.run.id`.
@@ -217,6 +355,25 @@ pub trait TelemetryStore: Send + Sync {
     }
     /// Filtered trace browse (root spans + aggregates).
     async fn traces_search(&self, query: &TraceQuery) -> anyhow::Result<TraceList>;
+    /// Overrepresented span-attribute values in a selected cohort compared
+    /// with a baseline cohort. Candidate-key discovery is bounded and denies
+    /// identifier, raw text, stacktrace, and secret-shaped attributes.
+    async fn attribute_compare(
+        &self,
+        selected: RangeInclusive<u128>,
+        baseline: RangeInclusive<u128>,
+        service: Option<&str>,
+        error_only: bool,
+        keys: &[String],
+        top_n: usize,
+    ) -> anyhow::Result<Vec<AttributeCompareRow>>;
+    /// Trace-path service edges derived from child SERVER spans paired with
+    /// their parent span inside bounded traces from the requested window.
+    async fn service_map(
+        &self,
+        range: RangeInclusive<u128>,
+        max_traces: usize,
+    ) -> anyhow::Result<Vec<ServiceEdge>>;
     /// Error events across a set of traces, newest first (run-anchored reads).
     async fn error_events_by_traces(
         &self,
@@ -229,6 +386,7 @@ pub trait TelemetryStore: Send + Sync {
         service: Option<&str>,
         range: RangeInclusive<u128>,
         severity_min: Option<i32>,
+        severity_max: Option<i32>,
         body_contains: Option<&str>,
         limit: usize,
     ) -> anyhow::Result<Vec<LogRow>>;
@@ -265,11 +423,13 @@ pub trait TelemetryStore: Send + Sync {
         service: Option<&str>,
         range: RangeInclusive<u128>,
         severity_min: Option<i32>,
+        severity_max: Option<i32>,
         body_contains: Option<&str>,
         step_nanos: u128,
     ) -> anyhow::Result<Vec<SeriesPoint>>;
-    /// Raw read-only SQL against the engine (SELECT-shaped statements only —
-    /// callers enforce the read-only guard). The in-memory store has no SQL
-    /// surface and returns an error.
+    /// Raw read-only SQL against the engine (SELECT-shaped statements only).
+    /// The API enforces the user-facing guard; adapters repeat a defensive
+    /// shape check before execution. The in-memory store has no SQL surface
+    /// and returns an error.
     async fn raw_sql(&self, query: &str) -> anyhow::Result<SqlResult>;
 }

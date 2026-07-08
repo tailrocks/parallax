@@ -1,5 +1,6 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router"
 import { IconTerminal2 } from "@tabler/icons-react"
+import { z } from "zod"
 
 import { CopyButton } from "@/components/console/copy-button"
 import { EmptyState } from "@/components/console/empty-state"
@@ -8,6 +9,7 @@ import {
   SearchInput,
   Toolbar,
 } from "@/components/console/data-table"
+import { RangePicker } from "@/components/console/range-picker"
 import { RelativeTime } from "@/components/console/relative-time"
 import { PageHeader } from "@/components/page-header"
 import { Badge } from "@/components/ui/badge"
@@ -21,6 +23,12 @@ import {
 } from "@/components/ui/table"
 import { graphql } from "@/lib/api"
 import { formatCount, formatDurationNs } from "@/lib/format"
+import {
+  rangeSearchSchema,
+  resolveRangeSearch,
+  updateRangeSearch,
+} from "@/lib/range"
+import type { ResolvedRange } from "@/lib/range"
 import { cn } from "@/lib/utils"
 
 interface RunRecord {
@@ -66,6 +74,9 @@ export interface RunsData {
 export interface RunsSearch {
   q?: string
   status?: "running" | "finished" | "external"
+  range?: string
+  from?: string
+  to?: string
 }
 
 type RunsSearchPatch = {
@@ -137,17 +148,44 @@ export function mergeRuns(
   )
 }
 
+export function filterRunsByRange(
+  rows: RunRow[],
+  range: ResolvedRange,
+  nowNanos = (BigInt(Date.now()) * 1_000_000n).toString()
+): RunRow[] {
+  const windowStart = BigInt(range.fromNanos)
+  const windowEnd = BigInt(range.toNanos)
+  const openEnd = BigInt(nowNanos)
+  return rows.filter((row) => {
+    const start = BigInt(row.startedAtNanos)
+    const end =
+      row.status === "running"
+        ? openEnd
+        : BigInt(row.endedAtNanos ?? row.lastNanos)
+    return start <= windowEnd && end >= windowStart
+  })
+}
+
+const runsSearchSchema = rangeSearchSchema.extend({
+  q: z.unknown().optional(),
+  status: z.unknown().optional(),
+})
+
 export const Route = createFileRoute("/runs/")({
   validateSearch: (search: Record<string, unknown>): RunsSearch => {
+    const parsed = runsSearchSchema.parse(search)
     const result: RunsSearch = {}
-    if (typeof search.q === "string" && search.q) result.q = search.q
+    if (typeof parsed.q === "string" && parsed.q) result.q = parsed.q
     if (
-      search.status === "running" ||
-      search.status === "finished" ||
-      search.status === "external"
+      parsed.status === "running" ||
+      parsed.status === "finished" ||
+      parsed.status === "external"
     ) {
-      result.status = search.status
+      result.status = parsed.status
     }
+    if (parsed.range) result.range = parsed.range
+    if (parsed.from) result.from = parsed.from
+    if (parsed.to) result.to = parsed.to
     return result
   },
   loader: async () => {
@@ -185,6 +223,7 @@ function RunsPage() {
   const data = Route.useLoaderData()
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
+  const range = resolveRangeSearch(search)
   const setSearch = (patch: RunsSearchPatch) => {
     const raw = { ...search, ...patch }
     const next: RunsSearch = {}
@@ -198,6 +237,7 @@ function RunsPage() {
     <RunsContent
       data={data}
       search={search}
+      range={range}
       onSearch={setSearch}
       onRun={(runId) => navigate({ to: "/runs/$runId", params: { runId } })}
     />
@@ -207,16 +247,19 @@ function RunsPage() {
 export function RunsContent({
   data,
   search,
+  range,
   onSearch,
   onRun,
 }: {
   data: RunsData
   search: RunsSearch
+  range: ResolvedRange
   onSearch: (patch: RunsSearchPatch) => void
   onRun: (runId: string) => void
 }) {
   const query = search.q?.toLowerCase() ?? ""
-  const rows = data.rows.filter((row) => {
+  const rowsInWindow = filterRunsByRange(data.rows, range)
+  const rows = rowsInWindow.filter((row) => {
     const matchesStatus = !search.status || row.status === search.status
     const haystack =
       `${row.runId} ${row.command ?? ""} ${row.service ?? ""}`.toLowerCase()
@@ -230,6 +273,12 @@ export function RunsContent({
         iconClassName="text-violet-500"
         title="Runs"
         description="Command and externally observed run ids with errors, duration, and last activity."
+        actions={
+          <RangePicker
+            value={range}
+            onChange={(next) => onSearch(updateRangeSearch(next))}
+          />
+        }
       />
 
       <Toolbar className="justify-between">
@@ -260,7 +309,14 @@ export function RunsContent({
           />
         </div>
         <span className="text-xs text-muted-foreground">
-          {formatCount(rows.length)} of {formatCount(data.rows.length)}
+          {formatCount(rows.length)} of {formatCount(rowsInWindow.length)}
+          {rowsInWindow.length !== data.rows.length ? (
+            <>
+              {" "}
+              shown · {formatCount(rowsInWindow.length)} of{" "}
+              {formatCount(data.rows.length)} runs in window
+            </>
+          ) : null}
         </span>
       </Toolbar>
 
@@ -283,6 +339,7 @@ export function RunsContent({
                 <TableHead>Run</TableHead>
                 <TableHead>Command</TableHead>
                 <TableHead className="w-32">Status</TableHead>
+                <TableHead className="w-24 text-right">Traces</TableHead>
                 <TableHead className="w-24 text-right">Errors</TableHead>
                 <TableHead className="w-28 text-right">Duration</TableHead>
                 <TableHead className="w-32 text-right">Last seen</TableHead>
@@ -303,9 +360,16 @@ export function RunsContent({
                   >
                     <TableCell>
                       <div className="flex min-w-0 items-center gap-2">
-                        <code className="max-w-44 truncate text-xs">
-                          {row.runId}
-                        </code>
+                        <Link
+                          to="/runs/$runId"
+                          params={{ runId: row.runId }}
+                          className="min-w-0 hover:underline"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <code className="block max-w-44 truncate text-xs">
+                            {row.runId}
+                          </code>
+                        </Link>
                         <CopyButton value={row.runId} />
                         <Badge variant="secondary">{row.source}</Badge>
                       </div>
@@ -320,6 +384,20 @@ export function RunsContent({
                     <TableCell>
                       <RunStatusBadge row={row} />
                     </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {row.traceCount == null ? (
+                        "-"
+                      ) : (
+                        <Link
+                          to="/runs/$runId"
+                          params={{ runId: row.runId }}
+                          className="hover:underline"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          {formatCount(row.traceCount)}
+                        </Link>
+                      )}
+                    </TableCell>
                     <TableCell
                       className={cn(
                         "text-right tabular-nums",
@@ -328,7 +406,18 @@ export function RunsContent({
                           : "text-muted-foreground/40"
                       )}
                     >
-                      {row.errorCount == null ? "-" : formatCount(errors)}
+                      {row.errorCount == null ? (
+                        "-"
+                      ) : (
+                        <Link
+                          to="/runs/$runId"
+                          params={{ runId: row.runId }}
+                          className="hover:underline"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          {formatCount(errors)}
+                        </Link>
+                      )}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {row.status === "running"

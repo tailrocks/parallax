@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import {
   IconActivity,
@@ -11,7 +11,7 @@ import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
 
 import { CopyButton } from "@/components/console/copy-button"
 import { EmptyState } from "@/components/console/empty-state"
-import { HeatCell } from "@/components/console/heat-cell"
+import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
 import { RangePicker } from "@/components/console/range-picker"
 import { RelativeTime } from "@/components/console/relative-time"
 import { ScrollFade } from "@/components/console/scroll-fade"
@@ -28,6 +28,7 @@ import {
 import { PageHeader } from "@/components/page-header"
 import { navItem } from "@/components/nav"
 import { Badge } from "@/components/ui/badge"
+import { buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   ChartContainer,
@@ -44,7 +45,8 @@ import {
   formatTimeInRange,
 } from "@/lib/format"
 import {
-  RANGE_PRESETS,
+  mergeRangeSearch,
+  rangeLinkSearch,
   rangeSearchSchema,
   resolveRangeSearch,
 } from "@/lib/range"
@@ -234,13 +236,6 @@ function msToNs(value: number | null): string {
   return Math.max(0, Math.round(value * 1_000_000)).toString()
 }
 
-function updateRangeSearch(range: ResolvedRange) {
-  if (RANGE_PRESETS.some((preset) => preset.key === range.key)) {
-    return { range: range.key, from: undefined, to: undefined }
-  }
-  return { range: "custom", from: range.fromNanos, to: range.toNanos }
-}
-
 function OverviewPage() {
   const data = Route.useLoaderData()
   const range = resolveRangeSearch(Route.useSearch())
@@ -252,7 +247,7 @@ function OverviewPage() {
       range={range}
       onRangeChange={(next) =>
         void navigate({
-          search: (current) => ({ ...current, ...updateRangeSearch(next) }),
+          search: (current) => mergeRangeSearch(current, next),
         })
       }
     />
@@ -310,68 +305,92 @@ export function OverviewContent({
       />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label="Spans"
-          value={formatCount(count(data.overview.spanCount))}
-          hint={`${formatCount(count(data.overview.traceCount))} traces`}
-          delta={formatDelta(
-            count(data.overview.spanCount),
-            count(data.previousOverview.spanCount)
-          )}
-          icon={IconAffiliateFilled}
-          iconClassName="text-sky-500"
-          chart={
-            <CardSparkline
-              data={data.spansSeries.map((point) => ({ value: point.value }))}
-              className="text-sky-500"
-            />
-          }
-        />
-        <StatCard
-          label="Logs"
-          value={formatCount(count(data.overview.logCount))}
-          hint={`${data.overview.activeServices.toLocaleString()} services`}
-          delta={formatDelta(
-            count(data.overview.logCount),
-            count(data.previousOverview.logCount)
-          )}
-          icon={IconNotes}
-          iconClassName="text-blue-500"
-          chart={
-            <CardSparkline
-              data={data.red.rate.map((point) => ({ value: point.value }))}
-              className="text-blue-500"
-            />
-          }
-        />
-        <StatCard
-          label="Error rate"
-          value={formatPercent(data.overview.errorRate)}
-          hint={`${formatCount(count(data.overview.errorCount))} errors`}
-          delta={formatDelta(
-            data.overview.errorRate,
-            data.previousOverview.errorRate
-          )}
-          deltaInverted
-          icon={IconAlertTriangleFilled}
-          iconClassName="text-rose-500"
-          chart={<PillMeter value={data.overview.errorRate} />}
-        />
-        <StatCard
-          label="p95 latency"
-          value={formatDurationNs(msToNs(p95))}
-          hint={`p50 ${formatDurationNs(msToNs(p50))}`}
-          delta={formatDelta(p95 ?? 0, previousP95 ?? 0)}
-          deltaInverted
-          icon={IconGaugeFilled}
-          iconClassName="text-violet-500"
-          chart={
-            <CardSparkline
-              data={data.red.p95.map((point) => ({ value: point.value }))}
-              className="text-violet-500"
-            />
-          }
-        />
+        <Link
+          to="/traces"
+          search={rangeLinkSearch(range)}
+          className="block rounded-lg outline-none transition hover:-translate-y-0.5 focus-visible:ring-[1.5px] focus-visible:ring-ring/50"
+        >
+          <StatCard
+            label="Spans"
+            value={formatCount(count(data.overview.spanCount))}
+            hint={`${formatCount(count(data.overview.traceCount))} traces`}
+            delta={formatDelta(
+              count(data.overview.spanCount),
+              count(data.previousOverview.spanCount)
+            )}
+            icon={IconAffiliateFilled}
+            iconClassName="text-sky-500"
+            chart={
+              <CardSparkline
+                data={data.spansSeries.map((point) => ({ value: point.value }))}
+                className="text-sky-500"
+              />
+            }
+          />
+        </Link>
+        <Link
+          to="/logs"
+          search={rangeLinkSearch(range)}
+          className="block rounded-lg outline-none transition hover:-translate-y-0.5 focus-visible:ring-[1.5px] focus-visible:ring-ring/50"
+        >
+          <StatCard
+            label="Logs"
+            value={formatCount(count(data.overview.logCount))}
+            hint={`${data.overview.activeServices.toLocaleString()} services`}
+            delta={formatDelta(
+              count(data.overview.logCount),
+              count(data.previousOverview.logCount)
+            )}
+            icon={IconNotes}
+            iconClassName="text-blue-500"
+            chart={
+              <CardSparkline
+                data={data.red.rate.map((point) => ({ value: point.value }))}
+                className="text-blue-500"
+              />
+            }
+          />
+        </Link>
+        <Link
+          to="/issues"
+          search={{ status: "open", ...rangeLinkSearch(range) }}
+          className="block rounded-lg outline-none transition hover:-translate-y-0.5 focus-visible:ring-[1.5px] focus-visible:ring-ring/50"
+        >
+          <StatCard
+            label="Error rate"
+            value={formatPercent(data.overview.errorRate)}
+            hint={`${formatCount(count(data.overview.errorCount))} errors`}
+            delta={formatDelta(
+              data.overview.errorRate,
+              data.previousOverview.errorRate
+            )}
+            deltaInverted
+            icon={IconAlertTriangleFilled}
+            iconClassName="text-rose-500"
+            chart={<PillMeter value={data.overview.errorRate} />}
+          />
+        </Link>
+        <Link
+          to="/traces"
+          search={{ sort: "DURATION_DESC", ...rangeLinkSearch(range) }}
+          className="block rounded-lg outline-none transition hover:-translate-y-0.5 focus-visible:ring-[1.5px] focus-visible:ring-ring/50"
+        >
+          <StatCard
+            label="p95 latency"
+            value={formatDurationNs(msToNs(p95))}
+            hint={`p50 ${formatDurationNs(msToNs(p50))}`}
+            delta={formatDelta(p95 ?? 0, previousP95 ?? 0)}
+            deltaInverted
+            icon={IconGaugeFilled}
+            iconClassName="text-violet-500"
+            chart={
+              <CardSparkline
+                data={data.red.p95.map((point) => ({ value: point.value }))}
+                className="text-violet-500"
+              />
+            }
+          />
+        </Link>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
@@ -429,16 +448,38 @@ function SignalTrendCard({
       <CardHeader className="gap-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle>Spans & errors</CardTitle>
-          <ChartLegend
-            {...(visible === "all" ? {} : { selected: visible })}
-            onSelect={(key) =>
-              onVisibleChange(visible === key ? "all" : (key as VisibleSeries))
-            }
-            items={[
-              { key: "spans", label: "Spans", color: "var(--chart-2)" },
-              { key: "errors", label: "Errors", color: "var(--destructive)" },
-            ]}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              to="/traces"
+              search={rangeLinkSearch(range)}
+              className={buttonVariants({ variant: "ghost", size: "xs" })}
+            >
+              View traces
+            </Link>
+            <Link
+              to="/issues"
+              search={{ status: "open", ...rangeLinkSearch(range) }}
+              className={buttonVariants({ variant: "ghost", size: "xs" })}
+            >
+              View issues
+            </Link>
+            <ChartLegend
+              {...(visible === "all" ? {} : { selected: visible })}
+              onSelect={(key) =>
+                onVisibleChange(
+                  visible === key ? "all" : (key as VisibleSeries)
+                )
+              }
+              items={[
+                { key: "spans", label: "Spans", color: "var(--chart-2)" },
+                {
+                  key: "errors",
+                  label: "Errors",
+                  color: "var(--destructive)",
+                },
+              ]}
+            />
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -525,17 +566,28 @@ function LatencyTrendCard({
       <CardHeader className="gap-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle>Latency</CardTitle>
-          <ChartLegend
-            {...(visible === "all" ? {} : { selected: visible })}
-            onSelect={(key) =>
-              onVisibleChange(visible === key ? "all" : (key as VisibleLatency))
-            }
-            items={[
-              { key: "p50", label: "p50", color: "var(--chart-2)" },
-              { key: "p95", label: "p95", color: "var(--chart-4)" },
-              { key: "p99", label: "p99", color: "var(--chart-5)" },
-            ]}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              to="/traces"
+              search={{ sort: "DURATION_DESC", ...rangeLinkSearch(range) }}
+              className={buttonVariants({ variant: "ghost", size: "xs" })}
+            >
+              View traces
+            </Link>
+            <ChartLegend
+              {...(visible === "all" ? {} : { selected: visible })}
+              onSelect={(key) =>
+                onVisibleChange(
+                  visible === key ? "all" : (key as VisibleLatency)
+                )
+              }
+              items={[
+                { key: "p50", label: "p50", color: "var(--chart-2)" },
+                { key: "p95", label: "p95", color: "var(--chart-4)" },
+                { key: "p99", label: "p99", color: "var(--chart-5)" },
+              ]}
+            />
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -755,6 +807,7 @@ function RecentIssuesCard({ issues }: { issues: IssueRow[] }) {
 
 function SlowestTracesCard({ traces }: { traces: TraceRow[] }) {
   const values = traces.map((trace) => Number(trace.durationNs))
+  const scale = useMemo(() => buildHeatScale(values), [values])
   return (
     <Card size="sm">
       <CardHeader>
@@ -787,7 +840,7 @@ function SlowestTracesCard({ traces }: { traces: TraceRow[] }) {
                     </div>
                   </div>
                   <div className="text-right text-xs text-muted-foreground">
-                    <HeatCell value={Number(trace.durationNs)} values={values}>
+                    <HeatCell value={Number(trace.durationNs)} scale={scale}>
                       {formatDurationNs(trace.durationNs)}
                     </HeatCell>
                     <div>{formatCount(trace.spanCount)} spans</div>

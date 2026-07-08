@@ -33,17 +33,17 @@ conditions, run its verification gates, and update your row when done.
 
 | Plan | Title | Repo | Priority | Effort | Depends on | Status |
 |------|-------|------|----------|--------|------------|--------|
-| 035 | UI correctness & feedback sweep (hooks crash, dead calendar, swallowed failures, delete confirm, fetch races) | parallax | P1 | M | — | TODO |
-| 036 | Playground trace spine (context extraction/injection, ERROR status, baggage, CORS, identity) | **[playground]** | P1 | M | — | TODO |
-| 037 | One-command demo (demo.sh, baseline loadgen, scenario runner/catalog, env contract) | **[playground]** | P1 | M | — | TODO |
+| 035 | UI correctness & feedback sweep (hooks crash, dead calendar, swallowed failures, delete confirm, fetch races) | parallax | P1 | M | — | DONE |
+| 036 | Playground trace spine (context extraction/injection, ERROR status, baggage, CORS, identity) | **[playground]** | P1 | M | — | DONE |
+| 037 | One-command demo (demo.sh, baseline loadgen, scenario runner/catalog, env contract) | **[playground]** | P1 | M | — | DONE |
 
 ### Wave 2 — UI/UX visualization core (P1-P2)
 
 | Plan | Title | Repo | Priority | Effort | Depends on | Status |
 |------|-------|------|----------|--------|------------|--------|
-| 038 | Time-window continuity (shared URL-state helper, drilldowns keep the window, runs scoped) | parallax | P1 | M | 035 | TODO |
-| 039 | Everything-clickable pivot sweep (overview KPIs, issues doorways, detail pivots, runs columns) | parallax | P1 | M | 038 | TODO |
-| 040 | UI performance at scale (stable keys, O(N) heat cells, shared ticker, virtualization) | parallax | P2 | L | 035, 039 | TODO |
+| 038 | Time-window continuity (shared URL-state helper, drilldowns keep the window, runs scoped) | parallax | P1 | M | 035 | DONE |
+| 039 | Everything-clickable pivot sweep (overview KPIs, issues doorways, detail pivots, runs columns) | parallax | P1 | M | 038 | DONE |
+| 040 | UI performance at scale (stable keys, O(N) heat cells, shared ticker, virtualization) | parallax | P2 | L | 035, 039 | DONE |
 
 ### Wave 3 — paired surfaces (UI ↔ scenario)
 
@@ -59,7 +59,7 @@ conditions, run its verification gates, and update your row when done.
 | 048 | Playground Postgres reality (sqlx inventory, db.* spans, pool metrics, DB scenarios) | **[playground]** | P2 | L | 036 | TODO |
 | 049 | Playground messaging + gRPC semantics (batch fan-in links, lag metric, orphan, deadlines, stream events) | **[playground]** | P2 | M | 036 | TODO |
 | 050 | Playground frontend RUM journey (routes, OTLP vitals, session.id, propagation break, flush) | **[playground]** | P2 | L | 036 | TODO |
-| 051 | traceCriticalPath + traceCompare (pure core analyses + waterfall highlight + diff UI) | parallax | P3 | M | — | TODO |
+| 051 | traceCriticalPath + traceCompare (pure core analyses + waterfall highlight + diff UI) | parallax | P3 | M | — | DONE |
 | 052 | Investigations (save/restore state, pins, notes — dashboards-CRUD clone) | parallax | P3 | M | 038 | TODO |
 | 053 | Design-system + a11y consolidation (one chip, central formatters, keyboard access) | parallax | P3 | M | 039, 040 | TODO |
 | 054 | Playground quality scenarios + TOUR.md (sampling gap, cron semantics, field spike, uncorrelated log) | **[playground]** | P3 | M | 036, 037 | TODO |

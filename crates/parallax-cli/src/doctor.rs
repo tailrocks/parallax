@@ -6,28 +6,38 @@
 
 use std::path::{Path, PathBuf};
 
-fn data_dir() -> PathBuf {
-    // Mirrors the server's default; a custom data_dir is read from the
-    // default config file when present.
-    let default = std::env::home_dir()
+use parallax_server::config::Config;
+
+const SPOOL_SIGNALS: [(&str, &str); 3] = [
+    ("traces", "traces.ndjson"),
+    ("logs", "logs.ndjson"),
+    ("metrics", "metrics.ndjson"),
+];
+
+#[derive(Debug, Default, PartialEq, Eq)]
+struct SignalSpoolStats {
+    active_lines: usize,
+    active_bytes: u64,
+    rotated_segments: usize,
+    rotated_bytes: u64,
+}
+
+fn default_data_dir() -> PathBuf {
+    std::env::home_dir()
         .map(|h| h.join(".parallax"))
-        .unwrap_or_else(|| PathBuf::from(".parallax"));
-    let config_path = default.join("config.toml");
-    if let Ok(raw) = std::fs::read_to_string(&config_path)
-        && let Ok(value) = raw.parse::<toml::Table>()
-        && let Some(dir) = value
-            .get("storage")
-            .and_then(|s| s.get("data_dir"))
-            .and_then(|d| d.as_str())
-    {
-        if let Some(rest) = dir.strip_prefix("~/")
-            && let Some(home) = std::env::home_dir()
-        {
-            return home.join(rest);
-        }
-        return PathBuf::from(dir);
-    }
-    default
+        .unwrap_or_else(|| PathBuf::from(".parallax"))
+}
+
+fn config_path() -> PathBuf {
+    default_data_dir().join("config.toml")
+}
+
+fn load_config() -> Config {
+    Config::load(Some(&config_path())).unwrap_or_default()
+}
+
+fn data_dir() -> PathBuf {
+    load_config().data_dir()
 }
 
 fn dir_size(path: &Path) -> u64 {
@@ -54,6 +64,44 @@ fn human(bytes: u64) -> String {
     }
 }
 
+fn rotated_segment_paths(spool_dir: &Path, stem: &str) -> Vec<PathBuf> {
+    let prefix = format!("{stem}.");
+    let active = format!("{stem}.ndjson");
+    let Ok(entries) = std::fs::read_dir(spool_dir) else {
+        return Vec::new();
+    };
+    entries
+        .flatten()
+        .map(|entry| entry.path())
+        .filter(|path| {
+            path.file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| {
+                    name != active && name.starts_with(&prefix) && name.ends_with(".ndjson")
+                })
+        })
+        .collect()
+}
+
+fn spool_stats(spool_dir: &Path, stem: &str, active_file: &str) -> SignalSpoolStats {
+    let active_path = spool_dir.join(active_file);
+    let active_lines = std::fs::read_to_string(&active_path)
+        .map(|s| s.lines().count())
+        .unwrap_or(0);
+    let active_bytes = active_path.metadata().map(|m| m.len()).unwrap_or(0);
+    let rotated_paths = rotated_segment_paths(spool_dir, stem);
+    let rotated_bytes = rotated_paths
+        .iter()
+        .filter_map(|path| path.metadata().ok().map(|metadata| metadata.len()))
+        .sum();
+    SignalSpoolStats {
+        active_lines,
+        active_bytes,
+        rotated_segments: rotated_paths.len(),
+        rotated_bytes,
+    }
+}
+
 async fn check_http(url: &str) -> Option<String> {
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(2))
@@ -64,7 +112,8 @@ async fn check_http(url: &str) -> Option<String> {
 }
 
 pub async fn doctor() -> anyhow::Result<()> {
-    let dir = data_dir();
+    let config = load_config();
+    let dir = config.data_dir();
     println!("parallax doctor");
     println!("  data dir: {} ({})", dir.display(), human(dir_size(&dir)));
 
@@ -112,13 +161,21 @@ pub async fn doctor() -> anyhow::Result<()> {
     // Spool backlog and storage sizes.
     let spool = dir.join("spool");
     if spool.exists() {
-        for file in ["traces.ndjson", "logs.ndjson", "metrics.ndjson"] {
-            let path = spool.join(file);
-            let lines = std::fs::read_to_string(&path)
-                .map(|s| s.lines().count())
-                .unwrap_or(0);
-            let size = path.metadata().map(|m| m.len()).unwrap_or(0);
-            println!("  spool {file}: {lines} request(s), {}", human(size));
+        println!(
+            "  spool caps: segment {}, total {}, max age {}h",
+            human(config.retention.spool_max_segment_bytes),
+            human(config.retention.spool_max_total_bytes),
+            config.retention.spool_max_age_hours
+        );
+        for (stem, file) in SPOOL_SIGNALS {
+            let stats = spool_stats(&spool, stem, file);
+            println!(
+                "  spool {file}: active {} ({} request(s)) + {} rotated segment(s) ({})",
+                human(stats.active_bytes),
+                stats.active_lines,
+                stats.rotated_segments,
+                human(stats.rotated_bytes)
+            );
         }
     }
     let engine_data = dir.join("greptime-data");
@@ -146,17 +203,28 @@ pub async fn doctor() -> anyhow::Result<()> {
 /// Truncate the ingest spool (telemetry TTLs are enforced by the engine).
 pub fn prune() -> anyhow::Result<()> {
     let dir = data_dir().join("spool");
+    let reclaimed = prune_dir(&dir)?;
+    println!("pruned spool: reclaimed {}", human(reclaimed));
+    println!("telemetry retention is TTL-managed by the engine (see config [retention])");
+    Ok(())
+}
+
+fn prune_dir(dir: &Path) -> anyhow::Result<u64> {
     let mut reclaimed = 0u64;
-    for file in ["traces.ndjson", "logs.ndjson", "metrics.ndjson"] {
+    for (stem, file) in SPOOL_SIGNALS {
         let path = dir.join(file);
         if let Ok(meta) = path.metadata() {
             reclaimed += meta.len();
             std::fs::write(&path, b"")?;
         }
+        for rotated in rotated_segment_paths(dir, stem) {
+            if let Ok(meta) = rotated.metadata() {
+                reclaimed += meta.len();
+            }
+            std::fs::remove_file(rotated)?;
+        }
     }
-    println!("pruned spool: reclaimed {}", human(reclaimed));
-    println!("telemetry retention is TTL-managed by the engine (see config [retention])");
-    Ok(())
+    Ok(reclaimed)
 }
 
 /// Remove the entire data directory. Destructive; requires --purge.
@@ -184,4 +252,73 @@ pub fn uninstall(purge: bool, yes: bool) -> anyhow::Result<()> {
     println!("removed {} ({size})", dir.display());
     println!("remove the binary with your package manager (e.g. brew uninstall parallax).");
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct TempDir(PathBuf);
+
+    impl TempDir {
+        fn new(name: &str) -> Self {
+            let nanos = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos();
+            let path = std::env::temp_dir().join(format!(
+                "parallax-doctor-{name}-{}-{nanos}",
+                std::process::id()
+            ));
+            std::fs::create_dir_all(&path).expect("create temp doctor dir");
+            Self(path)
+        }
+
+        fn path(&self) -> &Path {
+            &self.0
+        }
+    }
+
+    impl Drop for TempDir {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    #[test]
+    fn spool_stats_include_rotated_segments() {
+        let tmp = TempDir::new("stats");
+        std::fs::write(tmp.path().join("logs.ndjson"), b"one\ntwo\n").expect("active");
+        std::fs::write(tmp.path().join("logs.100.ndjson"), b"old").expect("old");
+        std::fs::write(tmp.path().join("logs.200-1.ndjson"), b"newer").expect("newer");
+        std::fs::write(tmp.path().join("traces.100.ndjson"), b"trace").expect("trace");
+
+        let stats = spool_stats(tmp.path(), "logs", "logs.ndjson");
+
+        assert_eq!(
+            stats,
+            SignalSpoolStats {
+                active_lines: 2,
+                active_bytes: 8,
+                rotated_segments: 2,
+                rotated_bytes: 8,
+            }
+        );
+    }
+
+    #[test]
+    fn prune_dir_truncates_active_and_removes_rotated_segments() {
+        let tmp = TempDir::new("prune");
+        std::fs::write(tmp.path().join("logs.ndjson"), b"active").expect("active");
+        std::fs::write(tmp.path().join("logs.100.ndjson"), b"old").expect("old");
+
+        let reclaimed = prune_dir(tmp.path()).expect("prune");
+
+        assert_eq!(reclaimed, 9);
+        assert_eq!(
+            std::fs::read_to_string(tmp.path().join("logs.ndjson")).expect("active remains"),
+            ""
+        );
+        assert!(!tmp.path().join("logs.100.ndjson").exists());
+    }
 }

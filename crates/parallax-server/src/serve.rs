@@ -2,21 +2,24 @@
 //! routes), the dedicated OTLP/HTTP listener (:4318), the OTLP/gRPC listener
 //! (:4317), and the ingest worker connecting receivers to storage.
 
-use crate::config::Config;
+use crate::config::{Config, LimitsConfig};
 use crate::otlp_grpc::OtlpGrpc;
 use crate::otlp_http;
 use crate::worker::{self, IngestSender, Worker};
-use axum::Json;
-use axum::Router;
-use axum::extract::State;
+use axum::extract::{Request, State};
+use axum::http::{StatusCode, header};
+use axum::middleware::{self, Next};
+use axum::response::Response;
 use axum::routing::{get, post};
+use axum::{Json, Router};
 use parallax_api::{ApiContext, Schema as ParallaxSchema};
 use parallax_storage::adapter::TelemetryStore;
 use parallax_storage::memory::MemoryStore;
 use parallax_storage::metadata::MetadataStore;
-use parallax_storage::spool::Spool;
+use parallax_storage::spool::{Spool, SpoolRetention};
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::net::TcpListener;
 use tokio::task::JoinHandle;
 
@@ -67,6 +70,95 @@ async fn connect_greptime(url: &str, config: &Config) -> anyhow::Result<Arc<dyn 
 struct GraphQlState {
     schema: Arc<ParallaxSchema>,
     context: Arc<ApiContext>,
+    limits: LimitsConfig,
+}
+
+#[derive(Clone)]
+struct HostGuard {
+    allowed_hosts: Arc<Vec<String>>,
+}
+
+impl HostGuard {
+    fn for_listener(bind: &str, api_addr: SocketAddr) -> Self {
+        let mut allowed = vec![
+            "localhost".to_string(),
+            "127.0.0.1".to_string(),
+            "[::1]".to_string(),
+        ];
+        add_allowed_host(&mut allowed, bind);
+        add_allowed_host(&mut allowed, &api_addr.ip().to_string());
+        allowed.sort();
+        allowed.dedup();
+        Self {
+            allowed_hosts: Arc::new(allowed),
+        }
+    }
+
+    fn allows(&self, host: &str) -> bool {
+        normalize_host_header(host)
+            .is_some_and(|host| self.allowed_hosts.iter().any(|allowed| allowed == &host))
+    }
+}
+
+fn add_allowed_host(allowed: &mut Vec<String>, host: &str) {
+    let host = host.trim().trim_end_matches('.').to_ascii_lowercase();
+    if host.is_empty() {
+        return;
+    }
+    if host.contains(':') && !host.starts_with('[') {
+        allowed.push(format!("[{host}]"));
+    } else {
+        allowed.push(host);
+    }
+}
+
+fn normalize_host_header(host: &str) -> Option<String> {
+    let host = host.trim().trim_end_matches('.');
+    if host.is_empty() {
+        return None;
+    }
+    if host.starts_with('[') {
+        let end = host.find(']')?;
+        let rest = &host[end + 1..];
+        if rest.is_empty()
+            || rest
+                .strip_prefix(':')
+                .is_some_and(|port| !port.is_empty() && port.chars().all(|c| c.is_ascii_digit()))
+        {
+            return Some(host[..=end].to_ascii_lowercase());
+        }
+        return None;
+    }
+    if host.matches(':').count() > 1 {
+        return None;
+    }
+    let bare = match host.rsplit_once(':') {
+        Some((name, port))
+            if !name.is_empty() && !port.is_empty() && port.chars().all(|c| c.is_ascii_digit()) =>
+        {
+            name
+        }
+        Some(_) => return None,
+        None => host,
+    };
+    Some(bare.to_ascii_lowercase())
+}
+
+async fn host_guard_middleware(
+    State(guard): State<HostGuard>,
+    request: Request,
+    next: Next,
+) -> Result<Response, StatusCode> {
+    let allowed = request
+        .headers()
+        .get(header::HOST)
+        .and_then(|host| host.to_str().ok())
+        .is_some_and(|host| guard.allows(host));
+    if allowed {
+        Ok(next.run(request).await)
+    } else {
+        Err(StatusCode::FORBIDDEN)
+    }
 }
 
 /// The hand-rolled Juniper-over-axum handler (spec §2 note). Wrapped in a
@@ -82,7 +174,19 @@ async fn graphql_handler(
         .clone()
         .unwrap_or_else(|| "anonymous".to_string());
     async move {
-        let response = request.execute(&state.schema, &state.context).await;
+        let response = match parallax_api::check_query_limits(
+            &state.schema,
+            &request.query,
+            request.operation_name.as_deref(),
+            state.limits.graphql_max_depth,
+            state.limits.graphql_max_complexity,
+        ) {
+            Ok(()) => request.execute(&state.schema, &state.context).await,
+            Err(message) => juniper::http::GraphQLResponse::error(juniper::FieldError::new(
+                message,
+                juniper::Value::null(),
+            )),
+        };
         tracing::info!(ok = response.is_ok(), "graphql request");
         Json(response)
     }
@@ -97,6 +201,34 @@ pub struct IngestState {
     pub sender: IngestSender,
 }
 
+fn spawn_spool_reaper(
+    spool: Arc<Spool>,
+    max_total_bytes: u64,
+    max_age_hours: u64,
+) -> JoinHandle<()> {
+    tokio::spawn(async move {
+        let retention = SpoolRetention {
+            max_total_bytes,
+            max_age: Duration::from_secs(max_age_hours.saturating_mul(60 * 60)),
+        };
+        let mut interval = tokio::time::interval(Duration::from_secs(10 * 60));
+        loop {
+            interval.tick().await;
+            match spool.reap(retention, std::time::SystemTime::now()) {
+                Ok(reclaimed) if reclaimed.removed_segments > 0 => {
+                    tracing::info!(
+                        segments = reclaimed.removed_segments,
+                        bytes = reclaimed.reclaimed_bytes,
+                        "reclaimed ingest spool segments"
+                    );
+                }
+                Ok(_) => {}
+                Err(error) => tracing::warn!("ingest spool reaper failed: {error}"),
+            }
+        }
+    })
+}
+
 /// Start every listener plus the ingest worker. Port 0 means "pick a free
 /// port" (tests); bound addresses are reported in the handle.
 ///
@@ -106,7 +238,10 @@ pub struct IngestState {
 pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
     let data_dir = config.data_dir();
     std::fs::create_dir_all(&data_dir)?;
-    let spool = Arc::new(Spool::open(data_dir.join("spool"))?);
+    let spool = Arc::new(Spool::open_with_max_segment_bytes(
+        data_dir.join("spool"),
+        config.retention.spool_max_segment_bytes,
+    )?);
 
     let mut supervisor = None;
     let store: Arc<dyn TelemetryStore> = match config.storage.mode.as_str() {
@@ -150,6 +285,11 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
     let worker = Worker::new(store.clone(), metadata.clone(), live.clone());
     let mut tasks = Vec::new();
     tasks.push(tokio::spawn(worker.run(receiver)));
+    tasks.push(spawn_spool_reaper(
+        spool.clone(),
+        config.retention.spool_max_total_bytes,
+        config.retention.spool_max_age_hours,
+    ));
 
     let bind = &config.server.bind;
     let api_listener = TcpListener::bind((bind.as_str(), config.server.api_port)).await?;
@@ -170,7 +310,9 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
             metadata: metadata.clone(),
             otlp_grpc_port: otlp_grpc_addr.port(),
         }),
+        limits: config.limits.clone(),
     };
+    let host_guard_state = HostGuard::for_listener(bind, api_addr);
     let api_router = Router::new()
         .route("/health", get(|| async { "ok" }))
         .route("/version", get(|| async { env!("CARGO_PKG_VERSION") }))
@@ -178,13 +320,23 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
             Router::new()
                 .route("/v1/logs/stream", get(crate::live::stream_logs))
                 .route("/v1/traces/stream", get(crate::live::stream_traces))
-                .with_state(live),
+                .with_state(live)
+                .layer(middleware::from_fn_with_state(
+                    host_guard_state.clone(),
+                    host_guard_middleware,
+                )),
         )
         .merge(
             Router::new()
                 .route("/graphql", post(graphql_handler))
-                .with_state(graphql_state),
+                .with_state(graphql_state)
+                .layer(middleware::from_fn_with_state(
+                    host_guard_state.clone(),
+                    host_guard_middleware,
+                )),
         )
+        // OTLP/HTTP stays unguarded here: exporters may legitimately use a
+        // container or bridge hostname while the developer API remains local.
         .merge(otlp_http::router(ingest.clone()));
 
     // The UI, by preference: an on-disk SPA build (assets + _shell.html

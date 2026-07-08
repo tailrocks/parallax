@@ -10,6 +10,17 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Combobox } from "@/components/ui/combobox"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -184,6 +195,7 @@ function DashboardsPage() {
   const [name, setName] = useState("")
   const [widgets, setWidgets] = useState<Widget[]>([emptyWidget()])
   const [error, setError] = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   async function create() {
     setError(null)
@@ -208,8 +220,13 @@ function DashboardsPage() {
   }
 
   async function remove(id: string) {
-    await graphql(`mutation { dashboardDelete(id: "${gqlString(id)}") }`)
-    await router.invalidate()
+    setDeleteError(null)
+    try {
+      await graphql(`mutation { dashboardDelete(id: "${gqlString(id)}") }`)
+      await router.invalidate()
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : String(err))
+    }
   }
 
   return (
@@ -279,6 +296,10 @@ function DashboardsPage() {
         }
       />
 
+      {deleteError ? (
+        <p className="text-sm text-destructive">{deleteError}</p>
+      ) : null}
+
       {dashboards.length === 0 ? (
         <EmptyState
           icon={IconLayoutDashboard}
@@ -300,14 +321,33 @@ function DashboardsPage() {
                       {dashboard.name}
                     </Link>
                   </CardTitle>
-                  <Button
-                    variant="ghost-destructive"
-                    size="icon-xs"
-                    onClick={() => void remove(dashboard.id)}
-                  >
-                    <IconTrash />
-                    <span className="sr-only">Delete</span>
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger
+                      render={
+                        <Button variant="ghost-destructive" size="icon-xs" />
+                      }
+                    >
+                      <IconTrash />
+                      <span className="sr-only">Delete</span>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete dashboard?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Delete {dashboard.name}. This cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          variant="destructive"
+                          onClick={() => void remove(dashboard.id)}
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </CardHeader>
                 <CardContent className="flex items-center justify-between gap-2">
                   <Badge variant="secondary">

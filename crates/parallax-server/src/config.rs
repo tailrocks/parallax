@@ -46,6 +46,9 @@ pub struct RetentionConfig {
     pub logs_ttl: String,
     pub metrics_ttl: String,
     pub error_events_ttl: String,
+    pub spool_max_segment_bytes: u64,
+    pub spool_max_total_bytes: u64,
+    pub spool_max_age_hours: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -99,6 +102,9 @@ impl Default for RetentionConfig {
             logs_ttl: "7d".to_string(),
             metrics_ttl: "14d".to_string(),
             error_events_ttl: "30d".to_string(),
+            spool_max_segment_bytes: 64 * 1024 * 1024,
+            spool_max_total_bytes: 512 * 1024 * 1024,
+            spool_max_age_hours: 72,
         }
     }
 }

@@ -28,17 +28,17 @@ conditions, run its verification gates, and update your row below when done.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| 022 | SQL surface hardening (metricSeries + EXPLAIN ANALYZE) | P1 | S | — | TODO |
-| 023 | Bundle redaction completeness (title/culprit/command) | P1 | S | — | TODO |
-| 024 | Enforce GraphQL depth/complexity + Host-header guard | P2 | M | — | TODO |
-| 025 | Redaction rule-set expansion (DSN/PEM/token shapes) | P2 | M | 023 | TODO |
-| 026 | Issue derivation correctness (non-error exceptions + dedup) | P1 | M | — | TODO |
-| 027 | Bundle hash stability + trace/metric budget bounding | P2 | M | — | TODO |
-| 028 | Typed span links + linkedTraces + UI causal edges | P1 | M | — | TODO |
-| 029 | Story timeline resolver + trace/run tab | P1 | M | — | TODO |
-| 030 | attributeCompare (BubbleUp) over span attributes | P2 | M | — | TODO |
-| 031 | Ecosystem service-map (trace-path graph) | P2 | L | 024 | TODO |
-| 032 | Evidence-gap detector + UI + bundle enrichment | P2 | M | — | TODO |
+| 022 | SQL surface hardening (metricSeries + EXPLAIN ANALYZE) | P1 | S | — | DONE |
+| 023 | Bundle redaction completeness (title/culprit/command) | P1 | S | — | DONE |
+| 024 | Enforce GraphQL depth/complexity + Host-header guard | P2 | M | — | DONE |
+| 025 | Redaction rule-set expansion (DSN/PEM/token shapes) | P2 | M | 023 | DONE |
+| 026 | Issue derivation correctness (non-error exceptions + dedup) | P1 | M | — | DONE |
+| 027 | Bundle hash stability + trace/metric budget bounding | P2 | M | — | DONE |
+| 028 | Typed span links + linkedTraces + UI causal edges | P1 | M | — | DONE |
+| 029 | Story timeline resolver + trace/run tab | P1 | M | — | DONE |
+| 030 | attributeCompare (BubbleUp) over span attributes | P2 | M | — | DONE |
+| 031 | Ecosystem service-map (trace-path graph) | P2 | L | 024 | DONE |
+| 032 | Evidence-gap detector + UI + bundle enrichment | P2 | M | — | DONE |
 | 033 | Metric exemplars end-to-end (design + thin slice) | P3 | L | — | TODO |
 | 034 | Playground execution-stack scenario (design + build) | P3 | L | 029 | TODO |
 
@@ -61,6 +61,10 @@ run in parallel.
   semantics — re-run both test suites after the second lands. 026 defers
   cross-*source* `error_type` divergence (entangled with 019's structured-field
   work).
+- 021 unblocks the run/log UI follow-up: the runs redesign (plan 017) can rely
+  on `logsByRun` preserving the newest rows under the limit and should default
+  the run page to INFO+ (`severityMin: 9`) with a DEBUG/TRACE toggle; the logs
+  redesign (plan 014) can expose severity ranges through `severityMax`.
 - 024 (depth/complexity guard) should land before 031 (ecosystem graph
   fan-out) and ideally before 030 (attribute-compare fan-out); both are safe
   without it but cheaper to reason about after.
@@ -90,6 +94,9 @@ run in parallel.
   explicitly someday, not plan-worthy now.
 - **`Worker.seen_runs` grows unbounded**: slow leak on very long-lived
   servers; low severity, deferred.
+- **Persisted occurrence idempotency for late span/log echoes**: valuable but
+  schema-changing; 026 lands bounded in-batch dedup and defers a durable seen
+  `(trace_id, span_id, fingerprint)` table.
 - **`metric_point_count` stubbed to 0 / metric trend empty**: a documented V1
   gap, not a regression; deferred.
 - **Stringly-typed UI GraphQL client** (no variables/codegen): real DX debt,
@@ -109,9 +116,9 @@ issue-derivation semantics — re-run both test suites after the second lands.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| 019 | Fingerprint normalization v2 (issue over-splitting) | P1 | M | — | TODO |
-| 020 | Spool retention: rotation + reaper + doctor | P1 | M | — | TODO |
-| 021 | Anchored log/span queries newest-first + severityMax | P2 | S | — | TODO |
+| 019 | Fingerprint normalization v2 (issue over-splitting) | P1 | M | — | DONE |
+| 020 | Spool retention: rotation + reaper + doctor | P1 | M | — | DONE |
+| 021 | Anchored log/span queries newest-first + severityMax | P2 | S | — | DONE |
 
 ## Verification baseline
 

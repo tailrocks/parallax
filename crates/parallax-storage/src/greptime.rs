@@ -1,8 +1,14 @@
 //! GreptimeDB `TelemetryStore` adapter: SQL over the HTTP API, DDL from the
 //! implementation spec §5. All engine-specific SQL lives in this module.
 
-use crate::adapter::{OverviewTotals, ServiceSummary, SignalKind, SpanRed, TelemetryStore};
+use crate::adapter::{
+    ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow, MAX_ROWS,
+    OverviewTotals, SERVICE_MAP_TRACE_CAP, ServiceEdge, ServiceSummary, SignalKind, SpanRed,
+    TelemetryStore, attribute_compare_key_allowed, attribute_compare_score,
+    attribute_compare_value_allowed,
+};
 use crate::model::*;
+use std::collections::{BTreeMap, BTreeSet};
 use std::ops::RangeInclusive;
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -24,6 +30,24 @@ pub struct GreptimeStore {
 
 fn escape(text: &str) -> String {
     text.replace('\'', "''")
+}
+
+/// Escape a value for inclusion inside a double-quoted SQL identifier.
+fn escape_ident(text: &str) -> String {
+    text.replace('"', "\"\"")
+}
+
+fn raw_sql_read_only(query: &str) -> bool {
+    let trimmed = query.trim();
+    let lowered = trimmed.to_ascii_lowercase();
+    let read_only = [
+        "select", "with", "show", "describe", "desc", "explain", "tql",
+    ]
+    .iter()
+    .any(|prefix| lowered.starts_with(prefix));
+    read_only
+        && !trimmed.trim_end_matches(';').contains(';')
+        && !(lowered.starts_with("explain") && lowered.contains("analyze"))
 }
 
 /// True when a SQL error is GreptimeDB reporting that the target table does not
@@ -499,6 +523,7 @@ fn log_filter_clauses(
     service: Option<&str>,
     range: &RangeInclusive<u128>,
     severity_min: Option<i32>,
+    severity_max: Option<i32>,
     body_contains: Option<&str>,
 ) -> Vec<String> {
     let mut clauses = vec![format!(
@@ -516,6 +541,9 @@ fn log_filter_clauses(
     }
     if let Some(min) = severity_min {
         clauses.push(format!(r#""severity_number" >= {min}"#));
+    }
+    if let Some(max) = severity_max {
+        clauses.push(format!(r#""severity_number" <= {max}"#));
     }
     if let Some(needle) = body_contains {
         // LIKE wildcards in the needle are literal for a substring search;
@@ -541,6 +569,24 @@ fn u128_at(row: &[serde_json::Value], index: usize) -> u128 {
 
 fn f64_at(row: &[serde_json::Value], index: usize) -> f64 {
     row.get(index).and_then(|v| v.as_f64()).unwrap_or(0.0)
+}
+
+fn duration_quantile_ms(durations: &mut [u128], q: f64) -> f64 {
+    if durations.is_empty() {
+        return 0.0;
+    }
+    durations.sort_unstable();
+    if durations.len() == 1 {
+        return durations[0] as f64 / 1_000_000.0;
+    }
+    let pos = q.clamp(0.0, 1.0) * (durations.len() - 1) as f64;
+    let lo = pos.floor() as usize;
+    let hi = pos.ceil() as usize;
+    if lo == hi {
+        return durations[lo] as f64 / 1_000_000.0;
+    }
+    let weight = pos - lo as f64;
+    (durations[lo] as f64 + (durations[hi] as f64 - durations[lo] as f64) * weight) / 1_000_000.0
 }
 
 fn trace_filter_clauses(service: Option<&str>, range: &RangeInclusive<u128>) -> Vec<String> {
@@ -675,28 +721,106 @@ impl TelemetryStore for GreptimeStore {
         .await
     }
 
+    async fn traces_by_ids(
+        &self,
+        trace_ids: &[String],
+    ) -> anyhow::Result<Vec<crate::adapter::TraceSummary>> {
+        let mut ids = Vec::new();
+        for trace_id in trace_ids.iter().filter(|trace_id| !trace_id.is_empty()) {
+            if ids.iter().any(|id| id == trace_id) {
+                continue;
+            }
+            ids.push(trace_id.clone());
+            if ids.len() >= MAX_ROWS {
+                break;
+            }
+        }
+        if ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let id_list = ids
+            .iter()
+            .map(|trace_id| format!("'{}'", escape(trace_id)))
+            .collect::<Vec<_>>()
+            .join(",");
+        let rows = self
+            .sql_lenient(&format!(
+                r#"SELECT "root"."trace_id", "root"."span_name", "root"."service_name",
+                          "root"."ts_nanos", "root"."dur", "agg"."span_count",
+                          "agg"."has_error"
+                   FROM (
+                     SELECT "trace_id", "span_name", "service_name",
+                            CAST("timestamp" AS BIGINT) AS "ts_nanos",
+                            CAST("duration_nano" AS BIGINT) AS "dur",
+                            ROW_NUMBER() OVER (
+                              PARTITION BY "trace_id"
+                              ORDER BY (CASE WHEN "parent_span_id" IS NULL OR "parent_span_id" = ''
+                                             THEN 0 ELSE 1 END) ASC,
+                                       "timestamp" ASC
+                            ) AS "rn"
+                     FROM opentelemetry_traces
+                     WHERE "trace_id" IN ({id_list})
+                   ) AS "root"
+                   JOIN (
+                     SELECT "trace_id", COUNT(*) AS "span_count",
+                            MAX(CASE WHEN "span_status_code" = 'STATUS_CODE_ERROR' THEN 1 ELSE 0 END)
+                            AS "has_error"
+                     FROM opentelemetry_traces
+                     WHERE "trace_id" IN ({id_list})
+                     GROUP BY "trace_id"
+                   ) AS "agg" ON "root"."trace_id" = "agg"."trace_id"
+                   WHERE "root"."rn" = 1"#
+            ))
+            .await?;
+        let mut by_id: std::collections::HashMap<_, _> = rows
+            .iter()
+            .map(|row| {
+                let summary = crate::adapter::TraceSummary {
+                    trace_id: str_at(row, 0),
+                    root_name: str_at(row, 1),
+                    service: str_at(row, 2),
+                    start_nanos: u128_at(row, 3),
+                    duration_ns: u128_at(row, 4),
+                    span_count: u128_at(row, 5) as u64,
+                    has_error: u128_at(row, 6) > 0,
+                };
+                (summary.trace_id.clone(), summary)
+            })
+            .collect();
+        Ok(ids
+            .into_iter()
+            .filter_map(|trace_id| by_id.remove(&trace_id))
+            .collect())
+    }
+
     async fn spans_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<SpanRow>> {
-        self.select_spans(
-            &format!(
-                r#""trace_id" IN (
+        let mut spans = self
+            .select_spans(
+                &format!(
+                    r#""trace_id" IN (
                     SELECT DISTINCT "trace_id" FROM opentelemetry_logs
                     WHERE "parallax.run.id" = '{}'
                   )"#,
-                escape(run_id)
-            ),
-            r#" ORDER BY "timestamp" ASC"#,
-            &format!(" LIMIT {limit}"),
-        )
-        .await
+                    escape(run_id)
+                ),
+                r#" ORDER BY "timestamp" DESC"#,
+                &format!(" LIMIT {limit}"),
+            )
+            .await?;
+        spans.reverse();
+        Ok(spans)
     }
 
     async fn logs_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<LogRow>> {
-        self.select_logs(
-            &format!(r#""parallax.run.id" = '{}'"#, escape(run_id)),
-            r#" ORDER BY "timestamp" ASC"#,
-            &format!(" LIMIT {limit}"),
-        )
-        .await
+        let mut logs = self
+            .select_logs(
+                &format!(r#""parallax.run.id" = '{}'"#, escape(run_id)),
+                r#" ORDER BY "timestamp" DESC"#,
+                &format!(" LIMIT {limit}"),
+            )
+            .await?;
+        logs.reverse();
+        Ok(logs)
     }
 
     async fn logs_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<LogRow>> {
@@ -832,7 +956,7 @@ impl TelemetryStore for GreptimeStore {
                 .await?
             }
             SignalKind::Logs => {
-                let clauses = log_filter_clauses(service, &range, None, None);
+                let clauses = log_filter_clauses(service, &range, None, None, None);
                 self.sql_lenient(&format!(
                     r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "timestamp") AS BIGINT)
                               AS "bucket_ns", COUNT(*) AS "n"
@@ -1006,7 +1130,7 @@ impl TelemetryStore for GreptimeStore {
                    FROM "{}"
                    WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}{service_clause}
                    GROUP BY "bucket_ms" ORDER BY "bucket_ms""#,
-                escape(name),
+                escape_ident(name),
                 sql_ts(range.start() / 1_000_000),
                 sql_ts(range.end() / 1_000_000),
             ))
@@ -1048,7 +1172,7 @@ impl TelemetryStore for GreptimeStore {
                    FROM "{}_bucket"
                    WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}{service_clause}
                    ORDER BY "greptime_timestamp" ASC"#,
-                escape(name),
+                escape_ident(name),
                 sql_ts(range.start() / 1_000_000),
                 sql_ts(range.end() / 1_000_000),
             ))
@@ -1291,6 +1415,168 @@ impl TelemetryStore for GreptimeStore {
         })
     }
 
+    async fn attribute_compare(
+        &self,
+        selected: RangeInclusive<u128>,
+        baseline: RangeInclusive<u128>,
+        service: Option<&str>,
+        error_only: bool,
+        keys: &[String],
+        top_n: usize,
+    ) -> anyhow::Result<Vec<AttributeCompareRow>> {
+        let limit = top_n.min(ATTRIBUTE_COMPARE_TOP_N_CAP);
+        if limit == 0 {
+            return Ok(Vec::new());
+        }
+
+        let available = self.discover_span_attribute_keys().await?;
+        let candidate_keys: Vec<String> = if keys.is_empty() {
+            available
+                .into_iter()
+                .filter(|key| attribute_compare_key_allowed(key))
+                .take(ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT)
+                .collect()
+        } else {
+            keys.iter()
+                .map(|key| key.trim())
+                .filter(|key| attribute_compare_key_allowed(key))
+                .filter(|key| available.contains(*key))
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .take(ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT)
+                .map(str::to_string)
+                .collect()
+        };
+
+        let mut rows = Vec::new();
+        for key in candidate_keys {
+            let (selected_total, selected_counts) = self
+                .span_attribute_counts(&key, &selected, service, error_only)
+                .await?;
+            let (baseline_total, baseline_counts) = self
+                .span_attribute_counts(&key, &baseline, service, error_only)
+                .await?;
+            for (value, selected_count) in selected_counts {
+                let baseline_count = baseline_counts.get(&value).copied().unwrap_or(0);
+                let score = attribute_compare_score(
+                    selected_count,
+                    selected_total,
+                    baseline_count,
+                    baseline_total,
+                );
+                if score > 0.0 {
+                    rows.push(AttributeCompareRow {
+                        key: key.clone(),
+                        value,
+                        selected_count,
+                        selected_total,
+                        baseline_count,
+                        baseline_total,
+                        score,
+                    });
+                }
+            }
+        }
+
+        rows.sort_by(|a, b| {
+            b.score
+                .total_cmp(&a.score)
+                .then_with(|| b.selected_count.cmp(&a.selected_count))
+                .then_with(|| a.key.cmp(&b.key))
+                .then_with(|| a.value.cmp(&b.value))
+        });
+        rows.truncate(limit);
+        Ok(rows)
+    }
+
+    async fn service_map(
+        &self,
+        range: RangeInclusive<u128>,
+        max_traces: usize,
+    ) -> anyhow::Result<Vec<ServiceEdge>> {
+        let trace_limit = max_traces.min(SERVICE_MAP_TRACE_CAP);
+        if trace_limit == 0 {
+            return Ok(Vec::new());
+        }
+        let trace_rows = self
+            .sql_lenient(&format!(
+                r#"SELECT "trace_id", MAX("timestamp") AS "last_seen"
+                   FROM opentelemetry_traces
+                   WHERE "timestamp" >= {} AND "timestamp" <= {}
+                   GROUP BY "trace_id"
+                   ORDER BY "last_seen" DESC, "trace_id" ASC
+                   LIMIT {trace_limit}"#,
+                sql_ts(*range.start()),
+                sql_ts(*range.end())
+            ))
+            .await?;
+        let trace_ids: Vec<String> = trace_rows
+            .iter()
+            .map(|row| str_at(row, 0))
+            .filter(|trace_id| !trace_id.is_empty())
+            .collect();
+        if trace_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let id_list = trace_ids
+            .iter()
+            .map(|trace_id| format!("'{}'", escape(trace_id)))
+            .collect::<Vec<_>>()
+            .join(",");
+        let rows = self
+            .sql_lenient(&format!(
+                r#"SELECT "parent"."service_name" AS "source",
+                          "child"."service_name" AS "target",
+                          "child"."span_status_code" AS "status",
+                          CAST("child"."duration_nano" AS BIGINT) AS "duration_ns"
+                   FROM opentelemetry_traces AS "child"
+                   JOIN opentelemetry_traces AS "parent"
+                     ON "child"."trace_id" = "parent"."trace_id"
+                    AND "child"."parent_span_id" = "parent"."span_id"
+                   WHERE "child"."trace_id" IN ({id_list})
+                     AND "child"."timestamp" >= {}
+                     AND "child"."timestamp" <= {}
+                     AND "child"."span_kind" = 'SPAN_KIND_SERVER'
+                     AND "child"."service_name" != "parent"."service_name""#,
+                sql_ts(*range.start()),
+                sql_ts(*range.end())
+            ))
+            .await?;
+
+        let mut grouped: BTreeMap<(String, String), (u64, u64, Vec<u128>)> = BTreeMap::new();
+        for row in &rows {
+            let source = str_at(row, 0);
+            let target = str_at(row, 1);
+            if source.is_empty() || target.is_empty() || source == target {
+                continue;
+            }
+            let entry = grouped.entry((source, target)).or_default();
+            entry.0 += 1;
+            if str_at(row, 2) == "STATUS_CODE_ERROR" {
+                entry.1 += 1;
+            }
+            entry.2.push(u128_at(row, 3));
+        }
+
+        Ok(grouped
+            .into_iter()
+            .map(
+                |((source, target), (call_count, error_count, mut durations))| {
+                    let p50_ms = duration_quantile_ms(&mut durations, 0.5);
+                    let p95_ms = duration_quantile_ms(&mut durations, 0.95);
+                    ServiceEdge {
+                        source,
+                        target,
+                        call_count,
+                        error_count,
+                        p50_ms,
+                        p95_ms,
+                    }
+                },
+            )
+            .collect())
+    }
+
     async fn error_events_by_traces(
         &self,
         trace_ids: &[String],
@@ -1321,10 +1607,12 @@ impl TelemetryStore for GreptimeStore {
         service: Option<&str>,
         range: RangeInclusive<u128>,
         severity_min: Option<i32>,
+        severity_max: Option<i32>,
         body_contains: Option<&str>,
         limit: usize,
     ) -> anyhow::Result<Vec<LogRow>> {
-        let clauses = log_filter_clauses(service, &range, severity_min, body_contains);
+        let clauses =
+            log_filter_clauses(service, &range, severity_min, severity_max, body_contains);
         let rows = self
             .sql_lenient(&format!(
                 r#"SELECT CAST("timestamp" AS BIGINT) AS "ts_nanos",
@@ -1361,7 +1649,7 @@ impl TelemetryStore for GreptimeStore {
             .unwrap_or_default();
         // native: metric-engine tags are real columns (resource attrs promoted
         // to tags); group on the quoted tag column, missing → "(none)".
-        let group_col = format!(r#""{}""#, group_by.replace('"', ""));
+        let group_col = format!(r#""{}""#, escape_ident(group_by));
         let rows = self
             .sql_lenient(&format!(
                 r#"SELECT COALESCE(CAST({group_col} AS STRING), '(none)') AS "grp",
@@ -1370,7 +1658,7 @@ impl TelemetryStore for GreptimeStore {
                    FROM "{}"
                    WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}{service_clause}
                    GROUP BY "grp", "bucket_ms" ORDER BY "grp", "bucket_ms""#,
-                escape(name),
+                escape_ident(name),
                 sql_ts(range.start() / 1_000_000),
                 sql_ts(range.end() / 1_000_000),
             ))
@@ -1415,7 +1703,7 @@ impl TelemetryStore for GreptimeStore {
                    FROM "{}_count"
                    WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}{service_clause}
                    GROUP BY "bucket_ms" ORDER BY "bucket_ms""#,
-                escape(name),
+                escape_ident(name),
                 sql_ts(range.start() / 1_000_000),
                 sql_ts(range.end() / 1_000_000),
             ))
@@ -1462,11 +1750,13 @@ impl TelemetryStore for GreptimeStore {
         service: Option<&str>,
         range: RangeInclusive<u128>,
         severity_min: Option<i32>,
+        severity_max: Option<i32>,
         body_contains: Option<&str>,
         step_nanos: u128,
     ) -> anyhow::Result<Vec<SeriesPoint>> {
         let step_secs = (step_nanos / 1_000_000_000).max(1);
-        let clauses = log_filter_clauses(service, &range, severity_min, body_contains);
+        let clauses =
+            log_filter_clauses(service, &range, severity_min, severity_max, body_contains);
         let rows = self
             .sql_lenient(&format!(
                 r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "timestamp") AS BIGINT)
@@ -1486,11 +1776,85 @@ impl TelemetryStore for GreptimeStore {
     }
 
     async fn raw_sql(&self, query: &str) -> anyhow::Result<crate::adapter::SqlResult> {
+        anyhow::ensure!(
+            raw_sql_read_only(query),
+            "raw_sql: read-only statements only"
+        );
         self.sql_with_schema(query).await
     }
 }
 
 impl GreptimeStore {
+    async fn discover_span_attribute_keys(&self) -> anyhow::Result<BTreeSet<String>> {
+        let rows = self
+            .sql(
+                r#"SELECT "column_name" FROM information_schema.columns
+                   WHERE "table_schema" = 'public'
+                     AND "table_name" = 'opentelemetry_traces'
+                     AND "column_name" LIKE 'span_attributes.%'
+                   ORDER BY "column_name""#,
+            )
+            .await?;
+        Ok(rows
+            .iter()
+            .filter_map(|row| {
+                str_at(row, 0)
+                    .strip_prefix("span_attributes.")
+                    .map(str::to_string)
+            })
+            .collect())
+    }
+
+    async fn span_attribute_counts(
+        &self,
+        key: &str,
+        range: &RangeInclusive<u128>,
+        service: Option<&str>,
+        error_only: bool,
+    ) -> anyhow::Result<(u64, BTreeMap<String, u64>)> {
+        let column = format!(r#""span_attributes.{}""#, escape_ident(key));
+        let value_expr = format!("CAST({column} AS STRING)");
+        let mut clauses = vec![
+            format!(
+                r#""timestamp" >= {} AND "timestamp" <= {}"#,
+                sql_ts(*range.start()),
+                sql_ts(*range.end())
+            ),
+            format!("{column} IS NOT NULL"),
+        ];
+        if let Some(service) = service {
+            clauses.push(format!(r#""service_name" = '{}'"#, escape(service)));
+        }
+        if error_only {
+            clauses.push(r#""span_status_code" = 'STATUS_CODE_ERROR'"#.to_string());
+        }
+
+        let rows = self
+            .sql_lenient(&format!(
+                r#"SELECT {value_expr} AS "value", COUNT(*) AS "n"
+                   FROM opentelemetry_traces
+                   WHERE {}
+                   GROUP BY {value_expr}
+                   ORDER BY "n" DESC
+                   LIMIT 512"#,
+                clauses.join(" AND ")
+            ))
+            .await?;
+
+        let mut total = 0;
+        let mut counts = BTreeMap::new();
+        for row in &rows {
+            let value = str_at(row, 0);
+            if !attribute_compare_value_allowed(&value) {
+                continue;
+            }
+            let count = u128_at(row, 1) as u64;
+            total += count;
+            counts.insert(value, count);
+        }
+        Ok((total, counts))
+    }
+
     /// Discover the base metric names from the schema: every public table that
     /// is neither a native otel table, an extension table, the metric-engine
     /// physical table, nor a system table. Histogram siblings collapse to the
@@ -1605,5 +1969,34 @@ fn error_event_from_row(row: &[serde_json::Value]) -> ErrorEventRow {
         trace_id: str_at(row, 7),
         span_id: str_at(row, 8),
         attributes: json_at(row, 9),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn escape_ident_doubles_double_quotes_only() {
+        assert_eq!(
+            escape_ident(r#"http."server".duration"#),
+            r#"http.""server"".duration"#
+        );
+        assert_eq!(escape_ident("metric's/name"), "metric's/name");
+    }
+
+    #[test]
+    fn raw_sql_read_only_guard_rejects_writes_and_explain_analyze() {
+        assert!(raw_sql_read_only("SELECT * FROM opentelemetry_logs"));
+        assert!(raw_sql_read_only(
+            "EXPLAIN SELECT * FROM opentelemetry_logs"
+        ));
+        assert!(!raw_sql_read_only(
+            "EXPLAIN ANALYZE SELECT * FROM opentelemetry_logs"
+        ));
+        assert!(!raw_sql_read_only(
+            "SELECT 1; DROP TABLE opentelemetry_logs"
+        ));
+        assert!(!raw_sql_read_only("DELETE FROM opentelemetry_logs"));
     }
 }

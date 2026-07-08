@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { Link, createFileRoute } from "@tanstack/react-router"
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router"
 import {
   IconActivity,
   IconAlertTriangleFilled,
@@ -13,10 +13,11 @@ import {
 
 import { CopyButton } from "@/components/console/copy-button"
 import { EmptyState } from "@/components/console/empty-state"
-import { HeatCell } from "@/components/console/heat-cell"
+import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
 import { RelativeTime } from "@/components/console/relative-time"
 import { ScrollFade } from "@/components/console/scroll-fade"
 import { StatCard } from "@/components/console/stat-card"
+import { StoryTimeline } from "@/components/console/story-timeline"
 import { LiveEventStack, LiveStreamPanel } from "@/components/live-stream-panel"
 import { LogsTable } from "@/components/logs-table"
 import type { LogDoc } from "@/components/logs-table"
@@ -34,7 +35,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { gqlString, graphql } from "@/lib/api"
+import type { StoryBeat } from "@/lib/api"
 import { formatCount, formatDurationNs } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { RunStatusBadge, durationNs } from "@/routes/runs.index"
@@ -80,13 +83,23 @@ interface LiveSpan {
   durationNs: string
 }
 
+type RunDetailTab = "overview" | "story"
+
+interface RunDetailSearch {
+  tab?: RunDetailTab | undefined
+}
+
 export const Route = createFileRoute("/runs/$runId")({
+  validateSearch: (search: Record<string, unknown>): RunDetailSearch => ({
+    tab: search.tab === "story" ? "story" : undefined,
+  }),
   loader: ({ params }) =>
     graphql<{
       run: RunRecordData | null
       tracesByRun: RunTraceSummary[]
       logsByRun: LogDoc[]
       bundle: { markdown: string } | null
+      story: StoryBeat[]
     }>(
       `{ run(runId: "${gqlString(params.runId)}") {
            runId command status exitCode startedAtNanos endedAtNanos
@@ -99,6 +112,9 @@ export const Route = createFileRoute("/runs/$runId")({
          logsByRun(runId: "${gqlString(params.runId)}", limit: 200) {
            tsNanos service severityNum severityText body traceId spanId
            runId scopeName attributes resource
+         }
+         story(runId: "${gqlString(params.runId)}") {
+           tsNanos lane kind title traceId spanId severity durationNs
          }
          bundle(runId: "${gqlString(params.runId)}") { markdown } }`
     ),
@@ -129,8 +145,11 @@ function RunDetailPage() {
     tracesByRun,
     logsByRun,
     bundle,
+    story,
   } = Route.useLoaderData()
   const { runId } = Route.useParams()
+  const search = Route.useSearch()
+  const navigate = useNavigate({ from: Route.fullPath })
   const [live, setLive] = useState(false)
   const [liveLogs, setLiveLogs] = useState<LogDoc[]>([])
   const [liveSpans, setLiveSpans] = useState<LiveSpan[]>([])
@@ -212,6 +231,8 @@ function RunDetailPage() {
       ).then((data) => {
         if (data.run) setPolledRun(data.run)
       })
+      // Live polling tolerates transient API failures; next interval retries.
+      .catch(() => {})
     }, 10_000)
     return () => clearInterval(timer)
   }, [live, runId])
@@ -223,6 +244,16 @@ function RunDetailPage() {
       traces={tracesByRun}
       logs={runLogs}
       bundle={bundle}
+      story={story}
+      activeTab={search.tab === "story" ? "story" : "overview"}
+      onTab={(value) =>
+        navigate({
+          search: (current) => ({
+            ...current,
+            tab: value === "story" ? "story" : undefined,
+          }),
+        })
+      }
       live={live}
       liveLogs={liveLogs}
       liveSpans={liveSpans}
@@ -237,6 +268,9 @@ export function RunDetailContent({
   traces,
   logs,
   bundle,
+  story = [],
+  activeTab = "overview",
+  onTab = () => {},
   live,
   liveLogs,
   liveSpans,
@@ -247,6 +281,9 @@ export function RunDetailContent({
   traces: RunTraceSummary[]
   logs: LogDoc[]
   bundle: { markdown: string } | null
+  story?: StoryBeat[]
+  activeTab?: RunDetailTab
+  onTab?: (value: string) => void
   live: boolean
   liveLogs: LogDoc[]
   liveSpans: LiveSpan[]
@@ -297,72 +334,96 @@ export function RunDetailContent({
 
       {run && row ? <RunStats run={run} row={row} /> : null}
 
-      {live ? (
-        <LiveStreamPanel
-          title="Run observation stream"
-          description="Streaming this run's logs and finished spans while metrics follow now."
-          count={liveLogs.length + liveSpans.length}
-          endpoint={`/v1/*/stream?run_id=${runId}`}
-          active
-        >
-          <LiveEventStack
-            items={[
-              ...liveSpans.map((span) => ({
-                id: `span-${span.spanId}-${span.tsNanos}`,
-                title: span.name,
-                meta: `${formatDurationNs(span.durationNs)} · span · ${span.service}`,
-                status:
-                  span.statusCode === "STATUS_CODE_ERROR"
-                    ? ("error" as const)
-                    : ("ok" as const),
-                detail: `trace ${span.traceId.slice(0, 16)}`,
-              })),
-              ...liveLogs.map((log) => ({
-                id: `log-${log.tsNanos}-${log.spanId}`,
-                title: log.body,
-                meta: `log · ${log.severityText} · ${log.service}`,
-                status:
-                  log.severityNum >= 17 ? ("error" as const) : ("ok" as const),
-                detail: log.traceId,
-              })),
-            ].sort((a, b) => a.id.localeCompare(b.id))}
-          />
-        </LiveStreamPanel>
-      ) : null}
+      <Tabs value={activeTab} onValueChange={onTab}>
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="story">Story</TabsTrigger>
+        </TabsList>
+        <TabsContent value="overview" className="flex flex-col gap-4">
+          {live ? (
+            <LiveStreamPanel
+              title="Run observation stream"
+              description="Streaming this run's logs and finished spans while metrics follow now."
+              count={liveLogs.length + liveSpans.length}
+              endpoint={`/v1/*/stream?run_id=${runId}`}
+              active
+            >
+              <LiveEventStack
+                items={[
+                  ...liveSpans.map((span) => ({
+                    id: `span-${span.spanId}-${span.tsNanos}`,
+                    title: span.name,
+                    meta: `${formatDurationNs(span.durationNs)} · span · ${span.service}`,
+                    status:
+                      span.statusCode === "STATUS_CODE_ERROR"
+                        ? ("error" as const)
+                        : ("ok" as const),
+                    detail: `trace ${span.traceId.slice(0, 16)}`,
+                  })),
+                  ...liveLogs.map((log) => ({
+                    id: `log-${log.tsNanos}-${log.spanId}`,
+                    title: log.body,
+                    meta: `log · ${log.severityText} · ${log.service}`,
+                    status:
+                      log.severityNum >= 17
+                        ? ("error" as const)
+                        : ("ok" as const),
+                    detail: log.traceId,
+                  })),
+                ].sort((a, b) => a.id.localeCompare(b.id))}
+              />
+            </LiveStreamPanel>
+          ) : null}
 
-      {run ? (
-        <MetricStrip
-          title="Process metrics"
-          runId={runId}
-          fromNanos={(BigInt(run.startedAtNanos) - 30_000_000_000n).toString()}
-          toNanos={(
-            (run.endedAtNanos
-              ? BigInt(run.endedAtNanos)
-              : BigInt(Date.now()) * 1_000_000n) + 30_000_000_000n
-          ).toString()}
-          stepSeconds={5}
-          live={live}
-        />
-      ) : null}
+          {run ? (
+            <MetricStrip
+              title="Process metrics"
+              runId={runId}
+              fromNanos={(
+                BigInt(run.startedAtNanos) - 30_000_000_000n
+              ).toString()}
+              toNanos={(
+                (run.endedAtNanos
+                  ? BigInt(run.endedAtNanos)
+                  : BigInt(Date.now()) * 1_000_000n) + 30_000_000_000n
+              ).toString()}
+              stepSeconds={5}
+              live={live}
+            />
+          ) : null}
 
-      {run?.issues.length ? <IssuesCard issues={run.issues} /> : null}
-      {traces.length ? <TracesCard traces={traces} /> : null}
-      {logs.length ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">
-              Logs{" "}
-              <span className="font-normal text-muted-foreground">
-                (newest first{live ? ", streaming" : ""})
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <LogsTable logs={logs} />
-          </CardContent>
-        </Card>
-      ) : null}
-      {bundle ? <BundleCard runId={runId} markdown={bundle.markdown} /> : null}
+          {run?.issues.length ? <IssuesCard issues={run.issues} /> : null}
+          {traces.length ? <TracesCard traces={traces} /> : null}
+          {logs.length ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">
+                  Logs{" "}
+                  <span className="font-normal text-muted-foreground">
+                    (newest first{live ? ", streaming" : ""})
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <LogsTable logs={logs} />
+              </CardContent>
+            </Card>
+          ) : null}
+          {bundle ? (
+            <BundleCard runId={runId} markdown={bundle.markdown} />
+          ) : null}
+        </TabsContent>
+        <TabsContent value="story">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Story</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <StoryTimeline beats={story} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
@@ -445,6 +506,7 @@ function IssuesCard({ issues }: { issues: RunIssue[] }) {
 
 function TracesCard({ traces }: { traces: RunTraceSummary[] }) {
   const durations = traces.map((trace) => Number(trace.durationNs))
+  const scale = useMemo(() => buildHeatScale(durations), [durations])
   return (
     <Card>
       <CardHeader>
@@ -489,7 +551,7 @@ function TracesCard({ traces }: { traces: RunTraceSummary[] }) {
                   <TableCell className="text-right">
                     <HeatCell
                       value={Number(trace.durationNs)}
-                      values={durations}
+                      scale={scale}
                     >
                       {formatDurationNs(trace.durationNs)}
                     </HeatCell>

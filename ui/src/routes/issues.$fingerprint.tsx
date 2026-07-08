@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import {
   Link,
   createFileRoute,
@@ -16,7 +16,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 
 import { CopyButton } from "@/components/console/copy-button"
 import { EmptyState } from "@/components/console/empty-state"
-import { HeatCell } from "@/components/console/heat-cell"
+import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
 import { RangePicker } from "@/components/console/range-picker"
 import { RelativeTime } from "@/components/console/relative-time"
 import { CardSparkline, StatCard } from "@/components/console/stat-card"
@@ -42,7 +42,12 @@ import {
 } from "@/lib/format"
 import { parseStacktrace, structuredFrameCount } from "@/lib/stacktrace"
 import type { Frame } from "@/lib/stacktrace"
-import { rangeSearchSchema, resolveRangeSearch } from "@/lib/range"
+import {
+  mergeRangeSearch,
+  rangeLinkSearch,
+  rangeSearchSchema,
+  resolveRangeSearch,
+} from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
 import { cn } from "@/lib/utils"
 
@@ -84,6 +89,10 @@ export const Route = createFileRoute("/issues/$fingerprint")({
 function rangeHours(range: ResolvedRange): number {
   const ns = BigInt(range.toNanos) - BigInt(range.fromNanos)
   return Math.max(1, Math.ceil(Number(ns / 3_600_000_000_000n)))
+}
+
+function shortRunId(runId: string) {
+  return runId.length > 8 ? `${runId.slice(0, 8)}...` : runId
 }
 
 export async function loadIssueDetail(
@@ -139,7 +148,11 @@ function IssueDetailPage() {
     <IssueDetailContent
       data={data}
       range={range}
-      onRange={(next) => navigate({ search: { range: next.key } })}
+      onRange={(next) =>
+        navigate({
+          search: (current) => mergeRangeSearch(current, next),
+        })
+      }
     />
   )
 }
@@ -168,6 +181,7 @@ export function IssueDetailContent({
   const { issue, issueTrend, resource, breadcrumbs, traceRunId } = data
   const router = useRouter()
   const [mutating, setMutating] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
   const [bucket, setBucket] = useState<string | null>(null)
   const [bucketEvents, setBucketEvents] = useState<IssueEvent[] | null>(null)
   const occurrencesRef = useRef<HTMLDivElement>(null)
@@ -190,38 +204,46 @@ export function IssueDetailContent({
 
   async function setStatus(status: "open" | "resolved") {
     setMutating(true)
+    setActionError(null)
     try {
       await graphql(
         `mutation { issueSetStatus(fingerprint: "${gqlString(currentIssue.fingerprint)}", status: "${status}") { status } }`
       )
       await router.invalidate()
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : String(err))
     } finally {
       setMutating(false)
     }
   }
 
   async function filterBucket(tsNanos: string | null) {
+    setActionError(null)
     setBucket(tsNanos)
     if (!tsNanos) {
       setBucketEvents(null)
       return
     }
-    const from = BigInt(tsNanos)
-    const to = from + 3_600_000_000_000n
-    const { issue: scoped } = await graphql<{
-      issue: { events: IssueEvent[] } | null
-    }>(
-      `{ issue(fingerprint: "${gqlString(currentIssue.fingerprint)}") {
-           events(limit: 50, fromNanos: "${from}", toNanos: "${to}") {
-             tsNanos service message stacktrace source traceId spanId attributes
-           }
-         } }`
-    )
-    setBucketEvents(scoped?.events ?? [])
-    occurrencesRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    })
+    try {
+      const from = BigInt(tsNanos)
+      const to = from + 3_600_000_000_000n
+      const { issue: scoped } = await graphql<{
+        issue: { events: IssueEvent[] } | null
+      }>(
+        `{ issue(fingerprint: "${gqlString(currentIssue.fingerprint)}") {
+             events(limit: 50, fromNanos: "${from}", toNanos: "${to}") {
+               tsNanos service message stacktrace source traceId spanId attributes
+             }
+           } }`
+      )
+      setBucketEvents(scoped?.events ?? [])
+      occurrencesRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      })
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : String(err))
+    }
   }
 
   return (
@@ -251,7 +273,23 @@ export function IssueDetailContent({
       />
 
       <div className="flex flex-wrap items-center gap-2">
-        <Badge variant="outline">{issue.service}</Badge>
+        <Link
+          to="/services/$service"
+          params={{ service: issue.service }}
+          search={rangeLinkSearch(range)}
+          className="inline-flex"
+        >
+          <Badge variant="outline">{issue.service}</Badge>
+        </Link>
+        {traceRunId ? (
+          <Link
+            to="/runs/$runId"
+            params={{ runId: traceRunId }}
+            className="inline-flex"
+          >
+            <Badge variant="secondary">run {shortRunId(traceRunId)}</Badge>
+          </Link>
+        ) : null}
         <Badge variant={issue.status === "open" ? "rose" : "emerald"}>
           {issue.status}
         </Badge>
@@ -262,6 +300,10 @@ export function IssueDetailContent({
           last <RelativeTime nanos={issue.lastSeenNanos} />
         </Badge>
       </div>
+
+      {actionError ? (
+        <p className="text-sm text-destructive">{actionError}</p>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
@@ -635,6 +677,7 @@ function Occurrences({
   range: ResolvedRange
 }) {
   const durations = events.map((event) => Number(event.tsNanos))
+  const scale = useMemo(() => buildHeatScale(durations), [durations])
   return (
     <Card ref={refEl}>
       <CardHeader>
@@ -661,7 +704,7 @@ function Occurrences({
               >
                 <span className="min-w-0 truncate">{event.message}</span>
                 <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
-                  <HeatCell value={Number(event.tsNanos)} values={durations}>
+                  <HeatCell value={Number(event.tsNanos)} scale={scale}>
                     {formatTimeInRange(event.tsNanos, range)}
                   </HeatCell>
                   <Badge variant="outline">{event.service}</Badge>

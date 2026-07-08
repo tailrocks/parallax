@@ -5,11 +5,18 @@
 // in the browser, so SSR/loader calls target the API directly.
 const BASE = typeof window === "undefined" ? "http://127.0.0.1:4000" : ""
 
-export async function graphql<T>(query: string): Promise<T> {
-  const response = await fetch(`${BASE}/graphql`, {
+export async function graphql<T>(
+  query: string,
+  init?: { signal?: AbortSignal }
+): Promise<T> {
+  const requestInit: RequestInit = {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ query }),
+  }
+  if (init?.signal) requestInit.signal = init.signal
+  const response = await fetch(`${BASE}/graphql`, {
+    ...requestInit,
   })
   if (!response.ok) {
     throw new Error(`parallax api unreachable (${response.status})`)
@@ -80,6 +87,77 @@ export interface Span {
   durationNs: string
 }
 
+export interface SpanLink {
+  traceId: string
+  spanId: string
+  attributes: string
+}
+
+export interface CriticalHop {
+  spanId: string
+  selfTimeNs: string
+  gatedByChild: string | null
+  clockSuspect: boolean
+}
+
+export interface CriticalPath {
+  hops: CriticalHop[]
+  totalGatedNs: string
+  unattached: string[]
+}
+
+export interface TraceDiffSpan {
+  spanId: string
+  service: string
+  name: string
+  kind: string
+  statusCode: string
+  durationNs: string
+  depth: number
+  matchKey: string
+}
+
+export interface TraceDiffChange {
+  before: TraceDiffSpan
+  after: TraceDiffSpan
+  durationDeltaNs: string
+  durationDeltaPct: number
+  statusChanged: boolean
+}
+
+export interface TraceDiff {
+  added: TraceDiffSpan[]
+  removed: TraceDiffSpan[]
+  changed: TraceDiffChange[]
+}
+
+export interface StoryBeat {
+  tsNanos: string
+  lane: string
+  kind: string
+  title: string
+  traceId: string
+  spanId: string | null
+  severity: string | null
+  durationNs: string | null
+}
+
+export interface AttributeCompareRow {
+  key: string
+  value: string
+  selectedCount: string
+  selectedTotal: string
+  baselineCount: string
+  baselineTotal: string
+  score: number
+}
+
+export interface EvidenceGap {
+  kind: string
+  subject: string
+  detail: string
+}
+
 export interface LogRecord {
   tsNanos: string
   service: string
@@ -113,4 +191,26 @@ export interface TraceSummary {
   durationNs: string
   spanCount: number
   hasError: boolean
+}
+
+export interface ServiceMapNode {
+  name: string
+  lastSeenNanos: string
+  spanCount: string
+  errorCount: string
+  p95Ms: number | null
+}
+
+export interface ServiceMapEdge {
+  source: string
+  target: string
+  callCount: string
+  errorCount: string
+  p50Ms: number
+  p95Ms: number
+}
+
+export interface ServiceMap {
+  nodes: ServiceMapNode[]
+  edges: ServiceMapEdge[]
 }

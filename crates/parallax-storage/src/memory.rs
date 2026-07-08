@@ -1,8 +1,14 @@
 //! In-memory `TelemetryStore` — the fast test adapter and the engine of the
 //! `--no-greptime` fallback's telemetry side (bounded).
 
-use crate::adapter::{OverviewTotals, ServiceSummary, SignalKind, SpanRed, TelemetryStore};
+use crate::adapter::{
+    ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow, MAX_ROWS,
+    OverviewTotals, SERVICE_MAP_TRACE_CAP, ServiceEdge, ServiceSummary, SignalKind, SpanRed,
+    TelemetryStore, attribute_compare_key_allowed, attribute_compare_score,
+    attribute_compare_value_allowed,
+};
 use crate::model::*;
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::ops::RangeInclusive;
 use std::sync::Mutex;
 
@@ -15,6 +21,32 @@ pub(crate) fn group_value(attributes: &serde_json::Value, key: &str) -> String {
         Some(serde_json::Value::Number(n)) => n.to_string(),
         _ => "(none)".to_string(),
     }
+}
+
+fn scalar_attribute_value(attributes: &serde_json::Value, key: &str) -> Option<String> {
+    let value = match attributes.get(key)? {
+        serde_json::Value::String(value) => value.clone(),
+        serde_json::Value::Bool(value) => value.to_string(),
+        serde_json::Value::Number(value) => value.to_string(),
+        _ => return None,
+    };
+    attribute_compare_value_allowed(&value).then_some(value)
+}
+
+fn span_matches_compare(
+    span: &SpanRow,
+    range: &RangeInclusive<u128>,
+    service: Option<&str>,
+    error_only: bool,
+) -> bool {
+    range.contains(&span.ts_nanos)
+        && service.is_none_or(|svc| span.service == svc)
+        && (!error_only || span.status_code == "STATUS_CODE_ERROR")
+}
+
+fn duration_quantile_ms(durations: &mut [u128], q: f64) -> f64 {
+    durations.sort_unstable();
+    quantile_from_sorted(durations, q) / 1_000_000.0
 }
 
 /// Per-second rate from bucketed counter sums (monotonic resets clamp to 0).
@@ -164,6 +196,55 @@ impl TelemetryStore for MemoryStore {
         Ok(spans)
     }
 
+    async fn traces_by_ids(
+        &self,
+        trace_ids: &[String],
+    ) -> anyhow::Result<Vec<crate::adapter::TraceSummary>> {
+        let mut ids = Vec::new();
+        for trace_id in trace_ids.iter().filter(|trace_id| !trace_id.is_empty()) {
+            if ids.iter().any(|id| id == trace_id) {
+                continue;
+            }
+            ids.push(trace_id.clone());
+            if ids.len() >= MAX_ROWS {
+                break;
+            }
+        }
+        if ids.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let inner = self.lock();
+        let mut summaries = Vec::new();
+        for trace_id in ids {
+            let trace_spans: Vec<&SpanRow> = inner
+                .spans
+                .iter()
+                .filter(|span| span.trace_id == trace_id)
+                .collect();
+            let Some(root) = trace_spans.iter().copied().min_by_key(|span| {
+                (
+                    !span.parent_span_id.as_deref().is_none_or(str::is_empty),
+                    span.ts_nanos,
+                )
+            }) else {
+                continue;
+            };
+            summaries.push(crate::adapter::TraceSummary {
+                trace_id,
+                root_name: root.name.clone(),
+                service: root.service.clone(),
+                start_nanos: root.ts_nanos,
+                duration_ns: root.duration_ns,
+                span_count: trace_spans.len() as u64,
+                has_error: trace_spans
+                    .iter()
+                    .any(|span| span.status_code == "STATUS_CODE_ERROR"),
+            });
+        }
+        Ok(summaries)
+    }
+
     async fn spans_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<SpanRow>> {
         let mut spans: Vec<SpanRow> = self
             .lock()
@@ -172,8 +253,9 @@ impl TelemetryStore for MemoryStore {
             .filter(|s| s.run_id.as_deref() == Some(run_id))
             .cloned()
             .collect();
-        spans.sort_by_key(|s| s.ts_nanos);
+        spans.sort_by_key(|s| std::cmp::Reverse(s.ts_nanos));
         spans.truncate(limit);
+        spans.sort_by_key(|s| s.ts_nanos);
         Ok(spans)
     }
 
@@ -185,8 +267,9 @@ impl TelemetryStore for MemoryStore {
             .filter(|l| l.run_id.as_deref() == Some(run_id))
             .cloned()
             .collect();
-        logs.sort_by_key(|l| l.ts_nanos);
+        logs.sort_by_key(|l| std::cmp::Reverse(l.ts_nanos));
         logs.truncate(limit);
+        logs.sort_by_key(|l| l.ts_nanos);
         Ok(logs)
     }
 
@@ -692,6 +775,184 @@ impl TelemetryStore for MemoryStore {
         Ok(crate::adapter::TraceList { items, total })
     }
 
+    async fn attribute_compare(
+        &self,
+        selected: RangeInclusive<u128>,
+        baseline: RangeInclusive<u128>,
+        service: Option<&str>,
+        error_only: bool,
+        keys: &[String],
+        top_n: usize,
+    ) -> anyhow::Result<Vec<AttributeCompareRow>> {
+        let limit = top_n.min(ATTRIBUTE_COMPARE_TOP_N_CAP);
+        if limit == 0 {
+            return Ok(Vec::new());
+        }
+
+        let spans = self.lock().spans.clone();
+        let candidate_keys: Vec<String> = if keys.is_empty() {
+            let mut discovered = BTreeSet::new();
+            for span in spans.iter().filter(|span| {
+                (span_matches_compare(span, &selected, service, error_only)
+                    || span_matches_compare(span, &baseline, service, error_only))
+                    && span.attributes.is_object()
+            }) {
+                if let Some(attributes) = span.attributes.as_object() {
+                    for key in attributes.keys() {
+                        if attribute_compare_key_allowed(key)
+                            && scalar_attribute_value(&span.attributes, key).is_some()
+                        {
+                            discovered.insert(key.clone());
+                        }
+                    }
+                }
+            }
+            discovered
+                .into_iter()
+                .take(ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT)
+                .collect()
+        } else {
+            keys.iter()
+                .map(|key| key.trim())
+                .filter(|key| attribute_compare_key_allowed(key))
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .take(ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT)
+                .map(str::to_string)
+                .collect()
+        };
+
+        let mut rows = Vec::new();
+        for key in candidate_keys {
+            let mut selected_counts: BTreeMap<String, u64> = BTreeMap::new();
+            let mut baseline_counts: BTreeMap<String, u64> = BTreeMap::new();
+            let mut selected_total = 0;
+            let mut baseline_total = 0;
+
+            for span in &spans {
+                if span_matches_compare(span, &selected, service, error_only)
+                    && let Some(value) = scalar_attribute_value(&span.attributes, &key)
+                {
+                    selected_total += 1;
+                    *selected_counts.entry(value).or_default() += 1;
+                }
+                if span_matches_compare(span, &baseline, service, error_only)
+                    && let Some(value) = scalar_attribute_value(&span.attributes, &key)
+                {
+                    baseline_total += 1;
+                    *baseline_counts.entry(value).or_default() += 1;
+                }
+            }
+
+            for (value, selected_count) in selected_counts {
+                let baseline_count = baseline_counts.get(&value).copied().unwrap_or(0);
+                let score = attribute_compare_score(
+                    selected_count,
+                    selected_total,
+                    baseline_count,
+                    baseline_total,
+                );
+                if score > 0.0 {
+                    rows.push(AttributeCompareRow {
+                        key: key.clone(),
+                        value,
+                        selected_count,
+                        selected_total,
+                        baseline_count,
+                        baseline_total,
+                        score,
+                    });
+                }
+            }
+        }
+
+        rows.sort_by(|a, b| {
+            b.score
+                .total_cmp(&a.score)
+                .then_with(|| b.selected_count.cmp(&a.selected_count))
+                .then_with(|| a.key.cmp(&b.key))
+                .then_with(|| a.value.cmp(&b.value))
+        });
+        rows.truncate(limit);
+        Ok(rows)
+    }
+
+    async fn service_map(
+        &self,
+        range: RangeInclusive<u128>,
+        max_traces: usize,
+    ) -> anyhow::Result<Vec<ServiceEdge>> {
+        let trace_limit = max_traces.min(SERVICE_MAP_TRACE_CAP);
+        if trace_limit == 0 {
+            return Ok(Vec::new());
+        }
+
+        let spans = self.lock().spans.clone();
+        let mut trace_last_seen: BTreeMap<String, u128> = BTreeMap::new();
+        for span in spans.iter().filter(|span| range.contains(&span.ts_nanos)) {
+            trace_last_seen
+                .entry(span.trace_id.clone())
+                .and_modify(|last| *last = (*last).max(span.ts_nanos))
+                .or_insert(span.ts_nanos);
+        }
+        let mut traces: Vec<_> = trace_last_seen.into_iter().collect();
+        traces.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+        let trace_ids: BTreeSet<String> = traces
+            .into_iter()
+            .take(trace_limit)
+            .map(|(trace_id, _)| trace_id)
+            .collect();
+
+        let by_trace_span: HashMap<(String, String), &SpanRow> = spans
+            .iter()
+            .filter(|span| trace_ids.contains(&span.trace_id))
+            .map(|span| ((span.trace_id.clone(), span.span_id.clone()), span))
+            .collect();
+        let mut grouped: BTreeMap<(String, String), (u64, u64, Vec<u128>)> = BTreeMap::new();
+        for span in spans.iter().filter(|span| {
+            trace_ids.contains(&span.trace_id)
+                && range.contains(&span.ts_nanos)
+                && span.kind == "SPAN_KIND_SERVER"
+        }) {
+            let Some(parent_id) = span.parent_span_id.as_deref().filter(|id| !id.is_empty()) else {
+                continue;
+            };
+            let Some(parent) = by_trace_span.get(&(span.trace_id.clone(), parent_id.to_string()))
+            else {
+                continue;
+            };
+            if parent.service == span.service {
+                continue;
+            }
+            let entry = grouped
+                .entry((parent.service.clone(), span.service.clone()))
+                .or_default();
+            entry.0 += 1;
+            if span.status_code == "STATUS_CODE_ERROR" {
+                entry.1 += 1;
+            }
+            entry.2.push(span.duration_ns);
+        }
+
+        Ok(grouped
+            .into_iter()
+            .map(
+                |((source, target), (call_count, error_count, mut durations))| {
+                    let p50_ms = duration_quantile_ms(&mut durations, 0.5);
+                    let p95_ms = duration_quantile_ms(&mut durations, 0.95);
+                    ServiceEdge {
+                        source,
+                        target,
+                        call_count,
+                        error_count,
+                        p50_ms,
+                        p95_ms,
+                    }
+                },
+            )
+            .collect())
+    }
+
     async fn error_events_by_traces(
         &self,
         trace_ids: &[String],
@@ -717,6 +978,7 @@ impl TelemetryStore for MemoryStore {
         service: Option<&str>,
         range: RangeInclusive<u128>,
         severity_min: Option<i32>,
+        severity_max: Option<i32>,
         body_contains: Option<&str>,
         limit: usize,
     ) -> anyhow::Result<Vec<LogRow>> {
@@ -728,6 +990,7 @@ impl TelemetryStore for MemoryStore {
                 range.contains(&l.ts_nanos)
                     && service.is_none_or(|svc| l.service == svc)
                     && severity_min.is_none_or(|min| l.severity_num >= min)
+                    && severity_max.is_none_or(|max| l.severity_num <= max)
                     && body_contains.is_none_or(|needle| l.body.contains(needle))
             })
             .cloned()
@@ -849,6 +1112,7 @@ impl TelemetryStore for MemoryStore {
         service: Option<&str>,
         range: RangeInclusive<u128>,
         severity_min: Option<i32>,
+        severity_max: Option<i32>,
         body_contains: Option<&str>,
         step_nanos: u128,
     ) -> anyhow::Result<Vec<SeriesPoint>> {
@@ -858,6 +1122,7 @@ impl TelemetryStore for MemoryStore {
             range.contains(&l.ts_nanos)
                 && service.is_none_or(|svc| l.service == svc)
                 && severity_min.is_none_or(|min| l.severity_num >= min)
+                && severity_max.is_none_or(|max| l.severity_num <= max)
                 && body_contains.is_none_or(|needle| l.body.contains(needle))
         }) {
             *buckets.entry((log.ts_nanos / step) * step).or_default() += 1;
@@ -926,12 +1191,320 @@ mod tests {
         }
     }
 
+    fn log(run_id: Option<&str>, ts: u128, severity_num: i32) -> LogRow {
+        LogRow {
+            ts_nanos: ts,
+            service: "api".into(),
+            severity_num,
+            severity_text: format!("S{severity_num}"),
+            body: format!("log-{ts}"),
+            trace_id: format!("trace-{ts}"),
+            span_id: format!("span-{ts}"),
+            run_id: run_id.map(Into::into),
+            scope_name: String::new(),
+            attributes: serde_json::Value::Null,
+            resource: serde_json::Value::Null,
+        }
+    }
+
     fn query(service: Option<&str>) -> TraceQuery {
         TraceQuery {
             service: service.map(Into::into),
             limit: 50,
             ..Default::default()
         }
+    }
+
+    fn span_with_attrs(trace: &str, span_id: &str, ts: u128, attrs: serde_json::Value) -> SpanRow {
+        let mut row = span(trace, span_id, None, "checkout", ts);
+        row.attributes = attrs;
+        row
+    }
+
+    #[tokio::test]
+    async fn attribute_compare_ranks_overrepresented_value_first() {
+        let store = MemoryStore::new();
+        let mut spans = Vec::new();
+        for index in 0..20 {
+            let version = if index == 0 { "2.0.0" } else { "1.0.0" };
+            spans.push(span_with_attrs(
+                &format!("baseline-{index}"),
+                "root",
+                index,
+                serde_json::json!({
+                    "service.version": version,
+                    "http.route": "/checkout"
+                }),
+            ));
+        }
+        for index in 0..10 {
+            let version = if index < 9 { "2.0.0" } else { "1.0.0" };
+            spans.push(span_with_attrs(
+                &format!("selected-{index}"),
+                "root",
+                100 + index,
+                serde_json::json!({
+                    "service.version": version,
+                    "http.route": "/checkout"
+                }),
+            ));
+        }
+        store
+            .ingest_traces(spans, bytes::Bytes::new())
+            .await
+            .unwrap();
+
+        let rows = store
+            .attribute_compare(100..=200, 0..=99, Some("checkout"), false, &[], 10)
+            .await
+            .unwrap();
+
+        let first = rows.first().expect("overrepresented value");
+        assert_eq!(first.key, "service.version");
+        assert_eq!(first.value, "2.0.0");
+        assert_eq!(first.selected_count, 9);
+        assert_eq!(first.selected_total, 10);
+        assert_eq!(first.baseline_count, 1);
+        assert_eq!(first.baseline_total, 20);
+        assert!(first.score > 0.8, "{first:?}");
+    }
+
+    #[tokio::test]
+    async fn attribute_compare_denies_identifier_keys() {
+        let store = MemoryStore::new();
+        store
+            .ingest_traces(
+                vec![
+                    span_with_attrs(
+                        "baseline",
+                        "root",
+                        1,
+                        serde_json::json!({
+                            "service.version": "1.0.0",
+                            "trace_id": "trace-baseline",
+                            "run_id": "run-baseline",
+                            "session.id": "session-baseline",
+                            "user.id": "user-baseline"
+                        }),
+                    ),
+                    span_with_attrs(
+                        "selected",
+                        "root",
+                        100,
+                        serde_json::json!({
+                            "service.version": "2.0.0",
+                            "trace_id": "trace-selected",
+                            "run_id": "run-selected",
+                            "session.id": "session-selected",
+                            "user.id": "user-selected"
+                        }),
+                    ),
+                ],
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+        let keys = vec![
+            "trace_id".to_string(),
+            "run_id".to_string(),
+            "session.id".to_string(),
+            "user.id".to_string(),
+            "service.version".to_string(),
+        ];
+
+        let rows = store
+            .attribute_compare(100..=200, 0..=99, None, false, &keys, 10)
+            .await
+            .unwrap();
+
+        assert!(rows.iter().all(|row| {
+            !matches!(
+                row.key.as_str(),
+                "trace_id" | "run_id" | "session.id" | "user.id"
+            )
+        }));
+        assert!(rows.iter().any(|row| row.key == "service.version"));
+    }
+
+    #[tokio::test]
+    async fn attribute_compare_is_deterministic() {
+        let store = MemoryStore::new();
+        store
+            .ingest_traces(
+                vec![
+                    span_with_attrs(
+                        "baseline-a",
+                        "root",
+                        1,
+                        serde_json::json!({"service.version": "1.0.0"}),
+                    ),
+                    span_with_attrs(
+                        "selected-a",
+                        "root",
+                        100,
+                        serde_json::json!({"service.version": "2.0.0"}),
+                    ),
+                ],
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+
+        let first = store
+            .attribute_compare(100..=200, 0..=99, None, false, &[], 10)
+            .await
+            .unwrap();
+        let second = store
+            .attribute_compare(100..=200, 0..=99, None, false, &[], 10)
+            .await
+            .unwrap();
+
+        assert_eq!(first, second);
+    }
+
+    #[tokio::test]
+    async fn service_map_derives_trace_path_edges() {
+        let store = MemoryStore::new();
+        let mut a_client = span("trace-ab", "a-client", None, "A", 100);
+        a_client.kind = "SPAN_KIND_CLIENT".into();
+        let mut b_server = span("trace-ab", "b-server", Some("a-client"), "B", 101);
+        b_server.kind = "SPAN_KIND_SERVER".into();
+        b_server.status_code = "STATUS_CODE_ERROR".into();
+        b_server.duration_ns = 20_000_000;
+        let mut b_client = span("trace-bc", "b-client", None, "B", 110);
+        b_client.kind = "SPAN_KIND_CLIENT".into();
+        let mut c_server = span("trace-bc", "c-server", Some("b-client"), "C", 111);
+        c_server.kind = "SPAN_KIND_SERVER".into();
+        c_server.duration_ns = 30_000_000;
+        let mut outside_client = span("trace-out", "a-client", None, "A", 1_000);
+        outside_client.kind = "SPAN_KIND_CLIENT".into();
+        let mut outside_server = span("trace-out", "d-server", Some("a-client"), "D", 1_001);
+        outside_server.kind = "SPAN_KIND_SERVER".into();
+        store
+            .ingest_traces(
+                vec![
+                    a_client,
+                    b_server,
+                    b_client,
+                    c_server,
+                    outside_client,
+                    outside_server,
+                ],
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+
+        let edges = store.service_map(0..=200, 100).await.unwrap();
+
+        let edge_ab = edges
+            .iter()
+            .find(|edge| edge.source == "A" && edge.target == "B")
+            .expect("A -> B edge");
+        assert_eq!(edge_ab.call_count, 1);
+        assert_eq!(edge_ab.error_count, 1);
+        assert_eq!(edge_ab.p50_ms, 20.0);
+        assert!(
+            edges
+                .iter()
+                .any(|edge| edge.source == "B" && edge.target == "C")
+        );
+        assert!(!edges.iter().any(|edge| edge.target == "D"));
+    }
+
+    #[tokio::test]
+    async fn service_map_is_deterministic_and_trace_bounded() {
+        let store = MemoryStore::new();
+        let mut a_client = span("trace-ab", "a-client", None, "A", 100);
+        a_client.kind = "SPAN_KIND_CLIENT".into();
+        let mut b_server = span("trace-ab", "b-server", Some("a-client"), "B", 101);
+        b_server.kind = "SPAN_KIND_SERVER".into();
+        let mut b_client = span("trace-bc", "b-client", None, "B", 110);
+        b_client.kind = "SPAN_KIND_CLIENT".into();
+        let mut c_server = span("trace-bc", "c-server", Some("b-client"), "C", 111);
+        c_server.kind = "SPAN_KIND_SERVER".into();
+        store
+            .ingest_traces(
+                vec![a_client, b_server, b_client, c_server],
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+
+        let first = store.service_map(0..=200, 100).await.unwrap();
+        let second = store.service_map(0..=200, 100).await.unwrap();
+        let bounded = store.service_map(0..=200, 1).await.unwrap();
+
+        assert_eq!(first, second);
+        assert_eq!(bounded.len(), 1);
+        assert_eq!(bounded[0].source, "B");
+        assert_eq!(bounded[0].target, "C");
+    }
+
+    #[tokio::test]
+    async fn run_anchored_reads_keep_newest_limit_in_ascending_order() {
+        let store = MemoryStore::new();
+        let mut spans = Vec::new();
+        let mut logs = Vec::new();
+        for index in 0..250u128 {
+            let mut span = span(
+                &format!("trace-{index}"),
+                &format!("span-{index}"),
+                None,
+                "api",
+                index,
+            );
+            span.run_id = Some("run-1".into());
+            spans.push(span);
+            logs.push(log(Some("run-1"), index, 9));
+        }
+        store
+            .ingest_traces(spans, bytes::Bytes::new())
+            .await
+            .unwrap();
+        store.ingest_logs(logs, bytes::Bytes::new()).await.unwrap();
+
+        let spans = store.spans_by_run("run-1", 200).await.unwrap();
+        let logs = store.logs_by_run("run-1", 200).await.unwrap();
+
+        assert_eq!(spans.len(), 200);
+        assert_eq!(logs.len(), 200);
+        assert_eq!(spans.first().map(|span| span.ts_nanos), Some(50));
+        assert_eq!(logs.first().map(|log| log.ts_nanos), Some(50));
+        assert_eq!(spans.last().map(|span| span.ts_nanos), Some(249));
+        assert_eq!(logs.last().map(|log| log.ts_nanos), Some(249));
+    }
+
+    #[tokio::test]
+    async fn log_severity_max_bounds_search_and_count_series() {
+        let store = MemoryStore::new();
+        store
+            .ingest_logs(
+                vec![
+                    log(None, 5, 5),
+                    log(None, 9, 9),
+                    log(None, 13, 13),
+                    log(None, 17, 17),
+                ],
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+
+        let logs = store
+            .logs_search(None, 0..=100, Some(5), Some(8), None, 10)
+            .await
+            .unwrap();
+        let series = store
+            .log_count_series(None, 0..=100, Some(5), Some(8), None, 1)
+            .await
+            .unwrap();
+
+        assert_eq!(
+            logs.iter().map(|log| log.severity_num).collect::<Vec<_>>(),
+            vec![5]
+        );
+        assert_eq!(series.iter().map(|point| point.value).sum::<f64>(), 1.0);
     }
 
     // A non-root span of a participating service surfaces the whole trace,
@@ -989,6 +1562,49 @@ mod tests {
             "earliest span represents a rootless trace"
         );
         assert_eq!(traces[0].span_count, 2);
+    }
+
+    #[tokio::test]
+    async fn traces_by_ids_preserves_requested_order_and_summarizes_targets() {
+        let store = MemoryStore::new();
+        let mut target_b = span("target-b", "root-b", None, "worker", 20);
+        target_b.name = "consume-b".into();
+        target_b.status_code = "STATUS_CODE_ERROR".into();
+        let mut target_a = span("target-a", "root-a", None, "api", 10);
+        target_a.name = "consume-a".into();
+        store
+            .ingest_traces(
+                vec![
+                    target_a,
+                    span("target-a", "child-a", Some("root-a"), "api", 12),
+                    target_b,
+                ],
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+
+        let summaries = store
+            .traces_by_ids(&[
+                "target-b".to_string(),
+                "missing".to_string(),
+                "target-a".to_string(),
+                "target-b".to_string(),
+            ])
+            .await
+            .unwrap();
+
+        assert_eq!(
+            summaries
+                .iter()
+                .map(|summary| summary.trace_id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["target-b", "target-a"]
+        );
+        assert_eq!(summaries[0].service, "worker");
+        assert_eq!(summaries[0].root_name, "consume-b");
+        assert!(summaries[0].has_error);
+        assert_eq!(summaries[1].span_count, 2);
     }
 
     #[tokio::test]

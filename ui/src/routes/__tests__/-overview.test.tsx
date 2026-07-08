@@ -176,6 +176,14 @@ describe("Overview route", () => {
     expect(screen.getByText("Error rate")).toBeTruthy()
     expect(screen.getByText("p95 latency")).toBeTruthy()
 
+    const hrefs = screen
+      .getAllByRole("link")
+      .map((link) => link.getAttribute("href"))
+    expect(hrefs).toContain("/traces?range=24h")
+    expect(hrefs).toContain("/logs?range=24h")
+    expect(hrefs).toContain("/issues?status=open&range=24h")
+    expect(hrefs).toContain("/traces?sort=DURATION_DESC&range=24h")
+
     const invertedDelta = rendered.container.querySelector(
       "[data-slot='badge'][class*='emerald']"
     )

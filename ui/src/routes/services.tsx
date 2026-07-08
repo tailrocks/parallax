@@ -5,10 +5,11 @@ import {
   useRouterState,
 } from "@tanstack/react-router"
 import { IconServer, IconTerminal2 } from "@tabler/icons-react"
+import { useMemo } from "react"
 import { z } from "zod"
 
 import { EmptyState } from "@/components/console/empty-state"
-import { HeatCell } from "@/components/console/heat-cell"
+import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
 import { useDelayedLoading } from "@/components/console/hooks"
 import { RangePicker } from "@/components/console/range-picker"
 import { RelativeTime } from "@/components/console/relative-time"
@@ -30,7 +31,12 @@ import {
 } from "@/components/ui/table"
 import { graphql } from "@/lib/api"
 import { formatCount, formatDurationNs, formatPercent } from "@/lib/format"
-import { rangeSearchSchema, resolveRangeSearch } from "@/lib/range"
+import {
+  rangeLinkSearch,
+  rangeSearchSchema,
+  resolveRangeSearch,
+  updateRangeSearch,
+} from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
 import { cn } from "@/lib/utils"
 
@@ -216,6 +222,11 @@ export function ServicesIndexContent({
     .map((row) => row.p95Ms)
     .filter((value): value is number => Number.isFinite(value))
   const errorRates = rows.map(serviceErrorRate)
+  const p95Scale = useMemo(() => buildHeatScale(p95Values), [p95Values])
+  const errorRateScale = useMemo(
+    () => buildHeatScale(errorRates),
+    [errorRates]
+  )
 
   return (
     <div className="space-y-4">
@@ -227,9 +238,7 @@ export function ServicesIndexContent({
         actions={
           <RangePicker
             value={range}
-            onChange={(next) =>
-              onSearch({ range: next.key, from: undefined, to: undefined })
-            }
+            onChange={(next) => onSearch(updateRangeSearch(next))}
           />
         }
       />
@@ -328,7 +337,7 @@ export function ServicesIndexContent({
                       <Link
                         to="/services/$service"
                         params={{ service: row.name }}
-                        search={{ range: range.key }}
+                        search={rangeLinkSearch(range)}
                         className="flex min-w-0 items-center gap-2 font-medium"
                       >
                         <ServiceDot errored={errors > 0} />
@@ -338,7 +347,7 @@ export function ServicesIndexContent({
                     <TableCell className="text-right tabular-nums">
                       <Link
                         to="/traces"
-                        search={{ service: row.name }}
+                        search={{ service: row.name, ...rangeLinkSearch(range) }}
                         className="hover:underline"
                       >
                         {formatCount(Number(row.spanCount))}
@@ -354,14 +363,18 @@ export function ServicesIndexContent({
                     >
                       <Link
                         to="/traces"
-                        search={{ service: row.name, errors: true }}
+                        search={{
+                          service: row.name,
+                          errors: true,
+                          ...rangeLinkSearch(range),
+                        }}
                         className="hover:underline"
                       >
                         {formatCount(errors)}
                       </Link>
                     </TableCell>
                     <TableCell className="text-right">
-                      <HeatCell value={rate} values={errorRates}>
+                      <HeatCell value={rate} scale={errorRateScale}>
                         {formatPercent(rate)}
                       </HeatCell>
                     </TableCell>
@@ -369,7 +382,7 @@ export function ServicesIndexContent({
                       {row.p95Ms == null ? (
                         <span className="text-muted-foreground">-</span>
                       ) : (
-                        <HeatCell value={row.p95Ms} values={p95Values}>
+                        <HeatCell value={row.p95Ms} scale={p95Scale}>
                           {formatDurationNs(row.p95Ms * 1_000_000)}
                         </HeatCell>
                       )}

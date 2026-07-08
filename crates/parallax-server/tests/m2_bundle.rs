@@ -6,6 +6,8 @@ use opentelemetry::logs::{AnyValue, LogRecord as _, Logger as _, LoggerProvider 
 use opentelemetry::trace::{Span as _, SpanContext, Status, Tracer as _, TracerProvider as _};
 use opentelemetry_otlp::WithExportConfig;
 use parallax_server::Config;
+use parallax_storage::metadata::IssueOccurrence;
+use parallax_storage::model::{ErrorEventRow, ErrorSource};
 use std::time::Duration;
 
 fn test_config(data_dir: &std::path::Path) -> Config {
@@ -16,6 +18,62 @@ fn test_config(data_dir: &std::path::Path) -> Config {
     config.storage.mode = "none".to_string();
     config.storage.data_dir = data_dir.to_string_lossy().into_owned();
     config
+}
+
+async fn seed_issue(
+    handle: &parallax_server::ServerHandle,
+    fingerprint: &str,
+    title: &str,
+    message: &str,
+    culprit: Option<&str>,
+) {
+    let attrs = serde_json::Value::Null;
+    handle
+        .store
+        .write_error_events(vec![ErrorEventRow {
+            ts_nanos: 1_000,
+            service: "api".into(),
+            fingerprint: fingerprint.into(),
+            error_type: "test::Secret".into(),
+            message: message.into(),
+            stacktrace: None,
+            source: ErrorSource::LogRecord,
+            trace_id: format!("trace-{fingerprint}"),
+            span_id: format!("span-{fingerprint}"),
+            attributes: serde_json::Value::Null,
+        }])
+        .await
+        .expect("seed error event");
+    handle
+        .metadata
+        .upsert_issue_occurrence(&IssueOccurrence {
+            fingerprint,
+            title: title.to_string(),
+            error_type: "test::Secret",
+            culprit: culprit.map(str::to_string),
+            service: "api",
+            ts_nanos: 1_000,
+            trace_id: Some("trace-secret"),
+            attributes: &attrs,
+        })
+        .await
+        .expect("seed issue");
+}
+
+async fn graphql(
+    client: &reqwest::Client,
+    api_addr: std::net::SocketAddr,
+    query: String,
+) -> serde_json::Value {
+    client
+        .post(format!("http://{api_addr}/graphql"))
+        .json(&serde_json::json!({ "query": query }))
+        .send()
+        .await
+        .expect("graphql request")
+        .json()
+        .await
+        .expect("graphql json")
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -38,6 +96,10 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
     let tracer = tracer_provider.tracer("m2-bundle");
     let mut span = tracer.start("payment.authorize");
     let span_context: SpanContext = span.span_context().clone();
+    span.set_attribute(KeyValue::new(
+        "db.query.text",
+        "select * from postgres://admin:s3cr3t@db:5432/app",
+    ));
     span.add_event(
         "exception",
         vec![
@@ -158,6 +220,10 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
             !projection.contains("AKIAIOSFODNN7EXAMPLE"),
             "aws canary leaked"
         );
+        assert!(!projection.contains("s3cr3t"), "dsn userinfo leaked");
+        assert!(projection.contains("[REDACTED:dsn_userinfo]"));
+        assert!(projection.contains("postgres://"));
+        assert!(projection.contains("@db:5432"));
     }
     assert!(
         json.contains("REDACTED"),
@@ -180,6 +246,29 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
         "hypotheses section present"
     );
     assert!(hash.starts_with("sha256:"));
+
+    let mut budget_hashes = Vec::new();
+    for max_tokens in [2_000, 8_000] {
+        let response: serde_json::Value = client
+            .post(format!("http://{}/graphql", handle.api_addr))
+            .json(&serde_json::json!({"query": format!(
+                r#"{{ bundle(fingerprint: "{fingerprint}", maxTokens: {max_tokens}) {{ canonicalHash }} }}"#
+            )}))
+            .send()
+            .await
+            .expect("budget hash request")
+            .json()
+            .await
+            .expect("budget hash json");
+        budget_hashes.push(
+            response
+                .pointer("/data/bundle/canonicalHash")
+                .and_then(|v| v.as_str())
+                .expect("budget hash")
+                .to_string(),
+        );
+    }
+    assert_eq!(budget_hashes[0], budget_hashes[1]);
 
     // Correlation: the same-window process gauge appears as a metric window
     // (poll — the metric batch may land just after the issue).
@@ -250,6 +339,111 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
         estimated <= 700,
         "bounded bundle near budget, got {estimated}"
     );
+
+    handle.shutdown();
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn bundle_redacts_issue_title_culprit_and_run_command() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let handle = parallax_server::start(&test_config(tmp.path()))
+        .await
+        .expect("server starts");
+    let client = reqwest::Client::new();
+
+    seed_issue(
+        &handle,
+        "fp-bearer",
+        "auth failed with Bearer abcdef123456",
+        "message without token",
+        Some("handler at /tmp/Bearer abcdef123456.rs:1"),
+    )
+    .await;
+    let response = graphql(
+        &client,
+        handle.api_addr,
+        r#"{ bundle(fingerprint: "fp-bearer") { json markdown } }"#.to_string(),
+    )
+    .await;
+    let json = response
+        .pointer("/data/bundle/json")
+        .and_then(|v| v.as_str())
+        .expect("bundle json");
+    let markdown = response
+        .pointer("/data/bundle/markdown")
+        .and_then(|v| v.as_str())
+        .expect("bundle markdown");
+    for projection in [json, markdown] {
+        assert!(!projection.contains("abcdef123456"), "bearer leaked");
+        assert!(projection.contains("[REDACTED:bearer_token]"));
+    }
+
+    seed_issue(
+        &handle,
+        "fp-password",
+        "login failed password=hunter2",
+        "login failed password=hunter2",
+        None,
+    )
+    .await;
+    let response = graphql(
+        &client,
+        handle.api_addr,
+        r#"{ bundle(fingerprint: "fp-password") { json markdown } }"#.to_string(),
+    )
+    .await;
+    let json = response
+        .pointer("/data/bundle/json")
+        .and_then(|v| v.as_str())
+        .expect("bundle json");
+    let markdown = response
+        .pointer("/data/bundle/markdown")
+        .and_then(|v| v.as_str())
+        .expect("bundle markdown");
+    let parsed: serde_json::Value = serde_json::from_str(json).expect("bundle parses");
+    assert!(!json.contains("hunter2"), "password leaked in json");
+    assert!(!markdown.contains("hunter2"), "password leaked in markdown");
+    assert_eq!(
+        parsed.pointer("/issue/title").and_then(|v| v.as_str()),
+        Some("login failed [REDACTED:password_assignment]")
+    );
+    assert_eq!(
+        parsed
+            .pointer("/latest_event/message")
+            .and_then(|v| v.as_str()),
+        Some("login failed [REDACTED:password_assignment]")
+    );
+
+    handle
+        .metadata
+        .start_run(
+            "run-secret",
+            Some("deploy --token=Bearer SECRETVALUE123"),
+            2_000,
+        )
+        .await
+        .expect("seed run");
+    let response = graphql(
+        &client,
+        handle.api_addr,
+        r#"{ bundle(runId: "run-secret") { json markdown } }"#.to_string(),
+    )
+    .await;
+    let json = response
+        .pointer("/data/bundle/json")
+        .and_then(|v| v.as_str())
+        .expect("bundle json");
+    let markdown = response
+        .pointer("/data/bundle/markdown")
+        .and_then(|v| v.as_str())
+        .expect("bundle markdown");
+    assert!(!json.contains("SECRETVALUE123"), "command leaked in json");
+    assert!(
+        !markdown.contains("SECRETVALUE123"),
+        "command leaked in markdown"
+    );
+    assert!(json.contains("[REDACTED:bearer_token]"));
+    assert!(markdown.contains("[REDACTED:bearer_token]"));
 
     handle.shutdown();
 }

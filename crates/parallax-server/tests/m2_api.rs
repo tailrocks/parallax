@@ -252,6 +252,8 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
         &client,
         handle.api_addr,
         r#"{ logs(query: "failing request") { body severityText }
+             infoOnly: logs(query: "failing request", severityMin: 9, severityMax: 9) { body }
+             debugOnly: logs(query: "failing request", severityMin: 5, severityMax: 8) { body }
              nothing: logs(query: "no-such-needle") { body } }"#,
     )
     .await;
@@ -268,6 +270,49 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
             .and_then(|v| v.as_array())
             .map(Vec::len),
         Some(0)
+    );
+    assert_eq!(
+        response
+            .pointer("/data/infoOnly/0/body")
+            .and_then(|v| v.as_str()),
+        Some("inside the failing request"),
+        "severityMax keeps the INFO row in range: {response}"
+    );
+    assert_eq!(
+        response
+            .pointer("/data/debugOnly")
+            .and_then(|v| v.as_array())
+            .map(Vec::len),
+        Some(0),
+        "severityMax excludes rows above DEBUG: {response}"
+    );
+    let response = graphql(
+        &client,
+        handle.api_addr,
+        r#"{ infoSeries: logCountSeries(fromNanos: "0", toNanos: "9223372036854775807",
+                                        severityMin: 9, severityMax: 9) { value }
+             debugSeries: logCountSeries(fromNanos: "0", toNanos: "9223372036854775807",
+                                         severityMin: 5, severityMax: 8) { value } }"#,
+    )
+    .await;
+    let info_total = response
+        .pointer("/data/infoSeries")
+        .and_then(|v| v.as_array())
+        .into_iter()
+        .flatten()
+        .filter_map(|point| point["value"].as_f64())
+        .sum::<f64>();
+    let debug_total = response
+        .pointer("/data/debugSeries")
+        .and_then(|v| v.as_array())
+        .into_iter()
+        .flatten()
+        .filter_map(|point| point["value"].as_f64())
+        .sum::<f64>();
+    assert_eq!(info_total, 1.0, "severityMax keeps INFO count: {response}");
+    assert_eq!(
+        debug_total, 0.0,
+        "severityMax excludes INFO count: {response}"
     );
 
     // serviceOverview answers with graceful absence (no well-known metrics
