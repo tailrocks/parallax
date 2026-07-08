@@ -26,6 +26,7 @@ import { buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { graphql, gqlString } from "@/lib/api"
+import type { SpanLink, TraceSummary } from "@/lib/api"
 import { formatDateTime, formatDurationNs } from "@/lib/format"
 import { computeWindow } from "@/lib/trace-tree"
 import { cn } from "@/lib/utils"
@@ -35,6 +36,7 @@ interface TraceSpan extends WaterfallSpan {
   traceId: string
   runId: string | null
   links: string
+  typedLinks: SpanLink[]
   events: string
   attributes: string
   resource: string
@@ -52,12 +54,6 @@ type JsonRecord = Record<string, unknown>
 type KeyValues = Array<[string, ReactNode]>
 type StringKeyValues = Array<[string, string]>
 
-interface SpanLink {
-  traceId: string
-  spanId?: string
-  attributes?: JsonRecord
-}
-
 interface SpanEvent {
   name: string
   timeUnixNano?: string
@@ -70,10 +66,15 @@ export const Route = createFileRoute("/traces/$traceId")({
     return graphql<{
       trace: { spans: TraceSpan[] } | null
       logsByTrace: TraceLog[]
+      linkedTraces: TraceSummary[]
     }>(
       `{ trace(traceId: "${traceId}") {
            spans { tsNanos service traceId name kind statusCode statusMessage durationNs
-                   spanId parentSpanId runId links events attributes resource }
+                   spanId parentSpanId runId links typedLinks { traceId spanId attributes }
+                   events attributes resource }
+         }
+         linkedTraces(traceId: "${traceId}") {
+           traceId rootName service startNanos durationNs spanCount hasError
          }
          logsByTrace(traceId: "${traceId}") { tsNanos service severityText body spanId } }`
     )
@@ -101,20 +102,6 @@ function parseKeyValues(json: string): StringKeyValues {
     ])
 }
 
-function parseLinks(json: string): SpanLink[] {
-  try {
-    const value: unknown = JSON.parse(json)
-    return Array.isArray(value)
-      ? value.filter(
-          (link): link is SpanLink =>
-            !!link && typeof link === "object" && "traceId" in link
-        )
-      : []
-  } catch {
-    return []
-  }
-}
-
 function parseEvents(json: string): SpanEvent[] {
   try {
     const value: unknown = JSON.parse(json)
@@ -134,7 +121,7 @@ function valueFor(entries: StringKeyValues, key: string): string | null {
 }
 
 function TracePage() {
-  const { trace, logsByTrace } = Route.useLoaderData()
+  const { trace, logsByTrace, linkedTraces } = Route.useLoaderData()
   const { traceId } = Route.useParams()
   const [selectedId, setSelectedId] = useState<string | null>(WHOLE_TRACE_ID)
   const orderedLogs = useMemo(
@@ -143,6 +130,11 @@ function TracePage() {
         BigInt(a.tsNanos) < BigInt(b.tsNanos) ? 1 : -1
       ),
     [logsByTrace]
+  )
+  const linkedTraceById = useMemo(
+    () =>
+      new Map(linkedTraces.map((traceSummary) => [traceSummary.traceId, traceSummary])),
+    [linkedTraces]
   )
 
   if (!trace || trace.spans.length === 0) {
@@ -168,7 +160,7 @@ function TracePage() {
   const failedSpans = spans.filter(
     (span) => span.statusCode === "STATUS_CODE_ERROR"
   )
-  const spanLinks = spans.flatMap((span) => parseLinks(span.links))
+  const spanLinks = spans.flatMap((span) => span.typedLinks)
   const spanEvents = spans.flatMap((span) => parseEvents(span.events))
   const selectedSpan =
     selectedId && selectedId !== WHOLE_TRACE_ID
@@ -291,6 +283,7 @@ function TracePage() {
           traceId={traceId}
           spans={spans}
           selectedSpan={selectedSpan}
+          linkedTraceById={linkedTraceById}
           logs={orderedLogs}
           onSelectSpan={setSelectedId}
         />
@@ -388,16 +381,81 @@ function TraceLogRow({
   )
 }
 
+export function LinkedTraceEdges({
+  links,
+  linkedTraceById,
+}: {
+  links: SpanLink[]
+  linkedTraceById: ReadonlyMap<string, TraceSummary>
+}) {
+  return (
+    <ul className="space-y-2">
+      {links.map((link) => {
+        const target = linkedTraceById.get(link.traceId)
+        return (
+          <li key={`${link.traceId}-${link.spanId}`}>
+            <Link
+              to="/traces/$traceId"
+              params={{ traceId: link.traceId }}
+              className="block rounded-lg border border-border/70 bg-background/60 p-2 hover:bg-muted/60"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Badge variant="outline">
+                      {target?.service ?? "unknown service"}
+                    </Badge>
+                    {target?.hasError ? (
+                      <Badge variant="rose">error</Badge>
+                    ) : null}
+                  </div>
+                  <p className="mt-1 font-medium break-words">
+                    {target?.rootName ?? "Unresolved linked trace"}
+                  </p>
+                </div>
+                <IconExternalLink className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2 font-mono text-[11px] text-muted-foreground">
+                <span>{link.traceId}</span>
+                {target ? (
+                  <>
+                    <span>{target.spanCount.toLocaleString()} spans</span>
+                    <span>{formatDurationNs(target.durationNs)}</span>
+                  </>
+                ) : null}
+              </div>
+            </Link>
+            <dl className="mt-1 grid gap-1 pl-2 font-mono text-[11px] text-muted-foreground">
+              <div className="flex gap-2">
+                <dt>span</dt>
+                <dd>{link.spanId || "-"}</dd>
+              </div>
+              {link.attributes && link.attributes !== "{}" ? (
+                <div className="flex gap-2">
+                  <dt>attributes</dt>
+                  <dd className="break-all">{link.attributes}</dd>
+                </div>
+              ) : null}
+            </dl>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
 function TraceInspector({
   traceId,
   spans,
   selectedSpan,
+  linkedTraceById,
   logs,
   onSelectSpan,
 }: {
   traceId: string
   spans: TraceSpan[]
   selectedSpan: TraceSpan | null
+  linkedTraceById: ReadonlyMap<string, TraceSummary>
   logs: TraceLog[]
   onSelectSpan: (spanId: string) => void
 }) {
@@ -445,7 +503,7 @@ function TraceInspector({
 
   const attributes = parseKeyValues(selectedSpan.attributes)
   const resource = parseKeyValues(selectedSpan.resource)
-  const links = parseLinks(selectedSpan.links)
+  const links = selectedSpan.typedLinks
   const events = parseEvents(selectedSpan.events)
   const spanLogs = logs.filter((log) => log.spanId === selectedSpan.spanId)
   const dbQuery = valueFor(attributes, "db.query.text")
@@ -563,19 +621,15 @@ function TraceInspector({
 
         {links.length > 0 ? (
           <InspectorSection title={`Links (${links.length})`}>
-            <ul className="space-y-1 font-mono">
-              {links.map((link) => (
-                <li key={`${link.traceId}-${link.spanId ?? ""}`}>
-                  <Link
-                    to="/traces/$traceId"
-                    params={{ traceId: link.traceId }}
-                    className="underline underline-offset-4"
-                  >
-                    {link.traceId}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <LinkedTraceEdges links={links} linkedTraceById={linkedTraceById} />
+            <details className="mt-2 rounded-lg border border-border/70 bg-background/60 p-2">
+              <summary className="cursor-pointer text-muted-foreground">
+                Raw links JSON
+              </summary>
+              <pre className="mt-2 overflow-x-auto font-mono text-[11px] whitespace-pre-wrap">
+                {selectedSpan.links}
+              </pre>
+            </details>
           </InspectorSection>
         ) : null}
 

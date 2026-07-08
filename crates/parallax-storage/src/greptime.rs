@@ -1,7 +1,9 @@
 //! GreptimeDB `TelemetryStore` adapter: SQL over the HTTP API, DDL from the
 //! implementation spec §5. All engine-specific SQL lives in this module.
 
-use crate::adapter::{OverviewTotals, ServiceSummary, SignalKind, SpanRed, TelemetryStore};
+use crate::adapter::{
+    MAX_ROWS, OverviewTotals, ServiceSummary, SignalKind, SpanRed, TelemetryStore,
+};
 use crate::model::*;
 use std::ops::RangeInclusive;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -695,6 +697,78 @@ impl TelemetryStore for GreptimeStore {
             "",
         )
         .await
+    }
+
+    async fn traces_by_ids(
+        &self,
+        trace_ids: &[String],
+    ) -> anyhow::Result<Vec<crate::adapter::TraceSummary>> {
+        let mut ids = Vec::new();
+        for trace_id in trace_ids.iter().filter(|trace_id| !trace_id.is_empty()) {
+            if ids.iter().any(|id| id == trace_id) {
+                continue;
+            }
+            ids.push(trace_id.clone());
+            if ids.len() >= MAX_ROWS {
+                break;
+            }
+        }
+        if ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let id_list = ids
+            .iter()
+            .map(|trace_id| format!("'{}'", escape(trace_id)))
+            .collect::<Vec<_>>()
+            .join(",");
+        let rows = self
+            .sql_lenient(&format!(
+                r#"SELECT "root"."trace_id", "root"."span_name", "root"."service_name",
+                          "root"."ts_nanos", "root"."dur", "agg"."span_count",
+                          "agg"."has_error"
+                   FROM (
+                     SELECT "trace_id", "span_name", "service_name",
+                            CAST("timestamp" AS BIGINT) AS "ts_nanos",
+                            CAST("duration_nano" AS BIGINT) AS "dur",
+                            ROW_NUMBER() OVER (
+                              PARTITION BY "trace_id"
+                              ORDER BY (CASE WHEN "parent_span_id" IS NULL OR "parent_span_id" = ''
+                                             THEN 0 ELSE 1 END) ASC,
+                                       "timestamp" ASC
+                            ) AS "rn"
+                     FROM opentelemetry_traces
+                     WHERE "trace_id" IN ({id_list})
+                   ) AS "root"
+                   JOIN (
+                     SELECT "trace_id", COUNT(*) AS "span_count",
+                            MAX(CASE WHEN "span_status_code" = 'STATUS_CODE_ERROR' THEN 1 ELSE 0 END)
+                            AS "has_error"
+                     FROM opentelemetry_traces
+                     WHERE "trace_id" IN ({id_list})
+                     GROUP BY "trace_id"
+                   ) AS "agg" ON "root"."trace_id" = "agg"."trace_id"
+                   WHERE "root"."rn" = 1"#
+            ))
+            .await?;
+        let mut by_id: std::collections::HashMap<_, _> = rows
+            .iter()
+            .map(|row| {
+                let summary = crate::adapter::TraceSummary {
+                    trace_id: str_at(row, 0),
+                    root_name: str_at(row, 1),
+                    service: str_at(row, 2),
+                    start_nanos: u128_at(row, 3),
+                    duration_ns: u128_at(row, 4),
+                    span_count: u128_at(row, 5) as u64,
+                    has_error: u128_at(row, 6) > 0,
+                };
+                (summary.trace_id.clone(), summary)
+            })
+            .collect();
+        Ok(ids
+            .into_iter()
+            .filter_map(|trace_id| by_id.remove(&trace_id))
+            .collect())
     }
 
     async fn spans_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<SpanRow>> {

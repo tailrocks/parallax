@@ -232,6 +232,71 @@ impl ErrorEvent {
 
 pub struct Span(model::SpanRow);
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SpanLink {
+    trace_id: String,
+    span_id: String,
+    attributes: String,
+}
+
+#[graphql_object(context = ApiContext)]
+impl SpanLink {
+    fn trace_id(&self) -> &str {
+        &self.trace_id
+    }
+    fn span_id(&self) -> &str {
+        &self.span_id
+    }
+    fn attributes(&self) -> &str {
+        &self.attributes
+    }
+}
+
+fn span_links_from_value(links: &serde_json::Value) -> Vec<SpanLink> {
+    links
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|link| {
+            let trace_id = link.get("traceId")?.as_str()?.to_string();
+            if trace_id.is_empty() {
+                return None;
+            }
+            let span_id = link
+                .get("spanId")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            let attributes = link
+                .get("attributes")
+                .cloned()
+                .unwrap_or_else(|| serde_json::json!({}))
+                .to_string();
+            Some(SpanLink {
+                trace_id,
+                span_id,
+                attributes,
+            })
+        })
+        .collect()
+}
+
+fn linked_trace_ids(spans: &[model::SpanRow], anchor_trace_id: &str) -> Vec<String> {
+    let mut ids = Vec::new();
+    for span in spans {
+        for link in span_links_from_value(&span.links) {
+            if link.trace_id == anchor_trace_id || ids.contains(&link.trace_id) {
+                continue;
+            }
+            ids.push(link.trace_id);
+            if ids.len() >= MAX_ROWS {
+                return ids;
+            }
+        }
+    }
+    ids
+}
+
 #[graphql_object(context = ApiContext)]
 impl Span {
     fn ts_nanos(&self) -> String {
@@ -271,6 +336,10 @@ impl Span {
     /// other traces this span causally references (batch/async sub-operations).
     fn links(&self) -> String {
         self.0.links.to_string()
+    }
+    /// Typed span-link targets, beside the raw JSON string for compatibility.
+    fn typed_links(&self) -> Vec<SpanLink> {
+        span_links_from_value(&self.0.links)
     }
     /// OTel span events as JSON: `[{name, timeUnixNano, attributes}]`.
     fn events(&self) -> String {
@@ -1076,6 +1145,21 @@ impl Query {
             return Ok(None);
         }
         Ok(Some(Trace { trace_id, spans }))
+    }
+
+    /// Summaries for traces referenced by this trace's span links.
+    async fn linked_traces(
+        context: &ApiContext,
+        trace_id: String,
+    ) -> FieldResult<Vec<TraceSummary>> {
+        let spans = context
+            .store
+            .spans_by_trace(&trace_id)
+            .await
+            .map_err(field_err)?;
+        let ids = linked_trace_ids(&spans, &trace_id);
+        let traces = context.store.traces_by_ids(&ids).await.map_err(field_err)?;
+        Ok(traces.into_iter().map(TraceSummary).collect())
     }
 
     /// Logs correlated to one trace, time ascending.
@@ -2341,6 +2425,98 @@ mod tests {
             })
             .span_count(),
             "2147483648"
+        );
+    }
+
+    #[test]
+    fn parses_typed_span_links_from_stored_json() {
+        let links = serde_json::json!([
+            {
+                "traceId": "target-trace",
+                "spanId": "target-span",
+                "attributes": { "link.kind": "batch" }
+            },
+            { "traceId": "", "spanId": "ignored" },
+            { "spanId": "missing-trace" }
+        ]);
+
+        let parsed = span_links_from_value(&links);
+
+        assert_eq!(parsed.len(), 1);
+        assert_eq!(parsed[0].trace_id, "target-trace");
+        assert_eq!(parsed[0].span_id, "target-span");
+        assert_eq!(parsed[0].attributes, r#"{"link.kind":"batch"}"#);
+    }
+
+    #[tokio::test]
+    async fn linked_traces_resolves_span_link_targets() {
+        let store = Arc::new(MemoryStore::new());
+        let mut source = span("api", "source", "source-root", 10, 10_000_000);
+        source.name = "publish".into();
+        source.links = serde_json::json!([
+            {
+                "traceId": "target",
+                "spanId": "target-root",
+                "attributes": { "messaging.operation": "publish" }
+            }
+        ]);
+        let mut target = span("worker", "target", "target-root", 20, 20_000_000);
+        target.name = "consume".into();
+        store
+            .ingest_traces(vec![source, target], Default::default())
+            .await
+            .unwrap();
+
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"
+            {
+              trace(traceId: "source") {
+                spans {
+                  spanId
+                  typedLinks { traceId spanId attributes }
+                }
+              }
+              linkedTraces(traceId: "source") {
+                traceId
+                rootName
+                service
+                spanCount
+                hasError
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(
+            error_messages(&json).is_empty(),
+            "linkedTraces query: {json}"
+        );
+        assert_eq!(
+            json.pointer("/data/trace/spans/0/typedLinks/0/traceId"),
+            Some(&serde_json::json!("target"))
+        );
+        assert_eq!(
+            json.pointer("/data/trace/spans/0/typedLinks/0/spanId"),
+            Some(&serde_json::json!("target-root"))
+        );
+        assert_eq!(
+            json.pointer("/data/linkedTraces/0/traceId"),
+            Some(&serde_json::json!("target"))
+        );
+        assert_eq!(
+            json.pointer("/data/linkedTraces/0/rootName"),
+            Some(&serde_json::json!("consume"))
+        );
+        assert_eq!(
+            json.pointer("/data/linkedTraces/0/service"),
+            Some(&serde_json::json!("worker"))
         );
     }
 

@@ -1,7 +1,9 @@
 //! In-memory `TelemetryStore` — the fast test adapter and the engine of the
 //! `--no-greptime` fallback's telemetry side (bounded).
 
-use crate::adapter::{OverviewTotals, ServiceSummary, SignalKind, SpanRed, TelemetryStore};
+use crate::adapter::{
+    MAX_ROWS, OverviewTotals, ServiceSummary, SignalKind, SpanRed, TelemetryStore,
+};
 use crate::model::*;
 use std::ops::RangeInclusive;
 use std::sync::Mutex;
@@ -162,6 +164,55 @@ impl TelemetryStore for MemoryStore {
             .collect();
         spans.sort_by_key(|s| s.ts_nanos);
         Ok(spans)
+    }
+
+    async fn traces_by_ids(
+        &self,
+        trace_ids: &[String],
+    ) -> anyhow::Result<Vec<crate::adapter::TraceSummary>> {
+        let mut ids = Vec::new();
+        for trace_id in trace_ids.iter().filter(|trace_id| !trace_id.is_empty()) {
+            if ids.iter().any(|id| id == trace_id) {
+                continue;
+            }
+            ids.push(trace_id.clone());
+            if ids.len() >= MAX_ROWS {
+                break;
+            }
+        }
+        if ids.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let inner = self.lock();
+        let mut summaries = Vec::new();
+        for trace_id in ids {
+            let trace_spans: Vec<&SpanRow> = inner
+                .spans
+                .iter()
+                .filter(|span| span.trace_id == trace_id)
+                .collect();
+            let Some(root) = trace_spans.iter().copied().min_by_key(|span| {
+                (
+                    !span.parent_span_id.as_deref().is_none_or(str::is_empty),
+                    span.ts_nanos,
+                )
+            }) else {
+                continue;
+            };
+            summaries.push(crate::adapter::TraceSummary {
+                trace_id,
+                root_name: root.name.clone(),
+                service: root.service.clone(),
+                start_nanos: root.ts_nanos,
+                duration_ns: root.duration_ns,
+                span_count: trace_spans.len() as u64,
+                has_error: trace_spans
+                    .iter()
+                    .any(|span| span.status_code == "STATUS_CODE_ERROR"),
+            });
+        }
+        Ok(summaries)
     }
 
     async fn spans_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<SpanRow>> {
@@ -1077,6 +1128,49 @@ mod tests {
             "earliest span represents a rootless trace"
         );
         assert_eq!(traces[0].span_count, 2);
+    }
+
+    #[tokio::test]
+    async fn traces_by_ids_preserves_requested_order_and_summarizes_targets() {
+        let store = MemoryStore::new();
+        let mut target_b = span("target-b", "root-b", None, "worker", 20);
+        target_b.name = "consume-b".into();
+        target_b.status_code = "STATUS_CODE_ERROR".into();
+        let mut target_a = span("target-a", "root-a", None, "api", 10);
+        target_a.name = "consume-a".into();
+        store
+            .ingest_traces(
+                vec![
+                    target_a,
+                    span("target-a", "child-a", Some("root-a"), "api", 12),
+                    target_b,
+                ],
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+
+        let summaries = store
+            .traces_by_ids(&[
+                "target-b".to_string(),
+                "missing".to_string(),
+                "target-a".to_string(),
+                "target-b".to_string(),
+            ])
+            .await
+            .unwrap();
+
+        assert_eq!(
+            summaries
+                .iter()
+                .map(|summary| summary.trace_id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["target-b", "target-a"]
+        );
+        assert_eq!(summaries[0].service, "worker");
+        assert_eq!(summaries[0].root_name, "consume-b");
+        assert!(summaries[0].has_error);
+        assert_eq!(summaries[1].span_count, 2);
     }
 
     #[tokio::test]

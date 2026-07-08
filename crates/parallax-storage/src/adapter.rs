@@ -4,6 +4,8 @@
 use crate::model::*;
 use std::ops::RangeInclusive;
 
+pub const MAX_ROWS: usize = 500;
+
 /// A run id observed in telemetry (spans/logs carrying `parallax.run.id`),
 /// whether or not the run was registered through the CLI wrapper. This is
 /// how externally-instrumented tools (e.g. jackin') appear in the runs UI.
@@ -143,6 +145,9 @@ pub trait TelemetryStore: Send + Sync {
 
     /// Anchored read: every span of one trace, start-time ascending.
     async fn spans_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<SpanRow>>;
+    /// Resolve summaries for span-link target trace ids.
+    /// Returns at most one summary per id, preserving input order where possible.
+    async fn traces_by_ids(&self, trace_ids: &[String]) -> anyhow::Result<Vec<TraceSummary>>;
     /// Run-scoped read: every span tagged with one `parallax.run.id`.
     async fn spans_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<SpanRow>>;
     /// Run-scoped read: every log tagged with one `parallax.run.id`.

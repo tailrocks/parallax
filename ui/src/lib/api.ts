@@ -87,6 +87,12 @@ export interface Span {
   durationNs: string
 }
 
+export interface SpanLink {
+  traceId: string
+  spanId: string
+  attributes: string
+}
+
 export interface LogRecord {
   tsNanos: string
   service: string

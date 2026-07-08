@@ -34,7 +34,7 @@ conditions, run its verification gates, and update your row below when done.
 | 025 | Redaction rule-set expansion (DSN/PEM/token shapes) | P2 | M | 023 | DONE |
 | 026 | Issue derivation correctness (non-error exceptions + dedup) | P1 | M | — | DONE |
 | 027 | Bundle hash stability + trace/metric budget bounding | P2 | M | — | DONE |
-| 028 | Typed span links + linkedTraces + UI causal edges | P1 | M | — | TODO |
+| 028 | Typed span links + linkedTraces + UI causal edges | P1 | M | — | DONE |
 | 029 | Story timeline resolver + trace/run tab | P1 | M | — | TODO |
 | 030 | attributeCompare (BubbleUp) over span attributes | P2 | M | — | TODO |
 | 031 | Ecosystem service-map (trace-path graph) | P2 | L | 024 | TODO |
