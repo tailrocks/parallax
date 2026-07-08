@@ -10,8 +10,8 @@
 use juniper::{EmptySubscription, FieldError, FieldResult, RootNode, graphql_object};
 use parallax_core::{story, trace_analysis};
 use parallax_storage::adapter::{
-    OverviewTotals, ServiceSummary as StorageServiceSummary, SpanRed as StorageSpanRed,
-    TelemetryStore,
+    ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow as StorageAttributeCompareRow, OverviewTotals,
+    ServiceSummary as StorageServiceSummary, SpanRed as StorageSpanRed, TelemetryStore,
 };
 use parallax_storage::metadata::MetadataStore;
 use parallax_storage::model;
@@ -621,6 +621,33 @@ impl StoryBeat {
     }
     fn duration_ns(&self) -> Option<String> {
         self.0.duration_ns.map(nanos_string)
+    }
+}
+
+pub struct AttributeCompareRow(StorageAttributeCompareRow);
+
+#[graphql_object(context = ApiContext)]
+impl AttributeCompareRow {
+    fn key(&self) -> &str {
+        &self.0.key
+    }
+    fn value(&self) -> &str {
+        &self.0.value
+    }
+    fn selected_count(&self) -> String {
+        self.0.selected_count.to_string()
+    }
+    fn selected_total(&self) -> String {
+        self.0.selected_total.to_string()
+    }
+    fn baseline_count(&self) -> String {
+        self.0.baseline_count.to_string()
+    }
+    fn baseline_total(&self) -> String {
+        self.0.baseline_total.to_string()
+    }
+    fn score(&self) -> f64 {
+        self.0.score
     }
 }
 
@@ -1448,6 +1475,40 @@ impl Query {
                 "story takes exactly one anchor: traceId or runId",
             )),
         }
+    }
+
+    /// Span-attribute overrepresentation in selected vs baseline windows.
+    #[allow(clippy::too_many_arguments)]
+    async fn attribute_compare(
+        context: &ApiContext,
+        selected_from_nanos: String,
+        selected_to_nanos: String,
+        baseline_from_nanos: String,
+        baseline_to_nanos: String,
+        service: Option<String>,
+        error_only: Option<bool>,
+        keys: Option<Vec<String>>,
+        top_n: Option<i32>,
+    ) -> FieldResult<Vec<AttributeCompareRow>> {
+        let (selected_from, selected_to) = parse_range(&selected_from_nanos, &selected_to_nanos)?;
+        let (baseline_from, baseline_to) = parse_range(&baseline_from_nanos, &baseline_to_nanos)?;
+        let limit = clamp_limit(top_n, 10).min(ATTRIBUTE_COMPARE_TOP_N_CAP);
+        let keys = keys.unwrap_or_default();
+        Ok(context
+            .store
+            .attribute_compare(
+                selected_from..=selected_to,
+                baseline_from..=baseline_to,
+                service.as_deref().filter(|service| !service.is_empty()),
+                error_only.unwrap_or(false),
+                &keys,
+                limit,
+            )
+            .await
+            .map_err(field_err)?
+            .into_iter()
+            .map(AttributeCompareRow)
+            .collect())
     }
 
     /// Unified log browse (spec §8 `logs`): every filter optional, newest
@@ -2929,6 +2990,86 @@ mod tests {
                 .iter()
                 .any(|message| message.contains("exactly one anchor")),
             "story anchor guard: {json}"
+        );
+    }
+
+    #[tokio::test]
+    async fn attribute_compare_resolver_returns_ranked_rows() {
+        let store = Arc::new(MemoryStore::new());
+        let mut spans = Vec::new();
+        for index in 0..20 {
+            let mut row = span("checkout", &format!("baseline-{index}"), "root", index, 10);
+            row.attributes = serde_json::json!({
+                "service.version": if index == 0 { "2.0.0" } else { "1.0.0" },
+                "trace_id": format!("trace-baseline-{index}")
+            });
+            spans.push(row);
+        }
+        for index in 0..10 {
+            let mut row = span(
+                "checkout",
+                &format!("selected-{index}"),
+                "root",
+                100 + index,
+                10,
+            );
+            row.attributes = serde_json::json!({
+                "service.version": if index < 9 { "2.0.0" } else { "1.0.0" },
+                "trace_id": format!("trace-selected-{index}")
+            });
+            spans.push(row);
+        }
+        store
+            .ingest_traces(spans, Default::default())
+            .await
+            .unwrap();
+
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"
+            {
+              attributeCompare(
+                selectedFromNanos: "100"
+                selectedToNanos: "200"
+                baselineFromNanos: "0"
+                baselineToNanos: "99"
+                service: "checkout"
+                keys: ["service.version", "trace_id"]
+                topN: 5
+              ) {
+                key value selectedCount selectedTotal baselineCount baselineTotal score
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(
+            error_messages(&json).is_empty(),
+            "attributeCompare query: {json}"
+        );
+        assert_eq!(
+            json.pointer("/data/attributeCompare/0/key"),
+            Some(&serde_json::json!("service.version"))
+        );
+        assert_eq!(
+            json.pointer("/data/attributeCompare/0/value"),
+            Some(&serde_json::json!("2.0.0"))
+        );
+        assert_eq!(
+            json.pointer("/data/attributeCompare/0/selectedCount"),
+            Some(&serde_json::json!("9"))
+        );
+        assert!(
+            json.pointer("/data/attributeCompare")
+                .and_then(|value| value.as_array())
+                .is_some_and(|rows| rows.iter().all(|row| row["key"] != "trace_id")),
+            "attributeCompare denies trace_id: {json}"
         );
     }
 

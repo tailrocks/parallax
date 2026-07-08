@@ -14,9 +14,17 @@ import {
 import { useEffect, useMemo, useState } from "react"
 import { z } from "zod"
 
+import { AttributeComparePanel } from "@/components/console/attribute-compare"
 import { PageHeader } from "@/components/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import {
   Table,
@@ -43,7 +51,7 @@ import { RelativeTime } from "@/components/console/relative-time"
 import { TableSkeleton } from "@/components/console/skeletons"
 import { formatCount, formatDurationNs, formatTimeInRange } from "@/lib/format"
 import { gqlString, graphql } from "@/lib/api"
-import type { TraceSummary } from "@/lib/api"
+import type { AttributeCompareRow, TraceSummary } from "@/lib/api"
 import { resolveRangeSearch, updateRangeSearch } from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
 import { cn } from "@/lib/utils"
@@ -217,6 +225,37 @@ function graphQlTraceArgs(search: TracesSearch, range: ResolvedRange): string {
     .join(", ")
 }
 
+function baselineRange(range: ResolvedRange): ResolvedRange {
+  const from = BigInt(range.fromNanos)
+  const to = BigInt(range.toNanos)
+  const width = to > from ? to - from : 1n
+  const baselineTo = from > 0n ? from - 1n : 0n
+  const baselineFrom = baselineTo > width ? baselineTo - width : 0n
+  return {
+    key: "baseline",
+    fromNanos: baselineFrom.toString(),
+    toNanos: baselineTo.toString(),
+  }
+}
+
+function graphQlAttributeCompareArgs(
+  search: TracesSearch,
+  range: ResolvedRange
+): string {
+  const baseline = baselineRange(range)
+  return [
+    `selectedFromNanos: "${range.fromNanos}"`,
+    `selectedToNanos: "${range.toNanos}"`,
+    `baselineFromNanos: "${baseline.fromNanos}"`,
+    `baselineToNanos: "${baseline.toNanos}"`,
+    search.service ? `service: "${gqlString(search.service)}"` : null,
+    search.errors ? "errorOnly: true" : null,
+    "topN: 8",
+  ]
+    .filter(Boolean)
+    .join(", ")
+}
+
 export const Route = createFileRoute("/traces/")({
   validateSearch: validateTracesSearch,
   loaderDeps: ({ search }) => search,
@@ -229,13 +268,16 @@ export const Route = createFileRoute("/traces/")({
       `).then((data) => ({
         services: data.services,
         tracesPage: { total: "0", items: [] },
+        attributeCompare: [],
       }))
     }
     const range = resolveRangeSearch(deps)
     const args = graphQlTraceArgs(deps, range)
+    const compareArgs = graphQlAttributeCompareArgs(deps, range)
     return graphql<{
       services: string[]
       tracesPage: TracePage
+      attributeCompare: AttributeCompareRow[]
     }>(`
       {
         services
@@ -244,6 +286,9 @@ export const Route = createFileRoute("/traces/")({
           items {
             traceId rootName service startNanos durationNs spanCount hasError
           }
+        }
+        attributeCompare(${compareArgs}) {
+          key value selectedCount selectedTotal baselineCount baselineTotal score
         }
       }
     `)
@@ -265,7 +310,7 @@ function statusError(statusCode: string): boolean {
 }
 
 function TracesPage() {
-  const { services, tracesPage } = Route.useLoaderData()
+  const { services, tracesPage, attributeCompare } = Route.useLoaderData()
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const router = useRouter()
@@ -513,6 +558,17 @@ function TracesPage() {
           />
         ) : tracesPage.items.length > 0 ? (
           <>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Attribute compare</CardTitle>
+                <CardDescription>
+                  Selected window vs previous window
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AttributeComparePanel rows={attributeCompare} />
+              </CardContent>
+            </Card>
             <TraceTable
               rows={tracesPage.items}
               durationValues={durationValues}

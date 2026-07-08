@@ -142,6 +142,16 @@ export interface StoryBeat {
   durationNs: string | null
 }
 
+export interface AttributeCompareRow {
+  key: string
+  value: string
+  selectedCount: string
+  selectedTotal: string
+  baselineCount: string
+  baselineTotal: string
+  score: number
+}
+
 export interface LogRecord {
   tsNanos: string
   service: string

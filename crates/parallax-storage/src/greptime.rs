@@ -2,9 +2,12 @@
 //! implementation spec §5. All engine-specific SQL lives in this module.
 
 use crate::adapter::{
-    MAX_ROWS, OverviewTotals, ServiceSummary, SignalKind, SpanRed, TelemetryStore,
+    ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow, MAX_ROWS,
+    OverviewTotals, ServiceSummary, SignalKind, SpanRed, TelemetryStore,
+    attribute_compare_key_allowed, attribute_compare_score, attribute_compare_value_allowed,
 };
 use crate::model::*;
+use std::collections::{BTreeMap, BTreeSet};
 use std::ops::RangeInclusive;
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -1393,6 +1396,80 @@ impl TelemetryStore for GreptimeStore {
         })
     }
 
+    async fn attribute_compare(
+        &self,
+        selected: RangeInclusive<u128>,
+        baseline: RangeInclusive<u128>,
+        service: Option<&str>,
+        error_only: bool,
+        keys: &[String],
+        top_n: usize,
+    ) -> anyhow::Result<Vec<AttributeCompareRow>> {
+        let limit = top_n.min(ATTRIBUTE_COMPARE_TOP_N_CAP);
+        if limit == 0 {
+            return Ok(Vec::new());
+        }
+
+        let available = self.discover_span_attribute_keys().await?;
+        let candidate_keys: Vec<String> = if keys.is_empty() {
+            available
+                .into_iter()
+                .filter(|key| attribute_compare_key_allowed(key))
+                .take(ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT)
+                .collect()
+        } else {
+            keys.iter()
+                .map(|key| key.trim())
+                .filter(|key| attribute_compare_key_allowed(key))
+                .filter(|key| available.contains(*key))
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .take(ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT)
+                .map(str::to_string)
+                .collect()
+        };
+
+        let mut rows = Vec::new();
+        for key in candidate_keys {
+            let (selected_total, selected_counts) = self
+                .span_attribute_counts(&key, &selected, service, error_only)
+                .await?;
+            let (baseline_total, baseline_counts) = self
+                .span_attribute_counts(&key, &baseline, service, error_only)
+                .await?;
+            for (value, selected_count) in selected_counts {
+                let baseline_count = baseline_counts.get(&value).copied().unwrap_or(0);
+                let score = attribute_compare_score(
+                    selected_count,
+                    selected_total,
+                    baseline_count,
+                    baseline_total,
+                );
+                if score > 0.0 {
+                    rows.push(AttributeCompareRow {
+                        key: key.clone(),
+                        value,
+                        selected_count,
+                        selected_total,
+                        baseline_count,
+                        baseline_total,
+                        score,
+                    });
+                }
+            }
+        }
+
+        rows.sort_by(|a, b| {
+            b.score
+                .total_cmp(&a.score)
+                .then_with(|| b.selected_count.cmp(&a.selected_count))
+                .then_with(|| a.key.cmp(&b.key))
+                .then_with(|| a.value.cmp(&b.value))
+        });
+        rows.truncate(limit);
+        Ok(rows)
+    }
+
     async fn error_events_by_traces(
         &self,
         trace_ids: &[String],
@@ -1601,6 +1678,76 @@ impl TelemetryStore for GreptimeStore {
 }
 
 impl GreptimeStore {
+    async fn discover_span_attribute_keys(&self) -> anyhow::Result<BTreeSet<String>> {
+        let rows = self
+            .sql(
+                r#"SELECT "column_name" FROM information_schema.columns
+                   WHERE "table_schema" = 'public'
+                     AND "table_name" = 'opentelemetry_traces'
+                     AND "column_name" LIKE 'span_attributes.%'
+                   ORDER BY "column_name""#,
+            )
+            .await?;
+        Ok(rows
+            .iter()
+            .filter_map(|row| {
+                str_at(row, 0)
+                    .strip_prefix("span_attributes.")
+                    .map(str::to_string)
+            })
+            .collect())
+    }
+
+    async fn span_attribute_counts(
+        &self,
+        key: &str,
+        range: &RangeInclusive<u128>,
+        service: Option<&str>,
+        error_only: bool,
+    ) -> anyhow::Result<(u64, BTreeMap<String, u64>)> {
+        let column = format!(r#""span_attributes.{}""#, escape_ident(key));
+        let value_expr = format!("CAST({column} AS STRING)");
+        let mut clauses = vec![
+            format!(
+                r#""timestamp" >= {} AND "timestamp" <= {}"#,
+                sql_ts(*range.start()),
+                sql_ts(*range.end())
+            ),
+            format!("{column} IS NOT NULL"),
+        ];
+        if let Some(service) = service {
+            clauses.push(format!(r#""service_name" = '{}'"#, escape(service)));
+        }
+        if error_only {
+            clauses.push(r#""span_status_code" = 'STATUS_CODE_ERROR'"#.to_string());
+        }
+
+        let rows = self
+            .sql_lenient(&format!(
+                r#"SELECT {value_expr} AS "value", COUNT(*) AS "n"
+                   FROM opentelemetry_traces
+                   WHERE {}
+                   GROUP BY {value_expr}
+                   ORDER BY "n" DESC
+                   LIMIT 512"#,
+                clauses.join(" AND ")
+            ))
+            .await?;
+
+        let mut total = 0;
+        let mut counts = BTreeMap::new();
+        for row in &rows {
+            let value = str_at(row, 0);
+            if !attribute_compare_value_allowed(&value) {
+                continue;
+            }
+            let count = u128_at(row, 1) as u64;
+            total += count;
+            counts.insert(value, count);
+        }
+        Ok((total, counts))
+    }
+
     /// Discover the base metric names from the schema: every public table that
     /// is neither a native otel table, an extension table, the metric-engine
     /// physical table, nor a system table. Histogram siblings collapse to the

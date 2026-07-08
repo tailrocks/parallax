@@ -2,9 +2,12 @@
 //! `--no-greptime` fallback's telemetry side (bounded).
 
 use crate::adapter::{
-    MAX_ROWS, OverviewTotals, ServiceSummary, SignalKind, SpanRed, TelemetryStore,
+    ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow, MAX_ROWS,
+    OverviewTotals, ServiceSummary, SignalKind, SpanRed, TelemetryStore,
+    attribute_compare_key_allowed, attribute_compare_score, attribute_compare_value_allowed,
 };
 use crate::model::*;
+use std::collections::{BTreeMap, BTreeSet};
 use std::ops::RangeInclusive;
 use std::sync::Mutex;
 
@@ -17,6 +20,27 @@ pub(crate) fn group_value(attributes: &serde_json::Value, key: &str) -> String {
         Some(serde_json::Value::Number(n)) => n.to_string(),
         _ => "(none)".to_string(),
     }
+}
+
+fn scalar_attribute_value(attributes: &serde_json::Value, key: &str) -> Option<String> {
+    let value = match attributes.get(key)? {
+        serde_json::Value::String(value) => value.clone(),
+        serde_json::Value::Bool(value) => value.to_string(),
+        serde_json::Value::Number(value) => value.to_string(),
+        _ => return None,
+    };
+    attribute_compare_value_allowed(&value).then_some(value)
+}
+
+fn span_matches_compare(
+    span: &SpanRow,
+    range: &RangeInclusive<u128>,
+    service: Option<&str>,
+    error_only: bool,
+) -> bool {
+    range.contains(&span.ts_nanos)
+        && service.is_none_or(|svc| span.service == svc)
+        && (!error_only || span.status_code == "STATUS_CODE_ERROR")
 }
 
 /// Per-second rate from bucketed counter sums (monotonic resets clamp to 0).
@@ -745,6 +769,108 @@ impl TelemetryStore for MemoryStore {
         Ok(crate::adapter::TraceList { items, total })
     }
 
+    async fn attribute_compare(
+        &self,
+        selected: RangeInclusive<u128>,
+        baseline: RangeInclusive<u128>,
+        service: Option<&str>,
+        error_only: bool,
+        keys: &[String],
+        top_n: usize,
+    ) -> anyhow::Result<Vec<AttributeCompareRow>> {
+        let limit = top_n.min(ATTRIBUTE_COMPARE_TOP_N_CAP);
+        if limit == 0 {
+            return Ok(Vec::new());
+        }
+
+        let spans = self.lock().spans.clone();
+        let candidate_keys: Vec<String> = if keys.is_empty() {
+            let mut discovered = BTreeSet::new();
+            for span in spans.iter().filter(|span| {
+                (span_matches_compare(span, &selected, service, error_only)
+                    || span_matches_compare(span, &baseline, service, error_only))
+                    && span.attributes.is_object()
+            }) {
+                if let Some(attributes) = span.attributes.as_object() {
+                    for key in attributes.keys() {
+                        if attribute_compare_key_allowed(key)
+                            && scalar_attribute_value(&span.attributes, key).is_some()
+                        {
+                            discovered.insert(key.clone());
+                        }
+                    }
+                }
+            }
+            discovered
+                .into_iter()
+                .take(ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT)
+                .collect()
+        } else {
+            keys.iter()
+                .map(|key| key.trim())
+                .filter(|key| attribute_compare_key_allowed(key))
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .take(ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT)
+                .map(str::to_string)
+                .collect()
+        };
+
+        let mut rows = Vec::new();
+        for key in candidate_keys {
+            let mut selected_counts: BTreeMap<String, u64> = BTreeMap::new();
+            let mut baseline_counts: BTreeMap<String, u64> = BTreeMap::new();
+            let mut selected_total = 0;
+            let mut baseline_total = 0;
+
+            for span in &spans {
+                if span_matches_compare(span, &selected, service, error_only)
+                    && let Some(value) = scalar_attribute_value(&span.attributes, &key)
+                {
+                    selected_total += 1;
+                    *selected_counts.entry(value).or_default() += 1;
+                }
+                if span_matches_compare(span, &baseline, service, error_only)
+                    && let Some(value) = scalar_attribute_value(&span.attributes, &key)
+                {
+                    baseline_total += 1;
+                    *baseline_counts.entry(value).or_default() += 1;
+                }
+            }
+
+            for (value, selected_count) in selected_counts {
+                let baseline_count = baseline_counts.get(&value).copied().unwrap_or(0);
+                let score = attribute_compare_score(
+                    selected_count,
+                    selected_total,
+                    baseline_count,
+                    baseline_total,
+                );
+                if score > 0.0 {
+                    rows.push(AttributeCompareRow {
+                        key: key.clone(),
+                        value,
+                        selected_count,
+                        selected_total,
+                        baseline_count,
+                        baseline_total,
+                        score,
+                    });
+                }
+            }
+        }
+
+        rows.sort_by(|a, b| {
+            b.score
+                .total_cmp(&a.score)
+                .then_with(|| b.selected_count.cmp(&a.selected_count))
+                .then_with(|| a.key.cmp(&b.key))
+                .then_with(|| a.value.cmp(&b.value))
+        });
+        rows.truncate(limit);
+        Ok(rows)
+    }
+
     async fn error_events_by_traces(
         &self,
         trace_ids: &[String],
@@ -1005,6 +1131,153 @@ mod tests {
             limit: 50,
             ..Default::default()
         }
+    }
+
+    fn span_with_attrs(trace: &str, span_id: &str, ts: u128, attrs: serde_json::Value) -> SpanRow {
+        let mut row = span(trace, span_id, None, "checkout", ts);
+        row.attributes = attrs;
+        row
+    }
+
+    #[tokio::test]
+    async fn attribute_compare_ranks_overrepresented_value_first() {
+        let store = MemoryStore::new();
+        let mut spans = Vec::new();
+        for index in 0..20 {
+            let version = if index == 0 { "2.0.0" } else { "1.0.0" };
+            spans.push(span_with_attrs(
+                &format!("baseline-{index}"),
+                "root",
+                index,
+                serde_json::json!({
+                    "service.version": version,
+                    "http.route": "/checkout"
+                }),
+            ));
+        }
+        for index in 0..10 {
+            let version = if index < 9 { "2.0.0" } else { "1.0.0" };
+            spans.push(span_with_attrs(
+                &format!("selected-{index}"),
+                "root",
+                100 + index,
+                serde_json::json!({
+                    "service.version": version,
+                    "http.route": "/checkout"
+                }),
+            ));
+        }
+        store
+            .ingest_traces(spans, bytes::Bytes::new())
+            .await
+            .unwrap();
+
+        let rows = store
+            .attribute_compare(100..=200, 0..=99, Some("checkout"), false, &[], 10)
+            .await
+            .unwrap();
+
+        let first = rows.first().expect("overrepresented value");
+        assert_eq!(first.key, "service.version");
+        assert_eq!(first.value, "2.0.0");
+        assert_eq!(first.selected_count, 9);
+        assert_eq!(first.selected_total, 10);
+        assert_eq!(first.baseline_count, 1);
+        assert_eq!(first.baseline_total, 20);
+        assert!(first.score > 0.8, "{first:?}");
+    }
+
+    #[tokio::test]
+    async fn attribute_compare_denies_identifier_keys() {
+        let store = MemoryStore::new();
+        store
+            .ingest_traces(
+                vec![
+                    span_with_attrs(
+                        "baseline",
+                        "root",
+                        1,
+                        serde_json::json!({
+                            "service.version": "1.0.0",
+                            "trace_id": "trace-baseline",
+                            "run_id": "run-baseline",
+                            "session.id": "session-baseline",
+                            "user.id": "user-baseline"
+                        }),
+                    ),
+                    span_with_attrs(
+                        "selected",
+                        "root",
+                        100,
+                        serde_json::json!({
+                            "service.version": "2.0.0",
+                            "trace_id": "trace-selected",
+                            "run_id": "run-selected",
+                            "session.id": "session-selected",
+                            "user.id": "user-selected"
+                        }),
+                    ),
+                ],
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+        let keys = vec![
+            "trace_id".to_string(),
+            "run_id".to_string(),
+            "session.id".to_string(),
+            "user.id".to_string(),
+            "service.version".to_string(),
+        ];
+
+        let rows = store
+            .attribute_compare(100..=200, 0..=99, None, false, &keys, 10)
+            .await
+            .unwrap();
+
+        assert!(rows.iter().all(|row| {
+            !matches!(
+                row.key.as_str(),
+                "trace_id" | "run_id" | "session.id" | "user.id"
+            )
+        }));
+        assert!(rows.iter().any(|row| row.key == "service.version"));
+    }
+
+    #[tokio::test]
+    async fn attribute_compare_is_deterministic() {
+        let store = MemoryStore::new();
+        store
+            .ingest_traces(
+                vec![
+                    span_with_attrs(
+                        "baseline-a",
+                        "root",
+                        1,
+                        serde_json::json!({"service.version": "1.0.0"}),
+                    ),
+                    span_with_attrs(
+                        "selected-a",
+                        "root",
+                        100,
+                        serde_json::json!({"service.version": "2.0.0"}),
+                    ),
+                ],
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+
+        let first = store
+            .attribute_compare(100..=200, 0..=99, None, false, &[], 10)
+            .await
+            .unwrap();
+        let second = store
+            .attribute_compare(100..=200, 0..=99, None, false, &[], 10)
+            .await
+            .unwrap();
+
+        assert_eq!(first, second);
     }
 
     #[tokio::test]
