@@ -8,6 +8,7 @@ use parallax_proto::common::{AnyValue, KeyValue};
 use parallax_proto::metrics::exemplar::Value as ExemplarValue;
 use parallax_proto::metrics::metric::Data;
 use parallax_proto::metrics::number_data_point::Value as NumberValue;
+use parallax_proto::semconv;
 use parallax_storage::model::{HistogramRow, LogRow, MetricExemplarRow, MetricPointRow, SpanRow};
 
 pub fn hex(bytes: &[u8]) -> String {
@@ -60,7 +61,7 @@ pub fn attr_str<'a>(attributes: &'a [KeyValue], key: &str) -> Option<&'a str> {
 }
 
 fn service_name(resource_attrs: &[KeyValue]) -> String {
-    attr_str(resource_attrs, "service.name")
+    attr_str(resource_attrs, semconv::SERVICE_NAME)
         .unwrap_or("unknown")
         .to_string()
 }
@@ -87,7 +88,7 @@ fn status_code_name(code: i32) -> &'static str {
 /// Resolve the run id from resource attributes. Parallax intentionally keeps
 /// this to one key so one wrapped command has one lookup id.
 fn run_id(resource_attrs: &[KeyValue]) -> Option<String> {
-    attr_str(resource_attrs, "parallax.run.id").map(str::to_string)
+    attr_str(resource_attrs, semconv::PARALLAX_RUN_ID).map(str::to_string)
 }
 
 /// OTel span links → `[{traceId, spanId, attributes}]` JSON. Links are the

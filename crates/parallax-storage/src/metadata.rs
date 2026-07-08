@@ -4,6 +4,7 @@
 use crate::model::{
     Dashboard, Investigation, Issue, IssueQuery, IssueSortKey, RunRecord, SavedView, TrendPoint,
 };
+use parallax_proto::semconv;
 use std::collections::BTreeMap;
 use std::path::Path;
 use turso::Value;
@@ -97,13 +98,18 @@ const TAGS_MAX_VALUES_PER_KEY: usize = 8;
 const TAGS_MAX_VALUE_LEN: usize = 64;
 
 /// Merge an event's scalar attributes into the `{key: {value: count}}` cache.
-/// `exception.*` keys are the event body, not tags; nested values are skipped.
+/// Exception keys are the event body, not tags; nested values are skipped.
 fn merge_tags(existing: &str, attributes: &serde_json::Value) -> String {
     let mut tags: BTreeMap<String, BTreeMap<String, u64>> =
         serde_json::from_str(existing).unwrap_or_default();
     if let Some(map) = attributes.as_object() {
         for (key, value) in map {
-            if key.starts_with("exception.") {
+            if key.starts_with(semconv::EXCEPTION_EVENT_NAME)
+                && key
+                    .as_bytes()
+                    .get(semconv::EXCEPTION_EVENT_NAME.len())
+                    .is_some_and(|byte| *byte == b'.')
+            {
                 continue;
             }
             let rendered = match value {

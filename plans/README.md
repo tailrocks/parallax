@@ -85,7 +85,7 @@ conditions, run its verification gates, and update your row when done.
 | 064 | Command center v1 (shared brush hook + "what changed" top movers) | parallax | P2 | L | 038, 039 | DONE |
 | 067 | Playground cache reality (TTL cache, hit/miss metrics, stampede) | **[playground]** | P2 | M | 036; pairs 044/046 | DONE |
 | 065 | Agent-session surface (`agentSession(runId)` + tool timeline + token strip) | parallax | P3 | L | advisor-034 (producer) | DONE |
-| 066 | Semconv registry (constants both repos, env-default fix, Weaver spike) | **[both]** | P3 | L | after in-flight waves | TODO |
+| 066 | Semconv registry (constants both repos, env-default fix, Weaver spike) | **[both]** | P3 | L | after in-flight waves | DONE |
 | 068 | Command palette (⌘K nav, service jump, recent, paste-an-id) | parallax | P3 | M | — | DONE |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (one-line reason) |

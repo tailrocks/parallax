@@ -11,6 +11,7 @@ use crate::adapter::{
     metric_group_label_allowed, runtime_metric_family, runtime_metric_unit, span_field_key_allowed,
 };
 use crate::model::*;
+use parallax_proto::semconv;
 use std::collections::{BTreeMap, BTreeSet};
 use std::ops::RangeInclusive;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -38,6 +39,25 @@ fn escape(text: &str) -> String {
 /// Escape a value for inclusion inside a double-quoted SQL identifier.
 fn escape_ident(text: &str) -> String {
     text.replace('"', "\"\"")
+}
+
+fn quoted_ident(text: &str) -> String {
+    format!(r#""{}""#, escape_ident(text))
+}
+
+fn resource_attr_ident(attr: &str) -> String {
+    quoted_ident(&semconv::resource_column(attr))
+}
+
+fn wire_attr_ident(attr: &str) -> String {
+    quoted_ident(attr)
+}
+
+fn resource_json_get(attr: &str) -> String {
+    format!(
+        r#"json_get_string("resource_attributes", '{}')"#,
+        semconv::resource_json_path(attr)
+    )
 }
 
 // Greptime metric-engine point tables discovered with live DESCRIBE expose
@@ -272,9 +292,13 @@ impl GreptimeStore {
     /// Run a batch of idempotent post-create ALTERs, swallowing the benign
     /// "already exists" / "not found" outcomes (the table may not exist yet, or
     /// the deviation may already be applied from a prior run).
-    async fn try_deviations(&self, statements: &[&str]) {
+    async fn try_deviations<I, S>(&self, statements: I)
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<str>,
+    {
         for statement in statements {
-            if let Err(error) = self.sql(statement).await {
+            if let Err(error) = self.sql(statement.as_ref()).await {
                 let text = error.to_string().to_ascii_lowercase();
                 if !text.contains("exist")
                     && !text.contains("duplicate")
@@ -289,7 +313,7 @@ impl GreptimeStore {
 
     /// Traces deviation: a `fingerprint` column for cross-signal correlation.
     async fn try_traces_deviations(&self) {
-        self.try_deviations(&[
+        self.try_deviations([
             // TODO(plan-010): unpopulated; filling it touches the zero-copy
             // ingest path and is deferred to a dedicated ingest change.
             r#"ALTER TABLE opentelemetry_traces ADD COLUMN "fingerprint" STRING"#,
@@ -298,16 +322,20 @@ impl GreptimeStore {
     }
 
     /// Logs deviations: an INVERTED index on `trace_id` and a FULLTEXT index on
-    /// `body` (the one native shortfall), plus an explicit `parallax.run.id`
-    /// column. The run-id column is normally promoted by the
+    /// `body` (the one native shortfall), plus an explicit run-id column.
+    /// The run-id column is normally promoted by the
     /// `x-greptime-log-extract-keys` header, but only when an ingested log
     /// actually carries that resource attribute — adding it here guarantees the
     /// column exists so run-scoped log reads never reference a missing field.
     async fn try_logs_deviations(&self) {
-        self.try_deviations(&[
-            r#"ALTER TABLE opentelemetry_logs MODIFY COLUMN "trace_id" SET INVERTED INDEX"#,
-            r#"ALTER TABLE opentelemetry_logs MODIFY COLUMN "body" SET FULLTEXT INDEX"#,
-            r#"ALTER TABLE opentelemetry_logs ADD COLUMN "parallax.run.id" STRING"#,
+        self.try_deviations([
+            r#"ALTER TABLE opentelemetry_logs MODIFY COLUMN "trace_id" SET INVERTED INDEX"#
+                .to_string(),
+            r#"ALTER TABLE opentelemetry_logs MODIFY COLUMN "body" SET FULLTEXT INDEX"#.to_string(),
+            format!(
+                "ALTER TABLE opentelemetry_logs ADD COLUMN {} STRING",
+                wire_attr_ident(semconv::PARALLAX_RUN_ID)
+            ),
         ])
         .await;
     }
@@ -535,8 +563,9 @@ impl GreptimeStore {
                     status_code: cols.string("span_status_code", row),
                     status_message: cols.string("span_status_message", row),
                     duration_ns: cols.u128("duration_nano", row),
-                    // native: run id flattens to a resource-attribute column.
-                    run_id: cols.opt_string("resource_attributes.parallax.run.id", row),
+                    // Native run id flattens to a resource-attribute column.
+                    run_id: cols
+                        .opt_string(&semconv::resource_column(semconv::PARALLAX_RUN_ID), row),
                     scope_name: cols.string("scope_name", row),
                     events,
                     links: cols.json("span_links", row),
@@ -549,8 +578,8 @@ impl GreptimeStore {
 
     /// Select logs from the native `opentelemetry_logs` table. Logs keep their
     /// attributes as JSON columns (`log_attributes`/`resource_attributes`), and
-    /// have no `service_name` column — service is derived from the resource
-    /// JSON. The promoted `parallax.run.id` column carries the run id.
+    /// have no `service_name` column, so service is derived from resource JSON.
+    /// The promoted Parallax run-id column carries the run id.
     async fn select_logs(
         &self,
         where_clause: &str,
@@ -560,12 +589,14 @@ impl GreptimeStore {
         let rows = self
             .sql_lenient(&format!(
                 r#"SELECT CAST("timestamp" AS BIGINT) AS "ts_nanos",
-                          json_get_string("resource_attributes", '$."service.name"') AS "service",
+                          {} AS "service",
                           "severity_number", "severity_text", "body", "trace_id", "span_id",
-                          "parallax.run.id", "scope_name",
+                          {}, "scope_name",
                           json_to_string("log_attributes"),
                           json_to_string("resource_attributes")
-                   FROM opentelemetry_logs WHERE {where_clause}{order}{limit_clause}"#
+                   FROM opentelemetry_logs WHERE {where_clause}{order}{limit_clause}"#,
+                resource_json_get(semconv::SERVICE_NAME),
+                wire_attr_ident(semconv::PARALLAX_RUN_ID),
             ))
             .await?;
         Ok(rows.iter().map(|row| log_row_from_row(row)).collect())
@@ -730,10 +761,10 @@ fn log_filter_clauses(
         sql_ts(*range.end())
     )];
     if let Some(service) = service {
-        // native: logs carry no `service_name` column — match on the resource
-        // JSON's `service.name`.
+        // Native logs carry no `service_name` column; match on resource JSON.
         clauses.push(format!(
-            r#"json_get_string("resource_attributes", '$."service.name"') = '{}'"#,
+            r#"{} = '{}'"#,
+            resource_json_get(semconv::SERVICE_NAME),
             escape(service)
         ));
     }
@@ -830,12 +861,12 @@ impl TelemetryStore for GreptimeStore {
     }
 
     async fn ingest_logs(&self, _logs: Vec<LogRow>, raw: bytes::Bytes) -> anyhow::Result<()> {
-        // The extract-keys header promotes `parallax.run.id` to a real column.
+        // The extract-keys header promotes the run id to a real column.
         let hints = format!("ttl={},append_mode=true", self.logs_ttl);
         self.forward_otlp(
             "v1/logs",
             &[
-                ("x-greptime-log-extract-keys", "parallax.run.id"),
+                ("x-greptime-log-extract-keys", semconv::PARALLAX_RUN_ID),
                 ("x-greptime-hints", &hints),
             ],
             raw,
@@ -1021,8 +1052,9 @@ impl TelemetryStore for GreptimeStore {
                 &format!(
                     r#""trace_id" IN (
                     SELECT DISTINCT "trace_id" FROM opentelemetry_logs
-                    WHERE "parallax.run.id" = '{}'
+                    WHERE {} = '{}'
                   )"#,
+                    wire_attr_ident(semconv::PARALLAX_RUN_ID),
                     escape(run_id)
                 ),
                 r#" ORDER BY "timestamp" DESC"#,
@@ -1036,7 +1068,11 @@ impl TelemetryStore for GreptimeStore {
     async fn logs_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<LogRow>> {
         let mut logs = self
             .select_logs(
-                &format!(r#""parallax.run.id" = '{}'"#, escape(run_id)),
+                &format!(
+                    r#"{} = '{}'"#,
+                    wire_attr_ident(semconv::PARALLAX_RUN_ID),
+                    escape(run_id)
+                ),
                 r#" ORDER BY "timestamp" DESC"#,
                 &format!(" LIMIT {limit}"),
             )
@@ -1131,16 +1167,17 @@ impl TelemetryStore for GreptimeStore {
 
     async fn service_names(&self) -> anyhow::Result<Vec<String>> {
         // Any signal makes a service real: traces' `service_name`, logs'
-        // resource `service.name`, plus the run-metric extension table.
+        // resource service name, plus the run-metric extension table.
         let rows = self
-            .sql_lenient(
+            .sql_lenient(&format!(
                 r#"SELECT DISTINCT "service_name" AS "svc" FROM opentelemetry_traces
                    UNION SELECT DISTINCT
-                          json_get_string("resource_attributes", '$."service.name"') AS "svc"
+                          {} AS "svc"
                           FROM opentelemetry_logs
                    UNION SELECT DISTINCT "service" AS "svc" FROM run_metric_points
                    ORDER BY "svc""#,
-            )
+                resource_json_get(semconv::SERVICE_NAME)
+            ))
             .await?;
         Ok(rows
             .iter()
@@ -1176,12 +1213,13 @@ impl TelemetryStore for GreptimeStore {
                      SELECT "service_name" AS "svc" FROM opentelemetry_traces
                      WHERE "timestamp" >= {} AND "timestamp" <= {}
                      UNION ALL
-                     SELECT json_get_string("resource_attributes", '$."service.name"') AS "svc"
+                     SELECT {} AS "svc"
                      FROM opentelemetry_logs
                      WHERE "timestamp" >= {} AND "timestamp" <= {}
                    ) WHERE "svc" IS NOT NULL AND "svc" != ''"#,
                 sql_ts(*range.start()),
                 sql_ts(*range.end()),
+                resource_json_get(semconv::SERVICE_NAME),
                 sql_ts(*range.start()),
                 sql_ts(*range.end()),
             ))
@@ -1325,8 +1363,9 @@ impl TelemetryStore for GreptimeStore {
         service: &str,
         range: RangeInclusive<u128>,
     ) -> anyhow::Result<Vec<ReleaseWindow>> {
+        let version_column = resource_attr_ident(semconv::SERVICE_VERSION);
         let sql = format!(
-            r#"SELECT "resource_attributes.service.version" AS "version",
+            r#"SELECT {version_column} AS "version",
                       MIN(CAST("timestamp" AS BIGINT)) AS "first_seen_nanos",
                       MAX(CAST("timestamp" AS BIGINT)) AS "last_seen_nanos",
                       COUNT(*) AS "span_count"
@@ -1334,9 +1373,9 @@ impl TelemetryStore for GreptimeStore {
                WHERE "service_name" = '{}'
                  AND "timestamp" >= {}
                  AND "timestamp" <= {}
-                 AND "resource_attributes.service.version" IS NOT NULL
-                 AND "resource_attributes.service.version" != ''
-               GROUP BY "resource_attributes.service.version"
+                 AND {version_column} IS NOT NULL
+                 AND {version_column} != ''
+               GROUP BY {version_column}
                ORDER BY "first_seen_nanos" ASC, "version" ASC"#,
             escape(service),
             sql_ts(*range.start()),
@@ -1368,15 +1407,20 @@ impl TelemetryStore for GreptimeStore {
             .sql_with_schema_lenient("SELECT * FROM opentelemetry_traces LIMIT 0")
             .await?;
         let has_column = |name: &str| schema.columns.iter().any(|column| column == name);
-        let latest_attr = |column: &str, alias: &str| {
-            if has_column(column) {
-                format!(r#"MAX(t."{}") AS "{}""#, escape_ident(column), alias)
+        let latest_attr = |attr: &str, alias: &str| {
+            let column = semconv::resource_column(attr);
+            if has_column(&column) {
+                format!(r#"MAX(t."{}") AS "{}""#, escape_ident(&column), alias)
             } else {
                 format!(r#"NULL AS "{}""#, alias)
             }
         };
-        let instance_count = if has_column("resource_attributes.service.instance.id") {
-            r#"COUNT(DISTINCT "resource_attributes.service.instance.id")"#.to_string()
+        let service_instance_column = semconv::resource_column(semconv::SERVICE_INSTANCE_ID);
+        let instance_count = if has_column(&service_instance_column) {
+            format!(
+                "COUNT(DISTINCT {})",
+                resource_attr_ident(semconv::SERVICE_INSTANCE_ID)
+            )
         } else {
             "0".to_string()
         };
@@ -1418,24 +1462,15 @@ impl TelemetryStore for GreptimeStore {
             sql_ts(*range.end()),
             sql_ts(*range.start()),
             sql_ts(*range.end()),
-            latest_attr("resource_attributes.service.version", "service_version"),
-            latest_attr("resource_attributes.service.namespace", "service_namespace"),
+            latest_attr(semconv::SERVICE_VERSION, "service_version"),
+            latest_attr(semconv::SERVICE_NAMESPACE, "service_namespace"),
             latest_attr(
-                "resource_attributes.deployment.environment.name",
+                semconv::DEPLOYMENT_ENVIRONMENT_NAME,
                 "deployment_environment"
             ),
-            latest_attr(
-                "resource_attributes.telemetry.sdk.language",
-                "telemetry_sdk_language"
-            ),
-            latest_attr(
-                "resource_attributes.telemetry.sdk.name",
-                "telemetry_sdk_name"
-            ),
-            latest_attr(
-                "resource_attributes.telemetry.sdk.version",
-                "telemetry_sdk_version"
-            ),
+            latest_attr(semconv::TELEMETRY_SDK_LANGUAGE, "telemetry_sdk_language"),
+            latest_attr(semconv::TELEMETRY_SDK_NAME, "telemetry_sdk_name"),
+            latest_attr(semconv::TELEMETRY_SDK_VERSION, "telemetry_sdk_version"),
             MAX_ROWS,
         );
         let rows = self.sql_lenient(&sql).await?;
@@ -1714,32 +1749,43 @@ impl TelemetryStore for GreptimeStore {
     ) -> anyhow::Result<Vec<crate::adapter::ObservedRun>> {
         let mut runs: std::collections::HashMap<String, crate::adapter::ObservedRun> =
             std::collections::HashMap::new();
-        // Native logs promote run id to `parallax.run.id`. Some GreptimeDB
-        // trace schemas do not flatten the run resource attribute to a column,
-        // so span counts derive from traces linked through run-scoped logs.
+        // Native logs promote run id. Some GreptimeDB trace schemas do not
+        // flatten the run resource attribute to a column, so span counts derive
+        // from traces linked through run-scoped logs.
         let sources = [
             (
-                r#"SELECT l."parallax.run.id" AS "run_id",
+                format!(
+                    r#"SELECT l.{} AS "run_id",
                           CAST(MIN(s."timestamp") AS BIGINT) AS "first_ts",
                           CAST(MAX(s."timestamp") AS BIGINT) AS "last_ts",
                           COUNT(DISTINCT s."span_id") AS "n",
                           MAX(s."service_name") AS "svc"
                    FROM opentelemetry_logs l
                    JOIN opentelemetry_traces s ON s."trace_id" = l."trace_id"
-                   WHERE l."parallax.run.id" IS NOT NULL
-                     AND l."parallax.run.id" != ''
+                   WHERE l.{} IS NOT NULL
+                     AND l.{} != ''
                    GROUP BY "run_id" ORDER BY "last_ts" DESC LIMIT "#,
+                    wire_attr_ident(semconv::PARALLAX_RUN_ID),
+                    wire_attr_ident(semconv::PARALLAX_RUN_ID),
+                    wire_attr_ident(semconv::PARALLAX_RUN_ID)
+                ),
                 true,
             ),
             (
-                r#"SELECT "parallax.run.id" AS "run_id",
+                format!(
+                    r#"SELECT {} AS "run_id",
                           CAST(MIN("timestamp") AS BIGINT) AS "first_ts",
                           CAST(MAX("timestamp") AS BIGINT) AS "last_ts",
                           COUNT(*) AS "n",
-                          MAX(json_get_string("resource_attributes", '$."service.name"')) AS "svc"
+                          MAX({}) AS "svc"
                    FROM opentelemetry_logs
-                   WHERE "parallax.run.id" IS NOT NULL AND "parallax.run.id" != ''
+                   WHERE {} IS NOT NULL AND {} != ''
                    GROUP BY "run_id" ORDER BY "last_ts" DESC LIMIT "#,
+                    wire_attr_ident(semconv::PARALLAX_RUN_ID),
+                    resource_json_get(semconv::SERVICE_NAME),
+                    wire_attr_ident(semconv::PARALLAX_RUN_ID),
+                    wire_attr_ident(semconv::PARALLAX_RUN_ID)
+                ),
                 false,
             ),
         ];
@@ -2241,12 +2287,14 @@ impl TelemetryStore for GreptimeStore {
         let rows = self
             .sql_lenient(&format!(
                 r#"SELECT CAST("timestamp" AS BIGINT) AS "ts_nanos",
-                          json_get_string("resource_attributes", '$."service.name"') AS "service",
+                          {} AS "service",
                           "severity_number", "severity_text", "body", "trace_id", "span_id",
-                          "parallax.run.id", "scope_name",
+                          {}, "scope_name",
                           json_to_string("log_attributes"),
                           json_to_string("resource_attributes")
                    FROM opentelemetry_logs WHERE {} ORDER BY "timestamp" DESC LIMIT {limit}"#,
+                resource_json_get(semconv::SERVICE_NAME),
+                wire_attr_ident(semconv::PARALLAX_RUN_ID),
                 clauses.join(" AND ")
             ))
             .await?;
@@ -2470,14 +2518,15 @@ impl GreptimeStore {
             )
             .await?;
         let mut columns = vec![SpanFieldColumn {
-            key: "resource.service.name".to_string(),
+            key: format!("resource.{}", semconv::SERVICE_NAME),
             column: "service_name".to_string(),
             source: FieldSource::Resource,
         }];
+        let service_name_key = format!("resource.{}", semconv::SERVICE_NAME);
         columns.extend(
             rows.iter()
                 .filter_map(|row| span_field_column_from_name(&str_at(row, 0)))
-                .filter(|column| column.key != "resource.service.name"),
+                .filter(|column| column.key != service_name_key),
         );
         Ok(columns)
     }

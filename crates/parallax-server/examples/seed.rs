@@ -14,12 +14,13 @@ use opentelemetry::trace::{
 };
 use opentelemetry::{Context as OtelContext, KeyValue};
 use opentelemetry_otlp::WithExportConfig;
+use parallax_proto::semconv;
 
 fn resource(service: &str) -> opentelemetry_sdk::Resource {
     opentelemetry_sdk::Resource::builder()
         .with_attributes([
-            KeyValue::new("service.name", service.to_string()),
-            KeyValue::new("service.version", "0.1.0"),
+            KeyValue::new(semconv::SERVICE_NAME, service.to_string()),
+            KeyValue::new(semconv::SERVICE_VERSION, "0.1.0"),
         ])
         .build()
 }
@@ -85,15 +86,15 @@ async fn main() {
         db_span.end();
         graphql_span.end();
         server_span.add_event(
-            "exception",
+            semconv::EXCEPTION_EVENT_NAME,
             vec![
-                KeyValue::new("exception.type", "tonic::Status"),
+                KeyValue::new(semconv::EXCEPTION_TYPE, "tonic::Status"),
                 KeyValue::new(
-                    "exception.message",
+                    semconv::EXCEPTION_MESSAGE,
                     format!("deadline exceeded talking to payments (attempt {attempt})"),
                 ),
                 KeyValue::new(
-                    "exception.stacktrace",
+                    semconv::EXCEPTION_STACKTRACE,
                     "checkout::payment::authorize at src/payment.rs:184",
                 ),
             ],
@@ -123,10 +124,13 @@ async fn main() {
     record.set_body(AnyValue::from(
         "panicked: checkout total overflowed at row 4242",
     ));
-    record.add_attribute("exception.type", "panic");
-    record.add_attribute("exception.message", "checkout total overflowed at row 4242");
+    record.add_attribute(semconv::EXCEPTION_TYPE, "panic");
     record.add_attribute(
-        "exception.stacktrace",
+        semconv::EXCEPTION_MESSAGE,
+        "checkout total overflowed at row 4242",
+    );
+    record.add_attribute(
+        semconv::EXCEPTION_STACKTRACE,
         "checkout::cart::total at src/cart.rs:99",
     );
     if let Some(ctx) = &last_span_context {

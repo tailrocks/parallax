@@ -2,6 +2,7 @@
 //! `TelemetryStore`; product code never sees an engine.
 
 use crate::model::*;
+use parallax_proto::semconv;
 use std::ops::RangeInclusive;
 
 pub const MAX_ROWS: usize = 500;
@@ -375,9 +376,9 @@ pub fn attribute_compare_key_allowed(key: &str) -> bool {
                 | "user.id"
                 | "session.id"
                 | "enduser.id"
-                | "exception.message"
-                | "exception.stacktrace"
-                | "exception.escaped"
+                | semconv::EXCEPTION_MESSAGE
+                | semconv::EXCEPTION_STACKTRACE
+                | semconv::EXCEPTION_ESCAPED
                 | "db.statement"
                 | "http.request.body"
                 | "http.response.body"

@@ -11,6 +11,7 @@ use crate::adapter::{
     metric_group_label_allowed, runtime_metric_family, runtime_metric_unit, span_field_key_allowed,
 };
 use crate::model::*;
+use parallax_proto::semconv;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::ops::RangeInclusive;
 use std::sync::Mutex;
@@ -601,7 +602,7 @@ impl TelemetryStore for MemoryStore {
         {
             let Some(version) = span
                 .resource
-                .get("service.version")
+                .get(semconv::SERVICE_VERSION)
                 .and_then(|value| value.as_str())
                 .map(str::trim)
                 .filter(|value| !value.is_empty())
@@ -656,13 +657,13 @@ impl TelemetryStore for MemoryStore {
             let Some(latest) = agg.latest else { continue };
             rows.push(ServiceCatalogRow {
                 name,
-                service_version: resource_string(&latest.resource, "service.version"),
-                service_namespace: resource_string(&latest.resource, "service.namespace"),
+                service_version: resource_string(&latest.resource, semconv::SERVICE_VERSION),
+                service_namespace: resource_string(&latest.resource, semconv::SERVICE_NAMESPACE),
                 deployment_environment: resource_string(
                     &latest.resource,
-                    "deployment.environment.name",
+                    semconv::DEPLOYMENT_ENVIRONMENT_NAME,
                 )
-                .or_else(|| resource_string(&latest.resource, "deployment.environment")),
+                .or_else(|| resource_string(&latest.resource, semconv::DEPLOYMENT_ENVIRONMENT)),
                 telemetry_sdk_language: resource_string(&latest.resource, "telemetry.sdk.language"),
                 telemetry_sdk_name: resource_string(&latest.resource, "telemetry.sdk.name"),
                 telemetry_sdk_version: resource_string(&latest.resource, "telemetry.sdk.version"),
@@ -1099,7 +1100,7 @@ impl TelemetryStore for MemoryStore {
         for span in &window {
             if !span.service.trim().is_empty() {
                 counts
-                    .entry("resource.service.name".to_string())
+                    .entry(format!("resource.{}", semconv::SERVICE_NAME))
                     .and_modify(|(_, count)| *count += 1)
                     .or_insert((FieldSource::Resource, 1));
             }
@@ -1118,7 +1119,7 @@ impl TelemetryStore for MemoryStore {
             }
             if let Some(resource) = span.resource.as_object() {
                 for key in resource.keys() {
-                    if key == "service.name" {
+                    if key == semconv::SERVICE_NAME {
                         continue;
                     }
                     let exposed = format!("resource.{key}");
@@ -1182,7 +1183,7 @@ impl TelemetryStore for MemoryStore {
         for span in &window {
             let value = match source {
                 FieldSource::Span => field_scalar_value(&span.attributes, raw_key),
-                FieldSource::Resource if raw_key == "service.name" => {
+                FieldSource::Resource if raw_key == semconv::SERVICE_NAME => {
                     field_value_display(&span.service)
                 }
                 FieldSource::Resource => field_scalar_value(&span.resource, raw_key),

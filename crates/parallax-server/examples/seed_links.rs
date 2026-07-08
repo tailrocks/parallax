@@ -5,6 +5,7 @@
 use parallax_proto::collector_trace::ExportTraceServiceRequest;
 use parallax_proto::common::{AnyValue, KeyValue, any_value};
 use parallax_proto::resource::Resource;
+use parallax_proto::semconv;
 use parallax_proto::trace::span::Link;
 use parallax_proto::trace::{ResourceSpans, ScopeSpans, Span, Status};
 use prost::Message as _;
@@ -66,7 +67,7 @@ async fn main() -> anyhow::Result<()> {
     let request = ExportTraceServiceRequest {
         resource_spans: vec![ResourceSpans {
             resource: Some(Resource {
-                attributes: vec![str_attr("service.name", "batcher")],
+                attributes: vec![str_attr(semconv::SERVICE_NAME, "batcher")],
                 ..Default::default()
             }),
             scope_spans: vec![ScopeSpans {

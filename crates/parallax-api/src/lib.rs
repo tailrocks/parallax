@@ -8,7 +8,7 @@
 //! auto-camelCased; cost limits are resolver-level caps in V1.
 
 use juniper::{EmptySubscription, FieldError, FieldResult, RootNode, graphql_object};
-use parallax_core::{agent_session, gaps, span_events, story, trace_analysis};
+use parallax_core::{agent_session, gaps, semconv, span_events, story, trace_analysis};
 use parallax_storage::adapter::{
     ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow as StorageAttributeCompareRow,
     FieldKey as StorageFieldKey, FieldSource, FieldStats as StorageFieldStats,
@@ -1425,7 +1425,7 @@ impl ServiceOverview {
         context: &ApiContext,
         q: f64,
     ) -> FieldResult<Vec<SeriesPoint>> {
-        for name in REQUEST_DURATION_METRICS {
+        for name in semconv::REQUEST_DURATION_METRICS {
             let series = context
                 .store
                 .histogram_quantile(name, Some(&self.service), self.from..=self.to, self.step, q)
@@ -1439,22 +1439,12 @@ impl ServiceOverview {
     }
 }
 
-/// Well-known request-duration histograms, preferred order (OTel semconv).
-const REQUEST_DURATION_METRICS: &[&str] = &["http.server.request.duration", "rpc.server.duration"];
-
 #[graphql_object(context = ApiContext)]
 impl ServiceOverview {
     /// Process/system CPU, averaged per step.
     async fn cpu(&self, context: &ApiContext) -> FieldResult<Vec<Point>> {
         Ok(self
-            .first_nonempty_points(
-                context,
-                &[
-                    "process.cpu.utilization",
-                    "process.cpu.usage",
-                    "system.cpu.utilization",
-                ],
-            )
+            .first_nonempty_points(context, semconv::CPU_METRICS)
             .await?
             .into_iter()
             .map(Point)
@@ -1464,14 +1454,7 @@ impl ServiceOverview {
     /// Process memory, averaged per step.
     async fn memory(&self, context: &ApiContext) -> FieldResult<Vec<Point>> {
         Ok(self
-            .first_nonempty_points(
-                context,
-                &[
-                    "process.memory.usage",
-                    "process.memory.virtual",
-                    "system.memory.usage",
-                ],
-            )
+            .first_nonempty_points(context, semconv::MEMORY_METRICS)
             .await?
             .into_iter()
             .map(Point)
@@ -1482,7 +1465,7 @@ impl ServiceOverview {
     /// counts.
     async fn request_rate(&self, context: &ApiContext) -> FieldResult<Vec<Point>> {
         let step_secs = (self.step / 1_000_000_000).max(1) as f64;
-        for name in REQUEST_DURATION_METRICS {
+        for name in semconv::REQUEST_DURATION_METRICS {
             let counts = context
                 .store
                 .histogram_count_series(name, Some(&self.service), self.from..=self.to, self.step)
@@ -3015,14 +2998,6 @@ impl Query {
     }
 }
 
-/// Well-known process metrics correlated into every bundle (spec §8
-/// correlation sections).
-const BUNDLE_WINDOW_METRICS: &[&str] = &[
-    "process.cpu.utilization",
-    "process.memory.usage",
-    "tokio.runtime.alive_tasks",
-];
-
 /// Fetch the anchor's metric windows: run anchors read run-scoped points
 /// over the run's lifespan (5 s steps); issue/trace anchors read a
 /// ±5-minute window around the anchor event (30 s steps), run-scoped when
@@ -3091,7 +3066,7 @@ async fn bundle_metric_windows(
         "service"
     };
     let mut windows = Vec::new();
-    for metric in BUNDLE_WINDOW_METRICS {
+    for metric in semconv::BUNDLE_WINDOW_METRICS {
         let points = context
             .store
             .metric_series(

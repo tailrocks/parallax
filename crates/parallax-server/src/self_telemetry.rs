@@ -3,7 +3,7 @@
 //! Parallax is normally a pure sink — it receives OTLP and never says anything
 //! about itself. When `[telemetry] self_otlp_endpoint` (or `PARALLAX_SELF_OTLP`)
 //! names a collector, serve also *exports* its internal `tracing` spans/logs
-//! there over OTLP/gRPC, tagged `service.name = parallax`. In the OTLP fan-out
+//! there over OTLP/gRPC, tagged with the service-name resource attribute. In the OTLP fan-out
 //! lab that endpoint is Rotel, so Parallax's own telemetry fans out beside the
 //! workload it ingests.
 //!
@@ -21,6 +21,7 @@ use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::Resource;
 use opentelemetry_sdk::logs::SdkLoggerProvider;
 use opentelemetry_sdk::trace::SdkTracerProvider;
+use parallax_proto::semconv;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::Layer;
 use tracing_subscriber::filter::Targets;
@@ -95,7 +96,10 @@ pub fn resolve_endpoint(config: &Config) -> Option<String> {
 fn resource() -> Resource {
     Resource::builder()
         .with_service_name("parallax")
-        .with_attribute(KeyValue::new("service.version", env!("CARGO_PKG_VERSION")))
+        .with_attribute(KeyValue::new(
+            semconv::SERVICE_VERSION,
+            env!("CARGO_PKG_VERSION"),
+        ))
         .build()
 }
 
