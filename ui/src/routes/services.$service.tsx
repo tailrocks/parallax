@@ -34,6 +34,7 @@ import {
 } from "@/components/console/trend"
 import { navItem } from "@/components/nav"
 import { PageHeader } from "@/components/page-header"
+import { RuntimeSnapshotCard } from "@/components/runtime-snapshot"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -60,7 +61,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { gqlString, graphql } from "@/lib/api"
-import type { ServiceCatalogRow, TraceSummary } from "@/lib/api"
+import type { RuntimeMetric, ServiceCatalogRow, TraceSummary } from "@/lib/api"
 import {
   formatCount,
   formatDateTime,
@@ -124,6 +125,7 @@ export interface ServiceDetailData {
   serviceCatalog: ServiceCatalogRow[]
   httpDurationExemplars: MetricExemplar[]
   rpcDurationExemplars: MetricExemplar[]
+  runtimeSnapshot: RuntimeMetric[]
   tracesPage: { items: TraceSummary[] }
 }
 
@@ -199,6 +201,9 @@ export async function loadServiceDetail(service: string, range: ResolvedRange) {
       }
       rpcDurationExemplars: metricExemplars(name: "rpc.server.duration", service: "${escaped}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", limit: 50) {
         tsNanos service name value traceId spanId runId attributes
+      }
+      runtimeSnapshot(service: "${escaped}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", stepSeconds: ${stepSeconds}) {
+        family metric unit points { tsNanos value }
       }
       tracesPage(service: "${escaped}", sort: START_DESC, limit: 10, fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}") {
         items { traceId rootName service startNanos durationNs spanCount hasError }
@@ -309,8 +314,7 @@ function exemplarMarkers(
   const span = to - from
   if (span <= 0n) return []
   const chartMax = data.reduce(
-    (max, row) =>
-      Math.max(max, row.p50 ?? 0, row.p95 ?? 0, row.p99 ?? 0),
+    (max, row) => Math.max(max, row.p50 ?? 0, row.p95 ?? 0, row.p99 ?? 0),
     0
   )
   const exemplarMax = exemplars.reduce(
@@ -374,7 +378,8 @@ export function ServiceDetailContent({
     data.red.p95.length > 0
   const traces = data.tracesPage.items
   const identity = data.serviceCatalog.find((row) => row.name === service)
-  const noData = !hasRed && traces.length === 0
+  const noData =
+    !hasRed && traces.length === 0 && data.runtimeSnapshot.length === 0
   const lastSeen = traces[0]?.startNanos
   const servicesBack = navItem("/services")!
 
@@ -486,7 +491,7 @@ export function ServiceDetailContent({
         />
       </div>
 
-      <InfraBand overview={data.overview} />
+      <RuntimeSnapshotCard metrics={data.runtimeSnapshot} />
       <RecentTraces traces={traces} />
     </div>
   )
@@ -526,7 +531,9 @@ function IdentityCard({
           <div key={label} className="space-y-1">
             <div className="text-xs text-muted-foreground">{label}</div>
             <div className="text-sm font-medium">
-              {value || <span className="text-muted-foreground">not emitted</span>}
+              {value || (
+                <span className="text-muted-foreground">not emitted</span>
+              )}
             </div>
           </div>
         ))}
@@ -735,12 +742,14 @@ function LatencyChart({
             </AreaChart>
           </ChartContainer>
           {markers.map((marker) => (
-            <Popover key={`${marker.exemplar.traceId}-${marker.exemplar.spanId}-${marker.exemplar.tsNanos}`}>
+            <Popover
+              key={`${marker.exemplar.traceId}-${marker.exemplar.spanId}-${marker.exemplar.tsNanos}`}
+            >
               <PopoverTrigger
                 render={
                   <button
                     type="button"
-                    className="absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary shadow-sm ring-2 ring-background outline-none transition-transform hover:scale-125 focus-visible:ring-ring"
+                    className="absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary shadow-sm ring-2 ring-background transition-transform outline-none hover:scale-125 focus-visible:ring-ring"
                     style={{ left: `${marker.x}%`, top: `${marker.y}%` }}
                     aria-label={`Trace exemplar ${marker.exemplar.traceId}`}
                   />
@@ -792,61 +801,6 @@ function LatencyChart({
   )
 }
 
-function InfraBand({ overview }: { overview: ServiceOverview }) {
-  if (overview.cpu.length === 0 && overview.memory.length === 0) return null
-  const data = toLineData({
-    cpu: overview.cpu,
-    memory: overview.memory,
-  })
-  const ticks = thinTicks(
-    data.map((row) => row.label),
-    7
-  )
-  return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between">
-        <CardTitle className="text-sm">Runtime metrics</CardTitle>
-        <ChartLegend
-          items={[
-            { key: "cpu", label: "CPU", color: "var(--chart-1)" },
-            { key: "memory", label: "Memory", color: "var(--chart-2)" },
-          ]}
-        />
-      </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="h-[220px] w-full">
-          <LineChart data={data} margin={{ left: 8, right: 8, top: 8 }}>
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="label"
-              tickLine={false}
-              axisLine={false}
-              ticks={ticks}
-              tickFormatter={(value, index) =>
-                makeEdgeTick(value, index, ticks)
-              }
-            />
-            <YAxis tickLine={false} axisLine={false} width={48} />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            <Line
-              dataKey="cpu"
-              stroke="var(--color-cpu)"
-              dot={false}
-              strokeWidth={1.7}
-            />
-            <Line
-              dataKey="memory"
-              stroke="var(--color-memory)"
-              dot={false}
-              strokeWidth={1.7}
-            />
-          </LineChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
-  )
-}
-
 function RecentTraces({ traces }: { traces: TraceSummary[] }) {
   const durations = traces.map((trace) => Number(trace.durationNs))
   const scale = useMemo(() => buildHeatScale(durations), [durations])
@@ -892,10 +846,7 @@ function RecentTraces({ traces }: { traces: TraceSummary[] }) {
                       </Link>
                     </TableCell>
                     <TableCell className="text-right">
-                      <HeatCell
-                        value={Number(trace.durationNs)}
-                        scale={scale}
-                      >
+                      <HeatCell value={Number(trace.durationNs)} scale={scale}>
                         {formatDurationNs(trace.durationNs)}
                       </HeatCell>
                     </TableCell>

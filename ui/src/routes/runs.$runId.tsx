@@ -24,6 +24,7 @@ import type { LogDoc } from "@/components/logs-table"
 import { MetricStrip } from "@/components/metric-strip"
 import { navItem } from "@/components/nav"
 import { PageHeader } from "@/components/page-header"
+import { RuntimeSnapshotCard } from "@/components/runtime-snapshot"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -37,7 +38,7 @@ import {
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { gqlString, graphql } from "@/lib/api"
-import type { StoryBeat } from "@/lib/api"
+import type { RuntimeMetric, StoryBeat } from "@/lib/api"
 import { formatCount, formatDurationNs } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { RunStatusBadge, durationNs } from "@/routes/runs.index"
@@ -93,13 +94,18 @@ export const Route = createFileRoute("/runs/$runId")({
   validateSearch: (search: Record<string, unknown>): RunDetailSearch => ({
     tab: search.tab === "story" ? "story" : undefined,
   }),
-  loader: ({ params }) =>
-    graphql<{
+  loader: ({ params }) => {
+    const toNanos = (
+      BigInt(Date.now()) * 1_000_000n +
+      60_000_000_000n
+    ).toString()
+    return graphql<{
       run: RunRecordData | null
       tracesByRun: RunTraceSummary[]
       logsByRun: LogDoc[]
       bundle: { markdown: string } | null
       story: StoryBeat[]
+      runtimeSnapshot: RuntimeMetric[]
     }>(
       `{ run(runId: "${gqlString(params.runId)}") {
            runId command status exitCode startedAtNanos endedAtNanos
@@ -116,8 +122,12 @@ export const Route = createFileRoute("/runs/$runId")({
          story(runId: "${gqlString(params.runId)}") {
            tsNanos lane kind title traceId spanId severity durationNs
          }
+         runtimeSnapshot(runId: "${gqlString(params.runId)}", fromNanos: "0", toNanos: "${toNanos}", stepSeconds: 5) {
+           family metric unit points { tsNanos value }
+         }
          bundle(runId: "${gqlString(params.runId)}") { markdown } }`
-    ),
+    )
+  },
   component: RunDetailPage,
 })
 
@@ -146,6 +156,7 @@ function RunDetailPage() {
     logsByRun,
     bundle,
     story,
+    runtimeSnapshot,
   } = Route.useLoaderData()
   const { runId } = Route.useParams()
   const search = Route.useSearch()
@@ -228,11 +239,12 @@ function RunDetailPage() {
              errorCount traceCount
              issues { fingerprint title errorType status eventCount }
            } }`
-      ).then((data) => {
-        if (data.run) setPolledRun(data.run)
-      })
-      // Live polling tolerates transient API failures; next interval retries.
-      .catch(() => {})
+      )
+        .then((data) => {
+          if (data.run) setPolledRun(data.run)
+        })
+        // Live polling tolerates transient API failures; next interval retries.
+        .catch(() => {})
     }, 10_000)
     return () => clearInterval(timer)
   }, [live, runId])
@@ -245,6 +257,7 @@ function RunDetailPage() {
       logs={runLogs}
       bundle={bundle}
       story={story}
+      runtimeSnapshot={runtimeSnapshot}
       activeTab={search.tab === "story" ? "story" : "overview"}
       onTab={(value) =>
         navigate({
@@ -269,6 +282,7 @@ export function RunDetailContent({
   logs,
   bundle,
   story = [],
+  runtimeSnapshot,
   activeTab = "overview",
   onTab = () => {},
   live,
@@ -282,6 +296,7 @@ export function RunDetailContent({
   logs: LogDoc[]
   bundle: { markdown: string } | null
   story?: StoryBeat[]
+  runtimeSnapshot: RuntimeMetric[]
   activeTab?: RunDetailTab
   onTab?: (value: string) => void
   live: boolean
@@ -391,6 +406,7 @@ export function RunDetailContent({
               live={live}
             />
           ) : null}
+          <RuntimeSnapshotCard metrics={runtimeSnapshot} />
 
           {run?.issues.length ? <IssuesCard issues={run.issues} /> : null}
           {traces.length ? <TracesCard traces={traces} /> : null}
@@ -549,10 +565,7 @@ function TracesCard({ traces }: { traces: RunTraceSummary[] }) {
                     {formatCount(trace.spanCount)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <HeatCell
-                      value={Number(trace.durationNs)}
-                      scale={scale}
-                    >
+                    <HeatCell value={Number(trace.durationNs)} scale={scale}>
                       {formatDurationNs(trace.durationNs)}
                     </HeatCell>
                   </TableCell>

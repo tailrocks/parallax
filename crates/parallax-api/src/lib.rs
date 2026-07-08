@@ -11,9 +11,10 @@ use juniper::{EmptySubscription, FieldError, FieldResult, RootNode, graphql_obje
 use parallax_core::{gaps, story, trace_analysis};
 use parallax_storage::adapter::{
     ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow as StorageAttributeCompareRow, OverviewTotals,
-    ReleaseWindow as StorageReleaseWindow, SERVICE_MAP_TRACE_CAP,
-    ServiceCatalogRow as StorageServiceCatalogRow, ServiceEdge as StorageServiceEdge,
-    ServiceSummary as StorageServiceSummary, SpanRed as StorageSpanRed, TelemetryStore,
+    ReleaseWindow as StorageReleaseWindow, RuntimeMetricSeries as StorageRuntimeMetricSeries,
+    SERVICE_MAP_TRACE_CAP, ServiceCatalogRow as StorageServiceCatalogRow,
+    ServiceEdge as StorageServiceEdge, ServiceSummary as StorageServiceSummary,
+    SpanRed as StorageSpanRed, TelemetryStore, metric_group_label_allowed,
 };
 use parallax_storage::metadata::MetadataStore;
 use parallax_storage::model;
@@ -64,6 +65,20 @@ fn validate_metric_name(name: &str) -> FieldResult<()> {
         Ok(())
     } else {
         Err(field_err("invalid metric name"))
+    }
+}
+
+fn validate_metric_group_label(label: &str) -> FieldResult<()> {
+    let ok = label
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-' | '/'))
+        && metric_group_label_allowed(label);
+    if ok {
+        Ok(())
+    } else {
+        Err(field_err(
+            "high-cardinality identifier - filter, don't group",
+        ))
     }
 }
 
@@ -807,6 +822,24 @@ impl Series {
     }
     fn points(&self) -> Vec<Point> {
         self.points.iter().copied().map(Point).collect()
+    }
+}
+
+pub struct RuntimeMetric(StorageRuntimeMetricSeries);
+
+#[graphql_object(context = ApiContext)]
+impl RuntimeMetric {
+    fn family(&self) -> &str {
+        &self.0.family
+    }
+    fn metric(&self) -> &str {
+        &self.0.metric
+    }
+    fn unit(&self) -> Option<&str> {
+        self.0.unit.as_deref()
+    }
+    fn points(&self) -> Vec<Point> {
+        self.0.points.iter().copied().map(Point).collect()
     }
 }
 
@@ -2289,9 +2322,62 @@ impl Query {
         Ok(names)
     }
 
+    /// Groupable label/tag keys for one metric.
+    async fn metric_labels(context: &ApiContext, name: String) -> FieldResult<Vec<String>> {
+        validate_metric_name(&name)?;
+        context.store.metric_labels(&name).await.map_err(field_err)
+    }
+
+    /// Distinct values for one metric label inside a time window.
+    async fn metric_label_values(
+        context: &ApiContext,
+        name: String,
+        label: String,
+        from_nanos: String,
+        to_nanos: String,
+    ) -> FieldResult<Vec<String>> {
+        validate_metric_name(&name)?;
+        validate_metric_group_label(&label)?;
+        let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+        context
+            .store
+            .metric_label_values(&name, &label, from..=to)
+            .await
+            .map_err(field_err)
+    }
+
     /// Distinct service names (drives the service-overview selector).
     async fn services(context: &ApiContext) -> FieldResult<Vec<String>> {
         context.store.service_names().await.map_err(field_err)
+    }
+
+    /// Runtime metric lanes, scoped to exactly one service or run.
+    async fn runtime_snapshot(
+        context: &ApiContext,
+        service: Option<String>,
+        run_id: Option<String>,
+        from_nanos: String,
+        to_nanos: String,
+        step_seconds: i32,
+    ) -> FieldResult<Vec<RuntimeMetric>> {
+        match (service.as_deref(), run_id.as_deref()) {
+            (Some(_), Some(_)) | (None, None) => {
+                return Err(field_err("runtimeSnapshot takes exactly one scope"));
+            }
+            _ => {}
+        }
+        let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+        let rows = context
+            .store
+            .runtime_snapshot(
+                service.as_deref(),
+                run_id.as_deref(),
+                from..=to,
+                step_nanos(Some(step_seconds)),
+            )
+            .await
+            .map_err(field_err)?;
+        Ok(rows.into_iter().map(RuntimeMetric).collect())
     }
 
     /// Aggregated series for a point metric (gauge/sum); agg one of
@@ -2317,6 +2403,7 @@ impl Query {
             .ok_or_else(|| field_err("agg must be avg|min|max|sum|rate"))?;
         match group_by {
             Some(group_by) => {
+                validate_metric_group_label(&group_by)?;
                 if run_id.is_some() {
                     return Err(field_err("runId with groupBy is not supported yet"));
                 }
@@ -2766,7 +2853,9 @@ mod tests {
     use super::*;
     use parallax_storage::adapter::TelemetryStore;
     use parallax_storage::memory::MemoryStore;
-    use parallax_storage::model::{ErrorEventRow, ErrorSource, LogRow, MetricExemplarRow, SpanRow};
+    use parallax_storage::model::{
+        ErrorEventRow, ErrorSource, LogRow, MetricExemplarRow, MetricPointRow, SpanRow,
+    };
 
     fn span(
         service: &str,
@@ -2905,6 +2994,97 @@ mod tests {
                 .and_then(|value| value.as_array())
                 .is_some(),
             "metricSeries returns data for valid name: {json}"
+        );
+    }
+
+    #[tokio::test]
+    async fn metric_label_and_runtime_resolvers_query_memory_store() {
+        let store = Arc::new(MemoryStore::new());
+        store
+            .ingest_metrics(
+                vec![
+                    MetricPointRow {
+                        ts_nanos: 1_000_000_000,
+                        service: "checkout".into(),
+                        name: "process.cpu.utilization".into(),
+                        value: 0.5,
+                        is_monotonic: false,
+                        run_id: Some("run-a".into()),
+                        attributes: serde_json::json!({
+                            "runtime.name": "tokio",
+                            "trace_id": "trace-a"
+                        }),
+                    },
+                    MetricPointRow {
+                        ts_nanos: 2_000_000_000,
+                        service: "checkout".into(),
+                        name: "jvm.memory.used".into(),
+                        value: 256.0,
+                        is_monotonic: false,
+                        run_id: None,
+                        attributes: serde_json::json!({
+                            "runtime.name": "jvm"
+                        }),
+                    },
+                ],
+                Vec::new(),
+                Vec::new(),
+                Default::default(),
+            )
+            .await
+            .unwrap();
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"
+            {
+              metricLabels(name: "process.cpu.utilization")
+              metricLabelValues(name: "process.cpu.utilization", label: "runtime.name", fromNanos: "0", toNanos: "3000000000")
+              runtimeSnapshot(service: "checkout", fromNanos: "0", toNanos: "3000000000", stepSeconds: 1) {
+                family metric unit points { tsNanos value }
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(
+            error_messages(&json).is_empty(),
+            "metric label/runtime query: {json}"
+        );
+        assert_eq!(
+            json.pointer("/data/metricLabels"),
+            Some(&serde_json::json!(["runtime.name"]))
+        );
+        assert_eq!(
+            json.pointer("/data/metricLabelValues"),
+            Some(&serde_json::json!(["tokio"]))
+        );
+        let runtime = json
+            .pointer("/data/runtimeSnapshot")
+            .and_then(|value| value.as_array())
+            .unwrap();
+        assert_eq!(runtime.len(), 2, "two runtime families returned: {json}");
+        assert!(runtime.iter().any(|row| row["family"] == "process"));
+        assert!(runtime.iter().any(|row| row["family"] == "jvm"));
+
+        let denied = juniper::http::GraphQLRequest::new(
+            r#"{ metricSeries(name: "process.cpu.utilization", fromNanos: "0", toNanos: "3000000000", groupBy: "trace_id") { groupValue } }"#
+                .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, denied).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(
+            error_messages(&json)
+                .iter()
+                .any(|message| message.contains("high-cardinality identifier")),
+            "denylisted groupBy rejected: {json}"
         );
     }
 

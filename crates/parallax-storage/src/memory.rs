@@ -3,9 +3,10 @@
 
 use crate::adapter::{
     ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow, MAX_ROWS,
-    OverviewTotals, ReleaseWindow, SERVICE_MAP_TRACE_CAP, ServiceCatalogRow, ServiceEdge,
-    ServiceSummary, SignalKind, SpanRed, TelemetryStore, attribute_compare_key_allowed,
-    attribute_compare_score, attribute_compare_value_allowed,
+    OverviewTotals, ReleaseWindow, RuntimeMetricSeries, SERVICE_MAP_TRACE_CAP, ServiceCatalogRow,
+    ServiceEdge, ServiceSummary, SignalKind, SpanRed, TelemetryStore,
+    attribute_compare_key_allowed, attribute_compare_score, attribute_compare_value_allowed,
+    metric_group_label_allowed, runtime_metric_family, runtime_metric_unit,
 };
 use crate::model::*;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -308,6 +309,80 @@ impl TelemetryStore for MemoryStore {
         names.sort();
         names.dedup();
         Ok(names)
+    }
+
+    async fn metric_labels(&self, name: &str) -> anyhow::Result<Vec<String>> {
+        let inner = self.lock();
+        let mut labels = BTreeSet::new();
+        for attributes in inner
+            .metric_points
+            .iter()
+            .filter(|point| point.name == name)
+            .map(|point| &point.attributes)
+            .chain(
+                inner
+                    .histograms
+                    .iter()
+                    .filter(|row| row.name == name)
+                    .map(|row| &row.attributes),
+            )
+        {
+            if let Some(object) = attributes.as_object() {
+                for (key, value) in object {
+                    if metric_group_label_allowed(key)
+                        && matches!(
+                            value,
+                            serde_json::Value::String(_)
+                                | serde_json::Value::Bool(_)
+                                | serde_json::Value::Number(_)
+                        )
+                    {
+                        labels.insert(key.clone());
+                    }
+                }
+            }
+        }
+        Ok(labels.into_iter().collect())
+    }
+
+    async fn metric_label_values(
+        &self,
+        name: &str,
+        label: &str,
+        range: RangeInclusive<u128>,
+    ) -> anyhow::Result<Vec<String>> {
+        anyhow::ensure!(
+            metric_group_label_allowed(label),
+            "high-cardinality identifier - filter, don't group"
+        );
+        let labels = self.metric_labels(name).await?;
+        anyhow::ensure!(
+            labels.iter().any(|known| known == label),
+            "unknown metric label"
+        );
+        let inner = self.lock();
+        let mut values = BTreeSet::new();
+        for attributes in inner
+            .metric_points
+            .iter()
+            .filter(|point| point.name == name && range.contains(&point.ts_nanos))
+            .map(|point| &point.attributes)
+            .chain(
+                inner
+                    .histograms
+                    .iter()
+                    .filter(|row| row.name == name && range.contains(&row.ts_nanos))
+                    .map(|row| &row.attributes),
+            )
+        {
+            if let Some(value) = scalar_attribute_value(attributes, label) {
+                values.insert(value);
+                if values.len() >= 100 {
+                    break;
+                }
+            }
+        }
+        Ok(values.into_iter().collect())
     }
 
     async fn service_names(&self) -> anyhow::Result<Vec<String>> {
@@ -1132,6 +1207,15 @@ impl TelemetryStore for MemoryStore {
         step_nanos: u128,
         agg: MetricAgg,
     ) -> anyhow::Result<Vec<(String, Vec<SeriesPoint>)>> {
+        anyhow::ensure!(
+            metric_group_label_allowed(group_by),
+            "high-cardinality identifier - filter, don't group"
+        );
+        let labels = self.metric_labels(name).await?;
+        anyhow::ensure!(
+            labels.iter().any(|label| label == group_by),
+            "unknown metric label"
+        );
         let step = step_nanos.max(1);
         let mut buckets: std::collections::BTreeMap<(String, u128), Vec<f64>> = Default::default();
         for point in self.lock().metric_points.iter().filter(|p| {
@@ -1171,6 +1255,42 @@ impl TelemetryStore for MemoryStore {
                 (group, series)
             })
             .collect())
+    }
+
+    async fn runtime_snapshot(
+        &self,
+        service: Option<&str>,
+        run_id: Option<&str>,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+    ) -> anyhow::Result<Vec<RuntimeMetricSeries>> {
+        let mut rows = Vec::new();
+        for metric in self.metric_names().await? {
+            let Some(family) = runtime_metric_family(&metric) else {
+                continue;
+            };
+            let points = self
+                .metric_series(
+                    &metric,
+                    service,
+                    run_id,
+                    range.clone(),
+                    step_nanos,
+                    MetricAgg::Avg,
+                )
+                .await?;
+            if points.is_empty() {
+                continue;
+            }
+            rows.push(RuntimeMetricSeries {
+                family: family.to_string(),
+                metric: metric.clone(),
+                unit: runtime_metric_unit(&metric),
+                points,
+            });
+        }
+        rows.sort_by(|a, b| a.family.cmp(&b.family).then(a.metric.cmp(&b.metric)));
+        Ok(rows)
     }
 
     async fn histogram_count_series(
@@ -1557,6 +1677,92 @@ mod tests {
         assert_eq!(rows[0].trace_id, "trace-a");
         assert_eq!(rows[0].run_id.as_deref(), Some("run-a"));
         assert_eq!(rows[0].attributes["route"], "/checkout");
+    }
+
+    #[tokio::test]
+    async fn metric_labels_values_and_runtime_snapshot_derive_from_points() {
+        let store = MemoryStore::new();
+        store
+            .ingest_metrics(
+                vec![
+                    MetricPointRow {
+                        ts_nanos: 1_000_000_000,
+                        service: "checkout".into(),
+                        name: "process.cpu.utilization".into(),
+                        value: 0.42,
+                        is_monotonic: false,
+                        run_id: Some("run-a".into()),
+                        attributes: serde_json::json!({
+                            "runtime.name": "tokio",
+                            "payment.method": "card",
+                            "trace_id": "trace-a"
+                        }),
+                    },
+                    MetricPointRow {
+                        ts_nanos: 2_000_000_000,
+                        service: "checkout".into(),
+                        name: "jvm.gc.time".into(),
+                        value: 12.0,
+                        is_monotonic: false,
+                        run_id: None,
+                        attributes: serde_json::json!({
+                            "payment.method": "wire"
+                        }),
+                    },
+                ],
+                Vec::new(),
+                Vec::new(),
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+
+        let labels = store
+            .metric_labels("process.cpu.utilization")
+            .await
+            .unwrap();
+        assert!(labels.contains(&"runtime.name".to_string()));
+        assert!(labels.contains(&"payment.method".to_string()));
+        assert!(!labels.contains(&"trace_id".to_string()));
+
+        let values = store
+            .metric_label_values(
+                "process.cpu.utilization",
+                "payment.method",
+                0..=3_000_000_000,
+            )
+            .await
+            .unwrap();
+        assert_eq!(values, vec!["card".to_string()]);
+
+        let runtime = store
+            .runtime_snapshot(Some("checkout"), None, 0..=3_000_000_000, 1_000_000_000)
+            .await
+            .unwrap();
+        assert_eq!(runtime.len(), 2);
+        assert!(runtime.iter().any(|row| row.family == "process"));
+        assert!(runtime.iter().any(|row| row.family == "jvm"));
+
+        let run_runtime = store
+            .runtime_snapshot(None, Some("run-a"), 0..=3_000_000_000, 1_000_000_000)
+            .await
+            .unwrap();
+        assert_eq!(run_runtime.len(), 1);
+        assert_eq!(run_runtime[0].metric, "process.cpu.utilization");
+
+        let denied = store
+            .metric_series_grouped(
+                "process.cpu.utilization",
+                Some("checkout"),
+                "trace_id",
+                0..=3_000_000_000,
+                1_000_000_000,
+                MetricAgg::Avg,
+            )
+            .await
+            .unwrap_err()
+            .to_string();
+        assert!(denied.contains("high-cardinality identifier"));
     }
 
     #[tokio::test]

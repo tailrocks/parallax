@@ -164,6 +164,18 @@ export interface AttributeCompareRow {
   score: number
 }
 
+export interface MetricPoint {
+  tsNanos: string
+  value: number
+}
+
+export interface RuntimeMetric {
+  family: string
+  metric: string
+  unit: string | null
+  points: MetricPoint[]
+}
+
 export interface EvidenceGap {
   kind: string
   subject: string

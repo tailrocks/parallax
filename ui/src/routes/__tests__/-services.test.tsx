@@ -96,6 +96,7 @@ const detailFixture: ServiceDetailData = {
   serviceCatalog: servicesFixture.serviceCatalog,
   httpDurationExemplars: [],
   rpcDurationExemplars: [],
+  runtimeSnapshot: [],
   tracesPage: {
     items: [
       {
@@ -184,7 +185,9 @@ describe("Services route", () => {
       screen.getByRole("link", { name: /api gateway/i }).getAttribute("href")
     ).toBe("/services/api%20gateway?range=24h")
 
-    const spansHref = screen.getByRole("link", { name: "20" }).getAttribute("href")
+    const spansHref = screen
+      .getByRole("link", { name: "20" })
+      .getAttribute("href")
     const spansUrl = new URL(spansHref!, "http://example.test")
     expect(spansUrl.pathname).toBe("/traces")
     expect(spansUrl.searchParams.get("service")).toBe("api gateway")

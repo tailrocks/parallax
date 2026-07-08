@@ -43,6 +43,21 @@ describe("final sweep", () => {
     })
   })
 
+  it("round-trips dashboard label choices without breaking old layouts", () => {
+    const widgets = parseLayout(
+      '[{"metric":"process.cpu.utilization","agg":"avg","chart":"line"},{"metric":"jvm.memory.used","groupBy":"service_name","filterValue":"checkout"}]'
+    )
+
+    expect(widgets[0]).toMatchObject({
+      metric: "process.cpu.utilization",
+    })
+    expect(JSON.parse(serializeWidgets(widgets))[1]).toMatchObject({
+      metric: "jvm.memory.used",
+      groupBy: "service_name",
+      filterValue: "checkout",
+    })
+  })
+
   it("renders SQL keyboard hint and examples menu", async () => {
     window.matchMedia = () =>
       ({

@@ -123,6 +123,69 @@ pub struct SpanRed {
     pub p99: Vec<SeriesPoint>,
 }
 
+/// One runtime metric lane returned by `runtimeSnapshot`.
+#[derive(Debug, Clone)]
+pub struct RuntimeMetricSeries {
+    pub family: String,
+    pub metric: String,
+    pub unit: Option<String>,
+    pub points: Vec<SeriesPoint>,
+}
+
+pub const RUNTIME_METRIC_PREFIXES: &[&str] = &[
+    "process.",
+    "system.",
+    "jvm.",
+    "tokio.runtime.",
+    "container.",
+    "db.client.connection.",
+];
+
+pub fn runtime_metric_family(name: &str) -> Option<&'static str> {
+    RUNTIME_METRIC_PREFIXES
+        .iter()
+        .find(|prefix| name.starts_with(**prefix))
+        .map(|prefix| prefix.trim_end_matches('.'))
+}
+
+pub fn runtime_metric_unit(name: &str) -> Option<String> {
+    let lower = name.to_ascii_lowercase();
+    let unit = if lower.ends_with("_bytes")
+        || lower.ends_with(".bytes")
+        || lower.contains(".memory.")
+        || lower.contains("_memory_")
+    {
+        "bytes"
+    } else if lower.ends_with("_ms") || lower.ends_with(".ms") {
+        "ms"
+    } else if lower.contains("cpu.utilization") || lower.contains("cpu_usage") {
+        "ratio"
+    } else {
+        return None;
+    };
+    Some(unit.to_string())
+}
+
+pub fn metric_group_label_allowed(label: &str) -> bool {
+    let lower = label.trim().to_ascii_lowercase();
+    if lower.is_empty() || lower.len() > 128 {
+        return false;
+    }
+    let compact = lower.replace(['.', '-'], "_");
+    let leaf = lower.rsplit('.').next().unwrap_or(lower.as_str());
+    let leaf_compact = leaf.replace('-', "_");
+    !matches!(
+        lower.as_str(),
+        "trace.id" | "run.id" | "user.id" | "session.id"
+    ) && !matches!(
+        compact.as_str(),
+        "trace_id" | "run_id" | "user_id" | "session_id"
+    ) && !matches!(
+        leaf_compact.as_str(),
+        "trace_id" | "run_id" | "user_id" | "session_id"
+    )
+}
+
 /// Filtered trace browse (UI Traces page / CLI `parallax traces` / GraphQL
 /// `traces`): every filter optional. `service` matches any trace the service
 /// **participates in** (a span of that service anywhere in the trace, not only
@@ -311,6 +374,15 @@ pub trait TelemetryStore: Send + Sync {
     async fn logs_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<LogRow>>;
     /// Distinct metric names (both point and histogram metrics).
     async fn metric_names(&self) -> anyhow::Result<Vec<String>>;
+    /// Discover groupable metric label/tag keys for one metric.
+    async fn metric_labels(&self, name: &str) -> anyhow::Result<Vec<String>>;
+    /// Distinct scalar values for one metric label inside an inclusive window.
+    async fn metric_label_values(
+        &self,
+        name: &str,
+        label: &str,
+        range: RangeInclusive<u128>,
+    ) -> anyhow::Result<Vec<String>>;
     /// Distinct service names seen in metrics.
     async fn service_names(&self) -> anyhow::Result<Vec<String>>;
     /// Whole-system overview counters for an inclusive time window.
@@ -442,6 +514,14 @@ pub trait TelemetryStore: Send + Sync {
         step_nanos: u128,
         agg: MetricAgg,
     ) -> anyhow::Result<Vec<(String, Vec<SeriesPoint>)>>;
+    /// Runtime metric lanes across known runtime families for service/run scope.
+    async fn runtime_snapshot(
+        &self,
+        service: Option<&str>,
+        run_id: Option<&str>,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+    ) -> anyhow::Result<Vec<RuntimeMetricSeries>>;
     /// Histogram sample counts summed per bucket (request-rate numerator).
     async fn histogram_count_series(
         &self,

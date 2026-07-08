@@ -3,9 +3,10 @@
 
 use crate::adapter::{
     ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow, MAX_ROWS,
-    OverviewTotals, ReleaseWindow, SERVICE_MAP_TRACE_CAP, ServiceCatalogRow, ServiceEdge,
-    ServiceSummary, SignalKind, SpanRed, TelemetryStore, attribute_compare_key_allowed,
-    attribute_compare_score, attribute_compare_value_allowed,
+    OverviewTotals, ReleaseWindow, RuntimeMetricSeries, SERVICE_MAP_TRACE_CAP, ServiceCatalogRow,
+    ServiceEdge, ServiceSummary, SignalKind, SpanRed, TelemetryStore,
+    attribute_compare_key_allowed, attribute_compare_score, attribute_compare_value_allowed,
+    metric_group_label_allowed, runtime_metric_family, runtime_metric_unit,
 };
 use crate::model::*;
 use std::collections::{BTreeMap, BTreeSet};
@@ -35,6 +36,122 @@ fn escape(text: &str) -> String {
 /// Escape a value for inclusion inside a double-quoted SQL identifier.
 fn escape_ident(text: &str) -> String {
     text.replace('"', "\"\"")
+}
+
+// Greptime metric-engine point tables discovered with live DESCRIBE expose
+// `greptime_timestamp` and `greptime_value`; explicit histogram bucket tables
+// add `le`. They are bookkeeping, not groupable metric labels.
+const METRIC_BOOKKEEPING_COLUMNS: &[&str] = &["greptime_timestamp", "greptime_value", "le"];
+
+fn native_metric_base(name: &str) -> String {
+    name.chars()
+        .map(|ch| {
+            if ch.is_ascii_alphanumeric() || ch == '_' {
+                ch
+            } else {
+                '_'
+            }
+        })
+        .collect()
+}
+
+fn metric_table_candidates(name: &str, suffix: Option<&str>) -> Vec<String> {
+    let suffix = suffix.unwrap_or_default();
+    let mut bases = vec![name.to_string()];
+    let native = native_metric_base(name);
+    if native != name {
+        bases.push(native.clone());
+    }
+    if !native.ends_with("_total") {
+        bases.push(format!("{native}_total"));
+    }
+    for unit_suffix in ["_ratio", "_bytes", "_seconds", "_nanoseconds_total"] {
+        if !native.ends_with(unit_suffix) {
+            bases.push(format!("{native}{unit_suffix}"));
+        }
+    }
+
+    let mut candidates = Vec::new();
+    for base in bases {
+        let candidate = format!("{base}{suffix}");
+        if !candidates.contains(&candidate) {
+            candidates.push(candidate);
+        }
+    }
+    candidates
+}
+
+fn runtime_display_name(base: &str) -> Option<String> {
+    const PREFIXES: &[(&str, &str)] = &[
+        ("process_", "process."),
+        ("system_", "system."),
+        ("jvm_", "jvm."),
+        ("container_", "container."),
+        ("db_client_connection_", "db.client.connection."),
+    ];
+    if let Some(rest) = base.strip_prefix("tokio_runtime_") {
+        return Some(format!("tokio.runtime.{rest}"));
+    }
+    PREFIXES.iter().find_map(|(native, display)| {
+        base.strip_prefix(native)
+            .map(|rest| format!("{display}{}", rest.replace('_', ".")))
+    })
+}
+
+const METRIC_DISPLAY_ALIASES: &[(&str, &str)] = &[
+    ("tokio.runtime.alive.tasks", "tokio.runtime.alive_tasks"),
+    (
+        "tokio.runtime.blocking.pool.depth",
+        "tokio.runtime.blocking_pool_depth",
+    ),
+    (
+        "tokio.runtime.global.queue.depth",
+        "tokio.runtime.global_queue_depth",
+    ),
+    (
+        "tokio.runtime.total.busy.duration.ms",
+        "tokio.runtime.total_busy_duration_ms",
+    ),
+    (
+        "tokio.runtime.total.park.count",
+        "tokio.runtime.total_park_count",
+    ),
+    ("tokio.runtime.workers.count", "tokio.runtime.workers_count"),
+    ("process.cpu.utilization.ratio", "process.cpu.utilization"),
+    ("process.memory.usage.bytes", "process.memory.usage"),
+];
+
+fn canonical_metric_display_name(name: &str) -> String {
+    METRIC_DISPLAY_ALIASES
+        .iter()
+        .find_map(|(legacy, canonical)| (*legacy == name).then_some((*canonical).to_string()))
+        .unwrap_or_else(|| name.to_string())
+}
+
+fn metric_name_query_names(name: &str) -> Vec<String> {
+    let mut names = vec![name.to_string(), canonical_metric_display_name(name)];
+    for (legacy, canonical) in METRIC_DISPLAY_ALIASES {
+        if *canonical == name {
+            names.push((*legacy).to_string());
+        }
+    }
+    names.sort();
+    names.dedup();
+    names
+}
+
+fn metric_name_sql_filter(column: &str, name: &str) -> String {
+    let names = metric_name_query_names(name);
+    if names.len() == 1 {
+        format!(r#"{column} = '{}'"#, escape(&names[0]))
+    } else {
+        let quoted = names
+            .iter()
+            .map(|name| format!("'{}'", escape(name)))
+            .collect::<Vec<_>>()
+            .join(",");
+        format!("{column} IN ({quoted})")
+    }
 }
 
 fn raw_sql_read_only(query: &str) -> bool {
@@ -335,6 +452,35 @@ impl GreptimeStore {
             })
             .unwrap_or_default();
         Ok(crate::adapter::SqlResult { columns, rows })
+    }
+
+    async fn metric_table_for_name(
+        &self,
+        name: &str,
+        suffix: Option<&str>,
+    ) -> anyhow::Result<Option<String>> {
+        let candidates = metric_table_candidates(name, suffix);
+        if candidates.is_empty() {
+            return Ok(None);
+        }
+        let quoted = candidates
+            .iter()
+            .map(|candidate| format!("'{}'", escape(candidate)))
+            .collect::<Vec<_>>()
+            .join(",");
+        let rows = self
+            .sql_lenient(&format!(
+                r#"SELECT "table_name" FROM information_schema.tables
+                   WHERE "table_schema" = 'public' AND "table_name" IN ({quoted})"#
+            ))
+            .await?;
+        let existing = rows
+            .iter()
+            .map(|row| str_at(row, 0))
+            .collect::<BTreeSet<_>>();
+        Ok(candidates
+            .into_iter()
+            .find(|candidate| existing.contains(candidate)))
     }
 
     async fn insert(&self, table: &str, columns: &str, values: Vec<String>) -> anyhow::Result<()> {
@@ -882,6 +1028,74 @@ impl TelemetryStore for GreptimeStore {
         Ok(self.discover_metric_names().await?.into_iter().collect())
     }
 
+    async fn metric_labels(&self, name: &str) -> anyhow::Result<Vec<String>> {
+        let table = match self.metric_table_for_name(name, None).await? {
+            Some(table) => table,
+            None => match self.metric_table_for_name(name, Some("_bucket")).await? {
+                Some(table) => table,
+                None => return Ok(Vec::new()),
+            },
+        };
+        let rows = self
+            .sql_lenient(&format!(
+                r#"SELECT "column_name" FROM information_schema.columns
+                   WHERE "table_schema" = 'public' AND "table_name" = '{}'
+                   ORDER BY "column_name""#,
+                escape(&table),
+            ))
+            .await?;
+        Ok(rows
+            .iter()
+            .map(|row| str_at(row, 0))
+            .filter(|column| {
+                !METRIC_BOOKKEEPING_COLUMNS.contains(&column.as_str())
+                    && metric_group_label_allowed(column)
+            })
+            .collect())
+    }
+
+    async fn metric_label_values(
+        &self,
+        name: &str,
+        label: &str,
+        range: RangeInclusive<u128>,
+    ) -> anyhow::Result<Vec<String>> {
+        anyhow::ensure!(
+            metric_group_label_allowed(label),
+            "high-cardinality identifier - filter, don't group"
+        );
+        let table = match self.metric_table_for_name(name, None).await? {
+            Some(table) => table,
+            None => match self.metric_table_for_name(name, Some("_bucket")).await? {
+                Some(table) => table,
+                None => return Ok(Vec::new()),
+            },
+        };
+        let labels = self.metric_labels(name).await?;
+        anyhow::ensure!(
+            labels.iter().any(|known| known == label),
+            "unknown metric label"
+        );
+        let label_ident = format!(r#""{}""#, escape_ident(label));
+        let rows = self
+            .sql_lenient(&format!(
+                r#"SELECT DISTINCT CAST({label_ident} AS STRING) AS "value"
+                   FROM "{}"
+                   WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}
+                     AND {label_ident} IS NOT NULL
+                   ORDER BY "value" LIMIT 100"#,
+                escape_ident(&table),
+                sql_ts(range.start() / 1_000_000),
+                sql_ts(range.end() / 1_000_000),
+            ))
+            .await?;
+        Ok(rows
+            .iter()
+            .map(|row| str_at(row, 0))
+            .filter(|value| attribute_compare_value_allowed(value))
+            .collect())
+    }
+
     async fn service_names(&self) -> anyhow::Result<Vec<String>> {
         // Any signal makes a service real: traces' `service_name`, logs'
         // resource `service.name`, plus the run-metric extension table.
@@ -1285,20 +1499,23 @@ impl TelemetryStore for GreptimeStore {
             let service_clause = service
                 .map(|svc| format!(r#" AND "service" = '{}'"#, escape(svc)))
                 .unwrap_or_default();
+            let name_filter = metric_name_sql_filter(r#""name""#, name);
             self.sql_lenient(&format!(
                 r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "ts") AS BIGINT)
                           AS "bucket_ns", {sql_agg}("value") AS "agg_value"
                    FROM run_metric_points
-                   WHERE "name" = '{}' AND "run_id" = '{}'{service_clause}
+                   WHERE {name_filter} AND "run_id" = '{}'{service_clause}
                      AND "ts" >= {} AND "ts" <= {}
                    GROUP BY "bucket_ns" ORDER BY "bucket_ns""#,
-                escape(name),
                 escape(run_id),
                 sql_ts(*range.start()),
                 sql_ts(*range.end()),
             ))
             .await?
         } else {
+            let Some(table) = self.metric_table_for_name(name, None).await? else {
+                return Ok(Vec::new());
+            };
             let service_clause = service
                 .map(|svc| format!(r#" AND "service_name" = '{}'"#, escape(svc)))
                 .unwrap_or_default();
@@ -1308,7 +1525,7 @@ impl TelemetryStore for GreptimeStore {
                    FROM "{}"
                    WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}{service_clause}
                    GROUP BY "bucket_ms" ORDER BY "bucket_ms""#,
-                escape_ident(name),
+                escape_ident(&table),
                 sql_ts(range.start() / 1_000_000),
                 sql_ts(range.end() / 1_000_000),
             ))
@@ -1337,6 +1554,9 @@ impl TelemetryStore for GreptimeStore {
         step_nanos: u128,
         q: f64,
     ) -> anyhow::Result<Vec<SeriesPoint>> {
+        let Some(bucket_table) = self.metric_table_for_name(name, Some("_bucket")).await? else {
+            return Ok(Vec::new());
+        };
         // native: explicit-bucket histograms split into `<name>_bucket`
         // (cumulative `greptime_value` per `le` tag), `<name>_count`, `<name>_sum`.
         // Read the bucket rows, merge per time window, then interpolate.
@@ -1347,10 +1567,10 @@ impl TelemetryStore for GreptimeStore {
             .sql_lenient(&format!(
                 r#"SELECT CAST("greptime_timestamp" AS BIGINT) AS "ts_ms",
                           CAST("le" AS DOUBLE) AS "le", "greptime_value" AS "cumulative"
-                   FROM "{}_bucket"
+                   FROM "{}"
                    WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}{service_clause}
                    ORDER BY "greptime_timestamp" ASC"#,
-                escape_ident(name),
+                escape_ident(&bucket_table),
                 sql_ts(range.start() / 1_000_000),
                 sql_ts(range.end() / 1_000_000),
             ))
@@ -1854,6 +2074,18 @@ impl TelemetryStore for GreptimeStore {
         step_nanos: u128,
         agg: MetricAgg,
     ) -> anyhow::Result<Vec<(String, Vec<SeriesPoint>)>> {
+        anyhow::ensure!(
+            metric_group_label_allowed(group_by),
+            "high-cardinality identifier - filter, don't group"
+        );
+        let labels = self.metric_labels(name).await?;
+        anyhow::ensure!(
+            labels.iter().any(|label| label == group_by),
+            "unknown metric label"
+        );
+        let Some(table) = self.metric_table_for_name(name, None).await? else {
+            return Ok(Vec::new());
+        };
         let step_secs = (step_nanos / 1_000_000_000).max(1);
         let sql_agg = match agg {
             MetricAgg::Avg => "avg",
@@ -1875,7 +2107,7 @@ impl TelemetryStore for GreptimeStore {
                    FROM "{}"
                    WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}{service_clause}
                    GROUP BY "grp", "bucket_ms" ORDER BY "grp", "bucket_ms""#,
-                escape_ident(name),
+                escape_ident(&table),
                 sql_ts(range.start() / 1_000_000),
                 sql_ts(range.end() / 1_000_000),
             ))
@@ -1898,6 +2130,42 @@ impl TelemetryStore for GreptimeStore {
                 (group, series)
             })
             .collect())
+    }
+
+    async fn runtime_snapshot(
+        &self,
+        service: Option<&str>,
+        run_id: Option<&str>,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+    ) -> anyhow::Result<Vec<RuntimeMetricSeries>> {
+        let mut rows = Vec::new();
+        for metric in self.metric_names().await? {
+            let Some(family) = runtime_metric_family(&metric) else {
+                continue;
+            };
+            let points = self
+                .metric_series(
+                    &metric,
+                    service,
+                    run_id,
+                    range.clone(),
+                    step_nanos,
+                    MetricAgg::Avg,
+                )
+                .await?;
+            if points.is_empty() {
+                continue;
+            }
+            rows.push(RuntimeMetricSeries {
+                family: family.to_string(),
+                metric: metric.clone(),
+                unit: runtime_metric_unit(&metric),
+                points,
+            });
+        }
+        rows.sort_by(|a, b| a.family.cmp(&b.family).then(a.metric.cmp(&b.metric)));
+        Ok(rows)
     }
 
     async fn histogram_count_series(
@@ -2093,22 +2361,53 @@ impl GreptimeStore {
                    WHERE "table_schema" = 'public'"#,
             )
             .await?;
+        let tables = rows
+            .iter()
+            .map(|row| str_at(row, 0))
+            .filter(|table| {
+                !table.is_empty()
+                    && !RESERVED.contains(&table.as_str())
+                    && !table.starts_with("opentelemetry_")
+            })
+            .collect::<Vec<_>>();
+        let table_set = tables
+            .iter()
+            .cloned()
+            .collect::<std::collections::BTreeSet<_>>();
         let mut names = std::collections::BTreeSet::new();
-        for row in &rows {
-            let table = str_at(row, 0);
-            if table.is_empty()
-                || RESERVED.contains(&table.as_str())
-                || table.starts_with("opentelemetry_")
-            {
-                continue;
-            }
-            // Collapse explicit-histogram siblings back to the base metric name.
-            let base = table
-                .strip_suffix("_bucket")
-                .or_else(|| table.strip_suffix("_count"))
-                .or_else(|| table.strip_suffix("_sum"))
-                .unwrap_or(&table);
-            names.insert(base.to_string());
+        for table in tables {
+            let base = if let Some(base) = table.strip_suffix("_bucket") {
+                base.to_string()
+            } else if let Some(base) = table.strip_suffix("_count") {
+                if table_set.contains(&format!("{base}_bucket")) {
+                    base.to_string()
+                } else {
+                    table.clone()
+                }
+            } else if let Some(base) = table.strip_suffix("_sum") {
+                if table_set.contains(&format!("{base}_bucket")) {
+                    base.to_string()
+                } else {
+                    table.clone()
+                }
+            } else {
+                table.clone()
+            };
+            let display = runtime_display_name(&base).unwrap_or_else(|| base.to_string());
+            names.insert(canonical_metric_display_name(&display));
+        }
+
+        // Run-scoped extension rows keep the original OTLP metric name. Union
+        // them so run dashboards can use dotted names even when native table
+        // names are Prometheus-normalized.
+        for row in self
+            .sql_lenient(
+                r#"SELECT DISTINCT "name" FROM run_metric_points
+                   WHERE "name" IS NOT NULL AND "name" != ''"#,
+            )
+            .await?
+        {
+            names.insert(canonical_metric_display_name(&str_at(&row, 0)));
         }
         Ok(names)
     }
