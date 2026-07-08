@@ -262,11 +262,14 @@ pub struct BundleInputs {
     pub metric_windows: Vec<MetricWindow>,
 }
 
-fn issue_summary(issue: &Issue) -> IssueSummary {
+fn issue_summary(issue: &Issue, report: &mut RedactionReport) -> IssueSummary {
     IssueSummary {
-        title: issue.title.clone(),
+        title: redact(&issue.title, report),
         error_type: issue.error_type.clone(),
-        culprit: issue.culprit.clone(),
+        culprit: issue
+            .culprit
+            .as_deref()
+            .map(|culprit| redact(culprit, report)),
         service: issue.service.clone(),
         status: issue.status.clone(),
         event_count: issue.event_count,
@@ -306,12 +309,18 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
                 },
                 Some(RunSection {
                     run_id: run.run_id.clone(),
-                    command: run.command.clone(),
+                    command: run
+                        .command
+                        .as_deref()
+                        .map(|command| redact(command, &mut redaction)),
                     status: run.status.clone(),
                     exit_code: run.exit_code,
                     started_at_nanos: run.started_at_nanos.to_string(),
                     ended_at_nanos: run.ended_at_nanos.map(|n| n.to_string()),
-                    issues: issues.iter().map(issue_summary).collect(),
+                    issues: issues
+                        .iter()
+                        .map(|issue| issue_summary(issue, &mut redaction))
+                        .collect(),
                 }),
                 primary,
             )
@@ -422,7 +431,9 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
         schema_version: SCHEMA_VERSION,
         generator: concat!("parallax/", env!("CARGO_PKG_VERSION")),
         anchor,
-        issue: primary_issue.as_ref().map(issue_summary),
+        issue: primary_issue
+            .as_ref()
+            .map(|issue| issue_summary(issue, &mut redaction)),
         run: run_section,
         latest_event,
         trace,
