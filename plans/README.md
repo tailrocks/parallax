@@ -76,7 +76,7 @@ conditions, run its verification gates, and update your row when done.
 | 059 | GraphQL operation explorer (field tree, N+1 badge, partial errors) | parallax | P2 | M | 058; pairs 047 | DONE |
 | 060 | gRPC stream + messaging lanes (message timeline, deadline callout, event caps) | parallax | P2 | M | 058; pairs 049 | DONE |
 | 061 | Trace view modes (errors-only, service lanes, minimap, skew banner) | parallax | P2 | L | after 040+051; pairs 063 | TODO |
-| 063 | Playground trace-shape scenarios (A19 stress, compare pair, real skew) | **[playground]** | P2 | M | 036; pairs 040/051/061 | TODO |
+| 063 | Playground trace-shape scenarios (A19 stress, compare pair, real skew) | **[playground]** | P2 | M | 036; pairs 040/051/061 | DONE |
 
 ### Wave 5 — command center, agent lane, platform (second run)
 
