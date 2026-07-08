@@ -93,6 +93,44 @@ export interface SpanLink {
   attributes: string
 }
 
+export interface CriticalHop {
+  spanId: string
+  selfTimeNs: string
+  gatedByChild: string | null
+  clockSuspect: boolean
+}
+
+export interface CriticalPath {
+  hops: CriticalHop[]
+  totalGatedNs: string
+  unattached: string[]
+}
+
+export interface TraceDiffSpan {
+  spanId: string
+  service: string
+  name: string
+  kind: string
+  statusCode: string
+  durationNs: string
+  depth: number
+  matchKey: string
+}
+
+export interface TraceDiffChange {
+  before: TraceDiffSpan
+  after: TraceDiffSpan
+  durationDeltaNs: string
+  durationDeltaPct: number
+  statusChanged: boolean
+}
+
+export interface TraceDiff {
+  added: TraceDiffSpan[]
+  removed: TraceDiffSpan[]
+  changed: TraceDiffChange[]
+}
+
 export interface LogRecord {
   tsNanos: string
   service: string

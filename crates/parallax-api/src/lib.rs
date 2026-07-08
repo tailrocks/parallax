@@ -8,6 +8,7 @@
 //! auto-camelCased; cost limits are resolver-level caps in V1.
 
 use juniper::{EmptySubscription, FieldError, FieldResult, RootNode, graphql_object};
+use parallax_core::trace_analysis;
 use parallax_storage::adapter::{
     OverviewTotals, ServiceSummary as StorageServiceSummary, SpanRed as StorageSpanRed,
     TelemetryStore,
@@ -491,6 +492,105 @@ impl TraceList {
     /// Matching traces before paging. String avoids GraphQL Int saturation.
     fn total(&self) -> String {
         self.0.total.to_string()
+    }
+}
+
+pub struct CriticalHop(trace_analysis::CriticalHop);
+
+#[graphql_object(context = ApiContext)]
+impl CriticalHop {
+    fn span_id(&self) -> &str {
+        &self.0.span_id
+    }
+    fn self_time_ns(&self) -> String {
+        nanos_string(self.0.self_time_ns)
+    }
+    fn gated_by_child(&self) -> Option<&str> {
+        self.0.gated_by_child.as_deref()
+    }
+    fn clock_suspect(&self) -> bool {
+        self.0.clock_suspect
+    }
+}
+
+pub struct CriticalPath(trace_analysis::CriticalPath);
+
+#[graphql_object(context = ApiContext)]
+impl CriticalPath {
+    fn hops(&self) -> Vec<CriticalHop> {
+        self.0.hops.iter().cloned().map(CriticalHop).collect()
+    }
+    fn total_gated_ns(&self) -> String {
+        nanos_string(self.0.total_gated_ns)
+    }
+    fn unattached(&self) -> Vec<String> {
+        self.0.unattached.clone()
+    }
+}
+
+pub struct DiffSpan(trace_analysis::DiffSpan);
+
+#[graphql_object(context = ApiContext)]
+impl DiffSpan {
+    fn span_id(&self) -> &str {
+        &self.0.span_id
+    }
+    fn service(&self) -> &str {
+        &self.0.service
+    }
+    fn name(&self) -> &str {
+        &self.0.name
+    }
+    fn kind(&self) -> &str {
+        &self.0.kind
+    }
+    fn status_code(&self) -> &str {
+        &self.0.status_code
+    }
+    fn duration_ns(&self) -> String {
+        nanos_string(self.0.duration_ns)
+    }
+    fn depth(&self) -> i32 {
+        i32::try_from(self.0.depth).unwrap_or(i32::MAX)
+    }
+    fn match_key(&self) -> &str {
+        &self.0.match_key
+    }
+}
+
+pub struct ChangedSpan(trace_analysis::ChangedSpan);
+
+#[graphql_object(context = ApiContext)]
+impl ChangedSpan {
+    fn before(&self) -> DiffSpan {
+        DiffSpan(self.0.before.clone())
+    }
+    fn after(&self) -> DiffSpan {
+        DiffSpan(self.0.after.clone())
+    }
+    fn duration_delta_ns(&self) -> String {
+        self.0.duration_delta_ns.to_string()
+    }
+    fn duration_delta_pct(&self) -> f64 {
+        self.0.duration_delta_pct
+    }
+    fn status_changed(&self) -> bool {
+        self.0.status_changed
+    }
+}
+
+pub struct TraceDiff(trace_analysis::TraceDiff);
+
+#[graphql_object(context = ApiContext)]
+impl TraceDiff {
+    fn added(&self) -> Vec<DiffSpan> {
+        self.0.added.iter().cloned().map(DiffSpan).collect()
+    }
+    fn removed(&self) -> Vec<DiffSpan> {
+        self.0.removed.iter().cloned().map(DiffSpan).collect()
+    }
+    fn changed(&self) -> Vec<ChangedSpan> {
+        self.0.changed.iter().cloned().map(ChangedSpan).collect()
     }
 }
 
@@ -1160,6 +1260,47 @@ impl Query {
         let ids = linked_trace_ids(&spans, &trace_id);
         let traces = context.store.traces_by_ids(&ids).await.map_err(field_err)?;
         Ok(traces.into_iter().map(TraceSummary).collect())
+    }
+
+    /// Critical-path hops that gate one trace's latency.
+    async fn trace_critical_path(
+        context: &ApiContext,
+        trace_id: String,
+    ) -> FieldResult<CriticalPath> {
+        let spans = context
+            .store
+            .spans_by_trace(&trace_id)
+            .await
+            .map_err(field_err)?;
+        if spans.is_empty() {
+            return Err(field_err("traceCriticalPath trace has no spans"));
+        }
+        Ok(CriticalPath(trace_analysis::critical_path(&spans)))
+    }
+
+    /// Structural diff between two traces' span trees.
+    async fn trace_compare(
+        context: &ApiContext,
+        trace_id_a: String,
+        trace_id_b: String,
+    ) -> FieldResult<TraceDiff> {
+        let spans_a = context
+            .store
+            .spans_by_trace(&trace_id_a)
+            .await
+            .map_err(field_err)?;
+        if spans_a.is_empty() {
+            return Err(field_err("traceCompare traceIdA has no spans"));
+        }
+        let spans_b = context
+            .store
+            .spans_by_trace(&trace_id_b)
+            .await
+            .map_err(field_err)?;
+        if spans_b.is_empty() {
+            return Err(field_err("traceCompare traceIdB has no spans"));
+        }
+        Ok(TraceDiff(trace_analysis::compare(&spans_a, &spans_b)))
     }
 
     /// Logs correlated to one trace, time ascending.
@@ -2517,6 +2658,103 @@ mod tests {
         assert_eq!(
             json.pointer("/data/linkedTraces/0/service"),
             Some(&serde_json::json!("worker"))
+        );
+    }
+
+    #[tokio::test]
+    async fn trace_analysis_resolvers_return_path_and_diff() {
+        let store = Arc::new(MemoryStore::new());
+        let a_root = span("api", "a", "a-root", 0, 100);
+        let mut a_db = span("db", "a", "a-db", 20, 40);
+        a_db.parent_span_id = Some("a-root".into());
+        let mut b_root = span("api", "b", "b-root", 0, 120);
+        b_root.name = "handler".into();
+        let mut b_db = span("db", "b", "b-db", 20, 60);
+        b_db.parent_span_id = Some("b-root".into());
+        b_db.status_code = "STATUS_CODE_ERROR".into();
+        let mut b_retry = span("api", "b", "b-retry", 90, 10);
+        b_retry.parent_span_id = Some("b-root".into());
+        b_retry.name = "retry".into();
+        store
+            .ingest_traces(
+                vec![a_root, a_db, b_root, b_db, b_retry],
+                Default::default(),
+            )
+            .await
+            .unwrap();
+
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"
+            {
+              traceCriticalPath(traceId: "a") {
+                totalGatedNs
+                hops { spanId gatedByChild selfTimeNs clockSuspect }
+                unattached
+              }
+              traceCompare(traceIdA: "a", traceIdB: "b") {
+                added { name service }
+                removed { name }
+                changed {
+                  durationDeltaNs
+                  statusChanged
+                  before { name statusCode }
+                  after { name statusCode }
+                }
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(
+            error_messages(&json).is_empty(),
+            "trace analysis query: {json}"
+        );
+        assert_eq!(
+            json.pointer("/data/traceCriticalPath/totalGatedNs"),
+            Some(&serde_json::json!("100"))
+        );
+        assert_eq!(
+            json.pointer("/data/traceCriticalPath/hops/0/gatedByChild"),
+            Some(&serde_json::json!("a-db"))
+        );
+        assert_eq!(
+            json.pointer("/data/traceCompare/added/0/name"),
+            Some(&serde_json::json!("retry"))
+        );
+        assert_eq!(
+            json.pointer("/data/traceCompare/changed/0/durationDeltaNs"),
+            Some(&serde_json::json!("20"))
+        );
+        assert_eq!(
+            json.pointer("/data/traceCompare/changed/1/statusChanged"),
+            Some(&serde_json::json!(true))
+        );
+    }
+
+    #[tokio::test]
+    async fn trace_critical_path_errors_for_empty_trace() {
+        let schema = build_schema();
+        let context = context_with_memory(Arc::new(MemoryStore::new())).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"{ traceCriticalPath(traceId: "missing") { totalGatedNs } }"#.into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(
+            error_messages(&json)
+                .iter()
+                .any(|message| message.contains("trace has no spans")),
+            "empty trace rejected: {json}"
         );
     }
 

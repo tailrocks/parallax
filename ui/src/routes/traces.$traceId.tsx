@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import type { ReactNode } from "react"
+import type { FormEvent, ReactNode } from "react"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import {
   IconAlertTriangle,
@@ -7,7 +7,9 @@ import {
   IconArticle,
   IconClock,
   IconExternalLink,
+  IconGitCompare,
   IconHash,
+  IconRoute,
   IconServer,
 } from "@tabler/icons-react"
 
@@ -22,11 +24,41 @@ import { PageHeader } from "@/components/page-header"
 import { MetricStrip } from "@/components/metric-strip"
 import { navItem } from "@/components/nav"
 import { Badge } from "@/components/ui/badge"
-import { buttonVariants } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import { Spinner } from "@/components/ui/spinner"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { graphql, gqlString } from "@/lib/api"
-import type { SpanLink, TraceSummary } from "@/lib/api"
+import type {
+  CriticalPath,
+  SpanLink,
+  TraceDiff,
+  TraceDiffSpan,
+  TraceSummary,
+} from "@/lib/api"
 import { formatDateTime, formatDurationNs } from "@/lib/format"
 import { computeWindow } from "@/lib/trace-tree"
 import { cn } from "@/lib/utils"
@@ -53,6 +85,9 @@ interface TraceLog {
 type JsonRecord = Record<string, unknown>
 type KeyValues = Array<[string, ReactNode]>
 type StringKeyValues = Array<[string, string]>
+
+const TRACE_DIFF_SPAN_FIELDS =
+  "spanId service name kind statusCode durationNs depth matchKey"
 
 interface SpanEvent {
   name: string
@@ -124,6 +159,22 @@ function TracePage() {
   const { trace, logsByTrace, linkedTraces } = Route.useLoaderData()
   const { traceId } = Route.useParams()
   const [selectedId, setSelectedId] = useState<string | null>(WHOLE_TRACE_ID)
+  const [criticalEnabled, setCriticalEnabled] = useState(false)
+  const [criticalPath, setCriticalPath] = useState<CriticalPath | null>(null)
+  const [criticalLoading, setCriticalLoading] = useState(false)
+  const [criticalError, setCriticalError] = useState<string | null>(null)
+  const [compareOpen, setCompareOpen] = useState(false)
+  const [compareTraceId, setCompareTraceId] = useState("")
+  const [compareResult, setCompareResult] = useState<TraceDiff | null>(null)
+  const [compareLoading, setCompareLoading] = useState(false)
+  const [compareError, setCompareError] = useState<string | null>(null)
+  const criticalIds = useMemo(
+    () =>
+      criticalEnabled && criticalPath
+        ? new Set(criticalPath.hops.map((hop) => hop.spanId))
+        : undefined,
+    [criticalEnabled, criticalPath]
+  )
   const orderedLogs = useMemo(
     () =>
       [...logsByTrace].sort((a, b) =>
@@ -167,6 +218,62 @@ function TracePage() {
       ? (spans.find((span) => span.spanId === selectedId) ?? null)
       : null
 
+  const loadCriticalPath = async () => {
+    setCriticalLoading(true)
+    setCriticalError(null)
+    try {
+      const data = await graphql<{ traceCriticalPath: CriticalPath }>(
+        `{ traceCriticalPath(traceId: "${gqlString(traceId)}") {
+             totalGatedNs unattached
+             hops { spanId selfTimeNs gatedByChild clockSuspect }
+           } }`
+      )
+      setCriticalPath(data.traceCriticalPath)
+    } catch (error) {
+      setCriticalError(error instanceof Error ? error.message : String(error))
+    } finally {
+      setCriticalLoading(false)
+    }
+  }
+
+  const toggleCriticalPath = () => {
+    const next = !criticalEnabled
+    setCriticalEnabled(next)
+    if (next && !criticalPath && !criticalLoading) void loadCriticalPath()
+    if (!next) setCriticalError(null)
+  }
+
+  const runCompare = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const otherTraceId = compareTraceId.trim()
+    if (!otherTraceId) {
+      setCompareError("Trace id required.")
+      return
+    }
+    setCompareLoading(true)
+    setCompareError(null)
+    try {
+      const data = await graphql<{ traceCompare: TraceDiff }>(
+        `{ traceCompare(traceIdA: "${gqlString(traceId)}", traceIdB: "${gqlString(
+          otherTraceId
+        )}") {
+             added { ${TRACE_DIFF_SPAN_FIELDS} }
+             removed { ${TRACE_DIFF_SPAN_FIELDS} }
+             changed {
+               durationDeltaNs durationDeltaPct statusChanged
+               before { ${TRACE_DIFF_SPAN_FIELDS} }
+               after { ${TRACE_DIFF_SPAN_FIELDS} }
+             }
+           } }`
+      )
+      setCompareResult(data.traceCompare)
+    } catch (error) {
+      setCompareError(error instanceof Error ? error.message : String(error))
+    } finally {
+      setCompareLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
       <PageHeader
@@ -197,6 +304,34 @@ function TracePage() {
               </Link>
             ))}
           </span>
+        }
+        actions={
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant={criticalEnabled ? "secondary" : "outline"}
+              size="sm"
+              aria-pressed={criticalEnabled}
+              onClick={toggleCriticalPath}
+              disabled={criticalLoading}
+            >
+              {criticalLoading ? (
+                <Spinner data-icon="inline-start" />
+              ) : (
+                <IconRoute data-icon="inline-start" />
+              )}
+              Critical path
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setCompareOpen(true)}
+            >
+              <IconGitCompare data-icon="inline-start" />
+              Compare
+            </Button>
+          </div>
         }
       />
 
@@ -232,11 +367,20 @@ function TracePage() {
             <CardHeader>
               <CardTitle className="text-sm">Waterfall</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex flex-col gap-3">
+              {criticalEnabled ? (
+                <CriticalPathSummary
+                  criticalPath={criticalPath}
+                  loading={criticalLoading}
+                  error={criticalError}
+                  totalNs={window.durationNs.toString()}
+                />
+              ) : null}
               <TraceWaterfall
                 spans={spans}
                 selectedId={selectedId}
                 onSelect={setSelectedId}
+                highlightIds={criticalIds}
               />
             </CardContent>
           </Card>
@@ -288,6 +432,56 @@ function TracePage() {
           onSelectSpan={setSelectedId}
         />
       </div>
+
+      <Sheet open={compareOpen} onOpenChange={setCompareOpen}>
+        <SheetContent className="overflow-y-auto sm:max-w-2xl">
+          <SheetHeader>
+            <SheetTitle>Compare traces</SheetTitle>
+            <SheetDescription>
+              Diff this trace against another trace id.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex flex-col gap-4 px-6 pb-6">
+            <form onSubmit={runCompare}>
+              <FieldGroup className="gap-3">
+                <Field data-invalid={compareError ? true : undefined}>
+                  <FieldLabel htmlFor="trace-compare-id">
+                    Compare with
+                  </FieldLabel>
+                  <Input
+                    id="trace-compare-id"
+                    value={compareTraceId}
+                    onChange={(event) => {
+                      setCompareTraceId(event.target.value)
+                      setCompareError(null)
+                    }}
+                    placeholder="trace id"
+                    aria-invalid={compareError ? true : undefined}
+                  />
+                  <FieldDescription>
+                    Current trace:{" "}
+                    <span className="font-mono">{traceId}</span>
+                  </FieldDescription>
+                  <FieldError>{compareError}</FieldError>
+                </Field>
+                <Button
+                  type="submit"
+                  className="w-fit"
+                  disabled={compareLoading || compareTraceId.trim().length === 0}
+                >
+                  {compareLoading ? (
+                    <Spinner data-icon="inline-start" />
+                  ) : (
+                    <IconGitCompare data-icon="inline-start" />
+                  )}
+                  Run compare
+                </Button>
+              </FieldGroup>
+            </form>
+            {compareResult ? <TraceCompareResult diff={compareResult} /> : null}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
@@ -378,6 +572,223 @@ function TraceLogRow({
         </button>
       ) : null}
     </li>
+  )
+}
+
+function CriticalPathSummary({
+  criticalPath,
+  loading,
+  error,
+  totalNs,
+}: {
+  criticalPath: CriticalPath | null
+  loading: boolean
+  error: string | null
+  totalNs: string
+}) {
+  if (loading) {
+    return (
+      <p className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Spinner />
+        Loading critical path
+      </p>
+    )
+  }
+  if (error) {
+    return (
+      <p className="text-sm text-destructive" role="alert">
+        {error}
+      </p>
+    )
+  }
+  if (!criticalPath) return null
+
+  const clockSuspect = criticalPath.hops.some((hop) => hop.clockSuspect)
+  return (
+    <p
+      className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground"
+      data-testid="critical-path-summary"
+    >
+      <span>
+        {criticalPath.hops.length.toLocaleString()} spans gate{" "}
+        {formatDurationNs(criticalPath.totalGatedNs)} of{" "}
+        {formatDurationNs(totalNs)} total
+      </span>
+      {criticalPath.unattached.length > 0 ? (
+        <Badge variant="outline">
+          {criticalPath.unattached.length.toLocaleString()} unattached
+        </Badge>
+      ) : null}
+      {clockSuspect ? <Badge variant="secondary">clock suspect</Badge> : null}
+    </p>
+  )
+}
+
+function statusLabel(statusCode: string): string {
+  return statusCode.replace("STATUS_CODE_", "") || "UNSET"
+}
+
+function formatSignedDurationNs(value: string): string {
+  const ns = BigInt(value)
+  const abs = ns < 0n ? -ns : ns
+  const sign = ns > 0n ? "+" : ns < 0n ? "-" : ""
+  return `${sign}${formatDurationNs(abs.toString())}`
+}
+
+function formatPctDelta(value: number): string {
+  if (!Number.isFinite(value)) return "-"
+  const sign = value > 0 ? "+" : ""
+  const abs = Math.abs(value)
+  return `${sign}${value.toFixed(abs < 10 ? 1 : 0)}%`
+}
+
+function DiffSpanSection({
+  title,
+  spans,
+  emptyLabel,
+}: {
+  title: string
+  spans: TraceDiffSpan[]
+  emptyLabel: string
+}) {
+  return (
+    <section className="flex flex-col gap-2">
+      <h3 className="text-sm font-medium">
+        {title}{" "}
+        <span className="font-normal text-muted-foreground">
+          ({spans.length.toLocaleString()})
+        </span>
+      </h3>
+      {spans.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{emptyLabel}</p>
+      ) : (
+        <Table density="compact">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Service</TableHead>
+              <TableHead align="right">Duration</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {spans.map((span) => (
+              <TableRow key={span.matchKey}>
+                <TableCell className="max-w-[16rem] truncate">
+                  {span.name}
+                </TableCell>
+                <TableCell>{span.service}</TableCell>
+                <TableCell align="right">
+                  {formatDurationNs(span.durationNs)}
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant={
+                      span.statusCode === "STATUS_CODE_ERROR"
+                        ? "rose"
+                        : "secondary"
+                    }
+                  >
+                    {statusLabel(span.statusCode)}
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </section>
+  )
+}
+
+export function TraceCompareResult({ diff }: { diff: TraceDiff }) {
+  const empty =
+    diff.added.length === 0 &&
+    diff.removed.length === 0 &&
+    diff.changed.length === 0
+
+  return (
+    <div className="flex flex-col gap-5" data-testid="trace-compare-result">
+      {empty ? (
+        <p className="text-sm text-muted-foreground">Structurally identical.</p>
+      ) : null}
+      <DiffSpanSection
+        title="Added"
+        spans={diff.added}
+        emptyLabel="No added spans."
+      />
+      <DiffSpanSection
+        title="Removed"
+        spans={diff.removed}
+        emptyLabel="No removed spans."
+      />
+      <section className="flex flex-col gap-2">
+        <h3 className="text-sm font-medium">
+          Changed{" "}
+          <span className="font-normal text-muted-foreground">
+            ({diff.changed.length.toLocaleString()})
+          </span>
+        </h3>
+        {diff.changed.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No changed spans.</p>
+        ) : (
+          <Table density="compact">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Service</TableHead>
+                <TableHead align="right">Before</TableHead>
+                <TableHead align="right">After</TableHead>
+                <TableHead align="right">Delta</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {diff.changed.map((change) => (
+                <TableRow key={change.after.matchKey}>
+                  <TableCell className="max-w-[14rem] truncate">
+                    {change.after.name}
+                  </TableCell>
+                  <TableCell>{change.after.service}</TableCell>
+                  <TableCell align="right">
+                    {formatDurationNs(change.before.durationNs)}
+                  </TableCell>
+                  <TableCell align="right">
+                    {formatDurationNs(change.after.durationNs)}
+                  </TableCell>
+                  <TableCell align="right">
+                    {formatSignedDurationNs(change.durationDeltaNs)}{" "}
+                    <span className="text-muted-foreground">
+                      ({formatPctDelta(change.durationDeltaPct)})
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    {change.statusChanged ? (
+                      <span className="flex flex-wrap gap-1">
+                        <Badge variant="outline">
+                          {statusLabel(change.before.statusCode)}
+                        </Badge>
+                        <Badge
+                          variant={
+                            change.after.statusCode === "STATUS_CODE_ERROR"
+                              ? "rose"
+                              : "secondary"
+                          }
+                        >
+                          {statusLabel(change.after.statusCode)}
+                        </Badge>
+                      </span>
+                    ) : (
+                      <Badge variant="secondary">duration</Badge>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </section>
+    </div>
   )
 }
 

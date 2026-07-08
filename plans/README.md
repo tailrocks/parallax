@@ -59,7 +59,7 @@ conditions, run its verification gates, and update your row when done.
 | 048 | Playground Postgres reality (sqlx inventory, db.* spans, pool metrics, DB scenarios) | **[playground]** | P2 | L | 036 | TODO |
 | 049 | Playground messaging + gRPC semantics (batch fan-in links, lag metric, orphan, deadlines, stream events) | **[playground]** | P2 | M | 036 | TODO |
 | 050 | Playground frontend RUM journey (routes, OTLP vitals, session.id, propagation break, flush) | **[playground]** | P2 | L | 036 | TODO |
-| 051 | traceCriticalPath + traceCompare (pure core analyses + waterfall highlight + diff UI) | parallax | P3 | M | — | TODO |
+| 051 | traceCriticalPath + traceCompare (pure core analyses + waterfall highlight + diff UI) | parallax | P3 | M | — | DONE |
 | 052 | Investigations (save/restore state, pins, notes — dashboards-CRUD clone) | parallax | P3 | M | 038 | TODO |
 | 053 | Design-system + a11y consolidation (one chip, central formatters, keyboard access) | parallax | P3 | M | 039, 040 | TODO |
 | 054 | Playground quality scenarios + TOUR.md (sampling gap, cron semantics, field spike, uncorrelated log) | **[playground]** | P3 | M | 036, 037 | TODO |

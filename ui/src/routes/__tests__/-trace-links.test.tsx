@@ -11,8 +11,8 @@ import {
 } from "@tanstack/react-router"
 import { describe, expect, it } from "vitest"
 
-import { LinkedTraceEdges } from "@/routes/traces.$traceId"
-import type { SpanLink, TraceSummary } from "@/lib/api"
+import { LinkedTraceEdges, TraceCompareResult } from "@/routes/traces.$traceId"
+import type { SpanLink, TraceDiff, TraceSummary } from "@/lib/api"
 
 function renderWithRouter(component: React.ReactNode) {
   window.scrollTo = () => {}
@@ -67,5 +67,74 @@ describe("LinkedTraceEdges", () => {
     expect(screen.getByRole("link").getAttribute("href")).toBe(
       "/traces/target-trace"
     )
+  })
+})
+
+describe("TraceCompareResult", () => {
+  it("renders added removed and changed sections", () => {
+    const diff: TraceDiff = {
+      added: [
+        {
+          spanId: "retry",
+          service: "api",
+          name: "POST /checkout/retry",
+          kind: "CLIENT",
+          statusCode: "STATUS_CODE_UNSET",
+          durationNs: "15000000",
+          depth: 1,
+          matchKey: "api|client|1|retry|0",
+        },
+      ],
+      removed: [
+        {
+          spanId: "cache",
+          service: "api",
+          name: "GET /cache",
+          kind: "CLIENT",
+          statusCode: "STATUS_CODE_UNSET",
+          durationNs: "5000000",
+          depth: 1,
+          matchKey: "api|client|1|cache|0",
+        },
+      ],
+      changed: [
+        {
+          before: {
+            spanId: "db-a",
+            service: "db",
+            name: "SELECT orders",
+            kind: "CLIENT",
+            statusCode: "STATUS_CODE_UNSET",
+            durationNs: "10000000",
+            depth: 1,
+            matchKey: "db|client|1|select|0",
+          },
+          after: {
+            spanId: "db-b",
+            service: "db",
+            name: "SELECT orders",
+            kind: "CLIENT",
+            statusCode: "STATUS_CODE_ERROR",
+            durationNs: "25000000",
+            depth: 1,
+            matchKey: "db|client|1|select|0",
+          },
+          durationDeltaNs: "15000000",
+          durationDeltaPct: 150,
+          statusChanged: true,
+        },
+      ],
+    }
+
+    render(<TraceCompareResult diff={diff} />)
+
+    expect(screen.getByText("Added")).toBeTruthy()
+    expect(screen.getByText("Removed")).toBeTruthy()
+    expect(screen.getByText("Changed")).toBeTruthy()
+    expect(screen.getByText("POST /checkout/retry")).toBeTruthy()
+    expect(screen.getByText("GET /cache")).toBeTruthy()
+    expect(screen.getByText("SELECT orders")).toBeTruthy()
+    expect(screen.getByText("+15ms")).toBeTruthy()
+    expect(screen.getByText("ERROR")).toBeTruthy()
   })
 })

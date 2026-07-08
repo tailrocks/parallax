@@ -25,10 +25,12 @@ export function TraceWaterfall({
   spans,
   selectedId,
   onSelect,
+  highlightIds,
 }: {
   spans: WaterfallSpan[]
   selectedId: string | null
   onSelect: (spanId: string | null) => void
+  highlightIds?: ReadonlySet<string> | undefined
 }) {
   const rows = useMemo(() => buildTraceTree(spans), [spans])
   const window = useMemo(() => computeWindow(spans), [spans])
@@ -78,6 +80,7 @@ export function TraceWaterfall({
   ) => {
     const { span, depth, offsetPct, widthPct } = row
     const active = span.spanId === selectedId
+    const highlighted = highlightIds?.has(span.spanId) ?? false
     const failed = span.statusCode === "STATUS_CODE_ERROR"
     const meta = spanKindMeta(span.kind, span.statusCode)
     return (
@@ -86,8 +89,9 @@ export function TraceWaterfall({
         type="button"
         onClick={() => onSelect(active ? null : span.spanId)}
         className={cn(
-          "grid w-full cursor-pointer grid-cols-[11rem_minmax(0,1fr)_6.5rem] items-center rounded-md py-1.5 text-left text-sm hover:bg-accent/50",
+          "grid w-full cursor-pointer grid-cols-[11rem_minmax(0,1fr)_6.5rem] items-center rounded-md border-l-2 border-transparent py-1.5 text-left text-sm hover:bg-accent/50",
           active && "bg-accent/70",
+          highlighted && "border-primary bg-primary/5",
           style && "absolute top-0 left-0"
         )}
         data-testid={`trace-row-${span.spanId}`}
@@ -112,7 +116,9 @@ export function TraceWaterfall({
               "absolute top-1/2 h-2 -translate-y-1/2 rounded-full",
               meta.bar,
               active &&
-                "ring-2 ring-foreground/30 ring-offset-1 ring-offset-background"
+                "ring-2 ring-foreground/30 ring-offset-1 ring-offset-background",
+              highlighted &&
+                "ring-2 ring-primary/60 ring-offset-1 ring-offset-background"
             )}
             style={{ left: `${offsetPct}%`, width: `${widthPct}%` }}
           />

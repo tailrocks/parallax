@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen } from "@testing-library/react"
-import { describe, expect, it, vi } from "vitest"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
   TraceWaterfall,
@@ -33,6 +33,8 @@ const spans: WaterfallSpan[] = [
     statusMessage: "boom",
   },
 ]
+
+afterEach(cleanup)
 
 describe("TraceWaterfall", () => {
   it("renders whole-trace and ordered span rows", () => {
@@ -76,5 +78,23 @@ describe("TraceWaterfall", () => {
     )
     fireEvent.keyDown(waterfall!, { key: "k" })
     expect(onSelect).toHaveBeenLastCalledWith("root")
+  })
+
+  it("highlights critical-path span rows", () => {
+    render(
+      <TraceWaterfall
+        spans={spans}
+        selectedId={WHOLE_TRACE_ID}
+        onSelect={vi.fn()}
+        highlightIds={new Set(["child"])}
+      />
+    )
+
+    expect(screen.getByTestId("trace-row-child").className).toContain(
+      "border-primary"
+    )
+    expect(screen.getByTestId("trace-row-root").className).not.toContain(
+      "border-primary"
+    )
   })
 })
