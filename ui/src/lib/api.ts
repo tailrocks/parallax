@@ -131,6 +131,17 @@ export interface TraceDiff {
   changed: TraceDiffChange[]
 }
 
+export interface StoryBeat {
+  tsNanos: string
+  lane: string
+  kind: string
+  title: string
+  traceId: string
+  spanId: string | null
+  severity: string | null
+  durationNs: string | null
+}
+
 export interface LogRecord {
   tsNanos: string
   service: string

@@ -9,4 +9,5 @@ pub mod bundle;
 pub mod derive;
 pub mod fingerprint;
 pub mod normalize;
+pub mod story;
 pub mod trace_analysis;

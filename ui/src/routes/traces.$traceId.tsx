@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react"
 import type { FormEvent, ReactNode } from "react"
-import { createFileRoute, Link } from "@tanstack/react-router"
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import {
   IconAlertTriangle,
   IconAffiliate,
@@ -18,6 +18,7 @@ import {
   WHOLE_TRACE_ID,
 } from "@/components/console/trace-waterfall"
 import type { WaterfallSpan } from "@/components/console/trace-waterfall"
+import { StoryTimeline } from "@/components/console/story-timeline"
 import { CopyButton } from "@/components/console/copy-button"
 import { EmptyState } from "@/components/console/empty-state"
 import { PageHeader } from "@/components/page-header"
@@ -51,10 +52,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { graphql, gqlString } from "@/lib/api"
 import type {
   CriticalPath,
   SpanLink,
+  StoryBeat,
   TraceDiff,
   TraceDiffSpan,
   TraceSummary,
@@ -82,6 +85,12 @@ interface TraceLog {
   spanId: string
 }
 
+type TraceDetailTab = "waterfall" | "story"
+
+interface TraceDetailSearch {
+  tab?: TraceDetailTab | undefined
+}
+
 type JsonRecord = Record<string, unknown>
 type KeyValues = Array<[string, ReactNode]>
 type StringKeyValues = Array<[string, string]>
@@ -96,12 +105,16 @@ interface SpanEvent {
 }
 
 export const Route = createFileRoute("/traces/$traceId")({
+  validateSearch: (search: Record<string, unknown>): TraceDetailSearch => ({
+    tab: search.tab === "story" ? "story" : undefined,
+  }),
   loader: ({ params }) => {
     const traceId = gqlString(params.traceId)
     return graphql<{
       trace: { spans: TraceSpan[] } | null
       logsByTrace: TraceLog[]
       linkedTraces: TraceSummary[]
+      story: StoryBeat[]
     }>(
       `{ trace(traceId: "${traceId}") {
            spans { tsNanos service traceId name kind statusCode statusMessage durationNs
@@ -110,6 +123,9 @@ export const Route = createFileRoute("/traces/$traceId")({
          }
          linkedTraces(traceId: "${traceId}") {
            traceId rootName service startNanos durationNs spanCount hasError
+         }
+         story(traceId: "${traceId}") {
+           tsNanos lane kind title traceId spanId severity durationNs
          }
          logsByTrace(traceId: "${traceId}") { tsNanos service severityText body spanId } }`
     )
@@ -156,8 +172,11 @@ function valueFor(entries: StringKeyValues, key: string): string | null {
 }
 
 function TracePage() {
-  const { trace, logsByTrace, linkedTraces } = Route.useLoaderData()
+  const { trace, logsByTrace, linkedTraces, story } = Route.useLoaderData()
   const { traceId } = Route.useParams()
+  const search = Route.useSearch()
+  const navigate = useNavigate({ from: Route.fullPath })
+  const activeTab: TraceDetailTab = search.tab === "story" ? "story" : "waterfall"
   const [selectedId, setSelectedId] = useState<string | null>(WHOLE_TRACE_ID)
   const [criticalEnabled, setCriticalEnabled] = useState(false)
   const [criticalPath, setCriticalPath] = useState<CriticalPath | null>(null)
@@ -274,6 +293,15 @@ function TracePage() {
     }
   }
 
+  const setActiveTab = (value: string) => {
+    void navigate({
+      search: (current) => ({
+        ...current,
+        tab: value === "story" ? "story" : undefined,
+      }),
+    })
+  }
+
   return (
     <div className="space-y-4">
       <PageHeader
@@ -361,77 +389,95 @@ function TracePage() {
         </button>
       ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <div className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="waterfall">Waterfall</TabsTrigger>
+          <TabsTrigger value="story">Story</TabsTrigger>
+        </TabsList>
+        <TabsContent value="waterfall">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Waterfall</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-3">
+                  {criticalEnabled ? (
+                    <CriticalPathSummary
+                      criticalPath={criticalPath}
+                      loading={criticalLoading}
+                      error={criticalError}
+                      totalNs={window.durationNs.toString()}
+                    />
+                  ) : null}
+                  <TraceWaterfall
+                    spans={spans}
+                    selectedId={selectedId}
+                    onSelect={setSelectedId}
+                    highlightIds={criticalIds}
+                  />
+                </CardContent>
+              </Card>
+
+              {orderedLogs.length > 0 ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">
+                      Trace logs{" "}
+                      <span className="font-normal text-muted-foreground">
+                        ({orderedLogs.length})
+                      </span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-1.5">
+                      {orderedLogs.map((log, index) => (
+                        <TraceLogRow
+                          key={`${log.tsNanos}-${index}`}
+                          log={log}
+                          onSelectSpan={setSelectedId}
+                        />
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              ) : null}
+
+              <MetricStrip
+                title="Metrics around this trace"
+                service={rootSpan.service}
+                runId={runId ?? undefined}
+                fromNanos={(window.startNs - 300_000_000_000n).toString()}
+                toNanos={(
+                  window.startNs +
+                  window.durationNs +
+                  300_000_000_000n
+                ).toString()}
+                stepSeconds={30}
+              />
+            </div>
+
+            <TraceInspector
+              traceId={traceId}
+              spans={spans}
+              selectedSpan={selectedSpan}
+              linkedTraceById={linkedTraceById}
+              logs={orderedLogs}
+              onSelectSpan={setSelectedId}
+            />
+          </div>
+        </TabsContent>
+        <TabsContent value="story">
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Waterfall</CardTitle>
+              <CardTitle className="text-sm">Story</CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              {criticalEnabled ? (
-                <CriticalPathSummary
-                  criticalPath={criticalPath}
-                  loading={criticalLoading}
-                  error={criticalError}
-                  totalNs={window.durationNs.toString()}
-                />
-              ) : null}
-              <TraceWaterfall
-                spans={spans}
-                selectedId={selectedId}
-                onSelect={setSelectedId}
-                highlightIds={criticalIds}
-              />
+            <CardContent>
+              <StoryTimeline beats={story} />
             </CardContent>
           </Card>
-
-          {orderedLogs.length > 0 ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">
-                  Trace logs{" "}
-                  <span className="font-normal text-muted-foreground">
-                    ({orderedLogs.length})
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-1.5">
-                  {orderedLogs.map((log, index) => (
-                    <TraceLogRow
-                      key={`${log.tsNanos}-${index}`}
-                      log={log}
-                      onSelectSpan={setSelectedId}
-                    />
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          ) : null}
-
-          <MetricStrip
-            title="Metrics around this trace"
-            service={rootSpan.service}
-            runId={runId ?? undefined}
-            fromNanos={(window.startNs - 300_000_000_000n).toString()}
-            toNanos={(
-              window.startNs +
-              window.durationNs +
-              300_000_000_000n
-            ).toString()}
-            stepSeconds={30}
-          />
-        </div>
-
-        <TraceInspector
-          traceId={traceId}
-          spans={spans}
-          selectedSpan={selectedSpan}
-          linkedTraceById={linkedTraceById}
-          logs={orderedLogs}
-          onSelectSpan={setSelectedId}
-        />
-      </div>
+        </TabsContent>
+      </Tabs>
 
       <Sheet open={compareOpen} onOpenChange={setCompareOpen}>
         <SheetContent className="overflow-y-auto sm:max-w-2xl">

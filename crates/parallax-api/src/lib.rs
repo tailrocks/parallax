@@ -8,7 +8,7 @@
 //! auto-camelCased; cost limits are resolver-level caps in V1.
 
 use juniper::{EmptySubscription, FieldError, FieldResult, RootNode, graphql_object};
-use parallax_core::trace_analysis;
+use parallax_core::{story, trace_analysis};
 use parallax_storage::adapter::{
     OverviewTotals, ServiceSummary as StorageServiceSummary, SpanRed as StorageSpanRed,
     TelemetryStore,
@@ -591,6 +591,36 @@ impl TraceDiff {
     }
     fn changed(&self) -> Vec<ChangedSpan> {
         self.0.changed.iter().cloned().map(ChangedSpan).collect()
+    }
+}
+
+pub struct StoryBeat(story::StoryBeat);
+
+#[graphql_object(context = ApiContext)]
+impl StoryBeat {
+    fn ts_nanos(&self) -> String {
+        nanos_string(self.0.ts_nanos)
+    }
+    fn lane(&self) -> &str {
+        &self.0.lane
+    }
+    fn kind(&self) -> &str {
+        &self.0.kind
+    }
+    fn title(&self) -> &str {
+        &self.0.title
+    }
+    fn trace_id(&self) -> &str {
+        &self.0.trace_id
+    }
+    fn span_id(&self) -> Option<&str> {
+        self.0.span_id.as_deref()
+    }
+    fn severity(&self) -> Option<&str> {
+        self.0.severity.as_deref()
+    }
+    fn duration_ns(&self) -> Option<String> {
+        self.0.duration_ns.map(nanos_string)
     }
 }
 
@@ -1373,6 +1403,51 @@ impl Query {
             .await
             .map_err(field_err)?;
         Ok(logs.into_iter().map(LogRecord).collect())
+    }
+
+    /// Deterministic story timeline for exactly one trace or run anchor.
+    async fn story(
+        context: &ApiContext,
+        trace_id: Option<String>,
+        run_id: Option<String>,
+    ) -> FieldResult<Vec<StoryBeat>> {
+        match (trace_id, run_id) {
+            (Some(trace_id), None) => {
+                let spans = context
+                    .store
+                    .spans_by_trace(&trace_id)
+                    .await
+                    .map_err(field_err)?;
+                let logs = context
+                    .store
+                    .logs_by_trace(&trace_id)
+                    .await
+                    .map_err(field_err)?;
+                Ok(story::project_story(&spans, &logs, &[])
+                    .into_iter()
+                    .map(StoryBeat)
+                    .collect())
+            }
+            (None, Some(run_id)) => {
+                let spans = context
+                    .store
+                    .spans_by_run(&run_id, MAX_ROWS)
+                    .await
+                    .map_err(field_err)?;
+                let logs = context
+                    .store
+                    .logs_by_run(&run_id, MAX_ROWS)
+                    .await
+                    .map_err(field_err)?;
+                Ok(story::project_story(&spans, &logs, &[])
+                    .into_iter()
+                    .map(StoryBeat)
+                    .collect())
+            }
+            _ => Err(field_err(
+                "story takes exactly one anchor: traceId or runId",
+            )),
+        }
     }
 
     /// Unified log browse (spec §8 `logs`): every filter optional, newest
@@ -2755,6 +2830,105 @@ mod tests {
                 .iter()
                 .any(|message| message.contains("trace has no spans")),
             "empty trace rejected: {json}"
+        );
+    }
+
+    #[tokio::test]
+    async fn story_resolver_returns_trace_and_run_beats() {
+        let store = Arc::new(MemoryStore::new());
+        let mut root = span("api", "story-trace", "root", 100, 50);
+        root.run_id = Some("run-story".into());
+        root.name = "checkout".into();
+        root.events = Some(r#"[{"name":"exception","timeUnixNano":"120"}]"#.into());
+        let mut child = span("db", "story-trace", "child", 110, 10);
+        child.run_id = Some("run-story".into());
+        child.parent_span_id = Some("root".into());
+        child.name = "SELECT orders".into();
+        child.status_code = "STATUS_CODE_ERROR".into();
+        store
+            .ingest_traces(vec![root, child], Default::default())
+            .await
+            .unwrap();
+        store
+            .ingest_logs(
+                vec![LogRow {
+                    ts_nanos: 130,
+                    service: "api".into(),
+                    severity_num: 17,
+                    severity_text: "ERROR".into(),
+                    body: "payment 123 failed".into(),
+                    trace_id: "story-trace".into(),
+                    span_id: "child".into(),
+                    run_id: Some("run-story".into()),
+                    scope_name: String::new(),
+                    attributes: serde_json::Value::Null,
+                    resource: serde_json::Value::Null,
+                }],
+                Default::default(),
+            )
+            .await
+            .unwrap();
+
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"
+            {
+              traceStory: story(traceId: "story-trace") {
+                tsNanos lane kind title traceId spanId severity durationNs
+              }
+              runStory: story(runId: "run-story") {
+                kind traceId spanId
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(error_messages(&json).is_empty(), "story query: {json}");
+        assert_eq!(
+            json.pointer("/data/traceStory/0/kind"),
+            Some(&serde_json::json!("span.start"))
+        );
+        assert!(
+            json.pointer("/data/traceStory")
+                .and_then(|value| value.as_array())
+                .is_some_and(|beats| beats.iter().any(|beat| {
+                    beat["kind"] == "error" && beat["title"] == "ERROR payment <n> failed"
+                })),
+            "trace story has normalized error log beat: {json}"
+        );
+        assert!(
+            json.pointer("/data/runStory")
+                .and_then(|value| value.as_array())
+                .is_some_and(|beats| beats
+                    .iter()
+                    .any(|beat| { beat["traceId"] == "story-trace" && beat["spanId"] == "child" })),
+            "run story contains trace spans: {json}"
+        );
+    }
+
+    #[tokio::test]
+    async fn story_requires_exactly_one_anchor() {
+        let schema = build_schema();
+        let context = context_with_memory(Arc::new(MemoryStore::new())).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"{ story(traceId: "a", runId: "b") { kind } }"#.into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(
+            error_messages(&json)
+                .iter()
+                .any(|message| message.contains("exactly one anchor")),
+            "story anchor guard: {json}"
         );
     }
 
