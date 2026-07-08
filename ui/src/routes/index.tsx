@@ -44,8 +44,8 @@ import {
   formatTimeInRange,
 } from "@/lib/format"
 import {
-  RANGE_PRESETS,
   rangeSearchSchema,
+  mergeRangeSearch,
   resolveRangeSearch,
 } from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
@@ -234,13 +234,6 @@ function msToNs(value: number | null): string {
   return Math.max(0, Math.round(value * 1_000_000)).toString()
 }
 
-function updateRangeSearch(range: ResolvedRange) {
-  if (RANGE_PRESETS.some((preset) => preset.key === range.key)) {
-    return { range: range.key, from: undefined, to: undefined }
-  }
-  return { range: "custom", from: range.fromNanos, to: range.toNanos }
-}
-
 function OverviewPage() {
   const data = Route.useLoaderData()
   const range = resolveRangeSearch(Route.useSearch())
@@ -252,7 +245,7 @@ function OverviewPage() {
       range={range}
       onRangeChange={(next) =>
         void navigate({
-          search: (current) => ({ ...current, ...updateRangeSearch(next) }),
+          search: (current) => mergeRangeSearch(current, next),
         })
       }
     />

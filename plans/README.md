@@ -41,7 +41,7 @@ conditions, run its verification gates, and update your row when done.
 
 | Plan | Title | Repo | Priority | Effort | Depends on | Status |
 |------|-------|------|----------|--------|------------|--------|
-| 038 | Time-window continuity (shared URL-state helper, drilldowns keep the window, runs scoped) | parallax | P1 | M | 035 | TODO |
+| 038 | Time-window continuity (shared URL-state helper, drilldowns keep the window, runs scoped) | parallax | P1 | M | 035 | DONE |
 | 039 | Everything-clickable pivot sweep (overview KPIs, issues doorways, detail pivots, runs columns) | parallax | P1 | M | 038 | TODO |
 | 040 | UI performance at scale (stable keys, O(N) heat cells, shared ticker, virtualization) | parallax | P2 | L | 035, 039 | TODO |
 

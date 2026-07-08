@@ -58,6 +58,52 @@ export function resolveRangeSearch(
   return resolvePreset(parsed.data.range, now)
 }
 
+export function updateRangeSearch(range: ResolvedRange): {
+  range: string
+  from: string | undefined
+  to: string | undefined
+} {
+  if (RANGE_PRESETS.some((preset) => preset.key === range.key)) {
+    return { range: range.key, from: undefined, to: undefined }
+  }
+  return { range: "custom", from: range.fromNanos, to: range.toNanos }
+}
+
+export function rangeLinkSearch(range: ResolvedRange): {
+  range?: string
+  from?: string
+  to?: string
+} {
+  const patch = updateRangeSearch(range)
+  if (patch.from === undefined || patch.to === undefined) {
+    return { range: patch.range }
+  }
+  return { range: patch.range, from: patch.from, to: patch.to }
+}
+
+export function mergeRangeSearch<
+  T extends {
+    range?: string | undefined
+    from?: string | undefined
+    to?: string | undefined
+  },
+>(current: T, range: ResolvedRange): T {
+  const patch = updateRangeSearch(range)
+  const next = { ...current }
+  next.range = patch.range
+  if (patch.from === undefined) {
+    delete next.from
+  } else {
+    next.from = patch.from
+  }
+  if (patch.to === undefined) {
+    delete next.to
+  } else {
+    next.to = patch.to
+  }
+  return next
+}
+
 export function formatRangeLabel(range: ResolvedRange): string {
   const preset = RANGE_PRESETS.find((candidate) => candidate.key === range.key)
   if (preset) return preset.label

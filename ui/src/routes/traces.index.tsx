@@ -44,7 +44,7 @@ import { TableSkeleton } from "@/components/console/skeletons"
 import { formatCount, formatDurationNs, formatTimeInRange } from "@/lib/format"
 import { gqlString, graphql } from "@/lib/api"
 import type { TraceSummary } from "@/lib/api"
-import { resolveRangeSearch } from "@/lib/range"
+import { resolveRangeSearch, updateRangeSearch } from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
 import { cn } from "@/lib/utils"
 
@@ -410,13 +410,7 @@ function TracesPage() {
             </div>
             <RangePicker
               value={range}
-              onChange={(next) =>
-                update({
-                  range: next.key,
-                  from: next.fromNanos,
-                  to: next.toNanos,
-                })
-              }
+              onChange={(next) => update(updateRangeSearch(next))}
             />
           </>
         }

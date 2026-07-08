@@ -128,7 +128,9 @@ describe("Issues route", () => {
     expect(await screen.findByText("panic")).toBeTruthy()
     const links = screen.getAllByRole("link")
     expect(
-      links.some((link) => link.getAttribute("href") === "/issues/panic-a")
+      links.some(
+        (link) => link.getAttribute("href") === "/issues/panic-a?range=24h"
+      )
     ).toBe(true)
   })
 

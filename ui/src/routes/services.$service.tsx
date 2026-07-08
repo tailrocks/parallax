@@ -51,7 +51,11 @@ import {
 import { gqlString, graphql } from "@/lib/api"
 import type { TraceSummary } from "@/lib/api"
 import { formatCount, formatDurationNs, formatPercent } from "@/lib/format"
-import { rangeSearchSchema, resolveRangeSearch } from "@/lib/range"
+import {
+  mergeRangeSearch,
+  rangeSearchSchema,
+  resolveRangeSearch,
+} from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
 import { cn } from "@/lib/utils"
 
@@ -243,7 +247,7 @@ function ServiceDetailPage() {
       range={range}
       onRange={(next) =>
         navigate({
-          search: { range: next.key },
+          search: (current) => mergeRangeSearch(current, next),
         })
       }
     />

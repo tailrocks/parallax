@@ -34,7 +34,12 @@ import {
 import { gqlString, graphql } from "@/lib/api"
 import type { Issue } from "@/lib/api"
 import { formatCount } from "@/lib/format"
-import { rangeSearchSchema, resolveRangeSearch } from "@/lib/range"
+import {
+  rangeLinkSearch,
+  rangeSearchSchema,
+  resolveRangeSearch,
+  updateRangeSearch,
+} from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
 import { cn } from "@/lib/utils"
 
@@ -183,7 +188,11 @@ function IssuesPage() {
       loading={loading}
       onSearch={setSearch}
       onIssue={(fingerprint) =>
-        navigate({ to: "/issues/$fingerprint", params: { fingerprint } })
+        navigate({
+          to: "/issues/$fingerprint",
+          params: { fingerprint },
+          search: rangeLinkSearch(range),
+        })
       }
     />
   )
@@ -217,9 +226,7 @@ export function IssuesContent({
         actions={
           <RangePicker
             value={range}
-            onChange={(next) =>
-              onSearch({ range: next.key, from: undefined, to: undefined })
-            }
+            onChange={(next) => onSearch(updateRangeSearch(next))}
           />
         }
       />
@@ -354,6 +361,7 @@ export function IssuesContent({
                         <Link
                           to="/issues/$fingerprint"
                           params={{ fingerprint: issue.fingerprint }}
+                          search={rangeLinkSearch(range)}
                           className="block truncate font-medium hover:underline"
                           onClick={(event) => event.stopPropagation()}
                         >
@@ -373,6 +381,7 @@ export function IssuesContent({
                       <Link
                         to="/issues/$fingerprint"
                         params={{ fingerprint: issue.fingerprint }}
+                        search={rangeLinkSearch(range)}
                         className="block text-rose-500"
                         onClick={(event) => event.stopPropagation()}
                       >
@@ -388,6 +397,7 @@ export function IssuesContent({
                       <Link
                         to="/issues/$fingerprint"
                         params={{ fingerprint: issue.fingerprint }}
+                        search={rangeLinkSearch(range)}
                         className="hover:underline"
                         onClick={(event) => event.stopPropagation()}
                       >

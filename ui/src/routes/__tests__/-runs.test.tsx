@@ -14,11 +14,18 @@ import { afterEach, describe, expect, it } from "vitest"
 import {
   RunsContent,
   durationNs,
+  filterRunsByRange,
   mergeRuns,
   statusTone,
 } from "@/routes/runs.index"
 import type { RunsData } from "@/routes/runs.index"
 import { RunDetailContent } from "@/routes/runs.$runId"
+
+const range = {
+  key: "custom",
+  fromNanos: "1500000000",
+  toNanos: "4000000000",
+}
 
 afterEach(cleanup)
 
@@ -110,11 +117,43 @@ describe("Runs route", () => {
     expect(merged.find((row) => row.runId === "run-b")?.errorCount).toBeNull()
   })
 
+  it("filters rows by activity window overlap", () => {
+    const rows = [
+      {
+        ...merged[0]!,
+        runId: "inside",
+        startedAtNanos: "2000000000",
+        endedAtNanos: "3000000000",
+        lastNanos: "3000000000",
+      },
+      {
+        ...merged[0]!,
+        runId: "before",
+        startedAtNanos: "1000000000",
+        endedAtNanos: "1200000000",
+        lastNanos: "1200000000",
+      },
+      {
+        ...merged[0]!,
+        runId: "running",
+        status: "running" as const,
+        startedAtNanos: "3500000000",
+        endedAtNanos: null,
+        lastNanos: "3500000000",
+      },
+    ]
+
+    expect(
+      filterRunsByRange(rows, range, "5000000000").map((row) => row.runId)
+    ).toEqual(["inside", "running"])
+  })
+
   it("renders list error and duration columns", async () => {
     renderWithRouter(
       <RunsContent
         data={data}
         search={{}}
+        range={range}
         onSearch={() => {}}
         onRun={() => {}}
       />

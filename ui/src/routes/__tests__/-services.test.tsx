@@ -145,6 +145,14 @@ describe("Services route", () => {
     expect(
       screen.getByRole("link", { name: /api gateway/i }).getAttribute("href")
     ).toBe("/services/api%20gateway?range=24h")
+
+    const spansHref = screen.getByRole("link", { name: "20" }).getAttribute("href")
+    const spansUrl = new URL(spansHref!, "http://example.test")
+    expect(spansUrl.pathname).toBe("/traces")
+    expect(spansUrl.searchParams.get("service")).toBe("api gateway")
+    expect(spansUrl.searchParams.get("range")).toBe("24h")
+    expect(spansUrl.searchParams.has("from")).toBe(false)
+    expect(spansUrl.searchParams.has("to")).toBe(false)
   })
 
   it("renders detail stats and hides infra band without CPU/memory", async () => {

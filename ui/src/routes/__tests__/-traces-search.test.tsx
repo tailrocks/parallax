@@ -4,6 +4,7 @@ import { render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 
 import type { TraceSummary } from "@/lib/api"
+import { resolvePreset, updateRangeSearch } from "@/lib/range"
 import {
   TraceTable,
   paramToTraceSort,
@@ -38,6 +39,15 @@ describe("traces search params", () => {
         { q: "checkout" }
       )
     ).toEqual({ sort: "DURATION_DESC", service: "api", q: "checkout" })
+  })
+
+  it("clears pinned bounds when a preset range is picked", () => {
+    expect(
+      patchTracesSearch(
+        { range: "custom", from: "1000", to: "2000", page: 3 },
+        updateRangeSearch(resolvePreset("1h", 1_720_000_000_000))
+      )
+    ).toEqual({ range: "1h" })
   })
 
   it("round-trips sort params", () => {

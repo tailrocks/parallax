@@ -52,7 +52,11 @@ import {
 import type { ChartConfig } from "@/components/ui/chart"
 import { gqlString, graphql } from "@/lib/api"
 import { formatCount, formatTimeInRange } from "@/lib/format"
-import { resolveRangeSearch, rangeSearchSchema } from "@/lib/range"
+import {
+  mergeRangeSearch,
+  resolveRangeSearch,
+  rangeSearchSchema,
+} from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
 import { cn } from "@/lib/utils"
 import {
@@ -214,7 +218,11 @@ function DashboardPage() {
           <>
             <RangePicker
               value={range}
-              onChange={(next) => navigate({ search: { range: next.key } })}
+              onChange={(next) =>
+                navigate({
+                  search: (current) => mergeRangeSearch(current, next),
+                })
+              }
             />
             {editing ? (
               <>

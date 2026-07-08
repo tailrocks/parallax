@@ -59,7 +59,7 @@ import {
 } from "@/components/ui/select"
 import { gqlString, graphql } from "@/lib/api"
 import { formatCount, formatTimeInRange } from "@/lib/format"
-import { resolveRangeSearch } from "@/lib/range"
+import { resolveRangeSearch, updateRangeSearch } from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
 
 interface SeriesPoint {
@@ -263,7 +263,7 @@ function LogsPage() {
     })
 
   const setRange = (next: ResolvedRange) => {
-    update({ range: next.key, from: next.fromNanos, to: next.toNanos })
+    update(updateRangeSearch(next))
   }
 
   const loadOlder = async () => {

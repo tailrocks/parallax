@@ -42,7 +42,11 @@ import {
 } from "@/lib/format"
 import { parseStacktrace, structuredFrameCount } from "@/lib/stacktrace"
 import type { Frame } from "@/lib/stacktrace"
-import { rangeSearchSchema, resolveRangeSearch } from "@/lib/range"
+import {
+  mergeRangeSearch,
+  rangeSearchSchema,
+  resolveRangeSearch,
+} from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
 import { cn } from "@/lib/utils"
 
@@ -139,7 +143,11 @@ function IssueDetailPage() {
     <IssueDetailContent
       data={data}
       range={range}
-      onRange={(next) => navigate({ search: { range: next.key } })}
+      onRange={(next) =>
+        navigate({
+          search: (current) => mergeRangeSearch(current, next),
+        })
+      }
     />
   )
 }
