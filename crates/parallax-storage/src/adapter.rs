@@ -270,8 +270,9 @@ pub trait TelemetryStore: Send + Sync {
         body_contains: Option<&str>,
         step_nanos: u128,
     ) -> anyhow::Result<Vec<SeriesPoint>>;
-    /// Raw read-only SQL against the engine (SELECT-shaped statements only —
-    /// callers enforce the read-only guard). The in-memory store has no SQL
-    /// surface and returns an error.
+    /// Raw read-only SQL against the engine (SELECT-shaped statements only).
+    /// The API enforces the user-facing guard; adapters repeat a defensive
+    /// shape check before execution. The in-memory store has no SQL surface
+    /// and returns an error.
     async fn raw_sql(&self, query: &str) -> anyhow::Result<SqlResult>;
 }

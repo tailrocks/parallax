@@ -49,6 +49,20 @@ fn clamp_limit(limit: Option<i32>, default: usize) -> usize {
         .min(MAX_ROWS)
 }
 
+/// Metric names flow into storage identifiers; keep them inside the OTel metric-name grammar.
+fn validate_metric_name(name: &str) -> FieldResult<()> {
+    let ok = !name.is_empty()
+        && name.len() <= 255
+        && name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-' | '/'));
+    if ok {
+        Ok(())
+    } else {
+        Err(field_err("invalid metric name"))
+    }
+}
+
 pub struct Issue(model::Issue);
 
 #[graphql_object(context = ApiContext)]
@@ -1220,6 +1234,11 @@ impl Query {
                 "only read-only statements are allowed (SELECT/WITH/SHOW/DESCRIBE/EXPLAIN/TQL)",
             ));
         }
+        if lowered.starts_with("explain") && lowered.contains("analyze") {
+            return Err(field_err(
+                "EXPLAIN ANALYZE executes the statement and is not allowed; use EXPLAIN",
+            ));
+        }
         if trimmed.trim_end_matches(';').contains(';') {
             return Err(field_err("multiple statements are not allowed"));
         }
@@ -1634,6 +1653,7 @@ impl Query {
         step_seconds: Option<i32>,
         agg: Option<String>,
     ) -> FieldResult<Vec<Series>> {
+        validate_metric_name(&name)?;
         let (from, to) = parse_range(&from_nanos, &to_nanos)?;
         let agg = MetricAgg::parse(agg.as_deref().unwrap_or("avg"))
             .ok_or_else(|| field_err("agg must be avg|min|max|sum|rate"))?;
@@ -1693,6 +1713,7 @@ impl Query {
         service: Option<String>,
         step_seconds: Option<i32>,
     ) -> FieldResult<Vec<Point>> {
+        validate_metric_name(&name)?;
         let (from, to) = parse_range(&from_nanos, &to_nanos)?;
         let series = context
             .store
@@ -1999,6 +2020,88 @@ mod tests {
             metadata: Arc::new(metadata),
             otlp_grpc_port: 4317,
         }
+    }
+
+    fn error_messages(json: &serde_json::Value) -> Vec<String> {
+        json.pointer("/errors")
+            .and_then(|value| value.as_array())
+            .into_iter()
+            .flatten()
+            .filter_map(|error| error.get("message").and_then(|message| message.as_str()))
+            .map(str::to_string)
+            .collect()
+    }
+
+    #[tokio::test]
+    async fn sql_guard_rejects_explain_analyze_but_allows_select_shape() {
+        let schema = build_schema();
+        let context = context_with_memory(Arc::new(MemoryStore::new())).await;
+        let analyze = juniper::http::GraphQLRequest::new(
+            r#"{ sql(query: "EXPLAIN ANALYZE SELECT 1") { rowCount } }"#.into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, analyze).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(
+            error_messages(&json)
+                .iter()
+                .any(|message| message.contains("EXPLAIN ANALYZE executes the statement")),
+            "EXPLAIN ANALYZE rejected by GraphQL guard: {json}"
+        );
+
+        let select = juniper::http::GraphQLRequest::new(
+            r#"{ sql(query: "SELECT 1") { rowCount } }"#.into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, select).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(
+            error_messages(&json)
+                .iter()
+                .any(|message| message.contains("in-memory store")),
+            "SELECT passes API guard and reaches memory adapter: {json}"
+        );
+    }
+
+    #[tokio::test]
+    async fn metric_name_validation_rejects_identifier_breakout() {
+        let schema = build_schema();
+        let context = context_with_memory(Arc::new(MemoryStore::new())).await;
+        let invalid = juniper::http::GraphQLRequest::new(
+            r#"{ metricSeries(name: "evil\"name", fromNanos: "0", toNanos: "1") { groupValue } }"#
+                .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, invalid).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(
+            error_messages(&json)
+                .iter()
+                .any(|message| message.contains("invalid metric name")),
+            "invalid metric name rejected: {json}"
+        );
+
+        let valid = juniper::http::GraphQLRequest::new(
+            r#"{ metricSeries(name: "http.server.request.duration", fromNanos: "0", toNanos: "1") { groupValue points { value } } }"#
+                .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, valid).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(
+            error_messages(&json).is_empty(),
+            "legal OTel metric name accepted: {json}"
+        );
+        assert!(
+            json.pointer("/data/metricSeries")
+                .and_then(|value| value.as_array())
+                .is_some(),
+            "metricSeries returns data for valid name: {json}"
+        );
     }
 
     #[tokio::test]

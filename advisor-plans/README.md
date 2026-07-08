@@ -28,7 +28,7 @@ conditions, run its verification gates, and update your row below when done.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| 022 | SQL surface hardening (metricSeries + EXPLAIN ANALYZE) | P1 | S | — | TODO |
+| 022 | SQL surface hardening (metricSeries + EXPLAIN ANALYZE) | P1 | S | — | DONE |
 | 023 | Bundle redaction completeness (title/culprit/command) | P1 | S | — | TODO |
 | 024 | Enforce GraphQL depth/complexity + Host-header guard | P2 | M | — | TODO |
 | 025 | Redaction rule-set expansion (DSN/PEM/token shapes) | P2 | M | 023 | TODO |

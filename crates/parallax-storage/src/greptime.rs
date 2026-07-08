@@ -26,6 +26,24 @@ fn escape(text: &str) -> String {
     text.replace('\'', "''")
 }
 
+/// Escape a value for inclusion inside a double-quoted SQL identifier.
+fn escape_ident(text: &str) -> String {
+    text.replace('"', "\"\"")
+}
+
+fn raw_sql_read_only(query: &str) -> bool {
+    let trimmed = query.trim();
+    let lowered = trimmed.to_ascii_lowercase();
+    let read_only = [
+        "select", "with", "show", "describe", "desc", "explain", "tql",
+    ]
+    .iter()
+    .any(|prefix| lowered.starts_with(prefix));
+    read_only
+        && !trimmed.trim_end_matches(';').contains(';')
+        && !(lowered.starts_with("explain") && lowered.contains("analyze"))
+}
+
 /// True when a SQL error is GreptimeDB reporting that the target table does not
 /// exist yet. Native OTLP tables auto-create on the first forward, so any read
 /// before the matching signal has arrived must read as empty rather than fail.
@@ -1016,7 +1034,7 @@ impl TelemetryStore for GreptimeStore {
                    FROM "{}"
                    WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}{service_clause}
                    GROUP BY "bucket_ms" ORDER BY "bucket_ms""#,
-                escape(name),
+                escape_ident(name),
                 sql_ts(range.start() / 1_000_000),
                 sql_ts(range.end() / 1_000_000),
             ))
@@ -1058,7 +1076,7 @@ impl TelemetryStore for GreptimeStore {
                    FROM "{}_bucket"
                    WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}{service_clause}
                    ORDER BY "greptime_timestamp" ASC"#,
-                escape(name),
+                escape_ident(name),
                 sql_ts(range.start() / 1_000_000),
                 sql_ts(range.end() / 1_000_000),
             ))
@@ -1373,7 +1391,7 @@ impl TelemetryStore for GreptimeStore {
             .unwrap_or_default();
         // native: metric-engine tags are real columns (resource attrs promoted
         // to tags); group on the quoted tag column, missing → "(none)".
-        let group_col = format!(r#""{}""#, group_by.replace('"', ""));
+        let group_col = format!(r#""{}""#, escape_ident(group_by));
         let rows = self
             .sql_lenient(&format!(
                 r#"SELECT COALESCE(CAST({group_col} AS STRING), '(none)') AS "grp",
@@ -1382,7 +1400,7 @@ impl TelemetryStore for GreptimeStore {
                    FROM "{}"
                    WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}{service_clause}
                    GROUP BY "grp", "bucket_ms" ORDER BY "grp", "bucket_ms""#,
-                escape(name),
+                escape_ident(name),
                 sql_ts(range.start() / 1_000_000),
                 sql_ts(range.end() / 1_000_000),
             ))
@@ -1427,7 +1445,7 @@ impl TelemetryStore for GreptimeStore {
                    FROM "{}_count"
                    WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}{service_clause}
                    GROUP BY "bucket_ms" ORDER BY "bucket_ms""#,
-                escape(name),
+                escape_ident(name),
                 sql_ts(range.start() / 1_000_000),
                 sql_ts(range.end() / 1_000_000),
             ))
@@ -1500,6 +1518,10 @@ impl TelemetryStore for GreptimeStore {
     }
 
     async fn raw_sql(&self, query: &str) -> anyhow::Result<crate::adapter::SqlResult> {
+        anyhow::ensure!(
+            raw_sql_read_only(query),
+            "raw_sql: read-only statements only"
+        );
         self.sql_with_schema(query).await
     }
 }
@@ -1619,5 +1641,34 @@ fn error_event_from_row(row: &[serde_json::Value]) -> ErrorEventRow {
         trace_id: str_at(row, 7),
         span_id: str_at(row, 8),
         attributes: json_at(row, 9),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn escape_ident_doubles_double_quotes_only() {
+        assert_eq!(
+            escape_ident(r#"http."server".duration"#),
+            r#"http.""server"".duration"#
+        );
+        assert_eq!(escape_ident("metric's/name"), "metric's/name");
+    }
+
+    #[test]
+    fn raw_sql_read_only_guard_rejects_writes_and_explain_analyze() {
+        assert!(raw_sql_read_only("SELECT * FROM opentelemetry_logs"));
+        assert!(raw_sql_read_only(
+            "EXPLAIN SELECT * FROM opentelemetry_logs"
+        ));
+        assert!(!raw_sql_read_only(
+            "EXPLAIN ANALYZE SELECT * FROM opentelemetry_logs"
+        ));
+        assert!(!raw_sql_read_only(
+            "SELECT 1; DROP TABLE opentelemetry_logs"
+        ));
+        assert!(!raw_sql_read_only("DELETE FROM opentelemetry_logs"));
     }
 }
