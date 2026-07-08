@@ -216,6 +216,12 @@ after 038/039; 067 anytime after 036; 065 after advisor-034; 066 last
 
 ## Verification baseline
 
+## Verification Rule
+
+- Browser-based verification in this planning program (manual UI/UX checks, interaction flows, screenshot checks, DOM validation) must be run with `agent-browser` only.
+- Current verified local tool: `agent-browser` CLI `0.31.1` (installed and executable on this environment).
+- Prefer deterministic `agent-browser` sessions and log command output beside the plan’s manual-check evidence.
+
 Parallax UI (from `ui/`): `bun install`; `bun run typecheck` / `lint` /
 `test` / `build` — all must exit 0 (Bun only; never npm/pnpm/yarn).
 Parallax Rust (repo root): `rtk cargo build --workspace`,
@@ -228,6 +234,5 @@ Gradle wrapper; web via `bun run build`;
 Manual checks need `parallax serve` + the playground
 (`OTEL_EXPORTER_OTLP_ENDPOINT` already matches ports 4317/4318).
 Git: work on `main` (BRANCHING.md), Conventional Commits (COMMITS.md),
-`git commit -s`, exactly one `Co-authored-by: Claude <noreply@anthropic.com>`
-trailer per agent commit, push when done. Playground-target plans commit in
+`git commit -s`, push when done. Playground-target plans commit in
 the playground repo but update their status row here.

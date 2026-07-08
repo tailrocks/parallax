@@ -4,6 +4,12 @@
 
 Research date: 2026-05-25
 
+## Verification Rule
+
+- Browser-based verification in this plan (navigation, interaction, screenshot capture, DOM assertions, and any runtime UI check) **must use `agent-browser`**.
+- Current verified tooling for this environment: `agent-browser` CLI version `0.31.1`.
+- Use deterministic CLI sessions (`session` naming, optional `--headed` only when needed) and record command outputs in the relevant validation ledger.
+
 ## Purpose
 
 The [technical implementation concept](implementation-concept.md) says
