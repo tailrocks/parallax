@@ -90,6 +90,19 @@ pub struct ReleaseWindow {
     pub span_count: u64,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ServiceCatalogRow {
+    pub name: String,
+    pub service_version: Option<String>,
+    pub service_namespace: Option<String>,
+    pub deployment_environment: Option<String>,
+    pub telemetry_sdk_language: Option<String>,
+    pub telemetry_sdk_name: Option<String>,
+    pub telemetry_sdk_version: Option<String>,
+    pub last_seen_nanos: u128,
+    pub instance_count: u64,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SignalKind {
     Spans,
@@ -321,6 +334,11 @@ pub trait TelemetryStore: Send + Sync {
         service: &str,
         range: RangeInclusive<u128>,
     ) -> anyhow::Result<Vec<ReleaseWindow>>;
+    /// Resource-identity catalog rows, one per service in the window.
+    async fn service_catalog(
+        &self,
+        range: RangeInclusive<u128>,
+    ) -> anyhow::Result<Vec<ServiceCatalogRow>>;
     /// Trace-derived RED series; works even when a service emits no metrics.
     async fn span_red_series(
         &self,

@@ -12,8 +12,8 @@ use parallax_core::{gaps, story, trace_analysis};
 use parallax_storage::adapter::{
     ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow as StorageAttributeCompareRow, OverviewTotals,
     ReleaseWindow as StorageReleaseWindow, SERVICE_MAP_TRACE_CAP,
-    ServiceEdge as StorageServiceEdge, ServiceSummary as StorageServiceSummary,
-    SpanRed as StorageSpanRed, TelemetryStore,
+    ServiceCatalogRow as StorageServiceCatalogRow, ServiceEdge as StorageServiceEdge,
+    ServiceSummary as StorageServiceSummary, SpanRed as StorageSpanRed, TelemetryStore,
 };
 use parallax_storage::metadata::MetadataStore;
 use parallax_storage::model;
@@ -906,6 +906,39 @@ impl ReleaseWindow {
     }
 }
 
+pub struct ServiceCatalogRow(StorageServiceCatalogRow);
+
+#[graphql_object(context = ApiContext)]
+impl ServiceCatalogRow {
+    fn name(&self) -> &str {
+        &self.0.name
+    }
+    fn service_version(&self) -> Option<&str> {
+        self.0.service_version.as_deref()
+    }
+    fn service_namespace(&self) -> Option<&str> {
+        self.0.service_namespace.as_deref()
+    }
+    fn deployment_environment(&self) -> Option<&str> {
+        self.0.deployment_environment.as_deref()
+    }
+    fn telemetry_sdk_language(&self) -> Option<&str> {
+        self.0.telemetry_sdk_language.as_deref()
+    }
+    fn telemetry_sdk_name(&self) -> Option<&str> {
+        self.0.telemetry_sdk_name.as_deref()
+    }
+    fn telemetry_sdk_version(&self) -> Option<&str> {
+        self.0.telemetry_sdk_version.as_deref()
+    }
+    fn last_seen_nanos(&self) -> String {
+        nanos_string(self.0.last_seen_nanos)
+    }
+    fn instance_count(&self) -> String {
+        self.0.instance_count.to_string()
+    }
+}
+
 #[derive(Clone)]
 pub struct ServiceNodeData {
     name: String,
@@ -1333,6 +1366,21 @@ impl Query {
             .await
             .map_err(field_err)?;
         Ok(windows.into_iter().map(ReleaseWindow).collect())
+    }
+
+    /// Resource-identity catalog rows for services in the selected window.
+    async fn service_catalog(
+        context: &ApiContext,
+        from_nanos: String,
+        to_nanos: String,
+    ) -> FieldResult<Vec<ServiceCatalogRow>> {
+        let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+        let rows = context
+            .store
+            .service_catalog(from..=to)
+            .await
+            .map_err(field_err)?;
+        Ok(rows.into_iter().map(ServiceCatalogRow).collect())
     }
 
     /// Trace-path service graph over a bounded set of traces in the window.
@@ -3038,6 +3086,80 @@ mod tests {
             json.pointer("/data/releases/1/version"),
             Some(&serde_json::json!("v2"))
         );
+    }
+
+    #[tokio::test]
+    async fn service_catalog_resolver_returns_identity_rows() {
+        let store = Arc::new(MemoryStore::new());
+        let mut checkout = span("checkout", "t1", "root", 10, 1_000);
+        checkout.resource = serde_json::json!({
+            "service.version": "v1",
+            "service.namespace": "shop",
+            "deployment.environment.name": "prod",
+            "telemetry.sdk.language": "rust",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "0.32.1",
+            "service.instance.id": "checkout-a"
+        });
+        store
+            .ingest_traces(
+                vec![checkout, span("bare", "t2", "root", 20, 1_000)],
+                Default::default(),
+            )
+            .await
+            .unwrap();
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"
+            {
+              serviceCatalog(fromNanos: "0", toNanos: "100") {
+                name serviceVersion serviceNamespace deploymentEnvironment
+                telemetrySdkLanguage telemetrySdkName telemetrySdkVersion
+                lastSeenNanos instanceCount
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(
+            error_messages(&json).is_empty(),
+            "serviceCatalog query: {json}"
+        );
+        let rows = json
+            .pointer("/data/serviceCatalog")
+            .unwrap()
+            .as_array()
+            .unwrap();
+        let checkout = rows
+            .iter()
+            .find(|row| row.get("name") == Some(&serde_json::json!("checkout")))
+            .unwrap();
+        assert_eq!(
+            checkout.get("serviceVersion"),
+            Some(&serde_json::json!("v1"))
+        );
+        assert_eq!(
+            checkout.get("deploymentEnvironment"),
+            Some(&serde_json::json!("prod"))
+        );
+        assert_eq!(
+            checkout.get("telemetrySdkLanguage"),
+            Some(&serde_json::json!("rust"))
+        );
+        assert_eq!(checkout.get("instanceCount"), Some(&serde_json::json!("1")));
+        let bare = rows
+            .iter()
+            .find(|row| row.get("name") == Some(&serde_json::json!("bare")))
+            .unwrap();
+        assert_eq!(bare.get("serviceVersion"), Some(&serde_json::Value::Null));
+        assert_eq!(bare.get("instanceCount"), Some(&serde_json::json!("0")));
     }
 
     #[test]

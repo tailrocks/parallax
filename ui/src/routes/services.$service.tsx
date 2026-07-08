@@ -60,7 +60,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { gqlString, graphql } from "@/lib/api"
-import type { TraceSummary } from "@/lib/api"
+import type { ServiceCatalogRow, TraceSummary } from "@/lib/api"
 import {
   formatCount,
   formatDateTime,
@@ -121,6 +121,7 @@ export interface ServiceDetailData {
   red: SpanRed
   overview: ServiceOverview
   releases: ReleaseWindow[]
+  serviceCatalog: ServiceCatalogRow[]
   httpDurationExemplars: MetricExemplar[]
   rpcDurationExemplars: MetricExemplar[]
   tracesPage: { items: TraceSummary[] }
@@ -181,6 +182,17 @@ export async function loadServiceDetail(service: string, range: ResolvedRange) {
       }
       releases(service: "${escaped}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}") {
         version firstSeenNanos lastSeenNanos spanCount
+      }
+      serviceCatalog(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}") {
+        name
+        serviceVersion
+        serviceNamespace
+        deploymentEnvironment
+        telemetrySdkLanguage
+        telemetrySdkName
+        telemetrySdkVersion
+        lastSeenNanos
+        instanceCount
       }
       httpDurationExemplars: metricExemplars(name: "http.server.request.duration", service: "${escaped}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", limit: 50) {
         tsNanos service name value traceId spanId runId attributes
@@ -361,6 +373,7 @@ export function ServiceDetailContent({
     data.red.errorRate.length > 0 ||
     data.red.p95.length > 0
   const traces = data.tracesPage.items
+  const identity = data.serviceCatalog.find((row) => row.name === service)
   const noData = !hasRed && traces.length === 0
   const lastSeen = traces[0]?.startNanos
   const servicesBack = navItem("/services")!
@@ -420,6 +433,8 @@ export function ServiceDetailContent({
 
       <ReleaseStrip releases={data.releases} range={range} />
 
+      <IdentityCard identity={identity} fallbackLastSeen={lastSeen} />
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={IconActivityHeartbeat}
@@ -474,6 +489,49 @@ export function ServiceDetailContent({
       <InfraBand overview={data.overview} />
       <RecentTraces traces={traces} />
     </div>
+  )
+}
+
+function IdentityCard({
+  identity,
+  fallbackLastSeen,
+}: {
+  identity: ServiceCatalogRow | undefined
+  fallbackLastSeen: string | undefined
+}) {
+  const sdk = [identity?.telemetrySdkName, identity?.telemetrySdkVersion]
+    .filter(Boolean)
+    .join(" ")
+  const identityLastSeen = identity?.lastSeenNanos ?? fallbackLastSeen
+  const values = [
+    ["Version", identity?.serviceVersion],
+    ["Namespace", identity?.serviceNamespace],
+    ["Environment", identity?.deploymentEnvironment],
+    ["Runtime", identity?.telemetrySdkLanguage],
+    ["SDK", sdk || null],
+    ["Instances", formatCount(Number(identity?.instanceCount ?? 0))],
+    [
+      "Last seen",
+      identityLastSeen ? <RelativeTime nanos={identityLastSeen} /> : null,
+    ],
+  ] satisfies Array<[string, React.ReactNode]>
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">Identity</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {values.map(([label, value]) => (
+          <div key={label} className="space-y-1">
+            <div className="text-xs text-muted-foreground">{label}</div>
+            <div className="text-sm font-medium">
+              {value || <span className="text-muted-foreground">not emitted</span>}
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   )
 }
 

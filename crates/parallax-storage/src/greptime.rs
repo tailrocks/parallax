@@ -3,9 +3,9 @@
 
 use crate::adapter::{
     ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow, MAX_ROWS,
-    OverviewTotals, ReleaseWindow, SERVICE_MAP_TRACE_CAP, ServiceEdge, ServiceSummary, SignalKind,
-    SpanRed, TelemetryStore, attribute_compare_key_allowed, attribute_compare_score,
-    attribute_compare_value_allowed,
+    OverviewTotals, ReleaseWindow, SERVICE_MAP_TRACE_CAP, ServiceCatalogRow, ServiceEdge,
+    ServiceSummary, SignalKind, SpanRed, TelemetryStore, attribute_compare_key_allowed,
+    attribute_compare_score, attribute_compare_value_allowed,
 };
 use crate::model::*;
 use std::collections::{BTreeMap, BTreeSet};
@@ -521,6 +521,10 @@ fn str_at(row: &[serde_json::Value], index: usize) -> String {
 
 fn opt_str_at(row: &[serde_json::Value], index: usize) -> Option<String> {
     row.get(index).and_then(|v| v.as_str()).map(str::to_string)
+}
+
+fn opt_nonempty_str_at(row: &[serde_json::Value], index: usize) -> Option<String> {
+    opt_str_at(row, index).filter(|value| !value.trim().is_empty())
 }
 
 /// Clamp a u128 time bound to what the engine's TIMESTAMP cast accepts
@@ -1105,6 +1109,101 @@ impl TelemetryStore for GreptimeStore {
                     last_seen_nanos: u128_at(row, 2),
                     span_count: u128_at(row, 3) as u64,
                 })
+            })
+            .collect())
+    }
+
+    async fn service_catalog(
+        &self,
+        range: RangeInclusive<u128>,
+    ) -> anyhow::Result<Vec<ServiceCatalogRow>> {
+        let schema = self
+            .sql_with_schema_lenient("SELECT * FROM opentelemetry_traces LIMIT 0")
+            .await?;
+        let has_column = |name: &str| schema.columns.iter().any(|column| column == name);
+        let latest_attr = |column: &str, alias: &str| {
+            if has_column(column) {
+                format!(r#"MAX(t."{}") AS "{}""#, escape_ident(column), alias)
+            } else {
+                format!(r#"NULL AS "{}""#, alias)
+            }
+        };
+        let instance_count = if has_column("resource_attributes.service.instance.id") {
+            r#"COUNT(DISTINCT "resource_attributes.service.instance.id")"#.to_string()
+        } else {
+            "0".to_string()
+        };
+        // GreptimeDB 1.1 rejects `arg_max`, and aggregate `last_value` is not
+        // timestamp-stable for native trace rows. Verified live on 2026-07-08:
+        // use one max-timestamp CTE per service, join the matching row(s), then
+        // aggregate duplicate latest rows with MAX.
+        let sql = format!(
+            r#"WITH latest AS (
+                   SELECT "service_name", MAX("timestamp") AS "last_seen"
+                   FROM opentelemetry_traces
+                   WHERE "timestamp" >= {} AND "timestamp" <= {}
+                   GROUP BY "service_name"
+               ),
+               counts AS (
+                   SELECT "service_name", {instance_count} AS "instance_count"
+                   FROM opentelemetry_traces
+                   WHERE "timestamp" >= {} AND "timestamp" <= {}
+                   GROUP BY "service_name"
+               )
+               SELECT l."service_name",
+                      {},
+                      {},
+                      {},
+                      {},
+                      {},
+                      {},
+                      CAST(l."last_seen" AS BIGINT) AS "last_seen_nanos",
+                      c."instance_count"
+               FROM latest l
+               JOIN opentelemetry_traces t
+                 ON t."service_name" = l."service_name"
+                AND t."timestamp" = l."last_seen"
+               LEFT JOIN counts c ON c."service_name" = l."service_name"
+               GROUP BY l."service_name", l."last_seen", c."instance_count"
+               ORDER BY l."service_name" ASC
+               LIMIT {}"#,
+            sql_ts(*range.start()),
+            sql_ts(*range.end()),
+            sql_ts(*range.start()),
+            sql_ts(*range.end()),
+            latest_attr("resource_attributes.service.version", "service_version"),
+            latest_attr("resource_attributes.service.namespace", "service_namespace"),
+            latest_attr(
+                "resource_attributes.deployment.environment.name",
+                "deployment_environment"
+            ),
+            latest_attr(
+                "resource_attributes.telemetry.sdk.language",
+                "telemetry_sdk_language"
+            ),
+            latest_attr(
+                "resource_attributes.telemetry.sdk.name",
+                "telemetry_sdk_name"
+            ),
+            latest_attr(
+                "resource_attributes.telemetry.sdk.version",
+                "telemetry_sdk_version"
+            ),
+            MAX_ROWS,
+        );
+        let rows = self.sql_lenient(&sql).await?;
+        Ok(rows
+            .iter()
+            .map(|row| ServiceCatalogRow {
+                name: str_at(row, 0),
+                service_version: opt_nonempty_str_at(row, 1),
+                service_namespace: opt_nonempty_str_at(row, 2),
+                deployment_environment: opt_nonempty_str_at(row, 3),
+                telemetry_sdk_language: opt_nonempty_str_at(row, 4),
+                telemetry_sdk_name: opt_nonempty_str_at(row, 5),
+                telemetry_sdk_version: opt_nonempty_str_at(row, 6),
+                last_seen_nanos: u128_at(row, 7),
+                instance_count: u128_at(row, 8) as u64,
             })
             .collect())
     }

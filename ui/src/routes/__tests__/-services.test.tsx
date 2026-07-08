@@ -42,6 +42,30 @@ const servicesFixture: ServicesData = {
       p95Ms: null,
     },
   ],
+  serviceCatalog: [
+    {
+      name: "api gateway",
+      serviceVersion: "v1",
+      serviceNamespace: "edge",
+      deploymentEnvironment: "prod",
+      telemetrySdkLanguage: "rust",
+      telemetrySdkName: "opentelemetry",
+      telemetrySdkVersion: "0.32.1",
+      lastSeenNanos: "1719999990000000000",
+      instanceCount: "2",
+    },
+    {
+      name: "checkout/core",
+      serviceVersion: null,
+      serviceNamespace: null,
+      deploymentEnvironment: null,
+      telemetrySdkLanguage: null,
+      telemetrySdkName: null,
+      telemetrySdkVersion: null,
+      lastSeenNanos: "1719999980000000000",
+      instanceCount: "0",
+    },
+  ],
 }
 
 const detailFixture: ServiceDetailData = {
@@ -69,6 +93,7 @@ const detailFixture: ServiceDetailData = {
       spanCount: "10",
     },
   ],
+  serviceCatalog: servicesFixture.serviceCatalog,
   httpDurationExemplars: [],
   rpcDurationExemplars: [],
   tracesPage: {
@@ -152,6 +177,9 @@ describe("Services route", () => {
 
     expect(await screen.findByText("api gateway")).toBeTruthy()
     expect(screen.getByText("checkout/core")).toBeTruthy()
+    expect(screen.getByText("v1")).toBeTruthy()
+    expect(screen.getByText("rust")).toBeTruthy()
+    expect(screen.getByText("prod")).toBeTruthy()
     expect(
       screen.getByRole("link", { name: /api gateway/i }).getAttribute("href")
     ).toBe("/services/api%20gateway?range=24h")
@@ -178,7 +206,10 @@ describe("Services route", () => {
 
     expect((await screen.findAllByText("Requests")).length).toBeGreaterThan(0)
     expect(screen.getByText("Releases")).toBeTruthy()
-    expect(screen.getByText("v1")).toBeTruthy()
+    expect(screen.getAllByText("v1").length).toBeGreaterThan(1)
+    expect(screen.getByText("Identity")).toBeTruthy()
+    expect(screen.getByText("edge")).toBeTruthy()
+    expect(screen.getByText("opentelemetry 0.32.1")).toBeTruthy()
     expect(screen.getByText("Error rate")).toBeTruthy()
     expect(screen.getByText("p95 latency")).toBeTruthy()
     expect(screen.queryByText("Runtime metrics")).toBeNull()

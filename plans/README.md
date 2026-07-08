@@ -51,7 +51,7 @@ conditions, run its verification gates, and update your row when done.
 |------|-------|------|----------|--------|------------|--------|
 | 041 | Releases/deploys lane (releases query, issue↔release design spike, regression badge) | parallax | P2 | L | demo: 042 | DONE |
 | 042 | Playground release + flags reality (env-sourced version, live flagd, honest A13, envs) | **[playground]** | P1 | M | 036 | DONE |
-| 043 | Service catalog (identity/runtime/SDK columns + detail card) | parallax | P2 | M | demo: 036 | TODO |
+| 043 | Service catalog (identity/runtime/SDK columns + detail card) | parallax | P2 | M | demo: 036 | DONE |
 | 044 | Runtime dashboards + metric label discovery (metricLabels/Values, runtimeSnapshot, builder autocomplete) | parallax | P2 | L | demo: 045 | TODO |
 | 045 | Playground runtime scenarios (Tokio gauges, JVM pressure, container limits, Micrometer/exemplar knobs) | **[playground]** | P2 | L | 036 | TODO |
 | 046 | Field explorer phase 1 (fieldStats over span/error attrs + traces-list drawer) | parallax | P2 | M | demo: 054 | TODO |

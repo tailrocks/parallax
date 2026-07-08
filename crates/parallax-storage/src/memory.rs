@@ -3,9 +3,9 @@
 
 use crate::adapter::{
     ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow, MAX_ROWS,
-    OverviewTotals, ReleaseWindow, SERVICE_MAP_TRACE_CAP, ServiceEdge, ServiceSummary, SignalKind,
-    SpanRed, TelemetryStore, attribute_compare_key_allowed, attribute_compare_score,
-    attribute_compare_value_allowed,
+    OverviewTotals, ReleaseWindow, SERVICE_MAP_TRACE_CAP, ServiceCatalogRow, ServiceEdge,
+    ServiceSummary, SignalKind, SpanRed, TelemetryStore, attribute_compare_key_allowed,
+    attribute_compare_score, attribute_compare_value_allowed,
 };
 use crate::model::*;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -31,6 +31,15 @@ fn scalar_attribute_value(attributes: &serde_json::Value, key: &str) -> Option<S
         _ => return None,
     };
     attribute_compare_value_allowed(&value).then_some(value)
+}
+
+fn resource_string(resource: &serde_json::Value, key: &str) -> Option<String> {
+    resource
+        .get(key)
+        .and_then(|value| value.as_str())
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
 }
 
 fn span_matches_compare(
@@ -527,6 +536,56 @@ impl TelemetryStore for MemoryStore {
         let mut windows: Vec<_> = by_version.into_values().collect();
         windows.sort_by_key(|window| (window.first_seen_nanos, window.version.clone()));
         Ok(windows)
+    }
+
+    async fn service_catalog(
+        &self,
+        range: RangeInclusive<u128>,
+    ) -> anyhow::Result<Vec<ServiceCatalogRow>> {
+        #[derive(Default)]
+        struct CatalogAgg {
+            latest: Option<SpanRow>,
+            instances: BTreeSet<String>,
+        }
+
+        let inner = self.lock();
+        let mut by_service: BTreeMap<String, CatalogAgg> = BTreeMap::new();
+        for span in inner.spans.iter().filter(|s| range.contains(&s.ts_nanos)) {
+            let entry = by_service.entry(span.service.clone()).or_default();
+            if entry
+                .latest
+                .as_ref()
+                .is_none_or(|latest| span.ts_nanos >= latest.ts_nanos)
+            {
+                entry.latest = Some(span.clone());
+            }
+            if let Some(instance) = resource_string(&span.resource, "service.instance.id") {
+                entry.instances.insert(instance);
+            }
+        }
+
+        let mut rows = Vec::new();
+        for (name, agg) in by_service {
+            let Some(latest) = agg.latest else { continue };
+            rows.push(ServiceCatalogRow {
+                name,
+                service_version: resource_string(&latest.resource, "service.version"),
+                service_namespace: resource_string(&latest.resource, "service.namespace"),
+                deployment_environment: resource_string(
+                    &latest.resource,
+                    "deployment.environment.name",
+                )
+                .or_else(|| resource_string(&latest.resource, "deployment.environment")),
+                telemetry_sdk_language: resource_string(&latest.resource, "telemetry.sdk.language"),
+                telemetry_sdk_name: resource_string(&latest.resource, "telemetry.sdk.name"),
+                telemetry_sdk_version: resource_string(&latest.resource, "telemetry.sdk.version"),
+                last_seen_nanos: latest.ts_nanos,
+                instance_count: agg.instances.len() as u64,
+            });
+        }
+        rows.sort_by_key(|row| row.name.clone());
+        rows.truncate(MAX_ROWS);
+        Ok(rows)
     }
 
     async fn span_red_series(
@@ -1289,6 +1348,81 @@ mod tests {
         let mut row = span(trace, span_id, None, "checkout", ts);
         row.resource = serde_json::json!({ "service.version": version });
         row
+    }
+
+    fn span_with_resource(
+        trace: &str,
+        span_id: &str,
+        service: &str,
+        ts: u128,
+        resource: serde_json::Value,
+    ) -> SpanRow {
+        let mut row = span(trace, span_id, None, service, ts);
+        row.resource = resource;
+        row
+    }
+
+    #[tokio::test]
+    async fn service_catalog_returns_identity_and_nulls() {
+        let store = MemoryStore::new();
+        store
+            .ingest_traces(
+                vec![
+                    span_with_resource(
+                        "checkout-old",
+                        "root",
+                        "checkout",
+                        10,
+                        serde_json::json!({
+                            "service.version": "v1",
+                            "service.namespace": "shop",
+                            "deployment.environment.name": "staging",
+                            "telemetry.sdk.language": "rust",
+                            "telemetry.sdk.name": "opentelemetry",
+                            "telemetry.sdk.version": "0.31.0",
+                            "service.instance.id": "checkout-a"
+                        }),
+                    ),
+                    span_with_resource(
+                        "checkout-new",
+                        "root",
+                        "checkout",
+                        20,
+                        serde_json::json!({
+                            "service.version": "v2",
+                            "service.namespace": "shop",
+                            "deployment.environment.name": "prod",
+                            "telemetry.sdk.language": "rust",
+                            "telemetry.sdk.name": "opentelemetry",
+                            "telemetry.sdk.version": "0.32.1",
+                            "service.instance.id": "checkout-b"
+                        }),
+                    ),
+                    span("bare", "root", None, "bare", 30),
+                ],
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+
+        let rows = store.service_catalog(0..=100).await.unwrap();
+
+        let bare = rows.iter().find(|row| row.name == "bare").unwrap();
+        assert_eq!(bare.service_version, None);
+        assert_eq!(bare.telemetry_sdk_language, None);
+        assert_eq!(bare.instance_count, 0);
+        let checkout = rows.iter().find(|row| row.name == "checkout").unwrap();
+        assert_eq!(checkout.service_version.as_deref(), Some("v2"));
+        assert_eq!(checkout.service_namespace.as_deref(), Some("shop"));
+        assert_eq!(checkout.deployment_environment.as_deref(), Some("prod"));
+        assert_eq!(checkout.telemetry_sdk_language.as_deref(), Some("rust"));
+        assert_eq!(
+            checkout.telemetry_sdk_name.as_deref(),
+            Some("opentelemetry")
+        );
+        assert_eq!(checkout.telemetry_sdk_version.as_deref(), Some("0.32.1"));
+        assert_eq!(checkout.last_seen_nanos, 20);
+        assert_eq!(checkout.instance_count, 2);
     }
 
     #[tokio::test]

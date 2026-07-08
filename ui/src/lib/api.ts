@@ -65,6 +65,18 @@ export interface Issue {
   lastTraceId: string | null
 }
 
+export interface ServiceCatalogRow {
+  name: string
+  serviceVersion: string | null
+  serviceNamespace: string | null
+  deploymentEnvironment: string | null
+  telemetrySdkLanguage: string | null
+  telemetrySdkName: string | null
+  telemetrySdkVersion: string | null
+  lastSeenNanos: string
+  instanceCount: string
+}
+
 export interface ErrorEvent {
   tsNanos: string
   message: string
