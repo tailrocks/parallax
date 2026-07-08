@@ -576,6 +576,13 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
         );
     }
 
+    for gap in crate::gaps::detect_gaps(&inputs.trace_spans, &inputs.trace_logs) {
+        let line = format!("{}: {}", gap.kind, gap.detail);
+        if !missing.contains(&line) {
+            missing.push(line);
+        }
+    }
+
     let hypotheses = rank_hypotheses(
         primary_issue.as_ref(),
         &inputs.events,

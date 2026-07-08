@@ -8,7 +8,7 @@
 //! auto-camelCased; cost limits are resolver-level caps in V1.
 
 use juniper::{EmptySubscription, FieldError, FieldResult, RootNode, graphql_object};
-use parallax_core::{story, trace_analysis};
+use parallax_core::{gaps, story, trace_analysis};
 use parallax_storage::adapter::{
     ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow as StorageAttributeCompareRow, OverviewTotals,
     SERVICE_MAP_TRACE_CAP, ServiceEdge as StorageServiceEdge,
@@ -649,6 +649,21 @@ impl AttributeCompareRow {
     }
     fn score(&self) -> f64 {
         self.0.score
+    }
+}
+
+pub struct EvidenceGap(gaps::EvidenceGap);
+
+#[graphql_object(context = ApiContext)]
+impl EvidenceGap {
+    fn kind(&self) -> &str {
+        &self.0.kind
+    }
+    fn subject(&self) -> &str {
+        &self.0.subject
+    }
+    fn detail(&self) -> &str {
+        &self.0.detail
     }
 }
 
@@ -1596,6 +1611,51 @@ impl Query {
             }
             _ => Err(field_err(
                 "story takes exactly one anchor: traceId or runId",
+            )),
+        }
+    }
+
+    /// Missing-evidence detector for exactly one trace or run anchor.
+    async fn evidence_gaps(
+        context: &ApiContext,
+        trace_id: Option<String>,
+        run_id: Option<String>,
+    ) -> FieldResult<Vec<EvidenceGap>> {
+        match (trace_id, run_id) {
+            (Some(trace_id), None) => {
+                let spans = context
+                    .store
+                    .spans_by_trace(&trace_id)
+                    .await
+                    .map_err(field_err)?;
+                let logs = context
+                    .store
+                    .logs_by_trace(&trace_id)
+                    .await
+                    .map_err(field_err)?;
+                Ok(gaps::detect_gaps(&spans, &logs)
+                    .into_iter()
+                    .map(EvidenceGap)
+                    .collect())
+            }
+            (None, Some(run_id)) => {
+                let spans = context
+                    .store
+                    .spans_by_run(&run_id, MAX_ROWS)
+                    .await
+                    .map_err(field_err)?;
+                let logs = context
+                    .store
+                    .logs_by_run(&run_id, MAX_ROWS)
+                    .await
+                    .map_err(field_err)?;
+                Ok(gaps::detect_gaps(&spans, &logs)
+                    .into_iter()
+                    .map(EvidenceGap)
+                    .collect())
+            }
+            _ => Err(field_err(
+                "evidenceGaps takes exactly one anchor: traceId or runId",
             )),
         }
     }
@@ -3113,6 +3173,98 @@ mod tests {
                 .iter()
                 .any(|message| message.contains("exactly one anchor")),
             "story anchor guard: {json}"
+        );
+    }
+
+    #[tokio::test]
+    async fn evidence_gaps_resolver_returns_trace_and_run_gaps() {
+        let store = Arc::new(MemoryStore::new());
+        let mut orphan = span("api", "gap-trace", "orphan", 100, 10);
+        orphan.parent_span_id = Some("missing-parent".into());
+        orphan.run_id = Some("gap-run".into());
+        store
+            .ingest_traces(vec![orphan], Default::default())
+            .await
+            .unwrap();
+        store
+            .ingest_logs(
+                vec![LogRow {
+                    ts_nanos: 110,
+                    service: "api".into(),
+                    severity_num: 9,
+                    severity_text: "INFO".into(),
+                    body: "uncorrelated".into(),
+                    trace_id: "00000000000000000000000000000000".into(),
+                    span_id: String::new(),
+                    run_id: Some("gap-run".into()),
+                    scope_name: String::new(),
+                    attributes: serde_json::Value::Null,
+                    resource: serde_json::Value::Null,
+                }],
+                Default::default(),
+            )
+            .await
+            .unwrap();
+
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"
+            {
+              traceGaps: evidenceGaps(traceId: "gap-trace") {
+                kind subject detail
+              }
+              runGaps: evidenceGaps(runId: "gap-run") {
+                kind subject detail
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(
+            error_messages(&json).is_empty(),
+            "evidenceGaps query: {json}"
+        );
+        assert_eq!(
+            json.pointer("/data/traceGaps/0/kind"),
+            Some(&serde_json::json!("orphan_span"))
+        );
+        assert!(
+            json.pointer("/data/traceGaps/0/detail")
+                .and_then(|value| value.as_str())
+                .is_some_and(|detail| detail.contains("legitimate cross-service root")),
+            "orphan gap caveat: {json}"
+        );
+        assert!(
+            json.pointer("/data/runGaps")
+                .and_then(|value| value.as_array())
+                .is_some_and(|gaps| gaps.iter().any(|gap| gap["kind"] == "log_without_trace")),
+            "run gaps include log_without_trace: {json}"
+        );
+    }
+
+    #[tokio::test]
+    async fn evidence_gaps_requires_exactly_one_anchor() {
+        let schema = build_schema();
+        let context = context_with_memory(Arc::new(MemoryStore::new())).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"{ evidenceGaps(traceId: "a", runId: "b") { kind } }"#.into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(
+            error_messages(&json)
+                .iter()
+                .any(|message| message.contains("exactly one anchor")),
+            "evidenceGaps anchor guard: {json}"
         );
     }
 

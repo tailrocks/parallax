@@ -18,6 +18,7 @@ import {
   WHOLE_TRACE_ID,
 } from "@/components/console/trace-waterfall"
 import type { WaterfallSpan } from "@/components/console/trace-waterfall"
+import { EvidenceGapsCard } from "@/components/console/evidence-gaps"
 import { StoryTimeline } from "@/components/console/story-timeline"
 import { CopyButton } from "@/components/console/copy-button"
 import { EmptyState } from "@/components/console/empty-state"
@@ -56,6 +57,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { graphql, gqlString } from "@/lib/api"
 import type {
   CriticalPath,
+  EvidenceGap,
   SpanLink,
   StoryBeat,
   TraceDiff,
@@ -115,6 +117,7 @@ export const Route = createFileRoute("/traces/$traceId")({
       logsByTrace: TraceLog[]
       linkedTraces: TraceSummary[]
       story: StoryBeat[]
+      evidenceGaps: EvidenceGap[]
     }>(
       `{ trace(traceId: "${traceId}") {
            spans { tsNanos service traceId name kind statusCode statusMessage durationNs
@@ -126,6 +129,9 @@ export const Route = createFileRoute("/traces/$traceId")({
          }
          story(traceId: "${traceId}") {
            tsNanos lane kind title traceId spanId severity durationNs
+         }
+         evidenceGaps(traceId: "${traceId}") {
+           kind subject detail
          }
          logsByTrace(traceId: "${traceId}") { tsNanos service severityText body spanId } }`
     )
@@ -172,7 +178,8 @@ function valueFor(entries: StringKeyValues, key: string): string | null {
 }
 
 function TracePage() {
-  const { trace, logsByTrace, linkedTraces, story } = Route.useLoaderData()
+  const { trace, logsByTrace, linkedTraces, story, evidenceGaps } =
+    Route.useLoaderData()
   const { traceId } = Route.useParams()
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
@@ -388,6 +395,8 @@ function TracePage() {
           <span className="text-xs font-medium">Open first</span>
         </button>
       ) : null}
+
+      <EvidenceGapsCard gaps={evidenceGaps} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>

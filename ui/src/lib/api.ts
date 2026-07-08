@@ -152,6 +152,12 @@ export interface AttributeCompareRow {
   score: number
 }
 
+export interface EvidenceGap {
+  kind: string
+  subject: string
+  detail: string
+}
+
 export interface LogRecord {
   tsNanos: string
   service: string

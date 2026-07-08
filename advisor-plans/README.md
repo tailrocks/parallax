@@ -38,7 +38,7 @@ conditions, run its verification gates, and update your row below when done.
 | 029 | Story timeline resolver + trace/run tab | P1 | M | — | DONE |
 | 030 | attributeCompare (BubbleUp) over span attributes | P2 | M | — | DONE |
 | 031 | Ecosystem service-map (trace-path graph) | P2 | L | 024 | DONE |
-| 032 | Evidence-gap detector + UI + bundle enrichment | P2 | M | — | TODO |
+| 032 | Evidence-gap detector + UI + bundle enrichment | P2 | M | — | DONE |
 | 033 | Metric exemplars end-to-end (design + thin slice) | P3 | L | — | TODO |
 | 034 | Playground execution-stack scenario (design + build) | P3 | L | 029 | TODO |
 
