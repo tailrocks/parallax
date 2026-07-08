@@ -192,26 +192,64 @@ pub struct BoundReport {
     pub truncated_stacktrace: bool,
 }
 
-fn redaction_rules() -> &'static [(&'static str, Regex)] {
-    static CELL: OnceLock<Vec<(&'static str, Regex)>> = OnceLock::new();
+fn redaction_rules() -> &'static [(&'static str, Regex, &'static str)] {
+    static CELL: OnceLock<Vec<(&'static str, Regex, &'static str)>> = OnceLock::new();
     CELL.get_or_init(|| {
         vec![
             (
+                "dsn_userinfo",
+                Regex::new(r"://[^/\s:@]+:[^/\s@]+@").expect("static regex"),
+                "://[REDACTED:dsn_userinfo]@",
+            ),
+            (
+                "private_key_block",
+                Regex::new(
+                    r"(?s)-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----",
+                )
+                .expect("static regex"),
+                "[REDACTED:private_key_block]",
+            ),
+            (
+                "github_token",
+                Regex::new(r"\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}\b").expect("static regex"),
+                "[REDACTED:github_token]",
+            ),
+            (
+                "github_pat",
+                Regex::new(r"\bgithub_pat_[A-Za-z0-9_]{20,}\b").expect("static regex"),
+                "[REDACTED:github_pat]",
+            ),
+            (
+                "slack_token",
+                Regex::new(r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b").expect("static regex"),
+                "[REDACTED:slack_token]",
+            ),
+            (
+                "jwt",
+                Regex::new(r"\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b")
+                    .expect("static regex"),
+                "[REDACTED:jwt]",
+            ),
+            (
                 "aws_access_key_id",
                 Regex::new(r"\bAKIA[0-9A-Z]{16}\b").expect("static regex"),
+                "[REDACTED:aws_access_key_id]",
             ),
             (
                 "bearer_token",
                 Regex::new(r"Bearer\s+[A-Za-z0-9._\-]{8,}").expect("static regex"),
+                "[REDACTED:bearer_token]",
             ),
             (
                 "password_assignment",
                 Regex::new(r"(?i)password\s*[=:]\s*\S+").expect("static regex"),
+                "[REDACTED:password_assignment]",
             ),
             (
                 "email_address",
                 Regex::new(r"\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b")
                     .expect("static regex"),
+                "[REDACTED:email_address]",
             ),
         ]
     })
@@ -219,12 +257,10 @@ fn redaction_rules() -> &'static [(&'static str, Regex)] {
 
 fn redact(text: &str, report: &mut RedactionReport) -> String {
     let mut out = text.to_string();
-    for (name, rule) in redaction_rules() {
+    for (name, rule, replacement) in redaction_rules() {
         let hits = rule.find_iter(&out).count() as u64;
         if hits > 0 {
-            out = rule
-                .replace_all(&out, format!("[REDACTED:{name}]"))
-                .into_owned();
+            out = rule.replace_all(&out, *replacement).into_owned();
             *report.redacted_counts.entry(name).or_insert(0) += hits;
         }
     }
@@ -280,7 +316,7 @@ fn issue_summary(issue: &Issue, report: &mut RedactionReport) -> IssueSummary {
 
 pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
     let mut redaction = RedactionReport {
-        policy: "redaction-lite-v1 (pre-A6)",
+        policy: "redaction-lite-v2",
         ..Default::default()
     };
     let mut missing = Vec::new();
@@ -718,4 +754,71 @@ pub fn to_markdown(bundle: &Bundle) -> String {
         }
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn redact_masks_dsn_userinfo_and_preserves_context() {
+        let mut report = RedactionReport::default();
+
+        let out = redact("connect postgres://admin:s3cr3t@db:5432/app", &mut report);
+
+        assert!(out.contains("postgres://"));
+        assert!(out.contains("[REDACTED:dsn_userinfo]"));
+        assert!(out.contains("@db:5432"));
+        assert!(!out.contains("s3cr3t"));
+        assert_eq!(report.redacted_counts.get("dsn_userinfo"), Some(&1));
+    }
+
+    #[test]
+    fn redact_leaves_url_without_userinfo_unchanged() {
+        let mut report = RedactionReport::default();
+
+        let out = redact("fetch https://example.com/path", &mut report);
+
+        assert_eq!(out, "fetch https://example.com/path");
+        assert!(report.redacted_counts.is_empty());
+    }
+
+    #[test]
+    fn redact_masks_private_key_blocks() {
+        let mut report = RedactionReport::default();
+        let input = "before\n-----BEGIN PRIVATE KEY-----\nabc123\n-----END PRIVATE KEY-----\nafter";
+
+        let out = redact(input, &mut report);
+
+        assert_eq!(out, "before\n[REDACTED:private_key_block]\nafter");
+        assert!(!out.contains("BEGIN PRIVATE KEY"));
+        assert!(!out.contains("abc123"));
+        assert_eq!(report.redacted_counts.get("private_key_block"), Some(&1));
+    }
+
+    #[test]
+    fn redact_masks_common_token_prefixes() {
+        let mut report = RedactionReport::default();
+        let input = concat!(
+            "ghp_0123456789ABCDEFGHIJKLMNOPQRST ",
+            "github_pat_0123456789abcdefghijklmnopqrst ",
+            "xoxb-1234567890abcdef ",
+            "eyJaaaaaaaaaa.bbbbbbbbbbbb.cccccccccccc"
+        );
+
+        let out = redact(input, &mut report);
+
+        assert!(out.contains("[REDACTED:github_token]"));
+        assert!(out.contains("[REDACTED:github_pat]"));
+        assert!(out.contains("[REDACTED:slack_token]"));
+        assert!(out.contains("[REDACTED:jwt]"));
+        assert!(!out.contains("ghp_0123456789"));
+        assert!(!out.contains("github_pat_0123456789"));
+        assert!(!out.contains("xoxb-1234567890"));
+        assert!(!out.contains("eyJaaaaaaaaaa"));
+        assert_eq!(report.redacted_counts.get("github_token"), Some(&1));
+        assert_eq!(report.redacted_counts.get("github_pat"), Some(&1));
+        assert_eq!(report.redacted_counts.get("slack_token"), Some(&1));
+        assert_eq!(report.redacted_counts.get("jwt"), Some(&1));
+    }
 }

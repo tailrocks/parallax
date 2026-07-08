@@ -96,6 +96,10 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
     let tracer = tracer_provider.tracer("m2-bundle");
     let mut span = tracer.start("payment.authorize");
     let span_context: SpanContext = span.span_context().clone();
+    span.set_attribute(KeyValue::new(
+        "db.query.text",
+        "select * from postgres://admin:s3cr3t@db:5432/app",
+    ));
     span.add_event(
         "exception",
         vec![
@@ -216,6 +220,10 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
             !projection.contains("AKIAIOSFODNN7EXAMPLE"),
             "aws canary leaked"
         );
+        assert!(!projection.contains("s3cr3t"), "dsn userinfo leaked");
+        assert!(projection.contains("[REDACTED:dsn_userinfo]"));
+        assert!(projection.contains("postgres://"));
+        assert!(projection.contains("@db:5432"));
     }
     assert!(
         json.contains("REDACTED"),
