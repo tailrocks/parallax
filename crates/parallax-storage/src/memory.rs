@@ -126,6 +126,7 @@ struct Inner {
     logs: Vec<LogRow>,
     metric_points: Vec<MetricPointRow>,
     histograms: Vec<HistogramRow>,
+    metric_exemplars: Vec<MetricExemplarRow>,
     error_events: Vec<ErrorEventRow>,
 }
 
@@ -171,11 +172,13 @@ impl TelemetryStore for MemoryStore {
         &self,
         points: Vec<MetricPointRow>,
         histograms: Vec<HistogramRow>,
+        exemplars: Vec<MetricExemplarRow>,
         _raw: bytes::Bytes,
     ) -> anyhow::Result<()> {
         let mut inner = self.lock();
         inner.metric_points.extend(points);
         inner.histograms.extend(histograms);
+        inner.metric_exemplars.extend(exemplars);
         Ok(())
     }
 
@@ -609,6 +612,29 @@ impl TelemetryStore for MemoryStore {
                 value: quantile_from_histograms(&rows, q),
             })
             .collect())
+    }
+
+    async fn metric_exemplars(
+        &self,
+        name: &str,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        limit: usize,
+    ) -> anyhow::Result<Vec<MetricExemplarRow>> {
+        let mut rows: Vec<MetricExemplarRow> = self
+            .lock()
+            .metric_exemplars
+            .iter()
+            .filter(|row| {
+                row.name == name
+                    && service.is_none_or(|svc| row.service == svc)
+                    && range.contains(&row.ts_nanos)
+            })
+            .cloned()
+            .collect();
+        rows.sort_by_key(|row| std::cmp::Reverse(row.ts_nanos));
+        rows.truncate(limit.min(MAX_ROWS));
+        Ok(rows)
     }
 
     async fn error_events_by_fingerprint(
@@ -1267,6 +1293,61 @@ mod tests {
         assert_eq!(first.baseline_count, 1);
         assert_eq!(first.baseline_total, 20);
         assert!(first.score > 0.8, "{first:?}");
+    }
+
+    #[tokio::test]
+    async fn metric_exemplars_filters_by_metric_service_range_and_limit() {
+        let store = MemoryStore::new();
+        store
+            .ingest_metrics(
+                Vec::new(),
+                Vec::new(),
+                vec![
+                    MetricExemplarRow {
+                        ts_nanos: 20,
+                        service: "checkout".into(),
+                        name: "http.server.request.duration".into(),
+                        value: 120.0,
+                        trace_id: "trace-a".into(),
+                        span_id: "span-a".into(),
+                        run_id: Some("run-a".into()),
+                        attributes: serde_json::json!({"route": "/checkout"}),
+                    },
+                    MetricExemplarRow {
+                        ts_nanos: 10,
+                        service: "checkout".into(),
+                        name: "http.server.request.duration".into(),
+                        value: 90.0,
+                        trace_id: "trace-b".into(),
+                        span_id: "span-b".into(),
+                        run_id: None,
+                        attributes: serde_json::Value::Null,
+                    },
+                    MetricExemplarRow {
+                        ts_nanos: 30,
+                        service: "catalog".into(),
+                        name: "http.server.request.duration".into(),
+                        value: 80.0,
+                        trace_id: "trace-c".into(),
+                        span_id: "span-c".into(),
+                        run_id: None,
+                        attributes: serde_json::Value::Null,
+                    },
+                ],
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+
+        let rows = store
+            .metric_exemplars("http.server.request.duration", Some("checkout"), 0..=25, 1)
+            .await
+            .unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].trace_id, "trace-a");
+        assert_eq!(rows[0].run_id.as_deref(), Some("run-a"));
+        assert_eq!(rows[0].attributes["route"], "/checkout");
     }
 
     #[tokio::test]

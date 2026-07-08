@@ -272,6 +272,7 @@ pub trait TelemetryStore: Send + Sync {
         &self,
         points: Vec<MetricPointRow>,
         histograms: Vec<HistogramRow>,
+        exemplars: Vec<MetricExemplarRow>,
         raw: bytes::Bytes,
     ) -> anyhow::Result<()>;
     async fn write_error_events(&self, rows: Vec<ErrorEventRow>) -> anyhow::Result<()>;
@@ -334,6 +335,14 @@ pub trait TelemetryStore: Send + Sync {
         step_nanos: u128,
         q: f64,
     ) -> anyhow::Result<Vec<SeriesPoint>>;
+    /// Trace-linked metric exemplars, time-bounded and newest first.
+    async fn metric_exemplars(
+        &self,
+        name: &str,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        limit: usize,
+    ) -> anyhow::Result<Vec<MetricExemplarRow>>;
     /// Error events for a fingerprint within a time range, newest first.
     async fn error_events_by_fingerprint(
         &self,

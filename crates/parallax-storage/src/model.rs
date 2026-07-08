@@ -54,6 +54,18 @@ pub struct MetricPointRow {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MetricExemplarRow {
+    pub ts_nanos: u128,
+    pub service: String,
+    pub name: String,
+    pub value: f64,
+    pub trace_id: String,
+    pub span_id: String,
+    pub run_id: Option<String>,
+    pub attributes: serde_json::Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HistogramRow {
     pub ts_nanos: u128,
     pub service: String,

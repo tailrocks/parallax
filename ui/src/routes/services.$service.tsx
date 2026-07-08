@@ -44,6 +44,14 @@ import {
 import type { ChartConfig } from "@/components/ui/chart"
 import { buttonVariants } from "@/components/ui/button"
 import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
   Table,
   TableBody,
   TableCell,
@@ -86,9 +94,22 @@ interface ServiceOverview {
   latencyP99: SeriesPoint[]
 }
 
+export interface MetricExemplar {
+  tsNanos: string
+  service: string
+  name: string
+  value: number
+  traceId: string
+  spanId: string
+  runId: string | null
+  attributes: string
+}
+
 export interface ServiceDetailData {
   red: SpanRed
   overview: ServiceOverview
+  httpDurationExemplars: MetricExemplar[]
+  rpcDurationExemplars: MetricExemplar[]
   tracesPage: { items: TraceSummary[] }
 }
 
@@ -106,6 +127,7 @@ const chartConfig = {
   p99Band: { label: "p99", color: "var(--chart-5)" },
   cpu: { label: "CPU", color: "var(--chart-1)" },
   memory: { label: "Memory", color: "var(--chart-2)" },
+  exemplar: { label: "Exemplar", color: "var(--chart-4)" },
 } satisfies ChartConfig
 
 export const Route = createFileRoute("/services/$service")({
@@ -143,6 +165,12 @@ export async function loadServiceDetail(service: string, range: ResolvedRange) {
         latencyP50 { tsNanos value }
         latencyP95 { tsNanos value }
         latencyP99 { tsNanos value }
+      }
+      httpDurationExemplars: metricExemplars(name: "http.server.request.duration", service: "${escaped}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", limit: 50) {
+        tsNanos service name value traceId spanId runId attributes
+      }
+      rpcDurationExemplars: metricExemplars(name: "rpc.server.duration", service: "${escaped}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", limit: 50) {
+        tsNanos service name value traceId spanId runId attributes
       }
       tracesPage(service: "${escaped}", sort: START_DESC, limit: 10, fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}") {
         items { traceId rootName service startNanos durationNs spanCount hasError }
@@ -235,6 +263,49 @@ function toLineData(
   return Array.from(rows.values()).sort((a, b) =>
     BigInt(a.tsNanos) < BigInt(b.tsNanos) ? -1 : 1
   )
+}
+
+type ExemplarMarker = {
+  exemplar: MetricExemplar
+  x: number
+  y: number
+}
+
+function exemplarMarkers(
+  exemplars: MetricExemplar[],
+  data: Array<{ tsNanos: string; p50?: number; p95?: number; p99?: number }>,
+  range: ResolvedRange
+): ExemplarMarker[] {
+  const from = BigInt(range.fromNanos)
+  const to = BigInt(range.toNanos)
+  const span = to - from
+  if (span <= 0n) return []
+  const chartMax = data.reduce(
+    (max, row) =>
+      Math.max(max, row.p50 ?? 0, row.p95 ?? 0, row.p99 ?? 0),
+    0
+  )
+  const exemplarMax = exemplars.reduce(
+    (max, exemplar) =>
+      Number.isFinite(exemplar.value) ? Math.max(max, exemplar.value) : max,
+    0
+  )
+  const maxValue = Math.max(chartMax, exemplarMax, 1)
+  return exemplars
+    .filter((exemplar) => exemplar.traceId && exemplar.spanId)
+    .map((exemplar) => {
+      const ts = BigInt(exemplar.tsNanos)
+      const clampedTs = ts < from ? from : ts > to ? to : ts
+      const x = Number(((clampedTs - from) * 10_000n) / span) / 100
+      const ratio = Number.isFinite(exemplar.value)
+        ? Math.max(0, Math.min(1, exemplar.value / maxValue))
+        : 0
+      return {
+        exemplar,
+        x: Math.max(5, Math.min(95, x)),
+        y: Math.max(12, Math.min(86, 86 - ratio * 70)),
+      }
+    })
 }
 
 function ServiceDetailPage() {
@@ -371,7 +442,15 @@ export function ServiceDetailContent({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <RequestsChart red={data.red} />
-        <LatencyChart red={data.red} overview={data.overview} />
+        <LatencyChart
+          red={data.red}
+          overview={data.overview}
+          exemplars={[
+            ...data.httpDurationExemplars,
+            ...data.rpcDurationExemplars,
+          ]}
+          range={range}
+        />
       </div>
 
       <InfraBand overview={data.overview} />
@@ -446,9 +525,13 @@ function RequestsChart({ red }: { red: SpanRed }) {
 function LatencyChart({
   red,
   overview,
+  exemplars,
+  range,
 }: {
   red: SpanRed
   overview: ServiceOverview
+  exemplars: MetricExemplar[]
+  range: ResolvedRange
 }) {
   const redBands = latencyBands(red)
   const appData =
@@ -465,52 +548,112 @@ function LatencyChart({
     appData.map((row) => row.label),
     7
   )
+  const markers = exemplarMarkers(exemplars, appData, range)
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between">
         <CardTitle className="text-sm">Latency</CardTitle>
-        {redBands.length === 0 && appData.length > 0 ? (
-          <Badge variant="secondary">app histogram</Badge>
-        ) : null}
+        <div className="flex items-center gap-2">
+          {markers.length > 0 ? (
+            <Badge variant="secondary">{markers.length} exemplars</Badge>
+          ) : null}
+          {redBands.length === 0 && appData.length > 0 ? (
+            <Badge variant="secondary">app histogram</Badge>
+          ) : null}
+        </div>
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="h-[220px] w-full">
-          <AreaChart data={appData} margin={{ left: 8, right: 8, top: 8 }}>
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="label"
-              tickLine={false}
-              axisLine={false}
-              ticks={ticks}
-              tickFormatter={(value, index) =>
-                makeEdgeTick(value, index, ticks)
-              }
-            />
-            <YAxis tickLine={false} axisLine={false} width={48} />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            <Area
-              dataKey="p50Band"
-              stackId="latency"
-              stroke="var(--color-p50Band)"
-              fill="var(--color-p50Band)"
-              fillOpacity={0.3}
-            />
-            <Area
-              dataKey="p95Band"
-              stackId="latency"
-              stroke="var(--color-p95Band)"
-              fill="var(--color-p95Band)"
-              fillOpacity={0.25}
-            />
-            <Area
-              dataKey="p99Band"
-              stackId="latency"
-              stroke="var(--color-p99Band)"
-              fill="var(--color-p99Band)"
-              fillOpacity={0.2}
-            />
-          </AreaChart>
-        </ChartContainer>
+      <CardContent className="flex flex-col gap-3">
+        <div className="relative">
+          <ChartContainer config={chartConfig} className="h-[220px] w-full">
+            <AreaChart data={appData} margin={{ left: 8, right: 8, top: 8 }}>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="label"
+                tickLine={false}
+                axisLine={false}
+                ticks={ticks}
+                tickFormatter={(value, index) =>
+                  makeEdgeTick(value, index, ticks)
+                }
+              />
+              <YAxis tickLine={false} axisLine={false} width={48} />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Area
+                dataKey="p50Band"
+                stackId="latency"
+                stroke="var(--color-p50Band)"
+                fill="var(--color-p50Band)"
+                fillOpacity={0.3}
+              />
+              <Area
+                dataKey="p95Band"
+                stackId="latency"
+                stroke="var(--color-p95Band)"
+                fill="var(--color-p95Band)"
+                fillOpacity={0.25}
+              />
+              <Area
+                dataKey="p99Band"
+                stackId="latency"
+                stroke="var(--color-p99Band)"
+                fill="var(--color-p99Band)"
+                fillOpacity={0.2}
+              />
+            </AreaChart>
+          </ChartContainer>
+          {markers.map((marker) => (
+            <Popover key={`${marker.exemplar.traceId}-${marker.exemplar.spanId}-${marker.exemplar.tsNanos}`}>
+              <PopoverTrigger
+                render={
+                  <button
+                    type="button"
+                    className="absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary shadow-sm ring-2 ring-background outline-none transition-transform hover:scale-125 focus-visible:ring-ring"
+                    style={{ left: `${marker.x}%`, top: `${marker.y}%` }}
+                    aria-label={`Trace exemplar ${marker.exemplar.traceId}`}
+                  />
+                }
+              />
+              <PopoverContent align="center" className="w-80">
+                <PopoverHeader>
+                  <PopoverTitle>Trace exemplar</PopoverTitle>
+                  <PopoverDescription>
+                    {formatChartTime(marker.exemplar.tsNanos)}
+                  </PopoverDescription>
+                </PopoverHeader>
+                <div className="grid gap-2 text-xs">
+                  <div className="grid grid-cols-[64px_1fr] gap-2">
+                    <span className="text-muted-foreground">trace</span>
+                    <span className="truncate font-mono">
+                      {marker.exemplar.traceId}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[64px_1fr] gap-2">
+                    <span className="text-muted-foreground">span</span>
+                    <span className="truncate font-mono">
+                      {marker.exemplar.spanId}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[64px_1fr] gap-2">
+                    <span className="text-muted-foreground">value</span>
+                    <span>{marker.exemplar.value.toLocaleString()}</span>
+                  </div>
+                </div>
+                <Link
+                  to="/traces/$traceId"
+                  params={{ traceId: marker.exemplar.traceId }}
+                  className={buttonVariants({ variant: "outline", size: "sm" })}
+                >
+                  Open trace
+                </Link>
+              </PopoverContent>
+            </Popover>
+          ))}
+        </div>
+        {markers.length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            No trace exemplar attached; showing traces near this timestamp
+          </p>
+        ) : null}
       </CardContent>
     </Card>
   )

@@ -122,6 +122,15 @@ impl GreptimeStore {
                    TIME INDEX ("ts"), PRIMARY KEY ("service", "name")
                  ) WITH (append_mode = 'true', ttl = '{metrics_ttl}')"#
             ),
+            format!(
+                r#"CREATE TABLE IF NOT EXISTS metric_exemplars (
+                   "ts" TIMESTAMP(9) NOT NULL,
+                   "service" STRING, "name" STRING, "value" DOUBLE,
+                   "trace_id" STRING, "span_id" STRING, "run_id" STRING SKIPPING INDEX,
+                   "attributes" JSON,
+                   TIME INDEX ("ts"), PRIMARY KEY ("service", "name", "trace_id", "span_id")
+                 ) WITH (append_mode = 'true', ttl = '{metrics_ttl}')"#
+            ),
         ];
         for statement in statements {
             self.sql(&statement).await?;
@@ -651,6 +660,7 @@ impl TelemetryStore for GreptimeStore {
         &self,
         points: Vec<MetricPointRow>,
         _histograms: Vec<HistogramRow>,
+        exemplars: Vec<MetricExemplarRow>,
         raw: bytes::Bytes,
     ) -> anyhow::Result<()> {
         // Forward all metrics to the native metric engine (one table per metric
@@ -679,6 +689,29 @@ impl TelemetryStore for GreptimeStore {
         self.insert(
             "run_metric_points",
             "\"ts\", \"run_id\", \"service\", \"name\", \"value\", \"attributes\"",
+            values,
+        )
+        .await?;
+
+        let values = exemplars
+            .iter()
+            .map(|r| {
+                format!(
+                    "({},'{}','{}',{},'{}','{}',{},{})",
+                    r.ts_nanos,
+                    escape(&r.service),
+                    escape(&r.name),
+                    r.value,
+                    escape(&r.trace_id),
+                    escape(&r.span_id),
+                    opt_literal(&r.run_id),
+                    json_literal(&r.attributes),
+                )
+            })
+            .collect();
+        self.insert(
+            "metric_exemplars",
+            "\"ts\", \"service\", \"name\", \"value\", \"trace_id\", \"span_id\", \"run_id\", \"attributes\"",
             values,
         )
         .await
@@ -1198,6 +1231,45 @@ impl TelemetryStore for GreptimeStore {
             .map(|(ts_nanos, bounds)| SeriesPoint {
                 ts_nanos,
                 value: quantile_from_cumulative(&bounds, q),
+            })
+            .collect())
+    }
+
+    async fn metric_exemplars(
+        &self,
+        name: &str,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        limit: usize,
+    ) -> anyhow::Result<Vec<MetricExemplarRow>> {
+        let service_clause = service
+            .map(|svc| format!(r#" AND "service" = '{}'"#, escape(svc)))
+            .unwrap_or_default();
+        let rows = self
+            .sql_lenient(&format!(
+                r#"SELECT CAST("ts" AS BIGINT) AS "ts_nanos",
+                          "service", "name", "value", "trace_id", "span_id", "run_id",
+                          json_to_string("attributes")
+                   FROM metric_exemplars
+                   WHERE "name" = '{}' AND "ts" >= {} AND "ts" <= {}{service_clause}
+                   ORDER BY "ts" DESC LIMIT {}"#,
+                escape(name),
+                sql_ts(*range.start()),
+                sql_ts(*range.end()),
+                limit.min(MAX_ROWS)
+            ))
+            .await?;
+        Ok(rows
+            .iter()
+            .map(|row| MetricExemplarRow {
+                ts_nanos: u128_at(row, 0),
+                service: str_at(row, 1),
+                name: str_at(row, 2),
+                value: f64_at(row, 3),
+                trace_id: str_at(row, 4),
+                span_id: str_at(row, 5),
+                run_id: opt_str_at(row, 6),
+                attributes: json_at(row, 7),
             })
             .collect())
     }
@@ -1867,6 +1939,7 @@ impl GreptimeStore {
             "opentelemetry_logs",
             "error_events",
             "run_metric_points",
+            "metric_exemplars",
             "greptime_physical_table",
         ];
         let rows = self

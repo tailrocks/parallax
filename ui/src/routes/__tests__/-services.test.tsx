@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import {
   Outlet,
   RouterProvider,
@@ -61,6 +61,8 @@ const detailFixture: ServiceDetailData = {
     latencyP95: [],
     latencyP99: [],
   },
+  httpDurationExemplars: [],
+  rpcDurationExemplars: [],
   tracesPage: {
     items: [
       {
@@ -170,6 +172,11 @@ describe("Services route", () => {
     expect(screen.getByText("Error rate")).toBeTruthy()
     expect(screen.getByText("p95 latency")).toBeTruthy()
     expect(screen.queryByText("Runtime metrics")).toBeNull()
+    expect(
+      screen.getByText(
+        "No trace exemplar attached; showing traces near this timestamp"
+      )
+    ).toBeTruthy()
     const tracesUrl = new URL(
       screen.getByRole("link", { name: /traces/i }).getAttribute("href")!,
       "http://example.test"
@@ -198,5 +205,43 @@ describe("Services route", () => {
         .getByRole("link", { name: /post \/checkout/i })
         .getAttribute("href")
     ).toBe("/traces/trace-a")
+  })
+
+  it("opens trace exemplar popovers from latency markers", async () => {
+    renderWithRouter(
+      <ServiceDetailContent
+        service="api gateway"
+        data={{
+          ...detailFixture,
+          httpDurationExemplars: [
+            {
+              tsNanos: "1719999980000000000",
+              service: "api gateway",
+              name: "http.server.request.duration",
+              value: 120,
+              traceId: "trace-exemplar",
+              spanId: "span-exemplar",
+              runId: "run-a",
+              attributes: "{}",
+            },
+          ],
+        }}
+        range={range}
+        onRange={() => {}}
+      />,
+      "/services/api%20gateway"
+    )
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: /trace exemplar trace-exemplar/i,
+      })
+    )
+
+    expect(await screen.findByText("Trace exemplar")).toBeTruthy()
+    expect(screen.getByText("span-exemplar")).toBeTruthy()
+    expect(
+      screen.getByRole("link", { name: /open trace/i }).getAttribute("href")
+    ).toBe("/traces/trace-exemplar")
   })
 })

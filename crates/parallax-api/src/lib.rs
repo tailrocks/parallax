@@ -809,6 +809,36 @@ impl Series {
     }
 }
 
+pub struct MetricExemplar(model::MetricExemplarRow);
+
+#[graphql_object(context = ApiContext)]
+impl MetricExemplar {
+    fn ts_nanos(&self) -> String {
+        nanos_string(self.0.ts_nanos)
+    }
+    fn service(&self) -> &str {
+        &self.0.service
+    }
+    fn name(&self) -> &str {
+        &self.0.name
+    }
+    fn value(&self) -> f64 {
+        self.0.value
+    }
+    fn trace_id(&self) -> &str {
+        &self.0.trace_id
+    }
+    fn span_id(&self) -> &str {
+        &self.0.span_id
+    }
+    fn run_id(&self) -> Option<&str> {
+        self.0.run_id.as_deref()
+    }
+    fn attributes(&self) -> String {
+        self.0.attributes.to_string()
+    }
+}
+
 pub struct Overview(OverviewTotals);
 
 #[graphql_object(context = ApiContext)]
@@ -2274,6 +2304,25 @@ impl Query {
         Ok(series.into_iter().map(Point).collect())
     }
 
+    /// Trace-linked exemplars for one metric, newest first.
+    async fn metric_exemplars(
+        context: &ApiContext,
+        name: String,
+        from_nanos: String,
+        to_nanos: String,
+        service: Option<String>,
+        limit: Option<i32>,
+    ) -> FieldResult<Vec<MetricExemplar>> {
+        validate_metric_name(&name)?;
+        let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+        let rows = context
+            .store
+            .metric_exemplars(&name, service.as_deref(), from..=to, clamp_limit(limit, 50))
+            .await
+            .map_err(field_err)?;
+        Ok(rows.into_iter().map(MetricExemplar).collect())
+    }
+
     /// Saved user dashboards, most recently updated first.
     async fn dashboards(context: &ApiContext) -> FieldResult<Vec<Dashboard>> {
         let dashboards = context.metadata.dashboards().await.map_err(field_err)?;
@@ -2634,7 +2683,7 @@ mod tests {
     use super::*;
     use parallax_storage::adapter::TelemetryStore;
     use parallax_storage::memory::MemoryStore;
-    use parallax_storage::model::{ErrorEventRow, ErrorSource, LogRow, SpanRow};
+    use parallax_storage::model::{ErrorEventRow, ErrorSource, LogRow, MetricExemplarRow, SpanRow};
 
     fn span(
         service: &str,
@@ -3345,6 +3394,73 @@ mod tests {
                 .and_then(|value| value.as_array())
                 .is_some_and(|rows| rows.iter().all(|row| row["key"] != "trace_id")),
             "attributeCompare denies trace_id: {json}"
+        );
+    }
+
+    #[tokio::test]
+    async fn metric_exemplars_resolver_returns_trace_links() {
+        let store = Arc::new(MemoryStore::new());
+        store
+            .ingest_metrics(
+                Vec::new(),
+                Vec::new(),
+                vec![MetricExemplarRow {
+                    ts_nanos: 20,
+                    service: "checkout".into(),
+                    name: "http.server.request.duration".into(),
+                    value: 120.0,
+                    trace_id: "trace-a".into(),
+                    span_id: "span-a".into(),
+                    run_id: Some("run-a".into()),
+                    attributes: serde_json::json!({"route": "/checkout"}),
+                }],
+                Default::default(),
+            )
+            .await
+            .unwrap();
+
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"
+            {
+              metricExemplars(
+                name: "http.server.request.duration"
+                fromNanos: "0"
+                toNanos: "100"
+                service: "checkout"
+                limit: 10
+              ) {
+                tsNanos service name value traceId spanId runId attributes
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(
+            error_messages(&json).is_empty(),
+            "metricExemplars query: {json}"
+        );
+        assert_eq!(
+            json.pointer("/data/metricExemplars/0/traceId"),
+            Some(&serde_json::json!("trace-a"))
+        );
+        assert_eq!(
+            json.pointer("/data/metricExemplars/0/spanId"),
+            Some(&serde_json::json!("span-a"))
+        );
+        assert_eq!(
+            json.pointer("/data/metricExemplars/0/runId"),
+            Some(&serde_json::json!("run-a"))
+        );
+        assert_eq!(
+            json.pointer("/data/metricExemplars/0/value"),
+            Some(&serde_json::json!(120.0))
         );
     }
 
