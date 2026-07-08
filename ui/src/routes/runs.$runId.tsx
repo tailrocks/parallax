@@ -12,6 +12,8 @@ import {
 } from "@tabler/icons-react"
 
 import { CopyButton } from "@/components/console/copy-button"
+import { AgentSessionCard } from "@/components/console/agent-session"
+import type { AgentSessionData } from "@/components/console/agent-session"
 import { EmptyState } from "@/components/console/empty-state"
 import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
 import { PinButton } from "@/components/console/pin-button"
@@ -107,6 +109,7 @@ export const Route = createFileRoute("/runs/$runId")({
       bundle: { markdown: string } | null
       story: StoryBeat[]
       runtimeSnapshot: RuntimeMetric[]
+      agentSession: AgentSessionData | null
     }>(
       `{ run(runId: "${gqlString(params.runId)}") {
            runId command status exitCode startedAtNanos endedAtNanos
@@ -125,6 +128,13 @@ export const Route = createFileRoute("/runs/$runId")({
          }
          runtimeSnapshot(runId: "${gqlString(params.runId)}", fromNanos: "0", toNanos: "${toNanos}", stepSeconds: 5) {
            family metric unit points { tsNanos value }
+         }
+         agentSession(runId: "${gqlString(params.runId)}") {
+           rootSpanId truncated totalInputTokens totalOutputTokens errorCount
+           steps {
+             spanId traceId kind name startNanos durationNs isError
+             genAiOperation inputTokens outputTokens
+           }
          }
          bundle(runId: "${gqlString(params.runId)}") { markdown } }`
     )
@@ -158,6 +168,7 @@ function RunDetailPage() {
     bundle,
     story,
     runtimeSnapshot,
+    agentSession,
   } = Route.useLoaderData()
   const { runId } = Route.useParams()
   const search = Route.useSearch()
@@ -259,6 +270,7 @@ function RunDetailPage() {
       bundle={bundle}
       story={story}
       runtimeSnapshot={runtimeSnapshot}
+      agentSession={agentSession}
       activeTab={search.tab === "story" ? "story" : "overview"}
       onTab={(value) =>
         navigate({
@@ -284,6 +296,7 @@ export function RunDetailContent({
   bundle,
   story = [],
   runtimeSnapshot,
+  agentSession = null,
   activeTab = "overview",
   onTab = () => {},
   live,
@@ -298,6 +311,7 @@ export function RunDetailContent({
   bundle: { markdown: string } | null
   story?: StoryBeat[]
   runtimeSnapshot: RuntimeMetric[]
+  agentSession?: AgentSessionData | null
   activeTab?: RunDetailTab
   onTab?: (value: string) => void
   live: boolean
@@ -391,6 +405,8 @@ export function RunDetailContent({
               />
             </LiveStreamPanel>
           ) : null}
+
+          {agentSession ? <AgentSessionCard session={agentSession} /> : null}
 
           {run ? (
             <MetricStrip

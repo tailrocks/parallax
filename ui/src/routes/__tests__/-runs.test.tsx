@@ -208,6 +208,7 @@ describe("Runs route", () => {
 
     expect(await screen.findByText("Status")).toBeTruthy()
     expect(screen.getByText("Traces")).toBeTruthy()
+    expect(screen.queryByText("Agent session")).toBeNull()
     expect(
       screen.getAllByRole("button", { name: /download/i }).length
     ).toBeGreaterThan(0)
