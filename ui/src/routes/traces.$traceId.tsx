@@ -17,7 +17,10 @@ import {
   TraceWaterfall,
   WHOLE_TRACE_ID,
 } from "@/components/console/trace-waterfall"
-import type { WaterfallSpan } from "@/components/console/trace-waterfall"
+import type {
+  TraceViewMode,
+  WaterfallSpan,
+} from "@/components/console/trace-waterfall"
 import { GraphqlOperationCard } from "@/components/console/graphql-operation"
 import { RpcStreamCard } from "@/components/console/rpc-stream"
 import { EvidenceGapsCard } from "@/components/console/evidence-gaps"
@@ -56,6 +59,10 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/components/ui/toggle-group"
 import { graphql, gqlString } from "@/lib/api"
 import type {
   CriticalPath,
@@ -80,7 +87,8 @@ import type {
   RpcStreamInfo,
   RpcTraceSpan,
 } from "@/lib/rpc-trace"
-import { computeWindow } from "@/lib/trace-tree"
+import { computeWindow, detectSkew } from "@/lib/trace-tree"
+import type { SkewReport } from "@/lib/trace-tree"
 import { cn } from "@/lib/utils"
 
 interface TraceSpan extends WaterfallSpan, GraphqlTraceSpan, RpcTraceSpan {
@@ -106,6 +114,7 @@ type TraceDetailTab = "waterfall" | "story"
 
 interface TraceDetailSearch {
   tab?: TraceDetailTab | undefined
+  view?: TraceViewMode | undefined
 }
 
 type JsonRecord = Record<string, unknown>
@@ -116,6 +125,23 @@ const TRACE_DIFF_SPAN_FIELDS =
   "spanId service name kind statusCode durationNs depth matchKey"
 const EMPTY_TRACE_SPANS: TraceSpan[] = []
 const INSPECTOR_LIST_CAP = 25
+const TRACE_VIEW_MODES = ["tree", "errors", "lanes"] as const
+
+function isTraceViewMode(value: unknown): value is TraceViewMode {
+  return (
+    typeof value === "string" &&
+    TRACE_VIEW_MODES.includes(value as TraceViewMode)
+  )
+}
+
+export function validateTraceDetailSearch(
+  search: Record<string, unknown>
+): TraceDetailSearch {
+  return {
+    tab: search.tab === "story" ? "story" : undefined,
+    view: isTraceViewMode(search.view) ? search.view : undefined,
+  }
+}
 
 export interface SpanEvent {
   name: string
@@ -139,9 +165,7 @@ interface TraceEventsResult {
 }
 
 export const Route = createFileRoute("/traces/$traceId")({
-  validateSearch: (search: Record<string, unknown>): TraceDetailSearch => ({
-    tab: search.tab === "story" ? "story" : undefined,
-  }),
+  validateSearch: validateTraceDetailSearch,
   loader: ({ params }) => {
     const traceId = gqlString(params.traceId)
     return graphql<{
@@ -228,6 +252,7 @@ function TracePage() {
   const navigate = useNavigate({ from: Route.fullPath })
   const activeTab: TraceDetailTab =
     search.tab === "story" ? "story" : "waterfall"
+  const waterfallView: TraceViewMode = search.view ?? "tree"
   const [selectedId, setSelectedId] = useState<string | null>(WHOLE_TRACE_ID)
   const [criticalEnabled, setCriticalEnabled] = useState(false)
   const [criticalPath, setCriticalPath] = useState<CriticalPath | null>(null)
@@ -270,6 +295,7 @@ function TracePage() {
     [rpcTraceEvents.events, rpcTraceEvents.truncated, spans]
   )
   const messaging = useMemo(() => messagingSummary(spans), [spans])
+  const skewReport = useMemo(() => detectSkew(spans), [spans])
 
   if (!trace || spans.length === 0) {
     return (
@@ -365,6 +391,15 @@ function TracePage() {
     })
   }
 
+  const setWaterfallView = (value: TraceViewMode) => {
+    void navigate({
+      search: (current) => ({
+        ...current,
+        view: value === "tree" ? undefined : value,
+      }),
+    })
+  }
+
   return (
     <div className="space-y-4">
       <PageHeader
@@ -453,6 +488,8 @@ function TracePage() {
         </button>
       ) : null}
 
+      <ClockSkewBanner report={skewReport} />
+
       <EvidenceGapsCard gaps={evidenceGaps} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -464,8 +501,12 @@ function TracePage() {
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
             <div className="space-y-4">
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <CardTitle className="text-sm">Waterfall</CardTitle>
+                  <TraceViewModeToggle
+                    value={waterfallView}
+                    onChange={setWaterfallView}
+                  />
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">
                   {criticalEnabled ? (
@@ -481,6 +522,7 @@ function TracePage() {
                     selectedId={selectedId}
                     onSelect={setSelectedId}
                     highlightIds={criticalIds}
+                    mode={waterfallView}
                   />
                 </CardContent>
               </Card>
@@ -639,6 +681,61 @@ export function TraceRpcSection({ streams }: { streams: RpcStreamInfo[] }) {
         <RpcStreamCard streams={streams} />
       </CardContent>
     </Card>
+  )
+}
+
+export function TraceViewModeToggle({
+  value,
+  onChange,
+}: {
+  value: TraceViewMode
+  onChange: (value: TraceViewMode) => void
+}) {
+  const options: Array<{ value: TraceViewMode; label: string }> = [
+    { value: "tree", label: "Tree" },
+    { value: "errors", label: "Errors" },
+    { value: "lanes", label: "Lanes" },
+  ]
+
+  return (
+    <ToggleGroup
+      value={[value]}
+      onValueChange={(values) => {
+        const next = values[0]
+        if (isTraceViewMode(next)) onChange(next)
+      }}
+      variant="outline"
+      size="sm"
+      spacing={0}
+      aria-label="Trace view mode"
+    >
+      {options.map((option) => (
+        <ToggleGroupItem
+          key={option.value}
+          value={option.value}
+          aria-label={`${option.label} view`}
+        >
+          {option.label}
+        </ToggleGroupItem>
+      ))}
+    </ToggleGroup>
+  )
+}
+
+export function ClockSkewBanner({ report }: { report: SkewReport }) {
+  if (report.suspectPairs.length === 0) return null
+
+  return (
+    <div className="flex w-full items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-left text-sm text-amber-800 dark:text-amber-200">
+      <IconAlertTriangle className="size-4 shrink-0" />
+      <span>
+        Clock skew suspected: {report.suspectPairs.length.toLocaleString()}{" "}
+        parent/child pair
+        {report.suspectPairs.length === 1 ? "" : "s"} disagree by up to{" "}
+        {Math.round(report.maxDriftMs).toLocaleString()} ms across services -
+        span order may be misleading.
+      </span>
+    </div>
   )
 }
 

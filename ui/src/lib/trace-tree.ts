@@ -17,6 +17,29 @@ export interface TraceWindow {
   durationNs: bigint
 }
 
+export interface ServiceTraceSpan extends TraceTreeSpan {
+  service: string
+}
+
+export interface ErrorTraceSpan extends TraceTreeSpan {
+  statusCode: string
+}
+
+export interface SkewPair {
+  parentId: string
+  childId: string
+  driftMs: number
+}
+
+export interface SkewReport {
+  suspectPairs: SkewPair[]
+  maxDriftMs: number
+}
+
+/** Cross-service parent/child clocks must disagree by this much before warning. */
+export const TRACE_SKEW_THRESHOLD_MS = 50
+const TRACE_SKEW_THRESHOLD_NS = BigInt(TRACE_SKEW_THRESHOLD_MS) * 1_000_000n
+
 function spanStart(span: TraceTreeSpan): bigint {
   return BigInt(span.tsNanos)
 }
@@ -116,4 +139,80 @@ export function buildTraceTree<T extends TraceTreeSpan>(
     depth,
     ...positionPct(span.tsNanos, span.durationNs, window),
   }))
+}
+
+export function errorPathSpanIds<T extends ErrorTraceSpan>(
+  spans: readonly T[]
+): Set<string> {
+  const byId = new Map(spans.map((span) => [span.spanId, span]))
+  const ids = new Set<string>()
+
+  for (const span of spans) {
+    if (span.statusCode !== "STATUS_CODE_ERROR") continue
+
+    let current: T | undefined = span
+    while (current) {
+      ids.add(current.spanId)
+      current = current.parentSpanId
+        ? byId.get(current.parentSpanId)
+        : undefined
+    }
+  }
+
+  return ids
+}
+
+export function groupByService<T extends ServiceTraceSpan>(
+  ordered: readonly OrderedTraceSpan<T>[]
+): Array<{ service: string; spans: Array<OrderedTraceSpan<T>> }> {
+  const groups: Array<{ service: string; spans: Array<OrderedTraceSpan<T>> }> =
+    []
+
+  for (const row of ordered) {
+    const service = row.span.service || "unknown"
+    const current = groups[groups.length - 1]
+    if (current?.service === service) {
+      current.spans.push(row)
+    } else {
+      groups.push({ service, spans: [row] })
+    }
+  }
+
+  return groups
+}
+
+function nsToMs(value: bigint): number {
+  return Number(value) / 1_000_000
+}
+
+export function detectSkew<T extends ServiceTraceSpan>(
+  spans: readonly T[]
+): SkewReport {
+  const byId = new Map(spans.map((span) => [span.spanId, span]))
+  const suspectPairs: SkewPair[] = []
+  let maxDriftMs = 0
+
+  for (const child of spans) {
+    if (!child.parentSpanId) continue
+    const parent = byId.get(child.parentSpanId)
+    if (!parent || parent.service === child.service) continue
+
+    const startsBeforeParent = spanStart(parent) - spanStart(child)
+    const endsAfterParent = spanEnd(child) - spanEnd(parent)
+    const driftNs =
+      startsBeforeParent > endsAfterParent
+        ? startsBeforeParent
+        : endsAfterParent
+    if (driftNs <= TRACE_SKEW_THRESHOLD_NS) continue
+
+    const driftMs = nsToMs(driftNs)
+    maxDriftMs = Math.max(maxDriftMs, driftMs)
+    suspectPairs.push({
+      parentId: parent.spanId,
+      childId: child.spanId,
+      driftMs,
+    })
+  }
+
+  return { suspectPairs, maxDriftMs }
 }

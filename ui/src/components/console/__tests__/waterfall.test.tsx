@@ -34,6 +34,22 @@ const spans: WaterfallSpan[] = [
   },
 ]
 
+const modeSpans: WaterfallSpan[] = [
+  spans[0]!,
+  spans[1]!,
+  {
+    spanId: "cache",
+    parentSpanId: "root",
+    tsNanos: "160",
+    durationNs: "15",
+    service: "cache",
+    name: "GET /cache",
+    kind: "CLIENT",
+    statusCode: "STATUS_CODE_UNSET",
+    statusMessage: "",
+  },
+]
+
 afterEach(cleanup)
 
 describe("TraceWaterfall", () => {
@@ -50,6 +66,7 @@ describe("TraceWaterfall", () => {
     expect(screen.getByText("GET /checkout")).toBeTruthy()
     expect(screen.getByText("POST /pay")).toBeTruthy()
     expect(screen.getByText("error")).toBeTruthy()
+    expect(screen.getAllByTestId("trace-minimap-bar")).toHaveLength(2)
   })
 
   it("moves selection with j/k and arrow keys", () => {
@@ -96,5 +113,64 @@ describe("TraceWaterfall", () => {
     expect(screen.getByTestId("trace-row-root").className).not.toContain(
       "border-primary"
     )
+  })
+
+  it("shows only errors and ancestors in errors mode", () => {
+    render(
+      <TraceWaterfall
+        spans={modeSpans}
+        selectedId={WHOLE_TRACE_ID}
+        onSelect={vi.fn()}
+        mode="errors"
+      />
+    )
+
+    expect(screen.getByText("GET /checkout")).toBeTruthy()
+    expect(screen.getByText("POST /pay")).toBeTruthy()
+    expect(screen.queryByText("GET /cache")).toBeNull()
+  })
+
+  it("falls back to the full tree when errors mode has no errors", () => {
+    render(
+      <TraceWaterfall
+        spans={modeSpans.map((span) => ({
+          ...span,
+          statusCode: "STATUS_CODE_UNSET",
+        }))}
+        selectedId={WHOLE_TRACE_ID}
+        onSelect={vi.fn()}
+        mode="errors"
+      />
+    )
+
+    expect(screen.getByText("No errored spans. Showing full trace.")).toBeTruthy()
+    expect(screen.getByText("GET /cache")).toBeTruthy()
+  })
+
+  it("renders contiguous service lanes", () => {
+    render(
+      <TraceWaterfall
+        spans={modeSpans}
+        selectedId={WHOLE_TRACE_ID}
+        onSelect={vi.fn()}
+        mode="lanes"
+      />
+    )
+
+    expect(screen.getAllByTestId("trace-lane-header")).toHaveLength(3)
+  })
+
+  it("selects spans from the minimap", () => {
+    const onSelect = vi.fn()
+    render(
+      <TraceWaterfall
+        spans={modeSpans}
+        selectedId={WHOLE_TRACE_ID}
+        onSelect={onSelect}
+      />
+    )
+
+    fireEvent.click(screen.getAllByTestId("trace-minimap-bar")[1]!)
+    expect(onSelect).toHaveBeenCalledWith("child")
   })
 })
