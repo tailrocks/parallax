@@ -198,6 +198,17 @@ pub struct Dashboard {
     pub updated_at_nanos: u128,
 }
 
+/// Named saved URL-state view (metadata store).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SavedView {
+    pub id: String,
+    pub name: String,
+    pub page: String,
+    pub state: String,
+    pub created_at_nanos: u128,
+    pub updated_at_nanos: u128,
+}
+
 /// One bucket of an issue's occurrence trend (metadata store rollup).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TrendPoint {

@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { act, fireEvent, render, screen } from "@testing-library/react"
+import { act, fireEvent, render, screen, within } from "@testing-library/react"
 import {
   Outlet,
   RouterProvider,
@@ -9,7 +9,7 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { useState } from "react"
 
 import {
@@ -21,7 +21,13 @@ import {
 import type { LogDoc } from "@/components/logs-table"
 import { formatDateTime } from "@/lib/format"
 import type { ResolvedRange } from "@/lib/range"
-import { bucketWindow, dragWindow } from "@/routes/logs"
+import {
+  SavedViewsMenu,
+  bucketWindow,
+  contextWindow,
+  dragWindow,
+  parseSavedViewState,
+} from "@/routes/logs"
 
 const range: ResolvedRange = {
   key: "7d",
@@ -68,12 +74,25 @@ function renderWithRouter(component: React.ReactNode) {
   return render(<RouterProvider router={router} />)
 }
 
-function renderLogsHost(initialLogs: LogDoc[]) {
+function renderLogsHost(
+  initialLogs: LogDoc[],
+  props: Pick<
+    React.ComponentProps<typeof LogsTable>,
+    "anchorNanos" | "onShowContext"
+  > = {}
+) {
   let setRows!: React.Dispatch<React.SetStateAction<LogDoc[]>>
   function Host() {
     const [rows, setLogs] = useState(initialLogs)
     setRows = setLogs
-    return <LogsTable logs={rows} range={range} columns={["service", "trace"]} />
+    return (
+      <LogsTable
+        logs={rows}
+        range={range}
+        columns={["service", "trace"]}
+        {...props}
+      />
+    )
   }
 
   const rendered = renderWithRouter(<Host />)
@@ -107,6 +126,19 @@ describe("logs redesign helpers", () => {
       "scope",
     ])
     expect(serializeLogColumns(["service", "scope"])).toBe("service,scope")
+  })
+
+  it("builds context windows and strips unknown saved-view params", () => {
+    expect(contextWindow("35000000000")).toEqual({
+      key: "custom",
+      fromNanos: "5000000000",
+      toNanos: "65000000000",
+    })
+    expect(parseSavedViewState("?service=api&sev=17&unknown=1")).toMatchObject({
+      service: "api",
+      sev: 17,
+      live: false,
+    })
   })
 
   it("maps all severity bands", () => {
@@ -151,5 +183,61 @@ describe("LogsTable", () => {
     fireEvent.click(screen.getByText("checkout failed"))
     expect(await screen.findByText("Log document")).toBeTruthy()
     expect(screen.getByText("trace trace-a")).toBeTruthy()
+  })
+
+  it("highlights the anchor row and exposes the context action", async () => {
+    const onShowContext = vi.fn()
+    const { container } = renderWithRouter(
+      <LogsTable
+        logs={[log]}
+        range={range}
+        columns={["service", "trace"]}
+        anchorNanos={log.tsNanos}
+        onShowContext={onShowContext}
+      />
+    )
+    await within(container).findByText("checkout failed")
+    const row = container.querySelector("tbody tr")
+    expect(row?.getAttribute("data-anchor")).toBe("true")
+
+    fireEvent.click(within(container).getByText("checkout failed"))
+    fireEvent.click(await screen.findByText("Show context (±30s)"))
+    expect(onShowContext).toHaveBeenCalledWith(log)
+  })
+})
+
+describe("SavedViewsMenu", () => {
+  it("renders saved views and dispatches select/delete/save actions", async () => {
+    const view = {
+      id: "view-1",
+      name: "Errors",
+      page: "/logs",
+      state: "?sev=17",
+      updatedAtNanos: "1",
+    }
+    const onSelect = vi.fn()
+    const onDelete = vi.fn()
+    const onSave = vi.fn()
+    renderWithRouter(
+      <SavedViewsMenu
+        views={[view]}
+        onSelect={onSelect}
+        onDelete={onDelete}
+        onSave={onSave}
+      />
+    )
+
+    fireEvent.click(await screen.findByText("Views"))
+    fireEvent.click((await screen.findAllByText("Errors"))[0]!)
+    expect(onSelect).toHaveBeenCalledWith(view)
+
+    fireEvent.click(await screen.findByText("Views"))
+    fireEvent.click(await screen.findByText("Save current view"))
+    expect(onSave).toHaveBeenCalled()
+
+    fireEvent.click(await screen.findByText("Views"))
+    const deleteItems = await screen.findAllByText("Errors")
+    fireEvent.click(deleteItems.at(-1)!)
+    expect(onDelete).toHaveBeenCalledWith("view-1")
   })
 })

@@ -49,11 +49,31 @@ fn saturate_i32(value: u64) -> i32 {
 /// Resolver-level row cap (the spec's Juniper note: cost limits are
 /// resolver-level in V1; query-cost middleware is M5 hardening).
 const MAX_ROWS: usize = 500;
+const SAVED_VIEW_NAME_MAX: usize = 120;
+const SAVED_VIEWS_PER_PAGE: usize = 100;
 
 fn clamp_limit(limit: Option<i32>, default: usize) -> usize {
     limit
         .map_or(default, |l| usize::try_from(l.max(0)).unwrap_or(default))
         .min(MAX_ROWS)
+}
+
+fn validate_saved_view_name(name: &str) -> FieldResult<String> {
+    let name = name.trim();
+    if name.is_empty() {
+        return Err(field_err("saved view name is required"));
+    }
+    if name.chars().count() > SAVED_VIEW_NAME_MAX {
+        return Err(field_err("saved view name is too long"));
+    }
+    Ok(name.to_string())
+}
+
+fn validate_saved_view_page(page: &str) -> FieldResult<()> {
+    if page.is_empty() || page.len() > 128 || !page.starts_with('/') {
+        return Err(field_err("saved view page must be a route path"));
+    }
+    Ok(())
 }
 
 /// Metric names flow into storage identifiers; keep them inside the OTel metric-name grammar.
@@ -1367,6 +1387,31 @@ impl Dashboard {
     }
 }
 
+pub struct SavedView(model::SavedView);
+
+#[graphql_object(context = ApiContext)]
+impl SavedView {
+    fn id(&self) -> &str {
+        &self.0.id
+    }
+    fn name(&self) -> &str {
+        &self.0.name
+    }
+    fn page(&self) -> &str {
+        &self.0.page
+    }
+    /// URL search string captured from the page state.
+    fn state(&self) -> &str {
+        &self.0.state
+    }
+    fn created_at_nanos(&self) -> String {
+        nanos_string(self.0.created_at_nanos)
+    }
+    fn updated_at_nanos(&self) -> String {
+        nanos_string(self.0.updated_at_nanos)
+    }
+}
+
 fn parse_range(from_nanos: &str, to_nanos: &str) -> juniper::FieldResult<(u128, u128)> {
     let from: u128 = from_nanos
         .parse()
@@ -2036,6 +2081,49 @@ impl Query {
         Ok(logs.into_iter().map(LogRecord).collect())
     }
 
+    /// Logs surrounding one anchor timestamp, ascending.
+    async fn logs_around(
+        context: &ApiContext,
+        anchor_nanos: String,
+        window_seconds: Option<i32>,
+        service: Option<String>,
+        trace_id: Option<String>,
+        limit: Option<i32>,
+    ) -> FieldResult<Vec<LogRecord>> {
+        let anchor: u128 = anchor_nanos
+            .parse()
+            .map_err(|_| field_err("invalid anchorNanos"))?;
+        let window = u128::try_from(window_seconds.unwrap_or(30).clamp(1, 600)).unwrap_or(30)
+            * 1_000_000_000;
+        let from = anchor.saturating_sub(window);
+        let to = anchor.saturating_add(window);
+        let limit = clamp_limit(limit, 200);
+        let mut logs =
+            if let Some(trace_id) = trace_id.as_deref().filter(|trace_id| !trace_id.is_empty()) {
+                context
+                    .store
+                    .logs_by_trace(trace_id)
+                    .await
+                    .map_err(field_err)?
+                    .into_iter()
+                    .filter(|log| {
+                        log.ts_nanos >= from
+                            && log.ts_nanos <= to
+                            && service.as_deref().is_none_or(|svc| log.service == svc)
+                    })
+                    .collect::<Vec<_>>()
+            } else {
+                context
+                    .store
+                    .logs_search(service.as_deref(), from..=to, None, None, None, limit)
+                    .await
+                    .map_err(field_err)?
+            };
+        logs.sort_by_key(|log| log.ts_nanos);
+        logs.truncate(limit);
+        Ok(logs.into_iter().map(LogRecord).collect())
+    }
+
     /// Raw read-only SQL against the telemetry engine (GreptimeDB) — the
     /// engine's full query power over logs, traces, and metrics tables.
     /// SELECT-shaped single statements only.
@@ -2626,6 +2714,19 @@ impl Query {
         Ok(dashboards.into_iter().map(Dashboard).collect())
     }
 
+    /// Named saved page states, most recently updated first.
+    async fn saved_views(
+        context: &ApiContext,
+        page: Option<String>,
+    ) -> FieldResult<Vec<SavedView>> {
+        let saved_views = context
+            .metadata
+            .saved_views(page.as_deref().filter(|page| !page.is_empty()))
+            .await
+            .map_err(field_err)?;
+        Ok(saved_views.into_iter().map(SavedView).collect())
+    }
+
     async fn runs(context: &ApiContext, limit: Option<i32>) -> FieldResult<Vec<Run>> {
         let runs = context
             .metadata
@@ -2825,6 +2926,61 @@ impl Mutation {
             .map_err(field_err)
     }
 
+    /// Create or update a named saved page state.
+    async fn saved_view_save(
+        context: &ApiContext,
+        name: String,
+        page: String,
+        state: String,
+        id: Option<String>,
+    ) -> FieldResult<SavedView> {
+        let name = validate_saved_view_name(&name)?;
+        validate_saved_view_page(&page)?;
+        let existing = match id.as_deref().filter(|id| !id.is_empty()) {
+            Some(id) => context.metadata.saved_view(id).await.map_err(field_err)?,
+            None => None,
+        };
+        if existing.as_ref().is_none_or(|view| view.page != page)
+            && context
+                .metadata
+                .saved_views(Some(&page))
+                .await
+                .map_err(field_err)?
+                .len()
+                >= SAVED_VIEWS_PER_PAGE
+        {
+            return Err(field_err("saved view cap reached for page"));
+        }
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let id = id
+            .filter(|id| !id.is_empty())
+            .unwrap_or_else(|| format!("view_{now:x}"));
+        context
+            .metadata
+            .saved_view_save(&id, &name, &page, &state, now)
+            .await
+            .map_err(field_err)?;
+        context
+            .metadata
+            .saved_view(&id)
+            .await
+            .map_err(field_err)?
+            .map(SavedView)
+            .ok_or_else(|| field_err("saved view save did not persist"))
+    }
+
+    /// Delete a named saved page state.
+    async fn saved_view_delete(context: &ApiContext, id: String) -> FieldResult<bool> {
+        context
+            .metadata
+            .saved_view_delete(&id)
+            .await
+            .map_err(field_err)
+    }
+
     /// Close a run with the wrapped command's exit code.
     async fn run_finish(
         context: &ApiContext,
@@ -2983,6 +3139,9 @@ mod tests {
     use parallax_storage::model::{
         ErrorEventRow, ErrorSource, LogRow, MetricExemplarRow, MetricPointRow, SpanRow,
     };
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    static TEST_DB_SEQ: AtomicU64 = AtomicU64::new(0);
 
     fn span(
         service: &str,
@@ -3011,6 +3170,22 @@ mod tests {
         }
     }
 
+    fn log_row(service: &str, trace_id: &str, ts_nanos: u128, body: &str) -> LogRow {
+        LogRow {
+            ts_nanos,
+            service: service.into(),
+            severity_num: 9,
+            severity_text: "INFO".into(),
+            body: body.into(),
+            trace_id: trace_id.into(),
+            span_id: format!("span-{ts_nanos}"),
+            run_id: None,
+            scope_name: String::new(),
+            attributes: serde_json::Value::Null,
+            resource: serde_json::Value::Null,
+        }
+    }
+
     fn span_with_release(
         service: &str,
         trace_id: &str,
@@ -3026,15 +3201,16 @@ mod tests {
     async fn context_with_memory(store: Arc<MemoryStore>) -> ApiContext {
         let mut path = std::env::temp_dir();
         path.push(format!(
-            "parallax-api-test-{}-{}.db",
+            "parallax-api-test-{}-{}-{}.db",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
-                .as_nanos()
+                .as_nanos(),
+            TEST_DB_SEQ.fetch_add(1, Ordering::Relaxed)
         ));
+        let _ = std::fs::remove_file(&path);
         let metadata = MetadataStore::open(&path).await.unwrap();
-        let _ = std::fs::remove_file(path);
         ApiContext {
             store,
             metadata: Arc::new(metadata),
@@ -3336,6 +3512,176 @@ mod tests {
             })
             .span_count(),
             "2147483648"
+        );
+    }
+
+    #[tokio::test]
+    async fn logs_around_returns_windowed_ascending_rows() {
+        let store = Arc::new(MemoryStore::new());
+        let anchor = 100_000_000_000;
+        store
+            .ingest_logs(
+                vec![
+                    log_row("api", "trace-a", anchor - 60_000_000_000, "too-old"),
+                    log_row("api", "trace-a", anchor - 10_000_000_000, "before"),
+                    log_row("api", "trace-a", anchor, "anchor"),
+                    log_row("api", "trace-a", anchor + 10_000_000_000, "after"),
+                    log_row("api", "trace-a", anchor + 60_000_000_000, "too-new"),
+                ],
+                Default::default(),
+            )
+            .await
+            .unwrap();
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            format!(
+                r#"{{
+                  logsAround(anchorNanos: "{anchor}", windowSeconds: 30, service: "api") {{
+                    tsNanos body
+                  }}
+                }}"#
+            ),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(error_messages(&json).is_empty(), "logsAround query: {json}");
+        let rows = json
+            .pointer("/data/logsAround")
+            .and_then(|value| value.as_array())
+            .unwrap();
+        assert_eq!(
+            rows.iter()
+                .map(|row| row["body"].as_str().unwrap())
+                .collect::<Vec<_>>(),
+            vec!["before", "anchor", "after"]
+        );
+    }
+
+    #[tokio::test]
+    async fn logs_around_can_scope_to_trace_inside_window() {
+        let store = Arc::new(MemoryStore::new());
+        let anchor = 100_000_000_000;
+        store
+            .ingest_logs(
+                vec![
+                    log_row("api", "trace-a", anchor - 1_000_000_000, "trace-a-before"),
+                    log_row("api", "trace-b", anchor, "trace-b-anchor"),
+                    log_row("api", "trace-a", anchor + 1_000_000_000, "trace-a-after"),
+                ],
+                Default::default(),
+            )
+            .await
+            .unwrap();
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            format!(
+                r#"{{
+                  logsAround(anchorNanos: "{anchor}", windowSeconds: 30, traceId: "trace-a") {{
+                    body traceId
+                  }}
+                }}"#
+            ),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(error_messages(&json).is_empty(), "logsAround trace: {json}");
+        assert_eq!(
+            json.pointer("/data/logsAround")
+                .and_then(|value| value.as_array())
+                .unwrap()
+                .iter()
+                .map(|row| row["body"].as_str().unwrap())
+                .collect::<Vec<_>>(),
+            vec!["trace-a-before", "trace-a-after"]
+        );
+    }
+
+    #[tokio::test]
+    async fn saved_view_resolvers_round_trip_filter_delete_and_cap() {
+        let schema = build_schema();
+        let context = context_with_memory(Arc::new(MemoryStore::new())).await;
+        let save = juniper::http::GraphQLRequest::new(
+            r#"
+            mutation {
+              savedViewSave(name: "Errors", page: "/logs", state: "?sev=17&cols=trace") {
+                id name page state
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, save).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(error_messages(&json).is_empty(), "savedViewSave: {json}");
+        let id = json
+            .pointer("/data/savedViewSave/id")
+            .and_then(|value| value.as_str())
+            .unwrap()
+            .to_string();
+        assert_eq!(
+            json.pointer("/data/savedViewSave/state"),
+            Some(&serde_json::json!("?sev=17&cols=trace"))
+        );
+
+        let list = juniper::http::GraphQLRequest::new(
+            r#"{ savedViews(page: "/logs") { id name page state } }"#.into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, list).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(error_messages(&json).is_empty(), "savedViews: {json}");
+        assert_eq!(
+            json.pointer("/data/savedViews/0/id"),
+            Some(&serde_json::json!(id.as_str()))
+        );
+
+        let delete = juniper::http::GraphQLRequest::new(
+            format!(r#"mutation {{ savedViewDelete(id: "{id}") }}"#),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, delete).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert_eq!(
+            json.pointer("/data/savedViewDelete"),
+            Some(&serde_json::json!(true))
+        );
+
+        for index in 0..SAVED_VIEWS_PER_PAGE {
+            context
+                .metadata
+                .saved_view_save(
+                    &format!("view-{index}"),
+                    "View",
+                    "/logs",
+                    "?q=x",
+                    index as u128,
+                )
+                .await
+                .unwrap();
+        }
+        let capped = juniper::http::GraphQLRequest::new(
+            r#"mutation { savedViewSave(name: "Too many", page: "/logs", state: "?q=y") { id } }"#
+                .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, capped).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(
+            error_messages(&json)
+                .iter()
+                .any(|message| message.contains("saved view cap")),
+            "saved view cap enforced: {json}"
         );
     }
 

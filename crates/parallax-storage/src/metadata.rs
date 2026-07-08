@@ -1,7 +1,7 @@
 //! The metadata store: mutable product state (issues, runs, dashboards) per
 //! implementation spec §6. Turso is the engine.
 
-use crate::model::{Dashboard, Issue, IssueQuery, IssueSortKey, RunRecord, TrendPoint};
+use crate::model::{Dashboard, Issue, IssueQuery, IssueSortKey, RunRecord, SavedView, TrendPoint};
 use std::collections::BTreeMap;
 use std::path::Path;
 use turso::Value;
@@ -32,6 +32,14 @@ CREATE TABLE IF NOT EXISTS dashboards (
   id          TEXT PRIMARY KEY,
   name        TEXT NOT NULL,
   layout      TEXT NOT NULL,
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS saved_views (
+  id          TEXT PRIMARY KEY,
+  name        TEXT NOT NULL,
+  page        TEXT NOT NULL,
+  state       TEXT NOT NULL,
   created_at  INTEGER NOT NULL,
   updated_at  INTEGER NOT NULL
 );
@@ -586,6 +594,95 @@ impl MetadataStore {
             .await?;
         Ok(rows.next().await?.map(|row| Self::dashboard_from_row(&row)))
     }
+
+    pub async fn saved_view_save(
+        &self,
+        id: &str,
+        name: &str,
+        page: &str,
+        state: &str,
+        now_nanos: u128,
+    ) -> anyhow::Result<()> {
+        let millis = nanos_to_millis(now_nanos);
+        self.conn
+            .lock()
+            .await
+            .execute(
+                "INSERT INTO saved_views (id, name, page, state, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?5)
+                 ON CONFLICT(id) DO UPDATE SET
+                   name = excluded.name, page = excluded.page, state = excluded.state,
+                   updated_at = excluded.updated_at",
+                (id, name, page, state, millis),
+            )
+            .await?;
+        Ok(())
+    }
+
+    pub async fn saved_view_delete(&self, id: &str) -> anyhow::Result<bool> {
+        let affected = self
+            .conn
+            .lock()
+            .await
+            .execute("DELETE FROM saved_views WHERE id = ?1", (id,))
+            .await?;
+        Ok(affected > 0)
+    }
+
+    pub async fn saved_views(&self, page: Option<&str>) -> anyhow::Result<Vec<SavedView>> {
+        let conn = self.conn.lock().await;
+        let mut saved_views = Vec::new();
+        if let Some(page) = page {
+            let mut rows = conn
+                .query(
+                    "SELECT id, name, page, state, created_at, updated_at
+                     FROM saved_views WHERE page = ?1 ORDER BY updated_at DESC",
+                    (page,),
+                )
+                .await?;
+            while let Some(row) = rows.next().await? {
+                saved_views.push(Self::saved_view_from_row(&row));
+            }
+        } else {
+            let mut rows = conn
+                .query(
+                    "SELECT id, name, page, state, created_at, updated_at
+                     FROM saved_views ORDER BY updated_at DESC",
+                    (),
+                )
+                .await?;
+            while let Some(row) = rows.next().await? {
+                saved_views.push(Self::saved_view_from_row(&row));
+            }
+        }
+        Ok(saved_views)
+    }
+
+    fn saved_view_from_row(row: &turso::Row) -> SavedView {
+        SavedView {
+            id: text(row, 0),
+            name: text(row, 1),
+            page: text(row, 2),
+            state: text(row, 3),
+            created_at_nanos: millis_to_nanos(integer(row, 4)),
+            updated_at_nanos: millis_to_nanos(integer(row, 5)),
+        }
+    }
+
+    pub async fn saved_view(&self, id: &str) -> anyhow::Result<Option<SavedView>> {
+        let conn = self.conn.lock().await;
+        let mut rows = conn
+            .query(
+                "SELECT id, name, page, state, created_at, updated_at
+                 FROM saved_views WHERE id = ?1",
+                (id,),
+            )
+            .await?;
+        Ok(rows
+            .next()
+            .await?
+            .map(|row| Self::saved_view_from_row(&row)))
+    }
 }
 
 fn text(row: &turso::Row, index: usize) -> String {
@@ -619,13 +716,17 @@ fn opt_integer(row: &turso::Row, index: usize) -> Option<i64> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    static TEST_DB_SEQ: AtomicU64 = AtomicU64::new(0);
 
     fn temp_db() -> std::path::PathBuf {
         let nanos = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map(|d| d.as_nanos())
             .unwrap_or(0);
-        std::env::temp_dir().join(format!("parallax-meta-test-{nanos}.db"))
+        let seq = TEST_DB_SEQ.fetch_add(1, Ordering::Relaxed);
+        std::env::temp_dir().join(format!("parallax-meta-test-{nanos}-{seq}.db"))
     }
 
     fn occurrence<'a>(
@@ -732,6 +833,48 @@ mod tests {
             .expect("query filtered");
         assert_eq!(none_total, 0);
         assert!(none.is_empty());
+    }
+
+    #[tokio::test]
+    async fn saved_views_round_trip_update_filter_and_delete() {
+        let store = MetadataStore::open(temp_db()).await.expect("open");
+        store
+            .saved_view_save("logs-errors", "Errors", "/logs", "?sev=17", 1_000_000)
+            .await
+            .expect("save logs");
+        store
+            .saved_view_save("traces-api", "API", "/traces", "?service=api", 2_000_000)
+            .await
+            .expect("save traces");
+        store
+            .saved_view_save("logs-errors", "Errors v2", "/logs", "?sev=13", 3_000_000)
+            .await
+            .expect("update logs");
+
+        let logs = store.saved_views(Some("/logs")).await.expect("list logs");
+        assert_eq!(logs.len(), 1);
+        assert_eq!(logs[0].id, "logs-errors");
+        assert_eq!(logs[0].name, "Errors v2");
+        assert_eq!(logs[0].state, "?sev=13");
+
+        let all = store.saved_views(None).await.expect("list all");
+        assert_eq!(
+            all.iter().map(|view| view.id.as_str()).collect::<Vec<_>>(),
+            vec!["logs-errors", "traces-api"]
+        );
+        assert!(
+            store
+                .saved_view_delete("logs-errors")
+                .await
+                .expect("delete")
+        );
+        assert!(
+            store
+                .saved_view("logs-errors")
+                .await
+                .expect("fetch")
+                .is_none()
+        );
     }
 
     /// Regression guard for the turso pitfall the tag cache hit: an UPDATE

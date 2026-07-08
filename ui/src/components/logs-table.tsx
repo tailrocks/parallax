@@ -4,6 +4,7 @@ import { useVirtualizer } from "@tanstack/react-virtual"
 
 import { CopyButton } from "@/components/console/copy-button"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
   Sheet,
@@ -152,10 +153,14 @@ export function LogsTable({
   logs,
   range = resolvePreset("24h"),
   columns = ["service", "trace"],
+  anchorNanos,
+  onShowContext,
 }: {
   logs: LogDoc[]
   range?: ResolvedRange
   columns?: OptionalLogColumn[]
+  anchorNanos?: string | undefined
+  onShowContext?: (log: LogDoc) => void
 }) {
   const [selected, setSelected] = useState<LogDoc | null>(null)
   const [fieldSearch, setFieldSearch] = useState("")
@@ -208,9 +213,13 @@ export function LogsTable({
   )
   const header = <TableHeader>{headerRows}</TableHeader>
 
-  const renderRow = (log: LogDoc) => (
+  const renderRow = (log: LogDoc) => {
+    const isAnchor = String(anchorNanos ?? "") === log.tsNanos
+    return (
     <TableRow
       key={logKey(log)}
+      data-anchor={isAnchor ? "true" : undefined}
+      data-state={isAnchor ? "selected" : undefined}
       className="cursor-pointer"
       onClick={() => {
         setSelected(log)
@@ -254,6 +263,7 @@ export function LogsTable({
       ) : null}
     </TableRow>
   )
+  }
 
   const table =
     logs.length > 100 ? (
@@ -328,6 +338,19 @@ export function LogsTable({
             <div className="flex flex-col gap-4 px-4 pb-6">
               <div className="flex flex-wrap items-center gap-2">
                 <SeverityBadge log={selected} />
+                {onShowContext ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      onShowContext(selected)
+                      setSelected(null)
+                    }}
+                  >
+                    Show context (±30s)
+                  </Button>
+                ) : null}
                 {selected.traceId ? (
                   <Link
                     to="/traces/$traceId"

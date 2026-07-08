@@ -5,10 +5,14 @@ import {
 } from "@tanstack/react-router"
 import {
   IconArticleFilled,
+  IconBookmark,
   IconColumns,
+  IconDeviceFloppy,
+  IconHistory,
   IconPlayerPlayFilled,
   IconPlayerStopFilled,
   IconRefresh,
+  IconTrash,
   IconX,
 } from "@tabler/icons-react"
 import { useEffect, useMemo, useState } from "react"
@@ -42,11 +46,20 @@ import {
 } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
 import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuGroup,
+  DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
@@ -58,7 +71,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { gqlString, graphql } from "@/lib/api"
-import { formatCount, formatTimeInRange } from "@/lib/format"
+import { formatCount, formatDateTime, formatTimeInRange } from "@/lib/format"
 import { resolveRangeSearch, updateRangeSearch } from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
 
@@ -71,6 +84,15 @@ interface LogsData {
   services: string[]
   logs: LogDoc[]
   logCountSeries: SeriesPoint[]
+  savedViews: SavedView[]
+}
+
+export interface SavedView {
+  id: string
+  name: string
+  page: string
+  state: string
+  updatedAtNanos: string
 }
 
 interface LogsSearch {
@@ -82,6 +104,7 @@ interface LogsSearch {
   to?: string | undefined
   live?: boolean | undefined
   cols?: string | undefined
+  anchor?: string | undefined
 }
 
 const PAGE_SIZE = 500
@@ -110,6 +133,7 @@ const logsSearchSchema = z.object({
   to: z.unknown().optional(),
   live: z.unknown().optional(),
   cols: z.unknown().optional(),
+  anchor: z.unknown().optional(),
 })
 
 export function validateLogsSearch(
@@ -129,6 +153,10 @@ export function validateLogsSearch(
     to: typeof parsed.to === "string" ? parsed.to : undefined,
     live: parsed.live === "1" || parsed.live === true,
     cols: typeof parsed.cols === "string" ? parsed.cols : undefined,
+    anchor:
+      typeof parsed.anchor === "string" && /^\d+$/.test(parsed.anchor)
+        ? parsed.anchor
+        : undefined,
   }
 }
 
@@ -174,8 +202,43 @@ export function dragWindow(
   return { fromNanos: from.tsNanos, toNanos: to.toNanos }
 }
 
+export function contextWindow(anchorNanos: string, windowSeconds = 30): ResolvedRange {
+  const anchor = BigInt(anchorNanos)
+  const width = BigInt(windowSeconds) * 1_000_000_000n
+  const from = anchor > width ? anchor - width : 0n
+  return {
+    key: "custom",
+    fromNanos: from.toString(),
+    toNanos: (anchor + width).toString(),
+  }
+}
+
+export function parseSavedViewState(state: string): LogsSearch {
+  const params = new URLSearchParams(state.startsWith("?") ? state.slice(1) : state)
+  const raw: Record<string, unknown> = {}
+  params.forEach((value, key) => {
+    raw[key] = value
+  })
+  return validateLogsSearch(raw)
+}
+
+function serializeLogsSearch(search: LogsSearch) {
+  const params = new URLSearchParams()
+  if (search.q) params.set("q", search.q)
+  if (search.service) params.set("service", search.service)
+  if (search.sev) params.set("sev", String(search.sev))
+  if (search.range) params.set("range", search.range)
+  if (search.from) params.set("from", search.from)
+  if (search.to) params.set("to", search.to)
+  if (search.live) params.set("live", "1")
+  if (search.cols) params.set("cols", search.cols)
+  if (search.anchor) params.set("anchor", search.anchor)
+  const value = params.toString()
+  return value ? `?${value}` : ""
+}
+
 export async function loadLogs(search: LogsSearch): Promise<LogsData> {
-  const range = resolveRangeSearch(search)
+  const range = search.anchor ? contextWindow(search.anchor) : resolveRangeSearch(search)
   const stepSeconds = stepSecondsForRange(range)
   const filters = [
     search.service ? `service: "${gqlString(search.service)}"` : "",
@@ -184,15 +247,18 @@ export async function loadLogs(search: LogsSearch): Promise<LogsData> {
   ].filter(Boolean)
   if (search.live) {
     return graphql<LogsData>(
-      `{ services logs(limit: 0) { tsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource } logCountSeries(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", stepSeconds: ${stepSeconds}) { tsNanos value } }`
+      `{ services savedViews(page: "/logs") { id name page state updatedAtNanos } logs(limit: 0) { tsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource } logCountSeries(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", stepSeconds: ${stepSeconds}) { tsNanos value } }`
     )
   }
-  const logArgs = [
-    `fromNanos: "${range.fromNanos}"`,
-    `toNanos: "${range.toNanos}"`,
-    ...filters,
-    `limit: ${PAGE_SIZE}`,
-  ].join(", ")
+  const logsSelection = `tsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource`
+  const logsQuery = search.anchor
+    ? `logs: logsAround(anchorNanos: "${search.anchor}", windowSeconds: 30, ${search.service ? `service: "${gqlString(search.service)}", ` : ""}limit: ${PAGE_SIZE}) { ${logsSelection} }`
+    : `logs(${[
+        `fromNanos: "${range.fromNanos}"`,
+        `toNanos: "${range.toNanos}"`,
+        ...filters,
+        `limit: ${PAGE_SIZE}`,
+      ].join(", ")}) { ${logsSelection} }`
   const seriesArgs = [
     `fromNanos: "${range.fromNanos}"`,
     `toNanos: "${range.toNanos}"`,
@@ -201,9 +267,8 @@ export async function loadLogs(search: LogsSearch): Promise<LogsData> {
   ].join(", ")
   return graphql<LogsData>(`{
     services
-    logs(${logArgs}) {
-      tsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource
-    }
+    savedViews(page: "/logs") { id name page state updatedAtNanos }
+    ${logsQuery}
     logCountSeries(${seriesArgs}) { tsNanos value }
   }`)
 }
@@ -216,7 +281,7 @@ function LogsPage() {
     select: (state) => state.status === "pending",
   })
   const delayedLoading = useDelayedLoading(routerLoading)
-  const range = resolveRangeSearch(search)
+  const range = search.anchor ? contextWindow(search.anchor) : resolveRangeSearch(search)
   const stepSeconds = stepSecondsForRange(range)
   const keyedDataLogs = useMemo(() => assignLogKeys(data.logs), [data.logs])
   const [logs, setLogs] = useState<LogDoc[]>(keyedDataLogs)
@@ -226,6 +291,11 @@ function LogsPage() {
   const [exhausted, setExhausted] = useState(data.logs.length < PAGE_SIZE)
   const [dragStart, setDragStart] = useState<number | null>(null)
   const [dragEnd, setDragEnd] = useState<number | null>(null)
+  const [savedViews, setSavedViews] = useState(data.savedViews)
+  const [viewError, setViewError] = useState<string | null>(null)
+  const [saveOpen, setSaveOpen] = useState(false)
+  const [saveName, setSaveName] = useState("")
+  const [savingView, setSavingView] = useState(false)
   const live = search.live === true
   const columns = parseLogColumns(search.cols)
 
@@ -233,6 +303,8 @@ function LogsPage() {
     setLogs(keyedDataLogs)
     setExhausted(keyedDataLogs.length < PAGE_SIZE)
   }, [keyedDataLogs])
+
+  useEffect(() => setSavedViews(data.savedViews), [data.savedViews])
 
   useEffect(() => setPendingQuery(search.q ?? ""), [search.q])
 
@@ -270,6 +342,64 @@ function LogsPage() {
     void navigate({
       search: (current) => ({ ...current, ...patch }),
     })
+
+  const showContext = (log: LogDoc) => {
+    const window = contextWindow(log.tsNanos)
+    update({
+      anchor: log.tsNanos,
+      range: "custom",
+      from: window.fromNanos,
+      to: window.toNanos,
+      live: undefined,
+      q: undefined,
+      sev: undefined,
+    })
+  }
+
+  const selectSavedView = (view: SavedView) => {
+    setViewError(null)
+    try {
+      const next = parseSavedViewState(view.state)
+      void navigate({ search: () => next })
+    } catch (err) {
+      setViewError(err instanceof Error ? err.message : String(err))
+    }
+  }
+
+  const deleteSavedView = async (id: string) => {
+    setViewError(null)
+    try {
+      await graphql<{ savedViewDelete: boolean }>(
+        `mutation { savedViewDelete(id: "${gqlString(id)}") }`
+      )
+      setSavedViews((current) => current.filter((view) => view.id !== id))
+    } catch (err) {
+      setViewError(err instanceof Error ? err.message : String(err))
+    }
+  }
+
+  const saveCurrentView = async () => {
+    const name = saveName.trim()
+    if (!name) return
+    setSavingView(true)
+    setViewError(null)
+    try {
+      const state = serializeLogsSearch(search)
+      const result = await graphql<{ savedViewSave: SavedView }>(
+        `mutation { savedViewSave(name: "${gqlString(name)}", page: "/logs", state: "${gqlString(state)}") { id name page state updatedAtNanos } }`
+      )
+      setSavedViews((current) => [
+        result.savedViewSave,
+        ...current.filter((view) => view.id !== result.savedViewSave.id),
+      ])
+      setSaveOpen(false)
+      setSaveName("")
+    } catch (err) {
+      setViewError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setSavingView(false)
+    }
+  }
 
   const setRange = (next: ResolvedRange) => {
     update(updateRangeSearch(next))
@@ -384,6 +514,15 @@ function LogsPage() {
           columns={columns}
           onChange={(next) => update({ cols: serializeLogColumns(next) })}
         />
+        <SavedViewsMenu
+          views={savedViews}
+          onSelect={selectSavedView}
+          onDelete={(id) => void deleteSavedView(id)}
+          onSave={() => {
+            setSaveName("")
+            setSaveOpen(true)
+          }}
+        />
         <Button
           type="button"
           variant="outline"
@@ -394,6 +533,57 @@ function LogsPage() {
           Refresh
         </Button>
       </div>
+
+      {viewError ? <p className="text-sm text-destructive">{viewError}</p> : null}
+
+      <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save view</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={saveName}
+            onChange={(event) => setSaveName(event.target.value)}
+            placeholder="View name"
+            autoFocus
+          />
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setSaveOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void saveCurrentView()}
+              disabled={savingView || !saveName.trim()}
+            >
+              <IconDeviceFloppy />
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {search.anchor ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/70 bg-accent/25 px-3 py-2">
+          <div className="flex items-center gap-2 text-sm">
+            <IconHistory className="size-4 text-muted-foreground" />
+            <span>Context around {formatDateTime(search.anchor)}</span>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => update({ anchor: undefined })}
+          >
+            <IconX />
+            Reset
+          </Button>
+        </div>
+      ) : null}
 
       <HistogramCard
         live={live}
@@ -442,8 +632,14 @@ function LogsPage() {
               </span>
             </div>
           ) : null}
-          <LogsTable logs={logs} range={range} columns={columns} />
-          {!live && !exhausted ? (
+          <LogsTable
+            logs={logs}
+            range={range}
+            columns={columns}
+            anchorNanos={search.anchor}
+            onShowContext={showContext}
+          />
+          {!live && !search.anchor && !exhausted ? (
             <div className="flex flex-col gap-2 border-t border-border/70 p-2">
               {olderError ? (
                 <p className="px-2 text-sm text-destructive">{olderError}</p>
@@ -638,6 +834,68 @@ function ColumnMenu({
             )
           )}
         </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+export function SavedViewsMenu({
+  views,
+  onSelect,
+  onDelete,
+  onSave,
+}: {
+  views: SavedView[]
+  onSelect: (view: SavedView) => void
+  onDelete: (id: string) => void
+  onSave: () => void
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={<Button type="button" variant="outline" size="sm" />}
+      >
+        <IconBookmark />
+        Views
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuLabel>Saved views</DropdownMenuLabel>
+        <DropdownMenuGroup>
+          {views.length === 0 ? (
+            <DropdownMenuItem disabled>No saved views</DropdownMenuItem>
+          ) : (
+            views.map((view) => (
+              <DropdownMenuItem key={view.id} onClick={() => onSelect(view)}>
+                <IconBookmark />
+                <span className="truncate">{view.name}</span>
+              </DropdownMenuItem>
+            ))
+          )}
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={onSave}>
+          <IconDeviceFloppy />
+          Save current view
+        </DropdownMenuItem>
+        {views.length > 0 ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Delete view</DropdownMenuLabel>
+            {views.map((view) => (
+              <DropdownMenuItem
+                key={`delete-${view.id}`}
+                variant="destructive"
+                onClick={(event) => {
+                  event.preventDefault()
+                  onDelete(view.id)
+                }}
+              >
+                <IconTrash />
+                <span className="truncate">{view.name}</span>
+              </DropdownMenuItem>
+            ))}
+          </>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   )
