@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SqlRouteImport } from './routes/sql'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as LogsRouteImport } from './routes/logs'
+import { Route as EcosystemRouteImport } from './routes/ecosystem'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TracesIndexRouteImport } from './routes/traces.index'
 import { Route as RunsIndexRouteImport } from './routes/runs.index'
@@ -36,6 +37,11 @@ const ServicesRoute = ServicesRouteImport.update({
 const LogsRoute = LogsRouteImport.update({
   id: '/logs',
   path: '/logs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EcosystemRoute = EcosystemRouteImport.update({
+  id: '/ecosystem',
+  path: '/ecosystem',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -91,6 +97,7 @@ const DashboardsDashboardIdRoute = DashboardsDashboardIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ecosystem': typeof EcosystemRoute
   '/logs': typeof LogsRoute
   '/services': typeof ServicesRouteWithChildren
   '/sql': typeof SqlRoute
@@ -106,6 +113,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ecosystem': typeof EcosystemRoute
   '/logs': typeof LogsRoute
   '/services': typeof ServicesRouteWithChildren
   '/sql': typeof SqlRoute
@@ -122,6 +130,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ecosystem': typeof EcosystemRoute
   '/logs': typeof LogsRoute
   '/services': typeof ServicesRouteWithChildren
   '/sql': typeof SqlRoute
@@ -139,6 +148,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/ecosystem'
     | '/logs'
     | '/services'
     | '/sql'
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/ecosystem'
     | '/logs'
     | '/services'
     | '/sql'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/ecosystem'
     | '/logs'
     | '/services'
     | '/sql'
@@ -185,6 +197,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  EcosystemRoute: typeof EcosystemRoute
   LogsRoute: typeof LogsRoute
   ServicesRoute: typeof ServicesRouteWithChildren
   SqlRoute: typeof SqlRoute
@@ -219,6 +232,13 @@ declare module '@tanstack/react-router' {
       path: '/logs'
       fullPath: '/logs'
       preLoaderRoute: typeof LogsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ecosystem': {
+      id: '/ecosystem'
+      path: '/ecosystem'
+      fullPath: '/ecosystem'
+      preLoaderRoute: typeof EcosystemRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -308,6 +328,7 @@ const ServicesRouteWithChildren = ServicesRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  EcosystemRoute: EcosystemRoute,
   LogsRoute: LogsRoute,
   ServicesRoute: ServicesRouteWithChildren,
   SqlRoute: SqlRoute,

@@ -11,6 +11,7 @@ use juniper::{EmptySubscription, FieldError, FieldResult, RootNode, graphql_obje
 use parallax_core::{story, trace_analysis};
 use parallax_storage::adapter::{
     ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow as StorageAttributeCompareRow, OverviewTotals,
+    SERVICE_MAP_TRACE_CAP, ServiceEdge as StorageServiceEdge,
     ServiceSummary as StorageServiceSummary, SpanRed as StorageSpanRed, TelemetryStore,
 };
 use parallax_storage::metadata::MetadataStore;
@@ -841,6 +842,75 @@ impl ServiceSummary {
     }
 }
 
+#[derive(Clone)]
+pub struct ServiceNodeData {
+    name: String,
+    last_seen_nanos: u128,
+    span_count: u64,
+    error_count: u64,
+    p95_ms: Option<f64>,
+}
+
+pub struct ServiceNode(ServiceNodeData);
+
+#[graphql_object(context = ApiContext)]
+impl ServiceNode {
+    fn name(&self) -> &str {
+        &self.0.name
+    }
+    fn last_seen_nanos(&self) -> String {
+        nanos_string(self.0.last_seen_nanos)
+    }
+    fn span_count(&self) -> String {
+        self.0.span_count.to_string()
+    }
+    fn error_count(&self) -> String {
+        self.0.error_count.to_string()
+    }
+    fn p95_ms(&self) -> Option<f64> {
+        self.0.p95_ms
+    }
+}
+
+pub struct ServiceEdge(StorageServiceEdge);
+
+#[graphql_object(context = ApiContext)]
+impl ServiceEdge {
+    fn source(&self) -> &str {
+        &self.0.source
+    }
+    fn target(&self) -> &str {
+        &self.0.target
+    }
+    fn call_count(&self) -> String {
+        self.0.call_count.to_string()
+    }
+    fn error_count(&self) -> String {
+        self.0.error_count.to_string()
+    }
+    fn p50_ms(&self) -> f64 {
+        self.0.p50_ms
+    }
+    fn p95_ms(&self) -> f64 {
+        self.0.p95_ms
+    }
+}
+
+pub struct ServiceMap {
+    nodes: Vec<ServiceNodeData>,
+    edges: Vec<StorageServiceEdge>,
+}
+
+#[graphql_object(context = ApiContext)]
+impl ServiceMap {
+    fn nodes(&self) -> Vec<ServiceNode> {
+        self.nodes.iter().cloned().map(ServiceNode).collect()
+    }
+    fn edges(&self) -> Vec<ServiceEdge> {
+        self.edges.iter().cloned().map(ServiceEdge).collect()
+    }
+}
+
 pub struct SpanRed(StorageSpanRed);
 
 #[graphql_object(context = ApiContext)]
@@ -1183,6 +1253,59 @@ impl Query {
             .await
             .map_err(field_err)?;
         Ok(services.into_iter().map(ServiceSummary).collect())
+    }
+
+    /// Trace-path service graph over a bounded set of traces in the window.
+    async fn service_map(
+        context: &ApiContext,
+        from_nanos: String,
+        to_nanos: String,
+        max_traces: Option<i32>,
+    ) -> FieldResult<ServiceMap> {
+        let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+        let max_traces = clamp_limit(max_traces, 50).min(SERVICE_MAP_TRACE_CAP);
+        let services = context
+            .store
+            .service_summaries(from..=to)
+            .await
+            .map_err(field_err)?;
+        let edges = context
+            .store
+            .service_map(from..=to, max_traces)
+            .await
+            .map_err(field_err)?;
+        let mut nodes: BTreeMap<String, ServiceNodeData> = services
+            .into_iter()
+            .map(|service| {
+                (
+                    service.name.clone(),
+                    ServiceNodeData {
+                        name: service.name,
+                        last_seen_nanos: service.last_seen_nanos,
+                        span_count: service.span_count,
+                        error_count: service.error_count,
+                        p95_ms: service.p95_ms,
+                    },
+                )
+            })
+            .collect();
+        for edge in &edges {
+            for service in [&edge.source, &edge.target] {
+                nodes
+                    .entry(service.clone())
+                    .or_insert_with(|| ServiceNodeData {
+                        name: service.clone(),
+                        last_seen_nanos: 0,
+                        span_count: 0,
+                        error_count: 0,
+                        p95_ms: None,
+                    });
+            }
+        }
+        Ok(ServiceMap {
+            nodes: nodes.into_values().collect(),
+            edges,
+        })
     }
 
     /// Trace-derived RED analytics; works even when a service emits no metrics.
@@ -3070,6 +3193,60 @@ mod tests {
                 .and_then(|value| value.as_array())
                 .is_some_and(|rows| rows.iter().all(|row| row["key"] != "trace_id")),
             "attributeCompare denies trace_id: {json}"
+        );
+    }
+
+    #[tokio::test]
+    async fn service_map_resolver_returns_nodes_and_edges() {
+        let store = Arc::new(MemoryStore::new());
+        let mut a_client = span("A", "trace-ab", "a-client", 100, 10_000_000);
+        a_client.kind = "SPAN_KIND_CLIENT".into();
+        let mut b_server = span("B", "trace-ab", "b-server", 101, 20_000_000);
+        b_server.kind = "SPAN_KIND_SERVER".into();
+        b_server.parent_span_id = Some("a-client".into());
+        b_server.status_code = "STATUS_CODE_ERROR".into();
+        store
+            .ingest_traces(vec![a_client, b_server], Default::default())
+            .await
+            .unwrap();
+
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"
+            {
+              serviceMap(fromNanos: "0", toNanos: "200", maxTraces: 10) {
+                nodes { name spanCount errorCount p95Ms }
+                edges { source target callCount errorCount p50Ms p95Ms }
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(error_messages(&json).is_empty(), "serviceMap query: {json}");
+        assert!(
+            json.pointer("/data/serviceMap/nodes")
+                .and_then(|value| value.as_array())
+                .is_some_and(|nodes| nodes.iter().any(|node| node["name"] == "A")
+                    && nodes.iter().any(|node| node["name"] == "B")),
+            "serviceMap nodes: {json}"
+        );
+        assert_eq!(
+            json.pointer("/data/serviceMap/edges/0/source"),
+            Some(&serde_json::json!("A"))
+        );
+        assert_eq!(
+            json.pointer("/data/serviceMap/edges/0/target"),
+            Some(&serde_json::json!("B"))
+        );
+        assert_eq!(
+            json.pointer("/data/serviceMap/edges/0/errorCount"),
+            Some(&serde_json::json!("1"))
         );
     }
 

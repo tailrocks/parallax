@@ -7,6 +7,7 @@ use std::ops::RangeInclusive;
 pub const MAX_ROWS: usize = 500;
 pub const ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT: usize = 24;
 pub const ATTRIBUTE_COMPARE_TOP_N_CAP: usize = 50;
+pub const SERVICE_MAP_TRACE_CAP: usize = 100;
 
 /// A run id observed in telemetry (spans/logs carrying `parallax.run.id`),
 /// whether or not the run was registered through the CLI wrapper. This is
@@ -135,6 +136,16 @@ pub struct AttributeCompareRow {
     pub baseline_count: u64,
     pub baseline_total: u64,
     pub score: f64,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ServiceEdge {
+    pub source: String,
+    pub target: String,
+    pub call_count: u64,
+    pub error_count: u64,
+    pub p50_ms: f64,
+    pub p95_ms: f64,
 }
 
 pub fn attribute_compare_key_allowed(key: &str) -> bool {
@@ -356,6 +367,13 @@ pub trait TelemetryStore: Send + Sync {
         keys: &[String],
         top_n: usize,
     ) -> anyhow::Result<Vec<AttributeCompareRow>>;
+    /// Trace-path service edges derived from child SERVER spans paired with
+    /// their parent span inside bounded traces from the requested window.
+    async fn service_map(
+        &self,
+        range: RangeInclusive<u128>,
+        max_traces: usize,
+    ) -> anyhow::Result<Vec<ServiceEdge>>;
     /// Error events across a set of traces, newest first (run-anchored reads).
     async fn error_events_by_traces(
         &self,

@@ -3,8 +3,9 @@
 
 use crate::adapter::{
     ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow, MAX_ROWS,
-    OverviewTotals, ServiceSummary, SignalKind, SpanRed, TelemetryStore,
-    attribute_compare_key_allowed, attribute_compare_score, attribute_compare_value_allowed,
+    OverviewTotals, SERVICE_MAP_TRACE_CAP, ServiceEdge, ServiceSummary, SignalKind, SpanRed,
+    TelemetryStore, attribute_compare_key_allowed, attribute_compare_score,
+    attribute_compare_value_allowed,
 };
 use crate::model::*;
 use std::collections::{BTreeMap, BTreeSet};
@@ -568,6 +569,24 @@ fn u128_at(row: &[serde_json::Value], index: usize) -> u128 {
 
 fn f64_at(row: &[serde_json::Value], index: usize) -> f64 {
     row.get(index).and_then(|v| v.as_f64()).unwrap_or(0.0)
+}
+
+fn duration_quantile_ms(durations: &mut [u128], q: f64) -> f64 {
+    if durations.is_empty() {
+        return 0.0;
+    }
+    durations.sort_unstable();
+    if durations.len() == 1 {
+        return durations[0] as f64 / 1_000_000.0;
+    }
+    let pos = q.clamp(0.0, 1.0) * (durations.len() - 1) as f64;
+    let lo = pos.floor() as usize;
+    let hi = pos.ceil() as usize;
+    if lo == hi {
+        return durations[lo] as f64 / 1_000_000.0;
+    }
+    let weight = pos - lo as f64;
+    (durations[lo] as f64 + (durations[hi] as f64 - durations[lo] as f64) * weight) / 1_000_000.0
 }
 
 fn trace_filter_clauses(service: Option<&str>, range: &RangeInclusive<u128>) -> Vec<String> {
@@ -1468,6 +1487,94 @@ impl TelemetryStore for GreptimeStore {
         });
         rows.truncate(limit);
         Ok(rows)
+    }
+
+    async fn service_map(
+        &self,
+        range: RangeInclusive<u128>,
+        max_traces: usize,
+    ) -> anyhow::Result<Vec<ServiceEdge>> {
+        let trace_limit = max_traces.min(SERVICE_MAP_TRACE_CAP);
+        if trace_limit == 0 {
+            return Ok(Vec::new());
+        }
+        let trace_rows = self
+            .sql_lenient(&format!(
+                r#"SELECT "trace_id", MAX("timestamp") AS "last_seen"
+                   FROM opentelemetry_traces
+                   WHERE "timestamp" >= {} AND "timestamp" <= {}
+                   GROUP BY "trace_id"
+                   ORDER BY "last_seen" DESC, "trace_id" ASC
+                   LIMIT {trace_limit}"#,
+                sql_ts(*range.start()),
+                sql_ts(*range.end())
+            ))
+            .await?;
+        let trace_ids: Vec<String> = trace_rows
+            .iter()
+            .map(|row| str_at(row, 0))
+            .filter(|trace_id| !trace_id.is_empty())
+            .collect();
+        if trace_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let id_list = trace_ids
+            .iter()
+            .map(|trace_id| format!("'{}'", escape(trace_id)))
+            .collect::<Vec<_>>()
+            .join(",");
+        let rows = self
+            .sql_lenient(&format!(
+                r#"SELECT "parent"."service_name" AS "source",
+                          "child"."service_name" AS "target",
+                          "child"."span_status_code" AS "status",
+                          CAST("child"."duration_nano" AS BIGINT) AS "duration_ns"
+                   FROM opentelemetry_traces AS "child"
+                   JOIN opentelemetry_traces AS "parent"
+                     ON "child"."trace_id" = "parent"."trace_id"
+                    AND "child"."parent_span_id" = "parent"."span_id"
+                   WHERE "child"."trace_id" IN ({id_list})
+                     AND "child"."timestamp" >= {}
+                     AND "child"."timestamp" <= {}
+                     AND "child"."span_kind" = 'SPAN_KIND_SERVER'
+                     AND "child"."service_name" != "parent"."service_name""#,
+                sql_ts(*range.start()),
+                sql_ts(*range.end())
+            ))
+            .await?;
+
+        let mut grouped: BTreeMap<(String, String), (u64, u64, Vec<u128>)> = BTreeMap::new();
+        for row in &rows {
+            let source = str_at(row, 0);
+            let target = str_at(row, 1);
+            if source.is_empty() || target.is_empty() || source == target {
+                continue;
+            }
+            let entry = grouped.entry((source, target)).or_default();
+            entry.0 += 1;
+            if str_at(row, 2) == "STATUS_CODE_ERROR" {
+                entry.1 += 1;
+            }
+            entry.2.push(u128_at(row, 3));
+        }
+
+        Ok(grouped
+            .into_iter()
+            .map(
+                |((source, target), (call_count, error_count, mut durations))| {
+                    let p50_ms = duration_quantile_ms(&mut durations, 0.5);
+                    let p95_ms = duration_quantile_ms(&mut durations, 0.95);
+                    ServiceEdge {
+                        source,
+                        target,
+                        call_count,
+                        error_count,
+                        p50_ms,
+                        p95_ms,
+                    }
+                },
+            )
+            .collect())
     }
 
     async fn error_events_by_traces(

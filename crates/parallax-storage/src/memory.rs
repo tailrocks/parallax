@@ -3,11 +3,12 @@
 
 use crate::adapter::{
     ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow, MAX_ROWS,
-    OverviewTotals, ServiceSummary, SignalKind, SpanRed, TelemetryStore,
-    attribute_compare_key_allowed, attribute_compare_score, attribute_compare_value_allowed,
+    OverviewTotals, SERVICE_MAP_TRACE_CAP, ServiceEdge, ServiceSummary, SignalKind, SpanRed,
+    TelemetryStore, attribute_compare_key_allowed, attribute_compare_score,
+    attribute_compare_value_allowed,
 };
 use crate::model::*;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::ops::RangeInclusive;
 use std::sync::Mutex;
 
@@ -41,6 +42,11 @@ fn span_matches_compare(
     range.contains(&span.ts_nanos)
         && service.is_none_or(|svc| span.service == svc)
         && (!error_only || span.status_code == "STATUS_CODE_ERROR")
+}
+
+fn duration_quantile_ms(durations: &mut [u128], q: f64) -> f64 {
+    durations.sort_unstable();
+    quantile_from_sorted(durations, q) / 1_000_000.0
 }
 
 /// Per-second rate from bucketed counter sums (monotonic resets clamp to 0).
@@ -871,6 +877,82 @@ impl TelemetryStore for MemoryStore {
         Ok(rows)
     }
 
+    async fn service_map(
+        &self,
+        range: RangeInclusive<u128>,
+        max_traces: usize,
+    ) -> anyhow::Result<Vec<ServiceEdge>> {
+        let trace_limit = max_traces.min(SERVICE_MAP_TRACE_CAP);
+        if trace_limit == 0 {
+            return Ok(Vec::new());
+        }
+
+        let spans = self.lock().spans.clone();
+        let mut trace_last_seen: BTreeMap<String, u128> = BTreeMap::new();
+        for span in spans.iter().filter(|span| range.contains(&span.ts_nanos)) {
+            trace_last_seen
+                .entry(span.trace_id.clone())
+                .and_modify(|last| *last = (*last).max(span.ts_nanos))
+                .or_insert(span.ts_nanos);
+        }
+        let mut traces: Vec<_> = trace_last_seen.into_iter().collect();
+        traces.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+        let trace_ids: BTreeSet<String> = traces
+            .into_iter()
+            .take(trace_limit)
+            .map(|(trace_id, _)| trace_id)
+            .collect();
+
+        let by_trace_span: HashMap<(String, String), &SpanRow> = spans
+            .iter()
+            .filter(|span| trace_ids.contains(&span.trace_id))
+            .map(|span| ((span.trace_id.clone(), span.span_id.clone()), span))
+            .collect();
+        let mut grouped: BTreeMap<(String, String), (u64, u64, Vec<u128>)> = BTreeMap::new();
+        for span in spans.iter().filter(|span| {
+            trace_ids.contains(&span.trace_id)
+                && range.contains(&span.ts_nanos)
+                && span.kind == "SPAN_KIND_SERVER"
+        }) {
+            let Some(parent_id) = span.parent_span_id.as_deref().filter(|id| !id.is_empty()) else {
+                continue;
+            };
+            let Some(parent) = by_trace_span.get(&(span.trace_id.clone(), parent_id.to_string()))
+            else {
+                continue;
+            };
+            if parent.service == span.service {
+                continue;
+            }
+            let entry = grouped
+                .entry((parent.service.clone(), span.service.clone()))
+                .or_default();
+            entry.0 += 1;
+            if span.status_code == "STATUS_CODE_ERROR" {
+                entry.1 += 1;
+            }
+            entry.2.push(span.duration_ns);
+        }
+
+        Ok(grouped
+            .into_iter()
+            .map(
+                |((source, target), (call_count, error_count, mut durations))| {
+                    let p50_ms = duration_quantile_ms(&mut durations, 0.5);
+                    let p95_ms = duration_quantile_ms(&mut durations, 0.95);
+                    ServiceEdge {
+                        source,
+                        target,
+                        call_count,
+                        error_count,
+                        p50_ms,
+                        p95_ms,
+                    }
+                },
+            )
+            .collect())
+    }
+
     async fn error_events_by_traces(
         &self,
         trace_ids: &[String],
@@ -1278,6 +1360,85 @@ mod tests {
             .unwrap();
 
         assert_eq!(first, second);
+    }
+
+    #[tokio::test]
+    async fn service_map_derives_trace_path_edges() {
+        let store = MemoryStore::new();
+        let mut a_client = span("trace-ab", "a-client", None, "A", 100);
+        a_client.kind = "SPAN_KIND_CLIENT".into();
+        let mut b_server = span("trace-ab", "b-server", Some("a-client"), "B", 101);
+        b_server.kind = "SPAN_KIND_SERVER".into();
+        b_server.status_code = "STATUS_CODE_ERROR".into();
+        b_server.duration_ns = 20_000_000;
+        let mut b_client = span("trace-bc", "b-client", None, "B", 110);
+        b_client.kind = "SPAN_KIND_CLIENT".into();
+        let mut c_server = span("trace-bc", "c-server", Some("b-client"), "C", 111);
+        c_server.kind = "SPAN_KIND_SERVER".into();
+        c_server.duration_ns = 30_000_000;
+        let mut outside_client = span("trace-out", "a-client", None, "A", 1_000);
+        outside_client.kind = "SPAN_KIND_CLIENT".into();
+        let mut outside_server = span("trace-out", "d-server", Some("a-client"), "D", 1_001);
+        outside_server.kind = "SPAN_KIND_SERVER".into();
+        store
+            .ingest_traces(
+                vec![
+                    a_client,
+                    b_server,
+                    b_client,
+                    c_server,
+                    outside_client,
+                    outside_server,
+                ],
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+
+        let edges = store.service_map(0..=200, 100).await.unwrap();
+
+        let edge_ab = edges
+            .iter()
+            .find(|edge| edge.source == "A" && edge.target == "B")
+            .expect("A -> B edge");
+        assert_eq!(edge_ab.call_count, 1);
+        assert_eq!(edge_ab.error_count, 1);
+        assert_eq!(edge_ab.p50_ms, 20.0);
+        assert!(
+            edges
+                .iter()
+                .any(|edge| edge.source == "B" && edge.target == "C")
+        );
+        assert!(!edges.iter().any(|edge| edge.target == "D"));
+    }
+
+    #[tokio::test]
+    async fn service_map_is_deterministic_and_trace_bounded() {
+        let store = MemoryStore::new();
+        let mut a_client = span("trace-ab", "a-client", None, "A", 100);
+        a_client.kind = "SPAN_KIND_CLIENT".into();
+        let mut b_server = span("trace-ab", "b-server", Some("a-client"), "B", 101);
+        b_server.kind = "SPAN_KIND_SERVER".into();
+        let mut b_client = span("trace-bc", "b-client", None, "B", 110);
+        b_client.kind = "SPAN_KIND_CLIENT".into();
+        let mut c_server = span("trace-bc", "c-server", Some("b-client"), "C", 111);
+        c_server.kind = "SPAN_KIND_SERVER".into();
+        store
+            .ingest_traces(
+                vec![a_client, b_server, b_client, c_server],
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+
+        let first = store.service_map(0..=200, 100).await.unwrap();
+        let second = store.service_map(0..=200, 100).await.unwrap();
+        let bounded = store.service_map(0..=200, 1).await.unwrap();
+
+        assert_eq!(first, second);
+        assert_eq!(bounded.len(), 1);
+        assert_eq!(bounded[0].source, "B");
+        assert_eq!(bounded[0].target, "C");
     }
 
     #[tokio::test]
