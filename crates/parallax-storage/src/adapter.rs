@@ -229,6 +229,7 @@ pub trait TelemetryStore: Send + Sync {
         service: Option<&str>,
         range: RangeInclusive<u128>,
         severity_min: Option<i32>,
+        severity_max: Option<i32>,
         body_contains: Option<&str>,
         limit: usize,
     ) -> anyhow::Result<Vec<LogRow>>;
@@ -265,6 +266,7 @@ pub trait TelemetryStore: Send + Sync {
         service: Option<&str>,
         range: RangeInclusive<u128>,
         severity_min: Option<i32>,
+        severity_max: Option<i32>,
         body_contains: Option<&str>,
         step_nanos: u128,
     ) -> anyhow::Result<Vec<SeriesPoint>>;

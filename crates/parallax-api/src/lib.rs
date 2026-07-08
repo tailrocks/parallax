@@ -1147,6 +1147,7 @@ impl Query {
         from_nanos: Option<String>,
         to_nanos: Option<String>,
         severity_min: Option<i32>,
+        severity_max: Option<i32>,
         query: Option<String>,
         limit: Option<i32>,
     ) -> FieldResult<Vec<LogRecord>> {
@@ -1177,6 +1178,7 @@ impl Query {
                         service.as_deref(),
                         from..=to,
                         severity_min,
+                        severity_max,
                         query.as_deref(),
                         limit,
                     )
@@ -1192,6 +1194,7 @@ impl Query {
                 && l.ts_nanos <= to
                 && service.as_deref().is_none_or(|svc| l.service == svc)
                 && severity_min.is_none_or(|min| l.severity_num >= min)
+                && severity_max.is_none_or(|max| l.severity_num <= max)
                 && query
                     .as_deref()
                     .is_none_or(|needle| l.body.contains(needle))
@@ -1230,12 +1233,14 @@ impl Query {
 
     /// Log counts per time bucket under the same filters as `logs` — the
     /// Discover-style histogram above the log table.
+    #[allow(clippy::too_many_arguments)]
     async fn log_count_series(
         context: &ApiContext,
         from_nanos: String,
         to_nanos: String,
         service: Option<String>,
         severity_min: Option<i32>,
+        severity_max: Option<i32>,
         query: Option<String>,
         step_seconds: Option<i32>,
     ) -> FieldResult<Vec<Point>> {
@@ -1251,6 +1256,7 @@ impl Query {
                 service.as_deref(),
                 from..=to,
                 severity_min,
+                severity_max,
                 query.as_deref(),
                 step,
             )

@@ -499,6 +499,7 @@ fn log_filter_clauses(
     service: Option<&str>,
     range: &RangeInclusive<u128>,
     severity_min: Option<i32>,
+    severity_max: Option<i32>,
     body_contains: Option<&str>,
 ) -> Vec<String> {
     let mut clauses = vec![format!(
@@ -516,6 +517,9 @@ fn log_filter_clauses(
     }
     if let Some(min) = severity_min {
         clauses.push(format!(r#""severity_number" >= {min}"#));
+    }
+    if let Some(max) = severity_max {
+        clauses.push(format!(r#""severity_number" <= {max}"#));
     }
     if let Some(needle) = body_contains {
         // LIKE wildcards in the needle are literal for a substring search;
@@ -676,27 +680,33 @@ impl TelemetryStore for GreptimeStore {
     }
 
     async fn spans_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<SpanRow>> {
-        self.select_spans(
-            &format!(
-                r#""trace_id" IN (
+        let mut spans = self
+            .select_spans(
+                &format!(
+                    r#""trace_id" IN (
                     SELECT DISTINCT "trace_id" FROM opentelemetry_logs
                     WHERE "parallax.run.id" = '{}'
                   )"#,
-                escape(run_id)
-            ),
-            r#" ORDER BY "timestamp" ASC"#,
-            &format!(" LIMIT {limit}"),
-        )
-        .await
+                    escape(run_id)
+                ),
+                r#" ORDER BY "timestamp" DESC"#,
+                &format!(" LIMIT {limit}"),
+            )
+            .await?;
+        spans.reverse();
+        Ok(spans)
     }
 
     async fn logs_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<LogRow>> {
-        self.select_logs(
-            &format!(r#""parallax.run.id" = '{}'"#, escape(run_id)),
-            r#" ORDER BY "timestamp" ASC"#,
-            &format!(" LIMIT {limit}"),
-        )
-        .await
+        let mut logs = self
+            .select_logs(
+                &format!(r#""parallax.run.id" = '{}'"#, escape(run_id)),
+                r#" ORDER BY "timestamp" DESC"#,
+                &format!(" LIMIT {limit}"),
+            )
+            .await?;
+        logs.reverse();
+        Ok(logs)
     }
 
     async fn logs_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<LogRow>> {
@@ -832,7 +842,7 @@ impl TelemetryStore for GreptimeStore {
                 .await?
             }
             SignalKind::Logs => {
-                let clauses = log_filter_clauses(service, &range, None, None);
+                let clauses = log_filter_clauses(service, &range, None, None, None);
                 self.sql_lenient(&format!(
                     r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "timestamp") AS BIGINT)
                               AS "bucket_ns", COUNT(*) AS "n"
@@ -1321,10 +1331,12 @@ impl TelemetryStore for GreptimeStore {
         service: Option<&str>,
         range: RangeInclusive<u128>,
         severity_min: Option<i32>,
+        severity_max: Option<i32>,
         body_contains: Option<&str>,
         limit: usize,
     ) -> anyhow::Result<Vec<LogRow>> {
-        let clauses = log_filter_clauses(service, &range, severity_min, body_contains);
+        let clauses =
+            log_filter_clauses(service, &range, severity_min, severity_max, body_contains);
         let rows = self
             .sql_lenient(&format!(
                 r#"SELECT CAST("timestamp" AS BIGINT) AS "ts_nanos",
@@ -1462,11 +1474,13 @@ impl TelemetryStore for GreptimeStore {
         service: Option<&str>,
         range: RangeInclusive<u128>,
         severity_min: Option<i32>,
+        severity_max: Option<i32>,
         body_contains: Option<&str>,
         step_nanos: u128,
     ) -> anyhow::Result<Vec<SeriesPoint>> {
         let step_secs = (step_nanos / 1_000_000_000).max(1);
-        let clauses = log_filter_clauses(service, &range, severity_min, body_contains);
+        let clauses =
+            log_filter_clauses(service, &range, severity_min, severity_max, body_contains);
         let rows = self
             .sql_lenient(&format!(
                 r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "timestamp") AS BIGINT)

@@ -172,8 +172,9 @@ impl TelemetryStore for MemoryStore {
             .filter(|s| s.run_id.as_deref() == Some(run_id))
             .cloned()
             .collect();
-        spans.sort_by_key(|s| s.ts_nanos);
+        spans.sort_by_key(|s| std::cmp::Reverse(s.ts_nanos));
         spans.truncate(limit);
+        spans.sort_by_key(|s| s.ts_nanos);
         Ok(spans)
     }
 
@@ -185,8 +186,9 @@ impl TelemetryStore for MemoryStore {
             .filter(|l| l.run_id.as_deref() == Some(run_id))
             .cloned()
             .collect();
-        logs.sort_by_key(|l| l.ts_nanos);
+        logs.sort_by_key(|l| std::cmp::Reverse(l.ts_nanos));
         logs.truncate(limit);
+        logs.sort_by_key(|l| l.ts_nanos);
         Ok(logs)
     }
 
@@ -717,6 +719,7 @@ impl TelemetryStore for MemoryStore {
         service: Option<&str>,
         range: RangeInclusive<u128>,
         severity_min: Option<i32>,
+        severity_max: Option<i32>,
         body_contains: Option<&str>,
         limit: usize,
     ) -> anyhow::Result<Vec<LogRow>> {
@@ -728,6 +731,7 @@ impl TelemetryStore for MemoryStore {
                 range.contains(&l.ts_nanos)
                     && service.is_none_or(|svc| l.service == svc)
                     && severity_min.is_none_or(|min| l.severity_num >= min)
+                    && severity_max.is_none_or(|max| l.severity_num <= max)
                     && body_contains.is_none_or(|needle| l.body.contains(needle))
             })
             .cloned()
@@ -849,6 +853,7 @@ impl TelemetryStore for MemoryStore {
         service: Option<&str>,
         range: RangeInclusive<u128>,
         severity_min: Option<i32>,
+        severity_max: Option<i32>,
         body_contains: Option<&str>,
         step_nanos: u128,
     ) -> anyhow::Result<Vec<SeriesPoint>> {
@@ -858,6 +863,7 @@ impl TelemetryStore for MemoryStore {
             range.contains(&l.ts_nanos)
                 && service.is_none_or(|svc| l.service == svc)
                 && severity_min.is_none_or(|min| l.severity_num >= min)
+                && severity_max.is_none_or(|max| l.severity_num <= max)
                 && body_contains.is_none_or(|needle| l.body.contains(needle))
         }) {
             *buckets.entry((log.ts_nanos / step) * step).or_default() += 1;
@@ -926,12 +932,94 @@ mod tests {
         }
     }
 
+    fn log(run_id: Option<&str>, ts: u128, severity_num: i32) -> LogRow {
+        LogRow {
+            ts_nanos: ts,
+            service: "api".into(),
+            severity_num,
+            severity_text: format!("S{severity_num}"),
+            body: format!("log-{ts}"),
+            trace_id: format!("trace-{ts}"),
+            span_id: format!("span-{ts}"),
+            run_id: run_id.map(Into::into),
+            scope_name: String::new(),
+            attributes: serde_json::Value::Null,
+            resource: serde_json::Value::Null,
+        }
+    }
+
     fn query(service: Option<&str>) -> TraceQuery {
         TraceQuery {
             service: service.map(Into::into),
             limit: 50,
             ..Default::default()
         }
+    }
+
+    #[tokio::test]
+    async fn run_anchored_reads_keep_newest_limit_in_ascending_order() {
+        let store = MemoryStore::new();
+        let mut spans = Vec::new();
+        let mut logs = Vec::new();
+        for index in 0..250u128 {
+            let mut span = span(
+                &format!("trace-{index}"),
+                &format!("span-{index}"),
+                None,
+                "api",
+                index,
+            );
+            span.run_id = Some("run-1".into());
+            spans.push(span);
+            logs.push(log(Some("run-1"), index, 9));
+        }
+        store
+            .ingest_traces(spans, bytes::Bytes::new())
+            .await
+            .unwrap();
+        store.ingest_logs(logs, bytes::Bytes::new()).await.unwrap();
+
+        let spans = store.spans_by_run("run-1", 200).await.unwrap();
+        let logs = store.logs_by_run("run-1", 200).await.unwrap();
+
+        assert_eq!(spans.len(), 200);
+        assert_eq!(logs.len(), 200);
+        assert_eq!(spans.first().map(|span| span.ts_nanos), Some(50));
+        assert_eq!(logs.first().map(|log| log.ts_nanos), Some(50));
+        assert_eq!(spans.last().map(|span| span.ts_nanos), Some(249));
+        assert_eq!(logs.last().map(|log| log.ts_nanos), Some(249));
+    }
+
+    #[tokio::test]
+    async fn log_severity_max_bounds_search_and_count_series() {
+        let store = MemoryStore::new();
+        store
+            .ingest_logs(
+                vec![
+                    log(None, 5, 5),
+                    log(None, 9, 9),
+                    log(None, 13, 13),
+                    log(None, 17, 17),
+                ],
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+
+        let logs = store
+            .logs_search(None, 0..=100, Some(5), Some(8), None, 10)
+            .await
+            .unwrap();
+        let series = store
+            .log_count_series(None, 0..=100, Some(5), Some(8), None, 1)
+            .await
+            .unwrap();
+
+        assert_eq!(
+            logs.iter().map(|log| log.severity_num).collect::<Vec<_>>(),
+            vec![5]
+        );
+        assert_eq!(series.iter().map(|point| point.value).sum::<f64>(), 1.0);
     }
 
     // A non-root span of a participating service surfaces the whole trace,

@@ -61,6 +61,10 @@ run in parallel.
   semantics — re-run both test suites after the second lands. 026 defers
   cross-*source* `error_type` divergence (entangled with 019's structured-field
   work).
+- 021 unblocks the run/log UI follow-up: the runs redesign (plan 017) can rely
+  on `logsByRun` preserving the newest rows under the limit and should default
+  the run page to INFO+ (`severityMin: 9`) with a DEBUG/TRACE toggle; the logs
+  redesign (plan 014) can expose severity ranges through `severityMax`.
 - 024 (depth/complexity guard) should land before 031 (ecosystem graph
   fan-out) and ideally before 030 (attribute-compare fan-out); both are safe
   without it but cheaper to reason about after.
@@ -111,7 +115,7 @@ issue-derivation semantics — re-run both test suites after the second lands.
 |------|-------|----------|--------|------------|--------|
 | 019 | Fingerprint normalization v2 (issue over-splitting) | P1 | M | — | DONE |
 | 020 | Spool retention: rotation + reaper + doctor | P1 | M | — | DONE |
-| 021 | Anchored log/span queries newest-first + severityMax | P2 | S | — | TODO |
+| 021 | Anchored log/span queries newest-first + severityMax | P2 | S | — | DONE |
 
 ## Verification baseline
 
