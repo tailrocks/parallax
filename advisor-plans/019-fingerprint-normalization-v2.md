@@ -49,7 +49,6 @@ pub fn fingerprint(error_type: &str, message: &str, stacktrace: Option<&str>) ->
 - Issue storage keyed by fingerprint: `crates/parallax-storage/src/metadata.rs:136` `upsert_issue_occurrence`; per-issue tag cache `merge_tags` `metadata.rs:85` (drops `exception.*`, caps 16 keys × 8 values × 64 chars).
 - Tests: inline `#[cfg(test)]` in `fingerprint.rs` (`:65+`, e.g. `volatile_tokens_group_together` — `cache-7` vs `cache-9` collapse because `-7`→`<n>`; alpha-suffixed hosts would NOT).
 - Existing rows: `issues` (Turso) and `error_events` (GreptimeDB) store historical fingerprints; changing the algorithm forks history.
-- Conventions (repo AGENTS.md, verified by prior recon): work on `main`; Conventional Commits + `-s` + exactly one `Co-authored-by: Claude <noreply@anthropic.com>` trailer; `cargo nextest run --workspace`; clippy `-D warnings`; any new `TelemetryStore` method must be implemented in both `greptime.rs` and `memory.rs`; contract changes go to `docs/research/architecture/v1-implementation-spec.md` first.
 
 ## Commands you will need
 
@@ -66,7 +65,7 @@ pub fn fingerprint(error_type: &str, message: &str, stacktrace: Option<&str>) ->
 
 ## Git workflow
 
-- Work on `main` (repo convention — no PR flow). One commit per step, `git commit -s`, subject e.g. `fix(core): normalize top stack frame in fingerprints`, single Claude co-author trailer.
+- Work on `main` (repo convention — no PR flow). One commit per step, `git commit -s`, subject e.g. `fix(core): normalize top stack frame in fingerprints`.
 
 ## Steps
 

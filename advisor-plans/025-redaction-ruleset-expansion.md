@@ -65,8 +65,7 @@ the gap is live in every exported bundle.
 
 ## Git workflow
 
-- `main`, Conventional Commits, `git commit -s`, one agent trailer. Push when
-  done.
+- `main`, Conventional Commits, `git commit -s`. Push when done.
 
 ## Steps
 

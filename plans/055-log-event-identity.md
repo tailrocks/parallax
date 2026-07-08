@@ -155,7 +155,6 @@ All excerpts verified at commit `ed5b10f`.
 ## Git workflow
 
 - Repo `main` (BRANCHING.md), Conventional Commits, `git commit -s`, exactly
-  one `Co-authored-by: Claude <noreply@anthropic.com>` trailer. Push when
   done.
 
 ## Steps

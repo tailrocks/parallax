@@ -78,8 +78,7 @@ this plan — see Step 5.)
 
 ## Git workflow
 
-- `main`, Conventional Commits, `git commit -s`, one agent trailer. Push when
-  done.
+- `main`, Conventional Commits, `git commit -s`. Push when done.
 
 ## Steps
 

@@ -114,9 +114,7 @@ admits `EXPLAIN` — and on DataFusion-backed engines `EXPLAIN ANALYZE <stmt>`
 ## Git workflow
 
 - Work directly on `main` (repo rule, `BRANCHING.md`).
-- Conventional Commits, DCO signoff, exactly one agent trailer:
-  `git commit -s -m "fix(storage): …"` +
-  `Co-authored-by: Claude <noreply@anthropic.com>`.
+- Conventional Commits, DCO signoff, `git commit -s -m "fix(storage): …"` +
 - Push after the plan is done (repo rule in `AGENTS.md`).
 
 ## Steps

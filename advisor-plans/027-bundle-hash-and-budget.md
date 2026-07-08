@@ -81,8 +81,7 @@ metric windows blow past `max_tokens` exactly when context is largest.
 
 ## Git workflow
 
-- `main`, Conventional Commits, `git commit -s`, one agent trailer. Push when
-  done.
+- `main`, Conventional Commits, `git commit -s`. Push when done.
 
 ## Steps
 

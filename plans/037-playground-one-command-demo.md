@@ -133,7 +133,6 @@ All excerpts verified at playground commit `ed1f975`.
 ## Git workflow
 
 - Playground repo, `main`, Conventional Commits, `git commit -s`, one
-  `Co-authored-by: Claude <noreply@anthropic.com>` trailer. Push when done.
 
 ## Steps
 
