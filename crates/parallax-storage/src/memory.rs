@@ -3,8 +3,8 @@
 
 use crate::adapter::{
     ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow, MAX_ROWS,
-    OverviewTotals, SERVICE_MAP_TRACE_CAP, ServiceEdge, ServiceSummary, SignalKind, SpanRed,
-    TelemetryStore, attribute_compare_key_allowed, attribute_compare_score,
+    OverviewTotals, ReleaseWindow, SERVICE_MAP_TRACE_CAP, ServiceEdge, ServiceSummary, SignalKind,
+    SpanRed, TelemetryStore, attribute_compare_key_allowed, attribute_compare_score,
     attribute_compare_value_allowed,
 };
 use crate::model::*;
@@ -489,6 +489,44 @@ impl TelemetryStore for MemoryStore {
             .collect();
         summaries.sort_by_key(|s| std::cmp::Reverse(s.last_seen_nanos));
         Ok(summaries)
+    }
+
+    async fn release_windows(
+        &self,
+        service: &str,
+        range: RangeInclusive<u128>,
+    ) -> anyhow::Result<Vec<ReleaseWindow>> {
+        let inner = self.lock();
+        let mut by_version: BTreeMap<String, ReleaseWindow> = BTreeMap::new();
+        for span in inner
+            .spans
+            .iter()
+            .filter(|s| s.service == service && range.contains(&s.ts_nanos))
+        {
+            let Some(version) = span
+                .resource
+                .get("service.version")
+                .and_then(|value| value.as_str())
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+            else {
+                continue;
+            };
+            let window = by_version
+                .entry(version.to_string())
+                .or_insert_with(|| ReleaseWindow {
+                    version: version.to_string(),
+                    first_seen_nanos: span.ts_nanos,
+                    last_seen_nanos: span.ts_nanos,
+                    span_count: 0,
+                });
+            window.first_seen_nanos = window.first_seen_nanos.min(span.ts_nanos);
+            window.last_seen_nanos = window.last_seen_nanos.max(span.ts_nanos);
+            window.span_count += 1;
+        }
+        let mut windows: Vec<_> = by_version.into_values().collect();
+        windows.sort_by_key(|window| (window.first_seen_nanos, window.version.clone()));
+        Ok(windows)
     }
 
     async fn span_red_series(
@@ -1245,6 +1283,43 @@ mod tests {
         let mut row = span(trace, span_id, None, "checkout", ts);
         row.attributes = attrs;
         row
+    }
+
+    fn span_with_release(trace: &str, span_id: &str, ts: u128, version: &str) -> SpanRow {
+        let mut row = span(trace, span_id, None, "checkout", ts);
+        row.resource = serde_json::json!({ "service.version": version });
+        row
+    }
+
+    #[tokio::test]
+    async fn release_windows_group_versions_by_service_and_range() {
+        let store = MemoryStore::new();
+        store
+            .ingest_traces(
+                vec![
+                    span_with_release("t1", "a", 10, "v1"),
+                    span_with_release("t2", "a", 20, "v1"),
+                    span_with_release("t3", "a", 40, "v2"),
+                    span_with_release("t4", "a", 60, "v2"),
+                    span("other", "a", None, "catalog", 30),
+                    span_with_release("too-late", "a", 90, "v3"),
+                ],
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+
+        let windows = store.release_windows("checkout", 0..=80).await.unwrap();
+
+        assert_eq!(windows.len(), 2);
+        assert_eq!(windows[0].version, "v1");
+        assert_eq!(windows[0].first_seen_nanos, 10);
+        assert_eq!(windows[0].last_seen_nanos, 20);
+        assert_eq!(windows[0].span_count, 2);
+        assert_eq!(windows[1].version, "v2");
+        assert_eq!(windows[1].first_seen_nanos, 40);
+        assert_eq!(windows[1].last_seen_nanos, 60);
+        assert_eq!(windows[1].span_count, 2);
     }
 
     #[tokio::test]

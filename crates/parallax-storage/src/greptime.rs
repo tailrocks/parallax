@@ -3,8 +3,8 @@
 
 use crate::adapter::{
     ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow, MAX_ROWS,
-    OverviewTotals, SERVICE_MAP_TRACE_CAP, ServiceEdge, ServiceSummary, SignalKind, SpanRed,
-    TelemetryStore, attribute_compare_key_allowed, attribute_compare_score,
+    OverviewTotals, ReleaseWindow, SERVICE_MAP_TRACE_CAP, ServiceEdge, ServiceSummary, SignalKind,
+    SpanRed, TelemetryStore, attribute_compare_key_allowed, attribute_compare_score,
     attribute_compare_value_allowed,
 };
 use crate::model::*;
@@ -59,6 +59,12 @@ fn is_missing_table(error: &anyhow::Error) -> bool {
         .to_string()
         .to_ascii_lowercase()
         .contains("table not found")
+}
+
+fn is_missing_column(error: &anyhow::Error) -> bool {
+    let message = error.to_string().to_ascii_lowercase();
+    (message.contains("column") || message.contains("field"))
+        && (message.contains("not found") || message.contains("not exist"))
 }
 
 fn json_literal(value: &serde_json::Value) -> String {
@@ -1058,6 +1064,46 @@ impl TelemetryStore for GreptimeStore {
                     span_count: u128_at(row, 2) as u64,
                     error_count: u128_at(row, 3) as u64,
                     p95_ms: Some(f64_at(row, 4) / 1_000_000.0),
+                })
+            })
+            .collect())
+    }
+
+    async fn release_windows(
+        &self,
+        service: &str,
+        range: RangeInclusive<u128>,
+    ) -> anyhow::Result<Vec<ReleaseWindow>> {
+        let sql = format!(
+            r#"SELECT "resource_attributes.service.version" AS "version",
+                      MIN(CAST("timestamp" AS BIGINT)) AS "first_seen_nanos",
+                      MAX(CAST("timestamp" AS BIGINT)) AS "last_seen_nanos",
+                      COUNT(*) AS "span_count"
+               FROM opentelemetry_traces
+               WHERE "service_name" = '{}'
+                 AND "timestamp" >= {}
+                 AND "timestamp" <= {}
+                 AND "resource_attributes.service.version" IS NOT NULL
+                 AND "resource_attributes.service.version" != ''
+               GROUP BY "resource_attributes.service.version"
+               ORDER BY "first_seen_nanos" ASC, "version" ASC"#,
+            escape(service),
+            sql_ts(*range.start()),
+            sql_ts(*range.end()),
+        );
+        let rows = match self.sql(&sql).await {
+            Err(error) if is_missing_table(&error) || is_missing_column(&error) => Vec::new(),
+            other => other?,
+        };
+        Ok(rows
+            .iter()
+            .filter_map(|row| {
+                let version = str_at(row, 0);
+                (!version.is_empty()).then(|| ReleaseWindow {
+                    version,
+                    first_seen_nanos: u128_at(row, 1),
+                    last_seen_nanos: u128_at(row, 2),
+                    span_count: u128_at(row, 3) as u64,
                 })
             })
             .collect())

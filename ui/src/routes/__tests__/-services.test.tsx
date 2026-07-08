@@ -61,6 +61,14 @@ const detailFixture: ServiceDetailData = {
     latencyP95: [],
     latencyP99: [],
   },
+  releases: [
+    {
+      version: "v1",
+      firstSeenNanos: "1719999900000000000",
+      lastSeenNanos: "1719999980000000000",
+      spanCount: "10",
+    },
+  ],
   httpDurationExemplars: [],
   rpcDurationExemplars: [],
   tracesPage: {
@@ -169,6 +177,8 @@ describe("Services route", () => {
     )
 
     expect((await screen.findAllByText("Requests")).length).toBeGreaterThan(0)
+    expect(screen.getByText("Releases")).toBeTruthy()
+    expect(screen.getByText("v1")).toBeTruthy()
     expect(screen.getByText("Error rate")).toBeTruthy()
     expect(screen.getByText("p95 latency")).toBeTruthy()
     expect(screen.queryByText("Runtime metrics")).toBeNull()

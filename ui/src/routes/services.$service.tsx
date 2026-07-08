@@ -61,7 +61,12 @@ import {
 } from "@/components/ui/table"
 import { gqlString, graphql } from "@/lib/api"
 import type { TraceSummary } from "@/lib/api"
-import { formatCount, formatDurationNs, formatPercent } from "@/lib/format"
+import {
+  formatCount,
+  formatDateTime,
+  formatDurationNs,
+  formatPercent,
+} from "@/lib/format"
 import {
   mergeRangeSearch,
   rangeLinkSearch,
@@ -105,9 +110,17 @@ export interface MetricExemplar {
   attributes: string
 }
 
+export interface ReleaseWindow {
+  version: string
+  firstSeenNanos: string
+  lastSeenNanos: string
+  spanCount: string
+}
+
 export interface ServiceDetailData {
   red: SpanRed
   overview: ServiceOverview
+  releases: ReleaseWindow[]
   httpDurationExemplars: MetricExemplar[]
   rpcDurationExemplars: MetricExemplar[]
   tracesPage: { items: TraceSummary[] }
@@ -165,6 +178,9 @@ export async function loadServiceDetail(service: string, range: ResolvedRange) {
         latencyP50 { tsNanos value }
         latencyP95 { tsNanos value }
         latencyP99 { tsNanos value }
+      }
+      releases(service: "${escaped}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}") {
+        version firstSeenNanos lastSeenNanos spanCount
       }
       httpDurationExemplars: metricExemplars(name: "http.server.request.duration", service: "${escaped}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", limit: 50) {
         tsNanos service name value traceId spanId runId attributes
@@ -402,6 +418,8 @@ export function ServiceDetailContent({
         }
       />
 
+      <ReleaseStrip releases={data.releases} range={range} />
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={IconActivityHeartbeat}
@@ -455,6 +473,63 @@ export function ServiceDetailContent({
 
       <InfraBand overview={data.overview} />
       <RecentTraces traces={traces} />
+    </div>
+  )
+}
+
+function ReleaseStrip({
+  releases,
+  range,
+}: {
+  releases: ReleaseWindow[]
+  range: ResolvedRange
+}) {
+  const segments = useMemo(() => {
+    const from = BigInt(range.fromNanos)
+    const to = BigInt(range.toNanos)
+    const total = to - from
+    if (total <= 0n) return []
+    return releases.map((release) => {
+      const first = BigInt(release.firstSeenNanos)
+      const last = BigInt(release.lastSeenNanos)
+      const start = first < from ? from : first > to ? to : first
+      const end = last < from ? from : last > to ? to : last
+      const left = Number(((start - from) * 10_000n) / total) / 100
+      const duration = end > start ? end - start : 1n
+      const rawWidth = Number((duration * 10_000n) / total) / 100
+      const width = Math.max(4, Math.min(100 - left, rawWidth))
+      return {
+        ...release,
+        left,
+        width,
+        title: `${release.version}: ${formatDateTime(release.firstSeenNanos)} - ${formatDateTime(release.lastSeenNanos)} (${formatCount(Number(release.spanCount))} spans)`,
+      }
+    })
+  }, [range.fromNanos, range.toNanos, releases])
+
+  if (segments.length === 0) return null
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-sm font-medium">Releases</h2>
+        <Badge variant="secondary">{segments.length} versions</Badge>
+      </div>
+      <div className="relative h-9 overflow-hidden rounded-md border bg-muted/30">
+        {segments.map((segment) => (
+          <div
+            key={`${segment.version}-${segment.firstSeenNanos}`}
+            className="absolute inset-y-1 flex min-w-12 items-center justify-center truncate rounded-sm border border-primary/30 bg-primary/15 px-2 text-xs font-medium text-primary"
+            style={{
+              left: `${segment.left}%`,
+              width: `${segment.width}%`,
+            }}
+            title={segment.title}
+          >
+            {segment.version}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

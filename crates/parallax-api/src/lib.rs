@@ -11,8 +11,9 @@ use juniper::{EmptySubscription, FieldError, FieldResult, RootNode, graphql_obje
 use parallax_core::{gaps, story, trace_analysis};
 use parallax_storage::adapter::{
     ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow as StorageAttributeCompareRow, OverviewTotals,
-    SERVICE_MAP_TRACE_CAP, ServiceEdge as StorageServiceEdge,
-    ServiceSummary as StorageServiceSummary, SpanRed as StorageSpanRed, TelemetryStore,
+    ReleaseWindow as StorageReleaseWindow, SERVICE_MAP_TRACE_CAP,
+    ServiceEdge as StorageServiceEdge, ServiceSummary as StorageServiceSummary,
+    SpanRed as StorageSpanRed, TelemetryStore,
 };
 use parallax_storage::metadata::MetadataStore;
 use parallax_storage::model;
@@ -887,6 +888,24 @@ impl ServiceSummary {
     }
 }
 
+pub struct ReleaseWindow(StorageReleaseWindow);
+
+#[graphql_object(context = ApiContext)]
+impl ReleaseWindow {
+    fn version(&self) -> &str {
+        &self.0.version
+    }
+    fn first_seen_nanos(&self) -> String {
+        nanos_string(self.0.first_seen_nanos)
+    }
+    fn last_seen_nanos(&self) -> String {
+        nanos_string(self.0.last_seen_nanos)
+    }
+    fn span_count(&self) -> String {
+        self.0.span_count.to_string()
+    }
+}
+
 #[derive(Clone)]
 pub struct ServiceNodeData {
     name: String,
@@ -1298,6 +1317,22 @@ impl Query {
             .await
             .map_err(field_err)?;
         Ok(services.into_iter().map(ServiceSummary).collect())
+    }
+
+    /// Per-version service release windows in the selected time range.
+    async fn releases(
+        context: &ApiContext,
+        service: String,
+        from_nanos: String,
+        to_nanos: String,
+    ) -> FieldResult<Vec<ReleaseWindow>> {
+        let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+        let windows = context
+            .store
+            .release_windows(&service, from..=to)
+            .await
+            .map_err(field_err)?;
+        Ok(windows.into_iter().map(ReleaseWindow).collect())
     }
 
     /// Trace-path service graph over a bounded set of traces in the window.
@@ -2712,6 +2747,18 @@ mod tests {
         }
     }
 
+    fn span_with_release(
+        service: &str,
+        trace_id: &str,
+        span_id: &str,
+        ts_nanos: u128,
+        version: &str,
+    ) -> SpanRow {
+        let mut row = span(service, trace_id, span_id, ts_nanos, 1_000);
+        row.resource = serde_json::json!({ "service.version": version });
+        row
+    }
+
     async fn context_with_memory(store: Arc<MemoryStore>) -> ApiContext {
         let mut path = std::env::temp_dir();
         path.push(format!(
@@ -2934,6 +2981,62 @@ mod tests {
             })
             .span_count(),
             "2147483648"
+        );
+    }
+
+    #[tokio::test]
+    async fn releases_resolver_returns_service_windows() {
+        let store = Arc::new(MemoryStore::new());
+        store
+            .ingest_traces(
+                vec![
+                    span_with_release("checkout", "t1", "a", 10, "v1"),
+                    span_with_release("checkout", "t2", "a", 30, "v1"),
+                    span_with_release("checkout", "t3", "a", 50, "v2"),
+                    span_with_release("catalog", "t4", "a", 20, "v9"),
+                ],
+                Default::default(),
+            )
+            .await
+            .unwrap();
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"
+            {
+              releases(service: "checkout", fromNanos: "0", toNanos: "100") {
+                version firstSeenNanos lastSeenNanos spanCount
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(error_messages(&json).is_empty(), "releases query: {json}");
+        assert_eq!(
+            json.pointer("/data/releases/0/version"),
+            Some(&serde_json::json!("v1"))
+        );
+        assert_eq!(
+            json.pointer("/data/releases/0/firstSeenNanos"),
+            Some(&serde_json::json!("10"))
+        );
+        assert_eq!(
+            json.pointer("/data/releases/0/lastSeenNanos"),
+            Some(&serde_json::json!("30"))
+        );
+        assert_eq!(
+            json.pointer("/data/releases/0/spanCount"),
+            Some(&serde_json::json!("2"))
+        );
+        assert_eq!(
+            json.pointer("/data/releases/1/version"),
+            Some(&serde_json::json!("v2"))
         );
     }
 

@@ -82,6 +82,14 @@ pub struct ServiceSummary {
     pub p95_ms: Option<f64>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReleaseWindow {
+    pub version: String,
+    pub first_seen_nanos: u128,
+    pub last_seen_nanos: u128,
+    pub span_count: u64,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SignalKind {
     Spans,
@@ -307,6 +315,12 @@ pub trait TelemetryStore: Send + Sync {
         &self,
         range: RangeInclusive<u128>,
     ) -> anyhow::Result<Vec<ServiceSummary>>;
+    /// Per-version activity windows for one service, ordered by first sighting.
+    async fn release_windows(
+        &self,
+        service: &str,
+        range: RangeInclusive<u128>,
+    ) -> anyhow::Result<Vec<ReleaseWindow>>;
     /// Trace-derived RED series; works even when a service emits no metrics.
     async fn span_red_series(
         &self,
