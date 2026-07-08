@@ -10,5 +10,6 @@ pub mod derive;
 pub mod fingerprint;
 pub mod gaps;
 pub mod normalize;
+pub mod span_events;
 pub mod story;
 pub mod trace_analysis;

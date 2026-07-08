@@ -8,7 +8,7 @@
 //! auto-camelCased; cost limits are resolver-level caps in V1.
 
 use juniper::{EmptySubscription, FieldError, FieldResult, RootNode, graphql_object};
-use parallax_core::{gaps, story, trace_analysis};
+use parallax_core::{gaps, span_events, story, trace_analysis};
 use parallax_storage::adapter::{
     ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow as StorageAttributeCompareRow,
     FieldKey as StorageFieldKey, FieldSource, FieldStats as StorageFieldStats,
@@ -21,7 +21,7 @@ use parallax_storage::adapter::{
 use parallax_storage::metadata::MetadataStore;
 use parallax_storage::model;
 use parallax_storage::model::{MetricAgg, SeriesPoint};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::Arc;
 
 /// Request context: the storage adapters.
@@ -326,9 +326,10 @@ fn span_links_from_value(links: &serde_json::Value) -> Vec<SpanLink> {
 
 fn linked_trace_ids(spans: &[model::SpanRow], anchor_trace_id: &str) -> Vec<String> {
     let mut ids = Vec::new();
+    let mut seen = HashSet::new();
     for span in spans {
         for link in span_links_from_value(&span.links) {
-            if link.trace_id == anchor_trace_id || ids.contains(&link.trace_id) {
+            if link.trace_id == anchor_trace_id || !seen.insert(link.trace_id.clone()) {
                 continue;
             }
             ids.push(link.trace_id);
@@ -450,6 +451,46 @@ impl Trace {
     }
     fn spans(&self) -> Vec<Span> {
         self.spans.iter().cloned().map(Span).collect()
+    }
+}
+
+pub struct TraceEvent(span_events::TraceEvent);
+
+#[graphql_object(context = ApiContext)]
+impl TraceEvent {
+    fn span_id(&self) -> &str {
+        &self.0.span_id
+    }
+    fn span_name(&self) -> &str {
+        &self.0.span_name
+    }
+    fn service(&self) -> &str {
+        &self.0.service
+    }
+    fn name(&self) -> &str {
+        &self.0.name
+    }
+    fn time_unix_nano(&self) -> String {
+        nanos_string(self.0.time_unix_nano)
+    }
+    fn attributes(&self) -> String {
+        let attributes: BTreeMap<_, _> = self.0.attributes.iter().cloned().collect();
+        serde_json::to_string(&attributes).unwrap_or_else(|_| "{}".to_string())
+    }
+}
+
+pub struct TraceEventsOut(span_events::TraceEvents);
+
+#[graphql_object(context = ApiContext)]
+impl TraceEventsOut {
+    fn events(&self) -> Vec<TraceEvent> {
+        self.0.events.iter().cloned().map(TraceEvent).collect()
+    }
+    fn truncated(&self) -> bool {
+        self.0.truncated()
+    }
+    fn skipped_spans(&self) -> i32 {
+        saturate_i32(self.0.skipped_spans as u64)
     }
 }
 
@@ -860,9 +901,11 @@ impl Run {
                     .await
                     .map_err(field_err)?;
                 let mut trace_ids: Vec<String> = Vec::new();
+                let mut seen_trace_ids = HashSet::new();
                 for span in &spans {
-                    if !trace_ids.contains(&span.trace_id) {
-                        trace_ids.push(span.trace_id.clone());
+                    let trace_id = span.trace_id.clone();
+                    if seen_trace_ids.insert(trace_id.clone()) {
+                        trace_ids.push(trace_id);
                     }
                 }
                 let events = context
@@ -911,9 +954,11 @@ impl Run {
     async fn issues(&self, context: &ApiContext) -> FieldResult<Vec<Issue>> {
         let stats = self.stats(context).await?;
         let mut fingerprints: Vec<String> = Vec::new();
+        let mut seen_fingerprints = HashSet::new();
         for event in &stats.events {
-            if !fingerprints.contains(&event.fingerprint) {
-                fingerprints.push(event.fingerprint.clone());
+            let fingerprint = event.fingerprint.clone();
+            if seen_fingerprints.insert(fingerprint.clone()) {
+                fingerprints.push(fingerprint);
             }
         }
         let issues = context
@@ -1742,6 +1787,27 @@ impl Query {
         Ok(Some(Trace { trace_id, spans }))
     }
 
+    /// Parsed span events across one trace, time ascending. `namePrefix`
+    /// filters by event name (for example "rpc.message" or "exception").
+    async fn trace_events(
+        context: &ApiContext,
+        trace_id: String,
+        name_prefix: Option<String>,
+        limit: Option<i32>,
+    ) -> FieldResult<TraceEventsOut> {
+        let spans = context
+            .store
+            .spans_by_trace(&trace_id)
+            .await
+            .map_err(field_err)?;
+        let name_prefix = name_prefix.as_deref().filter(|prefix| !prefix.is_empty());
+        Ok(TraceEventsOut(span_events::trace_events(
+            &spans,
+            name_prefix,
+            clamp_limit(limit, 500),
+        )))
+    }
+
     /// Summaries for traces referenced by this trace's span links.
     async fn linked_traces(
         context: &ApiContext,
@@ -1821,10 +1887,14 @@ impl Query {
             .await
             .map_err(field_err)?;
         let mut by_trace: Vec<(String, Vec<model::SpanRow>)> = Vec::new();
+        let mut trace_indexes: HashMap<String, usize> = HashMap::new();
         for span in spans {
-            match by_trace.iter_mut().find(|(t, _)| *t == span.trace_id) {
-                Some((_, group)) => group.push(span),
-                None => by_trace.push((span.trace_id.clone(), vec![span])),
+            let trace_id = span.trace_id.clone();
+            if let Some(index) = trace_indexes.get(&trace_id).copied() {
+                by_trace[index].1.push(span);
+            } else {
+                trace_indexes.insert(trace_id.clone(), by_trace.len());
+                by_trace.push((trace_id, vec![span]));
             }
         }
         let mut summaries: Vec<parallax_storage::adapter::TraceSummary> = by_trace
@@ -2445,9 +2515,11 @@ impl Query {
                 .await
                 .map_err(field_err)?;
             let mut trace_ids: Vec<String> = Vec::new();
+            let mut seen_trace_ids = HashSet::new();
             for span in &spans {
-                if !trace_ids.contains(&span.trace_id) {
-                    trace_ids.push(span.trace_id.clone());
+                let trace_id = span.trace_id.clone();
+                if seen_trace_ids.insert(trace_id.clone()) {
+                    trace_ids.push(trace_id);
                 }
             }
             let events = context
@@ -2456,9 +2528,11 @@ impl Query {
                 .await
                 .map_err(field_err)?;
             let mut fingerprints: Vec<String> = Vec::new();
+            let mut seen_fingerprints = HashSet::new();
             for event in &events {
-                if !fingerprints.contains(&event.fingerprint) {
-                    fingerprints.push(event.fingerprint.clone());
+                let fingerprint = event.fingerprint.clone();
+                if seen_fingerprints.insert(fingerprint.clone()) {
+                    fingerprints.push(fingerprint);
                 }
             }
             let issues = context
@@ -2508,9 +2582,11 @@ impl Query {
                 .await
                 .map_err(field_err)?;
             let mut fingerprints: Vec<String> = Vec::new();
+            let mut seen_fingerprints = HashSet::new();
             for event in &events {
-                if !fingerprints.contains(&event.fingerprint) {
-                    fingerprints.push(event.fingerprint.clone());
+                let fingerprint = event.fingerprint.clone();
+                if seen_fingerprints.insert(fingerprint.clone()) {
+                    fingerprints.push(fingerprint);
                 }
             }
             let issues = context
@@ -3298,6 +3374,128 @@ mod tests {
                 .iter()
                 .any(|message| message.contains("in-memory store")),
             "SELECT passes API guard and reaches memory adapter: {json}"
+        );
+    }
+
+    #[tokio::test]
+    async fn trace_events_filters_orders_and_reports_caps() {
+        let store = Arc::new(MemoryStore::new());
+        let mut root = span("checkout", "trace-a", "span-a", 1_000, 100);
+        root.name = "root".into();
+        root.events = Some(
+            r#"[
+                {"name":"exception","time_unix_nano":30,"attributes":{"message":"bad"}},
+                {"name":"rpc.message.sent","timeUnixNano":"10","attributes":{"message.type":"SENT","id":7}}
+            ]"#
+            .into(),
+        );
+        let mut child = span("payments", "trace-a", "span-b", 2_000, 100);
+        child.name = "client".into();
+        child.events = Some(
+            r#"[{"name":"rpc.message.received","time_unix_nano":20,"attributes":{"message.type":"RECEIVED"}}]"#
+                .into(),
+        );
+        store
+            .ingest_traces(vec![root, child], Default::default())
+            .await
+            .unwrap();
+
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"
+            {
+              traceEvents(traceId: "trace-a", namePrefix: "rpc.message", limit: 1) {
+                truncated
+                skippedSpans
+                events { name spanId spanName service timeUnixNano attributes }
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(
+            error_messages(&json).is_empty(),
+            "traceEvents query succeeds: {json}"
+        );
+        assert_eq!(
+            json.pointer("/data/traceEvents/truncated"),
+            Some(&serde_json::json!(true))
+        );
+        assert_eq!(
+            json.pointer("/data/traceEvents/skippedSpans"),
+            Some(&serde_json::json!(0))
+        );
+        assert_eq!(
+            json.pointer("/data/traceEvents/events/0/name"),
+            Some(&serde_json::json!("rpc.message.sent"))
+        );
+        assert_eq!(
+            json.pointer("/data/traceEvents/events/0/spanId"),
+            Some(&serde_json::json!("span-a"))
+        );
+        assert_eq!(
+            json.pointer("/data/traceEvents/events/0/timeUnixNano"),
+            Some(&serde_json::json!("10"))
+        );
+        assert_eq!(
+            json.pointer("/data/traceEvents/events/0/attributes"),
+            Some(&serde_json::json!(r#"{"id":"7","message.type":"SENT"}"#))
+        );
+    }
+
+    #[tokio::test]
+    async fn trace_events_counts_malformed_span_events() {
+        let store = Arc::new(MemoryStore::new());
+        let mut good = span("checkout", "trace-a", "span-a", 1_000, 100);
+        good.events =
+            Some(r#"[{"name":"rpc.message","time_unix_nano":10,"attributes":{}}]"#.into());
+        let mut bad = span("checkout", "trace-a", "span-b", 2_000, 100);
+        bad.events = Some("{not json".into());
+        store
+            .ingest_traces(vec![good, bad], Default::default())
+            .await
+            .unwrap();
+
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"
+            {
+              traceEvents(traceId: "trace-a") {
+                truncated
+                skippedSpans
+                events { name spanId }
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(
+            error_messages(&json).is_empty(),
+            "traceEvents malformed span query succeeds: {json}"
+        );
+        assert_eq!(
+            json.pointer("/data/traceEvents/skippedSpans"),
+            Some(&serde_json::json!(1))
+        );
+        assert_eq!(
+            json.pointer("/data/traceEvents/truncated"),
+            Some(&serde_json::json!(false))
+        );
+        assert_eq!(
+            json.pointer("/data/traceEvents/events/0/name"),
+            Some(&serde_json::json!("rpc.message"))
         );
     }
 
