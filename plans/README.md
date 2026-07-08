@@ -34,7 +34,7 @@ conditions, run its verification gates, and update your row when done.
 | Plan | Title | Repo | Priority | Effort | Depends on | Status |
 |------|-------|------|----------|--------|------------|--------|
 | 035 | UI correctness & feedback sweep (hooks crash, dead calendar, swallowed failures, delete confirm, fetch races) | parallax | P1 | M | — | DONE |
-| 036 | Playground trace spine (context extraction/injection, ERROR status, baggage, CORS, identity) | **[playground]** | P1 | M | — | TODO |
+| 036 | Playground trace spine (context extraction/injection, ERROR status, baggage, CORS, identity) | **[playground]** | P1 | M | — | DONE |
 | 037 | One-command demo (demo.sh, baseline loadgen, scenario runner/catalog, env contract) | **[playground]** | P1 | M | — | TODO |
 
 ### Wave 2 — UI/UX visualization core (P1-P2)
