@@ -126,7 +126,6 @@ Verified at `ed5b10f` (Parallax) / `ed1f975` (playground).
 ## Git workflow
 
 - Each repo on its own `main`, Conventional Commits, `git commit -s`, one
-  `Co-authored-by: Claude <noreply@anthropic.com>` trailer per commit. Push
   both when done.
 
 ## Steps

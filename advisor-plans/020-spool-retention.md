@@ -37,7 +37,7 @@ Every accepted OTLP request is appended to a per-signal NDJSON spool **before ac
 - Manual reclaim: `crates/parallax-cli/src/doctor.rs:147` (`prune` truncates via `std::fs::write(path, b"")`).
 - Retention config exemplar: `crates/parallax-server/src/config.rs:42-49` + `:95-104` — `[retention]` table already exists for engine TTLs; extend it, don't invent a second config section.
 - Worker forward: `crates/parallax-server/src/worker.rs:56-101` — consumes channel, dual-writes raw bytes to GreptimeDB `/v1/otlp`. There is **no replay-from-spool path today** (nothing reads the spool), so rotation cannot break replay — but the spec calls it a future WAL; keep rotated segments readable NDJSON, don't compress.
-- Conventions: main-branch commits, `-s`, one Claude co-author trailer; zero-copy ingest law (do not add per-request allocation/cloning on the hot path); nextest; clippy `-D warnings`; CLI long-running commands narrate + ready banner.
+- Conventions: main-branch commits, `-s`; zero-copy ingest law (do not add per-request allocation/cloning on the hot path); nextest; clippy `-D warnings`; CLI long-running commands narrate + ready banner.
 
 ## Commands you will need
 
@@ -55,7 +55,7 @@ Every accepted OTLP request is appended to a per-signal NDJSON spool **before ac
 
 ## Git workflow
 
-- `main`, per-step `git commit -s` (`feat(storage): size-rotate ingest spool`, `feat(server): spool retention reaper`, …), one Claude co-author trailer each.
+- `main`, per-step `git commit -s` (`feat(storage): size-rotate ingest spool`, `feat(server): spool retention reaper`, …).
 
 ## Steps
 

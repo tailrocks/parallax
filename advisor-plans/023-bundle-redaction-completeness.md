@@ -102,7 +102,6 @@ exactly the fields most likely to contain secrets.
 ## Git workflow
 
 - `main`, Conventional Commits, `git commit -s`, one
-  `Co-authored-by: Claude <noreply@anthropic.com>` trailer. Push when done.
 
 ## Steps
 

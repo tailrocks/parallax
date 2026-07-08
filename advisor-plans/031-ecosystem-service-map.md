@@ -81,8 +81,7 @@ resolver, rendered as a labelled graph, with the graph mode explicitly stated.
 
 ## Git workflow
 
-- `main`, Conventional Commits, `git commit -s`, one agent trailer. Push when
-  done.
+- `main`, Conventional Commits, `git commit -s`. Push when done.
 
 ## Steps
 

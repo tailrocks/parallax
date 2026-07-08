@@ -96,7 +96,6 @@ the linked traces' summaries so the UI can show *what* is on the other end.
 ## Git workflow
 
 - `main`, Conventional Commits, `git commit -s`, one
-  `Co-authored-by: Claude <noreply@anthropic.com>` trailer per agent commit.
 - Two commits (Rust, then UI) is fine. Push when done.
 
 ## Steps

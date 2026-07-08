@@ -71,8 +71,7 @@ optionally, the bundle's `missing_evidence`.
 
 ## Git workflow
 
-- `main`, Conventional Commits, `git commit -s`, one agent trailer. Push when
-  done.
+- `main`, Conventional Commits, `git commit -s`. Push when done.
 
 ## Steps
 

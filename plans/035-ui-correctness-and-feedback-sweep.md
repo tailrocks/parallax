@@ -185,9 +185,7 @@ All excerpts verified against commit `408be17`.
 ## Git workflow
 
 - Work directly on `main` (repo rule — see `BRANCHING.md`).
-- Conventional Commits, DCO signoff, exactly one agent trailer:
-  `git commit -s -m "fix(ui): ..."` +
-  `Co-authored-by: Claude <noreply@anthropic.com>`.
+- Conventional Commits, DCO signoff, `git commit -s -m "fix(ui): ..."` +
 - Push after finishing (repo rule in `AGENTS.md`).
 
 ## Steps

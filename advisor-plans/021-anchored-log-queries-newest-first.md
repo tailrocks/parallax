@@ -34,7 +34,7 @@ Run- and trace-anchored reads order **ASC with LIMIT**, then the run page re-sor
 - Severity mapping already numeric end-to-end: `ui/src/routes/logs.tsx:48-54` maps All/Debug+5/Info+9/Warn+13/Error+17 to `severityMin`.
 - The in-memory adapter `crates/parallax-storage/src/memory.rs` mirrors every `TelemetryStore` method — **any signature/semantic change must land in both** (repo hard rule).
 - SQL-injection posture note (do not regress): storage SQL is `format!`-assembled with `escape()` for literals; numeric params must be formatted as integers (`{}` on `i32`), never string-interpolated user text.
-- Conventions: main-branch, `-s`, one Claude co-author trailer; Rust nextest + clippy `-D warnings`; UI (only if touched): bun-only, strict TS, but this plan intends **no UI changes** — plan 017 owns the run-page INFO+ default toggle and should consume this fix.
+- Conventions: main-branch, `-s`; Rust nextest + clippy `-D warnings`; UI (only if touched): bun-only, strict TS, but this plan intends **no UI changes** — plan 017 owns the run-page INFO+ default toggle and should consume this fix.
 
 ## Commands you will need
 
@@ -51,7 +51,7 @@ Run- and trace-anchored reads order **ASC with LIMIT**, then the run page re-sor
 
 ## Git workflow
 
-- `main`; commits: `fix(storage): return newest rows from run/trace-anchored queries` and `feat(api): severityMax bound on log queries`; `-s` + one Claude co-author trailer each.
+- `main`; commits: `fix(storage): return newest rows from run/trace-anchored queries` and `feat(api): severityMax bound on log queries`; `-s`.
 
 ## Steps
 

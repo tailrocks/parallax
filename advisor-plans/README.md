@@ -121,8 +121,7 @@ must exit 0. Dev: `rtk bun run dev`. Rust (repo root):
 (zero warnings), `rtk cargo fmt --all`, `rtk cargo nextest run`. Manual checks
 need `parallax serve` + traffic (the sibling telemetry playground repo). Git:
 work on `main` (BRANCHING.md), Conventional Commits (COMMITS.md),
-`git commit -s`, exactly one `Co-authored-by: Claude <noreply@anthropic.com>`
-trailer per agent commit.
+`git commit -s`.
 
 ## Note on the source brief
 
