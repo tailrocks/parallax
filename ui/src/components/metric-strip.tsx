@@ -27,6 +27,13 @@ const stripConfig = {
   tasks: { label: "Tasks", color: "var(--chart-3)" },
 } satisfies ChartConfig
 
+function isAbortError(error: unknown): boolean {
+  return (
+    error instanceof DOMException ||
+    (typeof error === "object" && error !== null && "name" in error)
+  ) && (error as { name?: unknown }).name === "AbortError"
+}
+
 /** The cross-signal correlation strip: well-known process metrics in a
  * window around an anchor (trace, issue event, run) — run-scoped when a run
  * id is known, service-scoped otherwise. Renders nothing when the window
@@ -51,7 +58,12 @@ export function MetricStrip({
   const [panels, setPanels] = useState<Panel[] | null>(null)
 
   useEffect(() => {
+    let cancelled = false
+    let activeController: AbortController | null = null
     const fetchPanels = () => {
+      activeController?.abort()
+      const controller = new AbortController()
+      activeController = controller
       const to = live
         ? ((BigInt(Date.now()) + 30_000n) * 1_000_000n).toString()
         : toNanos
@@ -67,9 +79,11 @@ export function MetricStrip({
         cpu: metricSeries(name: "process.cpu.utilization", ${args}) { points { tsNanos value } }
         memory: metricSeries(name: "process.memory.usage", ${args}) { points { tsNanos value } }
         tasks: metricSeries(name: "tokio.runtime.alive_tasks", ${args}) { points { tsNanos value } }
-      }`
+      }`,
+      { signal: controller.signal }
     )
       .then((data) => {
+        if (cancelled || controller.signal.aborted) return
         setPanels([
           {
             title: "CPU",
@@ -97,12 +111,18 @@ export function MetricStrip({
           },
         ])
       })
-      .catch(() => setPanels([]))
+      .catch((error: unknown) => {
+        if (cancelled || isAbortError(error)) return
+        setPanels([])
+      })
     }
     fetchPanels()
-    if (!live) return
-    const timer = setInterval(fetchPanels, 5000)
-    return () => clearInterval(timer)
+    const timer = live ? setInterval(fetchPanels, 5000) : undefined
+    return () => {
+      cancelled = true
+      activeController?.abort()
+      if (timer) clearInterval(timer)
+    }
   }, [service, runId, fromNanos, toNanos, stepSeconds, live])
 
   if (!panels || panels.every((panel) => panel.points.length === 0)) {

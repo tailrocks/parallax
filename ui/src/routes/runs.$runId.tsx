@@ -212,6 +212,8 @@ function RunDetailPage() {
       ).then((data) => {
         if (data.run) setPolledRun(data.run)
       })
+      // Live polling tolerates transient API failures; next interval retries.
+      .catch(() => {})
     }, 10_000)
     return () => clearInterval(timer)
   }, [live, runId])

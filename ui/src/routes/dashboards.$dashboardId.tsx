@@ -30,6 +30,17 @@ import { RangePicker } from "@/components/console/range-picker"
 import { ChartLegend } from "@/components/console/trend"
 import { navItem } from "@/components/nav"
 import { PageHeader } from "@/components/page-header"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -145,21 +156,32 @@ function DashboardPage() {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState<Widget[]>(widgets)
   const [addition, setAddition] = useState<Widget>(emptyWidget())
+  const [error, setError] = useState<string | null>(null)
   const dashboardsBack = navItem("/dashboards")!
 
   async function save(layout: Widget[]) {
-    await graphql(
-      `mutation { dashboardSave(name: "${gqlString(name)}",
-         layout: "${gqlString(serializeWidgets(layout))}",
-         id: "${gqlString(id)}") { id } }`
-    )
-    setEditing(false)
-    await router.invalidate()
+    setError(null)
+    try {
+      await graphql(
+        `mutation { dashboardSave(name: "${gqlString(name)}",
+           layout: "${gqlString(serializeWidgets(layout))}",
+           id: "${gqlString(id)}") { id } }`
+      )
+      setEditing(false)
+      await router.invalidate()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    }
   }
 
   async function removeDashboard() {
-    await graphql(`mutation { dashboardDelete(id: "${gqlString(id)}") }`)
-    await router.navigate({ to: "/dashboards" })
+    setError(null)
+    try {
+      await graphql(`mutation { dashboardDelete(id: "${gqlString(id)}") }`)
+      await router.navigate({ to: "/dashboards" })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    }
   }
 
   function move(index: number, delta: -1 | 1) {
@@ -223,19 +245,40 @@ function DashboardPage() {
                   <IconPencil />
                   Edit
                 </Button>
-                <Button
-                  size="sm"
-                  variant="ghost-destructive"
-                  onClick={removeDashboard}
-                >
-                  <IconTrash />
-                  Delete
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger
+                    render={
+                      <Button size="sm" variant="ghost-destructive" />
+                    }
+                  >
+                    <IconTrash />
+                    Delete
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete dashboard?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Delete {name}. This cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        variant="destructive"
+                        onClick={() => void removeDashboard()}
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </>
             )}
           </>
         }
       />
+
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       {editing ? (
         <Card>

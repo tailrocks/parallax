@@ -135,6 +135,13 @@ function TracePage() {
   const { trace, logsByTrace } = Route.useLoaderData()
   const { traceId } = Route.useParams()
   const [selectedId, setSelectedId] = useState<string | null>(WHOLE_TRACE_ID)
+  const orderedLogs = useMemo(
+    () =>
+      [...logsByTrace].sort((a, b) =>
+        BigInt(a.tsNanos) < BigInt(b.tsNanos) ? 1 : -1
+      ),
+    [logsByTrace]
+  )
 
   if (!trace || trace.spans.length === 0) {
     return (
@@ -161,13 +168,6 @@ function TracePage() {
   )
   const spanLinks = spans.flatMap((span) => parseLinks(span.links))
   const spanEvents = spans.flatMap((span) => parseEvents(span.events))
-  const orderedLogs = useMemo(
-    () =>
-      [...logsByTrace].sort((a, b) =>
-        BigInt(a.tsNanos) < BigInt(b.tsNanos) ? 1 : -1
-      ),
-    [logsByTrace]
-  )
   const selectedSpan =
     selectedId && selectedId !== WHOLE_TRACE_ID
       ? (spans.find((span) => span.spanId === selectedId) ?? null)

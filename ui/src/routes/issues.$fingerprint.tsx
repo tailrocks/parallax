@@ -168,6 +168,7 @@ export function IssueDetailContent({
   const { issue, issueTrend, resource, breadcrumbs, traceRunId } = data
   const router = useRouter()
   const [mutating, setMutating] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
   const [bucket, setBucket] = useState<string | null>(null)
   const [bucketEvents, setBucketEvents] = useState<IssueEvent[] | null>(null)
   const occurrencesRef = useRef<HTMLDivElement>(null)
@@ -190,38 +191,46 @@ export function IssueDetailContent({
 
   async function setStatus(status: "open" | "resolved") {
     setMutating(true)
+    setActionError(null)
     try {
       await graphql(
         `mutation { issueSetStatus(fingerprint: "${gqlString(currentIssue.fingerprint)}", status: "${status}") { status } }`
       )
       await router.invalidate()
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : String(err))
     } finally {
       setMutating(false)
     }
   }
 
   async function filterBucket(tsNanos: string | null) {
+    setActionError(null)
     setBucket(tsNanos)
     if (!tsNanos) {
       setBucketEvents(null)
       return
     }
-    const from = BigInt(tsNanos)
-    const to = from + 3_600_000_000_000n
-    const { issue: scoped } = await graphql<{
-      issue: { events: IssueEvent[] } | null
-    }>(
-      `{ issue(fingerprint: "${gqlString(currentIssue.fingerprint)}") {
-           events(limit: 50, fromNanos: "${from}", toNanos: "${to}") {
-             tsNanos service message stacktrace source traceId spanId attributes
-           }
-         } }`
-    )
-    setBucketEvents(scoped?.events ?? [])
-    occurrencesRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    })
+    try {
+      const from = BigInt(tsNanos)
+      const to = from + 3_600_000_000_000n
+      const { issue: scoped } = await graphql<{
+        issue: { events: IssueEvent[] } | null
+      }>(
+        `{ issue(fingerprint: "${gqlString(currentIssue.fingerprint)}") {
+             events(limit: 50, fromNanos: "${from}", toNanos: "${to}") {
+               tsNanos service message stacktrace source traceId spanId attributes
+             }
+           } }`
+      )
+      setBucketEvents(scoped?.events ?? [])
+      occurrencesRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      })
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : String(err))
+    }
   }
 
   return (
@@ -262,6 +271,10 @@ export function IssueDetailContent({
           last <RelativeTime nanos={issue.lastSeenNanos} />
         </Badge>
       </div>
+
+      {actionError ? (
+        <p className="text-sm text-destructive">{actionError}</p>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard

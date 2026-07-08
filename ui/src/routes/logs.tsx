@@ -213,6 +213,7 @@ function LogsPage() {
   const [logs, setLogs] = useState<LogDoc[]>(data.logs)
   const [pendingQuery, setPendingQuery] = useState(search.q ?? "")
   const [olderLoading, setOlderLoading] = useState(false)
+  const [olderError, setOlderError] = useState<string | null>(null)
   const [exhausted, setExhausted] = useState(data.logs.length < PAGE_SIZE)
   const [dragStart, setDragStart] = useState<number | null>(null)
   const [dragEnd, setDragEnd] = useState<number | null>(null)
@@ -269,6 +270,7 @@ function LogsPage() {
     const oldest = logs.at(-1)
     if (!oldest) return
     setOlderLoading(true)
+    setOlderError(null)
     try {
       const args = [
         `fromNanos: "${range.fromNanos}"`,
@@ -285,6 +287,8 @@ function LogsPage() {
       } }`)
       setLogs((current) => [...current, ...more.logs])
       if (more.logs.length < PAGE_SIZE) setExhausted(true)
+    } catch (err) {
+      setOlderError(err instanceof Error ? err.message : String(err))
     } finally {
       setOlderLoading(false)
     }
@@ -431,7 +435,10 @@ function LogsPage() {
           ) : null}
           <LogsTable logs={logs} range={range} columns={columns} />
           {!live && !exhausted ? (
-            <div className="border-t border-border/70 p-2">
+            <div className="flex flex-col gap-2 border-t border-border/70 p-2">
+              {olderError ? (
+                <p className="px-2 text-sm text-destructive">{olderError}</p>
+              ) : null}
               <Button
                 type="button"
                 variant="ghost"

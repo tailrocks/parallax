@@ -148,6 +148,8 @@ function SqlPage() {
         }
       }
       setSchema(grouped)
+    }).catch((err: unknown) => {
+      setError(err instanceof Error ? err.message : String(err))
     })
   }, [])
 

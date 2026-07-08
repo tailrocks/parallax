@@ -5,11 +5,18 @@
 // in the browser, so SSR/loader calls target the API directly.
 const BASE = typeof window === "undefined" ? "http://127.0.0.1:4000" : ""
 
-export async function graphql<T>(query: string): Promise<T> {
-  const response = await fetch(`${BASE}/graphql`, {
+export async function graphql<T>(
+  query: string,
+  init?: { signal?: AbortSignal }
+): Promise<T> {
+  const requestInit: RequestInit = {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ query }),
+  }
+  if (init?.signal) requestInit.signal = init.signal
+  const response = await fetch(`${BASE}/graphql`, {
+    ...requestInit,
   })
   if (!response.ok) {
     throw new Error(`parallax api unreachable (${response.status})`)
