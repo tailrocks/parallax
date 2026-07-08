@@ -316,7 +316,13 @@ telemetry without a CLI `runStart` are auto-registered by the worker with status
 > [decisions/native-otel-tables.md](../decisions/native-otel-tables.md).
 
 Fingerprinting and derivation logic: graduate `poc/evidence-loop/src/{derive,fingerprint}.rs`
-verbatim semantics (both exception encodings; normalization rules; 16-hex fingerprint).
+semantics (both exception encodings; normalization rules; 16-hex fingerprint).
+As of 2026-07-08, new fingerprints normalize top-frame line/column/path variance,
+broaden volatile-token normalization for short hex IDs, jackin container slugs,
+and uid/gid pairs, and prefer producer-stated `error.type` plus
+`jackin.operation` when present. This is a forward-only cutover: existing issue
+rows keep their old fingerprints and age out under normal retention instead of
+being regrouped in place.
 
 ## 8. GraphQL SDL (the V1 core, as implemented by Juniper)
 
