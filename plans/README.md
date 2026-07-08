@@ -73,7 +73,7 @@ conditions, run its verification gates, and update your row when done.
 | 055 | Log event identity (`event_name` + `observed_ts_nanos` end-to-end) | parallax | P2 | M | demo: 056 | BLOCKED: Greptime native OTLP logs keep `event_name` NULL after ALTER + extract-keys header |
 | 056 | Playground typed log events + Java/web structured logs | **[playground]** | P2 | M | 036; pairs 055 | DONE |
 | 057 | Logs context + saved views (`logsAround`, context drawer, named views) | parallax | P2 | M | 035; richer after 055 | DONE |
-| 059 | GraphQL operation explorer (field tree, N+1 badge, partial errors) | parallax | P2 | M | 058; pairs 047 | TODO |
+| 059 | GraphQL operation explorer (field tree, N+1 badge, partial errors) | parallax | P2 | M | 058; pairs 047 | DONE |
 | 060 | gRPC stream + messaging lanes (message timeline, deadline callout, event caps) | parallax | P2 | M | 058; pairs 049 | TODO |
 | 061 | Trace view modes (errors-only, service lanes, minimap, skew banner) | parallax | P2 | L | after 040+051; pairs 063 | TODO |
 | 063 | Playground trace-shape scenarios (A19 stress, compare pair, real skew) | **[playground]** | P2 | M | 036; pairs 040/051/061 | TODO |

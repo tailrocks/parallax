@@ -18,6 +18,7 @@ import {
   WHOLE_TRACE_ID,
 } from "@/components/console/trace-waterfall"
 import type { WaterfallSpan } from "@/components/console/trace-waterfall"
+import { GraphqlOperationCard } from "@/components/console/graphql-operation"
 import { EvidenceGapsCard } from "@/components/console/evidence-gaps"
 import { StoryTimeline } from "@/components/console/story-timeline"
 import { CopyButton } from "@/components/console/copy-button"
@@ -65,10 +66,12 @@ import type {
   TraceSummary,
 } from "@/lib/api"
 import { formatDateTime, formatDurationNs } from "@/lib/format"
+import { buildGraphqlOperations } from "@/lib/graphql-trace"
+import type { GraphqlOperation, GraphqlTraceSpan } from "@/lib/graphql-trace"
 import { computeWindow } from "@/lib/trace-tree"
 import { cn } from "@/lib/utils"
 
-interface TraceSpan extends WaterfallSpan {
+interface TraceSpan extends WaterfallSpan, GraphqlTraceSpan {
   tsNanos: string
   traceId: string
   runId: string | null
@@ -99,6 +102,7 @@ type StringKeyValues = Array<[string, string]>
 
 const TRACE_DIFF_SPAN_FIELDS =
   "spanId service name kind statusCode durationNs depth matchKey"
+const EMPTY_TRACE_SPANS: TraceSpan[] = []
 
 interface SpanEvent {
   name: string
@@ -183,7 +187,8 @@ function TracePage() {
   const { traceId } = Route.useParams()
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
-  const activeTab: TraceDetailTab = search.tab === "story" ? "story" : "waterfall"
+  const activeTab: TraceDetailTab =
+    search.tab === "story" ? "story" : "waterfall"
   const [selectedId, setSelectedId] = useState<string | null>(WHOLE_TRACE_ID)
   const [criticalEnabled, setCriticalEnabled] = useState(false)
   const [criticalPath, setCriticalPath] = useState<CriticalPath | null>(null)
@@ -210,11 +215,18 @@ function TracePage() {
   )
   const linkedTraceById = useMemo(
     () =>
-      new Map(linkedTraces.map((traceSummary) => [traceSummary.traceId, traceSummary])),
+      new Map(
+        linkedTraces.map((traceSummary) => [traceSummary.traceId, traceSummary])
+      ),
     [linkedTraces]
   )
+  const spans = trace?.spans ?? EMPTY_TRACE_SPANS
+  const graphqlOperations = useMemo(
+    () => buildGraphqlOperations(spans),
+    [spans]
+  )
 
-  if (!trace || trace.spans.length === 0) {
+  if (!trace || spans.length === 0) {
     return (
       <EmptyState
         title="Trace not found"
@@ -224,7 +236,6 @@ function TracePage() {
     )
   }
 
-  const spans = trace.spans
   const window = computeWindow(spans)
   const rootSpan =
     spans.find((span) => !span.parentSpanId) ??
@@ -428,6 +439,11 @@ function TracePage() {
                 </CardContent>
               </Card>
 
+              <TraceGraphqlSection
+                operations={graphqlOperations}
+                onSelect={setSelectedId}
+              />
+
               {orderedLogs.length > 0 ? (
                 <Card>
                   <CardHeader>
@@ -514,15 +530,16 @@ function TracePage() {
                     aria-invalid={compareError ? true : undefined}
                   />
                   <FieldDescription>
-                    Current trace:{" "}
-                    <span className="font-mono">{traceId}</span>
+                    Current trace: <span className="font-mono">{traceId}</span>
                   </FieldDescription>
                   <FieldError>{compareError}</FieldError>
                 </Field>
                 <Button
                   type="submit"
                   className="w-fit"
-                  disabled={compareLoading || compareTraceId.trim().length === 0}
+                  disabled={
+                    compareLoading || compareTraceId.trim().length === 0
+                  }
                 >
                   {compareLoading ? (
                     <Spinner data-icon="inline-start" />
@@ -538,6 +555,27 @@ function TracePage() {
         </SheetContent>
       </Sheet>
     </div>
+  )
+}
+
+export function TraceGraphqlSection({
+  operations,
+  onSelect,
+}: {
+  operations: GraphqlOperation[]
+  onSelect: (spanId: string) => void
+}) {
+  if (operations.length === 0) return null
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">GraphQL</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <GraphqlOperationCard operations={operations} onSelect={onSelect} />
+      </CardContent>
+    </Card>
   )
 }
 
