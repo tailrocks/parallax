@@ -1,6 +1,13 @@
 /* @vitest-environment jsdom */
 
-import { act, fireEvent, render, screen, within } from "@testing-library/react"
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react"
 import {
   Outlet,
   RouterProvider,
@@ -9,7 +16,7 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router"
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { useState } from "react"
 
 import {
@@ -48,6 +55,8 @@ const log: LogDoc = {
   attributes: '{"error":"boom"}',
   resource: '{"service.name":"checkout"}',
 }
+
+afterEach(cleanup)
 
 function renderWithRouter(component: React.ReactNode) {
   window.scrollTo = () => {}
@@ -161,7 +170,10 @@ describe("LogsTable", () => {
     const before = Array.from(container.querySelectorAll("tbody tr"))
 
     await act(async () => {
-      setRows([{ ...log, tsNanos: "5000000000", traceId: "trace-d", body: "d" }, ...logs])
+      setRows([
+        { ...log, tsNanos: "5000000000", traceId: "trace-d", body: "d" },
+        ...logs,
+      ])
     })
 
     const after = Array.from(container.querySelectorAll("tbody tr"))
@@ -182,7 +194,21 @@ describe("LogsTable", () => {
     expect(await screen.findByText(formatDateTime(log.tsNanos))).toBeTruthy()
     fireEvent.click(screen.getByText("checkout failed"))
     expect(await screen.findByText("Log document")).toBeTruthy()
-    expect(screen.getByText("trace trace-a")).toBeTruthy()
+    expect(screen.getByRole("link", { name: /trace trace-a/i })).toBeTruthy()
+  })
+
+  it("opens the document sheet from keyboard row activation", async () => {
+    const { container } = renderWithRouter(
+      <LogsTable logs={[log]} range={range} columns={["service", "trace"]} />
+    )
+    await within(container).findByText("checkout failed")
+    const row = container.querySelector("tbody tr") as HTMLElement
+
+    row.focus()
+    expect(document.activeElement).toBe(row)
+    fireEvent.keyDown(row, { key: "Enter" })
+
+    expect(await screen.findByText("Log document")).toBeTruthy()
   })
 
   it("highlights the anchor row and exposes the context action", async () => {

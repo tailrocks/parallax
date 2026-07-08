@@ -67,6 +67,7 @@ import {
   formatDateTime,
   formatDurationNs,
   formatPercent,
+  formatTimeShort,
 } from "@/lib/format"
 import {
   mergeRangeSearch,
@@ -269,10 +270,7 @@ export function latencyBands(red: SpanRed) {
 }
 
 function formatChartTime(tsNanos: string) {
-  return new Date(Number(BigInt(tsNanos) / 1_000_000n)).toLocaleTimeString(
-    undefined,
-    { hour: "2-digit", minute: "2-digit" }
-  )
+  return formatTimeShort(tsNanos)
 }
 
 function toLineData(

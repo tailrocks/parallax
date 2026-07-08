@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 import { IconBroadcast } from "@tabler/icons-react"
 
+import { Chip } from "@/components/console/chip"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -39,9 +40,7 @@ export function LiveStreamPanel({
             {active ? "connected" : "idle"}
           </Badge>
           <Badge variant="outline">{count.toLocaleString()} shown</Badge>
-          <code className="rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">
-            {endpoint}
-          </code>
+          <Chip className="text-muted-foreground">{endpoint}</Chip>
         </div>
       </CardHeader>
       {children ? <CardContent>{children}</CardContent> : null}

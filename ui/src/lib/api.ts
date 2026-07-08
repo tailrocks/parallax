@@ -42,16 +42,6 @@ export function gqlString(value: string): string {
     .replace(/\t/g, "\\t")
 }
 
-export function relativeTime(nanosString: string): string {
-  const nanos = Number(nanosString)
-  if (!Number.isFinite(nanos) || nanos <= 0) return "-"
-  const seconds = Math.max(0, Math.floor(Date.now() / 1000 - nanos / 1e9))
-  if (seconds < 60) return `${seconds}s ago`
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
-  return `${Math.floor(seconds / 86400)}d ago`
-}
-
 export interface Issue {
   fingerprint: string
   title: string

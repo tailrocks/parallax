@@ -1,4 +1,9 @@
-import { IconChevronDown, IconChevronUp, IconSearch, IconX } from "@tabler/icons-react"
+import {
+  IconChevronDown,
+  IconChevronUp,
+  IconSearch,
+  IconX,
+} from "@tabler/icons-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -31,7 +36,7 @@ export function cycleSortParam(current: string | undefined, key: string) {
 export function sortRows<T>(
   rows: T[],
   sort: string | undefined,
-  accessors: Record<string, (row: T) => string | number | null | undefined>,
+  accessors: Record<string, (row: T) => string | number | null | undefined>
 ) {
   const parsed = parseSortParam(sort)
   if (!parsed) return rows
@@ -58,7 +63,9 @@ export function pageWindow(page: number, total: number) {
     .filter((value) => value >= 1 && value <= total)
     .sort((a, b) => a - b)
     .flatMap((value, index, values) =>
-      index > 0 && value - values[index - 1]! > 1 ? ["..." as const, value] : [value],
+      index > 0 && value - values[index - 1]! > 1
+        ? ["..." as const, value]
+        : [value]
     )
 }
 
@@ -98,6 +105,7 @@ export function SearchInput({
           onClick={() => onChange("")}
         >
           <IconX />
+          <span className="sr-only">Clear search</span>
         </Button>
       ) : null}
     </div>
@@ -116,7 +124,7 @@ export function ToggleChip({
       className={cn(
         "rounded-full",
         active &&
-          "bg-rose-500/10 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400",
+          "bg-rose-500/10 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400"
       )}
       {...props}
     >
