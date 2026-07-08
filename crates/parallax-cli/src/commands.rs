@@ -503,7 +503,7 @@ fn parse_since(since: &str) -> anyhow::Result<u128> {
 pub async fn sql(client: &Client, query: &str) -> anyhow::Result<()> {
     let response = client
         .graphql(&format!(
-            r#"{{ sql(query: "{}") {{ columns rows rowCount }} }}"#,
+            r#"{{ sql(query: "{}") {{ columns rows rowCount truncated }} }}"#,
             gql_str(query)
         ))
         .await?;
@@ -535,8 +535,13 @@ pub async fn sql(client: &Client, query: &str) -> anyhow::Result<()> {
             .unwrap_or_default();
         println!("{}", cells.join("\t"));
     }
+    let suffix = if result["truncated"].as_bool().unwrap_or(false) {
+        " (truncated)"
+    } else {
+        ""
+    };
     println!(
-        "-- {} row(s)",
+        "-- {} row(s){suffix}",
         result["rowCount"].as_i64().unwrap_or_default()
     );
     Ok(())

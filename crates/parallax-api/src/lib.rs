@@ -49,6 +49,9 @@ fn saturate_i32(value: u64) -> i32 {
 /// Resolver-level row cap (the spec's Juniper note: cost limits are
 /// resolver-level in V1; query-cost middleware is M5 hardening).
 const MAX_ROWS: usize = 500;
+/// Raw SQL is the power surface, so it gets a larger cap than typed resolvers
+/// while still bounding GraphQL response size.
+const SQL_MAX_ROWS: usize = 2_000;
 const SAVED_VIEW_NAME_MAX: usize = 120;
 const SAVED_VIEWS_PER_PAGE: usize = 100;
 
@@ -450,23 +453,40 @@ impl Trace {
     }
 }
 
-pub struct SqlResultOut(parallax_storage::adapter::SqlResult);
+pub struct SqlResultOut {
+    result: parallax_storage::adapter::SqlResult,
+    truncated: bool,
+}
+
+fn cap_sql_result(
+    mut result: parallax_storage::adapter::SqlResult,
+    max_rows: usize,
+) -> SqlResultOut {
+    let truncated = result.rows.len() > max_rows;
+    if truncated {
+        result.rows.truncate(max_rows);
+    }
+    SqlResultOut { result, truncated }
+}
 
 #[graphql_object(context = ApiContext)]
 impl SqlResultOut {
     fn columns(&self) -> &[String] {
-        &self.0.columns
+        &self.result.columns
     }
     /// Each row as a JSON array string (heterogeneous cell types).
     fn rows(&self) -> Vec<String> {
-        self.0
+        self.result
             .rows
             .iter()
             .map(|row| serde_json::Value::Array(row.clone()).to_string())
             .collect()
     }
     fn row_count(&self) -> i32 {
-        i32::try_from(self.0.rows.len()).unwrap_or(i32::MAX)
+        i32::try_from(self.result.rows.len()).unwrap_or(i32::MAX)
+    }
+    fn truncated(&self) -> bool {
+        self.truncated
     }
 }
 
@@ -2153,7 +2173,7 @@ impl Query {
             .raw_sql(trimmed.trim_end_matches(';'))
             .await
             .map_err(field_err)?;
-        Ok(SqlResultOut(result))
+        Ok(cap_sql_result(result, SQL_MAX_ROWS))
     }
 
     /// Log counts per time bucket under the same filters as `logs` — the
@@ -3134,7 +3154,7 @@ pub async fn execute(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use parallax_storage::adapter::TelemetryStore;
+    use parallax_storage::adapter::{SqlResult, TelemetryStore};
     use parallax_storage::memory::MemoryStore;
     use parallax_storage::model::{
         ErrorEventRow, ErrorSource, LogRow, MetricExemplarRow, MetricPointRow, SpanRow,
@@ -3226,6 +3246,26 @@ mod tests {
             .filter_map(|error| error.get("message").and_then(|message| message.as_str()))
             .map(str::to_string)
             .collect()
+    }
+
+    #[test]
+    fn cap_sql_result_truncates_rows_and_flags_over_cap_only() {
+        let result = SqlResult {
+            columns: vec!["n".into()],
+            rows: vec![vec![serde_json::json!(1)], vec![serde_json::json!(2)]],
+        };
+        let under = cap_sql_result(result.clone(), 3);
+        assert!(!under.truncated());
+        assert_eq!(under.row_count(), 2);
+
+        let at = cap_sql_result(result.clone(), 2);
+        assert!(!at.truncated());
+        assert_eq!(at.row_count(), 2);
+
+        let over = cap_sql_result(result, 1);
+        assert!(over.truncated());
+        assert_eq!(over.row_count(), 1);
+        assert_eq!(over.rows(), vec!["[1]"]);
     }
 
     #[tokio::test]

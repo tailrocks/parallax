@@ -18,7 +18,8 @@ vi.mock("@/lib/api", () => ({
   gqlString: (value: string) =>
     value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n"),
   graphql: vi.fn().mockResolvedValue({
-    sql: { columns: [], rows: [], rowCount: 0 },
+    sql: { columns: [], rows: [], rowCount: 0, truncated: false },
+    savedViews: [],
   }),
 }))
 

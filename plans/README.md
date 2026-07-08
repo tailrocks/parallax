@@ -69,7 +69,7 @@ conditions, run its verification gates, and update your row when done.
 | Plan | Title | Repo | Priority | Effort | Depends on | Status |
 |------|-------|------|----------|--------|------------|--------|
 | 058 | Trace-events backbone (`traceEvents` resolver + span-read hygiene) | parallax | P1 | M | — | TODO |
-| 062 | SQL workbench (server row cap + truncated flag, linkified cells, snippets) | parallax | P1 | M | coord. advisor-022, 057 | TODO |
+| 062 | SQL workbench (server row cap + truncated flag, linkified cells, snippets) | parallax | P1 | M | coord. advisor-022, 057 | DONE |
 | 055 | Log event identity (`event_name` + `observed_ts_nanos` end-to-end) | parallax | P2 | M | demo: 056 | BLOCKED: Greptime native OTLP logs keep `event_name` NULL after ALTER + extract-keys header |
 | 056 | Playground typed log events + Java/web structured logs | **[playground]** | P2 | M | 036; pairs 055 | DONE |
 | 057 | Logs context + saved views (`logsAround`, context drawer, named views) | parallax | P2 | M | 035; richer after 055 | DONE |
