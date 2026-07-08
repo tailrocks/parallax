@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen } from "@testing-library/react"
+import { act, fireEvent, render, screen } from "@testing-library/react"
 import {
   Outlet,
   RouterProvider,
@@ -10,6 +10,7 @@ import {
   createRouter,
 } from "@tanstack/react-router"
 import { describe, expect, it } from "vitest"
+import { useState } from "react"
 
 import {
   LogsTable,
@@ -67,6 +68,21 @@ function renderWithRouter(component: React.ReactNode) {
   return render(<RouterProvider router={router} />)
 }
 
+function renderLogsHost(initialLogs: LogDoc[]) {
+  let setRows!: React.Dispatch<React.SetStateAction<LogDoc[]>>
+  function Host() {
+    const [rows, setLogs] = useState(initialLogs)
+    setRows = setLogs
+    return <LogsTable logs={rows} range={range} columns={["service", "trace"]} />
+  }
+
+  const rendered = renderWithRouter(<Host />)
+  return {
+    ...rendered,
+    setRows: (next: React.SetStateAction<LogDoc[]>) => setRows(next),
+  }
+}
+
 describe("logs redesign helpers", () => {
   it("computes bucket and drag windows", () => {
     const points = [
@@ -102,6 +118,26 @@ describe("logs redesign helpers", () => {
 })
 
 describe("LogsTable", () => {
+  it("keeps existing row DOM nodes when live logs prepend", async () => {
+    const logs = [
+      { ...log, tsNanos: "4000000000", traceId: "trace-a", body: "a" },
+      { ...log, tsNanos: "3000000000", traceId: "trace-b", body: "b" },
+      { ...log, tsNanos: "2000000000", traceId: "trace-c", body: "c" },
+    ]
+    const { container, setRows } = renderLogsHost(logs)
+    await screen.findByText("a")
+    const before = Array.from(container.querySelectorAll("tbody tr"))
+
+    await act(async () => {
+      setRows([{ ...log, tsNanos: "5000000000", traceId: "trace-d", body: "d" }, ...logs])
+    })
+
+    const after = Array.from(container.querySelectorAll("tbody tr"))
+    expect(after[1]).toBe(before[0])
+    expect(after[2]).toBe(before[1])
+    expect(after[3]).toBe(before[2])
+  })
+
   it("renders date-aware time for multi-day ranges and opens the sheet", async () => {
     renderWithRouter(
       <LogsTable

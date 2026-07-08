@@ -36,7 +36,7 @@ import {
   parseSortParam,
 } from "@/components/console/data-table"
 import { EmptyState } from "@/components/console/empty-state"
-import { HeatCell } from "@/components/console/heat-cell"
+import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
 import { useDelayedLoading } from "@/components/console/hooks"
 import { RangePicker } from "@/components/console/range-picker"
 import { RelativeTime } from "@/components/console/relative-time"
@@ -605,6 +605,10 @@ export function TraceTable({
   onSort: (next: string | undefined) => void
   onOpen: (traceId: string) => void
 }) {
+  const durationScale = useMemo(
+    () => buildHeatScale(durationValues),
+    [durationValues]
+  )
   return (
     <Table density="compact">
       <TableHeader>
@@ -655,10 +659,7 @@ export function TraceTable({
               {trace.spanCount}
             </TableCell>
             <TableCell className="text-right">
-              <HeatCell
-                value={Number(trace.durationNs)}
-                values={durationValues}
-              >
+              <HeatCell value={Number(trace.durationNs)} scale={durationScale}>
                 {formatDurationNs(trace.durationNs)}
               </HeatCell>
             </TableCell>

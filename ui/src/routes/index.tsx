@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import {
   IconActivity,
@@ -11,7 +11,7 @@ import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
 
 import { CopyButton } from "@/components/console/copy-button"
 import { EmptyState } from "@/components/console/empty-state"
-import { HeatCell } from "@/components/console/heat-cell"
+import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
 import { RangePicker } from "@/components/console/range-picker"
 import { RelativeTime } from "@/components/console/relative-time"
 import { ScrollFade } from "@/components/console/scroll-fade"
@@ -807,6 +807,7 @@ function RecentIssuesCard({ issues }: { issues: IssueRow[] }) {
 
 function SlowestTracesCard({ traces }: { traces: TraceRow[] }) {
   const values = traces.map((trace) => Number(trace.durationNs))
+  const scale = useMemo(() => buildHeatScale(values), [values])
   return (
     <Card size="sm">
       <CardHeader>
@@ -839,7 +840,7 @@ function SlowestTracesCard({ traces }: { traces: TraceRow[] }) {
                     </div>
                   </div>
                   <div className="text-right text-xs text-muted-foreground">
-                    <HeatCell value={Number(trace.durationNs)} values={values}>
+                    <HeatCell value={Number(trace.durationNs)} scale={scale}>
                       {formatDurationNs(trace.durationNs)}
                     </HeatCell>
                     <div>{formatCount(trace.spanCount)} spans</div>

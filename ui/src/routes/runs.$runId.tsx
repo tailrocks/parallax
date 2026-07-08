@@ -13,7 +13,7 @@ import {
 
 import { CopyButton } from "@/components/console/copy-button"
 import { EmptyState } from "@/components/console/empty-state"
-import { HeatCell } from "@/components/console/heat-cell"
+import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
 import { RelativeTime } from "@/components/console/relative-time"
 import { ScrollFade } from "@/components/console/scroll-fade"
 import { StatCard } from "@/components/console/stat-card"
@@ -447,6 +447,7 @@ function IssuesCard({ issues }: { issues: RunIssue[] }) {
 
 function TracesCard({ traces }: { traces: RunTraceSummary[] }) {
   const durations = traces.map((trace) => Number(trace.durationNs))
+  const scale = useMemo(() => buildHeatScale(durations), [durations])
   return (
     <Card>
       <CardHeader>
@@ -491,7 +492,7 @@ function TracesCard({ traces }: { traces: RunTraceSummary[] }) {
                   <TableCell className="text-right">
                     <HeatCell
                       value={Number(trace.durationNs)}
-                      values={durations}
+                      scale={scale}
                     >
                       {formatDurationNs(trace.durationNs)}
                     </HeatCell>

@@ -93,6 +93,14 @@ const SEVERITIES = [
   { label: "Error+", value: 17 },
 ] as const
 
+let logKeySequence = 0
+
+function assignLogKeys(logs: LogDoc[]): LogDoc[] {
+  return logs.map((log) =>
+    log._key ? log : { ...log, _key: `log-${logKeySequence++}` }
+  )
+}
+
 const logsSearchSchema = z.object({
   q: z.unknown().optional(),
   service: z.unknown().optional(),
@@ -210,7 +218,8 @@ function LogsPage() {
   const delayedLoading = useDelayedLoading(routerLoading)
   const range = resolveRangeSearch(search)
   const stepSeconds = stepSecondsForRange(range)
-  const [logs, setLogs] = useState<LogDoc[]>(data.logs)
+  const keyedDataLogs = useMemo(() => assignLogKeys(data.logs), [data.logs])
+  const [logs, setLogs] = useState<LogDoc[]>(keyedDataLogs)
   const [pendingQuery, setPendingQuery] = useState(search.q ?? "")
   const [olderLoading, setOlderLoading] = useState(false)
   const [olderError, setOlderError] = useState<string | null>(null)
@@ -221,9 +230,9 @@ function LogsPage() {
   const columns = parseLogColumns(search.cols)
 
   useEffect(() => {
-    setLogs(data.logs)
-    setExhausted(data.logs.length < PAGE_SIZE)
-  }, [data.logs])
+    setLogs(keyedDataLogs)
+    setExhausted(keyedDataLogs.length < PAGE_SIZE)
+  }, [keyedDataLogs])
 
   useEffect(() => setPendingQuery(search.q ?? ""), [search.q])
 
@@ -238,7 +247,7 @@ function LogsPage() {
     source.onmessage = (event) => {
       try {
         const batch: unknown = JSON.parse(event.data as string)
-        if (Array.isArray(batch)) buffer.push(...(batch as LogDoc[]))
+        if (Array.isArray(batch)) buffer.push(...assignLogKeys(batch as LogDoc[]))
       } catch {
         // skip malformed frames
       }
@@ -285,7 +294,7 @@ function LogsPage() {
       const more = await graphql<{ logs: LogDoc[] }>(`{ logs(${args}) {
         tsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource
       } }`)
-      setLogs((current) => [...current, ...more.logs])
+      setLogs((current) => [...current, ...assignLogKeys(more.logs)])
       if (more.logs.length < PAGE_SIZE) setExhausted(true)
     } catch (err) {
       setOlderError(err instanceof Error ? err.message : String(err))

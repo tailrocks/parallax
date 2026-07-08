@@ -43,7 +43,7 @@ conditions, run its verification gates, and update your row when done.
 |------|-------|------|----------|--------|------------|--------|
 | 038 | Time-window continuity (shared URL-state helper, drilldowns keep the window, runs scoped) | parallax | P1 | M | 035 | DONE |
 | 039 | Everything-clickable pivot sweep (overview KPIs, issues doorways, detail pivots, runs columns) | parallax | P1 | M | 038 | DONE |
-| 040 | UI performance at scale (stable keys, O(N) heat cells, shared ticker, virtualization) | parallax | P2 | L | 035, 039 | TODO |
+| 040 | UI performance at scale (stable keys, O(N) heat cells, shared ticker, virtualization) | parallax | P2 | L | 035, 039 | DONE |
 
 ### Wave 3 — paired surfaces (UI ↔ scenario)
 

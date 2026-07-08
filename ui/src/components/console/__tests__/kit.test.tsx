@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react"
-import { describe, expect, it, vi } from "vitest"
+import { cleanup, render, screen } from "@testing-library/react"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
   cycleSortParam,
@@ -12,6 +12,11 @@ import { RelativeTime } from "@/components/console/relative-time"
 import { SpanKindChip, spanKindMeta } from "@/components/console/span-kind"
 import { StatCard } from "@/components/console/stat-card"
 import { resolveRangeSearch } from "@/lib/range"
+
+afterEach(() => {
+  cleanup()
+  vi.restoreAllMocks()
+})
 
 describe("console kit", () => {
   it("sorts rows nulls-last and cycles sort params", () => {
@@ -61,6 +66,21 @@ describe("console kit", () => {
     expect(screen.getByText("Traces")).toBeTruthy()
     expect(screen.getByText("42")).toBeTruthy()
     expect(screen.getByText("1m ago")).toBeTruthy()
-    vi.restoreAllMocks()
+  })
+
+  it("shares one relative-time ticker across mounted instances", () => {
+    vi.spyOn(Date, "now").mockReturnValue(1_720_000_000_000)
+    const intervalSpy = vi.spyOn(globalThis, "setInterval")
+    const clearSpy = vi.spyOn(globalThis, "clearInterval")
+    const rendered = render(
+      <>
+        <RelativeTime nanos="1719999940000000000" />
+        <RelativeTime nanos="1719999880000000000" />
+      </>
+    )
+
+    expect(intervalSpy).toHaveBeenCalledTimes(1)
+    rendered.unmount()
+    expect(clearSpy).toHaveBeenCalledTimes(1)
   })
 })

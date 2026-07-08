@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 import { graphql, gqlString } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -32,6 +32,52 @@ function isAbortError(error: unknown): boolean {
     error instanceof DOMException ||
     (typeof error === "object" && error !== null && "name" in error)
   ) && (error as { name?: unknown }).name === "AbortError"
+}
+
+function MetricPanel({ panel }: { panel: Panel }) {
+  const chartData = useMemo(
+    () =>
+      panel.points.map((p) => ({
+        time: new Date(Number(BigInt(p.tsNanos) / 1_000_000n)).toLocaleTimeString(
+          [],
+          {
+            minute: "2-digit",
+            second: "2-digit",
+          }
+        ),
+        value: Number(p.value.toFixed(2)),
+      })),
+    [panel.points]
+  )
+
+  return (
+    <div className="space-y-1">
+      <p className="text-xs font-medium text-muted-foreground">
+        {panel.title}
+        {panel.unit ? ` (${panel.unit})` : ""}
+      </p>
+      <ChartContainer config={stripConfig} className="h-24 w-full">
+        <LineChart data={chartData} margin={{ left: 0, right: 8, top: 4 }}>
+          <CartesianGrid vertical={false} />
+          <XAxis
+            dataKey="time"
+            tickLine={false}
+            axisLine={false}
+            minTickGap={32}
+          />
+          <YAxis tickLine={false} axisLine={false} width={44} />
+          <ChartTooltip content={<ChartTooltipContent />} />
+          <Line
+            dataKey="value"
+            name={panel.key}
+            stroke={`var(--color-${panel.key})`}
+            dot={false}
+            strokeWidth={1.5}
+          />
+        </LineChart>
+      </ChartContainer>
+    </div>
+  )
 }
 
 /** The cross-signal correlation strip: well-known process metrics in a
@@ -143,43 +189,7 @@ export function MetricStrip({
           {panels
             .filter((panel) => panel.points.length > 0)
             .map((panel) => (
-              <div key={panel.title} className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground">
-                  {panel.title}
-                  {panel.unit ? ` (${panel.unit})` : ""}
-                </p>
-                <ChartContainer config={stripConfig} className="h-24 w-full">
-                  <LineChart
-                    data={panel.points.map((p) => ({
-                      time: new Date(
-                        Number(BigInt(p.tsNanos) / 1_000_000n)
-                      ).toLocaleTimeString([], {
-                        minute: "2-digit",
-                        second: "2-digit",
-                      }),
-                      value: Number(p.value.toFixed(2)),
-                    }))}
-                    margin={{ left: 0, right: 8, top: 4 }}
-                  >
-                    <CartesianGrid vertical={false} />
-                    <XAxis
-                      dataKey="time"
-                      tickLine={false}
-                      axisLine={false}
-                      minTickGap={32}
-                    />
-                    <YAxis tickLine={false} axisLine={false} width={44} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Line
-                      dataKey="value"
-                      name={panel.key}
-                      stroke={`var(--color-${panel.key})`}
-                      dot={false}
-                      strokeWidth={1.5}
-                    />
-                  </LineChart>
-                </ChartContainer>
-              </div>
+              <MetricPanel key={panel.title} panel={panel} />
             ))}
         </div>
       </CardContent>

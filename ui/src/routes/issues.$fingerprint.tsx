@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import {
   Link,
   createFileRoute,
@@ -16,7 +16,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 
 import { CopyButton } from "@/components/console/copy-button"
 import { EmptyState } from "@/components/console/empty-state"
-import { HeatCell } from "@/components/console/heat-cell"
+import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
 import { RangePicker } from "@/components/console/range-picker"
 import { RelativeTime } from "@/components/console/relative-time"
 import { CardSparkline, StatCard } from "@/components/console/stat-card"
@@ -677,6 +677,7 @@ function Occurrences({
   range: ResolvedRange
 }) {
   const durations = events.map((event) => Number(event.tsNanos))
+  const scale = useMemo(() => buildHeatScale(durations), [durations])
   return (
     <Card ref={refEl}>
       <CardHeader>
@@ -703,7 +704,7 @@ function Occurrences({
               >
                 <span className="min-w-0 truncate">{event.message}</span>
                 <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
-                  <HeatCell value={Number(event.tsNanos)} values={durations}>
+                  <HeatCell value={Number(event.tsNanos)} scale={scale}>
                     {formatTimeInRange(event.tsNanos, range)}
                   </HeatCell>
                   <Badge variant="outline">{event.service}</Badge>

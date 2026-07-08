@@ -16,9 +16,10 @@ import {
   XAxis,
   YAxis,
 } from "recharts"
+import { useMemo } from "react"
 
 import { EmptyState } from "@/components/console/empty-state"
-import { HeatCell } from "@/components/console/heat-cell"
+import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
 import { RangePicker } from "@/components/console/range-picker"
 import { RelativeTime } from "@/components/console/relative-time"
 import {
@@ -572,6 +573,7 @@ function InfraBand({ overview }: { overview: ServiceOverview }) {
 
 function RecentTraces({ traces }: { traces: TraceSummary[] }) {
   const durations = traces.map((trace) => Number(trace.durationNs))
+  const scale = useMemo(() => buildHeatScale(durations), [durations])
   return (
     <Card>
       <CardHeader>
@@ -616,7 +618,7 @@ function RecentTraces({ traces }: { traces: TraceSummary[] }) {
                     <TableCell className="text-right">
                       <HeatCell
                         value={Number(trace.durationNs)}
-                        values={durations}
+                        scale={scale}
                       >
                         {formatDurationNs(trace.durationNs)}
                       </HeatCell>

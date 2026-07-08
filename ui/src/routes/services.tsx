@@ -5,10 +5,11 @@ import {
   useRouterState,
 } from "@tanstack/react-router"
 import { IconServer, IconTerminal2 } from "@tabler/icons-react"
+import { useMemo } from "react"
 import { z } from "zod"
 
 import { EmptyState } from "@/components/console/empty-state"
-import { HeatCell } from "@/components/console/heat-cell"
+import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
 import { useDelayedLoading } from "@/components/console/hooks"
 import { RangePicker } from "@/components/console/range-picker"
 import { RelativeTime } from "@/components/console/relative-time"
@@ -221,6 +222,11 @@ export function ServicesIndexContent({
     .map((row) => row.p95Ms)
     .filter((value): value is number => Number.isFinite(value))
   const errorRates = rows.map(serviceErrorRate)
+  const p95Scale = useMemo(() => buildHeatScale(p95Values), [p95Values])
+  const errorRateScale = useMemo(
+    () => buildHeatScale(errorRates),
+    [errorRates]
+  )
 
   return (
     <div className="space-y-4">
@@ -368,7 +374,7 @@ export function ServicesIndexContent({
                       </Link>
                     </TableCell>
                     <TableCell className="text-right">
-                      <HeatCell value={rate} values={errorRates}>
+                      <HeatCell value={rate} scale={errorRateScale}>
                         {formatPercent(rate)}
                       </HeatCell>
                     </TableCell>
@@ -376,7 +382,7 @@ export function ServicesIndexContent({
                       {row.p95Ms == null ? (
                         <span className="text-muted-foreground">-</span>
                       ) : (
-                        <HeatCell value={row.p95Ms} values={p95Values}>
+                        <HeatCell value={row.p95Ms} scale={p95Scale}>
                           {formatDurationNs(row.p95Ms * 1_000_000)}
                         </HeatCell>
                       )}

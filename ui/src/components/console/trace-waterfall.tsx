@@ -1,5 +1,7 @@
+import type { CSSProperties } from "react"
 import { useEffect, useMemo, useRef } from "react"
 import { IconAffiliate } from "@tabler/icons-react"
+import { useVirtualizer } from "@tanstack/react-virtual"
 
 import { SpanKindChip, spanKindMeta } from "@/components/console/span-kind"
 import { Badge } from "@/components/ui/badge"
@@ -34,7 +36,20 @@ export function TraceWaterfall({
     () => [WHOLE_TRACE_ID, ...rows.map((row) => row.span.spanId)],
     [rows]
   )
+  const services = useMemo(
+    () => Array.from(new Set(spans.map((span) => span.service))),
+    [spans]
+  )
+  const shouldVirtualize = rows.length > 300
   const containerRef = useRef<HTMLDivElement | null>(null)
+  const rowsRef = useRef<HTMLDivElement | null>(null)
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => rowsRef.current,
+    estimateSize: () => 54,
+    overscan: 12,
+  })
+  const virtualItems = rowVirtualizer.getVirtualItems()
 
   useEffect(() => {
     if (!selectedId && spans.length > 0) onSelect(WHOLE_TRACE_ID)
@@ -43,7 +58,70 @@ export function TraceWaterfall({
   const moveSelection = (direction: 1 | -1) => {
     const current = selectedId ? ids.indexOf(selectedId) : 0
     const next = Math.min(Math.max(current + direction, 0), ids.length - 1)
+    if (shouldVirtualize && next > 0) {
+      rowVirtualizer.scrollToIndex(next - 1, { align: "auto" })
+    }
     onSelect(ids[next] ?? WHOLE_TRACE_ID)
+  }
+
+  useEffect(() => {
+    if (!shouldVirtualize || !selectedId || selectedId === WHOLE_TRACE_ID) {
+      return
+    }
+    const index = rows.findIndex((row) => row.span.spanId === selectedId)
+    if (index >= 0) rowVirtualizer.scrollToIndex(index, { align: "auto" })
+  }, [rowVirtualizer, rows, selectedId, shouldVirtualize])
+
+  const renderSpanRow = (
+    row: (typeof rows)[number],
+    style?: CSSProperties
+  ) => {
+    const { span, depth, offsetPct, widthPct } = row
+    const active = span.spanId === selectedId
+    const failed = span.statusCode === "STATUS_CODE_ERROR"
+    const meta = spanKindMeta(span.kind, span.statusCode)
+    return (
+      <button
+        key={span.spanId}
+        type="button"
+        onClick={() => onSelect(active ? null : span.spanId)}
+        className={cn(
+          "grid w-full cursor-pointer grid-cols-[11rem_minmax(0,1fr)_6.5rem] items-center rounded-md py-1.5 text-left text-sm hover:bg-accent/50",
+          active && "bg-accent/70",
+          style && "absolute top-0 left-0"
+        )}
+        data-testid={`trace-row-${span.spanId}`}
+        style={style}
+      >
+        <div
+          className="flex min-w-0 items-start gap-2 pr-3"
+          style={{ paddingLeft: (depth + 1) * 14 + 4 }}
+        >
+          <SpanKindChip kind={span.kind} statusCode={span.statusCode} />
+          <div className="min-w-0">
+            <span className="block break-words">{span.name}</span>
+            <div className="mt-1 flex flex-wrap items-center gap-1">
+              <Badge variant="outline">{span.service}</Badge>
+              {failed ? <Badge variant="rose">error</Badge> : null}
+            </div>
+          </div>
+        </div>
+        <div className="relative h-5">
+          <div
+            className={cn(
+              "absolute top-1/2 h-2 -translate-y-1/2 rounded-full",
+              meta.bar,
+              active &&
+                "ring-2 ring-foreground/30 ring-offset-1 ring-offset-background"
+            )}
+            style={{ left: `${offsetPct}%`, width: `${widthPct}%` }}
+          />
+        </div>
+        <div className="pr-1 text-right text-[11px] font-medium text-muted-foreground tabular-nums">
+          {formatDurationNs(span.durationNs)}
+        </div>
+      </button>
+    )
   }
 
   return (
@@ -103,13 +181,11 @@ export function TraceWaterfall({
               <div className="min-w-0">
                 <span className="font-medium break-words">Whole trace</span>
                 <div className="mt-1 flex flex-wrap gap-1">
-                  {Array.from(new Set(spans.map((span) => span.service))).map(
-                    (service) => (
-                      <Badge key={service} variant="outline">
-                        {service}
-                      </Badge>
-                    )
-                  )}
+                  {services.map((service) => (
+                    <Badge key={service} variant="outline">
+                      {service}
+                    </Badge>
+                  ))}
                 </div>
               </div>
             </div>
@@ -121,51 +197,29 @@ export function TraceWaterfall({
             </div>
           </button>
 
-          {rows.map(({ span, depth, offsetPct, widthPct }) => {
-            const active = span.spanId === selectedId
-            const failed = span.statusCode === "STATUS_CODE_ERROR"
-            const meta = spanKindMeta(span.kind, span.statusCode)
-            return (
-              <button
-                key={span.spanId}
-                type="button"
-                onClick={() => onSelect(active ? null : span.spanId)}
-                className={cn(
-                  "grid w-full cursor-pointer grid-cols-[11rem_minmax(0,1fr)_6.5rem] items-center rounded-md py-1.5 text-left text-sm hover:bg-accent/50",
-                  active && "bg-accent/70"
-                )}
-                data-testid={`trace-row-${span.spanId}`}
+          {shouldVirtualize ? (
+            <div
+              ref={rowsRef}
+              className="max-h-[min(70vh,720px)] overflow-auto"
+            >
+              <div
+                className="relative w-full"
+                style={{ height: rowVirtualizer.getTotalSize() }}
               >
-                <div
-                  className="flex min-w-0 items-start gap-2 pr-3"
-                  style={{ paddingLeft: (depth + 1) * 14 + 4 }}
-                >
-                  <SpanKindChip kind={span.kind} statusCode={span.statusCode} />
-                  <div className="min-w-0">
-                    <span className="block break-words">{span.name}</span>
-                    <div className="mt-1 flex flex-wrap items-center gap-1">
-                      <Badge variant="outline">{span.service}</Badge>
-                      {failed ? <Badge variant="rose">error</Badge> : null}
-                    </div>
-                  </div>
-                </div>
-                <div className="relative h-5">
-                  <div
-                    className={cn(
-                      "absolute top-1/2 h-2 -translate-y-1/2 rounded-full",
-                      meta.bar,
-                      active &&
-                        "ring-2 ring-foreground/30 ring-offset-1 ring-offset-background"
-                    )}
-                    style={{ left: `${offsetPct}%`, width: `${widthPct}%` }}
-                  />
-                </div>
-                <div className="pr-1 text-right text-[11px] font-medium text-muted-foreground tabular-nums">
-                  {formatDurationNs(span.durationNs)}
-                </div>
-              </button>
-            )
-          })}
+                {virtualItems.map((virtualItem) => {
+                  const row = rows[virtualItem.index]
+                  return row
+                    ? renderSpanRow(row, {
+                        height: virtualItem.size,
+                        transform: `translateY(${virtualItem.start}px)`,
+                      })
+                    : null
+                })}
+              </div>
+            </div>
+          ) : (
+            rows.map((row) => renderSpanRow(row))
+          )}
         </div>
       </div>
     </div>
