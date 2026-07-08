@@ -30,7 +30,7 @@ conditions, run its verification gates, and update your row below when done.
 |------|-------|----------|--------|------------|--------|
 | 022 | SQL surface hardening (metricSeries + EXPLAIN ANALYZE) | P1 | S | — | DONE |
 | 023 | Bundle redaction completeness (title/culprit/command) | P1 | S | — | DONE |
-| 024 | Enforce GraphQL depth/complexity + Host-header guard | P2 | M | — | TODO |
+| 024 | Enforce GraphQL depth/complexity + Host-header guard | P2 | M | — | DONE |
 | 025 | Redaction rule-set expansion (DSN/PEM/token shapes) | P2 | M | 023 | DONE |
 | 026 | Issue derivation correctness (non-error exceptions + dedup) | P1 | M | — | TODO |
 | 027 | Bundle hash stability + trace/metric budget bounding | P2 | M | — | TODO |
