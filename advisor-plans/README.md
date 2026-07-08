@@ -110,7 +110,7 @@ issue-derivation semantics — re-run both test suites after the second lands.
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | 019 | Fingerprint normalization v2 (issue over-splitting) | P1 | M | — | DONE |
-| 020 | Spool retention: rotation + reaper + doctor | P1 | M | — | TODO |
+| 020 | Spool retention: rotation + reaper + doctor | P1 | M | — | DONE |
 | 021 | Anchored log/span queries newest-first + severityMax | P2 | S | — | TODO |
 
 ## Verification baseline

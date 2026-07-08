@@ -14,9 +14,10 @@ use parallax_api::{ApiContext, Schema as ParallaxSchema};
 use parallax_storage::adapter::TelemetryStore;
 use parallax_storage::memory::MemoryStore;
 use parallax_storage::metadata::MetadataStore;
-use parallax_storage::spool::Spool;
+use parallax_storage::spool::{Spool, SpoolRetention};
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::net::TcpListener;
 use tokio::task::JoinHandle;
 
@@ -97,6 +98,34 @@ pub struct IngestState {
     pub sender: IngestSender,
 }
 
+fn spawn_spool_reaper(
+    spool: Arc<Spool>,
+    max_total_bytes: u64,
+    max_age_hours: u64,
+) -> JoinHandle<()> {
+    tokio::spawn(async move {
+        let retention = SpoolRetention {
+            max_total_bytes,
+            max_age: Duration::from_secs(max_age_hours.saturating_mul(60 * 60)),
+        };
+        let mut interval = tokio::time::interval(Duration::from_secs(10 * 60));
+        loop {
+            interval.tick().await;
+            match spool.reap(retention, std::time::SystemTime::now()) {
+                Ok(reclaimed) if reclaimed.removed_segments > 0 => {
+                    tracing::info!(
+                        segments = reclaimed.removed_segments,
+                        bytes = reclaimed.reclaimed_bytes,
+                        "reclaimed ingest spool segments"
+                    );
+                }
+                Ok(_) => {}
+                Err(error) => tracing::warn!("ingest spool reaper failed: {error}"),
+            }
+        }
+    })
+}
+
 /// Start every listener plus the ingest worker. Port 0 means "pick a free
 /// port" (tests); bound addresses are reported in the handle.
 ///
@@ -106,7 +135,10 @@ pub struct IngestState {
 pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
     let data_dir = config.data_dir();
     std::fs::create_dir_all(&data_dir)?;
-    let spool = Arc::new(Spool::open(data_dir.join("spool"))?);
+    let spool = Arc::new(Spool::open_with_max_segment_bytes(
+        data_dir.join("spool"),
+        config.retention.spool_max_segment_bytes,
+    )?);
 
     let mut supervisor = None;
     let store: Arc<dyn TelemetryStore> = match config.storage.mode.as_str() {
@@ -150,6 +182,11 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
     let worker = Worker::new(store.clone(), metadata.clone(), live.clone());
     let mut tasks = Vec::new();
     tasks.push(tokio::spawn(worker.run(receiver)));
+    tasks.push(spawn_spool_reaper(
+        spool.clone(),
+        config.retention.spool_max_total_bytes,
+        config.retention.spool_max_age_hours,
+    ));
 
     let bind = &config.server.bind;
     let api_listener = TcpListener::bind((bind.as_str(), config.server.api_port)).await?;

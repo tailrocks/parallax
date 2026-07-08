@@ -56,11 +56,16 @@ exists for a required piece.
 
 Ingest is the hot path: **decode once, never clone, move ownership forward.** OTLP requests are
 decoded from the wire once; receivers spool by reference and *move* the decoded request into the
-worker channel (no `.clone()` on the hot path). Backlogged perf work, in order: spool raw
+worker channel (no `.clone()` on the hot path). The ingest spool is a bounded WAL: write-before-ack
+is unchanged, active per-signal NDJSON files rotate at `[retention].spool_max_segment_bytes`, and
+the reaper enforces `[retention].spool_max_total_bytes` plus `[retention].spool_max_age_hours`
+without deleting active files. Rotated segments are reclaim-eligible because forwarding to the
+engine happens synchronously from the ingest channel today; future replay work must narrow that to
+segments newer than the last engine-ack watermark. Backlogged perf work, in order: spool raw
 protobuf bytes instead of re-serializing to NDJSON (debuggability trade — revisit at M5 with
-measurements); intern repeated strings (`service`, names) behind `Arc<str>` in the normalized
-rows; batch adapter inserts by size and time window. Every perf claim still goes through
-measured gate rows — this section sets the design posture, not numbers.
+measurements); intern repeated strings (`service`, names) behind `Arc<str>` in the normalized rows;
+batch adapter inserts by size and time window. Every perf claim still goes through measured gate
+rows — this section sets the design posture, not numbers.
 
 **Progress visibility (operator rule, 2026-06-12).** The user never waits in silence: long
 CLI steps narrate as they happen (download progress with MiB/percent/speed, engine start,
@@ -516,7 +521,7 @@ in [`otlp-fanout-comparison-lab.md`](../validation/otlp-fanout-comparison-lab.md
    listener holds it. `parallax serve` handles SIGTERM as cleanly as Ctrl-C; the pidfile is
    removed on clean shutdown.
 5. `doctor` reports: binary path + version + checksum status, child pid/health, port checks,
-   data-dir size per table, spool backlog.
+   data-dir size per table, active spool sizes, rotated segment counts, and configured spool caps.
 
 ## 12. What stays out of this spec on purpose
 

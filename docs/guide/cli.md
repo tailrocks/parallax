@@ -44,8 +44,8 @@ server from `~/.parallax/contexts.toml` — omitted, it targets the local one.
 
 | Command | What it does |
 | --- | --- |
-| `parallax doctor` | Diagnose the install: server reachable, engine health, spool and data sizes. |
-| `parallax prune` | Reclaim spool space now (telemetry TTLs are engine-managed). |
+| `parallax doctor` | Diagnose the install: server reachable, engine health, active/rotated spool segments, configured spool caps, and data sizes. |
+| `parallax prune` | Reclaim spool space now by truncating active segments and removing rotated segments (telemetry TTLs are engine-managed). |
 | `parallax uninstall --purge --yes` | Delete `~/.parallax` (binary stays; remove it with your package manager). |
 
 ## Exit codes
