@@ -17,11 +17,13 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as TracesIndexRouteImport } from './routes/traces.index'
 import { Route as RunsIndexRouteImport } from './routes/runs.index'
 import { Route as IssuesIndexRouteImport } from './routes/issues.index'
+import { Route as InvestigationsIndexRouteImport } from './routes/investigations.index'
 import { Route as DashboardsIndexRouteImport } from './routes/dashboards.index'
 import { Route as TracesTraceIdRouteImport } from './routes/traces.$traceId'
 import { Route as ServicesServiceRouteImport } from './routes/services.$service'
 import { Route as RunsRunIdRouteImport } from './routes/runs.$runId'
 import { Route as IssuesFingerprintRouteImport } from './routes/issues.$fingerprint'
+import { Route as InvestigationsInvestigationIdRouteImport } from './routes/investigations.$investigationId'
 import { Route as DashboardsDashboardIdRouteImport } from './routes/dashboards.$dashboardId'
 
 const SqlRoute = SqlRouteImport.update({
@@ -64,6 +66,11 @@ const IssuesIndexRoute = IssuesIndexRouteImport.update({
   path: '/issues/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InvestigationsIndexRoute = InvestigationsIndexRouteImport.update({
+  id: '/investigations/',
+  path: '/investigations/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardsIndexRoute = DashboardsIndexRouteImport.update({
   id: '/dashboards/',
   path: '/dashboards/',
@@ -89,6 +96,12 @@ const IssuesFingerprintRoute = IssuesFingerprintRouteImport.update({
   path: '/issues/$fingerprint',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InvestigationsInvestigationIdRoute =
+  InvestigationsInvestigationIdRouteImport.update({
+    id: '/investigations/$investigationId',
+    path: '/investigations/$investigationId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const DashboardsDashboardIdRoute = DashboardsDashboardIdRouteImport.update({
   id: '/dashboards/$dashboardId',
   path: '/dashboards/$dashboardId',
@@ -102,11 +115,13 @@ export interface FileRoutesByFullPath {
   '/services': typeof ServicesRouteWithChildren
   '/sql': typeof SqlRoute
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
+  '/investigations/$investigationId': typeof InvestigationsInvestigationIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
   '/runs/$runId': typeof RunsRunIdRoute
   '/services/$service': typeof ServicesServiceRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
   '/dashboards/': typeof DashboardsIndexRoute
+  '/investigations/': typeof InvestigationsIndexRoute
   '/issues/': typeof IssuesIndexRoute
   '/runs/': typeof RunsIndexRoute
   '/traces/': typeof TracesIndexRoute
@@ -118,11 +133,13 @@ export interface FileRoutesByTo {
   '/services': typeof ServicesRouteWithChildren
   '/sql': typeof SqlRoute
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
+  '/investigations/$investigationId': typeof InvestigationsInvestigationIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
   '/runs/$runId': typeof RunsRunIdRoute
   '/services/$service': typeof ServicesServiceRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
   '/dashboards': typeof DashboardsIndexRoute
+  '/investigations': typeof InvestigationsIndexRoute
   '/issues': typeof IssuesIndexRoute
   '/runs': typeof RunsIndexRoute
   '/traces': typeof TracesIndexRoute
@@ -135,11 +152,13 @@ export interface FileRoutesById {
   '/services': typeof ServicesRouteWithChildren
   '/sql': typeof SqlRoute
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
+  '/investigations/$investigationId': typeof InvestigationsInvestigationIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
   '/runs/$runId': typeof RunsRunIdRoute
   '/services/$service': typeof ServicesServiceRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
   '/dashboards/': typeof DashboardsIndexRoute
+  '/investigations/': typeof InvestigationsIndexRoute
   '/issues/': typeof IssuesIndexRoute
   '/runs/': typeof RunsIndexRoute
   '/traces/': typeof TracesIndexRoute
@@ -153,11 +172,13 @@ export interface FileRouteTypes {
     | '/services'
     | '/sql'
     | '/dashboards/$dashboardId'
+    | '/investigations/$investigationId'
     | '/issues/$fingerprint'
     | '/runs/$runId'
     | '/services/$service'
     | '/traces/$traceId'
     | '/dashboards/'
+    | '/investigations/'
     | '/issues/'
     | '/runs/'
     | '/traces/'
@@ -169,11 +190,13 @@ export interface FileRouteTypes {
     | '/services'
     | '/sql'
     | '/dashboards/$dashboardId'
+    | '/investigations/$investigationId'
     | '/issues/$fingerprint'
     | '/runs/$runId'
     | '/services/$service'
     | '/traces/$traceId'
     | '/dashboards'
+    | '/investigations'
     | '/issues'
     | '/runs'
     | '/traces'
@@ -185,11 +208,13 @@ export interface FileRouteTypes {
     | '/services'
     | '/sql'
     | '/dashboards/$dashboardId'
+    | '/investigations/$investigationId'
     | '/issues/$fingerprint'
     | '/runs/$runId'
     | '/services/$service'
     | '/traces/$traceId'
     | '/dashboards/'
+    | '/investigations/'
     | '/issues/'
     | '/runs/'
     | '/traces/'
@@ -202,10 +227,12 @@ export interface RootRouteChildren {
   ServicesRoute: typeof ServicesRouteWithChildren
   SqlRoute: typeof SqlRoute
   DashboardsDashboardIdRoute: typeof DashboardsDashboardIdRoute
+  InvestigationsInvestigationIdRoute: typeof InvestigationsInvestigationIdRoute
   IssuesFingerprintRoute: typeof IssuesFingerprintRoute
   RunsRunIdRoute: typeof RunsRunIdRoute
   TracesTraceIdRoute: typeof TracesTraceIdRoute
   DashboardsIndexRoute: typeof DashboardsIndexRoute
+  InvestigationsIndexRoute: typeof InvestigationsIndexRoute
   IssuesIndexRoute: typeof IssuesIndexRoute
   RunsIndexRoute: typeof RunsIndexRoute
   TracesIndexRoute: typeof TracesIndexRoute
@@ -269,6 +296,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IssuesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/investigations/': {
+      id: '/investigations/'
+      path: '/investigations'
+      fullPath: '/investigations/'
+      preLoaderRoute: typeof InvestigationsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboards/': {
       id: '/dashboards/'
       path: '/dashboards'
@@ -304,6 +338,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IssuesFingerprintRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/investigations/$investigationId': {
+      id: '/investigations/$investigationId'
+      path: '/investigations/$investigationId'
+      fullPath: '/investigations/$investigationId'
+      preLoaderRoute: typeof InvestigationsInvestigationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboards/$dashboardId': {
       id: '/dashboards/$dashboardId'
       path: '/dashboards/$dashboardId'
@@ -333,10 +374,12 @@ const rootRouteChildren: RootRouteChildren = {
   ServicesRoute: ServicesRouteWithChildren,
   SqlRoute: SqlRoute,
   DashboardsDashboardIdRoute: DashboardsDashboardIdRoute,
+  InvestigationsInvestigationIdRoute: InvestigationsInvestigationIdRoute,
   IssuesFingerprintRoute: IssuesFingerprintRoute,
   RunsRunIdRoute: RunsRunIdRoute,
   TracesTraceIdRoute: TracesTraceIdRoute,
   DashboardsIndexRoute: DashboardsIndexRoute,
+  InvestigationsIndexRoute: InvestigationsIndexRoute,
   IssuesIndexRoute: IssuesIndexRoute,
   RunsIndexRoute: RunsIndexRoute,
   TracesIndexRoute: TracesIndexRoute,

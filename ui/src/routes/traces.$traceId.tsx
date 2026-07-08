@@ -22,6 +22,7 @@ import type {
   WaterfallSpan,
 } from "@/components/console/trace-waterfall"
 import { GraphqlOperationCard } from "@/components/console/graphql-operation"
+import { PinButton } from "@/components/console/pin-button"
 import { RpcStreamCard } from "@/components/console/rpc-stream"
 import { EvidenceGapsCard } from "@/components/console/evidence-gaps"
 import { StoryTimeline } from "@/components/console/story-timeline"
@@ -433,6 +434,7 @@ function TracePage() {
         }
         actions={
           <div className="flex flex-wrap items-center justify-end gap-2">
+            <PinButton kind="trace" label={rootSpan.name || traceId} />
             <Button
               type="button"
               variant={criticalEnabled ? "secondary" : "outline"}

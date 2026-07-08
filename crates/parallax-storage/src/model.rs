@@ -198,6 +198,16 @@ pub struct Dashboard {
     pub updated_at_nanos: u128,
 }
 
+/// Saved investigation/case state (metadata store).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Investigation {
+    pub id: String,
+    pub name: String,
+    pub state: String,
+    pub created_at_nanos: u128,
+    pub updated_at_nanos: u128,
+}
+
 /// Named saved URL-state view (metadata store).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SavedView {

@@ -54,6 +54,9 @@ const MAX_ROWS: usize = 500;
 const SQL_MAX_ROWS: usize = 2_000;
 const SAVED_VIEW_NAME_MAX: usize = 120;
 const SAVED_VIEWS_PER_PAGE: usize = 100;
+const INVESTIGATION_NAME_MAX: usize = 120;
+const INVESTIGATION_PIN_CAP: usize = 100;
+const INVESTIGATION_NOTES_MAX_BYTES: usize = 64 * 1024;
 
 fn clamp_limit(limit: Option<i32>, default: usize) -> usize {
     limit
@@ -75,6 +78,54 @@ fn validate_saved_view_name(name: &str) -> FieldResult<String> {
 fn validate_saved_view_page(page: &str) -> FieldResult<()> {
     if page.is_empty() || page.len() > 128 || !page.starts_with('/') {
         return Err(field_err("saved view page must be a route path"));
+    }
+    Ok(())
+}
+
+fn validate_investigation_name(name: &str) -> FieldResult<String> {
+    let name = name.trim();
+    if name.is_empty() {
+        return Err(field_err("investigation name is required"));
+    }
+    if name.chars().count() > INVESTIGATION_NAME_MAX {
+        return Err(field_err("investigation name is too long"));
+    }
+    Ok(name.to_string())
+}
+
+fn validate_investigation_state(state: &str) -> FieldResult<()> {
+    let parsed: serde_json::Value =
+        serde_json::from_str(state).map_err(|_| field_err("state must be valid JSON"))?;
+    let object = parsed
+        .as_object()
+        .ok_or_else(|| field_err("state must be a JSON object"))?;
+    if object
+        .get("version")
+        .and_then(serde_json::Value::as_u64)
+        .unwrap_or(0)
+        != 1
+    {
+        return Err(field_err("investigation state version must be 1"));
+    }
+    let pin_count = match object.get("pins") {
+        Some(pins) => pins
+            .as_array()
+            .ok_or_else(|| field_err("investigation pins must be an array"))?
+            .len(),
+        None => 0,
+    };
+    if pin_count > INVESTIGATION_PIN_CAP {
+        return Err(field_err("investigation pin cap exceeded"));
+    }
+    let notes_len = match object.get("notes") {
+        Some(notes) => notes
+            .as_str()
+            .ok_or_else(|| field_err("investigation notes must be a string"))?
+            .len(),
+        None => 0,
+    };
+    if notes_len > INVESTIGATION_NOTES_MAX_BYTES {
+        return Err(field_err("investigation notes are too long"));
     }
     Ok(())
 }
@@ -1452,6 +1503,29 @@ impl Dashboard {
     }
 }
 
+pub struct Investigation(model::Investigation);
+
+#[graphql_object(context = ApiContext)]
+impl Investigation {
+    fn id(&self) -> &str {
+        &self.0.id
+    }
+    fn name(&self) -> &str {
+        &self.0.name
+    }
+    /// Opaque V1 investigation state JSON:
+    /// `{version, window, pins, notes}`.
+    fn state(&self) -> &str {
+        &self.0.state
+    }
+    fn created_at_nanos(&self) -> String {
+        nanos_string(self.0.created_at_nanos)
+    }
+    fn updated_at_nanos(&self) -> String {
+        nanos_string(self.0.updated_at_nanos)
+    }
+}
+
 pub struct SavedView(model::SavedView);
 
 #[graphql_object(context = ApiContext)]
@@ -2300,6 +2374,16 @@ impl Query {
             .map(Dashboard))
     }
 
+    /// One saved investigation by id.
+    async fn investigation(context: &ApiContext, id: String) -> FieldResult<Option<Investigation>> {
+        Ok(context
+            .metadata
+            .investigation(&id)
+            .await
+            .map_err(field_err)?
+            .map(Investigation))
+    }
+
     /// The predefined service overview (spec §8): CPU, memory, request rate,
     /// latency percentiles, error rate from well-known metric names, with
     /// graceful absence.
@@ -2810,6 +2894,12 @@ impl Query {
         Ok(dashboards.into_iter().map(Dashboard).collect())
     }
 
+    /// Saved investigations/cases, most recently updated first.
+    async fn investigations(context: &ApiContext) -> FieldResult<Vec<Investigation>> {
+        let investigations = context.metadata.investigations().await.map_err(field_err)?;
+        Ok(investigations.into_iter().map(Investigation).collect())
+    }
+
     /// Named saved page states, most recently updated first.
     async fn saved_views(
         context: &ApiContext,
@@ -3018,6 +3108,45 @@ impl Mutation {
         context
             .metadata
             .dashboard_delete(&id)
+            .await
+            .map_err(field_err)
+    }
+
+    /// Create or update an investigation/case state.
+    async fn investigation_save(
+        context: &ApiContext,
+        name: String,
+        state: String,
+        id: Option<String>,
+    ) -> FieldResult<Investigation> {
+        let name = validate_investigation_name(&name)?;
+        validate_investigation_state(&state)?;
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let id = id
+            .filter(|id| !id.is_empty())
+            .unwrap_or_else(|| format!("case_{now:x}"));
+        context
+            .metadata
+            .investigation_save(&id, &name, &state, now)
+            .await
+            .map_err(field_err)?;
+        context
+            .metadata
+            .investigation(&id)
+            .await
+            .map_err(field_err)?
+            .map(Investigation)
+            .ok_or_else(|| field_err("investigation save did not persist"))
+    }
+
+    /// Delete an investigation/case.
+    async fn investigation_delete(context: &ApiContext, id: String) -> FieldResult<bool> {
+        context
+            .metadata
+            .investigation_delete(&id)
             .await
             .map_err(field_err)
     }
@@ -3920,6 +4049,127 @@ mod tests {
                 .iter()
                 .any(|message| message.contains("saved view cap")),
             "saved view cap enforced: {json}"
+        );
+    }
+
+    #[tokio::test]
+    async fn investigation_resolvers_round_trip_and_validate_state() {
+        let schema = build_schema();
+        let context = context_with_memory(Arc::new(MemoryStore::new())).await;
+        let state = r#"{"version":1,"window":{"range":"24h"},"pins":[{"kind":"trace","ref":"/traces/t1","label":"trace"}],"notes":"triage"}"#;
+        let save = juniper::http::GraphQLRequest::new(
+            format!(
+                r#"
+                mutation {{
+                  investigationSave(name: "Checkout case", state: "{}") {{
+                    id name state
+                  }}
+                }}
+                "#,
+                state.replace('"', "\\\"")
+            ),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, save).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(
+            error_messages(&json).is_empty(),
+            "investigationSave: {json}"
+        );
+        let id = json
+            .pointer("/data/investigationSave/id")
+            .and_then(|value| value.as_str())
+            .unwrap()
+            .to_string();
+        assert_eq!(
+            json.pointer("/data/investigationSave/name"),
+            Some(&serde_json::json!("Checkout case"))
+        );
+
+        let list = juniper::http::GraphQLRequest::new(
+            r#"{ investigations { id name state updatedAtNanos } }"#.into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, list).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(error_messages(&json).is_empty(), "investigations: {json}");
+        assert_eq!(
+            json.pointer("/data/investigations/0/id"),
+            Some(&serde_json::json!(id.as_str()))
+        );
+
+        let get = juniper::http::GraphQLRequest::new(
+            format!(r#"{{ investigation(id: "{id}") {{ id name state }} }}"#),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, get).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(error_messages(&json).is_empty(), "investigation: {json}");
+        assert_eq!(
+            json.pointer("/data/investigation/id"),
+            Some(&serde_json::json!(id.as_str()))
+        );
+
+        let delete = juniper::http::GraphQLRequest::new(
+            format!(r#"mutation {{ investigationDelete(id: "{id}") }}"#),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, delete).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert_eq!(
+            json.pointer("/data/investigationDelete"),
+            Some(&serde_json::json!(true))
+        );
+
+        let bad_json = juniper::http::GraphQLRequest::new(
+            r#"mutation { investigationSave(name: "Bad", state: "{bad json") { id } }"#.into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, bad_json).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(
+            error_messages(&json)
+                .iter()
+                .any(|message| message.contains("state must be valid JSON")),
+            "bad JSON rejected: {json}"
+        );
+
+        let pins = (0..=INVESTIGATION_PIN_CAP)
+            .map(|index| {
+                serde_json::json!({
+                    "kind": "trace",
+                    "ref": format!("/traces/{index}"),
+                    "label": format!("trace {index}")
+                })
+            })
+            .collect::<Vec<_>>();
+        let capped_state = serde_json::json!({
+            "version": 1,
+            "window": {"range": "24h"},
+            "pins": pins,
+            "notes": ""
+        })
+        .to_string();
+        let capped = juniper::http::GraphQLRequest::new(
+            format!(
+                r#"mutation {{ investigationSave(name: "Too many", state: "{}") {{ id }} }}"#,
+                capped_state.replace('"', "\\\"")
+            ),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, capped).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(
+            error_messages(&json)
+                .iter()
+                .any(|message| message.contains("pin cap")),
+            "pin cap enforced: {json}"
         );
     }
 

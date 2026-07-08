@@ -14,6 +14,7 @@ import {
 import { CopyButton } from "@/components/console/copy-button"
 import { EmptyState } from "@/components/console/empty-state"
 import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
+import { PinButton } from "@/components/console/pin-button"
 import { RelativeTime } from "@/components/console/relative-time"
 import { ScrollFade } from "@/components/console/scroll-fade"
 import { StatCard } from "@/components/console/stat-card"
@@ -329,6 +330,7 @@ export function RunDetailContent({
         }
         actions={
           <>
+            <PinButton kind="run" label={runId} />
             <Button
               size="sm"
               variant={live ? "secondary" : "outline"}

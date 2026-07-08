@@ -235,6 +235,14 @@ export interface ObservedRun {
   logCount: number
 }
 
+export interface Investigation {
+  id: string
+  name: string
+  state: string
+  createdAtNanos: string
+  updatedAtNanos: string
+}
+
 export interface TraceSummary {
   traceId: string
   rootName: string

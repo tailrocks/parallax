@@ -17,6 +17,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { CopyButton } from "@/components/console/copy-button"
 import { EmptyState } from "@/components/console/empty-state"
 import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
+import { PinButton } from "@/components/console/pin-button"
 import { RangePicker } from "@/components/console/range-picker"
 import { RelativeTime } from "@/components/console/relative-time"
 import { CardSparkline, StatCard } from "@/components/console/stat-card"
@@ -260,6 +261,10 @@ export function IssueDetailContent({
         description={currentIssue.title}
         actions={
           <>
+            <PinButton
+              kind="issue"
+              label={currentIssue.title || currentIssue.fingerprint}
+            />
             <Button
               size="sm"
               variant="outline"
