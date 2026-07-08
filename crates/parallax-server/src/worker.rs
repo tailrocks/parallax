@@ -8,7 +8,8 @@ use parallax_proto::collector_metrics::ExportMetricsServiceRequest;
 use parallax_proto::collector_trace::ExportTraceServiceRequest;
 use parallax_storage::adapter::TelemetryStore;
 use parallax_storage::metadata::MetadataStore;
-use parallax_storage::model::ErrorEventRow;
+use parallax_storage::model::{ErrorEventRow, ErrorSource};
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 
@@ -126,6 +127,7 @@ impl Worker {
     }
 
     async fn record_errors(&self, errors: Vec<ErrorEventRow>) -> anyhow::Result<()> {
+        let errors = dedup_error_events(errors);
         if errors.is_empty() {
             return Ok(());
         }
@@ -145,5 +147,113 @@ impl Worker {
         }
         self.store.write_error_events(errors).await?;
         Ok(())
+    }
+}
+
+fn source_precedence(source: ErrorSource) -> u8 {
+    match source {
+        ErrorSource::SpanException => 0,
+        ErrorSource::LogException => 1,
+        ErrorSource::LogRecord => 2,
+        ErrorSource::SpanStatus => 3,
+    }
+}
+
+fn dedup_error_events(errors: Vec<ErrorEventRow>) -> Vec<ErrorEventRow> {
+    let mut seen: HashMap<(String, String, String), usize> = HashMap::new();
+    let mut deduped: Vec<ErrorEventRow> = Vec::with_capacity(errors.len());
+    for event in errors {
+        if event.trace_id.is_empty() || event.span_id.is_empty() {
+            deduped.push(event);
+            continue;
+        }
+        let key = (
+            event.trace_id.clone(),
+            event.span_id.clone(),
+            event.fingerprint.clone(),
+        );
+        if let Some(&index) = seen.get(&key) {
+            if source_precedence(event.source) < source_precedence(deduped[index].source) {
+                deduped[index] = event;
+            }
+        } else {
+            seen.insert(key, deduped.len());
+            deduped.push(event);
+        }
+    }
+    deduped
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use parallax_storage::adapter::TelemetryStore;
+    use parallax_storage::memory::MemoryStore;
+    use serde_json::json;
+
+    fn error_event(source: ErrorSource, span_id: &str, fingerprint: &str) -> ErrorEventRow {
+        ErrorEventRow {
+            ts_nanos: 1,
+            service: "checkout".to_string(),
+            fingerprint: fingerprint.to_string(),
+            error_type: "test::Boom".to_string(),
+            message: "boom".to_string(),
+            stacktrace: Some("top\nbottom".to_string()),
+            source,
+            trace_id: "trace".to_string(),
+            span_id: span_id.to_string(),
+            attributes: json!({}),
+        }
+    }
+
+    #[test]
+    fn dedup_prefers_span_exception_for_same_failure() {
+        let events = dedup_error_events(vec![
+            error_event(ErrorSource::LogException, "span-a", "fp"),
+            error_event(ErrorSource::SpanException, "span-a", "fp"),
+        ]);
+
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].source, ErrorSource::SpanException);
+    }
+
+    #[test]
+    fn dedup_preserves_distinct_span_failures() {
+        let events = dedup_error_events(vec![
+            error_event(ErrorSource::SpanException, "span-a", "fp"),
+            error_event(ErrorSource::SpanException, "span-b", "fp"),
+        ]);
+
+        assert_eq!(events.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn record_errors_counts_one_occurrence_after_dedup() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let store = Arc::new(MemoryStore::new());
+        let metadata = Arc::new(
+            MetadataStore::open(tmp.path().join("meta.db"))
+                .await
+                .expect("metadata"),
+        );
+        let worker = Worker::new(store.clone(), metadata.clone(), crate::live::channels());
+
+        worker
+            .record_errors(vec![
+                error_event(ErrorSource::LogException, "span-a", "fp"),
+                error_event(ErrorSource::SpanException, "span-a", "fp"),
+            ])
+            .await
+            .expect("record errors");
+
+        let issues = metadata.issues(10).await.expect("issues");
+        assert_eq!(issues.len(), 1);
+        assert_eq!(issues[0].event_count, 1);
+        let events = store
+            .error_events_by_fingerprint("fp", 0..=u128::MAX, 10)
+            .await
+            .expect("error events");
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].source, ErrorSource::SpanException);
     }
 }

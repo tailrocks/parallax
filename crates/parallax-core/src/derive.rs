@@ -38,44 +38,51 @@ pub fn derive_from_traces(request: &ExportTraceServiceRequest) -> Vec<ErrorEvent
         for ss in &rs.scope_spans {
             for span in &ss.spans {
                 let is_error = span.status.as_ref().map(|s| s.code == 2).unwrap_or(false);
-                if !is_error {
-                    continue;
-                }
                 let exception = span.events.iter().find(|e| e.name == "exception");
-                let (source, error_type, message, stacktrace, ts, operation) = match exception {
-                    Some(event) => {
-                        let fallback_type =
-                            attr_str(&event.attributes, "exception.type").unwrap_or("unknown");
-                        (
-                            ErrorSource::SpanException,
-                            attr_str(&event.attributes, "error.type")
-                                .or_else(|| attr_str(&span.attributes, "error.type"))
-                                .unwrap_or(fallback_type)
-                                .to_string(),
-                            attr_str(&event.attributes, "exception.message")
-                                .unwrap_or("")
-                                .to_string(),
-                            attr_str(&event.attributes, "exception.stacktrace").map(str::to_string),
-                            u128::from(event.time_unix_nano),
-                            attr_str(&event.attributes, "jackin.operation")
-                                .or_else(|| attr_str(&span.attributes, "jackin.operation"))
-                                .map(str::to_string),
-                        )
-                    }
-                    None => (
-                        ErrorSource::SpanStatus,
-                        attr_str(&span.attributes, "error.type")
-                            .unwrap_or("span_error")
-                            .to_string(),
-                        span.status
-                            .as_ref()
-                            .map(|s| s.message.clone())
-                            .filter(|m| !m.is_empty())
-                            .unwrap_or_else(|| span.name.clone()),
-                        None,
-                        u128::from(span.end_time_unix_nano),
-                        attr_str(&span.attributes, "jackin.operation").map(str::to_string),
-                    ),
+                let Some((source, error_type, message, stacktrace, ts, operation)) = exception
+                    .map_or_else(
+                        || {
+                            is_error.then(|| {
+                                (
+                                    ErrorSource::SpanStatus,
+                                    attr_str(&span.attributes, "error.type")
+                                        .unwrap_or("span_error")
+                                        .to_string(),
+                                    span.status
+                                        .as_ref()
+                                        .map(|s| s.message.clone())
+                                        .filter(|m| !m.is_empty())
+                                        .unwrap_or_else(|| span.name.clone()),
+                                    None,
+                                    u128::from(span.end_time_unix_nano),
+                                    attr_str(&span.attributes, "jackin.operation")
+                                        .map(str::to_string),
+                                )
+                            })
+                        },
+                        |event| {
+                            let fallback_type =
+                                attr_str(&event.attributes, "exception.type").unwrap_or("unknown");
+                            Some((
+                                ErrorSource::SpanException,
+                                attr_str(&event.attributes, "error.type")
+                                    .or_else(|| attr_str(&span.attributes, "error.type"))
+                                    .unwrap_or(fallback_type)
+                                    .to_string(),
+                                attr_str(&event.attributes, "exception.message")
+                                    .unwrap_or("")
+                                    .to_string(),
+                                attr_str(&event.attributes, "exception.stacktrace")
+                                    .map(str::to_string),
+                                u128::from(event.time_unix_nano),
+                                attr_str(&event.attributes, "jackin.operation")
+                                    .or_else(|| attr_str(&span.attributes, "jackin.operation"))
+                                    .map(str::to_string),
+                            ))
+                        },
+                    )
+                else {
+                    continue;
                 };
                 let fp = fingerprint_with_operation(
                     &error_type,
@@ -115,9 +122,9 @@ pub fn derive_from_logs(rows: &[LogRow]) -> Vec<ErrorEventRow> {
             .get("exception.message")
             .and_then(|v| v.as_str());
         let has_exception_attrs = exception_type.is_some() || exception_message.is_some();
-        let is_error_severity = row.severity_num >= SEVERITY_ERROR
+        let error_severity = row.severity_num >= SEVERITY_ERROR
             || matches!(row.severity_text.as_str(), "ERROR" | "FATAL");
-        if !is_error_severity && !has_exception_attrs {
+        if !error_severity && !has_exception_attrs {
             continue;
         }
         let structured_error_type = json_attr_str(&row.attributes, "error.type");
@@ -180,7 +187,64 @@ pub fn culprit(stacktrace: Option<&str>) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use parallax_proto::collector_trace::ExportTraceServiceRequest;
+    use parallax_proto::common::{AnyValue, KeyValue, any_value};
+    use parallax_proto::resource::Resource;
+    use parallax_proto::trace::{ResourceSpans, ScopeSpans, Span, Status, span, status};
     use serde_json::json;
+
+    fn string_kv(key: &str, value: &str) -> KeyValue {
+        KeyValue {
+            key: key.to_string(),
+            value: Some(AnyValue {
+                value: Some(any_value::Value::StringValue(value.to_string())),
+            }),
+            key_strindex: 0,
+        }
+    }
+
+    fn span_request(span: Span) -> ExportTraceServiceRequest {
+        ExportTraceServiceRequest {
+            resource_spans: vec![ResourceSpans {
+                resource: Some(Resource {
+                    attributes: vec![string_kv("service.name", "checkout")],
+                    ..Default::default()
+                }),
+                scope_spans: vec![ScopeSpans {
+                    spans: vec![span],
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+        }
+    }
+
+    fn test_span(status_code: i32, exception: bool) -> Span {
+        Span {
+            trace_id: vec![1; 16],
+            span_id: vec![2; 8],
+            name: "checkout.authorize".to_string(),
+            end_time_unix_nano: 99,
+            status: Some(Status {
+                code: status_code,
+                message: "status failed".to_string(),
+            }),
+            events: exception
+                .then(|| span::Event {
+                    time_unix_nano: 42,
+                    name: "exception".to_string(),
+                    attributes: vec![
+                        string_kv("exception.type", "test::Boom"),
+                        string_kv("exception.message", "boom"),
+                        string_kv("exception.stacktrace", "top\nbottom"),
+                    ],
+                    ..Default::default()
+                })
+                .into_iter()
+                .collect(),
+            ..Default::default()
+        }
+    }
 
     fn log_row(body: &str, attributes: serde_json::Value) -> LogRow {
         LogRow {
@@ -196,6 +260,31 @@ mod tests {
             attributes,
             resource: json!({}),
         }
+    }
+
+    #[test]
+    fn ok_span_exception_produces_span_exception_error() {
+        let request = span_request(test_span(status::StatusCode::Ok as i32, true));
+
+        let events = derive_from_traces(&request);
+
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].source, ErrorSource::SpanException);
+        assert_eq!(events[0].error_type, "test::Boom");
+        assert_eq!(events[0].message, "boom");
+        assert_eq!(events[0].stacktrace.as_deref(), Some("top\nbottom"));
+    }
+
+    #[test]
+    fn error_span_without_exception_still_produces_span_status_error() {
+        let request = span_request(test_span(status::StatusCode::Error as i32, false));
+
+        let events = derive_from_traces(&request);
+
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].source, ErrorSource::SpanStatus);
+        assert_eq!(events[0].error_type, "span_error");
+        assert_eq!(events[0].message, "status failed");
     }
 
     #[test]
