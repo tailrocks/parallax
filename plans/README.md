@@ -11,29 +11,29 @@ delete that plan file and update this README.
 
 ## Active Items
 
-| Plan | Title | Repo | Remaining reason |
-|------|-------|------|------------------|
-| 036 | Playground trace spine | playground | live trace-spine proof and dependency note |
-| 038 | Time-window continuity | parallax | route-level URL range proof |
-| 040 | UI performance at scale | parallax | seeded performance/manual proof |
-| 041 | Releases/deploys lane | parallax | seeded release UI proof |
-| 042 | Playground release + flags reality | playground | live release/flag/catalog proof |
-| 043 | Service catalog | parallax | seeded catalog UI proof |
-| 044 | Runtime dashboards + metric discovery | parallax | seeded metric discovery/UI proof |
-| 045 | Playground runtime scenarios | playground | recorded runtime scenario evidence |
-| 046 | Field explorer phase 1 | parallax | seeded field-explorer UI proof |
-| 048 | Playground Postgres reality | playground | live db span/pool metric proof |
-| 049 | Playground messaging + gRPC semantics | playground | live messaging/grpc proof |
-| 050 | Playground frontend RUM journey | playground | live browser RUM proof |
-| 051 | traceCriticalPath + traceCompare | parallax | real trace compare proof |
-| 052 | Investigations | parallax | manual save/restore proof |
-| 053 | Design-system + a11y consolidation | parallax | visual/a11y sweep proof |
-| 054 | Playground quality scenarios + TOUR | playground | recorded scenario tour evidence |
-| 056 | Typed events + structured logs | playground | live native-log event proof |
-| 057 | Logs context + saved views | parallax | route integration tests/proof |
-| 061 | Trace view modes | parallax | route/deep-link/skew proof |
-| 063 | Playground trace-shape scenarios | playground | live backdated skew proof |
-| 064 | Command center v1 | parallax | manual Overview brush proof |
+| Plan | Status | Title | Repo | Remaining reason |
+|------|--------|-------|------|------------------|
+| 036 | TODO | Playground trace spine | playground | live trace-spine proof and dependency note |
+| 038 | TODO | Time-window continuity | parallax | route-level URL range proof |
+| 040 | TODO | UI performance at scale | parallax | seeded performance/manual proof |
+| 041 | TODO | Releases/deploys lane | parallax | seeded release UI proof |
+| 042 | TODO | Playground release + flags reality | playground | live release/flag/catalog proof |
+| 043 | TODO | Service catalog | parallax | seeded catalog UI proof |
+| 044 | TODO | Runtime dashboards + metric discovery | parallax | seeded metric discovery/UI proof |
+| 045 | TODO | Playground runtime scenarios | playground | recorded runtime scenario evidence |
+| 046 | TODO | Field explorer phase 1 | parallax | seeded field-explorer UI proof |
+| 048 | TODO | Playground Postgres reality | playground | live db span/pool metric proof |
+| 049 | TODO | Playground messaging + gRPC semantics | playground | live messaging/grpc proof |
+| 050 | TODO | Playground frontend RUM journey | playground | live browser RUM proof |
+| 051 | TODO | traceCriticalPath + traceCompare | parallax | real trace compare proof |
+| 052 | TODO | Investigations | parallax | manual save/restore proof |
+| 053 | TODO | Design-system + a11y consolidation | parallax | visual/a11y sweep proof |
+| 054 | TODO | Playground quality scenarios + TOUR | playground | recorded scenario tour evidence |
+| 056 | TODO | Typed events + structured logs | playground | live native-log event proof |
+| 057 | TODO | Logs context + saved views | parallax | route integration tests/proof |
+| 061 | TODO | Trace view modes | parallax | route/deep-link/skew proof |
+| 063 | TODO | Playground trace-shape scenarios | playground | live backdated skew proof |
+| 064 | TODO | Command center v1 | parallax | manual Overview brush proof |
 
 ## Retired In This Audit
 
