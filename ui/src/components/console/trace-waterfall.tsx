@@ -98,7 +98,7 @@ export function TraceWaterfall({
     () => visualItemsForMode(mode, rows),
     [mode, rows]
   )
-  const minimapRows = useMemo(() => sampledMinimapRows(allRows), [allRows])
+  const minimapRows = useMemo(() => sampledMinimapRows(rows), [rows])
   const ids = useMemo(
     () => [WHOLE_TRACE_ID, ...rows.map((row) => row.span.spanId)],
     [rows]

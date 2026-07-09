@@ -339,12 +339,13 @@ fn match_entries(spans: &[SpanRow]) -> Vec<MatchEntry<'_>> {
 
     let mut entries = Vec::new();
     let mut visited = HashSet::new();
-    collect_match_entries(None, 0, &children, &mut visited, &mut entries);
+    collect_match_entries(None, "", 0, &children, &mut visited, &mut entries);
     entries
 }
 
 fn collect_match_entries<'a>(
     parent: Option<&'a str>,
+    parent_key: &str,
     depth: usize,
     children: &HashMap<Option<&'a str>, Vec<&'a SpanRow>>,
     visited: &mut HashSet<&'a str>,
@@ -359,7 +360,8 @@ fn collect_match_entries<'a>(
             continue;
         }
         let base = format!(
-            "{}|{}|{}|{}",
+            "{}>{}|{}|{}|{}",
+            parent_key,
             span.service,
             span.kind,
             depth,
@@ -368,9 +370,14 @@ fn collect_match_entries<'a>(
         let sibling_index = sibling_counts.entry(base.clone()).or_insert(0);
         let key = format!("{base}|{}", *sibling_index);
         *sibling_index += 1;
-        entries.push(MatchEntry { span, depth, key });
+        entries.push(MatchEntry {
+            span,
+            depth,
+            key: key.clone(),
+        });
         collect_match_entries(
             Some(span.span_id.as_str()),
+            &key,
             depth + 1,
             children,
             visited,
@@ -601,6 +608,101 @@ mod tests {
 
         assert_eq!(diff.added.len(), 1);
         assert_eq!(diff.added[0].name, "retry");
+    }
+
+    #[test]
+    fn compare_keeps_same_operation_children_under_different_parents_distinct() {
+        let before = vec![
+            named(
+                "root-a",
+                None,
+                "api",
+                "checkout",
+                0,
+                100,
+                "STATUS_CODE_UNSET",
+            ),
+            named(
+                "branch-a",
+                Some("root-a"),
+                "api",
+                "fanout",
+                10,
+                40,
+                "STATUS_CODE_UNSET",
+            ),
+            named(
+                "branch-b",
+                Some("root-a"),
+                "api",
+                "fanout",
+                20,
+                40,
+                "STATUS_CODE_UNSET",
+            ),
+            named(
+                "select-a",
+                Some("branch-a"),
+                "db",
+                "SELECT stock",
+                12,
+                10,
+                "STATUS_CODE_UNSET",
+            ),
+            named(
+                "select-b",
+                Some("branch-b"),
+                "db",
+                "SELECT stock",
+                22,
+                10,
+                "STATUS_CODE_UNSET",
+            ),
+        ];
+        let after = vec![
+            named(
+                "root-b",
+                None,
+                "api",
+                "checkout",
+                0,
+                100,
+                "STATUS_CODE_UNSET",
+            ),
+            named(
+                "branch-c",
+                Some("root-b"),
+                "api",
+                "fanout",
+                10,
+                40,
+                "STATUS_CODE_UNSET",
+            ),
+            named(
+                "branch-d",
+                Some("root-b"),
+                "api",
+                "fanout",
+                20,
+                40,
+                "STATUS_CODE_UNSET",
+            ),
+            named(
+                "select-d",
+                Some("branch-d"),
+                "db",
+                "SELECT stock",
+                22,
+                10,
+                "STATUS_CODE_UNSET",
+            ),
+        ];
+
+        let diff = compare(&before, &after);
+
+        assert_eq!(diff.removed.len(), 1);
+        assert_eq!(diff.removed[0].span_id, "select-a");
+        assert!(diff.added.is_empty());
     }
 
     #[test]

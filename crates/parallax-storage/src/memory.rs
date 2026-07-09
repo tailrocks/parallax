@@ -1709,6 +1709,30 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn span_field_stats_rejects_disallowed_keys() {
+        let store = MemoryStore::new();
+        store
+            .ingest_traces(
+                vec![span_with_attrs(
+                    "trace-1",
+                    "root",
+                    10,
+                    serde_json::json!({ "authorization": "secret" }),
+                )],
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+
+        assert!(!span_field_key_allowed("authorization"));
+        let err = store
+            .span_field_stats("authorization", 0..=100, None)
+            .await
+            .unwrap_err();
+        assert!(err.to_string().contains("invalid field key"));
+    }
+
+    #[tokio::test]
     async fn service_catalog_returns_identity_and_nulls() {
         let store = MemoryStore::new();
         store
@@ -1960,6 +1984,31 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(values, vec!["card".to_string()]);
+
+        let mut capped_points = Vec::new();
+        for index in 0..110 {
+            capped_points.push(MetricPointRow {
+                ts_nanos: 4_000_000_000 + index,
+                service: "checkout".into(),
+                name: "process.cpu.utilization".into(),
+                value: index as f64,
+                is_monotonic: false,
+                run_id: None,
+                attributes: serde_json::json!({
+                    "runtime.name": format!("runtime-{index:03}")
+                }),
+            });
+        }
+        store
+            .ingest_metrics(capped_points, Vec::new(), Vec::new(), bytes::Bytes::new())
+            .await
+            .unwrap();
+
+        let capped = store
+            .metric_label_values("process.cpu.utilization", "runtime.name", 0..=5_000_000_000)
+            .await
+            .unwrap();
+        assert_eq!(capped.len(), 100);
 
         let runtime = store
             .runtime_snapshot(Some("checkout"), None, 0..=3_000_000_000, 1_000_000_000)

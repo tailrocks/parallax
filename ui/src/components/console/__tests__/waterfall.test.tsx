@@ -128,6 +128,7 @@ describe("TraceWaterfall", () => {
     expect(screen.getByText("GET /checkout")).toBeTruthy()
     expect(screen.getByText("POST /pay")).toBeTruthy()
     expect(screen.queryByText("GET /cache")).toBeNull()
+    expect(screen.getAllByTestId("trace-minimap-bar")).toHaveLength(2)
   })
 
   it("falls back to the full tree when errors mode has no errors", () => {

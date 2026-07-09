@@ -232,6 +232,7 @@ mod tests {
         tool_a.attributes = json!({
             GEN_AI_OPERATION_ATTR: EXECUTE_TOOL_SPAN,
             TOOL_NAME_ATTR: "inspect_repo",
+            SHELL_COMMAND_ATTR: "rg --files",
         });
         let mut tool_b = span("tool-b", Some("root"), EXECUTE_TOOL_SPAN, 140);
         tool_b.attributes = json!({

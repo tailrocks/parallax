@@ -163,11 +163,16 @@ function StatusPill() {
 export function ParallaxShell({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const [dashboards, setDashboards] = useState<DashboardNavItem[]>([])
+  const [dashboardNavError, setDashboardNavError] = useState<string | null>(null)
   const [paletteOpen, setPaletteOpen] = useState(false)
 
   useEffect(() => {
-    if (!pathname.startsWith("/dashboards")) return
+    if (!pathname.startsWith("/dashboards")) {
+      setDashboardNavError(null)
+      return
+    }
     const controller = new AbortController()
+    setDashboardNavError(null)
     void graphql<{ dashboards: DashboardNavItem[] }>(
       `
       {
@@ -180,7 +185,17 @@ export function ParallaxShell({ children }: { children: React.ReactNode }) {
       { signal: controller.signal }
     )
       .then((data) => setDashboards(data.dashboards))
-      .catch(() => {})
+      .catch((error: unknown) => {
+        if (
+          error instanceof DOMException &&
+          error.name === "AbortError"
+        ) {
+          return
+        }
+        setDashboardNavError(
+          error instanceof Error ? error.message : String(error)
+        )
+      })
     return () => controller.abort()
   }, [pathname])
 
@@ -208,6 +223,11 @@ export function ParallaxShell({ children }: { children: React.ReactNode }) {
             <SidebarGroupLabel>Workspace</SidebarGroupLabel>
             <SidebarGroupContent>
               <NavGroup items={workspaceNav} dashboards={dashboards} />
+              {dashboardNavError ? (
+                <p className="px-2 pt-2 text-xs text-destructive group-data-[collapsible=icon]:hidden">
+                  {dashboardNavError}
+                </p>
+              ) : null}
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>

@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router"
 import { useMemo, useRef, useState } from "react"
-import type { KeyboardEvent } from "react"
+import type { KeyboardEvent, ReactNode } from "react"
 import { useVirtualizer } from "@tanstack/react-virtual"
 
 import { Chip } from "@/components/console/chip"
@@ -49,6 +49,7 @@ export interface LogDoc {
 
 export const OPTIONAL_LOG_COLUMNS = ["service", "event", "trace", "scope"] as const
 export type OptionalLogColumn = (typeof OPTIONAL_LOG_COLUMNS)[number]
+const LOG_VIRTUALIZATION_THRESHOLD = 100
 
 export function parseLogColumns(
   value: string | undefined
@@ -165,6 +166,75 @@ function logKey(log: LogDoc) {
   )
 }
 
+function VirtualizedLogTable({
+  logs,
+  columnCount,
+  headerRows,
+  renderRow,
+}: {
+  logs: LogDoc[]
+  columnCount: number
+  headerRows: ReactNode
+  renderRow: (log: LogDoc) => ReactNode
+}) {
+  const parentRef = useRef<HTMLDivElement | null>(null)
+  const virtualizer = useVirtualizer({
+    count: logs.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 44,
+    overscan: 12,
+  })
+  const virtualItems = virtualizer.getVirtualItems()
+  const firstVirtual = virtualItems[0]
+  const lastVirtual = virtualItems.at(-1)
+  const paddingTop = firstVirtual?.start ?? 0
+  const paddingBottom = lastVirtual
+    ? Math.max(0, virtualizer.getTotalSize() - lastVirtual.end)
+    : 0
+
+  return (
+    <div
+      ref={parentRef}
+      data-slot="table-container"
+      data-virtualized="logs"
+      className="relative max-h-[min(70vh,720px)] w-full overflow-auto rounded-xl shadow-(--custom-shadow) corner-squircle dark:shadow-(--custom-shadow)"
+    >
+      <table
+        data-slot="table"
+        className="w-full caption-bottom rounded-xl bg-card/40 text-sm shadow-(--custom-shadow) corner-squircle dark:shadow-(--custom-shadow)"
+      >
+        <TableHeader className="sticky top-0 z-10 bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/75">
+          {headerRows}
+        </TableHeader>
+        <TableBody>
+          {paddingTop > 0 ? (
+            <tr aria-hidden="true">
+              <td
+                colSpan={columnCount}
+                className="border-0 p-0"
+                style={{ height: paddingTop }}
+              />
+            </tr>
+          ) : null}
+          {virtualItems.map((virtualItem) => {
+            const log = logs[virtualItem.index]
+            return log ? renderRow(log) : null
+          })}
+          {paddingBottom > 0 ? (
+            <tr aria-hidden="true">
+              <td
+                colSpan={columnCount}
+                className="border-0 p-0"
+                style={{ height: paddingBottom }}
+              />
+            </tr>
+          ) : null}
+        </TableBody>
+      </table>
+    </div>
+  )
+}
+
 /** The shared logs table: compact rows whose click opens a field-level document viewer. */
 export function LogsTable({
   logs,
@@ -181,7 +251,6 @@ export function LogsTable({
 }) {
   const [selected, setSelected] = useState<LogDoc | null>(null)
   const [fieldSearch, setFieldSearch] = useState("")
-  const parentRef = useRef<HTMLDivElement | null>(null)
   const visible = new Set(columns)
   const columnCount =
     3 +
@@ -189,19 +258,6 @@ export function LogsTable({
     (visible.has("event") ? 1 : 0) +
     (visible.has("trace") ? 1 : 0) +
     (visible.has("scope") ? 1 : 0)
-  const virtualizer = useVirtualizer({
-    count: logs.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 44,
-    overscan: 12,
-  })
-  const virtualItems = virtualizer.getVirtualItems()
-  const firstVirtual = virtualItems[0]
-  const lastVirtual = virtualItems.at(-1)
-  const paddingTop = firstVirtual?.start ?? 0
-  const paddingBottom = lastVirtual
-    ? Math.max(0, virtualizer.getTotalSize() - lastVirtual.end)
-    : 0
 
   const selectedFields = useMemo(() => {
     if (!selected) return []
@@ -312,45 +368,13 @@ export function LogsTable({
   }
 
   const table =
-    logs.length > 100 ? (
-      <div
-        ref={parentRef}
-        data-slot="table-container"
-        className="relative max-h-[min(70vh,720px)] w-full overflow-auto rounded-xl shadow-(--custom-shadow) corner-squircle dark:shadow-(--custom-shadow)"
-      >
-        <table
-          data-slot="table"
-          className="w-full caption-bottom rounded-xl bg-card/40 text-sm shadow-(--custom-shadow) corner-squircle dark:shadow-(--custom-shadow)"
-        >
-          <TableHeader className="sticky top-0 z-10 bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/75">
-            {headerRows}
-          </TableHeader>
-          <TableBody>
-            {paddingTop > 0 ? (
-              <tr aria-hidden="true">
-                <td
-                  colSpan={columnCount}
-                  className="border-0 p-0"
-                  style={{ height: paddingTop }}
-                />
-              </tr>
-            ) : null}
-            {virtualItems.map((virtualItem) => {
-              const log = logs[virtualItem.index]
-              return log ? renderRow(log) : null
-            })}
-            {paddingBottom > 0 ? (
-              <tr aria-hidden="true">
-                <td
-                  colSpan={columnCount}
-                  className="border-0 p-0"
-                  style={{ height: paddingBottom }}
-                />
-              </tr>
-            ) : null}
-          </TableBody>
-        </table>
-      </div>
+    logs.length > LOG_VIRTUALIZATION_THRESHOLD ? (
+      <VirtualizedLogTable
+        logs={logs}
+        columnCount={columnCount}
+        headerRows={headerRows}
+        renderRow={renderRow}
+      />
     ) : (
       <Table>
         {header}

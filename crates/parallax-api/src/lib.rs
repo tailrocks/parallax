@@ -94,37 +94,15 @@ fn validate_investigation_name(name: &str) -> FieldResult<String> {
 }
 
 fn validate_investigation_state(state: &str) -> FieldResult<()> {
-    let parsed: serde_json::Value =
+    let parsed: model::InvestigationState =
         serde_json::from_str(state).map_err(|_| field_err("state must be valid JSON"))?;
-    let object = parsed
-        .as_object()
-        .ok_or_else(|| field_err("state must be a JSON object"))?;
-    if object
-        .get("version")
-        .and_then(serde_json::Value::as_u64)
-        .unwrap_or(0)
-        != 1
-    {
+    if parsed.version != 1 {
         return Err(field_err("investigation state version must be 1"));
     }
-    let pin_count = match object.get("pins") {
-        Some(pins) => pins
-            .as_array()
-            .ok_or_else(|| field_err("investigation pins must be an array"))?
-            .len(),
-        None => 0,
-    };
-    if pin_count > INVESTIGATION_PIN_CAP {
+    if parsed.pins.len() > INVESTIGATION_PIN_CAP {
         return Err(field_err("investigation pin cap exceeded"));
     }
-    let notes_len = match object.get("notes") {
-        Some(notes) => notes
-            .as_str()
-            .ok_or_else(|| field_err("investigation notes must be a string"))?
-            .len(),
-        None => 0,
-    };
-    if notes_len > INVESTIGATION_NOTES_MAX_BYTES {
+    if parsed.notes.len() > INVESTIGATION_NOTES_MAX_BYTES {
         return Err(field_err("investigation notes are too long"));
     }
     Ok(())
@@ -3856,31 +3834,48 @@ mod tests {
         let store = Arc::new(MemoryStore::new());
         store
             .ingest_metrics(
-                vec![
-                    MetricPointRow {
-                        ts_nanos: 1_000_000_000,
-                        service: "checkout".into(),
-                        name: "process.cpu.utilization".into(),
-                        value: 0.5,
-                        is_monotonic: false,
-                        run_id: Some("run-a".into()),
-                        attributes: serde_json::json!({
-                            "runtime.name": "tokio",
-                            "trace_id": "trace-a"
-                        }),
-                    },
-                    MetricPointRow {
-                        ts_nanos: 2_000_000_000,
-                        service: "checkout".into(),
-                        name: "jvm.memory.used".into(),
-                        value: 256.0,
-                        is_monotonic: false,
-                        run_id: None,
-                        attributes: serde_json::json!({
-                            "runtime.name": "jvm"
-                        }),
-                    },
-                ],
+                {
+                    let mut points = vec![
+                        MetricPointRow {
+                            ts_nanos: 1_000_000_000,
+                            service: "checkout".into(),
+                            name: "process.cpu.utilization".into(),
+                            value: 0.5,
+                            is_monotonic: false,
+                            run_id: Some("run-a".into()),
+                            attributes: serde_json::json!({
+                                "runtime.name": "tokio",
+                                "payment.method": "card",
+                                "trace_id": "trace-a"
+                            }),
+                        },
+                        MetricPointRow {
+                            ts_nanos: 2_000_000_000,
+                            service: "checkout".into(),
+                            name: "jvm.memory.used".into(),
+                            value: 256.0,
+                            is_monotonic: false,
+                            run_id: None,
+                            attributes: serde_json::json!({
+                                "runtime.name": "jvm"
+                            }),
+                        },
+                    ];
+                    for index in 0..110 {
+                        points.push(MetricPointRow {
+                            ts_nanos: 2_100_000_000 + index,
+                            service: "checkout".into(),
+                            name: "process.cpu.utilization".into(),
+                            value: index as f64,
+                            is_monotonic: false,
+                            run_id: None,
+                            attributes: serde_json::json!({
+                                "runtime.name": format!("runtime-{index:03}")
+                            }),
+                        });
+                    }
+                    points
+                },
                 Vec::new(),
                 Vec::new(),
                 Default::default(),
@@ -3893,7 +3888,8 @@ mod tests {
             r#"
             {
               metricLabels(name: "process.cpu.utilization")
-              metricLabelValues(name: "process.cpu.utilization", label: "runtime.name", fromNanos: "0", toNanos: "3000000000")
+              metricLabelValues(name: "process.cpu.utilization", label: "payment.method", fromNanos: "0", toNanos: "3000000000")
+              cappedMetricLabelValues: metricLabelValues(name: "process.cpu.utilization", label: "runtime.name", fromNanos: "0", toNanos: "3000000000")
               runtimeSnapshot(service: "checkout", fromNanos: "0", toNanos: "3000000000", stepSeconds: 1) {
                 family metric unit points { tsNanos value }
               }
@@ -3912,11 +3908,17 @@ mod tests {
         );
         assert_eq!(
             json.pointer("/data/metricLabels"),
-            Some(&serde_json::json!(["runtime.name"]))
+            Some(&serde_json::json!(["payment.method", "runtime.name"]))
         );
         assert_eq!(
             json.pointer("/data/metricLabelValues"),
-            Some(&serde_json::json!(["tokio"]))
+            Some(&serde_json::json!(["card"]))
+        );
+        assert_eq!(
+            json.pointer("/data/cappedMetricLabelValues")
+                .and_then(|value| value.as_array())
+                .map(Vec::len),
+            Some(100)
         );
         let runtime = json
             .pointer("/data/runtimeSnapshot")
@@ -4163,6 +4165,54 @@ mod tests {
                 .map(|row| row["body"].as_str().unwrap())
                 .collect::<Vec<_>>(),
             vec!["trace-a-before", "trace-a-after"]
+        );
+    }
+
+    #[tokio::test]
+    async fn logs_around_clamps_window_and_limit() {
+        let store = Arc::new(MemoryStore::new());
+        let anchor = 1_000_000_000_000;
+        let mut rows = (0..550)
+            .map(|index| {
+                log_row(
+                    "api",
+                    "trace-a",
+                    anchor + index * 1_000_000,
+                    &format!("near-{index}"),
+                )
+            })
+            .collect::<Vec<_>>();
+        rows.push(log_row(
+            "api",
+            "trace-a",
+            anchor + 700_000_000_000,
+            "beyond-clamped-window",
+        ));
+        store.ingest_logs(rows, Default::default()).await.unwrap();
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            format!(
+                r#"{{
+                  logsAround(anchorNanos: "{anchor}", windowSeconds: 9999, limit: 9999) {{
+                    body
+                  }}
+                }}"#
+            ),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(error_messages(&json).is_empty(), "logsAround clamp: {json}");
+        let rows = json
+            .pointer("/data/logsAround")
+            .and_then(|value| value.as_array())
+            .unwrap();
+        assert_eq!(rows.len(), MAX_ROWS);
+        assert!(
+            rows.iter()
+                .all(|row| row["body"] != "beyond-clamped-window")
         );
     }
 
