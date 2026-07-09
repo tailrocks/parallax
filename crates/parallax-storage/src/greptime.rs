@@ -336,6 +336,14 @@ impl GreptimeStore {
                 "ALTER TABLE opentelemetry_logs ADD COLUMN {} STRING",
                 wire_attr_ident(semconv::PARALLAX_RUN_ID)
             ),
+            format!(
+                "ALTER TABLE opentelemetry_logs ADD COLUMN {} STRING",
+                wire_attr_ident(semconv::EVENT_NAME)
+            ),
+            format!(
+                "ALTER TABLE opentelemetry_logs ADD COLUMN {} BIGINT",
+                wire_attr_ident(semconv::LOG_OBSERVED_TS_NANOS)
+            ),
         ])
         .await;
     }
@@ -576,10 +584,9 @@ impl GreptimeStore {
             .collect())
     }
 
-    /// Select logs from the native `opentelemetry_logs` table. Logs keep their
-    /// attributes as JSON columns (`log_attributes`/`resource_attributes`), and
-    /// have no `service_name` column, so service is derived from resource JSON.
-    /// The promoted Parallax run-id column carries the run id.
+    /// Select logs from the native `opentelemetry_logs` table. Top-level OTLP
+    /// log identity fields are mirrored into attributes before native forward
+    /// because GreptimeDB does not map them to columns yet.
     async fn select_logs(
         &self,
         where_clause: &str,
@@ -593,17 +600,21 @@ impl GreptimeStore {
                           "severity_number", "severity_text", "body", "trace_id", "span_id",
                           {}, "scope_name",
                           json_to_string("log_attributes"),
-                          json_to_string("resource_attributes")
+                          json_to_string("resource_attributes"),
+                          json_get_string("log_attributes", '{}') AS "event_name",
+                          json_get_int("log_attributes", '{}') AS "observed_ts_nanos"
                    FROM opentelemetry_logs WHERE {where_clause}{order}{limit_clause}"#,
                 resource_json_get(semconv::SERVICE_NAME),
                 wire_attr_ident(semconv::PARALLAX_RUN_ID),
+                semconv::resource_json_path(semconv::EVENT_NAME),
+                semconv::resource_json_path(semconv::LOG_OBSERVED_TS_NANOS),
             ))
             .await?;
         Ok(rows.iter().map(|row| log_row_from_row(row)).collect())
     }
 }
 
-/// A row → `LogRow` projection for the fixed native-logs column order used by
+/// A row → `LogRow` projection for the fixed native log column order used by
 /// [`GreptimeStore::select_logs`] and `logs_search`.
 fn log_row_from_row(row: &[serde_json::Value]) -> LogRow {
     LogRow {
@@ -618,6 +629,8 @@ fn log_row_from_row(row: &[serde_json::Value]) -> LogRow {
         scope_name: str_at(row, 8),
         attributes: json_at(row, 9),
         resource: json_at(row, 10),
+        event_name: str_at(row, 11),
+        observed_ts_nanos: u128_at(row, 12),
     }
 }
 
@@ -861,12 +874,19 @@ impl TelemetryStore for GreptimeStore {
     }
 
     async fn ingest_logs(&self, _logs: Vec<LogRow>, raw: bytes::Bytes) -> anyhow::Result<()> {
-        // The extract-keys header promotes the run id to a real column.
+        // The extract-keys header promotes run id and typed-log identity
+        // attributes to native columns in opentelemetry_logs.
         let hints = format!("ttl={},append_mode=true", self.logs_ttl);
+        let extract_keys = format!(
+            "{},{},{}",
+            semconv::PARALLAX_RUN_ID,
+            semconv::EVENT_NAME,
+            semconv::LOG_OBSERVED_TS_NANOS
+        );
         self.forward_otlp(
             "v1/logs",
             &[
-                ("x-greptime-log-extract-keys", semconv::PARALLAX_RUN_ID),
+                ("x-greptime-log-extract-keys", &extract_keys),
                 ("x-greptime-hints", &hints),
             ],
             raw,
@@ -2284,21 +2304,12 @@ impl TelemetryStore for GreptimeStore {
     ) -> anyhow::Result<Vec<LogRow>> {
         let clauses =
             log_filter_clauses(service, &range, severity_min, severity_max, body_contains);
-        let rows = self
-            .sql_lenient(&format!(
-                r#"SELECT CAST("timestamp" AS BIGINT) AS "ts_nanos",
-                          {} AS "service",
-                          "severity_number", "severity_text", "body", "trace_id", "span_id",
-                          {}, "scope_name",
-                          json_to_string("log_attributes"),
-                          json_to_string("resource_attributes")
-                   FROM opentelemetry_logs WHERE {} ORDER BY "timestamp" DESC LIMIT {limit}"#,
-                resource_json_get(semconv::SERVICE_NAME),
-                wire_attr_ident(semconv::PARALLAX_RUN_ID),
-                clauses.join(" AND ")
-            ))
-            .await?;
-        Ok(rows.iter().map(|row| log_row_from_row(row)).collect())
+        self.select_logs(
+            &clauses.join(" AND "),
+            r#" ORDER BY "timestamp" DESC"#,
+            &format!(" LIMIT {limit}"),
+        )
+        .await
     }
 
     async fn metric_series_grouped(

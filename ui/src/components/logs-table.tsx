@@ -33,6 +33,8 @@ import { cn } from "@/lib/utils"
 export interface LogDoc {
   _key?: string
   tsNanos: string
+  eventName: string
+  observedTsNanos: string
   service: string
   severityNum: number
   severityText: string
@@ -45,7 +47,7 @@ export interface LogDoc {
   resource: string
 }
 
-export const OPTIONAL_LOG_COLUMNS = ["service", "trace", "scope"] as const
+export const OPTIONAL_LOG_COLUMNS = ["service", "event", "trace", "scope"] as const
 export type OptionalLogColumn = (typeof OPTIONAL_LOG_COLUMNS)[number]
 
 export function parseLogColumns(
@@ -78,6 +80,19 @@ export function severityLabel(log: LogDoc) {
   return log.severityText || (log.severityNum >= 17 ? "ERROR" : "LOG")
 }
 
+function observedSkewField(log: LogDoc): [string, string] | null {
+  try {
+    const observed = BigInt(log.observedTsNanos || "0")
+    if (observed === 0n) return null
+    const emitted = BigInt(log.tsNanos || "0")
+    const delta = observed > emitted ? observed - emitted : emitted - observed
+    if (delta <= 1_000_000_000n) return null
+    return ["@observed", formatDateTime(log.observedTsNanos)]
+  } catch {
+    return null
+  }
+}
+
 /** Flatten one log into ordered field/value rows for the doc viewer. */
 function docFields(log: LogDoc): Array<[string, string]> {
   const rows: Array<[string, string]> = [
@@ -86,6 +101,9 @@ function docFields(log: LogDoc): Array<[string, string]> {
     ["service.name", log.service],
     ["body", log.body],
   ]
+  if (log.eventName) rows.splice(2, 0, ["event.name", log.eventName])
+  const observed = observedSkewField(log)
+  if (observed) rows.splice(log.eventName ? 3 : 2, 0, observed)
   if (log.traceId) rows.push(["trace_id", log.traceId])
   if (log.spanId) rows.push(["span_id", log.spanId])
   if (log.runId) rows.push(["run_id", log.runId])
@@ -168,6 +186,7 @@ export function LogsTable({
   const columnCount =
     3 +
     (visible.has("service") ? 1 : 0) +
+    (visible.has("event") ? 1 : 0) +
     (visible.has("trace") ? 1 : 0) +
     (visible.has("scope") ? 1 : 0)
   const virtualizer = useVirtualizer({
@@ -203,6 +222,7 @@ export function LogsTable({
       {visible.has("service") ? (
         <TableHead className="w-36">Service</TableHead>
       ) : null}
+      {visible.has("event") ? <TableHead className="w-40">Event</TableHead> : null}
       <TableHead>Body</TableHead>
       {visible.has("trace") ? (
         <TableHead className="w-28">Trace</TableHead>
@@ -251,6 +271,11 @@ export function LogsTable({
         {visible.has("service") ? (
           <TableCell className="max-w-36 truncate text-muted-foreground">
             {log.service}
+          </TableCell>
+        ) : null}
+        {visible.has("event") ? (
+          <TableCell className="max-w-40 truncate font-mono text-xs text-muted-foreground">
+            {log.eventName || "-"}
           </TableCell>
         ) : null}
         <TableCell className="max-w-xl truncate font-mono text-xs">

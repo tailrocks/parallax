@@ -30,6 +30,10 @@ pub struct SpanRow {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LogRow {
     pub ts_nanos: u128,
+    /// OTel `EventName`, set for typed log events and empty for plain logs.
+    pub event_name: String,
+    /// OTel `ObservedTimestamp` in ns. Zero means the source did not set it.
+    pub observed_ts_nanos: u128,
     pub service: String,
     pub severity_num: i32,
     pub severity_text: String,

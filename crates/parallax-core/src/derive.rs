@@ -256,6 +256,8 @@ mod tests {
     fn log_row(body: &str, attributes: serde_json::Value) -> LogRow {
         LogRow {
             ts_nanos: 1,
+            event_name: String::new(),
+            observed_ts_nanos: 0,
             service: "checkout".to_string(),
             severity_num: SEVERITY_ERROR,
             severity_text: "ERROR".to_string(),

@@ -120,7 +120,7 @@ export const Route = createFileRoute("/runs/$runId")({
            traceId rootName service startNanos durationNs spanCount hasError
          }
          logsByRun(runId: "${gqlString(params.runId)}", limit: 200) {
-           tsNanos service severityNum severityText body traceId spanId
+           tsNanos eventName observedTsNanos service severityNum severityText body traceId spanId
            runId scopeName attributes resource
          }
          story(runId: "${gqlString(params.runId)}") {

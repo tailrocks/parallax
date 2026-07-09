@@ -9,6 +9,7 @@ use parallax_proto::collector_trace::ExportTraceServiceRequest;
 use parallax_storage::adapter::TelemetryStore;
 use parallax_storage::metadata::MetadataStore;
 use parallax_storage::model::{ErrorEventRow, ErrorSource};
+use prost::Message;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::mpsc;
@@ -79,7 +80,12 @@ impl Worker {
                 self.store.ingest_traces(spans, raw).await?;
                 self.record_errors(errors).await?;
             }
-            IngestItem::Logs(request, raw) => {
+            IngestItem::Logs(mut request, raw) => {
+                let raw = if normalize::promote_log_identity_attributes(&mut request) {
+                    bytes::Bytes::from(request.encode_to_vec())
+                } else {
+                    raw
+                };
                 let logs = normalize::normalize_logs(&request);
                 let errors = derive::derive_from_logs(&logs);
                 self.register_runs(

@@ -458,6 +458,12 @@ impl LogRecord {
     fn ts_nanos(&self) -> String {
         nanos_string(self.0.ts_nanos)
     }
+    fn event_name(&self) -> &str {
+        &self.0.event_name
+    }
+    fn observed_ts_nanos(&self) -> String {
+        nanos_string(self.0.observed_ts_nanos)
+    }
     fn service(&self) -> &str {
         &self.0.service
     }
@@ -3465,6 +3471,8 @@ mod tests {
     fn log_row(service: &str, trace_id: &str, ts_nanos: u128, body: &str) -> LogRow {
         LogRow {
             ts_nanos,
+            event_name: String::new(),
+            observed_ts_nanos: 0,
             service: service.into(),
             severity_num: 9,
             severity_text: "INFO".into(),
@@ -3950,6 +3958,8 @@ mod tests {
             .ingest_logs(
                 vec![LogRow {
                     ts_nanos: 1_250_000_000,
+                    event_name: "checkout.failed".into(),
+                    observed_ts_nanos: 1_300_000_000,
                     service: "api".into(),
                     severity_num: 17,
                     severity_text: "ERROR".into(),
@@ -4062,12 +4072,15 @@ mod tests {
     async fn logs_around_returns_windowed_ascending_rows() {
         let store = Arc::new(MemoryStore::new());
         let anchor = 100_000_000_000;
+        let mut anchor_log = log_row("api", "trace-a", anchor, "anchor");
+        anchor_log.event_name = "checkout.completed".into();
+        anchor_log.observed_ts_nanos = anchor + 2_000_000_000;
         store
             .ingest_logs(
                 vec![
                     log_row("api", "trace-a", anchor - 60_000_000_000, "too-old"),
                     log_row("api", "trace-a", anchor - 10_000_000_000, "before"),
-                    log_row("api", "trace-a", anchor, "anchor"),
+                    anchor_log,
                     log_row("api", "trace-a", anchor + 10_000_000_000, "after"),
                     log_row("api", "trace-a", anchor + 60_000_000_000, "too-new"),
                 ],
@@ -4081,7 +4094,7 @@ mod tests {
             format!(
                 r#"{{
                   logsAround(anchorNanos: "{anchor}", windowSeconds: 30, service: "api") {{
-                    tsNanos body
+                    tsNanos body eventName observedTsNanos
                   }}
                 }}"#
             ),
@@ -4100,6 +4113,14 @@ mod tests {
                 .map(|row| row["body"].as_str().unwrap())
                 .collect::<Vec<_>>(),
             vec!["before", "anchor", "after"]
+        );
+        assert_eq!(
+            rows[1].get("eventName"),
+            Some(&serde_json::json!("checkout.completed"))
+        );
+        assert_eq!(
+            rows[1].get("observedTsNanos"),
+            Some(&serde_json::json!("102000000000"))
         );
     }
 
@@ -4688,6 +4709,8 @@ mod tests {
             .ingest_logs(
                 vec![LogRow {
                     ts_nanos: 130,
+                    event_name: String::new(),
+                    observed_ts_nanos: 0,
                     service: "api".into(),
                     severity_num: 17,
                     severity_text: "ERROR".into(),
@@ -4781,6 +4804,8 @@ mod tests {
             .ingest_logs(
                 vec![LogRow {
                     ts_nanos: 110,
+                    event_name: String::new(),
+                    observed_ts_nanos: 0,
                     service: "api".into(),
                     severity_num: 9,
                     severity_text: "INFO".into(),
