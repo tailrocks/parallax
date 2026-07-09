@@ -19,6 +19,13 @@
   typed events; this plan is still verifiable without it via the test suite)
 - **Category**: direction
 - **Planned at**: commit `ed5b10f`, 2026-07-07
+- **Executed at**: 2026-07-09. Latest GreptimeDB stable `v1.1.2` and
+  nightly `v1.2.0-nightly-20260706` still do not map top-level
+  `LogRecord.event_name` / `observed_time_unix_nano` into native
+  `opentelemetry_logs` columns. Parallax therefore mirrors those fields into
+  log attributes before native forward, promotes `event.name` and
+  `observed_ts_nanos` with `x-greptime-log-extract-keys`, and keeps
+  `opentelemetry_logs` as the only log storage table.
 
 ## Why this matters
 

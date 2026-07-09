@@ -225,10 +225,10 @@ export async function loadLogs(search: LogsSearch): Promise<LogsData> {
   ].filter(Boolean)
   if (search.live) {
     return graphql<LogsData>(
-      `{ services savedViews(page: "/logs") { id name page state updatedAtNanos } logs(limit: 0) { tsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource } logCountSeries(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", stepSeconds: ${stepSeconds}) { tsNanos value } }`
+      `{ services savedViews(page: "/logs") { id name page state updatedAtNanos } logs(limit: 0) { tsNanos eventName observedTsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource } logCountSeries(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", stepSeconds: ${stepSeconds}) { tsNanos value } }`
     )
   }
-  const logsSelection = `tsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource`
+  const logsSelection = `tsNanos eventName observedTsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource`
   const logsQuery = search.anchor
     ? `logs: logsAround(anchorNanos: "${search.anchor}", windowSeconds: 30, ${search.service ? `service: "${gqlString(search.service)}", ` : ""}limit: ${PAGE_SIZE}) { ${logsSelection} }`
     : `logs(${[
@@ -401,7 +401,7 @@ function LogsPage() {
         .filter(Boolean)
         .join(", ")
       const more = await graphql<{ logs: LogDoc[] }>(`{ logs(${args}) {
-        tsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource
+        tsNanos eventName observedTsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource
       } }`)
       setLogs((current) => [...current, ...assignLogKeys(more.logs)])
       if (more.logs.length < PAGE_SIZE) setExhausted(true)

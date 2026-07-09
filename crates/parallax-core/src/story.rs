@@ -331,6 +331,8 @@ mod tests {
     fn log(ts: u128, severity_num: i32, severity_text: &str, body: &str, span_id: &str) -> LogRow {
         LogRow {
             ts_nanos: ts,
+            event_name: String::new(),
+            observed_ts_nanos: 0,
             service: "api".to_string(),
             severity_num,
             severity_text: severity_text.to_string(),

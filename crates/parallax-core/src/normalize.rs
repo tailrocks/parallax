@@ -60,6 +60,64 @@ pub fn attr_str<'a>(attributes: &'a [KeyValue], key: &str) -> Option<&'a str> {
         })
 }
 
+fn has_attr(attributes: &[KeyValue], key: &str) -> bool {
+    attributes.iter().any(|kv| kv.key == key)
+}
+
+fn string_attr(key: &str, value: &str) -> KeyValue {
+    KeyValue {
+        key: key.to_string(),
+        value: Some(AnyValue {
+            value: Some(AnyValueEnum::StringValue(value.to_string())),
+        }),
+        key_strindex: 0,
+    }
+}
+
+fn int_attr(key: &str, value: u64) -> KeyValue {
+    KeyValue {
+        key: key.to_string(),
+        value: Some(AnyValue {
+            value: Some(AnyValueEnum::IntValue(
+                i64::try_from(value).unwrap_or(i64::MAX),
+            )),
+        }),
+        key_strindex: 0,
+    }
+}
+
+/// Mirror top-level OTLP log identity fields into attributes before native
+/// GreptimeDB ingest. GreptimeDB v1.1.2/v1.2 nightly do not map
+/// `LogRecord.event_name` or `observed_time_unix_nano` to native log columns,
+/// but they do persist/extract log attributes into `opentelemetry_logs`.
+pub fn promote_log_identity_attributes(request: &mut ExportLogsServiceRequest) -> bool {
+    let mut changed = false;
+    for resource_logs in &mut request.resource_logs {
+        for scope_logs in &mut resource_logs.scope_logs {
+            for record in &mut scope_logs.log_records {
+                if !record.event_name.is_empty()
+                    && !has_attr(&record.attributes, semconv::EVENT_NAME)
+                {
+                    record
+                        .attributes
+                        .push(string_attr(semconv::EVENT_NAME, &record.event_name));
+                    changed = true;
+                }
+                if record.observed_time_unix_nano != 0
+                    && !has_attr(&record.attributes, semconv::LOG_OBSERVED_TS_NANOS)
+                {
+                    record.attributes.push(int_attr(
+                        semconv::LOG_OBSERVED_TS_NANOS,
+                        record.observed_time_unix_nano,
+                    ));
+                    changed = true;
+                }
+            }
+        }
+    }
+    changed
+}
+
 fn service_name(resource_attrs: &[KeyValue]) -> String {
     attr_str(resource_attrs, semconv::SERVICE_NAME)
         .unwrap_or("unknown")
@@ -193,6 +251,8 @@ pub fn normalize_logs(request: &ExportLogsServiceRequest) -> Vec<LogRow> {
                 };
                 rows.push(LogRow {
                     ts_nanos: u128::from(ts),
+                    event_name: record.event_name.clone(),
+                    observed_ts_nanos: u128::from(record.observed_time_unix_nano),
                     service: service.clone(),
                     severity_num: record.severity_number,
                     severity_text: record.severity_text.clone(),
@@ -395,6 +455,63 @@ mod tests {
             value: Some(value),
             filtered_attributes: vec![string_kv("route", "/checkout")],
         }
+    }
+
+    fn logs_request() -> ExportLogsServiceRequest {
+        ExportLogsServiceRequest {
+            resource_logs: vec![parallax_proto::logs::ResourceLogs {
+                resource: Some(parallax_proto::resource::Resource {
+                    attributes: vec![string_kv("service.name", "checkout")],
+                    ..Default::default()
+                }),
+                scope_logs: vec![parallax_proto::logs::ScopeLogs {
+                    log_records: vec![parallax_proto::logs::LogRecord {
+                        time_unix_nano: 1_000_000_000,
+                        observed_time_unix_nano: 5_000_000_000,
+                        event_name: "checkout.completed".to_string(),
+                        body: Some(AnyValue {
+                            value: Some(AnyValueEnum::StringValue("done".to_string())),
+                        }),
+                        ..Default::default()
+                    }],
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+        }
+    }
+
+    #[test]
+    fn normalize_logs_carries_event_name_and_observed_timestamp() {
+        let rows = normalize_logs(&logs_request());
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].ts_nanos, 1_000_000_000);
+        assert_eq!(rows[0].event_name, "checkout.completed");
+        assert_eq!(rows[0].observed_ts_nanos, 5_000_000_000);
+    }
+
+    #[test]
+    fn promote_log_identity_attributes_adds_native_greptime_keys() {
+        let mut request = logs_request();
+
+        assert!(promote_log_identity_attributes(&mut request));
+        let record = &request.resource_logs[0].scope_logs[0].log_records[0];
+        assert_eq!(
+            attr_str(&record.attributes, semconv::EVENT_NAME),
+            Some("checkout.completed")
+        );
+        let observed = record
+            .attributes
+            .iter()
+            .find(|kv| kv.key == semconv::LOG_OBSERVED_TS_NANOS)
+            .and_then(|kv| kv.value.as_ref())
+            .and_then(|value| match &value.value {
+                Some(AnyValueEnum::IntValue(value)) => Some(*value),
+                _ => None,
+            });
+        assert_eq!(observed, Some(5_000_000_000));
+        assert!(!promote_log_identity_attributes(&mut request));
     }
 
     #[test]

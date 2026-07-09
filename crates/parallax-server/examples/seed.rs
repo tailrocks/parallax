@@ -145,6 +145,18 @@ async fn main() {
         info.set_trace_context(ctx.trace_id(), ctx.span_id(), None);
     }
     logger.emit(info);
+    let mut typed = logger.create_log_record();
+    typed.set_event_name("checkout.completed");
+    typed.set_observed_timestamp(std::time::SystemTime::now() + std::time::Duration::from_secs(2));
+    typed.set_severity_number(Severity::Info);
+    typed.set_severity_text("INFO");
+    typed.set_body(AnyValue::from("checkout.completed"));
+    typed.add_attribute("cart.id", "seed-cart");
+    typed.add_attribute("checkout.total", 42_i64);
+    if let Some(ctx) = &last_span_context {
+        typed.set_trace_context(ctx.trace_id(), ctx.span_id(), None);
+    }
+    logger.emit(typed);
     logger_provider.force_flush().expect("log flush");
 
     // Metrics: a gauge, a counter, and an HTTP-duration histogram.

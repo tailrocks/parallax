@@ -24,6 +24,8 @@ pub const TELEMETRY_SDK_VERSION: &str = "telemetry.sdk.version";
 
 /// OTel log/event name attribute.
 pub const EVENT_NAME: &str = "event.name";
+/// Parallax bridge attribute for OTel LogRecord ObservedTimestamp in ns.
+pub const LOG_OBSERVED_TS_NANOS: &str = "observed_ts_nanos";
 /// OTel exception event name.
 pub const EXCEPTION_EVENT_NAME: &str = "exception";
 /// OTel exception type attribute.

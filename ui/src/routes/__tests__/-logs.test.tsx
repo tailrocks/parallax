@@ -43,6 +43,8 @@ const range: ResolvedRange = {
 
 const log: LogDoc = {
   tsNanos: "2000000000",
+  eventName: "checkout.completed",
+  observedTsNanos: "5000000000",
   service: "checkout",
   severityNum: 17,
   severityText: "ERROR",
@@ -129,8 +131,9 @@ describe("logs redesign helpers", () => {
   })
 
   it("round-trips optional column params", () => {
-    expect(parseLogColumns("trace,scope,nope,trace")).toEqual([
+    expect(parseLogColumns("trace,event,scope,nope,trace")).toEqual([
       "trace",
+      "event",
       "scope",
     ])
     expect(serializeLogColumns(["service", "scope"])).toBe("service,scope")
@@ -186,13 +189,16 @@ describe("LogsTable", () => {
       <LogsTable
         logs={[log]}
         range={range}
-        columns={["service", "trace", "scope"]}
+        columns={["service", "event", "trace", "scope"]}
       />
     )
 
     expect(await screen.findByText(formatDateTime(log.tsNanos))).toBeTruthy()
+    expect(screen.getByText("checkout.completed")).toBeTruthy()
     fireEvent.click(screen.getByText("checkout failed"))
     expect(await screen.findByText("Log document")).toBeTruthy()
+    expect(screen.getByText("event.name")).toBeTruthy()
+    expect(screen.getByText("@observed")).toBeTruthy()
     expect(screen.getByRole("link", { name: /trace trace-a/i })).toBeTruthy()
   })
 

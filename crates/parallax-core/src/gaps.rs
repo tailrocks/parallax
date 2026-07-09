@@ -141,6 +141,8 @@ mod tests {
     fn log(trace_id: &str) -> LogRow {
         LogRow {
             ts_nanos: 100,
+            event_name: String::new(),
+            observed_ts_nanos: 0,
             service: "api".to_string(),
             severity_num: 9,
             severity_text: "INFO".to_string(),

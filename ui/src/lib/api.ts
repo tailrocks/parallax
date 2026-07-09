@@ -202,6 +202,8 @@ export interface EvidenceGap {
 
 export interface LogRecord {
   tsNanos: string
+  eventName: string
+  observedTsNanos: string
   service: string
   severityText: string
   body: string

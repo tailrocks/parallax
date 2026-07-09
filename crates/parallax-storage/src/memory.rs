@@ -1592,6 +1592,8 @@ mod tests {
     fn log(run_id: Option<&str>, ts: u128, severity_num: i32) -> LogRow {
         LogRow {
             ts_nanos: ts,
+            event_name: String::new(),
+            observed_ts_nanos: 0,
             service: "api".into(),
             severity_num,
             severity_text: format!("S{severity_num}"),
@@ -2393,6 +2395,8 @@ mod tests {
             .ingest_logs(
                 vec![LogRow {
                     ts_nanos: 1_250_000_000,
+                    event_name: "checkout.failed".into(),
+                    observed_ts_nanos: 1_300_000_000,
                     service: "api".into(),
                     severity_num: 17,
                     severity_text: "ERROR".into(),
@@ -2420,6 +2424,10 @@ mod tests {
         assert_eq!(totals.error_count, 1);
         assert_eq!(totals.active_services, 1);
         assert_eq!(totals.error_rate, 0.5);
+
+        let logs = store.logs_by_trace("t1").await.unwrap();
+        assert_eq!(logs[0].event_name, "checkout.failed");
+        assert_eq!(logs[0].observed_ts_nanos, 1_300_000_000);
 
         let spans = store
             .signal_count_series(

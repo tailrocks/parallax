@@ -13,6 +13,7 @@ mod tests {
         assert_eq!(SERVICE_VERSION, "service.version");
         assert_eq!(DEPLOYMENT_ENVIRONMENT_NAME, "deployment.environment.name");
         assert_eq!(EVENT_NAME, "event.name");
+        assert_eq!(LOG_OBSERVED_TS_NANOS, "observed_ts_nanos");
         assert_eq!(EXCEPTION_TYPE, "exception.type");
         assert_eq!(EXCEPTION_MESSAGE, "exception.message");
         assert_eq!(EXCEPTION_STACKTRACE, "exception.stacktrace");
