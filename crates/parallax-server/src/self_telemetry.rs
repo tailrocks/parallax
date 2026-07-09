@@ -147,6 +147,12 @@ pub fn install(endpoint: &str) -> anyhow::Result<Installed> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::{Mutex, OnceLock};
+
+    fn env_lock() -> std::sync::MutexGuard<'static, ()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(())).lock().unwrap()
+    }
 
     fn config_with(endpoint: &str) -> Config {
         let mut config = Config::default();
@@ -156,6 +162,7 @@ mod tests {
 
     #[test]
     fn endpoint_off_and_empty_disable() {
+        let _guard = env_lock();
         // SAFETY: single-threaded test; no other thread reads the env here.
         unsafe { std::env::remove_var("PARALLAX_SELF_OTLP") };
         assert_eq!(resolve_endpoint(&config_with("")), None);
@@ -168,6 +175,7 @@ mod tests {
 
     #[test]
     fn env_overrides_config_including_off() {
+        let _guard = env_lock();
         // SAFETY: single-threaded test.
         unsafe { std::env::set_var("PARALLAX_SELF_OTLP", "off") };
         assert_eq!(
