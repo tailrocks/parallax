@@ -73,8 +73,8 @@ tables). Schema auto-grows columns from new attributes.
 | `otel_logs` (PK `service`, attrs as JSON) | `opentelemetry_logs` | **Replace + customize.** Forward logs OTLP → endpoint, then `ALTER`-add `trace_id INVERTED INDEX` + `message/body FULLTEXT INDEX` (the one native shortfall; Run 56 = dominant bundle cost). |
 | `otel_metrics_points` + `otel_metrics_histograms` (2 unified tables, SQL aggregates) | metric engine, one table per metric (PromQL) | **Replace, fully native (Q3 = A).** Forward metrics OTLP → endpoint. Rewrite chart reads (native metric tables are SQL-queryable, so SQL→PromQL is gradual). **ExponentialHistogram is the one native gap** — rely on explicit-bucket histograms (OTel SDK default, fully native); add a minimal extension table *only if* exp-histograms actually appear (native-first principle). |
 | `error_events` (Parallax fingerprinting) | — none — | **Keep custom.** Product semantics, no native form. |
-| `rollups_fingerprint_minute` | — none — | **Keep custom.** Derived. |
 | (new) run-scoped metrics | — none (metric engine can't hold run_id) — | **Add custom extension `run_metric_points`** (Approach 2, Q6): append table, `run_id STRING SKIPPING INDEX`, `append_mode='true'`, `flat` SST. Greptime's blessed high-card pattern. Metric engine stays run_id-free. |
+| Metric exemplars | — none (native metric tables do not preserve trace/span exemplars) — | **Keep extension table** `metric_exemplars`. Derived correlation pointers, not raw metrics. |
 | Turso metadata (issues, runs, dashboards) | — none — | **Keep.** Unaffected. |
 
 ## The architecture tension to resolve first
@@ -130,8 +130,8 @@ What GreptimeDB **can** do toward grouping (so the "no system can" framing is ov
 - **Fingerprint hashing** — SQL `sha512` (+ other hash funcs); VRL processor can derive fields on
   ingest. A template → hash is expressible.
 - **Issue rollups/counts** — the **Flow engine** does continuous `GROUP BY key, time_window →
-  count/min/max/avg` into a sink table. `rollups_fingerprint_minute` is reproducible server-side as a
-  Flow, no app code.
+  count/min/max/avg` into a sink table. Fingerprint rollups are reproducible server-side as a Flow, no
+  app-written raw-signal table.
 
 What GreptimeDB genuinely **cannot** (correctly) do → must stay Parallax:
 
@@ -174,7 +174,7 @@ intelligence + stateful issue identity/lifecycle + bundle assembly + alerting.**
 | Issue identity | find-or-create issue by fingerprint, merge/unmerge | **Parallax (Turso)** | mutable OLTP — never a timeseries store |
 | Issue lifecycle | status (resolved/ignored/regressed), assign, snooze | **Parallax (Turso)** | mutable state; no native form |
 | Count / first-seen / last-seen | per fingerprint | **Greptime-capable (Flow)** | `GROUP BY fingerprint → count, min(ts), max(ts)` |
-| Trend sparkline | count per fingerprint per window | **Greptime (Flow)** | == `rollups_fingerprint_minute`, server-side |
+| Trend sparkline | count per fingerprint per window | **Greptime (Flow)** | Flow-derived rollups over native tables; no app-written raw-signal table |
 | Users/sessions affected | approximate unique count | **Greptime-capable** | `hll` / `approx_distinct` (HyperLogLog) |
 | Latency / percentiles per issue or span | p50/p95/p99 | **Greptime-capable** | `uddsketch` Flow **directly over `opentelemetry_traces`** (docs "extend-trace") |
 | Tag-value distribution | top values per key | **Greptime-capable** | `GROUP BY tag` (watch cardinality) |
@@ -233,7 +233,7 @@ OTLP in → otlp_http/grpc (keep raw Bytes alongside decoded request) → spool 
 
 | File | Current role | Required change |
 | --- | --- | --- |
-| `parallax-storage/src/greptime.rs` | hand-rolled DDL + INSERT + custom-table SELECTs | **Largest change.** (1) `bootstrap`: drop the `otel_spans/otel_logs/otel_metrics_*` CREATE; keep CREATE for extension tables (`error_events`, `rollups_fingerprint_minute`, new `run_metric_points`). (2) Add `forward_traces/forward_logs/forward_metrics` → `POST {base_url}/v1/otlp/v1/…` with headers (`x-greptime-pipeline-name: greptime_trace_v1`, `x-greptime-log-table-name`, `x-greptime-log-extract-keys: parallax.run.id`, `x-greptime-hints: ttl=…,append_mode=true`). (3) Rewrite every read to native columns: traces `service_name`/`duration_nano`/`span_attributes.*`/`resource_attributes.*`; logs `body` + JSON attrs + extracted `parallax.run.id`; metrics → per-metric native tables (+ `information_schema.tables` for `metric_names`). (4) Add `run_metric_points` write + read. |
+| `parallax-storage/src/greptime.rs` | hand-rolled DDL + INSERT + custom-table SELECTs | **Largest change.** (1) `bootstrap`: drop the `otel_spans/otel_logs/otel_metrics_*` CREATE; keep CREATE for extension tables (`error_events`, `run_metric_points`, `metric_exemplars`). (2) Add `forward_traces/forward_logs/forward_metrics` → `POST {base_url}/v1/otlp/v1/…` with headers (`x-greptime-pipeline-name: greptime_trace_v1`, `x-greptime-log-table-name`, `x-greptime-log-extract-keys: parallax.run.id`, `x-greptime-hints: ttl=…,append_mode=true`). (3) Rewrite every read to native columns: traces `service_name`/`duration_nano`/`span_attributes.*`/`resource_attributes.*`; logs `body` + JSON attrs + extracted `parallax.run.id`; metrics → per-metric native tables (+ `information_schema.tables` for `metric_names`). (4) Add `run_metric_points` and `metric_exemplars` write + read. |
 | `parallax-storage/src/adapter.rs` | `TelemetryStore` trait | **Reshape the write side:** replace `write_spans/write_logs/write_metric_points/write_histograms` with `forward_traces/forward_logs/forward_metrics` (raw OTLP), add `write_run_metric_points` + a run-scoped metric read. **Read signatures stay** (API-stable). *(Sub-decision: how the in-memory test adapter satisfies a raw-OTLP write — see open impl questions.)* |
 | `parallax-server/src/worker.rs` | normalize + derive + write | Swap `store.write_*` for `store.forward_*` (pass the raw request/bytes). Keep `normalize_*` (still needed for live-tail, `register_runs`, `derive_from_logs`, and run-metric extraction). Metrics arm: forward raw **and** write `run_metric_points` from normalized points that carry `run_id`. |
 | `parallax-server/src/otlp_http.rs` / `otlp_grpc.rs` | decode → spool → queue | Keep the **original `Bytes`** next to the decoded request and hand both to the worker, so forwarding re-emits the original payload (no re-encode) — honors the zero-copy ingest rule. |
@@ -256,7 +256,7 @@ OTLP in → otlp_http/grpc (keep raw Bytes alongside decoded request) → spool 
   OTLP, so do **not** pre-create them. Run the deviations (`ALTER` logs `trace_id INVERTED` + `body
   FULLTEXT`; traces `ADD COLUMN fingerprint`) **idempotently after first forward** (swallow
   already-exists / not-found, same mechanism the old bootstrap used). Create the *custom extension*
-  tables (`error_events`, `rollups_fingerprint_minute`, `run_metric_points`) up front at bootstrap.
+  tables (`error_events`, `run_metric_points`, `metric_exemplars`) up front at bootstrap.
 - **IQ3 — zero-copy forward. DECIDED:** the OTLP/HTTP receiver forwards the **original spooled `Bytes`
   verbatim** (zero-copy) — they are already OTLP/HTTP protobuf, exactly what `/v1/otlp` accepts. The
   gRPC receiver re-encodes its decoded request once (gRPC framing differs from OTLP/HTTP). The worker
@@ -351,13 +351,13 @@ three signals to a real engine and `SHOW TABLES`, asserting the only Parallax-cr
 three documented extensions and that no retired `otel_*` raw table reappears. Confirmed live inventory:
 `opentelemetry_traces` (+`_services`/`_operations`), `opentelemetry_logs`, the native per-metric tables
 (`<metric>` / histogram `_bucket`/`_count`/`_sum`), GreptimeDB's internal `greptime_physical_table` —
-all **native/engine-owned** — plus exactly **`error_events`, `rollups_fingerprint_minute`,
-`run_metric_points`** as the custom extensions. Every raw OTel signal lives in a native table; zero
+all **native/engine-owned** — plus exactly **`error_events`, `run_metric_points`,
+`metric_exemplars`** as the custom extensions. Every raw OTel signal lives in a native table; zero
 hand-rolled raw tables remain.
 
 **Engine version — UPDATED (operator, 2026-07-09): pin v1.1.2.** The native OTLP traces pipeline
 (`greptime_trace_v1`) requires the v1.1.x line; v1.1.2 is the latest stable release verified by the
-Plan 055 native-table smoke test. The default is an explicit pin
+native-table smoke test. The default is an explicit pin
 (`StorageConfig::greptime_version = "1.1.2"`, `FALLBACK_VERSION = "1.1.2"`) rather than `"latest"` so
 isolated installs are reproducible. Bump the pin when a newer native-capable stable release ships
 (version table = floor, not freeze).

@@ -5,7 +5,7 @@ Parallax UI (`ui/`), the GraphQL/storage API surface (`crates/`), and the
 sibling `parallax-telemetry-playground` repo, guided by
 `docs/research/architecture/full-observability-ui-and-playground-research.md`.
 Written against Parallax commit `408be17` and playground commit `ed1f975`.
-**Second run (same day): plans 055-068 extend the program** — written
+**Second run (same day): later plans extend the program** — written
 against Parallax commit `ed5b10f` / playground `ed1f975` from a gap
 analysis of the research brief vs. plans 019-054 (see Waves 4-5 below).
 Selection default: run non-interactively; all research-brief concepts that
@@ -70,9 +70,8 @@ conditions, run its verification gates, and update your row when done.
 |------|-------|------|----------|--------|------------|--------|
 | 058 | Trace-events backbone (`traceEvents` resolver + span-read hygiene) | parallax | P1 | M | — | DONE |
 | 062 | SQL workbench (server row cap + truncated flag, linkified cells, snippets) | parallax | P1 | M | coord. advisor-022, 057 | DONE |
-| 055 | Log event identity (`event_name` + `observed_ts_nanos` end-to-end) | parallax | P2 | M | demo: 056 | DONE: native `opentelemetry_logs` via `event.name` + `observed_ts_nanos` attribute extraction |
-| 056 | Playground typed log events + Java/web structured logs | **[playground]** | P2 | M | 036; pairs 055 | DONE |
-| 057 | Logs context + saved views (`logsAround`, context drawer, named views) | parallax | P2 | M | 035; richer after 055 | DONE |
+| 056 | Playground typed log events + Java/web structured logs | **[playground]** | P2 | M | 036; pairs native Event column | DONE |
+| 057 | Logs context + saved views (`logsAround`, context drawer, named views) | parallax | P2 | M | 035; richer with Event column | DONE |
 | 059 | GraphQL operation explorer (field tree, N+1 badge, partial errors) | parallax | P2 | M | 058; pairs 047 | DONE |
 | 060 | gRPC stream + messaging lanes (message timeline, deadline callout, event caps) | parallax | P2 | M | 058; pairs 049 | DONE |
 | 061 | Trace view modes (errors-only, service lanes, minimap, skew banner) | parallax | P2 | L | after 040+051; pairs 063 | DONE |
@@ -96,7 +95,7 @@ repos), then 038 → 039 → 040 (UI core) alongside 042 → 045/047/048/049/050
 (scenario families, mutually independent after 036), then 041/043/044/046
 (API+UI surfaces — each lands best right after its paired scenario plan),
 finally 051/052/053/054. **Second-run waves**: 058 and 062 anytime (P1,
-independent); the logs family 055↔056 then 057; 059/060 after 058 (best
+independent); the logs family producer/consumer then 057; 059/060 after 058 (best
 after their paired scenarios 047/049 land); 061+063 after 040/051; 064
 after 038/039; 067 anytime after 036; 065 after advisor-034; 066 last
 (pure-refactor sweep over whatever landed); 068 anytime.
@@ -124,13 +123,13 @@ after 038/039; 067 anytime after 036; 065 after advisor-034; 066 last
   core function is intended for reuse by advisor-plans/029 (story).
 - 052 depends on 038 (URL state is the captured investigation state).
 
-### Second-run dependency notes (055-068)
+### Second-run dependency notes
 
 - **058 is the wave-4 keystone**: 059 (GraphQL tree beats/flags) and 060
   (message timeline) read its `traceEvents`; its dedup fixes touch the same
   `lib.rs` regions as advisor 028-032 resolvers — rebase whoever lands
   second.
-- Paired demos: 055↔056 (event_name producer/consumer), 059↔047,
+- Paired demos: native Event column ↔ 056 (event_name producer/consumer), 059↔047,
   060↔049, 061+040+051↔063 (stress/compare/skew traces), 064↔042's a13
   (regression spike for the movers lane), 067↔044/046, 065↔advisor-034.
 - 057 and 062 share the saved-state store decision: whichever lands second
@@ -177,7 +176,7 @@ after 038/039; 067 anytime after 036; 065 after advisor-034; 066 last
 - **kbd/OpenObserve/Rotel lab path changes**: the fan-out lab flow stays
   untouched; the demo path (037) is additive.
 
-### Second-run additions (2026-07-07, plans 055-068 gap analysis)
+### Second-run additions (2026-07-07 gap analysis)
 
 - **Topology graph modes beyond trace-path (one-hop/transitive/endpoint,
   layer toggles, run-scoped filter)**: deferred until advisor-031's edge

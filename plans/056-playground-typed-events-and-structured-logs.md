@@ -22,9 +22,9 @@
 ## Why this matters
 
 The OTel Logs Data Model separates plain log records from **typed events**
-(`EventName` + known attributes). Parallax plan 055 teaches the product to
-store and display `event_name` — but nothing in the playground emits one, so
-the feature would demo empty. Structured-log coverage is also lopsided today:
+(`EventName` + known attributes). Parallax now stores and displays native log
+event identity — but nothing in the playground emits one, so the feature would
+demo empty. Structured-log coverage is also lopsided today:
 Rust services emit rich key/value `tracing` fields, the Java tier emits **no
 application logs at all** (only the OTel agent's auto-captured framework
 logs), and the web app logs only through Sentry. This plan defines a small
@@ -94,7 +94,7 @@ Verified at playground commit `ed1f975`.
   a new `docs/telemetry-events.md`)
 
 **Out of scope**:
-- Parallax-side rendering — plan 055.
+- Parallax-side rendering — already landed in the native Event column.
 - RUM journey routes/vitals — plan 050 (its `route_view`/`user_step` events
   should adopt this taxonomy when it lands — coordination note only).
 - Log field-spike / uncorrelated-log scenarios — plan 054.
@@ -197,9 +197,9 @@ Logs → enable the Event column → `checkout.completed`, `checkout.failed`,
 `scenarios/run.sh` + `scenarios/README.md` (plan 037 format) if present.
 
 **Verify**: `bash -n scenarios/a29-typed-events.sh` → exit 0; live run
-recorded (requires Parallax plan 055 for the Event column — if 055 hasn't
-landed, verify via SQL: `SELECT event_name, body FROM opentelemetry_logs
-WHERE event_name != '' LIMIT 10`, and say which check you ran).
+recorded (requires the Parallax Event column; verify via SQL if needed:
+`SELECT "event.name", body FROM opentelemetry_logs WHERE "event.name" IS NOT NULL LIMIT 10`,
+and say which check you ran).
 
 ## Test plan
 

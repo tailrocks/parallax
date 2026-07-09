@@ -30,6 +30,7 @@ import { bucketWindow, dragWindow } from "@/components/console/use-chart-brush"
 import { formatDateTime } from "@/lib/format"
 import type { ResolvedRange } from "@/lib/range"
 import {
+  ColumnMenu,
   SavedViewsMenu,
   contextWindow,
   parseSavedViewState,
@@ -157,6 +158,16 @@ describe("logs redesign helpers", () => {
     expect(severityVariant(9)).toBe("secondary")
     expect(severityVariant(13)).toBe("amber")
     expect(severityVariant(17)).toBe("rose")
+  })
+
+  it("offers the event column in the menu", async () => {
+    const onChange = vi.fn()
+    render(<ColumnMenu columns={["service", "trace"]} onChange={onChange} />)
+
+    fireEvent.click(screen.getByRole("button", { name: /columns/i }))
+    expect(await screen.findByText("event")).toBeTruthy()
+    fireEvent.click(screen.getByText("event"))
+    expect(onChange).toHaveBeenCalledWith(["service", "trace", "event"])
   })
 })
 

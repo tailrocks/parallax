@@ -14,7 +14,7 @@
 - **Effort**: M
 - **Risk**: LOW
 - **Depends on**: plan 035 (inline-error UI conventions); reads get richer
-  after plan 055 (event column) but do not require it
+  with the Event column but do not require it
 - **Category**: direction
 - **Planned at**: commit `ed5b10f`, 2026-07-07
 

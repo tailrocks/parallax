@@ -12,7 +12,7 @@ vendor questions in [../storage/greptimedb-team-questions.md](../storage/greptim
 > raw OTLP straight to GreptimeDB's native tables (`opentelemetry_traces`, `opentelemetry_logs`, the
 > per-metric metric engine) and **tees** the same bytes in-process to derive its product signals
 > (error grouping / "issues") into a few **custom extension tables** (`error_events`,
-> `rollups_fingerprint_minute`, `run_metric_points`). **Hard rule:** raw observability signals must stay
+> `run_metric_points`, `metric_exemplars`). **Hard rule:** raw observability signals must stay
 > in GreptimeDB-native tables. Parallax may extend native tables and may keep derived product extension
 > tables, but must not replace native logs/traces/metrics with hand-rolled raw-signal tables. **ClickHouse
 > is deferred** — no longer a V1 fallback or a design constraint (revisit only if a concrete benefit
@@ -38,9 +38,9 @@ This decision is binding for agents and future implementation plans:
   focuses performance and compatibility work. Before creating a GreptimeDB pull request or adopting a
   custom raw-signal table, consult Ning / the GreptimeDB team with the research packet so the fix
   aligns with their roadmap instead of wasting their review time.
-- **Derived extension tables remain allowed.** Tables like `error_events`, `rollups_fingerprint_minute`,
-  and `run_metric_points` are Parallax product facts, not raw OTel replacements. They stay allowed only
-  when they are derived from native signal data or in-process tees and are documented here.
+- **Derived extension tables remain allowed.** Tables like `error_events`, `run_metric_points`, and
+  `metric_exemplars` are Parallax product facts, not raw OTel replacements. They stay allowed only when
+  they are derived from native signal data or in-process tees and are documented here.
 
 ## Why
 
@@ -86,7 +86,8 @@ headers; post-create `ALTER TABLE … ADD COLUMN` / `ADD … INVERTED INDEX | FU
 - **Run-scoped metrics → custom extension `run_metric_points`** (append table, `run_id STRING SKIPPING
   INDEX`, `append_mode`, `flat` SST) — GreptimeDB's own high-cardinality pattern; the metric engine
   stays run_id-free.
-- **`error_events`, `rollups_fingerprint_minute` → KEEP custom.** Product semantics; no native form.
+- **`error_events`, `run_metric_points`, `metric_exemplars` → KEEP custom.** Product semantics; no
+  native raw-signal replacement.
 
 ## Write path — Path A (decided)
 
