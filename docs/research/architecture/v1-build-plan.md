@@ -100,7 +100,7 @@ external mode, per [local-first-v1.md](local-first-v1.md)); Turso metadata file 
 no fallback engine — operator, 2026-06-12). **Storage (decided 2026-06-18, native-OTLP):** the adapter
 **forwards raw OTLP straight to GreptimeDB's native tables** (`opentelemetry_traces`/`opentelemetry_logs`/metric
 engine) and **tees** in-process to derive issues + run-scoped metrics into custom extension tables
-(`error_events`, `rollups_fingerprint_minute`, `run_metric_points`); anchored reads by
+(`error_events`, `run_metric_points`, `metric_exemplars`); anchored reads by
 trace_id/fingerprint/time window run over the native tables. See
 [native-otel-tables.md](../decisions/native-otel-tables.md). Graduate from the PoC: error derivation
 (both exception encodings), fingerprinting, grouping into issue rows (metadata store owns mutable issue

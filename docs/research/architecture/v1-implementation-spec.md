@@ -218,14 +218,6 @@ CREATE TABLE IF NOT EXISTS error_events (
   PRIMARY KEY (service, fingerprint)
 ) WITH (ttl = '{error_events_ttl}');
 
-CREATE TABLE IF NOT EXISTS rollups_fingerprint_minute (
-  bucket_ts    TIMESTAMP(0) NOT NULL,
-  service      STRING,
-  fingerprint  STRING,
-  count        BIGINT,
-  TIME INDEX (bucket_ts),
-  PRIMARY KEY (service, fingerprint)
-) WITH (ttl = '{error_events_ttl}');
 ```
 
 Adapter queries are plain SQL over the HTTP API; every engine-specific statement lives in
@@ -236,11 +228,12 @@ V1 **adopts GreptimeDB's native OTLP model** (`opentelemetry_traces`, `opentelem
 one-table-per-metric metric engine) for the three raw signals. The adapter **forwards raw OTLP straight
 to GreptimeDB's `/v1/otlp/` endpoints (Path A)** so native tables auto-create and ride Greptime's
 optimizations, and **tees** the same bytes in-process to derive the **custom extension** tables
-(`error_events`, `rollups_fingerprint_minute`, and `run_metric_points` for run-scoped metrics). Native
+(`error_events`, `run_metric_points`, and `metric_exemplars`). Native
 attributes are columns (traces) / JSON (logs); `run_id` is a resource attribute →
 `resource_attributes.parallax.run.id` on traces, promoted via `X-Greptime-Log-Extract-Keys` on logs,
-and **never a metric tag** (high cardinality). `error_events`/`rollups`/`run_metric_points` stay custom
-(no native equivalent). **GreptimeDB-only** — ClickHouse is deferred (not a V1 fallback or design
+and **never a metric tag** (high cardinality). `error_events`, `run_metric_points`, and
+`metric_exemplars` stay custom because they are derived Parallax product facts, not raw-signal
+replacement tables. **GreptimeDB-only** — ClickHouse is deferred (not a V1 fallback or design
 constraint). **Greenfield:** the `otel_spans`/`otel_logs`/`otel_metrics_*` DDL below is **removed**, not
 migrated (research stage, no users). Canonical decision + per-signal plan + implementation roadmap:
 [decisions/native-otel-tables.md](../decisions/native-otel-tables.md) ·
@@ -316,8 +309,9 @@ telemetry without a CLI `runStart` are auto-registered by the worker with status
 > **⚠ 2026-06-18 (native-OTLP decision):** the right-hand custom-table targets above (`otel_spans`,
 > `otel_logs`, `otel_metrics_*`) are **superseded** — raw signals now land in GreptimeDB's native tables
 > (`opentelemetry_traces`/`opentelemetry_logs`/metric engine) via OTLP forward; run-scoped metrics go to
-> the `run_metric_points` extension; only the derived rows (`error_events`) remain custom. `run_id` is a
-> resource attribute (column on traces, extract-key column on logs, never a metric tag). See
+> the `run_metric_points` extension, trace/span metric exemplars go to `metric_exemplars`, and derived
+> error rows go to `error_events`. `run_id` is a resource attribute (column on traces, extract-key
+> column on logs, never a metric tag). See
 > [decisions/native-otel-tables.md](../decisions/native-otel-tables.md).
 
 Fingerprinting and derivation logic: graduate `poc/evidence-loop/src/{derive,fingerprint}.rs`
