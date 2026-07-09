@@ -12,16 +12,42 @@ vendor questions in [../storage/greptimedb-team-questions.md](../storage/greptim
 > raw OTLP straight to GreptimeDB's native tables (`opentelemetry_traces`, `opentelemetry_logs`, the
 > per-metric metric engine) and **tees** the same bytes in-process to derive its product signals
 > (error grouping / "issues") into a few **custom extension tables** (`error_events`,
-> `rollups_fingerprint_minute`, `run_metric_points`). **Native-first:** use native for the entire OTel
-> stack; only where native genuinely cannot do something do we add a minimal extension — we **extend,
-> never replace** native. **ClickHouse is deferred** — no longer a V1 fallback or a design constraint
-> (revisit only if a concrete benefit appears). No data migration (greenfield; research stage).
+> `rollups_fingerprint_minute`, `run_metric_points`). **Hard rule:** raw observability signals must stay
+> in GreptimeDB-native tables. Parallax may extend native tables and may keep derived product extension
+> tables, but must not replace native logs/traces/metrics with hand-rolled raw-signal tables. **ClickHouse
+> is deferred** — no longer a V1 fallback or a design constraint (revisit only if a concrete benefit
+> appears). No data migration (greenfield; research stage).
+
+## Hard rule and escalation path
+
+This decision is binding for agents and future implementation plans:
+
+- **Always use GreptimeDB native signal tables.** Logs use `opentelemetry_logs`; traces use
+  `opentelemetry_traces` plus GreptimeDB's native trace helper tables; metrics use the native
+  per-metric metric-engine tables. The same rule applies to future GreptimeDB-native OTLP signals.
+- **Extend native before inventing tables.** Prefer native extension points: OTLP pipeline headers,
+  `X-Greptime-Log-Extract-Keys`, native schema auto-widening, `ALTER TABLE` columns/indexes, SQL/PromQL
+  functions, Flows, and upstream GreptimeDB changes.
+- **Custom raw-signal tables are a stop condition.** If a plan appears to require a custom table that
+  stores raw logs, traces, metrics, profiles, or equivalent observability records, stop and produce a
+  research packet first. The packet must cover latest stable, latest nightly/source, official docs,
+  live spike results where feasible, tradeoffs lost by leaving native tables, and candidate upstream
+  changes.
+- **Consult GreptimeDB before breaking native.** Ning Sun ([Greptime cofounder & CTO](https://greptime.com/about))
+  has directly recommended that Parallax design around native tables because that is where GreptimeDB
+  focuses performance and compatibility work. Before creating a GreptimeDB pull request or adopting a
+  custom raw-signal table, consult Ning / the GreptimeDB team with the research packet so the fix
+  aligns with their roadmap instead of wasting their review time.
+- **Derived extension tables remain allowed.** Tables like `error_events`, `rollups_fingerprint_minute`,
+  and `run_metric_points` are Parallax product facts, not raw OTel replacements. They stay allowed only
+  when they are derived from native signal data or in-process tees and are documented here.
 
 ## Why
 
-1. **The GreptimeDB team optimizes around the native model** and recommends it (founder, Slack
-   2026-06-18); ecosystem products build on it. Forwarding raw OTLP into the native tables means
-   Parallax inherits that optimization roadmap instead of competing with hand-rolled tables.
+1. **The GreptimeDB team optimizes around the native model** and recommends it (Ning Sun / GreptimeDB
+   team guidance, 2026-06-18 and reaffirmed 2026-07-09); ecosystem products build on it. Forwarding
+   raw OTLP into the native tables means Parallax inherits that optimization roadmap instead of
+   competing with hand-rolled tables.
 2. **The engine sub-study already verified the native trace model live and rated it better** than the
    hand-rolled `otel_spans` — bloom-indexed `trace_id` + 16-way `trace_id` partitioning
    ([greptimedb-implementation.md](../storage/greptimedb-vs-clickhouse/greptimedb-implementation.md),
@@ -33,7 +59,9 @@ vendor questions in [../storage/greptimedb-team-questions.md](../storage/greptim
 ## The native OTLP model (verified — official docs + live engine)
 
 GreptimeDB auto-creates and maintains these when OTLP flows into its `/v1/otlp/v1/...` endpoints.
-Source: GreptimeDB docs (`for-observability/opentelemetry.md`, `traces/data-model.md`) + Run 45/86.
+Source: GreptimeDB docs
+([OTLP](https://docs.greptime.com/user-guide/ingest-data/for-observability/opentelemetry/),
+[trace data model](https://docs.greptime.com/user-guide/traces/data-model/)) + Run 45/86.
 
 | Signal | Endpoint + header | Native table | Shape |
 | --- | --- | --- | --- |

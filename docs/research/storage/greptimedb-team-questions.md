@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: open · Created 2026-06-18 · **Several items empirically confirmed by the 2026-06-18 spike on
+Status: open · Created 2026-06-18 · Consultation protocol updated 2026-07-09 · **Several items empirically confirmed by the 2026-06-18 spike on
 GreptimeDB v1.1.0** (see [native-otel-migration-plan.md](native-otel-migration-plan.md) → "Spike
 results"). Confirmed-by-spike: **#1, #3, #4, #5** (auto-widen-safe custom columns/indexes, indexing
 native logs post-create, adding columns to native traces, log attribute promotion). Still genuinely
@@ -24,6 +24,19 @@ pass Parallax derives its own product signals (error grouping / "issues") into a
 extension tables** alongside the native ones. We want to lean on the native model as much as possible
 and only extend where native genuinely can't do something. The questions below are about the seams
 where we customize native tables.
+
+## Consultation protocol
+
+Ning Sun ([Greptime cofounder & CTO](https://greptime.com/about)) has been helping Parallax choose the
+best GreptimeDB-native design and has recommended designing around native tables. Do not ask the
+GreptimeDB team for ad hoc guidance without a prepared packet. Before proposing a custom raw-signal
+table, a GreptimeDB pull request, or a major deviation from native OTLP tables:
+
+1. Re-check official GreptimeDB docs, latest stable release behavior, and latest nightly/source.
+2. Run a focused live spike when feasible.
+3. Record the exact missing capability, native alternatives tried, performance/compatibility tradeoffs,
+   and proposed upstream shape in `docs/research/`.
+4. Bring that packet to Ning / the GreptimeDB team and align with their roadmap before implementation.
 
 ---
 
