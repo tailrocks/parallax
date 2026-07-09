@@ -53,19 +53,24 @@ one artifact. The SDL lives in the
 ## Raw SQL — the power tool
 
 When the shaped queries aren't enough, the agent gets the telemetry engine's
-full read surface (GreptimeDB SQL over the same tables the adapters write —
-`otel_spans`, `otel_logs`, `otel_metrics_points`, `otel_metrics_histograms`,
-`error_events`):
+full read surface: GreptimeDB SQL over native observability tables plus
+Parallax-derived extension tables. Raw signals stay native:
+`opentelemetry_traces`, `opentelemetry_logs`, and GreptimeDB's native
+per-metric tables. Derived product data can live in extension tables such as
+`error_events`.
 
 ```sh
-parallax sql "SELECT \"service\", COUNT(*) FROM otel_logs \
-              WHERE \"severity_num\" >= 17 GROUP BY \"service\""
+parallax sql "SELECT json_get_string(resource_attributes, 'service.name') AS service, \
+              COUNT(*) FROM opentelemetry_logs \
+              WHERE severity_number >= 17 GROUP BY service"
 ```
 
 Same surface as the UI Logs page's SQL mode and the GraphQL `sql(query:)`
 field. Read-only (SELECT/WITH/SHOW/DESCRIBE/EXPLAIN/TQL), one statement,
-engine-dialect — quote identifiers, `run_id`/`trace_id` are plain string
-columns. Local loopback profile only; not a portable contract.
+engine-dialect. Native GreptimeDB schemas are the contract: logs use JSON
+resource/log attributes, traces use native trace columns, and metric table
+names/columns are discovered through `metricNames` or `information_schema`.
+Local loopback profile only; not a portable contract.
 
 ## Verifying a fix — live tail
 

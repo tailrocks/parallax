@@ -90,8 +90,10 @@ parallax run inspect 18b946258b86fe20        # status, counts, issues
 parallax logs --run 18b946258b86fe20         # the run's log stream
 parallax traces --run 18b946258b86fe20       # the run's traces
 parallax run bundle 18b946258b86fe20         # agent handoff (Markdown)
-parallax sql "SELECT name, avg(value) FROM otel_metrics_points \
-  WHERE run_id = '18b946258b86fe20' GROUP BY name"
+parallax sql "SELECT json_get_string(resource_attributes, 'service.name') AS service, \
+  COUNT(*) FROM opentelemetry_logs \
+  WHERE json_get_string(resource_attributes, 'parallax.run.id') = '18b946258b86fe20' \
+  GROUP BY service"
 ```
 
 The same id also names the local diagnostics file jackin' keeps on its own:
