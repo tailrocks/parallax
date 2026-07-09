@@ -17,6 +17,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { CopyButton } from "@/components/console/copy-button"
 import { EmptyState } from "@/components/console/empty-state"
 import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
+import { PinButton } from "@/components/console/pin-button"
 import { RangePicker } from "@/components/console/range-picker"
 import { RelativeTime } from "@/components/console/relative-time"
 import { CardSparkline, StatCard } from "@/components/console/stat-card"
@@ -71,6 +72,7 @@ interface LoaderData {
   resource: Record<string, unknown>
   breadcrumbs: BreadcrumbLog[]
   traceRunId: string | null
+  releaseVersion: string | null
 }
 
 const trendConfig = {
@@ -117,6 +119,7 @@ export async function loadIssueDetail(
   let resource: Record<string, unknown> = {}
   let breadcrumbs: BreadcrumbLog[] = []
   let traceRunId: string | null = null
+  let releaseVersion: string | null = null
   const traceId = issue?.lastTraceId
   if (traceId) {
     try {
@@ -130,13 +133,16 @@ export async function loadIssueDetail(
       resource = JSON.parse(
         correlated.trace?.spans[0]?.resource ?? "{}"
       ) as Record<string, unknown>
+      const version = resource["service.version"]
+      releaseVersion =
+        typeof version === "string" && version.trim() ? version.trim() : null
       breadcrumbs = correlated.logsByTrace.slice(-12)
       traceRunId = correlated.trace?.spans.find((s) => s.runId)?.runId ?? null
     } catch {
       // Trace may have aged out; issue detail still renders.
     }
   }
-  return { issue, issueTrend, resource, breadcrumbs, traceRunId }
+  return { issue, issueTrend, resource, breadcrumbs, traceRunId, releaseVersion }
 }
 
 function IssueDetailPage() {
@@ -178,7 +184,7 @@ export function IssueDetailContent({
   range: ResolvedRange
   onRange: (range: ResolvedRange) => void
 }) {
-  const { issue, issueTrend, resource, breadcrumbs, traceRunId } = data
+  const { issue, issueTrend, resource, breadcrumbs, traceRunId, releaseVersion } = data
   const router = useRouter()
   const [mutating, setMutating] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -255,6 +261,10 @@ export function IssueDetailContent({
         description={currentIssue.title}
         actions={
           <>
+            <PinButton
+              kind="issue"
+              label={currentIssue.title || currentIssue.fingerprint}
+            />
             <Button
               size="sm"
               variant="outline"
@@ -289,6 +299,9 @@ export function IssueDetailContent({
           >
             <Badge variant="secondary">run {shortRunId(traceRunId)}</Badge>
           </Link>
+        ) : null}
+        {releaseVersion ? (
+          <Badge variant="secondary">release {releaseVersion}</Badge>
         ) : null}
         <Badge variant={issue.status === "open" ? "rose" : "emerald"}>
           {issue.status}

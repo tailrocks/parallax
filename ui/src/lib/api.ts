@@ -42,16 +42,6 @@ export function gqlString(value: string): string {
     .replace(/\t/g, "\\t")
 }
 
-export function relativeTime(nanosString: string): string {
-  const nanos = Number(nanosString)
-  if (!Number.isFinite(nanos) || nanos <= 0) return "-"
-  const seconds = Math.max(0, Math.floor(Date.now() / 1000 - nanos / 1e9))
-  if (seconds < 60) return `${seconds}s ago`
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
-  return `${Math.floor(seconds / 86400)}d ago`
-}
-
 export interface Issue {
   fingerprint: string
   title: string
@@ -63,6 +53,18 @@ export interface Issue {
   lastSeenNanos: string
   eventCount: number
   lastTraceId: string | null
+}
+
+export interface ServiceCatalogRow {
+  name: string
+  serviceVersion: string | null
+  serviceNamespace: string | null
+  deploymentEnvironment: string | null
+  telemetrySdkLanguage: string | null
+  telemetrySdkName: string | null
+  telemetrySdkVersion: string | null
+  lastSeenNanos: string
+  instanceCount: string
 }
 
 export interface ErrorEvent {
@@ -152,6 +154,46 @@ export interface AttributeCompareRow {
   score: number
 }
 
+export interface FieldKey {
+  key: string
+  namespace: string
+  source: "SPAN" | "RESOURCE"
+  rowCount: string
+  nonNullCount: string
+  coverage: number
+  isIdentifier: boolean
+}
+
+export interface FieldValueCount {
+  value: string
+  count: string
+}
+
+export interface FieldStats {
+  key: string
+  namespace: string
+  source: "SPAN" | "RESOURCE"
+  rowCount: string
+  nonNullCount: string
+  distinctCount: string
+  coverage: number
+  capped: boolean
+  isIdentifier: boolean
+  topValues: FieldValueCount[]
+}
+
+export interface MetricPoint {
+  tsNanos: string
+  value: number
+}
+
+export interface RuntimeMetric {
+  family: string
+  metric: string
+  unit: string | null
+  points: MetricPoint[]
+}
+
 export interface EvidenceGap {
   kind: string
   subject: string
@@ -181,6 +223,14 @@ export interface ObservedRun {
   lastNanos: string
   spanCount: number
   logCount: number
+}
+
+export interface Investigation {
+  id: string
+  name: string
+  state: string
+  createdAtNanos: string
+  updatedAtNanos: string
 }
 
 export interface TraceSummary {

@@ -2,12 +2,16 @@
 //! `--no-greptime` fallback's telemetry side (bounded).
 
 use crate::adapter::{
-    ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow, MAX_ROWS,
-    OverviewTotals, SERVICE_MAP_TRACE_CAP, ServiceEdge, ServiceSummary, SignalKind, SpanRed,
-    TelemetryStore, attribute_compare_key_allowed, attribute_compare_score,
-    attribute_compare_value_allowed,
+    ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow,
+    FIELD_KEYS_CAP, FIELD_TOP_VALUES_CAP, FieldKey, FieldSource, FieldStats, FieldValueCount,
+    MAX_ROWS, OverviewTotals, ReleaseWindow, RuntimeMetricSeries, SERVICE_MAP_TRACE_CAP,
+    ServiceCatalogRow, ServiceEdge, ServiceSummary, SignalKind, SpanRed, TelemetryStore,
+    attribute_compare_key_allowed, attribute_compare_score, attribute_compare_value_allowed,
+    field_key_identifier_like, field_key_namespace, field_value_display,
+    metric_group_label_allowed, runtime_metric_family, runtime_metric_unit, span_field_key_allowed,
 };
 use crate::model::*;
+use parallax_proto::semconv;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::ops::RangeInclusive;
 use std::sync::Mutex;
@@ -31,6 +35,25 @@ fn scalar_attribute_value(attributes: &serde_json::Value, key: &str) -> Option<S
         _ => return None,
     };
     attribute_compare_value_allowed(&value).then_some(value)
+}
+
+fn field_scalar_value(attributes: &serde_json::Value, key: &str) -> Option<String> {
+    let value = match attributes.get(key)? {
+        serde_json::Value::String(value) => value.clone(),
+        serde_json::Value::Bool(value) => value.to_string(),
+        serde_json::Value::Number(value) => value.to_string(),
+        _ => return None,
+    };
+    field_value_display(&value)
+}
+
+fn resource_string(resource: &serde_json::Value, key: &str) -> Option<String> {
+    resource
+        .get(key)
+        .and_then(|value| value.as_str())
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
 }
 
 fn span_matches_compare(
@@ -126,6 +149,7 @@ struct Inner {
     logs: Vec<LogRow>,
     metric_points: Vec<MetricPointRow>,
     histograms: Vec<HistogramRow>,
+    metric_exemplars: Vec<MetricExemplarRow>,
     error_events: Vec<ErrorEventRow>,
 }
 
@@ -171,11 +195,13 @@ impl TelemetryStore for MemoryStore {
         &self,
         points: Vec<MetricPointRow>,
         histograms: Vec<HistogramRow>,
+        exemplars: Vec<MetricExemplarRow>,
         _raw: bytes::Bytes,
     ) -> anyhow::Result<()> {
         let mut inner = self.lock();
         inner.metric_points.extend(points);
         inner.histograms.extend(histograms);
+        inner.metric_exemplars.extend(exemplars);
         Ok(())
     }
 
@@ -296,6 +322,80 @@ impl TelemetryStore for MemoryStore {
         names.sort();
         names.dedup();
         Ok(names)
+    }
+
+    async fn metric_labels(&self, name: &str) -> anyhow::Result<Vec<String>> {
+        let inner = self.lock();
+        let mut labels = BTreeSet::new();
+        for attributes in inner
+            .metric_points
+            .iter()
+            .filter(|point| point.name == name)
+            .map(|point| &point.attributes)
+            .chain(
+                inner
+                    .histograms
+                    .iter()
+                    .filter(|row| row.name == name)
+                    .map(|row| &row.attributes),
+            )
+        {
+            if let Some(object) = attributes.as_object() {
+                for (key, value) in object {
+                    if metric_group_label_allowed(key)
+                        && matches!(
+                            value,
+                            serde_json::Value::String(_)
+                                | serde_json::Value::Bool(_)
+                                | serde_json::Value::Number(_)
+                        )
+                    {
+                        labels.insert(key.clone());
+                    }
+                }
+            }
+        }
+        Ok(labels.into_iter().collect())
+    }
+
+    async fn metric_label_values(
+        &self,
+        name: &str,
+        label: &str,
+        range: RangeInclusive<u128>,
+    ) -> anyhow::Result<Vec<String>> {
+        anyhow::ensure!(
+            metric_group_label_allowed(label),
+            "high-cardinality identifier - filter, don't group"
+        );
+        let labels = self.metric_labels(name).await?;
+        anyhow::ensure!(
+            labels.iter().any(|known| known == label),
+            "unknown metric label"
+        );
+        let inner = self.lock();
+        let mut values = BTreeSet::new();
+        for attributes in inner
+            .metric_points
+            .iter()
+            .filter(|point| point.name == name && range.contains(&point.ts_nanos))
+            .map(|point| &point.attributes)
+            .chain(
+                inner
+                    .histograms
+                    .iter()
+                    .filter(|row| row.name == name && range.contains(&row.ts_nanos))
+                    .map(|row| &row.attributes),
+            )
+        {
+            if let Some(value) = scalar_attribute_value(attributes, label) {
+                values.insert(value);
+                if values.len() >= 100 {
+                    break;
+                }
+            }
+        }
+        Ok(values.into_iter().collect())
     }
 
     async fn service_names(&self) -> anyhow::Result<Vec<String>> {
@@ -488,6 +588,94 @@ impl TelemetryStore for MemoryStore {
         Ok(summaries)
     }
 
+    async fn release_windows(
+        &self,
+        service: &str,
+        range: RangeInclusive<u128>,
+    ) -> anyhow::Result<Vec<ReleaseWindow>> {
+        let inner = self.lock();
+        let mut by_version: BTreeMap<String, ReleaseWindow> = BTreeMap::new();
+        for span in inner
+            .spans
+            .iter()
+            .filter(|s| s.service == service && range.contains(&s.ts_nanos))
+        {
+            let Some(version) = span
+                .resource
+                .get(semconv::SERVICE_VERSION)
+                .and_then(|value| value.as_str())
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+            else {
+                continue;
+            };
+            let window = by_version
+                .entry(version.to_string())
+                .or_insert_with(|| ReleaseWindow {
+                    version: version.to_string(),
+                    first_seen_nanos: span.ts_nanos,
+                    last_seen_nanos: span.ts_nanos,
+                    span_count: 0,
+                });
+            window.first_seen_nanos = window.first_seen_nanos.min(span.ts_nanos);
+            window.last_seen_nanos = window.last_seen_nanos.max(span.ts_nanos);
+            window.span_count += 1;
+        }
+        let mut windows: Vec<_> = by_version.into_values().collect();
+        windows.sort_by_key(|window| (window.first_seen_nanos, window.version.clone()));
+        Ok(windows)
+    }
+
+    async fn service_catalog(
+        &self,
+        range: RangeInclusive<u128>,
+    ) -> anyhow::Result<Vec<ServiceCatalogRow>> {
+        #[derive(Default)]
+        struct CatalogAgg {
+            latest: Option<SpanRow>,
+            instances: BTreeSet<String>,
+        }
+
+        let inner = self.lock();
+        let mut by_service: BTreeMap<String, CatalogAgg> = BTreeMap::new();
+        for span in inner.spans.iter().filter(|s| range.contains(&s.ts_nanos)) {
+            let entry = by_service.entry(span.service.clone()).or_default();
+            if entry
+                .latest
+                .as_ref()
+                .is_none_or(|latest| span.ts_nanos >= latest.ts_nanos)
+            {
+                entry.latest = Some(span.clone());
+            }
+            if let Some(instance) = resource_string(&span.resource, "service.instance.id") {
+                entry.instances.insert(instance);
+            }
+        }
+
+        let mut rows = Vec::new();
+        for (name, agg) in by_service {
+            let Some(latest) = agg.latest else { continue };
+            rows.push(ServiceCatalogRow {
+                name,
+                service_version: resource_string(&latest.resource, semconv::SERVICE_VERSION),
+                service_namespace: resource_string(&latest.resource, semconv::SERVICE_NAMESPACE),
+                deployment_environment: resource_string(
+                    &latest.resource,
+                    semconv::DEPLOYMENT_ENVIRONMENT_NAME,
+                )
+                .or_else(|| resource_string(&latest.resource, semconv::DEPLOYMENT_ENVIRONMENT)),
+                telemetry_sdk_language: resource_string(&latest.resource, "telemetry.sdk.language"),
+                telemetry_sdk_name: resource_string(&latest.resource, "telemetry.sdk.name"),
+                telemetry_sdk_version: resource_string(&latest.resource, "telemetry.sdk.version"),
+                last_seen_nanos: latest.ts_nanos,
+                instance_count: agg.instances.len() as u64,
+            });
+        }
+        rows.sort_by_key(|row| row.name.clone());
+        rows.truncate(MAX_ROWS);
+        Ok(rows)
+    }
+
     async fn span_red_series(
         &self,
         service: Option<&str>,
@@ -609,6 +797,29 @@ impl TelemetryStore for MemoryStore {
                 value: quantile_from_histograms(&rows, q),
             })
             .collect())
+    }
+
+    async fn metric_exemplars(
+        &self,
+        name: &str,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        limit: usize,
+    ) -> anyhow::Result<Vec<MetricExemplarRow>> {
+        let mut rows: Vec<MetricExemplarRow> = self
+            .lock()
+            .metric_exemplars
+            .iter()
+            .filter(|row| {
+                row.name == name
+                    && service.is_none_or(|svc| row.service == svc)
+                    && range.contains(&row.ts_nanos)
+            })
+            .cloned()
+            .collect();
+        rows.sort_by_key(|row| std::cmp::Reverse(row.ts_nanos));
+        rows.truncate(limit.min(MAX_ROWS));
+        Ok(rows)
     }
 
     async fn error_events_by_fingerprint(
@@ -877,6 +1088,148 @@ impl TelemetryStore for MemoryStore {
         Ok(rows)
     }
 
+    async fn span_field_keys(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<FieldKey>> {
+        let spans = self.lock().spans.clone();
+        let window: Vec<SpanRow> = spans
+            .into_iter()
+            .filter(|span| range.contains(&span.ts_nanos))
+            .collect();
+        let row_count = window.len() as u64;
+        let mut counts: BTreeMap<String, (FieldSource, u64)> = BTreeMap::new();
+
+        for span in &window {
+            if !span.service.trim().is_empty() {
+                counts
+                    .entry(format!("resource.{}", semconv::SERVICE_NAME))
+                    .and_modify(|(_, count)| *count += 1)
+                    .or_insert((FieldSource::Resource, 1));
+            }
+            if let Some(attributes) = span.attributes.as_object() {
+                for key in attributes.keys() {
+                    if !span_field_key_allowed(key) {
+                        continue;
+                    }
+                    if field_scalar_value(&span.attributes, key).is_some() {
+                        counts
+                            .entry(key.clone())
+                            .and_modify(|(_, count)| *count += 1)
+                            .or_insert((FieldSource::Span, 1));
+                    }
+                }
+            }
+            if let Some(resource) = span.resource.as_object() {
+                for key in resource.keys() {
+                    if key == semconv::SERVICE_NAME {
+                        continue;
+                    }
+                    let exposed = format!("resource.{key}");
+                    if !span_field_key_allowed(&exposed) {
+                        continue;
+                    }
+                    if field_scalar_value(&span.resource, key).is_some() {
+                        counts
+                            .entry(exposed)
+                            .and_modify(|(_, count)| *count += 1)
+                            .or_insert((FieldSource::Resource, 1));
+                    }
+                }
+            }
+        }
+
+        Ok(counts
+            .into_iter()
+            .take(FIELD_KEYS_CAP)
+            .map(|(key, (source, non_null_count))| FieldKey {
+                namespace: field_key_namespace(&key),
+                coverage: if row_count == 0 {
+                    0.0
+                } else {
+                    non_null_count as f64 / row_count as f64
+                },
+                is_identifier: field_key_identifier_like(&key),
+                key,
+                source,
+                row_count,
+                non_null_count,
+            })
+            .collect())
+    }
+
+    async fn span_field_stats(
+        &self,
+        key: &str,
+        range: RangeInclusive<u128>,
+        service: Option<&str>,
+    ) -> anyhow::Result<FieldStats> {
+        anyhow::ensure!(span_field_key_allowed(key), "invalid field key");
+        let discovered = self.span_field_keys(range.clone()).await?;
+        let Some(discovered_key) = discovered.iter().find(|field| field.key == key) else {
+            anyhow::bail!("unknown span field key");
+        };
+        let (source, raw_key) = match key.strip_prefix("resource.") {
+            Some(raw) => (FieldSource::Resource, raw),
+            None => (FieldSource::Span, key),
+        };
+
+        let spans = self.lock().spans.clone();
+        let window: Vec<SpanRow> = spans
+            .into_iter()
+            .filter(|span| {
+                range.contains(&span.ts_nanos) && service.is_none_or(|svc| span.service == svc)
+            })
+            .collect();
+        let row_count = window.len() as u64;
+        let mut values = Vec::new();
+        for span in &window {
+            let value = match source {
+                FieldSource::Span => field_scalar_value(&span.attributes, raw_key),
+                FieldSource::Resource if raw_key == semconv::SERVICE_NAME => {
+                    field_value_display(&span.service)
+                }
+                FieldSource::Resource => field_scalar_value(&span.resource, raw_key),
+            };
+            if let Some(value) = value {
+                values.push(value);
+            }
+        }
+
+        let non_null_count = values.len() as u64;
+        let capped = values.len() > MAX_ROWS;
+        let mut counts: BTreeMap<String, u64> = BTreeMap::new();
+        let mut distinct = BTreeSet::new();
+        for value in values.into_iter().take(MAX_ROWS) {
+            distinct.insert(value.clone());
+            *counts.entry(value).or_default() += 1;
+        }
+
+        let mut top_values: Vec<FieldValueCount> = counts
+            .into_iter()
+            .map(|(value, count)| FieldValueCount { value, count })
+            .collect();
+        top_values.sort_by(|a, b| b.count.cmp(&a.count).then_with(|| a.value.cmp(&b.value)));
+        top_values.truncate(FIELD_TOP_VALUES_CAP);
+        let sample_count = non_null_count.min(MAX_ROWS as u64);
+        let is_identifier = discovered_key.is_identifier
+            || (sample_count >= 20 && distinct.len() as u64 >= sample_count.saturating_sub(1));
+
+        Ok(FieldStats {
+            key: key.to_string(),
+            namespace: field_key_namespace(key),
+            source,
+            row_count,
+            non_null_count,
+            distinct_count: distinct.len() as u64,
+            coverage: if row_count == 0 {
+                0.0
+            } else {
+                non_null_count as f64 / row_count as f64
+            },
+            capped,
+            is_identifier,
+            top_values,
+        })
+    }
+
     async fn service_map(
         &self,
         range: RangeInclusive<u128>,
@@ -1009,6 +1362,15 @@ impl TelemetryStore for MemoryStore {
         step_nanos: u128,
         agg: MetricAgg,
     ) -> anyhow::Result<Vec<(String, Vec<SeriesPoint>)>> {
+        anyhow::ensure!(
+            metric_group_label_allowed(group_by),
+            "high-cardinality identifier - filter, don't group"
+        );
+        let labels = self.metric_labels(name).await?;
+        anyhow::ensure!(
+            labels.iter().any(|label| label == group_by),
+            "unknown metric label"
+        );
         let step = step_nanos.max(1);
         let mut buckets: std::collections::BTreeMap<(String, u128), Vec<f64>> = Default::default();
         for point in self.lock().metric_points.iter().filter(|p| {
@@ -1048,6 +1410,42 @@ impl TelemetryStore for MemoryStore {
                 (group, series)
             })
             .collect())
+    }
+
+    async fn runtime_snapshot(
+        &self,
+        service: Option<&str>,
+        run_id: Option<&str>,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+    ) -> anyhow::Result<Vec<RuntimeMetricSeries>> {
+        let mut rows = Vec::new();
+        for metric in self.metric_names().await? {
+            let Some(family) = runtime_metric_family(&metric) else {
+                continue;
+            };
+            let points = self
+                .metric_series(
+                    &metric,
+                    service,
+                    run_id,
+                    range.clone(),
+                    step_nanos,
+                    MetricAgg::Avg,
+                )
+                .await?;
+            if points.is_empty() {
+                continue;
+            }
+            rows.push(RuntimeMetricSeries {
+                family: family.to_string(),
+                metric: metric.clone(),
+                unit: runtime_metric_unit(&metric),
+                points,
+            });
+        }
+        rows.sort_by(|a, b| a.family.cmp(&b.family).then(a.metric.cmp(&b.metric)));
+        Ok(rows)
     }
 
     async fn histogram_count_series(
@@ -1221,6 +1619,187 @@ mod tests {
         row
     }
 
+    fn span_with_release(trace: &str, span_id: &str, ts: u128, version: &str) -> SpanRow {
+        let mut row = span(trace, span_id, None, "checkout", ts);
+        row.resource = serde_json::json!({ "service.version": version });
+        row
+    }
+
+    fn span_with_resource(
+        trace: &str,
+        span_id: &str,
+        service: &str,
+        ts: u128,
+        resource: serde_json::Value,
+    ) -> SpanRow {
+        let mut row = span(trace, span_id, None, service, ts);
+        row.resource = resource;
+        row
+    }
+
+    #[tokio::test]
+    async fn span_field_keys_and_stats_cover_span_and_resource_attrs() {
+        let store = MemoryStore::new();
+        let mut s1 = span_with_attrs(
+            "trace-1",
+            "root",
+            10,
+            serde_json::json!({
+                "http.request.method": "GET",
+                "request.id": "req-1"
+            }),
+        );
+        s1.resource = serde_json::json!({ "service.name": "checkout" });
+        let mut s2 = span_with_attrs(
+            "trace-2",
+            "root",
+            20,
+            serde_json::json!({
+                "http.request.method": "GET",
+                "request.id": "req-2"
+            }),
+        );
+        s2.resource = serde_json::json!({ "service.name": "checkout" });
+        let mut s3 = span_with_attrs(
+            "trace-3",
+            "root",
+            30,
+            serde_json::json!({
+                "http.request.method": "POST",
+                "request.id": "req-3"
+            }),
+        );
+        s3.resource = serde_json::json!({ "service.name": "checkout" });
+        let mut s4 = span("trace-4", "root", None, "checkout", 40);
+        s4.resource = serde_json::json!({ "service.name": "checkout" });
+        store
+            .ingest_traces(vec![s1, s2, s3, s4], bytes::Bytes::new())
+            .await
+            .unwrap();
+
+        let keys = store.span_field_keys(0..=100).await.unwrap();
+        let method_key = keys
+            .iter()
+            .find(|key| key.key == "http.request.method")
+            .unwrap();
+        assert_eq!(method_key.namespace, "http");
+        assert_eq!(method_key.non_null_count, 3);
+        assert!((method_key.coverage - 0.75).abs() < f64::EPSILON);
+        assert!(
+            keys.iter().any(
+                |key| key.key == "resource.service.name" && key.source == FieldSource::Resource
+            )
+        );
+        assert!(
+            keys.iter()
+                .any(|key| key.key == "request.id" && key.is_identifier)
+        );
+
+        let stats = store
+            .span_field_stats("http.request.method", 0..=100, Some("checkout"))
+            .await
+            .unwrap();
+        assert_eq!(stats.row_count, 4);
+        assert_eq!(stats.non_null_count, 3);
+        assert_eq!(stats.distinct_count, 2);
+        assert_eq!(stats.top_values[0].value, "GET");
+        assert_eq!(stats.top_values[0].count, 2);
+    }
+
+    #[tokio::test]
+    async fn service_catalog_returns_identity_and_nulls() {
+        let store = MemoryStore::new();
+        store
+            .ingest_traces(
+                vec![
+                    span_with_resource(
+                        "checkout-old",
+                        "root",
+                        "checkout",
+                        10,
+                        serde_json::json!({
+                            "service.version": "v1",
+                            "service.namespace": "shop",
+                            "deployment.environment.name": "staging",
+                            "telemetry.sdk.language": "rust",
+                            "telemetry.sdk.name": "opentelemetry",
+                            "telemetry.sdk.version": "0.31.0",
+                            "service.instance.id": "checkout-a"
+                        }),
+                    ),
+                    span_with_resource(
+                        "checkout-new",
+                        "root",
+                        "checkout",
+                        20,
+                        serde_json::json!({
+                            "service.version": "v2",
+                            "service.namespace": "shop",
+                            "deployment.environment.name": "prod",
+                            "telemetry.sdk.language": "rust",
+                            "telemetry.sdk.name": "opentelemetry",
+                            "telemetry.sdk.version": "0.32.1",
+                            "service.instance.id": "checkout-b"
+                        }),
+                    ),
+                    span("bare", "root", None, "bare", 30),
+                ],
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+
+        let rows = store.service_catalog(0..=100).await.unwrap();
+
+        let bare = rows.iter().find(|row| row.name == "bare").unwrap();
+        assert_eq!(bare.service_version, None);
+        assert_eq!(bare.telemetry_sdk_language, None);
+        assert_eq!(bare.instance_count, 0);
+        let checkout = rows.iter().find(|row| row.name == "checkout").unwrap();
+        assert_eq!(checkout.service_version.as_deref(), Some("v2"));
+        assert_eq!(checkout.service_namespace.as_deref(), Some("shop"));
+        assert_eq!(checkout.deployment_environment.as_deref(), Some("prod"));
+        assert_eq!(checkout.telemetry_sdk_language.as_deref(), Some("rust"));
+        assert_eq!(
+            checkout.telemetry_sdk_name.as_deref(),
+            Some("opentelemetry")
+        );
+        assert_eq!(checkout.telemetry_sdk_version.as_deref(), Some("0.32.1"));
+        assert_eq!(checkout.last_seen_nanos, 20);
+        assert_eq!(checkout.instance_count, 2);
+    }
+
+    #[tokio::test]
+    async fn release_windows_group_versions_by_service_and_range() {
+        let store = MemoryStore::new();
+        store
+            .ingest_traces(
+                vec![
+                    span_with_release("t1", "a", 10, "v1"),
+                    span_with_release("t2", "a", 20, "v1"),
+                    span_with_release("t3", "a", 40, "v2"),
+                    span_with_release("t4", "a", 60, "v2"),
+                    span("other", "a", None, "catalog", 30),
+                    span_with_release("too-late", "a", 90, "v3"),
+                ],
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+
+        let windows = store.release_windows("checkout", 0..=80).await.unwrap();
+
+        assert_eq!(windows.len(), 2);
+        assert_eq!(windows[0].version, "v1");
+        assert_eq!(windows[0].first_seen_nanos, 10);
+        assert_eq!(windows[0].last_seen_nanos, 20);
+        assert_eq!(windows[0].span_count, 2);
+        assert_eq!(windows[1].version, "v2");
+        assert_eq!(windows[1].first_seen_nanos, 40);
+        assert_eq!(windows[1].last_seen_nanos, 60);
+        assert_eq!(windows[1].span_count, 2);
+    }
+
     #[tokio::test]
     async fn attribute_compare_ranks_overrepresented_value_first() {
         let store = MemoryStore::new();
@@ -1267,6 +1846,147 @@ mod tests {
         assert_eq!(first.baseline_count, 1);
         assert_eq!(first.baseline_total, 20);
         assert!(first.score > 0.8, "{first:?}");
+    }
+
+    #[tokio::test]
+    async fn metric_exemplars_filters_by_metric_service_range_and_limit() {
+        let store = MemoryStore::new();
+        store
+            .ingest_metrics(
+                Vec::new(),
+                Vec::new(),
+                vec![
+                    MetricExemplarRow {
+                        ts_nanos: 20,
+                        service: "checkout".into(),
+                        name: "http.server.request.duration".into(),
+                        value: 120.0,
+                        trace_id: "trace-a".into(),
+                        span_id: "span-a".into(),
+                        run_id: Some("run-a".into()),
+                        attributes: serde_json::json!({"route": "/checkout"}),
+                    },
+                    MetricExemplarRow {
+                        ts_nanos: 10,
+                        service: "checkout".into(),
+                        name: "http.server.request.duration".into(),
+                        value: 90.0,
+                        trace_id: "trace-b".into(),
+                        span_id: "span-b".into(),
+                        run_id: None,
+                        attributes: serde_json::Value::Null,
+                    },
+                    MetricExemplarRow {
+                        ts_nanos: 30,
+                        service: "catalog".into(),
+                        name: "http.server.request.duration".into(),
+                        value: 80.0,
+                        trace_id: "trace-c".into(),
+                        span_id: "span-c".into(),
+                        run_id: None,
+                        attributes: serde_json::Value::Null,
+                    },
+                ],
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+
+        let rows = store
+            .metric_exemplars("http.server.request.duration", Some("checkout"), 0..=25, 1)
+            .await
+            .unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].trace_id, "trace-a");
+        assert_eq!(rows[0].run_id.as_deref(), Some("run-a"));
+        assert_eq!(rows[0].attributes["route"], "/checkout");
+    }
+
+    #[tokio::test]
+    async fn metric_labels_values_and_runtime_snapshot_derive_from_points() {
+        let store = MemoryStore::new();
+        store
+            .ingest_metrics(
+                vec![
+                    MetricPointRow {
+                        ts_nanos: 1_000_000_000,
+                        service: "checkout".into(),
+                        name: "process.cpu.utilization".into(),
+                        value: 0.42,
+                        is_monotonic: false,
+                        run_id: Some("run-a".into()),
+                        attributes: serde_json::json!({
+                            "runtime.name": "tokio",
+                            "payment.method": "card",
+                            "trace_id": "trace-a"
+                        }),
+                    },
+                    MetricPointRow {
+                        ts_nanos: 2_000_000_000,
+                        service: "checkout".into(),
+                        name: "jvm.gc.time".into(),
+                        value: 12.0,
+                        is_monotonic: false,
+                        run_id: None,
+                        attributes: serde_json::json!({
+                            "payment.method": "wire"
+                        }),
+                    },
+                ],
+                Vec::new(),
+                Vec::new(),
+                bytes::Bytes::new(),
+            )
+            .await
+            .unwrap();
+
+        let labels = store
+            .metric_labels("process.cpu.utilization")
+            .await
+            .unwrap();
+        assert!(labels.contains(&"runtime.name".to_string()));
+        assert!(labels.contains(&"payment.method".to_string()));
+        assert!(!labels.contains(&"trace_id".to_string()));
+
+        let values = store
+            .metric_label_values(
+                "process.cpu.utilization",
+                "payment.method",
+                0..=3_000_000_000,
+            )
+            .await
+            .unwrap();
+        assert_eq!(values, vec!["card".to_string()]);
+
+        let runtime = store
+            .runtime_snapshot(Some("checkout"), None, 0..=3_000_000_000, 1_000_000_000)
+            .await
+            .unwrap();
+        assert_eq!(runtime.len(), 2);
+        assert!(runtime.iter().any(|row| row.family == "process"));
+        assert!(runtime.iter().any(|row| row.family == "jvm"));
+
+        let run_runtime = store
+            .runtime_snapshot(None, Some("run-a"), 0..=3_000_000_000, 1_000_000_000)
+            .await
+            .unwrap();
+        assert_eq!(run_runtime.len(), 1);
+        assert_eq!(run_runtime[0].metric, "process.cpu.utilization");
+
+        let denied = store
+            .metric_series_grouped(
+                "process.cpu.utilization",
+                Some("checkout"),
+                "trace_id",
+                0..=3_000_000_000,
+                1_000_000_000,
+                MetricAgg::Avg,
+            )
+            .await
+            .unwrap_err()
+            .to_string();
+        assert!(denied.contains("high-cardinality identifier"));
     }
 
     #[tokio::test]

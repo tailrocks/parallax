@@ -96,7 +96,12 @@ impl Worker {
             IngestItem::Metrics(request, raw) => {
                 let normalized = normalize::normalize_metrics(&request);
                 self.store
-                    .ingest_metrics(normalized.points, normalized.histograms, raw)
+                    .ingest_metrics(
+                        normalized.points,
+                        normalized.histograms,
+                        normalized.exemplars,
+                        raw,
+                    )
                     .await?;
             }
         }
@@ -187,6 +192,12 @@ fn dedup_error_events(errors: Vec<ErrorEventRow>) -> Vec<ErrorEventRow> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use parallax_proto::common::any_value::Value as AnyValueEnum;
+    use parallax_proto::common::{AnyValue, KeyValue};
+    use parallax_proto::metrics::{
+        Exemplar, Gauge, Metric, NumberDataPoint, ResourceMetrics, ScopeMetrics,
+        exemplar::Value as ExemplarValue, metric::Data, number_data_point::Value as NumberValue,
+    };
     use parallax_storage::adapter::TelemetryStore;
     use parallax_storage::memory::MemoryStore;
     use serde_json::json;
@@ -203,6 +214,52 @@ mod tests {
             trace_id: "trace".to_string(),
             span_id: span_id.to_string(),
             attributes: json!({}),
+        }
+    }
+
+    fn string_kv(key: &str, value: &str) -> KeyValue {
+        KeyValue {
+            key: key.to_string(),
+            value: Some(AnyValue {
+                value: Some(AnyValueEnum::StringValue(value.to_string())),
+            }),
+            key_strindex: 0,
+        }
+    }
+
+    fn metrics_request_with_exemplar() -> ExportMetricsServiceRequest {
+        ExportMetricsServiceRequest {
+            resource_metrics: vec![ResourceMetrics {
+                resource: Some(parallax_proto::resource::Resource {
+                    attributes: vec![
+                        string_kv("service.name", "checkout"),
+                        string_kv("parallax.run.id", "run-a"),
+                    ],
+                    ..Default::default()
+                }),
+                scope_metrics: vec![ScopeMetrics {
+                    metrics: vec![Metric {
+                        name: "http.server.request.duration".into(),
+                        data: Some(Data::Gauge(Gauge {
+                            data_points: vec![NumberDataPoint {
+                                time_unix_nano: 20,
+                                value: Some(NumberValue::AsDouble(100.0)),
+                                exemplars: vec![Exemplar {
+                                    time_unix_nano: 21,
+                                    trace_id: vec![0xab; 16],
+                                    span_id: vec![0xcd; 8],
+                                    value: Some(ExemplarValue::AsDouble(120.0)),
+                                    filtered_attributes: vec![string_kv("route", "/checkout")],
+                                }],
+                                ..Default::default()
+                            }],
+                        })),
+                        ..Default::default()
+                    }],
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
         }
     }
 
@@ -255,5 +312,41 @@ mod tests {
             .expect("error events");
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].source, ErrorSource::SpanException);
+    }
+
+    #[tokio::test]
+    async fn metric_exemplar_round_trips_through_worker_and_store() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let store = Arc::new(MemoryStore::new());
+        let metadata = Arc::new(
+            MetadataStore::open(tmp.path().join("meta.db"))
+                .await
+                .expect("metadata"),
+        );
+        let mut worker = Worker::new(store.clone(), metadata, crate::live::channels());
+
+        worker
+            .process(IngestItem::Metrics(
+                metrics_request_with_exemplar(),
+                bytes::Bytes::new(),
+            ))
+            .await
+            .expect("process metrics");
+
+        let rows = store
+            .metric_exemplars(
+                "http.server.request.duration",
+                Some("checkout"),
+                0..=100,
+                10,
+            )
+            .await
+            .expect("metric exemplars");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].value, 120.0);
+        assert_eq!(rows[0].trace_id, "abababababababababababababababab");
+        assert_eq!(rows[0].span_id, "cdcdcdcdcdcdcdcd");
+        assert_eq!(rows[0].run_id.as_deref(), Some("run-a"));
+        assert_eq!(rows[0].attributes["route"], "/checkout");
     }
 }

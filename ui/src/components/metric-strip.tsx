@@ -8,6 +8,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
+import { formatBytes, formatTimeShort } from "@/lib/format"
 
 interface MetricPoint {
   tsNanos: string
@@ -29,22 +30,20 @@ const stripConfig = {
 
 function isAbortError(error: unknown): boolean {
   return (
-    error instanceof DOMException ||
-    (typeof error === "object" && error !== null && "name" in error)
-  ) && (error as { name?: unknown }).name === "AbortError"
+    (error instanceof DOMException ||
+      (typeof error === "object" && error !== null && "name" in error)) &&
+    (error as { name?: unknown }).name === "AbortError"
+  )
 }
 
 function MetricPanel({ panel }: { panel: Panel }) {
   const chartData = useMemo(
     () =>
       panel.points.map((p) => ({
-        time: new Date(Number(BigInt(p.tsNanos) / 1_000_000n)).toLocaleTimeString(
-          [],
-          {
-            minute: "2-digit",
-            second: "2-digit",
-          }
-        ),
+        time: formatTimeShort(p.tsNanos, {
+          minute: "2-digit",
+          second: "2-digit",
+        }),
         value: Number(p.value.toFixed(2)),
       })),
     [panel.points]
@@ -65,7 +64,16 @@ function MetricPanel({ panel }: { panel: Panel }) {
             axisLine={false}
             minTickGap={32}
           />
-          <YAxis tickLine={false} axisLine={false} width={44} />
+          <YAxis
+            tickLine={false}
+            axisLine={false}
+            width={panel.key === "memory" ? 72 : 44}
+            tickFormatter={(value) =>
+              panel.key === "memory"
+                ? formatBytes(Number(value))
+                : String(value)
+            }
+          />
           <ChartTooltip content={<ChartTooltipContent />} />
           <Line
             dataKey="value"
@@ -113,54 +121,53 @@ export function MetricStrip({
       const to = live
         ? ((BigInt(Date.now()) + 30_000n) * 1_000_000n).toString()
         : toNanos
-    const scope = [
-      runId ? `runId: "${gqlString(runId)}"` : "",
-      !runId && service ? `service: "${gqlString(service)}"` : "",
-    ]
-      .filter(Boolean)
-      .join(", ")
-    const args = `${scope ? `${scope}, ` : ""}fromNanos: "${fromNanos}", toNanos: "${to}", stepSeconds: ${stepSeconds}`
-    void graphql<Record<string, Array<{ points: MetricPoint[] }> | undefined>>(
-      `{
+      const scope = [
+        runId ? `runId: "${gqlString(runId)}"` : "",
+        !runId && service ? `service: "${gqlString(service)}"` : "",
+      ]
+        .filter(Boolean)
+        .join(", ")
+      const args = `${scope ? `${scope}, ` : ""}fromNanos: "${fromNanos}", toNanos: "${to}", stepSeconds: ${stepSeconds}`
+      void graphql<
+        Record<string, Array<{ points: MetricPoint[] }> | undefined>
+      >(
+        `{
         cpu: metricSeries(name: "process.cpu.utilization", ${args}) { points { tsNanos value } }
         memory: metricSeries(name: "process.memory.usage", ${args}) { points { tsNanos value } }
         tasks: metricSeries(name: "tokio.runtime.alive_tasks", ${args}) { points { tsNanos value } }
       }`,
-      { signal: controller.signal }
-    )
-      .then((data) => {
-        if (cancelled || controller.signal.aborted) return
-        setPanels([
-          {
-            title: "CPU",
-            unit: "%",
-            key: "cpu",
-            points: (data.cpu?.[0]?.points ?? []).map((p) => ({
-              tsNanos: p.tsNanos,
-              value: p.value * 100,
-            })),
-          },
-          {
-            title: "Memory",
-            unit: "MiB",
-            key: "memory",
-            points: (data.memory?.[0]?.points ?? []).map((p) => ({
-              tsNanos: p.tsNanos,
-              value: p.value / (1024 * 1024),
-            })),
-          },
-          {
-            title: "Tokio alive tasks",
-            unit: "",
-            key: "tasks",
-            points: data.tasks?.[0]?.points ?? [],
-          },
-        ])
-      })
-      .catch((error: unknown) => {
-        if (cancelled || isAbortError(error)) return
-        setPanels([])
-      })
+        { signal: controller.signal }
+      )
+        .then((data) => {
+          if (cancelled || controller.signal.aborted) return
+          setPanels([
+            {
+              title: "CPU",
+              unit: "%",
+              key: "cpu",
+              points: (data.cpu?.[0]?.points ?? []).map((p) => ({
+                tsNanos: p.tsNanos,
+                value: p.value * 100,
+              })),
+            },
+            {
+              title: "Memory",
+              unit: "bytes",
+              key: "memory",
+              points: data.memory?.[0]?.points ?? [],
+            },
+            {
+              title: "Tokio alive tasks",
+              unit: "",
+              key: "tasks",
+              points: data.tasks?.[0]?.points ?? [],
+            },
+          ])
+        })
+        .catch((error: unknown) => {
+          if (cancelled || isAbortError(error)) return
+          setPanels([])
+        })
     }
     fetchPanels()
     const timer = live ? setInterval(fetchPanels, 5000) : undefined

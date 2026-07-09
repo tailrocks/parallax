@@ -1,10 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { Link, createFileRoute } from "@tanstack/react-router"
 import { useEffect, useMemo, useRef, useState } from "react"
 import {
+  IconBookmark,
   IconDatabase,
+  IconDeviceFloppy,
   IconHistory,
   IconPlayerPlay,
   IconTable,
+  IconTrash,
 } from "@tabler/icons-react"
 
 import { PageHeader } from "@/components/page-header"
@@ -12,12 +15,22 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
 import { Kbd, KbdGroup } from "@/components/ui/kbd"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
@@ -31,12 +44,30 @@ import {
 import { gqlString, graphql } from "@/lib/api"
 import { formatCount } from "@/lib/format"
 
-export const Route = createFileRoute("/sql")({ component: SqlPage })
+interface SqlSearch {
+  query?: string | undefined
+}
+
+export const Route = createFileRoute("/sql")({
+  validateSearch: (search: Record<string, unknown>): SqlSearch => ({
+    query: typeof search.query === "string" ? search.query : undefined,
+  }),
+  component: SqlPage,
+})
 
 interface SqlResult {
   columns: string[]
   rows: string[]
   rowCount: number
+  truncated?: boolean
+}
+
+interface SavedView {
+  id: string
+  name: string
+  page: string
+  state: string
+  updatedAtNanos: string
 }
 
 export const EXAMPLES: Array<{ label: string; sql: string }> = [
@@ -106,14 +137,208 @@ function loadHistory(): string[] {
   }
 }
 
+function normalizeColumn(column: string) {
+  return column.trim().replace(/^"+|"+$/g, "").toLowerCase()
+}
+
+function displayCell(cell: unknown) {
+  return typeof cell === "string" ? cell : JSON.stringify(cell)
+}
+
+function cellValue(row: Record<string, string>, keys: string[]) {
+  for (const key of keys) {
+    const value = row[key]
+    if (value && value !== "null") return value
+  }
+  return null
+}
+
+export type SqlCellTarget =
+  | { to: "/traces/$traceId"; params: { traceId: string } }
+  | { to: "/runs/$runId"; params: { runId: string } }
+  | { to: "/issues/$fingerprint"; params: { fingerprint: string } }
+  | { to: "/services/$service"; params: { service: string } }
+
+export function targetForCell(
+  column: string,
+  value: string,
+  row: Record<string, string>
+): SqlCellTarget | null {
+  if (!value || value === "null") return null
+  const normalized = normalizeColumn(column)
+  if (normalized === "trace_id") {
+    return { to: "/traces/$traceId", params: { traceId: value } }
+  }
+  if (normalized === "span_id") {
+    const traceId = cellValue(row, ["trace_id"])
+    return traceId
+      ? { to: "/traces/$traceId", params: { traceId } }
+      : null
+  }
+  if (normalized === "run_id" || normalized === "parallax.run.id") {
+    return { to: "/runs/$runId", params: { runId: value } }
+  }
+  if (normalized === "fingerprint") {
+    return { to: "/issues/$fingerprint", params: { fingerprint: value } }
+  }
+  if (normalized === "service" || normalized === "service_name") {
+    return { to: "/services/$service", params: { service: value } }
+  }
+  return null
+}
+
+export function SqlResultsTable({ result }: { result: SqlResult }) {
+  const parsedRows = useMemo(
+    () =>
+      result.rows.map((row) => {
+        try {
+          const cells: unknown = JSON.parse(row)
+          return Array.isArray(cells) ? cells.map(displayCell) : []
+        } catch {
+          return []
+        }
+      }),
+    [result.rows]
+  )
+
+  return (
+    <ScrollArea className="max-h-[520px] overflow-auto">
+      <Table>
+        <TableHeader className="sticky top-0 bg-card">
+          <TableRow>
+            {result.columns.map((column) => (
+              <TableHead key={column}>{column}</TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {parsedRows.map((cells, rowIndex) => {
+            const rowByColumn = Object.fromEntries(
+              result.columns.map((column, index) => [
+                normalizeColumn(column),
+                cells[index] ?? "",
+              ])
+            )
+            return (
+              <TableRow key={rowIndex}>
+                {cells.map((cell, cellIndex) => {
+                  const column = result.columns[cellIndex] ?? ""
+                  const target = targetForCell(column, cell, rowByColumn)
+                  return (
+                    <TableCell
+                      key={cellIndex}
+                      className="max-w-md truncate font-mono text-xs"
+                      title={cell}
+                    >
+                      {target ? (
+                        <Link
+                          to={target.to}
+                          params={target.params}
+                          className="underline underline-offset-4"
+                        >
+                          {cell}
+                        </Link>
+                      ) : (
+                        cell
+                      )}
+                    </TableCell>
+                  )
+                })}
+              </TableRow>
+            )
+          })}
+        </TableBody>
+      </Table>
+    </ScrollArea>
+  )
+}
+
+export function SqlResultBody({ result }: { result: SqlResult }) {
+  return (
+    <>
+      {result.truncated ? (
+        <p className="mb-3 text-sm text-amber-700 dark:text-amber-300">
+          Result capped at 2,000 rows — refine the query or add LIMIT/ORDER
+          BY.
+        </p>
+      ) : null}
+      <SqlResultsTable result={result} />
+    </>
+  )
+}
+
+export function SnippetsMenu({
+  snippets,
+  onSelect,
+  onDelete,
+  onSave,
+}: {
+  snippets: SavedView[]
+  onSelect: (snippet: SavedView) => void
+  onDelete: (id: string) => void
+  onSave: () => void
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<Button variant="outline" />}>
+        <IconBookmark />
+        Snippets
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-72">
+        <DropdownMenuLabel>Named snippets</DropdownMenuLabel>
+        <DropdownMenuGroup>
+          {snippets.length === 0 ? (
+            <DropdownMenuItem disabled>No snippets</DropdownMenuItem>
+          ) : (
+            snippets.map((snippet) => (
+              <DropdownMenuItem
+                key={snippet.id}
+                onClick={() => onSelect(snippet)}
+              >
+                <IconBookmark />
+                <span className="truncate">{snippet.name}</span>
+              </DropdownMenuItem>
+            ))
+          )}
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={onSave}>
+          <IconDeviceFloppy />
+          Save current snippet
+        </DropdownMenuItem>
+        {snippets.length > 0 ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Delete snippet</DropdownMenuLabel>
+            {snippets.map((snippet) => (
+              <DropdownMenuItem
+                key={`delete-${snippet.id}`}
+                variant="destructive"
+                onClick={(event) => {
+                  event.preventDefault()
+                  onDelete(snippet.id)
+                }}
+              >
+                <IconTrash />
+                <span className="truncate">{snippet.name}</span>
+              </DropdownMenuItem>
+            ))}
+          </>
+        ) : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 interface SchemaColumn {
   name: string
   dataType: string
 }
 
 function SqlPage() {
+  const search = Route.useSearch()
   const editorRef = useRef<HTMLTextAreaElement>(null)
-  const [statement, setStatement] = useState(EXAMPLES[0]?.sql ?? "")
+  const [statement, setStatement] = useState(search.query ?? EXAMPLES[0]?.sql ?? "")
   const [result, setResult] = useState<SqlResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [running, setRunning] = useState(false)
@@ -121,6 +346,17 @@ function SqlPage() {
   const [history, setHistory] = useState<string[]>(loadHistory)
   const [schema, setSchema] = useState<Map<string, SchemaColumn[]>>(new Map())
   const [openTable, setOpenTable] = useState<string | null>(null)
+  const [snippets, setSnippets] = useState<SavedView[]>([])
+  const [snippetError, setSnippetError] = useState<string | null>(null)
+  const [saveOpen, setSaveOpen] = useState(false)
+  const [snippetName, setSnippetName] = useState("")
+  const [savingSnippet, setSavingSnippet] = useState(false)
+
+  useEffect(() => {
+    if (search.query) {
+      setStatement(search.query)
+    }
+  }, [search.query])
 
   useEffect(() => {
     void graphql<{ sql: SqlResult }>(`
@@ -131,6 +367,7 @@ function SqlPage() {
           columns
           rows
           rowCount
+          truncated
         }
       }
     `).then((data) => {
@@ -151,6 +388,16 @@ function SqlPage() {
     }).catch((err: unknown) => {
       setError(err instanceof Error ? err.message : String(err))
     })
+  }, [])
+
+  useEffect(() => {
+    void graphql<{ savedViews: SavedView[] }>(
+      `{ savedViews(page: "/sql") { id name page state updatedAtNanos } }`
+    )
+      .then((data) => setSnippets(data.savedViews))
+      .catch((err: unknown) => {
+        setSnippetError(err instanceof Error ? err.message : String(err))
+      })
   }, [])
 
   function insertIdentifier(identifier: string) {
@@ -180,7 +427,7 @@ function SqlPage() {
     const startedAt = performance.now()
     try {
       const data = await graphql<{ sql: SqlResult }>(
-        `{ sql(query: "${gqlString(sql)}") { columns rows rowCount } }`
+        `{ sql(query: "${gqlString(sql)}") { columns rows rowCount truncated } }`
       )
       setResult(data.sql)
       setElapsedMs(performance.now() - startedAt)
@@ -198,22 +445,39 @@ function SqlPage() {
     }
   }
 
-  const parsedRows = useMemo(
-    () =>
-      (result?.rows ?? []).map((row) => {
-        try {
-          const cells: unknown = JSON.parse(row)
-          return Array.isArray(cells)
-            ? cells.map((cell) =>
-                typeof cell === "string" ? cell : JSON.stringify(cell)
-              )
-            : []
-        } catch {
-          return []
-        }
-      }),
-    [result]
-  )
+  async function saveSnippet() {
+    const name = snippetName.trim()
+    if (!name) return
+    setSavingSnippet(true)
+    setSnippetError(null)
+    try {
+      const data = await graphql<{ savedViewSave: SavedView }>(
+        `mutation { savedViewSave(name: "${gqlString(name)}", page: "/sql", state: "${gqlString(statement)}") { id name page state updatedAtNanos } }`
+      )
+      setSnippets((current) => [
+        data.savedViewSave,
+        ...current.filter((snippet) => snippet.id !== data.savedViewSave.id),
+      ])
+      setSaveOpen(false)
+      setSnippetName("")
+    } catch (err) {
+      setSnippetError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setSavingSnippet(false)
+    }
+  }
+
+  async function deleteSnippet(id: string) {
+    setSnippetError(null)
+    try {
+      await graphql<{ savedViewDelete: boolean }>(
+        `mutation { savedViewDelete(id: "${gqlString(id)}") }`
+      )
+      setSnippets((current) => current.filter((snippet) => snippet.id !== id))
+    } catch (err) {
+      setSnippetError(err instanceof Error ? err.message : String(err))
+    }
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -306,6 +570,15 @@ function SqlPage() {
                   <IconPlayerPlay />
                   Run query
                 </Button>
+                <SnippetsMenu
+                  snippets={snippets}
+                  onSelect={(snippet) => setStatement(snippet.state)}
+                  onDelete={(id) => void deleteSnippet(id)}
+                  onSave={() => {
+                    setSnippetName("")
+                    setSaveOpen(true)
+                  }}
+                />
                 <DropdownMenu>
                   <DropdownMenuTrigger render={<Button variant="outline" />}>
                     Examples
@@ -349,11 +622,45 @@ function SqlPage() {
                   </span>
                 ) : null}
               </div>
+              {snippetError ? (
+                <p className="text-sm text-destructive">{snippetError}</p>
+              ) : null}
               {error ? (
                 <p className="text-sm text-destructive">{error}</p>
               ) : null}
             </CardContent>
           </Card>
+
+          <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Save snippet</DialogTitle>
+              </DialogHeader>
+              <Input
+                value={snippetName}
+                onChange={(event) => setSnippetName(event.target.value)}
+                placeholder="Snippet name"
+                autoFocus
+              />
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setSaveOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => void saveSnippet()}
+                  disabled={savingSnippet || !snippetName.trim()}
+                >
+                  <IconDeviceFloppy />
+                  Save
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {result ? (
             <Card>
@@ -366,32 +673,7 @@ function SqlPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="max-h-[520px] overflow-auto">
-                  <Table>
-                    <TableHeader className="sticky top-0 bg-card">
-                      <TableRow>
-                        {result.columns.map((column) => (
-                          <TableHead key={column}>{column}</TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {parsedRows.map((cells, rowIndex) => (
-                        <TableRow key={rowIndex}>
-                          {cells.map((cell, cellIndex) => (
-                            <TableCell
-                              key={cellIndex}
-                              className="max-w-md truncate font-mono text-xs"
-                              title={cell}
-                            >
-                              {cell}
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </ScrollArea>
+                <SqlResultBody result={result} />
               </CardContent>
             </Card>
           ) : null}

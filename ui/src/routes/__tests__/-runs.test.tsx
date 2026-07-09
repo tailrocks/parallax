@@ -162,9 +162,9 @@ describe("Runs route", () => {
     expect(await screen.findByText("Errors")).toBeTruthy()
     expect(screen.getByText("Traces")).toBeTruthy()
     expect(screen.getByText("Duration")).toBeTruthy()
-    expect(screen.getByRole("link", { name: "run-a" }).getAttribute("href")).toBe(
-      "/runs/run-a"
-    )
+    expect(
+      screen.getByRole("link", { name: "run-a" }).getAttribute("href")
+    ).toBe("/runs/run-a")
     expect(screen.getByRole("link", { name: "4" }).getAttribute("href")).toBe(
       "/runs/run-a"
     )
@@ -197,6 +197,7 @@ describe("Runs route", () => {
         traces={[]}
         logs={[]}
         bundle={{ markdown: "# bundle" }}
+        runtimeSnapshot={[]}
         live={false}
         liveLogs={[]}
         liveSpans={[]}
@@ -207,6 +208,7 @@ describe("Runs route", () => {
 
     expect(await screen.findByText("Status")).toBeTruthy()
     expect(screen.getByText("Traces")).toBeTruthy()
+    expect(screen.queryByText("Agent session")).toBeNull()
     expect(
       screen.getAllByRole("button", { name: /download/i }).length
     ).toBeGreaterThan(0)

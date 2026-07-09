@@ -18,7 +18,8 @@ vi.mock("@/lib/api", () => ({
   gqlString: (value: string) =>
     value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n"),
   graphql: vi.fn().mockResolvedValue({
-    sql: { columns: [], rows: [], rowCount: 0 },
+    sql: { columns: [], rows: [], rowCount: 0, truncated: false },
+    savedViews: [],
   }),
 }))
 
@@ -40,6 +41,21 @@ describe("final sweep", () => {
     expect(JSON.parse(serializeWidgets(widgets))[0]).toMatchObject({
       metric: "process.cpu.utilization",
       custom: true,
+    })
+  })
+
+  it("round-trips dashboard label choices without breaking old layouts", () => {
+    const widgets = parseLayout(
+      '[{"metric":"process.cpu.utilization","agg":"avg","chart":"line"},{"metric":"jvm.memory.used","groupBy":"service_name","filterValue":"checkout"}]'
+    )
+
+    expect(widgets[0]).toMatchObject({
+      metric: "process.cpu.utilization",
+    })
+    expect(JSON.parse(serializeWidgets(widgets))[1]).toMatchObject({
+      metric: "jvm.memory.used",
+      groupBy: "service_name",
+      filterValue: "checkout",
     })
   })
 

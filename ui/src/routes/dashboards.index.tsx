@@ -1,5 +1,5 @@
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { IconLayoutDashboard, IconPlus, IconTrash } from "@tabler/icons-react"
 
 import { EmptyState } from "@/components/console/empty-state"
@@ -53,12 +53,15 @@ export interface Widget {
   chart: string
   title: string
   groupBy?: string | undefined
+  filterValue?: string | undefined
   w?: number
   [key: string]: unknown
 }
 
 export const AGGS = ["avg", "sum", "min", "max", "rate"] as const
 export const CHARTS = ["line", "area", "bar"] as const
+const NO_GROUP = "__none__"
+const ALL_VALUES = "__all__"
 
 export const Route = createFileRoute("/dashboards/")({
   loader: () =>
@@ -109,6 +112,59 @@ export function WidgetPicker({
   value: Widget
   onChange: (widget: Widget) => void
 }) {
+  const [labels, setLabels] = useState<string[]>([])
+  const [labelValues, setLabelValues] = useState<string[]>([])
+
+  useEffect(() => {
+    if (!value.metric) {
+      setLabels([])
+      return
+    }
+    let ignore = false
+    void graphql<{ metricLabels: string[] }>(
+      `{ metricLabels(name: "${gqlString(value.metric)}") }`
+    )
+      .then((data) => {
+        if (!ignore) setLabels(data.metricLabels)
+      })
+      .catch(() => {
+        if (!ignore) setLabels([])
+      })
+    return () => {
+      ignore = true
+    }
+  }, [value.metric])
+
+  useEffect(() => {
+    if (!value.metric || !value.groupBy) {
+      setLabelValues([])
+      return
+    }
+    let ignore = false
+    const toNanos = (BigInt(Date.now()) * 1_000_000n).toString()
+    void graphql<{ metricLabelValues: string[] }>(
+      `{ metricLabelValues(name: "${gqlString(value.metric)}", label: "${gqlString(value.groupBy)}", fromNanos: "0", toNanos: "${toNanos}") }`
+    )
+      .then((data) => {
+        if (!ignore) setLabelValues(data.metricLabelValues)
+      })
+      .catch(() => {
+        if (!ignore) setLabelValues([])
+      })
+    return () => {
+      ignore = true
+    }
+  }, [value.metric, value.groupBy])
+
+  const groupOptions =
+    value.groupBy && !labels.includes(value.groupBy)
+      ? [value.groupBy, ...labels]
+      : labels
+  const valueOptions =
+    value.filterValue && !labelValues.includes(value.filterValue)
+      ? [value.filterValue, ...labelValues]
+      : labelValues
+
   return (
     <div className="flex flex-wrap items-end gap-2">
       <div className="flex flex-col gap-1">
@@ -122,6 +178,8 @@ export function WidgetPicker({
               ...value,
               metric,
               title: metric ? `${metric} (${value.agg})` : "",
+              groupBy: undefined,
+              filterValue: undefined,
             })
           }
         />
@@ -172,18 +230,58 @@ export function WidgetPicker({
       </div>
       <div className="flex flex-col gap-1">
         <label className="text-xs text-muted-foreground">Group by</label>
-        <Input
-          value={value.groupBy ?? ""}
-          onChange={(event) =>
+        <Select
+          value={value.groupBy ?? NO_GROUP}
+          onValueChange={(groupBy) =>
             onChange({
               ...value,
-              groupBy: event.target.value || undefined,
+              groupBy: !groupBy || groupBy === NO_GROUP ? undefined : groupBy,
+              filterValue: undefined,
             })
           }
-          placeholder="attribute"
-          className="h-8 w-40"
-        />
+        >
+          <SelectTrigger size="sm" className="w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={NO_GROUP}>none</SelectItem>
+            {groupOptions.map((label) => (
+              <SelectItem key={label} value={label}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
+      {value.groupBy ? (
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-muted-foreground">Filter value</label>
+          <Select
+            value={value.filterValue ?? ALL_VALUES}
+            onValueChange={(filterValue) =>
+              onChange({
+                ...value,
+                filterValue:
+                  !filterValue || filterValue === ALL_VALUES
+                    ? undefined
+                    : filterValue,
+              })
+            }
+          >
+            <SelectTrigger size="sm" className="w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_VALUES}>all</SelectItem>
+              {valueOptions.map((labelValue) => (
+                <SelectItem key={labelValue} value={labelValue}>
+                  {labelValue}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      ) : null}
     </div>
   )
 }

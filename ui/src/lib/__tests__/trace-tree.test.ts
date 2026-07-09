@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest"
 import {
   buildTraceTree,
   computeWindow,
+  detectSkew,
+  errorPathSpanIds,
+  groupByService,
   orderSpans,
   positionPct,
 } from "@/lib/trace-tree"
@@ -15,6 +18,17 @@ function span(
   parentSpanId: string | null = null
 ): TraceTreeSpan {
   return { spanId, parentSpanId, tsNanos, durationNs }
+}
+
+function richSpan(
+  spanId: string,
+  tsNanos: string,
+  durationNs: string,
+  parentSpanId: string | null = null,
+  service = "api",
+  statusCode = "STATUS_CODE_UNSET"
+): TraceTreeSpan & { service: string; statusCode: string } {
+  return { spanId, parentSpanId, tsNanos, durationNs, service, statusCode }
 }
 
 describe("trace tree", () => {
@@ -79,5 +93,48 @@ describe("trace tree", () => {
       offsetPct: 90,
       widthPct: 10,
     })
+  })
+
+  it("keeps errored spans with their ancestor chain", () => {
+    const ids = errorPathSpanIds([
+      richSpan("root", "0", "100"),
+      richSpan("child", "10", "30", "root"),
+      richSpan("leaf", "20", "5", "child", "api", "STATUS_CODE_ERROR"),
+      richSpan("sibling", "40", "5", "root"),
+    ])
+
+    expect(Array.from(ids)).toEqual(["leaf", "child", "root"])
+  })
+
+  it("groups ordered rows into contiguous service lanes", () => {
+    const rows = buildTraceTree([
+      richSpan("root", "0", "100", null, "api"),
+      richSpan("db", "10", "20", "root", "db"),
+      richSpan("api-child", "40", "10", "root", "api"),
+    ])
+
+    expect(
+      groupByService(rows).map((group) => [
+        group.service,
+        group.spans.map((row) => row.span.spanId),
+      ])
+    ).toEqual([
+      ["api", ["root"]],
+      ["db", ["db"]],
+      ["api", ["api-child"]],
+    ])
+  })
+
+  it("detects cross-service clock skew and ignores same-service drift", () => {
+    const report = detectSkew([
+      richSpan("root", "1000000000", "100000000", null, "api"),
+      richSpan("db", "800000000", "10000000", "root", "db"),
+      richSpan("local", "700000000", "10000000", "root", "api"),
+    ])
+
+    expect(report.suspectPairs).toEqual([
+      { parentId: "root", childId: "db", driftMs: 200 },
+    ])
+    expect(report.maxDriftMs).toBe(200)
   })
 })

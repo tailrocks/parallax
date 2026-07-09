@@ -255,9 +255,7 @@ function DashboardPage() {
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger
-                    render={
-                      <Button size="sm" variant="ghost-destructive" />
-                    }
+                    render={<Button size="sm" variant="ghost-destructive" />}
                   >
                     <IconTrash />
                     Delete
@@ -375,9 +373,11 @@ function WidgetChart({
           <span className="flex gap-1">
             <Button variant="ghost" size="icon-xs" onClick={() => onMove(-1)}>
               <IconArrowUp />
+              <span className="sr-only">Move widget up</span>
             </Button>
             <Button variant="ghost" size="icon-xs" onClick={() => onMove(1)}>
               <IconArrowDown />
+              <span className="sr-only">Move widget down</span>
             </Button>
             <Button
               variant="ghost-destructive"
@@ -385,6 +385,7 @@ function WidgetChart({
               onClick={onRemove}
             >
               <IconTrash />
+              <span className="sr-only">Remove widget</span>
             </Button>
           </span>
         ) : null}

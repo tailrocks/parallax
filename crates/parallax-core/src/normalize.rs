@@ -5,9 +5,11 @@ use parallax_proto::collector_metrics::ExportMetricsServiceRequest;
 use parallax_proto::collector_trace::ExportTraceServiceRequest;
 use parallax_proto::common::any_value::Value as AnyValueEnum;
 use parallax_proto::common::{AnyValue, KeyValue};
+use parallax_proto::metrics::exemplar::Value as ExemplarValue;
 use parallax_proto::metrics::metric::Data;
 use parallax_proto::metrics::number_data_point::Value as NumberValue;
-use parallax_storage::model::{HistogramRow, LogRow, MetricPointRow, SpanRow};
+use parallax_proto::semconv;
+use parallax_storage::model::{HistogramRow, LogRow, MetricExemplarRow, MetricPointRow, SpanRow};
 
 pub fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
@@ -59,7 +61,7 @@ pub fn attr_str<'a>(attributes: &'a [KeyValue], key: &str) -> Option<&'a str> {
 }
 
 fn service_name(resource_attrs: &[KeyValue]) -> String {
-    attr_str(resource_attrs, "service.name")
+    attr_str(resource_attrs, semconv::SERVICE_NAME)
         .unwrap_or("unknown")
         .to_string()
 }
@@ -86,7 +88,7 @@ fn status_code_name(code: i32) -> &'static str {
 /// Resolve the run id from resource attributes. Parallax intentionally keeps
 /// this to one key so one wrapped command has one lookup id.
 fn run_id(resource_attrs: &[KeyValue]) -> Option<String> {
-    attr_str(resource_attrs, "parallax.run.id").map(str::to_string)
+    attr_str(resource_attrs, semconv::PARALLAX_RUN_ID).map(str::to_string)
 }
 
 /// OTel span links → `[{traceId, spanId, attributes}]` JSON. Links are the
@@ -211,11 +213,13 @@ pub fn normalize_logs(request: &ExportLogsServiceRequest) -> Vec<LogRow> {
 pub struct NormalizedMetrics {
     pub points: Vec<MetricPointRow>,
     pub histograms: Vec<HistogramRow>,
+    pub exemplars: Vec<MetricExemplarRow>,
 }
 
 pub fn normalize_metrics(request: &ExportMetricsServiceRequest) -> NormalizedMetrics {
     let mut points = Vec::new();
     let mut histograms = Vec::new();
+    let mut exemplars = Vec::new();
     for rm in &request.resource_metrics {
         let resource_attrs = rm
             .resource
@@ -229,6 +233,14 @@ pub fn normalize_metrics(request: &ExportMetricsServiceRequest) -> NormalizedMet
                 match &metric.data {
                     Some(Data::Gauge(g)) => {
                         for dp in &g.data_points {
+                            push_exemplars(
+                                &mut exemplars,
+                                &service,
+                                run_id.as_deref(),
+                                &metric.name,
+                                dp.time_unix_nano,
+                                &dp.exemplars,
+                            );
                             points.push(number_point(
                                 &service,
                                 run_id.as_deref(),
@@ -240,6 +252,14 @@ pub fn normalize_metrics(request: &ExportMetricsServiceRequest) -> NormalizedMet
                     }
                     Some(Data::Sum(s)) => {
                         for dp in &s.data_points {
+                            push_exemplars(
+                                &mut exemplars,
+                                &service,
+                                run_id.as_deref(),
+                                &metric.name,
+                                dp.time_unix_nano,
+                                &dp.exemplars,
+                            );
                             points.push(number_point(
                                 &service,
                                 run_id.as_deref(),
@@ -251,6 +271,14 @@ pub fn normalize_metrics(request: &ExportMetricsServiceRequest) -> NormalizedMet
                     }
                     Some(Data::Histogram(h)) => {
                         for dp in &h.data_points {
+                            push_exemplars(
+                                &mut exemplars,
+                                &service,
+                                run_id.as_deref(),
+                                &metric.name,
+                                dp.time_unix_nano,
+                                &dp.exemplars,
+                            );
                             histograms.push(HistogramRow {
                                 ts_nanos: u128::from(dp.time_unix_nano),
                                 service: service.clone(),
@@ -270,7 +298,52 @@ pub fn normalize_metrics(request: &ExportMetricsServiceRequest) -> NormalizedMet
             }
         }
     }
-    NormalizedMetrics { points, histograms }
+    NormalizedMetrics {
+        points,
+        histograms,
+        exemplars,
+    }
+}
+
+fn push_exemplars(
+    rows: &mut Vec<MetricExemplarRow>,
+    service: &str,
+    run_id: Option<&str>,
+    name: &str,
+    point_ts_nanos: u64,
+    exemplars: &[parallax_proto::metrics::Exemplar],
+) {
+    for exemplar in exemplars {
+        let Some(value) = exemplar_value(exemplar) else {
+            continue;
+        };
+        if exemplar.trace_id.is_empty() || exemplar.span_id.is_empty() {
+            continue;
+        }
+        let ts_nanos = if exemplar.time_unix_nano == 0 {
+            point_ts_nanos
+        } else {
+            exemplar.time_unix_nano
+        };
+        rows.push(MetricExemplarRow {
+            ts_nanos: u128::from(ts_nanos),
+            service: service.to_string(),
+            name: name.to_string(),
+            value,
+            trace_id: hex(&exemplar.trace_id),
+            span_id: hex(&exemplar.span_id),
+            run_id: run_id.map(str::to_string),
+            attributes: attributes_to_json(&exemplar.filtered_attributes),
+        });
+    }
+}
+
+fn exemplar_value(exemplar: &parallax_proto::metrics::Exemplar) -> Option<f64> {
+    match exemplar.value {
+        Some(ExemplarValue::AsDouble(value)) => Some(value),
+        Some(ExemplarValue::AsInt(value)) => Some(value as f64),
+        None => None,
+    }
 }
 
 fn number_point(
@@ -293,5 +366,99 @@ fn number_point(
         is_monotonic,
         run_id: run_id.map(str::to_string),
         attributes: attributes_to_json(&dp.attributes),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use parallax_proto::metrics::{
+        Exemplar, Gauge, Histogram, HistogramDataPoint, Metric, NumberDataPoint,
+        exemplar::Value as ExemplarValue, metric::Data, number_data_point::Value as NumberValue,
+    };
+
+    fn string_kv(key: &str, value: &str) -> KeyValue {
+        KeyValue {
+            key: key.to_string(),
+            value: Some(AnyValue {
+                value: Some(AnyValueEnum::StringValue(value.to_string())),
+            }),
+            key_strindex: 0,
+        }
+    }
+
+    fn exemplar(value: ExemplarValue, ts: u64) -> Exemplar {
+        Exemplar {
+            time_unix_nano: ts,
+            trace_id: vec![1; 16],
+            span_id: vec![2; 8],
+            value: Some(value),
+            filtered_attributes: vec![string_kv("route", "/checkout")],
+        }
+    }
+
+    #[test]
+    fn normalize_metrics_collects_number_and_histogram_exemplars() {
+        let request = ExportMetricsServiceRequest {
+            resource_metrics: vec![parallax_proto::metrics::ResourceMetrics {
+                resource: Some(parallax_proto::resource::Resource {
+                    attributes: vec![
+                        string_kv("service.name", "checkout"),
+                        string_kv("parallax.run.id", "run-a"),
+                    ],
+                    ..Default::default()
+                }),
+                scope_metrics: vec![parallax_proto::metrics::ScopeMetrics {
+                    metrics: vec![
+                        Metric {
+                            name: "process.cpu.utilization".into(),
+                            data: Some(Data::Gauge(Gauge {
+                                data_points: vec![NumberDataPoint {
+                                    time_unix_nano: 10,
+                                    value: Some(NumberValue::AsDouble(0.8)),
+                                    exemplars: vec![exemplar(ExemplarValue::AsDouble(0.9), 11)],
+                                    ..Default::default()
+                                }],
+                            })),
+                            ..Default::default()
+                        },
+                        Metric {
+                            name: "http.server.request.duration".into(),
+                            data: Some(Data::Histogram(Histogram {
+                                data_points: vec![HistogramDataPoint {
+                                    time_unix_nano: 20,
+                                    count: 1,
+                                    sum: Some(120.0),
+                                    bucket_counts: vec![0, 1],
+                                    explicit_bounds: vec![100.0],
+                                    exemplars: vec![exemplar(ExemplarValue::AsInt(120), 21)],
+                                    ..Default::default()
+                                }],
+                                ..Default::default()
+                            })),
+                            ..Default::default()
+                        },
+                    ],
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+        };
+
+        let normalized = normalize_metrics(&request);
+
+        assert_eq!(normalized.points.len(), 1);
+        assert_eq!(normalized.histograms.len(), 1);
+        assert_eq!(normalized.exemplars.len(), 2);
+        assert_eq!(normalized.exemplars[0].service, "checkout");
+        assert_eq!(normalized.exemplars[0].run_id.as_deref(), Some("run-a"));
+        assert_eq!(
+            normalized.exemplars[0].trace_id,
+            "01010101010101010101010101010101"
+        );
+        assert_eq!(normalized.exemplars[0].span_id, "0202020202020202");
+        assert_eq!(normalized.exemplars[0].attributes["route"], "/checkout");
+        assert_eq!(normalized.exemplars[1].name, "http.server.request.duration");
+        assert_eq!(normalized.exemplars[1].value, 120.0);
     }
 }

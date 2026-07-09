@@ -1,9 +1,12 @@
 import { Link } from "@tanstack/react-router"
 import { useMemo, useRef, useState } from "react"
+import type { KeyboardEvent } from "react"
 import { useVirtualizer } from "@tanstack/react-virtual"
 
+import { Chip } from "@/components/console/chip"
 import { CopyButton } from "@/components/console/copy-button"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
   Sheet,
@@ -78,10 +81,7 @@ export function severityLabel(log: LogDoc) {
 /** Flatten one log into ordered field/value rows for the doc viewer. */
 function docFields(log: LogDoc): Array<[string, string]> {
   const rows: Array<[string, string]> = [
-    [
-      "@timestamp",
-      new Date(Number(BigInt(log.tsNanos) / 1_000_000n)).toISOString(),
-    ],
+    ["@timestamp", formatDateTime(log.tsNanos)],
     ["severity", `${severityLabel(log)} (${log.severityNum})`],
     ["service.name", log.service],
     ["body", log.body],
@@ -152,17 +152,23 @@ export function LogsTable({
   logs,
   range = resolvePreset("24h"),
   columns = ["service", "trace"],
+  anchorNanos,
+  onShowContext,
 }: {
   logs: LogDoc[]
   range?: ResolvedRange
   columns?: OptionalLogColumn[]
+  anchorNanos?: string | undefined
+  onShowContext?: (log: LogDoc) => void
 }) {
   const [selected, setSelected] = useState<LogDoc | null>(null)
   const [fieldSearch, setFieldSearch] = useState("")
   const parentRef = useRef<HTMLDivElement | null>(null)
   const visible = new Set(columns)
   const columnCount =
-    3 + (visible.has("service") ? 1 : 0) + (visible.has("trace") ? 1 : 0) +
+    3 +
+    (visible.has("service") ? 1 : 0) +
+    (visible.has("trace") ? 1 : 0) +
     (visible.has("scope") ? 1 : 0)
   const virtualizer = useVirtualizer({
     count: logs.length,
@@ -208,63 +214,88 @@ export function LogsTable({
   )
   const header = <TableHeader>{headerRows}</TableHeader>
 
-  const renderRow = (log: LogDoc) => (
-    <TableRow
-      key={logKey(log)}
-      className="cursor-pointer"
-      onClick={() => {
-        setSelected(log)
-        setFieldSearch("")
-      }}
-    >
-      <TableCell className="font-mono text-xs whitespace-nowrap">
-        {formatTimeInRange(log.tsNanos, range)}
-      </TableCell>
-      <TableCell>
-        <SeverityBadge log={log} />
-      </TableCell>
-      {visible.has("service") ? (
-        <TableCell className="max-w-36 truncate text-muted-foreground">
-          {log.service}
+  function openLog(log: LogDoc) {
+    setSelected(log)
+    setFieldSearch("")
+  }
+
+  function handleRowKeyDown(
+    event: KeyboardEvent<HTMLTableRowElement>,
+    log: LogDoc
+  ) {
+    if (event.target !== event.currentTarget) return
+    if (event.key !== "Enter" && event.key !== " ") return
+    event.preventDefault()
+    openLog(log)
+  }
+
+  const renderRow = (log: LogDoc) => {
+    const isAnchor = String(anchorNanos ?? "") === log.tsNanos
+    return (
+      <TableRow
+        key={logKey(log)}
+        data-anchor={isAnchor ? "true" : undefined}
+        data-state={isAnchor ? "selected" : undefined}
+        role="button"
+        tabIndex={0}
+        className="cursor-pointer focus-visible:ring-[1.5px] focus-visible:ring-ring/50 focus-visible:outline-none"
+        onClick={() => openLog(log)}
+        onKeyDown={(event) => handleRowKeyDown(event, log)}
+      >
+        <TableCell className="font-mono text-xs whitespace-nowrap">
+          {formatTimeInRange(log.tsNanos, range)}
         </TableCell>
-      ) : null}
-      <TableCell className="max-w-xl truncate font-mono text-xs">
-        {log.body}
-      </TableCell>
-      {visible.has("trace") ? (
         <TableCell>
-          {log.traceId ? (
-            <Link
-              to="/traces/$traceId"
-              params={{ traceId: log.traceId }}
-              onClick={(event) => event.stopPropagation()}
-              className="rounded-full border border-border/70 px-2 py-1 font-mono text-[11px] text-muted-foreground hover:text-foreground"
-            >
-              {log.traceId.slice(0, 8)}
-            </Link>
-          ) : (
-            <span className="text-muted-foreground">-</span>
-          )}
+          <SeverityBadge log={log} />
         </TableCell>
-      ) : null}
-      {visible.has("scope") ? (
-        <TableCell className="max-w-36 truncate text-muted-foreground">
-          {log.scopeName || "-"}
+        {visible.has("service") ? (
+          <TableCell className="max-w-36 truncate text-muted-foreground">
+            {log.service}
+          </TableCell>
+        ) : null}
+        <TableCell className="max-w-xl truncate font-mono text-xs">
+          {log.body}
         </TableCell>
-      ) : null}
-    </TableRow>
-  )
+        {visible.has("trace") ? (
+          <TableCell>
+            {log.traceId ? (
+              <Chip
+                render={
+                  <Link
+                    to="/traces/$traceId"
+                    params={{ traceId: log.traceId }}
+                    aria-label={`Trace ${log.traceId}`}
+                    onClick={(event) => event.stopPropagation()}
+                  />
+                }
+                className="text-muted-foreground hover:text-foreground"
+              >
+                {log.traceId.slice(0, 8)}
+              </Chip>
+            ) : (
+              <span className="text-muted-foreground">-</span>
+            )}
+          </TableCell>
+        ) : null}
+        {visible.has("scope") ? (
+          <TableCell className="max-w-36 truncate text-muted-foreground">
+            {log.scopeName || "-"}
+          </TableCell>
+        ) : null}
+      </TableRow>
+    )
+  }
 
   const table =
     logs.length > 100 ? (
       <div
         ref={parentRef}
         data-slot="table-container"
-        className="relative max-h-[min(70vh,720px)] w-full overflow-auto rounded-xl corner-squircle shadow-(--custom-shadow) dark:shadow-(--custom-shadow)"
+        className="relative max-h-[min(70vh,720px)] w-full overflow-auto rounded-xl shadow-(--custom-shadow) corner-squircle dark:shadow-(--custom-shadow)"
       >
         <table
           data-slot="table"
-          className="w-full caption-bottom rounded-xl corner-squircle bg-card/40 text-sm shadow-(--custom-shadow) dark:shadow-(--custom-shadow)"
+          className="w-full caption-bottom rounded-xl bg-card/40 text-sm shadow-(--custom-shadow) corner-squircle dark:shadow-(--custom-shadow)"
         >
           <TableHeader className="sticky top-0 z-10 bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/75">
             {headerRows}
@@ -328,23 +359,44 @@ export function LogsTable({
             <div className="flex flex-col gap-4 px-4 pb-6">
               <div className="flex flex-wrap items-center gap-2">
                 <SeverityBadge log={selected} />
+                {onShowContext ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      onShowContext(selected)
+                      setSelected(null)
+                    }}
+                  >
+                    Show context (±30s)
+                  </Button>
+                ) : null}
                 {selected.traceId ? (
-                  <Link
-                    to="/traces/$traceId"
-                    params={{ traceId: selected.traceId }}
-                    className="rounded-full border border-border/70 px-2 py-1 font-mono text-xs hover:bg-muted"
+                  <Chip
+                    render={
+                      <Link
+                        to="/traces/$traceId"
+                        params={{ traceId: selected.traceId }}
+                        aria-label={`Trace ${selected.traceId}`}
+                      />
+                    }
                   >
                     trace {selected.traceId.slice(0, 12)}
-                  </Link>
+                  </Chip>
                 ) : null}
                 {selected.runId ? (
-                  <Link
-                    to="/runs/$runId"
-                    params={{ runId: selected.runId }}
-                    className="rounded-full border border-border/70 px-2 py-1 font-mono text-xs hover:bg-muted"
+                  <Chip
+                    render={
+                      <Link
+                        to="/runs/$runId"
+                        params={{ runId: selected.runId }}
+                        aria-label={`Run ${selected.runId}`}
+                      />
+                    }
                   >
                     run {selected.runId.slice(0, 12)}
-                  </Link>
+                  </Chip>
                 ) : null}
               </div>
               <Input

@@ -6,6 +6,8 @@ import {
   IconArticleFilled,
   IconBug,
   IconBugFilled,
+  IconClipboardList,
+  IconClipboardListFilled,
   IconDatabase,
   IconDatabaseFilled,
   IconHome,
@@ -93,6 +95,14 @@ export const workspaceNav: NavItem[] = [
     activeIcon: IconLayoutDashboardFilled,
     iconClassName:
       "bg-fuchsia-100 dark:bg-fuchsia-950 rounded-xl p-0.5 corner-squircle text-fuchsia-500 shadow-[inset_0_0_0_1px_rgba(217,70,239,0.14),0_2px_6px_-2px_rgba(217,70,239,0.25)] dark:shadow-(--custom-shadow)",
+  },
+  {
+    href: "/investigations",
+    label: "Investigations",
+    icon: IconClipboardList,
+    activeIcon: IconClipboardListFilled,
+    iconClassName:
+      "bg-teal-100 dark:bg-teal-950 rounded-xl p-0.5 corner-squircle text-teal-500 shadow-[inset_0_0_0_1px_rgba(20,184,166,0.14),0_2px_6px_-2px_rgba(20,184,166,0.25)] dark:shadow-(--custom-shadow)",
   },
   {
     href: "/sql",

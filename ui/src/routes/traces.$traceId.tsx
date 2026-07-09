@@ -17,7 +17,13 @@ import {
   TraceWaterfall,
   WHOLE_TRACE_ID,
 } from "@/components/console/trace-waterfall"
-import type { WaterfallSpan } from "@/components/console/trace-waterfall"
+import type {
+  TraceViewMode,
+  WaterfallSpan,
+} from "@/components/console/trace-waterfall"
+import { GraphqlOperationCard } from "@/components/console/graphql-operation"
+import { PinButton } from "@/components/console/pin-button"
+import { RpcStreamCard } from "@/components/console/rpc-stream"
 import { EvidenceGapsCard } from "@/components/console/evidence-gaps"
 import { StoryTimeline } from "@/components/console/story-timeline"
 import { CopyButton } from "@/components/console/copy-button"
@@ -54,6 +60,10 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/components/ui/toggle-group"
 import { graphql, gqlString } from "@/lib/api"
 import type {
   CriticalPath,
@@ -65,10 +75,24 @@ import type {
   TraceSummary,
 } from "@/lib/api"
 import { formatDateTime, formatDurationNs } from "@/lib/format"
-import { computeWindow } from "@/lib/trace-tree"
+import { buildGraphqlOperations } from "@/lib/graphql-trace"
+import type { GraphqlOperation, GraphqlTraceSpan } from "@/lib/graphql-trace"
+import {
+  buildRpcStreams,
+  grpcStatusLabel,
+  messagingSummary,
+  parseGrpcStatusCode,
+} from "@/lib/rpc-trace"
+import type {
+  MessagingSummary,
+  RpcStreamInfo,
+  RpcTraceSpan,
+} from "@/lib/rpc-trace"
+import { computeWindow, detectSkew } from "@/lib/trace-tree"
+import type { SkewReport } from "@/lib/trace-tree"
 import { cn } from "@/lib/utils"
 
-interface TraceSpan extends WaterfallSpan {
+interface TraceSpan extends WaterfallSpan, GraphqlTraceSpan, RpcTraceSpan {
   tsNanos: string
   traceId: string
   runId: string | null
@@ -91,6 +115,7 @@ type TraceDetailTab = "waterfall" | "story"
 
 interface TraceDetailSearch {
   tab?: TraceDetailTab | undefined
+  view?: TraceViewMode | undefined
 }
 
 type JsonRecord = Record<string, unknown>
@@ -99,17 +124,49 @@ type StringKeyValues = Array<[string, string]>
 
 const TRACE_DIFF_SPAN_FIELDS =
   "spanId service name kind statusCode durationNs depth matchKey"
+const EMPTY_TRACE_SPANS: TraceSpan[] = []
+const INSPECTOR_LIST_CAP = 25
+const TRACE_VIEW_MODES = ["tree", "errors", "lanes"] as const
 
-interface SpanEvent {
+function isTraceViewMode(value: unknown): value is TraceViewMode {
+  return (
+    typeof value === "string" &&
+    TRACE_VIEW_MODES.includes(value as TraceViewMode)
+  )
+}
+
+export function validateTraceDetailSearch(
+  search: Record<string, unknown>
+): TraceDetailSearch {
+  return {
+    tab: search.tab === "story" ? "story" : undefined,
+    view: isTraceViewMode(search.view) ? search.view : undefined,
+  }
+}
+
+export interface SpanEvent {
   name: string
   timeUnixNano?: string
   attributes?: JsonRecord
 }
 
+interface TraceEventRow {
+  spanId: string
+  spanName: string
+  service: string
+  name: string
+  timeUnixNano: string
+  attributes: string
+}
+
+interface TraceEventsResult {
+  events: TraceEventRow[]
+  truncated: boolean
+  skippedSpans: number
+}
+
 export const Route = createFileRoute("/traces/$traceId")({
-  validateSearch: (search: Record<string, unknown>): TraceDetailSearch => ({
-    tab: search.tab === "story" ? "story" : undefined,
-  }),
+  validateSearch: validateTraceDetailSearch,
   loader: ({ params }) => {
     const traceId = gqlString(params.traceId)
     return graphql<{
@@ -118,6 +175,7 @@ export const Route = createFileRoute("/traces/$traceId")({
       linkedTraces: TraceSummary[]
       story: StoryBeat[]
       evidenceGaps: EvidenceGap[]
+      rpcTraceEvents: TraceEventsResult
     }>(
       `{ trace(traceId: "${traceId}") {
            spans { tsNanos service traceId name kind statusCode statusMessage durationNs
@@ -132,6 +190,10 @@ export const Route = createFileRoute("/traces/$traceId")({
          }
          evidenceGaps(traceId: "${traceId}") {
            kind subject detail
+         }
+         rpcTraceEvents: traceEvents(traceId: "${traceId}", namePrefix: "rpc", limit: 500) {
+           truncated skippedSpans
+           events { spanId spanName service name timeUnixNano attributes }
          }
          logsByTrace(traceId: "${traceId}") { tsNanos service severityText body spanId } }`
     )
@@ -178,12 +240,20 @@ function valueFor(entries: StringKeyValues, key: string): string | null {
 }
 
 function TracePage() {
-  const { trace, logsByTrace, linkedTraces, story, evidenceGaps } =
-    Route.useLoaderData()
+  const {
+    trace,
+    logsByTrace,
+    linkedTraces,
+    story,
+    evidenceGaps,
+    rpcTraceEvents,
+  } = Route.useLoaderData()
   const { traceId } = Route.useParams()
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
-  const activeTab: TraceDetailTab = search.tab === "story" ? "story" : "waterfall"
+  const activeTab: TraceDetailTab =
+    search.tab === "story" ? "story" : "waterfall"
+  const waterfallView: TraceViewMode = search.view ?? "tree"
   const [selectedId, setSelectedId] = useState<string | null>(WHOLE_TRACE_ID)
   const [criticalEnabled, setCriticalEnabled] = useState(false)
   const [criticalPath, setCriticalPath] = useState<CriticalPath | null>(null)
@@ -210,11 +280,25 @@ function TracePage() {
   )
   const linkedTraceById = useMemo(
     () =>
-      new Map(linkedTraces.map((traceSummary) => [traceSummary.traceId, traceSummary])),
+      new Map(
+        linkedTraces.map((traceSummary) => [traceSummary.traceId, traceSummary])
+      ),
     [linkedTraces]
   )
+  const spans = trace?.spans ?? EMPTY_TRACE_SPANS
+  const graphqlOperations = useMemo(
+    () => buildGraphqlOperations(spans),
+    [spans]
+  )
+  const rpcStreams = useMemo(
+    () =>
+      buildRpcStreams(spans, rpcTraceEvents.events, rpcTraceEvents.truncated),
+    [rpcTraceEvents.events, rpcTraceEvents.truncated, spans]
+  )
+  const messaging = useMemo(() => messagingSummary(spans), [spans])
+  const skewReport = useMemo(() => detectSkew(spans), [spans])
 
-  if (!trace || trace.spans.length === 0) {
+  if (!trace || spans.length === 0) {
     return (
       <EmptyState
         title="Trace not found"
@@ -224,7 +308,6 @@ function TracePage() {
     )
   }
 
-  const spans = trace.spans
   const window = computeWindow(spans)
   const rootSpan =
     spans.find((span) => !span.parentSpanId) ??
@@ -309,6 +392,15 @@ function TracePage() {
     })
   }
 
+  const setWaterfallView = (value: TraceViewMode) => {
+    void navigate({
+      search: (current) => ({
+        ...current,
+        view: value === "tree" ? undefined : value,
+      }),
+    })
+  }
+
   return (
     <div className="space-y-4">
       <PageHeader
@@ -342,6 +434,7 @@ function TracePage() {
         }
         actions={
           <div className="flex flex-wrap items-center justify-end gap-2">
+            <PinButton kind="trace" label={rootSpan.name || traceId} />
             <Button
               type="button"
               variant={criticalEnabled ? "secondary" : "outline"}
@@ -378,6 +471,7 @@ function TracePage() {
         linkCount={spanLinks.length}
         eventCount={spanEvents.length}
       />
+      {messaging ? <MessagingSummaryLine summary={messaging} /> : null}
 
       {failedSpans.length > 0 ? (
         <button
@@ -396,6 +490,8 @@ function TracePage() {
         </button>
       ) : null}
 
+      <ClockSkewBanner report={skewReport} />
+
       <EvidenceGapsCard gaps={evidenceGaps} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -407,8 +503,12 @@ function TracePage() {
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
             <div className="space-y-4">
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <CardTitle className="text-sm">Waterfall</CardTitle>
+                  <TraceViewModeToggle
+                    value={waterfallView}
+                    onChange={setWaterfallView}
+                  />
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">
                   {criticalEnabled ? (
@@ -424,9 +524,17 @@ function TracePage() {
                     selectedId={selectedId}
                     onSelect={setSelectedId}
                     highlightIds={criticalIds}
+                    mode={waterfallView}
                   />
                 </CardContent>
               </Card>
+
+              <TraceGraphqlSection
+                operations={graphqlOperations}
+                onSelect={setSelectedId}
+              />
+
+              <TraceRpcSection streams={rpcStreams} />
 
               {orderedLogs.length > 0 ? (
                 <Card>
@@ -514,15 +622,16 @@ function TracePage() {
                     aria-invalid={compareError ? true : undefined}
                   />
                   <FieldDescription>
-                    Current trace:{" "}
-                    <span className="font-mono">{traceId}</span>
+                    Current trace: <span className="font-mono">{traceId}</span>
                   </FieldDescription>
                   <FieldError>{compareError}</FieldError>
                 </Field>
                 <Button
                   type="submit"
                   className="w-fit"
-                  disabled={compareLoading || compareTraceId.trim().length === 0}
+                  disabled={
+                    compareLoading || compareTraceId.trim().length === 0
+                  }
                 >
                   {compareLoading ? (
                     <Spinner data-icon="inline-start" />
@@ -538,6 +647,107 @@ function TracePage() {
         </SheetContent>
       </Sheet>
     </div>
+  )
+}
+
+export function TraceGraphqlSection({
+  operations,
+  onSelect,
+}: {
+  operations: GraphqlOperation[]
+  onSelect: (spanId: string) => void
+}) {
+  if (operations.length === 0) return null
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">GraphQL</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <GraphqlOperationCard operations={operations} onSelect={onSelect} />
+      </CardContent>
+    </Card>
+  )
+}
+
+export function TraceRpcSection({ streams }: { streams: RpcStreamInfo[] }) {
+  if (streams.length === 0) return null
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">RPC streams</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <RpcStreamCard streams={streams} />
+      </CardContent>
+    </Card>
+  )
+}
+
+export function TraceViewModeToggle({
+  value,
+  onChange,
+}: {
+  value: TraceViewMode
+  onChange: (value: TraceViewMode) => void
+}) {
+  const options: Array<{ value: TraceViewMode; label: string }> = [
+    { value: "tree", label: "Tree" },
+    { value: "errors", label: "Errors" },
+    { value: "lanes", label: "Lanes" },
+  ]
+
+  return (
+    <ToggleGroup
+      value={[value]}
+      onValueChange={(values) => {
+        const next = values[0]
+        if (isTraceViewMode(next)) onChange(next)
+      }}
+      variant="outline"
+      size="sm"
+      spacing={0}
+      aria-label="Trace view mode"
+    >
+      {options.map((option) => (
+        <ToggleGroupItem
+          key={option.value}
+          value={option.value}
+          aria-label={`${option.label} view`}
+        >
+          {option.label}
+        </ToggleGroupItem>
+      ))}
+    </ToggleGroup>
+  )
+}
+
+export function ClockSkewBanner({ report }: { report: SkewReport }) {
+  if (report.suspectPairs.length === 0) return null
+
+  return (
+    <div className="flex w-full items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-left text-sm text-amber-800 dark:text-amber-200">
+      <IconAlertTriangle className="size-4 shrink-0" />
+      <span>
+        Clock skew suspected: {report.suspectPairs.length.toLocaleString()}{" "}
+        parent/child pair
+        {report.suspectPairs.length === 1 ? "" : "s"} disagree by up to{" "}
+        {Math.round(report.maxDriftMs).toLocaleString()} ms across services -
+        span order may be misleading.
+      </span>
+    </div>
+  )
+}
+
+function MessagingSummaryLine({ summary }: { summary: MessagingSummary }) {
+  return (
+    <p className="rounded-lg border border-border/70 bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
+      {summary.producer.toLocaleString()} producer /{" "}
+      {summary.consumer.toLocaleString()} consumer spans - max batch{" "}
+      {summary.batchMax.toLocaleString()}
+    </p>
   )
 }
 
@@ -859,7 +1069,10 @@ export function LinkedTraceEdges({
       {links.map((link) => {
         const target = linkedTraceById.get(link.traceId)
         return (
-          <li key={`${link.traceId}-${link.spanId}`}>
+          <li
+            key={`${link.traceId}-${link.spanId}`}
+            data-testid="trace-link-edge"
+          >
             <Link
               to="/traces/$traceId"
               params={{ traceId: link.traceId }}
@@ -907,6 +1120,99 @@ export function LinkedTraceEdges({
         )
       })}
     </ul>
+  )
+}
+
+export function TraceErrorCallout({
+  statusMessage,
+  grpcStatusCode,
+}: {
+  statusMessage: string
+  grpcStatusCode: string | null
+}) {
+  const grpcLabel = grpcStatusLabel(parseGrpcStatusCode(grpcStatusCode))
+  return (
+    <div className="rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-rose-700 dark:text-rose-300">
+      {statusMessage || "Span ended with error status."}
+      {grpcLabel ? <span className="ml-1 font-medium">{grpcLabel}</span> : null}
+    </div>
+  )
+}
+
+export function InspectorEventList({ events }: { events: SpanEvent[] }) {
+  const [showAll, setShowAll] = useState(false)
+  const visible = showAll ? events : events.slice(0, INSPECTOR_LIST_CAP)
+  return (
+    <div className="space-y-2">
+      <ul className="space-y-2">
+        {visible.map((event, index) => (
+          <li
+            key={`${event.name}-${index}`}
+            data-testid="inspector-event"
+            className="rounded-lg border border-border/70 bg-background/60 p-2"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-medium">{event.name}</span>
+              {event.timeUnixNano ? (
+                <span className="text-muted-foreground tabular-nums">
+                  {formatDateTime(event.timeUnixNano)}
+                </span>
+              ) : null}
+            </div>
+            {event.attributes ? (
+              <KeyValueList
+                entries={Object.entries(event.attributes).map(
+                  ([key, value]) => [
+                    key,
+                    typeof value === "string" ? value : JSON.stringify(value),
+                  ]
+                )}
+              />
+            ) : null}
+          </li>
+        ))}
+      </ul>
+      {events.length > INSPECTOR_LIST_CAP ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="xs"
+          onClick={() => setShowAll((current) => !current)}
+        >
+          {showAll
+            ? "Show fewer events"
+            : `Show all ${events.length.toLocaleString()} events`}
+        </Button>
+      ) : null}
+    </div>
+  )
+}
+
+export function InspectorLinksList({
+  links,
+  linkedTraceById,
+}: {
+  links: SpanLink[]
+  linkedTraceById: ReadonlyMap<string, TraceSummary>
+}) {
+  const [showAll, setShowAll] = useState(false)
+  const visible = showAll ? links : links.slice(0, INSPECTOR_LIST_CAP)
+  return (
+    <div className="space-y-2">
+      <LinkedTraceEdges links={visible} linkedTraceById={linkedTraceById} />
+      {links.length > INSPECTOR_LIST_CAP ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="xs"
+          onClick={() => setShowAll((current) => !current)}
+        >
+          {showAll
+            ? "Show fewer links"
+            : `Show all ${links.length.toLocaleString()} links`}
+        </Button>
+      ) : null}
+    </div>
   )
 }
 
@@ -1005,9 +1311,10 @@ function TraceInspector({
       </CardHeader>
       <CardContent className="space-y-3 text-xs">
         {selectedSpan.statusCode === "STATUS_CODE_ERROR" ? (
-          <div className="rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-rose-700 dark:text-rose-300">
-            {selectedSpan.statusMessage || "Span ended with error status."}
-          </div>
+          <TraceErrorCallout
+            statusMessage={selectedSpan.statusMessage}
+            grpcStatusCode={valueFor(attributes, "rpc.grpc.status_code")}
+          />
         ) : null}
 
         <KeyValueList
@@ -1037,35 +1344,7 @@ function TraceInspector({
 
         {events.length > 0 ? (
           <InspectorSection title={`Events (${events.length})`}>
-            <ul className="space-y-2">
-              {events.map((event, index) => (
-                <li
-                  key={`${event.name}-${index}`}
-                  className="rounded-lg border border-border/70 bg-background/60 p-2"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium">{event.name}</span>
-                    {event.timeUnixNano ? (
-                      <span className="text-muted-foreground tabular-nums">
-                        {formatDateTime(event.timeUnixNano)}
-                      </span>
-                    ) : null}
-                  </div>
-                  {event.attributes ? (
-                    <KeyValueList
-                      entries={Object.entries(event.attributes).map(
-                        ([key, value]) => [
-                          key,
-                          typeof value === "string"
-                            ? value
-                            : JSON.stringify(value),
-                        ]
-                      )}
-                    />
-                  ) : null}
-                </li>
-              ))}
-            </ul>
+            <InspectorEventList key={selectedSpan.spanId} events={events} />
           </InspectorSection>
         ) : null}
 
@@ -1087,7 +1366,11 @@ function TraceInspector({
 
         {links.length > 0 ? (
           <InspectorSection title={`Links (${links.length})`}>
-            <LinkedTraceEdges links={links} linkedTraceById={linkedTraceById} />
+            <InspectorLinksList
+              key={selectedSpan.spanId}
+              links={links}
+              linkedTraceById={linkedTraceById}
+            />
             <details className="mt-2 rounded-lg border border-border/70 bg-background/60 p-2">
               <summary className="cursor-pointer text-muted-foreground">
                 Raw links JSON

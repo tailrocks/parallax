@@ -8,16 +8,20 @@
 //! auto-camelCased; cost limits are resolver-level caps in V1.
 
 use juniper::{EmptySubscription, FieldError, FieldResult, RootNode, graphql_object};
-use parallax_core::{gaps, story, trace_analysis};
+use parallax_core::{agent_session, gaps, semconv, span_events, story, trace_analysis};
 use parallax_storage::adapter::{
-    ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow as StorageAttributeCompareRow, OverviewTotals,
-    SERVICE_MAP_TRACE_CAP, ServiceEdge as StorageServiceEdge,
-    ServiceSummary as StorageServiceSummary, SpanRed as StorageSpanRed, TelemetryStore,
+    ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow as StorageAttributeCompareRow,
+    FieldKey as StorageFieldKey, FieldSource, FieldStats as StorageFieldStats,
+    FieldValueCount as StorageFieldValueCount, OverviewTotals,
+    ReleaseWindow as StorageReleaseWindow, RuntimeMetricSeries as StorageRuntimeMetricSeries,
+    SERVICE_MAP_TRACE_CAP, ServiceCatalogRow as StorageServiceCatalogRow,
+    ServiceEdge as StorageServiceEdge, ServiceSummary as StorageServiceSummary,
+    SpanRed as StorageSpanRed, TelemetryStore, metric_group_label_allowed,
 };
 use parallax_storage::metadata::MetadataStore;
 use parallax_storage::model;
 use parallax_storage::model::{MetricAgg, SeriesPoint};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::Arc;
 
 /// Request context: the storage adapters.
@@ -45,11 +49,85 @@ fn saturate_i32(value: u64) -> i32 {
 /// Resolver-level row cap (the spec's Juniper note: cost limits are
 /// resolver-level in V1; query-cost middleware is M5 hardening).
 const MAX_ROWS: usize = 500;
+/// Raw SQL is the power surface, so it gets a larger cap than typed resolvers
+/// while still bounding GraphQL response size.
+const SQL_MAX_ROWS: usize = 2_000;
+const SAVED_VIEW_NAME_MAX: usize = 120;
+const SAVED_VIEWS_PER_PAGE: usize = 100;
+const INVESTIGATION_NAME_MAX: usize = 120;
+const INVESTIGATION_PIN_CAP: usize = 100;
+const INVESTIGATION_NOTES_MAX_BYTES: usize = 64 * 1024;
 
 fn clamp_limit(limit: Option<i32>, default: usize) -> usize {
     limit
         .map_or(default, |l| usize::try_from(l.max(0)).unwrap_or(default))
         .min(MAX_ROWS)
+}
+
+fn validate_saved_view_name(name: &str) -> FieldResult<String> {
+    let name = name.trim();
+    if name.is_empty() {
+        return Err(field_err("saved view name is required"));
+    }
+    if name.chars().count() > SAVED_VIEW_NAME_MAX {
+        return Err(field_err("saved view name is too long"));
+    }
+    Ok(name.to_string())
+}
+
+fn validate_saved_view_page(page: &str) -> FieldResult<()> {
+    if page.is_empty() || page.len() > 128 || !page.starts_with('/') {
+        return Err(field_err("saved view page must be a route path"));
+    }
+    Ok(())
+}
+
+fn validate_investigation_name(name: &str) -> FieldResult<String> {
+    let name = name.trim();
+    if name.is_empty() {
+        return Err(field_err("investigation name is required"));
+    }
+    if name.chars().count() > INVESTIGATION_NAME_MAX {
+        return Err(field_err("investigation name is too long"));
+    }
+    Ok(name.to_string())
+}
+
+fn validate_investigation_state(state: &str) -> FieldResult<()> {
+    let parsed: serde_json::Value =
+        serde_json::from_str(state).map_err(|_| field_err("state must be valid JSON"))?;
+    let object = parsed
+        .as_object()
+        .ok_or_else(|| field_err("state must be a JSON object"))?;
+    if object
+        .get("version")
+        .and_then(serde_json::Value::as_u64)
+        .unwrap_or(0)
+        != 1
+    {
+        return Err(field_err("investigation state version must be 1"));
+    }
+    let pin_count = match object.get("pins") {
+        Some(pins) => pins
+            .as_array()
+            .ok_or_else(|| field_err("investigation pins must be an array"))?
+            .len(),
+        None => 0,
+    };
+    if pin_count > INVESTIGATION_PIN_CAP {
+        return Err(field_err("investigation pin cap exceeded"));
+    }
+    let notes_len = match object.get("notes") {
+        Some(notes) => notes
+            .as_str()
+            .ok_or_else(|| field_err("investigation notes must be a string"))?
+            .len(),
+        None => 0,
+    };
+    if notes_len > INVESTIGATION_NOTES_MAX_BYTES {
+        return Err(field_err("investigation notes are too long"));
+    }
+    Ok(())
 }
 
 /// Metric names flow into storage identifiers; keep them inside the OTel metric-name grammar.
@@ -63,6 +141,20 @@ fn validate_metric_name(name: &str) -> FieldResult<()> {
         Ok(())
     } else {
         Err(field_err("invalid metric name"))
+    }
+}
+
+fn validate_metric_group_label(label: &str) -> FieldResult<()> {
+    let ok = label
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-' | '/'))
+        && metric_group_label_allowed(label);
+    if ok {
+        Ok(())
+    } else {
+        Err(field_err(
+            "high-cardinality identifier - filter, don't group",
+        ))
     }
 }
 
@@ -285,9 +377,10 @@ fn span_links_from_value(links: &serde_json::Value) -> Vec<SpanLink> {
 
 fn linked_trace_ids(spans: &[model::SpanRow], anchor_trace_id: &str) -> Vec<String> {
     let mut ids = Vec::new();
+    let mut seen = HashSet::new();
     for span in spans {
         for link in span_links_from_value(&span.links) {
-            if link.trace_id == anchor_trace_id || ids.contains(&link.trace_id) {
+            if link.trace_id == anchor_trace_id || !seen.insert(link.trace_id.clone()) {
                 continue;
             }
             ids.push(link.trace_id);
@@ -412,23 +505,80 @@ impl Trace {
     }
 }
 
-pub struct SqlResultOut(parallax_storage::adapter::SqlResult);
+pub struct TraceEvent(span_events::TraceEvent);
+
+#[graphql_object(context = ApiContext)]
+impl TraceEvent {
+    fn span_id(&self) -> &str {
+        &self.0.span_id
+    }
+    fn span_name(&self) -> &str {
+        &self.0.span_name
+    }
+    fn service(&self) -> &str {
+        &self.0.service
+    }
+    fn name(&self) -> &str {
+        &self.0.name
+    }
+    fn time_unix_nano(&self) -> String {
+        nanos_string(self.0.time_unix_nano)
+    }
+    fn attributes(&self) -> String {
+        let attributes: BTreeMap<_, _> = self.0.attributes.iter().cloned().collect();
+        serde_json::to_string(&attributes).unwrap_or_else(|_| "{}".to_string())
+    }
+}
+
+pub struct TraceEventsOut(span_events::TraceEvents);
+
+#[graphql_object(context = ApiContext)]
+impl TraceEventsOut {
+    fn events(&self) -> Vec<TraceEvent> {
+        self.0.events.iter().cloned().map(TraceEvent).collect()
+    }
+    fn truncated(&self) -> bool {
+        self.0.truncated()
+    }
+    fn skipped_spans(&self) -> i32 {
+        saturate_i32(self.0.skipped_spans as u64)
+    }
+}
+
+pub struct SqlResultOut {
+    result: parallax_storage::adapter::SqlResult,
+    truncated: bool,
+}
+
+fn cap_sql_result(
+    mut result: parallax_storage::adapter::SqlResult,
+    max_rows: usize,
+) -> SqlResultOut {
+    let truncated = result.rows.len() > max_rows;
+    if truncated {
+        result.rows.truncate(max_rows);
+    }
+    SqlResultOut { result, truncated }
+}
 
 #[graphql_object(context = ApiContext)]
 impl SqlResultOut {
     fn columns(&self) -> &[String] {
-        &self.0.columns
+        &self.result.columns
     }
     /// Each row as a JSON array string (heterogeneous cell types).
     fn rows(&self) -> Vec<String> {
-        self.0
+        self.result
             .rows
             .iter()
             .map(|row| serde_json::Value::Array(row.clone()).to_string())
             .collect()
     }
     fn row_count(&self) -> i32 {
-        i32::try_from(self.0.rows.len()).unwrap_or(i32::MAX)
+        i32::try_from(self.result.rows.len()).unwrap_or(i32::MAX)
+    }
+    fn truncated(&self) -> bool {
+        self.truncated
     }
 }
 
@@ -625,6 +775,83 @@ impl StoryBeat {
     }
 }
 
+pub struct AgentSessionOut {
+    session: agent_session::AgentSession,
+    truncated: bool,
+}
+
+pub struct AgentStepOut(agent_session::AgentStep);
+
+fn agent_step_kind_name(kind: agent_session::AgentStepKind) -> &'static str {
+    match kind {
+        agent_session::AgentStepKind::InvokeAgent => "INVOKE_AGENT",
+        agent_session::AgentStepKind::ExecuteTool => "EXECUTE_TOOL",
+        agent_session::AgentStepKind::Shell => "SHELL",
+        agent_session::AgentStepKind::Other => "OTHER",
+    }
+}
+
+#[graphql_object(context = ApiContext)]
+impl AgentSessionOut {
+    fn root_span_id(&self) -> Option<&str> {
+        self.session.root_span_id.as_deref()
+    }
+    fn steps(&self) -> Vec<AgentStepOut> {
+        self.session
+            .steps
+            .iter()
+            .cloned()
+            .map(AgentStepOut)
+            .collect()
+    }
+    fn total_input_tokens(&self) -> String {
+        self.session.total_input_tokens.to_string()
+    }
+    fn total_output_tokens(&self) -> String {
+        self.session.total_output_tokens.to_string()
+    }
+    fn error_count(&self) -> i32 {
+        i32::try_from(self.session.error_count).unwrap_or(i32::MAX)
+    }
+    fn truncated(&self) -> bool {
+        self.truncated
+    }
+}
+
+#[graphql_object(context = ApiContext)]
+impl AgentStepOut {
+    fn span_id(&self) -> &str {
+        &self.0.span_id
+    }
+    fn trace_id(&self) -> &str {
+        &self.0.trace_id
+    }
+    fn kind(&self) -> &str {
+        agent_step_kind_name(self.0.kind)
+    }
+    fn name(&self) -> &str {
+        &self.0.name
+    }
+    fn start_nanos(&self) -> String {
+        nanos_string(self.0.start_nanos)
+    }
+    fn duration_ns(&self) -> String {
+        nanos_string(self.0.duration_ns)
+    }
+    fn is_error(&self) -> bool {
+        self.0.is_error
+    }
+    fn gen_ai_operation(&self) -> Option<&str> {
+        self.0.gen_ai_operation.as_deref()
+    }
+    fn input_tokens(&self) -> Option<String> {
+        self.0.input_tokens.map(|tokens| tokens.to_string())
+    }
+    fn output_tokens(&self) -> Option<String> {
+        self.0.output_tokens.map(|tokens| tokens.to_string())
+    }
+}
+
 pub struct AttributeCompareRow(StorageAttributeCompareRow);
 
 #[graphql_object(context = ApiContext)]
@@ -649,6 +876,93 @@ impl AttributeCompareRow {
     }
     fn score(&self) -> f64 {
         self.0.score
+    }
+}
+
+fn field_source_name(source: FieldSource) -> &'static str {
+    match source {
+        FieldSource::Span => "SPAN",
+        FieldSource::Resource => "RESOURCE",
+    }
+}
+
+pub struct FieldKey(StorageFieldKey);
+
+#[graphql_object(context = ApiContext)]
+impl FieldKey {
+    fn key(&self) -> &str {
+        &self.0.key
+    }
+    fn namespace(&self) -> &str {
+        &self.0.namespace
+    }
+    fn source(&self) -> &str {
+        field_source_name(self.0.source)
+    }
+    fn row_count(&self) -> String {
+        self.0.row_count.to_string()
+    }
+    fn non_null_count(&self) -> String {
+        self.0.non_null_count.to_string()
+    }
+    fn coverage(&self) -> f64 {
+        self.0.coverage
+    }
+    fn is_identifier(&self) -> bool {
+        self.0.is_identifier
+    }
+}
+
+pub struct FieldValueCount(StorageFieldValueCount);
+
+#[graphql_object(context = ApiContext)]
+impl FieldValueCount {
+    fn value(&self) -> &str {
+        &self.0.value
+    }
+    fn count(&self) -> String {
+        self.0.count.to_string()
+    }
+}
+
+pub struct FieldStats(StorageFieldStats);
+
+#[graphql_object(context = ApiContext)]
+impl FieldStats {
+    fn key(&self) -> &str {
+        &self.0.key
+    }
+    fn namespace(&self) -> &str {
+        &self.0.namespace
+    }
+    fn source(&self) -> &str {
+        field_source_name(self.0.source)
+    }
+    fn row_count(&self) -> String {
+        self.0.row_count.to_string()
+    }
+    fn non_null_count(&self) -> String {
+        self.0.non_null_count.to_string()
+    }
+    fn distinct_count(&self) -> String {
+        self.0.distinct_count.to_string()
+    }
+    fn coverage(&self) -> f64 {
+        self.0.coverage
+    }
+    fn capped(&self) -> bool {
+        self.0.capped
+    }
+    fn is_identifier(&self) -> bool {
+        self.0.is_identifier
+    }
+    fn top_values(&self) -> Vec<FieldValueCount> {
+        self.0
+            .top_values
+            .iter()
+            .cloned()
+            .map(FieldValueCount)
+            .collect()
     }
 }
 
@@ -715,9 +1029,11 @@ impl Run {
                     .await
                     .map_err(field_err)?;
                 let mut trace_ids: Vec<String> = Vec::new();
+                let mut seen_trace_ids = HashSet::new();
                 for span in &spans {
-                    if !trace_ids.contains(&span.trace_id) {
-                        trace_ids.push(span.trace_id.clone());
+                    let trace_id = span.trace_id.clone();
+                    if seen_trace_ids.insert(trace_id.clone()) {
+                        trace_ids.push(trace_id);
                     }
                 }
                 let events = context
@@ -766,9 +1082,11 @@ impl Run {
     async fn issues(&self, context: &ApiContext) -> FieldResult<Vec<Issue>> {
         let stats = self.stats(context).await?;
         let mut fingerprints: Vec<String> = Vec::new();
+        let mut seen_fingerprints = HashSet::new();
         for event in &stats.events {
-            if !fingerprints.contains(&event.fingerprint) {
-                fingerprints.push(event.fingerprint.clone());
+            let fingerprint = event.fingerprint.clone();
+            if seen_fingerprints.insert(fingerprint.clone()) {
+                fingerprints.push(fingerprint);
             }
         }
         let issues = context
@@ -806,6 +1124,54 @@ impl Series {
     }
     fn points(&self) -> Vec<Point> {
         self.points.iter().copied().map(Point).collect()
+    }
+}
+
+pub struct RuntimeMetric(StorageRuntimeMetricSeries);
+
+#[graphql_object(context = ApiContext)]
+impl RuntimeMetric {
+    fn family(&self) -> &str {
+        &self.0.family
+    }
+    fn metric(&self) -> &str {
+        &self.0.metric
+    }
+    fn unit(&self) -> Option<&str> {
+        self.0.unit.as_deref()
+    }
+    fn points(&self) -> Vec<Point> {
+        self.0.points.iter().copied().map(Point).collect()
+    }
+}
+
+pub struct MetricExemplar(model::MetricExemplarRow);
+
+#[graphql_object(context = ApiContext)]
+impl MetricExemplar {
+    fn ts_nanos(&self) -> String {
+        nanos_string(self.0.ts_nanos)
+    }
+    fn service(&self) -> &str {
+        &self.0.service
+    }
+    fn name(&self) -> &str {
+        &self.0.name
+    }
+    fn value(&self) -> f64 {
+        self.0.value
+    }
+    fn trace_id(&self) -> &str {
+        &self.0.trace_id
+    }
+    fn span_id(&self) -> &str {
+        &self.0.span_id
+    }
+    fn run_id(&self) -> Option<&str> {
+        self.0.run_id.as_deref()
+    }
+    fn attributes(&self) -> String {
+        self.0.attributes.to_string()
     }
 }
 
@@ -854,6 +1220,57 @@ impl ServiceSummary {
     }
     fn p95_ms(&self) -> Option<f64> {
         self.0.p95_ms
+    }
+}
+
+pub struct ReleaseWindow(StorageReleaseWindow);
+
+#[graphql_object(context = ApiContext)]
+impl ReleaseWindow {
+    fn version(&self) -> &str {
+        &self.0.version
+    }
+    fn first_seen_nanos(&self) -> String {
+        nanos_string(self.0.first_seen_nanos)
+    }
+    fn last_seen_nanos(&self) -> String {
+        nanos_string(self.0.last_seen_nanos)
+    }
+    fn span_count(&self) -> String {
+        self.0.span_count.to_string()
+    }
+}
+
+pub struct ServiceCatalogRow(StorageServiceCatalogRow);
+
+#[graphql_object(context = ApiContext)]
+impl ServiceCatalogRow {
+    fn name(&self) -> &str {
+        &self.0.name
+    }
+    fn service_version(&self) -> Option<&str> {
+        self.0.service_version.as_deref()
+    }
+    fn service_namespace(&self) -> Option<&str> {
+        self.0.service_namespace.as_deref()
+    }
+    fn deployment_environment(&self) -> Option<&str> {
+        self.0.deployment_environment.as_deref()
+    }
+    fn telemetry_sdk_language(&self) -> Option<&str> {
+        self.0.telemetry_sdk_language.as_deref()
+    }
+    fn telemetry_sdk_name(&self) -> Option<&str> {
+        self.0.telemetry_sdk_name.as_deref()
+    }
+    fn telemetry_sdk_version(&self) -> Option<&str> {
+        self.0.telemetry_sdk_version.as_deref()
+    }
+    fn last_seen_nanos(&self) -> String {
+        nanos_string(self.0.last_seen_nanos)
+    }
+    fn instance_count(&self) -> String {
+        self.0.instance_count.to_string()
     }
 }
 
@@ -1008,7 +1425,7 @@ impl ServiceOverview {
         context: &ApiContext,
         q: f64,
     ) -> FieldResult<Vec<SeriesPoint>> {
-        for name in REQUEST_DURATION_METRICS {
+        for name in semconv::REQUEST_DURATION_METRICS {
             let series = context
                 .store
                 .histogram_quantile(name, Some(&self.service), self.from..=self.to, self.step, q)
@@ -1022,22 +1439,12 @@ impl ServiceOverview {
     }
 }
 
-/// Well-known request-duration histograms, preferred order (OTel semconv).
-const REQUEST_DURATION_METRICS: &[&str] = &["http.server.request.duration", "rpc.server.duration"];
-
 #[graphql_object(context = ApiContext)]
 impl ServiceOverview {
     /// Process/system CPU, averaged per step.
     async fn cpu(&self, context: &ApiContext) -> FieldResult<Vec<Point>> {
         Ok(self
-            .first_nonempty_points(
-                context,
-                &[
-                    "process.cpu.utilization",
-                    "process.cpu.usage",
-                    "system.cpu.utilization",
-                ],
-            )
+            .first_nonempty_points(context, semconv::CPU_METRICS)
             .await?
             .into_iter()
             .map(Point)
@@ -1047,14 +1454,7 @@ impl ServiceOverview {
     /// Process memory, averaged per step.
     async fn memory(&self, context: &ApiContext) -> FieldResult<Vec<Point>> {
         Ok(self
-            .first_nonempty_points(
-                context,
-                &[
-                    "process.memory.usage",
-                    "process.memory.virtual",
-                    "system.memory.usage",
-                ],
-            )
+            .first_nonempty_points(context, semconv::MEMORY_METRICS)
             .await?
             .into_iter()
             .map(Point)
@@ -1065,7 +1465,7 @@ impl ServiceOverview {
     /// counts.
     async fn request_rate(&self, context: &ApiContext) -> FieldResult<Vec<Point>> {
         let step_secs = (self.step / 1_000_000_000).max(1) as f64;
-        for name in REQUEST_DURATION_METRICS {
+        for name in semconv::REQUEST_DURATION_METRICS {
             let counts = context
                 .store
                 .histogram_count_series(name, Some(&self.service), self.from..=self.to, self.step)
@@ -1157,6 +1557,54 @@ impl Dashboard {
     /// [{metric, agg, chart, title, quantile?}].
     fn layout(&self) -> &str {
         &self.0.layout
+    }
+    fn updated_at_nanos(&self) -> String {
+        nanos_string(self.0.updated_at_nanos)
+    }
+}
+
+pub struct Investigation(model::Investigation);
+
+#[graphql_object(context = ApiContext)]
+impl Investigation {
+    fn id(&self) -> &str {
+        &self.0.id
+    }
+    fn name(&self) -> &str {
+        &self.0.name
+    }
+    /// Opaque V1 investigation state JSON:
+    /// `{version, window, pins, notes}`.
+    fn state(&self) -> &str {
+        &self.0.state
+    }
+    fn created_at_nanos(&self) -> String {
+        nanos_string(self.0.created_at_nanos)
+    }
+    fn updated_at_nanos(&self) -> String {
+        nanos_string(self.0.updated_at_nanos)
+    }
+}
+
+pub struct SavedView(model::SavedView);
+
+#[graphql_object(context = ApiContext)]
+impl SavedView {
+    fn id(&self) -> &str {
+        &self.0.id
+    }
+    fn name(&self) -> &str {
+        &self.0.name
+    }
+    fn page(&self) -> &str {
+        &self.0.page
+    }
+    /// URL search string captured from the page state.
+    fn state(&self) -> &str {
+        &self.0.state
+    }
+    fn created_at_nanos(&self) -> String {
+        nanos_string(self.0.created_at_nanos)
     }
     fn updated_at_nanos(&self) -> String {
         nanos_string(self.0.updated_at_nanos)
@@ -1268,6 +1716,37 @@ impl Query {
             .await
             .map_err(field_err)?;
         Ok(services.into_iter().map(ServiceSummary).collect())
+    }
+
+    /// Per-version service release windows in the selected time range.
+    async fn releases(
+        context: &ApiContext,
+        service: String,
+        from_nanos: String,
+        to_nanos: String,
+    ) -> FieldResult<Vec<ReleaseWindow>> {
+        let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+        let windows = context
+            .store
+            .release_windows(&service, from..=to)
+            .await
+            .map_err(field_err)?;
+        Ok(windows.into_iter().map(ReleaseWindow).collect())
+    }
+
+    /// Resource-identity catalog rows for services in the selected window.
+    async fn service_catalog(
+        context: &ApiContext,
+        from_nanos: String,
+        to_nanos: String,
+    ) -> FieldResult<Vec<ServiceCatalogRow>> {
+        let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+        let rows = context
+            .store
+            .service_catalog(from..=to)
+            .await
+            .map_err(field_err)?;
+        Ok(rows.into_iter().map(ServiceCatalogRow).collect())
     }
 
     /// Trace-path service graph over a bounded set of traces in the window.
@@ -1442,6 +1921,27 @@ impl Query {
         Ok(Some(Trace { trace_id, spans }))
     }
 
+    /// Parsed span events across one trace, time ascending. `namePrefix`
+    /// filters by event name (for example "rpc.message" or "exception").
+    async fn trace_events(
+        context: &ApiContext,
+        trace_id: String,
+        name_prefix: Option<String>,
+        limit: Option<i32>,
+    ) -> FieldResult<TraceEventsOut> {
+        let spans = context
+            .store
+            .spans_by_trace(&trace_id)
+            .await
+            .map_err(field_err)?;
+        let name_prefix = name_prefix.as_deref().filter(|prefix| !prefix.is_empty());
+        Ok(TraceEventsOut(span_events::trace_events(
+            &spans,
+            name_prefix,
+            clamp_limit(limit, 500),
+        )))
+    }
+
     /// Summaries for traces referenced by this trace's span links.
     async fn linked_traces(
         context: &ApiContext,
@@ -1521,10 +2021,14 @@ impl Query {
             .await
             .map_err(field_err)?;
         let mut by_trace: Vec<(String, Vec<model::SpanRow>)> = Vec::new();
+        let mut trace_indexes: HashMap<String, usize> = HashMap::new();
         for span in spans {
-            match by_trace.iter_mut().find(|(t, _)| *t == span.trace_id) {
-                Some((_, group)) => group.push(span),
-                None => by_trace.push((span.trace_id.clone(), vec![span])),
+            let trace_id = span.trace_id.clone();
+            if let Some(index) = trace_indexes.get(&trace_id).copied() {
+                by_trace[index].1.push(span);
+            } else {
+                trace_indexes.insert(trace_id.clone(), by_trace.len());
+                by_trace.push((trace_id, vec![span]));
             }
         }
         let mut summaries: Vec<parallax_storage::adapter::TraceSummary> = by_trace
@@ -1568,6 +2072,21 @@ impl Query {
             .await
             .map_err(field_err)?;
         Ok(logs.into_iter().map(LogRecord).collect())
+    }
+
+    /// Agent-session projection for one run when gen_ai producer spans exist.
+    async fn agent_session(
+        context: &ApiContext,
+        run_id: String,
+    ) -> FieldResult<Option<AgentSessionOut>> {
+        let spans = context
+            .store
+            .spans_by_run(&run_id, MAX_ROWS)
+            .await
+            .map_err(field_err)?;
+        let truncated = spans.len() == MAX_ROWS;
+        Ok(agent_session::project_agent_session(&spans)
+            .map(|session| AgentSessionOut { session, truncated }))
     }
 
     /// Deterministic story timeline for exactly one trace or run anchor.
@@ -1694,6 +2213,44 @@ impl Query {
             .collect())
     }
 
+    /// Scalar span/resource attribute keys in a bounded time window.
+    async fn field_keys(
+        context: &ApiContext,
+        from_nanos: String,
+        to_nanos: String,
+    ) -> FieldResult<Vec<FieldKey>> {
+        let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+        Ok(context
+            .store
+            .span_field_keys(from..=to)
+            .await
+            .map_err(field_err)?
+            .into_iter()
+            .map(FieldKey)
+            .collect())
+    }
+
+    /// Bounded coverage/cardinality/top-values stats for one field key.
+    async fn field_stats(
+        context: &ApiContext,
+        key: String,
+        from_nanos: String,
+        to_nanos: String,
+        service: Option<String>,
+    ) -> FieldResult<FieldStats> {
+        let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+        let stats = context
+            .store
+            .span_field_stats(
+                key.trim(),
+                from..=to,
+                service.as_deref().filter(|service| !service.is_empty()),
+            )
+            .await
+            .map_err(field_err)?;
+        Ok(FieldStats(stats))
+    }
+
     /// Unified log browse (spec §8 `logs`): every filter optional, newest
     /// first. `query` substring-matches the body; trace/run scoping
     /// composes with the other filters.
@@ -1763,6 +2320,49 @@ impl Query {
         Ok(logs.into_iter().map(LogRecord).collect())
     }
 
+    /// Logs surrounding one anchor timestamp, ascending.
+    async fn logs_around(
+        context: &ApiContext,
+        anchor_nanos: String,
+        window_seconds: Option<i32>,
+        service: Option<String>,
+        trace_id: Option<String>,
+        limit: Option<i32>,
+    ) -> FieldResult<Vec<LogRecord>> {
+        let anchor: u128 = anchor_nanos
+            .parse()
+            .map_err(|_| field_err("invalid anchorNanos"))?;
+        let window = u128::try_from(window_seconds.unwrap_or(30).clamp(1, 600)).unwrap_or(30)
+            * 1_000_000_000;
+        let from = anchor.saturating_sub(window);
+        let to = anchor.saturating_add(window);
+        let limit = clamp_limit(limit, 200);
+        let mut logs =
+            if let Some(trace_id) = trace_id.as_deref().filter(|trace_id| !trace_id.is_empty()) {
+                context
+                    .store
+                    .logs_by_trace(trace_id)
+                    .await
+                    .map_err(field_err)?
+                    .into_iter()
+                    .filter(|log| {
+                        log.ts_nanos >= from
+                            && log.ts_nanos <= to
+                            && service.as_deref().is_none_or(|svc| log.service == svc)
+                    })
+                    .collect::<Vec<_>>()
+            } else {
+                context
+                    .store
+                    .logs_search(service.as_deref(), from..=to, None, None, None, limit)
+                    .await
+                    .map_err(field_err)?
+            };
+        logs.sort_by_key(|log| log.ts_nanos);
+        logs.truncate(limit);
+        Ok(logs.into_iter().map(LogRecord).collect())
+    }
+
     /// Raw read-only SQL against the telemetry engine (GreptimeDB) — the
     /// engine's full query power over logs, traces, and metrics tables.
     /// SELECT-shaped single statements only.
@@ -1792,7 +2392,7 @@ impl Query {
             .raw_sql(trimmed.trim_end_matches(';'))
             .await
             .map_err(field_err)?;
-        Ok(SqlResultOut(result))
+        Ok(cap_sql_result(result, SQL_MAX_ROWS))
     }
 
     /// Log counts per time bucket under the same filters as `logs` — the
@@ -1847,6 +2447,16 @@ impl Query {
             .await
             .map_err(field_err)?
             .map(Dashboard))
+    }
+
+    /// One saved investigation by id.
+    async fn investigation(context: &ApiContext, id: String) -> FieldResult<Option<Investigation>> {
+        Ok(context
+            .metadata
+            .investigation(&id)
+            .await
+            .map_err(field_err)?
+            .map(Investigation))
     }
 
     /// The predefined service overview (spec §8): CPU, memory, request rate,
@@ -2064,9 +2674,11 @@ impl Query {
                 .await
                 .map_err(field_err)?;
             let mut trace_ids: Vec<String> = Vec::new();
+            let mut seen_trace_ids = HashSet::new();
             for span in &spans {
-                if !trace_ids.contains(&span.trace_id) {
-                    trace_ids.push(span.trace_id.clone());
+                let trace_id = span.trace_id.clone();
+                if seen_trace_ids.insert(trace_id.clone()) {
+                    trace_ids.push(trace_id);
                 }
             }
             let events = context
@@ -2075,9 +2687,11 @@ impl Query {
                 .await
                 .map_err(field_err)?;
             let mut fingerprints: Vec<String> = Vec::new();
+            let mut seen_fingerprints = HashSet::new();
             for event in &events {
-                if !fingerprints.contains(&event.fingerprint) {
-                    fingerprints.push(event.fingerprint.clone());
+                let fingerprint = event.fingerprint.clone();
+                if seen_fingerprints.insert(fingerprint.clone()) {
+                    fingerprints.push(fingerprint);
                 }
             }
             let issues = context
@@ -2127,9 +2741,11 @@ impl Query {
                 .await
                 .map_err(field_err)?;
             let mut fingerprints: Vec<String> = Vec::new();
+            let mut seen_fingerprints = HashSet::new();
             for event in &events {
-                if !fingerprints.contains(&event.fingerprint) {
-                    fingerprints.push(event.fingerprint.clone());
+                let fingerprint = event.fingerprint.clone();
+                if seen_fingerprints.insert(fingerprint.clone()) {
+                    fingerprints.push(fingerprint);
                 }
             }
             let issues = context
@@ -2176,9 +2792,62 @@ impl Query {
         Ok(names)
     }
 
+    /// Groupable label/tag keys for one metric.
+    async fn metric_labels(context: &ApiContext, name: String) -> FieldResult<Vec<String>> {
+        validate_metric_name(&name)?;
+        context.store.metric_labels(&name).await.map_err(field_err)
+    }
+
+    /// Distinct values for one metric label inside a time window.
+    async fn metric_label_values(
+        context: &ApiContext,
+        name: String,
+        label: String,
+        from_nanos: String,
+        to_nanos: String,
+    ) -> FieldResult<Vec<String>> {
+        validate_metric_name(&name)?;
+        validate_metric_group_label(&label)?;
+        let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+        context
+            .store
+            .metric_label_values(&name, &label, from..=to)
+            .await
+            .map_err(field_err)
+    }
+
     /// Distinct service names (drives the service-overview selector).
     async fn services(context: &ApiContext) -> FieldResult<Vec<String>> {
         context.store.service_names().await.map_err(field_err)
+    }
+
+    /// Runtime metric lanes, scoped to exactly one service or run.
+    async fn runtime_snapshot(
+        context: &ApiContext,
+        service: Option<String>,
+        run_id: Option<String>,
+        from_nanos: String,
+        to_nanos: String,
+        step_seconds: i32,
+    ) -> FieldResult<Vec<RuntimeMetric>> {
+        match (service.as_deref(), run_id.as_deref()) {
+            (Some(_), Some(_)) | (None, None) => {
+                return Err(field_err("runtimeSnapshot takes exactly one scope"));
+            }
+            _ => {}
+        }
+        let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+        let rows = context
+            .store
+            .runtime_snapshot(
+                service.as_deref(),
+                run_id.as_deref(),
+                from..=to,
+                step_nanos(Some(step_seconds)),
+            )
+            .await
+            .map_err(field_err)?;
+        Ok(rows.into_iter().map(RuntimeMetric).collect())
     }
 
     /// Aggregated series for a point metric (gauge/sum); agg one of
@@ -2204,6 +2873,7 @@ impl Query {
             .ok_or_else(|| field_err("agg must be avg|min|max|sum|rate"))?;
         match group_by {
             Some(group_by) => {
+                validate_metric_group_label(&group_by)?;
                 if run_id.is_some() {
                     return Err(field_err("runId with groupBy is not supported yet"));
                 }
@@ -2274,10 +2944,48 @@ impl Query {
         Ok(series.into_iter().map(Point).collect())
     }
 
+    /// Trace-linked exemplars for one metric, newest first.
+    async fn metric_exemplars(
+        context: &ApiContext,
+        name: String,
+        from_nanos: String,
+        to_nanos: String,
+        service: Option<String>,
+        limit: Option<i32>,
+    ) -> FieldResult<Vec<MetricExemplar>> {
+        validate_metric_name(&name)?;
+        let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+        let rows = context
+            .store
+            .metric_exemplars(&name, service.as_deref(), from..=to, clamp_limit(limit, 50))
+            .await
+            .map_err(field_err)?;
+        Ok(rows.into_iter().map(MetricExemplar).collect())
+    }
+
     /// Saved user dashboards, most recently updated first.
     async fn dashboards(context: &ApiContext) -> FieldResult<Vec<Dashboard>> {
         let dashboards = context.metadata.dashboards().await.map_err(field_err)?;
         Ok(dashboards.into_iter().map(Dashboard).collect())
+    }
+
+    /// Saved investigations/cases, most recently updated first.
+    async fn investigations(context: &ApiContext) -> FieldResult<Vec<Investigation>> {
+        let investigations = context.metadata.investigations().await.map_err(field_err)?;
+        Ok(investigations.into_iter().map(Investigation).collect())
+    }
+
+    /// Named saved page states, most recently updated first.
+    async fn saved_views(
+        context: &ApiContext,
+        page: Option<String>,
+    ) -> FieldResult<Vec<SavedView>> {
+        let saved_views = context
+            .metadata
+            .saved_views(page.as_deref().filter(|page| !page.is_empty()))
+            .await
+            .map_err(field_err)?;
+        Ok(saved_views.into_iter().map(SavedView).collect())
     }
 
     async fn runs(context: &ApiContext, limit: Option<i32>) -> FieldResult<Vec<Run>> {
@@ -2289,14 +2997,6 @@ impl Query {
         Ok(runs.into_iter().map(Run::new).collect())
     }
 }
-
-/// Well-known process metrics correlated into every bundle (spec §8
-/// correlation sections).
-const BUNDLE_WINDOW_METRICS: &[&str] = &[
-    "process.cpu.utilization",
-    "process.memory.usage",
-    "tokio.runtime.alive_tasks",
-];
 
 /// Fetch the anchor's metric windows: run anchors read run-scoped points
 /// over the run's lifespan (5 s steps); issue/trace anchors read a
@@ -2366,7 +3066,7 @@ async fn bundle_metric_windows(
         "service"
     };
     let mut windows = Vec::new();
-    for metric in BUNDLE_WINDOW_METRICS {
+    for metric in semconv::BUNDLE_WINDOW_METRICS {
         let points = context
             .store
             .metric_series(
@@ -2475,6 +3175,100 @@ impl Mutation {
         context
             .metadata
             .dashboard_delete(&id)
+            .await
+            .map_err(field_err)
+    }
+
+    /// Create or update an investigation/case state.
+    async fn investigation_save(
+        context: &ApiContext,
+        name: String,
+        state: String,
+        id: Option<String>,
+    ) -> FieldResult<Investigation> {
+        let name = validate_investigation_name(&name)?;
+        validate_investigation_state(&state)?;
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let id = id
+            .filter(|id| !id.is_empty())
+            .unwrap_or_else(|| format!("case_{now:x}"));
+        context
+            .metadata
+            .investigation_save(&id, &name, &state, now)
+            .await
+            .map_err(field_err)?;
+        context
+            .metadata
+            .investigation(&id)
+            .await
+            .map_err(field_err)?
+            .map(Investigation)
+            .ok_or_else(|| field_err("investigation save did not persist"))
+    }
+
+    /// Delete an investigation/case.
+    async fn investigation_delete(context: &ApiContext, id: String) -> FieldResult<bool> {
+        context
+            .metadata
+            .investigation_delete(&id)
+            .await
+            .map_err(field_err)
+    }
+
+    /// Create or update a named saved page state.
+    async fn saved_view_save(
+        context: &ApiContext,
+        name: String,
+        page: String,
+        state: String,
+        id: Option<String>,
+    ) -> FieldResult<SavedView> {
+        let name = validate_saved_view_name(&name)?;
+        validate_saved_view_page(&page)?;
+        let existing = match id.as_deref().filter(|id| !id.is_empty()) {
+            Some(id) => context.metadata.saved_view(id).await.map_err(field_err)?,
+            None => None,
+        };
+        if existing.as_ref().is_none_or(|view| view.page != page)
+            && context
+                .metadata
+                .saved_views(Some(&page))
+                .await
+                .map_err(field_err)?
+                .len()
+                >= SAVED_VIEWS_PER_PAGE
+        {
+            return Err(field_err("saved view cap reached for page"));
+        }
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let id = id
+            .filter(|id| !id.is_empty())
+            .unwrap_or_else(|| format!("view_{now:x}"));
+        context
+            .metadata
+            .saved_view_save(&id, &name, &page, &state, now)
+            .await
+            .map_err(field_err)?;
+        context
+            .metadata
+            .saved_view(&id)
+            .await
+            .map_err(field_err)?
+            .map(SavedView)
+            .ok_or_else(|| field_err("saved view save did not persist"))
+    }
+
+    /// Delete a named saved page state.
+    async fn saved_view_delete(context: &ApiContext, id: String) -> FieldResult<bool> {
+        context
+            .metadata
+            .saved_view_delete(&id)
             .await
             .map_err(field_err)
     }
@@ -2632,9 +3426,14 @@ pub async fn execute(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use parallax_storage::adapter::TelemetryStore;
+    use parallax_storage::adapter::{SqlResult, TelemetryStore};
     use parallax_storage::memory::MemoryStore;
-    use parallax_storage::model::{ErrorEventRow, ErrorSource, LogRow, SpanRow};
+    use parallax_storage::model::{
+        ErrorEventRow, ErrorSource, LogRow, MetricExemplarRow, MetricPointRow, SpanRow,
+    };
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    static TEST_DB_SEQ: AtomicU64 = AtomicU64::new(0);
 
     fn span(
         service: &str,
@@ -2663,18 +3462,47 @@ mod tests {
         }
     }
 
+    fn log_row(service: &str, trace_id: &str, ts_nanos: u128, body: &str) -> LogRow {
+        LogRow {
+            ts_nanos,
+            service: service.into(),
+            severity_num: 9,
+            severity_text: "INFO".into(),
+            body: body.into(),
+            trace_id: trace_id.into(),
+            span_id: format!("span-{ts_nanos}"),
+            run_id: None,
+            scope_name: String::new(),
+            attributes: serde_json::Value::Null,
+            resource: serde_json::Value::Null,
+        }
+    }
+
+    fn span_with_release(
+        service: &str,
+        trace_id: &str,
+        span_id: &str,
+        ts_nanos: u128,
+        version: &str,
+    ) -> SpanRow {
+        let mut row = span(service, trace_id, span_id, ts_nanos, 1_000);
+        row.resource = serde_json::json!({ "service.version": version });
+        row
+    }
+
     async fn context_with_memory(store: Arc<MemoryStore>) -> ApiContext {
         let mut path = std::env::temp_dir();
         path.push(format!(
-            "parallax-api-test-{}-{}.db",
+            "parallax-api-test-{}-{}-{}.db",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
-                .as_nanos()
+                .as_nanos(),
+            TEST_DB_SEQ.fetch_add(1, Ordering::Relaxed)
         ));
+        let _ = std::fs::remove_file(&path);
         let metadata = MetadataStore::open(&path).await.unwrap();
-        let _ = std::fs::remove_file(path);
         ApiContext {
             store,
             metadata: Arc::new(metadata),
@@ -2690,6 +3518,26 @@ mod tests {
             .filter_map(|error| error.get("message").and_then(|message| message.as_str()))
             .map(str::to_string)
             .collect()
+    }
+
+    #[test]
+    fn cap_sql_result_truncates_rows_and_flags_over_cap_only() {
+        let result = SqlResult {
+            columns: vec!["n".into()],
+            rows: vec![vec![serde_json::json!(1)], vec![serde_json::json!(2)]],
+        };
+        let under = cap_sql_result(result.clone(), 3);
+        assert!(!under.truncated());
+        assert_eq!(under.row_count(), 2);
+
+        let at = cap_sql_result(result.clone(), 2);
+        assert!(!at.truncated());
+        assert_eq!(at.row_count(), 2);
+
+        let over = cap_sql_result(result, 1);
+        assert!(over.truncated());
+        assert_eq!(over.row_count(), 1);
+        assert_eq!(over.rows(), vec!["[1]"]);
     }
 
     #[tokio::test]
@@ -2722,6 +3570,237 @@ mod tests {
                 .iter()
                 .any(|message| message.contains("in-memory store")),
             "SELECT passes API guard and reaches memory adapter: {json}"
+        );
+    }
+
+    #[tokio::test]
+    async fn trace_events_filters_orders_and_reports_caps() {
+        let store = Arc::new(MemoryStore::new());
+        let mut root = span("checkout", "trace-a", "span-a", 1_000, 100);
+        root.name = "root".into();
+        root.events = Some(
+            r#"[
+                {"name":"exception","time_unix_nano":30,"attributes":{"message":"bad"}},
+                {"name":"rpc.message.sent","timeUnixNano":"10","attributes":{"message.type":"SENT","id":7}}
+            ]"#
+            .into(),
+        );
+        let mut child = span("payments", "trace-a", "span-b", 2_000, 100);
+        child.name = "client".into();
+        child.events = Some(
+            r#"[{"name":"rpc.message.received","time_unix_nano":20,"attributes":{"message.type":"RECEIVED"}}]"#
+                .into(),
+        );
+        store
+            .ingest_traces(vec![root, child], Default::default())
+            .await
+            .unwrap();
+
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"
+            {
+              traceEvents(traceId: "trace-a", namePrefix: "rpc.message", limit: 1) {
+                truncated
+                skippedSpans
+                events { name spanId spanName service timeUnixNano attributes }
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(
+            error_messages(&json).is_empty(),
+            "traceEvents query succeeds: {json}"
+        );
+        assert_eq!(
+            json.pointer("/data/traceEvents/truncated"),
+            Some(&serde_json::json!(true))
+        );
+        assert_eq!(
+            json.pointer("/data/traceEvents/skippedSpans"),
+            Some(&serde_json::json!(0))
+        );
+        assert_eq!(
+            json.pointer("/data/traceEvents/events/0/name"),
+            Some(&serde_json::json!("rpc.message.sent"))
+        );
+        assert_eq!(
+            json.pointer("/data/traceEvents/events/0/spanId"),
+            Some(&serde_json::json!("span-a"))
+        );
+        assert_eq!(
+            json.pointer("/data/traceEvents/events/0/timeUnixNano"),
+            Some(&serde_json::json!("10"))
+        );
+        assert_eq!(
+            json.pointer("/data/traceEvents/events/0/attributes"),
+            Some(&serde_json::json!(r#"{"id":"7","message.type":"SENT"}"#))
+        );
+    }
+
+    #[tokio::test]
+    async fn trace_events_counts_malformed_span_events() {
+        let store = Arc::new(MemoryStore::new());
+        let mut good = span("checkout", "trace-a", "span-a", 1_000, 100);
+        good.events =
+            Some(r#"[{"name":"rpc.message","time_unix_nano":10,"attributes":{}}]"#.into());
+        let mut bad = span("checkout", "trace-a", "span-b", 2_000, 100);
+        bad.events = Some("{not json".into());
+        store
+            .ingest_traces(vec![good, bad], Default::default())
+            .await
+            .unwrap();
+
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"
+            {
+              traceEvents(traceId: "trace-a") {
+                truncated
+                skippedSpans
+                events { name spanId }
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(
+            error_messages(&json).is_empty(),
+            "traceEvents malformed span query succeeds: {json}"
+        );
+        assert_eq!(
+            json.pointer("/data/traceEvents/skippedSpans"),
+            Some(&serde_json::json!(1))
+        );
+        assert_eq!(
+            json.pointer("/data/traceEvents/truncated"),
+            Some(&serde_json::json!(false))
+        );
+        assert_eq!(
+            json.pointer("/data/traceEvents/events/0/name"),
+            Some(&serde_json::json!("rpc.message"))
+        );
+    }
+
+    #[tokio::test]
+    async fn agent_session_projects_run_scoped_agent_spans() {
+        let store = Arc::new(MemoryStore::new());
+        let mut root = span("agent", "trace-agent", "root", 1_000, 100);
+        root.name = "invoke_agent".into();
+        root.run_id = Some("run-agent".into());
+        root.attributes = serde_json::json!({
+            "gen_ai.operation.name": "invoke_agent"
+        });
+        let mut tool = span("agent", "trace-agent", "tool", 1_100, 25);
+        tool.name = "execute_tool".into();
+        tool.parent_span_id = Some("root".into());
+        tool.run_id = Some("run-agent".into());
+        tool.attributes = serde_json::json!({
+            "gen_ai.operation.name": "execute_tool",
+            "tool.name": "inspect_repo",
+            "gen_ai.usage.input_tokens": "7"
+        });
+        let mut shell = span("agent", "trace-agent", "shell", 1_200, 25);
+        shell.name = "execute_tool".into();
+        shell.parent_span_id = Some("root".into());
+        shell.run_id = Some("run-agent".into());
+        shell.status_code = "STATUS_CODE_ERROR".into();
+        shell.attributes = serde_json::json!({
+            "gen_ai.operation.name": "execute_tool",
+            "tool.name": "shell_command",
+            "shell.command": "false",
+            "gen_ai.usage.output_tokens": 3
+        });
+        let mut unrelated = span("agent", "trace-other", "other", 1_050, 10);
+        unrelated.name = "execute_tool".into();
+        unrelated.run_id = Some("run-other".into());
+        store
+            .ingest_traces(vec![shell, unrelated, root, tool], Default::default())
+            .await
+            .unwrap();
+
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"
+            {
+              agentSession(runId: "run-agent") {
+                rootSpanId
+                truncated
+                totalInputTokens
+                totalOutputTokens
+                errorCount
+                steps {
+                  kind name spanId traceId startNanos durationNs isError
+                  genAiOperation inputTokens outputTokens
+                }
+              }
+              unrelated: agentSession(runId: "run-other") { rootSpanId }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(
+            error_messages(&json).is_empty(),
+            "agentSession query succeeds: {json}"
+        );
+        assert_eq!(
+            json.pointer("/data/agentSession/rootSpanId"),
+            Some(&serde_json::json!("root"))
+        );
+        assert_eq!(
+            json.pointer("/data/agentSession/truncated"),
+            Some(&serde_json::json!(false))
+        );
+        assert_eq!(
+            json.pointer("/data/agentSession/totalInputTokens"),
+            Some(&serde_json::json!("7"))
+        );
+        assert_eq!(
+            json.pointer("/data/agentSession/totalOutputTokens"),
+            Some(&serde_json::json!("3"))
+        );
+        assert_eq!(
+            json.pointer("/data/agentSession/errorCount"),
+            Some(&serde_json::json!(1))
+        );
+        assert_eq!(
+            json.pointer("/data/agentSession/steps/0/kind"),
+            Some(&serde_json::json!("INVOKE_AGENT"))
+        );
+        assert_eq!(
+            json.pointer("/data/agentSession/steps/1/name"),
+            Some(&serde_json::json!("inspect_repo"))
+        );
+        assert_eq!(
+            json.pointer("/data/agentSession/steps/2/kind"),
+            Some(&serde_json::json!("SHELL"))
+        );
+        assert_eq!(
+            json.pointer("/data/agentSession/steps/2/isError"),
+            Some(&serde_json::json!(true))
+        );
+        assert_eq!(
+            json.pointer("/data/unrelated"),
+            Some(&serde_json::Value::Null)
         );
     }
 
@@ -2761,6 +3840,97 @@ mod tests {
                 .and_then(|value| value.as_array())
                 .is_some(),
             "metricSeries returns data for valid name: {json}"
+        );
+    }
+
+    #[tokio::test]
+    async fn metric_label_and_runtime_resolvers_query_memory_store() {
+        let store = Arc::new(MemoryStore::new());
+        store
+            .ingest_metrics(
+                vec![
+                    MetricPointRow {
+                        ts_nanos: 1_000_000_000,
+                        service: "checkout".into(),
+                        name: "process.cpu.utilization".into(),
+                        value: 0.5,
+                        is_monotonic: false,
+                        run_id: Some("run-a".into()),
+                        attributes: serde_json::json!({
+                            "runtime.name": "tokio",
+                            "trace_id": "trace-a"
+                        }),
+                    },
+                    MetricPointRow {
+                        ts_nanos: 2_000_000_000,
+                        service: "checkout".into(),
+                        name: "jvm.memory.used".into(),
+                        value: 256.0,
+                        is_monotonic: false,
+                        run_id: None,
+                        attributes: serde_json::json!({
+                            "runtime.name": "jvm"
+                        }),
+                    },
+                ],
+                Vec::new(),
+                Vec::new(),
+                Default::default(),
+            )
+            .await
+            .unwrap();
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"
+            {
+              metricLabels(name: "process.cpu.utilization")
+              metricLabelValues(name: "process.cpu.utilization", label: "runtime.name", fromNanos: "0", toNanos: "3000000000")
+              runtimeSnapshot(service: "checkout", fromNanos: "0", toNanos: "3000000000", stepSeconds: 1) {
+                family metric unit points { tsNanos value }
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(
+            error_messages(&json).is_empty(),
+            "metric label/runtime query: {json}"
+        );
+        assert_eq!(
+            json.pointer("/data/metricLabels"),
+            Some(&serde_json::json!(["runtime.name"]))
+        );
+        assert_eq!(
+            json.pointer("/data/metricLabelValues"),
+            Some(&serde_json::json!(["tokio"]))
+        );
+        let runtime = json
+            .pointer("/data/runtimeSnapshot")
+            .and_then(|value| value.as_array())
+            .unwrap();
+        assert_eq!(runtime.len(), 2, "two runtime families returned: {json}");
+        assert!(runtime.iter().any(|row| row["family"] == "process"));
+        assert!(runtime.iter().any(|row| row["family"] == "jvm"));
+
+        let denied = juniper::http::GraphQLRequest::new(
+            r#"{ metricSeries(name: "process.cpu.utilization", fromNanos: "0", toNanos: "3000000000", groupBy: "trace_id") { groupValue } }"#
+                .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, denied).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(
+            error_messages(&json)
+                .iter()
+                .any(|message| message.contains("high-cardinality identifier")),
+            "denylisted groupBy rejected: {json}"
         );
     }
 
@@ -2886,6 +4056,427 @@ mod tests {
             .span_count(),
             "2147483648"
         );
+    }
+
+    #[tokio::test]
+    async fn logs_around_returns_windowed_ascending_rows() {
+        let store = Arc::new(MemoryStore::new());
+        let anchor = 100_000_000_000;
+        store
+            .ingest_logs(
+                vec![
+                    log_row("api", "trace-a", anchor - 60_000_000_000, "too-old"),
+                    log_row("api", "trace-a", anchor - 10_000_000_000, "before"),
+                    log_row("api", "trace-a", anchor, "anchor"),
+                    log_row("api", "trace-a", anchor + 10_000_000_000, "after"),
+                    log_row("api", "trace-a", anchor + 60_000_000_000, "too-new"),
+                ],
+                Default::default(),
+            )
+            .await
+            .unwrap();
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            format!(
+                r#"{{
+                  logsAround(anchorNanos: "{anchor}", windowSeconds: 30, service: "api") {{
+                    tsNanos body
+                  }}
+                }}"#
+            ),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(error_messages(&json).is_empty(), "logsAround query: {json}");
+        let rows = json
+            .pointer("/data/logsAround")
+            .and_then(|value| value.as_array())
+            .unwrap();
+        assert_eq!(
+            rows.iter()
+                .map(|row| row["body"].as_str().unwrap())
+                .collect::<Vec<_>>(),
+            vec!["before", "anchor", "after"]
+        );
+    }
+
+    #[tokio::test]
+    async fn logs_around_can_scope_to_trace_inside_window() {
+        let store = Arc::new(MemoryStore::new());
+        let anchor = 100_000_000_000;
+        store
+            .ingest_logs(
+                vec![
+                    log_row("api", "trace-a", anchor - 1_000_000_000, "trace-a-before"),
+                    log_row("api", "trace-b", anchor, "trace-b-anchor"),
+                    log_row("api", "trace-a", anchor + 1_000_000_000, "trace-a-after"),
+                ],
+                Default::default(),
+            )
+            .await
+            .unwrap();
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            format!(
+                r#"{{
+                  logsAround(anchorNanos: "{anchor}", windowSeconds: 30, traceId: "trace-a") {{
+                    body traceId
+                  }}
+                }}"#
+            ),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(error_messages(&json).is_empty(), "logsAround trace: {json}");
+        assert_eq!(
+            json.pointer("/data/logsAround")
+                .and_then(|value| value.as_array())
+                .unwrap()
+                .iter()
+                .map(|row| row["body"].as_str().unwrap())
+                .collect::<Vec<_>>(),
+            vec!["trace-a-before", "trace-a-after"]
+        );
+    }
+
+    #[tokio::test]
+    async fn saved_view_resolvers_round_trip_filter_delete_and_cap() {
+        let schema = build_schema();
+        let context = context_with_memory(Arc::new(MemoryStore::new())).await;
+        let save = juniper::http::GraphQLRequest::new(
+            r#"
+            mutation {
+              savedViewSave(name: "Errors", page: "/logs", state: "?sev=17&cols=trace") {
+                id name page state
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, save).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(error_messages(&json).is_empty(), "savedViewSave: {json}");
+        let id = json
+            .pointer("/data/savedViewSave/id")
+            .and_then(|value| value.as_str())
+            .unwrap()
+            .to_string();
+        assert_eq!(
+            json.pointer("/data/savedViewSave/state"),
+            Some(&serde_json::json!("?sev=17&cols=trace"))
+        );
+
+        let list = juniper::http::GraphQLRequest::new(
+            r#"{ savedViews(page: "/logs") { id name page state } }"#.into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, list).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(error_messages(&json).is_empty(), "savedViews: {json}");
+        assert_eq!(
+            json.pointer("/data/savedViews/0/id"),
+            Some(&serde_json::json!(id.as_str()))
+        );
+
+        let delete = juniper::http::GraphQLRequest::new(
+            format!(r#"mutation {{ savedViewDelete(id: "{id}") }}"#),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, delete).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert_eq!(
+            json.pointer("/data/savedViewDelete"),
+            Some(&serde_json::json!(true))
+        );
+
+        for index in 0..SAVED_VIEWS_PER_PAGE {
+            context
+                .metadata
+                .saved_view_save(
+                    &format!("view-{index}"),
+                    "View",
+                    "/logs",
+                    "?q=x",
+                    index as u128,
+                )
+                .await
+                .unwrap();
+        }
+        let capped = juniper::http::GraphQLRequest::new(
+            r#"mutation { savedViewSave(name: "Too many", page: "/logs", state: "?q=y") { id } }"#
+                .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, capped).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(
+            error_messages(&json)
+                .iter()
+                .any(|message| message.contains("saved view cap")),
+            "saved view cap enforced: {json}"
+        );
+    }
+
+    #[tokio::test]
+    async fn investigation_resolvers_round_trip_and_validate_state() {
+        let schema = build_schema();
+        let context = context_with_memory(Arc::new(MemoryStore::new())).await;
+        let state = r#"{"version":1,"window":{"range":"24h"},"pins":[{"kind":"trace","ref":"/traces/t1","label":"trace"}],"notes":"triage"}"#;
+        let save = juniper::http::GraphQLRequest::new(
+            format!(
+                r#"
+                mutation {{
+                  investigationSave(name: "Checkout case", state: "{}") {{
+                    id name state
+                  }}
+                }}
+                "#,
+                state.replace('"', "\\\"")
+            ),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, save).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(
+            error_messages(&json).is_empty(),
+            "investigationSave: {json}"
+        );
+        let id = json
+            .pointer("/data/investigationSave/id")
+            .and_then(|value| value.as_str())
+            .unwrap()
+            .to_string();
+        assert_eq!(
+            json.pointer("/data/investigationSave/name"),
+            Some(&serde_json::json!("Checkout case"))
+        );
+
+        let list = juniper::http::GraphQLRequest::new(
+            r#"{ investigations { id name state updatedAtNanos } }"#.into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, list).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(error_messages(&json).is_empty(), "investigations: {json}");
+        assert_eq!(
+            json.pointer("/data/investigations/0/id"),
+            Some(&serde_json::json!(id.as_str()))
+        );
+
+        let get = juniper::http::GraphQLRequest::new(
+            format!(r#"{{ investigation(id: "{id}") {{ id name state }} }}"#),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, get).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(error_messages(&json).is_empty(), "investigation: {json}");
+        assert_eq!(
+            json.pointer("/data/investigation/id"),
+            Some(&serde_json::json!(id.as_str()))
+        );
+
+        let delete = juniper::http::GraphQLRequest::new(
+            format!(r#"mutation {{ investigationDelete(id: "{id}") }}"#),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, delete).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert_eq!(
+            json.pointer("/data/investigationDelete"),
+            Some(&serde_json::json!(true))
+        );
+
+        let bad_json = juniper::http::GraphQLRequest::new(
+            r#"mutation { investigationSave(name: "Bad", state: "{bad json") { id } }"#.into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, bad_json).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(
+            error_messages(&json)
+                .iter()
+                .any(|message| message.contains("state must be valid JSON")),
+            "bad JSON rejected: {json}"
+        );
+
+        let pins = (0..=INVESTIGATION_PIN_CAP)
+            .map(|index| {
+                serde_json::json!({
+                    "kind": "trace",
+                    "ref": format!("/traces/{index}"),
+                    "label": format!("trace {index}")
+                })
+            })
+            .collect::<Vec<_>>();
+        let capped_state = serde_json::json!({
+            "version": 1,
+            "window": {"range": "24h"},
+            "pins": pins,
+            "notes": ""
+        })
+        .to_string();
+        let capped = juniper::http::GraphQLRequest::new(
+            format!(
+                r#"mutation {{ investigationSave(name: "Too many", state: "{}") {{ id }} }}"#,
+                capped_state.replace('"', "\\\"")
+            ),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, capped).await;
+        let json = serde_json::to_value(response).unwrap();
+        assert!(
+            error_messages(&json)
+                .iter()
+                .any(|message| message.contains("pin cap")),
+            "pin cap enforced: {json}"
+        );
+    }
+
+    #[tokio::test]
+    async fn releases_resolver_returns_service_windows() {
+        let store = Arc::new(MemoryStore::new());
+        store
+            .ingest_traces(
+                vec![
+                    span_with_release("checkout", "t1", "a", 10, "v1"),
+                    span_with_release("checkout", "t2", "a", 30, "v1"),
+                    span_with_release("checkout", "t3", "a", 50, "v2"),
+                    span_with_release("catalog", "t4", "a", 20, "v9"),
+                ],
+                Default::default(),
+            )
+            .await
+            .unwrap();
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"
+            {
+              releases(service: "checkout", fromNanos: "0", toNanos: "100") {
+                version firstSeenNanos lastSeenNanos spanCount
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(error_messages(&json).is_empty(), "releases query: {json}");
+        assert_eq!(
+            json.pointer("/data/releases/0/version"),
+            Some(&serde_json::json!("v1"))
+        );
+        assert_eq!(
+            json.pointer("/data/releases/0/firstSeenNanos"),
+            Some(&serde_json::json!("10"))
+        );
+        assert_eq!(
+            json.pointer("/data/releases/0/lastSeenNanos"),
+            Some(&serde_json::json!("30"))
+        );
+        assert_eq!(
+            json.pointer("/data/releases/0/spanCount"),
+            Some(&serde_json::json!("2"))
+        );
+        assert_eq!(
+            json.pointer("/data/releases/1/version"),
+            Some(&serde_json::json!("v2"))
+        );
+    }
+
+    #[tokio::test]
+    async fn service_catalog_resolver_returns_identity_rows() {
+        let store = Arc::new(MemoryStore::new());
+        let mut checkout = span("checkout", "t1", "root", 10, 1_000);
+        checkout.resource = serde_json::json!({
+            "service.version": "v1",
+            "service.namespace": "shop",
+            "deployment.environment.name": "prod",
+            "telemetry.sdk.language": "rust",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "0.32.1",
+            "service.instance.id": "checkout-a"
+        });
+        store
+            .ingest_traces(
+                vec![checkout, span("bare", "t2", "root", 20, 1_000)],
+                Default::default(),
+            )
+            .await
+            .unwrap();
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"
+            {
+              serviceCatalog(fromNanos: "0", toNanos: "100") {
+                name serviceVersion serviceNamespace deploymentEnvironment
+                telemetrySdkLanguage telemetrySdkName telemetrySdkVersion
+                lastSeenNanos instanceCount
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(
+            error_messages(&json).is_empty(),
+            "serviceCatalog query: {json}"
+        );
+        let rows = json
+            .pointer("/data/serviceCatalog")
+            .unwrap()
+            .as_array()
+            .unwrap();
+        let checkout = rows
+            .iter()
+            .find(|row| row.get("name") == Some(&serde_json::json!("checkout")))
+            .unwrap();
+        assert_eq!(
+            checkout.get("serviceVersion"),
+            Some(&serde_json::json!("v1"))
+        );
+        assert_eq!(
+            checkout.get("deploymentEnvironment"),
+            Some(&serde_json::json!("prod"))
+        );
+        assert_eq!(
+            checkout.get("telemetrySdkLanguage"),
+            Some(&serde_json::json!("rust"))
+        );
+        assert_eq!(checkout.get("instanceCount"), Some(&serde_json::json!("1")));
+        let bare = rows
+            .iter()
+            .find(|row| row.get("name") == Some(&serde_json::json!("bare")))
+            .unwrap();
+        assert_eq!(bare.get("serviceVersion"), Some(&serde_json::Value::Null));
+        assert_eq!(bare.get("instanceCount"), Some(&serde_json::json!("0")));
     }
 
     #[test]
@@ -3345,6 +4936,155 @@ mod tests {
                 .and_then(|value| value.as_array())
                 .is_some_and(|rows| rows.iter().all(|row| row["key"] != "trace_id")),
             "attributeCompare denies trace_id: {json}"
+        );
+    }
+
+    #[tokio::test]
+    async fn field_explorer_resolvers_return_keys_and_stats() {
+        let store = Arc::new(MemoryStore::new());
+        let mut first = span("checkout", "field-1", "root", 10, 10);
+        first.attributes = serde_json::json!({
+            "http.request.method": "GET",
+            "request.id": "req-1"
+        });
+        first.resource = serde_json::json!({ "service.name": "checkout" });
+        let mut second = span("checkout", "field-2", "root", 20, 10);
+        second.attributes = serde_json::json!({
+            "http.request.method": "GET",
+            "request.id": "req-2"
+        });
+        second.resource = serde_json::json!({ "service.name": "checkout" });
+        let mut third = span("checkout", "field-3", "root", 30, 10);
+        third.attributes = serde_json::json!({
+            "http.request.method": "POST",
+            "request.id": "req-3"
+        });
+        third.resource = serde_json::json!({ "service.name": "checkout" });
+        store
+            .ingest_traces(vec![first, second, third], Default::default())
+            .await
+            .unwrap();
+
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"
+            {
+              fieldKeys(fromNanos: "0", toNanos: "100") {
+                key namespace source nonNullCount coverage isIdentifier
+              }
+              fieldStats(
+                key: "http.request.method"
+                fromNanos: "0"
+                toNanos: "100"
+                service: "checkout"
+              ) {
+                key rowCount nonNullCount distinctCount coverage capped isIdentifier
+                topValues { value count }
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(
+            error_messages(&json).is_empty(),
+            "field explorer query: {json}"
+        );
+        assert!(
+            json.pointer("/data/fieldKeys")
+                .and_then(|value| value.as_array())
+                .is_some_and(|keys| keys.iter().any(|key| {
+                    key["key"] == "resource.service.name" && key["source"] == "RESOURCE"
+                })),
+            "resource field exposed: {json}"
+        );
+        assert!(
+            json.pointer("/data/fieldKeys")
+                .and_then(|value| value.as_array())
+                .is_some_and(|keys| keys
+                    .iter()
+                    .any(|key| key["key"] == "request.id" && key["isIdentifier"] == true)),
+            "identifier field labeled: {json}"
+        );
+        assert_eq!(
+            json.pointer("/data/fieldStats/topValues/0/value"),
+            Some(&serde_json::json!("GET"))
+        );
+        assert_eq!(
+            json.pointer("/data/fieldStats/topValues/0/count"),
+            Some(&serde_json::json!("2"))
+        );
+    }
+
+    #[tokio::test]
+    async fn metric_exemplars_resolver_returns_trace_links() {
+        let store = Arc::new(MemoryStore::new());
+        store
+            .ingest_metrics(
+                Vec::new(),
+                Vec::new(),
+                vec![MetricExemplarRow {
+                    ts_nanos: 20,
+                    service: "checkout".into(),
+                    name: "http.server.request.duration".into(),
+                    value: 120.0,
+                    trace_id: "trace-a".into(),
+                    span_id: "span-a".into(),
+                    run_id: Some("run-a".into()),
+                    attributes: serde_json::json!({"route": "/checkout"}),
+                }],
+                Default::default(),
+            )
+            .await
+            .unwrap();
+
+        let schema = build_schema();
+        let context = context_with_memory(store).await;
+        let request = juniper::http::GraphQLRequest::new(
+            r#"
+            {
+              metricExemplars(
+                name: "http.server.request.duration"
+                fromNanos: "0"
+                toNanos: "100"
+                service: "checkout"
+                limit: 10
+              ) {
+                tsNanos service name value traceId spanId runId attributes
+              }
+            }
+            "#
+            .into(),
+            None,
+            None,
+        );
+        let response = execute(&schema, &context, request).await;
+        let json = serde_json::to_value(response).unwrap();
+
+        assert!(
+            error_messages(&json).is_empty(),
+            "metricExemplars query: {json}"
+        );
+        assert_eq!(
+            json.pointer("/data/metricExemplars/0/traceId"),
+            Some(&serde_json::json!("trace-a"))
+        );
+        assert_eq!(
+            json.pointer("/data/metricExemplars/0/spanId"),
+            Some(&serde_json::json!("span-a"))
+        );
+        assert_eq!(
+            json.pointer("/data/metricExemplars/0/runId"),
+            Some(&serde_json::json!("run-a"))
+        );
+        assert_eq!(
+            json.pointer("/data/metricExemplars/0/value"),
+            Some(&serde_json::json!(120.0))
         );
     }
 

@@ -2,6 +2,7 @@
 
 use crate::bundle::MetricWindow;
 use crate::fingerprint::normalize_message;
+use crate::semconv;
 use parallax_storage::model::{LogRow, SpanRow};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -239,7 +240,7 @@ fn nanos_value(value: &Value) -> Option<u128> {
 }
 
 fn lane_for(service: &str, resource: &Value) -> String {
-    for key in ["parallax.source", "service.namespace"] {
+    for key in [semconv::PARALLAX_SOURCE, semconv::SERVICE_NAMESPACE] {
         if let Some(value) = resource
             .get(key)
             .and_then(Value::as_str)
@@ -252,7 +253,7 @@ fn lane_for(service: &str, resource: &Value) -> String {
         return service.to_string();
     }
     resource
-        .get("service.name")
+        .get(semconv::SERVICE_NAME)
         .and_then(Value::as_str)
         .filter(|value| !value.trim().is_empty())
         .unwrap_or("unknown")

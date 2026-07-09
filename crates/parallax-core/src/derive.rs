@@ -5,6 +5,7 @@
 //! `jackin.operation` attributes refine grouping when present.
 
 use crate::fingerprint::fingerprint_with_operation;
+use crate::semconv;
 use parallax_proto::collector_trace::ExportTraceServiceRequest;
 use parallax_proto::common::KeyValue;
 use parallax_storage::model::{ErrorEventRow, ErrorSource, LogRow};
@@ -32,20 +33,23 @@ pub fn derive_from_traces(request: &ExportTraceServiceRequest) -> Vec<ErrorEvent
             .as_ref()
             .map(|r| r.attributes.as_slice())
             .unwrap_or(&[]);
-        let service = attr_str(resource_attrs, "service.name")
+        let service = attr_str(resource_attrs, semconv::SERVICE_NAME)
             .unwrap_or("unknown")
             .to_string();
         for ss in &rs.scope_spans {
             for span in &ss.spans {
                 let is_error = span.status.as_ref().map(|s| s.code == 2).unwrap_or(false);
-                let exception = span.events.iter().find(|e| e.name == "exception");
+                let exception = span
+                    .events
+                    .iter()
+                    .find(|e| e.name == semconv::EXCEPTION_EVENT_NAME);
                 let Some((source, error_type, message, stacktrace, ts, operation)) = exception
                     .map_or_else(
                         || {
                             is_error.then(|| {
                                 (
                                     ErrorSource::SpanStatus,
-                                    attr_str(&span.attributes, "error.type")
+                                    attr_str(&span.attributes, semconv::ERROR_TYPE)
                                         .unwrap_or("span_error")
                                         .to_string(),
                                     span.status
@@ -55,28 +59,31 @@ pub fn derive_from_traces(request: &ExportTraceServiceRequest) -> Vec<ErrorEvent
                                         .unwrap_or_else(|| span.name.clone()),
                                     None,
                                     u128::from(span.end_time_unix_nano),
-                                    attr_str(&span.attributes, "jackin.operation")
+                                    attr_str(&span.attributes, semconv::JACKIN_OPERATION)
                                         .map(str::to_string),
                                 )
                             })
                         },
                         |event| {
                             let fallback_type =
-                                attr_str(&event.attributes, "exception.type").unwrap_or("unknown");
+                                attr_str(&event.attributes, semconv::EXCEPTION_TYPE)
+                                    .unwrap_or("unknown");
                             Some((
                                 ErrorSource::SpanException,
-                                attr_str(&event.attributes, "error.type")
-                                    .or_else(|| attr_str(&span.attributes, "error.type"))
+                                attr_str(&event.attributes, semconv::ERROR_TYPE)
+                                    .or_else(|| attr_str(&span.attributes, semconv::ERROR_TYPE))
                                     .unwrap_or(fallback_type)
                                     .to_string(),
-                                attr_str(&event.attributes, "exception.message")
+                                attr_str(&event.attributes, semconv::EXCEPTION_MESSAGE)
                                     .unwrap_or("")
                                     .to_string(),
-                                attr_str(&event.attributes, "exception.stacktrace")
+                                attr_str(&event.attributes, semconv::EXCEPTION_STACKTRACE)
                                     .map(str::to_string),
                                 u128::from(event.time_unix_nano),
-                                attr_str(&event.attributes, "jackin.operation")
-                                    .or_else(|| attr_str(&span.attributes, "jackin.operation"))
+                                attr_str(&event.attributes, semconv::JACKIN_OPERATION)
+                                    .or_else(|| {
+                                        attr_str(&span.attributes, semconv::JACKIN_OPERATION)
+                                    })
                                     .map(str::to_string),
                             ))
                         },
@@ -115,11 +122,11 @@ pub fn derive_from_logs(rows: &[LogRow]) -> Vec<ErrorEventRow> {
     for row in rows {
         let exception_type = row
             .attributes
-            .get("exception.type")
+            .get(semconv::EXCEPTION_TYPE)
             .and_then(|v| v.as_str());
         let exception_message = row
             .attributes
-            .get("exception.message")
+            .get(semconv::EXCEPTION_MESSAGE)
             .and_then(|v| v.as_str());
         let has_exception_attrs = exception_type.is_some() || exception_message.is_some();
         let error_severity = row.severity_num >= SEVERITY_ERROR
@@ -127,8 +134,8 @@ pub fn derive_from_logs(rows: &[LogRow]) -> Vec<ErrorEventRow> {
         if !error_severity && !has_exception_attrs {
             continue;
         }
-        let structured_error_type = json_attr_str(&row.attributes, "error.type");
-        let operation = json_attr_str(&row.attributes, "jackin.operation");
+        let structured_error_type = json_attr_str(&row.attributes, semconv::ERROR_TYPE);
+        let operation = json_attr_str(&row.attributes, semconv::JACKIN_OPERATION);
         let (source, error_type, message, stacktrace) = if has_exception_attrs {
             (
                 ErrorSource::LogException,
@@ -137,7 +144,7 @@ pub fn derive_from_logs(rows: &[LogRow]) -> Vec<ErrorEventRow> {
                     .to_string(),
                 exception_message.unwrap_or(&row.body).to_string(),
                 row.attributes
-                    .get("exception.stacktrace")
+                    .get(semconv::EXCEPTION_STACKTRACE)
                     .and_then(|v| v.as_str())
                     .map(str::to_string),
             )

@@ -6,8 +6,16 @@ import {
   IconAffiliateFilled,
   IconGaugeFilled,
   IconNotes,
+  IconX,
 } from "@tabler/icons-react"
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ReferenceArea,
+  XAxis,
+  YAxis,
+} from "recharts"
 
 import { CopyButton } from "@/components/console/copy-button"
 import { EmptyState } from "@/components/console/empty-state"
@@ -20,6 +28,8 @@ import {
   CardSparkline,
   PillMeter,
 } from "@/components/console/stat-card"
+import { TopMovers } from "@/components/console/top-movers"
+import type { ServiceMoverInput } from "@/components/console/top-movers"
 import {
   ChartLegend,
   makeEdgeTick,
@@ -28,7 +38,7 @@ import {
 import { PageHeader } from "@/components/page-header"
 import { navItem } from "@/components/nav"
 import { Badge } from "@/components/ui/badge"
-import { buttonVariants } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   ChartContainer,
@@ -45,13 +55,16 @@ import {
   formatTimeInRange,
 } from "@/lib/format"
 import {
+  customRange,
   mergeRangeSearch,
   rangeLinkSearch,
   rangeSearchSchema,
+  resolvePreset,
   resolveRangeSearch,
 } from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
 import { cn } from "@/lib/utils"
+import { useChartBrush } from "@/components/console/use-chart-brush"
 
 interface SeriesPoint {
   tsNanos: string
@@ -102,6 +115,8 @@ export interface OverviewData {
   errorsSeries: SeriesPoint[]
   red: SpanRed
   previousRed: SpanRed
+  servicesNow: ServiceMoverInput[]
+  servicesPrev: ServiceMoverInput[]
   issues: { items: IssueRow[] }
   tracesPage: { items: TraceRow[] }
 }
@@ -165,6 +180,12 @@ export async function loadOverview(range: ResolvedRange) {
         p50 { tsNanos value }
         p95 { tsNanos value }
         p99 { tsNanos value }
+      }
+      servicesNow: serviceList(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}") {
+        name spanCount errorCount p95Ms
+      }
+      servicesPrev: serviceList(fromNanos: "${previous.fromNanos}", toNanos: "${previous.toNanos}") {
+        name spanCount errorCount p95Ms
       }
       issues(sort: LAST_SEEN, limit: 6) {
         items { fingerprint title service lastSeenNanos eventCount status }
@@ -308,7 +329,7 @@ export function OverviewContent({
         <Link
           to="/traces"
           search={rangeLinkSearch(range)}
-          className="block rounded-lg outline-none transition hover:-translate-y-0.5 focus-visible:ring-[1.5px] focus-visible:ring-ring/50"
+          className="block rounded-lg transition outline-none hover:-translate-y-0.5 focus-visible:ring-[1.5px] focus-visible:ring-ring/50"
         >
           <StatCard
             label="Spans"
@@ -331,7 +352,7 @@ export function OverviewContent({
         <Link
           to="/logs"
           search={rangeLinkSearch(range)}
-          className="block rounded-lg outline-none transition hover:-translate-y-0.5 focus-visible:ring-[1.5px] focus-visible:ring-ring/50"
+          className="block rounded-lg transition outline-none hover:-translate-y-0.5 focus-visible:ring-[1.5px] focus-visible:ring-ring/50"
         >
           <StatCard
             label="Logs"
@@ -354,7 +375,7 @@ export function OverviewContent({
         <Link
           to="/issues"
           search={{ status: "open", ...rangeLinkSearch(range) }}
-          className="block rounded-lg outline-none transition hover:-translate-y-0.5 focus-visible:ring-[1.5px] focus-visible:ring-ring/50"
+          className="block rounded-lg transition outline-none hover:-translate-y-0.5 focus-visible:ring-[1.5px] focus-visible:ring-ring/50"
         >
           <StatCard
             label="Error rate"
@@ -373,7 +394,7 @@ export function OverviewContent({
         <Link
           to="/traces"
           search={{ sort: "DURATION_DESC", ...rangeLinkSearch(range) }}
-          className="block rounded-lg outline-none transition hover:-translate-y-0.5 focus-visible:ring-[1.5px] focus-visible:ring-ring/50"
+          className="block rounded-lg transition outline-none hover:-translate-y-0.5 focus-visible:ring-[1.5px] focus-visible:ring-ring/50"
         >
           <StatCard
             label="p95 latency"
@@ -393,6 +414,12 @@ export function OverviewContent({
         </Link>
       </section>
 
+      <TopMovers
+        now={data.servicesNow}
+        previous={data.servicesPrev}
+        range={range}
+      />
+
       <section className="grid gap-4 lg:grid-cols-2">
         <SignalTrendCard
           range={range}
@@ -400,12 +427,14 @@ export function OverviewContent({
           errors={data.errorsSeries}
           visible={visibleSeries}
           onVisibleChange={setVisibleSeries}
+          onRangeChange={onRangeChange}
         />
         <LatencyTrendCard
           range={range}
           red={data.red}
           visible={visibleLatency}
           onVisibleChange={setVisibleLatency}
+          onRangeChange={onRangeChange}
         />
       </section>
 
@@ -428,16 +457,26 @@ function SignalTrendCard({
   errors,
   visible,
   onVisibleChange,
+  onRangeChange,
 }: {
   range: ResolvedRange
   spans: SeriesPoint[]
   errors: SeriesPoint[]
   visible: VisibleSeries
   onVisibleChange: (value: VisibleSeries) => void
+  onRangeChange: (range: ResolvedRange) => void
 }) {
   const chartData = mergeSignalSeries(range, spans, errors)
   const empty = spans.length === 0 && errors.length === 0
   const displayData = empty ? sampleSignalData(range) : chartData
+  const brush = useChartBrush({
+    series: chartData,
+    stepSeconds: stepSecondsForRange(range),
+    disabled: empty,
+    onWindow: (fromNanos, toNanos) =>
+      onRangeChange(customRange(fromNanos, toNanos)),
+    getReferenceValue: (point) => point.time,
+  })
   const ticks = thinTicks(
     displayData.map((point) => point.time),
     6
@@ -479,6 +518,17 @@ function SignalTrendCard({
                 },
               ]}
             />
+            {range.key === "custom" ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                onClick={() => onRangeChange(resolvePreset())}
+              >
+                <IconX />
+                Reset window
+              </Button>
+            ) : null}
           </div>
         </div>
       </CardHeader>
@@ -491,6 +541,7 @@ function SignalTrendCard({
             <AreaChart
               data={displayData}
               margin={{ left: 0, right: 8, top: 8 }}
+              {...brush.chartHandlers}
             >
               <CartesianGrid vertical={false} />
               <XAxis
@@ -522,6 +573,14 @@ function SignalTrendCard({
                 strokeOpacity={visible === "spans" ? 0.3 : 1}
                 opacity={visible === "spans" ? 0.3 : 1}
               />
+              {brush.referenceRange ? (
+                <ReferenceArea
+                  x1={brush.referenceRange.x1}
+                  x2={brush.referenceRange.x2}
+                  fill="var(--muted-foreground)"
+                  fillOpacity={0.12}
+                />
+              ) : null}
             </AreaChart>
           </ChartContainer>
           {empty ? <EmptyChartOverlay /> : null}
@@ -542,11 +601,13 @@ function LatencyTrendCard({
   red,
   visible,
   onVisibleChange,
+  onRangeChange,
 }: {
   range: ResolvedRange
   red: SpanRed
   visible: VisibleLatency
   onVisibleChange: (value: VisibleLatency) => void
+  onRangeChange: (range: ResolvedRange) => void
 }) {
   const bands = latencyBands(red)
   const empty = bands.length === 0
@@ -556,6 +617,14 @@ function LatencyTrendCard({
       time: formatTimeInRange(point.tsNanos, range),
     })
   )
+  const brush = useChartBrush({
+    series: empty ? [] : displayData,
+    stepSeconds: stepSecondsForRange(range),
+    disabled: empty,
+    onWindow: (fromNanos, toNanos) =>
+      onRangeChange(customRange(fromNanos, toNanos)),
+    getReferenceValue: (point) => point.time,
+  })
   const ticks = thinTicks(
     displayData.map((point) => point.time),
     6
@@ -587,6 +656,17 @@ function LatencyTrendCard({
                 { key: "p99", label: "p99", color: "var(--chart-5)" },
               ]}
             />
+            {range.key === "custom" ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                onClick={() => onRangeChange(resolvePreset())}
+              >
+                <IconX />
+                Reset window
+              </Button>
+            ) : null}
           </div>
         </div>
       </CardHeader>
@@ -599,6 +679,7 @@ function LatencyTrendCard({
             <AreaChart
               data={displayData}
               margin={{ left: 0, right: 8, top: 8 }}
+              {...brush.chartHandlers}
             >
               <CartesianGrid vertical={false} />
               <XAxis
@@ -668,6 +749,14 @@ function LatencyTrendCard({
                 fillOpacity={0.22}
                 opacity={visible !== "all" && visible !== "p99" ? 0.3 : 1}
               />
+              {brush.referenceRange ? (
+                <ReferenceArea
+                  x1={brush.referenceRange.x1}
+                  x2={brush.referenceRange.x2}
+                  fill="var(--muted-foreground)"
+                  fillOpacity={0.12}
+                />
+              ) : null}
             </AreaChart>
           </ChartContainer>
           {empty ? <EmptyChartOverlay /> : null}

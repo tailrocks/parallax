@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from "vitest"
 
 import {
+  formatBytes,
   formatCount,
   formatDelta,
   formatDurationNs,
   formatRelative,
+  formatTimeShort,
   formatTimeInRange,
 } from "@/lib/format"
 
@@ -22,6 +24,13 @@ describe("formatters", () => {
     expect(formatDelta(120, 100)).toEqual({ dir: "up", pct: 20 })
   })
 
+  it("formats bytes as IEC units", () => {
+    expect(formatBytes(0)).toBe("0 B")
+    expect(formatBytes(512)).toBe("512 B")
+    expect(formatBytes(3_355_443)).toBe("3.2 MiB")
+    expect(formatBytes(5 * 1024 ** 4)).toBe("5.0 TiB")
+  })
+
   it("formats relative ns strings with precision", () => {
     vi.spyOn(Date, "now").mockReturnValue(1_720_000_000_000)
     expect(formatRelative("1719999999999999999")).toBe("0s ago")
@@ -34,5 +43,14 @@ describe("formatters", () => {
       toNanos: "1720000000000000000",
     })
     expect(label).toMatch(/\d/)
+  })
+
+  it("formats short time labels", () => {
+    expect(
+      formatTimeShort("1719999999999999999", {
+        minute: "2-digit",
+        second: "2-digit",
+      })
+    ).toMatch(/\d/)
   })
 })

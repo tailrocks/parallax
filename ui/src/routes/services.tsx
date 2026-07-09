@@ -30,6 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { graphql } from "@/lib/api"
+import type { ServiceCatalogRow } from "@/lib/api"
 import { formatCount, formatDurationNs, formatPercent } from "@/lib/format"
 import {
   rangeLinkSearch,
@@ -50,10 +51,22 @@ export interface ServiceSummary {
 
 export interface ServicesData {
   serviceList: ServiceSummary[]
+  serviceCatalog: ServiceCatalogRow[]
 }
+
+export type ServiceTableRow = ServiceSummary &
+  Partial<Omit<ServiceCatalogRow, "name" | "lastSeenNanos">> & {
+    catalogLastSeenNanos: string | undefined
+  }
 
 type ServiceSort =
   | "name:asc"
+  | "version:desc"
+  | "version:asc"
+  | "runtime:desc"
+  | "runtime:asc"
+  | "env:desc"
+  | "env:asc"
   | "spans:desc"
   | "spans:asc"
   | "errors:desc"
@@ -79,6 +92,12 @@ type ServicesSearchPatch = {
 
 const serviceSorts = new Set<ServiceSort>([
   "name:asc",
+  "version:desc",
+  "version:asc",
+  "runtime:desc",
+  "runtime:asc",
+  "env:desc",
+  "env:asc",
   "spans:desc",
   "spans:asc",
   "errors:desc",
@@ -121,9 +140,38 @@ export function serviceHref(service: string) {
   return `/services/${encodeURIComponent(service)}`
 }
 
-export function sortedServices(rows: ServiceSummary[], sort?: string) {
+export function servicesWithCatalog(data: ServicesData): ServiceTableRow[] {
+  const summaries = new Map(data.serviceList.map((row) => [row.name, row]))
+  const catalog = new Map(data.serviceCatalog.map((row) => [row.name, row]))
+  const names = new Set([...summaries.keys(), ...catalog.keys()])
+  return Array.from(names).map((name) => {
+    const summary = summaries.get(name)
+    const identity = catalog.get(name)
+    return {
+      name,
+      lastSeenNanos:
+        summary?.lastSeenNanos ?? identity?.lastSeenNanos ?? "0",
+      spanCount: summary?.spanCount ?? "0",
+      errorCount: summary?.errorCount ?? "0",
+      p95Ms: summary?.p95Ms ?? null,
+      serviceVersion: identity?.serviceVersion ?? null,
+      serviceNamespace: identity?.serviceNamespace ?? null,
+      deploymentEnvironment: identity?.deploymentEnvironment ?? null,
+      telemetrySdkLanguage: identity?.telemetrySdkLanguage ?? null,
+      telemetrySdkName: identity?.telemetrySdkName ?? null,
+      telemetrySdkVersion: identity?.telemetrySdkVersion ?? null,
+      instanceCount: identity?.instanceCount ?? "0",
+      catalogLastSeenNanos: identity?.lastSeenNanos,
+    }
+  })
+}
+
+export function sortedServices(rows: ServiceTableRow[], sort?: string) {
   return sortRows(rows, sort ?? "lastSeen:desc", {
     name: (row) => row.name.toLowerCase(),
+    version: (row) => row.serviceVersion?.toLowerCase(),
+    runtime: (row) => row.telemetrySdkLanguage?.toLowerCase(),
+    env: (row) => row.deploymentEnvironment?.toLowerCase(),
     spans: (row) => Number(row.spanCount),
     errors: (row) => Number(row.errorCount),
     errorRate: serviceErrorRate,
@@ -141,6 +189,17 @@ export async function loadServices(range: ResolvedRange) {
         spanCount
         errorCount
         p95Ms
+      }
+      serviceCatalog(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}") {
+        name
+        serviceVersion
+        serviceNamespace
+        deploymentEnvironment
+        telemetrySdkLanguage
+        telemetrySdkName
+        telemetrySdkVersion
+        lastSeenNanos
+        instanceCount
       }
     }
   `)
@@ -214,8 +273,16 @@ export function ServicesIndexContent({
   onSearch: (patch: ServicesSearchPatch) => void
 }) {
   const query = search.q?.toLowerCase() ?? ""
-  const filtered = data.serviceList.filter((row) =>
-    row.name.toLowerCase().includes(query)
+  const catalogRows = servicesWithCatalog(data)
+  const filtered = catalogRows.filter((row) =>
+    [
+      row.name,
+      row.serviceVersion,
+      row.telemetrySdkLanguage,
+      row.deploymentEnvironment,
+    ]
+      .filter(Boolean)
+      .some((value) => value!.toLowerCase().includes(query))
   )
   const rows = sortedServices(filtered, search.sort)
   const p95Values = rows
@@ -250,7 +317,7 @@ export function ServicesIndexContent({
           placeholder="Search services"
         />
         <span className="text-xs text-muted-foreground">
-          {formatCount(rows.length)} of {formatCount(data.serviceList.length)}
+          {formatCount(rows.length)} of {formatCount(catalogRows.length)}
         </span>
       </Toolbar>
 
@@ -279,6 +346,33 @@ export function ServicesIndexContent({
                     onSort={(sort) => onSearch({ sort: sort as ServiceSort })}
                   >
                     Service
+                  </SortableHead>
+                </TableHead>
+                <TableHead className="w-28">
+                  <SortableHead
+                    {...(search.sort ? { sort: search.sort } : {})}
+                    sortKey="version"
+                    onSort={(sort) => onSearch({ sort: sort as ServiceSort })}
+                  >
+                    Version
+                  </SortableHead>
+                </TableHead>
+                <TableHead className="w-24">
+                  <SortableHead
+                    {...(search.sort ? { sort: search.sort } : {})}
+                    sortKey="runtime"
+                    onSort={(sort) => onSearch({ sort: sort as ServiceSort })}
+                  >
+                    Runtime
+                  </SortableHead>
+                </TableHead>
+                <TableHead className="w-28">
+                  <SortableHead
+                    {...(search.sort ? { sort: search.sort } : {})}
+                    sortKey="env"
+                    onSort={(sort) => onSearch({ sort: sort as ServiceSort })}
+                  >
+                    Env
                   </SortableHead>
                 </TableHead>
                 <TableHead className="w-28 text-right">
@@ -343,6 +437,27 @@ export function ServicesIndexContent({
                         <ServiceDot errored={errors > 0} />
                         <span className="truncate">{row.name}</span>
                       </Link>
+                    </TableCell>
+                    <TableCell
+                      className="font-mono text-xs"
+                      title={`namespace ${row.serviceNamespace ?? "not emitted"}; instances ${row.instanceCount ?? "0"}`}
+                    >
+                      {row.serviceVersion ?? (
+                        <span className="font-sans text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell
+                      className="text-muted-foreground"
+                      title={
+                        row.telemetrySdkName
+                          ? `${row.telemetrySdkName} ${row.telemetrySdkVersion ?? ""}`.trim()
+                          : "SDK not emitted"
+                      }
+                    >
+                      {row.telemetrySdkLanguage ?? "-"}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {row.deploymentEnvironment ?? "-"}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       <Link

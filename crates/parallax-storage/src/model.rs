@@ -54,6 +54,18 @@ pub struct MetricPointRow {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MetricExemplarRow {
+    pub ts_nanos: u128,
+    pub service: String,
+    pub name: String,
+    pub value: f64,
+    pub trace_id: String,
+    pub span_id: String,
+    pub run_id: Option<String>,
+    pub attributes: serde_json::Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HistogramRow {
     pub ts_nanos: u128,
     pub service: String,
@@ -182,6 +194,27 @@ pub struct Dashboard {
     pub id: String,
     pub name: String,
     pub layout: String,
+    pub created_at_nanos: u128,
+    pub updated_at_nanos: u128,
+}
+
+/// Saved investigation/case state (metadata store).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Investigation {
+    pub id: String,
+    pub name: String,
+    pub state: String,
+    pub created_at_nanos: u128,
+    pub updated_at_nanos: u128,
+}
+
+/// Named saved URL-state view (metadata store).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SavedView {
+    pub id: String,
+    pub name: String,
+    pub page: String,
+    pub state: String,
     pub created_at_nanos: u128,
     pub updated_at_nanos: u128,
 }

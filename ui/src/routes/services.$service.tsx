@@ -34,6 +34,7 @@ import {
 } from "@/components/console/trend"
 import { navItem } from "@/components/nav"
 import { PageHeader } from "@/components/page-header"
+import { RuntimeSnapshotCard } from "@/components/runtime-snapshot"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -44,6 +45,14 @@ import {
 import type { ChartConfig } from "@/components/ui/chart"
 import { buttonVariants } from "@/components/ui/button"
 import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
   Table,
   TableBody,
   TableCell,
@@ -52,8 +61,14 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { gqlString, graphql } from "@/lib/api"
-import type { TraceSummary } from "@/lib/api"
-import { formatCount, formatDurationNs, formatPercent } from "@/lib/format"
+import type { RuntimeMetric, ServiceCatalogRow, TraceSummary } from "@/lib/api"
+import {
+  formatCount,
+  formatDateTime,
+  formatDurationNs,
+  formatPercent,
+  formatTimeShort,
+} from "@/lib/format"
 import {
   mergeRangeSearch,
   rangeLinkSearch,
@@ -86,9 +101,32 @@ interface ServiceOverview {
   latencyP99: SeriesPoint[]
 }
 
+export interface MetricExemplar {
+  tsNanos: string
+  service: string
+  name: string
+  value: number
+  traceId: string
+  spanId: string
+  runId: string | null
+  attributes: string
+}
+
+export interface ReleaseWindow {
+  version: string
+  firstSeenNanos: string
+  lastSeenNanos: string
+  spanCount: string
+}
+
 export interface ServiceDetailData {
   red: SpanRed
   overview: ServiceOverview
+  releases: ReleaseWindow[]
+  serviceCatalog: ServiceCatalogRow[]
+  httpDurationExemplars: MetricExemplar[]
+  rpcDurationExemplars: MetricExemplar[]
+  runtimeSnapshot: RuntimeMetric[]
   tracesPage: { items: TraceSummary[] }
 }
 
@@ -106,6 +144,7 @@ const chartConfig = {
   p99Band: { label: "p99", color: "var(--chart-5)" },
   cpu: { label: "CPU", color: "var(--chart-1)" },
   memory: { label: "Memory", color: "var(--chart-2)" },
+  exemplar: { label: "Exemplar", color: "var(--chart-4)" },
 } satisfies ChartConfig
 
 export const Route = createFileRoute("/services/$service")({
@@ -143,6 +182,29 @@ export async function loadServiceDetail(service: string, range: ResolvedRange) {
         latencyP50 { tsNanos value }
         latencyP95 { tsNanos value }
         latencyP99 { tsNanos value }
+      }
+      releases(service: "${escaped}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}") {
+        version firstSeenNanos lastSeenNanos spanCount
+      }
+      serviceCatalog(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}") {
+        name
+        serviceVersion
+        serviceNamespace
+        deploymentEnvironment
+        telemetrySdkLanguage
+        telemetrySdkName
+        telemetrySdkVersion
+        lastSeenNanos
+        instanceCount
+      }
+      httpDurationExemplars: metricExemplars(name: "http.server.request.duration", service: "${escaped}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", limit: 50) {
+        tsNanos service name value traceId spanId runId attributes
+      }
+      rpcDurationExemplars: metricExemplars(name: "rpc.server.duration", service: "${escaped}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", limit: 50) {
+        tsNanos service name value traceId spanId runId attributes
+      }
+      runtimeSnapshot(service: "${escaped}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", stepSeconds: ${stepSeconds}) {
+        family metric unit points { tsNanos value }
       }
       tracesPage(service: "${escaped}", sort: START_DESC, limit: 10, fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}") {
         items { traceId rootName service startNanos durationNs spanCount hasError }
@@ -208,10 +270,7 @@ export function latencyBands(red: SpanRed) {
 }
 
 function formatChartTime(tsNanos: string) {
-  return new Date(Number(BigInt(tsNanos) / 1_000_000n)).toLocaleTimeString(
-    undefined,
-    { hour: "2-digit", minute: "2-digit" }
-  )
+  return formatTimeShort(tsNanos)
 }
 
 function toLineData(
@@ -235,6 +294,48 @@ function toLineData(
   return Array.from(rows.values()).sort((a, b) =>
     BigInt(a.tsNanos) < BigInt(b.tsNanos) ? -1 : 1
   )
+}
+
+type ExemplarMarker = {
+  exemplar: MetricExemplar
+  x: number
+  y: number
+}
+
+function exemplarMarkers(
+  exemplars: MetricExemplar[],
+  data: Array<{ tsNanos: string; p50?: number; p95?: number; p99?: number }>,
+  range: ResolvedRange
+): ExemplarMarker[] {
+  const from = BigInt(range.fromNanos)
+  const to = BigInt(range.toNanos)
+  const span = to - from
+  if (span <= 0n) return []
+  const chartMax = data.reduce(
+    (max, row) => Math.max(max, row.p50 ?? 0, row.p95 ?? 0, row.p99 ?? 0),
+    0
+  )
+  const exemplarMax = exemplars.reduce(
+    (max, exemplar) =>
+      Number.isFinite(exemplar.value) ? Math.max(max, exemplar.value) : max,
+    0
+  )
+  const maxValue = Math.max(chartMax, exemplarMax, 1)
+  return exemplars
+    .filter((exemplar) => exemplar.traceId && exemplar.spanId)
+    .map((exemplar) => {
+      const ts = BigInt(exemplar.tsNanos)
+      const clampedTs = ts < from ? from : ts > to ? to : ts
+      const x = Number(((clampedTs - from) * 10_000n) / span) / 100
+      const ratio = Number.isFinite(exemplar.value)
+        ? Math.max(0, Math.min(1, exemplar.value / maxValue))
+        : 0
+      return {
+        exemplar,
+        x: Math.max(5, Math.min(95, x)),
+        y: Math.max(12, Math.min(86, 86 - ratio * 70)),
+      }
+    })
 }
 
 function ServiceDetailPage() {
@@ -274,7 +375,9 @@ export function ServiceDetailContent({
     data.red.errorRate.length > 0 ||
     data.red.p95.length > 0
   const traces = data.tracesPage.items
-  const noData = !hasRed && traces.length === 0
+  const identity = data.serviceCatalog.find((row) => row.name === service)
+  const noData =
+    !hasRed && traces.length === 0 && data.runtimeSnapshot.length === 0
   const lastSeen = traces[0]?.startNanos
   const servicesBack = navItem("/services")!
 
@@ -331,6 +434,10 @@ export function ServiceDetailContent({
         }
       />
 
+      <ReleaseStrip releases={data.releases} range={range} />
+
+      <IdentityCard identity={identity} fallbackLastSeen={lastSeen} />
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={IconActivityHeartbeat}
@@ -371,11 +478,121 @@ export function ServiceDetailContent({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <RequestsChart red={data.red} />
-        <LatencyChart red={data.red} overview={data.overview} />
+        <LatencyChart
+          red={data.red}
+          overview={data.overview}
+          exemplars={[
+            ...data.httpDurationExemplars,
+            ...data.rpcDurationExemplars,
+          ]}
+          range={range}
+        />
       </div>
 
-      <InfraBand overview={data.overview} />
+      <RuntimeSnapshotCard metrics={data.runtimeSnapshot} />
       <RecentTraces traces={traces} />
+    </div>
+  )
+}
+
+function IdentityCard({
+  identity,
+  fallbackLastSeen,
+}: {
+  identity: ServiceCatalogRow | undefined
+  fallbackLastSeen: string | undefined
+}) {
+  const sdk = [identity?.telemetrySdkName, identity?.telemetrySdkVersion]
+    .filter(Boolean)
+    .join(" ")
+  const identityLastSeen = identity?.lastSeenNanos ?? fallbackLastSeen
+  const values = [
+    ["Version", identity?.serviceVersion],
+    ["Namespace", identity?.serviceNamespace],
+    ["Environment", identity?.deploymentEnvironment],
+    ["Runtime", identity?.telemetrySdkLanguage],
+    ["SDK", sdk || null],
+    ["Instances", formatCount(Number(identity?.instanceCount ?? 0))],
+    [
+      "Last seen",
+      identityLastSeen ? <RelativeTime nanos={identityLastSeen} /> : null,
+    ],
+  ] satisfies Array<[string, React.ReactNode]>
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">Identity</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {values.map(([label, value]) => (
+          <div key={label} className="space-y-1">
+            <div className="text-xs text-muted-foreground">{label}</div>
+            <div className="text-sm font-medium">
+              {value || (
+                <span className="text-muted-foreground">not emitted</span>
+              )}
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  )
+}
+
+function ReleaseStrip({
+  releases,
+  range,
+}: {
+  releases: ReleaseWindow[]
+  range: ResolvedRange
+}) {
+  const segments = useMemo(() => {
+    const from = BigInt(range.fromNanos)
+    const to = BigInt(range.toNanos)
+    const total = to - from
+    if (total <= 0n) return []
+    return releases.map((release) => {
+      const first = BigInt(release.firstSeenNanos)
+      const last = BigInt(release.lastSeenNanos)
+      const start = first < from ? from : first > to ? to : first
+      const end = last < from ? from : last > to ? to : last
+      const left = Number(((start - from) * 10_000n) / total) / 100
+      const duration = end > start ? end - start : 1n
+      const rawWidth = Number((duration * 10_000n) / total) / 100
+      const width = Math.max(4, Math.min(100 - left, rawWidth))
+      return {
+        ...release,
+        left,
+        width,
+        title: `${release.version}: ${formatDateTime(release.firstSeenNanos)} - ${formatDateTime(release.lastSeenNanos)} (${formatCount(Number(release.spanCount))} spans)`,
+      }
+    })
+  }, [range.fromNanos, range.toNanos, releases])
+
+  if (segments.length === 0) return null
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-sm font-medium">Releases</h2>
+        <Badge variant="secondary">{segments.length} versions</Badge>
+      </div>
+      <div className="relative h-9 overflow-hidden rounded-md border bg-muted/30">
+        {segments.map((segment) => (
+          <div
+            key={`${segment.version}-${segment.firstSeenNanos}`}
+            className="absolute inset-y-1 flex min-w-12 items-center justify-center truncate rounded-sm border border-primary/30 bg-primary/15 px-2 text-xs font-medium text-primary"
+            style={{
+              left: `${segment.left}%`,
+              width: `${segment.width}%`,
+            }}
+            title={segment.title}
+          >
+            {segment.version}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -446,9 +663,13 @@ function RequestsChart({ red }: { red: SpanRed }) {
 function LatencyChart({
   red,
   overview,
+  exemplars,
+  range,
 }: {
   red: SpanRed
   overview: ServiceOverview
+  exemplars: MetricExemplar[]
+  range: ResolvedRange
 }) {
   const redBands = latencyBands(red)
   const appData =
@@ -465,107 +686,114 @@ function LatencyChart({
     appData.map((row) => row.label),
     7
   )
+  const markers = exemplarMarkers(exemplars, appData, range)
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between">
         <CardTitle className="text-sm">Latency</CardTitle>
-        {redBands.length === 0 && appData.length > 0 ? (
-          <Badge variant="secondary">app histogram</Badge>
+        <div className="flex items-center gap-2">
+          {markers.length > 0 ? (
+            <Badge variant="secondary">{markers.length} exemplars</Badge>
+          ) : null}
+          {redBands.length === 0 && appData.length > 0 ? (
+            <Badge variant="secondary">app histogram</Badge>
+          ) : null}
+        </div>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        <div className="relative">
+          <ChartContainer config={chartConfig} className="h-[220px] w-full">
+            <AreaChart data={appData} margin={{ left: 8, right: 8, top: 8 }}>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="label"
+                tickLine={false}
+                axisLine={false}
+                ticks={ticks}
+                tickFormatter={(value, index) =>
+                  makeEdgeTick(value, index, ticks)
+                }
+              />
+              <YAxis tickLine={false} axisLine={false} width={48} />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Area
+                dataKey="p50Band"
+                stackId="latency"
+                stroke="var(--color-p50Band)"
+                fill="var(--color-p50Band)"
+                fillOpacity={0.3}
+              />
+              <Area
+                dataKey="p95Band"
+                stackId="latency"
+                stroke="var(--color-p95Band)"
+                fill="var(--color-p95Band)"
+                fillOpacity={0.25}
+              />
+              <Area
+                dataKey="p99Band"
+                stackId="latency"
+                stroke="var(--color-p99Band)"
+                fill="var(--color-p99Band)"
+                fillOpacity={0.2}
+              />
+            </AreaChart>
+          </ChartContainer>
+          {markers.map((marker) => (
+            <Popover
+              key={`${marker.exemplar.traceId}-${marker.exemplar.spanId}-${marker.exemplar.tsNanos}`}
+            >
+              <PopoverTrigger
+                render={
+                  <button
+                    type="button"
+                    className="absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary shadow-sm ring-2 ring-background transition-transform outline-none hover:scale-125 focus-visible:ring-ring"
+                    style={{ left: `${marker.x}%`, top: `${marker.y}%` }}
+                    aria-label={`Trace exemplar ${marker.exemplar.traceId}`}
+                  />
+                }
+              />
+              <PopoverContent align="center" className="w-80">
+                <PopoverHeader>
+                  <PopoverTitle>Trace exemplar</PopoverTitle>
+                  <PopoverDescription>
+                    {formatChartTime(marker.exemplar.tsNanos)}
+                  </PopoverDescription>
+                </PopoverHeader>
+                <div className="grid gap-2 text-xs">
+                  <div className="grid grid-cols-[64px_1fr] gap-2">
+                    <span className="text-muted-foreground">trace</span>
+                    <span className="truncate font-mono">
+                      {marker.exemplar.traceId}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[64px_1fr] gap-2">
+                    <span className="text-muted-foreground">span</span>
+                    <span className="truncate font-mono">
+                      {marker.exemplar.spanId}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[64px_1fr] gap-2">
+                    <span className="text-muted-foreground">value</span>
+                    <span>{marker.exemplar.value.toLocaleString()}</span>
+                  </div>
+                </div>
+                <Link
+                  to="/traces/$traceId"
+                  params={{ traceId: marker.exemplar.traceId }}
+                  className={buttonVariants({ variant: "outline", size: "sm" })}
+                >
+                  Open trace
+                </Link>
+              </PopoverContent>
+            </Popover>
+          ))}
+        </div>
+        {markers.length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            No trace exemplar attached; showing traces near this timestamp
+          </p>
         ) : null}
-      </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="h-[220px] w-full">
-          <AreaChart data={appData} margin={{ left: 8, right: 8, top: 8 }}>
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="label"
-              tickLine={false}
-              axisLine={false}
-              ticks={ticks}
-              tickFormatter={(value, index) =>
-                makeEdgeTick(value, index, ticks)
-              }
-            />
-            <YAxis tickLine={false} axisLine={false} width={48} />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            <Area
-              dataKey="p50Band"
-              stackId="latency"
-              stroke="var(--color-p50Band)"
-              fill="var(--color-p50Band)"
-              fillOpacity={0.3}
-            />
-            <Area
-              dataKey="p95Band"
-              stackId="latency"
-              stroke="var(--color-p95Band)"
-              fill="var(--color-p95Band)"
-              fillOpacity={0.25}
-            />
-            <Area
-              dataKey="p99Band"
-              stackId="latency"
-              stroke="var(--color-p99Band)"
-              fill="var(--color-p99Band)"
-              fillOpacity={0.2}
-            />
-          </AreaChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
-  )
-}
-
-function InfraBand({ overview }: { overview: ServiceOverview }) {
-  if (overview.cpu.length === 0 && overview.memory.length === 0) return null
-  const data = toLineData({
-    cpu: overview.cpu,
-    memory: overview.memory,
-  })
-  const ticks = thinTicks(
-    data.map((row) => row.label),
-    7
-  )
-  return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between">
-        <CardTitle className="text-sm">Runtime metrics</CardTitle>
-        <ChartLegend
-          items={[
-            { key: "cpu", label: "CPU", color: "var(--chart-1)" },
-            { key: "memory", label: "Memory", color: "var(--chart-2)" },
-          ]}
-        />
-      </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="h-[220px] w-full">
-          <LineChart data={data} margin={{ left: 8, right: 8, top: 8 }}>
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="label"
-              tickLine={false}
-              axisLine={false}
-              ticks={ticks}
-              tickFormatter={(value, index) =>
-                makeEdgeTick(value, index, ticks)
-              }
-            />
-            <YAxis tickLine={false} axisLine={false} width={48} />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            <Line
-              dataKey="cpu"
-              stroke="var(--color-cpu)"
-              dot={false}
-              strokeWidth={1.7}
-            />
-            <Line
-              dataKey="memory"
-              stroke="var(--color-memory)"
-              dot={false}
-              strokeWidth={1.7}
-            />
-          </LineChart>
-        </ChartContainer>
       </CardContent>
     </Card>
   )
@@ -616,10 +844,7 @@ function RecentTraces({ traces }: { traces: TraceSummary[] }) {
                       </Link>
                     </TableCell>
                     <TableCell className="text-right">
-                      <HeatCell
-                        value={Number(trace.durationNs)}
-                        scale={scale}
-                      >
+                      <HeatCell value={Number(trace.durationNs)} scale={scale}>
                         {formatDurationNs(trace.durationNs)}
                       </HeatCell>
                     </TableCell>

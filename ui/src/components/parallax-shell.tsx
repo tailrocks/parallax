@@ -1,10 +1,14 @@
 import { Link, useRouterState } from "@tanstack/react-router"
+import { IconSearch } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 
+import { CommandPalette } from "@/components/console/command-palette"
 import { NavIcon } from "@/components/nav-icon"
 import type { NavItem } from "@/components/nav"
 import { primaryNav, workspaceNav } from "@/components/nav"
 import { ThemeSwitcher } from "@/components/theme-switcher"
+import { Button } from "@/components/ui/button"
+import { Kbd } from "@/components/ui/kbd"
 import {
   Sidebar,
   SidebarContent,
@@ -159,6 +163,7 @@ function StatusPill() {
 export function ParallaxShell({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const [dashboards, setDashboards] = useState<DashboardNavItem[]>([])
+  const [paletteOpen, setPaletteOpen] = useState(false)
 
   useEffect(() => {
     if (!pathname.startsWith("/dashboards")) return
@@ -181,6 +186,7 @@ export function ParallaxShell({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider className="relative h-svh min-h-0 overflow-hidden">
+      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
       <Sidebar variant="inset" collapsible="icon">
         <SidebarHeader className="px-3 py-4">
           <div className="flex h-9 items-center gap-2">
@@ -207,6 +213,21 @@ export function ParallaxShell({ children }: { children: React.ReactNode }) {
         </SidebarContent>
 
         <SidebarFooter className="px-3 py-4">
+          <div className="group-data-[collapsible=icon]:hidden">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full justify-between"
+              onClick={() => setPaletteOpen(true)}
+            >
+              <span className="flex min-w-0 items-center gap-1.5">
+                <IconSearch className="size-3.5" />
+                <span>Search...</span>
+              </span>
+              <Kbd>⌘K</Kbd>
+            </Button>
+          </div>
           <StatusPill />
           <div className="group-data-[collapsible=icon]:hidden">
             <ThemeSwitcher />

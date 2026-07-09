@@ -73,6 +73,7 @@ const detailFixture = {
     },
   ],
   traceRunId: null,
+  releaseVersion: "v1",
 }
 
 function renderWithRouter(component: React.ReactNode, path = "/issues") {
@@ -153,6 +154,9 @@ describe("Issues route", () => {
 
     expect(await screen.findByText("src/cart.rs:99:5")).toBeTruthy()
     expect(screen.getByText("checkout::cart::total")).toBeTruthy()
+    expect(
+      screen.getByText((_, element) => element?.textContent === "release v1")
+    ).toBeTruthy()
     expect(screen.getByText("Logs around latest event")).toBeTruthy()
     expect(screen.getByText("parallax issue context panic-a")).toBeTruthy()
   })

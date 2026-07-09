@@ -16,6 +16,7 @@ import { z } from "zod"
 
 import { AttributeComparePanel } from "@/components/console/attribute-compare"
 import { PageHeader } from "@/components/page-header"
+import { FieldExplorer } from "@/components/console/field-explorer"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -507,6 +508,13 @@ function TracesPage() {
             <IconAlertTriangle />
             Errors only
           </ToggleChip>
+          {!live ? (
+            <FieldExplorer
+              range={range}
+              service={search.service}
+              onApplyService={(service) => update({ service })}
+            />
+          ) : null}
           {hasFilters ? (
             <ClearFiltersButton
               onClick={() =>

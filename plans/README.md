@@ -49,44 +49,44 @@ conditions, run its verification gates, and update your row when done.
 
 | Plan | Title | Repo | Priority | Effort | Depends on | Status |
 |------|-------|------|----------|--------|------------|--------|
-| 041 | Releases/deploys lane (releases query, issue↔release design spike, regression badge) | parallax | P2 | L | demo: 042 | TODO |
-| 042 | Playground release + flags reality (env-sourced version, live flagd, honest A13, envs) | **[playground]** | P1 | M | 036 | TODO |
-| 043 | Service catalog (identity/runtime/SDK columns + detail card) | parallax | P2 | M | demo: 036 | TODO |
-| 044 | Runtime dashboards + metric label discovery (metricLabels/Values, runtimeSnapshot, builder autocomplete) | parallax | P2 | L | demo: 045 | TODO |
-| 045 | Playground runtime scenarios (Tokio gauges, JVM pressure, container limits, Micrometer/exemplar knobs) | **[playground]** | P2 | L | 036 | TODO |
-| 046 | Field explorer phase 1 (fieldStats over span/error attrs + traces-list drawer) | parallax | P2 | M | demo: 054 | TODO |
-| 047 | Playground GraphQL family (field spans on, N+1 contrast, partial errors, driver) | **[playground]** | P2 | M | 042, 037 | TODO |
-| 048 | Playground Postgres reality (sqlx inventory, db.* spans, pool metrics, DB scenarios) | **[playground]** | P2 | L | 036 | TODO |
-| 049 | Playground messaging + gRPC semantics (batch fan-in links, lag metric, orphan, deadlines, stream events) | **[playground]** | P2 | M | 036 | TODO |
-| 050 | Playground frontend RUM journey (routes, OTLP vitals, session.id, propagation break, flush) | **[playground]** | P2 | L | 036 | TODO |
+| 041 | Releases/deploys lane (releases query, issue↔release design spike, regression badge) | parallax | P2 | L | demo: 042 | DONE |
+| 042 | Playground release + flags reality (env-sourced version, live flagd, honest A13, envs) | **[playground]** | P1 | M | 036 | DONE |
+| 043 | Service catalog (identity/runtime/SDK columns + detail card) | parallax | P2 | M | demo: 036 | DONE |
+| 044 | Runtime dashboards + metric label discovery (metricLabels/Values, runtimeSnapshot, builder autocomplete) | parallax | P2 | L | demo: 045 | DONE |
+| 045 | Playground runtime scenarios (Tokio gauges, JVM pressure, container limits, Micrometer/exemplar knobs) | **[playground]** | P2 | L | 036 | DONE |
+| 046 | Field explorer phase 1 (fieldStats over span/error attrs + traces-list drawer) | parallax | P2 | M | demo: 054 | DONE |
+| 047 | Playground GraphQL family (field spans on, N+1 contrast, partial errors, driver) | **[playground]** | P2 | M | 042, 037 | DONE |
+| 048 | Playground Postgres reality (sqlx inventory, db.* spans, pool metrics, DB scenarios) | **[playground]** | P2 | L | 036 | DONE |
+| 049 | Playground messaging + gRPC semantics (batch fan-in links, lag metric, orphan, deadlines, stream events) | **[playground]** | P2 | M | 036 | DONE |
+| 050 | Playground frontend RUM journey (routes, OTLP vitals, session.id, propagation break, flush) | **[playground]** | P2 | L | 036 | DONE |
 | 051 | traceCriticalPath + traceCompare (pure core analyses + waterfall highlight + diff UI) | parallax | P3 | M | — | DONE |
-| 052 | Investigations (save/restore state, pins, notes — dashboards-CRUD clone) | parallax | P3 | M | 038 | TODO |
-| 053 | Design-system + a11y consolidation (one chip, central formatters, keyboard access) | parallax | P3 | M | 039, 040 | TODO |
-| 054 | Playground quality scenarios + TOUR.md (sampling gap, cron semantics, field spike, uncorrelated log) | **[playground]** | P3 | M | 036, 037 | TODO |
+| 052 | Investigations (save/restore state, pins, notes — dashboards-CRUD clone) | parallax | P3 | M | 038 | DONE |
+| 053 | Design-system + a11y consolidation (one chip, central formatters, keyboard access) | parallax | P3 | M | 039, 040 | DONE |
+| 054 | Playground quality scenarios + TOUR.md (sampling gap, cron semantics, field spike, uncorrelated log) | **[playground]** | P3 | M | 036, 037 | DONE |
 
 ### Wave 4 — trace-depth + logs family (second run, 2026-07-07)
 
 | Plan | Title | Repo | Priority | Effort | Depends on | Status |
 |------|-------|------|----------|--------|------------|--------|
-| 058 | Trace-events backbone (`traceEvents` resolver + span-read hygiene) | parallax | P1 | M | — | TODO |
-| 062 | SQL workbench (server row cap + truncated flag, linkified cells, snippets) | parallax | P1 | M | coord. advisor-022, 057 | TODO |
-| 055 | Log event identity (`event_name` + `observed_ts_nanos` end-to-end) | parallax | P2 | M | demo: 056 | TODO |
-| 056 | Playground typed log events + Java/web structured logs | **[playground]** | P2 | M | 036; pairs 055 | TODO |
-| 057 | Logs context + saved views (`logsAround`, context drawer, named views) | parallax | P2 | M | 035; richer after 055 | TODO |
-| 059 | GraphQL operation explorer (field tree, N+1 badge, partial errors) | parallax | P2 | M | 058; pairs 047 | TODO |
-| 060 | gRPC stream + messaging lanes (message timeline, deadline callout, event caps) | parallax | P2 | M | 058; pairs 049 | TODO |
-| 061 | Trace view modes (errors-only, service lanes, minimap, skew banner) | parallax | P2 | L | after 040+051; pairs 063 | TODO |
-| 063 | Playground trace-shape scenarios (A19 stress, compare pair, real skew) | **[playground]** | P2 | M | 036; pairs 040/051/061 | TODO |
+| 058 | Trace-events backbone (`traceEvents` resolver + span-read hygiene) | parallax | P1 | M | — | DONE |
+| 062 | SQL workbench (server row cap + truncated flag, linkified cells, snippets) | parallax | P1 | M | coord. advisor-022, 057 | DONE |
+| 055 | Log event identity (`event_name` + `observed_ts_nanos` end-to-end) | parallax | P2 | M | demo: 056 | BLOCKED: Greptime native OTLP logs keep `event_name` NULL after ALTER + extract-keys header |
+| 056 | Playground typed log events + Java/web structured logs | **[playground]** | P2 | M | 036; pairs 055 | DONE |
+| 057 | Logs context + saved views (`logsAround`, context drawer, named views) | parallax | P2 | M | 035; richer after 055 | DONE |
+| 059 | GraphQL operation explorer (field tree, N+1 badge, partial errors) | parallax | P2 | M | 058; pairs 047 | DONE |
+| 060 | gRPC stream + messaging lanes (message timeline, deadline callout, event caps) | parallax | P2 | M | 058; pairs 049 | DONE |
+| 061 | Trace view modes (errors-only, service lanes, minimap, skew banner) | parallax | P2 | L | after 040+051; pairs 063 | DONE |
+| 063 | Playground trace-shape scenarios (A19 stress, compare pair, real skew) | **[playground]** | P2 | M | 036; pairs 040/051/061 | DONE |
 
 ### Wave 5 — command center, agent lane, platform (second run)
 
 | Plan | Title | Repo | Priority | Effort | Depends on | Status |
 |------|-------|------|----------|--------|------------|--------|
-| 064 | Command center v1 (shared brush hook + "what changed" top movers) | parallax | P2 | L | 038, 039 | TODO |
-| 067 | Playground cache reality (TTL cache, hit/miss metrics, stampede) | **[playground]** | P2 | M | 036; pairs 044/046 | TODO |
-| 065 | Agent-session surface (`agentSession(runId)` + tool timeline + token strip) | parallax | P3 | L | advisor-034 (producer) | TODO |
-| 066 | Semconv registry (constants both repos, env-default fix, Weaver spike) | **[both]** | P3 | L | after in-flight waves | TODO |
-| 068 | Command palette (⌘K nav, service jump, recent, paste-an-id) | parallax | P3 | M | — | TODO |
+| 064 | Command center v1 (shared brush hook + "what changed" top movers) | parallax | P2 | L | 038, 039 | DONE |
+| 067 | Playground cache reality (TTL cache, hit/miss metrics, stampede) | **[playground]** | P2 | M | 036; pairs 044/046 | DONE |
+| 065 | Agent-session surface (`agentSession(runId)` + tool timeline + token strip) | parallax | P3 | L | advisor-034 (producer) | DONE |
+| 066 | Semconv registry (constants both repos, env-default fix, Weaver spike) | **[both]** | P3 | L | after in-flight waves | DONE |
+| 068 | Command palette (⌘K nav, service jump, recent, paste-an-id) | parallax | P3 | M | — | DONE |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (one-line reason) |
 REJECTED (one-line rationale) | SUPERSEDED.
@@ -112,6 +112,9 @@ after 038/039; 067 anytime after 036; 065 after advisor-034; 066 last
 - Paired demos: 041↔042 (releases), 043↔036 (identity attrs), 044↔045
   (runtime metrics), 046↔054 (field spike + uncorrelated log). The parallax
   side works without the pair but demos thin.
+- 046 landed span/resource attribute discovery; error-event JSON key discovery
+  stays deferred to the logs/error phase because Greptime does not expose those
+  JSON keys cheaply.
 - Cross-program: 036 overlaps advisor-plans/034 on the composite
   propagator in `libs/playground-telemetry` — whichever lands second reuses
   (both plans carry the note). 049's orphan-consumer + 054's rogue-log and

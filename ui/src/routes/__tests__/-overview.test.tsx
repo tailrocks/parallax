@@ -74,6 +74,12 @@ const fixture: OverviewData = {
     p95: [{ tsNanos: "1000000000", value: 120 }],
     p99: [{ tsNanos: "1000000000", value: 160 }],
   },
+  servicesNow: [
+    { name: "checkout", spanCount: "120", errorCount: "6", p95Ms: 90 },
+  ],
+  servicesPrev: [
+    { name: "checkout", spanCount: "100", errorCount: "1", p95Ms: 80 },
+  ],
   issues: {
     items: [
       {
@@ -148,8 +154,18 @@ function renderWithRouter(component: React.ReactNode) {
     path: "traces/$traceId",
     component: () => null,
   })
+  const serviceRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "services/$service",
+    component: () => null,
+  })
   const router = createRouter({
-    routeTree: rootRoute.addChildren([indexRoute, issueRoute, traceRoute]),
+    routeTree: rootRoute.addChildren([
+      indexRoute,
+      issueRoute,
+      traceRoute,
+      serviceRoute,
+    ]),
     history: createMemoryHistory({ initialEntries: ["/"] }),
   })
 
@@ -163,6 +179,7 @@ describe("Overview route", () => {
     await expect(loadOverview(range)).resolves.toBe(fixture)
     expect(vi.mocked(graphql).mock.calls[0]?.[0]).toContain("overview")
     expect(vi.mocked(graphql).mock.calls[0]?.[0]).toContain("signalCountSeries")
+    expect(vi.mocked(graphql).mock.calls[0]?.[0]).toContain("servicesNow")
     expect(vi.mocked(graphql).mock.calls[0]?.[0]).toContain("tracesPage")
   })
 
@@ -175,6 +192,8 @@ describe("Overview route", () => {
     expect(screen.getByText("Logs")).toBeTruthy()
     expect(screen.getByText("Error rate")).toBeTruthy()
     expect(screen.getByText("p95 latency")).toBeTruthy()
+    expect(screen.getByText("What changed")).toBeTruthy()
+    expect(screen.getByText("checkout error rate 1.0% -> 5.0%")).toBeTruthy()
 
     const hrefs = screen
       .getAllByRole("link")
@@ -183,6 +202,7 @@ describe("Overview route", () => {
     expect(hrefs).toContain("/logs?range=24h")
     expect(hrefs).toContain("/issues?status=open&range=24h")
     expect(hrefs).toContain("/traces?sort=DURATION_DESC&range=24h")
+    expect(hrefs).toContain("/services/checkout?range=24h")
 
     const invertedDelta = rendered.container.querySelector(
       "[data-slot='badge'][class*='emerald']"

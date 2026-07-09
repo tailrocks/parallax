@@ -2,12 +2,16 @@
 //! implementation spec §5. All engine-specific SQL lives in this module.
 
 use crate::adapter::{
-    ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow, MAX_ROWS,
-    OverviewTotals, SERVICE_MAP_TRACE_CAP, ServiceEdge, ServiceSummary, SignalKind, SpanRed,
-    TelemetryStore, attribute_compare_key_allowed, attribute_compare_score,
-    attribute_compare_value_allowed,
+    ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow,
+    FIELD_KEYS_CAP, FIELD_TOP_VALUES_CAP, FieldKey, FieldSource, FieldStats, FieldValueCount,
+    MAX_ROWS, OverviewTotals, ReleaseWindow, RuntimeMetricSeries, SERVICE_MAP_TRACE_CAP,
+    ServiceCatalogRow, ServiceEdge, ServiceSummary, SignalKind, SpanRed, TelemetryStore,
+    attribute_compare_key_allowed, attribute_compare_score, attribute_compare_value_allowed,
+    field_key_identifier_like, field_key_namespace, field_value_display,
+    metric_group_label_allowed, runtime_metric_family, runtime_metric_unit, span_field_key_allowed,
 };
 use crate::model::*;
+use parallax_proto::semconv;
 use std::collections::{BTreeMap, BTreeSet};
 use std::ops::RangeInclusive;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -37,6 +41,141 @@ fn escape_ident(text: &str) -> String {
     text.replace('"', "\"\"")
 }
 
+fn quoted_ident(text: &str) -> String {
+    format!(r#""{}""#, escape_ident(text))
+}
+
+fn resource_attr_ident(attr: &str) -> String {
+    quoted_ident(&semconv::resource_column(attr))
+}
+
+fn wire_attr_ident(attr: &str) -> String {
+    quoted_ident(attr)
+}
+
+fn resource_json_get(attr: &str) -> String {
+    format!(
+        r#"json_get_string("resource_attributes", '{}')"#,
+        semconv::resource_json_path(attr)
+    )
+}
+
+// Greptime metric-engine point tables discovered with live DESCRIBE expose
+// `greptime_timestamp` and `greptime_value`; explicit histogram bucket tables
+// add `le`. They are bookkeeping, not groupable metric labels.
+const METRIC_BOOKKEEPING_COLUMNS: &[&str] = &["greptime_timestamp", "greptime_value", "le"];
+
+fn native_metric_base(name: &str) -> String {
+    name.chars()
+        .map(|ch| {
+            if ch.is_ascii_alphanumeric() || ch == '_' {
+                ch
+            } else {
+                '_'
+            }
+        })
+        .collect()
+}
+
+fn metric_table_candidates(name: &str, suffix: Option<&str>) -> Vec<String> {
+    let suffix = suffix.unwrap_or_default();
+    let mut bases = vec![name.to_string()];
+    let native = native_metric_base(name);
+    if native != name {
+        bases.push(native.clone());
+    }
+    if !native.ends_with("_total") {
+        bases.push(format!("{native}_total"));
+    }
+    for unit_suffix in ["_ratio", "_bytes", "_seconds", "_nanoseconds_total"] {
+        if !native.ends_with(unit_suffix) {
+            bases.push(format!("{native}{unit_suffix}"));
+        }
+    }
+
+    let mut candidates = Vec::new();
+    for base in bases {
+        let candidate = format!("{base}{suffix}");
+        if !candidates.contains(&candidate) {
+            candidates.push(candidate);
+        }
+    }
+    candidates
+}
+
+fn runtime_display_name(base: &str) -> Option<String> {
+    const PREFIXES: &[(&str, &str)] = &[
+        ("process_", "process."),
+        ("system_", "system."),
+        ("jvm_", "jvm."),
+        ("container_", "container."),
+        ("db_client_connection_", "db.client.connection."),
+    ];
+    if let Some(rest) = base.strip_prefix("tokio_runtime_") {
+        return Some(format!("tokio.runtime.{rest}"));
+    }
+    PREFIXES.iter().find_map(|(native, display)| {
+        base.strip_prefix(native)
+            .map(|rest| format!("{display}{}", rest.replace('_', ".")))
+    })
+}
+
+const METRIC_DISPLAY_ALIASES: &[(&str, &str)] = &[
+    ("tokio.runtime.alive.tasks", "tokio.runtime.alive_tasks"),
+    (
+        "tokio.runtime.blocking.pool.depth",
+        "tokio.runtime.blocking_pool_depth",
+    ),
+    (
+        "tokio.runtime.global.queue.depth",
+        "tokio.runtime.global_queue_depth",
+    ),
+    (
+        "tokio.runtime.total.busy.duration.ms",
+        "tokio.runtime.total_busy_duration_ms",
+    ),
+    (
+        "tokio.runtime.total.park.count",
+        "tokio.runtime.total_park_count",
+    ),
+    ("tokio.runtime.workers.count", "tokio.runtime.workers_count"),
+    ("process.cpu.utilization.ratio", "process.cpu.utilization"),
+    ("process.memory.usage.bytes", "process.memory.usage"),
+];
+
+fn canonical_metric_display_name(name: &str) -> String {
+    METRIC_DISPLAY_ALIASES
+        .iter()
+        .find_map(|(legacy, canonical)| (*legacy == name).then_some((*canonical).to_string()))
+        .unwrap_or_else(|| name.to_string())
+}
+
+fn metric_name_query_names(name: &str) -> Vec<String> {
+    let mut names = vec![name.to_string(), canonical_metric_display_name(name)];
+    for (legacy, canonical) in METRIC_DISPLAY_ALIASES {
+        if *canonical == name {
+            names.push((*legacy).to_string());
+        }
+    }
+    names.sort();
+    names.dedup();
+    names
+}
+
+fn metric_name_sql_filter(column: &str, name: &str) -> String {
+    let names = metric_name_query_names(name);
+    if names.len() == 1 {
+        format!(r#"{column} = '{}'"#, escape(&names[0]))
+    } else {
+        let quoted = names
+            .iter()
+            .map(|name| format!("'{}'", escape(name)))
+            .collect::<Vec<_>>()
+            .join(",");
+        format!("{column} IN ({quoted})")
+    }
+}
+
 fn raw_sql_read_only(query: &str) -> bool {
     let trimmed = query.trim();
     let lowered = trimmed.to_ascii_lowercase();
@@ -59,6 +198,12 @@ fn is_missing_table(error: &anyhow::Error) -> bool {
         .to_string()
         .to_ascii_lowercase()
         .contains("table not found")
+}
+
+fn is_missing_column(error: &anyhow::Error) -> bool {
+    let message = error.to_string().to_ascii_lowercase();
+    (message.contains("column") || message.contains("field"))
+        && (message.contains("not found") || message.contains("not exist"))
 }
 
 fn json_literal(value: &serde_json::Value) -> String {
@@ -122,6 +267,15 @@ impl GreptimeStore {
                    TIME INDEX ("ts"), PRIMARY KEY ("service", "name")
                  ) WITH (append_mode = 'true', ttl = '{metrics_ttl}')"#
             ),
+            format!(
+                r#"CREATE TABLE IF NOT EXISTS metric_exemplars (
+                   "ts" TIMESTAMP(9) NOT NULL,
+                   "service" STRING, "name" STRING, "value" DOUBLE,
+                   "trace_id" STRING, "span_id" STRING, "run_id" STRING SKIPPING INDEX,
+                   "attributes" JSON,
+                   TIME INDEX ("ts"), PRIMARY KEY ("service", "name", "trace_id", "span_id")
+                 ) WITH (append_mode = 'true', ttl = '{metrics_ttl}')"#
+            ),
         ];
         for statement in statements {
             self.sql(&statement).await?;
@@ -138,9 +292,13 @@ impl GreptimeStore {
     /// Run a batch of idempotent post-create ALTERs, swallowing the benign
     /// "already exists" / "not found" outcomes (the table may not exist yet, or
     /// the deviation may already be applied from a prior run).
-    async fn try_deviations(&self, statements: &[&str]) {
+    async fn try_deviations<I, S>(&self, statements: I)
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<str>,
+    {
         for statement in statements {
-            if let Err(error) = self.sql(statement).await {
+            if let Err(error) = self.sql(statement.as_ref()).await {
                 let text = error.to_string().to_ascii_lowercase();
                 if !text.contains("exist")
                     && !text.contains("duplicate")
@@ -155,7 +313,7 @@ impl GreptimeStore {
 
     /// Traces deviation: a `fingerprint` column for cross-signal correlation.
     async fn try_traces_deviations(&self) {
-        self.try_deviations(&[
+        self.try_deviations([
             // TODO(plan-010): unpopulated; filling it touches the zero-copy
             // ingest path and is deferred to a dedicated ingest change.
             r#"ALTER TABLE opentelemetry_traces ADD COLUMN "fingerprint" STRING"#,
@@ -164,16 +322,20 @@ impl GreptimeStore {
     }
 
     /// Logs deviations: an INVERTED index on `trace_id` and a FULLTEXT index on
-    /// `body` (the one native shortfall), plus an explicit `parallax.run.id`
-    /// column. The run-id column is normally promoted by the
+    /// `body` (the one native shortfall), plus an explicit run-id column.
+    /// The run-id column is normally promoted by the
     /// `x-greptime-log-extract-keys` header, but only when an ingested log
     /// actually carries that resource attribute — adding it here guarantees the
     /// column exists so run-scoped log reads never reference a missing field.
     async fn try_logs_deviations(&self) {
-        self.try_deviations(&[
-            r#"ALTER TABLE opentelemetry_logs MODIFY COLUMN "trace_id" SET INVERTED INDEX"#,
-            r#"ALTER TABLE opentelemetry_logs MODIFY COLUMN "body" SET FULLTEXT INDEX"#,
-            r#"ALTER TABLE opentelemetry_logs ADD COLUMN "parallax.run.id" STRING"#,
+        self.try_deviations([
+            r#"ALTER TABLE opentelemetry_logs MODIFY COLUMN "trace_id" SET INVERTED INDEX"#
+                .to_string(),
+            r#"ALTER TABLE opentelemetry_logs MODIFY COLUMN "body" SET FULLTEXT INDEX"#.to_string(),
+            format!(
+                "ALTER TABLE opentelemetry_logs ADD COLUMN {} STRING",
+                wire_attr_ident(semconv::PARALLAX_RUN_ID)
+            ),
         ])
         .await;
     }
@@ -322,6 +484,35 @@ impl GreptimeStore {
         Ok(crate::adapter::SqlResult { columns, rows })
     }
 
+    async fn metric_table_for_name(
+        &self,
+        name: &str,
+        suffix: Option<&str>,
+    ) -> anyhow::Result<Option<String>> {
+        let candidates = metric_table_candidates(name, suffix);
+        if candidates.is_empty() {
+            return Ok(None);
+        }
+        let quoted = candidates
+            .iter()
+            .map(|candidate| format!("'{}'", escape(candidate)))
+            .collect::<Vec<_>>()
+            .join(",");
+        let rows = self
+            .sql_lenient(&format!(
+                r#"SELECT "table_name" FROM information_schema.tables
+                   WHERE "table_schema" = 'public' AND "table_name" IN ({quoted})"#
+            ))
+            .await?;
+        let existing = rows
+            .iter()
+            .map(|row| str_at(row, 0))
+            .collect::<BTreeSet<_>>();
+        Ok(candidates
+            .into_iter()
+            .find(|candidate| existing.contains(candidate)))
+    }
+
     async fn insert(&self, table: &str, columns: &str, values: Vec<String>) -> anyhow::Result<()> {
         if values.is_empty() {
             return Ok(());
@@ -372,8 +563,9 @@ impl GreptimeStore {
                     status_code: cols.string("span_status_code", row),
                     status_message: cols.string("span_status_message", row),
                     duration_ns: cols.u128("duration_nano", row),
-                    // native: run id flattens to a resource-attribute column.
-                    run_id: cols.opt_string("resource_attributes.parallax.run.id", row),
+                    // Native run id flattens to a resource-attribute column.
+                    run_id: cols
+                        .opt_string(&semconv::resource_column(semconv::PARALLAX_RUN_ID), row),
                     scope_name: cols.string("scope_name", row),
                     events,
                     links: cols.json("span_links", row),
@@ -386,8 +578,8 @@ impl GreptimeStore {
 
     /// Select logs from the native `opentelemetry_logs` table. Logs keep their
     /// attributes as JSON columns (`log_attributes`/`resource_attributes`), and
-    /// have no `service_name` column — service is derived from the resource
-    /// JSON. The promoted `parallax.run.id` column carries the run id.
+    /// have no `service_name` column, so service is derived from resource JSON.
+    /// The promoted Parallax run-id column carries the run id.
     async fn select_logs(
         &self,
         where_clause: &str,
@@ -397,12 +589,14 @@ impl GreptimeStore {
         let rows = self
             .sql_lenient(&format!(
                 r#"SELECT CAST("timestamp" AS BIGINT) AS "ts_nanos",
-                          json_get_string("resource_attributes", '$."service.name"') AS "service",
+                          {} AS "service",
                           "severity_number", "severity_text", "body", "trace_id", "span_id",
-                          "parallax.run.id", "scope_name",
+                          {}, "scope_name",
                           json_to_string("log_attributes"),
                           json_to_string("resource_attributes")
-                   FROM opentelemetry_logs WHERE {where_clause}{order}{limit_clause}"#
+                   FROM opentelemetry_logs WHERE {where_clause}{order}{limit_clause}"#,
+                resource_json_get(semconv::SERVICE_NAME),
+                wire_attr_ident(semconv::PARALLAX_RUN_ID),
             ))
             .await?;
         Ok(rows.iter().map(|row| log_row_from_row(row)).collect())
@@ -497,6 +691,37 @@ impl<'a> ColumnIndex<'a> {
     }
 }
 
+#[derive(Debug, Clone)]
+struct SpanFieldColumn {
+    key: String,
+    column: String,
+    source: FieldSource,
+}
+
+fn span_field_column_from_name(column: &str) -> Option<SpanFieldColumn> {
+    if let Some(key) = column.strip_prefix("span_attributes.") {
+        let key = key.to_string();
+        return span_field_key_allowed(&key).then_some(SpanFieldColumn {
+            key,
+            column: column.to_string(),
+            source: FieldSource::Span,
+        });
+    }
+    if let Some(key) = column.strip_prefix("resource_attributes.") {
+        let key = format!("resource.{key}");
+        return span_field_key_allowed(&key).then_some(SpanFieldColumn {
+            key,
+            column: column.to_string(),
+            source: FieldSource::Resource,
+        });
+    }
+    None
+}
+
+fn quoted_field_column(column: &SpanFieldColumn) -> String {
+    format!(r#""{}""#, escape_ident(&column.column))
+}
+
 fn str_at(row: &[serde_json::Value], index: usize) -> String {
     row.get(index)
         .and_then(|v| v.as_str())
@@ -506,6 +731,10 @@ fn str_at(row: &[serde_json::Value], index: usize) -> String {
 
 fn opt_str_at(row: &[serde_json::Value], index: usize) -> Option<String> {
     row.get(index).and_then(|v| v.as_str()).map(str::to_string)
+}
+
+fn opt_nonempty_str_at(row: &[serde_json::Value], index: usize) -> Option<String> {
+    opt_str_at(row, index).filter(|value| !value.trim().is_empty())
 }
 
 /// Clamp a u128 time bound to what the engine's TIMESTAMP cast accepts
@@ -532,10 +761,10 @@ fn log_filter_clauses(
         sql_ts(*range.end())
     )];
     if let Some(service) = service {
-        // native: logs carry no `service_name` column — match on the resource
-        // JSON's `service.name`.
+        // Native logs carry no `service_name` column; match on resource JSON.
         clauses.push(format!(
-            r#"json_get_string("resource_attributes", '$."service.name"') = '{}'"#,
+            r#"{} = '{}'"#,
+            resource_json_get(semconv::SERVICE_NAME),
             escape(service)
         ));
     }
@@ -632,12 +861,12 @@ impl TelemetryStore for GreptimeStore {
     }
 
     async fn ingest_logs(&self, _logs: Vec<LogRow>, raw: bytes::Bytes) -> anyhow::Result<()> {
-        // The extract-keys header promotes `parallax.run.id` to a real column.
+        // The extract-keys header promotes the run id to a real column.
         let hints = format!("ttl={},append_mode=true", self.logs_ttl);
         self.forward_otlp(
             "v1/logs",
             &[
-                ("x-greptime-log-extract-keys", "parallax.run.id"),
+                ("x-greptime-log-extract-keys", semconv::PARALLAX_RUN_ID),
                 ("x-greptime-hints", &hints),
             ],
             raw,
@@ -651,6 +880,7 @@ impl TelemetryStore for GreptimeStore {
         &self,
         points: Vec<MetricPointRow>,
         _histograms: Vec<HistogramRow>,
+        exemplars: Vec<MetricExemplarRow>,
         raw: bytes::Bytes,
     ) -> anyhow::Result<()> {
         // Forward all metrics to the native metric engine (one table per metric
@@ -679,6 +909,29 @@ impl TelemetryStore for GreptimeStore {
         self.insert(
             "run_metric_points",
             "\"ts\", \"run_id\", \"service\", \"name\", \"value\", \"attributes\"",
+            values,
+        )
+        .await?;
+
+        let values = exemplars
+            .iter()
+            .map(|r| {
+                format!(
+                    "({},'{}','{}',{},'{}','{}',{},{})",
+                    r.ts_nanos,
+                    escape(&r.service),
+                    escape(&r.name),
+                    r.value,
+                    escape(&r.trace_id),
+                    escape(&r.span_id),
+                    opt_literal(&r.run_id),
+                    json_literal(&r.attributes),
+                )
+            })
+            .collect();
+        self.insert(
+            "metric_exemplars",
+            "\"ts\", \"service\", \"name\", \"value\", \"trace_id\", \"span_id\", \"run_id\", \"attributes\"",
             values,
         )
         .await
@@ -799,8 +1052,9 @@ impl TelemetryStore for GreptimeStore {
                 &format!(
                     r#""trace_id" IN (
                     SELECT DISTINCT "trace_id" FROM opentelemetry_logs
-                    WHERE "parallax.run.id" = '{}'
+                    WHERE {} = '{}'
                   )"#,
+                    wire_attr_ident(semconv::PARALLAX_RUN_ID),
                     escape(run_id)
                 ),
                 r#" ORDER BY "timestamp" DESC"#,
@@ -814,7 +1068,11 @@ impl TelemetryStore for GreptimeStore {
     async fn logs_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<LogRow>> {
         let mut logs = self
             .select_logs(
-                &format!(r#""parallax.run.id" = '{}'"#, escape(run_id)),
+                &format!(
+                    r#"{} = '{}'"#,
+                    wire_attr_ident(semconv::PARALLAX_RUN_ID),
+                    escape(run_id)
+                ),
                 r#" ORDER BY "timestamp" DESC"#,
                 &format!(" LIMIT {limit}"),
             )
@@ -839,18 +1097,87 @@ impl TelemetryStore for GreptimeStore {
         Ok(self.discover_metric_names().await?.into_iter().collect())
     }
 
+    async fn metric_labels(&self, name: &str) -> anyhow::Result<Vec<String>> {
+        let table = match self.metric_table_for_name(name, None).await? {
+            Some(table) => table,
+            None => match self.metric_table_for_name(name, Some("_bucket")).await? {
+                Some(table) => table,
+                None => return Ok(Vec::new()),
+            },
+        };
+        let rows = self
+            .sql_lenient(&format!(
+                r#"SELECT "column_name" FROM information_schema.columns
+                   WHERE "table_schema" = 'public' AND "table_name" = '{}'
+                   ORDER BY "column_name""#,
+                escape(&table),
+            ))
+            .await?;
+        Ok(rows
+            .iter()
+            .map(|row| str_at(row, 0))
+            .filter(|column| {
+                !METRIC_BOOKKEEPING_COLUMNS.contains(&column.as_str())
+                    && metric_group_label_allowed(column)
+            })
+            .collect())
+    }
+
+    async fn metric_label_values(
+        &self,
+        name: &str,
+        label: &str,
+        range: RangeInclusive<u128>,
+    ) -> anyhow::Result<Vec<String>> {
+        anyhow::ensure!(
+            metric_group_label_allowed(label),
+            "high-cardinality identifier - filter, don't group"
+        );
+        let table = match self.metric_table_for_name(name, None).await? {
+            Some(table) => table,
+            None => match self.metric_table_for_name(name, Some("_bucket")).await? {
+                Some(table) => table,
+                None => return Ok(Vec::new()),
+            },
+        };
+        let labels = self.metric_labels(name).await?;
+        anyhow::ensure!(
+            labels.iter().any(|known| known == label),
+            "unknown metric label"
+        );
+        let label_ident = format!(r#""{}""#, escape_ident(label));
+        let rows = self
+            .sql_lenient(&format!(
+                r#"SELECT DISTINCT CAST({label_ident} AS STRING) AS "value"
+                   FROM "{}"
+                   WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}
+                     AND {label_ident} IS NOT NULL
+                   ORDER BY "value" LIMIT 100"#,
+                escape_ident(&table),
+                sql_ts(range.start() / 1_000_000),
+                sql_ts(range.end() / 1_000_000),
+            ))
+            .await?;
+        Ok(rows
+            .iter()
+            .map(|row| str_at(row, 0))
+            .filter(|value| attribute_compare_value_allowed(value))
+            .collect())
+    }
+
     async fn service_names(&self) -> anyhow::Result<Vec<String>> {
         // Any signal makes a service real: traces' `service_name`, logs'
-        // resource `service.name`, plus the run-metric extension table.
+        // resource service name, plus the run-metric extension table.
         let rows = self
-            .sql_lenient(
+            .sql_lenient(&format!(
                 r#"SELECT DISTINCT "service_name" AS "svc" FROM opentelemetry_traces
                    UNION SELECT DISTINCT
-                          json_get_string("resource_attributes", '$."service.name"') AS "svc"
+                          {} AS "svc"
                           FROM opentelemetry_logs
                    UNION SELECT DISTINCT "service" AS "svc" FROM run_metric_points
                    ORDER BY "svc""#,
-            )
+                resource_json_get(semconv::SERVICE_NAME)
+            ))
             .await?;
         Ok(rows
             .iter()
@@ -886,12 +1213,13 @@ impl TelemetryStore for GreptimeStore {
                      SELECT "service_name" AS "svc" FROM opentelemetry_traces
                      WHERE "timestamp" >= {} AND "timestamp" <= {}
                      UNION ALL
-                     SELECT json_get_string("resource_attributes", '$."service.name"') AS "svc"
+                     SELECT {} AS "svc"
                      FROM opentelemetry_logs
                      WHERE "timestamp" >= {} AND "timestamp" <= {}
                    ) WHERE "svc" IS NOT NULL AND "svc" != ''"#,
                 sql_ts(*range.start()),
                 sql_ts(*range.end()),
+                resource_json_get(semconv::SERVICE_NAME),
                 sql_ts(*range.start()),
                 sql_ts(*range.end()),
             ))
@@ -1030,6 +1358,138 @@ impl TelemetryStore for GreptimeStore {
             .collect())
     }
 
+    async fn release_windows(
+        &self,
+        service: &str,
+        range: RangeInclusive<u128>,
+    ) -> anyhow::Result<Vec<ReleaseWindow>> {
+        let version_column = resource_attr_ident(semconv::SERVICE_VERSION);
+        let sql = format!(
+            r#"SELECT {version_column} AS "version",
+                      MIN(CAST("timestamp" AS BIGINT)) AS "first_seen_nanos",
+                      MAX(CAST("timestamp" AS BIGINT)) AS "last_seen_nanos",
+                      COUNT(*) AS "span_count"
+               FROM opentelemetry_traces
+               WHERE "service_name" = '{}'
+                 AND "timestamp" >= {}
+                 AND "timestamp" <= {}
+                 AND {version_column} IS NOT NULL
+                 AND {version_column} != ''
+               GROUP BY {version_column}
+               ORDER BY "first_seen_nanos" ASC, "version" ASC"#,
+            escape(service),
+            sql_ts(*range.start()),
+            sql_ts(*range.end()),
+        );
+        let rows = match self.sql(&sql).await {
+            Err(error) if is_missing_table(&error) || is_missing_column(&error) => Vec::new(),
+            other => other?,
+        };
+        Ok(rows
+            .iter()
+            .filter_map(|row| {
+                let version = str_at(row, 0);
+                (!version.is_empty()).then(|| ReleaseWindow {
+                    version,
+                    first_seen_nanos: u128_at(row, 1),
+                    last_seen_nanos: u128_at(row, 2),
+                    span_count: u128_at(row, 3) as u64,
+                })
+            })
+            .collect())
+    }
+
+    async fn service_catalog(
+        &self,
+        range: RangeInclusive<u128>,
+    ) -> anyhow::Result<Vec<ServiceCatalogRow>> {
+        let schema = self
+            .sql_with_schema_lenient("SELECT * FROM opentelemetry_traces LIMIT 0")
+            .await?;
+        let has_column = |name: &str| schema.columns.iter().any(|column| column == name);
+        let latest_attr = |attr: &str, alias: &str| {
+            let column = semconv::resource_column(attr);
+            if has_column(&column) {
+                format!(r#"MAX(t."{}") AS "{}""#, escape_ident(&column), alias)
+            } else {
+                format!(r#"NULL AS "{}""#, alias)
+            }
+        };
+        let service_instance_column = semconv::resource_column(semconv::SERVICE_INSTANCE_ID);
+        let instance_count = if has_column(&service_instance_column) {
+            format!(
+                "COUNT(DISTINCT {})",
+                resource_attr_ident(semconv::SERVICE_INSTANCE_ID)
+            )
+        } else {
+            "0".to_string()
+        };
+        // GreptimeDB 1.1 rejects `arg_max`, and aggregate `last_value` is not
+        // timestamp-stable for native trace rows. Verified live on 2026-07-08:
+        // use one max-timestamp CTE per service, join the matching row(s), then
+        // aggregate duplicate latest rows with MAX.
+        let sql = format!(
+            r#"WITH latest AS (
+                   SELECT "service_name", MAX("timestamp") AS "last_seen"
+                   FROM opentelemetry_traces
+                   WHERE "timestamp" >= {} AND "timestamp" <= {}
+                   GROUP BY "service_name"
+               ),
+               counts AS (
+                   SELECT "service_name", {instance_count} AS "instance_count"
+                   FROM opentelemetry_traces
+                   WHERE "timestamp" >= {} AND "timestamp" <= {}
+                   GROUP BY "service_name"
+               )
+               SELECT l."service_name",
+                      {},
+                      {},
+                      {},
+                      {},
+                      {},
+                      {},
+                      CAST(l."last_seen" AS BIGINT) AS "last_seen_nanos",
+                      c."instance_count"
+               FROM latest l
+               JOIN opentelemetry_traces t
+                 ON t."service_name" = l."service_name"
+                AND t."timestamp" = l."last_seen"
+               LEFT JOIN counts c ON c."service_name" = l."service_name"
+               GROUP BY l."service_name", l."last_seen", c."instance_count"
+               ORDER BY l."service_name" ASC
+               LIMIT {}"#,
+            sql_ts(*range.start()),
+            sql_ts(*range.end()),
+            sql_ts(*range.start()),
+            sql_ts(*range.end()),
+            latest_attr(semconv::SERVICE_VERSION, "service_version"),
+            latest_attr(semconv::SERVICE_NAMESPACE, "service_namespace"),
+            latest_attr(
+                semconv::DEPLOYMENT_ENVIRONMENT_NAME,
+                "deployment_environment"
+            ),
+            latest_attr(semconv::TELEMETRY_SDK_LANGUAGE, "telemetry_sdk_language"),
+            latest_attr(semconv::TELEMETRY_SDK_NAME, "telemetry_sdk_name"),
+            latest_attr(semconv::TELEMETRY_SDK_VERSION, "telemetry_sdk_version"),
+            MAX_ROWS,
+        );
+        let rows = self.sql_lenient(&sql).await?;
+        Ok(rows
+            .iter()
+            .map(|row| ServiceCatalogRow {
+                name: str_at(row, 0),
+                service_version: opt_nonempty_str_at(row, 1),
+                service_namespace: opt_nonempty_str_at(row, 2),
+                deployment_environment: opt_nonempty_str_at(row, 3),
+                telemetry_sdk_language: opt_nonempty_str_at(row, 4),
+                telemetry_sdk_name: opt_nonempty_str_at(row, 5),
+                telemetry_sdk_version: opt_nonempty_str_at(row, 6),
+                last_seen_nanos: u128_at(row, 7),
+                instance_count: u128_at(row, 8) as u64,
+            })
+            .collect())
+    }
+
     async fn span_red_series(
         &self,
         service: Option<&str>,
@@ -1107,20 +1567,23 @@ impl TelemetryStore for GreptimeStore {
             let service_clause = service
                 .map(|svc| format!(r#" AND "service" = '{}'"#, escape(svc)))
                 .unwrap_or_default();
+            let name_filter = metric_name_sql_filter(r#""name""#, name);
             self.sql_lenient(&format!(
                 r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "ts") AS BIGINT)
                           AS "bucket_ns", {sql_agg}("value") AS "agg_value"
                    FROM run_metric_points
-                   WHERE "name" = '{}' AND "run_id" = '{}'{service_clause}
+                   WHERE {name_filter} AND "run_id" = '{}'{service_clause}
                      AND "ts" >= {} AND "ts" <= {}
                    GROUP BY "bucket_ns" ORDER BY "bucket_ns""#,
-                escape(name),
                 escape(run_id),
                 sql_ts(*range.start()),
                 sql_ts(*range.end()),
             ))
             .await?
         } else {
+            let Some(table) = self.metric_table_for_name(name, None).await? else {
+                return Ok(Vec::new());
+            };
             let service_clause = service
                 .map(|svc| format!(r#" AND "service_name" = '{}'"#, escape(svc)))
                 .unwrap_or_default();
@@ -1130,7 +1593,7 @@ impl TelemetryStore for GreptimeStore {
                    FROM "{}"
                    WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}{service_clause}
                    GROUP BY "bucket_ms" ORDER BY "bucket_ms""#,
-                escape_ident(name),
+                escape_ident(&table),
                 sql_ts(range.start() / 1_000_000),
                 sql_ts(range.end() / 1_000_000),
             ))
@@ -1159,6 +1622,9 @@ impl TelemetryStore for GreptimeStore {
         step_nanos: u128,
         q: f64,
     ) -> anyhow::Result<Vec<SeriesPoint>> {
+        let Some(bucket_table) = self.metric_table_for_name(name, Some("_bucket")).await? else {
+            return Ok(Vec::new());
+        };
         // native: explicit-bucket histograms split into `<name>_bucket`
         // (cumulative `greptime_value` per `le` tag), `<name>_count`, `<name>_sum`.
         // Read the bucket rows, merge per time window, then interpolate.
@@ -1169,10 +1635,10 @@ impl TelemetryStore for GreptimeStore {
             .sql_lenient(&format!(
                 r#"SELECT CAST("greptime_timestamp" AS BIGINT) AS "ts_ms",
                           CAST("le" AS DOUBLE) AS "le", "greptime_value" AS "cumulative"
-                   FROM "{}_bucket"
+                   FROM "{}"
                    WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}{service_clause}
                    ORDER BY "greptime_timestamp" ASC"#,
-                escape_ident(name),
+                escape_ident(&bucket_table),
                 sql_ts(range.start() / 1_000_000),
                 sql_ts(range.end() / 1_000_000),
             ))
@@ -1198,6 +1664,45 @@ impl TelemetryStore for GreptimeStore {
             .map(|(ts_nanos, bounds)| SeriesPoint {
                 ts_nanos,
                 value: quantile_from_cumulative(&bounds, q),
+            })
+            .collect())
+    }
+
+    async fn metric_exemplars(
+        &self,
+        name: &str,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        limit: usize,
+    ) -> anyhow::Result<Vec<MetricExemplarRow>> {
+        let service_clause = service
+            .map(|svc| format!(r#" AND "service" = '{}'"#, escape(svc)))
+            .unwrap_or_default();
+        let rows = self
+            .sql_lenient(&format!(
+                r#"SELECT CAST("ts" AS BIGINT) AS "ts_nanos",
+                          "service", "name", "value", "trace_id", "span_id", "run_id",
+                          json_to_string("attributes")
+                   FROM metric_exemplars
+                   WHERE "name" = '{}' AND "ts" >= {} AND "ts" <= {}{service_clause}
+                   ORDER BY "ts" DESC LIMIT {}"#,
+                escape(name),
+                sql_ts(*range.start()),
+                sql_ts(*range.end()),
+                limit.min(MAX_ROWS)
+            ))
+            .await?;
+        Ok(rows
+            .iter()
+            .map(|row| MetricExemplarRow {
+                ts_nanos: u128_at(row, 0),
+                service: str_at(row, 1),
+                name: str_at(row, 2),
+                value: f64_at(row, 3),
+                trace_id: str_at(row, 4),
+                span_id: str_at(row, 5),
+                run_id: opt_str_at(row, 6),
+                attributes: json_at(row, 7),
             })
             .collect())
     }
@@ -1244,32 +1749,43 @@ impl TelemetryStore for GreptimeStore {
     ) -> anyhow::Result<Vec<crate::adapter::ObservedRun>> {
         let mut runs: std::collections::HashMap<String, crate::adapter::ObservedRun> =
             std::collections::HashMap::new();
-        // Native logs promote run id to `parallax.run.id`. Some GreptimeDB
-        // trace schemas do not flatten the run resource attribute to a column,
-        // so span counts derive from traces linked through run-scoped logs.
+        // Native logs promote run id. Some GreptimeDB trace schemas do not
+        // flatten the run resource attribute to a column, so span counts derive
+        // from traces linked through run-scoped logs.
         let sources = [
             (
-                r#"SELECT l."parallax.run.id" AS "run_id",
+                format!(
+                    r#"SELECT l.{} AS "run_id",
                           CAST(MIN(s."timestamp") AS BIGINT) AS "first_ts",
                           CAST(MAX(s."timestamp") AS BIGINT) AS "last_ts",
                           COUNT(DISTINCT s."span_id") AS "n",
                           MAX(s."service_name") AS "svc"
                    FROM opentelemetry_logs l
                    JOIN opentelemetry_traces s ON s."trace_id" = l."trace_id"
-                   WHERE l."parallax.run.id" IS NOT NULL
-                     AND l."parallax.run.id" != ''
+                   WHERE l.{} IS NOT NULL
+                     AND l.{} != ''
                    GROUP BY "run_id" ORDER BY "last_ts" DESC LIMIT "#,
+                    wire_attr_ident(semconv::PARALLAX_RUN_ID),
+                    wire_attr_ident(semconv::PARALLAX_RUN_ID),
+                    wire_attr_ident(semconv::PARALLAX_RUN_ID)
+                ),
                 true,
             ),
             (
-                r#"SELECT "parallax.run.id" AS "run_id",
+                format!(
+                    r#"SELECT {} AS "run_id",
                           CAST(MIN("timestamp") AS BIGINT) AS "first_ts",
                           CAST(MAX("timestamp") AS BIGINT) AS "last_ts",
                           COUNT(*) AS "n",
-                          MAX(json_get_string("resource_attributes", '$."service.name"')) AS "svc"
+                          MAX({}) AS "svc"
                    FROM opentelemetry_logs
-                   WHERE "parallax.run.id" IS NOT NULL AND "parallax.run.id" != ''
+                   WHERE {} IS NOT NULL AND {} != ''
                    GROUP BY "run_id" ORDER BY "last_ts" DESC LIMIT "#,
+                    wire_attr_ident(semconv::PARALLAX_RUN_ID),
+                    resource_json_get(semconv::SERVICE_NAME),
+                    wire_attr_ident(semconv::PARALLAX_RUN_ID),
+                    wire_attr_ident(semconv::PARALLAX_RUN_ID)
+                ),
                 false,
             ),
         ];
@@ -1489,6 +2005,161 @@ impl TelemetryStore for GreptimeStore {
         Ok(rows)
     }
 
+    async fn span_field_keys(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<FieldKey>> {
+        let mut columns = self.span_field_columns().await?;
+        columns.truncate(FIELD_KEYS_CAP);
+        if columns.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let mut projections = vec!["COUNT(*) AS \"__total\"".to_string()];
+        for (index, column) in columns.iter().enumerate() {
+            projections.push(format!(
+                r#"SUM(CASE WHEN {} IS NOT NULL THEN 1 ELSE 0 END) AS "k{index}""#,
+                quoted_field_column(column)
+            ));
+        }
+        let rows = self
+            .sql_lenient(&format!(
+                r#"SELECT {}
+                   FROM opentelemetry_traces
+                   WHERE "timestamp" >= {} AND "timestamp" <= {}"#,
+                projections.join(", "),
+                sql_ts(*range.start()),
+                sql_ts(*range.end())
+            ))
+            .await?;
+        let Some(row) = rows.first() else {
+            return Ok(Vec::new());
+        };
+        let row_count = u128_at(row, 0) as u64;
+
+        Ok(columns
+            .into_iter()
+            .enumerate()
+            .filter_map(|(index, column)| {
+                let non_null_count = u128_at(row, index + 1) as u64;
+                (non_null_count > 0).then(|| FieldKey {
+                    namespace: field_key_namespace(&column.key),
+                    coverage: if row_count == 0 {
+                        0.0
+                    } else {
+                        non_null_count as f64 / row_count as f64
+                    },
+                    is_identifier: field_key_identifier_like(&column.key),
+                    key: column.key,
+                    source: column.source,
+                    row_count,
+                    non_null_count,
+                })
+            })
+            .collect())
+    }
+
+    async fn span_field_stats(
+        &self,
+        key: &str,
+        range: RangeInclusive<u128>,
+        service: Option<&str>,
+    ) -> anyhow::Result<FieldStats> {
+        anyhow::ensure!(span_field_key_allowed(key), "invalid field key");
+        let Some(column) = self
+            .span_field_columns()
+            .await?
+            .into_iter()
+            .find(|column| column.key == key)
+        else {
+            anyhow::bail!("unknown span field key");
+        };
+        let column_ident = quoted_field_column(&column);
+        let mut clauses = vec![format!(
+            r#""timestamp" >= {} AND "timestamp" <= {}"#,
+            sql_ts(*range.start()),
+            sql_ts(*range.end())
+        )];
+        if let Some(service) = service {
+            clauses.push(format!(r#""service_name" = '{}'"#, escape(service)));
+        }
+        let base_where = clauses.join(" AND ");
+
+        let totals = self
+            .sql_lenient(&format!(
+                r#"SELECT COUNT(*) AS "total",
+                          SUM(CASE WHEN {column_ident} IS NOT NULL THEN 1 ELSE 0 END) AS "non_null"
+                   FROM opentelemetry_traces
+                   WHERE {base_where}"#
+            ))
+            .await?;
+        let row_count = totals
+            .first()
+            .map(|row| u128_at(row, 0) as u64)
+            .unwrap_or(0);
+        let non_null_count = totals
+            .first()
+            .map(|row| u128_at(row, 1) as u64)
+            .unwrap_or(0);
+        let value_expr = format!("CAST({column_ident} AS STRING)");
+        let sample_where = format!("{base_where} AND {column_ident} IS NOT NULL");
+        let sample_sql = format!(
+            r#"SELECT {value_expr} AS "value"
+               FROM opentelemetry_traces
+               WHERE {sample_where}
+               ORDER BY "timestamp" DESC
+               LIMIT {MAX_ROWS}"#
+        );
+
+        let distinct_rows = self
+            .sql_lenient(&format!(
+                r#"SELECT COUNT(DISTINCT "value") AS "distinct_count"
+                   FROM ({sample_sql}) AS "field_sample""#
+            ))
+            .await?;
+        let distinct_count = distinct_rows
+            .first()
+            .map(|row| u128_at(row, 0) as u64)
+            .unwrap_or(0);
+
+        let value_rows = self
+            .sql_lenient(&format!(
+                r#"SELECT "value", COUNT(*) AS "count"
+                   FROM ({sample_sql}) AS "field_sample"
+                   GROUP BY "value"
+                   ORDER BY "count" DESC, "value" ASC
+                   LIMIT {FIELD_TOP_VALUES_CAP}"#
+            ))
+            .await?;
+        let top_values = value_rows
+            .iter()
+            .filter_map(|row| {
+                let value = field_value_display(&str_at(row, 0))?;
+                Some(FieldValueCount {
+                    value,
+                    count: u128_at(row, 1) as u64,
+                })
+            })
+            .collect();
+        let sample_count = non_null_count.min(MAX_ROWS as u64);
+        let is_identifier = field_key_identifier_like(key)
+            || (sample_count >= 20 && distinct_count >= sample_count.saturating_sub(1));
+
+        Ok(FieldStats {
+            key: key.to_string(),
+            namespace: field_key_namespace(key),
+            source: column.source,
+            row_count,
+            non_null_count,
+            distinct_count,
+            coverage: if row_count == 0 {
+                0.0
+            } else {
+                non_null_count as f64 / row_count as f64
+            },
+            capped: non_null_count > MAX_ROWS as u64,
+            is_identifier,
+            top_values,
+        })
+    }
+
     async fn service_map(
         &self,
         range: RangeInclusive<u128>,
@@ -1616,12 +2287,14 @@ impl TelemetryStore for GreptimeStore {
         let rows = self
             .sql_lenient(&format!(
                 r#"SELECT CAST("timestamp" AS BIGINT) AS "ts_nanos",
-                          json_get_string("resource_attributes", '$."service.name"') AS "service",
+                          {} AS "service",
                           "severity_number", "severity_text", "body", "trace_id", "span_id",
-                          "parallax.run.id", "scope_name",
+                          {}, "scope_name",
                           json_to_string("log_attributes"),
                           json_to_string("resource_attributes")
                    FROM opentelemetry_logs WHERE {} ORDER BY "timestamp" DESC LIMIT {limit}"#,
+                resource_json_get(semconv::SERVICE_NAME),
+                wire_attr_ident(semconv::PARALLAX_RUN_ID),
                 clauses.join(" AND ")
             ))
             .await?;
@@ -1637,6 +2310,18 @@ impl TelemetryStore for GreptimeStore {
         step_nanos: u128,
         agg: MetricAgg,
     ) -> anyhow::Result<Vec<(String, Vec<SeriesPoint>)>> {
+        anyhow::ensure!(
+            metric_group_label_allowed(group_by),
+            "high-cardinality identifier - filter, don't group"
+        );
+        let labels = self.metric_labels(name).await?;
+        anyhow::ensure!(
+            labels.iter().any(|label| label == group_by),
+            "unknown metric label"
+        );
+        let Some(table) = self.metric_table_for_name(name, None).await? else {
+            return Ok(Vec::new());
+        };
         let step_secs = (step_nanos / 1_000_000_000).max(1);
         let sql_agg = match agg {
             MetricAgg::Avg => "avg",
@@ -1658,7 +2343,7 @@ impl TelemetryStore for GreptimeStore {
                    FROM "{}"
                    WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}{service_clause}
                    GROUP BY "grp", "bucket_ms" ORDER BY "grp", "bucket_ms""#,
-                escape_ident(name),
+                escape_ident(&table),
                 sql_ts(range.start() / 1_000_000),
                 sql_ts(range.end() / 1_000_000),
             ))
@@ -1681,6 +2366,42 @@ impl TelemetryStore for GreptimeStore {
                 (group, series)
             })
             .collect())
+    }
+
+    async fn runtime_snapshot(
+        &self,
+        service: Option<&str>,
+        run_id: Option<&str>,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+    ) -> anyhow::Result<Vec<RuntimeMetricSeries>> {
+        let mut rows = Vec::new();
+        for metric in self.metric_names().await? {
+            let Some(family) = runtime_metric_family(&metric) else {
+                continue;
+            };
+            let points = self
+                .metric_series(
+                    &metric,
+                    service,
+                    run_id,
+                    range.clone(),
+                    step_nanos,
+                    MetricAgg::Avg,
+                )
+                .await?;
+            if points.is_empty() {
+                continue;
+            }
+            rows.push(RuntimeMetricSeries {
+                family: family.to_string(),
+                metric: metric.clone(),
+                unit: runtime_metric_unit(&metric),
+                points,
+            });
+        }
+        rows.sort_by(|a, b| a.family.cmp(&b.family).then(a.metric.cmp(&b.metric)));
+        Ok(rows)
     }
 
     async fn histogram_count_series(
@@ -1785,6 +2506,31 @@ impl TelemetryStore for GreptimeStore {
 }
 
 impl GreptimeStore {
+    async fn span_field_columns(&self) -> anyhow::Result<Vec<SpanFieldColumn>> {
+        let rows = self
+            .sql(
+                r#"SELECT "column_name" FROM information_schema.columns
+                   WHERE "table_schema" = 'public'
+                     AND "table_name" = 'opentelemetry_traces'
+                     AND ("column_name" LIKE 'span_attributes.%'
+                          OR "column_name" LIKE 'resource_attributes.%')
+                   ORDER BY "column_name""#,
+            )
+            .await?;
+        let mut columns = vec![SpanFieldColumn {
+            key: format!("resource.{}", semconv::SERVICE_NAME),
+            column: "service_name".to_string(),
+            source: FieldSource::Resource,
+        }];
+        let service_name_key = format!("resource.{}", semconv::SERVICE_NAME);
+        columns.extend(
+            rows.iter()
+                .filter_map(|row| span_field_column_from_name(&str_at(row, 0)))
+                .filter(|column| column.key != service_name_key),
+        );
+        Ok(columns)
+    }
+
     async fn discover_span_attribute_keys(&self) -> anyhow::Result<BTreeSet<String>> {
         let rows = self
             .sql(
@@ -1867,6 +2613,7 @@ impl GreptimeStore {
             "opentelemetry_logs",
             "error_events",
             "run_metric_points",
+            "metric_exemplars",
             "greptime_physical_table",
         ];
         let rows = self
@@ -1875,22 +2622,53 @@ impl GreptimeStore {
                    WHERE "table_schema" = 'public'"#,
             )
             .await?;
+        let tables = rows
+            .iter()
+            .map(|row| str_at(row, 0))
+            .filter(|table| {
+                !table.is_empty()
+                    && !RESERVED.contains(&table.as_str())
+                    && !table.starts_with("opentelemetry_")
+            })
+            .collect::<Vec<_>>();
+        let table_set = tables
+            .iter()
+            .cloned()
+            .collect::<std::collections::BTreeSet<_>>();
         let mut names = std::collections::BTreeSet::new();
-        for row in &rows {
-            let table = str_at(row, 0);
-            if table.is_empty()
-                || RESERVED.contains(&table.as_str())
-                || table.starts_with("opentelemetry_")
-            {
-                continue;
-            }
-            // Collapse explicit-histogram siblings back to the base metric name.
-            let base = table
-                .strip_suffix("_bucket")
-                .or_else(|| table.strip_suffix("_count"))
-                .or_else(|| table.strip_suffix("_sum"))
-                .unwrap_or(&table);
-            names.insert(base.to_string());
+        for table in tables {
+            let base = if let Some(base) = table.strip_suffix("_bucket") {
+                base.to_string()
+            } else if let Some(base) = table.strip_suffix("_count") {
+                if table_set.contains(&format!("{base}_bucket")) {
+                    base.to_string()
+                } else {
+                    table.clone()
+                }
+            } else if let Some(base) = table.strip_suffix("_sum") {
+                if table_set.contains(&format!("{base}_bucket")) {
+                    base.to_string()
+                } else {
+                    table.clone()
+                }
+            } else {
+                table.clone()
+            };
+            let display = runtime_display_name(&base).unwrap_or_else(|| base.to_string());
+            names.insert(canonical_metric_display_name(&display));
+        }
+
+        // Run-scoped extension rows keep the original OTLP metric name. Union
+        // them so run dashboards can use dotted names even when native table
+        // names are Prometheus-normalized.
+        for row in self
+            .sql_lenient(
+                r#"SELECT DISTINCT "name" FROM run_metric_points
+                   WHERE "name" IS NOT NULL AND "name" != ''"#,
+            )
+            .await?
+        {
+            names.insert(canonical_metric_display_name(&str_at(&row, 0)));
         }
         Ok(names)
     }

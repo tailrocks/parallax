@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
 import {
   Outlet,
   RouterProvider,
@@ -9,12 +9,31 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
 import { nav } from "@/components/nav"
 import { PageHeader } from "@/components/page-header"
 import { ParallaxShell } from "@/components/parallax-shell"
 import { RouteErrorPanel } from "@/components/route-fallbacks"
+
+vi.mock("@/lib/api", () => ({
+  graphql: vi.fn().mockImplementation(async (query: string) => {
+    if (query.includes("{ services }")) return { services: [] }
+    if (query.includes("tracesPage")) {
+      return { tracesPage: { items: [] }, runs: [] }
+    }
+    return { dashboards: [] }
+  }),
+}))
+
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+globalThis.ResizeObserver = ResizeObserverMock
+window.HTMLElement.prototype.scrollIntoView = vi.fn()
 
 function renderWithRouter(component: React.ReactNode) {
   window.scrollTo = () => {}
@@ -85,6 +104,8 @@ describe("shell primitives", () => {
     )
 
     expect(await screen.findByLabelText("Parallax home")).toBeTruthy()
+    fireEvent.click(screen.getByRole("button", { name: /search/i }))
+    expect(await screen.findByPlaceholderText(/search pages/i)).toBeTruthy()
     expect(screen.getByText("Parallax API did not answer")).toBeTruthy()
     expect(screen.getByText("offline")).toBeTruthy()
   })
