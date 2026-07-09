@@ -41,6 +41,22 @@ structure quickly.
   in-memory adapter exists for tests/dev harnesses only and is never a
   product mode. Canonical record:
   [docs/research/decisions/metadata-store.md](docs/research/decisions/metadata-store.md).
+- GreptimeDB native-table rule (operator, 2026-07-09): **raw observability
+  signals must use GreptimeDB native tables, always.** Logs use
+  `opentelemetry_logs`; traces use `opentelemetry_traces` and its native helper
+  tables; metrics use the native per-metric tables. Do not create hand-rolled
+  raw-signal tables for logs, traces, metrics, profiles, or future GreptimeDB
+  native OTLP signals. Native tables are where GreptimeDB's team is focusing
+  performance and compatibility work, and Ning Sun (Greptime CTO/co-founder)
+  has directly recommended that Parallax design around them. If a native table
+  lacks something Parallax needs, first try native extension points (`ALTER`
+  columns/indexes, pipeline headers, extract keys, native functions, Flows, or
+  upstream fixes). Before proposing any custom raw-signal table or GreptimeDB
+  pull request, do deep research against latest stable + latest nightly/source,
+  run a live spike when feasible, write the findings under `docs/research/`,
+  and consult Ning / the GreptimeDB team with that packet. Only
+  Parallax-derived extension tables are allowed, and they must be justified in
+  [docs/research/decisions/native-otel-tables.md](docs/research/decisions/native-otel-tables.md).
 - Version policy (operator, 2026-06-12): always use the latest stable versions
   everywhere — crates, engines, UI dependencies, toolchains. Version tables in
   docs are known-compatible floors, not freezes; when implementing, resolve
