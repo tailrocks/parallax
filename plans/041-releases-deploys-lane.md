@@ -7,10 +7,13 @@ release/deploy data.
 
 ## Remaining Work
 
-- [ ] Seed or run playground release data.
-- [ ] Verify the release lane, regression badge, and issue-release linkage in
-  the UI.
-- [ ] Record screenshots or route evidence.
+- [ ] Run A13 against `parallax serve` with `RELEASE=v1` and `RELEASE=v2`
+  telemetry.
+- [ ] Capture `/services/checkout` showing the release strip with `v1`/`v2`
+  windows.
+- [ ] Capture `/issues/<fingerprint>` showing the neutral `release v2` badge
+  and trace/resource linkage.
+- [ ] Record screenshot, route, or GraphQL evidence with trace/issue IDs.
 
 ## Remove When
 

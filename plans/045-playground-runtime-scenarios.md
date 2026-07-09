@@ -2,15 +2,17 @@
 
 ## Audit Verdict
 
-Implementation is mostly landed. B20 no longer auto-passes `--yes`, and
-stale exemplar docs were corrected. Remaining item is live scenario evidence.
+Implementation is landed. B20 no longer auto-passes `--yes`, and stale
+exemplar docs were corrected. Remaining item is live scenario evidence.
 
 ## Remaining Work
 
-- [ ] Run runtime scenarios that cover Tokio gauges, JVM pressure, container
-  limits, and exemplar configuration.
-- [ ] Record native GreptimeDB metric/log/trace evidence for each scenario.
-- [ ] Confirm dangerous scenarios still require explicit operator opt-in.
+- [ ] Record one evidence artifact covering A22 Tokio saturation, B19 JVM GC
+  pressure, B20 container limit/OOM, and A2 exemplar configuration.
+- [ ] Include exact commands, timestamp, environment, and repo SHAs.
+- [ ] Include native GreptimeDB SQL queries and row output from metric tables,
+  `opentelemetry_traces`, and `opentelemetry_logs` for each scenario.
+- [ ] Include trace IDs and B20 Docker OOM/restart evidence.
 
 ## Remove When
 
