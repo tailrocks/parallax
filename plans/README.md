@@ -1,9 +1,10 @@
 # Plans Audit Backlog
 
-This folder now holds only plan items that were not fully retired by the
-2026-07-09 sub-agent audit. Completed plans were removed. Remaining plan
-files are reduced to the exact missing implementation, verification, or
-evidence needed before deletion.
+This folder now holds only unfinished plan items. Completed plans were
+removed by the 2026-07-09 audit. A fresh 2026-07-10 independent sub-agent
+re-audit kept every active item below because each still has incomplete or
+weakly-evidenced work. Remaining plan files are reduced to the exact missing
+implementation, verification, or evidence needed before deletion.
 
 Rule: a plan file stays here only while it has an actionable incomplete,
 contradicted, or weak-evidence item. When its "Remove When" section is true,
@@ -35,7 +36,7 @@ delete that plan file and update this README.
 | 063 | TODO | Playground trace-shape scenarios | playground | live backdated skew proof |
 | 064 | TODO | Command center v1 | parallax | manual Overview brush proof |
 
-## Retired In This Audit
+## Previously Retired
 
 Removed as complete after audit and patch verification:
 
