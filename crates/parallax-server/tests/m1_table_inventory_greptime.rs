@@ -1,9 +1,10 @@
 //! Gated invariant: against a real GreptimeDB, the *only* tables Parallax
-//! creates are the two documented custom extension tables — every raw OTel
+//! creates are the documented custom extension tables — every raw OTel
 //! signal (traces, logs, metrics) lives in GreptimeDB's native auto-created
 //! tables, never a hand-rolled one. Pushes all three signals, then `SHOW
 //! TABLES` and asserts the inventory: native tables present, the extension set
-//! is exactly the two, and none of the retired `otel_*` raw tables exist.
+//! is exactly the documented set, and none of the retired `otel_*` raw tables
+//! exist.
 //!
 //! Run with: `cargo test -p parallax-server --test m1_table_inventory_greptime -- --ignored`
 
@@ -15,7 +16,7 @@ use std::time::Duration;
 
 /// Tables Parallax is allowed to create itself in GreptimeDB. Everything else
 /// must be a native OTLP table the engine auto-created from a forward.
-const ALLOWED_EXTENSIONS: &[&str] = &["error_events", "run_metric_points"];
+const ALLOWED_EXTENSIONS: &[&str] = &["error_events", "run_metric_points", "metric_exemplars"];
 
 /// The retired hand-rolled raw-signal tables — must never reappear.
 const RETIRED_RAW_TABLES: &[&str] = &[
@@ -156,7 +157,7 @@ async fn only_extension_tables_are_custom() {
     }
 
     // Every table is either a native OTLP table (opentelemetry_*), a native
-    // per-metric / metric-engine table, or one of the three allowed extensions.
+    // per-metric / metric-engine table, or one of the allowed extensions.
     // Anything else is an unexpected custom table.
     let unexpected: Vec<&String> = tables
         .iter()
@@ -171,17 +172,17 @@ async fn only_extension_tables_are_custom() {
         .collect();
     assert!(
         unexpected.is_empty(),
-        "no unexpected custom tables (only the 3 extensions are ours); found {unexpected:?} in {tables:?}"
+        "no unexpected custom tables (only documented extensions are ours); found {unexpected:?} in {tables:?}"
     );
 
-    // And the only *extension* tables present are a subset of the allowed three.
+    // And the only *extension* tables present are a subset of the allowed set.
     let extensions: Vec<&String> = tables
         .iter()
         .filter(|t| ALLOWED_EXTENSIONS.contains(&t.as_str()))
         .collect();
     assert!(
         extensions.len() <= ALLOWED_EXTENSIONS.len(),
-        "extension tables are a subset of the documented three: {extensions:?}"
+        "extension tables are a subset of the documented set: {extensions:?}"
     );
 
     handle.shutdown();

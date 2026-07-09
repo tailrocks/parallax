@@ -33,6 +33,7 @@ import { TableSkeleton } from "@/components/console/skeletons"
 import { useChartBrush } from "@/components/console/use-chart-brush"
 import {
   LogsTable,
+  OPTIONAL_LOG_COLUMNS,
   parseLogColumns,
   serializeLogColumns,
 } from "@/components/logs-table"
@@ -731,7 +732,7 @@ function HistogramCard({
   )
 }
 
-function ColumnMenu({
+export function ColumnMenu({
   columns,
   onChange,
 }: {
@@ -755,20 +756,18 @@ function ColumnMenu({
       <DropdownMenuContent align="end" className="w-44">
         <DropdownMenuLabel>Optional columns</DropdownMenuLabel>
         <DropdownMenuGroup>
-          {(["service", "trace", "scope"] as OptionalLogColumn[]).map(
-            (column) => (
-              <DropdownMenuCheckboxItem
-                key={column}
-                checked={columns.includes(column)}
-                onClick={(event) => {
-                  event.preventDefault()
-                  toggle(column)
-                }}
-              >
-                {column}
-              </DropdownMenuCheckboxItem>
-            )
-          )}
+          {OPTIONAL_LOG_COLUMNS.map((column) => (
+            <DropdownMenuCheckboxItem
+              key={column}
+              checked={columns.includes(column)}
+              onClick={(event) => {
+                event.preventDefault()
+                toggle(column)
+              }}
+            >
+              {column}
+            </DropdownMenuCheckboxItem>
+          ))}
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>

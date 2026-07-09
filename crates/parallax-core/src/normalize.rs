@@ -492,6 +492,22 @@ mod tests {
     }
 
     #[test]
+    fn normalize_logs_defaults_unset_event_name_and_observed_timestamp() {
+        let mut request = logs_request();
+        let record = &mut request.resource_logs[0].scope_logs[0].log_records[0];
+        record.event_name.clear();
+        record.time_unix_nano = 0;
+        record.observed_time_unix_nano = 0;
+
+        let rows = normalize_logs(&request);
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].ts_nanos, 0);
+        assert_eq!(rows[0].event_name, "");
+        assert_eq!(rows[0].observed_ts_nanos, 0);
+    }
+
+    #[test]
     fn promote_log_identity_attributes_adds_native_greptime_keys() {
         let mut request = logs_request();
 

@@ -146,8 +146,10 @@ async fn main() {
     }
     logger.emit(info);
     let mut typed = logger.create_log_record();
+    let emitted_at = std::time::SystemTime::now();
     typed.set_event_name("checkout.completed");
-    typed.set_observed_timestamp(std::time::SystemTime::now() + std::time::Duration::from_secs(2));
+    typed.set_timestamp(emitted_at);
+    typed.set_observed_timestamp(emitted_at + std::time::Duration::from_secs(2));
     typed.set_severity_number(Severity::Info);
     typed.set_severity_text("INFO");
     typed.set_body(AnyValue::from("checkout.completed"));

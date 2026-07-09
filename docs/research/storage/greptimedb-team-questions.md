@@ -79,9 +79,9 @@ table, a GreptimeDB pull request, or a major deviation from native OTLP tables:
   `trace_id` on an append table (inverted vs skipping)?
 - **Why it matters.** This is our one required deviation from the native log schema; the bundle hot
   path needs it.
-- **Fallback if no.** Use a custom logs extension table for indexed `trace_id` lookups, or pre-create
-  the log table with our indexes and point OTLP ingest at it (see Q4/Q5 on whether ingest accepts a
-  pre-created table).
+- **Fallback if no.** Stay on `opentelemetry_logs` and use JSON/scan reads while collecting a
+  research packet for Ning / the GreptimeDB team. The next candidate is to pre-create or `ALTER` the
+  native log table with the needed indexes, not to add a custom raw logs table.
 
 ## 4. Adding Parallax-specific columns to native tables
 
