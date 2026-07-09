@@ -212,6 +212,67 @@ pub struct Investigation {
     pub updated_at_nanos: u128,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct InvestigationState {
+    pub version: u8,
+    #[serde(default)]
+    pub window: InvestigationWindow,
+    #[serde(default)]
+    pub pins: Vec<InvestigationPin>,
+    #[serde(default)]
+    pub notes: String,
+}
+
+impl Default for InvestigationState {
+    fn default() -> Self {
+        Self {
+            version: 1,
+            window: InvestigationWindow::default(),
+            pins: Vec::new(),
+            notes: String::new(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct InvestigationWindow {
+    pub range: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub to: Option<String>,
+}
+
+impl Default for InvestigationWindow {
+    fn default() -> Self {
+        Self {
+            range: "24h".to_string(),
+            from: None,
+            to: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct InvestigationPin {
+    pub kind: InvestigationPinKind,
+    #[serde(rename = "ref")]
+    pub ref_: String,
+    pub label: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum InvestigationPinKind {
+    Trace,
+    Issue,
+    Run,
+    Log,
+    View,
+}
+
 /// Named saved URL-state view (metadata store).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SavedView {

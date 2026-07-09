@@ -38,19 +38,29 @@ describe("formatters", () => {
   })
 
   it("uses date labels for multi-day ranges", () => {
-    const label = formatTimeInRange("1719999999999999999", {
-      fromNanos: "1719400000000000000",
-      toNanos: "1720000000000000000",
+    const label = formatTimeInRange("2000000000", {
+      fromNanos: "1000000000",
+      toNanos: "172801000000000",
+      timeZone: "UTC",
     })
-    expect(label).toMatch(/\d/)
+    expect(label).toBe("Jan 1, 00:00:02")
   })
 
   it("formats short time labels", () => {
     expect(
-      formatTimeShort("1719999999999999999", {
+      formatTimeShort("2000000000", {
         minute: "2-digit",
         second: "2-digit",
+        hour12: false,
+        timeZone: "UTC",
       })
-    ).toMatch(/\d/)
+    ).toBe("00:02")
+    expect(
+      formatTimeInRange("2000000000", {
+        fromNanos: "1000000000",
+        toNanos: "3000000000",
+        timeZone: "UTC",
+      })
+    ).toBe("00:00:02")
   })
 })

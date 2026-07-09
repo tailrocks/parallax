@@ -30,5 +30,8 @@ describe("range search helpers", () => {
       from: "3000",
       to: "4000",
     })
+    expect(rangeLinkSearch(resolvePreset("1h", 1_720_000_000_000))).toEqual({
+      range: "1h",
+    })
   })
 })

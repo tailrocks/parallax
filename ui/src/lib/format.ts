@@ -64,16 +64,23 @@ export function formatRelative(
   return `${Math.floor(seconds / 86400)}d ago`
 }
 
-export function formatDateTime(value: string | number): string {
+export function formatDateTime(
+  value: string | number,
+  options: Intl.DateTimeFormatOptions = {}
+): string {
   const date = dateFromNanos(value)
-  return new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }).format(date)
+  return new Intl.DateTimeFormat(
+    undefined,
+    {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+      ...options,
+    }
+  ).format(date)
 }
 
 export function formatTimeShort(
@@ -91,7 +98,7 @@ export function formatTimeShort(
 
 export function formatTimeInRange(
   value: string | number,
-  range: { fromNanos: string; toNanos: string }
+  range: { fromNanos: string; toNanos: string; timeZone?: string }
 ): string {
   const windowNs = BigInt(range.toNanos) - BigInt(range.fromNanos)
   if (windowNs <= 86_400_000_000_000n) {
@@ -100,9 +107,10 @@ export function formatTimeInRange(
       minute: "2-digit",
       second: "2-digit",
       hour12: false,
+      timeZone: range.timeZone,
     })
   }
-  return formatDateTime(value)
+  return formatDateTime(value, { timeZone: range.timeZone })
 }
 
 export function formatPercent(value: number): string {

@@ -6,6 +6,7 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react"
 import {
@@ -113,6 +114,16 @@ function renderLogsHost(
   }
 }
 
+function makeLogs(count: number): LogDoc[] {
+  return Array.from({ length: count }, (_, index) => ({
+    ...log,
+    _key: `log-${index}`,
+    tsNanos: `${2_000_000_000 + index}`,
+    traceId: `trace-${index}`,
+    body: `log body ${index}`,
+  }))
+}
+
 describe("logs redesign helpers", () => {
   it("computes bucket and drag windows", () => {
     const points = [
@@ -172,6 +183,25 @@ describe("logs redesign helpers", () => {
 })
 
 describe("LogsTable", () => {
+  it("skips virtualizer overhead for capped log sets", async () => {
+    const { container } = renderWithRouter(
+      <LogsTable logs={makeLogs(100)} range={range} columns={["service"]} />
+    )
+
+    expect(await screen.findByText("log body 0")).toBeTruthy()
+    expect(container.querySelector("[data-virtualized='logs']")).toBeNull()
+  })
+
+  it("virtualizes log sets over the threshold", async () => {
+    const { container } = renderWithRouter(
+      <LogsTable logs={makeLogs(101)} range={range} columns={["service"]} />
+    )
+
+    await waitFor(() => {
+      expect(container.querySelector("[data-virtualized='logs']")).toBeTruthy()
+    })
+  })
+
   it("keeps existing row DOM nodes when live logs prepend", async () => {
     const logs = [
       { ...log, tsNanos: "4000000000", traceId: "trace-a", body: "a" },
