@@ -81,11 +81,10 @@ fn host_target() -> anyhow::Result<&'static str> {
 }
 
 /// Known-good fallback when "latest" cannot be resolved (no network to the
-/// GitHub API): the compatible floor from the implementation spec.
-/// Native-capable floor used when the GitHub API is unreachable. Parallax's
-/// whole storage path is native-OTLP, which requires the v1.1.0 line (the
-/// `greptime_trace_v1` traces pipeline); the default pin below tracks it.
-const FALLBACK_VERSION: &str = "1.1.0";
+/// GitHub API). Parallax's whole storage path is native-OTLP, so this fallback
+/// tracks the latest verified stable release instead of freezing the original
+/// native-capable floor.
+const FALLBACK_VERSION: &str = "1.1.2";
 
 /// Resolve "latest" to a concrete release tag via the GitHub API, falling back
 /// to the pinned native-capable floor when the API is unreachable. An explicit

@@ -355,12 +355,12 @@ all **native/engine-owned** — plus exactly **`error_events`, `rollups_fingerpr
 `run_metric_points`** as the custom extensions. Every raw OTel signal lives in a native table; zero
 hand-rolled raw tables remain.
 
-**Engine version — DECIDED (operator, 2026-06-18): pin v1.1.0** (the named release; the operator
-treats it as the latest usable line). The native OTLP traces pipeline (`greptime_trace_v1`) requires
-the v1.1.0 line; GitHub's `releases/latest` returns only the newest *stable* tag (v1.0.2), which
-predates it, so the default is now an explicit pin (`StorageConfig::greptime_version = "1.1.0"`,
-`FALLBACK_VERSION = "1.1.0"`) rather than `"latest"`. Bump the pin when a newer native-capable release
-ships (version table = floor, not freeze).
+**Engine version — UPDATED (operator, 2026-07-09): pin v1.1.2.** The native OTLP traces pipeline
+(`greptime_trace_v1`) requires the v1.1.x line; v1.1.2 is the latest stable release verified by the
+Plan 055 native-table smoke test. The default is an explicit pin
+(`StorageConfig::greptime_version = "1.1.2"`, `FALLBACK_VERSION = "1.1.2"`) rather than `"latest"` so
+isolated installs are reproducible. Bump the pin when a newer native-capable stable release ships
+(version table = floor, not freeze).
 
 ## Open questions → current decisions / leans
 
