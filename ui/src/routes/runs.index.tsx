@@ -24,6 +24,7 @@ import {
 import { graphql } from "@/lib/api"
 import { formatCount, formatDurationNs } from "@/lib/format"
 import {
+  rangeLinkSearch,
   rangeSearchSchema,
   resolveRangeSearch,
   updateRangeSearch,
@@ -239,7 +240,13 @@ function RunsPage() {
       search={search}
       range={range}
       onSearch={setSearch}
-      onRun={(runId) => navigate({ to: "/runs/$runId", params: { runId } })}
+      onRun={(runId) =>
+        navigate({
+          to: "/runs/$runId",
+          params: { runId },
+          search: rangeLinkSearch(range),
+        })
+      }
     />
   )
 }
@@ -265,6 +272,7 @@ export function RunsContent({
       `${row.runId} ${row.command ?? ""} ${row.service ?? ""}`.toLowerCase()
     return matchesStatus && haystack.includes(query)
   })
+  const detailSearch = rangeLinkSearch(range)
 
   return (
     <div className="space-y-4">
@@ -363,6 +371,7 @@ export function RunsContent({
                         <Link
                           to="/runs/$runId"
                           params={{ runId: row.runId }}
+                          search={detailSearch}
                           className="min-w-0 hover:underline"
                           onClick={(event) => event.stopPropagation()}
                         >
@@ -391,6 +400,7 @@ export function RunsContent({
                         <Link
                           to="/runs/$runId"
                           params={{ runId: row.runId }}
+                          search={detailSearch}
                           className="hover:underline"
                           onClick={(event) => event.stopPropagation()}
                         >
@@ -412,6 +422,7 @@ export function RunsContent({
                         <Link
                           to="/runs/$runId"
                           params={{ runId: row.runId }}
+                          search={detailSearch}
                           className="hover:underline"
                           onClick={(event) => event.stopPropagation()}
                         >

@@ -43,6 +43,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { gqlString, graphql } from "@/lib/api"
 import type { RuntimeMetric, StoryBeat } from "@/lib/api"
 import { formatCount, formatDurationNs } from "@/lib/format"
+import { rangeLinkSearch, resolveRangeSearch } from "@/lib/range"
+import type { ResolvedRange } from "@/lib/range"
 import { cn } from "@/lib/utils"
 import { RunStatusBadge, durationNs } from "@/routes/runs.index"
 import type { RunRow } from "@/routes/runs.index"
@@ -91,11 +93,23 @@ type RunDetailTab = "overview" | "story"
 
 interface RunDetailSearch {
   tab?: RunDetailTab | undefined
+  range?: string | undefined
+  from?: string | undefined
+  to?: string | undefined
+}
+
+function searchString(value: unknown) {
+  if (typeof value === "string") return value
+  if (typeof value === "number" && Number.isFinite(value)) return String(value)
+  return undefined
 }
 
 export const Route = createFileRoute("/runs/$runId")({
   validateSearch: (search: Record<string, unknown>): RunDetailSearch => ({
     tab: search.tab === "story" ? "story" : undefined,
+    range: searchString(search.range),
+    from: searchString(search.from),
+    to: searchString(search.to),
   }),
   loader: ({ params }) => {
     const toNanos = (
@@ -173,6 +187,7 @@ function RunDetailPage() {
   const { runId } = Route.useParams()
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
+  const range = resolveRangeSearch(search)
   const [live, setLive] = useState(false)
   const [liveLogs, setLiveLogs] = useState<LogDoc[]>([])
   const [liveSpans, setLiveSpans] = useState<LiveSpan[]>([])
@@ -271,6 +286,7 @@ function RunDetailPage() {
       story={story}
       runtimeSnapshot={runtimeSnapshot}
       agentSession={agentSession}
+      range={range}
       activeTab={search.tab === "story" ? "story" : "overview"}
       onTab={(value) =>
         navigate({
@@ -297,6 +313,7 @@ export function RunDetailContent({
   story = [],
   runtimeSnapshot,
   agentSession = null,
+  range,
   activeTab = "overview",
   onTab = () => {},
   live,
@@ -312,6 +329,7 @@ export function RunDetailContent({
   story?: StoryBeat[]
   runtimeSnapshot: RuntimeMetric[]
   agentSession?: AgentSessionData | null
+  range: ResolvedRange
   activeTab?: RunDetailTab
   onTab?: (value: string) => void
   live: boolean
@@ -426,8 +444,10 @@ export function RunDetailContent({
           ) : null}
           <RuntimeSnapshotCard metrics={runtimeSnapshot} />
 
-          {run?.issues.length ? <IssuesCard issues={run.issues} /> : null}
-          {traces.length ? <TracesCard traces={traces} /> : null}
+          {run?.issues.length ? (
+            <IssuesCard issues={run.issues} range={range} />
+          ) : null}
+          {traces.length ? <TracesCard traces={traces} range={range} /> : null}
           {logs.length ? (
             <Card>
               <CardHeader>
@@ -439,7 +459,7 @@ export function RunDetailContent({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <LogsTable logs={logs} />
+                <LogsTable logs={logs} range={range} />
               </CardContent>
             </Card>
           ) : null}
@@ -503,7 +523,13 @@ function RunStats({ run, row }: { run: RunRecordData; row: RunRow }) {
   )
 }
 
-function IssuesCard({ issues }: { issues: RunIssue[] }) {
+function IssuesCard({
+  issues,
+  range,
+}: {
+  issues: RunIssue[]
+  range: ResolvedRange
+}) {
   return (
     <Card>
       <CardHeader>
@@ -519,6 +545,7 @@ function IssuesCard({ issues }: { issues: RunIssue[] }) {
               <Link
                 to="/issues/$fingerprint"
                 params={{ fingerprint: issue.fingerprint }}
+                search={rangeLinkSearch(range)}
                 className="min-w-0 truncate font-medium hover:underline"
               >
                 {issue.errorType ? `${issue.errorType}: ` : ""}
@@ -538,7 +565,13 @@ function IssuesCard({ issues }: { issues: RunIssue[] }) {
   )
 }
 
-function TracesCard({ traces }: { traces: RunTraceSummary[] }) {
+function TracesCard({
+  traces,
+  range,
+}: {
+  traces: RunTraceSummary[]
+  range: ResolvedRange
+}) {
   const durations = traces.map((trace) => Number(trace.durationNs))
   const scale = useMemo(() => buildHeatScale(durations), [durations])
   return (
@@ -570,6 +603,7 @@ function TracesCard({ traces }: { traces: RunTraceSummary[] }) {
                     <Link
                       to="/traces/$traceId"
                       params={{ traceId: trace.traceId }}
+                      search={rangeLinkSearch(range)}
                       className="inline-flex items-center gap-1 font-medium hover:underline"
                     >
                       {trace.rootName || trace.traceId}

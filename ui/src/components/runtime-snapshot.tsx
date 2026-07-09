@@ -9,17 +9,11 @@ import {
 } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
 import type { RuntimeMetric } from "@/lib/api"
+import { formatTimeShort } from "@/lib/format"
 
 const runtimeConfig = {
   value: { label: "Value", color: "var(--chart-1)" },
 } satisfies ChartConfig
-
-function formatRuntimeTime(tsNanos: string) {
-  return new Date(Number(BigInt(tsNanos) / 1_000_000n)).toLocaleTimeString([], {
-    minute: "2-digit",
-    second: "2-digit",
-  })
-}
 
 function formatMetricName(name: string) {
   return name
@@ -44,7 +38,10 @@ function RuntimeChart({ metric }: { metric: RuntimeMetric }) {
   const data = useMemo(
     () =>
       metric.points.map((point) => ({
-        time: formatRuntimeTime(point.tsNanos),
+        time: formatTimeShort(point.tsNanos, {
+          minute: "2-digit",
+          second: "2-digit",
+        }),
         value: Number(displayValue(metric, point.value).toFixed(2)),
       })),
     [metric]

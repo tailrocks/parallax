@@ -212,14 +212,14 @@ describe("Overview route", () => {
       (
         await screen.findByRole("link", { name: /checkout timeout/i })
       ).getAttribute("href")
-    ).toBe("/issues/issue-a")
+    ).toBe("/issues/issue-a?range=24h")
     expect(
       (
         await screen.findByRole("link", {
           name: new RegExp("post /checkout", "i"),
         })
       ).getAttribute("href")
-    ).toBe("/traces/trace-a")
+    ).toBe("/traces/trace-a?range=24h")
   })
 
   it("renders onboarding when there is no telemetry", async () => {

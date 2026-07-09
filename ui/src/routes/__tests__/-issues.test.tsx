@@ -72,7 +72,7 @@ const detailFixture = {
       body: "panicked",
     },
   ],
-  traceRunId: null,
+  traceRunId: "run-a",
   releaseVersion: "v1",
 }
 
@@ -106,8 +106,18 @@ function renderWithRouter(component: React.ReactNode, path = "/issues") {
     path: "/traces/$traceId",
     component: () => null,
   })
+  const runRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/runs/$runId",
+    component: () => null,
+  })
   const router = createRouter({
-    routeTree: rootRoute.addChildren([issuesRoute, issueRoute, traceRoute]),
+    routeTree: rootRoute.addChildren([
+      issuesRoute,
+      issueRoute,
+      traceRoute,
+      runRoute,
+    ]),
     history: createMemoryHistory({ initialEntries: [path] }),
   })
 
@@ -133,7 +143,7 @@ describe("Issues route", () => {
     ).toBe("/services/checkout?range=24h")
     expect(
       screen.getByRole("link", { name: /trace trace-a/i }).getAttribute("href")
-    ).toBe("/traces/trace-a")
+    ).toBe("/traces/trace-a?range=24h")
     const links = screen.getAllByRole("link")
     expect(
       links.some(
@@ -159,5 +169,15 @@ describe("Issues route", () => {
     ).toBeTruthy()
     expect(screen.getByText("Logs around latest event")).toBeTruthy()
     expect(screen.getByText("parallax issue context panic-a")).toBeTruthy()
+    expect(
+      screen
+        .getAllByRole("link")
+        .some((link) => link.getAttribute("href") === "/runs/run-a?range=24h")
+    ).toBe(true)
+    expect(
+      screen
+        .getByRole("link", { name: /open trace trace-a/i })
+        .getAttribute("href")
+    ).toBe("/traces/trace-a?range=24h")
   })
 })

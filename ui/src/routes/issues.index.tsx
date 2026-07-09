@@ -376,6 +376,7 @@ export function IssuesContent({
                             <Link
                               to="/traces/$traceId"
                               params={{ traceId: issue.lastTraceId }}
+                              search={rangeLinkSearch(range)}
                               aria-label={`trace ${issue.lastTraceId}`}
                               className="shrink-0"
                               onClick={(event) => event.stopPropagation()}

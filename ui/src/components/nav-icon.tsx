@@ -17,19 +17,21 @@ export function NavIcon({
     <span
       className={cn(
         "grid size-4.5 place-items-center [&_svg]:size-full!",
-        className,
+        className
       )}
     >
       <OutlineIcon
+        aria-hidden="true"
         className={cn(
-          "[grid-area:1/1] transition-opacity duration-100 ease-in-out",
-          active ? "opacity-0" : "opacity-100",
+          "transition-opacity duration-100 ease-in-out [grid-area:1/1]",
+          active ? "opacity-0" : "opacity-100"
         )}
       />
       <ActiveIcon
+        aria-hidden="true"
         className={cn(
-          "[grid-area:1/1] transition-opacity duration-100 ease-in-out",
-          active ? "opacity-100" : "opacity-0",
+          "transition-opacity duration-100 ease-in-out [grid-area:1/1]",
+          active ? "opacity-100" : "opacity-0"
         )}
       />
     </span>

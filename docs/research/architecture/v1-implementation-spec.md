@@ -445,19 +445,23 @@ Go-live mode (run-filtered SSE tails + 5 s metric/status repolls).
 
 Pagination/row caps are resolver-level (500 rows; issue scans capped at 1000) — Juniper has no
 schema-level depth/complexity middleware; the `[limits]` config keys wait on the M5 query-cost
-middleware. `serviceOverview` resolves from well-known metric names (`process.cpu.*`,
-`process.memory.*`, `http.server.request.duration`, `rpc.server.duration` — first candidate
-with data wins) with graceful absence (empty series + the gap surfaced — feeds instrumentation
-suggestions). `bundle` accepts exactly one anchor: `fingerprint` (issue), `runId`
-(run-anchored: the run's traces, logs, and grouped issues), or `traceId`.
+middleware. `serviceOverview` resolves request/error/latency series from well-known request
+metrics (`http.server.request.duration`, `rpc.server.duration` — first candidate with data wins)
+with graceful absence (empty series + the gap surfaced — feeds instrumentation suggestions).
+`runtimeSnapshot` is the runtime lane and discovers native metric tables in the supported
+runtime families (`process.*`, `system.*`, `jvm.*`, `tokio.runtime.*`, `container.*`, and
+`db.client.connection.*`). Rust playground runtime scenarios should prefer the emitted
+`tokio.runtime.*` names; `process.*` remains a supported family for hosts/CLI/SDKs that emit it.
+`bundle` accepts exactly one anchor: `fingerprint` (issue), `runId` (run-anchored: the run's
+traces, logs, and grouped issues), or `traceId`.
 
 **Bundle correlation sections (`metric_window`).** The bundle is the
 correlation artifact — every anchor assembles **trace + logs + metric
 windows** together (the scope §1 acceptance wording). `metric_windows[]`
 entries carry `{metric, scope ("run"|"service"), window {from_nanos,
 to_nanos, step_seconds}, points [{ts_nanos, value}], stats {min, max, avg,
-last}}` for the well-known process metrics (`process.cpu.utilization`,
-`process.memory.usage`, `tokio.runtime.alive_tasks`): run anchors use the
+last}}` for supported runtime metrics such as `process.cpu.utilization`,
+`process.memory.usage`, and `tokio.runtime.alive_tasks`: run anchors use the
 run's own run-scoped points over the run's lifespan (5 s steps); issue/trace
 anchors use a ±5-minute window around the anchor event (30 s steps),
 run-scoped when the anchor's spans carry a run id, service-scoped otherwise.

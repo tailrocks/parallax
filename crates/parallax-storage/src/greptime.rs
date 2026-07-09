@@ -809,6 +809,38 @@ fn u128_at(row: &[serde_json::Value], index: usize) -> u128 {
         .unwrap_or(0)
 }
 
+fn absorb_observed_run(
+    runs: &mut std::collections::HashMap<String, crate::adapter::ObservedRun>,
+    row: &[serde_json::Value],
+    is_span: bool,
+) -> Option<String> {
+    let run_id = str_at(row, 0);
+    if run_id.is_empty() {
+        return None;
+    }
+    let first = u128_at(row, 1);
+    let last = u128_at(row, 2);
+    let count = u128_at(row, 3) as u64;
+    let entry = runs
+        .entry(run_id.clone())
+        .or_insert_with(|| crate::adapter::ObservedRun {
+            run_id: run_id.clone(),
+            first_nanos: first,
+            last_nanos: last,
+            span_count: 0,
+            log_count: 0,
+            service: str_at(row, 4),
+        });
+    entry.first_nanos = entry.first_nanos.min(first);
+    entry.last_nanos = entry.last_nanos.max(last);
+    if is_span {
+        entry.span_count += count;
+    } else {
+        entry.log_count += count;
+    }
+    Some(run_id)
+}
+
 fn f64_at(row: &[serde_json::Value], index: usize) -> f64 {
     row.get(index).and_then(|v| v.as_f64()).unwrap_or(0.0)
 }
@@ -1067,21 +1099,61 @@ impl TelemetryStore for GreptimeStore {
     }
 
     async fn spans_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<SpanRow>> {
-        let mut spans = self
+        if limit == 0 {
+            return Ok(Vec::new());
+        }
+
+        let escaped_run_id = escape(run_id);
+        let limit_clause = format!(" LIMIT {limit}");
+        let trace_run_column = resource_attr_ident(semconv::PARALLAX_RUN_ID);
+        let mut spans = match self
             .select_spans(
-                &format!(
-                    r#""trace_id" IN (
+                &format!(r#"{trace_run_column} = '{escaped_run_id}'"#),
+                r#" ORDER BY "timestamp" DESC"#,
+                &limit_clause,
+            )
+            .await
+        {
+            Ok(spans) => spans,
+            Err(error) if is_missing_column(&error) => Vec::new(),
+            Err(error) => return Err(error),
+        };
+
+        if spans.len() < limit {
+            let via_logs = match self
+                .select_spans(
+                    &format!(
+                        r#""trace_id" IN (
                     SELECT DISTINCT "trace_id" FROM opentelemetry_logs
                     WHERE {} = '{}'
                   )"#,
-                    wire_attr_ident(semconv::PARALLAX_RUN_ID),
-                    escape(run_id)
-                ),
-                r#" ORDER BY "timestamp" DESC"#,
-                &format!(" LIMIT {limit}"),
-            )
-            .await?;
-        spans.reverse();
+                        wire_attr_ident(semconv::PARALLAX_RUN_ID),
+                        escaped_run_id
+                    ),
+                    r#" ORDER BY "timestamp" DESC"#,
+                    &limit_clause,
+                )
+                .await
+            {
+                Ok(spans) => spans,
+                Err(error) if is_missing_column(&error) => Vec::new(),
+                Err(error) => return Err(error),
+            };
+            let mut seen: BTreeSet<(String, String)> = spans
+                .iter()
+                .map(|span| (span.trace_id.clone(), span.span_id.clone()))
+                .collect();
+            for span in via_logs {
+                if seen.insert((span.trace_id.clone(), span.span_id.clone())) {
+                    spans.push(span);
+                }
+            }
+        }
+
+        spans.sort_by_key(|span| span.ts_nanos);
+        if spans.len() > limit {
+            spans.drain(0..spans.len() - limit);
+        }
         Ok(spans)
     }
 
@@ -1769,9 +1841,33 @@ impl TelemetryStore for GreptimeStore {
     ) -> anyhow::Result<Vec<crate::adapter::ObservedRun>> {
         let mut runs: std::collections::HashMap<String, crate::adapter::ObservedRun> =
             std::collections::HashMap::new();
-        // Native logs promote run id. Some GreptimeDB trace schemas do not
-        // flatten the run resource attribute to a column, so span counts derive
-        // from traces linked through run-scoped logs.
+
+        let trace_run_column = resource_attr_ident(semconv::PARALLAX_RUN_ID);
+        let native_span_rows = match self
+            .sql_lenient(&format!(
+                r#"SELECT {trace_run_column} AS "run_id",
+                          CAST(MIN("timestamp") AS BIGINT) AS "first_ts",
+                          CAST(MAX("timestamp") AS BIGINT) AS "last_ts",
+                          COUNT(DISTINCT "span_id") AS "n",
+                          MAX("service_name") AS "svc"
+                   FROM opentelemetry_traces
+                   WHERE {trace_run_column} IS NOT NULL AND {trace_run_column} != ''
+                   GROUP BY "run_id" ORDER BY "last_ts" DESC LIMIT {limit}"#
+            ))
+            .await
+        {
+            Ok(rows) => rows,
+            Err(error) if is_missing_column(&error) => Vec::new(),
+            Err(error) => return Err(error),
+        };
+        let mut native_span_run_ids = BTreeSet::new();
+        for row in &native_span_rows {
+            if let Some(run_id) = absorb_observed_run(&mut runs, row, true) {
+                native_span_run_ids.insert(run_id);
+            }
+        }
+
+        // Fallback for older trace schemas where run id only appears on logs.
         let sources = [
             (
                 format!(
@@ -1810,32 +1906,16 @@ impl TelemetryStore for GreptimeStore {
             ),
         ];
         for (query, is_span) in sources {
-            let rows = self.sql_lenient(&format!("{query}{limit}")).await?;
+            let rows = match self.sql_lenient(&format!("{query}{limit}")).await {
+                Ok(rows) => rows,
+                Err(error) if is_missing_column(&error) => Vec::new(),
+                Err(error) => return Err(error),
+            };
             for row in &rows {
-                let run_id = str_at(row, 0);
-                if run_id.is_empty() {
+                if is_span && native_span_run_ids.contains(&str_at(row, 0)) {
                     continue;
                 }
-                let first = u128_at(row, 1);
-                let last = u128_at(row, 2);
-                let count = u128_at(row, 3) as u64;
-                let entry =
-                    runs.entry(run_id.clone())
-                        .or_insert_with(|| crate::adapter::ObservedRun {
-                            run_id,
-                            first_nanos: first,
-                            last_nanos: last,
-                            span_count: 0,
-                            log_count: 0,
-                            service: str_at(row, 4),
-                        });
-                entry.first_nanos = entry.first_nanos.min(first);
-                entry.last_nanos = entry.last_nanos.max(last);
-                if is_span {
-                    entry.span_count += count;
-                } else {
-                    entry.log_count += count;
-                }
+                absorb_observed_run(&mut runs, row, is_span);
             }
         }
         let mut runs: Vec<_> = runs.into_values().collect();

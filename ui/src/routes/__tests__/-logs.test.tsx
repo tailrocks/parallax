@@ -236,11 +236,21 @@ describe("LogsTable", () => {
 
     expect(await screen.findByText(formatDateTime(log.tsNanos))).toBeTruthy()
     expect(screen.getByText("checkout.completed")).toBeTruthy()
+    expect(
+      screen.getByRole("link", { name: "Trace trace-a" }).getAttribute("href")
+    ).toBe("/traces/trace-a?range=7d")
     fireEvent.click(screen.getByText("checkout failed"))
     expect(await screen.findByText("Log document")).toBeTruthy()
     expect(screen.getByText("event.name")).toBeTruthy()
     expect(screen.getByText("@observed")).toBeTruthy()
-    expect(screen.getByRole("link", { name: /trace trace-a/i })).toBeTruthy()
+    expect(
+      screen
+        .getAllByRole("link", { name: /trace trace-a/i })
+        .map((link) => link.getAttribute("href"))
+    ).toContain("/traces/trace-a?range=7d")
+    expect(
+      screen.getByRole("link", { name: /run run-a/i }).getAttribute("href")
+    ).toBe("/runs/run-a?range=7d")
   })
 
   it("opens the document sheet from keyboard row activation", async () => {

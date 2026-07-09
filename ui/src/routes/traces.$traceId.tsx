@@ -60,10 +60,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "@/components/ui/toggle-group"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { graphql, gqlString } from "@/lib/api"
 import type {
   CriticalPath,
@@ -90,6 +87,7 @@ import type {
 } from "@/lib/rpc-trace"
 import { computeWindow, detectSkew } from "@/lib/trace-tree"
 import type { SkewReport } from "@/lib/trace-tree"
+import { rangeLinkSearch, resolveRangeSearch } from "@/lib/range"
 import { cn } from "@/lib/utils"
 
 interface TraceSpan extends WaterfallSpan, GraphqlTraceSpan, RpcTraceSpan {
@@ -116,7 +114,12 @@ type TraceDetailTab = "waterfall" | "story"
 interface TraceDetailSearch {
   tab?: TraceDetailTab | undefined
   view?: TraceViewMode | undefined
+  range?: string | undefined
+  from?: string | undefined
+  to?: string | undefined
 }
+
+type TraceRangeSearch = ReturnType<typeof rangeLinkSearch>
 
 type JsonRecord = Record<string, unknown>
 type KeyValues = Array<[string, ReactNode]>
@@ -135,12 +138,21 @@ function isTraceViewMode(value: unknown): value is TraceViewMode {
   )
 }
 
+function searchString(value: unknown) {
+  if (typeof value === "string") return value
+  if (typeof value === "number" && Number.isFinite(value)) return String(value)
+  return undefined
+}
+
 export function validateTraceDetailSearch(
   search: Record<string, unknown>
 ): TraceDetailSearch {
   return {
     tab: search.tab === "story" ? "story" : undefined,
     view: isTraceViewMode(search.view) ? search.view : undefined,
+    range: searchString(search.range),
+    from: searchString(search.from),
+    to: searchString(search.to),
   }
 }
 
@@ -254,6 +266,7 @@ function TracePage() {
   const activeTab: TraceDetailTab =
     search.tab === "story" ? "story" : "waterfall"
   const waterfallView: TraceViewMode = search.view ?? "tree"
+  const detailRangeSearch = rangeLinkSearch(resolveRangeSearch(search))
   const [selectedId, setSelectedId] = useState<string | null>(WHOLE_TRACE_ID)
   const [criticalEnabled, setCriticalEnabled] = useState(false)
   const [criticalPath, setCriticalPath] = useState<CriticalPath | null>(null)
@@ -414,6 +427,7 @@ function TracePage() {
               <Link
                 to="/runs/$runId"
                 params={{ runId }}
+                search={detailRangeSearch}
                 className={buttonVariants({ variant: "outline", size: "xs" })}
               >
                 <IconExternalLink />
@@ -425,6 +439,7 @@ function TracePage() {
                 key={service}
                 to="/services/$service"
                 params={{ service }}
+                search={detailRangeSearch}
                 className="inline-flex"
               >
                 <Badge variant="outline">{service}</Badge>
@@ -579,6 +594,7 @@ function TracePage() {
               spans={spans}
               selectedSpan={selectedSpan}
               linkedTraceById={linkedTraceById}
+              rangeSearch={detailRangeSearch}
               logs={orderedLogs}
               onSelectSpan={setSelectedId}
             />
@@ -1060,9 +1076,11 @@ export function TraceCompareResult({ diff }: { diff: TraceDiff }) {
 export function LinkedTraceEdges({
   links,
   linkedTraceById,
+  rangeSearch,
 }: {
   links: SpanLink[]
   linkedTraceById: ReadonlyMap<string, TraceSummary>
+  rangeSearch?: TraceRangeSearch
 }) {
   return (
     <ul className="space-y-2">
@@ -1076,6 +1094,7 @@ export function LinkedTraceEdges({
             <Link
               to="/traces/$traceId"
               params={{ traceId: link.traceId }}
+              {...(rangeSearch ? { search: rangeSearch } : {})}
               className="block rounded-lg border border-border/70 bg-background/60 p-2 hover:bg-muted/60"
             >
               <div className="flex items-start justify-between gap-2">
@@ -1191,15 +1210,21 @@ export function InspectorEventList({ events }: { events: SpanEvent[] }) {
 export function InspectorLinksList({
   links,
   linkedTraceById,
+  rangeSearch,
 }: {
   links: SpanLink[]
   linkedTraceById: ReadonlyMap<string, TraceSummary>
+  rangeSearch?: TraceRangeSearch
 }) {
   const [showAll, setShowAll] = useState(false)
   const visible = showAll ? links : links.slice(0, INSPECTOR_LIST_CAP)
   return (
     <div className="space-y-2">
-      <LinkedTraceEdges links={visible} linkedTraceById={linkedTraceById} />
+      <LinkedTraceEdges
+        links={visible}
+        linkedTraceById={linkedTraceById}
+        {...(rangeSearch ? { rangeSearch } : {})}
+      />
       {links.length > INSPECTOR_LIST_CAP ? (
         <Button
           type="button"
@@ -1221,6 +1246,7 @@ function TraceInspector({
   spans,
   selectedSpan,
   linkedTraceById,
+  rangeSearch,
   logs,
   onSelectSpan,
 }: {
@@ -1228,6 +1254,7 @@ function TraceInspector({
   spans: TraceSpan[]
   selectedSpan: TraceSpan | null
   linkedTraceById: ReadonlyMap<string, TraceSummary>
+  rangeSearch: TraceRangeSearch
   logs: TraceLog[]
   onSelectSpan: (spanId: string) => void
 }) {
@@ -1325,6 +1352,7 @@ function TraceInspector({
                 key={selectedSpan.service}
                 to="/services/$service"
                 params={{ service: selectedSpan.service }}
+                search={rangeSearch}
                 className="font-mono underline underline-offset-4"
               >
                 {selectedSpan.service}
@@ -1370,6 +1398,7 @@ function TraceInspector({
               key={selectedSpan.spanId}
               links={links}
               linkedTraceById={linkedTraceById}
+              rangeSearch={rangeSearch}
             />
             <details className="mt-2 rounded-lg border border-border/70 bg-background/60 p-2">
               <summary className="cursor-pointer text-muted-foreground">

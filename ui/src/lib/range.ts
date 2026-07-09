@@ -25,7 +25,10 @@ function msToNanos(ms: number) {
   return (BigInt(ms) * 1_000_000n).toString()
 }
 
-export function resolvePreset(key = DEFAULT_RANGE_KEY, now = Date.now()): ResolvedRange {
+export function resolvePreset(
+  key = DEFAULT_RANGE_KEY,
+  now = Date.now()
+): ResolvedRange {
   const preset =
     RANGE_PRESETS.find((candidate) => candidate.key === key) ??
     RANGE_PRESETS.find((candidate) => candidate.key === DEFAULT_RANGE_KEY)!
@@ -42,10 +45,13 @@ export function customRange(fromNanos: string, toNanos: string): ResolvedRange {
 
 export function resolveRangeSearch(
   search: z.input<typeof rangeSearchSchema>,
-  now = Date.now(),
+  now = Date.now()
 ): ResolvedRange {
   const parsed = rangeSearchSchema.safeParse(search)
   if (!parsed.success) return resolvePreset(DEFAULT_RANGE_KEY, now)
+  if (RANGE_PRESETS.some((preset) => preset.key === parsed.data.range)) {
+    return resolvePreset(parsed.data.range, now)
+  }
   if (parsed.data.from && parsed.data.to) {
     try {
       if (BigInt(parsed.data.from) < BigInt(parsed.data.to)) {

@@ -248,7 +248,7 @@ describe("Services route", () => {
       screen
         .getByRole("link", { name: /post \/checkout/i })
         .getAttribute("href")
-    ).toBe("/traces/trace-a")
+    ).toBe("/traces/trace-a?range=24h")
   })
 
   it("opens trace exemplar popovers from latency markers", async () => {
@@ -286,6 +286,6 @@ describe("Services route", () => {
     expect(screen.getByText("span-exemplar")).toBeTruthy()
     expect(
       screen.getByRole("link", { name: /open trace/i }).getAttribute("href")
-    ).toBe("/traces/trace-exemplar")
+    ).toBe("/traces/trace-exemplar?range=24h")
   })
 })

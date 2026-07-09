@@ -2,15 +2,15 @@
 
 ## Audit Verdict
 
-Implementation and docs were corrected to use native `opentelemetry_logs`
-with `event_name`; no custom fallback table remains. Remaining item is live
-A29 evidence.
+Implementation and docs use native `opentelemetry_logs`; typed names are stored
+in `log_attributes['event.name']` and exposed by Parallax as `event_name`. No
+custom fallback table remains. Remaining item is live A29 evidence.
 
 ## Remaining Work
 
 - [ ] Run A29 typed-events scenario.
-- [ ] Query native `opentelemetry_logs` for `event_name`, body, and log
-  attributes.
+- [ ] Query native `opentelemetry_logs` for
+  `json_get_string(log_attributes, 'event.name')`, body, and log attributes.
 - [ ] Record proof that Java/web/Rust events appear with the expected names.
 
 ## Remove When
