@@ -63,6 +63,8 @@ impl StreamFilter {
 fn log_event(log: &LogRow) -> serde_json::Value {
     serde_json::json!({
         "tsNanos": log.ts_nanos.to_string(),
+        "eventName": log.event_name,
+        "observedTsNanos": log.observed_ts_nanos.to_string(),
         "service": log.service,
         "severityNum": log.severity_num,
         "severityText": log.severity_text,
@@ -99,6 +101,34 @@ pub async fn stream_logs(
         )
     });
     Sse::new(stream).keep_alive(KeepAlive::default())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn log_event_serializes_typed_log_identity() {
+        let value = log_event(&LogRow {
+            ts_nanos: 1_000_000_000,
+            event_name: "checkout.completed".to_string(),
+            observed_ts_nanos: 3_000_000_000,
+            service: "checkout".to_string(),
+            severity_num: 9,
+            severity_text: "INFO".to_string(),
+            body: "checkout.completed".to_string(),
+            trace_id: "trace-a".to_string(),
+            span_id: "span-a".to_string(),
+            run_id: Some("run-a".to_string()),
+            scope_name: "seed".to_string(),
+            attributes: serde_json::json!({"event.name": "checkout.completed"}),
+            resource: serde_json::json!({"service.name": "checkout"}),
+        });
+
+        assert_eq!(value["eventName"], "checkout.completed");
+        assert_eq!(value["observedTsNanos"], "3000000000");
+        assert_eq!(value["tsNanos"], "1000000000");
+    }
 }
 
 /// Span tail filters — per-row predicates, mirroring the `traces` GraphQL
