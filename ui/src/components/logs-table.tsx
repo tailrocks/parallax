@@ -24,7 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { formatDateTime, formatTimeInRange } from "@/lib/format"
-import { resolvePreset } from "@/lib/range"
+import { rangeLinkSearch, resolvePreset } from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
 import { cn } from "@/lib/utils"
 
@@ -47,7 +47,12 @@ export interface LogDoc {
   resource: string
 }
 
-export const OPTIONAL_LOG_COLUMNS = ["service", "event", "trace", "scope"] as const
+export const OPTIONAL_LOG_COLUMNS = [
+  "service",
+  "event",
+  "trace",
+  "scope",
+] as const
 export type OptionalLogColumn = (typeof OPTIONAL_LOG_COLUMNS)[number]
 const LOG_VIRTUALIZATION_THRESHOLD = 100
 
@@ -252,6 +257,7 @@ export function LogsTable({
   const [selected, setSelected] = useState<LogDoc | null>(null)
   const [fieldSearch, setFieldSearch] = useState("")
   const visible = new Set(columns)
+  const detailSearch = rangeLinkSearch(range)
   const columnCount =
     3 +
     (visible.has("service") ? 1 : 0) +
@@ -278,7 +284,9 @@ export function LogsTable({
       {visible.has("service") ? (
         <TableHead className="w-36">Service</TableHead>
       ) : null}
-      {visible.has("event") ? <TableHead className="w-40">Event</TableHead> : null}
+      {visible.has("event") ? (
+        <TableHead className="w-40">Event</TableHead>
+      ) : null}
       <TableHead>Body</TableHead>
       {visible.has("trace") ? (
         <TableHead className="w-28">Trace</TableHead>
@@ -345,6 +353,7 @@ export function LogsTable({
                   <Link
                     to="/traces/$traceId"
                     params={{ traceId: log.traceId }}
+                    search={detailSearch}
                     aria-label={`Trace ${log.traceId}`}
                     onClick={(event) => event.stopPropagation()}
                   />
@@ -427,6 +436,7 @@ export function LogsTable({
                       <Link
                         to="/traces/$traceId"
                         params={{ traceId: selected.traceId }}
+                        search={detailSearch}
                         aria-label={`Trace ${selected.traceId}`}
                       />
                     }
@@ -440,6 +450,7 @@ export function LogsTable({
                       <Link
                         to="/runs/$runId"
                         params={{ runId: selected.runId }}
+                        search={detailSearch}
                         aria-label={`Run ${selected.runId}`}
                       />
                     }
@@ -471,6 +482,7 @@ export function LogsTable({
                           <Link
                             to="/traces/$traceId"
                             params={{ traceId: value }}
+                            search={detailSearch}
                             className="underline underline-offset-4"
                           >
                             {value}
@@ -479,6 +491,7 @@ export function LogsTable({
                           <Link
                             to="/runs/$runId"
                             params={{ runId: value }}
+                            search={detailSearch}
                             className="underline underline-offset-4"
                           >
                             {value}

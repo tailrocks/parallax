@@ -57,6 +57,7 @@ describe("LinkedTraceEdges", () => {
       <LinkedTraceEdges
         links={links}
         linkedTraceById={new Map([[target.traceId, target]])}
+        rangeSearch={{ range: "24h" }}
       />
     )
 
@@ -65,7 +66,7 @@ describe("LinkedTraceEdges", () => {
     expect(screen.getByText("2 spans")).toBeTruthy()
     expect(screen.getByText("error")).toBeTruthy()
     expect(screen.getByRole("link").getAttribute("href")).toBe(
-      "/traces/target-trace"
+      "/traces/target-trace?range=24h"
     )
   })
 })

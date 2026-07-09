@@ -9,7 +9,7 @@ Remaining item is route-level UI coverage/evidence.
 
 - [ ] Add or record route integration coverage for context drawer banner reset.
 - [ ] Add or record route integration coverage for saved-view load/delete
-  behavior and parse-failure inline errors.
+  behavior and sanitized invalid saved-view params.
 - [ ] Verify `logsAround` behavior against native `opentelemetry_logs`.
 
 ## Remove When

@@ -428,6 +428,28 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
         Some(&serde_json::json!(0))
     );
 
+    let response = graphql(
+        &client,
+        handle.api_addr,
+        r#"{ observedRuns(limit: 20) {
+               runId service spanCount logCount } }"#,
+    )
+    .await;
+    let observed_run = response
+        .pointer("/data/observedRuns")
+        .and_then(|v| v.as_array())
+        .and_then(|rows| {
+            rows.iter()
+                .find(|row| row.get("runId").and_then(|v| v.as_str()) == Some("run_m2test"))
+        })
+        .expect("trace-only run appears in observedRuns");
+    assert_eq!(
+        observed_run.get("service").and_then(|v| v.as_str()),
+        Some("m2-run-service"),
+        "observedRuns reads native trace resource run id: {response}"
+    );
+    assert_eq!(observed_run.get("spanCount"), Some(&serde_json::json!(1)));
+
     // Run-anchored bundle (spec §8 bundle(runId:)) renders without errors.
     let response = graphql(
         &client,

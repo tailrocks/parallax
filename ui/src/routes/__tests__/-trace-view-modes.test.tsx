@@ -13,12 +13,28 @@ afterEach(cleanup)
 
 describe("trace detail view modes", () => {
   it("validates the trace view search param", () => {
-    expect(validateTraceDetailSearch({ tab: "story", view: "lanes" })).toEqual(
-      { tab: "story", view: "lanes" }
-    )
+    expect(validateTraceDetailSearch({ tab: "story", view: "lanes" })).toEqual({
+      tab: "story",
+      view: "lanes",
+      range: undefined,
+      from: undefined,
+      to: undefined,
+    })
     expect(validateTraceDetailSearch({ tab: "nope", view: "bad" })).toEqual({
       tab: undefined,
       view: undefined,
+      range: undefined,
+      from: undefined,
+      to: undefined,
+    })
+    expect(
+      validateTraceDetailSearch({ range: "custom", from: 1, to: "2" })
+    ).toEqual({
+      tab: undefined,
+      view: undefined,
+      range: "custom",
+      from: "1",
+      to: "2",
     })
   })
 

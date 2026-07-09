@@ -164,12 +164,12 @@ describe("Runs route", () => {
     expect(screen.getByText("Duration")).toBeTruthy()
     expect(
       screen.getByRole("link", { name: "run-a" }).getAttribute("href")
-    ).toBe("/runs/run-a")
+    ).toBe("/runs/run-a?range=custom&from=%221500000000%22&to=%224000000000%22")
     expect(screen.getByRole("link", { name: "4" }).getAttribute("href")).toBe(
-      "/runs/run-a"
+      "/runs/run-a?range=custom&from=%221500000000%22&to=%224000000000%22"
     )
     expect(screen.getByRole("link", { name: "2" }).getAttribute("href")).toBe(
-      "/runs/run-a"
+      "/runs/run-a?range=custom&from=%221500000000%22&to=%224000000000%22"
     )
     expect(
       screen.getAllByText(
@@ -192,12 +192,31 @@ describe("Runs route", () => {
           endedAtNanos: "3000000000",
           errorCount: 2,
           traceCount: 4,
-          issues: [],
+          issues: [
+            {
+              fingerprint: "panic-a",
+              title: "checkout total overflowed",
+              status: "open",
+              eventCount: 2,
+              errorType: "panic",
+            },
+          ],
         }}
-        traces={[]}
+        traces={[
+          {
+            traceId: "trace-a",
+            rootName: "POST /checkout",
+            service: "checkout",
+            startNanos: "2000000000",
+            durationNs: "25000000",
+            spanCount: 4,
+            hasError: true,
+          },
+        ]}
         logs={[]}
         bundle={{ markdown: "# bundle" }}
         runtimeSnapshot={[]}
+        range={range}
         live={false}
         liveLogs={[]}
         liveSpans={[]}
@@ -207,7 +226,21 @@ describe("Runs route", () => {
     )
 
     expect(await screen.findByText("Status")).toBeTruthy()
-    expect(screen.getByText("Traces")).toBeTruthy()
+    expect(screen.getAllByText("Traces").length).toBeGreaterThan(0)
+    expect(
+      screen
+        .getByRole("link", { name: /panic: checkout total overflowed/i })
+        .getAttribute("href")
+    ).toBe(
+      "/issues/panic-a?range=custom&from=%221500000000%22&to=%224000000000%22"
+    )
+    expect(
+      screen
+        .getByRole("link", { name: /post \/checkout/i })
+        .getAttribute("href")
+    ).toBe(
+      "/traces/trace-a?range=custom&from=%221500000000%22&to=%224000000000%22"
+    )
     expect(screen.queryByText("Agent session")).toBeNull()
     expect(
       screen.getAllByRole("button", { name: /download/i }).length

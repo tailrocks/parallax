@@ -2,16 +2,21 @@
 
 ## Audit Verdict
 
-Core URL-state implementation is landed. A regression test now pins preset
-links clearing stale absolute bounds. Remaining work is route-level evidence.
+Core URL-state implementation is landed. Shared helpers now make preset ranges
+win over stale absolute bounds, and current route code preserves ranges across
+the known drilldowns. Remaining work is route-level evidence for custom ranges
+on the surfaces that only have helper/source proof.
 
 ## Remaining Work
 
-- [ ] Exercise representative drilldowns from Overview, Issues, Traces, Runs,
-  Services, Logs, and Dashboards with preset and absolute ranges.
-- [ ] Record proof that navigation keeps the intended range and does not leave
-  stale `from`/`to` query params when a preset is chosen.
+- [ ] Add or record rendered custom/absolute range drilldown proof for Issues,
+  Traces, Services, Logs, and Dashboards.
+- [ ] Add or record rendered Dashboard link/create proof for preset and custom
+  ranges.
+- [ ] Record route-level proof that preset navigation has `range=<preset>` and
+  no stale `from`/`to` where only helper proof exists.
 
 ## Remove When
 
-- Route-level range propagation proof is recorded.
+- Route-level preset and custom range propagation proof is recorded for every
+  named surface.

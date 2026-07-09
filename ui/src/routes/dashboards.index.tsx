@@ -39,12 +39,19 @@ import {
 } from "@/components/ui/select"
 import { gqlString, graphql } from "@/lib/api"
 import { formatCount } from "@/lib/format"
+import { rangeLinkSearch, resolveRangeSearch } from "@/lib/range"
 
 interface Dashboard {
   id: string
   name: string
   layout: string
   updatedAtNanos: string
+}
+
+interface DashboardSearch {
+  range?: string | undefined
+  from?: string | undefined
+  to?: string | undefined
 }
 
 export interface Widget {
@@ -64,6 +71,11 @@ const NO_GROUP = "__none__"
 const ALL_VALUES = "__all__"
 
 export const Route = createFileRoute("/dashboards/")({
+  validateSearch: (search: Record<string, unknown>): DashboardSearch => ({
+    range: searchString(search.range),
+    from: searchString(search.from),
+    to: searchString(search.to),
+  }),
   loader: () =>
     graphql<{ dashboards: Dashboard[]; metricNames: string[] }>(`
       {
@@ -78,6 +90,16 @@ export const Route = createFileRoute("/dashboards/")({
     `),
   component: DashboardsPage,
 })
+
+function searchString(value: unknown) {
+  if (typeof value === "string") return value
+  if (typeof value === "number" && Number.isFinite(value)) return String(value)
+  return undefined
+}
+
+export function dashboardRangeSearch(search: DashboardSearch) {
+  return rangeLinkSearch(resolveRangeSearch(search))
+}
 
 export function emptyWidget(): Widget {
   return { metric: "", agg: "avg", chart: "line", title: "", w: 1 }
@@ -288,7 +310,9 @@ export function WidgetPicker({
 
 function DashboardsPage() {
   const { dashboards, metricNames } = Route.useLoaderData()
+  const search = Route.useSearch()
   const router = useRouter()
+  const detailSearch = dashboardRangeSearch(search)
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [widgets, setWidgets] = useState<Widget[]>([emptyWidget()])
@@ -311,6 +335,7 @@ function DashboardsPage() {
       await router.navigate({
         to: "/dashboards/$dashboardId",
         params: { dashboardId: dashboardSave.id },
+        search: detailSearch,
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -414,6 +439,7 @@ function DashboardsPage() {
                     <Link
                       to="/dashboards/$dashboardId"
                       params={{ dashboardId: dashboard.id }}
+                      search={detailSearch}
                       className="hover:underline"
                     >
                       {dashboard.name}

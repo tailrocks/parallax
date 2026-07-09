@@ -11,7 +11,11 @@ import {
 } from "@tanstack/react-router"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { parseLayout, serializeWidgets } from "@/routes/dashboards.index"
+import {
+  dashboardRangeSearch,
+  parseLayout,
+  serializeWidgets,
+} from "@/routes/dashboards.index"
 import { EXAMPLES, Route as SqlRoute } from "@/routes/sql"
 
 vi.mock("@/lib/api", () => ({
@@ -57,6 +61,12 @@ describe("final sweep", () => {
       groupBy: "service_name",
       filterValue: "checkout",
     })
+  })
+
+  it("does not propagate stale dashboard bounds for preset ranges", () => {
+    expect(
+      dashboardRangeSearch({ range: "24h", from: "1000", to: "2000" })
+    ).toEqual({ range: "24h" })
   })
 
   it("renders SQL keyboard hint and examples menu", async () => {

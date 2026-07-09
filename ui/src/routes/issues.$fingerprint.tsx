@@ -142,7 +142,14 @@ export async function loadIssueDetail(
       // Trace may have aged out; issue detail still renders.
     }
   }
-  return { issue, issueTrend, resource, breadcrumbs, traceRunId, releaseVersion }
+  return {
+    issue,
+    issueTrend,
+    resource,
+    breadcrumbs,
+    traceRunId,
+    releaseVersion,
+  }
 }
 
 function IssueDetailPage() {
@@ -184,7 +191,14 @@ export function IssueDetailContent({
   range: ResolvedRange
   onRange: (range: ResolvedRange) => void
 }) {
-  const { issue, issueTrend, resource, breadcrumbs, traceRunId, releaseVersion } = data
+  const {
+    issue,
+    issueTrend,
+    resource,
+    breadcrumbs,
+    traceRunId,
+    releaseVersion,
+  } = data
   const router = useRouter()
   const [mutating, setMutating] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -295,6 +309,7 @@ export function IssueDetailContent({
           <Link
             to="/runs/$runId"
             params={{ runId: traceRunId }}
+            search={rangeLinkSearch(range)}
             className="inline-flex"
           >
             <Badge variant="secondary">run {shortRunId(traceRunId)}</Badge>
@@ -359,7 +374,7 @@ export function IssueDetailContent({
       />
 
       {latest ? (
-        <StacktraceCard event={latest} culprit={issue.culprit} />
+        <StacktraceCard event={latest} culprit={issue.culprit} range={range} />
       ) : null}
 
       {latest ? (
@@ -456,9 +471,11 @@ function TrendChart({
 function StacktraceCard({
   event,
   culprit,
+  range,
 }: {
   event: IssueEvent
   culprit: string | null
+  range: ResolvedRange
 }) {
   const [showLibraries, setShowLibraries] = useState(false)
   const frames = parseStacktrace(event.stacktrace)
@@ -480,6 +497,7 @@ function StacktraceCard({
           <Link
             to="/traces/$traceId"
             params={{ traceId: event.traceId }}
+            search={rangeLinkSearch(range)}
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
           >
             Open trace {event.traceId.slice(0, 16)}
@@ -725,6 +743,7 @@ function Occurrences({
                     <Link
                       to="/traces/$traceId"
                       params={{ traceId: event.traceId }}
+                      search={rangeLinkSearch(range)}
                       className="inline-flex items-center gap-1 hover:text-foreground"
                     >
                       trace

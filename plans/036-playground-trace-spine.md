@@ -11,8 +11,6 @@ and the dependency note around `open-feature-flagd`/`rustls`.
   proof that HTTP/gRPC parent-child continuity, ERROR span status, baggage,
   CORS, and resource identity are visible through native GreptimeDB trace
   tables.
-- [ ] Record proof that the `PARALLAX_RUN_ID` fallback does not duplicate an
-  existing `parallax.run.id` in `OTEL_RESOURCE_ATTRIBUTES`.
 - [ ] Resolve the `rustls` dependency note: either upgrade/remove it if a
   newer `open-feature-flagd` releases without hard tonic TLS, or document that
   `0.2.1` still requires it.

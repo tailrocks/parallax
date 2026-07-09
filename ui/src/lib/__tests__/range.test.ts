@@ -4,6 +4,7 @@ import {
   customRange,
   rangeLinkSearch,
   resolvePreset,
+  resolveRangeSearch,
   updateRangeSearch,
 } from "@/lib/range"
 
@@ -22,6 +23,15 @@ describe("range search helpers", () => {
       from: "1000",
       to: "2000",
     })
+  })
+
+  it("lets a preset range win over stale absolute bounds", () => {
+    expect(
+      resolveRangeSearch(
+        { range: "24h", from: "1000", to: "2000" },
+        1_720_000_000_000
+      )
+    ).toEqual(resolvePreset("24h", 1_720_000_000_000))
   })
 
   it("mirrors update shape for cross-route links", () => {

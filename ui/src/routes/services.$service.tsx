@@ -490,7 +490,7 @@ export function ServiceDetailContent({
       </div>
 
       <RuntimeSnapshotCard metrics={data.runtimeSnapshot} />
-      <RecentTraces traces={traces} />
+      <RecentTraces traces={traces} range={range} />
     </div>
   )
 }
@@ -781,6 +781,7 @@ function LatencyChart({
                 <Link
                   to="/traces/$traceId"
                   params={{ traceId: marker.exemplar.traceId }}
+                  search={rangeLinkSearch(range)}
                   className={buttonVariants({ variant: "outline", size: "sm" })}
                 >
                   Open trace
@@ -799,7 +800,13 @@ function LatencyChart({
   )
 }
 
-function RecentTraces({ traces }: { traces: TraceSummary[] }) {
+function RecentTraces({
+  traces,
+  range,
+}: {
+  traces: TraceSummary[]
+  range: ResolvedRange
+}) {
   const durations = traces.map((trace) => Number(trace.durationNs))
   const scale = useMemo(() => buildHeatScale(durations), [durations])
   return (
@@ -838,6 +845,7 @@ function RecentTraces({ traces }: { traces: TraceSummary[] }) {
                       <Link
                         to="/traces/$traceId"
                         params={{ traceId: trace.traceId }}
+                        search={rangeLinkSearch(range)}
                         className="font-medium hover:underline"
                       >
                         {trace.rootName}

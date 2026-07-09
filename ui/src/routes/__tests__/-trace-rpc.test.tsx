@@ -92,6 +92,7 @@ describe("trace RPC inspector helpers", () => {
       <InspectorLinksList
         links={Array.from({ length: 60 }, (_, index) => link(index))}
         linkedTraceById={new Map()}
+        rangeSearch={{ range: "24h" }}
       />
     )
 

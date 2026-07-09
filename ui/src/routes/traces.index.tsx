@@ -53,7 +53,11 @@ import { TableSkeleton } from "@/components/console/skeletons"
 import { formatCount, formatDurationNs, formatTimeInRange } from "@/lib/format"
 import { gqlString, graphql } from "@/lib/api"
 import type { AttributeCompareRow, TraceSummary } from "@/lib/api"
-import { resolveRangeSearch, updateRangeSearch } from "@/lib/range"
+import {
+  rangeLinkSearch,
+  resolveRangeSearch,
+  updateRangeSearch,
+} from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
 import { cn } from "@/lib/utils"
 
@@ -409,6 +413,7 @@ function TracesPage() {
                   void navigate({
                     to: "/traces/$traceId",
                     params: { traceId: id },
+                    search: rangeLinkSearch(range),
                   })
                 }
               }}
@@ -561,7 +566,11 @@ function TracesPage() {
             sort={undefined}
             onSort={() => undefined}
             onOpen={(traceId) =>
-              void navigate({ to: "/traces/$traceId", params: { traceId } })
+              void navigate({
+                to: "/traces/$traceId",
+                params: { traceId },
+                search: rangeLinkSearch(range),
+              })
             }
           />
         ) : tracesPage.items.length > 0 ? (
@@ -584,7 +593,11 @@ function TracesPage() {
               sort={sortParam}
               onSort={setSortParam}
               onOpen={(traceId) =>
-                void navigate({ to: "/traces/$traceId", params: { traceId } })
+                void navigate({
+                  to: "/traces/$traceId",
+                  params: { traceId },
+                  search: rangeLinkSearch(range),
+                })
               }
             />
             <div className="flex flex-wrap items-center justify-between gap-3 px-1">

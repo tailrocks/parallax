@@ -439,8 +439,8 @@ export function OverviewContent({
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <RecentIssuesCard issues={data.issues.items} />
-        <SlowestTracesCard traces={data.tracesPage.items} />
+        <RecentIssuesCard issues={data.issues.items} range={range} />
+        <SlowestTracesCard traces={data.tracesPage.items} range={range} />
       </section>
     </div>
   )
@@ -841,7 +841,13 @@ function EmptyChartOverlay() {
   )
 }
 
-function RecentIssuesCard({ issues }: { issues: IssueRow[] }) {
+function RecentIssuesCard({
+  issues,
+  range,
+}: {
+  issues: IssueRow[]
+  range: ResolvedRange
+}) {
   return (
     <Card size="sm">
       <CardHeader>
@@ -862,6 +868,7 @@ function RecentIssuesCard({ issues }: { issues: IssueRow[] }) {
                   key={issue.fingerprint}
                   to="/issues/$fingerprint"
                   params={{ fingerprint: issue.fingerprint }}
+                  search={rangeLinkSearch(range)}
                   className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 py-3 text-sm hover:bg-muted/40"
                 >
                   <div className="flex min-w-0 items-start gap-2">
@@ -894,7 +901,13 @@ function RecentIssuesCard({ issues }: { issues: IssueRow[] }) {
   )
 }
 
-function SlowestTracesCard({ traces }: { traces: TraceRow[] }) {
+function SlowestTracesCard({
+  traces,
+  range,
+}: {
+  traces: TraceRow[]
+  range: ResolvedRange
+}) {
   const values = traces.map((trace) => Number(trace.durationNs))
   const scale = useMemo(() => buildHeatScale(values), [values])
   return (
@@ -917,6 +930,7 @@ function SlowestTracesCard({ traces }: { traces: TraceRow[] }) {
                   key={trace.traceId}
                   to="/traces/$traceId"
                   params={{ traceId: trace.traceId }}
+                  search={rangeLinkSearch(range)}
                   className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 py-3 text-sm hover:bg-muted/40"
                 >
                   <div className="min-w-0">
