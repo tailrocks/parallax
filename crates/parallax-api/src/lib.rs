@@ -330,12 +330,17 @@ fn span_links_from_value(links: &serde_json::Value) -> Vec<SpanLink> {
         .into_iter()
         .flatten()
         .filter_map(|link| {
-            let trace_id = link.get("traceId")?.as_str()?.to_string();
+            let trace_id = link
+                .get("traceId")
+                .or_else(|| link.get("trace_id"))?
+                .as_str()?
+                .to_string();
             if trace_id.is_empty() {
                 return None;
             }
             let span_id = link
                 .get("spanId")
+                .or_else(|| link.get("span_id"))
                 .and_then(serde_json::Value::as_str)
                 .unwrap_or_default()
                 .to_string();
@@ -405,8 +410,8 @@ impl Span {
     fn run_id(&self) -> Option<&str> {
         self.0.run_id.as_deref()
     }
-    /// OTel span links as JSON: `[{traceId, spanId, attributes}]` — spans in
-    /// other traces this span causally references (batch/async sub-operations).
+    /// OTel span links as JSON — spans in other traces this span causally
+    /// references (batch/async sub-operations).
     fn links(&self) -> String {
         self.0.links.to_string()
     }
@@ -4558,16 +4563,24 @@ mod tests {
                 "spanId": "target-span",
                 "attributes": { "link.kind": "batch" }
             },
+            {
+                "trace_id": "native-target",
+                "span_id": "native-span",
+                "attributes": { "link.kind": "native" }
+            },
             { "traceId": "", "spanId": "ignored" },
             { "spanId": "missing-trace" }
         ]);
 
         let parsed = span_links_from_value(&links);
 
-        assert_eq!(parsed.len(), 1);
+        assert_eq!(parsed.len(), 2);
         assert_eq!(parsed[0].trace_id, "target-trace");
         assert_eq!(parsed[0].span_id, "target-span");
         assert_eq!(parsed[0].attributes, r#"{"link.kind":"batch"}"#);
+        assert_eq!(parsed[1].trace_id, "native-target");
+        assert_eq!(parsed[1].span_id, "native-span");
+        assert_eq!(parsed[1].attributes, r#"{"link.kind":"native"}"#);
     }
 
     #[tokio::test]

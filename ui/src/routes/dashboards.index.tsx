@@ -41,14 +41,14 @@ import { gqlString, graphql } from "@/lib/api"
 import { formatCount } from "@/lib/format"
 import { rangeLinkSearch, resolveRangeSearch } from "@/lib/range"
 
-interface Dashboard {
+export interface Dashboard {
   id: string
   name: string
   layout: string
   updatedAtNanos: string
 }
 
-interface DashboardSearch {
+export interface DashboardSearch {
   range?: string | undefined
   from?: string | undefined
   to?: string | undefined
@@ -313,34 +313,7 @@ function DashboardsPage() {
   const search = Route.useSearch()
   const router = useRouter()
   const detailSearch = dashboardRangeSearch(search)
-  const [open, setOpen] = useState(false)
-  const [name, setName] = useState("")
-  const [widgets, setWidgets] = useState<Widget[]>([emptyWidget()])
-  const [error, setError] = useState<string | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
-
-  async function create() {
-    setError(null)
-    try {
-      const valid = widgets.filter((widget) => widget.metric)
-      const { dashboardSave } = await graphql<{
-        dashboardSave: { id: string }
-      }>(
-        `mutation { dashboardSave(name: "${gqlString(name)}",
-           layout: "${gqlString(serializeWidgets(valid))}") { id } }`
-      )
-      setName("")
-      setWidgets([emptyWidget()])
-      setOpen(false)
-      await router.navigate({
-        to: "/dashboards/$dashboardId",
-        params: { dashboardId: dashboardSave.id },
-        search: detailSearch,
-      })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
-    }
-  }
 
   async function remove(id: string) {
     setDeleteError(null)
@@ -360,62 +333,17 @@ function DashboardsPage() {
         title="Dashboards"
         description="Saved metric views built from telemetry already ingested."
         actions={
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger render={<Button />}>
-              <IconPlus />
-              New dashboard
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-3xl">
-              <DialogHeader>
-                <DialogTitle>New dashboard</DialogTitle>
-                <DialogDescription>
-                  Choose metrics, aggregation, and chart type.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex flex-col gap-4">
-                <Input
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  placeholder="checkout ops"
-                />
-                {widgets.map((widget, index) => (
-                  <WidgetPicker
-                    key={index}
-                    metricNames={metricNames}
-                    value={widget}
-                    onChange={(next) =>
-                      setWidgets((current) =>
-                        current.map((item, i) => (i === index ? next : item))
-                      )
-                    }
-                  />
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() =>
-                    setWidgets((current) => [...current, emptyWidget()])
-                  }
-                >
-                  <IconPlus />
-                  Add widget
-                </Button>
-                {error ? (
-                  <p className="text-sm text-destructive">{error}</p>
-                ) : null}
-              </div>
-              <DialogFooter>
-                <Button
-                  disabled={
-                    !name.trim() || widgets.every((widget) => !widget.metric)
-                  }
-                  onClick={create}
-                >
-                  Create
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <DashboardCreateDialog
+            metricNames={metricNames}
+            detailSearch={detailSearch}
+            onCreated={(dashboardId, search) =>
+              router.navigate({
+                to: "/dashboards/$dashboardId",
+                params: { dashboardId },
+                search,
+              })
+            }
+          />
         }
       />
 
@@ -430,62 +358,168 @@ function DashboardsPage() {
           description="Dashboards appear here after you save a metric layout."
         />
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {dashboards.map((dashboard) => (
-            <li key={dashboard.id}>
-              <Card>
-                <CardHeader className="flex-row items-center justify-between">
-                  <CardTitle className="truncate text-sm">
-                    <Link
-                      to="/dashboards/$dashboardId"
-                      params={{ dashboardId: dashboard.id }}
-                      search={detailSearch}
-                      className="hover:underline"
-                    >
-                      {dashboard.name}
-                    </Link>
-                  </CardTitle>
-                  <AlertDialog>
-                    <AlertDialogTrigger
-                      render={
-                        <Button variant="ghost-destructive" size="icon-xs" />
-                      }
-                    >
-                      <IconTrash />
-                      <span className="sr-only">Delete</span>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete dashboard?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Delete {dashboard.name}. This cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          variant="destructive"
-                          onClick={() => void remove(dashboard.id)}
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </CardHeader>
-                <CardContent className="flex items-center justify-between gap-2">
-                  <Badge variant="secondary">
-                    {formatCount(parseLayout(dashboard.layout).length)} widgets
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    <RelativeTime nanos={dashboard.updatedAtNanos} />
-                  </span>
-                </CardContent>
-              </Card>
-            </li>
-          ))}
-        </ul>
+        <DashboardCards
+          dashboards={dashboards}
+          detailSearch={detailSearch}
+          onRemove={remove}
+        />
       )}
     </div>
+  )
+}
+
+export function DashboardCreateDialog({
+  metricNames,
+  detailSearch,
+  onCreated,
+}: {
+  metricNames: string[]
+  detailSearch: ReturnType<typeof dashboardRangeSearch>
+  onCreated: (
+    dashboardId: string,
+    search: ReturnType<typeof dashboardRangeSearch>
+  ) => void | Promise<void>
+}) {
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState("")
+  const [widgets, setWidgets] = useState<Widget[]>([emptyWidget()])
+  const [error, setError] = useState<string | null>(null)
+
+  async function create() {
+    setError(null)
+    try {
+      const valid = widgets.filter((widget) => widget.metric)
+      const { dashboardSave } = await graphql<{
+        dashboardSave: { id: string }
+      }>(
+        `mutation { dashboardSave(name: "${gqlString(name)}",
+           layout: "${gqlString(serializeWidgets(valid))}") { id } }`
+      )
+      setName("")
+      setWidgets([emptyWidget()])
+      setOpen(false)
+      await onCreated(dashboardSave.id, detailSearch)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger render={<Button />}>
+        <IconPlus />
+        New dashboard
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>New dashboard</DialogTitle>
+          <DialogDescription>
+            Choose metrics, aggregation, and chart type.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-4">
+          <Input
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            placeholder="checkout ops"
+          />
+          {widgets.map((widget, index) => (
+            <WidgetPicker
+              key={index}
+              metricNames={metricNames}
+              value={widget}
+              onChange={(next) =>
+                setWidgets((current) =>
+                  current.map((item, i) => (i === index ? next : item))
+                )
+              }
+            />
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setWidgets((current) => [...current, emptyWidget()])}
+          >
+            <IconPlus />
+            Add widget
+          </Button>
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        </div>
+        <DialogFooter>
+          <Button
+            disabled={!name.trim() || widgets.every((widget) => !widget.metric)}
+            onClick={create}
+          >
+            Create
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+export function DashboardCards({
+  dashboards,
+  detailSearch,
+  onRemove,
+}: {
+  dashboards: Dashboard[]
+  detailSearch: ReturnType<typeof dashboardRangeSearch>
+  onRemove: (id: string) => void | Promise<void>
+}) {
+  return (
+    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {dashboards.map((dashboard) => (
+        <li key={dashboard.id}>
+          <Card>
+            <CardHeader className="flex-row items-center justify-between">
+              <CardTitle className="truncate text-sm">
+                <Link
+                  to="/dashboards/$dashboardId"
+                  params={{ dashboardId: dashboard.id }}
+                  search={detailSearch}
+                  className="hover:underline"
+                >
+                  {dashboard.name}
+                </Link>
+              </CardTitle>
+              <AlertDialog>
+                <AlertDialogTrigger
+                  render={<Button variant="ghost-destructive" size="icon-xs" />}
+                >
+                  <IconTrash />
+                  <span className="sr-only">Delete</span>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete dashboard?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Delete {dashboard.name}. This cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      variant="destructive"
+                      onClick={() => void onRemove(dashboard.id)}
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </CardHeader>
+            <CardContent className="flex items-center justify-between gap-2">
+              <Badge variant="secondary">
+                {formatCount(parseLayout(dashboard.layout).length)} widgets
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                <RelativeTime nanos={dashboard.updatedAtNanos} />
+              </span>
+            </CardContent>
+          </Card>
+        </li>
+      ))}
+    </ul>
   )
 }

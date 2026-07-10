@@ -16,6 +16,7 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  defaultParseSearch,
 } from "@tanstack/react-router"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { useState } from "react"
@@ -29,6 +30,7 @@ import {
 import type { LogDoc } from "@/components/logs-table"
 import { bucketWindow, dragWindow } from "@/components/console/use-chart-brush"
 import { formatDateTime } from "@/lib/format"
+import { customRange } from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
 import {
   ColumnMenu,
@@ -41,6 +43,12 @@ const range: ResolvedRange = {
   key: "7d",
   fromNanos: "1000000000",
   toNanos: "604801000000000",
+}
+const custom = customRange("1500000000", "4000000000")
+
+function parseHref(href: string) {
+  const url = new URL(href, "http://example.test")
+  return { search: defaultParseSearch(url.search), url }
 }
 
 const log: LogDoc = {
@@ -251,6 +259,23 @@ describe("LogsTable", () => {
     expect(
       screen.getByRole("link", { name: /run run-a/i }).getAttribute("href")
     ).toBe("/runs/run-a?range=7d")
+  })
+
+  it("preserves custom ranges in trace drilldown links", async () => {
+    renderWithRouter(
+      <LogsTable logs={[log]} range={custom} columns={["service", "trace"]} />
+    )
+
+    expect(await screen.findByText("checkout failed")).toBeTruthy()
+    const { search, url } = parseHref(
+      screen.getByRole("link", { name: "Trace trace-a" }).getAttribute("href")!
+    )
+    expect(url.pathname).toBe("/traces/trace-a")
+    expect(search).toMatchObject({
+      range: "custom",
+      from: custom.fromNanos,
+      to: custom.toNanos,
+    })
   })
 
   it("opens the document sheet from keyboard row activation", async () => {

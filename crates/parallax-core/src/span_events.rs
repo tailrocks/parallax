@@ -119,6 +119,90 @@ fn event_time_unix_nano(event: &Value) -> Option<u128> {
                 .map(u128::from)
                 .or_else(|| value.as_str().and_then(|text| text.parse().ok()))
         })
+        .or_else(|| {
+            event
+                .get("time")
+                .and_then(Value::as_str)
+                .and_then(parse_greptime_event_time)
+        })
+}
+
+fn parse_greptime_event_time(value: &str) -> Option<u128> {
+    let bytes = value.as_bytes();
+    if bytes.len() < 19 {
+        return None;
+    }
+    let year: i32 = value.get(0..4)?.parse().ok()?;
+    let month: u32 = value.get(5..7)?.parse().ok()?;
+    let day: u32 = value.get(8..10)?.parse().ok()?;
+    let hour: u32 = value.get(11..13)?.parse().ok()?;
+    let minute: u32 = value.get(14..16)?.parse().ok()?;
+    let second: u32 = value.get(17..19)?.parse().ok()?;
+    if bytes.get(4) != Some(&b'-')
+        || bytes.get(7) != Some(&b'-')
+        || !matches!(bytes.get(10), Some(b' ') | Some(b'T'))
+        || bytes.get(13) != Some(&b':')
+        || bytes.get(16) != Some(&b':')
+        || !(1..=12).contains(&month)
+        || !(1..=31).contains(&day)
+        || hour > 23
+        || minute > 59
+        || second > 60
+    {
+        return None;
+    }
+
+    let mut index = 19;
+    let mut nanos = 0u32;
+    if bytes.get(index) == Some(&b'.') {
+        index += 1;
+        let start = index;
+        while bytes.get(index).is_some_and(u8::is_ascii_digit) {
+            index += 1;
+        }
+        let digits = value.get(start..index)?;
+        if !digits.is_empty() {
+            let significant = &digits[..digits.len().min(9)];
+            nanos = significant.parse::<u32>().ok()?
+                * 10u32.pow(u32::try_from(9usize.saturating_sub(significant.len())).ok()?);
+        }
+    }
+
+    let offset_seconds = match bytes.get(index) {
+        Some(b'Z') => 0i64,
+        Some(sign @ (b'+' | b'-')) => {
+            let hours: i64 = value.get(index + 1..index + 3)?.parse().ok()?;
+            let minutes: i64 = value.get(index + 3..index + 5)?.parse().ok()?;
+            if hours > 23 || minutes > 59 {
+                return None;
+            }
+            let seconds = hours * 3600 + minutes * 60;
+            if *sign == b'+' { seconds } else { -seconds }
+        }
+        _ => 0,
+    };
+
+    let days = days_from_civil(year, month, day)?;
+    let local_seconds = days
+        .checked_mul(86_400)?
+        .checked_add(i64::from(hour) * 3600 + i64::from(minute) * 60 + i64::from(second))?;
+    let utc_seconds = local_seconds.checked_sub(offset_seconds)?;
+    if utc_seconds < 0 {
+        return None;
+    }
+    Some(u128::try_from(utc_seconds).ok()? * 1_000_000_000 + u128::from(nanos))
+}
+
+fn days_from_civil(year: i32, month: u32, day: u32) -> Option<i64> {
+    let year = i64::from(year) - i64::from(month <= 2);
+    let era = if year >= 0 { year } else { year - 399 } / 400;
+    let year_of_era = year - era * 400;
+    let month = i64::from(month);
+    let day = i64::from(day);
+    let day_of_year = (153 * (month + if month > 2 { -3 } else { 9 }) + 2) / 5 + day - 1;
+    let day_of_era = year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_year;
+    let days = era * 146_097 + day_of_era - 719_468;
+    (days >= 0).then_some(days)
 }
 
 #[cfg(test)]
@@ -153,7 +237,8 @@ mod tests {
             Some(
                 r#"[
                     {"name":"exception","time_unix_nano":"20","attributes":{"message":"bad","retry":true}},
-                    {"name":"rpc.message","timeUnixNano":10,"attributes":{"id":7}}
+                    {"name":"rpc.message","timeUnixNano":10,"attributes":{"id":7}},
+                    {"name":"native.message","time":"2026-07-10 06:31:40.754723148+0000","attributes":{"id":8}}
                 ]"#,
             ),
         )];
@@ -161,14 +246,14 @@ mod tests {
         let result = trace_events(&spans, None, 10);
 
         assert_eq!(result.skipped_spans, 0);
-        assert_eq!(result.total_matching, 2);
+        assert_eq!(result.total_matching, 3);
         assert_eq!(
             result
                 .events
                 .iter()
                 .map(|event| event.name.as_str())
                 .collect::<Vec<_>>(),
-            vec!["rpc.message", "exception"]
+            vec!["rpc.message", "exception", "native.message"]
         );
         assert_eq!(
             result.events[0].attributes,
@@ -181,6 +266,7 @@ mod tests {
                 ("retry".to_string(), "true".to_string())
             ]
         );
+        assert_eq!(result.events[2].time_unix_nano, 1_783_665_100_754_723_148);
     }
 
     #[test]

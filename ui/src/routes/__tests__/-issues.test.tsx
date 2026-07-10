@@ -8,10 +8,11 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  defaultParseSearch,
 } from "@tanstack/react-router"
 import { afterEach, describe, expect, it } from "vitest"
 
-import { resolvePreset } from "@/lib/range"
+import { customRange, resolvePreset } from "@/lib/range"
 import { IssuesContent } from "@/routes/issues.index"
 import type { IssuesData } from "@/routes/issues.index"
 import { IssueDetailContent } from "@/routes/issues.$fingerprint"
@@ -19,6 +20,12 @@ import { IssueDetailContent } from "@/routes/issues.$fingerprint"
 afterEach(cleanup)
 
 const range = resolvePreset("24h", 1_720_000_000_000)
+const custom = customRange("1500000000", "4000000000")
+
+function parseHref(href: string) {
+  const url = new URL(href, "http://test.local")
+  return { search: defaultParseSearch(url.search), url }
+}
 
 const issuesFixture: IssuesData = {
   services: ["checkout"],
@@ -150,6 +157,37 @@ describe("Issues route", () => {
         (link) => link.getAttribute("href") === "/issues/panic-a?range=24h"
       )
     ).toBe(true)
+  })
+
+  it("preserves custom ranges in rendered drilldown links", async () => {
+    renderWithRouter(
+      <IssuesContent
+        data={issuesFixture}
+        search={{}}
+        range={custom}
+        onSearch={() => {}}
+        onIssue={() => {}}
+      />
+    )
+
+    expect(await screen.findByText("panic")).toBeTruthy()
+    const urls = screen
+      .getAllByRole("link")
+      .map((link) => parseHref(link.getAttribute("href")!))
+
+    for (const pathname of [
+      "/services/checkout",
+      "/traces/trace-a",
+      "/issues/panic-a",
+    ]) {
+      const match = urls.find((candidate) => candidate.url.pathname === pathname)
+      expect(match).toBeTruthy()
+      expect(match?.search).toMatchObject({
+        range: "custom",
+        from: custom.fromNanos,
+        to: custom.toNanos,
+      })
+    }
   })
 
   it("renders parsed stack frames and timestamped breadcrumbs", async () => {

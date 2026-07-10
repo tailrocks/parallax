@@ -137,4 +137,28 @@ describe("trace tree", () => {
     ])
     expect(report.maxDriftMs).toBe(200)
   })
+
+  it("detects a backdated rootless span in the same trace", () => {
+    const report = detectSkew([
+      richSpan("skewed", "1000000000", "10000000", null, "api"),
+      richSpan("root", "3601000000000", "100000000", null, "api"),
+    ])
+
+    expect(report.suspectPairs).toEqual([
+      { parentId: "root", childId: "skewed", driftMs: 3_599_990 },
+    ])
+    expect(report.maxDriftMs).toBe(3_599_990)
+  })
+
+  it("detects a backdated same-service child when drift is extreme", () => {
+    const report = detectSkew([
+      richSpan("root", "3601000000000", "100000000", null, "api"),
+      richSpan("skewed", "1000000000", "10000000", "root", "api"),
+    ])
+
+    expect(report.suspectPairs).toEqual([
+      { parentId: "root", childId: "skewed", driftMs: 3_600_000 },
+    ])
+    expect(report.maxDriftMs).toBe(3_600_000)
+  })
 })

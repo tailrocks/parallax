@@ -4,9 +4,10 @@ import { render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 
 import type { TraceSummary } from "@/lib/api"
-import { resolvePreset, updateRangeSearch } from "@/lib/range"
+import { customRange, resolvePreset, updateRangeSearch } from "@/lib/range"
 import {
   TraceTable,
+  traceDetailSearch,
   paramToTraceSort,
   patchTracesSearch,
   traceSortToParam,
@@ -54,6 +55,19 @@ describe("traces search params", () => {
     expect(traceSortToParam("DURATION_ASC")).toBe("duration:asc")
     expect(paramToTraceSort("duration:desc")).toBe("DURATION_DESC")
     expect(paramToTraceSort("spans:asc")).toBeUndefined()
+  })
+
+  it("builds trace detail links for preset and custom ranges", () => {
+    expect(traceDetailSearch(resolvePreset("24h", 1_720_000_000_000))).toEqual({
+      range: "24h",
+    })
+
+    const custom = customRange("1500000000", "4000000000")
+    expect(traceDetailSearch(custom)).toEqual({
+      range: "custom",
+      from: custom.fromNanos,
+      to: custom.toNanos,
+    })
   })
 })
 
