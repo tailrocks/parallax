@@ -159,6 +159,14 @@ question instead of choosing silently.
 Implementation: inject `WHERE {scan_where}` into the `agg` subquery
 (`greptime.rs:1999`), reusing the same string.
 
+Also window the `participation` subquery in the same function (2026-07-10
+audit addendum): the `service` filter builds
+`"trace_id" IN (SELECT "trace_id" FROM opentelemetry_traces WHERE "service_name" = '…')`
+with NO time bound (`greptime.rs:~1929-1935`), so a windowed search still
+scans all-time for the service's trace ids. Apply the same `{scan_where}`
+inside that subquery. Same semantic caveat as the agg windowing; same golden
+test covers it.
+
 Update the Plan-074 golden test for `traces_search_sql` to the new expected
 string in the same commit.
 
