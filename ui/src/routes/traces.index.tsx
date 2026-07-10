@@ -198,6 +198,10 @@ export function traceSortToParam(sort?: TraceSort): string | undefined {
   }
 }
 
+export function traceDetailSearch(range: ResolvedRange) {
+  return rangeLinkSearch(range)
+}
+
 export function paramToTraceSort(
   param: string | undefined
 ): TraceSort | undefined {
@@ -413,7 +417,7 @@ function TracesPage() {
                   void navigate({
                     to: "/traces/$traceId",
                     params: { traceId: id },
-                    search: rangeLinkSearch(range),
+                    search: traceDetailSearch(range),
                   })
                 }
               }}
@@ -569,7 +573,7 @@ function TracesPage() {
               void navigate({
                 to: "/traces/$traceId",
                 params: { traceId },
-                search: rangeLinkSearch(range),
+                search: traceDetailSearch(range),
               })
             }
           />
@@ -596,7 +600,7 @@ function TracesPage() {
                 void navigate({
                   to: "/traces/$traceId",
                   params: { traceId },
-                  search: rangeLinkSearch(range),
+                  search: traceDetailSearch(range),
                 })
               }
             />

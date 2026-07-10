@@ -1,6 +1,8 @@
 import {
   Link,
+  Outlet,
   createFileRoute,
+  useLocation,
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router"
@@ -209,8 +211,15 @@ export const Route = createFileRoute("/services")({
   validateSearch: validateServicesSearch,
   loaderDeps: ({ search }) => search,
   loader: ({ deps }) => loadServices(resolveRangeSearch(deps)),
-  component: ServicesPage,
+  component: ServicesRoute,
 })
+
+function ServicesRoute() {
+  const { pathname } = useLocation()
+  const normalized = pathname.replace(/\/+$/, "") || "/"
+  if (normalized !== "/services") return <Outlet />
+  return <ServicesPage />
+}
 
 function patchSearch(current: ServicesSearch, patch: ServicesSearchPatch) {
   const raw = { ...current, ...patch }

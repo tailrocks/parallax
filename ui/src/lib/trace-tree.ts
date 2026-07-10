@@ -39,6 +39,7 @@ export interface SkewReport {
 /** Cross-service parent/child clocks must disagree by this much before warning. */
 export const TRACE_SKEW_THRESHOLD_MS = 50
 const TRACE_SKEW_THRESHOLD_NS = BigInt(TRACE_SKEW_THRESHOLD_MS) * 1_000_000n
+const TRACE_ROOT_SKEW_THRESHOLD_NS = 5n * 60n * 1_000_000_000n
 
 function spanStart(span: TraceTreeSpan): bigint {
   return BigInt(span.tsNanos)
@@ -195,7 +196,7 @@ export function detectSkew<T extends ServiceTraceSpan>(
   for (const child of spans) {
     if (!child.parentSpanId) continue
     const parent = byId.get(child.parentSpanId)
-    if (!parent || parent.service === child.service) continue
+    if (!parent) continue
 
     const startsBeforeParent = spanStart(parent) - spanStart(child)
     const endsAfterParent = spanEnd(child) - spanEnd(parent)
@@ -203,13 +204,37 @@ export function detectSkew<T extends ServiceTraceSpan>(
       startsBeforeParent > endsAfterParent
         ? startsBeforeParent
         : endsAfterParent
-    if (driftNs <= TRACE_SKEW_THRESHOLD_NS) continue
+    const thresholdNs =
+      parent.service === child.service
+        ? TRACE_ROOT_SKEW_THRESHOLD_NS
+        : TRACE_SKEW_THRESHOLD_NS
+    if (driftNs <= thresholdNs) continue
 
     const driftMs = nsToMs(driftNs)
     maxDriftMs = Math.max(maxDriftMs, driftMs)
     suspectPairs.push({
       parentId: parent.spanId,
       childId: child.spanId,
+      driftMs,
+    })
+  }
+
+  const roots = spans
+    .filter(
+      (span) => !span.parentSpanId || !byId.has(span.parentSpanId)
+    )
+    .sort(compareByStart)
+  for (let index = 0; index < roots.length - 1; index += 1) {
+    const earlier = roots[index]!
+    const later = roots[index + 1]!
+    const gapNs = spanStart(later) - spanEnd(earlier)
+    if (gapNs <= TRACE_ROOT_SKEW_THRESHOLD_NS) continue
+
+    const driftMs = nsToMs(gapNs)
+    maxDriftMs = Math.max(maxDriftMs, driftMs)
+    suspectPairs.push({
+      parentId: later.spanId,
+      childId: earlier.spanId,
       driftMs,
     })
   }

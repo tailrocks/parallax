@@ -8,10 +8,11 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  defaultParseSearch,
 } from "@tanstack/react-router"
 import { afterEach, describe, expect, it } from "vitest"
 
-import { resolvePreset } from "@/lib/range"
+import { customRange, resolvePreset } from "@/lib/range"
 import {
   ServicesIndexContent,
   serviceErrorRate,
@@ -24,6 +25,12 @@ import type { ServiceDetailData } from "@/routes/services.$service"
 afterEach(cleanup)
 
 const range = resolvePreset("24h", 1_720_000_000_000)
+const custom = customRange("1500000000", "4000000000")
+
+function parseHref(href: string) {
+  const url = new URL(href, "http://example.test")
+  return { search: defaultParseSearch(url.search), url }
+}
 
 const servicesFixture: ServicesData = {
   serviceList: [
@@ -196,6 +203,39 @@ describe("Services route", () => {
     expect(spansUrl.searchParams.has("to")).toBe(false)
   })
 
+  it("preserves custom ranges in index drilldown links", async () => {
+    renderWithRouter(
+      <ServicesIndexContent
+        data={servicesFixture}
+        search={{}}
+        range={custom}
+        onSearch={() => {}}
+      />
+    )
+
+    expect(await screen.findByText("api gateway")).toBeTruthy()
+    const { search: detailSearch, url: detailUrl } = parseHref(
+      screen.getByRole("link", { name: /api gateway/i }).getAttribute("href")!
+    )
+    expect(detailUrl.pathname).toBe("/services/api%20gateway")
+    expect(detailSearch).toMatchObject({
+      range: "custom",
+      from: custom.fromNanos,
+      to: custom.toNanos,
+    })
+
+    const { search: spansSearch, url: spansUrl } = parseHref(
+      screen.getByRole("link", { name: "20" }).getAttribute("href")!
+    )
+    expect(spansUrl.pathname).toBe("/traces")
+    expect(spansSearch).toMatchObject({
+      service: "api gateway",
+      range: "custom",
+      from: custom.fromNanos,
+      to: custom.toNanos,
+    })
+  })
+
   it("renders detail stats and hides infra band without CPU/memory", async () => {
     renderWithRouter(
       <ServiceDetailContent
@@ -249,6 +289,36 @@ describe("Services route", () => {
         .getByRole("link", { name: /post \/checkout/i })
         .getAttribute("href")
     ).toBe("/traces/trace-a?range=24h")
+  })
+
+  it("preserves custom ranges in detail drilldown links", async () => {
+    renderWithRouter(
+      <ServiceDetailContent
+        service="api gateway"
+        data={detailFixture}
+        range={custom}
+        onRange={() => {}}
+      />,
+      "/services/api%20gateway"
+    )
+
+    expect((await screen.findAllByText("Requests")).length).toBeGreaterThan(0)
+    for (const [name, pathname] of [
+      [/traces/i, "/traces"],
+      [/logs/i, "/logs"],
+      [/issues/i, "/issues"],
+      [/post \/checkout/i, "/traces/trace-a"],
+    ] as const) {
+      const { search, url } = parseHref(
+        screen.getByRole("link", { name }).getAttribute("href")!
+      )
+      expect(url.pathname).toBe(pathname)
+      expect(search).toMatchObject({
+        range: "custom",
+        from: custom.fromNanos,
+        to: custom.toNanos,
+      })
+    }
   })
 
   it("opens trace exemplar popovers from latency markers", async () => {

@@ -1048,48 +1048,40 @@ impl TelemetryStore for GreptimeStore {
             .map(|trace_id| format!("'{}'", escape(trace_id)))
             .collect::<Vec<_>>()
             .join(",");
-        let rows = self
-            .sql_lenient(&format!(
-                r#"SELECT "root"."trace_id", "root"."span_name", "root"."service_name",
-                          "root"."ts_nanos", "root"."dur", "agg"."span_count",
-                          "agg"."has_error"
-                   FROM (
-                     SELECT "trace_id", "span_name", "service_name",
-                            CAST("timestamp" AS BIGINT) AS "ts_nanos",
-                            CAST("duration_nano" AS BIGINT) AS "dur",
-                            ROW_NUMBER() OVER (
-                              PARTITION BY "trace_id"
-                              ORDER BY (CASE WHEN "parent_span_id" IS NULL OR "parent_span_id" = ''
-                                             THEN 0 ELSE 1 END) ASC,
-                                       "timestamp" ASC
-                            ) AS "rn"
-                     FROM opentelemetry_traces
-                     WHERE "trace_id" IN ({id_list})
-                   ) AS "root"
-                   JOIN (
-                     SELECT "trace_id", COUNT(*) AS "span_count",
-                            MAX(CASE WHEN "span_status_code" = 'STATUS_CODE_ERROR' THEN 1 ELSE 0 END)
-                            AS "has_error"
-                     FROM opentelemetry_traces
-                     WHERE "trace_id" IN ({id_list})
-                     GROUP BY "trace_id"
-                   ) AS "agg" ON "root"."trace_id" = "agg"."trace_id"
-                   WHERE "root"."rn" = 1"#
-            ))
+        let spans = self
+            .select_spans(
+                &format!(r#""trace_id" IN ({id_list})"#),
+                r#" ORDER BY "timestamp" ASC"#,
+                "",
+            )
             .await?;
-        let mut by_id: std::collections::HashMap<_, _> = rows
-            .iter()
-            .map(|row| {
-                let summary = crate::adapter::TraceSummary {
-                    trace_id: str_at(row, 0),
-                    root_name: str_at(row, 1),
-                    service: str_at(row, 2),
-                    start_nanos: u128_at(row, 3),
-                    duration_ns: u128_at(row, 4),
-                    span_count: u128_at(row, 5) as u64,
-                    has_error: u128_at(row, 6) > 0,
-                };
-                (summary.trace_id.clone(), summary)
+        let mut grouped: BTreeMap<String, Vec<SpanRow>> = BTreeMap::new();
+        for span in spans {
+            grouped.entry(span.trace_id.clone()).or_default().push(span);
+        }
+        let mut by_id: BTreeMap<_, _> = grouped
+            .into_iter()
+            .filter_map(|(trace_id, spans)| {
+                let root = spans.iter().min_by_key(|span| {
+                    (
+                        !span.parent_span_id.as_deref().is_none_or(str::is_empty),
+                        span.ts_nanos,
+                    )
+                })?;
+                Some((
+                    trace_id.clone(),
+                    crate::adapter::TraceSummary {
+                        trace_id,
+                        root_name: root.name.clone(),
+                        service: root.service.clone(),
+                        start_nanos: root.ts_nanos,
+                        duration_ns: root.duration_ns,
+                        span_count: spans.len() as u64,
+                        has_error: spans
+                            .iter()
+                            .any(|span| span.status_code == "STATUS_CODE_ERROR"),
+                    },
+                ))
             })
             .collect();
         Ok(ids
