@@ -73,7 +73,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { gqlString, graphql } from "@/lib/api"
+import { gqlString, graphql, LOG_FIELDS } from "@/lib/api"
 import { formatCount, formatDateTime, formatTimeInRange } from "@/lib/format"
 import { resolveRangeSearch, updateRangeSearch } from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
@@ -227,18 +227,17 @@ export async function loadLogs(search: LogsSearch): Promise<LogsData> {
   ].filter(Boolean)
   if (search.live) {
     return graphql<LogsData>(
-      `{ services savedViews(page: "/logs") { id name page state updatedAtNanos } logs(limit: 0) { tsNanos eventName observedTsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource } logCountSeries(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", stepSeconds: ${stepSeconds}) { tsNanos value } }`
+      `{ services savedViews(page: "/logs") { id name page state updatedAtNanos } logs(limit: 0) { ${LOG_FIELDS} } logCountSeries(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", stepSeconds: ${stepSeconds}) { tsNanos value } }`
     )
   }
-  const logsSelection = `tsNanos eventName observedTsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource`
   const logsQuery = search.anchor
-    ? `logs: logsAround(anchorNanos: "${search.anchor}", windowSeconds: 30, ${search.service ? `service: "${gqlString(search.service)}", ` : ""}limit: ${PAGE_SIZE}) { ${logsSelection} }`
+    ? `logs: logsAround(anchorNanos: "${search.anchor}", windowSeconds: 30, ${search.service ? `service: "${gqlString(search.service)}", ` : ""}limit: ${PAGE_SIZE}) { ${LOG_FIELDS} }`
     : `logs(${[
         `fromNanos: "${range.fromNanos}"`,
         `toNanos: "${range.toNanos}"`,
         ...filters,
         `limit: ${PAGE_SIZE}`,
-      ].join(", ")}) { ${logsSelection} }`
+      ].join(", ")}) { ${LOG_FIELDS} }`
   const seriesArgs = [
     `fromNanos: "${range.fromNanos}"`,
     `toNanos: "${range.toNanos}"`,
@@ -397,7 +396,7 @@ function LogsPage() {
         .filter(Boolean)
         .join(", ")
       const more = await graphql<{ logs: LogDoc[] }>(`{ logs(${args}) {
-        tsNanos eventName observedTsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource
+        ${LOG_FIELDS}
       } }`)
       // Window/filters changed while in flight — drop the stale page.
       if (logsGeneration.current !== generation) return

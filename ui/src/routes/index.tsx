@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
 import { graphql } from "@/lib/api"
+import type { Issue, TraceSummary } from "@/lib/api"
 import {
   formatCount,
   formatDelta,
@@ -89,24 +90,17 @@ interface SpanRed {
   p99: SeriesPoint[]
 }
 
-interface IssueRow {
-  fingerprint: string
-  title: string
-  service: string
-  lastSeenNanos: string
-  eventCount: number
-  status: string
-}
+type IssueRow = Pick<
+  Issue,
+  | "fingerprint"
+  | "title"
+  | "service"
+  | "lastSeenNanos"
+  | "eventCount"
+  | "status"
+>
 
-interface TraceRow {
-  traceId: string
-  rootName: string
-  service: string
-  startNanos: string
-  durationNs: string
-  spanCount: number
-  hasError: boolean
-}
+type TraceRow = TraceSummary
 
 export interface OverviewData {
   overview: OverviewTotals

@@ -22,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { graphql } from "@/lib/api"
+import type { ObservedRun } from "@/lib/api"
 import { formatCount, formatDurationNs } from "@/lib/format"
 import {
   rangeLinkSearch,
@@ -41,15 +42,6 @@ interface RunRecord {
   endedAtNanos: string | null
   errorCount: number
   traceCount: number
-}
-
-interface ObservedRun {
-  runId: string
-  service: string
-  firstNanos: string
-  lastNanos: string
-  spanCount: number
-  logCount: number
 }
 
 export interface RunRow {

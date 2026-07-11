@@ -41,7 +41,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { gqlString, graphql } from "@/lib/api"
+import { gqlString, graphql, LOG_FIELDS } from "@/lib/api"
 import type { RuntimeMetric, StoryBeat } from "@/lib/api"
 import { formatCount, formatDurationNs } from "@/lib/format"
 import { rangeLinkSearch, resolveRangeSearch } from "@/lib/range"
@@ -135,8 +135,7 @@ export const Route = createFileRoute("/runs/$runId")({
            traceId rootName service startNanos durationNs spanCount hasError
          }
          logsByRun(runId: "${gqlString(params.runId)}", limit: 200) {
-           tsNanos eventName observedTsNanos service severityNum severityText body traceId spanId
-           runId scopeName attributes resource
+           ${LOG_FIELDS}
          }
          story(runId: "${gqlString(params.runId)}") {
            tsNanos lane kind title traceId spanId severity durationNs

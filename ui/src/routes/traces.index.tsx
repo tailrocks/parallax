@@ -53,7 +53,7 @@ import { RelativeTime } from "@/components/console/relative-time"
 import { TableSkeleton } from "@/components/console/skeletons"
 import { formatCount, formatDurationNs, formatTimeInRange } from "@/lib/format"
 import { gqlString, graphql } from "@/lib/api"
-import type { AttributeCompareRow, TraceSummary } from "@/lib/api"
+import type { AttributeCompareRow, LiveSpan, TraceSummary } from "@/lib/api"
 import {
   rangeLinkSearch,
   resolveRangeSearch,
@@ -62,17 +62,8 @@ import {
 import type { ResolvedRange } from "@/lib/range"
 import { cn } from "@/lib/utils"
 
-/** One finished span from the live feed (`/v1/traces/stream`). */
-interface SpanDoc {
-  tsNanos: string
-  service: string
-  traceId: string
-  spanId: string
-  name: string
-  kind: string
-  statusCode: string
-  durationNs: string
-}
+/** Live feed span — derived from shared `Span` (+ `runId` on the wire). */
+type SpanDoc = LiveSpan
 
 type TraceSort =
   | "START_DESC"

@@ -93,6 +93,22 @@ export interface Span {
   durationNs: string
 }
 
+/** Full GraphQL selection for a log row (`LogDoc` / `logs` connection). */
+export const LOG_FIELDS =
+  "tsNanos eventName observedTsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource"
+
+/** Full GraphQL selection for a stored span (`Span`). */
+export const SPAN_FIELDS =
+  "tsNanos service traceId spanId parentSpanId name kind statusCode durationNs"
+
+/**
+ * Live SSE span from `/v1/traces/stream`.
+ *
+ * Matches `Span` and adds `runId` (the live serializer always emits it;
+ * `parentSpanId` is present on the wire — unlike the former inline `SpanDoc`).
+ */
+export type LiveSpan = Span & { runId: string | null }
+
 export interface SpanLink {
   traceId: string
   spanId: string
