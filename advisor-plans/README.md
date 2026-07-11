@@ -27,7 +27,7 @@ verified source inside the plan file.
 |------|-------|----------|--------|------------|--------|
 | 084 | GreptimeDB integration corrections (matches_term, index types, deterministic log schema, TTL reconcile, timeouts, version upgrades) | P1 | L | 070; 074 soft | DONE |
 | 085 | Read-path SQL rewrites (window unbounded scans, SQL-side histogram/edge aggregation, round-trip collapse, uncast timestamp) | P1 | L | 074, 075, 084 | TODO |
-| 086 | API request memoization + batching (per-request span/log memo, batched run stats, one RED scan, join!, SSE per-batch serialization) | P1 | L | 070; BEFORE 078 | DONE |
+| 086 | API request memoization + batching (per-request span/log memo, batched run stats, one RED scan, join!, SSE per-batch serialization) | P1 | L | 070; BEFORE 078 | TODO |
 | 087 | Ingest pipeline restructure (gzip OTLP/HTTP, per-signal workers, drop discarded batches, raw-bytes spool, bounded limits) | P1/P2 | L | 073, 076 | TODO |
 | 088 | UI data layer (query cache + preload reuse, dashboard fan-out collapse, bounded run scan, visibility gating, issues table) | P2 | L | 071, 077, 079 | TODO |
 | 089 | Extension-table writes via gRPC ingester + metric_exemplars PK fix | P2 | M | 084, 070 | TODO |
@@ -128,14 +128,14 @@ its verification gates, and update your row below when done.
 | 072 | Redaction bypasses + agent-trust delimiting in bundles | P1 | L | — | DONE |
 | 073 | Spool durability truth (worker retry, shutdown drain, honest docs) | P1 | M | 070 | DONE |
 | 074 | GreptimeDB SQL testability (golden SQL, escape tests, conformance suite) | P1 | L | 070; 069 (soft) | DONE |
-| 075 | Read-path performance (traces_search window, fan-out joins, table cache) | P2 | M | 074 | DONE |
+| 075 | Read-path performance (traces_search window, fan-out joins, table cache) | P2 | M | 074 | BLOCKED (memory traces_search aggregates span_count/has_error unwindowed — pick windowed vs lifetime for both adapters) |
 | 076 | Ingest hot path (spool locks/IO, batched upserts, normalize churn) | P2 | M-L | 073, 070 | TODO |
 | 077 | Shared SSE hook + real stream health in Live badges | P2 | M | 071 | DONE |
 | 078 | Split parallax-api lib.rs into domain modules | P2 | L | 069; after 072/073/075 | TODO |
 | 079 | UI query/type dedup + dependency hygiene + rotel.env template | P2 | M | 069; after 071/077 | TODO |
 | 080 | Onboarding docs (dev setup, ui/README, PROJECT_STRUCTURE, cli.md) | P3 | S | — | DONE |
 | 081 | `--format json` on bundle commands + agent-session CLI verb | P2 | M | — | DONE |
-| 082 | Publish bundle-v1 JSON Schema + conformance test | P3 | M | 072, 081 | DONE |
+| 082 | Publish bundle-v1 JSON Schema + conformance test | P3 | M | 072, 081 | TODO |
 | 083 | MCP read-only adapter SPIKE (projection equivalence) | P3 | M | 072, 081; 082 (soft) | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (one-line reason) |
@@ -238,39 +238,6 @@ Recorded so they are not re-audited; "deferred" items may be planned later.
 - Should the operator rotate the lab OpenObserve/Sentry credentials in
   `bench/otlp-fanout/rotel.env` history if they were ever non-default? (079
   replaces the file with a template but does not rewrite history.)
-
-### Plan 082 prose-vs-code divergences (2026-07-11)
-
-Recorded while authoring `schema/evidence-bundle.v1.schema.json` against the
-shipped `Bundle` Serialize shape. Research doc
-`docs/research/architecture/evidence-bundle-schema.md` is **not** edited;
-code is the validator source of truth. Do not resolve here.
-
-- **Envelope model**: prose is a CloudEvents-ish envelope with
-  `bundle_id`, `schema_ref`, `generated_at`, object `generator`/`project`,
-  `window`, typed `nodes`/`edges`, `projection_manifest`, `query_manifest`,
-  `access`. Code is a flat dossier: `schema_version`, string `generator`,
-  `anchor`, optional `issue`/`run`/`latest_event`/`trace`, `metric_windows`,
-  `logs[]` (preformatted strings), `hypotheses`, `missing_evidence`,
-  `redaction`, `bounded`, `canonical_hash`.
-- **`schema_version`**: prose uses semver-like `"0.1.0"`; code freezes
-  `"bundle-v1"`.
-- **Redaction field name**: prose `redaction_report`; code `redaction`
-  (`policy` + `redacted_counts` map, not the richer prose report).
-- **Anchor shape**: prose `{ type, id }`; code `{ kind, id }` with string
-  kinds `issue`/`run`/`trace`.
-- **No node/edge graph** in code — correlation is section-based
-  (`run`/`trace`/`metric_windows`/`logs`), not a typed graph catalog.
-- **Timestamps**: prose ISO-8601 / structured frames; code nanosecond
-  **strings** (`*_nanos` via `.to_string()`).
-- **Bounding**: code exposes `bounded` (max/estimated tokens, dropped logs,
-  truncated stacktrace); prose has no equivalent top-level object.
-- **Hypotheses**: prose cites supporting/contradicting/checks; code is
-  `{ kind, statement, confidence, evidence[] }` only.
-- **Missing from code** (present in prose): deploy/code-change/agent nodes,
-  source-field policy, raw refs, access policy, projection manifest.
-- **Present in code** (absent from prose envelope): `bounded`, string
-  `logs`, flat `IssueSummary`/`EventDetail`/`SpanLine` sections.
 
 ## Observability program (022-034)
 
