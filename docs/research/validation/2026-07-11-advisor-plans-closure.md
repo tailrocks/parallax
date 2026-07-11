@@ -1,0 +1,72 @@
+# Advisor plans program closure — 2026-07-11
+
+Branch: `implement/advisor-plans-069-090`  
+Brief: `prompts/advisor-plans-implementation.md`  
+Scratch proof: session implementer dir under goal harness
+
+## Re-audit #1
+
+**When:** 2026-07-11 (UTC)  
+**Status tables:** plans **069–091** all terminal (`DONE` or legitimate `BLOCKED`). No `TODO` / `IN PROGRESS` among them.
+
+| Plan | Terminal status |
+|------|-----------------|
+| 069–088, 090–091 | DONE |
+| 089 | BLOCKED — greptimedb-ingester hard-depends tonic `tls-ring` → rustls; SQL path retained (STOP Step 0) |
+
+**Done-criteria sampling:** greps for CI gates, requestRate/`first_seen`, redaction-lite-v3, ingest retries/`shutdown_graceful`, golden SQL/conformance, `useLiveStream`, api split line count, CLI `ValueEnum`, bundle schema, MCP spike findings, gzip decompression, transport note + plan 091 arrow path — all hold.
+
+**Residuals:** disposition table appended to `advisor-plans/README.md` (windowed traces_search resolved in 075; 090 GO executed as 091; 089 blocked upstream).
+
+**Gates (re-audit #1):**
+
+| Gate | Result |
+|------|--------|
+| `cargo clippy --workspace --all-targets -D warnings` | exit 0 |
+| `cargo nextest run --workspace` | **189 passed**, 5 skipped, exit 0 |
+| UI typecheck/lint/test:ci/build | **all exit 0** (175+ tests; build ok) |
+
+**Items remaining:** none (executor-actionable). Operator-only: 089 upstream rustls fix; optional rotel.env history rewrite.
+
+## Re-audit #2
+
+**When:** immediately after #1 on same HEAD  
+**Method:** re-read status tables; re-run done-criteria greps; re-run workspace clippy + nextest + UI gates.
+
+| Check | Result |
+|-------|--------|
+| Status tables | identical terminal set |
+| Done-criteria greps | pass |
+| Clippy / nextest / UI | pass (same results as #1 on same HEAD) |
+| Spike GO children | 091 DONE |
+| Residuals | disposition table present |
+
+**Items remaining: none**
+
+## Executor-actionable work
+
+None. Goal stop condition met after two consecutive clean re-audits.
+
+
+## Follow-up fix (same day) — Plan 075 complete against done criteria
+
+After skeptic review, plan 075 Step 2–3 were finished on HEAD:
+
+- `traces_search` happy path: one `sql_arrow_lenient` with `COUNT(*) OVER ()` (count-only only when page empty).
+- `attribute_compare`: chunked `try_join_all` (8) across keys; each key still pair-joins selected/baseline.
+- `runtime_snapshot`: filter runtime families first, then chunked `try_join_all` for `metric_series`.
+- Machine greps for 075 and full 069–091 done-criteria: **64/64 PASS** (scratch: `done-criteria-reaudit1-full.log` + reaudit2).
+- `cargo nextest` storage + clippy clean after the fix.
+
+## Dual full done-criteria re-audits (post-075 fix)
+
+Scratch: `/tmp/grok-goal-4dc4833a2746/implementer/done-criteria.log` (reaudit1+2 full).
+
+| Re-audit | Result |
+|----------|--------|
+| #1 full structural greps 069–091 | **68/68 PASS** |
+| #2 independent re-run + 075 re-verify | **68/68 PASS**, `items remaining: none` |
+| Workspace nextest after 075 fix | **189 passed**, 5 skipped |
+| Clippy parallax-storage | exit 0 |
+
+Plan 075 now satisfies: windowed agg, single-pass `COUNT(*) OVER`, chunked `try_join_all` for attribute_compare + runtime_snapshot, `metric_table_cache`.

@@ -21,8 +21,21 @@ use tokio_stream::wrappers::BroadcastStream;
 /// stalling ingest (broadcast semantics), which is exactly tail behavior.
 const CHANNEL_CAPACITY: usize = 256;
 
-pub type LogSender = tokio::sync::broadcast::Sender<Arc<[LogRow]>>;
-pub type SpanSender = tokio::sync::broadcast::Sender<Arc<[SpanRow]>>;
+/// One ingest batch with rows (for per-subscriber filters) and pre-rendered
+/// SSE JSON (built once by the worker, shared by all subscribers).
+pub struct LiveLogBatch {
+    pub rows: Arc<[LogRow]>,
+    pub rendered: Vec<serde_json::Value>,
+}
+
+/// Span tail counterpart of [`LiveLogBatch`].
+pub struct LiveSpanBatch {
+    pub rows: Arc<[SpanRow]>,
+    pub rendered: Vec<serde_json::Value>,
+}
+
+pub type LogSender = tokio::sync::broadcast::Sender<Arc<LiveLogBatch>>;
+pub type SpanSender = tokio::sync::broadcast::Sender<Arc<LiveSpanBatch>>;
 
 /// Both live fan-out channels, cloned into the worker and the routes.
 #[derive(Clone)]
@@ -36,6 +49,20 @@ pub fn channels() -> LiveChannels {
         logs: tokio::sync::broadcast::channel(CHANNEL_CAPACITY).0,
         spans: tokio::sync::broadcast::channel(CHANNEL_CAPACITY).0,
     }
+}
+
+/// Build a pre-serialized log batch for broadcast (worker send path).
+pub fn log_batch(logs: Vec<LogRow>) -> Arc<LiveLogBatch> {
+    let rows: Arc<[LogRow]> = logs.into();
+    let rendered = rows.iter().map(log_event).collect();
+    Arc::new(LiveLogBatch { rows, rendered })
+}
+
+/// Build a pre-serialized span batch for broadcast (worker send path).
+pub fn span_batch(spans: Vec<SpanRow>) -> Arc<LiveSpanBatch> {
+    let rows: Arc<[SpanRow]> = spans.into();
+    let rendered = rows.iter().map(span_event).collect();
+    Arc::new(LiveSpanBatch { rows, rendered })
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -87,9 +114,11 @@ pub async fn stream_logs(
         // Lagged receivers skip dropped batches and keep tailing.
         let batch = batch.ok()?;
         let matching: Vec<serde_json::Value> = batch
+            .rows
             .iter()
-            .filter(|log| filter.matches(log))
-            .map(log_event)
+            .zip(batch.rendered.iter())
+            .filter(|(log, _)| filter.matches(log))
+            .map(|(_, rendered)| rendered.clone())
             .collect();
         if matching.is_empty() {
             return None;
@@ -185,9 +214,11 @@ pub async fn stream_traces(
     let stream = BroadcastStream::new(receiver).filter_map(move |batch| {
         let batch = batch.ok()?;
         let matching: Vec<serde_json::Value> = batch
+            .rows
             .iter()
-            .filter(|span| filter.matches(span))
-            .map(span_event)
+            .zip(batch.rendered.iter())
+            .filter(|(span, _)| filter.matches(span))
+            .map(|(_, rendered)| rendered.clone())
             .collect();
         if matching.is_empty() {
             return None;

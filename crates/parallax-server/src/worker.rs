@@ -1,6 +1,10 @@
 //! The ingest worker: receives raw OTLP export requests from the receivers,
-//! normalizes them, writes telemetry rows through the storage adapter,
+//! normalizes them when needed, writes telemetry through the storage adapter,
 //! derives error events, and upserts grouped issues in the metadata store.
+//!
+//! Three per-signal worker tasks run independently so a slow traces forward
+//! does not stall logs/metrics acks (ordering across signals was never
+//! guaranteed).
 
 use parallax_core::{derive, normalize};
 use parallax_proto::collector_logs::ExportLogsServiceRequest;
@@ -9,34 +13,85 @@ use parallax_proto::collector_trace::ExportTraceServiceRequest;
 use parallax_storage::adapter::TelemetryStore;
 use parallax_storage::metadata::MetadataStore;
 use parallax_storage::model::{ErrorEventRow, ErrorSource};
+use parallax_storage::spool::Signal;
 use prost::Message;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
-use tokio::sync::mpsc;
+use std::time::Duration;
+use tokio::sync::{Mutex, mpsc};
 
-/// One queued OTLP batch: the decoded request feeds the in-process tee
-/// (normalize → derive → live → run registration) while the raw OTLP bytes are
-/// forwarded verbatim to GreptimeDB's native `/v1/otlp` endpoints.
+const INGEST_RETRIES: usize = 3;
+const INGEST_BACKOFF: [Duration; 3] = [
+    Duration::from_millis(100),
+    Duration::from_millis(500),
+    Duration::from_secs(2),
+];
+const SEEN_RUNS_CAP: usize = 100_000;
+
+/// One queued OTLP batch.
+///
+/// Memory shape per item:
+/// - **Traces / logs**: decoded `Export*ServiceRequest` (needed for derive,
+///   live-tail, and — for logs — identity-attribute promotion) plus raw
+///   protobuf `Bytes` (zero-copy refcounted) for the native GreptimeDB OTLP
+///   forward. Both are justified consumers; dropping either would re-decode
+///   or re-encode on the hot path.
+/// - **Metrics**: decoded request (normalize → extension tables / exemplars)
+///   plus raw bytes for the native metric-engine forward.
 pub enum IngestItem {
     Traces(ExportTraceServiceRequest, bytes::Bytes),
     Logs(ExportLogsServiceRequest, bytes::Bytes),
     Metrics(ExportMetricsServiceRequest, bytes::Bytes),
 }
 
-pub type IngestSender = mpsc::Sender<IngestItem>;
-
-pub fn channel(buffer: usize) -> (IngestSender, mpsc::Receiver<IngestItem>) {
-    mpsc::channel(buffer)
+/// Per-signal senders so receivers enqueue without crossing signal FIFOs.
+#[derive(Clone)]
+pub struct IngestSenders {
+    pub traces: mpsc::Sender<IngestItem>,
+    pub logs: mpsc::Sender<IngestItem>,
+    pub metrics: mpsc::Sender<IngestItem>,
 }
 
+impl IngestSenders {
+    pub fn for_signal(&self, signal: Signal) -> &mpsc::Sender<IngestItem> {
+        match signal {
+            Signal::Traces => &self.traces,
+            Signal::Logs => &self.logs,
+            Signal::Metrics => &self.metrics,
+        }
+    }
+}
+
+pub struct IngestReceivers {
+    pub traces: mpsc::Receiver<IngestItem>,
+    pub logs: mpsc::Receiver<IngestItem>,
+    pub metrics: mpsc::Receiver<IngestItem>,
+}
+
+/// Build three bounded channels, one per signal (`[limits] ingest_queue_batches`).
+pub fn channels(buffer_per_signal: usize) -> (IngestSenders, IngestReceivers) {
+    let (traces_tx, traces_rx) = mpsc::channel(buffer_per_signal);
+    let (logs_tx, logs_rx) = mpsc::channel(buffer_per_signal);
+    let (metrics_tx, metrics_rx) = mpsc::channel(buffer_per_signal);
+    (
+        IngestSenders {
+            traces: traces_tx,
+            logs: logs_tx,
+            metrics: metrics_tx,
+        },
+        IngestReceivers {
+            traces: traces_rx,
+            logs: logs_rx,
+            metrics: metrics_rx,
+        },
+    )
+}
+
+#[derive(Clone)]
 pub struct Worker {
     store: Arc<dyn TelemetryStore>,
     metadata: Arc<MetadataStore>,
-    /// Run ids already registered this process — saves a metadata round-trip
-    /// per row; `ensure_run` itself is idempotent.
-    seen_runs: std::collections::HashSet<String>,
-    /// Live-tail broadcasts. Publishing clones the batch only while someone
-    /// is subscribed; the hot path stays clone-free otherwise.
+    seen_runs: Arc<Mutex<HashSet<String>>>,
     live: crate::live::LiveChannels,
 }
 
@@ -49,43 +104,55 @@ impl Worker {
         Self {
             store,
             metadata,
-            seen_runs: std::collections::HashSet::new(),
+            seen_runs: Arc::new(Mutex::new(HashSet::new())),
             live,
         }
     }
 
-    /// Drain the channel until all senders drop.
-    pub async fn run(mut self, mut receiver: mpsc::Receiver<IngestItem>) {
+    pub async fn run(self, mut receiver: mpsc::Receiver<IngestItem>) {
         while let Some(item) = receiver.recv().await {
-            if let Err(e) = self.process(item).await {
-                tracing::error!("ingest worker item failed: {e:#}");
+            let mut attempt = 0;
+            loop {
+                match self.process(&item).await {
+                    Ok(()) => break,
+                    Err(e) if attempt < INGEST_RETRIES => {
+                        attempt += 1;
+                        tracing::warn!("ingest attempt {attempt} failed, retrying: {e:#}");
+                        tokio::time::sleep(INGEST_BACKOFF[attempt - 1]).await;
+                    }
+                    Err(e) => {
+                        tracing::error!(
+                            "ingest item DROPPED after {INGEST_RETRIES} retries: {e:#}"
+                        );
+                        break;
+                    }
+                }
             }
         }
     }
 
-    async fn process(&mut self, item: IngestItem) -> anyhow::Result<()> {
+    async fn process(&self, item: &IngestItem) -> anyhow::Result<()> {
         match item {
             IngestItem::Traces(request, raw) => {
-                let spans = normalize::normalize_traces(&request);
-                let errors = derive::derive_from_traces(&request);
-                self.register_runs(
-                    spans
-                        .iter()
-                        .filter_map(|s| s.run_id.clone().map(|run_id| (run_id, s.ts_nanos))),
-                )
-                .await?;
+                let errors = derive::derive_from_traces(request);
+                self.register_runs(normalize::resource_run_ids(request))
+                    .await?;
                 if self.live.spans.receiver_count() > 0 {
-                    let _ = self.live.spans.send(spans.clone().into());
+                    let spans = normalize::normalize_traces(request);
+                    let _ = self.live.spans.send(crate::live::span_batch(spans));
                 }
-                self.store.ingest_traces(spans, raw).await?;
+                self.store.ingest_traces(request, raw.clone()).await?;
                 self.record_errors(errors).await?;
             }
-            IngestItem::Logs(mut request, raw) => {
+            IngestItem::Logs(request, raw) => {
+                let mut request = request.clone();
                 let raw = if normalize::promote_log_identity_attributes(&mut request) {
                     bytes::Bytes::from(request.encode_to_vec())
                 } else {
-                    raw
+                    raw.clone()
                 };
+                // derive_from_logs takes normalized rows (Plan 070/026) — keep
+                // normalizing on the logs path rather than refactoring derive.
                 let logs = normalize::normalize_logs(&request);
                 let errors = derive::derive_from_logs(&logs);
                 self.register_runs(
@@ -94,19 +161,19 @@ impl Worker {
                 )
                 .await?;
                 if self.live.logs.receiver_count() > 0 {
-                    let _ = self.live.logs.send(logs.clone().into());
+                    let _ = self.live.logs.send(crate::live::log_batch(logs));
                 }
-                self.store.ingest_logs(logs, raw).await?;
+                self.store.ingest_logs(&request, raw).await?;
                 self.record_errors(errors).await?;
             }
             IngestItem::Metrics(request, raw) => {
-                let normalized = normalize::normalize_metrics(&request);
+                let normalized = normalize::normalize_metrics(request);
                 self.store
                     .ingest_metrics(
                         normalized.points,
                         normalized.histograms,
                         normalized.exemplars,
-                        raw,
+                        raw.clone(),
                     )
                     .await?;
             }
@@ -114,25 +181,30 @@ impl Worker {
         Ok(())
     }
 
-    /// Auto-register run ids first seen in telemetry (status `external`) so
-    /// run-scoped lookups work for runs no CLI wrapper started.
     async fn register_runs(
-        &mut self,
+        &self,
         run_ids: impl Iterator<Item = (String, u128)>,
     ) -> anyhow::Result<()> {
-        let mut first_seen: std::collections::HashMap<String, u128> = Default::default();
-        for (run_id, ts_nanos) in run_ids {
-            if run_id.is_empty() || self.seen_runs.contains(&run_id) {
-                continue;
+        let mut first_seen: HashMap<String, u128> = Default::default();
+        {
+            let seen = self.seen_runs.lock().await;
+            for (run_id, ts_nanos) in run_ids {
+                if run_id.is_empty() || seen.contains(&run_id) {
+                    continue;
+                }
+                first_seen
+                    .entry(run_id)
+                    .and_modify(|t| *t = (*t).min(ts_nanos))
+                    .or_insert(ts_nanos);
             }
-            first_seen
-                .entry(run_id)
-                .and_modify(|t| *t = (*t).min(ts_nanos))
-                .or_insert(ts_nanos);
         }
         for (run_id, ts_nanos) in first_seen {
             self.metadata.ensure_run(&run_id, ts_nanos).await?;
-            self.seen_runs.insert(run_id);
+            let mut seen = self.seen_runs.lock().await;
+            if seen.len() > SEEN_RUNS_CAP {
+                seen.clear();
+            }
+            seen.insert(run_id);
         }
         Ok(())
     }
@@ -142,8 +214,9 @@ impl Worker {
         if errors.is_empty() {
             return Ok(());
         }
-        for event in &errors {
-            let occurrence = parallax_storage::metadata::IssueOccurrence {
+        let occurrences: Vec<parallax_storage::metadata::IssueOccurrence<'_>> = errors
+            .iter()
+            .map(|event| parallax_storage::metadata::IssueOccurrence {
                 fingerprint: &event.fingerprint,
                 title: derive::issue_title(&event.error_type, &event.message),
                 error_type: &event.error_type,
@@ -153,9 +226,9 @@ impl Worker {
                 trace_id: (!event.trace_id.is_empty() && event.trace_id.chars().any(|c| c != '0'))
                     .then_some(event.trace_id.as_str()),
                 attributes: &event.attributes,
-            };
-            self.metadata.upsert_issue_occurrence(&occurrence).await?;
-        }
+            })
+            .collect();
+        self.metadata.upsert_issue_occurrences(&occurrences).await?;
         self.store.write_error_events(errors).await?;
         Ok(())
     }
@@ -204,9 +277,10 @@ mod tests {
         Exemplar, Gauge, Metric, NumberDataPoint, ResourceMetrics, ScopeMetrics,
         exemplar::Value as ExemplarValue, metric::Data, number_data_point::Value as NumberValue,
     };
-    use parallax_storage::adapter::TelemetryStore;
     use parallax_storage::memory::MemoryStore;
     use serde_json::json;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use tokio::sync::oneshot;
 
     fn error_event(source: ErrorSource, span_id: &str, fingerprint: &str) -> ErrorEventRow {
         ErrorEventRow {
@@ -275,7 +349,6 @@ mod tests {
             error_event(ErrorSource::LogException, "span-a", "fp"),
             error_event(ErrorSource::SpanException, "span-a", "fp"),
         ]);
-
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].source, ErrorSource::SpanException);
     }
@@ -286,7 +359,6 @@ mod tests {
             error_event(ErrorSource::SpanException, "span-a", "fp"),
             error_event(ErrorSource::SpanException, "span-b", "fp"),
         ]);
-
         assert_eq!(events.len(), 2);
     }
 
@@ -300,7 +372,6 @@ mod tests {
                 .expect("metadata"),
         );
         let worker = Worker::new(store.clone(), metadata.clone(), crate::live::channels());
-
         worker
             .record_errors(vec![
                 error_event(ErrorSource::LogException, "span-a", "fp"),
@@ -308,7 +379,6 @@ mod tests {
             ])
             .await
             .expect("record errors");
-
         let issues = metadata.issues(10).await.expect("issues");
         assert_eq!(issues.len(), 1);
         assert_eq!(issues[0].event_count, 1);
@@ -321,6 +391,39 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn process_is_reentrant_after_failure_shape() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let store = Arc::new(MemoryStore::new());
+        let metadata = Arc::new(
+            MetadataStore::open(tmp.path().join("meta.db"))
+                .await
+                .expect("metadata"),
+        );
+        let worker = Worker::new(store.clone(), metadata, crate::live::channels());
+        let item = IngestItem::Metrics(metrics_request_with_exemplar(), bytes::Bytes::new());
+        worker.process(&item).await.expect("first");
+        worker.process(&item).await.expect("second");
+        let rows = store
+            .metric_exemplars(
+                "http.server.request.duration",
+                Some("checkout"),
+                0..=100,
+                10,
+            )
+            .await
+            .expect("metric exemplars");
+        assert!(!rows.is_empty());
+    }
+
+    #[test]
+    fn ingest_retry_constants_are_bounded() {
+        assert_eq!(INGEST_RETRIES, 3);
+        assert_eq!(INGEST_BACKOFF.len(), 3);
+        assert!(INGEST_BACKOFF[0] < INGEST_BACKOFF[1]);
+        assert!(INGEST_BACKOFF[1] < INGEST_BACKOFF[2]);
+    }
+
+    #[tokio::test]
     async fn metric_exemplar_round_trips_through_worker_and_store() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let store = Arc::new(MemoryStore::new());
@@ -329,16 +432,14 @@ mod tests {
                 .await
                 .expect("metadata"),
         );
-        let mut worker = Worker::new(store.clone(), metadata, crate::live::channels());
-
+        let worker = Worker::new(store.clone(), metadata, crate::live::channels());
         worker
-            .process(IngestItem::Metrics(
+            .process(&IngestItem::Metrics(
                 metrics_request_with_exemplar(),
                 bytes::Bytes::new(),
             ))
             .await
             .expect("process metrics");
-
         let rows = store
             .metric_exemplars(
                 "http.server.request.duration",
@@ -354,5 +455,68 @@ mod tests {
         assert_eq!(rows[0].span_id, "cdcdcdcdcdcdcdcd");
         assert_eq!(rows[0].run_id.as_deref(), Some("run-a"));
         assert_eq!(rows[0].attributes["route"], "/checkout");
+    }
+
+    #[tokio::test]
+    async fn per_signal_workers_isolate_slow_traces_from_logs() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let (gate_tx, gate_rx) = oneshot::channel();
+        let store = Arc::new(MemoryStore::new());
+        store.set_traces_gate(gate_rx).await;
+        let logs_done = Arc::new(AtomicUsize::new(0));
+        let metadata = Arc::new(
+            MetadataStore::open(tmp.path().join("meta.db"))
+                .await
+                .expect("metadata"),
+        );
+        let live = crate::live::channels();
+        let worker = Worker::new(store.clone(), metadata, live);
+        let (senders, receivers) = channels(8);
+
+        let traces_task = tokio::spawn(worker.clone().run(receivers.traces));
+        let logs_done_c = logs_done.clone();
+        let worker_logs = worker.clone();
+        let logs_task = tokio::spawn(async move {
+            let mut rx = receivers.logs;
+            while let Some(item) = rx.recv().await {
+                worker_logs.process(&item).await.expect("logs");
+                logs_done_c.fetch_add(1, Ordering::SeqCst);
+            }
+        });
+        let metrics_task = tokio::spawn(worker.run(receivers.metrics));
+
+        senders
+            .traces
+            .send(IngestItem::Traces(
+                ExportTraceServiceRequest::default(),
+                bytes::Bytes::new(),
+            ))
+            .await
+            .expect("enqueue traces");
+        senders
+            .logs
+            .send(IngestItem::Logs(
+                ExportLogsServiceRequest::default(),
+                bytes::Bytes::new(),
+            ))
+            .await
+            .expect("enqueue logs");
+
+        // Poll until logs complete while traces remain gated (real time, bounded).
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(2);
+        while logs_done.load(Ordering::SeqCst) == 0 {
+            assert!(
+                tokio::time::Instant::now() < deadline,
+                "logs worker must not wait for a blocked traces forward"
+            );
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+        assert_eq!(logs_done.load(Ordering::SeqCst), 1);
+
+        let _ = gate_tx.send(());
+        drop(senders);
+        let _ = traces_task.await;
+        let _ = logs_task.await;
+        let _ = metrics_task.await;
     }
 }

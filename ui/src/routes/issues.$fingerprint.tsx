@@ -33,7 +33,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
-import { gqlString, graphql } from "@/lib/api"
+import { gqlString, graphql, graphqlCached } from "@/lib/api"
 import type { ErrorEvent, Issue } from "@/lib/api"
 import {
   formatCount,
@@ -102,7 +102,7 @@ export async function loadIssueDetail(
   range: ResolvedRange
 ): Promise<LoaderData> {
   const escaped = gqlString(fingerprint)
-  const { issue, issueTrend } = await graphql<{
+  const { issue, issueTrend } = await graphqlCached<{
     issue: IssueDetail | null
     issueTrend: TrendPoint[]
   }>(
@@ -123,7 +123,7 @@ export async function loadIssueDetail(
   const traceId = issue?.lastTraceId
   if (traceId) {
     try {
-      const correlated = await graphql<{
+      const correlated = await graphqlCached<{
         trace: { spans: { resource: string; runId: string | null }[] } | null
         logsByTrace: BreadcrumbLog[]
       }>(
@@ -237,13 +237,17 @@ export function IssueDetailContent({
     }
   }
 
+  const bucketRequestRef = useRef<string | null>(null)
+
   async function filterBucket(tsNanos: string | null) {
     setActionError(null)
     setBucket(tsNanos)
     if (!tsNanos) {
+      bucketRequestRef.current = null
       setBucketEvents(null)
       return
     }
+    bucketRequestRef.current = tsNanos
     try {
       const from = BigInt(tsNanos)
       const to = from + 3_600_000_000_000n
@@ -256,6 +260,8 @@ export function IssueDetailContent({
              }
            } }`
       )
+      // Another bucket was selected (or cleared) while this fetch was in flight.
+      if (bucketRequestRef.current !== tsNanos) return
       setBucketEvents(scoped?.events ?? [])
       occurrencesRef.current?.scrollIntoView({
         behavior: "smooth",

@@ -5,7 +5,7 @@
 use crate::config::{Config, LimitsConfig};
 use crate::otlp_grpc::OtlpGrpc;
 use crate::otlp_http;
-use crate::worker::{self, IngestSender, Worker};
+use crate::worker::{self, IngestSenders, Worker};
 use axum::extract::{Request, State};
 use axum::http::{StatusCode, header};
 use axum::middleware::{self, Next};
@@ -31,7 +31,10 @@ pub struct ServerHandle {
     pub store: Arc<dyn TelemetryStore>,
     pub metadata: Arc<MetadataStore>,
     supervisor: Option<crate::greptime_supervisor::GreptimeSupervisor>,
+    /// Listener/reaper tasks (aborted on shutdown).
     tasks: Vec<JoinHandle<()>>,
+    /// Ingest worker tasks (one per signal) — drained on graceful shutdown after senders drop.
+    worker_tasks: Vec<JoinHandle<()>>,
 }
 
 impl ServerHandle {
@@ -44,6 +47,27 @@ impl ServerHandle {
         for task in &self.tasks {
             task.abort();
         }
+        for worker in &self.worker_tasks {
+            worker.abort();
+        }
+    }
+
+    /// Graceful shutdown: stop listeners first so no new ingest items are
+    /// accepted, then wait for the worker to drain the channel (bounded).
+    pub async fn shutdown_graceful(mut self) {
+        if let Some(supervisor) = &self.supervisor {
+            supervisor.stop();
+        }
+        for task in &self.tasks {
+            task.abort();
+        }
+        let workers = std::mem::take(&mut self.worker_tasks);
+        let _ = tokio::time::timeout(Duration::from_secs(5), async {
+            for worker in workers {
+                let _ = worker.await;
+            }
+        })
+        .await;
     }
 }
 
@@ -69,7 +93,9 @@ async fn connect_greptime(url: &str, config: &Config) -> anyhow::Result<Arc<dyn 
 #[derive(Clone)]
 struct GraphQlState {
     schema: Arc<ParallaxSchema>,
-    context: Arc<ApiContext>,
+    store: Arc<dyn TelemetryStore>,
+    metadata: Arc<MetadataStore>,
+    otlp_grpc_port: u16,
     limits: LimitsConfig,
 }
 
@@ -174,6 +200,14 @@ async fn graphql_handler(
         .clone()
         .unwrap_or_else(|| "anonymous".to_string());
     async move {
+        // Fresh ApiContext per request so RequestMemo is request-scoped and
+        // sibling resolvers share one spans_by_trace / logs_by_trace fetch.
+        let context = ApiContext {
+            store: state.store.clone(),
+            metadata: state.metadata.clone(),
+            otlp_grpc_port: state.otlp_grpc_port,
+            memo: parallax_api::RequestMemo::default(),
+        };
         let response = match parallax_api::check_query_limits(
             &state.schema,
             &request.query,
@@ -181,7 +215,7 @@ async fn graphql_handler(
             state.limits.graphql_max_depth,
             state.limits.graphql_max_complexity,
         ) {
-            Ok(()) => request.execute(&state.schema, &state.context).await,
+            Ok(()) => request.execute(&state.schema, &context).await,
             Err(message) => juniper::http::GraphQLResponse::error(juniper::FieldError::new(
                 message,
                 juniper::Value::null(),
@@ -198,7 +232,7 @@ async fn graphql_handler(
 #[derive(Clone)]
 pub struct IngestState {
     pub spool: Arc<Spool>,
-    pub sender: IngestSender,
+    pub senders: IngestSenders,
 }
 
 fn spawn_spool_reaper(
@@ -245,7 +279,10 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
 
     let mut supervisor = None;
     let store: Arc<dyn TelemetryStore> = match config.storage.mode.as_str() {
-        "none" => Arc::new(MemoryStore::new()),
+        "none" => Arc::new(MemoryStore::new().with_normalizers(
+            std::sync::Arc::new(parallax_core::normalize::normalize_traces),
+            std::sync::Arc::new(parallax_core::normalize::normalize_logs),
+        )),
         "external" => {
             let url = &config.storage.greptime_url;
             anyhow::ensure!(
@@ -276,15 +313,24 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
     };
     let metadata = Arc::new(MetadataStore::open(data_dir.join("meta.db")).await?);
 
-    let (sender, receiver) = worker::channel(1024);
+    let queue_batches = config.limits.ingest_queue_batches.max(1);
+    let (senders, receivers) = worker::channels(queue_batches);
     let ingest = IngestState {
         spool: spool.clone(),
-        sender,
+        senders,
     };
     let live = crate::live::channels();
     let worker = Worker::new(store.clone(), metadata.clone(), live.clone());
+    let worker_tasks = vec![
+        tokio::spawn(worker.clone().run(receivers.traces)),
+        tokio::spawn(worker.clone().run(receivers.logs)),
+        tokio::spawn(worker.run(receivers.metrics)),
+    ];
+    tracing::info!(
+        queue_batches_per_signal = queue_batches,
+        "ingest workers ready (traces/logs/metrics)"
+    );
     let mut tasks = Vec::new();
-    tasks.push(tokio::spawn(worker.run(receiver)));
     tasks.push(spawn_spool_reaper(
         spool.clone(),
         config.retention.spool_max_total_bytes,
@@ -305,11 +351,9 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
 
     let graphql_state = GraphQlState {
         schema: Arc::new(parallax_api::build_schema()),
-        context: Arc::new(ApiContext {
-            store: store.clone(),
-            metadata: metadata.clone(),
-            otlp_grpc_port: otlp_grpc_addr.port(),
-        }),
+        store: store.clone(),
+        metadata: metadata.clone(),
+        otlp_grpc_port: otlp_grpc_addr.port(),
         limits: config.limits.clone(),
     };
     let host_guard_state = HostGuard::for_listener(bind, api_addr);
@@ -337,7 +381,10 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
         )
         // OTLP/HTTP stays unguarded here: exporters may legitimately use a
         // container or bridge hostname while the developer API remains local.
-        .merge(otlp_http::router(ingest.clone()));
+        .merge(otlp_http::router(
+            ingest.clone(),
+            config.limits.otlp_max_body_bytes,
+        ));
 
     // The UI, by preference: an on-disk SPA build (assets + _shell.html
     // fallback), then assets embedded at compile time (release builds with
@@ -360,8 +407,8 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
         _ => embedded_ui::fallback(api_router),
     };
 
-    let otlp_http_router = otlp_http::router(ingest.clone());
-    let grpc = OtlpGrpc::new(ingest);
+    let otlp_http_router = otlp_http::router(ingest.clone(), config.limits.otlp_max_body_bytes);
+    let grpc = OtlpGrpc::new(ingest, config.limits.otlp_max_body_bytes);
     let grpc_server = tonic::transport::Server::builder()
         .add_service(grpc.trace_service())
         .add_service(grpc.logs_service())
@@ -398,6 +445,7 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
         metadata,
         supervisor,
         tasks,
+        worker_tasks,
     })
 }
 

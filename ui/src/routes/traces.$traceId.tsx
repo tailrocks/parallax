@@ -61,7 +61,7 @@ import {
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { graphql, gqlString } from "@/lib/api"
+import { graphql, graphqlCached, gqlString } from "@/lib/api"
 import type {
   CriticalPath,
   EvidenceGap,
@@ -181,7 +181,7 @@ export const Route = createFileRoute("/traces/$traceId")({
   validateSearch: validateTraceDetailSearch,
   loader: ({ params }) => {
     const traceId = gqlString(params.traceId)
-    return graphql<{
+    return graphqlCached<{
       trace: { spans: TraceSpan[] } | null
       logsByTrace: TraceLog[]
       linkedTraces: TraceSummary[]
@@ -310,6 +310,7 @@ function TracePage() {
   )
   const messaging = useMemo(() => messagingSummary(spans), [spans])
   const skewReport = useMemo(() => detectSkew(spans), [spans])
+  const window = useMemo(() => computeWindow(spans), [spans])
 
   if (!trace || spans.length === 0) {
     return (
@@ -321,7 +322,6 @@ function TracePage() {
     )
   }
 
-  const window = computeWindow(spans)
   const rootSpan =
     spans.find((span) => !span.parentSpanId) ??
     [...spans].sort((a, b) =>

@@ -63,4 +63,17 @@ describe("formatters", () => {
       })
     ).toBe("00:00:02")
   })
+
+  it("returns consistent output across repeated formatter calls", () => {
+    const options = {
+      minute: "2-digit" as const,
+      second: "2-digit" as const,
+      hour12: false,
+      timeZone: "UTC",
+    }
+    const first = formatTimeShort("2000000000", options)
+    const second = formatTimeShort("2000000000", options)
+    expect(first).toBe(second)
+    expect(first).toBe("00:02")
+  })
 })

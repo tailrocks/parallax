@@ -1,0 +1,23 @@
+[package]
+name = "read-transport-bench"
+version = "0.1.0"
+edition = "2021"
+description = "Parallax PoC (plan 090): measure GreptimeDB read transports — HTTP JSON vs Arrow, MySQL prepared statements"
+authors = ["Tailrocks"]
+license = "Apache-2.0"
+publish = false
+
+[dependencies]
+anyhow = "1"
+arrow = { version = "59", default-features = false, features = ["ipc"] }
+arrow-ipc = { version = "59", default-features = false, features = ["zstd"] }
+bytes = "1"
+clap = { version = "4", features = ["derive", "env"] }
+mysql_async = { version = "0.37", default-features = false, features = ["default"] }
+reqwest = { version = "0.13", default-features = false, features = ["json", "form", "native-tls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+
+# Standalone package (not a workspace member).
+[workspace]

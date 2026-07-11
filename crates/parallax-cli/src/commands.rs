@@ -1,5 +1,6 @@
 //! CLI commands over the API: runs (with wrapper mode), issues, traces, logs.
 
+use crate::OutputFormat;
 use crate::client::{Client, gql_str};
 use std::time::{SystemTime, UNIX_EPOCH};
 /// What `--otlp-forward rotel` (and `PARALLAX_OTLP_FORWARD=rotel`) resolves to —
@@ -259,16 +260,24 @@ pub async fn run_start(
     for (key, value) in &pairs {
         cmd.env(key, value);
     }
-    let status = cmd.status().await?;
-    let exit_code = status.code().unwrap_or(-1);
+    // Always attempt runFinish even when the child fails to spawn, so the run
+    // does not stay stuck in `running` forever.
+    let status = cmd.status().await;
+    let exit_code = match &status {
+        Ok(status) => status.code().unwrap_or(-1),
+        Err(_) => -1,
+    };
 
-    client
+    let finish = client
         .graphql(&format!(
             r#"mutation {{ runFinish(runId: "{}", endedAtNanos: "{}", exitCode: {exit_code}) }}"#,
             gql_str(&run_id),
             now_nanos()
         ))
-        .await?;
+        .await;
+
+    status?; // propagate spawn error AFTER finishing the run
+    finish?;
     println!("Parallax run {run_id} finished with exit code {exit_code}");
     println!("inspect: parallax run inspect {run_id}   issues: parallax issue list");
     Ok(exit_code)
@@ -363,21 +372,154 @@ pub async fn run_inspect(client: &Client, run_id: &str) -> anyhow::Result<()> {
 
 /// `parallax run bundle <run_id>` — the run-anchored evidence bundle
 /// (scope §2.4: the run model's bundle).
-pub async fn run_bundle(client: &Client, run_id: &str) -> anyhow::Result<()> {
-    let response = client
-        .graphql(&format!(
+pub async fn run_bundle(client: &Client, run_id: &str, format: OutputFormat) -> anyhow::Result<()> {
+    let query = match format {
+        OutputFormat::Markdown => format!(
             r#"{{ bundle(runId: "{}") {{ markdown canonicalHash }} }}"#,
             gql_str(run_id)
-        ))
-        .await?;
+        ),
+        OutputFormat::Json => format!(
+            r#"{{ bundle(runId: "{}") {{ json canonicalHash }} }}"#,
+            gql_str(run_id)
+        ),
+    };
+    let response = client.graphql(&query).await?;
     let Some(bundle) = response.pointer("/data/bundle").filter(|v| !v.is_null()) else {
         anyhow::bail!("run {run_id} not found");
     };
-    println!("{}", bundle["markdown"].as_str().unwrap_or(""));
-    if let Some(hash) = bundle["canonicalHash"].as_str() {
-        println!("\n---\nbundle: {hash}");
-    }
+    let (stdout, stderr) = render_bundle(format, bundle);
+    print!("{stdout}");
+    eprint!("{stderr}");
     Ok(())
+}
+
+/// `parallax run agent <run_id>` — run-scoped agent-session projection
+/// (tool steps, token totals). Null when no agent spans were detected.
+pub async fn run_agent_session(
+    client: &Client,
+    run_id: &str,
+    format: OutputFormat,
+) -> anyhow::Result<()> {
+    let response = client
+        .graphql(&format!(
+            r#"{{ agentSession(runId: "{}") {{
+                rootSpanId totalInputTokens totalOutputTokens errorCount truncated
+                steps {{
+                  spanId traceId kind name startNanos durationNs isError
+                  genAiOperation inputTokens outputTokens
+                }}
+            }} }}"#,
+            gql_str(run_id)
+        ))
+        .await?;
+    let Some(session) = response
+        .pointer("/data/agentSession")
+        .filter(|v| !v.is_null())
+    else {
+        anyhow::bail!("no agent session detected for run {run_id}");
+    };
+    let (stdout, stderr) = render_agent_session(format, run_id, session);
+    print!("{stdout}");
+    eprint!("{stderr}");
+    Ok(())
+}
+
+/// Pure render decision for bundle commands — markdown is byte-compatible
+/// with the pre-`--format` CLI; json emits the canonical string alone
+/// (hash lives inside the bundle JSON; no trailer on stdout).
+fn render_bundle(format: OutputFormat, bundle: &serde_json::Value) -> (String, String) {
+    match format {
+        OutputFormat::Markdown => {
+            let mut out = String::new();
+            out.push_str(bundle["markdown"].as_str().unwrap_or(""));
+            out.push('\n');
+            if let Some(hash) = bundle["canonicalHash"].as_str() {
+                out.push_str("\n---\nbundle: ");
+                out.push_str(hash);
+                out.push('\n');
+            }
+            (out, String::new())
+        }
+        OutputFormat::Json => {
+            // Verbatim canonical JSON — do not re-serialize or pretty-print.
+            let mut out = String::new();
+            out.push_str(bundle["json"].as_str().unwrap_or(""));
+            out.push('\n');
+            (out, String::new())
+        }
+    }
+}
+
+/// Pure render decision for the agent-session projection.
+fn render_agent_session(
+    format: OutputFormat,
+    run_id: &str,
+    session: &serde_json::Value,
+) -> (String, String) {
+    match format {
+        OutputFormat::Json => {
+            let body = serde_json::to_string(session).unwrap_or_else(|_| "{}".into());
+            (format!("{body}\n"), String::new())
+        }
+        OutputFormat::Markdown => {
+            let mut out = String::new();
+            out.push_str(&format!("agent session for run {run_id}\n"));
+            out.push_str(&format!(
+                "  root:      {}\n",
+                session["rootSpanId"].as_str().unwrap_or("-")
+            ));
+            out.push_str(&format!(
+                "  tokens:    in={} out={}\n",
+                session["totalInputTokens"].as_str().unwrap_or("0"),
+                session["totalOutputTokens"].as_str().unwrap_or("0"),
+            ));
+            out.push_str(&format!(
+                "  errors:    {}\n",
+                session["errorCount"]
+                    .as_i64()
+                    .map(|n| n.to_string())
+                    .unwrap_or_else(|| session["errorCount"].to_string())
+            ));
+            if session["truncated"].as_bool() == Some(true) {
+                out.push_str("  truncated: true\n");
+            }
+            if let Some(steps) = session["steps"].as_array() {
+                if steps.is_empty() {
+                    out.push_str("steps: (none)\n");
+                } else {
+                    out.push_str("steps:\n");
+                    for step in steps {
+                        let err = if step["isError"].as_bool() == Some(true) {
+                            "  ERR"
+                        } else {
+                            ""
+                        };
+                        let tokens =
+                            match (step["inputTokens"].as_str(), step["outputTokens"].as_str()) {
+                                (Some(i), Some(o)) => format!("  tokens={i}/{o}"),
+                                (Some(i), None) => format!("  tokens_in={i}"),
+                                (None, Some(o)) => format!("  tokens_out={o}"),
+                                _ => String::new(),
+                            };
+                        let op = step["genAiOperation"]
+                            .as_str()
+                            .map(|o| format!("  op={o}"))
+                            .unwrap_or_default();
+                        out.push_str(&format!(
+                            "  {:<14} {:<32} dur={}{}{}{}\n",
+                            step["kind"].as_str().unwrap_or("-"),
+                            step["name"].as_str().unwrap_or("-"),
+                            step["durationNs"].as_str().unwrap_or("-"),
+                            err,
+                            tokens,
+                            op,
+                        ));
+                    }
+                }
+            }
+            (out, String::new())
+        }
+    }
 }
 
 pub async fn issue_list(
@@ -441,20 +583,28 @@ pub async fn issue_list(
 
 /// `parallax issue context <fingerprint>` — the agent handoff: the bounded,
 /// redacted, hypothesis-ranked evidence bundle, rendered by the server.
-pub async fn issue_context(client: &Client, fingerprint: &str) -> anyhow::Result<()> {
-    let response = client
-        .graphql(&format!(
+pub async fn issue_context(
+    client: &Client,
+    fingerprint: &str,
+    format: OutputFormat,
+) -> anyhow::Result<()> {
+    let query = match format {
+        OutputFormat::Markdown => format!(
             r#"{{ bundle(fingerprint: "{}") {{ markdown canonicalHash }} }}"#,
             gql_str(fingerprint)
-        ))
-        .await?;
+        ),
+        OutputFormat::Json => format!(
+            r#"{{ bundle(fingerprint: "{}") {{ json canonicalHash }} }}"#,
+            gql_str(fingerprint)
+        ),
+    };
+    let response = client.graphql(&query).await?;
     let Some(bundle) = response.pointer("/data/bundle").filter(|v| !v.is_null()) else {
         anyhow::bail!("issue {fingerprint} not found");
     };
-    println!("{}", bundle["markdown"].as_str().unwrap_or(""));
-    if let Some(hash) = bundle["canonicalHash"].as_str() {
-        println!("\n---\nbundle: {hash}");
-    }
+    let (stdout, stderr) = render_bundle(format, bundle);
+    print!("{stdout}");
+    eprint!("{stderr}");
     Ok(())
 }
 
@@ -1054,6 +1204,78 @@ mod tests {
             endpoint_from_api_url_and_port("http://127.0.0.1:4000", 14317).unwrap(),
             CUSTOM_ENDPOINT
         );
+    }
+
+    #[test]
+    fn render_bundle_markdown_matches_legacy_trailer() {
+        let bundle = serde_json::json!({
+            "markdown": "# Evidence\nline two",
+            "canonicalHash": "abc123",
+            "json": r#"{"schema_version":"bundle-v1","canonical_hash":"abc123"}"#,
+        });
+        let (stdout, stderr) = render_bundle(OutputFormat::Markdown, &bundle);
+        assert_eq!(stdout, "# Evidence\nline two\n\n---\nbundle: abc123\n");
+        assert!(stderr.is_empty());
+    }
+
+    #[test]
+    fn render_bundle_json_is_verbatim_without_trailer() {
+        let canonical = r#"{"schema_version":"bundle-v1","canonical_hash":"abc123"}"#;
+        let bundle = serde_json::json!({
+            "markdown": "# Evidence",
+            "canonicalHash": "abc123",
+            "json": canonical,
+        });
+        let (stdout, stderr) = render_bundle(OutputFormat::Json, &bundle);
+        assert_eq!(stdout, format!("{canonical}\n"));
+        assert!(!stdout.contains("---\nbundle:"));
+        assert!(stderr.is_empty());
+    }
+
+    #[test]
+    fn render_agent_session_json_is_object() {
+        let session = serde_json::json!({
+            "rootSpanId": "root-1",
+            "totalInputTokens": "10",
+            "totalOutputTokens": "20",
+            "errorCount": 0,
+            "truncated": false,
+            "steps": []
+        });
+        let (stdout, stderr) = render_agent_session(OutputFormat::Json, "run-x", &session);
+        let parsed: serde_json::Value = serde_json::from_str(stdout.trim()).unwrap();
+        assert_eq!(parsed["rootSpanId"], "root-1");
+        assert!(stderr.is_empty());
+    }
+
+    #[test]
+    fn render_agent_session_markdown_lists_steps() {
+        let session = serde_json::json!({
+            "rootSpanId": "root-1",
+            "totalInputTokens": "10",
+            "totalOutputTokens": "20",
+            "errorCount": 1,
+            "truncated": true,
+            "steps": [{
+                "spanId": "s1",
+                "traceId": "t1",
+                "kind": "EXECUTE_TOOL",
+                "name": "search",
+                "startNanos": "1",
+                "durationNs": "100",
+                "isError": true,
+                "genAiOperation": "tool",
+                "inputTokens": null,
+                "outputTokens": null
+            }]
+        });
+        let (stdout, stderr) = render_agent_session(OutputFormat::Markdown, "run-x", &session);
+        assert!(stdout.contains("agent session for run run-x"));
+        assert!(stdout.contains("EXECUTE_TOOL"));
+        assert!(stdout.contains("search"));
+        assert!(stdout.contains("ERR"));
+        assert!(stdout.contains("truncated: true"));
+        assert!(stderr.is_empty());
     }
 
     #[test]

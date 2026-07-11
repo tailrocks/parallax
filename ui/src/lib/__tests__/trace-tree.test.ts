@@ -106,6 +106,21 @@ describe("trace tree", () => {
     expect(Array.from(ids)).toEqual(["leaf", "child", "root"])
   })
 
+  it("terminates when an error span is its own parent", () => {
+    const ids = errorPathSpanIds([
+      richSpan("loop", "10", "5", "loop", "api", "STATUS_CODE_ERROR"),
+    ])
+    expect(Array.from(ids)).toEqual(["loop"])
+  })
+
+  it("terminates a two-node parent cycle containing an error span", () => {
+    const ids = errorPathSpanIds([
+      richSpan("a", "10", "5", "b", "api", "STATUS_CODE_ERROR"),
+      richSpan("b", "20", "5", "a", "api", "STATUS_CODE_UNSET"),
+    ])
+    expect(new Set(ids)).toEqual(new Set(["a", "b"]))
+  })
+
   it("groups ordered rows into contiguous service lanes", () => {
     const rows = buildTraceTree([
       richSpan("root", "0", "100", null, "api"),

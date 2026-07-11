@@ -7,8 +7,9 @@ members = [
     "crates/parallax-proto",
     "crates/parallax-server",
     "crates/parallax-storage",
+    "crates/parallax-mcp-spike",
 ]
-exclude = ["poc/evidence-loop"]
+exclude = ["poc/evidence-loop", "poc/read-transport-bench"]
 
 [workspace.package]
 version = "0.1.0-dev"
@@ -25,12 +26,14 @@ parallax-server = { path = "crates/parallax-server" }
 parallax-storage = { path = "crates/parallax-storage" }
 
 anyhow = "1"
+arrow = { version = "59", default-features = false, features = ["ipc"] }
+arrow-ipc = { version = "59", default-features = false, features = ["zstd"] }
 async-trait = "0.1"
 bytes = "1"
+jsonschema = { version = "0.47", default-features = false }
 juniper = "0.17"
 axum = "0.8"
 clap = { version = "4", features = ["derive"] }
-dirs = "6"
 prost = "0.14"
 regex = "1"
 reqwest = { version = "0.13", default-features = false, features = ["json", "native-tls-vendored", "stream", "form"] }
@@ -39,16 +42,16 @@ mime_guess = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
-thiserror = "2"
 tokio = { version = "1", features = ["full"] }
 tokio-stream = { version = "0.1", features = ["net", "sync"] }
 urlencoding = "2"
 futures-core = "0.3"
+futures-util = "0.3"
 toml = "1"
 tonic = { version = "0.14", features = ["gzip"] }
 turso = "0.6"
 tower = "0.5"
-tower-http = { version = "0.7", features = ["fs"] }
+tower-http = { version = "0.7", features = ["fs", "decompression-gzip"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 

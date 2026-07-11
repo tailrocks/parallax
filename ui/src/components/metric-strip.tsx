@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 import { graphql, gqlString } from "@/lib/api"
+import { usePageVisible } from "@/lib/use-visible"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   ChartContainer,
@@ -110,6 +111,7 @@ export function MetricStrip({
   live?: boolean
 }) {
   const [panels, setPanels] = useState<Panel[] | null>(null)
+  const pageVisible = usePageVisible()
 
   useEffect(() => {
     let cancelled = false
@@ -169,14 +171,16 @@ export function MetricStrip({
           setPanels([])
         })
     }
-    fetchPanels()
-    const timer = live ? setInterval(fetchPanels, 5000) : undefined
+    // Always fetch once when deps change; only poll while visible + live.
+    if (pageVisible) fetchPanels()
+    const timer =
+      live && pageVisible ? setInterval(fetchPanels, 5000) : undefined
     return () => {
       cancelled = true
       activeController?.abort()
       if (timer) clearInterval(timer)
     }
-  }, [service, runId, fromNanos, toNanos, stepSeconds, live])
+  }, [service, runId, fromNanos, toNanos, stepSeconds, live, pageVisible])
 
   if (!panels || panels.every((panel) => panel.points.length === 0)) {
     return null

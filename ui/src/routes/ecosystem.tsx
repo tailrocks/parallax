@@ -8,7 +8,7 @@ import { RangePicker } from "@/components/console/range-picker"
 import { TableSkeleton } from "@/components/console/skeletons"
 import { PageHeader } from "@/components/page-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { graphql } from "@/lib/api"
+import { graphqlCached } from "@/lib/api"
 import type { ServiceMap } from "@/lib/api"
 import {
   rangeSearchSchema,
@@ -34,7 +34,7 @@ export const Route = createFileRoute("/ecosystem")({
   loaderDeps: ({ search }) => search,
   loader: ({ deps }) => {
     const range = resolveRangeSearch(deps)
-    return graphql<{ serviceMap: ServiceMap }>(`
+    return graphqlCached<{ serviceMap: ServiceMap }>(`
       {
         serviceMap(
           fromNanos: "${range.fromNanos}"

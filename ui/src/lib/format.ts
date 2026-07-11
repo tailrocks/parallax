@@ -64,23 +64,34 @@ export function formatRelative(
   return `${Math.floor(seconds / 86400)}d ago`
 }
 
+const dateTimeFormatters = new Map<string, Intl.DateTimeFormat>()
+
+function cachedDateTimeFormat(
+  options: Intl.DateTimeFormatOptions
+): Intl.DateTimeFormat {
+  const key = `${JSON.stringify(options)}\0${options.timeZone ?? ""}`
+  let formatter = dateTimeFormatters.get(key)
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(undefined, options)
+    dateTimeFormatters.set(key, formatter)
+  }
+  return formatter
+}
+
 export function formatDateTime(
   value: string | number,
   options: Intl.DateTimeFormatOptions = {}
 ): string {
   const date = dateFromNanos(value)
-  return new Intl.DateTimeFormat(
-    undefined,
-    {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-      ...options,
-    }
-  ).format(date)
+  return cachedDateTimeFormat({
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+    ...options,
+  }).format(date)
 }
 
 export function formatTimeShort(
@@ -91,9 +102,7 @@ export function formatTimeShort(
     hour12: false,
   }
 ): string {
-  return new Intl.DateTimeFormat(undefined, options).format(
-    dateFromNanos(value)
-  )
+  return cachedDateTimeFormat(options).format(dateFromNanos(value))
 }
 
 export function formatTimeInRange(

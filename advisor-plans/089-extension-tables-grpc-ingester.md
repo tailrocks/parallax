@@ -18,6 +18,50 @@
 - **Depends on**: 084 (integration corrections land first — same file regions), 070
 - **Category**: perf
 - **Planned at**: commit `df81d86`, 2026-07-10
+- **Execution**: **BLOCKED** at Step 0 (2026-07-11) — see below. SQL path stays.
+
+### Step 0 failure (do not improvise)
+
+Resolved latest stable **`greptimedb-ingester` 0.18.0** (also checked 0.17.0, 0.16.0 —
+only published versions on crates.io). Constraints:
+
+| Check | Result |
+|-------|--------|
+| (a) tonic coexists with workspace `tonic 0.14` | **PASS** — crate pins `tonic = "0.14"` |
+| (b) no rustls / TLS features off for plaintext | **FAIL** — hard dep, not feature-gated |
+| (c) TIMESTAMP(9) ns + JSON row values | **PARTIAL** — ns OK; no JSON helper (proto has `JsonValue`; plan allows STRING encode) |
+
+**Blocking detail (b)**: every published `greptimedb-ingester` version declares:
+
+```toml
+[dependencies.tonic]
+version = "0.14"
+features = ["tls-ring", "gzip", "zstd"]
+```
+
+`tls-ring` pulls `rustls` / `tokio-rustls` / `ring` / `rustls-webpki` into
+`parallax-storage` with **no consumer feature flag** to disable TLS. Cargo
+cannot strip a dependency's required feature set. Repo TLS policy is
+**native-tls always, never rustls**; plan STOP requires halt on unavoidable
+rustls (SQL path remains).
+
+Verified: `cargo tree -i rustls` with only `greptimedb-ingester = "0.18.0"`:
+
+```text
+rustls → tokio-rustls → tonic → greptimedb-ingester
+```
+
+**Upstream ask (fix-forward)**: feature-gate TLS on
+`greptimedb-ingester` (default off for plaintext localhost; optional
+`tls-native-roots` / native-TLS path instead of hard-coded `tls-ring`). Until
+then this plan cannot land without violating TLS policy or forking the crate
+(out of scope / STOP: do not improvise).
+
+**Not reached**: Steps 1–4 (gRPC plumbing, row writers, exemplar PK migration,
+parity). Drift note: `greptime.rs` / supervisor / root `Cargo.toml` advanced
+past `df81d86` via 084/070 (dependencies) — write path still SQL `INSERT` and
+`metric_exemplars` still has high-card PK; work remains valid once Step 0
+clears.
 
 ## Why this matters
 

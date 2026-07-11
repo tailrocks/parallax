@@ -17,3 +17,7 @@ ui/dist/
 
 # advisor reference pointer (operator rule: reference project stays unnamed/uncommitted)
 plans/.reference-root
+
+# Local env files (keep *.env.example templates)
+*.env
+!*.env.example

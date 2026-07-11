@@ -22,6 +22,7 @@ import { ScrollFade } from "@/components/console/scroll-fade"
 import { StatCard } from "@/components/console/stat-card"
 import { StoryTimeline } from "@/components/console/story-timeline"
 import { LiveEventStack, LiveStreamPanel } from "@/components/live-stream-panel"
+import { useLiveStream } from "@/hooks/use-live-stream"
 import { LogsTable } from "@/components/logs-table"
 import type { LogDoc } from "@/components/logs-table"
 import { MetricStrip } from "@/components/metric-strip"
@@ -40,11 +41,12 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { gqlString, graphql } from "@/lib/api"
+import { gqlString, graphql, graphqlCached, LOG_FIELDS } from "@/lib/api"
 import type { RuntimeMetric, StoryBeat } from "@/lib/api"
 import { formatCount, formatDurationNs } from "@/lib/format"
 import { rangeLinkSearch, resolveRangeSearch } from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
+import { usePageVisible } from "@/lib/use-visible"
 import { cn } from "@/lib/utils"
 import { RunStatusBadge, durationNs } from "@/routes/runs.index"
 import type { RunRow } from "@/routes/runs.index"
@@ -104,6 +106,66 @@ function searchString(value: unknown) {
   return undefined
 }
 
+const DAY_NS = 86_400_000_000_000n
+
+/** Bound runtimeSnapshot lower edge: run start, or now−24h if unknown. */
+export function snapshotFromNanos(
+  startedAtNanos: string | null | undefined,
+  nowMs = Date.now()
+): string {
+  if (startedAtNanos && /^\d+$/.test(startedAtNanos)) return startedAtNanos
+  return (BigInt(nowMs) * 1_000_000n - DAY_NS).toString()
+}
+
+export async function loadRunDetail(runId: string, nowMs = Date.now()) {
+  const escaped = gqlString(runId)
+  const { run } = await graphqlCached<{ run: RunRecordData | null }>(
+    `{ run(runId: "${escaped}") {
+         runId command status exitCode startedAtNanos endedAtNanos
+         errorCount traceCount
+         issues { fingerprint title errorType status eventCount }
+       } }`
+  )
+  const toNanos = (BigInt(nowMs) * 1_000_000n + 60_000_000_000n).toString()
+  const fromNanos = snapshotFromNanos(run?.startedAtNanos, nowMs)
+  const rest = await graphqlCached<{
+    tracesByRun: RunTraceSummary[]
+    logsByRun: LogDoc[]
+    story: StoryBeat[]
+    runtimeSnapshot: RuntimeMetric[]
+    agentSession: AgentSessionData | null
+  }>(
+    `{ tracesByRun(runId: "${escaped}") {
+         traceId rootName service startNanos durationNs spanCount hasError
+       }
+       logsByRun(runId: "${escaped}", limit: 200) {
+         ${LOG_FIELDS}
+       }
+       story(runId: "${escaped}") {
+         tsNanos lane kind title traceId spanId severity durationNs
+       }
+       runtimeSnapshot(runId: "${escaped}", fromNanos: "${fromNanos}", toNanos: "${toNanos}", stepSeconds: 5) {
+         family metric unit points { tsNanos value }
+       }
+       agentSession(runId: "${escaped}") {
+         rootSpanId truncated totalInputTokens totalOutputTokens errorCount
+         steps {
+           spanId traceId kind name startNanos durationNs isError
+           genAiOperation inputTokens outputTokens
+         }
+       } }`
+  )
+  return {
+    run,
+    tracesByRun: rest.tracesByRun,
+    logsByRun: rest.logsByRun,
+    story: rest.story,
+    runtimeSnapshot: rest.runtimeSnapshot,
+    agentSession: rest.agentSession,
+    snapshotFromNanos: fromNanos,
+  }
+}
+
 export const Route = createFileRoute("/runs/$runId")({
   validateSearch: (search: Record<string, unknown>): RunDetailSearch => ({
     tab: search.tab === "story" ? "story" : undefined,
@@ -111,48 +173,7 @@ export const Route = createFileRoute("/runs/$runId")({
     from: searchString(search.from),
     to: searchString(search.to),
   }),
-  loader: ({ params }) => {
-    const toNanos = (
-      BigInt(Date.now()) * 1_000_000n +
-      60_000_000_000n
-    ).toString()
-    return graphql<{
-      run: RunRecordData | null
-      tracesByRun: RunTraceSummary[]
-      logsByRun: LogDoc[]
-      bundle: { markdown: string } | null
-      story: StoryBeat[]
-      runtimeSnapshot: RuntimeMetric[]
-      agentSession: AgentSessionData | null
-    }>(
-      `{ run(runId: "${gqlString(params.runId)}") {
-           runId command status exitCode startedAtNanos endedAtNanos
-           errorCount traceCount
-           issues { fingerprint title errorType status eventCount }
-         }
-         tracesByRun(runId: "${gqlString(params.runId)}") {
-           traceId rootName service startNanos durationNs spanCount hasError
-         }
-         logsByRun(runId: "${gqlString(params.runId)}", limit: 200) {
-           tsNanos eventName observedTsNanos service severityNum severityText body traceId spanId
-           runId scopeName attributes resource
-         }
-         story(runId: "${gqlString(params.runId)}") {
-           tsNanos lane kind title traceId spanId severity durationNs
-         }
-         runtimeSnapshot(runId: "${gqlString(params.runId)}", fromNanos: "0", toNanos: "${toNanos}", stepSeconds: 5) {
-           family metric unit points { tsNanos value }
-         }
-         agentSession(runId: "${gqlString(params.runId)}") {
-           rootSpanId truncated totalInputTokens totalOutputTokens errorCount
-           steps {
-             spanId traceId kind name startNanos durationNs isError
-             genAiOperation inputTokens outputTokens
-           }
-         }
-         bundle(runId: "${gqlString(params.runId)}") { markdown } }`
-    )
-  },
+  loader: ({ params }) => loadRunDetail(params.runId),
   component: RunDetailPage,
 })
 
@@ -179,7 +200,6 @@ function RunDetailPage() {
     run: loadedRun,
     tracesByRun,
     logsByRun,
-    bundle,
     story,
     runtimeSnapshot,
     agentSession,
@@ -192,6 +212,7 @@ function RunDetailPage() {
   const [liveLogs, setLiveLogs] = useState<LogDoc[]>([])
   const [liveSpans, setLiveSpans] = useState<LiveSpan[]>([])
   const [polledRun, setPolledRun] = useState<RunRecordData | null>(null)
+  const pageVisible = usePageVisible()
   const run = polledRun ?? loadedRun
 
   const runLogs = useMemo(
@@ -208,57 +229,43 @@ function RunDetailPage() {
     [logsByRun, liveLogs]
   )
 
-  useEffect(() => {
-    if (!live) return
-    const logSource = new EventSource(
-      `/v1/logs/stream?run_id=${encodeURIComponent(runId)}`
-    )
-    let logBuffer: LogDoc[] = []
-    logSource.onmessage = (event) => {
-      try {
-        const batch: unknown = JSON.parse(event.data as string)
-        if (Array.isArray(batch)) logBuffer.push(...(batch as LogDoc[]))
-      } catch {
-        // skip malformed frames
-      }
-    }
-    const spanSource = new EventSource(
-      `/v1/traces/stream?run_id=${encodeURIComponent(runId)}`
-    )
-    let spanBuffer: LiveSpan[] = []
-    spanSource.onmessage = (event) => {
-      try {
-        const batch: unknown = JSON.parse(event.data as string)
-        if (Array.isArray(batch)) spanBuffer.push(...(batch as LiveSpan[]))
-      } catch {
-        // skip malformed frames
-      }
-    }
-    const flush = setInterval(() => {
-      if (logBuffer.length > 0) {
-        const incoming = logBuffer
-        logBuffer = []
-        setLiveLogs((current) =>
-          [...incoming.reverse(), ...current].slice(0, 300)
-        )
-      }
-      if (spanBuffer.length > 0) {
-        const incoming = spanBuffer
-        spanBuffer = []
-        setLiveSpans((current) =>
-          [...incoming.reverse(), ...current].slice(0, 300)
-        )
-      }
-    }, 250)
-    return () => {
-      logSource.close()
-      spanSource.close()
-      clearInterval(flush)
-    }
-  }, [live, runId])
+  const logStreamUrl = live
+    ? `/v1/logs/stream?run_id=${encodeURIComponent(runId)}`
+    : null
+  const spanStreamUrl = live
+    ? `/v1/traces/stream?run_id=${encodeURIComponent(runId)}`
+    : null
+
+  const logStatus = useLiveStream<LogDoc>({
+    url: logStreamUrl,
+    parse: (data) => {
+      const batch: unknown = JSON.parse(data)
+      return Array.isArray(batch) ? (batch as LogDoc[]) : []
+    },
+    onBatch: (incoming) => {
+      setLiveLogs((current) =>
+        [...incoming.reverse(), ...current].slice(0, 300)
+      )
+    },
+  })
+
+  const spanStatus = useLiveStream<LiveSpan>({
+    url: spanStreamUrl,
+    parse: (data) => {
+      const batch: unknown = JSON.parse(data)
+      return Array.isArray(batch) ? (batch as LiveSpan[]) : []
+    },
+    onBatch: (incoming) => {
+      setLiveSpans((current) =>
+        [...incoming.reverse(), ...current].slice(0, 300)
+      )
+    },
+  })
+
+  const streamActive = logStatus === "open" || spanStatus === "open"
 
   useEffect(() => {
-    if (!live) return
+    if (!live || !pageVisible) return
     const timer = setInterval(() => {
       void graphql<{ run: RunRecordData | null }>(
         `{ run(runId: "${gqlString(runId)}") {
@@ -274,7 +281,7 @@ function RunDetailPage() {
         .catch(() => {})
     }, 10_000)
     return () => clearInterval(timer)
-  }, [live, runId])
+  }, [live, runId, pageVisible])
 
   return (
     <RunDetailContent
@@ -282,7 +289,6 @@ function RunDetailPage() {
       run={run}
       traces={tracesByRun}
       logs={runLogs}
-      bundle={bundle}
       story={story}
       runtimeSnapshot={runtimeSnapshot}
       agentSession={agentSession}
@@ -299,6 +305,7 @@ function RunDetailPage() {
       live={live}
       liveLogs={liveLogs}
       liveSpans={liveSpans}
+      streamActive={streamActive}
       onLive={() => setLive((current) => !current)}
     />
   )
@@ -309,7 +316,8 @@ export function RunDetailContent({
   run,
   traces,
   logs,
-  bundle,
+  /** Optional preloaded markdown; when omitted the card loads on mount. */
+  bundle = null,
   story = [],
   runtimeSnapshot,
   agentSession = null,
@@ -319,13 +327,14 @@ export function RunDetailContent({
   live,
   liveLogs,
   liveSpans,
+  streamActive = false,
   onLive,
 }: {
   runId: string
   run: RunRecordData | null
   traces: RunTraceSummary[]
   logs: LogDoc[]
-  bundle: { markdown: string } | null
+  bundle?: { markdown: string } | null
   story?: StoryBeat[]
   runtimeSnapshot: RuntimeMetric[]
   agentSession?: AgentSessionData | null
@@ -335,11 +344,44 @@ export function RunDetailContent({
   live: boolean
   liveLogs: LogDoc[]
   liveSpans: LiveSpan[]
+  streamActive?: boolean
   onLive: () => void
 }) {
   const empty = !run && traces.length === 0 && logs.length === 0
   const runsBack = navItem("/runs")!
   const row = run ? runRow(run, runId) : null
+  const [lazyBundle, setLazyBundle] = useState<string | null>(
+    bundle?.markdown ?? null
+  )
+  const [bundleError, setBundleError] = useState<string | null>(null)
+  const [bundleLoading, setBundleLoading] = useState(false)
+
+  useEffect(() => {
+    if (bundle?.markdown) {
+      setLazyBundle(bundle.markdown)
+      return
+    }
+    let cancelled = false
+    setBundleLoading(true)
+    setBundleError(null)
+    void graphql<{ bundle: { markdown: string } | null }>(
+      `{ bundle(runId: "${gqlString(runId)}") { markdown } }`
+    )
+      .then((data) => {
+        if (cancelled) return
+        setLazyBundle(data.bundle?.markdown ?? null)
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return
+        setBundleError(error instanceof Error ? error.message : String(error))
+      })
+      .finally(() => {
+        if (!cancelled) setBundleLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [runId, bundle?.markdown])
 
   if (empty) {
     return (
@@ -374,8 +416,8 @@ export function RunDetailContent({
                 <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
               ) : null}
             </Button>
-            {bundle ? (
-              <DownloadBundle runId={runId} markdown={bundle.markdown} />
+            {lazyBundle ? (
+              <DownloadBundle runId={runId} markdown={lazyBundle} />
             ) : null}
           </>
         }
@@ -395,7 +437,7 @@ export function RunDetailContent({
               description="Streaming this run's logs and finished spans while metrics follow now."
               count={liveLogs.length + liveSpans.length}
               endpoint={`/v1/*/stream?run_id=${runId}`}
-              active
+              active={streamActive}
             >
               <LiveEventStack
                 items={[
@@ -463,9 +505,12 @@ export function RunDetailContent({
               </CardContent>
             </Card>
           ) : null}
-          {bundle ? (
-            <BundleCard runId={runId} markdown={bundle.markdown} />
-          ) : null}
+          <BundleCard
+            runId={runId}
+            markdown={lazyBundle}
+            loading={bundleLoading}
+            error={bundleError}
+          />
         </TabsContent>
         <TabsContent value="story">
           <Card>
@@ -634,22 +679,48 @@ function TracesCard({
   )
 }
 
-function BundleCard({ runId, markdown }: { runId: string; markdown: string }) {
+function BundleCard({
+  runId,
+  markdown,
+  loading,
+  error,
+}: {
+  runId: string
+  markdown: string | null
+  loading: boolean
+  error: string | null
+}) {
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between">
         <CardTitle className="text-sm">Evidence bundle</CardTitle>
-        <div className="flex items-center gap-1">
-          <CopyButton value={markdown} />
-          <DownloadBundle runId={runId} markdown={markdown} />
-        </div>
+        {markdown ? (
+          <div className="flex items-center gap-1">
+            <CopyButton value={markdown} />
+            <DownloadBundle runId={runId} markdown={markdown} />
+          </div>
+        ) : null}
       </CardHeader>
       <CardContent>
-        <ScrollFade className="max-h-96 overflow-auto rounded-md border bg-muted/30 p-3">
-          <pre className="text-xs leading-relaxed whitespace-pre-wrap">
-            {markdown}
-          </pre>
-        </ScrollFade>
+        {loading ? (
+          <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+            <div className="h-3 w-2/3 animate-pulse rounded bg-muted" />
+            <div className="h-3 w-full animate-pulse rounded bg-muted" />
+            <div className="h-3 w-5/6 animate-pulse rounded bg-muted" />
+          </div>
+        ) : error ? (
+          <p className="text-sm text-destructive">{error}</p>
+        ) : markdown ? (
+          <ScrollFade className="max-h-96 overflow-auto rounded-md border bg-muted/30 p-3">
+            <pre className="text-xs leading-relaxed whitespace-pre-wrap">
+              {markdown}
+            </pre>
+          </ScrollFade>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No evidence bundle for this run.
+          </p>
+        )}
       </CardContent>
     </Card>
   )

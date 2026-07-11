@@ -5,6 +5,20 @@
 // in the browser, so SSR/loader calls target the API directly.
 const BASE = typeof window === "undefined" ? "http://127.0.0.1:4000" : ""
 
+const CACHE_TTL_MS = 15_000
+const CACHE_MAX = 100
+
+/** In-flight dedup of identical query strings (client-side only). */
+const inflight = new Map<string, Promise<unknown>>()
+/** Short-lived result cache keyed by query string (client-side only). */
+const cache = new Map<string, { at: number; data: unknown }>()
+
+/** Test-only: clear the client GraphQL cache and inflight map. */
+export function clearGraphqlCache(): void {
+  cache.clear()
+  inflight.clear()
+}
+
 export async function graphql<T>(
   query: string,
   init?: { signal?: AbortSignal }
@@ -31,15 +45,63 @@ export async function graphql<T>(
   return body.data
 }
 
+/**
+ * Client-side query cache + in-flight dedup for route loaders and preload.
+ *
+ * Key = full query string (variables are embedded today). SSR always bypasses
+ * the cache so a shared module never leaks data across requests. Pollers and
+ * explicit Refresh paths should keep using raw `graphql`.
+ */
+export async function graphqlCached<T>(
+  query: string,
+  init?: { signal?: AbortSignal }
+): Promise<T> {
+  // Cache is client-only — Bun/SSR may share the module across requests.
+  if (typeof window === "undefined") {
+    return graphql<T>(query, init)
+  }
+
+  const hit = cache.get(query)
+  if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
+    return hit.data as T
+  }
+
+  const pending = inflight.get(query)
+  if (pending) return pending as Promise<T>
+
+  const p = graphql<T>(query, init).then(
+    (data) => {
+      // Insertion-order LRU-ish: drop oldest when over cap.
+      if (cache.size >= CACHE_MAX && !cache.has(query)) {
+        const oldest = cache.keys().next().value
+        if (oldest !== undefined) cache.delete(oldest)
+      }
+      cache.set(query, { at: Date.now(), data })
+      inflight.delete(query)
+      return data
+    },
+    (error: unknown) => {
+      inflight.delete(query)
+      throw error
+    }
+  )
+  inflight.set(query, p)
+  return p
+}
+
 /** Escape a value for inclusion inside a GraphQL double-quoted literal. */
 export function gqlString(value: string): string {
-  // GraphQL string literals cannot contain raw newlines (multi-line SQL).
+  // GraphQL string literals cannot contain raw newlines or other control chars.
   return value
     .replace(/\\/g, "\\\\")
     .replace(/"/g, '\\"')
     .replace(/\n/g, "\\n")
     .replace(/\r/g, "")
     .replace(/\t/g, "\\t")
+    // eslint-disable-next-line no-control-regex -- GraphQL forbids raw C0 controls
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, (c) =>
+      "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0")
+    )
 }
 
 export interface Issue {
@@ -88,6 +150,22 @@ export interface Span {
   statusCode: string
   durationNs: string
 }
+
+/** Full GraphQL selection for a log row (`LogDoc` / `logs` connection). */
+export const LOG_FIELDS =
+  "tsNanos eventName observedTsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource"
+
+/** Full GraphQL selection for a stored span (`Span`). */
+export const SPAN_FIELDS =
+  "tsNanos service traceId spanId parentSpanId name kind statusCode durationNs"
+
+/**
+ * Live SSE span from `/v1/traces/stream`.
+ *
+ * Matches `Span` and adds `runId` (the live serializer always emits it;
+ * `parentSpanId` is present on the wire — unlike the former inline `SpanDoc`).
+ */
+export type LiveSpan = Span & { runId: string | null }
 
 export interface SpanLink {
   traceId: string

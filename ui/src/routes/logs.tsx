@@ -15,7 +15,7 @@ import {
   IconTrash,
   IconX,
 } from "@tabler/icons-react"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   Bar,
   BarChart,
@@ -38,6 +38,7 @@ import {
   serializeLogColumns,
 } from "@/components/logs-table"
 import type { LogDoc, OptionalLogColumn } from "@/components/logs-table"
+import { useLiveStream } from "@/hooks/use-live-stream"
 import { PageHeader } from "@/components/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -72,7 +73,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { gqlString, graphql } from "@/lib/api"
+import { gqlString, graphql, graphqlCached, LOG_FIELDS } from "@/lib/api"
 import { formatCount, formatDateTime, formatTimeInRange } from "@/lib/format"
 import { resolveRangeSearch, updateRangeSearch } from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
@@ -225,26 +226,25 @@ export async function loadLogs(search: LogsSearch): Promise<LogsData> {
     search.q ? `query: "${gqlString(search.q)}"` : "",
   ].filter(Boolean)
   if (search.live) {
-    return graphql<LogsData>(
-      `{ services savedViews(page: "/logs") { id name page state updatedAtNanos } logs(limit: 0) { tsNanos eventName observedTsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource } logCountSeries(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", stepSeconds: ${stepSeconds}) { tsNanos value } }`
+    return graphqlCached<LogsData>(
+      `{ services savedViews(page: "/logs") { id name page state updatedAtNanos } logs(limit: 0) { ${LOG_FIELDS} } logCountSeries(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", stepSeconds: ${stepSeconds}) { tsNanos value } }`
     )
   }
-  const logsSelection = `tsNanos eventName observedTsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource`
   const logsQuery = search.anchor
-    ? `logs: logsAround(anchorNanos: "${search.anchor}", windowSeconds: 30, ${search.service ? `service: "${gqlString(search.service)}", ` : ""}limit: ${PAGE_SIZE}) { ${logsSelection} }`
+    ? `logs: logsAround(anchorNanos: "${search.anchor}", windowSeconds: 30, ${search.service ? `service: "${gqlString(search.service)}", ` : ""}limit: ${PAGE_SIZE}) { ${LOG_FIELDS} }`
     : `logs(${[
         `fromNanos: "${range.fromNanos}"`,
         `toNanos: "${range.toNanos}"`,
         ...filters,
         `limit: ${PAGE_SIZE}`,
-      ].join(", ")}) { ${logsSelection} }`
+      ].join(", ")}) { ${LOG_FIELDS} }`
   const seriesArgs = [
     `fromNanos: "${range.fromNanos}"`,
     `toNanos: "${range.toNanos}"`,
     ...filters,
     `stepSeconds: ${stepSeconds}`,
   ].join(", ")
-  return graphql<LogsData>(`{
+  return graphqlCached<LogsData>(`{
     services
     savedViews(page: "/logs") { id name page state updatedAtNanos }
     ${logsQuery}
@@ -275,10 +275,12 @@ function LogsPage() {
   const [saveOpen, setSaveOpen] = useState(false)
   const [saveName, setSaveName] = useState("")
   const [savingView, setSavingView] = useState(false)
+  const logsGeneration = useRef(0)
   const live = search.live === true
   const columns = parseLogColumns(search.cols)
 
   useEffect(() => {
+    logsGeneration.current += 1
     setLogs(keyedDataLogs)
     setExhausted(keyedDataLogs.length < PAGE_SIZE)
   }, [keyedDataLogs])
@@ -287,36 +289,27 @@ function LogsPage() {
 
   useEffect(() => setPendingQuery(search.q ?? ""), [search.q])
 
-  useEffect(() => {
-    if (!live) return
+  const streamUrl = useMemo(() => {
+    if (!live) return null
     const params = new URLSearchParams()
     if (search.service) params.set("service", search.service)
     if (search.sev) params.set("severity_min", String(search.sev))
     if (search.q) params.set("q", search.q)
-    const source = new EventSource(`/v1/logs/stream?${params}`)
-    let buffer: LogDoc[] = []
-    source.onmessage = (event) => {
-      try {
-        const batch: unknown = JSON.parse(event.data as string)
-        if (Array.isArray(batch))
-          buffer.push(...assignLogKeys(batch as LogDoc[]))
-      } catch {
-        // skip malformed frames
-      }
-    }
-    const flush = setInterval(() => {
-      if (buffer.length === 0) return
-      const incoming = buffer
-      buffer = []
+    return `/v1/logs/stream?${params}`
+  }, [live, search.service, search.sev, search.q])
+
+  const streamStatus = useLiveStream<LogDoc>({
+    url: streamUrl,
+    parse: (frame) => {
+      const batch: unknown = JSON.parse(frame)
+      return Array.isArray(batch) ? assignLogKeys(batch as LogDoc[]) : []
+    },
+    onBatch: (incoming) => {
       setLogs((current) =>
         [...incoming.reverse(), ...current].slice(0, PAGE_SIZE)
       )
-    }, 250)
-    return () => {
-      source.close()
-      clearInterval(flush)
-    }
-  }, [live, search.service, search.sev, search.q])
+    },
+  })
 
   const update = (patch: Partial<LogsSearch>) =>
     void navigate({
@@ -388,6 +381,7 @@ function LogsPage() {
   const loadOlder = async () => {
     const oldest = logs.at(-1)
     if (!oldest) return
+    const generation = logsGeneration.current
     setOlderLoading(true)
     setOlderError(null)
     try {
@@ -402,8 +396,10 @@ function LogsPage() {
         .filter(Boolean)
         .join(", ")
       const more = await graphql<{ logs: LogDoc[] }>(`{ logs(${args}) {
-        tsNanos eventName observedTsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource
+        ${LOG_FIELDS}
       } }`)
+      // Window/filters changed while in flight — drop the stale page.
+      if (logsGeneration.current !== generation) return
       setLogs((current) => [...current, ...assignLogKeys(more.logs)])
       if (more.logs.length < PAGE_SIZE) setExhausted(true)
     } catch (err) {
@@ -603,8 +599,16 @@ function LogsPage() {
         <div className="overflow-hidden rounded-xl border border-border/70">
           {live ? (
             <div className="flex items-center gap-2 border-b border-border/70 px-3 py-2 text-xs">
-              <span className="size-2 animate-pulse rounded-full bg-emerald-500" />
-              <Badge variant="emerald">Live</Badge>
+              {streamStatus === "open" ? (
+                <>
+                  <span className="size-2 animate-pulse rounded-full bg-emerald-500" />
+                  <Badge variant="emerald">Live</Badge>
+                </>
+              ) : streamStatus === "error" ? (
+                <Badge variant="amber">reconnecting…</Badge>
+              ) : (
+                <Badge variant="secondary">connecting…</Badge>
+              )}
               <span className="text-muted-foreground">
                 {formatCount(logs.length)} records buffered
               </span>

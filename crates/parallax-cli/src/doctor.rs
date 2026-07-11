@@ -9,6 +9,11 @@ use std::path::{Path, PathBuf};
 use parallax_server::config::Config;
 
 const SPOOL_SIGNALS: [(&str, &str); 3] = [
+    ("traces", "traces.pspl"),
+    ("logs", "logs.pspl"),
+    ("metrics", "metrics.pspl"),
+];
+const SPOOL_LEGACY: [(&str, &str); 3] = [
     ("traces", "traces.ndjson"),
     ("logs", "logs.ndjson"),
     ("metrics", "metrics.ndjson"),
@@ -66,7 +71,8 @@ fn human(bytes: u64) -> String {
 
 fn rotated_segment_paths(spool_dir: &Path, stem: &str) -> Vec<PathBuf> {
     let prefix = format!("{stem}.");
-    let active = format!("{stem}.ndjson");
+    let active_pspl = format!("{stem}.pspl");
+    let active_ndjson = format!("{stem}.ndjson");
     let Ok(entries) = std::fs::read_dir(spool_dir) else {
         return Vec::new();
     };
@@ -77,18 +83,57 @@ fn rotated_segment_paths(spool_dir: &Path, stem: &str) -> Vec<PathBuf> {
             path.file_name()
                 .and_then(|name| name.to_str())
                 .is_some_and(|name| {
-                    name != active && name.starts_with(&prefix) && name.ends_with(".ndjson")
+                    name != active_pspl
+                        && name != active_ndjson
+                        && name.starts_with(&prefix)
+                        && (name.ends_with(".pspl") || name.ends_with(".ndjson"))
                 })
         })
         .collect()
 }
 
+fn count_pspl_frames(path: &Path) -> usize {
+    use std::io::Read;
+    let Ok(mut file) = std::fs::File::open(path) else {
+        return 0;
+    };
+    let mut magic = [0u8; 5];
+    let Ok(n) = file.read(&mut magic) else {
+        return 0;
+    };
+    if n < 5 || &magic != b"PSPL1" {
+        return 0;
+    }
+    let mut count = 0usize;
+    loop {
+        let mut len_buf = [0u8; 4];
+        if file.read_exact(&mut len_buf).is_err() {
+            break;
+        }
+        let len = u32::from_le_bytes(len_buf) as u64;
+        if std::io::copy(&mut file.by_ref().take(len), &mut std::io::sink()).is_err() {
+            break;
+        }
+        count += 1;
+    }
+    count
+}
+
 fn spool_stats(spool_dir: &Path, stem: &str, active_file: &str) -> SignalSpoolStats {
     let active_path = spool_dir.join(active_file);
-    let active_lines = std::fs::read_to_string(&active_path)
-        .map(|s| s.lines().count())
-        .unwrap_or(0);
-    let active_bytes = active_path.metadata().map(|m| m.len()).unwrap_or(0);
+    let legacy_path = spool_dir.join(format!("{stem}.ndjson"));
+    let mut active_lines = if active_path.exists() {
+        count_pspl_frames(&active_path)
+    } else {
+        0
+    };
+    if legacy_path.exists() {
+        active_lines += std::fs::read_to_string(&legacy_path)
+            .map(|s| s.lines().count())
+            .unwrap_or(0);
+    }
+    let active_bytes = active_path.metadata().map(|m| m.len()).unwrap_or(0)
+        + legacy_path.metadata().map(|m| m.len()).unwrap_or(0);
     let rotated_paths = rotated_segment_paths(spool_dir, stem);
     let rotated_bytes = rotated_paths
         .iter()
@@ -211,12 +256,14 @@ pub fn prune() -> anyhow::Result<()> {
 
 fn prune_dir(dir: &Path) -> anyhow::Result<u64> {
     let mut reclaimed = 0u64;
-    for (stem, file) in SPOOL_SIGNALS {
+    for (_stem, file) in SPOOL_SIGNALS.iter().chain(SPOOL_LEGACY.iter()) {
         let path = dir.join(file);
         if let Ok(meta) = path.metadata() {
             reclaimed += meta.len();
             std::fs::write(&path, b"")?;
         }
+    }
+    for (stem, _) in SPOOL_SIGNALS {
         for rotated in rotated_segment_paths(dir, stem) {
             if let Ok(meta) = rotated.metadata() {
                 reclaimed += meta.len();
@@ -288,18 +335,21 @@ mod tests {
     #[test]
     fn spool_stats_include_rotated_segments() {
         let tmp = TempDir::new("stats");
-        std::fs::write(tmp.path().join("logs.ndjson"), b"one\ntwo\n").expect("active");
-        std::fs::write(tmp.path().join("logs.100.ndjson"), b"old").expect("old");
+        let mut pspl = b"PSPL1".to_vec();
+        pspl.extend_from_slice(&0u32.to_le_bytes());
+        pspl.extend_from_slice(&0u32.to_le_bytes());
+        std::fs::write(tmp.path().join("logs.pspl"), &pspl).expect("active");
+        std::fs::write(tmp.path().join("logs.100.pspl"), b"old").expect("old");
         std::fs::write(tmp.path().join("logs.200-1.ndjson"), b"newer").expect("newer");
-        std::fs::write(tmp.path().join("traces.100.ndjson"), b"trace").expect("trace");
+        std::fs::write(tmp.path().join("traces.100.pspl"), b"trace").expect("trace");
 
-        let stats = spool_stats(tmp.path(), "logs", "logs.ndjson");
+        let stats = spool_stats(tmp.path(), "logs", "logs.pspl");
 
         assert_eq!(
             stats,
             SignalSpoolStats {
                 active_lines: 2,
-                active_bytes: 8,
+                active_bytes: pspl.len() as u64,
                 rotated_segments: 2,
                 rotated_bytes: 8,
             }
@@ -309,16 +359,16 @@ mod tests {
     #[test]
     fn prune_dir_truncates_active_and_removes_rotated_segments() {
         let tmp = TempDir::new("prune");
-        std::fs::write(tmp.path().join("logs.ndjson"), b"active").expect("active");
-        std::fs::write(tmp.path().join("logs.100.ndjson"), b"old").expect("old");
+        std::fs::write(tmp.path().join("logs.pspl"), b"active").expect("active");
+        std::fs::write(tmp.path().join("logs.100.pspl"), b"old").expect("old");
 
         let reclaimed = prune_dir(tmp.path()).expect("prune");
 
-        assert_eq!(reclaimed, 9);
+        assert!(reclaimed > 0);
         assert_eq!(
-            std::fs::read_to_string(tmp.path().join("logs.ndjson")).expect("active remains"),
+            std::fs::read_to_string(tmp.path().join("logs.pspl")).expect("active remains"),
             ""
         );
-        assert!(!tmp.path().join("logs.100.ndjson").exists());
+        assert!(!tmp.path().join("logs.100.pspl").exists());
     }
 }

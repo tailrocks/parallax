@@ -5,12 +5,11 @@ the project evolves.
 
 ## Current Stage
 
-Parallax is in research and product-discovery mode. The repository should stay
-simple: root-level project rules, a README, and Markdown research notes under
-`docs/`.
-
-V1 implementation is underway under `crates/` (authorized 2026-06-12); there
-is no release process or CI contract yet.
+Parallax ships a working V1 local product under `crates/` (Rust workspace) and
+`ui/` (TanStack Start SPA), alongside research notes under `docs/research/`.
+CI, stable-release, and preview-Homebrew automation live under
+`.github/workflows/`. Research and product code iterate together on `main`
+(or feature branches when an operator opens one).
 
 ## Root Files
 
@@ -22,6 +21,7 @@ is no release process or CI contract yet.
 | `BRANCHING.md` | Current `main`-first workflow and pull-request policy. |
 | `COMMITS.md` | Commit message and AI-agent attribution conventions. |
 | `PROJECT_STRUCTURE.md` | This repository map. |
+| `advisor-plans-implementation.md` | Root pointer to the exhaustive advisor-plans `/goal` brief at `prompts/advisor-plans-implementation.md`. |
 | `.gitignore` | Local files that should not be committed. |
 
 ## Directories
@@ -54,10 +54,13 @@ is no release process or CI contract yet.
 | `docs/research/reference/ai-native-debugging-tools.md` | Survey of 13 AI-native debugging, SRE agent, and coding-agent observability tools. |
 | `docs/research/capture/sentry-compatible-oss-tools.md` | Survey of 10 Sentry-compatible or Sentry-alternative open-source tools for future adapter/market tracking. |
 | `docs/research/reference/` | External technical reviews. Includes `ai-native-debugging-tools.md` (open-source AI debugging agents, SRE agents, coding-agent observability tools). |
-| `prompts/` | Reusable research and agent prompts. |
+| `prompts/` | Reusable research and agent prompts (goal-only briefs; run notes in `prompts/README.md`). |
+| `advisor-plans/` | Active improve/audit implementation plans (telemetry-quality 019–021 and observability 022–034 completed; codebase audit 069–083 and performance/Greptime integration 084–090 active). Index: `advisor-plans/README.md`. |
+| `schema/` | Shipped portable evidence-bundle JSON Schema (`evidence-bundle.v1.schema.json`) and versioning policy. Governs `BundleOut.json` / `parallax issue context --format json`. PoC schemas stay under `poc/evidence-loop/schema/`.
+| `plans/` | Operator feature-backlog plan items (035–068 series); not advisor plans. |
 | `bench/` | Local storage-benchmark scaffolding: pinned `compose.yml` for GreptimeDB + ClickHouse smoke runs. Generated datasets/results are gitignored; only compose/scripts are tracked. Consistent with [`docs/research/storage/benchmark-plan.md`](docs/research/storage/benchmark-plan.md). |
 | `bench/otlp-fanout/` | OTLP fan-out comparison lab: Rotel hub + competitor backends in Compose, fanning one OTLP stream to OpenObserve/SigNoz/Maple/Sentry and back to host Parallax. Implements [`docs/research/validation/otlp-fanout-comparison-lab.md`](docs/research/validation/otlp-fanout-comparison-lab.md). Vendored clones (`vendor/`) are gitignored. |
-| `poc/` | Concept-proving Rust code (operator-approved 2026-06-11). Small, runnable, test-covered proofs of designed mechanisms — not product code, no product claims. First artifact: `poc/evidence-loop/` (OTLP JSON → derived error events → fingerprint → trigger → redacted evidence bundle with canonical hash). Frozen as the concept reference; logic graduates into `crates/` by copy-and-adapt. |
+| `poc/` | Concept-proving Rust code (operator-approved 2026-06-11). Small, runnable, test-covered proofs of designed mechanisms — not product code, no product claims. Artifacts: `poc/evidence-loop/` (OTLP JSON → derived error events → fingerprint → trigger → redacted evidence bundle with canonical hash; frozen concept reference) and `poc/read-transport-bench/` (plan 090: GreptimeDB HTTP Arrow vs JSON + MySQL prepared-statement measurement harness). Logic graduates into `crates/` by copy-and-adapt. |
 | `crates/` | The V1 product workspace (Rust, edition 2024): `parallax-cli` (the installed `parallax` binary), `parallax-server` (OTLP ingest, API host, workers, engine supervision), `parallax-core` (derivation/fingerprinting/bundles), `parallax-storage` (spool + storage adapters), `parallax-api` (GraphQL schema), `parallax-proto` (OTLP types). Contracts in [`docs/research/architecture/v1-implementation-spec.md`](docs/research/architecture/v1-implementation-spec.md); brief in [`prompts/v1-implementation.md`](prompts/v1-implementation.md). |
 | `ui/` | The V1 web UI: TanStack Start SPA (shadcn/ui on Base UI, shadcn charts) served by `parallax serve` from `ui/dist/client` or embedded via the `embed-ui` feature. Talks only to the canonical GraphQL API. |
 | `.github/workflows/` | CI, stable release, and preview-release automation. Release workflows build binary archives with Zig/`cargo-zigbuild`; `preview.yml` publishes the rolling `preview` GitHub Release and rewrites the CI-owned `parallax-preview.rb` formula in the per-project `tailrocks/homebrew-parallax` tap. |
@@ -96,6 +99,7 @@ and compare next, ranked) is [`docs/research/research-agenda.md`](docs/research/
 | `prompts/deep-research-parallax.md` | Deep research brief for validating the AI-native debugging/investigation direction. |
 | `prompts/greptimedb-vs-clickhouse-internals.md` | Never-ending `/goal` or Claude Code `/loop` brief for the under-the-hood GreptimeDB vs ClickHouse comparison; writes to `docs/research/storage/greptimedb-vs-clickhouse/`. |
 | `prompts/v1-implementation.md` | `/goal` brief implementing Parallax V1 end-to-end from the authoritative docs, milestone by milestone, with the v1-scope acceptance scenarios as the stop condition. |
+| `prompts/advisor-plans-implementation.md` | Bounded exhaustive `/goal` brief to close every active `advisor-plans/` item (069–090), including residuals and two clean closure re-audits. |
 
 ## Update Rule
 

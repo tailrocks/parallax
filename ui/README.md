@@ -1,21 +1,39 @@
-# TanStack Start + shadcn/ui
+# Parallax UI
 
-This is a template for a new TanStack Start project with React, TypeScript, and shadcn/ui.
+TanStack Start SPA (React + TypeScript + shadcn/ui on Base UI) for the Parallax
+local-first observability console. The app talks **only** to the canonical
+GraphQL API served by `parallax serve` (default `:4000`).
 
-## Adding components
+## Develop
 
-To add components to your app, run the following command:
+**Bun only** (runtime + package manager). Never `npm`, `pnpm`, `yarn`, or
+Node-as-runtime — see [../AGENTS.md](../AGENTS.md).
 
 ```bash
-npx shadcn@latest add button
+bun install
+bun run dev          # http://127.0.0.1:3000
 ```
 
-This will place the ui components in the `components` directory.
+Vite proxies `/graphql` to `http://127.0.0.1:4000`. Start the backend first:
 
-## Using components
-
-To use the components in your app, import them as follows:
-
-```tsx
-import { Button } from "@/components/ui/button";
+```bash
+cargo run -p parallax-cli -- serve
 ```
+
+## Gates
+
+```bash
+bun run typecheck
+bun run lint
+bun run test         # local (allows empty suite)
+bun run test:ci      # CI-strict (fails if no tests match)
+bun run build
+```
+
+## Adding shadcn components
+
+```bash
+bunx --bun shadcn@latest add <component>
+```
+
+Full UI conventions: [AGENTS.md](AGENTS.md).

@@ -29,7 +29,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { gqlString, graphql } from "@/lib/api"
+import { gqlString, graphql, graphqlCached } from "@/lib/api"
 import type { Investigation } from "@/lib/api"
 import {
   emptyInvestigationState,
@@ -40,7 +40,7 @@ import { formatCount } from "@/lib/format"
 
 export const Route = createFileRoute("/investigations/")({
   loader: () =>
-    graphql<{ investigations: Investigation[] }>(`
+    graphqlCached<{ investigations: Investigation[] }>(`
       {
         investigations {
           id

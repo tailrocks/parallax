@@ -21,7 +21,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { graphql } from "@/lib/api"
+import { graphqlCached } from "@/lib/api"
+import type { ObservedRun } from "@/lib/api"
 import { formatCount, formatDurationNs } from "@/lib/format"
 import {
   rangeLinkSearch,
@@ -41,15 +42,6 @@ interface RunRecord {
   endedAtNanos: string | null
   errorCount: number
   traceCount: number
-}
-
-interface ObservedRun {
-  runId: string
-  service: string
-  firstNanos: string
-  lastNanos: string
-  spanCount: number
-  logCount: number
 }
 
 export interface RunRow {
@@ -190,7 +182,7 @@ export const Route = createFileRoute("/runs/")({
     return result
   },
   loader: async () => {
-    const { runs, observedRuns } = await graphql<{
+    const { runs, observedRuns } = await graphqlCached<{
       runs: RunRecord[]
       observedRuns: ObservedRun[]
     }>(`

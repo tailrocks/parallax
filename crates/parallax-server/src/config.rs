@@ -57,6 +57,8 @@ pub struct LimitsConfig {
     pub bundle_max_tokens: usize,
     pub graphql_max_depth: usize,
     pub graphql_max_complexity: usize,
+    pub otlp_max_body_bytes: usize,
+    pub ingest_queue_batches: usize,
 }
 
 /// Self-telemetry: where `parallax serve` exports its **own** spans/logs. Empty
@@ -115,6 +117,8 @@ impl Default for LimitsConfig {
             bundle_max_tokens: 10_000,
             graphql_max_depth: 8,
             graphql_max_complexity: 1_000,
+            otlp_max_body_bytes: 16 * 1024 * 1024,
+            ingest_queue_batches: 256,
         }
     }
 }

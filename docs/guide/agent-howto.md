@@ -18,11 +18,27 @@ context window; `canonical hash` at the end identifies the exact evidence
 state, so two agents (or one agent twice) can confirm they reasoned over the
 same bundle.
 
+### Structured output
+
+When the agent wants the same evidence as machine-readable JSON (no Markdown
+trailer), pass `--format json`:
+
+```sh
+parallax issue context <fingerprint> --format json
+parallax run bundle <run_id> --format json
+parallax run agent <run_id> --format json
+```
+
+Bundle JSON is the server's canonical bytes (schema `bundle-v1`); the hash is
+already a field inside that object — do not re-pretty-print it. `run agent`
+returns the run-scoped agent-session projection (steps, token totals) for
+tool/shell reconstruction. Markdown remains the default for human eyes.
+
 A working loop to give your agent:
 
 ```text
 1. parallax issue list                      # what is broken, newest first
-2. parallax issue context <fingerprint>     # full evidence for one issue
+2. parallax issue context <fingerprint> --format json   # structured evidence
 3. read the bundle; fix the code it points at
 4. re-run the failing flow (parallax run start -- <cmd>)
 5. parallax issue list                      # verify: no new occurrences
@@ -43,11 +59,12 @@ parallax logs --run <run_id> --grep error  # one run's noise, filtered
 ## Querying the API directly
 
 Everything the CLI prints comes from `POST http://127.0.0.1:4000/graphql`.
-Agents that prefer structured data over rendered Markdown can query it
-directly — `bundle(fingerprint:)` (or `bundle(runId:)` / `bundle(traceId:)`)
-returns the same evidence as canonical JSON plus the Markdown projection,
-correlating the trace, its logs, and the metric windows around the anchor in
-one artifact. The SDL lives in the
+Prefer the CLI `--format json` path above when the CLI already covers the
+verb; hand-rolled GraphQL is for fields without a CLI surface yet.
+`bundle(fingerprint:)` (or `bundle(runId:)` / `bundle(traceId:)`) returns the
+same evidence as canonical JSON plus the Markdown projection, correlating the
+trace, its logs, and the metric windows around the anchor in one artifact.
+The SDL lives in the
 [implementation spec §8](../research/architecture/v1-implementation-spec.md).
 
 ## Raw SQL — the power tool

@@ -1,27 +1,61 @@
 //! OTLP/HTTP receivers: `/v1/traces`, `/v1/logs`, `/v1/metrics`
 //! (binary protobuf bodies, per the OTLP/HTTP spec). Spool, then queue for
 //! the ingest worker, then acknowledge.
+//!
+//! Accepts `Content-Encoding: gzip` (OTLP/HTTP interop) via tower-http's
+//! request decompression layer so spool + forward always see decompressed
+//! protobuf bytes.
 
 use crate::serve::IngestState;
 use crate::worker::IngestItem;
 use axum::Router;
 use axum::body::Bytes;
-use axum::extract::State;
+use axum::extract::{DefaultBodyLimit, Request, State};
 use axum::http::{StatusCode, header};
-use axum::response::IntoResponse;
+use axum::middleware::{self, Next};
+use axum::response::{IntoResponse, Response};
 use axum::routing::post;
 use parallax_proto::collector_logs::ExportLogsServiceRequest;
 use parallax_proto::collector_metrics::ExportMetricsServiceRequest;
 use parallax_proto::collector_trace::ExportTraceServiceRequest;
 use parallax_storage::spool::Signal;
 use prost::Message;
+use tower_http::decompression::RequestDecompressionLayer;
 
-pub fn router(state: IngestState) -> Router {
+/// Build the OTLP/HTTP router with gzip request decompression and an explicit
+/// body-size limit (`[limits] otlp_max_body_bytes`).
+pub fn router(state: IngestState, max_body_bytes: usize) -> Router {
     Router::new()
         .route("/v1/traces", post(traces))
         .route("/v1/logs", post(logs))
         .route("/v1/metrics", post(metrics))
+        .layer(middleware::from_fn(move |req, next| {
+            body_limit_warn(max_body_bytes, req, next)
+        }))
+        .layer(DefaultBodyLimit::max(max_body_bytes))
+        // Decompress after the body is collected so handlers see plaintext
+        // protobuf; spool and Greptime forward must never see gzip frames.
+        .layer(RequestDecompressionLayer::new())
         .with_state(state)
+}
+
+/// Log when Content-Length already exceeds the configured limit (progress
+/// visibility for operator-facing rejections). Axum still enforces the limit.
+async fn body_limit_warn(max_body_bytes: usize, request: Request, next: Next) -> Response {
+    if let Some(len) = request
+        .headers()
+        .get(header::CONTENT_LENGTH)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.parse::<usize>().ok())
+        && len > max_body_bytes
+    {
+        tracing::warn!(
+            payload_size = len,
+            limit = max_body_bytes,
+            "OTLP/HTTP request rejected: body exceeds otlp_max_body_bytes"
+        );
+    }
+    next.run(request).await
 }
 
 async fn ingest<R>(
@@ -31,11 +65,10 @@ async fn ingest<R>(
     to_item: impl FnOnce(R, Bytes) -> IngestItem,
 ) -> axum::response::Response
 where
-    R: Message + Default + serde::Serialize,
+    R: Message + Default,
 {
-    // The OTLP/HTTP body is already the wire-format protobuf the native
-    // `/v1/otlp` endpoints accept — forward it verbatim (zero-copy `Bytes`
-    // clone) while decoding a copy for the in-process tee.
+    // Body is decompressed protobuf (RequestDecompressionLayer). Forward
+    // verbatim (zero-copy Bytes clone) while decoding for the in-process tee.
     let raw = body.clone();
     let request = match R::decode(body) {
         Ok(r) => r,
@@ -47,21 +80,26 @@ where
                 .into_response();
         }
     };
-    if let Err(e) = state.spool.append(signal, &request).await {
+    if let Err(e) = state.spool.append_raw(signal, &raw).await {
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("spool write failed: {e}"),
         )
             .into_response();
     }
-    if state.sender.send(to_item(request, raw)).await.is_err() {
+    if state
+        .senders
+        .for_signal(signal)
+        .send(to_item(request, raw))
+        .await
+        .is_err()
+    {
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
             "ingest worker unavailable".to_string(),
         )
             .into_response();
     }
-    // OTLP/HTTP success: 200 with an empty protobuf response message.
     (
         StatusCode::OK,
         [(header::CONTENT_TYPE, "application/x-protobuf")],

@@ -15,11 +15,14 @@ server from `~/.parallax/contexts.toml` — omitted, it targets the local one.
 | Command | What it does |
 | --- | --- |
 | `parallax run start -- <cmd…>` | Wrapper mode: inject OTLP/gRPC endpoint/protocol env vars for traces, logs, metrics, and profiles plus `parallax.run.id`, run the command, propagate its exit code. |
+| `parallax run start --print-env -- <cmd…>` | Dry-run: print the OTel env that would be injected for the command, then exit without recording a run or spawning the child. |
+| `parallax run start --otlp-forward <url\|rotel\|off> -- <cmd…>` | Compare mode: forward child telemetry to another collector (`rotel` expands to the local fan-out hub, `off` disables, or pass a full OTLP URL). Ambient override: `PARALLAX_OTLP_FORWARD`. |
 | `parallax run start` | Bare mode: print the exports to source into your shell. |
 | `parallax run finish <run_id> <exit_code>` | Close a bare-mode run. |
 | `parallax run list` | Recent runs with status, exit code, relative start time. Runs whose `parallax.run.id` arrived in telemetry without a wrapper show status `external`. |
 | `parallax run inspect <run_id>` | One run's record: status, exit code, trace/error counts, grouped issues. |
-| `parallax run bundle <run_id>` | The run-anchored evidence bundle (Markdown + canonical hash). |
+| `parallax run bundle <run_id> [--format json\|markdown]` | The run-anchored evidence bundle. Default Markdown + canonical-hash trailer; `--format json` prints canonical bundle JSON only (hash is inside the JSON). |
+| `parallax run agent <run_id> [--format json\|markdown]` | Agent-session projection for a run (tool/shell steps, token totals). Default compact Markdown; `--format json` prints the GraphQL projection object. |
 | `parallax run watch <run_id> [--level <severity>] [--grep <substr>] [--for 30s]` | Live tail of one run: new log records and finished spans interleaved (`[log]`/`[span]` prefixes) — the CLI mirror of the run page's Go live. `--for` watches a fixed window and reports per-stream match counts. |
 
 ## Issues
@@ -27,7 +30,7 @@ server from `~/.parallax/contexts.toml` — omitted, it targets the local one.
 | Command | What it does |
 | --- | --- |
 | `parallax issue list [--status open\|resolved] [--run <run_id>]` | Grouped errors, newest activity first; `--run` scopes to issues whose events fell inside that run's traces. |
-| `parallax issue context <fingerprint>` | **The agent handoff.** Server-rendered evidence bundle as Markdown + its canonical hash. |
+| `parallax issue context <fingerprint> [--format json\|markdown]` | **The agent handoff.** Default: server-rendered Markdown + canonical-hash trailer. `--format json` prints the canonical bundle JSON only (machine path). |
 | `parallax issue resolve <fingerprint>` | Mark resolved. |
 
 ## Telemetry

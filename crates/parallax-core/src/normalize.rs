@@ -12,7 +12,13 @@ use parallax_proto::semconv;
 use parallax_storage::model::{HistogramRow, LogRow, MetricExemplarRow, MetricPointRow, SpanRow};
 
 pub fn hex(bytes: &[u8]) -> String {
-    bytes.iter().map(|b| format!("{b:02x}")).collect()
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut out = String::with_capacity(bytes.len() * 2);
+    for b in bytes {
+        out.push(HEX[(b >> 4) as usize] as char);
+        out.push(HEX[(b & 0x0f) as usize] as char);
+    }
+    out
 }
 
 fn any_value_to_json(value: &AnyValue) -> serde_json::Value {
@@ -147,6 +153,27 @@ fn status_code_name(code: i32) -> &'static str {
 /// this to one key so one wrapped command has one lookup id.
 fn run_id(resource_attrs: &[KeyValue]) -> Option<String> {
     attr_str(resource_attrs, semconv::PARALLAX_RUN_ID).map(str::to_string)
+}
+
+pub fn resource_run_ids(
+    request: &ExportTraceServiceRequest,
+) -> impl Iterator<Item = (String, u128)> + '_ {
+    request.resource_spans.iter().filter_map(|rs| {
+        let resource_attrs = rs
+            .resource
+            .as_ref()
+            .map(|r| r.attributes.as_slice())
+            .unwrap_or(&[]);
+        let run_id = run_id(resource_attrs)?;
+        let ts = rs
+            .scope_spans
+            .iter()
+            .flat_map(|ss| ss.spans.iter())
+            .map(|span| u128::from(span.start_time_unix_nano))
+            .min()
+            .unwrap_or(0);
+        Some((run_id, ts))
+    })
 }
 
 /// OTel span links → `[{traceId, spanId, attributes}]` JSON. Links are the
@@ -479,6 +506,13 @@ mod tests {
                 ..Default::default()
             }],
         }
+    }
+
+    #[test]
+    fn hex_encodes_known_bytes() {
+        assert_eq!(hex(&[0x00, 0xff, 0x1a]), "00ff1a");
+        assert_eq!(hex(&[]), "");
+        assert_eq!(hex(&[0xab; 16]), "abababababababababababababababab");
     }
 
     #[test]

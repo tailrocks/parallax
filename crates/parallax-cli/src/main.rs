@@ -6,9 +6,18 @@ mod client;
 mod commands;
 mod doctor;
 
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 use client::{Client, resolve_url};
 use std::path::PathBuf;
+
+/// Output shape for agent-facing projections (bundles, agent sessions).
+/// Markdown is the human default; JSON is the machine/agent contract.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, ValueEnum)]
+pub enum OutputFormat {
+    #[default]
+    Markdown,
+    Json,
+}
 
 #[derive(Parser)]
 #[command(
@@ -150,8 +159,18 @@ enum RunCommand {
     Finish { run_id: String, exit_code: i32 },
     /// Show one run's record (status, counts, issues).
     Inspect { run_id: String },
-    /// The run-anchored evidence bundle (Markdown).
-    Bundle { run_id: String },
+    /// The run-anchored evidence bundle (Markdown by default; `--format json` for canonical JSON).
+    Bundle {
+        run_id: String,
+        #[arg(long = "format", value_enum, default_value = "markdown")]
+        format: OutputFormat,
+    },
+    /// Agent-session projection for a run (tool steps, token totals).
+    Agent {
+        run_id: String,
+        #[arg(long = "format", value_enum, default_value = "markdown")]
+        format: OutputFormat,
+    },
     /// List recent runs.
     List,
     /// Live tail of one run: new logs + finished spans, interleaved.
@@ -180,8 +199,12 @@ enum IssueCommand {
         #[arg(long)]
         run: Option<String>,
     },
-    /// The agent handoff: Markdown evidence for one issue.
-    Context { fingerprint: String },
+    /// The agent handoff: Markdown evidence for one issue (`--format json` for canonical JSON).
+    Context {
+        fingerprint: String,
+        #[arg(long = "format", value_enum, default_value = "markdown")]
+        format: OutputFormat,
+    },
     /// Mark an issue resolved.
     Resolve { fingerprint: String },
 }
@@ -290,7 +313,12 @@ async fn main() -> anyhow::Result<()> {
             }
             RunCommand::List => commands::run_list(&client()?).await,
             RunCommand::Inspect { run_id } => commands::run_inspect(&client()?, &run_id).await,
-            RunCommand::Bundle { run_id } => commands::run_bundle(&client()?, &run_id).await,
+            RunCommand::Bundle { run_id, format } => {
+                commands::run_bundle(&client()?, &run_id, format).await
+            }
+            RunCommand::Agent { run_id, format } => {
+                commands::run_agent_session(&client()?, &run_id, format).await
+            }
             RunCommand::Watch {
                 run_id,
                 level,
@@ -311,9 +339,10 @@ async fn main() -> anyhow::Result<()> {
             IssueCommand::List { status, run } => {
                 commands::issue_list(&client()?, status.as_deref(), run.as_deref()).await
             }
-            IssueCommand::Context { fingerprint } => {
-                commands::issue_context(&client()?, &fingerprint).await
-            }
+            IssueCommand::Context {
+                fingerprint,
+                format,
+            } => commands::issue_context(&client()?, &fingerprint, format).await,
             IssueCommand::Resolve { fingerprint } => {
                 let client = client()?;
                 client

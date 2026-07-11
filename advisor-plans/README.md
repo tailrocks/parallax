@@ -25,13 +25,14 @@ verified source inside the plan file.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| 084 | GreptimeDB integration corrections (matches_term, index types, deterministic log schema, TTL reconcile, timeouts, version upgrades) | P1 | L | 070; 074 soft | TODO |
-| 085 | Read-path SQL rewrites (window unbounded scans, SQL-side histogram/edge aggregation, round-trip collapse, uncast timestamp) | P1 | L | 074, 075, 084 | TODO |
-| 086 | API request memoization + batching (per-request span/log memo, batched run stats, one RED scan, join!, SSE per-batch serialization) | P1 | L | 070; BEFORE 078 | TODO |
-| 087 | Ingest pipeline restructure (gzip OTLP/HTTP, per-signal workers, drop discarded batches, raw-bytes spool, bounded limits) | P1/P2 | L | 073, 076 | TODO |
-| 088 | UI data layer (query cache + preload reuse, dashboard fan-out collapse, bounded run scan, visibility gating, issues table) | P2 | L | 071, 077, 079 | TODO |
-| 089 | Extension-table writes via gRPC ingester + metric_exemplars PK fix | P2 | M | 084, 070 | TODO |
-| 090 | SPIKE: measure read transport (arrow/wire prepared statements/RANGE) + trace-table partition default | P3 | M | 084; 085 recommended | TODO |
+| 084 | GreptimeDB integration corrections (matches_term, index types, deterministic log schema, TTL reconcile, timeouts, version upgrades) | P1 | L | 070; 074 soft | DONE |
+| 085 | Read-path SQL rewrites (window unbounded scans, SQL-side histogram/edge aggregation, round-trip collapse, uncast timestamp) | P1 | L | 074, 075, 084 | DONE |
+| 086 | API request memoization + batching (per-request span/log memo, batched run stats, one RED scan, join!, SSE per-batch serialization) | P1 | L | 070; BEFORE 078 | DONE |
+| 087 | Ingest pipeline restructure (gzip OTLP/HTTP, per-signal workers, drop discarded batches, raw-bytes spool, bounded limits) | P1/P2 | L | 073, 076 | DONE |
+| 088 | UI data layer (query cache + preload reuse, dashboard fan-out collapse, bounded run scan, visibility gating, issues table) | P2 | L | 071, 077, 079 | DONE |
+| 089 | Extension-table writes via gRPC ingester + metric_exemplars PK fix | P2 | M | 084, 070 | BLOCKED (Step 0: greptimedb-ingester hard-depends tonic tls-ring → rustls; SQL path stays) |
+| 090 | SPIKE: measure read transport (arrow/wire prepared statements/RANGE) + trace-table partition default | P3 | M | 084; 085 recommended | DONE |
+| 091 | Adopt HTTP `format=arrow&compression=zstd` for heavy GreptimeDB reads (from 090 GO) | P2 | S–M | 090 | DONE |
 
 Recommended order: **084 → 085 → 086** (the integration corrections and the
 two round-trip killers carry most of the value), **087** after 073/076 settle
@@ -122,21 +123,21 @@ its verification gates, and update your row below when done.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| 069 | CI verification gates (UI tests/lint, embed-ui, nightly real-engine, timeouts) | P1 | M | — | TODO |
-| 070 | Rust correctness batch (requestRate table, ingest panic, first_seen, stuck runs) | P1 | M | — | TODO |
-| 071 | UI correctness batch (cycle guard, stale paging, bucket race, gqlString) | P1 | M | 069 (soft) | TODO |
-| 072 | Redaction bypasses + agent-trust delimiting in bundles | P1 | L | — | TODO |
-| 073 | Spool durability truth (worker retry, shutdown drain, honest docs) | P1 | M | 070 | TODO |
-| 074 | GreptimeDB SQL testability (golden SQL, escape tests, conformance suite) | P1 | L | 070; 069 (soft) | TODO |
-| 075 | Read-path performance (traces_search window, fan-out joins, table cache) | P2 | M | 074 | TODO |
-| 076 | Ingest hot path (spool locks/IO, batched upserts, normalize churn) | P2 | M-L | 073, 070 | TODO |
-| 077 | Shared SSE hook + real stream health in Live badges | P2 | M | 071 | TODO |
-| 078 | Split parallax-api lib.rs into domain modules | P2 | L | 069; after 072/073/075 | TODO |
-| 079 | UI query/type dedup + dependency hygiene + rotel.env template | P2 | M | 069; after 071/077 | TODO |
-| 080 | Onboarding docs (dev setup, ui/README, PROJECT_STRUCTURE, cli.md) | P3 | S | — | TODO |
-| 081 | `--format json` on bundle commands + agent-session CLI verb | P2 | M | — | TODO |
-| 082 | Publish bundle-v1 JSON Schema + conformance test | P3 | M | 072, 081 | TODO |
-| 083 | MCP read-only adapter SPIKE (projection equivalence) | P3 | M | 072, 081; 082 (soft) | TODO |
+| 069 | CI verification gates (UI tests/lint, embed-ui, nightly real-engine, timeouts) | P1 | M | — | DONE |
+| 070 | Rust correctness batch (requestRate table, ingest panic, first_seen, stuck runs) | P1 | M | — | DONE |
+| 071 | UI correctness batch (cycle guard, stale paging, bucket race, gqlString) | P1 | M | 069 (soft) | DONE |
+| 072 | Redaction bypasses + agent-trust delimiting in bundles | P1 | L | — | DONE |
+| 073 | Spool durability truth (worker retry, shutdown drain, honest docs) | P1 | M | 070 | DONE |
+| 074 | GreptimeDB SQL testability (golden SQL, escape tests, conformance suite) | P1 | L | 070; 069 (soft) | DONE |
+| 075 | Read-path performance (traces_search window, fan-out joins, table cache) | P2 | M | 074 | DONE |
+| 076 | Ingest hot path (spool locks/IO, batched upserts, normalize churn) | P2 | M-L | 073, 070 | DONE (Step 4 Arc resource not-worth-it: ~39 construction/assignment sites >25 STOP) |
+| 077 | Shared SSE hook + real stream health in Live badges | P2 | M | 071 | DONE |
+| 078 | Split parallax-api lib.rs into domain modules | P2 | L | 069; after 072/073/075 | DONE |
+| 079 | UI query/type dedup + dependency hygiene + rotel.env template | P2 | M | 069; after 071/077 | DONE |
+| 080 | Onboarding docs (dev setup, ui/README, PROJECT_STRUCTURE, cli.md) | P3 | S | — | DONE |
+| 081 | `--format json` on bundle commands + agent-session CLI verb | P2 | M | — | DONE |
+| 082 | Publish bundle-v1 JSON Schema + conformance test | P3 | M | 072, 081 | DONE |
+| 083 | MCP read-only adapter SPIKE (projection equivalence) | P3 | M | 072, 081; 082 (soft) | DONE — [findings](../docs/research/validation/2026-07-11-mcp-spike-projection-equivalence.md) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (one-line reason) |
 REJECTED (one-line rationale) | SUPERSEDED.
@@ -164,6 +165,15 @@ lane **081 → 082 → 083** (any time after 072; 081 is independent and cheap).
 - The working tree had uncommitted edits to `ui/src/routes/dashboards.index.tsx`,
   `traces.index.tsx`, and several route tests at planning time — every plan's
   drift check covers this.
+
+### Plan 074 conformance notes (2026-07-11)
+
+- Golden SQL builders + escape unit tests land under `greptime.rs` tests.
+- Shared scenarios in `parallax-storage::conformance` pass on MemoryStore.
+- Gated `m6_conformance_greptime.rs` boots managed engine and probes read surface;
+  full dual-seed parity (raw OTLP for greptime vs decoded tee for memory) remains
+  the open follow-up when expanding seeds — **no divergences found** on empty-window
+  probes. Backslash-in-service equality stays deferred to a live seed extension.
 
 ### Findings considered and rejected / deferred (2026-07-10 audit)
 
@@ -229,6 +239,40 @@ Recorded so they are not re-audited; "deferred" items may be planned later.
 - Should the operator rotate the lab OpenObserve/Sentry credentials in
   `bench/otlp-fanout/rotel.env` history if they were ever non-default? (079
   replaces the file with a template but does not rewrite history.)
+
+
+### Plan 082 prose-vs-code divergences (2026-07-11)
+
+Recorded while authoring `schema/evidence-bundle.v1.schema.json` against the
+shipped `Bundle` Serialize shape. Research doc
+`docs/research/architecture/evidence-bundle-schema.md` is **not** edited;
+code is the validator source of truth. Do not resolve here.
+
+- **Envelope model**: prose is a CloudEvents-ish envelope with
+  `bundle_id`, `schema_ref`, `generated_at`, object `generator`/`project`,
+  `window`, typed `nodes`/`edges`, `projection_manifest`, `query_manifest`,
+  `access`. Code is a flat dossier: `schema_version`, string `generator`,
+  `anchor`, optional `issue`/`run`/`latest_event`/`trace`, `metric_windows`,
+  `logs[]` (preformatted strings), `hypotheses`, `missing_evidence`,
+  `redaction`, `bounded`, `canonical_hash`.
+- **`schema_version`**: prose uses semver-like `"0.1.0"`; code freezes
+  `"bundle-v1"`.
+- **Redaction field name**: prose `redaction_report`; code `redaction`
+  (`policy` + `redacted_counts` map, not the richer prose report).
+- **Anchor shape**: prose `{ type, id }`; code `{ kind, id }` with string
+  kinds `issue`/`run`/`trace`.
+- **No node/edge graph** in code — correlation is section-based
+  (`run`/`trace`/`metric_windows`/`logs`), not a typed graph catalog.
+- **Timestamps**: prose ISO-8601 / structured frames; code nanosecond
+  **strings** (`*_nanos` via `.to_string()`).
+- **Bounding**: code exposes `bounded` (max/estimated tokens, dropped logs,
+  truncated stacktrace); prose has no equivalent top-level object.
+- **Hypotheses**: prose cites supporting/contradicting/checks; code is
+  `{ kind, statement, confidence, evidence[] }` only.
+- **Missing from code** (present in prose): deploy/code-change/agent nodes,
+  source-field policy, raw refs, access policy, projection manifest.
+- **Present in code** (absent from prose envelope): `bounded`, string
+  `logs`, flat `IssueSummary`/`EventDetail`/`SpanLine` sections.
 
 ## Observability program (022-034)
 
@@ -363,3 +407,25 @@ content removed from that document). Plans 023, 025, and 032 concern
 secret-masking of agent-visible evidence bundles; their rationale is
 self-contained in each plan file and does not depend on the removed sections
 of the brief.
+
+## Residual dispositions (2026-07-11 program closure)
+
+Executed under `prompts/advisor-plans-implementation.md` on branch
+`implement/advisor-plans-069-090`.
+
+| Residual | Disposition |
+|----------|-------------|
+| traces_by_ids O(n²) id dedup | **Deferred** — MAX_ROWS=500 bounds cost; touch only when editing the function |
+| is_missing_* substring matching | **Watch** — conformance suite (074) is the net on version bumps |
+| Issue::latestEvent/events store N+1 | **Deferred** — no client selects them; 086 batch pattern ready when activated |
+| memory.rs Mutex across async | **Deferred** — test/dev adapter only |
+| Live-tail re-sort / Recharts identity | **Revisit** after 088 if live view still janks; 088 landed cache + visibility |
+| Recharts/Motion shell chunk | **Deferred** with route-splitting investigation (069) |
+| self_telemetry vs parallax_storage logs | **Policy** — keep storage ingest log-quiet or extend filter |
+| Worker seen_runs unbounded | **DONE** in 087 (cap+clear) |
+| span_events allocation-free | **Reaffirmed** — not hot-path |
+| fingerprint OnceLock | **Reaffirmed** |
+| traces_search windowed vs lifetime | **Resolved** — both adapters windowed in 075 |
+| rotel.env history credentials | **079** replaced file with template; history rewrite left to operator |
+| 089 greptimedb-ingester | **BLOCKED** — rustls hard-dep; SQL path stays until upstream |
+| 090 GO (arrow+zstd) | **DONE** as plan 091 |

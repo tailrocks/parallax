@@ -41,21 +41,38 @@ export const TRACE_SKEW_THRESHOLD_MS = 50
 const TRACE_SKEW_THRESHOLD_NS = BigInt(TRACE_SKEW_THRESHOLD_MS) * 1_000_000n
 const TRACE_ROOT_SKEW_THRESHOLD_NS = 5n * 60n * 1_000_000_000n
 
-function spanStart(span: TraceTreeSpan): bigint {
-  return BigInt(span.tsNanos)
+interface SpanTimes {
+  start: bigint
+  end: bigint
+  duration: bigint
 }
 
-function spanDuration(span: TraceTreeSpan): bigint {
-  const duration = BigInt(span.durationNs)
-  return duration > 0n ? duration : 0n
+/** Parse each span's timestamps once and index by spanId. */
+function buildTimesMap(
+  spans: readonly TraceTreeSpan[]
+): Map<string, SpanTimes> {
+  const times = new Map<string, SpanTimes>()
+  for (const span of spans) {
+    const start = BigInt(span.tsNanos)
+    const rawDuration = BigInt(span.durationNs)
+    const duration = rawDuration > 0n ? rawDuration : 0n
+    times.set(span.spanId, {
+      start,
+      duration,
+      end: start + duration,
+    })
+  }
+  return times
 }
 
-function spanEnd(span: TraceTreeSpan): bigint {
-  return spanStart(span) + spanDuration(span)
-}
-
-function compareByStart<T extends TraceTreeSpan>(a: T, b: T): number {
-  const byStart = spanStart(a) - spanStart(b)
+function compareByStartWithTimes<T extends TraceTreeSpan>(
+  times: Map<string, SpanTimes>,
+  a: T,
+  b: T
+): number {
+  const aStart = times.get(a.spanId)?.start ?? 0n
+  const bStart = times.get(b.spanId)?.start ?? 0n
+  const byStart = aStart - bStart
   if (byStart < 0n) return -1
   if (byStart > 0n) return 1
   return a.spanId.localeCompare(b.spanId)
@@ -63,7 +80,8 @@ function compareByStart<T extends TraceTreeSpan>(a: T, b: T): number {
 
 /** Order spans depth-first by parent so the waterfall reads top-to-bottom. */
 export function orderSpans<T extends TraceTreeSpan>(
-  spans: readonly T[]
+  spans: readonly T[],
+  times = buildTimesMap(spans)
 ): Array<{ span: T; depth: number }> {
   const byId = new Map(spans.map((span) => [span.spanId, span]))
   const children = new Map<string, T[]>()
@@ -82,14 +100,16 @@ export function orderSpans<T extends TraceTreeSpan>(
   const ordered: Array<{ span: T; depth: number }> = []
   const walk = (span: T, depth: number) => {
     ordered.push({ span, depth })
-    for (const child of (children.get(span.spanId) ?? []).sort(
-      compareByStart
+    for (const child of (children.get(span.spanId) ?? []).sort((a, b) =>
+      compareByStartWithTimes(times, a, b)
     )) {
       walk(child, depth + 1)
     }
   }
 
-  for (const root of roots.sort(compareByStart)) {
+  for (const root of roots.sort((a, b) =>
+    compareByStartWithTimes(times, a, b)
+  )) {
     walk(root, 0)
   }
 
@@ -97,15 +117,18 @@ export function orderSpans<T extends TraceTreeSpan>(
 }
 
 /** Trace-relative window: absolute start (ns) and total duration (ns, min 1). */
-export function computeWindow(spans: readonly TraceTreeSpan[]): TraceWindow {
+export function computeWindow(
+  spans: readonly TraceTreeSpan[],
+  times = buildTimesMap(spans)
+): TraceWindow {
   if (spans.length === 0) return { startNs: 0n, durationNs: 1n }
-  let start = spanStart(spans[0]!)
-  let end = spanEnd(spans[0]!)
-  for (const span of spans.slice(1)) {
-    const spanStartNs = spanStart(span)
-    const spanEndNs = spanEnd(span)
-    if (spanStartNs < start) start = spanStartNs
-    if (spanEndNs > end) end = spanEndNs
+  let start = times.get(spans[0]!.spanId)?.start ?? 0n
+  let end = times.get(spans[0]!.spanId)?.end ?? 0n
+  for (let i = 1; i < spans.length; i += 1) {
+    const t = times.get(spans[i]!.spanId)
+    if (!t) continue
+    if (t.start < start) start = t.start
+    if (t.end > end) end = t.end
   }
   const duration = end - start
   return { startNs: start, durationNs: duration > 0n ? duration : 1n }
@@ -134,12 +157,16 @@ export function positionPct(
 export function buildTraceTree<T extends TraceTreeSpan>(
   spans: readonly T[]
 ): Array<OrderedTraceSpan<T>> {
-  const window = computeWindow(spans)
-  return orderSpans(spans).map(({ span, depth }) => ({
-    span,
-    depth,
-    ...positionPct(span.tsNanos, span.durationNs, window),
-  }))
+  const times = buildTimesMap(spans)
+  const window = computeWindow(spans, times)
+  return orderSpans(spans, times).map(({ span, depth }) => {
+    const t = times.get(span.spanId)
+    return {
+      span,
+      depth,
+      ...positionPct(t?.start ?? 0n, t?.duration ?? 0n, window),
+    }
+  })
 }
 
 export function errorPathSpanIds<T extends ErrorTraceSpan>(
@@ -152,7 +179,8 @@ export function errorPathSpanIds<T extends ErrorTraceSpan>(
     if (span.statusCode !== "STATUS_CODE_ERROR") continue
 
     let current: T | undefined = span
-    while (current) {
+    // Shared `ids` also terminates parent-chain cycles (self-parent / A↔B).
+    while (current && !ids.has(current.spanId)) {
       ids.add(current.spanId)
       current = current.parentSpanId
         ? byId.get(current.parentSpanId)
@@ -189,6 +217,7 @@ function nsToMs(value: bigint): number {
 export function detectSkew<T extends ServiceTraceSpan>(
   spans: readonly T[]
 ): SkewReport {
+  const times = buildTimesMap(spans)
   const byId = new Map(spans.map((span) => [span.spanId, span]))
   const suspectPairs: SkewPair[] = []
   let maxDriftMs = 0
@@ -198,8 +227,12 @@ export function detectSkew<T extends ServiceTraceSpan>(
     const parent = byId.get(child.parentSpanId)
     if (!parent) continue
 
-    const startsBeforeParent = spanStart(parent) - spanStart(child)
-    const endsAfterParent = spanEnd(child) - spanEnd(parent)
+    const parentTimes = times.get(parent.spanId)
+    const childTimes = times.get(child.spanId)
+    if (!parentTimes || !childTimes) continue
+
+    const startsBeforeParent = parentTimes.start - childTimes.start
+    const endsAfterParent = childTimes.end - parentTimes.end
     const driftNs =
       startsBeforeParent > endsAfterParent
         ? startsBeforeParent
@@ -223,11 +256,14 @@ export function detectSkew<T extends ServiceTraceSpan>(
     .filter(
       (span) => !span.parentSpanId || !byId.has(span.parentSpanId)
     )
-    .sort(compareByStart)
+    .sort((a, b) => compareByStartWithTimes(times, a, b))
   for (let index = 0; index < roots.length - 1; index += 1) {
     const earlier = roots[index]!
     const later = roots[index + 1]!
-    const gapNs = spanStart(later) - spanEnd(earlier)
+    const earlierTimes = times.get(earlier.spanId)
+    const laterTimes = times.get(later.spanId)
+    if (!earlierTimes || !laterTimes) continue
+    const gapNs = laterTimes.start - earlierTimes.end
     if (gapNs <= TRACE_ROOT_SKEW_THRESHOLD_NS) continue
 
     const driftMs = nsToMs(gapNs)

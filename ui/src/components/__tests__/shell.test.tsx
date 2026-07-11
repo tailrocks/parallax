@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import {
   Outlet,
   RouterProvider,
@@ -9,7 +9,7 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router"
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { nav } from "@/components/nav"
 import { PageHeader } from "@/components/page-header"
@@ -72,6 +72,10 @@ function renderWithRouter(component: React.ReactNode, initialEntries = ["/"]) {
 }
 
 describe("shell primitives", () => {
+  afterEach(() => {
+    cleanup()
+  })
+
   it("renders PageHeader breadcrumb shape", async () => {
     const item = nav[0]!
     renderWithRouter(
