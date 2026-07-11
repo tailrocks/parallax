@@ -132,7 +132,7 @@ its verification gates, and update your row below when done.
 | 075 | Read-path performance (traces_search window, fan-out joins, table cache) | P2 | M | 074 | DONE |
 | 076 | Ingest hot path (spool locks/IO, batched upserts, normalize churn) | P2 | M-L | 073, 070 | DONE (Step 4 Arc resource not-worth-it: ~39 construction/assignment sites >25 STOP) |
 | 077 | Shared SSE hook + real stream health in Live badges | P2 | M | 071 | DONE |
-| 078 | Split parallax-api lib.rs into domain modules | P2 | L | 069; after 072/073/075 | TODO |
+| 078 | Split parallax-api lib.rs into domain modules | P2 | L | 069; after 072/073/075 | DONE |
 | 079 | UI query/type dedup + dependency hygiene + rotel.env template | P2 | M | 069; after 071/077 | DONE |
 | 080 | Onboarding docs (dev setup, ui/README, PROJECT_STRUCTURE, cli.md) | P3 | S | — | DONE |
 | 081 | `--format json` on bundle commands + agent-session CLI verb | P2 | M | — | DONE |
