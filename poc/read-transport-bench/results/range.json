@@ -1,0 +1,42 @@
+{
+  "date_bin_p50_ms": 5.507097,
+  "date_bin_row_count_sample": 1667,
+  "date_bin_sql": "SELECT CAST(date_bin(INTERVAL '60 seconds', \"greptime_timestamp\") AS BIGINT)\n                          AS \"bucket_ms\", SUM(\"greptime_value\") AS \"samples\"\n                   FROM \"http_server_request_duration_seconds_count\"\n                   WHERE \"greptime_timestamp\" >= 1716000000000 AND \"greptime_timestamp\" <= 1716100000000\n                     AND \"service_name\" = 's0'\n                   GROUP BY \"bucket_ms\" ORDER BY \"bucket_ms\"",
+  "explain_date_bin": [
+    [
+      0,
+      0,
+      " CooperativeExec metrics=[]\n  MergeScanExec: peers=[4432406249472(1032, 0), ] metrics=[output_rows: 1667, greptime_exec_read_cost: 0ns, finish_time: 2.2ms, first_consume_time: 2.1ms, ready_time: 2.0ms, ]\n"
+    ],
+    [
+      1,
+      0,
+      " SortPreservingMergeExec: [bucket_ms@0 ASC NULLS LAST] metrics=[output_rows: 1667, elapsed_compute: 51us, output_bytes: 26.0KiB, output_batches: 1, ]\n  SortExec: expr=[bucket_ms@0 ASC NULLS LAST], preserve_partitioning=[true] metrics=[output_rows: 1667, elapsed_compute: 2.2us, output_bytes: 0B, output_batches: 0, spill_count: 0, spilled_bytes: 0B, spilled_rows: 0, ]\n    ProjectionExec: expr=[date_bin(IntervalMonthDayNano(\"IntervalMonthDayNano { months: 0, days: 0, nanoseconds: 60000000000 }\"),http_server_request_duration_seconds_count.greptime_timestamp)@0 as bucket_ms, sum(http_server_request_duration_seconds_count.greptime_value)@1 as samples] metrics=[output_rows: 1667, elapsed_compute: 2.0us, output_bytes: 29.0KiB, output_batches: 4, expr_0_eval_time: 166ns, expr_1_eval_time: 126ns, ]\n      AggregateExec: mode=FinalPartitioned, gby=[date_bin(IntervalMonthDayNano(\"IntervalMonthDayNano { months: 0, days: 0, nanoseconds: 60000000000 }\"),http_server_request_duration_seconds_count.greptime_timestamp)@0 as date_bin(IntervalMonthDayNano(\"IntervalMonthDayNano { months: 0, days: 0, nanoseconds: 60000000000 }\"),http_server_request_duration_seconds_count.greptime_timestamp)], aggr=[sum(http_server_request_duration_seconds_count.greptime_value)] metrics=[output_rows: 1667, elapsed_compute: 52us, output_bytes: 29.0KiB, output_batches: 4, spill_count: 0, spilled_bytes: 0B, spilled_rows: 0, peak_mem_used: 130.3KiB, aggregate_arguments_time: 500ns, aggregation_time: 2.8us, emitting_time: 1.6us, time_calculating_group_ids: 28us, ]\n        RepartitionExec: partitioning=Hash([date_bin(IntervalMonthDayNano(\"IntervalMonthDayNano { months: 0, days: 0, nanoseconds: 60000000000 }\"),http_server_request_duration_seconds_count.greptime_timestamp)@0], 4), input_partitions=4 metrics=[output_rows: 1667, elapsed_compute: 16us, output_bytes: 512.0KiB, output_batches: 4, spill_count: 0, spilled_bytes: 0B, spilled_rows: 0, fetch_time: 410us, repartition_time: 32us, send_time: 3.0us, ]\n          AggregateExec: mode=Partial, gby=[CAST(date_bin(IntervalMonthDayNano { months: 0, days: 0, nanoseconds: 60000000000 }, greptime_timestamp@0) AS Int64) as date_bin(IntervalMonthDayNano(\"IntervalMonthDayNano { months: 0, days: 0, nanoseconds: 60000000000 }\"),http_server_request_duration_seconds_count.greptime_timestamp)], aggr=[sum(http_server_request_duration_seconds_count.greptime_value)] metrics=[output_rows: 1667, elapsed_compute: 273us, output_bytes: 33.0KiB, output_batches: 2, spill_count: 0, spilled_bytes: 0B, spilled_rows: 0, skipped_aggregation_rows: 0, peak_mem_used: 148.3KiB, aggregate_arguments_time: 960ns, aggregation_time: 34us, emitting_time: 57us, time_calculating_group_ids: 77us, reduction_factor: 0, ]\n            SeqScan: region=4432406249472(1032, 0), \"partition_count\":{\"count\":2, \"mem_ranges\":0, \"files\":2, \"file_ranges\":2} metrics=[output_rows: 8334, elapsed_compute: 266us, mem_used: 256.0KiB, build_parts_cost: 4ns, build_reader_cost: 4ns, convert_cost: 3.8us, elapsed_await: 90us, elapsed_poll: 93us, scan_cost: 80us, yield_cost: 182us, ]\n"
+    ],
+    [
+      null,
+      null,
+      "Total rows: 1667"
+    ]
+  ],
+  "explain_range": [
+    [
+      0,
+      0,
+      " SortExec: expr=[greptime_timestamp@0 ASC NULLS LAST], preserve_partitioning=[false] metrics=[output_rows: 1667, elapsed_compute: 1.2us, output_bytes: 0B, output_batches: 0, spill_count: 0, spilled_bytes: 0B, spilled_rows: 0, ]\n  ProjectionExec: expr=[greptime_timestamp@1 as greptime_timestamp, sum(http_server_request_duration_seconds_count.greptime_value) RANGE 60s@0 as samples] metrics=[output_rows: 1667, elapsed_compute: 3.1us, output_bytes: 29.0KiB, output_batches: 1, expr_0_eval_time: 916ns, expr_1_eval_time: 125ns, ]\n    RangeSelectExec: range_expr=[sum(http_server_request_duration_seconds_count.greptime_value) RANGE 60s], align=60000ms, align_to=0ms, align_by=[service_name@2], time_index=greptime_timestamp metrics=[output_rows: 0, elapsed_compute: 1.3ms, output_bytes: 0B, output_batches: 0, ]\n      CoalescePartitionsExec metrics=[output_rows: 8334, elapsed_compute: 927us, output_bytes: 304.8KiB, output_batches: 2, ]\n        MergeScanExec: peers=[4432406249472(1032, 0), ] metrics=[output_rows: 8334, greptime_exec_read_cost: 0ns, finish_time: 825us, first_consume_time: 742us, ready_time: 582us, ]\n"
+    ],
+    [
+      1,
+      0,
+      " CooperativeExec metrics=[]\n  SeqScan: region=4432406249472(1032, 0), \"partition_count\":{\"count\":2, \"mem_ranges\":0, \"files\":2, \"file_ranges\":2} metrics=[output_rows: 8334, elapsed_compute: 208us, mem_used: 304.8KiB, build_parts_cost: 4ns, build_reader_cost: 4ns, convert_cost: 90us, elapsed_await: 117us, elapsed_poll: 119us, scan_cost: 22us, yield_cost: 97us, ]\n"
+    ],
+    [
+      null,
+      null,
+      "Total rows: 1667"
+    ]
+  ],
+  "range_p50_ms": 5.098834,
+  "range_row_count_sample": 1667,
+  "range_sql": "SELECT \"greptime_timestamp\",\n       SUM(\"greptime_value\") RANGE '60s' AS \"samples\"\nFROM \"http_server_request_duration_seconds_count\"\nWHERE \"greptime_timestamp\" >= 1716000000000::TimestampMillisecond\n  AND \"greptime_timestamp\" <= 1716100000000::TimestampMillisecond\n  AND \"service_name\" = 's0'\nALIGN '60s'\nORDER BY \"greptime_timestamp\""
+}

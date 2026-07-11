@@ -31,7 +31,8 @@ verified source inside the plan file.
 | 087 | Ingest pipeline restructure (gzip OTLP/HTTP, per-signal workers, drop discarded batches, raw-bytes spool, bounded limits) | P1/P2 | L | 073, 076 | TODO |
 | 088 | UI data layer (query cache + preload reuse, dashboard fan-out collapse, bounded run scan, visibility gating, issues table) | P2 | L | 071, 077, 079 | DONE |
 | 089 | Extension-table writes via gRPC ingester + metric_exemplars PK fix | P2 | M | 084, 070 | BLOCKED (Step 0: greptimedb-ingester hard-depends tonic tls-ring → rustls; SQL path stays) |
-| 090 | SPIKE: measure read transport (arrow/wire prepared statements/RANGE) + trace-table partition default | P3 | M | 084; 085 recommended | TODO |
+| 090 | SPIKE: measure read transport (arrow/wire prepared statements/RANGE) + trace-table partition default | P3 | M | 084; 085 recommended | DONE |
+| 091 | Adopt HTTP `format=arrow&compression=zstd` for heavy GreptimeDB reads (from 090 GO) | P2 | S–M | 090 | TODO |
 
 Recommended order: **084 → 085 → 086** (the integration corrections and the
 two round-trip killers carry most of the value), **087** after 073/076 settle
@@ -136,7 +137,7 @@ its verification gates, and update your row below when done.
 | 080 | Onboarding docs (dev setup, ui/README, PROJECT_STRUCTURE, cli.md) | P3 | S | — | DONE |
 | 081 | `--format json` on bundle commands + agent-session CLI verb | P2 | M | — | DONE |
 | 082 | Publish bundle-v1 JSON Schema + conformance test | P3 | M | 072, 081 | DONE |
-| 083 | MCP read-only adapter SPIKE (projection equivalence) | P3 | M | 072, 081; 082 (soft) | TODO |
+| 083 | MCP read-only adapter SPIKE (projection equivalence) | P3 | M | 072, 081; 082 (soft) | DONE — [findings](../docs/research/validation/2026-07-11-mcp-spike-projection-equivalence.md) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (one-line reason) |
 REJECTED (one-line rationale) | SUPERSEDED.

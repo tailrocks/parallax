@@ -8,7 +8,7 @@ members = [
     "crates/parallax-server",
     "crates/parallax-storage",
 ]
-exclude = ["poc/evidence-loop"]
+exclude = ["poc/evidence-loop", "poc/read-transport-bench"]
 
 [workspace.package]
 version = "0.1.0-dev"

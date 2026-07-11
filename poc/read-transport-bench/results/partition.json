@@ -1,0 +1,63 @@
+{
+  "dataset": {
+    "metric_bucket_rows": 100000,
+    "metric_count_rows": 100000,
+    "opentelemetry_logs": 100000,
+    "opentelemetry_traces": 100000,
+    "traces_p16_regions": 4,
+    "traces_p1_regions": 1
+  },
+  "engine_version": "1.1.2",
+  "note": "traces_p16 uses 4 SQL RANGE partitions as a multi-region proxy; native OTLP default is 16 hash partitions via trace_table_partitions hint",
+  "reps": 50,
+  "results": [
+    {
+      "n": 50,
+      "p50_bytes": 17158.0,
+      "p50_decode_ms": 0.144626,
+      "p50_wall_ms": 11.960897,
+      "p95_bytes": 17158.0,
+      "p95_decode_ms": 0.190001,
+      "p95_wall_ms": 13.785698,
+      "query_id": "spans_p1",
+      "rows": 200,
+      "transport": "http_greptimedb_v1"
+    },
+    {
+      "n": 50,
+      "p50_bytes": 17157.0,
+      "p50_decode_ms": 0.107376,
+      "p50_wall_ms": 5.306319,
+      "p95_bytes": 17157.0,
+      "p95_decode_ms": 0.1185,
+      "p95_wall_ms": 5.98799,
+      "query_id": "spans_p4",
+      "rows": 200,
+      "transport": "http_greptimedb_v1"
+    },
+    {
+      "n": 50,
+      "p50_bytes": 3134.0,
+      "p50_decode_ms": 0.032334,
+      "p50_wall_ms": 30.233867,
+      "p95_bytes": 3134.0,
+      "p95_decode_ms": 0.043083,
+      "p95_wall_ms": 34.480098,
+      "query_id": "search_p1",
+      "rows": 50,
+      "transport": "http_greptimedb_v1"
+    },
+    {
+      "n": 50,
+      "p50_bytes": 1102.0,
+      "p50_decode_ms": 0.018583000000000002,
+      "p50_wall_ms": 23.822708000000002,
+      "p95_bytes": 3141.0,
+      "p95_decode_ms": 0.035167,
+      "p95_wall_ms": 32.798714,
+      "query_id": "search_p4",
+      "rows": 19,
+      "transport": "http_greptimedb_v1"
+    }
+  ]
+}

@@ -13,6 +13,7 @@
 
 ## Status
 
+- **Status**: **DONE** (2026-07-11)
 - **Priority**: P3
 - **Effort**: M
 - **Risk**: LOW (read-only spike; the risk it manages is adopting a transport
@@ -21,6 +22,12 @@
   085 recommended (measure the post-rewrite queries, not doomed ones)
 - **Category**: perf / direction
 - **Planned at**: commit `df81d86`, 2026-07-10
+- **Deliverables**:
+  - [`docs/research/storage/read-transport-and-engine-defaults.md`](../docs/research/storage/read-transport-and-engine-defaults.md)
+  - [`poc/read-transport-bench/`](../poc/read-transport-bench/)
+  - GO follow-up: [091](091-http-arrow-zstd-read-path.md) (HTTP arrow+zstd)
+- **Verdicts**: arrow+zstd **GO**; MySQL prepared **NO-GO**; RANGE **NO-GO**;
+  partition hint **REVISIT-AT-SCALE**
 
 ## Why this matters
 
@@ -178,10 +185,10 @@ it as a new advisor-plan entry in the index (do not implement here).
 
 ## Done criteria
 
-- [ ] `docs/research/storage/read-transport-and-engine-defaults.md` exists with: dataset size, engine version, per-query p50/p95 tables for ≥3 transports, partition A/B, decision table
-- [ ] `poc/read-transport-bench/` builds and its tests pass standalone
-- [ ] No diffs under `crates/` or `ui/` (`git status`)
-- [ ] `advisor-plans/README.md` status row updated (+ new plan rows for any GO)
+- [x] `docs/research/storage/read-transport-and-engine-defaults.md` exists with: dataset size, engine version, per-query p50/p95 tables for ≥3 transports, partition A/B, decision table
+- [x] `poc/read-transport-bench/` builds and its tests pass standalone
+- [x] No diffs under `crates/` or `ui/` from this plan (`git status` for staged files)
+- [x] `advisor-plans/README.md` status row updated (+ plan 091 for Arrow GO)
 
 ## STOP conditions
 
