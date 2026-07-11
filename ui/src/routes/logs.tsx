@@ -38,6 +38,7 @@ import {
   serializeLogColumns,
 } from "@/components/logs-table"
 import type { LogDoc, OptionalLogColumn } from "@/components/logs-table"
+import { useLiveStream } from "@/hooks/use-live-stream"
 import { PageHeader } from "@/components/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -289,36 +290,27 @@ function LogsPage() {
 
   useEffect(() => setPendingQuery(search.q ?? ""), [search.q])
 
-  useEffect(() => {
-    if (!live) return
+  const streamUrl = useMemo(() => {
+    if (!live) return null
     const params = new URLSearchParams()
     if (search.service) params.set("service", search.service)
     if (search.sev) params.set("severity_min", String(search.sev))
     if (search.q) params.set("q", search.q)
-    const source = new EventSource(`/v1/logs/stream?${params}`)
-    let buffer: LogDoc[] = []
-    source.onmessage = (event) => {
-      try {
-        const batch: unknown = JSON.parse(event.data as string)
-        if (Array.isArray(batch))
-          buffer.push(...assignLogKeys(batch as LogDoc[]))
-      } catch {
-        // skip malformed frames
-      }
-    }
-    const flush = setInterval(() => {
-      if (buffer.length === 0) return
-      const incoming = buffer
-      buffer = []
+    return `/v1/logs/stream?${params}`
+  }, [live, search.service, search.sev, search.q])
+
+  const streamStatus = useLiveStream<LogDoc>({
+    url: streamUrl,
+    parse: (frame) => {
+      const batch: unknown = JSON.parse(frame)
+      return Array.isArray(batch) ? assignLogKeys(batch as LogDoc[]) : []
+    },
+    onBatch: (incoming) => {
       setLogs((current) =>
         [...incoming.reverse(), ...current].slice(0, PAGE_SIZE)
       )
-    }, 250)
-    return () => {
-      source.close()
-      clearInterval(flush)
-    }
-  }, [live, search.service, search.sev, search.q])
+    },
+  })
 
   const update = (patch: Partial<LogsSearch>) =>
     void navigate({
@@ -608,8 +600,16 @@ function LogsPage() {
         <div className="overflow-hidden rounded-xl border border-border/70">
           {live ? (
             <div className="flex items-center gap-2 border-b border-border/70 px-3 py-2 text-xs">
-              <span className="size-2 animate-pulse rounded-full bg-emerald-500" />
-              <Badge variant="emerald">Live</Badge>
+              {streamStatus === "open" ? (
+                <>
+                  <span className="size-2 animate-pulse rounded-full bg-emerald-500" />
+                  <Badge variant="emerald">Live</Badge>
+                </>
+              ) : streamStatus === "error" ? (
+                <Badge variant="amber">reconnecting…</Badge>
+              ) : (
+                <Badge variant="secondary">connecting…</Badge>
+              )}
               <span className="text-muted-foreground">
                 {formatCount(logs.length)} records buffered
               </span>

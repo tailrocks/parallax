@@ -22,6 +22,7 @@ import { ScrollFade } from "@/components/console/scroll-fade"
 import { StatCard } from "@/components/console/stat-card"
 import { StoryTimeline } from "@/components/console/story-timeline"
 import { LiveEventStack, LiveStreamPanel } from "@/components/live-stream-panel"
+import { useLiveStream } from "@/hooks/use-live-stream"
 import { LogsTable } from "@/components/logs-table"
 import type { LogDoc } from "@/components/logs-table"
 import { MetricStrip } from "@/components/metric-strip"
@@ -208,54 +209,40 @@ function RunDetailPage() {
     [logsByRun, liveLogs]
   )
 
-  useEffect(() => {
-    if (!live) return
-    const logSource = new EventSource(
-      `/v1/logs/stream?run_id=${encodeURIComponent(runId)}`
-    )
-    let logBuffer: LogDoc[] = []
-    logSource.onmessage = (event) => {
-      try {
-        const batch: unknown = JSON.parse(event.data as string)
-        if (Array.isArray(batch)) logBuffer.push(...(batch as LogDoc[]))
-      } catch {
-        // skip malformed frames
-      }
-    }
-    const spanSource = new EventSource(
-      `/v1/traces/stream?run_id=${encodeURIComponent(runId)}`
-    )
-    let spanBuffer: LiveSpan[] = []
-    spanSource.onmessage = (event) => {
-      try {
-        const batch: unknown = JSON.parse(event.data as string)
-        if (Array.isArray(batch)) spanBuffer.push(...(batch as LiveSpan[]))
-      } catch {
-        // skip malformed frames
-      }
-    }
-    const flush = setInterval(() => {
-      if (logBuffer.length > 0) {
-        const incoming = logBuffer
-        logBuffer = []
-        setLiveLogs((current) =>
-          [...incoming.reverse(), ...current].slice(0, 300)
-        )
-      }
-      if (spanBuffer.length > 0) {
-        const incoming = spanBuffer
-        spanBuffer = []
-        setLiveSpans((current) =>
-          [...incoming.reverse(), ...current].slice(0, 300)
-        )
-      }
-    }, 250)
-    return () => {
-      logSource.close()
-      spanSource.close()
-      clearInterval(flush)
-    }
-  }, [live, runId])
+  const logStreamUrl = live
+    ? `/v1/logs/stream?run_id=${encodeURIComponent(runId)}`
+    : null
+  const spanStreamUrl = live
+    ? `/v1/traces/stream?run_id=${encodeURIComponent(runId)}`
+    : null
+
+  const logStatus = useLiveStream<LogDoc>({
+    url: logStreamUrl,
+    parse: (data) => {
+      const batch: unknown = JSON.parse(data)
+      return Array.isArray(batch) ? (batch as LogDoc[]) : []
+    },
+    onBatch: (incoming) => {
+      setLiveLogs((current) =>
+        [...incoming.reverse(), ...current].slice(0, 300)
+      )
+    },
+  })
+
+  const spanStatus = useLiveStream<LiveSpan>({
+    url: spanStreamUrl,
+    parse: (data) => {
+      const batch: unknown = JSON.parse(data)
+      return Array.isArray(batch) ? (batch as LiveSpan[]) : []
+    },
+    onBatch: (incoming) => {
+      setLiveSpans((current) =>
+        [...incoming.reverse(), ...current].slice(0, 300)
+      )
+    },
+  })
+
+  const streamActive = logStatus === "open" || spanStatus === "open"
 
   useEffect(() => {
     if (!live) return
@@ -299,6 +286,7 @@ function RunDetailPage() {
       live={live}
       liveLogs={liveLogs}
       liveSpans={liveSpans}
+      streamActive={streamActive}
       onLive={() => setLive((current) => !current)}
     />
   )
@@ -319,6 +307,7 @@ export function RunDetailContent({
   live,
   liveLogs,
   liveSpans,
+  streamActive = false,
   onLive,
 }: {
   runId: string
@@ -335,6 +324,7 @@ export function RunDetailContent({
   live: boolean
   liveLogs: LogDoc[]
   liveSpans: LiveSpan[]
+  streamActive?: boolean
   onLive: () => void
 }) {
   const empty = !run && traces.length === 0 && logs.length === 0
@@ -395,7 +385,7 @@ export function RunDetailContent({
               description="Streaming this run's logs and finished spans while metrics follow now."
               count={liveLogs.length + liveSpans.length}
               endpoint={`/v1/*/stream?run_id=${runId}`}
-              active
+              active={streamActive}
             >
               <LiveEventStack
                 items={[

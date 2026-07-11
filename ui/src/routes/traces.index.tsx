@@ -16,6 +16,7 @@ import { z } from "zod"
 
 import { AttributeComparePanel } from "@/components/console/attribute-compare"
 import { PageHeader } from "@/components/page-header"
+import { useLiveStream } from "@/hooks/use-live-stream"
 import { FieldExplorer } from "@/components/console/field-explorer"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -361,8 +362,8 @@ function TracesPage() {
   const setSortParam = (next: string | undefined) =>
     update({ sort: paramToTraceSort(next), page: undefined })
 
-  useEffect(() => {
-    if (!live) return
+  const streamUrl = useMemo(() => {
+    if (!live) return null
     const params = new URLSearchParams()
     if (search.service) params.set("service", search.service)
     const minMs = liveDurationMs(search)
@@ -371,28 +372,25 @@ function TracesPage() {
     }
     if (search.errors) params.set("errors_only", "true")
     if (search.q?.trim()) params.set("q", search.q.trim())
-    setSpans([])
-    const source = new EventSource(`/v1/traces/stream?${params}`)
-    let buffer: SpanDoc[] = []
-    source.onmessage = (event) => {
-      try {
-        const batch: unknown = JSON.parse(event.data as string)
-        if (Array.isArray(batch)) buffer.push(...(batch as SpanDoc[]))
-      } catch {
-        // Ignore malformed frames; the next valid batch will still flush.
-      }
-    }
-    const flush = setInterval(() => {
-      if (buffer.length === 0) return
-      const incoming = buffer
-      buffer = []
-      setSpans((current) => [...incoming.reverse(), ...current].slice(0, 100))
-    }, 250)
-    return () => {
-      source.close()
-      clearInterval(flush)
-    }
+    return `/v1/traces/stream?${params}`
   }, [live, search.service, search.errors, search.minMs, search.q])
+
+  // Preserve prior behavior: clear the live buffer when the stream URL changes.
+  useEffect(() => {
+    if (!streamUrl) return
+    setSpans([])
+  }, [streamUrl])
+
+  const streamStatus = useLiveStream<SpanDoc>({
+    url: streamUrl,
+    parse: (data) => {
+      const batch: unknown = JSON.parse(data)
+      return Array.isArray(batch) ? (batch as SpanDoc[]) : []
+    },
+    onBatch: (incoming) => {
+      setSpans((current) => [...incoming.reverse(), ...current].slice(0, 100))
+    },
+  })
 
   const pageStart = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
   const pageEnd = Math.min(
@@ -540,10 +538,16 @@ function TracesPage() {
           ) : null}
           <div className="ml-auto flex items-center gap-3">
             {live ? (
-              <Badge variant="emerald">
-                <span className="size-1.5 rounded-full bg-current motion-safe:animate-pulse" />
-                Live
-              </Badge>
+              streamStatus === "open" ? (
+                <Badge variant="emerald">
+                  <span className="size-1.5 rounded-full bg-current motion-safe:animate-pulse" />
+                  Live
+                </Badge>
+              ) : streamStatus === "error" ? (
+                <Badge variant="amber">reconnecting…</Badge>
+              ) : (
+                <Badge variant="secondary">connecting…</Badge>
+              )
             ) : (
               <span className="text-sm text-muted-foreground tabular-nums">
                 {formatCount(total)} {total === 1 ? "trace" : "traces"}

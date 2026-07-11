@@ -33,11 +33,11 @@ export function LiveStreamPanel({
           </div>
         </div>
         <div className="flex flex-wrap justify-end gap-2">
-          <Badge variant={active ? "emerald" : "secondary"}>
+          <Badge variant={active ? "emerald" : "amber"}>
             {active ? (
               <span className="size-1.5 animate-pulse rounded-full bg-current" />
             ) : null}
-            {active ? "connected" : "idle"}
+            {active ? "connected" : "reconnecting…"}
           </Badge>
           <Badge variant="outline">{count.toLocaleString()} shown</Badge>
           <Chip className="text-muted-foreground">{endpoint}</Chip>
