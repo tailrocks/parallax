@@ -4,7 +4,9 @@ use juniper::{FieldResult, graphql_object};
 use parallax_storage::model;
 use std::collections::{HashMap, HashSet};
 
-use crate::{retained_recent_range, ApiContext, MAX_ROWS, clamp_limit, field_err, nanos_string, saturate_i32};
+use crate::{
+    ApiContext, MAX_ROWS, clamp_limit, field_err, nanos_string, retained_recent_range, saturate_i32,
+};
 
 use crate::resolvers::issues::Issue;
 

@@ -157,7 +157,10 @@ fn managed_binary_matches_pin(managed: &Path, pin: &str) -> bool {
         return true;
     }
     let desired = pin.trim_start_matches('v');
-    let output = match std::process::Command::new(managed).arg("--version").output() {
+    let output = match std::process::Command::new(managed)
+        .arg("--version")
+        .output()
+    {
         Ok(o) if o.status.success() => o,
         _ => return true,
     };
@@ -214,7 +217,10 @@ pub async fn ensure_binary(
             );
             let _ = std::fs::remove_file(&managed);
         } else {
-            tracing::info!("archived previous GreptimeDB binary to {}", backup.display());
+            tracing::info!(
+                "archived previous GreptimeDB binary to {}",
+                backup.display()
+            );
         }
     } else if let Ok(output) = std::process::Command::new("greptime")
         .arg("--version")
@@ -462,7 +468,6 @@ impl GreptimeSupervisor {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::parse_greptime_version_output;
@@ -470,17 +475,26 @@ mod tests {
     #[test]
     fn parse_version_from_multiline_1_1_output() {
         let output = "GreptimeDB \nbranch: \ncommit: abc\nclean: true\nversion: 1.1.2\n";
-        assert_eq!(parse_greptime_version_output(output).as_deref(), Some("1.1.2"));
+        assert_eq!(
+            parse_greptime_version_output(output).as_deref(),
+            Some("1.1.2")
+        );
     }
 
     #[test]
     fn parse_version_strips_leading_v() {
-        assert_eq!(parse_greptime_version_output("version: v1.0.0").as_deref(), Some("1.0.0"));
+        assert_eq!(
+            parse_greptime_version_output("version: v1.0.0").as_deref(),
+            Some("1.0.0")
+        );
     }
 
     #[test]
     fn parse_version_fallback_token() {
-        assert_eq!(parse_greptime_version_output("greptime 1.1.0").as_deref(), Some("1.1.0"));
+        assert_eq!(
+            parse_greptime_version_output("greptime 1.1.0").as_deref(),
+            Some("1.1.0")
+        );
     }
 
     #[test]

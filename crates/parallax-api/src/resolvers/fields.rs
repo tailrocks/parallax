@@ -2,7 +2,7 @@
 
 use juniper::{FieldResult, graphql_object};
 
-use crate::{retained_recent_range, ApiContext, MAX_ROWS, clamp_limit, field_err, parse_range};
+use crate::{ApiContext, MAX_ROWS, clamp_limit, field_err, parse_range, retained_recent_range};
 
 use parallax_core::gaps;
 use parallax_storage::adapter::{
@@ -156,7 +156,9 @@ pub(crate) async fn evidence_gaps(
         }
         (None, Some(run_id)) => {
             let (spans, logs) = tokio::try_join!(
-                context.store.spans_by_run(&run_id, MAX_ROWS, retained_recent_range()),
+                context
+                    .store
+                    .spans_by_run(&run_id, MAX_ROWS, retained_recent_range()),
                 context.store.logs_by_run(&run_id, MAX_ROWS),
             )
             .map_err(field_err)?;
@@ -245,7 +247,7 @@ mod tests {
 
     use crate::resolvers::test_support::*;
     use crate::{build_schema, execute};
-    
+
     use parallax_storage::memory::MemoryStore;
 
     use parallax_storage::model::LogRow;
@@ -257,23 +259,22 @@ mod tests {
         let mut orphan = span("api", "gap-trace", "orphan", 100, 10);
         orphan.parent_span_id = Some("missing-parent".into());
         orphan.run_id = Some("gap-run".into());
-        store
-            .push_spans(vec![orphan]);
+        store.push_spans(vec![orphan]);
         store.push_logs(vec![LogRow {
-                    ts_nanos: 110,
-                    event_name: String::new(),
-                    observed_ts_nanos: 0,
-                    service: "api".into(),
-                    severity_num: 9,
-                    severity_text: "INFO".into(),
-                    body: "uncorrelated".into(),
-                    trace_id: "00000000000000000000000000000000".into(),
-                    span_id: String::new(),
-                    run_id: Some("gap-run".into()),
-                    scope_name: String::new(),
-                    attributes: serde_json::Value::Null,
-                    resource: serde_json::Value::Null,
-                }]);
+            ts_nanos: 110,
+            event_name: String::new(),
+            observed_ts_nanos: 0,
+            service: "api".into(),
+            severity_num: 9,
+            severity_text: "INFO".into(),
+            body: "uncorrelated".into(),
+            trace_id: "00000000000000000000000000000000".into(),
+            span_id: String::new(),
+            run_id: Some("gap-run".into()),
+            scope_name: String::new(),
+            attributes: serde_json::Value::Null,
+            resource: serde_json::Value::Null,
+        }]);
 
         let schema = build_schema();
         let context = context_with_memory(store).await;
@@ -435,8 +436,7 @@ mod tests {
             "request.id": "req-3"
         });
         third.resource = serde_json::json!({ "service.name": "checkout" });
-        store
-            .push_spans(vec![first, second, third]);
+        store.push_spans(vec![first, second, third]);
 
         let schema = build_schema();
         let context = context_with_memory(store).await;

@@ -2,7 +2,7 @@
 
 use juniper::{FieldResult, graphql_object};
 
-use crate::{retained_recent_range, ApiContext, MAX_ROWS, field_err, nanos_string};
+use crate::{ApiContext, MAX_ROWS, field_err, nanos_string, retained_recent_range};
 
 use parallax_core::{agent_session, story};
 
@@ -143,7 +143,9 @@ pub(crate) async fn story(
         }
         (None, Some(run_id)) => {
             let (spans, logs) = tokio::try_join!(
-                context.store.spans_by_run(&run_id, MAX_ROWS, retained_recent_range()),
+                context
+                    .store
+                    .spans_by_run(&run_id, MAX_ROWS, retained_recent_range()),
                 context.store.logs_by_run(&run_id, MAX_ROWS),
             )
             .map_err(field_err)?;
@@ -163,7 +165,7 @@ mod tests {
 
     use crate::resolvers::test_support::*;
     use crate::{build_schema, execute};
-    
+
     use parallax_storage::memory::MemoryStore;
 
     use parallax_storage::model::LogRow;
@@ -201,8 +203,7 @@ mod tests {
         let mut unrelated = span("agent", "trace-other", "other", 1_050, 10);
         unrelated.name = "execute_tool".into();
         unrelated.run_id = Some("run-other".into());
-        store
-            .push_spans(vec![shell, unrelated, root, tool]);
+        store.push_spans(vec![shell, unrelated, root, tool]);
 
         let schema = build_schema();
         let context = context_with_memory(store).await;
@@ -288,23 +289,22 @@ mod tests {
         child.parent_span_id = Some("root".into());
         child.name = "SELECT orders".into();
         child.status_code = "STATUS_CODE_ERROR".into();
-        store
-            .push_spans(vec![root, child]);
+        store.push_spans(vec![root, child]);
         store.push_logs(vec![LogRow {
-                    ts_nanos: 130,
-                    event_name: String::new(),
-                    observed_ts_nanos: 0,
-                    service: "api".into(),
-                    severity_num: 17,
-                    severity_text: "ERROR".into(),
-                    body: "payment 123 failed".into(),
-                    trace_id: "story-trace".into(),
-                    span_id: "child".into(),
-                    run_id: Some("run-story".into()),
-                    scope_name: String::new(),
-                    attributes: serde_json::Value::Null,
-                    resource: serde_json::Value::Null,
-                }]);
+            ts_nanos: 130,
+            event_name: String::new(),
+            observed_ts_nanos: 0,
+            service: "api".into(),
+            severity_num: 17,
+            severity_text: "ERROR".into(),
+            body: "payment 123 failed".into(),
+            trace_id: "story-trace".into(),
+            span_id: "child".into(),
+            run_id: Some("run-story".into()),
+            scope_name: String::new(),
+            attributes: serde_json::Value::Null,
+            resource: serde_json::Value::Null,
+        }]);
 
         let schema = build_schema();
         let context = context_with_memory(store).await;

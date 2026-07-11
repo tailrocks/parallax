@@ -104,4 +104,3 @@ pub(crate) fn retained_recent_range() -> std::ops::RangeInclusive<u128> {
         .unwrap_or(0);
     now.saturating_sub(24 * 3_600 * 1_000_000_000)..=u128::MAX
 }
-

@@ -3,9 +3,9 @@
 use juniper::{FieldResult, graphql_object};
 use parallax_storage::model;
 
-use crate::{retained_recent_range, 
-    ApiContext, clamp_limit, field_err, nanos_string, parse_range, step_nanos,
-    validate_metric_group_label, validate_metric_name,
+use crate::{
+    ApiContext, clamp_limit, field_err, nanos_string, parse_range, retained_recent_range,
+    step_nanos, validate_metric_group_label, validate_metric_name,
 };
 
 use crate::resolvers::common::Point;
@@ -79,7 +79,11 @@ pub(crate) async fn metric_names(
     context: &ApiContext,
     prefix: Option<String>,
 ) -> FieldResult<Vec<String>> {
-    let mut names = context.store.metric_names(retained_recent_range()).await.map_err(field_err)?;
+    let mut names = context
+        .store
+        .metric_names(retained_recent_range())
+        .await
+        .map_err(field_err)?;
     if let Some(prefix) = prefix {
         names.retain(|n| n.starts_with(&prefix));
     }
@@ -109,7 +113,11 @@ pub(crate) async fn metric_label_values(
 }
 
 pub(crate) async fn services(context: &ApiContext) -> FieldResult<Vec<String>> {
-    context.store.service_names(retained_recent_range()).await.map_err(field_err)
+    context
+        .store
+        .service_names(retained_recent_range())
+        .await
+        .map_err(field_err)
 }
 
 pub(crate) async fn runtime_snapshot(

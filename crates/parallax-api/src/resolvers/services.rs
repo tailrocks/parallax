@@ -618,24 +618,25 @@ mod tests {
         let store = Arc::new(MemoryStore::new());
         let mut errored = span("api", "t1", "b", 1_500_000_000, 30_000_000);
         errored.status_code = "STATUS_CODE_ERROR".into();
-        store
-            .push_spans(vec![span("api", "t1", "a", 1_000_000_000, 10_000_000), errored]
-            );
+        store.push_spans(vec![
+            span("api", "t1", "a", 1_000_000_000, 10_000_000),
+            errored,
+        ]);
         store.push_logs(vec![LogRow {
-                    ts_nanos: 1_250_000_000,
-                    event_name: "checkout.failed".into(),
-                    observed_ts_nanos: 1_300_000_000,
-                    service: "api".into(),
-                    severity_num: 17,
-                    severity_text: "ERROR".into(),
-                    body: "bad".into(),
-                    trace_id: "t1".into(),
-                    span_id: "b".into(),
-                    run_id: None,
-                    scope_name: String::new(),
-                    attributes: serde_json::Value::Null,
-                    resource: serde_json::Value::Null,
-                }]);
+            ts_nanos: 1_250_000_000,
+            event_name: "checkout.failed".into(),
+            observed_ts_nanos: 1_300_000_000,
+            service: "api".into(),
+            severity_num: 17,
+            severity_text: "ERROR".into(),
+            body: "bad".into(),
+            trace_id: "t1".into(),
+            span_id: "b".into(),
+            run_id: None,
+            scope_name: String::new(),
+            attributes: serde_json::Value::Null,
+            resource: serde_json::Value::Null,
+        }]);
         store
             .write_error_events(vec![ErrorEventRow {
                 ts_nanos: 1_600_000_000,
@@ -732,14 +733,12 @@ mod tests {
     #[tokio::test]
     async fn releases_resolver_returns_service_windows() {
         let store = Arc::new(MemoryStore::new());
-        store.push_spans(
-                vec![
-                    span_with_release("checkout", "t1", "a", 10, "v1"),
-                    span_with_release("checkout", "t2", "a", 30, "v1"),
-                    span_with_release("checkout", "t3", "a", 50, "v2"),
-                    span_with_release("catalog", "t4", "a", 20, "v9"),
-                ]
-            );
+        store.push_spans(vec![
+            span_with_release("checkout", "t1", "a", 10, "v1"),
+            span_with_release("checkout", "t2", "a", 30, "v1"),
+            span_with_release("checkout", "t3", "a", 50, "v2"),
+            span_with_release("catalog", "t4", "a", 20, "v9"),
+        ]);
         let schema = build_schema();
         let context = context_with_memory(store).await;
         let request = juniper::http::GraphQLRequest::new(
@@ -794,9 +793,7 @@ mod tests {
             "telemetry.sdk.version": "0.32.1",
             "service.instance.id": "checkout-a"
         });
-        store.push_spans(
-                vec![checkout, span("bare", "t2", "root", 20, 1_000)]
-            );
+        store.push_spans(vec![checkout, span("bare", "t2", "root", 20, 1_000)]);
         let schema = build_schema();
         let context = context_with_memory(store).await;
         let request = juniper::http::GraphQLRequest::new(

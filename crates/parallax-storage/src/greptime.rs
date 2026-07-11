@@ -2555,28 +2555,34 @@ impl TelemetryStore for GreptimeStore {
 
         // Concurrent per-key fan-out in chunks of 8 (plan 075 Step 3).
         // Each future runs selected+baseline pair with try_join!.
-        let mut per_key: Vec<(String, u64, BTreeMap<String, u64>, u64, BTreeMap<String, u64>)> =
-            Vec::with_capacity(candidate_keys.len());
+        let mut per_key: Vec<(
+            String,
+            u64,
+            BTreeMap<String, u64>,
+            u64,
+            BTreeMap<String, u64>,
+        )> = Vec::with_capacity(candidate_keys.len());
         for chunk in candidate_keys.chunks(8) {
-            let futs = chunk.iter().map(|key| {
-                let key = key.clone();
-                let selected = selected.clone();
-                let baseline = baseline.clone();
-                async move {
-                    let ((selected_total, selected_counts), (baseline_total, baseline_counts)) =
-                        tokio::try_join!(
-                            self.span_attribute_counts(&key, &selected, service, error_only),
-                            self.span_attribute_counts(&key, &baseline, service, error_only),
-                        )?;
-                    Ok::<_, anyhow::Error>((
-                        key,
-                        selected_total,
-                        selected_counts,
-                        baseline_total,
-                        baseline_counts,
-                    ))
-                }
-            });
+            let futs =
+                chunk.iter().map(|key| {
+                    let key = key.clone();
+                    let selected = selected.clone();
+                    let baseline = baseline.clone();
+                    async move {
+                        let ((selected_total, selected_counts), (baseline_total, baseline_counts)) =
+                            tokio::try_join!(
+                                self.span_attribute_counts(&key, &selected, service, error_only),
+                                self.span_attribute_counts(&key, &baseline, service, error_only),
+                            )?;
+                        Ok::<_, anyhow::Error>((
+                            key,
+                            selected_total,
+                            selected_counts,
+                            baseline_total,
+                            baseline_counts,
+                        ))
+                    }
+                });
             let chunk_results = futures_util::future::try_join_all(futs).await?;
             per_key.extend(chunk_results);
         }
@@ -2930,9 +2936,7 @@ impl TelemetryStore for GreptimeStore {
             .metric_names(range.clone())
             .await?
             .into_iter()
-            .filter_map(|metric| {
-                runtime_metric_family(&metric).map(|family| (metric, family))
-            })
+            .filter_map(|metric| runtime_metric_family(&metric).map(|family| (metric, family)))
             .collect();
         let mut rows = Vec::with_capacity(metrics.len());
         for chunk in metrics.chunks(8) {
@@ -2942,14 +2946,7 @@ impl TelemetryStore for GreptimeStore {
                 let range = range.clone();
                 async move {
                     let points = self
-                        .metric_series(
-                            &metric,
-                            service,
-                            run_id,
-                            range,
-                            step_nanos,
-                            MetricAgg::Avg,
-                        )
+                        .metric_series(&metric, service, run_id, range, step_nanos, MetricAgg::Avg)
                         .await?;
                     Ok::<_, anyhow::Error>((metric, family, points))
                 }
@@ -3394,7 +3391,11 @@ mod tests {
             0,
         );
         assert!(listed.contains("svc''quote"));
-        assert!(listed.contains("WHERE {scan_where}") || listed.contains(r#""timestamp" >= 1"#) || listed.contains("WHERE "));
+        assert!(
+            listed.contains("WHERE {scan_where}")
+                || listed.contains(r#""timestamp" >= 1"#)
+                || listed.contains("WHERE ")
+        );
         // windowed agg subquery + single-pass total (plan 075)
         assert!(page.contains("COUNT(*) OVER ()"));
         assert!(page.contains("LIMIT 50 OFFSET 0"));

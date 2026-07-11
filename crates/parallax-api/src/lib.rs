@@ -12,9 +12,9 @@ mod resolvers;
 mod schema;
 
 pub(crate) use resolvers::helpers::{
-    parse_range, step_nanos, validate_investigation_name, validate_investigation_state,
-    validate_metric_group_label, validate_metric_name, validate_saved_view_name,
-    validate_saved_view_page, retained_recent_range,
+    parse_range, retained_recent_range, step_nanos, validate_investigation_name,
+    validate_investigation_state, validate_metric_group_label, validate_metric_name,
+    validate_saved_view_name, validate_saved_view_page,
 };
 
 use juniper::{FieldError, FieldResult, graphql_object};

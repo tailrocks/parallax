@@ -217,7 +217,7 @@ mod tests {
     use super::*;
     use crate::resolvers::test_support::*;
     use crate::{build_schema, execute};
-    
+
     use parallax_storage::memory::MemoryStore;
 
     use std::sync::Arc;
@@ -230,12 +230,12 @@ mod tests {
         anchor_log.event_name = "checkout.completed".into();
         anchor_log.observed_ts_nanos = anchor + 2_000_000_000;
         store.push_logs(vec![
-                    log_row("api", "trace-a", anchor - 60_000_000_000, "too-old"),
-                    log_row("api", "trace-a", anchor - 10_000_000_000, "before"),
-                    anchor_log,
-                    log_row("api", "trace-a", anchor + 10_000_000_000, "after"),
-                    log_row("api", "trace-a", anchor + 60_000_000_000, "too-new"),
-                ]);
+            log_row("api", "trace-a", anchor - 60_000_000_000, "too-old"),
+            log_row("api", "trace-a", anchor - 10_000_000_000, "before"),
+            anchor_log,
+            log_row("api", "trace-a", anchor + 10_000_000_000, "after"),
+            log_row("api", "trace-a", anchor + 60_000_000_000, "too-new"),
+        ]);
         let schema = build_schema();
         let context = context_with_memory(store).await;
         let request = juniper::http::GraphQLRequest::new(
@@ -277,10 +277,10 @@ mod tests {
         let store = Arc::new(MemoryStore::new());
         let anchor = 100_000_000_000;
         store.push_logs(vec![
-                    log_row("api", "trace-a", anchor - 1_000_000_000, "trace-a-before"),
-                    log_row("api", "trace-b", anchor, "trace-b-anchor"),
-                    log_row("api", "trace-a", anchor + 1_000_000_000, "trace-a-after"),
-                ]);
+            log_row("api", "trace-a", anchor - 1_000_000_000, "trace-a-before"),
+            log_row("api", "trace-b", anchor, "trace-b-anchor"),
+            log_row("api", "trace-a", anchor + 1_000_000_000, "trace-a-after"),
+        ]);
         let schema = build_schema();
         let context = context_with_memory(store).await;
         let request = juniper::http::GraphQLRequest::new(
