@@ -134,7 +134,7 @@ its verification gates, and update your row below when done.
 | 078 | Split parallax-api lib.rs into domain modules | P2 | L | 069; after 072/073/075 | TODO |
 | 079 | UI query/type dedup + dependency hygiene + rotel.env template | P2 | M | 069; after 071/077 | TODO |
 | 080 | Onboarding docs (dev setup, ui/README, PROJECT_STRUCTURE, cli.md) | P3 | S | — | DONE |
-| 081 | `--format json` on bundle commands + agent-session CLI verb | P2 | M | — | TODO |
+| 081 | `--format json` on bundle commands + agent-session CLI verb | P2 | M | — | DONE |
 | 082 | Publish bundle-v1 JSON Schema + conformance test | P3 | M | 072, 081 | TODO |
 | 083 | MCP read-only adapter SPIKE (projection equivalence) | P3 | M | 072, 081; 082 (soft) | TODO |
 
