@@ -52,7 +52,7 @@ import { RangePicker } from "@/components/console/range-picker"
 import { RelativeTime } from "@/components/console/relative-time"
 import { TableSkeleton } from "@/components/console/skeletons"
 import { formatCount, formatDurationNs, formatTimeInRange } from "@/lib/format"
-import { gqlString, graphql } from "@/lib/api"
+import { gqlString, graphqlCached } from "@/lib/api"
 import type { AttributeCompareRow, LiveSpan, TraceSummary } from "@/lib/api"
 import {
   rangeLinkSearch,
@@ -262,7 +262,7 @@ export const Route = createFileRoute("/traces/")({
   loaderDeps: ({ search }) => search,
   loader: ({ deps }) => {
     if (deps.live) {
-      return graphql<{ services: string[] }>(`
+      return graphqlCached<{ services: string[] }>(`
         {
           services
         }
@@ -275,7 +275,7 @@ export const Route = createFileRoute("/traces/")({
     const range = resolveRangeSearch(deps)
     const args = graphQlTraceArgs(deps, range)
     const compareArgs = graphQlAttributeCompareArgs(deps, range)
-    return graphql<{
+    return graphqlCached<{
       services: string[]
       tracesPage: TracePage
       attributeCompare: AttributeCompareRow[]

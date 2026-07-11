@@ -60,7 +60,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { gqlString, graphql } from "@/lib/api"
+import { gqlString, graphqlCached } from "@/lib/api"
 import type { RuntimeMetric, ServiceCatalogRow, TraceSummary } from "@/lib/api"
 import {
   formatCount,
@@ -165,7 +165,7 @@ export function stepSecondsForRange(range: ResolvedRange): number {
 export async function loadServiceDetail(service: string, range: ResolvedRange) {
   const escaped = gqlString(service)
   const stepSeconds = stepSecondsForRange(range)
-  return graphql<ServiceDetailData>(`
+  return graphqlCached<ServiceDetailData>(`
     {
       red: serviceRed(service: "${escaped}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", stepSeconds: ${stepSeconds}) {
         rate { tsNanos value }

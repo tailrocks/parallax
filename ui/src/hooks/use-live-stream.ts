@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 
+import { usePageVisible } from "@/lib/use-visible"
+
 export type LiveStreamStatus = "idle" | "connecting" | "open" | "error"
 
 export interface UseLiveStreamOptions<T> {
@@ -12,6 +14,10 @@ export interface UseLiveStreamOptions<T> {
   flushMs?: number
 }
 
+/**
+ * Shared SSE consumer. Closes the EventSource and pauses the flush timer while
+ * the tab is hidden; reconnects when the page becomes visible again.
+ */
 export function useLiveStream<T>({
   url,
   parse,
@@ -23,14 +29,17 @@ export function useLiveStream<T>({
   onBatchRef.current = onBatch
   const parseRef = useRef(parse)
   parseRef.current = parse
+  const visible = usePageVisible()
+  // Gate the connection on visibility so background tabs do not fan out SSE.
+  const activeUrl = visible ? url : null
 
   useEffect(() => {
-    if (!url) {
+    if (!activeUrl) {
       setStatus("idle")
       return
     }
     setStatus("connecting")
-    const source = new EventSource(url)
+    const source = new EventSource(activeUrl)
     let buffer: T[] = []
     source.onopen = () => setStatus("open")
     // EventSource retries natively; state flips back to open on reopen.
@@ -53,7 +62,7 @@ export function useLiveStream<T>({
       clearInterval(flush)
       setStatus("idle")
     }
-  }, [url, flushMs])
+  }, [activeUrl, flushMs])
 
   return status
 }

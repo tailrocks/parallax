@@ -196,4 +196,37 @@ describe("useLiveStream", () => {
     expect(MockEventSource.constructedUrls).toEqual([])
     expect(MockEventSource.instances).toHaveLength(0)
   })
+
+  it("closes the stream while the tab is hidden and reconnects on visible", () => {
+    let hidden = false
+    Object.defineProperty(document, "hidden", {
+      configurable: true,
+      get: () => hidden,
+    })
+
+    const onBatch = vi.fn()
+    render(
+      <StatusHarness
+        url="/v1/logs/stream"
+        parse={() => []}
+        onBatch={onBatch}
+      />
+    )
+    expect(MockEventSource.instances).toHaveLength(1)
+    const first = MockEventSource.instances[0]!
+
+    act(() => {
+      hidden = true
+      document.dispatchEvent(new Event("visibilitychange"))
+    })
+    expect(first.closed).toBe(true)
+    expect(screen.getByTestId("status").textContent).toBe("idle")
+
+    act(() => {
+      hidden = false
+      document.dispatchEvent(new Event("visibilitychange"))
+    })
+    expect(MockEventSource.instances).toHaveLength(2)
+    expect(MockEventSource.instances[1]!.closed).toBe(false)
+  })
 })

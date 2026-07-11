@@ -12,7 +12,7 @@ export function getRouter() {
 
     scrollRestoration: true,
     defaultPreload: "intent",
-    defaultPreloadStaleTime: 0,
+    defaultPreloadStaleTime: 15_000,
     defaultErrorComponent: RouteErrorPanel,
     defaultPendingComponent: RoutePendingPanel,
     defaultNotFoundComponent: RouteNotFoundPanel,

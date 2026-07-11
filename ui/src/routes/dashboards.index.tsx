@@ -37,7 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { gqlString, graphql } from "@/lib/api"
+import { gqlString, graphql, graphqlCached } from "@/lib/api"
 import { formatCount } from "@/lib/format"
 import { rangeLinkSearch, resolveRangeSearch } from "@/lib/range"
 
@@ -77,7 +77,7 @@ export const Route = createFileRoute("/dashboards/")({
     to: searchString(search.to),
   }),
   loader: () =>
-    graphql<{ dashboards: Dashboard[]; metricNames: string[] }>(`
+    graphqlCached<{ dashboards: Dashboard[]; metricNames: string[] }>(`
       {
         dashboards {
           id

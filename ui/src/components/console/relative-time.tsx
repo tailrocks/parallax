@@ -11,17 +11,44 @@ function notifySubscribers() {
   for (const subscriber of subscribers) subscriber()
 }
 
+function pageIsVisible(): boolean {
+  return typeof document === "undefined" || !document.hidden
+}
+
+function ensureTimer() {
+  if (timer || typeof window === "undefined") return
+  if (!pageIsVisible()) return
+  timer = window.setInterval(notifySubscribers, 15_000)
+}
+
+function stopTimer() {
+  if (timer) {
+    clearInterval(timer)
+    timer = null
+  }
+}
+
+function onVisibilityChange() {
+  if (pageIsVisible()) {
+    if (subscribers.size > 0) {
+      ensureTimer()
+      notifySubscribers()
+    }
+  } else {
+    stopTimer()
+  }
+}
+
+if (typeof document !== "undefined") {
+  document.addEventListener("visibilitychange", onVisibilityChange)
+}
+
 function subscribeToTicker(subscriber: TickSubscriber) {
   subscribers.add(subscriber)
-  if (!timer && typeof window !== "undefined") {
-    timer = window.setInterval(notifySubscribers, 15_000)
-  }
+  ensureTimer()
   return () => {
     subscribers.delete(subscriber)
-    if (subscribers.size === 0 && timer) {
-      clearInterval(timer)
-      timer = null
-    }
+    if (subscribers.size === 0) stopTimer()
   }
 }
 

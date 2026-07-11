@@ -34,7 +34,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Textarea } from "@/components/ui/textarea"
-import { gqlString, graphql } from "@/lib/api"
+import { gqlString, graphql, graphqlCached } from "@/lib/api"
 import type { Investigation } from "@/lib/api"
 import {
   hrefForPin,
@@ -46,7 +46,7 @@ import type { InvestigationPin, InvestigationState } from "@/lib/investigations"
 
 export const Route = createFileRoute("/investigations/$investigationId")({
   loader: async ({ params }) => {
-    const { investigation } = await graphql<{
+    const { investigation } = await graphqlCached<{
       investigation: Investigation | null
     }>(
       `{ investigation(id: "${gqlString(params.investigationId)}") {

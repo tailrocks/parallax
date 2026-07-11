@@ -73,7 +73,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { gqlString, graphql, LOG_FIELDS } from "@/lib/api"
+import { gqlString, graphql, graphqlCached, LOG_FIELDS } from "@/lib/api"
 import { formatCount, formatDateTime, formatTimeInRange } from "@/lib/format"
 import { resolveRangeSearch, updateRangeSearch } from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
@@ -226,7 +226,7 @@ export async function loadLogs(search: LogsSearch): Promise<LogsData> {
     search.q ? `query: "${gqlString(search.q)}"` : "",
   ].filter(Boolean)
   if (search.live) {
-    return graphql<LogsData>(
+    return graphqlCached<LogsData>(
       `{ services savedViews(page: "/logs") { id name page state updatedAtNanos } logs(limit: 0) { ${LOG_FIELDS} } logCountSeries(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", stepSeconds: ${stepSeconds}) { tsNanos value } }`
     )
   }
@@ -244,7 +244,7 @@ export async function loadLogs(search: LogsSearch): Promise<LogsData> {
     ...filters,
     `stepSeconds: ${stepSeconds}`,
   ].join(", ")
-  return graphql<LogsData>(`{
+  return graphqlCached<LogsData>(`{
     services
     savedViews(page: "/logs") { id name page state updatedAtNanos }
     ${logsQuery}

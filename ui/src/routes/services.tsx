@@ -31,7 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { graphql } from "@/lib/api"
+import { graphqlCached } from "@/lib/api"
 import type { ServiceCatalogRow } from "@/lib/api"
 import { formatCount, formatDurationNs, formatPercent } from "@/lib/format"
 import {
@@ -183,7 +183,7 @@ export function sortedServices(rows: ServiceTableRow[], sort?: string) {
 }
 
 export async function loadServices(range: ResolvedRange) {
-  return graphql<ServicesData>(`
+  return graphqlCached<ServicesData>(`
     {
       serviceList(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}") {
         name

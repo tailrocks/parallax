@@ -50,7 +50,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
-import { gqlString, graphql } from "@/lib/api"
+import { gqlString, graphql, graphqlCached } from "@/lib/api"
 import { formatCount, formatTimeInRange } from "@/lib/format"
 import {
   mergeRangeSearch,
@@ -84,6 +84,43 @@ interface WidgetData {
 }
 
 const MAX_GROUPS = 5
+/** Stay well under GraphQL complexity limit (~1000); 24 aliases per document. */
+const WIDGET_CHUNK = 24
+
+function metricSeriesAlias(
+  widget: Widget,
+  range: ResolvedRange,
+  alias: string
+): string {
+  return `${alias}: metricSeries(name: "${gqlString(widget.metric)}",
+               fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}",
+               agg: "${gqlString(widget.agg)}"${
+                 widget.groupBy
+                   ? `, groupBy: "${gqlString(widget.groupBy)}"`
+                   : ""
+               }) { groupValue points { tsNanos value } }`
+}
+
+/** One (or chunked) aliased GraphQL document(s) for all widget series. */
+export async function loadWidgetSeries(
+  widgets: Widget[],
+  range: ResolvedRange,
+  fetch: typeof graphqlCached = graphqlCached
+): Promise<Series[][]> {
+  if (widgets.length === 0) return []
+  const results: Series[][] = new Array(widgets.length)
+  for (let offset = 0; offset < widgets.length; offset += WIDGET_CHUNK) {
+    const chunk = widgets.slice(offset, offset + WIDGET_CHUNK)
+    const doc = `{ ${chunk
+      .map((widget, i) => metricSeriesAlias(widget, range, `w${offset + i}`))
+      .join("\n")} }`
+    const body = await fetch<Record<string, Series[]>>(doc)
+    for (let i = 0; i < chunk.length; i += 1) {
+      results[offset + i] = body[`w${offset + i}`] ?? []
+    }
+  }
+  return results
+}
 
 export const Route = createFileRoute("/dashboards/$dashboardId")({
   validateSearch: (search: Record<string, unknown>) =>
@@ -91,7 +128,7 @@ export const Route = createFileRoute("/dashboards/$dashboardId")({
   loaderDeps: ({ search }) => search,
   loader: async ({ params, deps }) => {
     const range = resolveRangeSearch(deps)
-    const { dashboard, metricNames } = await graphql<{
+    const { dashboard, metricNames } = await graphqlCached<{
       dashboard: { id: string; name: string; layout: string } | null
       metricNames: string[]
     }>(
@@ -100,19 +137,9 @@ export const Route = createFileRoute("/dashboards/$dashboardId")({
     )
     if (!dashboard) throw notFound()
     const widgets = parseLayout(dashboard.layout)
-    const data = await Promise.all(
-      widgets.map(async (widget) => {
-        const { metricSeries } = await graphql<{ metricSeries: Series[] }>(
-          `{ metricSeries(name: "${gqlString(widget.metric)}",
-               fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}",
-               agg: "${gqlString(widget.agg)}"${
-                 widget.groupBy
-                   ? `, groupBy: "${gqlString(widget.groupBy)}"`
-                   : ""
-               }) { groupValue points { tsNanos value } } }`
-        )
-        return toWidgetData(widget, metricSeries, range)
-      })
+    const seriesList = await loadWidgetSeries(widgets, range)
+    const data = widgets.map((widget, index) =>
+      toWidgetData(widget, seriesList[index] ?? [], range)
     )
     return {
       id: dashboard.id,

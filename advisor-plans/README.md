@@ -29,7 +29,7 @@ verified source inside the plan file.
 | 085 | Read-path SQL rewrites (window unbounded scans, SQL-side histogram/edge aggregation, round-trip collapse, uncast timestamp) | P1 | L | 074, 075, 084 | TODO |
 | 086 | API request memoization + batching (per-request span/log memo, batched run stats, one RED scan, join!, SSE per-batch serialization) | P1 | L | 070; BEFORE 078 | DONE |
 | 087 | Ingest pipeline restructure (gzip OTLP/HTTP, per-signal workers, drop discarded batches, raw-bytes spool, bounded limits) | P1/P2 | L | 073, 076 | TODO |
-| 088 | UI data layer (query cache + preload reuse, dashboard fan-out collapse, bounded run scan, visibility gating, issues table) | P2 | L | 071, 077, 079 | TODO |
+| 088 | UI data layer (query cache + preload reuse, dashboard fan-out collapse, bounded run scan, visibility gating, issues table) | P2 | L | 071, 077, 079 | DONE |
 | 089 | Extension-table writes via gRPC ingester + metric_exemplars PK fix | P2 | M | 084, 070 | BLOCKED (Step 0: greptimedb-ingester hard-depends tonic tls-ring → rustls; SQL path stays) |
 | 090 | SPIKE: measure read transport (arrow/wire prepared statements/RANGE) + trace-table partition default | P3 | M | 084; 085 recommended | TODO |
 

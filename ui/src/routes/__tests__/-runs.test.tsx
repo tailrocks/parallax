@@ -9,7 +9,7 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router"
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
   RunsContent,
@@ -19,7 +19,21 @@ import {
   statusTone,
 } from "@/routes/runs.index"
 import type { RunsData } from "@/routes/runs.index"
-import { RunDetailContent } from "@/routes/runs.$runId"
+import { graphqlCached } from "@/lib/api"
+import {
+  RunDetailContent,
+  loadRunDetail,
+  snapshotFromNanos,
+} from "@/routes/runs.$runId"
+
+vi.mock("@/lib/api", async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...(actual as object),
+    graphql: vi.fn(async () => ({ bundle: { markdown: "# bundle" } })),
+    graphqlCached: vi.fn(),
+  }
+})
 
 const range = {
   key: "custom",
@@ -27,7 +41,10 @@ const range = {
   toNanos: "4000000000",
 }
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.clearAllMocks()
+})
 
 const merged = mergeRuns(
   [
@@ -245,5 +262,42 @@ describe("Runs route", () => {
     expect(
       screen.getAllByRole("button", { name: /download/i }).length
     ).toBeGreaterThan(0)
+  })
+
+
+  it("bounds runtimeSnapshot fromNanos to the run start and omits bundle", async () => {
+    expect(snapshotFromNanos("12345")).toBe("12345")
+    expect(snapshotFromNanos(null, 1_000_000)).toBe(
+      (BigInt(1_000_000) * 1_000_000n - 86_400_000_000_000n).toString()
+    )
+
+    vi.mocked(graphqlCached)
+      .mockResolvedValueOnce({
+        run: {
+          runId: "run-a",
+          command: "cargo test",
+          status: "finished",
+          exitCode: 0,
+          startedAtNanos: "5000000000",
+          endedAtNanos: "6000000000",
+          errorCount: 0,
+          traceCount: 1,
+          issues: [],
+        },
+      })
+      .mockResolvedValueOnce({
+        tracesByRun: [],
+        logsByRun: [],
+        story: [],
+        runtimeSnapshot: [],
+        agentSession: null,
+      })
+
+    await loadRunDetail("run-a", 10_000)
+    expect(vi.mocked(graphqlCached)).toHaveBeenCalledTimes(2)
+    const secondQuery = String(vi.mocked(graphqlCached).mock.calls[1]?.[0])
+    expect(secondQuery).toContain('fromNanos: "5000000000"')
+    expect(secondQuery).not.toContain('fromNanos: "0"')
+    expect(secondQuery).not.toContain("bundle")
   })
 })

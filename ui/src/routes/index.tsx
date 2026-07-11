@@ -46,7 +46,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
-import { graphql } from "@/lib/api"
+import { graphqlCached } from "@/lib/api"
 import type { Issue, TraceSummary } from "@/lib/api"
 import {
   formatCount,
@@ -147,7 +147,7 @@ export async function loadOverview(range: ResolvedRange) {
   const previous = previousRange(range)
   const stepSeconds = stepSecondsForRange(range)
   const previousStepSeconds = stepSecondsForRange(previous)
-  return graphql<OverviewData>(`
+  return graphqlCached<OverviewData>(`
     {
       overview(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}") {
         spanCount traceCount logCount metricPointCount errorCount errorRate activeServices

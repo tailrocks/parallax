@@ -11,7 +11,7 @@ import {
 } from "@tanstack/react-router"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { graphql } from "@/lib/api"
+import { graphqlCached } from "@/lib/api"
 import type { ResolvedRange } from "@/lib/range"
 import { OverviewContent, latencyBands, loadOverview } from "@/routes/index"
 import type { OverviewData } from "@/routes/index"
@@ -19,6 +19,7 @@ import type { OverviewData } from "@/routes/index"
 vi.mock("@/lib/api", () => {
   return {
     graphql: vi.fn(),
+    graphqlCached: vi.fn(),
   }
 })
 
@@ -174,13 +175,13 @@ function renderWithRouter(component: React.ReactNode) {
 
 describe("Overview route", () => {
   it("loads the one-document overview query", async () => {
-    vi.mocked(graphql).mockResolvedValueOnce(fixture)
+    vi.mocked(graphqlCached).mockResolvedValueOnce(fixture)
 
     await expect(loadOverview(range)).resolves.toBe(fixture)
-    expect(vi.mocked(graphql).mock.calls[0]?.[0]).toContain("overview")
-    expect(vi.mocked(graphql).mock.calls[0]?.[0]).toContain("signalCountSeries")
-    expect(vi.mocked(graphql).mock.calls[0]?.[0]).toContain("servicesNow")
-    expect(vi.mocked(graphql).mock.calls[0]?.[0]).toContain("tracesPage")
+    expect(vi.mocked(graphqlCached).mock.calls[0]?.[0]).toContain("overview")
+    expect(vi.mocked(graphqlCached).mock.calls[0]?.[0]).toContain("signalCountSeries")
+    expect(vi.mocked(graphqlCached).mock.calls[0]?.[0]).toContain("servicesNow")
+    expect(vi.mocked(graphqlCached).mock.calls[0]?.[0]).toContain("tracesPage")
   })
 
   it("renders KPIs and linked recent lists", async () => {
