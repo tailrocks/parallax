@@ -2169,7 +2169,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "thiserror",
 ]
 
 [[package]]
@@ -2204,7 +2203,6 @@ dependencies = [
  "serde_json",
  "sha2",
  "tempfile",
- "thiserror",
  "tokio",
  "tokio-stream",
  "toml",
@@ -2226,7 +2224,6 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
- "thiserror",
  "tokio",
  "tracing",
  "turso",
