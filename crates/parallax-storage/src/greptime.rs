@@ -12,9 +12,17 @@ use crate::adapter::{
 };
 use crate::model::*;
 use parallax_proto::semconv;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::ops::RangeInclusive;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Duration;
+
+/// Client-side HTTP deadline for all GreptimeDB requests (reads + OTLP forwards).
+/// Slightly above the SQL `X-Greptime-Timeout` so the engine can return a
+/// structured timeout before reqwest aborts the socket.
+const HTTP_CLIENT_TIMEOUT: Duration = Duration::from_secs(70);
+/// Server-side query deadline sent on SQL reads only (not on OTLP forwards).
+const SQL_QUERY_TIMEOUT_HEADER: &str = "60s";
 
 pub struct GreptimeStore {
     base_url: String,
@@ -140,7 +148,7 @@ impl GreptimeStore {
                           json_get_string("log_attributes", '{}') AS "event_name",
                           json_get_int("log_attributes", '{}') AS "observed_ts_nanos"
                    FROM opentelemetry_logs WHERE {where_clause}{order}{limit_clause}"#,
-            resource_json_get(semconv::SERVICE_NAME),
+            log_service_name_expr(),
             wire_attr_ident(semconv::PARALLAX_RUN_ID),
             semconv::resource_json_path(semconv::EVENT_NAME),
             semconv::resource_json_path(semconv::LOG_OBSERVED_TS_NANOS),
@@ -193,6 +201,15 @@ fn resource_json_get(attr: &str) -> String {
     format!(
         r#"json_get_string("resource_attributes", '{}')"#,
         semconv::resource_json_path(attr)
+    )
+}
+
+/// Prefer extract-key column `"service.name"` (TAG); fall back to resource JSON
+/// for pre-084 rows. extract-keys names columns after the OTLP attribute key.
+fn log_service_name_expr() -> String {
+    format!(
+        r#"COALESCE("service.name", {})"#,
+        resource_json_get(semconv::SERVICE_NAME)
     )
 }
 
@@ -360,9 +377,12 @@ impl GreptimeStore {
         logs_ttl: &str,
         metrics_ttl: &str,
     ) -> anyhow::Result<Self> {
+        let client = reqwest::Client::builder()
+            .timeout(HTTP_CLIENT_TIMEOUT)
+            .build()?;
         let store = Self {
             base_url: base_url.trim_end_matches('/').to_string(),
-            client: reqwest::Client::new(),
+            client,
             traces_ttl: traces_ttl.to_string(),
             logs_ttl: logs_ttl.to_string(),
             metrics_ttl: metrics_ttl.to_string(),
@@ -379,11 +399,55 @@ impl GreptimeStore {
         Ok(store)
     }
 
-    /// Create the *extension* tables (idempotent), interpolating TTLs. The
-    /// native OTLP tables (`opentelemetry_traces`/`_logs` + per-metric tables)
-    /// are NOT created here — they auto-create on the first forward; their
-    /// post-create deviations run via [`Self::ensure_native_deviations`].
+    /// Create extension tables + pre-create the native logs schema (idempotent),
+    /// apply repair ALTERs, and reconcile TTLs from config.
     pub async fn bootstrap(&self, metrics_ttl: &str, error_events_ttl: &str) -> anyhow::Result<()> {
+        // Pre-create opentelemetry_logs so extract-keys cannot promote high-card
+        // attributes into the PRIMARY KEY (Plan 084). Schema matches GreptimeDB
+        // v1.1.2 native OTLP logs + deliberate FIELD/TAG deviations.
+        let logs_create = format!(
+            r#"CREATE TABLE IF NOT EXISTS "opentelemetry_logs" (
+                   "timestamp" TIMESTAMP(9) NOT NULL,
+                   "trace_id" STRING NULL SKIPPING INDEX,
+                   "span_id" STRING NULL,
+                   "severity_text" STRING NULL,
+                   "severity_number" INT NULL,
+                   "body" STRING NULL FULLTEXT INDEX WITH(
+                       analyzer = 'English',
+                       backend = 'bloom',
+                       case_sensitive = 'false',
+                       false_positive_rate = '0.01',
+                       granularity = '10240'
+                   ),
+                   "log_attributes" JSON NULL,
+                   "trace_flags" INT UNSIGNED NULL,
+                   "scope_name" STRING NULL,
+                   "scope_version" STRING NULL,
+                   "scope_attributes" JSON NULL,
+                   "scope_schema_url" STRING NULL,
+                   "resource_attributes" JSON NULL,
+                   "resource_schema_url" STRING NULL,
+                   "service.name" STRING NULL,
+                   {} STRING NULL SKIPPING INDEX,
+                   {} STRING NULL,
+                   {} BIGINT NULL,
+                   TIME INDEX ("timestamp"),
+                   PRIMARY KEY ("scope_name", "service.name")
+                 )
+                 ENGINE=mito
+                 WITH(
+                   append_mode = 'true',
+                   'greptime.semantic.signal_type' = 'log',
+                   'greptime.semantic.source' = 'opentelemetry',
+                   ttl = '{}'
+                 )"#,
+            wire_attr_ident(semconv::PARALLAX_RUN_ID),
+            wire_attr_ident(semconv::EVENT_NAME),
+            wire_attr_ident(semconv::LOG_OBSERVED_TS_NANOS),
+            escape(&self.logs_ttl),
+        );
+        self.sql(&logs_create).await?;
+
         let statements = [
             format!(
                 r#"CREATE TABLE IF NOT EXISTS error_events (
@@ -393,9 +457,6 @@ impl GreptimeStore {
                    TIME INDEX ("ts"), PRIMARY KEY ("service", "fingerprint")
                  ) WITH (ttl = '{error_events_ttl}')"#
             ),
-            // Run-scoped metric points (Q6, Approach 2): high-card `run_id` is a
-            // SKIPPING-indexed column, not a metric-engine tag, so per-run series
-            // cost nothing on the metric engine.
             format!(
                 r#"CREATE TABLE IF NOT EXISTS run_metric_points (
                    "ts" TIMESTAMP(9) NOT NULL, "run_id" STRING SKIPPING INDEX,
@@ -416,13 +477,34 @@ impl GreptimeStore {
         for statement in statements {
             self.sql(&statement).await?;
         }
-        // The native tables may not exist yet (they auto-create on first
-        // forward), so try the deviations now and swallow not-found — the lazy
-        // per-signal guards re-run them after each signal's first forward (e.g.
-        // when a prior run already created the tables in a persistent data dir).
         self.try_traces_deviations().await;
         self.try_logs_deviations().await;
+        self.reconcile_ttls(metrics_ttl, error_events_ttl).await;
         Ok(())
+    }
+
+    /// Apply configured retention TTLs via `ALTER TABLE … SET 'ttl'`.
+    /// Per-metric native tables are excluded (TTL rides creation hints only).
+    async fn reconcile_ttls(&self, metrics_ttl: &str, error_events_ttl: &str) {
+        let targets = [
+            ("opentelemetry_traces", self.traces_ttl.as_str()),
+            ("opentelemetry_logs", self.logs_ttl.as_str()),
+            ("error_events", error_events_ttl),
+            ("run_metric_points", metrics_ttl),
+            ("metric_exemplars", metrics_ttl),
+        ];
+        for (table, ttl) in targets {
+            let sql = format!("ALTER TABLE {table} SET 'ttl' = '{}'", escape(ttl));
+            if let Err(error) = self.sql(&sql).await {
+                let text = error.to_string().to_ascii_lowercase();
+                if !text.contains("not found")
+                    && !text.contains("exist")
+                    && !text.contains("unknown table")
+                {
+                    tracing::warn!("ttl reconcile for {table} failed: {error:#}");
+                }
+            }
+        }
     }
 
     /// Run a batch of idempotent post-create ALTERs, swallowing the benign
@@ -457,17 +539,16 @@ impl GreptimeStore {
         .await;
     }
 
-    /// Logs deviations: an INVERTED index on `trace_id` and a FULLTEXT index on
-    /// `body` (the one native shortfall), plus an explicit run-id column.
-    /// The run-id column is normally promoted by the
-    /// `x-greptime-log-extract-keys` header, but only when an ingested log
-    /// actually carries that resource attribute — adding it here guarantees the
-    /// column exists so run-scoped log reads never reference a missing field.
+    /// Logs deviations: SKIPPING on trace_id; ADD COLUMN repair for extract-key
+    /// fields. Body FULLTEXT is native-default on ≥1.1 (no ALTER).
     async fn try_logs_deviations(&self) {
         self.try_deviations([
-            r#"ALTER TABLE opentelemetry_logs MODIFY COLUMN "trace_id" SET INVERTED INDEX"#
+            r#"ALTER TABLE opentelemetry_logs MODIFY COLUMN "trace_id" SET SKIPPING INDEX"#
                 .to_string(),
-            r#"ALTER TABLE opentelemetry_logs MODIFY COLUMN "body" SET FULLTEXT INDEX"#.to_string(),
+            format!(
+                "ALTER TABLE opentelemetry_logs ADD COLUMN {} STRING",
+                wire_attr_ident(semconv::SERVICE_NAME)
+            ),
             format!(
                 "ALTER TABLE opentelemetry_logs ADD COLUMN {} STRING",
                 wire_attr_ident(semconv::PARALLAX_RUN_ID)
@@ -482,6 +563,11 @@ impl GreptimeStore {
             ),
         ])
         .await;
+        let sql = format!(
+            "ALTER TABLE opentelemetry_logs SET 'ttl' = '{}'",
+            escape(&self.logs_ttl)
+        );
+        let _ = self.sql(&sql).await;
     }
 
     /// Apply the traces deviations once per process, after the first traces
@@ -493,6 +579,11 @@ impl GreptimeStore {
             .is_ok()
         {
             self.try_traces_deviations().await;
+            let sql = format!(
+                "ALTER TABLE opentelemetry_traces SET 'ttl' = '{}'",
+                escape(&self.traces_ttl)
+            );
+            let _ = self.sql(&sql).await;
         }
     }
 
@@ -545,6 +636,7 @@ impl GreptimeStore {
         let response: serde_json::Value = self
             .client
             .post(format!("{}/v1/sql?db=public", self.base_url))
+            .header("X-Greptime-Timeout", SQL_QUERY_TIMEOUT_HEADER)
             .form(&[("sql", sql)])
             .send()
             .await?
@@ -596,6 +688,7 @@ impl GreptimeStore {
         let response: serde_json::Value = self
             .client
             .post(format!("{}/v1/sql?db=public", self.base_url))
+            .header("X-Greptime-Timeout", SQL_QUERY_TIMEOUT_HEADER)
             .form(&[("sql", sql)])
             .send()
             .await?
@@ -876,10 +969,11 @@ fn sql_ts(bound: u128) -> i64 {
     i64::try_from(bound).unwrap_or(i64::MAX)
 }
 
-/// The shared WHERE clauses for `logs_search` and `log_count_series` — the
-/// histogram must count exactly what the table shows. Body search is `LIKE`
-/// today; a GreptimeDB FULLTEXT index + `matches_term` is the planned
-/// upgrade for large logs (spec §5 note).
+/// Shared WHERE clauses for `logs_search` and `log_count_series`.
+///
+/// Body search uses `matches_term` (FULLTEXT bloom): term match, not substring;
+/// whitespace tokens AND-combined; double-quoted phrase; punctuation → LIKE.
+/// Memory adapter stays substring (Plan 084 intentional divergence).
 fn log_filter_clauses(
     service: Option<&str>,
     range: &RangeInclusive<u128>,
@@ -893,10 +987,9 @@ fn log_filter_clauses(
         sql_ts(*range.end())
     )];
     if let Some(service) = service {
-        // Native logs carry no `service_name` column; match on resource JSON.
         clauses.push(format!(
             r#"{} = '{}'"#,
-            resource_json_get(semconv::SERVICE_NAME),
+            log_service_name_expr(),
             escape(service)
         ));
     }
@@ -907,18 +1000,36 @@ fn log_filter_clauses(
         clauses.push(format!(r#""severity_number" <= {max}"#));
     }
     if let Some(needle) = body_contains {
-        // LIKE wildcards in the needle are literal for a substring search;
-        // backslash first (it is the escape char), then %, _, then quotes.
+        push_body_search_clause(&mut clauses, needle);
+    }
+    clauses
+}
+
+fn push_body_search_clause(clauses: &mut Vec<String>, needle: &str) {
+    let needle = needle.trim();
+    if needle.is_empty() {
+        return;
+    }
+    if needle.len() >= 2 && needle.starts_with('"') && needle.ends_with('"') {
+        let phrase = &needle[1..needle.len() - 1];
+        clauses.push(format!(r#"matches_term("body", '{}')"#, escape(phrase)));
+        return;
+    }
+    if !needle.chars().any(|c| c.is_alphanumeric()) {
         let escaped = escape(
             &needle
                 .replace('\\', "\\\\")
                 .replace('%', "\\%")
                 .replace('_', "\\_"),
         );
-        // ESCAPE takes exactly one character — a single backslash in SQL.
         clauses.push(format!(r#""body" LIKE '%{escaped}%' ESCAPE '\'"#));
+        return;
     }
-    clauses
+    for token in needle.split_whitespace() {
+        if !token.is_empty() {
+            clauses.push(format!(r#"matches_term("body", '{}')"#, escape(token)));
+        }
+    }
 }
 
 fn u128_at(row: &[serde_json::Value], index: usize) -> u128 {
@@ -1029,7 +1140,8 @@ impl TelemetryStore for GreptimeStore {
         // attributes to native columns in opentelemetry_logs.
         let hints = format!("ttl={},append_mode=true", self.logs_ttl);
         let extract_keys = format!(
-            "{},{},{}",
+            "{},{},{},{}",
+            semconv::SERVICE_NAME,
             semconv::PARALLAX_RUN_ID,
             semconv::EVENT_NAME,
             semconv::LOG_OBSERVED_TS_NANOS
@@ -1268,6 +1380,85 @@ impl TelemetryStore for GreptimeStore {
         Ok(spans)
     }
 
+    async fn spans_by_runs(
+        &self,
+        run_ids: &[String],
+        limit_per_run: usize,
+    ) -> anyhow::Result<HashMap<String, Vec<SpanRow>>> {
+        let mut out: HashMap<String, Vec<SpanRow>> = HashMap::with_capacity(run_ids.len());
+        for run_id in run_ids {
+            out.entry(run_id.clone()).or_default();
+        }
+        if run_ids.is_empty() || limit_per_run == 0 {
+            return Ok(out);
+        }
+        let escaped = run_ids
+            .iter()
+            .filter(|id| !id.is_empty())
+            .map(|id| format!("'{}'", escape(id)))
+            .collect::<Vec<_>>();
+        if escaped.is_empty() {
+            return Ok(out);
+        }
+        let id_list = escaped.join(",");
+        let trace_run_column = resource_attr_ident(semconv::PARALLAX_RUN_ID);
+        let sql = format!(
+            r#"SELECT * FROM (
+                 SELECT *, ROW_NUMBER() OVER (
+                   PARTITION BY {trace_run_column}
+                   ORDER BY "timestamp" DESC
+                 ) AS "rn"
+                 FROM opentelemetry_traces
+                 WHERE {trace_run_column} IN ({id_list})
+               ) WHERE "rn" <= {limit_per_run}
+               ORDER BY "timestamp" ASC"#
+        );
+        let result = match self.sql_with_schema_lenient(&sql).await {
+            Ok(result) => result,
+            Err(error) if is_missing_column(&error) => {
+                for run_id in run_ids {
+                    out.insert(
+                        run_id.clone(),
+                        self.spans_by_run(run_id, limit_per_run).await?,
+                    );
+                }
+                return Ok(out);
+            }
+            Err(error) => return Err(error),
+        };
+        let cols = ColumnIndex::new(&result.columns);
+        for row in &result.rows {
+            let (attributes, resource) = cols.reassemble_attrs(row);
+            let events = match cols.json("span_events", row) {
+                serde_json::Value::Null => None,
+                value => Some(value.to_string()),
+            };
+            let span = SpanRow {
+                ts_nanos: cols.u128("timestamp", row),
+                service: cols.string("service_name", row),
+                trace_id: cols.string("trace_id", row),
+                span_id: cols.string("span_id", row),
+                parent_span_id: cols.opt_string("parent_span_id", row),
+                name: cols.string("span_name", row),
+                kind: cols.string("span_kind", row),
+                status_code: cols.string("span_status_code", row),
+                status_message: cols.string("span_status_message", row),
+                duration_ns: cols.u128("duration_nano", row),
+                run_id: cols
+                    .opt_string(&semconv::resource_column(semconv::PARALLAX_RUN_ID), row),
+                scope_name: cols.string("scope_name", row),
+                events,
+                links: cols.json("span_links", row),
+                attributes,
+                resource,
+            };
+            if let Some(run_id) = span.run_id.clone() {
+                out.entry(run_id).or_default().push(span);
+            }
+        }
+        Ok(out)
+    }
+
     async fn logs_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<LogRow>> {
         let mut logs = self
             .select_logs(
@@ -1379,7 +1570,7 @@ impl TelemetryStore for GreptimeStore {
                           FROM opentelemetry_logs
                    UNION SELECT DISTINCT "service" AS "svc" FROM run_metric_points
                    ORDER BY "svc""#,
-                resource_json_get(semconv::SERVICE_NAME)
+                log_service_name_expr()
             ))
             .await?;
         Ok(rows
@@ -1422,7 +1613,7 @@ impl TelemetryStore for GreptimeStore {
                    ) WHERE "svc" IS NOT NULL AND "svc" != ''"#,
                 sql_ts(*range.start()),
                 sql_ts(*range.end()),
-                resource_json_get(semconv::SERVICE_NAME),
+                log_service_name_expr(),
                 sql_ts(*range.start()),
                 sql_ts(*range.end()),
             ))
@@ -2005,7 +2196,7 @@ impl TelemetryStore for GreptimeStore {
                    WHERE {} IS NOT NULL AND {} != ''
                    GROUP BY "run_id" ORDER BY "last_ts" DESC LIMIT "#,
                     wire_attr_ident(semconv::PARALLAX_RUN_ID),
-                    resource_json_get(semconv::SERVICE_NAME),
+                    log_service_name_expr(),
                     wire_attr_ident(semconv::PARALLAX_RUN_ID),
                     wire_attr_ident(semconv::PARALLAX_RUN_ID)
                 ),
@@ -2150,12 +2341,11 @@ impl TelemetryStore for GreptimeStore {
 
         let mut rows = Vec::new();
         for key in candidate_keys {
-            let (selected_total, selected_counts) = self
-                .span_attribute_counts(&key, &selected, service, error_only)
-                .await?;
-            let (baseline_total, baseline_counts) = self
-                .span_attribute_counts(&key, &baseline, service, error_only)
-                .await?;
+            let ((selected_total, selected_counts), (baseline_total, baseline_counts)) =
+                tokio::try_join!(
+                    self.span_attribute_counts(&key, &selected, service, error_only),
+                    self.span_attribute_counts(&key, &baseline, service, error_only),
+                )?;
             for (value, selected_count) in selected_counts {
                 let baseline_count = baseline_counts.get(&value).copied().unwrap_or(0);
                 let score = attribute_compare_score(
@@ -2929,7 +3119,60 @@ mod tests {
         assert_eq!(quoted_ident(r#"a"b"#), r#""a""b""#);
     }
 
+    
     #[test]
+    fn body_search_clauses_single_term() {
+        let mut clauses = Vec::new();
+        push_body_search_clause(&mut clauses, "error");
+        assert_eq!(clauses, vec![r#"matches_term("body", 'error')"#]);
+    }
+
+    #[test]
+    fn body_search_clauses_two_terms_and_combined() {
+        let mut clauses = Vec::new();
+        push_body_search_clause(&mut clauses, "connection reset");
+        assert_eq!(
+            clauses,
+            vec![
+                r#"matches_term("body", 'connection')"#,
+                r#"matches_term("body", 'reset')"#,
+            ]
+        );
+    }
+
+    #[test]
+    fn body_search_clauses_quoted_phrase() {
+        let mut clauses = Vec::new();
+        push_body_search_clause(&mut clauses, r#""connection reset""#);
+        assert_eq!(clauses, vec![r#"matches_term("body", 'connection reset')"#]);
+    }
+
+    #[test]
+    fn body_search_clauses_punctuation_falls_back_to_like() {
+        let mut clauses = Vec::new();
+        push_body_search_clause(&mut clauses, "???");
+        assert_eq!(clauses.len(), 1);
+        assert!(clauses[0].contains(r#""body" LIKE"#));
+        assert!(clauses[0].contains("???"));
+    }
+
+    #[test]
+    fn body_search_escapes_sql_quotes_in_term() {
+        let mut clauses = Vec::new();
+        push_body_search_clause(&mut clauses, "o'brien");
+        assert_eq!(clauses, vec![r#"matches_term("body", 'o''brien')"#]);
+    }
+
+    #[test]
+    fn log_filter_clauses_use_matches_term_and_service_coalesce() {
+        let clauses = log_filter_clauses(Some("checkout"), &(0..=1000), None, None, Some("error"));
+        let joined = clauses.join(" AND ");
+        assert!(joined.contains(r#"matches_term("body", 'error')"#));
+        assert!(joined.contains(r#"COALESCE("service.name""#));
+        assert!(!joined.contains(r#""body" LIKE"#));
+    }
+
+#[test]
     fn golden_traces_search_sql_includes_adversarial_service() {
         let participation = format!(
             r#" AND "trace_id" IN (SELECT "trace_id" FROM opentelemetry_traces WHERE "service_name" = '{}')"#,

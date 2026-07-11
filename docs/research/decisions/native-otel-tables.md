@@ -76,8 +76,8 @@ headers; post-create `ALTER TABLE … ADD COLUMN` / `ADD … INVERTED INDEX | FU
 
 - **Traces → ADOPT native `opentelemetry_traces`.** Strictly better than hand-rolled. `ALTER`-add only
   cross-signal columns native lacks (e.g. `fingerprint`).
-- **Logs → ADOPT native `opentelemetry_logs`**, then `ALTER`-add `trace_id INVERTED INDEX` + body
-  `FULLTEXT` (native's one shortfall; `trace_id` retrieval is the dominant bundle cost, Run 56).
+- **Logs → ADOPT native `opentelemetry_logs`**, with Plan 084 corrections (pre-create + extract-keys
+  + SKIPPING on `trace_id`; body FULLTEXT is native-default on engine ≥1.1).
 - **Metrics → ADOPT the native metric engine fully (PromQL-native).** Rely on explicit-bucket
   histograms; add a minimal extension only if ExponentialHistogram appears.
 - **`run_id`** — emitted as a resource attribute. Traces: free column `resource_attributes.parallax.run.id`.
@@ -88,6 +88,24 @@ headers; post-create `ALTER TABLE … ADD COLUMN` / `ADD … INVERTED INDEX | FU
   stays run_id-free.
 - **`error_events`, `run_metric_points`, `metric_exemplars` → KEEP custom.** Product semantics; no
   native raw-signal replacement.
+
+## Plan 084 — deterministic native logs schema (verified 2026-07-11, GreptimeDB v1.1.2)
+
+Live engine verification:
+
+| Fact | Evidence |
+| --- | --- |
+| Version | `SELECT version()` → `1.1.2` |
+| Body FULLTEXT native | Auto-create includes bloom FULLTEXT on `body` |
+| extract-keys race | Keys become PK TAGs if columns do not pre-exist (incl. high-card `observed_ts_nanos`) |
+| Pre-create fix | Pre-create native-shaped schema with FIELD deviations; extract-keys reuses types |
+| Service column | extract-keys column is **`service.name`** (not traces `service_name`); TAG + COALESCE reads |
+| `trace_id` index | SKIPPING (bloom), not INVERTED |
+| Body search | `matches_term` term match (not substring); memory adapter stays substring |
+| TTL reconcile | `ALTER TABLE … SET 'ttl'` on bootstrap for listed tables; per-metric natives excluded |
+| Query timeout | `X-Greptime-Timeout: 60s` on SQL; reqwest client 70s |
+
+Native extension (pre-create + extract-keys + ALTER), not a custom raw-signal table.
 
 ## Write path — Path A (decided)
 

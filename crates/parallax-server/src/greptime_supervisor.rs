@@ -2,6 +2,14 @@
 //! resolve binary (data-dir bin → PATH → checksum-verified download of the
 //! pinned/latest release), spawn `greptime standalone start` on the shifted
 //! ports (24000–24003), health-check, restart with backoff.
+//!
+//! # Optional engine config
+//!
+//! If `<data_dir>/greptime-config.toml` exists, the supervisor passes
+//! `-c <that path>` to `greptime standalone start`. Parallax never writes this
+//! file by default. Knobs: `region_engine.mito.global_write_buffer_size`,
+//! `page_cache_size`, `query.memory_pool_size`, `wal.*`, TWCS options — any
+//! productized tuning needs a four-build benchmark first.
 
 use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
@@ -117,7 +125,61 @@ async fn resolve_version(version: &str) -> anyhow::Result<String> {
     }
 }
 
-/// Locate or install the engine binary. Returns (path, resolved_version_hint).
+/// Parse `greptime --version` into a bare semver string (no leading `v`).
+pub fn parse_greptime_version_output(output: &str) -> Option<String> {
+    for line in output.lines() {
+        let line = line.trim();
+        if let Some(rest) = line.strip_prefix("version:") {
+            let v = rest.trim().trim_start_matches('v');
+            if !v.is_empty() {
+                return Some(v.to_string());
+            }
+        }
+    }
+    for token in output.split_whitespace() {
+        let token = token.trim().trim_start_matches('v');
+        let mut parts = token.split('.');
+        if parts
+            .next()
+            .is_some_and(|p| p.chars().all(|c| c.is_ascii_digit()))
+            && parts
+                .next()
+                .is_some_and(|p| p.chars().all(|c| c.is_ascii_digit()))
+        {
+            return Some(token.to_string());
+        }
+    }
+    None
+}
+
+fn managed_binary_matches_pin(managed: &Path, pin: &str) -> bool {
+    if pin == "latest" {
+        return true;
+    }
+    let desired = pin.trim_start_matches('v');
+    let output = match std::process::Command::new(managed).arg("--version").output() {
+        Ok(o) if o.status.success() => o,
+        _ => return true,
+    };
+    let text = {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        if stdout.trim().is_empty() {
+            String::from_utf8_lossy(&output.stderr).into_owned()
+        } else {
+            stdout.into_owned()
+        }
+    };
+    match parse_greptime_version_output(&text) {
+        Some(found) if found != desired => {
+            tracing::info!("upgrading GreptimeDB v{found} → v{desired}");
+            false
+        }
+        _ => true,
+    }
+}
+
+/// Locate or install the engine binary. Version-pin mismatch re-downloads after
+/// archiving the old binary as `greptime-<oldversion>`.
 pub async fn ensure_binary(
     bin_dir: &Path,
     version: &str,
@@ -125,9 +187,36 @@ pub async fn ensure_binary(
 ) -> anyhow::Result<PathBuf> {
     let managed = bin_dir.join("greptime");
     if managed.exists() {
-        return Ok(managed);
-    }
-    if let Ok(output) = std::process::Command::new("greptime")
+        if managed_binary_matches_pin(&managed, version) {
+            return Ok(managed);
+        }
+        let old_label = std::process::Command::new(&managed)
+            .arg("--version")
+            .output()
+            .ok()
+            .and_then(|o| {
+                let text = {
+                    let stdout = String::from_utf8_lossy(&o.stdout);
+                    if stdout.trim().is_empty() {
+                        String::from_utf8_lossy(&o.stderr).into_owned()
+                    } else {
+                        stdout.into_owned()
+                    }
+                };
+                parse_greptime_version_output(&text)
+            })
+            .unwrap_or_else(|| "unknown".to_string());
+        let backup = bin_dir.join(format!("greptime-{old_label}"));
+        if let Err(error) = std::fs::rename(&managed, &backup) {
+            tracing::warn!(
+                "could not archive old greptime binary to {}: {error}; overwriting",
+                backup.display()
+            );
+            let _ = std::fs::remove_file(&managed);
+        } else {
+            tracing::info!("archived previous GreptimeDB binary to {}", backup.display());
+        }
+    } else if let Ok(output) = std::process::Command::new("greptime")
         .arg("--version")
         .output()
         && output.status.success()
@@ -264,8 +353,19 @@ impl GreptimeSupervisor {
             .create(true)
             .append(true)
             .open(&self.log_path)?;
-        let child = Command::new(&self.binary)
-            .args(["standalone", "start"])
+        let config_path = self
+            .data_home
+            .parent()
+            .map(|parent| parent.join("greptime-config.toml"));
+        let mut command = Command::new(&self.binary);
+        command.args(["standalone", "start"]);
+        if let Some(cfg) = config_path.as_ref()
+            && cfg.is_file()
+        {
+            tracing::info!("using GreptimeDB config {}", cfg.display());
+            command.arg("-c").arg(cfg);
+        }
+        let child = command
             .arg("--http-addr")
             .arg(format!("127.0.0.1:{GREPTIME_HTTP_PORT}"))
             .arg("--rpc-bind-addr")
@@ -359,5 +459,32 @@ impl GreptimeSupervisor {
             task.abort();
         }
         let _ = std::fs::remove_file(&self.pid_path);
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::parse_greptime_version_output;
+
+    #[test]
+    fn parse_version_from_multiline_1_1_output() {
+        let output = "GreptimeDB \nbranch: \ncommit: abc\nclean: true\nversion: 1.1.2\n";
+        assert_eq!(parse_greptime_version_output(output).as_deref(), Some("1.1.2"));
+    }
+
+    #[test]
+    fn parse_version_strips_leading_v() {
+        assert_eq!(parse_greptime_version_output("version: v1.0.0").as_deref(), Some("1.0.0"));
+    }
+
+    #[test]
+    fn parse_version_fallback_token() {
+        assert_eq!(parse_greptime_version_output("greptime 1.1.0").as_deref(), Some("1.1.0"));
+    }
+
+    #[test]
+    fn parse_version_empty_is_none() {
+        assert_eq!(parse_greptime_version_output(""), None);
     }
 }
