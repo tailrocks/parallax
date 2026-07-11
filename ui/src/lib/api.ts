@@ -33,13 +33,16 @@ export async function graphql<T>(
 
 /** Escape a value for inclusion inside a GraphQL double-quoted literal. */
 export function gqlString(value: string): string {
-  // GraphQL string literals cannot contain raw newlines (multi-line SQL).
+  // GraphQL string literals cannot contain raw newlines or other control chars.
   return value
     .replace(/\\/g, "\\\\")
     .replace(/"/g, '\\"')
     .replace(/\n/g, "\\n")
     .replace(/\r/g, "")
     .replace(/\t/g, "\\t")
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, (c) =>
+      "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0")
+    )
 }
 
 export interface Issue {

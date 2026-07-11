@@ -94,7 +94,8 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
         .with_batch_exporter(span_exporter)
         .build();
     let tracer = tracer_provider.tracer("m2-bundle");
-    let mut span = tracer.start("payment.authorize");
+    // Span name plants a canary secret so name redaction is exercised.
+    let mut span = tracer.start("payment.authorize sk_live_XXXXXXXXCANARYKEY");
     let span_context: SpanContext = span.span_context().clone();
     span.set_attribute(KeyValue::new(
         "db.query.text",
@@ -130,7 +131,8 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
     let mut record = logger.create_log_record();
     record.set_severity_number(Severity::Info);
     record.set_body(AnyValue::from(
-        "retrying with auth=Bearer abc123secrettoken key=AKIAIOSFODNN7EXAMPLE",
+        "retrying with auth=Bearer abc123secrettoken key=AKIAIOSFODNN7EXAMPLE \
+         api_key=supersecretcanary Basic dXNlcjpwYXNzd29yZHh4eHg=",
     ));
     record.set_trace_context(span_context.trace_id(), span_context.span_id(), None);
     logger.emit(record);
@@ -221,6 +223,18 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
             "aws canary leaked"
         );
         assert!(!projection.contains("s3cr3t"), "dsn userinfo leaked");
+        assert!(
+            !projection.contains("sk_live_XXXXXXXXCANARYKEY"),
+            "stripe/span-name canary leaked"
+        );
+        assert!(
+            !projection.contains("supersecretcanary"),
+            "generic api_key canary leaked"
+        );
+        assert!(
+            !projection.contains("dXNlcjpwYXNzd29yZHh4eHg="),
+            "basic-auth canary leaked"
+        );
         assert!(projection.contains("[REDACTED:dsn_userinfo]"));
         assert!(projection.contains("postgres://"));
         assert!(projection.contains("@db:5432"));

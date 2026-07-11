@@ -122,10 +122,10 @@ its verification gates, and update your row below when done.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| 069 | CI verification gates (UI tests/lint, embed-ui, nightly real-engine, timeouts) | P1 | M | — | TODO |
-| 070 | Rust correctness batch (requestRate table, ingest panic, first_seen, stuck runs) | P1 | M | — | TODO |
-| 071 | UI correctness batch (cycle guard, stale paging, bucket race, gqlString) | P1 | M | 069 (soft) | TODO |
-| 072 | Redaction bypasses + agent-trust delimiting in bundles | P1 | L | — | TODO |
+| 069 | CI verification gates (UI tests/lint, embed-ui, nightly real-engine, timeouts) | P1 | M | — | DONE |
+| 070 | Rust correctness batch (requestRate table, ingest panic, first_seen, stuck runs) | P1 | M | — | DONE |
+| 071 | UI correctness batch (cycle guard, stale paging, bucket race, gqlString) | P1 | M | 069 (soft) | DONE |
+| 072 | Redaction bypasses + agent-trust delimiting in bundles | P1 | L | — | DONE |
 | 073 | Spool durability truth (worker retry, shutdown drain, honest docs) | P1 | M | 070 | TODO |
 | 074 | GreptimeDB SQL testability (golden SQL, escape tests, conformance suite) | P1 | L | 070; 069 (soft) | TODO |
 | 075 | Read-path performance (traces_search window, fan-out joins, table cache) | P2 | M | 074 | TODO |

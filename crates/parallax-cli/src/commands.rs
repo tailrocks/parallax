@@ -259,16 +259,24 @@ pub async fn run_start(
     for (key, value) in &pairs {
         cmd.env(key, value);
     }
-    let status = cmd.status().await?;
-    let exit_code = status.code().unwrap_or(-1);
+    // Always attempt runFinish even when the child fails to spawn, so the run
+    // does not stay stuck in `running` forever.
+    let status = cmd.status().await;
+    let exit_code = match &status {
+        Ok(status) => status.code().unwrap_or(-1),
+        Err(_) => -1,
+    };
 
-    client
+    let finish = client
         .graphql(&format!(
             r#"mutation {{ runFinish(runId: "{}", endedAtNanos: "{}", exitCode: {exit_code}) }}"#,
             gql_str(&run_id),
             now_nanos()
         ))
-        .await?;
+        .await;
+
+    status?; // propagate spawn error AFTER finishing the run
+    finish?;
     println!("Parallax run {run_id} finished with exit code {exit_code}");
     println!("inspect: parallax run inspect {run_id}   issues: parallax issue list");
     Ok(exit_code)

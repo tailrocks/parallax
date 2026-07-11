@@ -167,6 +167,7 @@ impl MetadataStore {
                     first_seen, last_seen, event_count, last_trace_id)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6, 1, ?7)
                  ON CONFLICT(fingerprint) DO UPDATE SET
+                   first_seen = MIN(first_seen, excluded.first_seen),
                    last_seen = MAX(last_seen, excluded.last_seen),
                    event_count = event_count + 1,
                    last_trace_id = COALESCE(excluded.last_trace_id, last_trace_id)",
@@ -857,6 +858,40 @@ mod tests {
         assert_eq!(tags["attempt"]["3"], 2);
         assert!(tags.get("exception.message").is_none());
         assert!(tags.get("nested").is_none());
+    }
+
+    #[tokio::test]
+    async fn first_seen_lowers_on_out_of_order_occurrence() {
+        let store = MetadataStore::open(temp_db()).await.expect("open");
+        let attrs = serde_json::json!({});
+        // Later-timestamped occurrence first.
+        store
+            .upsert_issue_occurrence(&occurrence(
+                "fp-order",
+                "svc",
+                2_000_000_000, // 2000 ms
+                &attrs,
+            ))
+            .await
+            .expect("upsert later");
+        // Earlier-timestamped occurrence second must pull first_seen back.
+        store
+            .upsert_issue_occurrence(&occurrence(
+                "fp-order",
+                "svc",
+                1_000_000_000, // 1000 ms
+                &attrs,
+            ))
+            .await
+            .expect("upsert earlier");
+        let issue = store
+            .issue("fp-order")
+            .await
+            .expect("issue")
+            .expect("present");
+        assert_eq!(issue.first_seen_nanos, 1_000_000_000);
+        assert_eq!(issue.last_seen_nanos, 2_000_000_000);
+        assert_eq!(issue.event_count, 2);
     }
 
     #[tokio::test]

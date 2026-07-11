@@ -15,7 +15,7 @@ import {
   IconTrash,
   IconX,
 } from "@tabler/icons-react"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   Bar,
   BarChart,
@@ -275,10 +275,12 @@ function LogsPage() {
   const [saveOpen, setSaveOpen] = useState(false)
   const [saveName, setSaveName] = useState("")
   const [savingView, setSavingView] = useState(false)
+  const logsGeneration = useRef(0)
   const live = search.live === true
   const columns = parseLogColumns(search.cols)
 
   useEffect(() => {
+    logsGeneration.current += 1
     setLogs(keyedDataLogs)
     setExhausted(keyedDataLogs.length < PAGE_SIZE)
   }, [keyedDataLogs])
@@ -388,6 +390,7 @@ function LogsPage() {
   const loadOlder = async () => {
     const oldest = logs.at(-1)
     if (!oldest) return
+    const generation = logsGeneration.current
     setOlderLoading(true)
     setOlderError(null)
     try {
@@ -404,6 +407,8 @@ function LogsPage() {
       const more = await graphql<{ logs: LogDoc[] }>(`{ logs(${args}) {
         tsNanos eventName observedTsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource
       } }`)
+      // Window/filters changed while in flight — drop the stale page.
+      if (logsGeneration.current !== generation) return
       setLogs((current) => [...current, ...assignLogKeys(more.logs)])
       if (more.logs.length < PAGE_SIZE) setExhausted(true)
     } catch (err) {

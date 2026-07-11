@@ -418,10 +418,9 @@ impl GreptimeStore {
         // `error` (+ a non-zero `code`).
         if let Some(error) = response.get("error").and_then(|e| e.as_str()) {
             let code = response.get("code").and_then(|c| c.as_i64()).unwrap_or(-1);
-            anyhow::bail!(
-                "greptime sql failed (code {code}): {error} — sql: {}",
-                &sql[..sql.len().min(200)]
-            );
+            // Char-boundary-safe: byte slice at 200 can panic on multi-byte UTF-8.
+            let sql_prefix: String = sql.chars().take(200).collect();
+            anyhow::bail!("greptime sql failed (code {code}): {error} — sql: {sql_prefix}");
         }
         anyhow::ensure!(
             response.get("output").is_some(),
@@ -2498,16 +2497,21 @@ impl TelemetryStore for GreptimeStore {
         let service_clause = service
             .map(|svc| format!(r#" AND "service_name" = '{}'"#, escape(svc)))
             .unwrap_or_default();
+        // Resolve the real count sibling table (dotted OTel names → underscore
+        // native table + `_count` suffix), same as histogram_quantile.
+        let Some(count_table) = self.metric_table_for_name(name, Some("_count")).await? else {
+            return Ok(Vec::new());
+        };
         // native: the `<name>_count` sibling table holds the per-sample count
         // as `greptime_value`; sum it per window for the request-rate numerator.
         let rows = self
             .sql_lenient(&format!(
                 r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "greptime_timestamp") AS BIGINT)
                           AS "bucket_ms", SUM("greptime_value") AS "samples"
-                   FROM "{}_count"
+                   FROM "{}"
                    WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}{service_clause}
                    GROUP BY "bucket_ms" ORDER BY "bucket_ms""#,
-                escape_ident(name),
+                escape_ident(&count_table),
                 sql_ts(range.start() / 1_000_000),
                 sql_ts(range.end() / 1_000_000),
             ))
@@ -2859,5 +2863,26 @@ mod tests {
             "SELECT 1; DROP TABLE opentelemetry_logs"
         ));
         assert!(!raw_sql_read_only("DELETE FROM opentelemetry_logs"));
+    }
+
+    #[test]
+    fn metric_table_candidates_normalizes_dotted_count_suffix() {
+        let candidates = metric_table_candidates("http.server.request.duration", Some("_count"));
+        assert!(
+            candidates
+                .iter()
+                .any(|c| c == "http_server_request_duration_count"),
+            "expected underscore-normalized count table among {candidates:?}"
+        );
+    }
+
+    #[test]
+    fn sql_error_prefix_is_char_boundary_safe() {
+        // 3-byte codepoints so byte index 200 is mid-character (would panic on
+        // `&s[..200]`). "é" is 2 bytes and lands on a boundary at 200.
+        let s = "あ".repeat(300);
+        assert!(!s.is_char_boundary(200));
+        let prefix: String = s.chars().take(200).collect();
+        assert_eq!(prefix.chars().count(), 200);
     }
 }

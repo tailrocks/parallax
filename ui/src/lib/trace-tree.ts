@@ -152,7 +152,8 @@ export function errorPathSpanIds<T extends ErrorTraceSpan>(
     if (span.statusCode !== "STATUS_CODE_ERROR") continue
 
     let current: T | undefined = span
-    while (current) {
+    // Shared `ids` also terminates parent-chain cycles (self-parent / A↔B).
+    while (current && !ids.has(current.spanId)) {
       ids.add(current.spanId)
       current = current.parentSpanId
         ? byId.get(current.parentSpanId)

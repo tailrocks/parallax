@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run --passWithNoTests",
+    "test:ci": "vitest run",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx}\" \"!src/routeTree.gen.ts\"",
     "check": "prettier --check \"**/*.{ts,tsx,js,jsx}\" \"!src/routeTree.gen.ts\"",
