@@ -5,7 +5,7 @@
 use crate::config::{Config, LimitsConfig};
 use crate::otlp_grpc::OtlpGrpc;
 use crate::otlp_http;
-use crate::worker::{self, IngestSender, Worker};
+use crate::worker::{self, IngestSenders, Worker};
 use axum::extract::{Request, State};
 use axum::http::{StatusCode, header};
 use axum::middleware::{self, Next};
@@ -33,8 +33,8 @@ pub struct ServerHandle {
     supervisor: Option<crate::greptime_supervisor::GreptimeSupervisor>,
     /// Listener/reaper tasks (aborted on shutdown).
     tasks: Vec<JoinHandle<()>>,
-    /// Ingest worker task — drained on graceful shutdown after senders drop.
-    worker_task: Option<JoinHandle<()>>,
+    /// Ingest worker tasks (one per signal) — drained on graceful shutdown after senders drop.
+    worker_tasks: Vec<JoinHandle<()>>,
 }
 
 impl ServerHandle {
@@ -47,7 +47,7 @@ impl ServerHandle {
         for task in &self.tasks {
             task.abort();
         }
-        if let Some(worker) = &self.worker_task {
+        for worker in &self.worker_tasks {
             worker.abort();
         }
     }
@@ -61,9 +61,13 @@ impl ServerHandle {
         for task in &self.tasks {
             task.abort();
         }
-        if let Some(worker) = self.worker_task.take() {
-            let _ = tokio::time::timeout(Duration::from_secs(5), worker).await;
-        }
+        let workers = std::mem::take(&mut self.worker_tasks);
+        let _ = tokio::time::timeout(Duration::from_secs(5), async {
+            for worker in workers {
+                let _ = worker.await;
+            }
+        })
+        .await;
     }
 }
 
@@ -228,7 +232,7 @@ async fn graphql_handler(
 #[derive(Clone)]
 pub struct IngestState {
     pub spool: Arc<Spool>,
-    pub sender: IngestSender,
+    pub senders: IngestSenders,
 }
 
 fn spawn_spool_reaper(
@@ -275,7 +279,10 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
 
     let mut supervisor = None;
     let store: Arc<dyn TelemetryStore> = match config.storage.mode.as_str() {
-        "none" => Arc::new(MemoryStore::new()),
+        "none" => Arc::new(MemoryStore::new().with_normalizers(
+            std::sync::Arc::new(parallax_core::normalize::normalize_traces),
+            std::sync::Arc::new(parallax_core::normalize::normalize_logs),
+        )),
         "external" => {
             let url = &config.storage.greptime_url;
             anyhow::ensure!(
@@ -306,14 +313,23 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
     };
     let metadata = Arc::new(MetadataStore::open(data_dir.join("meta.db")).await?);
 
-    let (sender, receiver) = worker::channel(1024);
+    let queue_batches = config.limits.ingest_queue_batches.max(1);
+    let (senders, receivers) = worker::channels(queue_batches);
     let ingest = IngestState {
         spool: spool.clone(),
-        sender,
+        senders,
     };
     let live = crate::live::channels();
     let worker = Worker::new(store.clone(), metadata.clone(), live.clone());
-    let worker_task = Some(tokio::spawn(worker.run(receiver)));
+    let worker_tasks = vec![
+        tokio::spawn(worker.clone().run(receivers.traces)),
+        tokio::spawn(worker.clone().run(receivers.logs)),
+        tokio::spawn(worker.run(receivers.metrics)),
+    ];
+    tracing::info!(
+        queue_batches_per_signal = queue_batches,
+        "ingest workers ready (traces/logs/metrics)"
+    );
     let mut tasks = Vec::new();
     tasks.push(spawn_spool_reaper(
         spool.clone(),
@@ -365,7 +381,10 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
         )
         // OTLP/HTTP stays unguarded here: exporters may legitimately use a
         // container or bridge hostname while the developer API remains local.
-        .merge(otlp_http::router(ingest.clone()));
+        .merge(otlp_http::router(
+            ingest.clone(),
+            config.limits.otlp_max_body_bytes,
+        ));
 
     // The UI, by preference: an on-disk SPA build (assets + _shell.html
     // fallback), then assets embedded at compile time (release builds with
@@ -388,8 +407,8 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
         _ => embedded_ui::fallback(api_router),
     };
 
-    let otlp_http_router = otlp_http::router(ingest.clone());
-    let grpc = OtlpGrpc::new(ingest);
+    let otlp_http_router = otlp_http::router(ingest.clone(), config.limits.otlp_max_body_bytes);
+    let grpc = OtlpGrpc::new(ingest, config.limits.otlp_max_body_bytes);
     let grpc_server = tonic::transport::Server::builder()
         .add_service(grpc.trace_service())
         .add_service(grpc.logs_service())
@@ -426,7 +445,7 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
         metadata,
         supervisor,
         tasks,
-        worker_task,
+        worker_tasks,
     })
 }
 

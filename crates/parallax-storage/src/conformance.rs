@@ -2,6 +2,7 @@
 //! gated real-engine greptime suite (plan 074).
 
 use crate::adapter::{TelemetryStore, TraceQuery, TraceSort};
+use crate::memory::MemoryStore;
 use crate::model::{LogRow, SpanRow};
 use std::ops::RangeInclusive;
 
@@ -31,16 +32,11 @@ fn sample_span(trace_id: &str, span_id: &str, ts: u128, duration: u128, error: b
 }
 
 /// Seed a few spans and assert traces_search returns items.
-pub async fn trace_search_scenario(store: &dyn TelemetryStore) -> anyhow::Result<()> {
-    store
-        .ingest_traces(
-            vec![
-                sample_span("t1", "s1", 1_000, 100, false),
-                sample_span("t2", "s2", 2_000, 200, true),
-            ],
-            bytes::Bytes::new(),
-        )
-        .await?;
+pub async fn trace_search_scenario(store: &MemoryStore) -> anyhow::Result<()> {
+    store.push_spans(vec![
+        sample_span("t1", "s1", 1_000, 100, false),
+        sample_span("t2", "s2", 2_000, 200, true),
+    ]);
     let list = store
         .traces_search(&TraceQuery {
             limit: 10,
@@ -53,7 +49,7 @@ pub async fn trace_search_scenario(store: &dyn TelemetryStore) -> anyhow::Result
 }
 
 /// Seed logs and assert log_count_series returns a positive total over a window.
-pub async fn log_count_series_scenario(store: &dyn TelemetryStore) -> anyhow::Result<()> {
+pub async fn log_count_series_scenario(store: &MemoryStore) -> anyhow::Result<()> {
     let logs = vec![LogRow {
         ts_nanos: 5_000,
         event_name: String::new(),
@@ -69,7 +65,7 @@ pub async fn log_count_series_scenario(store: &dyn TelemetryStore) -> anyhow::Re
         attributes: serde_json::json!({}),
         resource: serde_json::json!({"service.name": "api"}),
     }];
-    store.ingest_logs(logs, bytes::Bytes::new()).await?;
+    store.push_logs(logs);
     let range: RangeInclusive<u128> = 0..=10_000;
     let series = store
         .log_count_series(Some("api"), range, None, None, None, 1_000)

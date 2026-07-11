@@ -22,51 +22,53 @@ use tonic::{Request, Response, Status};
 #[derive(Clone)]
 pub struct OtlpGrpc {
     state: IngestState,
+    max_decoding_message_size: usize,
 }
 
 impl OtlpGrpc {
-    pub fn new(state: IngestState) -> Self {
-        Self { state }
+    pub fn new(state: IngestState, max_decoding_message_size: usize) -> Self {
+        Self {
+            state,
+            max_decoding_message_size,
+        }
     }
 
     pub fn trace_service(&self) -> TraceServiceServer<Self> {
-        // Accept gzip — standard OTLP exporters (incl. Rotel) compress by
-        // default; without this tonic rejects the request as Unimplemented.
         TraceServiceServer::new(self.clone())
             .accept_compressed(CompressionEncoding::Gzip)
             .send_compressed(CompressionEncoding::Gzip)
+            .max_decoding_message_size(self.max_decoding_message_size)
     }
 
     pub fn logs_service(&self) -> LogsServiceServer<Self> {
         LogsServiceServer::new(self.clone())
             .accept_compressed(CompressionEncoding::Gzip)
             .send_compressed(CompressionEncoding::Gzip)
+            .max_decoding_message_size(self.max_decoding_message_size)
     }
 
     pub fn metrics_service(&self) -> MetricsServiceServer<Self> {
         MetricsServiceServer::new(self.clone())
             .accept_compressed(CompressionEncoding::Gzip)
             .send_compressed(CompressionEncoding::Gzip)
+            .max_decoding_message_size(self.max_decoding_message_size)
     }
 
-    /// Spool by reference, then MOVE the decoded request into the worker
-    /// queue — the request is decoded once and never cloned (zero-copy rule).
-    /// gRPC framing differs from OTLP/HTTP, so the OTLP payload is re-encoded
-    /// once here to produce the raw bytes the native `/v1/otlp` forward sends.
-    async fn spool_then_queue<T: serde::Serialize + Message>(
+    async fn spool_then_queue<T: Message>(
         &self,
         signal: Signal,
         request: T,
         to_item: impl FnOnce(T, bytes::Bytes) -> IngestItem,
     ) -> Result<(), Status> {
-        self.state
-            .spool
-            .append(signal, &request)
-            .await
-            .map_err(|e| Status::internal(format!("spool write failed: {e}")))?;
         let raw = bytes::Bytes::from(request.encode_to_vec());
         self.state
-            .sender
+            .spool
+            .append_raw(signal, &raw)
+            .await
+            .map_err(|e| Status::internal(format!("spool write failed: {e}")))?;
+        self.state
+            .senders
+            .for_signal(signal)
             .send(to_item(request, raw))
             .await
             .map_err(|_| Status::internal("ingest worker unavailable"))

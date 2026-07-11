@@ -87,19 +87,15 @@ async fn real_sdk_export_lands_in_the_spool() {
         "metric spooled"
     );
 
-    // Spooled lines are valid JSON with the OTLP shape.
-    let traces_file = handle.spool.dir().join("traces.ndjson");
-    let first_line = std::fs::read_to_string(traces_file)
-        .expect("read spool")
-        .lines()
-        .next()
-        .expect("one line")
-        .to_string();
-    let value: serde_json::Value = serde_json::from_str(&first_line).expect("valid json");
+    // Spooled frames are raw protobuf under the PSPL1 magic.
+    let traces_file = handle.spool.dir().join("traces.pspl");
+    let bytes = std::fs::read(&traces_file).expect("read spool");
     assert!(
-        value.get("resourceSpans").is_some(),
-        "OTLP JSON shape: {value}"
+        bytes.starts_with(b"PSPL1"),
+        "spool magic missing: {} bytes",
+        bytes.len()
     );
+    assert!(bytes.len() > 5 + 4, "expected at least one frame");
 
     handle.shutdown();
 }
@@ -157,5 +153,39 @@ async fn otlp_http_and_health_endpoints_work() {
         .expect("bad post");
     assert_eq!(bad.status(), 400, "garbage protobuf must be rejected");
 
+    handle.shutdown();
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn gzip_compressed_otlp_http_is_accepted() {
+    use flate2::Compression;
+    use flate2::write::GzEncoder;
+    use std::io::Write;
+
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let handle = parallax_server::start(&test_config(tmp.path()))
+        .await
+        .expect("server starts");
+
+    let request = parallax_proto::collector_trace::ExportTraceServiceRequest::default();
+    let plain = request.encode_to_vec();
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    encoder.write_all(&plain).expect("gzip");
+    let gz = encoder.finish().expect("finish gzip");
+
+    let client = reqwest::Client::new();
+    let response = client
+        .post(format!("http://{}/v1/traces", handle.otlp_http_addr))
+        .header("content-type", "application/x-protobuf")
+        .header("content-encoding", "gzip")
+        .body(gz)
+        .send()
+        .await
+        .expect("gzip post");
+    assert_eq!(response.status(), 200, "gzip OTLP/HTTP must be accepted");
+    assert!(
+        handle.spool.line_count(Signal::Traces).expect("count") >= 1,
+        "gzip body must land in the spool"
+    );
     handle.shutdown();
 }

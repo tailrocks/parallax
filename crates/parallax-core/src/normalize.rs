@@ -155,6 +155,27 @@ fn run_id(resource_attrs: &[KeyValue]) -> Option<String> {
     attr_str(resource_attrs, semconv::PARALLAX_RUN_ID).map(str::to_string)
 }
 
+pub fn resource_run_ids(
+    request: &ExportTraceServiceRequest,
+) -> impl Iterator<Item = (String, u128)> + '_ {
+    request.resource_spans.iter().filter_map(|rs| {
+        let resource_attrs = rs
+            .resource
+            .as_ref()
+            .map(|r| r.attributes.as_slice())
+            .unwrap_or(&[]);
+        let run_id = run_id(resource_attrs)?;
+        let ts = rs
+            .scope_spans
+            .iter()
+            .flat_map(|ss| ss.spans.iter())
+            .map(|span| u128::from(span.start_time_unix_nano))
+            .min()
+            .unwrap_or(0);
+        Some((run_id, ts))
+    })
+}
+
 /// OTel span links → `[{traceId, spanId, attributes}]` JSON. Links are the
 /// standard cross-trace correlation: a span references spans in other
 /// traces (batch/async sub-operations) without a parent/child edge.

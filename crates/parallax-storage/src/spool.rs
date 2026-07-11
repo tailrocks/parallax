@@ -1,19 +1,21 @@
-//! The ingest spool: an NDJSON landing zone for raw OTLP export requests.
+//! The ingest spool: a length-prefixed raw-protobuf landing zone for accepted
+//! OTLP export requests.
 //!
-//! Every accepted OTLP request is appended here before the ingest endpoint
-//! acknowledges it. Nothing reads the spool back today: it is a diagnostic
-//! record and crash-forensics trail, reaped by size/age (`reap`), NOT a
-//! write-ahead log. If the worker drops an item after retries (see
-//! `parallax-server::worker`), the data survives only here. Replay/WAL
-//! semantics are a deferred design — do not claim durability beyond this.
+//! Format (active segments, `.pspl`):
+//!   magic "PSPL1" once per file, then per record: u32-LE length + raw bytes.
+//!
+//! Legacy NDJSON segments (`.ndjson`) remain readable for doctor/line_count
+//! until the reaper ages them out (default 72h). New appends always write
+//! `.pspl`. The spool is a diagnostic record and crash-forensics trail, NOT a
+//! write-ahead log — see plan 073.
 
-use serde::Serialize;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::sync::Mutex;
 
 pub const DEFAULT_MAX_SEGMENT_BYTES: u64 = 64 * 1024 * 1024;
+const MAGIC: &[u8; 5] = b"PSPL1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Signal {
@@ -35,6 +37,14 @@ impl Signal {
 
     fn file_name(self) -> &'static str {
         match self {
+            Signal::Traces => "traces.pspl",
+            Signal::Logs => "logs.pspl",
+            Signal::Metrics => "metrics.pspl",
+        }
+    }
+
+    fn legacy_file_name(self) -> &'static str {
+        match self {
             Signal::Traces => "traces.ndjson",
             Signal::Logs => "logs.ndjson",
             Signal::Metrics => "metrics.ndjson",
@@ -50,9 +60,6 @@ impl Signal {
     }
 }
 
-/// Per-signal append state: size accounting plus a cached open handle so
-/// consecutive appends skip the open syscall. Handles are closed before
-/// rotation so a rename cannot leave writes on the rotated inode.
 struct SignalState {
     size: u64,
     file: Option<std::fs::File>,
@@ -77,11 +84,6 @@ struct RotatedSegment {
     timestamp_secs: Option<u64>,
 }
 
-/// Bounded NDJSON spool, one active file per signal plus rotated segments.
-///
-/// Appends for different signals do not share a lock; each signal serializes
-/// its own rotate/write path so concurrent traces/logs/metrics exporters do
-/// not wait on each other's disk IO.
 pub struct Spool {
     dir: PathBuf,
     max_segment_bytes: u64,
@@ -132,15 +134,9 @@ impl Spool {
         &self.dir
     }
 
-    /// Append one export request as a single NDJSON line.
-    ///
-    /// JSON serialization happens before the per-signal lock. Rotate-check and
-    /// the write itself run on a blocking pool thread so Tokio workers are not
-    /// stalled on disk syscalls; the async lock is held across that await so
-    /// line atomicity and size accounting stay exact per signal.
-    pub async fn append<T: Serialize>(&self, signal: Signal, request: &T) -> anyhow::Result<()> {
-        let line = serde_json::to_string(request)?;
-        let write_len = u64::try_from(line.len().saturating_add(1)).unwrap_or(u64::MAX);
+    pub async fn append_raw(&self, signal: Signal, raw: &bytes::Bytes) -> anyhow::Result<()> {
+        let payload = raw.to_vec();
+        let write_len = u64::try_from(payload.len().saturating_add(4)).unwrap_or(u64::MAX);
         let dir = self.dir.clone();
         let max_segment_bytes = self.max_segment_bytes;
 
@@ -149,7 +145,15 @@ impl Spool {
         let file = state.file.take();
 
         let (next_file, next_size) = tokio::task::spawn_blocking(move || {
-            append_blocking(dir, signal, max_segment_bytes, size, write_len, file, line)
+            append_blocking(
+                dir,
+                signal,
+                max_segment_bytes,
+                size,
+                write_len,
+                file,
+                payload,
+            )
         })
         .await
         .map_err(|e| anyhow::anyhow!("spool append join: {e}"))??;
@@ -159,16 +163,19 @@ impl Spool {
         Ok(())
     }
 
-    /// Count spooled lines for a signal (used by tests and `doctor`).
     pub fn line_count(&self, signal: Signal) -> anyhow::Result<usize> {
-        let path = self.dir.join(signal.file_name());
-        if !path.exists() {
-            return Ok(0);
+        let mut total = 0usize;
+        let pspl = self.dir.join(signal.file_name());
+        if pspl.exists() {
+            total = total.saturating_add(count_pspl_frames(&pspl)?);
         }
-        Ok(std::fs::read_to_string(path)?.lines().count())
+        let ndjson = self.dir.join(signal.legacy_file_name());
+        if ndjson.exists() {
+            total = total.saturating_add(std::fs::read_to_string(ndjson)?.lines().count());
+        }
+        Ok(total)
     }
 
-    /// Delete rotated segments that exceed retention. Active files are never removed.
     pub fn reap(&self, retention: SpoolRetention, now: SystemTime) -> anyhow::Result<SpoolReclaim> {
         let mut reclaim = SpoolReclaim::default();
         let now_secs = now.duration_since(UNIX_EPOCH).unwrap_or_default().as_secs();
@@ -206,9 +213,11 @@ impl Spool {
     fn active_total_bytes(&self) -> anyhow::Result<u64> {
         let mut total = 0u64;
         for signal in Signal::ALL {
-            let path = self.dir.join(signal.file_name());
-            if let Ok(metadata) = path.metadata() {
-                total = total.saturating_add(metadata.len());
+            for name in [signal.file_name(), signal.legacy_file_name()] {
+                let path = self.dir.join(name);
+                if let Ok(metadata) = path.metadata() {
+                    total = total.saturating_add(metadata.len());
+                }
             }
         }
         Ok(total)
@@ -237,9 +246,6 @@ impl Spool {
     }
 }
 
-/// Blocking rotate-check + write for one append. Closes any cached handle
-/// before renaming the active segment so writes cannot land on the rotated
-/// inode.
 fn append_blocking(
     dir: PathBuf,
     signal: Signal,
@@ -247,14 +253,27 @@ fn append_blocking(
     mut size: u64,
     write_len: u64,
     mut file: Option<std::fs::File>,
-    line: String,
+    payload: Vec<u8>,
 ) -> anyhow::Result<(Option<std::fs::File>, u64)> {
-    if size > 0 && size.saturating_add(write_len) > max_segment_bytes {
-        // Close before rename: an open fd would keep writing the rotated file.
+    let needs_magic = size == 0;
+    let total_write = if needs_magic {
+        write_len.saturating_add(MAGIC.len() as u64)
+    } else {
+        write_len
+    };
+
+    if size > 0 && size.saturating_add(total_write) > max_segment_bytes {
         drop(file.take());
         rotate_active(&dir, signal)?;
         size = 0;
     }
+
+    let needs_magic = size == 0;
+    let total_write = if needs_magic {
+        write_len.saturating_add(MAGIC.len() as u64)
+    } else {
+        write_len
+    };
 
     let mut handle = match file {
         Some(handle) => handle,
@@ -263,9 +282,13 @@ fn append_blocking(
             .append(true)
             .open(dir.join(signal.file_name()))?,
     };
-    handle.write_all(line.as_bytes())?;
-    handle.write_all(b"\n")?;
-    Ok((Some(handle), size.saturating_add(write_len)))
+    if needs_magic {
+        handle.write_all(MAGIC)?;
+    }
+    let len = u32::try_from(payload.len()).unwrap_or(u32::MAX);
+    handle.write_all(&len.to_le_bytes())?;
+    handle.write_all(&payload)?;
+    Ok((Some(handle), size.saturating_add(total_write)))
 }
 
 fn rotate_active(dir: &Path, signal: Signal) -> anyhow::Result<()> {
@@ -283,17 +306,12 @@ fn next_rotated_path(dir: &Path, signal: Signal) -> PathBuf {
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs();
-    let first = dir.join(format!("{}.{}.ndjson", signal.stem(), timestamp));
+    let first = dir.join(format!("{}.{}.pspl", signal.stem(), timestamp));
     if !first.exists() {
         return first;
     }
     for sequence in 1u64.. {
-        let candidate = dir.join(format!(
-            "{}.{}-{}.ndjson",
-            signal.stem(),
-            timestamp,
-            sequence
-        ));
+        let candidate = dir.join(format!("{}.{}-{}.pspl", signal.stem(), timestamp, sequence));
         if !candidate.exists() {
             return candidate;
         }
@@ -310,22 +328,54 @@ impl SpoolReclaim {
     }
 }
 
+fn count_pspl_frames(path: &Path) -> anyhow::Result<usize> {
+    let mut file = std::fs::File::open(path)?;
+    let mut magic = [0u8; 5];
+    let n = file.read(&mut magic)?;
+    if n == 0 {
+        return Ok(0);
+    }
+    if n < 5 || &magic != MAGIC {
+        return Ok(0);
+    }
+    let mut count = 0usize;
+    loop {
+        let mut len_buf = [0u8; 4];
+        match file.read_exact(&mut len_buf) {
+            Ok(()) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => break,
+            Err(e) => return Err(e.into()),
+        }
+        let len = u32::from_le_bytes(len_buf) as usize;
+        let mut skip = vec![0u8; len];
+        file.read_exact(&mut skip)?;
+        count += 1;
+    }
+    Ok(count)
+}
+
 fn rotated_timestamp(file_name: &str) -> Option<Option<u64>> {
     for signal in Signal::ALL {
         let prefix = format!("{}.", signal.stem());
-        let suffix = ".ndjson";
-        if file_name == signal.file_name()
-            || !file_name.starts_with(&prefix)
-            || !file_name.ends_with(suffix)
-        {
-            continue;
+        for suffix in [".pspl", ".ndjson"] {
+            let active = if suffix == ".pspl" {
+                signal.file_name()
+            } else {
+                signal.legacy_file_name()
+            };
+            if file_name == active
+                || !file_name.starts_with(&prefix)
+                || !file_name.ends_with(suffix)
+            {
+                continue;
+            }
+            let middle = &file_name[prefix.len()..file_name.len() - suffix.len()];
+            let timestamp = middle
+                .split('-')
+                .next()
+                .and_then(|part| part.parse::<u64>().ok());
+            return Some(timestamp);
         }
-        let middle = &file_name[prefix.len()..file_name.len() - suffix.len()];
-        let timestamp = middle
-            .split('-')
-            .next()
-            .and_then(|part| part.parse::<u64>().ok());
-        return Some(timestamp);
     }
     None
 }
@@ -333,7 +383,6 @@ fn rotated_timestamp(file_name: &str) -> Option<Option<u64>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json::json;
 
     struct TempDir(PathBuf);
 
@@ -373,8 +422,9 @@ mod tests {
                     .and_then(|name| name.to_str())
                     .is_some_and(|name| {
                         name != signal.file_name()
+                            && name != signal.legacy_file_name()
                             && name.starts_with(&prefix)
-                            && name.ends_with(".ndjson")
+                            && (name.ends_with(".pspl") || name.ends_with(".ndjson"))
                     })
             })
             .collect();
@@ -383,76 +433,71 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn rotates_without_splitting_ndjson_lines() {
+    async fn rotates_without_splitting_frames() {
         let tmp = TempDir::new("rotate");
         let spool = Spool::open_with_max_segment_bytes(tmp.path(), 40).expect("spool");
-
-        spool
-            .append(Signal::Logs, &json!({"body": "first request"}))
-            .await
-            .expect("first append");
-        spool
-            .append(Signal::Logs, &json!({"body": "second request"}))
-            .await
-            .expect("second append");
-
+        let a = bytes::Bytes::from(vec![1u8; 20]);
+        let b = bytes::Bytes::from(vec![2u8; 20]);
+        spool.append_raw(Signal::Logs, &a).await.expect("first");
+        spool.append_raw(Signal::Logs, &b).await.expect("second");
         let rotated = rotated_files(tmp.path(), Signal::Logs);
         assert_eq!(rotated.len(), 1);
-        let rotated_lines = std::fs::read_to_string(&rotated[0]).expect("rotated");
-        let active_lines = std::fs::read_to_string(tmp.path().join("logs.ndjson")).expect("active");
-        assert_eq!(rotated_lines.lines().count(), 1);
-        assert_eq!(active_lines.lines().count(), 1);
-        for line in rotated_lines.lines().chain(active_lines.lines()) {
-            serde_json::from_str::<serde_json::Value>(line).expect("valid ndjson line");
-        }
+        assert_eq!(count_pspl_frames(&rotated[0]).expect("rot count"), 1);
+        assert_eq!(
+            count_pspl_frames(&tmp.path().join("logs.pspl")).expect("active"),
+            1
+        );
     }
 
     #[tokio::test]
     async fn different_signals_keep_independent_sizes() {
         let tmp = TempDir::new("per-signal");
-        // Tiny segment budget so logs rotate while traces stay under the cap.
         let spool = Spool::open_with_max_segment_bytes(tmp.path(), 40).expect("spool");
-
+        let payload = bytes::Bytes::from(vec![9u8; 20]);
         spool
-            .append(Signal::Logs, &json!({"body": "first log"}))
+            .append_raw(Signal::Logs, &payload)
             .await
             .expect("logs first");
         spool
-            .append(Signal::Traces, &json!({"body": "first trace"}))
+            .append_raw(Signal::Traces, &payload)
             .await
             .expect("traces first");
         spool
-            .append(
-                Signal::Logs,
-                &json!({"body": "second log that forces rotate"}),
-            )
+            .append_raw(Signal::Logs, &payload)
             .await
             .expect("logs second");
-
-        // Logs rotated once; traces still a single active line.
         assert_eq!(rotated_files(tmp.path(), Signal::Logs).len(), 1);
         assert!(rotated_files(tmp.path(), Signal::Traces).is_empty());
         assert_eq!(spool.line_count(Signal::Logs).expect("logs count"), 1);
         assert_eq!(spool.line_count(Signal::Traces).expect("traces count"), 1);
-
-        // In-memory size for traces still accounts for the one line (not zeroed
-        // by the logs rotation). A third tiny traces append must not rotate.
         spool
-            .append(Signal::Traces, &json!({"b": 1}))
+            .append_raw(Signal::Traces, &bytes::Bytes::from(vec![1u8; 4]))
             .await
             .expect("traces second");
         assert!(rotated_files(tmp.path(), Signal::Traces).is_empty());
         assert_eq!(spool.line_count(Signal::Traces).expect("traces count"), 2);
     }
 
+    #[tokio::test]
+    async fn mixed_legacy_ndjson_and_pspl_counted() {
+        let tmp = TempDir::new("mixed");
+        std::fs::write(tmp.path().join("logs.ndjson"), b"{\"a\":1}\n{\"b\":2}\n").expect("legacy");
+        let spool = Spool::open(tmp.path()).expect("spool");
+        spool
+            .append_raw(Signal::Logs, &bytes::Bytes::from(vec![7u8; 8]))
+            .await
+            .expect("pspl frame");
+        assert_eq!(spool.line_count(Signal::Logs).expect("count"), 3);
+    }
+
     #[test]
     fn reaper_removes_old_rotated_segments_but_keeps_active() {
         let tmp = TempDir::new("age");
-        std::fs::write(tmp.path().join("logs.ndjson"), b"active\n").expect("active");
-        std::fs::write(tmp.path().join("logs.100.ndjson"), b"old\n").expect("old");
-        std::fs::write(tmp.path().join("logs.9900.ndjson"), b"fresh\n").expect("fresh");
+        std::fs::write(tmp.path().join("logs.pspl"), b"active").expect("active");
+        std::fs::write(tmp.path().join("logs.100.pspl"), b"old").expect("old");
+        std::fs::write(tmp.path().join("logs.9900.pspl"), b"fresh").expect("fresh");
+        std::fs::write(tmp.path().join("logs.50.ndjson"), b"legacy-old").expect("legacy");
         let spool = Spool::open(tmp.path()).expect("spool");
-
         let reclaimed = spool
             .reap(
                 SpoolRetention {
@@ -462,21 +507,20 @@ mod tests {
                 UNIX_EPOCH + Duration::from_secs(10_000),
             )
             .expect("reap");
-
-        assert_eq!(reclaimed.removed_segments, 1);
-        assert!(tmp.path().join("logs.ndjson").exists());
-        assert!(!tmp.path().join("logs.100.ndjson").exists());
-        assert!(tmp.path().join("logs.9900.ndjson").exists());
+        assert!(reclaimed.removed_segments >= 2);
+        assert!(tmp.path().join("logs.pspl").exists());
+        assert!(!tmp.path().join("logs.100.pspl").exists());
+        assert!(tmp.path().join("logs.9900.pspl").exists());
+        assert!(!tmp.path().join("logs.50.ndjson").exists());
     }
 
     #[test]
     fn reaper_removes_oldest_rotated_segments_to_enforce_total_cap() {
         let tmp = TempDir::new("size");
-        std::fs::write(tmp.path().join("logs.ndjson"), b"active").expect("active");
-        std::fs::write(tmp.path().join("logs.100.ndjson"), b"11111").expect("oldest");
-        std::fs::write(tmp.path().join("logs.200.ndjson"), b"22222").expect("newest");
+        std::fs::write(tmp.path().join("logs.pspl"), b"active").expect("active");
+        std::fs::write(tmp.path().join("logs.100.pspl"), b"11111").expect("oldest");
+        std::fs::write(tmp.path().join("logs.200.pspl"), b"22222").expect("newest");
         let spool = Spool::open(tmp.path()).expect("spool");
-
         let reclaimed = spool
             .reap(
                 SpoolRetention {
@@ -486,10 +530,17 @@ mod tests {
                 UNIX_EPOCH + Duration::from_secs(300),
             )
             .expect("reap");
-
         assert_eq!(reclaimed.removed_segments, 1);
-        assert!(tmp.path().join("logs.ndjson").exists());
-        assert!(!tmp.path().join("logs.100.ndjson").exists());
-        assert!(tmp.path().join("logs.200.ndjson").exists());
+        assert!(tmp.path().join("logs.pspl").exists());
+        assert!(!tmp.path().join("logs.100.pspl").exists());
+        assert!(tmp.path().join("logs.200.pspl").exists());
+    }
+
+    #[test]
+    fn no_serde_json_to_string_in_spool_source() {
+        let src = include_str!("spool.rs");
+        // Split the needle so this assertion does not match itself.
+        let needle = format!("{}::{}", "serde_json", "to_string");
+        assert!(!src.contains(&needle));
     }
 }

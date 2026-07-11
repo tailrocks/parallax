@@ -47,5 +47,6 @@ mime_guess = { workspace = true, optional = true }
 embed-ui = ["dep:rust-embed", "dep:mime_guess"]
 
 [dev-dependencies]
+flate2 = "1"
 reqwest = { workspace = true }
 tempfile = "3"
