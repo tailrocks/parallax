@@ -132,7 +132,7 @@ its verification gates, and update your row below when done.
 | 076 | Ingest hot path (spool locks/IO, batched upserts, normalize churn) | P2 | M-L | 073, 070 | TODO |
 | 077 | Shared SSE hook + real stream health in Live badges | P2 | M | 071 | DONE |
 | 078 | Split parallax-api lib.rs into domain modules | P2 | L | 069; after 072/073/075 | TODO |
-| 079 | UI query/type dedup + dependency hygiene + rotel.env template | P2 | M | 069; after 071/077 | TODO |
+| 079 | UI query/type dedup + dependency hygiene + rotel.env template | P2 | M | 069; after 071/077 | DONE |
 | 080 | Onboarding docs (dev setup, ui/README, PROJECT_STRUCTURE, cli.md) | P3 | S | — | DONE |
 | 081 | `--format json` on bundle commands + agent-session CLI verb | P2 | M | — | DONE |
 | 082 | Publish bundle-v1 JSON Schema + conformance test | P3 | M | 072, 081 | TODO |
