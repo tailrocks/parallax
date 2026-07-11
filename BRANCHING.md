@@ -1,55 +1,32 @@
 # Branching
 
-Parallax currently iterates directly on `main` for research, with one active
-implementation branch when the operator names it.
+Parallax uses **one active branch at a time**. Do not create side branches.
 
-## Operator override (2026-07-11) — one branch, one PR
-
-While the advisor-plans / v1 implementation program is open:
+## Operator rule (2026-07-11) — single branch always
 
 | Rule | Detail |
 |------|--------|
-| **Only branch** | `implement/advisor-plans-069-090` |
-| **Only PR** | One open PR: that branch → `main` |
-| **Never** | Create any new branch; open a second PR; split work across named side branches (`implement/076-…`, `implement/078-…`, per-agent `codex/…` implement branches, etc.) |
+| **Active branch** | `main` (after PR #19 merge; implement branch deleted) |
+| **Never** | Create new branches; open a second PR; split work across named side branches |
+| **Subagents** | Same branch as the main agent; restate the rule in every spawn prompt |
+
+When the operator later asks for a PR, use **one** named branch only, open
+**one** PR to `main`, merge it, delete the branch, and return to `main`.
 
 ### For the main agent and every subagent
 
-1. `git checkout implement/advisor-plans-069-090` (or stay on it).
-2. Commit and push **only** to that branch.
+1. Stay on the active branch (`main` unless the operator says otherwise).
+2. Commit and push **only** there.
 3. Do **not** run `git checkout -b`, `git switch -c`, or create remote branches.
-4. Do **not** open a new GitHub PR if one already exists for this branch.
-5. Subagent prompts must restate: *single branch
-   `implement/advisor-plans-069-090`, single PR, never create branches*.
+4. Do **not** open a new GitHub PR unless the operator asked and none exists yet.
 
-Parallelism is allowed only as concurrent work **on that same branch** (or
-worktrees that check out the same branch). Do not invent branch names to
-isolate plans.
+Parallelism is allowed only as concurrent work **on that same branch**.
 
-## Default research policy (when no implement branch is active)
+## Default workflow
 
-- Use `main` for routine research, documentation, and early structure updates.
-- Do not open pull requests unless the operator explicitly asks for one.
-- Commit focused changes directly to `main`.
+- Commit focused changes on the active branch.
 - Push after each durable finding or repository-structure update.
-
-This differs from a heavy multi-PR workflow. Pull requests are useful once
-implementation work, CI, review, and release discipline matter. They are
-unnecessary overhead while the repository is mostly product research and market
-analysis — except when the operator explicitly requests a single PR as above.
-
-## When to Revisit
-
-Reconsider multi-branch stacks when one of these becomes true **and** the
-operator lifts the single-branch override:
-
-- The repo has production code that can regress across independent features.
-- More than one human collaborator starts committing regularly.
-- CI checks become meaningful merge gates for independent PRs.
-- The project starts publishing releases or hosted artifacts.
-
-Until then, keep the process simple: one active implement branch when named,
-otherwise `main`.
+- Pull requests only when the operator explicitly requests one.
 
 ## History Rewrites
 

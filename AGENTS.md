@@ -133,28 +133,22 @@ structure quickly.
 
 ## Branching and Pull Requests
 
-**Operator override (2026-07-11) — single branch, single PR for this program:**
+**Operator rule (2026-07-11) — always one branch; never create extras:**
 
-- The **only** allowed working branch for advisor-plans / implementation work is
-  **`implement/advisor-plans-069-090`**. There is exactly **one** pull request
-  from that branch into `main`.
-- **Never create new branches** (no `implement/…` side branches, no
-  worktree-only branches, no per-plan branches, no codex/agent scratch
-  branches). Do not open additional PRs.
-- Main thread **and every subagent** must stay on
-  `implement/advisor-plans-069-090`, commit there, and push there. When
-  spawning subagents, state this constraint explicitly in the prompt: *use
-  only branch `implement/advisor-plans-069-090`; never create branches; never
-  open a second PR*.
-- If parallel work is needed, use process parallelism on the **same** branch
-  (or isolated worktrees that check out that same branch name), not new branch
-  names. Resolve conflicts on that branch only.
-- Redundant remote branches that carried subsets of this work are obsolete;
-  do not revive them.
+- Work on **exactly one** git branch at a time. **Never create new branches**
+  (`git checkout -b` / `switch -c` / new remotes) unless the operator
+  explicitly names a single new branch for a time-boxed PR.
+- **Never** open multiple PRs or spin per-plan / per-agent side branches.
+- Main thread **and every subagent** must use the **same** active branch.
+  When spawning subagents, restate: *stay on the current branch; never create
+  branches; never open a second PR*.
+- Parallelism = concurrent work on that **same** branch (or worktrees that
+  check out the same branch name), not new branch names.
 
-Outside that operator override, the research-stage default remains:
+**Current active branch:** `main` (advisor-plans PR #19 merged 2026-07-11;
+`implement/advisor-plans-069-090` deleted). Commit and push on `main` until
+the operator names another single branch.
 
-- Use `main` for routine research when no implementation branch is active.
 - Do not open pull requests unless the operator explicitly asks for one.
 - Commit focused changes and push after each durable update.
 

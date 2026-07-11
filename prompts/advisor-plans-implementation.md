@@ -28,13 +28,14 @@ for *how the run behaves* until the stop condition is met.
    `PROJECT_STRUCTURE.md`, crate/`ui` AGENTS files,
    `docs/research/architecture/v1-implementation-spec.md` for contracts.
 5. **Branch / PR law (operator 2026-07-11, non-negotiable):**
-   - **Only branch:** `implement/advisor-plans-069-090`
-   - **Only PR:** one PR from that branch → `main`
+   - **One active branch only** — after PR #19 merge that branch is **`main`**.
    - **Never create branches** (`git checkout -b` / `switch -c` / new remote
      branches). Never open a second PR. Never spin per-plan or per-agent
      implement branches.
-   - Main agent **and every subagent** work only on that branch. Subagent
+   - Main agent **and every subagent** work only on the active branch. Subagent
      prompts must restate this constraint.
+   - Historical implement branch `implement/advisor-plans-069-090` is merged
+     and deleted; do not revive it.
 6. Primary engine truth when a plan requires it: live GreptimeDB (managed
    binary / embedded path), docs.greptime.com, and the engine version the
    supervisor pins — never marketing claims alone.
@@ -69,7 +70,7 @@ A plan is complete **only** when **all** of the following are true:
    reality).
 6. Changes are committed (Conventional Commits, DCO signoff, single agent
    `Co-authored-by` trailer per `COMMITS.md` / `AGENTS.md`) and pushed **only**
-   on `implement/advisor-plans-069-090` (never a new branch).
+   on the active branch (`main` after PR #19; never a new branch).
 
 A program is complete **only** when **all** of the following are true:
 
@@ -203,7 +204,7 @@ For **each** plan, in dependency-safe order:
 3. Update the status row to `DONE`.
 4. Commit with a subject that matches the plan's suggested Conventional Commit
    style; include DCO (`git commit -s`) and the correct single agent trailer.
-5. Push **`implement/advisor-plans-069-090` only** (never a new branch).
+5. Push the **active branch only** (`main` after PR #19; never a new branch).
 6. Surface in the transcript: plan id, what landed, gates run, next plan id.
 
 Never batch "half of plan A + half of plan B" into one vague commit that makes

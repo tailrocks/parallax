@@ -4,8 +4,7 @@ Canonical goal-only brief (pass this to `/goal`):
 
 **[`prompts/advisor-plans-implementation.md`](prompts/advisor-plans-implementation.md)**
 
-**Only branch:** `implement/advisor-plans-069-090`  
-**Only PR:** one PR from that branch → `main`  
-**Never create branches** (main agent and every subagent).
+**Status:** program closed via [PR #19](https://github.com/tailrocks/parallax/pull/19)
+(merged 2026-07-11). Active branch is **`main`**. Never create branches.
 
-How to run: see [`prompts/README.md`](prompts/README.md) § “Advisor plans implementation”.
+How to run (historical): see [`prompts/README.md`](prompts/README.md) § “Advisor plans implementation”.
