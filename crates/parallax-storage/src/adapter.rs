@@ -3,6 +3,7 @@
 
 use crate::model::*;
 use parallax_proto::semconv;
+use std::collections::HashMap;
 use std::ops::RangeInclusive;
 
 pub const MAX_ROWS: usize = 500;
@@ -494,6 +495,23 @@ pub trait TelemetryStore: Send + Sync {
     async fn traces_by_ids(&self, trace_ids: &[String]) -> anyhow::Result<Vec<TraceSummary>>;
     /// Run-scoped read: every span tagged with one `parallax.run.id`.
     async fn spans_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<SpanRow>>;
+    /// Batched run-scoped span read: up to `limit_per_run` newest spans per
+    /// run id (then returned start-time ascending within each run). Default
+    /// loops `spans_by_run`; Greptime overrides with one windowed query.
+    async fn spans_by_runs(
+        &self,
+        run_ids: &[String],
+        limit_per_run: usize,
+    ) -> anyhow::Result<HashMap<String, Vec<SpanRow>>> {
+        let mut out = HashMap::with_capacity(run_ids.len());
+        for run_id in run_ids {
+            out.insert(
+                run_id.clone(),
+                self.spans_by_run(run_id, limit_per_run).await?,
+            );
+        }
+        Ok(out)
+    }
     /// Run-scoped read: every log tagged with one `parallax.run.id`.
     async fn logs_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<LogRow>>;
     /// Anchored read: every log of one trace, time ascending.
@@ -565,6 +583,26 @@ pub trait TelemetryStore: Send + Sync {
         step_nanos: u128,
         q: f64,
     ) -> anyhow::Result<Vec<SeriesPoint>>;
+    /// Multiple histogram quantiles from one logical scan. Default loops
+    /// [`Self::histogram_quantile`]; Plan 085 may replace the Greptime body
+    /// with a single multi-quantile SQL. Return order matches `quantiles`.
+    async fn histogram_quantiles(
+        &self,
+        name: &str,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+        quantiles: &[f64],
+    ) -> anyhow::Result<Vec<Vec<SeriesPoint>>> {
+        let mut out = Vec::with_capacity(quantiles.len());
+        for q in quantiles {
+            out.push(
+                self.histogram_quantile(name, service, range.clone(), step_nanos, *q)
+                    .await?,
+            );
+        }
+        Ok(out)
+    }
     /// Trace-linked metric exemplars, time-bounded and newest first.
     async fn metric_exemplars(
         &self,

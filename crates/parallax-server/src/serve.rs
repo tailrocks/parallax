@@ -89,7 +89,9 @@ async fn connect_greptime(url: &str, config: &Config) -> anyhow::Result<Arc<dyn 
 #[derive(Clone)]
 struct GraphQlState {
     schema: Arc<ParallaxSchema>,
-    context: Arc<ApiContext>,
+    store: Arc<dyn TelemetryStore>,
+    metadata: Arc<MetadataStore>,
+    otlp_grpc_port: u16,
     limits: LimitsConfig,
 }
 
@@ -194,6 +196,14 @@ async fn graphql_handler(
         .clone()
         .unwrap_or_else(|| "anonymous".to_string());
     async move {
+        // Fresh ApiContext per request so RequestMemo is request-scoped and
+        // sibling resolvers share one spans_by_trace / logs_by_trace fetch.
+        let context = ApiContext {
+            store: state.store.clone(),
+            metadata: state.metadata.clone(),
+            otlp_grpc_port: state.otlp_grpc_port,
+            memo: parallax_api::RequestMemo::default(),
+        };
         let response = match parallax_api::check_query_limits(
             &state.schema,
             &request.query,
@@ -201,7 +211,7 @@ async fn graphql_handler(
             state.limits.graphql_max_depth,
             state.limits.graphql_max_complexity,
         ) {
-            Ok(()) => request.execute(&state.schema, &state.context).await,
+            Ok(()) => request.execute(&state.schema, &context).await,
             Err(message) => juniper::http::GraphQLResponse::error(juniper::FieldError::new(
                 message,
                 juniper::Value::null(),
@@ -325,11 +335,9 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
 
     let graphql_state = GraphQlState {
         schema: Arc::new(parallax_api::build_schema()),
-        context: Arc::new(ApiContext {
-            store: store.clone(),
-            metadata: metadata.clone(),
-            otlp_grpc_port: otlp_grpc_addr.port(),
-        }),
+        store: store.clone(),
+        metadata: metadata.clone(),
+        otlp_grpc_port: otlp_grpc_addr.port(),
         limits: config.limits.clone(),
     };
     let host_guard_state = HostGuard::for_listener(bind, api_addr);

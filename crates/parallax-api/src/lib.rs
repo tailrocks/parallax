@@ -24,15 +24,88 @@ use parallax_storage::model::{MetricAgg, SeriesPoint};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::Arc;
 
-/// Request context: the storage adapters.
-#[derive(Clone)]
+/// Request-scoped memo for the highest-fan-in anchored reads. Built fresh on
+/// every GraphQL request so sibling fields share one store round-trip per
+/// (trace_id) without caching across requests.
+#[derive(Default)]
+pub struct RequestMemo {
+    spans: tokio::sync::Mutex<HashMap<String, Arc<Vec<model::SpanRow>>>>,
+    logs: tokio::sync::Mutex<HashMap<String, Arc<Vec<model::LogRow>>>>,
+}
+
+/// Request context: shared storage adapters plus a per-request memo layer.
+/// Constructed once per GraphQL request in the server handler — do not put a
+/// long-lived `RequestMemo` behind a shared `Arc` (stale-data risk).
 pub struct ApiContext {
     pub store: Arc<dyn TelemetryStore>,
     pub metadata: Arc<MetadataStore>,
     pub otlp_grpc_port: u16,
+    pub memo: RequestMemo,
 }
 
 impl juniper::Context for ApiContext {}
+
+impl ApiContext {
+    pub async fn spans_for(&self, trace_id: &str) -> FieldResult<Arc<Vec<model::SpanRow>>> {
+        {
+            let cache = self.memo.spans.lock().await;
+            if let Some(rows) = cache.get(trace_id) {
+                return Ok(Arc::clone(rows));
+            }
+        }
+        let mut rows = self
+            .store
+            .spans_by_trace(trace_id)
+            .await
+            .map_err(field_err)?;
+        if rows.len() > MAX_ROWS {
+            tracing::warn!(
+                trace_id,
+                fetched = rows.len(),
+                cap = MAX_ROWS,
+                "anchored spans truncated to MAX_ROWS"
+            );
+            rows.truncate(MAX_ROWS);
+        }
+        let rows = Arc::new(rows);
+        let mut cache = self.memo.spans.lock().await;
+        Ok(Arc::clone(
+            cache
+                .entry(trace_id.to_string())
+                .or_insert_with(|| Arc::clone(&rows)),
+        ))
+    }
+
+    pub async fn logs_for(&self, trace_id: &str) -> FieldResult<Arc<Vec<model::LogRow>>> {
+        {
+            let cache = self.memo.logs.lock().await;
+            if let Some(rows) = cache.get(trace_id) {
+                return Ok(Arc::clone(rows));
+            }
+        }
+        let mut rows = self
+            .store
+            .logs_by_trace(trace_id)
+            .await
+            .map_err(field_err)?;
+        if rows.len() > MAX_ROWS {
+            tracing::warn!(
+                trace_id,
+                fetched = rows.len(),
+                cap = MAX_ROWS,
+                "anchored logs truncated to MAX_ROWS"
+            );
+            rows.truncate(MAX_ROWS);
+        }
+        let rows = Arc::new(rows);
+        let mut cache = self.memo.logs.lock().await;
+        Ok(Arc::clone(
+            cache
+                .entry(trace_id.to_string())
+                .or_insert_with(|| Arc::clone(&rows)),
+        ))
+    }
+}
 
 fn field_err(e: impl std::fmt::Display) -> FieldError {
     FieldError::from(e.to_string())
@@ -992,7 +1065,7 @@ impl From<TraceSort> for parallax_storage::adapter::TraceSort {
 pub struct Run {
     record: model::RunRecord,
     /// Trace ids + error events of this run, fetched once however many of
-    /// the derived fields a query selects.
+    /// the derived fields a query selects. Prefetched on list paths.
     stats: tokio::sync::OnceCell<RunStats>,
 }
 
@@ -1006,6 +1079,15 @@ impl Run {
         Self {
             record,
             stats: tokio::sync::OnceCell::new(),
+        }
+    }
+
+    fn with_stats(record: model::RunRecord, stats: RunStats) -> Self {
+        let cell = tokio::sync::OnceCell::new();
+        let _ = cell.set(stats);
+        Self {
+            record,
+            stats: cell,
         }
     }
 
@@ -1034,6 +1116,29 @@ impl Run {
             })
             .await
     }
+}
+
+fn run_stats_from_spans(
+    spans: &[model::SpanRow],
+    events_by_trace: &HashMap<String, Vec<model::ErrorEventRow>>,
+) -> RunStats {
+    let mut trace_ids: Vec<String> = Vec::new();
+    let mut seen_trace_ids = HashSet::new();
+    for span in spans {
+        let trace_id = span.trace_id.clone();
+        if seen_trace_ids.insert(trace_id.clone()) {
+            trace_ids.push(trace_id);
+        }
+    }
+    let mut events: Vec<model::ErrorEventRow> = Vec::new();
+    for trace_id in &trace_ids {
+        if let Some(trace_events) = events_by_trace.get(trace_id) {
+            events.extend(trace_events.iter().cloned());
+        }
+    }
+    events.sort_by_key(|event| std::cmp::Reverse(event.ts_nanos));
+    events.truncate(MAX_ROWS);
+    RunStats { trace_ids, events }
 }
 
 #[graphql_object(context = ApiContext)]
@@ -1374,6 +1479,14 @@ impl From<SignalKind> for parallax_storage::adapter::SignalKind {
     }
 }
 
+/// Shared RED series for one service overview window.
+struct RedSource {
+    latency_p50: Vec<SeriesPoint>,
+    latency_p95: Vec<SeriesPoint>,
+    latency_p99: Vec<SeriesPoint>,
+    request_rate: Vec<SeriesPoint>,
+}
+
 /// The predefined per-service overview (spec §8): well-known metric names,
 /// graceful absence — a missing instrument yields an empty series.
 pub struct ServiceOverview {
@@ -1381,9 +1494,22 @@ pub struct ServiceOverview {
     from: u128,
     to: u128,
     step: u128,
+    red: tokio::sync::OnceCell<Arc<RedSource>>,
+    runtime: tokio::sync::OnceCell<(Vec<SeriesPoint>, Vec<SeriesPoint>)>,
 }
 
 impl ServiceOverview {
+    fn new(service: String, from: u128, to: u128, step: u128) -> Self {
+        Self {
+            service,
+            from,
+            to,
+            step,
+            red: tokio::sync::OnceCell::new(),
+            runtime: tokio::sync::OnceCell::new(),
+        }
+    }
+
     async fn first_nonempty_points(
         &self,
         context: &ApiContext,
@@ -1409,98 +1535,141 @@ impl ServiceOverview {
         Ok(Vec::new())
     }
 
-    async fn duration_quantile(
+    async fn red_source(&self, context: &ApiContext) -> FieldResult<Arc<RedSource>> {
+        self.red
+            .get_or_try_init(|| async {
+                let step_secs = (self.step / 1_000_000_000).max(1) as f64;
+                let quantiles = [0.50_f64, 0.95, 0.99];
+                let mut latency_p50 = Vec::new();
+                let mut latency_p95 = Vec::new();
+                let mut latency_p99 = Vec::new();
+                let mut request_rate = Vec::new();
+                for name in semconv::REQUEST_DURATION_METRICS {
+                    let series = context
+                        .store
+                        .histogram_quantiles(
+                            name,
+                            Some(&self.service),
+                            self.from..=self.to,
+                            self.step,
+                            &quantiles,
+                        )
+                        .await
+                        .map_err(field_err)?;
+                    if !series.iter().any(|points| !points.is_empty()) {
+                        continue;
+                    }
+                    latency_p50 = series.first().cloned().unwrap_or_default();
+                    latency_p95 = series.get(1).cloned().unwrap_or_default();
+                    latency_p99 = series.get(2).cloned().unwrap_or_default();
+                    let counts = context
+                        .store
+                        .histogram_count_series(
+                            name,
+                            Some(&self.service),
+                            self.from..=self.to,
+                            self.step,
+                        )
+                        .await
+                        .map_err(field_err)?;
+                    request_rate = counts
+                        .into_iter()
+                        .map(|p| SeriesPoint {
+                            ts_nanos: p.ts_nanos,
+                            value: p.value / step_secs,
+                        })
+                        .collect();
+                    break;
+                }
+                Ok(Arc::new(RedSource {
+                    latency_p50,
+                    latency_p95,
+                    latency_p99,
+                    request_rate,
+                }))
+            })
+            .await
+            .cloned()
+    }
+
+    async fn runtime_series(
         &self,
         context: &ApiContext,
-        q: f64,
-    ) -> FieldResult<Vec<SeriesPoint>> {
-        for name in semconv::REQUEST_DURATION_METRICS {
-            let series = context
-                .store
-                .histogram_quantile(name, Some(&self.service), self.from..=self.to, self.step, q)
-                .await
-                .map_err(field_err)?;
-            if !series.is_empty() {
-                return Ok(series);
-            }
-        }
-        Ok(Vec::new())
+    ) -> FieldResult<&(Vec<SeriesPoint>, Vec<SeriesPoint>)> {
+        self.runtime
+            .get_or_try_init(|| async {
+                let (cpu, memory) = tokio::try_join!(
+                    self.first_nonempty_points(context, semconv::CPU_METRICS),
+                    self.first_nonempty_points(context, semconv::MEMORY_METRICS),
+                )?;
+                Ok((cpu, memory))
+            })
+            .await
     }
 }
 
 #[graphql_object(context = ApiContext)]
 impl ServiceOverview {
-    /// Process/system CPU, averaged per step.
     async fn cpu(&self, context: &ApiContext) -> FieldResult<Vec<Point>> {
         Ok(self
-            .first_nonempty_points(context, semconv::CPU_METRICS)
+            .runtime_series(context)
             .await?
-            .into_iter()
+            .0
+            .iter()
+            .copied()
             .map(Point)
             .collect())
     }
-
-    /// Process memory, averaged per step.
     async fn memory(&self, context: &ApiContext) -> FieldResult<Vec<Point>> {
         Ok(self
-            .first_nonempty_points(context, semconv::MEMORY_METRICS)
+            .runtime_series(context)
             .await?
-            .into_iter()
+            .1
+            .iter()
+            .copied()
             .map(Point)
             .collect())
     }
-
-    /// Requests per second from the request-duration histogram's sample
-    /// counts.
     async fn request_rate(&self, context: &ApiContext) -> FieldResult<Vec<Point>> {
-        let step_secs = (self.step / 1_000_000_000).max(1) as f64;
-        for name in semconv::REQUEST_DURATION_METRICS {
-            let counts = context
-                .store
-                .histogram_count_series(name, Some(&self.service), self.from..=self.to, self.step)
-                .await
-                .map_err(field_err)?;
-            if !counts.is_empty() {
-                return Ok(counts
-                    .into_iter()
-                    .map(|p| {
-                        Point(SeriesPoint {
-                            ts_nanos: p.ts_nanos,
-                            value: p.value / step_secs,
-                        })
-                    })
-                    .collect());
-            }
-        }
-        Ok(Vec::new())
+        Ok(self
+            .red_source(context)
+            .await?
+            .request_rate
+            .iter()
+            .copied()
+            .map(Point)
+            .collect())
     }
-
     async fn latency_p50(&self, context: &ApiContext) -> FieldResult<Vec<Point>> {
         Ok(self
-            .duration_quantile(context, 0.50)
+            .red_source(context)
             .await?
-            .into_iter()
+            .latency_p50
+            .iter()
+            .copied()
             .map(Point)
             .collect())
     }
     async fn latency_p95(&self, context: &ApiContext) -> FieldResult<Vec<Point>> {
         Ok(self
-            .duration_quantile(context, 0.95)
+            .red_source(context)
             .await?
-            .into_iter()
+            .latency_p95
+            .iter()
+            .copied()
             .map(Point)
             .collect())
     }
     async fn latency_p99(&self, context: &ApiContext) -> FieldResult<Vec<Point>> {
         Ok(self
-            .duration_quantile(context, 0.99)
+            .red_source(context)
             .await?
-            .into_iter()
+            .latency_p99
+            .iter()
+            .copied()
             .map(Point)
             .collect())
     }
-
-    /// Derived error events per second for this service.
     async fn error_rate(&self, context: &ApiContext) -> FieldResult<Vec<Point>> {
         let step_secs = (self.step / 1_000_000_000).max(1) as f64;
         let counts = context
@@ -1747,16 +1916,11 @@ impl Query {
     ) -> FieldResult<ServiceMap> {
         let (from, to) = parse_range(&from_nanos, &to_nanos)?;
         let max_traces = clamp_limit(max_traces, 50).min(SERVICE_MAP_TRACE_CAP);
-        let services = context
-            .store
-            .service_summaries(from..=to)
-            .await
-            .map_err(field_err)?;
-        let edges = context
-            .store
-            .service_map(from..=to, max_traces)
-            .await
-            .map_err(field_err)?;
+        let (services, edges) = tokio::try_join!(
+            context.store.service_summaries(from..=to),
+            context.store.service_map(from..=to, max_traces),
+        )
+        .map_err(field_err)?;
         let mut nodes: BTreeMap<String, ServiceNodeData> = services
             .into_iter()
             .map(|service| {
@@ -1899,15 +2063,14 @@ impl Query {
 
     /// Every span of one trace, start-time ascending (cross-service).
     async fn trace(context: &ApiContext, trace_id: String) -> FieldResult<Option<Trace>> {
-        let spans = context
-            .store
-            .spans_by_trace(&trace_id)
-            .await
-            .map_err(field_err)?;
+        let spans = context.spans_for(&trace_id).await?;
         if spans.is_empty() {
             return Ok(None);
         }
-        Ok(Some(Trace { trace_id, spans }))
+        Ok(Some(Trace {
+            trace_id,
+            spans: Arc::unwrap_or_clone(spans),
+        }))
     }
 
     /// Parsed span events across one trace, time ascending. `namePrefix`
@@ -1918,11 +2081,7 @@ impl Query {
         name_prefix: Option<String>,
         limit: Option<i32>,
     ) -> FieldResult<TraceEventsOut> {
-        let spans = context
-            .store
-            .spans_by_trace(&trace_id)
-            .await
-            .map_err(field_err)?;
+        let spans = context.spans_for(&trace_id).await?;
         let name_prefix = name_prefix.as_deref().filter(|prefix| !prefix.is_empty());
         Ok(TraceEventsOut(span_events::trace_events(
             &spans,
@@ -1936,11 +2095,7 @@ impl Query {
         context: &ApiContext,
         trace_id: String,
     ) -> FieldResult<Vec<TraceSummary>> {
-        let spans = context
-            .store
-            .spans_by_trace(&trace_id)
-            .await
-            .map_err(field_err)?;
+        let spans = context.spans_for(&trace_id).await?;
         let ids = linked_trace_ids(&spans, &trace_id);
         let traces = context.store.traces_by_ids(&ids).await.map_err(field_err)?;
         Ok(traces.into_iter().map(TraceSummary).collect())
@@ -1951,11 +2106,7 @@ impl Query {
         context: &ApiContext,
         trace_id: String,
     ) -> FieldResult<CriticalPath> {
-        let spans = context
-            .store
-            .spans_by_trace(&trace_id)
-            .await
-            .map_err(field_err)?;
+        let spans = context.spans_for(&trace_id).await?;
         if spans.is_empty() {
             return Err(field_err("traceCriticalPath trace has no spans"));
         }
@@ -1968,19 +2119,13 @@ impl Query {
         trace_id_a: String,
         trace_id_b: String,
     ) -> FieldResult<TraceDiff> {
-        let spans_a = context
-            .store
-            .spans_by_trace(&trace_id_a)
-            .await
-            .map_err(field_err)?;
+        let (spans_a, spans_b) = tokio::try_join!(
+            context.spans_for(&trace_id_a),
+            context.spans_for(&trace_id_b),
+        )?;
         if spans_a.is_empty() {
             return Err(field_err("traceCompare traceIdA has no spans"));
         }
-        let spans_b = context
-            .store
-            .spans_by_trace(&trace_id_b)
-            .await
-            .map_err(field_err)?;
         if spans_b.is_empty() {
             return Err(field_err("traceCompare traceIdB has no spans"));
         }
@@ -1989,12 +2134,8 @@ impl Query {
 
     /// Logs correlated to one trace, time ascending.
     async fn logs_by_trace(context: &ApiContext, trace_id: String) -> FieldResult<Vec<LogRecord>> {
-        let logs = context
-            .store
-            .logs_by_trace(&trace_id)
-            .await
-            .map_err(field_err)?;
-        Ok(logs.into_iter().map(LogRecord).collect())
+        let logs = context.logs_for(&trace_id).await?;
+        Ok(logs.iter().cloned().map(LogRecord).collect())
     }
 
     /// Traces produced by one run, summarized (root span + aggregates),
@@ -2086,32 +2227,19 @@ impl Query {
     ) -> FieldResult<Vec<StoryBeat>> {
         match (trace_id, run_id) {
             (Some(trace_id), None) => {
-                let spans = context
-                    .store
-                    .spans_by_trace(&trace_id)
-                    .await
-                    .map_err(field_err)?;
-                let logs = context
-                    .store
-                    .logs_by_trace(&trace_id)
-                    .await
-                    .map_err(field_err)?;
+                let (spans, logs) =
+                    tokio::try_join!(context.spans_for(&trace_id), context.logs_for(&trace_id),)?;
                 Ok(story::project_story(&spans, &logs, &[])
                     .into_iter()
                     .map(StoryBeat)
                     .collect())
             }
             (None, Some(run_id)) => {
-                let spans = context
-                    .store
-                    .spans_by_run(&run_id, MAX_ROWS)
-                    .await
-                    .map_err(field_err)?;
-                let logs = context
-                    .store
-                    .logs_by_run(&run_id, MAX_ROWS)
-                    .await
-                    .map_err(field_err)?;
+                let (spans, logs) = tokio::try_join!(
+                    context.store.spans_by_run(&run_id, MAX_ROWS),
+                    context.store.logs_by_run(&run_id, MAX_ROWS),
+                )
+                .map_err(field_err)?;
                 Ok(story::project_story(&spans, &logs, &[])
                     .into_iter()
                     .map(StoryBeat)
@@ -2131,32 +2259,19 @@ impl Query {
     ) -> FieldResult<Vec<EvidenceGap>> {
         match (trace_id, run_id) {
             (Some(trace_id), None) => {
-                let spans = context
-                    .store
-                    .spans_by_trace(&trace_id)
-                    .await
-                    .map_err(field_err)?;
-                let logs = context
-                    .store
-                    .logs_by_trace(&trace_id)
-                    .await
-                    .map_err(field_err)?;
+                let (spans, logs) =
+                    tokio::try_join!(context.spans_for(&trace_id), context.logs_for(&trace_id),)?;
                 Ok(gaps::detect_gaps(&spans, &logs)
                     .into_iter()
                     .map(EvidenceGap)
                     .collect())
             }
             (None, Some(run_id)) => {
-                let spans = context
-                    .store
-                    .spans_by_run(&run_id, MAX_ROWS)
-                    .await
-                    .map_err(field_err)?;
-                let logs = context
-                    .store
-                    .logs_by_run(&run_id, MAX_ROWS)
-                    .await
-                    .map_err(field_err)?;
+                let (spans, logs) = tokio::try_join!(
+                    context.store.spans_by_run(&run_id, MAX_ROWS),
+                    context.store.logs_by_run(&run_id, MAX_ROWS),
+                )
+                .map_err(field_err)?;
                 Ok(gaps::detect_gaps(&spans, &logs)
                     .into_iter()
                     .map(EvidenceGap)
@@ -2329,16 +2444,15 @@ impl Query {
         let mut logs =
             if let Some(trace_id) = trace_id.as_deref().filter(|trace_id| !trace_id.is_empty()) {
                 context
-                    .store
-                    .logs_by_trace(trace_id)
-                    .await
-                    .map_err(field_err)?
-                    .into_iter()
+                    .logs_for(trace_id)
+                    .await?
+                    .iter()
                     .filter(|log| {
                         log.ts_nanos >= from
                             && log.ts_nanos <= to
                             && service.as_deref().is_none_or(|svc| log.service == svc)
                     })
+                    .cloned()
                     .collect::<Vec<_>>()
             } else {
                 context
@@ -2460,12 +2574,12 @@ impl Query {
     ) -> FieldResult<ServiceOverview> {
         let _ = context;
         let (from, to) = parse_range(&from_nanos, &to_nanos)?;
-        Ok(ServiceOverview {
+        Ok(ServiceOverview::new(
             service,
             from,
             to,
-            step: step_nanos(step_seconds),
-        })
+            step_nanos(step_seconds),
+        ))
     }
 
     /// Run ids observed in telemetry (any tool exporting `parallax.run.id`
@@ -2632,18 +2746,11 @@ impl Query {
                 .await
                 .map_err(field_err)?;
             let (trace_spans, trace_logs) = match issue.last_trace_id.as_deref() {
-                Some(trace_id) => (
-                    context
-                        .store
-                        .spans_by_trace(trace_id)
-                        .await
-                        .map_err(field_err)?,
-                    context
-                        .store
-                        .logs_by_trace(trace_id)
-                        .await
-                        .map_err(field_err)?,
-                ),
+                Some(trace_id) => {
+                    let (spans, logs) =
+                        tokio::try_join!(context.spans_for(trace_id), context.logs_for(trace_id),)?;
+                    (Arc::unwrap_or_clone(spans), Arc::unwrap_or_clone(logs))
+                }
                 None => (Vec::new(), Vec::new()),
             };
             BundleInputs {
@@ -2716,11 +2823,8 @@ impl Query {
             }
         } else {
             let trace_id = trace_id.unwrap_or_default();
-            let trace_spans = context
-                .store
-                .spans_by_trace(&trace_id)
-                .await
-                .map_err(field_err)?;
+            let (trace_spans, trace_logs) =
+                tokio::try_join!(context.spans_for(&trace_id), context.logs_for(&trace_id),)?;
             if trace_spans.is_empty() {
                 return Ok(None);
             }
@@ -2742,16 +2846,11 @@ impl Query {
                 .issues_by_fingerprints(&fingerprints)
                 .await
                 .map_err(field_err)?;
-            let trace_logs = context
-                .store
-                .logs_by_trace(&trace_id)
-                .await
-                .map_err(field_err)?;
             BundleInputs {
                 anchor: BundleAnchor::Trace { trace_id, issues },
                 events,
-                trace_spans,
-                trace_logs,
+                trace_spans: Arc::unwrap_or_clone(trace_spans),
+                trace_logs: Arc::unwrap_or_clone(trace_logs),
                 metric_windows: Vec::new(),
             }
         };
@@ -2983,7 +3082,48 @@ impl Query {
             .runs(clamp_limit(limit, 50))
             .await
             .map_err(field_err)?;
-        Ok(runs.into_iter().map(Run::new).collect())
+        if runs.is_empty() {
+            return Ok(Vec::new());
+        }
+        let run_ids: Vec<String> = runs.iter().map(|run| run.run_id.clone()).collect();
+        let spans_by_run = context
+            .store
+            .spans_by_runs(&run_ids, MAX_ROWS)
+            .await
+            .map_err(field_err)?;
+        let mut all_trace_ids: Vec<String> = Vec::new();
+        let mut seen_trace_ids = HashSet::new();
+        for spans in spans_by_run.values() {
+            for span in spans {
+                if seen_trace_ids.insert(span.trace_id.clone()) {
+                    all_trace_ids.push(span.trace_id.clone());
+                }
+            }
+        }
+        let event_limit = MAX_ROWS.saturating_mul(run_ids.len().max(1));
+        let events = context
+            .store
+            .error_events_by_traces(&all_trace_ids, event_limit)
+            .await
+            .map_err(field_err)?;
+        let mut events_by_trace: HashMap<String, Vec<model::ErrorEventRow>> = HashMap::new();
+        for event in events {
+            events_by_trace
+                .entry(event.trace_id.clone())
+                .or_default()
+                .push(event);
+        }
+        Ok(runs
+            .into_iter()
+            .map(|record| {
+                let spans = spans_by_run
+                    .get(&record.run_id)
+                    .map(Vec::as_slice)
+                    .unwrap_or(&[]);
+                let stats = run_stats_from_spans(spans, &events_by_trace);
+                Run::with_stats(record, stats)
+            })
+            .collect())
     }
 }
 
@@ -3054,22 +3194,42 @@ async fn bundle_metric_windows(
     } else {
         "service"
     };
+    let step = u128::from(step_seconds) * 1_000_000_000;
+    let (cpu, memory, tokio_tasks) = tokio::try_join!(
+        context.store.metric_series(
+            semconv::BUNDLE_WINDOW_METRICS[0],
+            service.as_deref(),
+            run_scope.as_deref(),
+            from..=to,
+            step,
+            MetricAgg::Avg,
+        ),
+        context.store.metric_series(
+            semconv::BUNDLE_WINDOW_METRICS[1],
+            service.as_deref(),
+            run_scope.as_deref(),
+            from..=to,
+            step,
+            MetricAgg::Avg,
+        ),
+        context.store.metric_series(
+            semconv::BUNDLE_WINDOW_METRICS[2],
+            service.as_deref(),
+            run_scope.as_deref(),
+            from..=to,
+            step,
+            MetricAgg::Avg,
+        ),
+    )
+    .map_err(field_err)?;
     let mut windows = Vec::new();
-    for metric in semconv::BUNDLE_WINDOW_METRICS {
-        let points = context
-            .store
-            .metric_series(
-                metric,
-                service.as_deref(),
-                run_scope.as_deref(),
-                from..=to,
-                u128::from(step_seconds) * 1_000_000_000,
-                MetricAgg::Avg,
-            )
-            .await
-            .map_err(field_err)?;
+    for (metric, points) in [
+        (semconv::BUNDLE_WINDOW_METRICS[0], cpu),
+        (semconv::BUNDLE_WINDOW_METRICS[1], memory),
+        (semconv::BUNDLE_WINDOW_METRICS[2], tokio_tasks),
+    ] {
         if let Some(window) = MetricWindow::from_points(
-            *metric,
+            metric,
             scope,
             from,
             to,
@@ -3498,6 +3658,7 @@ mod tests {
             store,
             metadata: Arc::new(metadata),
             otlp_grpc_port: 4317,
+            memo: RequestMemo::default(),
         }
     }
 
@@ -5287,5 +5448,175 @@ mod tests {
             .and_then(serde_json::Value::as_str)
             .unwrap();
         assert!(events.contains("exception"));
+    }
+
+    #[tokio::test]
+    async fn memo_helper_truncates_and_reuses_spans_for_same_trace() {
+        let store = Arc::new(MemoryStore::new());
+        let mut spans = Vec::new();
+        for i in 0..(MAX_ROWS + 25) {
+            spans.push(span(
+                "api",
+                "big-trace",
+                &format!("s{i}"),
+                1_000_000_000 + i as u128,
+                1_000,
+            ));
+        }
+        store
+            .ingest_traces(spans, Default::default())
+            .await
+            .unwrap();
+        let context = context_with_memory(store).await;
+        let first = context.spans_for("big-trace").await.unwrap();
+        let second = context.spans_for("big-trace").await.unwrap();
+        assert_eq!(first.len(), MAX_ROWS);
+        assert!(Arc::ptr_eq(&first, &second));
+    }
+
+    #[tokio::test]
+    async fn runs_list_stats_match_single_run() {
+        let store = Arc::new(MemoryStore::new());
+        let mut spans = Vec::new();
+        for (run, traces) in [
+            ("run-a", &["ta1", "ta2"][..]),
+            ("run-b", &["tb1"][..]),
+            ("run-c", &["tc1", "tc2", "tc3"][..]),
+        ] {
+            for (i, trace) in traces.iter().enumerate() {
+                let mut row = span(
+                    "api",
+                    trace,
+                    &format!("{run}-s{i}"),
+                    1_000_000_000 + i as u128,
+                    5_000,
+                );
+                row.run_id = Some(run.into());
+                spans.push(row);
+            }
+        }
+        store
+            .ingest_traces(spans, Default::default())
+            .await
+            .unwrap();
+        store
+            .write_error_events(vec![
+                ErrorEventRow {
+                    ts_nanos: 2_000_000_000,
+                    service: "api".into(),
+                    fingerprint: "fp-a".into(),
+                    error_type: "Error".into(),
+                    message: "boom-a".into(),
+                    stacktrace: None,
+                    source: ErrorSource::SpanStatus,
+                    trace_id: "ta1".into(),
+                    span_id: "run-a-s0".into(),
+                    attributes: serde_json::Value::Null,
+                },
+                ErrorEventRow {
+                    ts_nanos: 2_100_000_000,
+                    service: "api".into(),
+                    fingerprint: "fp-c".into(),
+                    error_type: "Error".into(),
+                    message: "boom-c".into(),
+                    stacktrace: None,
+                    source: ErrorSource::SpanStatus,
+                    trace_id: "tc2".into(),
+                    span_id: "run-c-s1".into(),
+                    attributes: serde_json::Value::Null,
+                },
+            ])
+            .await
+            .unwrap();
+        let context = context_with_memory(store).await;
+        for (run_id, command) in [("run-a", "a"), ("run-b", "b"), ("run-c", "c")] {
+            context
+                .metadata
+                .start_run(run_id, Some(command), 1_000_000_000)
+                .await
+                .unwrap();
+        }
+        let schema = build_schema();
+        let list = juniper::http::GraphQLRequest::new(
+            r#"{ runs { runId errorCount traceCount } }"#.into(),
+            None,
+            None,
+        );
+        let list_json = serde_json::to_value(execute(&schema, &context, list).await).unwrap();
+        assert!(error_messages(&list_json).is_empty(), "{list_json}");
+        let mut by_id = std::collections::BTreeMap::new();
+        for row in list_json
+            .pointer("/data/runs")
+            .and_then(|v| v.as_array())
+            .unwrap()
+        {
+            by_id.insert(
+                row["runId"].as_str().unwrap().to_string(),
+                (
+                    row["errorCount"].as_i64().unwrap(),
+                    row["traceCount"].as_i64().unwrap(),
+                ),
+            );
+        }
+        assert_eq!(by_id["run-a"], (1, 2));
+        assert_eq!(by_id["run-b"], (0, 1));
+        assert_eq!(by_id["run-c"], (1, 3));
+        for run_id in ["run-a", "run-b", "run-c"] {
+            let single_ctx = ApiContext {
+                store: context.store.clone(),
+                metadata: context.metadata.clone(),
+                otlp_grpc_port: 4317,
+                memo: RequestMemo::default(),
+            };
+            let q = juniper::http::GraphQLRequest::new(
+                format!(r#"{{ run(runId: "{run_id}") {{ errorCount traceCount }} }}"#),
+                None,
+                None,
+            );
+            let single = serde_json::to_value(execute(&schema, &single_ctx, q).await).unwrap();
+            assert_eq!(
+                (
+                    single
+                        .pointer("/data/run/errorCount")
+                        .and_then(|v| v.as_i64())
+                        .unwrap(),
+                    single
+                        .pointer("/data/run/traceCount")
+                        .and_then(|v| v.as_i64())
+                        .unwrap(),
+                ),
+                by_id[run_id],
+            );
+        }
+    }
+
+    #[test]
+    fn compare_two_500_span_traces_timing() {
+        let make = |trace_id: &str| -> Vec<SpanRow> {
+            (0..500)
+                .map(|i| {
+                    let mut row = span(
+                        "svc",
+                        trace_id,
+                        &format!("{trace_id}-{i}"),
+                        1_000_000_000 + i as u128 * 1_000,
+                        5_000,
+                    );
+                    if i > 0 {
+                        row.parent_span_id = Some(format!("{trace_id}-{}", i / 2));
+                    }
+                    row.name = format!("op.{}", i % 40);
+                    row
+                })
+                .collect()
+        };
+        let start = std::time::Instant::now();
+        let _ = parallax_core::trace_analysis::compare(&make("a"), &make("b"));
+        let elapsed = start.elapsed();
+        eprintln!(
+            "trace_analysis::compare on 2x500 spans: {:.3} ms",
+            elapsed.as_secs_f64() * 1000.0
+        );
+        assert!(elapsed.as_millis() < 50, "compare slow: {elapsed:?}");
     }
 }

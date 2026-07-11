@@ -100,7 +100,7 @@ impl Worker {
                 )
                 .await?;
                 if self.live.spans.receiver_count() > 0 {
-                    let _ = self.live.spans.send(spans.clone().into());
+                    let _ = self.live.spans.send(crate::live::span_batch(spans.clone()));
                 }
                 // Bytes clone is zero-copy (refcounted).
                 self.store.ingest_traces(spans, raw.clone()).await?;
@@ -121,7 +121,7 @@ impl Worker {
                 )
                 .await?;
                 if self.live.logs.receiver_count() > 0 {
-                    let _ = self.live.logs.send(logs.clone().into());
+                    let _ = self.live.logs.send(crate::live::log_batch(logs.clone()));
                 }
                 self.store.ingest_logs(logs, raw).await?;
                 self.record_errors(errors).await?;

@@ -84,7 +84,9 @@ impl GreptimeStore {
                  SELECT "trace_id", COUNT(*) AS "span_count",
                         MAX(CASE WHEN "span_status_code" = 'STATUS_CODE_ERROR' THEN 1 ELSE 0 END)
                         AS "has_error"
-                 FROM opentelemetry_traces GROUP BY "trace_id"
+                 FROM opentelemetry_traces
+                 WHERE {scan_where}
+                 GROUP BY "trace_id"
                ) AS "agg" ON "root"."trace_id" = "agg"."trace_id"
                WHERE {rep_where}"#
         );
@@ -2229,17 +2231,8 @@ impl TelemetryStore for GreptimeStore {
         // One representative span per trace — its root (no parent), else the
         // earliest span when no root was stored (all-INTERNAL traces).
         //
-        // `service` matches any trace the service **participates in** (a span
-        // of that service anywhere), not only the root — so a cross-service
-        // trace rooted at `checkout` still surfaces under `--service catalog`.
-        let participation = match &query.service {
-            Some(service) => format!(
-                r#" AND "trace_id" IN (SELECT "trace_id" FROM opentelemetry_traces WHERE "service_name" = '{}')"#,
-                escape(service)
-            ),
-            None => String::new(),
-        };
-        // Scan window — also bounds which span becomes the representative.
+        // Scan window — also bounds representative, participation, and
+        // in-window span_count/has_error (plan 075, aligned with memory).
         let mut scan = Vec::new();
         if let Some(from) = query.from_nanos {
             scan.push(format!(r#""timestamp" >= {}"#, sql_ts(from)));
@@ -2251,6 +2244,14 @@ impl TelemetryStore for GreptimeStore {
             "1 = 1".to_string()
         } else {
             scan.join(" AND ")
+        };
+        // `service` matches any in-window trace the service participates in.
+        let participation = match &query.service {
+            Some(service) => format!(
+                r#" AND "trace_id" IN (SELECT "trace_id" FROM opentelemetry_traces WHERE "service_name" = '{}' AND {scan_where})"#,
+                escape(service)
+            ),
+            None => String::new(),
         };
         // Representative-span filters, applied after the per-trace pick.
         let mut rep = vec!["\"rn\" = 1".to_string()];

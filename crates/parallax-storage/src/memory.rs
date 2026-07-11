@@ -12,7 +12,7 @@ use crate::adapter::{
 };
 use crate::model::*;
 use parallax_proto::semconv;
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::ops::RangeInclusive;
 use std::sync::Mutex;
 
@@ -283,6 +283,36 @@ impl TelemetryStore for MemoryStore {
         spans.truncate(limit);
         spans.sort_by_key(|s| s.ts_nanos);
         Ok(spans)
+    }
+
+    async fn spans_by_runs(
+        &self,
+        run_ids: &[String],
+        limit_per_run: usize,
+    ) -> anyhow::Result<HashMap<String, Vec<SpanRow>>> {
+        let wanted: HashSet<&str> = run_ids.iter().map(String::as_str).collect();
+        let mut out: HashMap<String, Vec<SpanRow>> = run_ids
+            .iter()
+            .map(|id| (id.clone(), Vec::new()))
+            .collect();
+        if wanted.is_empty() || limit_per_run == 0 {
+            return Ok(out);
+        }
+        for span in self.lock().spans.iter() {
+            let Some(run_id) = span.run_id.as_deref() else {
+                continue;
+            };
+            if !wanted.contains(run_id) {
+                continue;
+            }
+            out.entry(run_id.to_string()).or_default().push(span.clone());
+        }
+        for spans in out.values_mut() {
+            spans.sort_by_key(|s| std::cmp::Reverse(s.ts_nanos));
+            spans.truncate(limit_per_run);
+            spans.sort_by_key(|s| s.ts_nanos);
+        }
+        Ok(out)
     }
 
     async fn logs_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<LogRow>> {
@@ -888,12 +918,17 @@ impl TelemetryStore for MemoryStore {
         let inner = self.lock();
         // `service` matches any trace the service participates in (a span of
         // that service anywhere), not only the root span.
+        // Windowed participation + aggregates (plan 075; aligned both adapters).
+        let in_window = |ts: u128| {
+            query.from_nanos.is_none_or(|from| ts >= from)
+                && query.to_nanos.is_none_or(|to| ts <= to)
+        };
         let participating: Option<std::collections::HashSet<&str>> =
             query.service.as_deref().map(|svc| {
                 inner
                     .spans
                     .iter()
-                    .filter(|s| s.service == svc)
+                    .filter(|s| s.service == svc && in_window(s.ts_nanos))
                     .map(|s| s.trace_id.as_str())
                     .collect()
             });
@@ -946,7 +981,7 @@ impl TelemetryStore for MemoryStore {
                 let mut span_count = 0;
                 let mut has_error = false;
                 for span in &inner.spans {
-                    if span.trace_id == root.trace_id {
+                    if span.trace_id == root.trace_id && in_window(span.ts_nanos) {
                         span_count += 1;
                         has_error |= span.status_code == "STATUS_CODE_ERROR";
                     }
