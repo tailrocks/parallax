@@ -1,0 +1,35 @@
+[package]
+name = "parallax-mcp-spike"
+description = "SPIKE: read-only stdio MCP adapter over GraphQL (not a product surface)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[[bin]]
+name = "parallax-mcp-spike"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+# Official MCP Rust SDK. Features deliberately exclude every reqwest/TLS path
+# (those default to rustls). Stdio transport needs no TLS. GraphQL is plain
+# HTTP via the workspace reqwest (native-tls).
+rmcp = { version = "2.2.0", default-features = false, features = [
+    "server",
+    "transport-io",
+    "macros",
+] }
+reqwest = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+[lints]
+workspace = true

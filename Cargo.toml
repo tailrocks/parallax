@@ -7,6 +7,7 @@ members = [
     "crates/parallax-proto",
     "crates/parallax-server",
     "crates/parallax-storage",
+    "crates/parallax-mcp-spike",
 ]
 exclude = ["poc/evidence-loop", "poc/read-transport-bench"]
 
