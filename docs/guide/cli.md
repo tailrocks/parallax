@@ -15,6 +15,8 @@ server from `~/.parallax/contexts.toml` — omitted, it targets the local one.
 | Command | What it does |
 | --- | --- |
 | `parallax run start -- <cmd…>` | Wrapper mode: inject OTLP/gRPC endpoint/protocol env vars for traces, logs, metrics, and profiles plus `parallax.run.id`, run the command, propagate its exit code. |
+| `parallax run start --print-env -- <cmd…>` | Dry-run: print the OTel env that would be injected for the command, then exit without recording a run or spawning the child. |
+| `parallax run start --otlp-forward <url\|rotel\|off> -- <cmd…>` | Compare mode: forward child telemetry to another collector (`rotel` expands to the local fan-out hub, `off` disables, or pass a full OTLP URL). Ambient override: `PARALLAX_OTLP_FORWARD`. |
 | `parallax run start` | Bare mode: print the exports to source into your shell. |
 | `parallax run finish <run_id> <exit_code>` | Close a bare-mode run. |
 | `parallax run list` | Recent runs with status, exit code, relative start time. Runs whose `parallax.run.id` arrived in telemetry without a wrapper show status `external`. |

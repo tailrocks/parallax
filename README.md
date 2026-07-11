@@ -38,6 +38,7 @@ The V1 implementation (workspace under [`crates/`](crates/), web UI under
 - **[CLI reference](docs/guide/cli.md)** — every `parallax` command.
 - **[Agent how-to](docs/guide/agent-howto.md)** — point your coding agent at `parallax issue context`.
 - **[Conventions](docs/guide/conventions.md)** — resource attributes, `parallax.run.id`, exception encodings, DB wrapper spans.
+- **Developing Parallax itself** — see [CONTRIBUTING.md § Development](CONTRIBUTING.md#development).
 
 ## Start Here
 

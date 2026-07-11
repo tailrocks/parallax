@@ -126,14 +126,14 @@ its verification gates, and update your row below when done.
 | 070 | Rust correctness batch (requestRate table, ingest panic, first_seen, stuck runs) | P1 | M | — | DONE |
 | 071 | UI correctness batch (cycle guard, stale paging, bucket race, gqlString) | P1 | M | 069 (soft) | DONE |
 | 072 | Redaction bypasses + agent-trust delimiting in bundles | P1 | L | — | DONE |
-| 073 | Spool durability truth (worker retry, shutdown drain, honest docs) | P1 | M | 070 | TODO |
+| 073 | Spool durability truth (worker retry, shutdown drain, honest docs) | P1 | M | 070 | DONE |
 | 074 | GreptimeDB SQL testability (golden SQL, escape tests, conformance suite) | P1 | L | 070; 069 (soft) | TODO |
 | 075 | Read-path performance (traces_search window, fan-out joins, table cache) | P2 | M | 074 | TODO |
 | 076 | Ingest hot path (spool locks/IO, batched upserts, normalize churn) | P2 | M-L | 073, 070 | TODO |
 | 077 | Shared SSE hook + real stream health in Live badges | P2 | M | 071 | TODO |
 | 078 | Split parallax-api lib.rs into domain modules | P2 | L | 069; after 072/073/075 | TODO |
 | 079 | UI query/type dedup + dependency hygiene + rotel.env template | P2 | M | 069; after 071/077 | TODO |
-| 080 | Onboarding docs (dev setup, ui/README, PROJECT_STRUCTURE, cli.md) | P3 | S | — | TODO |
+| 080 | Onboarding docs (dev setup, ui/README, PROJECT_STRUCTURE, cli.md) | P3 | S | — | DONE |
 | 081 | `--format json` on bundle commands + agent-session CLI verb | P2 | M | — | TODO |
 | 082 | Publish bundle-v1 JSON Schema + conformance test | P3 | M | 072, 081 | TODO |
 | 083 | MCP read-only adapter SPIKE (projection equivalence) | P3 | M | 072, 081; 082 (soft) | TODO |

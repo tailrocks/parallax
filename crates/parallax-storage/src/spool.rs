@@ -1,9 +1,11 @@
 //! The ingest spool: an NDJSON landing zone for raw OTLP export requests.
 //!
-//! M0's durability story: every accepted OTLP request is appended to a
-//! per-signal NDJSON file before the ingest endpoint acknowledges it. M1's
-//! workers consume from here into the storage engine; the spool then becomes
-//! the bounded WAL described in the implementation spec.
+//! Every accepted OTLP request is appended here before the ingest endpoint
+//! acknowledges it. Nothing reads the spool back today: it is a diagnostic
+//! record and crash-forensics trail, reaped by size/age (`reap`), NOT a
+//! write-ahead log. If the worker drops an item after retries (see
+//! `parallax-server::worker`), the data survives only here. Replay/WAL
+//! semantics are a deferred design — do not claim durability beyond this.
 
 use serde::Serialize;
 use std::io::Write;

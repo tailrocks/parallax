@@ -12,7 +12,18 @@ use parallax_storage::model::{ErrorEventRow, ErrorSource};
 use prost::Message;
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::sync::mpsc;
+
+/// Bounded retries for transient store/metadata failures.
+/// A retry after a partial `record_errors` success can increment `event_count`
+/// twice; durable idempotence keys are the deferred WAL fix.
+const INGEST_RETRIES: usize = 3;
+const INGEST_BACKOFF: [Duration; 3] = [
+    Duration::from_millis(100),
+    Duration::from_millis(500),
+    Duration::from_secs(2),
+];
 
 /// One queued OTLP batch: the decoded request feeds the in-process tee
 /// (normalize → derive → live → run registration) while the raw OTLP bytes are
@@ -57,17 +68,31 @@ impl Worker {
     /// Drain the channel until all senders drop.
     pub async fn run(mut self, mut receiver: mpsc::Receiver<IngestItem>) {
         while let Some(item) = receiver.recv().await {
-            if let Err(e) = self.process(item).await {
-                tracing::error!("ingest worker item failed: {e:#}");
+            let mut attempt = 0;
+            loop {
+                match self.process(&item).await {
+                    Ok(()) => break,
+                    Err(e) if attempt < INGEST_RETRIES => {
+                        attempt += 1;
+                        tracing::warn!("ingest attempt {attempt} failed, retrying: {e:#}");
+                        tokio::time::sleep(INGEST_BACKOFF[attempt - 1]).await;
+                    }
+                    Err(e) => {
+                        tracing::error!(
+                            "ingest item DROPPED after {INGEST_RETRIES} retries: {e:#}"
+                        );
+                        break;
+                    }
+                }
             }
         }
     }
 
-    async fn process(&mut self, item: IngestItem) -> anyhow::Result<()> {
+    async fn process(&mut self, item: &IngestItem) -> anyhow::Result<()> {
         match item {
             IngestItem::Traces(request, raw) => {
-                let spans = normalize::normalize_traces(&request);
-                let errors = derive::derive_from_traces(&request);
+                let spans = normalize::normalize_traces(request);
+                let errors = derive::derive_from_traces(request);
                 self.register_runs(
                     spans
                         .iter()
@@ -77,14 +102,16 @@ impl Worker {
                 if self.live.spans.receiver_count() > 0 {
                     let _ = self.live.spans.send(spans.clone().into());
                 }
-                self.store.ingest_traces(spans, raw).await?;
+                // Bytes clone is zero-copy (refcounted).
+                self.store.ingest_traces(spans, raw.clone()).await?;
                 self.record_errors(errors).await?;
             }
-            IngestItem::Logs(mut request, raw) => {
+            IngestItem::Logs(request, raw) => {
+                let mut request = request.clone();
                 let raw = if normalize::promote_log_identity_attributes(&mut request) {
                     bytes::Bytes::from(request.encode_to_vec())
                 } else {
-                    raw
+                    raw.clone()
                 };
                 let logs = normalize::normalize_logs(&request);
                 let errors = derive::derive_from_logs(&logs);
@@ -100,13 +127,13 @@ impl Worker {
                 self.record_errors(errors).await?;
             }
             IngestItem::Metrics(request, raw) => {
-                let normalized = normalize::normalize_metrics(&request);
+                let normalized = normalize::normalize_metrics(request);
                 self.store
                     .ingest_metrics(
                         normalized.points,
                         normalized.histograms,
                         normalized.exemplars,
-                        raw,
+                        raw.clone(),
                     )
                     .await?;
             }
@@ -321,6 +348,44 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn process_is_reentrant_after_failure_shape() {
+        // process takes &IngestItem so the worker loop can retry without
+        // deep-cloning telemetry beyond Bytes (zero-copy).
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let store = Arc::new(MemoryStore::new());
+        let metadata = Arc::new(
+            MetadataStore::open(tmp.path().join("meta.db"))
+                .await
+                .expect("metadata"),
+        );
+        let mut worker = Worker::new(store.clone(), metadata, crate::live::channels());
+        let item = IngestItem::Metrics(
+            metrics_request_with_exemplar(),
+            bytes::Bytes::new(),
+        );
+        worker.process(&item).await.expect("first");
+        worker.process(&item).await.expect("second retry-shaped call");
+        let rows = store
+            .metric_exemplars(
+                "http.server.request.duration",
+                Some("checkout"),
+                0..=100,
+                10,
+            )
+            .await
+            .expect("metric exemplars");
+        assert!(!rows.is_empty());
+    }
+
+    #[test]
+    fn ingest_retry_constants_are_bounded() {
+        assert_eq!(INGEST_RETRIES, 3);
+        assert_eq!(INGEST_BACKOFF.len(), 3);
+        assert!(INGEST_BACKOFF[0] < INGEST_BACKOFF[1]);
+        assert!(INGEST_BACKOFF[1] < INGEST_BACKOFF[2]);
+    }
+
+    #[tokio::test]
     async fn metric_exemplar_round_trips_through_worker_and_store() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let store = Arc::new(MemoryStore::new());
@@ -332,7 +397,7 @@ mod tests {
         let mut worker = Worker::new(store.clone(), metadata, crate::live::channels());
 
         worker
-            .process(IngestItem::Metrics(
+            .process(&IngestItem::Metrics(
                 metrics_request_with_exemplar(),
                 bytes::Bytes::new(),
             ))

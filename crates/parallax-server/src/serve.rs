@@ -31,7 +31,10 @@ pub struct ServerHandle {
     pub store: Arc<dyn TelemetryStore>,
     pub metadata: Arc<MetadataStore>,
     supervisor: Option<crate::greptime_supervisor::GreptimeSupervisor>,
+    /// Listener/reaper tasks (aborted on shutdown).
     tasks: Vec<JoinHandle<()>>,
+    /// Ingest worker task — drained on graceful shutdown after senders drop.
+    worker_task: Option<JoinHandle<()>>,
 }
 
 impl ServerHandle {
@@ -43,6 +46,23 @@ impl ServerHandle {
         }
         for task in &self.tasks {
             task.abort();
+        }
+        if let Some(worker) = &self.worker_task {
+            worker.abort();
+        }
+    }
+
+    /// Graceful shutdown: stop listeners first so no new ingest items are
+    /// accepted, then wait for the worker to drain the channel (bounded).
+    pub async fn shutdown_graceful(mut self) {
+        if let Some(supervisor) = &self.supervisor {
+            supervisor.stop();
+        }
+        for task in &self.tasks {
+            task.abort();
+        }
+        if let Some(worker) = self.worker_task.take() {
+            let _ = tokio::time::timeout(Duration::from_secs(5), worker).await;
         }
     }
 }
@@ -283,8 +303,8 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
     };
     let live = crate::live::channels();
     let worker = Worker::new(store.clone(), metadata.clone(), live.clone());
+    let worker_task = Some(tokio::spawn(worker.run(receiver)));
     let mut tasks = Vec::new();
-    tasks.push(tokio::spawn(worker.run(receiver)));
     tasks.push(spawn_spool_reaper(
         spool.clone(),
         config.retention.spool_max_total_bytes,
@@ -398,6 +418,7 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
         metadata,
         supervisor,
         tasks,
+        worker_task,
     })
 }
 

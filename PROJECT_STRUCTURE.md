@@ -5,12 +5,11 @@ the project evolves.
 
 ## Current Stage
 
-Parallax is in research and product-discovery mode. The repository should stay
-simple: root-level project rules, a README, and Markdown research notes under
-`docs/`.
-
-V1 implementation is underway under `crates/` (authorized 2026-06-12); there
-is no release process or CI contract yet.
+Parallax ships a working V1 local product under `crates/` (Rust workspace) and
+`ui/` (TanStack Start SPA), alongside research notes under `docs/research/`.
+CI, stable-release, and preview-Homebrew automation live under
+`.github/workflows/`. Research and product code iterate together on `main`
+(or feature branches when an operator opens one).
 
 ## Root Files
 
