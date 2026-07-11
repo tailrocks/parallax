@@ -407,3 +407,25 @@ content removed from that document). Plans 023, 025, and 032 concern
 secret-masking of agent-visible evidence bundles; their rationale is
 self-contained in each plan file and does not depend on the removed sections
 of the brief.
+
+## Residual dispositions (2026-07-11 program closure)
+
+Executed under `prompts/advisor-plans-implementation.md` on branch
+`implement/advisor-plans-069-090`.
+
+| Residual | Disposition |
+|----------|-------------|
+| traces_by_ids O(n²) id dedup | **Deferred** — MAX_ROWS=500 bounds cost; touch only when editing the function |
+| is_missing_* substring matching | **Watch** — conformance suite (074) is the net on version bumps |
+| Issue::latestEvent/events store N+1 | **Deferred** — no client selects them; 086 batch pattern ready when activated |
+| memory.rs Mutex across async | **Deferred** — test/dev adapter only |
+| Live-tail re-sort / Recharts identity | **Revisit** after 088 if live view still janks; 088 landed cache + visibility |
+| Recharts/Motion shell chunk | **Deferred** with route-splitting investigation (069) |
+| self_telemetry vs parallax_storage logs | **Policy** — keep storage ingest log-quiet or extend filter |
+| Worker seen_runs unbounded | **DONE** in 087 (cap+clear) |
+| span_events allocation-free | **Reaffirmed** — not hot-path |
+| fingerprint OnceLock | **Reaffirmed** |
+| traces_search windowed vs lifetime | **Resolved** — both adapters windowed in 075 |
+| rotel.env history credentials | **079** replaced file with template; history rewrite left to operator |
+| 089 greptimedb-ingester | **BLOCKED** — rustls hard-dep; SQL path stays until upstream |
+| 090 GO (arrow+zstd) | **DONE** as plan 091 |
