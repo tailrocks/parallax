@@ -159,59 +159,99 @@ impl MetadataStore {
         &self,
         occurrence: &IssueOccurrence<'_>,
     ) -> anyhow::Result<()> {
-        let millis = nanos_to_millis(occurrence.ts_nanos);
+        self.upsert_issue_occurrences(std::slice::from_ref(occurrence))
+            .await
+    }
+
+    /// Record many occurrences under a single connection lock.
+    ///
+    /// Tag-cache read-merge-write is grouped by fingerprint: one SELECT, merge
+    /// every attribute set for that fingerprint, one UPDATE. Preserves the
+    /// turso constraint that the SELECT statement must drop before UPDATE
+    /// (same connection reports success but does not persist otherwise).
+    pub async fn upsert_issue_occurrences(
+        &self,
+        occurrences: &[IssueOccurrence<'_>],
+    ) -> anyhow::Result<()> {
+        if occurrences.is_empty() {
+            return Ok(());
+        }
         let conn = self.conn.lock().await;
-        conn.execute(
-            "INSERT INTO issues
-                   (fingerprint, title, error_type, culprit, service,
-                    first_seen, last_seen, event_count, last_trace_id)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6, 1, ?7)
-                 ON CONFLICT(fingerprint) DO UPDATE SET
-                   first_seen = MIN(first_seen, excluded.first_seen),
-                   last_seen = MAX(last_seen, excluded.last_seen),
-                   event_count = event_count + 1,
-                   last_trace_id = COALESCE(excluded.last_trace_id, last_trace_id)",
-            (
-                occurrence.fingerprint,
-                occurrence.title.as_str(),
-                occurrence.error_type,
-                occurrence.culprit.clone(),
-                occurrence.service,
-                millis,
-                occurrence.trace_id.map(str::to_string),
-            ),
-        )
-        .await?;
-        conn.execute(
-            "INSERT INTO issue_buckets (fingerprint, bucket_ts, count)
-             VALUES (?1, ?2, 1)
-             ON CONFLICT(fingerprint, bucket_ts) DO UPDATE SET count = count + 1",
-            (
-                occurrence.fingerprint,
-                millis / BUCKET_MILLIS * BUCKET_MILLIS,
-            ),
-        )
-        .await?;
-        // Tag cache: read-merge-write under the same connection lock. The
-        // SELECT's statement must be dropped before the UPDATE — an UPDATE
-        // executed while another statement is open on the same turso
-        // connection reports success but does not persist.
-        let existing = {
-            let mut rows = conn
-                .query(
-                    "SELECT tags FROM issues WHERE fingerprint = ?1",
-                    (occurrence.fingerprint,),
-                )
-                .await?;
-            rows.next().await?.map(|row| text(&row, 0))
-        };
-        if let Some(existing) = existing {
-            let merged = merge_tags(&existing, occurrence.attributes);
+        // Fingerprints that received at least one insert, in first-seen order,
+        // so tag merge can SELECT once per fingerprint after all inserts.
+        let mut tag_order: Vec<&str> = Vec::new();
+        let mut tag_attrs: BTreeMap<&str, Vec<&serde_json::Value>> = BTreeMap::new();
+
+        for occurrence in occurrences {
+            let millis = nanos_to_millis(occurrence.ts_nanos);
             conn.execute(
-                "UPDATE issues SET tags = ?1 WHERE fingerprint = ?2",
-                (merged, occurrence.fingerprint),
+                "INSERT INTO issues
+                       (fingerprint, title, error_type, culprit, service,
+                        first_seen, last_seen, event_count, last_trace_id)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6, 1, ?7)
+                     ON CONFLICT(fingerprint) DO UPDATE SET
+                       first_seen = MIN(first_seen, excluded.first_seen),
+                       last_seen = MAX(last_seen, excluded.last_seen),
+                       event_count = event_count + 1,
+                       last_trace_id = COALESCE(excluded.last_trace_id, last_trace_id)",
+                (
+                    occurrence.fingerprint,
+                    occurrence.title.as_str(),
+                    occurrence.error_type,
+                    occurrence.culprit.clone(),
+                    occurrence.service,
+                    millis,
+                    occurrence.trace_id.map(str::to_string),
+                ),
             )
             .await?;
+            conn.execute(
+                "INSERT INTO issue_buckets (fingerprint, bucket_ts, count)
+                 VALUES (?1, ?2, 1)
+                 ON CONFLICT(fingerprint, bucket_ts) DO UPDATE SET count = count + 1",
+                (
+                    occurrence.fingerprint,
+                    millis / BUCKET_MILLIS * BUCKET_MILLIS,
+                ),
+            )
+            .await?;
+            if !tag_attrs.contains_key(occurrence.fingerprint) {
+                tag_order.push(occurrence.fingerprint);
+            }
+            tag_attrs
+                .entry(occurrence.fingerprint)
+                .or_default()
+                .push(occurrence.attributes);
+        }
+
+        for fingerprint in tag_order {
+            let attrs = tag_attrs
+                .remove(fingerprint)
+                .expect("tag attrs for ordered fingerprint");
+            // Tag cache: read-merge-write under the same connection lock. The
+            // SELECT's statement must be dropped before the UPDATE — an UPDATE
+            // executed while another statement is open on the same turso
+            // connection reports success but does not persist.
+            let existing = {
+                let mut rows = conn
+                    .query(
+                        "SELECT tags FROM issues WHERE fingerprint = ?1",
+                        (fingerprint,),
+                    )
+                    .await?;
+                rows.next().await?.map(|row| text(&row, 0))
+            };
+            if let Some(existing) = existing {
+                let mut merged = existing;
+                for attributes in attrs {
+                    merged = merge_tags(&merged, attributes);
+                }
+                conn.execute(
+                    "UPDATE issues SET tags = ?1 WHERE fingerprint = ?2",
+                    (merged, fingerprint),
+                )
+                .await?;
+            }
         }
         Ok(())
     }
@@ -835,6 +875,53 @@ mod tests {
             trace_id: None,
             attributes,
         }
+    }
+
+    #[tokio::test]
+    async fn batch_upsert_merges_shared_fingerprint_tags_once() {
+        let store = MetadataStore::open(temp_db()).await.expect("open");
+        let shared_a = serde_json::json!({"http.route": "/checkout", "region": "us"});
+        let shared_b = serde_json::json!({"http.route": "/checkout", "region": "eu"});
+        let other = serde_json::json!({"http.route": "/cart"});
+        store
+            .upsert_issue_occurrences(&[
+                occurrence("fp-shared", "checkout", 1_000_000_000, &shared_a),
+                occurrence("fp-other", "checkout", 2_000_000_000, &other),
+                occurrence("fp-shared", "checkout", 3_000_000_000, &shared_b),
+            ])
+            .await
+            .expect("batch upsert");
+
+        let shared = store
+            .issue("fp-shared")
+            .await
+            .expect("issue")
+            .expect("present");
+        let other_issue = store
+            .issue("fp-other")
+            .await
+            .expect("issue")
+            .expect("present");
+        assert_eq!(shared.event_count, 2);
+        assert_eq!(other_issue.event_count, 1);
+        assert_eq!(shared.first_seen_nanos, 1_000_000_000);
+        assert_eq!(shared.last_seen_nanos, 3_000_000_000);
+
+        let tags: serde_json::Value = serde_json::from_str(&shared.tags).expect("tags");
+        assert_eq!(tags["http.route"]["/checkout"], 2);
+        assert_eq!(tags["region"]["us"], 1);
+        assert_eq!(tags["region"]["eu"], 1);
+
+        let other_tags: serde_json::Value =
+            serde_json::from_str(&other_issue.tags).expect("other tags");
+        assert_eq!(other_tags["http.route"]["/cart"], 1);
+
+        let trend = store.issue_trend("fp-shared", 0, 60).await.expect("trend");
+        let total: u64 = trend.iter().map(|p| p.count).sum();
+        assert_eq!(total, 2);
+        let other_trend = store.issue_trend("fp-other", 0, 60).await.expect("trend");
+        let other_total: u64 = other_trend.iter().map(|p| p.count).sum();
+        assert_eq!(other_total, 1);
     }
 
     #[tokio::test]

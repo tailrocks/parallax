@@ -169,8 +169,9 @@ impl Worker {
         if errors.is_empty() {
             return Ok(());
         }
-        for event in &errors {
-            let occurrence = parallax_storage::metadata::IssueOccurrence {
+        let occurrences: Vec<parallax_storage::metadata::IssueOccurrence<'_>> = errors
+            .iter()
+            .map(|event| parallax_storage::metadata::IssueOccurrence {
                 fingerprint: &event.fingerprint,
                 title: derive::issue_title(&event.error_type, &event.message),
                 error_type: &event.error_type,
@@ -180,9 +181,9 @@ impl Worker {
                 trace_id: (!event.trace_id.is_empty() && event.trace_id.chars().any(|c| c != '0'))
                     .then_some(event.trace_id.as_str()),
                 attributes: &event.attributes,
-            };
-            self.metadata.upsert_issue_occurrence(&occurrence).await?;
-        }
+            })
+            .collect();
+        self.metadata.upsert_issue_occurrences(&occurrences).await?;
         self.store.write_error_events(errors).await?;
         Ok(())
     }
@@ -359,12 +360,12 @@ mod tests {
                 .expect("metadata"),
         );
         let mut worker = Worker::new(store.clone(), metadata, crate::live::channels());
-        let item = IngestItem::Metrics(
-            metrics_request_with_exemplar(),
-            bytes::Bytes::new(),
-        );
+        let item = IngestItem::Metrics(metrics_request_with_exemplar(), bytes::Bytes::new());
         worker.process(&item).await.expect("first");
-        worker.process(&item).await.expect("second retry-shaped call");
+        worker
+            .process(&item)
+            .await
+            .expect("second retry-shaped call");
         let rows = store
             .metric_exemplars(
                 "http.server.request.duration",

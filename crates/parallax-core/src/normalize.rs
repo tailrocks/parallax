@@ -12,7 +12,13 @@ use parallax_proto::semconv;
 use parallax_storage::model::{HistogramRow, LogRow, MetricExemplarRow, MetricPointRow, SpanRow};
 
 pub fn hex(bytes: &[u8]) -> String {
-    bytes.iter().map(|b| format!("{b:02x}")).collect()
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut out = String::with_capacity(bytes.len() * 2);
+    for b in bytes {
+        out.push(HEX[(b >> 4) as usize] as char);
+        out.push(HEX[(b & 0x0f) as usize] as char);
+    }
+    out
 }
 
 fn any_value_to_json(value: &AnyValue) -> serde_json::Value {
@@ -479,6 +485,13 @@ mod tests {
                 ..Default::default()
             }],
         }
+    }
+
+    #[test]
+    fn hex_encodes_known_bytes() {
+        assert_eq!(hex(&[0x00, 0xff, 0x1a]), "00ff1a");
+        assert_eq!(hex(&[]), "");
+        assert_eq!(hex(&[0xab; 16]), "abababababababababababababababab");
     }
 
     #[test]

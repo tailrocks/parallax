@@ -25,6 +25,14 @@ pub enum Signal {
 impl Signal {
     const ALL: [Signal; 3] = [Signal::Traces, Signal::Logs, Signal::Metrics];
 
+    fn index(self) -> usize {
+        match self {
+            Signal::Traces => 0,
+            Signal::Logs => 1,
+            Signal::Metrics => 2,
+        }
+    }
+
     fn file_name(self) -> &'static str {
         match self {
             Signal::Traces => "traces.ndjson",
@@ -42,29 +50,12 @@ impl Signal {
     }
 }
 
-#[derive(Debug, Default)]
-struct SegmentSizes {
-    traces: u64,
-    logs: u64,
-    metrics: u64,
-}
-
-impl SegmentSizes {
-    fn get(&self, signal: Signal) -> u64 {
-        match signal {
-            Signal::Traces => self.traces,
-            Signal::Logs => self.logs,
-            Signal::Metrics => self.metrics,
-        }
-    }
-
-    fn set(&mut self, signal: Signal, size: u64) {
-        match signal {
-            Signal::Traces => self.traces = size,
-            Signal::Logs => self.logs = size,
-            Signal::Metrics => self.metrics = size,
-        }
-    }
+/// Per-signal append state: size accounting plus a cached open handle so
+/// consecutive appends skip the open syscall. Handles are closed before
+/// rotation so a rename cannot leave writes on the rotated inode.
+struct SignalState {
+    size: u64,
+    file: Option<std::fs::File>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -87,10 +78,14 @@ struct RotatedSegment {
 }
 
 /// Bounded NDJSON spool, one active file per signal plus rotated segments.
+///
+/// Appends for different signals do not share a lock; each signal serializes
+/// its own rotate/write path so concurrent traces/logs/metrics exporters do
+/// not wait on each other's disk IO.
 pub struct Spool {
     dir: PathBuf,
     max_segment_bytes: u64,
-    sizes: Mutex<SegmentSizes>,
+    states: [Mutex<SignalState>; 3],
 }
 
 impl Spool {
@@ -104,19 +99,32 @@ impl Spool {
     ) -> anyhow::Result<Self> {
         let dir = dir.as_ref().to_path_buf();
         std::fs::create_dir_all(&dir)?;
-        let mut sizes = SegmentSizes::default();
+        let mut states = [
+            Mutex::new(SignalState {
+                size: 0,
+                file: None,
+            }),
+            Mutex::new(SignalState {
+                size: 0,
+                file: None,
+            }),
+            Mutex::new(SignalState {
+                size: 0,
+                file: None,
+            }),
+        ];
         for signal in Signal::ALL {
             let size = dir
                 .join(signal.file_name())
                 .metadata()
                 .map(|metadata| metadata.len())
                 .unwrap_or(0);
-            sizes.set(signal, size);
+            *states[signal.index()].get_mut() = SignalState { size, file: None };
         }
         Ok(Self {
             dir,
             max_segment_bytes: max_segment_bytes.max(1),
-            sizes: Mutex::new(sizes),
+            states,
         })
     }
 
@@ -125,25 +133,29 @@ impl Spool {
     }
 
     /// Append one export request as a single NDJSON line.
+    ///
+    /// JSON serialization happens before the per-signal lock. Rotate-check and
+    /// the write itself run on a blocking pool thread so Tokio workers are not
+    /// stalled on disk syscalls; the async lock is held across that await so
+    /// line atomicity and size accounting stay exact per signal.
     pub async fn append<T: Serialize>(&self, signal: Signal, request: &T) -> anyhow::Result<()> {
         let line = serde_json::to_string(request)?;
         let write_len = u64::try_from(line.len().saturating_add(1)).unwrap_or(u64::MAX);
-        let path = self.dir.join(signal.file_name());
-        let mut sizes = self.sizes.lock().await;
-        if sizes.get(signal) > 0
-            && sizes.get(signal).saturating_add(write_len) > self.max_segment_bytes
-        {
-            self.rotate_active(signal)?;
-            sizes.set(signal, 0);
-        }
-        let mut file = std::fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(path)?;
-        file.write_all(line.as_bytes())?;
-        file.write_all(b"\n")?;
-        let next_size = sizes.get(signal).saturating_add(write_len);
-        sizes.set(signal, next_size);
+        let dir = self.dir.clone();
+        let max_segment_bytes = self.max_segment_bytes;
+
+        let mut state = self.states[signal.index()].lock().await;
+        let size = state.size;
+        let file = state.file.take();
+
+        let (next_file, next_size) = tokio::task::spawn_blocking(move || {
+            append_blocking(dir, signal, max_segment_bytes, size, write_len, file, line)
+        })
+        .await
+        .map_err(|e| anyhow::anyhow!("spool append join: {e}"))??;
+
+        state.file = next_file;
+        state.size = next_size;
         Ok(())
     }
 
@@ -202,41 +214,6 @@ impl Spool {
         Ok(total)
     }
 
-    fn rotate_active(&self, signal: Signal) -> anyhow::Result<()> {
-        let active = self.dir.join(signal.file_name());
-        if !active.exists() {
-            return Ok(());
-        }
-        let rotated = self.next_rotated_path(signal);
-        std::fs::rename(active, rotated)?;
-        Ok(())
-    }
-
-    fn next_rotated_path(&self, signal: Signal) -> PathBuf {
-        let timestamp = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs();
-        let first = self
-            .dir
-            .join(format!("{}.{}.ndjson", signal.stem(), timestamp));
-        if !first.exists() {
-            return first;
-        }
-        for sequence in 1u64.. {
-            let candidate = self.dir.join(format!(
-                "{}.{}-{}.ndjson",
-                signal.stem(),
-                timestamp,
-                sequence
-            ));
-            if !candidate.exists() {
-                return candidate;
-            }
-        }
-        unreachable!("unbounded sequence finds a rotated spool path")
-    }
-
     fn rotated_segments(&self) -> anyhow::Result<Vec<RotatedSegment>> {
         let mut segments = Vec::new();
         for entry in std::fs::read_dir(&self.dir)? {
@@ -258,6 +235,70 @@ impl Spool {
         }
         Ok(segments)
     }
+}
+
+/// Blocking rotate-check + write for one append. Closes any cached handle
+/// before renaming the active segment so writes cannot land on the rotated
+/// inode.
+fn append_blocking(
+    dir: PathBuf,
+    signal: Signal,
+    max_segment_bytes: u64,
+    mut size: u64,
+    write_len: u64,
+    mut file: Option<std::fs::File>,
+    line: String,
+) -> anyhow::Result<(Option<std::fs::File>, u64)> {
+    if size > 0 && size.saturating_add(write_len) > max_segment_bytes {
+        // Close before rename: an open fd would keep writing the rotated file.
+        drop(file.take());
+        rotate_active(&dir, signal)?;
+        size = 0;
+    }
+
+    let mut handle = match file {
+        Some(handle) => handle,
+        None => std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(dir.join(signal.file_name()))?,
+    };
+    handle.write_all(line.as_bytes())?;
+    handle.write_all(b"\n")?;
+    Ok((Some(handle), size.saturating_add(write_len)))
+}
+
+fn rotate_active(dir: &Path, signal: Signal) -> anyhow::Result<()> {
+    let active = dir.join(signal.file_name());
+    if !active.exists() {
+        return Ok(());
+    }
+    let rotated = next_rotated_path(dir, signal);
+    std::fs::rename(active, rotated)?;
+    Ok(())
+}
+
+fn next_rotated_path(dir: &Path, signal: Signal) -> PathBuf {
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    let first = dir.join(format!("{}.{}.ndjson", signal.stem(), timestamp));
+    if !first.exists() {
+        return first;
+    }
+    for sequence in 1u64.. {
+        let candidate = dir.join(format!(
+            "{}.{}-{}.ndjson",
+            signal.stem(),
+            timestamp,
+            sequence
+        ));
+        if !candidate.exists() {
+            return candidate;
+        }
+    }
+    unreachable!("unbounded sequence finds a rotated spool path")
 }
 
 impl SpoolReclaim {
@@ -364,6 +405,44 @@ mod tests {
         for line in rotated_lines.lines().chain(active_lines.lines()) {
             serde_json::from_str::<serde_json::Value>(line).expect("valid ndjson line");
         }
+    }
+
+    #[tokio::test]
+    async fn different_signals_keep_independent_sizes() {
+        let tmp = TempDir::new("per-signal");
+        // Tiny segment budget so logs rotate while traces stay under the cap.
+        let spool = Spool::open_with_max_segment_bytes(tmp.path(), 40).expect("spool");
+
+        spool
+            .append(Signal::Logs, &json!({"body": "first log"}))
+            .await
+            .expect("logs first");
+        spool
+            .append(Signal::Traces, &json!({"body": "first trace"}))
+            .await
+            .expect("traces first");
+        spool
+            .append(
+                Signal::Logs,
+                &json!({"body": "second log that forces rotate"}),
+            )
+            .await
+            .expect("logs second");
+
+        // Logs rotated once; traces still a single active line.
+        assert_eq!(rotated_files(tmp.path(), Signal::Logs).len(), 1);
+        assert!(rotated_files(tmp.path(), Signal::Traces).is_empty());
+        assert_eq!(spool.line_count(Signal::Logs).expect("logs count"), 1);
+        assert_eq!(spool.line_count(Signal::Traces).expect("traces count"), 1);
+
+        // In-memory size for traces still accounts for the one line (not zeroed
+        // by the logs rotation). A third tiny traces append must not rotate.
+        spool
+            .append(Signal::Traces, &json!({"b": 1}))
+            .await
+            .expect("traces second");
+        assert!(rotated_files(tmp.path(), Signal::Traces).is_empty());
+        assert_eq!(spool.line_count(Signal::Traces).expect("traces count"), 2);
     }
 
     #[test]

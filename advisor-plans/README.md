@@ -129,7 +129,7 @@ its verification gates, and update your row below when done.
 | 073 | Spool durability truth (worker retry, shutdown drain, honest docs) | P1 | M | 070 | DONE |
 | 074 | GreptimeDB SQL testability (golden SQL, escape tests, conformance suite) | P1 | L | 070; 069 (soft) | DONE |
 | 075 | Read-path performance (traces_search window, fan-out joins, table cache) | P2 | M | 074 | DONE |
-| 076 | Ingest hot path (spool locks/IO, batched upserts, normalize churn) | P2 | M-L | 073, 070 | TODO |
+| 076 | Ingest hot path (spool locks/IO, batched upserts, normalize churn) | P2 | M-L | 073, 070 | DONE (Step 4 Arc resource not-worth-it: ~39 construction/assignment sites >25 STOP) |
 | 077 | Shared SSE hook + real stream health in Live badges | P2 | M | 071 | DONE |
 | 078 | Split parallax-api lib.rs into domain modules | P2 | L | 069; after 072/073/075 | TODO |
 | 079 | UI query/type dedup + dependency hygiene + rotel.env template | P2 | M | 069; after 071/077 | DONE |
