@@ -53,7 +53,7 @@ async fn greptime_conformance_scenarios() {
     // Document: greptime native path needs OTLP raw bytes for non-empty seeds;
     // empty-window calls below prove the SQL layer is reachable.
     let store = handle.store.clone();
-    if let Err(e) = store.service_names().await {
+    if let Err(e) = store.service_names(0..=u128::MAX).await {
         panic!("service_names failed on live engine: {e:#}");
     }
     if let Err(e) = store.overview_totals(0..=u128::MAX).await {

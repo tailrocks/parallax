@@ -472,10 +472,18 @@ pub trait TelemetryStore: Send + Sync {
     /// `/v1/otlp/v1/traces` endpoint (auto-creates `opentelemetry_traces`). The
     /// decoded `spans` are the tee — kept for the in-memory adapter and unused
     /// by the native forward.
-    async fn ingest_traces(&self, spans: Vec<SpanRow>, raw: bytes::Bytes) -> anyhow::Result<()>;
+    async fn ingest_traces(
+        &self,
+        request: &parallax_proto::collector_trace::ExportTraceServiceRequest,
+        raw: bytes::Bytes,
+    ) -> anyhow::Result<()>;
     /// Ingest a logs batch: forward the raw OTLP bytes to the native
     /// `/v1/otlp/v1/logs` endpoint (auto-creates `opentelemetry_logs`).
-    async fn ingest_logs(&self, logs: Vec<LogRow>, raw: bytes::Bytes) -> anyhow::Result<()>;
+    async fn ingest_logs(
+        &self,
+        request: &parallax_proto::collector_logs::ExportLogsServiceRequest,
+        raw: bytes::Bytes,
+    ) -> anyhow::Result<()>;
     /// Ingest a metrics batch: forward the raw OTLP bytes to the native
     /// `/v1/otlp/v1/metrics` endpoint (per-metric metric-engine tables), then
     /// persist the run-scoped subset of `points` into `run_metric_points`.
@@ -494,7 +502,13 @@ pub trait TelemetryStore: Send + Sync {
     /// Returns at most one summary per id, preserving input order where possible.
     async fn traces_by_ids(&self, trace_ids: &[String]) -> anyhow::Result<Vec<TraceSummary>>;
     /// Run-scoped read: every span tagged with one `parallax.run.id`.
-    async fn spans_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<SpanRow>>;
+    /// `range` bounds the logs-table fallback scan (plan 085).
+    async fn spans_by_run(
+        &self,
+        run_id: &str,
+        limit: usize,
+        range: RangeInclusive<u128>,
+    ) -> anyhow::Result<Vec<SpanRow>>;
     /// Batched run-scoped span read: up to `limit_per_run` newest spans per
     /// run id (then returned start-time ascending within each run). Default
     /// loops `spans_by_run`; Greptime overrides with one windowed query.
@@ -504,10 +518,12 @@ pub trait TelemetryStore: Send + Sync {
         limit_per_run: usize,
     ) -> anyhow::Result<HashMap<String, Vec<SpanRow>>> {
         let mut out = HashMap::with_capacity(run_ids.len());
+        let range = 0..=u128::MAX;
         for run_id in run_ids {
             out.insert(
                 run_id.clone(),
-                self.spans_by_run(run_id, limit_per_run).await?,
+                self.spans_by_run(run_id, limit_per_run, range.clone())
+                    .await?,
             );
         }
         Ok(out)
@@ -516,8 +532,8 @@ pub trait TelemetryStore: Send + Sync {
     async fn logs_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<LogRow>>;
     /// Anchored read: every log of one trace, time ascending.
     async fn logs_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<LogRow>>;
-    /// Distinct metric names (both point and histogram metrics).
-    async fn metric_names(&self) -> anyhow::Result<Vec<String>>;
+    /// Distinct metric names inside `range` (plan 085 windows extension scan).
+    async fn metric_names(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<String>>;
     /// Discover groupable metric label/tag keys for one metric.
     async fn metric_labels(&self, name: &str) -> anyhow::Result<Vec<String>>;
     /// Distinct scalar values for one metric label inside an inclusive window.
@@ -527,8 +543,8 @@ pub trait TelemetryStore: Send + Sync {
         label: &str,
         range: RangeInclusive<u128>,
     ) -> anyhow::Result<Vec<String>>;
-    /// Distinct service names seen in metrics.
-    async fn service_names(&self) -> anyhow::Result<Vec<String>>;
+    /// Distinct service names across signals inside `range` (plan 085).
+    async fn service_names(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<String>>;
     /// Whole-system overview counters for an inclusive time window.
     async fn overview_totals(&self, range: RangeInclusive<u128>) -> anyhow::Result<OverviewTotals>;
     /// Signal volume per bucket for overview trend charts.
@@ -618,8 +634,12 @@ pub trait TelemetryStore: Send + Sync {
         range: RangeInclusive<u128>,
         limit: usize,
     ) -> anyhow::Result<Vec<ErrorEventRow>>;
-    /// Distinct run ids seen in telemetry, most recent activity first.
-    async fn observed_runs(&self, limit: usize) -> anyhow::Result<Vec<ObservedRun>>;
+    /// Distinct run ids inside `range`, most recent activity first (plan 085).
+    async fn observed_runs(
+        &self,
+        limit: usize,
+        range: RangeInclusive<u128>,
+    ) -> anyhow::Result<Vec<ObservedRun>>;
     /// Recent traces (root spans + aggregates), newest first.
     async fn recent_traces(&self, limit: usize) -> anyhow::Result<Vec<TraceSummary>> {
         Ok(self

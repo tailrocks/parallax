@@ -26,7 +26,7 @@ verified source inside the plan file.
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | 084 | GreptimeDB integration corrections (matches_term, index types, deterministic log schema, TTL reconcile, timeouts, version upgrades) | P1 | L | 070; 074 soft | DONE |
-| 085 | Read-path SQL rewrites (window unbounded scans, SQL-side histogram/edge aggregation, round-trip collapse, uncast timestamp) | P1 | L | 074, 075, 084 | TODO |
+| 085 | Read-path SQL rewrites (window unbounded scans, SQL-side histogram/edge aggregation, round-trip collapse, uncast timestamp) | P1 | L | 074, 075, 084 | DONE |
 | 086 | API request memoization + batching (per-request span/log memo, batched run stats, one RED scan, join!, SSE per-batch serialization) | P1 | L | 070; BEFORE 078 | DONE |
 | 087 | Ingest pipeline restructure (gzip OTLP/HTTP, per-signal workers, drop discarded batches, raw-bytes spool, bounded limits) | P1/P2 | L | 073, 076 | TODO |
 | 088 | UI data layer (query cache + preload reuse, dashboard fan-out collapse, bounded run scan, visibility gating, issues table) | P2 | L | 071, 077, 079 | DONE |

@@ -11,10 +11,13 @@ use crate::adapter::{
     metric_group_label_allowed, runtime_metric_family, runtime_metric_unit, span_field_key_allowed,
 };
 use crate::model::*;
+use parallax_proto::collector_logs::ExportLogsServiceRequest;
+use parallax_proto::collector_trace::ExportTraceServiceRequest;
 use parallax_proto::semconv;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::ops::RangeInclusive;
 use std::sync::Mutex;
+use tokio::sync::{Mutex as AsyncMutex, oneshot};
 
 /// Render one attribute value for grouping — scalars only, like the tag
 /// cache; missing/nested values group under "(none)".
@@ -138,9 +141,26 @@ fn quantile_from_sorted(values: &[u128], q: f64) -> f64 {
     values[lo] as f64 + (values[hi] as f64 - values[lo] as f64) * weight
 }
 
-#[derive(Default)]
+type TraceNormalizer =
+    std::sync::Arc<dyn Fn(&ExportTraceServiceRequest) -> Vec<SpanRow> + Send + Sync>;
+type LogNormalizer = std::sync::Arc<dyn Fn(&ExportLogsServiceRequest) -> Vec<LogRow> + Send + Sync>;
+
 pub struct MemoryStore {
     inner: Mutex<Inner>,
+    normalize_traces: Option<TraceNormalizer>,
+    normalize_logs: Option<LogNormalizer>,
+    traces_gate: AsyncMutex<Option<oneshot::Receiver<()>>>,
+}
+
+impl Default for MemoryStore {
+    fn default() -> Self {
+        Self {
+            inner: Mutex::new(Inner::default()),
+            normalize_traces: None,
+            normalize_logs: None,
+            traces_gate: AsyncMutex::new(None),
+        }
+    }
 }
 
 #[derive(Default)]
@@ -158,9 +178,25 @@ impl MemoryStore {
         Self::default()
     }
 
+    pub fn with_normalizers(mut self, traces: TraceNormalizer, logs: LogNormalizer) -> Self {
+        self.normalize_traces = Some(traces);
+        self.normalize_logs = Some(logs);
+        self
+    }
+
+    pub fn push_spans(&self, spans: Vec<SpanRow>) {
+        self.lock().spans.extend(spans);
+    }
+
+    pub fn push_logs(&self, logs: Vec<LogRow>) {
+        self.lock().logs.extend(logs);
+    }
+
+    pub async fn set_traces_gate(&self, rx: oneshot::Receiver<()>) {
+        *self.traces_gate.lock().await = Some(rx);
+    }
+
     fn lock(&self) -> std::sync::MutexGuard<'_, Inner> {
-        // A poisoned lock only happens after a panic while holding it; the
-        // data is plain rows, safe to keep serving.
         self.inner
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
@@ -179,15 +215,32 @@ impl MemoryStore {
 
 #[async_trait::async_trait]
 impl TelemetryStore for MemoryStore {
-    // The in-memory adapter has no proto dependency, so it stores the decoded
-    // tee rows and ignores the raw OTLP bytes the native forward would use.
-    async fn ingest_traces(&self, spans: Vec<SpanRow>, _raw: bytes::Bytes) -> anyhow::Result<()> {
-        self.lock().spans.extend(spans);
+    async fn ingest_traces(
+        &self,
+        request: &ExportTraceServiceRequest,
+        _raw: bytes::Bytes,
+    ) -> anyhow::Result<()> {
+        let gate = {
+            let mut g = self.traces_gate.lock().await;
+            g.take()
+        };
+        if let Some(rx) = gate {
+            let _ = rx.await;
+        }
+        if let Some(normalize) = &self.normalize_traces {
+            self.lock().spans.extend(normalize(request));
+        }
         Ok(())
     }
 
-    async fn ingest_logs(&self, logs: Vec<LogRow>, _raw: bytes::Bytes) -> anyhow::Result<()> {
-        self.lock().logs.extend(logs);
+    async fn ingest_logs(
+        &self,
+        request: &ExportLogsServiceRequest,
+        _raw: bytes::Bytes,
+    ) -> anyhow::Result<()> {
+        if let Some(normalize) = &self.normalize_logs {
+            self.lock().logs.extend(normalize(request));
+        }
         Ok(())
     }
 
@@ -271,7 +324,12 @@ impl TelemetryStore for MemoryStore {
         Ok(summaries)
     }
 
-    async fn spans_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<SpanRow>> {
+    async fn spans_by_run(
+        &self,
+        run_id: &str,
+        limit: usize,
+        _range: RangeInclusive<u128>,
+    ) -> anyhow::Result<Vec<SpanRow>> {
         let mut spans: Vec<SpanRow> = self
             .lock()
             .spans
@@ -291,10 +349,8 @@ impl TelemetryStore for MemoryStore {
         limit_per_run: usize,
     ) -> anyhow::Result<HashMap<String, Vec<SpanRow>>> {
         let wanted: HashSet<&str> = run_ids.iter().map(String::as_str).collect();
-        let mut out: HashMap<String, Vec<SpanRow>> = run_ids
-            .iter()
-            .map(|id| (id.clone(), Vec::new()))
-            .collect();
+        let mut out: HashMap<String, Vec<SpanRow>> =
+            run_ids.iter().map(|id| (id.clone(), Vec::new())).collect();
         if wanted.is_empty() || limit_per_run == 0 {
             return Ok(out);
         }
@@ -305,7 +361,9 @@ impl TelemetryStore for MemoryStore {
             if !wanted.contains(run_id) {
                 continue;
             }
-            out.entry(run_id.to_string()).or_default().push(span.clone());
+            out.entry(run_id.to_string())
+                .or_default()
+                .push(span.clone());
         }
         for spans in out.values_mut() {
             spans.sort_by_key(|s| std::cmp::Reverse(s.ts_nanos));
@@ -341,13 +399,20 @@ impl TelemetryStore for MemoryStore {
         Ok(logs)
     }
 
-    async fn metric_names(&self) -> anyhow::Result<Vec<String>> {
+    async fn metric_names(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<String>> {
         let inner = self.lock();
         let mut names: Vec<String> = inner
             .metric_points
             .iter()
+            .filter(|p| range.contains(&p.ts_nanos))
             .map(|p| p.name.clone())
-            .chain(inner.histograms.iter().map(|h| h.name.clone()))
+            .chain(
+                inner
+                    .histograms
+                    .iter()
+                    .filter(|h| range.contains(&h.ts_nanos))
+                    .map(|h| h.name.clone()),
+            )
             .collect();
         names.sort();
         names.dedup();
@@ -428,14 +493,27 @@ impl TelemetryStore for MemoryStore {
         Ok(values.into_iter().collect())
     }
 
-    async fn service_names(&self) -> anyhow::Result<Vec<String>> {
+    async fn service_names(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<String>> {
         let inner = self.lock();
         let mut names: Vec<String> = inner
             .metric_points
             .iter()
+            .filter(|p| range.contains(&p.ts_nanos))
             .map(|p| p.service.clone())
-            .chain(inner.spans.iter().map(|s| s.service.clone()))
-            .chain(inner.logs.iter().map(|l| l.service.clone()))
+            .chain(
+                inner
+                    .spans
+                    .iter()
+                    .filter(|s| range.contains(&s.ts_nanos))
+                    .map(|s| s.service.clone()),
+            )
+            .chain(
+                inner
+                    .logs
+                    .iter()
+                    .filter(|l| range.contains(&l.ts_nanos))
+                    .map(|l| l.service.clone()),
+            )
             .collect();
         names.sort();
         names.dedup();
@@ -808,23 +886,27 @@ impl TelemetryStore for MemoryStore {
         step_nanos: u128,
         q: f64,
     ) -> anyhow::Result<Vec<SeriesPoint>> {
+        // Latest sample per window (plan 085) — align with greptime MAX merge.
         let step = step_nanos.max(1);
-        let mut buckets: std::collections::BTreeMap<u128, Vec<HistogramRow>> = Default::default();
+        let mut latest: std::collections::BTreeMap<u128, HistogramRow> = Default::default();
         for row in self.lock().histograms.iter().filter(|h| {
             h.name == name
                 && service.is_none_or(|svc| h.service == svc)
                 && range.contains(&h.ts_nanos)
         }) {
-            buckets
-                .entry((row.ts_nanos / step) * step)
-                .or_default()
-                .push(row.clone());
+            let window = (row.ts_nanos / step) * step;
+            match latest.get(&window) {
+                Some(cur) if cur.ts_nanos >= row.ts_nanos => {}
+                _ => {
+                    latest.insert(window, row.clone());
+                }
+            }
         }
-        Ok(buckets
+        Ok(latest
             .into_iter()
-            .map(|(ts_nanos, rows)| SeriesPoint {
+            .map(|(ts_nanos, row)| SeriesPoint {
                 ts_nanos,
-                value: quantile_from_histograms(&rows, q),
+                value: quantile_from_histograms(&[row], q),
             })
             .collect())
     }
@@ -873,11 +955,15 @@ impl TelemetryStore for MemoryStore {
     async fn observed_runs(
         &self,
         limit: usize,
+        range: RangeInclusive<u128>,
     ) -> anyhow::Result<Vec<crate::adapter::ObservedRun>> {
         let inner = self.lock();
         let mut runs: std::collections::HashMap<String, crate::adapter::ObservedRun> =
             std::collections::HashMap::new();
         let mut absorb = |run_id: &Option<String>, ts: u128, service: &str, is_span: bool| {
+            if !range.contains(&ts) {
+                return;
+            }
             let Some(run_id) = run_id.as_deref().filter(|r| !r.is_empty()) else {
                 return;
             };
@@ -1455,7 +1541,7 @@ impl TelemetryStore for MemoryStore {
         step_nanos: u128,
     ) -> anyhow::Result<Vec<RuntimeMetricSeries>> {
         let mut rows = Vec::new();
-        for metric in self.metric_names().await? {
+        for metric in self.metric_names(range.clone()).await? {
             let Some(family) = runtime_metric_family(&metric) else {
                 continue;
             };
@@ -1709,10 +1795,7 @@ mod tests {
         s3.resource = serde_json::json!({ "service.name": "checkout" });
         let mut s4 = span("trace-4", "root", None, "checkout", 40);
         s4.resource = serde_json::json!({ "service.name": "checkout" });
-        store
-            .ingest_traces(vec![s1, s2, s3, s4], bytes::Bytes::new())
-            .await
-            .unwrap();
+        store.push_spans(vec![s1, s2, s3, s4]);
 
         let keys = store.span_field_keys(0..=100).await.unwrap();
         let method_key = keys
@@ -1746,18 +1829,12 @@ mod tests {
     #[tokio::test]
     async fn span_field_stats_rejects_disallowed_keys() {
         let store = MemoryStore::new();
-        store
-            .ingest_traces(
-                vec![span_with_attrs(
-                    "trace-1",
-                    "root",
-                    10,
-                    serde_json::json!({ "authorization": "secret" }),
-                )],
-                bytes::Bytes::new(),
-            )
-            .await
-            .unwrap();
+        store.push_spans(vec![span_with_attrs(
+            "trace-1",
+            "root",
+            10,
+            serde_json::json!({ "authorization": "secret" }),
+        )]);
 
         assert!(!span_field_key_allowed("authorization"));
         let err = store
@@ -1770,45 +1847,39 @@ mod tests {
     #[tokio::test]
     async fn service_catalog_returns_identity_and_nulls() {
         let store = MemoryStore::new();
-        store
-            .ingest_traces(
-                vec![
-                    span_with_resource(
-                        "checkout-old",
-                        "root",
-                        "checkout",
-                        10,
-                        serde_json::json!({
-                            "service.version": "v1",
-                            "service.namespace": "shop",
-                            "deployment.environment.name": "staging",
-                            "telemetry.sdk.language": "rust",
-                            "telemetry.sdk.name": "opentelemetry",
-                            "telemetry.sdk.version": "0.31.0",
-                            "service.instance.id": "checkout-a"
-                        }),
-                    ),
-                    span_with_resource(
-                        "checkout-new",
-                        "root",
-                        "checkout",
-                        20,
-                        serde_json::json!({
-                            "service.version": "v2",
-                            "service.namespace": "shop",
-                            "deployment.environment.name": "prod",
-                            "telemetry.sdk.language": "rust",
-                            "telemetry.sdk.name": "opentelemetry",
-                            "telemetry.sdk.version": "0.32.1",
-                            "service.instance.id": "checkout-b"
-                        }),
-                    ),
-                    span("bare", "root", None, "bare", 30),
-                ],
-                bytes::Bytes::new(),
-            )
-            .await
-            .unwrap();
+        store.push_spans(vec![
+            span_with_resource(
+                "checkout-old",
+                "root",
+                "checkout",
+                10,
+                serde_json::json!({
+                    "service.version": "v1",
+                    "service.namespace": "shop",
+                    "deployment.environment.name": "staging",
+                    "telemetry.sdk.language": "rust",
+                    "telemetry.sdk.name": "opentelemetry",
+                    "telemetry.sdk.version": "0.31.0",
+                    "service.instance.id": "checkout-a"
+                }),
+            ),
+            span_with_resource(
+                "checkout-new",
+                "root",
+                "checkout",
+                20,
+                serde_json::json!({
+                    "service.version": "v2",
+                    "service.namespace": "shop",
+                    "deployment.environment.name": "prod",
+                    "telemetry.sdk.language": "rust",
+                    "telemetry.sdk.name": "opentelemetry",
+                    "telemetry.sdk.version": "0.32.1",
+                    "service.instance.id": "checkout-b"
+                }),
+            ),
+            span("bare", "root", None, "bare", 30),
+        ]);
 
         let rows = store.service_catalog(0..=100).await.unwrap();
 
@@ -1833,20 +1904,14 @@ mod tests {
     #[tokio::test]
     async fn release_windows_group_versions_by_service_and_range() {
         let store = MemoryStore::new();
-        store
-            .ingest_traces(
-                vec![
-                    span_with_release("t1", "a", 10, "v1"),
-                    span_with_release("t2", "a", 20, "v1"),
-                    span_with_release("t3", "a", 40, "v2"),
-                    span_with_release("t4", "a", 60, "v2"),
-                    span("other", "a", None, "catalog", 30),
-                    span_with_release("too-late", "a", 90, "v3"),
-                ],
-                bytes::Bytes::new(),
-            )
-            .await
-            .unwrap();
+        store.push_spans(vec![
+            span_with_release("t1", "a", 10, "v1"),
+            span_with_release("t2", "a", 20, "v1"),
+            span_with_release("t3", "a", 40, "v2"),
+            span_with_release("t4", "a", 60, "v2"),
+            span("other", "a", None, "catalog", 30),
+            span_with_release("too-late", "a", 90, "v3"),
+        ]);
 
         let windows = store.release_windows("checkout", 0..=80).await.unwrap();
 
@@ -1889,10 +1954,7 @@ mod tests {
                 }),
             ));
         }
-        store
-            .ingest_traces(spans, bytes::Bytes::new())
-            .await
-            .unwrap();
+        store.push_spans(spans);
 
         let rows = store
             .attribute_compare(100..=200, 0..=99, Some("checkout"), false, &[], 10)
@@ -2078,38 +2140,32 @@ mod tests {
     #[tokio::test]
     async fn attribute_compare_denies_identifier_keys() {
         let store = MemoryStore::new();
-        store
-            .ingest_traces(
-                vec![
-                    span_with_attrs(
-                        "baseline",
-                        "root",
-                        1,
-                        serde_json::json!({
-                            "service.version": "1.0.0",
-                            "trace_id": "trace-baseline",
-                            "run_id": "run-baseline",
-                            "session.id": "session-baseline",
-                            "user.id": "user-baseline"
-                        }),
-                    ),
-                    span_with_attrs(
-                        "selected",
-                        "root",
-                        100,
-                        serde_json::json!({
-                            "service.version": "2.0.0",
-                            "trace_id": "trace-selected",
-                            "run_id": "run-selected",
-                            "session.id": "session-selected",
-                            "user.id": "user-selected"
-                        }),
-                    ),
-                ],
-                bytes::Bytes::new(),
-            )
-            .await
-            .unwrap();
+        store.push_spans(vec![
+            span_with_attrs(
+                "baseline",
+                "root",
+                1,
+                serde_json::json!({
+                    "service.version": "1.0.0",
+                    "trace_id": "trace-baseline",
+                    "run_id": "run-baseline",
+                    "session.id": "session-baseline",
+                    "user.id": "user-baseline"
+                }),
+            ),
+            span_with_attrs(
+                "selected",
+                "root",
+                100,
+                serde_json::json!({
+                    "service.version": "2.0.0",
+                    "trace_id": "trace-selected",
+                    "run_id": "run-selected",
+                    "session.id": "session-selected",
+                    "user.id": "user-selected"
+                }),
+            ),
+        ]);
         let keys = vec![
             "trace_id".to_string(),
             "run_id".to_string(),
@@ -2135,26 +2191,20 @@ mod tests {
     #[tokio::test]
     async fn attribute_compare_is_deterministic() {
         let store = MemoryStore::new();
-        store
-            .ingest_traces(
-                vec![
-                    span_with_attrs(
-                        "baseline-a",
-                        "root",
-                        1,
-                        serde_json::json!({"service.version": "1.0.0"}),
-                    ),
-                    span_with_attrs(
-                        "selected-a",
-                        "root",
-                        100,
-                        serde_json::json!({"service.version": "2.0.0"}),
-                    ),
-                ],
-                bytes::Bytes::new(),
-            )
-            .await
-            .unwrap();
+        store.push_spans(vec![
+            span_with_attrs(
+                "baseline-a",
+                "root",
+                1,
+                serde_json::json!({"service.version": "1.0.0"}),
+            ),
+            span_with_attrs(
+                "selected-a",
+                "root",
+                100,
+                serde_json::json!({"service.version": "2.0.0"}),
+            ),
+        ]);
 
         let first = store
             .attribute_compare(100..=200, 0..=99, None, false, &[], 10)
@@ -2186,20 +2236,14 @@ mod tests {
         outside_client.kind = "SPAN_KIND_CLIENT".into();
         let mut outside_server = span("trace-out", "d-server", Some("a-client"), "D", 1_001);
         outside_server.kind = "SPAN_KIND_SERVER".into();
-        store
-            .ingest_traces(
-                vec![
-                    a_client,
-                    b_server,
-                    b_client,
-                    c_server,
-                    outside_client,
-                    outside_server,
-                ],
-                bytes::Bytes::new(),
-            )
-            .await
-            .unwrap();
+        store.push_spans(vec![
+            a_client,
+            b_server,
+            b_client,
+            c_server,
+            outside_client,
+            outside_server,
+        ]);
 
         let edges = store.service_map(0..=200, 100).await.unwrap();
 
@@ -2229,13 +2273,7 @@ mod tests {
         b_client.kind = "SPAN_KIND_CLIENT".into();
         let mut c_server = span("trace-bc", "c-server", Some("b-client"), "C", 111);
         c_server.kind = "SPAN_KIND_SERVER".into();
-        store
-            .ingest_traces(
-                vec![a_client, b_server, b_client, c_server],
-                bytes::Bytes::new(),
-            )
-            .await
-            .unwrap();
+        store.push_spans(vec![a_client, b_server, b_client, c_server]);
 
         let first = store.service_map(0..=200, 100).await.unwrap();
         let second = store.service_map(0..=200, 100).await.unwrap();
@@ -2264,13 +2302,13 @@ mod tests {
             spans.push(span);
             logs.push(log(Some("run-1"), index, 9));
         }
-        store
-            .ingest_traces(spans, bytes::Bytes::new())
+        store.push_spans(spans);
+        store.push_logs(logs);
+
+        let spans = store
+            .spans_by_run("run-1", 200, 0..=u128::MAX)
             .await
             .unwrap();
-        store.ingest_logs(logs, bytes::Bytes::new()).await.unwrap();
-
-        let spans = store.spans_by_run("run-1", 200).await.unwrap();
         let logs = store.logs_by_run("run-1", 200).await.unwrap();
 
         assert_eq!(spans.len(), 200);
@@ -2284,18 +2322,12 @@ mod tests {
     #[tokio::test]
     async fn log_severity_max_bounds_search_and_count_series() {
         let store = MemoryStore::new();
-        store
-            .ingest_logs(
-                vec![
-                    log(None, 5, 5),
-                    log(None, 9, 9),
-                    log(None, 13, 13),
-                    log(None, 17, 17),
-                ],
-                bytes::Bytes::new(),
-            )
-            .await
-            .unwrap();
+        store.push_logs(vec![
+            log(None, 5, 5),
+            log(None, 9, 9),
+            log(None, 13, 13),
+            log(None, 17, 17),
+        ]);
 
         let logs = store
             .logs_search(None, 0..=100, Some(5), Some(8), None, 10)
@@ -2318,16 +2350,10 @@ mod tests {
     #[tokio::test]
     async fn service_filter_matches_participation_not_just_root() {
         let store = MemoryStore::new();
-        store
-            .ingest_traces(
-                vec![
-                    span("t1", "a", None, "checkout", 10),
-                    span("t1", "b", Some("a"), "catalog", 20),
-                ],
-                bytes::Bytes::new(),
-            )
-            .await
-            .unwrap();
+        store.push_spans(vec![
+            span("t1", "a", None, "checkout", 10),
+            span("t1", "b", Some("a"), "catalog", 20),
+        ]);
 
         let by_catalog = store.traces_search(&query(Some("catalog"))).await.unwrap();
         let by_catalog = by_catalog.items;
@@ -2348,16 +2374,10 @@ mod tests {
     #[tokio::test]
     async fn rootless_trace_lists_via_earliest_span() {
         let store = MemoryStore::new();
-        store
-            .ingest_traces(
-                vec![
-                    span("t2", "y", Some("missing-parent"), "catalog", 30),
-                    span("t2", "x", Some("missing-parent"), "catalog", 15),
-                ],
-                bytes::Bytes::new(),
-            )
-            .await
-            .unwrap();
+        store.push_spans(vec![
+            span("t2", "y", Some("missing-parent"), "catalog", 30),
+            span("t2", "x", Some("missing-parent"), "catalog", 15),
+        ]);
 
         let traces = store.traces_search(&query(None)).await.unwrap();
         let traces = traces.items;
@@ -2378,17 +2398,11 @@ mod tests {
         target_b.status_code = "STATUS_CODE_ERROR".into();
         let mut target_a = span("target-a", "root-a", None, "api", 10);
         target_a.name = "consume-a".into();
-        store
-            .ingest_traces(
-                vec![
-                    target_a,
-                    span("target-a", "child-a", Some("root-a"), "api", 12),
-                    target_b,
-                ],
-                bytes::Bytes::new(),
-            )
-            .await
-            .unwrap();
+        store.push_spans(vec![
+            target_a,
+            span("target-a", "child-a", Some("root-a"), "api", 12),
+            target_b,
+        ]);
 
         let summaries = store
             .traces_by_ids(&[
@@ -2416,19 +2430,13 @@ mod tests {
     #[tokio::test]
     async fn trace_search_sorts_offsets_and_filters_duration_band() {
         let store = MemoryStore::new();
-        store
-            .ingest_traces(
-                vec![
-                    span_with_duration("fast", "a", None, "api", 10, 10),
-                    span_with_duration("mid", "b", None, "api", 20, 20),
-                    span_with_duration("slow", "c", None, "api", 30, 30),
-                    span_with_duration("wide", "d", None, "api", 40, 25),
-                    span_with_duration("wide", "e", Some("d"), "api", 45, 5),
-                ],
-                bytes::Bytes::new(),
-            )
-            .await
-            .unwrap();
+        store.push_spans(vec![
+            span_with_duration("fast", "a", None, "api", 10, 10),
+            span_with_duration("mid", "b", None, "api", 20, 20),
+            span_with_duration("slow", "c", None, "api", 30, 30),
+            span_with_duration("wide", "d", None, "api", 40, 25),
+            span_with_duration("wide", "e", Some("d"), "api", 45, 5),
+        ]);
 
         let result = store
             .traces_search(&TraceQuery {
@@ -2471,31 +2479,22 @@ mod tests {
         let mut err = span("t1", "b", Some("a"), "api", 1_500_000_000);
         err.status_code = "STATUS_CODE_ERROR".into();
         err.duration_ns = 9_000_000;
-        store
-            .ingest_traces(vec![ok, err], bytes::Bytes::new())
-            .await
-            .unwrap();
-        store
-            .ingest_logs(
-                vec![LogRow {
-                    ts_nanos: 1_250_000_000,
-                    event_name: "checkout.failed".into(),
-                    observed_ts_nanos: 1_300_000_000,
-                    service: "api".into(),
-                    severity_num: 17,
-                    severity_text: "ERROR".into(),
-                    body: "bad".into(),
-                    trace_id: "t1".into(),
-                    span_id: "b".into(),
-                    run_id: None,
-                    scope_name: String::new(),
-                    attributes: serde_json::Value::Null,
-                    resource: serde_json::Value::Null,
-                }],
-                bytes::Bytes::new(),
-            )
-            .await
-            .unwrap();
+        store.push_spans(vec![ok, err]);
+        store.push_logs(vec![LogRow {
+            ts_nanos: 1_250_000_000,
+            event_name: "checkout.failed".into(),
+            observed_ts_nanos: 1_300_000_000,
+            service: "api".into(),
+            severity_num: 17,
+            severity_text: "ERROR".into(),
+            body: "bad".into(),
+            trace_id: "t1".into(),
+            span_id: "b".into(),
+            run_id: None,
+            scope_name: String::new(),
+            attributes: serde_json::Value::Null,
+            resource: serde_json::Value::Null,
+        }]);
         store
             .write_error_events(vec![error_event("api", 1_600_000_000)])
             .await
@@ -2545,10 +2544,7 @@ mod tests {
         slow.status_code = "STATUS_CODE_ERROR".into();
         let mut other = span("t3", "c", None, "worker", 1_800_000_000);
         other.duration_ns = 50_000_000;
-        store
-            .ingest_traces(vec![fast, slow, other], bytes::Bytes::new())
-            .await
-            .unwrap();
+        store.push_spans(vec![fast, slow, other]);
 
         let summaries = store.service_summaries(0..=2_000_000_000).await.unwrap();
         assert_eq!(summaries[0].name, "worker");

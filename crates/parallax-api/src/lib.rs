@@ -1096,7 +1096,7 @@ impl Run {
             .get_or_try_init(|| async {
                 let spans = context
                     .store
-                    .spans_by_run(&self.record.run_id, MAX_ROWS)
+                    .spans_by_run(&self.record.run_id, MAX_ROWS, retained_recent_range())
                     .await
                     .map_err(field_err)?;
                 let mut trace_ids: Vec<String> = Vec::new();
@@ -1780,6 +1780,15 @@ fn parse_range(from_nanos: &str, to_nanos: &str) -> juniper::FieldResult<(u128, 
     Ok((from, to))
 }
 
+/// Default window for windowless pickers (plan 085): now−24h ..= max.
+fn retained_recent_range() -> std::ops::RangeInclusive<u128> {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    now.saturating_sub(24 * 3_600 * 1_000_000_000)..=u128::MAX
+}
+
 fn step_nanos(step_seconds: Option<i32>) -> u128 {
     u128::try_from(step_seconds.unwrap_or(60).max(1)).unwrap_or(60) * 1_000_000_000
 }
@@ -2147,7 +2156,7 @@ impl Query {
     ) -> FieldResult<Vec<TraceSummary>> {
         let spans = context
             .store
-            .spans_by_run(&run_id, MAX_ROWS)
+            .spans_by_run(&run_id, MAX_ROWS, retained_recent_range())
             .await
             .map_err(field_err)?;
         let mut by_trace: Vec<(String, Vec<model::SpanRow>)> = Vec::new();
@@ -2211,7 +2220,7 @@ impl Query {
     ) -> FieldResult<Option<AgentSessionOut>> {
         let spans = context
             .store
-            .spans_by_run(&run_id, MAX_ROWS)
+            .spans_by_run(&run_id, MAX_ROWS, retained_recent_range())
             .await
             .map_err(field_err)?;
         let truncated = spans.len() == MAX_ROWS;
@@ -2236,7 +2245,9 @@ impl Query {
             }
             (None, Some(run_id)) => {
                 let (spans, logs) = tokio::try_join!(
-                    context.store.spans_by_run(&run_id, MAX_ROWS),
+                    context
+                        .store
+                        .spans_by_run(&run_id, MAX_ROWS, retained_recent_range()),
                     context.store.logs_by_run(&run_id, MAX_ROWS),
                 )
                 .map_err(field_err)?;
@@ -2268,7 +2279,9 @@ impl Query {
             }
             (None, Some(run_id)) => {
                 let (spans, logs) = tokio::try_join!(
-                    context.store.spans_by_run(&run_id, MAX_ROWS),
+                    context
+                        .store
+                        .spans_by_run(&run_id, MAX_ROWS, retained_recent_range()),
                     context.store.logs_by_run(&run_id, MAX_ROWS),
                 )
                 .map_err(field_err)?;
@@ -2591,7 +2604,7 @@ impl Query {
     ) -> FieldResult<Vec<ObservedRun>> {
         let runs = context
             .store
-            .observed_runs(clamp_limit(limit, 50))
+            .observed_runs(clamp_limit(limit, 50), retained_recent_range())
             .await
             .map_err(field_err)?;
         Ok(runs.into_iter().map(ObservedRun).collect())
@@ -2766,7 +2779,7 @@ impl Query {
             };
             let spans = context
                 .store
-                .spans_by_run(&run_id, MAX_ROWS)
+                .spans_by_run(&run_id, MAX_ROWS, retained_recent_range())
                 .await
                 .map_err(field_err)?;
             let mut trace_ids: Vec<String> = Vec::new();
@@ -2873,7 +2886,11 @@ impl Query {
         context: &ApiContext,
         prefix: Option<String>,
     ) -> FieldResult<Vec<String>> {
-        let mut names = context.store.metric_names().await.map_err(field_err)?;
+        let mut names = context
+            .store
+            .metric_names(retained_recent_range())
+            .await
+            .map_err(field_err)?;
         if let Some(prefix) = prefix {
             names.retain(|n| n.starts_with(&prefix));
         }
@@ -2906,7 +2923,11 @@ impl Query {
 
     /// Distinct service names (drives the service-overview selector).
     async fn services(context: &ApiContext) -> FieldResult<Vec<String>> {
-        context.store.service_names().await.map_err(field_err)
+        context
+            .store
+            .service_names(retained_recent_range())
+            .await
+            .map_err(field_err)
     }
 
     /// Runtime metric lanes, scoped to exactly one service or run.
@@ -3743,10 +3764,7 @@ mod tests {
             r#"[{"name":"rpc.message.received","time_unix_nano":20,"attributes":{"message.type":"RECEIVED"}}]"#
                 .into(),
         );
-        store
-            .ingest_traces(vec![root, child], Default::default())
-            .await
-            .unwrap();
+        store.push_spans(vec![root, child]);
 
         let schema = build_schema();
         let context = context_with_memory(store).await;
@@ -3805,10 +3823,7 @@ mod tests {
             Some(r#"[{"name":"rpc.message","time_unix_nano":10,"attributes":{}}]"#.into());
         let mut bad = span("checkout", "trace-a", "span-b", 2_000, 100);
         bad.events = Some("{not json".into());
-        store
-            .ingest_traces(vec![good, bad], Default::default())
-            .await
-            .unwrap();
+        store.push_spans(vec![good, bad]);
 
         let schema = build_schema();
         let context = context_with_memory(store).await;
@@ -3879,10 +3894,7 @@ mod tests {
         let mut unrelated = span("agent", "trace-other", "other", 1_050, 10);
         unrelated.name = "execute_tool".into();
         unrelated.run_id = Some("run-other".into());
-        store
-            .ingest_traces(vec![shell, unrelated, root, tool], Default::default())
-            .await
-            .unwrap();
+        store.push_spans(vec![shell, unrelated, root, tool]);
 
         let schema = build_schema();
         let context = context_with_memory(store).await;
@@ -4115,34 +4127,25 @@ mod tests {
         let store = Arc::new(MemoryStore::new());
         let mut errored = span("api", "t1", "b", 1_500_000_000, 30_000_000);
         errored.status_code = "STATUS_CODE_ERROR".into();
-        store
-            .ingest_traces(
-                vec![span("api", "t1", "a", 1_000_000_000, 10_000_000), errored],
-                Default::default(),
-            )
-            .await
-            .unwrap();
-        store
-            .ingest_logs(
-                vec![LogRow {
-                    ts_nanos: 1_250_000_000,
-                    event_name: "checkout.failed".into(),
-                    observed_ts_nanos: 1_300_000_000,
-                    service: "api".into(),
-                    severity_num: 17,
-                    severity_text: "ERROR".into(),
-                    body: "bad".into(),
-                    trace_id: "t1".into(),
-                    span_id: "b".into(),
-                    run_id: None,
-                    scope_name: String::new(),
-                    attributes: serde_json::Value::Null,
-                    resource: serde_json::Value::Null,
-                }],
-                Default::default(),
-            )
-            .await
-            .unwrap();
+        store.push_spans(vec![
+            span("api", "t1", "a", 1_000_000_000, 10_000_000),
+            errored,
+        ]);
+        store.push_logs(vec![LogRow {
+            ts_nanos: 1_250_000_000,
+            event_name: "checkout.failed".into(),
+            observed_ts_nanos: 1_300_000_000,
+            service: "api".into(),
+            severity_num: 17,
+            severity_text: "ERROR".into(),
+            body: "bad".into(),
+            trace_id: "t1".into(),
+            span_id: "b".into(),
+            run_id: None,
+            scope_name: String::new(),
+            attributes: serde_json::Value::Null,
+            resource: serde_json::Value::Null,
+        }]);
         store
             .write_error_events(vec![ErrorEventRow {
                 ts_nanos: 1_600_000_000,
@@ -4243,19 +4246,13 @@ mod tests {
         let mut anchor_log = log_row("api", "trace-a", anchor, "anchor");
         anchor_log.event_name = "checkout.completed".into();
         anchor_log.observed_ts_nanos = anchor + 2_000_000_000;
-        store
-            .ingest_logs(
-                vec![
-                    log_row("api", "trace-a", anchor - 60_000_000_000, "too-old"),
-                    log_row("api", "trace-a", anchor - 10_000_000_000, "before"),
-                    anchor_log,
-                    log_row("api", "trace-a", anchor + 10_000_000_000, "after"),
-                    log_row("api", "trace-a", anchor + 60_000_000_000, "too-new"),
-                ],
-                Default::default(),
-            )
-            .await
-            .unwrap();
+        store.push_logs(vec![
+            log_row("api", "trace-a", anchor - 60_000_000_000, "too-old"),
+            log_row("api", "trace-a", anchor - 10_000_000_000, "before"),
+            anchor_log,
+            log_row("api", "trace-a", anchor + 10_000_000_000, "after"),
+            log_row("api", "trace-a", anchor + 60_000_000_000, "too-new"),
+        ]);
         let schema = build_schema();
         let context = context_with_memory(store).await;
         let request = juniper::http::GraphQLRequest::new(
@@ -4296,17 +4293,11 @@ mod tests {
     async fn logs_around_can_scope_to_trace_inside_window() {
         let store = Arc::new(MemoryStore::new());
         let anchor = 100_000_000_000;
-        store
-            .ingest_logs(
-                vec![
-                    log_row("api", "trace-a", anchor - 1_000_000_000, "trace-a-before"),
-                    log_row("api", "trace-b", anchor, "trace-b-anchor"),
-                    log_row("api", "trace-a", anchor + 1_000_000_000, "trace-a-after"),
-                ],
-                Default::default(),
-            )
-            .await
-            .unwrap();
+        store.push_logs(vec![
+            log_row("api", "trace-a", anchor - 1_000_000_000, "trace-a-before"),
+            log_row("api", "trace-b", anchor, "trace-b-anchor"),
+            log_row("api", "trace-a", anchor + 1_000_000_000, "trace-a-after"),
+        ]);
         let schema = build_schema();
         let context = context_with_memory(store).await;
         let request = juniper::http::GraphQLRequest::new(
@@ -4354,7 +4345,7 @@ mod tests {
             anchor + 700_000_000_000,
             "beyond-clamped-window",
         ));
-        store.ingest_logs(rows, Default::default()).await.unwrap();
+        store.push_logs(rows);
         let schema = build_schema();
         let context = context_with_memory(store).await;
         let request = juniper::http::GraphQLRequest::new(
@@ -4589,18 +4580,12 @@ mod tests {
     #[tokio::test]
     async fn releases_resolver_returns_service_windows() {
         let store = Arc::new(MemoryStore::new());
-        store
-            .ingest_traces(
-                vec![
-                    span_with_release("checkout", "t1", "a", 10, "v1"),
-                    span_with_release("checkout", "t2", "a", 30, "v1"),
-                    span_with_release("checkout", "t3", "a", 50, "v2"),
-                    span_with_release("catalog", "t4", "a", 20, "v9"),
-                ],
-                Default::default(),
-            )
-            .await
-            .unwrap();
+        store.push_spans(vec![
+            span_with_release("checkout", "t1", "a", 10, "v1"),
+            span_with_release("checkout", "t2", "a", 30, "v1"),
+            span_with_release("checkout", "t3", "a", 50, "v2"),
+            span_with_release("catalog", "t4", "a", 20, "v9"),
+        ]);
         let schema = build_schema();
         let context = context_with_memory(store).await;
         let request = juniper::http::GraphQLRequest::new(
@@ -4655,13 +4640,7 @@ mod tests {
             "telemetry.sdk.version": "0.32.1",
             "service.instance.id": "checkout-a"
         });
-        store
-            .ingest_traces(
-                vec![checkout, span("bare", "t2", "root", 20, 1_000)],
-                Default::default(),
-            )
-            .await
-            .unwrap();
+        store.push_spans(vec![checkout, span("bare", "t2", "root", 20, 1_000)]);
         let schema = build_schema();
         let context = context_with_memory(store).await;
         let request = juniper::http::GraphQLRequest::new(
@@ -4758,10 +4737,7 @@ mod tests {
         ]);
         let mut target = span("worker", "target", "target-root", 20, 20_000_000);
         target.name = "consume".into();
-        store
-            .ingest_traces(vec![source, target], Default::default())
-            .await
-            .unwrap();
+        store.push_spans(vec![source, target]);
 
         let schema = build_schema();
         let context = context_with_memory(store).await;
@@ -4830,13 +4806,7 @@ mod tests {
         let mut b_retry = span("api", "b", "b-retry", 90, 10);
         b_retry.parent_span_id = Some("b-root".into());
         b_retry.name = "retry".into();
-        store
-            .ingest_traces(
-                vec![a_root, a_db, b_root, b_db, b_retry],
-                Default::default(),
-            )
-            .await
-            .unwrap();
+        store.push_spans(vec![a_root, a_db, b_root, b_db, b_retry]);
 
         let schema = build_schema();
         let context = context_with_memory(store).await;
@@ -4925,31 +4895,22 @@ mod tests {
         child.parent_span_id = Some("root".into());
         child.name = "SELECT orders".into();
         child.status_code = "STATUS_CODE_ERROR".into();
-        store
-            .ingest_traces(vec![root, child], Default::default())
-            .await
-            .unwrap();
-        store
-            .ingest_logs(
-                vec![LogRow {
-                    ts_nanos: 130,
-                    event_name: String::new(),
-                    observed_ts_nanos: 0,
-                    service: "api".into(),
-                    severity_num: 17,
-                    severity_text: "ERROR".into(),
-                    body: "payment 123 failed".into(),
-                    trace_id: "story-trace".into(),
-                    span_id: "child".into(),
-                    run_id: Some("run-story".into()),
-                    scope_name: String::new(),
-                    attributes: serde_json::Value::Null,
-                    resource: serde_json::Value::Null,
-                }],
-                Default::default(),
-            )
-            .await
-            .unwrap();
+        store.push_spans(vec![root, child]);
+        store.push_logs(vec![LogRow {
+            ts_nanos: 130,
+            event_name: String::new(),
+            observed_ts_nanos: 0,
+            service: "api".into(),
+            severity_num: 17,
+            severity_text: "ERROR".into(),
+            body: "payment 123 failed".into(),
+            trace_id: "story-trace".into(),
+            span_id: "child".into(),
+            run_id: Some("run-story".into()),
+            scope_name: String::new(),
+            attributes: serde_json::Value::Null,
+            resource: serde_json::Value::Null,
+        }]);
 
         let schema = build_schema();
         let context = context_with_memory(store).await;
@@ -5020,31 +4981,22 @@ mod tests {
         let mut orphan = span("api", "gap-trace", "orphan", 100, 10);
         orphan.parent_span_id = Some("missing-parent".into());
         orphan.run_id = Some("gap-run".into());
-        store
-            .ingest_traces(vec![orphan], Default::default())
-            .await
-            .unwrap();
-        store
-            .ingest_logs(
-                vec![LogRow {
-                    ts_nanos: 110,
-                    event_name: String::new(),
-                    observed_ts_nanos: 0,
-                    service: "api".into(),
-                    severity_num: 9,
-                    severity_text: "INFO".into(),
-                    body: "uncorrelated".into(),
-                    trace_id: "00000000000000000000000000000000".into(),
-                    span_id: String::new(),
-                    run_id: Some("gap-run".into()),
-                    scope_name: String::new(),
-                    attributes: serde_json::Value::Null,
-                    resource: serde_json::Value::Null,
-                }],
-                Default::default(),
-            )
-            .await
-            .unwrap();
+        store.push_spans(vec![orphan]);
+        store.push_logs(vec![LogRow {
+            ts_nanos: 110,
+            event_name: String::new(),
+            observed_ts_nanos: 0,
+            service: "api".into(),
+            severity_num: 9,
+            severity_text: "INFO".into(),
+            body: "uncorrelated".into(),
+            trace_id: "00000000000000000000000000000000".into(),
+            span_id: String::new(),
+            run_id: Some("gap-run".into()),
+            scope_name: String::new(),
+            attributes: serde_json::Value::Null,
+            resource: serde_json::Value::Null,
+        }]);
 
         let schema = build_schema();
         let context = context_with_memory(store).await;
@@ -5134,10 +5086,7 @@ mod tests {
             });
             spans.push(row);
         }
-        store
-            .ingest_traces(spans, Default::default())
-            .await
-            .unwrap();
+        store.push_spans(spans);
 
         let schema = build_schema();
         let context = context_with_memory(store).await;
@@ -5209,10 +5158,7 @@ mod tests {
             "request.id": "req-3"
         });
         third.resource = serde_json::json!({ "service.name": "checkout" });
-        store
-            .ingest_traces(vec![first, second, third], Default::default())
-            .await
-            .unwrap();
+        store.push_spans(vec![first, second, third]);
 
         let schema = build_schema();
         let context = context_with_memory(store).await;
@@ -5346,10 +5292,7 @@ mod tests {
         b_server.kind = "SPAN_KIND_SERVER".into();
         b_server.parent_span_id = Some("a-client".into());
         b_server.status_code = "STATUS_CODE_ERROR".into();
-        store
-            .ingest_traces(vec![a_client, b_server], Default::default())
-            .await
-            .unwrap();
+        store.push_spans(vec![a_client, b_server]);
 
         let schema = build_schema();
         let context = context_with_memory(store).await;
@@ -5399,17 +5342,11 @@ mod tests {
             r#"[{"name":"exception","timeUnixNano":"20","attributes":{"message":"bad"}}]"#
                 .to_string(),
         );
-        store
-            .ingest_traces(
-                vec![
-                    span("api", "fast", "a", 10, 10_000_000),
-                    mid,
-                    span("api", "slow", "c", 30, 30_000_000),
-                ],
-                Default::default(),
-            )
-            .await
-            .unwrap();
+        store.push_spans(vec![
+            span("api", "fast", "a", 10, 10_000_000),
+            mid,
+            span("api", "slow", "c", 30, 30_000_000),
+        ]);
 
         let schema = build_schema();
         let context = context_with_memory(store).await;
@@ -5463,10 +5400,7 @@ mod tests {
                 1_000,
             ));
         }
-        store
-            .ingest_traces(spans, Default::default())
-            .await
-            .unwrap();
+        store.push_spans(spans);
         let context = context_with_memory(store).await;
         let first = context.spans_for("big-trace").await.unwrap();
         let second = context.spans_for("big-trace").await.unwrap();
@@ -5495,10 +5429,7 @@ mod tests {
                 spans.push(row);
             }
         }
-        store
-            .ingest_traces(spans, Default::default())
-            .await
-            .unwrap();
+        store.push_spans(spans);
         store
             .write_error_events(vec![
                 ErrorEventRow {
