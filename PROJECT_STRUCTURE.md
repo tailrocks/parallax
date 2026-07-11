@@ -56,6 +56,7 @@ CI, stable-release, and preview-Homebrew automation live under
 | `docs/research/reference/` | External technical reviews. Includes `ai-native-debugging-tools.md` (open-source AI debugging agents, SRE agents, coding-agent observability tools). |
 | `prompts/` | Reusable research and agent prompts (goal-only briefs; run notes in `prompts/README.md`). |
 | `advisor-plans/` | Active improve/audit implementation plans (telemetry-quality 019–021 and observability 022–034 completed; codebase audit 069–083 and performance/Greptime integration 084–090 active). Index: `advisor-plans/README.md`. |
+| `schema/` | Shipped portable evidence-bundle JSON Schema (`evidence-bundle.v1.schema.json`) and versioning policy. Governs `BundleOut.json` / `parallax issue context --format json`. PoC schemas stay under `poc/evidence-loop/schema/`.
 | `plans/` | Operator feature-backlog plan items (035–068 series); not advisor plans. |
 | `bench/` | Local storage-benchmark scaffolding: pinned `compose.yml` for GreptimeDB + ClickHouse smoke runs. Generated datasets/results are gitignored; only compose/scripts are tracked. Consistent with [`docs/research/storage/benchmark-plan.md`](docs/research/storage/benchmark-plan.md). |
 | `bench/otlp-fanout/` | OTLP fan-out comparison lab: Rotel hub + competitor backends in Compose, fanning one OTLP stream to OpenObserve/SigNoz/Maple/Sentry and back to host Parallax. Implements [`docs/research/validation/otlp-fanout-comparison-lab.md`](docs/research/validation/otlp-fanout-comparison-lab.md). Vendored clones (`vendor/`) are gitignored. |

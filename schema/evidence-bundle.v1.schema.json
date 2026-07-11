@@ -1,0 +1,297 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tailrocks/parallax/schema/evidence-bundle.v1.schema.json",
+  "title": "parallax evidence bundle (bundle-v1)",
+  "description": "Shipped portable evidence-bundle contract. Describes the canonical JSON bytes emitted by BundleOut.json / `parallax issue context --format json` (serde_json over crates/parallax-core Bundle and its Serialize closure). Self-contained — no remote $refs. Additive-only within bundle-v1; see schema/README.md.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "generator",
+    "anchor",
+    "issue",
+    "run",
+    "latest_event",
+    "trace",
+    "metric_windows",
+    "logs",
+    "hypotheses",
+    "missing_evidence",
+    "redaction",
+    "bounded",
+    "canonical_hash"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "bundle-v1",
+      "description": "Must match crates/parallax-core SCHEMA_VERSION."
+    },
+    "generator": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Build identity, e.g. parallax/<CARGO_PKG_VERSION>. Excluded from canonical_hash."
+    },
+    "anchor": { "$ref": "#/$defs/Anchor" },
+    "issue": {
+      "anyOf": [{ "$ref": "#/$defs/IssueSummary" }, { "type": "null" }],
+      "description": "Primary grouped issue; null when the anchor has no correlated issue."
+    },
+    "run": {
+      "anyOf": [{ "$ref": "#/$defs/RunSection" }, { "type": "null" }],
+      "description": "Present for run anchors; null for issue/trace anchors."
+    },
+    "latest_event": {
+      "anyOf": [{ "$ref": "#/$defs/EventDetail" }, { "type": "null" }]
+    },
+    "trace": {
+      "anyOf": [{ "$ref": "#/$defs/TraceSection" }, { "type": "null" }]
+    },
+    "metric_windows": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/MetricWindow" }
+    },
+    "logs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Bounded, redacted correlated log lines (pre-formatted)."
+    },
+    "hypotheses": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Hypothesis" }
+    },
+    "missing_evidence": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "redaction": { "$ref": "#/$defs/RedactionReport" },
+    "bounded": { "$ref": "#/$defs/BoundReport" },
+    "canonical_hash": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        { "type": "null" }
+      ],
+      "description": "SHA-256 over sorted-key evidence fields; null only before assembly finalizes."
+    }
+  },
+  "$defs": {
+    "nanosString": {
+      "type": "string",
+      "pattern": "^[0-9]+$",
+      "description": "Nanosecond timestamp serialized via u128 Display / .to_string()."
+    },
+    "Anchor": {
+      "type": "object",
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "Anchor kind. Shipped values: issue, run, trace."
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Issue fingerprint, run id, or trace id."
+        }
+      }
+    },
+    "IssueSummary": {
+      "type": "object",
+      "required": [
+        "title",
+        "error_type",
+        "culprit",
+        "service",
+        "status",
+        "event_count",
+        "first_seen_nanos",
+        "last_seen_nanos"
+      ],
+      "properties": {
+        "title": { "type": "string" },
+        "error_type": { "type": "string" },
+        "culprit": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+        "service": { "type": "string" },
+        "status": { "type": "string" },
+        "event_count": { "type": "integer", "minimum": 0 },
+        "first_seen_nanos": { "$ref": "#/$defs/nanosString" },
+        "last_seen_nanos": { "$ref": "#/$defs/nanosString" }
+      }
+    },
+    "RunSection": {
+      "type": "object",
+      "required": [
+        "run_id",
+        "command",
+        "status",
+        "exit_code",
+        "started_at_nanos",
+        "ended_at_nanos",
+        "issues"
+      ],
+      "properties": {
+        "run_id": { "type": "string", "minLength": 1 },
+        "command": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+        "status": { "type": "string" },
+        "exit_code": { "anyOf": [{ "type": "integer" }, { "type": "null" }] },
+        "started_at_nanos": { "$ref": "#/$defs/nanosString" },
+        "ended_at_nanos": {
+          "anyOf": [{ "$ref": "#/$defs/nanosString" }, { "type": "null" }]
+        },
+        "issues": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/IssueSummary" }
+        }
+      }
+    },
+    "EventDetail": {
+      "type": "object",
+      "required": ["ts_nanos", "message", "stacktrace", "source", "trace_id"],
+      "properties": {
+        "ts_nanos": { "$ref": "#/$defs/nanosString" },
+        "message": { "type": "string" },
+        "stacktrace": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+        "source": {
+          "type": "string",
+          "description": "ErrorSource as snake_case string (span_exception, span_status, log_record, log_exception)."
+        },
+        "trace_id": { "type": "string" }
+      }
+    },
+    "TraceSection": {
+      "type": "object",
+      "required": ["trace_id", "spans"],
+      "properties": {
+        "trace_id": { "type": "string", "minLength": 1 },
+        "spans": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/SpanLine" }
+        }
+      }
+    },
+    "SpanLine": {
+      "type": "object",
+      "required": [
+        "service",
+        "name",
+        "kind",
+        "status_code",
+        "duration_us",
+        "db_query"
+      ],
+      "properties": {
+        "service": { "type": "string" },
+        "name": { "type": "string" },
+        "kind": { "type": "string" },
+        "status_code": { "type": "string" },
+        "duration_us": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Span duration in microseconds (u128 in Rust; JSON number)."
+        },
+        "db_query": { "anyOf": [{ "type": "string" }, { "type": "null" }] }
+      }
+    },
+    "MetricWindow": {
+      "type": "object",
+      "required": [
+        "metric",
+        "scope",
+        "from_nanos",
+        "to_nanos",
+        "step_seconds",
+        "points",
+        "stats"
+      ],
+      "properties": {
+        "metric": { "type": "string", "minLength": 1 },
+        "scope": {
+          "type": "string",
+          "description": "Correlation scope. Shipped values: run, service."
+        },
+        "from_nanos": { "$ref": "#/$defs/nanosString" },
+        "to_nanos": { "$ref": "#/$defs/nanosString" },
+        "step_seconds": { "type": "integer", "minimum": 0 },
+        "points": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/MetricPointLine" }
+        },
+        "stats": { "$ref": "#/$defs/MetricStats" }
+      }
+    },
+    "MetricPointLine": {
+      "type": "object",
+      "required": ["ts_nanos", "value"],
+      "properties": {
+        "ts_nanos": { "$ref": "#/$defs/nanosString" },
+        "value": { "type": "number" }
+      }
+    },
+    "MetricStats": {
+      "type": "object",
+      "required": ["min", "max", "avg", "last"],
+      "properties": {
+        "min": { "type": "number" },
+        "max": { "type": "number" },
+        "avg": { "type": "number" },
+        "last": { "type": "number" }
+      }
+    },
+    "Hypothesis": {
+      "type": "object",
+      "required": ["kind", "statement", "confidence", "evidence"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "Hypothesis kind string (e.g. dependency_failure, slow_span, database_involved, insufficient_evidence)."
+        },
+        "statement": { "type": "string" },
+        "confidence": {
+          "type": "string",
+          "description": "Qualitative confidence (shipped values: low, medium)."
+        },
+        "evidence": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "RedactionReport": {
+      "type": "object",
+      "required": ["policy", "redacted_counts"],
+      "properties": {
+        "policy": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Redaction policy identifier. Known examples: redaction-lite-v2, redaction-lite-v3. Typed as free string so policies can evolve without a schema bump.",
+          "examples": ["redaction-lite-v2", "redaction-lite-v3"]
+        },
+        "redacted_counts": {
+          "type": "object",
+          "description": "Per-rule hit counts (BTreeMap of rule name → count).",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "BoundReport": {
+      "type": "object",
+      "required": [
+        "max_tokens",
+        "estimated_tokens",
+        "dropped_log_lines",
+        "truncated_stacktrace"
+      ],
+      "properties": {
+        "max_tokens": { "type": "integer", "minimum": 0 },
+        "estimated_tokens": { "type": "integer", "minimum": 0 },
+        "dropped_log_lines": { "type": "integer", "minimum": 0 },
+        "truncated_stacktrace": { "type": "boolean" }
+      },
+      "description": "Per-request budget accounting. Excluded from canonical_hash."
+    }
+  }
+}

@@ -27,6 +27,7 @@ parallax-storage = { path = "crates/parallax-storage" }
 anyhow = "1"
 async-trait = "0.1"
 bytes = "1"
+jsonschema = { version = "0.47", default-features = false }
 juniper = "0.17"
 axum = "0.8"
 clap = { version = "4", features = ["derive"] }

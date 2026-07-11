@@ -1232,4 +1232,139 @@ mod tests {
         assert_eq!(md.matches("```").count(), 2);
         assert!(md.contains("IGNORE PREVIOUS INSTRUCTIONS"));
     }
+
+    /// JSON Schema for the shipped `bundle-v1` bytes (plan 082).
+    fn bundle_v1_validator() -> jsonschema::Validator {
+        let schema: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../schema/evidence-bundle.v1.schema.json"
+        ))
+        .expect("bundle-v1 schema parses as JSON");
+        jsonschema::validator_for(&schema).expect("bundle-v1 schema is a valid JSON Schema")
+    }
+
+    fn assert_validates_bundle_v1(bundle: &Bundle) {
+        // Same serializer the GraphQL BundleOut.json path uses (pretty-print
+        // is presentation-only; schema validates the value tree).
+        let json = serde_json::to_value(bundle).expect("bundle serializes");
+        let validator = bundle_v1_validator();
+        let errors: Vec<String> = validator
+            .iter_errors(&json)
+            .map(|e| format!("{e}"))
+            .collect();
+        assert!(
+            errors.is_empty(),
+            "bundle must validate against evidence-bundle.v1.schema.json; errors: {errors:?}\n{}",
+            serde_json::to_string_pretty(&json).unwrap_or_default()
+        );
+    }
+
+    #[test]
+    fn assembled_bundle_conforms_to_bundle_v1_schema() {
+        let mut issue = test_issue();
+        issue.title = "timeout contacting postgres://admin:s3cr3t@db/app".into();
+        issue.culprit = Some("token=ghp_0123456789ABCDEFGHIJKLMNOPQRST".into());
+
+        let mut event = test_event();
+        event.message = "connection timed out to dependency".into();
+        event.stacktrace = Some("top\nmiddle\nbottom".into());
+
+        let mut span = test_span(0, true, 2_500_000);
+        span.attributes = serde_json::json!({
+            "db.query.text": "SELECT * FROM users WHERE password=hunter2"
+        });
+        let slow = test_span(1, false, 3_000_000);
+
+        let metric = MetricWindow::from_points(
+            "process.cpu.utilization",
+            "run",
+            1,
+            60_000_000_000,
+            15,
+            vec![(1, 0.1), (15_000_000_000, 0.4), (30_000_000_000, 0.9)],
+        )
+        .expect("non-empty metric window");
+
+        let run = RunRecord {
+            run_id: "run_test".into(),
+            command: Some("PGPASSWORD=s3cr3t psql -c 'select 1'".into()),
+            started_at_nanos: 1,
+            ended_at_nanos: Some(2),
+            exit_code: Some(1),
+            status: "failed".into(),
+        };
+
+        let log = LogRow {
+            ts_nanos: 2,
+            event_name: String::new(),
+            observed_ts_nanos: 0,
+            service: "checkout".into(),
+            severity_num: 17,
+            severity_text: "ERROR".into(),
+            body: "Bearer eyJaaaaaaaaaa.bbbbbbbbbbbb.cccccccccccc leaked".into(),
+            trace_id: "trace".into(),
+            span_id: "span-0".into(),
+            run_id: Some("run_test".into()),
+            scope_name: "test".into(),
+            attributes: serde_json::Value::Null,
+            resource: serde_json::Value::Null,
+        };
+
+        let bundle = assemble(
+            BundleInputs {
+                anchor: BundleAnchor::Run {
+                    run: Box::new(run),
+                    issues: vec![issue],
+                },
+                events: vec![event],
+                trace_spans: vec![span, slow],
+                trace_logs: vec![log],
+                metric_windows: vec![metric],
+            },
+            8_000,
+        );
+
+        assert_eq!(bundle.schema_version, "bundle-v1");
+        assert!(bundle.run.is_some(), "run section present");
+        assert!(bundle.issue.is_some(), "primary issue present");
+        assert!(bundle.trace.is_some(), "trace section present");
+        assert!(!bundle.metric_windows.is_empty());
+        assert!(!bundle.hypotheses.is_empty());
+        assert!(!bundle.redaction.redacted_counts.is_empty());
+        assert!(bundle.canonical_hash.is_some());
+
+        assert_validates_bundle_v1(&bundle);
+    }
+
+    #[test]
+    fn minimal_all_none_bundle_conforms_to_bundle_v1_schema() {
+        let bundle = Bundle {
+            schema_version: SCHEMA_VERSION,
+            generator: "parallax/test",
+            anchor: Anchor {
+                kind: "issue",
+                id: "fp".into(),
+            },
+            issue: None,
+            run: None,
+            latest_event: None,
+            trace: None,
+            metric_windows: Vec::new(),
+            logs: Vec::new(),
+            hypotheses: Vec::new(),
+            missing_evidence: Vec::new(),
+            redaction: RedactionReport {
+                policy: "redaction-lite-v3",
+                redacted_counts: BTreeMap::new(),
+            },
+            bounded: BoundReport {
+                max_tokens: 0,
+                estimated_tokens: 0,
+                dropped_log_lines: 0,
+                truncated_stacktrace: false,
+            },
+            canonical_hash: None,
+        };
+
+        assert_validates_bundle_v1(&bundle);
+    }
 }
