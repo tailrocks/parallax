@@ -128,7 +128,7 @@ its verification gates, and update your row below when done.
 | 072 | Redaction bypasses + agent-trust delimiting in bundles | P1 | L | — | DONE |
 | 073 | Spool durability truth (worker retry, shutdown drain, honest docs) | P1 | M | 070 | DONE |
 | 074 | GreptimeDB SQL testability (golden SQL, escape tests, conformance suite) | P1 | L | 070; 069 (soft) | DONE |
-| 075 | Read-path performance (traces_search window, fan-out joins, table cache) | P2 | M | 074 | TODO |
+| 075 | Read-path performance (traces_search window, fan-out joins, table cache) | P2 | M | 074 | BLOCKED (memory traces_search aggregates span_count/has_error unwindowed — pick windowed vs lifetime for both adapters) |
 | 076 | Ingest hot path (spool locks/IO, batched upserts, normalize churn) | P2 | M-L | 073, 070 | TODO |
 | 077 | Shared SSE hook + real stream health in Live badges | P2 | M | 071 | DONE |
 | 078 | Split parallax-api lib.rs into domain modules | P2 | L | 069; after 072/073/075 | TODO |
