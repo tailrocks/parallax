@@ -7,6 +7,10 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 
+[features]
+default = []
+conformance = []
+
 [dependencies]
 anyhow = { workspace = true }
 async-trait = { workspace = true }

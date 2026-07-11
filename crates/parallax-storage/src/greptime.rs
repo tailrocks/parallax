@@ -45,6 +45,142 @@ fn quoted_ident(text: &str) -> String {
     format!(r#""{}""#, escape_ident(text))
 }
 
+impl GreptimeStore {
+    /// Pure SQL builder for `traces_search` (golden-tested).
+    fn traces_search_sql(
+        scan_where: &str,
+        participation: &str,
+        rep_where: &str,
+        order: &str,
+        limit: usize,
+        offset: usize,
+    ) -> (String, String) {
+        let listed = format!(
+            r#"SELECT "root"."trace_id", "root"."span_name", "root"."service_name",
+                      "root"."ts_nanos", "root"."dur", "agg"."span_count",
+                      "agg"."has_error"
+               FROM (
+                 SELECT "trace_id", "span_name", "service_name",
+                        CAST("timestamp" AS BIGINT) AS "ts_nanos",
+                        CAST("duration_nano" AS BIGINT) AS "dur",
+                        ROW_NUMBER() OVER (
+                          PARTITION BY "trace_id"
+                          ORDER BY (CASE WHEN "parent_span_id" IS NULL OR "parent_span_id" = ''
+                                         THEN 0 ELSE 1 END) ASC,
+                                   "timestamp" ASC
+                        ) AS "rn"
+                 FROM opentelemetry_traces
+                 WHERE {scan_where}{participation}
+               ) AS "root"
+               JOIN (
+                 SELECT "trace_id", COUNT(*) AS "span_count",
+                        MAX(CASE WHEN "span_status_code" = 'STATUS_CODE_ERROR' THEN 1 ELSE 0 END)
+                        AS "has_error"
+                 FROM opentelemetry_traces GROUP BY "trace_id"
+               ) AS "agg" ON "root"."trace_id" = "agg"."trace_id"
+               WHERE {rep_where}"#
+        );
+        let page = format!(
+            r#"SELECT * FROM ({listed}) ORDER BY {order} LIMIT {limit} OFFSET {offset}"#
+        );
+        (listed, page)
+    }
+
+    fn histogram_count_series_sql(
+        count_table: &str,
+        step_secs: u128,
+        range_start_ms: u128,
+        range_end_ms: u128,
+        service_clause: &str,
+    ) -> String {
+        format!(
+            r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "greptime_timestamp") AS BIGINT)
+                          AS "bucket_ms", SUM("greptime_value") AS "samples"
+                   FROM "{}"
+                   WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}{service_clause}
+                   GROUP BY "bucket_ms" ORDER BY "bucket_ms""#,
+            escape_ident(count_table),
+            sql_ts(range_start_ms),
+            sql_ts(range_end_ms),
+        )
+    }
+
+    fn histogram_quantile_bucket_sql(
+        bucket_table: &str,
+        range_start_ms: u128,
+        range_end_ms: u128,
+        service_clause: &str,
+    ) -> String {
+        format!(
+            r#"SELECT CAST("greptime_timestamp" AS BIGINT) AS "ts_ms",
+                          CAST("le" AS DOUBLE) AS "le", "greptime_value" AS "cumulative"
+                   FROM "{}"
+                   WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}{service_clause}
+                   ORDER BY "greptime_timestamp" ASC"#,
+            escape_ident(bucket_table),
+            sql_ts(range_start_ms),
+            sql_ts(range_end_ms),
+        )
+    }
+
+    fn select_spans_sql(where_clause: &str, order: &str, limit_clause: &str) -> String {
+        format!(
+            r#"SELECT * FROM opentelemetry_traces WHERE {where_clause}{order}{limit_clause}"#
+        )
+    }
+
+    fn select_logs_sql(where_clause: &str, order: &str, limit_clause: &str) -> String {
+        format!(
+            r#"SELECT CAST("timestamp" AS BIGINT) AS "ts_nanos",
+                          {} AS "service",
+                          "severity_number", "severity_text", "body", "trace_id", "span_id",
+                          {}, "scope_name",
+                          json_to_string("log_attributes"),
+                          json_to_string("resource_attributes"),
+                          json_get_string("log_attributes", '{}') AS "event_name",
+                          json_get_int("log_attributes", '{}') AS "observed_ts_nanos"
+                   FROM opentelemetry_logs WHERE {where_clause}{order}{limit_clause}"#,
+            resource_json_get(semconv::SERVICE_NAME),
+            wire_attr_ident(semconv::PARALLAX_RUN_ID),
+            semconv::resource_json_path(semconv::EVENT_NAME),
+            semconv::resource_json_path(semconv::LOG_OBSERVED_TS_NANOS),
+        )
+    }
+
+    fn span_attribute_counts_sql(
+        key: &str,
+        range: &std::ops::RangeInclusive<u128>,
+        service: Option<&str>,
+        error_only: bool,
+    ) -> String {
+        let column = format!(r#""span_attributes.{}""#, escape_ident(key));
+        let value_expr = format!("CAST({column} AS STRING)");
+        let mut clauses = vec![
+            format!(
+                r#""timestamp" >= {} AND "timestamp" <= {}"#,
+                sql_ts(*range.start()),
+                sql_ts(*range.end())
+            ),
+            format!("{column} IS NOT NULL"),
+        ];
+        if let Some(service) = service {
+            clauses.push(format!(r#""service_name" = '{}'"#, escape(service)));
+        }
+        if error_only {
+            clauses.push(r#""span_status_code" = 'STATUS_CODE_ERROR'"#.to_string());
+        }
+        format!(
+            r#"SELECT {value_expr} AS "value", COUNT(*) AS "n"
+                   FROM opentelemetry_traces
+                   WHERE {}
+                   GROUP BY {value_expr}
+                   ORDER BY "n" DESC
+                   LIMIT 512"#,
+            clauses.join(" AND ")
+        )
+    }
+}
+
 fn resource_attr_ident(attr: &str) -> String {
     quoted_ident(&semconv::resource_column(attr))
 }
@@ -543,9 +679,7 @@ impl GreptimeStore {
         limit_clause: &str,
     ) -> anyhow::Result<Vec<SpanRow>> {
         let result = self
-            .sql_with_schema_lenient(&format!(
-                r#"SELECT * FROM opentelemetry_traces WHERE {where_clause}{order}{limit_clause}"#
-            ))
+            .sql_with_schema_lenient(&Self::select_spans_sql(where_clause, order, limit_clause))
             .await?;
         let cols = ColumnIndex::new(&result.columns);
         Ok(result
@@ -593,21 +727,7 @@ impl GreptimeStore {
         limit_clause: &str,
     ) -> anyhow::Result<Vec<LogRow>> {
         let rows = self
-            .sql_lenient(&format!(
-                r#"SELECT CAST("timestamp" AS BIGINT) AS "ts_nanos",
-                          {} AS "service",
-                          "severity_number", "severity_text", "body", "trace_id", "span_id",
-                          {}, "scope_name",
-                          json_to_string("log_attributes"),
-                          json_to_string("resource_attributes"),
-                          json_get_string("log_attributes", '{}') AS "event_name",
-                          json_get_int("log_attributes", '{}') AS "observed_ts_nanos"
-                   FROM opentelemetry_logs WHERE {where_clause}{order}{limit_clause}"#,
-                resource_json_get(semconv::SERVICE_NAME),
-                wire_attr_ident(semconv::PARALLAX_RUN_ID),
-                semconv::resource_json_path(semconv::EVENT_NAME),
-                semconv::resource_json_path(semconv::LOG_OBSERVED_TS_NANOS),
-            ))
+            .sql_lenient(&Self::select_logs_sql(where_clause, order, limit_clause))
             .await?;
         Ok(rows.iter().map(|row| log_row_from_row(row)).collect())
     }
@@ -1715,15 +1835,11 @@ impl TelemetryStore for GreptimeStore {
             .map(|svc| format!(r#" AND "service_name" = '{}'"#, escape(svc)))
             .unwrap_or_default();
         let rows = self
-            .sql_lenient(&format!(
-                r#"SELECT CAST("greptime_timestamp" AS BIGINT) AS "ts_ms",
-                          CAST("le" AS DOUBLE) AS "le", "greptime_value" AS "cumulative"
-                   FROM "{}"
-                   WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}{service_clause}
-                   ORDER BY "greptime_timestamp" ASC"#,
-                escape_ident(&bucket_table),
-                sql_ts(range.start() / 1_000_000),
-                sql_ts(range.end() / 1_000_000),
+            .sql_lenient(&Self::histogram_quantile_bucket_sql(
+                &bucket_table,
+                range.start() / 1_000_000,
+                range.end() / 1_000_000,
+                &service_clause,
             ))
             .await?;
         let step = step_nanos.max(1);
@@ -1966,41 +2082,18 @@ impl TelemetryStore for GreptimeStore {
             crate::adapter::TraceSort::DurationAsc => r#""dur" ASC"#,
             crate::adapter::TraceSort::SpanCountDesc => r#""span_count" DESC"#,
         };
-        let listed = format!(
-            r#"SELECT "root"."trace_id", "root"."span_name", "root"."service_name",
-                      "root"."ts_nanos", "root"."dur", "agg"."span_count",
-                      "agg"."has_error"
-               FROM (
-                 SELECT "trace_id", "span_name", "service_name",
-                        CAST("timestamp" AS BIGINT) AS "ts_nanos",
-                        CAST("duration_nano" AS BIGINT) AS "dur",
-                        ROW_NUMBER() OVER (
-                          PARTITION BY "trace_id"
-                          ORDER BY (CASE WHEN "parent_span_id" IS NULL OR "parent_span_id" = ''
-                                         THEN 0 ELSE 1 END) ASC,
-                                   "timestamp" ASC
-                        ) AS "rn"
-                 FROM opentelemetry_traces
-                 WHERE {scan_where}{participation}
-               ) AS "root"
-               JOIN (
-                 SELECT "trace_id", COUNT(*) AS "span_count",
-                        MAX(CASE WHEN "span_status_code" = 'STATUS_CODE_ERROR' THEN 1 ELSE 0 END)
-                        AS "has_error"
-                 FROM opentelemetry_traces GROUP BY "trace_id"
-               ) AS "agg" ON "root"."trace_id" = "agg"."trace_id"
-               WHERE {rep_where}"#,
-            rep_where = rep.join(" AND "),
+        let (listed, page_sql) = Self::traces_search_sql(
+            &scan_where,
+            &participation,
+            &rep.join(" AND "),
+            order,
+            query.limit,
+            query.offset,
         );
         let total_rows = self
             .sql_lenient(&format!(r#"SELECT COUNT(*) AS "total" FROM ({listed})"#))
             .await?;
-        let roots = self
-            .sql_lenient(&format!(
-                r#"SELECT * FROM ({listed}) ORDER BY {order} LIMIT {} OFFSET {}"#,
-                query.limit, query.offset,
-            ))
-            .await?;
+        let roots = self.sql_lenient(&page_sql).await?;
         let traces: Vec<_> = roots
             .iter()
             .map(|row| crate::adapter::TraceSummary {
@@ -2505,15 +2598,12 @@ impl TelemetryStore for GreptimeStore {
         // native: the `<name>_count` sibling table holds the per-sample count
         // as `greptime_value`; sum it per window for the request-rate numerator.
         let rows = self
-            .sql_lenient(&format!(
-                r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "greptime_timestamp") AS BIGINT)
-                          AS "bucket_ms", SUM("greptime_value") AS "samples"
-                   FROM "{}"
-                   WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}{service_clause}
-                   GROUP BY "bucket_ms" ORDER BY "bucket_ms""#,
-                escape_ident(&count_table),
-                sql_ts(range.start() / 1_000_000),
-                sql_ts(range.end() / 1_000_000),
+            .sql_lenient(&Self::histogram_count_series_sql(
+                &count_table,
+                step_secs,
+                range.start() / 1_000_000,
+                range.end() / 1_000_000,
+                &service_clause,
             ))
             .await?;
         Ok(rows
@@ -2645,32 +2735,9 @@ impl GreptimeStore {
         service: Option<&str>,
         error_only: bool,
     ) -> anyhow::Result<(u64, BTreeMap<String, u64>)> {
-        let column = format!(r#""span_attributes.{}""#, escape_ident(key));
-        let value_expr = format!("CAST({column} AS STRING)");
-        let mut clauses = vec![
-            format!(
-                r#""timestamp" >= {} AND "timestamp" <= {}"#,
-                sql_ts(*range.start()),
-                sql_ts(*range.end())
-            ),
-            format!("{column} IS NOT NULL"),
-        ];
-        if let Some(service) = service {
-            clauses.push(format!(r#""service_name" = '{}'"#, escape(service)));
-        }
-        if error_only {
-            clauses.push(r#""span_status_code" = 'STATUS_CODE_ERROR'"#.to_string());
-        }
-
         let rows = self
-            .sql_lenient(&format!(
-                r#"SELECT {value_expr} AS "value", COUNT(*) AS "n"
-                   FROM opentelemetry_traces
-                   WHERE {}
-                   GROUP BY {value_expr}
-                   ORDER BY "n" DESC
-                   LIMIT 512"#,
-                clauses.join(" AND ")
+            .sql_lenient(&Self::span_attribute_counts_sql(
+                key, range, service, error_only,
             ))
             .await?;
 
@@ -2848,6 +2915,77 @@ mod tests {
             r#"http.""server"".duration"#
         );
         assert_eq!(escape_ident("metric's/name"), "metric's/name");
+    }
+
+    #[test]
+    fn escape_handles_quotes_newlines_backslash() {
+        assert_eq!(escape("o'brien"), "o''brien");
+        assert_eq!(escape("already''doubled"), "already''''doubled");
+        assert_eq!(escape("line\nbreak"), "line\nbreak");
+        assert_eq!(escape(""), "");
+        // Backslash passes through unchanged today; Step 5 of plan 074 verifies
+        // GreptimeDB dialect treatment of trailing backslash in string literals.
+        assert_eq!(escape(r"ends\"), r"ends\");
+        assert_eq!(quoted_ident(r#"a"b"#), r#""a""b""#);
+    }
+
+    #[test]
+    fn golden_traces_search_sql_includes_adversarial_service() {
+        let participation = format!(
+            r#" AND "trace_id" IN (SELECT "trace_id" FROM opentelemetry_traces WHERE "service_name" = '{}')"#,
+            escape("svc'quote")
+        );
+        let (listed, page) = GreptimeStore::traces_search_sql(
+            r#""timestamp" >= 1"#,
+            &participation,
+            r#""rn" = 1"#,
+            r#""ts_nanos" DESC"#,
+            50,
+            0,
+        );
+        assert!(listed.contains("svc''quote"));
+        assert!(page.contains("LIMIT 50 OFFSET 0"));
+        assert!(page.contains(&listed));
+    }
+
+    #[test]
+    fn golden_histogram_count_series_sql() {
+        let sql = GreptimeStore::histogram_count_series_sql(
+            "http_server_request_duration_count",
+            60,
+            1_000,
+            2_000,
+            r#" AND "service_name" = 'api'"#,
+        );
+        assert!(sql.contains(r#"FROM "http_server_request_duration_count""#));
+        assert!(sql.contains("date_bin"));
+    }
+
+    #[test]
+    fn golden_select_spans_and_logs_sql() {
+        let spans = GreptimeStore::select_spans_sql(
+            r#""trace_id" = 'abc""def'"#,
+            " ORDER BY \"timestamp\"",
+            " LIMIT 10",
+        );
+        assert!(spans.contains("opentelemetry_traces"));
+        assert!(spans.contains("LIMIT 10"));
+        let logs = GreptimeStore::select_logs_sql("1 = 1", "", " LIMIT 5");
+        assert!(logs.contains("opentelemetry_logs"));
+        assert!(logs.contains("json_to_string"));
+    }
+
+    #[test]
+    fn golden_span_attribute_counts_sql() {
+        let sql = GreptimeStore::span_attribute_counts_sql(
+            "http.route",
+            &(0..=1000),
+            Some("svc'x"),
+            true,
+        );
+        assert!(sql.contains("http.route"));
+        assert!(sql.contains("svc''x"));
+        assert!(sql.contains("STATUS_CODE_ERROR"));
     }
 
     #[test]

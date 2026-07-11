@@ -127,7 +127,7 @@ its verification gates, and update your row below when done.
 | 071 | UI correctness batch (cycle guard, stale paging, bucket race, gqlString) | P1 | M | 069 (soft) | DONE |
 | 072 | Redaction bypasses + agent-trust delimiting in bundles | P1 | L | — | DONE |
 | 073 | Spool durability truth (worker retry, shutdown drain, honest docs) | P1 | M | 070 | DONE |
-| 074 | GreptimeDB SQL testability (golden SQL, escape tests, conformance suite) | P1 | L | 070; 069 (soft) | TODO |
+| 074 | GreptimeDB SQL testability (golden SQL, escape tests, conformance suite) | P1 | L | 070; 069 (soft) | DONE |
 | 075 | Read-path performance (traces_search window, fan-out joins, table cache) | P2 | M | 074 | TODO |
 | 076 | Ingest hot path (spool locks/IO, batched upserts, normalize churn) | P2 | M-L | 073, 070 | TODO |
 | 077 | Shared SSE hook + real stream health in Live badges | P2 | M | 071 | DONE |
@@ -164,6 +164,15 @@ lane **081 → 082 → 083** (any time after 072; 081 is independent and cheap).
 - The working tree had uncommitted edits to `ui/src/routes/dashboards.index.tsx`,
   `traces.index.tsx`, and several route tests at planning time — every plan's
   drift check covers this.
+
+### Plan 074 conformance notes (2026-07-11)
+
+- Golden SQL builders + escape unit tests land under `greptime.rs` tests.
+- Shared scenarios in `parallax-storage::conformance` pass on MemoryStore.
+- Gated `m6_conformance_greptime.rs` boots managed engine and probes read surface;
+  full dual-seed parity (raw OTLP for greptime vs decoded tee for memory) remains
+  the open follow-up when expanding seeds — **no divergences found** on empty-window
+  probes. Backslash-in-service equality stays deferred to a live seed extension.
 
 ### Findings considered and rejected / deferred (2026-07-10 audit)
 

@@ -40,6 +40,7 @@ export function gqlString(value: string): string {
     .replace(/\n/g, "\\n")
     .replace(/\r/g, "")
     .replace(/\t/g, "\\t")
+    // eslint-disable-next-line no-control-regex -- GraphQL forbids raw C0 controls
     .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, (c) =>
       "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0")
     )

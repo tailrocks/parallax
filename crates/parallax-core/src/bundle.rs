@@ -413,8 +413,11 @@ fn redaction_rules() -> &'static [(&'static str, Regex, &'static str)] {
             ),
             (
                 "generic_secret_assignment",
+                // Exclude bare `auth` (collides with `auth=Bearer …` after the
+                // bearer rule rewrites the token). Values must not start with
+                // `[` so already-redacted markers are not re-matched.
                 Regex::new(
-                    r#"(?i)\b(?:api[_-]?key|apikey|secret|token|passwd|pwd|access[_-]?key|auth)\b\s*[=:]\s*[^\s"']{6,}"#,
+                    r#"(?i)\b(?:api[_-]?key|apikey|secret|token|passwd|pwd|access[_-]?key)\b\s*[=:]\s*[^\s"'\[\]]{6,}"#,
                 )
                 .expect("static regex"),
                 "[REDACTED:generic_secret_assignment]",

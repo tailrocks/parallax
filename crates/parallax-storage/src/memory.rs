@@ -2532,4 +2532,24 @@ mod tests {
         assert_eq!(red.p95[0].value, 29.0);
         assert_eq!(red.p99[0].value, 29.8);
     }
+
+    #[tokio::test]
+    async fn conformance_scenarios_pass_on_memory() {
+        let store = MemoryStore::new();
+        crate::conformance::trace_search_scenario(&store)
+            .await
+            .expect("trace_search");
+        crate::conformance::log_count_series_scenario(&store)
+            .await
+            .expect("log_count_series");
+        crate::conformance::overview_totals_scenario(&store)
+            .await
+            .expect("overview_totals");
+        crate::conformance::attribute_compare_scenario(&store)
+            .await
+            .expect("attribute_compare");
+        crate::conformance::service_map_scenario(&store)
+            .await
+            .expect("service_map");
+    }
 }
