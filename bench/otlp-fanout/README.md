@@ -90,13 +90,16 @@ emitters ─► localhost:4317 (Rotel) ─┬─► openobserve:5081        (com
 
 ```bash
 cd bench/otlp-fanout
+cp rotel.env.example rotel.env   # local lab credentials — never commit rotel.env
+# Fill Authorization (OpenObserve) and optional Sentry headers; compose defaults:
+#   root@example.com / Complexpass#123 → base64 in ROTEL_EXPORTER_OPENOBSERVE_CUSTOM_HEADERS
 docker compose -f compose.yml up -d rotel openobserve   # OpenObserve UI: http://localhost:5080
 ./smoke.sh                                               # drive + assert fan-out
 docker compose -f compose.yml down -v                    # teardown
 ```
 
 OpenObserve default login: `root@example.com` / `Complexpass#123` (change in
-`compose.yml` + the base64 `Authorization` in `rotel.env`).
+`compose.yml` + the base64 `Authorization` in your local `rotel.env`).
 
 ## Parallax (host) — the one host sink
 
