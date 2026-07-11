@@ -57,3 +57,16 @@ After skeptic review, plan 075 Step 2–3 were finished on HEAD:
 - `runtime_snapshot`: filter runtime families first, then chunked `try_join_all` for `metric_series`.
 - Machine greps for 075 and full 069–091 done-criteria: **64/64 PASS** (scratch: `done-criteria-reaudit1-full.log` + reaudit2).
 - `cargo nextest` storage + clippy clean after the fix.
+
+## Dual full done-criteria re-audits (post-075 fix)
+
+Scratch: `/tmp/grok-goal-4dc4833a2746/implementer/done-criteria.log` (reaudit1+2 full).
+
+| Re-audit | Result |
+|----------|--------|
+| #1 full structural greps 069–091 | **68/68 PASS** |
+| #2 independent re-run + 075 re-verify | **68/68 PASS**, `items remaining: none` |
+| Workspace nextest after 075 fix | **189 passed**, 5 skipped |
+| Clippy parallax-storage | exit 0 |
+
+Plan 075 now satisfies: windowed agg, single-pass `COUNT(*) OVER`, chunked `try_join_all` for attribute_compare + runtime_snapshot, `metric_table_cache`.
