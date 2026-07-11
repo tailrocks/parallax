@@ -13,6 +13,10 @@
 - **Depends on**: 090 (measurement spike — **DONE**, GO for arrow+zstd)
 - **Category**: perf
 - **Planned at**: 2026-07-11 (from plan 090 GO)
+- **Status**: **DONE** (2026-07-11) — heavy reads via `sql_arrow` /
+  `sql_with_schema_arrow` (`format=arrow&compression=zstd`); decode in
+  `arrow_sql.rs`; tiny/DDL/schema stay JSON; unit fixtures + storage nextest
+  green; no rustls; research note updated.
 
 ## Why this matters
 
@@ -84,10 +88,10 @@ Update the research note or implementation spec with the production default
 
 ## Done criteria
 
-- [ ] Heavy reads use Arrow+zstd; tiny reads stay JSON
-- [ ] Conformance / tests pass; no rustls in tree
-- [ ] No UI contract change
-- [ ] Note in `docs/research/storage/read-transport-and-engine-defaults.md` or
+- [x] Heavy reads use Arrow+zstd; tiny reads stay JSON
+- [x] Conformance / tests pass; no rustls in tree
+- [x] No UI contract change
+- [x] Note in `docs/research/storage/read-transport-and-engine-defaults.md` or
       architecture spec that product adopted the GO
 
 ## STOP conditions

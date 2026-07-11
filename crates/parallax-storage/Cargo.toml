@@ -13,6 +13,8 @@ conformance = []
 
 [dependencies]
 anyhow = { workspace = true }
+arrow = { workspace = true }
+arrow-ipc = { workspace = true }
 async-trait = { workspace = true }
 bytes = { workspace = true }
 parallax-proto = { workspace = true }

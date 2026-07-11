@@ -5,6 +5,7 @@
 //! metadata store for mutable product state, and the NDJSON ingest spool.
 
 pub mod adapter;
+mod arrow_sql;
 #[cfg(any(test, feature = "conformance"))]
 pub mod conformance;
 pub mod greptime;

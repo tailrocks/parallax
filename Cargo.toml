@@ -26,6 +26,8 @@ parallax-server = { path = "crates/parallax-server" }
 parallax-storage = { path = "crates/parallax-storage" }
 
 anyhow = "1"
+arrow = { version = "59", default-features = false, features = ["ipc"] }
+arrow-ipc = { version = "59", default-features = false, features = ["zstd"] }
 async-trait = "0.1"
 bytes = "1"
 jsonschema = { version = "0.47", default-features = false }

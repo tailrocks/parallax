@@ -32,7 +32,7 @@ verified source inside the plan file.
 | 088 | UI data layer (query cache + preload reuse, dashboard fan-out collapse, bounded run scan, visibility gating, issues table) | P2 | L | 071, 077, 079 | DONE |
 | 089 | Extension-table writes via gRPC ingester + metric_exemplars PK fix | P2 | M | 084, 070 | BLOCKED (Step 0: greptimedb-ingester hard-depends tonic tls-ring → rustls; SQL path stays) |
 | 090 | SPIKE: measure read transport (arrow/wire prepared statements/RANGE) + trace-table partition default | P3 | M | 084; 085 recommended | DONE |
-| 091 | Adopt HTTP `format=arrow&compression=zstd` for heavy GreptimeDB reads (from 090 GO) | P2 | S–M | 090 | TODO |
+| 091 | Adopt HTTP `format=arrow&compression=zstd` for heavy GreptimeDB reads (from 090 GO) | P2 | S–M | 090 | DONE |
 
 Recommended order: **084 → 085 → 086** (the integration corrections and the
 two round-trip killers carry most of the value), **087** after 073/076 settle

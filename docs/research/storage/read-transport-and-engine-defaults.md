@@ -9,11 +9,28 @@ Raw JSON: [`poc/read-transport-bench/results/`](../../../poc/read-transport-benc
 Planned at commit: `df81d86` (inventory read from live `greptime.rs` on branch
 `implement/advisor-plans-069-090`, post-084/085 working tree)
 
+## Product adoption (plan 091 — 2026-07-11)
+
+**GO landed.** Heavy GreptimeDB typed reads now use HTTP
+`format=arrow&compression=zstd` via `GreptimeStore::sql_arrow` /
+`sql_with_schema_arrow` (decode in `crates/parallax-storage/src/arrow_sql.rs`).
+Domain callers still consume `Vec<Vec<serde_json::Value>>` / `SqlResult` — no
+GraphQL or UI contract change.
+
+| Path | Wire format |
+|------|-------------|
+| `select_spans`, `select_logs` / `logs_search`, `traces_search` page, `histogram_*`, metric/log/signal series, service-map edges, batched spans-by-runs | **Arrow + zstd** |
+| DDL/admin, `information_schema`, `LIMIT 0` schema probes, single-row `COUNT(*)`, raw SQL playground, other tiny probes | **`greptimedb_v1` JSON** (`sql` / `sql_with_schema`) |
+
+Uncompressed Arrow is intentionally never used on the product path (090:
+`logs_search` IPC was ~7.8× larger than JSON without zstd). `cargo tree -p
+parallax-storage -i rustls` stays empty; `arrow-ipc` uses the `zstd` crate only.
+
 ## Purpose
 
-All Parallax product reads go through GreptimeDB HTTP `/v1/sql` returning
-`greptimedb_v1` JSON (`crates/parallax-storage/src/greptime.rs` `sql()`). The
-2026-07-10 audit verified that the engine also offers:
+Historically all Parallax product reads went through GreptimeDB HTTP `/v1/sql`
+returning `greptimedb_v1` JSON (`crates/parallax-storage/src/greptime.rs`
+`sql()`). The 2026-07-10 audit verified that the engine also offers:
 
 1. `format=arrow` (+ optional `compression=zstd|lz4`) on the same endpoint
 2. MySQL (:24002) / Postgres (:24003) wires with **session-cached prepared plans**

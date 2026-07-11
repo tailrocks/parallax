@@ -712,17 +712,21 @@ impl GreptimeStore {
         }
     }
 
+    /// Arrow+zstd sibling of [`Self::sql_lenient`] for heavy typed reads (plan 091).
+    async fn sql_arrow_lenient(&self, sql: &str) -> anyhow::Result<Vec<Vec<serde_json::Value>>> {
+        match self.sql_arrow(sql).await {
+            Err(error) if is_missing_table(&error) => Ok(Vec::new()),
+            other => other,
+        }
+    }
+
     /// Run one SQL statement; return the first result set's rows.
+    ///
+    /// Uses `greptimedb_v1` JSON — keep for DDL/admin, `information_schema`,
+    /// single-row counts, `LIMIT 0` schema probes, and other tiny results.
+    /// Heavy page/series reads use [`Self::sql_arrow`].
     pub async fn sql(&self, sql: &str) -> anyhow::Result<Vec<Vec<serde_json::Value>>> {
-        let response: serde_json::Value = self
-            .client
-            .post(format!("{}/v1/sql?db=public", self.base_url))
-            .header("X-Greptime-Timeout", SQL_QUERY_TIMEOUT_HEADER)
-            .form(&[("sql", sql)])
-            .send()
-            .await?
-            .json()
-            .await?;
+        let response = self.sql_json_response(sql).await?;
         // Success responses carry `output` (no `code`); failures carry
         // `error` (+ a non-zero `code`).
         if let Some(error) = response.get("error").and_then(|e| e.as_str()) {
@@ -747,6 +751,13 @@ impl GreptimeStore {
         Ok(rows)
     }
 
+    /// Heavy read path: HTTP `format=arrow&compression=zstd` → same row shape
+    /// as [`Self::sql`] (plan 091; measured GO in plan 090).
+    pub async fn sql_arrow(&self, sql: &str) -> anyhow::Result<Vec<Vec<serde_json::Value>>> {
+        let result = self.sql_with_schema_arrow(sql).await?;
+        Ok(result.rows)
+    }
+
     /// [`Self::sql_with_schema`] with the not-yet-created-table tolerance of
     /// [`Self::sql_lenient`]: returns an empty result set instead of erroring
     /// when the native table has not auto-created yet.
@@ -763,18 +774,24 @@ impl GreptimeStore {
         }
     }
 
+    /// Arrow+zstd sibling of [`Self::sql_with_schema_lenient`].
+    async fn sql_with_schema_arrow_lenient(
+        &self,
+        sql: &str,
+    ) -> anyhow::Result<crate::adapter::SqlResult> {
+        match self.sql_with_schema_arrow(sql).await {
+            Err(error) if is_missing_table(&error) => Ok(crate::adapter::SqlResult {
+                columns: Vec::new(),
+                rows: Vec::new(),
+            }),
+            other => other,
+        }
+    }
+
     /// Like [`Self::sql`], but also returns the result-set column names
     /// (the raw-SQL surface needs a generic grid, not a fixed projection).
     pub async fn sql_with_schema(&self, sql: &str) -> anyhow::Result<crate::adapter::SqlResult> {
-        let response: serde_json::Value = self
-            .client
-            .post(format!("{}/v1/sql?db=public", self.base_url))
-            .header("X-Greptime-Timeout", SQL_QUERY_TIMEOUT_HEADER)
-            .form(&[("sql", sql)])
-            .send()
-            .await?
-            .json()
-            .await?;
+        let response = self.sql_json_response(sql).await?;
         if let Some(error) = response.get("error").and_then(|e| e.as_str()) {
             let code = response.get("code").and_then(|c| c.as_i64()).unwrap_or(-1);
             anyhow::bail!("greptime sql failed (code {code}): {error}");
@@ -799,6 +816,42 @@ impl GreptimeStore {
             })
             .unwrap_or_default();
         Ok(crate::adapter::SqlResult { columns, rows })
+    }
+
+    /// Arrow+zstd variant of [`Self::sql_with_schema`] for wide/tall result sets.
+    pub async fn sql_with_schema_arrow(
+        &self,
+        sql: &str,
+    ) -> anyhow::Result<crate::adapter::SqlResult> {
+        let bytes = self
+            .client
+            .post(format!(
+                "{}/v1/sql?db=public&format=arrow&compression=zstd",
+                self.base_url
+            ))
+            .header("X-Greptime-Timeout", SQL_QUERY_TIMEOUT_HEADER)
+            .form(&[("sql", sql)])
+            .send()
+            .await?
+            .bytes()
+            .await?;
+        let (columns, rows) = crate::arrow_sql::decode_arrow_ipc(&bytes).map_err(|error| {
+            let sql_prefix: String = sql.chars().take(200).collect();
+            anyhow::anyhow!("{error} — sql: {sql_prefix}")
+        })?;
+        Ok(crate::adapter::SqlResult { columns, rows })
+    }
+
+    async fn sql_json_response(&self, sql: &str) -> anyhow::Result<serde_json::Value> {
+        Ok(self
+            .client
+            .post(format!("{}/v1/sql?db=public", self.base_url))
+            .header("X-Greptime-Timeout", SQL_QUERY_TIMEOUT_HEADER)
+            .form(&[("sql", sql)])
+            .send()
+            .await?
+            .json()
+            .await?)
     }
 
     async fn metric_table_for_name(
@@ -897,7 +950,11 @@ impl GreptimeStore {
         limit_clause: &str,
     ) -> anyhow::Result<Vec<SpanRow>> {
         let result = self
-            .sql_with_schema_lenient(&Self::select_spans_sql(where_clause, order, limit_clause))
+            .sql_with_schema_arrow_lenient(&Self::select_spans_sql(
+                where_clause,
+                order,
+                limit_clause,
+            ))
             .await?;
         let cols = ColumnIndex::new(&result.columns);
         Ok(result
@@ -945,7 +1002,7 @@ impl GreptimeStore {
         limit_clause: &str,
     ) -> anyhow::Result<Vec<LogRow>> {
         let rows = self
-            .sql_lenient(&Self::select_logs_sql(where_clause, order, limit_clause))
+            .sql_arrow_lenient(&Self::select_logs_sql(where_clause, order, limit_clause))
             .await?;
         Ok(rows.iter().map(|row| log_row_from_row(row)).collect())
     }
@@ -1566,7 +1623,7 @@ impl TelemetryStore for GreptimeStore {
                ) WHERE "rn" <= {limit_per_run}
                ORDER BY "timestamp" ASC"#
         );
-        let result = match self.sql_with_schema_lenient(&sql).await {
+        let result = match self.sql_with_schema_arrow_lenient(&sql).await {
             Ok(result) => result,
             Err(error) if is_missing_column(&error) => {
                 for run_id in run_ids {
@@ -1792,7 +1849,7 @@ impl TelemetryStore for GreptimeStore {
                 } else {
                     "COUNT(*)"
                 };
-                self.sql_lenient(&format!(
+                self.sql_arrow_lenient(&format!(
                     r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "timestamp") AS BIGINT)
                               AS "bucket_ns", {agg} AS "n"
                        FROM opentelemetry_traces WHERE {}
@@ -1803,7 +1860,7 @@ impl TelemetryStore for GreptimeStore {
             }
             SignalKind::Logs => {
                 let clauses = log_filter_clauses(service, &range, None, None, None);
-                self.sql_lenient(&format!(
+                self.sql_arrow_lenient(&format!(
                     r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "timestamp") AS BIGINT)
                               AS "bucket_ns", COUNT(*) AS "n"
                        FROM opentelemetry_logs WHERE {}
@@ -1821,7 +1878,7 @@ impl TelemetryStore for GreptimeStore {
                 if let Some(service) = service {
                     clauses.push(format!(r#""service" = '{}'"#, escape(service)));
                 }
-                self.sql_lenient(&format!(
+                self.sql_arrow_lenient(&format!(
                     r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "ts") AS BIGINT)
                               AS "bucket_ns", COUNT(*) AS "n"
                        FROM error_events WHERE {}
@@ -2019,7 +2076,7 @@ impl TelemetryStore for GreptimeStore {
         // Latest stable GreptimeDB accepts approx_percentile_cont(col, q);
         // verified through Parallax raw SQL for trace duration percentiles.
         let rows = self
-            .sql_lenient(&format!(
+            .sql_arrow_lenient(&format!(
                 r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "timestamp") AS BIGINT)
                           AS "bucket_ns",
                           COUNT(*) AS "spans",
@@ -2086,7 +2143,7 @@ impl TelemetryStore for GreptimeStore {
                 .map(|svc| format!(r#" AND "service" = '{}'"#, escape(svc)))
                 .unwrap_or_default();
             let name_filter = metric_name_sql_filter(r#""name""#, name);
-            self.sql_lenient(&format!(
+            self.sql_arrow_lenient(&format!(
                 r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "ts") AS BIGINT)
                           AS "bucket_ns", {sql_agg}("value") AS "agg_value"
                    FROM run_metric_points
@@ -2105,7 +2162,7 @@ impl TelemetryStore for GreptimeStore {
             let service_clause = service
                 .map(|svc| format!(r#" AND "service_name" = '{}'"#, escape(svc)))
                 .unwrap_or_default();
-            self.sql_lenient(&format!(
+            self.sql_arrow_lenient(&format!(
                 r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "greptime_timestamp") AS BIGINT)
                           AS "bucket_ms", {sql_agg}("greptime_value") AS "agg_value"
                    FROM "{}"
@@ -2166,7 +2223,7 @@ impl TelemetryStore for GreptimeStore {
             .unwrap_or_default();
         let step_secs = (step_nanos / 1_000_000_000).max(1);
         let rows = self
-            .sql_lenient(&Self::histogram_quantile_bucket_sql(
+            .sql_arrow_lenient(&Self::histogram_quantile_bucket_sql(
                 &bucket_table,
                 step_secs,
                 range.start() / 1_000_000,
@@ -2429,10 +2486,11 @@ impl TelemetryStore for GreptimeStore {
             query.limit,
             query.offset,
         );
+        // COUNT is a single-row probe — keep JSON. Page rows use Arrow+zstd.
         let total_rows = self
             .sql_lenient(&format!(r#"SELECT COUNT(*) AS "total" FROM ({listed})"#))
             .await?;
-        let roots = self.sql_lenient(&page_sql).await?;
+        let roots = self.sql_arrow_lenient(&page_sql).await?;
         let traces: Vec<_> = roots
             .iter()
             .map(|row| crate::adapter::TraceSummary {
@@ -2694,7 +2752,7 @@ impl TelemetryStore for GreptimeStore {
             .collect::<Vec<_>>()
             .join(",");
         let rows = self
-            .sql_lenient(&Self::service_map_edges_sql(&id_list, &range))
+            .sql_arrow_lenient(&Self::service_map_edges_sql(&id_list, &range))
             .await?;
         Ok(rows
             .iter()
@@ -2794,7 +2852,7 @@ impl TelemetryStore for GreptimeStore {
         // to tags); group on the quoted tag column, missing → "(none)".
         let group_col = format!(r#""{}""#, escape_ident(group_by));
         let rows = self
-            .sql_lenient(&format!(
+            .sql_arrow_lenient(&format!(
                 r#"SELECT COALESCE(CAST({group_col} AS STRING), '(none)') AS "grp",
                           CAST(date_bin(INTERVAL '{step_secs} seconds', "greptime_timestamp") AS BIGINT)
                           AS "bucket_ms", {sql_agg}("greptime_value") AS "agg_value"
@@ -2881,7 +2939,7 @@ impl TelemetryStore for GreptimeStore {
         // native: the `<name>_count` sibling table holds the per-sample count
         // as `greptime_value`; sum it per window for the request-rate numerator.
         let rows = self
-            .sql_lenient(&Self::histogram_count_series_sql(
+            .sql_arrow_lenient(&Self::histogram_count_series_sql(
                 &count_table,
                 step_secs,
                 range.start() / 1_000_000,
@@ -2939,7 +2997,7 @@ impl TelemetryStore for GreptimeStore {
         let clauses =
             log_filter_clauses(service, &range, severity_min, severity_max, body_contains);
         let rows = self
-            .sql_lenient(&format!(
+            .sql_arrow_lenient(&format!(
                 r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "timestamp") AS BIGINT)
                           AS "bucket_ns", COUNT(*) AS "n"
                    FROM opentelemetry_logs WHERE {}
