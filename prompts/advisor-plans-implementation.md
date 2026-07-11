@@ -24,11 +24,18 @@ for *how the run behaves* until the stop condition is met.
    plan or regression suite shows a DONE plan is no longer true, reopen its
    row (`TODO` or `BLOCKED` with reason) and fix to the plan's original done
    criteria before continuing.
-4. Repo law: `AGENTS.md`, `COMMITS.md`, `BRANCHING.md` (this run works on the
-   implementation branch named by the operator; otherwise stay on the current
-   implementation branch), `PROJECT_STRUCTURE.md`, crate/`ui` AGENTS files,
+4. Repo law: `AGENTS.md`, `COMMITS.md`, `BRANCHING.md`,
+   `PROJECT_STRUCTURE.md`, crate/`ui` AGENTS files,
    `docs/research/architecture/v1-implementation-spec.md` for contracts.
-5. Primary engine truth when a plan requires it: live GreptimeDB (managed
+5. **Branch / PR law (operator 2026-07-11, non-negotiable):**
+   - **Only branch:** `implement/advisor-plans-069-090`
+   - **Only PR:** one PR from that branch → `main`
+   - **Never create branches** (`git checkout -b` / `switch -c` / new remote
+     branches). Never open a second PR. Never spin per-plan or per-agent
+     implement branches.
+   - Main agent **and every subagent** work only on that branch. Subagent
+     prompts must restate this constraint.
+6. Primary engine truth when a plan requires it: live GreptimeDB (managed
    binary / embedded path), docs.greptime.com, and the engine version the
    supervisor pins — never marketing claims alone.
 
@@ -61,8 +68,8 @@ A plan is complete **only** when **all** of the following are true:
    `BLOCKED` / `REJECTED` / `SUPERSEDED` with a one-line rationale that matches
    reality).
 6. Changes are committed (Conventional Commits, DCO signoff, single agent
-   `Co-authored-by` trailer per `COMMITS.md` / `AGENTS.md`) and pushed on the
-   implementation branch.
+   `Co-authored-by` trailer per `COMMITS.md` / `AGENTS.md`) and pushed **only**
+   on `implement/advisor-plans-069-090` (never a new branch).
 
 A program is complete **only** when **all** of the following are true:
 
@@ -196,7 +203,7 @@ For **each** plan, in dependency-safe order:
 3. Update the status row to `DONE`.
 4. Commit with a subject that matches the plan's suggested Conventional Commit
    style; include DCO (`git commit -s`) and the correct single agent trailer.
-5. Push the implementation branch.
+5. Push **`implement/advisor-plans-069-090` only** (never a new branch).
 6. Surface in the transcript: plan id, what landed, gates run, next plan id.
 
 Never batch "half of plan A + half of plan B" into one vague commit that makes

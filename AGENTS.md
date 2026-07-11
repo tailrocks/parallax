@@ -133,16 +133,32 @@ structure quickly.
 
 ## Branching and Pull Requests
 
-Do not open pull requests for routine work in this repository yet. The project
-is too early and will iterate directly on `main`.
+**Operator override (2026-07-11) — single branch, single PR for this program:**
 
-- Work directly on `main`.
-- Commit focused changes.
-- Push after each durable research or structure update.
-- Revisit this rule later when the project has enough implementation surface or
-  collaborators to justify pull requests.
+- The **only** allowed working branch for advisor-plans / implementation work is
+  **`implement/advisor-plans-069-090`**. There is exactly **one** pull request
+  from that branch into `main`.
+- **Never create new branches** (no `implement/…` side branches, no
+  worktree-only branches, no per-plan branches, no codex/agent scratch
+  branches). Do not open additional PRs.
+- Main thread **and every subagent** must stay on
+  `implement/advisor-plans-069-090`, commit there, and push there. When
+  spawning subagents, state this constraint explicitly in the prompt: *use
+  only branch `implement/advisor-plans-069-090`; never create branches; never
+  open a second PR*.
+- If parallel work is needed, use process parallelism on the **same** branch
+  (or isolated worktrees that check out that same branch name), not new branch
+  names. Resolve conflicts on that branch only.
+- Redundant remote branches that carried subsets of this work are obsolete;
+  do not revive them.
 
-See [BRANCHING.md](BRANCHING.md) for the current branch policy.
+Outside that operator override, the research-stage default remains:
+
+- Use `main` for routine research when no implementation branch is active.
+- Do not open pull requests unless the operator explicitly asks for one.
+- Commit focused changes and push after each durable update.
+
+See [BRANCHING.md](BRANCHING.md) for the full policy.
 
 ## Tool-Specific Files
 
