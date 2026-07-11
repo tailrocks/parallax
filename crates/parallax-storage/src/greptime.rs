@@ -96,8 +96,11 @@ impl GreptimeStore {
                ) AS "agg" ON "root"."trace_id" = "agg"."trace_id"
                WHERE {rep_where}"#
         );
-        let page =
-            format!(r#"SELECT * FROM ({listed}) ORDER BY {order} LIMIT {limit} OFFSET {offset}"#);
+        // Single-pass page + total (plan 075 Step 2): window function avoids a
+        // second HTTP round-trip on the happy path.
+        let page = format!(
+            r#"SELECT *, COUNT(*) OVER () AS "total" FROM ({listed}) ORDER BY {order} LIMIT {limit} OFFSET {offset}"#
+        );
         (listed, page)
     }
 
@@ -2486,11 +2489,19 @@ impl TelemetryStore for GreptimeStore {
             query.limit,
             query.offset,
         );
-        // COUNT is a single-row probe — keep JSON. Page rows use Arrow+zstd.
-        let total_rows = self
-            .sql_lenient(&format!(r#"SELECT COUNT(*) AS "total" FROM ({listed})"#))
-            .await?;
+        // One happy-path execution: page rows + COUNT(*) OVER () as last column.
+        // Empty page (offset past end) falls back to a count-only query.
         let roots = self.sql_arrow_lenient(&page_sql).await?;
+        let total = if let Some(row) = roots.first() {
+            // listed projects 7 columns; window total is column index 7.
+            u128_at(row, 7) as u64
+        } else {
+            self.sql_lenient(&format!(r#"SELECT COUNT(*) AS "total" FROM ({listed})"#))
+                .await?
+                .first()
+                .map(|r| u128_at(r, 0) as u64)
+                .unwrap_or(0)
+        };
         let traces: Vec<_> = roots
             .iter()
             .map(|row| crate::adapter::TraceSummary {
@@ -2505,10 +2516,7 @@ impl TelemetryStore for GreptimeStore {
             .collect();
         Ok(crate::adapter::TraceList {
             items: traces,
-            total: total_rows
-                .first()
-                .map(|r| u128_at(r, 0) as u64)
-                .unwrap_or(0),
+            total,
         })
     }
 
@@ -2545,12 +2553,37 @@ impl TelemetryStore for GreptimeStore {
                 .collect()
         };
 
+        // Concurrent per-key fan-out in chunks of 8 (plan 075 Step 3).
+        // Each future runs selected+baseline pair with try_join!.
+        let mut per_key: Vec<(String, u64, BTreeMap<String, u64>, u64, BTreeMap<String, u64>)> =
+            Vec::with_capacity(candidate_keys.len());
+        for chunk in candidate_keys.chunks(8) {
+            let futs = chunk.iter().map(|key| {
+                let key = key.clone();
+                let selected = selected.clone();
+                let baseline = baseline.clone();
+                async move {
+                    let ((selected_total, selected_counts), (baseline_total, baseline_counts)) =
+                        tokio::try_join!(
+                            self.span_attribute_counts(&key, &selected, service, error_only),
+                            self.span_attribute_counts(&key, &baseline, service, error_only),
+                        )?;
+                    Ok::<_, anyhow::Error>((
+                        key,
+                        selected_total,
+                        selected_counts,
+                        baseline_total,
+                        baseline_counts,
+                    ))
+                }
+            });
+            let chunk_results = futures_util::future::try_join_all(futs).await?;
+            per_key.extend(chunk_results);
+        }
+
         let mut rows = Vec::new();
-        for key in candidate_keys {
-            let ((selected_total, selected_counts), (baseline_total, baseline_counts)) = tokio::try_join!(
-                self.span_attribute_counts(&key, &selected, service, error_only),
-                self.span_attribute_counts(&key, &baseline, service, error_only),
-            )?;
+        // Preserve original key order when assembling (sort reorders by score).
+        for (key, selected_total, selected_counts, baseline_total, baseline_counts) in per_key {
             for (value, selected_count) in selected_counts {
                 let baseline_count = baseline_counts.get(&value).copied().unwrap_or(0);
                 let score = attribute_compare_score(
@@ -2891,30 +2924,48 @@ impl TelemetryStore for GreptimeStore {
         range: RangeInclusive<u128>,
         step_nanos: u128,
     ) -> anyhow::Result<Vec<RuntimeMetricSeries>> {
-        let mut rows = Vec::new();
-        for metric in self.metric_names(range.clone()).await? {
-            let Some(family) = runtime_metric_family(&metric) else {
-                continue;
-            };
-            let points = self
-                .metric_series(
-                    &metric,
-                    service,
-                    run_id,
-                    range.clone(),
-                    step_nanos,
-                    MetricAgg::Avg,
-                )
-                .await?;
-            if points.is_empty() {
-                continue;
-            }
-            rows.push(RuntimeMetricSeries {
-                family: family.to_string(),
-                metric: metric.clone(),
-                unit: runtime_metric_unit(&metric),
-                points,
+        // Filter runtime families first, then fetch series concurrently
+        // (plan 075 Step 3) in chunks of 8.
+        let metrics: Vec<(String, &'static str)> = self
+            .metric_names(range.clone())
+            .await?
+            .into_iter()
+            .filter_map(|metric| {
+                runtime_metric_family(&metric).map(|family| (metric, family))
+            })
+            .collect();
+        let mut rows = Vec::with_capacity(metrics.len());
+        for chunk in metrics.chunks(8) {
+            let futs = chunk.iter().map(|(metric, family)| {
+                let metric = metric.clone();
+                let family = *family;
+                let range = range.clone();
+                async move {
+                    let points = self
+                        .metric_series(
+                            &metric,
+                            service,
+                            run_id,
+                            range,
+                            step_nanos,
+                            MetricAgg::Avg,
+                        )
+                        .await?;
+                    Ok::<_, anyhow::Error>((metric, family, points))
+                }
             });
+            let chunk_results = futures_util::future::try_join_all(futs).await?;
+            for (metric, family, points) in chunk_results {
+                if points.is_empty() {
+                    continue;
+                }
+                rows.push(RuntimeMetricSeries {
+                    family: family.to_string(),
+                    metric: metric.clone(),
+                    unit: runtime_metric_unit(&metric),
+                    points,
+                });
+            }
         }
         rows.sort_by(|a, b| a.family.cmp(&b.family).then(a.metric.cmp(&b.metric)));
         Ok(rows)
@@ -3343,6 +3394,9 @@ mod tests {
             0,
         );
         assert!(listed.contains("svc''quote"));
+        assert!(listed.contains("WHERE {scan_where}") || listed.contains(r#""timestamp" >= 1"#) || listed.contains("WHERE "));
+        // windowed agg subquery + single-pass total (plan 075)
+        assert!(page.contains("COUNT(*) OVER ()"));
         assert!(page.contains("LIMIT 50 OFFSET 0"));
         assert!(page.contains(&listed));
     }

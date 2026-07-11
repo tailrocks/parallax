@@ -17,6 +17,7 @@ arrow = { workspace = true }
 arrow-ipc = { workspace = true }
 async-trait = { workspace = true }
 bytes = { workspace = true }
+futures-util = { workspace = true }
 parallax-proto = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }

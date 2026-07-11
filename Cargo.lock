@@ -2781,6 +2781,7 @@ dependencies = [
  "arrow-ipc",
  "async-trait",
  "bytes",
+ "futures-util",
  "parallax-proto",
  "reqwest",
  "serde",

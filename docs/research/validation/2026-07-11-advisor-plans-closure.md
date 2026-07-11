@@ -46,3 +46,14 @@ Scratch proof: session implementer dir under goal harness
 ## Executor-actionable work
 
 None. Goal stop condition met after two consecutive clean re-audits.
+
+
+## Follow-up fix (same day) — Plan 075 complete against done criteria
+
+After skeptic review, plan 075 Step 2–3 were finished on HEAD:
+
+- `traces_search` happy path: one `sql_arrow_lenient` with `COUNT(*) OVER ()` (count-only only when page empty).
+- `attribute_compare`: chunked `try_join_all` (8) across keys; each key still pair-joins selected/baseline.
+- `runtime_snapshot`: filter runtime families first, then chunked `try_join_all` for `metric_series`.
+- Machine greps for 075 and full 069–091 done-criteria: **64/64 PASS** (scratch: `done-criteria-reaudit1-full.log` + reaudit2).
+- `cargo nextest` storage + clippy clean after the fix.
