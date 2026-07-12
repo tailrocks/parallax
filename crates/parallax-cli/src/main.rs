@@ -1,12 +1,12 @@
-#![expect(clippy::too_many_lines, reason = "CLI dispatch")]
 //! Installed thin API client (`--context` selects the server) plus the `serve`
 //! subcommand that embeds the server library.
 mod client;
 mod commands;
+mod dispatch;
 mod doctor;
+mod runtime;
 
 use clap::{Parser, Subcommand, ValueEnum};
-use client::{Client, resolve_url};
 
 /// Output shape for agent-facing projections (bundles, agent sessions).
 /// Markdown is the human default; JSON is the machine/agent contract.
@@ -23,7 +23,7 @@ pub enum OutputFormat {
     version = env!("PARALLAX_VERSION"),
     about = "Local-first observability for agent-assisted development"
 )]
-struct Cli {
+pub(crate) struct Cli {
     /// Named context from ~/.parallax/contexts.toml (default: local).
     #[arg(long, global = true)]
     context: Option<String>,
@@ -32,7 +32,7 @@ struct Cli {
 }
 
 #[derive(Subcommand)]
-enum Command {
+pub(crate) enum Command {
     /// Start the Parallax server (OTLP ingest + API + UI).
     Serve {
         /// Path to config.toml (default: ~/.parallax/config.toml when present).
@@ -137,7 +137,7 @@ enum Command {
 }
 
 #[derive(Subcommand)]
-enum RunCommand {
+pub(crate) enum RunCommand {
     /// Start a run. With `-- <command…>`: wrapper mode (injects `OTel` env,
     /// captures the exit code). Without: prints exports to source.
     Start {
@@ -187,7 +187,7 @@ enum RunCommand {
 }
 
 #[derive(Subcommand)]
-enum IssueCommand {
+pub(crate) enum IssueCommand {
     /// List grouped errors (newest activity first).
     List {
         /// Filter by workflow status (open | resolved).
@@ -208,7 +208,7 @@ enum IssueCommand {
 }
 
 #[derive(Subcommand)]
-enum TraceCommand {
+pub(crate) enum TraceCommand {
     /// Show a trace's spans and correlated logs by trace id.
     Inspect { trace_id: String },
 }
@@ -216,207 +216,6 @@ enum TraceCommand {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
-
-    // Self-telemetry (serve only): resolve + build the OTLP export pipeline
-    // before the subscriber is installed, then attach its layers alongside the
-    // console `fmt` layer. The serve config loaded here is reused by the arm.
-    let mut serve_config: Option<parallax_server::Config> = None;
-    let mut self_telemetry: Option<parallax_server::InstalledSelfTelemetry> = None;
-    if let Command::Serve { config } = &cli.command {
-        let default_path = std::env::home_dir().map(|h| h.join(".parallax/config.toml"));
-        let path = config.clone().or(default_path);
-        let cfg = parallax_server::Config::load(path.as_deref())?;
-        if let Some(endpoint) = parallax_server::resolve_self_telemetry_endpoint(&cfg) {
-            self_telemetry = Some(parallax_server::install_self_telemetry(&endpoint)?);
-        }
-        serve_config = Some(cfg);
-    }
-
-    let (otel_layers, telemetry_guard, telemetry_endpoint) = match self_telemetry {
-        Some(parallax_server::InstalledSelfTelemetry {
-            layers,
-            guard,
-            endpoint,
-        }) => (layers, Some(guard), Some(endpoint)),
-        None => (Vec::new(), None, None),
-    };
-
-    {
-        use tracing_subscriber::Layer;
-        use tracing_subscriber::layer::SubscriberExt;
-        use tracing_subscriber::util::SubscriberInitExt;
-        let env =
-            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into());
-        tracing_subscriber::registry()
-            .with(otel_layers)
-            .with(tracing_subscriber::fmt::layer().with_filter(env))
-            .init();
-    }
-    let client =
-        || -> anyhow::Result<Client> { Ok(Client::new(resolve_url(cli.context.as_deref())?)) };
-
-    match cli.command {
-        Command::Serve { .. } => {
-            // Config was loaded above (to resolve self-telemetry); reuse it.
-            let config = serve_config.ok_or_else(|| anyhow::anyhow!("serve config missing"))?;
-            let handle = parallax_server::start(&config).await?;
-            let storage = match config.storage.mode.as_str() {
-                "external" => format!("external GreptimeDB at {}", config.storage.greptime_url),
-                "managed" => "managed GreptimeDB on 127.0.0.1:24000".to_string(),
-                mode => anyhow::bail!("unsupported validated storage mode {mode:?}"),
-            };
-            println!();
-            println!("  Parallax ready — Ctrl-C to stop");
-            println!();
-            println!("    UI         http://{}", handle.api_addr);
-            println!("    GraphQL    http://{}/graphql", handle.api_addr);
-            println!("    OTLP/gRPC  {}", handle.otlp_grpc_addr);
-            println!("    OTLP/HTTP  {}", handle.otlp_http_addr);
-            println!("    storage    {storage}");
-            println!(
-                "    metadata   Turso at {}",
-                config.data_dir().join("meta.db").display()
-            );
-            println!("    data       {}", config.data_dir().display());
-            match &telemetry_endpoint {
-                Some(endpoint) => {
-                    println!("    self-otlp   parallax → {endpoint} (ingest path suppressed)");
-                }
-                None => println!("    self-otlp   off (set PARALLAX_SELF_OTLP to export)"),
-            }
-            println!();
-            // SIGTERM must also shut down cleanly — dying without cleanup
-            // orphans the managed engine child on its ports.
-            let mut sigterm =
-                tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
-            tokio::select! {
-                _ = tokio::signal::ctrl_c() => {},
-                _ = sigterm.recv() => {},
-            }
-            handle.shutdown();
-            // Flush buffered self-telemetry before exit.
-            if let Some(guard) = &telemetry_guard {
-                guard.shutdown();
-            }
-            Ok(())
-        }
-        Command::Run { command } => match command {
-            RunCommand::Start {
-                otlp_forward,
-                print_env,
-                command,
-            } => {
-                let code =
-                    commands::run_start(&client()?, command, otlp_forward, print_env).await?;
-                std::process::exit(code);
-            }
-            RunCommand::Finish { run_id, exit_code } => {
-                commands::run_finish(&client()?, &run_id, exit_code).await
-            }
-            RunCommand::List => commands::run_list(&client()?).await,
-            RunCommand::Inspect { run_id } => commands::run_inspect(&client()?, &run_id).await,
-            RunCommand::Bundle { run_id, format } => {
-                commands::run_bundle(&client()?, &run_id, format).await
-            }
-            RunCommand::Agent { run_id, format } => {
-                commands::run_agent_session(&client()?, &run_id, format).await
-            }
-            RunCommand::Watch {
-                run_id,
-                level,
-                grep,
-                watch_for,
-            } => {
-                commands::run_watch(
-                    &client()?,
-                    &run_id,
-                    level.as_deref(),
-                    grep.as_deref(),
-                    watch_for.as_deref(),
-                )
-                .await
-            }
-        },
-        Command::Issue { command } => match command {
-            IssueCommand::List { status, run } => {
-                commands::issue_list(&client()?, status.as_deref(), run.as_deref()).await
-            }
-            IssueCommand::Context {
-                fingerprint,
-                format,
-            } => commands::issue_context(&client()?, &fingerprint, format).await,
-            IssueCommand::Resolve { fingerprint } => {
-                let client = client()?;
-                client
-                    .graphql(&format!(
-                        r#"mutation {{ issueSetStatus(fingerprint: "{}", status: "resolved") {{ status }} }}"#,
-                        client::gql_str(&fingerprint)
-                    ))
-                    .await?;
-                println!("issue {fingerprint} resolved");
-                Ok(())
-            }
-        },
-        Command::Trace { command } => match command {
-            TraceCommand::Inspect { trace_id } => {
-                commands::trace_inspect(&client()?, &trace_id).await
-            }
-        },
-        Command::Logs {
-            trace,
-            run,
-            service,
-            level,
-            grep,
-            since,
-            limit,
-            follow,
-            follow_for,
-        } => {
-            let filter = commands::LogsFilter {
-                trace: trace.as_deref(),
-                run: run.as_deref(),
-                service: service.as_deref(),
-                level: level.as_deref(),
-                grep: grep.as_deref(),
-                since: &since,
-                limit,
-            };
-            if follow {
-                commands::logs_follow(&client()?, filter, follow_for.as_deref()).await
-            } else {
-                commands::logs(&client()?, filter).await
-            }
-        }
-        Command::Traces {
-            run,
-            service,
-            min_duration,
-            errors,
-            grep,
-            since,
-            limit,
-            follow,
-            follow_for,
-        } => {
-            let filter = commands::TracesFilter {
-                service: service.as_deref(),
-                run: run.as_deref(),
-                min_duration: min_duration.as_deref(),
-                errors_only: errors,
-                grep: grep.as_deref(),
-                since: &since,
-                limit,
-            };
-            if follow {
-                commands::traces_follow(&client()?, filter, follow_for.as_deref()).await
-            } else {
-                commands::traces(&client()?, filter).await
-            }
-        }
-        Command::Sql { query } => commands::sql(&client()?, &query).await,
-        Command::Doctor => doctor::doctor().await,
-        Command::Prune => doctor::prune(),
-        Command::Uninstall { purge, yes } => doctor::uninstall(purge, yes),
-    }
+    let runtime = runtime::prepare(&cli.command)?;
+    dispatch::execute(cli, runtime).await
 }

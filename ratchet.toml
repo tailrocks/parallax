@@ -156,11 +156,6 @@ lint = "clippy::excessive_nesting"
 ceiling = 1
 
 [[rust_suppressions]]
-crate_name = "parallax-cli"
-lint = "clippy::too_many_lines"
-ceiling = 1
-
-[[rust_suppressions]]
 crate_name = "parallax-analysis"
 lint = "clippy::cast_possible_wrap"
 ceiling = 1
@@ -390,11 +385,6 @@ ceiling = 536
 metric = "rust.file-lines"
 scope = "crates/parallax-cli/src/commands/implementation.rs"
 ceiling = 987
-
-[[limits]]
-metric = "rust.file-lines"
-scope = "crates/parallax-cli/src/main.rs"
-ceiling = 342
 
 [[limits]]
 metric = "rust.file-lines"
@@ -1600,11 +1590,6 @@ ceiling = 25
 
 [[limits]]
 metric = "rust.function-cognitive-complexity"
-scope = "crates/parallax-cli/src/main.rs::main"
-ceiling = 25
-
-[[limits]]
-metric = "rust.function-cognitive-complexity"
 scope = "crates/parallax-evidence/src/bundle/markdown.rs::to_markdown"
 ceiling = 25
 
@@ -1657,11 +1642,6 @@ ceiling = 108
 
 
 
-
-[[limits]]
-metric = "rust.function-lines"
-scope = "crates/parallax-cli/src/main.rs::main"
-ceiling = 207
 
 [[limits]]
 metric = "rust.function-lines"
