@@ -88,3 +88,20 @@ Brief re-run under `prompts/advisor-plans-implementation.md` after PR #19.
 | 089 upstream | still BLOCKED (`greptimedb-ingester` 0.18.0 → rustls); re-confirmed |
 
 **Executor-actionable remaining: none.** Operator-only: 089 rustls-free upstream; optional `rotel.env` history rewrite.
+
+## Goal harness dual re-audit (2026-07-12, scratch `10215a103403`)
+
+Full verification plan from goal harness on `main`:
+
+| Step | Result |
+|------|--------|
+| Status tables 069–091 | all terminal; non-terminal `rg` empty |
+| Done-criteria audit #1 | `SUMMARY fail=0` / `items remaining: none` |
+| Spikes 083/090 + GO child 091 | findings + PoC results + `sql_arrow` path greppable |
+| Residuals / open questions | every row dispositioned; executor remaining none |
+| Workspace gates | fmt check, clippy `-D warnings`, nextest **189 passed** |
+| UI gates | typecheck, lint, test:ci **175 passed**, 0 unhandled errors |
+| Done-criteria audit #2 | second clean pass on same program set |
+| Flake fix | `m1_pipeline` polls store error_events (not metadata alone) |
+
+Scratch artifacts: `status-tables.txt`, `done-criteria-audit{1,2}.log`, `spikes-go-children.txt`, `residuals.txt`, `gates-rust.log`, `gates-ui.log`, `git-state.txt`.

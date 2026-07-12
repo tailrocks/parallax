@@ -80,15 +80,30 @@ async fn error_telemetry_becomes_a_grouped_issue() {
     logger.emit(record);
     logger_provider.force_flush().expect("log flush");
 
-    // The worker is async; poll the metadata store until grouping lands.
+    // The worker is async; poll until metadata grouping AND store-side error
+    // events land. Metadata upsert runs before write_error_events, so polling
+    // issues alone can race the adapter under concurrent nextest load.
     let mut issues = Vec::new();
-    for _ in 0..50 {
+    let mut exception_fp = String::new();
+    let mut events = Vec::new();
+    for _ in 0..80 {
         issues = handle.metadata.issues(10).await.expect("issues query");
-        let exception_grouped = issues
+        let exception = issues
             .iter()
-            .any(|i| i.error_type == "redis::ConnectionTimeout" && i.event_count == 2);
-        if exception_grouped && issues.len() >= 2 {
-            break;
+            .find(|i| i.error_type == "redis::ConnectionTimeout" && i.event_count == 2);
+        let log_present = issues.iter().any(|i| i.error_type == "log_error");
+        if let Some(issue) = exception {
+            if log_present {
+                events = handle
+                    .store
+                    .error_events_by_fingerprint(&issue.fingerprint, 0..=u128::MAX, 10)
+                    .await
+                    .expect("error events read");
+                if events.len() >= 2 {
+                    exception_fp = issue.fingerprint.clone();
+                    break;
+                }
+            }
         }
         tokio::time::sleep(Duration::from_millis(100)).await;
     }
@@ -107,6 +122,7 @@ async fn error_telemetry_becomes_a_grouped_issue() {
     );
     assert_eq!(exception_issue.status, "open");
     assert!(exception_issue.last_trace_id.is_some());
+    assert_eq!(exception_issue.fingerprint, exception_fp);
     assert!(
         issues.iter().any(|i| i.error_type == "log_error"),
         "the ERROR log must form its own issue: {issues:?}"
@@ -121,12 +137,11 @@ async fn error_telemetry_becomes_a_grouped_issue() {
     assert_eq!(spans.len(), 1);
     assert_eq!(spans[0].name, "payment.authorize");
     assert_eq!(spans[0].status_code, "STATUS_CODE_ERROR");
-    let events = handle
-        .store
-        .error_events_by_fingerprint(&exception_issue.fingerprint, 0..=u128::MAX, 10)
-        .await
-        .expect("error events read");
-    assert_eq!(events.len(), 2);
+    assert_eq!(
+        events.len(),
+        2,
+        "store error_events must catch up to metadata event_count"
+    );
 
     // Rollups: both occurrences counted into the trend.
     let trend = handle
