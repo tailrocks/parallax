@@ -414,11 +414,6 @@ ceiling = 446
 
 [[limits]]
 metric = "rust.file-lines"
-scope = "crates/parallax-greptime/src/greptime.rs"
-ceiling = 2966
-
-[[limits]]
-metric = "rust.file-lines"
 scope = "crates/parallax-test-support/src/memory.rs"
 ceiling = 1399
 
@@ -1786,12 +1781,12 @@ ceiling = 187
 
 [[limits]]
 metric = "rust.function-lines"
-scope = "crates/parallax-greptime/src/greptime.rs::attribute_compare"
+scope = "crates/parallax-greptime/src/greptime/trace_analytics.rs::attribute_compare"
 ceiling = 102
 
 [[limits]]
 metric = "rust.function-lines"
-scope = "crates/parallax-greptime/src/greptime.rs::migrate_metric_exemplars"
+scope = "crates/parallax-greptime/src/greptime/lifecycle.rs::migrate_metric_exemplars"
 ceiling = 103
 
 [[limits]]

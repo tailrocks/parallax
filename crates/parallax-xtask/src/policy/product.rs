@@ -165,8 +165,8 @@ fn check_bun(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
 }
 
 fn check_native_tables(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
-    let path = root.join("crates/parallax-greptime/src/greptime.rs");
-    let literals = string_literals(&path)?;
+    let path = root.join("crates/parallax-greptime/src/greptime");
+    let literals = string_literals_in(&path)?;
     for table in ["opentelemetry_traces", "opentelemetry_logs"] {
         if !literals.iter().any(|literal| literal.contains(table)) {
             findings.push(error(
@@ -177,6 +177,19 @@ fn check_native_tables(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
         }
     }
     Ok(())
+}
+
+fn string_literals_in(directory: &Path) -> Result<Vec<String>> {
+    let mut literals = Vec::new();
+    for entry in fs::read_dir(directory)? {
+        let path = entry?.path();
+        if path.is_dir() {
+            literals.extend(string_literals_in(&path)?);
+        } else if path.extension().is_some_and(|extension| extension == "rs") {
+            literals.extend(string_literals(&path)?);
+        }
+    }
+    Ok(literals)
 }
 
 fn check_composition(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
