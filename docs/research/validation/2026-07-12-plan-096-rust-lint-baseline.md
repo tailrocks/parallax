@@ -127,3 +127,12 @@ All required selections passed with locked dependencies and `-D warnings`:
 - default workspace, all targets;
 - `parallax-cli` with `embed-ui`, all targets; and
 - `parallax-storage` with `conformance`, all targets.
+
+## Retirement gate
+
+`cargo xtask ci --full` passed on `main` at `cdbe7c1`. The aggregate included
+workspace formatting and strict Clippy, Bun lockfile install, formatting,
+typecheck, lint, 175 UI tests, client and SSR production builds, 231 nextest
+tests with 6 intentional real-engine skips, the compile-fail doctest, and the
+RustSec audit. Plan 096 is complete; remaining dependency orchestration belongs
+to Plan 101 and final artifact verification belongs to Plan 102.
