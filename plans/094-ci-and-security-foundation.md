@@ -13,7 +13,7 @@
 - **Depends on**: 093
 - **Category**: CI / security / DX
 - **Planned at**: `a1d8bf82`, revised 2026-07-12
-- **Status**: TODO
+- **Status**: IN PROGRESS
 
 ## Why
 
