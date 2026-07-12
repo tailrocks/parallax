@@ -362,7 +362,7 @@ ceiling = 3095
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-test-support/src/memory.rs"
-ceiling = 1463
+ceiling = 1455
 
 [[limits]]
 metric = "rust.file-lines"
@@ -1017,6 +1017,11 @@ ceiling = 4
 metric = "rust.assertions"
 scope = "crates/parallax-server/tests/m1_pipeline.rs"
 ceiling = 11
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-server/tests/m6_conformance_greptime.rs"
+ceiling = 2
 
 [[limits]]
 metric = "rust.assertions"
@@ -2094,6 +2099,11 @@ ceiling = 1
 metric = "rust.test-wall-clocks"
 scope = "crates/parallax-server/tests/m5_gates.rs"
 ceiling = 4
+
+[[limits]]
+metric = "rust.test-wall-clocks"
+scope = "crates/parallax-server/tests/m6_conformance_greptime.rs"
+ceiling = 1
 
 [[limits]]
 metric = "rust.test-wall-clocks"

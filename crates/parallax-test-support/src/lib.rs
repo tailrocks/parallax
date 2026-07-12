@@ -1,6 +1,7 @@
 //! Cycle-safe reusable fakes, builders, and conformance scenarios.
 #![cfg_attr(test, allow(clippy::float_cmp, reason = "exact fixture arithmetic"))]
 
+pub mod builders;
 pub mod conformance;
 #[expect(
     clippy::cast_possible_truncation,

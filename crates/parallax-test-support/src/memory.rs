@@ -2,6 +2,7 @@
 
 mod log_count;
 mod math;
+mod seed;
 
 use self::math::{
     duration_quantile_ms, field_scalar_value, group_value, quantile_from_histograms,
@@ -82,16 +83,6 @@ impl MemoryStore {
         self.inner
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
-    }
-
-    pub fn counts(&self) -> (usize, usize, usize, usize) {
-        let inner = self.lock();
-        (
-            inner.spans.len(),
-            inner.logs.len(),
-            inner.metric_points.len() + inner.histograms.len(),
-            inner.error_events.len(),
-        )
     }
 }
 

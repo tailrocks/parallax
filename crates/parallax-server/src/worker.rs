@@ -15,7 +15,7 @@ use parallax_core::{derive, normalize};
 use parallax_proto::collector_logs::ExportLogsServiceRequest;
 use parallax_proto::collector_metrics::ExportMetricsServiceRequest;
 use parallax_proto::collector_trace::ExportTraceServiceRequest;
-use parallax_storage::adapter::TelemetryStore;
+use parallax_storage::adapter::IngestStore;
 use parallax_storage::metadata::MetadataStore;
 use parallax_storage::model::{ErrorEventRow, ErrorSource};
 use parallax_storage::spool::Signal;
@@ -100,7 +100,7 @@ pub fn channels(buffer_per_signal: usize) -> (IngestSenders, IngestReceivers) {
     reason = "contains an opaque storage trait object"
 )]
 pub struct Worker {
-    store: Arc<dyn TelemetryStore>,
+    store: Arc<dyn IngestStore>,
     metadata: Arc<MetadataStore>,
     seen_runs: Arc<Mutex<HashSet<String>>>,
     live: crate::live::LiveChannels,
@@ -119,7 +119,7 @@ enum FailureStage {
 
 impl Worker {
     pub fn new(
-        store: Arc<dyn TelemetryStore>,
+        store: Arc<dyn IngestStore>,
         metadata: Arc<MetadataStore>,
         live: crate::live::LiveChannels,
     ) -> Self {

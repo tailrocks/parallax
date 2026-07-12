@@ -5,7 +5,8 @@
 #![allow(clippy::expect_used, reason = "test fixture assertions")]
 
 use parallax_server::Config;
-use std::time::Duration;
+use parallax_test_support::{builders, conformance};
+use prost::Message;
 
 fn make_executable(path: &std::path::Path) -> anyhow::Result<()> {
     let status = std::process::Command::new("chmod")
@@ -14,6 +15,17 @@ fn make_executable(path: &std::path::Path) -> anyhow::Result<()> {
         .status()?;
     anyhow::ensure!(status.success(), "chmod cached engine exited with {status}");
     Ok(())
+}
+
+async fn post<M: Message>(addr: std::net::SocketAddr, path: &str, request: &M) {
+    let response = reqwest::Client::new()
+        .post(format!("http://{addr}/v1/{path}"))
+        .header("content-type", "application/x-protobuf")
+        .body(request.encode_to_vec())
+        .send()
+        .await
+        .expect("OTLP conformance request");
+    assert_eq!(response.status(), 200, "{path}: {response:?}");
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -52,27 +64,61 @@ async fn greptime_conformance_scenarios() {
     let handle = parallax_server::start(&config)
         .await
         .expect("managed server starts");
+    let start = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
+    let window = start..=(start + 10_000_000_000);
+    conformance::assert_empty(handle.store.as_ref(), window.clone())
+        .await
+        .expect("fresh engine empty-window conformance");
 
-    // Memory-path conformance exercises the shared scenarios against MemoryStore.
-    // Real-engine seeding through public ingest_* requires raw OTLP frames the
-    // greptime adapter forwards (decoded tee is ignored). Scenario calls still
-    // validate the store trait surface does not panic on empty windows.
-    let divergences: Vec<String> = Vec::new();
-    // Document: greptime native path needs OTLP raw bytes for non-empty seeds;
-    // empty-window calls below prove the SQL layer is reachable.
-    let store = handle.store.clone();
-    if let Err(e) = store.service_names(0..=u128::MAX).await {
-        panic!("service_names failed on live engine: {e:#}");
-    }
-    if let Err(e) = store.overview_totals(0..=u128::MAX).await {
-        panic!("overview_totals failed on live engine: {e:#}");
-    }
+    let start = u64::try_from(start).expect("fixture timestamp");
+    post(
+        handle.otlp_http_addr,
+        "traces",
+        &builders::conformance_traces(conformance::SERVICE, start),
+    )
+    .await;
+    post(
+        handle.otlp_http_addr,
+        "logs",
+        &builders::conformance_logs(conformance::SERVICE, start),
+    )
+    .await;
+    post(
+        handle.otlp_http_addr,
+        "metrics",
+        &builders::conformance_metrics(conformance::SERVICE, start),
+    )
+    .await;
 
-    if !divergences.is_empty() {
-        eprintln!("conformance divergences: {divergences:?}");
+    let mut seeded = false;
+    let mut last_error = None;
+    for _ in 0..100 {
+        match conformance::assert_seeded(
+            handle.store.as_ref(),
+            "conformance_duration",
+            window.clone(),
+        )
+        .await
+        {
+            Ok(()) => {
+                seeded = true;
+                break;
+            }
+            Err(error) => last_error = Some(error),
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
     }
+    assert!(seeded, "seed never became queryable: {last_error:?}");
 
-    // Keep the process alive briefly so child cleanup is orderly.
-    tokio::time::sleep(Duration::from_millis(50)).await;
-    handle.shutdown();
+    handle.shutdown_graceful().await;
+    let restarted = parallax_server::start(&config)
+        .await
+        .expect("managed server restarts");
+    conformance::assert_seeded(restarted.store.as_ref(), "conformance_duration", window)
+        .await
+        .expect("restarted engine retains conformance seed");
+    restarted.shutdown_graceful().await;
 }

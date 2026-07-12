@@ -71,3 +71,22 @@ row names its current surface, final crate/facade, consumers, and compatibility
 oracles. The documentation policy now schema-validates the Plan 097 handoff in
 addition to the existing Plan 127 ledgers and rejects pending, unowned,
 malformed, or reused IDs.
+
+## Dual-adapter conformance and lock evidence
+
+The reusable conformance owner now includes typed OTLP trace, log, and histogram
+builders plus one full logical seed. MemoryStore receives the equivalent model
+rows; the live suite sends the OTLP requests through Parallax's public receiver
+and native GreptimeDB tables. Both paths validate empty and bounded windows,
+the adversarial `api\'雪` service, error traces, severity/body-filtered logs,
+histogram count series (empty and non-empty), exemplars, and derived errors.
+The live suite additionally shuts down and restarts the managed engine over the
+same data directory, then repeats the seeded assertions. The ignored real-engine
+test passed against GreptimeDB 1.1.2 on 2026-07-12.
+
+MemoryStore keeps its synchronous mutex only around non-awaiting state access;
+its sole async gate takes the receiver out of the Tokio mutex before awaiting.
+The capability split moved the ingest worker from the composition umbrella to
+`Arc<dyn IngestStore>`, proving consumers can request a narrow port without an
+adapter or telemetry clone. The memory conformance test, full-feature Clippy,
+and repository policy pass with exact shrink-only limits.

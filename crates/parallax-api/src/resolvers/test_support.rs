@@ -2,69 +2,12 @@
 
 use crate::{ApiContext, RequestMemo};
 use parallax_storage::metadata::MetadataStore;
-use parallax_storage::model::{LogRow, SpanRow};
 use parallax_test_support::MemoryStore;
+pub(crate) use parallax_test_support::builders::{log_row, span, span_with_release};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 pub(crate) static TEST_DB_SEQ: AtomicU64 = AtomicU64::new(0);
-
-pub(crate) fn span(
-    service: &str,
-    trace_id: &str,
-    span_id: &str,
-    ts_nanos: u128,
-    duration_ns: u128,
-) -> SpanRow {
-    SpanRow {
-        ts_nanos,
-        service: service.into(),
-        trace_id: trace_id.into(),
-        span_id: span_id.into(),
-        parent_span_id: None,
-        name: "handler".into(),
-        kind: "SPAN_KIND_SERVER".into(),
-        status_code: "STATUS_CODE_UNSET".into(),
-        status_message: String::new(),
-        duration_ns,
-        run_id: None,
-        scope_name: String::new(),
-        events: None,
-        links: serde_json::Value::Null,
-        attributes: serde_json::Value::Null,
-        resource: serde_json::Value::Null,
-    }
-}
-
-pub(crate) fn log_row(service: &str, trace_id: &str, ts_nanos: u128, body: &str) -> LogRow {
-    LogRow {
-        ts_nanos,
-        event_name: String::new(),
-        observed_ts_nanos: 0,
-        service: service.into(),
-        severity_num: 9,
-        severity_text: "INFO".into(),
-        body: body.into(),
-        trace_id: trace_id.into(),
-        span_id: format!("span-{ts_nanos}"),
-        run_id: None,
-        scope_name: String::new(),
-        attributes: serde_json::Value::Null,
-        resource: serde_json::Value::Null,
-    }
-}
-
-pub(crate) fn span_with_release(
-    service: &str,
-    trace_id: &str,
-    span_id: &str,
-    ts_nanos: u128,
-    version: &str,
-) -> SpanRow {
-    let mut row = span(service, trace_id, span_id, ts_nanos, 1_000);
-    row.resource = serde_json::json!({ "service.version": version });
-    row
-}
 
 pub(crate) async fn context_with_memory(store: Arc<MemoryStore>) -> ApiContext {
     let mut path = std::env::temp_dir();
