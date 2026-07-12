@@ -14,3 +14,18 @@ fn parses_functions_closures_and_comment_free_logical_lines() {
 fn malformed_rust_fails_closed() {
     assert!(analyze("fn {").is_err());
 }
+
+#[test]
+fn distinguishes_inline_bodies_from_external_markers_and_macros() {
+    let inline = analyze("#[cfg(test)] mod tests { #[test] fn works() {} }")
+        .expect("inline fixture should parse");
+    assert_eq!(inline.inline_test_modules, 1);
+
+    let external = analyze("#[cfg(test)] mod tests;").expect("external fixture should parse");
+    assert_eq!(external.inline_test_modules, 0);
+
+    let generated =
+        analyze("macro_rules! generated_tests { () => { #[cfg(test)] mod tests { } }; }")
+            .expect("macro fixture should parse");
+    assert_eq!(generated.inline_test_modules, 0);
+}
