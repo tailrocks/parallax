@@ -15,7 +15,7 @@
 - **Depends on**: 096, 127
 - **Category**: architecture / storage / testing
 - **Planned at**: `a1d8bf82`, revised 2026-07-12
-- **Status**: TODO
+- **Status**: IN PROGRESS
 
 ## Why
 

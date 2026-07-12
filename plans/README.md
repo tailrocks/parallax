@@ -76,7 +76,7 @@ Every plan must preserve these non-negotiable Parallax constraints:
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [097](097-model-test-support-and-dependency-direction.md) | Extract model/port/test-support foundations and remove the core-storage inversion | P1 | XL | 096, 127 | TODO |
+| [097](097-model-test-support-and-dependency-direction.md) | Extract model/port/test-support foundations and remove the core-storage inversion | P1 | XL | 096, 127 | IN PROGRESS |
 | [126](126-rust-workspace-decomposition.md) | Decompose Rust into domain, port, adapter, and composition crates | P1 | XL | 097, 101 | TODO |
 | [098](098-facades-modules-and-api-batching.md) | Seal crate facades, split responsibility hotspots, validate crate docs, and eliminate latent nested-field N+1 paths | P2 | L | 126 | TODO |
 | [099](099-boundary-errors-idempotency-and-agent-safety.md) | Add typed errors, explicit retry/idempotency boundaries, an ID pilot, and agent-surface safety | P1 | L | 097, 098 | TODO |
