@@ -105,3 +105,12 @@ Full verification plan from goal harness on `main`:
 | Flake fix | `m1_pipeline` polls store error_events (not metadata alone) |
 
 Scratch artifacts: `status-tables.txt`, `done-criteria-audit{1,2}.log`, `spikes-go-children.txt`, `residuals.txt`, `gates-rust.log`, `gates-ui.log`, `git-state.txt`.
+
+## Skeptic fix (same session) — clippy collapsible_if on m1 poll
+
+`m1_pipeline` nested `if let` + `if log_present` failed `clippy -D warnings`
+(`collapsible_if`). Collapsed via `.filter(|_| log_present)`. Re-ran full
+workspace gates on the fixed tree: `fmt_exit=0`, `clippy_exit=0`, nextest
+**189 passed**, UI **175 passed**. Dual done-criteria re-audits re-captured on
+final pushed HEAD.
+

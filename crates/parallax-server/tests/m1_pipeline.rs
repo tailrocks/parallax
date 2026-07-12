@@ -88,21 +88,20 @@ async fn error_telemetry_becomes_a_grouped_issue() {
     let mut events = Vec::new();
     for _ in 0..80 {
         issues = handle.metadata.issues(10).await.expect("issues query");
-        let exception = issues
-            .iter()
-            .find(|i| i.error_type == "redis::ConnectionTimeout" && i.event_count == 2);
         let log_present = issues.iter().any(|i| i.error_type == "log_error");
-        if let Some(issue) = exception {
-            if log_present {
-                events = handle
-                    .store
-                    .error_events_by_fingerprint(&issue.fingerprint, 0..=u128::MAX, 10)
-                    .await
-                    .expect("error events read");
-                if events.len() >= 2 {
-                    exception_fp = issue.fingerprint.clone();
-                    break;
-                }
+        if let Some(issue) = issues
+            .iter()
+            .find(|i| i.error_type == "redis::ConnectionTimeout" && i.event_count == 2)
+            .filter(|_| log_present)
+        {
+            events = handle
+                .store
+                .error_events_by_fingerprint(&issue.fingerprint, 0..=u128::MAX, 10)
+                .await
+                .expect("error events read");
+            if events.len() >= 2 {
+                exception_fp = issue.fingerprint.clone();
+                break;
             }
         }
         tokio::time::sleep(Duration::from_millis(100)).await;
