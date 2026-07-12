@@ -43,3 +43,10 @@ or private reporting detail is retained here.
 - UI format, ESLint, strict TypeScript, production build, and generated route-
   tree drift checks passed. The existing large-client-chunk warning remains
   owned by Plan 148.
+
+## Hosted required-check evidence
+
+GitHub Actions run `29200131016` on commit `0dc78a2` completed successfully.
+The stable `ci-required` aggregate passed after actionlint/policy fixtures,
+source hygiene, Rust format, advisory audit, check, Clippy, 195 nextest tests,
+UI, and embedded-UI lanes all succeeded. Check and Clippy ran as siblings.
