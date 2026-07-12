@@ -10,11 +10,61 @@ use crate::fingerprint::fingerprint_with_operation;
 use crate::semconv;
 use parallax_model::{ErrorEventRow, ErrorSource, LogRow};
 use parallax_proto::collector_trace::ExportTraceServiceRequest;
-use parallax_proto::common::KeyValue;
-
-use crate::normalize::{attr_str, attributes_to_json, hex};
+use parallax_proto::common::any_value::Value as AnyValueEnum;
+use parallax_proto::common::{AnyValue, KeyValue};
 
 pub const SEVERITY_ERROR: i32 = 17;
+
+fn hex(bytes: &[u8]) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut output = String::with_capacity(bytes.len() * 2);
+    for byte in bytes {
+        output.push(HEX[(byte >> 4) as usize] as char);
+        output.push(HEX[(byte & 0x0f) as usize] as char);
+    }
+    output
+}
+
+fn attr_str<'a>(attributes: &'a [KeyValue], key: &str) -> Option<&'a str> {
+    attributes
+        .iter()
+        .find(|item| item.key == key)
+        .and_then(|item| match item.value.as_ref()?.value.as_ref()? {
+            AnyValueEnum::StringValue(value) => Some(value.as_str()),
+            _ => None,
+        })
+}
+
+fn attributes_to_json(attributes: &[KeyValue]) -> serde_json::Value {
+    serde_json::Value::Object(
+        attributes
+            .iter()
+            .map(|item| {
+                let value = item
+                    .value
+                    .as_ref()
+                    .map_or(serde_json::Value::Null, any_value_to_json);
+                (item.key.clone(), value)
+            })
+            .collect(),
+    )
+}
+
+fn any_value_to_json(value: &AnyValue) -> serde_json::Value {
+    match &value.value {
+        Some(AnyValueEnum::StringValue(value)) => value.clone().into(),
+        Some(AnyValueEnum::BoolValue(value)) => (*value).into(),
+        Some(AnyValueEnum::IntValue(value)) => (*value).into(),
+        Some(AnyValueEnum::DoubleValue(value)) => serde_json::Number::from_f64(*value)
+            .map_or(serde_json::Value::Null, serde_json::Value::Number),
+        Some(AnyValueEnum::BytesValue(value)) => hex(value).into(),
+        Some(AnyValueEnum::ArrayValue(value)) => {
+            value.values.iter().map(any_value_to_json).collect()
+        }
+        Some(AnyValueEnum::KvlistValue(value)) => attributes_to_json(&value.values),
+        Some(_) | None => serde_json::Value::Null,
+    }
+}
 
 fn json_attr_str<'a>(attributes: &'a serde_json::Value, key: &str) -> Option<&'a str> {
     attributes

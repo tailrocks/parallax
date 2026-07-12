@@ -1,0 +1,11 @@
+schema_version = 1
+
+[roots]
+"lib.rs" = [
+    "fn normalize_logs",
+    "fn normalize_metrics",
+    "fn normalize_traces",
+    "fn promote_log_identity_attributes",
+    "fn resource_run_ids",
+    "struct NormalizedMetrics",
+]

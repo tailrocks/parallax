@@ -3,7 +3,7 @@ schema_version = 1
 package = "parallax-server"
 class = "product"
 tier = 4
-dependencies = ["parallax-api", "parallax-core", "parallax-proto", "parallax-storage", "parallax-test-support"]
+dependencies = ["parallax-api", "parallax-core", "parallax-ingest", "parallax-proto", "parallax-storage", "parallax-test-support"]
 facade_roots = ["lib.rs"]
 +++
 

@@ -158,12 +158,27 @@ ceiling = 1
 [[rust_suppressions]]
 crate_name = "parallax-core"
 lint = "clippy::cast_precision_loss"
-ceiling = 3
+ceiling = 2
 
 [[rust_suppressions]]
 crate_name = "parallax-core"
 lint = "clippy::excessive_nesting"
-ceiling = 3
+ceiling = 2
+
+[[rust_suppressions]]
+crate_name = "parallax-ingest"
+lint = "clippy::cast_precision_loss"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-ingest"
+lint = "clippy::excessive_nesting"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-ingest"
+lint = "clippy::float_cmp"
+ceiling = 1
 
 [[rust_suppressions]]
 crate_name = "parallax-core"
@@ -280,6 +295,11 @@ class = "product"
 tier = 1
 
 [[architecture.packages]]
+name = "parallax-ingest"
+class = "product"
+tier = 1
+
+[[architecture.packages]]
 name = "parallax-api"
 class = "product"
 tier = 3
@@ -339,9 +359,8 @@ ceiling = 905
 
 [[limits]]
 metric = "rust.file-lines"
-scope = "crates/parallax-core/src/normalize.rs"
-ceiling = 421
-
+scope = "crates/parallax-ingest/src/lib.rs"
+ceiling = 380
 
 [[limits]]
 metric = "rust.file-lines"
@@ -1573,7 +1592,7 @@ ceiling = 25
 
 [[limits]]
 metric = "rust.function-cognitive-complexity"
-scope = "crates/parallax-core/src/normalize.rs::normalize_metrics"
+scope = "crates/parallax-ingest/src/lib.rs::normalize_metrics"
 ceiling = 25
 
 [[limits]]
@@ -1773,7 +1792,12 @@ ceiling = 1
 [[limits]]
 metric = "rust.public-root-items"
 scope = "crates/parallax-core/facade.toml"
-ceiling = 10
+ceiling = 9
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = "crates/parallax-ingest/facade.toml"
+ceiling = 6
 
 [[limits]]
 metric = "rust.public-root-items"
@@ -1892,7 +1916,7 @@ ceiling = 7
 
 [[limits]]
 metric = "rust.assertions"
-scope = "crates/parallax-core/src/normalize/tests.rs"
+scope = "crates/parallax-ingest/src/tests.rs"
 ceiling = 25
 
 [[limits]]

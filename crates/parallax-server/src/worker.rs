@@ -11,7 +11,8 @@
 //! does not stall logs/metrics acks (ordering across signals was never
 //! guaranteed).
 
-use parallax_core::{derive, normalize};
+use parallax_core::derive;
+use parallax_ingest as normalize;
 use parallax_proto::collector_logs::ExportLogsServiceRequest;
 use parallax_proto::collector_metrics::ExportMetricsServiceRequest;
 use parallax_proto::collector_trace::ExportTraceServiceRequest;

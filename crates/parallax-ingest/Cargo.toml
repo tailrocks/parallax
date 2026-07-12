@@ -1,0 +1,18 @@
+[package]
+name = "parallax-ingest"
+description = "Parallax zero-copy OTLP normalization boundary"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+parallax-model = { workspace = true }
+parallax-proto = { workspace = true }
+serde_json = { workspace = true }

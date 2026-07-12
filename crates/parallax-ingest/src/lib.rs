@@ -1,4 +1,10 @@
 //! OTLP → normalized rows, per the implementation-spec §7 mapping.
+#![expect(
+    clippy::cast_precision_loss,
+    clippy::excessive_nesting,
+    reason = "mechanically transferred OTLP projection; Plan 098 owns the split"
+)]
+#![cfg_attr(test, allow(clippy::float_cmp, reason = "exact fixture arithmetic"))]
 
 use parallax_model::{HistogramRow, LogRow, MetricExemplarRow, MetricPointRow, SpanRow};
 use parallax_proto::collector_logs::ExportLogsServiceRequest;
@@ -11,60 +17,9 @@ use parallax_proto::metrics::metric::Data;
 use parallax_proto::metrics::number_data_point::Value as NumberValue;
 use parallax_proto::semconv;
 
-pub fn hex(bytes: &[u8]) -> String {
-    const HEX: &[u8; 16] = b"0123456789abcdef";
-    let mut out = String::with_capacity(bytes.len() * 2);
-    for b in bytes {
-        out.push(HEX[(b >> 4) as usize] as char);
-        out.push(HEX[(b & 0x0f) as usize] as char);
-    }
-    out
-}
+mod values;
 
-fn any_value_to_json(value: &AnyValue) -> serde_json::Value {
-    match &value.value {
-        Some(AnyValueEnum::StringValue(s)) => serde_json::Value::String(s.clone()),
-        Some(AnyValueEnum::BoolValue(b)) => serde_json::Value::Bool(*b),
-        Some(AnyValueEnum::IntValue(i)) => serde_json::Value::from(*i),
-        Some(AnyValueEnum::DoubleValue(d)) => serde_json::Number::from_f64(*d)
-            .map_or(serde_json::Value::Null, serde_json::Value::Number),
-        Some(AnyValueEnum::ArrayValue(items)) => {
-            serde_json::Value::Array(items.values.iter().map(any_value_to_json).collect())
-        }
-        Some(AnyValueEnum::KvlistValue(kvs)) => attributes_to_json(&kvs.values),
-        Some(AnyValueEnum::BytesValue(b)) => serde_json::Value::String(hex(b)),
-        // String-table indexed values (newer OTLP encodings) need the table
-        // context to resolve; standard SDK exports do not use them. Null out.
-        Some(_) | None => serde_json::Value::Null,
-    }
-}
-
-pub fn attributes_to_json(attributes: &[KeyValue]) -> serde_json::Value {
-    let map: serde_json::Map<String, serde_json::Value> = attributes
-        .iter()
-        .map(|kv| {
-            (
-                kv.key.clone(),
-                kv.value
-                    .as_ref()
-                    .map_or(serde_json::Value::Null, any_value_to_json),
-            )
-        })
-        .collect();
-    serde_json::Value::Object(map)
-}
-
-pub fn attr_str<'a>(attributes: &'a [KeyValue], key: &str) -> Option<&'a str> {
-    attributes
-        .iter()
-        .find(|kv| kv.key == key)
-        .and_then(|kv| match &kv.value {
-            Some(AnyValue {
-                value: Some(AnyValueEnum::StringValue(s)),
-            }) => Some(s.as_str()),
-            _ => None,
-        })
-}
+use values::{any_value_to_json, attr_str, attributes_to_json, hex};
 
 fn has_attr(attributes: &[KeyValue], key: &str) -> bool {
     attributes.iter().any(|kv| kv.key == key)

@@ -16,12 +16,6 @@ pub mod bundle;
 pub mod derive;
 pub mod fingerprint;
 pub mod gaps;
-#[expect(
-    clippy::cast_precision_loss,
-    clippy::excessive_nesting,
-    reason = "OTLP projection"
-)]
-pub mod normalize;
 pub mod semconv;
 pub mod span_events;
 pub mod story;

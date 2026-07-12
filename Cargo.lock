@@ -3123,6 +3123,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "parallax-ingest"
+version = "0.1.0-dev"
+dependencies = [
+ "parallax-model",
+ "parallax-proto",
+ "serde_json",
+]
+
+[[package]]
 name = "parallax-mcp-spike"
 version = "0.1.0-dev"
 dependencies = [
@@ -3170,6 +3179,7 @@ dependencies = [
  "opentelemetry_sdk",
  "parallax-api",
  "parallax-core",
+ "parallax-ingest",
  "parallax-proto",
  "parallax-storage",
  "parallax-test-support",
