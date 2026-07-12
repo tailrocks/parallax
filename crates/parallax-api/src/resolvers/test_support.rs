@@ -77,7 +77,11 @@ pub(crate) async fn context_with_memory(store: Arc<MemoryStore>) -> ApiContext {
             .as_nanos(),
         TEST_DB_SEQ.fetch_add(1, Ordering::Relaxed)
     ));
-    let _ = std::fs::remove_file(&path);
+    match std::fs::remove_file(&path) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => panic!("remove stale test metadata {}: {error}", path.display()),
+    }
     let metadata = MetadataStore::open(&path).await.unwrap();
     ApiContext {
         store,

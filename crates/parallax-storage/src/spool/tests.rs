@@ -23,7 +23,9 @@ impl TempDir {
 
 impl Drop for TempDir {
     fn drop(&mut self) {
-        let _ = std::fs::remove_dir_all(&self.0);
+        if let Err(error) = std::fs::remove_dir_all(&self.0) {
+            tracing::warn!(path = %self.0.display(), %error, "test directory cleanup failed");
+        }
     }
 }
 
@@ -143,7 +145,7 @@ fn reaper_removes_oldest_rotated_segments_to_enforce_total_cap() {
                 max_total_bytes: 11,
                 max_age: Duration::from_secs(u64::MAX),
             },
-            UNIX_EPOCH + Duration::from_secs(300),
+            UNIX_EPOCH + Duration::from_mins(5),
         )
         .expect("reap");
     assert_eq!(reclaimed.removed_segments, 1);

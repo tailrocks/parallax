@@ -261,7 +261,7 @@ async fn stack_scenarios_cross_service_db_and_graphql_spans() {
         let issues = graphql(
             &client,
             handle.api_addr,
-            r#"{ issues { items { fingerprint errorType } } }"#,
+            r"{ issues { items { fingerprint errorType } } }",
         )
         .await;
         if let Some(fp) = issues

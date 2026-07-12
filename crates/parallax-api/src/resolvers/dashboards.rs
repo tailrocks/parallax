@@ -5,7 +5,7 @@ use parallax_storage::model;
 
 use crate::{ApiContext, field_err, nanos_string};
 
-pub struct Dashboard(pub(crate) model::Dashboard);
+pub(crate) struct Dashboard(pub(crate) model::Dashboard);
 
 #[graphql_object(context = ApiContext)]
 impl Dashboard {
@@ -51,8 +51,7 @@ pub(crate) async fn dashboard_save(
     }
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_nanos())
-        .unwrap_or(0);
+        .map_or(0, |d| d.as_nanos());
     let id = id.unwrap_or_else(|| format!("dash_{now:x}"));
     context
         .metadata

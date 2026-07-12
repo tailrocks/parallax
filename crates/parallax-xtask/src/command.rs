@@ -6,7 +6,7 @@ use crate::cli::{Cli, Command, FacadeAction};
 use crate::facade;
 use crate::policy;
 
-pub fn execute(cli: Cli) -> Result<()> {
+pub(crate) fn execute(cli: Cli) -> Result<()> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     match cli.command {
         Command::Ci { fast, full } => {

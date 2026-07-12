@@ -6,7 +6,7 @@ use sha2::{Digest, Sha256};
 use std::process::Command;
 
 #[derive(Debug)]
-pub struct CheckArgs {
+pub(crate) struct CheckArgs {
     pub base_url: String,
     pub fingerprint: Option<String>,
     pub run_id: Option<String>,
@@ -14,7 +14,7 @@ pub struct CheckArgs {
     pub parallax_bin: String,
 }
 
-pub async fn run(args: CheckArgs) -> anyhow::Result<()> {
+pub(crate) async fn run(args: CheckArgs) -> anyhow::Result<()> {
     let client = GraphqlClient::new(args.base_url.clone());
     let mut cases: Vec<Case> = Vec::new();
 

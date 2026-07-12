@@ -4,7 +4,7 @@
 //!
 //! Usage: start `parallax serve`, then
 //! `cargo run -p parallax-server --example seed`
-//! (override the target with OTEL_EXPORTER_OTLP_ENDPOINT).
+//! (override the target with `OTEL_EXPORTER_OTLP_ENDPOINT`).
 
 use opentelemetry::logs::{AnyValue, LogRecord as _, Logger as _, LoggerProvider as _, Severity};
 use opentelemetry::metrics::MeterProvider as _;

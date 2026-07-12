@@ -4,7 +4,7 @@ use parallax_storage::memory::MemoryStore;
 use parallax_storage::metadata::MetadataStore;
 use std::sync::Arc;
 
-pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
+pub(crate) async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
     let store = Arc::new(MemoryStore::new().with_normalizers(
         Arc::new(parallax_core::normalize::normalize_traces),
         Arc::new(parallax_core::normalize::normalize_logs),

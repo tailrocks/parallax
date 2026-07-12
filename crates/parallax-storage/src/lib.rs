@@ -1,8 +1,7 @@
-#![cfg_attr(test, allow(clippy::unwrap_used, reason = "fixture assertions"))]
 //! Parallax storage adapters.
 //!
 //! Everything engine-specific lives behind the adapter boundary defined here:
-//! the `TelemetryStore` trait, the production GreptimeDB adapter, the Turso
+//! the `TelemetryStore` trait, the production `GreptimeDB` adapter, the Turso
 //! metadata store for mutable product state, and the ingest spool. The
 //! in-memory adapter is compiled only for tests and explicit test support.
 

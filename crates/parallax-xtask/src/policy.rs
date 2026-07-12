@@ -15,7 +15,7 @@ use crate::{
     diagnostic::{Format, Severity, render},
 };
 
-pub fn run(root: &Path, only: Option<&str>, output: Output) -> Result<()> {
+pub(crate) fn run(root: &Path, only: Option<&str>, output: Output) -> Result<()> {
     if let Some(rule) = only
         && !matches!(
             rule,
@@ -58,7 +58,7 @@ pub fn run(root: &Path, only: Option<&str>, output: Output) -> Result<()> {
     Ok(())
 }
 
-pub fn health(root: &Path, output: Output) -> Result<()> {
+pub(crate) fn health(root: &Path, output: Output) -> Result<()> {
     let ratchet = config::Ratchet::load(&root.join("ratchet.toml"))?;
     let mut findings = rust::health(root, &ratchet)?;
     findings.extend(typescript::health(root, &ratchet)?);

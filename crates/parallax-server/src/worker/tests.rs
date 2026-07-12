@@ -39,7 +39,7 @@ fn string_kv(key: &str, value: &str) -> KeyValue {
 fn metrics_request_with_exemplar() -> ExportMetricsServiceRequest {
     ExportMetricsServiceRequest {
         resource_metrics: vec![ResourceMetrics {
-            resource: Some(parallax_proto::resource::Resource {
+            resource: Some(Resource {
                 attributes: vec![
                     string_kv("service.name", "checkout"),
                     string_kv("parallax.run.id", "run-a"),
@@ -322,7 +322,7 @@ async fn per_signal_workers_isolate_slow_traces_from_logs() {
         while let Some(item) = rx.recv().await {
             worker_logs.process(&item).await.expect("logs");
             if let Some(done) = logs_done_tx.take() {
-                let _ = done.send(());
+                done.send(()).expect("signal logs completion");
             }
         }
     });
@@ -350,9 +350,9 @@ async fn per_signal_workers_isolate_slow_traces_from_logs() {
         .expect("logs worker must not wait for a blocked traces forward")
         .expect("logs worker must report completion");
 
-    let _ = gate_tx.send(());
+    gate_tx.send(()).expect("release traces gate");
     drop(senders);
-    let _ = traces_task.await;
-    let _ = logs_task.await;
-    let _ = metrics_task.await;
+    traces_task.await.expect("traces worker join");
+    logs_task.await.expect("logs worker join");
+    metrics_task.await.expect("metrics worker join");
 }

@@ -36,7 +36,7 @@ struct FileMetric {
     determinism: determinism::Metrics,
 }
 
-pub fn health(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
+pub(super) fn health(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
     let mut files = Vec::new();
     collect(&root.join("crates"), &mut files)?;
     let mut findings = Vec::new();

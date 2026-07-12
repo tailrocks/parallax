@@ -12,7 +12,7 @@ use crate::{
 use parallax_core::semconv;
 use parallax_storage::model::MetricAgg;
 
-pub struct Issue(pub(crate) model::Issue);
+pub(crate) struct Issue(pub(crate) model::Issue);
 
 #[graphql_object(context = ApiContext)]
 impl Issue {
@@ -103,7 +103,7 @@ impl Issue {
 }
 
 /// Page of issues plus the (scan-capped) total for pagination.
-pub struct IssueList {
+pub(crate) struct IssueList {
     items: Vec<model::Issue>,
     total: usize,
 }
@@ -121,7 +121,7 @@ impl IssueList {
 
 /// How `issues` lists are ordered. TREND = last-24h occurrence sum.
 #[derive(juniper::GraphQLEnum, Clone, Copy)]
-pub enum IssueSort {
+pub(crate) enum IssueSort {
     LastSeen,
     FirstSeen,
     Events,
@@ -139,7 +139,7 @@ impl IssueSort {
     }
 }
 
-pub struct ErrorEvent(pub(crate) model::ErrorEventRow);
+pub(crate) struct ErrorEvent(pub(crate) model::ErrorEventRow);
 
 #[graphql_object(context = ApiContext)]
 impl ErrorEvent {
@@ -178,7 +178,7 @@ impl ErrorEvent {
     }
 }
 
-pub struct TrendPoint(pub(crate) model::TrendPoint);
+pub(crate) struct TrendPoint(pub(crate) model::TrendPoint);
 
 #[graphql_object(context = ApiContext)]
 impl TrendPoint {
@@ -190,7 +190,7 @@ impl TrendPoint {
     }
 }
 
-pub struct BundleOut {
+pub(crate) struct BundleOut {
     json: String,
     markdown: String,
     canonical_hash: String,
@@ -217,8 +217,8 @@ pub(crate) async fn bundle_metric_windows(
 ) -> FieldResult<Vec<parallax_core::bundle::MetricWindow>> {
     use parallax_core::bundle::{BundleAnchor, MetricWindow};
     const PAD_NANOS: u128 = 5 * 60 * 1_000_000_000;
-    let (from, to, step_seconds, run_scope, service) = match &inputs.anchor {
-        BundleAnchor::Run { run, .. } => {
+    let (from, to, step_seconds, run_scope, service) =
+        if let BundleAnchor::Run { run, .. } = &inputs.anchor {
             let last_activity = inputs
                 .trace_logs
                 .iter()
@@ -244,8 +244,7 @@ pub(crate) async fn bundle_metric_windows(
                 Some(run.run_id.clone()),
                 None,
             )
-        }
-        _ => {
+        } else {
             let anchor_ts = inputs
                 .events
                 .first()
@@ -267,8 +266,7 @@ pub(crate) async fn bundle_metric_windows(
                 run_id,
                 service,
             )
-        }
-    };
+        };
     let scope = if run_scope.is_some() {
         "run"
     } else {

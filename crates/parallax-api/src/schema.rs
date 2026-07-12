@@ -6,6 +6,7 @@ use crate::{ApiContext, Mutation, Query};
 
 pub type Schema = RootNode<Query, Mutation, EmptySubscription<ApiContext>>;
 
+#[must_use]
 pub fn build_schema() -> Schema {
     Schema::new(Query, Mutation, EmptySubscription::new())
 }

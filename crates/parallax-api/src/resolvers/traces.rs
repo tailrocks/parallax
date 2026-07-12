@@ -11,10 +11,10 @@ use crate::{
 
 use parallax_core::{span_events, trace_analysis};
 
-pub struct Span(pub(crate) model::SpanRow);
+pub(crate) struct Span(pub(crate) model::SpanRow);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SpanLink {
+pub(crate) struct SpanLink {
     trace_id: String,
     span_id: String,
     attributes: String,
@@ -119,7 +119,7 @@ impl Span {
     fn run_id(&self) -> Option<&str> {
         self.0.run_id.as_deref()
     }
-    /// OTel span links as JSON — spans in other traces this span causally
+    /// `OTel` span links as JSON — spans in other traces this span causally
     /// references (batch/async sub-operations).
     fn links(&self) -> String {
         self.0.links.to_string()
@@ -128,7 +128,7 @@ impl Span {
     fn typed_links(&self) -> Vec<SpanLink> {
         span_links_from_value(&self.0.links)
     }
-    /// OTel span events as JSON: `[{name, timeUnixNano, attributes}]`.
+    /// `OTel` span events as JSON: `[{name, timeUnixNano, attributes}]`.
     fn events(&self) -> String {
         self.0.events.clone().unwrap_or_else(|| "[]".to_string())
     }
@@ -143,7 +143,7 @@ impl Span {
     }
 }
 
-pub struct Trace {
+pub(crate) struct Trace {
     trace_id: String,
     spans: Vec<model::SpanRow>,
 }
@@ -158,7 +158,7 @@ impl Trace {
     }
 }
 
-pub struct TraceEvent(pub(crate) span_events::TraceEvent);
+pub(crate) struct TraceEvent(pub(crate) span_events::TraceEvent);
 
 #[graphql_object(context = ApiContext)]
 impl TraceEvent {
@@ -183,7 +183,7 @@ impl TraceEvent {
     }
 }
 
-pub struct TraceEventsOut(pub(crate) span_events::TraceEvents);
+pub(crate) struct TraceEventsOut(pub(crate) span_events::TraceEvents);
 
 #[graphql_object(context = ApiContext)]
 impl TraceEventsOut {
@@ -198,7 +198,7 @@ impl TraceEventsOut {
     }
 }
 
-pub struct TraceSummary(pub(crate) parallax_storage::adapter::TraceSummary);
+pub(crate) struct TraceSummary(pub(crate) parallax_storage::adapter::TraceSummary);
 
 #[graphql_object(context = ApiContext)]
 impl TraceSummary {
@@ -225,7 +225,7 @@ impl TraceSummary {
     }
 }
 
-pub struct TraceList(pub(crate) parallax_storage::adapter::TraceList);
+pub(crate) struct TraceList(pub(crate) parallax_storage::adapter::TraceList);
 
 #[graphql_object(context = ApiContext)]
 impl TraceList {
@@ -238,7 +238,7 @@ impl TraceList {
     }
 }
 
-pub struct CriticalHop(pub(crate) trace_analysis::CriticalHop);
+pub(crate) struct CriticalHop(pub(crate) trace_analysis::CriticalHop);
 
 #[graphql_object(context = ApiContext)]
 impl CriticalHop {
@@ -256,7 +256,7 @@ impl CriticalHop {
     }
 }
 
-pub struct CriticalPath(pub(crate) trace_analysis::CriticalPath);
+pub(crate) struct CriticalPath(pub(crate) trace_analysis::CriticalPath);
 
 #[graphql_object(context = ApiContext)]
 impl CriticalPath {
@@ -271,7 +271,7 @@ impl CriticalPath {
     }
 }
 
-pub struct DiffSpan(pub(crate) trace_analysis::DiffSpan);
+pub(crate) struct DiffSpan(pub(crate) trace_analysis::DiffSpan);
 
 #[graphql_object(context = ApiContext)]
 impl DiffSpan {
@@ -301,7 +301,7 @@ impl DiffSpan {
     }
 }
 
-pub struct ChangedSpan(pub(crate) trace_analysis::ChangedSpan);
+pub(crate) struct ChangedSpan(pub(crate) trace_analysis::ChangedSpan);
 
 #[graphql_object(context = ApiContext)]
 impl ChangedSpan {
@@ -322,7 +322,7 @@ impl ChangedSpan {
     }
 }
 
-pub struct TraceDiff(pub(crate) trace_analysis::TraceDiff);
+pub(crate) struct TraceDiff(pub(crate) trace_analysis::TraceDiff);
 
 #[graphql_object(context = ApiContext)]
 impl TraceDiff {

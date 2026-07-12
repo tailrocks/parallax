@@ -12,7 +12,7 @@ use crate::resolvers::common::Point;
 use parallax_storage::adapter::RuntimeMetricSeries as StorageRuntimeMetricSeries;
 use parallax_storage::model::{MetricAgg, SeriesPoint};
 
-pub struct Series {
+pub(crate) struct Series {
     group_value: Option<String>,
     points: Vec<SeriesPoint>,
 }
@@ -27,7 +27,7 @@ impl Series {
     }
 }
 
-pub struct RuntimeMetric(pub(crate) StorageRuntimeMetricSeries);
+pub(crate) struct RuntimeMetric(pub(crate) StorageRuntimeMetricSeries);
 
 #[graphql_object(context = ApiContext)]
 impl RuntimeMetric {
@@ -45,7 +45,7 @@ impl RuntimeMetric {
     }
 }
 
-pub struct MetricExemplar(pub(crate) model::MetricExemplarRow);
+pub(crate) struct MetricExemplar(pub(crate) model::MetricExemplarRow);
 
 #[graphql_object(context = ApiContext)]
 impl MetricExemplar {
@@ -164,50 +164,47 @@ pub(crate) async fn metric_series(
     let (from, to) = parse_range(&from_nanos, &to_nanos)?;
     let agg = MetricAgg::parse(agg.as_deref().unwrap_or("avg"))
         .ok_or_else(|| field_err("agg must be avg|min|max|sum|rate"))?;
-    match group_by {
-        Some(group_by) => {
-            validate_metric_group_label(&group_by)?;
-            if run_id.is_some() {
-                return Err(field_err("runId with groupBy is not supported yet"));
-            }
-            let groups = context
-                .store
-                .metric_series_grouped(
-                    &name,
-                    service.as_deref(),
-                    &group_by,
-                    from..=to,
-                    step_nanos(step_seconds),
-                    agg,
-                )
-                .await
-                .map_err(field_err)?;
-            Ok(groups
-                .into_iter()
-                .map(|(group_value, points)| Series {
-                    group_value: Some(group_value),
-                    points,
-                })
-                .collect())
+    if let Some(group_by) = group_by {
+        validate_metric_group_label(&group_by)?;
+        if run_id.is_some() {
+            return Err(field_err("runId with groupBy is not supported yet"));
         }
-        None => {
-            let points = context
-                .store
-                .metric_series(
-                    &name,
-                    service.as_deref(),
-                    run_id.as_deref(),
-                    from..=to,
-                    step_nanos(step_seconds),
-                    agg,
-                )
-                .await
-                .map_err(field_err)?;
-            Ok(vec![Series {
-                group_value: None,
+        let groups = context
+            .store
+            .metric_series_grouped(
+                &name,
+                service.as_deref(),
+                &group_by,
+                from..=to,
+                step_nanos(step_seconds),
+                agg,
+            )
+            .await
+            .map_err(field_err)?;
+        Ok(groups
+            .into_iter()
+            .map(|(group_value, points)| Series {
+                group_value: Some(group_value),
                 points,
-            }])
-        }
+            })
+            .collect())
+    } else {
+        let points = context
+            .store
+            .metric_series(
+                &name,
+                service.as_deref(),
+                run_id.as_deref(),
+                from..=to,
+                step_nanos(step_seconds),
+                agg,
+            )
+            .await
+            .map_err(field_err)?;
+        Ok(vec![Series {
+            group_value: None,
+            points,
+        }])
     }
 }
 

@@ -23,6 +23,7 @@ pub struct TraceEvents {
 }
 
 impl TraceEvents {
+    #[must_use]
     pub fn truncated(&self) -> bool {
         self.total_matching > self.events.len()
     }
@@ -40,12 +41,11 @@ pub fn trace_events(spans: &[SpanRow], name_prefix: Option<&str>, limit: usize) 
         let Some(raw_events) = span.events.as_deref() else {
             continue;
         };
-        let parsed: Value = match serde_json::from_str(raw_events) {
-            Ok(value) => value,
-            Err(_) => {
-                skipped_spans += 1;
-                continue;
-            }
+        let parsed: Value = if let Ok(value) = serde_json::from_str(raw_events) {
+            value
+        } else {
+            skipped_spans += 1;
+            continue;
         };
         let Some(array) = parsed.as_array() else {
             skipped_spans += 1;
@@ -73,8 +73,7 @@ pub fn trace_events(spans: &[SpanRow], name_prefix: Option<&str>, limit: usize) 
                                 key.clone(),
                                 value
                                     .as_str()
-                                    .map(str::to_string)
-                                    .unwrap_or_else(|| value.to_string()),
+                                    .map_or_else(|| value.to_string(), str::to_string),
                             )
                         })
                         .collect();
@@ -140,7 +139,7 @@ fn parse_greptime_event_time(value: &str) -> Option<u128> {
     let second: u32 = value.get(17..19)?.parse().ok()?;
     if bytes.get(4) != Some(&b'-')
         || bytes.get(7) != Some(&b'-')
-        || !matches!(bytes.get(10), Some(b' ') | Some(b'T'))
+        || !matches!(bytes.get(10), Some(b' ' | b'T'))
         || bytes.get(13) != Some(&b':')
         || bytes.get(16) != Some(&b':')
         || !(1..=12).contains(&month)

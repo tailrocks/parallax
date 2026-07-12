@@ -80,13 +80,13 @@ replacement = "Move contracts to the lower model/port owners."
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-api/src/lib.rs"
-ceiling = 203
+ceiling = 202
 
 
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-api/src/resolvers/issues.rs"
-ceiling = 536
+ceiling = 534
 
 
 [[limits]]
@@ -1432,7 +1432,7 @@ ceiling = 151
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-api/src/resolvers/issues.rs::bundle_metric_windows"
-ceiling = 110
+ceiling = 108
 
 
 
@@ -1491,7 +1491,7 @@ ceiling = 148
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-server/tests/m1_greptime.rs::managed_engine_roundtrip"
-ceiling = 113
+ceiling = 111
 
 [[limits]]
 metric = "rust.function-lines"
@@ -1501,7 +1501,7 @@ ceiling = 137
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-server/tests/m1_table_inventory_greptime.rs::only_extension_tables_are_custom"
-ceiling = 161
+ceiling = 159
 
 [[limits]]
 metric = "rust.function-lines"
@@ -1526,7 +1526,7 @@ ceiling = 206
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-server/tests/m2_metrics_greptime.rs::managed_engine_metrics_roundtrip"
-ceiling = 194
+ceiling = 192
 
 [[limits]]
 metric = "rust.function-lines"
@@ -1536,7 +1536,7 @@ ceiling = 239
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-server/tests/m5_gates.rs::measure_m5_gates"
-ceiling = 244
+ceiling = 241
 
 [[limits]]
 metric = "rust.function-lines"
@@ -1780,7 +1780,7 @@ ceiling = 20
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-xtask/src/cli/tests.rs"
-ceiling = 3
+ceiling = 1
 
 [[limits]]
 metric = "rust.assertions"
@@ -1795,7 +1795,7 @@ ceiling = 2
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-xtask/src/facade/tests.rs"
-ceiling = 4
+ceiling = 3
 
 [[limits]]
 metric = "rust.assertions"
@@ -1804,13 +1804,8 @@ ceiling = 9
 
 [[limits]]
 metric = "rust.assertions"
-scope = "crates/parallax-xtask/src/policy/config/tests.rs"
-ceiling = 2
-
-[[limits]]
-metric = "rust.assertions"
 scope = "crates/parallax-xtask/src/policy/docs/tests.rs"
-ceiling = 6
+ceiling = 2
 
 [[limits]]
 metric = "rust.assertions"
@@ -1820,7 +1815,7 @@ ceiling = 5
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-xtask/src/policy/rust/tests.rs"
-ceiling = 9
+ceiling = 8
 
 [[limits]]
 metric = "rust.test-sleeps"

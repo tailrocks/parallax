@@ -277,7 +277,7 @@ fn u128_at_decodes_int_string_and_float() {
 
 #[test]
 fn windowed_histogram_merge_uses_latest_cumulative() {
-    let mut bounds = std::collections::BTreeMap::new();
+    let mut bounds = BTreeMap::new();
     bounds.insert(OrderedF64(0.1), 10.0);
     bounds.insert(OrderedF64(1.0), 20.0);
     bounds.insert(OrderedF64(f64::INFINITY), 20.0);

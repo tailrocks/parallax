@@ -24,8 +24,8 @@ fn parses_every_initial_command() {
 
 #[test]
 fn ci_requires_exactly_one_partition() {
-    assert!(Cli::try_parse_from(["xtask", "ci"]).is_err());
-    assert!(Cli::try_parse_from(["xtask", "ci", "--fast", "--full"]).is_err());
+    Cli::try_parse_from(["xtask", "ci"]).unwrap_err();
+    Cli::try_parse_from(["xtask", "ci", "--fast", "--full"]).unwrap_err();
     let cli = Cli::try_parse_from(["xtask", "lint"]).expect("lint should parse");
     assert!(matches!(cli.command, Command::Lint));
 }

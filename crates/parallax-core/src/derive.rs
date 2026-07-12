@@ -25,6 +25,7 @@ fn json_attr_str<'a>(attributes: &'a serde_json::Value, key: &str) -> Option<&'a
 /// Derive error events from a trace export request (span exceptions + span
 /// ERROR statuses). Works on the raw request so exception span *events* are
 /// visible (they are not part of `SpanRow`).
+#[must_use]
 pub fn derive_from_traces(request: &ExportTraceServiceRequest) -> Vec<ErrorEventRow> {
     let mut events = Vec::new();
     for rs in &request.resource_spans {
@@ -38,7 +39,7 @@ pub fn derive_from_traces(request: &ExportTraceServiceRequest) -> Vec<ErrorEvent
             .to_string();
         for ss in &rs.scope_spans {
             for span in &ss.spans {
-                let is_error = span.status.as_ref().map(|s| s.code == 2).unwrap_or(false);
+                let is_error = span.status.as_ref().is_some_and(|s| s.code == 2);
                 let exception = span
                     .events
                     .iter()
@@ -175,6 +176,7 @@ pub fn derive_from_logs(rows: &[LogRow]) -> Vec<ErrorEventRow> {
 }
 
 /// Issue title: `error_type: first line of the normalized-ish message`.
+#[must_use]
 pub fn issue_title(error_type: &str, message: &str) -> String {
     let head = message.lines().next().unwrap_or("").trim();
     if head.is_empty() {
@@ -185,6 +187,7 @@ pub fn issue_title(error_type: &str, message: &str) -> String {
 }
 
 /// Culprit: the top stack frame, when a stacktrace exists.
+#[must_use]
 pub fn culprit(stacktrace: Option<&str>) -> Option<String> {
     stacktrace
         .and_then(|s| s.lines().next())

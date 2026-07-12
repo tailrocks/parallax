@@ -12,7 +12,7 @@ fn parses_functions_closures_and_comment_free_logical_lines() {
 
 #[test]
 fn malformed_rust_fails_closed() {
-    assert!(analyze("fn {").is_err());
+    analyze("fn {").unwrap_err();
 }
 
 #[test]

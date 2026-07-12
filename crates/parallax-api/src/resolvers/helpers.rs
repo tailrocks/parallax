@@ -53,7 +53,7 @@ pub(crate) fn validate_investigation_state(state: &str) -> FieldResult<()> {
     Ok(())
 }
 
-/// Metric names flow into storage identifiers; keep them inside the OTel metric-name grammar.
+/// Metric names flow into storage identifiers; keep them inside the `OTel` metric-name grammar.
 pub(crate) fn validate_metric_name(name: &str) -> FieldResult<()> {
     let ok = !name.is_empty()
         && name.len() <= 255
@@ -81,7 +81,7 @@ pub(crate) fn validate_metric_group_label(label: &str) -> FieldResult<()> {
     }
 }
 
-pub(crate) fn parse_range(from_nanos: &str, to_nanos: &str) -> juniper::FieldResult<(u128, u128)> {
+pub(crate) fn parse_range(from_nanos: &str, to_nanos: &str) -> FieldResult<(u128, u128)> {
     let from: u128 = from_nanos
         .parse()
         .map_err(|_| field_err("invalid fromNanos"))?;
@@ -100,7 +100,6 @@ pub(crate) fn step_nanos(step_seconds: Option<i32>) -> u128 {
 pub(crate) fn retained_recent_range() -> std::ops::RangeInclusive<u128> {
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_nanos())
-        .unwrap_or(0);
+        .map_or(0, |d| d.as_nanos());
     now.saturating_sub(24 * 3_600 * 1_000_000_000)..=u128::MAX
 }

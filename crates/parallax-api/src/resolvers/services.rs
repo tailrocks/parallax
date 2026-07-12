@@ -17,7 +17,7 @@ use parallax_storage::adapter::{
 };
 use parallax_storage::model::{MetricAgg, SeriesPoint};
 
-pub struct Overview(pub(crate) OverviewTotals);
+pub(crate) struct Overview(pub(crate) OverviewTotals);
 
 #[graphql_object(context = ApiContext)]
 impl Overview {
@@ -44,7 +44,7 @@ impl Overview {
     }
 }
 
-pub struct ServiceSummary(pub(crate) StorageServiceSummary);
+pub(crate) struct ServiceSummary(pub(crate) StorageServiceSummary);
 
 #[graphql_object(context = ApiContext)]
 impl ServiceSummary {
@@ -65,7 +65,7 @@ impl ServiceSummary {
     }
 }
 
-pub struct ReleaseWindow(pub(crate) StorageReleaseWindow);
+pub(crate) struct ReleaseWindow(pub(crate) StorageReleaseWindow);
 
 #[graphql_object(context = ApiContext)]
 impl ReleaseWindow {
@@ -83,7 +83,7 @@ impl ReleaseWindow {
     }
 }
 
-pub struct ServiceCatalogRow(pub(crate) StorageServiceCatalogRow);
+pub(crate) struct ServiceCatalogRow(pub(crate) StorageServiceCatalogRow);
 
 #[graphql_object(context = ApiContext)]
 impl ServiceCatalogRow {
@@ -117,7 +117,7 @@ impl ServiceCatalogRow {
 }
 
 #[derive(Clone)]
-pub struct ServiceNodeData {
+pub(crate) struct ServiceNodeData {
     name: String,
     last_seen_nanos: u128,
     span_count: u64,
@@ -125,7 +125,7 @@ pub struct ServiceNodeData {
     p95_ms: Option<f64>,
 }
 
-pub struct ServiceNode(pub(crate) ServiceNodeData);
+pub(crate) struct ServiceNode(pub(crate) ServiceNodeData);
 
 #[graphql_object(context = ApiContext)]
 impl ServiceNode {
@@ -146,7 +146,7 @@ impl ServiceNode {
     }
 }
 
-pub struct ServiceEdge(pub(crate) StorageServiceEdge);
+pub(crate) struct ServiceEdge(pub(crate) StorageServiceEdge);
 
 #[graphql_object(context = ApiContext)]
 impl ServiceEdge {
@@ -170,7 +170,7 @@ impl ServiceEdge {
     }
 }
 
-pub struct ServiceMap {
+pub(crate) struct ServiceMap {
     nodes: Vec<ServiceNodeData>,
     edges: Vec<StorageServiceEdge>,
 }
@@ -185,7 +185,7 @@ impl ServiceMap {
     }
 }
 
-pub struct SpanRed(pub(crate) StorageSpanRed);
+pub(crate) struct SpanRed(pub(crate) StorageSpanRed);
 
 #[graphql_object(context = ApiContext)]
 impl SpanRed {
@@ -237,7 +237,7 @@ struct RedSource {
 
 /// The predefined per-service overview (spec §8): well-known metric names,
 /// graceful absence — a missing instrument yields an empty series.
-pub struct ServiceOverview {
+pub(crate) struct ServiceOverview {
     service: String,
     from: u128,
     to: u128,

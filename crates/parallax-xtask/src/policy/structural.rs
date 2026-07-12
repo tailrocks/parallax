@@ -10,7 +10,7 @@ use crate::diagnostic::Finding;
 
 use super::{config::Ratchet, rust, typescript};
 
-pub fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
+pub(super) fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
     let mut health = rust::health(root, ratchet)?;
     health.extend(typescript::health(root, ratchet)?);
     health.extend(self::health(root)?);
@@ -53,7 +53,7 @@ pub fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
     Ok(findings)
 }
 
-pub fn health(root: &Path) -> Result<Vec<Finding>> {
+pub(super) fn health(root: &Path) -> Result<Vec<Finding>> {
     let mut findings = Vec::new();
     let mut stack = vec![root.to_path_buf()];
     while let Some(directory) = stack.pop() {

@@ -4,7 +4,7 @@
 //! Format (active segments, `.pspl`):
 //!   magic "PSPL1" once per file, then per record: u32-LE length + raw bytes.
 //!
-//! Legacy NDJSON segments (`.ndjson`) remain readable for doctor/line_count
+//! Legacy NDJSON segments (`.ndjson`) remain readable for `doctor/line_count`
 //! until the reaper ages them out (default 72h). New appends always write
 //! `.pspl`. The spool is a diagnostic record and crash-forensics trail, NOT a
 //! write-ahead log — see plan 073.
@@ -119,8 +119,7 @@ impl Spool {
             let size = dir
                 .join(signal.file_name())
                 .metadata()
-                .map(|metadata| metadata.len())
-                .unwrap_or(0);
+                .map_or(0, |metadata| metadata.len());
             *states[signal.index()].get_mut() = SignalState { size, file: None };
         }
         Ok(Self {

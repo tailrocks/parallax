@@ -126,7 +126,7 @@ async fn investigation_resolvers_round_trip_and_validate_state() {
     );
 
     let list = juniper::http::GraphQLRequest::new(
-        r#"{ investigations { id name state updatedAtNanos } }"#.into(),
+        r"{ investigations { id name state updatedAtNanos } }".into(),
         None,
         None,
     );

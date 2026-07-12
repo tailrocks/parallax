@@ -56,7 +56,7 @@ async fn m5_gates_limits_enforce_graphql_depth_complexity_and_host_guard() {
         Some(env!("CARGO_PKG_VERSION"))
     );
 
-    let deep_query = r#"
+    let deep_query = r"
         {
           __schema {
             types {
@@ -78,7 +78,7 @@ async fn m5_gates_limits_enforce_graphql_depth_complexity_and_host_guard() {
             }
           }
         }
-    "#;
+    ";
     let (status, json) = graphql(&client, handle.api_addr, None, deep_query).await;
     assert_eq!(status, reqwest::StatusCode::OK);
     assert!(

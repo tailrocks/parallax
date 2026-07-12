@@ -44,6 +44,7 @@ fn normalizers() -> &'static Normalizers {
 }
 
 /// Normalize volatile tokens out of an error message before grouping.
+#[must_use]
 pub fn normalize_message(message: &str) -> String {
     let normalizers = normalizers();
     let mut out = message.to_string();
@@ -94,6 +95,7 @@ fn normalize_frame(frame: &str) -> String {
 }
 
 /// First frame of a newline-separated stacktrace, or empty string.
+#[must_use]
 pub fn top_frame(stacktrace: Option<&str>) -> String {
     stacktrace
         .and_then(|s| s.lines().next())
@@ -103,6 +105,7 @@ pub fn top_frame(stacktrace: Option<&str>) -> String {
 }
 
 /// 16-hex-char fingerprint over (type, normalized message, normalized top frame).
+#[must_use]
 pub fn fingerprint(error_type: &str, message: &str, stacktrace: Option<&str>) -> String {
     fingerprint_with_operation(error_type, message, stacktrace, None)
 }

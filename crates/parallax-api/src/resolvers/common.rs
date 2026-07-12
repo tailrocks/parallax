@@ -5,7 +5,7 @@ use parallax_storage::model::SeriesPoint;
 
 use crate::{ApiContext, nanos_string};
 
-pub struct Point(pub(crate) SeriesPoint);
+pub(crate) struct Point(pub(crate) SeriesPoint);
 
 #[graphql_object(context = ApiContext)]
 impl Point {

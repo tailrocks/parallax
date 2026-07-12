@@ -1,6 +1,6 @@
-//! Gated invariant: against a real GreptimeDB, the *only* tables Parallax
-//! creates are the documented custom extension tables — every raw OTel
-//! signal (traces, logs, metrics) lives in GreptimeDB's native auto-created
+//! Gated invariant: against a real `GreptimeDB`, the *only* tables Parallax
+//! creates are the documented custom extension tables — every raw `OTel`
+//! signal (traces, logs, metrics) lives in `GreptimeDB`'s native auto-created
 //! tables, never a hand-rolled one. Pushes all three signals, then `SHOW
 //! TABLES` and asserts the inventory: native tables present, the extension set
 //! is exactly the documented set, and none of the retired `otel_*` raw tables
@@ -14,7 +14,18 @@ use opentelemetry_otlp::WithExportConfig;
 use parallax_server::Config;
 use std::time::Duration;
 
-/// Tables Parallax is allowed to create itself in GreptimeDB. Everything else
+fn make_executable(path: &std::path::Path) {
+    let status = std::process::Command::new("chmod")
+        .arg("+x")
+        .arg(path)
+        .status()
+        .expect("mark cached engine executable");
+    if !status.success() {
+        panic!("chmod cached engine exited with {status}");
+    }
+}
+
+/// Tables Parallax is allowed to create itself in `GreptimeDB`. Everything else
 /// must be a native OTLP table the engine auto-created from a forward.
 const ALLOWED_EXTENSIONS: &[&str] = &["error_events", "run_metric_points", "metric_exemplars"];
 
@@ -29,7 +40,7 @@ const RETIRED_RAW_TABLES: &[&str] = &[
 #[tokio::test(flavor = "multi_thread")]
 #[ignore = "downloads and runs a real GreptimeDB; run with --ignored"]
 async fn only_extension_tables_are_custom() {
-    let _ = tracing_subscriber::fmt()
+    let _subscriber_already_installed = tracing_subscriber::fmt()
         .with_env_filter("parallax_server=debug")
         .try_init();
     let cache_bin = std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join("greptime-bin");
@@ -48,10 +59,7 @@ async fn only_extension_tables_are_custom() {
     if cache_bin.join("greptime").exists() {
         std::fs::create_dir_all(&data_bin).expect("bin dir");
         std::fs::copy(cache_bin.join("greptime"), data_bin.join("greptime")).expect("seed engine");
-        let _ = std::process::Command::new("chmod")
-            .arg("+x")
-            .arg(data_bin.join("greptime"))
-            .status();
+        make_executable(&data_bin.join("greptime"));
     }
 
     let mut config = Config::default();
@@ -66,7 +74,8 @@ async fn only_extension_tables_are_custom() {
         .expect("managed server starts");
     if !cache_bin.join("greptime").exists() && data_bin.join("greptime").exists() {
         std::fs::create_dir_all(&cache_bin).expect("cache dir");
-        let _ = std::fs::copy(data_bin.join("greptime"), cache_bin.join("greptime"));
+        std::fs::copy(data_bin.join("greptime"), cache_bin.join("greptime"))
+            .expect("cache downloaded engine");
     }
 
     let endpoint = format!("http://{}", handle.otlp_grpc_addr);

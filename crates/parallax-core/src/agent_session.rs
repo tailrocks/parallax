@@ -49,6 +49,7 @@ pub struct AgentSession {
     pub error_count: usize,
 }
 
+#[must_use]
 pub fn project_agent_session(spans: &[SpanRow]) -> Option<AgentSession> {
     let root_index = spans
         .iter()

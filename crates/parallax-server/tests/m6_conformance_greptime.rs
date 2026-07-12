@@ -1,14 +1,25 @@
-//! Gated adapter conformance against a real GreptimeDB (plan 074).
+//! Gated adapter conformance against a real `GreptimeDB` (plan 074).
 //!
 //! Run with: `cargo nextest run -p parallax-server m6_conformance --run-ignored only`
 
 use parallax_server::Config;
 use std::time::Duration;
 
+fn make_executable(path: &std::path::Path) {
+    let status = std::process::Command::new("chmod")
+        .arg("+x")
+        .arg(path)
+        .status()
+        .expect("mark cached engine executable");
+    if !status.success() {
+        panic!("chmod cached engine exited with {status}");
+    }
+}
+
 #[tokio::test(flavor = "multi_thread")]
 #[ignore = "downloads and runs a real GreptimeDB; run with --ignored"]
 async fn greptime_conformance_scenarios() {
-    let _ = tracing_subscriber::fmt()
+    let _subscriber_already_installed = tracing_subscriber::fmt()
         .with_env_filter("parallax_server=info")
         .try_init();
 
@@ -28,10 +39,7 @@ async fn greptime_conformance_scenarios() {
     if cache_bin.join("greptime").exists() {
         std::fs::create_dir_all(&data_bin).expect("bin dir");
         std::fs::copy(cache_bin.join("greptime"), data_bin.join("greptime")).expect("seed engine");
-        let _ = std::process::Command::new("chmod")
-            .arg("+x")
-            .arg(data_bin.join("greptime"))
-            .status();
+        make_executable(&data_bin.join("greptime"));
     }
 
     let mut config = Config::default();

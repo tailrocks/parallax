@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
-pub struct Ratchet {
+pub(super) struct Ratchet {
     pub schema_version: u32,
     pub architecture: Architecture,
     pub budgets: Budgets,
@@ -18,14 +18,14 @@ pub struct Ratchet {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Limit {
+pub(super) struct Limit {
     pub metric: String,
     pub scope: String,
     pub ceiling: usize,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Generated {
+pub(super) struct Generated {
     pub path: String,
     pub generator: String,
     pub owner: String,
@@ -33,25 +33,25 @@ pub struct Generated {
 }
 
 #[derive(Debug, Default, Deserialize)]
-pub struct Product {
+pub(super) struct Product {
     #[serde(default)]
     pub clone_floors: Vec<CloneFloor>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct CloneFloor {
+pub(super) struct CloneFloor {
     pub path: String,
     pub ceiling: usize,
 }
 
 #[derive(Debug, Default, Deserialize)]
-pub struct Budgets {
+pub(super) struct Budgets {
     pub rust: RustBudgets,
     pub typescript: TypeScriptBudgets,
 }
 
 #[derive(Debug, Default, Deserialize)]
-pub struct RustBudgets {
+pub(super) struct RustBudgets {
     pub root_file_lines: usize,
     pub production_file_lines: usize,
     pub test_file_lines: usize,
@@ -60,7 +60,7 @@ pub struct RustBudgets {
 }
 
 #[derive(Debug, Default, Deserialize)]
-pub struct TypeScriptBudgets {
+pub(super) struct TypeScriptBudgets {
     pub route_file_lines: usize,
     pub module_lines: usize,
     pub test_file_lines: usize,
@@ -70,19 +70,19 @@ pub struct TypeScriptBudgets {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Architecture {
+pub(super) struct Architecture {
     pub packages: Vec<PackageClass>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct PackageClass {
+pub(super) struct PackageClass {
     pub name: String,
     pub class: String,
     pub tier: Option<u8>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Exception {
+pub(super) struct Exception {
     pub rule: String,
     pub scope: String,
     pub evidence: String,
@@ -94,7 +94,7 @@ pub struct Exception {
 }
 
 impl Ratchet {
-    pub fn load(path: &Path) -> Result<Self> {
+    pub(super) fn load(path: &Path) -> Result<Self> {
         let source = fs::read_to_string(path)
             .with_context(|| format!("failed to read {}", path.display()))?;
         let ratchet: Self = toml::from_str(&source)

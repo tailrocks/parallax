@@ -1,5 +1,5 @@
 //! Gated M2 metrics acceptance for the managed-engine path: downloads (once)
-//! and supervises a real GreptimeDB standalone child, then round-trips SDK
+//! and supervises a real `GreptimeDB` standalone child, then round-trips SDK
 //! metrics through the native per-metric tables and reads them back over
 //! GraphQL. This is the metric counterpart to `m1_greptime` — it exercises the
 //! native metric read stack that the memory-backed `m2_metrics_dashboards` test
@@ -13,6 +13,17 @@ use opentelemetry::metrics::MeterProvider as _;
 use opentelemetry_otlp::WithExportConfig;
 use parallax_server::Config;
 use std::time::Duration;
+
+fn make_executable(path: &std::path::Path) {
+    let status = std::process::Command::new("chmod")
+        .arg("+x")
+        .arg(path)
+        .status()
+        .expect("mark cached engine executable");
+    if !status.success() {
+        panic!("chmod cached engine exited with {status}");
+    }
+}
 
 async fn graphql(
     client: &reqwest::Client,
@@ -33,7 +44,7 @@ async fn graphql(
 #[tokio::test(flavor = "multi_thread")]
 #[ignore = "downloads and runs a real GreptimeDB; run with --ignored"]
 async fn managed_engine_metrics_roundtrip() {
-    let _ = tracing_subscriber::fmt()
+    let _subscriber_already_installed = tracing_subscriber::fmt()
         .with_env_filter("parallax_server=debug")
         .try_init();
     // Cache the engine binary across test runs (and reuse an existing
@@ -55,10 +66,7 @@ async fn managed_engine_metrics_roundtrip() {
     if cache_bin.join("greptime").exists() {
         std::fs::create_dir_all(&data_bin).expect("bin dir");
         std::fs::copy(cache_bin.join("greptime"), data_bin.join("greptime")).expect("seed engine");
-        let _ = std::process::Command::new("chmod")
-            .arg("+x")
-            .arg(data_bin.join("greptime"))
-            .status();
+        make_executable(&data_bin.join("greptime"));
     }
 
     let mut config = Config::default();
@@ -75,7 +83,8 @@ async fn managed_engine_metrics_roundtrip() {
     // Cache the downloaded binary for the next run.
     if !cache_bin.join("greptime").exists() && data_bin.join("greptime").exists() {
         std::fs::create_dir_all(&cache_bin).expect("cache dir");
-        let _ = std::fs::copy(data_bin.join("greptime"), cache_bin.join("greptime"));
+        std::fs::copy(data_bin.join("greptime"), cache_bin.join("greptime"))
+            .expect("cache downloaded engine");
     }
 
     // Real SDK counter (with a grouping attribute) + histogram → native tables.
@@ -118,7 +127,7 @@ async fn managed_engine_metrics_roundtrip() {
     const HISTOGRAM: &str = "checkout_duration";
     let mut names = serde_json::Value::Null;
     for _ in 0..100 {
-        names = graphql(&client, handle.api_addr, r#"{ metricNames services }"#).await;
+        names = graphql(&client, handle.api_addr, r"{ metricNames services }").await;
         let has_metric = names
             .pointer("/data/metricNames")
             .and_then(|v| v.as_array())

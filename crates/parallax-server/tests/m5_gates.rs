@@ -10,6 +10,17 @@ use opentelemetry_otlp::WithExportConfig;
 use parallax_server::Config;
 use std::time::{Duration, Instant};
 
+fn make_executable(path: &std::path::Path) {
+    let status = std::process::Command::new("chmod")
+        .arg("+x")
+        .arg(path)
+        .status()
+        .expect("mark cached engine executable");
+    if !status.success() {
+        panic!("chmod cached engine exited with {status}");
+    }
+}
+
 fn percentile(sorted_millis: &[u128], p: f64) -> u128 {
     let rank = ((sorted_millis.len() as f64 - 1.0) * p).round() as usize;
     sorted_millis[rank.min(sorted_millis.len() - 1)]
@@ -34,10 +45,7 @@ async fn measure_m5_gates() {
     if cache_bin.join("greptime").exists() {
         std::fs::create_dir_all(&data_bin).expect("bin dir");
         std::fs::copy(cache_bin.join("greptime"), data_bin.join("greptime")).expect("seed engine");
-        let _ = std::process::Command::new("chmod")
-            .arg("+x")
-            .arg(data_bin.join("greptime"))
-            .status();
+        make_executable(&data_bin.join("greptime"));
     }
 
     let mut config = Config::default();
@@ -135,7 +143,7 @@ async fn measure_m5_gates() {
         .with_batch_exporter(log_exporter)
         .with_resource(
             opentelemetry_sdk::Resource::builder()
-                .with_attributes([opentelemetry::KeyValue::new("service.name", "gate-bench")])
+                .with_attributes([KeyValue::new("service.name", "gate-bench")])
                 .build(),
         )
         .build();

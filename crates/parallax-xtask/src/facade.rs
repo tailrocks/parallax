@@ -15,7 +15,7 @@ struct Manifest {
     roots: BTreeMap<String, Vec<String>>,
 }
 
-pub fn refresh(root: &Path) -> Result<()> {
+pub(crate) fn refresh(root: &Path) -> Result<()> {
     for (crate_dir, manifest) in collect(root)? {
         let output = toml::to_string_pretty(&manifest)?;
         fs::write(crate_dir.join("facade.toml"), output)
@@ -24,7 +24,7 @@ pub fn refresh(root: &Path) -> Result<()> {
     Ok(())
 }
 
-pub fn check(root: &Path) -> Result<()> {
+pub(crate) fn check(root: &Path) -> Result<()> {
     let mut drift = Vec::new();
     for (crate_dir, expected) in collect(root)? {
         let path = crate_dir.join("facade.toml");

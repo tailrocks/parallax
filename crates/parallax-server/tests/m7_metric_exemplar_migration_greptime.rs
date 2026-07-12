@@ -50,7 +50,7 @@ async fn insert_rows(store: &GreptimeStore, table: &str, rows: &str) {
 #[tokio::test(flavor = "multi_thread")]
 #[ignore = "downloads and runs a real GreptimeDB; run with --ignored"]
 async fn migrates_legacy_metric_exemplars_without_mutation() {
-    let _ = tracing_subscriber::fmt()
+    let _subscriber_already_installed = tracing_subscriber::fmt()
         .with_env_filter("parallax_server=info")
         .try_init();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -130,8 +130,8 @@ async fn migrates_legacy_metric_exemplars_without_mutation() {
 
     let tables = store
         .sql(
-            r#"SELECT table_name FROM information_schema.tables
-               WHERE table_schema = 'public' AND table_name LIKE 'metric_exemplars%'"#,
+            r"SELECT table_name FROM information_schema.tables
+               WHERE table_schema = 'public' AND table_name LIKE 'metric_exemplars%'",
         )
         .await
         .expect("migration tables");
@@ -150,7 +150,7 @@ async fn migrates_legacy_metric_exemplars_without_mutation() {
     insert_rows(
         &store,
         "metric_exemplars_v2",
-        &ROWS[..ROWS.find("),\n").expect("row split") + 1],
+        &ROWS[..=ROWS.find("),\n").expect("row split")],
     )
     .await;
     store
@@ -187,8 +187,8 @@ async fn migrates_legacy_metric_exemplars_without_mutation() {
     store.bootstrap("7d", "7d").await.expect("resume cleanup");
     let final_tables = store
         .sql(
-            r#"SELECT table_name FROM information_schema.tables
-               WHERE table_schema = 'public' AND table_name LIKE 'metric_exemplars%'"#,
+            r"SELECT table_name FROM information_schema.tables
+               WHERE table_schema = 'public' AND table_name LIKE 'metric_exemplars%'",
         )
         .await
         .expect("final migration tables");

@@ -20,7 +20,7 @@ use crate::diagnostic::Finding;
 use super::config::Ratchet;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ImportEdge {
+pub(super) struct ImportEdge {
     pub specifier: String,
     pub resolved: PathBuf,
     pub type_only: bool,
@@ -29,7 +29,7 @@ pub struct ImportEdge {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct Metrics {
+pub(super) struct Metrics {
     pub functions: usize,
     pub jsx_elements: usize,
     pub directives: usize,
@@ -37,7 +37,7 @@ pub struct Metrics {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct Analysis {
+pub(super) struct Analysis {
     pub imports: Vec<ImportEdge>,
     pub metrics: Metrics,
     pub findings: Vec<Finding>,
@@ -55,12 +55,12 @@ struct FunctionHealth {
     cognitive: usize,
 }
 
-pub struct TypeScriptProvider {
+pub(super) struct TypeScriptProvider {
     browser_resolver: Resolver,
     server_resolver: Resolver,
 }
 
-pub fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
+pub(super) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
     let ui = root.join("ui");
     let provider = TypeScriptProvider::new(&ui.join("tsconfig.json"));
     let mut files = Vec::new();
@@ -114,7 +114,7 @@ pub fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
     Ok(findings)
 }
 
-pub fn health(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
+pub(super) fn health(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
     let ui = root.join("ui");
     let provider = TypeScriptProvider::new(&ui.join("tsconfig.json"));
     let mut files = Vec::new();
@@ -209,7 +209,7 @@ pub fn health(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
 }
 
 impl TypeScriptProvider {
-    pub fn new(tsconfig: &Path) -> Self {
+    pub(super) fn new(tsconfig: &Path) -> Self {
         Self {
             browser_resolver: resolver(
                 tsconfig,
@@ -226,7 +226,7 @@ impl TypeScriptProvider {
         }
     }
 
-    pub fn analyze(&self, path: &Path, source: &str) -> Analysis {
+    pub(super) fn analyze(&self, path: &Path, source: &str) -> Analysis {
         let mut analysis = Analysis::default();
         let source_type = match SourceType::from_path(path) {
             Ok(source_type) => source_type,
@@ -350,7 +350,7 @@ impl TypeScriptProvider {
                             )
                         }) =>
                 {
-                    analysis.assertions += 1
+                    analysis.assertions += 1;
                 }
                 AstKind::JSXElement(_) => analysis.metrics.jsx_elements += 1,
                 AstKind::Directive(_) => analysis.metrics.directives += 1,

@@ -9,25 +9,25 @@ use serde_json::Value;
 ///
 /// Copied from `parallax-cli` (`gql_str`) so MCP and CLI embed arguments the
 /// same way. The CLI only escapes `\` and `"` — not newline/tab.
-pub fn gql_str(s: &str) -> String {
+pub(crate) fn gql_str(s: &str) -> String {
     s.replace('\\', "\\\\").replace('"', "\\\"")
 }
 
 #[derive(Clone)]
-pub struct GraphqlClient {
+pub(crate) struct GraphqlClient {
     base_url: String,
     http: reqwest::Client,
 }
 
 impl GraphqlClient {
-    pub fn new(base_url: String) -> Self {
+    pub(crate) fn new(base_url: String) -> Self {
         Self {
             base_url: base_url.trim_end_matches('/').to_string(),
             http: reqwest::Client::new(),
         }
     }
 
-    pub async fn graphql(&self, query: &str) -> anyhow::Result<Value> {
+    pub(crate) async fn graphql(&self, query: &str) -> anyhow::Result<Value> {
         let response: Value = self
             .http
             .post(format!("{}/graphql", self.base_url))
@@ -44,7 +44,7 @@ impl GraphqlClient {
             .json()
             .await?;
         if let Some(errors) = response.get("errors")
-            && !errors.as_array().map(Vec::is_empty).unwrap_or(true)
+            && !errors.as_array().is_none_or(Vec::is_empty)
         {
             anyhow::bail!("graphql error: {errors}");
         }
@@ -63,7 +63,7 @@ fn host_header_for(base_url: &str) -> String {
 
 /// Raw canonical bundle fields from GraphQL `bundle(...)`.
 #[derive(Debug, Clone)]
-pub struct BundleProjection {
+pub(crate) struct BundleProjection {
     /// Exact `json` field string from the API (do not re-serialize for compare).
     pub json: String,
     pub markdown: String,
@@ -71,7 +71,7 @@ pub struct BundleProjection {
 }
 
 /// Fetch issue- or run-anchored bundle. Exactly one of `fingerprint` / `run_id`.
-pub async fn fetch_bundle(
+pub(crate) async fn fetch_bundle(
     client: &GraphqlClient,
     fingerprint: Option<&str>,
     run_id: Option<&str>,
@@ -99,7 +99,10 @@ pub async fn fetch_bundle(
 }
 
 /// Agent-session projection (same GraphQL shape the CLI uses).
-pub async fn fetch_agent_session(client: &GraphqlClient, run_id: &str) -> anyhow::Result<Value> {
+pub(crate) async fn fetch_agent_session(
+    client: &GraphqlClient,
+    run_id: &str,
+) -> anyhow::Result<Value> {
     let response = client
         .graphql(&format!(
             r#"{{ agentSession(runId: "{}") {{

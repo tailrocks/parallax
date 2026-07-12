@@ -55,6 +55,7 @@ struct Interval<'a> {
     clock_suspect: bool,
 }
 
+#[must_use]
 pub fn critical_path(spans: &[SpanRow]) -> CriticalPath {
     if spans.is_empty() {
         return CriticalPath::default();

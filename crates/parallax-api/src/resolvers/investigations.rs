@@ -10,7 +10,7 @@ use crate::{
     validate_saved_view_name, validate_saved_view_page,
 };
 
-pub struct Investigation(pub(crate) model::Investigation);
+pub(crate) struct Investigation(pub(crate) model::Investigation);
 
 #[graphql_object(context = ApiContext)]
 impl Investigation {
@@ -33,7 +33,7 @@ impl Investigation {
     }
 }
 
-pub struct SavedView(pub(crate) model::SavedView);
+pub(crate) struct SavedView(pub(crate) model::SavedView);
 
 #[graphql_object(context = ApiContext)]
 impl SavedView {
@@ -97,8 +97,7 @@ pub(crate) async fn investigation_save(
     validate_investigation_state(&state)?;
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_nanos())
-        .unwrap_or(0);
+        .map_or(0, |d| d.as_nanos());
     let id = id
         .filter(|id| !id.is_empty())
         .unwrap_or_else(|| format!("case_{now:x}"));
@@ -150,8 +149,7 @@ pub(crate) async fn saved_view_save(
     }
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_nanos())
-        .unwrap_or(0);
+        .map_or(0, |d| d.as_nanos());
     let id = id
         .filter(|id| !id.is_empty())
         .unwrap_or_else(|| format!("view_{now:x}"));

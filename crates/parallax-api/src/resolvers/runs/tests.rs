@@ -89,7 +89,7 @@ async fn runs_list_stats_match_single_run() {
     }
     let schema = build_schema();
     let list = juniper::http::GraphQLRequest::new(
-        r#"{ runs { runId errorCount traceCount } }"#.into(),
+        r"{ runs { runId errorCount traceCount } }".into(),
         None,
         None,
     );
@@ -129,11 +129,11 @@ async fn runs_list_stats_match_single_run() {
             (
                 single
                     .pointer("/data/run/errorCount")
-                    .and_then(|v| v.as_i64())
+                    .and_then(serde_json::Value::as_i64)
                     .unwrap(),
                 single
                     .pointer("/data/run/traceCount")
-                    .and_then(|v| v.as_i64())
+                    .and_then(serde_json::Value::as_i64)
                     .unwrap(),
             ),
             by_id[run_id],

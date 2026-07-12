@@ -46,7 +46,7 @@ struct Edge {
     target: Option<String>,
 }
 
-pub fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
+pub(super) fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
     let metadata = MetadataCommand::new()
         .current_dir(root)
         .no_deps()

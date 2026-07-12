@@ -2,7 +2,7 @@
 //! and span batch; `/v1/logs/stream` and `/v1/traces/stream` serve them as
 //! Server-Sent Events with the same filter vocabulary as the `logs` and
 //! `traces` GraphQL queries. SSE over WebSocket deliberately: a tail is
-//! one-way, EventSource reconnects on its own, and the local profile has no
+//! one-way, `EventSource` reconnects on its own, and the local profile has no
 //! proxy buffering to fear.
 //!
 //! Live filters are per-row predicates only (service, severity/duration
@@ -44,6 +44,7 @@ pub struct LiveChannels {
     pub spans: SpanSender,
 }
 
+#[must_use]
 pub fn channels() -> LiveChannels {
     LiveChannels {
         logs: tokio::sync::broadcast::channel(CHANNEL_CAPACITY).0,
@@ -142,7 +143,7 @@ pub struct SpanStreamFilter {
     pub service: Option<String>,
     /// Only spans at least this long (the live "show me slow ones" knob).
     pub min_duration_ms: Option<f64>,
-    /// Only spans with STATUS_CODE_ERROR.
+    /// Only spans with `STATUS_CODE_ERROR`.
     pub errors_only: Option<bool>,
     /// Substring of the span name.
     pub q: Option<String>,

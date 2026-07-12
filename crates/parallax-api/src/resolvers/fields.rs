@@ -11,7 +11,7 @@ use parallax_storage::adapter::{
     FieldValueCount as StorageFieldValueCount,
 };
 
-pub struct AttributeCompareRow(pub(crate) StorageAttributeCompareRow);
+pub(crate) struct AttributeCompareRow(pub(crate) StorageAttributeCompareRow);
 
 #[graphql_object(context = ApiContext)]
 impl AttributeCompareRow {
@@ -45,7 +45,7 @@ fn field_source_name(source: FieldSource) -> &'static str {
     }
 }
 
-pub struct FieldKey(pub(crate) StorageFieldKey);
+pub(crate) struct FieldKey(pub(crate) StorageFieldKey);
 
 #[graphql_object(context = ApiContext)]
 impl FieldKey {
@@ -72,7 +72,7 @@ impl FieldKey {
     }
 }
 
-pub struct FieldValueCount(pub(crate) StorageFieldValueCount);
+pub(crate) struct FieldValueCount(pub(crate) StorageFieldValueCount);
 
 #[graphql_object(context = ApiContext)]
 impl FieldValueCount {
@@ -84,7 +84,7 @@ impl FieldValueCount {
     }
 }
 
-pub struct FieldStats(pub(crate) StorageFieldStats);
+pub(crate) struct FieldStats(pub(crate) StorageFieldStats);
 
 #[graphql_object(context = ApiContext)]
 impl FieldStats {
@@ -125,7 +125,7 @@ impl FieldStats {
     }
 }
 
-pub struct EvidenceGap(pub(crate) gaps::EvidenceGap);
+pub(crate) struct EvidenceGap(pub(crate) gaps::EvidenceGap);
 
 #[graphql_object(context = ApiContext)]
 impl EvidenceGap {

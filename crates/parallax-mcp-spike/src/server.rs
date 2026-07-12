@@ -12,26 +12,26 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
-pub struct IssueContextArgs {
+pub(crate) struct IssueContextArgs {
     /// Issue fingerprint (canonical issue anchor).
     pub fingerprint: String,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
-pub struct AgentSessionArgs {
+pub(crate) struct AgentSessionArgs {
     /// Run id whose agent-session projection to show.
     pub run_id: String,
 }
 
 #[derive(Clone)]
 #[allow(dead_code)] // tool_router is used by #[tool_handler] macro
-pub struct SpikeServer {
+pub(crate) struct SpikeServer {
     client: GraphqlClient,
     tool_router: ToolRouter<Self>,
 }
 
 impl SpikeServer {
-    pub fn new(base_url: String) -> Self {
+    pub(crate) fn new(base_url: String) -> Self {
         Self {
             client: GraphqlClient::new(base_url),
             tool_router: Self::tool_router(),
@@ -106,7 +106,7 @@ impl ServerHandler for SpikeServer {
 }
 
 /// Run the stdio MCP server until the client disconnects.
-pub async fn run_stdio(base_url: String) -> anyhow::Result<()> {
+pub(crate) async fn run_stdio(base_url: String) -> anyhow::Result<()> {
     let server = SpikeServer::new(base_url);
     let service = server.serve(stdio()).await?;
     service.waiting().await?;

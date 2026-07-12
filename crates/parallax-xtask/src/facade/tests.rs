@@ -23,5 +23,5 @@ fn malformed_root_fails_closed() {
     let directory = tempfile::tempdir().expect("temporary directory");
     let path = directory.path().join("facade-malformed.rs");
     fs::write(&path, "pub mod {").expect("fixture write");
-    assert!(parse_root(&path).is_err());
+    parse_root(&path).unwrap_err();
 }

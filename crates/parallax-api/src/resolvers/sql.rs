@@ -6,7 +6,7 @@ use crate::{ApiContext, field_err};
 
 use crate::SQL_MAX_ROWS;
 
-pub struct SqlResultOut {
+pub(crate) struct SqlResultOut {
     result: parallax_storage::adapter::SqlResult,
     truncated: bool,
 }

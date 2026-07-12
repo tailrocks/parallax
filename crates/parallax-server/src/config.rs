@@ -31,7 +31,7 @@ pub struct StorageConfig {
     /// Product storage mode: `managed` or `external`.
     pub mode: String,
     pub greptime_url: String,
-    /// Pinned GreptimeDB version to install. Defaults to v1.1.2, the latest
+    /// Pinned `GreptimeDB` version to install. Defaults to v1.1.2, the latest
     /// stable native-OTLP-capable release verified by Parallax. `"latest"`
     /// resolves the newest GitHub stable release at install instead (see
     /// `resolve_version`).
@@ -148,6 +148,7 @@ impl Config {
     }
 
     /// Expand `~` in `storage.data_dir` against the user's home directory.
+    #[must_use]
     pub fn data_dir(&self) -> PathBuf {
         let raw = &self.storage.data_dir;
         if let Some(rest) = raw.strip_prefix("~/")

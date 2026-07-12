@@ -26,6 +26,7 @@ pub struct OtlpGrpc {
 }
 
 impl OtlpGrpc {
+    #[must_use]
     pub fn new(state: IngestState, max_decoding_message_size: usize) -> Self {
         Self {
             state,
@@ -33,6 +34,7 @@ impl OtlpGrpc {
         }
     }
 
+    #[must_use]
     pub fn trace_service(&self) -> TraceServiceServer<Self> {
         TraceServiceServer::new(self.clone())
             .accept_compressed(CompressionEncoding::Gzip)
@@ -40,6 +42,7 @@ impl OtlpGrpc {
             .max_decoding_message_size(self.max_decoding_message_size)
     }
 
+    #[must_use]
     pub fn logs_service(&self) -> LogsServiceServer<Self> {
         LogsServiceServer::new(self.clone())
             .accept_compressed(CompressionEncoding::Gzip)
@@ -47,6 +50,7 @@ impl OtlpGrpc {
             .max_decoding_message_size(self.max_decoding_message_size)
     }
 
+    #[must_use]
     pub fn metrics_service(&self) -> MetricsServiceServer<Self> {
         MetricsServiceServer::new(self.clone())
             .accept_compressed(CompressionEncoding::Gzip)

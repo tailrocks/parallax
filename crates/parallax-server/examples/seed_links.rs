@@ -1,5 +1,5 @@
 //! Seed a linked-trace pair: trace A holds a source operation; trace B's
-//! span carries an OTel span link back to A (the batch/async sub-operation
+//! span carries an `OTel` span link back to A (the batch/async sub-operation
 //! pattern). Demo data for the trace page's "Linked traces" section.
 
 use parallax_proto::collector_trace::ExportTraceServiceRequest;

@@ -346,7 +346,7 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
     let parsed: serde_json::Value = serde_json::from_str(bounded_json).expect("valid json");
     let estimated = parsed
         .pointer("/bounded/estimated_tokens")
-        .and_then(|v| v.as_u64())
+        .and_then(serde_json::Value::as_u64)
         .expect("estimate present");
     assert!(
         estimated <= 700,

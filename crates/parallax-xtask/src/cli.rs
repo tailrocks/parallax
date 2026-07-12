@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand, ValueEnum};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
-pub enum Output {
+pub(crate) enum Output {
     Human,
     Json,
     Github,
@@ -9,7 +9,7 @@ pub enum Output {
 
 #[derive(Debug, Parser)]
 #[command(name = "cargo xtask", about = "Parallax repository control plane")]
-pub struct Cli {
+pub(crate) struct Cli {
     #[arg(long, global = true, value_enum, default_value_t = Output::Human)]
     pub output: Output,
     #[command(subcommand)]
@@ -17,7 +17,7 @@ pub struct Cli {
 }
 
 #[derive(Debug, Subcommand)]
-pub enum Command {
+pub(crate) enum Command {
     /// Run the deterministic fast or full repository partition.
     Ci {
         #[arg(long, conflicts_with = "full", required_unless_present = "full")]
@@ -50,7 +50,7 @@ pub enum Command {
 }
 
 #[derive(Debug, Subcommand)]
-pub enum FacadeAction {
+pub(crate) enum FacadeAction {
     Refresh,
     Check,
 }

@@ -1,5 +1,5 @@
 //! Normalized telemetry rows — the shapes the storage adapters persist,
-//! mirroring the GreptimeDB DDL in the implementation spec §5.
+//! mirroring the `GreptimeDB` DDL in the implementation spec §5.
 
 use serde::{Deserialize, Serialize};
 
@@ -17,10 +17,10 @@ pub struct SpanRow {
     pub duration_ns: u128,
     pub run_id: Option<String>,
     pub scope_name: String,
-    /// Raw OTel span events JSON (`[{name, time_unix_nano, attributes}]`) when
+    /// Raw `OTel` span events JSON (`[{name, time_unix_nano, attributes}]`) when
     /// the backing source projects it; absent sources default to no events.
     pub events: Option<String>,
-    /// OTel span links — `[{traceId, spanId, attributes}]` — the standard
+    /// `OTel` span links — `[{traceId, spanId, attributes}]` — the standard
     /// cross-trace correlation (batch/async "sub-operation" references).
     pub links: serde_json::Value,
     pub attributes: serde_json::Value,
@@ -30,9 +30,9 @@ pub struct SpanRow {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LogRow {
     pub ts_nanos: u128,
-    /// OTel `EventName`, set for typed log events and empty for plain logs.
+    /// `OTel` `EventName`, set for typed log events and empty for plain logs.
     pub event_name: String,
-    /// OTel `ObservedTimestamp` in ns. Zero means the source did not set it.
+    /// `OTel` `ObservedTimestamp` in ns. Zero means the source did not set it.
     pub observed_ts_nanos: u128,
     pub service: String,
     pub severity_num: i32,
@@ -142,7 +142,7 @@ pub enum IssueSortKey {
 pub struct IssueQuery {
     pub service: Option<String>,
     pub status: Option<String>,
-    /// Substring match against title, error_type, and fingerprint.
+    /// Substring match against title, `error_type`, and fingerprint.
     pub query: Option<String>,
     /// Window on `last_seen`.
     pub from_nanos: Option<u128>,
@@ -180,6 +180,7 @@ pub enum MetricAgg {
 }
 
 impl MetricAgg {
+    #[must_use]
     pub fn parse(s: &str) -> Option<Self> {
         Some(match s.to_ascii_lowercase().as_str() {
             "avg" => Self::Avg,

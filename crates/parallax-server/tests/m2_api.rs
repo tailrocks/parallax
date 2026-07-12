@@ -90,7 +90,7 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
         let response = graphql(
             &client,
             handle.api_addr,
-            r#"{ issues { total items { fingerprint errorType eventCount status } } }"#,
+            r"{ issues { total items { fingerprint errorType eventCount status } } }",
         )
         .await;
         if let Some(issue) = response
@@ -430,8 +430,8 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
     let response = graphql(
         &client,
         handle.api_addr,
-        r#"{ observedRuns(limit: 20) {
-               runId service spanCount logCount } }"#,
+        r"{ observedRuns(limit: 20) {
+               runId service spanCount logCount } }",
     )
     .await;
     let observed_run = response

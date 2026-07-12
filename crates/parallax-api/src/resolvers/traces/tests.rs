@@ -383,7 +383,7 @@ fn compare_two_500_span_traces_timing() {
             .collect()
     };
     let start = std::time::Instant::now();
-    let _ = parallax_core::trace_analysis::compare(&make("a"), &make("b"));
+    drop(trace_analysis::compare(&make("a"), &make("b")));
     let elapsed = start.elapsed();
     eprintln!(
         "trace_analysis::compare on 2x500 spans: {:.3} ms",

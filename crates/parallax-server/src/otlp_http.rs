@@ -63,7 +63,7 @@ async fn ingest<R>(
     signal: Signal,
     body: Bytes,
     to_item: impl FnOnce(R, Bytes) -> IngestItem,
-) -> axum::response::Response
+) -> Response
 where
     R: Message + Default,
 {

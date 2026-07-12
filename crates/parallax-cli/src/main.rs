@@ -1,13 +1,14 @@
-#![cfg_attr(test, allow(clippy::unwrap_used, reason = "fixture assertions"))]
 //! The installed `parallax` binary: thin client of the canonical API
 //! (kubectl model — `--context` selects the server), plus the `serve`
 //! subcommand embedding the server library.
+
 mod client;
 mod commands;
 mod doctor;
 
 use clap::{Parser, Subcommand, ValueEnum};
 use client::{Client, resolve_url};
+use std::path::PathBuf;
 
 /// Output shape for agent-facing projections (bundles, agent sessions).
 /// Markdown is the human default; JSON is the machine/agent contract.
@@ -38,7 +39,7 @@ enum Command {
     Serve {
         /// Path to config.toml (default: ~/.parallax/config.toml when present).
         #[arg(long)]
-        config: Option<std::path::PathBuf>,
+        config: Option<PathBuf>,
     },
     /// Runs: bounded, inspectable execution units.
     Run {
@@ -116,10 +117,10 @@ enum Command {
         #[arg(long = "for", requires = "follow")]
         follow_for: Option<String>,
     },
-    /// Run a read-only SQL query against the telemetry engine (GreptimeDB).
+    /// Run a read-only SQL query against the telemetry engine (`GreptimeDB`).
     Sql {
         /// The SELECT-shaped statement, e.g.
-        /// "SELECT * FROM opentelemetry_logs ORDER BY timestamp DESC LIMIT 10".
+        /// "SELECT * FROM `opentelemetry_logs` ORDER BY timestamp DESC LIMIT 10".
         query: String,
     },
     /// Diagnose the local install (server, engine, spool, sizes).
@@ -139,7 +140,7 @@ enum Command {
 
 #[derive(Subcommand)]
 enum RunCommand {
-    /// Start a run. With `-- <command…>`: wrapper mode (injects OTel env,
+    /// Start a run. With `-- <command…>`: wrapper mode (injects `OTel` env,
     /// captures the exit code). Without: prints exports to source.
     Start {
         /// Compare mode: forward child telemetry to a collector instead of
@@ -147,7 +148,7 @@ enum RunCommand {
         /// ambiently via `PARALLAX_OTLP_FORWARD`.
         #[arg(long = "otlp-forward", value_name = "TARGET")]
         otlp_forward: Option<String>,
-        /// Print the OTel env that would be injected, then exit (dry-run).
+        /// Print the `OTel` env that would be injected, then exit (dry-run).
         #[arg(long = "print-env")]
         print_env: bool,
         /// Everything after `--` is the wrapped command.
@@ -281,7 +282,7 @@ async fn main() -> anyhow::Result<()> {
             println!("    data       {}", config.data_dir().display());
             match &telemetry_endpoint {
                 Some(endpoint) => {
-                    println!("    self-otlp   parallax → {endpoint} (ingest path suppressed)")
+                    println!("    self-otlp   parallax → {endpoint} (ingest path suppressed)");
                 }
                 None => println!("    self-otlp   off (set PARALLAX_SELF_OTLP to export)"),
             }

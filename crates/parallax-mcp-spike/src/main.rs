@@ -16,7 +16,7 @@ use clap::{Parser, Subcommand};
 )]
 struct Cli {
     /// Base URL of the Parallax API (default local serve).
-    /// Override with env PARALLAX_URL if desired (read manually for clap without env feature).
+    /// Override with env `PARALLAX_URL` if desired (read manually for clap without env feature).
     #[arg(long, default_value = "http://127.0.0.1:4000", global = true)]
     url: String,
 

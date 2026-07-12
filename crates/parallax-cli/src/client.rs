@@ -5,7 +5,7 @@ use serde::Deserialize;
 use std::path::PathBuf;
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct ContextsFile {
+pub(crate) struct ContextsFile {
     #[serde(default)]
     pub current: Option<String>,
     #[serde(default)]
@@ -13,7 +13,7 @@ pub struct ContextsFile {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct NamedContext {
+pub(crate) struct NamedContext {
     pub name: String,
     pub url: String,
     /// API token for remote contexts — read when auth lands with the V2
@@ -30,7 +30,7 @@ fn contexts_path() -> Option<PathBuf> {
 
 /// Resolve the API base URL: --context name → contexts file; default →
 /// the file's `current`, else the implicit local context.
-pub fn resolve_url(context: Option<&str>) -> anyhow::Result<String> {
+pub(crate) fn resolve_url(context: Option<&str>) -> anyhow::Result<String> {
     let file: Option<ContextsFile> = contexts_path()
         .filter(|p| p.exists())
         .map(|p| -> anyhow::Result<ContextsFile> {
@@ -51,24 +51,24 @@ pub fn resolve_url(context: Option<&str>) -> anyhow::Result<String> {
     }
 }
 
-pub struct Client {
+pub(crate) struct Client {
     base_url: String,
     http: reqwest::Client,
 }
 
 impl Client {
-    pub fn new(base_url: String) -> Self {
+    pub(crate) fn new(base_url: String) -> Self {
         Self {
             base_url,
             http: reqwest::Client::new(),
         }
     }
 
-    pub fn base_url(&self) -> &str {
+    pub(crate) fn base_url(&self) -> &str {
         &self.base_url
     }
 
-    pub async fn graphql(&self, query: &str) -> anyhow::Result<serde_json::Value> {
+    pub(crate) async fn graphql(&self, query: &str) -> anyhow::Result<serde_json::Value> {
         let response: serde_json::Value = self
             .http
             .post(format!("{}/graphql", self.base_url))
@@ -84,7 +84,7 @@ impl Client {
             .json()
             .await?;
         if let Some(errors) = response.get("errors")
-            && !errors.as_array().map(Vec::is_empty).unwrap_or(true)
+            && !errors.as_array().is_none_or(Vec::is_empty)
         {
             anyhow::bail!("graphql error: {errors}");
         }
@@ -92,7 +92,7 @@ impl Client {
     }
 
     /// Open a Server-Sent Events stream (live tail endpoints).
-    pub async fn sse(&self, path_and_query: &str) -> anyhow::Result<reqwest::Response> {
+    pub(crate) async fn sse(&self, path_and_query: &str) -> anyhow::Result<reqwest::Response> {
         let response = self
             .http
             .get(format!("{}{}", self.base_url, path_and_query))
@@ -115,6 +115,6 @@ impl Client {
 }
 
 /// Escape a string for inclusion inside a GraphQL double-quoted literal.
-pub fn gql_str(s: &str) -> String {
+pub(crate) fn gql_str(s: &str) -> String {
     s.replace('\\', "\\\\").replace('"', "\\\"")
 }

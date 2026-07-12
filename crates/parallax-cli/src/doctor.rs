@@ -28,9 +28,7 @@ struct SignalSpoolStats {
 }
 
 fn default_data_dir() -> PathBuf {
-    std::env::home_dir()
-        .map(|h| h.join(".parallax"))
-        .unwrap_or_else(|| PathBuf::from(".parallax"))
+    std::env::home_dir().map_or_else(|| PathBuf::from(".parallax"), |h| h.join(".parallax"))
 }
 
 fn config_path() -> PathBuf {
@@ -110,7 +108,7 @@ fn count_pspl_frames(path: &Path) -> usize {
         if file.read_exact(&mut len_buf).is_err() {
             break;
         }
-        let len = u32::from_le_bytes(len_buf) as u64;
+        let len = u64::from(u32::from_le_bytes(len_buf));
         if std::io::copy(&mut file.by_ref().take(len), &mut std::io::sink()).is_err() {
             break;
         }
@@ -128,12 +126,10 @@ fn spool_stats(spool_dir: &Path, stem: &str, active_file: &str) -> SignalSpoolSt
         0
     };
     if legacy_path.exists() {
-        active_lines += std::fs::read_to_string(&legacy_path)
-            .map(|s| s.lines().count())
-            .unwrap_or(0);
+        active_lines += std::fs::read_to_string(&legacy_path).map_or(0, |s| s.lines().count());
     }
-    let active_bytes = active_path.metadata().map(|m| m.len()).unwrap_or(0)
-        + legacy_path.metadata().map(|m| m.len()).unwrap_or(0);
+    let active_bytes = active_path.metadata().map_or(0, |m| m.len())
+        + legacy_path.metadata().map_or(0, |m| m.len());
     let rotated_paths = rotated_segment_paths(spool_dir, stem);
     let rotated_bytes = rotated_paths
         .iter()
@@ -156,7 +152,7 @@ async fn check_http(url: &str) -> Option<String> {
     response.status().is_success().then(|| "ok".to_string())
 }
 
-pub async fn doctor() -> anyhow::Result<()> {
+pub(crate) async fn doctor() -> anyhow::Result<()> {
     let config = load_config();
     let dir = config.data_dir();
     println!("parallax doctor");
@@ -231,7 +227,7 @@ pub async fn doctor() -> anyhow::Result<()> {
     if meta.exists() {
         println!(
             "  metadata db: {}",
-            human(meta.metadata().map(|m| m.len()).unwrap_or(0))
+            human(meta.metadata().map_or(0, |m| m.len()))
         );
     }
     let log = dir.join("greptime.log");
@@ -239,14 +235,14 @@ pub async fn doctor() -> anyhow::Result<()> {
         println!(
             "  engine log: {} ({})",
             log.display(),
-            human(log.metadata().map(|m| m.len()).unwrap_or(0))
+            human(log.metadata().map_or(0, |m| m.len()))
         );
     }
     Ok(())
 }
 
 /// Truncate the ingest spool (telemetry TTLs are enforced by the engine).
-pub fn prune() -> anyhow::Result<()> {
+pub(crate) fn prune() -> anyhow::Result<()> {
     let dir = data_dir().join("spool");
     let reclaimed = prune_dir(&dir)?;
     println!("pruned spool: reclaimed {}", human(reclaimed));
@@ -275,7 +271,7 @@ fn prune_dir(dir: &Path) -> anyhow::Result<u64> {
 }
 
 /// Remove the entire data directory. Destructive; requires --purge.
-pub fn uninstall(purge: bool, yes: bool) -> anyhow::Result<()> {
+pub(crate) fn uninstall(purge: bool, yes: bool) -> anyhow::Result<()> {
     if !purge {
         println!("nothing removed. Use `parallax uninstall --purge` to delete the data dir;");
         println!("remove the binary with your package manager (e.g. brew uninstall parallax).");

@@ -7,7 +7,7 @@ use crate::{ApiContext, MAX_ROWS, clamp_limit, field_err, nanos_string};
 
 use crate::resolvers::common::Point;
 
-pub struct LogRecord(pub(crate) model::LogRow);
+pub(crate) struct LogRecord(pub(crate) model::LogRow);
 
 #[graphql_object(context = ApiContext)]
 impl LogRecord {

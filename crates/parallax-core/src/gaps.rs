@@ -11,6 +11,7 @@ pub struct EvidenceGap {
     pub detail: String,
 }
 
+#[must_use]
 pub fn detect_gaps(spans: &[SpanRow], logs: &[LogRow]) -> Vec<EvidenceGap> {
     let span_ids: HashSet<&str> = spans.iter().map(|span| span.span_id.as_str()).collect();
     let span_keys: HashSet<(&str, &str)> = spans

@@ -66,7 +66,7 @@ async fn metrics_become_series_and_dashboards_roundtrip() {
     // metricNames + a sum series with at least one point.
     let mut names = serde_json::Value::Null;
     for _ in 0..50 {
-        names = graphql(&client, handle.api_addr, r#"{ metricNames services }"#).await;
+        names = graphql(&client, handle.api_addr, r"{ metricNames services }").await;
         let has_metric = names
             .pointer("/data/metricNames")
             .and_then(|v| v.as_array())

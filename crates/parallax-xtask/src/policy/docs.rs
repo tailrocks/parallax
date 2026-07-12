@@ -27,7 +27,7 @@ struct Facade {
     roots: BTreeMap<String, Vec<String>>,
 }
 
-pub fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
+pub(super) fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
     let metadata = MetadataCommand::new().current_dir(root).no_deps().exec()?;
     let members: BTreeSet<_> = metadata.workspace_members.iter().collect();
     let classes: BTreeMap<_, _> = ratchet
@@ -44,24 +44,24 @@ pub fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
     {
         let directory = package.manifest_path.parent().context("manifest parent")?;
         let readme = directory.join("README.md");
-        let doc = match parse(
-            &fs::read_to_string(&readme).with_context(|| format!("missing {}", readme))?,
-        ) {
-            Ok(doc) => doc,
-            Err(error) => {
-                findings.push(finding(
-                    &readme,
-                    &format!("invalid crate-doc front matter: {error:#}"),
-                ));
-                continue;
-            }
-        };
+        let doc =
+            match parse(&fs::read_to_string(&readme).with_context(|| format!("missing {readme}"))?)
+            {
+                Ok(doc) => doc,
+                Err(error) => {
+                    findings.push(finding(
+                        &readme,
+                        &format!("invalid crate-doc front matter: {error:#}"),
+                    ));
+                    continue;
+                }
+            };
         let class = classes.get(&package.name.to_string());
         let mut dependencies: Vec<_> = package
             .dependencies
             .iter()
             .filter(|dependency| dependency.path.is_some())
-            .map(|dependency| dependency.name.to_string())
+            .map(|dependency| dependency.name.clone())
             .collect();
         dependencies.sort();
         dependencies.dedup();

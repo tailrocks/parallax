@@ -11,7 +11,7 @@ use crate::diagnostic::Finding;
 
 use super::config::Ratchet;
 
-pub fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
+pub(super) fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
     let mut findings = Vec::new();
     check_cargo(root, &mut findings)?;
     check_bun(root, &mut findings)?;
@@ -332,7 +332,7 @@ impl<'ast> Visit<'ast> for IngestLogVisitor {
         if !cfg_test(&function.attrs) {
             let name = function.sig.ident.to_string();
             self.enter(&name, |visitor| {
-                syn::visit::visit_item_fn(visitor, function)
+                syn::visit::visit_item_fn(visitor, function);
             });
         }
     }

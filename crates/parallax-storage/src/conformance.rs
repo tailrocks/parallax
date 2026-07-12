@@ -1,4 +1,4 @@
-//! Adapter conformance scenarios shared by MemoryStore unit tests and the
+//! Adapter conformance scenarios shared by `MemoryStore` unit tests and the
 //! gated real-engine greptime suite (plan 074).
 
 use crate::adapter::{TelemetryStore, TraceQuery, TraceSort};
@@ -31,7 +31,7 @@ fn sample_span(trace_id: &str, span_id: &str, ts: u128, duration: u128, error: b
     }
 }
 
-/// Seed a few spans and assert traces_search returns items.
+/// Seed a few spans and assert `traces_search` returns items.
 pub async fn trace_search_scenario(store: &MemoryStore) -> anyhow::Result<()> {
     store.push_spans(vec![
         sample_span("t1", "s1", 1_000, 100, false),
@@ -48,7 +48,7 @@ pub async fn trace_search_scenario(store: &MemoryStore) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Seed logs and assert log_count_series returns a positive total over a window.
+/// Seed logs and assert `log_count_series` returns a positive total over a window.
 pub async fn log_count_series_scenario(store: &MemoryStore) -> anyhow::Result<()> {
     let logs = vec![LogRow {
         ts_nanos: 5_000,

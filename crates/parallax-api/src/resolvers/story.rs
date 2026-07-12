@@ -6,7 +6,7 @@ use crate::{ApiContext, MAX_ROWS, field_err, nanos_string, retained_recent_range
 
 use parallax_core::{agent_session, story};
 
-pub struct StoryBeat(pub(crate) story::StoryBeat);
+pub(crate) struct StoryBeat(pub(crate) story::StoryBeat);
 
 #[graphql_object(context = ApiContext)]
 impl StoryBeat {
@@ -36,12 +36,12 @@ impl StoryBeat {
     }
 }
 
-pub struct AgentSessionOut {
+pub(crate) struct AgentSessionOut {
     session: agent_session::AgentSession,
     truncated: bool,
 }
 
-pub struct AgentStepOut(pub(crate) agent_session::AgentStep);
+pub(crate) struct AgentStepOut(pub(crate) agent_session::AgentStep);
 
 fn agent_step_kind_name(kind: agent_session::AgentStepKind) -> &'static str {
     match kind {
