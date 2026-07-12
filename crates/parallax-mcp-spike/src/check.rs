@@ -120,7 +120,7 @@ async fn check_one(client: &GraphqlClient, args: &CheckArgs, case: &Case) -> any
     }
 
     // Confirm hash definition: sha256 over sorted-key compact form of evidence
-    // fields only (see parallax-core bundle::canonical_hash). The GraphQL
+    // fields only (see parallax-evidence bundle::canonical_hash). The GraphQL
     // `canonicalHash` is computed server-side and embedded inside the JSON as
     // `canonical_hash`. Recompute from the emitted JSON body.
     let recomputed = recompute_canonical_hash(mcp_json)?;
@@ -170,7 +170,7 @@ fn extract_embedded_hash(json: &str) -> anyhow::Result<String> {
         .ok_or_else(|| anyhow::anyhow!("bundle JSON missing canonical_hash"))
 }
 
-/// Reproduce `parallax_core::bundle::canonical_hash` over the emitted JSON:
+/// Reproduce `parallax_evidence::bundle::canonical_hash` over the emitted JSON:
 /// sorted-key compact form of evidence fields only — drop `canonical_hash`,
 /// `generator`, and `bounded`, then SHA-256 hex with `sha256:` prefix.
 fn recompute_canonical_hash(json: &str) -> anyhow::Result<String> {

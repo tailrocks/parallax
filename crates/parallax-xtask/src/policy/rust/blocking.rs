@@ -10,7 +10,7 @@ pub(super) fn check(root: &Path) -> Result<Vec<Finding>> {
     for crate_name in [
         "parallax-api",
         "parallax-cli",
-        "parallax-core",
+        "parallax-evidence",
         "parallax-server",
         "parallax-storage",
     ] {

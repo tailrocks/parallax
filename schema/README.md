@@ -4,7 +4,7 @@ This directory holds the **shipped**, machine-readable contract for Parallax
 evidence bundles — the canonical JSON bytes returned by:
 
 - GraphQL `BundleOut.json` (`serde_json::to_string_pretty` over
-  `parallax_core::bundle::Bundle`)
+  `parallax_evidence::bundle::Bundle`)
 - `parallax issue context --format json` / `parallax run bundle --format json`
   (verbatim `json` field from the same GraphQL projection)
 
@@ -15,7 +15,7 @@ only and are **not** this contract.
 
 | File | Governs |
 | --- | --- |
-| [`evidence-bundle.v1.schema.json`](evidence-bundle.v1.schema.json) | `schema_version: "bundle-v1"` — the production Serialize shape of `crates/parallax-core/src/bundle.rs` |
+| [`evidence-bundle.v1.schema.json`](evidence-bundle.v1.schema.json) | `schema_version: "bundle-v1"` — the production Serialize shape of `crates/parallax-evidence/src/bundle.rs` |
 
 Dialect: JSON Schema Draft 2020-12. The schema is **self-contained** (no remote
 `$ref` resolution) so CI/conformance tests stay offline.
@@ -28,9 +28,9 @@ Dialect: JSON Schema Draft 2020-12. The schema is **self-contained** (no remote
 - **Renames, removals, type changes, or required-field additions require
   `bundle-v2`.** Ship a new file (`evidence-bundle.v2.schema.json`) beside v1;
   keep the v1 file forever so old consumers keep validating.
-- The Rust constant `parallax_core::bundle::SCHEMA_VERSION` must match the
+- The Rust constant `parallax_evidence::bundle::SCHEMA_VERSION` must match the
   schema's `schema_version` `const`.
-- Enforcement: the conformance tests in `crates/parallax-core/src/bundle.rs`
+- Enforcement: the conformance tests in `crates/parallax-evidence/src/bundle.rs`
   assemble representative bundles, serialize them the same way the API does,
   and validate against this file with the `jsonschema` crate. Every
   bundle-shape PR must update the schema and fixtures in the same commit.
@@ -57,6 +57,6 @@ If a future major version wants a closed shape for a sub-object, set
 - Prose / research draft (not the validator source of truth):
   [`docs/research/architecture/evidence-bundle-schema.md`](../docs/research/architecture/evidence-bundle-schema.md)
 - Assembly / hash / redaction implementation:
-  [`crates/parallax-core/src/bundle.rs`](../crates/parallax-core/src/bundle.rs)
+  [`crates/parallax-evidence/src/bundle.rs`](../crates/parallax-evidence/src/bundle.rs)
 - PoC frozen schemas:
   [`poc/evidence-loop/schema/`](../poc/evidence-loop/schema/)

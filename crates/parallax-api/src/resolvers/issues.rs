@@ -213,9 +213,9 @@ impl BundleOut {
 
 pub(crate) async fn bundle_metric_windows(
     context: &ApiContext,
-    inputs: &parallax_core::bundle::BundleInputs,
-) -> FieldResult<Vec<parallax_core::bundle::MetricWindow>> {
-    use parallax_core::bundle::{BundleAnchor, MetricWindow};
+    inputs: &parallax_evidence::bundle::BundleInputs,
+) -> FieldResult<Vec<parallax_evidence::bundle::MetricWindow>> {
+    use parallax_evidence::bundle::{BundleAnchor, MetricWindow};
     const PAD_NANOS: u128 = 5 * 60 * 1_000_000_000;
     let (from, to, step_seconds, run_scope, service) =
         if let BundleAnchor::Run { run, .. } = &inputs.anchor {
@@ -405,7 +405,7 @@ pub(crate) async fn bundle(
     trace_id: Option<String>,
     max_tokens: Option<i32>,
 ) -> FieldResult<Option<BundleOut>> {
-    use parallax_core::bundle::{BundleAnchor, BundleInputs};
+    use parallax_evidence::bundle::{BundleAnchor, BundleInputs};
     let max_tokens = usize::try_from(max_tokens.unwrap_or(10_000).max(500)).unwrap_or(10_000);
     let anchors = [fingerprint.is_some(), run_id.is_some(), trace_id.is_some()];
     if anchors.iter().filter(|present| **present).count() != 1 {
@@ -539,8 +539,8 @@ pub(crate) async fn bundle(
     };
 
     inputs.metric_windows = bundle_metric_windows(context, &inputs).await?;
-    let bundle = parallax_core::bundle::assemble(inputs, max_tokens);
-    let markdown = parallax_core::bundle::to_markdown(&bundle);
+    let bundle = parallax_evidence::bundle::assemble(inputs, max_tokens);
+    let markdown = parallax_evidence::bundle::to_markdown(&bundle);
     let canonical_hash = bundle.canonical_hash.clone().unwrap_or_default();
     let json = serde_json::to_string_pretty(&bundle).map_err(field_err)?;
     Ok(Some(BundleOut {

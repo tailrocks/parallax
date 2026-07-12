@@ -3095,7 +3095,7 @@ version = "0.1.0-dev"
 dependencies = [
  "juniper",
  "parallax-analysis",
- "parallax-core",
+ "parallax-evidence",
  "parallax-storage",
  "parallax-test-support",
  "serde_json",
@@ -3122,7 +3122,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "parallax-core"
+name = "parallax-evidence"
 version = "0.1.0-dev"
 dependencies = [
  "jsonschema",

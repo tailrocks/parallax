@@ -4,7 +4,7 @@ use juniper::{FieldResult, graphql_object};
 
 use crate::{ApiContext, MAX_ROWS, clamp_limit, field_err, parse_range, retained_recent_range};
 
-use parallax_core::gaps;
+use parallax_evidence::gaps;
 use parallax_storage::adapter::{
     ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow as StorageAttributeCompareRow,
     FieldKey as StorageFieldKey, FieldSource, FieldStats as StorageFieldStats,

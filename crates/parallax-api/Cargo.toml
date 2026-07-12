@@ -16,7 +16,7 @@ workspace = true
 parallax-analysis = { workspace = true }
 tokio = { workspace = true }
 juniper = { workspace = true, features = ["schema-language"] }
-parallax-core = { workspace = true }
+parallax-evidence = { workspace = true }
 parallax-storage = { workspace = true }
 serde_json = { workspace = true }
 tracing = { workspace = true }

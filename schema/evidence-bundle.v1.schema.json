@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/tailrocks/parallax/schema/evidence-bundle.v1.schema.json",
   "title": "parallax evidence bundle (bundle-v1)",
-  "description": "Shipped portable evidence-bundle contract. Describes the canonical JSON bytes emitted by BundleOut.json / `parallax issue context --format json` (serde_json over crates/parallax-core Bundle and its Serialize closure). Self-contained — no remote $refs. Additive-only within bundle-v1; see schema/README.md.",
+  "description": "Shipped portable evidence-bundle contract. Describes the canonical JSON bytes emitted by BundleOut.json / `parallax issue context --format json` (serde_json over crates/parallax-evidence Bundle and its Serialize closure). Self-contained — no remote $refs. Additive-only within bundle-v1; see schema/README.md.",
   "type": "object",
   "required": [
     "schema_version",
@@ -23,7 +23,7 @@
   "properties": {
     "schema_version": {
       "const": "bundle-v1",
-      "description": "Must match crates/parallax-core SCHEMA_VERSION."
+      "description": "Must match crates/parallax-evidence SCHEMA_VERSION."
     },
     "generator": {
       "type": "string",

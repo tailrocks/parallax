@@ -43,9 +43,20 @@ concrete adapters. Evidence orchestration receives typed, already-read inputs.
 2. Greptime, metadata, and spool adapters, preserving port conformance.
 3. Move construction to server, migrate consumers, and delete compatibility
    reexports immediately after the last use.
-4. Move the temporary semantic-convention constants to model until Plan 119
-   creates generated `parallax-semconv`, then delete `parallax-core`.
+4. Keep the temporary semantic-convention constants with pure analysis until
+   Plan 119 creates generated `parallax-semconv`.
 
 Every slice updates Cargo metadata, architecture tiers, facade manifests,
 crate README, structural ratchets, `PROJECT_STRUCTURE.md`, and behavior tests
 in the same commit.
+
+## Execution state
+
+- `126-ingest`: complete at `01f955e`; server owns the direct normalization
+  edge and the hot-path clone floor remains enforced.
+- `126-analysis`: complete at `8872100`; API, server, and evidence consume the
+  pure analysis facade directly.
+- `126-evidence`: complete in the following commit; schema, redaction,
+  bounding, canonical-hash, story, gap, and baseline tests moved with the
+  facade. The final compatibility-shell consumer moved and `parallax-core` was
+  deleted.

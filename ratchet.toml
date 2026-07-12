@@ -26,7 +26,7 @@ lint = "missing_debug_implementations"
 ceiling = 3
 
 [[rust_suppressions]]
-crate_name = "parallax-core"
+crate_name = "parallax-evidence"
 lint = "clippy::expect_used"
 ceiling = 1
 
@@ -41,7 +41,7 @@ lint = "clippy::expect_used"
 ceiling = 10
 
 [[rust_suppressions]]
-crate_name = "parallax-core"
+crate_name = "parallax-evidence"
 lint = "clippy::float_cmp"
 ceiling = 1
 
@@ -61,7 +61,7 @@ lint = "clippy::float_cmp"
 ceiling = 2
 
 [[rust_suppressions]]
-crate_name = "parallax-core"
+crate_name = "parallax-evidence"
 lint = "clippy::panic"
 ceiling = 1
 
@@ -161,7 +161,7 @@ lint = "clippy::cast_possible_wrap"
 ceiling = 1
 
 [[rust_suppressions]]
-crate_name = "parallax-core"
+crate_name = "parallax-evidence"
 lint = "clippy::cast_precision_loss"
 ceiling = 1
 
@@ -196,7 +196,7 @@ lint = "clippy::too_many_arguments"
 ceiling = 1
 
 [[rust_suppressions]]
-crate_name = "parallax-core"
+crate_name = "parallax-evidence"
 lint = "clippy::too_many_lines"
 ceiling = 2
 
@@ -305,7 +305,7 @@ class = "product"
 tier = 1
 
 [[architecture.packages]]
-name = "parallax-core"
+name = "parallax-evidence"
 class = "product"
 tier = 2
 
@@ -369,7 +369,7 @@ ceiling = 342
 
 [[limits]]
 metric = "rust.file-lines"
-scope = "crates/parallax-core/src/bundle.rs"
+scope = "crates/parallax-evidence/src/bundle.rs"
 ceiling = 905
 
 [[limits]]
@@ -1029,7 +1029,7 @@ ceiling = 84
 
 [[limits]]
 metric = "rust.assertions"
-scope = "crates/parallax-core/tests/plan_093_baseline.rs"
+scope = "crates/parallax-evidence/tests/plan_093_baseline.rs"
 ceiling = 3
 
 
@@ -1602,7 +1602,7 @@ ceiling = 25
 
 [[limits]]
 metric = "rust.function-cognitive-complexity"
-scope = "crates/parallax-core/src/bundle.rs::to_markdown"
+scope = "crates/parallax-evidence/src/bundle.rs::to_markdown"
 ceiling = 25
 
 [[limits]]
@@ -1662,27 +1662,27 @@ ceiling = 207
 
 [[limits]]
 metric = "rust.function-lines"
-scope = "crates/parallax-core/src/bundle.rs::assemble"
+scope = "crates/parallax-evidence/src/bundle.rs::assemble"
 ceiling = 217
 
 [[limits]]
 metric = "rust.function-lines"
-scope = "crates/parallax-core/src/bundle.rs::closure#12"
+scope = "crates/parallax-evidence/src/bundle.rs::closure#12"
 ceiling = 111
 
 [[limits]]
 metric = "rust.function-lines"
-scope = "crates/parallax-core/src/bundle.rs::redaction_rules"
+scope = "crates/parallax-evidence/src/bundle.rs::redaction_rules"
 ceiling = 114
 
 [[limits]]
 metric = "rust.function-lines"
-scope = "crates/parallax-core/src/bundle.rs::to_markdown"
+scope = "crates/parallax-evidence/src/bundle.rs::to_markdown"
 ceiling = 132
 
 [[limits]]
 metric = "rust.function-lines"
-scope = "crates/parallax-core/src/story.rs::project_story"
+scope = "crates/parallax-evidence/src/story.rs::project_story"
 ceiling = 142
 
 [[limits]]
@@ -1811,7 +1811,7 @@ ceiling = 1
 
 [[limits]]
 metric = "rust.public-root-items"
-scope = "crates/parallax-core/facade.toml"
+scope = "crates/parallax-evidence/facade.toml"
 ceiling = 4
 
 [[limits]]
@@ -1911,12 +1911,12 @@ ceiling = 4
 
 [[limits]]
 metric = "rust.assertions"
-scope = "crates/parallax-core/src/agent_session/tests.rs"
+scope = "crates/parallax-evidence/src/agent_session/tests.rs"
 ceiling = 8
 
 [[limits]]
 metric = "rust.assertions"
-scope = "crates/parallax-core/src/bundle/tests.rs"
+scope = "crates/parallax-evidence/src/bundle/tests.rs"
 ceiling = 55
 
 [[limits]]
@@ -1931,7 +1931,7 @@ ceiling = 11
 
 [[limits]]
 metric = "rust.assertions"
-scope = "crates/parallax-core/src/gaps/tests.rs"
+scope = "crates/parallax-evidence/src/gaps/tests.rs"
 ceiling = 7
 
 [[limits]]
@@ -1951,7 +1951,7 @@ ceiling = 14
 
 [[limits]]
 metric = "rust.assertions"
-scope = "crates/parallax-core/src/story/tests.rs"
+scope = "crates/parallax-evidence/src/story/tests.rs"
 ceiling = 7
 
 [[limits]]

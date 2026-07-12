@@ -1,6 +1,6 @@
 [package]
-name = "parallax-core"
-description = "Parallax domain logic: derivation, fingerprinting, grouping, bundles"
+name = "parallax-evidence"
+description = "Parallax evidence projection, gap detection, and bundle assembly"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

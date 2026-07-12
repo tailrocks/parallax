@@ -4,7 +4,7 @@ use juniper::{FieldResult, graphql_object};
 
 use crate::{ApiContext, MAX_ROWS, field_err, nanos_string, retained_recent_range};
 
-use parallax_core::{agent_session, story};
+use parallax_evidence::{agent_session, story};
 
 pub(crate) struct StoryBeat(pub(crate) story::StoryBeat);
 
