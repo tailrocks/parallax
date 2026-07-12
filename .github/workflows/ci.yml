@@ -499,6 +499,7 @@ jobs:
         with:
           install_args: "rust bun"
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
+      - run: rustup component add clippy
       - name: Cache Bun modules
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
