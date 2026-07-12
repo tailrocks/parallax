@@ -24,6 +24,7 @@ CI, stable-release, and preview-Homebrew automation live under
 | `.gitignore` | Local files that should not be committed. |
 | `.cargo/config.toml` | Cargo aliases, including the repository-owned `cargo xtask` control-plane entry point. |
 | `ratchet.toml` | Sole typed source for architecture classes/exceptions, structural budgets, generated ownership, product clone floors, and shrink-only scoped limits. |
+| `dependency-policy.toml` | Executable Bun non-AST usage reviews, narrow pre-stable Oxc exceptions, and exact downstream dependency handoffs. |
 
 ## Directories
 

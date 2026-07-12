@@ -81,5 +81,5 @@ pub(crate) fn health(root: &Path, output: Output) -> Result<()> {
 pub(crate) fn typescript_package_imports(
     root: &Path,
 ) -> Result<std::collections::BTreeSet<String>> {
-    typescript::package_imports(root)
+    typescript::packages::package_imports(root)
 }

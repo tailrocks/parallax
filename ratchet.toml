@@ -375,7 +375,7 @@ ceiling = 752
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-xtask/src/policy/typescript.rs"
-ceiling = 667
+ceiling = 665
 
 [[limits]]
 metric = "typescript.file-lines"

@@ -8,6 +8,8 @@ use crate::cli::Output;
 use crate::diagnostic::{Finding, Format, Severity, render};
 use crate::policy;
 
+mod contract;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum Selection {
     Rust,
@@ -213,6 +215,7 @@ fn ui_unused_policy(root: &Path, directory: &Path) -> Result<Vec<Finding>> {
     let policy: toml::Value = toml::from_str(&std::fs::read_to_string(
         root.join("dependency-policy.toml"),
     )?)?;
+    let mut findings = contract::check(&policy);
     let reviewed = policy
         .get("ui")
         .and_then(|ui| ui.get("reviewed-non-ast"))
@@ -232,7 +235,6 @@ fn ui_unused_policy(root: &Path, directory: &Path) -> Result<Vec<Finding>> {
                 .collect::<Vec<_>>()
                 .join("\n")
         });
-    let mut findings = Vec::new();
     for section in ["dependencies", "devDependencies"] {
         for name in package
             .get(section)
