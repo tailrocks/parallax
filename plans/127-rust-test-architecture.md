@@ -13,7 +13,7 @@
 - **Depends on**: 095
 - **Category**: Rust / test architecture
 - **Planned at**: `a1d8bf82`, 2026-07-12
-- **Status**: TODO
+- **Status**: IN PROGRESS
 
 ## Why
 
