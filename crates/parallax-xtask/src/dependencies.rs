@@ -197,14 +197,16 @@ fn ui(root: &Path) -> Result<Vec<Finding>> {
         )),
     }
     findings.extend(ui_manifest_policy(&directory)?);
+    findings.extend(contract::registry_and_license(&directory)?);
     findings.extend(ui_unused_policy(root, &directory)?);
-    if let Err(reason) = command(&directory, "bun", &["pm", "untrusted"]) {
-        findings.push(failure(
+    match capture(&directory, "bun", &["pm", "untrusted"]) {
+        Ok(report) => findings.extend(contract::blocked_lifecycle(&directory, &report)?),
+        Err(error) => findings.push(failure(
             "dependencies.ui.lifecycle",
             "ui/package.json",
-            &reason,
+            &error.to_string(),
             "cargo xtask dependencies --ui",
-        ));
+        )),
     }
     Ok(findings)
 }

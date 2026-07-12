@@ -525,7 +525,7 @@ jobs:
         working-directory: ui
       - name: Assert embedded shell exists
         run: test -f ui/dist/client/_shell.html
-      - run: cargo check --locked -p parallax-cli --features embed-ui
+      - run: cargo clippy --locked -p parallax-cli --all-targets --features embed-ui -- -D warnings
       - name: Show sccache stats
         if: always() && steps.sccache.outcome == 'success'
         run: sccache --show-stats

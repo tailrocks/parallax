@@ -46,3 +46,9 @@ reviewed-non-ast = [
   "tw-animate-css",
   "typescript",
 ]
+
+[ui.blocked-lifecycle.unrs-resolver]
+version = "1.12.2"
+integrity = "sha512-dmlRxBJJayXjqTwC+JtF1HhJmgf3ftQ3YejFcZrf4+KKtJv0qDsK1pjqaaVjG7wJ5NJ6UVP1OqRMQ71Z4C3rxQ=="
+script = "node postinstall.js"
+disposition = "deny; optional binding is lock-provisioned and build-tested"
