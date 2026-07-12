@@ -22,6 +22,7 @@ CI, stable-release, and preview-Homebrew automation live under
 | `COMMITS.md` | Commit message and AI-agent attribution conventions. |
 | `PROJECT_STRUCTURE.md` | This repository map. |
 | `.gitignore` | Local files that should not be committed. |
+| `.cargo/config.toml` | Cargo aliases, including the repository-owned `cargo xtask` control-plane entry point. |
 
 ## Directories
 
@@ -59,7 +60,7 @@ CI, stable-release, and preview-Homebrew automation live under
 | `bench/` | Local storage-benchmark scaffolding: pinned `compose.yml` for GreptimeDB + ClickHouse smoke runs. Generated datasets/results are gitignored; only compose/scripts are tracked. Consistent with [`docs/research/storage/benchmark-plan.md`](docs/research/storage/benchmark-plan.md). |
 | `bench/otlp-fanout/` | OTLP fan-out comparison lab: Rotel hub + competitor backends in Compose, fanning one OTLP stream to OpenObserve/SigNoz/Maple/Sentry and back to host Parallax. Implements [`docs/research/validation/otlp-fanout-comparison-lab.md`](docs/research/validation/otlp-fanout-comparison-lab.md). Vendored clones (`vendor/`) are gitignored. |
 | `poc/` | Concept-proving Rust code (operator-approved 2026-06-11). Small, runnable, test-covered proofs of designed mechanisms — not product code, no product claims. Artifacts: `poc/evidence-loop/` (OTLP JSON → derived error events → fingerprint → trigger → redacted evidence bundle with canonical hash; frozen concept reference) and `poc/read-transport-bench/` (plan 090: GreptimeDB HTTP Arrow vs JSON + MySQL prepared-statement measurement harness). Logic graduates into `crates/` by copy-and-adapt. |
-| `crates/` | The V1 product workspace (Rust, edition 2024): `parallax-cli` (the installed `parallax` binary), `parallax-server` (OTLP ingest, API host, workers, engine supervision), `parallax-core` (derivation/fingerprinting/bundles), `parallax-storage` (spool + storage adapters), `parallax-api` (GraphQL schema), `parallax-proto` (OTLP types). Contracts live in [`docs/research/architecture/v1-implementation-spec.md`](docs/research/architecture/v1-implementation-spec.md); unfinished implementation work lives in [`plans/`](plans/). |
+| `crates/` | The V1 Rust workspace (edition 2024): product crates `parallax-cli`, `parallax-server`, `parallax-core`, `parallax-storage`, `parallax-api`, and `parallax-proto`; isolated proof crate `parallax-mcp-spike`; and auxiliary repository control plane `parallax-xtask`. Contracts live in [`docs/research/architecture/v1-implementation-spec.md`](docs/research/architecture/v1-implementation-spec.md); unfinished implementation work lives in [`plans/`](plans/). |
 | `ui/` | The V1 web UI: TanStack Start SPA (shadcn/ui on Base UI, shadcn charts) served by `parallax serve` from `ui/dist/client` or embedded via the `embed-ui` feature. Talks only to the canonical GraphQL API. |
 | `.github/workflows/` | CI, stable release, and preview-release automation. Release workflows build binary archives with Zig/`cargo-zigbuild`; `preview.yml` publishes the rolling `preview` GitHub Release and rewrites the CI-owned `parallax-preview.rb` formula in the per-project `tailrocks/homebrew-parallax` tap. |
 | `mise.toml` | Shared tool versions for CI/release automation: cargo-nextest, cargo-zigbuild, Zig, Bun, cosign, and syft. |
