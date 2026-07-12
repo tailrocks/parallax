@@ -10,7 +10,16 @@ pub struct Ratchet {
     pub budgets: Budgets,
     pub product: Product,
     #[serde(default)]
+    pub limits: Vec<Limit>,
+    #[serde(default)]
     pub exceptions: Vec<Exception>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Limit {
+    pub metric: String,
+    pub scope: String,
+    pub ceiling: usize,
 }
 
 #[derive(Debug, Default, Deserialize)]

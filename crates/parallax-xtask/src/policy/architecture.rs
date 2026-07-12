@@ -317,6 +317,7 @@ mod tests {
             architecture: Architecture { packages: vec![] },
             budgets: Budgets::default(),
             product: Product::default(),
+            limits: vec![],
             exceptions: vec![],
         }
     }

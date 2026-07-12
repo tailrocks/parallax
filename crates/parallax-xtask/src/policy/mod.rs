@@ -2,6 +2,7 @@ mod architecture;
 mod config;
 mod product;
 mod rust;
+mod structural;
 mod typescript;
 
 use std::path::Path;
@@ -15,9 +16,14 @@ use crate::{
 
 pub fn run(root: &Path, only: Option<&str>, output: Output) -> Result<()> {
     if let Some(rule) = only
-        && !matches!(rule, "architecture" | "typescript" | "product")
+        && !matches!(
+            rule,
+            "architecture" | "typescript" | "product" | "structural"
+        )
     {
-        bail!("unknown policy family `{rule}`; available: architecture, product, typescript");
+        bail!(
+            "unknown policy family `{rule}`; available: architecture, product, structural, typescript"
+        );
     }
     let ratchet = config::Ratchet::load(&root.join("ratchet.toml"))?;
     let mut findings = Vec::new();
@@ -29,6 +35,9 @@ pub fn run(root: &Path, only: Option<&str>, output: Output) -> Result<()> {
     }
     if only.is_none() || only == Some("product") {
         findings.extend(product::check_workspace(root, &ratchet)?);
+    }
+    if only.is_none() || only == Some("structural") {
+        findings.extend(structural::check_workspace(root, &ratchet)?);
     }
     let format = match output {
         Output::Human => Format::Human,

@@ -67,3 +67,888 @@ created = "2026-07-12"
 expires = "2026-12-31"
 removal_condition = "Plan 097 removes the core/storage inversion."
 replacement = "Move contracts to the lower model/port owners."
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-api/src/lib.rs"
+ceiling = 226
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-api/src/resolvers/fields.rs"
+ceiling = 462
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-api/src/resolvers/issues.rs"
+ceiling = 536
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-api/src/resolvers/metrics.rs"
+ceiling = 459
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-api/src/resolvers/services.rs"
+ceiling = 848
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-api/src/resolvers/traces.rs"
+ceiling = 910
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-cli/src/commands.rs"
+ceiling = 1178
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-cli/src/main.rs"
+ceiling = 342
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-core/src/bundle.rs"
+ceiling = 1236
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-core/src/normalize.rs"
+ceiling = 580
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-core/src/trace_analysis.rs"
+ceiling = 664
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-server/src/greptime_supervisor.rs"
+ceiling = 440
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-server/src/serve.rs"
+ceiling = 452
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-server/src/worker.rs"
+ceiling = 624
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-storage/src/adapter.rs"
+ceiling = 633
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-storage/src/greptime.rs"
+ceiling = 3449
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-storage/src/memory.rs"
+ceiling = 2407
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-storage/src/metadata.rs"
+ceiling = 1098
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-storage/src/spool.rs"
+ceiling = 487
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-xtask/src/policy/architecture.rs"
+ceiling = 433
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-xtask/src/policy/product.rs"
+ceiling = 420
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-xtask/src/policy/typescript.rs"
+ceiling = 663
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-api/src/resolvers/investigations.rs:274"
+ceiling = 120
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-api/src/resolvers/issues.rs:214"
+ceiling = 110
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-api/src/resolvers/issues.rs:403"
+ceiling = 151
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-api/src/resolvers/metrics.rs:307"
+ceiling = 114
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-api/src/resolvers/runs.rs:304"
+ceiling = 112
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-api/src/resolvers/services.rs:616"
+ceiling = 116
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-api/src/resolvers/story.rs:174"
+ceiling = 105
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-cli/src/main.rs:218"
+ceiling = 207
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-core/src/bundle.rs:315"
+ceiling = 119
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-core/src/bundle.rs:317"
+ceiling = 116
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-core/src/bundle.rs:494"
+ceiling = 217
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-core/src/bundle.rs:861"
+ceiling = 132
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-core/src/story.rs:30"
+ceiling = 142
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-core/src/trace_analysis.rs:143"
+ceiling = 101
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/examples/seed.rs:40"
+ceiling = 152
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/src/greptime_supervisor.rs:184"
+ceiling = 132
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/src/serve.rs:324"
+ceiling = 148
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/tests/m1_greptime.rs:14"
+ceiling = 113
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/tests/m1_pipeline.rs:21"
+ceiling = 137
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/tests/m1_table_inventory_greptime.rs:29"
+ceiling = 161
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/tests/m2_api.rs:37"
+ceiling = 465
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/tests/m2_bundle.rs:359"
+ceiling = 104
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/tests/m2_bundle.rs:78"
+ceiling = 280
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/tests/m2_metrics_dashboards.rs:34"
+ceiling = 206
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/tests/m2_metrics_greptime.rs:33"
+ceiling = 194
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/tests/m3_scenarios.rs:59"
+ceiling = 239
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/tests/m5_gates.rs:18"
+ceiling = 244
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/tests/m7_metric_exemplar_migration_greptime.rs:50"
+ceiling = 187
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-storage/src/greptime.rs:2722"
+ceiling = 102
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-storage/src/greptime.rs:667"
+ceiling = 103
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-storage/src/memory.rs:1099"
+ceiling = 101
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-storage/src/memory.rs:2015"
+ceiling = 110
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-storage/src/memory.rs:989"
+ceiling = 109
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-xtask/src/policy/architecture.rs:125"
+ceiling = 119
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-xtask/src/policy/typescript.rs:182"
+ceiling = 102
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/components/console/command-palette.tsx"
+ceiling = 366
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/components/console/field-explorer.tsx"
+ceiling = 397
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/components/console/trace-waterfall.tsx"
+ceiling = 361
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/components/logs-table.tsx"
+ceiling = 490
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/components/ui/chart.tsx"
+ceiling = 334
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/components/ui/sidebar.tsx"
+ceiling = 676
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/lib/api.ts"
+ceiling = 309
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routeTree.gen.ts"
+ceiling = 386
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/__tests__/-final-sweep.test.tsx"
+ceiling = 238
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/__tests__/-issues.test.tsx"
+ceiling = 206
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/__tests__/-logs.test.tsx"
+ceiling = 313
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/__tests__/-overview.test.tsx"
+ceiling = 234
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/__tests__/-runs.test.tsx"
+ceiling = 282
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/__tests__/-services.test.tsx"
+ceiling = 335
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/dashboards.$dashboardId.tsx"
+ceiling = 461
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/dashboards.index.tsx"
+ceiling = 500
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/index.tsx"
+ceiling = 951
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/investigations.$investigationId.tsx"
+ceiling = 273
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/investigations.index.tsx"
+ceiling = 197
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/issues.$fingerprint.tsx"
+ceiling = 729
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/issues.index.tsx"
+ceiling = 585
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/logs.tsx"
+ceiling = 799
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/runs.$runId.tsx"
+ceiling = 722
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/runs.index.tsx"
+ceiling = 441
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/services.$service.tsx"
+ceiling = 833
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/services.tsx"
+ceiling = 501
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/sql.tsx"
+ceiling = 665
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/traces.$traceId.tsx"
+ceiling = 1423
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/traces.index.tsx"
+ceiling = 722
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/__tests__/shell.test.tsx:74"
+ceiling = 86
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/__tests__/command-palette.test.tsx:160"
+ceiling = 75
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/__tests__/command-palette.test.tsx:84"
+ceiling = 75
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/__tests__/field-explorer.test.tsx:56"
+ceiling = 71
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/__tests__/field-explorer.test.tsx:57"
+ceiling = 69
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/__tests__/kit.test.tsx:21"
+ceiling = 71
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/__tests__/use-chart-brush.test.tsx:15"
+ceiling = 62
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/__tests__/waterfall.test.tsx:55"
+ceiling = 125
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/agent-session.tsx:76"
+ceiling = 78
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/attribute-compare.tsx:50"
+ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/command-palette.tsx:113"
+ceiling = 277
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/ecosystem-graph.tsx:109"
+ceiling = 135
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/field-explorer.tsx:166"
+ceiling = 248
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/field-explorer.tsx:91"
+ceiling = 74
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/pin-button.tsx:29"
+ceiling = 177
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/range-picker.tsx:15"
+ceiling = 80
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/rpc-stream.tsx:104"
+ceiling = 62
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/rpc-stream.tsx:99"
+ceiling = 70
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/top-movers.tsx:85"
+ceiling = 77
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/trace-waterfall.tsx:73"
+ceiling = 312
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/use-chart-brush.ts:54"
+ceiling = 87
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/logs-table.tsx:174"
+ceiling = 68
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/logs-table.tsx:244"
+ceiling = 270
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/logs-table.tsx:316"
+ceiling = 62
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/metric-strip.tsx:116"
+ceiling = 68
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/metric-strip.tsx:96"
+ceiling = 114
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/parallax-shell.tsx:163"
+ceiling = 104
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/parallax-shell.tsx:62"
+ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/ui/calendar.tsx:15"
+ceiling = 163
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/ui/chart.tsx:119"
+ceiling = 153
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/ui/chart.tsx:202"
+ceiling = 66
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/ui/sidebar.tsx:153"
+ceiling = 101
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/ui/sidebar.tsx:57"
+ceiling = 95
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/hooks/__tests__/use-live-stream.test.tsx:77"
+ceiling = 146
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/lib/__tests__/format.test.ts:13"
+ceiling = 67
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/lib/__tests__/graphql-trace.test.ts:24"
+ceiling = 150
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/lib/__tests__/rpc-trace.test.ts:45"
+ceiling = 108
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/lib/__tests__/stacktrace.test.ts:5"
+ceiling = 83
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/lib/__tests__/trace-tree.test.ts:34"
+ceiling = 146
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/lib/graphql-trace.ts:146"
+ceiling = 148
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/lib/graphql-trace.ts:222"
+ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/lib/stacktrace.ts:51"
+ceiling = 112
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/lib/trace-tree.ts:217"
+ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/__tests__/-final-sweep.test.tsx:67"
+ceiling = 196
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/__tests__/-issues.test.tsx:134"
+ceiling = 90
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/__tests__/-logs.test.tsx:193"
+ceiling = 122
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/__tests__/-overview.test.tsx:176"
+ceiling = 78
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/__tests__/-runs.test.tsx:124"
+ceiling = 179
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/__tests__/-runs.test.tsx:199"
+ceiling = 67
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/__tests__/-services.test.tsx:170"
+ceiling = 192
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/__tests__/-trace-links.test.tsx:74"
+ceiling = 68
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/__tests__/-trace-links.test.tsx:75"
+ceiling = 66
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/dashboards.$dashboardId.tsx:183"
+ceiling = 182
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/dashboards.$dashboardId.tsx:366"
+ceiling = 115
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/dashboards.index.tsx:128"
+ceiling = 182
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/dashboards.index.tsx:371"
+ceiling = 89
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/dashboards.index.tsx:461"
+ceiling = 65
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/index.tsx:272"
+ceiling = 170
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/index.tsx:448"
+ceiling = 138
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/index.tsx:593"
+ceiling = 169
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/investigations.$investigationId.tsx:80"
+ceiling = 208
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/investigations.index.tsx:57"
+ceiling = 149
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/issues.$fingerprint.tsx:185"
+ceiling = 237
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/issues.$fingerprint.tsx:477"
+ceiling = 68
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/issues.$fingerprint.tsx:705"
+ceiling = 63
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/issues.index.tsx:253"
+ceiling = 125
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/issues.index.tsx:379"
+ceiling = 237
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/issues.index.tsx:457"
+ceiling = 123
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/logs.tsx:255"
+ceiling = 390
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/logs.tsx:650"
+ceiling = 88
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/logs.tsx:781"
+ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/runs.$runId.tsx:198"
+ceiling = 115
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/runs.$runId.tsx:314"
+ceiling = 215
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/runs.$runId.tsx:613"
+ceiling = 68
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/runs.index.tsx:246"
+ceiling = 199
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/runs.index.tsx:349"
+ceiling = 89
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/services.$service.tsx:362"
+ceiling = 135
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/services.$service.tsx:600"
+ceiling = 62
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/services.$service.tsx:663"
+ceiling = 139
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/services.$service.tsx:803"
+ceiling = 69
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/services.tsx:270"
+ceiling = 258
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/services.tsx:423"
+ceiling = 98
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/sql.tsx:191"
+ceiling = 65
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/sql.tsx:270"
+ceiling = 62
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/sql.tsx:338"
+ceiling = 359
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/traces.$traceId.tsx:1076"
+ceiling = 68
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/traces.$traceId.tsx:1244"
+ceiling = 204
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/traces.$traceId.tsx:254"
+ceiling = 414
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/traces.$traceId.tsx:985"
+ceiling = 90
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/traces.index.tsx:313"
+ceiling = 355
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/traces.index.tsx:669"
+ceiling = 84
