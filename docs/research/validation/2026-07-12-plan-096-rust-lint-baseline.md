@@ -78,3 +78,52 @@ Reqwest entry points in all contexts.
 Validation passed the 36 xtask tests, the server unit/integration suite (27
 passed and 6 intentionally ignored real-engine tests), full-feature workspace
 Clippy with `-D warnings`, and the repository policy with `[]`.
+
+## Release source-line contract
+
+The release profile retains line tables in the shipped binary:
+
+```toml
+[profile.release]
+debug = "line-tables-only"
+strip = "none"
+```
+
+Cargo documents `line-tables-only` as a supported debug level and `none` as the
+unstripped release setting. The executable product policy requires this exact
+pair, and its negative fixture rejects `debug = false` with
+`strip = "debuginfo"`. No separate symbol companion is part of the Parallax
+artifact contract; Plan 102 now names retained line tables as its input.
+
+Measured on Linux x86_64 at commit `87b98b9` with
+`cargo build --release -p parallax-cli`:
+
+| Evidence | Result |
+|---|---|
+| Final binary | `target/release/parallax`, 267,468,392 bytes (256 MiB) |
+| ELF sections | `.debug_line`, `.debug_info`, and `.symtab` present |
+| GNU build ID | `fe5229fd5074f11946f3883d43699db29481b0cb` |
+| Optimized entry mapping | `parallax::main` → `crates/parallax-cli/src/main.rs:217` |
+| Async entry mapping | `parallax::main::{closure#0}` → `crates/parallax-cli/src/main.rs:216` |
+
+The mapping was read from the final optimized binary with `readelf`, `nm`, and
+`addr2line`. Plan 102 must repeat the check on every final archive target,
+remap build-host paths for reproducibility, and track size; it must not strip
+the only source-line information. Reference:
+[Cargo profiles](https://doc.rust-lang.org/cargo/reference/profiles.html).
+
+## Matrix protection and feature selections
+
+The executable product policy now checks the required Rust, rustdoc, and Clippy
+groups and high-signal lints, `unsafe_code = "forbid"`, all four measured
+thresholds, and the disallowed-method set. A negative fixture weakens
+`pedantic` to `allow` and proves the policy fails closed. The blocking Reqwest
+entry is intentionally marked `allow-invalid` because the repository disables
+Reqwest's blocking feature; the ban becomes reachable automatically if that
+feature is ever introduced.
+
+All required selections passed with locked dependencies and `-D warnings`:
+
+- default workspace, all targets;
+- `parallax-cli` with `embed-ui`, all targets; and
+- `parallax-storage` with `conformance`, all targets.

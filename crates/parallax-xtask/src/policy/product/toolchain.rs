@@ -14,6 +14,41 @@ const TARGETS: [&str; 4] = [
     "x86_64-apple-darwin",
     "x86_64-unknown-linux-gnu",
 ];
+const RUST_WARN: [&str; 6] = [
+    "rust_2024_compatibility",
+    "future_incompatible",
+    "rust_2018_idioms",
+    "nonstandard_style",
+    "unused",
+    "unfulfilled_lint_expectations",
+];
+const RUSTDOC_WARN: [&str; 6] = [
+    "bare_urls",
+    "invalid_codeblock_attributes",
+    "invalid_html_tags",
+    "private_intra_doc_links",
+    "redundant_explicit_links",
+    "unescaped_backticks",
+];
+const CLIPPY_WARN: [&str; 17] = [
+    "all",
+    "pedantic",
+    "await_holding_lock",
+    "await_holding_refcell_ref",
+    "dbg_macro",
+    "disallowed_methods",
+    "expect_used",
+    "let_underscore_future",
+    "let_underscore_must_use",
+    "mem_forget",
+    "panic",
+    "todo",
+    "undocumented_unsafe_blocks",
+    "unimplemented",
+    "unwrap_used",
+    "unused_result_ok",
+    "wildcard_dependencies",
+];
 
 pub(super) fn check(root: &Path, metadata: &Metadata, findings: &mut Vec<Finding>) -> Result<()> {
     check_files(root, findings)?;
@@ -96,7 +131,53 @@ fn check_files(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
             "mise, Cargo, and rust-toolchain.toml must agree on exact Rust and edition",
         ));
     }
+    if cargo["profile"]["release"]["debug"].as_str() != Some("line-tables-only")
+        || cargo["profile"]["release"]["strip"].as_str() != Some("none")
+    {
+        findings.push(error(
+            "product.release-line-tables",
+            root.join("Cargo.toml"),
+            "release binaries must retain line tables and must not strip debug information",
+        ));
+    }
+    let clippy: toml::Value = toml::from_str(&fs::read_to_string(root.join("clippy.toml"))?)?;
+    let rust = &cargo["workspace"]["lints"]["rust"];
+    let rustdoc = &cargo["workspace"]["lints"]["rustdoc"];
+    let clippy_lints = &cargo["workspace"]["lints"]["clippy"];
+    let disallowed = clippy["disallowed-methods"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|entry| entry["path"].as_str())
+        .collect::<BTreeSet<_>>();
+    let lint_matrix_valid = RUST_WARN
+        .iter()
+        .all(|name| lint_level(&rust[name]) == Some("warn"))
+        && lint_level(&rust["unsafe_code"]) == Some("forbid")
+        && lint_level(&rustdoc["broken_intra_doc_links"]) == Some("deny")
+        && RUSTDOC_WARN
+            .iter()
+            .all(|name| lint_level(&rustdoc[name]) == Some("warn"))
+        && CLIPPY_WARN
+            .iter()
+            .all(|name| lint_level(&clippy_lints[name]) == Some("warn"))
+        && clippy["too-many-lines-threshold"].as_integer() == Some(100)
+        && clippy["cognitive-complexity-threshold"].as_integer() == Some(25)
+        && clippy["too-many-arguments-threshold"].as_integer() == Some(6)
+        && clippy["excessive-nesting-threshold"].as_integer() == Some(4)
+        && disallowed == BTreeSet::from(["reqwest::blocking::get", "std::thread::sleep"]);
+    if !lint_matrix_valid {
+        findings.push(error(
+            "product.rust-lint-matrix",
+            root.join("Cargo.toml"),
+            "required Rust, rustdoc, Clippy, threshold, or disallowed-method policy drifted",
+        ));
+    }
     Ok(())
+}
+
+fn lint_level(value: &toml::Value) -> Option<&str> {
+    value.as_str().or_else(|| value["level"].as_str())
 }
 
 fn string_set(value: &toml::Value) -> BTreeSet<&str> {

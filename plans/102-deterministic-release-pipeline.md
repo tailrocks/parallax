@@ -31,8 +31,9 @@ and there is no operator command that verifies the artifact set atomically.
   with caches keyed by the verified digest.
 - Deterministic ordering, paths, timestamps, ownership, permissions, and gzip
   metadata; isolated target/Zig caches.
-- Plan 096's source-line/backtrace decision: retained line tables or
-  build-ID-keyed symbol companions with deterministic ownership.
+- Plan 096's source-line/backtrace decision: shipped binaries retain line
+  tables (`debug = "line-tables-only"`, `strip = "none"`), so no symbol
+  companion is required. Verify this on final archive bytes.
 - Version/tag/archive/binary coherence before build or publish.
 - Protected stable-release environment and `v*` tag authorization evidence.
 - Checksum, cosign bundle, CycloneDX SBOM, and GitHub provenance attestation

@@ -12,6 +12,12 @@ members = [
 ]
 exclude = ["poc/evidence-loop", "poc/read-transport-bench"]
 
+[profile.release]
+# Shipped binaries retain source-line tables for panic/backtrace fidelity.
+# Plan 102 verifies these final archive bytes; no symbol companion is required.
+debug = "line-tables-only"
+strip = "none"
+
 [workspace.package]
 version = "0.1.0-dev"
 edition = "2024"
