@@ -33,6 +33,39 @@ const METRIC_EXEMPLARS_LEGACY: &str = "metric_exemplars_v1_legacy";
 const METRIC_EXEMPLAR_COLUMNS: &str =
     r#""ts", "service", "name", "value", "trace_id", "span_id", "run_id", "attributes""#;
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ExemplarMigrationState {
+    Fresh,
+    MigrateCanonical,
+    ResumeFromLegacy,
+    CleanupLegacy,
+    Complete,
+    UnknownCanonical,
+}
+
+fn exemplar_migration_state(
+    canonical_key: Option<&[String]>,
+    legacy_exists: bool,
+) -> ExemplarMigrationState {
+    const CURRENT: &[&str] = &["service", "name"];
+    const LEGACY: &[&str] = &["service", "name", "trace_id", "span_id"];
+    match canonical_key {
+        Some(key) if key.iter().map(String::as_str).eq(CURRENT.iter().copied()) => {
+            if legacy_exists {
+                ExemplarMigrationState::CleanupLegacy
+            } else {
+                ExemplarMigrationState::Complete
+            }
+        }
+        Some(key) if key.iter().map(String::as_str).eq(LEGACY.iter().copied()) => {
+            ExemplarMigrationState::MigrateCanonical
+        }
+        Some(_) => ExemplarMigrationState::UnknownCanonical,
+        None if legacy_exists => ExemplarMigrationState::ResumeFromLegacy,
+        None => ExemplarMigrationState::Fresh,
+    }
+}
+
 pub struct GreptimeStore {
     base_url: String,
     client: reqwest::Client,
@@ -634,11 +667,25 @@ impl GreptimeStore {
     async fn migrate_metric_exemplars(&self, metrics_ttl: &str) -> anyhow::Result<()> {
         let canonical_exists = self.table_exists(METRIC_EXEMPLARS_TABLE).await?;
         let legacy_exists = self.table_exists(METRIC_EXEMPLARS_LEGACY).await?;
+        let canonical_key = if canonical_exists {
+            Some(self.table_primary_key(METRIC_EXEMPLARS_TABLE).await?)
+        } else {
+            None
+        };
+        let state = exemplar_migration_state(canonical_key.as_deref(), legacy_exists);
 
-        if canonical_exists
-            && self.table_primary_key(METRIC_EXEMPLARS_TABLE).await? == ["service", "name"]
-        {
-            if legacy_exists {
+        match state {
+            ExemplarMigrationState::Complete => {
+                if self.table_exists(METRIC_EXEMPLARS_REPLACEMENT).await? {
+                    self.sql(&format!(
+                        "DROP TABLE {}",
+                        quoted_ident(METRIC_EXEMPLARS_REPLACEMENT)
+                    ))
+                    .await?;
+                }
+                return Ok(());
+            }
+            ExemplarMigrationState::CleanupLegacy => {
                 self.verify_exemplar_copy(METRIC_EXEMPLARS_LEGACY, METRIC_EXEMPLARS_TABLE)
                     .await?;
                 self.sql(&format!(
@@ -646,26 +693,34 @@ impl GreptimeStore {
                     quoted_ident(METRIC_EXEMPLARS_LEGACY)
                 ))
                 .await?;
+                if self.table_exists(METRIC_EXEMPLARS_REPLACEMENT).await? {
+                    self.sql(&format!(
+                        "DROP TABLE {}",
+                        quoted_ident(METRIC_EXEMPLARS_REPLACEMENT)
+                    ))
+                    .await?;
+                }
+                return Ok(());
             }
-            return Ok(());
+            ExemplarMigrationState::Fresh => {
+                self.sql(&Self::metric_exemplars_ddl(
+                    METRIC_EXEMPLARS_TABLE,
+                    metrics_ttl,
+                ))
+                .await?;
+                return Ok(());
+            }
+            ExemplarMigrationState::UnknownCanonical => {
+                anyhow::bail!("metric_exemplars has an unknown primary-key shape")
+            }
+            ExemplarMigrationState::MigrateCanonical | ExemplarMigrationState::ResumeFromLegacy => {
+            }
         }
 
-        let source = if canonical_exists {
-            anyhow::ensure!(
-                self.table_primary_key(METRIC_EXEMPLARS_TABLE).await?
-                    == ["service", "name", "trace_id", "span_id"],
-                "metric_exemplars has an unknown primary-key shape"
-            );
+        let source = if state == ExemplarMigrationState::MigrateCanonical {
             METRIC_EXEMPLARS_TABLE
-        } else if legacy_exists {
-            METRIC_EXEMPLARS_LEGACY
         } else {
-            self.sql(&Self::metric_exemplars_ddl(
-                METRIC_EXEMPLARS_TABLE,
-                metrics_ttl,
-            ))
-            .await?;
-            return Ok(());
+            METRIC_EXEMPLARS_LEGACY
         };
 
         if self.table_exists(METRIC_EXEMPLARS_REPLACEMENT).await? {
@@ -3465,6 +3520,52 @@ mod tests {
         assert!(!ddl.contains(r#"PRIMARY KEY ("service", "name", "trace_id"#));
         assert!(ddl.contains("append_mode = 'true'"));
         assert!(ddl.contains("ttl = '30d'"));
+    }
+
+    #[test]
+    fn metric_exemplar_migration_states_cover_every_restart_boundary() {
+        let current = vec!["service".to_string(), "name".to_string()];
+        let legacy = vec![
+            "service".to_string(),
+            "name".to_string(),
+            "trace_id".to_string(),
+            "span_id".to_string(),
+        ];
+        let unknown = vec!["service".to_string(), "trace_id".to_string()];
+
+        assert_eq!(
+            exemplar_migration_state(None, false),
+            ExemplarMigrationState::Fresh
+        );
+        assert_eq!(
+            exemplar_migration_state(Some(&legacy), false),
+            ExemplarMigrationState::MigrateCanonical
+        );
+        // A create/copy/verify interruption still has the legacy canonical;
+        // any partial replacement is disposable and rebuilt by this state.
+        assert_eq!(
+            exemplar_migration_state(Some(&legacy), false),
+            ExemplarMigrationState::MigrateCanonical
+        );
+        // Interruption after the first rename leaves only the retained legacy
+        // source (plus a disposable replacement table).
+        assert_eq!(
+            exemplar_migration_state(None, true),
+            ExemplarMigrationState::ResumeFromLegacy
+        );
+        // Interruption after the second rename must reverify before cleanup.
+        assert_eq!(
+            exemplar_migration_state(Some(&current), true),
+            ExemplarMigrationState::CleanupLegacy
+        );
+        assert_eq!(
+            exemplar_migration_state(Some(&current), false),
+            ExemplarMigrationState::Complete
+        );
+        assert_eq!(
+            exemplar_migration_state(Some(&unknown), false),
+            ExemplarMigrationState::UnknownCanonical
+        );
     }
 
     #[test]

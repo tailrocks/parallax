@@ -57,7 +57,6 @@ Every plan must preserve these non-negotiable Parallax constraints:
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | [089](089-extension-table-grpc-writes.md) | Move derived extension-table writes to GreptimeDB's row API | P2 | M | upstream `greptimedb-ingester` native-TLS/plaintext feature fix | BLOCKED: `greptimedb-ingester` hard-enables rustls through tonic `tls-ring` |
-| [092](092-metric-exemplar-schema.md) | Correct the high-cardinality `metric_exemplars` primary key and migrate existing data | P1 | M | none | IN PROGRESS |
 | [125](125-native-trace-fingerprint-deviation.md) | Resolve the unpopulated native trace fingerprint deviation and migration contract | P2 | M | 093, 097, 099, 104 | TODO |
 
 ### Foundation And Delivery

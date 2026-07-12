@@ -38,4 +38,17 @@ those probe tables afterward. After retiring the stale verification child, the
 dedicated `m7_metric_exemplar_migration_greptime` managed-engine fixture passed:
 it migrated two legacy rows covering nanosecond timestamps, nested JSON, and
 nullable `run_id`; verified the exact two-column key; reran bootstrap to prove
-idempotency; and confirmed that no replacement or legacy table remained.
+idempotency; and confirmed that no replacement or legacy table remained. The
+expanded fixture then reproduced interruption states after replacement create,
+partial copy/failed verification, the first rename, the second rename, and
+before cleanup. Every restart converged without row loss. Finally, it sent a
+new derived exemplar through the production ingest method and queried it through
+the production newest-first, metric/service/time-bounded read surface, proving
+trace/span links, run ID, and JSON attributes after migration.
+
+`SHOW CREATE TABLE metric_exemplars` on the migrated table mechanically
+confirmed `PRIMARY KEY (service, name)`, Bloom skipping indexes on exactly the
+query-justified `trace_id` and `run_id` fields, `append_mode = 'true'`, and the
+configured `7d` TTL normalized by GreptimeDB to `7days`. The native table
+inventory fixture also passed with only the three approved Parallax extension
+tables and no migration artifacts.
