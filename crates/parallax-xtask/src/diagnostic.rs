@@ -76,8 +76,13 @@ pub fn render(findings: &[Finding], format: Format) -> Result<String> {
             for finding in findings {
                 writeln!(
                     output,
-                    "{}:{} [{}] {}",
-                    finding.file, finding.line, finding.rule_id, finding.reason
+                    "{}:{} [schema={} severity={:?} rule={}] {}",
+                    finding.file,
+                    finding.line,
+                    finding.schema_version,
+                    finding.severity,
+                    finding.rule_id,
+                    finding.reason
                 )?;
                 writeln!(output, "  fix: {}", finding.remediation)?;
                 writeln!(output, "  rerun: {}", finding.rerun)?;
@@ -93,10 +98,12 @@ pub fn render(findings: &[Finding], format: Format) -> Result<String> {
                 };
                 writeln!(
                     output,
-                    "::{level} file={},line={},title={}::{} Fix: {} Rerun: {}",
+                    "::{level} file={},line={},title={}::schema={} severity={:?} {} Fix: {} Rerun: {}",
                     finding.file,
                     finding.line,
                     finding.rule_id,
+                    finding.schema_version,
+                    finding.severity,
                     finding.reason,
                     finding.remediation,
                     finding.rerun
@@ -124,8 +131,14 @@ mod tests {
         for format in [Format::Human, Format::Json, Format::Github] {
             let rendered =
                 render(std::slice::from_ref(&finding), format).expect("finding should render");
+            let (schema, severity) = match format {
+                Format::Json => ("\"schema_version\": 1", "\"severity\": \"error\""),
+                Format::Human | Format::Github => ("schema=1", "severity=Error"),
+            };
             for value in [
                 "arch.edge",
+                schema,
+                severity,
                 "Cargo.toml",
                 "7",
                 "bad edge",

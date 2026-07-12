@@ -175,7 +175,7 @@ ceiling = 487
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-xtask/src/policy/architecture.rs"
-ceiling = 434
+ceiling = 478
 
 [[limits]]
 metric = "rust.file-lines"
@@ -185,7 +185,7 @@ ceiling = 420
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-xtask/src/policy/typescript.rs"
-ceiling = 841
+ceiling = 908
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -1034,7 +1034,7 @@ ceiling = 4
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-xtask/src/policy/architecture.rs"
-ceiling = 8
+ceiling = 9
 
 [[limits]]
 metric = "rust.assertions"
@@ -1059,7 +1059,7 @@ ceiling = 6
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-xtask/src/policy/typescript.rs"
-ceiling = 20
+ceiling = 22
 
 [[limits]]
 metric = "rust.assertions"
@@ -1963,7 +1963,7 @@ ceiling = 109
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-xtask/src/policy/architecture.rs::evaluate"
-ceiling = 119
+ceiling = 146
 
 [[limits]]
 metric = "rust.function-lines"

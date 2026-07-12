@@ -56,7 +56,8 @@ struct FunctionHealth {
 }
 
 pub struct TypeScriptProvider {
-    resolver: Resolver,
+    browser_resolver: Resolver,
+    server_resolver: Resolver,
 }
 
 pub fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
@@ -64,6 +65,9 @@ pub fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
     let provider = TypeScriptProvider::new(&ui.join("tsconfig.json"));
     let mut files = Vec::new();
     collect_source_files(&ui.join("src"), &mut files)?;
+    if ui.join("tests").is_dir() {
+        collect_source_files(&ui.join("tests"), &mut files)?;
+    }
     for config in ["vite.config.ts", "eslint.config.js", "prettier.config.js"] {
         let path = ui.join(config);
         if path.is_file() {
@@ -207,31 +211,18 @@ pub fn health(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
 impl TypeScriptProvider {
     pub fn new(tsconfig: &Path) -> Self {
         Self {
-            resolver: Resolver::new(ResolveOptions {
-                condition_names: vec!["browser".into(), "import".into(), "default".into()],
-                extensions: vec![
-                    ".ts".into(),
-                    ".tsx".into(),
-                    ".js".into(),
-                    ".jsx".into(),
-                    ".json".into(),
-                ],
-                extension_alias: vec![
-                    (
-                        ".js".into(),
-                        vec![".ts".into(), ".tsx".into(), ".js".into()],
-                    ),
-                    (".jsx".into(), vec![".tsx".into(), ".jsx".into()]),
-                ],
-                tsconfig: Some(TsconfigDiscovery::Manual(TsconfigOptions {
-                    config_file: tsconfig.to_path_buf(),
-                    references: TsconfigReferences::Auto,
-                })),
-                alias_fields: vec![vec!["browser".into()]],
-                main_fields: vec!["browser".into(), "module".into(), "main".into()],
-                module_type: true,
-                ..ResolveOptions::default()
-            }),
+            browser_resolver: resolver(
+                tsconfig,
+                vec!["browser".into(), "import".into(), "default".into()],
+                vec![vec!["browser".into()]],
+                vec!["browser".into(), "module".into(), "main".into()],
+            ),
+            server_resolver: resolver(
+                tsconfig,
+                vec!["node".into(), "import".into(), "default".into()],
+                Vec::new(),
+                vec!["module".into(), "main".into()],
+            ),
         }
     }
 
@@ -406,7 +397,16 @@ impl TypeScriptProvider {
         line: usize,
         analysis: &mut Analysis,
     ) {
-        match self.resolver.resolve_file(path, specifier) {
+        let resolver = if path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .is_some_and(|name| name.contains(".server."))
+        {
+            &self.server_resolver
+        } else {
+            &self.browser_resolver
+        };
+        match resolver.resolve_file(path, specifier) {
             Ok(resolution) => analysis.imports.push(ImportEdge {
                 specifier: specifier.into(),
                 resolved: resolution.into_path_buf(),
@@ -422,6 +422,39 @@ impl TypeScriptProvider {
             )),
         }
     }
+}
+
+fn resolver(
+    tsconfig: &Path,
+    condition_names: Vec<String>,
+    alias_fields: Vec<Vec<String>>,
+    main_fields: Vec<String>,
+) -> Resolver {
+    Resolver::new(ResolveOptions {
+        condition_names,
+        extensions: vec![
+            ".ts".into(),
+            ".tsx".into(),
+            ".js".into(),
+            ".jsx".into(),
+            ".json".into(),
+        ],
+        extension_alias: vec![
+            (
+                ".js".into(),
+                vec![".ts".into(), ".tsx".into(), ".js".into()],
+            ),
+            (".jsx".into(), vec![".tsx".into(), ".jsx".into()]),
+        ],
+        tsconfig: Some(TsconfigDiscovery::Manual(TsconfigOptions {
+            config_file: tsconfig.to_path_buf(),
+            references: TsconfigReferences::Auto,
+        })),
+        alias_fields,
+        main_fields,
+        module_type: true,
+        ..ResolveOptions::default()
+    })
 }
 
 fn collect_source_files(directory: &Path, files: &mut Vec<PathBuf>) -> Result<()> {
@@ -765,6 +798,42 @@ mod tests {
             let analysis = provider.analyze(&path, source);
             assert!(analysis.findings.is_empty(), "{:?}", analysis.findings);
             assert_eq!(analysis.imports.len(), 1);
+        }
+        fs::remove_dir_all(root).expect("fixture should be removed");
+    }
+
+    #[test]
+    fn resolves_browser_and_server_package_export_conditions() {
+        let root = fixture();
+        fs::create_dir_all(root.join("node_modules/pkg/dist"))
+            .expect("package directories should be created");
+        fs::write(
+            root.join("node_modules/pkg/package.json"),
+            r#"{"name":"pkg","exports":{".":{"browser":"./dist/browser.js","node":"./dist/node.js","default":"./dist/default.js"}}}"#,
+        )
+        .expect("package manifest should be written");
+        for target in ["browser.js", "node.js", "default.js"] {
+            fs::write(
+                root.join("node_modules/pkg/dist").join(target),
+                "export default 1",
+            )
+            .expect("package target should be written");
+        }
+        let provider = TypeScriptProvider::new(&root.join("tsconfig.json"));
+        for (name, expected) in [
+            ("entry.client.ts", "browser.js"),
+            ("entry.server.ts", "node.js"),
+        ] {
+            let analysis =
+                provider.analyze(&root.join("src").join(name), "import value from 'pkg'");
+            assert!(analysis.findings.is_empty(), "{:?}", analysis.findings);
+            assert_eq!(
+                analysis.imports[0]
+                    .resolved
+                    .file_name()
+                    .and_then(|value| value.to_str()),
+                Some(expected)
+            );
         }
         fs::remove_dir_all(root).expect("fixture should be removed");
     }

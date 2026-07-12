@@ -239,6 +239,33 @@ fn evaluate(nodes: &BTreeMap<String, Node>, edges: &[Edge], ratchet: &Ratchet) -
     }
     findings.extend(cycles(nodes, edges, true));
     findings.extend(cycles(nodes, edges, false));
+    for root in nodes
+        .iter()
+        .filter(|(_, node)| node.class == "product" && node.tier.is_some_and(|tier| tier >= 4))
+        .map(|(name, _)| name)
+    {
+        let mut pending = vec![root.clone()];
+        let mut seen = BTreeSet::new();
+        while let Some(package) = pending.pop() {
+            if !seen.insert(package.clone()) {
+                continue;
+            }
+            if package != *root
+                && nodes
+                    .get(&package)
+                    .is_some_and(|node| node.class == "test-support")
+            {
+                findings.push(finding("arch.test-support-release", root, &format!("release root reaches test-support package {package} through normal/build dependencies")));
+                break;
+            }
+            pending.extend(
+                edges
+                    .iter()
+                    .filter(|edge| edge.from == package && edge.kind.production())
+                    .map(|edge| edge.to.clone()),
+            );
+        }
+    }
     findings
 }
 
@@ -351,7 +378,7 @@ mod tests {
                 "high".into(),
                 Node {
                     class: "product".into(),
-                    tier: Some(3),
+                    tier: Some(4),
                 },
             ),
             (
@@ -445,6 +472,24 @@ mod tests {
             result
                 .iter()
                 .any(|finding| finding.rule_id == "arch.exception.stale")
+        );
+    }
+
+    #[test]
+    fn rejects_release_reachability_to_test_support() {
+        let mut nodes = nodes();
+        nodes.insert(
+            "tests".into(),
+            Node {
+                class: "test-support".into(),
+                tier: None,
+            },
+        );
+        let result = evaluate(&nodes, &[edge("high", "tests", Kind::Normal)], &ratchet());
+        assert!(
+            result
+                .iter()
+                .any(|finding| finding.rule_id == "arch.test-support-release")
         );
     }
 }
