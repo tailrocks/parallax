@@ -73,6 +73,7 @@ jobs:
             cargo-target-${{ runner.os }}-${{ runner.arch }}-greptime-${{ hashFiles('Cargo.lock') }}-
             cargo-target-${{ runner.os }}-${{ runner.arch }}-greptime-
       - run: cargo nextest run --workspace --run-ignored only --profile real-engine --no-tests=fail
+      - run: cargo xtask nextest-evidence --profile real-engine --output github
       - name: Upload real-engine nextest JUnit
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

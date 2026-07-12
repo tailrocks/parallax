@@ -3239,6 +3239,7 @@ dependencies = [
  "oxc_semantic",
  "oxc_span",
  "proc-macro2",
+ "quick-xml",
  "quote",
  "ra-ap-rustc_lexer",
  "serde",
@@ -3479,6 +3480,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f94967dc7688f3054c7fac87473ffae4cc4c3904800e2d9f5b857246d8963b0a"
 dependencies = [
  "prost",
+]
+
+[[package]]
+name = "quick-xml"
+version = "0.41.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e660451e55124f798a69a5af3f49ccfbefbd41910eefd25caf2393e1f3473ec1"
+dependencies = [
+ "memchr",
 ]
 
 [[package]]

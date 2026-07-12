@@ -5,6 +5,7 @@ use anyhow::{Context, Result, bail};
 use crate::cli::{Cli, Command, FacadeAction};
 use crate::dependencies::{self, Selection};
 use crate::facade;
+use crate::nextest_evidence;
 use crate::policy;
 
 pub(crate) fn execute(cli: Cli) -> Result<()> {
@@ -35,11 +36,16 @@ pub(crate) fn execute(cli: Cli) -> Result<()> {
         Command::Dependencies { rust, ui, all } => {
             dependencies::run(&root, dependency_selection(rust, ui, all), cli.output)
         }
+        Command::NextestEvidence { profile } => nextest_evidence::run(&root, &profile, cli.output),
         Command::Health => policy::health(&root, cli.output),
-        Command::Facade { action } => match action {
-            FacadeAction::Refresh => facade::refresh(&root),
-            FacadeAction::Check => facade::check(&root),
-        },
+        Command::Facade { action } => execute_facade(&root, action),
+    }
+}
+
+fn execute_facade(root: &Path, action: FacadeAction) -> Result<()> {
+    match action {
+        FacadeAction::Refresh => facade::refresh(root),
+        FacadeAction::Check => facade::check(root),
     }
 }
 
@@ -91,7 +97,8 @@ fn test(root: &Path) -> Result<()> {
             "--no-tests=fail",
             "--color=always",
         ],
-    )
+    )?;
+    nextest_evidence::run(root, "ci", crate::cli::Output::Human)
 }
 
 fn integration(root: &Path) -> Result<()> {

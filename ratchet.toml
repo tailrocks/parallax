@@ -2122,6 +2122,11 @@ ceiling = 1
 
 [[limits]]
 metric = "rust.assertions"
+scope = "crates/parallax-xtask/src/nextest_evidence/tests.rs"
+ceiling = 2
+
+[[limits]]
+metric = "rust.assertions"
 scope = "crates/parallax-xtask/src/policy/typescript/tests.rs"
 ceiling = 22
 

@@ -3,6 +3,7 @@ mod command;
 mod dependencies;
 pub mod diagnostic;
 mod facade;
+mod nextest_evidence;
 mod policy;
 
 use anyhow::Result;

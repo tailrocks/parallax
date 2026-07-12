@@ -17,6 +17,7 @@ fn parses_every_initial_command() {
         vec!["xtask", "dependencies", "--rust"],
         vec!["xtask", "dependencies", "--ui"],
         vec!["xtask", "dependencies", "--all"],
+        vec!["xtask", "nextest-evidence", "--profile", "ci"],
         vec!["xtask", "health"],
         vec!["xtask", "facade", "refresh"],
         vec!["xtask", "facade", "check"],

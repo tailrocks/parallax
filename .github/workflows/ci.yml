@@ -378,6 +378,7 @@ jobs:
             cargo-target-${{ runner.os }}-${{ runner.arch }}-nextest-${{ hashFiles('Cargo.lock') }}-
             cargo-target-${{ runner.os }}-${{ runner.arch }}-nextest-
       - run: cargo nextest run --workspace --all-targets --profile ci --no-tests=fail --color=always
+      - run: cargo xtask nextest-evidence --profile ci --output github
       - name: Upload nextest JUnit
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

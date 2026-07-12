@@ -50,6 +50,11 @@ pub(crate) enum Command {
         #[arg(long)]
         all: bool,
     },
+    /// Validate nextest's structured JUnit evidence for one profile.
+    NextestEvidence {
+        #[arg(long)]
+        profile: String,
+    },
     /// Report noisy structural metrics without failing policy.
     Health,
     /// Refresh or verify syntax-derived crate facade manifests.

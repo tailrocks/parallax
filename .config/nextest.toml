@@ -17,6 +17,12 @@ final-status-level = "flaky"
 retries = 0
 flaky-result = "fail"
 
+[profile.local.junit]
+path = "junit.xml"
+report-name = "parallax-nextest-local"
+store-success-output = false
+store-failure-output = true
+
 [profile.ci]
 retries = { backoff = "fixed", count = 2, delay = "1s" }
 flaky-result = "fail"
