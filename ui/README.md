@@ -10,7 +10,7 @@ GraphQL API served by `parallax serve` (default `:4000`).
 Node-as-runtime — see [../AGENTS.md](../AGENTS.md).
 
 ```bash
-bun install
+bun ci
 bun run dev          # http://127.0.0.1:3000
 ```
 
@@ -25,7 +25,7 @@ cargo run -p parallax-cli -- serve
 ```bash
 bun run typecheck
 bun run lint
-bun run test         # local (allows empty suite)
+bun run test
 bun run test:ci      # CI-strict (fails if no tests match)
 bun run build
 ```
@@ -33,7 +33,7 @@ bun run build
 ## Adding shadcn components
 
 ```bash
-bunx --bun shadcn@latest add <component>
+bunx --bun --no-install shadcn add <component>
 ```
 
 Full UI conventions: [AGENTS.md](AGENTS.md).

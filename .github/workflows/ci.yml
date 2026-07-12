@@ -343,7 +343,10 @@ jobs:
           path: ~/.bun/install/cache
           key: bun-${{ runner.os }}-${{ hashFiles('ui/bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
-      - run: bun install --frozen-lockfile --ignore-scripts
+      - run: bun ci
+        working-directory: ui
+      - run: scripts/ci/test-bun-contract.sh
+      - run: bun run check
         working-directory: ui
       - run: bun run typecheck
         working-directory: ui
@@ -353,6 +356,8 @@ jobs:
         working-directory: ui
       - run: bun run build
         working-directory: ui
+      - name: Assert generated route tree is current
+        run: git diff --exit-code -- ui/src/routeTree.gen.ts
 
   embed:
     needs: changes
@@ -418,7 +423,7 @@ jobs:
             cargo-target-${{ runner.os }}-${{ runner.arch }}-${{ github.base_ref || 'main' }}-embed-
             cargo-target-${{ runner.os }}-${{ runner.arch }}-embed-${{ hashFiles('Cargo.lock') }}-
             cargo-target-${{ runner.os }}-${{ runner.arch }}-embed-
-      - run: bun install --frozen-lockfile --ignore-scripts
+      - run: bun ci
         working-directory: ui
       - run: bun run build
         working-directory: ui

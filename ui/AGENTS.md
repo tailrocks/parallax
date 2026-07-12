@@ -24,7 +24,9 @@ major upgrades. The root [`AGENTS.md`](../AGENTS.md) and the
    `createServerFn`.
 5. File conventions: `index.tsx` exact match, `$param` dynamic, `dot.notation` nesting,
    `_prefix` pathless layouts, `__root.tsx` shell. The route tree is generated —
-   **`routeTree.gen.ts` stays committed** (CI typecheck needs it), excluded from lint/format.
+   **`routeTree.gen.ts` stays committed** (CI typecheck needs it), excluded from lint/format,
+   and is drift-checked after the build regenerates it. Generated shadcn components are formatted
+   after generation and remain inside the normal formatter selection.
 6. Navigation only via typed APIs: `<Link to/params>`, `Route.useSearch()`; validate search
    params with zod `validateSearch` when a page grows URL state.
 7. When TanStack Query lands here: `queryClient.ensureQueryData` in loaders +
@@ -34,7 +36,8 @@ major upgrades. The root [`AGENTS.md`](../AGENTS.md) and the
 
 ## shadcn/ui (Base UI variant)
 
-9. **Add components only via the CLI** (`bunx --bun shadcn@latest add <name|block>`), never
+9. **Add components only via the lock-local CLI**
+   (`bunx --bun --no-install shadcn add <name|block>`), never
    hand-copy — the CLI resolves deps and applies the Base UI transforms. Compose existing
    blocks before writing custom UI.
 10. **Base UI composition uses `render={<El …/>}`, not `asChild`** (and `nativeButton={false}`
