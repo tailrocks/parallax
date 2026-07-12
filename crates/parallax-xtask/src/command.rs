@@ -11,14 +11,17 @@ pub fn execute(cli: Cli) -> Result<()> {
     match cli.command {
         Command::Ci { fast, full } => {
             debug_assert!(fast ^ full);
-            lint(&root)?;
-            policy::run(&root, None, cli.output)?;
-            facade::check(&root)?;
-            ui(&root)?;
-            if full {
-                test(&root)?;
-                integration(&root)?;
-                run(&root, "cargo", &["audit"])?;
+            for partition in ci_partitions(full) {
+                match partition {
+                    "lint" => lint(&root)?,
+                    "policy" => policy::run(&root, None, cli.output)?,
+                    "facade" => facade::check(&root)?,
+                    "ui" => ui(&root)?,
+                    "test" => test(&root)?,
+                    "integration" => integration(&root)?,
+                    "audit" => run(&root, "cargo", &["audit"])?,
+                    unknown => bail!("internal unknown CI partition `{unknown}`"),
+                }
             }
             Ok(())
         }
@@ -34,6 +37,14 @@ pub fn execute(cli: Cli) -> Result<()> {
             FacadeAction::Check => facade::check(&root),
         },
     }
+}
+
+fn ci_partitions(full: bool) -> Vec<&'static str> {
+    let mut partitions = vec!["lint", "policy", "facade", "ui"];
+    if full {
+        partitions.extend(["test", "integration", "audit"]);
+    }
+    partitions
 }
 
 fn lint(root: &Path) -> Result<()> {
@@ -91,4 +102,31 @@ fn run(directory: &Path, program: &str, arguments: &[&str]) -> Result<()> {
         bail!("{program} {} exited with {status}", arguments.join(" "));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ci_partitions;
+
+    #[test]
+    fn ci_inventory_has_no_empty_or_placeholder_partition() {
+        assert_eq!(ci_partitions(false), ["lint", "policy", "facade", "ui"]);
+        assert_eq!(
+            ci_partitions(true),
+            [
+                "lint",
+                "policy",
+                "facade",
+                "ui",
+                "test",
+                "integration",
+                "audit"
+            ]
+        );
+        assert!(
+            ci_partitions(true)
+                .iter()
+                .all(|partition| !matches!(*partition, "todo" | "placeholder"))
+        );
+    }
 }

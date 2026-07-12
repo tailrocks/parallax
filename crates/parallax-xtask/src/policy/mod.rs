@@ -62,6 +62,7 @@ pub fn health(root: &Path, output: Output) -> Result<()> {
     let ratchet = config::Ratchet::load(&root.join("ratchet.toml"))?;
     let mut findings = rust::health(root, &ratchet)?;
     findings.extend(typescript::health(root, &ratchet)?);
+    findings.extend(structural::health(root)?);
     let format = match output {
         Output::Human => Format::Human,
         Output::Json => Format::Json,

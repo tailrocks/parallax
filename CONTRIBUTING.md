@@ -88,3 +88,15 @@ From repo root:
 6. From `ui/`: `bun run check && bun run typecheck && bun run lint && bun run test:ci && bun run build`
 
 Add UI components with Bun's shadcn runner, not `npx` — see [ui/AGENTS.md](ui/AGENTS.md).
+
+The repository-owned control plane provides the same partitions without
+duplicating policy in local scripts:
+
+```bash
+cargo xtask ci --fast  # Rust lint + policy + facade drift + complete UI gate
+cargo xtask ci --full  # fast + nextest + doctests + RustSec audit
+```
+
+Individual real partitions are `lint`, `test`, `ui`, `integration`, `policy`,
+`arch`, `facade refresh|check`, and report-only `health`. Policy diagnostics use
+the same human, JSON, or GitHub renderer through `--output`.

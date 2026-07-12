@@ -12,6 +12,8 @@ pub struct Ratchet {
     #[serde(default)]
     pub limits: Vec<Limit>,
     #[serde(default)]
+    pub generated: Vec<Generated>,
+    #[serde(default)]
     pub exceptions: Vec<Exception>,
 }
 
@@ -20,6 +22,14 @@ pub struct Limit {
     pub metric: String,
     pub scope: String,
     pub ceiling: usize,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Generated {
+    pub path: String,
+    pub generator: String,
+    pub owner: String,
+    pub drift_check: String,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -46,6 +56,7 @@ pub struct RustBudgets {
     pub production_file_lines: usize,
     pub test_file_lines: usize,
     pub function_lines: usize,
+    pub cognitive_complexity: usize,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -54,6 +65,8 @@ pub struct TypeScriptBudgets {
     pub module_lines: usize,
     pub test_file_lines: usize,
     pub function_lines: usize,
+    pub cyclomatic_complexity: usize,
+    pub cognitive_complexity: usize,
 }
 
 #[derive(Debug, Deserialize)]
@@ -91,5 +104,29 @@ impl Ratchet {
             "unsupported ratchet schema version"
         );
         Ok(ratchet)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{
+        fs,
+        time::{SystemTime, UNIX_EPOCH},
+    };
+
+    #[test]
+    fn missing_and_malformed_ratchets_fail_closed() {
+        let path = std::env::temp_dir().join(format!(
+            "ratchet-{}.toml",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("clock")
+                .as_nanos()
+        ));
+        assert!(Ratchet::load(&path).is_err());
+        fs::write(&path, "schema_version = 'wrong'").expect("fixture write");
+        assert!(Ratchet::load(&path).is_err());
+        fs::remove_file(path).expect("fixture remove");
     }
 }

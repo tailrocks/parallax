@@ -1,5 +1,5 @@
 use std::{
-    collections::{BTreeMap, BTreeSet},
+    collections::{BTreeMap, BTreeSet, HashMap},
     fs,
     path::{Path, PathBuf},
 };
@@ -41,7 +41,18 @@ pub struct Analysis {
     pub imports: Vec<ImportEdge>,
     pub metrics: Metrics,
     pub findings: Vec<Finding>,
-    function_spans: Vec<(usize, usize)>,
+    function_spans: Vec<FunctionHealth>,
+    suppressions: usize,
+    assertions: usize,
+    star_exports: usize,
+}
+
+#[derive(Clone, Debug, Default)]
+struct FunctionHealth {
+    line: usize,
+    lines: usize,
+    cyclomatic: usize,
+    cognitive: usize,
 }
 
 pub struct TypeScriptProvider {
@@ -67,6 +78,16 @@ pub fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
             .with_context(|| format!("failed to read {}", path.display()))?;
         let analysis = provider.analyze(&path, &source);
         findings.extend(analysis.findings);
+        if analysis.star_exports > 0
+            && path.file_name().and_then(|name| name.to_str()) != Some("routeTree.gen.ts")
+        {
+            findings.push(finding(
+                &path,
+                1,
+                "typescript.star-export",
+                "handwritten export-star barrels hide public-surface growth",
+            ));
+        }
         for edge in analysis.imports {
             if !edge.resolved.starts_with(&ui) {
                 continue;
@@ -96,6 +117,14 @@ pub fn health(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
     collect_source_files(&ui.join("src"), &mut files)?;
     let mut findings = Vec::new();
     for path in files {
+        let relative = path
+            .strip_prefix(root)
+            .unwrap_or(&path)
+            .to_string_lossy()
+            .replace('\\', "/");
+        if ratchet.generated.iter().any(|entry| entry.path == relative) {
+            continue;
+        }
         let source = fs::read_to_string(&path)
             .with_context(|| format!("failed to read {}", path.display()))?;
         let analysis = provider.analyze(&path, &source);
@@ -103,7 +132,6 @@ pub fn health(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
             findings.extend(analysis.findings);
             continue;
         }
-        let relative = path.strip_prefix(root).unwrap_or(&path).to_string_lossy();
         let is_route = relative.contains("/routes/");
         let is_test = relative.contains("/__tests__/") || relative.contains("/tests/");
         let target = if is_route {
@@ -127,22 +155,50 @@ pub fn health(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
                 "cargo xtask health",
             ));
         }
-        for (line, lines) in analysis
-            .function_spans
-            .into_iter()
-            .filter(|(_, lines)| *lines > ratchet.budgets.typescript.function_lines)
-        {
-            findings.push(Finding::warning(
-                "health.typescript.function-lines",
-                &relative,
-                line,
-                &format!(
-                    "function has {lines} lines, target {}",
-                    ratchet.budgets.typescript.function_lines
+        for function in analysis.function_spans {
+            for (rule, value, target) in [
+                (
+                    "health.typescript.function-lines",
+                    function.lines,
+                    ratchet.budgets.typescript.function_lines,
                 ),
-                "extract focused behavior without refreshing the baseline",
-                "cargo xtask health",
-            ));
+                (
+                    "health.typescript.function-cyclomatic-complexity",
+                    function.cyclomatic,
+                    ratchet.budgets.typescript.cyclomatic_complexity,
+                ),
+                (
+                    "health.typescript.function-cognitive-complexity",
+                    function.cognitive,
+                    ratchet.budgets.typescript.cognitive_complexity,
+                ),
+            ] {
+                if value > target {
+                    findings.push(Finding::warning(
+                        rule,
+                        &relative,
+                        function.line,
+                        &format!("function measurement {value} exceeds target {target}"),
+                        "reduce function structure without refreshing the baseline",
+                        "cargo xtask health",
+                    ));
+                }
+            }
+        }
+        for (rule, value) in [
+            ("health.typescript.suppressions", analysis.suppressions),
+            ("health.typescript.assertions", analysis.assertions),
+        ] {
+            if value > 0 {
+                findings.push(Finding::warning(
+                    rule,
+                    &relative,
+                    1,
+                    &format!("count {value} exceeds target 0"),
+                    "reduce the scoped presence count and lower its ratchet",
+                    "cargo xtask health",
+                ));
+            }
         }
     }
     Ok(findings)
@@ -237,25 +293,84 @@ impl TypeScriptProvider {
         if !semantic.diagnostics.is_empty() {
             return analysis;
         }
-        for node in semantic.semantic.nodes().iter() {
+        let nodes = semantic.semantic.nodes();
+        let mut complexity = HashMap::new();
+        for node in nodes.iter() {
+            if matches!(
+                node.kind(),
+                AstKind::Function(_) | AstKind::ArrowFunctionExpression(_)
+            ) {
+                complexity.insert(node.id(), (1_usize, 0_usize));
+            }
+        }
+        for node in nodes.iter().filter(|node| branch(node.kind())) {
+            let mut nesting = 0;
+            for ancestor in nodes.ancestors(node.id()) {
+                if matches!(
+                    ancestor.kind(),
+                    AstKind::Function(_) | AstKind::ArrowFunctionExpression(_)
+                ) {
+                    if let Some((cyclomatic, cognitive)) = complexity.get_mut(&ancestor.id()) {
+                        *cyclomatic += 1;
+                        *cognitive += 1 + nesting;
+                    }
+                    break;
+                }
+                if branch(ancestor.kind()) {
+                    nesting += 1;
+                }
+            }
+        }
+        analysis.suppressions = semantic
+            .semantic
+            .comments()
+            .iter()
+            .filter(|comment| {
+                let text = &source[comment.span.start as usize..comment.span.end as usize];
+                text.contains("@ts-") || text.contains("eslint-disable")
+            })
+            .count();
+        for node in nodes.iter() {
             match node.kind() {
                 AstKind::Function(function) => {
                     analysis.metrics.functions += 1;
-                    analysis
-                        .function_spans
-                        .push(span_lines(source, function.span()));
+                    analysis.function_spans.push(function_health(
+                        source,
+                        function.span(),
+                        complexity[&node.id()],
+                    ));
                 }
                 AstKind::ArrowFunctionExpression(function) => {
                     analysis.metrics.functions += 1;
-                    analysis
-                        .function_spans
-                        .push(span_lines(source, function.span()));
+                    analysis.function_spans.push(function_health(
+                        source,
+                        function.span(),
+                        complexity[&node.id()],
+                    ));
+                }
+                AstKind::CallExpression(call)
+                    if call
+                        .callee
+                        .get_identifier_reference()
+                        .is_some_and(|identifier| {
+                            matches!(
+                                identifier.name.as_str(),
+                                "expect" | "assert" | "assertEquals"
+                            )
+                        }) =>
+                {
+                    analysis.assertions += 1
                 }
                 AstKind::JSXElement(_) => analysis.metrics.jsx_elements += 1,
                 AstKind::Directive(_) => analysis.metrics.directives += 1,
                 AstKind::ExportNamedDeclaration(_)
                 | AstKind::ExportDefaultDeclaration(_)
-                | AstKind::ExportAllDeclaration(_) => analysis.metrics.exports += 1,
+                | AstKind::ExportAllDeclaration(_) => {
+                    analysis.metrics.exports += 1;
+                    if matches!(node.kind(), AstKind::ExportAllDeclaration(_)) {
+                        analysis.star_exports += 1;
+                    }
+                }
                 AstKind::ImportExpression(expression) => {
                     let line = line_at(source, expression.span().start);
                     if let Expression::StringLiteral(literal) = &expression.source {
@@ -407,6 +522,19 @@ fn check_boundary(ui: &Path, source: &Path, edge: &ImportEdge, findings: &mut Ve
             "server-only module imports a client-only module",
         ));
     }
+    let source_feature = feature_name(ui, source);
+    let target_feature = feature_name(ui, &edge.resolved);
+    if let Some(target_feature) = target_feature
+        && source_feature.as_deref() != Some(target_feature.as_str())
+    {
+        let expected = ui
+            .join("src/features")
+            .join(&target_feature)
+            .join("index.ts");
+        if edge.resolved != expected {
+            findings.push(finding(source, edge.line, "typescript.feature-facade", &format!("external import reaches inside feature `{target_feature}` instead of its index.ts facade")));
+        }
+    }
     let allowed = match from {
         Layer::App | Layer::Test | Layer::Generated => true,
         Layer::Routes | Layer::Layout => matches!(
@@ -432,6 +560,17 @@ fn check_boundary(ui: &Path, source: &Path, edge: &ImportEdge, findings: &mut Ve
             ),
         ));
     }
+}
+
+fn feature_name(ui: &Path, path: &Path) -> Option<String> {
+    let relative = path.strip_prefix(ui).ok()?;
+    let mut parts = relative.components();
+    if parts.next()?.as_os_str() != "src" || parts.next()?.as_os_str() != "features" {
+        return None;
+    }
+    parts
+        .next()
+        .map(|part| part.as_os_str().to_string_lossy().into_owned())
 }
 
 fn find_cycle(graph: &BTreeMap<PathBuf, Vec<PathBuf>>) -> Option<PathBuf> {
@@ -477,6 +616,36 @@ fn span_lines(source: &str, span: oxc_span::Span) -> (usize, usize) {
     let start = line_at(source, span.start);
     let end = line_at(source, span.end);
     (start, end.saturating_sub(start) + 1)
+}
+
+fn function_health(
+    source: &str,
+    span: oxc_span::Span,
+    complexity: (usize, usize),
+) -> FunctionHealth {
+    let (line, lines) = span_lines(source, span);
+    FunctionHealth {
+        line,
+        lines,
+        cyclomatic: complexity.0,
+        cognitive: complexity.1,
+    }
+}
+
+fn branch(kind: AstKind<'_>) -> bool {
+    matches!(
+        kind,
+        AstKind::IfStatement(_)
+            | AstKind::ForStatement(_)
+            | AstKind::ForInStatement(_)
+            | AstKind::ForOfStatement(_)
+            | AstKind::WhileStatement(_)
+            | AstKind::DoWhileStatement(_)
+            | AstKind::SwitchCase(_)
+            | AstKind::CatchClause(_)
+            | AstKind::ConditionalExpression(_)
+            | AstKind::LogicalExpression(_)
+    )
 }
 
 fn finding(path: &Path, line: usize, rule: &str, reason: &str) -> Finding {
@@ -690,5 +859,19 @@ mod tests {
             );
             assert!(findings.iter().any(|finding| finding.rule_id == rule));
         }
+    }
+
+    #[test]
+    fn measures_nested_ast_complexity_and_presence() {
+        let root = fixture();
+        let path = root.join("src/complex.tsx");
+        let source = "// @ts-expect-error fixture\nconst f = () => { if (a && b) { for (const x of xs) { expect(x) } } }";
+        let analysis = TypeScriptProvider::new(&root.join("tsconfig.json")).analyze(&path, source);
+        assert!(analysis.findings.is_empty());
+        assert!(analysis.function_spans[0].cyclomatic > 2);
+        assert!(analysis.function_spans[0].cognitive > 2);
+        assert_eq!(analysis.suppressions, 1);
+        assert_eq!(analysis.assertions, 1);
+        fs::remove_dir_all(root).expect("fixture should be removed");
     }
 }

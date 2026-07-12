@@ -318,6 +318,7 @@ mod tests {
             budgets: Budgets::default(),
             product: Product::default(),
             limits: vec![],
+            generated: vec![],
             exceptions: vec![],
         }
     }
