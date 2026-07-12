@@ -9,6 +9,7 @@ pub mod conformance;
     reason = "bounded analytics math"
 )]
 mod memory;
+mod normalizers;
 
 pub use memory::MemoryStore;
 

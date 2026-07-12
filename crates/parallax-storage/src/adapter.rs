@@ -6,6 +6,8 @@ use parallax_proto::semconv;
 use std::collections::HashMap;
 use std::ops::RangeInclusive;
 
+pub use crate::adapter_math::{attribute_compare_score, rate_from_buckets};
+
 pub const MAX_ROWS: usize = 500;
 pub const ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT: usize = 24;
 pub const ATTRIBUTE_COMPARE_TOP_N_CAP: usize = 50;
@@ -447,40 +449,8 @@ pub fn attribute_compare_value_allowed(value: &str) -> bool {
     true
 }
 
-pub fn attribute_compare_score(
-    selected_count: u64,
-    selected_total: u64,
-    baseline_count: u64,
-    baseline_total: u64,
-) -> f64 {
-    let selected_share = if selected_total == 0 {
-        0.0
-    } else {
-        selected_count as f64 / selected_total as f64
-    };
-    let baseline_share = if baseline_total == 0 {
-        0.0
-    } else {
-        baseline_count as f64 / baseline_total as f64
-    };
-    (selected_share - baseline_share).clamp(0.0, 1.0)
-}
-
-/// Per-second rate from bucketed counter sums (monotonic resets clamp to 0).
-/// Shared by the production Greptime adapter and the test adapter.
-pub fn rate_from_buckets(series: &[SeriesPoint], step_nanos: u128) -> Vec<SeriesPoint> {
-    let step_secs = step_nanos as f64 / 1e9;
-    series
-        .windows(2)
-        .map(|window| SeriesPoint {
-            ts_nanos: window[1].ts_nanos,
-            value: ((window[1].value - window[0].value).max(0.0)) / step_secs,
-        })
-        .collect()
-}
-
 #[async_trait::async_trait]
-pub trait TelemetryStore: Send + Sync {
+pub trait IngestStore: Send + Sync {
     /// Ingest a traces batch: forward the raw OTLP bytes to GreptimeDB's native
     /// `/v1/otlp/v1/traces` endpoint (auto-creates `opentelemetry_traces`). The
     /// decoded `spans` are the tee — used by test adapters and ignored by the
@@ -508,7 +478,10 @@ pub trait TelemetryStore: Send + Sync {
         raw: bytes::Bytes,
     ) -> anyhow::Result<()>;
     async fn write_error_events(&self, rows: Vec<ErrorEventRow>) -> anyhow::Result<()>;
+}
 
+#[async_trait::async_trait]
+pub trait TraceStore: Send + Sync {
     /// Anchored read: every span of one trace, start-time ascending.
     async fn spans_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<SpanRow>>;
     /// Resolve summaries for span-link target trace ids.
@@ -541,10 +514,18 @@ pub trait TelemetryStore: Send + Sync {
         }
         Ok(out)
     }
+}
+
+#[async_trait::async_trait]
+pub trait LogStore: Send + Sync {
     /// Run-scoped read: every log tagged with one `parallax.run.id`.
     async fn logs_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<LogRow>>;
     /// Anchored read: every log of one trace, time ascending.
     async fn logs_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<LogRow>>;
+}
+
+#[async_trait::async_trait]
+pub trait MetricStore: Send + Sync {
     /// Distinct metric names inside `range` (plan 085 windows extension scan).
     async fn metric_names(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<String>>;
     /// Discover groupable metric label/tag keys for one metric.
@@ -556,6 +537,10 @@ pub trait TelemetryStore: Send + Sync {
         label: &str,
         range: RangeInclusive<u128>,
     ) -> anyhow::Result<Vec<String>>;
+}
+
+#[async_trait::async_trait]
+pub trait TelemetryStore: IngestStore + TraceStore + LogStore + MetricStore {
     /// Distinct service names across signals inside `range` (plan 085).
     async fn service_names(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<String>>;
     /// Whole-system overview counters for an inclusive time window.

@@ -1,5 +1,12 @@
 //! In-memory `TelemetryStore` for tests and explicit test-support builds only.
 
+mod math;
+
+use self::math::{
+    duration_quantile_ms, field_scalar_value, group_value, quantile_from_histograms,
+    quantile_from_sorted, resource_string, scalar_attribute_value, span_matches_compare,
+};
+use crate::normalizers::{LogNormalizer, TraceNormalizer};
 use parallax_model::*;
 use parallax_proto::collector_logs::ExportLogsServiceRequest;
 use parallax_proto::collector_trace::ExportTraceServiceRequest;
@@ -7,9 +14,9 @@ use parallax_proto::semconv;
 use parallax_storage::adapter::{
     self, ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow,
     FIELD_KEYS_CAP, FIELD_TOP_VALUES_CAP, FieldKey, FieldSource, FieldStats, FieldValueCount,
-    MAX_ROWS, OverviewTotals, ReleaseWindow, RuntimeMetricSeries, SERVICE_MAP_TRACE_CAP,
-    ServiceCatalogRow, ServiceEdge, ServiceSummary, SignalKind, SpanRed, TelemetryStore,
-    attribute_compare_key_allowed, attribute_compare_score, attribute_compare_value_allowed,
+    MAX_ROWS, MetricStore, OverviewTotals, ReleaseWindow, RuntimeMetricSeries,
+    SERVICE_MAP_TRACE_CAP, ServiceCatalogRow, ServiceEdge, ServiceSummary, SignalKind, SpanRed,
+    TelemetryStore, attribute_compare_key_allowed, attribute_compare_score,
     field_key_identifier_like, field_key_namespace, field_value_display,
     metric_group_label_allowed, runtime_metric_family, runtime_metric_unit, span_field_key_allowed,
 };
@@ -17,120 +24,6 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::ops::RangeInclusive;
 use std::sync::Mutex;
 use tokio::sync::{Mutex as AsyncMutex, oneshot};
-
-/// Render one attribute value for grouping — scalars only, like the tag
-/// cache; missing/nested values group under "(none)".
-pub(crate) fn group_value(attributes: &serde_json::Value, key: &str) -> String {
-    match attributes.get(key) {
-        Some(serde_json::Value::String(s)) => s.clone(),
-        Some(serde_json::Value::Bool(b)) => b.to_string(),
-        Some(serde_json::Value::Number(n)) => n.to_string(),
-        _ => "(none)".to_string(),
-    }
-}
-
-fn scalar_attribute_value(attributes: &serde_json::Value, key: &str) -> Option<String> {
-    let value = match attributes.get(key)? {
-        serde_json::Value::String(value) => value.clone(),
-        serde_json::Value::Bool(value) => value.to_string(),
-        serde_json::Value::Number(value) => value.to_string(),
-        _ => return None,
-    };
-    attribute_compare_value_allowed(&value).then_some(value)
-}
-
-fn field_scalar_value(attributes: &serde_json::Value, key: &str) -> Option<String> {
-    let value = match attributes.get(key)? {
-        serde_json::Value::String(value) => value.clone(),
-        serde_json::Value::Bool(value) => value.to_string(),
-        serde_json::Value::Number(value) => value.to_string(),
-        _ => return None,
-    };
-    field_value_display(&value)
-}
-
-fn resource_string(resource: &serde_json::Value, key: &str) -> Option<String> {
-    resource
-        .get(key)
-        .and_then(|value| value.as_str())
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(str::to_string)
-}
-
-fn span_matches_compare(
-    span: &SpanRow,
-    range: &RangeInclusive<u128>,
-    service: Option<&str>,
-    error_only: bool,
-) -> bool {
-    range.contains(&span.ts_nanos)
-        && service.is_none_or(|svc| span.service == svc)
-        && (!error_only || span.status_code == "STATUS_CODE_ERROR")
-}
-
-fn duration_quantile_ms(durations: &mut [u128], q: f64) -> f64 {
-    durations.sort_unstable();
-    quantile_from_sorted(durations, q) / 1_000_000.0
-}
-
-/// Linear-interpolated quantile from merged explicit-bounds histograms.
-pub(crate) fn quantile_from_histograms(rows: &[HistogramRow], q: f64) -> f64 {
-    let Some(first) = rows.first() else {
-        return 0.0;
-    };
-    let bounds = &first.bounds;
-    let mut counts = vec![0u64; bounds.len() + 1];
-    for row in rows {
-        for (i, c) in row.bucket_counts.iter().enumerate() {
-            if let Some(slot) = counts.get_mut(i) {
-                *slot += c;
-            }
-        }
-    }
-    let total: u64 = counts.iter().sum();
-    if total == 0 {
-        return 0.0;
-    }
-    let target = q.clamp(0.0, 1.0) * total as f64;
-    let mut cumulative = 0u64;
-    for (i, count) in counts.iter().enumerate() {
-        let next = cumulative + count;
-        if next as f64 >= target {
-            let lower = if i == 0 { 0.0 } else { bounds[i - 1] };
-            let upper = bounds.get(i).copied().unwrap_or(lower);
-            let within = if *count == 0 {
-                0.0
-            } else {
-                (target - cumulative as f64) / *count as f64
-            };
-            return lower + (upper - lower) * within;
-        }
-        cumulative = next;
-    }
-    bounds.last().copied().unwrap_or(0.0)
-}
-
-fn quantile_from_sorted(values: &[u128], q: f64) -> f64 {
-    if values.is_empty() {
-        return 0.0;
-    }
-    if values.len() == 1 {
-        return values[0] as f64;
-    }
-    let pos = q.clamp(0.0, 1.0) * (values.len() - 1) as f64;
-    let lo = pos.floor() as usize;
-    let hi = pos.ceil() as usize;
-    if lo == hi {
-        return values[lo] as f64;
-    }
-    let weight = pos - lo as f64;
-    values[lo] as f64 + (values[hi] as f64 - values[lo] as f64) * weight
-}
-
-type TraceNormalizer =
-    std::sync::Arc<dyn Fn(&ExportTraceServiceRequest) -> Vec<SpanRow> + Send + Sync>;
-type LogNormalizer = std::sync::Arc<dyn Fn(&ExportLogsServiceRequest) -> Vec<LogRow> + Send + Sync>;
 
 #[expect(missing_debug_implementations, reason = "opaque normalizers")]
 pub struct MemoryStore {
@@ -202,7 +95,7 @@ impl MemoryStore {
 }
 
 #[async_trait::async_trait]
-impl TelemetryStore for MemoryStore {
+impl adapter::IngestStore for MemoryStore {
     async fn ingest_traces(
         &self,
         request: &ExportTraceServiceRequest,
@@ -250,7 +143,10 @@ impl TelemetryStore for MemoryStore {
         self.lock().error_events.extend(rows);
         Ok(())
     }
+}
 
+#[async_trait::async_trait]
+impl adapter::TraceStore for MemoryStore {
     async fn spans_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<SpanRow>> {
         let mut spans: Vec<SpanRow> = self
             .lock()
@@ -362,7 +258,10 @@ impl TelemetryStore for MemoryStore {
         }
         Ok(out)
     }
+}
 
+#[async_trait::async_trait]
+impl adapter::LogStore for MemoryStore {
     async fn logs_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<LogRow>> {
         let mut logs: Vec<LogRow> = self
             .lock()
@@ -388,7 +287,10 @@ impl TelemetryStore for MemoryStore {
         logs.sort_by_key(|l| l.ts_nanos);
         Ok(logs)
     }
+}
 
+#[async_trait::async_trait]
+impl MetricStore for MemoryStore {
     async fn metric_names(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<String>> {
         let inner = self.lock();
         let mut names: Vec<String> = inner
@@ -482,7 +384,10 @@ impl TelemetryStore for MemoryStore {
         }
         Ok(values.into_iter().collect())
     }
+}
 
+#[async_trait::async_trait]
+impl TelemetryStore for MemoryStore {
     async fn service_names(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<String>> {
         let inner = self.lock();
         let mut names: Vec<String> = inner

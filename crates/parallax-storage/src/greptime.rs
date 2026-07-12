@@ -4,11 +4,15 @@
 use crate::adapter::{
     ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow,
     FIELD_KEYS_CAP, FIELD_TOP_VALUES_CAP, FieldKey, FieldSource, FieldStats, FieldValueCount,
-    MAX_ROWS, OverviewTotals, ReleaseWindow, RuntimeMetricSeries, SERVICE_MAP_TRACE_CAP,
-    ServiceCatalogRow, ServiceEdge, ServiceSummary, SignalKind, SpanRed, TelemetryStore,
-    attribute_compare_key_allowed, attribute_compare_score, attribute_compare_value_allowed,
-    field_key_identifier_like, field_key_namespace, field_value_display,
-    metric_group_label_allowed, runtime_metric_family, runtime_metric_unit, span_field_key_allowed,
+    MAX_ROWS, MetricStore, OverviewTotals, ReleaseWindow, RuntimeMetricSeries,
+    SERVICE_MAP_TRACE_CAP, ServiceCatalogRow, ServiceEdge, ServiceSummary, SignalKind, SpanRed,
+    TelemetryStore, attribute_compare_key_allowed, attribute_compare_score,
+    attribute_compare_value_allowed, field_key_identifier_like, field_key_namespace,
+    field_value_display, metric_group_label_allowed, runtime_metric_family, runtime_metric_unit,
+    span_field_key_allowed,
+};
+use crate::greptime_sql::{
+    escape, escape_ident, log_service_name_expr, quoted_ident, resource_attr_ident, wire_attr_ident,
 };
 use crate::model::*;
 use parallax_proto::semconv;
@@ -83,19 +87,6 @@ pub struct GreptimeStore {
     logs_deviations_done: AtomicBool,
     /// Positive-only metric name → table cache (plan 075/085).
     metric_table_cache: MetricTableCache,
-}
-
-fn escape(text: &str) -> String {
-    text.replace('\'', "''")
-}
-
-/// Escape a value for inclusion inside a double-quoted SQL identifier.
-fn escape_ident(text: &str) -> String {
-    text.replace('"', "\"\"")
-}
-
-fn quoted_ident(text: &str) -> String {
-    format!(r#""{}""#, escape_ident(text))
 }
 
 impl GreptimeStore {
@@ -309,30 +300,6 @@ impl GreptimeStore {
             clauses.join(" AND ")
         )
     }
-}
-
-fn resource_attr_ident(attr: &str) -> String {
-    quoted_ident(&semconv::resource_column(attr))
-}
-
-fn wire_attr_ident(attr: &str) -> String {
-    quoted_ident(attr)
-}
-
-fn resource_json_get(attr: &str) -> String {
-    format!(
-        r#"json_get_string("resource_attributes", '{}')"#,
-        semconv::resource_json_path(attr)
-    )
-}
-
-/// Prefer extract-key column `"service.name"` (TAG); fall back to resource JSON
-/// for pre-084 rows. extract-keys names columns after the OTLP attribute key.
-fn log_service_name_expr() -> String {
-    format!(
-        r#"COALESCE("service.name", {})"#,
-        resource_json_get(semconv::SERVICE_NAME)
-    )
 }
 
 // Greptime metric-engine point tables discovered with live DESCRIBE expose
@@ -1514,7 +1481,7 @@ fn json_at(row: &[serde_json::Value], index: usize) -> serde_json::Value {
 }
 
 #[async_trait::async_trait]
-impl TelemetryStore for GreptimeStore {
+impl crate::adapter::IngestStore for GreptimeStore {
     async fn ingest_traces(
         &self,
         _request: &parallax_proto::collector_trace::ExportTraceServiceRequest,
@@ -1649,7 +1616,10 @@ impl TelemetryStore for GreptimeStore {
         )
         .await
     }
+}
 
+#[async_trait::async_trait]
+impl crate::adapter::TraceStore for GreptimeStore {
     async fn spans_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<SpanRow>> {
         self.select_spans(
             &format!(r#""trace_id" = '{}'"#, escape(trace_id)),
@@ -1871,7 +1841,10 @@ impl TelemetryStore for GreptimeStore {
         }
         Ok(out)
     }
+}
 
+#[async_trait::async_trait]
+impl crate::adapter::LogStore for GreptimeStore {
     async fn logs_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<LogRow>> {
         let mut logs = self
             .select_logs(
@@ -1896,7 +1869,10 @@ impl TelemetryStore for GreptimeStore {
         )
         .await
     }
+}
 
+#[async_trait::async_trait]
+impl MetricStore for GreptimeStore {
     async fn metric_names(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<String>> {
         Ok(self
             .discover_metric_names(&range)
@@ -1949,7 +1925,10 @@ impl TelemetryStore for GreptimeStore {
             .filter(|value| attribute_compare_value_allowed(value))
             .collect())
     }
+}
 
+#[async_trait::async_trait]
+impl TelemetryStore for GreptimeStore {
     async fn service_names(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<String>> {
         let rows = self.sql_lenient(&Self::service_names_sql(&range)).await?;
         Ok(rows

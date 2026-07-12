@@ -43,3 +43,22 @@ checks. Its fixture proves both sides. Live metadata reports:
 `parallax-test-support`. Full-feature workspace Clippy, repository policy, and
 the syntax-derived facade check pass; API (32), server library (17), and moved
 test-support (20) tests pass.
+
+## Capability-port slice
+
+The broad storage boundary now has independently implementable object-safe
+ports for ingest writes, trace/run reads, log reads, and metric discovery:
+`IngestStore`, `TraceStore`, `LogStore`, and `MetricStore`. `TelemetryStore`
+is the composition umbrella over those capabilities plus the still-shared
+analytics surface. GreptimeStore and MemoryStore implement each capability
+directly; forwarding adapters and telemetry clones were not introduced.
+
+Concrete tests import only the capability that owns the operation they invoke,
+while product composition can continue using `dyn TelemetryStore`. Extracting
+shared adapter math, SQL identifier builders, and memory analytics helpers made
+the boundary change shrink-only: adapter 630→615, Greptime 3184→3173, and
+MemoryStore 1553→1469 logical lines.
+
+Validation passed full-feature workspace Clippy, 110 focused storage,
+test-support, API, and server-library tests, repository policy, and facade
+verification.

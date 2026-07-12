@@ -352,17 +352,17 @@ ceiling = 446
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-storage/src/adapter.rs"
-ceiling = 630
+ceiling = 615
 
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-storage/src/greptime.rs"
-ceiling = 3184
+ceiling = 3173
 
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-test-support/src/memory.rs"
-ceiling = 1553
+ceiling = 1469
 
 [[limits]]
 metric = "rust.file-lines"

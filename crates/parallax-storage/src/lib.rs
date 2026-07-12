@@ -6,12 +6,10 @@
 //! metadata store for mutable product state, and the ingest spool. The
 //! in-memory adapter is compiled only for tests and explicit test support.
 
-#[expect(
-    clippy::cast_precision_loss,
-    clippy::too_many_arguments,
-    reason = "adapter analytics"
-)]
+#[expect(clippy::too_many_arguments, reason = "adapter contract")]
 pub mod adapter;
+#[expect(clippy::cast_precision_loss, reason = "bounded analytics ratios")]
+mod adapter_math;
 mod arrow_sql;
 #[expect(
     clippy::cast_possible_truncation,
@@ -24,6 +22,7 @@ mod arrow_sql;
     reason = "checked queries"
 )]
 pub mod greptime;
+mod greptime_sql;
 #[expect(clippy::excessive_nesting, reason = "transaction flow")]
 pub mod metadata;
 pub use parallax_model as model;
