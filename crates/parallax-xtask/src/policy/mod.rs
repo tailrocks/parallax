@@ -1,5 +1,6 @@
 mod architecture;
 mod config;
+mod docs;
 mod product;
 mod rust;
 mod structural;
@@ -38,6 +39,9 @@ pub fn run(root: &Path, only: Option<&str>, output: Output) -> Result<()> {
     }
     if only.is_none() || only == Some("structural") {
         findings.extend(structural::check_workspace(root, &ratchet)?);
+    }
+    if only.is_none() {
+        findings.extend(docs::check_workspace(root, &ratchet)?);
     }
     let format = match output {
         Output::Human => Format::Human,

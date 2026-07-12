@@ -1,3 +1,11 @@
++++
+schema_version = 1
+package = "parallax-mcp-spike"
+class = "proof"
+dependencies = []
+facade_roots = ["main.rs"]
++++
+
 # parallax-mcp-spike
 
 **SPIKE only — not a product surface.** May be deleted after the MCP ship/no-ship
