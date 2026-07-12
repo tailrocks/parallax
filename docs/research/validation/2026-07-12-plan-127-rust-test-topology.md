@@ -65,7 +65,9 @@ lines.
 
 ## Target, resource, and selector inventory
 
-- Default nextest: 224 tests across 26 binaries; all 224 pass.
+- Extraction parity: the original 224 tests still pass with identical IDs.
+  Three new policy fixtures bring the final default inventory to 227 tests
+  across 26 binaries; all 227 pass.
 - Ignored real-engine targets (six): `m1_greptime`,
   `m1_table_inventory_greptime`, `m2_metrics_greptime`, `m5_gates`,
   `m6_conformance_greptime`, and `m7_metric_exemplar_migration_greptime`.
@@ -98,3 +100,16 @@ rotation, bundle redaction, removed storage fallback, and worker replay) and all
 real-engine selectors. Therefore the old-to-new mapping is the identity mapping
 for every test; there are zero renamed IDs and no selector or quarantine update
 is required.
+
+## Closure gates
+
+- `mise exec -- cargo xtask ci --full` passed at `8727d05`: strict Rust
+  formatting/Clippy, Bun formatting/typecheck/lint, 41 Vitest files / 175 UI
+  tests, client and SSR builds, 227 nextest tests across 26 binaries, the
+  compile-fail doctest partition, and RustSec audit.
+- `cargo nextest list -p parallax-server --run-ignored=only --message-format
+  json` selected exactly the six owned real-engine tests.
+- `cargo xtask policy --output json` returned `[]`; repository scans found no
+  inline test body, `mod.rs`, or test scenario over 600 lines.
+- Hosted [CI run 29203280582](https://github.com/tailrocks/parallax/actions/runs/29203280582)
+  passed at `8727d05`, including `policy`, `clippy`, `test`, and `ci-required`.
