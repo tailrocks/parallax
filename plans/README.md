@@ -76,7 +76,7 @@ Every plan must preserve these non-negotiable Parallax constraints:
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [098](098-facades-modules-and-api-batching.md) | Seal crate facades, split responsibility hotspots, validate crate docs, and eliminate latent nested-field N+1 paths | P2 | L | 126 | TODO |
+| [098](098-facades-modules-and-api-batching.md) | Seal crate facades, split responsibility hotspots, validate crate docs, and eliminate latent nested-field N+1 paths | P2 | L | 126 | IN PROGRESS |
 | [099](099-boundary-errors-idempotency-and-agent-safety.md) | Add typed errors, explicit retry/idempotency boundaries, an ID pilot, and agent-surface safety | P1 | L | 097, 098 | TODO |
 
 ### TypeScript Toolchain, Architecture, Boundary, And Test Foundations
