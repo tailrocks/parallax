@@ -1,8 +1,8 @@
+#![cfg_attr(test, allow(clippy::unwrap_used, reason = "fixture assertions"))]
 //! Parallax GraphQL API — the V1 surface from the implementation spec §8,
 //! served by **Juniper** (operator instruction, 2026-06-12: the library he
 //! uses in his own services). Every client (CLI, UI, agents) goes through
 //! this schema; none touch storage directly.
-//!
 //! Juniper notes (per the spec's dependency table): GraphQL `Int` is i32 —
 //! counts saturate; nanosecond timestamps cross as strings; field names are
 //! auto-camelCased; cost limits are resolver-level caps in V1.
@@ -27,8 +27,7 @@ use juniper::{FieldError, FieldResult, graphql_object};
 use parallax_storage::adapter::TelemetryStore;
 use parallax_storage::metadata::MetadataStore;
 use parallax_storage::model;
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use resolvers::{
     AgentSessionOut, AttributeCompareRow, BundleOut, CriticalPath, Dashboard, EvidenceGap,

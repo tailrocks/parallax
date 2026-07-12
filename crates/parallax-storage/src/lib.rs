@@ -1,3 +1,4 @@
+#![cfg_attr(test, allow(clippy::unwrap_used, reason = "fixture assertions"))]
 //! Parallax storage adapters.
 //!
 //! Everything engine-specific lives behind the adapter boundary defined here:

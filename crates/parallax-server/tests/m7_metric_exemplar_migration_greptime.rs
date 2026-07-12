@@ -161,7 +161,7 @@ async fn migrates_legacy_metric_exemplars_without_mutation() {
         store
             .sql("SELECT COUNT(*) FROM metric_exemplars")
             .await
-            .unwrap()[0][0],
+            .expect("count migrated exemplars")[0][0],
         2
     );
 

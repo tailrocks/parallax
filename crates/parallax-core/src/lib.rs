@@ -1,3 +1,4 @@
+#![cfg_attr(test, allow(clippy::unwrap_used, reason = "fixture assertions"))]
 //! Parallax domain logic.
 //!
 //! Graduates the mechanisms proven in `poc/evidence-loop` (error derivation,

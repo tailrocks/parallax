@@ -9,6 +9,9 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 
+[lints]
+workspace = true
+
 [[bin]]
 name = "parallax"
 path = "src/main.rs"
