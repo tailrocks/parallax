@@ -233,12 +233,12 @@ Recorded so they are not re-audited; "deferred" items may be planned later.
 
 ### Open questions for the operator
 
-- Windowed vs lifetime semantics for `traces_search` span_count/has_error
-  when a trace straddles the window boundary (075 assumes windowed; memory
-  adapter behavior decides — see 075 STOP condition).
+- ~~Windowed vs lifetime semantics for `traces_search`~~ **Resolved** in 075
+  (both adapters windowed; residual table below).
 - Should the operator rotate the lab OpenObserve/Sentry credentials in
-  `bench/otlp-fanout/rotel.env` history if they were ever non-default? (079
-  replaces the file with a template but does not rewrite history.)
+  `bench/otlp-fanout/rotel.env` **git history** if they were ever non-default?
+  (079 replaced the working-tree file with `rotel.env.example`; history rewrite
+  is operator-only.)
 
 
 ### Plan 082 prose-vs-code divergences (2026-07-11)
@@ -417,7 +417,7 @@ branch is **`main` only** — do not revive the implement branch.
 
 | Residual | Disposition |
 |----------|-------------|
-| traces_by_ids O(n²) id dedup | **Deferred** — MAX_ROWS=500 bounds cost; touch only when editing the function |
+| traces_by_ids O(n²) id dedup | **DONE** (2026-07-12) — `HashSet` order-preserving dedup in greptime + memory adapters |
 | is_missing_* substring matching | **Watch** — conformance suite (074) is the net on version bumps |
 | Issue::latestEvent/events store N+1 | **Deferred** — no client selects them; 086 batch pattern ready when activated |
 | memory.rs Mutex across async | **Deferred** — test/dev adapter only |

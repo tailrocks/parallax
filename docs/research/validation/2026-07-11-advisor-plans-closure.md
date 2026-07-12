@@ -71,3 +71,20 @@ Scratch: `/tmp/grok-goal-4dc4833a2746/implementer/done-criteria.log` (reaudit1+2
 | Clippy parallax-storage | exit 0 |
 
 Plan 075 now satisfies: windowed agg, single-pass `COUNT(*) OVER`, chunked `try_join_all` for attribute_compare + runtime_snapshot, `metric_table_cache`.
+
+## Post-merge goal re-audit (2026-07-12, on `main`)
+
+Brief re-run under `prompts/advisor-plans-implementation.md` after PR #19.
+
+| Check | Result |
+|-------|--------|
+| Index 069–091 | all terminal (`DONE` / 089 `BLOCKED`) |
+| Done-criteria dual greps | **2× clean**, `items remaining: none` |
+| `cargo fmt --check` | exit 0 |
+| `cargo clippy --workspace --all-targets -D warnings` | exit 0 |
+| `cargo nextest run --workspace` | **189 passed**, 5 skipped |
+| UI typecheck / lint / `test:ci` | exit 0, **175** tests, 0 unhandled errors |
+| Residual `traces_by_ids` O(n) dedup | **DONE** — `HashSet` in greptime + memory adapters |
+| 089 upstream | still BLOCKED (`greptimedb-ingester` 0.18.0 → rustls); re-confirmed |
+
+**Executor-actionable remaining: none.** Operator-only: 089 rustls-free upstream; optional `rotel.env` history rewrite.

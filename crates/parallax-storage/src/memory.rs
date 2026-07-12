@@ -279,9 +279,11 @@ impl TelemetryStore for MemoryStore {
         &self,
         trace_ids: &[String],
     ) -> anyhow::Result<Vec<crate::adapter::TraceSummary>> {
+        // O(n) dedup preserving request order (MAX_ROWS still caps fan-out).
+        let mut seen = HashSet::new();
         let mut ids = Vec::new();
         for trace_id in trace_ids.iter().filter(|trace_id| !trace_id.is_empty()) {
-            if ids.iter().any(|id| id == trace_id) {
+            if !seen.insert(trace_id.as_str()) {
                 continue;
             }
             ids.push(trace_id.clone());

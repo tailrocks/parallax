@@ -145,6 +145,15 @@ structure quickly.
 - Parallelism = concurrent work on that **same** branch (or worktrees that
   check out the same branch name), not new branch names.
 
+## Subagent model (operator 2026-07-12)
+
+- **Always** run subagents on **Grok 4.5 high** (Grok Build / highest Grok
+  reasoning tier available to the spawn path).
+- **Never** use Composer (or any non-Grok Composer-family model) for
+  subagents.
+- When spawning, put this in the subagent prompt if the tool surface does not
+  pin the model: *model = Grok 4.5 high only; never Composer*.
+
 **Current active branch:** `main` (advisor-plans PR #19 merged 2026-07-11;
 `implement/advisor-plans-069-090` deleted). Commit and push on `main` until
 the operator names another single branch.
