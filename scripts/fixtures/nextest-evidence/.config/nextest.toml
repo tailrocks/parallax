@@ -1,0 +1,21 @@
+[store]
+dir = "target/nextest"
+
+[profile.fixture]
+retries = 0
+flaky-result = "fail"
+fail-fast = false
+slow-timeout = { period = "100ms", terminate-after = 5, on-timeout = "fail" }
+
+[profile.fixture.junit]
+path = "junit.xml"
+store-success-output = true
+store-failure-output = true
+
+[profile.retry]
+inherits = "fixture"
+retries = 1
+
+[profile.timeout]
+inherits = "fixture"
+slow-timeout = { period = "100ms", terminate-after = 1, on-timeout = "fail" }

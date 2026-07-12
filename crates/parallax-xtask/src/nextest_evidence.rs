@@ -19,13 +19,16 @@ struct Evidence {
 pub(crate) fn run(root: &Path, profile: &str, output: Output) -> Result<()> {
     let relative = format!("target/nextest/{profile}/junit.xml");
     let path = root.join(&relative);
-    let findings = match std::fs::read(&path) {
+    let mut findings = match std::fs::read(&path) {
         Ok(xml) => validate(&xml, &relative),
         Err(error) => vec![finding(
             &relative,
             &format!("JUnit report is missing: {error}"),
         )],
     };
+    findings.extend(validate_quarantine(
+        &root.join(".config/nextest-quarantine.toml"),
+    ));
     let format = match output {
         Output::Human => Format::Human,
         Output::Json => Format::Json,
@@ -40,6 +43,66 @@ pub(crate) fn run(root: &Path, profile: &str, output: Output) -> Result<()> {
         bail!("nextest evidence found {errors} violation(s)");
     }
     Ok(())
+}
+
+fn validate_quarantine(path: &Path) -> Vec<Finding> {
+    let source = match std::fs::read_to_string(path) {
+        Ok(source) => source,
+        Err(error) => {
+            return vec![finding(
+                ".config/nextest-quarantine.toml",
+                &error.to_string(),
+            )];
+        }
+    };
+    let ledger: toml::Value = match toml::from_str(&source) {
+        Ok(ledger) => ledger,
+        Err(error) => {
+            return vec![finding(
+                ".config/nextest-quarantine.toml",
+                &error.to_string(),
+            )];
+        }
+    };
+    let mut findings = Vec::new();
+    if ledger
+        .get("schema-version")
+        .and_then(toml::Value::as_integer)
+        != Some(1)
+    {
+        findings.push(finding(
+            ".config/nextest-quarantine.toml",
+            "quarantine ledger schema-version must be 1",
+        ));
+    }
+    for (index, entry) in ledger
+        .get("quarantine")
+        .and_then(toml::Value::as_array)
+        .into_iter()
+        .flatten()
+        .enumerate()
+    {
+        for field in [
+            "test-expression",
+            "owner",
+            "reason",
+            "expiry",
+            "failure-link",
+            "removal-condition",
+        ] {
+            if entry
+                .get(field)
+                .and_then(toml::Value::as_str)
+                .is_none_or(str::is_empty)
+            {
+                findings.push(finding(
+                    ".config/nextest-quarantine.toml",
+                    &format!("quarantine row {index} requires `{field}`"),
+                ));
+            }
+        }
+    }
+    findings
 }
 
 fn validate(xml: &[u8], file: &str) -> Vec<Finding> {

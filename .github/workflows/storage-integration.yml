@@ -72,14 +72,20 @@ jobs:
             cargo-target-${{ runner.os }}-${{ runner.arch }}-${{ github.base_ref || 'main' }}-greptime-
             cargo-target-${{ runner.os }}-${{ runner.arch }}-greptime-${{ hashFiles('Cargo.lock') }}-
             cargo-target-${{ runner.os }}-${{ runner.arch }}-greptime-
-      - run: cargo nextest run --workspace --run-ignored only --profile real-engine --no-tests=fail
+      - name: Run real-engine tests with slow-test evidence
+        run: |
+          mkdir -p target/nextest/real-engine
+          cargo nextest run --workspace --run-ignored only --profile real-engine --no-tests=fail \
+            --status-level slow --final-status-level slow 2>&1 | tee target/nextest/real-engine/summary.log
       - run: cargo xtask nextest-evidence --profile real-engine --output github
       - name: Upload real-engine nextest JUnit
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: nextest-real-engine-junit
-          path: target/nextest/real-engine/junit.xml
+          path: |
+            target/nextest/real-engine/junit.xml
+            target/nextest/real-engine/summary.log
           if-no-files-found: error
       - name: Show sccache stats
         if: always() && steps.sccache.outcome == 'success'

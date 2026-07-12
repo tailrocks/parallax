@@ -401,7 +401,12 @@ jobs:
             cargo-target-${{ runner.os }}-${{ runner.arch }}-${{ github.base_ref || 'main' }}-nextest-
             cargo-target-${{ runner.os }}-${{ runner.arch }}-nextest-${{ hashFiles('Cargo.lock') }}-
             cargo-target-${{ runner.os }}-${{ runner.arch }}-nextest-
-      - run: cargo nextest run --workspace --all-targets --profile ci --no-tests=fail --color=always
+      - run: scripts/ci/test-nextest-evidence.sh
+      - name: Run Rust tests with slow-test evidence
+        run: |
+          mkdir -p target/nextest/ci
+          cargo nextest run --workspace --all-targets --profile ci --no-tests=fail --color=always \
+            --status-level slow --final-status-level slow 2>&1 | tee target/nextest/ci/summary.log
       - run: cargo xtask nextest-evidence --profile ci --output github
       - run: cargo test --workspace --doc --locked
       - name: Upload nextest JUnit
@@ -409,7 +414,9 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: nextest-junit-${{ runner.os }}
-          path: target/nextest/ci/junit.xml
+          path: |
+            target/nextest/ci/junit.xml
+            target/nextest/ci/summary.log
           if-no-files-found: error
       - name: Show sccache stats
         if: always() && steps.sccache.outcome == 'success'
@@ -538,7 +545,11 @@ jobs:
           install_args: "rust cargo:cargo-nextest"
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
       - run: cargo build --locked -p parallax-cli
-      - run: cargo nextest run --workspace --all-targets --profile ci --no-tests=fail
+      - name: Run macOS tests with slow-test evidence
+        run: |
+          mkdir -p target/nextest/ci
+          cargo nextest run --workspace --all-targets --profile ci --no-tests=fail \
+            --status-level slow --final-status-level slow 2>&1 | tee target/nextest/ci/summary.log
       - run: cargo xtask nextest-evidence --profile ci --output github
       - run: cargo run --locked -p parallax-cli -- --help
       - name: Upload macOS nextest JUnit
@@ -546,7 +557,9 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: nextest-junit-macos
-          path: target/nextest/ci/junit.xml
+          path: |
+            target/nextest/ci/junit.xml
+            target/nextest/ci/summary.log
           if-no-files-found: error
   ci-required:
     needs: [changes, actionlint, source-hygiene, security-hygiene, policy, fmt, audit, check, clippy, test, ui, embed, native-macos]
