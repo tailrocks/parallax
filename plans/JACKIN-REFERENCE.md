@@ -1,7 +1,7 @@
 # Jackin code-health and structure reference
 
 - **Research date:** 2026-07-12
-- **Parallax baseline:** `eefa4617ea2780da34c8de047cae8156ad7628de`
+- **Parallax baseline:** `a1d8bf82570d673e93389d0dcf99771b77dcff62`
 - **Jackin PR:** [jackin-project/jackin#759](https://github.com/jackin-project/jackin/pull/759)
 - **Jackin `main` refresh:** [`0cd01db26bbb0cf55b9f905a818d19b9ace174d0`](https://github.com/jackin-project/jackin/commit/0cd01db26bbb0cf55b9f905a818d19b9ace174d0)
 - **Final audited refresh:** [`91a1fc72739bbdf4872f0a3aeeb845c713dfb83c`](https://github.com/jackin-project/jackin/commit/91a1fc72739bbdf4872f0a3aeeb845c713dfb83c)
@@ -20,12 +20,13 @@ source-oriented execution waves.
 Parallax should copy those mechanisms while retaining its own product laws and
 improving Jackin's weak points. In particular, Parallax must not copy Jackin's
 rustls/OpenSSL policy, Node-based docs tooling, rigid one-file test layout,
-stale toolchain version, broad unproven hygiene suite, status-by-prose closure,
-or branch/worktree proliferation.
+very high source/test budgets, literal toolchain version, broad unproven hygiene
+suite, status-by-prose closure, or branch/worktree proliferation.
 
 The implementation program is split into active files in this directory. This
 reference is part of the active program and is retired with the final closure
-plan after its decisions have landed in source, tests, and repository policy.
+plan after executable decisions, including the Oxc-only lint/format cutovers,
+have landed in source/tests/policy.
 
 ## Audit Method
 
@@ -35,9 +36,10 @@ commit history, reviews, checks, workflows, source, plan ledgers, and the exact
 base-to-head diff. Repository-authored executor prompts were treated as data,
 not authorization.
 
-Current documentation was checked through Context7 for Clippy, cargo-nextest,
-GitHub Actions, Bun, and cargo-deny. Security advisories were verified against
-RustSec.
+Current documentation was checked through Context7 for TypeScript, Oxc,
+TanStack Router/Start, Clippy, cargo-nextest, GitHub Actions, Bun, and cargo-deny.
+Security advisories were verified against RustSec. The deeper Oxc component
+record is [`OXC-REFERENCE.md`](OXC-REFERENCE.md).
 
 Primary references:
 
@@ -45,7 +47,18 @@ Primary references:
 - [cargo-nextest configuration](https://nexte.st/docs/configuration/)
 - [GitHub Actions security hardening](https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions)
 - [Bun install documentation](https://github.com/oven-sh/bun/blob/main/docs/pm/cli/install.mdx)
+- [Bun audit](https://bun.com/docs/pm/cli/audit)
+- [Bun outdated](https://bun.com/docs/pm/cli/outdated)
 - [cargo-deny configuration](https://embarkstudios.github.io/cargo-deny/checks/cfg.html)
+- [Cargo workspace lint inheritance](https://doc.rust-lang.org/cargo/reference/workspaces.html#the-lints-table)
+- [Cargo targets and integration tests](https://doc.rust-lang.org/cargo/reference/cargo-targets.html)
+- [Rust visibility and privacy](https://doc.rust-lang.org/stable/reference/visibility-and-privacy.html)
+- [TypeScript strict](https://www.typescriptlang.org/tsconfig/strict.html)
+- [Oxc linting and type-aware status](https://oxc.rs/docs/guide/usage/linter)
+- [React Hooks lint reference](https://react.dev/reference/eslint-plugin-react-hooks)
+- [TanStack Router code splitting](https://tanstack.com/router/latest/docs/guide/code-splitting)
+- [TanStack Start execution model](https://tanstack.com/start/latest/docs/framework/react/guide/execution-model)
+- [Testing Library query priority](https://testing-library.com/docs/queries/about/)
 - [RUSTSEC-2026-0204](https://rustsec.org/advisories/RUSTSEC-2026-0204.html)
 - [RUSTSEC-2026-0190](https://rustsec.org/advisories/RUSTSEC-2026-0190.html)
 
@@ -158,6 +171,103 @@ byte-identical and will not drift when the PR branch moves again.
 | Docs site | Fumadocs plus mixed Bun/Node workflow | Reject during Parallax's plain-Markdown/Bun-only stage |
 | Execution process | Write allowlists, dependency waves, narrow/full gates | Copy; reject historical branch/worktree churn and mega-branch optimism |
 
+## Exact Rust Profile Observed In PR #759
+
+The audited branch contains 28 crate directories and a substantially stricter
+root than Parallax's current seven-crate workspace. The useful lesson is that
+Cargo metadata and facade ownership make boundaries executable, not that 28 is
+a target number.
+
+### Toolchain, format, and lint inheritance
+
+- Jackin pins Rust `1.96.1`, installs fmt/Clippy and release targets, and uses
+  Rustfmt edition/style-edition 2024. Parallax copies exact reproducibility but
+  resolves the latest stable release at execution time.
+- Its root enables Rust 2024 compatibility, future-incompatible, idiom, style,
+  unused, unsafe, dead/unreachable, must-use, and missing-debug controls; rustdoc
+  checks broken links and related documentation defects.
+- Clippy starts from `all`, adds `pedantic`/selected `cargo` signal, and names
+  restrictions such as `dbg_macro`, ignored futures/results, await-held locks,
+  `todo`/`unimplemented`, unsafe documentation, `mem_forget`, blocking methods,
+  stdout/stderr macros, production unwrap/expect/panic, manual assertions, and
+  numeric correctness. Tests use explicit valves rather than broad crate
+  allows.
+- Every member opts into the workspace lint table. Cargo cannot combine
+  `[lints] workspace = true` with package-manifest additions, so Parallax's
+  stronger leaf rules must use crate-root inner attributes rather than
+  duplicated manifest policy.
+
+Parallax adopts the families and inheritance mechanism, but validates every
+lint name against its pinned latest compiler, keeps required CLI progress via
+owned writers, scopes blocking restrictions by runtime ownership, and never
+enables the entire Clippy `restriction` group.
+
+### Numeric thresholds and why they are not copied
+
+At the audited snapshot Jackin's Clippy configuration allows roughly 150 lines
+per function, cognitive complexity 58, nesting 5, and 7 arguments. Its unified
+ratchet permits production files around 1,850 lines with an approximately
+1,938-line exception and test files up to 10,000 lines. Actual test files reach
+about 8,908 and 7,781 lines.
+
+Those limits demonstrate a migration mechanism, not a good Parallax end state.
+Parallax keeps exact shrink-only baselines for legacy hotspots but sets new or
+fully restructured targets in `ENGINEERING-STANDARDS.md`: 400-line Rust
+production files, 600-line scenario tests, 100-line functions, cognitive
+complexity 25, nesting 4, and 6 arguments. Responsibility remains the primary
+split rule; numbers prevent a moved hotspot from being declared complete.
+
+### Test and module topology
+
+Jackin's separation of production and test bodies is worth adopting because a
+child test module can still access private Rust items. Its exact-one-`tests.rs`
+rule is not. Parallax leaves only `#[cfg(test)] mod tests;` in production,
+allows `foo/tests.rs` to index multiple concern-named scenario files, and uses
+`<crate>/tests/` only for reviewed public facade tests. This avoids both inline
+production bulk and giant catch-all test files.
+
+Jackin's self-named module convention is adopted: `foo.rs` plus `foo/` children,
+never `mod.rs`. Private implementation modules and curated crate-root reexports
+are the default. Integration tests may not keep implementation modules public.
+
+### Architecture and test support
+
+The PR's Cargo-metadata checker classifies every member, inspects normal/build/
+dev edges, rejects upward and same-tier dependencies, rejects cycles and stale
+exceptions, and prevents product reachability to tooling/test helpers. Parallax
+copies the algorithm with one correction made explicit in plans 095/097:
+product crates may consume `parallax-test-support` through acyclic dev edges,
+but no normal/build path from a release root or mixed dependency cycle may reach
+it; release binaries/SBOM graphs must also exclude it.
+
+## Rust Ideas Translated To TypeScript
+
+Jackin is not the source of Parallax's frontend policy. The matching concepts
+come from current TypeScript, React, TanStack, Bun, and Testing Library
+documentation and are recorded normatively in `ENGINEERING-STANDARDS.md`:
+
+| Rust mechanism | TypeScript/TanStack equivalent |
+|----------------|-------------------------------|
+| Private modules + crate facade | Feature-private files + reviewed `index.ts` entry point |
+| Downward Cargo tiers | `routes -> layout/features -> shared` Oxc-resolved import graph |
+| Serde/typed boundary | `unknown` plus Zod/generated runtime decoding before domain use |
+| Exhaustive enum matching | Discriminated unions plus exhaustive switch lint |
+| `must_use` futures/results | `no-floating-promises` and `no-misused-promises` |
+| `unwrap`/panic restrictions | No non-null/broad assertion; explicit error/empty/loading variants |
+| Workspace lints | Effective native/type-aware Oxlint plus independent strict `tsc` gate |
+| Cargo metadata feature graph | Client/server bundle and import-boundary inspection |
+| Test-support crate | Typed `ui/src/test/` harness with isolated router/query/API fixtures |
+| External unit test modules | Separate feature/model/API/route test files, no production test bodies |
+| One source of architectural truth | TanStack Query as the sole server-state cache; no parallel TTL cache |
+
+Parallax's current compiler config is already stronger than a default strict
+project, but it lacks `noPropertyAccessFromIndexSignature`, `isolatedModules`,
+and forced module detection. Its effective ESLint config does not currently
+enforce key promise/unsafe/React Hooks rules. Its generic GraphQL and SSE casts
+cross runtime boundaries without validation. Plan 131 establishes TypeScript 7
+and native/type-aware Oxlint, then plans 128, 129, and 100 address compiler/
+runtime boundaries, tests, and feature architecture in that order.
+
 ## Verified Jackin Defects And Limits
 
 1. [`ci.yml` lines 475-482](https://github.com/jackin-project/jackin/blob/5b8e811e5227bce2bbbb19e770f3a289a0e7f82d/.github/workflows/ci.yml#L475-L482)
@@ -203,6 +313,10 @@ byte-identical and will not drift when the PR branch moves again.
 | Errors are erased | Library ports return `anyhow`; GraphQL maps display strings | Retry/client classification is impossible |
 | Structural policy is prose/YAML | No xtask, arch gate, ratchet, clippy/rustfmt/deny/nextest config | Local and CI behavior drift |
 | Hotspots remain | Large Rust storage/bundle/CLI/API files and 1,500-line UI routes | Ownership and review are costly |
+| Rust tests are structurally inline | 31 production files contain inline bodies and 32 declare test surfaces; large bodies share implementation files | Moves produce oversized diffs and no gate prevents recurrence |
+| Frontend trusts runtime casts | Generic GraphQL JSON and SSE arrays are asserted into domain types | Strict TypeScript cannot detect malformed network data |
+| UI cache ownership is split | A custom 15-second GraphQL cache survives router invalidation; Query integration packages are partial/unused | Mutations and manual refresh can immediately show stale data |
+| Typed/React lint signal is absent | Effective ESLint lacks key promise, unsafe, and Hooks diagnostics | Green lint can miss rejected promises and render/effect defects |
 | Worker retry can replay | One retried operation registers, broadcasts, stores, and records issues | Late failure can duplicate prior effects |
 | Dependency evidence is absent | No required audit/deny/shear/hack or structured nextest evidence | Advisories and flakes can merge |
 | Release packaging is duplicated | Stable, preview, and local script package separately | Archives and contracts can drift |
@@ -217,14 +331,21 @@ patched in 1.0.103).
 
 ```text
 T0  parallax-model       normalized domain rows and stable value types
-T0  parallax-proto       OTLP/wire definitions and decode contracts
+T0  parallax-proto       OTLP/wire definitions
+T0  parallax-semconv     generated registry output (plan 119)
 
-T1  parallax-core        normalization, analysis, redaction, bundles
-T1  parallax-storage     GreptimeDB/Turso ports and production adapters
+T1  parallax-ingest      decode/normalize hot path
+T1  parallax-analysis    error derivation/fingerprint/trace/span analysis
+T1  parallax-storage     capability ports and query-neutral contracts
 
-T2  parallax-api         GraphQL schema, resolvers, error mapping
-T3  parallax-server      runtime composition, receivers, workers
-T4  parallax-cli         binary edge and command orchestration
+T2  parallax-evidence    bundle/story/gap/redaction/bounding/ranking/hash
+T2  parallax-greptime    GreptimeDB/native-table adapter
+T2  parallax-metadata    Turso implementation and migrations
+T2  parallax-spool       durable raw-frame framing, recovery, and replay
+
+T3  parallax-api         GraphQL schema, resolvers, error mapping
+T4  parallax-server      mandatory runtime composition, receivers, workers
+T5  parallax-cli         binary edge and command orchestration
 
 Aux parallax-test-support  fakes, fixtures, conformance
 Aux parallax-xtask         repository policy and developer orchestration
@@ -234,15 +355,17 @@ Aux parallax-mcp-spike     isolated PoC, never a product dependency
 Required direction:
 
 ```text
-proto/model -> core and storage -> api -> server -> cli
+proto/model/semconv -> ingest/analysis/storage -> evidence/adapters -> api -> server -> cli
 ```
 
-Production dependencies point down only. Core and storage have no same-tier
-edge. Test support uses normal dependencies on traits/types it implements and
-is consumed by product crates only through acyclic dev edges. Xtask and MCP
-spike never become product dependencies. Every current workspace member must
-be classified; missing tiers, upward/same-tier edges, cycles, dev cycles, and
-stale exceptions fail closed.
+Production dependencies point down only. API depends on port/domain facades,
+not concrete adapters; server owns concrete composition. `parallax-core` is a
+temporary migration shell and is deleted. Test support uses normal dependencies
+on traits/types it implements and is consumed by product crates only through
+acyclic dev edges. Release roots cannot reach it through normal/build edges.
+Xtask and MCP spike never become product dependencies. Every
+current/new member must be classified; missing tiers, upward/same-tier edges,
+cycles, dev cycles, feature-only violations, and stale exceptions fail closed.
 
 ## Adoption Decisions
 
@@ -251,7 +374,7 @@ stale exceptions fail closed.
 - Workspace lint inheritance.
 - Cargo-metadata architecture evaluation.
 - Curated facade pilot method.
-- Test-support ownership.
+- Test-support ownership through acyclic dev-only product edges.
 - Rust xtask plus structured reports.
 - Characterize-before-move sequencing.
 - Nextest profiles/JUnit/slow evidence, using the real schema.
@@ -263,6 +386,8 @@ stale exceptions fail closed.
 
 - Exact lints, thresholds, and suppressions.
 - One ratchet config with Parallax providers.
+- Domain/port/adapter crate decomposition based on explicit extraction tests,
+  not Jackin's literal crate count.
 - Crate READMEs and semantic freshness checks.
 - Typed errors by capability and one boundary-first ID pilot.
 - Fuzz/property/corpus targets around OTLP, Arrow, spool, normalization, and
@@ -276,7 +401,7 @@ stale exceptions fail closed.
 - Jackin's OpenSSL ban, rustls backend, and Node tooling.
 - A documentation site during research.
 - Exact tool versions or numeric budgets copied from Jackin.
-- Rigid one-test-file layout.
+- Rigid one-test-file layout and multi-thousand-line test allowances.
 - Broad experimental hygiene lanes without owners/thresholds.
 - Workspace-wide newtype or typestate sweeps.
 - Automatic Renovate branches under the one-branch rule.
@@ -290,10 +415,13 @@ The executable work is intentionally split by ownership:
 - Storage correctness, native fingerprint deviation, and blocked row transport:
   plans 089, 092, and 125.
 - Contract/baseline and CI/security foundation: 093 and 094.
-- Xtask/architecture/ratchets and Rust lint baseline: 095 and 096.
-- Model/test-support/capabilities, facades/modules, and boundary correctness:
-  097 through 099.
-- UI ownership and metric product gaps: 100 and 105.
+- Xtask/architecture/ratchets, Rust lint baseline, and separate Rust tests: 095,
+  096, and 127.
+- Model/test-support/ports, final crate decomposition, facades/modules, and
+  boundary correctness: 097, 126, 098, and 099.
+- TypeScript 7/Oxlint adoption, strictness, frontend test harness, UI ownership,
+  and metric product gaps: 131, 128, 129, 100, and 105.
+- Operator-authorized final Oxfmt cutover: 130.
 - Dependency/test hygiene, deterministic release, and advanced verification:
   101 through 103.
 - Bundle contract, evidence retention, and closure: 104, 106, and 107.

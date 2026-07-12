@@ -12,7 +12,7 @@
 - **Risk**: HIGH
 - **Depends on**: none
 - **Category**: foundation / correctness
-- **Planned at**: `eefa4617`, 2026-07-12
+- **Planned at**: `a1d8bf82`, revised 2026-07-12
 - **Status**: TODO
 
 ## Why
@@ -69,6 +69,9 @@ Write a dated packet under `docs/research/validation/` containing:
 - V1 acceptance requirement-to-test/evidence mapping, with explicit missing
   ClickHouse-shaped and DataLoader-batch fixtures;
 - Rust/UI test and ignored-test inventory;
+- UI critical-path/high-churn-to-test map naming route/data/cache/SSE/search
+  risks, exact current tests, assertion quality, warnings/unhandled errors, and
+  missing characterization for plan 129;
 - native Greptime table/extension table inventory and representative SQL;
 - Turso migration/row-mapping inventory;
 - Rust/UI line distributions and named hotspots;
@@ -151,6 +154,8 @@ fallback, and worker retry findings.
 - [ ] Product code exposes no `none`/MemoryStore runtime path.
 - [ ] Tests use an internal injection seam, not a hidden product mode.
 - [ ] Baseline packet includes every listed machine-readable oracle.
+- [ ] UI critical paths and high-churn modules map to meaningful test evidence
+  or an explicit plan 129 prerequisite.
 - [ ] Worker stage characterization is green and unchanged by later moves.
 - [ ] Defect ledger rows name exact tests/gates.
 - [ ] Default workspace, real storage, UI, fmt, and Clippy gates pass.

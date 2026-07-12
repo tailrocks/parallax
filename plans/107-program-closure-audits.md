@@ -13,7 +13,7 @@
 - **Risk**: HIGH
 - **Depends on**: Every other actionable indexed plan; all blockers freshly rechecked
 - **Category**: validation / closure / plan lifecycle
-- **Planned at**: `eefa4617`, 2026-07-12
+- **Planned at**: `a1d8bf82`, revised 2026-07-12
 - **Status**: TODO
 
 ## Why
@@ -96,9 +96,10 @@ commands independently and records findings, not just command names.
 A skeptical auditor who did not implement the final wave uses a separate fresh
 detached checkout of the same commit. It owns CI path routing, required-check
 topology, security/dependency/TLS policy, nextest evidence, cache behavior,
-release determinism, signatures/SBOM/attestations, tamper failures, blocked
-condition checks, and plan lifecycle. It must inspect workflow/source logic and
-actual artifacts rather than trust green labels.
+Oxc/Bun process ownership, release determinism, signatures/SBOM/attestations,
+the exact two-entry Oxc pre-stable allowlist and expiry behavior, tamper failures,
+blocked condition checks, and plan lifecycle. It must inspect
+workflow/source logic and actual artifacts rather than trust green labels.
 
 ### Step 4: Reconcile and repeat
 
@@ -130,13 +131,18 @@ fix it, and return to Step 2 with a new C0 instead of mixing remediation into C1
 
 Confirm that earlier completion commits already retired every other actionable
 plan and index row. Delete this plan and its index row in the closure commit.
-Delete `JACKIN-REFERENCE.md` and `IMPLEMENTATION.md` when no actionable
-Jackin-alignment work remains. Keep every other BLOCKED file only when a fresh
-exact condition still prevents execution; shrink it to current evidence and
-trigger before staging the closure tree. Confirm all active plan material
-exists only in `plans/`.
+Delete `ENGINEERING-STANDARDS.md`, `JACKIN-REFERENCE.md`,
+`OXC-REFERENCE.md`, and `IMPLEMENTATION.md` when no actionable
+restructuring/alignment work remains and their rules have landed in durable
+source/config/tests/conventions or in a remaining self-contained BLOCKED plan.
+Keep every other BLOCKED file only when a fresh exact condition still prevents
+execution; shrink it to current evidence and trigger before staging the closure
+tree. Plans 130 and 131 are actionable Oxc-only prerequisites and must already
+have retired; closure cannot preserve Prettier, ESLint, or an unfinished Oxc
+migration as BLOCKED work. Confirm all active plan material exists only in
+`plans/`.
 
-The cleanup commit may change only this plan, its index row, the two program
+The cleanup commit may change only this plan, its index row, the four program
 reference/contract files, and already-generated closure packet references
 required by lifecycle. It may not batch-delete plans that should have retired
 earlier or change product source, manifests, policy, CI, release, or durable
@@ -172,6 +178,8 @@ product/policy/workflow changes, return to two full source audits on a new C0.
   evidence-only C1 fixture whose packets attest parent C0 without self-reference.
 - Negative tests for stale exceptions, skipped checks, hollow reports, and any
   previously completed numbered plan left in `plans/`.
+- Oxc-only proof: no invoked ESLint/Prettier path and exactly the expiring
+  Oxfmt/`oxlint-tsgolint` policy entries, with no broader pre-stable surface.
 - Repository search proving no active plan/prompt/index exists outside `plans/`.
 - Final cleanup-diff/trailer/tree fixtures and required `closure-final` check.
 
@@ -186,6 +194,9 @@ product/policy/workflow changes, return to two full source audits on a new C0.
   hashes validate against parent C0 without self-reference.
 - [ ] Required checks are non-hollow and actual artifact/sidecar tampering fails.
 - [ ] Exceptions, suppressions, quarantines, and docs match live source/policy.
+- [ ] ESLint and Prettier are not invoked or directly owned; the only pre-stable
+  Oxc exceptions are exact Oxfmt and `oxlint-tsgolint` entries with stable-release
+  expiry and negative broadening fixtures.
 - [ ] Git history proves every earlier actionable plan retired with its index
   row in its own completion commit; this final plan and the program
   reference/execution files are deleted by the closure commit.

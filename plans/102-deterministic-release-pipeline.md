@@ -10,9 +10,9 @@
 - **Priority**: P1
 - **Effort**: L
 - **Risk**: HIGH
-- **Depends on**: 094, 101
+- **Depends on**: 094, 096, 101
 - **Category**: release / packaging / provenance
-- **Planned at**: `eefa4617`, 2026-07-12
+- **Planned at**: `a1d8bf82`, revised 2026-07-12
 - **Status**: TODO
 
 ## Why
@@ -25,12 +25,14 @@ and there is no operator command that verifies the artifact set atomically.
 
 ## Scope
 
-- One local composite action or repository-owned implementation for archive
-  construction used by every release mode.
+- One repository-owned Rust helper/xtask archive implementation used by every
+  release mode; composite actions are callers, never independent byte producers.
 - Digest-pinned and verified external build inputs, including the macOS SDK,
   with caches keyed by the verified digest.
 - Deterministic ordering, paths, timestamps, ownership, permissions, and gzip
   metadata; isolated target/Zig caches.
+- Plan 096's source-line/backtrace decision: retained line tables or
+  build-ID-keyed symbol companions with deterministic ownership.
 - Version/tag/archive/binary coherence before build or publish.
 - Protected stable-release environment and `v*` tag authorization evidence.
 - Checksum, cosign bundle, CycloneDX SBOM, and GitHub provenance attestation
@@ -51,7 +53,9 @@ Out of scope:
 
 Inventory current preview/stable/script outputs, names, layout, executable
 modes, target triples, checksums, SBOMs, signatures, attestations, and formula
-expectations. Add fixtures that characterize the current public contract.
+expectations. Include debug/line-table presence, strip settings, build IDs,
+panic/backtrace source-line fidelity, symbol companion names when selected, and
+binary/archive size. Add fixtures that characterize the current public contract.
 Resolve any tag/workspace/binary version contradiction before packaging begins.
 
 Decide the current manual stable-release contradiction explicitly. Before
@@ -67,8 +71,10 @@ starts. Keyless signing identity is provenance, not release authorization.
 
 ### Step 2: Build identical bytes through one implementation
 
-Extract a repository-owned deterministic archive action/helper shared by
-preview, stable, and xtask rehearsal. Normalize file order, relative paths,
+Implement one repository-owned deterministic Rust library/xtask function shared
+by preview, stable, and local rehearsal. Composite actions and workflows pass
+validated inputs to that same function; they contain no alternate tar/gzip
+construction. Normalize file order, relative paths,
 mtime from a declared source epoch, uid/gid/uname/gname, permissions, and gzip
 header metadata. Keep Zig and per-target caches isolated so cached state cannot
 enter the archive. Run twice from clean directories and compare digests.
@@ -84,6 +90,12 @@ Produce checksums, cosign bundle/signature, CycloneDX SBOM, and GitHub artifact
 attestation from the finalized archive bytes. Use OIDC and least-privilege job
 permissions. Record workflow identity/issuer and source commit. Do not sign or
 attest an intermediate file that is later recompressed or renamed.
+
+When plan 096 selects symbol companions, treat each companion as a first-class
+version/target/build-ID-bound release asset with checksum, SBOM inventory,
+signature/attestation, completeness checks, and retention policy. When line
+tables remain in the binary, verify the final published stripped/unstripped
+bytes still resolve the representative backtrace.
 
 ### Step 4: Implement local rehearsal and atomic verification
 
@@ -101,9 +113,20 @@ Run one preview end to end, verify downloaded assets independently, and update
 only `parallax-preview` after every required asset is published and verified.
 Stable formula mutation remains disabled until stable readiness is opened.
 
+Remove the current cross-repository Homebrew tap write-token path. Prefer a
+pull model: a workflow in `tailrocks/homebrew-parallax` uses its own narrowly
+scoped repository authority to fetch and independently verify published Parallax
+preview assets before updating the formula. If the tap cannot use that model,
+the operator must approve a narrowly scoped GitHub App installation token with
+repository allowlist, short expiry, rotation/revocation evidence, and audited
+workflow identity. OIDC/cosign permissions do not authorize writes to another
+repository. A long-lived PAT or unreviewed secret blocks retirement.
+
 ## Test Plan
 
 - Golden archive layout/mode/name tests per supported target.
+- Representative release panic/backtrace resolution and build-ID/symbol
+  mismatch/tamper tests.
 - Two clean rehearsals with identical SHA-256 digests.
 - Tampered archive, checksum, signature/bundle, attestation, SBOM, missing
   sidecar, wrong target, and version mismatch tests; each must fail closed.
@@ -115,6 +138,9 @@ Stable formula mutation remains disabled until stable readiness is opened.
 - Actionlint and least-privilege workflow review.
 - End-to-end preview asset download and `release-verify` proof.
 - Homebrew preview formula update only after verified publication.
+- Cross-repository credential fixtures proving no long-lived PAT, pull-model or
+  approved short-lived App authorization, narrow repository scope, expiry, and
+  failure before verified assets.
 
 ## Done Criteria
 
@@ -122,6 +148,8 @@ Stable formula mutation remains disabled until stable readiness is opened.
 - [ ] Archive construction is deterministic across two clean identical inputs.
 - [ ] Tag, workspace, binary, archive, and release versions agree before build.
 - [ ] External SDK/tool inputs are digest-verified before extraction and cache use.
+- [ ] Published artifacts preserve the approved source-line/backtrace contract,
+  and any symbol companions match exact target/version/build ID.
 - [ ] Manual stable publication is disabled until explicitly opened and tagged.
 - [ ] Stable publication requires protected `v*` tag authorization and approval
   through the protected stable-release environment.
@@ -130,14 +158,21 @@ Stable formula mutation remains disabled until stable readiness is opened.
 - [ ] Release jobs are ordered behind validation with least-privilege permissions.
 - [ ] One published preview asset set verifies end to end.
 - [ ] Only the rolling preview formula mutates before stable readiness.
+- [ ] The tap update uses its own pull workflow or an operator-approved
+  short-lived narrowly scoped GitHub App token; the old long-lived write secret
+  and workflow path are absent.
 
 ## STOP Conditions
 
 - The shared path changes public archive names/layout or Homebrew expectations
   without a reviewed migration.
+- Stripping or symbol separation makes representative captured backtraces
+  unresolvable or produces unattested companion bytes.
 - Two identical clean rehearsals differ and the source of nondeterminism is
   not understood.
 - Signing/attestation would require a long-lived secret or broad permissions.
+- The rolling formula can be updated only by retaining an unreviewed long-lived
+  PAT or cross-repository write secret.
 - A sidecar refers to bytes other than the published archive.
 - Any external build input is downloaded/extracted without digest verification.
 - Stable publishing or formula mutation is opened implicitly.

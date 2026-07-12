@@ -1,4 +1,4 @@
-# Plan 103: Add focused property, fuzz, and performance regression gates
+# Plan 103: Add focused Rust/UI property, fuzz, and performance gates
 
 > **Executor instructions**: Add only targets tied to named defect classes.
 > Compile broad checks on pull-request-equivalent CI, run expensive measurement
@@ -9,9 +9,9 @@
 - **Priority**: P2
 - **Effort**: L
 - **Risk**: MEDIUM
-- **Depends on**: 097, 099, 101, 104
+- **Depends on**: 097, 099, 100, 101, 104
 - **Category**: testing / fuzzing / performance
-- **Planned at**: `eefa4617`, 2026-07-12
+- **Planned at**: `a1d8bf82`, revised 2026-07-12
 - **Status**: TODO
 
 ## Why
@@ -25,6 +25,9 @@ a reason to enable expensive tools without owners or thresholds.
 
 - Properties/goldens for normalization, redaction, bundle hashing, trace trees,
   SQL builders/validation, serialization, and retry invariants.
+- Bounded UI properties for route-search round trips, GraphQL/SSE runtime
+  decoders, query-key identity, live ordering/deduplication, and feature state
+  machines after plans 128/100 establish their owners.
 - Fuzz targets and minimized corpora for OTLP/protobuf, Arrow, spool, and
   redaction boundaries.
 - Target-to-workflow drift validation.
@@ -49,7 +52,10 @@ For each target, document the defect class, input domain, oracle, corpus owner,
 runtime class, and promotion/removal rule. Cover normalization determinism,
 redaction idempotence and no-secret output, canonical bundle hash stability,
 trace parent/child invariants, SQL escaping/validation, serialization
-compatibility, and late-retry no-replay properties from plan 099.
+compatibility, and late-retry no-replay properties from plan 099. For the UI,
+cover search encode/decode round trips, decoder accept/reject domains, Query key
+stability, SSE ordering/deduplication, and exhaustive reducer/state-machine
+transitions without browser-global generation.
 
 ### Step 2: Add bounded property suites
 
@@ -57,6 +63,8 @@ Use deterministic seeded generation, shrinkable cases, explicit size limits,
 and committed minimal regressions. Ensure timestamps, Unicode/invalid byte
 boundaries, high-cardinality attributes, duplicate/out-of-order telemetry,
 redaction variants, and nanosecond string compatibility are represented.
+Run TypeScript properties through Bun, reuse plan 128's runtime schemas, and
+persist only minimal deterministic regression cases.
 
 ### Step 3: Add parser/recovery fuzz targets
 
@@ -92,6 +100,8 @@ spike produces useful stable signal.
 ## Test Plan
 
 - Seeded property suites replay identically and shrink intentional failures.
+- UI search/schema/cache/state properties run through Bun without duplicating
+  production decoders.
 - Each fuzz target builds, runs its corpus, and rejects an intentional panic
   fixture in its harness tests.
 - Target/workflow drift fixtures fail for missing names in both directions.
@@ -102,6 +112,8 @@ spike produces useful stable signal.
 ## Done Criteria
 
 - [ ] Named invariants have bounded property/golden coverage and regressions.
+- [ ] UI search, runtime decoder, Query identity, live ordering, and state
+  invariants have bounded generated coverage.
 - [ ] Four initial fuzz boundaries have maintained minimized corpora.
 - [ ] Declared fuzz/benchmark targets and workflows cannot drift silently.
 - [ ] Representative hot paths have reproducible time/allocation baselines.

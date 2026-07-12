@@ -10,9 +10,9 @@
 - **Priority**: P2
 - **Effort**: M
 - **Risk**: MEDIUM
-- **Depends on**: 095, 096, 100, 101
+- **Depends on**: 095, 096, 100, 101, 126
 - **Category**: schema ownership / code generation / CI
-- **Planned at**: `eefa4617`, 2026-07-12
+- **Planned at**: `a1d8bf82`, revised 2026-07-12
 - **Status**: TODO
 
 ## Why
@@ -45,6 +45,8 @@ In scope:
   orchestration with human/JSON diagnostics.
 - Checked-in generated Rust, Java, and TypeScript constants from reviewed
   repository-owned templates.
+- The T0 `parallax-semconv` leaf crate from the final plan 126 graph and
+  generated TypeScript under plan 100's `shared` public boundary.
 - A temp-directory regeneration/diff gate used identically by local and CI
   commands, plus cross-language wire-name fixtures.
 - Migration of existing hand-written constant modules without changing emitted
@@ -68,7 +70,9 @@ Out of scope:
    stability/type/cardinality, unknown imports, and wire-name drift.
 3. Implement reviewed repository-owned templates for Rust, Java, and TypeScript.
    Generate into a temporary directory first and compare exact normalized output;
-   checked-in files remain the product build inputs.
+   checked-in files remain the product build inputs. Rust output is owned by the
+   dependency-free T0 `parallax-semconv` crate; TypeScript output is exposed
+   through `ui/src/shared` and never from a feature or route.
 4. Add `cargo xtask semconv check|generate` through the plan 095 diagnostic
    control plane. `check` must be read-only, deterministic, and machine-readable;
    `generate` is an explicit maintainer command.
@@ -77,6 +81,8 @@ Out of scope:
    generated output has compiled and emitted identical fixtures.
 6. Add path-aware CI for registry/template/generated-source changes. Prove stale,
    malicious, missing, and nondeterministic output fails without network access.
+   Generated output is excluded only from manual size/style ownership, not
+   compile, format, import direction, license, secret, or drift checks.
 
 ## Test Plan
 

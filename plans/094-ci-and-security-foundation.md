@@ -12,7 +12,7 @@
 - **Risk**: MEDIUM
 - **Depends on**: 093
 - **Category**: CI / security / DX
-- **Planned at**: `eefa4617`, 2026-07-12
+- **Planned at**: `a1d8bf82`, revised 2026-07-12
 - **Status**: TODO
 
 ## Why
@@ -29,6 +29,9 @@ rules actually require the aggregate check.
 - Shell/release-script validation is not triggered by every script input.
 - Preview archive routing omits `mise.toml` and shared release actions.
 - `ui/package.json` has `check`, but PR CI does not run it.
+- A 2026-07-12 read-only `bun run check` reports a 76-file formatting baseline,
+  including 39 shadcn primitives; requiring it without a transition would mix
+  a bulk rewrite into functional work.
 - No required cargo-audit lane exists.
 - `SECURITY.md` calls the repository private while contribution/protection docs
   call it public.
@@ -50,6 +53,9 @@ Out of scope:
 - Deterministic archive/signing implementation, owned by plan 102.
 - Automatic updater branches.
 - Replacing existing cache backends before measurement.
+- Oxfmt cutover, owned by plan 130 after plan 101 records the narrow operator-
+  approved Beta exception. This plan keeps the current formatter required until
+  that separate differential cutover completes.
 
 ## Steps
 
@@ -85,8 +91,27 @@ Make check and Clippy siblings after common prerequisites. Keep tests, UI,
 embed, actionlint, advisory, and policy inputs explicit in `ci-required`.
 Preserve current job name, concurrency, SHA pins, cache fallbacks, and timeouts.
 
-### Step 4: Enforce the Bun/source contract
+### Step 4: Enforce the current Bun/source formatting contract
 
+- Preserve the current LF, no-semicolon, double-quote, tab-width 2, ES5
+  trailing-comma, print-width 80, and Tailwind ordering baseline until plan 130
+  makes the operator-authorized Oxfmt cutover. This is explicit temporary
+  ownership, not a decision to retain Prettier permanently.
+- Keep `routeTree.gen.ts` generator-owned and drift-checked. Decide whether
+  shadcn output is formatted after generation or retained verbatim; record and
+  fixture the exact path/generator policy in `ui/AGENTS.md`. Do not silently
+  ignore all generated files or batch the baseline into feature work.
+- Make the current format/check scripts invoke their exact lock-local formatter
+  through Bun's `--bun` override with installation disabled, and fixture the
+  process tree so a Node shebang cannot spawn Node.
+- Check in `ui/bunfig.toml` with `[run] bun = true` and
+  `[install] auto = "disable"`. Inventory every required script and make its
+  Vite, Vitest, TypeScript, interim ESLint/Prettier, codegen, and generator CLI
+  resolve from the lock with Bun runtime; outer `bun run <name>` stays stable.
+  Add per-script executable-ancestry/no-auto-install fixtures.
+- Replace mutable generator instructions such as `bunx --bun shadcn@latest`
+  with the exact lock-local `bunx --bun --no-install shadcn ...` contract and
+  update `ui/AGENTS.md`. Reject every active `bunx ...@latest` form.
 - Use `bun ci` after verifying current trusted dependency behavior.
 - Add `bun run check` before lint/typecheck/test/build.
 - Reject npm/pnpm/yarn lock/config files and stale commands in active metadata.
@@ -114,7 +139,9 @@ plan 102 handles release-specific permissions during its rewrite.
 - Source-hygiene range fixtures for pull request, push, initial/zero base, and
   local staged/unstaged changes.
 - Actionlint.
-- `bun ci` and all UI scripts.
+- Bunfig recursion/auto-install and per-script Vite/Vitest/tsc/lint/format/
+  codegen/shadcn process fixtures on macOS/Linux, plus current formatter
+  config/file-selection/Tailwind/idempotence and all UI scripts.
 - Cargo audit clean or exact approved expiring exception.
 - Workflow permission assertions.
 
@@ -124,6 +151,10 @@ plan 102 handles release-specific permissions during its rewrite.
 - [ ] Check and Clippy are parallel siblings.
 - [ ] Every command/archive input routes to its validator.
 - [ ] UI format, lint, types, tests, and build are required where applicable.
+- [ ] The interim formatter is Bun-only and required, with explicit generated/
+  shadcn ownership and an isolated mechanical baseline for plan 130.
+- [ ] Global Bun run/auto-install policy and every required package script prove
+  exact lock-local execution with no Node, mutable `@latest`, or implicit install.
 - [ ] Source hygiene checks the committed event range in CI and both local diff
   surfaces instead of passing vacuously on a clean checkout.
 - [ ] No mutable third-party Action tag exists.
@@ -136,6 +167,8 @@ plan 102 handles release-specific permissions during its rewrite.
 - A change weakens or renames `ci-required` without a ruleset migration.
 - Advisory success requires a permanent unreasoned ignore.
 - Path routing cannot distinguish a required archive/security input.
+- Formatting can become green only through an unexplained generated-code
+  rewrite or broad ignore.
 - A proposed action needs broader permissions without a specific operation.
 - Security reporting details need an operator decision.
 

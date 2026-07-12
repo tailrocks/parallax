@@ -1,9 +1,12 @@
 # Active Implementation Plans
 
 Execution rules for the complete program live in
-[`IMPLEMENTATION.md`](IMPLEMENTATION.md). Both that contract and the Jackin
-reference are active plan material and must be retired by plan 107 when the
-program closes.
+[`IMPLEMENTATION.md`](IMPLEMENTATION.md). The self-contained Rust/TypeScript
+target lives in [`ENGINEERING-STANDARDS.md`](ENGINEERING-STANDARDS.md), while
+[`JACKIN-REFERENCE.md`](JACKIN-REFERENCE.md) preserves comparative provenance
+and [`OXC-REFERENCE.md`](OXC-REFERENCE.md) records the Oxc-first TypeScript
+toolchain decision. All four are active plan material and must be retired by
+plan 107 when the program closes.
 
 `plans/` is the only home for active Parallax implementation plans. It contains
 unfinished work only. Completed, rejected, or superseded work belongs in Git
@@ -34,6 +37,20 @@ with Jackin and PR #759. The analysis, audited commit, evidence classes,
 copy/adapt/reject decisions, and target architecture live in
 [`JACKIN-REFERENCE.md`](JACKIN-REFERENCE.md).
 
+The JavaScript/TypeScript quality-tooling direction comes from current official
+Oxc documentation and the live Parallax dependency/configuration baseline.
+[`OXC-REFERENCE.md`](OXC-REFERENCE.md) records component maturity, Bun
+compatibility, Oxlint/Oxfmt migration gates, Rust parser/resolver use, the
+Vite/Rolldown boundary, rejected alpha/experimental shortcuts, and numbered-plan
+ownership.
+
+The normative decisions are deliberately independent of that external project.
+[`ENGINEERING-STANDARDS.md`](ENGINEERING-STANDARDS.md) fixes the final Rust
+crate graph, module/test layout, lint contract, TypeScript boundary rules,
+TanStack feature/cache structure, frontend harness, structural budgets, and
+exception model. Numbered plans implement that contract rather than reopening
+its basic architecture during execution.
+
 Non-negotiable Parallax constraints override every external reference:
 
 - GreptimeDB + Turso only; no product fallback engine.
@@ -59,39 +76,45 @@ Non-negotiable Parallax constraints override every external reference:
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | [093](093-contract-and-baseline-corrections.md) | Reconcile product contracts, remove the storage fallback, and capture behavioral baselines | P1 | L | None | TODO |
-| [094](094-ci-and-security-foundation.md) | Repair CI topology, path routing, advisory gating, permissions, and repository security policy | P1 | L | 093 | TODO |
-| [102](102-deterministic-release-pipeline.md) | Unify deterministic preview/stable packaging and release verification | P1 | L | 094, 101 | TODO |
+| [094](094-ci-and-security-foundation.md) | Repair CI topology, source formatting enforcement, advisory gating, permissions, and security policy | P1 | L | 093 | TODO |
+| [102](102-deterministic-release-pipeline.md) | Unify deterministic preview/stable packaging, symbols, and release verification | P1 | L | 094, 096, 101 | TODO |
 
 ### Quality Tooling And Rust
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | [095](095-quality-control-plane.md) | Add xtask, architecture policy, one ratchet source, facades, and machine-readable diagnostics | P1 | L | 094 | TODO |
-| [096](096-rust-toolchain-and-lints.md) | Pin latest stable Rust and activate a strict measured lint/suppression baseline | P1 | L | 095 | TODO |
+| [127](127-rust-test-architecture.md) | Separate Rust test bodies and enforce public/private test ownership | P1 | L | 095 | TODO |
+| [096](096-rust-toolchain-and-lints.md) | Pin latest stable Rust and activate a strict measured lint/suppression baseline | P1 | L | 095, 127 | TODO |
 | [117](117-documentation-link-integrity.md) | Add a parser-backed required internal Markdown link gate | P2 | S-M | 095 | TODO |
-| [119](119-semconv-registry-codegen.md) | Generate checked-in Rust/Java/TypeScript semantic-convention constants from one registry | P2 | M | 095, 096, 100, 101 | TODO |
+| [119](119-semconv-registry-codegen.md) | Generate checked-in Rust/Java/TypeScript semantic-convention constants from one registry | P2 | M | 095, 096, 100, 101, 126 | TODO |
 
 ### Architecture And Boundaries
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [097](097-model-test-support-and-dependency-direction.md) | Extract the model leaf, move fakes to test support, split storage capabilities, and enforce direction | P1 | XL | 096 | TODO |
-| [098](098-facades-modules-and-api-batching.md) | Seal crate facades, split responsibility hotspots, validate crate docs, and eliminate latent nested-field N+1 paths | P2 | L | 097 | TODO |
+| [097](097-model-test-support-and-dependency-direction.md) | Extract model/port/test-support foundations and remove the core-storage inversion | P1 | XL | 096, 127 | TODO |
+| [126](126-rust-workspace-decomposition.md) | Decompose Rust into domain, port, adapter, and composition crates | P1 | XL | 097, 101 | TODO |
+| [098](098-facades-modules-and-api-batching.md) | Seal crate facades, split responsibility hotspots, validate crate docs, and eliminate latent nested-field N+1 paths | P2 | L | 126 | TODO |
 | [099](099-boundary-errors-idempotency-and-agent-safety.md) | Add typed errors, explicit retry/idempotency boundaries, an ID pilot, and agent-surface safety | P1 | L | 097, 098 | TODO |
 
 ### UI And Product Gaps
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [100](100-ui-feature-architecture.md) | Move UI ownership from routes to features and enforce import/data boundaries | P2 | L | 095; 099 soft | TODO |
+| [130](130-oxfmt-cutover.md) | Replace Prettier with exact-pinned Oxfmt and built-in Tailwind formatting | P1 | M | 094, 101 | TODO |
+| [131](131-typescript-7-and-type-aware-oxlint.md) | Adopt TypeScript 7 and replace ESLint with native/type-aware Oxlint | P1 | L | 095, 101 | TODO |
+| [128](128-typescript-static-and-runtime-safety.md) | Enforce TypeScript compile-time and runtime boundary safety | P1 | L | 095, 101, 131 | TODO |
+| [129](129-frontend-test-architecture.md) | Build a deterministic feature-owned Vitest and browser test architecture | P1 | L | 093, 128 | TODO |
+| [100](100-ui-feature-architecture.md) | Move UI ownership from routes to features and enforce TanStack cache/execution boundaries | P2 | L | 095, 101, 128, 129; 099 soft | TODO |
 | [105](105-metric-overview-and-trends.md) | Replace metric stubs and reconcile CLI, native-name, and metric-only service contracts | P2 | M | 097, 099, 100 | TODO |
 
 ### Dependencies, Tests, And Performance
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [101](101-dependencies-nextest-and-hygiene.md) | Add dependency policy, nextest evidence, native smoke, and staged security hygiene | P1 | L | 094, 095 | TODO |
-| [103](103-property-fuzz-and-performance.md) | Add focused property/fuzz corpora and measured performance/allocation gates | P2 | L | 097, 099, 101, 104 | TODO |
+| [101](101-dependencies-nextest-and-hygiene.md) | Add Cargo/Bun dependency policy, nextest evidence, native smoke, and staged hygiene | P1 | L | 094, 095, 096 | TODO |
+| [103](103-property-fuzz-and-performance.md) | Add focused Rust/UI property/fuzz corpora and measured performance/allocation gates | P2 | L | 097, 099, 100, 101, 104 | TODO |
 | [113](113-ingest-backpressure-observability.md) | Make queue, spool, retry, drop, and drain health observable | P2 | M | 095, 099 | TODO |
 
 ### Evidence Contracts And Closure
@@ -129,15 +152,19 @@ invent the missing product or operator decision.
 The main restructuring path is:
 
 ```text
-093 -> 094 -> 095 -> 096 -> 097 -> 098 -> 099 -> 104 -> 111
-095 -------------------------------> 100 -> 105
-099 ---------------------- soft ---> 100
-097 --------------------------------------> 105
-094 -> 095 -> 101 -> 102
-097 + 099 + 101 + 104 ------------------------> 103
+093 -> 094 -> 095 -> 127 -> 096 -> 097
+094 + 095 + 096 -----------------------> 101
+097 + 101 -----------------------------> 126 -> 098 -> 099 -> 104 -> 111
+095 + 101 -----------------------------> 131 -> 128
+093 + 128 -> 129
+095 + 101 + 128 + 129 ----------------> 100 -> 105
+099 ------------------------- soft ---> 100
+097 ------------------------------------------> 105
+094 + 096 + 101 ------------------------------> 102
+097 + 099 + 100 + 101 + 104 -----------------> 103
 095 + 099 ------------------------------------> 113
 095 ------------------------------------------> 117
-095 + 096 + 100 + 101 ------------------------> 119
+095 + 096 + 100 + 101 + 126 ----------------> 119
 093 + 097 + 099 ------------------------------> 116
 092 + 104 + 116 ------------------------------> 106
 093 + 097 + 099 + 104 ------------------------> 125
@@ -150,14 +177,25 @@ The main restructuring path is:
 100 + 105 + 111 + 119 -- cross-repo ----------> 122
 104 + 111 + 120 + 121 -- operator ------------> 123
 099 + 104 + 111 + 121 -- operator ------------> 124
+094 + 101 ------------------------------------> 130
 all actionable plans --------------------------> 107
 ```
 
-Plan 092 can run in parallel with 093. After 095, UI boundary work and
-dependency/test telemetry can proceed in parallel with the Rust architecture
-chain when their write sets are disjoint. Plan 107 is last. Any BLOCKED plan
-does not block closure only while a fresh reproducible external/operator/phase
-condition still holds and its file contains no hidden actionable work.
+Plan 092 can run in parallel with 093. After 095, Rust test/module extraction
+removes structural blockers before the strict lint baseline. After 096,
+Cargo/Bun dependency policy can proceed while the model/crate path starts.
+After 101 records the two narrow Oxc exceptions, plans 130 and 131 can proceed
+in parallel: plan 130 replaces Prettier with exact-pinned Oxfmt, while plan 131
+adopts the latest stable TypeScript 7 compiler and replaces the incompatible
+ESLint/typescript-eslint path with stable native plus exact-pinned type-aware
+Oxlint. Plan 128 then tightens declaration and runtime-boundary safety on that
+final stack while Rust crates move; after 128, the frontend harness follows.
+Plan 100 waits for dependency, strictness, and test foundations. Both Oxc
+cutovers are actionable and must retire before program closure; Prettier and
+ESLint are interim baselines, not permitted final tools.
+Plan 107 is last. Any BLOCKED plan does not block closure only while a fresh
+reproducible external/operator/phase condition still holds and its file contains
+no hidden actionable work.
 
 ## Shared Verification
 
@@ -169,6 +207,7 @@ git diff --cached --check
 cargo fmt --all --check
 cargo check --locked --workspace --all-targets
 cargo clippy --locked --workspace --all-targets -- -D warnings
+cargo xtask dependencies --all
 cargo nextest run --locked --workspace --all-targets --profile ci
 cargo test --locked --workspace --doc
 cargo xtask ci --full
@@ -178,8 +217,14 @@ cd ui && bun run lint
 cd ui && bun run typecheck
 cd ui && bun run test:ci
 cd ui && bun run build
+cd ui && bun run test:browser
 mise exec -- actionlint
 ```
+
+The plain outer `bun run <name>` interface is intentional. Plan 094 makes each
+script Bun-only through checked-in `bunfig.toml` (`[run] bun = true`, install
+auto-fetch disabled) and exact lock-local commands; plan 101 fixtures executable
+ancestry so Node shebangs, mutable `@latest`, and implicit installs fail.
 
 CI source hygiene uses the event's validated base/head range; the two plain
 commands above cover local unstaged and staged changes respectively.

@@ -1,8 +1,14 @@
 # Active Plans Execution Contract
 
 Execute the unfinished work indexed in [`README.md`](README.md). This file and
-all numbered plan files are one program contract; live source, tests, operator
-rules, and current upstream documentation override stale implementation detail.
+all numbered plan files are one program contract. The normative architecture,
+strictness, test, and exception decisions are in
+[`ENGINEERING-STANDARDS.md`](ENGINEERING-STANDARDS.md); the comparative source
+record is [`JACKIN-REFERENCE.md`](JACKIN-REFERENCE.md), and the Oxc component and
+migration record is [`OXC-REFERENCE.md`](OXC-REFERENCE.md). Live source, tests,
+operator rules, and current upstream documentation override stale implementation
+detail, but an executor may not silently substitute a different architecture or
+retain an obsolete lint/format stack after its migration plan completes.
 
 ## Mission
 
@@ -17,7 +23,10 @@ closure independently, and leave `plans/` containing unfinished work only.
    branch or pull request. Parallel agents use disjoint write sets on that same
    branch and receive the same branch restriction.
 2. Before a plan starts, read `AGENTS.md`, the index, its dependencies, its
-   full file, and the live code. Recheck assumptions/versions and record drift.
+   full file, `ENGINEERING-STANDARDS.md`, and the live code. Read the Jackin or
+   Oxc reference when provenance, component status, or an audited source
+   mechanism is useful; numbered plans and the standards file must be sufficient
+   to implement. Recheck assumptions/versions and record drift.
 3. Mark only one plan `IN PROGRESS` per overlapping write set. Update its
    status and evidence as durable commits land; never claim completion from
    prose, a checkbox, file existence, or grep alone.
@@ -29,7 +38,9 @@ closure independently, and leave `plans/` containing unfinished work only.
 6. Apply current stable ecosystem documentation at execution time. Bun is the
    only JS/TS runtime/package manager. Native TLS, GreptimeDB + Turso, native
    raw-signal tables, zero-copy ingest, Apache-2.0, and progress visibility are
-   non-negotiable.
+   non-negotiable. Preserve the standards file's dependency direction, facade,
+   separate-test, runtime-decoding, and single-cache decisions unless a new
+   operator-approved plan changes the contract first.
 7. STOP exactly when a plan's STOP condition fires. Capture reproducible
    evidence, shrink the file to current blocked work, set `BLOCKED`, and move
    to independent actionable work. Do not invent a bypass.
@@ -57,7 +68,8 @@ The program is complete only when:
 - both full closure packets agree at the pushed implementation candidate, and
   the closure commit embeds two independent exact-tree attestations while its
   required `closure-final` check verifies the mechanical diff and full baseline;
-- `JACKIN-REFERENCE.md` and this execution contract are deleted because no
-  Jackin-alignment action remains; and
+- `ENGINEERING-STANDARDS.md`, `JACKIN-REFERENCE.md`, `OXC-REFERENCE.md`, and this
+  execution contract are deleted because executable rules, including the exact
+  Oxc exceptions and completed plans 130/131, have landed durably; and
 - repository search proves all remaining active plan material exists only in
   `plans/`.

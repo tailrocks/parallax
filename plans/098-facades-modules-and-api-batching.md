@@ -10,14 +10,14 @@
 - **Priority**: P2
 - **Effort**: L
 - **Risk**: HIGH
-- **Depends on**: 097
+- **Depends on**: 126
 - **Category**: architecture / API performance / docs
-- **Planned at**: `eefa4617`, 2026-07-12
+- **Planned at**: `a1d8bf82`, revised 2026-07-12
 - **Status**: TODO
 
 ## Why
 
-Core, storage, and server expose broad module trees. Large files mix unrelated
+Current core, storage, and server expose broad module trees. Large files mix unrelated
 responsibilities: Greptime queries/bootstrap/ingest, metadata domains, bundle
 assembly/redaction/rendering, CLI commands, and GraphQL types/resolvers/tests.
 Nested `Issue::latestEvent`/`events` can also become a store N+1 if selected on
@@ -27,11 +27,13 @@ a list, even though current UI queries do not activate it.
 
 In scope:
 
-- Intentional facades for server, storage, and core.
+- Intentional facades for every product crate created/retained by plan 126.
 - Responsibility splits for named Rust hotspots and tests.
 - API resolver/module cleanup and nested issue batching.
 - Facade manifests/compile contracts and semantic per-crate docs.
 - Post-split file/public-surface ratchets.
+- Self-named Rust modules, thin crate roots, and the exact structural budgets in
+  `ENGINEERING-STANDARDS.md`.
 
 Out of scope:
 
@@ -44,13 +46,16 @@ Out of scope:
 
 | Current hotspot | Target ownership |
 |-----------------|------------------|
-| `storage/adapter.rs` | capability ports and shared query values from plan 097 |
-| `storage/greptime.rs` | transport, bootstrap/reconcile, ingest/Arrow, traces, logs, metrics, analytics, focused SQL tests |
-| `storage/metadata.rs` | connection/migration, issues, runs, dashboards/views, investigations, row mapping |
-| `core/bundle.rs` | model/assembly, bounding, redaction, ranking, hashing, Markdown, tests/properties |
+| `storage/adapter.rs` | `parallax-storage` capability modules and query-neutral values |
+| `storage/greptime.rs` | `parallax-greptime` transport, bootstrap/reconcile, ingest/Arrow, trace/log/metric/analytics modules |
+| `storage/metadata.rs` | `parallax-metadata` connection/migration, issue/run/dashboard/investigation, and row-mapping modules |
+| `storage/spool.rs` | `parallax-spool` framing, append, recovery, replay, limits, and compatibility modules |
+| `core/normalize.rs` | `parallax-ingest` signal-specific decode/normalize modules plus `parallax-analysis` error derivation |
+| `core/bundle.rs` | `parallax-evidence` model/assembly/story/gaps, bounding, redaction, ranking, hashing, Markdown, tests/properties |
+| trace/fingerprint/span-event modules | `parallax-analysis` domain-specific modules |
 | `cli/commands.rs` | run, issue, logs, traces, SQL, live/follow, bundle output, forwarding/render helpers |
 | API traces/services | GraphQL types, query orchestration, analysis/events, catalog/map/RED/runtime, tests |
-| `api/resolvers/mod.rs` | deliberate `resolvers.rs` facade consistent with current API split |
+| `api/resolvers.rs` facade created by plan 127 | responsibility-focused resolver children without reopening the facade contract |
 
 ## Steps
 
@@ -64,21 +69,27 @@ compiler-first, refresh the manifest intentionally, and review its diff.
 Add compile-contract tests for supported root paths and compile-fail docs for
 representative private implementation paths.
 
-### Step 2: Apply facades to storage and core
+### Step 2: Apply facades to the final workspace
 
-After plan 097 ownership settles, repeat the pilot. Preserve meaningful public
-domain namespaces; do not flatten merely to reduce `pub mod` counts. Each
-intentional export has an owner and consumer.
+After plan 126 ownership settles, repeat the pilot for model, proto, ingest,
+analysis, storage ports, evidence, concrete adapters, API, and CLI as
+applicable. Preserve meaningful public domain namespaces; do not flatten merely
+to reduce `pub mod` counts. Each intentional export has an owner and consumer.
 
 ### Step 3: Split production responsibilities
 
 Before each hotspot split, land characterization/golden tests and a write
-allowlist. Move one concern at a time, then its coherent tests. Multiple focused
-test files are allowed; reject Jackin's exactly-one-`tests.rs` rule.
+allowlist. Move one concern at a time, then its coherent external test modules
+from plan 127. Use the already-established `foo.rs` plus `foo/` children; plan
+127 has already eliminated `mod.rs`. Multiple
+focused test files are required when scenarios have independent concerns;
+reject an exactly-one-`tests.rs` rule.
 
-Replace `resolvers/mod.rs` without reopening Juniper's single-root impl or
-changing SDL. Introduce post-split size ratchets at measured values; no
-universal 500-line limit.
+Decompose behind the existing `resolvers.rs` facade without reopening Juniper's
+single-root impl or changing SDL. Enforce the new/restructured targets: 200 lines for crate roots,
+400 for Rust production files, 600 for test scenarios, 100 for functions,
+cognitive complexity 25, nesting 4, and 6 arguments. Existing larger items are
+exact shrink-only rows; file size does not replace responsibility analysis.
 
 ### Step 4: Batch nested issue fields
 
@@ -111,9 +122,12 @@ build a docs site.
 
 ## Done Criteria
 
-- [ ] Server/storage/core expose only reviewed root facades.
+- [ ] Every final product crate exposes only a reviewed root facade.
 - [ ] `unreachable_pub` and `cargo xtask facade check --workspace` pass.
 - [ ] Named hotspots are split by responsibility with coherent tests.
+- [ ] No crate root contains business logic, no `mod.rs` remains, and every new
+  or restructured item meets the structural targets or an exact expiring
+  exception.
 - [ ] GraphQL SDL, SQL, bundles, and CLI output are unchanged.
 - [ ] Nested issue fields remain bounded to constant storage calls.
 - [ ] Crate docs match Cargo/source semantically.
