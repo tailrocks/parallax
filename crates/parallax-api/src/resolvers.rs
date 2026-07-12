@@ -5,10 +5,16 @@ pub(crate) mod dashboards;
 pub(crate) mod fields;
 pub(crate) mod helpers;
 pub(crate) mod investigations;
+#[expect(clippy::too_many_lines, reason = "issue assembly")]
 pub(crate) mod issues;
 pub(crate) mod logs;
 pub(crate) mod metrics;
 pub(crate) mod runs;
+#[expect(
+    clippy::cast_precision_loss,
+    clippy::excessive_nesting,
+    reason = "telemetry analytics"
+)]
 pub(crate) mod services;
 pub(crate) mod sql;
 pub(crate) mod story;

@@ -32,3 +32,27 @@ runtime-type exceptions are reason-bearing and ratcheted by crate and lint.
 
 Validation after activation: 230 nextest tests, the compile-fail doctest,
 workspace Clippy with `-D warnings`, and the repository policy all passed.
+
+## Pedantic and measured thresholds
+
+Clippy `pedantic` is active at workspace scope. The explicit non-target
+allowlist is limited to opinionated API/documentation/style rules that do not
+represent correctness, ownership, or bounded-complexity requirements; public
+error documentation remains owned by Plan 099. Numeric conversion findings
+were either replaced with checked or lossless conversions or retained as
+reasoned expectations at the narrow semantic boundary.
+
+`clippy.toml` now enforces the repository ceilings directly: 100 function
+lines, cognitive complexity 25, nesting 4, and 6 arguments. Existing findings
+are represented by exact per-crate/per-lint suppression ceilings, while the
+structural gate continues to reject file/function growth. The oversized CLI
+command implementation moved behind a small lint-owning facade so activating
+the policy did not raise its existing line or complexity ceilings.
+
+Validation after this stage passed:
+
+- `cargo fmt --all -- --check`;
+- `cargo clippy --workspace --all-targets --all-features -- -D warnings`;
+- `cargo test --workspace --all-targets` (230 passed, 6 ignored real-engine
+  tests); and
+- `cargo xtask policy --output json` with `[]`.

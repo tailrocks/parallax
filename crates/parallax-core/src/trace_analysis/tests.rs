@@ -1,3 +1,8 @@
+#![expect(
+    clippy::too_many_arguments,
+    reason = "compact trace fixture constructor"
+)]
+
 use super::*;
 
 fn span(id: &str, parent: Option<&str>, start: u128, duration: u128) -> SpanRow {

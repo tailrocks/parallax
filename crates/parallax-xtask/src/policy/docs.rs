@@ -1,3 +1,8 @@
+#![expect(
+    clippy::excessive_nesting,
+    reason = "measured handoff document validation"
+)]
+
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs,

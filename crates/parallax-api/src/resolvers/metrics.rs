@@ -1,3 +1,8 @@
+#![expect(
+    clippy::too_many_arguments,
+    reason = "stable GraphQL metric filter contract"
+)]
+
 //! GraphQL metrics domain types and resolvers.
 
 use juniper::{FieldResult, graphql_object};

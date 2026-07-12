@@ -1,3 +1,5 @@
+#![expect(clippy::too_many_lines, reason = "measured real-engine scenario")]
+
 //! Gated M2 metrics acceptance for the managed-engine path: downloads (once)
 //! and supervises a real `GreptimeDB` standalone child, then round-trips SDK
 //! metrics through the native per-metric tables and reads them back over

@@ -1,3 +1,5 @@
+#![expect(clippy::too_many_lines, reason = "measured integration scenario")]
+
 //! M2 acceptance (metrics + dashboards slice): real SDK metrics become
 //! queryable series, and user dashboards round-trip through the API.
 

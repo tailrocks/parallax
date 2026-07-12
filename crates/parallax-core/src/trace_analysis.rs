@@ -1,3 +1,9 @@
+#![expect(
+    clippy::cast_possible_wrap,
+    clippy::cast_precision_loss,
+    reason = "signed trace deltas and percentage analytics"
+)]
+
 //! Pure trace analysis over normalized spans.
 
 use crate::fingerprint::normalize_message;

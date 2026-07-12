@@ -1,3 +1,9 @@
+#![expect(
+    clippy::cast_precision_loss,
+    clippy::too_many_lines,
+    reason = "exact telemetry fixture scenario"
+)]
+
 use crate::resolvers::test_support::*;
 use crate::{build_schema, execute};
 use parallax_storage::adapter::TelemetryStore;

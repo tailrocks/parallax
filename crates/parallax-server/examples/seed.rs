@@ -7,6 +7,7 @@
 //! (override the target with `OTEL_EXPORTER_OTLP_ENDPOINT`).
 
 #![expect(clippy::expect_used, reason = "seed exits on setup failure")]
+#![expect(clippy::too_many_lines, reason = "linear demonstration scenario")]
 
 use opentelemetry::logs::{AnyValue, LogRecord as _, Logger as _, LoggerProvider as _, Severity};
 use opentelemetry::metrics::MeterProvider as _;
@@ -181,10 +182,10 @@ async fn main() {
         .f64_histogram("http.server.request.duration")
         .with_unit("s")
         .build();
-    for i in 0..30u64 {
-        queue.record(3 + (i % 7), &[]);
+    for i in 0..30u32 {
+        queue.record(u64::from(3 + (i % 7)), &[]);
         orders.add(1, &[]);
-        duration.record(0.030 + (i as f64 % 9.0) * 0.012, &[]);
+        duration.record(0.030 + (f64::from(i) % 9.0) * 0.012, &[]);
         tokio::time::sleep(std::time::Duration::from_millis(40)).await;
     }
     meter_provider.force_flush().expect("metric flush");

@@ -1,3 +1,5 @@
+#![expect(clippy::too_many_lines, reason = "measured legacy story projection")]
+
 //! Deterministic story timeline projection over telemetry rows.
 
 use crate::bundle::MetricWindow;

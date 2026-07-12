@@ -1,3 +1,5 @@
+#![expect(clippy::too_many_lines, reason = "measured integration scenario")]
+
 //! M2 acceptance (bundle slice): the bundle query returns bounded, redacted,
 //! hypothesis-ranked evidence — and seeded secrets never reach it.
 

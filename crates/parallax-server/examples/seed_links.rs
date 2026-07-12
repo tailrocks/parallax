@@ -22,13 +22,15 @@ fn str_attr(key: &str, value: &str) -> KeyValue {
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)?
-        .as_nanos() as u64;
-    let trace_a: Vec<u8> = (0..16).map(|i| 0xa0 + i as u8).collect();
-    let span_a: Vec<u8> = (0..8).map(|i| 0xb0 + i as u8).collect();
-    let trace_b: Vec<u8> = (0..16).map(|i| 0xc0 + i as u8).collect();
-    let span_b: Vec<u8> = (0..8).map(|i| 0xd0 + i as u8).collect();
+    let now = u64::try_from(
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)?
+            .as_nanos(),
+    )?;
+    let trace_a: Vec<u8> = (0u8..16).map(|i| 0xa0 + i).collect();
+    let span_a: Vec<u8> = (0u8..8).map(|i| 0xb0 + i).collect();
+    let trace_b: Vec<u8> = (0u8..16).map(|i| 0xc0 + i).collect();
+    let span_b: Vec<u8> = (0u8..8).map(|i| 0xd0 + i).collect();
 
     let spans = vec![
         Span {

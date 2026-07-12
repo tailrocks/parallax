@@ -1,3 +1,5 @@
+#![expect(clippy::too_many_lines, reason = "measured integration scenario")]
+
 use super::*;
 use crate::INVESTIGATION_PIN_CAP;
 use crate::resolvers::test_support::*;

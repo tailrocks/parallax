@@ -1,3 +1,9 @@
+#![expect(
+    clippy::cast_possible_wrap,
+    clippy::cast_precision_loss,
+    reason = "Arrow schema conversions preserve source representation"
+)]
+
 //! Decode GreptimeDB HTTP `format=arrow` (+ optional zstd IPC compression)
 //! responses into the same row shape as `greptimedb_v1` JSON (`Vec<Vec<Value>>`).
 //!
@@ -96,8 +102,8 @@ fn array_value_to_json(array: &dyn Array, row: usize) -> anyhow::Result<Value> {
                 .context("bool array")?;
             Ok(Value::Bool(a.value(row)))
         }
-        DataType::Int8 => Ok(json_i64(primitive::<Int8Type>(array)?.value(row) as i64)),
-        DataType::Int16 => Ok(json_i64(primitive::<Int16Type>(array)?.value(row) as i64)),
+        DataType::Int8 => primitive::<Int8Type>(array).map(|a| json_i64(a.value(row).into())),
+        DataType::Int16 => primitive::<Int16Type>(array).map(|a| json_i64(a.value(row).into())),
         DataType::Int32 => Ok(json_i64(i64::from(
             primitive::<Int32Type>(array)?.value(row),
         ))),

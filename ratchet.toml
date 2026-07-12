@@ -3,7 +3,7 @@ schema_version = 1
 [[rust_suppressions]]
 crate_name = "parallax-api"
 lint = "clippy::too_many_arguments"
-ceiling = 14
+ceiling = 16
 
 [[rust_suppressions]]
 crate_name = "parallax-cli"
@@ -64,6 +64,151 @@ ceiling = 1
 crate_name = "parallax-server"
 lint = "clippy::panic"
 ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-api"
+lint = "clippy::cast_possible_truncation"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-api"
+lint = "clippy::cast_sign_loss"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-storage"
+lint = "clippy::cast_possible_truncation"
+ceiling = 2
+
+[[rust_suppressions]]
+crate_name = "parallax-storage"
+lint = "clippy::cast_precision_loss"
+ceiling = 4
+
+[[rust_suppressions]]
+crate_name = "parallax-storage"
+lint = "clippy::cast_sign_loss"
+ceiling = 2
+
+[[rust_suppressions]]
+crate_name = "parallax-server"
+lint = "clippy::cast_sign_loss"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-api"
+lint = "clippy::cast_precision_loss"
+ceiling = 2
+
+[[rust_suppressions]]
+crate_name = "parallax-api"
+lint = "clippy::excessive_nesting"
+ceiling = 2
+
+[[rust_suppressions]]
+crate_name = "parallax-api"
+lint = "clippy::too_many_lines"
+ceiling = 5
+
+[[rust_suppressions]]
+crate_name = "parallax-cli"
+lint = "clippy::cast_possible_truncation"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-cli"
+lint = "clippy::cast_precision_loss"
+ceiling = 2
+
+[[rust_suppressions]]
+crate_name = "parallax-cli"
+lint = "clippy::excessive_nesting"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-cli"
+lint = "clippy::too_many_lines"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-core"
+lint = "clippy::cast_possible_wrap"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-core"
+lint = "clippy::cast_precision_loss"
+ceiling = 3
+
+[[rust_suppressions]]
+crate_name = "parallax-core"
+lint = "clippy::excessive_nesting"
+ceiling = 3
+
+[[rust_suppressions]]
+crate_name = "parallax-core"
+lint = "clippy::too_many_arguments"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-core"
+lint = "clippy::too_many_lines"
+ceiling = 2
+
+[[rust_suppressions]]
+crate_name = "parallax-server"
+lint = "clippy::cast_possible_truncation"
+ceiling = 2
+
+[[rust_suppressions]]
+crate_name = "parallax-server"
+lint = "clippy::cast_precision_loss"
+ceiling = 3
+
+[[rust_suppressions]]
+crate_name = "parallax-server"
+lint = "clippy::excessive_nesting"
+ceiling = 5
+
+[[rust_suppressions]]
+crate_name = "parallax-server"
+lint = "clippy::too_many_lines"
+ceiling = 12
+
+[[rust_suppressions]]
+crate_name = "parallax-storage"
+lint = "clippy::cast_possible_wrap"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-storage"
+lint = "clippy::excessive_nesting"
+ceiling = 3
+
+[[rust_suppressions]]
+crate_name = "parallax-storage"
+lint = "clippy::too_many_arguments"
+ceiling = 2
+
+[[rust_suppressions]]
+crate_name = "parallax-xtask"
+lint = "clippy::cast_possible_truncation"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-xtask"
+lint = "clippy::excessive_nesting"
+ceiling = 3
+
+[[rust_suppressions]]
+crate_name = "parallax-xtask"
+lint = "clippy::too_many_arguments"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-xtask"
+lint = "clippy::too_many_lines"
+ceiling = 2
 
 [budgets.rust]
 root_file_lines = 200
@@ -161,7 +306,7 @@ ceiling = 536
 
 [[limits]]
 metric = "rust.file-lines"
-scope = "crates/parallax-cli/src/commands.rs"
+scope = "crates/parallax-cli/src/commands/implementation.rs"
 ceiling = 987
 
 [[limits]]
@@ -1395,7 +1540,7 @@ ceiling = 25
 
 [[limits]]
 metric = "rust.function-cognitive-complexity"
-scope = "crates/parallax-cli/src/commands.rs::render_agent_session"
+scope = "crates/parallax-cli/src/commands/implementation.rs::render_agent_session"
 ceiling = 25
 
 [[limits]]

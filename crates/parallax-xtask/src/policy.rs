@@ -4,6 +4,12 @@ mod docs;
 mod product;
 mod rust;
 mod structural;
+#[expect(
+    clippy::excessive_nesting,
+    clippy::too_many_arguments,
+    reason = "compiler analysis"
+)]
+#[expect(clippy::too_many_lines, reason = "compiler analysis")]
 mod typescript;
 
 use std::path::Path;

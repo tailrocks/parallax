@@ -1,3 +1,5 @@
+#![expect(clippy::cast_precision_loss, reason = "telemetry duration rendering")]
+
 //! Live telemetry tail: the ingest worker broadcasts every normalized log
 //! and span batch; `/v1/logs/stream` and `/v1/traces/stream` serve them as
 //! Server-Sent Events with the same filter vocabulary as the `logs` and

@@ -356,6 +356,15 @@ impl From<TraceSort> for parallax_storage::adapter::TraceSort {
     }
 }
 
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "finite positive duration is bounded by f64-to-u128 saturation"
+)]
+fn duration_ms_to_ns(ms: f64) -> Option<u128> {
+    (ms.is_finite() && ms > 0.0).then_some((ms * 1e6) as u128)
+}
+
 pub(crate) async fn trace(context: &ApiContext, trace_id: String) -> FieldResult<Option<Trace>> {
     let spans = context.spans_for(&trace_id).await?;
     if spans.is_empty() {
@@ -509,12 +518,8 @@ pub(crate) async fn traces(
         service: service.filter(|s| !s.is_empty()),
         from_nanos: parse(from_nanos, "fromNanos")?,
         to_nanos: parse(to_nanos, "toNanos")?,
-        min_duration_ns: min_duration_ms
-            .filter(|ms| *ms > 0.0)
-            .map(|ms| (ms * 1e6) as u128),
-        max_duration_ns: max_duration_ms
-            .filter(|ms| *ms > 0.0)
-            .map(|ms| (ms * 1e6) as u128),
+        min_duration_ns: min_duration_ms.and_then(duration_ms_to_ns),
+        max_duration_ns: max_duration_ms.and_then(duration_ms_to_ns),
         error_only: error_only.unwrap_or(false),
         name_contains: query.filter(|q| !q.trim().is_empty()),
         limit: clamp_limit(limit, 50),
@@ -557,12 +562,8 @@ pub(crate) async fn traces_page(
         service: service.filter(|s| !s.is_empty()),
         from_nanos: parse(from_nanos, "fromNanos")?,
         to_nanos: parse(to_nanos, "toNanos")?,
-        min_duration_ns: min_duration_ms
-            .filter(|ms| *ms > 0.0)
-            .map(|ms| (ms * 1e6) as u128),
-        max_duration_ns: max_duration_ms
-            .filter(|ms| *ms > 0.0)
-            .map(|ms| (ms * 1e6) as u128),
+        min_duration_ns: min_duration_ms.and_then(duration_ms_to_ns),
+        max_duration_ns: max_duration_ms.and_then(duration_ms_to_ns),
         error_only: error_only.unwrap_or(false),
         name_contains: query.filter(|q| !q.trim().is_empty()),
         limit: clamp_limit(limit, 50),

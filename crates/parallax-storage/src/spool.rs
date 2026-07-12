@@ -1,3 +1,9 @@
+#![expect(
+    clippy::excessive_nesting,
+    clippy::too_many_arguments,
+    reason = "measured legacy blocking spool boundary"
+)]
+
 //! The ingest spool: a length-prefixed raw-protobuf landing zone for accepted
 //! OTLP export requests.
 //!

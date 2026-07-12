@@ -1,3 +1,5 @@
+#![expect(clippy::excessive_nesting, reason = "measured legacy event traversal")]
+
 //! Trace-wide span event parsing over normalized span rows.
 
 use parallax_storage::model::SpanRow;

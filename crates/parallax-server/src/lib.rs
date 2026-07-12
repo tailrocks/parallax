@@ -7,12 +7,23 @@
 //! `serve` subcommand.
 
 pub mod config;
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_precision_loss,
+    reason = "progress math"
+)]
+#[expect(
+    clippy::excessive_nesting,
+    clippy::too_many_lines,
+    reason = "engine lifecycle"
+)]
 pub mod greptime_supervisor;
 pub mod live;
 pub mod otlp_grpc;
 pub mod otlp_http;
 mod outcomes;
 pub mod self_telemetry;
+#[expect(clippy::too_many_lines, reason = "server assembly")]
 pub mod serve;
 pub mod worker;
 

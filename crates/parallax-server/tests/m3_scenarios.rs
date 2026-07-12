@@ -1,3 +1,9 @@
+#![expect(
+    clippy::excessive_nesting,
+    clippy::too_many_lines,
+    reason = "measured integration scenario"
+)]
+
 //! The v1-scope stack scenarios, automated legs: (1) a cross-service trace
 //! spanning two services; (2) database wrapper spans carrying query text and
 //! duration (the documented tokio-postgres/clickhouse pattern's output);

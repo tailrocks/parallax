@@ -325,6 +325,7 @@ impl Query {
     async fn metric_series(context: &ApiContext, name: String, from_nanos: String, to_nanos: String, service: Option<String>, run_id: Option<String>, group_by: Option<String>, step_seconds: Option<i32>, agg: Option<String>,) -> FieldResult<Vec<Series>> { resolvers::metrics::metric_series(context, name, from_nanos, to_nanos, service, run_id, group_by, step_seconds, agg).await }
 
     /// Approximate quantile series from a histogram metric (q in 0..=1).
+    #[expect(clippy::too_many_arguments, reason = "public GraphQL filter contract")]
     async fn histogram_quantile(context: &ApiContext, name: String, from_nanos: String, to_nanos: String, q: f64, service: Option<String>, step_seconds: Option<i32>,) -> FieldResult<Vec<Point>> { resolvers::metrics::histogram_quantile(context, name, from_nanos, to_nanos, q, service, step_seconds).await }
 
     /// Trace-linked exemplars for one metric, newest first.

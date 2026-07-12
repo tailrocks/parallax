@@ -1,3 +1,9 @@
+#![expect(
+    clippy::cast_possible_truncation,
+    clippy::excessive_nesting,
+    reason = "filesystem metadata is bounded by address space"
+)]
+
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs,

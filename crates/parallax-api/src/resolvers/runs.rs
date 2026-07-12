@@ -1,3 +1,5 @@
+#![expect(clippy::excessive_nesting, reason = "measured run resolver flow")]
+
 //! GraphQL runs domain types and resolvers.
 
 use juniper::{FieldResult, graphql_object};

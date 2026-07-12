@@ -1,3 +1,5 @@
+#![expect(clippy::too_many_lines, reason = "measured Cargo graph validation")]
+
 use std::{
     collections::{BTreeMap, BTreeSet},
     path::Path,

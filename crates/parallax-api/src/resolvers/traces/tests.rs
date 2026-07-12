@@ -365,13 +365,13 @@ async fn traces_page_returns_total_and_span_events_json() {
 #[test]
 fn compare_two_500_span_traces_timing() {
     let make = |trace_id: &str| -> Vec<SpanRow> {
-        (0..500)
+        (0u128..500)
             .map(|i| {
                 let mut row = span(
                     "svc",
                     trace_id,
                     &format!("{trace_id}-{i}"),
-                    1_000_000_000 + i as u128 * 1_000,
+                    1_000_000_000 + i * 1_000,
                     5_000,
                 );
                 if i > 0 {

@@ -1,3 +1,9 @@
+#![expect(
+    clippy::excessive_nesting,
+    clippy::too_many_lines,
+    reason = "measured integration scenario"
+)]
+
 //! M1 acceptance: a real SDK export carrying an exception span and an ERROR
 //! log flows receiver → worker → storage adapter + metadata, producing a
 //! grouped issue and anchored-readable telemetry.

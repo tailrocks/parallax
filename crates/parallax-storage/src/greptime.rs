@@ -1429,7 +1429,7 @@ fn u128_at(row: &[serde_json::Value], index: usize) -> u128 {
     if let Some(n) = value.as_i64()
         && n >= 0
     {
-        return n as u128;
+        return u128::try_from(n).unwrap_or(0);
     }
     if let Some(s) = value.as_str()
         && let Ok(n) = s.parse::<u128>()
@@ -1450,7 +1450,7 @@ fn u128_at(row: &[serde_json::Value], index: usize) -> u128 {
             index,
             "u128_at decoded JSON float timestamp; prefer integer wire encoding"
         );
-        return f as u128;
+        return f.max(0.0) as u128;
     }
     0
 }

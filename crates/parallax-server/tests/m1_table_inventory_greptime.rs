@@ -1,3 +1,5 @@
+#![expect(clippy::too_many_lines, reason = "measured real-engine scenario")]
+
 //! Gated invariant: against a real `GreptimeDB`, the *only* tables Parallax
 //! creates are the documented custom extension tables — every raw `OTel`
 //! signal (traces, logs, metrics) lives in `GreptimeDB`'s native auto-created

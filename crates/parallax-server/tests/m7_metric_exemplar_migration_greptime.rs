@@ -1,3 +1,5 @@
+#![expect(clippy::too_many_lines, reason = "measured real-engine scenario")]
+
 //! Real-engine migration coverage for Plan 092.
 //!
 //! Run with: `cargo nextest run -p parallax-server --test m7_metric_exemplar_migration_greptime --run-ignored only`

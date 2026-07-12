@@ -1,3 +1,8 @@
+#![expect(
+    clippy::excessive_nesting,
+    reason = "measured staged ingest transaction"
+)]
+
 //! The ingest worker: receives raw OTLP export requests from the receivers,
 //! normalizes them when needed, writes telemetry through the storage adapter,
 //! derives error events, and upserts grouped issues in the metadata store.

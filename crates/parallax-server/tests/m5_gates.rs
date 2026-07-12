@@ -4,6 +4,12 @@
 //!
 //! Run with: `cargo test -p parallax-server --test m5_gates -- --ignored --nocapture`
 
+#![expect(
+    clippy::excessive_nesting,
+    clippy::too_many_lines,
+    reason = "measured real-engine scenario"
+)]
+
 use opentelemetry::KeyValue;
 use opentelemetry::trace::{Span as _, Status, Tracer as _, TracerProvider as _};
 use opentelemetry_otlp::WithExportConfig;
@@ -19,6 +25,12 @@ fn make_executable(path: &std::path::Path) -> anyhow::Result<()> {
     Ok(())
 }
 
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_precision_loss,
+    clippy::cast_sign_loss,
+    reason = "nonnegative bounded percentile rank"
+)]
 fn percentile(sorted_millis: &[u128], p: f64) -> u128 {
     let rank = ((sorted_millis.len() as f64 - 1.0) * p).round() as usize;
     sorted_millis[rank.min(sorted_millis.len() - 1)]

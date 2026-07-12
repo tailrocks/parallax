@@ -1,3 +1,5 @@
+#![expect(clippy::excessive_nesting, reason = "measured legacy OTLP traversal")]
+
 //! Error-event derivation from normalized rows — graduated from
 //! `poc/evidence-loop/src/derive.rs` with identical rules: span `exception`
 //! events, span ERROR status, ERROR/FATAL logs, and exception-attribute logs

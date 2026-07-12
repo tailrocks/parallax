@@ -1,3 +1,5 @@
+#![expect(clippy::too_many_lines, reason = "measured integration scenario")]
+
 //! M2 acceptance (API slice): the GraphQL surface answers over real ingested
 //! telemetry — issues with nested events, trace, correlated logs, and the
 //! issue-status mutation.

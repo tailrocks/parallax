@@ -7,10 +7,20 @@
 //! milestone; M0 ships the crate skeleton.
 
 pub mod agent_session;
+#[expect(
+    clippy::cast_precision_loss,
+    clippy::too_many_lines,
+    reason = "bounded bundle estimates"
+)]
 pub mod bundle;
 pub mod derive;
 pub mod fingerprint;
 pub mod gaps;
+#[expect(
+    clippy::cast_precision_loss,
+    clippy::excessive_nesting,
+    reason = "OTLP projection"
+)]
 pub mod normalize;
 pub mod semconv;
 pub mod span_events;

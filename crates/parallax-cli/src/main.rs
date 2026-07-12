@@ -1,14 +1,12 @@
-//! The installed `parallax` binary: thin client of the canonical API
-//! (kubectl model — `--context` selects the server), plus the `serve`
-//! subcommand embedding the server library.
-
+#![expect(clippy::too_many_lines, reason = "CLI dispatch")]
+//! Installed thin API client (`--context` selects the server) plus the `serve`
+//! subcommand that embeds the server library.
 mod client;
 mod commands;
 mod doctor;
 
 use clap::{Parser, Subcommand, ValueEnum};
 use client::{Client, resolve_url};
-use std::path::PathBuf;
 
 /// Output shape for agent-facing projections (bundles, agent sessions).
 /// Markdown is the human default; JSON is the machine/agent contract.
@@ -39,7 +37,7 @@ enum Command {
     Serve {
         /// Path to config.toml (default: ~/.parallax/config.toml when present).
         #[arg(long)]
-        config: Option<PathBuf>,
+        config: Option<std::path::PathBuf>,
     },
     /// Runs: bounded, inspectable execution units.
     Run {

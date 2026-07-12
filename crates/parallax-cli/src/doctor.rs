@@ -1,3 +1,8 @@
+#![expect(
+    clippy::cast_precision_loss,
+    reason = "human-readable storage percentages"
+)]
+
 //! Self-sufficiency commands: `doctor` (diagnose the local install),
 //! `prune` (reclaim spool space now), `uninstall --purge` (remove the data
 //! directory). These inspect the local installation directly — they are
