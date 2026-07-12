@@ -62,3 +62,12 @@ MemoryStore 1553→1469 logical lines.
 Validation passed full-feature workspace Clippy, 110 focused storage,
 test-support, API, and server-library tests, repository policy, and facade
 verification.
+
+## Plan 126 extraction handoff
+
+Plan 126's placeholder is replaced by six stable, owned extraction rows for
+ingest normalization, analysis, evidence, Greptime, metadata, and spool. Each
+row names its current surface, final crate/facade, consumers, and compatibility
+oracles. The documentation policy now schema-validates the Plan 097 handoff in
+addition to the existing Plan 127 ledgers and rejects pending, unowned,
+malformed, or reused IDs.

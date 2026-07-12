@@ -174,7 +174,12 @@ compatibility oracle, and terminal extraction status before plan 126 retires.
 
 | Stable ID | Current owner/surface | Target crate/facade | Consumers/oracles | Status |
 |-----------|-----------------------|---------------------|-------------------|--------|
-| `097-extraction-pending` | Populate during plan 097 | Populate during plan 097 | Populate during plan 097 | PENDING |
+| `097-ingest-normalization` | `parallax-core::normalize` | `parallax-ingest` public normalization facade | Server worker; OTLP golden vectors, serde contract, zero-copy clone floor | OWNED |
+| `097-analysis` | `parallax-core::{derive,fingerprint,span_events,trace_analysis}` | `parallax-analysis` analysis facade | API/server/evidence; derivation, fingerprint, span-event, trace-analysis tests | OWNED |
+| `097-evidence` | `parallax-core::{agent_session,bundle,gaps,story}` | `parallax-evidence` evidence facade | API/CLI/UI bundle consumers; schema, redaction, bounding, hash goldens | OWNED |
+| `097-greptime-adapter` | `parallax-storage::{greptime,arrow_sql,greptime_sql}` | `parallax-greptime` adapter facade | Server composition; SQL/Arrow goldens, native-table inventory, live conformance | OWNED |
+| `097-metadata-adapter` | `parallax-storage::metadata` | `parallax-metadata` metadata facade | API/server composition; Turso migration, restart, transaction tests | OWNED |
+| `097-spool-adapter` | `parallax-storage::spool` | `parallax-spool` durability facade | OTLP receivers/worker; frame, rotation, recovery, allocation tests | OWNED |
 
 ## Done Criteria
 

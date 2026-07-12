@@ -109,12 +109,38 @@ fn check_handoffs(root: &Path) -> Result<Vec<Finding>> {
             )),
         }
     }
+    let plan126 = root.join("plans/126-rust-workspace-decomposition.md");
+    match parse_owned_handoff(
+        &fs::read_to_string(&plan126)?,
+        "## Incoming Handoff From 097",
+        "097-",
+    ) {
+        Ok(rows) => {
+            for row in rows {
+                if !stable_ids.insert(row[0].clone()) {
+                    findings.push(handoff_finding(&plan126, "stable ID is reused"));
+                }
+            }
+        }
+        Err(error) => findings.push(handoff_finding(
+            &plan126,
+            &format!("invalid Plan 097 extraction handoff: {error:#}"),
+        )),
+    }
     Ok(findings)
 }
 
 fn parse_handoff(source: &str) -> Result<Vec<Vec<String>>> {
+    parse_owned_handoff(source, "## Incoming Handoff From 127", "127-")
+}
+
+fn parse_owned_handoff(
+    source: &str,
+    heading: &str,
+    stable_id_prefix: &str,
+) -> Result<Vec<Vec<String>>> {
     let section = source
-        .split_once("## Incoming Handoff From 127")
+        .split_once(heading)
         .context("missing handoff heading")?
         .1;
     let table: Vec<_> = section
@@ -132,8 +158,8 @@ fn parse_handoff(source: &str) -> Result<Vec<Vec<String>>> {
             .collect();
         anyhow::ensure!(cells.len() == 5, "handoff row must contain five columns");
         anyhow::ensure!(
-            cells[0].starts_with("127-") && cells[0] != "127-pending",
-            "handoff row needs a stable 127 ID"
+            cells[0].starts_with(stable_id_prefix) && !cells[0].ends_with("pending"),
+            "handoff row needs a stable owned ID"
         );
         anyhow::ensure!(
             cells[1..4].iter().all(|cell| !cell.is_empty()),
