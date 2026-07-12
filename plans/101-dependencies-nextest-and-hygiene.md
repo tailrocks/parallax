@@ -252,7 +252,12 @@ unowned when plan 101 begins nextest configuration.
 
 | Stable ID | Resource/current selector | Proposed group | Timeout/owner | Status |
 |-----------|---------------------------|----------------|---------------|--------|
-| `127-nextest-pending` | Populate during plan 127 | Populate during plan 127 | Populate during plan 127 | PENDING |
+| `127-nextest-greptime-roundtrip` | Cached GreptimeDB process; `parallax-server::m1_greptime::managed_engine_roundtrip` | `greptime-engine` | 10 minutes; Plan 101 | OWNED |
+| `127-nextest-native-table-inventory` | Cached GreptimeDB process; `parallax-server::m1_table_inventory_greptime::only_extension_tables_are_custom` | `greptime-engine` | 10 minutes; Plan 101 | OWNED |
+| `127-nextest-native-metrics` | Cached GreptimeDB process; `parallax-server::m2_metrics_greptime::managed_engine_metrics_roundtrip` | `greptime-engine` | 10 minutes; Plan 101 | OWNED |
+| `127-nextest-storage-conformance` | Cached GreptimeDB process; `parallax-server::m6_conformance_greptime::greptime_conformance_scenarios` | `greptime-engine` | 10 minutes; Plan 101 | OWNED |
+| `127-nextest-exemplar-migration` | Cached GreptimeDB process; `parallax-server::m7_metric_exemplar_migration_greptime::migrates_legacy_metric_exemplars_without_mutation` | `greptime-engine` | 10 minutes; Plan 101 | OWNED |
+| `127-nextest-performance-gates` | Cached GreptimeDB process; `parallax-server::m5_gates::measure_m5_gates` | `greptime-engine` | 15 minutes; Plan 101 | OWNED |
 
 ## Done Criteria
 

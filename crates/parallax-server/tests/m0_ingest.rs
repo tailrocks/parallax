@@ -188,4 +188,5 @@ async fn gzip_compressed_otlp_http_is_accepted() {
     );
     handle.shutdown();
 }
+#[path = "support/harness.rs"]
 mod support;

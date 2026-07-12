@@ -122,4 +122,5 @@ async fn m5_gates_limits_enforce_graphql_depth_complexity_and_host_guard() {
 
     handle.shutdown();
 }
+#[path = "support/harness.rs"]
 mod support;

@@ -166,7 +166,11 @@ unowned status.
 
 | Stable ID | Current owner | Consumers | Target test-support API/owner | Status |
 |-----------|---------------|-----------|-------------------------------|--------|
-| `127-pending` | Populate during plan 127 | Populate during plan 127 | Populate during plan 127 | PENDING |
+| `127-memory-store` | `parallax-storage::memory::MemoryStore` | API resolver tests, server worker/unit tests, server memory integration harness, storage conformance | `parallax-test-support::MemoryTelemetryStore`; Plan 097 | OWNED |
+| `127-api-resolver-fixtures` | `parallax-api::resolvers::test_support` | fields, investigations, metrics, runs, services, SQL, story, and traces child tests | `parallax-test-support::api` typed rows/context builders; Plan 097 | OWNED |
+| `127-server-memory-harness` | `parallax-server/tests/support.rs` | `m0_ingest`, `m1_pipeline`, `m2_api`, `m2_bundle`, `m2_metrics_dashboards`, `m3_scenarios`, `m5_gates_limits` | `parallax-test-support::server::start_memory`; Plan 097 | OWNED |
+| `127-storage-conformance` | `parallax-storage::conformance` | MemoryStore unit contract and `m6_conformance_greptime` | `parallax-test-support::telemetry_store_conformance`; Plan 097 | OWNED |
+| `127-telemetry-row-builders` | Private row/request builders across core, storage, API, and server child tests | Unit scenarios constructing spans, logs, errors, metrics, and OTLP requests | `parallax-test-support::builders`; Plan 097 | OWNED |
 
 ## Done Criteria
 

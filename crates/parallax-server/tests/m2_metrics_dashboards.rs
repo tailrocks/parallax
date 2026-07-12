@@ -237,4 +237,5 @@ async fn metrics_become_series_and_dashboards_roundtrip() {
 
     handle.shutdown();
 }
+#[path = "support/harness.rs"]
 mod support;

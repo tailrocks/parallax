@@ -295,4 +295,5 @@ async fn stack_scenarios_cross_service_db_and_graphql_spans() {
 
     handle.shutdown();
 }
+#[path = "support/harness.rs"]
 mod support;

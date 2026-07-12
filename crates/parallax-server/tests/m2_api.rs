@@ -499,4 +499,5 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
 
     handle.shutdown();
 }
+#[path = "support/harness.rs"]
 mod support;

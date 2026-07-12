@@ -6,6 +6,12 @@
 //! Juniper notes (per the spec's dependency table): GraphQL `Int` is i32 —
 //! counts saturate; nanosecond timestamps cross as strings; field names are
 //! auto-camelCased; cost limits are resolver-level caps in V1.
+//!
+//! Resolver implementation modules are not a supported public contract:
+//!
+//! ```compile_fail
+//! use parallax_api::resolvers::Trace;
+//! ```
 
 mod query_limits;
 mod resolvers;
@@ -384,28 +390,4 @@ pub use query_limits::check_query_limits;
 pub use schema::{Schema, build_schema, execute};
 
 #[cfg(test)]
-mod tests {
-    use super::build_schema;
-
-    #[test]
-    fn schema_sdl_snapshot() {
-        let sdl = build_schema().as_sdl();
-        for needle in [
-            "type Query",
-            "type Mutation",
-            "issues(",
-            "trace(",
-            "logsAround(",
-            "serviceMap(",
-            "metricSeries(",
-            "bundle(",
-            "story(",
-            "sql(",
-        ] {
-            assert!(
-                sdl.contains(needle),
-                "schema SDL missing sentinel {needle:?}"
-            );
-        }
-    }
-}
+mod tests;

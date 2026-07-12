@@ -155,4 +155,5 @@ async fn error_telemetry_becomes_a_grouped_issue() {
 
     handle.shutdown();
 }
+#[path = "support/harness.rs"]
 mod support;

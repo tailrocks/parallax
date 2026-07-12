@@ -460,4 +460,5 @@ async fn bundle_redacts_issue_title_culprit_and_run_command() {
 
     handle.shutdown();
 }
+#[path = "support/harness.rs"]
 mod support;

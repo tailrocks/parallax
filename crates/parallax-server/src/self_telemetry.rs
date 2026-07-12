@@ -79,6 +79,13 @@ pub struct Installed {
 /// Resolve the self-telemetry endpoint: `PARALLAX_SELF_OTLP` wins (even `off`),
 /// else `[telemetry] self_otlp_endpoint`. Empty / `off` ⇒ disabled (`None`).
 pub fn resolve_endpoint(config: &Config) -> Option<String> {
+    resolve_endpoint_from(config, std::env::var("PARALLAX_SELF_OTLP"))
+}
+
+fn resolve_endpoint_from(
+    config: &Config,
+    environment: Result<String, std::env::VarError>,
+) -> Option<String> {
     fn pick(raw: &str) -> Option<String> {
         let raw = raw.trim();
         if raw.is_empty() || raw.eq_ignore_ascii_case("off") {
@@ -87,7 +94,7 @@ pub fn resolve_endpoint(config: &Config) -> Option<String> {
             Some(raw.to_string())
         }
     }
-    match std::env::var("PARALLAX_SELF_OTLP") {
+    match environment {
         Ok(env) => pick(&env),
         Err(_) => pick(&config.telemetry.self_otlp_endpoint),
     }
@@ -145,52 +152,4 @@ pub fn install(endpoint: &str) -> anyhow::Result<Installed> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use std::sync::{Mutex, OnceLock};
-
-    fn env_lock() -> std::sync::MutexGuard<'static, ()> {
-        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-        LOCK.get_or_init(|| Mutex::new(())).lock().unwrap()
-    }
-
-    fn config_with(endpoint: &str) -> Config {
-        let mut config = Config::default();
-        config.telemetry.self_otlp_endpoint = endpoint.to_string();
-        config
-    }
-
-    #[test]
-    fn endpoint_off_and_empty_disable() {
-        let _guard = env_lock();
-        // SAFETY: single-threaded test; no other thread reads the env here.
-        unsafe { std::env::remove_var("PARALLAX_SELF_OTLP") };
-        assert_eq!(resolve_endpoint(&config_with("")), None);
-        assert_eq!(resolve_endpoint(&config_with("off")), None);
-        assert_eq!(
-            resolve_endpoint(&config_with("http://localhost:4317")).as_deref(),
-            Some("http://localhost:4317"),
-        );
-    }
-
-    #[test]
-    fn env_overrides_config_including_off() {
-        let _guard = env_lock();
-        // SAFETY: single-threaded test.
-        unsafe { std::env::set_var("PARALLAX_SELF_OTLP", "off") };
-        assert_eq!(
-            resolve_endpoint(&config_with("http://localhost:4317")),
-            None
-        );
-        unsafe { std::env::set_var("PARALLAX_SELF_OTLP", "http://rotel:4317") };
-        assert_eq!(
-            resolve_endpoint(&config_with("")).as_deref(),
-            Some("http://rotel:4317"),
-        );
-        unsafe { std::env::remove_var("PARALLAX_SELF_OTLP") };
-    }
-
-    // The ingest-path suppression (the self → sink → self loop guard) is
-    // verified live against a running serve in the validation note — exporting
-    // to Parallax's own receiver and asserting only non-ingest spans return.
-}
+mod tests;
