@@ -398,11 +398,6 @@ ceiling = 342
 
 [[limits]]
 metric = "rust.file-lines"
-scope = "crates/parallax-ingest/src/lib.rs"
-ceiling = 380
-
-[[limits]]
-metric = "rust.file-lines"
 scope = "crates/parallax-server/src/serve.rs"
 ceiling = 446
 
@@ -1615,7 +1610,7 @@ ceiling = 25
 
 [[limits]]
 metric = "rust.function-cognitive-complexity"
-scope = "crates/parallax-ingest/src/lib.rs::normalize_metrics"
+scope = "crates/parallax-ingest/src/metrics.rs::normalize_metrics"
 ceiling = 25
 
 [[limits]]
@@ -1825,7 +1820,7 @@ ceiling = 4
 [[limits]]
 metric = "rust.public-root-items"
 scope = "crates/parallax-ingest/facade.toml"
-ceiling = 6
+ceiling = 4
 
 [[limits]]
 metric = "rust.public-root-items"
