@@ -398,11 +398,6 @@ ceiling = 342
 
 [[limits]]
 metric = "rust.file-lines"
-scope = "crates/parallax-evidence/src/bundle.rs"
-ceiling = 905
-
-[[limits]]
-metric = "rust.file-lines"
 scope = "crates/parallax-ingest/src/lib.rs"
 ceiling = 380
 
@@ -1615,7 +1610,7 @@ ceiling = 25
 
 [[limits]]
 metric = "rust.function-cognitive-complexity"
-scope = "crates/parallax-evidence/src/bundle.rs::to_markdown"
+scope = "crates/parallax-evidence/src/bundle/markdown.rs::to_markdown"
 ceiling = 25
 
 [[limits]]
@@ -1675,22 +1670,22 @@ ceiling = 207
 
 [[limits]]
 metric = "rust.function-lines"
-scope = "crates/parallax-evidence/src/bundle.rs::assemble"
+scope = "crates/parallax-evidence/src/bundle/assembly.rs::assemble"
 ceiling = 217
 
 [[limits]]
 metric = "rust.function-lines"
-scope = "crates/parallax-evidence/src/bundle.rs::closure#12"
+scope = "crates/parallax-evidence/src/bundle/redaction.rs::closure#1"
 ceiling = 111
 
 [[limits]]
 metric = "rust.function-lines"
-scope = "crates/parallax-evidence/src/bundle.rs::redaction_rules"
+scope = "crates/parallax-evidence/src/bundle/redaction.rs::redaction_rules"
 ceiling = 114
 
 [[limits]]
 metric = "rust.function-lines"
-scope = "crates/parallax-evidence/src/bundle.rs::to_markdown"
+scope = "crates/parallax-evidence/src/bundle/markdown.rs::to_markdown"
 ceiling = 132
 
 [[limits]]
