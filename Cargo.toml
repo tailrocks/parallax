@@ -9,6 +9,7 @@ members = [
     "crates/parallax-api",
     "crates/parallax-proto",
     "crates/parallax-server",
+    "crates/parallax-spool",
     "crates/parallax-storage",
     "crates/parallax-test-support",
     "crates/parallax-mcp-spike",
@@ -38,6 +39,7 @@ parallax-ingest = { path = "crates/parallax-ingest" }
 parallax-model = { path = "crates/parallax-model" }
 parallax-proto = { path = "crates/parallax-proto" }
 parallax-server = { path = "crates/parallax-server" }
+parallax-spool = { path = "crates/parallax-spool" }
 parallax-storage = { path = "crates/parallax-storage" }
 parallax-test-support = { path = "crates/parallax-test-support" }
 

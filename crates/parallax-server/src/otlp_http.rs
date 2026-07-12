@@ -18,7 +18,7 @@ use axum::routing::post;
 use parallax_proto::collector_logs::ExportLogsServiceRequest;
 use parallax_proto::collector_metrics::ExportMetricsServiceRequest;
 use parallax_proto::collector_trace::ExportTraceServiceRequest;
-use parallax_storage::spool::Signal;
+use parallax_spool::Signal;
 use prost::Message;
 use tower_http::decompression::RequestDecompressionLayer;
 

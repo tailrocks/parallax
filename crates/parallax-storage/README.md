@@ -10,4 +10,4 @@ facade_roots = ["lib.rs"]
 # parallax-storage
 
 Owns telemetry and metadata capability contracts plus the current GreptimeDB,
-Turso, spool, and test-only in-memory adapters during staged decomposition.
+Turso, and test-only in-memory adapters during staged decomposition.

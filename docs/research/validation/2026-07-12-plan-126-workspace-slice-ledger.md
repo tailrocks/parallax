@@ -60,3 +60,6 @@ in the same commit.
   bounding, canonical-hash, story, gap, and baseline tests moved with the
   facade. The final compatibility-shell consumer moved and `parallax-core` was
   deleted.
+- `126-spool`: complete in the following commit; server receivers, worker, and
+  retention composition consume the durability facade directly. Raw-frame,
+  rotation, retention, recovery, and no-serialization tests moved with it.

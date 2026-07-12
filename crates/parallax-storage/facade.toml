@@ -5,6 +5,5 @@ schema_version = 1
     "mod adapter",
     "mod greptime",
     "mod metadata",
-    "mod spool",
     "use parallax_model as model",
 ]

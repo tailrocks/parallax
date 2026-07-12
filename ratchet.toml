@@ -228,12 +228,22 @@ ceiling = 1
 [[rust_suppressions]]
 crate_name = "parallax-storage"
 lint = "clippy::excessive_nesting"
-ceiling = 3
+ceiling = 2
+
+[[rust_suppressions]]
+crate_name = "parallax-spool"
+lint = "clippy::excessive_nesting"
+ceiling = 1
 
 [[rust_suppressions]]
 crate_name = "parallax-storage"
 lint = "clippy::too_many_arguments"
-ceiling = 2
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-spool"
+lint = "clippy::too_many_arguments"
+ceiling = 1
 
 [[rust_suppressions]]
 crate_name = "parallax-xtask"
@@ -306,6 +316,11 @@ tier = 1
 
 [[architecture.packages]]
 name = "parallax-evidence"
+class = "product"
+tier = 2
+
+[[architecture.packages]]
+name = "parallax-spool"
 class = "product"
 tier = 2
 
@@ -1837,7 +1852,12 @@ ceiling = 10
 [[limits]]
 metric = "rust.public-root-items"
 scope = "crates/parallax-storage/facade.toml"
-ceiling = 5
+ceiling = 4
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = "crates/parallax-spool/facade.toml"
+ceiling = 1
 
 [[limits]]
 metric = "rust.public-root-items"
@@ -2011,7 +2031,7 @@ ceiling = 42
 
 [[limits]]
 metric = "rust.assertions"
-scope = "crates/parallax-storage/src/spool/tests.rs"
+scope = "crates/parallax-spool/src/spool/tests.rs"
 ceiling = 20
 
 [[limits]]
@@ -2116,7 +2136,7 @@ ceiling = 1
 
 [[limits]]
 metric = "rust.test-temp-root-accesses"
-scope = "crates/parallax-storage/src/spool/tests.rs"
+scope = "crates/parallax-spool/src/spool/tests.rs"
 ceiling = 1
 
 [[limits]]
@@ -2151,7 +2171,7 @@ ceiling = 1
 
 [[limits]]
 metric = "rust.test-wall-clocks"
-scope = "crates/parallax-storage/src/spool/tests.rs"
+scope = "crates/parallax-spool/src/spool/tests.rs"
 ceiling = 1
 
 [[limits]]

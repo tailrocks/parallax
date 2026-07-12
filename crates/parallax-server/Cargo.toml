@@ -21,6 +21,7 @@ bytes = { workspace = true }
 parallax-api = { workspace = true }
 parallax-ingest = { workspace = true }
 parallax-proto = { workspace = true }
+parallax-spool = { workspace = true }
 parallax-storage = { workspace = true }
 prost = { workspace = true }
 reqwest = { workspace = true }

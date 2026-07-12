@@ -14,7 +14,7 @@ use parallax_proto::collector_metrics::{
 };
 use parallax_proto::collector_trace::trace_service_server::{TraceService, TraceServiceServer};
 use parallax_proto::collector_trace::{ExportTraceServiceRequest, ExportTraceServiceResponse};
-use parallax_storage::spool::Signal;
+use parallax_spool::Signal;
 use prost::Message;
 use tonic::codec::CompressionEncoding;
 use tonic::{Request, Response, Status};

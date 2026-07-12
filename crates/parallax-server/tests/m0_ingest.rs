@@ -9,7 +9,7 @@ use opentelemetry::metrics::MeterProvider as _;
 use opentelemetry::trace::{Span as _, Tracer as _, TracerProvider as _};
 use opentelemetry_otlp::WithExportConfig;
 use parallax_server::Config;
-use parallax_storage::spool::Signal;
+use parallax_spool::Signal;
 use prost::Message;
 
 fn test_config(data_dir: &std::path::Path) -> Config {

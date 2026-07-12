@@ -20,7 +20,7 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::sync::Mutex;
 
-pub const DEFAULT_MAX_SEGMENT_BYTES: u64 = 64 * 1024 * 1024;
+const DEFAULT_MAX_SEGMENT_BYTES: u64 = 64 * 1024 * 1024;
 const MAGIC: &[u8; 5] = b"PSPL1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

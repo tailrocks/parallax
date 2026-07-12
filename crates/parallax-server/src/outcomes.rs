@@ -19,10 +19,10 @@ pub(crate) async fn drain_workers(workers: Vec<tokio::task::JoinHandle<()>>) {
 pub(crate) async fn open_spool(
     data_dir: &std::path::Path,
     max_segment_bytes: u64,
-) -> anyhow::Result<std::sync::Arc<parallax_storage::spool::Spool>> {
+) -> anyhow::Result<std::sync::Arc<parallax_spool::Spool>> {
     let dir = data_dir.join("spool");
     tokio::task::spawn_blocking(move || {
-        parallax_storage::spool::Spool::open_with_max_segment_bytes(dir, max_segment_bytes)
+        parallax_spool::Spool::open_with_max_segment_bytes(dir, max_segment_bytes)
             .map(std::sync::Arc::new)
     })
     .await?

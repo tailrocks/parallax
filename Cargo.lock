@@ -3193,6 +3193,7 @@ dependencies = [
  "parallax-api",
  "parallax-ingest",
  "parallax-proto",
+ "parallax-spool",
  "parallax-storage",
  "parallax-test-support",
  "prost",
@@ -3210,6 +3211,16 @@ dependencies = [
  "tracing",
  "tracing-opentelemetry",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "parallax-spool"
+version = "0.1.0-dev"
+dependencies = [
+ "anyhow",
+ "bytes",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]

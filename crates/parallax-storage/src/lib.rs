@@ -28,4 +28,3 @@ mod greptime_sql;
 pub mod metadata;
 pub use parallax_model as model;
 mod outcomes;
-pub mod spool;
