@@ -62,6 +62,22 @@ Primary status sources: [Oxc releases](https://github.com/oxc-project/oxc/releas
 [TypeScript releases](https://github.com/microsoft/TypeScript/releases), and
 [Playwright releases](https://github.com/microsoft/playwright/releases).
 
+## Report-only declaration inventory
+
+`bunx --bun --no-install tsc --noEmit --skipLibCheck false` exits 2 on the live
+TypeScript 6 graph. The 2026-07-12 failures are entirely under `node_modules`:
+
+- Redux Toolkit generic/config constraints and exact-optional `SerializedError`;
+- Tabler's missing React `ReactSVG` export;
+- TanStack devtools/router/start declarations missing `ws` and Babel types plus
+  one router-core internal match property;
+- `unplugin` optional framework declarations (`farm`, Rspack, Bun, esbuild,
+  Rollup, unloader, webpack) and webpack-virtual-modules.
+
+The weekly dependency-discovery workflow captures the full output and exit
+status without making it a required gate. Plan 128 owns compatible dependency
+upgrades/removals before changing `skipLibCheck`.
+
 ## Cold/warm cache measurement
 
 Measurement used `sccache 0.16.0`, a deleted local sccache directory, a fully
