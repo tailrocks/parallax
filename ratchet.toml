@@ -1818,6 +1818,11 @@ scope = "crates/parallax-xtask/src/policy/rust/tests.rs"
 ceiling = 8
 
 [[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-xtask/src/policy/product/toolchain/tests.rs"
+ceiling = 2
+
+[[limits]]
 metric = "rust.test-sleeps"
 scope = "crates/parallax-server/tests/m1_greptime.rs"
 ceiling = 2

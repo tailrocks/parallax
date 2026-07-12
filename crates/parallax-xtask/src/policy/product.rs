@@ -11,6 +11,8 @@ use crate::diagnostic::Finding;
 
 use super::config::Ratchet;
 
+mod toolchain;
+
 pub(super) fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
     let mut findings = Vec::new();
     check_cargo(root, &mut findings)?;
@@ -25,6 +27,7 @@ pub(super) fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Find
 
 fn check_cargo(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
     let metadata = MetadataCommand::new().current_dir(root).exec()?;
+    toolchain::check(root, &metadata, findings)?;
     let workspace: BTreeSet<_> = metadata.workspace_members.iter().collect();
     for package in metadata
         .packages
