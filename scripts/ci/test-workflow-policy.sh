@@ -21,7 +21,7 @@ rg -U '^  clippy:\n    needs: changes$' "$workflows/ci.yml" >/dev/null || {
   printf 'Clippy is not a sibling of check\n' >&2
   failures=$((failures + 1))
 }
-rg '^    needs: \[changes, actionlint, source-hygiene, fmt, audit, check, clippy, test, ui, embed\]$' "$workflows/ci.yml" >/dev/null || {
+rg '^    needs: \[changes, actionlint, source-hygiene, policy, fmt, audit, check, clippy, test, ui, embed\]$' "$workflows/ci.yml" >/dev/null || {
   printf 'ci-required does not explicitly aggregate every required lane\n' >&2
   failures=$((failures + 1))
 }

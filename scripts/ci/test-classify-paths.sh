@@ -23,6 +23,7 @@ assert_case "Rust only" 'rust=true ui=false workflows=false advisory=false relea
 assert_case "UI only" 'rust=false ui=true workflows=false advisory=false release=true security=false' ui/src/main.tsx
 assert_case "shared toolchain" 'rust=true ui=true workflows=true advisory=true release=true security=false' mise.toml
 assert_case "shared CI" 'rust=true ui=true workflows=true advisory=true release=false security=true' .github/workflows/ci.yml
+assert_case "shared ratchet" 'rust=true ui=true workflows=false advisory=false release=false security=false' ratchet.toml
 assert_case "release only" 'rust=false ui=false workflows=true advisory=false release=true security=true' .github/workflows/preview.yml
 assert_case "deleted path" 'rust=false ui=true workflows=false advisory=false release=true security=false' ui/src/deleted.ts
 assert_case "rename paths" 'rust=true ui=true workflows=false advisory=false release=true security=false' crates/old.rs ui/src/new.ts
@@ -31,4 +32,4 @@ assert_case "mixed paths" 'rust=true ui=true workflows=true advisory=true releas
 if ((failures)); then
   exit 1
 fi
-printf 'classifier fixtures passed (9 cases)\n'
+printf 'classifier fixtures passed (10 cases)\n'

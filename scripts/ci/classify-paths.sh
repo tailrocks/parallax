@@ -12,12 +12,12 @@ classify() {
   local path=$1
 
   case "$path" in
-    .cargo/*|Cargo.toml|Cargo.lock|rust-toolchain.toml|crates/*|poc/*)
+    .cargo/*|Cargo.toml|Cargo.lock|rust-toolchain.toml|ratchet.toml|crates/*|poc/*)
       rust=true
       ;;
   esac
   case "$path" in
-    ui/*)
+    ratchet.toml|ui/*)
       ui=true
       ;;
   esac

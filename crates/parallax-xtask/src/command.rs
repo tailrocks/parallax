@@ -12,6 +12,8 @@ pub fn execute(cli: Cli) -> Result<()> {
         Command::Ci { fast, full } => {
             debug_assert!(fast ^ full);
             lint(&root)?;
+            policy::run(&root, None, cli.output)?;
+            facade::check(&root)?;
             ui(&root)?;
             if full {
                 test(&root)?;
