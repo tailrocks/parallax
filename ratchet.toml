@@ -1915,7 +1915,7 @@ ceiling = 1
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-xtask/src/policy/structural/tests.rs"
-ceiling = 6
+ceiling = 5
 
 [[limits]]
 metric = "rust.assertions"

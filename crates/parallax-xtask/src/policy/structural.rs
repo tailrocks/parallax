@@ -104,9 +104,7 @@ pub fn health(root: &Path) -> Result<Vec<Finding>> {
                     ));
                 }
             }
-            if path.file_name().and_then(|name| name.to_str()) == Some("mod.rs")
-                && relative.starts_with("crates/")
-            {
+            if is_legacy_module(&path, &relative) {
                 findings.push(Finding::warning(
                     "health.rust.mod-rs",
                     &relative,
@@ -119,6 +117,11 @@ pub fn health(root: &Path) -> Result<Vec<Finding>> {
         }
     }
     Ok(findings)
+}
+
+fn is_legacy_module(path: &Path, relative: &str) -> bool {
+    path.file_name().and_then(|name| name.to_str()) == Some("mod.rs")
+        && relative.starts_with("crates/")
 }
 
 fn check_generated(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {

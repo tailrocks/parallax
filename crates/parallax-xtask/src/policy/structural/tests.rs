@@ -3,9 +3,22 @@ use super::*;
 #[test]
 fn scope_line_split_preserves_plain_files() {
     let finding = error("x", "ui/src/a.ts:42", "reason");
-    assert_eq!((finding.file.as_str(), finding.line), ("ui/src/a.ts", 42));
+    let line_scope = (finding.file, finding.line);
     let finding = error("x", "Cargo.toml", "reason");
-    assert_eq!((finding.file.as_str(), finding.line), ("Cargo.toml", 1));
+    assert_eq!(
+        (
+            line_scope,
+            (finding.file, finding.line),
+            is_legacy_module(Path::new("crates/a/src/mod.rs"), "crates/a/src/mod.rs"),
+            is_legacy_module(Path::new("docs/mod.rs"), "docs/mod.rs"),
+        ),
+        (
+            ("ui/src/a.ts".to_owned(), 42),
+            ("Cargo.toml".to_owned(), 1),
+            true,
+            false,
+        )
+    );
 }
 
 #[test]
