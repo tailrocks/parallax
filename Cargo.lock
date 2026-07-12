@@ -3116,8 +3116,8 @@ name = "parallax-core"
 version = "0.1.0-dev"
 dependencies = [
  "jsonschema",
+ "parallax-model",
  "parallax-proto",
- "parallax-storage",
  "regex",
  "serde",
  "serde_json",
@@ -3138,6 +3138,15 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "parallax-model"
+version = "0.1.0-dev"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -3193,6 +3202,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "futures-util",
+ "parallax-model",
  "parallax-proto",
  "reqwest",
  "serde",

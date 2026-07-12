@@ -3,6 +3,7 @@ resolver = "3"
 members = [
     "crates/parallax-cli",
     "crates/parallax-core",
+    "crates/parallax-model",
     "crates/parallax-api",
     "crates/parallax-proto",
     "crates/parallax-server",
@@ -29,6 +30,7 @@ repository = "https://github.com/tailrocks/parallax"
 [workspace.dependencies]
 parallax-api = { path = "crates/parallax-api" }
 parallax-core = { path = "crates/parallax-core" }
+parallax-model = { path = "crates/parallax-model" }
 parallax-proto = { path = "crates/parallax-proto" }
 parallax-server = { path = "crates/parallax-server" }
 parallax-storage = { path = "crates/parallax-storage" }

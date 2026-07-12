@@ -1,6 +1,6 @@
 [package]
-name = "parallax-core"
-description = "Parallax domain logic: derivation, fingerprinting, grouping, bundles"
+name = "parallax-model"
+description = "Parallax normalized domain rows and stable value types"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -12,12 +12,8 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-parallax-proto = { workspace = true }
-parallax-model = { workspace = true }
-regex = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-sha2 = { workspace = true }
 
 [dev-dependencies]
-jsonschema = { workspace = true }
+anyhow = { workspace = true }

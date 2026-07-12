@@ -8,9 +8,9 @@
 
 use crate::fingerprint::fingerprint_with_operation;
 use crate::semconv;
+use parallax_model::{ErrorEventRow, ErrorSource, LogRow};
 use parallax_proto::collector_trace::ExportTraceServiceRequest;
 use parallax_proto::common::KeyValue;
-use parallax_storage::model::{ErrorEventRow, ErrorSource, LogRow};
 
 use crate::normalize::{attr_str, attributes_to_json, hex};
 

@@ -1,6 +1,6 @@
 //! Deterministic detection of missing telemetry evidence.
 
-use parallax_storage::model::{LogRow, SpanRow};
+use parallax_model::{LogRow, SpanRow};
 use serde_json::Value;
 use std::collections::HashSet;
 

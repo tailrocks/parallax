@@ -2,7 +2,7 @@
 
 //! Trace-wide span event parsing over normalized span rows.
 
-use parallax_storage::model::SpanRow;
+use parallax_model::SpanRow;
 use serde_json::Value;
 
 /// One parsed span event, joined to its carrying span.

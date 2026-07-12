@@ -1,6 +1,6 @@
 //! Run-scoped projection for agent execution spans.
 
-use parallax_storage::model::SpanRow;
+use parallax_model::SpanRow;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet, VecDeque};
 

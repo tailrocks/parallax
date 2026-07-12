@@ -24,7 +24,7 @@ fn test_event() -> ErrorEventRow {
         error_type: "test::Boom".to_string(),
         message: "boom".to_string(),
         stacktrace: Some("top\nmiddle\nbottom\nextra".to_string()),
-        source: parallax_storage::model::ErrorSource::SpanException,
+        source: parallax_model::ErrorSource::SpanException,
         trace_id: "trace".to_string(),
         span_id: "span-error".to_string(),
         attributes: serde_json::Value::Null,

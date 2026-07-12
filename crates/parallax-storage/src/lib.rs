@@ -36,6 +36,6 @@ pub mod greptime;
 pub mod memory;
 #[expect(clippy::excessive_nesting, reason = "transaction flow")]
 pub mod metadata;
-pub mod model;
+pub use parallax_model as model;
 mod outcomes;
 pub mod spool;

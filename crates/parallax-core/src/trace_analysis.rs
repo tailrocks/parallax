@@ -7,7 +7,7 @@
 //! Pure trace analysis over normalized spans.
 
 use crate::fingerprint::normalize_message;
-use parallax_storage::model::SpanRow;
+use parallax_model::SpanRow;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 #[derive(Debug, Clone, PartialEq, Eq)]

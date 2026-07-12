@@ -1,5 +1,4 @@
-//! Normalized telemetry rows — the shapes the storage adapters persist,
-//! mirroring the `GreptimeDB` DDL in the implementation spec §5.
+//! Query-neutral Parallax domain rows and stable value types.
 
 use serde::{Deserialize, Serialize};
 

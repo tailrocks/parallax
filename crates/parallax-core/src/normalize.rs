@@ -1,5 +1,6 @@
 //! OTLP → normalized rows, per the implementation-spec §7 mapping.
 
+use parallax_model::{HistogramRow, LogRow, MetricExemplarRow, MetricPointRow, SpanRow};
 use parallax_proto::collector_logs::ExportLogsServiceRequest;
 use parallax_proto::collector_metrics::ExportMetricsServiceRequest;
 use parallax_proto::collector_trace::ExportTraceServiceRequest;
@@ -9,7 +10,6 @@ use parallax_proto::metrics::exemplar::Value as ExemplarValue;
 use parallax_proto::metrics::metric::Data;
 use parallax_proto::metrics::number_data_point::Value as NumberValue;
 use parallax_proto::semconv;
-use parallax_storage::model::{HistogramRow, LogRow, MetricExemplarRow, MetricPointRow, SpanRow};
 
 pub fn hex(bytes: &[u8]) -> String {
     const HEX: &[u8; 16] = b"0123456789abcdef";
