@@ -411,7 +411,9 @@ of the brief.
 ## Residual dispositions (2026-07-11 program closure)
 
 Executed under `prompts/advisor-plans-implementation.md` on branch
-`implement/advisor-plans-069-090`.
+`implement/advisor-plans-069-090`, merged to `main` via
+[PR #19](https://github.com/tailrocks/parallax/pull/19) (2026-07-11). Active
+branch is **`main` only** — do not revive the implement branch.
 
 | Residual | Disposition |
 |----------|-------------|
@@ -427,5 +429,5 @@ Executed under `prompts/advisor-plans-implementation.md` on branch
 | fingerprint OnceLock | **Reaffirmed** |
 | traces_search windowed vs lifetime | **Resolved** — both adapters windowed in 075 |
 | rotel.env history credentials | **079** replaced file with template; history rewrite left to operator |
-| 089 greptimedb-ingester | **BLOCKED** — rustls hard-dep; SQL path stays until upstream |
+| 089 greptimedb-ingester | **BLOCKED** — re-checked 2026-07-12: still `0.18.0`, hard rustls via tonic default features; SQL path stays until upstream |
 | 090 GO (arrow+zstd) | **DONE** as plan 091 |

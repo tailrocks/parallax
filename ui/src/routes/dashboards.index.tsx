@@ -336,11 +336,11 @@ function DashboardsPage() {
           <DashboardCreateDialog
             metricNames={metricNames}
             detailSearch={detailSearch}
-            onCreated={(dashboardId, search) =>
+            onCreated={(dashboardId, createdSearch) =>
               router.navigate({
                 to: "/dashboards/$dashboardId",
                 params: { dashboardId },
-                search,
+                search: createdSearch,
               })
             }
           />

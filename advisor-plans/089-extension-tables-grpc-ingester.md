@@ -18,7 +18,9 @@
 - **Depends on**: 084 (integration corrections land first — same file regions), 070
 - **Category**: perf
 - **Planned at**: commit `df81d86`, 2026-07-10
-- **Execution**: **BLOCKED** at Step 0 (2026-07-11) — see below. SQL path stays.
+- **Execution**: **BLOCKED** at Step 0 (2026-07-11; re-confirmed 2026-07-12
+  still `greptimedb-ingester` 0.18.0 → rustls via tonic `tls-ring`). SQL path stays.
+  Landed program otherwise on `main` via PR #19.
 
 ### Step 0 failure (do not improvise)
 

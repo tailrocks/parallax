@@ -1,8 +1,9 @@
 # Advisor plans program closure — 2026-07-11
 
-Branch: `implement/advisor-plans-069-090`  
-Brief: `prompts/advisor-plans-implementation.md`  
-Scratch proof: session implementer dir under goal harness
+Branch (during execution): `implement/advisor-plans-069-090`  
+Landed: [PR #19](https://github.com/tailrocks/parallax/pull/19) merged to
+`main` 2026-07-11 (CI green; implement branch deleted). Active branch: **`main`**.  
+Brief: `prompts/advisor-plans-implementation.md`
 
 ## Re-audit #1
 
