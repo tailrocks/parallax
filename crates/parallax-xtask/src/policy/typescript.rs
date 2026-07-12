@@ -17,6 +17,8 @@ use oxc_span::{GetSpan, SourceType};
 
 use crate::diagnostic::Finding;
 
+use super::config::Ratchet;
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ImportEdge {
     pub specifier: String,
@@ -39,6 +41,7 @@ pub struct Analysis {
     pub imports: Vec<ImportEdge>,
     pub metrics: Metrics,
     pub findings: Vec<Finding>,
+    function_spans: Vec<(usize, usize)>,
 }
 
 pub struct TypeScriptProvider {
@@ -82,6 +85,65 @@ pub fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
             "typescript.import-cycle",
             "TypeScript module cycle detected",
         ));
+    }
+    Ok(findings)
+}
+
+pub fn health(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
+    let ui = root.join("ui");
+    let provider = TypeScriptProvider::new(&ui.join("tsconfig.json"));
+    let mut files = Vec::new();
+    collect_source_files(&ui.join("src"), &mut files)?;
+    let mut findings = Vec::new();
+    for path in files {
+        let source = fs::read_to_string(&path)
+            .with_context(|| format!("failed to read {}", path.display()))?;
+        let analysis = provider.analyze(&path, &source);
+        if !analysis.findings.is_empty() {
+            findings.extend(analysis.findings);
+            continue;
+        }
+        let relative = path.strip_prefix(root).unwrap_or(&path).to_string_lossy();
+        let is_route = relative.contains("/routes/");
+        let is_test = relative.contains("/__tests__/") || relative.contains("/tests/");
+        let target = if is_route {
+            ratchet.budgets.typescript.route_file_lines
+        } else if is_test {
+            ratchet.budgets.typescript.test_file_lines
+        } else {
+            ratchet.budgets.typescript.module_lines
+        };
+        let logical_lines = source
+            .lines()
+            .filter(|line| !line.trim().is_empty())
+            .count();
+        if logical_lines > target {
+            findings.push(Finding::warning(
+                "health.typescript.file-lines",
+                &relative,
+                1,
+                &format!("{logical_lines} logical lines exceeds target {target}"),
+                "split the module by responsibility; required ratchets are shrink-only",
+                "cargo xtask health",
+            ));
+        }
+        for (line, lines) in analysis
+            .function_spans
+            .into_iter()
+            .filter(|(_, lines)| *lines > ratchet.budgets.typescript.function_lines)
+        {
+            findings.push(Finding::warning(
+                "health.typescript.function-lines",
+                &relative,
+                line,
+                &format!(
+                    "function has {lines} lines, target {}",
+                    ratchet.budgets.typescript.function_lines
+                ),
+                "extract focused behavior without refreshing the baseline",
+                "cargo xtask health",
+            ));
+        }
     }
     Ok(findings)
 }
@@ -177,8 +239,17 @@ impl TypeScriptProvider {
         }
         for node in semantic.semantic.nodes().iter() {
             match node.kind() {
-                AstKind::Function(_) | AstKind::ArrowFunctionExpression(_) => {
-                    analysis.metrics.functions += 1
+                AstKind::Function(function) => {
+                    analysis.metrics.functions += 1;
+                    analysis
+                        .function_spans
+                        .push(span_lines(source, function.span()));
+                }
+                AstKind::ArrowFunctionExpression(function) => {
+                    analysis.metrics.functions += 1;
+                    analysis
+                        .function_spans
+                        .push(span_lines(source, function.span()));
                 }
                 AstKind::JSXElement(_) => analysis.metrics.jsx_elements += 1,
                 AstKind::Directive(_) => analysis.metrics.directives += 1,
@@ -400,6 +471,12 @@ fn line_at(source: &str, offset: u32) -> usize {
         .filter(|byte| **byte == b'\n')
         .count()
         + 1
+}
+
+fn span_lines(source: &str, span: oxc_span::Span) -> (usize, usize) {
+    let start = line_at(source, span.start);
+    let end = line_at(source, span.end);
+    (start, end.saturating_sub(start) + 1)
 }
 
 fn finding(path: &Path, line: usize, rule: &str, reason: &str) -> Finding {

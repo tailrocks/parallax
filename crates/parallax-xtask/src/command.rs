@@ -25,6 +25,7 @@ pub fn execute(cli: Cli) -> Result<()> {
         Command::Integration => integration(&root),
         Command::Policy { only } => policy::run(&root, only.as_deref(), cli.output),
         Command::Arch => policy::run(&root, Some("architecture"), cli.output),
+        Command::Health => policy::health(&root, cli.output),
     }
 }
 

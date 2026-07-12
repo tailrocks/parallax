@@ -1,5 +1,6 @@
 mod architecture;
 mod config;
+mod rust;
 mod typescript;
 
 use std::path::Path;
@@ -37,5 +38,18 @@ pub fn run(root: &Path, only: Option<&str>, output: Output) -> Result<()> {
     {
         bail!("policy found {} violation(s)", findings.len());
     }
+    Ok(())
+}
+
+pub fn health(root: &Path, output: Output) -> Result<()> {
+    let ratchet = config::Ratchet::load(&root.join("ratchet.toml"))?;
+    let mut findings = rust::health(root, &ratchet)?;
+    findings.extend(typescript::health(root, &ratchet)?);
+    let format = match output {
+        Output::Human => Format::Human,
+        Output::Json => Format::Json,
+        Output::Github => Format::Github,
+    };
+    print!("{}", render(&findings, format)?);
     Ok(())
 }

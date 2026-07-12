@@ -7,8 +7,31 @@ use serde::Deserialize;
 pub struct Ratchet {
     pub schema_version: u32,
     pub architecture: Architecture,
+    pub budgets: Budgets,
     #[serde(default)]
     pub exceptions: Vec<Exception>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+pub struct Budgets {
+    pub rust: RustBudgets,
+    pub typescript: TypeScriptBudgets,
+}
+
+#[derive(Debug, Default, Deserialize)]
+pub struct RustBudgets {
+    pub root_file_lines: usize,
+    pub production_file_lines: usize,
+    pub test_file_lines: usize,
+    pub function_lines: usize,
+}
+
+#[derive(Debug, Default, Deserialize)]
+pub struct TypeScriptBudgets {
+    pub route_file_lines: usize,
+    pub module_lines: usize,
+    pub test_file_lines: usize,
+    pub function_lines: usize,
 }
 
 #[derive(Debug, Deserialize)]

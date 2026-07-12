@@ -40,6 +40,8 @@ pub enum Command {
     },
     /// Enforce the staged Cargo workspace architecture graph.
     Arch,
+    /// Report noisy structural metrics without failing policy.
+    Health,
 }
 
 #[cfg(test)]
@@ -60,6 +62,7 @@ mod tests {
             vec!["xtask", "policy"],
             vec!["xtask", "policy", "--only", "architecture"],
             vec!["xtask", "arch"],
+            vec!["xtask", "health"],
         ] {
             Cli::try_parse_from(args).expect("documented command should parse");
         }

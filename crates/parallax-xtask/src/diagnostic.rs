@@ -45,6 +45,20 @@ impl Finding {
             rerun: rerun.into(),
         }
     }
+
+    #[must_use]
+    pub fn warning(
+        rule_id: &str,
+        file: &str,
+        line: usize,
+        reason: &str,
+        remediation: &str,
+        rerun: &str,
+    ) -> Self {
+        let mut finding = Self::error(rule_id, file, line, reason, remediation, rerun);
+        finding.severity = Severity::Warning;
+        finding
+    }
 }
 
 #[derive(Clone, Copy, Debug)]

@@ -1,5 +1,17 @@
 schema_version = 1
 
+[budgets.rust]
+root_file_lines = 200
+production_file_lines = 400
+test_file_lines = 600
+function_lines = 100
+
+[budgets.typescript]
+route_file_lines = 150
+module_lines = 300
+test_file_lines = 500
+function_lines = 60
+
 [architecture]
 
 [[architecture.packages]]
