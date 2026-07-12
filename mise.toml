@@ -1,5 +1,6 @@
 [tools]
 actionlint = "1.7.12"
+"cargo:cargo-audit" = "0.22.2"
 cosign = "3.0.6"
 "cargo:cargo-nextest" = "0.9.136"
 "cargo:cargo-zigbuild" = "0.22.3"
