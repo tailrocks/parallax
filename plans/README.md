@@ -7,6 +7,14 @@ plans contain all information required for implementation and never require an
 executor to reconstruct how a decision was originally researched. The optional
 [`OXC-IMPLEMENTATION.md`](OXC-IMPLEMENTATION.md) contains only official implementation
 lookups for refreshing Oxc/TypeScript component status at execution time.
+The compact [`GOAL.md`](GOAL.md) brief drives the whole program without
+duplicating the numbered plans.
+
+Run the bounded implementation program with:
+
+```text
+/goal Follow plans/GOAL.md until its Done condition is mechanically proven.
+```
 
 `plans/` is the only home for active Parallax implementation plans. It contains
 unfinished work only. Completed, rejected, or superseded work belongs in Git
@@ -24,6 +32,8 @@ history and, when durable evidence is useful, under `docs/research/validation/`.
    its file and index row in the same commit. Do not keep a DONE archive here.
 5. Work directly on the single active branch from `AGENTS.md`; commit with DCO
    and exactly one agent-product trailer, then push each durable update.
+6. `GOAL.md` is an orchestration brief, not another plan or source of
+   architecture. Plan 107 deletes it in the final mechanical closure commit.
 
 The completed historical plan programs were retired on 2026-07-12. Their
 closure evidence remains in Git history, not as active plan material.

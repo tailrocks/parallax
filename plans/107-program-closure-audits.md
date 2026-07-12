@@ -131,10 +131,12 @@ fix it, and return to Step 2 with a new C0 instead of mixing remediation into C1
 
 Confirm that earlier completion commits already retired every other actionable
 plan and index row. Delete this plan and its index row in the closure commit.
-Delete `ENGINEERING-STANDARDS.md`, `OXC-IMPLEMENTATION.md`, and
-`IMPLEMENTATION.md` when no actionable
+Delete `ENGINEERING-STANDARDS.md`, `OXC-IMPLEMENTATION.md`,
+`IMPLEMENTATION.md`, and `GOAL.md` when no actionable
 restructuring/alignment work remains and their rules have landed in durable
 source/config/tests/conventions or in a remaining self-contained BLOCKED plan.
+Remove the exact `GOAL.md` authorization/registry text from `AGENTS.md` and
+`PROJECT_STRUCTURE.md` in that same mechanical commit.
 Keep every other BLOCKED file only when a fresh exact condition still prevents
 execution; shrink it to current evidence and trigger before staging the closure
 tree. Plans 130 and 131 are actionable Oxc-only prerequisites and must already
@@ -142,20 +144,23 @@ have retired; closure cannot preserve Prettier, ESLint, or an unfinished Oxc
 migration as BLOCKED work. Confirm all active plan material exists only in
 `plans/`.
 
-The cleanup commit may change only this plan, its index row, the three program
-reference/contract files, and already-generated closure packet references
+The cleanup commit may change only this plan, its index row, the four program
+reference/contract/goal files, the `GOAL.md` registration in this index, and
+the exact `GOAL.md` authorization/registry text in `AGENTS.md` and
+`PROJECT_STRUCTURE.md`, plus already-generated closure packet references
 required by lifecycle. It may not batch-delete plans that should have retired
-earlier or change product source, manifests, policy, CI, release, or durable
-contract documents.
+earlier or change product source, manifests, policy, CI, release, or other
+durable contract documents.
 
 ### Step 7: Attest the staged tree and verify the pushed commit
 
 Stage the mechanical cleanup on evidence commit C1 and compute its Git tree hash
 without committing. Both auditors independently inspect that exact tree, its
 diff from C1, and the complete C0-to-staged-tree diff. They prove that C1 added
-only the two audit packets, the final-plan cleanup is allowlisted, and product,
-policy, test, workflow, and durable contract content remains byte-identical to
-the fully audited C0. They also verify the remaining `plans/`
+only the two audit packets, the final-plan cleanup matches the complete Step 6
+allowlist, and every byte outside the union of all four exact evidence artifact
+paths and that allowlist remains byte-identical to the fully audited C0. They
+also verify the remaining `plans/`
 bijection/statuses and plans-only policy. Record auditor ID, implementation
 candidate C0, evidence commit C1, staged tree hash, result, and full-attestation
 digest in `Closure-Audit-A` / `Closure-Audit-B` commit trailers alongside
@@ -163,11 +168,12 @@ exactly one normal agent co-author trailer. Commit and push once.
 
 The required `closure-final` check validates C0, parent C1, C1's evidence-only
 diff, the pushed closure tree/trailers, the mechanical cleanup diff, remaining
-plans, product-tree identity, and the full baseline. Because the source packets
-and exact tree/attestation hashes live in Git, no follow-up evidence commit or
-expiring artifact is needed. If either auditor changes the staged tree, or the
-diff contains non-mechanical work, recompute/re-audit the tree; for
-product/policy/workflow changes, return to two full source audits on a new C0.
+plans, byte identity outside the union of all four exact evidence artifact paths
+and all Step 6 allowlisted removals, and the full baseline. Because the source
+packets and exact tree/attestation hashes live in Git, no follow-up evidence
+commit or expiring artifact is needed. If either auditor changes the staged
+tree, or the diff contains non-mechanical work, recompute/re-audit the tree; for
+any change beyond that union, return to two full source audits on a new C0.
 
 ## Test Plan
 
@@ -181,6 +187,8 @@ product/policy/workflow changes, return to two full source audits on a new C0.
 - Oxc-only proof: no invoked ESLint/Prettier path and exactly the expiring
   Oxfmt/`oxlint-tsgolint` policy entries, with no broader pre-stable surface.
 - Repository search proving no active plan/prompt/index exists outside `plans/`.
+- Mechanical removal of `GOAL.md` and its index/agent/structure registration
+  text with the completed program contracts.
 - Final cleanup-diff/trailer/tree fixtures and required `closure-final` check.
 
 ## Done Criteria
@@ -199,7 +207,8 @@ product/policy/workflow changes, return to two full source audits on a new C0.
   expiry and negative broadening fixtures.
 - [ ] Git history proves every earlier actionable plan retired with its index
   row in its own completion commit; this final plan and the program
-  reference/execution files are deleted by the closure commit.
+  reference/execution/goal files and exact goal authorization/registry text are
+  deleted by the closure commit.
 - [ ] Only genuinely unfinished BLOCKED plans remain, with fresh trigger evidence.
 - [ ] No active plan material exists outside `plans/`.
 - [ ] The closure commit durably embeds both independent auditor IDs, C0 and C1

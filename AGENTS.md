@@ -22,10 +22,13 @@ structure quickly.
   checklists, and active plan run contracts. Keep unfinished work only. When an
   item becomes terminal, preserve durable evidence where appropriate, then
   delete its plan file and index row in the same commit. Never create another
-  implementation-plan directory or active implementation prompt. When research,
-  a decision record, or a specification identifies executable product or
-  engineering work, move the complete work packet into a numbered `plans/` file
-  and leave only evidence, requirements, or an ownership link at the source.
+  implementation-plan directory or active implementation prompt except the sole
+  compact `plans/GOAL.md` orchestration brief explicitly authorized on
+  2026-07-12; it adds no work beyond numbered plans and Plan 107 deletes it at
+  closure. When research, a decision record, or a specification identifies
+  executable product or engineering work, move the complete work packet into a
+  numbered `plans/` file and leave only evidence, requirements, or an ownership
+  link at the source.
   Durable research agendas, experiment protocols, specifications, and reusable
   research prompts stay in their topic-specific homes only when they are not
   implementation backlogs.

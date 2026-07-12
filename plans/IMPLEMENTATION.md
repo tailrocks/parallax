@@ -47,8 +47,9 @@ prove closure independently, and leave `plans/` containing unfinished work only.
    index row in the same commit. Never retain DONE/REJECTED/SUPERSEDED files.
 9. New actionable work discovered during execution receives a unique new
    numbered file in `plans/`, dependencies, tests, done/STOP/remove criteria,
-   and an index row before implementation. No plan, checklist, prompt, or
-   active item may live elsewhere.
+   and an index row before implementation. No plan, checklist, run contract, or
+   active item may live elsewhere. `GOAL.md` is the sole compact orchestration
+   brief and adds no work beyond the numbered plans.
 10. Run plan 107 last. Two independent auditors must inspect the same pushed
     implementation candidate from separate clean detached checkouts and agree
     after remediation. They then attest the exact mechanically limited staged
@@ -66,8 +67,10 @@ The program is complete only when:
 - both full closure packets agree at the pushed implementation candidate, and
   the closure commit embeds two independent exact-tree attestations while its
   required `closure-final` check verifies the mechanical diff and full baseline;
-- `ENGINEERING-STANDARDS.md`, `OXC-IMPLEMENTATION.md`, and this execution contract
-  are deleted because executable rules, including the exact Oxc exceptions and
-  completed plans 130/131, have landed durably; and
+- `ENGINEERING-STANDARDS.md`, `OXC-IMPLEMENTATION.md`, this execution contract,
+  and `GOAL.md` are deleted because executable rules, including the exact Oxc
+  exceptions and completed plans 130/131, have landed durably, and the exact
+  `GOAL.md` authorization/registry text is removed from `AGENTS.md` and
+  `PROJECT_STRUCTURE.md`; and
 - repository search proves all remaining active plan material exists only in
   `plans/`.
