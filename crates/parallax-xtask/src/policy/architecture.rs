@@ -309,13 +309,14 @@ fn finding(rule: &str, package: &str, reason: &str) -> Finding {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::policy::config::{Architecture, Budgets, Exception};
+    use crate::policy::config::{Architecture, Budgets, Exception, Product};
 
     fn ratchet() -> Ratchet {
         Ratchet {
             schema_version: 1,
             architecture: Architecture { packages: vec![] },
             budgets: Budgets::default(),
+            product: Product::default(),
             exceptions: vec![],
         }
     }

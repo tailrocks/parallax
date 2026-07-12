@@ -8,8 +8,21 @@ pub struct Ratchet {
     pub schema_version: u32,
     pub architecture: Architecture,
     pub budgets: Budgets,
+    pub product: Product,
     #[serde(default)]
     pub exceptions: Vec<Exception>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+pub struct Product {
+    #[serde(default)]
+    pub clone_floors: Vec<CloneFloor>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CloneFloor {
+    pub path: String,
+    pub ceiling: usize,
 }
 
 #[derive(Debug, Default, Deserialize)]

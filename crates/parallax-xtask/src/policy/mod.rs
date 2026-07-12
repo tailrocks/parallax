@@ -1,5 +1,6 @@
 mod architecture;
 mod config;
+mod product;
 mod rust;
 mod typescript;
 
@@ -14,9 +15,9 @@ use crate::{
 
 pub fn run(root: &Path, only: Option<&str>, output: Output) -> Result<()> {
     if let Some(rule) = only
-        && !matches!(rule, "architecture" | "typescript")
+        && !matches!(rule, "architecture" | "typescript" | "product")
     {
-        bail!("unknown policy family `{rule}`; available: architecture, typescript");
+        bail!("unknown policy family `{rule}`; available: architecture, product, typescript");
     }
     let ratchet = config::Ratchet::load(&root.join("ratchet.toml"))?;
     let mut findings = Vec::new();
@@ -25,6 +26,9 @@ pub fn run(root: &Path, only: Option<&str>, output: Output) -> Result<()> {
     }
     if only.is_none() || only == Some("typescript") {
         findings.extend(typescript::check_workspace(root)?);
+    }
+    if only.is_none() || only == Some("product") {
+        findings.extend(product::check_workspace(root, &ratchet)?);
     }
     let format = match output {
         Output::Human => Format::Human,

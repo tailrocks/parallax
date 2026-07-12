@@ -12,6 +12,12 @@ module_lines = 300
 test_file_lines = 500
 function_lines = 60
 
+[product]
+
+[[product.clone_floors]]
+path = "crates/parallax-server/src/worker.rs"
+ceiling = 8
+
 [architecture]
 
 [[architecture.packages]]
