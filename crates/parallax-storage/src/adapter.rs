@@ -468,7 +468,7 @@ pub fn attribute_compare_score(
 
 /// Per-second rate from bucketed counter sums (monotonic resets clamp to 0).
 /// Shared by the production Greptime adapter and the test adapter.
-pub(crate) fn rate_from_buckets(series: &[SeriesPoint], step_nanos: u128) -> Vec<SeriesPoint> {
+pub fn rate_from_buckets(series: &[SeriesPoint], step_nanos: u128) -> Vec<SeriesPoint> {
     let step_secs = step_nanos as f64 / 1e9;
     series
         .windows(2)

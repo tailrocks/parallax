@@ -211,7 +211,7 @@ fn evaluate(nodes: &BTreeMap<String, Node>, edges: &[Edge], ratchet: &Ratchet) -
             ));
             continue;
         };
-        if from.class == "product" && matches!(to.class.as_str(), "aux" | "proof") {
+        if product_reaches_aux(from, to, edge.kind) {
             findings.push(finding(
                 "arch.aux-dependency",
                 &edge.from,
@@ -269,6 +269,12 @@ fn evaluate(nodes: &BTreeMap<String, Node>, edges: &[Edge], ratchet: &Ratchet) -
         }
     }
     findings
+}
+
+fn product_reaches_aux(from: &Node, to: &Node, kind: Kind) -> bool {
+    from.class == "product"
+        && (matches!(to.class.as_str(), "aux" | "proof")
+            || (to.class == "test-support" && kind.production()))
 }
 
 fn cycles(nodes: &BTreeMap<String, Node>, edges: &[Edge], production_only: bool) -> Vec<Finding> {

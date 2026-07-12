@@ -13,8 +13,6 @@
 )]
 pub mod adapter;
 mod arrow_sql;
-#[cfg(any(test, feature = "test-support"))]
-pub mod conformance;
 #[expect(
     clippy::cast_possible_truncation,
     clippy::cast_precision_loss,
@@ -26,14 +24,6 @@ pub mod conformance;
     reason = "checked queries"
 )]
 pub mod greptime;
-#[cfg(any(test, feature = "test-support"))]
-#[expect(
-    clippy::cast_possible_truncation,
-    clippy::cast_precision_loss,
-    clippy::cast_sign_loss,
-    reason = "bounded analytics math"
-)]
-pub mod memory;
 #[expect(clippy::excessive_nesting, reason = "transaction flow")]
 pub mod metadata;
 pub use parallax_model as model;

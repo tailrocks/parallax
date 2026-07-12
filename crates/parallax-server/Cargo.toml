@@ -54,4 +54,4 @@ embed-ui = ["dep:rust-embed", "dep:mime_guess"]
 flate2 = "1"
 reqwest = { workspace = true }
 tempfile = "3"
-parallax-storage = { workspace = true, features = ["test-support"] }
+parallax-test-support = { workspace = true }

@@ -23,4 +23,4 @@ tracing = { workspace = true }
 [dev-dependencies]
 async-trait = { workspace = true }
 bytes = { workspace = true }
-parallax-storage = { workspace = true, features = ["test-support"] }
+parallax-test-support = { workspace = true }

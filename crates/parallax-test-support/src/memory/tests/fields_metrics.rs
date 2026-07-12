@@ -454,4 +454,3 @@ async fn attribute_compare_is_deterministic() {
 
     assert_eq!(first, second);
 }
-

@@ -7,7 +7,7 @@ use parallax_proto::metrics::{
 };
 use parallax_proto::resource::Resource;
 use parallax_proto::trace::{ResourceSpans, ScopeSpans, Span, Status, span, status};
-use parallax_storage::memory::MemoryStore;
+use parallax_test_support::MemoryStore;
 use serde_json::json;
 use tokio::sync::oneshot;
 

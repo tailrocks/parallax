@@ -2,7 +2,7 @@ use super::*;
 use crate::resolvers::test_support::*;
 use crate::{build_schema, execute};
 
-use parallax_storage::memory::MemoryStore;
+use parallax_test_support::MemoryStore;
 
 use parallax_storage::model::SpanRow;
 use std::sync::Arc;

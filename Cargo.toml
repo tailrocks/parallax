@@ -8,6 +8,7 @@ members = [
     "crates/parallax-proto",
     "crates/parallax-server",
     "crates/parallax-storage",
+    "crates/parallax-test-support",
     "crates/parallax-mcp-spike",
     "crates/parallax-xtask",
 ]
@@ -34,6 +35,7 @@ parallax-model = { path = "crates/parallax-model" }
 parallax-proto = { path = "crates/parallax-proto" }
 parallax-server = { path = "crates/parallax-server" }
 parallax-storage = { path = "crates/parallax-storage" }
+parallax-test-support = { path = "crates/parallax-test-support" }
 
 anyhow = "1"
 arrow = { version = "59", default-features = false, features = ["ipc"] }

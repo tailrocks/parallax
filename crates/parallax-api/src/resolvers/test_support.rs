@@ -1,9 +1,9 @@
 //! Shared test helpers for resolver domain tests.
 
 use crate::{ApiContext, RequestMemo};
-use parallax_storage::memory::MemoryStore;
 use parallax_storage::metadata::MetadataStore;
 use parallax_storage::model::{LogRow, SpanRow};
+use parallax_test_support::MemoryStore;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 

@@ -21,11 +21,6 @@ lint = "missing_debug_implementations"
 ceiling = 1
 
 [[rust_suppressions]]
-crate_name = "parallax-storage"
-lint = "missing_debug_implementations"
-ceiling = 1
-
-[[rust_suppressions]]
 crate_name = "parallax-server"
 lint = "missing_debug_implementations"
 ceiling = 3
@@ -51,6 +46,11 @@ lint = "clippy::float_cmp"
 ceiling = 1
 
 [[rust_suppressions]]
+crate_name = "parallax-test-support"
+lint = "clippy::float_cmp"
+ceiling = 1
+
+[[rust_suppressions]]
 crate_name = "parallax-server"
 lint = "clippy::float_cmp"
 ceiling = 2
@@ -78,17 +78,37 @@ ceiling = 1
 [[rust_suppressions]]
 crate_name = "parallax-storage"
 lint = "clippy::cast_possible_truncation"
-ceiling = 2
+ceiling = 1
 
 [[rust_suppressions]]
 crate_name = "parallax-storage"
 lint = "clippy::cast_precision_loss"
-ceiling = 4
+ceiling = 3
 
 [[rust_suppressions]]
 crate_name = "parallax-storage"
 lint = "clippy::cast_sign_loss"
-ceiling = 2
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-test-support"
+lint = "missing_debug_implementations"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-test-support"
+lint = "clippy::cast_possible_truncation"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-test-support"
+lint = "clippy::cast_precision_loss"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-test-support"
+lint = "clippy::cast_sign_loss"
+ceiling = 1
 
 [[rust_suppressions]]
 crate_name = "parallax-server"
@@ -282,6 +302,10 @@ class = "proof"
 name = "parallax-xtask"
 class = "aux"
 
+[[architecture.packages]]
+name = "parallax-test-support"
+class = "test-support"
+
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-api/src/resolvers/issues.rs"
@@ -337,7 +361,7 @@ ceiling = 3184
 
 [[limits]]
 metric = "rust.file-lines"
-scope = "crates/parallax-storage/src/memory.rs"
+scope = "crates/parallax-test-support/src/memory.rs"
 ceiling = 1553
 
 [[limits]]
@@ -1554,12 +1578,12 @@ ceiling = 25
 
 [[limits]]
 metric = "rust.function-cognitive-complexity"
-scope = "crates/parallax-storage/src/memory.rs::attribute_compare"
+scope = "crates/parallax-test-support/src/memory.rs::attribute_compare"
 ceiling = 25
 
 [[limits]]
 metric = "rust.function-cognitive-complexity"
-scope = "crates/parallax-storage/src/memory.rs::span_field_keys"
+scope = "crates/parallax-test-support/src/memory.rs::span_field_keys"
 ceiling = 25
 
 [[limits]]
@@ -1709,13 +1733,13 @@ ceiling = 103
 
 [[limits]]
 metric = "rust.function-lines"
-scope = "crates/parallax-storage/src/memory.rs::attribute_compare"
+scope = "crates/parallax-test-support/src/memory.rs::attribute_compare"
 ceiling = 101
 
 
 [[limits]]
 metric = "rust.function-lines"
-scope = "crates/parallax-storage/src/memory.rs::traces_search"
+scope = "crates/parallax-test-support/src/memory.rs::traces_search"
 ceiling = 108
 
 [[limits]]
@@ -1764,7 +1788,12 @@ ceiling = 10
 [[limits]]
 metric = "rust.public-root-items"
 scope = "crates/parallax-storage/facade.toml"
-ceiling = 7
+ceiling = 5
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = "crates/parallax-test-support/facade.toml"
+ceiling = 2
 
 [[limits]]
 metric = "rust.public-root-items"
@@ -1918,12 +1947,12 @@ ceiling = 69
 
 [[limits]]
 metric = "rust.assertions"
-scope = "crates/parallax-storage/src/memory/tests/fields_metrics.rs"
+scope = "crates/parallax-test-support/src/memory/tests/fields_metrics.rs"
 ceiling = 57
 
 [[limits]]
 metric = "rust.assertions"
-scope = "crates/parallax-storage/src/memory/tests/traces_services.rs"
+scope = "crates/parallax-test-support/src/memory/tests/traces_services.rs"
 ceiling = 54
 
 [[limits]]
@@ -2108,5 +2137,5 @@ ceiling = 105
 
 [[limits]]
 metric = "rust.function-lines"
-scope = "crates/parallax-storage/src/memory/tests/fields_metrics.rs::metric_labels_values_and_runtime_snapshot_derive_from_points"
+scope = "crates/parallax-test-support/src/memory/tests/fields_metrics.rs::metric_labels_values_and_runtime_snapshot_derive_from_points"
 ceiling = 110

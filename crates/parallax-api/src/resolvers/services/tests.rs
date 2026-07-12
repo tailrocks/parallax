@@ -4,7 +4,7 @@ use super::*;
 use crate::resolvers::test_support::*;
 use crate::{build_schema, execute};
 use parallax_storage::adapter::TelemetryStore;
-use parallax_storage::memory::MemoryStore;
+use parallax_test_support::MemoryStore;
 
 use parallax_storage::model::{ErrorEventRow, ErrorSource, LogRow};
 use std::sync::Arc;

@@ -1,9 +1,10 @@
 //! Adapter conformance scenarios shared by `MemoryStore` unit tests and the
 //! gated real-engine greptime suite (plan 074).
 
-use crate::adapter::{TelemetryStore, TraceQuery, TraceSort};
-use crate::memory::MemoryStore;
-use crate::model::{LogRow, SpanRow};
+use parallax_model::{LogRow, SpanRow};
+use parallax_storage::adapter::{TelemetryStore, TraceQuery, TraceSort};
+
+use crate::MemoryStore;
 use std::ops::RangeInclusive;
 
 fn sample_span(trace_id: &str, span_id: &str, ts: u128, duration: u128, error: bool) -> SpanRow {

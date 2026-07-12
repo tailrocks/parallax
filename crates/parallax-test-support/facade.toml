@@ -1,0 +1,7 @@
+schema_version = 1
+
+[roots]
+"lib.rs" = [
+    "mod conformance",
+    "use memory::MemoryStore",
+]

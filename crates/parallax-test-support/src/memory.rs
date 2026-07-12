@@ -1,7 +1,11 @@
 //! In-memory `TelemetryStore` for tests and explicit test-support builds only.
 
-use crate::adapter::{
-    ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow,
+use parallax_model::*;
+use parallax_proto::collector_logs::ExportLogsServiceRequest;
+use parallax_proto::collector_trace::ExportTraceServiceRequest;
+use parallax_proto::semconv;
+use parallax_storage::adapter::{
+    self, ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow,
     FIELD_KEYS_CAP, FIELD_TOP_VALUES_CAP, FieldKey, FieldSource, FieldStats, FieldValueCount,
     MAX_ROWS, OverviewTotals, ReleaseWindow, RuntimeMetricSeries, SERVICE_MAP_TRACE_CAP,
     ServiceCatalogRow, ServiceEdge, ServiceSummary, SignalKind, SpanRed, TelemetryStore,
@@ -9,10 +13,6 @@ use crate::adapter::{
     field_key_identifier_like, field_key_namespace, field_value_display,
     metric_group_label_allowed, runtime_metric_family, runtime_metric_unit, span_field_key_allowed,
 };
-use crate::model::*;
-use parallax_proto::collector_logs::ExportLogsServiceRequest;
-use parallax_proto::collector_trace::ExportTraceServiceRequest;
-use parallax_proto::semconv;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::ops::RangeInclusive;
 use std::sync::Mutex;
@@ -213,7 +213,7 @@ impl TelemetryStore for MemoryStore {
             g.take()
         };
         if let Some(rx) = gate {
-            crate::outcomes::warn_error(rx.await, "memory adapter test gate");
+            crate::warn_error(rx.await, "memory adapter test gate");
         }
         if let Some(normalize) = &self.normalize_traces {
             self.lock().spans.extend(normalize(request));
@@ -266,7 +266,7 @@ impl TelemetryStore for MemoryStore {
     async fn traces_by_ids(
         &self,
         trace_ids: &[String],
-    ) -> anyhow::Result<Vec<crate::adapter::TraceSummary>> {
+    ) -> anyhow::Result<Vec<adapter::TraceSummary>> {
         // O(n) dedup preserving request order (MAX_ROWS still caps fan-out).
         let mut seen = HashSet::new();
         let mut ids = Vec::new();
@@ -299,7 +299,7 @@ impl TelemetryStore for MemoryStore {
             }) else {
                 continue;
             };
-            summaries.push(crate::adapter::TraceSummary {
+            summaries.push(adapter::TraceSummary {
                 trace_id,
                 root_name: root.name.clone(),
                 service: root.service.clone(),
@@ -862,7 +862,7 @@ impl TelemetryStore for MemoryStore {
             })
             .collect();
         if agg == MetricAgg::Rate {
-            series = crate::adapter::rate_from_buckets(&series, step);
+            series = adapter::rate_from_buckets(&series, step);
         }
         Ok(series)
     }
@@ -945,9 +945,9 @@ impl TelemetryStore for MemoryStore {
         &self,
         limit: usize,
         range: RangeInclusive<u128>,
-    ) -> anyhow::Result<Vec<crate::adapter::ObservedRun>> {
+    ) -> anyhow::Result<Vec<adapter::ObservedRun>> {
         let inner = self.lock();
-        let mut runs: HashMap<String, crate::adapter::ObservedRun> = HashMap::new();
+        let mut runs: HashMap<String, adapter::ObservedRun> = HashMap::new();
         let mut absorb = |run_id: &Option<String>, ts: u128, service: &str, is_span: bool| {
             if !range.contains(&ts) {
                 return;
@@ -955,16 +955,16 @@ impl TelemetryStore for MemoryStore {
             let Some(run_id) = run_id.as_deref().filter(|r| !r.is_empty()) else {
                 return;
             };
-            let entry =
-                runs.entry(run_id.to_owned())
-                    .or_insert_with(|| crate::adapter::ObservedRun {
-                        run_id: run_id.to_owned(),
-                        first_nanos: ts,
-                        last_nanos: ts,
-                        span_count: 0,
-                        log_count: 0,
-                        service: service.to_owned(),
-                    });
+            let entry = runs
+                .entry(run_id.to_owned())
+                .or_insert_with(|| adapter::ObservedRun {
+                    run_id: run_id.to_owned(),
+                    first_nanos: ts,
+                    last_nanos: ts,
+                    span_count: 0,
+                    log_count: 0,
+                    service: service.to_owned(),
+                });
             entry.first_nanos = entry.first_nanos.min(ts);
             entry.last_nanos = entry.last_nanos.max(ts);
             if is_span {
@@ -987,8 +987,8 @@ impl TelemetryStore for MemoryStore {
 
     async fn traces_search(
         &self,
-        query: &crate::adapter::TraceQuery,
-    ) -> anyhow::Result<crate::adapter::TraceList> {
+        query: &adapter::TraceQuery,
+    ) -> anyhow::Result<adapter::TraceList> {
         let inner = self.lock();
         // `service` matches any trace the service participates in (a span of
         // that service anywhere), not only the root span.
@@ -1059,7 +1059,7 @@ impl TelemetryStore for MemoryStore {
                         has_error |= span.status_code == "STATUS_CODE_ERROR";
                     }
                 }
-                crate::adapter::TraceSummary {
+                adapter::TraceSummary {
                     trace_id: root.trace_id.clone(),
                     root_name: root.name.clone(),
                     service: root.service.clone(),
@@ -1074,14 +1074,14 @@ impl TelemetryStore for MemoryStore {
             traces.retain(|t| t.has_error);
         }
         match query.sort {
-            crate::adapter::TraceSort::StartDesc => {
+            adapter::TraceSort::StartDesc => {
                 traces.sort_by_key(|t| std::cmp::Reverse(t.start_nanos));
             }
-            crate::adapter::TraceSort::DurationDesc => {
+            adapter::TraceSort::DurationDesc => {
                 traces.sort_by_key(|t| std::cmp::Reverse(t.duration_ns));
             }
-            crate::adapter::TraceSort::DurationAsc => traces.sort_by_key(|t| t.duration_ns),
-            crate::adapter::TraceSort::SpanCountDesc => {
+            adapter::TraceSort::DurationAsc => traces.sort_by_key(|t| t.duration_ns),
+            adapter::TraceSort::SpanCountDesc => {
                 traces.sort_by_key(|t| std::cmp::Reverse(t.span_count));
             }
         }
@@ -1091,7 +1091,7 @@ impl TelemetryStore for MemoryStore {
             .skip(query.offset)
             .take(query.limit)
             .collect();
-        Ok(crate::adapter::TraceList { items, total })
+        Ok(adapter::TraceList { items, total })
     }
 
     async fn attribute_compare(
@@ -1511,7 +1511,7 @@ impl TelemetryStore for MemoryStore {
             .into_iter()
             .map(|(group, series)| {
                 let series = if agg == MetricAgg::Rate {
-                    crate::adapter::rate_from_buckets(&series, step)
+                    adapter::rate_from_buckets(&series, step)
                 } else {
                     series
                 };
@@ -1606,7 +1606,7 @@ impl TelemetryStore for MemoryStore {
             .collect())
     }
 
-    async fn raw_sql(&self, _query: &str) -> anyhow::Result<crate::adapter::SqlResult> {
+    async fn raw_sql(&self, _query: &str) -> anyhow::Result<adapter::SqlResult> {
         anyhow::bail!("raw SQL needs the GreptimeDB engine; the test store has no SQL surface")
     }
 

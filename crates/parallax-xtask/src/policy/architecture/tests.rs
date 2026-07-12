@@ -154,5 +154,6 @@ fn rejects_release_reachability_to_test_support() {
         result
             .iter()
             .any(|finding| finding.rule_id == "arch.test-support-release")
+            && evaluate(&nodes, &[edge("high", "tests", Kind::Dev)], &ratchet()).is_empty()
     );
 }
