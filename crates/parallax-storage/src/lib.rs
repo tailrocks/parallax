@@ -10,6 +10,5 @@ pub mod adapter;
 #[expect(clippy::cast_precision_loss, reason = "bounded analytics ratios")]
 mod adapter_math;
 mod adapter_rules;
-#[expect(clippy::excessive_nesting, reason = "transaction flow")]
 pub mod metadata;
 pub use parallax_model as model;

@@ -102,7 +102,7 @@ pub fn channels(buffer_per_signal: usize) -> (IngestSenders, IngestReceivers) {
 )]
 pub struct Worker {
     store: Arc<dyn IngestStore>,
-    metadata: Arc<MetadataStore>,
+    metadata: Arc<dyn MetadataStore>,
     seen_runs: Arc<Mutex<HashSet<String>>>,
     live: crate::live::LiveChannels,
     #[cfg(test)]
@@ -121,7 +121,7 @@ enum FailureStage {
 impl Worker {
     pub fn new(
         store: Arc<dyn IngestStore>,
-        metadata: Arc<MetadataStore>,
+        metadata: Arc<dyn MetadataStore>,
         live: crate::live::LiveChannels,
     ) -> Self {
         Self {

@@ -1,7 +1,7 @@
 //! Shared test helpers for resolver domain tests.
 
 use crate::{ApiContext, RequestMemo};
-use parallax_storage::metadata::MetadataStore;
+use parallax_metadata::TursoMetadataStore;
 use parallax_test_support::builders::MemoryStore;
 pub(crate) use parallax_test_support::builders::{log_row, span, span_with_release};
 use std::sync::Arc;
@@ -25,7 +25,7 @@ pub(crate) async fn context_with_memory(store: Arc<MemoryStore>) -> ApiContext {
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
         Err(error) => panic!("remove stale test metadata {}: {error}", path.display()),
     }
-    let metadata = MetadataStore::open(&path).await.unwrap();
+    let metadata = TursoMetadataStore::open(&path).await.unwrap();
     ApiContext {
         store,
         metadata: Arc::new(metadata),

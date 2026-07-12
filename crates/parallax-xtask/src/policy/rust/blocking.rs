@@ -11,6 +11,7 @@ pub(super) fn check(root: &Path) -> Result<Vec<Finding>> {
         "parallax-api",
         "parallax-cli",
         "parallax-evidence",
+        "parallax-metadata",
         "parallax-server",
         "parallax-storage",
     ] {

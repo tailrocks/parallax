@@ -1,4 +1,6 @@
 use super::*;
+
+type MetadataStore = TursoMetadataStore;
 fn temp_db() -> (tempfile::TempDir, std::path::PathBuf) {
     let directory = tempfile::tempdir().expect("temporary directory");
     let path = directory.path().join("metadata.db");

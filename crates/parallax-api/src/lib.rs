@@ -51,7 +51,7 @@ pub struct RequestMemo {
 #[expect(missing_debug_implementations, reason = "opaque storage handle")]
 pub struct ApiContext {
     pub store: Arc<dyn TelemetryStore>,
-    pub metadata: Arc<MetadataStore>,
+    pub metadata: Arc<dyn MetadataStore>,
     pub otlp_grpc_port: u16,
     pub memo: RequestMemo,
 }

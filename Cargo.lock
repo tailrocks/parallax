@@ -3096,6 +3096,7 @@ dependencies = [
  "juniper",
  "parallax-analysis",
  "parallax-evidence",
+ "parallax-metadata",
  "parallax-storage",
  "parallax-test-support",
  "serde_json",
@@ -3178,6 +3179,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "parallax-metadata"
+version = "0.1.0-dev"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "parallax-model",
+ "parallax-proto",
+ "parallax-storage",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "turso",
+]
+
+[[package]]
 name = "parallax-model"
 version = "0.1.0-dev"
 dependencies = [
@@ -3212,6 +3228,7 @@ dependencies = [
  "parallax-api",
  "parallax-greptime",
  "parallax-ingest",
+ "parallax-metadata",
  "parallax-proto",
  "parallax-spool",
  "parallax-storage",
@@ -3253,9 +3270,6 @@ dependencies = [
  "parallax-model",
  "parallax-proto",
  "serde_json",
- "tempfile",
- "tokio",
- "turso",
 ]
 
 [[package]]

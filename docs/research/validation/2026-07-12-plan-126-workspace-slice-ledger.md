@@ -67,3 +67,7 @@ in the same commit.
   native-table SQL, migration, and row-mapping dependencies left the port
   crate. Server is the concrete consumer and the SQL/Arrow goldens moved with
   the adapter.
+- `126-metadata`: complete in the following commit; the query-neutral
+  `MetadataStore` capability remains in storage while Turso connection,
+  migration, transaction, and row-mapping code moved to `parallax-metadata`.
+  API and workers hold the capability object; server constructs the adapter.

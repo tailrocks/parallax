@@ -1,4 +1,5 @@
 use super::*;
+use parallax_metadata::TursoMetadataStore as MetadataStore;
 use parallax_proto::common::any_value::Value as AnyValueEnum;
 use parallax_proto::common::{AnyValue, KeyValue};
 use parallax_proto::metrics::{

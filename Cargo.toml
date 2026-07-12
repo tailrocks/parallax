@@ -6,6 +6,7 @@ members = [
     "crates/parallax-evidence",
     "crates/parallax-greptime",
     "crates/parallax-ingest",
+    "crates/parallax-metadata",
     "crates/parallax-model",
     "crates/parallax-api",
     "crates/parallax-proto",
@@ -38,6 +39,7 @@ parallax-analysis = { path = "crates/parallax-analysis" }
 parallax-evidence = { path = "crates/parallax-evidence" }
 parallax-greptime = { path = "crates/parallax-greptime" }
 parallax-ingest = { path = "crates/parallax-ingest" }
+parallax-metadata = { path = "crates/parallax-metadata" }
 parallax-model = { path = "crates/parallax-model" }
 parallax-proto = { path = "crates/parallax-proto" }
 parallax-server = { path = "crates/parallax-server" }

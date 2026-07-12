@@ -231,7 +231,7 @@ lint = "clippy::cast_possible_wrap"
 ceiling = 1
 
 [[rust_suppressions]]
-crate_name = "parallax-storage"
+crate_name = "parallax-metadata"
 lint = "clippy::excessive_nesting"
 ceiling = 1
 
@@ -335,6 +335,11 @@ class = "product"
 tier = 2
 
 [[architecture.packages]]
+name = "parallax-metadata"
+class = "product"
+tier = 2
+
+[[architecture.packages]]
 name = "parallax-spool"
 class = "product"
 tier = 2
@@ -430,7 +435,7 @@ ceiling = 1455
 
 [[limits]]
 metric = "rust.file-lines"
-scope = "crates/parallax-storage/src/metadata.rs"
+scope = "crates/parallax-metadata/src/turso.rs"
 ceiling = 752
 
 
@@ -1876,6 +1881,11 @@ ceiling = 1
 
 [[limits]]
 metric = "rust.public-root-items"
+scope = "crates/parallax-metadata/facade.toml"
+ceiling = 1
+
+[[limits]]
+metric = "rust.public-root-items"
 scope = "crates/parallax-spool/facade.toml"
 ceiling = 1
 
@@ -2046,7 +2056,7 @@ ceiling = 54
 
 [[limits]]
 metric = "rust.assertions"
-scope = "crates/parallax-storage/src/metadata/tests.rs"
+scope = "crates/parallax-metadata/src/turso/tests.rs"
 ceiling = 42
 
 [[limits]]

@@ -56,15 +56,15 @@ fn check_cargo(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
             ));
         }
     }
-    let storage = metadata
-        .packages
-        .iter()
-        .find(|package| package.name == "parallax-storage");
     let greptime = metadata
         .packages
         .iter()
         .find(|package| package.name == "parallax-greptime");
-    let has_turso = storage.is_some_and(|package| {
+    let metadata_adapter = metadata
+        .packages
+        .iter()
+        .find(|package| package.name == "parallax-metadata");
+    let has_turso = metadata_adapter.is_some_and(|package| {
         package
             .dependencies
             .iter()
@@ -233,7 +233,7 @@ fn check_ingest_logging(root: &Path, findings: &mut Vec<Finding>) -> Result<()> 
     for relative in [
         "crates/parallax-storage/src/adapter.rs",
         "crates/parallax-greptime/src/greptime.rs",
-        "crates/parallax-storage/src/metadata.rs",
+        "crates/parallax-metadata/src/turso.rs",
     ] {
         let path = root.join(relative);
         let syntax = parse(&path)?;

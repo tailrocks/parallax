@@ -13,9 +13,9 @@ use axum::response::Response;
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use parallax_api::{ApiContext, Schema as ParallaxSchema};
+use parallax_metadata::TursoMetadataStore;
 use parallax_spool::{Spool, SpoolRetention};
-use parallax_storage::adapter::TelemetryStore;
-use parallax_storage::metadata::MetadataStore;
+use parallax_storage::{adapter::TelemetryStore, metadata::MetadataStore};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
@@ -29,7 +29,7 @@ pub struct ServerHandle {
     pub otlp_http_addr: SocketAddr,
     pub spool: Arc<Spool>,
     pub store: Arc<dyn TelemetryStore>,
-    pub metadata: Arc<MetadataStore>,
+    pub metadata: Arc<dyn MetadataStore>,
     supervisor: Option<crate::greptime_supervisor::GreptimeSupervisor>,
     /// Listener/reaper tasks (aborted on shutdown).
     tasks: Vec<JoinHandle<()>>,
@@ -89,7 +89,7 @@ async fn connect_greptime(url: &str, config: &Config) -> anyhow::Result<Arc<dyn 
 struct GraphQlState {
     schema: Arc<ParallaxSchema>,
     store: Arc<dyn TelemetryStore>,
-    metadata: Arc<MetadataStore>,
+    metadata: Arc<dyn MetadataStore>,
     otlp_grpc_port: u16,
     limits: LimitsConfig,
 }
@@ -302,7 +302,7 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
             "unsupported storage.mode {mode:?}; supported values are \"managed\" and \"external\""
         ),
     };
-    let metadata = Arc::new(MetadataStore::open(data_dir.join("meta.db")).await?);
+    let metadata = Arc::new(TursoMetadataStore::open(data_dir.join("meta.db")).await?);
     start_assembled(config, store, metadata, supervisor).await
 }
 
@@ -312,7 +312,7 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
 pub async fn start_with_capabilities(
     config: &Config,
     store: Arc<dyn TelemetryStore>,
-    metadata: Arc<MetadataStore>,
+    metadata: Arc<dyn MetadataStore>,
 ) -> anyhow::Result<ServerHandle> {
     start_assembled(config, store, metadata, None).await
 }
@@ -320,7 +320,7 @@ pub async fn start_with_capabilities(
 async fn start_assembled(
     config: &Config,
     store: Arc<dyn TelemetryStore>,
-    metadata: Arc<MetadataStore>,
+    metadata: Arc<dyn MetadataStore>,
     supervisor: Option<crate::greptime_supervisor::GreptimeSupervisor>,
 ) -> anyhow::Result<ServerHandle> {
     let data_dir = config.data_dir();
