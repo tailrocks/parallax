@@ -17,7 +17,6 @@ fn test_config(data_dir: &std::path::Path) -> Config {
     config.server.api_port = 0;
     config.server.otlp_grpc_port = 0;
     config.server.otlp_http_port = 0;
-    config.storage.mode = "none".to_string();
     config.storage.data_dir = data_dir.to_string_lossy().into_owned();
     config
 }
@@ -25,7 +24,7 @@ fn test_config(data_dir: &std::path::Path) -> Config {
 #[tokio::test(flavor = "multi_thread")]
 async fn real_sdk_export_lands_in_the_spool() {
     let tmp = tempfile::tempdir().expect("tempdir");
-    let handle = parallax_server::start(&test_config(tmp.path()))
+    let handle = support::start(&test_config(tmp.path()))
         .await
         .expect("server starts");
     let grpc_endpoint = format!("http://{}", handle.otlp_grpc_addr);
@@ -103,7 +102,7 @@ async fn real_sdk_export_lands_in_the_spool() {
 #[tokio::test(flavor = "multi_thread")]
 async fn otlp_http_and_health_endpoints_work() {
     let tmp = tempfile::tempdir().expect("tempdir");
-    let handle = parallax_server::start(&test_config(tmp.path()))
+    let handle = support::start(&test_config(tmp.path()))
         .await
         .expect("server starts");
 
@@ -163,7 +162,7 @@ async fn gzip_compressed_otlp_http_is_accepted() {
     use std::io::Write;
 
     let tmp = tempfile::tempdir().expect("tempdir");
-    let handle = parallax_server::start(&test_config(tmp.path()))
+    let handle = support::start(&test_config(tmp.path()))
         .await
         .expect("server starts");
 
@@ -189,3 +188,4 @@ async fn gzip_compressed_otlp_http_is_accepted() {
     );
     handle.shutdown();
 }
+mod support;

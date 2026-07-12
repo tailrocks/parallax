@@ -6,7 +6,6 @@ fn test_config(data_dir: &std::path::Path) -> Config {
     config.server.api_port = 0;
     config.server.otlp_grpc_port = 0;
     config.server.otlp_http_port = 0;
-    config.storage.mode = "none".to_string();
     config.storage.data_dir = data_dir.to_string_lossy().into_owned();
     config.limits.graphql_max_depth = 8;
     config.limits.graphql_max_complexity = 4;
@@ -44,7 +43,7 @@ fn error_messages(json: &serde_json::Value) -> Vec<&str> {
 #[tokio::test(flavor = "multi_thread")]
 async fn m5_gates_limits_enforce_graphql_depth_complexity_and_host_guard() {
     let tmp = tempfile::tempdir().expect("tempdir");
-    let handle = parallax_server::start(&test_config(tmp.path()))
+    let handle = support::start(&test_config(tmp.path()))
         .await
         .expect("server starts");
     let client = reqwest::Client::new();
@@ -123,3 +122,4 @@ async fn m5_gates_limits_enforce_graphql_depth_complexity_and_host_guard() {
 
     handle.shutdown();
 }
+mod support;

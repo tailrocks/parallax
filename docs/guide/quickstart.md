@@ -36,8 +36,10 @@ itself listens on:
 | `:4318` | OTLP/HTTP ingest |
 | `:4000` | GraphQL API + web UI (`http://127.0.0.1:4000`) |
 
-No GreptimeDB? `storage.mode = "none"` in `~/.parallax/config.toml` runs the
-in-memory store (degraded, still fully functional for a dev loop).
+To use an existing GreptimeDB, set `storage.mode = "external"` and provide
+`storage.greptime_url`. Managed and external GreptimeDB are the only supported
+product modes; Turso metadata remains mandatory in both. The in-memory adapter
+is test-only and cannot be selected in configuration.
 
 ## 3. Connect a Rust app
 
@@ -105,7 +107,7 @@ parallax run start -- cargo run
 ```
 
 The wrapper injects OTLP/gRPC endpoint and protocol env vars for traces,
-logs, metrics, and profiles plus a `parallax.run.id` resource attribute,
+logs and metrics plus a `parallax.run.id` resource attribute,
 then propagates your program's exit code. Everything the run emitted is now
 addressable: `parallax run list`, `parallax logs --run <id>`.
 

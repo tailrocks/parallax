@@ -263,9 +263,9 @@ async fn main() -> anyhow::Result<()> {
             let config = serve_config.expect("serve config loaded above");
             let handle = parallax_server::start(&config).await?;
             let storage = match config.storage.mode.as_str() {
-                "none" => "in-memory (degraded; data lost on exit)".to_string(),
                 "external" => format!("external GreptimeDB at {}", config.storage.greptime_url),
-                _ => "managed GreptimeDB on 127.0.0.1:24000".to_string(),
+                "managed" => "managed GreptimeDB on 127.0.0.1:24000".to_string(),
+                mode => anyhow::bail!("unsupported validated storage mode {mode:?}"),
             };
             println!();
             println!("  Parallax ready — Ctrl-C to stop");
@@ -275,6 +275,10 @@ async fn main() -> anyhow::Result<()> {
             println!("    OTLP/gRPC  {}", handle.otlp_grpc_addr);
             println!("    OTLP/HTTP  {}", handle.otlp_http_addr);
             println!("    storage    {storage}");
+            println!(
+                "    metadata   Turso at {}",
+                config.data_dir().join("meta.db").display()
+            );
             println!("    data       {}", config.data_dir().display());
             match &telemetry_endpoint {
                 Some(endpoint) => {

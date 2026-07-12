@@ -232,7 +232,7 @@ pub async fn ensure_binary(
     anyhow::ensure!(
         allow_download,
         "greptime binary not found (looked in {} and PATH); re-run with download allowed, \
-         install via the Greptime brew tap, or use --greptime-url / --no-greptime",
+         install via the Greptime brew tap, or configure external GreptimeDB",
         bin_dir.display()
     );
 

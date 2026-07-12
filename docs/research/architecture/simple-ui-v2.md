@@ -24,7 +24,7 @@ historical name; this is the V1 UI specification.
 | Theme | **custom token theme** (operator decision 2026-07-03, supersedes "default theme as-is") | Neutral achromatic palette, custom-shadow elevation instead of borders, squircle corners (`@toolwind/corner-shape`), Inter + Geist Mono, light+dark via `next-themes`. Modeled on a local reference console designated by the operator (deliberately not named here). |
 | Charts | **shadcn chart components only** | Built on **Recharts v3**; Area/Bar/Line/Pie/Radar/Radial + tooltip variants (~10 copy-paste variants each at ui.shadcn.com/charts). Sparklines = axis-stripped line/area. Colors via `--chart-N` tokens. |
 | Blocks/pages | **Reuse shadcn blocks** | `dashboard-01` (sidebar + header + SectionCards + interactive area chart + DataTable) is the app shell starting point; data tables on **TanStack Table** per the official data-table guide (sorting, filtering, pagination, row actions — the issue list). |
-| Install | `shadcn init` against the TanStack Start template | First-class: `pnpm dlx shadcn@latest init -t start` (Tailwind + `@/*` alias preconfigured). |
+| Install | `shadcn init` against the TanStack Start template | First-class through the repository's Bun-only runtime: `bunx --bun shadcn@latest init -t start` (Tailwind + `@/*` alias preconfigured). |
 
 The industry-standard look is the point: reuse, don't redesign.
 

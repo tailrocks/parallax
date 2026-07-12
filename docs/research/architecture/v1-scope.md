@@ -25,7 +25,7 @@ slice**; M3+ (server/cloud profiles) becomes the V2 line.
 ## 1. Acceptance (the dogfood test, unchanged)
 
 The operator connects one of his real Rust services locally with OTLP/gRPC
-endpoint/protocol env vars for traces, logs, metrics, and profiles plus the
+endpoint/protocol env vars for traces, logs, and metrics plus the
 resource-attribute conventions; a real panic appears as a grouped issue with
 trace + logs + metric window within ~5 seconds; `parallax issue context <id>`
 yields the bundle; his agent fixes the bug from that context alone; cold
@@ -56,7 +56,7 @@ Statement #7 adds the stack-shaped scenarios V1 must pass on the operator's real
 | Item | V1 answer |
 | --- | --- |
 | Install | `brew install tailrocks/tap/parallax` and a static binary download; `cargo install` for Rust users. One binary. |
-| GreptimeDB acquisition | Self-sufficient by default: `parallax serve` detects `greptime` on PATH or in `~/.parallax/bin/`; if absent, offers to download the **pinned** release binary (checksum-verified) into `~/.parallax/bin/` — no Docker, no manual setup. Escape hatch: `--greptime-url` (bring your own GreptimeDB). **No fallback engines** (operator, 2026-06-12): GreptimeDB + Turso are the mandatory stack; `storage.mode = "none"` (in-memory) exists for tests/dev harnesses only and is not a supported product mode. |
+| GreptimeDB acquisition | Self-sufficient by default: `parallax serve` detects `greptime` on PATH or in `~/.parallax/bin/`; if absent, downloads the **pinned** release binary (checksum-verified) into `~/.parallax/bin/` — no Docker or fallback. `storage.mode = "external"` connects to a supplied GreptimeDB URL. GreptimeDB + Turso are mandatory; the in-memory adapter is compiled only for test support and is unreachable from product config. |
 | Offline | Everything works with zero network after install (the only network feature is the optional engine download). No phone-home, no telemetry-about-telemetry, no account. |
 | Data layout | `~/.parallax/`: `bin/` (managed engine), `greptime-data/`, `meta.db` (Turso), `spool/` (ingest WAL), `config.toml`. One directory to back up or delete. |
 | Uninstall | `parallax uninstall --purge` removes the data dir; the binary removal is the package manager's job. Nothing else was installed. |
@@ -84,7 +84,8 @@ Statement #7 adds the stack-shaped scenarios V1 must pass on the operator's real
   exists and is listed. `new_fingerprint` marking comes free from grouping.)
 - Bundle assembly on demand: bounded (10K-token default), redaction-lite (the detector set,
   honestly labeled pre-A6), ranked evidence-cited hypotheses, `missing_evidence`,
-  instrumentation suggestions, canonical hash. JSON, Markdown, and terminal projections.
+  instrumentation suggestions, canonical hash. JSON and Markdown projections;
+  Markdown is the terminal-facing projection.
 
 ### 2.4 The run model (the local UX centerpiece)
 
@@ -106,19 +107,22 @@ service under development — into a bounded, inspectable evidence unit (the Jac
 ```text
 parallax serve                # the server (local profile only in V1)
 parallax doctor               # diagnostics
-parallax prune                # apply TTL / free space now
 parallax run start|list|inspect|bundle
 parallax issue list [--run]   # grouped errors, counts, first/last seen
-parallax issue context <id>   # the bounded bundle (json|markdown|term)
+parallax issue context <id>   # the bounded bundle (json|markdown)
 parallax issue resolve <id>
 parallax trace inspect <trace_id>
 parallax logs --trace <id> | --run <id> [--grep]
-parallax metrics --run <id> [--name]
 parallax uninstall --purge
 ```
 
 The CLI talks only to the local API (GraphQL/HTTP on `:4000`); `--context` plumbing exists but
 V1 ships with the implicit `local` context only.
+
+Immediate physical reclamation/`prune` is owned by Plan 116, and a distinct
+metrics CLI is owned by Plan 105. Neither is claimed as shipped here. OTLP
+profiles ingest is also outside V1 until GreptimeDB has a researched native
+path and the operator opens that scope.
 
 ### 2.5a The web UI (statement #7 — V1 scope)
 

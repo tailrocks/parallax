@@ -2386,7 +2386,7 @@ impl TelemetryStore for GreptimeStore {
             })
             .collect();
         if agg == MetricAgg::Rate {
-            series = crate::memory::rate_from_buckets(&series, step_secs * 1_000_000_000);
+            series = crate::adapter::rate_from_buckets(&series, step_secs * 1_000_000_000);
         }
         Ok(series)
     }
@@ -3113,7 +3113,7 @@ impl TelemetryStore for GreptimeStore {
             .into_iter()
             .map(|(group, series)| {
                 let series = if agg == MetricAgg::Rate {
-                    crate::memory::rate_from_buckets(&series, step_secs * 1_000_000_000)
+                    crate::adapter::rate_from_buckets(&series, step_secs * 1_000_000_000)
                 } else {
                     series
                 };

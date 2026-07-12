@@ -466,12 +466,28 @@ pub fn attribute_compare_score(
     (selected_share - baseline_share).clamp(0.0, 1.0)
 }
 
+/// Per-second rate from bucketed counter sums (monotonic resets clamp to 0).
+/// Shared by the production Greptime adapter and the test adapter.
+pub(crate) fn rate_from_buckets(
+    series: &[crate::model::SeriesPoint],
+    step_nanos: u128,
+) -> Vec<crate::model::SeriesPoint> {
+    let step_secs = step_nanos as f64 / 1e9;
+    series
+        .windows(2)
+        .map(|window| crate::model::SeriesPoint {
+            ts_nanos: window[1].ts_nanos,
+            value: ((window[1].value - window[0].value).max(0.0)) / step_secs,
+        })
+        .collect()
+}
+
 #[async_trait::async_trait]
 pub trait TelemetryStore: Send + Sync {
     /// Ingest a traces batch: forward the raw OTLP bytes to GreptimeDB's native
     /// `/v1/otlp/v1/traces` endpoint (auto-creates `opentelemetry_traces`). The
-    /// decoded `spans` are the tee — kept for the in-memory adapter and unused
-    /// by the native forward.
+    /// decoded `spans` are the tee — used by test adapters and ignored by the
+    /// native production forward.
     async fn ingest_traces(
         &self,
         request: &parallax_proto::collector_trace::ExportTraceServiceRequest,
@@ -744,7 +760,7 @@ pub trait TelemetryStore: Send + Sync {
     ) -> anyhow::Result<Vec<SeriesPoint>>;
     /// Raw read-only SQL against the engine (SELECT-shaped statements only).
     /// The API enforces the user-facing guard; adapters repeat a defensive
-    /// shape check before execution. The in-memory store has no SQL surface
+    /// shape check before execution. The test store has no SQL surface
     /// and returns an error.
     async fn raw_sql(&self, query: &str) -> anyhow::Result<SqlResult>;
 }

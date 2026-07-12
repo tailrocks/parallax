@@ -25,8 +25,10 @@ resolvers; Parallax only consumes whatever spans arrive.
   (their current official guidance) — re-checked whenever a layer is touched.
 - Errors: `thiserror` in library crates, `anyhow` at binary edges. No `unwrap()` outside tests.
 - Tests: unit beside code; integration tests under `crates/parallax-server/tests/` driven by
-  **real SDK emission** (tracing + opentelemetry-otlp) against an in-process server with the
-  in-memory storage adapter; golden bundle tests reuse PoC fixtures.
+  **real SDK emission** (tracing + opentelemetry-otlp) against an in-process server with
+  explicitly injected telemetry and metadata capabilities. The in-memory adapter is
+  feature-gated test support, absent from product config and normal/release graphs; golden
+  bundle tests reuse PoC fixtures.
 - Logging: the server uses `tracing` itself; never exports its own telemetry to itself by
   default (loop guard).
 
@@ -45,7 +47,7 @@ exists for a required piece.
 | Runtime | tokio 1.x, axum 0.8, tonic 0.14, tower 0.5 |
 | OTel ingest types | opentelemetry-proto 0.32 (`gen-tonic`, `with-serde`) |
 | GraphQL server | **Juniper 0.17** (operator instruction, 2026-06-12 — the library he uses in his own services; replaces async-graphql). Axum integration is a ~20-line hand-rolled handler (`juniper::http::GraphQLRequest` → `execute` → JSON), avoiding integration-crate version skew. GraphQL `Int` is i32: counts cross the API saturated to i32. Schema-level depth/complexity enforcement is not built into Juniper — resolver-level limit caps apply now; query-cost middleware is M5 hardening. |
-| Metadata | turso (latest; **committed, no fallback engine** — operator decision 2026-06-12: GreptimeDB + Turso are the mandatory stack; no rusqlite flag, no engine swap; in-memory adapter is test/dev-only) |
+| Metadata | turso (latest; **committed, no fallback engine** — operator decision 2026-06-12: GreptimeDB + Turso are the mandatory stack; no rusqlite flag, no engine swap; in-memory adapter is test-only and absent from normal/release feature graphs) |
 | GreptimeDB client | SQL over HTTP API (reqwest) — no native client dependency in V1 |
 | CLI | clap 4 |
 | Core | serde/serde_json, sha2, regex, anyhow/thiserror |
@@ -70,7 +72,7 @@ rows — this section sets the design posture, not numbers.
 **Progress visibility (operator rule, 2026-06-12).** The user never waits in silence: long
 CLI steps narrate as they happen (download progress with MiB/percent/speed, engine start,
 health, table bootstrap), and `parallax serve` ends with a human banner naming every surface —
-UI URL, GraphQL, OTLP ports, storage mode, data dir. New long-running surfaces follow the same
+UI URL, GraphQL, OTLP ports, GreptimeDB endpoint/mode, Turso path, and data dir. New long-running surfaces follow the same
 rule.
 
 ## 2b. UI delivery (decided against the real build, 2026-06-12)
@@ -104,7 +106,7 @@ otlp_grpc_port = 4317
 otlp_http_port = 4318
 
 [storage]
-mode = "managed"             # managed | external | none
+mode = "managed"             # managed | external; no product fallback mode
 greptime_url = ""            # used when mode = "external"
 greptime_version = "latest"  # resolves to latest stable at install; resolved version recorded here
 data_dir = "~/.parallax"
@@ -120,6 +122,12 @@ bundle_max_tokens = 10000
 graphql_max_depth = 8
 graphql_max_complexity = 1000
 ```
+
+Product config and startup reject every storage mode except `managed` and
+`external`; external mode requires `greptime_url`. Tests do not encode a hidden
+mode. They call an internal composition seam with injected `TelemetryStore` and
+`MetadataStore` capabilities. Normal and release builds do not compile the
+in-memory adapter.
 
 ## 5. GreptimeDB DDL (created by the storage adapter on first start)
 

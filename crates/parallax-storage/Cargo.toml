@@ -1,6 +1,6 @@
 [package]
 name = "parallax-storage"
-description = "Parallax storage adapters: GreptimeDB, Turso metadata, in-memory"
+description = "Parallax storage adapters: GreptimeDB telemetry and Turso metadata"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -9,7 +9,8 @@ repository.workspace = true
 
 [features]
 default = []
-conformance = []
+test-support = []
+conformance = ["test-support"]
 
 [dependencies]
 anyhow = { workspace = true }

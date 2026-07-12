@@ -1,5 +1,4 @@
-//! In-memory `TelemetryStore` — the fast test adapter and the engine of the
-//! `--no-greptime` fallback's telemetry side (bounded).
+//! In-memory `TelemetryStore` for tests and explicit test-support builds only.
 
 use crate::adapter::{
     ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow,
@@ -73,18 +72,6 @@ fn span_matches_compare(
 fn duration_quantile_ms(durations: &mut [u128], q: f64) -> f64 {
     durations.sort_unstable();
     quantile_from_sorted(durations, q) / 1_000_000.0
-}
-
-/// Per-second rate from bucketed counter sums (monotonic resets clamp to 0).
-pub(crate) fn rate_from_buckets(series: &[SeriesPoint], step_nanos: u128) -> Vec<SeriesPoint> {
-    let step_secs = step_nanos as f64 / 1e9;
-    series
-        .windows(2)
-        .map(|w| SeriesPoint {
-            ts_nanos: w[1].ts_nanos,
-            value: ((w[1].value - w[0].value).max(0.0)) / step_secs,
-        })
-        .collect()
 }
 
 /// Linear-interpolated quantile from merged explicit-bounds histograms.
@@ -875,7 +862,7 @@ impl TelemetryStore for MemoryStore {
             })
             .collect();
         if agg == MetricAgg::Rate {
-            series = rate_from_buckets(&series, step);
+            series = crate::adapter::rate_from_buckets(&series, step);
         }
         Ok(series)
     }
@@ -1526,7 +1513,7 @@ impl TelemetryStore for MemoryStore {
             .into_iter()
             .map(|(group, series)| {
                 let series = if agg == MetricAgg::Rate {
-                    rate_from_buckets(&series, step)
+                    crate::adapter::rate_from_buckets(&series, step)
                 } else {
                     series
                 };
@@ -1622,10 +1609,7 @@ impl TelemetryStore for MemoryStore {
     }
 
     async fn raw_sql(&self, _query: &str) -> anyhow::Result<crate::adapter::SqlResult> {
-        anyhow::bail!(
-            "raw SQL needs the GreptimeDB engine; the in-memory store \
-             (storage.mode = \"none\") has no SQL surface"
-        )
+        anyhow::bail!("raw SQL needs the GreptimeDB engine; the test store has no SQL surface")
     }
 
     async fn log_count_series(

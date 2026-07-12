@@ -15,7 +15,6 @@ fn test_config(data_dir: &std::path::Path) -> Config {
     config.server.api_port = 0;
     config.server.otlp_grpc_port = 0;
     config.server.otlp_http_port = 0;
-    config.storage.mode = "none".to_string();
     config.storage.data_dir = data_dir.to_string_lossy().into_owned();
     config
 }
@@ -79,7 +78,7 @@ async fn graphql(
 #[tokio::test(flavor = "multi_thread")]
 async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
     let tmp = tempfile::tempdir().expect("tempdir");
-    let handle = parallax_server::start(&test_config(tmp.path()))
+    let handle = support::start(&test_config(tmp.path()))
         .await
         .expect("server starts");
     let grpc_endpoint = format!("http://{}", handle.otlp_grpc_addr);
@@ -360,7 +359,7 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
 #[tokio::test(flavor = "multi_thread")]
 async fn bundle_redacts_issue_title_culprit_and_run_command() {
     let tmp = tempfile::tempdir().expect("tempdir");
-    let handle = parallax_server::start(&test_config(tmp.path()))
+    let handle = support::start(&test_config(tmp.path()))
         .await
         .expect("server starts");
     let client = reqwest::Client::new();
@@ -461,3 +460,4 @@ async fn bundle_redacts_issue_title_culprit_and_run_command() {
 
     handle.shutdown();
 }
+mod support;

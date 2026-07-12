@@ -28,7 +28,7 @@ pub struct ServerConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct StorageConfig {
-    /// managed | external | none
+    /// Product storage mode: `managed` or `external`.
     pub mode: String,
     pub greptime_url: String,
     /// Pinned GreptimeDB version to install. Defaults to v1.1.2, the latest
@@ -126,10 +126,25 @@ impl Default for LimitsConfig {
 impl Config {
     /// Load from a config file if present, else defaults.
     pub fn load(path: Option<&Path>) -> anyhow::Result<Self> {
-        match path {
-            Some(p) if p.exists() => Ok(toml::from_str(&std::fs::read_to_string(p)?)?),
-            _ => Ok(Self::default()),
-        }
+        let config = match path {
+            Some(p) if p.exists() => toml::from_str(&std::fs::read_to_string(p)?)?,
+            _ => Self::default(),
+        };
+        config.validate()?;
+        Ok(config)
+    }
+
+    pub fn validate(&self) -> anyhow::Result<()> {
+        anyhow::ensure!(
+            matches!(self.storage.mode.as_str(), "managed" | "external"),
+            "unsupported storage.mode {:?}; supported values are \"managed\" and \"external\"",
+            self.storage.mode
+        );
+        anyhow::ensure!(
+            self.storage.mode != "external" || !self.storage.greptime_url.trim().is_empty(),
+            "storage.mode=external requires greptime_url"
+        );
+        Ok(())
     }
 
     /// Expand `~` in `storage.data_dir` against the user's home directory.
@@ -141,5 +156,31 @@ impl Config {
             return home.join(rest);
         }
         PathBuf::from(raw)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Config;
+
+    #[test]
+    fn rejects_removed_none_storage_mode() {
+        let config: Config = toml::from_str("[storage]\nmode = 'none'\n").expect("parse");
+        let error = config.validate().expect_err("none must be rejected");
+        assert_eq!(
+            error.to_string(),
+            "unsupported storage.mode \"none\"; supported values are \"managed\" and \"external\""
+        );
+    }
+
+    #[test]
+    fn external_storage_requires_url() {
+        let mut config = Config::default();
+        config.storage.mode = "external".to_string();
+        let error = config.validate().expect_err("URL required");
+        assert_eq!(
+            error.to_string(),
+            "storage.mode=external requires greptime_url"
+        );
     }
 }
