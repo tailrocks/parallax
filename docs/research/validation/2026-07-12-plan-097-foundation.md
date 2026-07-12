@@ -90,3 +90,9 @@ The capability split moved the ingest worker from the composition umbrella to
 `Arc<dyn IngestStore>`, proving consumers can request a narrow port without an
 adapter or telemetry clone. The memory conformance test, full-feature Clippy,
 and repository policy pass with exact shrink-only limits.
+
+Reusable model-row and OTLP builders moved to test support. API-context and
+server-process assembly remain in their downstream crate-local test owners:
+moving either into test support would create the upward dependency/cycle that
+the architecture gate explicitly forbids. Those owners now compose the shared
+MemoryStore and builders instead of owning reusable telemetry fixtures.

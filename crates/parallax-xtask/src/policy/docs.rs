@@ -89,10 +89,7 @@ pub(super) fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Find
 fn check_handoffs(root: &Path) -> Result<Vec<Finding>> {
     let mut findings = Vec::new();
     let mut stable_ids = BTreeSet::new();
-    for relative in [
-        "plans/097-model-test-support-and-dependency-direction.md",
-        "plans/101-dependencies-nextest-and-hygiene.md",
-    ] {
+    for relative in ["plans/101-dependencies-nextest-and-hygiene.md"] {
         let path = root.join(relative);
         let source = fs::read_to_string(&path)?;
         match parse_handoff(&source) {
