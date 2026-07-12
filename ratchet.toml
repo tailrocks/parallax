@@ -373,16 +373,6 @@ class = "test-support"
 
 [[limits]]
 metric = "rust.file-lines"
-scope = "crates/parallax-api/src/resolvers/services.rs"
-ceiling = 564
-
-[[limits]]
-metric = "rust.file-lines"
-scope = "crates/parallax-api/src/resolvers/traces.rs"
-ceiling = 536
-
-[[limits]]
-metric = "rust.file-lines"
 scope = "crates/parallax-cli/src/commands/implementation.rs"
 ceiling = 987
 

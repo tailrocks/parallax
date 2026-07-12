@@ -3,7 +3,7 @@
 use super::*;
 use crate::resolvers::test_support::*;
 use crate::{build_schema, execute};
-use parallax_storage::adapter::IngestStore;
+use parallax_storage::adapter::{IngestStore, OverviewTotals};
 use parallax_test_support::builders::MemoryStore;
 
 use parallax_storage::model::{ErrorEventRow, ErrorSource, LogRow};
