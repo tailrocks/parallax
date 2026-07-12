@@ -27,6 +27,11 @@ type MetricTableCache = Arc<RwLock<HashMap<(String, Option<String>), String>>>;
 const HTTP_CLIENT_TIMEOUT: Duration = Duration::from_secs(70);
 /// Server-side query deadline sent on SQL reads only (not on OTLP forwards).
 const SQL_QUERY_TIMEOUT_HEADER: &str = "60s";
+const METRIC_EXEMPLARS_TABLE: &str = "metric_exemplars";
+const METRIC_EXEMPLARS_REPLACEMENT: &str = "metric_exemplars_v2";
+const METRIC_EXEMPLARS_LEGACY: &str = "metric_exemplars_v1_legacy";
+const METRIC_EXEMPLAR_COLUMNS: &str =
+    r#""ts", "service", "name", "value", "trace_id", "span_id", "run_id", "attributes""#;
 
 pub struct GreptimeStore {
     base_url: String,
@@ -548,22 +553,163 @@ impl GreptimeStore {
                    TIME INDEX ("ts"), PRIMARY KEY ("service", "name")
                  ) WITH (append_mode = 'true', ttl = '{metrics_ttl}')"#
             ),
-            format!(
-                r#"CREATE TABLE IF NOT EXISTS metric_exemplars (
-                   "ts" TIMESTAMP(9) NOT NULL,
-                   "service" STRING, "name" STRING, "value" DOUBLE,
-                   "trace_id" STRING, "span_id" STRING, "run_id" STRING SKIPPING INDEX,
-                   "attributes" JSON,
-                   TIME INDEX ("ts"), PRIMARY KEY ("service", "name", "trace_id", "span_id")
-                 ) WITH (append_mode = 'true', ttl = '{metrics_ttl}')"#
-            ),
         ];
         for statement in statements {
             self.sql(&statement).await?;
         }
+        self.migrate_metric_exemplars(metrics_ttl).await?;
         self.try_traces_deviations().await;
         self.try_logs_deviations().await;
         self.reconcile_ttls(metrics_ttl, error_events_ttl).await;
+        Ok(())
+    }
+
+    fn metric_exemplars_ddl(table: &str, metrics_ttl: &str) -> String {
+        format!(
+            r#"CREATE TABLE IF NOT EXISTS {table} (
+                   "ts" TIMESTAMP(9) NOT NULL,
+                   "service" STRING, "name" STRING, "value" DOUBLE,
+                   "trace_id" STRING SKIPPING INDEX, "span_id" STRING,
+                   "run_id" STRING SKIPPING INDEX, "attributes" JSON,
+                   TIME INDEX ("ts"), PRIMARY KEY ("service", "name")
+                 ) WITH (append_mode = 'true', ttl = '{}')"#,
+            escape(metrics_ttl)
+        )
+    }
+
+    async fn table_exists(&self, table: &str) -> anyhow::Result<bool> {
+        let rows = self
+            .sql(&format!(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '{}'",
+                escape(table)
+            ))
+            .await?;
+        Ok(rows.first().map(|row| u128_at(row, 0)).unwrap_or(0) == 1)
+    }
+
+    async fn table_primary_key(&self, table: &str) -> anyhow::Result<Vec<String>> {
+        Ok(self
+            .sql(&format!("DESCRIBE {}", quoted_ident(table)))
+            .await?
+            .iter()
+            .filter(|row| str_at(row, 2) == "PRI" && str_at(row, 5) == "TAG")
+            .map(|row| str_at(row, 0))
+            .collect())
+    }
+
+    async fn table_count(&self, table: &str) -> anyhow::Result<u128> {
+        let rows = self
+            .sql(&format!("SELECT COUNT(*) FROM {}", quoted_ident(table)))
+            .await?;
+        Ok(rows.first().map(|row| u128_at(row, 0)).unwrap_or(0))
+    }
+
+    async fn verify_exemplar_copy(&self, source: &str, destination: &str) -> anyhow::Result<()> {
+        let source_count = self.table_count(source).await?;
+        let destination_count = self.table_count(destination).await?;
+        anyhow::ensure!(
+            source_count == destination_count,
+            "metric exemplar migration row-count mismatch: {source}={source_count}, {destination}={destination_count}"
+        );
+        let mismatches = self
+            .sql(&format!(
+                r#"SELECT COUNT(*) FROM (
+                       (SELECT {METRIC_EXEMPLAR_COLUMNS} FROM {source} EXCEPT
+                        SELECT {METRIC_EXEMPLAR_COLUMNS} FROM {destination})
+                       UNION ALL
+                       (SELECT {METRIC_EXEMPLAR_COLUMNS} FROM {destination} EXCEPT
+                        SELECT {METRIC_EXEMPLAR_COLUMNS} FROM {source})
+                   ) AS differences"#,
+                source = quoted_ident(source),
+                destination = quoted_ident(destination),
+            ))
+            .await?;
+        anyhow::ensure!(
+            mismatches.first().map(|row| u128_at(row, 0)).unwrap_or(0) == 0,
+            "metric exemplar migration changed values"
+        );
+        Ok(())
+    }
+
+    async fn migrate_metric_exemplars(&self, metrics_ttl: &str) -> anyhow::Result<()> {
+        let canonical_exists = self.table_exists(METRIC_EXEMPLARS_TABLE).await?;
+        let legacy_exists = self.table_exists(METRIC_EXEMPLARS_LEGACY).await?;
+
+        if canonical_exists
+            && self.table_primary_key(METRIC_EXEMPLARS_TABLE).await? == ["service", "name"]
+        {
+            if legacy_exists {
+                self.verify_exemplar_copy(METRIC_EXEMPLARS_LEGACY, METRIC_EXEMPLARS_TABLE)
+                    .await?;
+                self.sql(&format!(
+                    "DROP TABLE {}",
+                    quoted_ident(METRIC_EXEMPLARS_LEGACY)
+                ))
+                .await?;
+            }
+            return Ok(());
+        }
+
+        let source = if canonical_exists {
+            anyhow::ensure!(
+                self.table_primary_key(METRIC_EXEMPLARS_TABLE).await?
+                    == ["service", "name", "trace_id", "span_id"],
+                "metric_exemplars has an unknown primary-key shape"
+            );
+            METRIC_EXEMPLARS_TABLE
+        } else if legacy_exists {
+            METRIC_EXEMPLARS_LEGACY
+        } else {
+            self.sql(&Self::metric_exemplars_ddl(
+                METRIC_EXEMPLARS_TABLE,
+                metrics_ttl,
+            ))
+            .await?;
+            return Ok(());
+        };
+
+        if self.table_exists(METRIC_EXEMPLARS_REPLACEMENT).await? {
+            self.sql(&format!(
+                "DROP TABLE {}",
+                quoted_ident(METRIC_EXEMPLARS_REPLACEMENT)
+            ))
+            .await?;
+        }
+        self.sql(&Self::metric_exemplars_ddl(
+            METRIC_EXEMPLARS_REPLACEMENT,
+            metrics_ttl,
+        ))
+        .await?;
+        self.sql(&format!(
+            "INSERT INTO {} ({METRIC_EXEMPLAR_COLUMNS}) SELECT {METRIC_EXEMPLAR_COLUMNS} FROM {}",
+            quoted_ident(METRIC_EXEMPLARS_REPLACEMENT),
+            quoted_ident(source)
+        ))
+        .await?;
+        self.verify_exemplar_copy(source, METRIC_EXEMPLARS_REPLACEMENT)
+            .await?;
+
+        if source == METRIC_EXEMPLARS_TABLE {
+            self.sql(&format!(
+                "ALTER TABLE {} RENAME {}",
+                quoted_ident(METRIC_EXEMPLARS_TABLE),
+                quoted_ident(METRIC_EXEMPLARS_LEGACY)
+            ))
+            .await?;
+        }
+        self.sql(&format!(
+            "ALTER TABLE {} RENAME {}",
+            quoted_ident(METRIC_EXEMPLARS_REPLACEMENT),
+            quoted_ident(METRIC_EXEMPLARS_TABLE)
+        ))
+        .await?;
+        self.verify_exemplar_copy(METRIC_EXEMPLARS_LEGACY, METRIC_EXEMPLARS_TABLE)
+            .await?;
+        self.sql(&format!(
+            "DROP TABLE {}",
+            quoted_ident(METRIC_EXEMPLARS_LEGACY)
+        ))
+        .await?;
         Ok(())
     }
 
@@ -575,7 +721,7 @@ impl GreptimeStore {
             ("opentelemetry_logs", self.logs_ttl.as_str()),
             ("error_events", error_events_ttl),
             ("run_metric_points", metrics_ttl),
-            ("metric_exemplars", metrics_ttl),
+            (METRIC_EXEMPLARS_TABLE, metrics_ttl),
         ];
         for (table, ttl) in targets {
             let sql = format!("ALTER TABLE {table} SET 'ttl' = '{}'", escape(ttl));
@@ -1416,12 +1562,8 @@ impl TelemetryStore for GreptimeStore {
                 )
             })
             .collect();
-        self.insert(
-            "metric_exemplars",
-            "\"ts\", \"service\", \"name\", \"value\", \"trace_id\", \"span_id\", \"run_id\", \"attributes\"",
-            values,
-        )
-        .await
+        self.insert(METRIC_EXEMPLARS_TABLE, METRIC_EXEMPLAR_COLUMNS, values)
+            .await
     }
 
     async fn write_error_events(&self, rows: Vec<ErrorEventRow>) -> anyhow::Result<()> {
@@ -2279,7 +2421,7 @@ impl TelemetryStore for GreptimeStore {
                 r#"SELECT CAST("ts" AS BIGINT) AS "ts_nanos",
                           "service", "name", "value", "trace_id", "span_id", "run_id",
                           json_to_string("attributes")
-                   FROM metric_exemplars
+                   FROM {METRIC_EXEMPLARS_TABLE}
                    WHERE "name" = '{}' AND "ts" >= {} AND "ts" <= {}{service_clause}
                    ORDER BY "ts" DESC LIMIT {}"#,
                 escape(name),
@@ -3161,7 +3303,7 @@ impl GreptimeStore {
             "opentelemetry_logs",
             "error_events",
             "run_metric_points",
-            "metric_exemplars",
+            METRIC_EXEMPLARS_TABLE,
             "greptime_physical_table",
         ];
         let rows = self
@@ -3312,6 +3454,17 @@ mod tests {
             r#"http.""server"".duration"#
         );
         assert_eq!(escape_ident("metric's/name"), "metric's/name");
+    }
+
+    #[test]
+    fn metric_exemplars_fresh_ddl_has_low_cardinality_primary_key() {
+        let ddl = GreptimeStore::metric_exemplars_ddl(METRIC_EXEMPLARS_TABLE, "30d");
+        assert!(ddl.contains(r#""trace_id" STRING SKIPPING INDEX"#));
+        assert!(ddl.contains(r#""run_id" STRING SKIPPING INDEX"#));
+        assert!(ddl.contains(r#"PRIMARY KEY ("service", "name")"#));
+        assert!(!ddl.contains(r#"PRIMARY KEY ("service", "name", "trace_id"#));
+        assert!(ddl.contains("append_mode = 'true'"));
+        assert!(ddl.contains("ttl = '30d'"));
     }
 
     #[test]

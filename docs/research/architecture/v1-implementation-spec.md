@@ -240,6 +240,14 @@ migrated (research stage, no users). Canonical decision and historical adoption 
 [storage/native-otel-migration-plan.md](../storage/native-otel-migration-plan.md). The DDL block below
 is retained only as a record of the legacy shape and the extension-table definitions.
 
+The `metric_exemplars` extension uses `TIMESTAMP(9)` as its time index and
+`PRIMARY KEY (service, name)` only. `trace_id` and `run_id` are skipping-indexed
+fields; `span_id` and JSON attributes remain fields. Bootstrap recognizes the
+historical `(service, name, trace_id, span_id)` key, copies it into a versioned
+replacement, verifies row count and bidirectional value equality, then performs
+a restart-safe rename cutover. The retained source is never dropped until the
+canonical replacement passes verification.
+
 ## 6. Turso (metadata) DDL
 
 ```sql

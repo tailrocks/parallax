@@ -87,7 +87,11 @@ headers; post-create `ALTER TABLE … ADD COLUMN` / `ADD … INVERTED INDEX | FU
   INDEX`, `append_mode`, `flat` SST) — GreptimeDB's own high-cardinality pattern; the metric engine
   stays run_id-free.
 - **`error_events`, `run_metric_points`, `metric_exemplars` → KEEP custom.** Product semantics; no
-  native raw-signal replacement.
+  native raw-signal replacement. `metric_exemplars` is keyed only by the
+  low-cardinality `(service, name)` pair; trace/run correlation identifiers are
+  fields with skipping indexes only where reads justify them. Existing legacy
+  exemplar tables migrate through a verified replacement-and-rename sequence,
+  preserving the source until row and value parity succeeds.
 
 ## Plan 084 — deterministic native logs schema (verified 2026-07-11, GreptimeDB v1.1.2)
 
