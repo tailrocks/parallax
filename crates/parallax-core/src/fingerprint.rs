@@ -22,23 +22,27 @@ struct Normalizers {
     absolute_path: Regex,
 }
 
+#[expect(clippy::expect_used, reason = "static regex literal")]
+fn static_regex(pattern: &str) -> Regex {
+    Regex::new(pattern).expect("static regex")
+}
+
 fn normalizers() -> &'static Normalizers {
     static CELL: OnceLock<Normalizers> = OnceLock::new();
     CELL.get_or_init(|| {
         Normalizers {
-            uuid: Regex::new(
+            uuid: static_regex(
                 r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
-            )
-            .expect("static regex"),
-            long_hex: Regex::new(r"\b[0-9a-fA-F]{16,}\b").expect("static regex"),
-            short_hex: Regex::new(r"\b[0-9a-f]{6,15}\b").expect("static regex"),
-            container: Regex::new(r"\bjk-[a-z0-9-]+\b").expect("static regex"),
-            uid_gid: Regex::new(r"\b\d+:\d+\b").expect("static regex"),
+            ),
+            long_hex: static_regex(r"\b[0-9a-fA-F]{16,}\b"),
+            short_hex: static_regex(r"\b[0-9a-f]{6,15}\b"),
+            container: static_regex(r"\bjk-[a-z0-9-]+\b"),
+            uid_gid: static_regex(r"\b\d+:\d+\b"),
             // No word boundaries: "2000ms" and "attempt4" must normalize too.
-            digits: Regex::new(r"\d+").expect("static regex"),
-            whitespace: Regex::new(r"\s+").expect("static regex"),
-            frame_suffix: Regex::new(r":\d+(?::\d+)?$").expect("static regex"),
-            absolute_path: Regex::new(r"/[^\s]+").expect("static regex"),
+            digits: static_regex(r"\d+"),
+            whitespace: static_regex(r"\s+"),
+            frame_suffix: static_regex(r":\d+(?::\d+)?$"),
+            absolute_path: static_regex(r"/[^\s]+"),
         }
     })
 }

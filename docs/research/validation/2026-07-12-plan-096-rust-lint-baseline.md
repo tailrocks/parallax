@@ -20,3 +20,15 @@ The measurement came from structured Cargo JSON for
 `cargo clippy --workspace --all-targets --locked --message-format=json`; it is
 not a stderr grep. Strict-family activation is measured separately after this
 inheritance-only checkpoint.
+
+## High-signal activation
+
+The Rust 2024, future-incompatible, idiom, style, unused, rustdoc, unsafe,
+Clippy `all`, async correctness, panic, must-use, memory-safety, and layout
+rules are active under CI `-D warnings`. The activation pass handled every
+previously silent shutdown, cleanup, TTL-reconcile, worker-join, and broadcast
+outcome according to its runtime contract. Exact test-only valves and opaque
+runtime-type exceptions are reason-bearing and ratcheted by crate and lint.
+
+Validation after activation: 230 nextest tests, the compile-fail doctest,
+workspace Clippy with `-D warnings`, and the repository policy all passed.

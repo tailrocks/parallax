@@ -1,6 +1,8 @@
 //! M2 acceptance (metrics + dashboards slice): real SDK metrics become
 //! queryable series, and user dashboards round-trip through the API.
 
+#![allow(clippy::expect_used, reason = "test fixture assertions")]
+
 use opentelemetry::metrics::MeterProvider as _;
 use opentelemetry_otlp::WithExportConfig;
 use parallax_server::Config;

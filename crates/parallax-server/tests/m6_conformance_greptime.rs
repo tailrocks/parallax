@@ -2,18 +2,18 @@
 //!
 //! Run with: `cargo nextest run -p parallax-server m6_conformance --run-ignored only`
 
+#![allow(clippy::expect_used, reason = "test fixture assertions")]
+
 use parallax_server::Config;
 use std::time::Duration;
 
-fn make_executable(path: &std::path::Path) {
+fn make_executable(path: &std::path::Path) -> anyhow::Result<()> {
     let status = std::process::Command::new("chmod")
         .arg("+x")
         .arg(path)
-        .status()
-        .expect("mark cached engine executable");
-    if !status.success() {
-        panic!("chmod cached engine exited with {status}");
-    }
+        .status()?;
+    anyhow::ensure!(status.success(), "chmod cached engine exited with {status}");
+    Ok(())
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -39,7 +39,7 @@ async fn greptime_conformance_scenarios() {
     if cache_bin.join("greptime").exists() {
         std::fs::create_dir_all(&data_bin).expect("bin dir");
         std::fs::copy(cache_bin.join("greptime"), data_bin.join("greptime")).expect("seed engine");
-        make_executable(&data_bin.join("greptime"));
+        make_executable(&data_bin.join("greptime")).expect("mark cached engine executable");
     }
 
     let mut config = Config::default();

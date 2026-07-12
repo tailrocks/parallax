@@ -291,3 +291,17 @@ pub struct TrendPoint {
     pub ts_nanos: u128,
     pub count: u64,
 }
+
+/// One derived error occurrence, ready for metadata issue upsert.
+#[derive(Debug)]
+pub struct IssueOccurrence<'a> {
+    pub fingerprint: &'a str,
+    pub title: String,
+    pub error_type: &'a str,
+    pub culprit: Option<String>,
+    pub service: &'a str,
+    pub ts_nanos: u128,
+    pub trace_id: Option<&'a str>,
+    /// The event's attributes — merged into the issue's bounded tag cache.
+    pub attributes: &'a serde_json::Value,
+}

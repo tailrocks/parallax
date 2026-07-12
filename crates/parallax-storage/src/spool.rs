@@ -60,6 +60,7 @@ impl Signal {
     }
 }
 
+#[derive(Debug)]
 struct SignalState {
     size: u64,
     file: Option<std::fs::File>,
@@ -84,6 +85,7 @@ struct RotatedSegment {
     timestamp_secs: Option<u64>,
 }
 
+#[derive(Debug)]
 pub struct Spool {
     dir: PathBuf,
     max_segment_bytes: u64,

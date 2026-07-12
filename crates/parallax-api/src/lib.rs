@@ -24,9 +24,7 @@ pub(crate) use resolvers::helpers::{
 };
 
 use juniper::{FieldError, FieldResult, graphql_object};
-use parallax_storage::adapter::TelemetryStore;
-use parallax_storage::metadata::MetadataStore;
-use parallax_storage::model;
+use parallax_storage::{adapter::TelemetryStore, metadata::MetadataStore, model};
 use std::{collections::HashMap, sync::Arc};
 
 use resolvers::{
@@ -41,7 +39,7 @@ use resolvers::{
 /// Request-scoped memo for the highest-fan-in anchored reads. Built fresh on
 /// every GraphQL request so sibling fields share one store round-trip per
 /// (`trace_id`) without caching across requests.
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct RequestMemo {
     spans: tokio::sync::Mutex<HashMap<String, Arc<Vec<model::SpanRow>>>>,
     logs: tokio::sync::Mutex<HashMap<String, Arc<Vec<model::LogRow>>>>,
@@ -50,6 +48,7 @@ pub struct RequestMemo {
 /// Request context: shared storage adapters plus a per-request memo layer.
 /// Constructed once per GraphQL request in the server handler — do not put a
 /// long-lived `RequestMemo` behind a shared `Arc` (stale-data risk).
+#[expect(missing_debug_implementations, reason = "opaque storage handle")]
 pub struct ApiContext {
     pub store: Arc<dyn TelemetryStore>,
     pub metadata: Arc<MetadataStore>,
@@ -145,12 +144,7 @@ pub(crate) const INVESTIGATION_NAME_MAX: usize = 120;
 pub(crate) const INVESTIGATION_PIN_CAP: usize = 100;
 pub(crate) const INVESTIGATION_NOTES_MAX_BYTES: usize = 64 * 1024;
 
-pub(crate) fn clamp_limit(limit: Option<i32>, default: usize) -> usize {
-    limit
-        .map_or(default, |l| usize::try_from(l.max(0)).unwrap_or(default))
-        .min(MAX_ROWS)
-}
-
+#[derive(Debug)]
 pub struct Query;
 
 #[rustfmt::skip]
@@ -349,6 +343,7 @@ impl Query {
 
 }
 
+#[derive(Debug)]
 pub struct Mutation;
 
 #[rustfmt::skip]
@@ -386,6 +381,7 @@ impl Mutation {
 }
 
 pub use query_limits::check_query_limits;
+pub(crate) use query_limits::clamp_limit;
 pub use schema::{Schema, build_schema, execute};
 
 #[cfg(test)]

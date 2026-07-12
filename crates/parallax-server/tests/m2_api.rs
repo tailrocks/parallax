@@ -2,6 +2,12 @@
 //! telemetry — issues with nested events, trace, correlated logs, and the
 //! issue-status mutation.
 
+#![allow(
+    clippy::expect_used,
+    clippy::float_cmp,
+    reason = "test fixture assertions"
+)]
+
 use opentelemetry::KeyValue;
 use opentelemetry::logs::{AnyValue, LogRecord as _, Logger as _, LoggerProvider as _, Severity};
 use opentelemetry::trace::{Span as _, SpanContext, Status, Tracer as _, TracerProvider as _};

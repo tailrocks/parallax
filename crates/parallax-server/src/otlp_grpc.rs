@@ -19,7 +19,7 @@ use prost::Message;
 use tonic::codec::CompressionEncoding;
 use tonic::{Request, Response, Status};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct OtlpGrpc {
     state: IngestState,
     max_decoding_message_size: usize,

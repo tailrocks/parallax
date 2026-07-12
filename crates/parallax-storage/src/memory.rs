@@ -132,6 +132,7 @@ type TraceNormalizer =
     std::sync::Arc<dyn Fn(&ExportTraceServiceRequest) -> Vec<SpanRow> + Send + Sync>;
 type LogNormalizer = std::sync::Arc<dyn Fn(&ExportLogsServiceRequest) -> Vec<LogRow> + Send + Sync>;
 
+#[expect(missing_debug_implementations, reason = "opaque normalizers")]
 pub struct MemoryStore {
     inner: Mutex<Inner>,
     normalize_traces: Option<TraceNormalizer>,
@@ -212,7 +213,7 @@ impl TelemetryStore for MemoryStore {
             g.take()
         };
         if let Some(rx) = gate {
-            let _ = rx.await;
+            crate::outcomes::warn_error(rx.await, "memory adapter test gate");
         }
         if let Some(normalize) = &self.normalize_traces {
             self.lock().spans.extend(normalize(request));
@@ -538,7 +539,7 @@ impl TelemetryStore for MemoryStore {
         let trace_count = spans
             .iter()
             .map(|s| s.trace_id.as_str())
-            .collect::<std::collections::BTreeSet<_>>()
+            .collect::<BTreeSet<_>>()
             .len() as u64;
         let active_services = spans
             .iter()
@@ -564,7 +565,7 @@ impl TelemetryStore for MemoryStore {
                     .filter(|h| range.contains(&h.ts_nanos))
                     .map(|h| h.service.as_str()),
             )
-            .collect::<std::collections::BTreeSet<_>>()
+            .collect::<BTreeSet<_>>()
             .len() as u64;
         let span_count = spans.len() as u64;
         Ok(OverviewTotals {
@@ -591,7 +592,7 @@ impl TelemetryStore for MemoryStore {
     ) -> anyhow::Result<Vec<SeriesPoint>> {
         let step = step_nanos.max(1);
         let inner = self.lock();
-        let mut buckets: std::collections::BTreeMap<u128, u64> = Default::default();
+        let mut buckets: BTreeMap<u128, u64> = Default::default();
         match kind {
             SignalKind::Spans => {
                 for span in inner.spans.iter().filter(|s| {
@@ -601,8 +602,7 @@ impl TelemetryStore for MemoryStore {
                 }
             }
             SignalKind::Traces => {
-                let mut traces: std::collections::BTreeMap<u128, std::collections::BTreeSet<&str>> =
-                    Default::default();
+                let mut traces: BTreeMap<u128, BTreeSet<&str>> = Default::default();
                 for span in inner.spans.iter().filter(|s| {
                     range.contains(&s.ts_nanos) && service.is_none_or(|svc| s.service == svc)
                 }) {
@@ -660,7 +660,7 @@ impl TelemetryStore for MemoryStore {
         range: RangeInclusive<u128>,
     ) -> anyhow::Result<Vec<ServiceSummary>> {
         let inner = self.lock();
-        let mut by_service: std::collections::BTreeMap<&str, Vec<&SpanRow>> = Default::default();
+        let mut by_service: BTreeMap<&str, Vec<&SpanRow>> = Default::default();
         for span in inner.spans.iter().filter(|s| range.contains(&s.ts_nanos)) {
             by_service.entry(&span.service).or_default().push(span);
         }
@@ -782,7 +782,7 @@ impl TelemetryStore for MemoryStore {
         let step = step_nanos.max(1);
         let step_secs = step as f64 / 1_000_000_000.0;
         let inner = self.lock();
-        let mut buckets: std::collections::BTreeMap<u128, Vec<&SpanRow>> = Default::default();
+        let mut buckets: BTreeMap<u128, Vec<&SpanRow>> = Default::default();
         for span in inner
             .spans
             .iter()
@@ -836,7 +836,7 @@ impl TelemetryStore for MemoryStore {
         agg: MetricAgg,
     ) -> anyhow::Result<Vec<SeriesPoint>> {
         let step = step_nanos.max(1);
-        let mut buckets: std::collections::BTreeMap<u128, Vec<f64>> = Default::default();
+        let mut buckets: BTreeMap<u128, Vec<f64>> = Default::default();
         for point in self.lock().metric_points.iter().filter(|p| {
             p.name == name
                 && service.is_none_or(|svc| p.service == svc)
@@ -877,7 +877,7 @@ impl TelemetryStore for MemoryStore {
     ) -> anyhow::Result<Vec<SeriesPoint>> {
         // Latest sample per window (plan 085) — align with greptime MAX merge.
         let step = step_nanos.max(1);
-        let mut latest: std::collections::BTreeMap<u128, HistogramRow> = Default::default();
+        let mut latest: BTreeMap<u128, HistogramRow> = Default::default();
         for row in self.lock().histograms.iter().filter(|h| {
             h.name == name
                 && service.is_none_or(|svc| h.service == svc)
@@ -947,8 +947,7 @@ impl TelemetryStore for MemoryStore {
         range: RangeInclusive<u128>,
     ) -> anyhow::Result<Vec<crate::adapter::ObservedRun>> {
         let inner = self.lock();
-        let mut runs: std::collections::HashMap<String, crate::adapter::ObservedRun> =
-            std::collections::HashMap::new();
+        let mut runs: HashMap<String, crate::adapter::ObservedRun> = HashMap::new();
         let mut absorb = |run_id: &Option<String>, ts: u128, service: &str, is_span: bool| {
             if !range.contains(&ts) {
                 return;
@@ -998,19 +997,18 @@ impl TelemetryStore for MemoryStore {
             query.from_nanos.is_none_or(|from| ts >= from)
                 && query.to_nanos.is_none_or(|to| ts <= to)
         };
-        let participating: Option<std::collections::HashSet<&str>> =
-            query.service.as_deref().map(|svc| {
-                inner
-                    .spans
-                    .iter()
-                    .filter(|s| s.service == svc && in_window(s.ts_nanos))
-                    .map(|s| s.trace_id.as_str())
-                    .collect()
-            });
+        let participating: Option<HashSet<&str>> = query.service.as_deref().map(|svc| {
+            inner
+                .spans
+                .iter()
+                .filter(|s| s.service == svc && in_window(s.ts_nanos))
+                .map(|s| s.trace_id.as_str())
+                .collect()
+        });
         // Representative span per trace: the root (no parent), else — when no
         // root was stored — the earliest span, so all-INTERNAL traces still
         // list instead of vanishing.
-        let mut rep: std::collections::HashMap<&str, &SpanRow> = std::collections::HashMap::new();
+        let mut rep: HashMap<&str, &SpanRow> = HashMap::new();
         for span in &inner.spans {
             let is_root = span.parent_span_id.as_deref().is_none_or(str::is_empty);
             match rep.get(span.trace_id.as_str()) {
@@ -1482,7 +1480,7 @@ impl TelemetryStore for MemoryStore {
             "unknown metric label"
         );
         let step = step_nanos.max(1);
-        let mut buckets: std::collections::BTreeMap<(String, u128), Vec<f64>> = Default::default();
+        let mut buckets: BTreeMap<(String, u128), Vec<f64>> = Default::default();
         for point in self.lock().metric_points.iter().filter(|p| {
             p.name == name
                 && service.is_none_or(|svc| p.service == svc)
@@ -1496,7 +1494,7 @@ impl TelemetryStore for MemoryStore {
                 .or_default()
                 .push(point.value);
         }
-        let mut groups: std::collections::BTreeMap<String, Vec<SeriesPoint>> = Default::default();
+        let mut groups: BTreeMap<String, Vec<SeriesPoint>> = Default::default();
         for ((group, ts_nanos), values) in buckets {
             let value = match agg {
                 MetricAgg::Avg => values.iter().sum::<f64>() / values.len() as f64,
@@ -1566,7 +1564,7 @@ impl TelemetryStore for MemoryStore {
         step_nanos: u128,
     ) -> anyhow::Result<Vec<SeriesPoint>> {
         let step = step_nanos.max(1);
-        let mut buckets: std::collections::BTreeMap<u128, u64> = Default::default();
+        let mut buckets: BTreeMap<u128, u64> = Default::default();
         for row in self.lock().histograms.iter().filter(|h| {
             h.name == name
                 && service.is_none_or(|svc| h.service == svc)
@@ -1590,7 +1588,7 @@ impl TelemetryStore for MemoryStore {
         step_nanos: u128,
     ) -> anyhow::Result<Vec<SeriesPoint>> {
         let step = step_nanos.max(1);
-        let mut buckets: std::collections::BTreeMap<u128, u64> = Default::default();
+        let mut buckets: BTreeMap<u128, u64> = Default::default();
         for event in self
             .lock()
             .error_events
@@ -1622,7 +1620,7 @@ impl TelemetryStore for MemoryStore {
         step_nanos: u128,
     ) -> anyhow::Result<Vec<SeriesPoint>> {
         let step = step_nanos.max(1);
-        let mut buckets: std::collections::BTreeMap<u128, u64> = Default::default();
+        let mut buckets: BTreeMap<u128, u64> = Default::default();
         for log in self.lock().logs.iter().filter(|l| {
             range.contains(&l.ts_nanos)
                 && service.is_none_or(|svc| l.service == svc)

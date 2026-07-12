@@ -260,7 +260,7 @@ async fn main() -> anyhow::Result<()> {
     match cli.command {
         Command::Serve { .. } => {
             // Config was loaded above (to resolve self-telemetry); reuse it.
-            let config = serve_config.expect("serve config loaded above");
+            let config = serve_config.ok_or_else(|| anyhow::anyhow!("serve config missing"))?;
             let handle = parallax_server::start(&config).await?;
             let storage = match config.storage.mode.as_str() {
                 "external" => format!("external GreptimeDB at {}", config.storage.greptime_url),

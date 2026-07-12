@@ -22,7 +22,7 @@ use std::io::Cursor;
 
 /// Decode an Arrow IPC stream (optionally zstd-compressed per-message) into
 /// column names + rows of JSON-compatible cells.
-pub fn decode_arrow_ipc(bytes: &[u8]) -> anyhow::Result<(Vec<String>, Vec<Vec<Value>>)> {
+pub(crate) fn decode_arrow_ipc(bytes: &[u8]) -> anyhow::Result<(Vec<String>, Vec<Vec<Value>>)> {
     if bytes.is_empty() {
         return Ok((Vec::new(), Vec::new()));
     }
@@ -279,7 +279,7 @@ fn decimal_i128_to_value(raw: i128, scale: i8) -> Value {
 // `hex` is tiny; avoid a new dependency by inlining a nibble encoder.
 mod hex {
     const HEX: &[u8; 16] = b"0123456789abcdef";
-    pub fn encode(bytes: &[u8]) -> String {
+    pub(super) fn encode(bytes: &[u8]) -> String {
         let mut out = String::with_capacity(bytes.len() * 2);
         for &b in bytes {
             out.push(HEX[(b >> 4) as usize] as char);

@@ -54,6 +54,7 @@ fn export_filter() -> Targets {
 /// Owns the export pipelines so they can be flushed and shut down on serve
 /// exit; dropping without [`SelfTelemetry::shutdown`] risks losing buffered
 /// spans/logs.
+#[derive(Debug)]
 pub struct SelfTelemetry {
     tracer_provider: SdkTracerProvider,
     logger_provider: SdkLoggerProvider,
@@ -62,14 +63,18 @@ pub struct SelfTelemetry {
 impl SelfTelemetry {
     /// Flush and shut the exporters down (call before process exit).
     pub fn shutdown(&self) {
-        let _ = self.tracer_provider.force_flush();
-        let _ = self.tracer_provider.shutdown();
-        let _ = self.logger_provider.shutdown();
+        crate::outcomes::note(self.tracer_provider.force_flush(), "flush trace exporter");
+        crate::outcomes::note(self.tracer_provider.shutdown(), "stop trace exporter");
+        crate::outcomes::note(self.logger_provider.shutdown(), "stop log exporter");
     }
 }
 
 /// The result of [`install`]: layers to attach to the subscriber, the guard to
 /// flush on exit, and the resolved endpoint (for the ready banner).
+#[expect(
+    missing_debug_implementations,
+    reason = "contains opaque tracing layers"
+)]
 pub struct Installed {
     pub layers: Vec<BoxLayer>,
     pub guard: SelfTelemetry,

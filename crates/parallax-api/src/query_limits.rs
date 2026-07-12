@@ -2,7 +2,13 @@
 
 use std::collections::BTreeMap;
 
-use crate::Schema;
+use crate::{MAX_ROWS, Schema};
+
+pub(crate) fn clamp_limit(limit: Option<i32>, default: usize) -> usize {
+    limit
+        .map_or(default, |l| usize::try_from(l.max(0)).unwrap_or(default))
+        .min(MAX_ROWS)
+}
 
 #[derive(Debug, Default)]
 struct QueryShape {

@@ -1,3 +1,5 @@
+#![allow(clippy::panic, reason = "test failure reports measured baseline drift")]
+
 use sha2::{Digest, Sha256};
 use std::path::PathBuf;
 

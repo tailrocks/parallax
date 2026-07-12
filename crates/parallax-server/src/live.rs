@@ -23,12 +23,14 @@ const CHANNEL_CAPACITY: usize = 256;
 
 /// One ingest batch with rows (for per-subscriber filters) and pre-rendered
 /// SSE JSON (built once by the worker, shared by all subscribers).
+#[derive(Debug)]
 pub struct LiveLogBatch {
     pub rows: Arc<[LogRow]>,
     pub rendered: Vec<serde_json::Value>,
 }
 
 /// Span tail counterpart of [`LiveLogBatch`].
+#[derive(Debug)]
 pub struct LiveSpanBatch {
     pub rows: Arc<[SpanRow]>,
     pub rendered: Vec<serde_json::Value>,
@@ -38,7 +40,7 @@ pub type LogSender = tokio::sync::broadcast::Sender<Arc<LiveLogBatch>>;
 pub type SpanSender = tokio::sync::broadcast::Sender<Arc<LiveSpanBatch>>;
 
 /// Both live fan-out channels, cloned into the worker and the routes.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct LiveChannels {
     pub logs: LogSender,
     pub spans: SpanSender,

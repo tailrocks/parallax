@@ -9,20 +9,20 @@
 //!
 //! Run with: `cargo test -p parallax-server --test m2_metrics_greptime -- --ignored`
 
+#![allow(clippy::expect_used, reason = "test fixture assertions")]
+
 use opentelemetry::metrics::MeterProvider as _;
 use opentelemetry_otlp::WithExportConfig;
 use parallax_server::Config;
 use std::time::Duration;
 
-fn make_executable(path: &std::path::Path) {
+fn make_executable(path: &std::path::Path) -> anyhow::Result<()> {
     let status = std::process::Command::new("chmod")
         .arg("+x")
         .arg(path)
-        .status()
-        .expect("mark cached engine executable");
-    if !status.success() {
-        panic!("chmod cached engine exited with {status}");
-    }
+        .status()?;
+    anyhow::ensure!(status.success(), "chmod cached engine exited with {status}");
+    Ok(())
 }
 
 async fn graphql(
@@ -66,7 +66,7 @@ async fn managed_engine_metrics_roundtrip() {
     if cache_bin.join("greptime").exists() {
         std::fs::create_dir_all(&data_bin).expect("bin dir");
         std::fs::copy(cache_bin.join("greptime"), data_bin.join("greptime")).expect("seed engine");
-        make_executable(&data_bin.join("greptime"));
+        make_executable(&data_bin.join("greptime")).expect("mark cached engine executable");
     }
 
     let mut config = Config::default();

@@ -337,8 +337,8 @@ impl TraceDiff {
     }
 }
 
-#[derive(juniper::GraphQLEnum, Clone, Copy)]
-pub enum TraceSort {
+#[derive(juniper::GraphQLEnum, Clone, Copy, Debug)]
+pub(crate) enum TraceSort {
     StartDesc,
     DurationDesc,
     DurationAsc,

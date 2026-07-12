@@ -150,15 +150,15 @@ fn evaluate(nodes: &BTreeMap<String, Node>, edges: &[Edge], ratchet: &Ratchet) -
         let format = format_description!("[year]-[month]-[day]");
         let created = Date::parse(&exception.created, format);
         let expires = Date::parse(&exception.expires, format);
-        if created.is_err() || expires.is_err() {
+        let (Ok(_created), Ok(expires)) = (created, expires) else {
             findings.push(finding(
                 "arch.exception.invalid",
                 &exception.scope,
                 "exception dates must use valid YYYY-MM-DD values",
             ));
             continue;
-        }
-        if expires.expect("checked above") < OffsetDateTime::now_utc().date() {
+        };
+        if expires < OffsetDateTime::now_utc().date() {
             findings.push(finding(
                 "arch.exception.expired",
                 &exception.scope,

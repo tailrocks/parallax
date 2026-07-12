@@ -15,6 +15,56 @@ crate_name = "parallax-mcp-spike"
 lint = "dead_code"
 ceiling = 1
 
+[[rust_suppressions]]
+crate_name = "parallax-api"
+lint = "missing_debug_implementations"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-storage"
+lint = "missing_debug_implementations"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-server"
+lint = "missing_debug_implementations"
+ceiling = 3
+
+[[rust_suppressions]]
+crate_name = "parallax-core"
+lint = "clippy::expect_used"
+ceiling = 2
+
+[[rust_suppressions]]
+crate_name = "parallax-server"
+lint = "clippy::expect_used"
+ceiling = 10
+
+[[rust_suppressions]]
+crate_name = "parallax-core"
+lint = "clippy::float_cmp"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-storage"
+lint = "clippy::float_cmp"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-server"
+lint = "clippy::float_cmp"
+ceiling = 2
+
+[[rust_suppressions]]
+crate_name = "parallax-core"
+lint = "clippy::panic"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-server"
+lint = "clippy::panic"
+ceiling = 1
+
 [budgets.rust]
 root_file_lines = 200
 production_file_lines = 400
@@ -92,11 +142,6 @@ expires = "2026-12-31"
 removal_condition = "Plan 097 removes the core/storage inversion."
 replacement = "Move contracts to the lower model/port owners."
 
-[[limits]]
-metric = "rust.file-lines"
-scope = "crates/parallax-api/src/lib.rs"
-ceiling = 202
-
 
 [[limits]]
 metric = "rust.file-lines"
@@ -117,7 +162,7 @@ ceiling = 536
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-cli/src/commands.rs"
-ceiling = 988
+ceiling = 987
 
 [[limits]]
 metric = "rust.file-lines"
@@ -132,39 +177,39 @@ ceiling = 905
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-core/src/normalize.rs"
-ceiling = 423
+ceiling = 421
 
 
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-server/src/greptime_supervisor.rs"
-ceiling = 412
+ceiling = 410
 
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-server/src/serve.rs"
-ceiling = 452
+ceiling = 448
 
 
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-storage/src/adapter.rs"
-ceiling = 633
+ceiling = 630
 
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-storage/src/greptime.rs"
-ceiling = 3190
+ceiling = 3184
 
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-storage/src/memory.rs"
-ceiling = 1555
+ceiling = 1553
 
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-storage/src/metadata.rs"
-ceiling = 761
+ceiling = 752
 
 
 
@@ -923,46 +968,6 @@ ceiling = 1
 
 
 
-[[limits]]
-metric = "rust.suppressions"
-scope = "crates/parallax-api/src/lib.rs"
-ceiling = 7
-
-[[limits]]
-metric = "rust.suppressions"
-scope = "crates/parallax-api/src/resolvers/fields.rs"
-ceiling = 1
-
-[[limits]]
-metric = "rust.suppressions"
-scope = "crates/parallax-api/src/resolvers/issues.rs"
-ceiling = 1
-
-[[limits]]
-metric = "rust.suppressions"
-scope = "crates/parallax-api/src/resolvers/logs.rs"
-ceiling = 2
-
-[[limits]]
-metric = "rust.suppressions"
-scope = "crates/parallax-api/src/resolvers/metrics.rs"
-ceiling = 1
-
-[[limits]]
-metric = "rust.suppressions"
-scope = "crates/parallax-api/src/resolvers/traces.rs"
-ceiling = 2
-
-[[limits]]
-metric = "rust.suppressions"
-scope = "crates/parallax-cli/src/client.rs"
-ceiling = 1
-
-[[limits]]
-metric = "rust.suppressions"
-scope = "crates/parallax-mcp-spike/src/server.rs"
-ceiling = 1
-
 
 [[limits]]
 metric = "typescript.assertions"
@@ -1466,12 +1471,12 @@ ceiling = 217
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-core/src/bundle.rs::closure#12"
-ceiling = 116
+ceiling = 111
 
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-core/src/bundle.rs::redaction_rules"
-ceiling = 119
+ceiling = 114
 
 [[limits]]
 metric = "rust.function-lines"
@@ -1496,7 +1501,7 @@ ceiling = 152
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-server/src/greptime_supervisor.rs::ensure_binary"
-ceiling = 132
+ceiling = 131
 
 [[limits]]
 metric = "rust.function-lines"
@@ -1577,7 +1582,7 @@ ceiling = 101
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-storage/src/memory.rs::traces_search"
-ceiling = 109
+ceiling = 108
 
 [[limits]]
 metric = "rust.function-lines"

@@ -58,7 +58,7 @@ fn detects_nondeterministic_test_harness_calls() {
 }
 
 #[test]
-fn parses_reasoned_direct_and_cfg_attr_suppressions() {
+fn parses_reasoned_direct_and_cfg_attr_suppressions() -> Result<()> {
     let metric = analyze(
         r#"
         #![cfg_attr(test, allow(clippy::unwrap_used, reason = "fixture assertion"))]
@@ -77,10 +77,10 @@ fn parses_reasoned_direct_and_cfg_attr_suppressions() {
             reason: Some("wire contract".into()),
         },
     ];
-    if metric.suppression_details != expected {
-        panic!(
-            "suppression parsing drifted: {:?}",
-            metric.suppression_details
-        );
-    }
+    anyhow::ensure!(
+        metric.suppression_details == expected,
+        "suppression parsing drifted: {:?}",
+        metric.suppression_details
+    );
+    Ok(())
 }

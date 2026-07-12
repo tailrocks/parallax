@@ -31,7 +31,6 @@ struct FileMetric {
     logical_lines: usize,
     functions: Vec<FunctionMetric>,
     unsafe_blocks: usize,
-    suppressions: usize,
     suppression_details: Vec<suppressions::Suppression>,
     assertions: usize,
     inline_test_modules: usize,
@@ -105,7 +104,6 @@ pub(super) fn health(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
         }
         for (rule, value) in [
             ("health.rust.unsafe-blocks", metric.unsafe_blocks),
-            ("health.rust.suppressions", metric.suppressions),
             ("health.rust.assertions", metric.assertions),
             (
                 "health.rust.inline-test-modules",
@@ -158,7 +156,6 @@ fn analyze(source: &str) -> Result<FileMetric> {
         logical_lines: logical_lines(source),
         functions: visitor.functions,
         unsafe_blocks: presence.unsafe_blocks,
-        suppressions: presence.suppressions,
         suppression_details: presence.suppression_details,
         assertions: presence.assertions,
         inline_test_modules: presence.inline_test_modules,
@@ -302,7 +299,6 @@ impl<'ast> Visit<'ast> for BranchVisitor {
 #[derive(Default)]
 struct PresenceVisitor {
     unsafe_blocks: usize,
-    suppressions: usize,
     suppression_details: Vec<suppressions::Suppression>,
     assertions: usize,
     inline_test_modules: usize,
@@ -312,7 +308,6 @@ struct PresenceVisitor {
 impl<'ast> Visit<'ast> for PresenceVisitor {
     fn visit_attribute(&mut self, attribute: &'ast syn::Attribute) {
         suppressions::collect(&attribute.meta, &mut self.suppression_details);
-        self.suppressions = self.suppression_details.len();
         syn::visit::visit_attribute(self, attribute);
     }
     fn visit_expr_unsafe(&mut self, expression: &'ast ExprUnsafe) {

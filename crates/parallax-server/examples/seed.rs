@@ -6,6 +6,8 @@
 //! `cargo run -p parallax-server --example seed`
 //! (override the target with `OTEL_EXPORTER_OTLP_ENDPOINT`).
 
+#![expect(clippy::expect_used, reason = "seed exits on setup failure")]
+
 use opentelemetry::logs::{AnyValue, LogRecord as _, Logger as _, LoggerProvider as _, Severity};
 use opentelemetry::metrics::MeterProvider as _;
 use opentelemetry::trace::{

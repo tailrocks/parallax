@@ -22,6 +22,7 @@ pub const GREPTIME_GRPC_PORT: u16 = 24001;
 pub const GREPTIME_MYSQL_PORT: u16 = 24002;
 pub const GREPTIME_POSTGRES_PORT: u16 = 24003;
 
+#[derive(Debug)]
 pub struct GreptimeSupervisor {
     binary: PathBuf,
     data_home: PathBuf,
@@ -49,9 +50,7 @@ async fn reap_stale_child(pid_path: &Path) {
         .unwrap_or_default();
     if command.contains("greptime") {
         tracing::warn!("reaping stale greptime child (pid {pid}) from a previous serve");
-        let _ = std::process::Command::new("kill")
-            .args(["-9", &pid.to_string()])
-            .status();
+        crate::outcomes::kill_stale(pid);
         // Give the OS a moment to release the listeners.
         for _ in 0..40 {
             if std::net::TcpListener::bind(("127.0.0.1", GREPTIME_HTTP_PORT)).is_ok() {
@@ -60,7 +59,7 @@ async fn reap_stale_child(pid_path: &Path) {
             tokio::time::sleep(Duration::from_millis(50)).await;
         }
     }
-    let _ = std::fs::remove_file(pid_path);
+    crate::outcomes::note(std::fs::remove_file(pid_path), "remove stale pid file");
 }
 
 /// The engine ports must be free before spawning; a foreign listener means
@@ -215,7 +214,7 @@ pub async fn ensure_binary(
                 "could not archive old greptime binary to {}: {error}; overwriting",
                 backup.display()
             );
-            let _ = std::fs::remove_file(&managed);
+            crate::outcomes::note(std::fs::remove_file(&managed), "remove managed binary");
         } else {
             tracing::info!(
                 "archived previous GreptimeDB binary to {}",
@@ -308,8 +307,7 @@ pub async fn ensure_binary(
         .status()?;
     anyhow::ensure!(status.success(), "extracting GreptimeDB archive failed");
     std::fs::rename(bin_dir.join(&asset).join("greptime"), &managed)?;
-    let _ = std::fs::remove_dir_all(bin_dir.join(&asset));
-    let _ = std::fs::remove_file(&archive_path);
+    crate::outcomes::cleanup_asset(bin_dir, &asset, &archive_path);
     tracing::info!("GreptimeDB v{version} installed to {}", managed.display());
     Ok(managed)
 }
@@ -389,7 +387,7 @@ impl GreptimeSupervisor {
         // The pidfile lets the NEXT serve reap this child if we die without
         // running shutdown (SIGKILL, crash) — kill_on_drop cannot fire then.
         if let Some(pid) = child.id() {
-            let _ = std::fs::write(&self.pid_path, pid.to_string());
+            crate::outcomes::note(std::fs::write(&self.pid_path, pid.to_string()), "write pid");
         }
         Ok(child)
     }
@@ -464,7 +462,7 @@ impl GreptimeSupervisor {
             // Aborting the monitor drops the Child; kill_on_drop kills it.
             task.abort();
         }
-        let _ = std::fs::remove_file(&self.pid_path);
+        crate::outcomes::note(std::fs::remove_file(&self.pid_path), "remove pid file");
     }
 }
 

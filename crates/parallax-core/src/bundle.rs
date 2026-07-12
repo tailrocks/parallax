@@ -7,8 +7,7 @@ use parallax_storage::model::{ErrorEventRow, Issue, LogRow, RunRecord, SpanRow};
 use regex::Regex;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
-use std::collections::BTreeMap;
-use std::sync::OnceLock;
+use std::{collections::BTreeMap, sync::OnceLock};
 
 pub const SCHEMA_VERSION: &str = "bundle-v1";
 
@@ -312,103 +311,105 @@ pub struct BoundReport {
     pub truncated_stacktrace: bool,
 }
 
+#[expect(clippy::expect_used, reason = "static regex literal")]
+fn static_regex(pattern: &str) -> Regex {
+    Regex::new(pattern).expect("static regex")
+}
+
 fn redaction_rules() -> &'static [(&'static str, Regex, &'static str)] {
     static CELL: OnceLock<Vec<(&'static str, Regex, &'static str)>> = OnceLock::new();
     CELL.get_or_init(|| {
         vec![
             (
                 "dsn_userinfo",
-                Regex::new(r"://[^/\s:@]+:[^/\s@]+@").expect("static regex"),
+                static_regex(r"://[^/\s:@]+:[^/\s@]+@"),
                 "://[REDACTED:dsn_userinfo]@",
             ),
             (
                 "private_key_block",
-                Regex::new(
+                static_regex(
                     r"(?s)-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----",
-                )
-                .expect("static regex"),
+                ),
                 "[REDACTED:private_key_block]",
             ),
             (
                 "github_token",
-                Regex::new(r"\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}\b").expect("static regex"),
+                static_regex(r"\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}\b"),
                 "[REDACTED:github_token]",
             ),
             (
                 "github_pat",
-                Regex::new(r"\bgithub_pat_[A-Za-z0-9_]{20,}\b").expect("static regex"),
+                static_regex(r"\bgithub_pat_[A-Za-z0-9_]{20,}\b"),
                 "[REDACTED:github_pat]",
             ),
             (
                 "slack_token",
-                Regex::new(r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b").expect("static regex"),
+                static_regex(r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b"),
                 "[REDACTED:slack_token]",
             ),
             (
                 "jwt",
-                Regex::new(r"\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b")
-                    .expect("static regex"),
+                static_regex(r"\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b"),
                 "[REDACTED:jwt]",
             ),
             (
                 "aws_access_key_id",
-                Regex::new(r"\bAKIA[0-9A-Z]{16}\b").expect("static regex"),
+                static_regex(r"\bAKIA[0-9A-Z]{16}\b"),
                 "[REDACTED:aws_access_key_id]",
             ),
             (
                 "aws_secret_access_key",
-                Regex::new(r"(?i)\baws[_.-]?secret[_.-]?access[_.-]?key\b\s*[=:]\s*\S+")
-                    .expect("static regex"),
+                static_regex(r"(?i)\baws[_.-]?secret[_.-]?access[_.-]?key\b\s*[=:]\s*\S+"),
                 "[REDACTED:aws_secret_access_key]",
             ),
             (
                 "bearer_token",
-                Regex::new(r"Bearer\s+[A-Za-z0-9._\-]{8,}").expect("static regex"),
+                static_regex(r"Bearer\s+[A-Za-z0-9._\-]{8,}"),
                 "[REDACTED:bearer_token]",
             ),
             (
                 "stripe_live_key",
-                Regex::new(r"\bsk_live_[A-Za-z0-9_-]{10,}\b").expect("static regex"),
+                static_regex(r"\bsk_live_[A-Za-z0-9_-]{10,}\b"),
                 "[REDACTED:stripe_live_key]",
             ),
             (
                 "stripe_test_key",
-                Regex::new(r"\bsk_test_[A-Za-z0-9_-]{10,}\b").expect("static regex"),
+                static_regex(r"\bsk_test_[A-Za-z0-9_-]{10,}\b"),
                 "[REDACTED:stripe_test_key]",
             ),
             (
                 "anthropic_api_key",
-                Regex::new(r"\bsk-ant-[A-Za-z0-9_-]{10,}\b").expect("static regex"),
+                static_regex(r"\bsk-ant-[A-Za-z0-9_-]{10,}\b"),
                 "[REDACTED:anthropic_api_key]",
             ),
             (
                 "openai_api_key",
-                Regex::new(r"\bsk-[A-Za-z0-9]{20,}\b").expect("static regex"),
+                static_regex(r"\bsk-[A-Za-z0-9]{20,}\b"),
                 "[REDACTED:openai_api_key]",
             ),
             (
                 "google_api_key",
-                Regex::new(r"\bAIza[0-9A-Za-z_-]{10,}\b").expect("static regex"),
+                static_regex(r"\bAIza[0-9A-Za-z_-]{10,}\b"),
                 "[REDACTED:google_api_key]",
             ),
             (
                 "gitlab_pat",
-                Regex::new(r"\bglpat-[A-Za-z0-9_-]{10,}\b").expect("static regex"),
+                static_regex(r"\bglpat-[A-Za-z0-9_-]{10,}\b"),
                 "[REDACTED:gitlab_pat]",
             ),
             (
                 "npm_token",
-                Regex::new(r"\bnpm_[A-Za-z0-9_-]{10,}\b").expect("static regex"),
+                static_regex(r"\bnpm_[A-Za-z0-9_-]{10,}\b"),
                 "[REDACTED:npm_token]",
             ),
             (
                 "basic_auth",
-                Regex::new(r"(?i)\bBasic\s+[A-Za-z0-9+/=]{16,}\b").expect("static regex"),
+                static_regex(r"(?i)\bBasic\s+[A-Za-z0-9+/=]{16,}\b"),
                 "[REDACTED:basic_auth]",
             ),
             (
                 "password_assignment",
-                Regex::new(r"(?i)password\s*[=:]\s*\S+").expect("static regex"),
+                static_regex(r"(?i)password\s*[=:]\s*\S+"),
                 "[REDACTED:password_assignment]",
             ),
             (
@@ -416,16 +417,14 @@ fn redaction_rules() -> &'static [(&'static str, Regex, &'static str)] {
                 // Exclude bare `auth` (collides with `auth=Bearer …` after the
                 // bearer rule rewrites the token). Values must not start with
                 // `[` so already-redacted markers are not re-matched.
-                Regex::new(
+                static_regex(
                     r#"(?i)\b(?:api[_-]?key|apikey|secret|token|passwd|pwd|access[_-]?key)\b\s*[=:]\s*[^\s"'\[\]]{6,}"#,
-                )
-                .expect("static regex"),
+                ),
                 "[REDACTED:generic_secret_assignment]",
             ),
             (
                 "email_address",
-                Regex::new(r"\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b")
-                    .expect("static regex"),
+                static_regex(r"\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b"),
                 "[REDACTED:email_address]",
             ),
         ]
@@ -450,6 +449,7 @@ fn estimate_tokens(text: &str) -> usize {
 
 /// What the bundle is anchored to (spec §8: exactly one of issue fingerprint,
 /// run id, trace id).
+#[derive(Debug)]
 pub enum BundleAnchor {
     Issue(Box<Issue>),
     Run {
@@ -465,6 +465,7 @@ pub enum BundleAnchor {
 
 /// Inputs for assembly — the caller (API layer) fetches these through the
 /// storage adapters; assembly itself is pure and deterministic.
+#[derive(Debug)]
 pub struct BundleInputs {
     pub anchor: BundleAnchor,
     pub events: Vec<ErrorEventRow>,

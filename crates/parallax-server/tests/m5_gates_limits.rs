@@ -1,3 +1,5 @@
+#![allow(clippy::expect_used, reason = "test fixture assertions")]
+
 use parallax_server::Config;
 use reqwest::header::HOST;
 

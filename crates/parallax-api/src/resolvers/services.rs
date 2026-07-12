@@ -206,8 +206,8 @@ impl SpanRed {
     }
 }
 
-#[derive(juniper::GraphQLEnum, Clone, Copy)]
-pub enum SignalKind {
+#[derive(juniper::GraphQLEnum, Clone, Copy, Debug)]
+pub(crate) enum SignalKind {
     Spans,
     Traces,
     Logs,

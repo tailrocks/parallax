@@ -69,5 +69,70 @@ tower-http = { version = "0.7", features = ["fs", "decompression-gzip"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
+[workspace.lints.rust]
+rust_2024_compatibility = { level = "warn", priority = -1 }
+future_incompatible = { level = "warn", priority = -1 }
+rust_2018_idioms = { level = "warn", priority = -1 }
+nonstandard_style = { level = "warn", priority = -1 }
+unused = { level = "warn", priority = -1 }
+unsafe_code = "forbid"
+dead_code = "warn"
+let_underscore_drop = "warn"
+macro_use_extern_crate = "warn"
+meta_variable_misuse = "warn"
+missing_debug_implementations = "warn"
+missing_unsafe_on_extern = "warn"
+redundant_lifetimes = "warn"
+single_use_lifetimes = "warn"
+trivial_casts = "warn"
+unnameable_types = "warn"
+unreachable_code = "warn"
+unreachable_pub = "warn"
+unfulfilled_lint_expectations = "warn"
+unit_bindings = "warn"
+unsafe_attr_outside_unsafe = "warn"
+unsafe_op_in_unsafe_fn = "warn"
+unused_imports = "warn"
+unused_lifetimes = "warn"
+unused_must_use = "warn"
+unused_qualifications = "warn"
+unused_variables = "warn"
+
+[workspace.lints.rustdoc]
+broken_intra_doc_links = "deny"
+bare_urls = "warn"
+invalid_codeblock_attributes = "warn"
+invalid_html_tags = "warn"
+private_intra_doc_links = "warn"
+redundant_explicit_links = "warn"
+unescaped_backticks = "warn"
+
 [workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+assertions_on_result_states = "warn"
+await_holding_lock = "warn"
+await_holding_refcell_ref = "warn"
+dbg_macro = "warn"
+disallowed_methods = "warn"
+expect_used = "warn"
+expl_impl_clone_on_copy = "warn"
+float_cmp = "warn"
+float_cmp_const = "warn"
+infallible_try_from = "warn"
+invalid_upcast_comparisons = "warn"
+iter_not_returning_iterator = "warn"
+let_underscore_future = "warn"
+let_underscore_must_use = "warn"
+lossy_float_literal = "warn"
+manual_assert = "warn"
+mem_forget = "warn"
+mod_module_files = "warn"
+multiple_unsafe_ops_per_block = "warn"
+panic = "warn"
+rc_mutex = "warn"
+todo = "warn"
+undocumented_unsafe_blocks = "warn"
+unimplemented = "warn"
 unwrap_used = "warn"
+unused_result_ok = "warn"
+wildcard_dependencies = "warn"

@@ -66,6 +66,7 @@ fn exemplar_migration_state(
     }
 }
 
+#[derive(Debug)]
 pub struct GreptimeStore {
     base_url: String,
     client: reqwest::Client,
@@ -278,7 +279,7 @@ impl GreptimeStore {
 
     fn span_attribute_counts_sql(
         key: &str,
-        range: &std::ops::RangeInclusive<u128>,
+        range: &RangeInclusive<u128>,
         service: Option<&str>,
         error_only: bool,
     ) -> String {
@@ -852,7 +853,7 @@ impl GreptimeStore {
             "ALTER TABLE opentelemetry_logs SET 'ttl' = '{}'",
             escape(&self.logs_ttl)
         );
-        let _ = self.sql(&sql).await;
+        crate::outcomes::warn_error(self.sql(&sql).await, "logs TTL reconcile");
     }
 
     /// Apply the traces deviations once per process, after the first traces
@@ -868,7 +869,7 @@ impl GreptimeStore {
                 "ALTER TABLE opentelemetry_traces SET 'ttl' = '{}'",
                 escape(&self.traces_ttl)
             );
-            let _ = self.sql(&sql).await;
+            crate::outcomes::warn_error(self.sql(&sql).await, "traces TTL reconcile");
         }
     }
 
@@ -1238,7 +1239,7 @@ fn log_row_from_row(row: &[serde_json::Value]) -> LogRow {
 /// the `attributes` / `resource` JSON objects the model carries.
 struct ColumnIndex<'a> {
     columns: &'a [String],
-    by_name: std::collections::HashMap<&'a str, usize>,
+    by_name: HashMap<&'a str, usize>,
 }
 
 impl<'a> ColumnIndex<'a> {
@@ -1455,7 +1456,7 @@ fn u128_at(row: &[serde_json::Value], index: usize) -> u128 {
 }
 
 fn absorb_observed_run(
-    runs: &mut std::collections::HashMap<String, crate::adapter::ObservedRun>,
+    runs: &mut HashMap<String, crate::adapter::ObservedRun>,
     row: &[serde_json::Value],
     is_span: bool,
 ) -> Option<String> {
@@ -2433,10 +2434,7 @@ impl TelemetryStore for GreptimeStore {
                 &service_clause,
             ))
             .await?;
-        let mut windows: std::collections::BTreeMap<
-            u128,
-            std::collections::BTreeMap<OrderedF64, f64>,
-        > = Default::default();
+        let mut windows: BTreeMap<u128, BTreeMap<OrderedF64, f64>> = Default::default();
         for row in &rows {
             let ts_nanos = u128_at(row, 0) * 1_000_000;
             let le = row.get(1).and_then(|v| v.as_f64()).unwrap_or(f64::INFINITY);
@@ -2541,8 +2539,7 @@ impl TelemetryStore for GreptimeStore {
         limit: usize,
         range: RangeInclusive<u128>,
     ) -> anyhow::Result<Vec<crate::adapter::ObservedRun>> {
-        let mut runs: std::collections::HashMap<String, crate::adapter::ObservedRun> =
-            std::collections::HashMap::new();
+        let mut runs: HashMap<String, crate::adapter::ObservedRun> = HashMap::new();
         let start = sql_ts(*range.start());
         let end = sql_ts(*range.end());
         let trace_run_column = resource_attr_ident(semconv::PARALLAX_RUN_ID);
@@ -3102,7 +3099,7 @@ impl TelemetryStore for GreptimeStore {
                 sql_ts(range.end() / 1_000_000),
             ))
             .await?;
-        let mut groups: std::collections::BTreeMap<String, Vec<SeriesPoint>> = Default::default();
+        let mut groups: BTreeMap<String, Vec<SeriesPoint>> = Default::default();
         for row in &rows {
             groups.entry(str_at(row, 0)).or_default().push(SeriesPoint {
                 ts_nanos: u128_at(row, 1) * 1_000_000,
@@ -3350,7 +3347,7 @@ impl GreptimeStore {
     async fn discover_metric_names(
         &self,
         range: &RangeInclusive<u128>,
-    ) -> anyhow::Result<std::collections::BTreeSet<String>> {
+    ) -> anyhow::Result<BTreeSet<String>> {
         const RESERVED: &[&str] = &[
             "opentelemetry_traces",
             "opentelemetry_traces_services",
@@ -3376,11 +3373,8 @@ impl GreptimeStore {
                     && !table.starts_with("opentelemetry_")
             })
             .collect::<Vec<_>>();
-        let table_set = tables
-            .iter()
-            .cloned()
-            .collect::<std::collections::BTreeSet<_>>();
-        let mut names = std::collections::BTreeSet::new();
+        let table_set = tables.iter().cloned().collect::<BTreeSet<_>>();
+        let mut names = BTreeSet::new();
         for table in tables {
             let base = if let Some(base) = table.strip_suffix("_bucket") {
                 base.to_string()
@@ -3446,7 +3440,7 @@ impl Ord for OrderedF64 {
 /// Linear-interpolated quantile from native cumulative `le`-bucket counts
 /// (`bound → cumulative count ≤ bound`, ascending). Mirrors the explicit-bucket
 /// math the in-memory store uses, adapted to native cumulative buckets.
-fn quantile_from_cumulative(bounds: &std::collections::BTreeMap<OrderedF64, f64>, q: f64) -> f64 {
+fn quantile_from_cumulative(bounds: &BTreeMap<OrderedF64, f64>, q: f64) -> f64 {
     let Some((_, &total)) = bounds.iter().next_back() else {
         return 0.0;
     };

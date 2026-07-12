@@ -1,12 +1,12 @@
 //! The metadata store: mutable product state (issues, runs, dashboards) per
 //! implementation spec §6. Turso is the engine.
 
+pub use crate::model::IssueOccurrence;
 use crate::model::{
     Dashboard, Investigation, Issue, IssueQuery, IssueSortKey, RunRecord, SavedView, TrendPoint,
 };
 use parallax_proto::semconv;
-use std::collections::BTreeMap;
-use std::path::Path;
+use std::{collections::BTreeMap, path::Path};
 use turso::Value;
 
 const SCHEMA: &str = "
@@ -79,19 +79,6 @@ fn millis_to_nanos(millis: i64) -> u128 {
     u128::try_from(millis.max(0)).unwrap_or(0) * 1_000_000
 }
 
-/// One derived error occurrence, ready for issue upsert.
-pub struct IssueOccurrence<'a> {
-    pub fingerprint: &'a str,
-    pub title: String,
-    pub error_type: &'a str,
-    pub culprit: Option<String>,
-    pub service: &'a str,
-    pub ts_nanos: u128,
-    pub trace_id: Option<&'a str>,
-    /// The event's attributes — merged into the issue's bounded tag cache.
-    pub attributes: &'a serde_json::Value,
-}
-
 /// Bounds for the per-issue tag-values cache (`issues.tags`).
 const TAGS_MAX_KEYS: usize = 16;
 const TAGS_MAX_VALUES_PER_KEY: usize = 8;
@@ -134,6 +121,7 @@ fn merge_tags(existing: &str, attributes: &serde_json::Value) -> String {
     serde_json::to_string(&tags).unwrap_or_else(|_| "{}".to_string())
 }
 
+#[derive(Debug)]
 pub struct MetadataStore {
     /// Turso forbids concurrent statement use on one connection; the worker
     /// upserts while the API reads, so every operation takes this lock.
@@ -227,7 +215,7 @@ impl MetadataStore {
         for fingerprint in tag_order {
             let attrs = tag_attrs
                 .remove(fingerprint)
-                .expect("tag attrs for ordered fingerprint");
+                .ok_or_else(|| anyhow::anyhow!("tag attrs missing for ordered fingerprint"))?;
             // Tag cache: read-merge-write under the same connection lock. The
             // SELECT's statement must be dropped before the UPDATE — an UPDATE
             // executed while another statement is open on the same turso

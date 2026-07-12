@@ -22,6 +22,7 @@ use std::time::Duration;
 use tokio::net::TcpListener;
 use tokio::task::JoinHandle;
 
+#[expect(missing_debug_implementations, reason = "opaque runtime handles")]
 pub struct ServerHandle {
     pub api_addr: SocketAddr,
     pub otlp_grpc_addr: SocketAddr,
@@ -61,12 +62,7 @@ impl ServerHandle {
             task.abort();
         }
         let workers = std::mem::take(&mut self.worker_tasks);
-        let _ = tokio::time::timeout(Duration::from_secs(5), async {
-            for worker in workers {
-                let _ = worker.await;
-            }
-        })
-        .await;
+        crate::outcomes::drain_workers(workers).await;
     }
 }
 
@@ -228,7 +224,7 @@ async fn graphql_handler(
 }
 
 /// Shared state handed to both OTLP transports.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct IngestState {
     pub spool: Arc<Spool>,
     pub senders: IngestSenders,

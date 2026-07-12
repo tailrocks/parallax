@@ -38,6 +38,7 @@ const SEEN_RUNS_CAP: usize = 100_000;
 ///   or re-encode on the hot path.
 /// - **Metrics**: decoded request (normalize → extension tables / exemplars)
 ///   plus raw bytes for the native metric-engine forward.
+#[derive(Debug)]
 pub enum IngestItem {
     Traces(ExportTraceServiceRequest, bytes::Bytes),
     Logs(ExportLogsServiceRequest, bytes::Bytes),
@@ -45,7 +46,7 @@ pub enum IngestItem {
 }
 
 /// Per-signal senders so receivers enqueue without crossing signal FIFOs.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct IngestSenders {
     pub traces: mpsc::Sender<IngestItem>,
     pub logs: mpsc::Sender<IngestItem>,
@@ -62,6 +63,7 @@ impl IngestSenders {
     }
 }
 
+#[derive(Debug)]
 pub struct IngestReceivers {
     pub traces: mpsc::Receiver<IngestItem>,
     pub logs: mpsc::Receiver<IngestItem>,
@@ -88,6 +90,10 @@ pub fn channels(buffer_per_signal: usize) -> (IngestSenders, IngestReceivers) {
 }
 
 #[derive(Clone)]
+#[expect(
+    missing_debug_implementations,
+    reason = "contains an opaque storage trait object"
+)]
 pub struct Worker {
     store: Arc<dyn TelemetryStore>,
     metadata: Arc<MetadataStore>,
@@ -169,7 +175,7 @@ impl Worker {
                 self.maybe_fail_after(FailureStage::Registration).await?;
                 if self.live.spans.receiver_count() > 0 {
                     let spans = normalize::normalize_traces(request);
-                    let _ = self.live.spans.send(crate::live::span_batch(spans));
+                    drop(self.live.spans.send(crate::live::span_batch(spans)));
                 }
                 #[cfg(test)]
                 self.maybe_fail_after(FailureStage::Broadcast).await?;
@@ -200,7 +206,7 @@ impl Worker {
                 #[cfg(test)]
                 self.maybe_fail_after(FailureStage::Registration).await?;
                 if self.live.logs.receiver_count() > 0 {
-                    let _ = self.live.logs.send(crate::live::log_batch(logs));
+                    drop(self.live.logs.send(crate::live::log_batch(logs)));
                 }
                 #[cfg(test)]
                 self.maybe_fail_after(FailureStage::Broadcast).await?;

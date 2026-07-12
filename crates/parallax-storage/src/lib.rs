@@ -1,4 +1,5 @@
 //! Parallax storage adapters.
+#![cfg_attr(test, allow(clippy::float_cmp, reason = "exact fixture arithmetic"))]
 //!
 //! Everything engine-specific lives behind the adapter boundary defined here:
 //! the `TelemetryStore` trait, the production `GreptimeDB` adapter, the Turso
@@ -14,4 +15,5 @@ pub mod greptime;
 pub mod memory;
 pub mod metadata;
 pub mod model;
+mod outcomes;
 pub mod spool;

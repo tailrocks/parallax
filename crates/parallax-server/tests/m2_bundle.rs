@@ -1,6 +1,8 @@
 //! M2 acceptance (bundle slice): the bundle query returns bounded, redacted,
 //! hypothesis-ranked evidence — and seeded secrets never reach it.
 
+#![allow(clippy::expect_used, reason = "test fixture assertions")]
+
 use opentelemetry::KeyValue;
 use opentelemetry::logs::{AnyValue, LogRecord as _, Logger as _, LoggerProvider as _, Severity};
 use opentelemetry::trace::{Span as _, SpanContext, Status, Tracer as _, TracerProvider as _};

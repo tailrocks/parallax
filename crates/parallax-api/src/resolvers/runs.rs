@@ -10,7 +10,7 @@ use crate::{
 
 use crate::resolvers::issues::Issue;
 
-pub struct ObservedRun(pub(crate) parallax_storage::adapter::ObservedRun);
+pub(crate) struct ObservedRun(pub(crate) parallax_storage::adapter::ObservedRun);
 
 #[graphql_object(context = ApiContext)]
 impl ObservedRun {
@@ -34,7 +34,7 @@ impl ObservedRun {
     }
 }
 
-pub struct Run {
+pub(crate) struct Run {
     record: model::RunRecord,
     /// Trace ids + error events of this run, fetched once however many of
     /// the derived fields a query selects. Prefetched on list paths.
@@ -55,11 +55,9 @@ impl Run {
     }
 
     fn with_stats(record: model::RunRecord, stats: RunStats) -> Self {
-        let cell = tokio::sync::OnceCell::new();
-        let _ = cell.set(stats);
         Self {
             record,
-            stats: cell,
+            stats: stats.into(),
         }
     }
 

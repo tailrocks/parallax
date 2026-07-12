@@ -6,6 +6,8 @@
 //! covered by the trace/run lookup, dashboards, and CLI-wrapper tests plus
 //! the operator's live dogfood.
 
+#![allow(clippy::expect_used, reason = "test fixture assertions")]
+
 use opentelemetry::trace::{
     Span as _, SpanContext, SpanKind, Status, TraceContextExt as _, Tracer as _,
     TracerProvider as _,

@@ -199,7 +199,7 @@ fn relative(nanos_str: &str) -> String {
 /// Default: child telemetry → Parallax's own receiver. Compare mode (forward set
 /// via flag or `PARALLAX_OTLP_FORWARD`): child telemetry → the collector (Rotel),
 /// which fans it out to every backend incl. Parallax for side-by-side comparison.
-pub async fn run_start(
+pub(crate) async fn run_start(
     client: &Client,
     command: Vec<String>,
     forward: Option<String>,
@@ -283,19 +283,18 @@ pub async fn run_start(
     Ok(exit_code)
 }
 
-pub async fn run_finish(client: &Client, run_id: &str, exit_code: i32) -> anyhow::Result<()> {
-    client
-        .graphql(&format!(
-            r#"mutation {{ runFinish(runId: "{}", endedAtNanos: "{}", exitCode: {exit_code}) }}"#,
-            gql_str(run_id),
-            now_nanos()
-        ))
-        .await?;
-    println!("run {run_id} finished ({exit_code})");
+pub(crate) async fn run_finish(c: &Client, id: &str, code: i32) -> anyhow::Result<()> {
+    c.graphql(&format!(
+        r#"mutation {{ runFinish(runId: "{}", endedAtNanos: "{}", exitCode: {code}) }}"#,
+        gql_str(id),
+        now_nanos()
+    ))
+    .await?;
+    println!("run {id} finished ({code})");
     Ok(())
 }
 
-pub async fn run_list(client: &Client) -> anyhow::Result<()> {
+pub(crate) async fn run_list(client: &Client) -> anyhow::Result<()> {
     let response = client
         .graphql(r#"{ runs { runId command status exitCode startedAtNanos } }"#)
         .await?;
@@ -330,7 +329,7 @@ pub async fn run_list(client: &Client) -> anyhow::Result<()> {
 
 /// `parallax run inspect <run_id>` — the run's record plus its derived
 /// counts and grouped issues.
-pub async fn run_inspect(client: &Client, run_id: &str) -> anyhow::Result<()> {
+pub(crate) async fn run_inspect(client: &Client, run_id: &str) -> anyhow::Result<()> {
     let response = client
         .graphql(&format!(
             r#"{{ run(runId: "{}") {{ runId command status exitCode startedAtNanos endedAtNanos
@@ -372,22 +371,22 @@ pub async fn run_inspect(client: &Client, run_id: &str) -> anyhow::Result<()> {
 
 /// `parallax run bundle <run_id>` — the run-anchored evidence bundle
 /// (scope §2.4: the run model's bundle).
-pub async fn run_bundle(client: &Client, run_id: &str, format: OutputFormat) -> anyhow::Result<()> {
-    let query = match format {
+pub(crate) async fn run_bundle(c: &Client, id: &str, fmt: OutputFormat) -> anyhow::Result<()> {
+    let query = match fmt {
         OutputFormat::Markdown => format!(
             r#"{{ bundle(runId: "{}") {{ markdown canonicalHash }} }}"#,
-            gql_str(run_id)
+            gql_str(id)
         ),
         OutputFormat::Json => format!(
             r#"{{ bundle(runId: "{}") {{ json canonicalHash }} }}"#,
-            gql_str(run_id)
+            gql_str(id)
         ),
     };
-    let response = client.graphql(&query).await?;
+    let response = c.graphql(&query).await?;
     let Some(bundle) = response.pointer("/data/bundle").filter(|v| !v.is_null()) else {
-        anyhow::bail!("run {run_id} not found");
+        anyhow::bail!("run {id} not found");
     };
-    let (stdout, stderr) = render_bundle(format, bundle);
+    let (stdout, stderr) = render_bundle(fmt, bundle);
     print!("{stdout}");
     eprint!("{stderr}");
     Ok(())
@@ -395,7 +394,7 @@ pub async fn run_bundle(client: &Client, run_id: &str, format: OutputFormat) -> 
 
 /// `parallax run agent <run_id>` — run-scoped agent-session projection
 /// (tool steps, token totals). Null when no agent spans were detected.
-pub async fn run_agent_session(
+pub(crate) async fn run_agent_session(
     client: &Client,
     run_id: &str,
     format: OutputFormat,
@@ -522,7 +521,7 @@ fn render_agent_session(
     }
 }
 
-pub async fn issue_list(
+pub(crate) async fn issue_list(
     client: &Client,
     status: Option<&str>,
     run: Option<&str>,
@@ -583,7 +582,7 @@ pub async fn issue_list(
 
 /// `parallax issue context <fingerprint>` — the agent handoff: the bounded,
 /// redacted, hypothesis-ranked evidence bundle, rendered by the server.
-pub async fn issue_context(
+pub(crate) async fn issue_context(
     client: &Client,
     fingerprint: &str,
     format: OutputFormat,
@@ -610,7 +609,7 @@ pub async fn issue_context(
 
 /// The CLI mirror of the UI Logs page filters — agents compose the same
 /// scoping (trace/run/service/level/text/window) in one command.
-pub struct LogsFilter<'a> {
+pub(crate) struct LogsFilter<'a> {
     pub trace: Option<&'a str>,
     pub run: Option<&'a str>,
     pub service: Option<&'a str>,
@@ -650,7 +649,7 @@ fn parse_since(since: &str) -> anyhow::Result<u128> {
 
 /// `parallax sql "<SELECT …>"` — the engine's raw query power for agents
 /// and ad-hoc digging; read-only, same guard as the API.
-pub async fn sql(client: &Client, query: &str) -> anyhow::Result<()> {
+pub(crate) async fn sql(client: &Client, query: &str) -> anyhow::Result<()> {
     let response = client
         .graphql(&format!(
             r#"{{ sql(query: "{}") {{ columns rows rowCount truncated }} }}"#,
@@ -698,7 +697,7 @@ pub async fn sql(client: &Client, query: &str) -> anyhow::Result<()> {
 }
 
 /// `parallax logs [--trace|--run] [--service] [--level] [--grep] [--since] [--limit]`.
-pub async fn logs(client: &Client, filter: LogsFilter<'_>) -> anyhow::Result<()> {
+pub(crate) async fn logs(client: &Client, filter: LogsFilter<'_>) -> anyhow::Result<()> {
     let mut args: Vec<String> = Vec::new();
     if let Some(trace_id) = filter.trace {
         args.push(format!(r#"traceId: "{}""#, gql_str(trace_id)));
@@ -748,7 +747,7 @@ pub async fn logs(client: &Client, filter: LogsFilter<'_>) -> anyhow::Result<()>
 }
 
 /// The CLI mirror of the UI Traces page filters.
-pub struct TracesFilter<'a> {
+pub(crate) struct TracesFilter<'a> {
     pub service: Option<&'a str>,
     pub run: Option<&'a str>,
     pub min_duration: Option<&'a str>,
@@ -778,7 +777,7 @@ fn parse_duration_ms(value: &str) -> anyhow::Result<f64> {
 }
 
 /// `parallax traces [--run] [--service] [--min-duration] [--errors] [--grep] [--since] [--limit]`.
-pub async fn traces(client: &Client, filter: TracesFilter<'_>) -> anyhow::Result<()> {
+pub(crate) async fn traces(client: &Client, filter: TracesFilter<'_>) -> anyhow::Result<()> {
     // --run anchors on the run's traces (tracesByRun); other filters are
     // the browse query.
     let (pointer, query) = match filter.run {
@@ -902,7 +901,7 @@ async fn tail_sse(
 }
 
 /// `parallax logs --follow` — kubectl-style live tail over SSE.
-pub async fn logs_follow(
+pub(crate) async fn logs_follow(
     client: &Client,
     filter: LogsFilter<'_>,
     for_window: Option<&str>,
@@ -943,7 +942,7 @@ pub async fn logs_follow(
 }
 
 /// `parallax traces --follow` — live finished-span feed over SSE.
-pub async fn traces_follow(
+pub(crate) async fn traces_follow(
     client: &Client,
     filter: TracesFilter<'_>,
     for_window: Option<&str>,
@@ -999,7 +998,7 @@ fn print_span_line(span: &serde_json::Value) {
 /// arrive (the CLI mirror of the run page's Live mode). `--for 30s` watches
 /// a fixed window and reports per-stream match counts — the agent
 /// verification loop for a specific run.
-pub async fn run_watch(
+pub(crate) async fn run_watch(
     client: &Client,
     run_id: &str,
     level: Option<&str>,
@@ -1051,7 +1050,7 @@ fn encode_query(params: &[(&str, String)]) -> String {
     format!("?{}", encoded.join("&"))
 }
 
-pub async fn trace_inspect(client: &Client, trace_id: &str) -> anyhow::Result<()> {
+pub(crate) async fn trace_inspect(client: &Client, trace_id: &str) -> anyhow::Result<()> {
     let response = client
         .graphql(&format!(
             r#"{{ trace(traceId: "{0}") {{ spans {{ name service kind statusCode durationNs spanId parentSpanId }} }}

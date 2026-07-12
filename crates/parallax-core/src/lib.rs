@@ -1,4 +1,5 @@
 //! Parallax domain logic.
+#![cfg_attr(test, allow(clippy::float_cmp, reason = "exact fixture arithmetic"))]
 //!
 //! Graduates the mechanisms proven in `poc/evidence-loop` (error derivation,
 //! fingerprinting, grouping, bundle assembly, bounding, redaction,

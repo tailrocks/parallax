@@ -162,8 +162,7 @@ pub fn resource_run_ids(
         let resource_attrs = rs
             .resource
             .as_ref()
-            .map(|r| r.attributes.as_slice())
-            .unwrap_or(&[]);
+            .map_or(&[][..], |r| r.attributes.as_slice());
         let run_id = run_id(resource_attrs)?;
         let ts = rs
             .scope_spans
@@ -251,8 +250,7 @@ pub fn normalize_logs(request: &ExportLogsServiceRequest) -> Vec<LogRow> {
         let resource_attrs = rl
             .resource
             .as_ref()
-            .map(|r| r.attributes.as_slice())
-            .unwrap_or(&[]);
+            .map_or(&[][..], |r| r.attributes.as_slice());
         let service = service_name(resource_attrs);
         let run_id = run_id(resource_attrs);
         let resource_json = attributes_to_json(resource_attrs);
@@ -297,6 +295,7 @@ pub fn normalize_logs(request: &ExportLogsServiceRequest) -> Vec<LogRow> {
     rows
 }
 
+#[derive(Debug)]
 pub struct NormalizedMetrics {
     pub points: Vec<MetricPointRow>,
     pub histograms: Vec<HistogramRow>,
@@ -311,8 +310,7 @@ pub fn normalize_metrics(request: &ExportMetricsServiceRequest) -> NormalizedMet
         let resource_attrs = rm
             .resource
             .as_ref()
-            .map(|r| r.attributes.as_slice())
-            .unwrap_or(&[]);
+            .map_or(&[][..], |r| r.attributes.as_slice());
         let service = service_name(resource_attrs);
         let run_id = run_id(resource_attrs);
         for sm in &rm.scope_metrics {
