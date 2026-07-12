@@ -3,6 +3,7 @@ name = "parallax-mcp-spike"
 description = "SPIKE: read-only stdio MCP adapter over GraphQL (not a product surface)"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true

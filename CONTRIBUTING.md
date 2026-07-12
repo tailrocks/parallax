@@ -35,7 +35,7 @@ mise install
 ```
 
 That installs Bun and the other tools pinned in `mise.toml`. The Rust
-toolchain resolves via `rust-toolchain.toml` (stable) when you run Cargo.
+toolchain resolves via `rust-toolchain.toml` (Rust 1.97.0) when you run Cargo.
 
 ### Backend
 

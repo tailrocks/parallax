@@ -14,7 +14,7 @@ resolvers; Parallax only consumes whatever spans arrive.
 
 ## 1. Workspace conventions
 
-- Rust edition 2024; toolchain pinned via `rust-toolchain.toml` (current stable; 1.96 at spec
+- Rust edition 2024; toolchain pinned via `rust-toolchain.toml` (current stable; 1.97 at spec
   time). Workspace at repo root: `crates/*` + `ui/` + existing `poc/` (frozen).
 - Lints: `cargo clippy --workspace --all-targets -- -D warnings`; `cargo fmt --check` in CI —
   both strict, zero tolerated warnings (operator rule, 2026-06-12).

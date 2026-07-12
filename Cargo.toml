@@ -15,6 +15,7 @@ exclude = ["poc/evidence-loop", "poc/read-transport-bench"]
 [workspace.package]
 version = "0.1.0-dev"
 edition = "2024"
+rust-version = "1.97.0"
 license = "Apache-2.0"
 authors = ["Tailrocks"]
 repository = "https://github.com/tailrocks/parallax"

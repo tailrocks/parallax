@@ -1,4 +1,5 @@
 [tools]
+rust = "1.97.0"
 actionlint = "1.7.12"
 "cargo:cargo-audit" = "0.22.2"
 cosign = "3.0.6"
