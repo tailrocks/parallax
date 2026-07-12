@@ -99,6 +99,21 @@ jobs:
         if: github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call'
         run: scripts/ci/source-hygiene.sh ci push "$(git rev-parse HEAD^)" "$(git rev-parse HEAD)"
 
+  security-hygiene:
+    needs: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
+        with:
+          install_args: "gitleaks zizmor"
+          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+      - name: Scan checked-out tree for secrets
+        run: gitleaks dir . --redact=100 --no-banner --no-color --log-level warn
+      - name: Audit workflow security offline
+        run: zizmor --offline --persona regular --min-severity low --min-confidence medium --format github --color never --no-progress .github
+
   policy:
     needs: changes
     if: needs.changes.outputs.rust == 'true' || needs.changes.outputs.ui == 'true' || needs.changes.outputs.security == 'true'
@@ -243,10 +258,19 @@ jobs:
             cargo-target-${{ runner.os }}-${{ runner.arch }}-${{ github.base_ref || 'main' }}-check-
             cargo-target-${{ runner.os }}-${{ runner.arch }}-check-${{ hashFiles('Cargo.lock') }}-
             cargo-target-${{ runner.os }}-${{ runner.arch }}-check-
-      - run: cargo check --workspace --all-targets --locked
+      - run: cargo check --workspace --all-targets --locked --timings
       - name: Show sccache stats
         if: always() && steps.sccache.outcome == 'success'
-        run: sccache --show-stats
+        run: sccache --show-stats | tee target/sccache-check.txt
+      - name: Upload Cargo timing and cache evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cargo-cache-evidence-${{ runner.os }}
+          path: |
+            target/cargo-timings/cargo-timing.html
+            target/sccache-check.txt
+          if-no-files-found: error
 
   clippy:
     needs: changes
@@ -379,6 +403,7 @@ jobs:
             cargo-target-${{ runner.os }}-${{ runner.arch }}-nextest-
       - run: cargo nextest run --workspace --all-targets --profile ci --no-tests=fail --color=always
       - run: cargo xtask nextest-evidence --profile ci --output github
+      - run: cargo test --workspace --doc --locked
       - name: Upload nextest JUnit
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -498,8 +523,33 @@ jobs:
         if: always() && steps.sccache.outcome == 'success'
         run: sccache --show-stats
 
+  native-macos:
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      CARGO_INCREMENTAL: "0"
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
+        with:
+          install_args: "rust cargo:cargo-nextest"
+          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+      - run: cargo build --locked -p parallax-cli
+      - run: cargo nextest run --workspace --all-targets --profile ci --no-tests=fail
+      - run: cargo xtask nextest-evidence --profile ci --output github
+      - run: cargo run --locked -p parallax-cli -- --help
+      - name: Upload macOS nextest JUnit
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nextest-junit-macos
+          path: target/nextest/ci/junit.xml
+          if-no-files-found: error
   ci-required:
-    needs: [changes, actionlint, source-hygiene, policy, fmt, audit, check, clippy, test, ui, embed]
+    needs: [changes, actionlint, source-hygiene, security-hygiene, policy, fmt, audit, check, clippy, test, ui, embed, native-macos]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 10

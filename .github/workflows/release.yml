@@ -46,7 +46,6 @@ jobs:
   test:
     needs: check-version
     uses: ./.github/workflows/ci.yml
-    secrets: inherit
 
   build:
     needs: [check-version, test]
