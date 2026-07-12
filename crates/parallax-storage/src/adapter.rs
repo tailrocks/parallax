@@ -7,6 +7,10 @@ use std::collections::HashMap;
 use std::ops::RangeInclusive;
 
 pub use crate::adapter_math::{attribute_compare_score, rate_from_buckets};
+pub use crate::adapter_rules::{
+    field_key_identifier_like, field_key_namespace, metric_group_label_allowed,
+    runtime_metric_family, runtime_metric_unit,
+};
 
 pub const MAX_ROWS: usize = 500;
 pub const ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT: usize = 24;
@@ -138,60 +142,6 @@ pub struct RuntimeMetricSeries {
     pub points: Vec<SeriesPoint>,
 }
 
-pub const RUNTIME_METRIC_PREFIXES: &[&str] = &[
-    "process.",
-    "system.",
-    "jvm.",
-    "tokio.runtime.",
-    "container.",
-    "db.client.connection.",
-];
-
-pub fn runtime_metric_family(name: &str) -> Option<&'static str> {
-    RUNTIME_METRIC_PREFIXES
-        .iter()
-        .find(|prefix| name.starts_with(**prefix))
-        .map(|prefix| prefix.trim_end_matches('.'))
-}
-
-pub fn runtime_metric_unit(name: &str) -> Option<String> {
-    let lower = name.to_ascii_lowercase();
-    let unit = if lower.ends_with("_bytes")
-        || lower.ends_with(".bytes")
-        || lower.contains(".memory.")
-        || lower.contains("_memory_")
-    {
-        "bytes"
-    } else if lower.ends_with("_ms") || lower.ends_with(".ms") {
-        "ms"
-    } else if lower.contains("cpu.utilization") || lower.contains("cpu_usage") {
-        "ratio"
-    } else {
-        return None;
-    };
-    Some(unit.to_string())
-}
-
-pub fn metric_group_label_allowed(label: &str) -> bool {
-    let lower = label.trim().to_ascii_lowercase();
-    if lower.is_empty() || lower.len() > 128 {
-        return false;
-    }
-    let compact = lower.replace(['.', '-'], "_");
-    let leaf = lower.rsplit('.').next().unwrap_or(lower.as_str());
-    let leaf_compact = leaf.replace('-', "_");
-    !matches!(
-        lower.as_str(),
-        "trace.id" | "run.id" | "user.id" | "session.id"
-    ) && !matches!(
-        compact.as_str(),
-        "trace_id" | "run_id" | "user_id" | "session_id"
-    ) && !matches!(
-        leaf_compact.as_str(),
-        "trace_id" | "run_id" | "user_id" | "session_id"
-    )
-}
-
 /// Filtered trace browse (UI Traces page / CLI `parallax traces` / GraphQL
 /// `traces`): every filter optional. `service` matches any trace the service
 /// **participates in** (a span of that service anywhere in the trace, not only
@@ -307,39 +257,6 @@ pub fn span_field_key_allowed(key: &str) -> bool {
         || lower.ends_with("_body")
         || lower.ends_with(".message")
         || lower.ends_with("_message"))
-}
-
-pub fn field_key_namespace(key: &str) -> String {
-    let logical = key.strip_prefix("resource.").unwrap_or(key);
-    logical
-        .split('.')
-        .next()
-        .filter(|part| !part.is_empty())
-        .unwrap_or("custom")
-        .to_string()
-}
-
-pub fn field_key_identifier_like(key: &str) -> bool {
-    let logical = key.strip_prefix("resource.").unwrap_or(key);
-    let lower = logical.to_ascii_lowercase();
-    let compact = lower.replace(['.', '-'], "_");
-    let leaf = lower.rsplit('.').next().unwrap_or(lower.as_str());
-    let leaf_compact = leaf.replace('-', "_");
-
-    matches!(
-        leaf_compact.as_str(),
-        "id" | "trace_id" | "span_id" | "run_id" | "user_id" | "session_id" | "enduser_id"
-    ) || lower.ends_with(".id")
-        || lower.ends_with("_id")
-        || compact.contains("trace_id")
-        || compact.contains("span_id")
-        || compact.contains("run_id")
-        || compact.contains("user_id")
-        || compact.contains("session_id")
-        || lower.contains("uuid")
-        || lower.contains("guid")
-        || lower.contains("fingerprint")
-        || lower.contains("hash")
 }
 
 pub fn field_value_allowed(value: &str) -> bool {
@@ -540,7 +457,7 @@ pub trait MetricStore: Send + Sync {
 }
 
 #[async_trait::async_trait]
-pub trait TelemetryStore: IngestStore + TraceStore + LogStore + MetricStore {
+pub trait ServiceAnalyticsStore: Send + Sync {
     /// Distinct service names across signals inside `range` (plan 085).
     async fn service_names(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<String>>;
     /// Whole-system overview counters for an inclusive time window.
@@ -576,6 +493,10 @@ pub trait TelemetryStore: IngestStore + TraceStore + LogStore + MetricStore {
         range: RangeInclusive<u128>,
         step_nanos: u128,
     ) -> anyhow::Result<SpanRed>;
+}
+
+#[async_trait::async_trait]
+pub trait MetricAnalyticsStore: Send + Sync {
     /// Aggregated series for a point metric, bucketed by `step_nanos`.
     /// `run_id` scopes to points whose resource carried `parallax.run.id`
     /// (run-anchored cross-analytics: CPU/memory beside a run's traces).
@@ -625,6 +546,10 @@ pub trait TelemetryStore: IngestStore + TraceStore + LogStore + MetricStore {
         range: RangeInclusive<u128>,
         limit: usize,
     ) -> anyhow::Result<Vec<MetricExemplarRow>>;
+}
+
+#[async_trait::async_trait]
+pub trait RunStore: Send + Sync {
     /// Error events for a fingerprint within a time range, newest first.
     async fn error_events_by_fingerprint(
         &self,
@@ -638,6 +563,10 @@ pub trait TelemetryStore: IngestStore + TraceStore + LogStore + MetricStore {
         limit: usize,
         range: RangeInclusive<u128>,
     ) -> anyhow::Result<Vec<ObservedRun>>;
+}
+
+#[async_trait::async_trait]
+pub trait TraceAnalyticsStore: Send + Sync {
     /// Recent traces (root spans + aggregates), newest first.
     async fn recent_traces(&self, limit: usize) -> anyhow::Result<Vec<TraceSummary>> {
         Ok(self
@@ -685,6 +614,10 @@ pub trait TelemetryStore: IngestStore + TraceStore + LogStore + MetricStore {
         trace_ids: &[String],
         limit: usize,
     ) -> anyhow::Result<Vec<ErrorEventRow>>;
+}
+
+#[async_trait::async_trait]
+pub trait LogAnalyticsStore: Send + Sync {
     /// Unified log browse: every filter optional, newest first.
     async fn logs_search(
         &self,
@@ -695,6 +628,10 @@ pub trait TelemetryStore: IngestStore + TraceStore + LogStore + MetricStore {
         body_contains: Option<&str>,
         limit: usize,
     ) -> anyhow::Result<Vec<LogRow>>;
+}
+
+#[async_trait::async_trait]
+pub trait RuntimeMetricStore: Send + Sync {
     /// Aggregated series split by one attribute key's value (spec §8
     /// `metricSeries(groupBy:)`); rows missing the key group under "(none)".
     async fn metric_series_grouped(
@@ -722,6 +659,10 @@ pub trait TelemetryStore: IngestStore + TraceStore + LogStore + MetricStore {
         range: RangeInclusive<u128>,
         step_nanos: u128,
     ) -> anyhow::Result<Vec<SeriesPoint>>;
+}
+
+#[async_trait::async_trait]
+pub trait ErrorAnalyticsStore: Send + Sync {
     /// Error events per bucket for one service (overview error rate).
     async fn error_count_series(
         &self,
@@ -729,6 +670,10 @@ pub trait TelemetryStore: IngestStore + TraceStore + LogStore + MetricStore {
         range: RangeInclusive<u128>,
         step_nanos: u128,
     ) -> anyhow::Result<Vec<SeriesPoint>>;
+}
+
+#[async_trait::async_trait]
+pub trait LogCountStore: Send + Sync {
     /// Log counts per bucket under the same filters as `logs_search` — the
     /// Discover-style histogram must reflect the active query.
     async fn log_count_series(
@@ -740,9 +685,47 @@ pub trait TelemetryStore: IngestStore + TraceStore + LogStore + MetricStore {
         body_contains: Option<&str>,
         step_nanos: u128,
     ) -> anyhow::Result<Vec<SeriesPoint>>;
+}
+
+#[async_trait::async_trait]
+pub trait RawSqlStore: Send + Sync {
     /// Raw read-only SQL against the engine (SELECT-shaped statements only).
     /// The API enforces the user-facing guard; adapters repeat a defensive
     /// shape check before execution. The test store has no SQL surface
     /// and returns an error.
     async fn raw_sql(&self, query: &str) -> anyhow::Result<SqlResult>;
+}
+
+pub trait TelemetryStore:
+    IngestStore
+    + TraceStore
+    + LogStore
+    + MetricStore
+    + ServiceAnalyticsStore
+    + MetricAnalyticsStore
+    + RunStore
+    + TraceAnalyticsStore
+    + LogAnalyticsStore
+    + RuntimeMetricStore
+    + ErrorAnalyticsStore
+    + LogCountStore
+    + RawSqlStore
+{
+}
+
+impl<T> TelemetryStore for T where
+    T: IngestStore
+        + TraceStore
+        + LogStore
+        + MetricStore
+        + ServiceAnalyticsStore
+        + MetricAnalyticsStore
+        + RunStore
+        + TraceAnalyticsStore
+        + LogAnalyticsStore
+        + RuntimeMetricStore
+        + ErrorAnalyticsStore
+        + LogCountStore
+        + RawSqlStore
+{
 }

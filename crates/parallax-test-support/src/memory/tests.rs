@@ -1,6 +1,8 @@
 use super::*;
 use parallax_storage::adapter::{
-    IngestStore, LogStore, TelemetryStore, TraceQuery, TraceSort, TraceStore,
+    IngestStore, LogAnalyticsStore, LogCountStore, LogStore, MetricAnalyticsStore,
+    RuntimeMetricStore, ServiceAnalyticsStore, TraceAnalyticsStore, TraceQuery, TraceSort,
+    TraceStore,
 };
 
 fn span(trace: &str, span_id: &str, parent: Option<&str>, service: &str, ts: u128) -> SpanRow {

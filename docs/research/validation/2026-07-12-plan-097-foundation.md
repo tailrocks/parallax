@@ -46,22 +46,22 @@ test-support (20) tests pass.
 
 ## Capability-port slice
 
-The broad storage boundary now has independently implementable object-safe
-ports for ingest writes, trace/run reads, log reads, and metric discovery:
-`IngestStore`, `TraceStore`, `LogStore`, and `MetricStore`. `TelemetryStore`
-is the composition umbrella over those capabilities plus the still-shared
-analytics surface. GreptimeStore and MemoryStore implement each capability
-directly; forwarding adapters and telemetry clones were not introduced.
+The broad storage boundary now has 13 independently implementable object-safe
+ports: ingest, base trace/log/metric reads, service analytics, metric analytics,
+run reads, trace analytics, log analytics, runtime metrics, error analytics,
+log counts, and raw SQL. `TelemetryStore` is an empty composition umbrella over
+those ports. GreptimeStore and MemoryStore implement every capability directly;
+forwarding adapters and telemetry clones were not introduced.
 
 Concrete tests import only the capability that owns the operation they invoke,
 while product composition can continue using `dyn TelemetryStore`. Extracting
-shared adapter math, SQL identifier builders, and memory analytics helpers made
-the boundary change shrink-only: adapter 630→615, Greptime 3184→3173, and
-MemoryStore 1553→1469 logical lines.
+shared adapter math and policy rules, Greptime SQL and metric naming rules, and
+memory analytics capabilities made the boundary change shrink-only: adapter
+630→595, Greptime 3184→3095, and MemoryStore 1553→1463 logical lines.
 
-Validation passed full-feature workspace Clippy, 110 focused storage,
-test-support, API, and server-library tests, repository policy, and facade
-verification.
+Validation passed workspace/all-target compilation, full-feature workspace
+Clippy with warnings denied, all repository policies, and the complete nextest
+workspace suite (232 passed, 6 skipped).
 
 ## Plan 126 extraction handoff
 

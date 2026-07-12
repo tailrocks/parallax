@@ -10,6 +10,7 @@
 pub mod adapter;
 #[expect(clippy::cast_precision_loss, reason = "bounded analytics ratios")]
 mod adapter_math;
+mod adapter_rules;
 mod arrow_sql;
 #[expect(
     clippy::cast_possible_truncation,

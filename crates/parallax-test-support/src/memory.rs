@@ -1,5 +1,6 @@
 //! In-memory `TelemetryStore` for tests and explicit test-support builds only.
 
+mod log_count;
 mod math;
 
 use self::math::{
@@ -14,9 +15,9 @@ use parallax_proto::semconv;
 use parallax_storage::adapter::{
     self, ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow,
     FIELD_KEYS_CAP, FIELD_TOP_VALUES_CAP, FieldKey, FieldSource, FieldStats, FieldValueCount,
-    MAX_ROWS, MetricStore, OverviewTotals, ReleaseWindow, RuntimeMetricSeries,
-    SERVICE_MAP_TRACE_CAP, ServiceCatalogRow, ServiceEdge, ServiceSummary, SignalKind, SpanRed,
-    TelemetryStore, attribute_compare_key_allowed, attribute_compare_score,
+    MAX_ROWS, MetricAnalyticsStore, MetricStore, OverviewTotals, ReleaseWindow,
+    RuntimeMetricSeries, SERVICE_MAP_TRACE_CAP, ServiceCatalogRow, ServiceEdge, ServiceSummary,
+    SignalKind, SpanRed, attribute_compare_key_allowed, attribute_compare_score,
     field_key_identifier_like, field_key_namespace, field_value_display,
     metric_group_label_allowed, runtime_metric_family, runtime_metric_unit, span_field_key_allowed,
 };
@@ -45,13 +46,13 @@ impl Default for MemoryStore {
 }
 
 #[derive(Default)]
-struct Inner {
-    spans: Vec<SpanRow>,
-    logs: Vec<LogRow>,
-    metric_points: Vec<MetricPointRow>,
-    histograms: Vec<HistogramRow>,
-    metric_exemplars: Vec<MetricExemplarRow>,
-    error_events: Vec<ErrorEventRow>,
+pub(super) struct Inner {
+    pub(super) spans: Vec<SpanRow>,
+    pub(super) logs: Vec<LogRow>,
+    pub(super) metric_points: Vec<MetricPointRow>,
+    pub(super) histograms: Vec<HistogramRow>,
+    pub(super) metric_exemplars: Vec<MetricExemplarRow>,
+    pub(super) error_events: Vec<ErrorEventRow>,
 }
 
 impl MemoryStore {
@@ -77,7 +78,7 @@ impl MemoryStore {
         *self.traces_gate.lock().await = Some(rx);
     }
 
-    fn lock(&self) -> std::sync::MutexGuard<'_, Inner> {
+    pub(super) fn lock(&self) -> std::sync::MutexGuard<'_, Inner> {
         self.inner
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
@@ -387,7 +388,7 @@ impl MetricStore for MemoryStore {
 }
 
 #[async_trait::async_trait]
-impl TelemetryStore for MemoryStore {
+impl adapter::ServiceAnalyticsStore for MemoryStore {
     async fn service_names(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<String>> {
         let inner = self.lock();
         let mut names: Vec<String> = inner
@@ -730,7 +731,10 @@ impl TelemetryStore for MemoryStore {
         }
         Ok(red)
     }
+}
 
+#[async_trait::async_trait]
+impl MetricAnalyticsStore for MemoryStore {
     async fn metric_series(
         &self,
         name: &str,
@@ -827,7 +831,10 @@ impl TelemetryStore for MemoryStore {
         rows.truncate(limit.min(MAX_ROWS));
         Ok(rows)
     }
+}
 
+#[async_trait::async_trait]
+impl adapter::RunStore for MemoryStore {
     async fn error_events_by_fingerprint(
         &self,
         fingerprint: &str,
@@ -889,7 +896,10 @@ impl TelemetryStore for MemoryStore {
         runs.truncate(limit);
         Ok(runs)
     }
+}
 
+#[async_trait::async_trait]
+impl adapter::TraceAnalyticsStore for MemoryStore {
     async fn traces_search(
         &self,
         query: &adapter::TraceQuery,
@@ -1338,7 +1348,10 @@ impl TelemetryStore for MemoryStore {
         events.truncate(limit);
         Ok(events)
     }
+}
 
+#[async_trait::async_trait]
+impl adapter::LogAnalyticsStore for MemoryStore {
     async fn logs_search(
         &self,
         service: Option<&str>,
@@ -1365,7 +1378,10 @@ impl TelemetryStore for MemoryStore {
         logs.truncate(limit);
         Ok(logs)
     }
+}
 
+#[async_trait::async_trait]
+impl adapter::RuntimeMetricStore for MemoryStore {
     async fn metric_series_grouped(
         &self,
         name: &str,
@@ -1485,7 +1501,10 @@ impl TelemetryStore for MemoryStore {
             })
             .collect())
     }
+}
 
+#[async_trait::async_trait]
+impl adapter::ErrorAnalyticsStore for MemoryStore {
     async fn error_count_series(
         &self,
         service: &str,
@@ -1510,38 +1529,12 @@ impl TelemetryStore for MemoryStore {
             })
             .collect())
     }
+}
 
+#[async_trait::async_trait]
+impl adapter::RawSqlStore for MemoryStore {
     async fn raw_sql(&self, _query: &str) -> anyhow::Result<adapter::SqlResult> {
         anyhow::bail!("raw SQL needs the GreptimeDB engine; the test store has no SQL surface")
-    }
-
-    async fn log_count_series(
-        &self,
-        service: Option<&str>,
-        range: RangeInclusive<u128>,
-        severity_min: Option<i32>,
-        severity_max: Option<i32>,
-        body_contains: Option<&str>,
-        step_nanos: u128,
-    ) -> anyhow::Result<Vec<SeriesPoint>> {
-        let step = step_nanos.max(1);
-        let mut buckets: BTreeMap<u128, u64> = Default::default();
-        for log in self.lock().logs.iter().filter(|l| {
-            range.contains(&l.ts_nanos)
-                && service.is_none_or(|svc| l.service == svc)
-                && severity_min.is_none_or(|min| l.severity_num >= min)
-                && severity_max.is_none_or(|max| l.severity_num <= max)
-                && body_contains.is_none_or(|needle| l.body.contains(needle))
-        }) {
-            *buckets.entry((log.ts_nanos / step) * step).or_default() += 1;
-        }
-        Ok(buckets
-            .into_iter()
-            .map(|(ts_nanos, count)| SeriesPoint {
-                ts_nanos,
-                value: count as f64,
-            })
-            .collect())
     }
 }
 

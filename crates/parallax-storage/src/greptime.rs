@@ -4,15 +4,17 @@
 use crate::adapter::{
     ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow,
     FIELD_KEYS_CAP, FIELD_TOP_VALUES_CAP, FieldKey, FieldSource, FieldStats, FieldValueCount,
-    MAX_ROWS, MetricStore, OverviewTotals, ReleaseWindow, RuntimeMetricSeries,
-    SERVICE_MAP_TRACE_CAP, ServiceCatalogRow, ServiceEdge, ServiceSummary, SignalKind, SpanRed,
-    TelemetryStore, attribute_compare_key_allowed, attribute_compare_score,
+    MAX_ROWS, MetricAnalyticsStore, MetricStore, OverviewTotals, ReleaseWindow,
+    RuntimeMetricSeries, SERVICE_MAP_TRACE_CAP, ServiceCatalogRow, ServiceEdge, ServiceSummary,
+    SignalKind, SpanRed, attribute_compare_key_allowed, attribute_compare_score,
     attribute_compare_value_allowed, field_key_identifier_like, field_key_namespace,
     field_value_display, metric_group_label_allowed, runtime_metric_family, runtime_metric_unit,
     span_field_key_allowed,
 };
 use crate::greptime_sql::{
-    escape, escape_ident, log_service_name_expr, quoted_ident, resource_attr_ident, wire_attr_ident,
+    METRIC_BOOKKEEPING_COLUMNS, canonical_metric_display_name, escape, escape_ident,
+    log_service_name_expr, metric_name_sql_filter, metric_table_candidates, quoted_ident,
+    resource_attr_ident, runtime_display_name, wire_attr_ident,
 };
 use crate::model::*;
 use parallax_proto::semconv;
@@ -299,122 +301,6 @@ impl GreptimeStore {
                    LIMIT 512"#,
             clauses.join(" AND ")
         )
-    }
-}
-
-// Greptime metric-engine point tables discovered with live DESCRIBE expose
-// `greptime_timestamp` and `greptime_value`; explicit histogram bucket tables
-// add `le`. They are bookkeeping, not groupable metric labels.
-const METRIC_BOOKKEEPING_COLUMNS: &[&str] = &["greptime_timestamp", "greptime_value", "le"];
-
-fn native_metric_base(name: &str) -> String {
-    name.chars()
-        .map(|ch| {
-            if ch.is_ascii_alphanumeric() || ch == '_' {
-                ch
-            } else {
-                '_'
-            }
-        })
-        .collect()
-}
-
-fn metric_table_candidates(name: &str, suffix: Option<&str>) -> Vec<String> {
-    let suffix = suffix.unwrap_or_default();
-    let mut bases = vec![name.to_string()];
-    let native = native_metric_base(name);
-    if native != name {
-        bases.push(native.clone());
-    }
-    if !native.ends_with("_total") {
-        bases.push(format!("{native}_total"));
-    }
-    for unit_suffix in ["_ratio", "_bytes", "_seconds", "_nanoseconds_total"] {
-        if !native.ends_with(unit_suffix) {
-            bases.push(format!("{native}{unit_suffix}"));
-        }
-    }
-
-    let mut candidates = Vec::new();
-    for base in bases {
-        let candidate = format!("{base}{suffix}");
-        if !candidates.contains(&candidate) {
-            candidates.push(candidate);
-        }
-    }
-    candidates
-}
-
-fn runtime_display_name(base: &str) -> Option<String> {
-    const PREFIXES: &[(&str, &str)] = &[
-        ("process_", "process."),
-        ("system_", "system."),
-        ("jvm_", "jvm."),
-        ("container_", "container."),
-        ("db_client_connection_", "db.client.connection."),
-    ];
-    if let Some(rest) = base.strip_prefix("tokio_runtime_") {
-        return Some(format!("tokio.runtime.{rest}"));
-    }
-    PREFIXES.iter().find_map(|(native, display)| {
-        base.strip_prefix(native)
-            .map(|rest| format!("{display}{}", rest.replace('_', ".")))
-    })
-}
-
-const METRIC_DISPLAY_ALIASES: &[(&str, &str)] = &[
-    ("tokio.runtime.alive.tasks", "tokio.runtime.alive_tasks"),
-    (
-        "tokio.runtime.blocking.pool.depth",
-        "tokio.runtime.blocking_pool_depth",
-    ),
-    (
-        "tokio.runtime.global.queue.depth",
-        "tokio.runtime.global_queue_depth",
-    ),
-    (
-        "tokio.runtime.total.busy.duration.ms",
-        "tokio.runtime.total_busy_duration_ms",
-    ),
-    (
-        "tokio.runtime.total.park.count",
-        "tokio.runtime.total_park_count",
-    ),
-    ("tokio.runtime.workers.count", "tokio.runtime.workers_count"),
-    ("process.cpu.utilization.ratio", "process.cpu.utilization"),
-    ("process.memory.usage.bytes", "process.memory.usage"),
-];
-
-fn canonical_metric_display_name(name: &str) -> String {
-    METRIC_DISPLAY_ALIASES
-        .iter()
-        .find_map(|(legacy, canonical)| (*legacy == name).then_some((*canonical).to_string()))
-        .unwrap_or_else(|| name.to_string())
-}
-
-fn metric_name_query_names(name: &str) -> Vec<String> {
-    let mut names = vec![name.to_string(), canonical_metric_display_name(name)];
-    for (legacy, canonical) in METRIC_DISPLAY_ALIASES {
-        if *canonical == name {
-            names.push((*legacy).to_string());
-        }
-    }
-    names.sort();
-    names.dedup();
-    names
-}
-
-fn metric_name_sql_filter(column: &str, name: &str) -> String {
-    let names = metric_name_query_names(name);
-    if names.len() == 1 {
-        format!(r#"{column} = '{}'"#, escape(&names[0]))
-    } else {
-        let quoted = names
-            .iter()
-            .map(|name| format!("'{}'", escape(name)))
-            .collect::<Vec<_>>()
-            .join(",");
-        format!("{column} IN ({quoted})")
     }
 }
 
@@ -1928,7 +1814,7 @@ impl MetricStore for GreptimeStore {
 }
 
 #[async_trait::async_trait]
-impl TelemetryStore for GreptimeStore {
+impl crate::adapter::ServiceAnalyticsStore for GreptimeStore {
     async fn service_names(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<String>> {
         let rows = self.sql_lenient(&Self::service_names_sql(&range)).await?;
         Ok(rows
@@ -2300,7 +2186,10 @@ impl TelemetryStore for GreptimeStore {
         }
         Ok(red)
     }
+}
 
+#[async_trait::async_trait]
+impl MetricAnalyticsStore for GreptimeStore {
     async fn metric_series(
         &self,
         name: &str,
@@ -2476,7 +2365,10 @@ impl TelemetryStore for GreptimeStore {
             })
             .collect())
     }
+}
 
+#[async_trait::async_trait]
+impl crate::adapter::RunStore for GreptimeStore {
     async fn error_events_by_fingerprint(
         &self,
         fingerprint: &str,
@@ -2605,7 +2497,10 @@ impl TelemetryStore for GreptimeStore {
         runs.truncate(limit);
         Ok(runs)
     }
+}
 
+#[async_trait::async_trait]
+impl crate::adapter::TraceAnalyticsStore for GreptimeStore {
     async fn traces_search(
         &self,
         query: &crate::adapter::TraceQuery,
@@ -3012,7 +2907,10 @@ impl TelemetryStore for GreptimeStore {
             .await?;
         Ok(rows.iter().map(|row| error_event_from_row(row)).collect())
     }
+}
 
+#[async_trait::async_trait]
+impl crate::adapter::LogAnalyticsStore for GreptimeStore {
     async fn logs_search(
         &self,
         service: Option<&str>,
@@ -3031,7 +2929,10 @@ impl TelemetryStore for GreptimeStore {
         )
         .await
     }
+}
 
+#[async_trait::async_trait]
+impl crate::adapter::RuntimeMetricStore for GreptimeStore {
     async fn metric_series_grouped(
         &self,
         name: &str,
@@ -3178,7 +3079,10 @@ impl TelemetryStore for GreptimeStore {
             })
             .collect())
     }
+}
 
+#[async_trait::async_trait]
+impl crate::adapter::ErrorAnalyticsStore for GreptimeStore {
     async fn error_count_series(
         &self,
         service: &str,
@@ -3206,7 +3110,10 @@ impl TelemetryStore for GreptimeStore {
             })
             .collect())
     }
+}
 
+#[async_trait::async_trait]
+impl crate::adapter::LogCountStore for GreptimeStore {
     async fn log_count_series(
         &self,
         service: Option<&str>,
@@ -3236,7 +3143,10 @@ impl TelemetryStore for GreptimeStore {
             })
             .collect())
     }
+}
 
+#[async_trait::async_trait]
+impl crate::adapter::RawSqlStore for GreptimeStore {
     async fn raw_sql(&self, query: &str) -> anyhow::Result<crate::adapter::SqlResult> {
         anyhow::ensure!(
             raw_sql_read_only(query),

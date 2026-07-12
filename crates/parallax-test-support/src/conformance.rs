@@ -2,7 +2,9 @@
 //! gated real-engine greptime suite (plan 074).
 
 use parallax_model::{LogRow, SpanRow};
-use parallax_storage::adapter::{TelemetryStore, TraceQuery, TraceSort};
+use parallax_storage::adapter::{
+    LogCountStore, TelemetryStore, TraceAnalyticsStore, TraceQuery, TraceSort,
+};
 
 use crate::MemoryStore;
 use std::ops::RangeInclusive;
