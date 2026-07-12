@@ -49,6 +49,14 @@ The executable pins, owners, expiry rules, and Playwright predicate live in
 `dependency-policy.toml`; `cargo xtask dependencies --ui` fails if the two
 pre-stable exceptions broaden or the handoff versions drift.
 
+Registry metadata also records SHA-512 integrity for each wrapper and the
+exact Darwin arm64/x64 and Linux GNU arm64/x64 native package set. Oxlint and
+Oxfmt expose no install lifecycle; their wrappers select optional native
+packages. `oxlint-tsgolint` has the same four supported platform packages and
+a Bun-forced JS wrapper. Playwright's predicate locks runner, `playwright`, and
+`playwright-core` to `1.61.1`; browser download is a later explicit provisioning
+step and never an install lifecycle side effect.
+
 Primary status sources: [Oxc releases](https://github.com/oxc-project/oxc/releases),
 [Oxlint releases](https://github.com/oxc-project/oxc/releases),
 [TypeScript releases](https://github.com/microsoft/TypeScript/releases), and

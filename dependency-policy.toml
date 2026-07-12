@@ -2,19 +2,40 @@ schema-version = 1
 
 [prestable.oxfmt]
 version = "0.58.0"
+integrity = "sha512-8feG/7NVEHDVwc1OUpP6Pks+TnaDFUw2jLLFIMi5bcmmwxAX2wBQvjSzj62RRTYBf2Op1Wt8xbkmagmPTR5ETg=="
 owner = "Plan 130"
 status = "Beta"
 expiry = "first stable Oxfmt release"
+platform-packages = [
+  "@oxfmt/binding-darwin-arm64@0.58.0",
+  "@oxfmt/binding-darwin-x64@0.58.0",
+  "@oxfmt/binding-linux-arm64-gnu@0.58.0",
+  "@oxfmt/binding-linux-x64-gnu@0.58.0",
+]
 
 [prestable.oxlint-tsgolint]
 version = "0.24.0"
+integrity = "sha512-giCk5sEvG02d5tzPmFMX3hem8ndzEEu1xvGYS5OwNfO2WGl6ZVxt5LjE0yiMDoz94INI7XkXwgFAQiydPvVHDw=="
 owner = "Plan 131"
 status = "pre-stable"
 expiry = "first stable oxlint-tsgolint release"
 typescript-go-revision = "c080da62"
+platform-packages = [
+  "@oxlint-tsgolint/darwin-arm64@0.24.0",
+  "@oxlint-tsgolint/darwin-x64@0.24.0",
+  "@oxlint-tsgolint/linux-arm64@0.24.0",
+  "@oxlint-tsgolint/linux-x64@0.24.0",
+]
 
 [handoff.plan-131]
 oxlint = "1.73.0"
+oxlint-integrity = "sha512-u91G9TJzU6yqKWNZUYprQB07W7YvntZXaRxQ6CkoytepYhLWUXWsr1M8zUJ34VatNPuUAr3Z8GH+O2A331CluQ=="
+oxlint-platform-packages = [
+  "@oxlint/binding-darwin-arm64@1.73.0",
+  "@oxlint/binding-darwin-x64@1.73.0",
+  "@oxlint/binding-linux-arm64-gnu@1.73.0",
+  "@oxlint/binding-linux-x64-gnu@1.73.0",
+]
 typescript = "7.0.2"
 typescript-go-minimum = "TypeScript 7 GA revision or checked-in project/diagnostic parity proof"
 
@@ -23,6 +44,9 @@ testing-library-user-event = "14.6.1"
 
 [handoff.plan-132]
 playwright-test = "1.61.1"
+integrity = "sha512-8nKv6+0RJSL9FE4jYOEGXnPeM/Hg12qZpmqzZjRh3qM0Y7c3z1mrOTfFLids72RDQYVh9WpLEfR5WdpNX4fkig=="
+transitive-playwright = "1.61.1"
+transitive-playwright-core = "1.61.1"
 forbidden-direct = ["playwright", "playwright-core"]
 runtime = "bun"
 install = "explicit browser provisioning after ignore-scripts install"

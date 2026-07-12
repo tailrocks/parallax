@@ -45,7 +45,26 @@ pub(super) fn check(policy: &toml::Value) -> Vec<Finding> {
                 "`prestable.{name}` requires a stable-release expiry"
             )));
         }
+        if entry
+            .and_then(|entry| entry.get("integrity"))
+            .and_then(toml::Value::as_str)
+            .is_none_or(|integrity| !integrity.starts_with("sha512-"))
+            || entry
+                .and_then(|entry| entry.get("platform-packages"))
+                .and_then(toml::Value::as_array)
+                .is_none_or(|platforms| platforms.len() != 4)
+        {
+            findings.push(contract_failure(&format!(
+                "`prestable.{name}` requires exact integrity and four supported platform packages"
+            )));
+        }
     }
+    findings.extend(check_handoffs(policy));
+    findings
+}
+
+fn check_handoffs(policy: &toml::Value) -> Vec<Finding> {
+    let mut findings = Vec::new();
     for (path, expected) in [
         (&["handoff", "plan-131", "oxlint"][..], "1.73.0"),
         (&["handoff", "plan-131", "typescript"][..], "7.0.2"),
@@ -64,6 +83,49 @@ pub(super) fn check(policy: &toml::Value) -> Vec<Finding> {
                 "cargo xtask dependencies --ui",
             ));
         }
+    }
+    for (path, expected) in [
+        (
+            &["handoff", "plan-132", "transitive-playwright"][..],
+            "1.61.1",
+        ),
+        (
+            &["handoff", "plan-132", "transitive-playwright-core"][..],
+            "1.61.1",
+        ),
+    ] {
+        if path
+            .iter()
+            .try_fold(policy, |value, key| value.get(*key))
+            .and_then(toml::Value::as_str)
+            != Some(expected)
+        {
+            findings.push(failure(
+                "dependencies.ui.playwright-handoff",
+                "dependency-policy.toml",
+                "Playwright runner, package, and core versions must remain identical",
+                "cargo xtask dependencies --ui",
+            ));
+        }
+    }
+    let oxlint = policy
+        .get("handoff")
+        .and_then(|value| value.get("plan-131"));
+    if oxlint
+        .and_then(|value| value.get("oxlint-integrity"))
+        .and_then(toml::Value::as_str)
+        .is_none_or(|integrity| !integrity.starts_with("sha512-"))
+        || oxlint
+            .and_then(|value| value.get("oxlint-platform-packages"))
+            .and_then(toml::Value::as_array)
+            .is_none_or(|platforms| platforms.len() != 4)
+    {
+        findings.push(failure(
+            "dependencies.ui.handoff",
+            "dependency-policy.toml",
+            "stable Oxlint requires exact integrity and four supported platform packages",
+            "cargo xtask dependencies --ui",
+        ));
     }
     findings
 }

@@ -22,9 +22,13 @@ fn fails_closed_on_broad_or_drifting_exceptions() -> Result<()> {
         .iter()
         .map(|finding| finding.rule_id.as_str())
         .collect::<std::collections::BTreeSet<_>>();
-    let expected = ["dependencies.ui.handoff", "dependencies.ui.prestable"]
-        .into_iter()
-        .collect();
+    let expected = [
+        "dependencies.ui.handoff",
+        "dependencies.ui.playwright-handoff",
+        "dependencies.ui.prestable",
+    ]
+    .into_iter()
+    .collect();
     anyhow::ensure!(actual == expected, "unexpected findings: {findings:?}");
     Ok(())
 }
