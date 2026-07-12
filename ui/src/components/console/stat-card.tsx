@@ -16,10 +16,9 @@ import {
 import {
   ChartContainer,
   ChartTooltip,
-  ChartTooltipContent
-  
+  ChartTooltipContent,
 } from "@/components/ui/chart"
-import type {ChartConfig} from "@/components/ui/chart";
+import type { ChartConfig } from "@/components/ui/chart"
 
 export function DeltaBadge({
   delta,
@@ -32,7 +31,8 @@ export function DeltaBadge({
     return <Badge variant="secondary">~0%</Badge>
   }
   const good = inverted ? delta.dir === "down" : delta.dir === "up"
-  const Icon = delta.dir === "up" ? IconCircleArrowUpFilled : IconCircleArrowDownFilled
+  const Icon =
+    delta.dir === "up" ? IconCircleArrowUpFilled : IconCircleArrowDownFilled
   return (
     <Badge variant={good ? "emerald" : "rose"}>
       <Icon />
@@ -70,7 +70,7 @@ export function StatCard({
               <Icon
                 className={cn(
                   "size-[13px] shrink-0 text-muted-foreground",
-                  iconClassName,
+                  iconClassName
                 )}
               />
             ) : null}
@@ -102,7 +102,10 @@ export function CardSparkline({
   className?: string
 }) {
   return (
-    <ChartContainer config={sparkConfig} className={cn("h-12 w-full", className)}>
+    <ChartContainer
+      config={sparkConfig}
+      className={cn("h-12 w-full", className)}
+    >
       <AreaChart data={data} margin={{ left: 0, right: 0, top: 4, bottom: 0 }}>
         <defs>
           <linearGradient id="sparkline-fill" x1="0" y1="0" x2="0" y2="1">
@@ -139,7 +142,7 @@ export function PillMeter({
           key={index}
           className={cn(
             "flex-1 rounded-full",
-            index < filled ? "bg-primary" : "bg-transparent",
+            index < filled ? "bg-primary" : "bg-transparent"
           )}
         />
       ))}

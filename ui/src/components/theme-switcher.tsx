@@ -41,7 +41,7 @@ export function ThemeSwitcher() {
               "relative flex size-7 cursor-pointer items-center justify-center rounded-full transition-colors",
               active
                 ? "text-foreground"
-                : "text-muted-foreground/60 hover:text-foreground",
+                : "text-muted-foreground/60 hover:text-foreground"
             )}
           >
             {active ? (

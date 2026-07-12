@@ -138,7 +138,10 @@ function loadHistory(): string[] {
 }
 
 function normalizeColumn(column: string) {
-  return column.trim().replace(/^"+|"+$/g, "").toLowerCase()
+  return column
+    .trim()
+    .replace(/^"+|"+$/g, "")
+    .toLowerCase()
 }
 
 function displayCell(cell: unknown) {
@@ -171,9 +174,7 @@ export function targetForCell(
   }
   if (normalized === "span_id") {
     const traceId = cellValue(row, ["trace_id"])
-    return traceId
-      ? { to: "/traces/$traceId", params: { traceId } }
-      : null
+    return traceId ? { to: "/traces/$traceId", params: { traceId } } : null
   }
   if (normalized === "run_id" || normalized === "parallax.run.id") {
     return { to: "/runs/$runId", params: { runId: value } }
@@ -258,8 +259,7 @@ export function SqlResultBody({ result }: { result: SqlResult }) {
     <>
       {result.truncated ? (
         <p className="mb-3 text-sm text-amber-700 dark:text-amber-300">
-          Result capped at 2,000 rows — refine the query or add LIMIT/ORDER
-          BY.
+          Result capped at 2,000 rows — refine the query or add LIMIT/ORDER BY.
         </p>
       ) : null}
       <SqlResultsTable result={result} />
@@ -338,7 +338,9 @@ interface SchemaColumn {
 function SqlPage() {
   const search = Route.useSearch()
   const editorRef = useRef<HTMLTextAreaElement>(null)
-  const [statement, setStatement] = useState(search.query ?? EXAMPLES[0]?.sql ?? "")
+  const [statement, setStatement] = useState(
+    search.query ?? EXAMPLES[0]?.sql ?? ""
+  )
   const [result, setResult] = useState<SqlResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [running, setRunning] = useState(false)
@@ -370,30 +372,40 @@ function SqlPage() {
           truncated
         }
       }
-    `).then((data) => {
-      const grouped = new Map<string, SchemaColumn[]>()
-      for (const row of data.sql.rows) {
-        try {
-          const cells: unknown = JSON.parse(row)
-          if (!Array.isArray(cells)) continue
-          const [table, column, dataType] = cells as Array<string | undefined>
-          if (!table || !column || !dataType) continue
-          if (!grouped.has(table)) grouped.set(table, [])
-          grouped.get(table)?.push({ name: column, dataType })
-        } catch {
-          // skip malformed rows
+    `)
+      .then((data) => {
+        const grouped = new Map<string, SchemaColumn[]>()
+        for (const row of data.sql.rows) {
+          try {
+            const cells: unknown = JSON.parse(row)
+            if (!Array.isArray(cells)) continue
+            const [table, column, dataType] = cells as Array<string | undefined>
+            if (!table || !column || !dataType) continue
+            if (!grouped.has(table)) grouped.set(table, [])
+            grouped.get(table)?.push({ name: column, dataType })
+          } catch {
+            // skip malformed rows
+          }
         }
-      }
-      setSchema(grouped)
-    }).catch((err: unknown) => {
-      setError(err instanceof Error ? err.message : String(err))
-    })
+        setSchema(grouped)
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : String(err))
+      })
   }, [])
 
   useEffect(() => {
-    void graphql<{ savedViews: SavedView[] }>(
-      `{ savedViews(page: "/sql") { id name page state updatedAtNanos } }`
-    )
+    void graphql<{ savedViews: SavedView[] }>(`
+      {
+        savedViews(page: "/sql") {
+          id
+          name
+          page
+          state
+          updatedAtNanos
+        }
+      }
+    `)
       .then((data) => setSnippets(data.savedViews))
       .catch((err: unknown) => {
         setSnippetError(err instanceof Error ? err.message : String(err))

@@ -70,9 +70,7 @@ export const MiniSparkline = memo(function MiniSparkline({
   const points = values
     .map((value, index) => {
       const x =
-        values.length === 1
-          ? width / 2
-          : (index / (values.length - 1)) * width
+        values.length === 1 ? width / 2 : (index / (values.length - 1)) * width
       const y = height - pad - ((value - min) / span) * (height - pad * 2)
       return `${x},${y}`
     })
@@ -413,7 +411,9 @@ function IssuesTable({
     : items
 
   const header = (
-    <TableHeader className={virtualize ? "sticky top-0 z-10 bg-card" : undefined}>
+    <TableHeader
+      className={virtualize ? "sticky top-0 z-10 bg-card" : undefined}
+    >
       <TableRow>
         <TableHead>Issue</TableHead>
         <TableHead className="w-36">Service</TableHead>
@@ -613,4 +613,3 @@ function IssuesTable({
     </div>
   )
 }
-

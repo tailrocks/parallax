@@ -180,7 +180,9 @@ describe("Issues route", () => {
       "/traces/trace-a",
       "/issues/panic-a",
     ]) {
-      const match = urls.find((candidate) => candidate.url.pathname === pathname)
+      const match = urls.find(
+        (candidate) => candidate.url.pathname === pathname
+      )
       expect(match).toBeTruthy()
       expect(match?.search).toMatchObject({
         range: "custom",

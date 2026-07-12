@@ -41,7 +41,8 @@ afterEach(() => {
 })
 
 function mockPaletteData() {
-  vi.mocked(graphql).mockImplementation(async <T,>(query: string): Promise<T> => {
+  vi.mocked(graphql).mockImplementation(
+    async <T,>(query: string): Promise<T> => {
       if (query.includes("{ services }")) {
         return { services: ["checkout", "catalog"] } as T
       }
@@ -71,7 +72,8 @@ function mockPaletteData() {
         } as T
       }
       throw new Error("unexpected query")
-    })
+    }
+  )
 }
 
 function PaletteHarness() {

@@ -1,9 +1,9 @@
-import * as React from "react";
-import { Button as ButtonPrimitive } from "@base-ui/react/button";
-import { cva  } from "class-variance-authority";
-import type {VariantProps} from "class-variance-authority";
+import * as React from "react"
+import { Button as ButtonPrimitive } from "@base-ui/react/button"
+import { cva } from "class-variance-authority"
+import type { VariantProps } from "class-variance-authority"
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
   "group/button inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-[1.5px] focus-visible:ring-ring/50 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-[1.5px] aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
@@ -11,11 +11,11 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-neutral-800 dark:bg-neutral-200 shadow-[var(--custom-shadow-primary)] text-primary-foreground hover:bg-primary/80 dark:hover:bg-primary/90",
+          "bg-neutral-800 text-primary-foreground shadow-[var(--custom-shadow-primary)] hover:bg-primary/80 dark:bg-neutral-200 dark:hover:bg-primary/90",
         outline:
-          "shadow-(--custom-shadow) bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:bg-input/10 dark:hover:bg-input/50",
+          "bg-background shadow-(--custom-shadow) hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:bg-input/10 dark:hover:bg-input/50",
         secondary:
-          "bg-secondary shadow-[var(--custom-shadow-secondary)] text-secondary-foreground hover:bg-secondary/80 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+          "bg-secondary text-secondary-foreground shadow-[var(--custom-shadow-secondary)] hover:bg-secondary/80 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
         ghost:
           "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
         // Like `ghost` (transparent at rest), but hover tints it red — bg and
@@ -24,7 +24,7 @@ const buttonVariants = cva(
         "ghost-destructive":
           "hover:bg-destructive/10 hover:text-destructive focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:hover:bg-destructive/20 dark:focus-visible:ring-destructive/40",
         destructive:
-          "bg-destructive/10 shadow-[var(--custom-shadow-destructive)] text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
+          "bg-destructive/10 text-destructive shadow-[var(--custom-shadow-destructive)] hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         // Underline stays rendered but transparent at rest, fading its opacity
         // in on hover — the base `transition-all` animates the decoration color.
         link: "text-foreground underline decoration-foreground/20 underline-offset-4 hover:decoration-foreground",
@@ -48,7 +48,7 @@ const buttonVariants = cva(
       size: "default",
     },
   }
-);
+)
 
 function Button({
   className,
@@ -76,7 +76,7 @@ function Button({
         )
       )}
     </ButtonPrimitive>
-  );
+  )
 }
 
-export { Button, buttonVariants };
+export { Button, buttonVariants }

@@ -120,8 +120,7 @@ export function TraceWaterfall({
   const rowVirtualizer = useVirtualizer({
     count: visualItems.length,
     getScrollElement: () => rowsRef.current,
-    estimateSize: (index) =>
-      visualItems[index]?.type === "lane" ? 34 : 54,
+    estimateSize: (index) => (visualItems[index]?.type === "lane" ? 34 : 54),
     overscan: 12,
   })
   const virtualItems = rowVirtualizer.getVirtualItems()
@@ -167,10 +166,7 @@ export function TraceWaterfall({
     scrollToSpan(selectedId)
   }, [scrollToSpan, selectedId, shouldVirtualize])
 
-  const renderSpanRow = (
-    row: WaterfallRow,
-    style?: CSSProperties
-  ) => {
+  const renderSpanRow = (row: WaterfallRow, style?: CSSProperties) => {
     const { span, depth, offsetPct, widthPct } = row
     const active = span.spanId === selectedId
     const highlighted = highlightIds?.has(span.spanId) ?? false
@@ -234,9 +230,7 @@ export function TraceWaterfall({
       data-testid="trace-lane-header"
       style={style}
     >
-      <div className="truncate font-medium text-foreground">
-        {item.service}
-      </div>
+      <div className="truncate font-medium text-foreground">{item.service}</div>
       <div className="tabular-nums">
         {item.spanCount.toLocaleString()} span
         {item.spanCount === 1 ? "" : "s"}

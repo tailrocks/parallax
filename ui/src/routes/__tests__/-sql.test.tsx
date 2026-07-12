@@ -11,11 +11,7 @@ import {
 } from "@tanstack/react-router"
 import { describe, expect, it, vi } from "vitest"
 
-import {
-  SnippetsMenu,
-  SqlResultBody,
-  targetForCell,
-} from "@/routes/sql"
+import { SnippetsMenu, SqlResultBody, targetForCell } from "@/routes/sql"
 
 function renderWithRouter(component: React.ReactNode) {
   const rootRoute = createRootRoute({ component: Outlet })
@@ -63,12 +59,12 @@ describe("SQL result helpers", () => {
       to: "/traces/$traceId",
       params: { traceId: "trace-a" },
     })
-    expect(
-      targetForCell("span_id", "span-a", { trace_id: "trace-a" })
-    ).toEqual({
-      to: "/traces/$traceId",
-      params: { traceId: "trace-a" },
-    })
+    expect(targetForCell("span_id", "span-a", { trace_id: "trace-a" })).toEqual(
+      {
+        to: "/traces/$traceId",
+        params: { traceId: "trace-a" },
+      }
+    )
     expect(targetForCell('"parallax.run.id"', "run-a", {})).toEqual({
       to: "/runs/$runId",
       params: { runId: "run-a" },

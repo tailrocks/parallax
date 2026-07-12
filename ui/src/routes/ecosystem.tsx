@@ -1,4 +1,8 @@
-import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router"
+import {
+  createFileRoute,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router"
 import { IconSitemap } from "@tabler/icons-react"
 import { useMemo } from "react"
 

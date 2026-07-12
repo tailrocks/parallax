@@ -14,7 +14,7 @@ describe("primitive recipes", () => {
     render(<Button>Save</Button>)
 
     expect(screen.getByRole("button", { name: "Save" }).className).toContain(
-      "rounded-full",
+      "rounded-full"
     )
   })
 
@@ -22,7 +22,7 @@ describe("primitive recipes", () => {
     render(<Badge variant="rose">error</Badge>)
 
     expect(
-      screen.getByText("error").closest("[data-slot=badge]")?.className,
+      screen.getByText("error").closest("[data-slot=badge]")?.className
     ).toContain("shadow-[var(--custom-shadow-rose)]")
   })
 
@@ -32,7 +32,7 @@ describe("primitive recipes", () => {
         <Card data-testid="card" />
         <Empty data-testid="empty" />
         <Kbd>Esc</Kbd>
-      </>,
+      </>
     )
 
     expect(screen.getByTestId("card").className).toContain("corner-squircle")

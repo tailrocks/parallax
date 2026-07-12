@@ -1,8 +1,5 @@
 import type { ErrorComponentProps } from "@tanstack/react-router"
-import {
-  IconAlertTriangleFilled,
-  IconMapQuestion,
-} from "@tabler/icons-react"
+import { IconAlertTriangleFilled, IconMapQuestion } from "@tabler/icons-react"
 
 import { Button } from "@/components/ui/button"
 import {

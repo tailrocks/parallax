@@ -1,11 +1,7 @@
 import * as React from "react"
 import { Command as CommandPrimitive } from "cmdk"
 
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 
 function Command({
@@ -53,7 +49,10 @@ function CommandInput({
   ...props
 }: React.ComponentProps<typeof CommandPrimitive.Input>) {
   return (
-    <div data-slot="command-input-wrapper" className="flex h-12 items-center px-4">
+    <div
+      data-slot="command-input-wrapper"
+      className="flex h-12 items-center px-4"
+    >
       <CommandPrimitive.Input
         data-slot="command-input"
         className={cn(
@@ -86,7 +85,10 @@ function CommandEmpty({
   return (
     <CommandPrimitive.Empty
       data-slot="command-empty"
-      className={cn("py-6 text-center text-sm text-muted-foreground", className)}
+      className={cn(
+        "py-6 text-center text-sm text-muted-foreground",
+        className
+      )}
       {...props}
     />
   )

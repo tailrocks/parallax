@@ -113,7 +113,7 @@ function FieldValueRow({
           </div>
           <div className="mt-1 flex items-center gap-2">
             <CoverageBar value={max > 0 ? n / max : 0} />
-            <span className="w-12 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+            <span className="w-12 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
               {formatCount(n)}
             </span>
           </div>
@@ -265,7 +265,9 @@ export function FieldExplorer({
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger render={<Button type="button" variant="outline" size="sm" />}>
+      <SheetTrigger
+        render={<Button type="button" variant="outline" size="sm" />}
+      >
         <IconDatabase />
         Fields
       </SheetTrigger>
@@ -287,7 +289,7 @@ export function FieldExplorer({
                 ) : (
                   grouped.map((group) => (
                     <div key={group.namespace} className="flex flex-col gap-1">
-                      <div className="px-1 text-xs font-medium uppercase text-muted-foreground">
+                      <div className="px-1 text-xs font-medium text-muted-foreground uppercase">
                         {group.namespace}
                       </div>
                       {group.fields.map((field) => (
@@ -295,7 +297,7 @@ export function FieldExplorer({
                           key={field.key}
                           type="button"
                           className={cn(
-                            "flex flex-col gap-1 rounded-md px-2 py-2 text-left outline-none transition hover:bg-muted focus-visible:ring-[1.5px] focus-visible:ring-ring/50",
+                            "flex flex-col gap-1 rounded-md px-2 py-2 text-left transition outline-none hover:bg-muted focus-visible:ring-[1.5px] focus-visible:ring-ring/50",
                             selectedKey === field.key && "bg-muted"
                           )}
                           onClick={() => setSelectedKey(field.key)}
@@ -313,7 +315,7 @@ export function FieldExplorer({
                           </div>
                           <div className="flex items-center gap-2">
                             <CoverageBar value={field.coverage} />
-                            <span className="w-10 text-right text-xs tabular-nums text-muted-foreground">
+                            <span className="w-10 text-right text-xs text-muted-foreground tabular-nums">
                               {formatPercent(field.coverage)}
                             </span>
                           </div>
@@ -341,13 +343,19 @@ export function FieldExplorer({
                     <h3 className="min-w-0 flex-1 truncate font-mono text-sm">
                       {stats.key}
                     </h3>
-                    <Badge variant="outline">{stats.source.toLowerCase()}</Badge>
-                    {stats.isIdentifier ? <Badge variant="amber">identifier</Badge> : null}
+                    <Badge variant="outline">
+                      {stats.source.toLowerCase()}
+                    </Badge>
+                    {stats.isIdentifier ? (
+                      <Badge variant="amber">identifier</Badge>
+                    ) : null}
                     {stats.capped ? <Badge variant="blue">capped</Badge> : null}
                   </div>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                     <div className="rounded-md border p-3">
-                      <div className="text-xs text-muted-foreground">Coverage</div>
+                      <div className="text-xs text-muted-foreground">
+                        Coverage
+                      </div>
                       <div className="mt-1 text-lg font-medium tabular-nums">
                         {formatPercent(stats.coverage)}
                       </div>
@@ -359,13 +367,17 @@ export function FieldExplorer({
                       </div>
                     </div>
                     <div className="rounded-md border p-3">
-                      <div className="text-xs text-muted-foreground">Distinct</div>
+                      <div className="text-xs text-muted-foreground">
+                        Distinct
+                      </div>
                       <div className="mt-1 text-lg font-medium tabular-nums">
                         {formatCount(count(stats.distinctCount))}
                       </div>
                     </div>
                     <div className="rounded-md border p-3">
-                      <div className="text-xs text-muted-foreground">Window</div>
+                      <div className="text-xs text-muted-foreground">
+                        Window
+                      </div>
                       <div className="mt-1 text-lg font-medium tabular-nums">
                         {formatCount(count(stats.rowCount))}
                       </div>

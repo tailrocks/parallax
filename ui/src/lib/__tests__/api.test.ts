@@ -2,12 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import {
-  clearGraphqlCache,
-  gqlString,
-  graphql,
-  graphqlCached,
-} from "@/lib/api"
+import { clearGraphqlCache, gqlString, graphql, graphqlCached } from "@/lib/api"
 
 describe("gqlString", () => {
   it("escapes backslash, quote, newline, and tab", () => {

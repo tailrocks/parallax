@@ -121,7 +121,9 @@ describe("shell primitives", () => {
   })
 
   it("surfaces dashboard navigation load failures", async () => {
-    vi.mocked(graphql).mockRejectedValueOnce(new Error("dashboard query failed"))
+    vi.mocked(graphql).mockRejectedValueOnce(
+      new Error("dashboard query failed")
+    )
 
     renderWithRouter(
       <ParallaxShell>
@@ -149,7 +151,9 @@ describe("shell primitives", () => {
     expect(sidebar.getAttribute("data-state")).toBe("collapsed")
 
     fireEvent.keyDown(window, { key: "k", metaKey: true })
-    expect((await screen.findAllByPlaceholderText(/search pages/i)).length).toBeGreaterThan(0)
+    expect(
+      (await screen.findAllByPlaceholderText(/search pages/i)).length
+    ).toBeGreaterThan(0)
     expect(sidebar.getAttribute("data-state")).toBe("collapsed")
   })
 })

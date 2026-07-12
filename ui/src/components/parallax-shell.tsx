@@ -163,7 +163,9 @@ function StatusPill() {
 export function ParallaxShell({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const [dashboards, setDashboards] = useState<DashboardNavItem[]>([])
-  const [dashboardNavError, setDashboardNavError] = useState<string | null>(null)
+  const [dashboardNavError, setDashboardNavError] = useState<string | null>(
+    null
+  )
   const [paletteOpen, setPaletteOpen] = useState(false)
 
   useEffect(() => {
@@ -175,21 +177,18 @@ export function ParallaxShell({ children }: { children: React.ReactNode }) {
     setDashboardNavError(null)
     void graphql<{ dashboards: DashboardNavItem[] }>(
       `
-      {
-        dashboards {
-          id
-          name
+        {
+          dashboards {
+            id
+            name
+          }
         }
-      }
-    `,
+      `,
       { signal: controller.signal }
     )
       .then((data) => setDashboards(data.dashboards))
       .catch((error: unknown) => {
-        if (
-          error instanceof DOMException &&
-          error.name === "AbortError"
-        ) {
+        if (error instanceof DOMException && error.name === "AbortError") {
           return
         }
         setDashboardNavError(

@@ -1,5 +1,10 @@
 import { Link } from "@tanstack/react-router"
-import { IconAlertTriangle, IconArticle, IconCircleDot, IconClock } from "@tabler/icons-react"
+import {
+  IconAlertTriangle,
+  IconArticle,
+  IconCircleDot,
+  IconClock,
+} from "@tabler/icons-react"
 
 import { Badge } from "@/components/ui/badge"
 import type { StoryBeat } from "@/lib/api"
@@ -25,7 +30,10 @@ function beatTone(beat: StoryBeat) {
 
 function timeRange(beats: StoryBeat[]) {
   const timestamps = beats.map((beat) => BigInt(beat.tsNanos))
-  const start = timestamps.reduce((min, ts) => (ts < min ? ts : min), timestamps[0] ?? 0n)
+  const start = timestamps.reduce(
+    (min, ts) => (ts < min ? ts : min),
+    timestamps[0] ?? 0n
+  )
   const end = timestamps.reduce((max, ts) => (ts > max ? ts : max), start)
   return {
     fromNanos: start.toString(),

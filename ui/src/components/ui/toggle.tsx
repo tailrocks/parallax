@@ -1,19 +1,19 @@
-"use client";
+"use client"
 
-import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
-import { cva  } from "class-variance-authority";
-import type {VariantProps} from "class-variance-authority";
+import { Toggle as TogglePrimitive } from "@base-ui/react/toggle"
+import { cva } from "class-variance-authority"
+import type { VariantProps } from "class-variance-authority"
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"
 
 const toggleVariants = cva(
-  "group/toggle inline-flex cursor-pointer items-center justify-center gap-1 rounded-2xl corner-squircle text-sm font-medium whitespace-nowrap transition-[color,box-shadow] outline-none hover:bg-muted hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-pressed:bg-muted dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/toggle inline-flex cursor-pointer items-center justify-center gap-1 rounded-2xl text-sm font-medium whitespace-nowrap transition-[color,box-shadow] outline-none corner-squircle hover:bg-muted hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-pressed:bg-muted dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
         default: "bg-transparent",
         outline:
-          "bg-input/10 dark:shadow-none shadow-(--custom-shadow) dark:border dark:border-border/50 hover:bg-muted",
+          "bg-input/10 shadow-(--custom-shadow) hover:bg-muted dark:border dark:border-border/50 dark:shadow-none",
       },
       size: {
         default:
@@ -27,7 +27,7 @@ const toggleVariants = cva(
       size: "default",
     },
   }
-);
+)
 
 function Toggle({
   className,
@@ -41,7 +41,7 @@ function Toggle({
       className={cn(toggleVariants({ variant, size, className }))}
       {...props}
     />
-  );
+  )
 }
 
-export { Toggle, toggleVariants };
+export { Toggle, toggleVariants }

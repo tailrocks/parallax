@@ -1,6 +1,6 @@
-import * as React from "react";
+import * as React from "react"
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"
 
 function Card({
   className,
@@ -12,12 +12,12 @@ function Card({
       data-slot="card"
       data-size={size}
       className={cn(
-        "group/card flex shadow-(--custom-shadow) flex-col gap-4 overflow-hidden rounded-3xl corner-squircle bg-card py-6 text-sm text-card-foreground has-[>img:first-child]:pt-0 data-[size=sm]:gap-2 data-[size=sm]:py-5 *:[img:first-child]:rounded-t-3xl *:[img:first-child]:corner-squircle *:[img:last-child]:rounded-b-3xl *:[img:last-child]:corner-squircle",
+        "group/card flex flex-col gap-4 overflow-hidden rounded-3xl bg-card py-6 text-sm text-card-foreground shadow-(--custom-shadow) corner-squircle has-[>img:first-child]:pt-0 data-[size=sm]:gap-2 data-[size=sm]:py-5 *:[img:first-child]:rounded-t-3xl *:[img:first-child]:corner-squircle *:[img:last-child]:rounded-b-3xl *:[img:last-child]:corner-squircle",
         className
       )}
       {...props}
     />
-  );
+  )
 }
 
 function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
@@ -30,7 +30,7 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
       )}
       {...props}
     />
-  );
+  )
 }
 
 function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
@@ -43,17 +43,17 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
       )}
       {...props}
     />
-  );
+  )
 }
 
 function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-description"
-      className={cn("text-sm text-muted-foreground text-balance", className)}
+      className={cn("text-sm text-balance text-muted-foreground", className)}
       {...props}
     />
-  );
+  )
 }
 
 function CardAction({ className, ...props }: React.ComponentProps<"div">) {
@@ -66,7 +66,7 @@ function CardAction({ className, ...props }: React.ComponentProps<"div">) {
       )}
       {...props}
     />
-  );
+  )
 }
 
 function CardContent({ className, ...props }: React.ComponentProps<"div">) {
@@ -76,7 +76,7 @@ function CardContent({ className, ...props }: React.ComponentProps<"div">) {
       className={cn("px-6 group-data-[size=sm]/card:px-5", className)}
       {...props}
     />
-  );
+  )
 }
 
 function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
@@ -89,7 +89,7 @@ function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
       )}
       {...props}
     />
-  );
+  )
 }
 
 export {
@@ -100,4 +100,4 @@ export {
   CardAction,
   CardDescription,
   CardContent,
-};
+}

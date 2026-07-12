@@ -56,49 +56,51 @@ afterEach(() => {
 describe("FieldExplorer", () => {
   it("loads field keys, stats, service filters, and SQL pivots", async () => {
     const onApplyService = vi.fn()
-    vi.mocked(graphql).mockImplementation(async <T,>(query: string): Promise<T> => {
-      if (query.includes("fieldKeys")) {
-        return {
-          fieldKeys: [
-            {
+    vi.mocked(graphql).mockImplementation(
+      async <T,>(query: string): Promise<T> => {
+        if (query.includes("fieldKeys")) {
+          return {
+            fieldKeys: [
+              {
+                key: "resource.service.name",
+                namespace: "service",
+                source: "RESOURCE",
+                rowCount: "3",
+                nonNullCount: "3",
+                coverage: 1,
+                isIdentifier: false,
+              },
+              {
+                key: "http.request.method",
+                namespace: "http",
+                source: "SPAN",
+                rowCount: "3",
+                nonNullCount: "2",
+                coverage: 2 / 3,
+                isIdentifier: false,
+              },
+            ],
+          } as T
+        }
+        if (query.includes("fieldStats")) {
+          return {
+            fieldStats: {
               key: "resource.service.name",
               namespace: "service",
               source: "RESOURCE",
               rowCount: "3",
               nonNullCount: "3",
+              distinctCount: "1",
               coverage: 1,
+              capped: false,
               isIdentifier: false,
+              topValues: [{ value: "checkout", count: "3" }],
             },
-            {
-              key: "http.request.method",
-              namespace: "http",
-              source: "SPAN",
-              rowCount: "3",
-              nonNullCount: "2",
-              coverage: 2 / 3,
-              isIdentifier: false,
-            },
-          ],
-        } as T
+          } as T
+        }
+        throw new Error(`unexpected query ${query}`)
       }
-      if (query.includes("fieldStats")) {
-        return {
-          fieldStats: {
-            key: "resource.service.name",
-            namespace: "service",
-            source: "RESOURCE",
-            rowCount: "3",
-            nonNullCount: "3",
-            distinctCount: "1",
-            coverage: 1,
-            capped: false,
-            isIdentifier: false,
-            topValues: [{ value: "checkout", count: "3" }],
-          },
-        } as T
-      }
-      throw new Error(`unexpected query ${query}`)
-    })
+    )
 
     renderWithRouter(
       <FieldExplorer range={range} onApplyService={onApplyService} />

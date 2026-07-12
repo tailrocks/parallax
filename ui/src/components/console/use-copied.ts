@@ -8,7 +8,7 @@ export function useCopied(timeout = 1200) {
       setCopied(true)
       window.setTimeout(() => setCopied(false), timeout)
     },
-    [timeout],
+    [timeout]
   )
   return { copied, copy }
 }

@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"
 
 // prompt-kit "text-shimmer" loader (https://www.prompt-kit.com/docs/loader):
 // a label whose color sweeps left→right via an animated background-clip gradient.
@@ -6,16 +6,16 @@ import { cn } from "@/lib/utils";
 // styles/globals.css.
 
 export type TextShimmerLoaderProps = {
-  text?: string;
-  size?: "sm" | "md" | "lg";
-  className?: string;
-};
+  text?: string
+  size?: "sm" | "md" | "lg"
+  className?: string
+}
 
 const textSizes = {
   sm: "text-xs",
   md: "text-sm",
   lg: "text-base",
-} as const;
+} as const
 
 export function TextShimmerLoader({
   text = "Thinking",
@@ -28,7 +28,7 @@ export function TextShimmerLoader({
       aria-label={text}
       className={cn(
         "bg-[linear-gradient(to_right,var(--muted-foreground)_40%,var(--foreground)_60%,var(--muted-foreground)_80%)]",
-        "bg-clip-text font-normal text-transparent bg-size-[200%_auto]",
+        "bg-size-[200%_auto] bg-clip-text font-normal text-transparent",
         "animate-shimmer",
         textSizes[size],
         className
@@ -36,5 +36,5 @@ export function TextShimmerLoader({
     >
       {text}
     </div>
-  );
+  )
 }

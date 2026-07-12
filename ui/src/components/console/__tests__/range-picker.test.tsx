@@ -15,7 +15,9 @@ describe("RangePicker", () => {
     const button = screen
       .getAllByText(label)
       .map((node) => node.closest("button"))
-      .find((node): node is HTMLButtonElement => node instanceof HTMLButtonElement)
+      .find(
+        (node): node is HTMLButtonElement => node instanceof HTMLButtonElement
+      )
     if (!button) throw new Error(`missing day button ${label}`)
     return button
   }

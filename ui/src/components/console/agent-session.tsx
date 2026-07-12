@@ -15,11 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCount, formatDurationNs } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
-export type AgentStepKind =
-  | "INVOKE_AGENT"
-  | "EXECUTE_TOOL"
-  | "SHELL"
-  | "OTHER"
+export type AgentStepKind = "INVOKE_AGENT" | "EXECUTE_TOOL" | "SHELL" | "OTHER"
 
 export interface AgentStepData {
   spanId: string
@@ -106,7 +102,9 @@ export function AgentSessionCard({ session }: { session: AgentSessionData }) {
                 </Badge>
               </>
             ) : null}
-            {session.truncated ? <Badge variant="amber">truncated</Badge> : null}
+            {session.truncated ? (
+              <Badge variant="amber">truncated</Badge>
+            ) : null}
           </div>
         </div>
       </CardHeader>

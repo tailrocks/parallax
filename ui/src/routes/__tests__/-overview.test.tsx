@@ -179,7 +179,9 @@ describe("Overview route", () => {
 
     await expect(loadOverview(range)).resolves.toBe(fixture)
     expect(vi.mocked(graphqlCached).mock.calls[0]?.[0]).toContain("overview")
-    expect(vi.mocked(graphqlCached).mock.calls[0]?.[0]).toContain("signalCountSeries")
+    expect(vi.mocked(graphqlCached).mock.calls[0]?.[0]).toContain(
+      "signalCountSeries"
+    )
     expect(vi.mocked(graphqlCached).mock.calls[0]?.[0]).toContain("servicesNow")
     expect(vi.mocked(graphqlCached).mock.calls[0]?.[0]).toContain("tracesPage")
   })

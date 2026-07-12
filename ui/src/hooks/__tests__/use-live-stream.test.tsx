@@ -136,11 +136,7 @@ describe("useLiveStream", () => {
   it("maps onerror to error and subsequent onopen to open", () => {
     const onBatch = vi.fn()
     render(
-      <StatusHarness
-        url="/v1/logs/stream"
-        parse={() => []}
-        onBatch={onBatch}
-      />
+      <StatusHarness url="/v1/logs/stream" parse={() => []} onBatch={onBatch} />
     )
 
     expect(screen.getByTestId("status").textContent).toBe("connecting")
@@ -188,9 +184,7 @@ describe("useLiveStream", () => {
 
   it("stays idle and constructs no EventSource when url is null", () => {
     const onBatch = vi.fn()
-    render(
-      <StatusHarness url={null} parse={() => []} onBatch={onBatch} />
-    )
+    render(<StatusHarness url={null} parse={() => []} onBatch={onBatch} />)
 
     expect(screen.getByTestId("status").textContent).toBe("idle")
     expect(MockEventSource.constructedUrls).toEqual([])
@@ -206,11 +200,7 @@ describe("useLiveStream", () => {
 
     const onBatch = vi.fn()
     render(
-      <StatusHarness
-        url="/v1/logs/stream"
-        parse={() => []}
-        onBatch={onBatch}
-      />
+      <StatusHarness url="/v1/logs/stream" parse={() => []} onBatch={onBatch} />
     )
     expect(MockEventSource.instances).toHaveLength(1)
     const first = MockEventSource.instances[0]!

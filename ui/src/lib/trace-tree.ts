@@ -253,9 +253,7 @@ export function detectSkew<T extends ServiceTraceSpan>(
   }
 
   const roots = spans
-    .filter(
-      (span) => !span.parentSpanId || !byId.has(span.parentSpanId)
-    )
+    .filter((span) => !span.parentSpanId || !byId.has(span.parentSpanId))
     .sort((a, b) => compareByStartWithTimes(times, a, b))
   for (let index = 0; index < roots.length - 1; index += 1) {
     const earlier = roots[index]!

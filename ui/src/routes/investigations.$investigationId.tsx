@@ -1,4 +1,9 @@
-import { Link, createFileRoute, notFound, useRouter } from "@tanstack/react-router"
+import {
+  Link,
+  createFileRoute,
+  notFound,
+  useRouter,
+} from "@tanstack/react-router"
 import { useState } from "react"
 import {
   IconAffiliate,

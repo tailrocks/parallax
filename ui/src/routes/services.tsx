@@ -151,8 +151,7 @@ export function servicesWithCatalog(data: ServicesData): ServiceTableRow[] {
     const identity = catalog.get(name)
     return {
       name,
-      lastSeenNanos:
-        summary?.lastSeenNanos ?? identity?.lastSeenNanos ?? "0",
+      lastSeenNanos: summary?.lastSeenNanos ?? identity?.lastSeenNanos ?? "0",
       spanCount: summary?.spanCount ?? "0",
       errorCount: summary?.errorCount ?? "0",
       p95Ms: summary?.p95Ms ?? null,
@@ -299,10 +298,7 @@ export function ServicesIndexContent({
     .filter((value): value is number => Number.isFinite(value))
   const errorRates = rows.map(serviceErrorRate)
   const p95Scale = useMemo(() => buildHeatScale(p95Values), [p95Values])
-  const errorRateScale = useMemo(
-    () => buildHeatScale(errorRates),
-    [errorRates]
-  )
+  const errorRateScale = useMemo(() => buildHeatScale(errorRates), [errorRates])
 
   return (
     <div className="space-y-4">
@@ -452,7 +448,9 @@ export function ServicesIndexContent({
                       title={`namespace ${row.serviceNamespace ?? "not emitted"}; instances ${row.instanceCount ?? "0"}`}
                     >
                       {row.serviceVersion ?? (
-                        <span className="font-sans text-muted-foreground">-</span>
+                        <span className="font-sans text-muted-foreground">
+                          -
+                        </span>
                       )}
                     </TableCell>
                     <TableCell
@@ -471,7 +469,10 @@ export function ServicesIndexContent({
                     <TableCell className="text-right tabular-nums">
                       <Link
                         to="/traces"
-                        search={{ service: row.name, ...rangeLinkSearch(range) }}
+                        search={{
+                          service: row.name,
+                          ...rangeLinkSearch(range),
+                        }}
                         className="hover:underline"
                       >
                         {formatCount(Number(row.spanCount))}

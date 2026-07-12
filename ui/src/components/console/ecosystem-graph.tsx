@@ -40,7 +40,10 @@ function layoutNodes(
   for (let pass = 0; pass < names.size; pass += 1) {
     for (const edge of edges) {
       const sourceDepth = depth.get(edge.source) ?? 0
-      depth.set(edge.target, Math.max(depth.get(edge.target) ?? 0, sourceDepth + 1))
+      depth.set(
+        edge.target,
+        Math.max(depth.get(edge.target) ?? 0, sourceDepth + 1)
+      )
     }
   }
   const maxDepth = Math.max(0, ...depth.values())
@@ -94,7 +97,10 @@ function EdgePath({
         "fill-none stroke-muted-foreground/50",
         hasError && "stroke-rose-500/80"
       )}
-      strokeWidth={Math.max(1.5, Math.min(6, Math.log2(count(edge.callCount) + 1)))}
+      strokeWidth={Math.max(
+        1.5,
+        Math.min(6, Math.log2(count(edge.callCount) + 1))
+      )}
       markerEnd="url(#ecosystem-arrow)"
     />
   )
@@ -118,7 +124,9 @@ export function EcosystemGraph({
       target: byName.get(edge.target),
     }))
     .filter(
-      (item): item is {
+      (
+        item
+      ): item is {
         edge: ServiceMapEdge
         source: PositionedNode
         target: PositionedNode
@@ -138,7 +146,8 @@ export function EcosystemGraph({
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm text-muted-foreground">
-          {formatCount(positioned.length)} services · {formatCount(edges.length)} edges
+          {formatCount(positioned.length)} services ·{" "}
+          {formatCount(edges.length)} edges
         </span>
         <Badge variant="secondary">trace-path</Badge>
       </div>

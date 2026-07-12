@@ -54,9 +54,16 @@ export function PinButton({
     let ignore = false
     setLoading(true)
     setError(null)
-    void graphql<{ investigations: Investigation[] }>(
-      `{ investigations { id name state updatedAtNanos } }`
-    )
+    void graphql<{ investigations: Investigation[] }>(`
+      {
+        investigations {
+          id
+          name
+          state
+          updatedAtNanos
+        }
+      }
+    `)
       .then((data) => {
         if (!ignore) setInvestigations(data.investigations)
       })

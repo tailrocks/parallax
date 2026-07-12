@@ -161,7 +161,8 @@ describe("final sweep", () => {
   })
 
   it("loads N widget series with one aliased GraphQL document", async () => {
-    const { loadWidgetSeries } = await import("@/routes/dashboards.$dashboardId")
+    const { loadWidgetSeries } =
+      await import("@/routes/dashboards.$dashboardId")
     const fetch = vi.fn(async (_query: string) => ({
       w0: [{ groupValue: null, points: [{ tsNanos: "1", value: 1 }] }],
       w1: [{ groupValue: null, points: [{ tsNanos: "1", value: 2 }] }],

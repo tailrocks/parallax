@@ -144,7 +144,9 @@ describe("TraceWaterfall", () => {
       />
     )
 
-    expect(screen.getByText("No errored spans. Showing full trace.")).toBeTruthy()
+    expect(
+      screen.getByText("No errored spans. Showing full trace.")
+    ).toBeTruthy()
     expect(screen.getByText("GET /cache")).toBeTruthy()
   })
 

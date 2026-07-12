@@ -69,7 +69,9 @@ export function RangePicker({
               onClick={() =>
                 onChange({
                   key: preset.key,
-                  fromNanos: ((BigInt(Date.now() - preset.ms)) * 1_000_000n).toString(),
+                  fromNanos: (
+                    BigInt(Date.now() - preset.ms) * 1_000_000n
+                  ).toString(),
                   toNanos: (BigInt(Date.now()) * 1_000_000n).toString(),
                 })
               }

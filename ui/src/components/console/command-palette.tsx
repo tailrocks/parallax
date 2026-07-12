@@ -148,9 +148,16 @@ export function CommandPalette({
     if (!open) return
     const controller = new AbortController()
     setServices({ status: "loading", data: [] })
-    void graphql<{ services: string[] }>(`{ services }`, {
-      signal: controller.signal,
-    })
+    void graphql<{ services: string[] }>(
+      `
+        {
+          services
+        }
+      `,
+      {
+        signal: controller.signal,
+      }
+    )
       .then((data) =>
         setServices({
           status: "ready",
@@ -169,14 +176,27 @@ export function CommandPalette({
       tracesPage: { items: RecentTrace[] }
       runs: RecentRun[]
     }>(
-      `{
-        tracesPage(limit: 5, sort: START_DESC) {
-          items { traceId rootName service startNanos hasError }
+      `
+        {
+          tracesPage(limit: 5, sort: START_DESC) {
+            items {
+              traceId
+              rootName
+              service
+              startNanos
+              hasError
+            }
+          }
+          runs(limit: 5) {
+            runId
+            command
+            status
+            startedAtNanos
+            endedAtNanos
+            errorCount
+          }
         }
-        runs(limit: 5) {
-          runId command status startedAtNanos endedAtNanos errorCount
-        }
-      }`,
+      `,
       { signal: controller.signal }
     )
       .then((data) =>
@@ -333,7 +353,9 @@ export function CommandPalette({
                 {trace.rootName || trace.traceId}
               </span>
               {trace.hasError ? <CommandShortcut>error</CommandShortcut> : null}
-              <CommandShortcut>{formatRelative(trace.startNanos)}</CommandShortcut>
+              <CommandShortcut>
+                {formatRelative(trace.startNanos)}
+              </CommandShortcut>
             </CommandItem>
           ))}
           {recent.data.runs.map((run) => (
@@ -355,7 +377,9 @@ export function CommandPalette({
               {run.errorCount > 0 ? (
                 <CommandShortcut>{run.errorCount} errors</CommandShortcut>
               ) : null}
-              <CommandShortcut>{formatRelative(run.startedAtNanos)}</CommandShortcut>
+              <CommandShortcut>
+                {formatRelative(run.startedAtNanos)}
+              </CommandShortcut>
             </CommandItem>
           ))}
         </CommandGroup>

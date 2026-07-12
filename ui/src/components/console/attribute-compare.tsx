@@ -27,13 +27,7 @@ function identifierKey(key: string): boolean {
   return lower.endsWith(".id") || lower.endsWith("_id") || lower === "id"
 }
 
-function ShareBar({
-  value,
-  muted,
-}: {
-  value: number
-  muted?: boolean
-}) {
+function ShareBar({ value, muted }: { value: number; muted?: boolean }) {
   const pct = Math.max(0, Math.min(1, value)) * 100
   return (
     <span className="flex min-w-32 items-center gap-2">
@@ -41,7 +35,7 @@ function ShareBar({
         <span
           className={cn(
             "block h-2 rounded-full",
-            muted ? "bg-muted-foreground/45" : "bg-primary",
+            muted ? "bg-muted-foreground/45" : "bg-primary"
           )}
           style={{ width: `${pct}%` }}
         />
@@ -89,13 +83,13 @@ export function AttributeComparePanel({
               </TableCell>
               <TableCell>
                 <span className="flex min-w-0 flex-wrap items-center gap-1.5">
-                  <span className="break-all font-mono text-xs">{row.key}</span>
+                  <span className="font-mono text-xs break-all">{row.key}</span>
                   {identifierKey(row.key) ? (
                     <Badge variant="outline">identifier</Badge>
                   ) : null}
                 </span>
               </TableCell>
-              <TableCell className="max-w-72 whitespace-normal break-words font-mono text-xs">
+              <TableCell className="max-w-72 font-mono text-xs break-words whitespace-normal">
                 {row.value}
               </TableCell>
               <TableCell align="right">

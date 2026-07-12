@@ -264,7 +264,6 @@ describe("Runs route", () => {
     ).toBeGreaterThan(0)
   })
 
-
   it("bounds runtimeSnapshot fromNanos to the run start and omits bundle", async () => {
     expect(snapshotFromNanos("12345")).toBe("12345")
     expect(snapshotFromNanos(null, 1_000_000)).toBe(
