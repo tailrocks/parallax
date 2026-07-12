@@ -5,7 +5,7 @@ schema_version = 1
     "struct ApiContext",
     "struct Mutation",
     "struct Query",
-    "struct RequestMemo",
+    "use memo::RequestMemo",
     "use query_limits::check_query_limits",
     "use schema::{Schema, build_schema, execute}",
 ]

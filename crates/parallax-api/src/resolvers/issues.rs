@@ -12,183 +12,8 @@ use crate::{
 use parallax_analysis::semconv;
 use parallax_storage::model::MetricAgg;
 
-pub(crate) struct Issue(pub(crate) model::Issue);
-
-#[graphql_object(context = ApiContext)]
-impl Issue {
-    fn fingerprint(&self) -> &str {
-        &self.0.fingerprint
-    }
-    fn title(&self) -> &str {
-        &self.0.title
-    }
-    fn error_type(&self) -> &str {
-        &self.0.error_type
-    }
-    fn culprit(&self) -> Option<&str> {
-        self.0.culprit.as_deref()
-    }
-    fn service(&self) -> &str {
-        &self.0.service
-    }
-    fn status(&self) -> &str {
-        &self.0.status
-    }
-    fn first_seen_nanos(&self) -> String {
-        nanos_string(self.0.first_seen_nanos)
-    }
-    fn last_seen_nanos(&self) -> String {
-        nanos_string(self.0.last_seen_nanos)
-    }
-    fn event_count(&self) -> i32 {
-        saturate_i32(self.0.event_count)
-    }
-    fn last_trace_id(&self) -> Option<&str> {
-        self.0.last_trace_id.as_deref()
-    }
-    /// Bounded top-tag-values cache as JSON: `{key: {value: count}}`.
-    fn tags(&self) -> &str {
-        &self.0.tags
-    }
-
-    /// The last-24h occurrence sparkline (hourly buckets), oldest first.
-    async fn trend(&self, context: &ApiContext) -> FieldResult<Vec<TrendPoint>> {
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map_err(field_err)?
-            .as_nanos();
-        let since = now.saturating_sub(24 * 3_600_000_000_000);
-        let points = context
-            .metadata
-            .issue_trend(&self.0.fingerprint, since, 3600)
-            .await
-            .map_err(field_err)?;
-        Ok(points.into_iter().map(TrendPoint).collect())
-    }
-
-    /// The most recent stored occurrence.
-    async fn latest_event(&self, context: &ApiContext) -> FieldResult<Option<ErrorEvent>> {
-        let events = context
-            .store
-            .error_events_by_fingerprint(&self.0.fingerprint, 0..=u128::MAX, 1)
-            .await
-            .map_err(field_err)?;
-        Ok(events.into_iter().next().map(ErrorEvent))
-    }
-
-    /// Recent occurrences of this issue, newest first, optionally
-    /// range-bounded (`fromNanos`/`toNanos`).
-    async fn events(
-        &self,
-        context: &ApiContext,
-        limit: Option<i32>,
-        from_nanos: Option<String>,
-        to_nanos: Option<String>,
-    ) -> FieldResult<Vec<ErrorEvent>> {
-        let from = match from_nanos {
-            Some(s) => s.parse().map_err(|_| field_err("invalid fromNanos"))?,
-            None => 0,
-        };
-        let to = match to_nanos {
-            Some(s) => s.parse().map_err(|_| field_err("invalid toNanos"))?,
-            None => u128::MAX,
-        };
-        let events = context
-            .store
-            .error_events_by_fingerprint(&self.0.fingerprint, from..=to, clamp_limit(limit, 50))
-            .await
-            .map_err(field_err)?;
-        Ok(events.into_iter().map(ErrorEvent).collect())
-    }
-}
-
-/// Page of issues plus the (scan-capped) total for pagination.
-pub(crate) struct IssueList {
-    items: Vec<model::Issue>,
-    total: usize,
-}
-
-#[graphql_object(context = ApiContext)]
-impl IssueList {
-    fn items(&self) -> Vec<Issue> {
-        self.items.iter().cloned().map(Issue).collect()
-    }
-    /// Matching issues before paging — exact up to the 1000-row scan window.
-    fn total(&self) -> i32 {
-        i32::try_from(self.total).unwrap_or(i32::MAX)
-    }
-}
-
-/// How `issues` lists are ordered. TREND = last-24h occurrence sum.
-#[derive(juniper::GraphQLEnum, Clone, Copy)]
-pub(crate) enum IssueSort {
-    LastSeen,
-    FirstSeen,
-    Events,
-    Trend,
-}
-
-impl IssueSort {
-    fn key(self) -> model::IssueSortKey {
-        match self {
-            Self::LastSeen => model::IssueSortKey::LastSeen,
-            Self::FirstSeen => model::IssueSortKey::FirstSeen,
-            Self::Events => model::IssueSortKey::Events,
-            Self::Trend => model::IssueSortKey::Trend,
-        }
-    }
-}
-
-pub(crate) struct ErrorEvent(pub(crate) model::ErrorEventRow);
-
-#[graphql_object(context = ApiContext)]
-impl ErrorEvent {
-    fn ts_nanos(&self) -> String {
-        nanos_string(self.0.ts_nanos)
-    }
-    fn service(&self) -> &str {
-        &self.0.service
-    }
-    fn fingerprint(&self) -> &str {
-        &self.0.fingerprint
-    }
-    fn error_type(&self) -> &str {
-        &self.0.error_type
-    }
-    fn message(&self) -> &str {
-        &self.0.message
-    }
-    fn stacktrace(&self) -> Option<&str> {
-        self.0.stacktrace.as_deref()
-    }
-    fn source(&self) -> String {
-        serde_json::to_string(&self.0.source)
-            .unwrap_or_default()
-            .trim_matches('"')
-            .to_string()
-    }
-    fn trace_id(&self) -> &str {
-        &self.0.trace_id
-    }
-    fn span_id(&self) -> &str {
-        &self.0.span_id
-    }
-    fn attributes(&self) -> String {
-        self.0.attributes.to_string()
-    }
-}
-
-pub(crate) struct TrendPoint(pub(crate) model::TrendPoint);
-
-#[graphql_object(context = ApiContext)]
-impl TrendPoint {
-    fn ts_nanos(&self) -> String {
-        nanos_string(self.0.ts_nanos)
-    }
-    fn count(&self) -> i32 {
-        i32::try_from(self.0.count).unwrap_or(i32::MAX)
-    }
-}
+mod nested;
+pub(crate) use nested::{Issue, IssueList, IssueSort, TrendPoint};
 
 pub(crate) struct BundleOut {
     json: String,
@@ -365,7 +190,7 @@ pub(crate) async fn issues(
         )
         .await
         .map_err(field_err)?;
-    Ok(IssueList { items, total })
+    Ok(IssueList::new(items, total))
 }
 
 pub(crate) async fn issue(context: &ApiContext, fingerprint: String) -> FieldResult<Option<Issue>> {
@@ -374,7 +199,7 @@ pub(crate) async fn issue(context: &ApiContext, fingerprint: String) -> FieldRes
         .issue(&fingerprint)
         .await
         .map_err(field_err)?
-        .map(Issue))
+        .map(Issue::single))
 }
 
 pub(crate) async fn issue_trend(
@@ -568,6 +393,9 @@ pub(crate) async fn issue_set_status(
         .issue(&fingerprint)
         .await
         .map_err(field_err)?
-        .map(Issue)
+        .map(Issue::single)
         .ok_or_else(|| field_err(format!("issue {fingerprint} not found")))
 }
+
+#[cfg(test)]
+mod tests;

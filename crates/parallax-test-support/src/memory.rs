@@ -2,6 +2,7 @@
 
 mod log_count;
 mod math;
+mod run_store;
 mod seed;
 
 use self::math::{
@@ -25,6 +26,7 @@ use parallax_storage::adapter::{
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::ops::RangeInclusive;
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use tokio::sync::{Mutex as AsyncMutex, oneshot};
 
 #[expect(missing_debug_implementations, reason = "opaque normalizers")]
@@ -33,6 +35,7 @@ pub struct MemoryStore {
     normalize_traces: Option<TraceNormalizer>,
     normalize_logs: Option<LogNormalizer>,
     traces_gate: AsyncMutex<Option<oneshot::Receiver<()>>>,
+    error_event_read_calls: AtomicUsize,
 }
 
 impl Default for MemoryStore {
@@ -42,6 +45,7 @@ impl Default for MemoryStore {
             normalize_traces: None,
             normalize_logs: None,
             traces_gate: AsyncMutex::new(None),
+            error_event_read_calls: AtomicUsize::new(0),
         }
     }
 }
@@ -77,6 +81,10 @@ impl MemoryStore {
 
     pub async fn set_traces_gate(&self, rx: oneshot::Receiver<()>) {
         *self.traces_gate.lock().await = Some(rx);
+    }
+
+    pub fn error_event_read_calls(&self) -> usize {
+        self.error_event_read_calls.load(Ordering::Relaxed)
     }
 
     pub(super) fn lock(&self) -> std::sync::MutexGuard<'_, Inner> {
@@ -821,71 +829,6 @@ impl MetricAnalyticsStore for MemoryStore {
         rows.sort_by_key(|row| std::cmp::Reverse(row.ts_nanos));
         rows.truncate(limit.min(MAX_ROWS));
         Ok(rows)
-    }
-}
-
-#[async_trait::async_trait]
-impl adapter::RunStore for MemoryStore {
-    async fn error_events_by_fingerprint(
-        &self,
-        fingerprint: &str,
-        range: RangeInclusive<u128>,
-        limit: usize,
-    ) -> anyhow::Result<Vec<ErrorEventRow>> {
-        let mut events: Vec<ErrorEventRow> = self
-            .lock()
-            .error_events
-            .iter()
-            .filter(|e| e.fingerprint == fingerprint && range.contains(&e.ts_nanos))
-            .cloned()
-            .collect();
-        events.sort_by_key(|e| std::cmp::Reverse(e.ts_nanos));
-        events.truncate(limit);
-        Ok(events)
-    }
-
-    async fn observed_runs(
-        &self,
-        limit: usize,
-        range: RangeInclusive<u128>,
-    ) -> anyhow::Result<Vec<adapter::ObservedRun>> {
-        let inner = self.lock();
-        let mut runs: HashMap<String, adapter::ObservedRun> = HashMap::new();
-        let mut absorb = |run_id: &Option<String>, ts: u128, service: &str, is_span: bool| {
-            if !range.contains(&ts) {
-                return;
-            }
-            let Some(run_id) = run_id.as_deref().filter(|r| !r.is_empty()) else {
-                return;
-            };
-            let entry = runs
-                .entry(run_id.to_owned())
-                .or_insert_with(|| adapter::ObservedRun {
-                    run_id: run_id.to_owned(),
-                    first_nanos: ts,
-                    last_nanos: ts,
-                    span_count: 0,
-                    log_count: 0,
-                    service: service.to_owned(),
-                });
-            entry.first_nanos = entry.first_nanos.min(ts);
-            entry.last_nanos = entry.last_nanos.max(ts);
-            if is_span {
-                entry.span_count += 1;
-            } else {
-                entry.log_count += 1;
-            }
-        };
-        for span in &inner.spans {
-            absorb(&span.run_id, span.ts_nanos, &span.service, true);
-        }
-        for log in &inner.logs {
-            absorb(&log.run_id, log.ts_nanos, &log.service, false);
-        }
-        let mut runs: Vec<_> = runs.into_values().collect();
-        runs.sort_by_key(|r| std::cmp::Reverse(r.last_nanos));
-        runs.truncate(limit);
-        Ok(runs)
     }
 }
 

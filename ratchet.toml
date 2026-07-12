@@ -378,12 +378,6 @@ class = "test-support"
 
 [[limits]]
 metric = "rust.file-lines"
-scope = "crates/parallax-api/src/resolvers/issues.rs"
-ceiling = 534
-
-
-[[limits]]
-metric = "rust.file-lines"
 scope = "crates/parallax-api/src/resolvers/services.rs"
 ceiling = 564
 
@@ -420,18 +414,13 @@ ceiling = 446
 
 [[limits]]
 metric = "rust.file-lines"
-scope = "crates/parallax-storage/src/adapter.rs"
-ceiling = 595
-
-[[limits]]
-metric = "rust.file-lines"
 scope = "crates/parallax-greptime/src/greptime.rs"
-ceiling = 3095
+ceiling = 2966
 
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-test-support/src/memory.rs"
-ceiling = 1455
+ceiling = 1399
 
 [[limits]]
 metric = "rust.file-lines"
@@ -1948,6 +1937,11 @@ ceiling = 36
 metric = "rust.assertions"
 scope = "crates/parallax-api/src/tests.rs"
 ceiling = 1
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-api/src/resolvers/issues/tests.rs"
+ceiling = 3
 
 [[limits]]
 metric = "rust.assertions"

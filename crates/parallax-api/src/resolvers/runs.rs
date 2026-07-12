@@ -160,7 +160,7 @@ impl Run {
             .issues_by_fingerprints(&fingerprints)
             .await
             .map_err(field_err)?;
-        Ok(issues.into_iter().map(Issue).collect())
+        Ok(Issue::from_rows(issues))
     }
 }
 

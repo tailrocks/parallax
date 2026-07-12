@@ -36,14 +36,8 @@ use resolvers::{
     TrendPoint,
 };
 
-/// Request-scoped memo for the highest-fan-in anchored reads. Built fresh on
-/// every GraphQL request so sibling fields share one store round-trip per
-/// (`trace_id`) without caching across requests.
-#[derive(Debug, Default)]
-pub struct RequestMemo {
-    spans: tokio::sync::Mutex<HashMap<String, Arc<Vec<model::SpanRow>>>>,
-    logs: tokio::sync::Mutex<HashMap<String, Arc<Vec<model::LogRow>>>>,
-}
+mod memo;
+pub use memo::RequestMemo;
 
 /// Request context: shared storage adapters plus a per-request memo layer.
 /// Constructed once per GraphQL request in the server handler — do not put a
@@ -57,68 +51,6 @@ pub struct ApiContext {
 }
 
 impl juniper::Context for ApiContext {}
-
-impl ApiContext {
-    pub async fn spans_for(&self, trace_id: &str) -> FieldResult<Arc<Vec<model::SpanRow>>> {
-        {
-            let cache = self.memo.spans.lock().await;
-            if let Some(rows) = cache.get(trace_id) {
-                return Ok(Arc::clone(rows));
-            }
-        }
-        let mut rows = self
-            .store
-            .spans_by_trace(trace_id)
-            .await
-            .map_err(field_err)?;
-        if rows.len() > MAX_ROWS {
-            tracing::warn!(
-                trace_id,
-                fetched = rows.len(),
-                cap = MAX_ROWS,
-                "anchored spans truncated to MAX_ROWS"
-            );
-            rows.truncate(MAX_ROWS);
-        }
-        let rows = Arc::new(rows);
-        let mut cache = self.memo.spans.lock().await;
-        Ok(Arc::clone(
-            cache
-                .entry(trace_id.to_string())
-                .or_insert_with(|| Arc::clone(&rows)),
-        ))
-    }
-
-    pub async fn logs_for(&self, trace_id: &str) -> FieldResult<Arc<Vec<model::LogRow>>> {
-        {
-            let cache = self.memo.logs.lock().await;
-            if let Some(rows) = cache.get(trace_id) {
-                return Ok(Arc::clone(rows));
-            }
-        }
-        let mut rows = self
-            .store
-            .logs_by_trace(trace_id)
-            .await
-            .map_err(field_err)?;
-        if rows.len() > MAX_ROWS {
-            tracing::warn!(
-                trace_id,
-                fetched = rows.len(),
-                cap = MAX_ROWS,
-                "anchored logs truncated to MAX_ROWS"
-            );
-            rows.truncate(MAX_ROWS);
-        }
-        let rows = Arc::new(rows);
-        let mut cache = self.memo.logs.lock().await;
-        Ok(Arc::clone(
-            cache
-                .entry(trace_id.to_string())
-                .or_insert_with(|| Arc::clone(&rows)),
-        ))
-    }
-}
 
 pub(crate) fn field_err(e: impl std::fmt::Display) -> FieldError {
     FieldError::from(e.to_string())
