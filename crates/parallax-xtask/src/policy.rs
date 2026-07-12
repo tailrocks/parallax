@@ -77,3 +77,9 @@ pub(crate) fn health(root: &Path, output: Output) -> Result<()> {
     print!("{}", render(&findings, format)?);
     Ok(())
 }
+
+pub(crate) fn typescript_package_imports(
+    root: &Path,
+) -> Result<std::collections::BTreeSet<String>> {
+    typescript::package_imports(root)
+}

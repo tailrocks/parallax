@@ -1,0 +1,21 @@
+schema-version = 1
+
+[ui]
+# Each entry is used outside a JavaScript/TypeScript import analyzed by Oxc:
+# CSS imports/plugins, runtime peers, compiler types, config-discovered plugins,
+# test-environment directives, or deliberately invoked maintainer tooling.
+reviewed-non-ast = [
+  "@fontsource-variable/geist-mono",
+  "@fontsource-variable/inter",
+  "@testing-library/dom",
+  "@toolwind/corner-shape",
+  "@types/react",
+  "@types/react-dom",
+  "jsdom",
+  "prettier-plugin-tailwindcss",
+  "react-dom",
+  "shadcn",
+  "tailwindcss",
+  "tw-animate-css",
+  "typescript",
+]

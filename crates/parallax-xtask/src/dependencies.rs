@@ -6,6 +6,7 @@ use cargo_metadata::MetadataCommand;
 
 use crate::cli::Output;
 use crate::diagnostic::{Finding, Format, Severity, render};
+use crate::policy;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum Selection {
@@ -194,6 +195,7 @@ fn ui(root: &Path) -> Result<Vec<Finding>> {
         )),
     }
     findings.extend(ui_manifest_policy(&directory)?);
+    findings.extend(ui_unused_policy(root, &directory)?);
     if let Err(reason) = command(&directory, "bun", &["pm", "untrusted"]) {
         findings.push(failure(
             "dependencies.ui.lifecycle",
@@ -201,6 +203,57 @@ fn ui(root: &Path) -> Result<Vec<Finding>> {
             &reason,
             "cargo xtask dependencies --ui",
         ));
+    }
+    Ok(findings)
+}
+
+fn ui_unused_policy(root: &Path, directory: &Path) -> Result<Vec<Finding>> {
+    let package: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(directory.join("package.json"))?)?;
+    let policy: toml::Value = toml::from_str(&std::fs::read_to_string(
+        root.join("dependency-policy.toml"),
+    )?)?;
+    let reviewed = policy
+        .get("ui")
+        .and_then(|ui| ui.get("reviewed-non-ast"))
+        .and_then(toml::Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(toml::Value::as_str)
+        .collect::<std::collections::BTreeSet<_>>();
+    let imported = policy::typescript_package_imports(root)?;
+    let scripts = package
+        .get("scripts")
+        .and_then(serde_json::Value::as_object)
+        .map_or_else(String::new, |scripts| {
+            scripts
+                .values()
+                .filter_map(serde_json::Value::as_str)
+                .collect::<Vec<_>>()
+                .join("\n")
+        });
+    let mut findings = Vec::new();
+    for section in ["dependencies", "devDependencies"] {
+        for name in package
+            .get(section)
+            .and_then(serde_json::Value::as_object)
+            .into_iter()
+            .flatten()
+            .map(|(name, _)| name)
+        {
+            let executable = name.rsplit('/').next().unwrap_or(name);
+            if !imported.contains(name)
+                && !scripts.contains(executable)
+                && !reviewed.contains(name.as_str())
+            {
+                findings.push(failure(
+                    "dependencies.ui.unused",
+                    "ui/package.json",
+                    &format!("direct dependency `{name}` has no resolved import, script use, or reviewed non-AST exception"),
+                    "cargo xtask dependencies --ui",
+                ));
+            }
+        }
     }
     Ok(findings)
 }
