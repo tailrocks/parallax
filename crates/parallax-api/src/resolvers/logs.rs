@@ -73,7 +73,7 @@ pub(crate) async fn logs_by_run(
     Ok(logs.into_iter().map(LogRecord).collect())
 }
 
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments, reason = "public GraphQL filter contract")]
 pub(crate) async fn logs(
     context: &ApiContext,
     trace_id: Option<String>,
@@ -180,7 +180,7 @@ pub(crate) async fn logs_around(
     Ok(logs.into_iter().map(LogRecord).collect())
 }
 
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments, reason = "public GraphQL filter contract")]
 pub(crate) async fn log_count_series(
     context: &ApiContext,
     from_nanos: String,

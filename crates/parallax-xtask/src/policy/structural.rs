@@ -49,6 +49,7 @@ pub(super) fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Find
         .map(|limit| ((limit.metric.clone(), limit.scope.clone()), limit.ceiling))
         .collect();
     let mut findings = evaluate(&measured, &limits);
+    findings.extend(rust::check_suppressions(root, ratchet)?);
     findings.extend(check_generated(root, ratchet)?);
     Ok(findings)
 }

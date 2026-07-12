@@ -483,7 +483,7 @@ pub(crate) async fn recent_traces(
     Ok(traces.into_iter().map(TraceSummary).collect())
 }
 
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments, reason = "public GraphQL filter contract")]
 pub(crate) async fn traces(
     context: &ApiContext,
     service: Option<String>,
@@ -531,7 +531,7 @@ pub(crate) async fn traces(
     Ok(traces.items.into_iter().map(TraceSummary).collect())
 }
 
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments, reason = "public GraphQL filter contract")]
 pub(crate) async fn traces_page(
     context: &ApiContext,
     service: Option<String>,

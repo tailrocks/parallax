@@ -16,6 +16,7 @@ use crate::diagnostic::Finding;
 use super::config::Ratchet;
 
 mod determinism;
+mod suppressions;
 
 #[derive(Debug, Eq, PartialEq)]
 struct FunctionMetric {
@@ -31,6 +32,7 @@ struct FileMetric {
     functions: Vec<FunctionMetric>,
     unsafe_blocks: usize,
     suppressions: usize,
+    suppression_details: Vec<suppressions::Suppression>,
     assertions: usize,
     inline_test_modules: usize,
     determinism: determinism::Metrics,
@@ -128,6 +130,10 @@ pub(super) fn health(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
     Ok(findings)
 }
 
+pub(super) fn check_suppressions(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
+    suppressions::check(root, ratchet)
+}
+
 fn collect(directory: &Path, files: &mut Vec<PathBuf>) -> Result<()> {
     for entry in fs::read_dir(directory)
         .with_context(|| format!("failed to read {}", directory.display()))?
@@ -153,6 +159,7 @@ fn analyze(source: &str) -> Result<FileMetric> {
         functions: visitor.functions,
         unsafe_blocks: presence.unsafe_blocks,
         suppressions: presence.suppressions,
+        suppression_details: presence.suppression_details,
         assertions: presence.assertions,
         inline_test_modules: presence.inline_test_modules,
         determinism: presence.determinism,
@@ -296,6 +303,7 @@ impl<'ast> Visit<'ast> for BranchVisitor {
 struct PresenceVisitor {
     unsafe_blocks: usize,
     suppressions: usize,
+    suppression_details: Vec<suppressions::Suppression>,
     assertions: usize,
     inline_test_modules: usize,
     determinism: determinism::Metrics,
@@ -303,9 +311,8 @@ struct PresenceVisitor {
 
 impl<'ast> Visit<'ast> for PresenceVisitor {
     fn visit_attribute(&mut self, attribute: &'ast syn::Attribute) {
-        if attribute.path().is_ident("allow") || attribute.path().is_ident("expect") {
-            self.suppressions += 1;
-        }
+        suppressions::collect(&attribute.meta, &mut self.suppression_details);
+        self.suppressions = self.suppression_details.len();
         syn::visit::visit_attribute(self, attribute);
     }
     fn visit_expr_unsafe(&mut self, expression: &'ast ExprUnsafe) {

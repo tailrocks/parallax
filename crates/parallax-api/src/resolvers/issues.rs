@@ -320,7 +320,7 @@ pub(crate) async fn bundle_metric_windows(
     Ok(windows)
 }
 
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments, reason = "public GraphQL filter contract")]
 pub(crate) async fn issues(
     context: &ApiContext,
     service: Option<String>,

@@ -194,7 +194,7 @@ impl Query {
     /// `query` argument substring-matches title, error type, and fingerprint;
     /// `fromNanos`/`toNanos` window on last-seen; `tagKey`+`tagValue` filter
     /// on the cached tags.
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments, reason = "GraphQL issue filters are the public query contract")]
     async fn issues(context: &ApiContext, service: Option<String>, status: Option<String>, query: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, tag_key: Option<String>, tag_value: Option<String>, sort: Option<IssueSort>, limit: Option<i32>, offset: Option<i32>,) -> FieldResult<IssueList> { resolvers::issues::issues(context, service, status, query, from_nanos, to_nanos, tag_key, tag_value, sort, limit, offset).await }
 
     async fn issue(context: &ApiContext, fingerprint: String) -> FieldResult<Option<Issue>> { resolvers::issues::issue(context, fingerprint).await }
@@ -239,7 +239,7 @@ impl Query {
     async fn evidence_gaps(context: &ApiContext, trace_id: Option<String>, run_id: Option<String>,) -> FieldResult<Vec<EvidenceGap>> { resolvers::fields::evidence_gaps(context, trace_id, run_id).await }
 
     /// Span-attribute overrepresentation in selected vs baseline windows.
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments, reason = "GraphQL field filters are the public query contract")]
     async fn attribute_compare(context: &ApiContext, selected_from_nanos: String, selected_to_nanos: String, baseline_from_nanos: String, baseline_to_nanos: String, service: Option<String>, error_only: Option<bool>, keys: Option<Vec<String>>, top_n: Option<i32>,) -> FieldResult<Vec<AttributeCompareRow>> { resolvers::fields::attribute_compare(context, selected_from_nanos, selected_to_nanos, baseline_from_nanos, baseline_to_nanos, service, error_only, keys, top_n).await }
 
     /// Scalar span/resource attribute keys in a bounded time window.
@@ -251,7 +251,7 @@ impl Query {
     /// Unified log browse (spec §8 `logs`): every filter optional, newest
     /// first. `query` substring-matches the body; trace/run scoping
     /// composes with the other filters.
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments, reason = "GraphQL log filters are the public query contract")]
     async fn logs(context: &ApiContext, trace_id: Option<String>, run_id: Option<String>, service: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, severity_min: Option<i32>, severity_max: Option<i32>, query: Option<String>, limit: Option<i32>,) -> FieldResult<Vec<LogRecord>> { resolvers::logs::logs(context, trace_id, run_id, service, from_nanos, to_nanos, severity_min, severity_max, query, limit).await }
 
     /// Logs surrounding one anchor timestamp, ascending.
@@ -264,7 +264,7 @@ impl Query {
 
     /// Log counts per time bucket under the same filters as `logs` — the
     /// Discover-style histogram above the log table.
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments, reason = "GraphQL log filters are the public query contract")]
     async fn log_count_series(context: &ApiContext, from_nanos: String, to_nanos: String, service: Option<String>, severity_min: Option<i32>, severity_max: Option<i32>, query: Option<String>, step_seconds: Option<i32>,) -> FieldResult<Vec<Point>> { resolvers::logs::log_count_series(context, from_nanos, to_nanos, service, severity_min, severity_max, query, step_seconds).await }
 
     /// One run by id (wrapper-registered or auto-registered external).
@@ -292,12 +292,12 @@ impl Query {
     /// Filtered trace browse (UI Traces page / `parallax traces`): every
     /// filter optional; filters hit the root span except `errorOnly`,
     /// which looks at the whole trace.
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments, reason = "GraphQL trace filters are the public query contract")]
     async fn traces(context: &ApiContext, service: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, min_duration_ms: Option<f64>, max_duration_ms: Option<f64>, error_only: Option<bool>, query: Option<String>, limit: Option<i32>, offset: Option<i32>, sort: Option<TraceSort>,) -> FieldResult<Vec<TraceSummary>> { resolvers::traces::traces(context, service, from_nanos, to_nanos, min_duration_ms, max_duration_ms, error_only, query, limit, offset, sort).await }
 
     /// Filtered, sorted, paged trace browse with total count for redesigned
     /// trace list clients.
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments, reason = "GraphQL trace filters are the public query contract")]
     async fn traces_page(context: &ApiContext, service: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, min_duration_ms: Option<f64>, max_duration_ms: Option<f64>, error_only: Option<bool>, query: Option<String>, limit: Option<i32>, offset: Option<i32>, sort: Option<TraceSort>,) -> FieldResult<TraceList> { resolvers::traces::traces_page(context, service, from_nanos, to_nanos, min_duration_ms, max_duration_ms, error_only, query, limit, offset, sort).await }
 
     /// The bounded, redacted, hypothesis-ranked evidence bundle — the agent
@@ -327,7 +327,7 @@ impl Query {
     /// per value; without it a single series with a null `groupValue`
     /// (spec §8 `metricSeries`). `runId` scopes to points whose resource
     /// carried `parallax.run.id` (run-anchored cross-analytics).
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments, reason = "GraphQL metric filters are the public query contract")]
     async fn metric_series(context: &ApiContext, name: String, from_nanos: String, to_nanos: String, service: Option<String>, run_id: Option<String>, group_by: Option<String>, step_seconds: Option<i32>, agg: Option<String>,) -> FieldResult<Vec<Series>> { resolvers::metrics::metric_series(context, name, from_nanos, to_nanos, service, run_id, group_by, step_seconds, agg).await }
 
     /// Approximate quantile series from a histogram metric (q in 0..=1).

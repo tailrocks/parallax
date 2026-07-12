@@ -148,7 +148,7 @@ pub(crate) async fn runtime_snapshot(
     Ok(rows.into_iter().map(RuntimeMetric).collect())
 }
 
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments, reason = "public GraphQL filter contract")]
 pub(crate) async fn metric_series(
     context: &ApiContext,
     name: String,

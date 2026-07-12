@@ -173,7 +173,7 @@ pub(crate) async fn evidence_gaps(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments, reason = "public GraphQL filter contract")]
 pub(crate) async fn attribute_compare(
     context: &ApiContext,
     selected_from_nanos: String,

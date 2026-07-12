@@ -56,3 +56,31 @@ fn detects_nondeterministic_test_harness_calls() {
         (2, 2, 1, 2, 1)
     );
 }
+
+#[test]
+fn parses_reasoned_direct_and_cfg_attr_suppressions() {
+    let metric = analyze(
+        r#"
+        #![cfg_attr(test, allow(clippy::unwrap_used, reason = "fixture assertion"))]
+        #[expect(clippy::too_many_arguments, reason = "wire contract")]
+        fn direct() {}
+        "#,
+    )
+    .expect("suppression fixture should parse");
+    let expected = [
+        suppressions::Suppression {
+            lint: "clippy::unwrap_used".into(),
+            reason: Some("fixture assertion".into()),
+        },
+        suppressions::Suppression {
+            lint: "clippy::too_many_arguments".into(),
+            reason: Some("wire contract".into()),
+        },
+    ];
+    if metric.suppression_details != expected {
+        panic!(
+            "suppression parsing drifted: {:?}",
+            metric.suppression_details
+        );
+    }
+}

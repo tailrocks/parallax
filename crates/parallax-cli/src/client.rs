@@ -20,7 +20,10 @@ pub(crate) struct NamedContext {
     /// server profiles; accepted in the file now so contexts are forward
     /// compatible.
     #[serde(default)]
-    #[allow(dead_code)]
+    #[expect(
+        dead_code,
+        reason = "token is reserved for the authenticated context contract"
+    )]
     pub token: Option<String>,
 }
 

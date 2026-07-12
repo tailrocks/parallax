@@ -15,12 +15,21 @@ pub(super) struct Ratchet {
     pub generated: Vec<Generated>,
     #[serde(default)]
     pub exceptions: Vec<Exception>,
+    #[serde(default)]
+    pub rust_suppressions: Vec<RustSuppression>,
 }
 
 #[derive(Debug, Deserialize)]
 pub(super) struct Limit {
     pub metric: String,
     pub scope: String,
+    pub ceiling: usize,
+}
+
+#[derive(Debug, Deserialize)]
+pub(super) struct RustSuppression {
+    pub crate_name: String,
+    pub lint: String,
     pub ceiling: usize,
 }
 

@@ -24,7 +24,10 @@ pub(crate) struct AgentSessionArgs {
 }
 
 #[derive(Clone)]
-#[allow(dead_code)] // tool_router is used by #[tool_handler] macro
+#[expect(
+    dead_code,
+    reason = "tool_handler macro reads the generated router field"
+)]
 pub(crate) struct SpikeServer {
     client: GraphqlClient,
     tool_router: ToolRouter<Self>,

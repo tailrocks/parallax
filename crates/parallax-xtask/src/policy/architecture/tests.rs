@@ -10,6 +10,7 @@ fn ratchet() -> Ratchet {
         limits: vec![],
         generated: vec![],
         exceptions: vec![],
+        rust_suppressions: vec![],
     }
 }
 
