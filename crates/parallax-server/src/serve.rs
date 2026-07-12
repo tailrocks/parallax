@@ -510,7 +510,7 @@ mod embedded_ui {
     #[cfg(not(feature = "embed-ui"))]
     pub(super) fn fallback(router: Router) -> Router {
         router.fallback(axum::routing::get(|| async {
-            "Parallax API is running. UI build not found — run `pnpm build` in ui/ \
+            "Parallax API is running. UI build not found — run `bun run build` in ui/ \
              or set [server].ui_dist in config.toml."
         }))
     }

@@ -70,7 +70,8 @@ repo TLS rule without friction.
 
 Environment:
 
-- `parallax serve --config` with `[storage] mode = "none"` (in-memory) on
+- Historical test setup used the since-removed `[storage] mode = "none"`
+  (in-memory) on
   `127.0.0.1:4000` / OTLP HTTP `4318`
 - Seeded via OTLP/HTTP protobuf: two distinct exception spans → two issues;
   one run-registered span with `parallax.run.id` → run-anchored bundle

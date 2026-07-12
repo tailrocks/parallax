@@ -1,7 +1,7 @@
 # Plan 093 behavioral baseline
 
 - **Captured:** 2026-07-12
-- **Clean source commit:** `1812e20ed1dd33080f3c76180a45a37e4c74bc7b`
+- **Clean source commit:** `22434df44a754cf3d7c131e8936bacd7633b2217`
 - **Characterization commit:** `22434df`
 - **Schema:** `parallax.plan-093-baseline/v1`
 
@@ -52,7 +52,8 @@ The forced-Bun lane initially exposed invalid externalization of Zod's
 conditional ESM exports (`z` was undefined in 17 suites). Vitest's documented
 last-resort dependency-inlining control now inlines `zod`; all 41 files and 175
 tests pass. Four jsdom `Window.scrollTo()` not-implemented warnings remain
-explicit Plan 129 characterization work. The risk rows in `baseline.json` map
+explicit Plan 129 characterization work. The production build's >500 kB index
+chunk advisory is owned by Plan 148. The risk rows in `baseline.json` map
 route/search, GraphQL data, cache, SSE, and search owners to current tests and
 named follow-up plans.
 

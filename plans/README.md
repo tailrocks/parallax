@@ -63,7 +63,6 @@ Every plan must preserve these non-negotiable Parallax constraints:
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [093](093-contract-and-baseline-corrections.md) | Reconcile product contracts, remove the storage fallback, and capture behavioral baselines | P1 | L | none | IN PROGRESS |
 | [094](094-ci-and-security-foundation.md) | Repair CI topology, source formatting enforcement, advisory gating, permissions, and security policy | P1 | L | 093 | TODO |
 | [102](102-deterministic-release-pipeline.md) | Unify deterministic preview/stable packaging, symbols, and release verification | P1 | L | 094, 096, 101 | TODO |
 

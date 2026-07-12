@@ -14,7 +14,7 @@ server from `~/.parallax/contexts.toml` — omitted, it targets the local one.
 
 | Command | What it does |
 | --- | --- |
-| `parallax run start -- <cmd…>` | Wrapper mode: inject OTLP/gRPC endpoint/protocol env vars for traces, logs, metrics, and profiles plus `parallax.run.id`, run the command, propagate its exit code. |
+| `parallax run start -- <cmd…>` | Wrapper mode: inject OTLP/gRPC endpoint/protocol env vars for traces, logs, and metrics plus `parallax.run.id`, run the command, propagate its exit code. Profiles ingest is not a V1 signal. |
 | `parallax run start --print-env -- <cmd…>` | Dry-run: print the OTel env that would be injected for the command, then exit without recording a run or spawning the child. |
 | `parallax run start --otlp-forward <url\|rotel\|off> -- <cmd…>` | Compare mode: forward child telemetry to another collector (`rotel` expands to the local fan-out hub, `off` disables, or pass a full OTLP URL). Ambient override: `PARALLAX_OTLP_FORWARD`. |
 | `parallax run start` | Bare mode: print the exports to source into your shell. |
@@ -48,7 +48,7 @@ server from `~/.parallax/contexts.toml` — omitted, it targets the local one.
 | Command | What it does |
 | --- | --- |
 | `parallax doctor` | Diagnose the install: server reachable, engine health, active/rotated spool segments, configured spool caps, and data sizes. |
-| `parallax prune` | Reclaim spool space now by truncating active segments and removing rotated segments (telemetry TTLs are engine-managed). |
+| `parallax prune` | Reclaim spool space now by truncating active segments and removing rotated segments. Telemetry TTL and physical engine reclamation remain Plan 116 work. |
 | `parallax uninstall --purge --yes` | Delete `~/.parallax` (binary stays; remove it with your package manager). |
 
 ## Exit codes

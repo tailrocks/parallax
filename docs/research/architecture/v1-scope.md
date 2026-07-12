@@ -149,7 +149,8 @@ away.
 ### 2.7 Retention (local defaults)
 
 Telemetry TTL 7 days (per-signal configurable), issues and rollups kept until resolved+30d,
-spool bounded; `parallax prune` for immediate reclaim. Disk is the laptop's — defaults stay
+spool bounded; the current `parallax prune` reclaims spool segments only.
+Telemetry TTL/physical reclamation semantics remain Plan 116 work. Disk is the laptop's — defaults stay
 small and visible (`parallax doctor` reports usage).
 
 ### 2.8 Documentation shipped with V1
@@ -163,7 +164,7 @@ encodings).
 
 | Out | Where it lives |
 | --- | --- |
-| Server + cloud profiles, tokens/auth, remote contexts | V2 — build plan M3 ([deployment map](deployment-architecture-map.md) angles B/C) |
+| Server + cloud profiles, tokens/auth, remote contexts | V2 — Plans 109/115; build-plan M3 is historical projection only ([deployment map](deployment-architecture-map.md) angles B/C) |
 | ~~Web UI~~ | **Moved into V1** by statement #7 (§2.5a); only the fix-review screen stays deferred with the fixer rails |
 | MCP adapter | Gated ([agent-access-surface.md](../decisions/agent-access-surface.md)); CLI is the V1 agent path |
 | Sentry envelope ingest | Future adapter ([sentry-ingest.md](../capture/sentry-ingest.md)) |
