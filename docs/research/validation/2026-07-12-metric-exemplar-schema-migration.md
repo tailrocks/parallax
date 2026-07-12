@@ -30,9 +30,12 @@ re-verifies before cleanup.
 ## Environment note
 
 The repository-managed baseline harness downloaded and checksum-verified the
-166 MiB GreptimeDB 1.1.2 Linux ARM64 release, but correctly refused to start
-because ports 24000–24003 were already owned by an earlier Parallax verification
+166 MiB GreptimeDB 1.1.2 Linux ARM64 release, but initially refused to start
+because ports 24000–24003 were owned by an earlier Parallax verification
 engine. The capability spike used that existing isolated GreptimeDB 1.1.2 HTTP
 endpoint with uniquely named `parallax_plan092_probe_*` tables and dropped only
-those probe tables afterward. A dedicated managed-engine migration fixture
-remains required before Plan 092 can retire.
+those probe tables afterward. After retiring the stale verification child, the
+dedicated `m7_metric_exemplar_migration_greptime` managed-engine fixture passed:
+it migrated two legacy rows covering nanosecond timestamps, nested JSON, and
+nullable `run_id`; verified the exact two-column key; reran bootstrap to prove
+idempotency; and confirmed that no replacement or legacy table remained.
