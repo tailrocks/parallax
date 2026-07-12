@@ -69,7 +69,7 @@ Every plan must preserve these non-negotiable Parallax constraints:
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [095](095-quality-control-plane.md) | Add xtask, architecture policy, one ratchet source, facades, and machine-readable diagnostics | P1 | L | 094 | TODO |
+| [095](095-quality-control-plane.md) | Add xtask, architecture policy, one ratchet source, facades, and machine-readable diagnostics | P1 | L | 094 | IN PROGRESS |
 | [127](127-rust-test-architecture.md) | Separate Rust test bodies and enforce public/private test ownership | P1 | L | 095 | TODO |
 | [096](096-rust-toolchain-and-lints.md) | Pin latest stable Rust and activate a strict measured lint/suppression baseline | P1 | L | 095, 127 | TODO |
 | [117](117-documentation-link-integrity.md) | Add a parser-backed required internal Markdown link gate | P2 | S-M | 095 | TODO |
