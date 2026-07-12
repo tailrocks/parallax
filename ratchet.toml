@@ -23,7 +23,7 @@ ceiling = 1
 [[rust_suppressions]]
 crate_name = "parallax-server"
 lint = "missing_debug_implementations"
-ceiling = 3
+ceiling = 2
 
 [[rust_suppressions]]
 crate_name = "parallax-evidence"
@@ -1867,7 +1867,7 @@ ceiling = 9
 [[limits]]
 metric = "rust.public-root-items"
 scope = "crates/parallax-server/facade.toml"
-ceiling = 10
+ceiling = 4
 
 [[limits]]
 metric = "rust.public-root-items"

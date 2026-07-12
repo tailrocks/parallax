@@ -29,7 +29,7 @@ use tracing_subscriber::registry::Registry;
 
 /// A boxed subscriber layer fixed to the root [`Registry`] so the CLI can
 /// attach it first in the subscriber stack (empty when self-telemetry is off).
-pub type BoxLayer = Box<dyn Layer<Registry> + Send + Sync>;
+type BoxLayer = Box<dyn Layer<Registry> + Send + Sync>;
 
 /// What this exporter must never emit: the OTLP ingest receivers + worker (the
 /// self → sink → self loop), and the transport/export crates they ride on.

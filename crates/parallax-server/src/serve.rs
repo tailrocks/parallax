@@ -225,7 +225,7 @@ async fn graphql_handler(
 
 /// Shared state handed to both OTLP transports.
 #[derive(Clone, Debug)]
-pub struct IngestState {
+pub(crate) struct IngestState {
     pub spool: Arc<Spool>,
     pub senders: IngestSenders,
 }

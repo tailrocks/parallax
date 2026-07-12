@@ -221,19 +221,19 @@ async fn main() -> anyhow::Result<()> {
     // before the subscriber is installed, then attach its layers alongside the
     // console `fmt` layer. The serve config loaded here is reused by the arm.
     let mut serve_config: Option<parallax_server::Config> = None;
-    let mut self_telemetry: Option<parallax_server::self_telemetry::Installed> = None;
+    let mut self_telemetry: Option<parallax_server::InstalledSelfTelemetry> = None;
     if let Command::Serve { config } = &cli.command {
         let default_path = std::env::home_dir().map(|h| h.join(".parallax/config.toml"));
         let path = config.clone().or(default_path);
         let cfg = parallax_server::Config::load(path.as_deref())?;
-        if let Some(endpoint) = parallax_server::self_telemetry::resolve_endpoint(&cfg) {
-            self_telemetry = Some(parallax_server::self_telemetry::install(&endpoint)?);
+        if let Some(endpoint) = parallax_server::resolve_self_telemetry_endpoint(&cfg) {
+            self_telemetry = Some(parallax_server::install_self_telemetry(&endpoint)?);
         }
         serve_config = Some(cfg);
     }
 
     let (otel_layers, telemetry_guard, telemetry_endpoint) = match self_telemetry {
-        Some(parallax_server::self_telemetry::Installed {
+        Some(parallax_server::InstalledSelfTelemetry {
             layers,
             guard,
             endpoint,

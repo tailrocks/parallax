@@ -45,7 +45,7 @@ const SEEN_RUNS_CAP: usize = 100_000;
 /// - **Metrics**: decoded request (normalize → extension tables / exemplars)
 ///   plus raw bytes for the native metric-engine forward.
 #[derive(Debug)]
-pub enum IngestItem {
+pub(crate) enum IngestItem {
     Traces(ExportTraceServiceRequest, bytes::Bytes),
     Logs(ExportLogsServiceRequest, bytes::Bytes),
     Metrics(ExportMetricsServiceRequest, bytes::Bytes),
@@ -53,14 +53,14 @@ pub enum IngestItem {
 
 /// Per-signal senders so receivers enqueue without crossing signal FIFOs.
 #[derive(Clone, Debug)]
-pub struct IngestSenders {
+pub(crate) struct IngestSenders {
     pub traces: mpsc::Sender<IngestItem>,
     pub logs: mpsc::Sender<IngestItem>,
     pub metrics: mpsc::Sender<IngestItem>,
 }
 
 impl IngestSenders {
-    pub fn for_signal(&self, signal: Signal) -> &mpsc::Sender<IngestItem> {
+    pub(crate) fn for_signal(&self, signal: Signal) -> &mpsc::Sender<IngestItem> {
         match signal {
             Signal::Traces => &self.traces,
             Signal::Logs => &self.logs,
@@ -70,14 +70,14 @@ impl IngestSenders {
 }
 
 #[derive(Debug)]
-pub struct IngestReceivers {
+pub(crate) struct IngestReceivers {
     pub traces: mpsc::Receiver<IngestItem>,
     pub logs: mpsc::Receiver<IngestItem>,
     pub metrics: mpsc::Receiver<IngestItem>,
 }
 
 /// Build three bounded channels, one per signal (`[limits] ingest_queue_batches`).
-pub fn channels(buffer_per_signal: usize) -> (IngestSenders, IngestReceivers) {
+pub(crate) fn channels(buffer_per_signal: usize) -> (IngestSenders, IngestReceivers) {
     let (traces_tx, traces_rx) = mpsc::channel(buffer_per_signal);
     let (logs_tx, logs_rx) = mpsc::channel(buffer_per_signal);
     let (metrics_tx, metrics_rx) = mpsc::channel(buffer_per_signal);
@@ -96,11 +96,7 @@ pub fn channels(buffer_per_signal: usize) -> (IngestSenders, IngestReceivers) {
 }
 
 #[derive(Clone)]
-#[expect(
-    missing_debug_implementations,
-    reason = "contains an opaque storage trait object"
-)]
-pub struct Worker {
+pub(crate) struct Worker {
     store: Arc<dyn IngestStore>,
     metadata: Arc<dyn MetadataStore>,
     seen_runs: Arc<Mutex<HashSet<String>>>,
@@ -119,7 +115,7 @@ enum FailureStage {
 }
 
 impl Worker {
-    pub fn new(
+    pub(crate) fn new(
         store: Arc<dyn IngestStore>,
         metadata: Arc<dyn MetadataStore>,
         live: crate::live::LiveChannels,
@@ -149,7 +145,7 @@ impl Worker {
         Ok(())
     }
 
-    pub async fn run(self, mut receiver: mpsc::Receiver<IngestItem>) {
+    pub(crate) async fn run(self, mut receiver: mpsc::Receiver<IngestItem>) {
         while let Some(item) = receiver.recv().await {
             let mut attempt = 0;
             loop {

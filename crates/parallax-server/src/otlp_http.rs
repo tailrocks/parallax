@@ -24,7 +24,7 @@ use tower_http::decompression::RequestDecompressionLayer;
 
 /// Build the OTLP/HTTP router with gzip request decompression and an explicit
 /// body-size limit (`[limits] otlp_max_body_bytes`).
-pub fn router(state: IngestState, max_body_bytes: usize) -> Router {
+pub(crate) fn router(state: IngestState, max_body_bytes: usize) -> Router {
     Router::new()
         .route("/v1/traces", post(traces))
         .route("/v1/logs", post(logs))

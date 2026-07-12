@@ -26,30 +26,30 @@ const CHANNEL_CAPACITY: usize = 256;
 /// One ingest batch with rows (for per-subscriber filters) and pre-rendered
 /// SSE JSON (built once by the worker, shared by all subscribers).
 #[derive(Debug)]
-pub struct LiveLogBatch {
+pub(crate) struct LiveLogBatch {
     pub rows: Arc<[LogRow]>,
     pub rendered: Vec<serde_json::Value>,
 }
 
 /// Span tail counterpart of [`LiveLogBatch`].
 #[derive(Debug)]
-pub struct LiveSpanBatch {
+pub(crate) struct LiveSpanBatch {
     pub rows: Arc<[SpanRow]>,
     pub rendered: Vec<serde_json::Value>,
 }
 
-pub type LogSender = tokio::sync::broadcast::Sender<Arc<LiveLogBatch>>;
-pub type SpanSender = tokio::sync::broadcast::Sender<Arc<LiveSpanBatch>>;
+pub(crate) type LogSender = tokio::sync::broadcast::Sender<Arc<LiveLogBatch>>;
+pub(crate) type SpanSender = tokio::sync::broadcast::Sender<Arc<LiveSpanBatch>>;
 
 /// Both live fan-out channels, cloned into the worker and the routes.
 #[derive(Clone, Debug)]
-pub struct LiveChannels {
+pub(crate) struct LiveChannels {
     pub logs: LogSender,
     pub spans: SpanSender,
 }
 
 #[must_use]
-pub fn channels() -> LiveChannels {
+pub(crate) fn channels() -> LiveChannels {
     LiveChannels {
         logs: tokio::sync::broadcast::channel(CHANNEL_CAPACITY).0,
         spans: tokio::sync::broadcast::channel(CHANNEL_CAPACITY).0,
@@ -57,21 +57,21 @@ pub fn channels() -> LiveChannels {
 }
 
 /// Build a pre-serialized log batch for broadcast (worker send path).
-pub fn log_batch(logs: Vec<LogRow>) -> Arc<LiveLogBatch> {
+pub(crate) fn log_batch(logs: Vec<LogRow>) -> Arc<LiveLogBatch> {
     let rows: Arc<[LogRow]> = logs.into();
     let rendered = rows.iter().map(log_event).collect();
     Arc::new(LiveLogBatch { rows, rendered })
 }
 
 /// Build a pre-serialized span batch for broadcast (worker send path).
-pub fn span_batch(spans: Vec<SpanRow>) -> Arc<LiveSpanBatch> {
+pub(crate) fn span_batch(spans: Vec<SpanRow>) -> Arc<LiveSpanBatch> {
     let rows: Arc<[SpanRow]> = spans.into();
     let rendered = rows.iter().map(span_event).collect();
     Arc::new(LiveSpanBatch { rows, rendered })
 }
 
 #[derive(Debug, serde::Deserialize)]
-pub struct StreamFilter {
+pub(crate) struct StreamFilter {
     pub service: Option<String>,
     pub severity_min: Option<i32>,
     pub q: Option<String>,
@@ -110,7 +110,7 @@ fn log_event(log: &LogRow) -> serde_json::Value {
     })
 }
 
-pub async fn stream_logs(
+pub(crate) async fn stream_logs(
     State(channels): State<LiveChannels>,
     Query(filter): Query<StreamFilter>,
 ) -> Sse<impl Stream<Item = Result<Event, axum::Error>>> {
@@ -143,7 +143,7 @@ mod tests;
 /// Span tail filters — per-row predicates, mirroring the `traces` GraphQL
 /// vocabulary where it applies to a single finished span.
 #[derive(Debug, serde::Deserialize)]
-pub struct SpanStreamFilter {
+pub(crate) struct SpanStreamFilter {
     pub service: Option<String>,
     /// Only spans at least this long (the live "show me slow ones" knob).
     pub min_duration_ms: Option<f64>,
@@ -186,7 +186,7 @@ fn span_event(span: &SpanRow) -> serde_json::Value {
     })
 }
 
-pub async fn stream_traces(
+pub(crate) async fn stream_traces(
     State(channels): State<LiveChannels>,
     Query(filter): Query<SpanStreamFilter>,
 ) -> Sse<impl Stream<Item = Result<Event, axum::Error>>> {

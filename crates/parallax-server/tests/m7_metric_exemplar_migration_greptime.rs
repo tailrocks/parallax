@@ -7,7 +7,7 @@
 #![allow(clippy::panic, reason = "test helpers fail fast with engine context")]
 
 use parallax_greptime::GreptimeStore;
-use parallax_server::greptime_supervisor::{GreptimeSupervisor, ensure_binary};
+use parallax_server::{GreptimeSupervisor, ensure_greptime_binary};
 use parallax_storage::adapter::{IngestStore, MetricAnalyticsStore};
 use parallax_storage::model::MetricExemplarRow;
 
@@ -66,7 +66,7 @@ async fn migrates_legacy_metric_exemplars_without_mutation() {
             std::fs::copy(cached, bin_dir.join("greptime")).expect("seed cached GreptimeDB");
         }
     }
-    let binary = ensure_binary(&bin_dir, "1.1.2", true)
+    let binary = ensure_greptime_binary(&bin_dir, "1.1.2", true)
         .await
         .expect("resolve GreptimeDB");
     let engine = GreptimeSupervisor::start(binary, tmp.path())

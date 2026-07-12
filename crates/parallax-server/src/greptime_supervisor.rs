@@ -17,10 +17,10 @@ use std::process::Stdio;
 use std::time::Duration;
 use tokio::process::Command;
 
-pub const GREPTIME_HTTP_PORT: u16 = 24000;
-pub const GREPTIME_GRPC_PORT: u16 = 24001;
-pub const GREPTIME_MYSQL_PORT: u16 = 24002;
-pub const GREPTIME_POSTGRES_PORT: u16 = 24003;
+pub(crate) const GREPTIME_HTTP_PORT: u16 = 24000;
+pub(crate) const GREPTIME_GRPC_PORT: u16 = 24001;
+pub(crate) const GREPTIME_MYSQL_PORT: u16 = 24002;
+pub(crate) const GREPTIME_POSTGRES_PORT: u16 = 24003;
 
 #[derive(Debug)]
 pub struct GreptimeSupervisor {
@@ -95,7 +95,7 @@ async fn resolve_version(version: &str) -> anyhow::Result<String> {
 }
 
 /// Parse `greptime --version` into a bare semver string (no leading `v`).
-pub fn parse_greptime_version_output(output: &str) -> Option<String> {
+pub(crate) fn parse_greptime_version_output(output: &str) -> Option<String> {
     for line in output.lines() {
         let line = line.trim();
         if let Some(rest) = line.strip_prefix("version:") {

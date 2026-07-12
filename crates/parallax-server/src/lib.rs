@@ -5,8 +5,26 @@
 //! API, and (from M1) the workers and engine supervision. The installed
 //! `parallax` binary (crate `parallax-cli`) embeds this library for the
 //! `serve` subcommand.
+//!
+//! Supported lifecycle paths are available from the crate root:
+//!
+//! ```
+//! use parallax_server::{Config, ServerHandle, start};
+//! # let _ = (Config::default(), start);
+//! # fn accepts(_: Option<ServerHandle>) {}
+//! ```
+//!
+//! Implementation modules are intentionally private:
+//!
+//! ```compile_fail
+//! use parallax_server::worker::Worker;
+//! ```
+//!
+//! ```compile_fail
+//! use parallax_server::self_telemetry::Installed;
+//! ```
 
-pub mod config;
+mod config;
 mod engine_io;
 #[expect(
     clippy::cast_possible_truncation,
@@ -18,15 +36,22 @@ mod engine_io;
     clippy::too_many_lines,
     reason = "engine lifecycle"
 )]
-pub mod greptime_supervisor;
-pub mod live;
-pub mod otlp_grpc;
-pub mod otlp_http;
+mod greptime_supervisor;
+mod live;
+mod otlp_grpc;
+mod otlp_http;
 mod outcomes;
-pub mod self_telemetry;
+mod self_telemetry;
 #[expect(clippy::too_many_lines, reason = "server assembly")]
-pub mod serve;
-pub mod worker;
+mod serve;
+mod worker;
 
-pub use config::Config;
-pub use serve::{ServerHandle, start};
+pub use config::{
+    Config, LimitsConfig, RetentionConfig, ServerConfig, StorageConfig, TelemetryConfig,
+};
+pub use greptime_supervisor::{GreptimeSupervisor, ensure_binary as ensure_greptime_binary};
+pub use self_telemetry::{
+    Installed as InstalledSelfTelemetry, SelfTelemetry, install as install_self_telemetry,
+    resolve_endpoint as resolve_self_telemetry_endpoint,
+};
+pub use serve::{ServerHandle, start, start_with_capabilities};

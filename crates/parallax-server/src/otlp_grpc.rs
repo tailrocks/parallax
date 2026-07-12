@@ -20,14 +20,14 @@ use tonic::codec::CompressionEncoding;
 use tonic::{Request, Response, Status};
 
 #[derive(Clone, Debug)]
-pub struct OtlpGrpc {
+pub(crate) struct OtlpGrpc {
     state: IngestState,
     max_decoding_message_size: usize,
 }
 
 impl OtlpGrpc {
     #[must_use]
-    pub fn new(state: IngestState, max_decoding_message_size: usize) -> Self {
+    pub(crate) fn new(state: IngestState, max_decoding_message_size: usize) -> Self {
         Self {
             state,
             max_decoding_message_size,
@@ -35,7 +35,7 @@ impl OtlpGrpc {
     }
 
     #[must_use]
-    pub fn trace_service(&self) -> TraceServiceServer<Self> {
+    pub(crate) fn trace_service(&self) -> TraceServiceServer<Self> {
         TraceServiceServer::new(self.clone())
             .accept_compressed(CompressionEncoding::Gzip)
             .send_compressed(CompressionEncoding::Gzip)
@@ -43,7 +43,7 @@ impl OtlpGrpc {
     }
 
     #[must_use]
-    pub fn logs_service(&self) -> LogsServiceServer<Self> {
+    pub(crate) fn logs_service(&self) -> LogsServiceServer<Self> {
         LogsServiceServer::new(self.clone())
             .accept_compressed(CompressionEncoding::Gzip)
             .send_compressed(CompressionEncoding::Gzip)
@@ -51,7 +51,7 @@ impl OtlpGrpc {
     }
 
     #[must_use]
-    pub fn metrics_service(&self) -> MetricsServiceServer<Self> {
+    pub(crate) fn metrics_service(&self) -> MetricsServiceServer<Self> {
         MetricsServiceServer::new(self.clone())
             .accept_compressed(CompressionEncoding::Gzip)
             .send_compressed(CompressionEncoding::Gzip)

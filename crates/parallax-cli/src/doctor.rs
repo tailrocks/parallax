@@ -11,7 +11,7 @@
 
 use std::path::{Path, PathBuf};
 
-use parallax_server::config::Config;
+use parallax_server::Config;
 
 const SPOOL_SIGNALS: [(&str, &str); 3] = [
     ("traces", "traces.pspl"),
