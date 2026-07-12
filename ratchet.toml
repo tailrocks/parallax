@@ -1,0 +1,51 @@
+schema_version = 1
+
+[architecture]
+
+[[architecture.packages]]
+name = "parallax-proto"
+class = "product"
+tier = 0
+
+[[architecture.packages]]
+name = "parallax-storage"
+class = "product"
+tier = 1
+
+[[architecture.packages]]
+name = "parallax-core"
+class = "product"
+tier = 1
+
+[[architecture.packages]]
+name = "parallax-api"
+class = "product"
+tier = 3
+
+[[architecture.packages]]
+name = "parallax-server"
+class = "product"
+tier = 4
+
+[[architecture.packages]]
+name = "parallax-cli"
+class = "product"
+tier = 5
+
+[[architecture.packages]]
+name = "parallax-mcp-spike"
+class = "proof"
+
+[[architecture.packages]]
+name = "parallax-xtask"
+class = "aux"
+
+[[exceptions]]
+rule = "arch.dependency.direction"
+scope = "parallax-core -> parallax-storage (normal)"
+evidence = "The migration-shell core currently imports storage contracts."
+owner = "Tailrocks"
+created = "2026-07-12"
+expires = "2026-12-31"
+removal_condition = "Plan 097 removes the core/storage inversion."
+replacement = "Move contracts to the lower model/port owners."

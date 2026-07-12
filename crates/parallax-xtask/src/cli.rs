@@ -33,6 +33,13 @@ pub enum Command {
     Ui,
     /// Run the distinct Rust doctest integration partition.
     Integration,
+    /// Enforce all required repository policies or one named rule family.
+    Policy {
+        #[arg(long)]
+        only: Option<String>,
+    },
+    /// Enforce the staged Cargo workspace architecture graph.
+    Arch,
 }
 
 #[cfg(test)]
@@ -50,6 +57,9 @@ mod tests {
             vec!["xtask", "test"],
             vec!["xtask", "ui"],
             vec!["xtask", "integration"],
+            vec!["xtask", "policy"],
+            vec!["xtask", "policy", "--only", "architecture"],
+            vec!["xtask", "arch"],
         ] {
             Cli::try_parse_from(args).expect("documented command should parse");
         }

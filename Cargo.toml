@@ -50,6 +50,7 @@ urlencoding = "2"
 futures-core = "0.3"
 futures-util = "0.3"
 toml = "1"
+time = { version = "0.3.48", features = ["parsing", "macros"] }
 tonic = { version = "0.14", features = ["gzip"] }
 turso = "0.6"
 tower = "0.5"

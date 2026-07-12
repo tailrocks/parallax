@@ -3,6 +3,7 @@ use std::{path::Path, process::Command as Process};
 use anyhow::{Context, Result, bail};
 
 use crate::cli::{Cli, Command};
+use crate::policy;
 
 pub fn execute(cli: Cli) -> Result<()> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
@@ -22,6 +23,8 @@ pub fn execute(cli: Cli) -> Result<()> {
         Command::Test => test(&root),
         Command::Ui => ui(&root),
         Command::Integration => integration(&root),
+        Command::Policy { only } => policy::run(&root, only.as_deref(), cli.output),
+        Command::Arch => policy::run(&root, Some("architecture"), cli.output),
     }
 }
 
