@@ -1,0 +1,15 @@
+schema_version = 1
+
+[roots]
+"lib.rs" = [
+    "mod agent_session",
+    "mod bundle",
+    "mod derive",
+    "mod fingerprint",
+    "mod gaps",
+    "mod normalize",
+    "mod semconv",
+    "mod span_events",
+    "mod story",
+    "mod trace_analysis",
+]

@@ -2,7 +2,8 @@ use std::{path::Path, process::Command as Process};
 
 use anyhow::{Context, Result, bail};
 
-use crate::cli::{Cli, Command};
+use crate::cli::{Cli, Command, FacadeAction};
+use crate::facade;
 use crate::policy;
 
 pub fn execute(cli: Cli) -> Result<()> {
@@ -26,6 +27,10 @@ pub fn execute(cli: Cli) -> Result<()> {
         Command::Policy { only } => policy::run(&root, only.as_deref(), cli.output),
         Command::Arch => policy::run(&root, Some("architecture"), cli.output),
         Command::Health => policy::health(&root, cli.output),
+        Command::Facade { action } => match action {
+            FacadeAction::Refresh => facade::refresh(&root),
+            FacadeAction::Check => facade::check(&root),
+        },
     }
 }
 

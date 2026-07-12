@@ -42,6 +42,17 @@ pub enum Command {
     Arch,
     /// Report noisy structural metrics without failing policy.
     Health,
+    /// Refresh or verify syntax-derived crate facade manifests.
+    Facade {
+        #[command(subcommand)]
+        action: FacadeAction,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum FacadeAction {
+    Refresh,
+    Check,
 }
 
 #[cfg(test)]
@@ -63,6 +74,8 @@ mod tests {
             vec!["xtask", "policy", "--only", "architecture"],
             vec!["xtask", "arch"],
             vec!["xtask", "health"],
+            vec!["xtask", "facade", "refresh"],
+            vec!["xtask", "facade", "check"],
         ] {
             Cli::try_parse_from(args).expect("documented command should parse");
         }

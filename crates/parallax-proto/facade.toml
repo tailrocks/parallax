@@ -1,0 +1,14 @@
+schema_version = 1
+
+[roots]
+"lib.rs" = [
+    "mod semconv",
+    "use opentelemetry_proto::tonic::collector::logs::v1 as collector_logs",
+    "use opentelemetry_proto::tonic::collector::metrics::v1 as collector_metrics",
+    "use opentelemetry_proto::tonic::collector::trace::v1 as collector_trace",
+    "use opentelemetry_proto::tonic::common::v1 as common",
+    "use opentelemetry_proto::tonic::logs::v1 as logs",
+    "use opentelemetry_proto::tonic::metrics::v1 as metrics",
+    "use opentelemetry_proto::tonic::resource::v1 as resource",
+    "use opentelemetry_proto::tonic::trace::v1 as trace",
+]

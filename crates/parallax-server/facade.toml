@@ -1,0 +1,15 @@
+schema_version = 1
+
+[roots]
+"lib.rs" = [
+    "mod config",
+    "mod greptime_supervisor",
+    "mod live",
+    "mod otlp_grpc",
+    "mod otlp_http",
+    "mod self_telemetry",
+    "mod serve",
+    "mod worker",
+    "use config::Config",
+    "use serve::{ServerHandle, start}",
+]

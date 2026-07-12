@@ -3216,6 +3216,7 @@ dependencies = [
  "oxc_semantic",
  "oxc_span",
  "proc-macro2",
+ "quote",
  "ra-ap-rustc_lexer",
  "serde",
  "serde_json",

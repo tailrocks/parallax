@@ -1,0 +1,11 @@
+schema_version = 1
+
+[roots]
+"lib.rs" = [
+    "struct ApiContext",
+    "struct Mutation",
+    "struct Query",
+    "struct RequestMemo",
+    "use query_limits::check_query_limits",
+    "use schema::{Schema, build_schema, execute}",
+]

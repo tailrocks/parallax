@@ -1,0 +1,8 @@
+schema_version = 1
+
+[roots]
+"lib.rs" = [
+    "fn run",
+    "mod diagnostic",
+]
+"main.rs" = []
