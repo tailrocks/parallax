@@ -2,6 +2,7 @@ schema_version = 1
 
 [roots]
 "lib.rs" = [
+    "mod builders",
     "mod conformance",
     "use memory::MemoryStore",
 ]
