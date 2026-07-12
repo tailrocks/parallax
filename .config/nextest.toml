@@ -1,0 +1,49 @@
+[store]
+dir = "target/nextest"
+
+[test-groups]
+greptime-engine = { max-threads = 1 }
+
+[profile.default]
+retries = 0
+flaky-result = "fail"
+fail-fast = true
+slow-timeout = { period = "60s", terminate-after = 1, on-timeout = "fail" }
+global-timeout = "20m"
+status-level = "pass"
+final-status-level = "flaky"
+
+[profile.local]
+retries = 0
+flaky-result = "fail"
+
+[profile.ci]
+retries = { backoff = "fixed", count = 2, delay = "1s" }
+flaky-result = "fail"
+fail-fast = false
+global-timeout = "20m"
+slow-timeout = { period = "60s", terminate-after = 1, on-timeout = "fail" }
+
+[profile.ci.junit]
+path = "junit.xml"
+report-name = "parallax-nextest-ci"
+store-success-output = false
+store-failure-output = true
+
+[profile.real-engine]
+retries = 0
+flaky-result = "fail"
+fail-fast = false
+global-timeout = "45m"
+slow-timeout = { period = "10m", terminate-after = 1, on-timeout = "fail" }
+
+[profile.real-engine.junit]
+path = "junit.xml"
+report-name = "parallax-nextest-real-engine"
+store-success-output = false
+store-failure-output = true
+
+[[profile.default.overrides]]
+filter = 'test(managed_engine_roundtrip) | test(only_extension_tables_are_custom) | test(managed_engine_metrics_roundtrip) | test(greptime_conformance_scenarios) | test(migrates_legacy_metric_exemplars_without_mutation) | test(measure_m5_gates)'
+test-group = "greptime-engine"
+slow-timeout = { period = "15m", terminate-after = 1, on-timeout = "fail" }

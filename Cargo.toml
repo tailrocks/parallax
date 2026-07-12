@@ -74,7 +74,6 @@ toml = "1"
 time = { version = "0.3.48", features = ["parsing", "macros"] }
 tonic = { version = "0.14", features = ["gzip"] }
 turso = "0.6"
-tower = "0.5"
 tower-http = { version = "0.7", features = ["fs", "decompression-gzip"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }

@@ -3082,9 +3082,6 @@ dependencies = [
 name = "parallax-api"
 version = "0.1.0-dev"
 dependencies = [
- "anyhow",
- "async-trait",
- "bytes",
  "juniper",
  "parallax-core",
  "parallax-storage",
@@ -3137,7 +3134,6 @@ dependencies = [
  "serde_json",
  "sha2",
  "tokio",
- "tracing",
  "tracing-subscriber",
 ]
 
@@ -3207,7 +3203,6 @@ dependencies = [
  "parallax-model",
  "parallax-proto",
  "reqwest",
- "serde",
  "serde_json",
  "tempfile",
  "tokio",

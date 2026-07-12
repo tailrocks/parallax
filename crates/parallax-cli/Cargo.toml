@@ -8,9 +8,13 @@ rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
+publish = false
 
 [lints]
 workspace = true
+
+[package.metadata.cargo-shear]
+ignored-paths = ["src/commands/tests.rs"]
 
 [[bin]]
 name = "parallax"

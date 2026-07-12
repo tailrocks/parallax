@@ -3,6 +3,10 @@
   "private": true,
   "type": "module",
   "packageManager": "bun@1.3.14",
+  "trustedDependencies": [],
+  "overrides": {
+    "undici": "7.28.0"
+  },
   "scripts": {
     "dev": "bunx --bun --no-install vite dev --port 3000",
     "build": "bunx --bun --no-install vite build",

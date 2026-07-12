@@ -7,13 +7,13 @@ rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
+publish = false
 
 [lints]
 workspace = true
 
 [dependencies]
 tokio = { workspace = true }
-anyhow = { workspace = true }
 juniper = { workspace = true, features = ["schema-language"] }
 parallax-core = { workspace = true }
 parallax-storage = { workspace = true }
@@ -21,6 +21,4 @@ serde_json = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
-async-trait = { workspace = true }
-bytes = { workspace = true }
 parallax-test-support = { workspace = true }
