@@ -7,13 +7,15 @@ use anyhow::{Context, Result};
 use proc_macro2::Span;
 use rustc_lexer::{FrontmatterAllowed, TokenKind};
 use syn::{
-    BinOp, ExprBinary, ExprForLoop, ExprIf, ExprLoop, ExprMatch, ExprUnsafe, ExprWhile, ItemMod,
-    Macro, Meta, spanned::Spanned, visit::Visit,
+    BinOp, ExprBinary, ExprCall, ExprForLoop, ExprIf, ExprLoop, ExprMatch, ExprUnsafe, ExprWhile,
+    ItemMod, Macro, Meta, spanned::Spanned, visit::Visit,
 };
 
 use crate::diagnostic::Finding;
 
 use super::config::Ratchet;
+
+mod determinism;
 
 #[derive(Debug, Eq, PartialEq)]
 struct FunctionMetric {
@@ -31,6 +33,7 @@ struct FileMetric {
     suppressions: usize,
     assertions: usize,
     inline_test_modules: usize,
+    determinism: determinism::Metrics,
 }
 
 pub fn health(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
@@ -68,7 +71,7 @@ pub fn health(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
                 "cargo xtask health",
             ));
         }
-        for function in metric.functions {
+        for function in &metric.functions {
             if function.lines > ratchet.budgets.rust.function_lines {
                 findings.push(Finding::warning(
                     "health.rust.function-lines",
@@ -118,6 +121,9 @@ pub fn health(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
                 ));
             }
         }
+        if is_test {
+            findings.extend(determinism::findings(&relative, &metric.determinism));
+        }
     }
     Ok(findings)
 }
@@ -149,6 +155,7 @@ fn analyze(source: &str) -> Result<FileMetric> {
         suppressions: presence.suppressions,
         assertions: presence.assertions,
         inline_test_modules: presence.inline_test_modules,
+        determinism: presence.determinism,
     })
 }
 
@@ -291,6 +298,7 @@ struct PresenceVisitor {
     suppressions: usize,
     assertions: usize,
     inline_test_modules: usize,
+    determinism: determinism::Metrics,
 }
 
 impl<'ast> Visit<'ast> for PresenceVisitor {
@@ -331,6 +339,10 @@ impl<'ast> Visit<'ast> for PresenceVisitor {
             self.inline_test_modules += 1;
         }
         syn::visit::visit_item_mod(self, module);
+    }
+    fn visit_expr_call(&mut self, call: &'ast ExprCall) {
+        self.determinism.visit_call(call);
+        syn::visit::visit_expr_call(self, call);
     }
 }
 

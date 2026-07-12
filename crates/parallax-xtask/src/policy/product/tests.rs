@@ -1,5 +1,4 @@
 use super::*;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 #[test]
 fn ast_visitors_detect_clone_memory_and_ingest_logging() {
@@ -20,11 +19,8 @@ fn ast_visitors_detect_clone_memory_and_ingest_logging() {
 
 #[test]
 fn bun_policy_has_positive_and_negative_fixtures() {
-    let id = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock")
-        .as_nanos();
-    let root = std::env::temp_dir().join(format!("parallax-bun-policy-{id}"));
+    let directory = tempfile::tempdir().expect("temporary directory");
+    let root = directory.path();
     fs::create_dir_all(root.join("ui")).expect("fixture directory");
     fs::write(
         root.join("ui/package.json"),
@@ -37,14 +33,13 @@ fn bun_policy_has_positive_and_negative_fixtures() {
     )
     .expect("bunfig fixture");
     let mut findings = Vec::new();
-    check_bun(&root, &mut findings).expect("positive fixture check");
+    check_bun(root, &mut findings).expect("positive fixture check");
     assert!(findings.is_empty());
     fs::write(root.join("ui/package-lock.json"), "{}").expect("negative fixture");
-    check_bun(&root, &mut findings).expect("negative fixture check");
+    check_bun(root, &mut findings).expect("negative fixture check");
     assert!(
         findings
             .iter()
             .any(|finding| finding.rule_id == "product.bun")
     );
-    fs::remove_dir_all(root).expect("fixture cleanup");
 }

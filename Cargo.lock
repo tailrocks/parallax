@@ -3197,6 +3197,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "tempfile",
  "tokio",
  "tracing",
  "turso",
@@ -3221,6 +3222,7 @@ dependencies = [
  "serde",
  "serde_json",
  "syn",
+ "tempfile",
  "time",
  "toml",
 ]

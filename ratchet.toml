@@ -1820,7 +1820,97 @@ ceiling = 5
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-xtask/src/policy/rust/tests.rs"
-ceiling = 8
+ceiling = 9
+
+[[limits]]
+metric = "rust.test-sleeps"
+scope = "crates/parallax-server/tests/m1_greptime.rs"
+ceiling = 2
+
+[[limits]]
+metric = "rust.test-sleeps"
+scope = "crates/parallax-server/tests/m1_pipeline.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.test-sleeps"
+scope = "crates/parallax-server/tests/m1_table_inventory_greptime.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.test-sleeps"
+scope = "crates/parallax-server/tests/m2_api.rs"
+ceiling = 2
+
+[[limits]]
+metric = "rust.test-sleeps"
+scope = "crates/parallax-server/tests/m2_bundle.rs"
+ceiling = 2
+
+[[limits]]
+metric = "rust.test-sleeps"
+scope = "crates/parallax-server/tests/m2_metrics_dashboards.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.test-sleeps"
+scope = "crates/parallax-server/tests/m2_metrics_greptime.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.test-sleeps"
+scope = "crates/parallax-server/tests/m3_scenarios.rs"
+ceiling = 4
+
+[[limits]]
+metric = "rust.test-sleeps"
+scope = "crates/parallax-server/tests/m5_gates.rs"
+ceiling = 2
+
+[[limits]]
+metric = "rust.test-sleeps"
+scope = "crates/parallax-server/tests/m6_conformance_greptime.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.test-temp-root-accesses"
+scope = "crates/parallax-cli/src/doctor/tests.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.test-temp-root-accesses"
+scope = "crates/parallax-storage/src/spool/tests.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.test-wall-clocks"
+scope = "crates/parallax-api/src/resolvers/traces/tests.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.test-wall-clocks"
+scope = "crates/parallax-cli/src/doctor/tests.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.test-wall-clocks"
+scope = "crates/parallax-server/tests/m2_metrics_dashboards.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.test-wall-clocks"
+scope = "crates/parallax-server/tests/m2_metrics_greptime.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.test-wall-clocks"
+scope = "crates/parallax-server/tests/m5_gates.rs"
+ceiling = 4
+
+[[limits]]
+metric = "rust.test-wall-clocks"
+scope = "crates/parallax-storage/src/spool/tests.rs"
+ceiling = 1
 
 [[limits]]
 metric = "rust.assertions"

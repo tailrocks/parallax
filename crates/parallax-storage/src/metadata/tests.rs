@@ -1,15 +1,8 @@
 use super::*;
-use std::sync::atomic::{AtomicU64, Ordering};
-
-static TEST_DB_SEQ: AtomicU64 = AtomicU64::new(0);
-
-fn temp_db() -> std::path::PathBuf {
-    let nanos = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_nanos())
-        .unwrap_or(0);
-    let seq = TEST_DB_SEQ.fetch_add(1, Ordering::Relaxed);
-    std::env::temp_dir().join(format!("parallax-meta-test-{nanos}-{seq}.db"))
+fn temp_db() -> (tempfile::TempDir, std::path::PathBuf) {
+    let directory = tempfile::tempdir().expect("temporary directory");
+    let path = directory.path().join("metadata.db");
+    (directory, path)
 }
 
 fn occurrence<'a>(
@@ -32,7 +25,8 @@ fn occurrence<'a>(
 
 #[tokio::test]
 async fn batch_upsert_merges_shared_fingerprint_tags_once() {
-    let store = MetadataStore::open(temp_db()).await.expect("open");
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(path).await.expect("open");
     let shared_a = serde_json::json!({"http.route": "/checkout", "region": "us"});
     let shared_b = serde_json::json!({"http.route": "/checkout", "region": "eu"});
     let other = serde_json::json!({"http.route": "/cart"});
@@ -79,7 +73,8 @@ async fn batch_upsert_merges_shared_fingerprint_tags_once() {
 
 #[tokio::test]
 async fn tags_accumulate_bounded() {
-    let store = MetadataStore::open(temp_db()).await.expect("open");
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(path).await.expect("open");
     let attrs = serde_json::json!({
         "http.route": "/checkout",
         "exception.message": "ignored",
@@ -102,7 +97,8 @@ async fn tags_accumulate_bounded() {
 
 #[tokio::test]
 async fn first_seen_lowers_on_out_of_order_occurrence() {
-    let store = MetadataStore::open(temp_db()).await.expect("open");
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(path).await.expect("open");
     let attrs = serde_json::json!({});
     // Later-timestamped occurrence first.
     store
@@ -136,7 +132,8 @@ async fn first_seen_lowers_on_out_of_order_occurrence() {
 
 #[tokio::test]
 async fn filtered_issues_page_and_total() {
-    let store = MetadataStore::open(temp_db()).await.expect("open");
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(path).await.expect("open");
     let attrs = serde_json::json!({"env": "dev"});
     for i in 0..5u128 {
         let fingerprint = format!("fp{i}");
@@ -201,7 +198,8 @@ async fn filtered_issues_page_and_total() {
 
 #[tokio::test]
 async fn saved_views_round_trip_update_filter_and_delete() {
-    let store = MetadataStore::open(temp_db()).await.expect("open");
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(path).await.expect("open");
     store
         .saved_view_save("logs-errors", "Errors", "/logs", "?sev=17", 1_000_000)
         .await
@@ -243,7 +241,8 @@ async fn saved_views_round_trip_update_filter_and_delete() {
 
 #[tokio::test]
 async fn investigations_round_trip_update_list_and_delete() {
-    let store = MetadataStore::open(temp_db()).await.expect("open");
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(path).await.expect("open");
     store
         .investigation_save(
             "case-a",
@@ -302,7 +301,8 @@ async fn investigations_round_trip_update_list_and_delete() {
 /// the reading statement first.
 #[tokio::test]
 async fn update_with_open_statement_is_lost() {
-    let store = MetadataStore::open(temp_db()).await.expect("open");
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(path).await.expect("open");
     let conn = store.conn.lock().await;
     conn.execute(
         "INSERT INTO dashboards (id, name, layout, created_at, updated_at)
@@ -336,7 +336,8 @@ async fn update_with_open_statement_is_lost() {
 }
 #[tokio::test]
 async fn external_runs_register_once() {
-    let store = MetadataStore::open(temp_db()).await.expect("open");
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(path).await.expect("open");
     store
         .ensure_run("jk-run-1", 5_000_000_000)
         .await

@@ -29,3 +29,30 @@ fn distinguishes_inline_bodies_from_external_markers_and_macros() {
             .expect("macro fixture should parse");
     assert_eq!(generated.inline_test_modules, 0);
 }
+
+#[test]
+fn detects_nondeterministic_test_harness_calls() {
+    let metric = analyze(
+        r#"fn harness() {
+            std::env::set_var("K", "V");
+            std::env::remove_var("K");
+            std::thread::sleep(duration);
+            tokio::time::sleep(duration);
+            std::net::TcpListener::bind("127.0.0.1:4317");
+            std::time::SystemTime::now();
+            Instant::now();
+            std::env::temp_dir();
+        }"#,
+    )
+    .expect("determinism fixture should parse");
+    assert_eq!(
+        (
+            metric.determinism.environment_mutations,
+            metric.determinism.sleeps,
+            metric.determinism.listener_binds,
+            metric.determinism.wall_clocks,
+            metric.determinism.temp_root_accesses,
+        ),
+        (2, 2, 1, 2, 1)
+    );
+}

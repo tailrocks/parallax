@@ -1,16 +1,10 @@
-use std::{
-    fs,
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::fs;
 
 use super::*;
 
-fn fixture() -> PathBuf {
-    let id = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock should be after epoch")
-        .as_nanos();
-    let root = std::env::temp_dir().join(format!("parallax-oxc-{id}"));
+fn fixture() -> tempfile::TempDir {
+    let directory = tempfile::tempdir().expect("temporary directory");
+    let root = directory.path();
     fs::create_dir_all(root.join("src/lib")).expect("fixture directories should be created");
     fs::write(
         root.join("tsconfig.json"),
@@ -19,12 +13,13 @@ fn fixture() -> PathBuf {
     .expect("tsconfig should be written");
     fs::write(root.join("src/lib/value.ts"), "export const value = 1")
         .expect("module should be written");
-    root
+    directory
 }
 
 #[test]
 fn parses_tsx_alias_type_reexport_and_dynamic_import() {
-    let root = fixture();
+    let directory = fixture();
+    let root = directory.path();
     let path = root.join("src/index.tsx");
     let source = "'use client'\nimport type { T } from './types'\nexport { value } from '@/lib/value'\nconst C = () => <div />\nvoid import('./lazy')";
     fs::write(root.join("src/types.ts"), "export type T = string")
@@ -39,12 +34,12 @@ fn parses_tsx_alias_type_reexport_and_dynamic_import() {
     assert_eq!(analysis.metrics.jsx_elements, 1);
     assert_eq!(analysis.metrics.directives, 1);
     assert_eq!(analysis.metrics.exports, 1);
-    fs::remove_dir_all(root).expect("fixture should be removed");
 }
 
 #[test]
 fn fails_closed_on_parse_resolution_and_nonliteral_dynamic_import() {
-    let root = fixture();
+    let directory = fixture();
+    let root = directory.path();
     let provider = TypeScriptProvider::new(&root.join("tsconfig.json"));
     let parse = provider.analyze(&root.join("src/bad.ts"), "const =");
     assert!(
@@ -69,12 +64,12 @@ fn fails_closed_on_parse_resolution_and_nonliteral_dynamic_import() {
             .iter()
             .any(|finding| finding.rule_id == "typescript.dynamic-import")
     );
-    fs::remove_dir_all(root).expect("fixture should be removed");
 }
 
 #[test]
 fn resolves_extension_index_and_package_exports_for_js_and_jsx() {
-    let root = fixture();
+    let directory = fixture();
+    let root = directory.path();
     fs::write(root.join("src/lib/index.ts"), "export const indexed = 1")
         .expect("index module should be written");
     fs::create_dir_all(root.join("node_modules/pkg/dist"))
@@ -102,12 +97,12 @@ fn resolves_extension_index_and_package_exports_for_js_and_jsx() {
         assert!(analysis.findings.is_empty(), "{:?}", analysis.findings);
         assert_eq!(analysis.imports.len(), 1);
     }
-    fs::remove_dir_all(root).expect("fixture should be removed");
 }
 
 #[test]
 fn resolves_browser_and_server_package_export_conditions() {
-    let root = fixture();
+    let directory = fixture();
+    let root = directory.path();
     fs::create_dir_all(root.join("node_modules/pkg/dist"))
         .expect("package directories should be created");
     fs::write(
@@ -137,7 +132,6 @@ fn resolves_browser_and_server_package_export_conditions() {
             Some(expected)
         );
     }
-    fs::remove_dir_all(root).expect("fixture should be removed");
 }
 
 #[test]
@@ -235,7 +229,8 @@ fn enforces_every_layer_and_test_runtime_boundary() {
 
 #[test]
 fn measures_nested_ast_complexity_and_presence() {
-    let root = fixture();
+    let directory = fixture();
+    let root = directory.path();
     let path = root.join("src/complex.tsx");
     let source = "// @ts-expect-error fixture\nconst f = () => { if (a && b) { for (const x of xs) { expect(x) } } }";
     let analysis = TypeScriptProvider::new(&root.join("tsconfig.json")).analyze(&path, source);
@@ -244,5 +239,4 @@ fn measures_nested_ast_complexity_and_presence() {
     assert!(analysis.function_spans[0].cognitive > 2);
     assert_eq!(analysis.suppressions, 1);
     assert_eq!(analysis.assertions, 1);
-    fs::remove_dir_all(root).expect("fixture should be removed");
 }
