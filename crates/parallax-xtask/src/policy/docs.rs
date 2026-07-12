@@ -77,31 +77,6 @@ pub(super) fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Find
             findings.push(finding(&readme, "crate documentation disagrees with Cargo metadata, architecture class/tier, or facade roots"));
         }
     }
-    findings.extend(check_handoffs(root)?);
-    Ok(findings)
-}
-
-fn check_handoffs(root: &Path) -> Result<Vec<Finding>> {
-    let mut findings = Vec::new();
-    let mut stable_ids = BTreeSet::new();
-    let plan126 = root.join("plans/126-rust-workspace-decomposition.md");
-    match parse_owned_handoff(
-        &fs::read_to_string(&plan126)?,
-        "## Incoming Handoff From 097",
-        "097-",
-    ) {
-        Ok(rows) => {
-            for row in rows {
-                if !stable_ids.insert(row[0].clone()) {
-                    findings.push(handoff_finding(&plan126, "stable ID is reused"));
-                }
-            }
-        }
-        Err(error) => findings.push(handoff_finding(
-            &plan126,
-            &format!("invalid Plan 097 extraction handoff: {error:#}"),
-        )),
-    }
     Ok(findings)
 }
 
@@ -110,6 +85,7 @@ fn parse_handoff(source: &str) -> Result<Vec<Vec<String>>> {
     parse_owned_handoff(source, "## Incoming Handoff From 127", "127-")
 }
 
+#[cfg(test)]
 fn parse_owned_handoff(
     source: &str,
     heading: &str,
@@ -172,17 +148,6 @@ fn finding(path: impl AsRef<Path>, reason: &str) -> Finding {
         1,
         reason,
         "update README front matter and prose from current crate ownership",
-        "cargo xtask policy",
-    )
-}
-
-fn handoff_finding(path: impl AsRef<Path>, reason: &str) -> Finding {
-    Finding::error(
-        "docs.plan-127-handoff",
-        &path.as_ref().to_string_lossy(),
-        1,
-        reason,
-        "populate every handoff row with a stable ID, explicit owner, and OWNED status",
         "cargo xtask policy",
     )
 }

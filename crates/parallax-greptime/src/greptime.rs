@@ -1288,7 +1288,7 @@ fn u128_at(row: &[serde_json::Value], index: usize) -> u128 {
         && let Ok(n) = s.parse::<u128>()
     {
         tracing::warn!(
-            target: "parallax_storage::greptime",
+            target: "parallax_greptime",
             index,
             "u128_at decoded JSON string timestamp; prefer integer wire encoding"
         );
@@ -1299,7 +1299,7 @@ fn u128_at(row: &[serde_json::Value], index: usize) -> u128 {
         && f >= 0.0
     {
         tracing::warn!(
-            target: "parallax_storage::greptime",
+            target: "parallax_greptime",
             index,
             "u128_at decoded JSON float timestamp; prefer integer wire encoding"
         );
