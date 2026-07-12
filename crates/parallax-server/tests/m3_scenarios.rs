@@ -98,6 +98,15 @@ async fn stack_scenarios_cross_service_db_and_graphql_spans() {
     let mut resolver_span = backend_tracer
         .span_builder("graphql.resolve Cart.items")
         .start_with_context(&backend_tracer, &graphql_context);
+    let resolver_context =
+        OtelContext::new().with_remote_span_context(resolver_span.span_context().clone());
+    let mut dataloader_span = backend_tracer
+        .span_builder("graphql.dataloader Cart.items batch")
+        .with_attributes([
+            KeyValue::new("graphql.dataloader.keys.count", 3_i64),
+            KeyValue::new("graphql.field.name", "items"),
+        ])
+        .start_with_context(&backend_tracer, &resolver_context);
 
     let mut db_span = backend_tracer
         .span_builder("query orders")
@@ -113,6 +122,22 @@ async fn stack_scenarios_cross_service_db_and_graphql_spans() {
         .start_with_context(&backend_tracer, &graphql_context);
     tokio::time::sleep(Duration::from_millis(5)).await;
     db_span.end();
+    let mut clickhouse_span = backend_tracer
+        .span_builder("query order_events")
+        .with_kind(SpanKind::Client)
+        .with_attributes([
+            KeyValue::new("db.system.name", "clickhouse"),
+            KeyValue::new("db.namespace", "analytics"),
+            KeyValue::new("db.operation.name", "SELECT"),
+            KeyValue::new(
+                "db.query.text",
+                "SELECT order_id, event FROM order_events WHERE order_id = ?",
+            ),
+        ])
+        .start_with_context(&backend_tracer, &graphql_context);
+    tokio::time::sleep(Duration::from_millis(2)).await;
+    clickhouse_span.end();
+    dataloader_span.end();
     resolver_span.end();
     graphql_span.end();
     server_span.set_status(Status::error("downstream timeout"));
@@ -145,7 +170,7 @@ async fn stack_scenarios_cross_service_db_and_graphql_spans() {
         if trace
             .pointer("/data/trace/spans")
             .and_then(|v| v.as_array())
-            .is_some_and(|spans| spans.len() == 5)
+            .is_some_and(|spans| spans.len() == 7)
         {
             break;
         }
@@ -156,7 +181,7 @@ async fn stack_scenarios_cross_service_db_and_graphql_spans() {
         .and_then(|v| v.as_array())
         .cloned()
         .expect("trace spans");
-    assert_eq!(spans.len(), 5, "all five spans in one trace: {trace}");
+    assert_eq!(spans.len(), 7, "all seven spans in one trace: {trace}");
 
     // Scenario 1 — cross-service: both services present, SERVER span parents
     // to the gateway's CLIENT span.
@@ -195,6 +220,19 @@ async fn stack_scenarios_cross_service_db_and_graphql_spans() {
         .and_then(|d| d.parse().ok())
         .expect("duration");
     assert!(duration_ns >= 5_000_000, "db span measured its duration");
+    let clickhouse = spans
+        .iter()
+        .find(|span| span["name"] == "query order_events")
+        .expect("ClickHouse wrapper span");
+    let clickhouse_attributes: serde_json::Value =
+        serde_json::from_str(clickhouse["attributes"].as_str().unwrap_or("{}"))
+            .expect("ClickHouse attrs JSON");
+    assert_eq!(clickhouse_attributes["db.system.name"], "clickhouse");
+    assert_eq!(clickhouse_attributes["db.namespace"], "analytics");
+    assert_eq!(
+        clickhouse_attributes["db.query.text"],
+        "SELECT order_id, event FROM order_events WHERE order_id = ?"
+    );
 
     // Scenario 3 — GraphQL operation + resolver spans rendered in the trace.
     assert!(
@@ -207,6 +245,14 @@ async fn stack_scenarios_cross_service_db_and_graphql_spans() {
             .iter()
             .any(|s| s["name"] == "graphql.resolve Cart.items")
     );
+    let dataloader = spans
+        .iter()
+        .find(|span| span["name"] == "graphql.dataloader Cart.items batch")
+        .expect("DataLoader batch span");
+    let dataloader_attributes: serde_json::Value =
+        serde_json::from_str(dataloader["attributes"].as_str().unwrap_or("{}"))
+            .expect("DataLoader attrs JSON");
+    assert_eq!(dataloader_attributes["graphql.dataloader.keys.count"], 3);
 
     // And the failure grouped into an issue whose bundle shows the captured
     // query — the agent sees what the database was asked.

@@ -130,8 +130,8 @@ mod tests {
         assert!(
             error_messages(&json)
                 .iter()
-                .any(|message| message.contains("in-memory store")),
-            "SELECT passes API guard and reaches memory adapter: {json}"
+                .any(|message| message.contains("test store has no SQL surface")),
+            "SELECT passes API guard and reaches the test adapter: {json}"
         );
     }
 }

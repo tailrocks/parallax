@@ -8,6 +8,12 @@ const config = defineConfig({
   resolve: { tsconfigPaths: true },
   test: {
     include: ["src/**/*.test.{ts,tsx}"],
+    server: {
+      // Bun executes Vitest in this repository. Inline Zod so Vite transforms
+      // its conditional ESM exports instead of handing Bun an externalized
+      // namespace with missing named exports.
+      deps: { inline: ["zod"] },
+    },
   },
   plugins: [
     devtools(),

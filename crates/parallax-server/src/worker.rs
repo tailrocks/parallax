@@ -93,6 +93,17 @@ pub struct Worker {
     metadata: Arc<MetadataStore>,
     seen_runs: Arc<Mutex<HashSet<String>>>,
     live: crate::live::LiveChannels,
+    #[cfg(test)]
+    fail_once_after: Arc<Mutex<Option<FailureStage>>>,
+}
+
+#[cfg(test)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum FailureStage {
+    Registration,
+    Broadcast,
+    TelemetryStorage,
+    IssueRecording,
 }
 
 impl Worker {
@@ -106,7 +117,24 @@ impl Worker {
             metadata,
             seen_runs: Arc::new(Mutex::new(HashSet::new())),
             live,
+            #[cfg(test)]
+            fail_once_after: Arc::new(Mutex::new(None)),
         }
+    }
+
+    #[cfg(test)]
+    async fn inject_failure_once_after(&self, stage: FailureStage) {
+        *self.fail_once_after.lock().await = Some(stage);
+    }
+
+    #[cfg(test)]
+    async fn maybe_fail_after(&self, stage: FailureStage) -> anyhow::Result<()> {
+        let mut configured = self.fail_once_after.lock().await;
+        if configured.as_ref() == Some(&stage) {
+            *configured = None;
+            anyhow::bail!("injected failure after {stage:?}");
+        }
+        Ok(())
     }
 
     pub async fn run(self, mut receiver: mpsc::Receiver<IngestItem>) {
@@ -137,12 +165,21 @@ impl Worker {
                 let errors = derive::derive_from_traces(request);
                 self.register_runs(normalize::resource_run_ids(request))
                     .await?;
+                #[cfg(test)]
+                self.maybe_fail_after(FailureStage::Registration).await?;
                 if self.live.spans.receiver_count() > 0 {
                     let spans = normalize::normalize_traces(request);
                     let _ = self.live.spans.send(crate::live::span_batch(spans));
                 }
+                #[cfg(test)]
+                self.maybe_fail_after(FailureStage::Broadcast).await?;
                 self.store.ingest_traces(request, raw.clone()).await?;
+                #[cfg(test)]
+                self.maybe_fail_after(FailureStage::TelemetryStorage)
+                    .await?;
                 self.record_errors(errors).await?;
+                #[cfg(test)]
+                self.maybe_fail_after(FailureStage::IssueRecording).await?;
             }
             IngestItem::Logs(request, raw) => {
                 let mut request = request.clone();
@@ -160,11 +197,20 @@ impl Worker {
                         .filter_map(|l| l.run_id.clone().map(|run_id| (run_id, l.ts_nanos))),
                 )
                 .await?;
+                #[cfg(test)]
+                self.maybe_fail_after(FailureStage::Registration).await?;
                 if self.live.logs.receiver_count() > 0 {
                     let _ = self.live.logs.send(crate::live::log_batch(logs));
                 }
+                #[cfg(test)]
+                self.maybe_fail_after(FailureStage::Broadcast).await?;
                 self.store.ingest_logs(&request, raw).await?;
+                #[cfg(test)]
+                self.maybe_fail_after(FailureStage::TelemetryStorage)
+                    .await?;
                 self.record_errors(errors).await?;
+                #[cfg(test)]
+                self.maybe_fail_after(FailureStage::IssueRecording).await?;
             }
             IngestItem::Metrics(request, raw) => {
                 let normalized = normalize::normalize_metrics(request);
@@ -175,6 +221,9 @@ impl Worker {
                         normalized.exemplars,
                         raw.clone(),
                     )
+                    .await?;
+                #[cfg(test)]
+                self.maybe_fail_after(FailureStage::TelemetryStorage)
                     .await?;
             }
         }
@@ -277,6 +326,8 @@ mod tests {
         Exemplar, Gauge, Metric, NumberDataPoint, ResourceMetrics, ScopeMetrics,
         exemplar::Value as ExemplarValue, metric::Data, number_data_point::Value as NumberValue,
     };
+    use parallax_proto::resource::Resource;
+    use parallax_proto::trace::{ResourceSpans, ScopeSpans, Span, Status, span, status};
     use parallax_storage::memory::MemoryStore;
     use serde_json::json;
     use std::sync::atomic::{AtomicUsize, Ordering};
@@ -341,6 +392,92 @@ mod tests {
                 ..Default::default()
             }],
         }
+    }
+
+    fn trace_request_with_run_and_error() -> ExportTraceServiceRequest {
+        ExportTraceServiceRequest {
+            resource_spans: vec![ResourceSpans {
+                resource: Some(Resource {
+                    attributes: vec![
+                        string_kv("service.name", "checkout"),
+                        string_kv("parallax.run.id", "run-failure-oracle"),
+                    ],
+                    ..Default::default()
+                }),
+                scope_spans: vec![ScopeSpans {
+                    spans: vec![Span {
+                        trace_id: vec![1; 16],
+                        span_id: vec![2; 8],
+                        name: "checkout.authorize".to_string(),
+                        start_time_unix_nano: 10,
+                        end_time_unix_nano: 99,
+                        status: Some(Status {
+                            code: status::StatusCode::Error as i32,
+                            message: "status failed".to_string(),
+                        }),
+                        events: vec![span::Event {
+                            time_unix_nano: 42,
+                            name: "exception".to_string(),
+                            attributes: vec![
+                                string_kv("exception.type", "test::Boom"),
+                                string_kv("exception.message", "boom"),
+                                string_kv("exception.stacktrace", "top\nbottom"),
+                            ],
+                            ..Default::default()
+                        }],
+                        ..Default::default()
+                    }],
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+        }
+    }
+
+    async fn characterize_failure_after(stage: FailureStage) -> (usize, usize, u64, usize, usize) {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let store = Arc::new(MemoryStore::new().with_normalizers(
+            Arc::new(normalize::normalize_traces),
+            Arc::new(normalize::normalize_logs),
+        ));
+        let metadata = Arc::new(
+            MetadataStore::open(tmp.path().join("meta.db"))
+                .await
+                .expect("metadata"),
+        );
+        let live = crate::live::channels();
+        let mut live_spans = live.spans.subscribe();
+        let worker = Worker::new(store.clone(), metadata.clone(), live);
+        worker.inject_failure_once_after(stage).await;
+        let item = IngestItem::Traces(trace_request_with_run_and_error(), bytes::Bytes::new());
+        worker
+            .process(&item)
+            .await
+            .expect_err("first attempt fails");
+        worker.process(&item).await.expect("retry succeeds");
+
+        let mut broadcasts = 0;
+        while live_spans.try_recv().is_ok() {
+            broadcasts += 1;
+        }
+        let spans = store
+            .spans_by_trace("01010101010101010101010101010101")
+            .await
+            .expect("spans")
+            .len();
+        let issues = metadata.issues(10).await.expect("issues");
+        let issue_count = issues.first().map_or(0, |issue| issue.event_count);
+        let errors = if let Some(issue) = issues.first() {
+            store
+                .error_events_by_fingerprint(&issue.fingerprint, 0..=u128::MAX, 10)
+                .await
+                .expect("error events")
+                .len()
+        } else {
+            0
+        };
+        let runs = metadata.runs(10).await.expect("runs").len();
+        (broadcasts, spans, issue_count, errors, runs)
     }
 
     #[test]
@@ -421,6 +558,32 @@ mod tests {
         assert_eq!(INGEST_BACKOFF.len(), 3);
         assert!(INGEST_BACKOFF[0] < INGEST_BACKOFF[1]);
         assert!(INGEST_BACKOFF[1] < INGEST_BACKOFF[2]);
+    }
+
+    #[tokio::test]
+    async fn failure_stage_replay_behavior_is_characterized() {
+        // Tuple: live broadcasts, stored spans, issue occurrences,
+        // stored error rows, registered runs.
+        assert_eq!(
+            characterize_failure_after(FailureStage::Registration).await,
+            (1, 1, 1, 1, 1),
+            "registration succeeds before failure; its seen-run cache prevents a duplicate"
+        );
+        assert_eq!(
+            characterize_failure_after(FailureStage::Broadcast).await,
+            (2, 1, 1, 1, 1),
+            "broadcast repeats because it has no idempotency boundary"
+        );
+        assert_eq!(
+            characterize_failure_after(FailureStage::TelemetryStorage).await,
+            (2, 2, 1, 1, 1),
+            "telemetry and earlier broadcast repeat after a late storage failure"
+        );
+        assert_eq!(
+            characterize_failure_after(FailureStage::IssueRecording).await,
+            (2, 2, 2, 2, 1),
+            "all completed effects replay after the final stage fails"
+        );
     }
 
     #[tokio::test]
