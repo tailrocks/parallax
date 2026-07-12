@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    { "id": "typescript", "covers": ["ts", "static-import"] },
+    { "id": "tsx", "covers": ["tsx", "component", "hook", "jsx"] },
+    { "id": "javascript", "covers": ["js", "export"] },
+    { "id": "jsx", "covers": ["jsx", "component"] },
+    { "id": "extension-index", "covers": ["extension", "index-lookup"] },
+    { "id": "tsconfig-alias", "covers": ["alias"] },
+    { "id": "type-only", "covers": ["type-only"] },
+    { "id": "dynamic-import", "covers": ["dynamic"] },
+    { "id": "reexport", "covers": ["reexport", "barrel"] },
+    { "id": "package-exports", "covers": ["package-exports"] },
+    { "id": "missing-target", "covers": ["resolution-failure"] },
+    { "id": "cycle", "covers": ["cycle"] },
+    { "id": "root-layout", "covers": ["app", "layout"] },
+    { "id": "generated-route", "covers": ["generated-route-composition"] },
+    { "id": "layer-directions", "covers": ["app", "layout", "routes", "features", "domain", "platform", "shared"] },
+    { "id": "feature-facade", "covers": ["feature-facade", "feature-deep-import"] },
+    { "id": "test-topology", "covers": ["source-tests", "src-test-harness", "e2e"] },
+    { "id": "runtime-conditions", "covers": ["server", "client", "browser-condition"] }
+  ]
+}
