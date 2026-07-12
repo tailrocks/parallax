@@ -15,6 +15,7 @@ use crate::diagnostic::Finding;
 
 use super::config::Ratchet;
 
+mod blocking;
 mod determinism;
 mod suppressions;
 
@@ -130,6 +131,10 @@ pub(super) fn health(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
 
 pub(super) fn check_suppressions(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
     suppressions::check(root, ratchet)
+}
+
+pub(super) fn check_async_blocking(root: &Path) -> Result<Vec<Finding>> {
+    blocking::check(root)
 }
 
 fn collect(directory: &Path, files: &mut Vec<PathBuf>) -> Result<()> {

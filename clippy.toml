@@ -3,6 +3,10 @@ too-many-lines-threshold = 100
 cognitive-complexity-threshold = 25
 too-many-arguments-threshold = 6
 excessive-nesting-threshold = 4
+disallowed-methods = [
+  { path = "std::thread::sleep", reason = "runtime waits must yield with tokio::time::sleep" },
+  { path = "reqwest::blocking::get", reason = "network I/O must use the asynchronous client" },
+]
 allow-expect-in-tests = true
 allow-indexing-slicing-in-tests = true
 allow-panic-in-tests = true

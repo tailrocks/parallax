@@ -7,6 +7,7 @@
 //! `serve` subcommand.
 
 pub mod config;
+mod engine_io;
 #[expect(
     clippy::cast_possible_truncation,
     clippy::cast_precision_loss,

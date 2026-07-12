@@ -267,7 +267,7 @@ fn spawn_spool_reaper(
 pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
     config.validate()?;
     let data_dir = config.data_dir();
-    std::fs::create_dir_all(&data_dir)?;
+    tokio::fs::create_dir_all(&data_dir).await?;
 
     let mut supervisor = None;
     let store: Arc<dyn TelemetryStore> = match config.storage.mode.as_str() {
@@ -324,11 +324,9 @@ async fn start_assembled(
     supervisor: Option<crate::greptime_supervisor::GreptimeSupervisor>,
 ) -> anyhow::Result<ServerHandle> {
     let data_dir = config.data_dir();
-    std::fs::create_dir_all(&data_dir)?;
-    let spool = Arc::new(Spool::open_with_max_segment_bytes(
-        data_dir.join("spool"),
-        config.retention.spool_max_segment_bytes,
-    )?);
+    tokio::fs::create_dir_all(&data_dir).await?;
+    let spool =
+        crate::outcomes::open_spool(&data_dir, config.retention.spool_max_segment_bytes).await?;
 
     let queue_batches = config.limits.ingest_queue_batches.max(1);
     let (senders, receivers) = worker::channels(queue_batches);

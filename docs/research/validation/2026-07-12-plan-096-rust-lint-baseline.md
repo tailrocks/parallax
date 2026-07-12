@@ -56,3 +56,25 @@ Validation after this stage passed:
 - `cargo test --workspace --all-targets` (230 passed, 6 ignored real-engine
   tests); and
 - `cargo xtask policy --output json` with `[]`.
+
+## Async blocking ownership
+
+The Rust policy now parses product source and rejects fully qualified blocking
+filesystem, process, socket-bind, thread-sleep, and blocking HTTP calls when
+they are directly reachable from an async function. Test support is excluded;
+an operation deliberately moved into `tokio::task::spawn_blocking` is an owned
+boundary. Positive and negative syntax fixtures prevent the context rule from
+becoming a text search or banning synchronous startup/tool code.
+
+The measured findings were in managed-engine startup, server assembly, and the
+doctor command. Engine filesystem, subprocess, and port-probe operations now
+use Tokio APIs; the spool's synchronous constructor runs as one complete
+`spawn_blocking` operation. Extraction of engine I/O removed the supervisor's
+oversized-file ratchet, lowered its `ensure_binary` function ceiling from 131
+to 122, and lowered the server assembly file/function ceilings from 448/148 to
+446/146. `clippy.toml` additionally bans runtime thread sleep and blocking
+Reqwest entry points in all contexts.
+
+Validation passed the 36 xtask tests, the server unit/integration suite (27
+passed and 6 intentionally ignored real-engine tests), full-feature workspace
+Clippy with `-D warnings`, and the repository policy with `[]`.

@@ -327,13 +327,8 @@ ceiling = 421
 
 [[limits]]
 metric = "rust.file-lines"
-scope = "crates/parallax-server/src/greptime_supervisor.rs"
-ceiling = 410
-
-[[limits]]
-metric = "rust.file-lines"
 scope = "crates/parallax-server/src/serve.rs"
-ceiling = 448
+ceiling = 446
 
 
 [[limits]]
@@ -1646,12 +1641,12 @@ ceiling = 152
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-server/src/greptime_supervisor.rs::ensure_binary"
-ceiling = 131
+ceiling = 122
 
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-server/src/serve.rs::start_assembled"
-ceiling = 148
+ceiling = 146
 
 [[limits]]
 metric = "rust.function-lines"

@@ -32,40 +32,10 @@ pub struct GreptimeSupervisor {
     task: Option<tokio::task::JoinHandle<()>>,
 }
 
-/// Kill a leftover engine child recorded in the pidfile (a previous serve
-/// died without cleanup). Only kills a process that is verifiably a
-/// greptime binary, then waits briefly for its ports to release.
-async fn reap_stale_child(pid_path: &Path) {
-    let Some(pid) = std::fs::read_to_string(pid_path)
-        .ok()
-        .and_then(|s| s.trim().parse::<u32>().ok())
-    else {
-        return;
-    };
-    let command = std::process::Command::new("ps")
-        .args(["-p", &pid.to_string(), "-o", "command="])
-        .output()
-        .ok()
-        .map(|o| String::from_utf8_lossy(&o.stdout).into_owned())
-        .unwrap_or_default();
-    if command.contains("greptime") {
-        tracing::warn!("reaping stale greptime child (pid {pid}) from a previous serve");
-        crate::outcomes::kill_stale(pid);
-        // Give the OS a moment to release the listeners.
-        for _ in 0..40 {
-            if std::net::TcpListener::bind(("127.0.0.1", GREPTIME_HTTP_PORT)).is_ok() {
-                break;
-            }
-            tokio::time::sleep(Duration::from_millis(50)).await;
-        }
-    }
-    crate::outcomes::note(std::fs::remove_file(pid_path), "remove stale pid file");
-}
-
 /// The engine ports must be free before spawning; a foreign listener means
 /// we would supervise one process but query another.
-fn preflight_port_free(port: u16) -> anyhow::Result<()> {
-    match std::net::TcpListener::bind(("127.0.0.1", port)) {
+async fn preflight_port_free(port: u16) -> anyhow::Result<()> {
+    match tokio::net::TcpListener::bind(("127.0.0.1", port)).await {
         Ok(listener) => {
             drop(listener);
             Ok(())
@@ -151,15 +121,12 @@ pub fn parse_greptime_version_output(output: &str) -> Option<String> {
     None
 }
 
-fn managed_binary_matches_pin(managed: &Path, pin: &str) -> bool {
+async fn managed_binary_matches_pin(managed: &Path, pin: &str) -> bool {
     if pin == "latest" {
         return true;
     }
     let desired = pin.trim_start_matches('v');
-    let output = match std::process::Command::new(managed)
-        .arg("--version")
-        .output()
-    {
+    let output = match Command::new(managed).arg("--version").output().await {
         Ok(o) if o.status.success() => o,
         _ => return true,
     };
@@ -189,12 +156,13 @@ pub async fn ensure_binary(
 ) -> anyhow::Result<PathBuf> {
     let managed = bin_dir.join("greptime");
     if managed.exists() {
-        if managed_binary_matches_pin(&managed, version) {
+        if managed_binary_matches_pin(&managed, version).await {
             return Ok(managed);
         }
-        let old_label = std::process::Command::new(&managed)
+        let old_label = Command::new(&managed)
             .arg("--version")
             .output()
+            .await
             .ok()
             .and_then(|o| {
                 let text = {
@@ -209,21 +177,22 @@ pub async fn ensure_binary(
             })
             .unwrap_or_else(|| "unknown".to_string());
         let backup = bin_dir.join(format!("greptime-{old_label}"));
-        if let Err(error) = std::fs::rename(&managed, &backup) {
+        if let Err(error) = tokio::fs::rename(&managed, &backup).await {
             tracing::warn!(
                 "could not archive old greptime binary to {}: {error}; overwriting",
                 backup.display()
             );
-            crate::outcomes::note(std::fs::remove_file(&managed), "remove managed binary");
+            crate::outcomes::note(
+                tokio::fs::remove_file(&managed).await,
+                "remove managed binary",
+            );
         } else {
             tracing::info!(
                 "archived previous GreptimeDB binary to {}",
                 backup.display()
             );
         }
-    } else if let Ok(output) = std::process::Command::new("greptime")
-        .arg("--version")
-        .output()
+    } else if let Ok(output) = Command::new("greptime").arg("--version").output().await
         && output.status.success()
     {
         return Ok(PathBuf::from("greptime"));
@@ -296,18 +265,7 @@ pub async fn ensure_binary(
         "GreptimeDB download checksum mismatch: expected {expected}, got {actual}"
     );
 
-    std::fs::create_dir_all(bin_dir)?;
-    let archive_path = bin_dir.join(format!("{asset}.tar.gz"));
-    std::fs::write(&archive_path, &archive)?;
-    let status = std::process::Command::new("tar")
-        .arg("-xzf")
-        .arg(&archive_path)
-        .arg("-C")
-        .arg(bin_dir)
-        .status()?;
-    anyhow::ensure!(status.success(), "extracting GreptimeDB archive failed");
-    std::fs::rename(bin_dir.join(&asset).join("greptime"), &managed)?;
-    crate::outcomes::cleanup_asset(bin_dir, &asset, &archive_path);
+    crate::engine_io::install_archive(bin_dir, &asset, &managed, &archive).await?;
     tracing::info!("GreptimeDB v{version} installed to {}", managed.display());
     Ok(managed)
 }
@@ -320,13 +278,13 @@ impl GreptimeSupervisor {
     /// the wrong data dir while its own child crash-loops.
     pub async fn start(binary: PathBuf, data_dir: &Path) -> anyhow::Result<Self> {
         let data_home = data_dir.join("greptime-data");
-        std::fs::create_dir_all(&data_home)?;
+        tokio::fs::create_dir_all(&data_home).await?;
         let log_path = data_dir.join("greptime.log");
         let pid_path = data_dir.join("greptime.pid");
         let http_url = format!("http://127.0.0.1:{GREPTIME_HTTP_PORT}");
 
-        reap_stale_child(&pid_path).await;
-        preflight_port_free(GREPTIME_HTTP_PORT)?;
+        crate::engine_io::reap_stale_child(&pid_path, GREPTIME_HTTP_PORT).await;
+        preflight_port_free(GREPTIME_HTTP_PORT).await?;
 
         let mut supervisor = Self {
             binary,

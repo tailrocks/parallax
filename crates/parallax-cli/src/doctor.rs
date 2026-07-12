@@ -188,9 +188,10 @@ pub(crate) async fn doctor() -> anyhow::Result<()> {
     // Engine binary.
     let engine = dir.join("bin/greptime");
     if engine.exists() {
-        let version = std::process::Command::new(&engine)
+        let version = tokio::process::Command::new(&engine)
             .arg("--version")
             .output()
+            .await
             .ok()
             .and_then(|o| String::from_utf8(o.stdout).ok())
             .and_then(|s| {

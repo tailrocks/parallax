@@ -56,6 +56,7 @@ pub(super) fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Find
         .collect();
     let mut findings = evaluate(&measured, &limits);
     findings.extend(rust::check_suppressions(root, ratchet)?);
+    findings.extend(rust::check_async_blocking(root)?);
     findings.extend(check_generated(root, ratchet)?);
     Ok(findings)
 }
