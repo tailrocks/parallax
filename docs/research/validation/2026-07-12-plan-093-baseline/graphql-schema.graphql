@@ -1,0 +1,640 @@
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+"How `issues` lists are ordered. TREND = last-24h occurrence sum."
+enum IssueSort {
+  LAST_SEEN
+  FIRST_SEEN
+  EVENTS
+  TREND
+}
+
+enum SignalKind {
+  SPANS
+  TRACES
+  LOGS
+  ERRORS
+  METRIC_POINTS
+}
+
+enum TraceSort {
+  START_DESC
+  DURATION_DESC
+  DURATION_ASC
+  SPAN_COUNT_DESC
+}
+
+type AgentSessionOut {
+  rootSpanId: String
+  steps: [AgentStepOut!]!
+  totalInputTokens: String!
+  totalOutputTokens: String!
+  errorCount: Int!
+  truncated: Boolean!
+}
+
+type AgentStepOut {
+  spanId: String!
+  traceId: String!
+  kind: String!
+  name: String!
+  startNanos: String!
+  durationNs: String!
+  isError: Boolean!
+  genAiOperation: String
+  inputTokens: String
+  outputTokens: String
+}
+
+type AttributeCompareRow {
+  key: String!
+  value: String!
+  selectedCount: String!
+  selectedTotal: String!
+  baselineCount: String!
+  baselineTotal: String!
+  score: Float!
+}
+
+type BundleOut {
+  "The bundle as canonical JSON."
+  json: String!
+  "The agent-facing Markdown projection."
+  markdown: String!
+  canonicalHash: String!
+}
+
+type ChangedSpan {
+  before: DiffSpan!
+  after: DiffSpan!
+  durationDeltaNs: String!
+  durationDeltaPct: Float!
+  statusChanged: Boolean!
+}
+
+type CriticalHop {
+  spanId: String!
+  selfTimeNs: String!
+  gatedByChild: String
+  clockSuspect: Boolean!
+}
+
+type CriticalPath {
+  hops: [CriticalHop!]!
+  totalGatedNs: String!
+  unattached: [String!]!
+}
+
+type Dashboard {
+  id: String!
+  name: String!
+  """
+    Widget layout as a JSON string:
+    [{metric, agg, chart, title, quantile?}].
+  """
+  layout: String!
+  updatedAtNanos: String!
+}
+
+type DiffSpan {
+  spanId: String!
+  service: String!
+  name: String!
+  kind: String!
+  statusCode: String!
+  durationNs: String!
+  depth: Int!
+  matchKey: String!
+}
+
+type ErrorEvent {
+  tsNanos: String!
+  service: String!
+  fingerprint: String!
+  errorType: String!
+  message: String!
+  stacktrace: String
+  source: String!
+  traceId: String!
+  spanId: String!
+  attributes: String!
+}
+
+type EvidenceGap {
+  kind: String!
+  subject: String!
+  detail: String!
+}
+
+type FieldKey {
+  key: String!
+  namespace: String!
+  source: String!
+  rowCount: String!
+  nonNullCount: String!
+  coverage: Float!
+  isIdentifier: Boolean!
+}
+
+type FieldStats {
+  key: String!
+  namespace: String!
+  source: String!
+  rowCount: String!
+  nonNullCount: String!
+  distinctCount: String!
+  coverage: Float!
+  capped: Boolean!
+  isIdentifier: Boolean!
+  topValues: [FieldValueCount!]!
+}
+
+type FieldValueCount {
+  value: String!
+  count: String!
+}
+
+type Investigation {
+  id: String!
+  name: String!
+  """
+    Opaque V1 investigation state JSON:
+    `{version, window, pins, notes}`.
+  """
+  state: String!
+  createdAtNanos: String!
+  updatedAtNanos: String!
+}
+
+type Issue {
+  fingerprint: String!
+  title: String!
+  errorType: String!
+  culprit: String
+  service: String!
+  status: String!
+  firstSeenNanos: String!
+  lastSeenNanos: String!
+  eventCount: Int!
+  lastTraceId: String
+  "Bounded top-tag-values cache as JSON: `{key: {value: count}}`."
+  tags: String!
+  "The last-24h occurrence sparkline (hourly buckets), oldest first."
+  trend: [TrendPoint!]!
+  "The most recent stored occurrence."
+  latestEvent: ErrorEvent
+  """
+    Recent occurrences of this issue, newest first, optionally
+    range-bounded (`fromNanos`/`toNanos`).
+  """
+  events(limit: Int, fromNanos: String, toNanos: String): [ErrorEvent!]!
+}
+
+type IssueList {
+  items: [Issue!]!
+  "Matching issues before paging — exact up to the 1000-row scan window."
+  total: Int!
+}
+
+type LogRecord {
+  tsNanos: String!
+  eventName: String!
+  observedTsNanos: String!
+  service: String!
+  severityNum: Int!
+  severityText: String!
+  body: String!
+  traceId: String!
+  spanId: String!
+  runId: String
+  scopeName: String!
+  attributes: String!
+  resource: String!
+}
+
+type MetricExemplar {
+  tsNanos: String!
+  service: String!
+  name: String!
+  value: Float!
+  traceId: String!
+  spanId: String!
+  runId: String
+  attributes: String!
+}
+
+type Mutation {
+  """
+    Set an issue's workflow status (open | resolved); returns the updated
+    issue (spec §8: `Issue!`).
+  """
+  issueSetStatus(fingerprint: String!, status: String!): Issue!
+  "Register a run (the CLI wrapper calls this before launching)."
+  runStart(runId: String!, command: String, startedAtNanos: String!): Boolean!
+  """
+    Create or update a user dashboard; returns the saved dashboard
+    (spec §8: `Dashboard!`).
+  """
+  dashboardSave(name: String!, layout: String!, id: String): Dashboard!
+  "Delete a user dashboard."
+  dashboardDelete(id: String!): Boolean!
+  "Create or update an investigation/case state."
+  investigationSave(name: String!, state: String!, id: String): Investigation!
+  "Delete an investigation/case."
+  investigationDelete(id: String!): Boolean!
+  "Create or update a named saved page state."
+  savedViewSave(name: String!, page: String!, state: String!, id: String): SavedView!
+  "Delete a named saved page state."
+  savedViewDelete(id: String!): Boolean!
+  "Close a run with the wrapped command's exit code."
+  runFinish(runId: String!, endedAtNanos: String!, exitCode: Int!): Boolean!
+}
+
+type ObservedRun {
+  runId: String!
+  service: String!
+  firstNanos: String!
+  lastNanos: String!
+  spanCount: Int!
+  logCount: Int!
+}
+
+type Overview {
+  spanCount: String!
+  traceCount: String!
+  logCount: String!
+  metricPointCount: String!
+  errorCount: String!
+  errorRate: Float!
+  activeServices: Int!
+}
+
+type Point {
+  tsNanos: String!
+  value: Float!
+}
+
+type Query {
+  health: String!
+  version: String!
+  otlpGrpcPort: Int!
+  """
+    Whole-system counters for an inclusive time window. Counts are strings
+    so large telemetry volumes never saturate GraphQL Int.
+  """
+  overview(fromNanos: String!, toNanos: String!): Overview!
+  "Per-signal count series for overview trend charts."
+  signalCountSeries(kind: SignalKind!, service: String, fromNanos: String!, toNanos: String!, stepSeconds: Int): [Point!]!
+  "Service summary rows for the services index."
+  serviceList(fromNanos: String!, toNanos: String!): [ServiceSummary!]!
+  "Per-version service release windows in the selected time range."
+  releases(service: String!, fromNanos: String!, toNanos: String!): [ReleaseWindow!]!
+  "Resource-identity catalog rows for services in the selected window."
+  serviceCatalog(fromNanos: String!, toNanos: String!): [ServiceCatalogRow!]!
+  "Trace-path service graph over a bounded set of traces in the window."
+  serviceMap(fromNanos: String!, toNanos: String!, maxTraces: Int): ServiceMap!
+  "Trace-derived RED analytics; works even when a service emits no metrics."
+  serviceRed(service: String, fromNanos: String!, toNanos: String!, stepSeconds: Int): SpanRed!
+  """
+    Grouped errors: filtered, sorted, paged (spec §8 `issues`). The
+    `query` argument substring-matches title, error type, and fingerprint;
+    `fromNanos`/`toNanos` window on last-seen; `tagKey`+`tagValue` filter
+    on the cached tags.
+  """
+  issues(service: String, status: String, query: String, fromNanos: String, toNanos: String, tagKey: String, tagValue: String, sort: IssueSort, limit: Int, offset: Int): IssueList!
+  issue(fingerprint: String!): Issue
+  """
+    Occurrence counts per bucket for one issue's sparkline, oldest
+    first. Defaults: the last 24 hours in one-hour buckets.
+  """
+  issueTrend(fingerprint: String!, hours: Int, stepSeconds: Int): [TrendPoint!]!
+  "Every span of one trace, start-time ascending (cross-service)."
+  trace(traceId: String!): Trace
+  """
+    Parsed span events across one trace, time ascending. `namePrefix`
+    filters by event name (for example "rpc.message" or "exception").
+  """
+  traceEvents(traceId: String!, namePrefix: String, limit: Int): TraceEventsOut!
+  "Summaries for traces referenced by this trace's span links."
+  linkedTraces(traceId: String!): [TraceSummary!]!
+  "Critical-path hops that gate one trace's latency."
+  traceCriticalPath(traceId: String!): CriticalPath!
+  "Structural diff between two traces' span trees."
+  traceCompare(traceIdA: String!, traceIdB: String!): TraceDiff!
+  "Logs correlated to one trace, time ascending."
+  logsByTrace(traceId: String!): [LogRecord!]!
+  """
+    Traces produced by one run, summarized (root span + aggregates),
+    newest first. Open one via `trace(traceId:)`.
+  """
+  tracesByRun(runId: String!, limit: Int): [TraceSummary!]!
+  "Logs produced by one run."
+  logsByRun(runId: String!, limit: Int): [LogRecord!]!
+  "Agent-session projection for one run when gen_ai producer spans exist."
+  agentSession(runId: String!): AgentSessionOut
+  "Deterministic story timeline for exactly one trace or run anchor."
+  story(traceId: String, runId: String): [StoryBeat!]!
+  "Missing-evidence detector for exactly one trace or run anchor."
+  evidenceGaps(traceId: String, runId: String): [EvidenceGap!]!
+  "Span-attribute overrepresentation in selected vs baseline windows."
+  attributeCompare(selectedFromNanos: String!, selectedToNanos: String!, baselineFromNanos: String!, baselineToNanos: String!, service: String, errorOnly: Boolean, keys: [String!], topN: Int): [AttributeCompareRow!]!
+  "Scalar span/resource attribute keys in a bounded time window."
+  fieldKeys(fromNanos: String!, toNanos: String!): [FieldKey!]!
+  "Bounded coverage/cardinality/top-values stats for one field key."
+  fieldStats(key: String!, fromNanos: String!, toNanos: String!, service: String): FieldStats!
+  """
+    Unified log browse (spec §8 `logs`): every filter optional, newest
+    first. `query` substring-matches the body; trace/run scoping
+    composes with the other filters.
+  """
+  logs(traceId: String, runId: String, service: String, fromNanos: String, toNanos: String, severityMin: Int, severityMax: Int, query: String, limit: Int): [LogRecord!]!
+  "Logs surrounding one anchor timestamp, ascending."
+  logsAround(anchorNanos: String!, windowSeconds: Int, service: String, traceId: String, limit: Int): [LogRecord!]!
+  """
+    Raw read-only SQL against the telemetry engine (GreptimeDB) — the
+    engine's full query power over logs, traces, and metrics tables.
+    SELECT-shaped single statements only.
+  """
+  sql(query: String!): SqlResultOut!
+  """
+    Log counts per time bucket under the same filters as `logs` — the
+    Discover-style histogram above the log table.
+  """
+  logCountSeries(fromNanos: String!, toNanos: String!, service: String, severityMin: Int, severityMax: Int, query: String, stepSeconds: Int): [Point!]!
+  "One run by id (wrapper-registered or auto-registered external)."
+  run(runId: String!): Run
+  "One saved dashboard by id."
+  dashboard(id: String!): Dashboard
+  "One saved investigation by id."
+  investigation(id: String!): Investigation
+  """
+    The predefined service overview (spec §8): CPU, memory, request rate,
+    latency percentiles, error rate from well-known metric names, with
+    graceful absence.
+  """
+  serviceOverview(service: String!, fromNanos: String!, toNanos: String!, stepSeconds: Int): ServiceOverview!
+  """
+    Run ids observed in telemetry (any tool exporting `parallax.run.id`
+    — e.g. jackin'), newest activity first. Independent of wrapper
+    registration: this is how external runs appear in the UI.
+  """
+  observedRuns(limit: Int): [ObservedRun!]!
+  "Recent traces (root span + aggregates), newest first."
+  recentTraces(limit: Int): [TraceSummary!]!
+  """
+    Filtered trace browse (UI Traces page / `parallax traces`): every
+    filter optional; filters hit the root span except `errorOnly`,
+    which looks at the whole trace.
+  """
+  traces(service: String, fromNanos: String, toNanos: String, minDurationMs: Float, maxDurationMs: Float, errorOnly: Boolean, query: String, limit: Int, offset: Int, sort: TraceSort): [TraceSummary!]!
+  """
+    Filtered, sorted, paged trace browse with total count for redesigned
+    trace list clients.
+  """
+  tracesPage(service: String, fromNanos: String, toNanos: String, minDurationMs: Float, maxDurationMs: Float, errorOnly: Boolean, query: String, limit: Int, offset: Int, sort: TraceSort): TraceList!
+  """
+    The bounded, redacted, hypothesis-ranked evidence bundle — the agent
+    handoff artifact assembling trace + logs + metric windows together.
+    Exactly one anchor: `fingerprint` (issue), `runId`, or `traceId`
+    (spec §8). Null when the anchor does not exist.
+  """
+  bundle(fingerprint: String, runId: String, traceId: String, maxTokens: Int): BundleOut
+  """
+    Distinct metric names seen by the store (drives the dashboard
+    builder), optionally prefix-filtered.
+  """
+  metricNames(prefix: String): [String!]!
+  "Groupable label/tag keys for one metric."
+  metricLabels(name: String!): [String!]!
+  "Distinct values for one metric label inside a time window."
+  metricLabelValues(name: String!, label: String!, fromNanos: String!, toNanos: String!): [String!]!
+  "Distinct service names (drives the service-overview selector)."
+  services: [String!]!
+  "Runtime metric lanes, scoped to exactly one service or run."
+  runtimeSnapshot(service: String, runId: String, fromNanos: String!, toNanos: String!, stepSeconds: Int!): [RuntimeMetric!]!
+  """
+    Aggregated series for a point metric (gauge/sum); agg one of
+    avg|min|max|sum|rate. With `groupBy` (an attribute key) one series
+    per value; without it a single series with a null `groupValue`
+    (spec §8 `metricSeries`). `runId` scopes to points whose resource
+    carried `parallax.run.id` (run-anchored cross-analytics).
+  """
+  metricSeries(name: String!, fromNanos: String!, toNanos: String!, service: String, runId: String, groupBy: String, stepSeconds: Int, agg: String): [Series!]!
+  "Approximate quantile series from a histogram metric (q in 0..=1)."
+  histogramQuantile(name: String!, fromNanos: String!, toNanos: String!, q: Float!, service: String, stepSeconds: Int): [Point!]!
+  "Trace-linked exemplars for one metric, newest first."
+  metricExemplars(name: String!, fromNanos: String!, toNanos: String!, service: String, limit: Int): [MetricExemplar!]!
+  "Saved user dashboards, most recently updated first."
+  dashboards: [Dashboard!]!
+  "Saved investigations/cases, most recently updated first."
+  investigations: [Investigation!]!
+  "Named saved page states, most recently updated first."
+  savedViews(page: String): [SavedView!]!
+  runs(limit: Int): [Run!]!
+}
+
+type ReleaseWindow {
+  version: String!
+  firstSeenNanos: String!
+  lastSeenNanos: String!
+  spanCount: String!
+}
+
+type Run {
+  runId: String!
+  command: String
+  startedAtNanos: String!
+  endedAtNanos: String
+  exitCode: Int
+  "running | finished | external (auto-registered from telemetry)."
+  status: String!
+  "Error events derived inside this run's traces."
+  errorCount: Int!
+  "Distinct traces this run produced."
+  traceCount: Int!
+  "Grouped issues whose events fell inside this run's traces."
+  issues: [Issue!]!
+}
+
+type RuntimeMetric {
+  family: String!
+  metric: String!
+  unit: String
+  points: [Point!]!
+}
+
+type SavedView {
+  id: String!
+  name: String!
+  page: String!
+  "URL search string captured from the page state."
+  state: String!
+  createdAtNanos: String!
+  updatedAtNanos: String!
+}
+
+type Series {
+  groupValue: String
+  points: [Point!]!
+}
+
+type ServiceCatalogRow {
+  name: String!
+  serviceVersion: String
+  serviceNamespace: String
+  deploymentEnvironment: String
+  telemetrySdkLanguage: String
+  telemetrySdkName: String
+  telemetrySdkVersion: String
+  lastSeenNanos: String!
+  instanceCount: String!
+}
+
+type ServiceEdge {
+  source: String!
+  target: String!
+  callCount: String!
+  errorCount: String!
+  p50Ms: Float!
+  p95Ms: Float!
+}
+
+type ServiceMap {
+  nodes: [ServiceNode!]!
+  edges: [ServiceEdge!]!
+}
+
+type ServiceNode {
+  name: String!
+  lastSeenNanos: String!
+  spanCount: String!
+  errorCount: String!
+  p95Ms: Float
+}
+
+type ServiceOverview {
+  cpu: [Point!]!
+  memory: [Point!]!
+  requestRate: [Point!]!
+  latencyP50: [Point!]!
+  latencyP95: [Point!]!
+  latencyP99: [Point!]!
+  errorRate: [Point!]!
+}
+
+type ServiceSummary {
+  name: String!
+  lastSeenNanos: String!
+  spanCount: String!
+  errorCount: String!
+  p95Ms: Float
+}
+
+type Span {
+  tsNanos: String!
+  service: String!
+  traceId: String!
+  spanId: String!
+  parentSpanId: String
+  name: String!
+  kind: String!
+  statusCode: String!
+  statusMessage: String!
+  durationNs: String!
+  runId: String
+  """
+    OTel span links as JSON — spans in other traces this span causally
+    references (batch/async sub-operations).
+  """
+  links: String!
+  "Typed span-link targets, beside the raw JSON string for compatibility."
+  typedLinks: [SpanLink!]!
+  "OTel span events as JSON: `[{name, timeUnixNano, attributes}]`."
+  events: String!
+  scopeName: String!
+  attributes: String!
+  resource: String!
+}
+
+type SpanLink {
+  traceId: String!
+  spanId: String!
+  attributes: String!
+}
+
+type SpanRed {
+  rate: [Point!]!
+  errorRate: [Point!]!
+  p50: [Point!]!
+  p95: [Point!]!
+  p99: [Point!]!
+}
+
+type SqlResultOut {
+  columns: [String!]!
+  "Each row as a JSON array string (heterogeneous cell types)."
+  rows: [String!]!
+  rowCount: Int!
+  truncated: Boolean!
+}
+
+type StoryBeat {
+  tsNanos: String!
+  lane: String!
+  kind: String!
+  title: String!
+  traceId: String!
+  spanId: String
+  severity: String
+  durationNs: String
+}
+
+type Trace {
+  traceId: String!
+  spans: [Span!]!
+}
+
+type TraceDiff {
+  added: [DiffSpan!]!
+  removed: [DiffSpan!]!
+  changed: [ChangedSpan!]!
+}
+
+type TraceEvent {
+  spanId: String!
+  spanName: String!
+  service: String!
+  name: String!
+  timeUnixNano: String!
+  attributes: String!
+}
+
+type TraceEventsOut {
+  events: [TraceEvent!]!
+  truncated: Boolean!
+  skippedSpans: Int!
+}
+
+type TraceList {
+  items: [TraceSummary!]!
+  "Matching traces before paging. String avoids GraphQL Int saturation."
+  total: String!
+}
+
+type TraceSummary {
+  traceId: String!
+  rootName: String!
+  service: String!
+  startNanos: String!
+  durationNs: String!
+  spanCount: Int!
+  hasError: Boolean!
+}
+
+type TrendPoint {
+  tsNanos: String!
+  count: Int!
+}
+

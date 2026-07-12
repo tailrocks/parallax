@@ -1,0 +1,123 @@
+{
+  "schema_version": "parallax.plan-093-baseline/v1",
+  "captured_at": "2026-07-12",
+  "source_commit": "1812e20ed1dd33080f3c76180a45a37e4c74bc7b",
+  "commands": [
+    "mise exec -- rustc --version",
+    "mise exec -- cargo --version",
+    "mise exec -- bun --version",
+    "mise exec -- cargo metadata --format-version 1 --no-deps",
+    "mise exec -- cargo nextest list --workspace --message-format json",
+    "mise exec -- cargo run -q -p parallax-api --example schema_sdl",
+    "mise exec -- bun run --bun --no-install test:ci",
+    "find crates ui/src -type f ... -print0 | xargs -0 wc -l | sort -nr",
+    "rg -n '#[(allow|expect)|unsafe|.clone()|pub mod' crates -g '*.rs'",
+    "mise exec -- cargo tree -p parallax-cli -e features",
+    "rg --files ui .github/workflows"
+  ],
+  "tools": {
+    "rustc": "1.97.0 (2d8144b78 2026-07-07)",
+    "cargo": "1.97.0 (c980f4866 2026-06-30)",
+    "bun": "1.3.14",
+    "vitest": "4.1.8",
+    "greptimedb_live_gate": "1.1.2"
+  },
+  "workspace": {
+    "schema": "cargo-metadata/1",
+    "packages": [
+      { "name": "parallax-cli", "internal_dependencies": ["parallax-server"] },
+      { "name": "parallax-server", "internal_dependencies": ["parallax-api", "parallax-core", "parallax-proto", "parallax-storage"] },
+      { "name": "parallax-api", "internal_dependencies": ["parallax-core", "parallax-storage"] },
+      { "name": "parallax-core", "internal_dependencies": ["parallax-proto", "parallax-storage"] },
+      { "name": "parallax-storage", "internal_dependencies": ["parallax-proto"] },
+      { "name": "parallax-proto", "internal_dependencies": [] },
+      { "name": "parallax-mcp-spike", "internal_dependencies": [] }
+    ],
+    "known_inversion": "parallax-core depends on parallax-storage; Plan 097 owns removal"
+  },
+  "graphql": {
+    "schema_version": "juniper-sdl/current",
+    "artifact": "graphql-schema.graphql",
+    "sha256": "d7470dcf8800f175482e37b28570c4870223235417250e0d0befb236be6958fb",
+    "bytes": 17917,
+    "lines": 640,
+    "representative_errors": {
+      "query_guard": "EXPLAIN ANALYZE executes the statement",
+      "test_store_sql": "raw SQL needs the GreptimeDB engine; the test store has no SQL surface",
+      "config_none": "unsupported storage.mode \\\"none\\\"; supported values are \\\"managed\\\" and \\\"external\\\""
+    }
+  },
+  "tests": {
+    "rust": { "listed": 200, "binaries": 20, "ignored": 6, "non_ignored_after_characterization": 194 },
+    "ui": { "files": 41, "tests": 175, "forced_bun": true, "warnings": ["Window.scrollTo not implemented (4 occurrences)"], "warning_owner": "Plan 129" },
+    "acceptance": {
+      "cross_service_grpc": "parallax-server::m3_scenarios stack_scenarios_cross_service_db_and_graphql_spans",
+      "postgres_shape": "same m3_scenarios test; db.system.name=postgresql and db.query.text asserted",
+      "clickhouse_shape": "same m3_scenarios test at characterization commit 22434df; db.system.name=clickhouse asserted",
+      "graphql_operation_resolver": "same m3_scenarios test",
+      "dataloader_batch": "same m3_scenarios test at characterization commit 22434df; batch key count asserted",
+      "dashboard": "parallax-server::m2_metrics_dashboards metrics_become_series_and_dashboards_roundtrip",
+      "bundle": "parallax-server::m2_bundle bundle_is_bounded_redacted_and_hypothesis_ranked",
+      "tui_live_dogfood": "manual operator evidence only; no automated TUI process fixture"
+    }
+  },
+  "ui_risks": [
+    { "area": "route/search continuity", "owners": ["src/lib/range.ts", "src/routes/*"], "tests": ["range.test.ts", "-final-sweep.test.tsx", "-issues.test.tsx", "-services.test.tsx"], "gap": "route ownership and deterministic characterization remain Plan 129/100 work" },
+    { "area": "GraphQL data boundary", "owners": ["src/lib/api.ts", "route loaders"], "tests": ["api.test.ts", "-trace-graphql.test.tsx", "-overview.test.tsx"], "gap": "runtime decoding is incomplete; Plans 128/152/153 own it" },
+    { "area": "TTL cache/inflight", "owners": ["src/lib/api.ts"], "tests": ["api.test.ts serves cache within TTL", "api.test.ts refetches after TTL"], "gap": "global cache ownership is replaced by Plan 133" },
+    { "area": "SSE/live updates", "owners": ["src/hooks/use-live-stream.ts", "logs.tsx", "runs.$runId.tsx"], "tests": ["use-live-stream.test.tsx", "-logs.test.tsx", "-runs.test.tsx"], "gap": "identity stability/backpressure characterization belongs to Plans 129/147" },
+    { "area": "trace/log search", "owners": ["traces.index.tsx", "logs.tsx"], "tests": ["-traces-search.test.tsx", "-logs.test.tsx", "range.test.ts"], "gap": "no browser history/back-forward contract yet; Plan 129 prerequisite" }
+  ],
+  "storage": {
+    "native_tables": ["opentelemetry_traces", "opentelemetry_traces_services", "opentelemetry_traces_operations", "opentelemetry_logs", "native per-metric tables"],
+    "extensions": ["error_events", "run_metric_points", "metric_exemplars"],
+    "inventory_gate": "parallax-server::m1_table_inventory_greptime only_extension_tables_are_custom",
+    "representative_sql_tests": ["golden_traces_search_sql_includes_adversarial_service", "golden_select_spans_and_logs_sql", "golden_histogram_count_series_sql", "metric_exemplars_fresh_ddl_has_low_cardinality_primary_key"]
+  },
+  "metadata": {
+    "engine": "Turso 0.6.1",
+    "tables": ["issues", "runs", "dashboards", "investigations", "saved_views", "issue_buckets"],
+    "row_mappers": ["issue_from_row", "run_from_row", "dashboard_from_row", "investigation_from_row", "saved_view_from_row"],
+    "migration_style": "idempotent CREATE TABLE IF NOT EXISTS plus schema bootstrap",
+    "mapping_tests": ["batch_upsert_merges_shared_fingerprint_tags_once", "first_seen_lowers_on_out_of_order_occurrence", "saved_views_round_trip_update_filter_and_delete", "investigations_round_trip_update_list_and_delete", "external_runs_register_once"]
+  },
+  "code_census": {
+    "schema": "source-census/v1",
+    "rust_lines": 29196,
+    "ui_lines": 28086,
+    "combined_lines": 57282,
+    "hotspots": [
+      ["crates/parallax-storage/src/greptime.rs", 3794],
+      ["crates/parallax-storage/src/memory.rs", 2572],
+      ["ui/src/routes/traces.$traceId.tsx", 1500],
+      ["crates/parallax-core/src/bundle.rs", 1370],
+      ["crates/parallax-cli/src/commands.rs", 1310],
+      ["crates/parallax-storage/src/metadata.rs", 1216],
+      ["ui/src/routes/index.tsx", 990],
+      ["crates/parallax-api/src/resolvers/traces.rs", 981]
+    ],
+    "allow_expect_attributes": 16,
+    "unsafe_occurrences": 4,
+    "unsafe_scope": "test-only environment mutation in parallax-server self_telemetry tests",
+    "clone_call_sites_server_core_storage": 215,
+    "hot_path_clone_exceptions": ["Bytes::clone for raw OTLP dual consumers", "logs request clone only when identity promotion mutates the forwarded request"],
+    "public_module_roots": { "core": 10, "storage": 7, "server": 8 }
+  },
+  "supply_chain": {
+    "tls": { "active_backend": "native-tls-vendored", "rustls_backend_active": false, "note": "rustls-pki-types is transitive type support; no rustls transport crate/feature is active" },
+    "javascript_runtime": "Bun only",
+    "lockfiles": ["ui/bun.lock"],
+    "foreign_package_manager_files": [],
+    "current_ui_tooling": ["TypeScript 6", "ESLint 9", "Prettier 3", "Vitest 4", "Vite 8"],
+    "planned_owners": { "format": 130, "lint_compiler": 131, "strictness": 128, "test_architecture": 129 }
+  },
+  "ci": {
+    "workflows": ["ci.yml", "storage-integration.yml", "release.yml", "preview.yml"],
+    "ci_jobs": ["changes", "actionlint", "fmt", "check", "clippy", "test", "ui", "embed", "ci-required"],
+    "storage_jobs": ["greptime"],
+    "release_jobs": ["check-version", "test", "build", "publish"],
+    "preview_jobs": ["source-changed", "build-preview", "publish-preview"],
+    "required_aggregate": "ci-required",
+    "known_gaps": ["path filtering and permissions hardening owned by Plan 094", "storage integration is scheduled/manual rather than required on every CI run"]
+  }
+}

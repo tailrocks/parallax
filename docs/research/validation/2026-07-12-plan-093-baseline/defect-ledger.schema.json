@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tailrocks/parallax/schemas/defect-ledger-v1.json",
+  "type": "object",
+  "required": ["schema_version", "evidence_date", "rows"],
+  "properties": {
+    "schema_version": { "const": "parallax.defect-ledger/v1" },
+    "evidence_date": { "type": "string", "format": "date" },
+    "rows": {
+      "type": "array",
+      "minItems": 6,
+      "items": {
+        "type": "object",
+        "required": ["class", "symptom", "regression_test", "gate", "landed_commit", "owner", "status"],
+        "properties": {
+          "class": { "type": "string" }, "symptom": { "type": "string" },
+          "regression_test": { "type": "string" }, "gate": { "type": "string" },
+          "landed_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" }, "owner": { "type": "string" },
+          "status": { "enum": ["prevented", "characterized", "open"] }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

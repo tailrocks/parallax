@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tailrocks/parallax/schemas/plan-093-baseline-v1.json",
+  "type": "object",
+  "required": ["schema_version", "captured_at", "source_commit", "commands", "tools", "workspace", "graphql", "tests", "ui_risks", "storage", "metadata", "code_census", "supply_chain", "ci"],
+  "properties": {
+    "schema_version": { "const": "parallax.plan-093-baseline/v1" },
+    "captured_at": { "type": "string", "format": "date" },
+    "source_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "commands": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "tools": { "type": "object" },
+    "workspace": { "type": "object" },
+    "graphql": { "type": "object" },
+    "tests": { "type": "object" },
+    "ui_risks": { "type": "array" },
+    "storage": { "type": "object" },
+    "metadata": { "type": "object" },
+    "code_census": { "type": "object" },
+    "supply_chain": { "type": "object" },
+    "ci": { "type": "object" }
+  },
+  "additionalProperties": false
+}

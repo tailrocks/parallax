@@ -1,0 +1,12 @@
+{
+  "schema_version": "parallax.defect-ledger/v1",
+  "evidence_date": "2026-07-12",
+  "rows": [
+    { "class": "compressed ingest", "symptom": "gzip OTLP bodies were rejected or decoded incorrectly", "regression_test": "parallax-server::m0_ingest gzip_compressed_otlp_http_is_accepted", "gate": "cargo nextest run --workspace", "landed_commit": "c4c3b79c811a05a861f26d5586d210ff9c76865c", "owner": "OTLP HTTP", "status": "prevented" },
+    { "class": "paging race", "symptom": "trace list total/page could disagree across separate reads", "regression_test": "parallax-api resolvers::traces::tests::traces_page_returns_total_and_span_events_json", "gate": "cargo nextest run --workspace", "landed_commit": "198306393611bc4d30f5c1dd828f5896686daabc", "owner": "trace query", "status": "prevented" },
+    { "class": "spool durability", "symptom": "rotation/reaping could split frames or remove the wrong segment", "regression_test": "parallax-storage spool::tests::rotates_without_splitting_frames", "gate": "cargo nextest run --workspace", "landed_commit": "9bfb00f8e4a1c58dbfcf7f290e8ca60b98c48b5f", "owner": "spool", "status": "prevented" },
+    { "class": "redaction bypass", "symptom": "provider tokens, DSN userinfo, or private keys could reach bundles", "regression_test": "parallax-core bundle::tests::redact_masks_provider_and_generic_secrets", "gate": "cargo nextest run --workspace", "landed_commit": "45ca1675b44b62287c9d0263c6ab5f451675301d", "owner": "Plan 111", "status": "characterized" },
+    { "class": "forbidden storage fallback", "symptom": "storage.mode=none exposed MemoryStore as a product mode", "regression_test": "parallax-server config::tests::rejects_removed_none_storage_mode", "gate": "release feature graph + nextest", "landed_commit": "1812e20ed1dd33080f3c76180a45a37e4c74bc7b", "owner": "server composition", "status": "prevented" },
+    { "class": "worker retry replay", "symptom": "late failures replay broadcast, telemetry, and issue side effects", "regression_test": "parallax-server worker::tests::failure_stage_replay_behavior_is_characterized", "gate": "cargo nextest run --workspace", "landed_commit": "22434df44a754cf3d7c131e8936bacd7633b2217", "owner": "Plan 099", "status": "characterized" }
+  ]
+}
