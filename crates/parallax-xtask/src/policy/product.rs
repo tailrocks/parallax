@@ -86,12 +86,12 @@ fn check_cargo(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
             && dependency
                 .features
                 .iter()
-                .any(|feature| feature == "native-tls-vendored")
+                .any(|feature| feature == "native-tls")
     }) {
         findings.push(error(
             "product.tls",
             Path::new("Cargo.toml"),
-            "reqwest must disable defaults and enable native-tls-vendored",
+            "reqwest must disable defaults and enable host native-tls",
         ));
     }
     Ok(())

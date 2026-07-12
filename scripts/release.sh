@@ -30,8 +30,8 @@ test -f ui/dist/client/_shell.html || {
   exit 1
 }
 
-echo "==> cargo zigbuild --release --features embed-ui (${zig_target})"
-mise exec -- cargo zigbuild --release --locked -p parallax-cli --features embed-ui --target "$zig_target"
+echo "==> cargo zigbuild --release --features embed-ui,cross-release-vendored (${zig_target})"
+mise exec -- cargo zigbuild --release --locked -p parallax-cli --features embed-ui,cross-release-vendored --target "$zig_target"
 
 bin="target/${target}/release/parallax"
 test -x "$bin"

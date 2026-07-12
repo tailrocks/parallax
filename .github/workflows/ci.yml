@@ -161,7 +161,7 @@ jobs:
 
   audit:
     needs: changes
-    if: needs.changes.outputs.advisory == 'true'
+    if: needs.changes.outputs.advisory == 'true' || needs.changes.outputs.ui == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -181,9 +181,9 @@ jobs:
             mise-cargo-tools-${{ runner.os }}-${{ runner.arch }}-audit-
       - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
-          install_args: "cargo:cargo-audit"
+          install_args: "rust bun cargo:cargo-audit cargo:cargo-deny cargo:cargo-hack cargo:cargo-shear"
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
-      - run: cargo audit
+      - run: cargo xtask dependencies --all --output github
 
   check:
     needs: changes
@@ -377,7 +377,14 @@ jobs:
             cargo-target-${{ runner.os }}-${{ runner.arch }}-${{ github.base_ref || 'main' }}-nextest-
             cargo-target-${{ runner.os }}-${{ runner.arch }}-nextest-${{ hashFiles('Cargo.lock') }}-
             cargo-target-${{ runner.os }}-${{ runner.arch }}-nextest-
-      - run: cargo nextest run --workspace --all-targets --color=always
+      - run: cargo nextest run --workspace --all-targets --profile ci --no-tests=fail --color=always
+      - name: Upload nextest JUnit
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nextest-junit-${{ runner.os }}
+          path: target/nextest/ci/junit.xml
+          if-no-files-found: error
       - name: Show sccache stats
         if: always() && steps.sccache.outcome == 'success'
         run: sccache --show-stats

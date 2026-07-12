@@ -156,7 +156,7 @@ jobs:
         env:
           ZIGBUILD_TARGET: ${{ matrix.zigbuild_target }}
           PARALLAX_VERSION_OVERRIDE: ${{ needs.check-version.outputs.version }}
-        run: mise exec -- cargo zigbuild --release --locked -p parallax-cli --features embed-ui --target "$ZIGBUILD_TARGET"
+        run: mise exec -- cargo zigbuild --release --locked -p parallax-cli --features embed-ui,cross-release-vendored --target "$ZIGBUILD_TARGET"
       - name: Package
         env:
           TARGET: ${{ matrix.target }}

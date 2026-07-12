@@ -14,12 +14,21 @@ fn parses_every_initial_command() {
         vec!["xtask", "policy"],
         vec!["xtask", "policy", "--only", "architecture"],
         vec!["xtask", "arch"],
+        vec!["xtask", "dependencies", "--rust"],
+        vec!["xtask", "dependencies", "--ui"],
+        vec!["xtask", "dependencies", "--all"],
         vec!["xtask", "health"],
         vec!["xtask", "facade", "refresh"],
         vec!["xtask", "facade", "check"],
     ] {
         Cli::try_parse_from(args).expect("documented command should parse");
     }
+}
+
+#[test]
+fn dependencies_requires_exactly_one_scope() {
+    Cli::try_parse_from(["xtask", "dependencies"]).unwrap_err();
+    Cli::try_parse_from(["xtask", "dependencies", "--rust", "--ui"]).unwrap_err();
 }
 
 #[test]

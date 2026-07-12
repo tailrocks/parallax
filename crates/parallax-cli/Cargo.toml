@@ -24,6 +24,10 @@ path = "src/main.rs"
 # Single-binary release: serve the web UI from assets compiled in at build
 # time (scripts/release.sh builds ui/ first, then enables this).
 embed-ui = ["parallax-server/embed-ui"]
+cross-release-vendored = [
+    "reqwest/native-tls-vendored",
+    "parallax-server/cross-release-vendored",
+]
 
 [dependencies]
 anyhow = { workspace = true }

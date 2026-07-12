@@ -1,5 +1,6 @@
 mod cli;
 mod command;
+mod dependencies;
 pub mod diagnostic;
 mod facade;
 mod policy;

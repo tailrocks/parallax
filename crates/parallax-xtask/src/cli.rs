@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{ArgGroup, Parser, Subcommand, ValueEnum};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
 pub(crate) enum Output {
@@ -40,6 +40,16 @@ pub(crate) enum Command {
     },
     /// Enforce the staged Cargo workspace architecture graph.
     Arch,
+    /// Enforce Rust and Bun dependency policy.
+    #[command(group(ArgGroup::new("scope").required(true).multiple(false).args(["rust", "ui", "all"])))]
+    Dependencies {
+        #[arg(long)]
+        rust: bool,
+        #[arg(long)]
+        ui: bool,
+        #[arg(long)]
+        all: bool,
+    },
     /// Report noisy structural metrics without failing policy.
     Health,
     /// Refresh or verify syntax-derived crate facade manifests.

@@ -29,3 +29,6 @@ turso = { workspace = true }
 
 [dev-dependencies]
 tempfile = "3"
+
+[features]
+cross-release-vendored = ["reqwest/native-tls-vendored"]

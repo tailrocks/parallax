@@ -3,6 +3,7 @@ use std::{path::Path, process::Command as Process};
 use anyhow::{Context, Result, bail};
 
 use crate::cli::{Cli, Command, FacadeAction};
+use crate::dependencies::{self, Selection};
 use crate::facade;
 use crate::policy;
 
@@ -19,7 +20,7 @@ pub(crate) fn execute(cli: Cli) -> Result<()> {
                     "ui" => ui(&root)?,
                     "test" => test(&root)?,
                     "integration" => integration(&root)?,
-                    "audit" => run(&root, "cargo", &["audit"])?,
+                    "dependencies" => dependencies::run(&root, Selection::All, cli.output)?,
                     unknown => bail!("internal unknown CI partition `{unknown}`"),
                 }
             }
@@ -31,6 +32,9 @@ pub(crate) fn execute(cli: Cli) -> Result<()> {
         Command::Integration => integration(&root),
         Command::Policy { only } => policy::run(&root, only.as_deref(), cli.output),
         Command::Arch => policy::run(&root, Some("architecture"), cli.output),
+        Command::Dependencies { rust, ui, all } => {
+            dependencies::run(&root, dependency_selection(rust, ui, all), cli.output)
+        }
         Command::Health => policy::health(&root, cli.output),
         Command::Facade { action } => match action {
             FacadeAction::Refresh => facade::refresh(&root),
@@ -39,10 +43,19 @@ pub(crate) fn execute(cli: Cli) -> Result<()> {
     }
 }
 
+fn dependency_selection(rust: bool, ui: bool, all: bool) -> Selection {
+    match (rust, ui, all) {
+        (true, false, false) => Selection::Rust,
+        (false, true, false) => Selection::Ui,
+        (false, false, true) => Selection::All,
+        _ => unreachable!("clap requires exactly one dependency scope"),
+    }
+}
+
 fn ci_partitions(full: bool) -> Vec<&'static str> {
     let mut partitions = vec!["lint", "policy", "facade", "ui"];
     if full {
-        partitions.extend(["test", "integration", "audit"]);
+        partitions.extend(["test", "integration", "dependencies"]);
     }
     partitions
 }
@@ -73,6 +86,9 @@ fn test(root: &Path) -> Result<()> {
             "run",
             "--workspace",
             "--all-targets",
+            "--profile",
+            "ci",
+            "--no-tests=fail",
             "--color=always",
         ],
     )
