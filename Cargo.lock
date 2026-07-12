@@ -3135,6 +3135,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "parallax-greptime"
+version = "0.1.0-dev"
+dependencies = [
+ "anyhow",
+ "arrow",
+ "arrow-ipc",
+ "async-trait",
+ "bytes",
+ "futures-util",
+ "parallax-model",
+ "parallax-proto",
+ "parallax-storage",
+ "reqwest",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "parallax-ingest"
 version = "0.1.0-dev"
 dependencies = [
@@ -3191,6 +3210,7 @@ dependencies = [
  "opentelemetry_sdk",
  "parallax-analysis",
  "parallax-api",
+ "parallax-greptime",
  "parallax-ingest",
  "parallax-proto",
  "parallax-spool",
@@ -3228,18 +3248,13 @@ name = "parallax-storage"
 version = "0.1.0-dev"
 dependencies = [
  "anyhow",
- "arrow",
- "arrow-ipc",
  "async-trait",
  "bytes",
- "futures-util",
  "parallax-model",
  "parallax-proto",
- "reqwest",
  "serde_json",
  "tempfile",
  "tokio",
- "tracing",
  "turso",
 ]
 

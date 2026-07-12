@@ -4,6 +4,7 @@ members = [
     "crates/parallax-cli",
     "crates/parallax-analysis",
     "crates/parallax-evidence",
+    "crates/parallax-greptime",
     "crates/parallax-ingest",
     "crates/parallax-model",
     "crates/parallax-api",
@@ -35,6 +36,7 @@ repository = "https://github.com/tailrocks/parallax"
 parallax-api = { path = "crates/parallax-api" }
 parallax-analysis = { path = "crates/parallax-analysis" }
 parallax-evidence = { path = "crates/parallax-evidence" }
+parallax-greptime = { path = "crates/parallax-greptime" }
 parallax-ingest = { path = "crates/parallax-ingest" }
 parallax-model = { path = "crates/parallax-model" }
 parallax-proto = { path = "crates/parallax-proto" }

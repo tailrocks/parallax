@@ -19,6 +19,7 @@ juniper = { workspace = true }
 axum = { workspace = true }
 bytes = { workspace = true }
 parallax-api = { workspace = true }
+parallax-greptime = { workspace = true }
 parallax-ingest = { workspace = true }
 parallax-proto = { workspace = true }
 parallax-spool = { workspace = true }
@@ -54,7 +55,7 @@ mime_guess = { workspace = true, optional = true }
 embed-ui = ["dep:rust-embed", "dep:mime_guess"]
 cross-release-vendored = [
     "reqwest/native-tls-vendored",
-    "parallax-storage/cross-release-vendored",
+    "parallax-greptime/cross-release-vendored",
 ]
 
 [dev-dependencies]

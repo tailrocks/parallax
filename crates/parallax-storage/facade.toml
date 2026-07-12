@@ -3,7 +3,6 @@ schema_version = 1
 [roots]
 "lib.rs" = [
     "mod adapter",
-    "mod greptime",
     "mod metadata",
     "use parallax_model as model",
 ]

@@ -1,6 +1,6 @@
 [package]
-name = "parallax-storage"
-description = "Parallax storage adapters: GreptimeDB telemetry and Turso metadata"
+name = "parallax-greptime"
+description = "Parallax GreptimeDB native-table telemetry adapter"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -14,13 +14,18 @@ workspace = true
 
 [dependencies]
 anyhow = { workspace = true }
+arrow = { workspace = true }
+arrow-ipc = { workspace = true }
 async-trait = { workspace = true }
 bytes = { workspace = true }
-parallax-proto = { workspace = true }
+futures-util = { workspace = true }
 parallax-model = { workspace = true }
+parallax-proto = { workspace = true }
+parallax-storage = { workspace = true }
+reqwest = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
-turso = { workspace = true }
+tracing = { workspace = true }
 
-[dev-dependencies]
-tempfile = "3"
+[features]
+cross-release-vendored = ["reqwest/native-tls-vendored"]

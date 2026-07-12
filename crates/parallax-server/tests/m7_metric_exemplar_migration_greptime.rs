@@ -6,9 +6,9 @@
 
 #![allow(clippy::panic, reason = "test helpers fail fast with engine context")]
 
+use parallax_greptime::GreptimeStore;
 use parallax_server::greptime_supervisor::{GreptimeSupervisor, ensure_binary};
 use parallax_storage::adapter::{IngestStore, MetricAnalyticsStore};
-use parallax_storage::greptime::GreptimeStore;
 use parallax_storage::model::MetricExemplarRow;
 
 const LEGACY_DDL: &str = r#"CREATE TABLE {table} (

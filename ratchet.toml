@@ -46,7 +46,7 @@ lint = "clippy::float_cmp"
 ceiling = 1
 
 [[rust_suppressions]]
-crate_name = "parallax-storage"
+crate_name = "parallax-greptime"
 lint = "clippy::float_cmp"
 ceiling = 1
 
@@ -82,16 +82,21 @@ ceiling = 1
 
 [[rust_suppressions]]
 crate_name = "parallax-storage"
+lint = "clippy::cast_precision_loss"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-greptime"
 lint = "clippy::cast_possible_truncation"
 ceiling = 1
 
 [[rust_suppressions]]
-crate_name = "parallax-storage"
+crate_name = "parallax-greptime"
 lint = "clippy::cast_precision_loss"
-ceiling = 3
+ceiling = 2
 
 [[rust_suppressions]]
-crate_name = "parallax-storage"
+crate_name = "parallax-greptime"
 lint = "clippy::cast_sign_loss"
 ceiling = 1
 
@@ -221,14 +226,19 @@ lint = "clippy::too_many_lines"
 ceiling = 12
 
 [[rust_suppressions]]
-crate_name = "parallax-storage"
+crate_name = "parallax-greptime"
 lint = "clippy::cast_possible_wrap"
 ceiling = 1
 
 [[rust_suppressions]]
 crate_name = "parallax-storage"
 lint = "clippy::excessive_nesting"
-ceiling = 2
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-greptime"
+lint = "clippy::excessive_nesting"
+ceiling = 1
 
 [[rust_suppressions]]
 crate_name = "parallax-spool"
@@ -320,6 +330,11 @@ class = "product"
 tier = 2
 
 [[architecture.packages]]
+name = "parallax-greptime"
+class = "product"
+tier = 2
+
+[[architecture.packages]]
 name = "parallax-spool"
 class = "product"
 tier = 2
@@ -405,7 +420,7 @@ ceiling = 595
 
 [[limits]]
 metric = "rust.file-lines"
-scope = "crates/parallax-storage/src/greptime.rs"
+scope = "crates/parallax-greptime/src/greptime.rs"
 ceiling = 3095
 
 [[limits]]
@@ -1627,7 +1642,7 @@ ceiling = 25
 
 [[limits]]
 metric = "rust.function-cognitive-complexity"
-scope = "crates/parallax-storage/src/arrow_sql.rs::array_value_to_json"
+scope = "crates/parallax-greptime/src/arrow_sql.rs::array_value_to_json"
 ceiling = 25
 
 [[limits]]
@@ -1777,12 +1792,12 @@ ceiling = 187
 
 [[limits]]
 metric = "rust.function-lines"
-scope = "crates/parallax-storage/src/greptime.rs::attribute_compare"
+scope = "crates/parallax-greptime/src/greptime.rs::attribute_compare"
 ceiling = 102
 
 [[limits]]
 metric = "rust.function-lines"
-scope = "crates/parallax-storage/src/greptime.rs::migrate_metric_exemplars"
+scope = "crates/parallax-greptime/src/greptime.rs::migrate_metric_exemplars"
 ceiling = 103
 
 [[limits]]
@@ -1852,7 +1867,12 @@ ceiling = 10
 [[limits]]
 metric = "rust.public-root-items"
 scope = "crates/parallax-storage/facade.toml"
-ceiling = 4
+ceiling = 3
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = "crates/parallax-greptime/facade.toml"
+ceiling = 1
 
 [[limits]]
 metric = "rust.public-root-items"
@@ -2006,12 +2026,12 @@ ceiling = 22
 
 [[limits]]
 metric = "rust.assertions"
-scope = "crates/parallax-storage/src/arrow_sql/tests.rs"
+scope = "crates/parallax-greptime/src/arrow_sql/tests.rs"
 ceiling = 22
 
 [[limits]]
 metric = "rust.assertions"
-scope = "crates/parallax-storage/src/greptime/tests.rs"
+scope = "crates/parallax-greptime/src/greptime/tests.rs"
 ceiling = 69
 
 [[limits]]

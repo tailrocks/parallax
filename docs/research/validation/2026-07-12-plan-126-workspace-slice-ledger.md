@@ -63,3 +63,7 @@ in the same commit.
 - `126-spool`: complete in the following commit; server receivers, worker, and
   retention composition consume the durability facade directly. Raw-frame,
   rotation, retention, recovery, and no-serialization tests moved with it.
+- `126-greptime`: complete in the following commit; HTTP/native-TLS, Arrow,
+  native-table SQL, migration, and row-mapping dependencies left the port
+  crate. Server is the concrete consumer and the SQL/Arrow goldens moved with
+  the adapter.

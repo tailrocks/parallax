@@ -69,7 +69,7 @@ impl ServerHandle {
 async fn connect_greptime(url: &str, config: &Config) -> anyhow::Result<Arc<dyn TelemetryStore>> {
     // TTLs ride the `x-greptime-hints` on each native OTLP forward, so the
     // adapter keeps them; bootstrap only creates the extension tables.
-    let store = parallax_storage::greptime::GreptimeStore::connect(
+    let store = parallax_greptime::GreptimeStore::connect(
         url,
         &config.retention.traces_ttl,
         &config.retention.logs_ttl,

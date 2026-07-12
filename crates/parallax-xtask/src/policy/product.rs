@@ -60,22 +60,31 @@ fn check_cargo(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
         .packages
         .iter()
         .find(|package| package.name == "parallax-storage");
-    let has_storage_stack = storage.is_some_and(|package| {
-        let names: BTreeSet<_> = package
+    let greptime = metadata
+        .packages
+        .iter()
+        .find(|package| package.name == "parallax-greptime");
+    let has_turso = storage.is_some_and(|package| {
+        package
             .dependencies
             .iter()
-            .map(|dependency| dependency.name.as_str())
-            .collect();
-        names.contains("turso") && names.contains("reqwest")
+            .any(|dependency| dependency.name == "turso")
     });
+    let has_greptime_transport = greptime.is_some_and(|package| {
+        package
+            .dependencies
+            .iter()
+            .any(|dependency| dependency.name == "reqwest")
+    });
+    let has_storage_stack = has_turso && has_greptime_transport;
     if !has_storage_stack {
         findings.push(error(
             "product.storage-stack",
-            Path::new("crates/parallax-storage/Cargo.toml"),
-            "storage must compose Turso and GreptimeDB transport dependencies",
+            Path::new("Cargo.toml"),
+            "metadata ownership must compose Turso and Greptime ownership must compose HTTP transport",
         ));
     }
-    let reqwest = storage.and_then(|package| {
+    let reqwest = greptime.and_then(|package| {
         package
             .dependencies
             .iter()
@@ -156,7 +165,7 @@ fn check_bun(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
 }
 
 fn check_native_tables(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
-    let path = root.join("crates/parallax-storage/src/greptime.rs");
+    let path = root.join("crates/parallax-greptime/src/greptime.rs");
     let literals = string_literals(&path)?;
     for table in ["opentelemetry_traces", "opentelemetry_logs"] {
         if !literals.iter().any(|literal| literal.contains(table)) {
@@ -223,7 +232,7 @@ fn check_clone_floors(root: &Path, ratchet: &Ratchet, findings: &mut Vec<Finding
 fn check_ingest_logging(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
     for relative in [
         "crates/parallax-storage/src/adapter.rs",
-        "crates/parallax-storage/src/greptime.rs",
+        "crates/parallax-greptime/src/greptime.rs",
         "crates/parallax-storage/src/metadata.rs",
     ] {
         let path = root.join(relative);
