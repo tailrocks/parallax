@@ -12,8 +12,6 @@ pub mod conformance;
 mod memory;
 mod normalizers;
 
-pub use memory::MemoryStore;
-
 fn warn_error<E: std::fmt::Display>(result: Result<(), E>, operation: &str) {
     if let Err(error) = result {
         tracing::warn!(%error, operation, "test-support operation failed");

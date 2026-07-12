@@ -1,7 +1,7 @@
 use parallax_server::Config;
 use parallax_server::serve::ServerHandle;
 use parallax_storage::metadata::MetadataStore;
-use parallax_test_support::MemoryStore;
+use parallax_test_support::builders::MemoryStore;
 use std::sync::Arc;
 
 pub(crate) async fn start(config: &Config) -> anyhow::Result<ServerHandle> {

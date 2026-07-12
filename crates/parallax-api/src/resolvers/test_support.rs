@@ -2,7 +2,7 @@
 
 use crate::{ApiContext, RequestMemo};
 use parallax_storage::metadata::MetadataStore;
-use parallax_test_support::MemoryStore;
+use parallax_test_support::builders::MemoryStore;
 pub(crate) use parallax_test_support::builders::{log_row, span, span_with_release};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};

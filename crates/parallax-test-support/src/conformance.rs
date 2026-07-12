@@ -1,6 +1,6 @@
 //! Shared adapter conformance seeds and assertions for memory and GreptimeDB.
 
-use crate::MemoryStore;
+use crate::memory::MemoryStore;
 use parallax_model::{
     ErrorEventRow, ErrorSource, HistogramRow, LogRow, MetricExemplarRow, MetricPointRow, SpanRow,
 };

@@ -1,7 +1,7 @@
 use crate::resolvers::test_support::*;
 use crate::{build_schema, execute};
 
-use parallax_test_support::MemoryStore;
+use parallax_test_support::builders::MemoryStore;
 
 use parallax_storage::model::LogRow;
 use std::sync::Arc;

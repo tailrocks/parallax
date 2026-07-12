@@ -4,5 +4,4 @@ schema_version = 1
 "lib.rs" = [
     "mod builders",
     "mod conformance",
-    "use memory::MemoryStore",
 ]
