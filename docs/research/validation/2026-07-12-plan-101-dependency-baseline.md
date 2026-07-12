@@ -2,6 +2,12 @@
 
 **Research date:** 2026-07-12
 
+**Completion evidence:** GitHub Actions run
+[`29210727576`](https://github.com/tailrocks/parallax/actions/runs/29210727576)
+passed the required aggregate on commit `0c0eecb`, including dependency audit,
+generated nextest fixtures, doctests, embedded-UI Clippy, hygiene scans, cache
+artifacts, and native macOS build/test/JUnit/CLI smoke.
+
 ## Enforced live baseline
 
 - `cargo audit`, `cargo deny check`, `cargo shear`, the supported

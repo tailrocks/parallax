@@ -218,7 +218,7 @@ ceiling = 1
 [[rust_suppressions]]
 crate_name = "parallax-xtask"
 lint = "clippy::excessive_nesting"
-ceiling = 3
+ceiling = 2
 
 [[rust_suppressions]]
 crate_name = "parallax-xtask"

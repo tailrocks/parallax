@@ -1,8 +1,3 @@
-#![expect(
-    clippy::excessive_nesting,
-    reason = "measured handoff document validation"
-)]
-
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs,
@@ -89,23 +84,6 @@ pub(super) fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Find
 fn check_handoffs(root: &Path) -> Result<Vec<Finding>> {
     let mut findings = Vec::new();
     let mut stable_ids = BTreeSet::new();
-    for relative in ["plans/101-dependencies-nextest-and-hygiene.md"] {
-        let path = root.join(relative);
-        let source = fs::read_to_string(&path)?;
-        match parse_handoff(&source) {
-            Ok(rows) => {
-                for row in rows {
-                    if !stable_ids.insert(row[0].clone()) {
-                        findings.push(handoff_finding(&path, "stable ID is reused"));
-                    }
-                }
-            }
-            Err(error) => findings.push(handoff_finding(
-                &path,
-                &format!("invalid Plan 127 handoff: {error:#}"),
-            )),
-        }
-    }
     let plan126 = root.join("plans/126-rust-workspace-decomposition.md");
     match parse_owned_handoff(
         &fs::read_to_string(&plan126)?,
@@ -127,6 +105,7 @@ fn check_handoffs(root: &Path) -> Result<Vec<Finding>> {
     Ok(findings)
 }
 
+#[cfg(test)]
 fn parse_handoff(source: &str) -> Result<Vec<Vec<String>>> {
     parse_owned_handoff(source, "## Incoming Handoff From 127", "127-")
 }

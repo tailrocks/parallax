@@ -135,7 +135,6 @@ work.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [101](101-dependencies-nextest-and-hygiene.md) | Add Cargo/Bun dependency policy, nextest evidence, native smoke, and staged hygiene | P1 | L | 094, 095, 096 | IN PROGRESS |
 | [103](103-property-fuzz-and-performance.md) | Add focused Rust/UI property/fuzz corpora and measured performance/allocation gates | P2 | L | 097, 099, 101, 104, 133, 147, 148 | TODO |
 | [113](113-ingest-backpressure-observability.md) | Make queue, spool, retry, drop, and drain health observable | P2 | M | 095, 099 | TODO |
 
