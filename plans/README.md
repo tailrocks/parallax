@@ -69,7 +69,7 @@ Every plan must preserve these non-negotiable Parallax constraints:
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [096](096-rust-toolchain-and-lints.md) | Pin latest stable Rust and activate a strict measured lint/suppression baseline | P1 | L | 095, 127 | TODO |
+| [096](096-rust-toolchain-and-lints.md) | Pin latest stable Rust and activate a strict measured lint/suppression baseline | P1 | L | 095, 127 | IN PROGRESS |
 | [117](117-documentation-link-integrity.md) | Add a parser-backed required internal Markdown link gate | P2 | S-M | 095 | TODO |
 | [119](119-semconv-registry-codegen.md) | Generate checked-in Rust/Java/TypeScript semantic-convention constants from one registry | P2 | M | 095, 096, 100, 101, 126 | TODO |
 
