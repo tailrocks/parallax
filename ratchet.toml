@@ -417,12 +417,6 @@ metric = "rust.file-lines"
 scope = "crates/parallax-test-support/src/memory.rs"
 ceiling = 1399
 
-[[limits]]
-metric = "rust.file-lines"
-scope = "crates/parallax-metadata/src/turso.rs"
-ceiling = 752
-
-
 
 
 [[limits]]
