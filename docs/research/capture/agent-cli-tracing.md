@@ -4,6 +4,13 @@
 
 > Parallax should be an evidence engine for software execution — services, CI runs, CLI tools, and coding agents — not only an observability backend for services, and coding-agent sessions plus CLI invocations are first-class execution evidence. OpenTelemetry GenAI, MCP, CLI, process, and CI/CD semantic conventions (catalog `1.41.0`, still development-stage for GenAI/MCP/CLI) are ingestion vocabulary that must be mapped into stable Parallax `agent_session`, `agent_action`, `cli_invocation`, and `ci_run` rows with recorded `semconv_version`, lossiness reports, and state verification — never stored as the durable product schema. Agent-session tracing across real tools (Codex CLI `0.133.0`, Claude Code `2.1.150`, Amp `0.0.1779639467-g6d0650`, OpenCode `1.15.10`) is viable only as a lossy, redacted, normalized execution audit via per-tool adapters (native OTel, hooks, streaming/run JSON, export/plugin, server/API, ACP), not as complete reasoning capture, and the agent-session ledger status is **not measured** (initial level `not_measured`). CLI tracing is default-on only for structural capture; redacted output excerpts require a separate canary-plus-overhead proof gate, raw args/env/stdout/stderr/config are opt-in raw refs only, and the CLI trace safety ledger status is likewise **not measured**. The decided posture is conservative wording with default-deny redaction and explicit claim levels; the open gates are the dated four-arm measurement runs that move both ledgers above `not_measured` (at minimum two agents through non-brittle surfaces, zero seeded canary leaks across canonical JSON/Markdown/CLI/HTTP/MCP projections, state-verification rows before any "validated/changed/deployed/fixed" wording, and positive audit-value lift).
 
+> **Implementation ownership (2026-07-12):** this file preserves trace models,
+> adapter evidence, safety defaults, claim levels, and measurement protocols. It
+> is not an executable adapter queue. Plan 120 in
+> [`plans/`](../../../plans/) exclusively owns unfinished agent/CLI tracing
+> implementation and real protocol runs. Historical build order below records
+> rationale only.
+
 This note consolidates the following previously-separate research files, each preserved in full below:
 
 - `agent-and-cli-execution-tracing.md`
@@ -1117,9 +1124,9 @@ to 40 sessions. Store raw refs only in a controlled local fixture project.
 | Overhead | Capture must not make the agent workflow noticeably slower; measure wall time delta and adapter CPU/RSS for each tool. |
 | Outcome linkage | Patch/test/commit/PR outcome can be linked back to the session in >= 80 percent of successful runs. |
 
-### Pass/Fail Gate
+### Claim Acceptance Contract
 
-Pass the agent-session gate only if:
+The agent-session claim passes only if:
 
 1. At least two agents pass through supported, non-brittle capture surfaces
    without parsing unstable transcripts as the only source.
@@ -1152,23 +1159,14 @@ Fail or narrow if:
   questions;
 - only one proprietary tool can be captured well.
 
-### Build Sequence
+### Historical Adapter Sequencing Rationale
 
-1. Build a neutral `agent_session` importer and lossiness report.
-2. Implement Claude Code OTel ingest first because it is native and
-   OpenTelemetry-shaped; add the Claude stream-json adapter as a fixture and
-   non-interactive validation surface, not as a replacement for OTel.
-3. Implement Codex hook ingestion next, paired with a Parallax CLI wrapper and
-   repo diff/hash capture, plus a separate `codex exec --json` fixture adapter,
-   because Codex is already part of the Parallax operator workflow and exposes
-   structured hook events.
-4. Implement Amp plugin-event ingestion plus streaming JSON ingestion, because
-   Amp plugins now appear to cover interactive and execute-mode lifecycle/tool
-   events.
-5. Implement OpenCode export/plugin ingestion as the second open-tool adapter
-   with deep session hooks.
-6. Run the value evaluation gate across all four tools before claiming
-   "agent-session tracing" as a general capability.
+The original design placed a neutral `agent_session` importer and lossiness
+report before tool adapters, then preferred Claude Code's native OTel surface,
+Codex structured hooks/JSONL, Amp plugin/streaming events, and OpenCode
+export/plugin surfaces. A four-tool value evaluation preceded any general
+agent-session-tracing claim. This is design rationale, not an implementation
+order; plan 120 owns the current executable decomposition.
 
 ### Product Decision
 
@@ -1304,7 +1302,8 @@ Initial Parallax level: `not_measured`.
 
 ### Result Artifacts
 
-Create these only for real adapter runs:
+The retained result-packet layout applies only to real adapter runs owned by plan
+120; it is a protocol schema, not a file-creation queue:
 
 ```text
 docs/research/agent-session-tracing-results.md
@@ -1873,9 +1872,9 @@ approves a redacted synthetic fixture.
 - If a tool changes event schema or docs materially, mark only the affected
   adapter claim expired.
 
-### Initial Results Template
+### Results Report Schema
 
-When measurement begins, create `docs/research/agent-session-tracing-results.md`:
+The retained report schema for a real plan-120 adapter run is:
 
 ```markdown
 # Agent Session Tracing Results
@@ -2293,7 +2292,8 @@ Initial Parallax level: `not_measured`.
 
 ### Result Artifacts
 
-Create these only for real CLI safety runs:
+The retained packet layout applies only to real CLI safety runs owned by plan
+120; it is a protocol schema, not a file-creation queue:
 
 ```text
 docs/research/cli-trace-safety-results.md

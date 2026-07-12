@@ -5,7 +5,7 @@
 Research date: 2026-06-12. This is the layer between the concept docs and the first commit: the
 concrete schemas, mappings, pins, and conventions an implementing agent needs so that
 [v1-scope.md](v1-scope.md) + [simple-ui-v2.md](simple-ui-v2.md) are executable without
-re-deriving decisions. Read order for an implementer: **v1-scope (what) → v1-build-plan (order)
+re-deriving decisions. Read order for an implementer: **v1-scope (what) → historical v1-build record (sequencing context)
 → this spec (contracts) → simple-ui-v2 (UI) → rust-stack-instrumentation (what arrives)**.
 PoC kernels graduate per [poc-evidence-loop-coverage.md](poc-evidence-loop-coverage.md).
 
@@ -233,9 +233,9 @@ attributes are columns (traces) / JSON (logs); `run_id` is a resource attribute 
 `resource_attributes.parallax.run.id` on traces, promoted via `X-Greptime-Log-Extract-Keys` on logs,
 and **never a metric tag** (high cardinality). `error_events`, `run_metric_points`, and
 `metric_exemplars` stay custom because they are derived Parallax product facts, not raw-signal
-replacement tables. **GreptimeDB-only** — ClickHouse is deferred (not a V1 fallback or design
-constraint). **Greenfield:** the `otel_spans`/`otel_logs`/`otel_metrics_*` DDL below is **removed**, not
-migrated (research stage, no users). Canonical decision + per-signal plan + implementation roadmap:
+replacement tables. **GreptimeDB + Turso only** — ClickHouse and Postgres are
+comparators, not product targets. **Greenfield:** the `otel_spans`/`otel_logs`/`otel_metrics_*` DDL below is **removed**, not
+migrated (research stage, no users). Canonical decision and historical adoption record:
 [decisions/native-otel-tables.md](../decisions/native-otel-tables.md) ·
 [storage/native-otel-migration-plan.md](../storage/native-otel-migration-plan.md). The DDL block below
 is retained only as a record of the legacy shape and the extension-table definitions.
@@ -535,5 +535,6 @@ With this spec, [v1-scope.md](v1-scope.md) (inventory + acceptance) and
 [simple-ui-v2.md](simple-ui-v2.md) (UI) are implementable end-to-end: schemas, mappings, ports,
 pins, API shape, and supervision are decided; the PoC supplies derivation/fingerprint/bundle
 semantics; acceptance is the dogfood scenarios in v1-scope §1. The recommended long-running
-instruction for an implementing agent is recorded in [prompts/README.md](../../../prompts/README.md)
-alongside the other runbooks.
+execution contract for all unfinished implementation work is
+[`plans/IMPLEMENTATION.md`](../../../plans/IMPLEMENTATION.md), with the active
+index in [`plans/README.md`](../../../plans/README.md).

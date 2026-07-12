@@ -1,11 +1,13 @@
 # Metric Exemplars Design
 
-Plan 033 is feasible against the current Parallax code and pinned OTLP proto.
-The drift check is non-empty because earlier roadmap plans expanded
-`adapter.rs`, `greptime.rs`, and `lib.rs`, but the blocking assumptions still
-hold in live code: metric normalization still ignores exemplars, normalized
-metric rows have no trace/span fields, and Greptime native metric tables remain
-unable to store exemplar records.
+Status: **shipped design record**. The historical plan 033 implementation now
+normalizes number/histogram exemplars, persists them in the
+`metric_exemplars` extension table, and exposes bounded API reads. The remaining
+schema correction is active only in
+[`plans/092-metric-exemplar-schema.md`](../../../plans/092-metric-exemplar-schema.md):
+remove high-cardinality trace/span identifiers from the primary key and migrate
+existing data. The design rationale below describes the adopted shape, not an
+unfinished implementation plan.
 
 ## Storage Shape
 
@@ -18,7 +20,7 @@ not enough for the general case because most metric points do not carry
 `parallax.run.id`; keeping exemplars there would silently drop non-run metric
 to trace links.
 
-Use a new Parallax extension table, `metric_exemplars`, following the same
+The adopted Parallax extension table, `metric_exemplars`, follows the same
 bootstrap and batched insert pattern as `run_metric_points`:
 
 - `ts` as `TIMESTAMP(9)` time index
@@ -43,7 +45,7 @@ The pinned `opentelemetry-proto 0.32.0` types expose the required fields:
 - `Exemplar.filtered_attributes: Vec<KeyValue>`
 - `Exemplar.value` oneof with double or int values
 
-Normalization can read exemplars while it already iterates each metric data
+Normalization reads exemplars while it already iterates each metric data
 point. It borrows the request, converts only each exemplar row into the storage
 shape, and never clones the telemetry batch. Existing unavoidable per-row
 allocations stay local: service/name strings, hex trace/span ids, and JSON
@@ -51,12 +53,12 @@ attributes.
 
 ## Producer Coverage
 
-The Rust playground currently lacks metric exemplars because the Rust SDK does
-not emit them yet. Plan 033 should not try to fix the producer. Tests and live
-demo coverage should use JVM/Micrometer-style exemplar data or synthetic OTLP
-fixtures. The UI must therefore render an explicit fallback when a metric has
-no attached exemplars: "No trace exemplar attached; showing traces near this
-timestamp".
+At implementation time the Rust playground lacked metric exemplars because the
+Rust SDK did not emit them. Historical plan 033 therefore used
+JVM/Micrometer-style exemplar data and synthetic OTLP fixtures instead of
+changing the producer. The shipped UI renders the explicit no-exemplar fallback
+"No trace exemplar attached; showing traces near this timestamp," with route
+tests pinning that behavior.
 
 ## Query Cost
 

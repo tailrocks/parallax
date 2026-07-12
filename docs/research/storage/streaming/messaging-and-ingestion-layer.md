@@ -4,6 +4,17 @@
 
 Research date: 2026-05-25
 
+> **Historical research note, not an implementation plan (reconciled
+> 2026-07-12).** Parallax currently uses its bounded local raw-frame spool and
+> in-process worker; GreptimeDB + Turso remain mandatory. No external broker,
+> alternate telemetry database, or broker fallback is authorized. Current
+> ingest-health work is owned by
+> [plan 113](../../../../plans/113-ingest-backpressure-observability.md).
+> The candidate comparisons and dormant experiment protocol below become
+> executable only after the measured broker trigger in
+> [`plans/README.md`](../../../../plans/README.md) fires and the operator opens a
+> new numbered plan.
+
 ## Executive Summary
 
 Parallax should **not** require a message broker in the smallest deployment.
@@ -11,34 +22,33 @@ The tiny self-hosted version should start with:
 
 ```text
 parallax-server
-  -> local durable WAL / outbox
+  -> bounded local raw-frame spool
   -> storage writer
-  -> GreptimeDB or ClickHouse
+  -> GreptimeDB native tables
 ```
 
 That is the fastest way to beat self-hosted Sentry on operational simplicity.
 A stream only becomes mandatory when Parallax needs independent processors,
 burst absorption, replay, backfill, or scale-out ingestion.
 
-For the durable and scale-out profiles, **Apache Iggy is the first stream to
-prototype** because it is Rust-native, append-only, partitioned, single-binary,
-low-latency, and architecturally close to Parallax's goal. But it should be
-treated as a high-conviction prototype, not a locked dependency, until Parallax
-proves crash durability, fsync behavior, cluster replication, operational
-recovery, and mixed ingest/query processor workloads.
+If a supported server profile later proves that the current design cannot meet
+an approved replay/isolation SLO, this research ranks **Apache Iggy as the first
+stream candidate to measure** because it is Rust-native, append-only,
+partitioned, and single-binary. That comparison is dormant until the trigger
+above; it does not authorize a dependency or product profile.
 
-Current recommendation:
+Historical candidate disposition:
 
 | Deployment stage | Stream decision |
 | --- | --- |
-| Tiny single server | No external stream. Use a local WAL/outbox and direct writes. |
-| Durable single server | Prototype Apache Iggy as the durable replay log. |
-| Scale-out | Prefer Iggy if clustering and durability tests pass; otherwise fall back to Redpanda or NATS JetStream depending on which failure mode matters more. |
+| Current local product | No external stream. Use the bounded local spool and direct GreptimeDB writes. |
+| Future durable single server | Not open; compare Iggy only after the measured trigger and a numbered plan. |
+| Future scale-out | Not open; compare Iggy, NATS JetStream, and Redpanda as research candidates only. |
 
-The important design move is to define Parallax's internal ingest contract now:
-raw accepted telemetry is append-only, idempotent, replayable, and processor
-agnostic. The first implementation can be a local WAL. Iggy can replace that WAL
-when the product actually needs a broker.
+The durable research requirement is that accepted raw telemetry has explicit
+spool, replay, idempotency, and backpressure semantics. Plans 099 and 113 own
+the currently actionable boundary/idempotency and health work. This note does
+not authorize an `IngestLog` abstraction or broker substitution.
 
 The concrete replay, backpressure, durability-mode, and fault-test gate for this
 decision is specified in
@@ -137,11 +147,11 @@ date. Older Jepsen reports, vendor benchmarks, or release notes are useful
 signals, but they must be labeled historical if newer releases have materially
 changed durability, clustering, performance, or licensing.
 
-| Candidate | Runtime | License / source posture | Strong fit | Main concern | Current role |
+| Candidate | Runtime | License / source posture | Strong fit | Main concern | Historical research role |
 | --- | --- | --- | --- | --- | --- |
-| Apache Iggy | Rust | Apache project, incubating | Best architectural fit: Rust, append-only log, partitions, consumer groups, single binary, low-latency design. | Clustering is still being hardened; public performance evidence is young; defaults may not fit tiny deployments. | First durable-stream prototype. |
-| Redpanda | C++ / Seastar | Source-available BSL community; enterprise features | Strong Kafka-compatible operational baseline with Raft, mature partition model, high performance. | Not open-source in the Parallax sense; tiered storage is Enterprise for self-hosted; Kafka compatibility is not a requirement. | Baseline/fallback if Iggy durability or clustering fails. |
-| NATS JetStream | Go | Apache-2.0 | Mature, single-binary, simple messaging plus persistence, good edge/cloud deployment model. | Not as naturally Kafka-like for partitioned telemetry replay; durability defaults need careful testing and config. | Fallback when simplicity and OSS matter more than log-centric design. |
+| Apache Iggy | Rust | Apache project, incubating | Best architectural fit: Rust, append-only log, partitions, consumer groups, single binary, low-latency design. | Clustering is still being hardened; public performance evidence is young; defaults may not fit tiny deployments. | First comparator if the experiment is triggered. |
+| Redpanda | C++ / Seastar | Source-available BSL community; enterprise features | Strong Kafka-compatible operational baseline with Raft, mature partition model, high performance. | Not open-source in the Parallax sense; tiered storage is Enterprise for self-hosted; Kafka compatibility is not a requirement. | Triggered-experiment comparator only. |
+| NATS JetStream | Go | Apache-2.0 | Mature, single-binary, simple messaging plus persistence, good edge/cloud deployment model. | Not as naturally Kafka-like for partitioned telemetry replay; durability defaults need careful testing and config. | Triggered-experiment comparator only. |
 | Liftbridge | Go | Apache-2.0 | Kafka-lite semantics on NATS; partitioned replicated streams; simple Go stack. | Smaller ecosystem, old docs, and overlaps with JetStream while adding another layer. | Watch-list only. |
 | Kafka / Pulsar | JVM | Open source | Baseline-to-beat for durable stream architecture and ecosystem. | Excluded by the language/runtime filter and operational profile. | Reference only, not deployable candidates. |
 
@@ -204,10 +214,9 @@ The consequence for Parallax is concrete and changes a prior conclusion: **Tier 
 horizontal durability cannot depend on Iggy yet**, because a single-node stream is
 a single point of failure with no replicated partitions or failover. Iggy is a
 fine *single-node durable* stream (Tier 2), but the Tier 3 clustered-durable
-stream must be NATS JetStream (Go, mature clustering) or Redpanda (C++, Raft) —
-or a storage-backed/object-store stream — until Iggy ships and proves VSR
-clustering. Keep Iggy behind the `IngestLog` abstraction precisely so this
-Tier-3 substitution is a config change, not a rewrite.
+research comparison must include NATS JetStream (Go, mature clustering) and
+Redpanda (C++, Raft) until Iggy ships and proves VSR clustering. This is a
+candidate finding, not an approved Tier-3 product architecture.
 
 Sources:
 
@@ -216,7 +225,7 @@ Sources:
 - [Iggy clustering status (issue #2562)](https://github.com/apache/iggy/issues/2562)
 - [Apache Iggy incubation status](https://incubator.apache.org/projects/iggy.html)
 
-Risks to test before making it a default dependency:
+Risks a future triggered experiment would need to test:
 
 | Risk | Why it matters |
 | --- | --- |
@@ -227,7 +236,7 @@ Risks to test before making it a default dependency:
 | Linux bias | The highest-performance path depends on `io_uring`; laptop and non-Linux dev environments may behave differently. |
 | Ecosystem depth | Kafka, Redpanda, and NATS have more operational runbooks and user scars. |
 
-Iggy should therefore be evaluated with adversarial tests, not only vendor
+A future triggered Iggy experiment would use adversarial tests, not only vendor
 benchmarks:
 
 1. Produce Sentry-envelope-sized and OTLP-batch-sized messages with `fsync`
@@ -241,18 +250,17 @@ benchmarks:
 
 ### Iggy Verdict
 
-Iggy is the right first prototype because it is the only candidate that is both
-Rust-native and architecturally shaped like Parallax's desired ingest log. If
-its durability and clustering pass the Parallax benchmark, it should become the
-default durable stream.
+Iggy is the first candidate this historical study would measure after the
+broker trigger because it is Rust-native and shaped like an ingest log. Passing
+the experiment would produce decision evidence, not silently create a product
+default.
 
-But it should not be required in the tiny profile. The first version should keep
-Iggy behind an internal `IngestLog` abstraction so Parallax can run with either
-`local-wal` or `iggy`.
+It is not required in the current product. Any future abstraction or supported
+mode belongs in the numbered plan opened after the trigger.
 
 ## Redpanda Evaluation
 
-Redpanda is the strongest non-Rust fallback for a high-throughput durable log.
+Redpanda is the strongest non-Rust clustered comparator in this research.
 It is C++/Seastar-based, Kafka API-compatible, uses Raft-based data management,
 and appends events to partition log files on disk.
 
@@ -286,14 +294,14 @@ Source:
 
 ### Redpanda Verdict
 
-Redpanda is the serious fallback if Iggy cannot prove durability or cluster
-readiness. It is not the preferred Parallax default because it is not Rust,
+Redpanda is a serious comparator if Iggy cannot prove durability or cluster
+readiness. It is not an approved Parallax dependency because it is not Rust,
 Kafka compatibility is not valuable for this product, and the licensing/tiered
 storage posture works against the open-source object-retention goal.
 
 ## NATS JetStream Evaluation
 
-NATS JetStream is the strongest "simple operational fallback." It is built into
+NATS JetStream is the strongest simple-operations comparator. It is built into
 the NATS server, supports persistent streams, file or memory storage,
 at-least-once delivery, message replay, stream retention limits, consumers, and
 Raft-based clustering.
@@ -332,10 +340,10 @@ Source:
 
 ### NATS Verdict
 
-Use NATS JetStream if Parallax values broad operational maturity and simple OSS
-deployment more than a purpose-built append-only telemetry log. It is a better
-fallback than Liftbridge because it is the native NATS persistence path, but it
-is less architecturally precise than Iggy for Parallax's evidence replay model.
+In a triggered experiment, NATS JetStream would represent broad operational
+maturity and simple OSS deployment. It is a stronger comparator than
+Liftbridge because it is the native NATS persistence path, but it is less
+architecturally precise than Iggy for Parallax's evidence replay model.
 
 ## Liftbridge Evaluation
 
@@ -370,12 +378,13 @@ Weaknesses:
 
 Keep Liftbridge on the watch list only. It is directionally aligned with the
 "Kafka-lite, no JVM" instinct, but it is neither Rust-native nor clearly better
-than NATS JetStream as the practical fallback.
+than NATS JetStream as the practical comparator.
 
 ## Cost and Retention
 
-The stream should not be the long-term telemetry store. GreptimeDB or
-ClickHouse should own long retention. The stream owns short raw replay.
+An external stream, if ever authorized, should not be the long-term telemetry
+store. GreptimeDB owns long retention; a stream would own short raw replay.
+ClickHouse remains benchmark evidence only.
 
 Recommended retention:
 
@@ -394,7 +403,7 @@ replay buffer, not the evidence archive.
 Object storage belongs primarily behind the database/storage layer:
 
 - GreptimeDB object-storage-oriented deployments for retained telemetry.
-- ClickHouse object-storage/tiered layouts where self-hosting proves practical.
+- ClickHouse object-storage/tiered layouts as comparator evidence only.
 - Broker tiering only if the broker is also used as a durable historical log,
   which is not the first Parallax requirement.
 
@@ -408,7 +417,7 @@ parallax-server
   - future HTTP Sentry envelope endpoint after V1
   - local WAL/outbox
   - in-process normalizer/grouping/storage writer
-greptimedb standalone or clickhouse
+greptimedb standalone
 turso metadata
 ```
 
@@ -417,23 +426,24 @@ Goal: lower operational burden than self-hosted Sentry.
 This profile should run on a small VPS. No broker unless benchmarks prove the
 local WAL loses data or blocks ingestion too often.
 
-### Profile 2: Durable Single Server
+### Historical Candidate Profile 2: Durable Single Server
 
 ```text
 parallax-ingest
 apache iggy standalone
 parallax-worker
 greptimedb standalone
-postgres metadata
+turso metadata
 object storage for database retention/backups
 ```
 
 Goal: tolerate storage outages, processor restarts, and parser/grouping
 replays.
 
-This is the first place Iggy should appear in the default architecture.
+This topology is not open product scope. It is retained only as input to a
+future triggered comparison.
 
-### Profile 3: Scale-Out
+### Historical Candidate Profile 3: Scale-Out
 
 ```text
 parallax-ingest x N
@@ -443,24 +453,24 @@ clustered durable stream: NATS JetStream or Redpanda
 normalizer workers x N
 grouping workers x N
 context-index workers x N
-greptimedb distributed or clickhouse cluster
-postgres metadata
+greptimedb distributed
+turso metadata
 object storage
 ```
 
-Goal: horizontal scaling without rewriting event contracts. Because the
-`IngestLog` abstraction is the same across tiers, swapping the Tier 3 stream
-(NATS/Redpanda today, Iggy when its clustering is proven) is a deployment change,
-not an event-contract change.
+This topology is not an approved product profile. A future numbered plan must
+derive its contract from measured requirements rather than assume a swappable
+broker layer.
 
 The ingest gateway must remain stateless except for authentication/cache. All
 durable state belongs in the stream, observability storage, metadata store, or
 object storage.
 
-## Benchmark Plan For The Stream Layer
+## Dormant Experiment Protocol For The Stream Layer
 
-The storage benchmark already covers GreptimeDB versus ClickHouse. The stream
-benchmark should be separate and narrower:
+Run this protocol only after the repository trigger and operator authorization
+create a numbered plan. It is research scaffolding, not an active queue. The
+storage benchmark remains separate and treats ClickHouse only as a comparator.
 
 ### Dataset
 
@@ -494,7 +504,7 @@ benchmark should be separate and narrower:
 
 ### Acceptance Criteria
 
-Iggy becomes the preferred durable stream only if:
+Iggy would qualify for a separate product decision only if:
 
 1. Single-node durability is clear and configurable.
 2. Replay is fast enough to reprocess at least 24 hours of expected startup
@@ -507,16 +517,8 @@ Iggy becomes the preferred durable stream only if:
 
 ## Bottom Line
 
-Parallax should design around an append-only ingestion log, but it should not
-prematurely force users to operate one.
-
-- **Now:** implement the interface and local WAL semantics.
-- **Prototype:** use Apache Iggy for the durable stream profile.
-- **Fallback:** use Redpanda if durability/cluster maturity beats openness and
-  Rust purity; use NATS JetStream if OSS simplicity beats log-centric design.
-- **Reject:** Kafka and Pulsar as deployable candidates because they violate the
-  language/runtime and operational-simplicity constraints.
-
-This keeps the architecture honest: Iggy is the best match for the vision, but
-the product wins early by being simpler than Sentry, not by requiring another
-piece of infrastructure before users have enough volume to need it.
+The current product keeps its bounded local spool and in-process worker.
+Plan 113 makes that path observable; plan 099 strengthens its boundaries. Iggy,
+NATS JetStream, and Redpanda remain dormant research candidates until a
+supported profile proves the current design misses an approved SLO and the
+operator opens a numbered plan. This note cannot authorize implementation.

@@ -4,10 +4,12 @@
 
 Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 
-> **⚠ Update 2026-06-18 — V1 storage decided: GreptimeDB-only, native OTLP model.** Where this doc says
-> "storage adapter, GreptimeDB lean / ClickHouse fallback," read: V1 commits to GreptimeDB alone on its
-> **native OTLP tables**; ClickHouse is deferred (not a V1 fallback or design constraint). Canonical:
-> [native-otel-tables.md](native-otel-tables.md) · [native-otel-migration-plan.md](../storage/native-otel-migration-plan.md).
+> **Current authority (operator, 2026-06-12; native-table refinement,
+> 2026-06-18): GreptimeDB + Turso are mandatory.** ClickHouse and Postgres are
+> research comparators only. Capability adapters exist for ownership and tests,
+> not product substitution. Historical build sequencing in this synthesis is not
+> an active queue: contract cleanup is plan 093 and server work is plan 115;
+> every other unfinished implementation item must first exist in `plans/`.
 
 > **Decision record — strategic synthesis and coverage map.** Status: GO (narrow), tying the
 > research notes into one verdict and mapping every prompt area to its evidence. The current
@@ -55,9 +57,9 @@ audit system that can answer what happened, who or what initiated it, what the
 agent saw, what tools it used, what it changed, and whether the result fixed or
 worsened the original problem.
 
-## Build Direction
+## Historical Build Direction And Current Ownership
 
-Build this first:
+The original research proposed this sequence:
 
 ```text
 Rust service / CLI / coding agent
@@ -66,18 +68,17 @@ Rust service / CLI / coding agent
   -> CLI invocation trace ingest and tested agent-session adapter ingest
   -> Parallax Rust ingest gateway
   -> local WAL for tiny mode
-  -> columnar storage adapter (GreptimeDB lean / ClickHouse fallback)
-  -> Turso prototype metadata / Postgres production fallback
+  -> GreptimeDB telemetry capability boundary
+  -> Turso metadata capability boundary
   -> deterministic grouping/correlation/evidence graph
   -> API context bundle / later read-only MCP projection
 ```
 
-Add Apache Iggy only when replay, burst buffering, or worker separation is worth
-the extra process. Keep ClickHouse and GreptimeDB runnable behind the storage
-adapter; the current lean is **GreptimeDB (not yet settled)** — the resolved
-anchored-retrieval query mix takes ClickHouse's scan-speed lead off the hot
-path, so cost + Rust decide — with ClickHouse the fallback until Parallax-shaped
-storage gates settle it (see [storage-engine.md](storage-engine.md)).
+This is not executable work. Local V1 subsequently shipped. Plans 093 and 115
+own current contract and server-profile work. Sentry compatibility and product
+MCP are blocked in plans 118 and 112. Any external stream remains research until
+the operator authorizes a numbered plan. ClickHouse benchmark deltas expose
+GreptimeDB risks; they do not activate a fallback.
 
 ## Direct Answers To Strategic Questions
 
@@ -135,9 +136,9 @@ storage gates settle it (see [storage-engine.md](storage-engine.md)).
 | App collection | Rust `tracing`, `tracing-error`, `opentelemetry-otlp`, panic hooks, error-chain capture, Sentry envelope error path. |
 | External protocols | Sentry envelope `event` subset and OTLP HTTP/gRPC. |
 | Ingest | Rust `parallax-ingest` gateway. |
-| Stream | No external broker for tiny mode; Apache Iggy for durable profile. |
-| Observability storage | Storage adapter; current lean GreptimeDB (not settled, see [storage-engine.md](storage-engine.md)), ClickHouse fallback, until A5 gates decide. |
-| Metadata | Turso Database for prototype/tiny local metadata; Postgres remains the production and scale-out fallback until Turso passes the production-readiness gate. |
+| Stream | Current local spool/WAL only; external streams remain research until a numbered plan is authorized. |
+| Observability storage | GreptimeDB native tables, mandatory; capability boundaries serve ownership/tests, while ClickHouse is comparator-only. |
+| Metadata | Turso Database, mandatory; Postgres is comparator-only. |
 | Processing | Rust workers, deterministic normalization/grouping/correlation before AI. |
 | Context model | Typed evidence graph in tables first. |
 | Execution surfaces | Services, CI runs, CLI apps, and coding agents. |
@@ -170,7 +171,7 @@ Technical proof gates:
 - A5 stack-decision roll-up across storage speed/cost, metadata, ingest-log,
   setup, and integration rows, specified in the
   [A5 stack decision ledger](stack-decision.md). This ledger controls
-  when component benchmarks are allowed to become stack-default claims.
+  when component benchmarks are allowed to support stack-assurance claims.
 
 - A7 scope-discipline roll-up across component inventory, dependency rows,
   feature intake, interface surfaces, and phase budgets, specified in the
@@ -234,7 +235,7 @@ Technical proof gates:
     [Agent session tracing ledger](../capture/agent-cli-tracing.md),
     with OpenTelemetry GenAI/MCP/CLI normalization specified in
     [Agent and CLI OTel semantic-convention mapping](../capture/agent-cli-tracing.md).
-12. Turso correctness, backup/restore, concurrency, migration, and fallback
+12. Turso correctness, backup/restore, concurrency, migration, and degraded-mode
     behavior for metadata, agent session state, CLI invocation state, outcomes,
     and audit records, specified further in
     [Turso metadata production readiness](../storage/metadata/turso-metadata-production-readiness.md).

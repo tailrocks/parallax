@@ -20,7 +20,7 @@ Warm, **median of 5 reps**. GT = `execution_time_ms`; CH = `clickhouse-client --
 
 Median ms, lower = faster. **Faster** = which engine wins this query (both interactive — every cell
 ≪ 300 ms). **Details** links the curated mechanism note + the reproducible run(s) in the run log.
-**Numbers below are produced by the reproducible harness [`bench/four-way/`](../../bench/four-way/) at
+**Numbers below are produced by the reproducible harness [`bench/four-way/`](../../../../bench/four-way/) at
 `N = 1,000,000` rows per table (uniform; `gen.sh` enforces a 50,000 minimum), median of 8 warm reps,
 Run 140.** Re-run with `docker compose -f bench/compose.yml up -d && bench/four-way/gen.sh &&
 bench/four-way/bench.sh`.

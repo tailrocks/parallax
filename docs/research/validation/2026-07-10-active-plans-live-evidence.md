@@ -1,4 +1,4 @@
-# Active Plans Live Evidence
+# Historical active-plan live evidence
 
 Timestamp: 2026-07-10T07:40:00Z
 
@@ -264,4 +264,6 @@ savedViews(page:"/logs")=[]
 - 063: trace-shape scenarios satisfied by long trace, compare pair, and backdated skew trace proof.
 - 064: command center satisfied by overview counts, dashboard brush route tests, and linked drilldown proof.
 
-Result: every active `plans/` file has removal evidence. Keep future work in a new plan only if evidence becomes contradicted.
+Historical result at the timestamp above: every then-active plan file had
+removal evidence. This packet is completion evidence, not a current plan index;
+current unfinished work is authoritative only in `plans/`.

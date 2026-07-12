@@ -1,20 +1,30 @@
-# Build Roadmap and Validation Sequence
+# Historical Build And Validation Sequence
 
 <!-- markdownlint-disable MD013 -->
 
 Research date: 2026-05-25
 
-## Verification Rule
+> **Status (2026-07-12): historical sequencing and research-gate record, not an
+> active implementation roadmap.** Phase 1 shipped. Every unfinished product or
+> engineering item is authoritative only in [`plans/`](../../../plans/).
+> Research experiments and market-validation protocols remain in their linked
+> research ledgers, but no implementation may start from this file. The
+> GreptimeDB + Turso decision also supersedes every fallback reference in the
+> original projection.
 
-- Browser-based verification in this plan (navigation, interaction, screenshot capture, DOM assertions, and any runtime UI check) **must use `agent-browser`**.
-- Current verified tooling for this environment: `agent-browser` CLI version `0.31.1`.
-- Use deterministic CLI sessions (`session` naming, optional `--headed` only when needed) and record command outputs in the relevant validation ledger.
+## Recorded Verification Rule
+
+- Browser-based verification in the original sequence used `agent-browser` for
+  navigation, interaction, screenshots, DOM assertions, and runtime UI checks.
+- The environment record pinned `agent-browser` CLI version `0.31.1` at the time.
+- Runs used deterministic named sessions and stored results in the relevant
+  validation ledger. Current implementation plans define their own live gates.
 
 ## Purpose
 
-The [technical implementation concept](implementation-concept.md) says
-*what* to build. This says *in what order*, and the order is chosen to **kill the
-project as cheaply as possible** if it is going to die. It synthesizes the
+The [technical implementation concept](implementation-concept.md) recorded
+*what* the research proposed. This file recorded *in what order*, with the order
+chosen to **kill the project as cheaply as possible** if it was going to die. It synthesizes the
 [verdict](../decisions/go-no-go.md), the [bear case](../decisions/risks-and-bear-case.md), the
 [bundle-value evaluation](../validation/a1-bundle-value/bundle-value-evaluation.md), and the benchmark specs
 into one de-risking sequence with explicit go/no-go gates.
@@ -28,9 +38,10 @@ cheap experiments first.
 > **Alignment note (operator statement #5, 2026-06-11).** The gates in this sequence govern
 > **market claims and further-investment framing**, not the operator's own tool. The operator
 > ruled that goals 1+2 — local visibility and the server profile, per the
-> [V1 build plan](v1-build-plan.md) — are built now for operator-as-user-#1, in parallel with
-> these gates, with autonomous fixing deferred to a future nice-to-have. The two tracks feed
-> each other: the build's M2 bundle output is the Arm-C generator the Phase-0 A1 eval needs, and
+> [historical V1 build record](v1-build-plan.md) — were prioritized for
+> operator-as-user-#1, in parallel with these gates, with autonomous fixing
+> deferred. Local V1 subsequently shipped; server work now remains blocked in
+> `plans/`. The two tracks feed each other: M2 bundle output is the Arm-C generator the Phase-0 A1 eval needs, and
 > A1/A2 still decide what may be *claimed* and whether the market product gets further
 > investment. Phase numbering below is unchanged; read "build nothing until the gate passes" as
 > "claim nothing and invest no further market effort until the gate passes."
@@ -89,9 +100,9 @@ assumption. Failing a gate sends you back, not forward.
   the paying tier — managed cloud + enterprise-ops — after A1, per
   [monetization-and-paying-segment.md](../validation/monetization-and-paying-segment.md).)
 
-### Phase 1 — Tiny tier that makes bundles real (the MVP)
+### Phase 1 — Tiny tier that made bundles real (shipped MVP)
 
-Build only enough to generate the bundle automatically and repeatably:
+The original phase built enough to generate the bundle automatically and repeatably:
 
 - Local-first one-command server with managed local GreptimeDB standalone for observability evidence,
   Turso/SQLite-like metadata for grouping/state, short local retention, and `run_id` as the primary
@@ -102,8 +113,9 @@ Build only enough to generate the bundle automatically and repeatably:
 - Direct-SDK and Collector OTLP claim levels controlled by the
   [OTLP conformance ledger](../capture/otlp.md).
 - Same-trace and same-run correlation → one real `run context` / `issue context` bundle.
-- Storage adapter contract with local GreptimeDB profile implemented first; ClickHouse and Turso-only
-  fallback remain interface targets, not Phase-1 blockers.
+- Storage capability boundaries with local GreptimeDB + Turso. The historical
+  ClickHouse/Turso-only fallback projection is superseded and must not be
+  implemented.
 - CLI (`parallax run inspect …`, `parallax run bundle …`, `parallax issue context …`) + local context
   API; GraphQL is the preferred query/exploration API, with OTLP for ingest and minimal health/version
   endpoints.
@@ -113,63 +125,39 @@ Build only enough to generate the bundle automatically and repeatably:
   [self-hosted simplicity gate](../validation/self-hosted-simplicity.md). This is the
   "simpler than Sentry" proof.
 
-### Phase 2 — Prove the engine and start the moat clock
+### Phase 2 — Engine and evidence gates (partly shipped; ownership migrated)
 
-- Implement the GreptimeDB production/server storage profile and run the
-  [storage benchmark prototype](../storage/benchmark-plan.md) (GreptimeDB vs ClickHouse) — now
-  justified, because local bundles have proven value.
-- Add the Sentry-compatible envelope adapter only if the OTLP-first local loop is proven and Sentry
-  migration becomes the next highest-value adoption path; compatibility claims remain controlled by
-  the [Sentry SDK compatibility ledger](../capture/sentry-ingest.md).
-- Validate [retention cost](../storage/size-and-object-cost.md) on real data; pick the
-  object store (R2/B2 vs S3 per the egress finding).
-- Redaction red-team (A6) before any third-party-model exposure.
-- Publish the [open evidence schema](evidence-bundle-schema.md) with the
-  machine-readable artifacts and conformance suite required by the
-  [schema adoption and corpus moat gate](../validation/a3-schema-corpus.md)
-  and [A3 schema adoption and corpus ledger](../validation/a3-schema-corpus.md)
-  → starts the A3 adoption clock.
-- **Gate:** storage gates pass (freshness/latency/cost) or ClickHouse substitutes;
-  redaction leak rate acceptable.
+- GreptimeDB is the committed engine. Comparative benchmark research remains in
+  [the storage benchmark](../storage/benchmark-plan.md), while server-profile
+  implementation is blocked in plan 115 and cannot introduce a fallback.
+- Conditional Sentry migration-adapter work moved to blocked plan 118; the
+  [capture note](../capture/sentry-ingest.md) remains design evidence only.
+- Retention/prune, evidence pinning, runtime redaction/A6, and evidence-contract
+  reconciliation are owned by plans 116, 106, 111, and 104 respectively.
+- Schema/corpus adoption remains a research claim gate in
+  [A3](../validation/a3-schema-corpus.md), not an implementation checklist here.
 
-### Phase 3 — Scale seams and breadth
+The historical gate now means that performance/cost or redaction evidence can
+block claims and expose GreptimeDB/Parallax work. It cannot authorize ClickHouse
+or any other product fallback.
 
-- Add the simple local investigation UI specified in
-  [Simple UI V2 Concept](simple-ui-v2.md): TanStack Start + shadcn/ui over the Parallax API, with
-  Sentry-style grouped issues, stack traces, run timeline, trace waterfall, log object inspection,
-  metric windows, and bundle preview. Do not build a dashboard suite first.
-- Tier-2 topology (split ingest/workers, object storage, optional Iggy
-  single-node; NATS/Redpanda reserved for Tier-3 clustering per
-  [messaging](../storage/streaming/messaging-and-ingestion-layer.md)).
-- Add the read-only MCP adapter specified in
-  [Agent access surface: CLI, HTTP API, and MCP](../decisions/agent-access-surface.md).
-- Add CLI-invocation tracing only after the
-  [CLI trace safety ledger](../capture/agent-cli-tracing.md) passes the relevant
-  capture/redaction/overhead level.
-- Add coding-agent session tracing surface by surface, not as one generic
-  feature: Claude OTel and `stream-json`, Codex hooks and `exec --json` JSONL,
-  Amp plugins and streaming JSON, and OpenCode run JSON/export/plugin/server/API
-  and ACP all require separate rows in the
-  [Agent session tracing ledger](../capture/agent-cli-tracing.md).
-- Add frontend collection after the privacy and cross-tier gates in
-  [frontend collection](../capture/frontend.md).
-- **Gate:** scale-out changes topology, not the event/bundle contract; no agent
-  tracing wording goes beyond the exact adapter/version/config claim level the
-  ledger has passed.
+### Phase 3 — Historical scale-and-breadth projection
 
-### Phase 4 — Value capture and the feedback loop
+This phase originally grouped UI, server topology, MCP, CLI/agent tracing, and
+frontend collection. It is not a backlog. The UI and several capture surfaces
+subsequently shipped; current UI restructuring is plan 100, server/auth work is
+blocked in plans 109/110/115, and product MCP is blocked in plan 112. Capture
+ledgers continue to constrain product claims. Any future unlisted implementation
+must first receive a numbered plan in `plans/`.
 
-- The separate **fixer** component (PR proposals) — the commercial seam from
-  [business model](../validation/business-model.md), measured through the
-  [fixer outcome ledger](../decisions/fixer-boundary.md) before any value claim feeds
-  the [business model validation ledger](../validation/business-model.md).
-- Accepted/rejected/reverted fixer outcome capture -> the
-  failure/fixer-outcome corpus (A3 moat).
-- Use the [fixer component and outcome loop](../decisions/fixer-boundary.md)
-  contract and [fixer outcome ledger](../decisions/fixer-boundary.md) so opened PRs are
-  not counted as successful fixes until review, validation, and recurrence
-  evidence support that label.
-- **Gate:** fixes cite evidence, record outcomes, and feed recurrence back.
+### Phase 4 — Historical fixer projection
+
+The separate fixer and outcome loop remain product research in the
+[fixer-boundary decision](../decisions/fixer-boundary.md), A3 corpus gate, and
+[business-model ledger](../validation/business-model.md). They are not
+authorized implementation work. If the operator opens that scope, create a
+numbered plan before editing product code; this file supplies no executable
+steps or completion claim.
 
 ## Assumption → Phase Map
 
@@ -236,8 +224,8 @@ Build only enough to generate the bundle automatically and repeatably:
   projection audits, usefulness preservation, and claim freshness before agent
   exposure.
 - [A5 stack decision ledger](../decisions/stack-decision.md) — the Phase 2 umbrella
-  result contract for turning component benchmarks into stack defaults or
-  fallback decisions.
+  result contract for testing stack claims and exposing GreptimeDB/Turso risks;
+  it no longer authorizes fallback decisions.
 - [A7 scope discipline ledger](../validation/a7-scope.md) — the phase budget
   and feature-admission contract that prevents broad roadmap work from entering
   Phase 1 before the tiny bundle proof.
@@ -272,7 +260,7 @@ Build only enough to generate the bundle automatically and repeatably:
   — the claim-level contract for proving least privilege, RLS/view scoping,
   template parsing, redaction, audit, and projection safety.
 - [Technical implementation concept](implementation-concept.md) — the
-  component detail each phase builds.
+  historical component detail each phase built or projected.
 - [Storage benchmark prototype](../storage/benchmark-plan.md),
   [retention cost model](../storage/size-and-object-cost.md) — Phase 2 gates.
 - [Business model](../validation/business-model.md) and
@@ -286,8 +274,9 @@ Build only enough to generate the bundle automatically and repeatably:
 
 ## Bottom Line
 
-Order the work by how cheaply each step can kill the project. A hand-built bundle
-and twenty conversations can falsify Parallax in a week; a storage benchmark
-cannot. Build the tiny tier only after the bundle earns its keep, prove the engine
-only after bundles matter, and add breadth only after the tiny tier is excellent.
-De-risk in assumption-priority order, not in build-comfort order.
+The sequencing principle was to order work by how cheaply each step could kill
+the project. A hand-built bundle and twenty conversations could falsify Parallax
+in a week; a storage benchmark could not. The tiny tier followed bundle value,
+engine proof followed bundle relevance, and breadth followed tiny-tier quality.
+That assumption-priority principle remains research guidance, not an executable
+implementation queue in this file.

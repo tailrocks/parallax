@@ -4,32 +4,23 @@
 
 Decision date: 2026-06-03 · Updated after local-first clarification 2026-06-03
 
-> **⚠ Update 2026-06-18 — V1 is GreptimeDB-only on the native OTLP model.** Parallax V1 commits to
-> GreptimeDB alone and adopts its **native OTLP tables** (proxy forwards raw OTLP to Greptime + tees
-> in-process to derive issues into custom extension tables). **ClickHouse is deferred** — not a V1
-> fallback and not a design constraint; revisit only if a concrete benefit appears. The `StorageAdapter`
-> trait may remain (it exists, with the in-memory test adapter), but portability-to-ClickHouse is no
-> longer a constraint, so the design uses Greptime-native features freely. This supersedes the
-> "adapter-extensible, ClickHouse fallback profile" framing below for V1 scope. Canonical:
-> [native-otel-tables.md](native-otel-tables.md) · [native-otel-migration-plan.md](../storage/native-otel-migration-plan.md).
-
-> **Decision — V1 is local-first and adapter-extensible; managed local GreptimeDB is the preferred
-> evidence store.** The first implementation should feel like one command on a developer machine:
-> Parallax manages a local GreptimeDB standalone process for observability evidence and uses
-> Turso/SQLite-like storage for local metadata/grouping state. The product contract still goes through
-> a storage adapter so future profiles can target Turso-only fallback, GreptimeDB server/cluster,
-> ClickHouse, or another backend without changing the evidence-bundle API.
+> **Current authority (operator, 2026-06-12; native-table refinement,
+> 2026-06-18): GreptimeDB + Turso are mandatory.** GreptimeDB uses native raw
+> signal tables; Turso owns metadata. ClickHouse, Postgres, SQLite, and Turso-only
+> telemetry are not product modes. Capability traits exist for ownership and
+> tests, not backend replacement. This is a historical V1 design record, not an
+> active plan. Contract cleanup is plan 093 and server work is plan 115.
 
 ## What This Means
 
-There are two different "firsts":
+The historical design distinguished these profiles; current policy retains only
+the GreptimeDB + Turso shape:
 
-- **First local product:** managed local GreptimeDB standalone for telemetry evidence plus
-  Turso/SQLite-like metadata, because this avoids rebuilding observability storage.
+- **First local product:** managed local GreptimeDB standalone for telemetry
+  evidence plus Turso's SQLite-compatible metadata, because this avoids
+  rebuilding observability storage.
 - **First production storage profile:** GreptimeDB server/cluster, because it is the best current fit
   for high-volume retained observability evidence.
-- **Fallback local product:** Turso/SQLite-like only, for ultra-small demos/tests where no GreptimeDB
-  sidecar is allowed.
 
 V1 local should store enough bounded telemetry and metadata to answer:
 
@@ -40,7 +31,8 @@ which spans/logs/metrics led to that failure?
 what bundle should I hand to an agent?
 ```
 
-The product contract remains backend-neutral. Parallax users and agents depend on:
+The product contract remains engine-encapsulated, not engine-swappable. Parallax
+users and agents depend on:
 
 - OpenTelemetry traces, logs, and metrics;
 - optional Sentry-compatible error ingest adapter;
@@ -51,7 +43,7 @@ The product contract remains backend-neutral. Parallax users and agents depend o
 
 They should not depend on Turso table names, GreptimeDB table names, query dialect details, region
 layout, object-storage internals, or PromQL-specific implementation behavior. Those belong behind
-`StorageAdapter`.
+  capability-specific storage boundaries.
 
 ## Local V1 Default
 
@@ -60,7 +52,7 @@ The local profile should optimize for:
 - one command;
 - no Docker requirement;
 - managed GreptimeDB child process or existing GreptimeDB URL;
-- Turso/SQLite-like local metadata file;
+- Turso local metadata file (SQLite-compatible API, not a SQLite fallback);
 - short-lived local retention;
 - disposable/prunable run history;
 - small and medium local app stacks;
@@ -70,12 +62,9 @@ GreptimeDB is the preferred local evidence store because it runs as a standalone
 Greptime Homebrew tap supports `brew install greptime`; `greptime standalone start` launches local
 HTTP/RPC/MySQL/Postgres ports. Docker is optional.
 
-Turso Database is the leading local metadata candidate because current docs describe an in-process SQL
-database written in Rust, compatible with SQLite, with local file and in-memory database examples. It
-is still beta, so V1 must keep a fallback path and avoid production durability claims until gates pass.
-
-Plain SQLite or another embedded store can substitute if Turso fails local reliability, migration, or
-concurrency checks. Turso-only telemetry storage remains a fallback, not the preferred V1 path.
+Turso Database is the mandatory local metadata engine. Its beta status gates
+production claims; reliability, migration, or concurrency failures require
+fix-forward work.
 
 ## GreptimeDB Server Profile
 
@@ -94,9 +83,9 @@ GreptimeDB is still the default production/server focus:
 5. **It aligns with the Rust-first strategy.** GreptimeDB is Rust, so deeper debugging, contribution,
    and long-term operator control are more realistic than with a C++ engine.
 
-This is a server-profile decision, not a claim that GreptimeDB is universally better than ClickHouse.
-ClickHouse remains the fallback for analytics-heavy workloads and if cost/cold-read benchmarks overturn
-the GreptimeDB assumption.
+This is not a claim that GreptimeDB is universally faster than ClickHouse.
+ClickHouse remains an analytics comparator; cost/cold-read results guide
+GreptimeDB or Parallax remediation.
 
 ## Adapter Boundary
 
@@ -119,19 +108,17 @@ build_bundle_inputs(...)
 enforce_retention(...)
 ```
 
-Exact names can change during implementation, but principle should not: callers ask for Parallax
-evidence, not database queries. Backend-specific SQL, schemas, indexes, retention behavior, and query
-dialects stay inside adapters.
+Exact names can change under numbered plans, but the principle should not:
+callers ask for Parallax evidence, not database queries. GreptimeDB/Turso-specific
+details stay inside capability implementations.
 
 Minimum storage profiles:
 
 | Profile | Role | Status |
 | --- | --- | --- |
 | `local-greptimedb` | Default local V1 evidence profile using managed GreptimeDB standalone. | Build first for CLI/local runs. |
-| `local-metadata` | Turso/SQLite-like metadata/grouping profile. | Build with local GreptimeDB profile. |
-| `local-turso-only` | Ultra-small fallback using embedded storage only. | Keep limited; do not make it main observability store. |
+| `local-metadata` | Turso metadata/grouping capability. | Mandatory with local GreptimeDB. |
 | `greptimedb` | Default production/server observability storage. | Same model as local GreptimeDB, scaled up. |
-| `clickhouse` | Fallback for raw analytical speed and broad log/trace search. | Keep interface ready; implement when needed or when benchmarks flip. |
 
 ## Why Keep It Extensible
 
@@ -139,20 +126,17 @@ Extensibility protects three real futures:
 
 1. **Local-only mode.** Developer runs Parallax fully local, with managed GreptimeDB and no Docker.
    Turso handles grouping/state; GreptimeDB handles logs/traces/metrics.
-2. **Storage-result reversibility.** The GreptimeDB-vs-ClickHouse decision is still benchmark-gated. If
-   real $/GB, cold-read, or query-mix results flip, Parallax needs a swap path.
-3. **Different deployment sizes.** Tiny local, single-node self-hosted, durable server, and scale-out
-   deployments may deserve different backends while preserving one bundle contract.
+2. **Deployment growth.** Local and future server profiles preserve one bundle
+   contract while using the same mandatory engines.
 
 ## Non-Negotiables
 
 - V1 local implementation should be managed-GreptimeDB-plus-Turso-shaped.
 - V1 server implementation should remain GreptimeDB-shaped.
-- API and evidence-bundle contract must be backend-neutral.
-- No backend-only feature may become required for bundle correctness unless the adapter contract has a
-  portable fallback.
-- ClickHouse remains the explicit fallback, not a rejected engine.
-- Turso-only storage is a fallback, not the default observability profile.
+- API and evidence-bundle contracts hide engine details but may use approved
+  GreptimeDB native extensions.
+- Capability boundaries must not imply an alternate product engine.
+- ClickHouse and Postgres remain research comparators only.
 
 ## Relationship To Existing Decisions
 

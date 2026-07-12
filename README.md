@@ -49,14 +49,14 @@ reach "what is Parallax, which storage engine, and why" in a few minutes:
 - **[Research index](docs/research/README.md)** — the navigable map (vision, decisions, architecture, capture, storage, validation, market, reference) with a "current answers" table.
 - **[Problem, audience, and product shape](docs/research/00-vision/problem-audience-product-shape.md)** — what Parallax solves, who it is for (developer on a dev machine first), and the shape: best of three worlds (OTel collect, Sentry organize, Grafana understand), agent-first, CLI + API + UI over one canonical API.
 - **[North star: the autonomous fix loop](docs/research/00-vision/north-star-autonomous-fix-loop.md)** — the named moonshot (earned autonomy, the impossible triangle) and how it coexists with the narrow wedge. Build-order note: the moonshot is the ceiling, not the schedule.
-- **[V1 scope](docs/research/architecture/v1-scope.md)** — what V1 is: the self-sufficient local machine, complete inventory (install + engine auto-download, ingest, the `parallax run start -- <cmd>` wrapper, full CLI list, retention, docs, out-of-scope table, build checklist).
-- **[V1 build plan](docs/research/architecture/v1-build-plan.md)** — how it gets built: crate layout, milestones M0–M6 with dogfood exit criteria (V1 = M0–M2 + packaging; server profiles open V2); autonomous fixing parked at the schema level.
-- **[Deployment architecture map](docs/research/architecture/deployment-architecture-map.md)** — the three angles (local laptop, own server, cloud + object storage) with diagrams, setup flows, and the GreptimeDB/Turso/Postgres role split per angle.
+- **[V1 scope](docs/research/architecture/v1-scope.md)** — the self-sufficient local-machine contract and shipped delivery inventory (install, engine supervision, ingest, run wrapper, CLI, retention, docs, exclusions, and acceptance scenarios).
+- **[V1 build record](docs/research/architecture/v1-build-plan.md)** — historical crate/milestone sequencing and dogfood criteria; current unfinished implementation work is indexed only in [`plans/`](plans/).
+- **[Deployment architecture map](docs/research/architecture/deployment-architecture-map.md)** — the three historical topology angles; current implementation policy is GreptimeDB telemetry plus Turso metadata in every supported profile.
 - **[Go / no-go verdict](docs/research/decisions/go-no-go.md)** — GO, for the narrow evidence/context engine.
-- **[Storage engine decision](docs/research/decisions/storage-engine.md)** — current lean GreptimeDB (not yet settled), ClickHouse fallback, both behind a `StorageAdapter`.
+- **[Storage engine decision](docs/research/decisions/storage-engine.md)** — GreptimeDB is the committed telemetry engine; ClickHouse remains a research/benchmark comparator, never a product fallback.
 - **[Risks and the bear case](docs/research/decisions/risks-and-bear-case.md)** — the adversarial counterweight.
 - **[Strategic synthesis + coverage map](docs/research/decisions/strategic-coverage.md)** — every prompt area mapped to its evidence.
-- **[Implementation concept](docs/research/architecture/implementation-concept.md)** — the end-to-end blueprint.
+- **[Historical implementation concept](docs/research/architecture/implementation-concept.md)** — the original end-to-end architecture reasoning; current executable work is only in [`plans/`](plans/).
 
 Other entry points: [Repository structure](PROJECT_STRUCTURE.md) · [Agent instructions](AGENTS.md) · [Research prompt runbook](prompts/README.md).
 
@@ -94,10 +94,10 @@ The current recommended wedge is:
    spans and ERROR/FATAL logs.
 2. Treat Sentry-compatible error ingestion as a future migration adapter, not
    V1 scope.
-3. Store high-volume observability data in a simple self-hosted backend behind a
-   `StorageAdapter`; current lean is GreptimeDB (see the
-   [storage engine decision](docs/research/decisions/storage-engine.md)), with
-   ClickHouse as the fallback.
+3. Store raw telemetry in GreptimeDB native observability tables and mutable
+   product metadata in Turso. `StorageAdapter` separates capabilities and test
+   fakes; it is not an engine-substitution promise. ClickHouse remains a
+   benchmark comparator only.
 4. Use a Rust message stream such as Apache Iggy only if replay, buffering, or
    processor separation is worth the operational cost.
 5. Trace coding-agent sessions and CLI invocations as first-class execution

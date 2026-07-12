@@ -1,5 +1,11 @@
 # Competitor Watch
 
+> **Implementation ownership (2026-07-12):** this is a rolling market-evidence
+> record, not a product roadmap. Historical product recommendations are mapped to
+> plan 104 (bundle contract), blocked plan 118 (conditional Sentry migration),
+> and blocked plan 123 (fixer/outcome loop) in [`plans/`](../../../plans/).
+> Competitor refresh triggers authorize research updates only.
+
 > **2026-06-11 update (post-DASH drift):** Datadog DASH (June 9–10, 2026) is the largest competitive
 > movement since the 2026-06-02 recheck: **Bits Code is GA** (fix generation embedded wherever Datadog
 > surfaces a problem — Error Tracking, APM, profiler, security), with **Bits Remediation**, **Bits
@@ -350,22 +356,14 @@ The wedge is:
 > open self-hosted evidence bundles for agents, starting from Sentry-compatible
 > errors and OTLP traces/logs/metrics, with CLI/coding-agent action audit.
 
-The watchlist changes the product priority:
+The watchlist produced this historical product recommendation:
 
-1. Do not spend early cycles on dashboards. OpenObserve, SigNoz, and Coroot
-   already cover that market well.
-2. Ship Sentry-compatible error ingestion and deterministic grouping early.
-   That is the cleanest gap in all three.
-3. Ship the evidence bundle/schema as the first open contract, not as a later
-   export feature.
-4. Keep CLI and coding-agent action audit first-class; this is the gap that
-   generic observability platforms are least likely to model correctly.
-5. Re-check this watchlist every ongoing research pass. If OpenObserve or SigNoz
-   closes Sentry migration plus bundle export, the Parallax wedge must narrow
-   further to agent action audit and measured fixer-outcome corpus.
-6. Re-check the
-   [lightweight Sentry-compatible watchlist](competitor-watch.md)
-   before making any "simpler than Sentry" or "drop-in Sentry-compatible" claim.
+Dashboard breadth was deprioritized because OpenObserve, SigNoz, and Coroot
+already covered it well. Sentry-compatible migration, a versioned open evidence
+bundle, and measured outcome records were identified as the sharper gaps. Those
+recommendations now map exclusively to plans 118, 104, and 123 respectively;
+they are not an executable list here. Ongoing watch refreshes may narrow claims
+or reopen a numbered plan, but cannot start implementation directly.
 
 #### Sources
 
@@ -980,8 +978,9 @@ what happened
 + whether the result fixed, failed, regressed, or recurred
 ```
 
-The next build and research priority should protect that contract before adding
-dashboard breadth.
+The historical recommendation was to protect that contract before dashboard
+breadth. Plans 104 and 123 own any remaining implementation; this watch record
+owns only competitive rechecks and wording evidence.
 
 ## OpenObserve AI/MCP Enterprise Recheck
 _Provenance: merged verbatim from `openobserve-ai-mcp-enterprise-recheck.md` (2026-05-29 restructure)._

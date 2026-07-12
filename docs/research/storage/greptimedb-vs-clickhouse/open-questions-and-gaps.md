@@ -7,6 +7,11 @@ open questions + the dimensions the storage research has **not** covered, priori
 vs-ClickHouse *engine* comparison is exhaustive + re-verified (Runs 1–170); the gaps below are the parts
 that either need data we don't have, are deferred, or sit one layer above the engine.
 
+> **Current authority:** GreptimeDB + Turso are mandatory. ClickHouse and
+> Postgres are comparators only. This is a factual research-gap ledger, not a
+> product backlog or backend-selection mechanism. Plan 093 owns contract cleanup;
+> plan 115 owns any supported server profile.
+
 ## 1. THE deciding input we don't have — Parallax's real workload mix
 
 The entire verdict is conditional on **one un-characterized variable**: is Parallax's query distribution
@@ -15,8 +20,8 @@ GreptimeDB fine) or **ad-hoc-analytics-dominant** (heavy scans/aggregations over
 ClickHouse wins)? Every flip-trigger (`verdict-which-to-choose.md`, `platform-fit-and-alternatives.md`)
 points here, and we have **never modelled Parallax's expected query mix**. **This is the highest-value
 missing input — the operator (product intent) or a projected-usage model resolves it, not another
-benchmark.** Until then the verdict stays "ClickHouse default under the proxy lens; GreptimeDB for the
-metrics-cardinality/cost bet," conditioned on this.
+benchmark.** The missing input limits performance claims; it cannot change the
+mandatory GreptimeDB product engine.
 
 ## 2. Server-tier benchmarks (deferred + agent-network-blocked)
 
@@ -67,8 +72,9 @@ axis after workload mix.
 
 ## 6. Decided-but-not-designed
 
-- **Metadata store schema** — we decided *where* grouped errors/issues/config live (Turso default /
-  Postgres fallback, NOT the columnar engine — `data-model-store-split`), but not the relational model
+- **Metadata store schema** — grouped errors/issues/config live in mandatory
+  Turso, not the columnar engine; the relational model remained incomplete in
+  this dated study
   (issues, fingerprint→issue mapping, projects/users, how it joins to the columnar telemetry).
 - **The hybrid federation** (if pursued) — how the proxy routes/merges a time-spanning query across
   CH-hot + GT-cold (flagged Phase-2, `storage-cost-and-tiering.md`, undesigned).
@@ -91,7 +97,7 @@ the *inputs* (1, 2, 5) and the *layers above the engine* (3, 4, 6) are what rema
 
 ## How to use this
 
-Resolve **#1 (workload mix)** and **#5 (managed-vs-self-host)** first — they are the two inputs that
-most move the final decision and need operator/product intent, not more local benchmarking. **#2** is
-the server-tier run when the operator is ready. **#3/#4/#6** are the next research/design fronts once the
-store decision is locked.
+Research **#1 (workload mix)** and **#5 (managed-vs-self-host)** first because
+they most affect risk and claims. **#2** remains a server-tier research run.
+Product work discovered by **#3/#4/#6** must be added to `plans/` before
+implementation; this ledger does not authorize it.

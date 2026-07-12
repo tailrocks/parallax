@@ -51,5 +51,5 @@ This roll-up is owned by the A5 stack decision: [stack-decision.md](stack-decisi
 
 ## Evidence
 
-- [../storage/metadata/metadata-store-benchmark-plan.md](../storage/metadata/metadata-store-benchmark-plan.md) — Turso-first benchmark plan and runnable prototype spec, with Postgres fallback gates.
-- [../storage/metadata/turso-metadata-production-readiness.md](../storage/metadata/turso-metadata-production-readiness.md) — production-readiness gate: source posture, local-vs-cloud distinction, MVCC/CDC/sync constraints, backup/restore, fallback triggers.
+- [../storage/metadata/metadata-store-benchmark-plan.md](../storage/metadata/metadata-store-benchmark-plan.md) — Turso hardening benchmark/prototype with Postgres retained only as a comparator.
+- [../storage/metadata/turso-metadata-production-readiness.md](../storage/metadata/turso-metadata-production-readiness.md) — production-readiness protocol: source posture, local-vs-cloud distinction, MVCC/CDC/sync constraints, backup/restore, and fix-forward triggers.

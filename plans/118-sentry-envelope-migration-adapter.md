@@ -1,0 +1,144 @@
+# Plan 118: Add a bounded Sentry envelope migration adapter
+
+> **Executor instructions**: This is a compatibility adapter, not a second
+> telemetry architecture. Do not begin until the operator opens the scope and
+> evidence shows that Sentry migration is the next adoption constraint. Preserve
+> OTLP as the primary ingest contract, GreptimeDB + Turso as the only product
+> stores, native raw-signal tables, native TLS, and the canonical redacted bundle.
+
+## Status
+
+- **Priority**: P3
+- **Effort**: L
+- **Risk**: HIGH
+- **Depends on**: 093, 099, 104, 111, 116
+- **Category**: future compatibility / ingest / security
+- **Planned at**: `eefa4617`, 2026-07-12
+- **Status**: BLOCKED
+- **Blocker**: The operator has not opened Sentry-compatible ingest, and no
+  current adoption evidence establishes it as the next highest-value migration
+  path after the OTLP-first local loop.
+
+## Why
+
+The research corpus contains a detailed Sentry envelope design and compatibility
+matrix, but leaving its five implementation phases in a capture note made that
+note a second executable backlog. The adapter remains a plausible migration
+surface for Rust services already using Sentry SDKs. It must be isolated behind
+an explicit product decision because envelope parsing, DSN mapping, attachment
+handling, raw retention, redaction, and cross-signal identity materially expand
+the attack surface.
+
+## Current Evidence
+
+- `docs/research/capture/sentry-ingest.md` records the envelope framing,
+  Sentry-Rust event shapes, compatibility levels, and source-field constraints.
+- OTLP HTTP/gRPC is the shipped primary ingest contract.
+- The spool, normalized error model, Turso issue membership, GreptimeDB native
+  tables, and canonical bundle projection already provide the reusable product
+  boundaries; the adapter must not create parallel ones.
+- Plans 099, 104, 111, and 116 own typed/idempotent ingest behavior, the bundle
+  contract, fail-closed redaction, and retention/prune policy respectively.
+
+## Scope
+
+In scope after the trigger clears:
+
+- A versioned decision that fixes the supported Sentry SDK/version/item subset,
+  project/DSN mapping, outcome semantics, size limits, retention, and claim level.
+- Real envelope fixtures from the latest stable Sentry Rust SDK for panic,
+  `anyhow`, `eyre`, tracing/breadcrumb, explicit fingerprint, trace context,
+  missing stack, PII-shaped header, duplicate ID, unsupported item, and oversized
+  attachment cases.
+- A bounded `POST /api/<project_id>/envelope/` gateway supporting `event` first,
+  authenticating the public key/project mapping and recording explicit outcomes.
+- Durable acceptance through the existing spool contract before acknowledgement.
+- Normalization into the existing error/event identity model, issue membership in
+  Turso, and correlation to GreptimeDB-native OTLP spans/logs by trace/span ID.
+- Canonical bounded bundle output with source-field status, redaction report,
+  stable hash, projection manifest, and approved raw references.
+- Conditional transaction, attachment, and additional-language expansion only
+  after measured correlation value and all preceding gates pass.
+
+Out of scope:
+
+- Full Sentry API, Relay, Discover, performance, replay, profile, or SDK parity.
+- A second issue model, alternate metadata/telemetry engine, custom raw OTLP
+  table, or engine-substitution abstraction.
+- Agent access to raw envelopes or unredacted GraphQL/SSE surfaces.
+- Attachments before explicit redaction, cost, size, retention, and access policy.
+- Product MCP work, which remains independently gated by plan 112.
+
+## Steps
+
+1. Reproduce the trigger. Record the operator decision and source-linked demand
+   evidence showing that this migration path outranks other adoption work. If it
+   does not, refresh the blocker and stop.
+2. Recheck the latest stable Sentry protocol and Rust SDK. Write the supported
+   subset/claim-level decision before code, including envelope/item limits,
+   authentication, outcomes, duplicate IDs, retryability, raw-reference policy,
+   and unsupported-item behavior.
+3. Generate and inspect real SDK envelopes. Commit sanitized fixtures plus
+   expected parse/normalization/outcome records; never commit live credentials,
+   customer data, or provider-shaped secrets.
+4. Add the minimal endpoint through the existing receiver/spool boundaries.
+   Authenticate project mapping, bound bytes/items, accept only the approved
+   item subset, acknowledge only durable acceptance, and expose typed retryable
+   versus terminal outcomes.
+5. Normalize accepted events into the existing domain model and idempotency
+   contract. Store mutable issue membership only in Turso; use approved derived
+   extension rows and GreptimeDB native telemetry reads without inventing a raw
+   Sentry signal table.
+6. Correlate trace/span identifiers to native OTLP evidence and build the same
+   bounded, fail-closed-redacted bundle used by CLI/HTTP. Verify stable identity
+   when the same failure arrives through both OTLP and Sentry channels.
+7. Measure whether transactions, bounded attachments, or another SDK language
+   improve correlation enough to justify their cost. Add each only through a
+   separately fixture-gated contract update; otherwise leave it unsupported.
+
+## Test Plan
+
+- Parser golden tests for valid, truncated, malformed, multi-item, compressed,
+  oversized, and unknown-item envelopes from real sanitized SDK fixtures.
+- Authentication/project mapping, request limit, explicit outcome, retry, and
+  durable-acknowledgement integration tests.
+- Normalization/grouping parity for panic, error chains, explicit fingerprint,
+  missing stack, trace context, duplicate event ID, and cross-source OTLP echoes.
+- Real GreptimeDB + Turso tests proving native-table correlation, issue updates,
+  retention/prune behavior, and no custom raw-signal table.
+- Seeded PII/secret tests proving fail-closed redaction before every bundle
+  projection; raw envelopes remain inaccessible to agents.
+- CLI/HTTP bundle hash/projection compatibility tests and bounded-query evidence.
+
+## Done Criteria
+
+- [ ] A current operator decision and demand packet clear the exact blocker.
+- [ ] The supported SDK/protocol/item claim is explicit and fixture-backed.
+- [ ] Accepted requests are bounded, authenticated, durably spooled, and return
+  typed, documented outcomes; malformed/unsupported inputs fail predictably.
+- [ ] Duplicate and cross-source events preserve one stable issue/occurrence
+  contract without replaying completed effects.
+- [ ] Turso owns mutable issue state and GreptimeDB native tables remain the raw
+  observability source; no fallback engine or parallel raw table appears.
+- [ ] Every agent-visible projection is canonical, bounded, and fail-closed
+  redacted, with stable hashes and approved raw-reference behavior.
+- [ ] Real-engine, spool, retention, strict Rust, nextest, and API gates pass.
+- [ ] Any expanded transaction/attachment/language support has its own measured
+  value, limits, fixtures, and security evidence.
+
+## STOP Conditions
+
+- The operator has not explicitly opened Sentry-compatible ingest or the demand
+  evidence does not justify it as the next adoption path.
+- Implementation requires weakening OTLP-first, GreptimeDB + Turso, native-table,
+  native-TLS, redaction, retention, or agent-access policy.
+- The endpoint cannot acknowledge only after bounded durable acceptance.
+- Current protocol/SDK behavior cannot be established from primary sources and
+  sanitized real fixtures.
+- Cross-source identity or duplicate-event semantics remain ambiguous.
+
+## Remove When
+
+Delete this plan and index row when the approved bounded adapter is shipped with
+all compatibility/security evidence, or when an explicit durable decision rejects
+the adapter and no actionable migration work remains.

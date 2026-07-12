@@ -21,7 +21,6 @@ CI, stable-release, and preview-Homebrew automation live under
 | `BRANCHING.md` | Current `main`-first workflow and pull-request policy. |
 | `COMMITS.md` | Commit message and AI-agent attribution conventions. |
 | `PROJECT_STRUCTURE.md` | This repository map. |
-| `advisor-plans-implementation.md` | Root pointer to the exhaustive advisor-plans `/goal` brief at `prompts/advisor-plans-implementation.md`. |
 | `.gitignore` | Local files that should not be committed. |
 
 ## Directories
@@ -33,9 +32,9 @@ CI, stable-release, and preview-Homebrew automation live under
 | `docs/research/` | Market, product, and strategy research, grouped by topic. The canonical per-note index is [`docs/research/README.md`](docs/research/README.md). |
 | `docs/research/00-vision/` | Why this product: problem/audience/product-shape front door, the north-star autonomous fix loop + impossible triangle, thesis, world-before-Parallax stack, platform direction, AI-native observability synthesis. |
 | `docs/research/decisions/` | ADR-style decision records — current truth, conclusion first (go/no-go, strategic coverage, risks, the dated skeptical re-assessment, storage engine, V1 storage adapter vision, native OTLP tables adoption, stack decision, metadata store, agent access surface, fixer boundary). |
-| `docs/research/architecture/` | How the pieces fit: implementation concept, overview, evidence-bundle schema, API concept, causal reconstruction, local-first V1, simple UI V2, build roadmap, autonomous fix loop, integration contract, PoC coverage map, V1 build plan, deployment architecture map. |
+| `docs/research/architecture/` | How the pieces fit: historical implementation/build/deployment projections, current contracts and decision evidence, overview, evidence-bundle schema, API concept, causal reconstruction, local-first V1 record, simple UI V2, autonomous fix loop, integration contract, and PoC coverage map. Executable work lives only in `plans/`. |
 | `docs/research/capture/` | How each signal is collected and made safe: rust, the operator-stack instrumentation matrix (tracing/OTel crates, gRPC/HTTP/Postgres/ClickHouse/Redis/RabbitMQ/GraphQL recipes), frontend, OTLP-first ingest, future sentry-ingest, agent/CLI tracing, deploy/change context, CI/flaky tests, production-DB evidence, correlation (A4), redaction (A6). |
-| `docs/research/storage/` | Telemetry-store evaluation, benchmark plan, freshness/latency and size/object-cost gates, the native-OTLP adoption plan (`native-otel-migration-plan.md`) and the GreptimeDB-team question list (`greptimedb-team-questions.md`), plus `metadata/` and `streaming/` evidence subdirs. |
+| `docs/research/storage/` | Telemetry-store evaluation, benchmark plan, freshness/latency and size/object-cost gates, the historical native-OTLP adoption record (`native-otel-migration-plan.md`) and the GreptimeDB-team question list (`greptimedb-team-questions.md`), plus `metadata/` and `streaming/` evidence subdirs. |
 | `docs/research/storage/greptimedb-vs-clickhouse/` | Deep white-box GreptimeDB vs ClickHouse internals comparison: one-page verdict, run-log, 30+ mechanism notes, the four-build version matrix, and benchmarks. Produced by an indefinite `/goal` or Claude Code `/loop`. |
 | `docs/research/validation/` | A1–A7 assumption gates and ledgers (A1 bundle-value subdir, A1 trajectory-source checks, A2 user demand, A3 schema/corpus, A7 scope, self-hosted simplicity, business model, repo intent, profitability analysis). |
 | `docs/research/market/` | Market landscape, consolidated competitor watch, alternatives deep analysis, competitive comparison matrix, wider alternatives survey, and focused agent-debugging competitor drift notes. |
@@ -55,13 +54,12 @@ CI, stable-release, and preview-Homebrew automation live under
 | `docs/research/capture/sentry-compatible-oss-tools.md` | Survey of 10 Sentry-compatible or Sentry-alternative open-source tools for future adapter/market tracking. |
 | `docs/research/reference/` | External technical reviews. Includes `ai-native-debugging-tools.md` (open-source AI debugging agents, SRE agents, coding-agent observability tools). |
 | `prompts/` | Reusable research and agent prompts (goal-only briefs; run notes in `prompts/README.md`). |
-| `advisor-plans/` | Active improve/audit implementation plans (telemetry-quality 019–021 and observability 022–034 completed; codebase audit 069–083 and performance/Greptime integration 084–090 active). Index: `advisor-plans/README.md`. |
-| `schema/` | Shipped portable evidence-bundle JSON Schema (`evidence-bundle.v1.schema.json`) and versioning policy. Governs `BundleOut.json` / `parallax issue context --format json`. PoC schemas stay under `poc/evidence-loop/schema/`.
-| `plans/` | Operator feature-backlog plan items (035–068 series); not advisor plans. |
+| `schema/` | Shipped portable evidence-bundle JSON Schema (`evidence-bundle.v1.schema.json`) and versioning policy. Governs `BundleOut.json` / `parallax issue context --format json`. PoC schemas stay under `poc/evidence-loop/schema/`. |
+| `plans/` | Sole home for unfinished implementation plans, the active-only index, execution contract, and current reference analysis. Terminal plans are deleted; durable completion evidence belongs under `docs/research/validation/` or in Git history. |
 | `bench/` | Local storage-benchmark scaffolding: pinned `compose.yml` for GreptimeDB + ClickHouse smoke runs. Generated datasets/results are gitignored; only compose/scripts are tracked. Consistent with [`docs/research/storage/benchmark-plan.md`](docs/research/storage/benchmark-plan.md). |
 | `bench/otlp-fanout/` | OTLP fan-out comparison lab: Rotel hub + competitor backends in Compose, fanning one OTLP stream to OpenObserve/SigNoz/Maple/Sentry and back to host Parallax. Implements [`docs/research/validation/otlp-fanout-comparison-lab.md`](docs/research/validation/otlp-fanout-comparison-lab.md). Vendored clones (`vendor/`) are gitignored. |
 | `poc/` | Concept-proving Rust code (operator-approved 2026-06-11). Small, runnable, test-covered proofs of designed mechanisms — not product code, no product claims. Artifacts: `poc/evidence-loop/` (OTLP JSON → derived error events → fingerprint → trigger → redacted evidence bundle with canonical hash; frozen concept reference) and `poc/read-transport-bench/` (plan 090: GreptimeDB HTTP Arrow vs JSON + MySQL prepared-statement measurement harness). Logic graduates into `crates/` by copy-and-adapt. |
-| `crates/` | The V1 product workspace (Rust, edition 2024): `parallax-cli` (the installed `parallax` binary), `parallax-server` (OTLP ingest, API host, workers, engine supervision), `parallax-core` (derivation/fingerprinting/bundles), `parallax-storage` (spool + storage adapters), `parallax-api` (GraphQL schema), `parallax-proto` (OTLP types). Contracts in [`docs/research/architecture/v1-implementation-spec.md`](docs/research/architecture/v1-implementation-spec.md); brief in [`prompts/v1-implementation.md`](prompts/v1-implementation.md). |
+| `crates/` | The V1 product workspace (Rust, edition 2024): `parallax-cli` (the installed `parallax` binary), `parallax-server` (OTLP ingest, API host, workers, engine supervision), `parallax-core` (derivation/fingerprinting/bundles), `parallax-storage` (spool + storage adapters), `parallax-api` (GraphQL schema), `parallax-proto` (OTLP types). Contracts live in [`docs/research/architecture/v1-implementation-spec.md`](docs/research/architecture/v1-implementation-spec.md); unfinished implementation work lives in [`plans/`](plans/). |
 | `ui/` | The V1 web UI: TanStack Start SPA (shadcn/ui on Base UI, shadcn charts) served by `parallax serve` from `ui/dist/client` or embedded via the `embed-ui` feature. Talks only to the canonical GraphQL API. |
 | `.github/workflows/` | CI, stable release, and preview-release automation. Release workflows build binary archives with Zig/`cargo-zigbuild`; `preview.yml` publishes the rolling `preview` GitHub Release and rewrites the CI-owned `parallax-preview.rb` formula in the per-project `tailrocks/homebrew-parallax` tap. |
 | `mise.toml` | Shared tool versions for CI/release automation: cargo-nextest, cargo-zigbuild, Zig, Bun, cosign, and syft. |
@@ -98,8 +96,6 @@ and compare next, ranked) is [`docs/research/research-agenda.md`](docs/research/
 | `prompts/CLAUDE.md` | Thin pointer to `prompts/AGENTS.md`. |
 | `prompts/deep-research-parallax.md` | Deep research brief for validating the AI-native debugging/investigation direction. |
 | `prompts/greptimedb-vs-clickhouse-internals.md` | Never-ending `/goal` or Claude Code `/loop` brief for the under-the-hood GreptimeDB vs ClickHouse comparison; writes to `docs/research/storage/greptimedb-vs-clickhouse/`. |
-| `prompts/v1-implementation.md` | `/goal` brief implementing Parallax V1 end-to-end from the authoritative docs, milestone by milestone, with the v1-scope acceptance scenarios as the stop condition. |
-| `prompts/advisor-plans-implementation.md` | Bounded exhaustive `/goal` brief to close every active `advisor-plans/` item (069–090), including residuals and two clean closure re-audits. |
 
 ## Update Rule
 

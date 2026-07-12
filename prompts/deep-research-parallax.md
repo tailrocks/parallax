@@ -200,16 +200,16 @@ server. One command should run on a developer machine, assign a `run_id`, ingest
 local traces/spans/logs/metrics/errors from one app or several local services,
 group failures, and expose CLI plus API access so a coding agent can inspect the
 run without human context-gathering. The preferred local store is managed
-GreptimeDB standalone for observability evidence plus Turso/SQLite-like embedded
+GreptimeDB standalone for observability evidence plus Turso's embedded,
+SQLite-compatible
 metadata for grouping/state/config. GreptimeDB can be installed as a standalone
 binary (including via the Greptime Homebrew tap on macOS), so Docker should be
-optional. Turso-only storage remains an ultra-small fallback, not the preferred
-observability store. GreptimeDB remains the first production/server observability
-profile because it gives Parallax metrics/logs/traces, OpenTelemetry-oriented
-ingest, SQL/PromQL, and retained evidence storage. Keep the product contract
-behind a storage adapter so ClickHouse, Turso-only storage, GreptimeDB, or
-another backend can replace or supplement it later without changing the
-evidence-bundle API.
+optional. GreptimeDB + Turso are the mandatory product stack in every profile:
+no Turso-only telemetry mode, ClickHouse/Postgres fallback, or substitute engine.
+GreptimeDB raw signals use native observability tables. Storage capability
+interfaces exist for ownership/testability, not product engine replacement.
+Research should fix forward in Parallax or upstream when either committed
+engine lacks a needed behavior.
 
 Current V2 UI direction: after CLI/API V1, add a simple local investigation UI
 using **TanStack Start + shadcn/ui**. The UI should expose what developers
@@ -384,9 +384,10 @@ as co-equal top priorities. Autonomous fixing is explicitly a future
 nice-to-have: keep its schemas, contracts, and design pressure current (the
 north star remains the ceiling), but do not pull fix-loop components
 (dispatch, reconciler, learner, fixer rails, autonomy budgets) into the build
-until goals 1 and 2 are achieved. The concrete milestone plan is
-docs/research/architecture/v1-build-plan.md; research passes should keep that
-plan honest against the decided stack, the gates, and new evidence.
+until goals 1 and 2 are achieved. The historical milestone sequence is
+docs/research/architecture/v1-build-plan.md; research passes should keep its
+status/supersession notes honest while implementation work remains only in
+`plans/`.
 
 ## Separation of concerns: Parallax stores, a separate agent fixes
 
@@ -667,12 +668,12 @@ instead of filling the gap with vendor claims.
    - a harness that drives load and records results reproducibly, with the
      candidate behind a storage abstraction so candidates can be swapped.
 
-   The storage benchmark has veto power over the default storage choice: no
-   storage winner is declared until the prototype is run against the latest
-   stable versions. Keep `docs/research/storage/benchmark-plan.md`,
-   `docs/research/storage/benchmark-plan.md`, and the metadata-store
-   benchmark aligned with this contract, and consume benchmark-agent results when
-   they land.
+   The storage benchmark measures the committed GreptimeDB design against
+   ClickHouse as a comparator; it can expose risks and upstream work but cannot
+   authorize a product fallback. Keep
+   `docs/research/storage/benchmark-plan.md` and the metadata-store benchmark
+   aligned with this contract, and consume benchmark-agent results when they
+   land.
 
 Judge every candidate on these axes, in priority order:
 
@@ -1040,16 +1041,16 @@ Research Turso as the Rust-first, SQLite-compatible metadata engine for
 low-volume product state: users, projects, DSNs, issue status, redaction
 policies, audit records, agent sessions, CLI invocations, and fix outcomes.
 
-Treat Postgres only as a scale-out fallback if Turso production behavior,
-ecosystem maturity, backup/restore, replication, or operational safety does not
-hold up under research and benchmarks.
+Turso is the mandatory metadata engine. If production behavior, backup/restore,
+replication, or operational safety fails a gate, fix forward in Parallax or
+upstream and record the blocker; do not substitute Postgres.
 
 Do not describe the metadata layer as "use SQLite" except when discussing
 SQLite compatibility. The operator preference is Turso.
 
 **Grouped errors live here, not in the telemetry store.** Sentry-style grouped errors (fingerprint →
 first/last seen, count, status, assignee, notes) are mutable, relational, low-volume OLTP — they belong
-in this metadata store (Turso default / Postgres fallback), **not** in the columnar telemetry engine
+in this metadata store (Turso only), **not** in the columnar telemetry engine
 (ClickHouse/GreptimeDB do not do easy row UPDATEs — Sentry built a ClickHouse "replacements consumer"
 to fake mutations). The columnar store holds the raw error/log/trace/metric firehose + computed
 aggregates (count/first/last via `argMin/argMax` or a materialized rollup); the workflow/identity state
@@ -1067,8 +1068,8 @@ economics + metrics cardinality + auto-rebalance (GreptimeDB leads). Current sta
 (superseding this lens's earlier ClickHouse-default reading; reconciled 2026-05-29, operator
 re-affirmed 2026-06-11): **GreptimeDB** — the resolved anchored-retrieval query mix puts
 ClickHouse's scan-speed lead off the hot path, so the decision turns on cost + Rust + self-hosted
-economics, where GreptimeDB leads; ClickHouse stays the fallback behind the same `StorageAdapter`
-until the sized cost and cold-read gates settle it. The operator additionally treats GreptimeDB as
+economics, where GreptimeDB leads. GreptimeDB is now the committed product engine;
+ClickHouse remains a benchmark comparator, not a fallback. The operator additionally treats GreptimeDB as
 the long-term investment: Rust, AI-contributable, with missing ClickHouse-class capabilities
 absorbable upstream over time (bounded by GreptimeDB's CLA and AI-assisted-PR policy; fork is the
 hedge). GreptimeDB's slower heavy-query speed is an *engine* gap (closable), not
@@ -1484,10 +1485,11 @@ Deliver, with reasoning tied to the evaluation lens and the benchmark axes:
   gateway, messaging/stream (if any), storage, correlation/processing, and the
   agent-facing context surface (API/MCP). Include CLI tracing and coding-agent
   tracing layers. Make an actual recommendation, not a menu.
-- What storage to use as the default, and why it wins on speed, cost, and scaling
-  for this purpose — including the object-storage / S3 story.
-- What metadata store to use, with Turso as the preferred default and Postgres
-  only as a scale-out fallback if Turso fails the technical gates.
+- Whether the committed GreptimeDB telemetry engine remains fit on speed, cost,
+  scaling, and object-storage behavior, and which Parallax/upstream gaps must be
+  fixed without introducing a fallback engine.
+- How to make the mandatory Turso metadata store production-safe, fixing
+  forward in Parallax or upstream when a technical gate fails.
 - The API decision: follow OpenTelemetry/OTLP for V1 ingest; treat Sentry
   envelopes as future migration compatibility. Concretely define what V1 must
   support, how it behaves, what data it stores, and how that data is stored. Do
@@ -1505,8 +1507,8 @@ Deliver, with reasoning tied to the evaluation lens and the benchmark axes:
   goal: dataset + generator, per-candidate schema/DDL, the exact
   evidence-bundle/correlation queries, the freshness/latency/cost/size metrics,
   and a reproducible harness with the candidate behind a storage abstraction.
-  The benchmark harness and its results have veto power over the default storage
-  choice (see "Benchmarking and Comparison Methodology"), but ordinary
+  The benchmark harness can veto performance/cost claims and expose blocking
+  GreptimeDB/Parallax work; it cannot authorize a fallback engine. Ordinary
   indefinite research passes should update the contract or interpret benchmark
   artifacts rather than duplicate the separate benchmark agent's execution work.
 - Tradeoffs and the rejected alternatives, so the choice is defensible.

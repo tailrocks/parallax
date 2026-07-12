@@ -1,6 +1,14 @@
-# V1 Build Plan: From Concept to a Tool the Operator Uses Daily
+# Historical V1 Build Record: From Concept to a Daily Tool
 
 <!-- markdownlint-disable MD013 -->
+
+> **Status (2026-07-12): historical sequencing record, not an active plan.**
+> M0-M2, the V1 UI, packaging, and the initial M5 measurements shipped. All
+> unfinished implementation work now lives only in [`plans/`](../../../plans/):
+> contract reconciliation (093), metrics (105), evidence pinning (106),
+> production redaction (111), V2 auth/profile work (109/115), product MCP (112),
+> and retention/prune (116). Older Postgres/ClickHouse/fallback alternatives in
+> this projection are superseded by the mandatory GreptimeDB + Turso policy.
 
 Research date: 2026-06-11. Operator statement #5 recorded 2026-06-11. This is the finalized
 technical projection of **what gets built and how**, synthesizing the decided stack
@@ -122,16 +130,14 @@ default); JSON/Markdown/terminal bundle projections sharing one canonical hash.
 service from `parallax issue context` output alone. This is also where SDK-generated fixtures
 replace hand-written ones in tests, feeding the A1 overlay tooling.
 
-### M3 — The server profiles (Goal 2 lands here)
+### M3 — The server profiles (historical V2 projection; unbuilt)
 
-`--profile server` (own hardware: local-SSD GreptimeDB, Turso-or-Postgres metadata) and
-`--profile cloud` (object-storage-backed GreptimeDB, managed-Postgres recommendation) ship as
-presets of one server-side family — the full three-angle picture is the
-[deployment architecture map](deployment-architecture-map.md). Concretely:
-external GreptimeDB URL + object-storage-backed engine config passthrough,
-per-project ingest tokens (`x-parallax-project-token`) and API tokens, Postgres as the metadata
-option when Turso gates aren't met; deploy-events endpoint (`parallax.deploy.v0`); CLI remote
-contexts (`parallax context add prod --url … --token …`); retention TTLs per signal.
+This milestone did not ship in V1 and is not currently authorized. If the
+operator opens V2, plans 109 and 115 own the current design. Every server/cloud
+profile uses GreptimeDB + Turso only, with native TLS, authenticated ingest/API,
+remote contexts, explicit retention, backup/restore, and a supported profile
+contract. The earlier Turso-or-Postgres/managed-Postgres fallback projection is
+superseded and must not be implemented.
 
 *Exit:* **Goal-2 dogfood passes** — operator's deployed services report to a VM instance;
 `parallax --context prod issue list` and trace-ID lookup work from the laptop; the
@@ -161,12 +167,12 @@ not A6 pass); raw-ref TTL + evidence pinning for bundle-cited slices.
 **Status 2026-06-12: measured.** The first gate rows are in
 [v1-gates-report.md](v1-gates-report.md) — setup/freshness/bundle-latency/canary
 all pass with large margins (`m5_gates` gated test reproduces them). The
-remaining M5 items (real detector library replacing redaction-lite, raw-ref
-TTL/evidence pinning) stay open.
+remaining M5 work moved to active plans: production redaction/A6 is plan 111,
+retention/prune is plan 116, and raw-ref/evidence pinning is plan 106.
 
 ### M6+ — Parked until goals 1+2 are achieved (operator statement #5)
 
-Read-only MCP (after access-surface gates); Sentry envelope adapter (fixture-gated, breadcrumbs
+Read-only MCP (active only as blocked plan 112 after access-surface gates); Sentry envelope adapter (fixture-gated, breadcrumbs
 being the named gap it fills); fixer rails — dispatch, outcome write-back, Reconciler, Learner,
 autonomy budgets. Nothing in M0–M5 blocks them: the bundle schema, `fix_candidate.v0` draft, and
 outcome contracts are already versioned, which is the whole cost of "keeping it in mind."

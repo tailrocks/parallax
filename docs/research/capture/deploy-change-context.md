@@ -2,6 +2,12 @@
 
 > Deploy/change/issue context is first-class evidence for answering "what changed?" after a production error, but it is decided that it is never root-cause proof by itself. The contract is set: Parallax ingests exact release, deployment, commit, PR, CI/check, workflow-run/job, and work-item records from GitHub/Sentry/Linear/Jira (plus OTel CICD as adapter input), attaches them to telemetry by stable identifiers first, downgrades everything else to explicit medium/weak/inferred hypotheses, and loudly reports missing-evidence categories rather than guessing. Normalized nodes, edge-strength rules, privacy defaults (issue/deploy text and logs are untrusted, redacted/ref-only by default), and the proof-gate thresholds are defined. What remains an open gate is execution: the deploy/change result ledger is currently at claim level `not_measured` — there is a data model and edge rules but no real provider ingestion, backfill, redaction, or bundle-audit run yet, so release/deploy/code/work-item context must be described as planned evidence, not proven "what changed?" intelligence. Strong deploy/change edges prove linkage only; causality still requires runtime evidence (first-seen/spike timing, trace/log/metric support, touched code, recurrence after fix, or contradiction analysis). Claims advance through explicit claim levels with allowed wording, expire on provider/schema/policy/freshness changes, and fail closed per provider, surface, and edge.
 
+> **Implementation ownership (2026-07-12):** this file retains the provider,
+> edge-strength, privacy, claim-level, and measurement contracts. It is not an
+> executable ingestion queue. [Plan 121](../../../plans/121-deploy-and-change-context-collectors.md) exclusively
+> owns unfinished deploy/change ingestion and product work. The historical order
+> below cannot authorize implementation independently of that plan.
+
 This note consolidates the following previously-separate research files, each preserved in full below:
 
 - `deploy-change-and-issue-context.md`
@@ -231,25 +237,19 @@ Defaults:
   keep raw provider payloads, issue text, release notes, and deploy logs as
   non-dereferenced refs in default agent projections.
 
-### Implementation Order
+### Historical Sequencing Rationale
 
-1. **V0 GitHub + Sentry release/deploy markers.** Accept GitHub deployment and
-   deployment-status webhooks, GitHub Actions commit/environment fields, Sentry
-   release/deploy data, and GitHub compare/PR file backfill.
-2. **V0 bundle edges.** Add release/deploy/code-change edges and missing-evidence
-   fields to backend error bundles. Do not add issue tracker descriptions yet.
-3. **V1 issue tracker refs.** Ingest GitHub issues/PR timelines and Linear/Jira
-   work-item links as metadata refs, with redacted summaries only.
-4. **V1 deploy diagnostics.** Add `parallax doctor deploy-context` to check
-   whether releases carry commit SHAs, deploys carry environments/statuses, and
-   PR file lists, deployment reviews, inactive-status backfill, and webhook/API
-   delivery coverage are complete.
-5. **Later writeback.** Only after the fixer outcome loop is proven, write
-   Parallax bundle/outcome links back to GitHub/Linear/Jira.
+The original design ordered exact GitHub/Sentry release and deployment markers
+before bundle edges, issue-tracker references, diagnostics, and any provider
+writeback. It also placed writeback after proof of the fixer outcome loop. That
+sequence explains the contract dependencies but is not an active version queue.
+Plan 121 owns the current executable slices and must preserve exact identifiers,
+missing-evidence reporting, redacted/ref-only provider text, and the writeback
+gate.
 
-### Proof Gate
+### Claim Acceptance Contract
 
-Before Parallax claims release-regression or "what changed?" intelligence:
+Release-regression or "what changed?" wording is permitted only when:
 
 | Gate | Target |
 | --- | --- |
@@ -384,7 +384,8 @@ Initial Parallax level: `not_measured`.
 
 ### Result Artifacts
 
-Deploy/change runs should be durable and diffable:
+The retained result-packet schema makes real deploy/change runs durable and
+diffable. Plan 121 owns any future instantiation:
 
 ```text
 docs/research/deploy-change-context-results.md
@@ -408,8 +409,8 @@ docs/research/deploy-change-context-runs/<run_id>/claim-ledger.jsonl
 docs/research/deploy-change-context-runs/<run_id>/hashes.sha256
 ```
 
-Do not create run directories for hypothetical data. Add them only when a real
-fixture or pilot run exists.
+Hypothetical data never receives a run directory; the protocol applies only to a
+real fixture or pilot run executed through plan 121.
 
 ### Run Manifest
 

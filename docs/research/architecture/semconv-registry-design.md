@@ -2,6 +2,12 @@
 
 Checked: 2026-07-09
 
+> **Status (2026-07-12): design evidence, not an active plan or build
+> checklist.** The Weaver investigation and candidate registry shape are retained
+> here for reference. Numbered plan 119 in [`plans/`](../../../plans/) exclusively
+> owns any registry, generated constants, or CI enforcement. Do not implement
+> from this file.
+
 ## Current Weaver State
 
 OpenTelemetry Weaver latest release is `v0.24.2`, published 2026-06-23:
@@ -42,9 +48,9 @@ Sources:
 - https://github.com/open-telemetry/weaver/blob/main/crates/weaver_live_check/docs/dog-fooding.md
 - https://github.com/open-telemetry/weaver/blob/main/crates/weaver_forge/README.md
 
-## Proposed Registry Layout
+## Candidate Registry Layout
 
-Use one repository-owned registry later, probably under
+The research evaluated one repository-owned registry, probably under
 `telemetry/semconv/registry`, with these files:
 
 ```text
@@ -75,7 +81,7 @@ Registry content:
 - Define metric names: `catalog.product.queries`, Tokio runtime gauges, and
   service overview lookup candidates.
 
-## Codegen Integration Estimate
+## Historical Codegen Integration Estimate
 
 Rust:
 
@@ -104,14 +110,9 @@ Validation:
   exists.
 - Keep existing Rust/TS/Java freeze tests until generated files are proven.
 
-## Recommendation
+## Decision And Implementation Ownership
 
-Recommendation: GO for a follow-up Weaver registry, but do not add Weaver to
-the build in this plan.
-
-Follow-up plan:
-
-1. Add YAML registry and `weaver registry check` as an optional local command.
-2. Add checked-in generated constants for Rust, Java, and TypeScript.
-3. Add CI check that regenerates into a temp dir and diffs checked-in output.
-4. Replace package-local Java duplication once generator output is stable.
+The research recommendation was GO, subject to measured scope and repository
+policy. Plan 119 is the sole execution queue for the YAML registry, checked-in
+Rust/Java/TypeScript constants, regeneration/diff CI, and any later Java
+deduplication. The shapes above are inputs to that plan, not authorization.

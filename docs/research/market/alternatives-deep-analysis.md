@@ -8,6 +8,12 @@
 > credible alternative, identifies what each covers, and argues both FOR and AGAINST
 > building Parallax. The conclusion is not predetermined — the evidence leads.
 
+> **Status (2026-07-12): historical market recommendation, not an implementation
+> roadmap.** Current evidence-bundle reconciliation, conditional Sentry migration,
+> and fixer/outcome-loop work is owned only by plans 104, 118, and 123 in
+> [`plans/`](../../../plans/). Market gates remain research evidence; they do not
+> authorize product work from this file.
+
 ---
 
 ## 1. Executive Summary
@@ -450,15 +456,14 @@ Kill Parallax if:
 
 If two or more of these trigger, reopen the GO/NO-GO verdict.
 
-### What to build first (priority order)
+### Historical Product Recommendation
 
-1. **A1 evaluation** — prove bundle value before building anything else.
-2. **Tiny tier** — `parallax start` → point Sentry SDK → see grouped errors
-   with OTLP context. Must be simpler than Bugsink.
-3. **One bundle format** — JSON, versioned, with redaction. Ship the schema
-   openly and see if anyone adopts it.
-4. **Outcome tracking** — even if the first version only records
-  "issue → PR → merged/reverted → recurred," this data is the moat.
+The 2026-05-31 recommendation placed A1 bundle-value evidence before product
+breadth, a simple local tier before migration breadth, one versioned redacted
+bundle contract before additional exports, and append-only fix outcomes before
+autonomy claims. The local tier subsequently shipped. Plans 104, 118, and 123
+exclusively own the remaining bundle, Sentry migration, and outcome-loop work;
+this dated ranking is not an executable priority list.
 
 ---
 
@@ -476,7 +481,7 @@ If two or more of these trigger, reopen the GO/NO-GO verdict.
 
 - [GO/NO-GO verdict](../decisions/go-no-go.md)
 - [Skeptical reassessment (2026-05-31)](../decisions/skeptical-reassessment-2026-05-31.md)
-- [Skeptical reassessment (2026-05)](../decisions/skeptical-reassessment-2026.md)
+- [Skeptical reassessment (2026-05)](../decisions/skeptical-reassessment-2026-05.md)
 - [Risks and bear case](../decisions/risks-and-bear-case.md)
 - [Profitability analysis](../validation/profitability-analysis.md)
 - [Business model](../validation/business-model.md)

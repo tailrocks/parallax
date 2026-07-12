@@ -1,9 +1,10 @@
-# Parallax on ClickHouse — Concrete Implementation Design
+# Historical ClickHouse Comparator Implementation
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 13 (design) + pass 74 (**whole schema built live**, Run 46). The buildable
-storage design for the **rejected-but-viable** alternative (`verdict-which-to-choose.md`):
+Status: pass 13 (design) + pass 74 (**whole schema built live**, Run 46).
+This is comparator evidence, not a Parallax product plan or fallback. The
+historical buildable design for the rejected alternative (`verdict-which-to-choose.md`) records:
 full schema, ingest path, exact retrieval, object storage, operational shape — kept
 structurally parallel to `greptimedb-implementation.md` so the differences are directly
 comparable. Builds on the seed DDL in `storage-benchmark-prototype.md` and the Docker runs
@@ -235,7 +236,8 @@ SETTINGS storage_policy = 'hot_cold';
 
 In exchange you get the faster log/trace scan engine, the higher vertical ceiling,
 and the broader hand-tunable codec set. The verdict weighs this and still chooses
-GreptimeDB on *fit*; this note proves ClickHouse is a fully buildable fallback.
+GreptimeDB on *fit*; this note proves only that ClickHouse was a technically
+credible comparator. Current policy forbids it as a product fallback.
 
 ## Build-validation status
 

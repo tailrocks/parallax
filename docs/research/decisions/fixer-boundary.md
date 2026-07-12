@@ -2,6 +2,12 @@
 
 > Parallax core must not become the fixer: it is the context engine that stores, redacts, groups, correlates, and serves evidence, while a separate fixer component consumes evidence bundles, drives a coding agent, drafts a patch or pull request, and writes session/outcome evidence back with measured adapter provenance. The first product contract is an evidence-bundle and append-only outcome-record contract, not "agent opens PR" — PR creation is now a platform commodity (Sentry Seer, GitHub Copilot cloud agent and Agent Tasks, OpenHands), so the defensible wedge is portable evidence, redaction reports, validation logs, and outcome feedback that improves future evidence selection. The boundary and schema are designed, but the outcome loop is currently **not measured**: there are no dated result rows linking evidence bundle -> fixer run -> agent session -> patch/PR -> CI -> review/merge/revert/recurrence. Autonomy is gated by level (L0 observe through L5 auto_merge/deploy), with L5 out of scope for the MVP and L3 draft-PR creation the first goal that must be earned; opened PRs and provider-task completion are never fix success by themselves. Until the gates pass and the result rows exist, the honest claim is design, not capability, and the fixer stays an offline eval harness while Parallax exposes read-only bundles through CLI/API/MCP.
 
+> **Implementation ownership (2026-07-12):** this file is the durable boundary,
+> claim-level, schema, and measurement-protocol record. It is not an executable
+> queue. [Plan 123](../../../plans/123-fixer-outcome-loop.md) exclusively owns any unfinished
+> fixer/outcome-loop implementation and instantiation of the retained result
+> protocol. No fixer implementation may start from the historical ordering below.
+
 This decision record consolidates the following previously-separate research files, each preserved in full below:
 
 - `fixer-component-and-outcome-loop.md`
@@ -206,9 +212,9 @@ non-recurrence. Parallax should model that sequence, not collapse it.
 This aligns with the empirical PR lifecycle evidence: agents can carry work, but
 humans retain governance. Parallax should earn L3 before it even discusses L4.
 
-### First Fixer Gate
+### Fixer Acceptance Contract
 
-The fixer should not ship before these gates pass:
+Any future fixer implementation remains constrained by these acceptance gates:
 
 | Gate | Pass condition |
 | --- | --- |
@@ -225,8 +231,8 @@ The fixer should not ship before these gates pass:
 | Human review | Draft PRs request a human reviewer and carry a clear "agent generated" marker. |
 | Recurrence tracking | Merged fixes create a follow-up watch window before Parallax marks `fix_addressed_issue` as strong. |
 
-If these fail, keep the fixer as an offline eval harness and continue exposing
-read-only bundles through CLI/API/MCP.
+Failure of any gate limits the allowed claim to the offline-evaluation boundary;
+read-only bundles through CLI/API/MCP remain the only supported surface.
 
 ### Schema Implications
 
@@ -263,20 +269,14 @@ This prevents the classic bad metric: counting opened PRs as successful fixes.
    patches, validation logs, human review, merge/revert/recurrence outcomes, and
    evidence links. Without that, the fixer is just another PR bot.
 
-### Implementation Order
+### Historical Sequencing Rationale
 
-1. Keep Phase 0 focused on hand-built bundle evals, no product fixer.
-2. In Phase 1, expose bundles through CLI/API and define the outcome record
-   schema even if no fixer exists.
-3. In Phase 2, build a local fixer harness for evals only: consume bundle, run
-   agent, produce patch, write outcome record, and link measured agent-session
-   evidence when the session-trace arm is enabled.
-4. In Phase 3, allow draft PR creation through one repository provider with
-   explicit least-privilege permissions.
-5. In Phase 4, commercialize the fixer only if A1/A2/A3 and redaction gates hold.
-
-Do not let fixer excitement pull frontend, MCP, database evidence, or Tier-3
-storage forward before the tiny evidence engine proves value.
+The original research sequence placed hand-built bundle evaluation before a
+product fixer, bundle and outcome contracts before a harness, an offline harness
+before provider-backed draft PRs, and commercial claims after A1/A2/A3 and
+redaction evidence. That ordering remains design rationale, not an active phase
+queue. Plan 123 owns the current executable sequence and must preserve the
+least-privilege and evidence-first constraints recorded here.
 
 ### Relationship To Other Research
 
@@ -407,7 +407,9 @@ and score the actual autonomy level only.
 
 ### Result Artifacts
 
-Create these only when measurement begins:
+The following paths define the retained result-packet layout. Plan 123 owns any
+future instantiation; their presence here is a protocol schema, not a creation
+instruction:
 
 ```text
 docs/research/fixer-outcome-results.md
@@ -845,9 +847,9 @@ raw refs unless the operator explicitly approves redacted fixtures.
   [business model validation ledger](../validation/business-model.md).
 - No auto-merge belongs in early Parallax scope.
 
-### Initial Results Template
+### Results Report Schema
 
-When measurement begins, create `docs/research/fixer-outcome-results.md`:
+The retained report schema for a real plan-123 measurement packet is:
 
 ```markdown
 # Fixer Outcome Results

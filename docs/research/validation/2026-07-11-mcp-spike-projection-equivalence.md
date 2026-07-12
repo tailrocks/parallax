@@ -4,7 +4,6 @@ Timestamp: 2026-07-11 (plan 083)
 
 ## Sources
 
-- Plan: [`advisor-plans/083-mcp-adapter-spike.md`](../../advisor-plans/083-mcp-adapter-spike.md)
 - Design: [`docs/research/decisions/agent-access-surface.md`](../decisions/agent-access-surface.md)
   (invariant at lines 225–228; first tools 266–279; ship gates 346–367)
 - CLI comparand: Plan 081 (`parallax issue context` / `run bundle` `--format json`)
@@ -13,7 +12,7 @@ Timestamp: 2026-07-11 (plan 083)
   `canonical_hash`)
 - Spike crate: `crates/parallax-mcp-spike/` (**not** a product surface)
 
-## Drift check (plan Step 0)
+## Historical drift check
 
 ```text
 git diff --stat dbaba3c..HEAD -- crates/parallax-api/src \
@@ -171,49 +170,21 @@ stands alone. Example project-scoped config for a future local smoke
 When a client is available, record: trust prompt behavior,
 `structuredContent` surfacing, and output-budget behavior on a large bundle.
 
-## Open ship gates (15 remaining)
+## Product ship work migrated
 
-From `agent-access-surface.md` gate table (spike covered **projection
-equivalence** only; client smoke deferred):
-
-| Gate | What building it would take |
-| --- | --- |
-| Client fixture | Register product MCP against Codex + Claude Code; record config source, precedence, auth/header source, output budget, trust prompts per client |
-| Tool-discovery fixture | Scripted `tools/list` + client tool search + deferred loading + negative-tool absence per claimed client |
-| Resource-read fixture | Implement `parallax://bundles/{id}` resources; fixtures for list/read/templates/`@` attach + raw-ref denial |
-| Scope fixture | Principal/scope model on GraphQL + MCP; fail closed without `evidence:read` |
-| Remote auth fixture | Streamable HTTP transport + protected-resource metadata, resource indicators, audience, PKCE, token-passthrough denial |
-| Local stdio fixture | Explicit install/trust, approved credential sources only, credential redaction in logs/audit, no auto-enable from repo |
-| Redaction fixture | Seed secrets across logs/CLI/agent/frontend; assert none appear in MCP output |
-| Source-field fixture | Eval/corpus bundles with `source_field_policy.status = pass` across CLI/HTTP/MCP |
-| Output budget | Oversized bundle → summary + refs; stay within Parallax + client MCP limits |
-| Audit fixture | Audit row + OTel MCP span per tool call (caller, tool, scopes, bundle id, status, redaction policy) |
-| Negative tool catalog | Permanent CI assert absent shell/SQL/deploy/rollback/delete (spike already has zero) |
-| Management-tool catalog | Permanent CI assert absent alert/dashboard/role/user/pipeline/… CRUD |
-| Protocol-drift fixture | Record stable spec version, observed protocol version, no session-id dependence |
-| Capability fixture | Deny/audit roots, sampling, elicitation, MRTR, task-augmented execution |
-| Client-retention fixture | Document Codex memory + Claude file persistence; exclude sensitive evidence |
-
-## Recommendation
-
-**Proceed toward a product MCP crate**, gated on:
-
-1. **Scope model** — no agent transport without `evidence:read` (and
-   `evidence:read_sensitive` for raw refs)
-2. **Audit events** — every `tools/call` audited + traced
-3. **Output budget** — refuse unbounded text; summary + resource refs
-
-Projection equivalence is **proven** for the thin GraphQL-backed path; reuse
-`parallax-mcp-spike check` (or its algorithm) as a permanent fixture when the
-product crate lands. Delete or quarantine this spike crate so it does not rot
-half-shipped. Do **not** flip `docs/guide/agent-howto.md` until the product
-decision + remaining gates clear.
+This packet proves projection equivalence only. It does not authorize or plan a
+product MCP surface. All unfinished client, resource, scope/auth, redaction,
+budget, audit, protocol/capability, retention, and spike-disposition work now
+lives exclusively in
+[`plans/112-product-mcp-ship-gates.md`](../../../plans/112-product-mcp-ship-gates.md),
+which remains blocked on an explicit operator ship/no-ship decision. This
+validation file is durable evidence, not an active checklist.
 
 ## Reproduce
 
 ```bash
 # terminal A
-parallax serve   # or memory mode via config storage.mode = "none"
+parallax serve   # managed GreptimeDB + Turso
 
 # terminal B — seed any failing telemetry, then:
 cargo run -p parallax-mcp-spike -- check \

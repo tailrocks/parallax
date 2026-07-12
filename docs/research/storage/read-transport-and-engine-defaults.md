@@ -2,12 +2,12 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: **2026-07-11**  
-Engine under test: **GreptimeDB `1.1.2`** (`SELECT version()` → `1.1.2`)  
-Harness: [`poc/read-transport-bench/`](../../../poc/read-transport-bench/)  
-Raw JSON: [`poc/read-transport-bench/results/`](../../../poc/read-transport-bench/results/)  
-Planned at commit: `df81d86` (inventory read from live `greptime.rs` on branch
-`implement/advisor-plans-069-090`, post-084/085 working tree)
+- **Research date:** 2026-07-11
+- **Engine under test:** GreptimeDB `1.1.2` (`SELECT version()` → `1.1.2`)
+- **Harness:** [`poc/read-transport-bench/`](../../../poc/read-transport-bench/)
+- **Raw JSON:** [`poc/read-transport-bench/results/`](../../../poc/read-transport-bench/results/)
+- **Planned at:** commit `df81d86` (inventory read from the historical PR #19
+  implementation working tree after items 084/085)
 
 ## Product adoption (plan 091 — 2026-07-11)
 

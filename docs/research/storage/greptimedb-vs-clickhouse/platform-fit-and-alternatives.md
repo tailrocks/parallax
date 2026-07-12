@@ -8,6 +8,13 @@ is ClickHouse actually the better choice than GreptimeDB? Is there a third syste
 where do Sentry-style grouped errors and other metadata live — do we need Postgres?* Be skeptical;
 compare on **practical fit for the vision**, not raw speed.
 
+> **Current authority (operator, 2026-06-12): GreptimeDB + Turso are mandatory.**
+> ClickHouse and Postgres are research comparators only. The default/fallback/flip
+> conclusions in this dated Run 153 analysis are superseded and retained solely
+> to explain how the benchmark was interpreted. Capability boundaries do not
+> promise engine substitution. Plan 093 owns contract cleanup and plan 115 owns
+> supported server work.
+
 This note reframes the whole comparison. It does not replace the mechanism notes; it changes the
 **weighting** of what they found.
 
@@ -105,19 +112,20 @@ economics — exactly one of the three things the proxy does not neutralize. If 
 cost-at-scale is the priority, this is GreptimeDB's best case. Just don't attribute the *speed* gap to
 the storage model — it's the engine, and it's closable.
 
-## Skeptical re-score: under the proxy lens, ClickHouse is the stronger default
+## Historical skeptical re-score (superseded)
 
 > **Superseded as the standing lean (2026-05-29; operator re-affirmed 2026-06-11).** This
 > section's conclusion held while the query mix was unresolved. The operator then resolved the
 > mix as **anchored-bundle-retrieval-dominant**, which moves ClickHouse's retrieval-speed lead
 > off the hot path and turns the decision on cost + Rust — where GreptimeDB leads. The current
-> lean is **GreptimeDB**, ClickHouse the fallback; see
+> product engine is **GreptimeDB**; ClickHouse is comparator-only; see
 > [decisions/storage-engine.md](../../decisions/storage-engine.md). The analysis below remains
 > valid as the answer to a different question ("what if the mix were analytics-dominated?") and
 > as the documented flip condition.
 
-Being skeptical, as asked: **once ingest ergonomics are removed from the scorecard, the case for
-GreptimeDB narrows to a specific bet, and ClickHouse becomes the pragmatic default for Parallax.**
+The historical re-score found that once ingest ergonomics were removed from the
+scorecard, the case for GreptimeDB narrowed and ClickHouse looked like the
+pragmatic default. This was analysis, not current product authority.
 
 - **Choose ClickHouse if** the dominant value is fast retrieval over heterogeneous telemetry + the
   widest "build on top" surface + a proven unified-obs backend you don't have to de-risk. This fits
@@ -144,7 +152,7 @@ store Parallax embeds as a backend**:
 
 | System | Lang | Unified m/l/t? | Verdict for Parallax-as-backend |
 | --- | --- | --- | --- |
-| **ClickHouse** | C++ | Yes (proven: SigNoz/Uptrace/HyperDX/ClickStack) | **The default.** Fastest retrieval, deepest ecosystem, de-facto obs backend. |
+| **ClickHouse** | C++ | Yes (proven: SigNoz/Uptrace/HyperDX/ClickStack) | Historical comparator winner on retrieval/ecosystem; not a Parallax product target. |
 | **GreptimeDB** | Rust | Yes (one engine) | The Rust-native challenger; wins metrics-cardinality + object-store economics + auto-scale. |
 | **OpenObserve** | Rust | Yes (DataFusion+Parquet+tantivy on S3) | **A competitor *platform*, not an embeddable DB.** You'd query its APIs, not run SQL against a store you own — wrong layer for "Parallax owns the platform." Study it as a rival, not a backend. |
 | **Quickwit** | Rust | Logs/traces only (no metrics); sub-second search on S3 | Not unified (no metrics). Datadog-acquired → OSS-sustainability risk. Strong *log/trace search* tech only. |
@@ -152,20 +160,19 @@ store Parallax embeds as a backend**:
 | **VictoriaMetrics + VictoriaLogs** | Go | **Two separate products** (metrics; logs); traces weak | Efficient, but not one unified store — two systems to operate; not a single-backend answer. |
 | **StarRocks / Apache Doris** | C++ (Doris has a **JVM frontend** → filter risk) | OLAP, used for some obs | Heavier ops, not obs-purpose-built; Doris JVM FE trips the filter. No clear win over ClickHouse. |
 
-**Conclusion: no single alternative clearly beats the ClickHouse-or-GreptimeDB choice as an embeddable
-backend.** OpenObserve is the most interesting Rust unified store but is a *platform/competitor* (the
-layer Parallax itself is), not a database to build on. The pragmatic universe stays **ClickHouse vs
-GreptimeDB** — now re-weighted toward ClickHouse by the proxy lens. The real "alternative" worth
-adopting is not a magic DB but an **architecture** (below).
+**Historical conclusion:** no third candidate clearly beat either comparison
+engine. OpenObserve was the most interesting Rust unified platform but the wrong
+ownership layer. Current Parallax product work is not choosing among these
+engines; it fixes forward on GreptimeDB.
 
 ## The data model: metrics + logs + traces + grouped-errors + metadata → a 2–3 store split
 
 Parallax will hold: **metrics, logs, traces**, plus **Sentry-style grouped errors** and **metadata**.
 These are not one workload, and forcing them into one engine is the mistake.
 
-- **High-volume append telemetry** (metrics, logs, traces, raw error *events*): the columnar store —
-  **ClickHouse** (default) or GreptimeDB. Immutable, time-ordered, scanned/aggregated. This is what
-  both engines are for.
+- **High-volume append telemetry** (metrics, logs, traces, raw error *events*):
+  mandatory GreptimeDB native tables. ClickHouse only demonstrates comparator
+  behavior for this workload.
 - **Sentry-style grouped errors** (the "issue": fingerprint → first_seen, last_seen, count, status
   resolved/ignored/regressed, assignee, notes): this is **mutable, relational, low-volume OLTP**
   (millions of issues, not billions of events), with frequent UPDATEs and lookups/joins to
@@ -174,17 +181,15 @@ These are not one workload, and forcing them into one engine is the mistake.
   event firehose** — and Sentry had to build a special **"replacements consumer"** *because ClickHouse
   cannot do easy row UPDATEs* (merge/unmerge/resolve mutate issues). That pain is the tell.
 - **The relational metadata tier is already chosen — and it is the right home for grouped errors.** The
-  operator's standing direction (`prompts/deep-research-parallax.md` "Metadata Store") is **Turso**
-  (Rust-first, SQLite-compatible) as the **default** metadata store, with **Postgres only as a
-  scale-out fallback**, explicitly for *"users, projects, DSNs, issue status, redaction policies, audit
-  records, agent sessions, CLI invocations, fix outcomes."* So the answer to *"do we need Postgres?"* is:
-  **you need a relational OLTP store for grouped-error/issue state — that store already exists in the
-  plan (Turso by default, Postgres if Turso doesn't hold up at scale). It is NOT ClickHouse/GreptimeDB.**
+  operator's standing direction is mandatory **Turso** for users, projects,
+  issue status, policies, audit records, sessions, invocations, and outcomes.
+  Postgres remains useful comparison evidence but is not needed or authorized as
+  a product engine.
   Split:
-  - **Relational metadata store (Turso default / Postgres fallback)** = issue identity (fingerprint →
+  - **Relational metadata store (Turso)** = issue identity (fingerprint →
     issue), mutable workflow state (status, assignee, snooze, notes), first/last-seen, projects, users,
     DSNs, dashboards, alert rules, config. Transactional, indexed, small.
-  - **Columnar store (ClickHouse/GreptimeDB)** = the raw event/log/trace/metric firehose + the
+  - **Columnar store (GreptimeDB)** = the raw event/log/trace/metric firehose + the
     *computed* aggregates. The grouped-error *count/first-seen/last-seen* can be **computed on read**
     (ClickHouse `argMin/argMax/count` is fast) or **materialized** (ClickHouse MV / GreptimeDB Flow,
     see `rollup-and-continuous-aggregation.md`) keyed by fingerprint; the *human/workflow* fields live
@@ -223,23 +228,16 @@ whether Parallax's analytical queries are expressible (they are, on both). The g
 *aggregate* runs on either columnar engine; only the *mutable workflow state* needs the relational
 store (above).
 
-## Bottom line (practical fit, as asked — not raw speed)
+## Current Product Consequence
 
-1. **Behind the Parallax proxy, ClickHouse is the stronger default store** — it wins the two axes the
-   proxy can't neutralize (retrieval speed + build-on-top ecosystem) and is the de-facto, de-risked
-   unified-obs backend. GreptimeDB's headline advantage (native protocols/schema-on-write) is supplied
-   by Parallax itself, so it stops counting.
-2. **GreptimeDB stays the choice only for a specific bet**: metrics-cardinality/PromQL as a first-class
-   surface, *or* self-hosted 1×-S3 HA economics at scale, *or* mandatory zero-ops auto-rebalance.
-3. **No third system beats them as an embeddable backend** within the language filter; OpenObserve is a
-   competitor platform, the rest are partial.
-4. **Add Postgres** for Sentry-style grouped errors + metadata (mutable/relational/OLTP). Keep the
-   firehose in the columnar store. This is non-negotiable architecture, not a tie-breaker.
-5. This is a **genuine re-weighting toward ClickHouse** vs the prior GreptimeDB-on-fit lean — caused by
-   the proxy architecture. The deciding input the operator still owns: **does the metrics-cardinality /
-   self-hosted-economics / auto-scale bet outweigh ClickHouse's retrieval+ecosystem lead?**
+1. GreptimeDB remains the mandatory telemetry engine; benchmark disadvantages
+   create risk disclosures or fix-forward work.
+2. Turso remains the mandatory mutable metadata store; do not add Postgres.
+3. ClickHouse and other systems remain research comparators.
+4. No implementation begins from this note. Contract corrections are plan 093,
+   and any server topology is plan 115.
 
-## What would flip it back to GreptimeDB
+## Historical flip conditions (research only)
 
 - Parallax's product centre of gravity turns out to be **metrics/PromQL dashboards over huge
   cardinality**, and pre-aggregation on ClickHouse proves too lossy/awkward.
@@ -247,7 +245,8 @@ store (above).
   decisive cost/ops win, and ClickHouse Cloud is not an option.
 - The **startups→big auto-rebalance** requirement is hard and operator-managed ClickHouse resharding is
   unacceptable.
-Absent one of those, the proxy lens says ClickHouse.
+These conditions explain the old re-score. They have no current stack-selection
+authority.
 
 ## Sources / evidence
 

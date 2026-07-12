@@ -8,9 +8,9 @@ Proves that a thin stdio MCP server over the existing GraphQL API can reproduce
 the canonical evidence bundle byte-for-byte (CLI ↔ HTTP ↔ MCP projection
 equivalence). See:
 
-- Plan: [`advisor-plans/083-mcp-adapter-spike.md`](../../advisor-plans/083-mcp-adapter-spike.md)
 - Findings: [`docs/research/validation/2026-07-11-mcp-spike-projection-equivalence.md`](../../docs/research/validation/2026-07-11-mcp-spike-projection-equivalence.md)
 - Design: [`docs/research/decisions/agent-access-surface.md`](../../docs/research/decisions/agent-access-surface.md)
+- Active ship/no-ship work: [`plans/112-product-mcp-ship-gates.md`](../../plans/112-product-mcp-ship-gates.md)
 
 ## Tools (read-only catalog, spike subset)
 

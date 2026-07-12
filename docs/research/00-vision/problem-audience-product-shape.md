@@ -104,7 +104,7 @@ the cloud from the start.
 next quarter. That makes **retention economics** the product feature: object storage as the only
 copy, hot/cold tiering, pre-aggregation, evidence pinning so bundle-cited raw slices outlive TTL
 ([north-star §4](north-star-autonomous-fix-loop.md)). Storage scales horizontally on the
-GreptimeDB production profile (ClickHouse fallback behind the adapter); ingest/workers scale as
+GreptimeDB production profile with mandatory Turso metadata and no fallback engine; ingest/workers scale as
 Tier 2/3 topology ([implementation-concept.md](../architecture/implementation-concept.md)).
 Local-first is not a toy tier: if GreptimeDB serves everything from laptop to cluster, the same
 engine runs the whole ladder — which is exactly the current lean

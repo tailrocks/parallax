@@ -17,6 +17,18 @@ structure quickly.
   research, docs, code, prompts, and repository-rule updates.
 - Keep research under `docs/research/` unless a topic-specific root file is a
   better fit.
+- Active-plan policy (operator, 2026-07-12): `plans/` is the only directory
+  for active product/engineering implementation plans, their execution
+  checklists, and active plan run contracts. Keep unfinished work only. When an
+  item becomes terminal, preserve durable evidence where appropriate, then
+  delete its plan file and index row in the same commit. Never create another
+  implementation-plan directory or active implementation prompt. When research,
+  a decision record, or a specification identifies executable product or
+  engineering work, move the complete work packet into a numbered `plans/` file
+  and leave only evidence, requirements, or an ownership link at the source.
+  Durable research agendas, experiment protocols, specifications, and reusable
+  research prompts stay in their topic-specific homes only when they are not
+  implementation backlogs.
 - Do not build a documentation site yet. Plain Markdown is enough for this
   stage.
 - Concept-proving Rust code is allowed under `poc/` (operator, 2026-06-11):
@@ -108,10 +120,11 @@ structure quickly.
   aggregate required check.
 - V1 implementation is authorized (operator, 2026-06-12): product code lands
   under `crates/` (Cargo workspace) and `ui/` (TanStack Start app), following
-  [docs/research/architecture/v1-implementation-spec.md](docs/research/architecture/v1-implementation-spec.md)
-  and the [v1-implementation prompt](prompts/v1-implementation.md). Contract
-  changes go to the implementation spec first, then code; update
-  `PROJECT_STRUCTURE.md` when the directories appear.
+  [docs/research/architecture/v1-implementation-spec.md](docs/research/architecture/v1-implementation-spec.md).
+  The original V1 execution prompt is retired because the product now ships;
+  unfinished implementation work lives only in `plans/`. Contract changes go
+  to the implementation spec first, then code; update `PROJECT_STRUCTURE.md`
+  when the directories change.
 - Homebrew packaging policy (operator, 2026-06-15): before the first stable
   release, Parallax follows the Jackin packaging model: a disabled stable
   formula plus a CI-owned rolling `parallax-preview` formula in the
@@ -154,9 +167,8 @@ structure quickly.
 - When spawning, put this in the subagent prompt if the tool surface does not
   pin the model: *model = Grok 4.5 high only; never Composer*.
 
-**Current active branch:** `main` (advisor-plans PR #19 merged 2026-07-11;
-`implement/advisor-plans-069-090` deleted). Commit and push on `main` until
-the operator names another single branch.
+**Current active branch:** `main`. Commit and push on `main` until the operator
+names another single branch.
 
 - Do not open pull requests unless the operator explicitly asks for one.
 - Commit focused changes and push after each durable update.

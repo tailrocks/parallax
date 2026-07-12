@@ -1,4 +1,11 @@
-# GreptimeDB Parity Roadmap — What To Implement To Make It A Clear Winner For All Cases
+# GreptimeDB Parity Research Assessment
+
+> **Status (2026-07-12): upstream mechanism research, not a Parallax
+> implementation roadmap.** This dated assessment records possible GreptimeDB
+> and DataFusion improvements behind measured ClickHouse advantages. Parallax
+> remains committed to GreptimeDB + Turso. A product change may begin only from
+> a numbered file in [`plans/`](../../../../plans/); this document cannot
+> authorize implementation, a fork, or an alternate engine.
 
 <!-- markdownlint-disable MD013 -->
 

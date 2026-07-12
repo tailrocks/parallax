@@ -10,8 +10,6 @@ OpenCode) so a piece of work runs the same way every time.
 | --- | --- |
 | `deep-research-parallax.md` | Deep, critical research brief that validates, re-verifies, and extends the Parallax direction indefinitely; every prior finding is treated as a hypothesis until current evidence supports it. |
 | `greptimedb-vs-clickhouse-internals.md` | Never-ending `/goal` or Claude Code `/loop` brief for the under-the-hood GreptimeDB vs ClickHouse comparison: read the source, explain which design decisions make each fast or slow per signal, re-verify every claim against the live Docker stack with production-realistic, no-tricks, reproducible benchmarks, check each system's native out-of-the-box metrics/logs/traces structure (adopt-native vs custom), decide which to build Parallax on, and (when one wins but lacks features) map what the winner must implement to close the gap. Writes to `docs/research/storage/greptimedb-vs-clickhouse/`. |
-| `v1-implementation.md` | `/goal` brief that implements Parallax V1 end-to-end from the authoritative docs (v1-scope → v1-build-plan → v1-implementation-spec → UI spec → instrumentation matrix), milestone by milestone (M0→M2.5-UI→packaging), with the v1-scope acceptance scenarios as the stop condition. Run it as: `/goal Follow prompts/v1-implementation.md until the stop condition is met.` |
-| `advisor-plans-implementation.md` | Bounded `/goal` brief that exhaustively executes every active `advisor-plans/` item (069–090 and residual dispositions): plan-by-plan steps, machine-checkable done criteria, STOP honesty, dependency order, spike follow-through, and two consecutive clean closure re-audits. Run it as: `/goal Follow prompts/advisor-plans-implementation.md until the stop condition is met.` |
 
 ## Current preferred mode
 
@@ -145,37 +143,7 @@ Notes:
 - Do not wrap `/goal` inside `/loop` for this open-ended research. Pick one
   runner: `/goal` in Codex or Claude Code, or Claude Code `/loop`.
 
-### 4. Advisor plans implementation (bounded exhaustive `/goal`)
-
-`advisor-plans-implementation.md` closes the active improve/audit plan program
-under `advisor-plans/` (069–090 plus residual dispositions). Work on the
-implementation branch `implement/advisor-plans-069-090` (or the operator's
-current equivalent). Plans are the source of truth for edits; the brief is the
-source of truth for run behavior and the stop bar (no "mostly done").
-
-```text
-/goal Follow prompts/advisor-plans-implementation.md until the stop condition
-is met.
-
-Execute every active advisor plan (069–090) in dependency order from
-advisor-plans/README.md. For each plan: read the full plan file, run its drift
-check, execute every step, honor STOP conditions without improvising, satisfy
-every machine-checkable done criterion, update the README status row, commit
-with DCO + agent trailer, and push.
-
-Never declare a plan or the program complete with "mostly", "good enough", or
-"minor leftovers". Spikes (083, 090) must produce their artifacts; every GO
-verdict becomes a new plan that this same goal also drives to DONE. Disposition
-every residual/open-question bullet in the index. After the last plan reaches a
-terminal status, run the closure re-audit, then run it again — stop only after
-two consecutive clean re-audits report items remaining: none.
-```
-
-In Grok Build, `/goal` is available when the goal feature is enabled for the
-session; use `/goal status` / `pause` / `resume` / `clear` as needed. Prefer a
-single long-running `/goal` over wrapping it in `/loop`.
-
-### 5. Bounded `/goal` — fixed deliverables
+### 4. Bounded `/goal` — fixed deliverables
 
 Use a bounded `/goal` when the desired stop condition is explicit, such as
 creating the first verdict or refreshing one named research area. Make the

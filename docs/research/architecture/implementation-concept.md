@@ -1,14 +1,24 @@
-# Technical Implementation Concept
+# Historical Technical Implementation Concept
 
 <!-- markdownlint-disable MD013 -->
 
 Research date: 2026-05-25
 
+> **Status (2026-07-12): historical architecture research, not an active
+> implementation plan or current stack contract.** V1 subsequently shipped.
+> Unfinished contract and bundle work is owned by plans 093 and 104; server,
+> authentication, concurrency, and profile work by plans 109, 110, and 115;
+> product MCP by plan 112; and conditional Sentry compatibility by plan 118.
+> Only [`plans/`](../../../plans/) authorizes implementation. GreptimeDB plus
+> Turso is mandatory in every product profile. The older ClickHouse, Postgres,
+> engine-free, and storage-substitution projections below are superseded and
+> provide historical comparison context only.
+
 ## Purpose
 
-This document turns the Parallax research into a concrete build concept. It is
-not a neutral menu. It names the first system to build, the default components,
-the deployment topology, the data model, and the alternatives rejected for now.
+This document records how the 2026-05 research was turned into the original
+build concept. It preserves the proposed topology, data model, and alternatives
+for design provenance; it does not schedule current work.
 
 Version freshness rule: this recommendation is based on current public docs and
 source material checked on 2026-05-25. Every future benchmark or comparison must
@@ -16,20 +26,17 @@ use the latest reasonably available stable/public version of each candidate as
 of the benchmark date, and must label older benchmark posts or architecture docs
 as historical evidence.
 
-## Short Recommendation
+## Historical Short Recommendation
 
-Build Parallax as:
+The research proposed Parallax as:
 
 > A Rust-first execution context system with OpenTelemetry-compatible telemetry ingest for services,
 > CLI apps, CI runs, and coding agents. It starts as a **local-first one-binary
 > evidence server** with managed local GreptimeDB standalone for observability
-> evidence and Turso/SQLite-like metadata storage so a developer can hand a
+> evidence and Turso metadata storage so a developer can hand a
 > `run_id` to an agent and get logs, traces, spans, metrics, and grouped failures
 > back as a bundle. It stores production/high-volume observability evidence
-> behind the same GreptimeDB-first adapter boundary, with ClickHouse the fallback
-> that wins raw analytics; see
-> [storage engine decision](../decisions/storage-engine.md). It keeps Postgres
-> as the production relational fallback until metadata gates pass and exposes
+> through GreptimeDB native tables, with Turso owning product metadata. It exposes
 > bounded schema-bound evidence bundles through a CLI and local API, with a later
 > read-only MCP adapter once the canonical bundle and projection contracts are
 > stable.
@@ -37,13 +44,14 @@ Build Parallax as:
 The first product should beat self-hosted Sentry on operational simplicity. It
 should not start as a full observability dashboard or autonomous production SRE.
 
-> **⚠ Update 2026-06-18 — V1 storage decided: GreptimeDB-only, native OTLP model.** Where this doc says
-> "GreptimeDB-first adapter boundary with ClickHouse the fallback," read: V1 commits to GreptimeDB alone
-> on its **native OTLP tables** (proxy forwards raw OTLP + tees to derive issues into custom extension
-> tables); ClickHouse is deferred (not a V1 fallback or design constraint). Metadata (Turso) is
-> unchanged. Canonical: [native-otel-tables.md](../decisions/native-otel-tables.md).
+> **Current storage correction:** Parallax commits to GreptimeDB native OTLP
+> tables plus Turso metadata, with no product fallback engine. Canonical:
+> [native-otel-tables.md](../decisions/native-otel-tables.md).
 
-## Layer Decisions
+## Historical Layer Proposals
+
+The table records the original decomposition. Current work must use the plan
+owners named above and the mandatory storage policy.
 
 | Layer | Recommendation | Why |
 | --- | --- | --- |
@@ -51,8 +59,8 @@ should not start as a full observability dashboard or autonomous production SRE.
 | External protocol | V1 accepts OTLP HTTP/gRPC. Sentry envelope `event` subset is future compatibility work. | Keeps V1 one ingest model. Preserves Sentry migration as later adoption path without making Sentry compatibility a V1 blocker. |
 | Ingest gateway | Build a Rust `parallax-ingest` service. | Parallax needs auth, redaction, size limits, raw evidence retention, grouping hooks, and idempotency before storage. |
 | Message stream | No external broker in the tiny deployment. Use a local WAL/outbox. Add Apache Iggy for the durable profile. | The first version must stay simpler than Sentry. Iggy is the best Rust-native append-only stream once replay and processor isolation matter. |
-| Storage default | Do not hard-code one engine in the product contract. **V1 local default: managed GreptimeDB standalone for evidence plus Turso/SQLite-like metadata. Production/server lean: GreptimeDB, not settled**, with ClickHouse fallback; all behind the adapter ([v1-storage-adapter-vision.md](../decisions/v1-storage-adapter-vision.md), [storage-engine.md](../decisions/storage-engine.md)). | Local V1 optimizes one-command developer/agent debugging by `run_id`. Server mode optimizes retained observability evidence; the resolved anchored-retrieval query mix takes ClickHouse's scan-speed lead off the hot path, so cost + Rust decide — where GreptimeDB leads. Full A5 gates still have veto power. |
-| Metadata store | Turso Database for local/dev and tiny single-node prototypes; keep Postgres as the production and scale-out fallback until Turso production behavior is proven. | Users, projects, DSNs, issue status, policies, and audit records are relational product state, not telemetry. Turso keeps the embedded metadata path Rust-native and SQLite-compatible without choosing C SQLite. |
+| Storage default | GreptimeDB native observability tables for raw telemetry and approved derived extension tables only. | The adapter is a capability/test boundary, not an engine-substitution promise. |
+| Metadata store | Turso Database in every product profile. | Users, projects, DSNs, issue status, policies, and audit records are relational product state, not telemetry. |
 | Processing | Rust workers, in-process for tiny mode and separate services for durable/scale-out mode. | Normalization, symbolication, grouping, correlation, and graph building need deterministic logic and strong testability. |
 | Causal layer | Typed evidence graph stored as tables first. | Materialize graph edges before adopting a graph database. Causality needs explicit evidence and confidence. |
 | Agent surface | CLI plus canonical HTTP context API first; read-only MCP adapter after the access-surface gate. | Agents need structured evidence, not dashboards. CLI/HTTP keeps the tiny tier testable; MCP becomes valuable once the bundle contract and safety model are stable. |
@@ -72,7 +80,7 @@ Support **OpenTelemetry first**. Keep Sentry-compatible ingest as a future adapt
 | --- | --- | --- | --- |
 | OpenTelemetry / OTLP | Native telemetry standard. | OTLP/gRPC on `4317`, OTLP/HTTP on `4318`, `/v1/traces`, `/v1/logs`, `/v1/metrics`, binary protobuf first, gzip, partial-success responses, retryable overload responses, strict body limits. | Normalized spans, logs, metric samples, resources, trace/span IDs, service identity, deployment attributes, semantic attributes, and raw payload refs. High-volume rows go to GreptimeDB; raw refs go to local disk/object storage. |
 | Sentry envelope API | Future compatibility and migration standard for error events. | Later: `POST /api/<project_id>/envelope/`, starting with `event` items only. Parse `exception`, stacktrace, release, environment, tags, breadcrumbs, `contexts.trace`, `debug_meta`, and client fingerprints. Reject or metadata-only-store high-risk items until explicitly supported. | Later: raw envelope refs, normalized error events, stack frames, Rust panic/error-chain fields, grouping material, issue/fingerprint metadata, release linkage, and trace/span correlation keys. |
-| Parallax context API | Product API above OTEL/Sentry. | JSON and Markdown evidence bundles by issue, event, trace, CI run, CLI invocation, or agent session. All responses include redaction status, evidence refs, confidence, missing-data warnings, and query manifest. | Product/query state, investigation runs, bundle manifests, audit records, agent access logs, and accepted/rejected fix outcomes in Turso or Postgres fallback. |
+| Parallax context API | Product API above OTEL/Sentry. | JSON and Markdown evidence bundles by issue, event, trace, CI run, CLI invocation, or agent session. All responses include redaction status, evidence refs, confidence, missing-data warnings, and query manifest. | Product/query state, investigation runs, bundle manifests, audit records, agent access logs, and accepted/rejected fix outcomes in Turso. |
 
 Do not invent a new telemetry wire protocol. OTLP is the V1 wire format for
 logs/traces/metrics and runtime errors. Sentry envelopes are a future wire format for migration.
@@ -122,7 +130,10 @@ Access decision:
 - **No generic mutation tools:** no `run_sql`, `run_shell`, production deploy,
   rollback, or database mutation tools in Parallax core.
 
-### Named Stack Per Layer
+### Historical Named Stack Per Layer
+
+This was a topology option map, not a supported-profile matrix. Plans 109, 110,
+and 115 own any future server topology.
 
 | Layer | Simple default | Scalable path | Very scalable path |
 | --- | --- | --- | --- |
@@ -132,9 +143,9 @@ Access decision:
 | App collection | Rust `tracing`, `tracing-error`, and `opentelemetry-otlp` for V1. | Add SDK fixtures for more languages through OTLP first; add Sentry envelope `event` compatibility only as a later migration adapter. | Collector/agent integrations, sampling policy, tenant routing. |
 | CLI tracing | `parallax` CLI built with `clap`; wrapper/subcommand mode records structural command metadata, sanitized args/env/cwd, stdout/stderr policy refs, exit code, and overhead metrics. | CI and deploy systems call CLI with project token and redaction policy after the [CLI trace overhead and redaction](../capture/agent-cli-tracing.md) gate passes. | Organization-wide CLI/agent gateway and policy templates. |
 | Agent-session tracing | Normalized `agent_session` / `agent_action` schema fed by bounded adapters for native OTel, hooks/plugins, JSONL or stream JSON, exports, server/API protocols, wrappers, and raw refs. | Fixer component and real-tool adapters source session traces with per-tool/version/config coverage, lossiness, redaction, and projection rows in the ledger. | Multi-agent session graph with policy, review, and fixer outcome feedback loops after ledger gates. |
-| Stream / buffer | Local append-only WAL/outbox segment files. | Apache Iggy standalone when replay, backpressure, or worker separation is needed. | Iggy cluster or storage-backed stream fallback if Iggy fails scale tests. |
-| Observability storage | Managed local GreptimeDB standalone first; server storage adapter with GreptimeDB and ClickHouse profiles; current production lean GreptimeDB (not settled), ClickHouse fallback ([v1-storage-adapter-vision.md](../decisions/v1-storage-adapter-vision.md), [storage-engine.md](../decisions/storage-engine.md)). | GreptimeDB S3-native profile or ClickHouse hot tier depending on freshness/cost gates. | ClickHouse cluster, GreptimeDB distributed/object-storage profile, or a later hot/cold split only if A5 cost and latency gates justify the added operations. |
-| Metadata store | Turso Database for prototype projects, DSNs, policies, issue state, audit, agent sessions, CLI invocations, and outcomes. | Turso with benchmarked backup/restore and concurrency gates; Postgres production fallback if those fail. | Postgres fallback for production or large multi-node metadata if Turso fails production gates. |
+| Stream / buffer | Local append-only WAL/outbox segment files. | No additional product stream is authorized; a measured profile plan must justify one. | No additional product stream is authorized; a measured profile plan must justify one. |
+| Observability storage | Managed or external GreptimeDB using native observability tables. | GreptimeDB with the storage placement approved by plan 115. | GreptimeDB distributed/object-storage placement only after an approved profile plan. |
+| Metadata store | Turso Database for projects, policies, issue state, audit, agent sessions, CLI invocations, and outcomes. | Turso under the backup/restore and concurrency contract approved by plan 115. | Turso; fix forward or upstream rather than substitute engines. |
 | Raw evidence retention | Local disk raw refs with TTL. | S3-compatible object storage for raw envelopes, attachments, logs, and bundle manifests. | Tiered object storage with lifecycle policy and per-tenant retention. |
 | Processing | In-process Rust normalizer/grouping/evidence-graph worker. | Separate Rust worker services and consumer groups. | Worker pools by normalization, grouping, symbolication, graph, bundle indexing. |
 | Context surface | CLI + HTTP API in the same binary; optional read-only MCP adapter only after the access-surface gate. | Separate API and optional MCP service. | Horizontally scaled API/MCP tier with tenant isolation and audit indexing. |
@@ -149,8 +160,8 @@ Two version-freshness caveats on this table as of 2026-05:
   (latest `server-0.8.0`, 2026-04-22) and is **single-node only**; replication
   via Viewstamped Replication is in progress but not yet used by the server. So
   the Tier 3 "Iggy cluster" cell is a future target, not a shipping capability.
-  Tier 3 must assume the storage-backed stream fallback until Iggy ships and
-  proves clustering; do not design Tier 3 around Iggy HA that does not exist.
+  The historical Tier 3 sketch therefore could not assume Iggy HA. Any future
+  buffering topology needs an approved measured profile plan.
 - **Rotel is alpha.** A Rust OTLP collector (Rotel, `v0.2.x`) is attractive but
   pre-1.0; the conservative collector default is the OpenTelemetry Collector
   (Go, allowed by the runtime filter) until Rotel reaches 1.0. Treat Rotel as an
@@ -202,22 +213,22 @@ MVCC-internal changes, so benchmark rows must distinguish stable release,
 pre-release, and moving `main` commit results;
 Turso Cloud has separate documented durability, PITR, export, and sync behavior,
 but those managed-cloud guarantees do not prove the embedded local store is safe
-under Parallax crash, backup, migration, and audit workloads. This is an
-operator-chosen default, not a maturity claim: Parallax must pair it with its
-own backup path and the [metadata-store benchmark](../storage/metadata/metadata-store-benchmark-plan.md)
-before relying on it for large production installs, and Postgres remains the
-scale-out fallback the moment Turso fails those gates. Treat the metadata slot
-as the most likely place the named stack changes under benchmarking. Metadata
+under Parallax crash, backup, migration, and audit workloads. This was an
+operator-chosen default, not a maturity claim. The later operator decision made
+Turso mandatory: failures are fixed in Parallax or upstream rather than by
+substituting another metadata engine. The
+[metadata-store benchmark](../storage/metadata/metadata-store-benchmark-plan.md)
+remains evidence for hardening Turso. Metadata
 benchmarks must record whether they use a stable or pre-release Turso tag; a
 pre-release result can inform development but should not satisfy production
 default claims without a stable rerun.
 
-The current Turso-specific production gate is stricter than "it runs locally":
+The Turso-specific production research gate was stricter than "it runs locally":
 [Turso metadata production readiness](../storage/metadata/turso-metadata-production-readiness.md)
 separates local embedded Turso from Turso Sync/Cloud behavior, requires MVCC
-conflict/retry tests, treats CDC and MVCC as mutually exclusive for the audit
-path, and keeps Postgres as an active fallback until backup/restore and
-migration rollback are proven.
+conflict/retry tests, and treats CDC and MVCC as mutually exclusive for the audit
+path. Its older substitution language is superseded by the mandatory-stack
+decision.
 
 ## Why This Is The Right First System
 
@@ -247,11 +258,11 @@ Rust service panics or emits error
 
 That is narrower than "AI observability" but much more buildable.
 
-## Default Storage Decision
+## Historical Storage Comparison
 
-Keep **ClickHouse and GreptimeDB** behind a storage adapter. The current lean is
-**GreptimeDB (not yet settled)**, with ClickHouse the fallback; full reasoning in
-[storage-engine.md](../decisions/storage-engine.md).
+This section preserves the comparison that preceded the final storage decision.
+The current product contract is GreptimeDB native tables plus Turso, with no
+fallback engine; [storage-engine.md](../decisions/storage-engine.md) is canonical.
 
 GreptimeDB reached **v1.0 GA in April 2026** (latest stable checked `v1.0.2`,
 2026-05-14). An intermediate proxy lens once tilted toward ClickHouse: Parallax
@@ -263,23 +274,22 @@ leads cost/cardinality/PromQL/auto-rebalance. The deciding input then resolved:
 the query mix is **anchored-retrieval-dominant** (operator 2026-05-29), so both
 engines serve Parallax's hot path interactively (≪300 ms) and ClickHouse's
 retrieval lead falls off it — leaving cost + Rust, where GreptimeDB leads. Hence
-the current lean is **GreptimeDB, not yet settled**, with ClickHouse the fallback
-for analytics-heavy use.
+that evidence contributed to the final GreptimeDB decision. ClickHouse remains
+a benchmark comparator only.
 
-This is still a benchmark-controlled decision. The storage freshness,
-bundle-latency, object-cost, cold-read, durability, setup, and
-operational-complexity gates keep veto power.
+Benchmarks still control performance claims and expose work to fix forward in
+GreptimeDB or Parallax; they do not reopen engine substitution.
 
-### Current Lean
+### Historical Comparison Snapshot
 
 | Axis | Current interpretation |
 | --- | --- |
 | Retrieval speed | ClickHouse is faster on scans, broad log search, dynamic JSON, joins, and mature analytical SQL — but this is **off Parallax's anchored hot path**, where both engines stay interactive (≪300 ms) when schema keys/indexes are correct. So retrieval speed does not decide the lean. |
 | Build-on-top ecosystem | ClickHouse leads: SigNoz, Uptrace, HyperDX, and ClickStack prove a large observability platform surface over ClickHouse. GreptimeDB can express the core grouped-error/evidence-window queries, but the ecosystem is younger. |
 | Cost and retention | GreptimeDB remains the important branch for self-hosted 1x object-storage economics, fewer always-on compute assumptions, and deep retained history. ClickHouse can use object storage too, so this must be priced rather than assumed. |
-| Metrics/cardinality/PromQL | GreptimeDB remains strategically relevant for PromQL-native and high-cardinality metric workflows. This can flip the storage choice if metrics become a first-class product surface rather than background evidence. |
+| Metrics/cardinality/PromQL | GreptimeDB's PromQL-native and high-cardinality behavior remains relevant to product claims and upstream priorities; it does not reopen the committed storage choice. |
 | Rust/open-source lens | GreptimeDB is the operator-contributable Rust substrate. That matters for a long-term bet, but does not override current retrieval/ecosystem evidence. |
-| First build discipline | The first build should not depend on either engine-specific magic. It should keep the schema, bundle, and storage adapter boundaries honest until A5 decides. |
+| Product consequence | GreptimeDB native tables are mandatory; the comparison remains useful only for mechanism and performance research. |
 
 Current source anchors:
 
@@ -321,8 +331,8 @@ Rust app / service / CLI / coding agent
        - evidence graph builder
        - CLI / HTTP context API
        - optional MCP adapter after access-surface gate
-  -> columnar storage adapter (GreptimeDB lean / ClickHouse fallback)
-  -> Turso prototype metadata
+  -> GreptimeDB native observability tables
+  -> Turso metadata
 ```
 
 Durable single-server:
@@ -349,13 +359,13 @@ Scale-out:
 ```text
 apps / collectors / CI systems / coding agents
   -> parallax-ingest x N
-  -> Iggy cluster or fallback stream
+  -> stream topology only if an approved profile plan requires it
   -> normalizer workers x N
   -> grouping workers x N
   -> symbolication workers x N
   -> context-index workers x N
-  -> GreptimeDB distributed or ClickHouse fallback cluster
-  -> Turso metadata or Postgres scale-out fallback
+  -> GreptimeDB distributed placement
+  -> Turso metadata
   -> object storage
   -> context API / optional MCP adapter / UI
 ```
@@ -634,7 +644,10 @@ Sources:
 - [MCP security best practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)
 - [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/)
 
-## Scaling Trajectory
+## Historical Scaling Projection
+
+The tiers below were design sketches, not supported profiles or an execution
+queue. Plans 109, 110, and 115 exclusively own any future server/profile work.
 
 ### Tier 1: Simple
 
@@ -690,8 +703,7 @@ Properties:
 - stateless ingest split from API;
 - raw replay and worker separation if Iggy is enabled;
 - object storage for retained telemetry;
-- Turso for prototype metadata and audit, with Postgres ready if production
-  gates fail;
+- Turso for metadata and audit;
 - still small enough for one VM or a simple Compose deployment.
 
 The explicit seams are ingest, stream, workers, storage, API, and optional MCP. Moving
@@ -704,10 +716,10 @@ Target: larger companies and high-volume telemetry.
 
 ```text
 parallax-ingest x N
-iggy cluster or fallback stream
+stream topology only if an approved profile plan requires it
 worker pools x N
-greptimedb distributed or clickhouse fallback cluster
-turso metadata or postgres scale-out fallback
+greptimedb distributed
+turso metadata
 object storage
 api nodes x N, plus optional mcp adapter nodes
 parallax CLI across CI/dev/agent environments
@@ -806,14 +818,14 @@ candidate versions:
 | eBPF-first error capture | Reject. | eBPF cannot see Rust panic messages, typed error chains, or span fields. |
 | Kafka/Pulsar | Reject as deployable candidates. | JVM and operational profile violate the language/runtime filter. |
 | Required broker in v0.1 | Reject. | The tiny deployment must stay simpler than self-hosted Sentry. |
-| ClickHouse as automatic default | Reject for first build. | Strong fallback, but less purpose-built for unified metrics/logs/traces plus PromQL semantics. |
+| ClickHouse as a product engine | Superseded. | It remains a benchmark comparator; GreptimeDB is mandatory. |
 | Elasticsearch/OpenSearch storage | Reject. | JVM/search-index architecture is the wrong performance and operations profile. Keep only object-centric log UI lessons. |
 | Generic `run_sql` / `run_shell` MCP tools | Reject. | Too much blast radius and prompt-injection risk. |
 | Autonomous production rollback | Reject for MVP. | Requires a separate safety, approval, and policy system. |
 
-## What To Build First
+## Historical First-Milestone Record
 
-The first implementation milestone should be:
+The original first implementation milestone was:
 
 ```text
 parallax-server
@@ -847,18 +859,17 @@ No matching failures exist in the prior release window.
 Suggested fix: guard empty rule set and add regression test.
 ```
 
-That is the correct first proof point: deterministic context that makes an
+That was the intended first proof point: deterministic context that makes an
 agent's fix proposal materially better than reading the stacktrace alone.
 
 ## Bottom Line
 
-Parallax is technically plausible if it stays disciplined:
+The historical research concluded that Parallax was plausible if it stayed
+disciplined. Current implementation authority belongs only to `plans/`:
 
 - start as a small Rust/OTLP error-context system;
-- keep the columnar observability store behind an adapter; the current lean is
-  GreptimeDB (not yet settled — cost + Rust, anchored hot path), with ClickHouse
-  the fallback for analytics ([storage-engine.md](../decisions/storage-engine.md));
-- use no broker in the tiny profile and Apache Iggy in the durable profile;
+- use GreptimeDB native observability tables and Turso in every product profile;
+- use no additional broker or stream without an approved, measured profile plan;
 - build deterministic grouping and evidence graphs before AI claims;
 - expose safe CLI/API context before autonomous action, then add MCP after the
   access-surface and redaction gates;

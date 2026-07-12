@@ -4,6 +4,11 @@
 
 Research date: 2026-05-25
 
+> **Status (2026-07-12): dated external-pattern review, not a current stack or
+> implementation plan.** Parallax now requires GreptimeDB + Turso in every
+> product profile. Plans 120 and 123 exclusively own any agent-capture or fixer
+> implementation; historical Iggy/Postgres alternatives below are not authorized.
+
 ## Purpose
 
 This note reviews agent-observability tools from a technical perspective and
@@ -292,7 +297,7 @@ SDKs / CLI wrappers / agent plugins / OTEL collectors
        - build graph
        - compute outcomes
   -> GreptimeDB
-  -> Turso or Postgres scale-out fallback
+  -> Turso metadata (mandatory; exact server placement requires plan 115)
   -> API/MCP/UI
 ```
 

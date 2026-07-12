@@ -168,7 +168,14 @@ encodings).
 | Browser/frontend first-class capture | Roadmap ([frontend.md](../capture/frontend.md)); V1 is backend/CLI Rust apps first |
 | Multi-user, multi-tenant anything | V2+ |
 
-## 4. Everything required — the build checklist
+## 4. Shipped V1 inventory and residual ownership
+
+The original build checklist below is retained as a shipped contract inventory,
+not an active implementation runner. Dated V1 evidence lives in
+[v1-gates-report.md](v1-gates-report.md). Every remaining implementation
+divergence is indexed only under [`plans/`](../../../plans/): plan 093 owns
+contract reconciliation, 105 metrics, 111 redaction, 116 retention/prune, and
+the triggered V2/MCP plans own work outside V1.
 
 1. **Crates** (per the [build plan](v1-build-plan.md) layout): `parallax-server`, `parallax-core`
    (graduating the 21 PoC kernels), `parallax-storage` (greptime + turso + memory adapters),
@@ -177,8 +184,7 @@ encodings).
 0. **The concrete contracts** — [v1-implementation-spec.md](v1-implementation-spec.md):
    storage DDL (GreptimeDB + Turso), the OTLP→column mapping, the GraphQL SDL, ports (managed
    GreptimeDB child shifted to 24000–24003 to avoid the :4000 collision), `config.toml` keys,
-   pinned dependencies, the supervision contract, workspace conventions. The implementing
-   agent's entry point is [prompts/v1-implementation.md](../../../prompts/v1-implementation.md).
+   pinned dependencies, the supervision contract, and workspace conventions.
 1a. **Capture documentation for the operator's stack** — the
    [instrumentation matrix](../capture/rust-stack-instrumentation.md): one shared telemetry-init
    pattern; middleware picks for tonic/axum; the manual-wrapper recipes for tokio-postgres,

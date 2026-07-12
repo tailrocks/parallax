@@ -2,40 +2,24 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Decision date baseline: 2026-05-29 (reconciles the engine sub-study to the current operator brief).
-Operator re-affirmed focus: 2026-06-03. Operator re-affirmed harder: 2026-06-11 (see below).
+Decision date baseline: 2026-05-29. Operator confirmations followed on
+2026-06-03, 2026-06-11, and 2026-06-18.
 
-> **⚠ Update 2026-06-18 — V1 storage decided: GreptimeDB-only, native OTLP model.** Parallax V1 commits
-> to GreptimeDB alone and adopts its **native OTLP tables** (the proxy forwards raw OTLP straight to
-> GreptimeDB and tees in-process to derive issues into a few custom extension tables). **ClickHouse is
-> deferred** — no longer a V1 fallback and not a design constraint; revisit only if a concrete benefit
-> appears. This supersedes the "both engines behind one `StorageAdapter` / ClickHouse fallback" framing
-> in this doc **for V1 scope**; everything below stays as historical engine evidence and a future-option
-> record. Canonical: [native-otel-tables.md](native-otel-tables.md) ·
-> [native-otel-migration-plan.md](../storage/native-otel-migration-plan.md).
+> **Current authority (operator, 2026-06-12; native-table refinement,
+> 2026-06-18): GreptimeDB + Turso are mandatory in every product profile.** Raw
+> observability signals use GreptimeDB native tables. ClickHouse and Postgres are
+> research comparators only, never fallback engines or implementation targets.
+> Storage and metadata traits are capability, ownership, and test boundaries;
+> they do not promise engine substitution. The in-memory adapter is test/dev
+> support only. Contract cleanup is owned by
+> [`plans/093-contract-and-baseline-corrections.md`](../../../plans/093-contract-and-baseline-corrections.md),
+> and any supported server profile is owned by
+> [`plans/115-v2-server-profile.md`](../../../plans/115-v2-server-profile.md).
+>
+> The dated selection, fallback, and flip analysis below is preserved as
+> benchmark history. It cannot authorize a product backend change.
 
-> **Decision — current production/server lean GreptimeDB, NOT yet settled.** Keep **both engines behind one
-> `StorageAdapter`**; never hard-code engine magic into the schema or the evidence-bundle
-> contract. ClickHouse is the fallback and the faster raw analytical engine. The lean is
-> GreptimeDB because Parallax's hot path is *anchored* evidence-bundle retrieval (all signals
-> for one `trace_id`/`fingerprint`), where **both engines are interactive (≪300 ms at every
-> tested scale)** — so ClickHouse's scan-speed lead is off the hot path and the decision turns
-> on **cost + Rust + self-hosted**, where GreptimeDB leads. This is finalized only when the
-> sized cost numbers and the self-host-vs-managed-cloud call land (below).
-
-The practical server-profile focus is therefore:
-
-> **Implement the first production storage profile around GreptimeDB-shaped assumptions, while preserving the
-> ClickHouse adapter boundary.**
-
-This does **not** mean Parallax embeds GreptimeDB into the Parallax process. The local-first V1 should
-manage a local GreptimeDB standalone binary for evidence and use Turso/SQLite-like storage for local
-metadata/grouping state. This page decides the high-volume self-hosted/server storage profile, where
-GreptimeDB is also the first focus. No product contract may depend on GreptimeDB-only behavior. The
-bundle schema, context API, grouping semantics, and evidence graph must stay portable enough that
-ClickHouse can replace GreptimeDB if the remaining cost/cold-read gates flip.
-
-This is the condensed current verdict. The **full record** — ~170 benchmark runs, a source-level
+This is the condensed historical engine verdict. The **full record** — ~170 benchmark runs, a source-level
 teardown of both engines, the four-build version matrix, and the per-pass history — lives in
 [../storage/greptimedb-vs-clickhouse/](../storage/greptimedb-vs-clickhouse/) (start at
 [verdict-which-to-choose.md](../storage/greptimedb-vs-clickhouse/verdict-which-to-choose.md);
@@ -48,8 +32,8 @@ history in [run-log.md](../storage/greptimedb-vs-clickhouse/run-log.md); cross-b
 | --- | --- | --- |
 | DQ1 | Where is **GreptimeDB** genuinely better? | Metrics/PromQL-native (GA + default-on); small-write/upsert ingest ergonomics (LSM, no "too many parts"); horizontal scale-out by design (region auto-rebalance, compute/storage separation, no bulk-copy migration); read-time dedup → correct latest-state on a plain query; OTLP schema-drift auto-adds typed columns; retention = whole-SST drop (cheap by default); object-storage-native (fewer objects → wins cold *full* scans); replayable WAL; cardinality-insensitive metric *ingest* (~flat 1k→1M series). |
 | DQ2 | Where is **ClickHouse** genuinely better? | Selective log/trace scan + full-text; time-DESC log-tail locality; generic wide-scan/aggregate throughput (decade-tuned C++ vectorized engine, ~2–3× warm metric-agg); per-column codecs; dynamic-attribute JSON path queries (~8× with the required `.:Type` cast); projections (a 2nd physical order); in-DB anchored cross-tier joins; cold *selective* object-store reads (sparse-granule egress); schema-mistake tolerance. The gap **widens with scale** (5M+). |
-| DQ3 | Can ClickHouse replace GreptimeDB? | **Yes, technically** — stored every signal, identical bundles — at the cost of a PromQL+OTLP compatibility layer (experimental/collector-only on CH), manual sharding (OSS `SharedMergeTree` is Cloud-only), and an ingest-batching layer. |
-| DQ4 | Can GreptimeDB replace ClickHouse? | **Yes** — ran Q1–Q6 with identical results; accept slower heavy ad-hoc log/trace scans. Parallax's anchored hot path is **not latency-bound** (Q6 composite ≪300 ms on both). |
+| DQ3 | Did ClickHouse prove technical workload comparability? | **Yes** — the historical study stored every signal and produced identical bundles, while requiring a PromQL+OTLP compatibility layer, manual sharding (OSS `SharedMergeTree` is Cloud-only), and ingest batching. This is comparator evidence, not product portability authority. |
+| DQ4 | Did GreptimeDB cover the same comparison workload? | **Yes** — Q1–Q6 produced identical results while heavy ad-hoc log/trace scans were slower. Parallax's anchored hot path was **not latency-bound** (Q6 composite ≪300 ms on both). |
 | DQ5 | Which to choose for Parallax today? | **GreptimeDB** on workload fit (metrics-native, ingest/upsert ergonomics, retention cost, scale-out) + the Rust tiebreak; ClickHouse's wins are real but less central to anchored retrieval. |
 | DQ6 | Better long-term *investment*? | **GreptimeDB** — the speed gap is **closable engineering, not a physics wall** (seven of eight advantages are pure engineering; the two heaviest ride the shared **DataFusion** scan and **Parquet-Variant** JSON roadmaps), and it is the **Rust, open-source substrate the operator can contribute to** rather than wait on (C++). |
 
@@ -86,9 +70,10 @@ That workload makes GreptimeDB the better first focus for five reasons:
    contribute to. ClickHouse is stronger and more mature in many analytical paths, but it is a C++
    substrate. When the hot path is fast enough on both, operator-contributable Rust matters.
 
-This focus should not be misread as "ClickHouse is worse." For Parallax, ClickHouse remains the
-fallback when the workload shifts toward heavy ad-hoc analytics, broad log search, or when real
-server-tier numbers show no GreptimeDB cost/cold-read advantage.
+This focus should not be misread as "ClickHouse is worse." ClickHouse remains a
+useful analytical comparator for heavy ad-hoc analytics and broad log search;
+contrary measurements expose GreptimeDB risks or upstream work, not a product
+engine switch.
 
 ## Why the lean is GreptimeDB even though ClickHouse is faster
 
@@ -133,7 +118,7 @@ close the cost/cold-read finalizer gates below, and three reality checks bound t
    JSON ("JSON2") is the headline in-flight v1.1 feature (merged PRs May–June 2026), which is the
    exact gap behind ClickHouse's ~8× dynamic-attribute win.
 
-## What must close before this is settled
+## Historical finalizer questions
 
 1. **Sized cost numbers on a real server tier** — $/GB retained, per-signal compression, and
    **multi-replica object-storage cost** (GreptimeDB 1× shared S3 vs OSS ClickHouse N× replica
@@ -148,18 +133,19 @@ close the cost/cold-read finalizer gates below, and three reality checks bound t
    metrics path; the v1.1 *nightly* is uneven, even regressing 5M dedup-aggregation). Re-pin and re-run
    the load-bearing speed/cost benchmarks when it ships.
 
-## The flip rule (honest guardrail)
+## Historical flip analysis (superseded)
 
-Absent a surprise in (1)–(2) or a "yes" to managed cloud in (3), the anchored workload + cost + Rust
-point at **GreptimeDB**. **But** if the sized cost numbers come back **at parity** *and* a **managed
-path is acceptable**, ClickHouse's ecosystem + speed make it the safer pick — let the **numbers**, not
-the Rust preference, settle it. A secondary flip (from the sub-study): if the real query mix turns out
-**analytics-/ad-hoc-scan-dominated** *and* GreptimeDB's cold-scan latency at GB–TB is materially worse,
-ClickHouse's read-path advantage becomes central.
+The 2026-05 selection study would have flipped toward ClickHouse if sized costs
+were equal, managed service use was acceptable, and the workload became
+analytics-dominated. That counterfactual remains useful for interpreting
+benchmark risk. Current policy does not permit it to change the product stack;
+such evidence instead narrows claims or creates GreptimeDB/Parallax fix-forward
+work in `plans/`.
 
 ## Standing maintenance
 
-- Keep both engines behind one `StorageAdapter` trait; no engine magic in the schema or bundle contract.
+- Keep capability-specific storage boundaries for ownership and testability;
+  they do not imply a ClickHouse implementation.
 - Query mix is **resolved** (anchored-retrieval-dominant); the remaining finalizers are the sized cost
   numbers and the self-host-vs-managed-cloud call, not another query-shape model.
 - Re-pin versions and re-verify load-bearing claims on each new stable release (GreptimeDB v1.1 GA next).

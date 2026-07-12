@@ -4,11 +4,13 @@
 
 White-box, source-level comparison of **GreptimeDB** and **ClickHouse** for the Parallax storage
 layer: how each works internally, which design decisions make each fast or slow, and — for
-Parallax's signals (metrics, logs, traces, anchored evidence-bundle correlation) — which to build
-on, and why.
+Parallax's signals (metrics, logs, traces, anchored evidence-bundle correlation)
+— what risks and upstream opportunities the comparison exposes.
 
-> **Conclusion:** current lean **GreptimeDB, not yet settled** (fit + cost + Rust; ClickHouse is
-> the faster analytical engine but its lead is off Parallax's anchored hot path). Read the one-page
+> **Current authority:** GreptimeDB + Turso are mandatory; ClickHouse is a
+> comparator only, never a fallback. The historical study selected GreptimeDB on
+> fit + cost + Rust while measuring ClickHouse as the faster analytical engine.
+> Read the one-page
 > [`verdict-which-to-choose.md`](verdict-which-to-choose.md); the product decision is in
 > [`../../decisions/storage-engine.md`](../../decisions/storage-engine.md); the full run-by-run
 > history and detailed synthesis are in [`run-log.md`](run-log.md).
@@ -21,7 +23,7 @@ This sub-study is driven by the loop brief
 This is the **white-box** layer — the *why* behind the *what* the other notes establish:
 
 - [`../evaluation.md`](../evaluation.md) — strategy/fit evaluation (reasons *about* the systems).
-- [`../benchmark-plan.md`](../benchmark-plan.md) — the benchmark plan + runnable black-box harness (holds veto over the default).
+- [`../benchmark-plan.md`](../benchmark-plan.md) — benchmark plan + runnable black-box harness (qualifies claims and risks; it cannot change the stack).
 - [`../size-and-object-cost.md`](../size-and-object-cost.md) and [`../freshness-and-latency.md`](../freshness-and-latency.md) — the cost and latency proof gates.
 
 A benchmark number the internals cannot explain is a flag that one of them is wrong.
@@ -85,10 +87,10 @@ A benchmark number the internals cannot explain is a flag that one of them is wr
 - [`vendor-claims-audit.md`](vendor-claims-audit.md) — audit of GreptimeDB's own marketing/comparison pages.
 - [`otel-arrow-ingest-assessment.md`](otel-arrow-ingest-assessment.md) — OTel-Arrow (OTAP) ingest assessment.
 
-**Implementation designs and roadmap**
-- [`greptimedb-implementation.md`](greptimedb-implementation.md) / [`clickhouse-implementation.md`](clickhouse-implementation.md) — concrete Parallax-on-X design (schema, ingest, queries, retention).
+**Historical implementation studies and improvement assessment**
+- [`greptimedb-implementation.md`](greptimedb-implementation.md) / [`clickhouse-implementation.md`](clickhouse-implementation.md) — comparative schema, ingest, query, and retention studies; ClickHouse is not a product target.
 - [`platform-fit-and-alternatives.md`](platform-fit-and-alternatives.md) — proxy lens, alternatives survey, the metadata/error-grouping split.
-- [`greptimedb-parity-roadmap.md`](greptimedb-parity-roadmap.md) — per ClickHouse advantage, the borrowed concept → code change → effort tier → Parallax verdict.
+- [`greptimedb-parity-roadmap.md`](greptimedb-parity-roadmap.md) — research assessment of possible GreptimeDB/upstream improvements, not an active Parallax implementation roadmap.
 
 ## Source repositories (read, do not vendor into this repo)
 

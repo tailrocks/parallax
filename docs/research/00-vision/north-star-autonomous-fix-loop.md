@@ -29,9 +29,10 @@ Recorded as durable intent, condensed from the operator's own words:
 2. **OpenTelemetry as far as it goes.** Collect everything an application can emit through the
    standard protocol. Extend with Sentry-protocol compatibility only where OTLP genuinely lacks
    data, and only as a future adapter ([capture/sentry-ingest.md](../capture/sentry-ingest.md)).
-3. **Pre-aggregate, pre-process, structure.** Telemetry is shaped on the way in, then lands in
-   pluggable storage: the columnar evidence store (GreptimeDB lean, ClickHouse fallback, both
-   behind `StorageAdapter`) plus a relational metadata store (Turso-first, Postgres fallback).
+3. **Pre-aggregate, pre-process, structure.** Telemetry is shaped on the way in,
+   then lands in GreptimeDB native observability tables plus approved derived
+   extensions, while mandatory Turso owns relational metadata. Capability
+   boundaries support ownership and tests, not engine substitution.
 4. **GreptimeDB conviction.** The operator leans GreptimeDB harder than before: it is Rust, it is
    already designed around the concepts ClickHouse proves (columnar, object-storage-native), and —
    because AI contributes best to Rust codebases — what it still misses versus ClickHouse can be

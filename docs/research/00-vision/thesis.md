@@ -10,7 +10,7 @@
 
 **Purpose:** share with engineers, founders, investors, and observability/SRE practitioners to collect critical feedback.
 
-**Current research status, 2026-05-25:** the maintained verdict is **GO only for
+**Current research status, refreshed 2026-07-12:** the maintained verdict is **GO only for
 the narrow version**: a Rust-first, self-hostable runtime evidence/context
 engine that accepts OTLP traces/logs/metrics, derives Parallax-owned error
 events from exception spans and ERROR/FATAL logs, accepts CLI invocation traces
@@ -18,12 +18,11 @@ and tested coding-agent session records, then serves schema-valid, redacted
 evidence bundles. Sentry-compatible ingest is future migration compatibility,
 not V1 scope. Do not read this thesis as a claim for a generic AI RCA chatbot,
 a full dashboard suite, or autonomous production mutation. The
-current storage posture is also narrower than early drafts: the observability
-store stays behind a ClickHouse/GreptimeDB adapter, the **current lean is
-GreptimeDB (not yet settled)** with ClickHouse the fallback (see
-[storage engine decision](../decisions/storage-engine.md)), and storage claims
-stay unproven until freshness, bundle-latency, object-cost, and operational
-gates pass.
+current storage posture is also narrower than early drafts: GreptimeDB native
+tables are mandatory for telemetry and Turso is mandatory for metadata (see
+[storage engine decision](../decisions/storage-engine.md)). ClickHouse/Postgres
+remain comparators only, and benchmark gates bound claims rather than reopen the
+stack.
 
 **Wedge update, 2026-06-12 (operator statements #3–#5):** this thesis's "flaky test
 investigation first" recommendation is superseded. The current first product is the
@@ -233,12 +232,10 @@ GreptimeDB reached `v1.0.2` as the latest stable release checked on
 2026-05-25. Its GA status reduces unreleased-database risk, but its trace
 read/write docs still mark trace support as experimental, and vendor-published
 benchmarks do not prove Parallax's evidence-bundle workload. The current
-research position is: **current lean GreptimeDB, not yet settled** — with the
-anchored-retrieval query mix resolved (operator 2026-05-29), ClickHouse's
-retrieval-speed lead is off Parallax's hot path, so the decision turns on cost +
-Rust where GreptimeDB leads; ClickHouse remains the fallback (faster analytics,
-build-on-top ecosystem) until the benchmark gates settle speed, cost, and
-operations. Full reasoning: [storage engine decision](../decisions/storage-engine.md).
+product position is mandatory GreptimeDB + Turso. ClickHouse's faster analytics
+and broader build-on-top ecosystem remain comparison evidence; benchmark gates
+bound speed, cost, and operations claims and identify fix-forward work. Full
+reasoning: [storage engine decision](../decisions/storage-engine.md).
 
 Sources: [GreptimeDB v1.0.2 release](https://github.com/GreptimeTeam/greptimedb/releases/tag/v1.0.2),
 [GreptimeDB trace read/write docs](https://docs.greptime.com/user-guide/traces/read-write/),

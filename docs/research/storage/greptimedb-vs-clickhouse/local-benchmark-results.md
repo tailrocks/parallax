@@ -5,8 +5,11 @@
 Empirical log of local Docker runs. **Every number here is an indicative
 laptop/dev-box smoke result, not a production verdict** (per the brief's honesty
 rule). Numbers exist to confirm/refute the mechanism predictions in the internals
-notes and the public performance claims — not to settle the choice. The runnable
-`parallax-bench` harness in `storage-benchmark-prototype.md` holds the real veto.
+notes and public performance claims, not to settle the product stack.
+GreptimeDB + Turso is mandatory; ClickHouse/Postgres fallback language preserved
+inside dated run entries is historical evidence only. The runnable benchmark in
+`benchmark-plan.md` can veto performance/cost claims and expose work to fix
+forward, but cannot authorize engine substitution.
 
 ## Run log
 

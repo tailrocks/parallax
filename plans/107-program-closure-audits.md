@@ -1,0 +1,218 @@
+# Plan 107: Independently prove and close the active restructuring program
+
+> **Executor instructions**: Plan status and file existence are not evidence.
+> Run two independent audits from clean detached checkouts of the same pushed
+> implementation commit. Resolve findings in source, produce both packets,
+> then use a mechanically limited closure commit and independently verify its
+> final pushed tree without creating a self-referential evidence commit.
+
+## Status
+
+- **Priority**: P1
+- **Effort**: M
+- **Risk**: HIGH
+- **Depends on**: Every other actionable indexed plan; all blockers freshly rechecked
+- **Category**: validation / closure / plan lifecycle
+- **Planned at**: `eefa4617`, 2026-07-12
+- **Status**: TODO
+
+## Why
+
+The program changes contracts, dependency direction, CI, releases, storage,
+agent boundaries, and UI ownership. A green aggregate job alone cannot prove
+that policy is non-hollow, documentation is truthful, or temporary exceptions
+were removed. Closure requires separate source-based reviewers and durable,
+machine-readable evidence.
+
+## Scope
+
+In scope:
+
+- Two independent full source/artifact audits of one pushed implementation
+  candidate and durable packets committed before lifecycle cleanup.
+- Reconciliation of all findings, exceptions, suppressions, quarantines, and
+  documentation claims.
+- A mechanical final-plan cleanup tree inspected by both auditors, with their
+  tree/diff attestations embedded durably in the closure commit and a
+  repository-owned required check validating that exact pushed commit.
+
+Out of scope:
+
+- Waiving findings through plan status or broad exceptions.
+- Product/config/workflow changes in the mechanical cleanup commit.
+- Keeping terminal plan files as an archive.
+
+## Criteria For Freezing C0
+
+- Every other actionable plan passed its gates and was already deleted with its
+  index row in its own completion commit. Completion evidence is read from
+  source, tests, durable validation records, and Git history, never from a
+  retained terminal plan file.
+- Every other remaining indexed file is a minimal BLOCKED plan whose exact
+  external/operator/phase condition was freshly reproduced. A blocker may not
+  hide internally actionable steps.
+- The candidate commit is pushed and the main working tree is clean.
+- Required CI and release evidence is accessible at that exact commit.
+- Step 0's repository-owned `closure-final` verifier/check exists on the
+  candidate, has read-only permissions, validates closure commit trailers,
+  parent/tree/diff allowlists and remaining plan state, is required by the
+  ruleset, and has passed a dry-run fixture. It may not rely on expiring
+  Actions artifacts or files that the closure commit deletes.
+
+## Steps
+
+### Step 0: Build the final-closure verifier
+
+Before freezing an implementation candidate, implement and fixture-test the
+persistent `closure-final` command/workflow. It records auditor identities and
+attestation digests in dedicated commit trailers, validates the staged-tree
+hash and audited parent, rejects any non-mechanical path/content change, and
+runs the required final baseline. The check needs `contents: read` only, no
+secrets or write token. Add the stable check to the live ruleset, push it, and
+prove both passing and tampered dry-run fixtures. Only then apply the entry
+criteria above and freeze C0.
+
+### Step 1: Prepare a closure manifest
+
+Record commit, repository cleanliness, tool/engine versions, active policies,
+retired-plan Git history, plan-to-source/test evidence, required checks,
+exceptions, suppressions, quarantines, generated artifacts, artifact hashes,
+and open blocked triggers. Do not use historical plan checkboxes as proof. The
+closure mechanism's durable evidence is the Git commit/tree/trailers plus the
+source audit packets; the GitHub check is enforcement, not the sole retained
+artifact.
+
+### Step 2: Run auditor A
+
+From a fresh clean detached checkout at the pushed commit, an auditor focused
+on architecture/contracts/source behavior inspects Cargo metadata, dependency
+tiers, public facades, product configuration, storage/native-table behavior,
+zero-copy ownership, retry/idempotency, GraphQL/bundle compatibility, UI import
+boundaries, tests, and source-linked documentation. The auditor runs relevant
+commands independently and records findings, not just command names.
+
+### Step 3: Run auditor B
+
+A skeptical auditor who did not implement the final wave uses a separate fresh
+detached checkout of the same commit. It owns CI path routing, required-check
+topology, security/dependency/TLS policy, nextest evidence, cache behavior,
+release determinism, signatures/SBOM/attestations, tamper failures, blocked
+condition checks, and plan lifecycle. It must inspect workflow/source logic and
+actual artifacts rather than trust green labels.
+
+### Step 4: Reconcile and repeat
+
+Resolve every disagreement or finding in source, policy, or tests. Push a new
+candidate and rerun both auditors from separate clean detached checkouts at that
+same commit. Reconcile every defect-ledger row, policy/tier exception, lint
+allow, ignored/quarantined test, generated drift, and documentation claim.
+Remove stale entries instead of grandfathering them. Repeat until both audits
+agree on one pushed implementation candidate, C0.
+
+### Step 5: Store durable evidence without commit recursion
+
+Write matching
+`docs/research/validation/<date>-active-plans-closure-{a,b}.md` and `.json`.
+JSON includes schema version, audited commit C0, clean state, auditor
+identity/independence, tool versions, commands, exit codes, artifact hashes,
+findings, exceptions, and blocked-trigger evidence. Markdown explains source
+review and dispositions.
+
+Commit and push only those already-generated packets as evidence commit C1,
+whose parent is C0. A repository-owned verifier must prove that C1 changes only
+the expected packet paths, that both packets validate and name parent C0, and
+that their recorded hashes agree. Do not regenerate packets to name C1: they
+attest their parent implementation commit by design. If packet preparation
+reveals a source, policy, test, or documentation defect, discard the candidate,
+fix it, and return to Step 2 with a new C0 instead of mixing remediation into C1.
+
+### Step 6: Retire the final program plan
+
+Confirm that earlier completion commits already retired every other actionable
+plan and index row. Delete this plan and its index row in the closure commit.
+Delete `JACKIN-REFERENCE.md` and `IMPLEMENTATION.md` when no actionable
+Jackin-alignment work remains. Keep every other BLOCKED file only when a fresh
+exact condition still prevents execution; shrink it to current evidence and
+trigger before staging the closure tree. Confirm all active plan material
+exists only in `plans/`.
+
+The cleanup commit may change only this plan, its index row, the two program
+reference/contract files, and already-generated closure packet references
+required by lifecycle. It may not batch-delete plans that should have retired
+earlier or change product source, manifests, policy, CI, release, or durable
+contract documents.
+
+### Step 7: Attest the staged tree and verify the pushed commit
+
+Stage the mechanical cleanup on evidence commit C1 and compute its Git tree hash
+without committing. Both auditors independently inspect that exact tree, its
+diff from C1, and the complete C0-to-staged-tree diff. They prove that C1 added
+only the two audit packets, the final-plan cleanup is allowlisted, and product,
+policy, test, workflow, and durable contract content remains byte-identical to
+the fully audited C0. They also verify the remaining `plans/`
+bijection/statuses and plans-only policy. Record auditor ID, implementation
+candidate C0, evidence commit C1, staged tree hash, result, and full-attestation
+digest in `Closure-Audit-A` / `Closure-Audit-B` commit trailers alongside
+exactly one normal agent co-author trailer. Commit and push once.
+
+The required `closure-final` check validates C0, parent C1, C1's evidence-only
+diff, the pushed closure tree/trailers, the mechanical cleanup diff, remaining
+plans, product-tree identity, and the full baseline. Because the source packets
+and exact tree/attestation hashes live in Git, no follow-up evidence commit or
+expiring artifact is needed. If either auditor changes the staged tree, or the
+diff contains non-mechanical work, recompute/re-audit the tree; for
+product/policy/workflow changes, return to two full source audits on a new C0.
+
+## Test Plan
+
+- Two clean detached checkout manifests at one pushed commit.
+- Full shared verification plus plan-specific real-engine/UI/release gates.
+- Independent source/config/workflow/artifact reviews.
+- JSON schema/required-field validation, artifact hash verification, and an
+  evidence-only C1 fixture whose packets attest parent C0 without self-reference.
+- Negative tests for stale exceptions, skipped checks, hollow reports, and any
+  previously completed numbered plan left in `plans/`.
+- Repository search proving no active plan/prompt/index exists outside `plans/`.
+- Final cleanup-diff/trailer/tree fixtures and required `closure-final` check.
+
+## Done Criteria
+
+- [ ] Both auditors used separate clean detached checkouts at one pushed
+  implementation candidate.
+- [ ] Auditor B did not implement the final wave.
+- [ ] Both packets contain exact commands, results, hashes, source review, and findings.
+- [ ] Every difference/finding was resolved before C0 and both packets attest C0.
+- [ ] C1 changes only the expected packets, whose schemas, commit fields, and
+  hashes validate against parent C0 without self-reference.
+- [ ] Required checks are non-hollow and actual artifact/sidecar tampering fails.
+- [ ] Exceptions, suppressions, quarantines, and docs match live source/policy.
+- [ ] Git history proves every earlier actionable plan retired with its index
+  row in its own completion commit; this final plan and the program
+  reference/execution files are deleted by the closure commit.
+- [ ] Only genuinely unfinished BLOCKED plans remain, with fresh trigger evidence.
+- [ ] No active plan material exists outside `plans/`.
+- [ ] The closure commit durably embeds both independent auditor IDs, C0 and C1
+  SHAs, exact tree hash, results, and attestation digests.
+- [ ] The repository-owned required `closure-final` check passes at the exact
+  final pushed commit with read-only permissions and no expiring evidence dependency.
+
+## STOP Conditions
+
+- Checkouts differ by commit, contain uncommitted changes, or reuse implementation
+  state that invalidates independence.
+- An audit relies on plan prose, status, grep alone, or a green label without
+  source/artifact inspection.
+- Any finding is waived by raising a ratchet, weakening a required check, or
+  broadening an exception.
+- A blocked condition is asserted without a fresh reproducible check.
+- Durable evidence omits failures, hashes, versions, or auditor independence.
+- The closure commit changes anything outside its mechanical allowlist.
+- The required verifier/check is absent, untested, not required, or depends on
+  expiring artifacts, secrets, or deleted plan files.
+
+## Remove When
+
+Delete this plan and row in the mechanical closure commit after both full
+audits agree and all actionable work is closed. Closure is valid only after
+both auditors attest the exact staged tree in commit metadata and the required
+final pushed check passes as described above.

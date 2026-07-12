@@ -1,8 +1,17 @@
-# Self-Hosted Observability Architecture
+# Historical Self-Hosted Observability Architecture
 
 <!-- markdownlint-disable MD013 -->
 
 Research date: 2026-05-24
+
+> **Status (2026-07-12): historical architecture research, not an active plan,
+> backlog, or supported-profile contract.** The local V1 subsequently shipped.
+> Plans 093 and 104 own current contract/bundle reconciliation; plans 109, 110,
+> and 115 own future auth, concurrency, and server profiles; plan 112 owns
+> product MCP; and plan 118 owns conditional Sentry migration. Only
+> [`plans/`](../../../plans/) authorizes implementation. GreptimeDB plus Turso is
+> mandatory in every product profile. Earlier Iggy, ClickHouse, Postgres, and
+> engine-substitution projections below are design history, not authority.
 
 Update: 2026-06-03. Sentry-compatible ingest is now a future adapter, not V1
 scope. V1 starts with OpenTelemetry/OTLP ingest for traces, logs, and metrics;
@@ -14,7 +23,7 @@ error status, and ERROR/FATAL logs. See [API concept](api-concept.md) and
 
 The stronger Parallax thesis is not CI-first debugging. It is:
 
-> Build a Rust-first, self-hosted observability and error-context system that is
+> The research proposed a Rust-first, self-hosted observability and error-context system that is
 > OpenTelemetry-native first, can later add Sentry-compatible ingestion, and is
 > much simpler and cheaper to operate than self-hosted Sentry.
 
@@ -26,18 +35,17 @@ The target user is a small engineering team that:
 - wants enough context for a human or coding agent to fix production bugs;
 - is willing to run a few simple services, but not a Sentry-sized service graph.
 
-The recommended architecture direction:
+The original architecture direction, corrected for the mandatory stack:
 
 ```text
 Applications
   -> OpenTelemetry OTLP ingest endpoint
   -> Rust ingest gateway
-  -> Apache Iggy durable stream
-  -> Rust processors
+  -> bounded local spool and Rust workers
   -> GreptimeDB for logs/traces/metrics/derived error events
   -> Turso metadata store for projects/issues/users
   -> simple UI + CLI + agent context API
-  -> future Sentry-compatible ingest adapter
+  -> conditional Sentry-compatible adapter only through plan 118
 ```
 
 The product should not start as a full Sentry clone. It should start as a
@@ -53,7 +61,7 @@ needs:
 | Need | Parallax stance |
 | --- | --- |
 | Keep standard telemetry setup | Accept OTLP for traces, logs, and metrics; derive Parallax error rows from exception/error evidence. |
-| Future Sentry migration | Add Sentry envelopes and DSNs after V1 proves useful. |
+| Conditional Sentry migration | Design evidence is retained here; plan 118 alone can authorize it. |
 | Group recurring errors | Implement deterministic grouping first. |
 | Show what happened around an error | Correlate errors with logs, traces, metrics, releases, deploys, and host context. |
 | Keep cost predictable | Self-host with bounded retention, object storage where useful, and no SaaS event quota anxiety. |
@@ -302,7 +310,10 @@ Source:
 
 - [OpenTelemetry Rust](https://opentelemetry.io/docs/languages/rust/)
 
-## Message Bus: Apache Iggy
+## Historical Message-Bus Candidate: Apache Iggy
+
+This section records an evaluated option. It does not authorize adding Iggy or
+another stream; any such topology must be justified by a numbered plan.
 
 Apache Iggy is worth prototyping as the internal durable stream because it fits
 the system's philosophy:
@@ -361,13 +372,17 @@ Risks to validate:
 - Iggy may be unnecessary for a single-node MVP if direct writes plus a local
   WAL are enough.
 
-The first benchmark should compare:
+The historical benchmark proposal compared:
 
 1. no message bus: ingest gateway writes directly to storage plus local WAL;
 2. Iggy as the durable stream;
-3. NATS JetStream or Redpanda only if Iggy fails maturity tests.
+3. NATS JetStream or Redpanda as research comparators.
 
-## Storage: GreptimeDB First, Not Forever
+## Historical Storage Evaluation
+
+The decision is now final for product architecture: GreptimeDB native tables
+hold telemetry and Turso holds metadata. Comparative candidates below remain
+useful for research only and cannot become product fallbacks.
 
 GreptimeDB is the best first storage prototype for this product direction
 because it is explicitly positioned as one database for metrics, logs, and
@@ -395,9 +410,7 @@ The MVP schema should use GreptimeDB for high-volume, time-oriented data:
 - context windows;
 - deployment/release time markers.
 
-Use Turso Database for low-volume product state by default. Keep Postgres as a
-scale-out fallback only if Turso production behavior or ecosystem maturity
-blocks a larger deployment:
+Use Turso Database for low-volume product state in every product profile:
 
 - users;
 - projects;
@@ -505,7 +518,10 @@ The same evidence bundle that renders in the UI is the payload the agent reads.
 MCP makes the agent a first-class client rather than an afterthought, which is
 the point of the product.
 
-## Minimal Deployment Profiles
+## Historical Deployment Profiles
+
+Only the local profile shipped. The server/scale-out sketches are not supported
+contracts; plans 109, 110, and 115 own any future implementation.
 
 ### Profile 1: Tiny Single Server
 
@@ -533,11 +549,11 @@ parallax-ingest
 iggy
 parallax-worker
 greptimedb standalone
-postgres
+turso metadata
 object storage backups
 ```
 
-This is the first serious target.
+This was a projected target, not a current implementation instruction.
 
 ### Profile 3: Scale-Out
 
@@ -548,30 +564,22 @@ multiple parallax-ingest nodes
 iggy cluster or alternate stream
 multiple workers
 greptimedb distributed
-postgres
+turso metadata
 object storage
 ```
 
-Do not design this first. Keep interfaces clean enough that this can happen
-later.
+This topology remains a historical sketch unless a numbered plan adopts it.
 
-## MVP Sequence
+## Historical MVP Sequence And Current Ownership
 
-1. Implement OTLP ingest fixtures for one Rust panic event, one anyhow/eyre-style
-   error event, logs, spans, and metrics.
-2. Normalize those records into Parallax-owned event/span/log/metric rows.
-3. Compute deterministic grouping fingerprints.
-4. Store normalized metadata in Turso and telemetry in managed local GreptimeDB.
-5. Add GraphQL query/exploration API and CLI commands over the same Parallax API.
-6. Add Sentry envelope parser fixtures only after the OTLP-first local loop is
-   useful.
-7. Add a minimal HTTP endpoint compatible with Sentry SDK envelope submission as
-   a future migration adapter.
-8. Add Iggy only when the direct ingest path needs replay, buffering, or
-   independent processors.
-9. Build the `issue context` API before building a full UI.
+The original sequence covered OTLP fixtures, normalized rows, deterministic
+grouping, GreptimeDB/Turso persistence, GraphQL/CLI access, and issue context.
+Those V1 surfaces shipped; this section no longer orders work. Contract and
+bundle residuals belong to plans 093 and 104. Product MCP belongs to plan 112,
+conditional Sentry ingest to plan 118, and all server/profile work to plans 109,
+110, and 115.
 
-This order keeps the riskiest product question first:
+The sequence was organized around this product question:
 
 > Can Parallax capture a production Rust error and provide more useful
 > debugging context than Sentry, while remaining cheaper and simpler to run?
@@ -591,12 +599,15 @@ This order keeps the riskiest product question first:
 7. Later: how close must Sentry DSN/auth behavior be for existing SDKs to work
    unchanged?
 
-## Current Recommendation
+## Historical Recommendation
 
-Parallax should pivot its primary research direction to:
+The note originally recommended this research direction:
 
 > OpenTelemetry-native, Rust-first self-hosted error context, with
 > Sentry-compatible ingestion as a future migration adapter.
+
+Current implementation policy narrows that direction to GreptimeDB plus Turso,
+with Sentry compatibility blocked in plan 118 until its explicit trigger clears.
 
 The CI failure context work remains useful as an adjacent agent-context workflow,
 but it is not the first wedge if the real pain is production Rust observability

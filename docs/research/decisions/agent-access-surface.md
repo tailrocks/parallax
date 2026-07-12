@@ -1,6 +1,13 @@
 # Agent Access Surface — CLI, HTTP API, and MCP
 
-> Parallax will build one canonical evidence-bundle contract (one redaction policy, one authorization model) and expose it through three transports: a stable HTTP API as the canonical service-to-service surface, a CLI shipped day one for human/CI/coding-agent use, and a read-only MCP adapter. The decision is **CLI first, HTTP API underneath, MCP required before any agent-native product claim** — MCP must not be the first or only interface because it remains security-sensitive (per NSA guidance), and no MCP tool may produce evidence unavailable through the canonical API or skip bundle size limits, redaction, authorization, or audit logging. The MCP adapter is gated: it ships only after projection-equivalence (CLI, HTTP, and MCP return the same canonical JSON hash) plus the read-only safety, client-fixture, scope, redaction, source-field, output-budget, audit, and negative-tool-catalog gates pass. Current status is **not measured**: there is a design but no implementation, projection-equivalence run, MCP client fixture, redaction run, or audit-log result, so Parallax must describe CLI/API/MCP as a planned design direction (claim level `not_measured`), not a proven safe agent surface. The safety ledger turns these fixtures into auditable claim levels with allowed product wording, run artifacts, row schemas, and expiry triggers.
+> **Status (2026-07-12): durable decision and claim-evidence contract, not an
+> active implementation plan.** CLI/HTTP product surfaces and an MCP spike now
+> exist, but no product MCP safety claim is authorized. Plan 104 exclusively
+> owns canonical bundle/projection reconciliation, plan 111 owns production
+> redaction/A6, and blocked plan 112 owns every product MCP ship/no-ship gate.
+> Only [`plans/`](../../../plans/) authorizes implementation. The design decision
+> remains **CLI first, HTTP API underneath, MCP only after its gates pass**; no
+> transport may bypass bundle bounds, redaction, authorization, or audit.
 
 This decision record consolidates the following previously-separate research files, each preserved in full below:
 
@@ -21,8 +28,8 @@ The deep-research prompt asks whether Parallax should expose evidence only
 through a CLI, or whether it also needs a dedicated MCP server. This note gives
 the focused answer:
 
-> Build the canonical context contract once, expose it through HTTP first, ship
-> a CLI from the start, and add a read-only MCP adapter before claiming
+> Define the canonical context contract once, expose it through HTTP first, ship
+> a CLI from the start, and require a gated read-only MCP adapter before claiming
 > agent-native distribution. CLI-only is enough for Phase 0/1 validation, but it
 > is not enough for the product direction.
 
@@ -329,18 +336,13 @@ or serialized JSON for compatibility, but the claimable result is the
 `structuredContent` object and its canonical hash. A text-only MCP response does
 not satisfy the Parallax schema/adoption or source-field policy gates.
 
-### Implementation Order
+### Implementation Ownership
 
-1. **Phase 0:** no product surface needed. Hand-built bundles can be passed as
-   files to agents for A1 eval.
-2. **Phase 1 tiny tier:** build the canonical bundle builder, HTTP context API,
-   and CLI. This proves the evidence contract and simplicity claim.
-3. **Phase 2:** add projection-equivalence tests across CLI and HTTP, plus the
-   redaction and schema conformance gates.
-4. **Phase 3:** add the read-only MCP adapter before broad agent pilots or public
-   agent-native positioning.
-5. **Later:** consider write/proposal MCP tools only for draft PR creation,
-   never direct production mutation.
+The former phase ordering is retired. Plan 104 owns the canonical bundle and
+projection contract, plan 111 owns the redaction/source-field safety boundary,
+and plan 112 owns the product MCP decision, client fixtures, auth/scope,
+resources, capabilities, output budgets, auditing, and spike graduation or
+removal. This document supplies requirements and claim levels only.
 
 ### Gate For Shipping MCP
 
@@ -419,10 +421,10 @@ levels. It consumes the design in
 and the normalization contract in
 [Agent and CLI OTel semantic-convention mapping](../capture/agent-cli-tracing.md).
 
-Current status: **not measured**. Parallax has an access-surface design, but no
-implementation, projection-equivalence run, MCP client fixture, redaction run,
-or audit-log result. Until those exist, Parallax should describe CLI/API/MCP as
-a planned design direction, not as a proven safe agent surface.
+Current product claim status remains **not measured**. The MCP spike is evidence,
+not a shipped product surface, and does not satisfy the full projection,
+client/auth, redaction, source-field, retention, or audit gates in plan 112.
+Until those pass, Parallax must not describe product MCP as proven safe.
 
 The central rule:
 

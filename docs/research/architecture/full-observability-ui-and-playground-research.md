@@ -2,10 +2,13 @@
 
 Research date: 2026-07-06
 
-Status: brainstorming / design research. This is not an implementation plan and
-does not authorize stack expansion. It is a detailed source-linked brief for a
-future agent to inspect Parallax and `parallax-telemetry-playground`, then design
-the next UI and playground generation.
+> **Status (2026-07-12): historical brainstorming and design evidence, not an
+> active implementation plan, backlog, checklist, or ordering authority.** Many
+> candidate surfaces subsequently shipped. Plan 100 owns current UI structure,
+> plan 105 owns metric overview/trends, plan 119 owns Weaver/semantic conventions,
+> and plan 122 owns any remaining causal-UI/playground breadth. Only
+> [`plans/`](../../../plans/) authorizes implementation. Lists below are dated
+> option inventories and may be stale; do not implement from them.
 
 ## Executive thesis
 
@@ -1106,7 +1109,8 @@ UI placement:
 
 ### K. Expanded query/API ideas from this pass
 
-Add these to the future GraphQL/query backlog:
+The research recorded these candidate GraphQL/query shapes. Current ownership is
+limited to plans 100, 105, and 122:
 
 - `metricExemplars(metric, from, to, filters)` → trace/span-linked metric points.
 - `fieldStats(entity, from, to, filters)` → top values, coverage, cardinality,
@@ -1120,7 +1124,7 @@ Add these to the future GraphQL/query backlog:
   bundle previews, notes.
 - `telemetryQuality(scope)` → completeness/gap scoring.
 
-Add these to potential materializations:
+Candidate materializations recorded by the same pass:
 
 - `metric_exemplars`: metric name/time/value/resource attrs/trace/span/run ids.
 - `field_stats_minute`: entity/key/top values/cardinality/coverage/safety.
@@ -1132,7 +1136,7 @@ Add these to potential materializations:
 
 ### L. Playground additions from this pass
 
-Add explicit scenarios that prove the new concepts:
+The pass also recorded scenario candidates; plan 122 owns any activation:
 
 - **Exemplar demo:** p99 checkout latency chart contains exemplar dots that open
   exact traces; control scenario lacks exemplars and shows lower confidence.
@@ -1269,9 +1273,9 @@ must explain these execution shapes, each with at least one playground scenario:
 - **Global UX:** global time/environment/release/service filters, command
   palette, keyboard navigation, saved investigations, and URL state everywhere.
 
-### Playground scenario backlog after deduplication
+### Historical Playground Scenario Option Catalog
 
-Use these as concrete proof cases when a future agent turns research into tasks:
+These are design inputs for plan 122, not executable tasks in this file:
 
 | ID | Scenario | Proves |
 | --- | --- | --- |
@@ -1299,7 +1303,9 @@ Additional chaos cases:
   drop, extended clock skew, frontend rage/dead clicks, propagation break, and
   container-spawn timeout.
 
-### Playground topology and instrumentation upgrades
+### Historical Playground Topology Options
+
+Plan 122 owns any selected topology or instrumentation change.
 
 - Wire inventory/catalog to the existing Postgres container.
 - Keep cache scenarios inside existing services; do not add Redis or another
@@ -1434,10 +1440,10 @@ Current Parallax signatures to keep stable:
 - Native OTLP rows in GreptimeDB plus `parallax.run.id` are the correlation
   spine.
 
-### Known current playground absences to close
+### Absences Recorded By The Dated Audit
 
-The playground should not be treated as feature-complete until these gaps are
-covered or explicitly deferred:
+This snapshot is retained for provenance and is not a current checklist. Plan
+122 must revalidate any residual before adopting it:
 
 - No Docker/container-spawn or daemon/session/container topology.
 - No agent-session trace inside a container.
@@ -1608,7 +1614,9 @@ Topology analysis:
 - UI must label the graph mode because each mode makes different causality
   claims.
 
-### Resolver and materialization backlog by surface
+### Historical Resolver And Materialization Option Map
+
+Plans 100, 105, and 122 own any current work represented by this map.
 
 | Surface | Query/API concept | Likely materialization |
 | --- | --- | --- |
@@ -1628,6 +1636,8 @@ Topology analysis:
 | Quality | `evidenceGaps`, `telemetryQuality` | `evidence_gaps` by trace/run/service. |
 
 ### Telemetry contract enforcement with OpenTelemetry Weaver
+
+Plan 119 exclusively owns any implementation of the following design evidence.
 
 Parallax should treat telemetry names as public API:
 
@@ -1862,25 +1872,19 @@ External references retained for follow-up research:
 9. **Local-first remains sacred.** One binary/local workflow should stay simpler
    than self-hosted Sentry and less fragmented than Grafana+Kibana.
 
-## Suggested future execution order
+## Retired Execution Order And Current Ownership
 
-1. **Inventory current UI/API gaps.** Compare this note against existing GraphQL
-   schema and UI routes; list missing query surfaces only.
-2. **Design the Ecosystem page first.** It changes how the whole product feels
-   and reuses existing spans/service summaries.
-3. **Make span links visible.** Smallest high-value trace improvement: links are
-   already stored; UI should resolve/render them.
-4. **Add Story timeline for trace/run.** Start with spans + events + logs;
-   later add normalized UI/agent events.
-5. **Add attribute compare.** Needed for Sentry/Honeycomb-grade spike diagnosis.
-6. **Extend playground with execution-stack scenarios.** Create host CLI/daemon/
-   container/agent simulation after UI can visualize run stories.
-7. **Add evidence-gap detector.** Useful both as UI feature and instrumentation
-   quality gate for the playground.
-8. **Only then deepen dashboards.** Metrics are important, but causal navigation
-   is the differentiator.
+The former sequence covered inventory, Ecosystem, span links, Story, attribute
+compare, execution-stack scenarios, evidence gaps, and dashboards. The first
+six product surfaces largely shipped through retired plans; this file no longer
+orders follow-up work. Plan 100 owns UI restructuring, plan 105 owns metric
+overview/trends, plan 119 owns Weaver, and plan 122 owns any remaining causal UI
+or playground expansion.
 
-## Questions a future agent should answer before implementation
+## Historical Design Questions
+
+Plan 122 must revalidate these questions if its trigger clears; they are not an
+execution checklist here.
 
 - Which current GraphQL resolvers already expose enough data for a service graph?
 - Are span links queryable by trace id and resolvable across traces, or only

@@ -4,6 +4,15 @@
 
 Research date: 2026-05-25
 
+> **Current authority (operator, 2026-06-12): Turso is mandatory metadata
+> storage.** This file remains a research benchmark protocol. Postgres and C
+> SQLite are comparison baselines only; no result can activate a product
+> fallback or adapter. Failures create Turso/Parallax fix-forward work. Contract
+> cleanup belongs to
+> [`plans/093-contract-and-baseline-corrections.md`](../../../../plans/093-contract-and-baseline-corrections.md),
+> and supported server operations belong to
+> [`plans/115-v2-server-profile.md`](../../../../plans/115-v2-server-profile.md).
+
 ## Purpose
 
 Parallax needs a separate benchmark and runnable prototype for low-volume product
@@ -20,8 +29,9 @@ The metadata store holds control-plane and audit state:
 
 The current operator decision is:
 
-> Prefer Turso Database for metadata. Do not default to C SQLite. Keep Postgres
-> only as a scale-out fallback if Turso fails the technical gates.
+> Use Turso Database for metadata in every product profile. Do not ship C SQLite,
+> Postgres, or another fallback. Use comparators only to calibrate the hardening
+> bar and fix forward when Turso misses it.
 
 ## Current Source Snapshot
 
@@ -64,26 +74,25 @@ Sources:
 
 ## Benchmark Question
 
-Can Turso safely serve as the tiny/local Parallax metadata store while preserving
-a clean fallback path to Postgres for larger installs?
+Can Turso safely serve the Parallax metadata workload across every supported
+profile, and where does Parallax or Turso need hardening?
 
 This benchmark should not ask whether Turso can store high-volume telemetry. It
-should ask whether Turso is good enough for product state and audit records while
-keeping Parallax simpler and more Rust-native than a mandatory Postgres
-deployment.
+should ask whether Turso is correct and operable enough for product state and
+audit records while keeping Parallax simple and Rust-native.
 
 The focused production-readiness interpretation is in
 [Turso metadata production readiness](turso-metadata-production-readiness.md).
-That note separates local embedded Turso, optional Turso Sync/Cloud behavior,
-and Postgres fallback so the benchmark does not import cloud guarantees into the
-self-hosted tiny profile by accident.
+That note separates local embedded Turso and optional Turso Sync/Cloud behavior,
+and uses Postgres only as a comparator so the benchmark does not import cloud or
+alternate-engine guarantees into the self-hosted profile.
 
 ## Candidate Roles
 
 | Store | Role | Why |
 | --- | --- | --- |
-| Turso Database | Preferred tiny/local metadata engine. | Rust-first, SQLite-compatible, in-process, simple operational shape, aligned with the project's Rust/agent-contributable lens. |
-| Postgres | Scale-out fallback. | Mature concurrent relational database, strong ecosystem, boring production behavior, but adds an external service and non-Rust operational surface. |
+| Turso Database | Mandatory metadata engine. | Rust-first, SQLite-compatible, in-process, simple operational shape, aligned with the project's Rust/agent-contributable lens. |
+| Postgres | Comparison baseline only. | Mature concurrent relational database used to calibrate concurrency and recovery expectations; it is not a product adapter. |
 | C SQLite | Compatibility baseline only. | Proven embedded reliability, but not the operator's preferred default and not Rust-native. |
 
 ## Workload Model
@@ -153,7 +162,7 @@ Primary write paths:
 - observability of the metadata store itself;
 - data export portability;
 - upgrade path between versions;
-- path from Turso to Postgres if needed.
+- comparator export from Turso to Postgres to expose schema assumptions.
 
 ### Agent And Audit Fit
 
@@ -169,7 +178,7 @@ Primary write paths:
 | --- | --- | --- |
 | Local smoke | Validate schema, migrations, and simple queries. | 10 projects, 1k issues, 100 agent sessions, 500 CLI runs. |
 | Startup realistic | Early deployment. | 100 projects, 100k issues/events, 10k agent sessions, 50k CLI runs. |
-| Stress | Prove fallback point. | Millions of issue events, agent steps, CLI invocations, and audit records. |
+| Stress | Find Turso's remediation threshold. | Millions of issue events, agent steps, CLI invocations, and audit records. |
 
 ## Runnable Prototype Spec
 
@@ -182,18 +191,19 @@ parallax-metadata-bench
   ├── gen         deterministic product/audit workload generator
   ├── load        concurrent writer/reader workload
   ├── crash       crash/restart and backup/restore probes
-  ├── migrate     Turso -> Postgres export/import check
+  ├── compare     Turso -> Postgres comparator export/import check
   └── report      results.json + markdown summary with release-track eligibility
-MetadataStore (trait)
+BenchmarkStore (research-harness trait; never a product adapter)
   ├── TursoStore      local file, optional sync mode when testing cloud sync
   └── PostgresStore   sqlx or tokio-postgres against local container
 ```
 
-The trait keeps Parallax's metadata API independent of the backend:
+The research-harness trait keeps the workload identical across measurements;
+it does not define a product substitution boundary:
 
 ```rust
 #[async_trait]
-pub trait MetadataStore: Send + Sync {
+pub trait BenchmarkStore: Send + Sync {
     fn name(&self) -> &'static str;
     async fn migrate(&self) -> Result<()>;
     async fn create_project(&self, project: ProjectSeed) -> Result<ProjectId>;
@@ -210,14 +220,16 @@ pub trait MetadataStore: Send + Sync {
 }
 ```
 
-The benchmark must run every query through this trait. If Turso requires SQL that
-Postgres cannot execute, or the reverse, the adapter owns the dialect difference.
-Parallax product code should not care.
+The benchmark must run every query through this trait. If Turso requires SQL
+that Postgres cannot execute, or the reverse, the benchmark adapter owns the
+dialect difference. Product code remains Turso-specific behind capability
+boundaries.
 
 ## Schema Prototype
 
-Use the same logical schema for Turso and Postgres. Dialect differences should
-be limited to primary-key generation, JSON type, and timestamp defaults.
+Use the same logical schema for Turso and the disposable Postgres comparator.
+Benchmark-only dialect differences should be limited to primary-key generation,
+JSON type, and timestamp defaults.
 
 ```sql
 CREATE TABLE projects (
@@ -357,8 +369,9 @@ Measure p50/p95/p99 latency and error rate for each query:
 | `Q7 policy_version_check` | latest redaction/raw-access policy used for bundle and agent read. |
 
 `Q2`, `Q5`, and `Q7` are the critical Parallax queries because they sit in the
-agent context path. Turso fails as default if these are unstable under concurrent
-writes even when simple point lookups are fast.
+agent context path. If these are unstable under concurrent writes, the applicable
+product claim fails and Turso/Parallax requires remediation even when simple
+point lookups are fast.
 
 ## Crash, Backup, Restore, And Export Tests
 
@@ -371,12 +384,12 @@ prototype must run destructive checks in disposable temp directories/containers:
 | Disk-full simulation | Fill filesystem or mount quota during audit append and backup. | Same with data volume and WAL volume. |
 | Backup/restore | Use local file copy where safe plus Turso export/PITR path when using Turso Cloud. Verify row counts and checksums. | Use `pg_dump`/`pg_restore`; verify row counts and checksums. |
 | Migration rollback | Fail a migration halfway and confirm old API can still read or cleanly abort. | Same; include `CREATE INDEX CONCURRENTLY` path. |
-| Turso-to-Postgres fallback | Export logical rows and import into Postgres adapter; run all Q queries unchanged through trait. | N/A, target side. |
+| Comparator export | Export logical rows and import into a disposable Postgres comparator; run all Q queries to detect schema/identity assumptions. This is not a product migration rehearsal. | N/A, comparator side. |
 
 Additional Turso-specific gates are defined in
 [Turso metadata production readiness](turso-metadata-production-readiness.md):
 MVCC conflict retries, CDC/MVCC incompatibility, sync last-push-wins behavior,
-checkpoint policy, Cloud PITR restore gaps, and production fallback triggers.
+checkpoint policy, Cloud PITR restore gaps, and fix-forward triggers.
 
 Invariants:
 
@@ -399,16 +412,16 @@ Initial gates for `startup realistic` tier on modest single-node hardware:
 | Agent timeline query | p95 below 100 ms for 1,000-step session; p99 below 250 ms. |
 | Context metadata query | p95 below 100 ms for issue + events + bundle refs. |
 | Audit lookup | p95 below 150 ms by resource id over stress-tier audit table. |
-| Fallback export | Turso export/import to Postgres preserves logical schema and passes all Q queries. |
+| Comparator export | Optional Turso export/import to Postgres preserves logical schema and passes all Q queries; failure is diagnostic, not stack-selection authority. |
 | Operational complexity | Tiny profile runs without mandatory external service. |
 
-Postgres becomes the metadata default if Turso fails correctness, backup/restore,
-or fallback export. Turso can remain the tiny default if it fails only stress-tier
-throughput but passes correctness and has a clean Postgres migration path.
+Any Turso correctness or backup/restore failure blocks the applicable product
+claim until fixed. Comparator-export failure exposes portability or schema debt;
+it does not authorize Postgres as a product engine.
 
 ## Minimum Acceptance Criteria
 
-Turso remains the default only if it passes these gates:
+Turso production-readiness claims require these gates:
 
 - no observed metadata corruption under crash/restart tests;
 - clear backup/restore process for local and tiny deployments;
@@ -417,19 +430,19 @@ Turso remains the default only if it passes these gates:
 - concurrent writes from ingest, agent sessions, and CLI traces do not create
   unacceptable lock contention;
 - schema migrations are deterministic and testable;
-- data can be exported or migrated to Postgres without changing Parallax's API;
+- logical data can be exported and independently checked without changing
+  Parallax's API or promising an alternate engine;
 - beta status risk is documented and acceptable for the chosen release stage.
 - production/default claims use a non-prerelease Turso tag, or explicitly label
   the result prototype-only if a pre-release was used to investigate an upcoming
   behavior change.
 
-Postgres becomes the default only if Turso fails correctness, backup/restore,
-concurrency, migration, or operational-safety gates.
+Failure blocks or narrows the claim and creates fix-forward work; it never changes
+the mandatory metadata engine.
 
 ## Bottom Line
 
-Use Turso as the first metadata-store implementation because it matches the
-small, Rust-first, self-hosted Parallax direction. But treat it as a benchmarked
-choice, not a belief. The decision is valid only if Turso proves safe enough for
-metadata and audit state under the exact agent/CLI/runtime workflows Parallax
-needs.
+Use Turso as the mandatory metadata implementation because it matches the small,
+Rust-first, self-hosted Parallax direction. Treat production-readiness claims as
+measured, not assumed. When the exact agent/CLI/runtime workload exposes a gap,
+fix it in Parallax or Turso and rerun this protocol.

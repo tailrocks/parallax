@@ -6,10 +6,15 @@ Research date: 2026-05-25
 
 ## Executive Summary
 
-> **⚠ V1 scope update (2026-06-18):** V1 is **decided GreptimeDB-only on the native OTLP model**;
-> ClickHouse is deferred (not a V1 fallback or design constraint). The conclusion below ("ClickHouse
-> stays the fallback") is retained as the engine-study record. Canonical:
-> [../decisions/native-otel-tables.md](../decisions/native-otel-tables.md).
+> **Current authority (operator, 2026-06-12; native-table refinement,
+> 2026-06-18): GreptimeDB + Turso are mandatory.** ClickHouse is a research
+> comparator only, never a fallback or product adapter target. Storage traits
+> express capabilities and test boundaries, not engine replaceability. Historical
+> candidate-selection language below is retained only to explain the benchmark.
+> Contract cleanup belongs to
+> [`plans/093-contract-and-baseline-corrections.md`](../../../plans/093-contract-and-baseline-corrections.md);
+> server-profile work belongs to
+> [`plans/115-v2-server-profile.md`](../../../plans/115-v2-server-profile.md).
 
 GreptimeDB is a credible storage-layer candidate for Parallax, but the strongest
 technical argument is not that it is universally faster than every alternative.
@@ -17,19 +22,19 @@ The stronger argument is that GreptimeDB is designed as an open-source,
 observability-native database that can ingest and query metrics, logs, and
 traces through one system.
 
-Current conclusion, after consuming the GreptimeDB-vs-ClickHouse benchmark
+Historical conclusion after consuming the GreptimeDB-vs-ClickHouse benchmark
 artifacts through Run 170:
 
-> GreptimeDB remains a serious prototype-fit candidate for Parallax's unified
+> GreptimeDB was the stronger fit for Parallax's unified
 > observability-context layer, especially when Prometheus-compatible metrics,
 > self-hosted 1x object-storage economics, cardinality tolerance, and
-> auto-rebalance matter. The **current lean is GreptimeDB, not yet settled**
-> ([decision](../decisions/storage-engine.md)): an intermediate proxy-lens
+> auto-rebalance mattered. An intermediate proxy-lens
 > interpretation once tilted toward ClickHouse (Parallax owns
 > OTLP/routing/conversion, weighting retrieval speed + build-on-top ecosystem),
 > but the resolved anchored-retrieval query mix takes ClickHouse's scan-speed
-> lead off Parallax's hot path, so cost + Rust decide. ClickHouse stays the
-> fallback; the full Parallax-shaped A5 gates still decide the production default.
+> lead off Parallax's hot path, so cost + Rust decided the comparison. Current
+> stack authority is the mandatory GreptimeDB + Turso decision above; A5 evidence
+> measures risk and claim strength, not backend selection.
 
 But the skeptical view matters:
 
@@ -118,7 +123,7 @@ engine candidates. Parallax should compare the databases underneath them.
 | Is it better for metrics than ClickHouse? | Likely yes for Prometheus-compatible metrics workflows because GreptimeDB supports Prometheus remote write and PromQL. ClickHouse can store metrics, but it is less metrics-native in the core database. |
 | Is it better for logs and traces than ClickHouse? | Not clearly. ClickHouse is a proven fit for logs/traces analytics, and ClickStack proves ClickHouse can be packaged into a unified observability stack. GreptimeDB's advantage is more metrics-native architecture, not obvious superiority on every log/trace query. |
 | Is it mature enough? | Promising but young. GreptimeDB reached 1.0 GA and latest stable checked is `v1.0.2`, but trace docs remain experimental and ClickHouse has a much larger ecosystem and longer production history. |
-| Should Parallax choose it now? | Keep it behind the storage abstraction; it is the **current lean (not yet settled)** as the Rust/object-storage/cardinality candidate, with ClickHouse the fallback — finalized only when the A5 sized-cost gates land (see [storage-engine.md](../decisions/storage-engine.md)). |
+| What did Parallax choose? | GreptimeDB is the mandatory telemetry engine. ClickHouse remains a performance comparator; A5 results refine risk and claims, not product stack selection (see [storage-engine.md](../decisions/storage-engine.md)). |
 
 ## GreptimeDB Strengths
 
@@ -318,7 +323,8 @@ Source:
 
 ## ClickHouse Strengths and Weaknesses
 
-ClickHouse remains the fallback and the skeptical alternative (faster raw analytics, more mature).
+ClickHouse remains the skeptical research comparator (faster raw analytics,
+more mature), not a product fallback.
 
 Strengths:
 
@@ -547,7 +553,7 @@ Sources:
 - [InfluxDB](https://github.com/influxdata/influxdb)
 - [TimescaleDB](https://github.com/timescale/timescaledb)
 
-## Recommended Parallax Position
+## Current Product Position And Historical Research Recommendation
 
 Parallax should not describe GreptimeDB as "the fastest observability database"
 unless we prove that with our own workload.
@@ -559,17 +565,12 @@ The stronger and more defensible claim is:
 > failure context without requiring separate Prometheus, Loki, Tempo, and
 > ClickHouse deployments.
 
-For the current research stage:
-
-1. Treat GreptimeDB as the **current lean (not yet settled)** for unified
-   observability storage — fit + cost + Rust — not a locked-in stack dependency.
-2. Treat ClickHouse as the fallback behind the Parallax
-   proxy, especially for logs, traces, spans, analytical SQL, and build-on-top
-   ecosystem maturity.
-3. Do not require either backend for the earliest CLI-first CI failure MVP.
-4. Design Parallax's bundle format and ingestion interfaces so storage can be
-   swapped.
-5. Run a Parallax-shaped benchmark before confirming the production default.
+The current product position is fixed: use GreptimeDB native tables for raw
+telemetry and Turso for metadata in every supported profile. Capability
+interfaces isolate ownership, tests, and backend-specific details; they do not
+keep a substitute engine ready. The original research recommendation was to
+compare both engines before choosing. That comparison remains useful for
+performance, cost, and upstream prioritization, but it cannot select a fallback.
 
 ## Benchmark We Should Run
 
@@ -625,10 +626,9 @@ better than most alternatives because it is open source, self-hostable,
 Prometheus-compatible, OpenTelemetry-compatible, SQL-queryable,
 object-storage-oriented, and designed around unified observability.
 
-The recommended next step is to keep both ClickHouse and GreptimeDB behind the
-storage abstraction while the A5 gates decide. A GreptimeDB GA release makes the
-candidate less speculative; it does not close the benchmark, trace-maturity,
-cost, cold-read, or operational-complexity questions. The **current lean is
-GreptimeDB (not yet settled)** — the resolved anchored-retrieval query mix takes
-ClickHouse's scan-speed lead off the hot path, so cost + Rust decide — with
-ClickHouse the fallback to keep alive (see [storage-engine.md](../decisions/storage-engine.md)).
+GreptimeDB is the mandatory telemetry engine, paired with mandatory Turso
+metadata. A GreptimeDB release does not by itself close trace-maturity, cost,
+cold-read, or operational-complexity questions. Continue the four-build
+comparison to expose risk and guide fix-forward work, with ClickHouse as a
+comparator only. Any product contract corrections are executed through plan 093;
+any supported server profile is executed through plan 115.

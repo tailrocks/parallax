@@ -4,20 +4,22 @@
 
 Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 
-> **⚠ Update 2026-06-18 — V1 storage decided: GreptimeDB-only, native OTLP model.** The storage axis of
-> this ledger is settled for V1: GreptimeDB alone on its **native OTLP tables** (proxy forwards raw OTLP
-> + tees to derive issues into custom extension tables). **ClickHouse is deferred** — not a V1 fallback
-> or a design constraint. Metadata (Turso) is unchanged. Canonical:
-> [native-otel-tables.md](native-otel-tables.md) · [native-otel-migration-plan.md](../storage/native-otel-migration-plan.md).
-
-> **Decision record — A5 stack decision (roll-up).** Status: **open — no A5 pass yet.** Rule:
-> no single component benchmark creates an A5 pass; A5 passes only when one run manifest proves
-> the selected profile end-to-end with pinned versions/settings and a named fallback trigger.
-> Current stack lean: observability store GreptimeDB (not settled — see
-> [storage-engine.md](storage-engine.md)) with ClickHouse fallback; metadata Turso-first with
-> Postgres fallback (see [metadata-store.md](metadata-store.md)); local WAL with an optional
-> Apache Iggy stream. The source checks, benchmark-artifact status, claim levels, and fallback
-> triggers follow.
+> **Current authority (operator, 2026-06-12; native-table refinement,
+> 2026-06-18): GreptimeDB + Turso are mandatory in every product profile.** Raw
+> observability signals use GreptimeDB native tables. ClickHouse, Postgres, and
+> other engines are research comparators only; component gates cannot activate a
+> fallback. Storage/metadata traits are capability and test boundaries, not
+> substitution promises. Contract cleanup belongs to
+> [`plans/093-contract-and-baseline-corrections.md`](../../../plans/093-contract-and-baseline-corrections.md),
+> and supported server-profile work belongs to
+> [`plans/115-v2-server-profile.md`](../../../plans/115-v2-server-profile.md).
+>
+> **A5 is now a stack-assurance roll-up.** Status: **open — no A5 pass yet.** A5
+> passes only when one run manifest proves the mandatory stack end to end with
+> pinned versions/settings. A failed component creates a release blocker,
+> claim restriction, or fix-forward item; it never selects another engine. The
+> historical candidate and fallback fields below remain only where needed to
+> interpret old rows.
 
 ## Purpose
 
@@ -25,17 +27,17 @@ This note turns assumption A5 from
 [Risks and the bear case](risks-and-bear-case.md) into a roll-up claim ledger:
 
 > The chosen stack holds: GreptimeDB speed/cost, Turso metadata correctness and
-> backup path, and Iggy where used.
+> backup path, and the supported local ingest log.
 
 Parallax already has focused proof gates for storage speed, storage cost,
 metadata, ingest-log replay/backpressure, and self-hosted setup. The missing
-piece was a rule for when those component results are allowed to become a stack
-decision. This ledger owns that boundary.
+piece was a rule for when those component results are allowed to support a stack
+claim. This ledger owns that boundary.
 
 The decision rule is deliberately conservative: **no component benchmark creates
 an A5 pass by itself.** A5 passes only when the current run manifest proves the
-selected profile end to end, records exact versions and settings, and names the
-fallback trigger that would change the default.
+selected profile end to end and records exact versions and settings. Failure
+responses must name remediation and claim impact, not a replacement engine.
 
 ## Current Primary-Source Checks
 
@@ -43,7 +45,7 @@ fallback trigger that would change the default.
 | --- | --- |
 | [GreptimeDB standalone docs](https://docs.greptime.com/getting-started/installation/greptimedb-standalone/) | GreptimeDB `v1.0.2` is the current documented standalone binary/Docker example in the 1.0 docs, with one-process local persistence suitable for the tiny-tier storage candidate. |
 | [GreptimeDB configuration docs](https://docs.greptime.com/user-guide/deployments/configuration/) | GreptimeDB supports local file storage plus S3-compatible, Azure Blob, Aliyun OSS, and GCS storage, has object-storage cache settings, and exposes WAL durability settings such as `sync_write`. A5 storage claims must pin these settings. |
-| [ClickHouse MergeTree docs](https://clickhouse.com/docs/engines/table-engines/mergetree-family/mergetree) | ClickHouse remains the benchmark fallback for high-volume observability data: MergeTree targets high ingest and large data volumes, supports TTL and disk/object-storage movement, and has mature concurrent-read behavior. |
+| [ClickHouse MergeTree docs](https://clickhouse.com/docs/engines/table-engines/mergetree-family/mergetree) | ClickHouse remains the high-volume research comparator: MergeTree targets high ingest and large data volumes, supports TTL and disk/object-storage movement, and has mature concurrent-read behavior. |
 | [ClickHouse insert strategy docs](https://clickhouse.com/docs/best-practices/selecting-an-insert-strategy) | ClickHouse performance claims depend on insert mode: synchronous inserts need client-side batches, while async inserts change acknowledgement/error behavior. A5 cannot compare candidates without recording insert mode. |
 | [Turso libSQL docs](https://docs.turso.tech/libsql) | Turso documents libSQL as production-ready and Turso Database as evolving beta. A5 must distinguish libSQL/Turso Database/local file/Cloud usage instead of saying only "Turso." |
 | [Turso SDK docs](https://docs.turso.tech/sdk/introduction) | Turso recommends Turso Database packages for new local/embedded work and libSQL packages as production-ready ORM fallbacks. The metadata default must record which package/engine is under test. |
@@ -53,7 +55,7 @@ fallback trigger that would change the default.
 | [Apache Iggy 0.8.0 release](https://iggy.apache.org/blogs/2026/04/22/release-0.8.0/) | 0.8.0 hardens the path toward clustering, but the release still frames clustering as upcoming work through `iggy-server-ng`. |
 | [Iggy clustering status issue](https://github.com/apache/iggy/issues/2562) | Public docs still need clearer clustering/replication status. A5 must not treat Iggy as a production HA clustered dependency until that changes and fault tests pass. |
 | [Apache Iggy incubator status](https://incubator.apache.org/projects/iggy.html) | Iggy entered the Apache Incubator on 2025-02-04. Incubation is acceptable for prototype evaluation, not for unstated Tier-3 HA dependence. |
-| [PostgreSQL backup docs](https://www.postgresql.org/docs/current/backup.html) and [concurrency docs](https://www.postgresql.org/docs/current/mvcc.html) | Postgres remains the mature metadata fallback with documented backup/restore and concurrency behavior. It is heavier than the tiny tier, but the production fallback must be real. |
+| [PostgreSQL backup docs](https://www.postgresql.org/docs/current/backup.html) and [concurrency docs](https://www.postgresql.org/docs/current/mvcc.html) | Postgres remains a mature metadata comparison baseline with documented backup/restore and concurrency behavior. It is not a product fallback. |
 
 ## Current Benchmark Artifact Status
 
@@ -109,7 +111,7 @@ Those artifacts are useful A5 inputs, but they do not create an A5 pass:
   ecosystem/maturity, not unique SQL expressibility for those views.
 - Run 157 re-verifies the full-text mechanism at 5M: selective search prunes on
   both engines, while broad terms prune on neither and favor ClickHouse's scan
-  engine. A5 must keep broad log search as a ClickHouse flip trigger.
+  engine. A5 records this as a GreptimeDB risk and fix-forward input.
 - Run 158 re-verifies the dominant anchored-bundle pillar: both engines prune
   hard only when `trace_id`/`fingerprint` is keyed or indexed on the signal table,
   and both engines full-scan when the anchor is absent. It also corrects future
@@ -124,11 +126,11 @@ Those artifacts are useful A5 inputs, but they do not create an A5 pass:
   rows, metadata, ingest-log, setup, restart, redaction, or end-to-end
   integration rows.
 
-So A5 remains unpassed. The current storage stance is "GreptimeDB remains a
-prototype-fit candidate for the anchored hot path if Parallax avoids the direct
-in-DB `LEFT JOIN` trap and proves anchor keys/indexes on every bundle signal;
-ClickHouse is the measured analytics-heavy, broad-search, and ecosystem
-fallback; the adapter boundary stays mandatory."
+So A5 remains unpassed. GreptimeDB is still mandatory, and the evidence says
+Parallax must avoid the direct in-DB `LEFT JOIN` trap and prove anchor
+keys/indexes on every bundle signal. ClickHouse remains the analytics-heavy,
+broad-search comparator. Capability boundaries stay mandatory for ownership and
+tests, not engine substitution.
 
 ## Ledger Artifacts
 
@@ -225,15 +227,15 @@ Required fields:
 
 | Field | Meaning |
 | --- | --- |
-| `engine` | `turso-database`, `libsql`, `sqlite`, `postgres`, or other. |
-| `mode` | Embedded file, local server, hosted/cloud, sync, or Postgres fallback. |
+| `engine` | `turso-database` for product rows; comparator name for explicitly marked research rows. |
+| `mode` | Embedded file, local server, hosted/cloud, sync, or comparator-only. |
 | `package` | SDK/package/crate name and exact version. |
 | `hot_write_p95_ms` | Agent/session/outcome write latency under target concurrency. |
 | `read_p95_ms` | Issue, session, audit, and bundle-reference reads. |
 | `crash_recovery_status` | Whether committed state survives process/OS crash tests. |
 | `backup_restore_status` | Export, restore, PITR/snapshot status and duration. |
 | `migration_rollback_status` | Forward/backward migration safety. |
-| `postgres_fallback_status` | Whether logical rows round-trip into Postgres with stable ids. |
+| `postgres_comparator_status` | Whether logical rows round-trip into the disposable Postgres comparator with stable ids. |
 
 ### Ingest Log
 
@@ -296,42 +298,38 @@ Use these exact claim levels in `decision-ledger.jsonl`:
 | --- | --- |
 | `not_measured` | No current compatible run. No product claim allowed. |
 | `smoke_only` | Starts and passes fixture smoke tests only. Suitable for prototype planning, not default claims. |
-| `greptime_prototype_default` | GreptimeDB may be named as the first storage prototype for the tested profile. |
-| `clickhouse_storage_default` | ClickHouse replaces GreptimeDB as storage default for the tested profile. |
-| `dual_storage_open` | Neither storage candidate clearly wins; architecture must keep storage swappable. |
-| `turso_prototype_metadata` | Turso/Turso Database/libSQL may be used for tiny/prototype metadata only, with production caveat. |
-| `postgres_production_metadata` | Postgres is the production metadata default or fallback for the tested profile. |
+| `greptime_product_measured` | Mandatory GreptimeDB passes the measured gate for the tested profile. |
+| `greptime_product_blocked` | Mandatory GreptimeDB fails the measured gate; claim is blocked and remediation is required. |
+| `clickhouse_comparator` | ClickHouse comparator result is recorded for risk calibration only. |
+| `turso_product_measured` | Mandatory Turso passes the measured metadata gate. |
+| `turso_product_blocked` | Mandatory Turso fails the measured gate; claim is blocked and remediation is required. |
 | `local_wal_tiny_default` | Local WAL remains the tiny-profile ingest-log default. |
 | `iggy_optional_profile` | Iggy may be offered for durable single-node replay, not required tiny-tier operation. |
-| `nats_or_redpanda_clustered_fallback` | NATS or Redpanda is the current clustered stream fallback; Iggy is not a clustered default. |
+| `stream_comparator_only` | An external stream was measured but is not an authorized product mode. |
 | `phase1_stack_pass` | The tiny profile passes end-to-end for the tested workload and may be used for Phase 1 claims. |
 | `claim_expired` | A prior result is stale because versions, docs, pricing, hardware profile, or workload changed materially. |
 | `claim_failed` | The tested claim is false for the recorded configuration. |
 
-## Roll-Up Decision Rules
+## Roll-Up Assurance Rules
 
-### Storage Default
+### Mandatory Storage
 
-GreptimeDB may be the tested profile's storage default only if:
+GreptimeDB supports the tested profile's claim only if:
 
 1. It passes mixed-load freshness and Q6 bundle latency gates.
 2. It passes retained-size/object-cost gates or records an explicit operational
    advantage that justifies a bounded cost premium.
 3. The result pins storage mode, WAL settings, cache settings, schema, insert
    mode, and object-store provider.
-4. ClickHouse does not beat it by enough to justify the operational cost for
-   Parallax's narrow bundle workload.
+4. Comparator deltas are understood and any material GreptimeDB risk has an
+   explicit remediation or bounded product claim.
 
-ClickHouse becomes the storage default if it passes freshness/cost gates and
-GreptimeDB fails, or if GreptimeDB passes only through settings that undermine
-durability, freshness, or operator simplicity.
+If GreptimeDB fails, record `greptime_product_blocked`, narrow or block the
+profile, and fix forward. ClickHouse results cannot satisfy the product gate.
 
-If both pass with tradeoffs, record `dual_storage_open` and keep the storage
-adapter boundary real.
+### Mandatory Metadata
 
-### Metadata Default
-
-Turso may be the tiny/prototype metadata default only if:
+Turso supports the tested profile's claim only if:
 
 1. The row states whether it tested Turso Database, libSQL, SQLite-file mode,
    local `turso dev`, hosted Turso, or sync.
@@ -339,10 +337,9 @@ Turso may be the tiny/prototype metadata default only if:
    and audit/history invariants pass for the tested workload.
 3. Hosted Turso is not required for the tiny self-hosted profile.
 
-Turso must not be called production metadata by default while Turso Database is
-still recorded as beta/evolving and production-readiness gates are incomplete.
-Use `postgres_production_metadata` when production backup/restore, operational
-maturity, or migration safety matters more than tiny-tier simplicity.
+Do not make a production-readiness claim while Turso Database is recorded as
+beta/evolving and its gates are incomplete. Record `turso_product_blocked` and
+fix forward; Postgres comparator evidence cannot satisfy the gate.
 
 ### Ingest Log Default
 
@@ -354,9 +351,8 @@ durability, consumer groups, replay/backfill, memory, and setup burden pass.
 Iggy must not become a clustered HA default until clustering is released,
 documented, and passes the multi-node fault matrix.
 
-NATS or Redpanda becomes the clustered fallback only after a current run shows
-which one meets replay/durability/backpressure needs with acceptable operator
-burden and licensing posture.
+NATS and Redpanda remain research comparators unless a future numbered plan and
+operator decision explicitly authorize a stream profile.
 
 ### Phase 1 Stack Pass
 
@@ -374,20 +370,20 @@ burden and licensing posture.
 6. The tiny setup stays within the self-hosted simplicity gate.
 7. Any redaction fixture included in bundle output reports seeded canary status.
 
-If any component fails, A5 records the failure component and fallback trigger
-instead of weakening the product claim.
+If any component fails, A5 records the failure component, claim impact, and
+remediation instead of weakening the product claim.
 
-## Fallback Triggers
+## Failure And Remediation Triggers
 
-| Component | Trigger | Default consequence |
+| Component | Trigger | Required consequence |
 | --- | --- | --- |
-| Storage speed | Freshness p95 or Q6 p95 misses threshold under mixed ingest. | Switch to ClickHouse if it passes, or narrow MVP signal retention. |
+| Storage speed | Freshness p95 or Q6 p95 misses threshold under mixed ingest. | Block or narrow the claim and remediate GreptimeDB/Parallax. |
 | Storage schema | GreptimeDB dedup/`last_non_null` metric tables exceed query budgets, depend on compaction state, or span many TWCS windows for scrape-style unique metrics. | Use append-mode metric tables where `(series, ts)` uniqueness is guaranteed; reserve dedup for correction/upsert semantics. |
-| Storage durability | The selected storage candidate loses acknowledged evidence under its declared durability mode, or strict durability makes ingest/freshness miss budget. | Change durability settings, add replication/remote WAL, or switch candidate/profile. |
-| Storage cost | Retained bytes/object count/provider costs exceed budget without offsetting simplicity. | Change schema/retention or switch object-store/candidate. |
-| Metadata | Turso/local metadata fails crash, backup/restore, contention, or migration gates. | Use Postgres for production metadata; keep Turso only for prototype/tiny if safe. |
-| Ingest log | Local WAL loses acknowledged data or cannot backpressure before disk risk. | Add Iggy/NATS/Redpanda profile or reject the target workload. |
-| Iggy | Standalone stream fails replay/durability/memory/setup gates, or clustering remains unproven for HA. | Keep local WAL tiny default and NATS/Redpanda clustered fallback. |
+| Storage durability | GreptimeDB loses acknowledged evidence under its declared durability mode, or strict durability makes ingest/freshness miss budget. | Change supported settings or block the profile; never switch engines. |
+| Storage cost | Retained bytes/object count/provider costs exceed budget without offsetting simplicity. | Change schema/retention or narrow the supported profile. |
+| Metadata | Turso fails crash, backup/restore, contention, or migration gates. | Block the claim and fix Turso/Parallax; Postgres remains comparator-only. |
+| Ingest log | Local WAL loses acknowledged data or cannot backpressure before disk risk. | Block the workload and create a numbered plan before changing the product topology. |
+| External stream | A researched stream fails replay/durability/memory/setup gates. | Record comparator evidence only; it has no product consequence without a numbered plan. |
 | Setup | More than three tiny-tier services, >15 minutes to first bundle, or hidden hosted dependency. | Narrow MVP or reject the default stack. |
 | Integration | Component green results do not produce one durable issue context bundle after restart. | No A5 pass; fix handoffs before changing claims. |
 
@@ -424,7 +420,7 @@ Expired results stay useful as history, but the decision row must move to
 - [Storage size and object cost gate](../storage/size-and-object-cost.md)
   owns storage cost rows.
 - [Turso metadata production readiness](../storage/metadata/turso-metadata-production-readiness.md)
-  owns metadata maturity and fallback rows.
+  owns metadata maturity and fix-forward rows.
 - [Ingest log replay and backpressure gate](../storage/streaming/ingest-log-replay-and-backpressure-gate.md)
   owns stream/WAL durability, replay, and backpressure rows.
 - [OTLP conformance ledger](../capture/otlp.md) owns direct-SDK,
@@ -440,10 +436,8 @@ Expired results stay useful as history, but the decision row must move to
 A5 should be reported as a ledger, not a vibe. The current architecture remains
 reasonable, but the honest claim is:
 
-> GreptimeDB, Turso/libSQL/Turso Database, local WAL, Iggy, ClickHouse, NATS,
-> Redpanda, and Postgres are candidates behind explicit boundaries. Parallax can
-> claim a stack default only after current, version-pinned component gates roll
-> up into one end-to-end decision row for the exact deployment profile.
-
-Until then, the safe wording is "prototype default" or "fallback candidate,"
-not "the stack holds."
+> GreptimeDB + Turso are the mandatory engines. Local WAL is the current ingest
+> log. ClickHouse, Postgres, Iggy, NATS, and Redpanda appear only as research
+> comparators unless an operator-approved numbered plan says otherwise. Parallax
+> can claim a profile only after current, version-pinned component gates roll up
+> into one end-to-end assurance row.

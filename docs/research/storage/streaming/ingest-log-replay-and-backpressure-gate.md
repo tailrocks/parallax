@@ -4,6 +4,16 @@
 
 Research date: 2026-05-25
 
+> **Dormant experiment protocol, not an implementation plan (reconciled
+> 2026-07-12).** The shipped bounded local spool remains the only product ingest
+> log. GreptimeDB + Turso are mandatory, and NATS/Redpanda/Iggy are not product
+> fallbacks. Current work belongs to
+> [plan 113](../../../../plans/113-ingest-backpressure-observability.md) and
+> [plan 099](../../../../plans/099-boundary-errors-idempotency-and-agent-safety.md).
+> Run or revise this protocol only after the measured broker trigger in
+> [`plans/README.md`](../../../../plans/README.md) fires and the operator opens a
+> new numbered plan.
+
 ## Purpose
 
 This note tightens proof gate 4 from
@@ -17,10 +27,10 @@ message durability, replay speed, backpressure behavior, recovery complexity,
 and operational burden under faults, not on the attractiveness of any broker's
 architecture.
 
-Decision: **the tiny profile stays local-WAL-first until a stream proves a
-specific replay or processor-isolation need.** Apache Iggy is the first durable
-single-node stream to prototype. NATS JetStream and Redpanda are the scale-out
-fallbacks until Iggy ships and proves production clustering.
+Current decision: **the product stays on its bounded local spool unless a
+supported server profile proves a specific replay or processor-isolation SLO
+cannot be met.** The candidate rankings below are historical hypotheses for a
+future authorized experiment, not supported profiles or fallback choices.
 
 ## Current Primary-Source Checks
 
@@ -32,14 +42,15 @@ fallbacks until Iggy ships and proves production clustering.
 | [Apache Iggy incubation status](https://incubator.apache.org/projects/iggy.html) | Iggy entered the Apache Incubator on 2025-02-04 and is still an incubating project. This is compatible with prototyping, but not with making it a load-bearing Tier 3 HA dependency. |
 | [NATS JetStream concepts](https://docs.nats.io/nats-concepts/jetstream) | JetStream supports complete replay, original-rate replay, replication factors, source/mirror streams, and file-based persistence. Its docs also state that default file persistence flushes to the OS but does not immediately `fsync`, with a default `sync_interval` of 2 minutes. |
 | [NATS JetStream consumers](https://docs.nats.io/nats-concepts/jetstream/consumers) | JetStream consumers track delivery and acknowledgements and can provide at-least-once delivery. This maps well to Parallax worker restarts and replay, but duplicate handling remains Parallax's responsibility. |
-| [Jepsen NATS 2.12.1](https://jepsen.io/analyses/nats-2.12.1) | Jepsen found acknowledged-write loss under file truncation/corruption and coordinated power-failure scenarios, tied partly to the default 2-minute fsync interval. JetStream remains a strong fallback, but Parallax must test exact settings such as `sync_interval: always`. |
-| [Redpanda architecture](https://docs.redpanda.com/current/get-started/architecture/) | Redpanda is a serious clustered log fallback and its tiered storage architecture can offload log segments to object storage while preserving API access to historical offsets. |
+| [Jepsen NATS 2.12.1](https://jepsen.io/analyses/nats-2.12.1) | Jepsen found acknowledged-write loss under file truncation/corruption and coordinated power-failure scenarios, tied partly to the default 2-minute fsync interval. Any future comparison must test exact settings such as `sync_interval: always`. |
+| [Redpanda architecture](https://docs.redpanda.com/current/get-started/architecture/) | Redpanda is a serious clustered-log comparator and its tiered storage architecture can offload log segments to object storage while preserving API access to historical offsets. |
 | [Redpanda tiered storage docs](https://docs.redpanda.com/24.2/manage/tiered-storage/) | Self-managed Tiered Storage requires an Enterprise license, and docs warn about mixed-version upload stalls and re-enabling risks. This conflicts with Parallax's open self-hosted cheap-retention posture if Redpanda becomes more than a short replay buffer. |
 
-## IngestLog Contract
+## Historical Candidate Contract
 
-Parallax should implement an internal `IngestLog` interface before committing to
-any broker:
+If the broker trigger opens a numbered plan, this interface is a candidate to
+test against the live spool contract. This note does not authorize implementing
+it or committing to any broker:
 
 ```rust
 #[async_trait]
@@ -67,15 +78,15 @@ Redpanda:
 | Replay by stable cursor | Normalizers, grouping, symbolication, and context builders can replay by offset/time/window without reading from object storage manually. |
 | Lossiness report | Any dropped, dead-lettered, expired, or unparseable payload is counted with topic, reason, and policy version. |
 
-## Candidate Modes To Test
+## Historical Candidate Modes For A Triggered Experiment
 
 | Mode | Role | What must be proven |
 | --- | --- | --- |
-| `local-wal:batch-fsync` | Tiny default. Append accepted payloads to segment files, fsync per batch or time window, process in-process or through a local worker queue. | Process crash safety, restart recovery, bounded disk behavior, simple replay, and no extra service. |
+| `local-wal:batch-fsync` | Local experiment baseline. Append accepted payloads to segment files, fsync per batch or time window, process in-process or through a local worker queue. | Process crash safety, restart recovery, bounded disk behavior, simple replay, and no extra service. |
 | `local-wal:strict-fsync` | Sensitive-mode baseline. Fsync before acknowledging high-value error envelopes. | Stronger durability cost for low-volume Sentry/error events. |
 | `iggy:standalone` | Durable single-server profile. | Durable ack semantics, replay throughput, consumer group behavior, retention, memory tuning, and recovery after segment faults. |
-| `nats:jetstream-r3` | OSS clustered fallback. | Replicated stream behavior, pull consumer scaling, replay policy, duplicate rate, and explicit `sync_interval` durability tradeoff. |
-| `redpanda:r3` | Kafka-like clustered fallback. | Raft partition durability, consumer group behavior, replay throughput, operational cost, and whether lack of open self-managed tiering matters when used only as a short replay buffer. |
+| `nats:jetstream-r3` | OSS clustered comparator. | Replicated stream behavior, pull consumer scaling, replay policy, duplicate rate, and explicit `sync_interval` durability tradeoff. |
+| `redpanda:r3` | Kafka-like clustered comparator. | Raft partition durability, consumer group behavior, replay throughput, operational cost, and whether lack of open self-managed tiering matters when used only as a short replay buffer. |
 
 Do not test only happy-path throughput. The selection criterion is "which
 profile keeps accepted evidence recoverable and replayable while staying simpler
@@ -131,7 +142,7 @@ For local WAL, run at least two configurations:
 
 For Redpanda, record whether any object-storage or long-retention behavior used
 in the test requires an Enterprise license; Parallax should not hide a license
-dependency inside the fallback path.
+dependency inside a candidate path.
 
 ## Metrics And Initial Budgets
 
@@ -155,7 +166,7 @@ benchmark result, not the product claim. The gate exists to prevent accidental
 
 ## Pass/Fail Decision
 
-### Local WAL Remains The Tiny Default If
+### A Local Spool/WAL Candidate Would Pass If
 
 1. It loses zero acknowledged payloads under process-kill tests in batch mode.
 2. Strict mode loses zero acknowledged error events under OS-crash simulation.
@@ -163,7 +174,7 @@ benchmark result, not the product claim. The gate exists to prevent accidental
 4. It applies backpressure before disk-full and emits a clear lag/disk report.
 5. It requires materially less operator setup than any external stream.
 
-### Iggy Becomes The Durable Single-Server Default If
+### Iggy Would Qualify For A Durable Single-Server Decision If
 
 1. Standalone durability behavior is explicit and passes process-kill,
    restart, segment-truncation, and disk-full tests.
@@ -176,7 +187,7 @@ Iggy must **not** become the Tier 3 clustered stream until production clustering
 is released, documented, and passes the same fault matrix under multi-node
 failure.
 
-### NATS JetStream Becomes The OSS Clustered Fallback If
+### NATS JetStream Would Qualify As An OSS Clustered Candidate If
 
 1. The strongest acceptable `sync_interval`/replica configuration passes the
    acknowledged-message fault tests.
@@ -186,7 +197,7 @@ failure.
 4. Jepsen-relevant hazards are either fixed upstream or explicitly mitigated in
    Parallax's required config.
 
-### Redpanda Becomes The Clustered Fallback If
+### Redpanda Would Qualify As A Clustered Candidate If
 
 1. NATS cannot satisfy durability/backpressure/replay requirements.
 2. Kafka-like partition logs materially reduce implementation risk.
@@ -194,44 +205,45 @@ failure.
    short-retention replay buffer, not as the cheap long-term evidence archive.
 4. Operational complexity is justified by measured fault behavior.
 
-## Product Implication
+## Research Implication
 
-The architecture should make these claims, and no stronger ones:
+The first claim reflects the current supported topology. The second and final
+statements are requirements owned by plan 113, not product claims until its
+evidence lands. The two candidate statements are research observations, not
+shipped architecture:
 
 - "Parallax can run without an external broker in the tiny profile."
-- "Parallax uses an append-only ingest-log interface so raw evidence can be
-  replayed after parser, grouping, and correlation fixes."
+- "Parallax reports the bounded local spool's accepted, replayed, retried, and
+  dropped evidence honestly."
 - "Apache Iggy is the preferred single-node durable stream candidate, not yet a
   proven clustered dependency."
-- "NATS JetStream and Redpanda remain measured fallbacks for clustered
-  deployments."
+- "NATS JetStream and Redpanda remain dormant clustered comparators."
 - "Accepted evidence durability is reported by mode; Parallax does not hide
   best-effort acks behind durable-sounding language."
 
 ## Relationship To Other Research
 
 - [Messaging and ingestion layer](messaging-and-ingestion-layer.md) is the broad
-  stream-layer evaluation this gate operationalizes.
-- [Technical implementation concept](../../architecture/implementation-concept.md) should
-  keep local WAL in the tiny profile and Iggy behind `IngestLog`.
-- [Sentry-compatible ingestion](../../capture/sentry-ingest.md) depends on this
-  gate for raw-envelope durability and replay.
-- [OpenTelemetry protocol and context layer](../../capture/otlp.md)
-  depends on this gate for OTLP batch replay and backpressure.
+  historical stream-layer evaluation behind this dormant protocol.
+- [Technical implementation concept](../../architecture/implementation-concept.md)
+  preserves the historical candidate topology; it does not authorize it.
+- [Sentry-compatible ingestion](../../capture/sentry-ingest.md) records future
+  raw-envelope durability/replay requirements.
+- [OpenTelemetry protocol and context layer](../../capture/otlp.md) records the
+  current OTLP batch replay/backpressure contract.
 - [Storage benchmark prototype](../benchmark-plan.md) is separate:
   databases own long retention; this gate owns short raw replay and processor
   fan-out.
-- [A5 stack decision ledger](../../decisions/stack-decision.md) consumes this gate's
-  local-WAL/Iggy/NATS/Redpanda rows before any ingest-log result can become a
-  tiny, durable-single, or clustered stack default.
+- [A5 stack decision ledger](../../decisions/stack-decision.md) would consume a
+  future authorized experiment before any external ingest-log proposal could
+  reach a product decision.
+- [Plan 113](../../../../plans/113-ingest-backpressure-observability.md) owns
+  currently actionable spool/queue/retry/drop/drain visibility. Broker work
+  requires the separate trigger and a new numbered plan.
 
 ## Bottom Line
 
-Parallax should build the ingest contract now and keep the runtime choice
-swappable. The local WAL is the right tiny default. Iggy is the best Rust-shaped
-single-node stream to test. NATS JetStream is the strongest open clustered
-fallback if configured for explicit durability. Redpanda is the strongest
-Kafka-like fallback if operational and licensing tradeoffs are acceptable. The
-winner is the first mode that keeps acknowledged evidence replayable under
-faults without making Parallax harder to run than the systems it is trying to
-replace.
+Parallax should make the current bounded spool observable and correct through
+plans 099 and 113. The candidate contract and fault matrix remain dormant until
+a supported profile proves a replay/isolation SLO gap and the operator opens a
+numbered plan. No broker or alternate runtime is authorized by this note.

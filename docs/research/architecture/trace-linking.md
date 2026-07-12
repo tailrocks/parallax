@@ -4,6 +4,12 @@ Research date: 2026-06-12 (operator question: "can one span reference a
 separate operation's trace, open it, and investigate the correlation —
 does OpenTelemetry support that?").
 
+> **Status (2026-07-12): implemented mechanism record, not an active plan.**
+> Typed links, reverse linked-trace lookup, and UI navigation shipped. Numbered
+> plan 120 in [`plans/`](../../../plans/) exclusively owns any remaining
+> integration/SDK guidance and validation. Do not execute follow-up work from
+> this note.
+
 ## Answer: yes — span links, first-class in OTel
 
 OpenTelemetry's tracing API has exactly this concept: **span links**. A
@@ -50,15 +56,13 @@ Verified live: the seeded batch span stored
 the trace page showed the badge and the Linked traces entry, and the link
 navigated to the source trace.
 
-## Follow-ups (not in this slice)
+## Residual Ownership
 
-- **Reverse direction** ("which traces link TO this one?") needs an index
-  or scan over `links` — natural once linked traffic exists; GreptimeDB
-  JSON functions or a promoted link table both work.
-- **jackin'/SDK guidance:** when jackin' (or any integrated tool) spawns a
-  logically separate operation, it should start a new trace and attach a
-  span link to the spawning span — document in the integration guide when
-  the first real emitter needs it.
+- **Reverse direction:** shipped through the typed linked-trace query and UI;
+  further indexing is evidence-triggered storage tuning, not an open item here.
+- **Integration/SDK guidance:** plan 120 owns documentation and real-emitter
+  verification for starting a separate trace and linking it to the spawning
+  span.
 
 ## Sources
 

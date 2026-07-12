@@ -4,10 +4,16 @@
 
 Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 
+> **Current stack authority (operator, 2026-06-12): GreptimeDB + Turso are
+> mandatory.** ClickHouse and Postgres remain research comparators only. This GO
+> verdict authorizes the product direction, not an implementation queue or an
+> alternate backend. Current contract work is plan 093; supported server work is
+> plan 115; all other unfinished implementation must live in `plans/`.
+
 > **Decision record — Status: GO (narrow product).** Build the open-source, Rust-first,
 > self-hosted execution-context engine; do **not** build the generic AI-RCA chatbot,
 > dashboard suite, or autonomous SRE. Reverse only if a kill criterion (below) triggers.
-> The storage engine is a separate decision — current lean **GreptimeDB, not settled** —
+> The storage engine is a separate decision — **GreptimeDB is mandatory** —
 > see [storage-engine.md](storage-engine.md). The adversarial counterweight is
 > [risks-and-bear-case.md](risks-and-bear-case.md); the synthesis + coverage map is
 > [strategic-coverage.md](strategic-coverage.md). Full gate answers and evidence follow.
@@ -120,9 +126,9 @@ The architecture is plausible with current open-source components:
 | --- | --- | --- |
 | Error compatibility | Support the Sentry envelope `event` path, not the whole Sentry product. | Current registry checks still show Rust `sentry`/`sentry-types` `0.48.2`, JS SDKs `10.53.1`, Go `v0.46.2`, and Python `2.60.0`; "Sentry-compatible" remains only a target until those SDK-generated fixtures pass parser, normalization, grouping, redaction, projection, and unsupported-item gates. |
 | Telemetry standard | Use OpenTelemetry as the native telemetry protocol. | OTLP `1.10.0` is stable for traces, metrics, and logs, and gives shared `trace_id`, `span_id`, resource, and semantic-convention context. This proves the wire substrate, not agent readiness: public OTLP claims require the conformance ledger, canonical bundle/projection checks, and MCP structured-output validation. |
-| Observability store | **V1 decided (2026-06-18): GreptimeDB-only on the native OTLP model; ClickHouse deferred (not a V1 fallback or design constraint)** — see [native-otel-tables.md](native-otel-tables.md). Historical lean/reasoning in [storage-engine.md](storage-engine.md). | GreptimeDB reached **v1.0 GA in April 2026** (latest stable checked `v1.0.2`). The proxy lens (Parallax owns OTLP/routing/conversion, Runs 153-170) once leaned ClickHouse on retrieval speed + build-on-top ecosystem; but the **resolved anchored-retrieval query mix (operator 2026-05-29)** takes ClickHouse's scan-speed lead off Parallax's hot path (both engines serve the anchored bundle ≪300 ms at every tested scale), so the decision now turns on cost + Rust, where GreptimeDB leads. ClickHouse stays the fallback and wins heavy analytical scans/cardinality/PromQL ecosystem. The storage freshness, bundle-latency, object-cost, and operational-complexity gates keep veto power. |
-| Stream | Start with local WAL; add Apache Iggy only when replay/burst separation matters. | Iggy is Rust-native, persistent, append-oriented, and explicitly designed for low-latency message streaming. |
-| Metadata | Start with local Turso Database for prototype/tiny metadata; keep Postgres as an active production and scale-out fallback. | Latest non-prerelease checked is `v0.6.1`; `v0.7.0-pre.3` exists but is a prerelease. Turso is Rust-written and SQLite-compatible, but still beta/production-caution in the repository README, so crash, backup/restore, concurrency, migration, and fallback gates are mandatory before any production-default claim. |
+| Observability store | GreptimeDB only, on native OTLP tables; see [native-otel-tables.md](native-otel-tables.md). | Historical comparison found ClickHouse faster on heavy analytical scans while GreptimeDB fit the anchored workload and Rust strategy. ClickHouse remains comparator evidence, not a fallback. |
+| Stream | Current local WAL/spool only; external streams remain research until explicitly planned. | Iggy is a useful comparator, but this verdict does not authorize a durable external-stream profile. |
+| Metadata | Turso Database only. | Turso's maturity keeps crash, backup/restore, concurrency, and migration claims gated; a failure requires fix-forward work, not Postgres. |
 | Agent surface | CLI and HTTP first; read-only MCP only after the access-surface safety gate. | Coding agents can call CLIs today, but MCP has become the standard tool discovery/invocation surface and has explicit auth/security requirements. Do not claim first-class agent-native access until MCP projects the same canonical bundle as CLI/API and passes read-only, redaction, output-budget, and audit fixtures. |
 
 Sources:
@@ -278,9 +284,10 @@ It is open enough for:
 - fixer outcome feedback loop after review, merge/revert, and recurrence rows
   exist.
 
-## Phase 2 Gate
+## Historical Phase 2 Gate And Current Ownership
 
-Because the verdict is **GO**, proceed to the implementation blueprint.
+The GO originally led to the implementation blueprint below. It is now design
+history, not an active plan. Current work is authoritative only in `plans/`.
 
 The blueprint must keep the boundary strict:
 
@@ -301,7 +308,7 @@ Reverse this GO if prototype evidence shows any of the following:
 
 1. Sentry envelope event ingestion cannot work without recreating Relay,
    Kafka, Snuba, and the operational burden Parallax exists to avoid.
-2. GreptimeDB or the fallback store cannot answer evidence-bundle queries with
+2. GreptimeDB cannot answer evidence-bundle queries with
    acceptable freshness, latency, and storage cost.
 3. Agent bundles do not improve diagnosis or patch quality over raw Sentry/CI
    context in controlled tests. The experiment that decides this is designed in

@@ -1,15 +1,18 @@
-# Migration to GreptimeDB Native OTLP Tables — Working Plan
+# GreptimeDB Native OTLP Table Adoption Record
 
 <!-- markdownlint-disable MD013 -->
 
-Status: **living working doc** (started 2026-06-18). This is the iteration surface for moving
-Parallax off its hand-rolled telemetry tables onto GreptimeDB's native OTLP model. It is *not* a
-settled ADR — decisions get debated here, and only the resolved ones graduate into
+Status: **implemented historical adoption record** (started 2026-06-18;
+reclassified 2026-07-12). Parallax now forwards raw OTLP to GreptimeDB native
+trace/log/per-metric tables and keeps only approved derived extension tables.
+The settled contract lives in
 [decisions/native-otel-tables.md](../decisions/native-otel-tables.md) and the
-[v1-implementation-spec.md §5](../architecture/v1-implementation-spec.md). Open questions live at the
-bottom and are answered with the operator over time.
+[V1 implementation spec](../architecture/v1-implementation-spec.md). This file
+preserves spike evidence and design reasoning; it is not an active plan. Current
+contract correction is in plan 093, metric residuals are in plan 105, and vendor questions remain research in
+[greptimedb-team-questions.md](greptimedb-team-questions.md).
 
-## Direction (operator, 2026-06-18)
+## Adopted Direction (operator, 2026-06-18)
 
 - **Use GreptimeDB native tables directly.** Adopt the native OTLP model for the raw signals.
 - **The proxy stays — but its reason is derivation, not multi-store routing.** All telemetry goes
@@ -41,9 +44,10 @@ bottom and are answered with the operator over time.
 - **No migration, ever (operator, 2026-06-18).** Parallax is in the research state with no users (the
   operator runs it locally, fresh data on each spawn). We freely refactor / re-implement / redefine.
   There is **no data migration, no backfill, no dual-write, no parity-before-delete** — just rebuild
-  on the native model. This is a *refactor* plan, not a data-migration plan.
-- **Goal of this doc:** decide exactly what is native, what (if anything) must be a custom extension,
-  and how — then re-implement on native models.
+  on the native model. This records the completed refactor, not a current
+  migration instruction.
+- **Historical goal:** decide exactly what was native, what required a custom
+  extension, and how to implement the adopted model.
 
 ## Why native (recap of the finding)
 
@@ -65,7 +69,7 @@ Customization levers: ingest hints `x-greptime-hints: ttl=…, append_mode=…`;
 post-create `ALTER TABLE … ADD COLUMN` / `ADD … INVERTED INDEX / FULLTEXT INDEX` (they are ordinary
 tables). Schema auto-grows columns from new attributes.
 
-## Current → target (per signal)
+## Historical Current-To-Target Map
 
 | Today (custom, `greptime.rs`) | Target (native) | Migration action |
 | --- | --- | --- |
@@ -77,7 +81,7 @@ tables). Schema auto-grows columns from new attributes.
 | Metric exemplars | — none (native metric tables do not preserve trace/span exemplars) — | **Keep extension table** `metric_exemplars`. Derived correlation pointers, not raw metrics. |
 | Turso metadata (issues, runs, dashboards) | — none — | **Keep.** Unaffected. |
 
-## The architecture tension to resolve first
+## Historical Architecture Tension
 
 The operator's "forward OTLP straight through **without doing anything**" is the right move for raw
 storage — but Parallax's product value (derived `error_events`, fingerprinting, run-scoping,
@@ -94,7 +98,10 @@ Two things this forces a decision on (Q1, Q2 below): **redaction** (if raw OTLP 
 redaction-before-storage is gone — is that acceptable, or does redaction move to query-time / opt-in?),
 and **derivation source** (derive from the in-flight OTLP on the tee, vs. read back from native tables).
 
-## Build steps (greenfield — no migration, Q4)
+## Completed Build Sequence (greenfield, no migration, Q4)
+
+The following records the sequence used for the adoption. It is not an active
+checklist; plans 093 and 105 own the remaining contract and metric work.
 
 1. **Delete the hand-rolled raw-signal DDL + write paths** (`otel_spans`, `otel_logs`,
    `otel_metrics_*`) outright. No parity gate, no backfill — fresh data each spawn.
@@ -142,11 +149,12 @@ What GreptimeDB genuinely **cannot** (correctly) do → must stay Parallax:
 - **Cross-signal evidence-bundle assembly** + custom grouping-rule overrides. App orchestration.
 
 **The decisive reason the operator is still right:** even where Greptime *could* group (digest +
-Flow), doing it *inside* Greptime via pipelines/Flow **couples the grouping logic to GreptimeDB and
-breaks the storage-router** — ClickHouse (the kept fallback) cannot run Greptime pipelines or Flow.
-So to keep the multi-store boundary, the **canonical fingerprint + grouping must live in Parallax**
-regardless of Greptime's capability. Greptime's digest/Flow are best treated as an *optional
-in-adapter optimization*, not the source of truth.
+Flow), coupling canonical product identity to engine-local acceleration would
+make fingerprint semantics harder to test and evolve. The **canonical
+fingerprint + grouping must live in Parallax** regardless of Greptime's
+capability. Greptime's digest/Flow are best treated as recomputable acceleration,
+not the source of truth. This is a product-semantics boundary, not an
+engine-substitution promise.
 
 Corollary for "read data back to group": with the proxy tee, fingerprinting can run on the
 **in-flight OTLP** (no read-back needed). Read-back (or a Greptime Flow feeding a sink Parallax
@@ -195,15 +203,15 @@ fingerprint algorithm + issue state authoritative in Parallax** for control and 
 Greptime Flows/sketches as a derived acceleration layer Parallax owns and can recompute. Greptime
 accelerates; Parallax decides.
 
-## Implementation roadmap — current code → required changes
+## Historical implementation map — former code to adopted shape
 
-Mapped against the live code (2026-06-18). The good news: the ingest worker **already tees** —
+Mapped against the code as it existed on 2026-06-18. The ingest worker **already teed** —
 `worker.rs::process` normalizes *and* derives from the same OTLP request — so Q2's structure exists.
 What changes is the **write target** (custom INSERT → native OTLP forward) and the **read layer**
 (custom columns → native columns). The `TelemetryStore` *read* signatures are the stable boundary the
 GraphQL API depends on, so most of `parallax-api` is untouched.
 
-### As-is flow
+### Former flow
 
 ```text
 OTLP HTTP/gRPC (otlp_http.rs / otlp_grpc.rs)
@@ -216,7 +224,7 @@ OTLP HTTP/gRPC (otlp_http.rs / otlp_grpc.rs)
   Reads: parallax-api GraphQL → TelemetryStore read methods → SELECT custom otel_* tables
 ```
 
-### Target flow
+### Adopted flow
 
 ```text
 OTLP in → otlp_http/grpc (keep raw Bytes alongside decoded request) → spool → mpsc → worker
@@ -229,7 +237,7 @@ OTLP in → otlp_http/grpc (keep raw Bytes alongside decoded request) → spool 
    Reads: GraphQL → SAME TelemetryStore read signatures → SELECT native tables (new column names)
 ```
 
-### Change list by file
+### Historical change list by file
 
 | File | Current role | Required change |
 | --- | --- | --- |
@@ -244,7 +252,7 @@ OTLP in → otlp_http/grpc (keep raw Bytes alongside decoded request) → spool 
 | `parallax-server/src/greptime_supervisor.rs` / `config.rs` | manage local engine, TTLs | Forward target = the managed local Greptime HTTP base URL (already known). TTLs now ride `x-greptime-hints` on forward + `WITH(ttl)` on extension tables. |
 | `poc/evidence-loop/*` | frozen reference | Untouched (frozen). Update `crates` tests for the new write/read shapes. |
 
-### Implementation questions — DECIDED (2026-06-18)
+### Implementation decisions (2026-06-18)
 
 - **IQ1 — trait write shape. DECIDED (a): one raw-OTLP contract.** The `TelemetryStore` write side
   becomes `forward_traces(Bytes)`, `forward_logs(Bytes)`, `forward_metrics(Bytes)` — the adapter just
@@ -291,8 +299,8 @@ binary on private ports + temp data dir; the running instance was untouched). Pu
 - **Native reads** ✅ — trace lookup by `resource_attributes.parallax.run.id`, log FULLTEXT, and
   per-metric table reads (`greptime_timestamp`/`greptime_value` + resource-attr tags) all work.
 
-**Implications:** IQ2 resolved. IQ1 (trait write shape) and IQ3 (zero-copy forward) remain build-time
-choices. IQ4 (metric reads) is straightforward SQL over the per-metric tables. **Engine is v1.1.0**
+**Implications:** IQ1-IQ4 were subsequently implemented and validated in the
+product. Metric reads use SQL over the per-metric tables. **Engine was v1.1.0**
 (newer than the pinned v1.0.2 — version policy is latest; bump pins when implementing). **Still genuinely
 for the team** (works empirically, but their word matters): traces-OTLP GA/stability *commitment*,
 ExponentialHistogram timeline, OTLP-forward perf guidance, and a blessing on the `run_metric_points`
@@ -339,12 +347,10 @@ math all return correct results. Two behaviors the memory adapter hid surfaced a
   already surfaces these native names and reads address them as-is — consistent and **native-first
   correct**, but user-visible: the UI lists Prometheus-style names, not the raw OTLP instrument names.
   Attribute keys normalize the same way for tag columns (`payment.method` → `payment_method` in
-  `groupBy`). *(Open for operator: confirm surfacing native names is desired, or add a name-mapping
-  layer — note the dots→underscores normalization is lossy, so OTLP names can't be perfectly restored.)*
+  `groupBy`). The remaining name-mapping/collision decision is owned only by active plan 105.
 - **`service_names` misses metric-only services** — it unions `opentelemetry_traces` / `opentelemetry_logs`
   / `run_metric_points`, not the native per-metric tables, so a service that emits *only* metrics is not
-  listed. Edge case (a real service also emits traces/logs); left as a documented limitation rather than
-  coupling to the metric engine's internal physical-table layout.
+  listed. Active plan 105 owns bounded native-catalog discovery for this case.
 
 **Table inventory locked (added 2026-06-18).** A gated guard (`m1_table_inventory_greptime`) pushes all
 three signals to a real engine and `SHOW TABLES`, asserting the only Parallax-created tables are the
@@ -362,7 +368,7 @@ native-table smoke test. The default is an explicit pin
 isolated installs are reproducible. Bump the pin when a newer native-capable stable release ships
 (version table = floor, not freeze).
 
-## Open questions → current decisions / leans
+## Decision record and vendor research follow-ups
 
 - **Q1 — Redaction (A6). DECIDED (operator, 2026-06-18): forward raw OTLP as-is, no redaction, straight
   to Greptime's OTLP API.** Consequence to record: raw telemetry is stored **unredacted at rest** in
@@ -407,7 +413,7 @@ isolated installs are reproducible. Bump the pin when a newer native-capable sta
     stays for aggregates; this is an *added* table, not a replacement. (Time-window reconstruction via
     Turso `RunRecord` start/end and span-derived metrics over native traces remain available as
     no-storage complements, but Approach 2 is the chosen primary for exact per-run metrics.)
-- **Q7 — Questions for the GreptimeDB team (open — needs their input).** Eight detailed questions
+- **Q7 — GreptimeDB-team research follow-up.** Eight detailed questions
   (custom columns/indexes vs schema auto-widening, indexing native logs post-create, adding Parallax
   columns to native traces, log attribute promotion, traces OTLP GA/stability, high-card metric
   pattern confirmation, OTLP forward performance, ExponentialHistogram timeline) live in their own

@@ -337,7 +337,7 @@ Failure consequences:
 - If provenance is mostly reconstructed, report the task under
   `reconstructed_overlay`, not `runtime_overlay`.
 
-## Implementation Order
+## Experiment Assembly Order
 
 1. Add a tiny Rust or shell-free Rust-wrapper capture tool later, but do not make
    it depend on the Parallax backend.

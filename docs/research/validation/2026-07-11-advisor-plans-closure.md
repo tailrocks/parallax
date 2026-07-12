@@ -1,13 +1,14 @@
 # Advisor plans program closure — 2026-07-11
 
-Branch (during execution): `implement/advisor-plans-069-090`  
+Branch during execution: the temporary PR #19 implementation branch (deleted
+after merge).
 Landed: [PR #19](https://github.com/tailrocks/parallax/pull/19) merged to
-`main` 2026-07-11 (CI green; implement branch deleted). Active branch: **`main`**.  
-Brief: `prompts/advisor-plans-implementation.md`
+`main` 2026-07-11 (CI green; implement branch deleted). Active branch: **`main`**.
+Historical execution brief: retired after closure; available in Git history.
 
 ## Re-audit #1
 
-**When:** 2026-07-11 (UTC)  
+**When:** 2026-07-11 (UTC)
 **Status tables:** plans **069–091** all terminal (`DONE` or legitimate `BLOCKED`). No `TODO` / `IN PROGRESS` among them.
 
 | Plan | Terminal status |
@@ -17,7 +18,9 @@ Brief: `prompts/advisor-plans-implementation.md`
 
 **Done-criteria sampling:** greps for CI gates, requestRate/`first_seen`, redaction-lite-v3, ingest retries/`shutdown_graceful`, golden SQL/conformance, `useLiveStream`, api split line count, CLI `ValueEnum`, bundle schema, MCP spike findings, gzip decompression, transport note + plan 091 arrow path — all hold.
 
-**Residuals:** disposition table appended to `advisor-plans/README.md` (windowed traces_search resolved in 075; 090 GO executed as 091; 089 blocked upstream).
+**Residuals:** the historical disposition table recorded windowed
+`traces_search` as resolved in 075, the 090 GO as executed in 091, and 089 as
+blocked upstream. Any still-unfinished work now lives only under `plans/`.
 
 **Gates (re-audit #1):**
 
@@ -31,7 +34,7 @@ Brief: `prompts/advisor-plans-implementation.md`
 
 ## Re-audit #2
 
-**When:** immediately after #1 on same HEAD  
+**When:** immediately after #1 on same HEAD
 **Method:** re-read status tables; re-run done-criteria greps; re-run workspace clippy + nextest + UI gates.
 
 | Check | Result |
@@ -74,7 +77,7 @@ Plan 075 now satisfies: windowed agg, single-pass `COUNT(*) OVER`, chunked `try_
 
 ## Post-merge goal re-audit (2026-07-12, on `main`)
 
-Brief re-run under `prompts/advisor-plans-implementation.md` after PR #19.
+The historical closure brief was re-run after PR #19.
 
 | Check | Result |
 |-------|--------|
@@ -113,4 +116,3 @@ Scratch artifacts: `status-tables.txt`, `done-criteria-audit{1,2}.log`, `spikes-
 workspace gates on the fixed tree: `fmt_exit=0`, `clippy_exit=0`, nextest
 **189 passed**, UI **175 passed**. Dual done-criteria re-audits re-captured on
 final pushed HEAD.
-

@@ -1,6 +1,15 @@
 # Storage Benchmark Plan, Prototype, and Artifact Interpretation
 
-> The database-only benchmark for observability storage compares two primary candidates — GreptimeDB and ClickHouse — against Parallax-shaped evidence-bundle workloads, ranked speed > cost > scaling, with GreptimeDB becoming the preferred backend only if it meets the numeric speed gates and wins or ties on cost/operability. The runnable Rust `parallax-bench` prototype (a `StorageAdapter` trait, a seeded deterministic dataset generator, per-candidate DDL, exact Q1–Q6 evidence-bundle/correlation queries, a measurement protocol, and numeric decision gates) realizes that plan and holds **veto power** over the default storage choice: no winner is declared until it runs against the latest stable versions (pinned for the first run as GreptimeDB `v1.0.2`, ClickHouse feature-stable `v26.5.1.882-stable`, and ClickHouse LTS `v26.3.12.3-lts`, plus MinIO). The separate benchmark agent's current `bench/four-way/` artifacts (Runs 140-158) make the four-build benchmark reproducible, validate a local (`N=100000`) vs server (`N=5000000+`) tier split, tighten schema guidance, and source-ground GreptimeDB TWCS/TTL, raft-engine WAL durability, and PartitionTree high-cardinality ingest mechanisms. Those runs prove GreptimeDB's anchored/keyed hot path stays interactive while its heavy analytics cross the 300 ms gate at 5M — confirming ClickHouse as the analytics-heavy fallback — but they do not measure mixed native ingest, Q6 p95/p99, stale-bundle rate, crash/restart loss, high-cardinality native metric memory/flush behavior, object-store economics, ClickHouse LTS, or end-to-end A5 integration. They therefore count as `smoke_only` storage and schema evidence, not a `greptime_prototype_default`, `clickhouse_storage_default`, `dual_storage_open`, or `phase1_stack_pass` result. The open gate remains: run the full mixed-load Q6 freshness gate and the object-store cost gate before turning any number into a storage default.
+> **Current authority:** GreptimeDB + Turso are mandatory product engines;
+> ClickHouse is a comparator only. This consolidated benchmark protocol preserves
+> the historical candidate-selection method and runnable `parallax-bench`/
+> `bench/four-way/` evidence. Its numeric gates can veto performance, cost,
+> durability, and scaling claims and expose Parallax/GreptimeDB work, but cannot
+> authorize a fallback or product stack change. Runs 140-158 prove the keyed
+> GreptimeDB hot path stays interactive while heavy analytics cross 300 ms at 5M;
+> they remain `smoke_only` evidence because mixed native ingest, Q6 p95/p99,
+> stale-bundle rate, crash/restart loss, high-cardinality native metric pressure,
+> object-store economics, and end-to-end A5 integration are incomplete.
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
@@ -34,7 +43,7 @@ storage engine underneath the platform.
 > per-candidate DDL, the exact query SQL, the measurement protocol, and numeric
 > decision gates — lives in
 > [Storage benchmark prototype (runnable)](benchmark-plan.md). The
-> benchmark prototype has veto power over the default storage choice. The first
+> benchmark prototype has veto power over performance/cost claims. The first
 > mixed-load speed gate is specified in
 > [Storage freshness and bundle latency gate](freshness-and-latency.md).
 > The first retained-size and object-cost gate is specified in
@@ -338,10 +347,9 @@ Research date: 2026-05-25
 This is the runnable realization of
 [Observability storage benchmark plan](benchmark-plan.md).
 The plan says *what* to measure and *why*; this document specifies a concrete
-harness someone can build and run to compare storage candidates against the
-Parallax goal, and it has **veto power** over the default storage choice: no
-storage winner is declared until this prototype runs against the latest stable
-versions.
+harness for comparing storage behavior against the Parallax goal. It has
+**veto power** over performance/cost claims: no comparative claim is accepted
+until the prototype runs against the required current builds.
 
 It is opinionated and concrete on purpose — Rust harness, a `StorageAdapter`
 trait so candidates swap behind one interface, a deterministic dataset generator,
@@ -388,8 +396,8 @@ version-freshness rule):
 - MinIO (S3-compatible) for the object-storage cost path.
 
 ClickHouse docs recommend `stable` by default and `lts` for teams that cannot
-upgrade frequently or are using simpler secondary workloads. Because Parallax is
-choosing a storage default, not just a leaderboard winner, the first serious
+upgrade frequently or are using simpler secondary workloads. To compare
+ClickHouse risk fairly rather than choose a product default, the first serious
 benchmark should either run both ClickHouse tracks or explicitly justify why one
 track is excluded. A result that says only "latest ClickHouse" expires as soon
 as either track moves.
@@ -943,18 +951,18 @@ decisions. They cannot produce `greptime_prototype_default`,
 | "The full-text correction might be a one-off." | "Run 157 re-verifies at 5M that selective full-text prunes on both engines while broad terms become scan-bound and favor ClickHouse." |
 | "Anchored bundle retrieval is automatically fast on both engines." | "Run 158 narrows this: anchored retrieval is fast only where the queried signal table keys or indexes `trace_id`/`fingerprint`; un-keyed signal tables full-scan on both engines." |
 | "GreptimeDB `output_rows` proves rows read." | "Run 158 corrects this: scan `output_rows` can be post-filter emission. Use `scan_cost`, `elapsed_poll`, and `file_ranges` to judge scan work." |
-| "Benchmark confirms GreptimeDB as the default." | "Benchmark confirms GreptimeDB remains plausible for Parallax's anchored hot path, while ClickHouse is the fallback/default for analytics-heavy usage until the full gates decide." |
+| "Benchmark confirms GreptimeDB as the default." | "GreptimeDB is mandatory by operator policy; the benchmark supports bounded workload claims and records ClickHouse's comparative analytics advantage." |
 
 ### Decision Impact
 
-Keep GreptimeDB as the **prototype-fit candidate**, not as a measured stack
-default. The new evidence strengthens both sides:
+Keep GreptimeDB performance/cost claims bounded by evidence. The product engine
+is fixed; the comparison strengthens or weakens claims and fix-forward priorities:
 
 - GreptimeDB still fits Parallax's intended anchored evidence-bundle path.
 - ClickHouse is clearly safer if Parallax drifts into ad hoc analytics, wide
   dynamic JSON, broad log search, or in-database cross-tier joins at scale.
-- A storage adapter boundary remains mandatory because the measured flip trigger
-  is now real, not hypothetical.
+- Capability-specific storage boundaries remain mandatory for ownership,
+  conformance, and testability, not engine substitution.
 - For GreptimeDB, the hot path should fetch anchored signal slices separately
   and correlate in application code or use explicit subquery prefilters. A direct
   `LEFT JOIN` on the bundle path is a known optimizer trap until a future
@@ -978,7 +986,7 @@ default. The new evidence strengthens both sides:
 - GreptimeDB's metric-ingest fit is stronger for high-cardinality labels because
   the source-backed PartitionTree dictionary explains the measured flat ingest
   curve. This is a metric-ingest ergonomics win, not an aggregation-speed win;
-  ClickHouse remains the safer fallback for heavy analytical metric scans.
+  ClickHouse remains the faster comparator for heavy analytical metric scans.
 - Future storage docs should separate local preliminary (`N=100000` default),
   historical 1M/5M local warm artifacts, operator-requested server large-tier,
   small-tier cold/object-store, and A5 stack-proof claims. Run 145 belongs in
@@ -1007,7 +1015,7 @@ default. The new evidence strengthens both sides:
 ### Next Evidence Gap
 
 Run the full mixed-load Q6 freshness gate and the object-store cost gate before
-turning these numbers into a storage default. The next storage-specific
+making broad performance/cost claims. The next storage-specific
 falsification target is: **does GreptimeDB keep Q6 p95 under 300 ms under mixed
 native ingest with cold/object-store reads, using the app-side/subquery
 correlation shape that avoids the Run 154 join trap and the fully keyed/indexed
@@ -1050,7 +1058,7 @@ durability, and cardinality-insensitive metric ingest. Runs 154-158 add five
 more guardrails: avoid direct in-DB `LEFT JOIN` correlation on GreptimeDB's hot
 path, treat ClickHouse object storage as real, stop describing grouped-error
 rollups as a GreptimeDB capability blocker, keep broad full-text search as a
-ClickHouse flip trigger, and require anchor keys/indexes on every
+  GreptimeDB risk/upstream trigger, and require anchor keys/indexes on every
 bundle-participating signal table. They are still mechanism evidence. Treat the
 benchmark code, local runs, and source-read evidence as strong smoke/schema
 guidance, not as an A5 pass.

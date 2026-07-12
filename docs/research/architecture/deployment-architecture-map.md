@@ -1,18 +1,25 @@
-# Deployment Architecture Map: Local, Own Server, Cloud
+# Historical Deployment Architecture Projection
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: 2026-06-11. Companion to the [V1 build plan](v1-build-plan.md): the same one
-binary and one API in all three pictures — only the **profile** changes where state lives and
-how clients reach it. Profiles: `--profile local`, `--profile server`, `--profile cloud`
-(the build plan's M3 ships `server` and `cloud` as presets of one server-side family).
+> **Status (2026-07-12): design history, not an active plan or supported-profile
+> contract.** Local V1 shipped, but the projected `server` and `cloud` profiles
+> did not. Plans 109, 110, and 115 exclusively own any future auth, concurrency,
+> and supported server-profile work; plans 106 and 116 own evidence pinning and
+> retention. Every supported profile must use GreptimeDB + Turso, native TLS,
+> and no fallback engine. Commands and topology in this dated projection are
+> illustrative unless the live CLI and a numbered plan say otherwise.
+
+Research date: 2026-06-11. Companion to the
+[historical V1 build record](v1-build-plan.md), this note explored how one binary
+and API might be placed across local, own-server, and cloud environments.
 
 ## 0. Who holds what (the rule that never changes)
 
 | Store | Role | Holds | Why this split |
 | --- | --- | --- | --- |
 | **GreptimeDB** | The telemetry evidence engine — high-volume, append-only, columnar | Spans, log records, metric points, derived `error_event` rows, rollup counters (fingerprint × minute) | This data is written once, queried by anchor (`trace_id`/`fingerprint`/time window), compressed 10×-class, aged by TTL. Columnar engines exist for exactly this. |
-| **Turso** (local/dev) → **Postgres** (server/cloud option) | The product-state store — low-volume, mutable, relational | Projects, ingest/API tokens, **issues** (fingerprint → status/first/last seen/count/assignee), runs, retention & redaction policies, audit records, (later: outcome rows) | Issue state is OLTP: it gets UPDATEd (resolved, assigned, regressed). Columnar stores hate row updates — Sentry built a whole "replacements" pipeline to fake them in ClickHouse. We keep mutable state relational from day one. |
+| **Turso** (every profile) | The product-state store — low-volume, mutable, relational | Projects, ingest/API tokens, **issues** (fingerprint → status/first/last seen/count/assignee), runs, retention & redaction policies, audit records, (later: outcome rows) | Issue state is OLTP: it gets UPDATEd (resolved, assigned, regressed). Columnar stores are the wrong ownership boundary. Turso is mandatory; the historical Postgres option is superseded. |
 | **Local disk** | Spool + engine data in local/server profiles | Ingest WAL/outbox segments, GreptimeDB data dir, Turso file, raw-ref blobs with TTL | Cheap durability for the write path and the local tiers. |
 | **Object storage** (cloud profile) | The only long-term copy | GreptimeDB SSTs (engine-native S3 backend), raw-ref archive, **pinned evidence slices** (bundle-cited raw data that must outlive TTL), bundle JSON archive | ~$0.021/GB-month, 1× copy (no replica multiplication) — the cost vertex of the [impossible triangle](../00-vision/north-star-autonomous-fix-loop.md). |
 
@@ -55,7 +62,7 @@ The daily-driver setup. One command; Parallax supervises everything; nothing to 
  └────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Setup experience:**
+**Historical setup sketch:**
 
 ```bash
 brew install parallax@preview    # or one static binary download
@@ -68,8 +75,8 @@ parallax run inspect <run_id>    # or your agent does this
 
 - **GreptimeDB here:** a *managed child process* (`greptime standalone start`), installed via
   the Greptime brew tap or downloaded/pinned by Parallax; Parallax owns spawn, health, restart,
-  and version pin. Escape hatches: `--greptime-url` (use one you already run) and
-  `--no-greptime` (tiny Turso-only fallback for demos — bounded telemetry, not the default).
+  and version pin. External GreptimeDB remains a supported placement; there is
+  no engine-free or Turso-only product mode.
 - **Turso here:** one in-process file. No server, no socket, nothing to operate.
 - No auth in local profile (loopback only by default). Short TTLs, manual prune.
 - The agent uses the same CLI you do; `--context local` is the implicit default.
@@ -91,12 +98,12 @@ service, local disks, same API, reached from every laptop kubectl-style.
  │           │                              │                                 │
  │           ▼                              ▼                                 │
  │   ┌───────────────────────┐   ┌───────────────────────────────────┐        │
- │   │ metadata store        │   │ GreptimeDB standalone             │        │
- │   │ Turso file (default)  │   │ (managed child OR --greptime-url  │        │
- │   │ or Postgres           │   │  to a separate host)              │        │
- │   │ (--metadata postgres) │   │ data on local SSD, per-signal TTL │        │
+ │   │ Turso metadata        │   │ GreptimeDB standalone             │        │
+ │   │ deployment shape TBD  │   │ (managed child OR --greptime-url  │        │
+ │   │ by plan 115           │   │  to a separate host)              │        │
+ │   │                       │   │ data on local SSD, per-signal TTL │        │
  │   └───────────────────────┘   └───────────────────────────────────┘        │
- │           ▲ backups: file snapshot / pg_dump      ▲ disk snapshots         │
+ │           ▲ verified Turso backups                 ▲ disk snapshots         │
  └───────────┼───────────────────────────────────────┼────────────────────────┘
              │                                       │
    ──────────┼───────────────────────────────────────┼──────────────
@@ -123,15 +130,13 @@ parallax --context prod issue list
 - **GreptimeDB here:** still standalone (managed child by default; point at a separate host with
   `--greptime-url` when telemetry volume wants its own box). Data on local SSD; retention by
   per-signal TTL; whole-SST drops make retention cheap.
-- **Turso vs Postgres here:** Turso file remains the zero-ops default; switch to Postgres
-  (`--metadata postgres://…`) when you want operational durability guarantees (backups,
-  replication, multiple Parallax processes later). The adapter boundary makes this a config
-  change, not a migration project — though the Turso production gates
-  ([metadata-store.md](../decisions/metadata-store.md)) say Postgres is the safer answer once
-  this server matters.
-- Auth is on: per-project ingest tokens for OTLP, API tokens for humans/agents.
-- Deploy events arrive from CI (`parallax.deploy.v0`) and make deploy-adjacent regressions
-  visible (trigger creates/escalates the issue — nothing auto-dispatches).
+- **Turso here:** Turso remains mandatory. Plan 115 must select and live-prove
+  the exact backup, restore, replication, and process topology before any server
+  profile is supported; Postgres is not an escape hatch.
+- The projection required per-project OTLP ingest tokens and API tokens for
+  humans/agents; plans 109 and 115 own the current contract.
+- The projection routed `parallax.deploy.v0` events from CI to
+  deploy-adjacent-regression detection without automatic dispatch.
 
 ## 3. Angle C — cloud machine + cloud storage (`--profile cloud`)
 
@@ -150,12 +155,12 @@ The retention-economics setup: compute is disposable, **object storage is the on
  │           │                               │                                    │
  │           ▼                               ▼                                    │
  │   ┌─────────────────────┐   ┌──────────────────────────────────────┐           │
- │   │ managed Postgres    │   │ GreptimeDB (standalone now,          │           │
- │   │ (RDS/Cloud SQL/...) │   │  distributed later — same seam)      │           │
- │   │ recommended default │   │  storage backend = OBJECT STORAGE    │           │
- │   │ for this profile;   │   │  local NVMe = cache + memtables only │           │
- │   │ Turso file still    │   └──────────────┬───────────────────────┘           │
- │   │ fine for one-VM     │                  │ engine-native S3 API              │
+ │   │ Turso metadata      │   │ GreptimeDB (standalone now,          │           │
+ │   │ deployment shape    │   │  distributed later — same seam)      │           │
+ │   │ selected and proven │   │  storage backend = OBJECT STORAGE    │           │
+ │   │ by plan 115         │   │  local NVMe = cache + memtables only │           │
+ │   │                     │   └──────────────┬───────────────────────┘           │
+ │   │                     │                  │ engine-native S3 API              │
  │   └─────────────────────┘                  ▼                                   │
  │                              ┌─────────────────────────────────────┐           │
  │                              │ object storage (S3 / R2 / GCS / B2) │           │
@@ -170,13 +175,8 @@ The retention-economics setup: compute is disposable, **object storage is the on
    your services (any language, std OTel)     laptops / agents: parallax --context cloud …
 ```
 
-**Setup experience:**
-
-```bash
-parallax serve --profile cloud \
-  --object-store s3://acct-parallax-evidence?region=… \   # passed through to GreptimeDB
-  --metadata postgres://…                                  # managed Postgres recommended
-```
+**Historical setup sketch:** no `cloud` command is supported until plan 115
+defines and proves the complete GreptimeDB + Turso profile contract.
 
 - **GreptimeDB here:** the same engine with its **object-storage backend** — SSTs live in
   S3/R2/GCS, the VM's NVMe is only cache and memtables. This is why the engine was chosen: the
@@ -185,9 +185,9 @@ parallax serve --profile cloud \
   Kill the VM, start another, point it at the same bucket — the evidence is the bucket.
   Egress-free providers (R2/B2) fit re-read-heavy use best
   ([size-and-object-cost.md](../storage/size-and-object-cost.md)).
-- **Metadata here:** managed Postgres is the recommended default (issue state and tokens deserve
-  the cloud's backup/replication machinery); a Turso file remains acceptable for a single-VM
-  setup with snapshots.
+- **Metadata here:** Turso is mandatory. The concrete cloud/server deployment,
+  backup, restore, and replication shape is deliberately unresolved until plan
+  115 produces live evidence.
 - **Tiering and pinning:** raw telemetry ages out by per-signal TTL; rollups stay; every raw
   slice a bundle cites is pinned to the bucket first — bills shrink, audit trails don't break.
 - **The growth seam (rung 3, designed-under, not built):** the same profile later splits into
@@ -201,12 +201,13 @@ parallax serve --profile cloud \
 | --- | --- | --- | --- |
 | Parallax process | `parallax serve` (foreground) | systemd/container unit | disposable VM/container |
 | GreptimeDB | managed child, data in `~/.parallax/greptime/` | managed child or separate host, local SSD | object-storage backend; NVMe = cache only |
-| Metadata | Turso file | Turso file → Postgres option | managed Postgres (Turso ok for one VM) |
+| Metadata | Turso file | Turso deployment selected by plan 115 | Turso deployment selected by plan 115 |
 | Long-term evidence | short TTL, prune | SSD + TTL, disk snapshots | object storage, lifecycle tiers, pinned slices |
 | Auth | none (loopback) | ingest + API tokens, TLS at proxy | same + cloud IAM for the bucket |
 | Clients | same-machine CLI/agent/UI | kubectl-style remote contexts | same as B |
-| Setup | one command | one unit + one context | one command + bucket + Postgres URL |
+| Setup | one command | blocked pending plan 115 | blocked pending plan 115 |
 
-Same binary, same API, same bundle, same CLI grammar everywhere — `--context` picks the world,
-the profile picks where state lives, and the [StorageAdapter](../decisions/v1-storage-adapter-vision.md)
-keeps every one of these placements swappable.
+The architectural goal remains one binary, API, bundle, and CLI grammar. Any
+future profile may change placement but not the committed GreptimeDB + Turso
+ownership. Storage capability boundaries support composition and tests, not
+engine substitution.

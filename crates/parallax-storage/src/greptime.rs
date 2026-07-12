@@ -616,8 +616,8 @@ impl GreptimeStore {
     /// Traces deviation: a `fingerprint` column for cross-signal correlation.
     async fn try_traces_deviations(&self) {
         self.try_deviations([
-            // TODO(plan-010): unpopulated; filling it touches the zero-copy
-            // ingest path and is deferred to a dedicated ingest change.
+            // Contract and migration ownership:
+            // plans/125-native-trace-fingerprint-deviation.md.
             r#"ALTER TABLE opentelemetry_traces ADD COLUMN "fingerprint" STRING"#,
         ])
         .await;

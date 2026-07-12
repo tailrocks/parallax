@@ -297,8 +297,8 @@ See [backend-and-data-flow.md](backend-and-data-flow.md) for the side-by-side. M
 | **Product category** | Full observability platform (traces, logs, metrics, errors, sessions, K8s) | Evidence context engine (not a dashboard suite) |
 | **Primary language** | TypeScript (Bun) | Rust (Tokio) |
 | **Ingest protocols** | OTLP only | Sentry envelope + OTLP |
-| **Storage** | ClickHouse (Tinybird/chDB) | GreptimeDB (lean) / ClickHouse (fallback) behind adapter |
-| **Metadata** | SQLite / Turso | Turso (prototype) / Postgres (production) |
+| **Storage** | ClickHouse (Tinybird/chDB) | GreptimeDB native tables (mandatory) |
+| **Metadata** | SQLite / Turso | Turso (mandatory) |
 | **Agent surface** | MCP with 10+ read tools | CLI first, HTTP underneath, MCP (read-only, after safety gates) |
 | **Evidence bundles** | None — raw query results | Bounded, redacted, citable, portable bundles |
 | **Outcome tracking** | None | Fix-outcome loop (accepted/rejected/reverted) |

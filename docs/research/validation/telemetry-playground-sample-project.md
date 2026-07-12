@@ -1,8 +1,12 @@
 # Telemetry Playground — Maximum-Fidelity OTel + Sentry Sample Stack
 
 Research date: 2026-06-23
-Status: **implementation in progress** — repo:
+Status: **historical implementation snapshot and reusable validation protocol** — external repo:
 [tailrocks/parallax-telemetry-playground](https://github.com/tailrocks/parallax-telemetry-playground).
+This file is not an executable queue. Plan 122 in
+[`plans/`](../../../plans/) exclusively owns unfinished playground/fan-out work,
+live reruns, and any approved enrichment. The commands, scenario catalog, and
+coverage matrix below remain reproducible protocol evidence.
 All three language tiers validated to build (2026-06-23):
 - **Rust** — `playground-telemetry` (OTel + Sentry dual-pipeline), `proto`, and a
   verified multi-service distributed call: `/checkout` (axum) fans out to
@@ -43,8 +47,8 @@ compose (`Dockerfile.java`/`Dockerfile.web`).
 async-profiler, `profile-lifecycle=trace`) — JVM-only by necessity:
 `sentry-rust` has no profiling and OTLP profiles have no Rust impl.
 
-Remaining is now **host-/SaaS-gated or a hard version blocker**, not deferred
-implementation work:
+The 2026-06-23 snapshot recorded these **host-/SaaS-gated or hard-version
+conditions**. They are evidence for plan 122, not deferred work owned here:
 
 - A full cross-language **live** trace through the running lab, and the
   Sentry-envelope rendering scenarios (A15/A16 issue lifecycle, A17 flamegraph
@@ -70,9 +74,9 @@ backend (Parallax, Maple, SigNoz, OpenObserve, Sentry) receives identical,
 feature-complete telemetry and we can compare how each renders it.
 
 > Deep-review status: all version/API claims below were verified against live
-> 2026 sources; corrections from that review are folded in. Items that depend on
-> unbuilt Parallax features or non-stable upstream signals are marked
-> **[NOT YET IMPLEMENTED]** or with a stability tag.
+> 2026 sources; corrections from that review are folded in. Historical gaps and
+> non-stable upstream signals are labeled only to explain the dated snapshot;
+> they do not create implementation work outside plan 122.
 
 ## 1. Why this exists
 
@@ -424,10 +428,10 @@ inline.
 - **Resource:** `service.name` from `spring.application.name`,
   `deployment.environment.name`, `service.namespace/version/instance.id`.
 
-## 9. Telemetry feature-coverage checklist
+## 9. Telemetry feature-coverage contract
 
-The acceptance checklist — the playground must produce all of it (semconv
-stability corrected per deep review):
+The retained validation matrix defines the signals a qualifying playground run
+records (semconv stability corrected per deep review):
 
 - **Traces:** spans; all five span kinds (CLIENT/SERVER/PRODUCER/CONSUMER/
   INTERNAL); span status (Unset/Ok/Error); span events; **span links**; rich
@@ -528,22 +532,22 @@ Parallax — that's expected, and flagged).
 | B17 | Cron/scheduled-job faults (success 90% / fail 5% / **stuck-missed-checkin** 5%) | CLI cron telemetry, missed-checkin | Y (Parallax cli) |
 | B18 | **Clock skew** between two services | negative/overlapping span timing — tests how each backend handles it | Y (rendering stress) |
 
-## 12. Comparison method — manual for now (scored harness DEFERRED)
+## 12. Comparison protocol — manual by operator decision
 
 **Out of scope for the build (operator, 2026-06-23): no automated comparison
 harness / scoring rubric / per-backend extraction yet.** Comparison is **manual**:
 emit a scenario, open each backend's UI, and eyeball how it renders the same data.
 That is enough to decide what features to build into Parallax.
 
-A future scored harness (per-signal rubric of preserved/renamed/dropped/mangled,
-per-backend read-API extraction, pinned-id fixtures, recorded `semconv_version`)
-can be added later if we want a defensible quantitative comparison — but it is
-**not** part of what we build now, and it is distinct from otlp.md's L4
-conformance gate.
+A scored harness was not authorized. Its candidate dimensions
+(preserved/renamed/dropped/mangled fields, per-backend read APIs, pinned IDs, and
+recorded `semconv_version`) remain design evidence only and are distinct from
+`otlp.md`'s L4 conformance gate. Reopening that scope belongs to plan 122.
 
-## 13. Extensions / forward-looking
+## 13. Historical candidate extensions
 
-Real, current 2026 additions worth building once the core works:
+The 2026 research recorded these possible enrichment surfaces. None is an
+authorized queue; plan 122 must explicitly retain or reject any implementation:
 
 - **OTel Profiling signal** (4th OTLP signal, alpha) + Collector pprof receiver —
   profiles correlated to traces; de-Sentry-izes profiling (A17).
@@ -642,21 +646,13 @@ parallax-telemetry-playground/
 - **Comparison rigor depends on determinism** — pinned ids/seeds and recorded
   semconv version are mandatory, or the cross-backend diff isn't reproducible.
 
-## 16. Suggested phasing
+## 16. Historical Scenario-Layering Rationale
 
-1. **One trace, real topology** — `web` → `checkout` (Rust) → `payment` (Java
-   gRPC) + `catalog` (Java GraphQL), OTLP → Rotel → Parallax + one other backend.
-   Prove browser→Rust→Java W3C stitch + assert the Parallax copy.
-2. **Signal breadth** — logs, metrics+exemplars (JVM), DB spans, streaming
-   (A7); Sentry envelope path everywhere; scenarios A1–A2, A5–A9, A14.
-3. **Async + reverse + errors** — broker (`checkout`→`fulfillment`→`notifications`,
-   reverse hop), span links, deliberate failures both languages, Sentry issues +
-   source context; A3–A4, A15–A16, B1–B11.
-4. **Parallax-differentiators** — `parallax.run.id` (A12), deploy+regression
-   (A13), canary redaction (A18).
-5. **Flags, load, full chaos, full fan-out** — flagd + loadgen, all backends up,
-   run the scenario catalog; compare **manually** in each UI (no scored harness —
-   §12).
+The original protocol layered one cross-language trace before signal breadth,
+async/reverse/error paths, Parallax-specific run/deploy/redaction evidence, and a
+full flag/load/chaos fan-out. This ordering explains fixture dependencies but is
+not an execution sequence. Plan 122 owns any remaining scenario run and uses the
+manual comparison contract in §12.
 
 ## 17. Sources
 

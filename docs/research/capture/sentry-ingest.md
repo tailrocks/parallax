@@ -437,69 +437,15 @@ Parallax should default to:
 This matters more for Parallax than for a dashboard-only product because agent
 context is easy to over-share.
 
-### Implementation Plan
+### Implementation Ownership
 
-#### Phase 1: Parser Fixtures
-
-- Capture real envelopes from the latest Sentry Rust SDK.
-- Include panic, `anyhow`, `eyre`, and `tracing`/breadcrumb examples.
-- Parse envelope header, item headers, and `event` payloads.
-- Store raw fixture files under a future test fixture path.
-
-#### Phase 2: Minimal Gateway
-
-- Implement `POST /api/<project_id>/envelope/`.
-- Validate DSN/public key/project mapping.
-- Support only `event` item.
-- Reject unsupported items with explicit outcome records.
-- Append accepted payload to local WAL.
-
-#### Phase 3: Normalization And Grouping
-
-- Normalize Rust error events into the Parallax event model.
-- Compute deterministic grouping fingerprints.
-- Store issue membership in Turso.
-- Store normalized event rows in GreptimeDB.
-
-#### Phase 4: Correlation
-
-- Extract `trace_id` and `span_id`.
-- Join to OTLP spans/logs already in storage.
-- Build first evidence bundle:
-  - representative stacktrace;
-  - recent same-fingerprint events;
-  - same-trace logs/spans;
-  - release/deploy window;
-  - redaction summary;
-  - source-field status;
-  - canonical hash and projection manifest;
-  - CLI/API/MCP projection-equivalence report.
-
-#### Phase 5: Compatibility Expansion
-
-- Add transaction parsing if it materially improves correlation.
-- Add bounded attachments only after redaction and cost policy exist.
-- Add Sentry SDK fixture suites for more languages only when the Rust path is
-  stable.
-
-### Compatibility Test Matrix
-
-This table is the short version. The full SDK-generated fixture gate is
-[Sentry SDK fixture compatibility](sentry-ingest.md).
-
-| Test | Expected result |
-| --- | --- |
-| Rust panic envelope | Accepted, normalized, grouped by panic frame. |
-| Rust `anyhow` error event | Accepted, source chain preserved where present. |
-| Event with explicit fingerprint | Accepted, grouped by client fingerprint. |
-| Event with trace context | Accepted, context bundle finds matching OTLP trace. |
-| Event with missing stacktrace | Accepted, grouped by type/message fallback. |
-| Event with PII-like request headers | Accepted with redaction record. |
-| Unknown envelope item | Raw reference retained, item ignored/rejected by policy. |
-| Oversized attachment | Rejected before storage. |
-| Duplicate event ID | Idempotent no-op or duplicate marker, no new issue event. |
-| Agent-visible projection | Redacted bundle has stable canonical hash across JSON, Markdown, CLI, HTTP, and MCP `structuredContent`; raw envelope remains a ref. |
-| Storage unavailable | Accepted only if WAL/Iggy has capacity; otherwise explicit rejection. |
+This note is a capture and compatibility design reference, not an active
+implementation plan. The conditional parser, gateway, normalization, grouping,
+correlation, expansion, and compatibility-test work has moved in full to
+[`plans/118-sentry-envelope-migration-adapter.md`](../../../plans/118-sentry-envelope-migration-adapter.md).
+That plan remains blocked until the operator opens the scope and current demand
+evidence makes Sentry migration the next adoption constraint. Do not implement
+from this document or treat its historical phase ordering as authorization.
 
 ### Bottom Line
 

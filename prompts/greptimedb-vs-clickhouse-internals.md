@@ -15,17 +15,17 @@ slow for a specific signal type.*
 
 ## How this differs from the research we already have
 
-Three documents already exist and must not be duplicated. This loop sits one
+Two documents already exist and must not be duplicated. This loop sits one
 layer deeper than all of them:
 
 - [`docs/research/storage/evaluation.md`](../docs/research/storage/evaluation.md)
   is a strategy/fit evaluation (open source, maturity, metrics-native posture,
   risks). It reasons *about* the systems, not *inside* them.
 - [`docs/research/storage/benchmark-plan.md`](../docs/research/storage/benchmark-plan.md)
-  defines *what to measure and why*.
-- [`docs/research/storage/benchmark-plan.md`](../docs/research/storage/benchmark-plan.md)
-  is the runnable, black-box harness that produces numbers and holds **veto
-  power** over the default storage choice.
+  defines what to measure and is the runnable black-box harness that produces
+  comparative numbers. The
+  product stack is already committed to GreptimeDB + Turso; results identify
+  risks and upstream work, not a fallback-engine switch.
 
 This loop is the **white-box** counterpart to that black-box benchmark. The
 benchmark measures *that* one system is faster; this loop must explain *why* it
@@ -94,11 +94,10 @@ Judge the systems on **practical fit for Parallax's vision**, not on which is ab
 decisive architectural fact: **Parallax is the first layer — a proxy that owns OTLP ingestion, routing,
 and conversion, and writes to whatever backend it chooses.** Consequences this loop must apply:
 
-- **Native-protocol / ingest-ergonomics advantages are largely NEUTRALIZED.** "GreptimeDB speaks OTLP/
-  PromQL/Jaeger natively and needs no collector/pipeline" stops being a differentiator, because Parallax
-  *is* that pipeline by design and translates to any backend API. If ClickHouse lacks a format out of
-  the box, Parallax supplies it. Weight ingest-nativeness near zero in the verdict; do **not** let the
-  Run 150–152 native-trio findings drive the recommendation.
+- **Native OTLP remains a binding design input.** Parallax forwards raw signals
+  into GreptimeDB native observability tables and derives only approved
+  extensions. Compare ClickHouse honestly, but do not propose translating the
+  product onto custom ClickHouse tables or treating native-table fit as zero.
 - **What still counts (Parallax can't paper over it):** retrieval speed, storage cost/compression,
   object-store economics at scale, high-cardinality handling, horizontal-scale/topology change, and —
   central — **the "build on top" ecosystem surface.** ClickHouse leads retrieval + ecosystem; GreptimeDB
@@ -107,18 +106,18 @@ and conversion, and writes to whatever backend it chooses.** Consequences this l
   language filter) beats both as an *embeddable backend* — OpenObserve (a competitor *platform*, not a
   DB), Quickwit (logs/traces only), InfluxDB 3, VictoriaMetrics/Logs (split products), StarRocks/Doris
   (JVM-FE filter risk). Current finding: none clearly beats CH/GT as a backend.
-- **The data model is a 2–3 store split, not one engine.** metrics/logs/traces/raw-error-events →
-  columnar store (ClickHouse or GreptimeDB); **Sentry-style grouped errors + metadata (mutable,
-  relational, OLTP) → Postgres**; cold tier → object storage. Do not force mutable issue state into the
-  columnar engine (Sentry's ClickHouse "replacements consumer" is the warning). See
+- **The product data model is fixed.** Native metrics/logs/traces and derived
+  telemetry extensions live in GreptimeDB; mutable grouped errors and metadata
+  live in Turso; cold/object storage is a Greptime deployment concern. Do not
+  force mutable issue state into the columnar engine. See
   [`platform-fit-and-alternatives.md`](../docs/research/storage/greptimedb-vs-clickhouse/platform-fit-and-alternatives.md).
 
 Net standing lean (superseding the earlier ClickHouse-default reading of the proxy lens;
 resolved 2026-05-29, operator re-affirmed 2026-06-11): **GreptimeDB** — the anchored-retrieval
 query mix puts ClickHouse's scan-speed lead off the hot path, so the decision turns on cost +
-Rust + self-hosted economics; ClickHouse stays the fallback behind the same `StorageAdapter`.
-The benchmark program's job is unchanged: keep testing this honestly — the sized cost and
-cold-read gates remain the finalizers, and the mechanism evidence flips the lean if it says so.
+Rust + self-hosted economics. GreptimeDB is the committed product engine and
+ClickHouse is a comparator, not a fallback. Keep testing honestly: contrary
+evidence changes risk/upstream priorities and product claims, not stack policy.
 
 ## Count Experimental As Stable — Judge On Mechanism And Trajectory
 
@@ -461,7 +460,8 @@ For each difference worth measuring, specify:
 
 Keep this consistent with, and routed into, the runnable harness: this document
 proposes and refines the cases; `storage-benchmark-prototype.md` is where they
-become runnable and holds veto power over the storage choice. New cases discovered
+become runnable and can veto performance/cost claims or expose a product/upstream
+blocker, but cannot authorize an alternate product engine. New cases discovered
 here should be folded back into that prototype (and its generator/queries
 extended) rather than forked into a parallel benchmark. Distinguish what is
 **already runnable there** from what is a **proposed new case**.
@@ -693,14 +693,15 @@ The loop must drive toward an explicit, defensible answer to all of these, in
 7. **Does the Parallax-proxy lens change the answer?** Parallax owns ingestion (OTLP/routing/
    conversion), so native-protocol/ingest-ergonomics advantages are neutralized. Re-score on what
    remains (retrieval speed + build-on-top ecosystem + cost/scaling/cardinality). Current standing
-   answer: the proxy tilts the default to **ClickHouse**; GreptimeDB stays for the metrics-cardinality /
-   self-hosted-1×-S3 / mandatory-auto-rebalance bet. Keep this honest and flip on contrary evidence.
+   answer: the product remains on committed GreptimeDB native tables. Keep the
+   comparison honest and record where ClickHouse wins, but translate contrary
+   evidence into GreptimeDB/Parallax upstream work rather than a fallback.
    (See [`platform-fit-and-alternatives.md`](../docs/research/storage/greptimedb-vs-clickhouse/platform-fit-and-alternatives.md).)
 8. **Where do grouped errors + metadata live?** Sentry-style grouped errors (fingerprint → first/last
    seen, count, status, assignee) are **mutable, relational, low-volume OLTP** — neither ClickHouse nor
    GreptimeDB handles that well (Sentry uses Postgres + a ClickHouse "replacements consumer" to fake
    mutations). Standing answer: put issue/workflow/metadata state in the **relational metadata store
-   already chosen — Turso (default) / Postgres (scale-out fallback)** per `deep-research-parallax.md`
+   already chosen — mandatory Turso** per `deep-research-parallax.md`
    "Metadata Store" — NOT in the columnar engine; keep the raw firehose + computed aggregates in the
    columnar store; cold tier on object storage. Confirm or refute this split as evidence accrues.
 

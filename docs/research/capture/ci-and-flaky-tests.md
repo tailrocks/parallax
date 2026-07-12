@@ -2,6 +2,13 @@
 
 > Parallax should start with a deterministic GitHub Actions failure-context compiler — given a failed workflow run, collect CI metadata, job logs, test reports, check annotations, artifacts, git context, and bounded raw evidence into a portable bundle that a human or coding agent can inspect — rather than a full flaky-test platform or production incident system. Flaky-test investigation is a validated but crowded space (Datadog, Trunk, BuildPulse, CloudBees, and CI-autofix startups already cover detection, history, quarantine, prioritization, ownership, and AI grouping), so Parallax wins only by being open-source, local-first, evidence-bundle-centric, agent-designed, and excellent for Rust and GitHub Actions. The decided sequence is: build the CI failure bundle MVP first, then add historical test memory (Turso for tiny mode), then deterministic same-commit and retry-based flaky classifiers, then reproducer hints (retry/stress/serial/seed/trace replay), and only then an agent PR workflow that proposes fixes for well-evidenced, reproducible failure classes. The open gate is validation: whether a bundle reconstructed from API access alone makes a failed run easier to debug, how often real projects upload machine-readable test reports, and whether bounded log excerpts and the normalized schema hold across Python, Java/JVM, Go, and JavaScript without becoming too generic. JUnit XML is the first interchange format with `go test -json` as a first-class non-JUnit path; OpenTelemetry CI/CD/VCS/test naming is a compatibility influence (development-stage), not a mandatory ingestion contract. Autonomous fixes are gated behind strong evidence, reproduction, and required local or CI validation.
 
+> **Implementation ownership (2026-07-12):** this file preserves CI/flaky-test
+> research, candidate schemas, safety constraints, and validation questions. It
+> is not an executable MVP or product queue. Plan 124 in
+> [`plans/`](../../../plans/) exclusively owns unfinished CI failure-context and
+> flaky-test implementation. Historical sequence language below records design
+> rationale only.
+
 This note consolidates the following previously-separate research files, each preserved in full below:
 
 - `ci-failure-context-mvp.md`
@@ -131,9 +138,9 @@ Sources:
 - [OpenTelemetry CI/CD resource conventions](https://opentelemetry.io/docs/specs/semconv/resource/cicd/)
 - [OpenTelemetry test attributes](https://opentelemetry.io/docs/specs/semconv/registry/attributes/test/)
 
-### MVP User Flow
+### Historical MVP Flow Proposal
 
-The first workflow should be post-run collection:
+The original research proposed post-run collection as the first workflow:
 
 ```bash
 parallax gha collect donbeave/parallax --run-id 123456789 --out parallax-bundle.zip
@@ -143,7 +150,7 @@ parallax bundle summarize parallax-bundle.zip
 This can work outside the failing workflow and can fetch the finalized run,
 jobs, logs, artifacts, and annotations through the GitHub API.
 
-A GitHub Action wrapper should come next:
+A GitHub Action wrapper was the proposed second surface:
 
 ```yaml
 - name: Upload Parallax failure bundle
@@ -259,9 +266,9 @@ Source:
 
 - [GitHub Actions - using secrets](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets)
 
-### What Not To Build Yet
+### Historical Scope Exclusions
 
-Avoid these in the first implementation:
+The original narrow prototype excluded:
 
 - Hosted backend.
 - Dashboard UI.
@@ -273,12 +280,12 @@ Avoid these in the first implementation:
 - Production logs, traces, and metrics ingestion.
 - Long-term historical analytics.
 
-These are plausible later, but they will slow the first validation loop. The
-first proof is whether a bundle makes a failed run easier to debug.
+These exclusions document why the proposal stayed narrow. They are not a future
+queue; plan 124 is authoritative for any retained implementation scope.
 
-### Validation Questions
+### Research Questions
 
-The next research and prototype work should answer:
+The retained evaluation protocol asks:
 
 1. Can Parallax reconstruct a useful bundle from a public failed GitHub Actions
    run using only API access?
@@ -292,19 +299,13 @@ The next research and prototype work should answer:
 7. Is the GitHub Action wrapper more valuable than post-run CLI collection for
    early users?
 
-### Recommended Next Step
+### Historical Prototype Recommendation
 
-Build a tiny schema-and-sample fixture before writing a full CLI:
-
-1. Pick one failed GitHub Actions run from an open-source project with uploaded
-   JUnit XML or Go JSON output.
-2. Manually assemble `manifest.json`, `summary.md`, `test_cases.jsonl`, and one
-   log excerpt.
-3. Use that bundle as the acceptance fixture for the first collector.
-4. Only then implement `parallax gha collect`.
-
-This sequence keeps the product honest: the bundle format should be judged by
-whether it improves debugging, not by how much infrastructure it can ingest.
+The research recommended validating a tiny schema-and-sample fixture from one
+public failed GitHub Actions run before a full collector: a hand-assembled
+`manifest.json`, `summary.md`, `test_cases.jsonl`, and bounded log excerpt would
+serve as the acceptance fixture. This recommendation is retained as rationale;
+plan 124 owns the executable steps and current acceptance evidence.
 
 ## Flaky Test Investigation and Replay
 _Provenance: merged verbatim from `flaky-test-investigation-and-replay.md` (2026-05-29 restructure)._
@@ -561,7 +562,7 @@ Agents can fix some flaky tests, but only with the right evidence.
 | Infrastructure-only transient | Low-medium | Agent can quarantine or adjust infra, but may not fix root cause. |
 | Unknown rare flake with only one log line | Low | Too little evidence. |
 
-The best agent workflow is:
+The candidate evidence contract assumes this lifecycle:
 
 1. produce failure bundle;
 2. classify likely flaky versus likely regression;
@@ -577,25 +578,15 @@ Flaky-test investigation can become a product, but Parallax should not start as
 quarantine workflow, enterprise QA reporting, and CI-provider integrations
 before the evidence layer is proven.
 
-The better Parallax sequence:
+The historical dependency rationale placed portable CI failure bundles before
+Turso-backed test history, deterministic flaky classification, reproducer hints,
+and any agent PR workflow. This preserves Parallax as a runtime/context engine
+for agents rather than a standalone CI analytics dashboard. Plan 124 owns the
+current executable decomposition.
 
-1. **CI failure bundle MVP.** Collect run/job/step/log/artifact/JUnit/go-test
-   context and produce a portable evidence bundle.
-2. **Historical test memory.** Store test identity, outcome, retries,
-   signatures, duration, environment, and commit history in Turso for tiny mode.
-3. **Flaky classification.** Add deterministic same-commit and retry-based
-   classifiers.
-4. **Reproducer hints.** Generate command lines for retry loops, stress, serial
-   mode, seed replay, and framework-specific trace viewing.
-5. **Agent PR workflow.** Only after reproducible classes are detected, ask an
-   agent to propose a fix.
+### Candidate Data Model
 
-This keeps Parallax aligned with the bigger thesis: a runtime/context engine for
-agents, not a standalone CI analytics dashboard.
-
-### Data Model Extension
-
-Add these records after the CI bundle schema is proven:
+The retained candidate model for a proven CI bundle contract is:
 
 ```text
 test_entities(

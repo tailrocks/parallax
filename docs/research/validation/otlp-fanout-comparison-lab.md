@@ -1,13 +1,13 @@
 # OTLP Fan-Out Comparison Lab
 
 Research date: 2026-06-22
-Status: design proposal (no code yet)
+Status: **historical design plus live-verified comparison protocol**
 Topology: Parallax runs on the host (Homebrew); Rotel + competitor backends run
 in Docker Compose; Rotel fans out across the host↔container boundary.
 Deep review: 2026-06-22 (two passes) — every external claim verified against live
 sources and every Parallax-side claim checked against `crates/`; corrections
-folded in. Items needing unbuilt Parallax features are marked
-**[NOT YET IMPLEMENTED]**.
+folded in. Historical gaps do not create an implementation queue here: plan 122
+in [`plans/`](../../../plans/) exclusively owns unfinished lab work and reruns.
 Updates 2026-06-23: added the compare-mode `parallax run start` DevEx design;
 **only Parallax runs on the host — Rotel, Maple, SigNoz, OpenObserve, Sentry all
 run in Docker Compose.** Maple runs fully local as a **chDB-binary container (not
@@ -76,7 +76,7 @@ self-telemetry are genuinely unbuilt:
 |---|---|---|
 | Offset OTLP ports `14317/14318` | **BUILT** — `config.toml` keys `otlp_grpc_port` / `otlp_http_port` (default `4317/4318`); `parallax serve` takes only `--config` | config-only edit; **no CLI flags** (`--otlp-grpc`/`--otlp-http` don't exist) — set the ports in `~/.parallax/config.toml` |
 | Bind OTLP on `0.0.0.0` | **BUILT** — `config.toml` key `bind` (default `127.0.0.1`); `serve` binds all three listeners (api/otlp_http/otlp_grpc) to it | config-only edit; set `bind = "0.0.0.0"`. No code change needed |
-| Forward child telemetry to Rotel | `parallax run start` injects a **hardcoded** `http://127.0.0.1:4317` into the child env (`commands.rs`) | a `--otlp-forward` switch is **[NOT YET IMPLEMENTED]**. *Lucky accident:* the hardcoded `127.0.0.1:4317` already equals Rotel's published port, so child apps reach Rotel today with zero changes |
+| Forward child telemetry to Rotel | `parallax run start` injects a **hardcoded** `http://127.0.0.1:4317` into the child env (`commands.rs`) | historical gap at this snapshot: no `--otlp-forward` switch. *Lucky accident:* the hardcoded `127.0.0.1:4317` already equals Rotel's published port, so child apps reach Rotel today with zero changes |
 | Parallax self-telemetry into the lab | **BUILT (2026-06-23)** — `parallax serve` exports its own spans/logs over OTLP/gRPC when `[telemetry] self_otlp_endpoint` / `PARALLAX_SELF_OTLP` names a collector (tagged `service.name=parallax`); the ingest receivers/worker are suppressed from that exporter so a sink fanning back to Parallax can't loop | set `PARALLAX_SELF_OTLP=http://localhost:4317` (Rotel) and add `parallax` to Rotel's exporters; off by default. Verified live: self-spans land, count stable (no loop), 0 ingest-path spans exported |
 | Install via Homebrew | repo policy: stable formula is **disabled** pre-release; only a rolling `parallax-preview` exists | use `brew install tailrocks/parallax/parallax-preview` (or run from a local checkout), **not** `brew install parallax` |
 
@@ -243,9 +243,8 @@ where telemetry goes. Resolution precedence (highest wins):
    `export PARALLAX_OTLP_FORWARD=http://localhost:4317` line to `source`, so the
    endpoint comes straight from the compose, not memory.
 3. **Config file** — `~/.parallax/config.toml` `[run].otlp_forward` /
-   `[lab].rotel_endpoint`. **DEFERRED (operator, 2026-06-23): v1 ships env + flag
-   ONLY** — no new `config.rs` section yet; add the config-file surface later if
-   the ambient env proves insufficient.
+   `[lab].rotel_endpoint`. **Historical operator decision (2026-06-23):** the
+   proposal retained env + flag only and did not authorize a `config.rs` surface.
 4. **Respect a pre-existing child OTel endpoint** — if the environment `run start`
    inherits *already* has `OTEL_EXPORTER_OTLP_ENDPOINT` set, **don't clobber it**.
    This is the idiomatic OTel escape hatch: `export
@@ -325,7 +324,7 @@ target-level suppression is the loop-breaker. Verified live by exporting to
 Parallax's own receiver: self-spans land, the count holds steady (no loop), and
 zero ingest-path spans are exported.
 
-## Docker Compose setup (what to build)
+## Retained Docker Compose protocol
 
 **Parallax is the ONLY host process; everything else runs in Compose** — Rotel,
 Maple, SigNoz, OpenObserve, Sentry. Put the lab under **`bench/otlp-fanout/`** (the
@@ -429,7 +428,7 @@ is a Tinybird/compose-build concern, not used here), so no Maple header is neede
 - **One `.env`** at the lab root for shared knobs (image tags, root creds, Sentry
   DSN/version).
 
-## Comparison workflow
+## Reproducible comparison protocol
 
 0. Host (Parallax only): `brew install tailrocks/parallax/parallax-preview`; in
    `~/.parallax/config.toml` set `bind = "0.0.0.0"`, `otlp_grpc_port = 14317`,
@@ -453,12 +452,11 @@ is a Tinybird/compose-build concern, not used here), so no Maple header is neede
    [observability-feature-matrix.md](../market/observability-feature-matrix.md))
    and into Parallax capture/UI work.
 
-> **Scored comparison harness is DEFERRED** (operator, 2026-06-23) — no automated
+> **Scored comparison harness was not authorized** (operator, 2026-06-23) — no automated
 > per-backend extraction / scoring rubric / pinned-id diffing as part of this
-> build. Comparison is **manual** (open the UIs). A future harness (per-backend
-> read APIs, preserved/renamed/dropped scoring, recorded `semconv_version`) can be
-> added if we want quantitative results; it is distinct from otlp.md's L4
-> conformance gate.
+> protocol. Comparison is **manual** (open the UIs). Candidate quantitative
+> dimensions remain design evidence for plan 122 and are distinct from otlp.md's
+> L4 conformance gate.
 
 ## Sentry OTLP — how it actually works (verified 2026-06-22)
 
@@ -530,26 +528,15 @@ Sentry speaks OTLP; the lab treats it as a near-first-class target.
 - **Version/service-name drift.** SigNoz UI/service names, Sentry path, Maple
   ports, OpenObserve image tag — lock per pinned version at implementation.
 
-## Suggested phasing
+## Historical Run-State Evidence
 
-1. **Host-bridge smoke** — host Parallax (offset ports, `0.0.0.0`) + Rotel +
-   Maple (compose). Prove the host↔container bridge: emit to `localhost:4317`,
-   **assert** the copy lands in both Parallax (`host.docker.internal:14317`) and
-   Maple (`maple:4318`). This single assert guards the lab's one fragile host hop.
-2. **Core lab** — add SigNoz + OpenObserve in Compose (with `include:` port
-   overrides + auth headers). Lock the port map; build the `parallax run start`
-   compare-mode forward (the `--otlp-forward`/`PARALLAX_OTLP_FORWARD` switch).
-3. **Full lab (Sentry)** — **DONE (2026-06-23, v26.6.0):** self-hosted Sentry
-   runs as its own vendored stack via `sentry/setup.sh`; `sentry/onboard.sh`
-   bootstraps the project/DSN and prints the `rotel.env` exports; Rotel reaches
-   it over the host bridge (`host.docker.internal:9000`, no network-join);
-   `sentry/verify.sh` asserts native OTLP ingest (A1) + issue grouping
-   (A15/A16). Sentry is the heaviest/fiddliest piece, so phases 1–2 still stand
-   up without it.
-4. **Server tier** — move the full set to a server for sustained runs.
-
-*(A scored fixture/diff harness is out of scope for now — comparison is manual,
-see §Comparison workflow.)*
+The dated design separated a host-bridge smoke, the core SigNoz/OpenObserve lab,
+the full Sentry lab, and a server-sized sustained run. The host-bridge assertion
+is the protocol's fragile-hop check. The full Sentry lab was completed on
+2026-06-23 with v26.6.0 through `sentry/setup.sh`, `sentry/onboard.sh`, and
+`sentry/verify.sh`. Any unexecuted core/server rerun or compare-mode product gap
+belongs only to plan 122. The scored fixture/diff harness remains outside the
+manual protocol by operator decision.
 
 ## Sources
 

@@ -8,6 +8,12 @@ product-level decision is in [`../../decisions/storage-engine.md`](../../decisio
 Nothing was deleted in the 2026-05-29 restructure — the run-by-run status timeline, the per-note
 status, and the pre-restructure verdict synthesis are preserved verbatim below.
 
+> **Current-policy boundary (2026-07-12):** GreptimeDB + Turso is mandatory.
+> Older entries that rank a ClickHouse/Postgres fallback or describe a possible
+> default flip are immutable run history, not current product authority or an
+> implementation queue. New evidence changes claims and fix-forward priorities,
+> not the committed stack.
+
 ---
 
 ## Part A — sub-study status timeline and per-note status (former README body)

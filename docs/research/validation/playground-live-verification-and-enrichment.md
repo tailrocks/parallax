@@ -1,4 +1,4 @@
-# Playground + Fan-Out Lab — Live Verification & Enrichment Backlog
+# Playground + Fan-Out Lab — Live Verification And Enrichment Evidence
 
 Research date: 2026-06-23
 Status: **live run executed** — the whole stack was brought up on one machine
@@ -6,8 +6,9 @@ Status: **live run executed** — the whole stack was brought up on one machine
 Companion to [otlp-fanout-comparison-lab.md](otlp-fanout-comparison-lab.md)
 (plumbing) and [telemetry-playground-sample-project.md](telemetry-playground-sample-project.md)
 (payload). This note records what the live run proved, the bugs it surfaced, and
-the concrete backlog for making the sample the *richest possible* cross-backend
-comparison.
+candidate probes retained as validation design. It is not an executable backlog;
+plan 122 in [`plans/`](../../../plans/) exclusively owns unfinished lab work,
+reruns, and approved enrichment.
 
 ## 1. What the live run proved (2026-06-23)
 
@@ -96,44 +97,45 @@ backend that mishandles a *standard* exporter default (gzip) silently loses data
 while looking healthy. This is precisely the class of defect Parallax must never
 have — and the lab catches it.
 
-## 3. Enrichment backlog — toward the richest possible sample
+## 3. Historical enrichment candidates
 
-The playload already exercises the full §9 checklist (all span kinds, links,
+The playload already exercises the §9 coverage contract (all span kinds, links,
 logs+severity, metrics+exemplars on JVM, exceptions, baggage, feature flags,
-`parallax.run.id`, canary corpus, deploy/regression). Enrichments that would make
-the *cross-backend comparison* sharper, ranked by signal-per-effort:
+`parallax.run.id`, canary corpus, deploy/regression). The 2026-06-23 review ranked
+these candidate probes by signal-per-effort. They are evidence inputs to plan
+122, not an active queue:
 
-1. **Cross-language error-grouping stimulus.** Emit the *same logical failure*
+1. **Cross-language error-grouping stimulus.** The candidate emits the *same logical failure*
    (`PaymentError: payment failure (chaos)`) from the Rust `checkout` path **and**
    the Java `payment` path, same fingerprint, and compare how each backend groups
    it: one issue or two? language-aware? This is the single highest-signal
    differentiator test — Sentry groups aggressively, OTLP-only backends (SigNoz/
    OpenObserve) mostly don't group at all, Parallax's issue layer sits in between.
    ([Sentry fingerprinting](https://docs.sentry.io/concepts/data-management/event-grouping/))
-2. **Protocol/compression matrix.** Drive the same trace over OTLP/gRPC+gzip,
-   gRPC+uncompressed, and OTLP/HTTP-protobuf to each backend, and record which
+2. **Protocol/compression matrix.** The candidate drives the same trace over
+   OTLP/gRPC+gzip, gRPC+uncompressed, and OTLP/HTTP-protobuf to each backend and records which
    combinations each accepts. The gzip bug shows this matters and is invisible
-   until tested. Cheap to add (telemetrygen flags) and directly exercises the
+   until tested. The telemetrygen-flag probe directly exercises the
    conformance surface.
 3. **Custom-resource-attribute rendering.** A scripted assertion of how each UI
    surfaces `parallax.run.id` / `parallax.lab=1` (filter? facet? hidden?). This is
-   where Parallax should win and competitors show nothing — make it a named,
-   repeatable step, not an eyeball.
+   where Parallax should win and competitors show nothing; the proposed evidence
+   is a named repeatable assertion rather than an eyeball.
 4. **OTLP Profiles signal (alpha, 4th signal).** Today profiling is Sentry-only
-   (Rust pprof / JVM async-profiler). Emit the OTel profiling signal where a
+   (Rust pprof / JVM async-profiler). The candidate uses the OTel profiling signal where a
    runtime supports it so backends can be compared on native OTLP profiles vs
    Sentry-envelope profiles. Mark alpha; few backends ingest it yet.
    ([OTel Profiles](https://opentelemetry.io/blog/2026/profiles-alpha/))
-5. **eBPF zero-code (OBI) on one service.** Instrument e.g. `recommendation`
-   *both* via SDK and via OpenTelemetry eBPF Instrumentation, and compare
+5. **eBPF zero-code (OBI) on one service.** The candidate compares, for example,
+   `recommendation` instrumented both via SDK and via OpenTelemetry eBPF Instrumentation:
    breadth-no-code vs depth-custom-spans across backends.
    ([OBI](https://opentelemetry.io/docs/zero-code/obi/))
 6. **Streaming-span fidelity probe.** A7 already emits gRPC server-streaming +
-   GraphQL subscription + SSE/WS long-lived spans; add an explicit per-backend
-   check of how each renders a span that is *open for minutes* (a known weak
+   GraphQL subscription + SSE/WS long-lived spans; the proposed evidence is an
+   explicit per-backend check of how each renders a span that is *open for minutes* (a known weak
    spot) — does it show live, truncate, or drop?
-7. **Canary-redaction diff table.** A18 plants the canary corpus; turn the
-   "compare raw-vs-scrubbed" step into a fixed per-field table (token, JWT, DB
+7. **Canary-redaction diff table.** A18 plants the canary corpus; the candidate
+   evidence is a fixed raw-vs-scrubbed per-field table (token, JWT, DB
    URL, email, …) × backend (stored raw / masked / dropped). Directly feeds
    Parallax's redaction-at-ingest gate.
 

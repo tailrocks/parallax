@@ -599,9 +599,9 @@ pub trait TelemetryStore: Send + Sync {
         step_nanos: u128,
         q: f64,
     ) -> anyhow::Result<Vec<SeriesPoint>>;
-    /// Multiple histogram quantiles from one logical scan. Default loops
-    /// [`Self::histogram_quantile`]; Plan 085 may replace the Greptime body
-    /// with a single multi-quantile SQL. Return order matches `quantiles`.
+    /// Multiple histogram quantiles from one logical scan. The default loops
+    /// [`Self::histogram_quantile`]; Greptime overrides it with one
+    /// multi-quantile SQL query. Return order matches `quantiles`.
     async fn histogram_quantiles(
         &self,
         name: &str,

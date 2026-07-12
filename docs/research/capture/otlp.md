@@ -256,7 +256,8 @@ App / service
   -> context API / MCP
 ```
 
-Large deployment:
+Historical large-deployment sketch (not a supported profile; plans 109 and 115
+own any future auth/topology contract):
 
 ```text
 Apps and collectors
@@ -266,8 +267,8 @@ Apps and collectors
   -> parallax-ingest x N
   -> clustered durable stream (NATS/Redpanda; Iggy is single-node today)
   -> processing workers x N
-  -> GreptimeDB distributed or ClickHouse fallback
-  -> Turso or Postgres metadata fallback
+  -> GreptimeDB placement approved by plan 115
+  -> Turso metadata placement approved by plan 115
   -> API / MCP / UI
 ```
 
