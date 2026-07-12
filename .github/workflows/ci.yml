@@ -78,6 +78,7 @@ jobs:
       - run: scripts/ci/test-changed-paths.sh
       - run: scripts/ci/test-aggregate-results.sh
       - run: scripts/ci/test-source-hygiene.sh
+      - run: scripts/ci/test-workflow-policy.sh
 
   source-hygiene:
     needs: changes

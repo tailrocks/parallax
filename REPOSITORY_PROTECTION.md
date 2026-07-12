@@ -22,7 +22,12 @@ and advisory hygiene is owned only by
   use `Apache-2.0`; canonical attribution remains in `NOTICE`.
 - Organization and repository administration use least privilege and two-factor
   authentication.
-- `main` retains the approved ruleset, required checks, and review policy.
+- `main` retains the active repository ruleset: no deletion or force-push,
+  one approval from someone other than the last pusher, resolved review threads,
+  and strict required `ci-required` and `DCO` checks.
+- Organization administrators retain an explicit always-bypass solely for
+  operator-authorized repository operations, including the current research-
+  stage main-first workflow. Normal contributions do not use bypass.
 - Secret scanning, dependency/advisory scanning, and license/source policy stay
   enabled through the repository-owned gates.
 - Issue, discussion, project, disclosure, embargo, and feedback settings remain
