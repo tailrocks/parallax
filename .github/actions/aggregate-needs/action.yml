@@ -20,8 +20,7 @@ runs:
         WORKFLOW_LABEL: ${{ inputs.workflow-label }}
       run: |
         set -euo pipefail
-        printf '%s\n' "$NEEDS_RESULT"
-        if printf '%s' "$NEEDS_RESULT" | jq -e 'to_entries | map(.value.result) | any(. == "failure" or . == "cancelled")' >/dev/null; then
+        if ! scripts/ci/aggregate-results.sh "$NEEDS_RESULT" "$WORKFLOW_LABEL"; then
           echo "::error::one or more gated ${WORKFLOW_LABEL} jobs failed or were cancelled"
           exit 1
         fi
