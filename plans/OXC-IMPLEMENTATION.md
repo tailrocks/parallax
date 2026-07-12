@@ -1,15 +1,15 @@
-# Oxc-only lint and format adoption decision
+# Oxc implementation contract and official lookups
 
-- **Status:** Active research and migration reference for plans 094, 095, 100,
-  101, 107, and 128-131
-- **Research date:** 2026-07-12
-- **Parallax baseline:** `a1d8bf82570d673e93389d0dcf99771b77dcff62`
+- **Status:** Active implementation companion for plans 094, 095, 100, 101,
+  107, and 128-153
+- **Last verified:** 2026-07-12
+- **Parallax baseline:** `e3e7997933801e0e78804d32f0973181036bb617`
 - **Upstream:** [Oxc](https://oxc.rs/) and its official documentation
 
-This file records what Parallax will use from the Oxc toolchain, what it will
-not use, and the evidence required to retire the older direct ESLint/Prettier
-toolchain. It is a planning reference, not an implementation. The normative
-end state also appears in
+This file fixes what Parallax will use from the Oxc toolchain, what it will not
+use, and the gates required to retire the older direct ESLint/Prettier
+toolchain. It is an execution-time companion to the numbered implementation
+plans. The normative end state also appears in
 [`ENGINEERING-STANDARDS.md`](ENGINEERING-STANDARDS.md), and executable ownership
 is split across the numbered plans named above.
 
@@ -244,7 +244,7 @@ Migration order:
    keys, aliases, and migration utility are absent or have one named unrelated
    non-invoked owner before plan 131 retires.
 
-Do not retain residual ESLint for TanStack Query rules. Plan 100 translates the
+Do not retain residual ESLint for TanStack Query rules. Plan 133 translates the
 important Query invariants (`stable-query-client`, exhaustive dependencies,
 stable option ownership, no unstable dependency use, no void query function)
 into typed facade APIs, Oxc-native signal where available, and Oxc-backed xtask
@@ -290,7 +290,7 @@ styles, Markdown, and other supported text. Expansion is staged by file class:
 - decide and fixture whether shadcn output is formatted after generation or
   retained verbatim;
 - add eligible frontend JSON/JSONC/CSS/Markdown/GraphQL classes only after a
-  clean differential and generated/research ownership review; record an explicit
+  clean differential and generated/documentation ownership review; record an explicit
   generator/semantic/stronger-formatter exclusion for every other supported
   repository class; and
 - use explicit ignore patterns for binary, generated, vendored, fixtures whose
@@ -350,7 +350,7 @@ boundaries, facade size, generated ownership, and Query key/options ownership.
 ## Vite, Rolldown, And Build Boundary
 
 Vite 8 and TanStack Start own transforms, route generation, chunking, source
-maps, and production minification. Plan 100 verifies the resolved build graph
+maps, and production minification. Plan 148 verifies the resolved build graph
 and records that the supported Vite/Rolldown path uses Oxc where upstream owns
 it. It also measures entry/route chunk identities, compressed sizes,
 source-map attribution, server-module reachability, and two clean builds.
@@ -425,12 +425,24 @@ success while skipping work.
 |------|--------------------|
 | 094 | Keep current formatting Bun-only/required; freeze generated and parity inputs for plan 130 |
 | 095 | Oxc Rust parser/AST/semantic/resolver providers and single architecture graph |
-| 100 | TanStack-specific invariant enforcement plus Vite/Rolldown/Oxc build evidence |
+| 100 | Layer/facade/import/runtime/test ownership through the Oxc architecture graph |
 | 101 | Oxc version/source/platform/lifecycle/advisory policy, exact two-entry pre-stable allowlist, and compatible upgrade units |
-| 128 | TypeScript declaration/runtime strictness on the final plan-131 toolchain |
+| 128 | TypeScript declaration strictness and static invariants on the final plan-131 toolchain |
 | 129 | Vitest file-class lint fixtures and deterministic Bun-invoked frontend tests |
 | 130 | Operator-authorized Oxfmt differential cutover and direct Prettier removal |
 | 131 | TypeScript 7 adoption, native/type-aware Oxlint parity, direct ESLint removal, and transitive lock-path proof |
+| 132 | Playwright config/spec/runtime ownership through stable configuration and Oxc-backed policy |
+| 133 | TanStack Query key/options/client/invalidation and sole-cache invariants |
+| 134-142 | Feature facade/import/runtime/test/browser ownership through the Oxc architecture and test policies |
+| 143 | App/layout/shell facade and runtime ownership |
+| 144-146 | Playwright contract/full-stack/breadth matrix invariants through Oxc-backed policy |
+| 147 | Live-data facade, identity, and runtime-boundary invariants without a second parser/linter |
+| 148 | Vite/Rolldown/Oxc build ownership, route reachability, chunks, maps, and deterministic bundle evidence |
+| 149 | Route-less capability facade/import/test ownership |
+| 150 | Overview feature/route/runtime/browser ownership |
+| 151 | Final zero-exception architecture and test-topology proof |
+| 152 | Generated GraphQL/config/output ownership and decoded transport policy without a second linter/parser |
+| 153 | Non-GraphQL external-value facade/decode/test ownership through Oxc architecture policy |
 | 107 | Independent proof that no obsolete lint/format path remains and only the exact expiring two-entry Oxc exception survives |
 
 ## Official Sources
@@ -472,7 +484,7 @@ success while skipping work.
 
 ## Remove When
 
-Plan 107 deletes this shared reference when every currently executable Oxc
+Plan 107 deletes this implementation companion when every currently executable Oxc
 decision is encoded in live configuration/source/tests/policy/CI and actionable
 plans 130/131 have retired. No ESLint/Prettier migration remains; durable policy,
 not an active plan, owns the two exceptions until their stable-release expiry.

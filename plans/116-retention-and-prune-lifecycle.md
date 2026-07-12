@@ -38,6 +38,23 @@ Out of scope:
 - Custom raw-signal tables, disabling native TTL, deleting unresolved issues by
   surprise, or an object-store/engine substitution.
 
+## Decision Gate
+
+Before approval, the current spool-only `prune` behavior and existing engine TTLs
+remain authoritative; no new metadata, native-table, extension-table, dashboard,
+investigation, run, issue, or evidence deletion may land. Step 1 must produce an
+operator-approved `docs/research/decisions/retention-and-prune-contract.md` that
+names every data class, owner, TTL/grace rule, resolved/unresolved behavior,
+pin/reachability protection, logical-versus-physical reclaim promise,
+confirmation policy, compatibility/migration behavior, and approval date. Add a
+decision-policy fixture that fails missing, draft, rejected, or incomplete
+approval.
+
+Steps 2-5 are forbidden until that exact record is approved. If approval is
+unavailable, rejects every proposal, or changes storage/product scope, mark this
+plan `BLOCKED` with the exact open decision and stop. Never infer destructive
+semantics from prose or implement a partial delete path.
+
 ## Steps
 
 ### Step 1: Decide the lifecycle contract
@@ -46,6 +63,9 @@ Inventory every data class, owner, configured/default TTL, resolved/unresolved
 state, legal/user expectations, pin protection, cascade/reachability, and
 physical-versus-logical reclaim. Resolve whether the existing resolved+30-day
 and immediate-reclaim promises are implemented or corrected before code.
+
+**Verify**: the decision-policy gate reports one approved complete lifecycle
+contract. Otherwise mark `BLOCKED`; do not run Step 2.
 
 ### Step 2: Add a deterministic prune plan
 
@@ -96,6 +116,9 @@ store failure, repeated prune, dry-run parity, and measured disk/row reclaim.
 - [ ] Real row/disk reclaim and progress/output behavior are verified.
 
 ## STOP Conditions
+
+- The Step-1 operator approval is missing, draft, rejected, ambiguous, or changes
+  implementation scope.
 
 - The lifecycle/product decision is unresolved.
 - A path requires a custom raw table, fallback engine, or disabling native TTL.

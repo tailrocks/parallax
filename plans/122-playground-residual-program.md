@@ -11,7 +11,7 @@
 - **Priority**: P3
 - **Effort**: XL
 - **Risk**: HIGH
-- **Depends on**: 100, 105, 111, 119
+- **Depends on**: 105, 111, 119, 151
 - **Category**: cross-repository playground / validation / demos
 - **Planned at**: `eefa4617`, 2026-07-12
 - **Status**: BLOCKED
@@ -36,7 +36,7 @@ In scope after the blocker clears:
 - Only unresolved telemetry-shape scenarios needed by current Parallax contracts:
   native metric names/exemplars, trace links/events, cross-tier propagation,
   agent/CLI sessions, backpressure/drop evidence, and redaction canaries.
-- Residual UI/playground fixtures required by plans 100/105/111/119.
+- Residual UI/playground fixtures required by plans 105/111/119/151.
 - Deterministic one-command startup/progress/readiness and bounded scenario tours.
 - OTLP fan-out lab maintenance as comparative research, including any explicitly
   authorized server-scale run, without making another backend a product fallback.

@@ -54,16 +54,6 @@ fixtures, and independent `tsc` remain mandatory. At this
 refresh, tsgolint 0.24.0 embeds a 2026-06-25 pre-GA TypeScript Go snapshot; that
 package version alone does not prove final TypeScript 7 project-model parity.
 
-Primary status sources are the
-[TypeScript 7.0 announcement](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/),
-[Oxc type-aware guide](https://oxc.rs/docs/guide/usage/linter/type-aware.html),
-[Oxlint stable core](https://oxc.rs/blog/2025-06-10-oxlint-stable),
-[type-aware linting Alpha](https://oxc.rs/blog/2025-12-08-type-aware-alpha),
-[official ESLint migration guidance](https://oxc.rs/docs/guide/usage/linter/migrate-from-eslint),
-[Oxc versioning policy](https://oxc.rs/docs/guide/usage/linter/versioning.html),
-[the tsgolint 0.24.0 embedded TypeScript Go revision](https://github.com/oxc-project/tsgolint/blob/5a37e8902f65440900be1436b814919fcdb4e3d4/go.mod),
-and [Vite TypeScript behavior](https://vite.dev/guide/features.html#typescript).
-
 ## Scope
 
 - One latest-stable TypeScript 7 compiler CLI/project line; no TypeScript 6
@@ -79,7 +69,8 @@ and [Vite TypeScript behavior](https://vite.dev/guide/features.html#typescript).
 
 Out of scope:
 
-- Runtime GraphQL/SSE/search/storage decoding and `skipLibCheck=false`, plan 128.
+- `skipLibCheck=false` and static safety, plan 128; GraphQL runtime contracts,
+  plan 152; all other external-value runtime contracts, plan 153.
 - Feature/cache/layout refactoring, plan 100.
 - Oxfmt/Prettier migration, actionable plan 130 and independent of TypeScript.
 - Oxc `--type-check` as the required compiler.
@@ -111,7 +102,7 @@ that imports the compiler API. Current expected result: only the ESLint/
 typescript-eslint branch rejects 7 and is removable in this plan. Fail the
 inventory if TanStack, Vite, Vitest, React, shadcn, codegen, or a repository
 script has gained a TypeScript 6 API dependency. The future GraphQL generator in
-plan 128 must be Bun/TS7-compatible and cannot reopen that dependency.
+plan 152 must be Bun/TS7-compatible and cannot reopen that dependency.
 
 ### Step 2: Freeze ESLint and prepare Oxlint while TypeScript 6 is live
 

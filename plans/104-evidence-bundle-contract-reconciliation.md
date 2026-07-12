@@ -52,6 +52,21 @@ Out of scope:
 - Unversioned breaking changes or preserving contradictory documents.
 - Expanding causal inference beyond the approved evidence contract.
 
+## Decision Gate
+
+Until the operator approves a replacement, shipped immutable `bundle-v1` is the
+only canonical read/write/hash contract. Characterization and proposal work may
+run, but Steps 3-5 may not start. Step 2 must produce an operator-approved
+`docs/research/decisions/evidence-bundle-contract.md` naming the selected model,
+version, compatibility window, migration behavior, and approval date. Extend the
+repository decision-policy fixture so missing, draft, rejected, or incomplete
+approval fails closed.
+
+If approval is unavailable, rejects every proposal, or changes schema/migration
+scope beyond this plan, set this plan to `BLOCKED` with the exact decision needed
+and stop. Do not choose on the operator's behalf or make code/prose silently
+converge.
+
 ## Steps
 
 ### Step 1: Characterize every observable contract
@@ -69,6 +84,10 @@ bounding fields, hypotheses, manifests/access metadata, and treatment of
 deploy/code-change/agent evidence. Include rejected alternatives, migration
 cost, agent-safety implications, and exact compatibility promise. Obtain the
 required operator/product approval before changing the schema.
+
+**Verify**: the decision-policy gate reports one approved canonical model and
+version with no unresolved required field. Otherwise mark `BLOCKED`; do not run
+Step 3.
 
 ### Step 3: Design versioned migration
 
@@ -112,6 +131,9 @@ maximal graphs/sections, dropped evidence counts, and timestamp extremes.
 - [ ] Unknown/malformed versions and malicious content fail or sanitize safely.
 
 ## STOP Conditions
+
+- The Step-2 operator approval is missing, draft, rejected, ambiguous, or widens
+  the implementation beyond this plan.
 
 - No authorized canonical-model decision exists.
 - A proposed edit mutates `bundle-v1` incompatibly without a new version.

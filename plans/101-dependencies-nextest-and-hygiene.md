@@ -153,18 +153,29 @@ the live `.oxlintrc.jsonc`; plan 130 alone installs/configures live Oxfmt. This
 policy plan records both narrow exceptions but does not require either live
 config to retire.
 
-Define and fixture the dependency-policy predicate plan 129 must apply to a Rust
-CDP/browser automation dependency: Apache-2.0-compatible licensing, no active
-rustls, no unreviewed browser download/lifecycle, and a pinned-browser protocol
-test. Report current candidates without selecting/installing one; lack of a
-passing candidate blocks plan 129, not this general dependency-policy plan.
+Define and fixture the dependency-policy predicate plan 132 must apply to
+Playwright. The final direct browser runner is exact `@playwright/test`; direct
+`playwright`, direct `playwright-core`, Node runtime, and an additional browser
+framework are forbidden. Require the transitive core/browser revision to match
+the runner, Apache-2.0-compatible licensing, registry integrity/source review,
+explicit browser provisioning after an ignore-scripts install, no implicit
+install/lifecycle download, and macOS/Linux Bun-only process ancestry. Evaluate
+`@types/bun` only when plan 132 proves it is needed, and exact stable
+`@axe-core/playwright` only when plan 146 first uses it. Failure of plan 132's
+exact matrix blocks browser adoption; Node is not a fallback.
+
+Record latest compatible `@testing-library/user-event` for plan 129 and fixture
+its Bun runtime, peer graph, license, integrity, and absence of unreviewed
+lifecycle behavior. Do not add ESLint, `eslint-plugin-playwright`, or an alpha
+Oxlint JavaScript plugin. Playwright-only invariants use stable config, runtime
+self-tests, and plan 095's Rust/Oxc AST policy provider.
 
 Reconcile the current TanStack suite as one mutually compatible set. Remove a
 current devtools/bridge package only after resolver/build evidence proves it is
 unused; do not keep it merely to imply a future Query architecture. Record the
 compatible TypeScript 7/Query/Router/Start versions and prove the current
 TanStack/Vite/Vitest/React graph has no TypeScript compiler peer/API dependency
-apart from the ESLint path assigned to plan 131. Plan 100 adds every new Query
+apart from the ESLint path assigned to plan 131. Plan 133 adds every new Query
 dependency in the same slice that first imports it. Add a report-only
 `skipLibCheck=false` lane that records exact current third-party declaration
 failures. Plan 128 consumes that inventory and owns the narrow compatible
@@ -181,7 +192,8 @@ explicit no-test behavior, slow/global timeouts, bounded CI retries, engine
 serialization, JUnit output, and a shrink-only quarantine ledger. Parse JUnit
 as XML or use nextest-native metadata. Fixture tests must prove first-pass
 fail/retry/pass, persistent fail, slow, timeout, zero-test, and malformed
-report behavior. Never copy PR #759's ineffective `flaky=\"true\"` grep.
+report behavior. Never use a raw `flaky=\"true\"` grep as the retry-pass gate;
+it does not parse the report contract reliably.
 
 Set CI `flaky-result = "fail"`: a retry-pass remains a failing required result
 and retains structured JUnit evidence. Quarantined tests continue running in a
@@ -225,7 +237,8 @@ as a report/artifact only. The workflow must not create a branch or PR.
   feature-tree policy fixtures.
 - Compatible Oxc Rust family/native-Oxlint fixtures, synthetic grouped
   Oxlint/tsgolint/TypeScript policy fixtures and report-only maturity evidence,
-  plus synthetic Rust CDP no-rustls dependency-policy proof.
+  plus synthetic Playwright/Bun runner/core/browser-version, no-Node,
+  no-lifecycle-download, user-event, and axe dependency-policy proof.
 - Nextest-generated JUnit flake/slow/timeout/zero-test fixtures.
 - Clean-checkout generic and embed-ui partitions.
 - Native macOS CLI smoke and staged current-tree-only gitleaks/zizmor scans.

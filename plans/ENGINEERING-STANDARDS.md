@@ -1,17 +1,15 @@
 # Parallax engineering structure and strictness standard
 
-- **Status:** Active target contract for plans 093-103, 119, and 126-131
-- **Research date:** 2026-07-12
-- **Parallax baseline:** `a1d8bf82570d673e93389d0dcf99771b77dcff62`
+- **Status:** Active target contract for plans 093-103, 119, and 126-153
+- **Last revised:** 2026-07-12
+- **Parallax baseline:** `e3e7997933801e0e78804d32f0973181036bb617`
 - **Applies to:** Handwritten Rust and TypeScript/React product, test, build,
   policy, and generated-code ownership
 
 This document is the self-contained end state for the restructuring program.
 Executors must not need to inspect another repository to decide where code
 belongs, how tests are laid out, which boundaries are public, or what strictness
-is required. [`JACKIN-REFERENCE.md`](JACKIN-REFERENCE.md) records provenance and
-comparative evidence; [`OXC-REFERENCE.md`](OXC-REFERENCE.md) records the current
-Oxc capability/maturity analysis; this file records Parallax decisions.
+is required. Every rule below is a Parallax implementation decision.
 
 ## Baseline And Intent
 
@@ -20,9 +18,12 @@ inherits workspace lints, 31 production files contain inline test bodies, 32
 production files declare `#[cfg(test)]`, and one legacy `mod.rs` remains. The
 largest handwritten Rust files are
 3,540, 2,588, 1,370, 1,310, and 1,216 lines. The UI already has a strong
-TypeScript compiler baseline and 41 tests under `__tests__`, but route files
-reach 1,500, 990, 871, 841, and 767 lines. Route modules own data fetching,
-caching, state, business rules, and rendering together.
+TypeScript compiler baseline and 41 test files under `__tests__`, but route
+files reach 1,500, 990, 871, 841, and 767 lines. Route modules own data
+fetching, caching, state, business rules, and rendering together. The ordinary
+Vitest path can pass through a Node shebang; the forced-Bun 2026-07-12 probe
+loads all 41 files but fails 17 suites at the Zod schema import boundary. A
+passing default run is therefore not yet Bun-only baseline evidence.
 
 The goal is not a crate or file count. The goal is compiler-visible ownership:
 
@@ -247,7 +248,7 @@ startup, test setup, or a dedicated blocking thread uses an item-local reasoned
 expectation until a context-aware policy rule can prove the owner. New runtime
 code receives no exception.
 
-Do not copy a residual allow merely because the reference branch has it. Lints
+Do not copy a residual allow merely because another repository has it. Lints
 such as `needless_pass_by_value`, `large_futures`, `implicit_hasher`,
 `assigning_clones`, `missing_errors_doc`, `missing_panics_doc`, and numeric casts
 are measured against Parallax. New/restructured code must be clean; any legacy
@@ -336,8 +337,9 @@ plan 101's mutually compatible dependency policy, not application casts.
   storage values, environment values, and cross-window messages are runtime
   boundaries. A generic `as T` is not decoding.
 - Static GraphQL operations use named documents, generated variables/results,
-  and runtime response schemas. Dynamic widget queries use a bounded typed
-  representation or an explicit reviewed decoder; they do not bypass the rule.
+  and runtime response schemas. The sole dynamic widget-series exception uses
+  Plan 152's bounded structured `DocumentNode`, variables-only values, exact
+  alias set, and strict per-series decoder; raw query construction is forbidden.
 - Use discriminated unions for async/UI state and exhaustive switches for
   variants. Impossible states should be unrepresentable instead of coordinated
   booleans.
@@ -421,7 +423,10 @@ and ESLint deletion wave. The missing 7.0 programmatic compiler API is not an
 application prerequisite: current consumers are inventoried and the only hard
 conflict, typescript-eslint through TanStack's ESLint config, is removed in that
 wave. Plan 128 follows on the final stack and owns declaration cleanup, maximum
-compiler strictness, runtime decoding, and boundary invariants.
+compiler strictness, and static boundary invariants. Plan 152 owns the generated
+GraphQL/decoded-transport foundation; Plan 153 owns SSE/search/storage/
+environment/cross-window runtime foundations. Product feature plans instantiate
+those mechanisms for their own contracts.
 
 Native stable `react/rules-of-hooks` and `react/exhaustive-deps` are required.
 Experimental `react/react-compiler` and compiler-derived purity, immutability,
@@ -440,35 +445,48 @@ suppress security, boundary, promise, or import-direction rules unnecessarily.
 
 ```text
 ui/src/
-  app/                    bootstrap, router creation, QueryClient, providers
+  app/                    composition root: router, QueryClient, providers
+    tests/                public composition/router contracts
   layout/                 shell, navigation, application boundaries
+    tests/                shell/navigation/theme/boundary contracts
   features/<feature>/
-    api/                  documents, schemas, server calls
+    api/                  documents, schemas, decoded adapters
     model/                domain types, state machines, pure transforms
     queries/              queryOptions, mutations, cache keys
     components/           feature UI
     hooks/                feature orchestration only
-    tests/ or __tests__/  feature-owned tests
+    tests/                separated feature-owned tests
     index.ts              reviewed public facade
+  domain/<concept>/       framework-neutral cross-feature product concepts
+    tests/                pure domain contracts
+  platform/<adapter>/     GraphQL, SSE, storage/clock/runtime adapters
+    tests/                technical boundary contracts
   shared/
-    api/                  transport and common envelope decoding
     components/           product-neutral components
     hooks/                product-neutral hooks
     lib/                  cohesive named utilities only
+    tests/                product-neutral component/hook/lib contracts
   routes/                 route declaration, search, loader, boundary, compose
-  test/                   deterministic global setup and typed harness builders
+    tests/                route contracts only
+  test/                   deterministic Vitest setup/builders; no test bodies
+  components/ui/          shadcn CLI-owned primitive island
+  lib/utils.ts            shadcn CLI-owned `cn` island
+ui/tests/harness/         test-infrastructure self-tests
+ui/tests/e2e/             Playwright black-box fixtures/screens/specs
+ui/test-matrix.json       durable risk-to-evidence manifest
 ```
 
-Imports follow `routes -> layout/features -> shared`; `layout` may import only
-reviewed feature entries and shared modules. `app` owns bootstrap/router/provider
-composition, and no route, layout, feature, or shared module imports `app`.
-Only the root route may import the reviewed `layout` entry; a fixture proves
-this module-level edge remains acyclic. A feature may import another feature
-only through its reviewed public entry point and only when the dependency is
-declared in the architecture map. Shared never imports layout, a feature, or a
-route. Generated `routeTree.gen.ts` is a composition exception, not a precedent.
-Aliases, type-only imports, dynamic imports, and barrels are included in cycle
-and direction analysis.
+The closed graph is: `app` composes all layers; routes import feature facades,
+domain, and shared, with root-only access to the reviewed layout entry; layout
+imports feature facades, domain, and shared; features import their own internals,
+domain, platform, shared, and only explicitly approved other-feature facades;
+platform imports domain/shared; domain imports only product-neutral pure shared
+utilities; shared imports no Parallax upper layer. No route, layout, feature,
+domain, platform, or shared module imports `app`. Shared is not a default bucket:
+promotion requires multiple independent consumers and product-neutral naming.
+Generated `routeTree.gen.ts` is a composition exception, not a precedent.
+Aliases, type-only imports, dynamic imports, barrels, source test directories,
+and browser test imports are included in cycle/direction analysis.
 
 Feature `index.ts` files use explicit named type/value exports; handwritten
 `export *` barrels are forbidden because they hide public-surface growth and can
@@ -481,6 +499,14 @@ export route implementation properties that prevent automatic code splitting.
 Use `getRouteApi` in deep feature code rather than importing route definitions
 and creating cycles. Route loaders return `void` or minimal identifiers when
 the query cache owns data, keeping inferred route types and bundles bounded.
+
+Keep `ui/` as one Bun package and one canonical strict TypeScript project.
+Internal npm packages or TypeScript project references require measured
+typecheck/editor evidence and a separate migration contract; file-count analogy
+to Rust crates is not sufficient. Prefer pure named modules and readonly values.
+A class is justified only by a real lifecycle or invariant-bearing mutable
+identity, not by class-per-file ceremony. New catch-all `utils.ts`, `types.ts`,
+`helpers.ts`, and `common.ts` modules are forbidden.
 
 ### Data, cache, and execution decision
 
@@ -538,27 +564,41 @@ Tests stay outside production bodies and mirror ownership:
   navigation, and error/pending boundaries without importing private route
   implementation;
 - component tests cover user-visible behavior and accessibility;
-- browser tests cover a small deterministic critical path per moved feature;
+- Playwright browser tests cover every shipped screen plus critical cross-route
+  flows in distinct deterministic contract and real-stack projects;
   and
 - type tests prove public facade and generated contract expectations.
 
 `ui/src/test/` owns deterministic render/router/QueryClient builders, endpoint
 fixtures, fixed clock/timezone, matchMedia/ResizeObserver/scroll polyfills,
 theme and reduced-motion defaults, and cleanup. Unexpected console errors,
-unhandled rejections, network calls, and no-test selections fail. Browser
-screenshots use fixed data, fonts, viewport matrix, animation policy, artifact
-names, and review rules. No runner may require Node as its runtime.
+unhandled rejections, network calls, and no-test selections fail. `tests/` is
+the one source-owned test directory convention; `src/test/` contains no test
+bodies; `ui/tests/harness/` owns tests of that infrastructure itself.
+`ui/test-matrix.json` maps stable risk IDs to unit/component/route/browser
+evidence and is machine validated.
 
-The required browser entry is `bun run test:browser`, which delegates to a
-repository-owned Rust xtask CDP harness and a separately digest-pinned
-Chrome-for-Testing/Chromium binary. The harness starts the declared Parallax
-server, waits on a named readiness endpoint, drives DOM/geometry/screenshot
-assertions through the browser protocol, and owns cleanup/artifacts. Dependency
-lifecycle scripts do not install the browser. Executable-path ancestry fixtures
-allow Bun, Cargo/xtask, the declared Parallax server, and the browser process
-family while rejecting Node and every undeclared runtime. Experimental
-`Bun.WebView` is not a required gate until Bun marks the API stable and a
-separate migration decision proves equivalent diagnostics.
+The required browser entry is exact lock-local `@playwright/test` invoked by
+`bun run test:browser`, with Bun forced and installation disabled. Playwright
+is the sole browser test framework; Rust xtask may start/seed/stop Parallax and
+the engines but never implements a second browser driver, locator, assertion,
+or reporter stack. Direct `playwright`, direct `playwright-core`, Node runtime,
+Playwright component testing, ESLint Playwright plugins, and alpha Oxlint
+JavaScript plugins are forbidden.
+
+Playwright adoption is conditional on the complete exact-version macOS/Linux
+Bun matrix in plan 132. A hang, hidden compatibility flag, Node child,
+unsupported browser, or leaked process blocks adoption; Node and custom CDP are
+not fallbacks.
+
+Browser projects separate deterministic test-support contracts from a managed
+GreptimeDB + isolated Turso full-stack lane. Chromium/Firefox/WebKit and real
+Playwright mobile device descriptors are explicit. Semantic role/name/label
+locators and web-first assertions are required; CSS/XPath, fixed sleeps,
+order-dependent tests, and response interception for happy paths are forbidden.
+Runtime axe plus keyboard/focus tests supplement static JSX accessibility.
+Canonical visual comparison runs in one digest-pinned Linux/browser/font
+environment with explicit update and shrink-only threshold policy.
 
 Coverage is risk based: critical boundary/state modules and touched hotspots
 receive branch evidence. A global percentage is not a quality proxy. If line
@@ -591,10 +631,16 @@ retries are forbidden.
   toolchain, lockfile, target, profile, feature partition, and relevant config;
   cache misses never skip a gate. Cold/warm timing and sccache statistics must
   justify consolidation or key changes.
+- Browser installation is explicit after an ignore-scripts Bun install.
+  Playwright's CI guidance says browser binary cache restore is often comparable
+  to download and system dependencies are not cacheable, so no browser cache is
+  added without cold-versus-restore measurement. Any adopted cache includes the
+  exact Playwright/browser version, OS, architecture, and manifest in its key.
 - Rust default, supported feature, doctest, nextest, real-engine, and release
-  lanes are distinct. UI formatting, typed lint, typecheck, Vitest, production
-  build, generated drift, bundle boundary, and deterministic browser smoke are
-  distinct but aggregated.
+  lanes are distinct. UI formatting, typed lint, typecheck, forced-Bun Vitest,
+  production build, generated drift, deterministic Playwright contract/visual,
+  cross-browser/mobile, and real-stack browser lanes are distinct but
+  aggregated according to their required cadence.
 - Nextest retry-pass is failure in CI. Quarantined tests keep running in a
   visible selection and require owner, reason, expiry, and shrink-only state.
 - Exceptions use a common schema: rule, exact scope, evidence, owner, created
@@ -611,38 +657,6 @@ signatures, provenance attestations, and the rolling preview formula all refer
 to the same finalized bytes. Actions remain full-SHA pinned and release jobs use
 least privilege plus protected operator approval.
 
-## Primary Standards Sources
-
-Rust decisions are grounded in the [Cargo workspace lint inheritance
-reference](https://doc.rust-lang.org/cargo/reference/workspaces.html#the-lints-table),
-[Cargo target and integration-test model](https://doc.rust-lang.org/cargo/reference/cargo-targets.html),
-[Rust module system](https://doc.rust-lang.org/book/ch07-00-managing-growing-projects-with-packages-crates-and-modules.html),
-[visibility rules](https://doc.rust-lang.org/stable/reference/visibility-and-privacy.html),
-[Clippy configuration](https://doc.rust-lang.org/stable/clippy/configuration.html),
-[Clippy restriction guidance](https://doc.rust-lang.org/stable/clippy/usage.html#clippyrestriction),
-and the [Rust API Guidelines](https://rust-lang.github.io/api-guidelines/checklist.html).
-
-TypeScript decisions use the [TypeScript 7.0 GA announcement](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/),
-the [strict compiler family](https://www.typescriptlang.org/tsconfig/strict.html),
-[`noUncheckedIndexedAccess`](https://www.typescriptlang.org/tsconfig/noUncheckedIndexedAccess.html),
-[`exactOptionalPropertyTypes`](https://www.typescriptlang.org/tsconfig/exactOptionalPropertyTypes.html),
-[`noPropertyAccessFromIndexSignature`](https://www.typescriptlang.org/tsconfig/noPropertyAccessFromIndexSignature.html),
-[`isolatedModules`](https://www.typescriptlang.org/tsconfig/isolatedModules.html),
-[Oxlint](https://oxc.rs/docs/guide/usage/linter),
-[type-aware Oxlint](https://oxc.rs/docs/guide/usage/linter/type-aware.html),
-[Oxfmt](https://oxc.rs/docs/guide/usage/formatter), and the
-[Oxc parser/resolver](OXC-REFERENCE.md#rust-native-oxc-architecture-engine).
-
-UI decisions use the [React Hooks lint reference](https://react.dev/reference/eslint-plugin-react-hooks),
-[TanStack Router code splitting](https://tanstack.com/router/latest/docs/guide/code-splitting),
-[TanStack Router external data loading](https://tanstack.com/router/latest/docs/guide/external-data-loading),
-[TanStack Start execution model](https://tanstack.com/start/latest/docs/framework/react/guide/execution-model),
-[Bun frozen installs](https://bun.com/docs/pm/cli/install),
-[Bun lifecycle trust](https://bun.com/docs/pm/lifecycle),
-[Testing Library query priority](https://testing-library.com/docs/queries/about/),
-[user-event guidance](https://testing-library.com/docs/user-event/intro/), and
-the [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/).
-
 ## Plan Ownership
 
 | Decision area | Owning plan |
@@ -656,10 +670,23 @@ the [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protoco
 | Final Rust crate decomposition | 126 |
 | Facades and remaining module splits | 098 |
 | TypeScript 7, stable native plus operator-excepted type-aware Oxlint, ESLint removal | 131 |
-| TypeScript declaration strictness and runtime decoding | 128 |
+| TypeScript declaration strictness and static safety | 128 |
 | Operator-excepted Oxfmt cutover and Prettier removal | 130 |
-| Frontend test topology/harness; Query extension | 129; 100 |
-| TanStack features/routes/cache/server-client boundaries | 100 |
+| Forced-Bun Vitest topology, harness, characterization matrix | 094, 129 |
+| Playwright Bun compatibility, config, fixtures, and foundation smoke | 132 |
+| Fixture-backed Playwright product contracts and required CI | 144 |
+| Managed GreptimeDB + Turso Playwright integration | 145 |
+| Cross-browser, mobile, accessibility, and visual Playwright gates | 146 |
+| TypeScript layers, lower-level adapters, facades, and placement policy | 100 |
+| Generated GraphQL SDL/operations/runtime transport | 152 |
+| SSE, search, storage, environment, and cross-window runtime foundations | 153 |
+| Route-less cross-feature capability facades | 149 |
+| Independent TypeScript feature moves, including overview | 134-142, 150 |
+| App/root/layout/shell migration | 143 |
+| Final UI ownership/ratchet/handoff closure | 151 |
+| TanStack Query ownership and legacy TTL-cache removal | 133 |
+| Typed bounded live-data behavior and performance | 147 |
+| Route chunks, bundle budgets, minification, and source maps | 148 |
 | Cargo and Bun dependency/test evidence | 101 |
 | Release profiles, symbols, deterministic artifacts | 102 |
 | Property, fuzz, and performance evidence | 103 |

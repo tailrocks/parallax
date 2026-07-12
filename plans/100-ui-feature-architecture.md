@@ -1,273 +1,464 @@
-# Plan 100: Restructure the UI by feature ownership
+# Plan 100: Establish the TypeScript project architecture foundation
 
-> **Executor instructions**: Preserve visual behavior, URL/search contracts,
-> TanStack loader/cache semantics, and all existing tests while moving one
-> vertical feature at a time. Run every package through Bun. Generated route and
-> shadcn files are not manual ownership targets. Plans 128/129 establish strict
-> boundaries and characterization first. TanStack Query is the sole target
-> server-state cache; do not retain the current TTL cache beside it.
+> **Executor instructions**: Establish one enforced source/test architecture
+> before any route feature moves. Preserve all product behavior, URLs, requests,
+> cache semantics, and rendering. This plan owns layer definitions, the complete
+> source-to-destination ledger, lower-layer extraction, public-facade templates,
+> structural policy, and durable agent instructions. Plans 152 and 153 harden
+> the provisional GraphQL and non-GraphQL runtime boundaries, Plan 149 then
+> establishes route-less capability facades, plans 134-143 and 150 move product
+> features independently, and plan 151 verifies final closure.
+>
+> **Drift check (run first)**:
+> `git diff --stat e3e7997..HEAD -- ui/src ui/AGENTS.md PROJECT_STRUCTURE.md ratchet.toml`
+> Reconcile changed files with the ownership ledger before editing. Do not create
+> a second architecture beside a partial migration.
 
 ## Status
 
-- **Priority**: P2
+- **Priority**: P1
 - **Effort**: L
 - **Risk**: HIGH
-- **Depends on**: 095, 101, 128, 129; 099 soft
-- **Category**: UI / architecture / performance
-- **Planned at**: `a1d8bf82`, revised 2026-07-12
+- **Depends on**: 095, 101, 128, 129
+- **Category**: TypeScript / project structure / architecture policy
+- **Planned at**: `e3e7997`, revised 2026-07-12
 - **Status**: TODO
 
-## Why
+## Why This Matters
 
-Several route files own queries, caching, state, tables, charts, and
-presentation in one place; the largest is 1,500 lines. The current generic
-GraphQL cache keeps data for 15 seconds while mutations and Refresh call only
-router invalidation, so a reload can immediately receive stale cached data.
-Route modules export implementation components/functions for tests, which can
-prevent TanStack automatic code splitting. Server/client imports, loader search
-dependencies, dynamic GraphQL aliases, SSE ownership, and chunk weight are not
-enforced.
+The UI is a 28,000-line TypeScript application organized mainly by technical
+file kind. Route modules own URL state, GraphQL strings, DTOs, cache calls,
+domain transforms, React state, and presentation. The largest route files are
+1,500, 990, 871, 841, and 767 lines. `ui/src/lib/api.ts` mixes runtime selection,
+transport, cache, escaping, and many product contracts. Tests import route
+implementation exports because those responsibilities have no other owner.
 
-## Target Layout
+Before parallel feature refactors can be safe, every file needs one destination,
+every layer needs a closed dependency direction, and every new file needs a
+machine-checkable placement decision. This plan creates that control plane and
+the reusable lower layers. It does not move product features or alter behavior.
+
+## Fixed Architecture Decisions
+
+### One package and one strict project
+
+Keep `ui/` as one Bun package and one canonical strict TypeScript project. Do
+not add internal npm packages, a frontend monorepo, or TypeScript project
+references merely to imitate Rust crates. Source-layer enforcement provides the
+needed boundary today. Project references require measured typecheck/editor
+evidence and a separate plan defining declaration/build ownership.
+
+### Canonical tree
 
 ```text
 ui/src/
-  app/                 bootstrap, router creation, QueryClient, providers
-  layout/              shell, navigation, application boundaries
-  features/
-    <feature>/
-      api/              documents, runtime schemas, transport calls
-      model/            domain state and pure transforms
-      queries/          queryOptions, keys, mutations
-      components/       feature presentation
-      hooks/            feature orchestration
-      __tests__/        feature-owned tests
-      index.ts          reviewed public entry
+  app/                         router/provider/composition root only
+    tests/                     public composition/router contracts
+  layout/                      shell, navigation, global boundaries
+    tests/                     shell/navigation/theme/boundary contracts
+  routes/                      TanStack route adapters only
+    tests/                     URL/search/loader/boundary contracts
+  features/<feature>/
+    api/                       documents, schemas, decoded adapters
+    model/                     domain state and pure transforms
+    queries/                   created by plan 133 on first real use
+    components/                feature-owned presentation
+    hooks/                     feature orchestration only
+    tests/                     separated feature tests
+      api/
+      model/
+      components/
+      integration/
+    index.ts                   reviewed explicit public facade
+  domain/<concept>/            framework-neutral cross-feature concepts
+    tests/                     pure domain contracts
+  platform/<adapter>/          GraphQL, SSE, storage/clock/runtime adapters
+    tests/                     technical boundary contracts
   shared/
-    api/
-    components/
-    hooks/
-    lib/
-  routes/              route/search/loader/composition only
-  test/                deterministic harness from plan 129
+    components/                product-neutral composed components
+    hooks/                     product-neutral hooks
+    lib/                       cohesive named pure utilities only
+    tests/                     product-neutral component/hook/lib contracts
+  test/                        Vitest setup/builders; no test bodies
+  components/ui/               shadcn CLI-owned primitive island
+  lib/utils.ts                 shadcn CLI-owned `cn` island
+  routeTree.gen.ts             TanStack-generated composition
+  styles.css                   global tokens and Tailwind entry
+ui/tests/harness/              plan 129 test-infrastructure self-tests
+ui/tests/e2e/                  plans 132 and 144-146 browser tests
+ui/test-matrix.json            plan 129 durable risk/evidence manifest
 ```
 
-Routes may depend on the reviewed layout entry, feature public entries, and
-shared; only the root route imports layout. Layout may depend on reviewed
-feature entries and shared. Features depend on shared and may depend on another
-feature only through a declared public entry. Shared never depends on layout,
-features, or routes. `app` composes router/QueryClient/providers and nothing
-imports `app`. Generated route-tree composition is the only declared reverse
-edge. Features never import route implementations.
+Create directories only with their first real file. Empty architecture theater
+is forbidden.
+
+### Closed dependency graph
+
+| From | Allowed product imports | Forbidden imports |
+|------|-------------------------|-------------------|
+| `app` | all layers for composition plus generated route tree | app internals imported by lower layers |
+| `routes` | feature facades, `domain`, `shared`; root-only reviewed layout entry | feature internals, `platform`, other route implementations, `app` |
+| `layout` | feature facades, `domain`, `shared` | routes, feature internals, platform, app |
+| `features/<a>` | own internals, domain, platform, shared, explicitly approved facade of `<b>` | another feature's internals, routes, layout, app |
+| `platform` | domain and shared | features, routes, layout, app |
+| `domain` | product-neutral pure shared utilities only | React, TanStack, browser/transport APIs, features |
+| `shared` | shadcn primitives and third-party libraries | Parallax feature/domain concepts and every upper layer |
+
+Generated `routeTree.gen.ts` is the only reverse composition exception.
+Cross-feature imports require an exact `feature A -> feature B facade` row with
+reason and owner. Prefer passing a typed value/callback from composition over
+adding an edge.
+
+### Complete feature catalog
+
+| Owner | Routes/surfaces | Separate migration plan |
+|-------|-----------------|-------------------------|
+| `investigations` | `/investigations`, detail, pins/notes | 134 |
+| `sql` | `/sql`, history/snippets/results | 135 |
+| `ecosystem` | `/ecosystem`, topology graph | 136 |
+| `dashboards` | dashboard list/detail/widget CRUD | 137 |
+| `services` | service list/detail/RED/exemplars | 138 |
+| `issues` | issue list/detail/status/context | 139 |
+| `runs` | run list/detail/live/bundle | 140 |
+| `logs` | log search/context/saved/live | 141 |
+| `traces` | trace list/detail/compare/links | 142 |
+| `runtime-metrics`, `story`, `time-range`, shared page header | Route-less cross-feature capability facades | 149 |
+| `overview` | `/`, trends, movers, onboarding and recent entities | 150 |
+| `app`, `layout`, `app-status`, `quick-navigation` | Root composition, shell/nav/theme/fallbacks, shell data | 143 |
+| Whole UI graph | Final ownership/ratchet/handoff/documentation verification only | 151 |
+
+Before this plan completes, classify every handwritten file currently under
+`routes`, `components`, `hooks`, and `lib` as one feature above or exact
+`app`, `layout`, `domain`, `platform`, `shared`, test-support, or generator
+ownership. The architecture gate fails unclassified files.
+
+### Shared and lower-layer promotion rules
+
+- `domain` contains only cross-feature Parallax concepts with no framework,
+  browser, network, persistence, or React dependency. Feature-specific concepts
+  stay in the feature model.
+- `platform` contains technical adapters such as GraphQL transport/envelope,
+  SSE/EventSource, browser storage, visibility, clock, downloads, and runtime
+  environment selection. It contains no feature presentation. This plan's
+  extraction is behavior-preserving and provisional: Plan 152 hardens GraphQL
+  generation/transport, and Plan 153 hardens every non-GraphQL external value.
+- `shared` is product-neutral. Promotion requires at least two independent
+  consumers, a cohesive responsibility, no Parallax domain name, and no upper
+  import. It is not a dumping ground for unresolved ownership.
+- `components/ui` and `lib/utils.ts` remain where `components.json` expects them.
+  shadcn primitives are generator-owned; product composition is not.
+
+## TypeScript Module Rules
+
+1. Use kebab-case filenames, named exports, PascalCase components/types,
+   `use*` hook names, and `*Schema` runtime schemas.
+2. Feature `index.ts` files contain explicit value/type exports only. Handwritten
+   `export *` and deep feature imports are forbidden.
+3. External data enters as `unknown`, is parsed once, then mapped once to a
+   domain value. Plan 152 supplies generated GraphQL operation contracts; Plan
+   153 supplies SSE/search/storage/environment/cross-window mechanisms. Plan
+   128 supplies static compiler and lint safety only. Do not duplicate wire/
+   domain shapes or trust generic JSON with `as T`.
+4. Expected failure uses a discriminated Result-shaped union. Transport and
+   framework edges may throw `Error`, then map once. Error text is not control
+   flow.
+5. Async/UI states use discriminated unions and exhaustive `never` checks, not
+   independent booleans that represent impossible combinations.
+6. Prefer readonly values and pure functions. Use a class only for a real
+   lifecycle or invariant-bearing mutable identity, never class-per-file
+   ceremony for stateless logic.
+7. More than three related parameters become a readonly named input object.
+   Behavior-changing booleans become a discriminated option.
+8. Use `import type`, `satisfies`, and `as const` where inference benefits. Do
+   not solve moves with `any`, broad assertions, non-null assertions, or
+   suppressions.
+9. New catch-all `utils.ts`, `helpers.ts`, `types.ts`, and `common.ts` names are
+   forbidden. Name modules by responsibility.
+10. `.server.ts` and `.client.ts` mark runtime-specific boundaries when needed;
+    server-only transitive code can never enter a client chunk.
+
+## Test Placement Rules
+
+- Test bodies never share a production file.
+- `tests/` is the only final source-owned test directory name; do not retain
+  both `tests/` and `__tests__/`.
+- Feature/layer tests live below their owner. Route contracts live only in
+  `routes/tests/` and cannot import private route components.
+- `src/test/` contains setup/builders only. `ui/tests/harness/` tests that
+  infrastructure; `ui/tests/e2e/` contains black-box Playwright code only.
+- Every test has a stable `ui/test-matrix.json` owner from plan 129.
+
+## Required Templates
+
+### Feature facade
+
+```ts
+export { InvestigationsPage } from "./components/investigations-page"
+export { loadInvestigations } from "./api/load-investigations"
+export type { Investigation } from "./model/investigation"
+```
+
+### Boundary-to-domain adapter
+
+```ts
+import { executeGraphqlOperation } from "@/platform/graphql/execute-graphql-operation"
+import {
+  investigationListDocument,
+  investigationListSchema,
+} from "./investigation-list.generated"
+import { toInvestigation } from "../model/investigation"
+
+export async function loadInvestigations() {
+  const value = await executeGraphqlOperation({
+    document: investigationListDocument,
+    resultSchema: investigationListSchema,
+    variables: {},
+  })
+  return value.investigations.map(toInvestigation)
+}
+```
+
+The generated document/schema and transport come from Plan 152. Non-GraphQL
+adapters use Plan 153's equivalent unknown-first result contract. This adapter
+does not build a raw query, cast JSON, or duplicate cache behavior.
+
+### Exhaustive state
+
+```ts
+type LoadState<T> =
+  | { readonly kind: "idle" }
+  | { readonly kind: "loading" }
+  | { readonly kind: "ready"; readonly value: T }
+  | { readonly kind: "failed"; readonly error: InvestigationError }
+
+export function stateLabel(state: LoadState<unknown>): string {
+  switch (state.kind) {
+    case "idle":
+      return "Idle"
+    case "loading":
+      return "Loading"
+    case "ready":
+      return "Ready"
+    case "failed":
+      return state.error.message
+    default: {
+      const unreachable: never = state
+      return unreachable
+    }
+  }
+}
+```
+
+### Thin route adapter
+
+```tsx
+import { createFileRoute } from "@tanstack/react-router"
+import {
+  InvestigationsPage,
+  loadInvestigations,
+} from "@/features/investigations"
+
+export const Route = createFileRoute("/investigations/")({
+  loader: loadInvestigations,
+  component: InvestigationsRoute,
+})
+
+function InvestigationsRoute() {
+  return <InvestigationsPage investigations={Route.useLoaderData()} />
+}
+```
+
+Routes may retain route/search/loader/boundary/composition code and export only
+`Route`. Feature plans instantiate this template with current contracts.
+
+## Commands
+
+| Purpose | Command | Expected result |
+|---------|---------|-----------------|
+| Architecture | `cargo xtask arch` | no unknown edge, cycle, deep import, or unclassified file |
+| UI policy | `cargo xtask policy --only ui.architecture` | layer/facade/runtime/test topology passes |
+| Ratchets | `cargo xtask policy --only ui.ratchets` | no new size/export/test exception |
+| Format | `cd ui && bun run check` | exit 0 |
+| Lint | `cd ui && bun run lint` | zero warnings |
+| Typecheck | `cd ui && bun run typecheck` | exit 0 |
+| Tests | `cd ui && bun run --bun test:ci` | all tests pass, no unexpected diagnostic |
+| Build | `cd ui && bun run build` | exit 0, generated tree current |
+| Fast aggregate | `cargo xtask ci --fast` | exit 0 |
 
 ## Scope
 
 In scope:
 
-- TypeScript-aware import/cycle and TanStack server/client enforcement.
-- Feature-by-feature ownership moves and route size ratchets.
-- Placement of plan 128's typed/validated GraphQL and SSE contracts.
-- One TanStack Query cache with feature-owned query options/mutations.
-- Trace/log/run/services/dashboard/issue hotspot decomposition.
-- Live-tail sorting, delta fetching, chart identity, and chunk graph evidence.
-- Responsive visual smoke checks for moved surfaces.
+- Lower-layer modules under `domain`, `platform`, `shared`, and test support,
+  plus enforceable placement contracts for the later `app`/`layout` owners.
+- Complete current/destination ownership ledger and feature dependency matrix.
+- Oxc-backed import/facade/runtime/test topology and ratchet configuration.
+- Behavior-preserving provisional extraction of generic GraphQL/SSE/browser/
+  runtime adapters and truly cross-feature pure concepts. Decoded hardening is
+  exclusively Plans 152 and 153.
+- `ui/AGENTS.md` and `PROJECT_STRUCTURE.md` placement/navigation rules.
 
 Out of scope:
 
-- Marketing/landing pages or visual redesign.
-- Editing generated `routeTree.gen.ts` or shadcn-owned primitives by hand.
-- Node/npm/pnpm/yarn.
-- Backend metric stub completion, owned by plan 105.
+- Product feature/route moves and route-less capability migration (plans
+  134-143, 149, and 150).
+- Playwright implementation (plans 132 and 144-146).
+- Query/cache/live/bundle behavior (plans 133, 147, and 148).
+- Toolchain/compiler/lint/format selection (plans 128, 130, and 131).
+- Visual redesign, product/backend contract changes, Node, foreign package
+  managers, internal npm packages, or manual generated/shadcn primitive edits.
+
+## Git Workflow
+
+- Stay on the single active branch; do not create a branch or PR.
+- Land the ledger/policy, lower-layer extraction, and durable docs as separate
+  green changes.
+- Use Conventional Commits, DCO, and exactly one agent-product trailer.
+- Push every durable green update.
 
 ## Steps
 
-### Step 1: Add import/cycle policy
+### Step 0: Prove prerequisites
 
-Extend plan 095's single Rust-native Oxc parser/resolver graph; do not create an
-ESLint or second import graph. Fixture aliases, type-only imports, package
-exports, barrels, lazy imports, generated exclusions, and root-route-to-layout
-acyclicity. Fail every forbidden direction and real cycle. Oxlint
-`import/no-cycle` may be a fast supplemental rule only with `ignoreTypes:false`,
-`allowUnsafeDynamicCyclicDependency:false`, unlimited depth, and parity against
-the authoritative fixture corpus.
+Run the command table. Confirm Plan 128's static compiler/lint contracts, Plan
+129's green forced-Bun harness/matrix, and Plan 095's Oxc parser/resolver.
+Capture current route exports, imports, file/function budgets, provisional
+external-boundary owners, and generated/client boundaries.
 
-Define the complete matrix for app/routes/layout/features/shared, cross-feature
-public entries, generated route composition, `.server`/`.client` modules, and
-dynamic imports. Current source has no measured internal cycle, so do not create
-a legacy cycle allowlist. Verify server-only modules, environment secrets,
-filesystem/process APIs, and server functions cannot enter production client
-chunks. Feature `index.ts` facades use reviewed explicit exports; handwritten
-`export *` barrels fail.
+**Verify**: every prerequisite command passes at the same commit.
 
-Every TanStack Start server function validates its input at the boundary with
-plan 128's schema, returns a decoded contract, and is callable only from the
-intended client surface. Fixture SSR and client navigation separately because
-Start modules are isomorphic unless protected.
+### Step 1: Build the complete ownership ledger
 
-### Step 2: Place typed data boundaries
+Inventory every handwritten `ui/src` file with current path, current consumers,
+target layer/feature, public facade requirement, test owner, generated/runtime
+classification, and plan 134-143, 149, or 150 migration owner. Resolve duplicate
+types and generic bucket ambiguity in the ledger before code moves.
 
-Mechanically relocate plan 128's authoritative SDL output, named GraphQL
-documents, generated variables/results/runtime schemas, dynamic-widget
-contract, search schemas, and typed SSE frames. Static operations live under
-feature `api/`; common envelope/transport belongs in `shared/api`. Generated
-files remain reproducible under Bun and drift-checked. No route owns a raw query
-string, JSON cast, event decoder, value interpolation, or manual escaping. This
-plan may not create a second schema/codegen/decoder pipeline.
+Store machine ownership in plan 095's single typed `ratchet.toml` policy source.
+Document the human feature catalog and placement decision tree in
+`ui/AGENTS.md`/`PROJECT_STRUCTURE.md`.
 
-Update `ui/AGENTS.md` in the implementation change so browser data policy
-truthfully permits canonical same-origin GraphQL queries/mutations plus the two
-typed same-origin SSE feeds. No other endpoint is implied.
+**Verify**: removing or adding an unclassified file fails with exact file/line,
+rule ID, destination guidance, and rerun command.
 
-### Step 3: Make TanStack Query the only cache
+### Step 2: Enforce the graph before migration
 
-Install the latest mutually compatible stable `@tanstack/react-query` through
-Bun if plan 101 confirms the dependency suite. Create one fresh QueryClient for
-each router/server request and keep one stable browser client for that router
-lifetime; a module singleton is forbidden. Features own stable keys and
-`queryOptions`; route loaders call `ensureQueryData`, loader-backed components
-may call `useSuspenseQuery`, and optional/on-demand work uses `useQuery` or
-`fetchQuery`. Mutations invalidate or update exact keys. Set Router
-`defaultPreloadStaleTime` to `0` so Query owns freshness and reconcile SSE
-updates through QueryClient.
+Implement fixtures for every dependency-table row, feature facade/deep import,
+type-only/dynamic/reexport path, generated reverse edge, source-test/harness/E2E
+topology, and `.server`/`.client` reachability. Handwritten wildcard facades,
+route-to-route implementation imports, production-to-test imports, and cycles
+fail closed.
 
-Encode the useful TanStack Query lint invariants without retaining ESLint or an
-alpha Oxlint JS plugin: the Oxc-backed xtask AST/facade policy proves stable
-QueryClient lifetime, feature-owned exhaustive query-key/options factories, no
-unstable dependency passed into hooks, no void query function, and preferred
-shared query options. Each invariant has a negative TS/TSX fixture.
+Baseline only exact current violations with owner and removal plan 134-143,
+149, or 150.
+Rows are shrink-only and cannot authorize new callers.
 
-Extend plan 129's shared test harness with an isolated QueryClient builder in
-that same first-use slice; no test may share cache state across cases.
+**Verify**: every intentional negative fixture fails and current source produces
+only the exact migration ledger.
 
-Delete `graphqlCached` and its cache after parity tests. Remove an unused Router/
-Query bridge or configure it end to end; partial integration and dual caches are
-forbidden. Test mutation, Refresh, navigation preload, SSR hydration, reconnect,
-and visibility timing against current behavior, including the stale-cache
-regression. Preserve SPA deployment semantics: only root-shell prerender is
-expected. Test two router/server instances for cache isolation and browser
-client stability; do not quietly enable per-route SSR to make hydration tests
-pass.
+### Step 3: Extract platform, domain, shared, and test foundations
 
-### Step 4: Move vertical features
+Move only lower-layer responsibilities used by several future feature plans:
 
-Start with a bounded feature, then traces, logs, services, runs, issues, and
-dashboards. Route files keep only route definitions, search parsing,
-loader/preload wiring, error boundaries, and top-level composition. Search uses
-typed `validateSearch`, and `loaderDeps` includes every value affecting data.
-Queries, tables, visualizations, state machines, and tests move to their
-feature.
+- current GraphQL transport/envelope and cache-preserving adapter, provisionally
+  and without claiming generated/runtime safety;
+- SSE/EventSource, browser storage, visibility, clock, download, and runtime
+  environment adapters, provisionally and without product decoders;
+- cross-feature telemetry range/time/identity concepts with no framework;
+- product-neutral shared components/hooks/pure utilities; and
+- deterministic test builders from plan 129.
 
-Before each wave, its persisted plan 129 matrix rows must be green. Add only the
-Query/key/invalidation/move-specific cases required by this wave, then persist
-the updated row before moving source. A missing characterization case blocks
-the wave; it cannot be deferred to this plan's final checklist.
+Preserve signatures and behavior. Record the exact GraphQL handoff to Plan 152
+and SSE/search/storage/environment/cross-window handoffs to Plan 153. Temporary
+old-path reexports are allowed only with one removal plan, no new callers, and
+an exact expiry. Keep shadcn-owned paths unchanged.
 
-Route files export only the file-route `Route` contract. Move testable
-components/loaders/transforms to features instead of exporting route properties
-that defeat automatic splitting. Deep consumers use `getRouteApi` rather than
-importing route definitions. Loaders return `void` or minimal identifiers when
-Query owns data, avoiding oversized inferred route types.
+**Verify**: request/result/cache/SSE behavior parity, exact 152/153 handoffs,
+focused tests, architecture, typecheck, full tests, and build pass after each
+extraction.
 
-Preserve the live cache/preload/SSE visibility behavior pinned by current route
-tests and the 2026-07-11 closure evidence, plus all URL contracts.
+### Step 4: Publish feature migration contracts
 
-### Step 5: Fix live data identity and work
+For plans 134-143, 149, and 150, freeze exact source paths, target tree, allowed
+facade edges, test-matrix IDs, ratchet rows, and route terminal criteria. Plan
+149 must land before its consumers; the feature plans may otherwise run in
+parallel only when their write sets and facade edges are disjoint. Plan 151 has
+no product-move write set and only verifies the completed graph.
 
-- Replace repeated full-buffer sort with ordered insertion or one bounded sort
-  per actual batch, proved by tests/measurement.
-- Preserve chart series identity when data is unchanged.
-- Add delta/cursor fetch only where server contracts support it; otherwise
-  bound and memoize the existing window honestly.
-- Verify list keys and live-tail identity across polling/SSE reconciliation.
+Provide a machine policy that rejects a feature move lacking its declared plan
+owner or touching another active feature's write set without coordination.
 
-### Step 6: Prove route/chunk boundaries
+**Verify**: all plan-owned current paths are assigned exactly once and no
+source/destination overlap is unexplained.
 
-Inspect production build chunks. Ensure route/feature splitting is active and
-heavy Recharts/Motion code does not inflate the shell without need. Motion is
-currently theme-switcher-only; replace or lazy-load only if measured shell cost
-justifies it and visual behavior remains identical.
+### Step 5: Make the foundation durable
 
-Enable/verify automatic route code splitting using the current TanStack plugin
-contract. Assert each lazy property is actually split and that exported route
-implementation cannot pull it back into the shell. Add a client-bundle manifest
-check for server-only code and secret-bearing modules.
+Update `ui/AGENTS.md` with the tree, graph, module/test rules, templates, feature
+catalog, placement decision table, and exact commands. Update
+`PROJECT_STRUCTURE.md` with directory ownership. Re-run the ledger against the
+live tree and remove completed foundation compatibility exports.
 
-Record the resolved Vite 8/Rolldown production path and prove its upstream-owned
-Oxc minifier is the only minification pass. Do not add direct `oxc-transform`,
-`oxc-minify`, `unplugin-oxc`, or Vite+ ownership. Compare source maps, runtime
-behavior, and chunk identity across two clean builds; direct Oxc build adoption
-requires a later TanStack-supported migration plan.
+Record `tsc --extendedDiagnostics` as a baseline; do not introduce project
+references without a separate measured plan.
 
-Capture initial and post-wave entry/route chunk identities and gzip/Brotli
-sizes. Lazy route properties remain separate. Each row has a shrink-only or
-operator-approved exact delta budget; a report with no numeric/structural oracle
-does not pass. The shell budget includes accidental duplicate framework/runtime
-code, and client reachability to server modules is always zero.
-
-### Step 7: Add measured size and visual gates
-
-Ratchet route files to the 150-line target, handwritten TS/TSX modules to 300,
-and functions/components/hooks to 60 after each split. Existing larger items are
-exact shrink-only rows. Moving an intact oversized component does not pass.
-Generated/shadcn files are excluded only from manual size ownership.
-
-Use plan 129's Bun-invoked deterministic browser harness and viewport/data/
-clock/theme/motion contract for moved routes. Assert no overlap, clipping,
-hydration/console error, server bundle leak, or state loss. This is structure/
-performance work, not a new visual system.
+**Verify**: full command table passes twice from clean state and
+`git diff --check` is clean.
 
 ## Test Plan
 
-- Oxc-backed import/cycle/root-layout positive and negative fixtures plus
-  supplemental Oxlint parity.
-- Existing generated GraphQL drift/type/operation parity after mechanical move;
-  no second pipeline.
-- Existing route/search/loader/cache/SSE/SSR tests plus stale-after-mutation and
-  stale-after-Refresh regressions.
-- Query key/options/AST invariants, mutation invalidation, two-router isolation,
-  stable browser ownership, SPA root-shell hydration, navigation, and sole-cache
-  tests.
-- Live-tail ordering/identity and chart memoization tests.
-- Two-clean-build Vite/Rolldown/Oxc-minifier evidence plus numeric compressed
-  chunk identity/budget and source-map comparison.
-- Desktop/mobile visual smoke screenshots for every moved feature.
-- Bun check/lint/typecheck/test/build.
+- Oxc resolver fixtures for every layer/facade/alias/type-only/dynamic/generated/
+  runtime/test edge and cycle.
+- Ownership-ledger unknown/duplicate/stale/overlap/removal-plan fixtures.
+- File/function/export/test topology and temporary compatibility ratchets.
+- Provisional GraphQL/SSE/browser adapter behavior-parity tests and exact
+  Plan-152/153 ownership-handoff fixtures.
+- Server-only client bundle negative fixtures.
+- Durable placement documentation and machine-policy consistency tests.
 
 ## Done Criteria
 
-- [ ] Import direction and cycles fail through TypeScript-aware tooling.
-- [ ] Server/client violations and server-only client bundle content fail.
-- [ ] Server functions validate inputs and pass separate SSR/client execution
-  fixtures.
-- [ ] Routes are thin orchestrators and feature ownership is explicit.
-- [ ] Feature public entries contain only reviewed explicit exports and cannot
-  grow silently.
-- [ ] GraphQL variables/results are typed and generated reproducibly under Bun.
-- [ ] Every runtime response/SSE frame is decoded by plan 128's owned schema.
-- [ ] TanStack Query is the only server-state cache and invalidation is exact.
-- [ ] QueryClient ownership is fresh per router/server request, stable in the
-  browser, and enforced with Query-specific AST negative fixtures without ESLint.
-- [ ] Route files export no implementation that defeats automatic splitting.
-- [ ] Named route hotspots shrink without behavior/visual changes.
-- [ ] Live-tail/polling work is bounded and identity-stable.
-- [ ] Chunk evidence proves route splitting, one framework-owned Oxc minifier,
-  numeric compressed budgets, source-map parity, and no accidental shell
-  inflation.
-- [ ] Generated/shadcn files are excluded from manual ratchets.
-- [ ] All Bun and visual smoke gates pass.
+- [ ] Every current handwritten UI file has one current owner, target owner, and
+  separate migration plan.
+- [ ] The canonical tree and closed graph are machine-enforced with complete
+  positive/negative fixtures.
+- [ ] Platform/domain/shared/test foundations exist without product behavior
+  changes or catch-all buckets; route-less capabilities, overview, and app/
+  layout remain assigned to plans 149, 150, and 143 respectively.
+- [ ] shadcn/generated ownership remains explicit and unchanged by hand.
+- [ ] Feature facade, thin-route, strict type, and separated-test templates are
+  durable and executable.
+- [ ] `ui/AGENTS.md`, `PROJECT_STRUCTURE.md`, and policy give a new human/agent
+  one unambiguous placement answer.
+- [ ] No internal package/project-reference/Node/foreign-tool architecture was
+  introduced.
+- [ ] Architecture, ratchet, format, lint, typecheck, forced-Bun tests, build,
+  and fast aggregate pass twice.
 
 ## STOP Conditions
 
-- A move changes route URLs/search/loader/cache semantics.
-- GraphQL typing requires Node or a foreign package manager.
-- TanStack Query parity cannot preserve loader/SSR/SSE semantics; STOP rather
-  than ship two caches.
-- A server-only module or secret-bearing dependency appears in a client chunk.
-- Performance change drops/reorders live data.
-- A chunk optimization changes theme/interaction behavior without approval.
-- Visual checks show overlap, clipping, or responsive regression.
+Stop and report if:
 
-## Remove When
+- Plan 128's static-safety contracts or Plan 129's forced-Bun matrix are
+  missing/red;
+- a lower layer requires a forbidden upper import and composition cannot solve
+  it;
+- extraction changes a request, response, cache, SSE, URL, rendering, or user
+  behavior;
+- an ambiguity can be resolved only with a new generic bucket or broad graph
+  exception;
+- generated/shadcn ownership requires manual implementation edits;
+- a client chunk reaches server-only code; or
+- a required gate fails twice after a reasonable correction.
 
-Delete this plan and row when feature ownership, typed GraphQL, live-data work,
-chunking, and visual compatibility are enforced and green.
+## Maintenance And Removal
+
+New files must select an existing ledger owner or update the feature catalog,
+graph, tests, and policy in the same change. Reviewers reject deep feature
+imports, wildcard facades, generic buckets, hidden runtime edges, and parallel
+plans with overlapping write sets.
+
+Delete this plan and its README row only after the complete ledger, enforced
+graph, provisional lower-layer foundations, durable templates/docs, exact
+Plan-152/153 handoffs, and every command above are green. Plans 152 and 153 then
+harden runtime boundaries, Plan 149 establishes shared capability facades,
+plans 134-143 and 150 own product movement, and Plan 151 owns final proof only.

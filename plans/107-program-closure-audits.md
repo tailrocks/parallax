@@ -131,8 +131,8 @@ fix it, and return to Step 2 with a new C0 instead of mixing remediation into C1
 
 Confirm that earlier completion commits already retired every other actionable
 plan and index row. Delete this plan and its index row in the closure commit.
-Delete `ENGINEERING-STANDARDS.md`, `JACKIN-REFERENCE.md`,
-`OXC-REFERENCE.md`, and `IMPLEMENTATION.md` when no actionable
+Delete `ENGINEERING-STANDARDS.md`, `OXC-IMPLEMENTATION.md`, and
+`IMPLEMENTATION.md` when no actionable
 restructuring/alignment work remains and their rules have landed in durable
 source/config/tests/conventions or in a remaining self-contained BLOCKED plan.
 Keep every other BLOCKED file only when a fresh exact condition still prevents
@@ -142,7 +142,7 @@ have retired; closure cannot preserve Prettier, ESLint, or an unfinished Oxc
 migration as BLOCKED work. Confirm all active plan material exists only in
 `plans/`.
 
-The cleanup commit may change only this plan, its index row, the four program
+The cleanup commit may change only this plan, its index row, the three program
 reference/contract files, and already-generated closure packet references
 required by lifecycle. It may not batch-delete plans that should have retired
 earlier or change product source, manifests, policy, CI, release, or durable

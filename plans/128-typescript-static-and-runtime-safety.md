@@ -1,11 +1,17 @@
-# Plan 128: Enforce TypeScript compile-time and runtime boundary safety
+# Plan 128: Enforce strict TypeScript static safety
 
-> **Executor instructions**: Preserve the already-strong compiler baseline and
-> add one strict control at a time with effective-config evidence. Never replace
-> an error with `as`, `!`, `any`, or an unvalidated generic. Generated and
-> shadcn exclusions must be narrow and tested. Plan 131 has already established
-> TypeScript 7 plus native/type-aware Oxlint; do not reopen compiler or linter
-> selection here.
+> **Executor instructions**: Finish the compile-time contract on top of Plan
+> 131's single TypeScript 7 and Oxlint toolchain. Add one compiler option or
+> static invariant at a time, keep selected-file and effective-config evidence,
+> and repair findings by narrowing or modeling. Never replace an error with
+> `any`, `as`, `!`, a suppression, or a local declaration patch. This plan owns
+> static safety only. Plan 152 owns GraphQL runtime contracts; Plan 153 owns all
+> other external-value runtime contracts.
+>
+> **Drift check (run first)**:
+> `git diff --stat e3e7997..HEAD -- ui/tsconfig.json ui/package.json ui/bun.lock ui/.oxlintrc.jsonc ui/src ui/tests crates/parallax-xtask ratchet.toml plans/ENGINEERING-STANDARDS.md`
+> Reconcile compiler, declaration, file-selection, and escape-hatch changes
+> before editing. Do not absorb runtime decoding from Plans 152 or 153.
 
 ## Status
 
@@ -13,207 +19,309 @@
 - **Effort**: L
 - **Risk**: MEDIUM
 - **Depends on**: 095, 101, 131
-- **Category**: TypeScript / static safety / runtime contracts
-- **Planned at**: `a1d8bf82`, 2026-07-12
+- **Category**: TypeScript / compiler / static safety
+- **Planned at**: `e3e7997`, revised 2026-07-12
 - **Status**: TODO
 
-## Why
+## Why This Matters
 
-Parallax already enables `strict`, unchecked-index protection, exact optional
-properties, unused/return/fallthrough checks, and side-effect import checking.
-The remaining gap is not a switch called "strictest": index signatures still
-allow property syntax, current lint lacks key promise/unsafe/React signal, and
-GraphQL/SSE/JSON data becomes trusted through casts instead of decoding.
-Compiler strictness cannot prove network data. Plan 131 supplies the Oxc-first
-TypeScript 7/native/type-aware lint foundation; this plan uses it to eliminate
-unchecked application boundaries and finish the strict compiler contract.
+Parallax already enables most strict compiler options and Plan 131 establishes
+TypeScript 7 plus native and type-aware Oxlint. The remaining static contract is
+incomplete: index signatures still permit property access, module isolation is
+implicit, third-party declarations are skipped, and handwritten code has no
+single enforced policy for assertions, directives, impossible async states, or
+stringly expected failures.
+
+Runtime validation is a separate ownership problem. Mixing GraphQL, SSE,
+storage, search, environment, and message decoding into this plan makes the
+compiler migration too large and prevents the boundary foundations from running
+independently. This plan therefore establishes the static rules that those
+runtime plans must satisfy, but does not implement a decoder or move a product
+feature.
 
 ## Current Evidence
 
-- `tsconfig.json` omits `noPropertyAccessFromIndexSignature`,
-  `isolatedModules`, and forced module detection while retaining
-  `skipLibCheck`; a read-only full declaration probe exposes third-party
-  incompatibilities, so flipping both application and library checks together
-  would obscure ownership.
-- The pre-plan-131 effective ESLint config lacks floating/misused-promise,
-  unsafe-value, non-null, React Hooks, and compiler-diagnostic enforcement. A
-  read-only check-only typed-rule probe found 22 hidden findings, 13 in
-  production; plan 131 converts that inventory into the final Oxc rule baseline.
-- Handwritten UI code has no explicit `any`; the visible `as any` instances are
-  generated route-tree code. Preserve that strength while eliminating generic
-  JSON and SSE assertions.
-- `ui/src/lib/api.ts` trusts `response.json()` as generic `T`; dynamic dashboard
-  aliases and logs/traces/run SSE feeds are not fully runtime decoded.
-- Official Oxc documentation currently describes type-aware linting as outside
-  normal semver guarantees, coupled to TypeScript Go/TS7, and implementing
-  59 of 61 typescript-eslint typed rules. Oxc type-check is experimental and
-  JavaScript plugins are alpha, so neither can silently replace a proven gate.
+- `ui/tsconfig.json` omits `noPropertyAccessFromIndexSignature`,
+  `isolatedModules`, and forced module detection.
+- `skipLibCheck` remains enabled. A full declaration probe exposes third-party
+  incompatibilities that must be solved as one mutually compatible dependency
+  set rather than hidden with ambient declarations.
+- Handwritten UI code has no explicit `any`; the visible `as any` cases are in
+  generated route-tree output. File-class ownership must preserve that
+  distinction.
+- Existing production code still contains broad assertions, non-null
+  assertions, coordinated boolean states, and exception-text classification
+  that are not covered by one required static policy.
+- Plan 131 inventories and enables the final native/type-aware Oxlint rules.
+  This plan consumes that inventory and closes only the remaining application
+  policy gaps; it does not introduce another linter or compiler.
+
+## Fixed Decisions
+
+1. `tsc --noEmit` remains the authoritative compiler gate. Experimental Oxc
+   type-checking cannot replace it.
+2. Native and type-aware Oxlint remain the only linters. Parallax-specific
+   syntax and graph invariants use Plan 095's Rust/Oxc xtask provider.
+3. Effective configuration and selected files are checked artifacts. A green
+   command with a weakened config or incomplete file set fails.
+4. `any`, production `@ts-ignore`, unreasoned `@ts-expect-error`, non-null
+   assertions, and broad assertions are forbidden in handwritten production
+   code except an exact no-growth runtime-boundary handoff to Plan 152 or 153.
+   Generated and shadcn files have explicit, narrow owners.
+5. Async/UI state uses discriminated unions when independent booleans can
+   represent an impossible combination. Expected domain failures use exhaustive
+   Result-shaped unions with typed codes.
+6. `skipLibCheck` is disabled only by fixing the compatible dependency graph.
+   Ambient patches, `any`, and application casts are not declaration fixes.
+7. External values remain `unknown` until their owning runtime plan parses
+   them. GraphQL belongs to Plan 152; SSE, route search, storage, environment,
+   cross-window messages, and other external JSON belong to Plan 153. Plans 152
+   and 153 depend on this plan; this plan does not wait for either one.
 
 ## Scope
 
-- Complete compiler options and effective-config drift evidence.
-- Boundary-specific Oxlint/xtask rules and effective-config drift evidence on
-  plan 131's final native/type-aware configuration.
-- `unknown`-first runtime decoding for GraphQL, SSE, search, and storage edges.
-- Assertion/non-null/directive/suppression ratchets and exhaustive domain state.
-- Generated/shadcn ownership and declaration-compatibility evidence.
+In scope:
+
+- The complete TypeScript 7 compiler-option contract and effective-config
+  drift check.
+- Full third-party declaration compatibility with `skipLibCheck = false`.
+- Static native/type-aware Oxlint rules and Oxc-backed xtask policies not
+  completed by Plan 131.
+- Assertion, non-null, directive, suppression, generated-owner, and file-class
+  ratchets.
+- Exhaustive discriminated state and Result-shaped expected-failure policy.
+- Required local and CI diagnostics for this static contract.
 
 Out of scope:
 
-- Feature/route/cache movement, owned by plan 100.
-- Test harness/topology, owned by plan 129.
-- General dependency policy/upgrades, owned by plan 101. This plan may make the
-  narrow compatible upgrade needed to clear a known TypeScript declaration
-  failure, using plan 101's already-landed policy.
-- Cosmetic type rewrites or application-wide branded-type migration.
+- GraphQL SDL, documents, code generation, transport, envelope parsing, and
+  dynamic dashboard response validation, owned by Plan 152.
+- SSE, search, storage, environment, cross-window, and other non-GraphQL runtime
+  boundary implementations, owned by Plan 153.
+- Feature/route movement, owned by Plans 100, 134-143, 149, and 150; cache
+  behavior, owned by Plan 133.
+- Test topology and browser automation, owned by Plans 129 and 132/144-146.
+- General dependency upgrades except the narrow mutually compatible changes
+  required to make third-party TypeScript declarations clean under Plan 101.
+- Application-wide branded types or cosmetic type rewrites.
+
+## Required Commands
+
+| Purpose | Command | Expected result |
+|---------|---------|-----------------|
+| Effective compiler config | `cd ui && bunx --bun --no-install tsc --showConfig` | exact strict options and complete file classes |
+| Compiler | `cd ui && bun run typecheck` | TypeScript 7 exits zero with full declaration checking |
+| Native lint | `cd ui && bun run lint:native` | warnings, stale directives, parse errors, and zero selection fail |
+| Type-aware lint | `cd ui && bun run lint:type-aware` | typed rule fixtures and full project pass |
+| Static policy | `cargo xtask policy --only ui.typescript-static-safety` | ratchets, ownership, state, and Result rules pass |
+| UI regression | `cd ui && bun run test:ci && bun run build` | existing behavior remains green |
+| Aggregate | `cargo xtask ci --fast` | required static diagnostics are represented once |
+
+Use the final script names established by Plan 131 if they differ. Update this
+table and the stable xtask diagnostic IDs in the same implementation change;
+never retain aliases that invoke a second toolchain.
 
 ## Steps
 
-### Step 0: Verify the compiler/linter prerequisite
+### Step 0: Verify the compiler and linter prerequisite
 
-Verify plan 131 left exactly one latest-stable TypeScript 7 compiler, native and
-type-aware Oxlint as the only invoked linters, independent `tsc --noEmit`, and no
-ESLint/typescript-eslint or TypeScript 6 alias. Reproduce its effective config,
-selected-file, Bun-process, and dependency/API-consumer gates before proceeding.
+Confirm Plan 131 left exactly one latest-stable TypeScript 7 compiler, one
+native Oxlint lane, one type-aware Oxlint lane, independent `tsc --noEmit`, and
+no invoked ESLint/typescript-eslint or TypeScript 6 alias. Reproduce its
+effective-config, selected-file, Bun-process, dependency, and API-consumer
+negative gates before changing strictness.
 
-### Step 1: Freeze the compiler, lint, and boundary baseline
+**Verify:** compiler/linter versions match the lock, every command is forced
+through Bun with installation disabled, process ancestry contains no Node, and
+all Plan 131 compatibility fixtures pass.
 
-Capture `tsc --showConfig`, Oxlint's printed effective config for handwritten,
-test, generated-route, config, and shadcn files, current diagnostics, assertion/
-non-null/directive counts, and runtime boundary inventory. Classify every
-violation by production, test, generated, or third-party declaration ownership.
-Freeze exact selected-file manifests and representative positive/negative files
-so the migration cannot appear green by omitting a class.
+### Step 1: Freeze the static baseline by file class
+
+Capture the effective compiler config, compiler file list, native/type-aware
+Oxlint effective rules and file lists, full declaration diagnostics, and the
+current assertion/non-null/directive/state/Result inventories. Classify every
+finding as handwritten production, test, config, generated route tree, shadcn,
+or third-party declaration ownership.
+
+Store exact positive and negative file manifests in the quality-control-plane
+fixtures. The baseline can shrink but cannot grow, omit a class, or silently
+move a handwritten file into an excluded class.
+
+**Verify:** missing, duplicate, stale, zero-file, parse-failure, and deliberately
+misclassified fixtures fail with the same rule IDs in human and JSON output.
 
 ### Step 2: Complete the compiler contract
 
 Add `noPropertyAccessFromIndexSignature`, `isolatedModules`, and
-`moduleDetection: "force"`; preserve every strict option named in
-`ENGINEERING-STANDARDS.md`. Repair application findings using precise access
-and narrowing. Spike `erasableSyntaxOnly` and enable it only if handwritten and
-generated application code is compatible.
+`moduleDetection: "force"`. Preserve `strict` and explicitly verify all strict
+sub-options plus unchecked-index, exact-optional, override, return, unused,
+fallthrough, side-effect-import, casing, unreachable-code, unused-label,
+verbatim-module, and bundler-resolution settings required by
+`ENGINEERING-STANDARDS.md`.
 
-Start from plan 101's report-only `skipLibCheck=false` inventory. Resolve each
-third-party failure by selecting the latest mutually compatible stable
-TypeScript 7/TanStack/declaration set under that dependency policy, then make
-the lane required and disable `skipLibCheck`. This plan owns only upgrades necessary
-for declaration compatibility. Never paper over dependency declarations with
-local `any` or an ambient declaration patch.
+Repair application diagnostics with precise property access, narrowing,
+readonly values, and exact optional-property construction. Spike
+`erasableSyntaxOnly` over handwritten, generated, test, and config classes;
+enable it only when the complete application surface passes. Do not enable
+`isolatedDeclarations` for this no-emit application.
 
-### Step 3: Extend the final static boundary contract
+**Verify:** `tsc --showConfig` matches the checked strict contract, one fixture
+fails for every newly required option, the full compiler file manifest is
+non-empty and exact, and `tsc --noEmit` passes without casts or exclusions.
 
-Consume plan 131's exact native/type-aware Oxlint inventory. Add or confirm the
-boundary-specific rules for unsafe values, promises, exhaustive variants,
-assertions, throw/catch, non-null, type imports, unused directives, and test-only
-expectations. Each added rule has a negative fixture and exact file-class scope.
+### Step 3: Make the full declaration graph clean
 
-Use plan 095's Oxc-backed xtask provider for Parallax-specific escape-hatch,
-Result-union, generated-owner, and boundary-decode ratchets that generic lint
-cannot express. Do not add JS plugins, ESLint, a second import graph, or
-experimental Oxc type-check authority.
+Start from Plan 101's report-only `skipLibCheck = false` inventory. For each
+failure, record package owner, declaration path, diagnostic, current compatible
+version set, and upstream fixed version if one exists. Select the latest
+mutually compatible stable TypeScript 7, TanStack, React, Vite, Vitest, and
+declaration set under Plan 101's dependency policy.
 
-### Step 4: Decode every runtime boundary
+Upgrade only packages necessary for declaration compatibility, run their owned
+behavior suites, then set `skipLibCheck` to `false` and make the full lane
+required. Do not add local ambient modules, declaration merging that lies about
+the package, `patch-package`, `any`, or application casts.
 
-Make `build_schema().as_sdl()` from `parallax-api` the authoritative GraphQL SDL
-source. A repository-owned command exports a deterministic checked-in schema and
-fails drift. Static named `.graphql` documents are validated against that schema
-and one Bun-compatible generator emits variables/results plus runtime schemas;
-generated outputs are checked in or reproduced deterministically under Bun.
-Transport always sends `{ operationName, query, variables }`; remove value
-interpolation/manual escaping. The generic client accepts `unknown`, decodes the
-GraphQL envelope and operation payload once, and returns the generated domain
-contract. Inventory dynamic dashboard aliases and choose a bounded typed query
-representation or an explicit decoder that validates alias keys and values.
+**Verify:** a clean checkout checks every library declaration; a fixture that
+re-enables `skipLibCheck`, excludes the failing declaration, or adds an ambient
+patch fails policy. `bun why`, the exact lock, UI tests, build, and TanStack route
+generation remain green.
 
-Land these contracts behind the current narrow API/SSE boundary without moving
-route ownership in the same change. Plan 100 relocates the already-tested
-documents/schemas into `shared/api` and feature `api/` modules mechanically.
+### Step 4: Close static Oxlint and xtask gaps
 
-Define schemas for each logs/traces/run SSE event and validate before state
-mutation. Reject malformed frames deterministically, record bounded diagnostics
-without payload secrets, and test reconnect/order behavior. Apply the same rule
-to route search, local/session storage, environment, and cross-window values.
+Consume Plan 131's implemented/mapped/missing inventory. Require every
+available stable native/type-aware rule for unsafe values, promises,
+exhaustiveness, unnecessary conditions/assertions/type arguments, non-null,
+throw/catch, strict booleans, confusing void, and consistent type imports.
+Never duplicate a rule already owned by Plan 131 under a second name.
 
-### Step 5: Model states and remove escape hatches
+Use Plan 095's Rust/Oxc provider only for invariants the pinned Oxlint pair
+cannot express: handwritten/generated owner separation, forbidden escape-hatch
+forms, reason-bearing type-test directives, Result-union shape, stringly error
+classification, and coordinated-boolean state candidates. Parse syntax and
+semantic imports; do not enforce these with regex, alpha JavaScript plugins,
+ESLint, or experimental Oxc type-check authority.
 
-Convert touched multi-boolean async states to discriminated unions and exhaust
-their variants. Replace production non-null assertions and broad assertions
-with narrowing, schema parsing, or a tiny proven adapter. Forbid `@ts-ignore`;
-reason-bearing `@ts-expect-error` exists only in type tests. Ratchet all escape
-hatches by handwritten/generated/test ownership.
+**Verify:** each rule or custom invariant has one positive and one minimal
+negative fixture in every applicable file class. Missing rules are mapped to an
+exact compiler/xtask oracle; warnings, unused disables, parse/resolution errors,
+scope broadening, and zero selection fail.
 
-Pure/domain operations represent expected failures as a discriminated
-Result-shaped union with a typed code. Transport/framework boundaries may throw
-an `Error`, but map it once; exception text cannot classify retry, UI, or control
-flow. Inventory touched domain functions and add Oxc/xtask/type fixtures that
-reject stringly failure variants and unhandled result cases.
+### Step 5: Remove escape hatches and impossible states
 
-### Step 6: Integrate required gates
+Replace handwritten production non-null assertions and broad assertions with
+narrowing, `satisfies`, literal-preserving `as const`, or explicit impossible-
+state handling. Do not implement a runtime decoder here. If an assertion exists
+only because an external GraphQL value is still unparsed, record its exact
+path/symbol/test IDs and expiry under Plan 152; assign every other external-
+value assertion to Plan 153. Those handoffs are exact and no-growth. Forbid
+`@ts-ignore`. Permit `@ts-expect-error` only in a type test with a precise reason
+and an adjacent assertion proving the intended diagnostic; stale directives
+must fail compilation.
 
-Make the current required formatter, native Oxlint, type-aware Oxlint,
-effective-config drift, `tsc --noEmit`, schema/codegen drift, and boundary
-negative fixtures separate xtask/CI diagnostics under the stable aggregate.
-Experimental Oxc type-check cannot satisfy `tsc`. Lint cache keys include exact
-tool/TypeScript/platform/config/project-graph inputs; skipped or zero/incomplete
-file selection fails.
+Inventory components/hooks that coordinate two or more booleans for one async
+or UI lifecycle. Convert only genuine state-machine groups to readonly
+discriminated unions with exhaustive switches and a `never` oracle. Do not
+combine unrelated orthogonal booleans merely to satisfy a metric.
 
-Consume plan 094's global bunfig contract: native/type-aware Oxlint, `tsc`, and
-the selected GraphQL generator must resolve exact lock-local
-executables under Bun with auto-install disabled. A Node descendant or mutable
-`@latest` command fails the gate.
+Inventory pure/domain functions whose expected failures are classified by
+thrown text or untyped strings. Replace them with a discriminated Result-shaped
+union carrying a stable typed code. Framework and transport edges may throw an
+`Error`, but map it once and never branch on its message.
+
+**Verify:** type fixtures reject impossible state combinations, unhandled
+variants, stringly error codes, message-based control flow, broad assertions,
+production non-null, and unreasoned directives. Existing behavior tests remain
+unchanged and green.
+
+### Step 6: Lock generated and shadcn ownership
+
+Keep TanStack's route tree and shadcn primitives in explicit generated/tool-owned
+classes. Generated code is compiler-checked but is never hand-edited to satisfy
+an application policy. Exceptions name generator, path glob, allowed rules,
+reason, owner, refresh command, and stale/removal condition. A handwritten file
+cannot match either class.
+
+Generated files introduced later by Plan 152 follow the same contract, but
+their generation and runtime semantics remain Plan 152's responsibility.
+
+**Verify:** handwritten-in-generated-path, generated-outside-owner,
+scope-broadening, stale exception, and direct generated edit fixtures fail.
+Regeneration produces the same compiler/lint classification.
+
+### Step 7: Integrate required static gates
+
+Expose separate stable diagnostics for effective compiler config, compiler file
+selection, full declarations, native lint, type-aware lint, escape-hatch/state/
+Result policy, and generated ownership. Add them once under the aggregate
+required check with exact tool/config/project-graph/platform cache inputs.
+
+Keep failures attributable: a declaration failure cannot appear as lint, and a
+runtime boundary failure from Plans 152/153 cannot be hidden in this static
+gate. A skipped, cached-with-wrong-inputs, zero-file, Node-spawned, or implicit-
+install invocation fails closed.
+
+**Verify:** local and CI command manifests agree; intentional failures route to
+the exact diagnostic; two clean runs are deterministic; typecheck, lint, tests,
+build, and `cargo xtask ci --fast` pass.
 
 ## Test Plan
 
-- Compiler/effective-Oxlint config and selected-file goldens plus weakening,
-  zero-file, parse-failure, and resolution-failure fixtures.
-- One failing fixture for every selected boundary-specific native/type-aware
-  rule and custom Oxc-backed ratchet.
-- Exact SDL export/drift, named-document validation, generated variable/result/
-  runtime-schema drift, operation-name, variables, and no-interpolation tests.
-- Valid, missing, extra, wrong-type, null, malformed JSON, and partial GraphQL
-  envelopes for static and dynamic operations.
-- Valid/malformed/oversized/out-of-order SSE frames with secret-safe errors.
-- Search/storage schema round trips and exhaustive-union type tests.
-- Result-shaped domain failure and exception-text-classifier rejection tests.
-- Assertion/non-null/directive ratchet growth/stale/generated cases.
-- Bun-only lint/typecheck/build on a clean checkout.
+- Effective TypeScript config and selected-file goldens, including weakening,
+  omission, duplicate class, parse failure, and zero-file fixtures.
+- One compiler-error fixture for each newly required compiler option.
+- `skipLibCheck = false` declaration graph plus skip, exclusion, ambient-patch,
+  and incompatible-dependency negative fixtures.
+- One positive/negative fixture for every selected native/type-aware Oxlint rule
+  and every Oxc-backed custom static invariant.
+- Assertion, non-null, directive, suppression, generated-owner, and stale-
+  exception ratchet cases.
+- Exhaustive discriminated-state and Result-shaped failure type fixtures,
+  including impossible combinations and exception-message classification.
+- Bun-only typecheck/lint/test/build and process-ancestry checks from a clean
+  checkout on supported macOS and Linux CI environments.
 
 ## Done Criteria
 
-- [ ] Effective TypeScript config contains every required compatible option and
-  cannot drift weaker.
-- [ ] TypeScript 7, native/type-aware Oxlint, and stable React Hooks rules catch
-  every intentional failure, select every intended file, and use no Node process.
-- [ ] No handwritten boundary trusts JSON, GraphQL, SSE, search, or storage via
-  a generic cast.
-- [ ] Handwritten production code contains no `any`, `@ts-ignore`, or unreasoned
-  non-null/broad assertion.
-- [ ] Authoritative SDL, named documents, generated variables/results, runtime
-  schemas, and `{ operationName, query, variables }` transport drift together;
-  dynamic GraphQL and every SSE event have explicit runtime contracts.
-- [ ] Expected domain failures use exhaustive typed Result-shaped unions rather
-  than exception-text control flow.
-- [ ] Generated/shadcn exceptions are narrow, owned, and tested.
-- [ ] `skipLibCheck` is disabled and the full third-party declaration graph is
-  clean without ambient patches or application casts.
-- [ ] Required Bun gates pass with no zero-file selection.
+- [ ] Effective TypeScript 7 config contains every compatible strict option and
+  cannot drift weaker or omit a file class.
+- [ ] `skipLibCheck` is false and the complete third-party declaration graph is
+  clean without ambient patches, exclusions, or application casts.
+- [ ] Native/type-aware Oxlint and Oxc-backed xtask rules cover every selected
+  static invariant with exact positive and negative fixtures.
+- [ ] Handwritten production code contains no `any`, `@ts-ignore`, unreasoned
+  `@ts-expect-error`, non-null assertion, or broad assertion outside exact
+  no-growth Plan-152/153 runtime-boundary handoffs.
+- [ ] Genuine async/UI state machines and expected domain failures are
+  exhaustive discriminated unions; exception text is not control flow.
+- [ ] Generated and shadcn classes are narrow, owned, refreshable, and cannot
+  capture handwritten files.
+- [ ] Static gates are deterministic, Bun-only, non-empty, separately
+  attributable, and required under the aggregate check.
+- [ ] GraphQL and other runtime parsing remain assigned only to Plans 152 and
+  153; this plan has not created a boundary implementation.
 
 ## STOP Conditions
 
-- A compiler/rule change requires broad disablement or generated-code edits.
-- Runtime validation changes a public payload/search contract without a spec
-  migration.
-- A fix introduces `any`, a broad assertion, duplicate domain types, or a
-  second decoder for the same boundary.
-- Native or type-aware Oxlint cannot identify the intended project,
-  skips a file class, needs Node, or a critical invariant has no native,
-  compiler, xtask, runtime, or test oracle.
-- No latest mutually compatible stable dependency set has a clean declaration
-  graph; record exact upstream failures and block rather than patch types
-  locally or re-enable `skipLibCheck`.
+Stop and report if:
+
+- a compiler or rule change requires broad disablement, generated-code edits,
+  a handwritten exclusion, `any`, a broad assertion, or a suppression;
+- no latest mutually compatible stable dependency set has a clean declaration
+  graph;
+- a proposed state union combines unrelated state or changes behavior rather
+  than removing an impossible combination;
+- native/type-aware Oxlint skips a file class, needs Node, or has no exact
+  compiler/xtask substitute for a required missing rule;
+- generated/shadcn ownership cannot distinguish tool output from handwritten
+  code; or
+- a remaining assertion cannot be assigned exactly to static repair, Plan 152,
+  or Plan 153 without changing runtime behavior; or
+- implementation starts decoding GraphQL or any Plan 153 external boundary.
 
 ## Remove When
 
-Delete this plan and index row when strict TypeScript 7/`tsc`, native/type-aware
-Oxlint, authoritative GraphQL/runtime decoding, Result-shaped failures,
-escape-hatch ratchets, and generated ownership are required and green.
+Delete this plan and its index row when the complete strict TypeScript 7
+compiler contract, full declaration graph, static Oxlint/xtask rules,
+escape-hatch/state/Result policy, generated ownership, and required Bun-only
+gates are green. Runtime boundary plans do not block this plan's retirement.

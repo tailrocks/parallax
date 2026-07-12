@@ -12,7 +12,7 @@
 - **Risk**: MEDIUM
 - **Depends on**: upstream `greptimedb-ingester` native-TLS/plaintext feature fix
 - **Category**: storage / ingest performance
-- **Planned at**: re-based from historical plan 089 on 2026-07-12
+- **Planned at**: `e3e7997`, re-based from historical plan 089 on 2026-07-12
 - **Status**: BLOCKED
 - **Blocker**: Published `greptimedb-ingester` versions through 0.18.0
   hard-enable tonic `tls-ring`; no native-TLS/plaintext feature split exists.

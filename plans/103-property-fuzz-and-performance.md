@@ -9,7 +9,7 @@
 - **Priority**: P2
 - **Effort**: L
 - **Risk**: MEDIUM
-- **Depends on**: 097, 099, 100, 101, 104
+- **Depends on**: 097, 099, 101, 104, 133, 147, 148
 - **Category**: testing / fuzzing / performance
 - **Planned at**: `a1d8bf82`, revised 2026-07-12
 - **Status**: TODO
@@ -18,8 +18,8 @@
 
 Parallax's highest-risk parsers and invariants have examples but no systematic
 property/fuzz corpus, and its ingest/read performance promises lack durable
-allocation and regression evidence. Jackin's breadth is useful as a menu, not
-a reason to enable expensive tools without owners or thresholds.
+allocation and regression evidence. Expensive tools need named defect classes,
+owners, reproducible environments, and measured thresholds.
 
 ## Scope
 
@@ -27,7 +27,9 @@ a reason to enable expensive tools without owners or thresholds.
   SQL builders/validation, serialization, and retry invariants.
 - Bounded UI properties for route-search round trips, GraphQL/SSE runtime
   decoders, query-key identity, live ordering/deduplication, and feature state
-  machines after plans 128/100 establish their owners.
+  machines after plans 128/151 establish their owners, plus query-key,
+  live-data, and bundle properties after plans 133, 147, and 148 establish their
+  final owners.
 - Fuzz targets and minimized corpora for OTLP/protobuf, Arrow, spool, and
   redaction boundaries.
 - Target-to-workflow drift validation.
@@ -37,7 +39,7 @@ a reason to enable expensive tools without owners or thresholds.
 
 Out of scope:
 
-- Arbitrary benchmark thresholds copied from Jackin.
+- Arbitrary benchmark thresholds copied from an unrelated project or machine.
 - Four-engine database performance claims outside the mandated four-build
   benchmark protocol.
 - Miri, mutants, Dylint, Hakari, chaos, or self-hosted runners without a
@@ -63,7 +65,8 @@ Use deterministic seeded generation, shrinkable cases, explicit size limits,
 and committed minimal regressions. Ensure timestamps, Unicode/invalid byte
 boundaries, high-cardinality attributes, duplicate/out-of-order telemetry,
 redaction variants, and nanosecond string compatibility are represented.
-Run TypeScript properties through Bun, reuse plan 128's runtime schemas, and
+Run TypeScript properties through Bun, reuse Plan-152/153 and feature-owned
+runtime schemas, and
 persist only minimal deterministic regression cases.
 
 ### Step 3: Add parser/recovery fuzz targets

@@ -28,10 +28,6 @@ Oxfmt non-negotiable before program closure and authorizes its exact narrow Beta
 exception through plan 101. This does not relabel `oxfmt@0.58.0` stable or grant
 a general pre-stable-tool exception.
 
-Sources: [current Oxfmt recommendation](https://oxc.rs/docs/guide/usage/formatter),
-[unsupported features](https://oxc.rs/docs/guide/usage/formatter/unsupported-features),
-and the [Oxfmt Beta announcement](https://oxc.rs/blog/2026-02-24-oxfmt-beta).
-
 ## Readiness Check
 
 Before any dependency/config change, record the official Oxc status, latest

@@ -40,7 +40,8 @@ Out of scope:
 - Typed domain errors, owned by 099.
 - Module/facade decomposition, owned by 098.
 - Nightly-only custom lints.
-- Copying Jackin's version, thresholds, or allow list.
+- Copying another repository's versions, thresholds, or allow list without a
+  Parallax measurement.
 
 ## Steps
 
@@ -92,7 +93,7 @@ false-positive evidence, and ratchet every local attribute.
 
 Set the new/restructured ceilings from `ENGINEERING-STANDARDS.md`: 100-line
 functions, cognitive complexity 25, nesting 4, and 6 arguments. Existing
-over-target functions receive exact shrink-only rows; do not import Jackin's
+over-target functions receive exact shrink-only rows; do not import unrelated
 150/58/5/7 thresholds. CLI progress/readiness output is required; use injected
 writers or narrow reasoned expectations rather than suppressing narration.
 

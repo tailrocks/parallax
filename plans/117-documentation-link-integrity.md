@@ -19,8 +19,8 @@
 
 The consolidation audit found broken relative links in the four-way benchmark
 matrix and alternatives research. They were repaired in the planning commit,
-but no required gate prevents the same drift. Jackin's repository-link checker
-is a useful pattern; Parallax needs a smaller plain-Markdown implementation.
+but no required gate prevents the same drift. Parallax needs a small
+plain-Markdown implementation in the existing control plane.
 
 ## Scope
 

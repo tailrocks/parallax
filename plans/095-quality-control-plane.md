@@ -91,7 +91,11 @@ Pin one compatible Rust Oxc family and build the TypeScript providers from
 `oxc_parser`, `oxc_ast`, `oxc_semantic`, and `oxc_resolver`. The import provider
 resolves tsconfig aliases, package exports, type-only edges, barrels/reexports,
 dynamic imports, generated route composition, `.server`/`.client` conditions,
-and feature public entry points. The AST provider measures functions,
+and the complete `app/layout/routes/features/domain/platform/shared` graph plus
+feature public entry points. It also classifies source-owned `tests/`,
+harness-only `src/test/`, and black-box `ui/tests/e2e/` so test support cannot
+enter production graphs and production modules cannot depend on test bodies.
+The AST provider measures functions,
 components, hooks, assertions, directives, and exports so moving a 400-line
 component out of a route cannot claim success. Parse or resolution failure is a
 finding, never an absent edge. This graph is authoritative; Oxlint's native
@@ -99,11 +103,14 @@ import/cycle rules may provide fast supplemental diagnostics but may not create
 a second architecture truth. Publish the alias, barrel, type-only, dynamic,
 server/client, and cycle cases as a tool-neutral downstream parity corpus. This
 plan does not install or invoke Oxlint before plan 131 owns that live toolchain;
-plans 131 and 100 consume the corpus and prove supplemental agreement later.
+plans 131, 100, 129, and 132 consume the corpus and prove supplemental
+agreement later.
 
 Fixture TS/TSX/JS/JSX, extension/index lookup, aliases, type-only imports,
 `import()`, reexports, package exports, missing targets, cycles, root-layout,
-generated route, and server/client cases. Record version/source/license review
+generated route, every UI layer direction, feature deep/facade imports,
+source-test/harness/E2E topology, and server/client cases. Record
+version/source/license review
 for the initial Oxc crates; plan 101 later makes compatible-family upgrades and
 supply-chain coverage executable.
 

@@ -9,7 +9,7 @@
 - **Priority**: P2
 - **Effort**: M
 - **Risk**: MEDIUM
-- **Depends on**: 097, 099, 100
+- **Depends on**: 097, 099, 133, 151
 - **Category**: metrics / API / UI
 - **Planned at**: `eefa4617`, 2026-07-12
 - **Status**: TODO
@@ -39,6 +39,22 @@ Out of scope:
 - Unbounded lifetime counts, high-cardinality label downloads, or per-row N+1.
 - General dashboard redesign or changing metric retention.
 
+## Decision Gate
+
+Until an operator-approved contract exists, preserve the current GraphQL/CLI
+surface and do not claim a meaning for the stubbed values. Step 1 must produce
+`docs/research/decisions/metric-summary-contract.md` with the exact query window,
+eligible metric kinds/samples, NaN/stale/histogram treatment, trend buckets and
+cap, `parallax metrics --run` disposition, native-name/collision mapping, metric-
+only service discovery rule, compatibility promise, and approval date. Add a
+decision-policy fixture that fails missing, draft, rejected, or incomplete
+approval.
+
+Steps 2-5 are forbidden until that record is operator-approved. If approval is
+unavailable, rejects every proposal, or changes backend/API/UI scope, mark this
+plan `BLOCKED` with the exact open decision and stop instead of selecting product
+semantics during implementation.
+
 ## Steps
 
 1. Specify whether `metric_point_count` is windowed, which samples count, how
@@ -48,6 +64,8 @@ Out of scope:
    table names map back to user metric names, collisions/errors, and how
    metric-only services enter service discovery. Add CLI/GraphQL compatibility
    snapshots before implementation.
+   Verify the checked-in decision-policy gate reports one approved complete
+   contract; otherwise mark `BLOCKED` and do not begin step 2.
 2. Add capability-level storage methods returning typed, bounded summaries and
    a bounded metric-only service catalog.
    Implement MemoryStore first as executable semantics, then GreptimeDB using
@@ -86,6 +104,8 @@ Out of scope:
 
 ## STOP Conditions
 
+- The Step-1 operator approval is missing, draft, rejected, ambiguous, or changes
+  implementation scope.
 - The implementation needs a custom raw metric table.
 - Semantics require an unbounded scan or one query per result/metric row.
 - Native tables lack a required capability and the mandated research/upstream
