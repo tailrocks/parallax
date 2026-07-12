@@ -9,7 +9,7 @@ use crate::{
     ApiContext, MAX_ROWS, clamp_limit, field_err, nanos_string, retained_recent_range, saturate_i32,
 };
 
-use parallax_core::{span_events, trace_analysis};
+use parallax_analysis::{span_events, trace_analysis};
 
 pub(crate) struct Span(pub(crate) model::SpanRow);
 

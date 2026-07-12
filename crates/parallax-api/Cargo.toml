@@ -13,6 +13,7 @@ publish = false
 workspace = true
 
 [dependencies]
+parallax-analysis = { workspace = true }
 tokio = { workspace = true }
 juniper = { workspace = true, features = ["schema-language"] }
 parallax-core = { workspace = true }

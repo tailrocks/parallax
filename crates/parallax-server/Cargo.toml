@@ -13,12 +13,12 @@ publish = false
 workspace = true
 
 [dependencies]
+parallax-analysis = { workspace = true }
 anyhow = { workspace = true }
 juniper = { workspace = true }
 axum = { workspace = true }
 bytes = { workspace = true }
 parallax-api = { workspace = true }
-parallax-core = { workspace = true }
 parallax-ingest = { workspace = true }
 parallax-proto = { workspace = true }
 parallax-storage = { workspace = true }

@@ -3079,10 +3079,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "parallax-analysis"
+version = "0.1.0-dev"
+dependencies = [
+ "parallax-model",
+ "parallax-proto",
+ "regex",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "parallax-api"
 version = "0.1.0-dev"
 dependencies = [
  "juniper",
+ "parallax-analysis",
  "parallax-core",
  "parallax-storage",
  "parallax-test-support",
@@ -3114,8 +3126,8 @@ name = "parallax-core"
 version = "0.1.0-dev"
 dependencies = [
  "jsonschema",
+ "parallax-analysis",
  "parallax-model",
- "parallax-proto",
  "regex",
  "serde",
  "serde_json",
@@ -3177,8 +3189,8 @@ dependencies = [
  "opentelemetry-appender-tracing",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
+ "parallax-analysis",
  "parallax-api",
- "parallax-core",
  "parallax-ingest",
  "parallax-proto",
  "parallax-storage",

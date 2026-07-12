@@ -9,7 +9,7 @@ use crate::{
 };
 
 use crate::resolvers::common::Point;
-use parallax_core::semconv;
+use parallax_analysis::semconv;
 use parallax_storage::adapter::{
     OverviewTotals, ReleaseWindow as StorageReleaseWindow, SERVICE_MAP_TRACE_CAP,
     ServiceCatalogRow as StorageServiceCatalogRow, ServiceEdge as StorageServiceEdge,

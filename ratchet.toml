@@ -28,7 +28,12 @@ ceiling = 3
 [[rust_suppressions]]
 crate_name = "parallax-core"
 lint = "clippy::expect_used"
-ceiling = 2
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-analysis"
+lint = "clippy::expect_used"
+ceiling = 1
 
 [[rust_suppressions]]
 crate_name = "parallax-server"
@@ -151,17 +156,22 @@ lint = "clippy::too_many_lines"
 ceiling = 1
 
 [[rust_suppressions]]
-crate_name = "parallax-core"
+crate_name = "parallax-analysis"
 lint = "clippy::cast_possible_wrap"
 ceiling = 1
 
 [[rust_suppressions]]
 crate_name = "parallax-core"
 lint = "clippy::cast_precision_loss"
-ceiling = 2
+ceiling = 1
 
 [[rust_suppressions]]
-crate_name = "parallax-core"
+crate_name = "parallax-analysis"
+lint = "clippy::cast_precision_loss"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-analysis"
 lint = "clippy::excessive_nesting"
 ceiling = 2
 
@@ -181,7 +191,7 @@ lint = "clippy::float_cmp"
 ceiling = 1
 
 [[rust_suppressions]]
-crate_name = "parallax-core"
+crate_name = "parallax-analysis"
 lint = "clippy::too_many_arguments"
 ceiling = 1
 
@@ -285,6 +295,11 @@ class = "product"
 tier = 0
 
 [[architecture.packages]]
+name = "parallax-analysis"
+class = "product"
+tier = 1
+
+[[architecture.packages]]
 name = "parallax-storage"
 class = "product"
 tier = 1
@@ -292,7 +307,7 @@ tier = 1
 [[architecture.packages]]
 name = "parallax-core"
 class = "product"
-tier = 1
+tier = 2
 
 [[architecture.packages]]
 name = "parallax-ingest"
@@ -1672,7 +1687,7 @@ ceiling = 142
 
 [[limits]]
 metric = "rust.function-lines"
-scope = "crates/parallax-core/src/trace_analysis.rs::collect_critical_hops"
+scope = "crates/parallax-analysis/src/trace_analysis.rs::collect_critical_hops"
 ceiling = 101
 
 [[limits]]
@@ -1781,6 +1796,11 @@ ceiling = 161
 
 [[limits]]
 metric = "rust.public-root-items"
+scope = "crates/parallax-analysis/facade.toml"
+ceiling = 5
+
+[[limits]]
+metric = "rust.public-root-items"
 scope = "crates/parallax-api/facade.toml"
 ceiling = 6
 
@@ -1792,7 +1812,7 @@ ceiling = 1
 [[limits]]
 metric = "rust.public-root-items"
 scope = "crates/parallax-core/facade.toml"
-ceiling = 9
+ceiling = 4
 
 [[limits]]
 metric = "rust.public-root-items"
@@ -1901,12 +1921,12 @@ ceiling = 55
 
 [[limits]]
 metric = "rust.assertions"
-scope = "crates/parallax-core/src/derive/tests.rs"
+scope = "crates/parallax-analysis/src/derive/tests.rs"
 ceiling = 13
 
 [[limits]]
 metric = "rust.assertions"
-scope = "crates/parallax-core/src/fingerprint/tests.rs"
+scope = "crates/parallax-analysis/src/fingerprint/tests.rs"
 ceiling = 11
 
 [[limits]]
@@ -1921,12 +1941,12 @@ ceiling = 25
 
 [[limits]]
 metric = "rust.assertions"
-scope = "crates/parallax-core/src/semconv/tests.rs"
+scope = "crates/parallax-analysis/src/semconv/tests.rs"
 ceiling = 10
 
 [[limits]]
 metric = "rust.assertions"
-scope = "crates/parallax-core/src/span_events/tests.rs"
+scope = "crates/parallax-analysis/src/span_events/tests.rs"
 ceiling = 14
 
 [[limits]]
@@ -1936,7 +1956,7 @@ ceiling = 7
 
 [[limits]]
 metric = "rust.assertions"
-scope = "crates/parallax-core/src/trace_analysis/tests.rs"
+scope = "crates/parallax-analysis/src/trace_analysis/tests.rs"
 ceiling = 31
 
 [[limits]]

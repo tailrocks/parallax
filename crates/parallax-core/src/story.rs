@@ -3,8 +3,8 @@
 //! Deterministic story timeline projection over telemetry rows.
 
 use crate::bundle::MetricWindow;
-use crate::fingerprint::normalize_message;
-use crate::semconv;
+use parallax_analysis::fingerprint::normalize_message;
+use parallax_analysis::semconv;
 use parallax_model::{LogRow, SpanRow};
 use serde_json::Value;
 use std::collections::HashMap;

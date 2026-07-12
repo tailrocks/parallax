@@ -1,6 +1,6 @@
 [package]
-name = "parallax-core"
-description = "Parallax domain logic: derivation, fingerprinting, grouping, bundles"
+name = "parallax-analysis"
+description = "Parallax error, fingerprint, span-event, and trace analysis"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -13,12 +13,8 @@ publish = false
 workspace = true
 
 [dependencies]
-parallax-analysis = { workspace = true }
 parallax-model = { workspace = true }
+parallax-proto = { workspace = true }
 regex = { workspace = true }
-serde = { workspace = true }
 serde_json = { workspace = true }
 sha2 = { workspace = true }
-
-[dev-dependencies]
-jsonschema = { workspace = true }

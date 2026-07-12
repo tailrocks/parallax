@@ -9,7 +9,7 @@ use crate::{
     ApiContext, MAX_ROWS, clamp_limit, field_err, nanos_string, retained_recent_range, saturate_i32,
 };
 
-use parallax_core::semconv;
+use parallax_analysis::semconv;
 use parallax_storage::model::MetricAgg;
 
 pub(crate) struct Issue(pub(crate) model::Issue);

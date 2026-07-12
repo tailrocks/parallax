@@ -13,10 +13,5 @@ pub mod agent_session;
     reason = "bounded bundle estimates"
 )]
 pub mod bundle;
-pub mod derive;
-pub mod fingerprint;
 pub mod gaps;
-pub mod semconv;
-pub mod span_events;
 pub mod story;
-pub mod trace_analysis;
