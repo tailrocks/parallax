@@ -13,7 +13,7 @@
 - **Depends on**: 097, 098
 - **Category**: boundary correctness / security
 - **Planned at**: `eefa4617`, 2026-07-12
-- **Status**: TODO
+- **Status**: IN PROGRESS
 
 ## Why
 
