@@ -190,10 +190,7 @@ pub async fn assert_seeded(
     let trace_events = store.error_events_by_traces(&[TRACE_ID.into()], 1).await?;
     anyhow::ensure!(!trace_events.is_empty());
     let fingerprint = trace_events[0].fingerprint.clone();
-    let fingerprints = vec![
-        fingerprint.clone(),
-        "absent-fingerprint".to_string(),
-    ];
+    let fingerprints = vec![fingerprint.clone(), "absent-fingerprint".to_string()];
     let batched = store
         .error_events_by_fingerprints(&fingerprints, window, 1)
         .await?;
@@ -204,9 +201,7 @@ pub async fn assert_seeded(
         "batched fingerprint events: {batched:?}"
     );
     anyhow::ensure!(
-        batched
-            .get("absent-fingerprint")
-            .is_some_and(Vec::is_empty),
+        batched.get("absent-fingerprint").is_some_and(Vec::is_empty),
         "batched missing fingerprint: {batched:?}"
     );
     Ok(())
