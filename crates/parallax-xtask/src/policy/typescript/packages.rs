@@ -12,11 +12,9 @@ pub(crate) fn package_imports(root: &Path) -> Result<BTreeSet<String>> {
     if ui.join("tests").is_dir() {
         collect_source_files(&ui.join("tests"), &mut files)?;
     }
-    for config in ["vite.config.ts"] {
-        let path = ui.join(config);
-        if path.is_file() {
-            files.push(path);
-        }
+    let config = ui.join("vite.config.ts");
+    if config.is_file() {
+        files.push(config);
     }
     let mut packages = BTreeSet::new();
     for path in files {

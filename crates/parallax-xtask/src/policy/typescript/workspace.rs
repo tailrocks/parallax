@@ -10,11 +10,9 @@ pub(in crate::policy) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
     if ui.join("tests").is_dir() {
         collect_source_files(&ui.join("tests"), &mut files)?;
     }
-    for config in ["vite.config.ts"] {
-        let path = ui.join(config);
-        if path.is_file() {
-            files.push(path);
-        }
+    let config = ui.join("vite.config.ts");
+    if config.is_file() {
+        files.push(config);
     }
     files.sort();
     let mut findings = Vec::new();

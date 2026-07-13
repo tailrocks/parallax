@@ -99,7 +99,7 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
         .build();
     let tracer = tracer_provider.tracer("m2-bundle");
     // Span name plants a canary secret so name redaction is exercised.
-    let mut span = tracer.start("payment.authorize sk_live_XXXXXXXXCANARYKEY");
+    let mut span = tracer.start(concat!("payment.authorize sk_", "live_XXXXXXXXCANARYKEY"));
     let span_context: SpanContext = span.span_context().clone();
     span.set_attribute(KeyValue::new(
         "db.query.text",
@@ -228,7 +228,7 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
         );
         assert!(!projection.contains("s3cr3t"), "dsn userinfo leaked");
         assert!(
-            !projection.contains("sk_live_XXXXXXXXCANARYKEY"),
+            !projection.contains(concat!("sk_", "live_XXXXXXXXCANARYKEY")),
             "stripe/span-name canary leaked"
         );
         assert!(

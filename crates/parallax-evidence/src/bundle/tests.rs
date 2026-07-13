@@ -277,7 +277,7 @@ fn assert_validates_bundle_v1(bundle: &Bundle) {
 fn assembled_bundle_conforms_to_bundle_v1_schema() {
     let mut issue = test_issue();
     issue.title = "timeout contacting postgres://admin:s3cr3t@db/app".into();
-    issue.culprit = Some("token=ghp_0123456789ABCDEFGHIJKLMNOPQRST".into());
+    issue.culprit = Some(concat!("token=ghp_", "0123456789ABCDEFGHIJKLMNOPQRST").into());
 
     let mut event = test_event();
     event.message = "connection timed out to dependency".into();

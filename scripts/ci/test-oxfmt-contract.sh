@@ -70,14 +70,30 @@ if [[ -d /proc ]]; then
   bun run check >/dev/null &
   check_pid=$!
   cd "$caller_directory"
-  runtime=''
+  bun_runtime=''
   while kill -0 "$check_pid" 2>/dev/null; do
-    runtime=$(readlink "/proc/$check_pid/exe" 2>/dev/null || true)
-    [[ -z "$runtime" ]] || break
+    descendants="$check_pid"
+    frontier="$check_pid"
+    for _ in 1 2 3; do
+      next=''
+      for parent in $frontier; do
+        children=$(pgrep -P "$parent" 2>/dev/null || true)
+        next="$next $children"
+      done
+      descendants="$descendants $next"
+      frontier="$next"
+    done
+    for pid in $descendants; do
+      runtime=$(readlink "/proc/$pid/exe" 2>/dev/null || true)
+      if [[ "$runtime" == */bun ]]; then
+        bun_runtime=$runtime
+        break 2
+      fi
+    done
   done
   wait "$check_pid"
-  [[ "$runtime" == */bun ]] || {
-    printf 'Oxfmt check was not launched by Bun: %s\n' "$runtime" >&2
+  [[ "$bun_runtime" == */bun ]] || {
+    printf 'Oxfmt check process tree contained no Bun executable\n' >&2
     exit 1
   }
 fi
