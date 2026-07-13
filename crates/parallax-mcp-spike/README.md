@@ -50,3 +50,23 @@ No CI wiring: needs a live server and seeded telemetry. Manual only.
 `rmcp` 2.2.0 with `default-features = false` and only `server`, `transport-io`,
 `macros`. No `reqwest`/`rustls` feature of the SDK is enabled. HTTP to GraphQL
 uses the workspace `reqwest` with `native-tls-vendored`.
+
+## Owned concerns
+
+Isolated proof of read-only MCP projection equivalence; never product packaging.
+
+## Source map
+
+- [src/main.rs](src/main.rs)
+- [Reviewed facade manifest](facade.toml)
+
+## Public surface
+
+The supported `main.rs` paths are the exports recorded in the
+[reviewed facade manifest](facade.toml); implementation modules are not a
+compatibility surface.
+
+## Verification
+
+Run `cargo check -p parallax-mcp-spike` for the narrow crate gate and `cargo xtask facade check` for
+root-surface drift.

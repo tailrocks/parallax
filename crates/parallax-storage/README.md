@@ -11,3 +11,25 @@ facade_roots = ["lib.rs"]
 
 Owns query-neutral telemetry and metadata capability contracts plus their pure
 shared selection and aggregation rules. Concrete engines live in adapter crates.
+
+## Owned concerns
+
+Engine-neutral telemetry and metadata capability contracts.
+
+## Source map
+
+- [src/lib.rs](src/lib.rs)
+- [src/adapter.rs](src/adapter.rs)
+- [src/metadata.rs](src/metadata.rs)
+- [Reviewed facade manifest](facade.toml)
+
+## Public surface
+
+The supported `lib.rs` paths are the exports recorded in the
+[reviewed facade manifest](facade.toml); implementation modules are not a
+compatibility surface.
+
+## Verification
+
+Run `cargo test -p parallax-storage --all-features` for the narrow crate gate and `cargo xtask facade check` for
+root-surface drift.

@@ -10,3 +10,26 @@ facade_roots = ["lib.rs", "main.rs"]
 
 Repository-only quality control plane for local and CI orchestration,
 architecture/product policy, structural ratchets, and facade/doc validation.
+
+## Owned concerns
+
+Repository policy, architecture, facade, dependency, health, and CI orchestration.
+
+## Source map
+
+- [src/lib.rs](src/lib.rs)
+- [src/main.rs](src/main.rs)
+- [src/policy.rs](src/policy.rs)
+- [src/facade.rs](src/facade.rs)
+- [Reviewed facade manifest](facade.toml)
+
+## Public surface
+
+The supported `lib.rs` paths are the exports recorded in the
+[reviewed facade manifest](facade.toml); implementation modules are not a
+compatibility surface.
+
+## Verification
+
+Run `cargo test -p parallax-xtask --all-features` for the narrow crate gate and `cargo xtask facade check` for
+root-surface drift.

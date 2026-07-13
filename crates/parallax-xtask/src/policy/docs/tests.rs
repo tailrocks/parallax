@@ -9,6 +9,24 @@ fn parses_structured_front_matter_and_rejects_touch_only_docs() {
 }
 
 #[test]
+fn semantic_crate_body_checks_roots_links_and_gates() {
+    let directory = tempfile::tempdir().expect("temp crate");
+    fs::create_dir(directory.path().join("src")).expect("src");
+    fs::write(directory.path().join("src/lib.rs"), "").expect("root");
+    fs::write(directory.path().join("facade.toml"), "").expect("facade");
+    let source = "+++\nschema_version=1\npackage='x'\nclass='aux'\ndependencies=[]\nfacade_roots=['lib.rs']\n+++\n# x\n\n## Owned concerns\n\nPolicy.\n\n## Source map\n\n- [root](src/lib.rs)\n- [facade](facade.toml)\n\n## Public surface\n\nSee [facade](facade.toml).\n\n## Verification\n\n`cargo test -p x` and `cargo xtask facade check`.\n";
+    let doc = parse(source).expect("crate doc");
+    let facade = Facade {
+        roots: BTreeMap::from([("lib.rs".to_string(), Vec::new())]),
+    };
+    check_semantic_body(directory.path(), &doc, &facade).expect("semantic body");
+
+    let missing_root = source.replace("- [root](src/lib.rs)\n", "");
+    let doc = parse(&missing_root).expect("crate doc");
+    check_semantic_body(directory.path(), &doc, &facade).unwrap_err();
+}
+
+#[test]
 fn handoff_schema_rejects_placeholders_and_malformed_rows() {
     let valid = "## Incoming Handoff From 127\n\n| Stable ID | Owner | Consumers | Target | Status |\n|---|---|---|---|---|\n| `127-store` | current | users | target; Plan 097 | OWNED |\n";
     assert_eq!(parse_handoff(valid).expect("valid handoff").len(), 1);

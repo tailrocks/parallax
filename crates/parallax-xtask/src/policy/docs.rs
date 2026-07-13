@@ -20,6 +20,8 @@ struct CrateDoc {
     tier: Option<u8>,
     dependencies: Vec<String>,
     facade_roots: Vec<String>,
+    #[serde(skip)]
+    body: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -75,6 +77,12 @@ pub(super) fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Find
             || doc.facade_roots != roots
         {
             findings.push(finding(&readme, "crate documentation disagrees with Cargo metadata, architecture class/tier, or facade roots"));
+        }
+        if let Err(error) = check_semantic_body(directory.as_std_path(), &doc, &facade) {
+            findings.push(finding(
+                &readme,
+                &format!("crate documentation body is not semantic: {error:#}"),
+            ));
         }
     }
     Ok(findings)
@@ -138,7 +146,67 @@ fn parse(source: &str) -> Result<CrateDoc> {
         .context("missing opening +++")?;
     let (front, body) = rest.split_once("\n+++\n").context("missing closing +++")?;
     anyhow::ensure!(!body.trim().is_empty(), "README body is empty");
-    Ok(toml::from_str(front)?)
+    let mut doc: CrateDoc = toml::from_str(front)?;
+    doc.body = body.to_string();
+    Ok(doc)
+}
+
+fn check_semantic_body(directory: &Path, doc: &CrateDoc, facade: &Facade) -> Result<()> {
+    for heading in [
+        "## Owned concerns",
+        "## Source map",
+        "## Public surface",
+        "## Verification",
+    ] {
+        anyhow::ensure!(doc.body.contains(heading), "missing {heading}");
+    }
+    let source_map = section(&doc.body, "## Source map")?;
+    let targets = markdown_targets(source_map);
+    anyhow::ensure!(
+        targets.iter().any(|target| target == "facade.toml"),
+        "source map does not link facade.toml"
+    );
+    for root in facade.roots.keys() {
+        let target = format!("src/{root}");
+        anyhow::ensure!(
+            targets.iter().any(|candidate| candidate == &target),
+            "source map does not link facade root {target}"
+        );
+    }
+    for target in targets {
+        anyhow::ensure!(
+            !target.contains("://") && directory.join(&target).exists(),
+            "source-map target does not exist: {target}"
+        );
+    }
+    let public_surface = section(&doc.body, "## Public surface")?;
+    anyhow::ensure!(
+        public_surface.contains("facade.toml"),
+        "public surface does not name the reviewed facade manifest"
+    );
+    let verification = section(&doc.body, "## Verification")?;
+    anyhow::ensure!(
+        verification.contains(&format!("-p {}", doc.package))
+            && verification.contains("cargo xtask facade check"),
+        "verification does not name the crate gate and facade drift gate"
+    );
+    Ok(())
+}
+
+fn section<'a>(body: &'a str, heading: &str) -> Result<&'a str> {
+    let content = body
+        .split_once(heading)
+        .with_context(|| format!("missing {heading}"))?
+        .1;
+    Ok(content.split("\n## ").next().unwrap_or(content))
+}
+
+fn markdown_targets(section: &str) -> Vec<String> {
+    section
+        .lines()
+        .filter_map(|line| line.split_once("](").map(|(_, rest)| rest))
+        .filter_map(|rest| rest.split_once(')').map(|(target, _)| target.to_string()))
+        .collect()
 }
 
 fn finding(path: impl AsRef<Path>, reason: &str) -> Finding {

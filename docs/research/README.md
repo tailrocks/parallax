@@ -47,6 +47,7 @@ This directory is the research record behind Parallax. It is organized so a read
 - [fixer-boundary.md](decisions/fixer-boundary.md) — the separate fixer component, outcome loop, and why PR creation is commodity while outcome feedback is the moat.
 
 ### `architecture/` — how the pieces fit
+- [rust-workspace-map.md](architecture/rust-workspace-map.md) — semantic Cargo workspace map: dependency tiers, crate ownership, reviewed facades, and machine-owned contracts.
 - [implementation-concept.md](architecture/implementation-concept.md) — opinionated end-to-end blueprint with named component choices, deployment profiles, data flow, rejected alternatives.
 - [overview.md](architecture/overview.md) — the OpenTelemetry-native self-hosted architecture, with Sentry compatibility as a future adapter.
 - [evidence-bundle-schema.md](architecture/evidence-bundle-schema.md) — the `v0` portable evidence-bundle and open schema (the named moat artifact).
