@@ -133,11 +133,12 @@ fn check_files(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
     }
     if cargo["profile"]["release"]["debug"].as_str() != Some("line-tables-only")
         || cargo["profile"]["release"]["strip"].as_str() != Some("none")
+        || cargo["profile"]["release"]["split-debuginfo"].as_str() != Some("off")
     {
         findings.push(error(
             "product.release-line-tables",
             root.join("Cargo.toml"),
-            "release binaries must retain line tables and must not strip debug information",
+            "release binaries must retain embedded line tables and must not strip debug information",
         ));
     }
     let clippy: toml::Value = toml::from_str(&fs::read_to_string(root.join("clippy.toml"))?)?;

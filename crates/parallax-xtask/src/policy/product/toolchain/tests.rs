@@ -14,7 +14,7 @@ fn write_fixture(root: &Path, version: &str) {
     )
     .expect("mise fixture");
     let mut cargo = format!(
-        "[workspace.package]\nrust-version = '{version}'\nedition = '2024'\n[profile.release]\ndebug = 'line-tables-only'\nstrip = 'none'\n[workspace.lints.rust]\nunsafe_code = 'forbid'\n"
+        "[workspace.package]\nrust-version = '{version}'\nedition = '2024'\n[profile.release]\ndebug = 'line-tables-only'\nstrip = 'none'\nsplit-debuginfo = 'off'\n[workspace.lints.rust]\nunsafe_code = 'forbid'\n"
     );
     for name in RUST_WARN {
         cargo.push_str(&format!("{name} = 'warn'\n"));

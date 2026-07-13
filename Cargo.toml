@@ -24,6 +24,7 @@ exclude = ["poc/evidence-loop", "poc/read-transport-bench"]
 # Plan 102 verifies these final archive bytes; no symbol companion is required.
 debug = "line-tables-only"
 strip = "none"
+split-debuginfo = "off"
 
 [workspace.package]
 version = "0.1.0-dev"
