@@ -7,11 +7,7 @@ fn local_verification_rejects_metadata_version_and_missing_bundle()
     let target = host_target()?;
     let archive_path = temp.path().join(format!("parallax-{target}.tar.gz"));
     let fixture_binary = temp.path().join("parallax");
-    let mut binary = std::fs::read(std::env::current_exe()?)?;
-    binary.extend_from_slice(
-        format!("parallax-release-identity:{}", env!("CARGO_PKG_VERSION")).as_bytes(),
-    );
-    std::fs::write(&fixture_binary, binary)?;
+    std::fs::write(&fixture_binary, b"tiny fixture")?;
     archive::write(&fixture_binary, &archive_path, 1_700_000_000)?;
     let digest = archive::write_checksum(&archive_path)?;
     write_sbom(
@@ -19,10 +15,20 @@ fn local_verification_rejects_metadata_version_and_missing_bundle()
         file_name(&archive_path)?,
         &digest,
     )?;
-    std::fs::write(bundle_path(&archive_path), b"bundle fixture")?;
-    let mut spec = spec(archive_path.clone(), target, env!("CARGO_PKG_VERSION"));
-    let valid = local(&spec).is_ok();
-    let mut corrupt_debug = std::fs::read(&fixture_binary)?;
+    let mut spec = spec(archive_path, target, env!("CARGO_PKG_VERSION"));
+    let missing_bundle = local(&spec).is_err();
+    spec.source_epoch += 1;
+    let bad_epoch = read_binary(&spec).is_err();
+
+    let mut binary = std::fs::read(std::env::current_exe()?)?;
+    binary.extend_from_slice(
+        format!("parallax-release-identity:{}", env!("CARGO_PKG_VERSION")).as_bytes(),
+    );
+    let valid = verify_object(&binary, target, env!("CARGO_PKG_VERSION")).is_ok();
+    let bad_version = verify_object(&binary, target, "999.999.999-identity-missing").is_err();
+    let bad_target =
+        verify_object(&binary, alternate_target(target), env!("CARGO_PKG_VERSION")).is_err();
+    let mut corrupt_debug = binary;
     let line_range = {
         let object = object::File::parse(corrupt_debug.as_slice())?;
         object
@@ -39,20 +45,29 @@ fn local_verification_rejects_metadata_version_and_missing_bundle()
     let end = start + usize::try_from(line_range.1)?;
     corrupt_debug[start..end].fill(0);
     let bad_debug = verify_object(&corrupt_debug, target, env!("CARGO_PKG_VERSION")).is_err();
-    spec.source_epoch += 1;
-    let bad_epoch = local(&spec).is_err();
-    spec.source_epoch -= 1;
-    spec.version = "999.999.999-identity-missing".to_string();
-    let bad_version = local(&spec).is_err();
-    spec.version = env!("CARGO_PKG_VERSION").to_string();
-    std::fs::remove_file(bundle_path(&archive_path))?;
-    let missing_bundle = local(&spec).is_err();
 
-    let actual = (valid, bad_debug, bad_epoch, bad_version, missing_bundle);
-    if actual != (true, true, true, true, true) {
+    let actual = (
+        valid,
+        bad_debug,
+        bad_target,
+        bad_version,
+        bad_epoch,
+        missing_bundle,
+    );
+    if actual != (true, true, true, true, true, true) {
         return Err(format!("local release verification mismatch: {actual:?}").into());
     }
     Ok(())
+}
+
+fn alternate_target(target: &str) -> &'static str {
+    match target {
+        "aarch64-unknown-linux-gnu" => "x86_64-unknown-linux-gnu",
+        "x86_64-unknown-linux-gnu" => "aarch64-unknown-linux-gnu",
+        "aarch64-apple-darwin" => "x86_64-apple-darwin",
+        "x86_64-apple-darwin" => "aarch64-apple-darwin",
+        _ => unreachable!("host_target returns a supported target"),
+    }
 }
 
 #[test]
