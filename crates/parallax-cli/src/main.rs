@@ -8,6 +8,8 @@ mod runtime;
 
 use clap::{Parser, Subcommand, ValueEnum};
 
+const RELEASE_IDENTITY: &str = concat!("parallax-release-identity:", env!("PARALLAX_VERSION"));
+
 /// Output shape for agent-facing projections (bundles, agent sessions).
 /// Markdown is the human default; JSON is the machine/agent contract.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, ValueEnum)]
@@ -215,6 +217,7 @@ pub(crate) enum TraceCommand {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    std::hint::black_box(RELEASE_IDENTITY);
     let cli = Cli::parse();
     let runtime = runtime::prepare(&cli.command)?;
     dispatch::execute(cli, runtime).await

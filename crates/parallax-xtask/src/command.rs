@@ -27,9 +27,9 @@ pub(crate) fn execute(cli: Cli) -> Result<()> {
         Command::NextestEvidence { profile } => nextest_evidence::run(&root, &profile, cli.output),
         Command::Health => policy::health(&root, cli.output),
         Command::Facade { action } => execute_facade(&root, action),
-        release_command @ (Command::ReleasePackage { .. } | Command::ReleaseRehearse { .. }) => {
-            execute_release(release_command)
-        }
+        release_command @ (Command::ReleasePackage { .. }
+        | Command::ReleaseRehearse { .. }
+        | Command::ReleaseVerify { .. }) => execute_release(release_command),
     }
 }
 
@@ -65,6 +65,27 @@ fn execute_release(command: Command) -> Result<()> {
             source_epoch,
             output_dir,
         } => release::rehearse(&binary, &target, &version, source_epoch, &output_dir),
+        Command::ReleaseVerify {
+            archive,
+            target,
+            version,
+            source_epoch,
+            source_commit,
+            source_ref,
+            repository,
+            signer_identity,
+            signer_workflow,
+        } => release::verify(release::VerifySpec {
+            archive,
+            target,
+            version,
+            source_epoch,
+            source_commit,
+            source_ref,
+            repository,
+            signer_identity,
+            signer_workflow,
+        }),
         _ => unreachable!("execute_release receives only release commands"),
     }
 }

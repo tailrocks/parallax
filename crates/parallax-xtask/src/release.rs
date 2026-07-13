@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result, bail};
 
 mod archive;
+mod verify;
 
 const TARGETS: [&str; 4] = [
     "aarch64-apple-darwin",
@@ -10,6 +11,19 @@ const TARGETS: [&str; 4] = [
     "aarch64-unknown-linux-gnu",
     "x86_64-unknown-linux-gnu",
 ];
+
+#[derive(Debug)]
+pub(crate) struct VerifySpec {
+    pub archive: PathBuf,
+    pub target: String,
+    pub version: String,
+    pub source_epoch: u64,
+    pub source_commit: String,
+    pub source_ref: String,
+    pub repository: String,
+    pub signer_identity: String,
+    pub signer_workflow: String,
+}
 
 pub(crate) fn package(binary: &Path, output: &Path, source_epoch: u64) -> Result<()> {
     println!(
@@ -56,6 +70,41 @@ pub(crate) fn rehearse(
         "==> deterministic rehearsal ready: {} ({first_digest})",
         final_path.display()
     );
+    Ok(())
+}
+
+pub(crate) fn verify(spec: VerifySpec) -> Result<()> {
+    validate_identity(&spec.target, &spec.version)?;
+    validate_verification_identity(&spec)?;
+    println!("==> verify release set {}", spec.archive.display());
+    verify::local(&spec)?;
+    verify::signature(&spec)?;
+    verify::provenance(&spec)?;
+    println!("==> release set verified");
+    Ok(())
+}
+
+fn validate_verification_identity(spec: &VerifySpec) -> Result<()> {
+    if spec.source_commit.len() != 40
+        || !spec
+            .source_commit
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit())
+        || spec
+            .source_commit
+            .bytes()
+            .any(|byte| byte.is_ascii_uppercase())
+    {
+        bail!("source commit must be one full lowercase SHA");
+    }
+    if !spec.source_ref.starts_with("refs/") {
+        bail!("source ref must be a full refs/* name");
+    }
+    if !spec.signer_identity.starts_with("https://github.com/")
+        || !spec.signer_workflow.contains("/.github/workflows/")
+    {
+        bail!("signer identity and workflow must name an exact GitHub workflow");
+    }
     Ok(())
 }
 

@@ -44,6 +44,24 @@ fn parses_every_initial_command() {
             "--source-epoch",
             "1",
         ],
+        vec![
+            "xtask",
+            "release-verify",
+            "--archive",
+            "parallax-x86_64-unknown-linux-gnu.tar.gz",
+            "--target",
+            "x86_64-unknown-linux-gnu",
+            "--version",
+            "0.1.0-preview.1+abcdef0",
+            "--source-epoch",
+            "1",
+            "--source-commit",
+            "abcdef0123456789abcdef0123456789abcdef01",
+            "--signer-identity",
+            "https://github.com/tailrocks/parallax/.github/workflows/preview.yml@refs/heads/main",
+            "--signer-workflow",
+            "tailrocks/parallax/.github/workflows/preview.yml",
+        ],
     ] {
         Cli::try_parse_from(args).expect("documented command should parse");
     }

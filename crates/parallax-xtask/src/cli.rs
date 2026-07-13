@@ -90,6 +90,27 @@ pub(crate) enum Command {
         #[arg(long, default_value = "target/dist")]
         output_dir: PathBuf,
     },
+    /// Verify one complete archive, checksum, SBOM, signature, and provenance set.
+    ReleaseVerify {
+        #[arg(long)]
+        archive: PathBuf,
+        #[arg(long)]
+        target: String,
+        #[arg(long)]
+        version: String,
+        #[arg(long)]
+        source_epoch: u64,
+        #[arg(long)]
+        source_commit: String,
+        #[arg(long, default_value = "refs/heads/main")]
+        source_ref: String,
+        #[arg(long, default_value = "tailrocks/parallax")]
+        repository: String,
+        #[arg(long)]
+        signer_identity: String,
+        #[arg(long)]
+        signer_workflow: String,
+    },
 }
 
 #[derive(Debug, Subcommand)]

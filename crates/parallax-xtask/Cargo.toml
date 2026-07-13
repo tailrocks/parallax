@@ -13,6 +13,7 @@ anyhow.workspace = true
 cargo_metadata.workspace = true
 clap.workspace = true
 flate2.workspace = true
+object.workspace = true
 oxc_allocator.workspace = true
 oxc_ast.workspace = true
 oxc_parser.workspace = true

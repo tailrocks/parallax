@@ -63,6 +63,7 @@ oxc_parser = "0.139.0"
 oxc_semantic = "0.139.0"
 oxc_span = "0.139.0"
 oxc_resolver = "11.24.2"
+object = { version = "0.39.1", default-features = false, features = ["read", "std"] }
 proc-macro2 = { version = "1", features = ["span-locations"] }
 pulldown-cmark = "0.13.4"
 quote = "1"
