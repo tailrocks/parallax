@@ -41,7 +41,7 @@ async fn seed_issue(
             message: message.into(),
             stacktrace: None,
             source: ErrorSource::LogRecord,
-            trace_id: format!("trace-{fingerprint}"),
+            trace_id: "abababababababababababababababab".to_string(),
             span_id: format!("span-{fingerprint}"),
             attributes: serde_json::Value::Null,
         }])
@@ -50,14 +50,14 @@ async fn seed_issue(
     handle
         .metadata
         .upsert_issue_occurrence(&IssueOccurrence {
-            occurrence_id: "bundle-issue".into(),
+            occurrence_id: format!("bundle:{fingerprint}").into(),
             fingerprint,
             title: title.to_string(),
             error_type: "test::Secret",
             culprit: culprit.map(str::to_string),
             service: "api",
             ts_nanos: 1_000,
-            trace_id: Some("trace-secret"),
+            trace_id: Some("abababababababababababababababab"),
             attributes: &attrs,
         })
         .await
