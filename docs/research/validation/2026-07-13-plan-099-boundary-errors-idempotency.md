@@ -41,6 +41,16 @@ Validation date: 2026-07-13
 
 ## Gates
 
-Focused crate tests, strict all-target/all-feature Clippy, structural/product
-policy, facade drift, model serde, GraphQL SDL, and real Turso gates pass. Full
-workspace and real GreptimeDB results are recorded when the plan closes.
+| Gate | Result |
+| --- | --- |
+| `cargo nextest run --workspace --all-features --no-fail-fast` | PASS — 251/251, 6 skipped |
+| `cargo nextest run -p parallax-server --all-features --run-ignored all --no-capture --no-fail-fast` | PASS — 36/36, including managed GreptimeDB restart/conformance |
+| `cargo clippy --workspace --all-targets --all-features -- -D warnings` | PASS |
+| `cargo check --release --workspace --all-features` | PASS |
+| `cargo xtask dependencies --all` | PASS — audit, deny, shear, feature powerset, TLS trees, Bun audit/trust |
+| `cargo xtask policy` / `cargo xtask facade check` | PASS |
+| GraphQL SDL snapshot and model serde contract | PASS |
+
+The initial workspace closure run exposed one stale integration fixture using a
+non-hex trace placeholder and one reused occurrence identity. Commit `f13a373`
+changed only those fixture identities; the focused test and complete rerun pass.

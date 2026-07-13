@@ -72,12 +72,6 @@ Every plan must preserve these non-negotiable Parallax constraints:
 | [117](117-documentation-link-integrity.md) | Add a parser-backed required internal Markdown link gate | P2 | S-M | 095 | TODO |
 | [119](119-semconv-registry-codegen.md) | Generate checked-in Rust/Java/TypeScript semantic-convention constants from one registry | P2 | M | 095, 096, 100, 101, 126 | TODO |
 
-### Architecture And Boundaries
-
-| Plan | Title | Priority | Effort | Depends on | Status |
-|------|-------|----------|--------|------------|--------|
-| [099](099-boundary-errors-idempotency-and-agent-safety.md) | Add typed errors, explicit retry/idempotency boundaries, an ID pilot, and agent-surface safety | P1 | L | 097, 098 | IN PROGRESS |
-
 ### TypeScript Toolchain, Architecture, Boundary, And Test Foundations
 
 | Plan | Title | Priority | Effort | Depends on | Status |
