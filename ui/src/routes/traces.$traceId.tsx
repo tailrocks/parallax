@@ -344,12 +344,12 @@ function TracePage() {
     setCriticalLoading(true)
     setCriticalError(null)
     try {
-      const data = await graphql<{ traceCriticalPath: CriticalPath }>(
-        `{ traceCriticalPath(traceId: "${gqlString(traceId)}") {
+      const data = await graphql<{
+        traceCriticalPath: CriticalPath
+      }>(`{ traceCriticalPath(traceId: "${gqlString(traceId)}") {
              totalGatedNs unattached
              hops { spanId selfTimeNs gatedByChild clockSuspect }
-           } }`
-      )
+           } }`)
       setCriticalPath(data.traceCriticalPath)
     } catch (error) {
       setCriticalError(error instanceof Error ? error.message : String(error))
@@ -375,10 +375,11 @@ function TracePage() {
     setCompareLoading(true)
     setCompareError(null)
     try {
-      const data = await graphql<{ traceCompare: TraceDiff }>(
-        `{ traceCompare(traceIdA: "${gqlString(traceId)}", traceIdB: "${gqlString(
-          otherTraceId
-        )}") {
+      const data = await graphql<{
+        traceCompare: TraceDiff
+      }>(`{ traceCompare(traceIdA: "${gqlString(traceId)}", traceIdB: "${gqlString(
+        otherTraceId
+      )}") {
              added { ${TRACE_DIFF_SPAN_FIELDS} }
              removed { ${TRACE_DIFF_SPAN_FIELDS} }
              changed {
@@ -386,8 +387,7 @@ function TracePage() {
                before { ${TRACE_DIFF_SPAN_FIELDS} }
                after { ${TRACE_DIFF_SPAN_FIELDS} }
              }
-           } }`
-      )
+           } }`)
       setCompareResult(data.traceCompare)
     } catch (error) {
       setCompareError(error instanceof Error ? error.message : String(error))

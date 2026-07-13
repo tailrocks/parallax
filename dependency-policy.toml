@@ -64,7 +64,6 @@ reviewed-non-ast = [
   "@types/react-dom",
   "jsdom",
   "oxlint-tsgolint",
-  "prettier-plugin-tailwindcss",
   "react-dom",
   "shadcn",
   "tailwindcss",

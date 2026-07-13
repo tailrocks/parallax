@@ -8,7 +8,7 @@ rg -U '^\[run\]\nbun = true\n\n\[install\]\nauto = "disable"$' "$ui/bunfig.toml"
 
 while IFS=$'\t' read -r name command; do
   case "$name" in
-    dev|build|preview|test|test:ci|lint|format|check|typecheck)
+    dev|build|preview|test|test:ci|lint|format|format:list|check|typecheck)
       [[ "$command" == "bunx --bun --no-install "* ||
           "$command" == "bun ./node_modules/"* ||
           "$command" == "bun run "* ]] || {

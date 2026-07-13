@@ -87,9 +87,7 @@ export function PinButton({
         parseInvestigationState(investigation.state),
         pin
       )
-      await graphql(
-        `mutation { investigationSave(id: "${gqlString(investigation.id)}", name: "${gqlString(investigation.name)}", state: "${gqlString(serializeInvestigationState(state))}") { id } }`
-      )
+      await graphql(`mutation { investigationSave(id: "${gqlString(investigation.id)}", name: "${gqlString(investigation.name)}", state: "${gqlString(serializeInvestigationState(state))}") { id } }`)
       setMessage(`Pinned to ${investigation.name}`)
       await router.invalidate()
     } catch (err) {
@@ -115,9 +113,7 @@ export function PinButton({
       )
       const { investigationSave } = await graphql<{
         investigationSave: Investigation
-      }>(
-        `mutation { investigationSave(name: "${gqlString(name)}", state: "${gqlString(serializeInvestigationState(state))}") { id name state updatedAtNanos createdAtNanos } }`
-      )
+      }>(`mutation { investigationSave(name: "${gqlString(name)}", state: "${gqlString(serializeInvestigationState(state))}") { id name state updatedAtNanos createdAtNanos } }`)
       setInvestigations((current) => [investigationSave, ...current])
       setNewName("")
       setMessage(`Pinned to ${investigationSave.name}`)

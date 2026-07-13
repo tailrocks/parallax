@@ -143,9 +143,9 @@ export function WidgetPicker({
       return
     }
     let ignore = false
-    void graphql<{ metricLabels: string[] }>(
-      `{ metricLabels(name: "${gqlString(value.metric)}") }`
-    )
+    void graphql<{
+      metricLabels: string[]
+    }>(`{ metricLabels(name: "${gqlString(value.metric)}") }`)
       .then((data) => {
         if (!ignore) setLabels(data.metricLabels)
       })
@@ -164,9 +164,9 @@ export function WidgetPicker({
     }
     let ignore = false
     const toNanos = (BigInt(Date.now()) * 1_000_000n).toString()
-    void graphql<{ metricLabelValues: string[] }>(
-      `{ metricLabelValues(name: "${gqlString(value.metric)}", label: "${gqlString(value.groupBy)}", fromNanos: "0", toNanos: "${toNanos}") }`
-    )
+    void graphql<{
+      metricLabelValues: string[]
+    }>(`{ metricLabelValues(name: "${gqlString(value.metric)}", label: "${gqlString(value.groupBy)}", fromNanos: "0", toNanos: "${toNanos}") }`)
       .then((data) => {
         if (!ignore) setLabelValues(data.metricLabelValues)
       })
@@ -391,10 +391,8 @@ export function DashboardCreateDialog({
       const valid = widgets.filter((widget) => widget.metric)
       const { dashboardSave } = await graphql<{
         dashboardSave: { id: string }
-      }>(
-        `mutation { dashboardSave(name: "${gqlString(name)}",
-           layout: "${gqlString(serializeWidgets(valid))}") { id } }`
-      )
+      }>(`mutation { dashboardSave(name: "${gqlString(name)}",
+           layout: "${gqlString(serializeWidgets(valid))}") { id } }`)
       setName("")
       setWidgets([emptyWidget()])
       setOpen(false)

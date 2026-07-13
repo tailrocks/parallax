@@ -438,9 +438,9 @@ function SqlPage() {
     setError(null)
     const startedAt = performance.now()
     try {
-      const data = await graphql<{ sql: SqlResult }>(
-        `{ sql(query: "${gqlString(sql)}") { columns rows rowCount truncated } }`
-      )
+      const data = await graphql<{
+        sql: SqlResult
+      }>(`{ sql(query: "${gqlString(sql)}") { columns rows rowCount truncated } }`)
       setResult(data.sql)
       setElapsedMs(performance.now() - startedAt)
       setHistory((current) => {
@@ -463,9 +463,9 @@ function SqlPage() {
     setSavingSnippet(true)
     setSnippetError(null)
     try {
-      const data = await graphql<{ savedViewSave: SavedView }>(
-        `mutation { savedViewSave(name: "${gqlString(name)}", page: "/sql", state: "${gqlString(statement)}") { id name page state updatedAtNanos } }`
-      )
+      const data = await graphql<{
+        savedViewSave: SavedView
+      }>(`mutation { savedViewSave(name: "${gqlString(name)}", page: "/sql", state: "${gqlString(statement)}") { id name page state updatedAtNanos } }`)
       setSnippets((current) => [
         data.savedViewSave,
         ...current.filter((snippet) => snippet.id !== data.savedViewSave.id),
@@ -482,9 +482,9 @@ function SqlPage() {
   async function deleteSnippet(id: string) {
     setSnippetError(null)
     try {
-      await graphql<{ savedViewDelete: boolean }>(
-        `mutation { savedViewDelete(id: "${gqlString(id)}") }`
-      )
+      await graphql<{
+        savedViewDelete: boolean
+      }>(`mutation { savedViewDelete(id: "${gqlString(id)}") }`)
       setSnippets((current) => current.filter((snippet) => snippet.id !== id))
     } catch (err) {
       setSnippetError(err instanceof Error ? err.message : String(err))

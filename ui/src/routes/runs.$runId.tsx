@@ -267,13 +267,13 @@ function RunDetailPage() {
   useEffect(() => {
     if (!live || !pageVisible) return
     const timer = setInterval(() => {
-      void graphql<{ run: RunRecordData | null }>(
-        `{ run(runId: "${gqlString(runId)}") {
+      void graphql<{
+        run: RunRecordData | null
+      }>(`{ run(runId: "${gqlString(runId)}") {
              runId command status exitCode startedAtNanos endedAtNanos
              errorCount traceCount
              issues { fingerprint title errorType status eventCount }
-           } }`
-      )
+           } }`)
         .then((data) => {
           if (data.run) setPolledRun(data.run)
         })
@@ -364,9 +364,9 @@ export function RunDetailContent({
     let cancelled = false
     setBundleLoading(true)
     setBundleError(null)
-    void graphql<{ bundle: { markdown: string } | null }>(
-      `{ bundle(runId: "${gqlString(runId)}") { markdown } }`
-    )
+    void graphql<{
+      bundle: { markdown: string } | null
+    }>(`{ bundle(runId: "${gqlString(runId)}") { markdown } }`)
       .then((data) => {
         if (cancelled) return
         setLazyBundle(data.bundle?.markdown ?? null)

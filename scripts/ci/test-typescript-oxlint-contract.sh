@@ -33,7 +33,7 @@ selected=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --debug=files .)
 
 config=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --print-config)
 [[ $(printf '%s\n' "$config" | hash_stream) == ebcc47b1b91ce91f0e19cc0f260992e656cbddd6a0a1d9d1ab73aa9b837fc04d ]]
-[[ $(cd "$ui" && bun ./node_modules/typescript/bin/tsc --showConfig | hash_stream) == f6b94e460cb728ea095b0a7138c731f3ddf9f89a8faa10d0d18480c8933b8083 ]]
+[[ $(cd "$ui" && bun ./node_modules/typescript/bin/tsc --showConfig | hash_stream) == 7a27bbb55ed1ef1a6dd1c9d0b70ccd851f3fa78f18d31e284eff6520b412407e ]]
 
 probe="$ui/plan131-negative-probe.tsx"
 cycle_a="$ui/plan131-cycle-a.ts"

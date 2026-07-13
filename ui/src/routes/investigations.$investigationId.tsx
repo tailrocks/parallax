@@ -93,9 +93,7 @@ export function InvestigationDetailContent({
   async function save() {
     setError(null)
     try {
-      await graphql(
-        `mutation { investigationSave(id: "${gqlString(investigation.id)}", name: "${gqlString(investigation.name)}", state: "${gqlString(serializeInvestigationState(draft))}") { id } }`
-      )
+      await graphql(`mutation { investigationSave(id: "${gqlString(investigation.id)}", name: "${gqlString(investigation.name)}", state: "${gqlString(serializeInvestigationState(draft))}") { id } }`)
       await router.invalidate()
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -105,9 +103,7 @@ export function InvestigationDetailContent({
   async function remove() {
     setError(null)
     try {
-      await graphql(
-        `mutation { investigationDelete(id: "${gqlString(investigation.id)}") }`
-      )
+      await graphql(`mutation { investigationDelete(id: "${gqlString(investigation.id)}") }`)
       await router.navigate({ to: "/investigations" })
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))

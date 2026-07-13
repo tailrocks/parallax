@@ -193,11 +193,9 @@ function DashboardPage() {
   async function save(layout: Widget[]) {
     setError(null)
     try {
-      await graphql(
-        `mutation { dashboardSave(name: "${gqlString(name)}",
+      await graphql(`mutation { dashboardSave(name: "${gqlString(name)}",
            layout: "${gqlString(serializeWidgets(layout))}",
-           id: "${gqlString(id)}") { id } }`
-      )
+           id: "${gqlString(id)}") { id } }`)
       setEditing(false)
       await router.invalidate()
     } catch (err) {

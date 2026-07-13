@@ -444,6 +444,7 @@ jobs:
       - run: bun ci
         working-directory: ui
       - run: scripts/ci/test-bun-contract.sh
+      - run: scripts/ci/test-oxfmt-contract.sh
       - run: scripts/ci/test-typescript-oxlint-contract.sh
       - run: bun run check
         working-directory: ui

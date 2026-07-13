@@ -67,9 +67,7 @@ function InvestigationsPage() {
     try {
       const { investigationSave } = await graphql<{
         investigationSave: { id: string }
-      }>(
-        `mutation { investigationSave(name: "${gqlString(name)}", state: "${gqlString(serializeInvestigationState(emptyInvestigationState()))}") { id } }`
-      )
+      }>(`mutation { investigationSave(name: "${gqlString(name)}", state: "${gqlString(serializeInvestigationState(emptyInvestigationState()))}") { id } }`)
       setName("")
       setOpen(false)
       await router.navigate({

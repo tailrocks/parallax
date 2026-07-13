@@ -228,9 +228,7 @@ export function IssueDetailContent({
     setMutating(true)
     setActionError(null)
     try {
-      await graphql(
-        `mutation { issueSetStatus(fingerprint: "${gqlString(currentIssue.fingerprint)}", status: "${status}") { status } }`
-      )
+      await graphql(`mutation { issueSetStatus(fingerprint: "${gqlString(currentIssue.fingerprint)}", status: "${status}") { status } }`)
       await router.invalidate()
     } catch (err) {
       setActionError(err instanceof Error ? err.message : String(err))
@@ -253,13 +251,11 @@ export function IssueDetailContent({
       const to = from + 3_600_000_000_000n
       const { issue: scoped } = await graphql<{
         issue: { events: IssueEvent[] } | null
-      }>(
-        `{ issue(fingerprint: "${gqlString(currentIssue.fingerprint)}") {
+      }>(`{ issue(fingerprint: "${gqlString(currentIssue.fingerprint)}") {
              events(limit: 50, fromNanos: "${from}", toNanos: "${to}") {
                tsNanos service message stacktrace source traceId spanId attributes
              }
-           } }`
-      )
+           } }`)
       // Another bucket was selected (or cleared) while this fetch was in flight.
       if (bucketRequestRef.current !== tsNanos) return
       setBucketEvents(scoped?.events ?? [])

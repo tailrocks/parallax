@@ -557,12 +557,12 @@ ceiling = 335
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/routes/dashboards.$dashboardId.tsx"
-ceiling = 461
+ceiling = 459
 
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/routes/dashboards.index.tsx"
-ceiling = 500
+ceiling = 498
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -572,17 +572,17 @@ ceiling = 951
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/routes/investigations.$investigationId.tsx"
-ceiling = 273
+ceiling = 269
 
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/routes/investigations.index.tsx"
-ceiling = 197
+ceiling = 195
 
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/routes/issues.$fingerprint.tsx"
-ceiling = 729
+ceiling = 725
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -702,7 +702,7 @@ ceiling = 74
 [[limits]]
 metric = "typescript.function-lines"
 scope = "ui/src/components/console/pin-button.tsx:29"
-ceiling = 177
+ceiling = 173
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -892,11 +892,11 @@ ceiling = 66
 [[limits]]
 metric = "typescript.function-lines"
 scope = "ui/src/routes/dashboards.$dashboardId.tsx:183"
-ceiling = 182
+ceiling = 180
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/dashboards.$dashboardId.tsx:366"
+scope = "ui/src/routes/dashboards.$dashboardId.tsx:364"
 ceiling = 115
 
 [[limits]]
@@ -907,11 +907,11 @@ ceiling = 182
 [[limits]]
 metric = "typescript.function-lines"
 scope = "ui/src/routes/dashboards.index.tsx:371"
-ceiling = 89
+ceiling = 87
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/dashboards.index.tsx:461"
+scope = "ui/src/routes/dashboards.index.tsx:459"
 ceiling = 65
 
 [[limits]]
@@ -932,26 +932,26 @@ ceiling = 169
 [[limits]]
 metric = "typescript.function-lines"
 scope = "ui/src/routes/investigations.$investigationId.tsx:80"
-ceiling = 208
+ceiling = 204
 
 [[limits]]
 metric = "typescript.function-lines"
 scope = "ui/src/routes/investigations.index.tsx:57"
-ceiling = 149
+ceiling = 147
 
 [[limits]]
 metric = "typescript.function-lines"
 scope = "ui/src/routes/issues.$fingerprint.tsx:185"
-ceiling = 237
+ceiling = 233
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/issues.$fingerprint.tsx:477"
+scope = "ui/src/routes/issues.$fingerprint.tsx:473"
 ceiling = 68
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/issues.$fingerprint.tsx:705"
+scope = "ui/src/routes/issues.$fingerprint.tsx:701"
 ceiling = 63
 
 [[limits]]
@@ -1511,7 +1511,7 @@ ceiling = 16
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/issues.$fingerprint.tsx:546"
+scope = "ui/src/routes/issues.$fingerprint.tsx:542"
 ceiling = 26
 
 [[limits]]
@@ -1596,7 +1596,7 @@ ceiling = 13
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/issues.$fingerprint.tsx:546"
+scope = "ui/src/routes/issues.$fingerprint.tsx:542"
 ceiling = 14
 
 [[limits]]

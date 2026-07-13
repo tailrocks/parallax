@@ -342,9 +342,9 @@ function LogsPage() {
   const deleteSavedView = async (id: string) => {
     setViewError(null)
     try {
-      await graphql<{ savedViewDelete: boolean }>(
-        `mutation { savedViewDelete(id: "${gqlString(id)}") }`
-      )
+      await graphql<{
+        savedViewDelete: boolean
+      }>(`mutation { savedViewDelete(id: "${gqlString(id)}") }`)
       setSavedViews((current) => current.filter((view) => view.id !== id))
     } catch (err) {
       setViewError(err instanceof Error ? err.message : String(err))
@@ -358,9 +358,9 @@ function LogsPage() {
     setViewError(null)
     try {
       const state = serializeLogsSearch(search)
-      const result = await graphql<{ savedViewSave: SavedView }>(
-        `mutation { savedViewSave(name: "${gqlString(name)}", page: "/logs", state: "${gqlString(state)}") { id name page state updatedAtNanos } }`
-      )
+      const result = await graphql<{
+        savedViewSave: SavedView
+      }>(`mutation { savedViewSave(name: "${gqlString(name)}", page: "/logs", state: "${gqlString(state)}") { id name page state updatedAtNanos } }`)
       setSavedViews((current) => [
         result.savedViewSave,
         ...current.filter((view) => view.id !== result.savedViewSave.id),
