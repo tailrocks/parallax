@@ -218,7 +218,7 @@ ceiling = 5
 [[rust_suppressions]]
 crate_name = "parallax-server"
 lint = "clippy::too_many_lines"
-ceiling = 12
+ceiling = 11
 
 [[rust_suppressions]]
 crate_name = "parallax-greptime"
@@ -375,11 +375,6 @@ class = "test-support"
 metric = "rust.file-lines"
 scope = "crates/parallax-cli/src/commands/implementation.rs"
 ceiling = 987
-
-[[limits]]
-metric = "rust.file-lines"
-scope = "crates/parallax-server/src/serve.rs"
-ceiling = 446
 
 
 [[limits]]
@@ -1672,11 +1667,6 @@ ceiling = 152
 metric = "rust.function-lines"
 scope = "crates/parallax-server/src/greptime_supervisor.rs::ensure_binary"
 ceiling = 122
-
-[[limits]]
-metric = "rust.function-lines"
-scope = "crates/parallax-server/src/serve.rs::start_assembled"
-ceiling = 146
 
 [[limits]]
 metric = "rust.function-lines"

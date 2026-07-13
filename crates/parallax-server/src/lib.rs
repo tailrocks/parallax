@@ -42,7 +42,6 @@ mod otlp_grpc;
 mod otlp_http;
 mod outcomes;
 mod self_telemetry;
-#[expect(clippy::too_many_lines, reason = "server assembly")]
 mod serve;
 mod worker;
 

@@ -2,17 +2,13 @@
 //! routes), the dedicated OTLP/HTTP listener (:4318), the OTLP/gRPC listener
 //! (:4317), and the ingest worker connecting receivers to storage.
 
-use crate::config::{Config, LimitsConfig};
+use crate::config::Config;
 use crate::otlp_grpc::OtlpGrpc;
 use crate::otlp_http;
 use crate::worker::{self, IngestSenders, Worker};
-use axum::extract::{Request, State};
-use axum::http::{StatusCode, header};
-use axum::middleware::{self, Next};
-use axum::response::Response;
+use axum::Router;
+use axum::middleware;
 use axum::routing::{get, post};
-use axum::{Json, Router};
-use parallax_api::{ApiContext, Schema as ParallaxSchema};
 use parallax_metadata::TursoMetadataStore;
 use parallax_spool::{Spool, SpoolRetention};
 use parallax_storage::{adapter::TelemetryStore, metadata::MetadataStore};
@@ -21,6 +17,9 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::net::TcpListener;
 use tokio::task::JoinHandle;
+
+mod http;
+use http::{GraphQlState, HostGuard, graphql_handler, host_guard_middleware};
 
 #[expect(missing_debug_implementations, reason = "opaque runtime handles")]
 pub struct ServerHandle {
@@ -83,144 +82,6 @@ async fn connect_greptime(url: &str, config: &Config) -> anyhow::Result<Arc<dyn 
         )
         .await?;
     Ok(Arc::new(store))
-}
-
-#[derive(Clone)]
-struct GraphQlState {
-    schema: Arc<ParallaxSchema>,
-    store: Arc<dyn TelemetryStore>,
-    metadata: Arc<dyn MetadataStore>,
-    otlp_grpc_port: u16,
-    limits: LimitsConfig,
-}
-
-#[derive(Clone)]
-struct HostGuard {
-    allowed_hosts: Arc<Vec<String>>,
-}
-
-impl HostGuard {
-    fn for_listener(bind: &str, api_addr: SocketAddr) -> Self {
-        let mut allowed = vec![
-            "localhost".to_string(),
-            "127.0.0.1".to_string(),
-            "[::1]".to_string(),
-        ];
-        add_allowed_host(&mut allowed, bind);
-        add_allowed_host(&mut allowed, &api_addr.ip().to_string());
-        allowed.sort();
-        allowed.dedup();
-        Self {
-            allowed_hosts: Arc::new(allowed),
-        }
-    }
-
-    fn allows(&self, host: &str) -> bool {
-        normalize_host_header(host)
-            .is_some_and(|host| self.allowed_hosts.iter().any(|allowed| allowed == &host))
-    }
-}
-
-fn add_allowed_host(allowed: &mut Vec<String>, host: &str) {
-    let host = host.trim().trim_end_matches('.').to_ascii_lowercase();
-    if host.is_empty() {
-        return;
-    }
-    if host.contains(':') && !host.starts_with('[') {
-        allowed.push(format!("[{host}]"));
-    } else {
-        allowed.push(host);
-    }
-}
-
-fn normalize_host_header(host: &str) -> Option<String> {
-    let host = host.trim().trim_end_matches('.');
-    if host.is_empty() {
-        return None;
-    }
-    if host.starts_with('[') {
-        let end = host.find(']')?;
-        let rest = &host[end + 1..];
-        if rest.is_empty()
-            || rest
-                .strip_prefix(':')
-                .is_some_and(|port| !port.is_empty() && port.chars().all(|c| c.is_ascii_digit()))
-        {
-            return Some(host[..=end].to_ascii_lowercase());
-        }
-        return None;
-    }
-    if host.matches(':').count() > 1 {
-        return None;
-    }
-    let bare = match host.rsplit_once(':') {
-        Some((name, port))
-            if !name.is_empty() && !port.is_empty() && port.chars().all(|c| c.is_ascii_digit()) =>
-        {
-            name
-        }
-        Some(_) => return None,
-        None => host,
-    };
-    Some(bare.to_ascii_lowercase())
-}
-
-async fn host_guard_middleware(
-    State(guard): State<HostGuard>,
-    request: Request,
-    next: Next,
-) -> Result<Response, StatusCode> {
-    let allowed = request
-        .headers()
-        .get(header::HOST)
-        .and_then(|host| host.to_str().ok())
-        .is_some_and(|host| guard.allows(host));
-    if allowed {
-        Ok(next.run(request).await)
-    } else {
-        Err(StatusCode::FORBIDDEN)
-    }
-}
-
-/// The hand-rolled Juniper-over-axum handler (spec §2 note). Wrapped in a
-/// `graphql.request` span so self-telemetry (when enabled) emits Parallax's own
-/// API activity — this is the recurring signal that fans out to the lab.
-async fn graphql_handler(
-    State(state): State<GraphQlState>,
-    Json(request): Json<juniper::http::GraphQLRequest>,
-) -> Json<juniper::http::GraphQLResponse> {
-    use tracing::Instrument;
-    let operation = request
-        .operation_name
-        .clone()
-        .unwrap_or_else(|| "anonymous".to_string());
-    async move {
-        // Fresh ApiContext per request so RequestMemo is request-scoped and
-        // sibling resolvers share one spans_by_trace / logs_by_trace fetch.
-        let context = ApiContext {
-            store: state.store.clone(),
-            metadata: state.metadata.clone(),
-            otlp_grpc_port: state.otlp_grpc_port,
-            memo: parallax_api::RequestMemo::default(),
-        };
-        let response = match parallax_api::check_query_limits(
-            &state.schema,
-            &request.query,
-            request.operation_name.as_deref(),
-            state.limits.graphql_max_depth,
-            state.limits.graphql_max_complexity,
-        ) {
-            Ok(()) => request.execute(&state.schema, &context).await,
-            Err(message) => juniper::http::GraphQLResponse::error(juniper::FieldError::new(
-                message,
-                juniper::Value::null(),
-            )),
-        };
-        tracing::info!(ok = response.is_ok(), "graphql request");
-        Json(response)
-    }
-    .instrument(tracing::info_span!("graphql.request", otel.name = %operation))
-    .await
 }
 
 /// Shared state handed to both OTLP transports.
@@ -317,6 +178,68 @@ pub async fn start_with_capabilities(
     start_assembled(config, store, metadata, None).await
 }
 
+struct RouterState {
+    store: Arc<dyn TelemetryStore>,
+    metadata: Arc<dyn MetadataStore>,
+    grpc_port: u16,
+    api_addr: SocketAddr,
+}
+
+fn build_api_router(
+    config: &Config,
+    state: RouterState,
+    live: crate::live::LiveChannels,
+    ingest: IngestState,
+) -> Router {
+    let graphql_state = GraphQlState {
+        schema: Arc::new(parallax_api::build_schema()),
+        store: state.store,
+        metadata: state.metadata,
+        otlp_grpc_port: state.grpc_port,
+        limits: config.limits.clone(),
+    };
+    let host_guard = HostGuard::for_listener(&config.server.bind, state.api_addr);
+    let router = Router::new()
+        .route("/health", get(|| async { "ok" }))
+        .route("/version", get(|| async { env!("CARGO_PKG_VERSION") }))
+        .merge(
+            Router::new()
+                .route("/v1/logs/stream", get(crate::live::stream_logs))
+                .route("/v1/traces/stream", get(crate::live::stream_traces))
+                .with_state(live)
+                .layer(middleware::from_fn_with_state(
+                    host_guard.clone(),
+                    host_guard_middleware,
+                )),
+        )
+        .merge(
+            Router::new()
+                .route("/graphql", post(graphql_handler))
+                .with_state(graphql_state)
+                .layer(middleware::from_fn_with_state(
+                    host_guard,
+                    host_guard_middleware,
+                )),
+        )
+        .merge(otlp_http::router(ingest, config.limits.otlp_max_body_bytes));
+    let ui_dist = if config.server.ui_dist.is_empty() {
+        ["ui/dist/client", "../ui/dist/client"]
+            .iter()
+            .map(std::path::PathBuf::from)
+            .find(|path| path.join("_shell.html").exists())
+    } else {
+        Some(std::path::PathBuf::from(&config.server.ui_dist))
+    };
+    match ui_dist {
+        Some(dist) if dist.join("_shell.html").exists() => {
+            tracing::info!("serving UI from {}", dist.display());
+            let shell = tower_http::services::ServeFile::new(dist.join("_shell.html"));
+            router.fallback_service(tower_http::services::ServeDir::new(&dist).fallback(shell))
+        }
+        _ => embedded_ui::fallback(router),
+    }
+}
+
 async fn start_assembled(
     config: &Config,
     store: Arc<dyn TelemetryStore>,
@@ -364,63 +287,17 @@ async fn start_assembled(
         TcpListener::bind((bind.as_str(), config.server.otlp_grpc_port)).await?;
     let otlp_grpc_addr = otlp_grpc_listener.local_addr()?;
 
-    let graphql_state = GraphQlState {
-        schema: Arc::new(parallax_api::build_schema()),
-        store: store.clone(),
-        metadata: metadata.clone(),
-        otlp_grpc_port: otlp_grpc_addr.port(),
-        limits: config.limits.clone(),
-    };
-    let host_guard_state = HostGuard::for_listener(bind, api_addr);
-    let api_router = Router::new()
-        .route("/health", get(|| async { "ok" }))
-        .route("/version", get(|| async { env!("CARGO_PKG_VERSION") }))
-        .merge(
-            Router::new()
-                .route("/v1/logs/stream", get(crate::live::stream_logs))
-                .route("/v1/traces/stream", get(crate::live::stream_traces))
-                .with_state(live)
-                .layer(middleware::from_fn_with_state(
-                    host_guard_state.clone(),
-                    host_guard_middleware,
-                )),
-        )
-        .merge(
-            Router::new()
-                .route("/graphql", post(graphql_handler))
-                .with_state(graphql_state)
-                .layer(middleware::from_fn_with_state(
-                    host_guard_state.clone(),
-                    host_guard_middleware,
-                )),
-        )
-        // OTLP/HTTP stays unguarded here: exporters may legitimately use a
-        // container or bridge hostname while the developer API remains local.
-        .merge(otlp_http::router(
-            ingest.clone(),
-            config.limits.otlp_max_body_bytes,
-        ));
-
-    // The UI, by preference: an on-disk SPA build (assets + _shell.html
-    // fallback), then assets embedded at compile time (release builds with
-    // the `embed-ui` feature), then API-only with a hint.
-    let ui_dist = if config.server.ui_dist.is_empty() {
-        ["ui/dist/client", "../ui/dist/client"]
-            .iter()
-            .map(std::path::PathBuf::from)
-            .find(|p| p.join("_shell.html").exists())
-    } else {
-        Some(std::path::PathBuf::from(&config.server.ui_dist))
-    };
-    let api_router = match ui_dist {
-        Some(dist) if dist.join("_shell.html").exists() => {
-            tracing::info!("serving UI from {}", dist.display());
-            let shell = tower_http::services::ServeFile::new(dist.join("_shell.html"));
-            let files = tower_http::services::ServeDir::new(&dist).fallback(shell);
-            api_router.fallback_service(files)
-        }
-        _ => embedded_ui::fallback(api_router),
-    };
+    let api_router = build_api_router(
+        config,
+        RouterState {
+            store: store.clone(),
+            metadata: metadata.clone(),
+            grpc_port: otlp_grpc_addr.port(),
+            api_addr,
+        },
+        live,
+        ingest.clone(),
+    );
 
     let otlp_http_router = otlp_http::router(ingest.clone(), config.limits.otlp_max_body_bytes);
     let grpc = OtlpGrpc::new(ingest, config.limits.otlp_max_body_bytes);
