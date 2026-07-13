@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - 'v[0-9]*'
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -21,26 +20,17 @@ jobs:
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
-      - name: Require main for manual releases
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          test "${GITHUB_REF}" = "refs/heads/main" || {
-            echo "::error::workflow_dispatch releases must run from main"
-            exit 1
-          }
-
       - name: Determine version
         id: version
         run: |
-          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            version="${GITHUB_REF#refs/tags/v}"
-          else
-            version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
-            if [[ "$version" == *"-dev"* ]]; then
-              echo "::error::Cannot release a dev version ($version)"
+          case "${GITHUB_REF}" in
+            refs/tags/v*) ;;
+            *)
+              echo "::error::stable releases require an existing v* tag"
               exit 1
-            fi
-          fi
+              ;;
+          esac
+          version="${GITHUB_REF#refs/tags/v}"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
   test:
