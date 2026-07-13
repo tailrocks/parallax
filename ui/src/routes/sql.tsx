@@ -50,7 +50,7 @@ interface SqlSearch {
 
 export const Route = createFileRoute("/sql")({
   validateSearch: (search: Record<string, unknown>): SqlSearch => ({
-    query: typeof search.query === "string" ? search.query : undefined,
+    query: typeof search["query"] === "string" ? search["query"] : undefined,
   }),
   component: SqlPage,
 })

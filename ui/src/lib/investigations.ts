@@ -47,9 +47,9 @@ function parseWindow(value: unknown): InvestigationWindow {
   if (!value || typeof value !== "object") return { range: DEFAULT_RANGE_KEY }
   const record = value as Record<string, unknown>
   const range =
-    typeof record.range === "string" ? record.range : DEFAULT_RANGE_KEY
-  const from = typeof record.from === "string" ? record.from : undefined
-  const to = typeof record.to === "string" ? record.to : undefined
+    typeof record["range"] === "string" ? record["range"] : DEFAULT_RANGE_KEY
+  const from = typeof record["from"] === "string" ? record["from"] : undefined
+  const to = typeof record["to"] === "string" ? record["to"] : undefined
   return { range, from, to }
 }
 
@@ -57,17 +57,17 @@ function parsePin(value: unknown): InvestigationPin | null {
   if (!value || typeof value !== "object") return null
   const record = value as Record<string, unknown>
   if (
-    !isPinKind(record.kind) ||
-    typeof record.ref !== "string" ||
-    typeof record.label !== "string"
+    !isPinKind(record["kind"]) ||
+    typeof record["ref"] !== "string" ||
+    typeof record["label"] !== "string"
   ) {
     return null
   }
   return {
-    kind: record.kind,
-    ref: record.ref,
-    label: record.label,
-    note: typeof record.note === "string" ? record.note : undefined,
+    kind: record["kind"],
+    ref: record["ref"],
+    label: record["label"],
+    note: typeof record["note"] === "string" ? record["note"] : undefined,
   }
 }
 
@@ -76,18 +76,18 @@ export function parseInvestigationState(state: string): InvestigationState {
     const parsed: unknown = JSON.parse(state)
     if (!parsed || typeof parsed !== "object") return emptyInvestigationState()
     const record = parsed as Record<string, unknown>
-    if (record.version !== 1) return emptyInvestigationState()
-    const pins = Array.isArray(record.pins)
-      ? record.pins
+    if (record["version"] !== 1) return emptyInvestigationState()
+    const pins = Array.isArray(record["pins"])
+      ? record["pins"]
           .map(parsePin)
           .filter((pin): pin is InvestigationPin => Boolean(pin))
           .slice(0, INVESTIGATION_PIN_LIMIT)
       : []
     return {
       version: 1,
-      window: parseWindow(record.window),
+      window: parseWindow(record["window"]),
       pins,
-      notes: typeof record.notes === "string" ? record.notes : "",
+      notes: typeof record["notes"] === "string" ? record["notes"] : "",
     }
   } catch {
     return emptyInvestigationState()

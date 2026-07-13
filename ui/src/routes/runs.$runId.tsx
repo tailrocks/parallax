@@ -168,10 +168,10 @@ export async function loadRunDetail(runId: string, nowMs = Date.now()) {
 
 export const Route = createFileRoute("/runs/$runId")({
   validateSearch: (search: Record<string, unknown>): RunDetailSearch => ({
-    tab: search.tab === "story" ? "story" : undefined,
-    range: searchString(search.range),
-    from: searchString(search.from),
-    to: searchString(search.to),
+    tab: search["tab"] === "story" ? "story" : undefined,
+    range: searchString(search["range"]),
+    from: searchString(search["from"]),
+    to: searchString(search["to"]),
   }),
   loader: ({ params }) => loadRunDetail(params.runId),
   component: RunDetailPage,

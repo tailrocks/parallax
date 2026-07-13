@@ -147,7 +147,7 @@ export function MetricStrip({
               title: "CPU",
               unit: "%",
               key: "cpu",
-              points: (data.cpu?.[0]?.points ?? []).map((p) => ({
+              points: (data["cpu"]?.[0]?.points ?? []).map((p) => ({
                 tsNanos: p.tsNanos,
                 value: p.value * 100,
               })),
@@ -156,13 +156,13 @@ export function MetricStrip({
               title: "Memory",
               unit: "bytes",
               key: "memory",
-              points: data.memory?.[0]?.points ?? [],
+              points: data["memory"]?.[0]?.points ?? [],
             },
             {
               title: "Tokio alive tasks",
               unit: "",
               key: "tasks",
-              points: data.tasks?.[0]?.points ?? [],
+              points: data["tasks"]?.[0]?.points ?? [],
             },
           ])
         })

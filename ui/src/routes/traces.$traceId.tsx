@@ -148,11 +148,11 @@ export function validateTraceDetailSearch(
   search: Record<string, unknown>
 ): TraceDetailSearch {
   return {
-    tab: search.tab === "story" ? "story" : undefined,
-    view: isTraceViewMode(search.view) ? search.view : undefined,
-    range: searchString(search.range),
-    from: searchString(search.from),
-    to: searchString(search.to),
+    tab: search["tab"] === "story" ? "story" : undefined,
+    view: isTraceViewMode(search["view"]) ? search["view"] : undefined,
+    range: searchString(search["range"]),
+    from: searchString(search["from"]),
+    to: searchString(search["to"]),
   }
 }
 

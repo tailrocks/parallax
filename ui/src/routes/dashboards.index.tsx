@@ -72,9 +72,9 @@ const ALL_VALUES = "__all__"
 
 export const Route = createFileRoute("/dashboards/")({
   validateSearch: (search: Record<string, unknown>): DashboardSearch => ({
-    range: searchString(search.range),
-    from: searchString(search.from),
-    to: searchString(search.to),
+    range: searchString(search["range"]),
+    from: searchString(search["from"]),
+    to: searchString(search["to"]),
   }),
   loader: () =>
     graphqlCached<{ dashboards: Dashboard[]; metricNames: string[] }>(`

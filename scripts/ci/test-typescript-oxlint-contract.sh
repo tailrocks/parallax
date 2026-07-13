@@ -33,7 +33,12 @@ selected=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --debug=files .)
 
 config=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --print-config)
 [[ $(printf '%s\n' "$config" | hash_stream) == ebcc47b1b91ce91f0e19cc0f260992e656cbddd6a0a1d9d1ab73aa9b837fc04d ]]
-[[ $(cd "$ui" && bun ./node_modules/typescript/bin/tsc --showConfig | hash_stream) == 7a27bbb55ed1ef1a6dd1c9d0b70ccd851f3fa78f18d31e284eff6520b412407e ]]
+ts_config=$(cd "$ui" && bun ./node_modules/typescript/bin/tsc --showConfig)
+[[ $(printf '%s\n' "$ts_config" | hash_stream) == 791dd062c6bd4a032c40ca61236ac00646eaa9b70068c8d1d14a5cf1c2382c35 ]]
+[[ $(jq -r '.compilerOptions.noPropertyAccessFromIndexSignature' <<<"$ts_config") == true ]]
+[[ $(jq -r '.compilerOptions.isolatedModules' <<<"$ts_config") == true ]]
+[[ $(jq -r '.compilerOptions.moduleDetection' <<<"$ts_config") == force ]]
+[[ $(jq -r '.compilerOptions.erasableSyntaxOnly' <<<"$ts_config") == true ]]
 
 probe="$ui/plan131-negative-probe.tsx"
 cycle_a="$ui/plan131-cycle-a.ts"
@@ -49,6 +54,24 @@ if (cd "$ui" && bun ./node_modules/typescript/bin/tsc --noEmit >/dev/null 2>&1);
   printf 'TypeScript negative fixture unexpectedly passed\n' >&2
   exit 1
 fi
+
+expect_compiler_failure() {
+  local diagnostic=$1
+  local source=$2
+  printf '%s\n' "$source" >"$probe"
+  output=$(cd "$ui" && bun ./node_modules/typescript/bin/tsc --noEmit --pretty false 2>&1) && {
+    printf 'compiler negative fixture unexpectedly passed: %s\n' "$diagnostic" >&2
+    exit 1
+  }
+  rg -F "$diagnostic" <<<"$output" >/dev/null || {
+    printf 'compiler negative fixture did not report %s\n' "$diagnostic" >&2
+    exit 1
+  }
+}
+
+expect_compiler_failure 'TS4111' $'declare const record: Record<string, unknown>\nvoid record.value'
+expect_compiler_failure 'TS2748' $'declare const enum Mode { Active }\nvoid Mode.Active'
+expect_compiler_failure 'TS1294' $'enum RuntimeMode { Active }\nvoid RuntimeMode.Active'
 
 expect_rule_failure() {
   local rule=$1
