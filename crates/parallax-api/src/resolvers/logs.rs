@@ -56,6 +56,7 @@ pub(crate) async fn logs_by_trace(
     context: &ApiContext,
     trace_id: String,
 ) -> FieldResult<Vec<LogRecord>> {
+    let trace_id = crate::validate_trace_id(trace_id)?;
     let logs = context.logs_for(&trace_id).await?;
     Ok(logs.iter().cloned().map(LogRecord).collect())
 }
@@ -86,6 +87,7 @@ pub(crate) async fn logs(
     query: Option<String>,
     limit: Option<i32>,
 ) -> FieldResult<Vec<LogRecord>> {
+    let trace_id = crate::validate_optional_trace_id(trace_id)?;
     let from: u128 = match from_nanos {
         Some(s) => s.parse().map_err(|_| field_err("invalid fromNanos"))?,
         None => 0,
@@ -147,6 +149,7 @@ pub(crate) async fn logs_around(
     trace_id: Option<String>,
     limit: Option<i32>,
 ) -> FieldResult<Vec<LogRecord>> {
+    let trace_id = crate::validate_optional_trace_id(trace_id)?;
     let anchor: u128 = anchor_nanos
         .parse()
         .map_err(|_| field_err("invalid anchorNanos"))?;

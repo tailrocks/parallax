@@ -115,11 +115,11 @@ async fn agent_session_projects_run_scoped_agent_spans() {
 #[tokio::test]
 async fn story_resolver_returns_trace_and_run_beats() {
     let store = Arc::new(MemoryStore::new());
-    let mut root = span("api", "story-trace", "root", 100, 50);
+    let mut root = span("api", "cccccccccccccccccccccccccccccccc", "root", 100, 50);
     root.run_id = Some("run-story".into());
     root.name = "checkout".into();
     root.events = Some(r#"[{"name":"exception","timeUnixNano":"120"}]"#.into());
-    let mut child = span("db", "story-trace", "child", 110, 10);
+    let mut child = span("db", "cccccccccccccccccccccccccccccccc", "child", 110, 10);
     child.run_id = Some("run-story".into());
     child.parent_span_id = Some("root".into());
     child.name = "SELECT orders".into();
@@ -133,7 +133,7 @@ async fn story_resolver_returns_trace_and_run_beats() {
         severity_num: 17,
         severity_text: "ERROR".into(),
         body: "payment 123 failed".into(),
-        trace_id: "story-trace".into(),
+        trace_id: "cccccccccccccccccccccccccccccccc".into(),
         span_id: "child".into(),
         run_id: Some("run-story".into()),
         scope_name: String::new(),
@@ -146,7 +146,7 @@ async fn story_resolver_returns_trace_and_run_beats() {
     let request = juniper::http::GraphQLRequest::new(
         r#"
         {
-          traceStory: story(traceId: "story-trace") {
+          traceStory: story(traceId: "cccccccccccccccccccccccccccccccc") {
             tsNanos lane kind title traceId spanId severity durationNs
           }
           runStory: story(runId: "run-story") {
@@ -177,9 +177,9 @@ async fn story_resolver_returns_trace_and_run_beats() {
     assert!(
         json.pointer("/data/runStory")
             .and_then(|value| value.as_array())
-            .is_some_and(|beats| beats
-                .iter()
-                .any(|beat| { beat["traceId"] == "story-trace" && beat["spanId"] == "child" })),
+            .is_some_and(|beats| beats.iter().any(|beat| {
+                beat["traceId"] == "cccccccccccccccccccccccccccccccc" && beat["spanId"] == "child"
+            })),
         "run story contains trace spans: {json}"
     );
 }
@@ -189,7 +189,7 @@ async fn story_requires_exactly_one_anchor() {
     let schema = build_schema();
     let context = context_with_memory(Arc::new(MemoryStore::new())).await;
     let request = juniper::http::GraphQLRequest::new(
-        r#"{ story(traceId: "a", runId: "b") { kind } }"#.into(),
+        r#"{ story(traceId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", runId: "b") { kind } }"#.into(),
         None,
         None,
     );

@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 pub(crate) async fn trace(context: &ApiContext, trace_id: String) -> FieldResult<Option<Trace>> {
+    let trace_id = crate::validate_trace_id(trace_id)?;
     let spans = context.spans_for(&trace_id).await?;
     if spans.is_empty() {
         return Ok(None);
@@ -25,6 +26,7 @@ pub(crate) async fn trace_events(
     name_prefix: Option<String>,
     limit: Option<i32>,
 ) -> FieldResult<TraceEventsOut> {
+    let trace_id = crate::validate_trace_id(trace_id)?;
     let spans = context.spans_for(&trace_id).await?;
     let name_prefix = name_prefix.as_deref().filter(|prefix| !prefix.is_empty());
     Ok(TraceEventsOut(span_events::trace_events(
@@ -38,6 +40,7 @@ pub(crate) async fn linked_traces(
     context: &ApiContext,
     trace_id: String,
 ) -> FieldResult<Vec<TraceSummary>> {
+    let trace_id = crate::validate_trace_id(trace_id)?;
     let spans = context.spans_for(&trace_id).await?;
     let ids = linked_trace_ids(&spans, &trace_id);
     let traces = context
@@ -52,6 +55,7 @@ pub(crate) async fn trace_critical_path(
     context: &ApiContext,
     trace_id: String,
 ) -> FieldResult<CriticalPath> {
+    let trace_id = crate::validate_trace_id(trace_id)?;
     let spans = context.spans_for(&trace_id).await?;
     if spans.is_empty() {
         return Err(field_err("traceCriticalPath trace has no spans"));
@@ -64,6 +68,8 @@ pub(crate) async fn trace_compare(
     trace_id_a: String,
     trace_id_b: String,
 ) -> FieldResult<TraceDiff> {
+    let trace_id_a = crate::validate_trace_id(trace_id_a)?;
+    let trace_id_b = crate::validate_trace_id(trace_id_b)?;
     let (spans_a, spans_b) = tokio::try_join!(
         context.spans_for(&trace_id_a),
         context.spans_for(&trace_id_b),

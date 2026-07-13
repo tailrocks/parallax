@@ -63,6 +63,7 @@ async fn ingest<R>(
     signal: Signal,
     body: Bytes,
     to_item: impl FnOnce(R, Bytes) -> IngestItem,
+    validate: impl FnOnce(&R) -> Result<(), &'static str>,
 ) -> Response
 where
     R: Message + Default,
@@ -80,6 +81,9 @@ where
                 .into_response();
         }
     };
+    if let Err(error) = validate(&request) {
+        return (StatusCode::BAD_REQUEST, error.to_string()).into_response();
+    }
     if let Err(e) = state.spool.append_raw(signal, &raw).await {
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -109,13 +113,34 @@ where
 }
 
 async fn traces(State(state): State<IngestState>, body: Bytes) -> impl IntoResponse {
-    ingest::<ExportTraceServiceRequest>(&state, Signal::Traces, body, IngestItem::Traces).await
+    ingest::<ExportTraceServiceRequest>(
+        &state,
+        Signal::Traces,
+        body,
+        IngestItem::Traces,
+        crate::otlp_validation::trace_ids,
+    )
+    .await
 }
 
 async fn logs(State(state): State<IngestState>, body: Bytes) -> impl IntoResponse {
-    ingest::<ExportLogsServiceRequest>(&state, Signal::Logs, body, IngestItem::Logs).await
+    ingest::<ExportLogsServiceRequest>(
+        &state,
+        Signal::Logs,
+        body,
+        IngestItem::Logs,
+        crate::otlp_validation::log_trace_ids,
+    )
+    .await
 }
 
 async fn metrics(State(state): State<IngestState>, body: Bytes) -> impl IntoResponse {
-    ingest::<ExportMetricsServiceRequest>(&state, Signal::Metrics, body, IngestItem::Metrics).await
+    ingest::<ExportMetricsServiceRequest>(
+        &state,
+        Signal::Metrics,
+        body,
+        IngestItem::Metrics,
+        crate::otlp_validation::metric_trace_ids,
+    )
+    .await
 }

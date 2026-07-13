@@ -145,6 +145,7 @@ pub(crate) async fn evidence_gaps(
     trace_id: Option<String>,
     run_id: Option<String>,
 ) -> FieldResult<Vec<EvidenceGap>> {
+    let trace_id = crate::validate_optional_trace_id(trace_id)?;
     match (trace_id, run_id) {
         (Some(trace_id), None) => {
             let (spans, logs) =

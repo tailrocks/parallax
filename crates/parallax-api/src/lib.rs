@@ -65,6 +65,17 @@ pub(crate) fn nanos_string(nanos: u128) -> String {
     nanos.to_string()
 }
 
+pub(crate) fn validate_trace_id(value: String) -> FieldResult<String> {
+    value
+        .parse::<model::TraceId>()
+        .map(|trace_id| trace_id.to_string())
+        .map_err(field_err)
+}
+
+pub(crate) fn validate_optional_trace_id(value: Option<String>) -> FieldResult<Option<String>> {
+    value.map(validate_trace_id).transpose()
+}
+
 pub(crate) fn saturate_i32(value: u64) -> i32 {
     i32::try_from(value).unwrap_or(i32::MAX)
 }

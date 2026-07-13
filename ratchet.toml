@@ -1582,7 +1582,7 @@ ceiling = 25
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-api/src/resolvers/issues.rs::bundle"
-ceiling = 142
+ceiling = 138
 
 [[limits]]
 metric = "rust.function-lines"
@@ -1750,7 +1750,7 @@ ceiling = 4
 [[limits]]
 metric = "rust.public-root-items"
 scope = "crates/parallax-model/facade.toml"
-ceiling = 1
+ceiling = 2
 
 [[limits]]
 metric = "rust.public-root-items"
@@ -1916,6 +1916,11 @@ ceiling = 2
 metric = "rust.assertions"
 scope = "crates/parallax-server/src/errors/tests.rs"
 ceiling = 4
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-model/src/ids/tests.rs"
+ceiling = 3
 
 [[limits]]
 metric = "rust.assertions"

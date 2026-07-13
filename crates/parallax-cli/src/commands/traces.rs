@@ -77,6 +77,8 @@ pub(crate) async fn traces(client: &Client, filter: TracesFilter<'_>) -> anyhow:
 }
 
 pub(crate) async fn trace_inspect(client: &Client, trace_id: &str) -> anyhow::Result<()> {
+    let trace_id = trace_id.parse::<parallax_model::TraceId>()?;
+    let trace_id = trace_id.as_str();
     let response = client
         .graphql(&format!(
             r#"{{ trace(traceId: "{0}") {{ spans {{ name service kind statusCode durationNs spanId parentSpanId }} }}

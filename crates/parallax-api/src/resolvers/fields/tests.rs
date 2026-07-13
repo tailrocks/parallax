@@ -9,7 +9,7 @@ use std::sync::Arc;
 #[tokio::test]
 async fn evidence_gaps_resolver_returns_trace_and_run_gaps() {
     let store = Arc::new(MemoryStore::new());
-    let mut orphan = span("api", "gap-trace", "orphan", 100, 10);
+    let mut orphan = span("api", "dddddddddddddddddddddddddddddddd", "orphan", 100, 10);
     orphan.parent_span_id = Some("missing-parent".into());
     orphan.run_id = Some("gap-run".into());
     store.push_spans(vec![orphan]);
@@ -34,7 +34,7 @@ async fn evidence_gaps_resolver_returns_trace_and_run_gaps() {
     let request = juniper::http::GraphQLRequest::new(
         r#"
         {
-          traceGaps: evidenceGaps(traceId: "gap-trace") {
+          traceGaps: evidenceGaps(traceId: "dddddddddddddddddddddddddddddddd") {
             kind subject detail
           }
           runGaps: evidenceGaps(runId: "gap-run") {
@@ -76,7 +76,8 @@ async fn evidence_gaps_requires_exactly_one_anchor() {
     let schema = build_schema();
     let context = context_with_memory(Arc::new(MemoryStore::new())).await;
     let request = juniper::http::GraphQLRequest::new(
-        r#"{ evidenceGaps(traceId: "a", runId: "b") { kind } }"#.into(),
+        r#"{ evidenceGaps(traceId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", runId: "b") { kind } }"#
+            .into(),
         None,
         None,
     );

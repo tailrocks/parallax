@@ -41,6 +41,7 @@ mod greptime_supervisor;
 mod live;
 mod otlp_grpc;
 mod otlp_http;
+mod otlp_validation;
 mod outcomes;
 mod self_telemetry;
 mod serve;

@@ -1,4 +1,7 @@
 schema_version = 1
 
 [roots]
-"lib.rs" = ["use types::*"]
+"lib.rs" = [
+    "use ids::*",
+    "use types::*",
+]

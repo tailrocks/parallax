@@ -233,6 +233,21 @@ pub(crate) async fn issue_trend(
     Ok(points.into_iter().map(TrendPoint).collect())
 }
 
+fn validate_bundle_anchors(fingerprint: bool, run_id: bool, trace_id: bool) -> FieldResult<()> {
+    if [fingerprint, run_id, trace_id]
+        .into_iter()
+        .filter(|present| *present)
+        .count()
+        == 1
+    {
+        Ok(())
+    } else {
+        Err(field_err(
+            "bundle takes exactly one anchor: fingerprint, runId, or traceId",
+        ))
+    }
+}
+
 pub(crate) async fn bundle(
     context: &ApiContext,
     fingerprint: Option<String>,
@@ -241,13 +256,9 @@ pub(crate) async fn bundle(
     max_tokens: Option<i32>,
 ) -> FieldResult<Option<BundleOut>> {
     use parallax_evidence::bundle::{BundleAnchor, BundleInputs};
+    let trace_id = crate::validate_optional_trace_id(trace_id)?;
     let max_tokens = usize::try_from(max_tokens.unwrap_or(10_000).max(500)).unwrap_or(10_000);
-    let anchors = [fingerprint.is_some(), run_id.is_some(), trace_id.is_some()];
-    if anchors.iter().filter(|present| **present).count() != 1 {
-        return Err(field_err(
-            "bundle takes exactly one anchor: fingerprint, runId, or traceId",
-        ));
-    }
+    validate_bundle_anchors(fingerprint.is_some(), run_id.is_some(), trace_id.is_some())?;
 
     let mut inputs = if let Some(fingerprint) = fingerprint {
         let Some(issue) = context

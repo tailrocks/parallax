@@ -132,6 +132,7 @@ pub(crate) async fn story(
     trace_id: Option<String>,
     run_id: Option<String>,
 ) -> FieldResult<Vec<StoryBeat>> {
+    let trace_id = crate::validate_optional_trace_id(trace_id)?;
     match (trace_id, run_id) {
         (Some(trace_id), None) => {
             let (spans, logs) =

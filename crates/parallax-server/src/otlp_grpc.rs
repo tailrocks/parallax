@@ -86,6 +86,7 @@ impl TraceService for OtlpGrpc {
         request: Request<ExportTraceServiceRequest>,
     ) -> Result<Response<ExportTraceServiceResponse>, Status> {
         let request = request.into_inner();
+        crate::otlp_validation::trace_ids(&request).map_err(Status::invalid_argument)?;
         self.spool_then_queue(Signal::Traces, request, IngestItem::Traces)
             .await?;
         Ok(Response::new(ExportTraceServiceResponse {
@@ -101,6 +102,7 @@ impl LogsService for OtlpGrpc {
         request: Request<ExportLogsServiceRequest>,
     ) -> Result<Response<ExportLogsServiceResponse>, Status> {
         let request = request.into_inner();
+        crate::otlp_validation::log_trace_ids(&request).map_err(Status::invalid_argument)?;
         self.spool_then_queue(Signal::Logs, request, IngestItem::Logs)
             .await?;
         Ok(Response::new(ExportLogsServiceResponse {
@@ -116,6 +118,7 @@ impl MetricsService for OtlpGrpc {
         request: Request<ExportMetricsServiceRequest>,
     ) -> Result<Response<ExportMetricsServiceResponse>, Status> {
         let request = request.into_inner();
+        crate::otlp_validation::metric_trace_ids(&request).map_err(Status::invalid_argument)?;
         self.spool_then_queue(Signal::Metrics, request, IngestItem::Metrics)
             .await?;
         Ok(Response::new(ExportMetricsServiceResponse {

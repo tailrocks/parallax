@@ -10,7 +10,13 @@ use std::sync::Arc;
 #[tokio::test]
 async fn trace_events_filters_orders_and_reports_caps() {
     let store = Arc::new(MemoryStore::new());
-    let mut root = span("checkout", "trace-a", "span-a", 1_000, 100);
+    let mut root = span(
+        "checkout",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "span-a",
+        1_000,
+        100,
+    );
     root.name = "root".into();
     root.events = Some(
         r#"[
@@ -19,7 +25,13 @@ async fn trace_events_filters_orders_and_reports_caps() {
         ]"#
         .into(),
     );
-    let mut child = span("payments", "trace-a", "span-b", 2_000, 100);
+    let mut child = span(
+        "payments",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "span-b",
+        2_000,
+        100,
+    );
     child.name = "client".into();
     child.events = Some(
         r#"[{"name":"rpc.message.received","time_unix_nano":20,"attributes":{"message.type":"RECEIVED"}}]"#
@@ -32,7 +44,7 @@ async fn trace_events_filters_orders_and_reports_caps() {
     let request = juniper::http::GraphQLRequest::new(
         r#"
         {
-          traceEvents(traceId: "trace-a", namePrefix: "rpc.message", limit: 1) {
+          traceEvents(traceId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", namePrefix: "rpc.message", limit: 1) {
             truncated
             skippedSpans
             events { name spanId spanName service timeUnixNano attributes }
@@ -79,9 +91,21 @@ async fn trace_events_filters_orders_and_reports_caps() {
 #[tokio::test]
 async fn trace_events_counts_malformed_span_events() {
     let store = Arc::new(MemoryStore::new());
-    let mut good = span("checkout", "trace-a", "span-a", 1_000, 100);
+    let mut good = span(
+        "checkout",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "span-a",
+        1_000,
+        100,
+    );
     good.events = Some(r#"[{"name":"rpc.message","time_unix_nano":10,"attributes":{}}]"#.into());
-    let mut bad = span("checkout", "trace-a", "span-b", 2_000, 100);
+    let mut bad = span(
+        "checkout",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "span-b",
+        2_000,
+        100,
+    );
     bad.events = Some("{not json".into());
     store.push_spans(vec![good, bad]);
 
@@ -90,7 +114,7 @@ async fn trace_events_counts_malformed_span_events() {
     let request = juniper::http::GraphQLRequest::new(
         r#"
         {
-          traceEvents(traceId: "trace-a") {
+          traceEvents(traceId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") {
             truncated
             skippedSpans
             events { name spanId }
@@ -153,16 +177,28 @@ fn parses_typed_span_links_from_stored_json() {
 #[tokio::test]
 async fn linked_traces_resolves_span_link_targets() {
     let store = Arc::new(MemoryStore::new());
-    let mut source = span("api", "source", "source-root", 10, 10_000_000);
+    let mut source = span(
+        "api",
+        "11111111111111111111111111111111",
+        "source-root",
+        10,
+        10_000_000,
+    );
     source.name = "publish".into();
     source.links = serde_json::json!([
         {
-            "traceId": "target",
+            "traceId": "33333333333333333333333333333333",
             "spanId": "target-root",
             "attributes": { "messaging.operation": "publish" }
         }
     ]);
-    let mut target = span("worker", "target", "target-root", 20, 20_000_000);
+    let mut target = span(
+        "worker",
+        "33333333333333333333333333333333",
+        "target-root",
+        20,
+        20_000_000,
+    );
     target.name = "consume".into();
     store.push_spans(vec![source, target]);
 
@@ -171,13 +207,13 @@ async fn linked_traces_resolves_span_link_targets() {
     let request = juniper::http::GraphQLRequest::new(
         r#"
         {
-          trace(traceId: "source") {
+          trace(traceId: "11111111111111111111111111111111") {
             spans {
               spanId
               typedLinks { traceId spanId attributes }
             }
           }
-          linkedTraces(traceId: "source") {
+          linkedTraces(traceId: "11111111111111111111111111111111") {
             traceId
             rootName
             service
@@ -199,7 +235,7 @@ async fn linked_traces_resolves_span_link_targets() {
     );
     assert_eq!(
         json.pointer("/data/trace/spans/0/typedLinks/0/traceId"),
-        Some(&serde_json::json!("target"))
+        Some(&serde_json::json!("33333333333333333333333333333333"))
     );
     assert_eq!(
         json.pointer("/data/trace/spans/0/typedLinks/0/spanId"),
@@ -207,7 +243,7 @@ async fn linked_traces_resolves_span_link_targets() {
     );
     assert_eq!(
         json.pointer("/data/linkedTraces/0/traceId"),
-        Some(&serde_json::json!("target"))
+        Some(&serde_json::json!("33333333333333333333333333333333"))
     );
     assert_eq!(
         json.pointer("/data/linkedTraces/0/rootName"),
@@ -222,15 +258,15 @@ async fn linked_traces_resolves_span_link_targets() {
 #[tokio::test]
 async fn trace_analysis_resolvers_return_path_and_diff() {
     let store = Arc::new(MemoryStore::new());
-    let a_root = span("api", "a", "a-root", 0, 100);
-    let mut a_db = span("db", "a", "a-db", 20, 40);
+    let a_root = span("api", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a-root", 0, 100);
+    let mut a_db = span("db", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a-db", 20, 40);
     a_db.parent_span_id = Some("a-root".into());
-    let mut b_root = span("api", "b", "b-root", 0, 120);
+    let mut b_root = span("api", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "b-root", 0, 120);
     b_root.name = "handler".into();
-    let mut b_db = span("db", "b", "b-db", 20, 60);
+    let mut b_db = span("db", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "b-db", 20, 60);
     b_db.parent_span_id = Some("b-root".into());
     b_db.status_code = "STATUS_CODE_ERROR".into();
-    let mut b_retry = span("api", "b", "b-retry", 90, 10);
+    let mut b_retry = span("api", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "b-retry", 90, 10);
     b_retry.parent_span_id = Some("b-root".into());
     b_retry.name = "retry".into();
     store.push_spans(vec![a_root, a_db, b_root, b_db, b_retry]);
@@ -240,12 +276,12 @@ async fn trace_analysis_resolvers_return_path_and_diff() {
     let request = juniper::http::GraphQLRequest::new(
         r#"
         {
-          traceCriticalPath(traceId: "a") {
+          traceCriticalPath(traceId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") {
             totalGatedNs
             hops { spanId gatedByChild selfTimeNs clockSuspect }
             unattached
           }
-          traceCompare(traceIdA: "a", traceIdB: "b") {
+          traceCompare(traceIdA: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", traceIdB: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb") {
             added { name service }
             removed { name }
             changed {
@@ -295,7 +331,8 @@ async fn trace_critical_path_errors_for_empty_trace() {
     let schema = build_schema();
     let context = context_with_memory(Arc::new(MemoryStore::new())).await;
     let request = juniper::http::GraphQLRequest::new(
-        r#"{ traceCriticalPath(traceId: "missing") { totalGatedNs } }"#.into(),
+        r#"{ traceCriticalPath(traceId: "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee") { totalGatedNs } }"#
+            .into(),
         None,
         None,
     );
@@ -313,14 +350,32 @@ async fn trace_critical_path_errors_for_empty_trace() {
 #[tokio::test]
 async fn traces_page_returns_total_and_span_events_json() {
     let store = Arc::new(MemoryStore::new());
-    let mut mid = span("api", "mid", "b", 20, 20_000_000);
+    let mut mid = span(
+        "api",
+        "22222222222222222222222222222222",
+        "b",
+        20,
+        20_000_000,
+    );
     mid.events = Some(
         r#"[{"name":"exception","timeUnixNano":"20","attributes":{"message":"bad"}}]"#.to_string(),
     );
     store.push_spans(vec![
-        span("api", "fast", "a", 10, 10_000_000),
+        span(
+            "api",
+            "11111111111111111111111111111111",
+            "a",
+            10,
+            10_000_000,
+        ),
         mid,
-        span("api", "slow", "c", 30, 30_000_000),
+        span(
+            "api",
+            "33333333333333333333333333333333",
+            "c",
+            30,
+            30_000_000,
+        ),
     ]);
 
     let schema = build_schema();
@@ -332,7 +387,7 @@ async fn traces_page_returns_total_and_span_events_json() {
             total
             items { traceId durationNs }
           }
-          trace(traceId: "mid") {
+          trace(traceId: "22222222222222222222222222222222") {
             spans { spanId events }
           }
         }
@@ -349,11 +404,11 @@ async fn traces_page_returns_total_and_span_events_json() {
     );
     assert_eq!(
         json.pointer("/data/tracesPage/items/0/traceId"),
-        Some(&serde_json::json!("mid"))
+        Some(&serde_json::json!("22222222222222222222222222222222"))
     );
     assert_eq!(
         json.pointer("/data/tracesPage/items/1/traceId"),
-        Some(&serde_json::json!("fast"))
+        Some(&serde_json::json!("11111111111111111111111111111111"))
     );
     let events = json
         .pointer("/data/trace/spans/0/events")

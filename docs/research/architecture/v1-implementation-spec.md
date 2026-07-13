@@ -345,6 +345,12 @@ telemetry without a CLI `runStart` are auto-registered by the worker with status
 | metric histogram data points | `otel_metrics_histograms` |
 | `resource.attributes["parallax.run.id"]` | **promoted to a real `run_id` column** on `otel_spans`/`otel_logs`/`otel_metrics_points` (the key contains a dot, making JSON-path filtering fragile; a column makes run-scoped reads exact and fast — and puts a run's CPU/memory beside its traces and logs). No aliases are accepted: `session.id` is a broader client-session key, and `cicd.pipeline.run.id` is scoped to CI/CD pipeline systems. Decision + sources: [capture/run-id-standardization.md](../capture/run-id-standardization.md) |
 
+`TraceId` is a transparent model value at external boundaries: OTLP requires
+exactly 16 non-zero bytes, GraphQL/CLI accept exactly 32 non-zero hexadecimal
+characters, and text normalizes to lowercase. Persisted and wire values remain
+the same lowercase strings; storage row fields are intentionally not swept in
+the boundary pilot.
+
 > **⚠ 2026-06-18 (native-OTLP decision):** the right-hand custom-table targets above (`otel_spans`,
 > `otel_logs`, `otel_metrics_*`) are **superseded** — raw signals now land in GreptimeDB's native tables
 > (`opentelemetry_traces`/`opentelemetry_logs`/metric engine) via OTLP forward; run-scoped metrics go to

@@ -3111,6 +3111,7 @@ version = "0.1.0-dev"
 dependencies = [
  "anyhow",
  "clap",
+ "parallax-model",
  "parallax-server",
  "reqwest",
  "serde",
