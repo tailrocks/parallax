@@ -40,7 +40,11 @@ pub(crate) async fn linked_traces(
 ) -> FieldResult<Vec<TraceSummary>> {
     let spans = context.spans_for(&trace_id).await?;
     let ids = linked_trace_ids(&spans, &trace_id);
-    let traces = context.store.traces_by_ids(&ids).await.map_err(field_err)?;
+    let traces = context
+        .store
+        .traces_by_ids(&ids)
+        .await
+        .map_err(crate::internal_field_err)?;
     Ok(traces.into_iter().map(TraceSummary).collect())
 }
 
@@ -82,7 +86,7 @@ pub(crate) async fn traces_by_run(
         .store
         .spans_by_run(&run_id, MAX_ROWS, retained_recent_range())
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     let mut by_trace: Vec<(String, Vec<model::SpanRow>)> = Vec::new();
     let mut trace_indexes: HashMap<String, usize> = HashMap::new();
     for span in spans {
@@ -131,7 +135,7 @@ pub(crate) async fn recent_traces(
         .store
         .recent_traces(clamp_limit(limit, 50))
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     Ok(traces.into_iter().map(TraceSummary).collect())
 }
 
@@ -175,7 +179,7 @@ pub(crate) async fn traces(
         .store
         .traces_search(&trace_query)
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     Ok(traces.items.into_iter().map(TraceSummary).collect())
 }
 
@@ -219,6 +223,6 @@ pub(crate) async fn traces_page(
         .store
         .traces_search(&trace_query)
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     Ok(TraceList(traces))
 }

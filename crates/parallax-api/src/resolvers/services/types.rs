@@ -3,7 +3,7 @@
 use juniper::{FieldResult, graphql_object};
 use std::sync::Arc;
 
-use crate::{ApiContext, field_err, nanos_string, saturate_i32};
+use crate::{ApiContext, nanos_string, saturate_i32};
 
 use crate::resolvers::common::Point;
 use parallax_analysis::semconv;
@@ -260,7 +260,7 @@ impl ServiceOverview {
                     MetricAgg::Avg,
                 )
                 .await
-                .map_err(field_err)?;
+                .map_err(crate::internal_field_err)?;
             if !series.is_empty() {
                 return Ok(series);
             }
@@ -288,7 +288,7 @@ impl ServiceOverview {
                             &quantiles,
                         )
                         .await
-                        .map_err(field_err)?;
+                        .map_err(crate::internal_field_err)?;
                     if !series.iter().any(|points| !points.is_empty()) {
                         continue;
                     }
@@ -304,7 +304,7 @@ impl ServiceOverview {
                             self.step,
                         )
                         .await
-                        .map_err(field_err)?;
+                        .map_err(crate::internal_field_err)?;
                     request_rate = counts
                         .into_iter()
                         .map(|p| SeriesPoint {
@@ -409,7 +409,7 @@ impl ServiceOverview {
             .store
             .error_count_series(&self.service, self.from..=self.to, self.step)
             .await
-            .map_err(field_err)?;
+            .map_err(crate::internal_field_err)?;
         Ok(counts
             .into_iter()
             .map(|p| {

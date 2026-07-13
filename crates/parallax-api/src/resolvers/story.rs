@@ -121,7 +121,7 @@ pub(crate) async fn agent_session(
         .store
         .spans_by_run(&run_id, MAX_ROWS, retained_recent_range())
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     let truncated = spans.len() == MAX_ROWS;
     Ok(agent_session::project_agent_session(&spans)
         .map(|session| AgentSessionOut { session, truncated }))
@@ -148,7 +148,7 @@ pub(crate) async fn story(
                     .spans_by_run(&run_id, MAX_ROWS, retained_recent_range()),
                 context.store.logs_by_run(&run_id, MAX_ROWS),
             )
-            .map_err(field_err)?;
+            .map_err(crate::internal_field_err)?;
             Ok(story::project_story(&spans, &logs, &[])
                 .into_iter()
                 .map(StoryBeat)

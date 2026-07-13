@@ -13,6 +13,7 @@
 //! use parallax_api::resolvers::Trace;
 //! ```
 
+mod api_errors;
 mod query_limits;
 mod resolvers;
 mod schema;
@@ -52,8 +53,12 @@ pub struct ApiContext {
 
 impl juniper::Context for ApiContext {}
 
-pub(crate) fn field_err(e: impl std::fmt::Display) -> FieldError {
-    FieldError::from(e.to_string())
+pub(crate) fn field_err(error: impl std::fmt::Display) -> FieldError {
+    api_errors::invalid(error)
+}
+
+pub(crate) fn internal_field_err(error: impl std::error::Error + 'static) -> FieldError {
+    api_errors::internal(error)
 }
 
 pub(crate) fn nanos_string(nanos: u128) -> String {

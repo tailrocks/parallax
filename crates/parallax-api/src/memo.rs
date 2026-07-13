@@ -44,7 +44,7 @@ impl ApiContext {
             self.store
                 .error_events_by_fingerprints(fingerprints, from_nanos..=to_nanos, limit)
                 .await
-                .map_err(field_err)?,
+                .map_err(internal_field_err)?,
         );
         let result = events.get(fingerprint).cloned().unwrap_or_default();
         cache.insert(key, events);
@@ -62,7 +62,7 @@ impl ApiContext {
             .store
             .spans_by_trace(trace_id)
             .await
-            .map_err(field_err)?;
+            .map_err(internal_field_err)?;
         if rows.len() > MAX_ROWS {
             tracing::warn!(
                 trace_id,
@@ -92,7 +92,7 @@ impl ApiContext {
             .store
             .logs_by_trace(trace_id)
             .await
-            .map_err(field_err)?;
+            .map_err(internal_field_err)?;
         if rows.len() > MAX_ROWS {
             tracing::warn!(
                 trace_id,

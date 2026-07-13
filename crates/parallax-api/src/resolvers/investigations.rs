@@ -66,12 +66,16 @@ pub(crate) async fn investigation(
         .metadata
         .investigation(&id)
         .await
-        .map_err(field_err)?
+        .map_err(crate::internal_field_err)?
         .map(Investigation))
 }
 
 pub(crate) async fn investigations(context: &ApiContext) -> FieldResult<Vec<Investigation>> {
-    let investigations = context.metadata.investigations().await.map_err(field_err)?;
+    let investigations = context
+        .metadata
+        .investigations()
+        .await
+        .map_err(crate::internal_field_err)?;
     Ok(investigations.into_iter().map(Investigation).collect())
 }
 
@@ -83,7 +87,7 @@ pub(crate) async fn saved_views(
         .metadata
         .saved_views(page.as_deref().filter(|page| !page.is_empty()))
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     Ok(saved_views.into_iter().map(SavedView).collect())
 }
 
@@ -105,12 +109,12 @@ pub(crate) async fn investigation_save(
         .metadata
         .investigation_save(&id, &name, &state, now)
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     context
         .metadata
         .investigation(&id)
         .await
-        .map_err(field_err)?
+        .map_err(crate::internal_field_err)?
         .map(Investigation)
         .ok_or_else(|| field_err("investigation save did not persist"))
 }
@@ -120,7 +124,7 @@ pub(crate) async fn investigation_delete(context: &ApiContext, id: String) -> Fi
         .metadata
         .investigation_delete(&id)
         .await
-        .map_err(field_err)
+        .map_err(crate::internal_field_err)
 }
 
 pub(crate) async fn saved_view_save(
@@ -133,7 +137,11 @@ pub(crate) async fn saved_view_save(
     let name = validate_saved_view_name(&name)?;
     validate_saved_view_page(&page)?;
     let existing = match id.as_deref().filter(|id| !id.is_empty()) {
-        Some(id) => context.metadata.saved_view(id).await.map_err(field_err)?,
+        Some(id) => context
+            .metadata
+            .saved_view(id)
+            .await
+            .map_err(crate::internal_field_err)?,
         None => None,
     };
     if existing.as_ref().is_none_or(|view| view.page != page)
@@ -141,7 +149,7 @@ pub(crate) async fn saved_view_save(
             .metadata
             .saved_views(Some(&page))
             .await
-            .map_err(field_err)?
+            .map_err(crate::internal_field_err)?
             .len()
             >= SAVED_VIEWS_PER_PAGE
     {
@@ -157,12 +165,12 @@ pub(crate) async fn saved_view_save(
         .metadata
         .saved_view_save(&id, &name, &page, &state, now)
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     context
         .metadata
         .saved_view(&id)
         .await
-        .map_err(field_err)?
+        .map_err(crate::internal_field_err)?
         .map(SavedView)
         .ok_or_else(|| field_err("saved view save did not persist"))
 }
@@ -172,7 +180,7 @@ pub(crate) async fn saved_view_delete(context: &ApiContext, id: String) -> Field
         .metadata
         .saved_view_delete(&id)
         .await
-        .map_err(field_err)
+        .map_err(crate::internal_field_err)
 }
 
 #[cfg(test)]

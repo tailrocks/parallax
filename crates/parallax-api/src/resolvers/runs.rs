@@ -70,7 +70,7 @@ impl Run {
                     .store
                     .spans_by_run(&self.record.run_id, MAX_ROWS, retained_recent_range())
                     .await
-                    .map_err(field_err)?;
+                    .map_err(crate::internal_field_err)?;
                 let mut trace_ids: Vec<String> = Vec::new();
                 let mut seen_trace_ids = HashSet::new();
                 for span in &spans {
@@ -83,7 +83,7 @@ impl Run {
                     .store
                     .error_events_by_traces(&trace_ids, MAX_ROWS)
                     .await
-                    .map_err(field_err)?;
+                    .map_err(crate::internal_field_err)?;
                 Ok(RunStats { trace_ids, events })
             })
             .await
@@ -159,7 +159,7 @@ impl Run {
             .metadata
             .issues_by_fingerprints(&fingerprints)
             .await
-            .map_err(field_err)?;
+            .map_err(crate::internal_field_err)?;
         Ok(Issue::from_rows(issues))
     }
 }
@@ -169,7 +169,7 @@ pub(crate) async fn run(context: &ApiContext, run_id: String) -> FieldResult<Opt
         .metadata
         .run(&run_id)
         .await
-        .map_err(field_err)?
+        .map_err(crate::internal_field_err)?
         .map(Run::new))
 }
 
@@ -181,7 +181,7 @@ pub(crate) async fn observed_runs(
         .store
         .observed_runs(clamp_limit(limit, 50), retained_recent_range())
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     Ok(runs.into_iter().map(ObservedRun).collect())
 }
 
@@ -190,7 +190,7 @@ pub(crate) async fn runs(context: &ApiContext, limit: Option<i32>) -> FieldResul
         .metadata
         .runs(clamp_limit(limit, 50))
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     if runs.is_empty() {
         return Ok(Vec::new());
     }
@@ -199,7 +199,7 @@ pub(crate) async fn runs(context: &ApiContext, limit: Option<i32>) -> FieldResul
         .store
         .spans_by_runs(&run_ids, MAX_ROWS)
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     let mut all_trace_ids: Vec<String> = Vec::new();
     let mut seen_trace_ids = HashSet::new();
     for spans in spans_by_run.values() {
@@ -214,7 +214,7 @@ pub(crate) async fn runs(context: &ApiContext, limit: Option<i32>) -> FieldResul
         .store
         .error_events_by_traces(&all_trace_ids, event_limit)
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     let mut events_by_trace: HashMap<String, Vec<model::ErrorEventRow>> = HashMap::new();
     for event in events {
         events_by_trace
@@ -248,7 +248,7 @@ pub(crate) async fn run_start(
         .metadata
         .start_run(&run_id, command.as_deref(), nanos)
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     Ok(true)
 }
 
@@ -265,7 +265,7 @@ pub(crate) async fn run_finish(
         .metadata
         .finish_run(&run_id, nanos, exit_code)
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     Ok(true)
 }
 

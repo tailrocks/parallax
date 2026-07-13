@@ -22,5 +22,6 @@ serde_json = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
+anyhow = { workspace = true }
 parallax-metadata = { workspace = true }
 parallax-test-support = { workspace = true }

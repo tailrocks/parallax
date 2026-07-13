@@ -52,9 +52,9 @@ async fn sql_guard_rejects_explain_analyze_but_allows_select_shape() {
     let response = execute(&schema, &context, select).await;
     let json = serde_json::to_value(response).unwrap();
     assert!(
-        error_messages(&json)
-            .iter()
-            .any(|message| message.contains("test store has no SQL surface")),
-        "SELECT passes API guard and reaches the test adapter: {json}"
+        error_messages(&json) == ["internal server error"]
+            && json.pointer("/errors/0/extensions/code") == Some(&serde_json::json!("INTERNAL"))
+            && !json.to_string().contains("test store has no SQL surface"),
+        "SELECT reaches the adapter but its detail is sanitized: {json}"
     );
 }

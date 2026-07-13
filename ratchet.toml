@@ -1540,11 +1540,6 @@ ceiling = 4043
 
 [[limits]]
 metric = "rust.function-cognitive-complexity"
-scope = "crates/parallax-api/src/resolvers/issues.rs::bundle"
-ceiling = 25
-
-[[limits]]
-metric = "rust.function-cognitive-complexity"
 scope = "crates/parallax-evidence/src/bundle/markdown.rs::to_markdown"
 ceiling = 25
 
@@ -1587,7 +1582,7 @@ ceiling = 25
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-api/src/resolvers/issues.rs::bundle"
-ceiling = 151
+ceiling = 142
 
 [[limits]]
 metric = "rust.function-lines"

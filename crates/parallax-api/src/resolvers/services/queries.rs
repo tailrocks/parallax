@@ -2,7 +2,7 @@
 
 use super::types::*;
 use crate::resolvers::common::Point;
-use crate::{ApiContext, clamp_limit, field_err, parse_range, step_nanos};
+use crate::{ApiContext, clamp_limit, parse_range, step_nanos};
 use juniper::FieldResult;
 use parallax_storage::adapter::SERVICE_MAP_TRACE_CAP;
 use std::collections::BTreeMap;
@@ -30,7 +30,7 @@ pub(crate) async fn overview(
             .store
             .overview_totals(from..=to)
             .await
-            .map_err(field_err)?,
+            .map_err(crate::internal_field_err)?,
     ))
 }
 
@@ -52,7 +52,7 @@ pub(crate) async fn signal_count_series(
             step_nanos(step_seconds),
         )
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     Ok(series.into_iter().map(Point).collect())
 }
 
@@ -66,7 +66,7 @@ pub(crate) async fn service_list(
         .store
         .service_summaries(from..=to)
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     Ok(services.into_iter().map(ServiceSummary).collect())
 }
 
@@ -81,7 +81,7 @@ pub(crate) async fn releases(
         .store
         .release_windows(&service, from..=to)
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     Ok(windows.into_iter().map(ReleaseWindow).collect())
 }
 
@@ -95,7 +95,7 @@ pub(crate) async fn service_catalog(
         .store
         .service_catalog(from..=to)
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     Ok(rows.into_iter().map(ServiceCatalogRow).collect())
 }
 
@@ -111,7 +111,7 @@ pub(crate) async fn service_map(
         context.store.service_summaries(from..=to),
         context.store.service_map(from..=to, max_traces),
     )
-    .map_err(field_err)?;
+    .map_err(crate::internal_field_err)?;
     let mut nodes: BTreeMap<String, ServiceNodeData> = services
         .into_iter()
         .map(|service| {
@@ -163,7 +163,7 @@ pub(crate) async fn service_red(
                 step_nanos(step_seconds),
             )
             .await
-            .map_err(field_err)?,
+            .map_err(crate::internal_field_err)?,
     ))
 }
 

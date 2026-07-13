@@ -65,14 +65,14 @@ impl Issue {
     async fn trend(&self, context: &ApiContext) -> FieldResult<Vec<TrendPoint>> {
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
-            .map_err(field_err)?
+            .map_err(internal_field_err)?
             .as_nanos();
         let since = now.saturating_sub(24 * 3_600_000_000_000);
         let points = context
             .metadata
             .issue_trend(&self.row.fingerprint, since, 3600)
             .await
-            .map_err(field_err)?;
+            .map_err(internal_field_err)?;
         Ok(points.into_iter().map(TrendPoint).collect())
     }
 

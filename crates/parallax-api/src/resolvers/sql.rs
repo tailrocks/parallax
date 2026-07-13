@@ -68,7 +68,7 @@ pub(crate) async fn sql(context: &ApiContext, query: String) -> FieldResult<SqlR
         .store
         .raw_sql(trimmed.trim_end_matches(';'))
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     Ok(cap_sql_result(result, SQL_MAX_ROWS))
 }
 

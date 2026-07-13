@@ -6,7 +6,8 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use crate::{
-    ApiContext, MAX_ROWS, clamp_limit, field_err, nanos_string, retained_recent_range, saturate_i32,
+    ApiContext, MAX_ROWS, clamp_limit, field_err, internal_field_err, nanos_string,
+    retained_recent_range, saturate_i32,
 };
 
 use parallax_analysis::semconv;
@@ -14,6 +15,15 @@ use parallax_storage::model::MetricAgg;
 
 mod nested;
 pub(crate) use nested::{Issue, IssueList, IssueSort, TrendPoint};
+
+fn unique_fingerprints(events: &[model::ErrorEventRow]) -> Vec<String> {
+    let mut seen = HashSet::new();
+    events
+        .iter()
+        .filter(|event| seen.insert(event.fingerprint.clone()))
+        .map(|event| event.fingerprint.clone())
+        .collect()
+}
 
 pub(crate) struct BundleOut {
     json: String,
@@ -124,7 +134,7 @@ pub(crate) async fn bundle_metric_windows(
             MetricAgg::Avg,
         ),
     )
-    .map_err(field_err)?;
+    .map_err(internal_field_err)?;
     let mut windows = Vec::new();
     for (metric, points) in [
         (semconv::BUNDLE_WINDOW_METRICS[0], cpu),
@@ -189,7 +199,7 @@ pub(crate) async fn issues(
             offset,
         )
         .await
-        .map_err(field_err)?;
+        .map_err(internal_field_err)?;
     Ok(IssueList::new(items, total))
 }
 
@@ -198,7 +208,7 @@ pub(crate) async fn issue(context: &ApiContext, fingerprint: String) -> FieldRes
         .metadata
         .issue(&fingerprint)
         .await
-        .map_err(field_err)?
+        .map_err(internal_field_err)?
         .map(Issue::single))
 }
 
@@ -212,14 +222,14 @@ pub(crate) async fn issue_trend(
     let step = u32::try_from(step_seconds.unwrap_or(3600).clamp(60, 86_400)).unwrap_or(3600);
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
-        .map_err(field_err)?
+        .map_err(internal_field_err)?
         .as_nanos();
     let since = now.saturating_sub(u128::from(hours) * 3_600_000_000_000);
     let points = context
         .metadata
         .issue_trend(&fingerprint, since, step)
         .await
-        .map_err(field_err)?;
+        .map_err(internal_field_err)?;
     Ok(points.into_iter().map(TrendPoint).collect())
 }
 
@@ -244,7 +254,7 @@ pub(crate) async fn bundle(
             .metadata
             .issue(&fingerprint)
             .await
-            .map_err(field_err)?
+            .map_err(internal_field_err)?
         else {
             return Ok(None);
         };
@@ -252,7 +262,7 @@ pub(crate) async fn bundle(
             .store
             .error_events_by_fingerprint(&fingerprint, 0..=u128::MAX, 5)
             .await
-            .map_err(field_err)?;
+            .map_err(internal_field_err)?;
         let (trace_spans, trace_logs) = match issue.last_trace_id.as_deref() {
             Some(trace_id) => {
                 let (spans, logs) =
@@ -269,14 +279,19 @@ pub(crate) async fn bundle(
             metric_windows: Vec::new(),
         }
     } else if let Some(run_id) = run_id {
-        let Some(run) = context.metadata.run(&run_id).await.map_err(field_err)? else {
+        let Some(run) = context
+            .metadata
+            .run(&run_id)
+            .await
+            .map_err(internal_field_err)?
+        else {
             return Ok(None);
         };
         let spans = context
             .store
             .spans_by_run(&run_id, MAX_ROWS, retained_recent_range())
             .await
-            .map_err(field_err)?;
+            .map_err(internal_field_err)?;
         let mut trace_ids: Vec<String> = Vec::new();
         let mut seen_trace_ids = HashSet::new();
         for span in &spans {
@@ -289,20 +304,13 @@ pub(crate) async fn bundle(
             .store
             .error_events_by_traces(&trace_ids, 50)
             .await
-            .map_err(field_err)?;
-        let mut fingerprints: Vec<String> = Vec::new();
-        let mut seen_fingerprints = HashSet::new();
-        for event in &events {
-            let fingerprint = event.fingerprint.clone();
-            if seen_fingerprints.insert(fingerprint.clone()) {
-                fingerprints.push(fingerprint);
-            }
-        }
+            .map_err(internal_field_err)?;
+        let fingerprints = unique_fingerprints(&events);
         let issues = context
             .metadata
             .issues_by_fingerprints(&fingerprints)
             .await
-            .map_err(field_err)?;
+            .map_err(internal_field_err)?;
         // The trace behind the newest error carries the evidence; the
         // run's logs are the log section.
         let evidence_trace = events.first().map(|e| e.trace_id.clone());
@@ -318,7 +326,7 @@ pub(crate) async fn bundle(
             .store
             .logs_by_run(&run_id, 200)
             .await
-            .map_err(field_err)?;
+            .map_err(internal_field_err)?;
         BundleInputs {
             anchor: BundleAnchor::Run {
                 run: Box::new(run),
@@ -340,20 +348,13 @@ pub(crate) async fn bundle(
             .store
             .error_events_by_traces(std::slice::from_ref(&trace_id), 50)
             .await
-            .map_err(field_err)?;
-        let mut fingerprints: Vec<String> = Vec::new();
-        let mut seen_fingerprints = HashSet::new();
-        for event in &events {
-            let fingerprint = event.fingerprint.clone();
-            if seen_fingerprints.insert(fingerprint.clone()) {
-                fingerprints.push(fingerprint);
-            }
-        }
+            .map_err(internal_field_err)?;
+        let fingerprints = unique_fingerprints(&events);
         let issues = context
             .metadata
             .issues_by_fingerprints(&fingerprints)
             .await
-            .map_err(field_err)?;
+            .map_err(internal_field_err)?;
         BundleInputs {
             anchor: BundleAnchor::Trace { trace_id, issues },
             events,
@@ -367,7 +368,7 @@ pub(crate) async fn bundle(
     let bundle = parallax_evidence::bundle::assemble(inputs, max_tokens);
     let markdown = parallax_evidence::bundle::to_markdown(&bundle);
     let canonical_hash = bundle.canonical_hash.clone().unwrap_or_default();
-    let json = serde_json::to_string_pretty(&bundle).map_err(field_err)?;
+    let json = serde_json::to_string_pretty(&bundle).map_err(internal_field_err)?;
     Ok(Some(BundleOut {
         json,
         markdown,
@@ -387,12 +388,12 @@ pub(crate) async fn issue_set_status(
         .metadata
         .set_issue_status(&fingerprint, &status)
         .await
-        .map_err(field_err)?;
+        .map_err(internal_field_err)?;
     context
         .metadata
         .issue(&fingerprint)
         .await
-        .map_err(field_err)?
+        .map_err(internal_field_err)?
         .map(Issue::single)
         .ok_or_else(|| field_err(format!("issue {fingerprint} not found")))
 }

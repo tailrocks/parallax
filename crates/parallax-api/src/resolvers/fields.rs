@@ -161,7 +161,7 @@ pub(crate) async fn evidence_gaps(
                     .spans_by_run(&run_id, MAX_ROWS, retained_recent_range()),
                 context.store.logs_by_run(&run_id, MAX_ROWS),
             )
-            .map_err(field_err)?;
+            .map_err(crate::internal_field_err)?;
             Ok(gaps::detect_gaps(&spans, &logs)
                 .into_iter()
                 .map(EvidenceGap)
@@ -200,7 +200,7 @@ pub(crate) async fn attribute_compare(
             limit,
         )
         .await
-        .map_err(field_err)?
+        .map_err(crate::internal_field_err)?
         .into_iter()
         .map(AttributeCompareRow)
         .collect())
@@ -216,7 +216,7 @@ pub(crate) async fn field_keys(
         .store
         .span_field_keys(from..=to)
         .await
-        .map_err(field_err)?
+        .map_err(crate::internal_field_err)?
         .into_iter()
         .map(FieldKey)
         .collect())
@@ -238,7 +238,7 @@ pub(crate) async fn field_stats(
             service.as_deref().filter(|service| !service.is_empty()),
         )
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     Ok(FieldStats(stats))
 }
 

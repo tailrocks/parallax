@@ -88,7 +88,7 @@ pub(crate) async fn metric_names(
         .store
         .metric_names(retained_recent_range())
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     if let Some(prefix) = prefix {
         names.retain(|n| n.starts_with(&prefix));
     }
@@ -97,7 +97,11 @@ pub(crate) async fn metric_names(
 
 pub(crate) async fn metric_labels(context: &ApiContext, name: String) -> FieldResult<Vec<String>> {
     validate_metric_name(&name)?;
-    context.store.metric_labels(&name).await.map_err(field_err)
+    context
+        .store
+        .metric_labels(&name)
+        .await
+        .map_err(crate::internal_field_err)
 }
 
 pub(crate) async fn metric_label_values(
@@ -114,7 +118,7 @@ pub(crate) async fn metric_label_values(
         .store
         .metric_label_values(&name, &label, from..=to)
         .await
-        .map_err(field_err)
+        .map_err(crate::internal_field_err)
 }
 
 pub(crate) async fn services(context: &ApiContext) -> FieldResult<Vec<String>> {
@@ -122,7 +126,7 @@ pub(crate) async fn services(context: &ApiContext) -> FieldResult<Vec<String>> {
         .store
         .service_names(retained_recent_range())
         .await
-        .map_err(field_err)
+        .map_err(crate::internal_field_err)
 }
 
 pub(crate) async fn runtime_snapshot(
@@ -149,7 +153,7 @@ pub(crate) async fn runtime_snapshot(
             step_nanos(Some(step_seconds)),
         )
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     Ok(rows.into_iter().map(RuntimeMetric).collect())
 }
 
@@ -185,7 +189,7 @@ pub(crate) async fn metric_series(
                 agg,
             )
             .await
-            .map_err(field_err)?;
+            .map_err(crate::internal_field_err)?;
         Ok(groups
             .into_iter()
             .map(|(group_value, points)| Series {
@@ -205,7 +209,7 @@ pub(crate) async fn metric_series(
                 agg,
             )
             .await
-            .map_err(field_err)?;
+            .map_err(crate::internal_field_err)?;
         Ok(vec![Series {
             group_value: None,
             points,
@@ -234,7 +238,7 @@ pub(crate) async fn histogram_quantile(
             q,
         )
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     Ok(series.into_iter().map(Point).collect())
 }
 
@@ -252,7 +256,7 @@ pub(crate) async fn metric_exemplars(
         .store
         .metric_exemplars(&name, service.as_deref(), from..=to, clamp_limit(limit, 50))
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     Ok(rows.into_iter().map(MetricExemplar).collect())
 }
 

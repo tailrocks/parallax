@@ -30,12 +30,16 @@ pub(crate) async fn dashboard(context: &ApiContext, id: String) -> FieldResult<O
         .metadata
         .dashboard(&id)
         .await
-        .map_err(field_err)?
+        .map_err(crate::internal_field_err)?
         .map(Dashboard))
 }
 
 pub(crate) async fn dashboards(context: &ApiContext) -> FieldResult<Vec<Dashboard>> {
-    let dashboards = context.metadata.dashboards().await.map_err(field_err)?;
+    let dashboards = context
+        .metadata
+        .dashboards()
+        .await
+        .map_err(crate::internal_field_err)?;
     Ok(dashboards.into_iter().map(Dashboard).collect())
 }
 
@@ -57,12 +61,12 @@ pub(crate) async fn dashboard_save(
         .metadata
         .dashboard_save(&id, &name, &layout, now)
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     context
         .metadata
         .dashboard(&id)
         .await
-        .map_err(field_err)?
+        .map_err(crate::internal_field_err)?
         .map(Dashboard)
         .ok_or_else(|| field_err("dashboard save did not persist"))
 }
@@ -72,5 +76,5 @@ pub(crate) async fn dashboard_delete(context: &ApiContext, id: String) -> FieldR
         .metadata
         .dashboard_delete(&id)
         .await
-        .map_err(field_err)
+        .map_err(crate::internal_field_err)
 }

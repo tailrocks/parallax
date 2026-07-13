@@ -69,7 +69,7 @@ pub(crate) async fn logs_by_run(
         .store
         .logs_by_run(&run_id, clamp_limit(limit, 500))
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     Ok(logs.into_iter().map(LogRecord).collect())
 }
 
@@ -100,12 +100,12 @@ pub(crate) async fn logs(
             .store
             .logs_by_trace(trace_id)
             .await
-            .map_err(field_err)?,
+            .map_err(crate::internal_field_err)?,
         (None, Some(run_id)) => context
             .store
             .logs_by_run(run_id, MAX_ROWS)
             .await
-            .map_err(field_err)?,
+            .map_err(crate::internal_field_err)?,
         (None, None) => {
             let logs = context
                 .store
@@ -118,7 +118,7 @@ pub(crate) async fn logs(
                     limit,
                 )
                 .await
-                .map_err(field_err)?;
+                .map_err(crate::internal_field_err)?;
             return Ok(logs.into_iter().map(LogRecord).collect());
         }
     };
@@ -173,7 +173,7 @@ pub(crate) async fn logs_around(
                 .store
                 .logs_search(service.as_deref(), from..=to, None, None, None, limit)
                 .await
-                .map_err(field_err)?
+                .map_err(crate::internal_field_err)?
         };
     logs.sort_by_key(|log| log.ts_nanos);
     logs.truncate(limit);
@@ -208,7 +208,7 @@ pub(crate) async fn log_count_series(
             step,
         )
         .await
-        .map_err(field_err)?;
+        .map_err(crate::internal_field_err)?;
     Ok(series.into_iter().map(Point).collect())
 }
 

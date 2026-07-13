@@ -3093,6 +3093,7 @@ dependencies = [
 name = "parallax-api"
 version = "0.1.0-dev"
 dependencies = [
+ "anyhow",
  "juniper",
  "parallax-analysis",
  "parallax-evidence",
