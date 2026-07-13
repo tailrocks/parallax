@@ -21,7 +21,7 @@
 - **Depends on**: 095, 101, 131
 - **Category**: TypeScript / compiler / static safety
 - **Planned at**: `e3e7997`, revised 2026-07-12
-- **Status**: TODO
+- **Status**: IN PROGRESS
 
 ## Why This Matters
 
