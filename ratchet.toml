@@ -1870,7 +1870,7 @@ ceiling = 55
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-analysis/src/derive/tests.rs"
-ceiling = 13
+ceiling = 20
 
 [[limits]]
 metric = "rust.assertions"

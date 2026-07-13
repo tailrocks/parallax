@@ -134,3 +134,58 @@ fn logs_prefer_structured_error_type_and_operation_for_fingerprint() {
     assert_eq!(events[0].fingerprint, events[1].fingerprint);
     assert_ne!(events[0].fingerprint, events[2].fingerprint);
 }
+
+#[test]
+fn structured_failure_has_one_identity_across_all_sources() {
+    let mut exception_span = test_span(status::StatusCode::Ok as i32, true);
+    exception_span.events[0]
+        .attributes
+        .push(string_kv("error.type", "test::Boom"));
+
+    let mut status_span = test_span(status::StatusCode::Error as i32, false);
+    status_span.status.as_mut().expect("status").message = "boom".to_string();
+    status_span.attributes = vec![
+        string_kv("error.type", "test::Boom"),
+        string_kv("exception.stacktrace", "top\nbottom"),
+    ];
+
+    let trace_exception = derive_from_traces(&span_request(exception_span));
+    let trace_status = derive_from_traces(&span_request(status_span));
+    let logs = derive_from_logs(&[
+        log_row(
+            "boom",
+            json!({
+                "error.type": "test::Boom",
+                "exception.message": "boom",
+                "exception.stacktrace": "top\nbottom"
+            }),
+        ),
+        log_row(
+            "boom",
+            json!({
+                "error.type": "test::Boom",
+                "exception.stacktrace": "top\nbottom"
+            }),
+        ),
+    ]);
+
+    let all = [&trace_exception[0], &trace_status[0], &logs[0], &logs[1]];
+    assert!(all.iter().all(|event| event.error_type == "test::Boom"));
+    assert!(
+        all.iter()
+            .all(|event| event.fingerprint == all[0].fingerprint)
+    );
+    assert_eq!(all[0].source, ErrorSource::SpanException);
+    assert_eq!(all[1].source, ErrorSource::SpanStatus);
+    assert_eq!(all[2].source, ErrorSource::LogException);
+    assert_eq!(all[3].source, ErrorSource::LogRecord);
+
+    let different_frame = derive_from_logs(&[log_row(
+        "boom",
+        json!({
+            "error.type": "test::Boom",
+            "exception.stacktrace": "other\nbottom"
+        }),
+    )]);
+    assert_ne!(different_frame[0].fingerprint, all[0].fingerprint);
+}

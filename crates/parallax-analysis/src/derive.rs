@@ -103,6 +103,9 @@ pub fn derive_from_traces(request: &ExportTraceServiceRequest) -> Vec<ErrorEvent
                                 (
                                     ErrorSource::SpanStatus,
                                     attr_str(&span.attributes, semconv::ERROR_TYPE)
+                                        .or_else(|| {
+                                            attr_str(&span.attributes, semconv::EXCEPTION_TYPE)
+                                        })
                                         .unwrap_or("span_error")
                                         .to_string(),
                                     span.status
@@ -110,7 +113,8 @@ pub fn derive_from_traces(request: &ExportTraceServiceRequest) -> Vec<ErrorEvent
                                         .map(|s| s.message.clone())
                                         .filter(|m| !m.is_empty())
                                         .unwrap_or_else(|| span.name.clone()),
-                                    None,
+                                    attr_str(&span.attributes, semconv::EXCEPTION_STACKTRACE)
+                                        .map(str::to_string),
                                     u128::from(span.end_time_unix_nano),
                                     attr_str(&span.attributes, semconv::JACKIN_OPERATION)
                                         .map(str::to_string),
@@ -206,7 +210,7 @@ pub fn derive_from_logs(rows: &[LogRow]) -> Vec<ErrorEventRow> {
                 ErrorSource::LogRecord,
                 structured_error_type.unwrap_or("log_error").to_string(),
                 row.body.clone(),
-                None,
+                json_attr_str(&row.attributes, semconv::EXCEPTION_STACKTRACE).map(str::to_string),
             )
         };
         let fp =
