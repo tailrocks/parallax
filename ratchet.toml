@@ -142,17 +142,7 @@ ceiling = 5
 
 [[rust_suppressions]]
 crate_name = "parallax-cli"
-lint = "clippy::cast_possible_truncation"
-ceiling = 1
-
-[[rust_suppressions]]
-crate_name = "parallax-cli"
 lint = "clippy::cast_precision_loss"
-ceiling = 2
-
-[[rust_suppressions]]
-crate_name = "parallax-cli"
-lint = "clippy::excessive_nesting"
 ceiling = 1
 
 [[rust_suppressions]]
@@ -370,11 +360,6 @@ class = "aux"
 [[architecture.packages]]
 name = "parallax-test-support"
 class = "test-support"
-
-[[limits]]
-metric = "rust.file-lines"
-scope = "crates/parallax-cli/src/commands/implementation.rs"
-ceiling = 987
 
 
 [[limits]]
@@ -1566,11 +1551,6 @@ ceiling = 4043
 [[limits]]
 metric = "rust.function-cognitive-complexity"
 scope = "crates/parallax-api/src/resolvers/issues.rs::bundle"
-ceiling = 25
-
-[[limits]]
-metric = "rust.function-cognitive-complexity"
-scope = "crates/parallax-cli/src/commands/implementation.rs::render_agent_session"
 ceiling = 25
 
 [[limits]]

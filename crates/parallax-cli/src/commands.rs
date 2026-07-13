@@ -1,10 +1,28 @@
-#[expect(
-    clippy::cast_possible_truncation,
-    clippy::cast_precision_loss,
-    reason = "display math"
-)]
-#[expect(clippy::excessive_nesting, reason = "command flow")]
-#[path = "commands/implementation.rs"]
-mod implementation;
+//! CLI command facade grouped by product responsibility.
 
-pub(crate) use implementation::*;
+mod filters;
+mod forwarding;
+mod issues;
+mod live;
+mod logs;
+mod output;
+mod runs;
+mod sql;
+mod traces;
+
+pub(crate) use filters::{LogsFilter, TracesFilter};
+pub(crate) use issues::*;
+pub(crate) use live::*;
+pub(crate) use logs::*;
+pub(crate) use runs::*;
+pub(crate) use sql::*;
+pub(crate) use traces::*;
+
+#[cfg(test)]
+use crate::OutputFormat;
+#[cfg(test)]
+pub(crate) use forwarding::*;
+#[cfg(test)]
+pub(crate) use output::*;
+#[cfg(test)]
+mod tests;
