@@ -76,7 +76,6 @@ Every plan must preserve these non-negotiable Parallax constraints:
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [098](098-facades-modules-and-api-batching.md) | Seal crate facades, split responsibility hotspots, validate crate docs, and eliminate latent nested-field N+1 paths | P2 | L | 126 | IN PROGRESS |
 | [099](099-boundary-errors-idempotency-and-agent-safety.md) | Add typed errors, explicit retry/idempotency boundaries, an ID pilot, and agent-surface safety | P1 | L | 097, 098 | TODO |
 
 ### TypeScript Toolchain, Architecture, Boundary, And Test Foundations
@@ -174,7 +173,7 @@ The main restructuring path is:
 ```text
 093 -> 094 -> 095 -> 127 -> 096 -> 097
 094 + 095 + 096 -----------------------> 101
-097 + 101 -----------------------------> 126 -> 098 -> 099 -> 104 -> 111
+097 + 101 -----------------------------> 126 -> 099 -> 104 -> 111
 095 + 101 -----------------------------> 131 -> 128
 094 + 101 -----------------------------> 130
 094 + 101 + 128 ----------------------> 129
