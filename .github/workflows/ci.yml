@@ -444,11 +444,14 @@ jobs:
       - run: bun ci
         working-directory: ui
       - run: scripts/ci/test-bun-contract.sh
+      - run: scripts/ci/test-typescript-oxlint-contract.sh
       - run: bun run check
         working-directory: ui
       - run: bun run typecheck
         working-directory: ui
-      - run: bun run lint
+      - run: bun run lint:native
+        working-directory: ui
+      - run: bun run lint:type-aware
         working-directory: ui
       - run: bun run test:ci
         working-directory: ui

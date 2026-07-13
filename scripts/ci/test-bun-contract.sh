@@ -9,16 +9,27 @@ rg -U '^\[run\]\nbun = true\n\n\[install\]\nauto = "disable"$' "$ui/bunfig.toml"
 while IFS=$'\t' read -r name command; do
   case "$name" in
     dev|build|preview|test|test:ci|lint|format|check|typecheck)
-      [[ "$command" == "bunx --bun --no-install "* ]] || {
+      [[ "$command" == "bunx --bun --no-install "* ||
+          "$command" == "bun ./node_modules/"* ||
+          "$command" == "bun run "* ]] || {
         printf 'script does not enforce lock-local Bun execution: %s\n' "$name" >&2
         exit 1
       }
-      executable=${command#bunx --bun --no-install }
-      executable=${executable%% *}
-      [[ -x "$ui/node_modules/.bin/$executable" ]] || {
-        printf 'script executable is not installed locally: %s\n' "$executable" >&2
-        exit 1
-      }
+      if [[ "$command" == "bunx --bun --no-install "* ]]; then
+        executable=${command#bunx --bun --no-install }
+        executable=${executable%% *}
+        [[ -x "$ui/node_modules/.bin/$executable" ]] || {
+          printf 'script executable is not installed locally: %s\n' "$executable" >&2
+          exit 1
+        }
+      elif [[ "$command" == "bun ./node_modules/"* ]]; then
+        executable=${command#bun }
+        executable=${executable%% *}
+        [[ -f "$ui/${executable#./}" ]] || {
+          printf 'script executable is not installed locally: %s\n' "$executable" >&2
+          exit 1
+        }
+      fi
       ;;
   esac
 done < <(jq -r '.scripts | to_entries[] | [.key, .value] | @tsv' "$ui/package.json")
