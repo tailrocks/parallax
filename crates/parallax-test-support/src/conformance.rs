@@ -183,15 +183,31 @@ pub async fn assert_seeded(
     );
     anyhow::ensure!(
         !store
-            .metric_exemplars(METRIC, Some(SERVICE), window, 1)
+            .metric_exemplars(METRIC, Some(SERVICE), window.clone(), 1)
             .await?
             .is_empty()
     );
+    let trace_events = store.error_events_by_traces(&[TRACE_ID.into()], 1).await?;
+    anyhow::ensure!(!trace_events.is_empty());
+    let fingerprint = trace_events[0].fingerprint.clone();
+    let fingerprints = vec![
+        fingerprint.clone(),
+        "absent-fingerprint".to_string(),
+    ];
+    let batched = store
+        .error_events_by_fingerprints(&fingerprints, window, 1)
+        .await?;
     anyhow::ensure!(
-        !store
-            .error_events_by_traces(&[TRACE_ID.into()], 1)
-            .await?
-            .is_empty()
+        batched
+            .get(&fingerprint)
+            .is_some_and(|events| events.len() == 1),
+        "batched fingerprint events: {batched:?}"
+    );
+    anyhow::ensure!(
+        batched
+            .get("absent-fingerprint")
+            .is_some_and(Vec::is_empty),
+        "batched missing fingerprint: {batched:?}"
     );
     Ok(())
 }
