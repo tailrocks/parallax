@@ -13,7 +13,20 @@
 - **Depends on**: 093, 099
 - **Category**: product contract / schema / evidence safety
 - **Planned at**: `eefa4617`, 2026-07-12
-- **Status**: IN PROGRESS
+- **Status**: BLOCKED — operator must approve Option A, B, C, or a replacement contract
+
+## Current Blocker (2026-07-13)
+
+Step 1 is complete at `71a176a`: the observable consumer inventory, shipped
+golden JSON/hash, and fail-closed decision fixture are committed. The draft
+[decision record](../docs/research/decisions/evidence-bundle-contract.md)
+contains three fully scoped choices. Its required approval fields remain
+`UNRESOLVED`, and the gate demonstrably rejects it.
+
+The operator/product owner must explicitly choose Option A (`bundle-v1`),
+Option B (research graph as `bundle-v2`), Option C (versioned envelope around
+the V1 dossier), or reject all three with a replacement scope; they must also
+name approver and approval date. Steps 3–5 are forbidden until then.
 
 ## Why
 

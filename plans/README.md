@@ -134,7 +134,6 @@ work.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [104](104-evidence-bundle-contract-reconciliation.md) | Reconcile the research bundle model with shipped `bundle-v1` | P1 | L | 093, 099 | IN PROGRESS |
 | [111](111-redaction-pipeline-and-a6-gate.md) | Build the source-aware fail-closed runtime redactor and prove the A6 gate | P1 | L | 099, 101, 104 | TODO |
 | [116](116-retention-and-prune-lifecycle.md) | Reconcile data retention and make `prune` truthfully reclaim eligible data | P1 | L | 093, 097, 099; 105 soft | TODO |
 | [106](106-evidence-pinning-ttl-spike.md) | Design and live-test evidence pinning beyond telemetry TTL | P2 | M | 092, 104, 116 | TODO |
@@ -147,6 +146,7 @@ invent the missing product or operator decision.
 
 | Plan | Depends on | Trigger | Status |
 |------|------------|---------|--------|
+| [104](104-evidence-bundle-contract-reconciliation.md) | 093, 099 | Operator approves Option A, B, C, or a replacement canonical evidence-bundle contract with approver/date | BLOCKED: canonical model/version/migration approval missing |
 | [108](108-rotel-credential-history-decision.md) | Operator decision | Operator confirms whether non-default lab credentials ever entered Git history and authorizes any rewrite | BLOCKED: operator-only destructive-history decision |
 | [109](109-v2-auth-and-context-management.md) | Operator opens V2 scope | Operator opens V2 authentication and remote-context scope | BLOCKED: V2 not open |
 | [110](110-server-profile-ingest-concurrency.md) | 099, 113, 115; measured saturation | Plan 115 ships a supported profile and measurements prove single-worker saturation | BLOCKED: no qualifying profile/measurement |
