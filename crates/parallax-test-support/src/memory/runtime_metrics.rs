@@ -12,16 +12,18 @@ impl adapter::RuntimeMetricStore for MemoryStore {
         range: RangeInclusive<u128>,
         step_nanos: u128,
         agg: MetricAgg,
-    ) -> anyhow::Result<Vec<(String, Vec<SeriesPoint>)>> {
-        anyhow::ensure!(
-            metric_group_label_allowed(group_by),
-            "high-cardinality identifier - filter, don't group"
-        );
+    ) -> StorageResult<Vec<(String, Vec<SeriesPoint>)>> {
+        if !metric_group_label_allowed(group_by) {
+            return Err(adapter::StorageError::query(anyhow::anyhow!(
+                "high-cardinality identifier - filter, don't group"
+            )));
+        }
         let labels = self.metric_labels(name).await?;
-        anyhow::ensure!(
-            labels.iter().any(|label| label == group_by),
-            "unknown metric label"
-        );
+        if !labels.iter().any(|label| label == group_by) {
+            return Err(adapter::StorageError::query(anyhow::anyhow!(
+                "unknown metric label"
+            )));
+        }
         let step = step_nanos.max(1);
         let mut buckets: BTreeMap<(String, u128), Vec<f64>> = Default::default();
         for point in self.lock().metric_points.iter().filter(|p| {
@@ -69,7 +71,7 @@ impl adapter::RuntimeMetricStore for MemoryStore {
         run_id: Option<&str>,
         range: RangeInclusive<u128>,
         step_nanos: u128,
-    ) -> anyhow::Result<Vec<RuntimeMetricSeries>> {
+    ) -> StorageResult<Vec<RuntimeMetricSeries>> {
         let mut rows = Vec::new();
         for metric in self.metric_names(range.clone()).await? {
             let Some(family) = runtime_metric_family(&metric) else {
@@ -105,7 +107,7 @@ impl adapter::RuntimeMetricStore for MemoryStore {
         service: Option<&str>,
         range: RangeInclusive<u128>,
         step_nanos: u128,
-    ) -> anyhow::Result<Vec<SeriesPoint>> {
+    ) -> StorageResult<Vec<SeriesPoint>> {
         let step = step_nanos.max(1);
         let mut buckets: BTreeMap<u128, u64> = Default::default();
         for row in self.lock().histograms.iter().filter(|h| {

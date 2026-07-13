@@ -4,7 +4,7 @@ use super::*;
 
 #[async_trait::async_trait]
 impl adapter::LogStore for MemoryStore {
-    async fn logs_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<LogRow>> {
+    async fn logs_by_run(&self, run_id: &str, limit: usize) -> StorageResult<Vec<LogRow>> {
         let mut logs: Vec<LogRow> = self
             .lock()
             .logs
@@ -18,7 +18,7 @@ impl adapter::LogStore for MemoryStore {
         Ok(logs)
     }
 
-    async fn logs_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<LogRow>> {
+    async fn logs_by_trace(&self, trace_id: &str) -> StorageResult<Vec<LogRow>> {
         let mut logs: Vec<LogRow> = self
             .lock()
             .logs

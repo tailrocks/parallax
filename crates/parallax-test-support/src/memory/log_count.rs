@@ -1,6 +1,6 @@
 use super::MemoryStore;
 use parallax_model::SeriesPoint;
-use parallax_storage::adapter::LogCountStore;
+use parallax_storage::adapter::{LogCountStore, StorageResult};
 use std::collections::BTreeMap;
 use std::ops::RangeInclusive;
 
@@ -14,7 +14,7 @@ impl LogCountStore for MemoryStore {
         severity_max: Option<i32>,
         body_contains: Option<&str>,
         step_nanos: u128,
-    ) -> anyhow::Result<Vec<SeriesPoint>> {
+    ) -> StorageResult<Vec<SeriesPoint>> {
         let step = step_nanos.max(1);
         let mut buckets: BTreeMap<u128, u64> = Default::default();
         for log in self.lock().logs.iter().filter(|log| {

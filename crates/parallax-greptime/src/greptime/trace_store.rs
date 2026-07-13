@@ -2,19 +2,20 @@ use super::*;
 
 #[async_trait::async_trait]
 impl crate::adapter::TraceStore for GreptimeStore {
-    async fn spans_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<SpanRow>> {
+    async fn spans_by_trace(&self, trace_id: &str) -> StorageResult<Vec<SpanRow>> {
         self.select_spans(
             &format!(r#""trace_id" = '{}'"#, escape(trace_id)),
             r#" ORDER BY "timestamp" ASC"#,
             "",
         )
         .await
+        .map_err(Into::into)
     }
 
     async fn traces_by_ids(
         &self,
         trace_ids: &[String],
-    ) -> anyhow::Result<Vec<crate::adapter::TraceSummary>> {
+    ) -> StorageResult<Vec<crate::adapter::TraceSummary>> {
         // O(n) dedup preserving request order (MAX_ROWS still caps fan-out).
         let mut seen = HashSet::new();
         let mut ids = Vec::new();
@@ -82,7 +83,7 @@ impl crate::adapter::TraceStore for GreptimeStore {
         run_id: &str,
         limit: usize,
         range: RangeInclusive<u128>,
-    ) -> anyhow::Result<Vec<SpanRow>> {
+    ) -> StorageResult<Vec<SpanRow>> {
         if limit == 0 {
             return Ok(Vec::new());
         }
@@ -103,7 +104,7 @@ impl crate::adapter::TraceStore for GreptimeStore {
                 native_missing = true;
                 Vec::new()
             }
-            Err(error) => return Err(error),
+            Err(error) => return Err(error.into()),
         };
         if native_missing || spans.is_empty() {
             let via_logs = match self
@@ -126,7 +127,7 @@ impl crate::adapter::TraceStore for GreptimeStore {
             {
                 Ok(spans) => spans,
                 Err(error) if is_missing_column(&error) => Vec::new(),
-                Err(error) => return Err(error),
+                Err(error) => return Err(error.into()),
             };
             let mut seen: BTreeSet<(String, String)> = spans
                 .iter()
@@ -149,7 +150,7 @@ impl crate::adapter::TraceStore for GreptimeStore {
         &self,
         run_ids: &[String],
         limit_per_run: usize,
-    ) -> anyhow::Result<HashMap<String, Vec<SpanRow>>> {
+    ) -> StorageResult<HashMap<String, Vec<SpanRow>>> {
         let mut out: HashMap<String, Vec<SpanRow>> = HashMap::with_capacity(run_ids.len());
         for run_id in run_ids {
             out.entry(run_id.clone()).or_default();
@@ -190,7 +191,7 @@ impl crate::adapter::TraceStore for GreptimeStore {
                 }
                 return Ok(out);
             }
-            Err(error) => return Err(error),
+            Err(error) => return Err(error.into()),
         };
         let cols = ColumnIndex::new(&result.columns);
         for row in &result.rows {

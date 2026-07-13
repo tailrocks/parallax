@@ -30,22 +30,22 @@ pub enum MetadataError {
     NotFound(String),
     #[error("metadata conflict: {0}")]
     Conflict(String),
-    #[error("metadata store unavailable")]
+    #[error("metadata store unavailable: {source}")]
     Unavailable {
         #[source]
         source: anyhow::Error,
     },
-    #[error("metadata operation timed out")]
+    #[error("metadata operation timed out: {source}")]
     Timeout {
         #[source]
         source: anyhow::Error,
     },
-    #[error("metadata schema operation failed")]
+    #[error("metadata schema operation failed: {source}")]
     Schema {
         #[source]
         source: anyhow::Error,
     },
-    #[error("metadata operation failed")]
+    #[error("metadata operation failed: {source}")]
     Internal {
         #[source]
         source: anyhow::Error,

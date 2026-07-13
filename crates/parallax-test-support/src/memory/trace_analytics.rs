@@ -7,8 +7,8 @@ impl adapter::TraceAnalyticsStore for MemoryStore {
     async fn traces_search(
         &self,
         query: &adapter::TraceQuery,
-    ) -> anyhow::Result<adapter::TraceList> {
-        trace_search::search(self, query)
+    ) -> StorageResult<adapter::TraceList> {
+        trace_search::search(self, query).map_err(Into::into)
     }
 
     async fn attribute_compare(
@@ -19,7 +19,7 @@ impl adapter::TraceAnalyticsStore for MemoryStore {
         error_only: bool,
         keys: &[String],
         top_n: usize,
-    ) -> anyhow::Result<Vec<AttributeCompareRow>> {
+    ) -> StorageResult<Vec<AttributeCompareRow>> {
         let limit = top_n.min(ATTRIBUTE_COMPARE_TOP_N_CAP);
         if limit == 0 {
             return Ok(Vec::new());
@@ -113,7 +113,7 @@ impl adapter::TraceAnalyticsStore for MemoryStore {
         Ok(rows)
     }
 
-    async fn span_field_keys(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<FieldKey>> {
+    async fn span_field_keys(&self, range: RangeInclusive<u128>) -> StorageResult<Vec<FieldKey>> {
         let spans = self.lock().spans.clone();
         let window: Vec<SpanRow> = spans
             .into_iter()
@@ -185,11 +185,17 @@ impl adapter::TraceAnalyticsStore for MemoryStore {
         key: &str,
         range: RangeInclusive<u128>,
         service: Option<&str>,
-    ) -> anyhow::Result<FieldStats> {
-        anyhow::ensure!(span_field_key_allowed(key), "invalid field key");
+    ) -> StorageResult<FieldStats> {
+        if !span_field_key_allowed(key) {
+            return Err(adapter::StorageError::query(anyhow::anyhow!(
+                "invalid field key"
+            )));
+        }
         let discovered = self.span_field_keys(range.clone()).await?;
         let Some(discovered_key) = discovered.iter().find(|field| field.key == key) else {
-            anyhow::bail!("unknown span field key");
+            return Err(adapter::StorageError::query(anyhow::anyhow!(
+                "unknown span field key"
+            )));
         };
         let (source, raw_key) = match key.strip_prefix("resource.") {
             Some(raw) => (FieldSource::Resource, raw),
@@ -259,7 +265,7 @@ impl adapter::TraceAnalyticsStore for MemoryStore {
         &self,
         range: RangeInclusive<u128>,
         max_traces: usize,
-    ) -> anyhow::Result<Vec<ServiceEdge>> {
+    ) -> StorageResult<Vec<ServiceEdge>> {
         let trace_limit = max_traces.min(SERVICE_MAP_TRACE_CAP);
         if trace_limit == 0 {
             return Ok(Vec::new());
@@ -335,7 +341,7 @@ impl adapter::TraceAnalyticsStore for MemoryStore {
         &self,
         trace_ids: &[String],
         limit: usize,
-    ) -> anyhow::Result<Vec<ErrorEventRow>> {
+    ) -> StorageResult<Vec<ErrorEventRow>> {
         if trace_ids.is_empty() {
             return Ok(Vec::new());
         }

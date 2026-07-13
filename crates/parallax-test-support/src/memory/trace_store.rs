@@ -4,7 +4,7 @@ use super::*;
 
 #[async_trait::async_trait]
 impl adapter::TraceStore for MemoryStore {
-    async fn spans_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<SpanRow>> {
+    async fn spans_by_trace(&self, trace_id: &str) -> StorageResult<Vec<SpanRow>> {
         let mut spans: Vec<SpanRow> = self
             .lock()
             .spans
@@ -19,7 +19,7 @@ impl adapter::TraceStore for MemoryStore {
     async fn traces_by_ids(
         &self,
         trace_ids: &[String],
-    ) -> anyhow::Result<Vec<adapter::TraceSummary>> {
+    ) -> StorageResult<Vec<adapter::TraceSummary>> {
         // O(n) dedup preserving request order (MAX_ROWS still caps fan-out).
         let mut seen = HashSet::new();
         let mut ids = Vec::new();
@@ -72,7 +72,7 @@ impl adapter::TraceStore for MemoryStore {
         run_id: &str,
         limit: usize,
         _range: RangeInclusive<u128>,
-    ) -> anyhow::Result<Vec<SpanRow>> {
+    ) -> StorageResult<Vec<SpanRow>> {
         let mut spans: Vec<SpanRow> = self
             .lock()
             .spans
@@ -90,7 +90,7 @@ impl adapter::TraceStore for MemoryStore {
         &self,
         run_ids: &[String],
         limit_per_run: usize,
-    ) -> anyhow::Result<HashMap<String, Vec<SpanRow>>> {
+    ) -> StorageResult<HashMap<String, Vec<SpanRow>>> {
         let wanted: HashSet<&str> = run_ids.iter().map(String::as_str).collect();
         let mut out: HashMap<String, Vec<SpanRow>> =
             run_ids.iter().map(|id| (id.clone(), Vec::new())).collect();

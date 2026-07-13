@@ -5,7 +5,7 @@ impl crate::adapter::TraceAnalyticsStore for GreptimeStore {
     async fn traces_search(
         &self,
         query: &crate::adapter::TraceQuery,
-    ) -> anyhow::Result<crate::adapter::TraceList> {
+    ) -> StorageResult<crate::adapter::TraceList> {
         // One representative span per trace — its root (no parent), else the
         // earliest span when no root was stored (all-INTERNAL traces).
         //
@@ -34,10 +34,16 @@ impl crate::adapter::TraceAnalyticsStore for GreptimeStore {
         // Representative-span filters, applied after the per-trace pick.
         let mut rep = vec!["\"rn\" = 1".to_string()];
         if let Some(min) = query.min_duration_ns {
-            rep.push(format!(r#""dur" >= {}"#, u64::try_from(min)?));
+            rep.push(format!(
+                r#""dur" >= {}"#,
+                u64::try_from(min).map_err(anyhow::Error::from)?
+            ));
         }
         if let Some(max) = query.max_duration_ns {
-            rep.push(format!(r#""dur" <= {}"#, u64::try_from(max)?));
+            rep.push(format!(
+                r#""dur" <= {}"#,
+                u64::try_from(max).map_err(anyhow::Error::from)?
+            ));
         }
         if let Some(needle) = &query.name_contains {
             let escaped = escape(needle).replace('%', r"\%").replace('_', r"\_");
@@ -99,7 +105,7 @@ impl crate::adapter::TraceAnalyticsStore for GreptimeStore {
         error_only: bool,
         keys: &[String],
         top_n: usize,
-    ) -> anyhow::Result<Vec<AttributeCompareRow>> {
+    ) -> StorageResult<Vec<AttributeCompareRow>> {
         let limit = top_n.min(ATTRIBUTE_COMPARE_TOP_N_CAP);
         if limit == 0 {
             return Ok(Vec::new());
@@ -194,7 +200,7 @@ impl crate::adapter::TraceAnalyticsStore for GreptimeStore {
         Ok(rows)
     }
 
-    async fn span_field_keys(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<FieldKey>> {
+    async fn span_field_keys(&self, range: RangeInclusive<u128>) -> StorageResult<Vec<FieldKey>> {
         let mut columns = self.span_field_columns().await?;
         columns.truncate(FIELD_KEYS_CAP);
         if columns.is_empty() {
@@ -250,15 +256,19 @@ impl crate::adapter::TraceAnalyticsStore for GreptimeStore {
         key: &str,
         range: RangeInclusive<u128>,
         service: Option<&str>,
-    ) -> anyhow::Result<FieldStats> {
-        anyhow::ensure!(span_field_key_allowed(key), "invalid field key");
+    ) -> StorageResult<FieldStats> {
+        if !span_field_key_allowed(key) {
+            return Err(StorageError::query(anyhow::anyhow!("invalid field key")));
+        }
         let Some(column) = self
             .span_field_columns()
             .await?
             .into_iter()
             .find(|column| column.key == key)
         else {
-            anyhow::bail!("unknown span field key");
+            return Err(StorageError::query(anyhow::anyhow!(
+                "unknown span field key"
+            )));
         };
         let column_ident = quoted_field_column(&column);
         let mut clauses = vec![format!(
@@ -331,7 +341,7 @@ impl crate::adapter::TraceAnalyticsStore for GreptimeStore {
         &self,
         range: RangeInclusive<u128>,
         max_traces: usize,
-    ) -> anyhow::Result<Vec<ServiceEdge>> {
+    ) -> StorageResult<Vec<ServiceEdge>> {
         let trace_limit = max_traces.min(SERVICE_MAP_TRACE_CAP);
         if trace_limit == 0 {
             return Ok(Vec::new());
@@ -388,7 +398,7 @@ impl crate::adapter::TraceAnalyticsStore for GreptimeStore {
         &self,
         trace_ids: &[String],
         limit: usize,
-    ) -> anyhow::Result<Vec<ErrorEventRow>> {
+    ) -> StorageResult<Vec<ErrorEventRow>> {
         if trace_ids.is_empty() {
             return Ok(Vec::new());
         }

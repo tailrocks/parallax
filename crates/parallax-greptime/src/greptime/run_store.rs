@@ -7,7 +7,7 @@ impl crate::adapter::RunStore for GreptimeStore {
         fingerprint: &str,
         range: RangeInclusive<u128>,
         limit: usize,
-    ) -> anyhow::Result<Vec<ErrorEventRow>> {
+    ) -> StorageResult<Vec<ErrorEventRow>> {
         let rows = self
             .sql(&format!(
                 r#"SELECT CAST("ts" AS BIGINT) AS "ts_nanos", "service", "fingerprint", "error_type",
@@ -28,7 +28,7 @@ impl crate::adapter::RunStore for GreptimeStore {
         fingerprints: &[String],
         range: RangeInclusive<u128>,
         limit_per_fingerprint: usize,
-    ) -> anyhow::Result<HashMap<String, Vec<ErrorEventRow>>> {
+    ) -> StorageResult<HashMap<String, Vec<ErrorEventRow>>> {
         let mut events: HashMap<String, Vec<ErrorEventRow>> = fingerprints
             .iter()
             .map(|fingerprint| (fingerprint.clone(), Vec::new()))
@@ -76,7 +76,7 @@ impl crate::adapter::RunStore for GreptimeStore {
         &self,
         limit: usize,
         range: RangeInclusive<u128>,
-    ) -> anyhow::Result<Vec<crate::adapter::ObservedRun>> {
+    ) -> StorageResult<Vec<crate::adapter::ObservedRun>> {
         let mut runs: HashMap<String, crate::adapter::ObservedRun> = HashMap::new();
         let start = sql_ts(*range.start());
         let end = sql_ts(*range.end());
@@ -97,7 +97,7 @@ impl crate::adapter::RunStore for GreptimeStore {
         {
             Ok(rows) => rows,
             Err(error) if is_missing_column(&error) => Vec::new(),
-            Err(error) => return Err(error),
+            Err(error) => return Err(error.into()),
         };
         let mut native_span_run_ids = BTreeSet::new();
         for row in &native_span_rows {
@@ -150,7 +150,7 @@ impl crate::adapter::RunStore for GreptimeStore {
             let rows = match self.sql_lenient(&format!("{query}{limit}")).await {
                 Ok(rows) => rows,
                 Err(error) if is_missing_column(&error) => Vec::new(),
-                Err(error) => return Err(error),
+                Err(error) => return Err(error.into()),
             };
             for row in &rows {
                 if is_span && native_span_run_ids.contains(&str_at(row, 0)) {

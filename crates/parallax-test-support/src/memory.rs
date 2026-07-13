@@ -30,7 +30,7 @@ use parallax_storage::adapter::{
     FIELD_KEYS_CAP, FIELD_TOP_VALUES_CAP, FieldKey, FieldSource, FieldStats, FieldValueCount,
     MAX_ROWS, MetricAnalyticsStore, MetricStore, OverviewTotals, ReleaseWindow,
     RuntimeMetricSeries, SERVICE_MAP_TRACE_CAP, ServiceCatalogRow, ServiceEdge, ServiceSummary,
-    SignalKind, SpanRed, attribute_compare_key_allowed, attribute_compare_score,
+    SignalKind, SpanRed, StorageResult, attribute_compare_key_allowed, attribute_compare_score,
     field_key_identifier_like, field_key_namespace, field_value_display,
     metric_group_label_allowed, runtime_metric_family, runtime_metric_unit, span_field_key_allowed,
 };
@@ -111,7 +111,7 @@ impl adapter::IngestStore for MemoryStore {
         &self,
         request: &ExportTraceServiceRequest,
         _raw: bytes::Bytes,
-    ) -> anyhow::Result<()> {
+    ) -> StorageResult<()> {
         let gate = {
             let mut g = self.traces_gate.lock().await;
             g.take()
@@ -129,7 +129,7 @@ impl adapter::IngestStore for MemoryStore {
         &self,
         request: &ExportLogsServiceRequest,
         _raw: bytes::Bytes,
-    ) -> anyhow::Result<()> {
+    ) -> StorageResult<()> {
         if let Some(normalize) = &self.normalize_logs {
             self.lock().logs.extend(normalize(request));
         }
@@ -142,7 +142,7 @@ impl adapter::IngestStore for MemoryStore {
         histograms: Vec<HistogramRow>,
         exemplars: Vec<MetricExemplarRow>,
         _raw: bytes::Bytes,
-    ) -> anyhow::Result<()> {
+    ) -> StorageResult<()> {
         let mut inner = self.lock();
         inner.metric_points.extend(points);
         inner.histograms.extend(histograms);
@@ -150,7 +150,7 @@ impl adapter::IngestStore for MemoryStore {
         Ok(())
     }
 
-    async fn write_error_events(&self, rows: Vec<ErrorEventRow>) -> anyhow::Result<()> {
+    async fn write_error_events(&self, rows: Vec<ErrorEventRow>) -> StorageResult<()> {
         self.lock().error_events.extend(rows);
         Ok(())
     }

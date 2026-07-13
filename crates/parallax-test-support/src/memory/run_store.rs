@@ -7,7 +7,7 @@ impl adapter::RunStore for MemoryStore {
         fingerprint: &str,
         range: RangeInclusive<u128>,
         limit: usize,
-    ) -> anyhow::Result<Vec<ErrorEventRow>> {
+    ) -> StorageResult<Vec<ErrorEventRow>> {
         self.error_event_read_calls.fetch_add(1, Ordering::Relaxed);
         let mut events: Vec<ErrorEventRow> = self
             .lock()
@@ -26,7 +26,7 @@ impl adapter::RunStore for MemoryStore {
         fingerprints: &[String],
         range: RangeInclusive<u128>,
         limit_per_fingerprint: usize,
-    ) -> anyhow::Result<HashMap<String, Vec<ErrorEventRow>>> {
+    ) -> StorageResult<HashMap<String, Vec<ErrorEventRow>>> {
         self.error_event_read_calls.fetch_add(1, Ordering::Relaxed);
         let wanted: HashSet<_> = fingerprints.iter().map(String::as_str).collect();
         let mut events: HashMap<String, Vec<ErrorEventRow>> = fingerprints
@@ -52,7 +52,7 @@ impl adapter::RunStore for MemoryStore {
         &self,
         limit: usize,
         range: RangeInclusive<u128>,
-    ) -> anyhow::Result<Vec<adapter::ObservedRun>> {
+    ) -> StorageResult<Vec<adapter::ObservedRun>> {
         let inner = self.lock();
         let mut runs: HashMap<String, adapter::ObservedRun> = HashMap::new();
         let mut absorb = |run_id: &Option<String>, ts: u128, service: &str, is_span: bool| {

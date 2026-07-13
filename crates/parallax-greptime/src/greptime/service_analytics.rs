@@ -2,7 +2,7 @@ use super::*;
 
 #[async_trait::async_trait]
 impl crate::adapter::ServiceAnalyticsStore for GreptimeStore {
-    async fn service_names(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<String>> {
+    async fn service_names(&self, range: RangeInclusive<u128>) -> StorageResult<Vec<String>> {
         let rows = self.sql_lenient(&Self::service_names_sql(&range)).await?;
         Ok(rows
             .iter()
@@ -11,7 +11,7 @@ impl crate::adapter::ServiceAnalyticsStore for GreptimeStore {
             .collect())
     }
 
-    async fn overview_totals(&self, range: RangeInclusive<u128>) -> anyhow::Result<OverviewTotals> {
+    async fn overview_totals(&self, range: RangeInclusive<u128>) -> StorageResult<OverviewTotals> {
         let start = sql_ts(*range.start());
         let end = sql_ts(*range.end());
         let log_svc = log_service_name_expr();
@@ -94,7 +94,7 @@ impl crate::adapter::ServiceAnalyticsStore for GreptimeStore {
         service: Option<&str>,
         range: RangeInclusive<u128>,
         step_nanos: u128,
-    ) -> anyhow::Result<Vec<SeriesPoint>> {
+    ) -> StorageResult<Vec<SeriesPoint>> {
         let step_secs = (step_nanos / 1_000_000_000).max(1);
         let rows = match kind {
             SignalKind::Spans | SignalKind::Traces => {
@@ -156,7 +156,7 @@ impl crate::adapter::ServiceAnalyticsStore for GreptimeStore {
     async fn service_summaries(
         &self,
         range: RangeInclusive<u128>,
-    ) -> anyhow::Result<Vec<ServiceSummary>> {
+    ) -> StorageResult<Vec<ServiceSummary>> {
         // Latest stable GreptimeDB accepts approx_percentile_cont(col, q);
         // verified through Parallax raw SQL for trace duration percentiles.
         let rows = self
@@ -192,7 +192,7 @@ impl crate::adapter::ServiceAnalyticsStore for GreptimeStore {
         &self,
         service: &str,
         range: RangeInclusive<u128>,
-    ) -> anyhow::Result<Vec<ReleaseWindow>> {
+    ) -> StorageResult<Vec<ReleaseWindow>> {
         let version_column = resource_attr_ident(semconv::SERVICE_VERSION);
         let sql = format!(
             r#"SELECT {version_column} AS "version",
@@ -232,7 +232,7 @@ impl crate::adapter::ServiceAnalyticsStore for GreptimeStore {
     async fn service_catalog(
         &self,
         range: RangeInclusive<u128>,
-    ) -> anyhow::Result<Vec<ServiceCatalogRow>> {
+    ) -> StorageResult<Vec<ServiceCatalogRow>> {
         let schema = self
             .sql_with_schema_lenient("SELECT * FROM opentelemetry_traces LIMIT 0")
             .await?;
@@ -325,7 +325,7 @@ impl crate::adapter::ServiceAnalyticsStore for GreptimeStore {
         service: Option<&str>,
         range: RangeInclusive<u128>,
         step_nanos: u128,
-    ) -> anyhow::Result<SpanRed> {
+    ) -> StorageResult<SpanRed> {
         let step_secs = (step_nanos / 1_000_000_000).max(1);
         let clauses = trace_filter_clauses(service, &range);
         // Latest stable GreptimeDB accepts approx_percentile_cont(col, q);

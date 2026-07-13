@@ -10,14 +10,14 @@ pub trait IngestStore: Send + Sync {
         &self,
         request: &parallax_proto::collector_trace::ExportTraceServiceRequest,
         raw: bytes::Bytes,
-    ) -> anyhow::Result<()>;
+    ) -> StorageResult<()>;
     /// Ingest a logs batch: forward the raw OTLP bytes to the native
     /// `/v1/otlp/v1/logs` endpoint (auto-creates `opentelemetry_logs`).
     async fn ingest_logs(
         &self,
         request: &parallax_proto::collector_logs::ExportLogsServiceRequest,
         raw: bytes::Bytes,
-    ) -> anyhow::Result<()>;
+    ) -> StorageResult<()>;
     /// Ingest a metrics batch: forward the raw OTLP bytes to the native
     /// `/v1/otlp/v1/metrics` endpoint (per-metric metric-engine tables), then
     /// persist the run-scoped subset of `points` into `run_metric_points`.
@@ -27,17 +27,17 @@ pub trait IngestStore: Send + Sync {
         histograms: Vec<HistogramRow>,
         exemplars: Vec<MetricExemplarRow>,
         raw: bytes::Bytes,
-    ) -> anyhow::Result<()>;
-    async fn write_error_events(&self, rows: Vec<ErrorEventRow>) -> anyhow::Result<()>;
+    ) -> StorageResult<()>;
+    async fn write_error_events(&self, rows: Vec<ErrorEventRow>) -> StorageResult<()>;
 }
 
 #[async_trait::async_trait]
 pub trait TraceStore: Send + Sync {
     /// Anchored read: every span of one trace, start-time ascending.
-    async fn spans_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<SpanRow>>;
+    async fn spans_by_trace(&self, trace_id: &str) -> StorageResult<Vec<SpanRow>>;
     /// Resolve summaries for span-link target trace ids.
     /// Returns at most one summary per id, preserving input order where possible.
-    async fn traces_by_ids(&self, trace_ids: &[String]) -> anyhow::Result<Vec<TraceSummary>>;
+    async fn traces_by_ids(&self, trace_ids: &[String]) -> StorageResult<Vec<TraceSummary>>;
     /// Run-scoped read: every span tagged with one `parallax.run.id`.
     /// `range` bounds the logs-table fallback scan (plan 085).
     async fn spans_by_run(
@@ -45,7 +45,7 @@ pub trait TraceStore: Send + Sync {
         run_id: &str,
         limit: usize,
         range: RangeInclusive<u128>,
-    ) -> anyhow::Result<Vec<SpanRow>>;
+    ) -> StorageResult<Vec<SpanRow>>;
     /// Batched run-scoped span read: up to `limit_per_run` newest spans per
     /// run id (then returned start-time ascending within each run). Default
     /// loops `spans_by_run`; Greptime overrides with one windowed query.
@@ -53,7 +53,7 @@ pub trait TraceStore: Send + Sync {
         &self,
         run_ids: &[String],
         limit_per_run: usize,
-    ) -> anyhow::Result<HashMap<String, Vec<SpanRow>>> {
+    ) -> StorageResult<HashMap<String, Vec<SpanRow>>> {
         let mut out = HashMap::with_capacity(run_ids.len());
         let range = 0..=u128::MAX;
         for run_id in run_ids {
@@ -70,32 +70,32 @@ pub trait TraceStore: Send + Sync {
 #[async_trait::async_trait]
 pub trait LogStore: Send + Sync {
     /// Run-scoped read: every log tagged with one `parallax.run.id`.
-    async fn logs_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<LogRow>>;
+    async fn logs_by_run(&self, run_id: &str, limit: usize) -> StorageResult<Vec<LogRow>>;
     /// Anchored read: every log of one trace, time ascending.
-    async fn logs_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<LogRow>>;
+    async fn logs_by_trace(&self, trace_id: &str) -> StorageResult<Vec<LogRow>>;
 }
 
 #[async_trait::async_trait]
 pub trait MetricStore: Send + Sync {
     /// Distinct metric names inside `range` (plan 085 windows extension scan).
-    async fn metric_names(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<String>>;
+    async fn metric_names(&self, range: RangeInclusive<u128>) -> StorageResult<Vec<String>>;
     /// Discover groupable metric label/tag keys for one metric.
-    async fn metric_labels(&self, name: &str) -> anyhow::Result<Vec<String>>;
+    async fn metric_labels(&self, name: &str) -> StorageResult<Vec<String>>;
     /// Distinct scalar values for one metric label inside an inclusive window.
     async fn metric_label_values(
         &self,
         name: &str,
         label: &str,
         range: RangeInclusive<u128>,
-    ) -> anyhow::Result<Vec<String>>;
+    ) -> StorageResult<Vec<String>>;
 }
 
 #[async_trait::async_trait]
 pub trait ServiceAnalyticsStore: Send + Sync {
     /// Distinct service names across signals inside `range` (plan 085).
-    async fn service_names(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<String>>;
+    async fn service_names(&self, range: RangeInclusive<u128>) -> StorageResult<Vec<String>>;
     /// Whole-system overview counters for an inclusive time window.
-    async fn overview_totals(&self, range: RangeInclusive<u128>) -> anyhow::Result<OverviewTotals>;
+    async fn overview_totals(&self, range: RangeInclusive<u128>) -> StorageResult<OverviewTotals>;
     /// Signal volume per bucket for overview trend charts.
     async fn signal_count_series(
         &self,
@@ -103,30 +103,30 @@ pub trait ServiceAnalyticsStore: Send + Sync {
         service: Option<&str>,
         range: RangeInclusive<u128>,
         step_nanos: u128,
-    ) -> anyhow::Result<Vec<SeriesPoint>>;
+    ) -> StorageResult<Vec<SeriesPoint>>;
     /// Service summary rows for the services index.
     async fn service_summaries(
         &self,
         range: RangeInclusive<u128>,
-    ) -> anyhow::Result<Vec<ServiceSummary>>;
+    ) -> StorageResult<Vec<ServiceSummary>>;
     /// Per-version activity windows for one service, ordered by first sighting.
     async fn release_windows(
         &self,
         service: &str,
         range: RangeInclusive<u128>,
-    ) -> anyhow::Result<Vec<ReleaseWindow>>;
+    ) -> StorageResult<Vec<ReleaseWindow>>;
     /// Resource-identity catalog rows, one per service in the window.
     async fn service_catalog(
         &self,
         range: RangeInclusive<u128>,
-    ) -> anyhow::Result<Vec<ServiceCatalogRow>>;
+    ) -> StorageResult<Vec<ServiceCatalogRow>>;
     /// Trace-derived RED series; works even when a service emits no metrics.
     async fn span_red_series(
         &self,
         service: Option<&str>,
         range: RangeInclusive<u128>,
         step_nanos: u128,
-    ) -> anyhow::Result<SpanRed>;
+    ) -> StorageResult<SpanRed>;
 }
 
 #[async_trait::async_trait]
@@ -142,7 +142,7 @@ pub trait MetricAnalyticsStore: Send + Sync {
         range: RangeInclusive<u128>,
         step_nanos: u128,
         agg: MetricAgg,
-    ) -> anyhow::Result<Vec<SeriesPoint>>;
+    ) -> StorageResult<Vec<SeriesPoint>>;
     /// Approximate quantile series from a histogram metric's buckets.
     async fn histogram_quantile(
         &self,
@@ -151,7 +151,7 @@ pub trait MetricAnalyticsStore: Send + Sync {
         range: RangeInclusive<u128>,
         step_nanos: u128,
         q: f64,
-    ) -> anyhow::Result<Vec<SeriesPoint>>;
+    ) -> StorageResult<Vec<SeriesPoint>>;
     /// Multiple histogram quantiles from one logical scan. The default loops
     /// [`Self::histogram_quantile`]; Greptime overrides it with one
     /// multi-quantile SQL query. Return order matches `quantiles`.
@@ -162,7 +162,7 @@ pub trait MetricAnalyticsStore: Send + Sync {
         range: RangeInclusive<u128>,
         step_nanos: u128,
         quantiles: &[f64],
-    ) -> anyhow::Result<Vec<Vec<SeriesPoint>>> {
+    ) -> StorageResult<Vec<Vec<SeriesPoint>>> {
         let mut out = Vec::with_capacity(quantiles.len());
         for q in quantiles {
             out.push(
@@ -179,7 +179,7 @@ pub trait MetricAnalyticsStore: Send + Sync {
         service: Option<&str>,
         range: RangeInclusive<u128>,
         limit: usize,
-    ) -> anyhow::Result<Vec<MetricExemplarRow>>;
+    ) -> StorageResult<Vec<MetricExemplarRow>>;
 }
 
 #[async_trait::async_trait]
@@ -190,7 +190,7 @@ pub trait RunStore: Send + Sync {
         fingerprint: &str,
         range: RangeInclusive<u128>,
         limit: usize,
-    ) -> anyhow::Result<Vec<ErrorEventRow>>;
+    ) -> StorageResult<Vec<ErrorEventRow>>;
     /// Error events for multiple fingerprints, newest first per fingerprint.
     /// Adapters override this with one physical query; the default preserves
     /// compatibility for capability implementations while migration completes.
@@ -199,7 +199,7 @@ pub trait RunStore: Send + Sync {
         fingerprints: &[String],
         range: RangeInclusive<u128>,
         limit_per_fingerprint: usize,
-    ) -> anyhow::Result<HashMap<String, Vec<ErrorEventRow>>> {
+    ) -> StorageResult<HashMap<String, Vec<ErrorEventRow>>> {
         let mut events = HashMap::with_capacity(fingerprints.len());
         for fingerprint in fingerprints {
             events.insert(
@@ -215,13 +215,13 @@ pub trait RunStore: Send + Sync {
         &self,
         limit: usize,
         range: RangeInclusive<u128>,
-    ) -> anyhow::Result<Vec<ObservedRun>>;
+    ) -> StorageResult<Vec<ObservedRun>>;
 }
 
 #[async_trait::async_trait]
 pub trait TraceAnalyticsStore: Send + Sync {
     /// Recent traces (root spans + aggregates), newest first.
-    async fn recent_traces(&self, limit: usize) -> anyhow::Result<Vec<TraceSummary>> {
+    async fn recent_traces(&self, limit: usize) -> StorageResult<Vec<TraceSummary>> {
         Ok(self
             .traces_search(&TraceQuery {
                 limit,
@@ -231,7 +231,7 @@ pub trait TraceAnalyticsStore: Send + Sync {
             .items)
     }
     /// Filtered trace browse (root spans + aggregates).
-    async fn traces_search(&self, query: &TraceQuery) -> anyhow::Result<TraceList>;
+    async fn traces_search(&self, query: &TraceQuery) -> StorageResult<TraceList>;
     /// Overrepresented span-attribute values in a selected cohort compared
     /// with a baseline cohort. Candidate-key discovery is bounded and denies
     /// identifier, raw text, stacktrace, and secret-shaped attributes.
@@ -243,30 +243,30 @@ pub trait TraceAnalyticsStore: Send + Sync {
         error_only: bool,
         keys: &[String],
         top_n: usize,
-    ) -> anyhow::Result<Vec<AttributeCompareRow>>;
+    ) -> StorageResult<Vec<AttributeCompareRow>>;
     /// Discover scalar span/resource attribute keys in a window. Resource
     /// attributes are exposed as `resource.<key>` so the API key is unambiguous.
-    async fn span_field_keys(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<FieldKey>>;
+    async fn span_field_keys(&self, range: RangeInclusive<u128>) -> StorageResult<Vec<FieldKey>>;
     /// Bounded stats for one discovered span/resource attribute key.
     async fn span_field_stats(
         &self,
         key: &str,
         range: RangeInclusive<u128>,
         service: Option<&str>,
-    ) -> anyhow::Result<FieldStats>;
+    ) -> StorageResult<FieldStats>;
     /// Trace-path service edges derived from child SERVER spans paired with
     /// their parent span inside bounded traces from the requested window.
     async fn service_map(
         &self,
         range: RangeInclusive<u128>,
         max_traces: usize,
-    ) -> anyhow::Result<Vec<ServiceEdge>>;
+    ) -> StorageResult<Vec<ServiceEdge>>;
     /// Error events across a set of traces, newest first (run-anchored reads).
     async fn error_events_by_traces(
         &self,
         trace_ids: &[String],
         limit: usize,
-    ) -> anyhow::Result<Vec<ErrorEventRow>>;
+    ) -> StorageResult<Vec<ErrorEventRow>>;
 }
 
 #[async_trait::async_trait]
@@ -280,7 +280,7 @@ pub trait LogAnalyticsStore: Send + Sync {
         severity_max: Option<i32>,
         body_contains: Option<&str>,
         limit: usize,
-    ) -> anyhow::Result<Vec<LogRow>>;
+    ) -> StorageResult<Vec<LogRow>>;
 }
 
 #[async_trait::async_trait]
@@ -295,7 +295,7 @@ pub trait RuntimeMetricStore: Send + Sync {
         range: RangeInclusive<u128>,
         step_nanos: u128,
         agg: MetricAgg,
-    ) -> anyhow::Result<Vec<(String, Vec<SeriesPoint>)>>;
+    ) -> StorageResult<Vec<(String, Vec<SeriesPoint>)>>;
     /// Runtime metric lanes across known runtime families for service/run scope.
     async fn runtime_snapshot(
         &self,
@@ -303,7 +303,7 @@ pub trait RuntimeMetricStore: Send + Sync {
         run_id: Option<&str>,
         range: RangeInclusive<u128>,
         step_nanos: u128,
-    ) -> anyhow::Result<Vec<RuntimeMetricSeries>>;
+    ) -> StorageResult<Vec<RuntimeMetricSeries>>;
     /// Histogram sample counts summed per bucket (request-rate numerator).
     async fn histogram_count_series(
         &self,
@@ -311,7 +311,7 @@ pub trait RuntimeMetricStore: Send + Sync {
         service: Option<&str>,
         range: RangeInclusive<u128>,
         step_nanos: u128,
-    ) -> anyhow::Result<Vec<SeriesPoint>>;
+    ) -> StorageResult<Vec<SeriesPoint>>;
 }
 
 #[async_trait::async_trait]
@@ -322,7 +322,7 @@ pub trait ErrorAnalyticsStore: Send + Sync {
         service: &str,
         range: RangeInclusive<u128>,
         step_nanos: u128,
-    ) -> anyhow::Result<Vec<SeriesPoint>>;
+    ) -> StorageResult<Vec<SeriesPoint>>;
 }
 
 #[async_trait::async_trait]
@@ -337,7 +337,7 @@ pub trait LogCountStore: Send + Sync {
         severity_max: Option<i32>,
         body_contains: Option<&str>,
         step_nanos: u128,
-    ) -> anyhow::Result<Vec<SeriesPoint>>;
+    ) -> StorageResult<Vec<SeriesPoint>>;
 }
 
 #[async_trait::async_trait]
@@ -346,7 +346,7 @@ pub trait RawSqlStore: Send + Sync {
     /// The API enforces the user-facing guard; adapters repeat a defensive
     /// shape check before execution. The test store has no SQL surface
     /// and returns an error.
-    async fn raw_sql(&self, query: &str) -> anyhow::Result<SqlResult>;
+    async fn raw_sql(&self, query: &str) -> StorageResult<SqlResult>;
 }
 
 pub trait TelemetryStore:

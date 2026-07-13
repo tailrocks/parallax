@@ -4,7 +4,7 @@ use super::*;
 
 #[async_trait::async_trait]
 impl adapter::ServiceAnalyticsStore for MemoryStore {
-    async fn service_names(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<String>> {
+    async fn service_names(&self, range: RangeInclusive<u128>) -> StorageResult<Vec<String>> {
         let inner = self.lock();
         let mut names: Vec<String> = inner
             .metric_points
@@ -31,7 +31,7 @@ impl adapter::ServiceAnalyticsStore for MemoryStore {
         Ok(names)
     }
 
-    async fn overview_totals(&self, range: RangeInclusive<u128>) -> anyhow::Result<OverviewTotals> {
+    async fn overview_totals(&self, range: RangeInclusive<u128>) -> StorageResult<OverviewTotals> {
         let inner = self.lock();
         let spans: Vec<&SpanRow> = inner
             .spans
@@ -110,7 +110,7 @@ impl adapter::ServiceAnalyticsStore for MemoryStore {
         service: Option<&str>,
         range: RangeInclusive<u128>,
         step_nanos: u128,
-    ) -> anyhow::Result<Vec<SeriesPoint>> {
+    ) -> StorageResult<Vec<SeriesPoint>> {
         let step = step_nanos.max(1);
         let inner = self.lock();
         let mut buckets: BTreeMap<u128, u64> = Default::default();
@@ -179,7 +179,7 @@ impl adapter::ServiceAnalyticsStore for MemoryStore {
     async fn service_summaries(
         &self,
         range: RangeInclusive<u128>,
-    ) -> anyhow::Result<Vec<ServiceSummary>> {
+    ) -> StorageResult<Vec<ServiceSummary>> {
         let inner = self.lock();
         let mut by_service: BTreeMap<&str, Vec<&SpanRow>> = Default::default();
         for span in inner.spans.iter().filter(|s| range.contains(&s.ts_nanos)) {
@@ -210,7 +210,7 @@ impl adapter::ServiceAnalyticsStore for MemoryStore {
         &self,
         service: &str,
         range: RangeInclusive<u128>,
-    ) -> anyhow::Result<Vec<ReleaseWindow>> {
+    ) -> StorageResult<Vec<ReleaseWindow>> {
         let inner = self.lock();
         let mut by_version: BTreeMap<String, ReleaseWindow> = BTreeMap::new();
         for span in inner
@@ -247,7 +247,7 @@ impl adapter::ServiceAnalyticsStore for MemoryStore {
     async fn service_catalog(
         &self,
         range: RangeInclusive<u128>,
-    ) -> anyhow::Result<Vec<ServiceCatalogRow>> {
+    ) -> StorageResult<Vec<ServiceCatalogRow>> {
         #[derive(Default)]
         struct CatalogAgg {
             latest: Option<SpanRow>,
@@ -299,7 +299,7 @@ impl adapter::ServiceAnalyticsStore for MemoryStore {
         service: Option<&str>,
         range: RangeInclusive<u128>,
         step_nanos: u128,
-    ) -> anyhow::Result<SpanRed> {
+    ) -> StorageResult<SpanRed> {
         let step = step_nanos.max(1);
         let step_secs = step as f64 / 1_000_000_000.0;
         let inner = self.lock();

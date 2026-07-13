@@ -6,7 +6,7 @@ impl crate::adapter::IngestStore for GreptimeStore {
         &self,
         _request: &parallax_proto::collector_trace::ExportTraceServiceRequest,
         raw: bytes::Bytes,
-    ) -> anyhow::Result<()> {
+    ) -> StorageResult<()> {
         // Forward the raw OTLP verbatim to the native traces endpoint; the
         // `greptime_trace_v1` pipeline auto-creates `opentelemetry_traces`. The
         // decoded spans are the worker's tee (errors/live/runs), not stored here.
@@ -19,7 +19,8 @@ impl crate::adapter::IngestStore for GreptimeStore {
             ],
             raw,
         )
-        .await?;
+        .await
+        .map_err(StorageError::transport)?;
         self.ensure_traces_deviations().await;
         Ok(())
     }
@@ -28,7 +29,7 @@ impl crate::adapter::IngestStore for GreptimeStore {
         &self,
         _request: &parallax_proto::collector_logs::ExportLogsServiceRequest,
         raw: bytes::Bytes,
-    ) -> anyhow::Result<()> {
+    ) -> StorageResult<()> {
         // The extract-keys header promotes run id and typed-log identity
         // attributes to native columns in opentelemetry_logs.
         let hints = format!("ttl={},append_mode=true", self.logs_ttl);
@@ -47,7 +48,8 @@ impl crate::adapter::IngestStore for GreptimeStore {
             ],
             raw,
         )
-        .await?;
+        .await
+        .map_err(StorageError::transport)?;
         self.ensure_logs_deviations().await;
         Ok(())
     }
@@ -58,12 +60,13 @@ impl crate::adapter::IngestStore for GreptimeStore {
         _histograms: Vec<HistogramRow>,
         exemplars: Vec<MetricExemplarRow>,
         raw: bytes::Bytes,
-    ) -> anyhow::Result<()> {
+    ) -> StorageResult<()> {
         // Forward all metrics to the native metric engine (one table per metric
         // name; histograms split into `_bucket`/`_count`/`_sum`).
         let hints = format!("ttl={}", self.metrics_ttl);
         self.forward_otlp("v1/metrics", &[("x-greptime-hints", &hints)], raw)
-            .await?;
+            .await
+            .map_err(StorageError::transport)?;
         // Run-scoped points (Q6, Approach 2): the metric engine cannot hold a
         // high-card `run_id` tag, so persist those points to `run_metric_points`
         // where `run_id` is an indexed column.
@@ -107,9 +110,10 @@ impl crate::adapter::IngestStore for GreptimeStore {
             .collect();
         self.insert(METRIC_EXEMPLARS_TABLE, METRIC_EXEMPLAR_COLUMNS, values)
             .await
+            .map_err(Into::into)
     }
 
-    async fn write_error_events(&self, rows: Vec<ErrorEventRow>) -> anyhow::Result<()> {
+    async fn write_error_events(&self, rows: Vec<ErrorEventRow>) -> StorageResult<()> {
         let values = rows
             .iter()
             .map(|r| {
@@ -135,5 +139,6 @@ impl crate::adapter::IngestStore for GreptimeStore {
             values,
         )
         .await
+        .map_err(Into::into)
     }
 }

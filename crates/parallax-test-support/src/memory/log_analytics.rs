@@ -12,7 +12,7 @@ impl adapter::LogAnalyticsStore for MemoryStore {
         severity_max: Option<i32>,
         body_contains: Option<&str>,
         limit: usize,
-    ) -> anyhow::Result<Vec<LogRow>> {
+    ) -> StorageResult<Vec<LogRow>> {
         let mut logs: Vec<LogRow> = self
             .lock()
             .logs

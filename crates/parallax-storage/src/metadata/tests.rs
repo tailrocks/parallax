@@ -55,12 +55,12 @@ fn metadata_error_kinds_are_stable() -> anyhow::Result<()> {
 }
 
 #[test]
-fn internal_display_is_sanitized_but_source_chain_is_preserved() -> anyhow::Result<()> {
+fn internal_display_preserves_operator_context_and_source_chain() -> anyhow::Result<()> {
     let error = MetadataError::internal(anyhow::anyhow!(
         "SELECT secret FROM private_path WHERE token='credential'"
     ));
     anyhow::ensure!(
-        error.to_string() == "metadata operation failed"
+        error.to_string().contains("private_path")
             && error
                 .source()
                 .is_some_and(|source| source.to_string().contains("private_path"))

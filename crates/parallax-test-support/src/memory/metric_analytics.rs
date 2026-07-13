@@ -12,7 +12,7 @@ impl MetricAnalyticsStore for MemoryStore {
         range: RangeInclusive<u128>,
         step_nanos: u128,
         agg: MetricAgg,
-    ) -> anyhow::Result<Vec<SeriesPoint>> {
+    ) -> StorageResult<Vec<SeriesPoint>> {
         let step = step_nanos.max(1);
         let mut buckets: BTreeMap<u128, Vec<f64>> = Default::default();
         for point in self.lock().metric_points.iter().filter(|p| {
@@ -52,7 +52,7 @@ impl MetricAnalyticsStore for MemoryStore {
         range: RangeInclusive<u128>,
         step_nanos: u128,
         q: f64,
-    ) -> anyhow::Result<Vec<SeriesPoint>> {
+    ) -> StorageResult<Vec<SeriesPoint>> {
         // Latest sample per window (plan 085) — align with greptime MAX merge.
         let step = step_nanos.max(1);
         let mut latest: BTreeMap<u128, HistogramRow> = Default::default();
@@ -84,7 +84,7 @@ impl MetricAnalyticsStore for MemoryStore {
         service: Option<&str>,
         range: RangeInclusive<u128>,
         limit: usize,
-    ) -> anyhow::Result<Vec<MetricExemplarRow>> {
+    ) -> StorageResult<Vec<MetricExemplarRow>> {
         let mut rows: Vec<MetricExemplarRow> = self
             .lock()
             .metric_exemplars

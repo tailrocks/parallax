@@ -4,7 +4,7 @@ use super::*;
 
 #[async_trait::async_trait]
 impl MetricStore for MemoryStore {
-    async fn metric_names(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<String>> {
+    async fn metric_names(&self, range: RangeInclusive<u128>) -> StorageResult<Vec<String>> {
         let inner = self.lock();
         let mut names: Vec<String> = inner
             .metric_points
@@ -24,7 +24,7 @@ impl MetricStore for MemoryStore {
         Ok(names)
     }
 
-    async fn metric_labels(&self, name: &str) -> anyhow::Result<Vec<String>> {
+    async fn metric_labels(&self, name: &str) -> StorageResult<Vec<String>> {
         let inner = self.lock();
         let mut labels = BTreeSet::new();
         for attributes in inner
@@ -63,16 +63,18 @@ impl MetricStore for MemoryStore {
         name: &str,
         label: &str,
         range: RangeInclusive<u128>,
-    ) -> anyhow::Result<Vec<String>> {
-        anyhow::ensure!(
-            metric_group_label_allowed(label),
-            "high-cardinality identifier - filter, don't group"
-        );
+    ) -> StorageResult<Vec<String>> {
+        if !metric_group_label_allowed(label) {
+            return Err(adapter::StorageError::query(anyhow::anyhow!(
+                "high-cardinality identifier - filter, don't group"
+            )));
+        }
         let labels = self.metric_labels(name).await?;
-        anyhow::ensure!(
-            labels.iter().any(|known| known == label),
-            "unknown metric label"
-        );
+        if !labels.iter().any(|known| known == label) {
+            return Err(adapter::StorageError::query(anyhow::anyhow!(
+                "unknown metric label"
+            )));
+        }
         let inner = self.lock();
         let mut values = BTreeSet::new();
         for attributes in inner

@@ -9,7 +9,7 @@ impl adapter::ErrorAnalyticsStore for MemoryStore {
         service: &str,
         range: RangeInclusive<u128>,
         step_nanos: u128,
-    ) -> anyhow::Result<Vec<SeriesPoint>> {
+    ) -> StorageResult<Vec<SeriesPoint>> {
         let step = step_nanos.max(1);
         let mut buckets: BTreeMap<u128, u64> = Default::default();
         for event in self

@@ -10,7 +10,7 @@ impl MetricAnalyticsStore for GreptimeStore {
         range: RangeInclusive<u128>,
         step_nanos: u128,
         agg: MetricAgg,
-    ) -> anyhow::Result<Vec<SeriesPoint>> {
+    ) -> StorageResult<Vec<SeriesPoint>> {
         let step_secs = (step_nanos / 1_000_000_000).max(1);
         let sql_agg = match agg {
             MetricAgg::Avg => "avg",
@@ -79,7 +79,7 @@ impl MetricAnalyticsStore for GreptimeStore {
         range: RangeInclusive<u128>,
         step_nanos: u128,
         q: f64,
-    ) -> anyhow::Result<Vec<SeriesPoint>> {
+    ) -> StorageResult<Vec<SeriesPoint>> {
         let series = self
             .histogram_quantiles(name, service, range, step_nanos, &[q])
             .await?;
@@ -93,7 +93,7 @@ impl MetricAnalyticsStore for GreptimeStore {
         range: RangeInclusive<u128>,
         step_nanos: u128,
         quantiles: &[f64],
-    ) -> anyhow::Result<Vec<Vec<SeriesPoint>>> {
+    ) -> StorageResult<Vec<Vec<SeriesPoint>>> {
         if quantiles.is_empty() {
             return Ok(Vec::new());
         }
@@ -145,7 +145,7 @@ impl MetricAnalyticsStore for GreptimeStore {
         service: Option<&str>,
         range: RangeInclusive<u128>,
         limit: usize,
-    ) -> anyhow::Result<Vec<MetricExemplarRow>> {
+    ) -> StorageResult<Vec<MetricExemplarRow>> {
         let service_clause = service
             .map(|svc| format!(r#" AND "service" = '{}'"#, escape(svc)))
             .unwrap_or_default();

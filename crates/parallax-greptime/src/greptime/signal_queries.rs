@@ -2,7 +2,7 @@ use super::*;
 
 #[async_trait::async_trait]
 impl crate::adapter::LogStore for GreptimeStore {
-    async fn logs_by_run(&self, run_id: &str, limit: usize) -> anyhow::Result<Vec<LogRow>> {
+    async fn logs_by_run(&self, run_id: &str, limit: usize) -> StorageResult<Vec<LogRow>> {
         let mut logs = self
             .select_logs(
                 &format!(
@@ -18,19 +18,20 @@ impl crate::adapter::LogStore for GreptimeStore {
         Ok(logs)
     }
 
-    async fn logs_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<LogRow>> {
+    async fn logs_by_trace(&self, trace_id: &str) -> StorageResult<Vec<LogRow>> {
         self.select_logs(
             &format!(r#""trace_id" = '{}'"#, escape(trace_id)),
             r#" ORDER BY "timestamp" ASC"#,
             "",
         )
         .await
+        .map_err(Into::into)
     }
 }
 
 #[async_trait::async_trait]
 impl MetricStore for GreptimeStore {
-    async fn metric_names(&self, range: RangeInclusive<u128>) -> anyhow::Result<Vec<String>> {
+    async fn metric_names(&self, range: RangeInclusive<u128>) -> StorageResult<Vec<String>> {
         Ok(self
             .discover_metric_names(&range)
             .await?
@@ -38,7 +39,7 @@ impl MetricStore for GreptimeStore {
             .collect())
     }
 
-    async fn metric_labels(&self, name: &str) -> anyhow::Result<Vec<String>> {
+    async fn metric_labels(&self, name: &str) -> StorageResult<Vec<String>> {
         Ok(self
             .resolved_metric_table(name)
             .await?
@@ -51,18 +52,18 @@ impl MetricStore for GreptimeStore {
         name: &str,
         label: &str,
         range: RangeInclusive<u128>,
-    ) -> anyhow::Result<Vec<String>> {
-        anyhow::ensure!(
-            metric_group_label_allowed(label),
-            "high-cardinality identifier - filter, don't group"
-        );
+    ) -> StorageResult<Vec<String>> {
+        if !metric_group_label_allowed(label) {
+            return Err(StorageError::query(anyhow::anyhow!(
+                "high-cardinality identifier - filter, don't group"
+            )));
+        }
         let Some((table, labels)) = self.resolved_metric_table(name).await? else {
             return Ok(Vec::new());
         };
-        anyhow::ensure!(
-            labels.iter().any(|known| known == label),
-            "unknown metric label"
-        );
+        if !labels.iter().any(|known| known == label) {
+            return Err(StorageError::query(anyhow::anyhow!("unknown metric label")));
+        }
         let label_ident = format!(r#""{}""#, escape_ident(label));
         let rows = self
             .sql_lenient(&format!(

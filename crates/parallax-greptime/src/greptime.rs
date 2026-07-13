@@ -6,10 +6,10 @@ use crate::adapter::{
     FIELD_KEYS_CAP, FIELD_TOP_VALUES_CAP, FieldKey, FieldSource, FieldStats, FieldValueCount,
     MAX_ROWS, MetricAnalyticsStore, MetricStore, OverviewTotals, ReleaseWindow,
     RuntimeMetricSeries, SERVICE_MAP_TRACE_CAP, ServiceCatalogRow, ServiceEdge, ServiceSummary,
-    SignalKind, SpanRed, attribute_compare_key_allowed, attribute_compare_score,
-    attribute_compare_value_allowed, field_key_identifier_like, field_key_namespace,
-    field_value_display, metric_group_label_allowed, runtime_metric_family, runtime_metric_unit,
-    span_field_key_allowed,
+    SignalKind, SpanRed, StorageError, StorageResult, attribute_compare_key_allowed,
+    attribute_compare_score, attribute_compare_value_allowed, field_key_identifier_like,
+    field_key_namespace, field_value_display, metric_group_label_allowed, runtime_metric_family,
+    runtime_metric_unit, span_field_key_allowed,
 };
 use crate::greptime_sql::{
     METRIC_BOOKKEEPING_COLUMNS, canonical_metric_display_name, escape, escape_ident,

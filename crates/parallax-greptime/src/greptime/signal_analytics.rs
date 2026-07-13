@@ -10,7 +10,7 @@ impl crate::adapter::LogAnalyticsStore for GreptimeStore {
         severity_max: Option<i32>,
         body_contains: Option<&str>,
         limit: usize,
-    ) -> anyhow::Result<Vec<LogRow>> {
+    ) -> StorageResult<Vec<LogRow>> {
         let clauses =
             log_filter_clauses(service, &range, severity_min, severity_max, body_contains);
         self.select_logs(
@@ -19,6 +19,7 @@ impl crate::adapter::LogAnalyticsStore for GreptimeStore {
             &format!(" LIMIT {limit}"),
         )
         .await
+        .map_err(Into::into)
     }
 }
 
@@ -32,18 +33,18 @@ impl crate::adapter::RuntimeMetricStore for GreptimeStore {
         range: RangeInclusive<u128>,
         step_nanos: u128,
         agg: MetricAgg,
-    ) -> anyhow::Result<Vec<(String, Vec<SeriesPoint>)>> {
-        anyhow::ensure!(
-            metric_group_label_allowed(group_by),
-            "high-cardinality identifier - filter, don't group"
-        );
+    ) -> StorageResult<Vec<(String, Vec<SeriesPoint>)>> {
+        if !metric_group_label_allowed(group_by) {
+            return Err(StorageError::query(anyhow::anyhow!(
+                "high-cardinality identifier - filter, don't group"
+            )));
+        }
         let Some((table, labels)) = self.resolved_metric_table(name).await? else {
             return Ok(Vec::new());
         };
-        anyhow::ensure!(
-            labels.iter().any(|label| label == group_by),
-            "unknown metric label"
-        );
+        if !labels.iter().any(|label| label == group_by) {
+            return Err(StorageError::query(anyhow::anyhow!("unknown metric label")));
+        }
         let step_secs = (step_nanos / 1_000_000_000).max(1);
         let sql_agg = match agg {
             MetricAgg::Avg => "avg",
@@ -96,7 +97,7 @@ impl crate::adapter::RuntimeMetricStore for GreptimeStore {
         run_id: Option<&str>,
         range: RangeInclusive<u128>,
         step_nanos: u128,
-    ) -> anyhow::Result<Vec<RuntimeMetricSeries>> {
+    ) -> StorageResult<Vec<RuntimeMetricSeries>> {
         // Filter runtime families first, then fetch series concurrently
         // (plan 075 Step 3) in chunks of 8.
         let metrics: Vec<(String, &'static str)> = self
@@ -141,7 +142,7 @@ impl crate::adapter::RuntimeMetricStore for GreptimeStore {
         service: Option<&str>,
         range: RangeInclusive<u128>,
         step_nanos: u128,
-    ) -> anyhow::Result<Vec<SeriesPoint>> {
+    ) -> StorageResult<Vec<SeriesPoint>> {
         let step_secs = (step_nanos / 1_000_000_000).max(1);
         let service_clause = service
             .map(|svc| format!(r#" AND "service_name" = '{}'"#, escape(svc)))
@@ -179,7 +180,7 @@ impl crate::adapter::ErrorAnalyticsStore for GreptimeStore {
         service: &str,
         range: RangeInclusive<u128>,
         step_nanos: u128,
-    ) -> anyhow::Result<Vec<SeriesPoint>> {
+    ) -> StorageResult<Vec<SeriesPoint>> {
         let step_secs = (step_nanos / 1_000_000_000).max(1);
         let rows = self
             .sql(&format!(
@@ -213,7 +214,7 @@ impl crate::adapter::LogCountStore for GreptimeStore {
         severity_max: Option<i32>,
         body_contains: Option<&str>,
         step_nanos: u128,
-    ) -> anyhow::Result<Vec<SeriesPoint>> {
+    ) -> StorageResult<Vec<SeriesPoint>> {
         let step_secs = (step_nanos / 1_000_000_000).max(1);
         let clauses =
             log_filter_clauses(service, &range, severity_min, severity_max, body_contains);
@@ -238,11 +239,12 @@ impl crate::adapter::LogCountStore for GreptimeStore {
 
 #[async_trait::async_trait]
 impl crate::adapter::RawSqlStore for GreptimeStore {
-    async fn raw_sql(&self, query: &str) -> anyhow::Result<crate::adapter::SqlResult> {
-        anyhow::ensure!(
-            raw_sql_read_only(query),
-            "raw_sql: read-only statements only"
-        );
-        self.sql_with_schema(query).await
+    async fn raw_sql(&self, query: &str) -> StorageResult<crate::adapter::SqlResult> {
+        if !raw_sql_read_only(query) {
+            return Err(StorageError::query(anyhow::anyhow!(
+                "raw_sql: read-only statements only"
+            )));
+        }
+        self.sql_with_schema(query).await.map_err(Into::into)
     }
 }

@@ -6,6 +6,9 @@ use parallax_proto::semconv;
 use std::collections::HashMap;
 use std::ops::RangeInclusive;
 
+mod error;
+pub use error::{StorageError, StorageErrorKind, StorageResult};
+
 pub use crate::adapter_math::{attribute_compare_score, rate_from_buckets};
 pub use crate::adapter_rules::{
     field_key_identifier_like, field_key_namespace, metric_group_label_allowed,
