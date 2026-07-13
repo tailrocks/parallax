@@ -1760,7 +1760,7 @@ ceiling = 9
 [[limits]]
 metric = "rust.public-root-items"
 scope = "crates/parallax-server/facade.toml"
-ceiling = 4
+ceiling = 5
 
 [[limits]]
 metric = "rust.public-root-items"

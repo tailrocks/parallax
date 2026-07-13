@@ -130,11 +130,15 @@ async fn characterize_failure_after(stage: FailureStage) -> (usize, usize, u64, 
     let worker = Worker::new(store.clone(), metadata.clone(), live);
     worker.inject_failure_once_after(stage).await;
     let item = IngestItem::Traces(trace_request_with_run_and_error(), bytes::Bytes::new());
+    let mut progress = EffectProgress::default();
     worker
-        .process(&item)
+        .process_with_progress(&item, &mut progress)
         .await
         .expect_err("first attempt fails");
-    worker.process(&item).await.expect("retry succeeds");
+    worker
+        .process_with_progress(&item, &mut progress)
+        .await
+        .expect("retry succeeds");
 
     let mut broadcasts = 0;
     while live_spans.try_recv().is_ok() {
@@ -251,18 +255,18 @@ async fn failure_stage_replay_behavior_is_characterized() {
     );
     assert_eq!(
         characterize_failure_after(FailureStage::Broadcast).await,
-        (2, 1, 1, 1, 1),
-        "broadcast repeats because it has no idempotency boundary"
+        (1, 1, 1, 1, 1),
+        "completed broadcast is checkpointed before retry"
     );
     assert_eq!(
         characterize_failure_after(FailureStage::TelemetryStorage).await,
-        (2, 2, 1, 1, 1),
-        "telemetry and earlier broadcast repeat after a late storage failure"
+        (1, 1, 1, 1, 1),
+        "completed telemetry and earlier effects are checkpointed before retry"
     );
     assert_eq!(
         characterize_failure_after(FailureStage::IssueRecording).await,
-        (2, 2, 2, 2, 1),
-        "all completed effects replay after the final stage fails"
+        (1, 1, 1, 1, 1),
+        "a final-stage failure does not replay any completed effect"
     );
 }
 

@@ -17,8 +17,8 @@ use parallax_proto::collector_logs::ExportLogsServiceRequest;
 use parallax_proto::collector_metrics::ExportMetricsServiceRequest;
 use parallax_proto::collector_trace::ExportTraceServiceRequest;
 use parallax_spool::Signal;
-use parallax_storage::adapter::IngestStore;
-use parallax_storage::metadata::MetadataStore;
+use parallax_storage::adapter::{IngestStore, StorageError};
+use parallax_storage::metadata::{MetadataError, MetadataStore};
 use parallax_storage::model::{ErrorEventRow, ErrorSource};
 use prost::Message;
 use std::collections::{HashMap, HashSet};
@@ -114,6 +114,42 @@ enum FailureStage {
     IssueRecording,
 }
 
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+enum EffectStage {
+    Registration,
+    Broadcast,
+    TelemetryStorage,
+    IssueRecording,
+}
+
+#[derive(Debug, Default)]
+struct EffectProgress {
+    completed_through: Option<EffectStage>,
+}
+
+impl EffectProgress {
+    fn completed(&self, stage: EffectStage) -> bool {
+        self.completed_through.is_some_and(|done| done >= stage)
+    }
+
+    fn mark_completed(&mut self, stage: EffectStage) {
+        self.completed_through = Some(stage);
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+enum WorkerError {
+    #[error(transparent)]
+    Storage(#[from] StorageError),
+    #[error(transparent)]
+    Metadata(#[from] MetadataError),
+    #[cfg(test)]
+    #[error("injected failure after {0:?}")]
+    Injected(FailureStage),
+}
+
+type WorkerResult<T> = Result<T, WorkerError>;
+
 impl Worker {
     pub(crate) fn new(
         store: Arc<dyn IngestStore>,
@@ -136,11 +172,11 @@ impl Worker {
     }
 
     #[cfg(test)]
-    async fn maybe_fail_after(&self, stage: FailureStage) -> anyhow::Result<()> {
+    async fn maybe_fail_after(&self, stage: FailureStage) -> WorkerResult<()> {
         let mut configured = self.fail_once_after.lock().await;
         if configured.as_ref() == Some(&stage) {
             *configured = None;
-            anyhow::bail!("injected failure after {stage:?}");
+            return Err(WorkerError::Injected(stage));
         }
         Ok(())
     }
@@ -148,8 +184,9 @@ impl Worker {
     pub(crate) async fn run(self, mut receiver: mpsc::Receiver<IngestItem>) {
         while let Some(item) = receiver.recv().await {
             let mut attempt = 0;
+            let mut progress = EffectProgress::default();
             loop {
-                match self.process(&item).await {
+                match self.process_with_progress(&item, &mut progress).await {
                     Ok(()) => break,
                     Err(e) if attempt < INGEST_RETRIES => {
                         attempt += 1;
@@ -167,81 +204,151 @@ impl Worker {
         }
     }
 
-    async fn process(&self, item: &IngestItem) -> anyhow::Result<()> {
+    #[cfg(test)]
+    async fn process(&self, item: &IngestItem) -> WorkerResult<()> {
+        self.process_with_progress(item, &mut EffectProgress::default())
+            .await
+    }
+
+    async fn process_with_progress(
+        &self,
+        item: &IngestItem,
+        progress: &mut EffectProgress,
+    ) -> WorkerResult<()> {
         match item {
             IngestItem::Traces(request, raw) => {
-                let errors = derive::derive_from_traces(request);
-                self.register_runs(normalize::resource_run_ids(request))
-                    .await?;
-                #[cfg(test)]
-                self.maybe_fail_after(FailureStage::Registration).await?;
-                if self.live.spans.receiver_count() > 0 {
-                    let spans = normalize::normalize_traces(request);
-                    drop(self.live.spans.send(crate::live::span_batch(spans)));
-                }
-                #[cfg(test)]
-                self.maybe_fail_after(FailureStage::Broadcast).await?;
-                self.store.ingest_traces(request, raw.clone()).await?;
-                #[cfg(test)]
-                self.maybe_fail_after(FailureStage::TelemetryStorage)
-                    .await?;
-                self.record_errors(errors).await?;
-                #[cfg(test)]
-                self.maybe_fail_after(FailureStage::IssueRecording).await?;
+                self.process_traces(request, raw, progress).await?;
             }
             IngestItem::Logs(request, raw) => {
-                let mut request = request.clone();
-                let raw = if normalize::promote_log_identity_attributes(&mut request) {
-                    bytes::Bytes::from(request.encode_to_vec())
-                } else {
-                    raw.clone()
-                };
-                // derive_from_logs takes normalized rows (Plan 070/026) — keep
-                // normalizing on the logs path rather than refactoring derive.
-                let logs = normalize::normalize_logs(&request);
-                let errors = derive::derive_from_logs(&logs);
-                self.register_runs(
-                    logs.iter()
-                        .filter_map(|l| l.run_id.clone().map(|run_id| (run_id, l.ts_nanos))),
-                )
-                .await?;
-                #[cfg(test)]
-                self.maybe_fail_after(FailureStage::Registration).await?;
-                if self.live.logs.receiver_count() > 0 {
-                    drop(self.live.logs.send(crate::live::log_batch(logs)));
-                }
-                #[cfg(test)]
-                self.maybe_fail_after(FailureStage::Broadcast).await?;
-                self.store.ingest_logs(&request, raw).await?;
-                #[cfg(test)]
-                self.maybe_fail_after(FailureStage::TelemetryStorage)
-                    .await?;
-                self.record_errors(errors).await?;
-                #[cfg(test)]
-                self.maybe_fail_after(FailureStage::IssueRecording).await?;
+                self.process_logs(request, raw, progress).await?;
             }
             IngestItem::Metrics(request, raw) => {
-                let normalized = normalize::normalize_metrics(request);
-                self.store
-                    .ingest_metrics(
-                        normalized.points,
-                        normalized.histograms,
-                        normalized.exemplars,
-                        raw.clone(),
-                    )
-                    .await?;
-                #[cfg(test)]
-                self.maybe_fail_after(FailureStage::TelemetryStorage)
-                    .await?;
+                self.process_metrics(request, raw, progress).await?;
             }
         }
+        Ok(())
+    }
+
+    async fn process_traces(
+        &self,
+        request: &ExportTraceServiceRequest,
+        raw: &bytes::Bytes,
+        progress: &mut EffectProgress,
+    ) -> WorkerResult<()> {
+        let errors = derive::derive_from_traces(request);
+        if !progress.completed(EffectStage::Registration) {
+            self.register_runs(normalize::resource_run_ids(request))
+                .await?;
+            progress.mark_completed(EffectStage::Registration);
+        }
+        #[cfg(test)]
+        self.maybe_fail_after(FailureStage::Registration).await?;
+        if !progress.completed(EffectStage::Broadcast) {
+            if self.live.spans.receiver_count() > 0 {
+                drop(
+                    self.live
+                        .spans
+                        .send(crate::live::span_batch(normalize::normalize_traces(
+                            request,
+                        ))),
+                );
+            }
+            progress.mark_completed(EffectStage::Broadcast);
+        }
+        #[cfg(test)]
+        self.maybe_fail_after(FailureStage::Broadcast).await?;
+        if !progress.completed(EffectStage::TelemetryStorage) {
+            self.store.ingest_traces(request, raw.clone()).await?;
+            progress.mark_completed(EffectStage::TelemetryStorage);
+        }
+        #[cfg(test)]
+        self.maybe_fail_after(FailureStage::TelemetryStorage)
+            .await?;
+        if !progress.completed(EffectStage::IssueRecording) {
+            self.record_errors(errors).await?;
+            progress.mark_completed(EffectStage::IssueRecording);
+        }
+        #[cfg(test)]
+        self.maybe_fail_after(FailureStage::IssueRecording).await?;
+        Ok(())
+    }
+
+    async fn process_logs(
+        &self,
+        request: &ExportLogsServiceRequest,
+        raw: &bytes::Bytes,
+        progress: &mut EffectProgress,
+    ) -> WorkerResult<()> {
+        let mut request = request.clone();
+        let raw = if normalize::promote_log_identity_attributes(&mut request) {
+            bytes::Bytes::from(request.encode_to_vec())
+        } else {
+            raw.clone()
+        };
+        let logs = normalize::normalize_logs(&request);
+        let errors = derive::derive_from_logs(&logs);
+        if !progress.completed(EffectStage::Registration) {
+            self.register_runs(
+                logs.iter()
+                    .filter_map(|log| log.run_id.clone().map(|id| (id, log.ts_nanos))),
+            )
+            .await?;
+            progress.mark_completed(EffectStage::Registration);
+        }
+        #[cfg(test)]
+        self.maybe_fail_after(FailureStage::Registration).await?;
+        if !progress.completed(EffectStage::Broadcast) {
+            if self.live.logs.receiver_count() > 0 {
+                drop(self.live.logs.send(crate::live::log_batch(logs)));
+            }
+            progress.mark_completed(EffectStage::Broadcast);
+        }
+        #[cfg(test)]
+        self.maybe_fail_after(FailureStage::Broadcast).await?;
+        if !progress.completed(EffectStage::TelemetryStorage) {
+            self.store.ingest_logs(&request, raw).await?;
+            progress.mark_completed(EffectStage::TelemetryStorage);
+        }
+        #[cfg(test)]
+        self.maybe_fail_after(FailureStage::TelemetryStorage)
+            .await?;
+        if !progress.completed(EffectStage::IssueRecording) {
+            self.record_errors(errors).await?;
+            progress.mark_completed(EffectStage::IssueRecording);
+        }
+        #[cfg(test)]
+        self.maybe_fail_after(FailureStage::IssueRecording).await?;
+        Ok(())
+    }
+
+    async fn process_metrics(
+        &self,
+        request: &ExportMetricsServiceRequest,
+        raw: &bytes::Bytes,
+        progress: &mut EffectProgress,
+    ) -> WorkerResult<()> {
+        if !progress.completed(EffectStage::TelemetryStorage) {
+            let normalized = normalize::normalize_metrics(request);
+            self.store
+                .ingest_metrics(
+                    normalized.points,
+                    normalized.histograms,
+                    normalized.exemplars,
+                    raw.clone(),
+                )
+                .await?;
+            progress.mark_completed(EffectStage::TelemetryStorage);
+        }
+        #[cfg(test)]
+        self.maybe_fail_after(FailureStage::TelemetryStorage)
+            .await?;
         Ok(())
     }
 
     async fn register_runs(
         &self,
         run_ids: impl Iterator<Item = (String, u128)>,
-    ) -> anyhow::Result<()> {
+    ) -> Result<(), MetadataError> {
         let mut first_seen: HashMap<String, u128> = Default::default();
         {
             let seen = self.seen_runs.lock().await;
@@ -266,7 +373,7 @@ impl Worker {
         Ok(())
     }
 
-    async fn record_errors(&self, errors: Vec<ErrorEventRow>) -> anyhow::Result<()> {
+    async fn record_errors(&self, errors: Vec<ErrorEventRow>) -> WorkerResult<()> {
         let errors = dedup_error_events(errors);
         if errors.is_empty() {
             return Ok(());
