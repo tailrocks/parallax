@@ -362,11 +362,6 @@ name = "parallax-test-support"
 class = "test-support"
 
 
-[[limits]]
-metric = "rust.file-lines"
-scope = "crates/parallax-test-support/src/memory.rs"
-ceiling = 1399
-
 
 
 [[limits]]
@@ -1570,12 +1565,12 @@ ceiling = 25
 
 [[limits]]
 metric = "rust.function-cognitive-complexity"
-scope = "crates/parallax-test-support/src/memory.rs::attribute_compare"
+scope = "crates/parallax-test-support/src/memory/trace_analytics.rs::attribute_compare"
 ceiling = 25
 
 [[limits]]
 metric = "rust.function-cognitive-complexity"
-scope = "crates/parallax-test-support/src/memory.rs::span_field_keys"
+scope = "crates/parallax-test-support/src/memory/trace_analytics.rs::span_field_keys"
 ceiling = 25
 
 [[limits]]
@@ -1715,14 +1710,14 @@ ceiling = 103
 
 [[limits]]
 metric = "rust.function-lines"
-scope = "crates/parallax-test-support/src/memory.rs::attribute_compare"
+scope = "crates/parallax-test-support/src/memory/trace_analytics.rs::attribute_compare"
 ceiling = 101
 
 
 [[limits]]
 metric = "rust.function-lines"
-scope = "crates/parallax-test-support/src/memory.rs::traces_search"
-ceiling = 108
+scope = "crates/parallax-test-support/src/memory/trace_search.rs::search"
+ceiling = 107
 
 [[limits]]
 metric = "rust.function-lines"

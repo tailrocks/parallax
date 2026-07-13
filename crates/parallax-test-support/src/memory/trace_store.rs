@@ -1,0 +1,118 @@
+//! In-memory trace store capability.
+
+use super::*;
+
+#[async_trait::async_trait]
+impl adapter::TraceStore for MemoryStore {
+    async fn spans_by_trace(&self, trace_id: &str) -> anyhow::Result<Vec<SpanRow>> {
+        let mut spans: Vec<SpanRow> = self
+            .lock()
+            .spans
+            .iter()
+            .filter(|s| s.trace_id == trace_id)
+            .cloned()
+            .collect();
+        spans.sort_by_key(|s| s.ts_nanos);
+        Ok(spans)
+    }
+
+    async fn traces_by_ids(
+        &self,
+        trace_ids: &[String],
+    ) -> anyhow::Result<Vec<adapter::TraceSummary>> {
+        // O(n) dedup preserving request order (MAX_ROWS still caps fan-out).
+        let mut seen = HashSet::new();
+        let mut ids = Vec::new();
+        for trace_id in trace_ids.iter().filter(|trace_id| !trace_id.is_empty()) {
+            if !seen.insert(trace_id.as_str()) {
+                continue;
+            }
+            ids.push(trace_id.clone());
+            if ids.len() >= MAX_ROWS {
+                break;
+            }
+        }
+        if ids.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let inner = self.lock();
+        let mut summaries = Vec::new();
+        for trace_id in ids {
+            let trace_spans: Vec<&SpanRow> = inner
+                .spans
+                .iter()
+                .filter(|span| span.trace_id == trace_id)
+                .collect();
+            let Some(root) = trace_spans.iter().copied().min_by_key(|span| {
+                (
+                    !span.parent_span_id.as_deref().is_none_or(str::is_empty),
+                    span.ts_nanos,
+                )
+            }) else {
+                continue;
+            };
+            summaries.push(adapter::TraceSummary {
+                trace_id,
+                root_name: root.name.clone(),
+                service: root.service.clone(),
+                start_nanos: root.ts_nanos,
+                duration_ns: root.duration_ns,
+                span_count: trace_spans.len() as u64,
+                has_error: trace_spans
+                    .iter()
+                    .any(|span| span.status_code == "STATUS_CODE_ERROR"),
+            });
+        }
+        Ok(summaries)
+    }
+
+    async fn spans_by_run(
+        &self,
+        run_id: &str,
+        limit: usize,
+        _range: RangeInclusive<u128>,
+    ) -> anyhow::Result<Vec<SpanRow>> {
+        let mut spans: Vec<SpanRow> = self
+            .lock()
+            .spans
+            .iter()
+            .filter(|s| s.run_id.as_deref() == Some(run_id))
+            .cloned()
+            .collect();
+        spans.sort_by_key(|s| std::cmp::Reverse(s.ts_nanos));
+        spans.truncate(limit);
+        spans.sort_by_key(|s| s.ts_nanos);
+        Ok(spans)
+    }
+
+    async fn spans_by_runs(
+        &self,
+        run_ids: &[String],
+        limit_per_run: usize,
+    ) -> anyhow::Result<HashMap<String, Vec<SpanRow>>> {
+        let wanted: HashSet<&str> = run_ids.iter().map(String::as_str).collect();
+        let mut out: HashMap<String, Vec<SpanRow>> =
+            run_ids.iter().map(|id| (id.clone(), Vec::new())).collect();
+        if wanted.is_empty() || limit_per_run == 0 {
+            return Ok(out);
+        }
+        for span in self.lock().spans.iter() {
+            let Some(run_id) = span.run_id.as_deref() else {
+                continue;
+            };
+            if !wanted.contains(run_id) {
+                continue;
+            }
+            out.entry(run_id.to_string())
+                .or_default()
+                .push(span.clone());
+        }
+        for spans in out.values_mut() {
+            spans.sort_by_key(|s| std::cmp::Reverse(s.ts_nanos));
+            spans.truncate(limit_per_run);
+            spans.sort_by_key(|s| s.ts_nanos);
+        }
+        Ok(out)
+    }
+}
