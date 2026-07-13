@@ -461,6 +461,37 @@ jobs:
       - name: Assert generated route tree is current
         run: git diff --exit-code -- ui/src/routeTree.gen.ts
 
+  ui-formatter-platform:
+    needs: changes
+    if: needs.changes.outputs.ui == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
+        with:
+          install_args: "bun ripgrep"
+          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+      - name: Cache formatter package graph
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ~/.bun/install/cache
+          key: oxfmt-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('ui/bun.lock', 'ui/package.json', 'ui/.oxfmtrc.jsonc', 'ui/**/*.ts', 'ui/**/*.tsx', 'ui/**/*.js', 'ui/**/*.jsx') }}
+          restore-keys: oxfmt-${{ runner.os }}-${{ runner.arch }}-
+      - run: bun ci
+        working-directory: ui
+      - run: scripts/ci/test-oxfmt-contract.sh
+      - name: Prove second-run formatter idempotence
+        run: |
+          bun run format
+          bun run format
+          git diff --exit-code -- . ':(exclude)src/routeTree.gen.ts'
+        working-directory: ui
+
   embed:
     needs: changes
     if: needs.changes.outputs.rust == 'true' || needs.changes.outputs.ui == 'true'
@@ -569,7 +600,7 @@ jobs:
             target/nextest/ci/summary.log
           if-no-files-found: error
   ci-required:
-    needs: [changes, actionlint, source-hygiene, security-hygiene, policy, fmt, audit, check, clippy, test, ui, embed, native-macos]
+    needs: [changes, actionlint, source-hygiene, security-hygiene, policy, fmt, audit, check, clippy, test, ui, ui-formatter-platform, embed, native-macos]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 10

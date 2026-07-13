@@ -28,7 +28,7 @@ files=$(git -C "$root" ls-files 'ui/*.ts' 'ui/*.tsx' 'ui/*.js' 'ui/*.jsx' 'ui/**
 [[ $(printf '%s\n' "$files" | wc -l | tr -d ' ') == 151 ]]
 [[ $(printf '%s\n' "$files" | shasum -a 256 | awk '{print $1}') == ebb965980822201e59b37286bdef0e3933901795ad6a77e5fd1c5c6d22ed1bbe ]]
 
-platform=$(cd "$ui" && bun -e 'console.log(`${process.platform}-${process.arch}`)')
+platform=$(cd "$ui" && bun -e 'console.log(process.platform + "-" + process.arch)')
 case "$platform" in
   darwin-*) binding_pattern="$ui/node_modules/@oxfmt/binding-$platform/oxfmt.*.node" ;;
   linux-*) binding_pattern="$ui/node_modules/@oxfmt/binding-$platform-*/oxfmt.*.node" ;;
