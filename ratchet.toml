@@ -1712,7 +1712,7 @@ ceiling = 107
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-xtask/src/policy/architecture.rs::evaluate"
-ceiling = 146
+ceiling = 133
 
 [[limits]]
 metric = "rust.function-lines"
@@ -1995,7 +1995,7 @@ ceiling = 3
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-xtask/src/policy/architecture/tests.rs"
-ceiling = 9
+ceiling = 11
 
 [[limits]]
 metric = "rust.assertions"

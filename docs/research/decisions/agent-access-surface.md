@@ -8,6 +8,8 @@
 > Only [`plans/`](../../../plans/) authorizes implementation. The design decision
 > remains **CLI first, HTTP API underneath, MCP only after its gates pass**; no
 > transport may bypass bundle bounds, redaction, authorization, or audit.
+> The executable product-code boundary is specified in
+> [agent-trust-boundary-and-prompt-injection.md](agent-trust-boundary-and-prompt-injection.md).
 
 This decision record consolidates the following previously-separate research files, each preserved in full below:
 

@@ -88,6 +88,8 @@ pub(super) struct PackageClass {
     pub name: String,
     pub class: String,
     pub tier: Option<u8>,
+    #[serde(default)]
+    pub agent_context: bool,
 }
 
 #[derive(Debug, Deserialize)]

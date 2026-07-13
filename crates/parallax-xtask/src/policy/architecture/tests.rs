@@ -36,6 +36,7 @@ fn nodes() -> BTreeMap<String, Node> {
             Node {
                 class: "product".into(),
                 tier: Some(1),
+                agent_context: false,
             },
         ),
         (
@@ -43,6 +44,7 @@ fn nodes() -> BTreeMap<String, Node> {
             Node {
                 class: "product".into(),
                 tier: Some(4),
+                agent_context: false,
             },
         ),
         (
@@ -50,6 +52,7 @@ fn nodes() -> BTreeMap<String, Node> {
             Node {
                 class: "aux".into(),
                 tier: None,
+                agent_context: false,
             },
         ),
     ]
@@ -109,6 +112,7 @@ fn fails_unknown_and_missing_classifications() {
         Node {
             class: "mystery".into(),
             tier: None,
+            agent_context: false,
         },
     );
     let result = evaluate(&nodes, &[edge("missing", "low", Kind::Normal)], &ratchet());
@@ -147,6 +151,7 @@ fn rejects_release_reachability_to_test_support() {
         Node {
             class: "test-support".into(),
             tier: None,
+            agent_context: false,
         },
     );
     let result = evaluate(&nodes, &[edge("high", "tests", Kind::Normal)], &ratchet());
@@ -155,5 +160,42 @@ fn rejects_release_reachability_to_test_support() {
             .iter()
             .any(|finding| finding.rule_id == "arch.test-support-release")
             && evaluate(&nodes, &[edge("high", "tests", Kind::Dev)], &ratchet()).is_empty()
+    );
+}
+
+#[test]
+fn agent_context_rejects_raw_product_dependencies() {
+    let mut nodes = nodes();
+    nodes.insert(
+        "parallax-agent".into(),
+        Node {
+            class: "product".into(),
+            tier: Some(5),
+            agent_context: true,
+        },
+    );
+    nodes.insert(
+        "parallax-evidence".into(),
+        Node {
+            class: "product".into(),
+            tier: Some(2),
+            agent_context: false,
+        },
+    );
+    let allowed = evaluate(
+        &nodes,
+        &[edge("parallax-agent", "parallax-evidence", Kind::Normal)],
+        &ratchet(),
+    );
+    let rejected = evaluate(
+        &nodes,
+        &[edge("parallax-agent", "low", Kind::Normal)],
+        &ratchet(),
+    );
+    assert!(allowed.is_empty());
+    assert!(
+        rejected
+            .iter()
+            .any(|finding| finding.rule_id == "arch.agent-context.dependency")
     );
 }

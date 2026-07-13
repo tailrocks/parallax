@@ -37,6 +37,7 @@ impl Kind {
 struct Node {
     class: String,
     tier: Option<u8>,
+    agent_context: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -96,6 +97,7 @@ pub(super) fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Find
                 Node {
                     class: package.class.clone(),
                     tier: package.tier,
+                    agent_context: package.agent_context,
                 },
             )
         })
@@ -176,23 +178,7 @@ fn evaluate(nodes: &BTreeMap<String, Node>, edges: &[Edge], ratchet: &Ratchet) -
         }
     }
     for (name, node) in nodes {
-        if node.class == "product" && node.tier.is_none() {
-            findings.push(finding(
-                "arch.classification",
-                name,
-                "product package has no tier",
-            ));
-        }
-        if !matches!(
-            node.class.as_str(),
-            "product" | "aux" | "proof" | "test-support"
-        ) {
-            findings.push(finding(
-                "arch.classification",
-                name,
-                "package has an unknown class",
-            ));
-        }
+        validate_node(name, node, &mut findings);
     }
     for edge in edges {
         let Some(from) = nodes.get(&edge.from) else {
@@ -220,6 +206,9 @@ fn evaluate(nodes: &BTreeMap<String, Node>, edges: &[Edge], ratchet: &Ratchet) -
                     to.class, edge.to
                 ),
             ));
+        }
+        if let Some(agent_finding) = agent_dependency_finding(from, edge) {
+            findings.push(agent_finding);
         }
         if edge.kind.production()
             && from.class == "product"
@@ -269,6 +258,52 @@ fn evaluate(nodes: &BTreeMap<String, Node>, edges: &[Edge], ratchet: &Ratchet) -
         }
     }
     findings
+}
+
+fn validate_node(name: &str, node: &Node, findings: &mut Vec<Finding>) {
+    if node.class == "product" && node.tier.is_none() {
+        findings.push(finding(
+            "arch.classification",
+            name,
+            "product package has no tier",
+        ));
+    }
+    if !matches!(
+        node.class.as_str(),
+        "product" | "aux" | "proof" | "test-support"
+    ) {
+        findings.push(finding(
+            "arch.classification",
+            name,
+            "package has an unknown class",
+        ));
+    }
+    if node.class == "product"
+        && (name.contains("agent") || name.contains("mcp"))
+        && !node.agent_context
+    {
+        findings.push(finding(
+            "arch.agent-context.classification",
+            name,
+            "product agent/MCP package must declare agent_context = true",
+        ));
+    }
+}
+
+fn agent_dependency_finding(from: &Node, edge: &Edge) -> Option<Finding> {
+    (from.agent_context
+        && edge.kind.production()
+        && !matches!(edge.to.as_str(), "parallax-evidence" | "parallax-model"))
+    .then(|| {
+        finding(
+            "arch.agent-context.dependency",
+            &edge.from,
+            &format!(
+                "agent context package may depend only on parallax-evidence/parallax-model, not {}",
+                edge.to
+            ),
+        )
+    })
 }
 
 fn product_reaches_aux(from: &Node, to: &Node, kind: Kind) -> bool {
