@@ -179,7 +179,7 @@ impl TypeScriptProvider {
             .iter()
             .filter(|comment| {
                 let text = &source[comment.span.start as usize..comment.span.end as usize];
-                text.contains("@ts-") || text.contains("eslint-disable")
+                text.contains("@ts-") || text.contains("lint-disable")
             })
             .count();
         for node in nodes.iter() {

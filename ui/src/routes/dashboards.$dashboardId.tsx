@@ -108,7 +108,7 @@ export async function loadWidgetSeries(
   fetch: typeof graphqlCached = graphqlCached
 ): Promise<Series[][]> {
   if (widgets.length === 0) return []
-  const results: Series[][] = new Array(widgets.length)
+  const results: Series[][] = Array.from({ length: widgets.length })
   for (let offset = 0; offset < widgets.length; offset += WIDGET_CHUNK) {
     const chunk = widgets.slice(offset, offset + WIDGET_CHUNK)
     const doc = `{ ${chunk
@@ -246,7 +246,7 @@ function DashboardPage() {
             <RangePicker
               value={range}
               onChange={(next) =>
-                navigate({
+                void navigate({
                   search: (current) => mergeRangeSearch(current, next),
                 })
               }

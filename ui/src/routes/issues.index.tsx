@@ -230,7 +230,7 @@ function IssuesPage() {
   const loading = useDelayedLoading(routerLoading)
 
   const setSearch = (patch: IssuesSearchPatch) =>
-    navigate({ search: patchSearch(search, patch) })
+    void navigate({ search: patchSearch(search, patch) })
 
   return (
     <IssuesContent
@@ -240,7 +240,7 @@ function IssuesPage() {
       loading={loading}
       onSearch={setSearch}
       onIssue={(fingerprint) =>
-        navigate({
+        void navigate({
           to: "/issues/$fingerprint",
           params: { fingerprint },
           search: rangeLinkSearch(range),

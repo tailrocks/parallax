@@ -295,7 +295,7 @@ function RunDetailPage() {
       range={range}
       activeTab={search.tab === "story" ? "story" : "overview"}
       onTab={(value) =>
-        navigate({
+        void navigate({
           search: (current) => ({
             ...current,
             tab: value === "story" ? "story" : undefined,

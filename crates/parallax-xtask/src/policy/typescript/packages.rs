@@ -12,7 +12,7 @@ pub(crate) fn package_imports(root: &Path) -> Result<BTreeSet<String>> {
     if ui.join("tests").is_dir() {
         collect_source_files(&ui.join("tests"), &mut files)?;
     }
-    for config in ["vite.config.ts", "eslint.config.js", "prettier.config.js"] {
+    for config in ["vite.config.ts", "prettier.config.js"] {
         let path = ui.join(config);
         if path.is_file() {
             files.push(path);

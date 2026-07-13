@@ -24,7 +24,7 @@ fn bun_policy_has_positive_and_negative_fixtures() {
     fs::create_dir_all(root.join("ui")).expect("fixture directory");
     fs::write(
         root.join("ui/package.json"),
-        r#"{"scripts":{"build":"bunx --bun --no-install vite build"}}"#,
+        r#"{"scripts":{"build":"bunx --bun --no-install vite build","lint":"bun run lint:native","typecheck":"bun ./node_modules/typescript/bin/tsc --noEmit"}}"#,
     )
     .expect("package fixture");
     fs::write(
@@ -35,11 +35,27 @@ fn bun_policy_has_positive_and_negative_fixtures() {
     let mut findings = Vec::new();
     check_bun(root, &mut findings).expect("positive fixture check");
     assert!(findings.is_empty());
+    fs::write(
+        root.join("ui/package.json"),
+        r#"{"scripts":{"build":"node ./node_modules/vite/bin/vite.js build"}}"#,
+    )
+    .expect("runtime-negative package fixture");
+    check_bun(root, &mut findings).expect("runtime-negative fixture check");
+    let rejects_node = findings
+        .iter()
+        .any(|finding| finding.rule_id == "product.bun");
+    findings.clear();
+    fs::write(
+        root.join("ui/package.json"),
+        r#"{"scripts":{"build":"bunx --bun --no-install vite build"}}"#,
+    )
+    .expect("restore positive package fixture");
     fs::write(root.join("ui/package-lock.json"), "{}").expect("negative fixture");
     check_bun(root, &mut findings).expect("negative fixture check");
     assert!(
-        findings
-            .iter()
-            .any(|finding| finding.rule_id == "product.bun")
+        rejects_node
+            && findings
+                .iter()
+                .any(|finding| finding.rule_id == "product.bun")
     );
 }

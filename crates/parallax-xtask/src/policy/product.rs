@@ -130,6 +130,7 @@ fn check_bun(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
                 | "check"
                 | "typecheck"
         ) && !command.starts_with("bunx --bun --no-install ")
+            && !command.starts_with("bun ")
         {
             findings.push(error(
                 "product.bun",

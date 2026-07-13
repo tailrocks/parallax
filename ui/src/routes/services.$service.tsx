@@ -351,7 +351,7 @@ function ServiceDetailPage() {
       data={data}
       range={range}
       onRange={(next) =>
-        navigate({
+        void navigate({
           search: (current) => mergeRangeSearch(current, next),
         })
       }
@@ -636,7 +636,7 @@ function RequestsChart({ red }: { red: SpanRed }) {
               axisLine={false}
               ticks={ticks}
               tickFormatter={(value, index) =>
-                makeEdgeTick(value, index, ticks)
+                makeEdgeTick(String(value), index, ticks)
               }
             />
             <YAxis tickLine={false} axisLine={false} width={48} />
@@ -711,7 +711,7 @@ function LatencyChart({
                 axisLine={false}
                 ticks={ticks}
                 tickFormatter={(value, index) =>
-                  makeEdgeTick(value, index, ticks)
+                  makeEdgeTick(String(value), index, ticks)
                 }
               />
               <YAxis tickLine={false} axisLine={false} width={48} />

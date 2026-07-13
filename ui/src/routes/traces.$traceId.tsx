@@ -621,7 +621,7 @@ function TracePage() {
             </SheetDescription>
           </SheetHeader>
           <div className="flex flex-col gap-4 px-6 pb-6">
-            <form onSubmit={runCompare}>
+            <form onSubmit={(event) => void runCompare(event)}>
               <FieldGroup className="gap-3">
                 <Field data-invalid={compareError ? true : undefined}>
                   <FieldLabel htmlFor="trace-compare-id">

@@ -64,7 +64,7 @@ function EcosystemPage() {
   const showSkeleton = useDelayedLoading(pending)
   const range = useMemo(
     () => resolveRangeSearch(search),
-    [search.range, search.from, search.to]
+    [search]
   )
 
   return (

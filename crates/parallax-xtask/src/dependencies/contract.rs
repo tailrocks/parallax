@@ -131,18 +131,10 @@ fn check_handoffs(policy: &toml::Value) -> Vec<Finding> {
 }
 
 pub(super) fn blocked_lifecycle(directory: &Path, report: &str) -> Result<Vec<Finding>> {
-    let expected = [
-        "./node_modules/unrs-resolver @1.12.2",
-        "[postinstall]: node postinstall.js",
-    ];
     let lock = std::fs::read_to_string(directory.join("bun.lock"))?;
-    let script =
-        std::fs::read_to_string(directory.join("node_modules/unrs-resolver/postinstall.js"))?;
-    let valid = expected.iter().all(|needle| report.contains(needle))
-        && report.matches("[postinstall]:").count() == 1
-        && lock.contains("unrs-resolver@1.12.2")
-        && lock.contains("sha512-dmlRxBJJayXjqTwC+JtF1HhJmgf3ftQ3YejFcZrf4+KKtJv0qDsK1pjqaaVjG7wJ5NJ6UVP1OqRMQ71Z4C3rxQ==")
-        && script.contains("checkAndPreparePackage(packageJson, true)");
+    let valid = !report.contains("[postinstall]:")
+        && !lock.contains("unrs-resolver@")
+        && !directory.join("node_modules/unrs-resolver").exists();
     Ok(if valid {
         Vec::new()
     } else {

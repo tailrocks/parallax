@@ -254,7 +254,7 @@ function ServicesPage() {
   const pending = useDelayedLoading(routerLoading)
 
   const setSearch = (patch: ServicesSearchPatch) =>
-    navigate({ search: patchSearch(search, patch) })
+    void navigate({ search: patchSearch(search, patch) })
 
   return (
     <ServicesIndexContent

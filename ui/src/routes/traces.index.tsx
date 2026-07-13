@@ -185,7 +185,7 @@ export function traceSortToParam(sort?: TraceSort): string | undefined {
       return "spans:desc"
     case "START_DESC":
       return "when:desc"
-    default:
+    case undefined:
       return undefined
   }
 }
@@ -325,7 +325,7 @@ function TracesPage() {
   const page = search.page ?? 1
   const range = useMemo(
     () => resolveRangeSearch(search),
-    [search.range, search.from, search.to]
+    [search]
   )
   const total = toNumber(tracesPage.total)
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
@@ -364,7 +364,7 @@ function TracesPage() {
     if (search.errors) params.set("errors_only", "true")
     if (search.q?.trim()) params.set("q", search.q.trim())
     return `/v1/traces/stream?${params}`
-  }, [live, search.service, search.errors, search.minMs, search.q])
+  }, [live, search])
 
   // Preserve prior behavior: clear the live buffer when the stream URL changes.
   useEffect(() => {

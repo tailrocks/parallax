@@ -162,7 +162,7 @@ function IssueDetailPage() {
       data={data}
       range={range}
       onRange={(next) =>
-        navigate({
+        void navigate({
           search: (current) => mergeRangeSearch(current, next),
         })
       }
@@ -205,6 +205,8 @@ export function IssueDetailContent({
   const [bucket, setBucket] = useState<string | null>(null)
   const [bucketEvents, setBucketEvents] = useState<IssueEvent[] | null>(null)
   const occurrencesRef = useRef<HTMLDivElement>(null)
+  const bucketRequestRef = useRef<string | null>(null)
+
   const issuesBack = navItem("/issues")!
 
   if (!issue) {
@@ -236,8 +238,6 @@ export function IssueDetailContent({
       setMutating(false)
     }
   }
-
-  const bucketRequestRef = useRef<string | null>(null)
 
   async function filterBucket(tsNanos: string | null) {
     setActionError(null)
@@ -375,7 +375,7 @@ export function IssueDetailContent({
 
       <TrendChart
         trend={issueTrend}
-        onBucket={filterBucket}
+        onBucket={(tsNanos) => void filterBucket(tsNanos)}
         activeBucket={bucket}
       />
 

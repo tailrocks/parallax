@@ -448,7 +448,7 @@ export function DashboardCreateDialog({
         <DialogFooter>
           <Button
             disabled={!name.trim() || widgets.every((widget) => !widget.metric)}
-            onClick={create}
+            onClick={() => void create()}
           >
             Create
           </Button>

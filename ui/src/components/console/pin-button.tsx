@@ -67,7 +67,7 @@ export function PinButton({
       .then((data) => {
         if (!ignore) setInvestigations(data.investigations)
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         if (!ignore) setError(err instanceof Error ? err.message : String(err))
       })
       .finally(() => {

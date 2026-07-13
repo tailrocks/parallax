@@ -224,7 +224,7 @@ function RunsPage() {
       const value = raw[key]
       if (value != null && value !== "") Object.assign(next, { [key]: value })
     }
-    navigate({ search: next })
+    void navigate({ search: next })
   }
   return (
     <RunsContent
@@ -233,7 +233,7 @@ function RunsPage() {
       range={range}
       onSearch={setSearch}
       onRun={(runId) =>
-        navigate({
+        void navigate({
           to: "/runs/$runId",
           params: { runId },
           search: rangeLinkSearch(range),
