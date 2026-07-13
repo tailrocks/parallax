@@ -48,6 +48,7 @@ parallax-storage = { path = "crates/parallax-storage" }
 parallax-test-support = { path = "crates/parallax-test-support" }
 
 anyhow = "1"
+addr2line = { version = "0.27.0", default-features = false, features = ["loader"] }
 arrow = { version = "59", default-features = false, features = ["ipc"] }
 arrow-ipc = { version = "59", default-features = false, features = ["zstd"] }
 async-trait = "0.1"
@@ -86,6 +87,7 @@ futures-util = "0.3"
 flate2 = "1.1.9"
 toml = "1"
 tar = { version = "0.4.46", default-features = false }
+tempfile = "3"
 time = { version = "0.3.48", features = ["parsing", "macros"] }
 thiserror = "2.0.18"
 tonic = { version = "0.14", features = ["gzip"] }

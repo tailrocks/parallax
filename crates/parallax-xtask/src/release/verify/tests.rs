@@ -22,6 +22,23 @@ fn local_verification_rejects_metadata_version_and_missing_bundle()
     std::fs::write(bundle_path(&archive_path), b"bundle fixture")?;
     let mut spec = spec(archive_path.clone(), target, env!("CARGO_PKG_VERSION"));
     let valid = local(&spec).is_ok();
+    let mut corrupt_debug = std::fs::read(&fixture_binary)?;
+    let line_range = {
+        let object = object::File::parse(corrupt_debug.as_slice())?;
+        object
+            .sections()
+            .find(|section| {
+                section
+                    .name()
+                    .is_ok_and(|name| matches!(name, ".debug_line" | "__debug_line"))
+            })
+            .and_then(|section| section.file_range())
+            .ok_or("debug line section has no file range")?
+    };
+    let start = usize::try_from(line_range.0)?;
+    let end = start + usize::try_from(line_range.1)?;
+    corrupt_debug[start..end].fill(0);
+    let bad_debug = verify_object(&corrupt_debug, target, env!("CARGO_PKG_VERSION")).is_err();
     spec.source_epoch += 1;
     let bad_epoch = local(&spec).is_err();
     spec.source_epoch -= 1;
@@ -31,8 +48,8 @@ fn local_verification_rejects_metadata_version_and_missing_bundle()
     std::fs::remove_file(bundle_path(&archive_path))?;
     let missing_bundle = local(&spec).is_err();
 
-    let actual = (valid, bad_epoch, bad_version, missing_bundle);
-    if actual != (true, true, true, true) {
+    let actual = (valid, bad_debug, bad_epoch, bad_version, missing_bundle);
+    if actual != (true, true, true, true, true) {
         return Err(format!("local release verification mismatch: {actual:?}").into());
     }
     Ok(())

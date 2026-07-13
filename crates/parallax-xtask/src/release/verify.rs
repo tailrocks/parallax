@@ -1,11 +1,11 @@
 use std::ffi::OsStr;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use anyhow::{Context, Result, bail, ensure};
+use anyhow::{Context, Result, anyhow, bail, ensure};
 use flate2::read::GzDecoder;
-use object::{Architecture, BinaryFormat, Object, ObjectSection};
+use object::{Architecture, BinaryFormat, Object, ObjectSection, ObjectSymbol, SymbolKind};
 use serde_json::Value;
 use tar::EntryType;
 
@@ -182,6 +182,7 @@ fn verify_object(binary: &[u8], target: &str, version: &str) -> Result<()> {
         object.symbol_table().is_some(),
         "release binary is missing its symbol table"
     );
+    verify_symbolication(binary, &object)?;
     let identity = format!("parallax-release-identity:{version}");
     ensure!(
         binary
@@ -190,6 +191,28 @@ fn verify_object(binary: &[u8], target: &str, version: &str) -> Result<()> {
         "release binary does not contain expected identity `{identity}`"
     );
     Ok(())
+}
+
+fn verify_symbolication(binary: &[u8], object: &object::File<'_>) -> Result<()> {
+    let mut executable = tempfile::NamedTempFile::new().context("create symbolication fixture")?;
+    executable
+        .write_all(binary)
+        .context("write symbolication fixture")?;
+    executable.flush().context("flush symbolication fixture")?;
+    let loader = addr2line::Loader::new(executable.path())
+        .map_err(|error| anyhow!("load release debug data: {error}"))?;
+    for symbol in object.symbols().filter(|symbol| {
+        symbol.kind() == SymbolKind::Text && symbol.is_definition() && symbol.address() != 0
+    }) {
+        if loader
+            .find_location(symbol.address())
+            .map_err(|error| anyhow!("resolve release symbol source location: {error}"))?
+            .is_some_and(|location| location.file.is_some() && location.line.is_some())
+        {
+            return Ok(());
+        }
+    }
+    bail!("release line tables cannot resolve any text symbol to a source line")
 }
 
 fn run(program: &str, arguments: &[&OsStr]) -> Result<()> {
