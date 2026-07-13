@@ -45,12 +45,21 @@ pub(super) struct Generated {
 pub(super) struct Product {
     #[serde(default)]
     pub clone_floors: Vec<CloneFloor>,
+    #[serde(default)]
+    pub anyhow_edges: Vec<AnyhowEdge>,
 }
 
 #[derive(Debug, Deserialize)]
 pub(super) struct CloneFloor {
     pub path: String,
     pub ceiling: usize,
+}
+
+#[derive(Debug, Deserialize)]
+pub(super) struct AnyhowEdge {
+    pub path: String,
+    pub ceiling: usize,
+    pub reason: String,
 }
 
 #[derive(Debug, Default, Deserialize)]

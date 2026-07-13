@@ -11,6 +11,7 @@ use crate::diagnostic::Finding;
 
 use super::config::Ratchet;
 
+mod anyhow_edges;
 mod toolchain;
 
 pub(super) fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
@@ -20,6 +21,7 @@ pub(super) fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Find
     check_native_tables(root, &mut findings)?;
     check_composition(root, &mut findings)?;
     check_clone_floors(root, ratchet, &mut findings)?;
+    anyhow_edges::check(root, ratchet, &mut findings)?;
     check_ingest_logging(root, &mut findings)?;
     check_self_telemetry(root, &mut findings)?;
     Ok(findings)
@@ -292,7 +294,7 @@ fn string_literals(path: &Path) -> Result<Vec<String>> {
     Ok(visitor.values)
 }
 
-fn error(rule: &str, path: impl AsRef<Path>, reason: &str) -> Finding {
+pub(super) fn error(rule: &str, path: impl AsRef<Path>, reason: &str) -> Finding {
     Finding::error(
         rule,
         &path.as_ref().to_string_lossy(),

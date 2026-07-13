@@ -287,6 +287,131 @@ drift_check = "git diff --exit-code -- ui/src/routeTree.gen.ts"
 path = "crates/parallax-server/src/worker.rs"
 ceiling = 8
 
+[[product.anyhow_edges]]
+path = "crates/parallax-greptime/src/arrow_sql.rs"
+ceiling = 19
+reason = "private Arrow decode composition preserves field-level context before the typed storage port"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-greptime/src/greptime/analytics_helpers.rs"
+ceiling = 4
+reason = "private multi-query analytics composition is converted at the typed storage port"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-greptime/src/greptime/lifecycle.rs"
+ceiling = 10
+reason = "adapter bootstrap and verified migration composition is mapped to typed server startup"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-greptime/src/greptime/query_sql.rs"
+ceiling = 2
+reason = "private Greptime error-chain classifiers inspect adapter sources"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-greptime/src/greptime/signal_analytics.rs"
+ceiling = 4
+reason = "private concurrent query joins are converted at typed capability methods"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-greptime/src/greptime/signal_queries.rs"
+ceiling = 2
+reason = "private query assembly is converted at typed capability methods"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-greptime/src/greptime/trace_analytics.rs"
+ceiling = 5
+reason = "private trace analytics conversions are converted at the typed port"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-greptime/src/greptime/transport.rs"
+ceiling = 19
+reason = "HTTP SQL transport composes protocol decode context behind typed storage capabilities"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-metadata/src/turso.rs"
+ceiling = 9
+reason = "Turso transaction composition is converted by the typed metadata port"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-metadata/src/turso/connection.rs"
+ceiling = 1
+reason = "top-level adapter construction preserves Turso build and migration sources"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-metadata/src/turso/occurrences.rs"
+ceiling = 2
+reason = "private atomic occurrence-ledger helpers compose Turso statements"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-metadata/src/turso/runs.rs"
+ceiling = 5
+reason = "private Turso run persistence is converted by the typed metadata port"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-metadata/src/turso/saved_state.rs"
+ceiling = 12
+reason = "private Turso saved-state persistence is converted by the typed metadata port"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-server/src/engine_io.rs"
+ceiling = 2
+reason = "managed-engine archive installation is top-level lifecycle composition"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-server/src/errors.rs"
+ceiling = 6
+reason = "typed server errors retain erased top-level lifecycle source chains"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-server/src/greptime_supervisor.rs"
+ceiling = 14
+reason = "managed-engine download process and health orchestration is top-level lifecycle composition"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-server/src/outcomes.rs"
+ceiling = 1
+reason = "server startup composes spool open context before mapping to ServerError"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-server/src/self_telemetry.rs"
+ceiling = 1
+reason = "optional top-level telemetry subscriber installation composes vendor errors"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-server/src/serve.rs"
+ceiling = 1
+reason = "private Greptime connect/bootstrap composition maps immediately to ServerError"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-spool/src/spool.rs"
+ceiling = 2
+reason = "filesystem spool construction preserves multi-step operator context"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-spool/src/spool/append.rs"
+ceiling = 4
+reason = "filesystem append and rotation composition preserves path and IO context"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-spool/src/spool/framing.rs"
+ceiling = 2
+reason = "private frame decoding composes IO and format sources"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-spool/src/spool/retention.rs"
+ceiling = 4
+reason = "private retention scan and removal composition preserves filesystem sources"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-storage/src/adapter/error.rs"
+ceiling = 11
+reason = "typed StorageError variants retain erased adapter-specific source chains"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-storage/src/metadata.rs"
+ceiling = 5
+reason = "typed MetadataError variants retain erased adapter-specific source chains"
+
 [architecture]
 
 [[architecture.packages]]
