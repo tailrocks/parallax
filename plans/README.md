@@ -76,7 +76,7 @@ Every plan must preserve these non-negotiable Parallax constraints:
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [128](128-typescript-static-and-runtime-safety.md) | Enforce strict TypeScript static safety | P1 | L | 095, 101, 131 | IN PROGRESS |
+| [128](128-typescript-static-and-runtime-safety.md) | Enforce strict TypeScript static safety | P1 | L | 095, 101, 131 | BLOCKED |
 | [129](129-frontend-test-architecture.md) | Build deterministic forced-Bun Vitest characterization and separated test ownership | P1 | L | 094, 101, 128 | TODO |
 | [100](100-ui-feature-architecture.md) | Establish the TypeScript layer graph, ownership ledger, facades, and placement policy | P1 | L | 095, 101, 128, 129 | TODO |
 | [152](152-graphql-contract-foundation.md) | Establish the generated GraphQL contract foundation | P1 | L | 095, 100, 101, 128, 129, 130 | TODO |

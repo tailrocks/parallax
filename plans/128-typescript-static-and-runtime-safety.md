@@ -21,7 +21,9 @@
 - **Depends on**: 095, 101, 131
 - **Category**: TypeScript / compiler / static safety
 - **Planned at**: `e3e7997`, revised 2026-07-12
-- **Status**: IN PROGRESS
+- **Status**: BLOCKED — latest stable third-party declarations fail TypeScript
+  7 full checking; see
+  [`docs/research/validation/2026-07-13-plan-128-declaration-blocker.md`](../docs/research/validation/2026-07-13-plan-128-declaration-blocker.md)
 
 ## Why This Matters
 
