@@ -3,6 +3,7 @@
 //! (:4317), and the ingest worker connecting receivers to storage.
 
 use crate::config::Config;
+use crate::errors::{ServerError, ServerResult};
 use crate::otlp_grpc::OtlpGrpc;
 use crate::otlp_http;
 use crate::worker::{self, IngestSenders, Worker};
@@ -125,21 +126,21 @@ fn spawn_spool_reaper(
 /// Storage mode (config `[storage] mode`): `managed` supervises a local
 /// GreptimeDB standalone child on the shifted ports; `external` uses
 /// `greptime_url`. No product fallback store exists.
-pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
+pub async fn start(config: &Config) -> ServerResult<ServerHandle> {
     config.validate()?;
     let data_dir = config.data_dir();
-    tokio::fs::create_dir_all(&data_dir).await?;
+    tokio::fs::create_dir_all(&data_dir)
+        .await
+        .map_err(|source| ServerError::Filesystem { source })?;
 
     let mut supervisor = None;
     let store: Arc<dyn TelemetryStore> = match config.storage.mode.as_str() {
         "external" => {
             let url = &config.storage.greptime_url;
-            anyhow::ensure!(
-                !url.is_empty(),
-                "storage.mode=external requires greptime_url"
-            );
             tracing::info!("connecting to external GreptimeDB at {url}");
-            let store = connect_greptime(url, config).await?;
+            let store = connect_greptime(url, config)
+                .await
+                .map_err(ServerError::storage)?;
             tracing::info!("storage ready (external engine)");
             store
         }
@@ -149,21 +150,27 @@ pub async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
                 &config.storage.greptime_version,
                 true,
             )
-            .await?;
-            let started =
-                crate::greptime_supervisor::GreptimeSupervisor::start(binary, &data_dir).await?;
+            .await
+            .map_err(ServerError::lifecycle)?;
+            let started = crate::greptime_supervisor::GreptimeSupervisor::start(binary, &data_dir)
+                .await
+                .map_err(ServerError::lifecycle)?;
             let url = started.http_url.clone();
             supervisor = Some(started);
             tracing::info!("bootstrapping telemetry tables");
-            let store = connect_greptime(&url, config).await?;
+            let store = connect_greptime(&url, config)
+                .await
+                .map_err(ServerError::storage)?;
             tracing::info!("storage ready (managed engine)");
             store
         }
-        mode => anyhow::bail!(
-            "unsupported storage.mode {mode:?}; supported values are \"managed\" and \"external\""
-        ),
+        _ => unreachable!("configuration validation accepts only supported storage modes"),
     };
-    let metadata = Arc::new(TursoMetadataStore::open(data_dir.join("meta.db")).await?);
+    let metadata = Arc::new(
+        TursoMetadataStore::open(data_dir.join("meta.db"))
+            .await
+            .map_err(|source| ServerError::Metadata { source })?,
+    );
     start_assembled(config, store, metadata, supervisor).await
 }
 
@@ -174,7 +181,7 @@ pub async fn start_with_capabilities(
     config: &Config,
     store: Arc<dyn TelemetryStore>,
     metadata: Arc<dyn MetadataStore>,
-) -> anyhow::Result<ServerHandle> {
+) -> ServerResult<ServerHandle> {
     start_assembled(config, store, metadata, None).await
 }
 
@@ -183,6 +190,20 @@ struct RouterState {
     metadata: Arc<dyn MetadataStore>,
     grpc_port: u16,
     api_addr: SocketAddr,
+}
+
+async fn bind_listener(
+    bind: &str,
+    port: u16,
+    surface: &'static str,
+) -> ServerResult<(TcpListener, SocketAddr)> {
+    let listener = TcpListener::bind((bind, port))
+        .await
+        .map_err(|source| ServerError::Bind { surface, source })?;
+    let addr = listener
+        .local_addr()
+        .map_err(|source| ServerError::Bind { surface, source })?;
+    Ok((listener, addr))
 }
 
 fn build_api_router(
@@ -245,11 +266,14 @@ async fn start_assembled(
     store: Arc<dyn TelemetryStore>,
     metadata: Arc<dyn MetadataStore>,
     supervisor: Option<crate::greptime_supervisor::GreptimeSupervisor>,
-) -> anyhow::Result<ServerHandle> {
+) -> ServerResult<ServerHandle> {
     let data_dir = config.data_dir();
-    tokio::fs::create_dir_all(&data_dir).await?;
-    let spool =
-        crate::outcomes::open_spool(&data_dir, config.retention.spool_max_segment_bytes).await?;
+    tokio::fs::create_dir_all(&data_dir)
+        .await
+        .map_err(|source| ServerError::Filesystem { source })?;
+    let spool = crate::outcomes::open_spool(&data_dir, config.retention.spool_max_segment_bytes)
+        .await
+        .map_err(|source| ServerError::Spool { source })?;
 
     let queue_batches = config.limits.ingest_queue_batches.max(1);
     let (senders, receivers) = worker::channels(queue_batches);
@@ -276,16 +300,12 @@ async fn start_assembled(
     ));
 
     let bind = &config.server.bind;
-    let api_listener = TcpListener::bind((bind.as_str(), config.server.api_port)).await?;
-    let api_addr = api_listener.local_addr()?;
-
-    let otlp_http_listener =
-        TcpListener::bind((bind.as_str(), config.server.otlp_http_port)).await?;
-    let otlp_http_addr = otlp_http_listener.local_addr()?;
-
-    let otlp_grpc_listener =
-        TcpListener::bind((bind.as_str(), config.server.otlp_grpc_port)).await?;
-    let otlp_grpc_addr = otlp_grpc_listener.local_addr()?;
+    let (api_listener, api_addr) =
+        bind_listener(bind, config.server.api_port, "API listener").await?;
+    let (otlp_http_listener, otlp_http_addr) =
+        bind_listener(bind, config.server.otlp_http_port, "OTLP/HTTP listener").await?;
+    let (otlp_grpc_listener, otlp_grpc_addr) =
+        bind_listener(bind, config.server.otlp_grpc_port, "OTLP/gRPC listener").await?;
 
     let api_router = build_api_router(
         config,

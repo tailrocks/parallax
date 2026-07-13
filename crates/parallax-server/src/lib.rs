@@ -26,6 +26,7 @@
 
 mod config;
 mod engine_io;
+mod errors;
 #[expect(
     clippy::cast_possible_truncation,
     clippy::cast_precision_loss,
@@ -47,6 +48,9 @@ mod worker;
 
 pub use config::{
     Config, LimitsConfig, RetentionConfig, ServerConfig, StorageConfig, TelemetryConfig,
+};
+pub use errors::{
+    ConfigError, ConfigErrorKind, ConfigResult, ServerError, ServerErrorKind, ServerResult,
 };
 pub use greptime_supervisor::{GreptimeSupervisor, ensure_binary as ensure_greptime_binary};
 pub use self_telemetry::{

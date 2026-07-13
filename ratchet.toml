@@ -1914,6 +1914,11 @@ ceiling = 2
 
 [[limits]]
 metric = "rust.assertions"
+scope = "crates/parallax-server/src/errors/tests.rs"
+ceiling = 4
+
+[[limits]]
+metric = "rust.assertions"
 scope = "crates/parallax-server/src/greptime_supervisor/tests.rs"
 ceiling = 4
 

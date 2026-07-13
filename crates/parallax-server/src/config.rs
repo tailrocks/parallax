@@ -3,6 +3,8 @@
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
+use crate::errors::{ConfigError, ConfigResult};
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Config {
@@ -125,25 +127,33 @@ impl Default for LimitsConfig {
 
 impl Config {
     /// Load from a config file if present, else defaults.
-    pub fn load(path: Option<&Path>) -> anyhow::Result<Self> {
+    pub fn load(path: Option<&Path>) -> ConfigResult<Self> {
         let config = match path {
-            Some(p) if p.exists() => toml::from_str(&std::fs::read_to_string(p)?)?,
+            Some(p) if p.exists() => {
+                let text = std::fs::read_to_string(p).map_err(|source| ConfigError::Read {
+                    path: p.to_path_buf(),
+                    source,
+                })?;
+                toml::from_str(&text)?
+            }
             _ => Self::default(),
         };
         config.validate()?;
         Ok(config)
     }
 
-    pub fn validate(&self) -> anyhow::Result<()> {
-        anyhow::ensure!(
-            matches!(self.storage.mode.as_str(), "managed" | "external"),
-            "unsupported storage.mode {:?}; supported values are \"managed\" and \"external\"",
-            self.storage.mode
-        );
-        anyhow::ensure!(
-            self.storage.mode != "external" || !self.storage.greptime_url.trim().is_empty(),
-            "storage.mode=external requires greptime_url"
-        );
+    pub fn validate(&self) -> ConfigResult<()> {
+        if !matches!(self.storage.mode.as_str(), "managed" | "external") {
+            return Err(ConfigError::Invalid(format!(
+                "unsupported storage.mode {:?}; supported values are \"managed\" and \"external\"",
+                self.storage.mode
+            )));
+        }
+        if self.storage.mode == "external" && self.storage.greptime_url.trim().is_empty() {
+            return Err(ConfigError::Invalid(
+                "storage.mode=external requires greptime_url".to_string(),
+            ));
+        }
         Ok(())
     }
 

@@ -10,5 +10,5 @@ pub(crate) async fn start(config: &Config) -> anyhow::Result<ServerHandle> {
         Arc::new(parallax_ingest::normalize_logs),
     ));
     let metadata = Arc::new(TursoMetadataStore::open(config.data_dir().join("meta.db")).await?);
-    parallax_server::start_with_capabilities(config, store, metadata).await
+    Ok(parallax_server::start_with_capabilities(config, store, metadata).await?)
 }

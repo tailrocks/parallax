@@ -3,6 +3,7 @@ schema_version = 1
 [roots]
 "lib.rs" = [
     "use config::{Config, LimitsConfig, RetentionConfig, ServerConfig, StorageConfig, TelemetryConfig ,}",
+    "use errors::{ConfigError, ConfigErrorKind, ConfigResult, ServerError, ServerErrorKind, ServerResult ,}",
     "use greptime_supervisor::{GreptimeSupervisor, ensure_binary as ensure_greptime_binary}",
     "use self_telemetry::{Installed as InstalledSelfTelemetry, SelfTelemetry, install as install_self_telemetry, resolve_endpoint as resolve_self_telemetry_endpoint ,}",
     "use serve::{ServerHandle, start, start_with_capabilities}",
