@@ -2,6 +2,7 @@ mod cli;
 mod command;
 mod dependencies;
 pub mod diagnostic;
+mod docs_links;
 mod facade;
 mod nextest_evidence;
 mod policy;

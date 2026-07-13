@@ -11,6 +11,7 @@ fn parses_every_initial_command() {
         vec!["xtask", "test"],
         vec!["xtask", "ui"],
         vec!["xtask", "integration"],
+        vec!["xtask", "docs", "links"],
         vec!["xtask", "policy"],
         vec!["xtask", "policy", "--only", "architecture"],
         vec!["xtask", "arch"],

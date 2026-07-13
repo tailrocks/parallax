@@ -7,9 +7,9 @@ quality, least privilege, supply-chain integrity, and prompt incident response.
 
 This file records standing policy, not an implementation checklist. Unfinished
 repository-security and required-check automation is owned only by
-[plan 094](plans/094-ci-and-security-foundation.md). Dependency, license, source,
+[Plan 094 validation](docs/research/validation/2026-07-12-plan-094-ci-security.md). Dependency, license, source,
 and advisory hygiene is owned only by
-[plan 101](plans/101-dependencies-nextest-and-hygiene.md).
+[Plan 101 validation](docs/research/validation/2026-07-12-plan-101-dependency-baseline.md).
 
 ## Standing Requirements
 

@@ -4,7 +4,7 @@ Status: **shipped design record**. The historical plan 033 implementation now
 normalizes number/histogram exemplars, persists them in the
 `metric_exemplars` extension table, and exposes bounded API reads. The remaining
 schema correction is active only in
-[`plans/092-metric-exemplar-schema.md`](../../../plans/092-metric-exemplar-schema.md):
+[Plan 092 closure](https://github.com/tailrocks/parallax/commit/953409b):
 remove high-cardinality trace/span identifiers from the primary key and migrate
 existing data. The design rationale below describes the adopted shape, not an
 unfinished implementation plan.

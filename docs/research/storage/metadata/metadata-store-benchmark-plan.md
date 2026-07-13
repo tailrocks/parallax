@@ -9,7 +9,7 @@ Research date: 2026-05-25
 > SQLite are comparison baselines only; no result can activate a product
 > fallback or adapter. Failures create Turso/Parallax fix-forward work. Contract
 > cleanup belongs to
-> [`plans/093-contract-and-baseline-corrections.md`](../../../../plans/093-contract-and-baseline-corrections.md),
+> [Plan 093 validation](../../validation/2026-07-12-plan-093-baseline/README.md),
 > and supported server operations belong to
 > [`plans/115-v2-server-profile.md`](../../../../plans/115-v2-server-profile.md).
 

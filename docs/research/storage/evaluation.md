@@ -12,7 +12,7 @@ Research date: 2026-05-25
 > express capabilities and test boundaries, not engine replaceability. Historical
 > candidate-selection language below is retained only to explain the benchmark.
 > Contract cleanup belongs to
-> [`plans/093-contract-and-baseline-corrections.md`](../../../plans/093-contract-and-baseline-corrections.md);
+> [Plan 093 validation](../validation/2026-07-12-plan-093-baseline/README.md);
 > server-profile work belongs to
 > [`plans/115-v2-server-profile.md`](../../../plans/115-v2-server-profile.md).
 

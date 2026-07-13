@@ -13,7 +13,8 @@ architecture/product policy, structural ratchets, and facade/doc validation.
 
 ## Owned concerns
 
-Repository policy, architecture, facade, dependency, health, and CI orchestration.
+Repository policy, architecture, facade, dependency, internal Markdown link
+integrity, health, and CI orchestration.
 
 ## Source map
 
@@ -21,6 +22,7 @@ Repository policy, architecture, facade, dependency, health, and CI orchestratio
 - [src/main.rs](src/main.rs)
 - [src/policy.rs](src/policy.rs)
 - [src/facade.rs](src/facade.rs)
+- [src/docs_links.rs](src/docs_links.rs)
 - [Reviewed facade manifest](facade.toml)
 
 ## Public surface
@@ -31,5 +33,6 @@ compatibility surface.
 
 ## Verification
 
-Run `cargo test -p parallax-xtask --all-features` for the narrow crate gate and `cargo xtask facade check` for
-root-surface drift.
+Run `cargo test -p parallax-xtask --all-features` for the narrow crate gate,
+`cargo xtask facade check` for root-surface drift, and
+`cargo xtask docs links` for tracked internal Markdown link integrity.

@@ -30,6 +30,7 @@ jobs:
       advisory: ${{ steps.dispatch.outputs.advisory || steps.filter.outputs.advisory }}
       release: ${{ steps.dispatch.outputs.release || steps.filter.outputs.release }}
       security: ${{ steps.dispatch.outputs.security || steps.filter.outputs.security }}
+      docs: ${{ steps.dispatch.outputs.docs || steps.filter.outputs.docs }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -47,6 +48,7 @@ jobs:
             echo "advisory=true"
             echo "release=true"
             echo "security=true"
+            echo "docs=true"
           } >> "$GITHUB_OUTPUT"
 
       - name: Classify changed paths
@@ -173,6 +175,30 @@ jobs:
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
       - run: rustup component add rustfmt
       - run: cargo fmt --all -- --check
+
+  docs-links:
+    needs: changes
+    if: needs.changes.outputs.docs == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Cache Cargo registry
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ~/.cargo/registry/cache
+            ~/.cargo/registry/index
+            ~/.cargo/registry/src
+          key: cargo-registry-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: cargo-registry-${{ runner.os }}-${{ runner.arch }}-
+      - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
+        with:
+          install_args: "rust"
+          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+      - run: cargo xtask docs links --output github
 
   audit:
     needs: changes
@@ -600,7 +626,7 @@ jobs:
             target/nextest/ci/summary.log
           if-no-files-found: error
   ci-required:
-    needs: [changes, actionlint, source-hygiene, security-hygiene, policy, fmt, audit, check, clippy, test, ui, ui-formatter-platform, embed, native-macos]
+    needs: [changes, actionlint, source-hygiene, security-hygiene, policy, fmt, docs-links, audit, check, clippy, test, ui, ui-formatter-platform, embed, native-macos]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 10

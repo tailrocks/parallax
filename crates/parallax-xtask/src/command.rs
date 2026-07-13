@@ -2,8 +2,9 @@ use std::{path::Path, process::Command as Process};
 
 use anyhow::{Context, Result, bail};
 
-use crate::cli::{Cli, Command, FacadeAction};
+use crate::cli::{Cli, Command, DocsAction, FacadeAction};
 use crate::dependencies::{self, Selection};
+use crate::docs_links;
 use crate::facade;
 use crate::nextest_evidence;
 use crate::policy;
@@ -18,6 +19,7 @@ pub(crate) fn execute(cli: Cli) -> Result<()> {
                     "lint" => lint(&root)?,
                     "policy" => policy::run(&root, None, cli.output)?,
                     "facade" => facade::check(&root)?,
+                    "docs-links" => docs_links::run(&root, cli.output)?,
                     "ui" => ui(&root)?,
                     "test" => test(&root)?,
                     "integration" => integration(&root)?,
@@ -31,6 +33,7 @@ pub(crate) fn execute(cli: Cli) -> Result<()> {
         Command::Test => test(&root),
         Command::Ui => ui(&root),
         Command::Integration => integration(&root),
+        Command::Docs { action } => execute_docs(&root, action, cli.output),
         Command::Policy { only } => policy::run(&root, only.as_deref(), cli.output),
         Command::Arch => policy::run(&root, Some("architecture"), cli.output),
         Command::Dependencies { rust, ui, all } => {
@@ -39,6 +42,12 @@ pub(crate) fn execute(cli: Cli) -> Result<()> {
         Command::NextestEvidence { profile } => nextest_evidence::run(&root, &profile, cli.output),
         Command::Health => policy::health(&root, cli.output),
         Command::Facade { action } => execute_facade(&root, action),
+    }
+}
+
+fn execute_docs(root: &Path, action: DocsAction, output: crate::cli::Output) -> Result<()> {
+    match action {
+        DocsAction::Links => docs_links::run(root, output),
     }
 }
 
@@ -59,7 +68,7 @@ fn dependency_selection(rust: bool, ui: bool, all: bool) -> Selection {
 }
 
 fn ci_partitions(full: bool) -> Vec<&'static str> {
-    let mut partitions = vec!["lint", "policy", "facade", "ui"];
+    let mut partitions = vec!["lint", "policy", "facade", "docs-links", "ui"];
     if full {
         partitions.extend(["test", "integration", "dependencies"]);
     }

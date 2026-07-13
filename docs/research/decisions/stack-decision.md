@@ -10,7 +10,7 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > other engines are research comparators only; component gates cannot activate a
 > fallback. Storage/metadata traits are capability and test boundaries, not
 > substitution promises. Contract cleanup belongs to
-> [`plans/093-contract-and-baseline-corrections.md`](../../../plans/093-contract-and-baseline-corrections.md),
+> [Plan 093 validation](../validation/2026-07-12-plan-093-baseline/README.md),
 > and supported server-profile work belongs to
 > [`plans/115-v2-server-profile.md`](../../../plans/115-v2-server-profile.md).
 >

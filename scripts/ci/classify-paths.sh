@@ -7,10 +7,16 @@ workflows=false
 advisory=false
 release=false
 security=false
+docs=false
 
 classify() {
   local path=$1
 
+  case "$path" in
+    *.md|Cargo.toml|Cargo.lock|rust-toolchain.toml|crates/parallax-xtask/Cargo.toml|crates/parallax-xtask/src/docs_links.rs|crates/parallax-xtask/src/cli.rs|crates/parallax-xtask/src/command.rs|crates/parallax-xtask/src/lib.rs|.github/workflows/ci.yml|scripts/ci/classify-paths.sh|scripts/ci/test-classify-paths.sh|scripts/ci/test-workflow-policy.sh)
+      docs=true
+      ;;
+  esac
   case "$path" in
     .cargo/*|Cargo.toml|Cargo.lock|rust-toolchain.toml|ratchet.toml|crates/*|poc/*)
       rust=true
@@ -71,3 +77,4 @@ printf 'workflows=%s\n' "$workflows"
 printf 'advisory=%s\n' "$advisory"
 printf 'release=%s\n' "$release"
 printf 'security=%s\n' "$security"
+printf 'docs=%s\n' "$docs"

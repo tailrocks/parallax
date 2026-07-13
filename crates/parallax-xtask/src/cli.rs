@@ -33,6 +33,11 @@ pub(crate) enum Command {
     Ui,
     /// Run the distinct Rust doctest integration partition.
     Integration,
+    /// Validate repository documentation.
+    Docs {
+        #[command(subcommand)]
+        action: DocsAction,
+    },
     /// Enforce all required repository policies or one named rule family.
     Policy {
         #[arg(long)]
@@ -62,6 +67,12 @@ pub(crate) enum Command {
         #[command(subcommand)]
         action: FacadeAction,
     },
+}
+
+#[derive(Debug, Subcommand)]
+pub(crate) enum DocsAction {
+    /// Validate every tracked internal Markdown link and fragment.
+    Links,
 }
 
 #[derive(Debug, Subcommand)]

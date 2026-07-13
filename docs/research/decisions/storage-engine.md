@@ -12,7 +12,7 @@ Decision date baseline: 2026-05-29. Operator confirmations followed on
 > Storage and metadata traits are capability, ownership, and test boundaries;
 > they do not promise engine substitution. The in-memory adapter is test/dev
 > support only. Contract cleanup is owned by
-> [`plans/093-contract-and-baseline-corrections.md`](../../../plans/093-contract-and-baseline-corrections.md),
+> [Plan 093 validation](../validation/2026-07-12-plan-093-baseline/README.md),
 > and any supported server profile is owned by
 > [`plans/115-v2-server-profile.md`](../../../plans/115-v2-server-profile.md).
 >

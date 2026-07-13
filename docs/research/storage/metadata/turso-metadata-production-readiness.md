@@ -9,7 +9,7 @@ Research date: 2026-05-25
 > Parallax or upstream, never switch to Postgres, libSQL, SQLite, or another
 > engine. Postgres rows below are preserved as dated comparator evidence only.
 > Product contract cleanup is owned by
-> [`plans/093-contract-and-baseline-corrections.md`](../../../../plans/093-contract-and-baseline-corrections.md),
+> [Plan 093 validation](../../validation/2026-07-12-plan-093-baseline/README.md),
 > and supported server operations are owned by
 > [`plans/115-v2-server-profile.md`](../../../../plans/115-v2-server-profile.md).
 > This file is a research and validation protocol, not an implementation queue.

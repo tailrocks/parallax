@@ -9,7 +9,7 @@ Research date: 2026-05-25
 > log. GreptimeDB + Turso are mandatory, and NATS/Redpanda/Iggy are not product
 > fallbacks. Current work belongs to
 > [plan 113](../../../../plans/113-ingest-backpressure-observability.md) and
-> [plan 099](../../../../plans/099-boundary-errors-idempotency-and-agent-safety.md).
+> [Plan 099 validation](../../validation/2026-07-13-plan-099-boundary-errors-idempotency.md).
 > Run or revise this protocol only after the measured broker trigger in
 > [`plans/README.md`](../../../../plans/README.md) fires and the operator opens a
 > new numbered plan.

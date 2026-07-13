@@ -27,7 +27,7 @@ even when Parallax uses a plaintext trusted local hop, violating repository
 policy.
 
 The independently actionable exemplar primary-key correction was split into
-[plan 092](092-metric-exemplar-schema.md). This plan owns transport only.
+[Plan 092 closure](https://github.com/tailrocks/parallax/commit/953409b). This plan owns transport only.
 
 ## Current Evidence
 
