@@ -9,6 +9,12 @@ lock="$ui/bun.lock"
 [[ $(jq -r '.devDependencies.typescript' "$package") == 7.0.2 ]]
 [[ $(jq -r '.devDependencies.oxlint' "$package") == 1.73.0 ]]
 [[ $(jq -r '.devDependencies["oxlint-tsgolint"]' "$package") == 0.24.0 ]]
+compiler=$(cd "$ui" && bun -e 'import getExePath from "./node_modules/typescript/lib/getExePath.js"; console.log(getExePath())')
+platform=$(cd "$ui" && bun -e 'console.log(`${process.platform}-${process.arch}`)')
+[[ "$compiler" == *"/@typescript/typescript-$platform/lib/tsc" && -x "$compiler" ]]
+[[ $(jq -r '.options.typeCheck' "$ui/.oxlintrc.jsonc") == false ]]
+[[ $(jq -r 'has("jsPlugins")' "$ui/.oxlintrc.jsonc") == false ]]
+[[ $(jq -r '.categories.nursery // "absent"' "$ui/.oxlintrc.jsonc") == absent ]]
 
 if rg -n '(@tanstack/eslint-config|typescript-eslint|@typescript-eslint|eslint-plugin|@oxlint/migrate|typescript@6)' "$package" "$lock"; then
   printf 'legacy TypeScript/ESLint graph is reachable from the final package graph\n' >&2
