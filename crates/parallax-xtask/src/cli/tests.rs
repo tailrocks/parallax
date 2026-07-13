@@ -22,6 +22,28 @@ fn parses_every_initial_command() {
         vec!["xtask", "health"],
         vec!["xtask", "facade", "refresh"],
         vec!["xtask", "facade", "check"],
+        vec![
+            "xtask",
+            "release-package",
+            "--binary",
+            "target/release/parallax",
+            "--archive",
+            "target/dist/parallax.tar.gz",
+            "--source-epoch",
+            "1",
+        ],
+        vec![
+            "xtask",
+            "release-rehearse",
+            "--binary",
+            "target/release/parallax",
+            "--target",
+            "x86_64-unknown-linux-gnu",
+            "--version",
+            "0.1.0",
+            "--source-epoch",
+            "1",
+        ],
     ] {
         Cli::try_parse_from(args).expect("documented command should parse");
     }

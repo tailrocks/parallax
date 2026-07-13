@@ -1,4 +1,5 @@
 use clap::{ArgGroup, Parser, Subcommand, ValueEnum};
+use std::path::PathBuf;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
 pub(crate) enum Output {
@@ -66,6 +67,28 @@ pub(crate) enum Command {
     Facade {
         #[command(subcommand)]
         action: FacadeAction,
+    },
+    /// Package one built binary through the deterministic release implementation.
+    ReleasePackage {
+        #[arg(long)]
+        binary: PathBuf,
+        #[arg(long)]
+        archive: PathBuf,
+        #[arg(long)]
+        source_epoch: u64,
+    },
+    /// Package the same binary twice and require byte-identical release output.
+    ReleaseRehearse {
+        #[arg(long)]
+        binary: PathBuf,
+        #[arg(long)]
+        target: String,
+        #[arg(long)]
+        version: String,
+        #[arg(long)]
+        source_epoch: u64,
+        #[arg(long, default_value = "target/dist")]
+        output_dir: PathBuf,
     },
 }
 

@@ -8,27 +8,12 @@ use crate::docs_links;
 use crate::facade;
 use crate::nextest_evidence;
 use crate::policy;
+use crate::release;
 
 pub(crate) fn execute(cli: Cli) -> Result<()> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     match cli.command {
-        Command::Ci { fast, full } => {
-            debug_assert!(fast ^ full);
-            for partition in ci_partitions(full) {
-                match partition {
-                    "lint" => lint(&root)?,
-                    "policy" => policy::run(&root, None, cli.output)?,
-                    "facade" => facade::check(&root)?,
-                    "docs-links" => docs_links::run(&root, cli.output)?,
-                    "ui" => ui(&root)?,
-                    "test" => test(&root)?,
-                    "integration" => integration(&root)?,
-                    "dependencies" => dependencies::run(&root, Selection::All, cli.output)?,
-                    unknown => bail!("internal unknown CI partition `{unknown}`"),
-                }
-            }
-            Ok(())
-        }
+        Command::Ci { fast, full } => execute_ci(&root, fast, full, cli.output),
         Command::Lint => lint(&root),
         Command::Test => test(&root),
         Command::Ui => ui(&root),
@@ -42,6 +27,45 @@ pub(crate) fn execute(cli: Cli) -> Result<()> {
         Command::NextestEvidence { profile } => nextest_evidence::run(&root, &profile, cli.output),
         Command::Health => policy::health(&root, cli.output),
         Command::Facade { action } => execute_facade(&root, action),
+        release_command @ (Command::ReleasePackage { .. } | Command::ReleaseRehearse { .. }) => {
+            execute_release(release_command)
+        }
+    }
+}
+
+fn execute_ci(root: &Path, fast: bool, full: bool, output: crate::cli::Output) -> Result<()> {
+    debug_assert!(fast ^ full);
+    for partition in ci_partitions(full) {
+        match partition {
+            "lint" => lint(root)?,
+            "policy" => policy::run(root, None, output)?,
+            "facade" => facade::check(root)?,
+            "docs-links" => docs_links::run(root, output)?,
+            "ui" => ui(root)?,
+            "test" => test(root)?,
+            "integration" => integration(root)?,
+            "dependencies" => dependencies::run(root, Selection::All, output)?,
+            unknown => bail!("internal unknown CI partition `{unknown}`"),
+        }
+    }
+    Ok(())
+}
+
+fn execute_release(command: Command) -> Result<()> {
+    match command {
+        Command::ReleasePackage {
+            binary,
+            archive,
+            source_epoch,
+        } => release::package(&binary, &archive, source_epoch),
+        Command::ReleaseRehearse {
+            binary,
+            target,
+            version,
+            source_epoch,
+            output_dir,
+        } => release::rehearse(&binary, &target, &version, source_epoch, &output_dir),
+        _ => unreachable!("execute_release receives only release commands"),
     }
 }
 

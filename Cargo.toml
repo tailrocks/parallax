@@ -82,7 +82,9 @@ tokio-stream = { version = "0.1", features = ["net", "sync"] }
 urlencoding = "2"
 futures-core = "0.3"
 futures-util = "0.3"
+flate2 = "1.1.9"
 toml = "1"
+tar = { version = "0.4.46", default-features = false }
 time = { version = "0.3.48", features = ["parsing", "macros"] }
 thiserror = "2.0.18"
 tonic = { version = "0.14", features = ["gzip"] }
