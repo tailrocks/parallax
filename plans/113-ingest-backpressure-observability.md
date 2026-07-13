@@ -13,7 +13,7 @@
 - **Depends on**: 095, 099
 - **Category**: ingest / operability / performance evidence
 - **Planned at**: `eefa4617`, 2026-07-12
-- **Status**: TODO
+- **Status**: IN PROGRESS
 
 ## Why
 
