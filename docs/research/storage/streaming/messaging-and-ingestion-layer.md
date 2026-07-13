@@ -8,8 +8,8 @@ Research date: 2026-05-25
 > 2026-07-12).** Parallax currently uses its bounded local raw-frame spool and
 > in-process worker; GreptimeDB + Turso remain mandatory. No external broker,
 > alternate telemetry database, or broker fallback is authorized. Current
-> ingest-health work is owned by
-> [plan 113](../../../../plans/113-ingest-backpressure-observability.md).
+> ingest-health evidence is preserved in the
+> [Plan 113 validation](../../validation/2026-07-13-plan-113-ingest-health.md).
 > The candidate comparisons and dormant experiment protocol below become
 > executable only after the measured broker trigger in
 > [`plans/README.md`](../../../../plans/README.md) fires and the operator opens a

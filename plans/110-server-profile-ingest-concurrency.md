@@ -27,6 +27,12 @@
 - Proof that downstream storage/network is not the primary limiter and that
   current batching/configuration cannot meet the target.
 
+Plan 113's bounded instrument and overload/recovery packet is available at
+[the ingest health validation](../docs/research/validation/2026-07-13-plan-113-ingest-health.md).
+It supplies the measurement vocabulary and fixtures, but it is not trigger
+evidence by itself. This plan remains blocked until Plan 115 supplies a named
+supported profile and that profile produces reproducible saturation evidence.
+
 ## Scope
 
 In scope after the trigger exists:

@@ -7,8 +7,8 @@ Research date: 2026-05-25
 > **Dormant experiment protocol, not an implementation plan (reconciled
 > 2026-07-12).** The shipped bounded local spool remains the only product ingest
 > log. GreptimeDB + Turso are mandatory, and NATS/Redpanda/Iggy are not product
-> fallbacks. Current work belongs to
-> [plan 113](../../../../plans/113-ingest-backpressure-observability.md) and
+> fallbacks. Current ingest-health evidence is preserved in the
+> [Plan 113 validation](../../validation/2026-07-13-plan-113-ingest-health.md) and
 > [Plan 099 validation](../../validation/2026-07-13-plan-099-boundary-errors-idempotency.md).
 > Run or revise this protocol only after the measured broker trigger in
 > [`plans/README.md`](../../../../plans/README.md) fires and the operator opens a
@@ -237,9 +237,9 @@ shipped architecture:
 - [A5 stack decision ledger](../../decisions/stack-decision.md) would consume a
   future authorized experiment before any external ingest-log proposal could
   reach a product decision.
-- [Plan 113](../../../../plans/113-ingest-backpressure-observability.md) owns
-  currently actionable spool/queue/retry/drop/drain visibility. Broker work
-  requires the separate trigger and a new numbered plan.
+- [Plan 113 validation](../../validation/2026-07-13-plan-113-ingest-health.md)
+  preserves the shipped spool/queue/retry/drop/drain visibility evidence.
+  Broker work requires the separate trigger and a new numbered plan.
 
 ## Bottom Line
 

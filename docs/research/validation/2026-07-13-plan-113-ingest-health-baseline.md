@@ -28,24 +28,25 @@ service, trace, batch, route, error text, or other unbounded value is permitted.
 
 | Instrument | Type/unit | Update owner and invariant |
 | --- | --- | --- |
-| `parallax.ingest.queue.depth` | observable gauge `{batch}` | transport enqueue + worker dequeue; exact current depth |
-| `parallax.ingest.queue.capacity` | observable gauge `{batch}` | initialization; immutable per signal |
-| `parallax.ingest.queue.high_water` | observable gauge `{batch}` | enqueue; monotonic maximum until process restart |
-| `parallax.ingest.queue.oldest_age` | observable gauge `s` | preallocated timestamp ring; zero iff empty |
+| `parallax.ingest.queue.depth` | gauge `{batch}` | transport enqueue + worker dequeue; exact current depth |
+| `parallax.ingest.queue.capacity` | gauge `{batch}` | initialization; immutable per signal |
+| `parallax.ingest.queue.high_water` | gauge `{batch}` | enqueue; monotonic maximum until process restart |
+| `parallax.ingest.queue.oldest_age` | gauge `s` | preallocated timestamp ring; zero iff empty |
 | `parallax.ingest.queue.age` | histogram `s` | worker dequeue; actual residence time for every observed batch |
 | `parallax.ingest.enqueue.wait` | histogram `s` | transport; one sample for every capacity wait |
 | `parallax.ingest.enqueue.outcomes` | counter `{batch}` | transport; exactly one accepted/unavailable outcome |
 | `parallax.ingest.worker.retries` | counter `{retry}` | worker retry boundary, fixed signal label |
 | `parallax.ingest.worker.drops` | counter `{batch}` | terminal exhaustion only |
 | `parallax.ingest.worker.drain` | histogram `s` | graceful worker drain outcome |
-| `parallax.ingest.spool.bytes` | observable gauge `By` | spool inventory, active plus rotated per signal |
-| `parallax.ingest.spool.oldest_age` | observable gauge `s` | oldest retained segment per signal |
+| `parallax.ingest.spool.bytes` | gauge `By` | spool inventory, active plus rotated per signal |
+| `parallax.ingest.spool.oldest_age` | gauge `s` | oldest retained segment per signal |
 | `parallax.ingest.spool.reclaimed` | counter `By` | reaper/prune reclaim boundary |
 
 The timestamp ring is allocated once at configured capacity. Every accepted item
-carries only a sequence number and monotonic enqueue instant beside its already
-owned decoded request/raw `Bytes`; no telemetry payload is cloned. The worker
-advances the read sequence and records age before processing.
+carries only a monotonic enqueue instant and a self-metric observation flag
+beside its already owned decoded request/raw `Bytes`; no telemetry payload is
+cloned. The worker removes the oldest timestamp and records age before
+processing.
 
 ## Loop and noise contract
 
@@ -58,9 +59,9 @@ This prevents `metric export → Parallax ingest → queue metric → metric exp
 recursion. Exact fixtures must prove both the exclusion and ordinary workload
 metrics observation.
 
-Normal enqueue/dequeue and retry counters do not log. Only transitions into a
-sustained degraded state, recovery, startup, reaper reclaim, and drain completion
-may narrate at operator-visible levels; error text never becomes a metric label.
+Normal enqueue/dequeue metric updates do not log. Existing bounded worker retry
+warnings and terminal-drop errors remain the exceptional paths; no routine batch
+log was added. Error text never becomes a metric label.
 
 No research prompt changed: this packet makes an existing implementation plan
 executable and does not change product research direction or evaluation
