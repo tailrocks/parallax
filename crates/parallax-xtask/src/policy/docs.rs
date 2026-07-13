@@ -29,6 +29,44 @@ struct Facade {
     roots: BTreeMap<String, Vec<String>>,
 }
 
+#[cfg(test)]
+#[derive(Debug, Deserialize)]
+struct EvidenceBundleDecision {
+    status: String,
+    canonical_model: String,
+    contract_version: String,
+    compatibility_window: String,
+    migration_behavior: String,
+    approved_by: String,
+    approval_date: String,
+}
+
+#[cfg(test)]
+fn approved_evidence_bundle_decision(source: &str) -> Result<()> {
+    let front = source
+        .strip_prefix("+++\n")
+        .context("missing decision front matter")?
+        .split_once("\n+++\n")
+        .context("missing decision front matter close")?
+        .0;
+    let decision: EvidenceBundleDecision = toml::from_str(front)?;
+    anyhow::ensure!(decision.status == "approved", "decision is not approved");
+    for value in [
+        decision.canonical_model,
+        decision.contract_version,
+        decision.compatibility_window,
+        decision.migration_behavior,
+        decision.approved_by,
+        decision.approval_date,
+    ] {
+        anyhow::ensure!(
+            !value.trim().is_empty() && value != "UNRESOLVED",
+            "approved decision contains an unresolved required field"
+        );
+    }
+    Ok(())
+}
+
 pub(super) fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
     let metadata = MetadataCommand::new().current_dir(root).no_deps().exec()?;
     let members: BTreeSet<_> = metadata.workspace_members.iter().collect();

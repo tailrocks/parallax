@@ -77,6 +77,16 @@ fn canonical_hash_ignores_generator() {
 }
 
 #[test]
+fn bundle_v1_golden_fixture_is_stable() {
+    let bundle = assemble(test_inputs(vec![test_span(0, true, 10)]), 8_000);
+    let actual = serde_json::to_value(bundle).expect("serialize");
+    let expected: serde_json::Value =
+        serde_json::from_str(include_str!("../../fixtures/bundle-v1-golden.json"))
+            .expect("golden JSON");
+    assert_eq!(actual, expected);
+}
+
+#[test]
 fn large_trace_is_bounded_and_keeps_error_span() {
     let spans = (0..400)
         .map(|index| test_span(index, index == 123, (index as u128 + 1) * 1_000))

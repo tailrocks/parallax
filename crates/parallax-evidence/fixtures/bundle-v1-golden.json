@@ -1,0 +1,54 @@
+{
+  "schema_version": "bundle-v1",
+  "generator": "parallax/0.1.0-dev",
+  "anchor": { "kind": "issue", "id": "fp" },
+  "issue": {
+    "title": "test::Boom: boom",
+    "error_type": "test::Boom",
+    "culprit": "top",
+    "service": "checkout",
+    "status": "open",
+    "event_count": 1,
+    "first_seen_nanos": "1",
+    "last_seen_nanos": "2"
+  },
+  "run": null,
+  "latest_event": {
+    "ts_nanos": "2",
+    "message": "boom",
+    "stacktrace": "top\nmiddle\nbottom\nextra",
+    "source": "span_exception",
+    "trace_id": "trace"
+  },
+  "trace": {
+    "trace_id": "trace",
+    "spans": [{
+      "service": "checkout",
+      "name": "span-0",
+      "kind": "SPAN_KIND_INTERNAL",
+      "status_code": "STATUS_CODE_ERROR",
+      "duration_us": 10,
+      "db_query": null
+    }]
+  },
+  "metric_windows": [],
+  "logs": [],
+  "hypotheses": [{
+    "kind": "insufficient_evidence",
+    "statement": "The evidence does not support a root-cause hypothesis; see missing_evidence for what to instrument next.",
+    "confidence": "low",
+    "evidence": ["issue fp"]
+  }],
+  "missing_evidence": [
+    "no logs correlated to the trace — bridge the log appender through tracing-opentelemetry",
+    "no process metrics in the anchor window — export process.cpu/process.memory gauges (run-tagged under the wrapper) for the cross-signal view"
+  ],
+  "redaction": { "policy": "redaction-lite-v3", "redacted_counts": {} },
+  "bounded": {
+    "max_tokens": 8000,
+    "estimated_tokens": 320,
+    "dropped_log_lines": 0,
+    "truncated_stacktrace": false
+  },
+  "canonical_hash": "sha256:08a52f52a5fc97b2faa04ede1fed0861957b2053e1f1ef8cc19d91627d07c94a"
+}

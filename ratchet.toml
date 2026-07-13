@@ -1990,7 +1990,7 @@ ceiling = 8
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-evidence/src/bundle/tests.rs"
-ceiling = 55
+ceiling = 56
 
 [[limits]]
 metric = "rust.assertions"

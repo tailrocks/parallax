@@ -9,6 +9,28 @@ fn parses_structured_front_matter_and_rejects_touch_only_docs() {
 }
 
 #[test]
+fn evidence_bundle_decision_gate_fails_closed() {
+    let draft = include_str!("../../../../../docs/research/decisions/evidence-bundle-contract.md");
+    approved_evidence_bundle_decision(draft).expect_err("draft decision rejected");
+
+    let approved = r#"+++
+status = "approved"
+canonical_model = "bundle-v1"
+contract_version = "bundle-v1"
+compatibility_window = "permanent"
+migration_behavior = "no migration"
+approved_by = "operator"
+approval_date = "2026-07-13"
++++
+# Decision
+"#;
+    approved_evidence_bundle_decision(approved).expect("complete approval accepted");
+
+    let incomplete = approved.replace("bundle-v1", "UNRESOLVED");
+    approved_evidence_bundle_decision(&incomplete).expect_err("unresolved approval rejected");
+}
+
+#[test]
 fn semantic_crate_body_checks_roots_links_and_gates() {
     let directory = tempfile::tempdir().expect("temp crate");
     fs::create_dir(directory.path().join("src")).expect("src");
