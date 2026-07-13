@@ -25,7 +25,7 @@ fn parser_handles_anchors_and_ignores_fenced_links() -> Result<()> {
         Some(PathBuf::from("README.md")),
         None,
         true,
-        (3, vec![1, 2, 3]),
+        (4, vec![1, 2, 3, 4]),
     );
     if actual != expected {
         bail!("Markdown link fixture mismatch: {actual:?}");
@@ -68,6 +68,7 @@ fn invalid_target_fixture() -> (usize, Vec<usize>) {
             "[fragment](../target.md#missing)\n",
             "[file](missing.md)\n",
             "[escape](../../outside.md)\n",
+            "[encoding](bad%ZZ.md)\n",
         )
         .into(),
         anchors: HashSet::new(),
