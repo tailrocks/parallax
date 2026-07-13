@@ -13,12 +13,55 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  authorize-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Require explicitly opened stable readiness
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STABLE_RELEASE_ENABLED: ${{ vars.STABLE_RELEASE_ENABLED }}
+        run: |
+          set -euo pipefail
+          test "$STABLE_RELEASE_ENABLED" = "true" || {
+            echo "::error::stable readiness is closed (STABLE_RELEASE_ENABLED != true)"
+            exit 1
+          }
+          environment=$(
+            gh api "repos/${GITHUB_REPOSITORY}/environments/stable-release"
+          )
+          jq -e '.protection_rules | any(.type == "required_reviewers")' \
+            <<< "$environment" >/dev/null || {
+              echo "::error::stable-release environment lacks required reviewers"
+              exit 1
+            }
+          rulesets=$(gh api "repos/${GITHUB_REPOSITORY}/rulesets")
+          authorized=false
+          while IFS= read -r ruleset_id; do
+            detail=$(gh api "repos/${GITHUB_REPOSITORY}/rulesets/${ruleset_id}")
+            if jq -e '
+              (.conditions.ref_name.include | index("refs/tags/v*")) != null and
+              ([.rules[].type] | contains(["creation", "deletion", "non_fast_forward"]))
+            ' <<< "$detail" >/dev/null; then
+              authorized=true
+              break
+            fi
+          done < <(jq -r '.[] | select(.target == "tag" and .enforcement == "active") | .id' <<< "$rulesets")
+          test "$authorized" = true || {
+            echo "::error::no active v* tag ruleset restricts create/update/delete"
+            exit 1
+          }
+
   check-version:
+    needs: authorize-release
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
 
       - name: Determine version
         id: version
@@ -31,6 +74,17 @@ jobs:
               ;;
           esac
           version="${GITHUB_REF#refs/tags/v}"
+          workspace_version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
+          test "$version" = "$workspace_version" || {
+            echo "::error::tag version $version != workspace version $workspace_version"
+            exit 1
+          }
+          case "$version" in
+            *-dev*)
+              echo "::error::stable releases cannot use a dev version ($version)"
+              exit 1
+              ;;
+          esac
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
   test:
@@ -60,6 +114,8 @@ jobs:
             zigbuild_target: x86_64-unknown-linux-gnu.2.17
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
       - name: Cache Rust toolchain
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
@@ -101,7 +157,10 @@ jobs:
         with:
           install_args: "rust zig cargo:cargo-zigbuild cosign syft bun"
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
-      - run: mise exec -- rustup target add ${{ matrix.target }}
+      - name: Install Rust target
+        env:
+          TARGET: ${{ matrix.target }}
+        run: mise exec -- rustup target add "$TARGET"
       - name: Cache Cargo build artifacts
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
@@ -113,24 +172,12 @@ jobs:
             cargo-target-${{ runner.os }}-${{ runner.arch }}-${{ matrix.target }}-release-
             cargo-target-${{ runner.os }}-${{ runner.arch }}-release-${{ hashFiles('Cargo.lock') }}-
             cargo-target-${{ runner.os }}-${{ runner.arch }}-release-
-      - name: Cache macOS SDK
+      - name: Set up verified macOS SDK
         if: contains(matrix.target, 'apple')
-        id: sdk-cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: ./.github/actions/setup-macos-sdk
         with:
-          path: /tmp/macos-sdk
-          key: macos-sdk-26.1
-      - name: Download macOS SDK
-        if: contains(matrix.target, 'apple') && steps.sdk-cache.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p /tmp/macos-sdk
-          curl -fsSL "https://github.com/joseluisq/macosx-sdks/releases/download/26.1/MacOSX26.1.sdk.tar.xz" \
-            | tar -xJ -C /tmp/macos-sdk
-      - name: Set macOS SDKROOT
-        if: contains(matrix.target, 'apple')
-        run: |
-          echo "SDKROOT=/tmp/macos-sdk/MacOSX26.1.sdk" >> "$GITHUB_ENV"
-          echo "MACOSX_DEPLOYMENT_TARGET=12.0" >> "$GITHUB_ENV"
+          version: "26.1"
+          sha256: beee7212d265a6d2867d0236cc069314b38d5fb3486a6515734e76fa210c784c
       - name: Cache Bun modules
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
@@ -147,18 +194,40 @@ jobs:
           PARALLAX_VERSION_OVERRIDE: ${{ needs.check-version.outputs.version }}
         run: mise exec -- cargo zigbuild --release --locked -p parallax-cli --features embed-ui,cross-release-vendored --target "$ZIGBUILD_TARGET"
       - name: Package
+        id: package
         env:
           TARGET: ${{ matrix.target }}
           VERSION: ${{ needs.check-version.outputs.version }}
         run: |
+          set -euo pipefail
           archive="parallax-${VERSION}-${TARGET}.tar.gz"
-          tar -czf "$archive" -C "target/${TARGET}/release" parallax
-          shasum -a 256 "$archive" | awk '{print $1}' > "$archive.sha256"
-          echo "archive=$archive" >> "$GITHUB_ENV"
+          source_epoch=$(git show -s --format=%ct "$GITHUB_SHA")
+          mise exec -- cargo xtask release-package \
+            --binary "target/${TARGET}/release/parallax" \
+            --archive "$archive" \
+            --source-epoch "$source_epoch"
+          echo "archive=$archive" >> "$GITHUB_OUTPUT"
+          echo "source_epoch=$source_epoch" >> "$GITHUB_OUTPUT"
       - name: Sign, SBOM, and attest archive
         uses: ./.github/actions/sign-and-attest-archive
         with:
-          archive: ${{ env.archive }}
+          archive: ${{ steps.package.outputs.archive }}
+      - name: Verify complete stable artifact set
+        env:
+          ARCHIVE: ${{ steps.package.outputs.archive }}
+          SOURCE_EPOCH: ${{ steps.package.outputs.source_epoch }}
+          TARGET: ${{ matrix.target }}
+          VERSION: ${{ needs.check-version.outputs.version }}
+        run: |
+          mise exec -- cargo xtask release-verify \
+            --archive "$ARCHIVE" \
+            --target "$TARGET" \
+            --version "$VERSION" \
+            --source-epoch "$SOURCE_EPOCH" \
+            --source-commit "$GITHUB_SHA" \
+            --source-ref "$GITHUB_REF" \
+            --signer-identity "https://github.com/tailrocks/parallax/.github/workflows/release.yml@${GITHUB_REF}" \
+            --signer-workflow tailrocks/parallax/.github/workflows/release.yml
       - name: Show sccache stats
         if: always() && steps.sccache.outcome == 'success'
         run: sccache --show-stats
@@ -176,9 +245,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      id-token: write
+    environment: stable-release
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.0
         with:
           path: artifacts

@@ -74,3 +74,39 @@ fn identity_rejects_unsupported_targets_and_ambiguous_versions() -> Result<(), S
     }
     Ok(())
 }
+
+#[test]
+fn release_callers_use_one_packager_and_verified_sdk() -> Result<(), String> {
+    let preview = include_str!("../../../../.github/workflows/preview.yml");
+    let stable = include_str!("../../../../.github/workflows/release.yml");
+    let rehearsal = include_str!("../../../../scripts/release.sh");
+    let sdk = include_str!("../../../../.github/actions/setup-macos-sdk/action.yml");
+    let callers = [preview, stable];
+    let actual = (
+        callers
+            .iter()
+            .all(|source| source.contains("cargo xtask release-package")),
+        callers
+            .iter()
+            .all(|source| source.contains("cargo xtask release-verify")),
+        callers
+            .iter()
+            .all(|source| source.contains("./.github/actions/setup-macos-sdk")),
+        callers
+            .iter()
+            .all(|source| !source.contains("tar -czf") && !source.contains("| tar")),
+        rehearsal.contains("cargo xtask release-rehearse")
+            && !rehearsal.contains("tar -czf")
+            && !rehearsal.contains("-czf"),
+        sdk.contains("key: macos-sdk-archive-${{ inputs.version }}-${{ inputs.sha256 }}")
+            && sdk.contains("sha256sum --check --strict")
+            && sdk.find("sha256sum --check --strict") < sdk.find("tar -xJf"),
+        !stable.contains("workflow_dispatch:")
+            && stable.contains("STABLE_RELEASE_ENABLED")
+            && stable.contains("environment: stable-release"),
+    );
+    if actual != (true, true, true, true, true, true, true) {
+        return Err(format!("release caller contract mismatch: {actual:?}"));
+    }
+    Ok(())
+}

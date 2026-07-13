@@ -21,7 +21,11 @@ zig_target="$target"
 case "$target" in
   *-unknown-linux-gnu) zig_target="${target}.2.17" ;;
 esac
-version="$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)"
+base_version="$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)"
+source_sha="$(git rev-parse HEAD)"
+short_sha="$(printf '%s' "$source_sha" | cut -c1-7)"
+source_epoch="$(git show -s --format=%ct "$source_sha")"
+version="${base_version}+${short_sha}"
 
 echo "==> UI build (bun)"
 (cd ui && mise exec -- bun install --frozen-lockfile --ignore-scripts && mise exec -- bun run build)
@@ -31,17 +35,21 @@ test -f ui/dist/client/_shell.html || {
 }
 
 echo "==> cargo zigbuild --release --features embed-ui,cross-release-vendored (${zig_target})"
-mise exec -- cargo zigbuild --release --locked -p parallax-cli --features embed-ui,cross-release-vendored --target "$zig_target"
+PARALLAX_VERSION_OVERRIDE="$version" mise exec -- cargo zigbuild --release --locked -p parallax-cli --features embed-ui,cross-release-vendored --target "$zig_target"
 
 bin="target/${target}/release/parallax"
 test -x "$bin"
 
-echo "==> package"
+echo "==> deterministic release rehearsal"
 dist="target/dist"
-name="parallax-v${version}-${target}"
 mkdir -p "$dist"
-tar -C "$(dirname "$bin")" -czf "${dist}/${name}.tar.gz" parallax
-(cd "$dist" && shasum -a 256 "${name}.tar.gz" | tee "${name}.tar.gz.sha256")
+mise exec -- cargo xtask release-rehearse \
+  --binary "$bin" \
+  --target "$target" \
+  --version "$version" \
+  --source-epoch "$source_epoch" \
+  --output-dir "$dist"
 
-echo "==> done: ${dist}/${name}.tar.gz"
+archive="${dist}/parallax-${version}-${target}.tar.gz"
+echo "==> done: ${archive}"
 echo "    update tailrocks/homebrew-parallax with the url + sha256 above"
