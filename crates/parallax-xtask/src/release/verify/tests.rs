@@ -20,6 +20,18 @@ fn local_verification_rejects_metadata_version_and_missing_bundle()
     spec.source_epoch += 1;
     let bad_epoch = read_binary(&spec).is_err();
 
+    let actual = (bad_epoch, missing_bundle);
+    if actual != (true, true) {
+        return Err(format!("local release verification mismatch: {actual:?}").into());
+    }
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn object_verification_rejects_target_version_and_corrupt_line_tables()
+-> Result<(), Box<dyn std::error::Error>> {
+    let target = host_target()?;
     let mut binary = std::fs::read(std::env::current_exe()?)?;
     binary.extend_from_slice(
         format!("parallax-release-identity:{}", env!("CARGO_PKG_VERSION")).as_bytes(),
@@ -46,16 +58,9 @@ fn local_verification_rejects_metadata_version_and_missing_bundle()
     corrupt_debug[start..end].fill(0);
     let bad_debug = verify_object(&corrupt_debug, target, env!("CARGO_PKG_VERSION")).is_err();
 
-    let actual = (
-        valid,
-        bad_debug,
-        bad_target,
-        bad_version,
-        bad_epoch,
-        missing_bundle,
-    );
-    if actual != (true, true, true, true, true, true) {
-        return Err(format!("local release verification mismatch: {actual:?}").into());
+    let actual = (valid, bad_debug, bad_target, bad_version);
+    if actual != (true, true, true, true) {
+        return Err(format!("release object verification mismatch: {actual:?}").into());
     }
     Ok(())
 }
