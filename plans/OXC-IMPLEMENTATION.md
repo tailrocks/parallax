@@ -79,6 +79,14 @@ the end state by themselves. A framework or route generator may retain an
 internal dependency. Parallax controls direct dependencies, commands,
 configuration, lifecycle trust, and which executable is accepted as a gate.
 
+Plan 131 completed on 2026-07-13. The live graph now uses exact TypeScript
+7.0.2, Oxlint 1.73.0, and `oxlint-tsgolint` 0.24.0; ESLint and the complete
+typescript-eslint path are absent. Native lint, type-aware lint, and independent
+`tsc --noEmit` are separate CI gates with selected-file/config fingerprints and
+19 rule fixtures. The baseline bullets above remain historical migration input.
+Prettier remains live only because the independent Plan 130 Oxfmt cutover has
+not executed yet.
+
 ## Upstream Capability And Maturity Matrix
 
 | Component | Upstream capability | Parallax decision |
