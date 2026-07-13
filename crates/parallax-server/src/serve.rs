@@ -270,23 +270,13 @@ fn build_api_router(
 }
 
 async fn health_handler(State(health): State<Arc<IngestHealth>>) -> impl IntoResponse {
-    let snapshots = [
-        ("traces", health.snapshot(parallax_spool::Signal::Traces)),
-        ("logs", health.snapshot(parallax_spool::Signal::Logs)),
-        ("metrics", health.snapshot(parallax_spool::Signal::Metrics)),
-    ];
-    let degraded = snapshots
-        .iter()
-        .filter(|(_, snapshot)| snapshot.depth >= snapshot.capacity)
-        .map(|(signal, snapshot)| format!("{signal}={}/{}", snapshot.depth, snapshot.capacity))
-        .collect::<Vec<_>>();
-    if degraded.is_empty() {
-        (StatusCode::OK, "ok".to_string())
-    } else {
+    if let Some(reason) = health.degradation() {
         (
             StatusCode::SERVICE_UNAVAILABLE,
-            format!("degraded: ingest queue full ({})", degraded.join(", ")),
+            format!("degraded: {reason}"),
         )
+    } else {
+        (StatusCode::OK, "ok".to_string())
     }
 }
 

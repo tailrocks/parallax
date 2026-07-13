@@ -29,12 +29,17 @@ fn queue_state_and_self_metric_filter_are_exact() -> Result<(), String> {
     health.enqueued(Signal::Traces, Duration::from_millis(2), true);
     health.enqueued(Signal::Traces, Duration::ZERO, true);
     let full = health.snapshot(Signal::Traces);
+    let degraded = health.degradation();
     health.dequeued(Signal::Traces, Duration::from_millis(4), true);
     health.dequeued(Signal::Traces, Duration::from_millis(5), true);
+    health.retry(Signal::Traces);
+    health.terminal_drop(Signal::Traces);
     let snapshot = health.snapshot(Signal::Traces);
     let actual = (
         snapshot,
+        health.degradation(),
         full,
+        degraded,
         is_self_metrics(&metric_request("parallax")),
         is_self_metrics(&metric_request("checkout")),
         instrument_contract_is_bounded(),
@@ -44,12 +49,18 @@ fn queue_state_and_self_metric_filter_are_exact() -> Result<(), String> {
             depth: 0,
             capacity: 2,
             high_water: 2,
+            retries: 1,
+            drops: 1,
         },
+        None,
         QueueSnapshot {
             depth: 2,
             capacity: 2,
             high_water: 2,
+            retries: 0,
+            drops: 0,
         },
+        Some("ingest queue full (traces=2/2)".to_string()),
         true,
         false,
         true,

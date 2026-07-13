@@ -13,6 +13,8 @@ use parallax_test_support::builders::MemoryStore;
 use serde_json::json;
 use tokio::sync::oneshot;
 
+use crate::ingest_health::QueueSnapshot;
+
 fn queued(item: IngestItem) -> QueuedItem {
     QueuedItem::fixture(item)
 }
@@ -288,6 +290,49 @@ async fn failure_stage_replay_behavior_is_characterized() {
         (1, 1, 1, 1, 1),
         "a final-stage failure does not replay any completed effect"
     );
+}
+
+#[tokio::test]
+async fn retry_exhaustion_metrics_match_worker_attempts() -> Result<(), String> {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let store = Arc::new(MemoryStore::new());
+    let metadata = Arc::new(
+        MetadataStore::open(tmp.path().join("meta.db"))
+            .await
+            .expect("metadata"),
+    );
+    let health = Arc::new(IngestHealth::new(1));
+    let worker = Worker::new_with_health(store, metadata, crate::live::channels(), health.clone());
+    worker
+        .inject_failures_after(FailureStage::Registration, INGEST_RETRIES + 1)
+        .await;
+    let (senders, receivers) = channels(1);
+    let enqueued_at = health.enqueued(Signal::Traces, Duration::ZERO, true);
+    senders
+        .traces
+        .send(QueuedItem {
+            item: IngestItem::Traces(ExportTraceServiceRequest::default(), bytes::Bytes::new()),
+            enqueued_at,
+            observed: true,
+        })
+        .await
+        .expect("enqueue traces");
+    drop(senders);
+
+    worker.run(Signal::Traces, receivers.traces).await;
+
+    let actual = health.snapshot(Signal::Traces);
+    let expected = QueueSnapshot {
+        depth: 0,
+        capacity: 1,
+        high_water: 1,
+        retries: 3,
+        drops: 1,
+    };
+    if actual != expected {
+        return Err(format!("retry exhaustion health mismatch: {actual:?}"));
+    }
+    Ok(())
 }
 
 #[tokio::test]

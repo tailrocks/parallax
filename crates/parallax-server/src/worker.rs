@@ -49,7 +49,7 @@ pub(crate) struct Worker {
     live: crate::live::LiveChannels,
     health: Arc<IngestHealth>,
     #[cfg(test)]
-    fail_once_after: Arc<Mutex<Option<FailureStage>>>,
+    fail_after: Arc<Mutex<Option<(FailureStage, usize)>>>,
 }
 
 #[cfg(test)]
@@ -120,20 +120,30 @@ impl Worker {
             live,
             health,
             #[cfg(test)]
-            fail_once_after: Arc::new(Mutex::new(None)),
+            fail_after: Arc::new(Mutex::new(None)),
         }
     }
 
     #[cfg(test)]
     async fn inject_failure_once_after(&self, stage: FailureStage) {
-        *self.fail_once_after.lock().await = Some(stage);
+        self.inject_failures_after(stage, 1).await;
+    }
+
+    #[cfg(test)]
+    async fn inject_failures_after(&self, stage: FailureStage, attempts: usize) {
+        *self.fail_after.lock().await = Some((stage, attempts));
     }
 
     #[cfg(test)]
     async fn maybe_fail_after(&self, stage: FailureStage) -> WorkerResult<()> {
-        let mut configured = self.fail_once_after.lock().await;
-        if configured.as_ref() == Some(&stage) {
-            *configured = None;
+        let mut configured = self.fail_after.lock().await;
+        if let Some((configured_stage, attempts)) = configured.as_mut()
+            && *configured_stage == stage
+        {
+            *attempts -= 1;
+            if *attempts == 0 {
+                *configured = None;
+            }
             return Err(WorkerError::Injected(stage));
         }
         Ok(())

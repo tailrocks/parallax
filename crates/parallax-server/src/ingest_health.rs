@@ -13,6 +13,8 @@ use parallax_spool::Signal;
 struct SignalState {
     depth: AtomicUsize,
     high_water: AtomicUsize,
+    retries: AtomicU64,
+    drops: AtomicU64,
     capacity: usize,
     attributes: [KeyValue; 1],
     accepted_attributes: [KeyValue; 2],
@@ -25,6 +27,8 @@ impl SignalState {
         Self {
             depth: AtomicUsize::new(0),
             high_water: AtomicUsize::new(0),
+            retries: AtomicU64::new(0),
+            drops: AtomicU64::new(0),
             capacity,
             attributes: [KeyValue::new("signal", signal)],
             accepted_attributes: [
@@ -45,6 +49,8 @@ pub(crate) struct QueueSnapshot {
     pub depth: usize,
     pub capacity: usize,
     pub high_water: usize,
+    pub retries: u64,
+    pub drops: u64,
 }
 
 #[derive(Debug)]
@@ -175,11 +181,15 @@ impl IngestHealth {
     }
 
     pub(crate) fn retry(&self, signal: Signal) {
-        self.retries.add(1, &self.state(signal).attributes);
+        let state = self.state(signal);
+        state.retries.fetch_add(1, Ordering::Relaxed);
+        self.retries.add(1, &state.attributes);
     }
 
     pub(crate) fn terminal_drop(&self, signal: Signal) {
-        self.drops.add(1, &self.state(signal).attributes);
+        let state = self.state(signal);
+        state.drops.fetch_add(1, Ordering::Relaxed);
+        self.drops.add(1, &state.attributes);
     }
 
     pub(crate) fn drained(&self, elapsed: Duration, completed: bool) {
@@ -214,7 +224,22 @@ impl IngestHealth {
             depth: state.depth.load(Ordering::Acquire),
             capacity: state.capacity,
             high_water: state.high_water.load(Ordering::Relaxed),
+            retries: state.retries.load(Ordering::Relaxed),
+            drops: state.drops.load(Ordering::Relaxed),
         }
+    }
+
+    pub(crate) fn degradation(&self) -> Option<String> {
+        let full = [
+            ("traces", self.snapshot(Signal::Traces)),
+            ("logs", self.snapshot(Signal::Logs)),
+            ("metrics", self.snapshot(Signal::Metrics)),
+        ]
+        .into_iter()
+        .filter(|(_, snapshot)| snapshot.depth >= snapshot.capacity)
+        .map(|(signal, snapshot)| format!("{signal}={}/{}", snapshot.depth, snapshot.capacity))
+        .collect::<Vec<_>>();
+        (!full.is_empty()).then(|| format!("ingest queue full ({})", full.join(", ")))
     }
 
     fn record_gauges(&self, state: &SignalState) {
