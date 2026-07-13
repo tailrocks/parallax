@@ -215,6 +215,7 @@ jobs:
       - name: Verify complete stable artifact set
         env:
           ARCHIVE: ${{ steps.package.outputs.archive }}
+          GH_TOKEN: ${{ github.token }}
           SOURCE_EPOCH: ${{ steps.package.outputs.source_epoch }}
           TARGET: ${{ matrix.target }}
           VERSION: ${{ needs.check-version.outputs.version }}

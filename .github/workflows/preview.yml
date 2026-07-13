@@ -257,6 +257,7 @@ jobs:
       - name: Verify complete preview artifact set
         env:
           ARCHIVE: ${{ steps.package.outputs.archive }}
+          GH_TOKEN: ${{ github.token }}
           SOURCE_SHA: ${{ needs.source-changed.outputs.sha }}
           SOURCE_EPOCH: ${{ steps.package.outputs.source_epoch }}
           TARGET: ${{ matrix.target }}

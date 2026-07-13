@@ -104,8 +104,10 @@ fn release_callers_use_one_packager_and_verified_sdk() -> Result<(), String> {
         !stable.contains("workflow_dispatch:")
             && stable.contains("STABLE_RELEASE_ENABLED")
             && stable.contains("environment: stable-release"),
+        !preview.contains("GH_PARALLAX_HOMEBREW_TAP_TOKEN")
+            && !preview.contains("repository: tailrocks/homebrew-parallax"),
     );
-    if actual != (true, true, true, true, true, true, true) {
+    if actual != (true, true, true, true, true, true, true, true) {
         return Err(format!("release caller contract mismatch: {actual:?}"));
     }
     Ok(())
