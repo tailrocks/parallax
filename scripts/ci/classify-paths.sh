@@ -13,7 +13,7 @@ classify() {
   local path=$1
 
   case "$path" in
-    *.md|Cargo.toml|Cargo.lock|rust-toolchain.toml|crates/parallax-xtask/Cargo.toml|crates/parallax-xtask/src/docs_links.rs|crates/parallax-xtask/src/cli.rs|crates/parallax-xtask/src/command.rs|crates/parallax-xtask/src/lib.rs|.github/workflows/ci.yml|scripts/ci/classify-paths.sh|scripts/ci/test-classify-paths.sh|scripts/ci/test-workflow-policy.sh)
+    *.md|Cargo.toml|Cargo.lock|rust-toolchain.toml|crates/parallax-xtask/Cargo.toml|crates/parallax-xtask/src/docs_links.rs|crates/parallax-xtask/src/docs_links/*|crates/parallax-xtask/src/cli.rs|crates/parallax-xtask/src/command.rs|crates/parallax-xtask/src/lib.rs|.github/workflows/ci.yml|scripts/ci/classify-paths.sh|scripts/ci/test-classify-paths.sh|scripts/ci/test-workflow-policy.sh)
       docs=true
       ;;
   esac

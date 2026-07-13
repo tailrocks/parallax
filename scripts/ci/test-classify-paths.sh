@@ -18,6 +18,7 @@ assert_case() {
 }
 
 assert_case "docs only" 'rust=false ui=false workflows=false advisory=false release=false security=false docs=true' docs/research/note.md
+assert_case "docs gate fixture" 'rust=true ui=false workflows=false advisory=false release=true security=false docs=true' crates/parallax-xtask/src/docs_links/tests.rs
 assert_case "Rust only" 'rust=true ui=false workflows=false advisory=false release=true security=false docs=false' crates/parallax-cli/src/main.rs
 assert_case "UI only" 'rust=false ui=true workflows=false advisory=false release=true security=false docs=false' ui/src/main.tsx
 assert_case "shared toolchain" 'rust=true ui=true workflows=true advisory=true release=true security=false docs=false' mise.toml
@@ -31,4 +32,4 @@ assert_case "mixed paths" 'rust=true ui=true workflows=true advisory=true releas
 if ((failures)); then
   exit 1
 fi
-printf 'classifier fixtures passed (10 cases)\n'
+printf 'classifier fixtures passed (11 cases)\n'
