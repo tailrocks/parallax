@@ -134,7 +134,7 @@ work.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [104](104-evidence-bundle-contract-reconciliation.md) | Reconcile the research bundle model with shipped `bundle-v1` | P1 | L | 093, 099 | TODO |
+| [104](104-evidence-bundle-contract-reconciliation.md) | Reconcile the research bundle model with shipped `bundle-v1` | P1 | L | 093, 099 | IN PROGRESS |
 | [111](111-redaction-pipeline-and-a6-gate.md) | Build the source-aware fail-closed runtime redactor and prove the A6 gate | P1 | L | 099, 101, 104 | TODO |
 | [116](116-retention-and-prune-lifecycle.md) | Reconcile data retention and make `prune` truthfully reclaim eligible data | P1 | L | 093, 097, 099; 105 soft | TODO |
 | [106](106-evidence-pinning-ttl-spike.md) | Design and live-test evidence pinning beyond telemetry TTL | P2 | M | 092, 104, 116 | TODO |
