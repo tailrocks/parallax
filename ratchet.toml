@@ -365,11 +365,6 @@ class = "test-support"
 
 
 [[limits]]
-metric = "rust.file-lines"
-scope = "crates/parallax-xtask/src/policy/typescript.rs"
-ceiling = 665
-
-[[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/components/console/command-palette.tsx"
 ceiling = 366
@@ -1585,7 +1580,7 @@ ceiling = 25
 
 [[limits]]
 metric = "rust.function-cognitive-complexity"
-scope = "crates/parallax-xtask/src/policy/typescript.rs::health"
+scope = "crates/parallax-xtask/src/policy/typescript/workspace.rs::health"
 ceiling = 25
 
 
