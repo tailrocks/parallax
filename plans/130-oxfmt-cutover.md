@@ -14,7 +14,7 @@
 - **Depends on**: 094, 101
 - **Category**: Oxc / TypeScript formatting / tooling
 - **Planned at**: `a1d8bf82`, 2026-07-12
-- **Status**: TODO
+- **Status**: IN PROGRESS
 
 ## Why
 

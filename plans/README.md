@@ -76,7 +76,7 @@ Every plan must preserve these non-negotiable Parallax constraints:
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [130](130-oxfmt-cutover.md) | Replace Prettier with exact-pinned Oxfmt and built-in Tailwind formatting | P1 | M | 094, 101 | TODO |
+| [130](130-oxfmt-cutover.md) | Replace Prettier with exact-pinned Oxfmt and built-in Tailwind formatting | P1 | M | 094, 101 | IN PROGRESS |
 | [128](128-typescript-static-and-runtime-safety.md) | Enforce strict TypeScript static safety | P1 | L | 095, 101, 131 | TODO |
 | [129](129-frontend-test-architecture.md) | Build deterministic forced-Bun Vitest characterization and separated test ownership | P1 | L | 094, 101, 128 | TODO |
 | [100](100-ui-feature-architecture.md) | Establish the TypeScript layer graph, ownership ledger, facades, and placement policy | P1 | L | 095, 101, 128, 129 | TODO |
