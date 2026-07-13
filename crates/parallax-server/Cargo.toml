@@ -39,7 +39,7 @@ tonic = { workspace = true }
 tower-http = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
-# Self-telemetry: `parallax serve` exports its own spans/logs over OTLP to a
+# Self-telemetry: `parallax serve` exports its own spans/logs/metrics over OTLP to a
 # configured collector (e.g. the lab's Rotel) — opt-in via `PARALLAX_SELF_OTLP`
 # / `[telemetry] self_otlp_endpoint`. The ingest-path is suppressed so the sink
 # does not re-export what it just received (self→Rotel→self loop).
