@@ -2,7 +2,7 @@
 
 - **Status:** Active implementation companion for plans 094, 095, 100, 101,
   107, and 128-153
-- **Last verified:** 2026-07-12
+- **Last verified:** 2026-07-13
 - **Parallax baseline:** `e3e7997933801e0e78804d32f0973181036bb617`
 - **Upstream:** [Oxc](https://oxc.rs/) and its official documentation
 
@@ -84,8 +84,10 @@ Plan 131 completed on 2026-07-13. The live graph now uses exact TypeScript
 typescript-eslint path are absent. Native lint, type-aware lint, and independent
 `tsc --noEmit` are separate CI gates with selected-file/config fingerprints and
 19 rule fixtures. The baseline bullets above remain historical migration input.
-Prettier remains live only because the independent Plan 130 Oxfmt cutover has
-not executed yet.
+Plan 130 completed on 2026-07-13. Exact Oxfmt 0.58.0 is now the sole direct UI
+formatter, forced through Bun with native-platform and process-tree proof.
+Direct Prettier/plugin/config/command ownership is absent; only TanStack's
+non-invoked internal route-generator dependency remains transitively.
 
 ## Upstream Capability And Maturity Matrix
 
