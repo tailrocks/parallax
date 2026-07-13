@@ -38,6 +38,8 @@ mod errors;
     reason = "engine lifecycle"
 )]
 mod greptime_supervisor;
+mod ingest_health;
+mod ingest_runtime;
 mod live;
 mod otlp_grpc;
 mod otlp_http;

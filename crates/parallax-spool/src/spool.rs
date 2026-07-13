@@ -92,11 +92,46 @@ pub struct SpoolReclaim {
     pub reclaimed_bytes: u64,
 }
 
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct SpoolHealth {
+    pub bytes: u64,
+    pub oldest_age: Duration,
+}
+
 #[derive(Debug, Clone)]
 struct RotatedSegment {
     path: PathBuf,
     size: u64,
     timestamp_secs: Option<u64>,
+}
+
+impl Spool {
+    pub fn health(&self, signal: Signal, now: SystemTime) -> std::io::Result<SpoolHealth> {
+        let mut health = SpoolHealth::default();
+        for entry in std::fs::read_dir(&self.dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            let Some(name) = path.file_name().and_then(|name| name.to_str()) else {
+                continue;
+            };
+            if !path.is_file()
+                || !(name == signal.file_name()
+                    || name == signal.legacy_file_name()
+                    || name.starts_with(&format!("{}.", signal.stem())))
+            {
+                continue;
+            }
+            let metadata = entry.metadata()?;
+            health.bytes = health.bytes.saturating_add(metadata.len());
+            let age = metadata
+                .modified()
+                .ok()
+                .and_then(|modified| now.duration_since(modified).ok())
+                .unwrap_or_default();
+            health.oldest_age = health.oldest_age.max(age);
+        }
+        Ok(health)
+    }
 }
 
 #[derive(Debug)]

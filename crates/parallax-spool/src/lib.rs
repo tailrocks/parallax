@@ -2,4 +2,4 @@
 
 mod spool;
 
-pub use spool::{Signal, Spool, SpoolReclaim, SpoolRetention};
+pub use spool::{Signal, Spool, SpoolHealth, SpoolReclaim, SpoolRetention};

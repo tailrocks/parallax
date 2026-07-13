@@ -13,6 +13,10 @@ use parallax_test_support::builders::MemoryStore;
 use serde_json::json;
 use tokio::sync::oneshot;
 
+fn queued(item: IngestItem) -> QueuedItem {
+    QueuedItem::fixture(item)
+}
+
 fn error_event(source: ErrorSource, span_id: &str, fingerprint: &str) -> ErrorEventRow {
     ErrorEventRow {
         ts_nanos: 1,
@@ -336,34 +340,34 @@ async fn per_signal_workers_isolate_slow_traces_from_logs() {
     let worker = Worker::new(store.clone(), metadata, live);
     let (senders, receivers) = channels(8);
 
-    let traces_task = tokio::spawn(worker.clone().run(receivers.traces));
+    let traces_task = tokio::spawn(worker.clone().run(Signal::Traces, receivers.traces));
     let worker_logs = worker.clone();
     let logs_task = tokio::spawn(async move {
         let mut rx = receivers.logs;
         let mut logs_done_tx = Some(logs_done_tx);
         while let Some(item) = rx.recv().await {
-            worker_logs.process(&item).await.expect("logs");
+            worker_logs.process(&item.item).await.expect("logs");
             if let Some(done) = logs_done_tx.take() {
                 done.send(()).expect("signal logs completion");
             }
         }
     });
-    let metrics_task = tokio::spawn(worker.run(receivers.metrics));
+    let metrics_task = tokio::spawn(worker.run(Signal::Metrics, receivers.metrics));
 
     senders
         .traces
-        .send(IngestItem::Traces(
+        .send(queued(IngestItem::Traces(
             ExportTraceServiceRequest::default(),
             bytes::Bytes::new(),
-        ))
+        )))
         .await
         .expect("enqueue traces");
     senders
         .logs
-        .send(IngestItem::Logs(
+        .send(queued(IngestItem::Logs(
             ExportLogsServiceRequest::default(),
             bytes::Bytes::new(),
-        ))
+        )))
         .await
         .expect("enqueue logs");
 

@@ -1,4 +1,4 @@
-//! Self-telemetry: `parallax serve` emitting its **own** OTLP spans and logs.
+//! Self-telemetry: `parallax serve` emitting its **own** OTLP spans, logs, and metrics.
 //!
 //! Parallax is normally a pure sink — it receives OTLP and never says anything
 //! about itself. When `[telemetry] self_otlp_endpoint` (or `PARALLAX_SELF_OTLP`)
@@ -16,10 +16,12 @@
 
 use crate::config::Config;
 use opentelemetry::KeyValue;
+use opentelemetry::global;
 use opentelemetry::trace::TracerProvider as _;
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::Resource;
 use opentelemetry_sdk::logs::SdkLoggerProvider;
+use opentelemetry_sdk::metrics::SdkMeterProvider;
 use opentelemetry_sdk::trace::SdkTracerProvider;
 use parallax_proto::semconv;
 use tracing::level_filters::LevelFilter;
@@ -53,19 +55,22 @@ fn export_filter() -> Targets {
 
 /// Owns the export pipelines so they can be flushed and shut down on serve
 /// exit; dropping without [`SelfTelemetry::shutdown`] risks losing buffered
-/// spans/logs.
+/// spans/logs/metrics.
 #[derive(Debug)]
 pub struct SelfTelemetry {
-    tracer_provider: SdkTracerProvider,
-    logger_provider: SdkLoggerProvider,
+    tracer: SdkTracerProvider,
+    logger: SdkLoggerProvider,
+    meter: SdkMeterProvider,
 }
 
 impl SelfTelemetry {
     /// Flush and shut the exporters down (call before process exit).
     pub fn shutdown(&self) {
-        crate::outcomes::note(self.tracer_provider.force_flush(), "flush trace exporter");
-        crate::outcomes::note(self.tracer_provider.shutdown(), "stop trace exporter");
-        crate::outcomes::note(self.logger_provider.shutdown(), "stop log exporter");
+        crate::outcomes::note(self.tracer.force_flush(), "flush trace exporter");
+        crate::outcomes::note(self.tracer.shutdown(), "stop trace exporter");
+        crate::outcomes::note(self.logger.shutdown(), "stop log exporter");
+        crate::outcomes::note(self.meter.force_flush(), "flush metric exporter");
+        crate::outcomes::note(self.meter.shutdown(), "stop metric exporter");
     }
 }
 
@@ -137,6 +142,16 @@ pub fn install(endpoint: &str) -> anyhow::Result<Installed> {
         .with_batch_exporter(log_exporter)
         .build();
 
+    let metric_exporter = opentelemetry_otlp::MetricExporter::builder()
+        .with_tonic()
+        .with_endpoint(endpoint.to_string())
+        .build()?;
+    let meter_provider = SdkMeterProvider::builder()
+        .with_resource(resource())
+        .with_periodic_exporter(metric_exporter)
+        .build();
+    global::set_meter_provider(meter_provider.clone());
+
     let trace_layer = tracing_opentelemetry::layer()
         .with_tracer(tracer_provider.tracer("parallax"))
         .with_filter(export_filter())
@@ -149,8 +164,9 @@ pub fn install(endpoint: &str) -> anyhow::Result<Installed> {
     Ok(Installed {
         layers: vec![trace_layer, log_layer],
         guard: SelfTelemetry {
-            tracer_provider,
-            logger_provider,
+            tracer: tracer_provider,
+            logger: logger_provider,
+            meter: meter_provider,
         },
         endpoint: endpoint.to_string(),
     })

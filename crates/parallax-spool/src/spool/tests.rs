@@ -161,3 +161,27 @@ fn no_serde_json_to_string_in_spool_source() {
     let needle = format!("{}::{}", "serde_json", "to_string");
     assert!(!src.contains(&needle));
 }
+
+#[tokio::test]
+async fn health_counts_only_the_selected_signal() -> Result<(), std::io::Error> {
+    let tmp = TempDir::new("health");
+    let spool =
+        Spool::open_with_max_segment_bytes(tmp.path(), 40).map_err(std::io::Error::other)?;
+    spool
+        .append_raw(Signal::Logs, &bytes::Bytes::from_static(&[1; 32]))
+        .await
+        .map_err(std::io::Error::other)?;
+    spool
+        .append_raw(Signal::Traces, &bytes::Bytes::from_static(&[2; 8]))
+        .await
+        .map_err(std::io::Error::other)?;
+    let now = UNIX_EPOCH + Duration::from_secs(4_000_000_000);
+    let logs = spool.health(Signal::Logs, now)?;
+    let traces = spool.health(Signal::Traces, now)?;
+    if logs.bytes <= traces.bytes || traces.bytes == 0 {
+        return Err(std::io::Error::other(format!(
+            "spool health mismatch: logs={logs:?}, traces={traces:?}"
+        )));
+    }
+    Ok(())
+}

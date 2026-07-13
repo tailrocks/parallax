@@ -2,7 +2,7 @@
 //! Each accepted request is spooled (durability) then queued for the ingest
 //! worker (processing) before acknowledgement.
 
-use crate::serve::IngestState;
+use crate::ingest_runtime::IngestState;
 use crate::worker::IngestItem;
 use parallax_proto::collector_logs::logs_service_server::{LogsService, LogsServiceServer};
 use parallax_proto::collector_logs::{ExportLogsServiceRequest, ExportLogsServiceResponse};
@@ -63,6 +63,7 @@ impl OtlpGrpc {
         signal: Signal,
         request: T,
         to_item: impl FnOnce(T, bytes::Bytes) -> IngestItem,
+        observed: bool,
     ) -> Result<(), Status> {
         let raw = bytes::Bytes::from(request.encode_to_vec());
         self.state
@@ -71,11 +72,9 @@ impl OtlpGrpc {
             .await
             .map_err(|e| Status::internal(format!("spool write failed: {e}")))?;
         self.state
-            .senders
-            .for_signal(signal)
-            .send(to_item(request, raw))
+            .enqueue(signal, to_item(request, raw), observed)
             .await
-            .map_err(|_| Status::internal("ingest worker unavailable"))
+            .map_err(|()| Status::internal("ingest worker unavailable"))
     }
 }
 
@@ -87,7 +86,7 @@ impl TraceService for OtlpGrpc {
     ) -> Result<Response<ExportTraceServiceResponse>, Status> {
         let request = request.into_inner();
         crate::otlp_validation::trace_ids(&request).map_err(Status::invalid_argument)?;
-        self.spool_then_queue(Signal::Traces, request, IngestItem::Traces)
+        self.spool_then_queue(Signal::Traces, request, IngestItem::Traces, true)
             .await?;
         Ok(Response::new(ExportTraceServiceResponse {
             partial_success: None,
@@ -103,7 +102,7 @@ impl LogsService for OtlpGrpc {
     ) -> Result<Response<ExportLogsServiceResponse>, Status> {
         let request = request.into_inner();
         crate::otlp_validation::log_trace_ids(&request).map_err(Status::invalid_argument)?;
-        self.spool_then_queue(Signal::Logs, request, IngestItem::Logs)
+        self.spool_then_queue(Signal::Logs, request, IngestItem::Logs, true)
             .await?;
         Ok(Response::new(ExportLogsServiceResponse {
             partial_success: None,
@@ -119,7 +118,8 @@ impl MetricsService for OtlpGrpc {
     ) -> Result<Response<ExportMetricsServiceResponse>, Status> {
         let request = request.into_inner();
         crate::otlp_validation::metric_trace_ids(&request).map_err(Status::invalid_argument)?;
-        self.spool_then_queue(Signal::Metrics, request, IngestItem::Metrics)
+        let observed = !crate::ingest_health::is_self_metrics(&request);
+        self.spool_then_queue(Signal::Metrics, request, IngestItem::Metrics, observed)
             .await?;
         Ok(Response::new(ExportMetricsServiceResponse {
             partial_success: None,

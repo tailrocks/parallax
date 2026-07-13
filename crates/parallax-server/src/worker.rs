@@ -26,8 +26,12 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::{Mutex, mpsc};
 
+use crate::ingest_health::{IngestHealth, QueuedItem};
+
 mod occurrence;
+mod queue;
 use occurrence::occurrence_id;
+pub(crate) use queue::{IngestItem, IngestSenders, channels};
 
 const INGEST_RETRIES: usize = 3;
 const INGEST_BACKOFF: [Duration; 3] = [
@@ -37,73 +41,13 @@ const INGEST_BACKOFF: [Duration; 3] = [
 ];
 const SEEN_RUNS_CAP: usize = 100_000;
 
-/// One queued OTLP batch.
-///
-/// Memory shape per item:
-/// - **Traces / logs**: decoded `Export*ServiceRequest` (needed for derive,
-///   live-tail, and — for logs — identity-attribute promotion) plus raw
-///   protobuf `Bytes` (zero-copy refcounted) for the native GreptimeDB OTLP
-///   forward. Both are justified consumers; dropping either would re-decode
-///   or re-encode on the hot path.
-/// - **Metrics**: decoded request (normalize → extension tables / exemplars)
-///   plus raw bytes for the native metric-engine forward.
-#[derive(Debug)]
-pub(crate) enum IngestItem {
-    Traces(ExportTraceServiceRequest, bytes::Bytes),
-    Logs(ExportLogsServiceRequest, bytes::Bytes),
-    Metrics(ExportMetricsServiceRequest, bytes::Bytes),
-}
-
-/// Per-signal senders so receivers enqueue without crossing signal FIFOs.
-#[derive(Clone, Debug)]
-pub(crate) struct IngestSenders {
-    pub traces: mpsc::Sender<IngestItem>,
-    pub logs: mpsc::Sender<IngestItem>,
-    pub metrics: mpsc::Sender<IngestItem>,
-}
-
-impl IngestSenders {
-    pub(crate) fn for_signal(&self, signal: Signal) -> &mpsc::Sender<IngestItem> {
-        match signal {
-            Signal::Traces => &self.traces,
-            Signal::Logs => &self.logs,
-            Signal::Metrics => &self.metrics,
-        }
-    }
-}
-
-#[derive(Debug)]
-pub(crate) struct IngestReceivers {
-    pub traces: mpsc::Receiver<IngestItem>,
-    pub logs: mpsc::Receiver<IngestItem>,
-    pub metrics: mpsc::Receiver<IngestItem>,
-}
-
-/// Build three bounded channels, one per signal (`[limits] ingest_queue_batches`).
-pub(crate) fn channels(buffer_per_signal: usize) -> (IngestSenders, IngestReceivers) {
-    let (traces_tx, traces_rx) = mpsc::channel(buffer_per_signal);
-    let (logs_tx, logs_rx) = mpsc::channel(buffer_per_signal);
-    let (metrics_tx, metrics_rx) = mpsc::channel(buffer_per_signal);
-    (
-        IngestSenders {
-            traces: traces_tx,
-            logs: logs_tx,
-            metrics: metrics_tx,
-        },
-        IngestReceivers {
-            traces: traces_rx,
-            logs: logs_rx,
-            metrics: metrics_rx,
-        },
-    )
-}
-
 #[derive(Clone)]
 pub(crate) struct Worker {
     store: Arc<dyn IngestStore>,
     metadata: Arc<dyn MetadataStore>,
     seen_runs: Arc<Mutex<HashSet<String>>>,
     live: crate::live::LiveChannels,
+    health: Arc<IngestHealth>,
     #[cfg(test)]
     fail_once_after: Arc<Mutex<Option<FailureStage>>>,
 }
@@ -154,16 +98,27 @@ enum WorkerError {
 type WorkerResult<T> = Result<T, WorkerError>;
 
 impl Worker {
+    #[cfg(test)]
     pub(crate) fn new(
         store: Arc<dyn IngestStore>,
         metadata: Arc<dyn MetadataStore>,
         live: crate::live::LiveChannels,
+    ) -> Self {
+        Self::new_with_health(store, metadata, live, Arc::new(IngestHealth::new(1)))
+    }
+
+    pub(crate) fn new_with_health(
+        store: Arc<dyn IngestStore>,
+        metadata: Arc<dyn MetadataStore>,
+        live: crate::live::LiveChannels,
+        health: Arc<IngestHealth>,
     ) -> Self {
         Self {
             store,
             metadata,
             seen_runs: Arc::new(Mutex::new(HashSet::new())),
             live,
+            health,
             #[cfg(test)]
             fail_once_after: Arc::new(Mutex::new(None)),
         }
@@ -184,8 +139,11 @@ impl Worker {
         Ok(())
     }
 
-    pub(crate) async fn run(self, mut receiver: mpsc::Receiver<IngestItem>) {
-        while let Some(item) = receiver.recv().await {
+    pub(crate) async fn run(self, signal: Signal, mut receiver: mpsc::Receiver<QueuedItem>) {
+        while let Some(queued) = receiver.recv().await {
+            self.health
+                .dequeued(signal, queued.enqueued_at.elapsed(), queued.observed);
+            let item = queued.item;
             let mut attempt = 0;
             let mut progress = EffectProgress::default();
             loop {
@@ -193,10 +151,16 @@ impl Worker {
                     Ok(()) => break,
                     Err(e) if attempt < INGEST_RETRIES => {
                         attempt += 1;
+                        if queued.observed {
+                            self.health.retry(signal);
+                        }
                         tracing::warn!("ingest attempt {attempt} failed, retrying: {e:#}");
                         tokio::time::sleep(INGEST_BACKOFF[attempt - 1]).await;
                     }
                     Err(e) => {
+                        if queued.observed {
+                            self.health.terminal_drop(signal);
+                        }
                         tracing::error!(
                             "ingest item DROPPED after {INGEST_RETRIES} retries: {e:#}"
                         );

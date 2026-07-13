@@ -6,7 +6,7 @@
 //! request decompression layer so spool + forward always see decompressed
 //! protobuf bytes.
 
-use crate::serve::IngestState;
+use crate::ingest_runtime::IngestState;
 use crate::worker::IngestItem;
 use axum::Router;
 use axum::body::Bytes;
@@ -64,6 +64,7 @@ async fn ingest<R>(
     body: Bytes,
     to_item: impl FnOnce(R, Bytes) -> IngestItem,
     validate: impl FnOnce(&R) -> Result<(), &'static str>,
+    observe: impl FnOnce(&R) -> bool,
 ) -> Response
 where
     R: Message + Default,
@@ -91,10 +92,9 @@ where
         )
             .into_response();
     }
+    let observed = observe(&request);
     if state
-        .senders
-        .for_signal(signal)
-        .send(to_item(request, raw))
+        .enqueue(signal, to_item(request, raw), observed)
         .await
         .is_err()
     {
@@ -119,6 +119,7 @@ async fn traces(State(state): State<IngestState>, body: Bytes) -> impl IntoRespo
         body,
         IngestItem::Traces,
         crate::otlp_validation::trace_ids,
+        |_| true,
     )
     .await
 }
@@ -130,6 +131,7 @@ async fn logs(State(state): State<IngestState>, body: Bytes) -> impl IntoRespons
         body,
         IngestItem::Logs,
         crate::otlp_validation::log_trace_ids,
+        |_| true,
     )
     .await
 }
@@ -141,6 +143,7 @@ async fn metrics(State(state): State<IngestState>, body: Bytes) -> impl IntoResp
         body,
         IngestItem::Metrics,
         crate::otlp_validation::metric_trace_ids,
+        |request| !crate::ingest_health::is_self_metrics(request),
     )
     .await
 }

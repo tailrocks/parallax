@@ -31,7 +31,8 @@ service, trace, batch, route, error text, or other unbounded value is permitted.
 | `parallax.ingest.queue.depth` | observable gauge `{batch}` | transport enqueue + worker dequeue; exact current depth |
 | `parallax.ingest.queue.capacity` | observable gauge `{batch}` | initialization; immutable per signal |
 | `parallax.ingest.queue.high_water` | observable gauge `{batch}` | enqueue; monotonic maximum until process restart |
-| `parallax.ingest.queue.oldest_age` | observable gauge `s` | preallocated sequence/timestamp ring; zero iff empty |
+| `parallax.ingest.queue.oldest_age` | observable gauge `s` | preallocated timestamp ring; zero iff empty |
+| `parallax.ingest.queue.age` | histogram `s` | worker dequeue; actual residence time for every observed batch |
 | `parallax.ingest.enqueue.wait` | histogram `s` | transport; one sample for every capacity wait |
 | `parallax.ingest.enqueue.outcomes` | counter `{batch}` | transport; exactly one accepted/unavailable outcome |
 | `parallax.ingest.worker.retries` | counter `{retry}` | worker retry boundary, fixed signal label |
@@ -41,7 +42,7 @@ service, trace, batch, route, error text, or other unbounded value is permitted.
 | `parallax.ingest.spool.oldest_age` | observable gauge `s` | oldest retained segment per signal |
 | `parallax.ingest.spool.reclaimed` | counter `By` | reaper/prune reclaim boundary |
 
-The queue ring is allocated once at configured capacity. Every accepted item
+The timestamp ring is allocated once at configured capacity. Every accepted item
 carries only a sequence number and monotonic enqueue instant beside its already
 owned decoded request/raw `Bytes`; no telemetry payload is cloned. The worker
 advances the read sequence and records age before processing.

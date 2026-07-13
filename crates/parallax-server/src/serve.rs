@@ -4,11 +4,15 @@
 
 use crate::config::Config;
 use crate::errors::{ServerError, ServerResult};
+use crate::ingest_health::IngestHealth;
+use crate::ingest_runtime::{IngestState, assemble_ingest};
 use crate::otlp_grpc::OtlpGrpc;
 use crate::otlp_http;
-use crate::worker::{self, IngestSenders, Worker};
 use axum::Router;
+use axum::extract::State;
+use axum::http::StatusCode;
 use axum::middleware;
+use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use parallax_metadata::TursoMetadataStore;
 use parallax_spool::{Spool, SpoolRetention};
@@ -35,6 +39,7 @@ pub struct ServerHandle {
     tasks: Vec<JoinHandle<()>>,
     /// Ingest worker tasks (one per signal) — drained on graceful shutdown after senders drop.
     worker_tasks: Vec<JoinHandle<()>>,
+    ingest_health: Arc<IngestHealth>,
 }
 
 impl ServerHandle {
@@ -62,7 +67,7 @@ impl ServerHandle {
             task.abort();
         }
         let workers = std::mem::take(&mut self.worker_tasks);
-        crate::outcomes::drain_workers(workers).await;
+        crate::outcomes::drain_workers(workers, &self.ingest_health).await;
     }
 }
 
@@ -85,15 +90,9 @@ async fn connect_greptime(url: &str, config: &Config) -> anyhow::Result<Arc<dyn 
     Ok(Arc::new(store))
 }
 
-/// Shared state handed to both OTLP transports.
-#[derive(Clone, Debug)]
-pub(crate) struct IngestState {
-    pub spool: Arc<Spool>,
-    pub senders: IngestSenders,
-}
-
 fn spawn_spool_reaper(
     spool: Arc<Spool>,
+    health: Arc<IngestHealth>,
     max_total_bytes: u64,
     max_age_hours: u64,
 ) -> JoinHandle<()> {
@@ -107,6 +106,7 @@ fn spawn_spool_reaper(
             interval.tick().await;
             match spool.reap(retention, std::time::SystemTime::now()) {
                 Ok(reclaimed) if reclaimed.removed_segments > 0 => {
+                    health.spool_reclaimed(reclaimed.reclaimed_bytes);
                     tracing::info!(
                         segments = reclaimed.removed_segments,
                         bytes = reclaimed.reclaimed_bytes,
@@ -115,6 +115,9 @@ fn spawn_spool_reaper(
                 }
                 Ok(_) => {}
                 Err(error) => tracing::warn!("ingest spool reaper failed: {error}"),
+            }
+            if let Err(error) = health.observe_spool(&spool) {
+                tracing::warn!(%error, "ingest spool health scan failed");
             }
         }
     })
@@ -212,6 +215,7 @@ fn build_api_router(
     live: crate::live::LiveChannels,
     ingest: IngestState,
 ) -> Router {
+    let ingest_health = ingest.health.clone();
     let graphql_state = GraphQlState {
         schema: Arc::new(parallax_api::build_schema()),
         store: state.store,
@@ -221,7 +225,11 @@ fn build_api_router(
     };
     let host_guard = HostGuard::for_listener(&config.server.bind, state.api_addr);
     let router = Router::new()
-        .route("/health", get(|| async { "ok" }))
+        .merge(
+            Router::new()
+                .route("/health", get(health_handler))
+                .with_state(ingest_health),
+        )
         .route("/version", get(|| async { env!("CARGO_PKG_VERSION") }))
         .merge(
             Router::new()
@@ -261,6 +269,27 @@ fn build_api_router(
     }
 }
 
+async fn health_handler(State(health): State<Arc<IngestHealth>>) -> impl IntoResponse {
+    let snapshots = [
+        ("traces", health.snapshot(parallax_spool::Signal::Traces)),
+        ("logs", health.snapshot(parallax_spool::Signal::Logs)),
+        ("metrics", health.snapshot(parallax_spool::Signal::Metrics)),
+    ];
+    let degraded = snapshots
+        .iter()
+        .filter(|(_, snapshot)| snapshot.depth >= snapshot.capacity)
+        .map(|(signal, snapshot)| format!("{signal}={}/{}", snapshot.depth, snapshot.capacity))
+        .collect::<Vec<_>>();
+    if degraded.is_empty() {
+        (StatusCode::OK, "ok".to_string())
+    } else {
+        (
+            StatusCode::SERVICE_UNAVAILABLE,
+            format!("degraded: ingest queue full ({})", degraded.join(", ")),
+        )
+    }
+}
+
 async fn start_assembled(
     config: &Config,
     store: Arc<dyn TelemetryStore>,
@@ -276,18 +305,16 @@ async fn start_assembled(
         .map_err(|source| ServerError::Spool { source })?;
 
     let queue_batches = config.limits.ingest_queue_batches.max(1);
-    let (senders, receivers) = worker::channels(queue_batches);
-    let ingest = IngestState {
-        spool: spool.clone(),
-        senders,
-    };
-    let live = crate::live::channels();
-    let worker = Worker::new(store.clone(), metadata.clone(), live.clone());
-    let worker_tasks = vec![
-        tokio::spawn(worker.clone().run(receivers.traces)),
-        tokio::spawn(worker.clone().run(receivers.logs)),
-        tokio::spawn(worker.run(receivers.metrics)),
-    ];
+    let runtime = assemble_ingest(
+        queue_batches,
+        spool.clone(),
+        store.clone(),
+        metadata.clone(),
+    );
+    let ingest = runtime.state;
+    let health = runtime.health;
+    let live = runtime.live;
+    let worker_tasks = runtime.workers;
     tracing::info!(
         queue_batches_per_signal = queue_batches,
         "ingest workers ready (traces/logs/metrics)"
@@ -295,6 +322,7 @@ async fn start_assembled(
     let mut tasks = Vec::new();
     tasks.push(spawn_spool_reaper(
         spool.clone(),
+        health.clone(),
         config.retention.spool_max_total_bytes,
         config.retention.spool_max_age_hours,
     ));
@@ -358,6 +386,7 @@ async fn start_assembled(
         supervisor,
         tasks,
         worker_tasks,
+        ingest_health: health,
     })
 }
 

@@ -6,13 +6,19 @@ pub(crate) fn note<T, E: Display>(result: Result<T, E>, operation: &str) {
     }
 }
 
-pub(crate) async fn drain_workers(workers: Vec<tokio::task::JoinHandle<()>>) {
+pub(crate) async fn drain_workers(
+    workers: Vec<tokio::task::JoinHandle<()>>,
+    health: &crate::ingest_health::IngestHealth,
+) {
+    let started = std::time::Instant::now();
     let drain = tokio::time::timeout(std::time::Duration::from_secs(5), async {
         for worker in workers {
             note(worker.await, "join ingest worker");
         }
     })
     .await;
+    let completed = drain.is_ok();
+    health.drained(started.elapsed(), completed);
     note(drain, "drain ingest workers within 5 seconds");
 }
 

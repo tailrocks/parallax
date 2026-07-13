@@ -1,4 +1,4 @@
 schema_version = 1
 
 [roots]
-"lib.rs" = ["use spool::{Signal, Spool, SpoolReclaim, SpoolRetention}"]
+"lib.rs" = ["use spool::{Signal, Spool, SpoolHealth, SpoolReclaim, SpoolRetention}"]
