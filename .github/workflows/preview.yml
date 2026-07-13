@@ -27,7 +27,6 @@ jobs:
     outputs:
       source: ${{ steps.filter.outputs.source }}
       sha: ${{ steps.source.outputs.sha }}
-      short_sha: ${{ steps.meta.outputs.short_sha }}
       version: ${{ steps.meta.outputs.version }}
     steps:
       - name: Resolve source SHA
@@ -128,7 +127,6 @@ jobs:
           )
           {
             echo "full_sha=$FULL_SHA"
-            echo "short_sha=$short_sha"
             echo "version=${base_version}-preview.${commit_count}+${short_sha}"
           } >> "$GITHUB_OUTPUT"
 
@@ -291,46 +289,17 @@ jobs:
     if: needs.source-changed.outputs.source == 'true'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # rolling preview release assets only; the tap pulls independently
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          ref: ${{ needs.source-changed.outputs.sha }}
-          fetch-depth: 0
-          persist-credentials: false
-
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.0
         with:
           path: artifacts
           merge-multiple: true
 
-      - name: Compute preview metadata
-        id: meta
-        env:
-          FULL_SHA: ${{ needs.source-changed.outputs.sha }}
-          SHORT_SHA: ${{ needs.source-changed.outputs.short_sha }}
-          VERSION: ${{ needs.source-changed.outputs.version }}
-        run: |
-          {
-            echo "full_sha=$FULL_SHA"
-            echo "short_sha=$SHORT_SHA"
-            echo "version=$VERSION"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Read platform SHA256s
-        id: shas
-        run: |
-          {
-            echo "arm64_macos=$(cat artifacts/parallax-aarch64-apple-darwin.tar.gz.sha256)"
-            echo "x86_macos=$(cat artifacts/parallax-x86_64-apple-darwin.tar.gz.sha256)"
-            echo "arm64_linux=$(cat artifacts/parallax-aarch64-unknown-linux-gnu.tar.gz.sha256)"
-            echo "x86_linux=$(cat artifacts/parallax-x86_64-unknown-linux-gnu.tar.gz.sha256)"
-          } >> "$GITHUB_OUTPUT"
-
       - name: Publish preview GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.meta.outputs.version }}
+          VERSION: ${{ needs.source-changed.outputs.version }}
           SHA: ${{ needs.source-changed.outputs.sha }}
         run: |
           set -euo pipefail
@@ -365,154 +334,3 @@ jobs:
             echo "::error::gh release view failed: $view_output"
             exit "$status"
           fi
-
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          repository: tailrocks/homebrew-parallax
-          ref: main
-          token: ${{ secrets.GH_PARALLAX_HOMEBREW_TAP_TOKEN }}
-          path: homebrew-tap
-
-      - name: Verify preview alias
-        run: |
-          test -L homebrew-tap/Aliases/parallax@preview
-          test "$(readlink homebrew-tap/Aliases/parallax@preview)" = "../Formula/parallax-preview.rb"
-
-      - name: Extract previous preview SHA
-        id: prev
-        run: |
-          old_sha=$(
-            sed -n 's|^[[:space:]]*# source-sha: \([0-9a-f]\{40\}\)$|\1|p' \
-              homebrew-tap/Formula/parallax-preview.rb | head -1
-          )
-          echo "old_sha=${old_sha}" >> "$GITHUB_OUTPUT"
-
-      - name: Rewrite preview formula
-        env:
-          VERSION: ${{ steps.meta.outputs.version }}
-          FULL_SHA: ${{ steps.meta.outputs.full_sha }}
-          ARM64_SHA256: ${{ steps.shas.outputs.arm64_macos }}
-          X86_SHA256: ${{ steps.shas.outputs.x86_macos }}
-          LINUX_ARM64_SHA256: ${{ steps.shas.outputs.arm64_linux }}
-          LINUX_X86_SHA256: ${{ steps.shas.outputs.x86_linux }}
-        run: |
-          cat > homebrew-tap/Formula/parallax-preview.rb <<EOF
-          # source-sha: ${FULL_SHA}
-          class ParallaxPreview < Formula
-            desc "Local-first observability for agent-assisted development"
-            homepage "https://github.com/tailrocks/parallax"
-            version "${VERSION}"
-            license "Apache-2.0"
-
-            on_macos do
-              on_arm do
-                url "https://github.com/tailrocks/parallax/releases/download/preview/parallax-aarch64-apple-darwin.tar.gz"
-                sha256 "${ARM64_SHA256}"
-              end
-              on_intel do
-                url "https://github.com/tailrocks/parallax/releases/download/preview/parallax-x86_64-apple-darwin.tar.gz"
-                sha256 "${X86_SHA256}"
-              end
-            end
-
-            on_linux do
-              on_arm do
-                url "https://github.com/tailrocks/parallax/releases/download/preview/parallax-aarch64-unknown-linux-gnu.tar.gz"
-                sha256 "${LINUX_ARM64_SHA256}"
-              end
-              on_intel do
-                url "https://github.com/tailrocks/parallax/releases/download/preview/parallax-x86_64-unknown-linux-gnu.tar.gz"
-                sha256 "${LINUX_X86_SHA256}"
-              end
-            end
-
-            conflicts_with "tailrocks/parallax/parallax", because: "preview and stable install the same binary"
-
-            def install
-              bin.install "parallax"
-            end
-
-            def caveats
-              <<~EOS
-                Start the local server (downloads a pinned GreptimeDB on first run):
-                  parallax serve
-                Then open http://127.0.0.1:4000 - quickstart:
-                  https://github.com/tailrocks/parallax/blob/main/docs/guide/quickstart.md
-              EOS
-            end
-
-            test do
-              assert_match version.to_s, shell_output("#{bin}/parallax --version")
-            end
-          end
-          EOF
-
-      - name: Verify preview formula downloads
-        run: |
-          set -euo pipefail
-          while IFS= read -r url; do
-            echo "Verifying $url"
-            curl -fsIL --retry 3 --retry-all-errors --max-time 30 "$url" >/dev/null
-          done < <(
-            sed -n 's|^[[:space:]]*url "\(https://github.com/tailrocks/parallax/releases/download/preview/[^"]*\)".*$|\1|p' \
-              homebrew-tap/Formula/parallax-preview.rb
-          )
-
-      - name: Build PR body
-        id: pr_body
-        env:
-          OLD_SHA: ${{ steps.prev.outputs.old_sha }}
-          NEW_SHA: ${{ steps.meta.outputs.full_sha }}
-          VERSION: ${{ steps.meta.outputs.version }}
-        run: |
-          body_file="${RUNNER_TEMP}/pr-body.md"
-          {
-            printf 'Automated preview formula update for **parallax@preview %s**.\n\n' "$VERSION"
-            # shellcheck disable=SC2016
-            printf -- '- Source: [`%s`](https://github.com/tailrocks/parallax/commit/%s)\n' \
-              "${NEW_SHA:0:7}" "$NEW_SHA"
-            if [ -n "$OLD_SHA" ] && [ "$OLD_SHA" != "$NEW_SHA" ]; then
-              # shellcheck disable=SC2016
-              printf -- '- Previous: [`%s`](https://github.com/tailrocks/parallax/commit/%s)\n' \
-                "${OLD_SHA:0:7}" "$OLD_SHA"
-              printf -- '- [Full diff](https://github.com/tailrocks/parallax/compare/%s...%s)\n' \
-                "$OLD_SHA" "$NEW_SHA"
-            fi
-            printf '\n## Commits\n\n'
-            if [ -n "$OLD_SHA" ] \
-               && git -C "${GITHUB_WORKSPACE}" rev-parse --verify --quiet "${OLD_SHA}^{commit}" >/dev/null; then
-              git -C "${GITHUB_WORKSPACE}" log --pretty=format:'- %s (%h)' "${OLD_SHA}..${NEW_SHA}"
-              printf '\n'
-            else
-              printf '_No prior preview SHA found; commit range unavailable._\n'
-            fi
-          } > "$body_file"
-          echo "body_file=$body_file" >> "$GITHUB_OUTPUT"
-
-      - name: Open and merge PR for tap update
-        working-directory: homebrew-tap
-        env:
-          GH_TOKEN: ${{ secrets.GH_PARALLAX_HOMEBREW_TAP_TOKEN }}
-          VERSION: ${{ steps.meta.outputs.version }}
-          SHORT_SHA: ${{ steps.meta.outputs.short_sha }}
-          PR_BODY_FILE: ${{ steps.pr_body.outputs.body_file }}
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add Formula/parallax-preview.rb
-          if git diff --cached --quiet; then
-            echo "Preview formula already up to date"
-            exit 0
-          fi
-          branch="preview/formula-${SHORT_SHA}"
-          git switch -c "$branch"
-          git commit -m "parallax@preview ${VERSION}"
-          git push -u origin "$branch"
-          pr_url=$(gh pr create \
-            --title "parallax@preview ${VERSION}" \
-            --body-file "$PR_BODY_FILE" \
-            --base main \
-            --head "$branch")
-          echo "Opened PR: $pr_url"
-          gh pr merge "$pr_url" --squash --delete-branch
