@@ -183,6 +183,22 @@ fn dedup_preserves_distinct_span_failures() {
     assert_eq!(events.len(), 2);
 }
 
+#[test]
+fn occurrence_identity_collapses_echoes_but_preserves_distinct_events() {
+    let span = error_event(ErrorSource::SpanException, "span-a", "fp");
+    let log_echo = error_event(ErrorSource::LogException, "span-a", "fp");
+    let other_span = error_event(ErrorSource::SpanException, "span-b", "fp");
+    let mut first_log = error_event(ErrorSource::LogRecord, "", "fp");
+    first_log.trace_id.clear();
+    let mut later_log = error_event(ErrorSource::LogRecord, "", "fp");
+    later_log.trace_id.clear();
+    later_log.ts_nanos = 2;
+
+    assert_eq!(occurrence_id(&span), occurrence_id(&log_echo));
+    assert_ne!(occurrence_id(&span), occurrence_id(&other_span));
+    assert_ne!(occurrence_id(&first_log), occurrence_id(&later_log));
+}
+
 #[tokio::test]
 async fn record_errors_counts_one_occurrence_after_dedup() {
     let tmp = tempfile::tempdir().expect("tempdir");

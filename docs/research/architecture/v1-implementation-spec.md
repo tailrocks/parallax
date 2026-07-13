@@ -294,10 +294,33 @@ CREATE TABLE IF NOT EXISTS issue_buckets (
   count       INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (fingerprint, bucket_ts)
 );
+CREATE TABLE IF NOT EXISTS issue_occurrences (
+  occurrence_id TEXT PRIMARY KEY,
+  fingerprint   TEXT NOT NULL,
+  observed_at   INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS issue_occurrences_observed_at
+  ON issue_occurrences(observed_at);
 ```
 
-Counters (`event_count`, `last_seen`) are updated by the ingest worker on each derived error
-event; the same upsert increments the minute-grained `issue_buckets` rollup that feeds the
+Issue occurrence identity is deterministic and source-neutral: a failure with a
+valid trace/span context uses `v1:span:{trace_id}:{span_id}:{fingerprint}` so a
+late span/log echo claims the same identity; an uncorrelated log uses
+`v1:event:{service}:{ts_nanos}:{fingerprint}` as its log-event identity. Turso
+owns this mutable ledger because issue counters, buckets, status, and tags are
+already one metadata consistency domain. GreptimeDB continues to store every
+derived `error_events` row and owns no mutable dedup state.
+
+Each metadata batch runs in one immediate transaction. It first inserts the
+occurrence identity with `ON CONFLICT DO NOTHING`; only a newly claimed identity
+updates `issues`, `issue_buckets`, and the tag cache. This makes retries,
+concurrent delivery, and restart replays idempotent without collapsing distinct
+span/log identities. The transaction prunes ledger rows older than 30 days from
+the newest observed event time in the batch, bounding state consistently with
+the default derived-error retention horizon.
+
+Counters (`event_count`, `last_seen`) are updated by the ingest worker on each newly claimed derived error
+event; the same transaction increments the minute-grained `issue_buckets` rollup that feeds the
 trend sparkline (`issueTrend` sums it into coarser steps in SQL) and merges the event's scalar
 attributes into the bounded `tags` cache (`{key: {value: count}}`; ≤16 keys, ≤8 values per key,
 values ≤64 chars, `exception.*` excluded). Runs whose `parallax.run.id` first appears in

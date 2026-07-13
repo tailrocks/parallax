@@ -26,6 +26,9 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::{Mutex, mpsc};
 
+mod occurrence;
+use occurrence::occurrence_id;
+
 const INGEST_RETRIES: usize = 3;
 const INGEST_BACKOFF: [Duration; 3] = [
     Duration::from_millis(100),
@@ -378,19 +381,25 @@ impl Worker {
         if errors.is_empty() {
             return Ok(());
         }
+        let occurrence_ids: Vec<String> = errors.iter().map(occurrence_id).collect();
         let occurrences: Vec<parallax_storage::metadata::IssueOccurrence<'_>> = errors
             .iter()
-            .map(|event| parallax_storage::metadata::IssueOccurrence {
-                fingerprint: &event.fingerprint,
-                title: derive::issue_title(&event.error_type, &event.message),
-                error_type: &event.error_type,
-                culprit: derive::culprit(event.stacktrace.as_deref()),
-                service: &event.service,
-                ts_nanos: event.ts_nanos,
-                trace_id: (!event.trace_id.is_empty() && event.trace_id.chars().any(|c| c != '0'))
+            .zip(&occurrence_ids)
+            .map(
+                |(event, occurrence_id)| parallax_storage::metadata::IssueOccurrence {
+                    occurrence_id: occurrence_id.as_str().into(),
+                    fingerprint: &event.fingerprint,
+                    title: derive::issue_title(&event.error_type, &event.message),
+                    error_type: &event.error_type,
+                    culprit: derive::culprit(event.stacktrace.as_deref()),
+                    service: &event.service,
+                    ts_nanos: event.ts_nanos,
+                    trace_id: (!event.trace_id.is_empty()
+                        && event.trace_id.chars().any(|c| c != '0'))
                     .then_some(event.trace_id.as_str()),
-                attributes: &event.attributes,
-            })
+                    attributes: &event.attributes,
+                },
+            )
             .collect();
         self.metadata.upsert_issue_occurrences(&occurrences).await?;
         self.store.write_error_events(errors).await?;

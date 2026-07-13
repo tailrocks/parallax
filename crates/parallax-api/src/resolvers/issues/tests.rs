@@ -15,6 +15,7 @@ async fn assert_nested_issue_reads_are_batched(page_size: usize) {
         context
             .metadata
             .upsert_issue_occurrence(&IssueOccurrence {
+                occurrence_id: fingerprint.as_str().into(),
                 fingerprint: &fingerprint,
                 title: format!("Issue {index}"),
                 error_type: "test::Issue",

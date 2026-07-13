@@ -50,6 +50,7 @@ async fn seed_issue(
     handle
         .metadata
         .upsert_issue_occurrence(&IssueOccurrence {
+            occurrence_id: "bundle-issue".into(),
             fingerprint,
             title: title.to_string(),
             error_type: "test::Secret",

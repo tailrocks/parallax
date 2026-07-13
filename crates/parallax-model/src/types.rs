@@ -294,6 +294,8 @@ pub struct TrendPoint {
 /// One derived error occurrence, ready for metadata issue upsert.
 #[derive(Debug)]
 pub struct IssueOccurrence<'a> {
+    /// Deterministic, source-neutral identity used for durable replay dedup.
+    pub occurrence_id: std::borrow::Cow<'a, str>,
     pub fingerprint: &'a str,
     pub title: String,
     pub error_type: &'a str,

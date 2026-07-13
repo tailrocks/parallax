@@ -10,6 +10,7 @@ use std::{collections::BTreeMap, path::Path};
 use turso::Value;
 
 mod connection;
+mod occurrences;
 mod row;
 mod runs;
 mod saved_state;
@@ -68,9 +69,19 @@ CREATE TABLE IF NOT EXISTS issue_buckets (
   count       INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (fingerprint, bucket_ts)
 );
+CREATE TABLE IF NOT EXISTS issue_occurrences (
+  occurrence_id TEXT PRIMARY KEY,
+  fingerprint   TEXT NOT NULL,
+  observed_at   INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS issue_occurrences_observed_at
+  ON issue_occurrences(observed_at);
 ";
 
+#[cfg(test)]
+use occurrences::OCCURRENCE_RETENTION_MILLIS;
 /// Trend rollups count occurrences per fingerprint per minute.
+use occurrences::{claim_occurrence, prune_occurrence_ledger};
 
 #[derive(Debug)]
 pub struct TursoMetadataStore {
@@ -102,7 +113,11 @@ impl TursoMetadataStore {
         if occurrences.is_empty() {
             return Ok(());
         }
-        let conn = self.conn.lock().await;
+        let mut conn = self.conn.lock().await;
+        let tx = conn
+            .transaction_with_behavior(turso::transaction::TransactionBehavior::Immediate)
+            .await?;
+        prune_occurrence_ledger(&tx, occurrences).await?;
         // Fingerprints that received at least one insert, in first-seen order,
         // so tag merge can SELECT once per fingerprint after all inserts.
         let mut tag_order: Vec<&str> = Vec::new();
@@ -110,7 +125,10 @@ impl TursoMetadataStore {
 
         for occurrence in occurrences {
             let millis = nanos_to_millis(occurrence.ts_nanos);
-            conn.execute(
+            if !claim_occurrence(&tx, occurrence, millis).await? {
+                continue;
+            }
+            tx.execute(
                 "INSERT INTO issues
                        (fingerprint, title, error_type, culprit, service,
                         first_seen, last_seen, event_count, last_trace_id)
@@ -131,7 +149,7 @@ impl TursoMetadataStore {
                 ),
             )
             .await?;
-            conn.execute(
+            tx.execute(
                 "INSERT INTO issue_buckets (fingerprint, bucket_ts, count)
                  VALUES (?1, ?2, 1)
                  ON CONFLICT(fingerprint, bucket_ts) DO UPDATE SET count = count + 1",
@@ -159,7 +177,7 @@ impl TursoMetadataStore {
             // executed while another statement is open on the same turso
             // connection reports success but does not persist.
             let existing = {
-                let mut rows = conn
+                let mut rows = tx
                     .query(
                         "SELECT tags FROM issues WHERE fingerprint = ?1",
                         (fingerprint,),
@@ -172,13 +190,14 @@ impl TursoMetadataStore {
                 for attributes in attrs {
                     merged = merge_tags(&merged, attributes);
                 }
-                conn.execute(
+                tx.execute(
                     "UPDATE issues SET tags = ?1 WHERE fingerprint = ?2",
                     (merged, fingerprint),
                 )
                 .await?;
             }
         }
+        tx.commit().await?;
         Ok(())
     }
 

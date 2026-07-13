@@ -14,6 +14,7 @@ fn occurrence<'a>(
     attributes: &'a serde_json::Value,
 ) -> IssueOccurrence<'a> {
     IssueOccurrence {
+        occurrence_id: format!("{fingerprint}:{ts_nanos}").into(),
         fingerprint,
         title: format!("Error: {fingerprint}"),
         error_type: "Error",
@@ -23,6 +24,66 @@ fn occurrence<'a>(
         trace_id: None,
         attributes,
     }
+}
+
+fn occurrence_with_id<'a>(
+    occurrence_id: &str,
+    fingerprint: &'a str,
+    ts_nanos: u128,
+    attributes: &'a serde_json::Value,
+) -> IssueOccurrence<'a> {
+    let mut occurrence = occurrence(fingerprint, "svc", ts_nanos, attributes);
+    occurrence.occurrence_id = occurrence_id.to_string().into();
+    occurrence
+}
+
+#[tokio::test]
+async fn occurrence_claim_survives_restart_concurrency_and_prunes() {
+    let (_directory, path) = temp_db();
+    let attrs = serde_json::json!({"region": "us"});
+    let store = MetadataStore::open(&path).await.expect("open");
+    store
+        .upsert_issue_occurrence(&occurrence_with_id("same", "fp", 1, &attrs))
+        .await
+        .expect("first claim");
+    drop(store);
+
+    let store = std::sync::Arc::new(MetadataStore::open(&path).await.expect("reopen"));
+    let mut deliveries = Vec::new();
+    for _ in 0..8 {
+        let store = std::sync::Arc::clone(&store);
+        deliveries.push(tokio::spawn(async move {
+            let attrs = serde_json::json!({"region": "us"});
+            store
+                .upsert_issue_occurrence(&occurrence_with_id("same", "fp", 1, &attrs))
+                .await
+        }));
+    }
+    for delivery in deliveries {
+        delivery.await.expect("delivery task").expect("delivery");
+    }
+    let issue = store.issue("fp").await.expect("issue").expect("present");
+    assert_eq!(issue.event_count, 1);
+
+    let beyond_retention =
+        u128::try_from(OCCURRENCE_RETENTION_MILLIS + 1).expect("positive retention") * 1_000_000;
+    store
+        .upsert_issue_occurrence(&occurrence_with_id("new", "fp", beyond_retention, &attrs))
+        .await
+        .expect("new occurrence");
+    let conn = store.conn.lock().await;
+    let mut rows = conn
+        .query(
+            "SELECT occurrence_id FROM issue_occurrences ORDER BY occurrence_id",
+            (),
+        )
+        .await
+        .expect("ledger query");
+    let mut ids = Vec::new();
+    while let Some(row) = rows.next().await.expect("ledger row") {
+        ids.push(text(&row, 0));
+    }
+    assert_eq!(ids, vec!["new"]);
 }
 
 #[tokio::test]
@@ -83,9 +144,9 @@ async fn tags_accumulate_bounded() {
         "nested": {"skip": true},
         "attempt": 3,
     });
-    for _ in 0..2 {
+    for index in 0..2 {
         store
-            .upsert_issue_occurrence(&occurrence("fp1", "svc", 1_000_000_000, &attrs))
+            .upsert_issue_occurrence(&occurrence("fp1", "svc", 1_000_000_000 + index, &attrs))
             .await
             .expect("upsert");
     }

@@ -1935,7 +1935,7 @@ ceiling = 5
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-server/src/worker/tests.rs"
-ceiling = 22
+ceiling = 25
 
 [[limits]]
 metric = "rust.assertions"
@@ -1960,7 +1960,7 @@ ceiling = 54
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-metadata/src/turso/tests.rs"
-ceiling = 42
+ceiling = 44
 
 [[limits]]
 metric = "rust.assertions"
