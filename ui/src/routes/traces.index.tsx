@@ -323,10 +323,7 @@ function TracesPage() {
   const [spans, setSpans] = useState<SpanDoc[]>([])
   const live = search.live === true
   const page = search.page ?? 1
-  const range = useMemo(
-    () => resolveRangeSearch(search),
-    [search]
-  )
+  const range = useMemo(() => resolveRangeSearch(search), [search])
   const total = toNumber(tracesPage.total)
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const pages = pageWindow(page, totalPages)

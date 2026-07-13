@@ -627,7 +627,7 @@ ceiling = 1423
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/routes/traces.index.tsx"
-ceiling = 722
+ceiling = 719
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -1077,11 +1077,11 @@ ceiling = 90
 [[limits]]
 metric = "typescript.function-lines"
 scope = "ui/src/routes/traces.index.tsx:313"
-ceiling = 355
+ceiling = 352
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/traces.index.tsx:669"
+scope = "ui/src/routes/traces.index.tsx:666"
 ceiling = 84
 
 

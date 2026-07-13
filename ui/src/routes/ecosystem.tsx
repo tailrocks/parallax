@@ -62,10 +62,7 @@ function EcosystemPage() {
     select: (state) => state.status === "pending",
   })
   const showSkeleton = useDelayedLoading(pending)
-  const range = useMemo(
-    () => resolveRangeSearch(search),
-    [search]
-  )
+  const range = useMemo(() => resolveRangeSearch(search), [search])
 
   return (
     <div className="flex flex-col gap-4">
