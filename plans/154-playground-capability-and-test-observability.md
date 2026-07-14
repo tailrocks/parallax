@@ -433,6 +433,9 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
 - `332639c` adds checkout's bounded real-listener health proof alongside its
   failure-shape tests. The six-test crate and strict clippy pass locally;
   downstream fan-out/retry behavior remains covered by the final live stack.
+- `74578de` adds recommendation's bounded real-listener health proof using
+  the existing native-TLS `reqwest` test client. Four local tests and strict
+  clippy pass; cache/degradation backend rendering remains a live-stack gate.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
