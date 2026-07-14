@@ -155,6 +155,9 @@ fn playground_artifacts(root: &Path, constants: &[&Constant]) -> Vec<Artifact> {
 
 fn validate(constants: &[Constant]) -> Result<()> {
     let mut ids = BTreeSet::new();
+    let mut rust_identifiers = BTreeSet::new();
+    let mut typescript_identifiers = BTreeSet::new();
+    let mut java_identifiers = BTreeSet::new();
     for constant in constants {
         if !ids.insert(&constant.id) {
             bail!("duplicate semantic-convention id `{}`", constant.id);
@@ -164,6 +167,19 @@ fn validate(constants: &[Constant]) -> Result<()> {
         if has_value == has_values {
             bail!(
                 "semantic-convention `{}` must have exactly one of `value` or `values`",
+                constant.id
+            );
+        }
+        if constant
+            .value
+            .as_deref()
+            .is_some_and(|value| value.trim().is_empty())
+            || constant.values.as_ref().is_some_and(|values| {
+                values.is_empty() || values.iter().any(|value| value.trim().is_empty())
+            })
+        {
+            bail!(
+                "semantic-convention `{}` has an empty wire value",
                 constant.id
             );
         }
@@ -178,6 +194,22 @@ fn validate(constants: &[Constant]) -> Result<()> {
             {
                 bail!(
                     "semantic-convention `{}` has invalid {language} identifier `{identifier}`",
+                    constant.id
+                );
+            }
+        }
+        for (language, identifiers, identifier) in [
+            ("rust", &mut rust_identifiers, &constant.rust),
+            (
+                "typescript",
+                &mut typescript_identifiers,
+                &constant.typescript,
+            ),
+            ("java", &mut java_identifiers, &constant.java),
+        ] {
+            if !identifiers.insert(identifier) {
+                bail!(
+                    "semantic-convention `{}` duplicates {language} identifier `{identifier}`",
                     constant.id
                 );
             }
@@ -208,22 +240,7 @@ fn render_rust(constants: &[Constant], include_freeze_test: bool) -> String {
                 rust(value)
             ));
         } else if let Some(values) = &constant.values {
-            if values.len() <= 2 {
-                output.push_str(&format!("pub const {}: &[&str] =\n    &[", constant.rust));
-                for (index, value) in values.iter().enumerate() {
-                    if index > 0 {
-                        output.push_str(", ");
-                    }
-                    output.push_str(&rust(value));
-                }
-                output.push_str("];\n");
-            } else {
-                output.push_str(&format!("pub const {}: &[&str] = &[\n", constant.rust));
-                for value in values {
-                    output.push_str(&format!("    {},\n", rust(value)));
-                }
-                output.push_str("];\n");
-            }
+            output.push_str(&render_rust_values(&constant.rust, values));
         }
     }
     output.push_str(
@@ -234,6 +251,22 @@ fn render_rust(constants: &[Constant], include_freeze_test: bool) -> String {
         output.truncate(test_start);
     }
     output
+}
+
+fn render_rust_values(identifier: &str, values: &[String]) -> String {
+    if values.len() <= 2 {
+        let values = values
+            .iter()
+            .map(|value| rust(value))
+            .collect::<Vec<_>>()
+            .join(", ");
+        return format!("pub const {identifier}: &[&str] =\n    &[{values}];\n");
+    }
+    let values = values
+        .iter()
+        .map(|value| format!("    {},\n", rust(value)))
+        .collect::<String>();
+    format!("pub const {identifier}: &[&str] = &[\n{values}];\n")
 }
 
 fn render_typescript(constants: &[Constant]) -> String {
@@ -335,6 +368,19 @@ mod tests {
         invalid.values = Some(vec!["service.name".to_owned()]);
         if validate(&[invalid]).is_ok() {
             return Err("scalar/list cardinality conflict was accepted".to_owned());
+        }
+
+        let mut duplicate_identifier = constant();
+        duplicate_identifier.id = "event.name".to_owned();
+        duplicate_identifier.value = Some("event.name".to_owned());
+        if validate(&[constant(), duplicate_identifier]).is_ok() {
+            return Err("duplicate generated language identifier was accepted".to_owned());
+        }
+
+        let mut empty_wire_value = constant();
+        empty_wire_value.value = Some(" ".to_owned());
+        if validate(&[empty_wire_value]).is_ok() {
+            return Err("empty wire value was accepted".to_owned());
         }
         Ok(())
     }
