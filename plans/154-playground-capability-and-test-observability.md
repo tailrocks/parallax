@@ -426,6 +426,10 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   tick assertion and a bounded real-loopback GraphiQL request. All four
   storefront tests and strict clippy pass locally, covering the HTTP and
   subscription service surfaces without needing a live upstream.
+- `42ac071` adds orders' bounded real-listener health test using the already
+  pinned native-TLS `reqwest` client as a test-only dependency. The service's
+  five tests and strict clippy pass locally; broker-backed poison/lag behavior
+  remains owned by the live-stack acceptance sweep.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
