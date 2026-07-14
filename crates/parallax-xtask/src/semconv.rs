@@ -28,6 +28,10 @@ pub(crate) struct CheckReport {
 
 pub(crate) fn check(root: &Path, playground_root: Option<&Path>) -> Result<CheckReport> {
     check_weaver(root)?;
+    check_generated_artifacts(root, playground_root)
+}
+
+fn check_generated_artifacts(root: &Path, playground_root: Option<&Path>) -> Result<CheckReport> {
     let artifacts = artifacts(root, playground_root)?;
     let temporary = TempDir::new().context("create semantic-convention temporary directory")?;
     for artifact in &artifacts {
@@ -377,7 +381,9 @@ fn write(path: &Path, contents: &str) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Constant, validate};
+    use super::{Constant, check_generated_artifacts, generate_at, validate};
+    use std::fs;
+    use tempfile::TempDir;
 
     fn constant() -> Constant {
         Constant {
@@ -418,6 +424,32 @@ mod tests {
         if validate(&[empty_wire_value]).is_ok() {
             return Err("empty wire value was accepted".to_owned());
         }
+        Ok(())
+    }
+
+    #[test]
+    fn generated_artifact_check_rejects_a_hand_edit() -> anyhow::Result<()> {
+        let root = TempDir::new()?;
+        let registry = root.path().join("telemetry/semconv/contract.yaml");
+        fs::create_dir_all(registry.parent().expect("registry parent"))?;
+        fs::write(
+            registry,
+            "constants:\n  - id: service.name\n    rust: SERVICE_NAME\n    typescript: SERVICE_NAME\n    java: SERVICE_NAME\n    value: service.name\n    owner: shared\n",
+        )?;
+        generate_at(root.path(), None)?;
+        let report = check_generated_artifacts(root.path(), None)?;
+        assert_eq!(report.artifacts.len(), 3);
+
+        fs::write(
+            root.path().join("ui/src/shared/semconv.ts"),
+            "// hand edit\n",
+        )?;
+        let error = check_generated_artifacts(root.path(), None).expect_err("stale output fails");
+        assert!(
+            error
+                .to_string()
+                .contains("stale semantic-convention artifact")
+        );
         Ok(())
     }
 }

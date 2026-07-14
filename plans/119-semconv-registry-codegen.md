@@ -60,6 +60,11 @@ reviewable generated source and reproducible offline builds.
   and Java. `898eae2` subsequently unblocked the Java host by relocating
   Gradle's native cache; the clean catalog suite now executes this fixture
   consumer successfully alongside the generated TypeScript Vitest consumer.
+- The current local implementation makes stale generated-artifact rejection directly unit-testable:
+  the xtask creates output from a temporary registry, accepts the untouched
+  artifacts, and fails closed after a hand edit without invoking Weaver or the
+  network. Formatting, all 56 xtask tests, strict clippy, and the real
+  cross-repository semconv check pass locally.
 
 ## Scope
 
