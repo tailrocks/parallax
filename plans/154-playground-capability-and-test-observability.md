@@ -107,6 +107,13 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   Bun instead of Node, and README Spring gRPC/Sentry wording matches the live
   dependency model. Reinstalling the foreign web dependency tree with Bun made
   the local production build and TypeScript check pass.
+- `fcbfbd9` starts W2 with a real `storefront` workspace service using Juniper
+  0.17, `juniper_axum`, and `juniper_graphql_ws`. It exposes GraphQL HTTP,
+  both WebSocket subscription protocols, a catalog GraphQL gateway resolver,
+  and a pricing gRPC gateway resolver. Resolver spans emit the required
+  GraphQL operation/document/field attributes; the compose topology exposes
+  the service on port 8094. Cargo check, test, strict clippy, and formatting
+  pass locally.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
