@@ -400,6 +400,13 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   reports all 49 passing cases without attempting the SDK's implicit localhost
   export when no endpoint is requested. With an explicit OTLP endpoint it
   retains the live W4 export path. Focused CLI tests (10) pass locally.
+- `a249bd9` completes the missing Java shared-test-schema adapter: every
+  catalog, payment, and fulfillment JUnit test is wrapped by one generated
+  source-set extension that extracts `TRACEPARENT`, emits parented `test.case`
+  spans using the generated `test.*`, `cicd.*`, and `parallax.test.id` names,
+  and preserves assertion-versus-harness failure taxonomy. All three Gradle
+  suites pass locally with the Java agent attached; a supplied endpoint keeps
+  the live exporter path intact.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
