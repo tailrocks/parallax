@@ -283,6 +283,13 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   invocation remains blocked before project configuration by the same Linux
   arm64 `libnative-platform.so` loader failure, so no Java execution claim is
   made.
+- `6f67831` implements W5's catalog Postgres path. The service now uses a
+  Spring `JdbcClient` repository over a seeded `catalog_products` schema;
+  compose supplies the database credentials and waits for Postgres. The
+  upstream Java agent will therefore emit JDBC client spans beside the stable
+  scenario names in a live stack. GraphQL unit tests retain an explicit
+  in-memory repository fixture only; a fresh `compileJava` attempt remains
+  blocked before configuration by the host's `libnative-platform.so` failure.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
