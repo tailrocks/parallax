@@ -460,6 +460,9 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   system libraries (`libglib2.0`, `libnss3`, `libatk`, `libgbm`, and related
   runtime dependencies). No source workaround or non-Bun runner is allowed;
   rerun the seven-test acceptance fixture on a browser-capable host.
+- `eb76c60` aligns the companion verification runbook with that distinction:
+  Rust, clean Java suites, Bun build/Vitest, and Playwright discovery are
+  local facts; browser execution is expressly named as host-capability work.
 - After the W3 boundary sweep, the complete Rust `nextest` CI profile passes
   55 tests across 11 binaries. Its freshly generated JUnit XML is accepted by
   `playground test-report` as 55 passing test cases with no implicit local
