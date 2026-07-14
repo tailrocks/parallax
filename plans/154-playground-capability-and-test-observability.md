@@ -254,6 +254,14 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   launcher still fails before project configuration while loading
   `libnative-platform.so`, so this JUnit test is present but not yet counted
   as locally executed.
+- `677ba72` implements the W4 custom Playwright reporter as a Bun-compatible,
+  opt-in OTLP bridge. With `PLAYGROUND_TEST_OTLP_ENDPOINT`, it emits an
+  explicitly timed, run-parented `test.case` span for every result with the
+  generated identity/suite/status/CI constants, retry and duration metadata,
+  exception details, and explicit end-of-run flushing. The reporter is loaded
+  by Playwright; Bun production build, TypeScript, Vitest (four tests), and
+  Playwright discovery (two journeys) pass. Actual browser execution remains
+  blocked by this container's missing Playwright shared libraries.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
