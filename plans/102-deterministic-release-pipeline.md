@@ -41,6 +41,12 @@
   filename and source version to the archive's final SHA-256. This makes the
   emitted SBOM metadata match the fail-closed verifier's exact archive/digest
   contract; a release workflow fixture prevents removal of either flag.
+- 2026-07-14: a local Syft 1.45.1 rehearsal against
+  `parallax-0.1.0-dev+69db387-aarch64-unknown-linux-gnu.tar.gz` produced
+  CycloneDX 1.6 metadata with that exact basename and
+  `sha256:9d744cf76159352b3ff498e7d60558b66db816b7231f706131c025980da9c80a`.
+  This proves the action's producer flags and verifier expectations agree on
+  real archive bytes without publishing an artifact.
 
 ## Why
 
