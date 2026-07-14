@@ -228,6 +228,11 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   status, while `test.case.failure.kind` distinguishes
   `assertion_failure` from `harness_error` for failed-vs-broken derivation.
   Ten locked CLI tests and strict clippy pass locally.
+- `a33fb3f` adds W3 HTTP boundary coverage for recommendation's health and
+  request-validation routes, with a constructible router for in-process Tower
+  calls. It also declares the service's direct OpenTelemetry dependency that
+  strict clippy exposed. Three locked recommendation tests and strict clippy
+  pass locally.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
