@@ -379,6 +379,17 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   than incorrectly classifying them as failures. Bun build/typecheck, Vitest
   (seven tests), and Playwright discovery (six tests) pass locally; browser
   execution remains blocked by this container's missing system libraries.
+- `898eae2` / `7dd8c3b` remove the repeated Java-execution blocker rather than
+  accepting it as a host limitation. Running Gradle with a temporary cache
+  (`GRADLE_USER_HOME=/tmp/parallax-gradle`) and native integration disabled
+  avoids the home-mounted native-library extraction failure. Clean catalog,
+  payment, and fulfillment suites now pass locally, including the new GraphQL,
+  Java-agent, and in-process gRPC coverage. Test JVMs export only when
+  `OTEL_EXPORTER_OTLP_ENDPOINT` is supplied; otherwise their OTLP exporters
+  are explicitly disabled to prevent false localhost exporter errors. README
+  and VERIFICATION now state the runnable command contract. Upstream JDK /
+  protobuf and Gradle-plugin deprecation notices remain observable output, not
+  a product-source warning.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
