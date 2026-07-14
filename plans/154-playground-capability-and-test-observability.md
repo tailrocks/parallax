@@ -447,6 +447,12 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   consumed embedded-Kafka record is passed through the real fulfillment
   consumer, an in-process payment gRPC server, and the notification client
   seam. The clean Java-agent suite passes with the full handoff asserted.
+- `f0d9d90` completes the ready browser failure-taxonomy fixture: alongside
+  the assertion retry, an opt-in Playwright test now times out only on its
+  first attempt and passes on retry, yielding the reporter's `harness_error`
+  branch. Bun build/typecheck, seven Vitest tests, and discovery of all seven
+  Playwright journeys pass locally; browser execution remains host-library
+  blocked.
 - After the W3 boundary sweep, the complete Rust `nextest` CI profile passes
   55 tests across 11 binaries. Its freshly generated JUnit XML is accepted by
   `playground test-report` as 55 passing test cases with no implicit local
