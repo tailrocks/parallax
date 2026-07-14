@@ -439,6 +439,10 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
 - `2e0b940` adds inventory's bounded no-Postgres loopback health proof. Its
   four local tests and strict clippy pass without misrepresenting the separate
   real-Postgres reservation integration gate.
+- `98c6716` adds fulfillment's Docker-free embedded Kafka contract test. It
+  proves the real `OrderProducer` record reaches an `orders` consumer, while
+  the existing in-process gRPC test covers the following payment/notification
+  handoff. A clean fulfillment Gradle suite passes with the Java agent.
 - After the W3 boundary sweep, the complete Rust `nextest` CI profile passes
   55 tests across 11 binaries. Its freshly generated JUnit XML is accepted by
   `playground test-report` as 55 passing test cases with no implicit local
