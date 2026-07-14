@@ -268,6 +268,13 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   xtask tests (55), Weaver, the cross-repository semconv check, playground
   web build, Vitest (four tests), and Playwright discovery (two journeys)
   pass locally.
+- `127faff` completes the ready W4 browser-stitching implementation. A
+  deterministic per-test W3C parent preserves a valid run trace ID when
+  `TRACEPARENT` is supplied; the reporter uses it as the test-span parent and
+  the Playwright fixture injects it into the initial navigation plus the SSR
+  traceparent meta handoff before browser instrumentation runs. Six Vitest
+  tests prove the carrier contract; browser execution remains host-library
+  blocked.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
