@@ -417,6 +417,11 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   non-empty `PARALLAX_TEST_ID` override, and records display-name variants plus
   OS/environment outside that identity. Payment's parameterized quote fixture
   and a clean Gradle suite pass locally.
+- `30db51f` removes the Kafka causal-edge dependency on agent behavior:
+  fulfillment explicitly injects/extracts W3C `traceparent` through Kafka
+  headers and adds the valid producer span as a link on the consumer span.
+  Focused producer-header and in-process consumer tests pass in a clean
+  fulfillment Gradle run; live backend rendering remains a final fan-out gate.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
