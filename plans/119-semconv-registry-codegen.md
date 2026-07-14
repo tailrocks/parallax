@@ -34,6 +34,13 @@ reviewable generated source and reproducible offline builds.
   Weaver registry/template shape and the previous current-version check.
 - TypeScript generation required a custom template at the research snapshot;
   recheck current stable Weaver before choosing templates.
+- `7effc39` extends the repository-owned generator's negative contract checks:
+  duplicate generated Rust/TypeScript/Java identifiers and empty scalar/list
+  wire values now fail before rendering, alongside the existing duplicate-ID
+  and cardinality checks. The renderer was flattened without output changes to
+  satisfy strict linting. `cargo test --locked -p parallax-xtask` (55 tests),
+  strict xtask clippy, Weaver registry validation, and the cross-repository
+  deterministic semconv check pass locally.
 
 ## Scope
 
