@@ -43,6 +43,13 @@ OpenObserve, and Sentry over one Rotel fan-out. A full two-repo audit on
 
 ## Current state (audit evidence, 2026-07-14)
 
+> Re-audited 2026-07-14 (same day, later session): zero commits in either
+> repository since planning (`parallax` `8f24808`, playground `ad6cbfa`);
+> **no item below is complete** — all workstreams stand. Spot-checks
+> re-confirmed the two highest-risk claims: Java `build.gradle.kts` Sentry
+> matches are comments only (no dependency), and checkout only logs
+> `tenant`/`tier` (baggage never enters the OTel context).
+
 ### Verified working
 
 Cross-language trace spine (browser → Rust axum/tonic → Java agent 2.29 →
@@ -228,6 +235,20 @@ Out of scope:
     `web/src/semconv.ts`; single source list documented in the repo README.
     When plan 119's registry codegen lands, these constants migrate to
     generated output.
+    **Identity contract (plan 155 D1 — the payload must emit what the Tests
+    surface consumes):** every test root span carries (a) an explicit
+    `parallax.test.id` on at least one suite per stack to exercise the
+    override path, (b) a code-reference name path that never encodes
+    line/column (Playwright's default fullName is line/column-fragile — the
+    reporter must emit qualified title paths instead), (c) parameters as
+    attributes for at least one parameterized test per stack (variant
+    history), (d) configuration attributes (`test.configuration.*`-shaped:
+    os/browser/environment) kept out of any identity value, (e) attempt
+    ordinals on retries plus one deliberate pass-after-fail retry per stack
+    (flaky-pass evidence), (f) one assertion failure AND one harness error
+    per stack so failed-vs-broken derivation is testable, and (g)
+    `vcs.ref.head.revision` + `service.version` on test resources so
+    same-commit flaky detection and version-under-test attribution work.
 15. Run-level parent: every test session runs under
     `parallax run start -- <runner>` so the whole session is a Parallax Run
     with `parallax.run.id`; export `TRACEPARENT` into child processes so all
@@ -280,13 +301,18 @@ Out of scope:
 
 ### W6 — Parallax-side follow-ups (recorded triggers only; no implementation here)
 
-- Playground already emits data Parallax cannot display: web-vitals/RUM spans,
-  baggage, `feature_flag.*`, and (after W4) test spans. Candidate future
-  plans: RUM/web-vitals view, baggage surfacing, feature-flag view, and a
-  test-observability view on the Runs surface (test session = run; failing
-  test span + stitched app trace is the evidence bundle's natural test-mode
-  anchor). Metric stubs stay plan 105; exp-histogram ingest stays a ledger
-  trigger; Sentry envelope stays plan 118.
+- **Test reporting surface is now plan 155** (operator-directed 2026-07-14):
+  a dedicated `/tests` page with identity registry, attempt chains,
+  failed-vs-broken taxonomy, flaky state machine, and shared-fingerprint
+  fusion with production issues. Evidence base:
+  `docs/research/market/test-reporting-ecosystem.md`. This plan's W4 payload
+  is plan 155's live verification input; the identity contract in step 14 is
+  the shared cross-repo contract.
+- Playground already emits other data Parallax cannot display: web-vitals/RUM
+  spans, baggage, `feature_flag.*`. Candidate future plans: RUM/web-vitals
+  view, baggage surfacing, feature-flag view. Metric stubs stay plan 105;
+  exp-histogram ingest stays a ledger trigger; Sentry envelope stays plan
+  118.
 
 ## Test Plan
 

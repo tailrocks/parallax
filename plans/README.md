@@ -135,18 +135,24 @@ work.
 | [106](106-evidence-pinning-ttl-spike.md) | Design and live-test evidence pinning beyond telemetry TTL | P2 | M | 092, 104, 116 | TODO |
 | [107](107-program-closure-audits.md) | Run independent source audits and verify the mechanical closure commit | P1 | M | Every other actionable indexed plan; all blockers freshly rechecked | TODO |
 
-### Cross-Repository Playground
+### Cross-Repository Playground And Test Reporting
 
 Plan 154 is the operator-directed (2026-07-14) expansion program for the
 companion `parallax-telemetry-playground` repository: correctness fixes,
 Juniper GraphQL + gRPC matrix completion, per-service test coverage, and
 OpenTelemetry test-run visibility (nextest/JUnit 5/Playwright). Plan 122
 keeps historical-residual reconciliation and must classify overlapping rows
-as owned by 154.
+as owned by 154. Plan 155 is the Parallax-side product surface consuming the
+154 W4 payload: a dedicated Tests page with a stable test-identity registry,
+attempt chains, failed-vs-broken taxonomy, a flaky state machine, and
+failure fingerprints shared with production issues (evidence:
+`docs/research/market/test-reporting-ecosystem.md`). Plan 124 keeps
+CI-provider API collection; 155 consumes OTLP-ingested telemetry only.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | [154](154-playground-capability-and-test-observability.md) | Playground full-capability coverage and test observability | P1 | XL | soft 105, 111, 119 | TODO |
+| [155](155-test-reporting-surface.md) | Test reporting and test observability surface | P1 | XL | 149, 152, 153; soft 104, 119, 121, 124, 140 | TODO |
 
 ### Triggered Or Operator-Blocked Work
 
