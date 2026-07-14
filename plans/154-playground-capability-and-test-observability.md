@@ -295,6 +295,13 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   matrix to `VERIFICATION.md`. Rendering/disposition remains pending the final
   live fan-out run; Parallax's expected unsupported-histogram disposition is
   stated as an expectation, not a measured result.
+- `4dd8164` implements the W5 cross-language `PaymentError` scenario. Rust
+  checkout B1 and Java payment's deterministic unary gRPC failure now record
+  the same `PaymentError` type/message before transport wrapping; Java also
+  records the original exception for OTLP and Sentry. Four locked checkout
+  tests and strict clippy pass. The added Java test and backend grouping
+  comparison await a Gradle-capable/live fan-out host; `VERIFICATION.md` gives
+  the exact non-claiming rubric.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
