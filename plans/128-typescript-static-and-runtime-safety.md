@@ -43,8 +43,10 @@ feature.
 
 ## Current Evidence
 
-- `ui/tsconfig.json` omits `noPropertyAccessFromIndexSignature`,
-  `isolatedModules`, and forced module detection.
+- `ui/tsconfig.json` now enforces `noPropertyAccessFromIndexSignature`,
+  `isolatedModules`, and `moduleDetection: "force"`; the normal strict
+  application typecheck passes with those options. The remaining work is the
+  separate third-party declaration graph described below.
 - `skipLibCheck` remains enabled. A full declaration probe exposes third-party
   incompatibilities that must be solved as one mutually compatible dependency
   set rather than hidden with ambient declarations.
