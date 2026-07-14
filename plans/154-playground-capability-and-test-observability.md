@@ -82,6 +82,11 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   extracted baggage onto the inventory HTTP and pricing gRPC server spans;
   focused Rust tests and clippy pass. `c8a89a8` adds the generated
   cross-repository `TENANT_ID` convention.
+- `950f09c` adds the A10 scenario and a public-boundary Rust integration test.
+  The fixture proves the exported HTTP injector/extractor preserves both
+  business baggage keys; cargo test, strict clippy, formatting, and scenario
+  shell syntax pass locally. The full live-backend rendering assertion remains
+  part of the final non-Docker evidence sweep.
 - `a21585f` adds the shared Axum middleware and applies it to every Rust HTTP
   service. It emits the standard server span attributes and
   `http.server.request.duration` RED histogram; focused Rust checks pass.
