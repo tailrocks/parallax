@@ -322,6 +322,10 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   requests still evaluate all three flags. The new in-process HTTP assertion
   proves the 502 payment-failure response without downstream calls; five
   locked checkout tests and strict clippy pass locally.
+- `c47d7ef` completes the remaining W1 verification-runbook drift cleanup:
+  it now distinguishes implemented source/configuration from Rust/web local
+  builds and Java execution awaiting a Gradle-capable host, without changing
+  any scenario claim into an unearned pass.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
