@@ -172,6 +172,10 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   `graphql.field.*`) into the shared source registry. Rust, TypeScript, and
   Java generated convention targets were regenerated together; Weaver and the
   deterministic cross-repository semconv check pass locally.
+- `f44faa6` adds W3 transport coverage for pricing's tonic service. Ephemeral
+  in-process listeners prove unary totals, ordered server-streaming responses,
+  and the requested mid-stream INTERNAL failure through the generated client;
+  locked pricing tests and strict clippy pass locally.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
