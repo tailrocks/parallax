@@ -148,6 +148,10 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   and `target/nextest/ci/junit.xml` output. A local nextest run generated the
   report and the converter processed it successfully (two passing cases), so
   the report path and parser are proven together without a CI dependency.
+- `23376d9` adds W3 in-process HTTP coverage for the notifications service.
+  Its router is now constructible for tests, and the focused async boundary
+  test exercises both the notification response and health endpoint through
+  Tower one-shot calls. Locked test and strict clippy pass locally.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
