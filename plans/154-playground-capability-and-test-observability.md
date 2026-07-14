@@ -311,6 +311,12 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   runtime now uses Bun rather than Node, and README/VERIFICATION claims reflect
   catalog's real Postgres path plus the present arm64 Gradle limitation. Bun
   production build and TypeScript checking pass locally.
+- `95291a5` completes the remaining ready W3 web journey coverage: Playwright
+  now describes deterministic mocked orders submission and the forced RUM
+  error/backend-failure path in addition to checkout and propagation-break.
+  Bun build, six Vitest tests, and Playwright discovery of all four journeys
+  pass; browser execution remains blocked only by this container's missing
+  system libraries.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
