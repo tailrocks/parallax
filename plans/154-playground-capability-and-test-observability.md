@@ -339,6 +339,13 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   contract. A fresh catalog test attempt still fails before Gradle evaluates
   the build because this Linux arm64 host cannot load
   `libnative-platform.so`; no Java execution result is claimed.
+- `27cffc1` completes W5's scenario-dispatch implementation: A2/A5/A8 and
+  B2/B5/B6/B10/B13/B15/B16 now have concrete, environment-configurable
+  drivers instead of placeholder rows. A new Playwright rage-click journey
+  repeatedly exercises the intentionally unresponsive promo control. Shell
+  syntax, catalog dispatch, web unit tests (six), and five-test Playwright
+  discovery pass locally; requests, browser execution, k6, and backend
+  rendering remain final live-host work.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
