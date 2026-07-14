@@ -219,6 +219,10 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   spans now retain nextest's per-attempt ID and positive total-attempt count in
   addition to a validated 1-indexed ordinal. Eight locked CLI tests and strict
   clippy pass locally.
+- `b01a3b8` adds parameterized-test variant evidence to Rust W4 roots. A
+  bracketed stable test name emits a separate `test.case.parameters` attribute
+  without mutating the code-reference identity; nine locked CLI tests and
+  strict clippy pass locally.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
