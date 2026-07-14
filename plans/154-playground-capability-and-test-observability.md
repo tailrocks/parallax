@@ -189,6 +189,12 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   Gradle launcher still fails before project configuration while loading
   `libnative-platform.so`, so these Java tests require execution on a
   functional Gradle host before they can be counted as locally passing.
+- `00c223a` adds Bun-managed Playwright 1.61 Chromium journeys for the home
+  → checkout and intentional propagation-break flows, with a Bun build/server
+  webServer and retry trace archive configuration. Bun build, Vitest, and
+  Playwright test discovery pass locally. Chromium itself downloads on arm64,
+  but cannot launch because this container lacks Playwright's required system
+  shared libraries; browser execution awaits a host with those libraries.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
