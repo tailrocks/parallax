@@ -13,7 +13,7 @@
 - **Depends on**: 095, 096, 100, 101, 126
 - **Category**: schema ownership / code generation / CI
 - **Planned at**: `a1d8bf82`, revised 2026-07-12
-- **Status**: TODO
+- **Status**: BLOCKED
 
 ## Why
 
@@ -34,6 +34,21 @@ reviewable generated source and reproducible offline builds.
   Weaver registry/template shape and the previous current-version check.
 - TypeScript generation required a custom template at the research snapshot;
   recheck current stable Weaver before choosing templates.
+
+## Blocker Evidence (2026-07-14)
+
+Plan 119's cross-language migration and its required byte-identical companion
+fixture need an operator-approved branch in
+`tailrocks/parallax-telemetry-playground`. The active authorization permits
+only `codex/active-plan-closure-7f3c` and PR #20 in this repository; its sole
+remote is `tailrocks/parallax`, and no companion branch is named or authorized.
+Fresh checks: `git remote -v`, `git branch -a | rg 'playground|telemetry'`, and
+`gh repo view tailrocks/parallax-telemetry-playground --json
+nameWithOwner,defaultBranchRef,url,isPrivate`. The companion repository exists
+on `main`, but that is not authorization to create or use a branch there.
+
+Unblock only when the operator names the companion branch and exact allowed
+cross-repository scope. Then recheck current stable Weaver before implementation.
 
 ## Scope
 
