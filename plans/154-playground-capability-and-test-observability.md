@@ -290,6 +290,11 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   scenario names in a live stack. GraphQL unit tests retain an explicit
   in-memory repository fixture only; a fresh `compileJava` attempt remains
   blocked before configuration by the host's `libnative-platform.so` failure.
+- `26c126b` implements W5's Java exponential-histogram probe with the current
+  documented SDK setting on catalog and adds an explicit five-backend result
+  matrix to `VERIFICATION.md`. Rendering/disposition remains pending the final
+  live fan-out run; Parallax's expected unsupported-histogram disposition is
+  stated as an expectation, not a measured result.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
