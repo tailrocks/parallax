@@ -45,6 +45,7 @@ constants:
   - { id: tool.name, rust: TOOL_NAME, typescript: TOOL_NAME, java: TOOL_NAME, value: tool.name, owner: playground }
   - { id: shell.command, rust: SHELL_COMMAND, typescript: SHELL_COMMAND, java: SHELL_COMMAND, value: shell.command, owner: playground }
   - { id: user.tier, rust: USER_TIER, typescript: USER_TIER, java: USER_TIER, value: user.tier, owner: playground }
+  - { id: tenant.id, rust: TENANT_ID, typescript: TENANT_ID, java: TENANT_ID, value: tenant.id, owner: playground }
   - { id: canary.email, rust: CANARY_EMAIL, typescript: CANARY_EMAIL, java: CANARY_EMAIL, value: canary.email, owner: playground }
   - { id: canary.token, rust: CANARY_TOKEN, typescript: CANARY_TOKEN, java: CANARY_TOKEN, value: canary.token, owner: playground }
   - { id: canary.card, rust: CANARY_CARD, typescript: CANARY_CARD, java: CANARY_CARD, value: canary.card, owner: playground }
