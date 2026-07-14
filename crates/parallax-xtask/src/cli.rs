@@ -72,6 +72,9 @@ pub(crate) enum Command {
     Semconv {
         #[command(subcommand)]
         action: SemconvAction,
+        /// Optional checkout of the linked telemetry playground repository.
+        #[arg(long)]
+        playground_root: Option<PathBuf>,
     },
     /// Package one built binary through the deterministic release implementation.
     ReleasePackage {

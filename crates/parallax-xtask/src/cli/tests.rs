@@ -26,6 +26,13 @@ fn parses_every_initial_command() {
         vec!["xtask", "semconv", "generate"],
         vec![
             "xtask",
+            "semconv",
+            "--playground-root",
+            "../parallax-telemetry-playground",
+            "check",
+        ],
+        vec![
+            "xtask",
             "release-package",
             "--binary",
             "target/release/parallax",

@@ -24,10 +24,23 @@ pub const ERROR_TYPE: &str = "error.type";
 pub const PARALLAX_RUN_ID: &str = "parallax.run.id";
 pub const PARALLAX_SOURCE: &str = "parallax.source";
 pub const JACKIN_OPERATION: &str = "jackin.operation";
-pub const REQUEST_DURATION_METRICS: &[&str] = &["http.server.request.duration", "rpc.server.duration", ];
-pub const CPU_METRICS: &[&str] = &["process.cpu.utilization", "process.cpu.usage", "system.cpu.utilization", ];
-pub const MEMORY_METRICS: &[&str] = &["process.memory.usage", "process.memory.virtual", "system.memory.usage", ];
-pub const BUNDLE_WINDOW_METRICS: &[&str] = &["process.cpu.utilization", "process.memory.usage", "tokio.runtime.alive_tasks", ];
+pub const REQUEST_DURATION_METRICS: &[&str] =
+    &["http.server.request.duration", "rpc.server.duration"];
+pub const CPU_METRICS: &[&str] = &[
+    "process.cpu.utilization",
+    "process.cpu.usage",
+    "system.cpu.utilization",
+];
+pub const MEMORY_METRICS: &[&str] = &[
+    "process.memory.usage",
+    "process.memory.virtual",
+    "system.memory.usage",
+];
+pub const BUNDLE_WINDOW_METRICS: &[&str] = &[
+    "process.cpu.utilization",
+    "process.memory.usage",
+    "tokio.runtime.alive_tasks",
+];
 pub const PLAYGROUND_NAMESPACE: &str = "playground";
 pub const DEFAULT_ENVIRONMENT: &str = "playground";
 pub const SESSION_ID: &str = "session.id";
@@ -70,7 +83,14 @@ pub const TOKIO_RUNTIME_GLOBAL_QUEUE_DEPTH: &str = "tokio.runtime.global_queue_d
 pub const TOKIO_RUNTIME_BLOCKING_POOL_DEPTH: &str = "tokio.runtime.blocking_pool_depth";
 pub const TOKIO_RUNTIME_TOTAL_PARK_COUNT: &str = "tokio.runtime.total_park_count";
 pub const TOKIO_RUNTIME_TOTAL_BUSY_DURATION_MS: &str = "tokio.runtime.total_busy_duration_ms";
-pub const TOKIO_RUNTIME_METRIC_NAMES: &[&str] = &["tokio.runtime.workers_count", "tokio.runtime.alive_tasks", "tokio.runtime.global_queue_depth", "tokio.runtime.blocking_pool_depth", "tokio.runtime.total_park_count", "tokio.runtime.total_busy_duration_ms", ];
+pub const TOKIO_RUNTIME_METRIC_NAMES: &[&str] = &[
+    "tokio.runtime.workers_count",
+    "tokio.runtime.alive_tasks",
+    "tokio.runtime.global_queue_depth",
+    "tokio.runtime.blocking_pool_depth",
+    "tokio.runtime.total_park_count",
+    "tokio.runtime.total_busy_duration_ms",
+];
 
 #[must_use]
 pub fn resource_json_path(attr: &str) -> String {
@@ -88,12 +108,21 @@ mod tests {
 
     #[test]
     fn preserves_load_bearing_wire_names() -> Result<(), String> {
-        let actual = (SERVICE_NAME, EVENT_NAME, PARALLAX_RUN_ID, BUNDLE_WINDOW_METRICS);
+        let actual = (
+            SERVICE_NAME,
+            EVENT_NAME,
+            PARALLAX_RUN_ID,
+            BUNDLE_WINDOW_METRICS,
+        );
         let expected = (
             "service.name",
             "event.name",
             "parallax.run.id",
-            &["process.cpu.utilization", "process.memory.usage", "tokio.runtime.alive_tasks"][..],
+            &[
+                "process.cpu.utilization",
+                "process.memory.usage",
+                "tokio.runtime.alive_tasks",
+            ][..],
         );
         if actual != expected {
             return Err(format!("semantic-convention wire-name drift: {actual:?}"));

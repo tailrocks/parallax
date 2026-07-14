@@ -28,17 +28,27 @@ pub(crate) fn execute(cli: Cli) -> Result<()> {
         Command::NextestEvidence { profile } => nextest_evidence::run(&root, &profile, cli.output),
         Command::Health => policy::health(&root, cli.output),
         Command::Facade { action } => execute_facade(&root, action),
-        Command::Semconv { action } => execute_semconv(&root, action),
+        Command::Semconv {
+            action,
+            playground_root,
+        } => execute_semconv(&root, action, playground_root.as_deref()),
         release_command @ (Command::ReleasePackage { .. }
         | Command::ReleaseRehearse { .. }
         | Command::ReleaseVerify { .. }) => execute_release(release_command),
     }
 }
 
-fn execute_semconv(root: &Path, action: SemconvAction) -> Result<()> {
+fn execute_semconv(
+    root: &Path,
+    action: SemconvAction,
+    playground_root: Option<&Path>,
+) -> Result<()> {
     match action {
-        SemconvAction::Check => semconv::check(root),
-        SemconvAction::Generate => semconv::generate(root),
+        SemconvAction::Check => semconv::check(root, playground_root),
+        SemconvAction::Generate => match playground_root {
+            Some(playground_root) => semconv::generate_with_playground(root, playground_root),
+            None => semconv::generate(root),
+        },
     }
 }
 
