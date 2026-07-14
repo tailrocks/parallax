@@ -1,6 +1,23 @@
 use super::*;
 
 #[test]
+fn recognizes_native_and_compressed_line_tables() -> Result<(), String> {
+    let actual = [
+        ".debug_line",
+        ".zdebug_line",
+        "__debug_line",
+        "__zdebug_line",
+    ]
+    .map(is_line_table_section);
+    if actual != [true, true, true, true] || is_line_table_section(".debug_info") {
+        return Err(format!(
+            "line-table section recognition mismatch: {actual:?}"
+        ));
+    }
+    Ok(())
+}
+
+#[test]
 fn local_verification_rejects_metadata_version_and_missing_bundle()
 -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;
@@ -45,11 +62,7 @@ fn object_verification_rejects_target_version_and_corrupt_line_tables()
         let object = object::File::parse(corrupt_debug.as_slice())?;
         object
             .sections()
-            .find(|section| {
-                section
-                    .name()
-                    .is_ok_and(|name| matches!(name, ".debug_line" | "__debug_line"))
-            })
+            .find(|section| section.name().is_ok_and(is_line_table_section))
             .and_then(|section| section.file_range())
             .ok_or("debug line section has no file range")?
     };

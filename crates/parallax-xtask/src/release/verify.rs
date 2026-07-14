@@ -173,9 +173,7 @@ fn verify_object(binary: &[u8], target: &str, version: &str) -> Result<()> {
         .filter_map(|section| section.name().ok())
         .collect::<Vec<_>>();
     ensure!(
-        sections
-            .iter()
-            .any(|name| matches!(*name, ".debug_line" | "__debug_line")),
+        sections.iter().any(|name| is_line_table_section(name)),
         "release binary is missing line tables"
     );
     ensure!(
@@ -191,6 +189,13 @@ fn verify_object(binary: &[u8], target: &str, version: &str) -> Result<()> {
         "release binary does not contain expected identity `{identity}`"
     );
     Ok(())
+}
+
+fn is_line_table_section(name: &str) -> bool {
+    matches!(
+        name,
+        ".debug_line" | ".zdebug_line" | "__debug_line" | "__zdebug_line"
+    )
 }
 
 fn verify_symbolication(binary: &[u8], object: &object::File<'_>) -> Result<()> {
