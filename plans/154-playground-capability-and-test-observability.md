@@ -167,6 +167,11 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   real loopback TCP boundary. The test binds an ephemeral listener, performs a
   reqwest HTTP request, and proves graceful task shutdown under a bounded
   timeout; both notifications tests and strict clippy pass locally.
+- `f26df12` / this linked root update move storefront's five GraphQL resolver
+  wire names (`graphql.operation.*`, `graphql.document`, and
+  `graphql.field.*`) into the shared source registry. Rust, TypeScript, and
+  Java generated convention targets were regenerated together; Weaver and the
+  deterministic cross-repository semconv check pass locally.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and

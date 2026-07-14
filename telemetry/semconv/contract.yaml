@@ -56,6 +56,11 @@ constants:
   - { id: shell.command, rust: SHELL_COMMAND, typescript: SHELL_COMMAND, java: SHELL_COMMAND, value: shell.command, owner: playground }
   - { id: user.tier, rust: USER_TIER, typescript: USER_TIER, java: USER_TIER, value: user.tier, owner: playground }
   - { id: tenant.id, rust: TENANT_ID, typescript: TENANT_ID, java: TENANT_ID, value: tenant.id, owner: playground }
+  - { id: graphql.operation.type, rust: GRAPHQL_OPERATION_TYPE, typescript: GRAPHQL_OPERATION_TYPE, java: GRAPHQL_OPERATION_TYPE, value: graphql.operation.type, owner: playground }
+  - { id: graphql.operation.name, rust: GRAPHQL_OPERATION_NAME, typescript: GRAPHQL_OPERATION_NAME, java: GRAPHQL_OPERATION_NAME, value: graphql.operation.name, owner: playground }
+  - { id: graphql.document, rust: GRAPHQL_DOCUMENT, typescript: GRAPHQL_DOCUMENT, java: GRAPHQL_DOCUMENT, value: graphql.document, owner: playground }
+  - { id: graphql.field.name, rust: GRAPHQL_FIELD_NAME, typescript: GRAPHQL_FIELD_NAME, java: GRAPHQL_FIELD_NAME, value: graphql.field.name, owner: playground }
+  - { id: graphql.field.path, rust: GRAPHQL_FIELD_PATH, typescript: GRAPHQL_FIELD_PATH, java: GRAPHQL_FIELD_PATH, value: graphql.field.path, owner: playground }
   - { id: test.case.name, rust: TEST_CASE_NAME, typescript: TEST_CASE_NAME, java: TEST_CASE_NAME, value: test.case.name, owner: playground }
   - { id: test.case.result.status, rust: TEST_CASE_RESULT_STATUS, typescript: TEST_CASE_RESULT_STATUS, java: TEST_CASE_RESULT_STATUS, value: test.case.result.status, owner: playground }
   - { id: test.suite.name, rust: TEST_SUITE_NAME, typescript: TEST_SUITE_NAME, java: TEST_SUITE_NAME, value: test.suite.name, owner: playground }
