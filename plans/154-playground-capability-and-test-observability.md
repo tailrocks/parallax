@@ -122,6 +122,10 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   arm64 Gradle launcher still fails before configuration on its bundled native
   platform library, so Java compilation needs final validation on a functional
   Gradle host.
+- `95a5baa` adds registered `a23` and `a24` scenario scripts for the storefront
+  GraphQL-to-Java-gRPC and GraphQL-to-Java-GraphQL gateway paths. Shell syntax
+  checks pass locally; the live trace rendering check remains deferred to the
+  final running-stack validation sweep.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
