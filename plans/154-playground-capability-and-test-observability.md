@@ -453,6 +453,13 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   branch. Bun build/typecheck, seven Vitest tests, and discovery of all seven
   Playwright journeys pass locally; browser execution remains host-library
   blocked.
+- Fresh execution on 2026-07-14 confirms the browser blocker is environmental,
+  not a test failure: `bun x playwright test --project=chromium --grep 'home
+  to checkout'` completes the Bun web-server build/typecheck and then fails at
+  `browserType.launch` because this container lacks Chromium's required
+  system libraries (`libglib2.0`, `libnss3`, `libatk`, `libgbm`, and related
+  runtime dependencies). No source workaround or non-Bun runner is allowed;
+  rerun the seven-test acceptance fixture on a browser-capable host.
 - After the W3 boundary sweep, the complete Rust `nextest` CI profile passes
   55 tests across 11 binaries. Its freshly generated JUnit XML is accepted by
   `playground test-report` as 55 passing test cases with no implicit local
