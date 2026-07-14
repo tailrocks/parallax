@@ -275,6 +275,14 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   traceparent meta handoff before browser instrumentation runs. Six Vitest
   tests prove the carrier contract; browser execution remains host-library
   blocked.
+- `5029f7f` wires Java W4 test telemetry across catalog, payment, and
+  fulfillment with `com.atkinsondev.opentelemetry-build` 4.6.2. Each Gradle
+  `Test` task now preserves reruns in JUnit XML, receives `PARALLAX_RUN_ID`,
+  and receives plugin-generated task `TRACEPARENT`; the plugin emits the
+  build/task/per-test spans and failure details to OTLP. A fresh Gradle task
+  invocation remains blocked before project configuration by the same Linux
+  arm64 `libnative-platform.so` loader failure, so no Java execution claim is
+  made.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
