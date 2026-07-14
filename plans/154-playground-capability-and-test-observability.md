@@ -372,6 +372,13 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   The fresh targeted Gradle invocation is blocked before configuration by the
   same Linux arm64 native-platform loader, so the new test remains
   source-present rather than locally executed.
+- `0828077` completes the ready browser retry-chain implementation. An opt-in
+  W4 fixture deterministically fails its first attempt and passes on retry
+  when `PLAYGROUND_TEST_FLAKY_FIXTURE=1 PLAYWRIGHT_RETRIES=1` is used for the
+  acceptance run; the reporter now preserves skipped tests as `skip` rather
+  than incorrectly classifying them as failures. Bun build/typecheck, Vitest
+  (seven tests), and Playwright discovery (six tests) pass locally; browser
+  execution remains blocked by this container's missing system libraries.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
