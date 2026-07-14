@@ -31,6 +31,11 @@ public final class Semconv {
     public static final String HTTP_RESPONSE_STATUS_CODE = "http.response.status_code";
     public static final String URL_PATH = "url.path";
     public static final String HTTP_SERVER_REQUEST_DURATION = "http.server.request.duration";
+    public static final String MESSAGING_SYSTEM = "messaging.system";
+    public static final String MESSAGING_DESTINATION_NAME = "messaging.destination.name";
+    public static final String MESSAGING_OPERATION_NAME = "messaging.operation.name";
+    public static final String MESSAGING_OPERATION_TYPE = "messaging.operation.type";
+    public static final String MESSAGING_MESSAGE_ID = "messaging.message.id";
     public static final String[] CPU_METRICS = {"process.cpu.utilization", "process.cpu.usage", "system.cpu.utilization", };
     public static final String[] MEMORY_METRICS = {"process.memory.usage", "process.memory.virtual", "system.memory.usage", };
     public static final String[] BUNDLE_WINDOW_METRICS = {"process.cpu.utilization", "process.memory.usage", "tokio.runtime.alive_tasks", };

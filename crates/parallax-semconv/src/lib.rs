@@ -31,6 +31,11 @@ pub const HTTP_ROUTE: &str = "http.route";
 pub const HTTP_RESPONSE_STATUS_CODE: &str = "http.response.status_code";
 pub const URL_PATH: &str = "url.path";
 pub const HTTP_SERVER_REQUEST_DURATION: &str = "http.server.request.duration";
+pub const MESSAGING_SYSTEM: &str = "messaging.system";
+pub const MESSAGING_DESTINATION_NAME: &str = "messaging.destination.name";
+pub const MESSAGING_OPERATION_NAME: &str = "messaging.operation.name";
+pub const MESSAGING_OPERATION_TYPE: &str = "messaging.operation.type";
+pub const MESSAGING_MESSAGE_ID: &str = "messaging.message.id";
 pub const CPU_METRICS: &[&str] = &[
     "process.cpu.utilization",
     "process.cpu.usage",

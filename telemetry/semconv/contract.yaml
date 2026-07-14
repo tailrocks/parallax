@@ -28,6 +28,11 @@ constants:
   - { id: http.response.status_code, rust: HTTP_RESPONSE_STATUS_CODE, typescript: HTTP_RESPONSE_STATUS_CODE, java: HTTP_RESPONSE_STATUS_CODE, value: http.response.status_code, owner: playground }
   - { id: url.path, rust: URL_PATH, typescript: URL_PATH, java: URL_PATH, value: url.path, owner: playground }
   - { id: http.server.request.duration, rust: HTTP_SERVER_REQUEST_DURATION, typescript: HTTP_SERVER_REQUEST_DURATION, java: HTTP_SERVER_REQUEST_DURATION, value: http.server.request.duration, owner: playground }
+  - { id: messaging.system, rust: MESSAGING_SYSTEM, typescript: MESSAGING_SYSTEM, java: MESSAGING_SYSTEM, value: messaging.system, owner: playground }
+  - { id: messaging.destination.name, rust: MESSAGING_DESTINATION_NAME, typescript: MESSAGING_DESTINATION_NAME, java: MESSAGING_DESTINATION_NAME, value: messaging.destination.name, owner: playground }
+  - { id: messaging.operation.name, rust: MESSAGING_OPERATION_NAME, typescript: MESSAGING_OPERATION_NAME, java: MESSAGING_OPERATION_NAME, value: messaging.operation.name, owner: playground }
+  - { id: messaging.operation.type, rust: MESSAGING_OPERATION_TYPE, typescript: MESSAGING_OPERATION_TYPE, java: MESSAGING_OPERATION_TYPE, value: messaging.operation.type, owner: playground }
+  - { id: messaging.message.id, rust: MESSAGING_MESSAGE_ID, typescript: MESSAGING_MESSAGE_ID, java: MESSAGING_MESSAGE_ID, value: messaging.message.id, owner: playground }
   - { id: process.cpu.metrics, rust: CPU_METRICS, typescript: CPU_METRICS, java: CPU_METRICS, values: [process.cpu.utilization, process.cpu.usage, system.cpu.utilization], owner: parallax }
   - { id: process.memory.metrics, rust: MEMORY_METRICS, typescript: MEMORY_METRICS, java: MEMORY_METRICS, values: [process.memory.usage, process.memory.virtual, system.memory.usage], owner: parallax }
   - { id: parallax.bundle.window.metrics, rust: BUNDLE_WINDOW_METRICS, typescript: BUNDLE_WINDOW_METRICS, java: BUNDLE_WINDOW_METRICS, values: [process.cpu.utilization, process.memory.usage, tokio.runtime.alive_tasks], owner: parallax }
