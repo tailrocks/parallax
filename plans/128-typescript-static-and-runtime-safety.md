@@ -127,7 +127,7 @@ Out of scope:
 | Compiler | `cd ui && bun run typecheck` | TypeScript 7 exits zero with full declaration checking |
 | Native lint | `cd ui && bun run lint:native` | warnings, stale directives, parse errors, and zero selection fail |
 | Type-aware lint | `cd ui && bun run lint:type-aware` | typed rule fixtures and full project pass |
-| Static policy | `cargo xtask policy --only ui.typescript-static-safety` | ratchets, ownership, state, and Result rules pass |
+| Static policy | `cargo xtask policy --only typescript` | ratchets, ownership, state, and Result rules pass |
 | UI regression | `cd ui && bun run test:ci && bun run build` | existing behavior remains green |
 | Aggregate | `cargo xtask ci --fast` | required static diagnostics are represented once |
 
