@@ -126,6 +126,9 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   GraphQL-to-Java-gRPC and GraphQL-to-Java-GraphQL gateway paths. Shell syntax
   checks pass locally; the live trace rendering check remains deferred to the
   final running-stack validation sweep.
+- `83c6f24` begins W3 coverage for the new service with in-process Axum tests
+  for GraphiQL, GraphQL introspection, and catalog response mapping. The tests
+  use Tower's documented one-shot service path and pass with strict clippy.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
