@@ -394,6 +394,12 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   `TRACEPARENT` alongside `PARALLAX_RUN_ID` into every Gradle `Test` JVM. The
   catalog Gradle suite passes with this configuration; live collector proof
   remains part of the final fan-out acceptance run.
+- `1a2c66e` makes the Rust JUnit reconciliation path locally reliable. The
+  configured nextest CI profile freshly compiled and passed the full Rust
+  workspace, producing a 49-case JUnit report; `playground test-report` now
+  reports all 49 passing cases without attempting the SDK's implicit localhost
+  export when no endpoint is requested. With an explicit OTLP endpoint it
+  retains the live W4 export path. Focused CLI tests (10) pass locally.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
