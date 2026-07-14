@@ -248,6 +248,12 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   broker-free unit coverage; the live broker/rendering scenario remains a
   final running-stack gate. Four locked orders tests and strict clippy pass
   locally.
+- `d6e6768` adds the remaining fulfillment W3 source test: a mocked
+  `KafkaTemplate` proves its REST producer returns the expected response and
+  publishes the requested order to the `orders` topic. The local arm64 Gradle
+  launcher still fails before project configuration while loading
+  `libnative-platform.so`, so this JUnit test is present but not yet counted
+  as locally executed.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
