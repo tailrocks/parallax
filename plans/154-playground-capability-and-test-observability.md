@@ -78,9 +78,18 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   real: `tenant.id` and `user.tier` are attached to the OpenTelemetry parent
   context and injected by the existing composite W3C tracecontext+baggage
   propagator into both HTTP and gRPC downstream carriers. The shared
-  propagation fixture round-trips both keys; `playground-telemetry` and
-  `checkout` tests pass. `c8a89a8` adds the generated cross-repository
-  `TENANT_ID` convention.
+  propagation fixture round-trips both keys. `4e9602e` additionally stamps
+  extracted baggage onto the inventory HTTP and pricing gRPC server spans;
+  focused Rust tests and clippy pass. `c8a89a8` adds the generated
+  cross-repository `TENANT_ID` convention.
+- `a21585f` adds the shared Axum middleware and applies it to every Rust HTTP
+  service. It emits the standard server span attributes and
+  `http.server.request.duration` RED histogram; focused Rust checks pass.
+- `dfdd066` moves flagd evaluation into the shared Rust telemetry library and
+  connects `cacheLeak`, `poisonMessage`, and `canaryFailure` to their real
+  recommendation, orders, and checkout chaos paths, with explicit environment
+  fallback and `feature_flag.*` evaluation logs. Focused Rust tests and clippy
+  pass.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
