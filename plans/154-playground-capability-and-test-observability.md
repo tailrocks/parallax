@@ -200,6 +200,11 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   reference, permit an explicit `PARALLAX_TEST_ID` override, and attach OS and
   environment as non-identity `test.configuration.*` attributes. Locked CLI
   tests (four cases) and strict clippy pass locally.
+- `e61f23c` corrects W4 session parenting: `playground test-report` now
+  extracts a valid `TRACEPARENT` environment carrier before creating each test
+  root span, falling back only to the active context when no carrier exists.
+  The regression test proves that fallback; five locked CLI tests and strict
+  clippy pass locally.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
