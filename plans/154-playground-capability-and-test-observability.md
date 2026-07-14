@@ -195,6 +195,11 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   Playwright test discovery pass locally. Chromium itself downloads on arm64,
   but cannot launch because this container lacks Playwright's required system
   shared libraries; browser execution awaits a host with those libraries.
+- `b704893` advances the Rust W4 identity contract: JUnit test roots now
+  prefer `NEXTEST_BINARY_ID` plus `NEXTEST_TEST_NAME` as their stable code
+  reference, permit an explicit `PARALLAX_TEST_ID` override, and attach OS and
+  environment as non-identity `test.configuration.*` attributes. Locked CLI
+  tests (four cases) and strict clippy pass locally.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
