@@ -65,6 +65,12 @@ reviewable generated source and reproducible offline builds.
   artifacts, and fails closed after a hand edit without invoking Weaver or the
   network. Formatting, all 56 xtask tests, strict clippy, and the real
   cross-repository semconv check pass locally.
+- 2026-07-14: the TypeScript renderer now emits the repository's current Oxfmt
+  style (including multiline lists and long declarations) rather than relying
+  on a post-generation manual formatter pass. Root and companion generated
+  TypeScript outputs were regenerated together. Root xtask tests (57), strict
+  clippy, cross-repository drift checking, root UI formatting/tests/build, and
+  companion web tests/build pass locally.
 
 ## Scope
 

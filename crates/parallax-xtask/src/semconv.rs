@@ -300,17 +300,26 @@ fn render_typescript(constants: &[Constant]) -> String {
     );
     for constant in constants {
         if let Some(value) = &constant.value {
-            output.push_str(&format!(
-                "export const {} = {} as const;\n",
+            let declaration = format!(
+                "export const {} = {} as const",
                 constant.typescript,
                 json(value)
-            ));
-        } else if let Some(values) = &constant.values {
-            output.push_str(&format!("export const {} = [", constant.typescript));
-            for value in values {
-                output.push_str(&format!("{}, ", json(value)));
+            );
+            if declaration.len() > 80 {
+                output.push_str(&format!(
+                    "export const {} =\n  {} as const\n",
+                    constant.typescript,
+                    json(value)
+                ));
+            } else {
+                output.push_str(&format!("{declaration}\n"));
             }
-            output.push_str("] as const;\n");
+        } else if let Some(values) = &constant.values {
+            output.push_str(&format!("export const {} = [\n", constant.typescript));
+            for value in values {
+                output.push_str(&format!("  {},\n", json(value)));
+            }
+            output.push_str("] as const\n");
         }
     }
     output
