@@ -422,6 +422,10 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   headers and adds the valid producer span as a link on the consumer span.
   Focused producer-header and in-process consumer tests pass in a clean
   fulfillment Gradle run; live backend rendering remains a final fan-out gate.
+- `b03d6a1` deepens Juniper storefront coverage with a direct subscription
+  tick assertion and a bounded real-loopback GraphiQL request. All four
+  storefront tests and strict clippy pass locally, covering the HTTP and
+  subscription service surfaces without needing a live upstream.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
