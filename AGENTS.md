@@ -170,10 +170,8 @@ structure quickly.
 - When spawning, put this in the subagent prompt if the tool surface does not
   pin the model: *model = Grok 4.5 high only; never Composer*.
 
-**Active branch:** `codex/active-plan-closure-7f3c`. Commit and push only here.
-
-- Do not open pull requests unless the operator explicitly asks for one.
-- Commit focused changes and push after each durable update.
+**Active branch:** `codex/active-plan-closure-7f3c`; the same name is allowed
+only in `tailrocks/parallax-telemetry-playground`. PR #20 is the sole PR.
 
 See [BRANCHING.md](BRANCHING.md) for the full policy.
 
