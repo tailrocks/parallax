@@ -62,6 +62,11 @@ feature.
   diagnostics but do not resolve the remaining four upstream TS7 declaration
   owners recorded in the validation note; no declaration patch or compiler
   weakening was introduced.
+- 2026-07-14: a further Bun-only compatible stable refresh (Base UI 1.6.0,
+  React 19.2.7, Vite 8.1.4, Vitest 4.1.10, Tailwind 4.3.2, and shadcn 4.13.0)
+  keeps the normal strict UI lanes green but reproduces the same four
+  full-declaration owners. The validation note records the exact package paths
+  and confirms no safe source-level workaround exists.
 
 ## Fixed Decisions
 

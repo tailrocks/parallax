@@ -97,3 +97,19 @@ Recharts, Tabler's nonexistent `ReactSVG` import, TanStack Router's
 adapter declarations. Normal `bun run typecheck` remains green; `bun run
 test:ci` passes 175 tests and `bun run build` passes. `skipLibCheck` remains
 enabled pending an upstream-compatible full declaration graph.
+
+## Fresh compatible-update probe (2026-07-14)
+
+The UI dependency graph was refreshed through `mise exec -- bun update`, using
+the latest stable versions compatible with the existing TanStack Start graph:
+Base UI 1.6.0, React 19.2.7, Vite 8.1.4, Vitest 4.1.10, Tailwind 4.3.2,
+shadcn 4.13.0, and their lock-resolved transitive dependencies. The newer
+TanStack devtools 0.8.1 is not compatible with this Start graph; Bun selected
+its latest compatible 0.7.2 instead.
+
+The mandatory full probe still fails only on the same four upstream owners:
+Redux Toolkit 2.12.0 via Recharts 3.9.2, Tabler 3.44.0, Router Core 1.171.15,
+and unplugin 3.0.0. The normal strict application typecheck stays green, and
+the updated graph passes all 175 Vitest tests plus the production build. No
+ambient declaration, optional-adapter sprawl, package patch, compiler
+weakening, or source assertion was introduced.
