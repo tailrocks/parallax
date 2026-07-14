@@ -233,6 +233,10 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   calls. It also declares the service's direct OpenTelemetry dependency that
   strict clippy exposed. Three locked recommendation tests and strict clippy
   pass locally.
+- `2a7be5b` makes checkout's router constructible and adds a W3 health-route
+  boundary test that does not fake required pricing/inventory/recommendation
+  dependencies. Its existing local scenario-shape tests remain intact; three
+  locked checkout tests and strict clippy pass locally.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
