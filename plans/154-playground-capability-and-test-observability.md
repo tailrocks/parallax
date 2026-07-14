@@ -476,6 +476,11 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   telemetry tests (16 unit + one public boundary), notifications tests (2),
   and strict clippy pass locally. Live collector inspection remains part of
   final fan-out acceptance.
+- 2026-07-14: added inventory's explicit real-Postgres W3 contract test. With
+  `INVENTORY_TEST_DATABASE_URL`, it uses the production pool and route to seed,
+  reserve, assert, and clean up an isolated row; without that compose-provided
+  endpoint it prints a deterministic skip diagnostic so Docker-free suites do
+  not claim database coverage.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
