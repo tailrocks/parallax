@@ -170,8 +170,10 @@ structure quickly.
 - When spawning, put this in the subagent prompt if the tool surface does not
   pin the model: *model = Grok 4.5 high only; never Composer*.
 
-**Current active branch:** `main`. Commit and push on `main` until the operator
-names another single branch.
+**Current active branch:** `codex/active-plan-closure-7f3c`. The operator
+authorized this single implementation branch and one pull request to `main` on
+2026-07-14. Commit and push only on this branch until the program closes or the
+operator names another single branch.
 
 - Do not open pull requests unless the operator explicitly asks for one.
 - Commit focused changes and push after each durable update.
