@@ -242,6 +242,12 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   reservation response without substituting for the separate real-Postgres
   integration gate. Three locked inventory tests and strict clippy pass
   locally.
+- `2e89eb1` adds the missing W3 orders HTTP boundary coverage: its router is
+  now reusable, exposes a health endpoint, and a Tower one-shot POST proves a
+  real order is queued on the in-memory async channel. This is deliberately
+  broker-free unit coverage; the live broker/rendering scenario remains a
+  final running-stack gate. Four locked orders tests and strict clippy pass
+  locally.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
