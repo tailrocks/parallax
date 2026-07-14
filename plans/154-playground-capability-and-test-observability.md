@@ -132,6 +132,8 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
 - `6242a38` adds Bun-run Vitest 4.1.6 to the web tier and characterizes W3C
   traceparent generation plus SSR-safe RUM delegation. Four deterministic unit
   tests pass, as does the production Vite build and TypeScript check.
+- `a3b842b` and `1bfdab8` establish W4's generated test-telemetry vocabulary
+  and document the three language outputs as the sole wire-name sources.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
