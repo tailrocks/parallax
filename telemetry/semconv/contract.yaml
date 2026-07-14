@@ -63,6 +63,7 @@ constants:
   - { id: graphql.field.path, rust: GRAPHQL_FIELD_PATH, typescript: GRAPHQL_FIELD_PATH, java: GRAPHQL_FIELD_PATH, value: graphql.field.path, owner: playground }
   - { id: test.case.name, rust: TEST_CASE_NAME, typescript: TEST_CASE_NAME, java: TEST_CASE_NAME, value: test.case.name, owner: playground }
   - { id: test.case.result.status, rust: TEST_CASE_RESULT_STATUS, typescript: TEST_CASE_RESULT_STATUS, java: TEST_CASE_RESULT_STATUS, value: test.case.result.status, owner: playground }
+  - { id: test.artifact.path, rust: TEST_ARTIFACT_PATH, typescript: TEST_ARTIFACT_PATH, java: TEST_ARTIFACT_PATH, value: test.artifact.path, owner: playground }
   - { id: test.suite.name, rust: TEST_SUITE_NAME, typescript: TEST_SUITE_NAME, java: TEST_SUITE_NAME, value: test.suite.name, owner: playground }
   - { id: test.suite.run.status, rust: TEST_SUITE_RUN_STATUS, typescript: TEST_SUITE_RUN_STATUS, java: TEST_SUITE_RUN_STATUS, value: test.suite.run.status, owner: playground }
   - { id: cicd.pipeline.run.id, rust: CICD_PIPELINE_RUN_ID, typescript: CICD_PIPELINE_RUN_ID, java: CICD_PIPELINE_RUN_ID, value: cicd.pipeline.run.id, owner: playground }

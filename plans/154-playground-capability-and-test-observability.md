@@ -262,6 +262,12 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   by Playwright; Bun production build, TypeScript, Vitest (four tests), and
   Playwright discovery (two journeys) pass. Actual browser execution remains
   blocked by this container's missing Playwright shared libraries.
+- `8609dbe` / this linked root update add the generated `test.artifact.path`
+  convention and use it for a Playwright retry's `trace.zip` archive. The
+  complete Rust, TypeScript, and Java convention targets are deterministic;
+  xtask tests (55), Weaver, the cross-repository semconv check, playground
+  web build, Vitest (four tests), and Playwright discovery (two journeys)
+  pass locally.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
