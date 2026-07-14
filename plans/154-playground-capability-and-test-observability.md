@@ -332,6 +332,13 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   deterministic SKU through checkout to payment. Shell syntax and failure-path
   behavior are checked locally; backend grouping remains a final live-fan-out
   observation.
+- `6f061b5` attaches the pinned upstream OpenTelemetry Java agent to every
+  catalog, payment, and fulfillment Gradle `Test` JVM, completing W4's missing
+  code-under-test instrumentation path beneath the existing plugin's per-test
+  spans. `VERIFICATION.md` now gives the exact parent/run/endpoint validation
+  contract. A fresh catalog test attempt still fails before Gradle evaluates
+  the build because this Linux arm64 host cannot load
+  `libnative-platform.so`; no Java execution result is claimed.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
