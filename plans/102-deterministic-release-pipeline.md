@@ -15,6 +15,20 @@
 - **Planned at**: `a1d8bf82`, revised 2026-07-12
 - **Status**: IN PROGRESS
 
+## Local implementation evidence
+
+- 2026-07-14: built the host `aarch64-unknown-linux-gnu` embedded-UI binary
+  with `PARALLAX_VERSION_OVERRIDE=0.1.0-dev+69db387` and
+  `--features embed-ui,cross-release-vendored`. `cargo xtask release-rehearse`
+  packaged it twice with source epoch `1784059938`; both archives matched and
+  produced SHA-256
+  `9d744cf76159352b3ff498e7d60558b66db816b7231f706131c025980da9c80a`.
+  The promoted archive contains one root-owned executable `parallax` entry
+  (mode `0755`), and the binary contains the matching release-identity marker.
+- This is a local rehearsal only. Cross-target Zig builds, signed/SBOM/
+  provenance sidecars, workflow ordering, and preview publication remain
+  intentionally unverified while the implementation program is still active.
+
 ## Why
 
 Parallax already has strong SHA pins, Zig builds, signatures, SBOMs,
