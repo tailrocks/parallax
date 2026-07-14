@@ -205,6 +205,11 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   root span, falling back only to the active context when no carrier exists.
   The regression test proves that fallback; five locked CLI tests and strict
   clippy pass locally.
+- `7181e1c` supplies the matching shared-carrier proof: a deterministic
+  `EnvExtractor` fixture now round-trips a W3C `TRACEPARENT` into the expected
+  OpenTelemetry trace ID, rather than testing environment injection alone.
+  Shared telemetry tests (16 unit plus one public baggage integration test)
+  and strict clippy pass locally.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
