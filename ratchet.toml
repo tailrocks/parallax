@@ -1651,7 +1651,7 @@ ceiling = 1
 [[limits]]
 metric = "agent-doc-bytes"
 scope = "AGENTS.md"
-ceiling = 16436
+ceiling = 16407
 
 [[limits]]
 metric = "agent-doc-bytes"
