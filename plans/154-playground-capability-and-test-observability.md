@@ -176,6 +176,12 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   in-process listeners prove unary totals, ordered server-streaming responses,
   and the requested mid-stream INTERNAL failure through the generated client;
   locked pricing tests and strict clippy pass locally.
+- `016bd83` closes the scriptless-scenario accounting gap for ready W5 IDs.
+  `scenarios/run.sh` now dispatches A2, A5, A8, B2, B5, B6, B10, B13, B15,
+  and B16 to explicit live-host requirement messages while retaining normal
+  script dispatch and unknown-ID failure behavior. Shell syntax and both
+  live-host/unknown dispatch paths pass locally; live backend rendering remains
+  intentionally deferred to the final running-stack sweep.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
