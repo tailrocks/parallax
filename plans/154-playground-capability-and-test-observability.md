@@ -134,6 +134,15 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   tests pass, as does the production Vite build and TypeScript check.
 - `a3b842b` and `1bfdab8` establish W4's generated test-telemetry vocabulary
   and document the three language outputs as the sole wire-name sources.
+- `09b01a5` begins W4's Rust result bridge with `playground test-report
+  <junit.xml>`. The CLI streams JUnit suites/cases, emits one run-parented OTLP
+  `test.case` span per result using generated `test.*`, `cicd.pipeline.*`, and
+  `parallax.test.id` names, retains duration and nextest attempt metadata, and
+  records assertion failures versus harness errors as ERROR status plus
+  exception message/stack events. Parser tests cover nested suites, pass,
+  failure, error, and malformed duration handling; locked CLI tests and strict
+  clippy pass locally. The per-process in-test helper, nextest CI profile,
+  Java, and Playwright telemetry remain open W4 work.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
