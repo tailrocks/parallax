@@ -163,6 +163,10 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   an integration test a process-local route for child app spans under its
   propagated `TRACEPARENT`; focused library tests (including its public
   baggage integration test) and strict clippy pass locally.
+- `89a01fd` extends notifications W3 coverage from in-process routing to a
+  real loopback TCP boundary. The test binds an ephemeral listener, performs a
+  reqwest HTTP request, and proves graceful task shutdown under a bounded
+  timeout; both notifications tests and strict clippy pass locally.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
