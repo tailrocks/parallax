@@ -22,7 +22,12 @@ constants:
   - { id: parallax.run.id, rust: PARALLAX_RUN_ID, typescript: PARALLAX_RUN_ID, java: PARALLAX_RUN_ID, value: parallax.run.id, owner: shared }
   - { id: parallax.source, rust: PARALLAX_SOURCE, typescript: PARALLAX_SOURCE, java: PARALLAX_SOURCE, value: parallax.source, owner: parallax }
   - { id: jackin.operation, rust: JACKIN_OPERATION, typescript: JACKIN_OPERATION, java: JACKIN_OPERATION, value: jackin.operation, owner: parallax }
-  - { id: http.server.request.duration, rust: REQUEST_DURATION_METRICS, typescript: REQUEST_DURATION_METRICS, java: REQUEST_DURATION_METRICS, values: [http.server.request.duration, rpc.server.duration], owner: parallax }
+  - { id: parallax.request.duration.metrics, rust: REQUEST_DURATION_METRICS, typescript: REQUEST_DURATION_METRICS, java: REQUEST_DURATION_METRICS, values: [http.server.request.duration, rpc.server.duration], owner: parallax }
+  - { id: http.request.method, rust: HTTP_REQUEST_METHOD, typescript: HTTP_REQUEST_METHOD, java: HTTP_REQUEST_METHOD, value: http.request.method, owner: playground }
+  - { id: http.route, rust: HTTP_ROUTE, typescript: HTTP_ROUTE, java: HTTP_ROUTE, value: http.route, owner: playground }
+  - { id: http.response.status_code, rust: HTTP_RESPONSE_STATUS_CODE, typescript: HTTP_RESPONSE_STATUS_CODE, java: HTTP_RESPONSE_STATUS_CODE, value: http.response.status_code, owner: playground }
+  - { id: url.path, rust: URL_PATH, typescript: URL_PATH, java: URL_PATH, value: url.path, owner: playground }
+  - { id: http.server.request.duration, rust: HTTP_SERVER_REQUEST_DURATION, typescript: HTTP_SERVER_REQUEST_DURATION, java: HTTP_SERVER_REQUEST_DURATION, value: http.server.request.duration, owner: playground }
   - { id: process.cpu.metrics, rust: CPU_METRICS, typescript: CPU_METRICS, java: CPU_METRICS, values: [process.cpu.utilization, process.cpu.usage, system.cpu.utilization], owner: parallax }
   - { id: process.memory.metrics, rust: MEMORY_METRICS, typescript: MEMORY_METRICS, java: MEMORY_METRICS, values: [process.memory.usage, process.memory.virtual, system.memory.usage], owner: parallax }
   - { id: parallax.bundle.window.metrics, rust: BUNDLE_WINDOW_METRICS, typescript: BUNDLE_WINDOW_METRICS, java: BUNDLE_WINDOW_METRICS, values: [process.cpu.utilization, process.memory.usage, tokio.runtime.alive_tasks], owner: parallax }

@@ -26,6 +26,11 @@ pub const PARALLAX_SOURCE: &str = "parallax.source";
 pub const JACKIN_OPERATION: &str = "jackin.operation";
 pub const REQUEST_DURATION_METRICS: &[&str] =
     &["http.server.request.duration", "rpc.server.duration"];
+pub const HTTP_REQUEST_METHOD: &str = "http.request.method";
+pub const HTTP_ROUTE: &str = "http.route";
+pub const HTTP_RESPONSE_STATUS_CODE: &str = "http.response.status_code";
+pub const URL_PATH: &str = "url.path";
+pub const HTTP_SERVER_REQUEST_DURATION: &str = "http.server.request.duration";
 pub const CPU_METRICS: &[&str] = &[
     "process.cpu.utilization",
     "process.cpu.usage",

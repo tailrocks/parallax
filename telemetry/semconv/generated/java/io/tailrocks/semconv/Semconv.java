@@ -26,6 +26,11 @@ public final class Semconv {
     public static final String PARALLAX_SOURCE = "parallax.source";
     public static final String JACKIN_OPERATION = "jackin.operation";
     public static final String[] REQUEST_DURATION_METRICS = {"http.server.request.duration", "rpc.server.duration", };
+    public static final String HTTP_REQUEST_METHOD = "http.request.method";
+    public static final String HTTP_ROUTE = "http.route";
+    public static final String HTTP_RESPONSE_STATUS_CODE = "http.response.status_code";
+    public static final String URL_PATH = "url.path";
+    public static final String HTTP_SERVER_REQUEST_DURATION = "http.server.request.duration";
     public static final String[] CPU_METRICS = {"process.cpu.utilization", "process.cpu.usage", "system.cpu.utilization", };
     public static final String[] MEMORY_METRICS = {"process.memory.usage", "process.memory.virtual", "system.memory.usage", };
     public static final String[] BUNDLE_WINDOW_METRICS = {"process.cpu.utilization", "process.memory.usage", "tokio.runtime.alive_tasks", };
