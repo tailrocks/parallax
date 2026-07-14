@@ -464,8 +464,8 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   Rust, clean Java suites, Bun build/Vitest, and Playwright discovery are
   local facts; browser execution is expressly named as host-capability work.
 - After the W3 boundary sweep, the complete Rust `nextest` CI profile passes
-  55 tests across 11 binaries. Its freshly generated JUnit XML is accepted by
-  `playground test-report` as 55 passing test cases with no implicit local
+  57 tests across 11 binaries. Its freshly generated JUnit XML is accepted by
+  `playground test-report` as 57 passing test cases with no implicit local
   OTLP exporter. This proves the expanded Rust suite remains consumable by the
   W4 result bridge; live run-parent/export proof remains a final acceptance
   gate.
