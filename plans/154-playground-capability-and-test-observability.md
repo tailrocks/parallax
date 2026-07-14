@@ -102,6 +102,11 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   and profiling configuration; Docker and compose claims match this two-path
   design. Gradle execution remains deferred because its arm64 native platform
   loader currently fails before project configuration in this host.
+- `277eb69` completes the ready documentation/runtime drift cleanup: the
+  playground now provisions Bun through mise, production `web start` executes
+  Bun instead of Node, and README Spring gRPC/Sentry wording matches the live
+  dependency model. Reinstalling the foreign web dependency tree with Bun made
+  the local production build and TypeScript check pass.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
