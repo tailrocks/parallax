@@ -326,6 +326,12 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   it now distinguishes implemented source/configuration from Rust/web local
   builds and Java execution awaiting a Gradle-capable host, without changing
   any scenario claim into an unearned pass.
+- `8e650c7` makes the W5 cross-language `PaymentError` comparison runnable via
+  the existing Java-payment compose overlay: opt into
+  `CROSS_LANGUAGE_PAYMENT_ERROR=1 scenarios/b-chaos.sh` to send the
+  deterministic SKU through checkout to payment. Shell syntax and failure-path
+  behavior are checked locally; backend grouping remains a final live-fan-out
+  observation.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
