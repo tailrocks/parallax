@@ -215,6 +215,10 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   its input attribute list, proving empty, additive, and non-duplication
   behavior without ambient environment mutation. Seven locked CLI tests and
   strict clippy pass locally.
+- `3b76c0b` completes another W4 retry-chain payload requirement: test-report
+  spans now retain nextest's per-attempt ID and positive total-attempt count in
+  addition to a validated 1-indexed ordinal. Eight locked CLI tests and strict
+  clippy pass locally.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
