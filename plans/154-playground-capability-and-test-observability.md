@@ -307,6 +307,10 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   browser/environment/OS attributes, and have revision/version resources.
   The explicit generated `parallax.test.id` remains the Playwright test ID.
   Bun build, six Vitest tests, and two-test Playwright discovery pass locally.
+- `a4d32f2` closes the ready W1 documentation/runtime drift: the web Docker
+  runtime now uses Bun rather than Node, and README/VERIFICATION claims reflect
+  catalog's real Postgres path plus the present arm64 Gradle limitation. Bun
+  production build and TypeScript checking pass locally.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
