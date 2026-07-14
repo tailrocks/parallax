@@ -143,6 +143,11 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   failure, error, and malformed duration handling; locked CLI tests and strict
   clippy pass locally. The per-process in-test helper, nextest CI profile,
   Java, and Playwright telemetry remain open W4 work.
+- `5c15c52` supplies the bridge's authoritative input: the playground now has
+  a `.config/nextest.toml` `ci` profile with retry, retained failure output,
+  and `target/nextest/ci/junit.xml` output. A local nextest run generated the
+  report and the converter processed it successfully (two passing cases), so
+  the report path and parser are proven together without a CI dependency.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
