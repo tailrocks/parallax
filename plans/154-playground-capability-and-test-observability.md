@@ -152,6 +152,10 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   Its router is now constructible for tests, and the focused async boundary
   test exercises both the notification response and health endpoint through
   Tower one-shot calls. Locked test and strict clippy pass locally.
+- `538dbfd` hardens the JUnit bridge against two common producer shapes:
+  self-closing failure/error elements now retain their outcome/message, and
+  `system-out` text after a closed diagnostic no longer contaminates its stack.
+  The new regression test plus locked CLI test and strict clippy pass locally.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
