@@ -261,12 +261,26 @@ Out of scope:
     lib (per-process subscriber, simple/blocking exporter, `force_flush`
     guard, parent from `TRACEPARENT`) for integration tests whose internal
     service-to-service calls must be visible as child spans.
+    Mechanism refinements (research doc §5): identity/attempt attrs come
+    from nextest env (`NEXTEST_BINARY_ID`, `NEXTEST_TEST_NAME`,
+    `NEXTEST_ATTEMPT`, `NEXTEST_ATTEMPT_ID`); use `SimpleSpanProcessor` or
+    explicit provider shutdown — libtest exits via `process::exit` on
+    failure, so Drop-based flushing loses exactly the failing tests; the
+    JUnit XML converter is also the gap-fill for SIGKILL/timeout-killed
+    tests. When plan 155 D9 ships product adapters, the playground migrates
+    to them and keeps only scenario-specific glue.
 17. Java: adopt `com.atkinsondev.opentelemetry-build` for per-task/per-test
     spans (failure message + stack on the span); attach the OTel Java agent to
     the test JVM (`test { jvmArgs }`) + `@AutoConfigureObservability` so
     integration-test HTTP/gRPC/Kafka/JDBC client spans of the code under test
     nest beneath; add the thin JUnit 5 extension only if the plugin's
     attribute names cannot be mapped to the shared `test.*` constants.
+    Known plugin losses to record in VERIFICATION.md (research doc §5.1):
+    displayName-only identity, stacks truncated to 5 frames, no attempt
+    counter, non-semconv attribute names, degraded config-cache mode;
+    Gradle `mergeReruns=true` JUnit XML is the authoritative flaky/rerun
+    record. Forward `TRACEPARENT`/`PARALLAX_RUN_ID` explicitly via the
+    `Test` task environment (Gradle daemon does not inherit the shell).
 18. Playwright: evaluate `playwright-opentelemetry` (endformdev) first; if its
     span model or Bun compatibility fails, write the custom Reporter
     (explicit-timestamp spans keyed by `test.id`, step spans, `forceFlush` in

@@ -295,3 +295,212 @@ UX and identity semantics but has no store and no trace linkage. Tracetest
 proved trace-based testing and died. The open position: **OTel-native,
 self-hosted, evidence-bundle-centric test observability fused with production
 error tracking.**
+
+## 4. Allure TestOps / Allure Service — run-preview UI inventory (second pass, 2026-07-14)
+
+Deep pass on the commercial server (docs.qameta.io) and Allure 3's hosted
+service, to derive what Parallax's UI needs to preview test-run results.
+
+### 4.1 Launch (test run) model
+
+- Launch list: card per launch with **Open/Closed state**, per-status result
+  counts (clickable deep-links), metadata chips (tags, issues, env vars,
+  release), assignee, defect count. **Open = uploads/triage in progress**
+  (effectively "live"); **Closed** triggers post-processing (test-case
+  upsert, dashboard statistics, cleanup). Configurable **auto-close policy**
+  handles crashed producers. Launch contains 1..n job runs (one per CI
+  execution / environment set).
+- Launch detail — six tabs: **Overview** (unresolved failures, retries,
+  muted, defects widgets) · **Tree** (grouping via project trees: Suites,
+  Features, or custom label paths; per-node rollups; bulk actions) ·
+  **Categories** (regex error categories) · **Errors** (message clustering) ·
+  **Graphs** · **Timeline** (host × thread gantt).
+- Live behavior: `allurectl watch` streams each result file as the test
+  finishes; open launch fills incrementally. TestOps has no push transport
+  documented — **a truly push-updating (SSE) launch view would out-execute
+  TestOps**; Parallax already has the live infra (`LiveStreamPanel` on run
+  detail).
+- Cross-launch: **Compare** (N-launch status matrix, All/Intersect/Diff,
+  "only status changes") and per-result transition badges
+  **New / Regressed / Malfunctioned / Fixed** vs previous launch,
+  environment-aware, filterable. **Rerun failed** creates a new job run in
+  the same launch via a `testplan.json` subset contract.
+
+### 4.2 Result detail and triage semantics
+
+- Tabs: Overview (error + trace, category, defect links, **"similar
+  failures"**, parameters, scenario = nested steps + fixtures, comments) ·
+  History (same logical test across launches) · Retries (attempts within
+  launch; same test id + same environment) · Attachments (inline image/
+  video/log/HTML preview; fixture vs test-body attachments distinguished).
+- **Execution status vs resolution** — the load-bearing triage concept:
+  status = how the run ended; resolution = whether the team triaged it
+  (defect-linked or muted). Unresolved-failure count is the launch's
+  headline number.
+- **Defects**: curated known-failure records with per-defect regex matchers
+  (message pattern + stacktrace pattern), created inline from a failing
+  result; while a defect is Open, matching failures in new launches
+  auto-link and show as resolved; Closed disables matchers; issue-tracker
+  sync can auto-close the defect. "Apply defect matchers" re-scans an open
+  launch.
+- **Mutes**: per test case (not per result), required reason, excluded from
+  stats but visible, bulk mute, Mutes tab for review. No env scoping, no
+  expiry — a beatable gap (env-scoped mutes + TTL/review queue).
+- **Flaky rule**: ≥3 status transitions within last 10 executions →
+  automatic bomb icon + filter (non-configurable).
+- Test-case repository: AllureID ledger, workflow statuses, custom trees by
+  label paths, **AQL** query language (`cf["Epic"] = "Auth"`,
+  `ev["browser"] = "chrome"`, `not tag in [..]`) powering filters, saved
+  views, widgets, dynamic test plans.
+- Dashboards: 10 widget types (launch trend, automation trend,
+  **low-performing tests** ranked by success rate/duration, tree map, pies).
+
+### 4.3 Upload/session mechanics (defines a live test-ingest API)
+
+Adapters write files; `allurectl` is the transport: create launch → open
+numbered **upload session** per job run → batched file upload (results /
+containers / attachments as separate categories) → close session → close
+launch (or auto-close). CI-triggered runs get `ALLURE_JOB_RUN_ID` injected so
+results land in the pre-created job run; `allurectl job-run env` exports
+launch context for fan-out CI jobs. Raw upload endpoints are declared
+proprietary/unstable — only the CLI is supported. Lessons for Parallax:
+session lifecycle with server-side auto-close; env-var context injection
+(`PARALLAX_RUN_ID` already exists); batch endpoints separating results from
+attachments; stable test identity so streaming results attach to known
+entities; environment as part of retry identity. Allure Service (OSS-adjacent)
+is just remote history + static report hosting keyed by repo+branch — no
+server UI; Parallax being the persistent backend makes per-run permalinks
+sufficient.
+
+### 4.4 Ranked UI requirements for a Parallax test-run preview
+
+Tier 1 (not credible without): run list with status counts + open/closed
+state + metadata chips + filters · **live-filling run detail** (results
+appear as each test finishes — maps to existing SSE; differentiator in
+execution since TestOps lacks push) · test tree with grouping + rollups ·
+result detail with error/stack + nested step tree (maps to trace waterfall)
++ parameters + attachments viewer · five-status model + retries grouped
+under one logical result.
+Tier 2 (expected by Allure migrants): per-test history + flaky badge ·
+failure grouping ("similar failures" — maps directly to Parallax
+fingerprinting) · defect records with regex matchers + status-vs-resolution
+split · mute with reason (env-scoped + expiry beats TestOps) · transition
+badges (new/regressed/malfunctioned/fixed) · run comparison matrix.
+Tier 3 (defer/scope down): dashboards, timeline tab (≈ trace waterfall with
+host/thread lanes — near-free), AQL-style query grammar (share one grammar
+with existing pages), test-case repository + CI trigger/test plans (only the
+ingest-side hooks first), comments/assignees, PDF/CSV export.
+Bottom line: Parallax already owns the primitives Allure lacks (push
+updates, trace waterfall, issue grouping, metrics). Net-new UI concentrates
+in four components: test tree with rollups, step tree + attachments viewer,
+retry/history identity layer, and matcher/mute triage flows.
+
+## 5. Runner integration — Gradle, cargo test, cargo-nextest → Parallax (2026-07-14)
+
+Parenting chain for all runners: `parallax run start` root span →
+`TRACEPARENT` env (bare uppercase; OTel env-carrier spec is RC) → runner →
+per-test span `setParent(extract(TRACEPARENT))`; `parallax.run.id` stamped on
+every span. Universal pitfall: batch span processors (5 s default delay) lose
+spans in short-lived processes — every path below needs explicit
+flush/shutdown or a simple/sync processor.
+
+### 5.1 Gradle / JUnit 5 (ranked)
+
+1. **Custom JUnit Platform listener jar (recommended; live + best identity).**
+   `testRuntimeOnly` jar registering `TestExecutionListener` +
+   `LauncherSessionListener` via ServiceLoader; Gradle auto-registers it in
+   each forked worker JVM. Identity = **JUnit `UniqueId`**
+   (`[engine:junit-jupiter]/[class:FQCN]/[method:name(paramSig)]`,
+   `[test-template-invocation:#N]` for parameterized) — structured,
+   deterministic, param-signature-aware; full `recordException` stacks.
+   Listener callbacks are multi-threaded → keep
+   `ConcurrentHashMap<UniqueId, Span>` + explicit `setParent`, never
+   `Span.current()`. Flush in `launcherSessionClosed` per fork JVM.
+   Spring Boot integration tests: OTel javaagent on the test JVM +
+   agent-bridged `GlobalOpenTelemetry` + a Jupiter `InvocationInterceptor`
+   that wraps the invocation on the test thread with `makeCurrent()` → agent
+   HTTP/JDBC spans nest under the per-test span. Gradle daemon env drift:
+   forward `TRACEPARENT`/`PARALLAX_RUN_ID` explicitly in the `Test` task DSL.
+   Retries: Gradle test-retry rounds = fresh worker JVM, same UniqueId —
+   count attempts listener-side; JUnit Pioneer `@RetryingTest` attempts
+   appear as template invocations natively. Prior art all dormant/archived
+   (ryandens/junit-platform-otel, Dynatrace extension) — build, don't adopt.
+2. **`com.atkinsondev.opentelemetry-build` 4.6.2 (zero-code quick win).**
+   Live per-test spans (100 ms batch), OTLP gRPC/HTTP, build→task→worker→
+   class→method nesting. Accept: displayName-only identity (param
+   collisions), stacks truncated to 5 frames, no attempt counter, custom
+   attribute names (`test.result`, `test.failure.*` — not semconv),
+   TRACE_ID/SPAN_ID-style parenting (not TRACEPARENT), config-cache mode
+   degrades (retroactive spans, retries deduped by name).
+3. **Post-run reconciliation from Gradle JUnit XML** with `mergeReruns=true`
+   → Surefire-style `<flakyFailure>`/`<rerunFailure>` classification;
+   XML written only at task end (never live); no per-testcase wall-clock
+   timestamp. Best as authority layer over 1 or 2 for crashed/killed JVMs.
+
+### 5.2 cargo test / libtest (structurally worst — nextest preferred)
+
+- **No hooks, no listener API.** JSON output still unstable mid-2026
+  (rust-lang/rust#49359 open; eRFC 3558 stalled, 2026 project goal unowned);
+  works on stable only via
+  `RUSTC_BOOTSTRAP=1 cargo test -- -Z unstable-options --format json
+  --report-time`; events carry no wall-clock timestamps (reader-side
+  stamping), `exec_time` for duration.
+- **Fatal flush class**: libtest exits via `process::exit(101)` on failure —
+  destructors never run; Drop-based exporters lose exactly the failing runs.
+  Mitigations: `SimpleSpanProcessor` (sync export), libtest-mimic custom
+  harness (own `main`, flush before `Conclusion::exit()`), nightly-only exit
+  callback.
+- In-process subscriber: one process, tests parallel on threads —
+  `#[tokio::test(flavor="multi_thread")]` futures hop threads → context
+  bleed unless every body is instrumented. No established crate does
+  per-test OTel for stock cargo test — niche open.
+- Recommended if forced: wrapper-side converter streaming the unstable JSON
+  into synthesized spans.
+
+### 5.3 cargo-nextest (best Rust story)
+
+1. **In-test subscriber lib + env identity (recommended; live + richest).**
+   Process-per-test → per-process subscriber is contention-free. Identity
+   from env (all verified, 0.9.116+): `NEXTEST_RUN_ID`, `NEXTEST_BINARY_ID`,
+   `NEXTEST_TEST_NAME`, `NEXTEST_ATTEMPT` (1-indexed),
+   `NEXTEST_TOTAL_ATTEMPTS`, **`NEXTEST_ATTEMPT_ID`**
+   (`run-id:binary-id$test-name#attempt` — globally unique per attempt).
+   Parent from passed-through `TRACEPARENT`. Export with
+   `SimpleSpanProcessor` or explicit `SdkTracerProvider::shutdown()` (never
+   Drop-at-exit; `global::shutdown_tracer_provider()` was removed in OTel
+   Rust 0.28). Retry attempts land automatically (fresh process + fresh
+   attempt env).
+2. **Wrapper consumes `libtest-json-plus` stream (live, zero test-code).**
+   `NEXTEST_EXPERIMENTAL_LIBTEST_JSON=1 cargo nextest run --message-format
+   libtest-json-plus --message-format-version 0.1` — per-event flush since
+   0.9.103; caveats: experimental, only final aggregate per test (no
+   per-attempt events), test names carry `#total-runs` suffix.
+3. **Post-run JUnit XML (authoritative retries).** `[profile.ci.junit]
+   path`; testsuite per binary id, real start timestamps, full error chain,
+   `<flakyFailure>`/`<rerunFailure>` per attempt with output;
+   `flaky-fail-status` configurable (0.9.131+). Written only on run finish.
+   Required as reconciliation for SIGKILL/timeout-killed tests that never
+   flushed (nextest SIGTERM grace default 10 s; Windows timeout = hard
+   kill).
+4. Exotic: USDT probes (per-attempt start/done events, needs
+   bpftrace/DTrace, unstable); experimental `run-wrapper` scripts can
+   interpose a span-emitting wrapper around every test invocation.
+
+### 5.4 Stable test_case_key inputs per runner
+
+| Runner | Key input | Caveat |
+|---|---|---|
+| Gradle/JUnit 5 | UniqueId segments (class + method + param signature) | `#N` template invocations positional; avoid displayName with argument toString |
+| cargo test | binary target + `module::path::fn_name` | line-free; module rename breaks history (no lineage) |
+| cargo-nextest | `NEXTEST_BINARY_ID` + `NEXTEST_TEST_NAME`; attempt = `NEXTEST_ATTEMPT`; per-attempt key = `NEXTEST_ATTEMPT_ID` | binary-id forms: `crate`, `crate::bin-name`, `crate::kind/bin-name` |
+| rstest | each `#[case]` = own test fn `parent::case_N[_desc]` | positional numbering shifts on insert/reorder — prefer `#[case::name]` |
+
+### 5.5 Recommended hybrid (feeds plans 154/155)
+
+Live spans from Gradle listener jar + nextest in-test subscriber, parented on
+the `parallax run` wrapper's TRACEPARENT; wrapper additionally parses
+post-run JUnit XML (Gradle `mergeReruns`, nextest junit profile) to reconcile
+retry/flaky classification and gap-fill tests that died without flushing.
+Policy note: `opentelemetry-otlp` 0.32 gRPC TLS is rustls-only — irrelevant
+for plaintext local `:4317`/`:4318`, but any future remote-TLS test export
+must use OTLP/HTTP with a native-TLS client per repository TLS policy.

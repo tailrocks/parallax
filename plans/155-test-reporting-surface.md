@@ -124,6 +124,64 @@ facades, plan-152 generated GraphQL documents), nav entry in `workspaceNav`
 next to Runs. Tests link to Runs (session), Traces (stitched SUT trace),
 Logs (test window), Issues (shared fingerprint) via declared feature edges.
 
+### D8 — Run-preview semantics (Allure TestOps second-pass research, 2026-07-14)
+
+The test-session view follows the TestOps launch model where it is proven,
+and beats it where Parallax has structural advantages (research doc §4):
+
+- **Session lifecycle**: a test session (run) is *open* while results stream
+  and *closed* afterward; closing finalizes statistics. An **auto-close
+  policy** (idle timeout) handles crashed producers. Parallax reuses the
+  existing run start/finish plus live SSE — the run detail **fills in live
+  per finished test** (TestOps needs polling; push updates are the
+  out-execution win).
+- **Status vs resolution**: a failure is *unresolved* until triaged
+  (issue-linked or muted). The session headline number is unresolved
+  failures, not raw failures.
+- Tier-1 view set (research doc §4.4): session list with status counts +
+  open/closed + metadata chips; live-filling session detail with a grouped
+  test tree (suite rollups); result detail = error + stack + nested step
+  tree (rendered by the existing trace waterfall) + parameters +
+  attachments; retries grouped under one logical result.
+- Tier-2: per-test history + flaky badge; "similar failures" via shared
+  fingerprints; transition badges (new/regressed/**malfunctioned**/fixed —
+  passed→broken vs passed→failed distinguished); mute with required reason,
+  **environment-scoped with optional expiry** (TestOps lacks both); session
+  comparison matrix (defer if needed).
+- Declarative matcher rules (defect-record regexes auto-resolving future
+  failures) stay a recorded trigger until fingerprint override rules exist.
+
+### D9 — Runner adapters (how tests reach Parallax)
+
+Parallax ships thin client-side adapters; identity attributes follow D1 and
+the research doc §5 mechanisms:
+
+- **Gradle/JUnit 5**: a `TestExecutionListener` + `LauncherSessionListener`
+  jar (ServiceLoader-registered, `testRuntimeOnly`). Identity from JUnit
+  `UniqueId` segments (param-signature-aware); full `recordException`;
+  concurrent-safe span map (no `Span.current()`); flush in
+  `launcherSessionClosed` per forked JVM; optional Jupiter
+  `InvocationInterceptor` so OTel-javaagent spans (Spring Boot integration
+  tests) nest under per-test spans; `TRACEPARENT`/`PARALLAX_RUN_ID`
+  forwarded explicitly through the `Test` task env (daemon drift). The
+  atkinsondev Gradle plugin is the documented zero-code fallback with known
+  losses (displayName identity, 5-frame stacks, no attempt counter).
+- **cargo-nextest**: a small Rust test-support crate — per-process lazy
+  subscriber (process-per-test makes it contention-free), identity from
+  `NEXTEST_RUN_ID` / `NEXTEST_BINARY_ID` / `NEXTEST_TEST_NAME` /
+  `NEXTEST_ATTEMPT` / `NEXTEST_ATTEMPT_ID` env, parent from passed-through
+  `TRACEPARENT`, export via `SimpleSpanProcessor` or explicit provider
+  shutdown (never Drop-at-exit; libtest `process::exit` skips destructors).
+- **Reconciliation in the wrapper**: `parallax run` (or a `parallax test`
+  subcommand) parses post-run JUnit XML — Gradle with `mergeReruns=true`,
+  nextest `[profile.ci.junit]` — to classify flaky/rerun attempts
+  authoritatively and gap-fill tests killed before flushing (SIGKILL /
+  timeout). Stock `cargo test` (no nextest) is supported only via the
+  unstable-JSON wrapper path and documented as degraded.
+- TLS policy note: OTLP gRPC TLS in `opentelemetry-otlp` 0.32 is
+  rustls-only; adapters target plaintext local `:4317`/`:4318`, and any
+  remote-TLS path must be OTLP/HTTP over a native-TLS client.
+
 ## Scope
 
 In scope:
@@ -141,7 +199,13 @@ In scope:
 - UI: Tests list page (filter toolbar + virtualized table — `issues.index`
   is the template) and test detail (history trend per variant, attempt
   chain, failure message/stack, linked trace waterfall, logs-in-window,
-  related issue, release/version attribution, flaky badge with evidence).
+  related issue, release/version attribution, flaky badge with evidence);
+  test-session view per D8 (live-filling tree with rollups via existing SSE,
+  unresolved-failures headline, transition badges, mute-with-reason).
+- Runner adapters per D9: JUnit Platform listener jar, nextest test-support
+  crate, wrapper-side JUnit XML reconciliation; adapter distribution
+  (artifact coordinates, versioning) is an operator decision recorded before
+  first release.
 - Overview/Runs cross-links: a run that is a test session shows its test
   rollup; a failed test deep-links its evidence.
 - Semconv constants for `test.*`, `cicd.pipeline.*`, `parallax.test.id`
@@ -181,9 +245,15 @@ Out of scope (recorded triggers):
 6. Flaky state machine job over ingested results (same-commit divergence
    needs `vcs.ref.head.revision` present — playground provides it; document
    degraded mode when absent).
-7. Verify end-to-end with plan 154 W4 payload: one failed Playwright test and
+7. Runner adapters (D9): nextest test-support crate first (dogfoods on
+   Parallax's own test suite), then the JUnit listener jar (verified against
+   the playground's Gradle services), then wrapper-side JUnit XML
+   reconciliation; each adapter lands with a live-vs-reconciled fixture
+   pair proving killed-test gap-fill.
+8. Verify end-to-end with plan 154 W4 payload: one failed Playwright test and
    one failed Rust integration test produce list/detail/history/trace/issue
-   linkage; record evidence in `docs/research/validation/`.
+   linkage, watched live on an open session; record evidence in
+   `docs/research/validation/`.
 
 ## Test Plan
 
@@ -210,6 +280,12 @@ Out of scope (recorded triggers):
       logs window, shared-fingerprint issue link, release/version, history.
 - [ ] Flaky states computed from at least two signals with expiry; visibly
       badged with evidence counts.
+- [ ] Test-session detail fills live over SSE while a session is open;
+      sessions auto-close on idle policy; unresolved-failures headline and
+      transition badges present.
+- [ ] Both D9 adapters (JUnit listener jar, nextest support crate) ship with
+      the reconciliation path proven on a killed-test fixture; Gradle
+      fallback plugin losses documented.
 - [ ] Live verification against the plan 154 playground recorded under
       `docs/research/validation/`.
 
