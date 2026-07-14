@@ -129,6 +129,9 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
 - `83c6f24` begins W3 coverage for the new service with in-process Axum tests
   for GraphiQL, GraphQL introspection, and catalog response mapping. The tests
   use Tower's documented one-shot service path and pass with strict clippy.
+- `6242a38` adds Bun-run Vitest 4.1.6 to the web tier and characterizes W3C
+  traceparent generation plus SSR-safe RUM delegation. Four deterministic unit
+  tests pass, as does the production Vite build and TypeScript check.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
