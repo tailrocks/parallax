@@ -37,6 +37,10 @@
   workflows, malformed repository names, and identity/ref mismatches fail
   before any external verification command runs; the 57-test xtask suite and
   strict clippy remain green.
+- 2026-07-14: the Syft CycloneDX action now sets its source name to the archive
+  filename and source version to the archive's final SHA-256. This makes the
+  emitted SBOM metadata match the fail-closed verifier's exact archive/digest
+  contract; a release workflow fixture prevents removal of either flag.
 
 ## Why
 
