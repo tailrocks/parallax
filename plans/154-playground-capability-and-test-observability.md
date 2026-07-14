@@ -210,6 +210,11 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   OpenTelemetry trace ID, rather than testing environment injection alone.
   Shared telemetry tests (16 unit plus one public baggage integration test)
   and strict clippy pass locally.
+- `3181f55` adds W3 CLI coverage for cron process exit semantics and the
+  run-scoped resource-attribute contract. The run-ID helper is now pure over
+  its input attribute list, proving empty, additive, and non-duplication
+  behavior without ambient environment mutation. Seven locked CLI tests and
+  strict clippy pass locally.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
