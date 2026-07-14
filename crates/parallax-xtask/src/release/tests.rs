@@ -135,6 +135,13 @@ fn verification_identity_rejects_ambiguous_provenance_inputs() -> Result<(), Str
             .to_string();
     spec.signer_workflow = "tailrocks/parallax/release.yml".to_string();
     let non_workflow_path = validate_verification_identity(&spec).is_err();
+    spec.signer_workflow = "other/repository/.github/workflows/release.yml".to_string();
+    let foreign_workflow = validate_verification_identity(&spec).is_err();
+    spec.signer_workflow = "tailrocks/parallax/.github/workflows/release.yml".to_string();
+    spec.signer_identity =
+        "https://github.com/tailrocks/parallax/.github/workflows/release.yml@refs/heads/main"
+            .to_string();
+    let mismatched_ref = validate_verification_identity(&spec).is_err();
 
     let actual = (
         valid,
@@ -143,8 +150,10 @@ fn verification_identity_rejects_ambiguous_provenance_inputs() -> Result<(), Str
         short_ref,
         foreign_signer,
         non_workflow_path,
+        foreign_workflow,
+        mismatched_ref,
     );
-    if actual != (true, true, true, true, true, true) {
+    if actual != (true, true, true, true, true, true, true, true) {
         return Err(format!(
             "verification identity validation mismatch: {actual:?}"
         ));

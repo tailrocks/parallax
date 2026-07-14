@@ -32,6 +32,11 @@
   provenance inputs: only a full lowercase source SHA, full `refs/*` source
   ref, GitHub signer identity, and workflow path are accepted. `cargo test
   --locked -p parallax-xtask` passes all 57 tests and strict clippy is clean.
+- 2026-07-14: release verification now binds the signer identity exactly to the
+  requested repository-owned workflow and source ref. Cross-repository
+  workflows, malformed repository names, and identity/ref mismatches fail
+  before any external verification command runs; the 57-test xtask suite and
+  strict clippy remain green.
 
 ## Why
 

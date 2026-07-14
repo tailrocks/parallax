@@ -97,13 +97,32 @@ fn validate_verification_identity(spec: &VerifySpec) -> Result<()> {
     {
         bail!("source commit must be one full lowercase SHA");
     }
-    if !spec.source_ref.starts_with("refs/") {
+    if !spec.source_ref.starts_with("refs/") || spec.source_ref.contains(char::is_whitespace) {
         bail!("source ref must be a full refs/* name");
     }
-    if !spec.signer_identity.starts_with("https://github.com/")
-        || !spec.signer_workflow.contains("/.github/workflows/")
+    let repository_parts = spec.repository.split('/').collect::<Vec<_>>();
+    if repository_parts.len() != 2
+        || repository_parts.iter().any(|part| {
+            part.is_empty()
+                || !part
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'-' | b'_'))
+        })
     {
-        bail!("signer identity and workflow must name an exact GitHub workflow");
+        bail!("repository must be one GitHub owner/repository name");
+    }
+    let workflow_prefix = format!("{}/.github/workflows/", spec.repository);
+    if !spec.signer_workflow.starts_with(&workflow_prefix)
+        || !spec.signer_workflow.ends_with(".yml")
+    {
+        bail!("signer workflow must be an exact repository-owned .github workflow");
+    }
+    let expected_identity = format!(
+        "https://github.com/{}@{}",
+        spec.signer_workflow, spec.source_ref
+    );
+    if spec.signer_identity != expected_identity {
+        bail!("signer identity must match the repository workflow and source ref");
     }
     Ok(())
 }
