@@ -351,6 +351,14 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   variant, drives requests without the legacy `leak` query override, and
   restores the exact flag file on exit. Shell syntax passes locally; the
   runtime observation remains a final live-stack check.
+- `463d1ae` adds the requested catalog GraphQL test slice with Spring Boot
+  4.1's current `@AutoConfigureTracing` annotation (the plan's older
+  `@AutoConfigureObservability` name is not the supported API). It uses
+  `@GraphQlTest`, a mocked catalog repository, and a local meter registry to
+  exercise batched reviews, deliberate N+1 reviews, and the deterministic
+  partial error without Postgres. A fresh targeted Gradle command is still
+  blocked before configuration by the Linux arm64 native-platform loader; no
+  Java execution claim is made.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
