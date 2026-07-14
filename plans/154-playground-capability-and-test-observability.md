@@ -114,6 +114,14 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   GraphQL operation/document/field attributes; the compose topology exposes
   the service on port 8094. Cargo check, test, strict clippy, and formatting
   pass locally.
+- `83e849b` completes the ready Java gRPC topology work: payment now implements
+  `QuoteStream` with ordered server-streamed responses and a controlled
+  mid-stream failure, while fulfillment uses Spring gRPC's named `payment`
+  channel to make a Java gRPC client call before its Java-to-Rust HTTP hop.
+  The fulfillment proto generation and compose address are explicit. The
+  arm64 Gradle launcher still fails before configuration on its bundled native
+  platform library, so Java compilation needs final validation on a functional
+  Gradle host.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
