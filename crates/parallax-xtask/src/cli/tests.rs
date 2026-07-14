@@ -22,6 +22,8 @@ fn parses_every_initial_command() {
         vec!["xtask", "health"],
         vec!["xtask", "facade", "refresh"],
         vec!["xtask", "facade", "check"],
+        vec!["xtask", "semconv", "check"],
+        vec!["xtask", "semconv", "generate"],
         vec![
             "xtask",
             "release-package",

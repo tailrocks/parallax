@@ -2,13 +2,14 @@ use std::{path::Path, process::Command as Process};
 
 use anyhow::{Context, Result, bail};
 
-use crate::cli::{Cli, Command, DocsAction, FacadeAction};
+use crate::cli::{Cli, Command, DocsAction, FacadeAction, SemconvAction};
 use crate::dependencies::{self, Selection};
 use crate::docs_links;
 use crate::facade;
 use crate::nextest_evidence;
 use crate::policy;
 use crate::release;
+use crate::semconv;
 
 pub(crate) fn execute(cli: Cli) -> Result<()> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
@@ -27,9 +28,17 @@ pub(crate) fn execute(cli: Cli) -> Result<()> {
         Command::NextestEvidence { profile } => nextest_evidence::run(&root, &profile, cli.output),
         Command::Health => policy::health(&root, cli.output),
         Command::Facade { action } => execute_facade(&root, action),
+        Command::Semconv { action } => execute_semconv(&root, action),
         release_command @ (Command::ReleasePackage { .. }
         | Command::ReleaseRehearse { .. }
         | Command::ReleaseVerify { .. }) => execute_release(release_command),
+    }
+}
+
+fn execute_semconv(root: &Path, action: SemconvAction) -> Result<()> {
+    match action {
+        SemconvAction::Check => semconv::check(root),
+        SemconvAction::Generate => semconv::generate(root),
     }
 }
 

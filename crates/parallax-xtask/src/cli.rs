@@ -68,6 +68,11 @@ pub(crate) enum Command {
         #[command(subcommand)]
         action: FacadeAction,
     },
+    /// Generate or verify checked-in semantic-convention artifacts.
+    Semconv {
+        #[command(subcommand)]
+        action: SemconvAction,
+    },
     /// Package one built binary through the deterministic release implementation.
     ReleasePackage {
         #[arg(long)]
@@ -123,6 +128,14 @@ pub(crate) enum DocsAction {
 pub(crate) enum FacadeAction {
     Refresh,
     Check,
+}
+
+#[derive(Debug, Subcommand)]
+pub(crate) enum SemconvAction {
+    /// Compare deterministic generated output with the checked-in artifacts.
+    Check,
+    /// Explicitly refresh checked-in artifacts from the registry.
+    Generate,
 }
 
 #[cfg(test)]

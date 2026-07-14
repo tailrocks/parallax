@@ -7,6 +7,7 @@ mod facade;
 mod nextest_evidence;
 mod policy;
 mod release;
+mod semconv;
 
 use anyhow::Result;
 use clap::Parser;

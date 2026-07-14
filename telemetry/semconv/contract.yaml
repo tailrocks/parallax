@@ -1,0 +1,28 @@
+# Checked-in language contract rendered by `cargo xtask semconv generate`.
+# The adjacent `registry/` is the Weaver-valid OpenTelemetry overlay; together
+# they are the sole versioned semantic-convention registry for both projects.
+constants:
+  - { id: service.name, rust: SERVICE_NAME, typescript: SERVICE_NAME, java: SERVICE_NAME, value: service.name, owner: shared }
+  - { id: service.namespace, rust: SERVICE_NAMESPACE, typescript: SERVICE_NAMESPACE, java: SERVICE_NAMESPACE, value: service.namespace, owner: shared }
+  - { id: service.instance.id, rust: SERVICE_INSTANCE_ID, typescript: SERVICE_INSTANCE_ID, java: SERVICE_INSTANCE_ID, value: service.instance.id, owner: shared }
+  - { id: service.version, rust: SERVICE_VERSION, typescript: SERVICE_VERSION, java: SERVICE_VERSION, value: service.version, owner: shared }
+  - { id: deployment.environment.name, rust: DEPLOYMENT_ENVIRONMENT_NAME, typescript: DEPLOYMENT_ENVIRONMENT_NAME, java: DEPLOYMENT_ENVIRONMENT_NAME, value: deployment.environment.name, owner: shared }
+  - { id: deployment.environment, rust: DEPLOYMENT_ENVIRONMENT, typescript: DEPLOYMENT_ENVIRONMENT, java: DEPLOYMENT_ENVIRONMENT, value: deployment.environment, owner: parallax }
+  - { id: telemetry.sdk.language, rust: TELEMETRY_SDK_LANGUAGE, typescript: TELEMETRY_SDK_LANGUAGE, java: TELEMETRY_SDK_LANGUAGE, value: telemetry.sdk.language, owner: parallax }
+  - { id: telemetry.sdk.name, rust: TELEMETRY_SDK_NAME, typescript: TELEMETRY_SDK_NAME, java: TELEMETRY_SDK_NAME, value: telemetry.sdk.name, owner: parallax }
+  - { id: telemetry.sdk.version, rust: TELEMETRY_SDK_VERSION, typescript: TELEMETRY_SDK_VERSION, java: TELEMETRY_SDK_VERSION, value: telemetry.sdk.version, owner: parallax }
+  - { id: event.name, rust: EVENT_NAME, typescript: EVENT_NAME, java: EVENT_NAME, value: event.name, owner: shared }
+  - { id: observed_ts_nanos, rust: LOG_OBSERVED_TS_NANOS, typescript: LOG_OBSERVED_TS_NANOS, java: LOG_OBSERVED_TS_NANOS, value: observed_ts_nanos, owner: parallax }
+  - { id: exception.event.name, rust: EXCEPTION_EVENT_NAME, typescript: EXCEPTION_EVENT_NAME, java: EXCEPTION_EVENT_NAME, value: exception, owner: parallax }
+  - { id: exception.type, rust: EXCEPTION_TYPE, typescript: EXCEPTION_TYPE, java: EXCEPTION_TYPE, value: exception.type, owner: parallax }
+  - { id: exception.message, rust: EXCEPTION_MESSAGE, typescript: EXCEPTION_MESSAGE, java: EXCEPTION_MESSAGE, value: exception.message, owner: parallax }
+  - { id: exception.stacktrace, rust: EXCEPTION_STACKTRACE, typescript: EXCEPTION_STACKTRACE, java: EXCEPTION_STACKTRACE, value: exception.stacktrace, owner: parallax }
+  - { id: exception.escaped, rust: EXCEPTION_ESCAPED, typescript: EXCEPTION_ESCAPED, java: EXCEPTION_ESCAPED, value: exception.escaped, owner: parallax }
+  - { id: error.type, rust: ERROR_TYPE, typescript: ERROR_TYPE, java: ERROR_TYPE, value: error.type, owner: shared }
+  - { id: parallax.run.id, rust: PARALLAX_RUN_ID, typescript: PARALLAX_RUN_ID, java: PARALLAX_RUN_ID, value: parallax.run.id, owner: shared }
+  - { id: parallax.source, rust: PARALLAX_SOURCE, typescript: PARALLAX_SOURCE, java: PARALLAX_SOURCE, value: parallax.source, owner: parallax }
+  - { id: jackin.operation, rust: JACKIN_OPERATION, typescript: JACKIN_OPERATION, java: JACKIN_OPERATION, value: jackin.operation, owner: parallax }
+  - { id: http.server.request.duration, rust: REQUEST_DURATION_METRICS, typescript: REQUEST_DURATION_METRICS, java: REQUEST_DURATION_METRICS, values: [http.server.request.duration, rpc.server.duration], owner: parallax }
+  - { id: process.cpu.metrics, rust: CPU_METRICS, typescript: CPU_METRICS, java: CPU_METRICS, values: [process.cpu.utilization, process.cpu.usage, system.cpu.utilization], owner: parallax }
+  - { id: process.memory.metrics, rust: MEMORY_METRICS, typescript: MEMORY_METRICS, java: MEMORY_METRICS, values: [process.memory.usage, process.memory.virtual, system.memory.usage], owner: parallax }
+  - { id: parallax.bundle.window.metrics, rust: BUNDLE_WINDOW_METRICS, typescript: BUNDLE_WINDOW_METRICS, java: BUNDLE_WINDOW_METRICS, values: [process.cpu.utilization, process.memory.usage, tokio.runtime.alive_tasks], owner: parallax }
