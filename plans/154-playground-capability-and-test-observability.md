@@ -90,6 +90,13 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   recommendation, orders, and checkout chaos paths, with explicit environment
   fallback and `feature_flag.*` evaluation logs. Focused Rust tests and clippy
   pass.
+- `f8c7098` records the default Java Sentry decision in executable form:
+  retain the upstream OTel agent as the sole OTLP fan-out path and add Sentry's
+  Spring Boot 4-compatible Jakarta starter (`8.46.0`) to catalog, payment, and
+  fulfillment. The three services now have DSN, environment, release, trace,
+  and profiling configuration; Docker and compose claims match this two-path
+  design. Gradle execution remains deferred because its arm64 native platform
+  loader currently fails before project configuration in this host.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
