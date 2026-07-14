@@ -481,6 +481,10 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   reserve, assert, and clean up an isolated row; without that compose-provided
   endpoint it prints a deterministic skip diagnostic so Docker-free suites do
   not claim database coverage.
+- 2026-07-14: hardened the Rust W4 parent bridge with an in-memory deterministic
+  fixture proving its scope makes the propagated remote trace ID current. The
+  shared telemetry suite now has 17 unit tests plus its public baggage boundary;
+  no collector/network path is needed for that parent-contract proof.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
