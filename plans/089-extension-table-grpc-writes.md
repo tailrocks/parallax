@@ -39,6 +39,12 @@ The independently actionable exemplar primary-key correction was split into
   and `zstd` as required features.
 - `cargo tree -i rustls` with that dependency resolves through tonic and
   tokio-rustls. Cargo cannot remove a dependency's required feature.
+- 2026-07-14 fresh upstream check: `mise exec -- cargo search
+  greptimedb-ingester --limit 5` still reports 0.18.0 as latest. Its published
+  manifest declares `tonic = "0.14"` with required `tls-ring`, `gzip`, and
+  `zstd` features; Tonic 0.14.6 maps `tls-ring` to `tokio-rustls/ring`.
+  Therefore the native-TLS/plaintext feature split required by Step 0 is still
+  absent and implementation cannot begin without violating policy.
 
 ## Scope
 

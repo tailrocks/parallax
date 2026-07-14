@@ -56,7 +56,7 @@ Every plan must preserve these non-negotiable Parallax constraints:
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [089](089-extension-table-grpc-writes.md) | Move derived extension-table writes to GreptimeDB's row API | P2 | M | upstream `greptimedb-ingester` native-TLS/plaintext feature fix | BLOCKED: `greptimedb-ingester` hard-enables rustls through tonic `tls-ring` |
+| [089](089-extension-table-grpc-writes.md) | Move derived extension-table writes to GreptimeDB's row API | P2 | M | upstream `greptimedb-ingester` native-TLS/plaintext feature fix | BLOCKED: 2026-07-14 latest `greptimedb-ingester` 0.18.0 still hard-enables rustls through tonic `tls-ring` |
 | [125](125-native-trace-fingerprint-deviation.md) | Resolve the unpopulated native trace fingerprint deviation and migration contract | P2 | M | 093, 097, 099, 104 | BLOCKED: Plan 104 approval and live stable/nightly GreptimeDB probes unavailable |
 
 ### Foundation And Delivery
