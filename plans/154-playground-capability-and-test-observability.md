@@ -156,6 +156,13 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   self-closing failure/error elements now retain their outcome/message, and
   `system-out` text after a closed diagnostic no longer contaminates its stack.
   The new regression test plus locked CLI test and strict clippy pass locally.
+- `cf5391c` adds W4's opt-in in-process Rust helper. With
+  `PLAYGROUND_TEST_TELEMETRY=1`, `init_test_telemetry` installs a scoped
+  tracing dispatcher backed by a simple OTLP exporter, retains the provider
+  for an explicit shutdown, and leaves default test runs untouched. This gives
+  an integration test a process-local route for child app spans under its
+  propagated `TRACEPARENT`; focused library tests (including its public
+  baggage integration test) and strict clippy pass locally.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
