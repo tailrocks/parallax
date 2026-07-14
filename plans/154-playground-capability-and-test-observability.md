@@ -365,6 +365,13 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   deterministic failure tests. The fresh targeted Gradle command is blocked
   at the same arm64 native-platform loader before project configuration, so
   this source test is not counted as executed here.
+- `2a01417` makes fulfillment's consumer handoff testable without changing its
+  runtime topology: the notification hop is an injected component, and a new
+  in-process payment gRPC server proves the generated Java client carries the
+  expected order SKU/quantity before the Rust-notification handoff is invoked.
+  The fresh targeted Gradle invocation is blocked before configuration by the
+  same Linux arm64 native-platform loader, so the new test remains
+  source-present rather than locally executed.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
