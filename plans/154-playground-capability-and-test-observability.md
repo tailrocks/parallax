@@ -443,6 +443,10 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   proves the real `OrderProducer` record reaches an `orders` consumer, while
   the existing in-process gRPC test covers the following payment/notification
   handoff. A clean fulfillment Gradle suite passes with the Java agent.
+- `1ca3da1` strengthens that fixture into one end-to-end local contract: the
+  consumed embedded-Kafka record is passed through the real fulfillment
+  consumer, an in-process payment gRPC server, and the notification client
+  seam. The clean Java-agent suite passes with the full handoff asserted.
 - After the W3 boundary sweep, the complete Rust `nextest` CI profile passes
   55 tests across 11 binaries. Its freshly generated JUnit XML is accepted by
   `playground test-report` as 55 passing test cases with no implicit local
