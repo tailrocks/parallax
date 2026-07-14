@@ -28,6 +28,10 @@
 - This is a local rehearsal only. Cross-target Zig builds, signed/SBOM/
   provenance sidecars, workflow ordering, and preview publication remain
   intentionally unverified while the implementation program is still active.
+- 2026-07-14: added fail-closed unit coverage for release-verification
+  provenance inputs: only a full lowercase source SHA, full `refs/*` source
+  ref, GitHub signer identity, and workflow path are accepted. `cargo test
+  --locked -p parallax-xtask` passes all 57 tests and strict clippy is clean.
 
 ## Why
 

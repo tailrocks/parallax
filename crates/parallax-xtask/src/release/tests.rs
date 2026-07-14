@@ -103,6 +103,56 @@ fn identity_rejects_unsupported_targets_and_ambiguous_versions() -> Result<(), S
 }
 
 #[test]
+fn verification_identity_rejects_ambiguous_provenance_inputs() -> Result<(), String> {
+    let archive = PathBuf::from("parallax-x86_64-unknown-linux-gnu.tar.gz");
+    let mut spec = VerifySpec {
+        archive,
+        target: "x86_64-unknown-linux-gnu".to_string(),
+        version: "0.1.0".to_string(),
+        source_epoch: 1_700_000_000,
+        source_commit: "a".repeat(40),
+        source_ref: "refs/tags/v0.1.0".to_string(),
+        repository: "tailrocks/parallax".to_string(),
+        signer_identity:
+            "https://github.com/tailrocks/parallax/.github/workflows/release.yml@refs/tags/v0.1.0"
+                .to_string(),
+        signer_workflow: "tailrocks/parallax/.github/workflows/release.yml".to_string(),
+    };
+    let valid = validate_verification_identity(&spec).is_ok();
+
+    spec.source_commit = "A".repeat(40);
+    let uppercase_commit = validate_verification_identity(&spec).is_err();
+    spec.source_commit = "a".repeat(39);
+    let short_commit = validate_verification_identity(&spec).is_err();
+    spec.source_commit = "a".repeat(40);
+    spec.source_ref = "main".to_string();
+    let short_ref = validate_verification_identity(&spec).is_err();
+    spec.source_ref = "refs/tags/v0.1.0".to_string();
+    spec.signer_identity = "https://example.test/workflow".to_string();
+    let foreign_signer = validate_verification_identity(&spec).is_err();
+    spec.signer_identity =
+        "https://github.com/tailrocks/parallax/.github/workflows/release.yml@refs/tags/v0.1.0"
+            .to_string();
+    spec.signer_workflow = "tailrocks/parallax/release.yml".to_string();
+    let non_workflow_path = validate_verification_identity(&spec).is_err();
+
+    let actual = (
+        valid,
+        uppercase_commit,
+        short_commit,
+        short_ref,
+        foreign_signer,
+        non_workflow_path,
+    );
+    if actual != (true, true, true, true, true, true) {
+        return Err(format!(
+            "verification identity validation mismatch: {actual:?}"
+        ));
+    }
+    Ok(())
+}
+
+#[test]
 fn release_callers_use_one_packager_and_verified_sdk() -> Result<(), String> {
     let preview = include_str!("../../../../.github/workflows/preview.yml");
     let stable = include_str!("../../../../.github/workflows/release.yml");
