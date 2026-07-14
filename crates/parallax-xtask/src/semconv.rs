@@ -9,7 +9,7 @@ const RUST_OUTPUT: &str = "crates/parallax-semconv/src/lib.rs";
 const TYPESCRIPT_OUTPUT: &str = "ui/src/shared/semconv.ts";
 const JAVA_OUTPUT: &str = "telemetry/semconv/generated/java/io/tailrocks/semconv/Semconv.java";
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 struct Constant {
     id: String,
     rust: String,
@@ -140,17 +140,17 @@ fn artifacts(root: &Path, playground_root: Option<&Path>) -> Result<Vec<Artifact
             .iter()
             .filter(|constant| constant.owner != "parallax")
             .collect::<Vec<_>>();
-        artifacts.extend(playground_artifacts(playground_root, &playground));
+        artifacts.extend(playground_artifacts(playground_root, &playground)?);
     }
     Ok(artifacts)
 }
 
-fn playground_artifacts(root: &Path, constants: &[&Constant]) -> Vec<Artifact> {
+fn playground_artifacts(root: &Path, constants: &[&Constant]) -> Result<Vec<Artifact>> {
     let constants = constants
         .iter()
         .map(|constant| (*constant).clone())
         .collect::<Vec<_>>();
-    vec![
+    Ok(vec![
         Artifact {
             root: root.to_owned(),
             path: "libs/playground-telemetry/src/semconv.rs".into(),
@@ -166,7 +166,12 @@ fn playground_artifacts(root: &Path, constants: &[&Constant]) -> Vec<Artifact> {
             path: "services/semconv/src/main/java/io/tailrocks/semconv/Semconv.java".into(),
             contents: render_java(&constants),
         },
-    ]
+        Artifact {
+            root: root.to_owned(),
+            path: "fixtures/semconv-wire-contract.json".into(),
+            contents: render_wire_fixture(&constants)?,
+        },
+    ])
 }
 
 fn validate(constants: &[Constant]) -> Result<()> {
@@ -331,6 +336,21 @@ fn render_java(constants: &[Constant]) -> String {
     }
     output.push_str("}\n");
     output
+}
+
+fn render_wire_fixture(constants: &[Constant]) -> Result<String> {
+    #[derive(Serialize)]
+    struct Fixture<'a> {
+        schema_version: u32,
+        constants: &'a [Constant],
+    }
+
+    let rendered = serde_json::to_string_pretty(&Fixture {
+        schema_version: 1,
+        constants,
+    })
+    .context("serialize semantic-convention wire fixture")?;
+    Ok(rendered + "\n")
 }
 
 fn rust(value: &str) -> String {

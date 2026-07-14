@@ -47,6 +47,13 @@ reviewable generated source and reproducible offline builds.
   output is captured so it cannot corrupt JSON; failed Weaver output remains
   in the error diagnostic. Xtask tests (55), strict clippy, and the human/JSON
   cross-repository deterministic checks pass locally.
+- `6ecb2c1` adds the generator-owned, versioned cross-language wire-contract
+  fixture to the companion repository. It names every shared/playground wire
+  ID, language identifier, scalar/list value, and owner; a Bun Vitest test
+  proves generated TypeScript exports match it exactly, while xtask's artifact
+  check proves the Rust and Java generated files match the same registry.
+  Xtask tests (55), strict clippy, semconv drift checking, and companion
+  Vitest (7) pass locally.
 
 ## Scope
 
