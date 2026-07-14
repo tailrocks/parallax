@@ -346,6 +346,11 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   syntax, catalog dispatch, web unit tests (six), and five-test Playwright
   discovery pass locally; requests, browser execution, k6, and backend
   rendering remain final live-host work.
+- `0f7bb7c` corrects B6 to exercise the real `cacheLeak` flagd transition:
+  the driver starts flagd plus recommendation, changes only that default
+  variant, drives requests without the legacy `leak` query override, and
+  restores the exact flag file on exit. Shell syntax passes locally; the
+  runtime observation remains a final live-stack check.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
