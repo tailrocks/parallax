@@ -57,3 +57,22 @@ patching declarations locally, or replacing errors with suppressions/casts.
 
 No research prompt changed: this is execution evidence for an existing static
 safety STOP condition, not a change in research direction or product intent.
+
+## Fresh reproduction (2026-07-14)
+
+The required probe was rerun from the current active-plan branch with the
+current Bun lockfile:
+
+```sh
+cd ui
+mise exec -- bun ./node_modules/typescript/bin/tsc --noEmit --skipLibCheck false
+```
+
+The ordinary `bun run typecheck` remains green because it intentionally keeps
+`skipLibCheck=true`; the full declaration graph still fails. The prior Redux
+Toolkit, Tabler, TanStack Router, and unplugin diagnostics reproduce, with the
+current graph also reporting missing upstream declaration dependencies for
+`ws`, `@babel/core`, `@babel/generator`, `@babel/traverse`, Farm, Rspack, Bun,
+esbuild, Rollup, unloader, and webpack. No local declaration patch, exclusion,
+ambient module, cast, or dependency sprawl was introduced. Plan 128 therefore
+remains blocked by its documented upstream-compatible-release condition.
