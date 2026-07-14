@@ -13,7 +13,8 @@
 - **Depends on**: 093, 097, 099, 104
 - **Category**: storage / native tables / correlation correctness
 - **Planned at**: `eefa4617`, 2026-07-12
-- **Status**: IN PROGRESS
+- **Status**: BLOCKED — Plan 104 canonical evidence-contract approval and
+  required live stable/nightly GreptimeDB migration evidence are unavailable
 
 ## Why
 
@@ -38,6 +39,23 @@ adds schema drift, and leaves future queries unsure which relation is canonical.
   `error_events(fingerprint, trace_id, span_id)` as the canonical relation and
   leaves legacy nullable native columns inert until a live-proven safe removal
   exists; it does not drop, backfill, or duplicate native raw writes.
+
+## Current Blocker (rechecked 2026-07-14)
+
+- Plan 104 remains fail-closed: its decision record has no operator-selected
+  canonical evidence model/version, approver, or approval date. Plan 125's
+  dependency list explicitly includes 104, so it cannot publish a final
+  fingerprint-to-bundle correlation contract independently.
+- The required stable and nightly GreptimeDB fresh/upgrade, drop/index, and
+  restart probes need a live engine. This host's Docker client cannot connect
+  to a daemon, and no alternate engine or custom raw table is permitted. No
+  safe migration can be inferred from SQL syntax or mocked in-memory behavior.
+
+The already-landed fresh-install behavior remains valid: `error_events` is the
+only current product correlation relation, no product reader relies on the
+nullable native column, and legacy columns remain inert. Resume only after the
+Plan 104 approval is committed and a live GreptimeDB-capable host is available
+for the named stable/nightly experiments.
 
 ## Scope
 
