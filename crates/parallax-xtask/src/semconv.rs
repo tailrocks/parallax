@@ -1,7 +1,7 @@
 use std::{collections::BTreeSet, fs, path::Path, process::Command};
 
 use anyhow::{Context, Result, bail};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tempfile::TempDir;
 
 const REGISTRY: &str = "telemetry/semconv/contract.yaml";
@@ -20,7 +20,13 @@ struct Constant {
     owner: String,
 }
 
-pub(crate) fn check(root: &Path, playground_root: Option<&Path>) -> Result<()> {
+#[derive(Debug, Serialize)]
+pub(crate) struct CheckReport {
+    pub(crate) schema_version: u32,
+    pub(crate) artifacts: Vec<String>,
+}
+
+pub(crate) fn check(root: &Path, playground_root: Option<&Path>) -> Result<CheckReport> {
     check_weaver(root)?;
     let artifacts = artifacts(root, playground_root)?;
     let temporary = TempDir::new().context("create semantic-convention temporary directory")?;
@@ -37,12 +43,17 @@ pub(crate) fn check(root: &Path, playground_root: Option<&Path>) -> Result<()> {
             );
         }
     }
-    println!("semantic-convention artifacts are deterministic and current");
-    Ok(())
+    Ok(CheckReport {
+        schema_version: 1,
+        artifacts: artifacts
+            .iter()
+            .map(|artifact| artifact.path.display().to_string())
+            .collect(),
+    })
 }
 
 fn check_weaver(root: &Path) -> Result<()> {
-    let status = Command::new("weaver")
+    let output = Command::new("weaver")
         .args([
             "registry",
             "check",
@@ -51,10 +62,15 @@ fn check_weaver(root: &Path) -> Result<()> {
             "--future",
         ])
         .current_dir(root)
-        .status()
+        .output()
         .context("start pinned Weaver; run `mise install` to provision it")?;
-    if !status.success() {
-        bail!("Weaver rejected the semantic-convention registry: {status}");
+    if !output.status.success() {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        bail!(
+            "Weaver rejected the semantic-convention registry ({status}):\nstdout:\n{stdout}\nstderr:\n{stderr}",
+            status = output.status
+        );
     }
     Ok(())
 }

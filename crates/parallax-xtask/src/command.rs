@@ -2,7 +2,7 @@ use std::{path::Path, process::Command as Process};
 
 use anyhow::{Context, Result, bail};
 
-use crate::cli::{Cli, Command, DocsAction, FacadeAction, SemconvAction};
+use crate::cli::{Cli, Command, DocsAction, FacadeAction, Output, SemconvAction};
 use crate::dependencies::{self, Selection};
 use crate::docs_links;
 use crate::facade;
@@ -31,7 +31,7 @@ pub(crate) fn execute(cli: Cli) -> Result<()> {
         Command::Semconv {
             action,
             playground_root,
-        } => execute_semconv(&root, action, playground_root.as_deref()),
+        } => execute_semconv(&root, action, playground_root.as_deref(), cli.output),
         release_command @ (Command::ReleasePackage { .. }
         | Command::ReleaseRehearse { .. }
         | Command::ReleaseVerify { .. }) => execute_release(release_command),
@@ -42,9 +42,41 @@ fn execute_semconv(
     root: &Path,
     action: SemconvAction,
     playground_root: Option<&Path>,
+    output: Output,
 ) -> Result<()> {
     match action {
-        SemconvAction::Check => semconv::check(root, playground_root),
+        SemconvAction::Check => {
+            let report = match semconv::check(root, playground_root) {
+                Ok(report) => report,
+                Err(error) => {
+                    if matches!(output, Output::Json) {
+                        println!(
+                            "{}",
+                            serde_json::json!({
+                                "schema_version": 1,
+                                "status": "error",
+                                "reason": format!("{error:#}"),
+                            })
+                        );
+                    }
+                    return Err(error);
+                }
+            };
+            match output {
+                Output::Json => println!(
+                    "{}",
+                    serde_json::json!({
+                        "schema_version": report.schema_version,
+                        "status": "ok",
+                        "artifacts": report.artifacts,
+                    })
+                ),
+                Output::Human | Output::Github => {
+                    println!("semantic-convention artifacts are deterministic and current");
+                }
+            }
+            Ok(())
+        }
         SemconvAction::Generate => match playground_root {
             Some(playground_root) => semconv::generate_with_playground(root, playground_root),
             None => semconv::generate(root),
@@ -52,7 +84,7 @@ fn execute_semconv(
     }
 }
 
-fn execute_ci(root: &Path, fast: bool, full: bool, output: crate::cli::Output) -> Result<()> {
+fn execute_ci(root: &Path, fast: bool, full: bool, output: Output) -> Result<()> {
     debug_assert!(fast ^ full);
     for partition in ci_partitions(full) {
         match partition {
@@ -109,7 +141,7 @@ fn execute_release(command: Command) -> Result<()> {
     }
 }
 
-fn execute_docs(root: &Path, action: DocsAction, output: crate::cli::Output) -> Result<()> {
+fn execute_docs(root: &Path, action: DocsAction, output: Output) -> Result<()> {
     match action {
         DocsAction::Links => docs_links::run(root, output),
     }
@@ -171,7 +203,7 @@ fn test(root: &Path) -> Result<()> {
             "--color=always",
         ],
     )?;
-    nextest_evidence::run(root, "ci", crate::cli::Output::Human)
+    nextest_evidence::run(root, "ci", Output::Human)
 }
 
 fn integration(root: &Path) -> Result<()> {
