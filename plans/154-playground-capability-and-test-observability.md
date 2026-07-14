@@ -302,6 +302,11 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   tests and strict clippy pass. The added Java test and backend grouping
   comparison await a Gradle-capable/live fan-out host; `VERIFICATION.md` gives
   the exact non-claiming rubric.
+- `e67c03f` closes the ready Playwright W4 identity metadata gap: test roots
+  use qualified title paths, carry parameter/attempt/failure-taxonomy and
+  browser/environment/OS attributes, and have revision/version resources.
+  The explicit generated `parallax.test.id` remains the Playwright test ID.
+  Bun build, six Vitest tests, and two-test Playwright discovery pass locally.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
