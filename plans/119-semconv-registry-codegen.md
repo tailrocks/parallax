@@ -57,9 +57,9 @@ reviewable generated source and reproducible offline builds.
 - `6997df1` adds the Java-side consumer of that same fixture. It reflects each
   generated `Semconv` field and proves its scalar/list wire value against the
   versioned contract, completing executable fixture consumers for TypeScript
-  and Java. The fresh targeted Gradle invocation remains blocked before
-  project configuration by `libnative-platform.so` on Linux arm64, so this
-  Java test is source-present but not counted as executed here.
+  and Java. `898eae2` subsequently unblocked the Java host by relocating
+  Gradle's native cache; the clean catalog suite now executes this fixture
+  consumer successfully alongside the generated TypeScript Vitest consumer.
 
 ## Scope
 
