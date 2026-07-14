@@ -170,8 +170,8 @@ structure quickly.
 - When spawning, put this in the subagent prompt if the tool surface does not
   pin the model: *model = Grok 4.5 high only; never Composer*.
 
-**Active branch:** `codex/active-plan-closure-7f3c`; the same name is allowed
-only in `tailrocks/parallax-telemetry-playground`. PR #20 is the sole PR.
+**Active branch:** `codex/active-plan-closure-7f3c`; use it in the playground.
+Only Parallax PR #20 and its linked playground PR are allowed.
 
 See [BRANCHING.md](BRANCHING.md) for the full policy.
 
