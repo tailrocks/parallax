@@ -13,7 +13,7 @@
 - **Depends on**: 093, 097, 099, 104
 - **Category**: storage / native tables / correlation correctness
 - **Planned at**: `eefa4617`, 2026-07-12
-- **Status**: TODO
+- **Status**: IN PROGRESS
 
 ## Why
 
@@ -34,6 +34,10 @@ adds schema drift, and leaves future queries unsure which relation is canonical.
   column; this must be confirmed with structured query/consumer inventory.
 - Existing data directories may already contain the nullable column, so merely
   removing fresh-install DDL is not a complete migration decision.
+- `f21bc65` stops adding the unpopulated column on fresh installs. It records
+  `error_events(fingerprint, trace_id, span_id)` as the canonical relation and
+  leaves legacy nullable native columns inert until a live-proven safe removal
+  exists; it does not drop, backfill, or duplicate native raw writes.
 
 ## Scope
 
