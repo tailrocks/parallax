@@ -439,6 +439,12 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
 - `2e0b940` adds inventory's bounded no-Postgres loopback health proof. Its
   four local tests and strict clippy pass without misrepresenting the separate
   real-Postgres reservation integration gate.
+- After the W3 boundary sweep, the complete Rust `nextest` CI profile passes
+  55 tests across 11 binaries. Its freshly generated JUnit XML is accepted by
+  `playground test-report` as 55 passing test cases with no implicit local
+  OTLP exporter. This proves the expanded Rust suite remains consumable by the
+  W4 result bridge; live run-parent/export proof remains a final acceptance
+  gate.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
