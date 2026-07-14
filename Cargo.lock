@@ -3260,7 +3260,12 @@ name = "parallax-proto"
 version = "0.1.0-dev"
 dependencies = [
  "opentelemetry-proto",
+ "parallax-semconv",
 ]
+
+[[package]]
+name = "parallax-semconv"
+version = "0.1.0-dev"
 
 [[package]]
 name = "parallax-server"
