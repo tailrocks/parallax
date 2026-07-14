@@ -68,7 +68,8 @@ reviewable generated source and reproducible offline builds.
 - 2026-07-14: the TypeScript renderer now emits the repository's current Oxfmt
   style (including multiline lists and long declarations) rather than relying
   on a post-generation manual formatter pass. Root and companion generated
-  TypeScript outputs were regenerated together. Root xtask tests (57), strict
+  TypeScript outputs were regenerated together. A direct renderer fixture locks
+  that formatter-compatible layout. Root xtask tests (58), strict
   clippy, cross-repository drift checking, root UI formatting/tests/build, and
   companion web tests/build pass locally.
 

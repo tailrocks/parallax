@@ -390,7 +390,7 @@ fn write(path: &Path, contents: &str) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Constant, check_generated_artifacts, generate_at, validate};
+    use super::{Constant, check_generated_artifacts, generate_at, render_typescript, validate};
     use std::fs;
     use tempfile::TempDir;
 
@@ -460,5 +460,33 @@ mod tests {
                 .contains("stale semantic-convention artifact")
         );
         Ok(())
+    }
+
+    #[test]
+    fn typescript_renderer_emits_formatter_compatible_declarations() {
+        let mut long = constant();
+        long.typescript = "DEPLOYMENT_ENVIRONMENT_NAME".to_owned();
+        long.value = Some("deployment.environment.name".to_owned());
+        let mut list = constant();
+        list.typescript = "REQUEST_DURATION_METRICS".to_owned();
+        list.value = None;
+        list.values = Some(vec![
+            "http.server.request.duration".to_owned(),
+            "rpc.server.duration".to_owned(),
+        ]);
+
+        let actual = render_typescript(&[constant(), long, list]);
+        let expected = concat!(
+            "// Generated from telemetry/semconv/contract.yaml.\n",
+            "// Run `cargo xtask semconv generate`; do not edit by hand.\n\n",
+            "export const SERVICE_NAME = \"service.name\" as const\n",
+            "export const DEPLOYMENT_ENVIRONMENT_NAME =\n",
+            "  \"deployment.environment.name\" as const\n",
+            "export const REQUEST_DURATION_METRICS = [\n",
+            "  \"http.server.request.duration\",\n",
+            "  \"rpc.server.duration\",\n",
+            "] as const\n",
+        );
+        assert_eq!(actual, expected);
     }
 }
