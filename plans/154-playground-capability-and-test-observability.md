@@ -17,7 +17,7 @@
   Parallax-side display follow-ups recorded in W6
 - **Category**: cross-repository playground / validation / test observability
 - **Planned at**: `cb7c514`, 2026-07-14 (playground baseline `ad6cbfa`)
-- **Status**: TODO
+- **Status**: IN PROGRESS
 
 ## Why
 
@@ -69,8 +69,18 @@ per-signal fan-out with Sentry correctly excluded from metrics.
 2. **Java Sentry not wired**: `deploy/Dockerfile.java` deliberately ships the
    upstream OTel agent; no Sentry dependency exists in any
    `build.gradle.kts`; README line "single Sentry+OTel javaagent", the
-   `sentry.*` blocks in all three `application.yml` files, and source comments
-   are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
+`sentry.*` blocks in all three `application.yml` files, and source comments
+are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
+
+### Implementation progress
+
+- `9ff4254` in the linked playground PR makes the A10 checkout baggage path
+  real: `tenant.id` and `user.tier` are attached to the OpenTelemetry parent
+  context and injected by the existing composite W3C tracecontext+baggage
+  propagator into both HTTP and gRPC downstream carriers. The shared
+  propagation fixture round-trips both keys; `playground-telemetry` and
+  `checkout` tests pass. `c8a89a8` adds the generated cross-repository
+  `TENANT_ID` convention.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and

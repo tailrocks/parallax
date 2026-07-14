@@ -151,7 +151,7 @@ CI-provider API collection; 155 consumes OTLP-ingested telemetry only.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [154](154-playground-capability-and-test-observability.md) | Playground full-capability coverage and test observability | P1 | XL | soft 105, 111, 119 | TODO |
+| [154](154-playground-capability-and-test-observability.md) | Playground full-capability coverage and test observability | P1 | XL | soft 105, 111, 119 | IN PROGRESS |
 | [155](155-test-reporting-surface.md) | Test reporting and test observability surface | P1 | XL | 149, 152, 153; soft 104, 119, 121, 124, 140 | TODO |
 
 ### Triggered Or Operator-Blocked Work
