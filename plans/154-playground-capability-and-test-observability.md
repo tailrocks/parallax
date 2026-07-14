@@ -407,6 +407,11 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   and preserves assertion-versus-harness failure taxonomy. All three Gradle
   suites pass locally with the Java agent attached; a supplied endpoint keeps
   the live exporter path intact.
+- `2f5b739` adds the test resource contract without overwriting caller
+  attributes: Java test JVMs now include `service.version`,
+  `vcs.ref.head.revision`, and non-identity OS/environment configuration.
+  Clean catalog, payment, and fulfillment Gradle test runs pass with the
+  resulting agent configuration.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
