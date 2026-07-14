@@ -182,6 +182,13 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   script dispatch and unknown-ID failure behavior. Shell syntax and both
   live-host/unknown dispatch paths pass locally; live backend rendering remains
   intentionally deferred to the final running-stack sweep.
+- `47fdcae` establishes JUnit 5 test dependencies across catalog, payment,
+  and fulfillment, and adds deterministic source-level coverage for catalog's
+  product/batch/N+1/partial-error behavior plus payment's ordered stream and
+  controlled stream-failure behavior. Diff hygiene passes locally. The arm64
+  Gradle launcher still fails before project configuration while loading
+  `libnative-platform.so`, so these Java tests require execution on a
+  functional Gradle host before they can be counted as locally passing.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
