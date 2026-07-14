@@ -1,4 +1,4 @@
-use std::io::Read;
+use std::{io::Read, path::PathBuf};
 
 use flate2::read::GzDecoder;
 use tar::EntryType;
@@ -57,6 +57,33 @@ fn deterministic_archive_has_exact_public_contract() -> Result<(), Box<dyn std::
     }
     if entries.next().is_some() {
         return Err("archive contains more than one entry".into());
+    }
+    Ok(())
+}
+
+#[test]
+fn rehearsal_promotes_one_verified_archive_and_checksum() -> Result<(), Box<dyn std::error::Error>>
+{
+    let temp = tempfile::tempdir()?;
+    let binary = temp.path().join("parallax");
+    std::fs::write(&binary, b"rehearsal fixture")?;
+    let output_dir = temp.path().join("dist");
+    let target = "x86_64-unknown-linux-gnu";
+    let version = "0.1.0-preview.1+abcdef0";
+    rehearse(&binary, target, version, 1_700_000_000, &output_dir)?;
+
+    let archive = output_dir.join(format!("parallax-{version}-{target}.tar.gz"));
+    let checksum = PathBuf::from(format!("{}.sha256", archive.display()));
+    let digest = archive::digest(&archive)?;
+    let actual = (
+        archive.is_file(),
+        std::fs::read_to_string(checksum)? == format!("{digest}\n"),
+        output_dir.read_dir()?.all(|entry| {
+            entry.is_ok_and(|entry| !entry.file_name().to_string_lossy().contains(".second."))
+        }),
+    );
+    if actual != (true, true, true) {
+        return Err(format!("release rehearsal contract mismatch: {actual:?}").into());
     }
     Ok(())
 }
