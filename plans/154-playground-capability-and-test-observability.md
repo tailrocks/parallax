@@ -390,6 +390,10 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   and VERIFICATION now state the runnable command contract. Upstream JDK /
   protobuf and Gradle-plugin deprecation notices remain observable output, not
   a product-source warning.
+- `c4ba93a` completes the Java W4 process-parenting path by explicitly passing
+  `TRACEPARENT` alongside `PARALLAX_RUN_ID` into every Gradle `Test` JVM. The
+  catalog Gradle suite passes with this configuration; live collector proof
+  remains part of the final fan-out acceptance run.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
