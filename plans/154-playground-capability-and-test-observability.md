@@ -412,6 +412,11 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   `vcs.ref.head.revision`, and non-identity OS/environment configuration.
   Clean catalog, payment, and fulfillment Gradle test runs pass with the
   resulting agent configuration.
+- `ab99f44` completes Java's ready identity-variant slice: the shared JUnit
+  interceptor handles both ordinary and parameterized invocations, honors a
+  non-empty `PARALLAX_TEST_ID` override, and records display-name variants plus
+  OS/environment outside that identity. Payment's parameterized quote fixture
+  and a clean Gradle suite pass locally.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
