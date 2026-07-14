@@ -469,6 +469,13 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   OTLP exporter. This proves the expanded Rust suite remains consumable by the
   W4 result bridge; live run-parent/export proof remains a final acceptance
   gate.
+- 2026-07-14: corrected the ready Rust W4 in-process bridge so its scoped
+  dispatcher also attaches the supplied `TRACEPARENT` context. The real
+  notifications loopback test now exercises that opt-in helper and explicitly
+  shuts it down after the test body; default runs remain exporter-free. Shared
+  telemetry tests (16 unit + one public boundary), notifications tests (2),
+  and strict clippy pass locally. Live collector inspection remains part of
+  final fan-out acceptance.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
