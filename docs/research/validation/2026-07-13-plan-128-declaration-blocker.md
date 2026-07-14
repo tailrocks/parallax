@@ -76,3 +76,24 @@ current graph also reporting missing upstream declaration dependencies for
 esbuild, Rollup, unloader, and webpack. No local declaration patch, exclusion,
 ambient module, cast, or dependency sprawl was introduced. Plan 128 therefore
 remains blocked by its documented upstream-compatible-release condition.
+
+## Compatible graph cleanup (2026-07-14)
+
+The current Bun registry exposed compatible patch releases for the direct
+TanStack packages. The UI was updated through Bun to
+`@tanstack/react-router@1.170.18`, `@tanstack/react-start@1.168.28`, and
+`@tanstack/react-virtual@3.14.6`. The router's TypeScript 7 SSR diagnostic
+persists, so this is not claimed as an unblock.
+
+Published declaration packages `@types/ws@8.18.1`,
+`@types/babel__core@7.20.5`, `@types/babel__generator@7.27.0`, and
+`@types/babel__traverse@7.28.0` were also added as narrow development
+dependencies. They remove all missing `ws`/Babel declaration diagnostics
+without adding Farm, Rspack, Bun, esbuild, Rollup, unloader, or webpack.
+
+The full probe now fails only on the four actual owners: Redux Toolkit through
+Recharts, Tabler's nonexistent `ReactSVG` import, TanStack Router's
+`__beforeLoadContext` SSR declaration, and unplugin's undeclared optional
+adapter declarations. Normal `bun run typecheck` remains green; `bun run
+test:ci` passes 175 tests and `bun run build` passes. `skipLibCheck` remains
+enabled pending an upstream-compatible full declaration graph.

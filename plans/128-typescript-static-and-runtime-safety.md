@@ -57,6 +57,11 @@ feature.
 - Plan 131 inventories and enables the final native/type-aware Oxlint rules.
   This plan consumes that inventory and closes only the remaining application
   policy gaps; it does not introduce another linter or compiler.
+- 2026-07-14: direct TanStack patch releases and the published `ws`/Babel type
+  packages were updated through Bun. They remove ordinary missing-declaration
+  diagnostics but do not resolve the remaining four upstream TS7 declaration
+  owners recorded in the validation note; no declaration patch or compiler
+  weakening was introduced.
 
 ## Fixed Decisions
 
