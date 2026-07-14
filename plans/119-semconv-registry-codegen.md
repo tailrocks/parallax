@@ -41,6 +41,12 @@ reviewable generated source and reproducible offline builds.
   satisfy strict linting. `cargo test --locked -p parallax-xtask` (55 tests),
   strict xtask clippy, Weaver registry validation, and the cross-repository
   deterministic semconv check pass locally.
+- `76c773e` completes the ready machine-readable control-plane slice:
+  `cargo xtask --output json semconv check` now emits one clean versioned JSON
+  document naming every checked-in root/playground artifact. Successful Weaver
+  output is captured so it cannot corrupt JSON; failed Weaver output remains
+  in the error diagnostic. Xtask tests (55), strict clippy, and the human/JSON
+  cross-repository deterministic checks pass locally.
 
 ## Scope
 
