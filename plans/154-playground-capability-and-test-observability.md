@@ -359,6 +359,12 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   partial error without Postgres. A fresh targeted Gradle command is still
   blocked before configuration by the Linux arm64 native-platform loader; no
   Java execution claim is made.
+- `f2d7b29` adds payment's requested in-process gRPC transport coverage: a
+  direct in-memory server/channel proves both unary and server-streaming
+  `Pricing` calls over the generated wire contract, complementing the existing
+  deterministic failure tests. The fresh targeted Gradle command is blocked
+  at the same arm64 native-platform loader before project configuration, so
+  this source test is not counted as executed here.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
