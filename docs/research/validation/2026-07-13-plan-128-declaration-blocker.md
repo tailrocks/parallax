@@ -113,3 +113,16 @@ and unplugin 3.0.0. The normal strict application typecheck stays green, and
 the updated graph passes all 175 Vitest tests plus the production build. No
 ambient declaration, optional-adapter sprawl, package patch, compiler
 weakening, or source assertion was introduced.
+
+## Fresh reproduction (2026-07-15, Linux arm64)
+
+The implementation-first continuation reran `mise exec -- bun outdated` and
+the mandatory full-declaration command against the current branch and lock.
+Bun offers no compatible update for any of the four declaration owners. The
+probe still fails on Redux Toolkit 2.12.0, Tabler Icons React 3.44.0, TanStack
+Router Core 1.171.15, and unplugin 3.0.0's optional-adapter imports. The only
+offered direct updates are unrelated dev-tool releases (Oxfmt/Oxlint, jsdom,
+and an incompatible TanStack devtools line). No declaration patch, ambient
+module, unused adapter dependency, assertion, exclusion, or compiler weakening
+was introduced. Plan 128's upstream-compatible-release STOP condition remains
+exactly reproduced.

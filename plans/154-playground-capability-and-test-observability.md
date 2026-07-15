@@ -501,6 +501,15 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   explicitly removes `TRACEPARENT`, `TRACESTATE`, and `BAGGAGE`. The locked
   CLI suite passes 11 tests and strict all-target clippy is clean on Linux
   arm64.
+- 2026-07-15: completed Rust's W4 deliberate retry payload and fixed the
+  reconciliation defect it exposed. The bounded `w4-acceptance` nextest
+  profile records one assertion panic and one SIGABRT harness failure on the
+  first attempt, then passes both in fresh processes on attempt 2. The JUnit
+  converter now expands nextest `flakyFailure` elements into distinct failed
+  and final-pass spans with correct ordinal/total metadata and final-suite exit
+  semantics. The locked CLI suite passes 13 tests, strict clippy is clean, the
+  acceptance run reports two flaky passes, and conversion reports four
+  attempts (two pass, one assertion failure, one harness error).
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
