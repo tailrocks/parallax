@@ -242,6 +242,35 @@ fn gzip_header_tampering_fails_closed() -> Result<(), Box<dyn std::error::Error>
     Ok(())
 }
 
+#[test]
+fn noncanonical_outer_archive_bytes_fail_closed() -> Result<(), Box<dyn std::error::Error>> {
+    let temp = tempfile::tempdir()?;
+    let target = host_target()?;
+    let archive_path = temp.path().join(format!("parallax-{target}.tar.gz"));
+    let binary = temp.path().join("parallax");
+    std::fs::write(&binary, b"fixture")?;
+    archive::write(&binary, &archive_path, 1_700_000_000)?;
+    let original = std::fs::read(&archive_path)?;
+    verify_canonical_archive(&original, b"fixture", 1_700_000_000)?;
+
+    let mut trailing_bytes = original.clone();
+    trailing_bytes.extend_from_slice(b"unattested trailing bytes");
+    assert!(verify_canonical_archive(&trailing_bytes, b"fixture", 1_700_000_000).is_err());
+
+    let mut changed_deflate_stream = original;
+    changed_deflate_stream[10] ^= 1;
+    assert!(verify_canonical_archive(&changed_deflate_stream, b"fixture", 1_700_000_000).is_err());
+
+    let oversized = temp
+        .path()
+        .join(format!("parallax-{target}-oversized.tar.gz"));
+    std::fs::File::create(&oversized)?.set_len(MAX_ARCHIVE_BYTES + 1)?;
+    let error = read_binary(&spec(oversized, target, env!("CARGO_PKG_VERSION")))
+        .expect_err("oversized archive must fail before reading");
+    assert!(error.to_string().contains("exceeds 512 MiB"));
+    Ok(())
+}
+
 fn write_archive_fixture(
     path: &Path,
     entry_path: &str,

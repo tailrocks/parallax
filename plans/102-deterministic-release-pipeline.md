@@ -88,6 +88,14 @@
   download URL; restored bytes remain checksum-verified before extraction.
   The release caller fixture locks validation/cache/checksum/extraction order,
   and the focused test plus strict all-target xtask clippy pass locally.
+- 2026-07-15: closed the remaining whole-archive canonicality gap in local
+  verification. After bounded extraction and metadata validation, the verifier
+  now rebuilds the archive with the sole repository packager and requires exact
+  compressed-byte equality. Recomputed sidecars can therefore no longer bless
+  appended bytes or a different deflate/tar encoding that happens to expose the
+  same inner file. Archive input is rejected above 512 MiB before allocation;
+  sparse oversized, trailing-byte, and changed-stream fixtures fail closed.
+  All 14 release-focused tests and strict all-target xtask clippy pass locally.
 
 ## Why
 

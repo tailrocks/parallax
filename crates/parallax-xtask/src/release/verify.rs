@@ -12,6 +12,7 @@ use tar::EntryType;
 use super::{VerifySpec, archive};
 
 const MAX_BINARY_BYTES: u64 = 512 * 1024 * 1024;
+const MAX_ARCHIVE_BYTES: u64 = 512 * 1024 * 1024;
 const OIDC_ISSUER: &str = "https://token.actions.githubusercontent.com";
 
 pub(super) fn local(spec: &VerifySpec) -> Result<()> {
@@ -115,45 +116,73 @@ fn verify_sbom(archive: &Path, archive_name: &str, digest: &str) -> Result<()> {
 }
 
 fn read_binary(spec: &VerifySpec) -> Result<Vec<u8>> {
+    let archive_bytes = std::fs::metadata(&spec.archive)
+        .with_context(|| format!("read archive metadata {}", spec.archive.display()))?
+        .len();
+    ensure!(
+        archive_bytes <= MAX_ARCHIVE_BYTES,
+        "release archive exceeds 512 MiB"
+    );
     let compressed = std::fs::read(&spec.archive)
         .with_context(|| format!("read archive {}", spec.archive.display()))?;
     verify_gzip_header(&compressed)?;
-    let mut archive = tar::Archive::new(GzDecoder::new(compressed.as_slice()));
-    let mut entries = archive.entries()?;
-    let mut entry = entries.next().context("archive is empty")??;
-    let header = entry.header();
-    let actual = (
-        entry.path()?.to_string_lossy().into_owned(),
-        header.mode()?,
-        header.uid()?,
-        header.gid()?,
-        header.mtime()?,
-        header.username()?.map(str::to_owned),
-        header.groupname()?.map(str::to_owned),
-        header.entry_type(),
-    );
-    let expected = (
-        "parallax".to_string(),
-        0o755,
-        0,
-        0,
-        spec.source_epoch,
-        Some("root".to_string()),
-        Some("root".to_string()),
-        EntryType::Regular,
-    );
-    ensure!(actual == expected, "archive metadata mismatch: {actual:?}");
-    ensure!(
-        header.size()? <= MAX_BINARY_BYTES,
-        "archive binary exceeds 512 MiB"
-    );
-    let mut binary = Vec::with_capacity(usize::try_from(header.size()?)?);
-    entry.read_to_end(&mut binary)?;
-    ensure!(
-        entries.next().is_none(),
-        "archive contains unexpected extra entries"
-    );
+    let binary = {
+        let mut archive = tar::Archive::new(GzDecoder::new(compressed.as_slice()));
+        let mut entries = archive.entries()?;
+        let binary = {
+            let mut entry = entries.next().context("archive is empty")??;
+            let header = entry.header();
+            let actual = (
+                entry.path()?.to_string_lossy().into_owned(),
+                header.mode()?,
+                header.uid()?,
+                header.gid()?,
+                header.mtime()?,
+                header.username()?.map(str::to_owned),
+                header.groupname()?.map(str::to_owned),
+                header.entry_type(),
+            );
+            let expected = (
+                "parallax".to_string(),
+                0o755,
+                0,
+                0,
+                spec.source_epoch,
+                Some("root".to_string()),
+                Some("root".to_string()),
+                EntryType::Regular,
+            );
+            ensure!(actual == expected, "archive metadata mismatch: {actual:?}");
+            ensure!(
+                header.size()? <= MAX_BINARY_BYTES,
+                "archive binary exceeds 512 MiB"
+            );
+            let mut binary = Vec::with_capacity(usize::try_from(header.size()?)?);
+            entry.read_to_end(&mut binary)?;
+            binary
+        };
+        ensure!(
+            entries.next().is_none(),
+            "archive contains unexpected extra entries"
+        );
+        binary
+    };
+    verify_canonical_archive(&compressed, &binary, spec.source_epoch)?;
     Ok(binary)
+}
+
+fn verify_canonical_archive(compressed: &[u8], binary: &[u8], source_epoch: u64) -> Result<()> {
+    let temporary = tempfile::tempdir().context("create canonical archive verification dir")?;
+    let binary_path = temporary.path().join("parallax");
+    let archive_path = temporary.path().join("canonical.tar.gz");
+    std::fs::write(&binary_path, binary).context("write canonical archive verification binary")?;
+    archive::write(&binary_path, &archive_path, source_epoch)?;
+    let canonical = std::fs::read(&archive_path).context("read canonical archive verification")?;
+    ensure!(
+        compressed == canonical,
+        "release archive bytes differ from the canonical packager output"
+    );
+    Ok(())
 }
 
 fn verify_gzip_header(compressed: &[u8]) -> Result<()> {
