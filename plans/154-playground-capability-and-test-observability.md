@@ -486,6 +486,14 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   fixture proving its scope makes the propagated remote trace ID current. The
   shared telemetry suite now has 17 unit tests plus its public baggage boundary;
   no collector/network path is needed for that parent-contract proof.
+- 2026-07-15: completed Java's deliberate W4 retry-chain fixtures. Payment now
+  uses Gradle's maintained test-retry plugin 1.6.5 and two opt-in tests record
+  an assertion failure and a harness error before passing in fresh retry JVMs.
+  A run-token-scoped temporary marker makes the cross-process transition
+  deterministic and isolated; the shared JUnit extension emits an explicit
+  `test.attempt.ordinal`. The normal payment suite and the two-fixture retry
+  rehearsal both pass locally on Linux arm64 with the documented mise/Gradle
+  cache invocation. Collector rendering remains part of final acceptance.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
