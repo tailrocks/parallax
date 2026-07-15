@@ -355,6 +355,10 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   catalog IDs map to present executable drivers (with the declared Bun
   TypeScript exception); the runbook records the command. `7ebe16b` removes
   GNU-only shell utility flags so the same gate runs on macOS and Linux.
+- `ae0079d` repairs the second scenario catalog after the gate exposed ten
+  implemented IDs missing from `scenarios/README.md`. The portable checker now
+  proves README, printed catalog, and dispatcher contain the same 45 IDs before
+  resolving every mapped driver and checking shell syntax.
 - `0f7bb7c` corrects B6 to exercise the real `cacheLeak` flagd transition:
   the driver starts flagd plus recommendation, changes only that default
   variant, drives requests without the legacy `leak` query override, and
