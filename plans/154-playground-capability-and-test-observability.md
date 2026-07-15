@@ -537,6 +537,12 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   Bun-run Vitest plus Playwright beneath that single parent. Shell syntax and
   the missing-carrier negative path pass locally; live export inspection stays
   in the final collector-backed acceptance gate.
+- 2026-07-15: corrected Java failure payload consistency in companion commit
+  `91f8543`. The shared JUnit extension now changes both
+  `test.case.result.status` and `test.suite.run.status` to `fail` when an
+  intercepted assertion or harness error escapes, instead of exporting a
+  contradictory passing suite. Payment, catalog, and fulfillment Gradle suites
+  all pass locally under the attached OTel Java agent.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
