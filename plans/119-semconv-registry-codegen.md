@@ -104,6 +104,11 @@ reviewable generated source and reproducible offline builds.
   Rust/TypeScript constants without changing wire values. Cross-repository
   regeneration is deterministic; 23 affected Rust tests, strict clippy,
   TypeScript checking, formatting, and 15 focused UI tests pass locally.
+- 2026-07-15: companion commit `6a24e80` removes the remaining mutable
+  TypeScript producer literal found by the same audit: browser screen spans now
+  key `url.path` through the generated constant. Seven Vitest cases and the
+  production web build/typecheck pass locally. Rust `tracing` field keys remain
+  literal only where the macro grammar requires compile-time field syntax.
 
 ## Scope
 
