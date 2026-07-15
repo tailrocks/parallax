@@ -18,7 +18,6 @@ export function installTimerTracker() {
   const originalClearInterval = globalThis.clearInterval
   const timeouts = new Set<TimerHandle>()
   const intervals = new Set<TimerHandle>()
-
   function trackedSetTimeout<TArguments extends unknown[]>(
     callback: (...arguments_: TArguments) => void,
     delay?: number,
@@ -36,7 +35,6 @@ export function installTimerTracker() {
     timeouts.add(handle)
     return handle
   }
-
   function trackedSetInterval<TArguments extends unknown[]>(
     callback: (...arguments_: TArguments) => void,
     delay?: number,
@@ -46,7 +44,6 @@ export function installTimerTracker() {
     intervals.add(handle)
     return handle
   }
-
   globalThis.setTimeout = trackedSetTimeout as typeof globalThis.setTimeout
   globalThis.setInterval = trackedSetInterval as typeof globalThis.setInterval
   globalThis.clearTimeout = ((handle?: TimerHandle) => {
