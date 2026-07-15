@@ -510,6 +510,13 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   semantics. The locked CLI suite passes 13 tests, strict clippy is clean, the
   acceptance run reports two flaky passes, and conversion reports four
   attempts (two pass, one assertion failure, one harness error).
+- 2026-07-15: implemented the repository-owned local W4 session entrypoint for
+  all three stacks. `scripts/observable-test-session.sh` fails closed unless
+  `parallax run start` supplied both `PARALLAX_RUN_ID` and `TRACEPARENT`, then
+  runs Rust nextest plus JUnit reconciliation, all three Java Gradle suites, or
+  Bun-run Vitest plus Playwright beneath that single parent. Shell syntax and
+  the missing-carrier negative path pass locally; live export inspection stays
+  in the final collector-backed acceptance gate.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
