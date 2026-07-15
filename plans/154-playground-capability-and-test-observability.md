@@ -363,9 +363,7 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   resolving every mapped driver and checking shell syntax.
 - 2026-07-15: reconciled W3's topology count after W2 added storefront. The
   companion has 10 app services (seven Rust and three Java), and source
-  inventory finds tests in every app service plus the CLI and web. The
-  playground workflow remains the explicitly deferred CI/CD slice; no workflow
-  pass is claimed.
+  inventory finds tests in every app service plus the CLI and web.
 - `0f7bb7c` corrects B6 to exercise the real `cacheLeak` flagd transition:
   the driver starts flagd plus recommendation, changes only that default
   variant, drives requests without the legacy `leak` query override, and
@@ -592,6 +590,15 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   metrics feature. Repository search finds no residual `MetricsLayer` claim. The
   shared telemetry suite (18 unit tests plus the public baggage boundary),
   formatting, strict Clippy, and `git diff --check` pass locally.
+- 2026-07-15: companion `6488bf3` completes W3's repository workflow. One
+  least-privilege CI workflow runs the portable scenario contract, Rust fmt /
+  strict Clippy / nextest / doctests, all three Gradle suites, Bun Vitest and
+  production build/typecheck, and headless Chromium. It preserves nextest,
+  Gradle, and Playwright results as pinned-action artifacts and aggregates all
+  four lanes into one required result. Actionlint, the 45-scenario contract,
+  Rust formatting and all 15 CLI tests, nine Vitest tests, production build,
+  and seven-test Playwright discovery pass locally; no remote CI result is
+  claimed.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
