@@ -66,6 +66,12 @@ component, route, and future browser evidence.
   `-dashboards.test.tsx` legacy file without changing assertions. The split
   exposed and fixed SQL's order-dependent DOM leak by adding explicit cleanup.
   Both focused files pass 11 tests; TypeScript, Oxfmt, and diff hygiene pass.
+- 2026-07-15: added Bun-installed `@testing-library/user-event` 14.6.1 and
+  began the semantic-interaction migration with the dashboard create flow,
+  using one `userEvent.setup()` session. The shared setup now owns global React
+  cleanup plus deterministic `scrollTo` and `matchMedia` shims instead of
+  relying on file ordering. The full forced-Bun baseline remains 41 files / 175
+  tests; TypeScript, both Oxlint lanes, Oxfmt, and diff hygiene pass locally.
 
 ## Fixed Test Topology
 

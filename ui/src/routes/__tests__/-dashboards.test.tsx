@@ -1,12 +1,7 @@
 /* @vitest-environment jsdom */
 
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react"
+import { cleanup, render, screen, waitFor } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import {
   Outlet,
   RouterProvider,
@@ -181,6 +176,7 @@ describe("dashboard contracts", () => {
   })
 
   it("passes custom ranges through dashboard create navigation", async () => {
+    const user = userEvent.setup()
     const custom = customRange("1500000000", "4000000000")
     const detailSearch = dashboardRangeSearch({
       range: custom.key,
@@ -203,14 +199,13 @@ describe("dashboard contracts", () => {
       />
     )
 
-    fireEvent.click(screen.getByRole("button", { name: /new dashboard/i }))
-    fireEvent.change(screen.getByPlaceholderText("checkout ops"), {
-      target: { value: "checkout ops" },
-    })
-    fireEvent.change(screen.getByPlaceholderText("Search metrics"), {
-      target: { value: "process.cpu.utilization" },
-    })
-    fireEvent.click(screen.getByRole("button", { name: "Create" }))
+    await user.click(screen.getByRole("button", { name: /new dashboard/i }))
+    await user.type(screen.getByPlaceholderText("checkout ops"), "checkout ops")
+    await user.type(
+      screen.getByPlaceholderText("Search metrics"),
+      "process.cpu.utilization"
+    )
+    await user.click(screen.getByRole("button", { name: "Create" }))
 
     await waitFor(() =>
       expect(onCreated).toHaveBeenCalledWith("dash-new", {
