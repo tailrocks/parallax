@@ -33,7 +33,7 @@ reproduced upstream, operator, phase, platform, or dependency condition. Plan
 | 123 | Autonomous fixer scope is unopened and its evidence/provider prerequisites are incomplete | Operator opens a separate fixer after all prerequisites |
 | 124 | Product CI-provider collection/repository/permission scope is unopened | Operator selects and opens the provider after change/redaction prerequisites |
 | 125 | Plan 104 is unresolved; `docker info` cannot connect because `/var/run/docker.sock` is absent | Canonical approval plus a stable/nightly Greptime-capable host |
-| 128 | The full TypeScript 7 declaration probe still fails on Redux Toolkit, Tabler, TanStack Router, and unplugin; no compatible update is offered | Latest mutually compatible stable declarations pass without patches, casts, exclusions, or `skipLibCheck` |
+| 128 | At `1d43bd8`, the full TypeScript 7 probe still fails on Redux Toolkit, Tabler, TanStack Router, and unplugin; published unplugin 3.3.0 retains the optional-adapter imports and cannot replace TanStack's nested copy cleanly | Latest mutually compatible stable declarations pass without overrides, patches, casts, exclusions, unused adapters, or `skipLibCheck` |
 | 129 | Plan 128 is blocked and the current host is Linux aarch64 | Plan 128 closes and the exact-head forced-Bun negative matrix passes on supported macOS |
 | 154 | Docker CLI is present but no daemon/socket exists; five-backend credentials/topology are unavailable | Docker-capable configured host runs the collector-backed acceptance sweep and exact-head playground workflow |
 

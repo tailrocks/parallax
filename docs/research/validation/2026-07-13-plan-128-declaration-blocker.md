@@ -141,3 +141,19 @@ dependency conflicts, so retaining it cannot satisfy this plan's full-graph
 criterion. No source, declaration, lockfile, or compiler configuration was
 changed by this probe. The upstream-compatible-release STOP condition remains
 active.
+
+## Fresh completion-audit reproduction (2026-07-15, branch head `1d43bd8`)
+
+The mandatory Bun-only probe again fails on Redux Toolkit 2.12.0, Tabler Icons
+React 3.44.0, TanStack Router Core 1.171.15, and unplugin's optional-adapter
+imports. Registry queries confirm those first three are still their latest
+published owner versions. `bun outdated` offers no compatible direct update.
+
+Unplugin 3.3.0 is newly published inside the router plugin's declared `^3.0.0`
+range, but `bun update unplugin` adds it as an unwanted direct dependency while
+TanStack retains a nested 3.0.0. The change was removed through Bun. Inspection
+of the published 3.3.0 declaration shows it still eagerly imports optional
+Farm, Rsbuild/Rspack, Bun, esbuild, Rolldown/Rollup, unloader, and webpack
+adapters, so forcing that version would not produce the required clean graph.
+No override, patch, ambient declaration, unused adapter, cast, exclusion, or
+compiler weakening remains in the tree.
