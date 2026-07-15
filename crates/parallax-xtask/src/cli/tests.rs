@@ -57,7 +57,7 @@ fn parses_every_initial_command() {
             "--version",
             "0.1.0",
             "--channel",
-            "stable",
+            "rehearsal",
             "--source-epoch",
             "1",
         ],

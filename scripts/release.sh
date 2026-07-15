@@ -47,7 +47,7 @@ mise exec -- cargo xtask release-rehearse \
   --binary "$bin" \
   --target "$target" \
   --version "$version" \
-  --channel stable \
+  --channel rehearsal \
   --source-epoch "$source_epoch" \
   --output-dir "$dist"
 

@@ -112,14 +112,19 @@
   confirmed this exact metadata/tool shape on Linux arm64. All 15
   release-focused tests and strict all-target xtask clippy pass locally.
 - 2026-07-15: removed archive-channel ambiguity from packaging and
-  verification. Package and rehearsal callers must now select `preview` or
-  `stable`; the former accepts only `parallax-<target>.tar.gz`, while the latter
-  accepts only `parallax-<version>-<target>.tar.gz`. Verification binds the
-  preview shape to `refs/heads/main` and the stable shape to the exact
-  `refs/tags/v<version>`, before checking signer identity. Both workflows and
-  the local rehearsal pass their explicit channel, and fixtures reject both
-  crossed name/channel combinations and noncanonical source refs. All 15
-  release-focused tests and strict all-target xtask clippy pass locally.
+  verification. Callers must select `preview`, `stable`, or the explicitly
+  non-publishable `rehearsal` channel. Preview requires a
+  `<version>-preview.<ordinal>+<source>` version and
+  `parallax-<target>.tar.gz`; stable requires a release version without
+  prerelease/build metadata and `parallax-<version>-<target>.tar.gz`;
+  rehearsal permits development SemVer but keeps the versioned name.
+  Verification derives only preview from `refs/heads/main` or stable from the
+  exact `refs/tags/v<version>` ref before checking signer identity, so no
+  rehearsal identity can pass the publication boundary. Both workflows and
+  the local rehearsal pass their explicit channel, and fixtures reject crossed
+  names, versions, channels, and source refs. All 15 focused release tests, all
+  three CLI parser tests, strict xtask Clippy, formatting, and
+  `git diff --check` pass locally.
 
 ## Why
 

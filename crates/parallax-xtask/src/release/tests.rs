@@ -77,7 +77,7 @@ fn rehearsal_promotes_one_verified_archive_and_checksum() -> Result<(), Box<dyn 
         &binary,
         target,
         version,
-        Channel::Stable,
+        Channel::Rehearsal,
         1_700_000_000,
         &output_dir,
     )?;
@@ -110,7 +110,7 @@ fn rehearsal_rejects_non_release_and_oversized_binaries() -> Result<(), Box<dyn 
         &invalid,
         target,
         version,
-        Channel::Stable,
+        Channel::Rehearsal,
         1_700_000_000,
         temp.path(),
     )
@@ -122,7 +122,7 @@ fn rehearsal_rejects_non_release_and_oversized_binaries() -> Result<(), Box<dyn 
         &oversized,
         target,
         version,
-        Channel::Stable,
+        Channel::Rehearsal,
         1_700_000_000,
         temp.path(),
     )
@@ -143,13 +143,18 @@ fn host_target() -> Result<&'static str, String> {
 
 #[test]
 fn identity_rejects_unsupported_targets_and_ambiguous_versions() -> Result<(), String> {
-    let actual = (
+    let actual = [
         validate_identity("x86_64-unknown-linux-gnu", "0.1.0").is_ok(),
         validate_identity("powerpc-unknown-linux-gnu", "0.1.0").is_err(),
         validate_identity("x86_64-unknown-linux-gnu", "v0.1.0").is_err(),
         validate_identity("x86_64-unknown-linux-gnu", "0.1.0 bad").is_err(),
         validate_identity("x86_64-unknown-linux-gnu", "0.1").is_err(),
         validate_identity("x86_64-unknown-linux-gnu", "0.1.0;echo").is_err(),
+        validate_channel_version("0.1.0-preview.1+abcdef0", Channel::Preview).is_ok(),
+        validate_channel_version("0.1.0", Channel::Stable).is_ok(),
+        validate_channel_version("0.1.0-dev+abcdef0", Channel::Rehearsal).is_ok(),
+        validate_channel_version("0.1.0", Channel::Preview).is_err(),
+        validate_channel_version("0.1.0-preview.1+abcdef0", Channel::Stable).is_err(),
         validate_archive_name(
             Path::new("parallax-x86_64-unknown-linux-gnu.tar.gz"),
             "x86_64-unknown-linux-gnu",
@@ -185,12 +190,8 @@ fn identity_rejects_unsupported_targets_and_ambiguous_versions() -> Result<(), S
             Channel::Preview,
         )
         .is_err(),
-    );
-    if actual
-        != (
-            true, true, true, true, true, true, true, true, true, true, true,
-        )
-    {
+    ];
+    if !actual.into_iter().all(|valid| valid) {
         return Err(format!("release identity validation mismatch: {actual:?}"));
     }
     Ok(())
@@ -278,7 +279,7 @@ fn release_callers_use_one_packager_and_verified_sdk() -> Result<(), String> {
             .iter()
             .all(|source| !source.contains("tar -czf") && !source.contains("| tar")),
         rehearsal.contains("cargo xtask release-rehearse")
-            && rehearsal.contains("--channel stable")
+            && rehearsal.contains("--channel rehearsal")
             && !rehearsal.contains("tar -czf")
             && !rehearsal.contains("-czf"),
         sdk.contains("key: macos-sdk-archive-${{ inputs.version }}-${{ inputs.sha256 }}")

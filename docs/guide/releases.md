@@ -17,10 +17,15 @@ Pass a supported target triple to rehearse a cross build. The script builds the
 embedded UI, uses Zig/cargo-zigbuild with the native-TLS vendored OpenSSL path,
 packages the same binary twice, and fails unless both archive digests match. It
 writes the archive and bare-hash `.sha256` under `target/dist/` and never
-publishes. The script explicitly rehearses the stable/versioned archive shape;
-workflow callers must likewise select exactly one `--channel preview|stable`.
-Preview accepts only `parallax-<target>.tar.gz`; stable accepts only
-`parallax-<version>-<target>.tar.gz`.
+publishes. The script explicitly selects the non-publishable `rehearsal`
+channel and produces the versioned archive shape. Every package caller must
+select exactly one `--channel preview|stable|rehearsal`. Preview requires a
+`<version>-preview.<ordinal>+<source>` version and
+`parallax-<target>.tar.gz`; stable requires a release version without
+prerelease or build metadata and `parallax-<version>-<target>.tar.gz`.
+Rehearsal accepts development SemVer and the versioned name, but published
+verification derives only preview or stable from the trusted source ref, so a
+rehearsal can never satisfy the publication contract.
 
 ## Verify published preview assets
 

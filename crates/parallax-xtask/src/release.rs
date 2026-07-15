@@ -18,6 +18,7 @@ const MAX_RELEASE_BINARY_BYTES: u64 = 512 * 1024 * 1024;
 pub(crate) enum Channel {
     Preview,
     Stable,
+    Rehearsal,
 }
 
 #[derive(Debug)]
@@ -42,6 +43,7 @@ pub(crate) fn package(
     source_epoch: u64,
 ) -> Result<()> {
     validate_identity(target, version)?;
+    validate_channel_version(version, channel)?;
     validate_archive_name(output, target, version, channel)?;
     validate_binary(binary, target, version)?;
     println!(
@@ -69,7 +71,7 @@ fn validate_archive_name(
     let stable = format!("parallax-{version}-{target}.tar.gz");
     let expected = match channel {
         Channel::Preview => preview,
-        Channel::Stable => stable,
+        Channel::Stable | Channel::Rehearsal => stable,
     };
     if name != expected {
         bail!("release archive name `{name}` does not match {channel:?} identity `{expected}`");
@@ -86,6 +88,7 @@ pub(crate) fn rehearse(
     output_dir: &Path,
 ) -> Result<()> {
     validate_identity(target, version)?;
+    validate_channel_version(version, channel)?;
     validate_binary(binary, target, version)?;
     rehearse_archives(binary, target, version, channel, source_epoch, output_dir)
 }
@@ -102,7 +105,7 @@ fn rehearse_archives(
         .with_context(|| format!("create rehearsal directory {}", output_dir.display()))?;
     let name = match channel {
         Channel::Preview => format!("parallax-{target}.tar.gz"),
-        Channel::Stable => format!("parallax-{version}-{target}.tar.gz"),
+        Channel::Stable | Channel::Rehearsal => format!("parallax-{version}-{target}.tar.gz"),
     };
     let first = temporary(output_dir, &name, "first");
     let second = temporary(output_dir, &name, "second");
@@ -172,6 +175,7 @@ fn validate_verification_identity(spec: &VerifySpec) -> Result<()> {
     } else {
         bail!("source ref must be refs/heads/main for preview or refs/tags/v<version> for stable");
     };
+    validate_channel_version(&spec.version, channel)?;
     validate_archive_name(&spec.archive, &spec.target, &spec.version, channel)?;
     let repository_parts = spec.repository.split('/').collect::<Vec<_>>();
     if repository_parts.len() != 2
@@ -206,6 +210,25 @@ fn validate_identity(target: &str, version: &str) -> Result<()> {
     }
     semver::Version::parse(version)
         .with_context(|| format!("invalid semantic release version `{version}`"))?;
+    Ok(())
+}
+
+fn validate_channel_version(version: &str, channel: Channel) -> Result<()> {
+    let version = semver::Version::parse(version)
+        .with_context(|| format!("invalid semantic release version `{version}`"))?;
+    match channel {
+        Channel::Preview => {
+            if !version.pre.as_str().starts_with("preview.") || version.build.is_empty() {
+                bail!("preview version must use <version>-preview.<ordinal>+<source> identity");
+            }
+        }
+        Channel::Stable => {
+            if !version.pre.is_empty() || !version.build.is_empty() {
+                bail!("stable version cannot contain prerelease or build metadata");
+            }
+        }
+        Channel::Rehearsal => {}
+    }
     Ok(())
 }
 
