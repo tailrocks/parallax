@@ -113,9 +113,10 @@ fn verify_sbom(archive: &Path, archive_name: &str, digest: &str) -> Result<()> {
 }
 
 fn read_binary(spec: &VerifySpec) -> Result<Vec<u8>> {
-    let file = std::fs::File::open(&spec.archive)
-        .with_context(|| format!("open archive {}", spec.archive.display()))?;
-    let mut archive = tar::Archive::new(GzDecoder::new(file));
+    let compressed = std::fs::read(&spec.archive)
+        .with_context(|| format!("read archive {}", spec.archive.display()))?;
+    verify_gzip_header(&compressed)?;
+    let mut archive = tar::Archive::new(GzDecoder::new(compressed.as_slice()));
     let mut entries = archive.entries()?;
     let mut entry = entries.next().context("archive is empty")??;
     let header = entry.header();
@@ -151,6 +152,15 @@ fn read_binary(spec: &VerifySpec) -> Result<Vec<u8>> {
         "archive contains unexpected extra entries"
     );
     Ok(binary)
+}
+
+fn verify_gzip_header(compressed: &[u8]) -> Result<()> {
+    const HEADER: [u8; 10] = [0x1f, 0x8b, 8, 0, 0, 0, 0, 0, 2, 255];
+    ensure!(
+        compressed.get(..HEADER.len()) == Some(HEADER.as_slice()),
+        "archive gzip header is not deterministic"
+    );
+    Ok(())
 }
 
 pub(super) fn verify_object(binary: &[u8], target: &str, version: &str) -> Result<()> {

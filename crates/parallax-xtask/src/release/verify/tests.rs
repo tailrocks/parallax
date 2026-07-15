@@ -172,6 +172,32 @@ fn archive_layout_tampering_fails_closed() -> Result<(), Box<dyn std::error::Err
     Ok(())
 }
 
+#[test]
+fn gzip_header_tampering_fails_closed() -> Result<(), Box<dyn std::error::Error>> {
+    let temp = tempfile::tempdir()?;
+    let target = host_target()?;
+    let archive_path = temp.path().join(format!("parallax-{target}.tar.gz"));
+    let binary = temp.path().join("parallax");
+    std::fs::write(&binary, b"fixture")?;
+    archive::write(&binary, &archive_path, 1_700_000_000)?;
+    let original = std::fs::read(&archive_path)?;
+    verify_gzip_header(&original)?;
+
+    for (name, offset, value) in [
+        ("flags", 3, 8),
+        ("mtime", 4, 1),
+        ("compression", 8, 0),
+        ("operating-system", 9, 3),
+    ] {
+        let mut tampered = original.clone();
+        tampered[offset] = value;
+        if verify_gzip_header(&tampered).is_ok() {
+            return Err(format!("tampered gzip {name} unexpectedly passed").into());
+        }
+    }
+    Ok(())
+}
+
 fn write_archive_fixture(
     path: &Path,
     entry_path: &str,

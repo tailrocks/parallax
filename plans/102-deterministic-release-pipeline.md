@@ -71,6 +71,11 @@
   `v`-prefixed tags, whitespace, and shell-like suffixes fail before packaging
   or verification. The explicit dependency is locked, all 10 release tests
   pass with `--locked`, and strict all-target xtask clippy is clean.
+- 2026-07-15: bound atomic verification to the deterministic outer gzip header,
+  not only the inner tar contract. Nonzero flags/mtime, changed compression
+  metadata, and a host-specific OS byte now fail even if an alternate producer
+  recomputes sidecars. All 11 release-focused tests and strict all-target xtask
+  clippy pass locally.
 
 ## Why
 
