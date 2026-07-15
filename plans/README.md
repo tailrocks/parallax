@@ -63,7 +63,7 @@ Every plan must preserve these non-negotiable Parallax constraints:
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [102](102-deterministic-release-pipeline.md) | Unify deterministic preview/stable packaging, symbols, and release verification | P1 | L | 094, 096, 101 | IN PROGRESS |
+| [102](102-deterministic-release-pipeline.md) | Prove the deterministic release pipeline externally | P1 | S | 094, 096, 101; repository protection + post-merge preview | BLOCKED: stable environment/tag protection absent and current preview predates implementation |
 
 ### Quality Tooling And Rust
 
