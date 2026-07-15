@@ -72,6 +72,15 @@ component, route, and future browser evidence.
   cleanup plus deterministic `scrollTo` and `matchMedia` shims instead of
   relying on file ordering. The full forced-Bun baseline remains 41 files / 175
   tests; TypeScript, both Oxlint lanes, Oxfmt, and diff hygiene pass locally.
+- 2026-07-15: introduced the versioned `ui/test-matrix.json` with exact entries
+  for all 41 current files and all 175 named tests. Every row has a stable ID,
+  product/risk owner, Vitest lane/layer, environment, and one path-specific
+  expiring legacy handoff. `cargo xtask policy --only ui.tests` now discovers
+  source tests independently and rejects schema drift, duplicate IDs, unknown
+  owners/layers, missing or empty files, mismatched test-name sets, and broad
+  handoffs. Positive real-repository validation and a stale-name negative
+  fixture pass; both policy tests, strict xtask Clippy, formatting, and diff
+  hygiene are green locally.
 
 ## Fixed Test Topology
 

@@ -1,0 +1,1041 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "id": "vitest-001",
+      "surface": "features/overview",
+      "risk": "Behavior characterized by metric-strip.test.tsx",
+      "scenario_owner": "features/overview",
+      "lane_owner": "vitest/component",
+      "delivery_plan": 150,
+      "layer": "component",
+      "test_file": "ui/src/components/__tests__/metric-strip.test.tsx",
+      "test_ids": [
+        "aborts stale requests and ignores late responses"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/__tests__/metric-strip.test.tsx",
+        "destination_owner": "features/overview",
+        "removal_plan": 150,
+        "created": "2026-07-15",
+        "expires": "plan-150-completion"
+      }
+    },
+    {
+      "id": "vitest-002",
+      "surface": "layout/shell",
+      "risk": "Behavior characterized by shell.test.tsx",
+      "scenario_owner": "layout/shell",
+      "lane_owner": "vitest/component",
+      "delivery_plan": 143,
+      "layer": "component",
+      "test_file": "ui/src/components/__tests__/shell.test.tsx",
+      "test_ids": [
+        "renders PageHeader breadcrumb shape",
+        "defines icons for every nav item",
+        "keeps the styled error fallback inside the shell",
+        "surfaces dashboard navigation load failures",
+        "keeps the sidebar shortcut independent from the command palette shortcut"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/__tests__/shell.test.tsx",
+        "destination_owner": "layout/shell",
+        "removal_plan": 143,
+        "created": "2026-07-15",
+        "expires": "plan-143-completion"
+      }
+    },
+    {
+      "id": "vitest-003",
+      "surface": "features/runs",
+      "risk": "Behavior characterized by agent-session.test.tsx",
+      "scenario_owner": "features/runs",
+      "lane_owner": "vitest/component",
+      "delivery_plan": 140,
+      "layer": "component",
+      "test_file": "ui/src/components/console/__tests__/agent-session.test.tsx",
+      "test_ids": [
+        "renders step timeline with trace links and token totals",
+        "hides token totals when both totals are zero"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/console/__tests__/agent-session.test.tsx",
+        "destination_owner": "features/runs",
+        "removal_plan": 140,
+        "created": "2026-07-15",
+        "expires": "plan-140-completion"
+      }
+    },
+    {
+      "id": "vitest-004",
+      "surface": "features/investigations",
+      "risk": "Behavior characterized by attribute-compare.test.tsx",
+      "scenario_owner": "features/investigations",
+      "lane_owner": "vitest/component",
+      "delivery_plan": 134,
+      "layer": "component",
+      "test_file": "ui/src/components/console/__tests__/attribute-compare.test.tsx",
+      "test_ids": [
+        "renders ranked BubbleUp rows with paired percentages",
+        "renders an empty state"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/console/__tests__/attribute-compare.test.tsx",
+        "destination_owner": "features/investigations",
+        "removal_plan": 134,
+        "created": "2026-07-15",
+        "expires": "plan-134-completion"
+      }
+    },
+    {
+      "id": "vitest-005",
+      "surface": "layout/shell",
+      "risk": "Behavior characterized by command-palette.test.tsx",
+      "scenario_owner": "layout/shell",
+      "lane_owner": "vitest/component",
+      "delivery_plan": 143,
+      "layer": "component",
+      "test_file": "ui/src/components/console/__tests__/command-palette.test.tsx",
+      "test_ids": [
+        "opens with Cmd/Ctrl+K and closes with Escape",
+        "filters pages and navigates on selection",
+        "shows id jump entries for trace and ambiguous 16-hex ids",
+        "navigates from logs to a pasted trace id",
+        "keeps pages available when entity fetches fail"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/console/__tests__/command-palette.test.tsx",
+        "destination_owner": "layout/shell",
+        "removal_plan": 143,
+        "created": "2026-07-15",
+        "expires": "plan-143-completion"
+      }
+    },
+    {
+      "id": "vitest-006",
+      "surface": "features/ecosystem",
+      "risk": "Behavior characterized by ecosystem-graph.test.tsx",
+      "scenario_owner": "features/ecosystem",
+      "lane_owner": "vitest/component",
+      "delivery_plan": 136,
+      "layer": "component",
+      "test_file": "ui/src/components/console/__tests__/ecosystem-graph.test.tsx",
+      "test_ids": [
+        "renders trace-path graph nodes and edge links"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/console/__tests__/ecosystem-graph.test.tsx",
+        "destination_owner": "features/ecosystem",
+        "removal_plan": 136,
+        "created": "2026-07-15",
+        "expires": "plan-136-completion"
+      }
+    },
+    {
+      "id": "vitest-007",
+      "surface": "features/investigations",
+      "risk": "Behavior characterized by evidence-gaps.test.tsx",
+      "scenario_owner": "features/investigations",
+      "lane_owner": "vitest/component",
+      "delivery_plan": 134,
+      "layer": "component",
+      "test_file": "ui/src/components/console/__tests__/evidence-gaps.test.tsx",
+      "test_ids": [
+        "renders gaps when present",
+        "renders nothing for clean evidence"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/console/__tests__/evidence-gaps.test.tsx",
+        "destination_owner": "features/investigations",
+        "removal_plan": 134,
+        "created": "2026-07-15",
+        "expires": "plan-134-completion"
+      }
+    },
+    {
+      "id": "vitest-008",
+      "surface": "features/sql",
+      "risk": "Behavior characterized by field-explorer.test.tsx",
+      "scenario_owner": "features/sql",
+      "lane_owner": "vitest/component",
+      "delivery_plan": 135,
+      "layer": "component",
+      "test_file": "ui/src/components/console/__tests__/field-explorer.test.tsx",
+      "test_ids": [
+        "loads field keys, stats, service filters, and SQL pivots"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/console/__tests__/field-explorer.test.tsx",
+        "destination_owner": "features/sql",
+        "removal_plan": 135,
+        "created": "2026-07-15",
+        "expires": "plan-135-completion"
+      }
+    },
+    {
+      "id": "vitest-009",
+      "surface": "features/traces",
+      "risk": "Behavior characterized by graphql-operation.test.tsx",
+      "scenario_owner": "features/traces",
+      "lane_owner": "vitest/component",
+      "delivery_plan": 142,
+      "layer": "component",
+      "test_file": "ui/src/components/console/__tests__/graphql-operation.test.tsx",
+      "test_ids": [
+        "renders operation badges and selects the backing span",
+        "renders nothing for non-graphql traces"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/console/__tests__/graphql-operation.test.tsx",
+        "destination_owner": "features/traces",
+        "removal_plan": 142,
+        "created": "2026-07-15",
+        "expires": "plan-142-completion"
+      }
+    },
+    {
+      "id": "vitest-010",
+      "surface": "shared/visualization",
+      "risk": "Behavior characterized by heat-cell.test.tsx",
+      "scenario_owner": "shared/visualization",
+      "lane_owner": "vitest/unit",
+      "delivery_plan": 149,
+      "layer": "model",
+      "test_file": "ui/src/components/console/__tests__/heat-cell.test.tsx",
+      "test_ids": [
+        "handles empty and single-value scales",
+        "filters non-finite values",
+        "keeps ties at the first matching rank",
+        "clamps below min and above max",
+        "preserves exact bucket boundaries"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/console/__tests__/heat-cell.test.tsx",
+        "destination_owner": "shared/visualization",
+        "removal_plan": 149,
+        "created": "2026-07-15",
+        "expires": "plan-149-completion"
+      }
+    },
+    {
+      "id": "vitest-011",
+      "surface": "shared/console",
+      "risk": "Behavior characterized by kit.test.tsx",
+      "scenario_owner": "shared/console",
+      "lane_owner": "vitest/component",
+      "delivery_plan": 149,
+      "layer": "component",
+      "test_file": "ui/src/components/console/__tests__/kit.test.tsx",
+      "test_ids": [
+        "sorts rows nulls-last and cycles sort params",
+        "creates pagination windows",
+        "resolves range search",
+        "covers span kind palette and error override",
+        "renders StatCard and RelativeTime",
+        "shares one relative-time ticker across mounted instances"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/console/__tests__/kit.test.tsx",
+        "destination_owner": "shared/console",
+        "removal_plan": 149,
+        "created": "2026-07-15",
+        "expires": "plan-149-completion"
+      }
+    },
+    {
+      "id": "vitest-012",
+      "surface": "capabilities/time-range",
+      "risk": "Behavior characterized by range-picker.test.tsx",
+      "scenario_owner": "capabilities/time-range",
+      "lane_owner": "vitest/component",
+      "delivery_plan": 149,
+      "layer": "component",
+      "test_file": "ui/src/components/console/__tests__/range-picker.test.tsx",
+      "test_ids": [
+        "emits preset and custom calendar ranges"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/console/__tests__/range-picker.test.tsx",
+        "destination_owner": "capabilities/time-range",
+        "removal_plan": 149,
+        "created": "2026-07-15",
+        "expires": "plan-149-completion"
+      }
+    },
+    {
+      "id": "vitest-013",
+      "surface": "features/traces",
+      "risk": "Behavior characterized by rpc-stream.test.tsx",
+      "scenario_owner": "features/traces",
+      "lane_owner": "vitest/component",
+      "delivery_plan": 142,
+      "layer": "component",
+      "test_file": "ui/src/components/console/__tests__/rpc-stream.test.tsx",
+      "test_ids": [
+        "renders message dots outcome badge and truncated line",
+        "renders nothing for empty streams"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/console/__tests__/rpc-stream.test.tsx",
+        "destination_owner": "features/traces",
+        "removal_plan": 142,
+        "created": "2026-07-15",
+        "expires": "plan-142-completion"
+      }
+    },
+    {
+      "id": "vitest-014",
+      "surface": "features/investigations",
+      "risk": "Behavior characterized by story-timeline.test.tsx",
+      "scenario_owner": "features/investigations",
+      "lane_owner": "vitest/component",
+      "delivery_plan": 134,
+      "layer": "component",
+      "test_file": "ui/src/components/console/__tests__/story-timeline.test.tsx",
+      "test_ids": [
+        "renders time ordered lanes with linked error beats"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/console/__tests__/story-timeline.test.tsx",
+        "destination_owner": "features/investigations",
+        "removal_plan": 134,
+        "created": "2026-07-15",
+        "expires": "plan-134-completion"
+      }
+    },
+    {
+      "id": "vitest-015",
+      "surface": "features/overview",
+      "risk": "Behavior characterized by top-movers.test.tsx",
+      "scenario_owner": "features/overview",
+      "lane_owner": "vitest/component",
+      "delivery_plan": 150,
+      "layer": "component",
+      "test_file": "ui/src/components/console/__tests__/top-movers.test.tsx",
+      "test_ids": [
+        "applies threshold edges and ranking",
+        "caps movers at six",
+        "builds deterministic sentences",
+        "renders mover links with the current window",
+        "renders the empty state"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/console/__tests__/top-movers.test.tsx",
+        "destination_owner": "features/overview",
+        "removal_plan": 150,
+        "created": "2026-07-15",
+        "expires": "plan-150-completion"
+      }
+    },
+    {
+      "id": "vitest-016",
+      "surface": "shared/charts",
+      "risk": "Behavior characterized by use-chart-brush.test.tsx",
+      "scenario_owner": "shared/charts",
+      "lane_owner": "vitest/component",
+      "delivery_plan": 149,
+      "layer": "component",
+      "test_file": "ui/src/components/console/__tests__/use-chart-brush.test.tsx",
+      "test_ids": [
+        "clicks a single bucket window",
+        "drags forward and exposes the reference range",
+        "normalizes reversed drags"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/console/__tests__/use-chart-brush.test.tsx",
+        "destination_owner": "shared/charts",
+        "removal_plan": 149,
+        "created": "2026-07-15",
+        "expires": "plan-149-completion"
+      }
+    },
+    {
+      "id": "vitest-017",
+      "surface": "features/traces",
+      "risk": "Behavior characterized by waterfall.test.tsx",
+      "scenario_owner": "features/traces",
+      "lane_owner": "vitest/component",
+      "delivery_plan": 142,
+      "layer": "component",
+      "test_file": "ui/src/components/console/__tests__/waterfall.test.tsx",
+      "test_ids": [
+        "renders whole-trace and ordered span rows",
+        "moves selection with j/k and arrow keys",
+        "highlights critical-path span rows",
+        "shows only errors and ancestors in errors mode",
+        "falls back to the full tree when errors mode has no errors",
+        "renders contiguous service lanes",
+        "selects spans from the minimap"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/console/__tests__/waterfall.test.tsx",
+        "destination_owner": "features/traces",
+        "removal_plan": 142,
+        "created": "2026-07-15",
+        "expires": "plan-142-completion"
+      }
+    },
+    {
+      "id": "vitest-018",
+      "surface": "shared/ui",
+      "risk": "Behavior characterized by primitives.test.tsx",
+      "scenario_owner": "shared/ui",
+      "lane_owner": "vitest/component",
+      "delivery_plan": 149,
+      "layer": "component",
+      "test_file": "ui/src/components/ui/__tests__/primitives.test.tsx",
+      "test_ids": [
+        "keeps the reference button shape",
+        "keeps badge hue variants",
+        "keeps card, empty, and kbd squircle recipes"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/ui/__tests__/primitives.test.tsx",
+        "destination_owner": "shared/ui",
+        "removal_plan": 149,
+        "created": "2026-07-15",
+        "expires": "plan-149-completion"
+      }
+    },
+    {
+      "id": "vitest-019",
+      "surface": "platform/live",
+      "risk": "Behavior characterized by use-live-stream.test.tsx",
+      "scenario_owner": "platform/live",
+      "lane_owner": "vitest/unit",
+      "delivery_plan": 153,
+      "layer": "platform-contract",
+      "test_file": "ui/src/hooks/__tests__/use-live-stream.test.tsx",
+      "test_ids": [
+        "buffers frames and flushes after flushMs via onBatch",
+        "skips malformed frames when parse throws without killing the stream",
+        "maps onerror to error and subsequent onopen to open",
+        "closes the source and clears the interval on unmount",
+        "stays idle and constructs no EventSource when url is null",
+        "closes the stream while the tab is hidden and reconnects on visible"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/hooks/__tests__/use-live-stream.test.tsx",
+        "destination_owner": "platform/live",
+        "removal_plan": 153,
+        "created": "2026-07-15",
+        "expires": "plan-153-completion"
+      }
+    },
+    {
+      "id": "vitest-020",
+      "surface": "platform/graphql",
+      "risk": "Behavior characterized by api.test.ts",
+      "scenario_owner": "platform/graphql",
+      "lane_owner": "vitest/unit",
+      "delivery_plan": 152,
+      "layer": "platform-contract",
+      "test_file": "ui/src/lib/__tests__/api.test.ts",
+      "test_ids": [
+        "escapes backslash, quote, newline, and tab",
+        "strips carriage returns",
+        "escapes form-feed as a unicode escape",
+        "escapes NUL as a unicode escape",
+        "leaves plain ASCII unchanged",
+        "dedupes concurrent identical queries into one fetch",
+        "serves a second call from cache within TTL",
+        "refetches after the TTL expires",
+        "raw graphql always hits the network",
+        "is available in the browser (client-side cache active)"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/api.test.ts",
+        "destination_owner": "platform/graphql",
+        "removal_plan": 152,
+        "created": "2026-07-15",
+        "expires": "plan-152-completion"
+      }
+    },
+    {
+      "id": "vitest-021",
+      "surface": "shared/format",
+      "risk": "Behavior characterized by format.test.ts",
+      "scenario_owner": "shared/format",
+      "lane_owner": "vitest/unit",
+      "delivery_plan": 149,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/format.test.ts",
+      "test_ids": [
+        "formats durations across units",
+        "formats counts and deltas",
+        "formats bytes as IEC units",
+        "formats relative ns strings with precision",
+        "uses date labels for multi-day ranges",
+        "formats short time labels",
+        "returns consistent output across repeated formatter calls"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/format.test.ts",
+        "destination_owner": "shared/format",
+        "removal_plan": 149,
+        "created": "2026-07-15",
+        "expires": "plan-149-completion"
+      }
+    },
+    {
+      "id": "vitest-022",
+      "surface": "features/traces",
+      "risk": "Behavior characterized by graphql-trace.test.ts",
+      "scenario_owner": "features/traces",
+      "lane_owner": "vitest/unit",
+      "delivery_plan": 142,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/graphql-trace.test.ts",
+      "test_ids": [
+        "builds a nested field tree with self durations",
+        "merges repeated sibling paths into one N+1 node",
+        "counts partial field errors under a successful operation",
+        "ignores spans without graphql operation attributes",
+        "sorts roots by start time then path"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/graphql-trace.test.ts",
+        "destination_owner": "features/traces",
+        "removal_plan": 142,
+        "created": "2026-07-15",
+        "expires": "plan-142-completion"
+      }
+    },
+    {
+      "id": "vitest-023",
+      "surface": "features/investigations",
+      "risk": "Behavior characterized by investigations.test.ts",
+      "scenario_owner": "features/investigations",
+      "lane_owner": "vitest/unit",
+      "delivery_plan": 134,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/investigations.test.ts",
+      "test_ids": [
+        "serializes the current route as a restorable pin",
+        "captures window params from hrefs",
+        "parses and caps investigation state"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/investigations.test.ts",
+        "destination_owner": "features/investigations",
+        "removal_plan": 134,
+        "created": "2026-07-15",
+        "expires": "plan-134-completion"
+      }
+    },
+    {
+      "id": "vitest-024",
+      "surface": "layout/shell",
+      "risk": "Behavior characterized by quick-jump.test.ts",
+      "scenario_owner": "layout/shell",
+      "lane_owner": "vitest/unit",
+      "delivery_plan": 143,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/quick-jump.test.ts",
+      "test_ids": [
+        "routes 32-hex OTel trace ids directly to traces",
+        "keeps 16-hex ids ambiguous across run, fingerprint, and span",
+        "recognizes real-shaped non-hex run ids from fixtures and playground",
+        "does not route arbitrary words"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/quick-jump.test.ts",
+        "destination_owner": "layout/shell",
+        "removal_plan": 143,
+        "created": "2026-07-15",
+        "expires": "plan-143-completion"
+      }
+    },
+    {
+      "id": "vitest-025",
+      "surface": "capabilities/time-range",
+      "risk": "Behavior characterized by range.test.ts",
+      "scenario_owner": "capabilities/time-range",
+      "lane_owner": "vitest/unit",
+      "delivery_plan": 149,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/range.test.ts",
+      "test_ids": [
+        "clears explicit bounds for preset windows",
+        "pins custom windows",
+        "lets a preset range win over stale absolute bounds",
+        "mirrors update shape for cross-route links"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/range.test.ts",
+        "destination_owner": "capabilities/time-range",
+        "removal_plan": 149,
+        "created": "2026-07-15",
+        "expires": "plan-149-completion"
+      }
+    },
+    {
+      "id": "vitest-026",
+      "surface": "features/traces",
+      "risk": "Behavior characterized by rpc-trace.test.ts",
+      "scenario_owner": "features/traces",
+      "lane_owner": "vitest/unit",
+      "delivery_plan": 142,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/rpc-trace.test.ts",
+      "test_ids": [
+        "builds ordered message timelines for multi-message RPC spans",
+        "maps deadline outcomes and labels",
+        "excludes unary and non-rpc spans",
+        "summarizes messaging producers consumers and max batch size"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/rpc-trace.test.ts",
+        "destination_owner": "features/traces",
+        "removal_plan": 142,
+        "created": "2026-07-15",
+        "expires": "plan-142-completion"
+      }
+    },
+    {
+      "id": "vitest-027",
+      "surface": "features/issues",
+      "risk": "Behavior characterized by stacktrace.test.ts",
+      "scenario_owner": "features/issues",
+      "lane_owner": "vitest/unit",
+      "delivery_plan": 139,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/stacktrace.test.ts",
+      "test_ids": [
+        "parses Rust frames",
+        "parses compact Rust-style frames",
+        "parses Python frames",
+        "parses Node/V8 frames and marks libraries",
+        "parses Go frames",
+        "parses Java frames",
+        "keeps garbage as raw passthrough"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/stacktrace.test.ts",
+        "destination_owner": "features/issues",
+        "removal_plan": 139,
+        "created": "2026-07-15",
+        "expires": "plan-139-completion"
+      }
+    },
+    {
+      "id": "vitest-028",
+      "surface": "features/traces",
+      "risk": "Behavior characterized by trace-tree.test.ts",
+      "scenario_owner": "features/traces",
+      "lane_owner": "vitest/unit",
+      "delivery_plan": 142,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/trace-tree.test.ts",
+      "test_ids": [
+        "orders a parent chain with increasing depth",
+        "treats missing parents as orphan roots",
+        "sorts siblings by start time then span id",
+        "keeps zero-duration traces drawable",
+        "clamps positions inside the remaining track",
+        "keeps errored spans with their ancestor chain",
+        "terminates when an error span is its own parent",
+        "terminates a two-node parent cycle containing an error span",
+        "groups ordered rows into contiguous service lanes",
+        "detects cross-service clock skew and ignores same-service drift",
+        "detects a backdated rootless span in the same trace",
+        "detects a backdated same-service child when drift is extreme"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/trace-tree.test.ts",
+        "destination_owner": "features/traces",
+        "removal_plan": 142,
+        "created": "2026-07-15",
+        "expires": "plan-142-completion"
+      }
+    },
+    {
+      "id": "vitest-029",
+      "surface": "platform/browser",
+      "risk": "Behavior characterized by use-visible.test.tsx",
+      "scenario_owner": "platform/browser",
+      "lane_owner": "vitest/unit",
+      "delivery_plan": 153,
+      "layer": "platform-contract",
+      "test_file": "ui/src/lib/__tests__/use-visible.test.tsx",
+      "test_ids": [
+        "tracks document.visibilitychange"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/use-visible.test.tsx",
+        "destination_owner": "platform/browser",
+        "removal_plan": 153,
+        "created": "2026-07-15",
+        "expires": "plan-153-completion"
+      }
+    },
+    {
+      "id": "vitest-030",
+      "surface": "features/dashboards",
+      "risk": "Behavior characterized by -dashboards.test.tsx",
+      "scenario_owner": "features/dashboards",
+      "lane_owner": "vitest/route",
+      "delivery_plan": 137,
+      "layer": "route-contract",
+      "test_file": "ui/src/routes/__tests__/-dashboards.test.tsx",
+      "test_ids": [
+        "preserves dashboard widget unknown fields",
+        "round-trips dashboard label choices without breaking old layouts",
+        "does not propagate stale dashboard bounds for preset ranges",
+        "renders dashboard links with custom ranges",
+        "loads N widget series with one aliased GraphQL document",
+        "passes custom ranges through dashboard create navigation"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/routes/__tests__/-dashboards.test.tsx",
+        "destination_owner": "features/dashboards",
+        "removal_plan": 137,
+        "created": "2026-07-15",
+        "expires": "plan-137-completion"
+      }
+    },
+    {
+      "id": "vitest-031",
+      "surface": "features/issues",
+      "risk": "Behavior characterized by -issues.test.tsx",
+      "scenario_owner": "features/issues",
+      "lane_owner": "vitest/route",
+      "delivery_plan": 139,
+      "layer": "route-contract",
+      "test_file": "ui/src/routes/__tests__/-issues.test.tsx",
+      "test_ids": [
+        "renders trend and event cells as detail links",
+        "preserves custom ranges in rendered drilldown links",
+        "renders parsed stack frames and timestamped breadcrumbs"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/routes/__tests__/-issues.test.tsx",
+        "destination_owner": "features/issues",
+        "removal_plan": 139,
+        "created": "2026-07-15",
+        "expires": "plan-139-completion"
+      }
+    },
+    {
+      "id": "vitest-032",
+      "surface": "features/logs",
+      "risk": "Behavior characterized by -logs.test.tsx",
+      "scenario_owner": "features/logs",
+      "lane_owner": "vitest/route",
+      "delivery_plan": 141,
+      "layer": "route-contract",
+      "test_file": "ui/src/routes/__tests__/-logs.test.tsx",
+      "test_ids": [
+        "computes bucket and drag windows",
+        "round-trips optional column params",
+        "builds context windows and strips unknown saved-view params",
+        "maps all severity bands",
+        "offers the event column in the menu",
+        "skips virtualizer overhead for capped log sets",
+        "virtualizes log sets over the threshold",
+        "keeps existing row DOM nodes when live logs prepend",
+        "renders date-aware time for multi-day ranges and opens the sheet",
+        "preserves custom ranges in trace drilldown links",
+        "opens the document sheet from keyboard row activation",
+        "highlights the anchor row and exposes the context action",
+        "renders saved views and dispatches select/delete/save actions"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/routes/__tests__/-logs.test.tsx",
+        "destination_owner": "features/logs",
+        "removal_plan": 141,
+        "created": "2026-07-15",
+        "expires": "plan-141-completion"
+      }
+    },
+    {
+      "id": "vitest-033",
+      "surface": "features/overview",
+      "risk": "Behavior characterized by -overview.test.tsx",
+      "scenario_owner": "features/overview",
+      "lane_owner": "vitest/route",
+      "delivery_plan": 150,
+      "layer": "route-contract",
+      "test_file": "ui/src/routes/__tests__/-overview.test.tsx",
+      "test_ids": [
+        "loads the one-document overview query",
+        "renders KPIs and linked recent lists",
+        "renders onboarding when there is no telemetry",
+        "guards negative stacked latency bands"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/routes/__tests__/-overview.test.tsx",
+        "destination_owner": "features/overview",
+        "removal_plan": 150,
+        "created": "2026-07-15",
+        "expires": "plan-150-completion"
+      }
+    },
+    {
+      "id": "vitest-034",
+      "surface": "features/runs",
+      "risk": "Behavior characterized by -runs.test.tsx",
+      "scenario_owner": "features/runs",
+      "lane_owner": "vitest/route",
+      "delivery_plan": 140,
+      "layer": "route-contract",
+      "test_file": "ui/src/routes/__tests__/-runs.test.tsx",
+      "test_ids": [
+        "merges registered and observed rows with duration/error fallbacks",
+        "filters rows by activity window overlap",
+        "renders list error and duration columns",
+        "renders detail stat row and download action",
+        "bounds runtimeSnapshot fromNanos to the run start and omits bundle"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/routes/__tests__/-runs.test.tsx",
+        "destination_owner": "features/runs",
+        "removal_plan": 140,
+        "created": "2026-07-15",
+        "expires": "plan-140-completion"
+      }
+    },
+    {
+      "id": "vitest-035",
+      "surface": "features/services",
+      "risk": "Behavior characterized by -services.test.tsx",
+      "scenario_owner": "features/services",
+      "lane_owner": "vitest/route",
+      "delivery_plan": 138,
+      "layer": "route-contract",
+      "test_file": "ui/src/routes/__tests__/-services.test.tsx",
+      "test_ids": [
+        "derives error rates and encoded detail hrefs",
+        "renders index rows with detail links",
+        "preserves custom ranges in index drilldown links",
+        "renders detail stats and hides infra band without CPU/memory",
+        "preserves custom ranges in detail drilldown links",
+        "opens trace exemplar popovers from latency markers"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/routes/__tests__/-services.test.tsx",
+        "destination_owner": "features/services",
+        "removal_plan": 138,
+        "created": "2026-07-15",
+        "expires": "plan-138-completion"
+      }
+    },
+    {
+      "id": "vitest-036",
+      "surface": "features/sql",
+      "risk": "Behavior characterized by -sql.test.tsx",
+      "scenario_owner": "features/sql",
+      "lane_owner": "vitest/route",
+      "delivery_plan": 135,
+      "layer": "route-contract",
+      "test_file": "ui/src/routes/__tests__/-sql.test.tsx",
+      "test_ids": [
+        "keeps SQL examples on real table names",
+        "maps supported id columns to route targets",
+        "renders truncation notice and linkified cells",
+        "renders SQL keyboard hint and examples menu",
+        "dispatches select, save, and delete actions"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/routes/__tests__/-sql.test.tsx",
+        "destination_owner": "features/sql",
+        "removal_plan": 135,
+        "created": "2026-07-15",
+        "expires": "plan-135-completion"
+      }
+    },
+    {
+      "id": "vitest-037",
+      "surface": "features/traces",
+      "risk": "Behavior characterized by -trace-graphql.test.tsx",
+      "scenario_owner": "features/traces",
+      "lane_owner": "vitest/route",
+      "delivery_plan": 142,
+      "layer": "route-contract",
+      "test_file": "ui/src/routes/__tests__/-trace-graphql.test.tsx",
+      "test_ids": [
+        "renders the GraphQL card only when operations exist"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/routes/__tests__/-trace-graphql.test.tsx",
+        "destination_owner": "features/traces",
+        "removal_plan": 142,
+        "created": "2026-07-15",
+        "expires": "plan-142-completion"
+      }
+    },
+    {
+      "id": "vitest-038",
+      "surface": "features/traces",
+      "risk": "Behavior characterized by -trace-links.test.tsx",
+      "scenario_owner": "features/traces",
+      "lane_owner": "vitest/route",
+      "delivery_plan": 142,
+      "layer": "route-contract",
+      "test_file": "ui/src/routes/__tests__/-trace-links.test.tsx",
+      "test_ids": [
+        "renders resolved link targets as causal edge cards",
+        "renders added removed and changed sections"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/routes/__tests__/-trace-links.test.tsx",
+        "destination_owner": "features/traces",
+        "removal_plan": 142,
+        "created": "2026-07-15",
+        "expires": "plan-142-completion"
+      }
+    },
+    {
+      "id": "vitest-039",
+      "surface": "features/traces",
+      "risk": "Behavior characterized by -trace-rpc.test.tsx",
+      "scenario_owner": "features/traces",
+      "lane_owner": "vitest/route",
+      "delivery_plan": 142,
+      "layer": "route-contract",
+      "test_file": "ui/src/routes/__tests__/-trace-rpc.test.tsx",
+      "test_ids": [
+        "caps inspector events and expands on demand",
+        "caps inspector links and expands on demand",
+        "surfaces deadline and cancel grpc status labels",
+        "renders the RPC card only for stream data"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/routes/__tests__/-trace-rpc.test.tsx",
+        "destination_owner": "features/traces",
+        "removal_plan": 142,
+        "created": "2026-07-15",
+        "expires": "plan-142-completion"
+      }
+    },
+    {
+      "id": "vitest-040",
+      "surface": "features/traces",
+      "risk": "Behavior characterized by -trace-view-modes.test.tsx",
+      "scenario_owner": "features/traces",
+      "lane_owner": "vitest/route",
+      "delivery_plan": 142,
+      "layer": "route-contract",
+      "test_file": "ui/src/routes/__tests__/-trace-view-modes.test.tsx",
+      "test_ids": [
+        "validates the trace view search param",
+        "dispatches view changes from the mode toggle",
+        "renders skew warnings only for suspect pairs"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/routes/__tests__/-trace-view-modes.test.tsx",
+        "destination_owner": "features/traces",
+        "removal_plan": 142,
+        "created": "2026-07-15",
+        "expires": "plan-142-completion"
+      }
+    },
+    {
+      "id": "vitest-041",
+      "surface": "features/traces",
+      "risk": "Behavior characterized by -traces-search.test.tsx",
+      "scenario_owner": "features/traces",
+      "lane_owner": "vitest/route",
+      "delivery_plan": 142,
+      "layer": "route-contract",
+      "test_file": "ui/src/routes/__tests__/-traces-search.test.tsx",
+      "test_ids": [
+        "tolerates garbage and keeps valid params",
+        "resets page when filters change",
+        "clears pinned bounds when a preset range is picked",
+        "round-trips sort params",
+        "builds trace detail links for preset and custom ranges",
+        "renders a compact trace table from a mocked payload"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/routes/__tests__/-traces-search.test.tsx",
+        "destination_owner": "features/traces",
+        "removal_plan": 142,
+        "created": "2026-07-15",
+        "expires": "plan-142-completion"
+      }
+    }
+  ]
+}
