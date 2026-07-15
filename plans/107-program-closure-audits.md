@@ -36,10 +36,12 @@
   packets fail. C1 must add rather than modify all four same-date packets, each
   JSON packet must hash its matching Markdown report, and both auditors must
   record the full aggregate command.
-  The final lane runs `cargo xtask ci --full` before structural verification
-  with every required pinned tool. All 72 xtask tests, strict xtask Clippy,
-  Actionlint, workflow/classifier fixtures, Rust formatting, structural policy,
-  and the explicit dry-run command pass locally.
+  The final lane runs the repository-owned `scripts/ci/closure-baseline.sh`,
+  which mirrors the complete Shared Verification block, before structural
+  verification with every required pinned tool. Workflow fixtures require
+  every published baseline command and the executable bit. All 72 xtask tests,
+  strict xtask Clippy, Actionlint, workflow/classifier fixtures, Rust
+  formatting, structural policy, and the explicit dry-run command pass locally.
 - 2026-07-15: the fresh direct/dependency blocker matrix is preserved in
   [`docs/research/validation/2026-07-15-active-plan-blocker-audit.md`](../docs/research/validation/2026-07-15-active-plan-blocker-audit.md).
   No other product plan is ready, so Criteria for Freezing C0 are not met and
