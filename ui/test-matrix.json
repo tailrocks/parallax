@@ -1081,6 +1081,20 @@
       ],
       "required_environment": "bun",
       "status": "implemented"
+    },
+    {
+      "id": "vitest-045",
+      "surface": "platform/test-harness",
+      "risk": "Sequential component routers cannot leak history state",
+      "scenario_owner": "platform/test-harness",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/tests/harness/router.test.tsx",
+      "test_ids": [
+        "creates isolated memory history for sequential renders"
+      ],
+      "required_environment": "jsdom",
+      "status": "implemented"
     }
   ]
 }

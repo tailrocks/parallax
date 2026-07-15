@@ -1,43 +1,12 @@
 /* @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react"
-import {
-  Outlet,
-  RouterProvider,
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-} from "@tanstack/react-router"
+import { screen } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 
 import { EcosystemGraph } from "@/components/console/ecosystem-graph"
 import type { ServiceMapEdge, ServiceMapNode } from "@/lib/api"
 import { customRange } from "@/lib/range"
-
-function renderWithRouter(component: React.ReactNode) {
-  const rootRoute = createRootRoute({ component: Outlet })
-  const indexRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/",
-    component: () => component,
-  })
-  const serviceRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "services/$service",
-    component: () => null,
-  })
-  const tracesRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "traces",
-    component: () => null,
-  })
-  const router = createRouter({
-    routeTree: rootRoute.addChildren([indexRoute, serviceRoute, tracesRoute]),
-    history: createMemoryHistory({ initialEntries: ["/"] }),
-  })
-  return render(<RouterProvider router={router} />)
-}
+import { renderTestRouter } from "@/test/router"
 
 const nodes: ServiceMapNode[] = [
   {
@@ -69,12 +38,13 @@ const edges: ServiceMapEdge[] = [
 
 describe("EcosystemGraph", () => {
   it("renders trace-path graph nodes and edge links", async () => {
-    renderWithRouter(
+    renderTestRouter(
       <EcosystemGraph
         nodes={nodes}
         edges={edges}
         range={customRange("0", "200")}
-      />
+      />,
+      { targetPaths: ["/services/$service", "/traces"] }
     )
 
     expect(await screen.findByText("trace-path")).toBeTruthy()

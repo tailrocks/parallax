@@ -122,6 +122,15 @@ component, route, and future browser evidence.
   identity, and the matrix owns both test IDs without legacy debt. All 44 files
   / 181 tests pass under forced Bun; TypeScript, both Oxlint lanes, Oxfmt,
   matrix policy/tests, strict xtask Clippy, and diff hygiene pass locally.
+- 2026-07-15: added the typed `renderTestRouter` harness following TanStack
+  Router's maintained memory-history test pattern. It constructs a fresh root,
+  route tree, router, and history per invocation and accepts only explicit
+  inert target paths. Its final-topology self-test proves sequential routers do
+  not share navigation state. Agent session, trace-link/RPC, field explorer,
+  ecosystem graph, and story timeline tests now use it, removing six duplicate
+  router builders without changing their public assertions. All 45 files / 182
+  tests pass under forced Bun; TypeScript, both Oxlint lanes, Oxfmt, matrix
+  policy/tests, strict xtask Clippy, and diff hygiene pass locally.
 
 ## Fixed Test Topology
 

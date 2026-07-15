@@ -1,37 +1,11 @@
 /* @vitest-environment jsdom */
 
 import { render, screen } from "@testing-library/react"
-import {
-  Outlet,
-  RouterProvider,
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-} from "@tanstack/react-router"
 import { describe, expect, it } from "vitest"
 
 import { LinkedTraceEdges, TraceCompareResult } from "@/routes/traces.$traceId"
 import type { SpanLink, TraceDiff, TraceSummary } from "@/lib/api"
-
-function renderWithRouter(component: React.ReactNode) {
-  const rootRoute = createRootRoute({ component: Outlet })
-  const indexRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/",
-    component: () => component,
-  })
-  const traceRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "traces/$traceId",
-    component: () => null,
-  })
-  const router = createRouter({
-    routeTree: rootRoute.addChildren([indexRoute, traceRoute]),
-    history: createMemoryHistory({ initialEntries: ["/"] }),
-  })
-  return render(<RouterProvider router={router} />)
-}
+import { renderTestRouter } from "@/test/router"
 
 describe("LinkedTraceEdges", () => {
   it("renders resolved link targets as causal edge cards", async () => {
@@ -52,12 +26,13 @@ describe("LinkedTraceEdges", () => {
       hasError: true,
     }
 
-    renderWithRouter(
+    renderTestRouter(
       <LinkedTraceEdges
         links={links}
         linkedTraceById={new Map([[target.traceId, target]])}
         rangeSearch={{ range: "24h" }}
-      />
+      />,
+      { targetPaths: ["/traces/$traceId"] }
     )
 
     expect(await screen.findByText("worker")).toBeTruthy()

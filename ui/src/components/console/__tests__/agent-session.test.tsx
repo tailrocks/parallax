@@ -1,43 +1,17 @@
 /* @vitest-environment jsdom */
 
-import { cleanup, render, screen } from "@testing-library/react"
-import {
-  Outlet,
-  RouterProvider,
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-} from "@tanstack/react-router"
+import { cleanup, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
 import { AgentSessionCard } from "@/components/console/agent-session"
 import type { AgentSessionData } from "@/components/console/agent-session"
+import { renderTestRouter } from "@/test/router"
 
 afterEach(cleanup)
 
 function textContentIs(text: string) {
   return (_content: string, element: Element | null) =>
     element?.textContent === text
-}
-
-function renderWithRouter(component: React.ReactNode) {
-  const rootRoute = createRootRoute({ component: Outlet })
-  const indexRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/",
-    component: () => component,
-  })
-  const traceRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "traces/$traceId",
-    component: () => null,
-  })
-  const router = createRouter({
-    routeTree: rootRoute.addChildren([indexRoute, traceRoute]),
-    history: createMemoryHistory({ initialEntries: ["/"] }),
-  })
-  return render(<RouterProvider router={router} />)
 }
 
 const session: AgentSessionData = {
@@ -88,7 +62,9 @@ const session: AgentSessionData = {
 
 describe("AgentSessionCard", () => {
   it("renders step timeline with trace links and token totals", async () => {
-    renderWithRouter(<AgentSessionCard session={session} />)
+    renderTestRouter(<AgentSessionCard session={session} />, {
+      targetPaths: ["/traces/$traceId"],
+    })
 
     expect(await screen.findByText("Agent session")).toBeTruthy()
     expect(screen.getAllByTestId("agent-step")).toHaveLength(3)
@@ -103,10 +79,11 @@ describe("AgentSessionCard", () => {
   })
 
   it("hides token totals when both totals are zero", async () => {
-    renderWithRouter(
+    renderTestRouter(
       <AgentSessionCard
         session={{ ...session, totalInputTokens: "0", totalOutputTokens: "0" }}
-      />
+      />,
+      { targetPaths: ["/traces/$traceId"] }
     )
 
     expect(await screen.findByText("Agent session")).toBeTruthy()

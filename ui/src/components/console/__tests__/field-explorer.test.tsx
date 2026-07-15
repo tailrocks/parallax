@@ -1,19 +1,12 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen } from "@testing-library/react"
-import {
-  Outlet,
-  RouterProvider,
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-} from "@tanstack/react-router"
+import { fireEvent, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { FieldExplorer } from "@/components/console/field-explorer"
 import { graphql } from "@/lib/api"
 import type { ResolvedRange } from "@/lib/range"
+import { renderTestRouter } from "@/test/router"
 
 vi.mock("@/lib/api", async (importOriginal) => {
   const actual = await importOriginal()
@@ -27,25 +20,6 @@ const range: ResolvedRange = {
   key: "1h",
   fromNanos: "1000",
   toNanos: "2000",
-}
-
-function renderWithRouter(component: React.ReactNode) {
-  const rootRoute = createRootRoute({ component: Outlet })
-  const indexRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/",
-    component: () => component,
-  })
-  const sqlRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "sql",
-    component: () => null,
-  })
-  const router = createRouter({
-    routeTree: rootRoute.addChildren([indexRoute, sqlRoute]),
-    history: createMemoryHistory({ initialEntries: ["/"] }),
-  })
-  return render(<RouterProvider router={router} />)
 }
 
 afterEach(() => {
@@ -101,8 +75,9 @@ describe("FieldExplorer", () => {
       }
     )
 
-    renderWithRouter(
-      <FieldExplorer range={range} onApplyService={onApplyService} />
+    renderTestRouter(
+      <FieldExplorer range={range} onApplyService={onApplyService} />,
+      { targetPaths: ["/sql"] }
     )
 
     fireEvent.click(await screen.findByRole("button", { name: /fields/i }))
