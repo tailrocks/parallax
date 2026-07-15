@@ -109,6 +109,7 @@ pub(super) fn validate_artifacts(root: &Path, value: &serde_json::Value) -> Resu
 fn validate_commands(value: &serde_json::Value) -> Result<()> {
     let commands = value.as_array().context("commands must be an array")?;
     ensure!(!commands.is_empty(), "commands must not be empty");
+    let mut has_full_baseline = false;
     for command in commands {
         let object = command.as_object().context("command must be an object")?;
         ensure!(
@@ -122,6 +123,7 @@ fn validate_commands(value: &serde_json::Value) -> Result<()> {
                 .is_some_and(|value| !value.trim().is_empty()),
             "command text is empty"
         );
+        has_full_baseline |= command["command"] == "cargo xtask ci --full";
         ensure!(command["exit_code"] == 0, "closure command did not pass");
         let output = command["output"]
             .as_str()
@@ -133,6 +135,10 @@ fn validate_commands(value: &serde_json::Value) -> Result<()> {
             "command output hash is invalid"
         );
     }
+    ensure!(
+        has_full_baseline,
+        "commands omit the required `cargo xtask ci --full` baseline"
+    );
     Ok(())
 }
 

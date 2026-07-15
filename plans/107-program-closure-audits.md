@@ -33,7 +33,9 @@
   output bytes bound to their hashes, repository artifact hashes verified
   against safe relative paths, structured finding/exception arrays, and fresh
   blocked-trigger records; hollow, extra-field, path traversal, or tampered
-  packets fail.
+  packets fail. C1 must add rather than modify all four same-date packets, each
+  JSON packet must hash its matching Markdown report, and both auditors must
+  record the full aggregate command.
   The final lane runs `cargo xtask ci --full` before structural verification
   with every required pinned tool. All 72 xtask tests, strict xtask Clippy,
   Actionlint, workflow/classifier fixtures, Rust formatting, structural policy,

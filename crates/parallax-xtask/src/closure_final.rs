@@ -8,6 +8,7 @@ use std::{
 use anyhow::{Context, Result, ensure};
 use sha2::{Digest, Sha256};
 
+mod fixtures;
 mod packet;
 
 const CLOSURE_PATHS: [&str; 8] = [
@@ -32,7 +33,7 @@ struct Attestation {
 
 pub(super) fn run(root: &Path, dry_run: bool) -> Result<()> {
     if dry_run {
-        dry_run_fixtures()?;
+        fixtures::run()?;
         println!("closure-final passing and tampered fixtures passed");
         return Ok(());
     }
@@ -61,6 +62,10 @@ fn verify_repository(root: &Path) -> Result<()> {
     validate_attestations(&a, &b, &c0, &parent, &tree)?;
     let evidence_paths = git_paths(root, &c0, &parent)?;
     let evidence_date = validate_evidence_paths(&evidence_paths)?;
+    ensure!(
+        git_added_paths(root, &c0, &parent)? == evidence_paths,
+        "C1 must add all four evidence packets"
+    );
     validate_paths(&git_paths(root, &parent, &head)?, &CLOSURE_PATHS, false)?;
     validate_evidence(root, &evidence_date, &c0, &a, &b)?;
     validate_program_files_retired(root)?;
@@ -240,6 +245,11 @@ fn validate_evidence(
         ensure!(digest == attestation.digest, "closure packet digest drift");
         let value: serde_json::Value = serde_json::from_slice(&source)?;
         packet::validate(&value, c0, &attestation.auditor)?;
+        let markdown = format!("docs/research/validation/{date}-active-plans-closure-{suffix}.md");
+        ensure!(
+            value["artifact_hashes"].get(&markdown).is_some(),
+            "closure packet does not hash its Markdown report"
+        );
         packet::validate_artifacts(root, &value)?;
     }
     Ok(())
@@ -336,6 +346,15 @@ fn git_paths(root: &Path, from: &str, to: &str) -> Result<Vec<String>> {
     Ok(paths)
 }
 
+fn git_added_paths(root: &Path, from: &str, to: &str) -> Result<Vec<String>> {
+    let mut paths = git(root, &["diff", "--name-only", "--diff-filter=A", from, to])?
+        .lines()
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
+    paths.sort();
+    Ok(paths)
+}
+
 fn git(root: &Path, args: &[&str]) -> Result<String> {
     let output = Command::new("git").args(args).current_dir(root).output()?;
     ensure!(output.status.success(), "git {} failed", args.join(" "));
@@ -347,58 +366,6 @@ fn is_hex(value: &str, length: usize) -> bool {
         && value
             .bytes()
             .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
-}
-
-fn dry_run_fixtures() -> Result<()> {
-    let sha = "0123456789abcdef0123456789abcdef01234567";
-    let digest = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-    let output_digest = format!("{:x}", Sha256::digest(b"passed"));
-    let a = parse_attestation(&format!(
-        "auditor=source-a;c0={sha};c1={sha};tree={sha};result=pass;digest={digest}"
-    ))?;
-    let b = parse_attestation(&format!(
-        "auditor=source-b;c0={sha};c1={sha};tree={sha};result=pass;digest={digest}"
-    ))?;
-    validate_attestations(&a, &b, sha, sha, sha)?;
-    let packet = serde_json::json!({
-        "schema_version": 1,
-        "audited_commit": sha,
-        "clean_state": true,
-        "auditor": "source-a",
-        "independent": true,
-        "tool_versions": {"rustc": "1.97.0"},
-        "commands": [{"command": "cargo xtask ci --full", "exit_code": 0, "output": "passed", "output_sha256": output_digest}],
-        "artifact_hashes": {"target/report.json": digest},
-        "findings": [],
-        "exceptions": [],
-        "blocked_triggers": [{"plan": "089", "evidence": "upstream feature graph", "unblock": "native TLS support"}],
-        "result": "pass"
-    });
-    packet::validate(&packet, sha, "source-a")?;
-    ensure!(
-        parse_attestation(&format!(
-            "auditor=source-a;c0={sha};c1={sha};tree={sha};result=fail;digest={digest}"
-        ))
-        .is_err(),
-        "tampered result fixture passed"
-    );
-    ensure!(
-        validate_paths(&["src/main.rs".into()], &CLOSURE_PATHS, false).is_err(),
-        "tampered path fixture passed"
-    );
-    let mut hollow_packet = packet;
-    hollow_packet["commands"] = serde_json::json!([]);
-    ensure!(
-        packet::validate(&hollow_packet, sha, "source-a").is_err(),
-        "hollow packet fixture passed"
-    );
-    let trailers = "closure\n\nSigned-off-by: Codex <codex@openai.com>\nCo-authored-by: Codex <codex@openai.com>\n";
-    validate_commit_trailers(trailers)?;
-    ensure!(
-        validate_commit_trailers(&trailers.replace("Signed-off-by: ", "")).is_err(),
-        "missing DCO fixture passed"
-    );
-    Ok(())
 }
 
 #[cfg(test)]

@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn dry_run_accepts_valid_and_rejects_tampered_contracts() -> Result<()> {
-    dry_run_fixtures()
+    fixtures::run()
 }
 
 #[test]
