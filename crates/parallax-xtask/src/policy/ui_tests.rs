@@ -11,6 +11,29 @@ use crate::diagnostic::Finding;
 
 const MATRIX_PATH: &str = "ui/test-matrix.json";
 const RERUN: &str = "cargo xtask policy --only ui.tests";
+const REQUIRED_SURFACES: [&str; 21] = [
+    "capabilities/time-range",
+    "features/dashboards",
+    "features/ecosystem",
+    "features/investigations",
+    "features/issues",
+    "features/logs",
+    "features/overview",
+    "features/runs",
+    "features/services",
+    "features/sql",
+    "features/traces",
+    "layout/shell",
+    "platform/browser",
+    "platform/graphql",
+    "platform/live",
+    "platform/test-harness",
+    "shared/charts",
+    "shared/console",
+    "shared/format",
+    "shared/ui",
+    "shared/visualization",
+];
 
 #[derive(Debug, Deserialize)]
 struct Matrix {
@@ -80,6 +103,7 @@ pub(super) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
     for entry in &matrix.entries {
         validate_entry(root, entry, &mut ids, &mut represented, &mut findings)?;
     }
+    validate_catalog(&matrix, &mut findings);
 
     let discovered = discover_tests(root)?;
     let test_cases = discovered.values().map(BTreeSet::len).sum::<usize>();
@@ -159,6 +183,22 @@ pub(super) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
         ));
     }
     Ok(findings)
+}
+
+fn validate_catalog(matrix: &Matrix, findings: &mut Vec<Finding>) {
+    let surfaces = matrix
+        .entries
+        .iter()
+        .map(|entry| entry.surface.as_str())
+        .collect::<BTreeSet<_>>();
+    for required in REQUIRED_SURFACES {
+        if !surfaces.contains(required) {
+            findings.push(finding(
+                "ui.tests.catalog",
+                &format!("required product surface `{required}` has no risk owner"),
+            ));
+        }
+    }
 }
 
 fn validate_private_route_imports(
@@ -296,6 +336,7 @@ fn validate_entry(
         "model" | "component" | "route-contract" | "platform-contract"
     ) || !entry.lane_owner.starts_with("vitest/")
         || entry.risk.trim().is_empty()
+        || entry.risk.starts_with("Behavior characterized by")
         || entry.required_environment.trim().is_empty()
         || entry.status != "implemented"
     {

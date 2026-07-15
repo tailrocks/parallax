@@ -186,6 +186,13 @@ component, route, and future browser evidence.
   strict xtask Clippy, and diff hygiene pass locally. The complete structural
   gate remains red only on separately owned active-plan Rust/production UI
   measurements and is not claimed as Plan 129 closure evidence.
+- 2026-07-15: replaced all 41 file-name placeholder risks with durable product
+  failure statements covering the behavior each owned test set protects. The
+  matrix validator now rejects placeholder risk prose and requires all 21
+  current product/platform/shared capability surfaces, so deleting a catalog
+  surface or reverting to file-existence evidence fails the negative fixture.
+  Matrix policy/tests, strict xtask Clippy, formatting, and diff hygiene pass
+  locally.
 
 ## Fixed Test Topology
 

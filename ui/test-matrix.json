@@ -103,7 +103,7 @@
     {
       "id": "vitest-001",
       "surface": "features/overview",
-      "risk": "Behavior characterized by metric-strip.test.tsx",
+      "risk": "Overview metric refresh can commit stale responses after a newer request wins",
       "scenario_owner": "features/overview",
       "lane_owner": "vitest/component",
       "delivery_plan": 150,
@@ -125,7 +125,7 @@
     {
       "id": "vitest-002",
       "surface": "layout/shell",
-      "risk": "Behavior characterized by shell.test.tsx",
+      "risk": "Shell navigation, fallbacks, and keyboard shortcuts can lose route context or conflict",
       "scenario_owner": "layout/shell",
       "lane_owner": "vitest/component",
       "delivery_plan": 143,
@@ -151,7 +151,7 @@
     {
       "id": "vitest-003",
       "surface": "features/runs",
-      "risk": "Behavior characterized by agent-session.test.tsx",
+      "risk": "Agent session summaries can misclassify run state and break trace navigation",
       "scenario_owner": "features/runs",
       "lane_owner": "vitest/component",
       "delivery_plan": 140,
@@ -174,7 +174,7 @@
     {
       "id": "vitest-004",
       "surface": "features/investigations",
-      "risk": "Behavior characterized by attribute-compare.test.tsx",
+      "risk": "Investigation attribute comparison can hide divergent evidence or misorder values",
       "scenario_owner": "features/investigations",
       "lane_owner": "vitest/component",
       "delivery_plan": 134,
@@ -197,7 +197,7 @@
     {
       "id": "vitest-005",
       "surface": "layout/shell",
-      "risk": "Behavior characterized by command-palette.test.tsx",
+      "risk": "Command palette search and identity jumps can navigate to the wrong product entity",
       "scenario_owner": "layout/shell",
       "lane_owner": "vitest/component",
       "delivery_plan": 143,
@@ -223,7 +223,7 @@
     {
       "id": "vitest-006",
       "surface": "features/ecosystem",
-      "risk": "Behavior characterized by ecosystem-graph.test.tsx",
+      "risk": "Ecosystem topology can drop service edges or generate incorrect navigation targets",
       "scenario_owner": "features/ecosystem",
       "lane_owner": "vitest/component",
       "delivery_plan": 136,
@@ -245,7 +245,7 @@
     {
       "id": "vitest-007",
       "surface": "features/investigations",
-      "risk": "Behavior characterized by evidence-gaps.test.tsx",
+      "risk": "Investigation evidence gaps can be ranked or linked incorrectly",
       "scenario_owner": "features/investigations",
       "lane_owner": "vitest/component",
       "delivery_plan": 134,
@@ -268,7 +268,7 @@
     {
       "id": "vitest-008",
       "surface": "features/sql",
-      "risk": "Behavior characterized by field-explorer.test.tsx",
+      "risk": "Field exploration can apply the wrong service filter or SQL pivot",
       "scenario_owner": "features/sql",
       "lane_owner": "vitest/component",
       "delivery_plan": 135,
@@ -290,7 +290,7 @@
     {
       "id": "vitest-009",
       "surface": "features/traces",
-      "risk": "Behavior characterized by graphql-operation.test.tsx",
+      "risk": "GraphQL trace operations can render incorrect field timing and error evidence",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/component",
       "delivery_plan": 142,
@@ -313,7 +313,7 @@
     {
       "id": "vitest-010",
       "surface": "shared/visualization",
-      "risk": "Behavior characterized by heat-cell.test.tsx",
+      "risk": "Percentile heat cells can misbucket empty, tied, non-finite, or boundary values",
       "scenario_owner": "shared/visualization",
       "lane_owner": "vitest/unit",
       "delivery_plan": 149,
@@ -339,7 +339,7 @@
     {
       "id": "vitest-011",
       "surface": "shared/console",
-      "risk": "Behavior characterized by kit.test.tsx",
+      "risk": "Shared console primitives can format telemetry and copy actions inconsistently",
       "scenario_owner": "shared/console",
       "lane_owner": "vitest/component",
       "delivery_plan": 149,
@@ -366,7 +366,7 @@
     {
       "id": "vitest-012",
       "surface": "capabilities/time-range",
-      "risk": "Behavior characterized by range-picker.test.tsx",
+      "risk": "Time-range selection can emit an incorrect preset or absolute window",
       "scenario_owner": "capabilities/time-range",
       "lane_owner": "vitest/component",
       "delivery_plan": 149,
@@ -388,7 +388,7 @@
     {
       "id": "vitest-013",
       "surface": "features/traces",
-      "risk": "Behavior characterized by rpc-stream.test.tsx",
+      "risk": "RPC stream evidence can mislabel direction, deadlines, or message ordering",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/component",
       "delivery_plan": 142,
@@ -411,7 +411,7 @@
     {
       "id": "vitest-014",
       "surface": "features/investigations",
-      "risk": "Behavior characterized by story-timeline.test.tsx",
+      "risk": "Investigation timelines can reorder or mislabel causal evidence",
       "scenario_owner": "features/investigations",
       "lane_owner": "vitest/component",
       "delivery_plan": 134,
@@ -433,7 +433,7 @@
     {
       "id": "vitest-015",
       "surface": "features/overview",
-      "risk": "Behavior characterized by top-movers.test.tsx",
+      "risk": "Overview mover ranking can violate thresholds, caps, empty states, or range links",
       "scenario_owner": "features/overview",
       "lane_owner": "vitest/component",
       "delivery_plan": 150,
@@ -459,7 +459,7 @@
     {
       "id": "vitest-016",
       "surface": "shared/charts",
-      "risk": "Behavior characterized by use-chart-brush.test.tsx",
+      "risk": "Chart brush gestures can select incorrect forward or reversed time buckets",
       "scenario_owner": "shared/charts",
       "lane_owner": "vitest/component",
       "delivery_plan": 149,
@@ -484,7 +484,7 @@
     {
       "id": "vitest-017",
       "surface": "features/traces",
-      "risk": "Behavior characterized by waterfall.test.tsx",
+      "risk": "Trace waterfall selection, modes, lanes, and minimap navigation can diverge",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/component",
       "delivery_plan": 142,
@@ -512,7 +512,7 @@
     {
       "id": "vitest-018",
       "surface": "shared/ui",
-      "risk": "Behavior characterized by primitives.test.tsx",
+      "risk": "Shared UI primitives can lose accessible names or interactive semantics",
       "scenario_owner": "shared/ui",
       "lane_owner": "vitest/component",
       "delivery_plan": 149,
@@ -536,7 +536,7 @@
     {
       "id": "vitest-019",
       "surface": "platform/live",
-      "risk": "Behavior characterized by use-live-stream.test.tsx",
+      "risk": "Live SSE state can reconnect incorrectly, leak stale data, or ignore cancellation",
       "scenario_owner": "platform/live",
       "lane_owner": "vitest/unit",
       "delivery_plan": 153,
@@ -563,7 +563,7 @@
     {
       "id": "vitest-020",
       "surface": "platform/graphql",
-      "risk": "Behavior characterized by api.test.ts",
+      "risk": "GraphQL transport can mishandle success, error, cancellation, caching, or invalid envelopes",
       "scenario_owner": "platform/graphql",
       "lane_owner": "vitest/unit",
       "delivery_plan": 152,
@@ -594,7 +594,7 @@
     {
       "id": "vitest-021",
       "surface": "shared/format",
-      "risk": "Behavior characterized by format.test.ts",
+      "risk": "Telemetry units, dates, counts, and relative times can format inconsistently",
       "scenario_owner": "shared/format",
       "lane_owner": "vitest/unit",
       "delivery_plan": 149,
@@ -622,7 +622,7 @@
     {
       "id": "vitest-022",
       "surface": "features/traces",
-      "risk": "Behavior characterized by graphql-trace.test.ts",
+      "risk": "GraphQL span trees can miscompute nesting, self time, N+1 groups, or partial errors",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/unit",
       "delivery_plan": 142,
@@ -648,7 +648,7 @@
     {
       "id": "vitest-023",
       "surface": "features/investigations",
-      "risk": "Behavior characterized by investigations.test.ts",
+      "risk": "Investigation pins can lose route windows or exceed persisted state bounds",
       "scenario_owner": "features/investigations",
       "lane_owner": "vitest/unit",
       "delivery_plan": 134,
@@ -672,7 +672,7 @@
     {
       "id": "vitest-024",
       "surface": "layout/shell",
-      "risk": "Behavior characterized by quick-jump.test.ts",
+      "risk": "Identity detection can route trace, run, issue, and span IDs ambiguously",
       "scenario_owner": "layout/shell",
       "lane_owner": "vitest/unit",
       "delivery_plan": 143,
@@ -697,7 +697,7 @@
     {
       "id": "vitest-025",
       "surface": "capabilities/time-range",
-      "risk": "Behavior characterized by range.test.ts",
+      "risk": "Preset and custom time ranges can retain stale bounds or serialize incorrectly",
       "scenario_owner": "capabilities/time-range",
       "lane_owner": "vitest/unit",
       "delivery_plan": 149,
@@ -722,7 +722,7 @@
     {
       "id": "vitest-026",
       "surface": "features/traces",
-      "risk": "Behavior characterized by rpc-trace.test.ts",
+      "risk": "RPC trace analysis can include unary spans or misclassify outcomes and messaging",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/unit",
       "delivery_plan": 142,
@@ -747,7 +747,7 @@
     {
       "id": "vitest-027",
       "surface": "features/issues",
-      "risk": "Behavior characterized by stacktrace.test.ts",
+      "risk": "Issue stack traces can lose frames across supported runtime formats",
       "scenario_owner": "features/issues",
       "lane_owner": "vitest/unit",
       "delivery_plan": 139,
@@ -775,7 +775,7 @@
     {
       "id": "vitest-028",
       "surface": "features/traces",
-      "risk": "Behavior characterized by trace-tree.test.ts",
+      "risk": "Trace trees can loop, orphan spans, misorder lanes, or miss clock skew",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/unit",
       "delivery_plan": 142,
@@ -808,7 +808,7 @@
     {
       "id": "vitest-029",
       "surface": "platform/browser",
-      "risk": "Behavior characterized by use-visible.test.tsx",
+      "risk": "Visibility observation can report stale intersection state",
       "scenario_owner": "platform/browser",
       "lane_owner": "vitest/unit",
       "delivery_plan": 153,
@@ -830,7 +830,7 @@
     {
       "id": "vitest-030",
       "surface": "features/dashboards",
-      "risk": "Behavior characterized by -dashboards.test.tsx",
+      "risk": "Dashboard CRUD, layout serialization, range links, and widget queries can diverge",
       "scenario_owner": "features/dashboards",
       "lane_owner": "vitest/route",
       "delivery_plan": 137,
@@ -857,7 +857,7 @@
     {
       "id": "vitest-031",
       "surface": "features/issues",
-      "risk": "Behavior characterized by -issues.test.tsx",
+      "risk": "Issue list and detail links can lose filters, time ranges, or evidence targets",
       "scenario_owner": "features/issues",
       "lane_owner": "vitest/route",
       "delivery_plan": 139,
@@ -881,7 +881,7 @@
     {
       "id": "vitest-032",
       "surface": "features/logs",
-      "risk": "Behavior characterized by -logs.test.tsx",
+      "risk": "Log tables, context, saved views, live identity, and drilldowns can lose state",
       "scenario_owner": "features/logs",
       "lane_owner": "vitest/route",
       "delivery_plan": 141,
@@ -915,7 +915,7 @@
     {
       "id": "vitest-033",
       "surface": "features/overview",
-      "risk": "Behavior characterized by -overview.test.tsx",
+      "risk": "Overview loading, KPI bands, recent evidence, and drilldowns can diverge",
       "scenario_owner": "features/overview",
       "lane_owner": "vitest/route",
       "delivery_plan": 150,
@@ -940,7 +940,7 @@
     {
       "id": "vitest-034",
       "surface": "features/runs",
-      "risk": "Behavior characterized by -runs.test.tsx",
+      "risk": "Run merging, filtering, detail snapshots, and evidence links can be inconsistent",
       "scenario_owner": "features/runs",
       "lane_owner": "vitest/route",
       "delivery_plan": 140,
@@ -966,7 +966,7 @@
     {
       "id": "vitest-035",
       "surface": "features/services",
-      "risk": "Behavior characterized by -services.test.tsx",
+      "risk": "Service list and detail metrics, ranges, exemplars, and links can diverge",
       "scenario_owner": "features/services",
       "lane_owner": "vitest/route",
       "delivery_plan": 138,
@@ -993,7 +993,7 @@
     {
       "id": "vitest-036",
       "surface": "features/sql",
-      "risk": "Behavior characterized by -sql.test.tsx",
+      "risk": "SQL safety examples, result links, snippets, and actions can target wrong data",
       "scenario_owner": "features/sql",
       "lane_owner": "vitest/route",
       "delivery_plan": 135,
@@ -1020,7 +1020,7 @@
     {
       "id": "vitest-037",
       "surface": "features/traces",
-      "risk": "Behavior characterized by -trace-graphql.test.tsx",
+      "risk": "Trace detail can omit GraphQL operation evidence",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/route",
       "delivery_plan": 142,
@@ -1042,7 +1042,7 @@
     {
       "id": "vitest-038",
       "surface": "features/traces",
-      "risk": "Behavior characterized by -trace-links.test.tsx",
+      "risk": "Trace compare and linked-edge navigation can lose current window state",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/route",
       "delivery_plan": 142,
@@ -1065,7 +1065,7 @@
     {
       "id": "vitest-039",
       "surface": "features/traces",
-      "risk": "Behavior characterized by -trace-rpc.test.tsx",
+      "risk": "Trace RPC inspectors can misrender errors, events, links, or stream evidence",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/route",
       "delivery_plan": 142,
@@ -1090,7 +1090,7 @@
     {
       "id": "vitest-040",
       "surface": "features/traces",
-      "risk": "Behavior characterized by -trace-view-modes.test.tsx",
+      "risk": "Trace view modes and clock-skew search state can round-trip incorrectly",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/route",
       "delivery_plan": 142,
@@ -1114,7 +1114,7 @@
     {
       "id": "vitest-041",
       "surface": "features/traces",
-      "risk": "Behavior characterized by -traces-search.test.tsx",
+      "risk": "Trace search, sorting, links, and URL state can round-trip incorrectly",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/route",
       "delivery_plan": 142,

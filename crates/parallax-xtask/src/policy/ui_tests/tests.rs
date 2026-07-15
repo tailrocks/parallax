@@ -40,7 +40,7 @@ fn rejects_test_id_drift() -> Result<(), Box<dyn std::error::Error>> {
   "entries": [{
     "id": "vitest-001",
     "surface": "features/sample",
-    "risk": "sample drift",
+    "risk": "Behavior characterized by sample.test.ts",
     "scenario_owner": "features/sample",
     "lane_owner": "vitest/route",
     "delivery_plan": 134,
@@ -80,6 +80,16 @@ fn rejects_test_id_drift() -> Result<(), Box<dyn std::error::Error>> {
         findings
             .iter()
             .any(|finding| finding.rule_id == "ui.tests.private-route")
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|finding| finding.rule_id == "ui.tests.contract")
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|finding| finding.rule_id == "ui.tests.catalog")
     );
     Ok(())
 }
