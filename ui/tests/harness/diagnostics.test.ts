@@ -1,6 +1,11 @@
+/* @vitest-environment jsdom */
+
 import { describe, expect, it } from "vitest"
 
-import { diagnosticMismatch } from "../../src/test/diagnostics"
+import {
+  diagnosticMismatch,
+  expectDiagnostic,
+} from "../../src/test/diagnostics"
 
 describe("test diagnostic policy", () => {
   it("accepts exact ordered diagnostics", () => {
@@ -30,5 +35,24 @@ describe("test diagnostic policy", () => {
         [{ level: "error", message: "second" }, ...expected]
       )
     ).toContain("runtime diagnostics differ")
+  })
+
+  it("owns page errors exactly", () => {
+    expectDiagnostic("error", "page error Error: page exploded")
+    window.dispatchEvent(
+      new ErrorEvent("error", { error: new Error("page exploded") })
+    )
+  })
+
+  it("owns browser rejections exactly", () => {
+    expectDiagnostic(
+      "error",
+      "browser unhandled rejection Error: promise exploded"
+    )
+    const event = new Event("unhandledrejection", { cancelable: true })
+    Object.defineProperty(event, "reason", {
+      value: new Error("promise exploded"),
+    })
+    window.dispatchEvent(event)
   })
 })

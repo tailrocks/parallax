@@ -14,15 +14,33 @@ const originalConsoleError = console.error
 const originalConsoleWarn = console.warn
 const originalFetch = globalThis.fetch
 
+function recordPageError(event: ErrorEvent) {
+  event.preventDefault()
+  recordDiagnostic("error", ["page error", event.error ?? event.message])
+}
+
+function recordUnhandledRejection(event: PromiseRejectionEvent) {
+  event.preventDefault()
+  recordDiagnostic("error", ["browser unhandled rejection", event.reason])
+}
+
 beforeEach(() => {
   resetDiagnostics()
   console.error = (...values: unknown[]) => recordDiagnostic("error", values)
   console.warn = (...values: unknown[]) => recordDiagnostic("warn", values)
   globalThis.fetch = (input: RequestInfo | URL) =>
     Promise.reject(new Error(networkEscapeReason(input)))
+  if (typeof window !== "undefined") {
+    window.addEventListener("error", recordPageError)
+    window.addEventListener("unhandledrejection", recordUnhandledRejection)
+  }
 })
 
 afterEach(() => {
+  if (typeof window !== "undefined") {
+    window.removeEventListener("error", recordPageError)
+    window.removeEventListener("unhandledrejection", recordUnhandledRejection)
+  }
   console.error = originalConsoleError
   console.warn = originalConsoleWarn
   globalThis.fetch = originalFetch

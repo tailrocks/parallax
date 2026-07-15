@@ -158,6 +158,13 @@ component, route, and future browser evidence.
   removes the manifest row. The negative policy fixture proves an unrecorded
   private helper fails. Matrix policy/tests, strict xtask Clippy, formatting,
   and diff hygiene pass locally.
+- 2026-07-15: extended the shared runtime boundary to capture browser page
+  errors and unhandled-rejection events as exact, ordered diagnostics while
+  remaining inert in non-DOM unit environments. Harness self-tests own both
+  failure forms, and the structural anti-pattern policy now rejects real
+  intervals alongside real timeouts. All 45 files / 184 tests pass under
+  forced Bun; TypeScript, both Oxlint lanes, Oxfmt, matrix policy/tests, strict
+  xtask Clippy, and diff hygiene pass locally.
 
 ## Fixed Test Topology
 

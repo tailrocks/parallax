@@ -356,6 +356,7 @@ fn check_test_source(root: &Path, path: &str, findings: &mut Vec<Finding>) -> Re
         ("toMatchSnapshot(", "snapshot assertion"),
         ("toMatchInlineSnapshot(", "inline snapshot assertion"),
         ("setTimeout(", "real-time sleep/timer"),
+        ("setInterval(", "real-time interval/timer"),
         ("diagnosticAllowlist", "diagnostic allowlist"),
     ] {
         if source.contains(forbidden.0) {

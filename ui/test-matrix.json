@@ -1143,9 +1143,11 @@
       "test_file": "ui/tests/harness/diagnostics.test.ts",
       "test_ids": [
         "accepts exact ordered diagnostics",
-        "rejects unexpected, missing, reordered, and substring-only matches"
+        "rejects unexpected, missing, reordered, and substring-only matches",
+        "owns page errors exactly",
+        "owns browser rejections exactly"
       ],
-      "required_environment": "bun",
+      "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
     {
