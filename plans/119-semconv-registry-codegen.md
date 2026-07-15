@@ -79,6 +79,11 @@ reviewable generated source and reproducible offline builds.
   locked proto test and strict all-target proto clippy pass locally; the same
   constants remain tied to the Java/TypeScript consumers by the versioned
   cross-repository fixture.
+- 2026-07-15: removed the remaining stale analysis-layer ownership indirection.
+  `parallax-analysis` now depends on and re-exports the generated T0
+  `parallax-semconv` crate directly rather than reaching through
+  `parallax-proto` under a "temporary until Plan 119" comment. Its 27 locked
+  tests and strict all-target clippy pass locally.
 
 ## Scope
 
