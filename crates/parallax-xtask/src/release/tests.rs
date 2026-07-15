@@ -208,6 +208,9 @@ fn release_callers_use_one_packager_and_verified_sdk() -> Result<(), String> {
             && !rehearsal.contains("tar -czf")
             && !rehearsal.contains("-czf"),
         sdk.contains("key: macos-sdk-archive-${{ inputs.version }}-${{ inputs.sha256 }}")
+            && sdk.contains("[[ \"$SDK_VERSION\" =~ ^[0-9]+\\.[0-9]+$ ]]")
+            && sdk.contains("[[ \"$SDK_SHA256\" =~ ^[0-9a-f]{64}$ ]]")
+            && sdk.find("Validate macOS SDK identity") < sdk.find("actions/cache@")
             && sdk.contains("sha256sum --check --strict")
             && sdk.find("sha256sum --check --strict") < sdk.find("tar -xJf"),
         include_str!("../../../../.github/actions/sign-and-attest-archive/action.yml")

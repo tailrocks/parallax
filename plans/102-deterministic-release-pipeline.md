@@ -82,6 +82,12 @@
   identity and OIDC issuer, repository/workflow, source commit/ref, and denial
   of self-hosted-runner attestations. All 12 release-focused tests and strict
   all-target xtask clippy pass locally.
+- 2026-07-15: hardened the verified macOS SDK input boundary before cache use.
+  The composite action now rejects malformed versions and any digest that is
+  not exactly 64 lowercase hex characters before constructing a cache key or
+  download URL; restored bytes remain checksum-verified before extraction.
+  The release caller fixture locks validation/cache/checksum/extraction order,
+  and the focused test plus strict all-target xtask clippy pass locally.
 
 ## Why
 
