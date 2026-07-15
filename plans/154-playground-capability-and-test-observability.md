@@ -583,6 +583,13 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   and Playwright reporter no longer maintain local runtime spellings for those
   attributes or taxonomy values; generation and executable wire fixtures now
   keep the producer and acceptance consumer synchronized.
+- 2026-07-15: companion `1ae2327` closes W1's dead-metrics-layer branch. The
+  shared bootstrap no longer installs or claims tracing-opentelemetry's
+  `MetricsLayer`, because no service emits its reserved tracing field prefixes;
+  explicit OpenTelemetry counters, gauges, and histograms remain the sole
+  metrics path. Repository search finds no residual `MetricsLayer` claim. The
+  shared telemetry suite (18 unit tests plus the public baggage boundary),
+  formatting, strict Clippy, and `git diff --check` pass locally.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
