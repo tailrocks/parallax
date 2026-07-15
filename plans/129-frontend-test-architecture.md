@@ -93,6 +93,18 @@ component, route, and future browser evidence.
   IDs and shim duplication. All 41 files / 175 tests pass under forced Bun with
   zero unhandled errors; TypeScript, both Oxlint lanes, Oxfmt, focused xtask
   tests, strict xtask Clippy, policy, and diff hygiene pass locally.
+- 2026-07-15: made unexpected `console.warn`/`console.error` output fail every
+  Vitest by default through a shared exact diagnostic registry. Tests can
+  declare only ordered, full-message expectations; no substring/global
+  allowlist exists. The first separated harness self-test now lives under the
+  final `ui/tests/harness` topology, is explicitly included by Vitest while
+  `tests/e2e` remains excluded, and has a matrix row with no legacy handoff or
+  temporary delivery owner. Enabling the gate exposed six tests emitting
+  Recharts zero-size warnings; a synchronous deterministic 1024x640
+  `ResizeObserver` contract fixes the missing jsdom geometry instead of
+  suppressing them. All 42 files / 177 tests pass under forced Bun with zero
+  diagnostics; TypeScript, both Oxlint lanes, Oxfmt, matrix policy and negative
+  fixtures, strict xtask Clippy, and diff hygiene pass locally.
 
 ## Fixed Test Topology
 

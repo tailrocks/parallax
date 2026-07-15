@@ -1036,6 +1036,21 @@
         "created": "2026-07-15",
         "expires": "plan-142-completion"
       }
+    },
+    {
+      "id": "vitest-042",
+      "surface": "platform/test-harness",
+      "risk": "Unexpected runtime diagnostics are exact and fail closed",
+      "scenario_owner": "platform/test-harness",
+      "lane_owner": "vitest/unit",
+      "layer": "model",
+      "test_file": "ui/tests/harness/diagnostics.test.ts",
+      "test_ids": [
+        "accepts exact ordered diagnostics",
+        "rejects unexpected, missing, reordered, and substring-only matches"
+      ],
+      "required_environment": "bun",
+      "status": "implemented"
     }
   ]
 }

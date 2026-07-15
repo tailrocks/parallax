@@ -25,7 +25,7 @@ struct Entry {
     risk: String,
     scenario_owner: String,
     lane_owner: String,
-    delivery_plan: u16,
+    delivery_plan: Option<u16>,
     layer: String,
     test_file: String,
     test_ids: Vec<String>,
@@ -139,13 +139,16 @@ fn validate_entry(
         ));
     }
     if entry.test_file.contains("/__tests__/") {
-        let valid_handoff = entry.legacy_handoff.as_ref().is_some_and(|handoff| {
-            handoff.current_path == entry.test_file
-                && handoff.destination_owner == entry.scenario_owner
-                && handoff.removal_plan == entry.delivery_plan
-                && handoff.created == "2026-07-15"
-                && handoff.expires == format!("plan-{}-completion", entry.delivery_plan)
-        });
+        let valid_handoff = entry
+            .delivery_plan
+            .zip(entry.legacy_handoff.as_ref())
+            .is_some_and(|(plan, handoff)| {
+                handoff.current_path == entry.test_file
+                    && handoff.destination_owner == entry.scenario_owner
+                    && handoff.removal_plan == plan
+                    && handoff.created == "2026-07-15"
+                    && handoff.expires == format!("plan-{plan}-completion")
+            });
         if !valid_handoff {
             findings.push(finding(
                 "ui.tests.handoff",
@@ -155,7 +158,10 @@ fn validate_entry(
                 ),
             ));
         }
-    } else if !entry.test_file.contains("/tests/") || entry.legacy_handoff.is_some() {
+    } else if !entry.test_file.contains("/tests/")
+        || entry.legacy_handoff.is_some()
+        || entry.delivery_plan.is_some()
+    {
         findings.push(finding(
             "ui.tests.topology",
             &format!("entry `{}` is outside the final tests/ topology", entry.id),
@@ -203,6 +209,7 @@ fn check_local_harness(root: &Path, path: &str, findings: &mut Vec<Finding>) -> 
 fn discover_tests(workspace: &Path) -> Result<BTreeMap<String, BTreeSet<String>>> {
     let mut files = Vec::new();
     collect_files(&workspace.join("ui/src"), &mut files)?;
+    collect_files(&workspace.join("ui/tests/harness"), &mut files)?;
     let mut tests = BTreeMap::new();
     for path in files {
         let name = path.to_string_lossy();
@@ -222,6 +229,9 @@ fn discover_tests(workspace: &Path) -> Result<BTreeMap<String, BTreeSet<String>>
 }
 
 fn collect_files(root: &Path, files: &mut Vec<PathBuf>) -> Result<()> {
+    if !root.is_dir() {
+        return Ok(());
+    }
     for entry in fs::read_dir(root).with_context(|| format!("read {}", root.display()))? {
         let path = entry?.path();
         if path.is_dir() {

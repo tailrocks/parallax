@@ -1,11 +1,52 @@
 import { cleanup } from "@testing-library/react"
-import { afterEach } from "vitest"
+import { afterEach, beforeEach } from "vitest"
+
+import {
+  assertDiagnostics,
+  recordDiagnostic,
+  resetDiagnostics,
+} from "@/test/diagnostics"
 
 afterEach(cleanup)
 
+const originalConsoleError = console.error
+const originalConsoleWarn = console.warn
+
+beforeEach(() => {
+  resetDiagnostics()
+  console.error = (...values: unknown[]) => recordDiagnostic("error", values)
+  console.warn = (...values: unknown[]) => recordDiagnostic("warn", values)
+})
+
+afterEach(() => {
+  console.error = originalConsoleError
+  console.warn = originalConsoleWarn
+  assertDiagnostics()
+})
+
 class TestResizeObserver implements ResizeObserver {
+  readonly #callback: ResizeObserverCallback
+
+  constructor(callback: ResizeObserverCallback) {
+    this.#callback = callback
+  }
+
   disconnect() {}
-  observe() {}
+  observe(target: Element) {
+    const contentRect = new DOMRectReadOnly(0, 0, 1024, 640)
+    this.#callback(
+      [
+        {
+          borderBoxSize: [],
+          contentBoxSize: [],
+          contentRect,
+          devicePixelContentBoxSize: [],
+          target,
+        },
+      ],
+      this
+    )
+  }
   unobserve() {}
 }
 
