@@ -119,6 +119,7 @@ async fn runs_list_stats_match_single_run() {
             store: context.store.clone(),
             metadata: context.metadata.clone(),
             otlp_grpc_port: 4317,
+            otlp_http_port: 4318,
             memo: RequestMemo::default(),
         };
         let q = juniper::http::GraphQLRequest::new(

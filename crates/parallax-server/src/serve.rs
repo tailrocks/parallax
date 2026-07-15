@@ -192,6 +192,7 @@ struct RouterState {
     store: Arc<dyn TelemetryStore>,
     metadata: Arc<dyn MetadataStore>,
     grpc_port: u16,
+    http_port: u16,
     api_addr: SocketAddr,
 }
 
@@ -221,6 +222,7 @@ fn build_api_router(
         store: state.store,
         metadata: state.metadata,
         otlp_grpc_port: state.grpc_port,
+        otlp_http_port: state.http_port,
         limits: config.limits.clone(),
     };
     let host_guard = HostGuard::for_listener(&config.server.bind, state.api_addr);
@@ -331,6 +333,7 @@ async fn start_assembled(
             store: store.clone(),
             metadata: metadata.clone(),
             grpc_port: otlp_grpc_addr.port(),
+            http_port: otlp_http_addr.port(),
             api_addr,
         },
         live,

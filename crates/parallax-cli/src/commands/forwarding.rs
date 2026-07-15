@@ -8,6 +8,11 @@ use std::time::{SystemTime, UNIX_EPOCH};
 pub(crate) const DEFAULT_ROTEL_ENDPOINT: &str = "http://localhost:4317";
 pub(crate) const OTLP_GRPC_PROTOCOL: &str = "grpc";
 pub(crate) const OTLP_HTTP_PROTOCOL: &str = "http";
+#[derive(Debug)]
+pub(crate) struct ParallaxEndpoints {
+    pub(crate) grpc: String,
+    pub(crate) http_traces: String,
+}
 /// Resolved compare-mode forwarding target for `run start`.
 pub(crate) struct Forward {
     pub(crate) endpoint: String,
@@ -93,20 +98,41 @@ pub(crate) fn endpoint_from_api_url_and_port(api_url: &str, port: u16) -> anyhow
     };
     Ok(format!("{scheme}://{host}:{port}"))
 }
-pub(crate) async fn parallax_endpoint_from_server(client: &Client) -> anyhow::Result<String> {
-    let response = client.graphql(r#"{ otlpGrpcPort }"#).await?;
-    let port = response
+
+pub(crate) fn http_traces_endpoint(forward: &Forward, parallax_http: &str) -> String {
+    if forward.protocol == OTLP_HTTP_PROTOCOL {
+        return format!("{}/v1/traces", forward.endpoint.trim_end_matches('/'));
+    }
+    if forward.compare
+        && let Ok(mut url) = reqwest::Url::parse(&forward.endpoint)
+        && url.port() == Some(4317)
+        && url.set_port(Some(4318)).is_ok()
+    {
+        return format!("{}/v1/traces", url.as_str().trim_end_matches('/'));
+    }
+    parallax_http.to_string()
+}
+pub(crate) async fn parallax_endpoints_from_server(
+    client: &Client,
+) -> anyhow::Result<ParallaxEndpoints> {
+    let response = client.graphql(r#"{ otlpGrpcPort otlpHttpPort }"#).await?;
+    let port = |field: &str, transport: &str| {
+        response
         .get("data")
-        .and_then(|data| data.get("otlpGrpcPort"))
+        .and_then(|data| data.get(field))
         .and_then(serde_json::Value::as_u64)
         .and_then(|port| u16::try_from(port).ok())
         .filter(|port| *port != 0)
-        .ok_or_else(|| {
-            anyhow::anyhow!(
-                "Parallax server did not report a valid OTLP/gRPC port; cannot inject OTLP env"
-            )
-        })?;
-    endpoint_from_api_url_and_port(client.base_url(), port)
+        .ok_or_else(|| anyhow::anyhow!(
+            "Parallax server did not report a valid OTLP/{transport} port; cannot inject OTLP env"
+        ))
+    };
+    let grpc = endpoint_from_api_url_and_port(client.base_url(), port("otlpGrpcPort", "gRPC")?)?;
+    let http = endpoint_from_api_url_and_port(client.base_url(), port("otlpHttpPort", "HTTP")?)?;
+    Ok(ParallaxEndpoints {
+        grpc,
+        http_traces: format!("{http}/v1/traces"),
+    })
 }
 
 /// Child resource attributes: run ID plus comparison labels when forwarding.

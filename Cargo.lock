@@ -3176,6 +3176,9 @@ version = "0.1.0-dev"
 dependencies = [
  "anyhow",
  "clap",
+ "opentelemetry",
+ "opentelemetry-otlp",
+ "opentelemetry_sdk",
  "parallax-model",
  "parallax-semconv",
  "parallax-server",

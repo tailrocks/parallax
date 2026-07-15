@@ -17,6 +17,7 @@ pub(super) struct GraphQlState {
     pub(super) store: Arc<dyn TelemetryStore>,
     pub(super) metadata: Arc<dyn MetadataStore>,
     pub(super) otlp_grpc_port: u16,
+    pub(super) otlp_http_port: u16,
     pub(super) limits: LimitsConfig,
 }
 
@@ -127,6 +128,7 @@ pub(super) async fn graphql_handler(
             store: state.store.clone(),
             metadata: state.metadata.clone(),
             otlp_grpc_port: state.otlp_grpc_port,
+            otlp_http_port: state.otlp_http_port,
             memo: parallax_api::RequestMemo::default(),
         };
         let response = match parallax_api::check_query_limits(

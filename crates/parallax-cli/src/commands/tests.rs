@@ -105,6 +105,37 @@ fn endpoint_uses_api_host_and_reported_grpc_port() {
 }
 
 #[test]
+fn browser_traces_follow_rotel_http_receiver_in_compare_mode() {
+    let forward =
+        resolve_forward_from(None, Some("rotel".to_string()), None, CUSTOM_ENDPOINT).unwrap();
+    assert_eq!(
+        http_traces_endpoint(&forward, "http://127.0.0.1:14318/v1/traces"),
+        "http://localhost:4318/v1/traces"
+    );
+}
+
+#[test]
+fn browser_traces_use_explicit_http_forward() {
+    let forward =
+        resolve_forward_from(Some("http://collector:4318"), None, None, CUSTOM_ENDPOINT).unwrap();
+    assert_eq!(
+        http_traces_endpoint(&forward, "http://127.0.0.1:14318/v1/traces"),
+        "http://collector:4318/v1/traces"
+    );
+}
+
+#[test]
+fn generated_trace_carrier_is_w3c_shaped() {
+    let carrier = generated_traceparent();
+    let fields = carrier.split('-').collect::<Vec<_>>();
+    assert_eq!(fields.len(), 4);
+    assert_eq!(fields[0], "00");
+    assert_eq!(fields[1].len(), 32);
+    assert_eq!(fields[2].len(), 16);
+    assert_eq!(fields[3], "01");
+}
+
+#[test]
 fn render_bundle_markdown_matches_legacy_trailer() {
     let bundle = serde_json::json!({
         "markdown": "# Evidence\nline two",

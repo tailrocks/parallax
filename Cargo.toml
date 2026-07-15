@@ -68,6 +68,9 @@ oxc_semantic = "0.139.0"
 oxc_span = "0.139.0"
 oxc_resolver = "11.24.2"
 object = { version = "0.39.1", default-features = false, features = ["read", "std"] }
+opentelemetry = "0.32"
+opentelemetry-otlp = { version = "0.32", default-features = false, features = ["grpc-tonic", "http-proto", "reqwest-client", "trace"] }
+opentelemetry_sdk = "0.32"
 proc-macro2 = { version = "1", features = ["span-locations"] }
 pulldown-cmark = "0.13.4"
 quote = "1"
