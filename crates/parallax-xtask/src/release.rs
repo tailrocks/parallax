@@ -155,13 +155,8 @@ fn validate_identity(target: &str, version: &str) -> Result<()> {
     if !TARGETS.contains(&target) {
         bail!("unsupported release target `{target}`");
     }
-    if version.is_empty()
-        || version.starts_with('v')
-        || version.contains('/')
-        || version.contains(char::is_whitespace)
-    {
-        bail!("invalid release version `{version}`");
-    }
+    semver::Version::parse(version)
+        .with_context(|| format!("invalid semantic release version `{version}`"))?;
     Ok(())
 }
 

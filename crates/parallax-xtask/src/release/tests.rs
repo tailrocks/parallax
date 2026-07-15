@@ -98,6 +98,8 @@ fn identity_rejects_unsupported_targets_and_ambiguous_versions() -> Result<(), S
         validate_identity("powerpc-unknown-linux-gnu", "0.1.0").is_err(),
         validate_identity("x86_64-unknown-linux-gnu", "v0.1.0").is_err(),
         validate_identity("x86_64-unknown-linux-gnu", "0.1.0 bad").is_err(),
+        validate_identity("x86_64-unknown-linux-gnu", "0.1").is_err(),
+        validate_identity("x86_64-unknown-linux-gnu", "0.1.0;echo").is_err(),
         validate_archive_name(
             Path::new("parallax-x86_64-unknown-linux-gnu.tar.gz"),
             "x86_64-unknown-linux-gnu",
@@ -117,7 +119,7 @@ fn identity_rejects_unsupported_targets_and_ambiguous_versions() -> Result<(), S
         )
         .is_err(),
     );
-    if actual != (true, true, true, true, true, true, true) {
+    if actual != (true, true, true, true, true, true, true, true, true) {
         return Err(format!("release identity validation mismatch: {actual:?}"));
     }
     Ok(())

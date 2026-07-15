@@ -3381,6 +3381,7 @@ dependencies = [
  "quick-xml",
  "quote",
  "ra-ap-rustc_lexer",
+ "semver",
  "serde",
  "serde_json",
  "serde_yml",

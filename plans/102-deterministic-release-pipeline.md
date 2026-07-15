@@ -65,6 +65,12 @@
   archive bytes. Both preview and stable callers pass their authoritative
   identities. The release suite, CLI parser fixture, and strict all-target
   xtask clippy pass locally.
+- 2026-07-15: release identity validation now parses Cargo-flavored SemVer
+  through `semver::Version` instead of accepting every whitespace-free string.
+  Valid preview build metadata remains supported; incomplete versions,
+  `v`-prefixed tags, whitespace, and shell-like suffixes fail before packaging
+  or verification. The explicit dependency is locked, all 10 release tests
+  pass with `--locked`, and strict all-target xtask clippy is clean.
 
 ## Why
 
