@@ -96,6 +96,13 @@
   same inner file. Archive input is rejected above 512 MiB before allocation;
   sparse oversized, trailing-byte, and changed-stream fixtures fail closed.
   All 14 release-focused tests and strict all-target xtask clippy pass locally.
+- 2026-07-15: unified release-object validation across production packaging and
+  local rehearsal. Rehearsal now rejects unsupported architecture/object bytes,
+  missing symbols or resolvable line tables, wrong embedded version identity,
+  and binaries larger than 512 MiB before its two archive passes. The archive
+  determinism primitive remains separately fixture-tested without compressing
+  a large debug test executable. All 15 release-focused tests and strict
+  all-target xtask clippy pass locally.
 
 ## Why
 

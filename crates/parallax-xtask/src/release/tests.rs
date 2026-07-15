@@ -73,7 +73,7 @@ fn rehearsal_promotes_one_verified_archive_and_checksum() -> Result<(), Box<dyn 
     let output_dir = temp.path().join("dist");
     let target = "x86_64-unknown-linux-gnu";
     let version = "0.1.0-preview.1+abcdef0";
-    rehearse(&binary, target, version, 1_700_000_000, &output_dir)?;
+    rehearse_archives(&binary, target, version, 1_700_000_000, &output_dir)?;
 
     let archive = output_dir.join(format!("parallax-{version}-{target}.tar.gz"));
     let checksum = PathBuf::from(format!("{}.sha256", archive.display()));
@@ -89,6 +89,35 @@ fn rehearsal_promotes_one_verified_archive_and_checksum() -> Result<(), Box<dyn 
         return Err(format!("release rehearsal contract mismatch: {actual:?}").into());
     }
     Ok(())
+}
+
+#[test]
+fn rehearsal_rejects_non_release_and_oversized_binaries() -> Result<(), Box<dyn std::error::Error>>
+{
+    let temp = tempfile::tempdir()?;
+    let target = host_target()?;
+    let version = env!("CARGO_PKG_VERSION");
+    let invalid = temp.path().join("invalid");
+    std::fs::write(&invalid, b"not an executable")?;
+    rehearse(&invalid, target, version, 1_700_000_000, temp.path())
+        .expect_err("non-object release binary must fail");
+
+    let oversized = temp.path().join("oversized");
+    std::fs::File::create(&oversized)?.set_len(MAX_RELEASE_BINARY_BYTES + 1)?;
+    let error = rehearse(&oversized, target, version, 1_700_000_000, temp.path())
+        .expect_err("oversized release binary must fail before reading");
+    assert!(error.to_string().contains("exceeds 512 MiB"));
+    Ok(())
+}
+
+fn host_target() -> Result<&'static str, String> {
+    match (std::env::consts::OS, std::env::consts::ARCH) {
+        ("linux", "aarch64") => Ok("aarch64-unknown-linux-gnu"),
+        ("linux", "x86_64") => Ok("x86_64-unknown-linux-gnu"),
+        ("macos", "aarch64") => Ok("aarch64-apple-darwin"),
+        ("macos", "x86_64") => Ok("x86_64-apple-darwin"),
+        pair => Err(format!("unsupported test host {pair:?}")),
+    }
 }
 
 #[test]

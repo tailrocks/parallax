@@ -11,6 +11,7 @@ const TARGETS: [&str; 4] = [
     "aarch64-unknown-linux-gnu",
     "x86_64-unknown-linux-gnu",
 ];
+const MAX_RELEASE_BINARY_BYTES: u64 = 512 * 1024 * 1024;
 
 #[derive(Debug)]
 pub(crate) struct VerifySpec {
@@ -34,9 +35,7 @@ pub(crate) fn package(
 ) -> Result<()> {
     validate_identity(target, version)?;
     validate_archive_name(output, target, version)?;
-    let binary_bytes = std::fs::read(binary)
-        .with_context(|| format!("read release binary {}", binary.display()))?;
-    verify::verify_object(&binary_bytes, target, version)?;
+    validate_binary(binary, target, version)?;
     println!(
         "==> package {} -> {} (SOURCE_DATE_EPOCH={source_epoch})",
         binary.display(),
@@ -69,6 +68,17 @@ pub(crate) fn rehearse(
     output_dir: &Path,
 ) -> Result<()> {
     validate_identity(target, version)?;
+    validate_binary(binary, target, version)?;
+    rehearse_archives(binary, target, version, source_epoch, output_dir)
+}
+
+fn rehearse_archives(
+    binary: &Path,
+    target: &str,
+    version: &str,
+    source_epoch: u64,
+    output_dir: &Path,
+) -> Result<()> {
     std::fs::create_dir_all(output_dir)
         .with_context(|| format!("create rehearsal directory {}", output_dir.display()))?;
     let name = format!("parallax-{version}-{target}.tar.gz");
@@ -95,6 +105,18 @@ pub(crate) fn rehearse(
         final_path.display()
     );
     Ok(())
+}
+
+fn validate_binary(binary: &Path, target: &str, version: &str) -> Result<()> {
+    let size = std::fs::metadata(binary)
+        .with_context(|| format!("read release binary metadata {}", binary.display()))?
+        .len();
+    if size > MAX_RELEASE_BINARY_BYTES {
+        bail!("release binary exceeds 512 MiB");
+    }
+    let binary_bytes = std::fs::read(binary)
+        .with_context(|| format!("read release binary {}", binary.display()))?;
+    verify::verify_object(&binary_bytes, target, version)
 }
 
 pub(crate) fn verify(spec: VerifySpec) -> Result<()> {
