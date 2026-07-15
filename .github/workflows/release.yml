@@ -87,6 +87,11 @@ jobs:
           esac
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
+      - name: Validate stable release identity
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: cargo xtask release-validate --version "$VERSION" --channel stable
+
   test:
     needs: check-version
     uses: ./.github/workflows/ci.yml

@@ -130,6 +130,12 @@ jobs:
             echo "version=${base_version}-preview.${commit_count}+${short_sha}"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Validate preview release identity
+        if: steps.filter.outputs.source == 'true'
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: cargo xtask release-validate --version "$VERSION" --channel preview
+
   build-preview:
     needs: source-changed
     if: needs.source-changed.outputs.source == 'true'

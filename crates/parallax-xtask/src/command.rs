@@ -32,7 +32,8 @@ pub(crate) fn execute(cli: Cli) -> Result<()> {
             action,
             playground_root,
         } => execute_semconv(&root, action, playground_root.as_deref(), cli.output),
-        release_command @ (Command::ReleasePackage { .. }
+        release_command @ (Command::ReleaseValidate { .. }
+        | Command::ReleasePackage { .. }
         | Command::ReleaseRehearse { .. }
         | Command::ReleaseVerify { .. }) => execute_release(release_command),
     }
@@ -104,6 +105,9 @@ fn execute_ci(root: &Path, fast: bool, full: bool, output: Output) -> Result<()>
 
 fn execute_release(command: Command) -> Result<()> {
     match command {
+        Command::ReleaseValidate { version, channel } => {
+            release::validate_channel_version(&version, channel)
+        }
         Command::ReleasePackage {
             binary,
             archive,

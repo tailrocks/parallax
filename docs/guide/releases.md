@@ -27,6 +27,11 @@ Rehearsal accepts development SemVer and the versioned name, but published
 verification derives only preview or stable from the trusted source ref, so a
 rehearsal can never satisfy the publication contract.
 
+Release workflows run `cargo xtask release-validate` in their metadata gate,
+before any test or cross-build matrix starts. This rejects a preview identity
+without its ordinal/source metadata and rejects stable versions containing any
+prerelease or build metadata before release resources are spent.
+
 ## Verify published preview assets
 
 Install repository tools through mise, download one archive with its three

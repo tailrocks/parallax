@@ -213,7 +213,7 @@ fn validate_identity(target: &str, version: &str) -> Result<()> {
     Ok(())
 }
 
-fn validate_channel_version(version: &str, channel: Channel) -> Result<()> {
+pub(crate) fn validate_channel_version(version: &str, channel: Channel) -> Result<()> {
     let version = semver::Version::parse(version)
         .with_context(|| format!("invalid semantic release version `{version}`"))?;
     match channel {

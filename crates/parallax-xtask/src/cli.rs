@@ -77,6 +77,13 @@ pub(crate) enum Command {
         #[arg(long)]
         playground_root: Option<PathBuf>,
     },
+    /// Validate a release channel/version identity before an expensive build.
+    ReleaseValidate {
+        #[arg(long)]
+        version: String,
+        #[arg(long, value_enum)]
+        channel: Channel,
+    },
     /// Package one built binary through the deterministic release implementation.
     ReleasePackage {
         #[arg(long)]

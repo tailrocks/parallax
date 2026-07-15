@@ -125,6 +125,14 @@
   names, versions, channels, and source refs. All 15 focused release tests, all
   three CLI parser tests, strict xtask Clippy, formatting, and
   `git diff --check` pass locally.
+- 2026-07-15: moved publishable version-shape enforcement ahead of expensive
+  builds. The parser/dispatch-tested `release-validate` preflight reuses the
+  package verifier's Rust channel/version contract. Stable runs it in
+  `check-version` before tests and the build matrix; preview runs it in
+  `source-changed` before the build matrix. A workflow fixture locks both
+  commands and their ordering. All 15 focused release tests, all three CLI
+  parser tests, strict xtask Clippy, Actionlint for both release workflows,
+  formatting, and `git diff --check` pass locally.
 
 ## Why
 
