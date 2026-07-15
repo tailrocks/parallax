@@ -13,9 +13,6 @@ publish = false
 [lints]
 workspace = true
 
-[package.metadata.cargo-shear]
-ignored-paths = ["src/commands/tests.rs"]
-
 [[bin]]
 name = "parallax"
 path = "src/main.rs"

@@ -42,7 +42,7 @@ pub(crate) fn check(root: &Path, playground_root: Option<&Path>) -> Result<Check
 
 fn check_playground_test_consumer_ownership(root: &Path, playground_root: &Path) -> Result<()> {
     let document: RegistryDocument =
-        serde_yml::from_str(&fs::read_to_string(root.join(REGISTRY))?)?;
+        serde_norway::from_str(&fs::read_to_string(root.join(REGISTRY))?)?;
     let guarded = document
         .constants
         .iter()
@@ -217,7 +217,7 @@ fn artifacts(root: &Path, playground_root: Option<&Path>) -> Result<Vec<Artifact
             registry_path.display()
         )
     })?;
-    let document: RegistryDocument = serde_yml::from_str(&source).with_context(|| {
+    let document: RegistryDocument = serde_norway::from_str(&source).with_context(|| {
         format!(
             "parse semantic-convention registry `{}`",
             registry_path.display()
