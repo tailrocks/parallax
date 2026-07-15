@@ -13,7 +13,6 @@ publish = false
 workspace = true
 
 [dependencies]
-parallax-semconv.workspace = true
 opentelemetry-proto = { version = "0.32", features = [
     "gen-tonic",
     "trace",
@@ -23,4 +22,5 @@ opentelemetry-proto = { version = "0.32", features = [
 ] }
 
 [dev-dependencies]
+parallax-semconv.workspace = true
 prost.workspace = true

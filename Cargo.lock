@@ -3214,6 +3214,7 @@ dependencies = [
  "futures-util",
  "parallax-model",
  "parallax-proto",
+ "parallax-semconv",
  "parallax-storage",
  "reqwest",
  "serde_json",
@@ -3227,6 +3228,7 @@ version = "0.1.0-dev"
 dependencies = [
  "parallax-model",
  "parallax-proto",
+ "parallax-semconv",
  "serde_json",
 ]
 
@@ -3253,6 +3255,7 @@ dependencies = [
  "async-trait",
  "parallax-model",
  "parallax-proto",
+ "parallax-semconv",
  "parallax-storage",
  "serde_json",
  "tempfile",
@@ -3303,6 +3306,7 @@ dependencies = [
  "parallax-ingest",
  "parallax-metadata",
  "parallax-proto",
+ "parallax-semconv",
  "parallax-spool",
  "parallax-storage",
  "parallax-test-support",
@@ -3343,6 +3347,7 @@ dependencies = [
  "bytes",
  "parallax-model",
  "parallax-proto",
+ "parallax-semconv",
  "serde_json",
  "thiserror 2.0.18",
 ]
@@ -3356,6 +3361,7 @@ dependencies = [
  "bytes",
  "parallax-model",
  "parallax-proto",
+ "parallax-semconv",
  "parallax-storage",
  "serde_json",
  "tokio",

@@ -17,7 +17,7 @@ use crate::greptime_sql::{
     resource_attr_ident, runtime_display_name, wire_attr_ident,
 };
 use crate::model::*;
-use parallax_proto::semconv;
+use parallax_semconv as semconv;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::ops::RangeInclusive;
 use std::sync::Arc;

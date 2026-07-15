@@ -85,9 +85,10 @@ Registry content:
 
 Rust:
 
-- Generate a constants module matching
-  `libs/playground-telemetry/src/semconv.rs` and
-  `crates/parallax-proto/src/semconv.rs`.
+- Generate a dependency-free `parallax-semconv` leaf crate plus the companion
+  `libs/playground-telemetry/src/semconv.rs` output. The historical
+  `parallax-proto/src/semconv.rs` compatibility re-export was removed after all
+  Rust consumers migrated directly to the leaf crate.
 - Use `build.rs` or a checked-in generated file. Checked-in output is safer for
   this repo because CI and local dev should not need Docker or Weaver installed.
 - Tracing macro field names like `otel.kind` and quoted dotted fields still need

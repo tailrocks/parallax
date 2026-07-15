@@ -17,7 +17,7 @@ use opentelemetry::trace::{
 };
 use opentelemetry::{Context as OtelContext, KeyValue};
 use opentelemetry_otlp::WithExportConfig;
-use parallax_proto::semconv;
+use parallax_semconv as semconv;
 
 fn resource(service: &str) -> opentelemetry_sdk::Resource {
     opentelemetry_sdk::Resource::builder()

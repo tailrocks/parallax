@@ -5,7 +5,7 @@ use parallax_model::IssueOccurrence;
 use parallax_model::{
     Dashboard, Investigation, Issue, IssueQuery, IssueSortKey, RunRecord, SavedView, TrendPoint,
 };
-use parallax_proto::semconv;
+use parallax_semconv as semconv;
 use std::{collections::BTreeMap, path::Path};
 use turso::Value;
 

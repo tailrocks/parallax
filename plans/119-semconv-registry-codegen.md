@@ -27,7 +27,8 @@ reviewable generated source and reproducible offline builds.
 
 ## Current Evidence
 
-- Parallax has `parallax-proto/src/semconv.rs` and a core facade/freeze test.
+- At the planning baseline Parallax had `parallax-proto/src/semconv.rs` and a
+  core facade/freeze test; the generated T0 crate now owns this surface.
 - The companion playground maintains Rust, Java, and TypeScript emitters that
   must agree with Parallax consumers.
 - `docs/research/architecture/semconv-registry-design.md` records the evaluated
@@ -84,6 +85,12 @@ reviewable generated source and reproducible offline builds.
   `parallax-semconv` crate directly rather than reaching through
   `parallax-proto` under a "temporary until Plan 119" comment. Its 27 locked
   tests and strict all-target clippy pass locally.
+- 2026-07-15: completed the Rust consumer migration and removed the temporary
+  `parallax-proto::semconv` compatibility module. Server, storage, Greptime,
+  metadata, ingest, test-support, analysis, examples, and the OTLP wire fixture
+  now depend directly on `parallax-semconv`; repository search finds no old
+  imports. Locked all-target checks and strict clippy pass across all eight
+  affected crates.
 
 ## Scope
 

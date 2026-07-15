@@ -13,8 +13,6 @@ pub use opentelemetry_proto::tonic::metrics::v1 as metrics;
 pub use opentelemetry_proto::tonic::resource::v1 as resource;
 pub use opentelemetry_proto::tonic::trace::v1 as trace;
 
-pub mod semconv;
-
 #[cfg(test)]
 mod tests {
     use prost::Message;
@@ -30,8 +28,8 @@ mod tests {
             resource_spans: vec![ResourceSpans {
                 resource: Some(Resource {
                     attributes: vec![string_attribute(
-                        crate::semconv::SERVICE_NAME,
-                        crate::semconv::PLAYGROUND_NAMESPACE,
+                        parallax_semconv::SERVICE_NAME,
+                        parallax_semconv::PLAYGROUND_NAMESPACE,
                     )],
                     dropped_attributes_count: 0,
                     entity_refs: Vec::new(),
@@ -43,9 +41,9 @@ mod tests {
                         span_id: vec![2; 8],
                         name: "semconv-wire-contract".into(),
                         attributes: vec![
-                            string_attribute(crate::semconv::PARALLAX_RUN_ID, "run-fixture"),
-                            string_attribute(crate::semconv::TEST_CASE_RESULT_STATUS, "fail"),
-                            string_attribute(crate::semconv::GRAPHQL_FIELD_PATH, "Query.product"),
+                            string_attribute(parallax_semconv::PARALLAX_RUN_ID, "run-fixture"),
+                            string_attribute(parallax_semconv::TEST_CASE_RESULT_STATUS, "fail"),
+                            string_attribute(parallax_semconv::GRAPHQL_FIELD_PATH, "Query.product"),
                         ],
                         ..Span::default()
                     }],
@@ -64,17 +62,17 @@ mod tests {
         assert_eq!(
             string_value(&resource.attributes[0]),
             (
-                crate::semconv::SERVICE_NAME,
-                crate::semconv::PLAYGROUND_NAMESPACE
+                parallax_semconv::SERVICE_NAME,
+                parallax_semconv::PLAYGROUND_NAMESPACE
             )
         );
         let attributes = &decoded.resource_spans[0].scope_spans[0].spans[0].attributes;
         assert_eq!(
             attributes.iter().map(string_value).collect::<Vec<_>>(),
             vec![
-                (crate::semconv::PARALLAX_RUN_ID, "run-fixture"),
-                (crate::semconv::TEST_CASE_RESULT_STATUS, "fail"),
-                (crate::semconv::GRAPHQL_FIELD_PATH, "Query.product"),
+                (parallax_semconv::PARALLAX_RUN_ID, "run-fixture"),
+                (parallax_semconv::TEST_CASE_RESULT_STATUS, "fail"),
+                (parallax_semconv::GRAPHQL_FIELD_PATH, "Query.product"),
             ]
         );
     }

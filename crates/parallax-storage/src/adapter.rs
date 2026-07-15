@@ -2,7 +2,7 @@
 //! `TelemetryStore`; product code never sees an engine.
 
 use crate::model::*;
-use parallax_proto::semconv;
+use parallax_semconv as semconv;
 use std::collections::HashMap;
 use std::ops::RangeInclusive;
 
