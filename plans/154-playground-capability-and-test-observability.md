@@ -564,6 +564,19 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   into the Playwright reporter. Focused CLI/API/server tests, strict clippy,
   shell syntax, and missing-carrier fail-closed behavior pass locally; the
   collector-backed multi-backend inspection remains the final acceptance gate.
+- 2026-07-15: companion commit `6bc91d0` makes the W4 acceptance contract
+  executable instead of screenshot-based. Each stack's observable-session
+  wrapper can now add its bounded assertion-failure and harness-error retry
+  fixtures with `--acceptance`. The new `playground test-verify` command polls
+  Parallax GraphQL for the finished run and fails closed unless the indexed
+  graph contains the exported run-session parent, run-scoped test attempts,
+  explicit identity, parameters separated from configuration, retry ordinals,
+  pass/assertion/harness outcomes, ERROR status, revision/version resources,
+  and application spans descended from a test span. Pure response fixtures
+  prove both the complete payload and individual missing-payload/stitching
+  failures. All 15 locked CLI tests, strict all-target CLI clippy, shell syntax,
+  and invalid-argument behavior pass locally. Executing the verifier against
+  all five live fan-out backends remains the collector-backed acceptance gate.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
