@@ -193,6 +193,15 @@ component, route, and future browser evidence.
   surface or reverting to file-existence evidence fails the negative fixture.
   Matrix policy/tests, strict xtask Clippy, formatting, and diff hygiene pass
   locally.
+- 2026-07-15: added a shared asynchronous reset registry for future per-test
+  cache/state owners and an explicit timer tracker that reports timeout versus
+  interval leaks and always restores globals. Harness self-tests prove reset
+  unregister/isolation, exact pending-timer diagnostics, handle removal, and
+  tracker cleanup. The timer tracker is opt-in because a global wrapper changed
+  Base UI scheduling semantics; normal tests remain source-banned from real
+  timers without a global third-party allowlist. All 45 files / 188 tests pass
+  under forced Bun; TypeScript, both Oxlint lanes, Oxfmt, matrix policy/tests,
+  strict xtask Clippy, and diff hygiene pass locally.
 
 ## Fixed Test Topology
 

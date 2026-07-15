@@ -7,8 +7,7 @@ import {
   resetDiagnostics,
 } from "@/test/diagnostics"
 import { networkEscapeReason } from "@/test/network"
-
-afterEach(cleanup)
+import { resetRegisteredTestState } from "@/test/resets"
 
 const originalConsoleError = console.error
 const originalConsoleWarn = console.warn
@@ -24,7 +23,8 @@ function recordUnhandledRejection(event: PromiseRejectionEvent) {
   recordDiagnostic("error", ["browser unhandled rejection", event.reason])
 }
 
-beforeEach(() => {
+beforeEach(async () => {
+  await resetRegisteredTestState()
   resetDiagnostics()
   console.error = (...values: unknown[]) => recordDiagnostic("error", values)
   console.warn = (...values: unknown[]) => recordDiagnostic("warn", values)
@@ -37,6 +37,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  cleanup()
   if (typeof window !== "undefined") {
     window.removeEventListener("error", recordPageError)
     window.removeEventListener("unhandledrejection", recordUnhandledRejection)

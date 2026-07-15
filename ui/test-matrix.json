@@ -4,7 +4,7 @@
     "fire_event_calls": 7,
     "legacy_handoffs": 41,
     "raw_router_builders": 1,
-    "test_cases": 185,
+    "test_cases": 188,
     "test_files": 45
   },
   "private_route_imports": [
@@ -1165,7 +1165,10 @@
       "test_file": "ui/tests/harness/boundaries.test.ts",
       "test_ids": [
         "reports exact network escape targets",
-        "provides UTC time and deterministic isolated identifiers"
+        "provides UTC time and deterministic isolated identifiers",
+        "runs registered state resets without retaining removed owners",
+        "reports pending timer classes exactly",
+        "tracks and clears pending timer handles exactly"
       ],
       "required_environment": "bun",
       "status": "implemented"
