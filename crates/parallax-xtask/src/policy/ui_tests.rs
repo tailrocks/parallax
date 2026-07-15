@@ -16,6 +16,7 @@ const RERUN: &str = "cargo xtask policy --only ui.tests";
 struct Matrix {
     schema_version: u32,
     ratchets: Ratchets,
+    private_route_imports: Vec<PrivateRouteImport>,
     entries: Vec<Entry>,
 }
 
@@ -48,6 +49,14 @@ struct LegacyHandoff {
     removal_plan: u16,
     created: String,
     expires: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct PrivateRouteImport {
+    test_file: String,
+    module: String,
+    symbols: Vec<String>,
+    removal_plan: u16,
 }
 
 pub(super) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
@@ -99,6 +108,7 @@ pub(super) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
             ));
         }
     }
+    validate_private_route_imports(root, &matrix, &mut findings)?;
     if fire_event_calls != matrix.ratchets.fire_event_calls {
         findings.push(finding(
             "ui.tests.fire-event-ratchet",
@@ -109,6 +119,105 @@ pub(super) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
         ));
     }
     Ok(findings)
+}
+
+fn validate_private_route_imports(
+    root: &Path,
+    matrix: &Matrix,
+    findings: &mut Vec<Finding>,
+) -> Result<()> {
+    let plans = matrix
+        .entries
+        .iter()
+        .filter_map(|entry| entry.delivery_plan.map(|plan| (&entry.test_file, plan)))
+        .collect::<BTreeMap<_, _>>();
+    let mut expected = BTreeSet::new();
+    for import in &matrix.private_route_imports {
+        let valid = plans.get(&import.test_file) == Some(&import.removal_plan)
+            && import.module.starts_with("@/routes/")
+            && !import.symbols.is_empty();
+        if !valid {
+            findings.push(finding(
+                "ui.tests.private-route",
+                &format!(
+                    "private route handoff for `{}` is invalid",
+                    import.test_file
+                ),
+            ));
+        }
+        for symbol in &import.symbols {
+            if !expected.insert((
+                import.test_file.clone(),
+                import.module.clone(),
+                symbol.clone(),
+            )) {
+                findings.push(finding(
+                    "ui.tests.private-route",
+                    &format!(
+                        "duplicate private route symbol `{symbol}` in `{}`",
+                        import.test_file
+                    ),
+                ));
+            }
+        }
+    }
+    let actual = discover_private_route_imports(root)?;
+    if actual != expected {
+        findings.push(finding(
+            "ui.tests.private-route",
+            &format!("private route imports differ: expected {expected:?}, discovered {actual:?}"),
+        ));
+    }
+    Ok(())
+}
+
+fn discover_private_route_imports(root: &Path) -> Result<BTreeSet<(String, String, String)>> {
+    let mut discovered = BTreeSet::new();
+    for path in discover_tests(root)?.keys() {
+        let source = fs::read_to_string(root.join(path))?;
+        let mut statement = String::new();
+        for line in source.lines() {
+            let trimmed = line.trim();
+            if trimmed.starts_with("import ") {
+                statement.clear();
+            }
+            if !statement.is_empty() || trimmed.starts_with("import ") {
+                statement.push_str(trimmed);
+                statement.push(' ');
+            }
+            if statement.contains(" from \"@/routes/") {
+                collect_private_symbols(path, &statement, &mut discovered);
+                statement.clear();
+            }
+        }
+    }
+    Ok(discovered)
+}
+
+fn collect_private_symbols(
+    path: &str,
+    statement: &str,
+    discovered: &mut BTreeSet<(String, String, String)>,
+) {
+    let Some(module) = statement
+        .split_once(" from \"")
+        .and_then(|(_, tail)| tail.split_once('"').map(|(module, _)| module))
+    else {
+        return;
+    };
+    let Some((_, symbols)) = statement.split_once('{') else {
+        return;
+    };
+    let Some((symbols, _)) = symbols.split_once('}') else {
+        return;
+    };
+    for symbol in symbols
+        .split(',')
+        .map(str::trim)
+        .filter(|item| !item.is_empty())
+    {
+        discovered.insert((path.to_owned(), module.to_owned(), symbol.to_owned()));
+    }
 }
 
 fn validate_entry(

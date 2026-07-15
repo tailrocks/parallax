@@ -151,6 +151,13 @@ component, route, and future browser evidence.
   files / 182 tests pass under forced Bun; TypeScript, both Oxlint lanes,
   Oxfmt, matrix policy/tests, strict xtask Clippy, and diff hygiene pass
   locally.
+- 2026-07-15: froze the remaining private-route test debt as 15 exact
+  file/module/symbol handoffs to plans 135, 137-142, and 150. `ui.tests` now
+  discovers route imports independently and rejects added, removed, renamed,
+  duplicated, mis-owned, or wrong-plan symbols until their owning feature plan
+  removes the manifest row. The negative policy fixture proves an unrecorded
+  private helper fails. Matrix policy/tests, strict xtask Clippy, formatting,
+  and diff hygiene pass locally.
 
 ## Fixed Test Topology
 

@@ -23,13 +23,14 @@ fn rejects_test_id_drift() -> Result<(), Box<dyn std::error::Error>> {
     fs::create_dir_all(test_path.parent().expect("test path has parent"))?;
     fs::write(
         &test_path,
-        "window.scrollTo = () => {};\nsetTimeout(() => {}, 1);\nit(\"actual behavior\", () => {});\n",
+        "import { privateHelper } from \"@/routes/sample\";\nwindow.scrollTo = () => {};\nsetTimeout(() => {}, 1);\nit(\"actual behavior\", () => {});\n",
     )?;
     fs::write(
         temp.path().join("ui/test-matrix.json"),
         r#"{
   "schema_version": 1,
   "ratchets": { "fire_event_calls": 0 },
+  "private_route_imports": [],
   "entries": [{
     "id": "vitest-001",
     "surface": "features/sample",
@@ -68,6 +69,11 @@ fn rejects_test_id_drift() -> Result<(), Box<dyn std::error::Error>> {
         findings
             .iter()
             .any(|finding| finding.rule_id == "ui.tests.antipattern")
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|finding| finding.rule_id == "ui.tests.private-route")
     );
     Ok(())
 }

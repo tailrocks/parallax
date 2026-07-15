@@ -3,6 +3,98 @@
   "ratchets": {
     "fire_event_calls": 7
   },
+  "private_route_imports": [
+    {
+      "test_file": "ui/src/routes/__tests__/-dashboards.test.tsx",
+      "module": "@/routes/dashboards.index",
+      "symbols": ["DashboardCards", "DashboardCreateDialog", "dashboardRangeSearch", "parseLayout", "serializeWidgets"],
+      "removal_plan": 137
+    },
+    {
+      "test_file": "ui/src/routes/__tests__/-issues.test.tsx",
+      "module": "@/routes/issues.index",
+      "symbols": ["IssuesContent", "IssuesData"],
+      "removal_plan": 139
+    },
+    {
+      "test_file": "ui/src/routes/__tests__/-issues.test.tsx",
+      "module": "@/routes/issues.$fingerprint",
+      "symbols": ["IssueDetailContent"],
+      "removal_plan": 139
+    },
+    {
+      "test_file": "ui/src/routes/__tests__/-logs.test.tsx",
+      "module": "@/routes/logs",
+      "symbols": ["ColumnMenu", "SavedViewsMenu", "contextWindow", "parseSavedViewState"],
+      "removal_plan": 141
+    },
+    {
+      "test_file": "ui/src/routes/__tests__/-overview.test.tsx",
+      "module": "@/routes/index",
+      "symbols": ["OverviewContent", "OverviewData", "latencyBands", "loadOverview"],
+      "removal_plan": 150
+    },
+    {
+      "test_file": "ui/src/routes/__tests__/-runs.test.tsx",
+      "module": "@/routes/runs.index",
+      "symbols": ["RunsContent", "RunsData", "durationNs", "filterRunsByRange", "mergeRuns", "statusTone"],
+      "removal_plan": 140
+    },
+    {
+      "test_file": "ui/src/routes/__tests__/-runs.test.tsx",
+      "module": "@/routes/runs.$runId",
+      "symbols": ["RunDetailContent", "loadRunDetail", "snapshotFromNanos"],
+      "removal_plan": 140
+    },
+    {
+      "test_file": "ui/src/routes/__tests__/-services.test.tsx",
+      "module": "@/routes/services",
+      "symbols": ["ServicesData", "ServicesIndexContent", "serviceErrorRate", "serviceHref"],
+      "removal_plan": 138
+    },
+    {
+      "test_file": "ui/src/routes/__tests__/-services.test.tsx",
+      "module": "@/routes/services.$service",
+      "symbols": ["ServiceDetailContent", "ServiceDetailData"],
+      "removal_plan": 138
+    },
+    {
+      "test_file": "ui/src/routes/__tests__/-sql.test.tsx",
+      "module": "@/routes/sql",
+      "symbols": ["EXAMPLES", "Route as SqlRoute", "SnippetsMenu", "SqlResultBody", "targetForCell"],
+      "removal_plan": 135
+    },
+    {
+      "test_file": "ui/src/routes/__tests__/-trace-graphql.test.tsx",
+      "module": "@/routes/traces.$traceId",
+      "symbols": ["TraceGraphqlSection"],
+      "removal_plan": 142
+    },
+    {
+      "test_file": "ui/src/routes/__tests__/-trace-links.test.tsx",
+      "module": "@/routes/traces.$traceId",
+      "symbols": ["LinkedTraceEdges", "TraceCompareResult"],
+      "removal_plan": 142
+    },
+    {
+      "test_file": "ui/src/routes/__tests__/-trace-rpc.test.tsx",
+      "module": "@/routes/traces.$traceId",
+      "symbols": ["InspectorEventList", "InspectorLinksList", "SpanEvent", "TraceErrorCallout", "TraceRpcSection"],
+      "removal_plan": 142
+    },
+    {
+      "test_file": "ui/src/routes/__tests__/-trace-view-modes.test.tsx",
+      "module": "@/routes/traces.$traceId",
+      "symbols": ["ClockSkewBanner", "TraceViewModeToggle", "validateTraceDetailSearch"],
+      "removal_plan": 142
+    },
+    {
+      "test_file": "ui/src/routes/__tests__/-traces-search.test.tsx",
+      "module": "@/routes/traces.index",
+      "symbols": ["TraceTable", "paramToTraceSort", "patchTracesSearch", "traceDetailSearch", "traceSortToParam", "validateTracesSearch"],
+      "removal_plan": 142
+    }
+  ],
   "entries": [
     {
       "id": "vitest-001",
