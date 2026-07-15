@@ -73,7 +73,14 @@ fn rehearsal_promotes_one_verified_archive_and_checksum() -> Result<(), Box<dyn 
     let output_dir = temp.path().join("dist");
     let target = "x86_64-unknown-linux-gnu";
     let version = "0.1.0-preview.1+abcdef0";
-    rehearse_archives(&binary, target, version, 1_700_000_000, &output_dir)?;
+    rehearse_archives(
+        &binary,
+        target,
+        version,
+        Channel::Stable,
+        1_700_000_000,
+        &output_dir,
+    )?;
 
     let archive = output_dir.join(format!("parallax-{version}-{target}.tar.gz"));
     let checksum = PathBuf::from(format!("{}.sha256", archive.display()));
@@ -99,13 +106,27 @@ fn rehearsal_rejects_non_release_and_oversized_binaries() -> Result<(), Box<dyn 
     let version = env!("CARGO_PKG_VERSION");
     let invalid = temp.path().join("invalid");
     std::fs::write(&invalid, b"not an executable")?;
-    rehearse(&invalid, target, version, 1_700_000_000, temp.path())
-        .expect_err("non-object release binary must fail");
+    rehearse(
+        &invalid,
+        target,
+        version,
+        Channel::Stable,
+        1_700_000_000,
+        temp.path(),
+    )
+    .expect_err("non-object release binary must fail");
 
     let oversized = temp.path().join("oversized");
     std::fs::File::create(&oversized)?.set_len(MAX_RELEASE_BINARY_BYTES + 1)?;
-    let error = rehearse(&oversized, target, version, 1_700_000_000, temp.path())
-        .expect_err("oversized release binary must fail before reading");
+    let error = rehearse(
+        &oversized,
+        target,
+        version,
+        Channel::Stable,
+        1_700_000_000,
+        temp.path(),
+    )
+    .expect_err("oversized release binary must fail before reading");
     assert!(error.to_string().contains("exceeds 512 MiB"));
     Ok(())
 }
@@ -133,22 +154,43 @@ fn identity_rejects_unsupported_targets_and_ambiguous_versions() -> Result<(), S
             Path::new("parallax-x86_64-unknown-linux-gnu.tar.gz"),
             "x86_64-unknown-linux-gnu",
             "0.1.0-preview.1+abcdef0",
+            Channel::Preview,
         )
         .is_ok(),
         validate_archive_name(
             Path::new("parallax-0.1.0-x86_64-unknown-linux-gnu.tar.gz"),
             "x86_64-unknown-linux-gnu",
             "0.1.0",
+            Channel::Stable,
         )
         .is_ok(),
         validate_archive_name(
             Path::new("parallax-wrong.tar.gz"),
             "x86_64-unknown-linux-gnu",
             "0.1.0",
+            Channel::Stable,
+        )
+        .is_err(),
+        validate_archive_name(
+            Path::new("parallax-x86_64-unknown-linux-gnu.tar.gz"),
+            "x86_64-unknown-linux-gnu",
+            "0.1.0",
+            Channel::Stable,
+        )
+        .is_err(),
+        validate_archive_name(
+            Path::new("parallax-0.1.0-x86_64-unknown-linux-gnu.tar.gz"),
+            "x86_64-unknown-linux-gnu",
+            "0.1.0",
+            Channel::Preview,
         )
         .is_err(),
     );
-    if actual != (true, true, true, true, true, true, true, true, true) {
+    if actual
+        != (
+            true, true, true, true, true, true, true, true, true, true, true,
+        )
+    {
         return Err(format!("release identity validation mismatch: {actual:?}"));
     }
     Ok(())
@@ -156,7 +198,7 @@ fn identity_rejects_unsupported_targets_and_ambiguous_versions() -> Result<(), S
 
 #[test]
 fn verification_identity_rejects_ambiguous_provenance_inputs() -> Result<(), String> {
-    let archive = PathBuf::from("parallax-x86_64-unknown-linux-gnu.tar.gz");
+    let archive = PathBuf::from("parallax-0.1.0-x86_64-unknown-linux-gnu.tar.gz");
     let mut spec = VerifySpec {
         archive,
         target: "x86_64-unknown-linux-gnu".to_string(),
@@ -223,7 +265,9 @@ fn release_callers_use_one_packager_and_verified_sdk() -> Result<(), String> {
     let actual = (
         callers
             .iter()
-            .all(|source| source.contains("cargo xtask release-package")),
+            .all(|source| source.contains("cargo xtask release-package"))
+            && preview.contains("--channel preview")
+            && stable.contains("--channel stable"),
         callers
             .iter()
             .all(|source| source.contains("cargo xtask release-verify")),
@@ -234,6 +278,7 @@ fn release_callers_use_one_packager_and_verified_sdk() -> Result<(), String> {
             .iter()
             .all(|source| !source.contains("tar -czf") && !source.contains("| tar")),
         rehearsal.contains("cargo xtask release-rehearse")
+            && rehearsal.contains("--channel stable")
             && !rehearsal.contains("tar -czf")
             && !rehearsal.contains("-czf"),
         sdk.contains("key: macos-sdk-archive-${{ inputs.version }}-${{ inputs.sha256 }}")

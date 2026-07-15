@@ -1,3 +1,4 @@
+use crate::release::Channel;
 use clap::{ArgGroup, Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
@@ -86,6 +87,8 @@ pub(crate) enum Command {
         target: String,
         #[arg(long)]
         version: String,
+        #[arg(long, value_enum)]
+        channel: Channel,
         #[arg(long)]
         source_epoch: u64,
     },
@@ -97,6 +100,8 @@ pub(crate) enum Command {
         target: String,
         #[arg(long)]
         version: String,
+        #[arg(long, value_enum)]
+        channel: Channel,
         #[arg(long)]
         source_epoch: u64,
         #[arg(long, default_value = "target/dist")]

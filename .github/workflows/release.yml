@@ -207,6 +207,7 @@ jobs:
             --archive "$archive" \
             --target "$TARGET" \
             --version "$VERSION" \
+            --channel stable \
             --source-epoch "$source_epoch"
           echo "archive=$archive" >> "$GITHUB_OUTPUT"
           echo "source_epoch=$source_epoch" >> "$GITHUB_OUTPUT"

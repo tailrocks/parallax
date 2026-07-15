@@ -17,7 +17,10 @@ Pass a supported target triple to rehearse a cross build. The script builds the
 embedded UI, uses Zig/cargo-zigbuild with the native-TLS vendored OpenSSL path,
 packages the same binary twice, and fails unless both archive digests match. It
 writes the archive and bare-hash `.sha256` under `target/dist/` and never
-publishes.
+publishes. The script explicitly rehearses the stable/versioned archive shape;
+workflow callers must likewise select exactly one `--channel preview|stable`.
+Preview accepts only `parallax-<target>.tar.gz`; stable accepts only
+`parallax-<version>-<target>.tar.gz`.
 
 ## Verify published preview assets
 
@@ -58,6 +61,9 @@ target format or architecture, missing line or symbol tables, mismatched
 embedded version identity, checksum or CycloneDX digest drift, a missing
 Sigstore bundle, the wrong workflow certificate identity, self-hosted
 provenance, or a different source commit/ref.
+Preview verification accepts only `refs/heads/main` plus the unversioned
+preview name. Stable verification accepts only the exact
+`refs/tags/v<version>` plus its versioned archive name.
 
 ## Publication authority
 

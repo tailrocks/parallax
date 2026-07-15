@@ -111,6 +111,15 @@
   hollow but name/digest-matching SBOM fails closed. A local Syft 1.45.1 scan
   confirmed this exact metadata/tool shape on Linux arm64. All 15
   release-focused tests and strict all-target xtask clippy pass locally.
+- 2026-07-15: removed archive-channel ambiguity from packaging and
+  verification. Package and rehearsal callers must now select `preview` or
+  `stable`; the former accepts only `parallax-<target>.tar.gz`, while the latter
+  accepts only `parallax-<version>-<target>.tar.gz`. Verification binds the
+  preview shape to `refs/heads/main` and the stable shape to the exact
+  `refs/tags/v<version>`, before checking signer identity. Both workflows and
+  the local rehearsal pass their explicit channel, and fixtures reject both
+  crossed name/channel combinations and noncanonical source refs. All 15
+  release-focused tests and strict all-target xtask clippy pass locally.
 
 ## Why
 

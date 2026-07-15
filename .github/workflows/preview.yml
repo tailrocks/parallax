@@ -248,6 +248,7 @@ jobs:
             --archive "$archive" \
             --target "$TARGET" \
             --version "${{ needs.source-changed.outputs.version }}" \
+            --channel preview \
             --source-epoch "$source_epoch"
           echo "archive=$archive" >> "$GITHUB_OUTPUT"
           echo "source_epoch=$source_epoch" >> "$GITHUB_OUTPUT"

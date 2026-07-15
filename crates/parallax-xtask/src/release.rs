@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
+use clap::ValueEnum;
 
 mod archive;
 mod verify;
@@ -12,6 +13,12 @@ const TARGETS: [&str; 4] = [
     "x86_64-unknown-linux-gnu",
 ];
 const MAX_RELEASE_BINARY_BYTES: u64 = 512 * 1024 * 1024;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
+pub(crate) enum Channel {
+    Preview,
+    Stable,
+}
 
 #[derive(Debug)]
 pub(crate) struct VerifySpec {
@@ -31,10 +38,11 @@ pub(crate) fn package(
     output: &Path,
     target: &str,
     version: &str,
+    channel: Channel,
     source_epoch: u64,
 ) -> Result<()> {
     validate_identity(target, version)?;
-    validate_archive_name(output, target, version)?;
+    validate_archive_name(output, target, version, channel)?;
     validate_binary(binary, target, version)?;
     println!(
         "==> package {} -> {} (SOURCE_DATE_EPOCH={source_epoch})",
@@ -47,15 +55,24 @@ pub(crate) fn package(
     Ok(())
 }
 
-fn validate_archive_name(output: &Path, target: &str, version: &str) -> Result<()> {
+fn validate_archive_name(
+    output: &Path,
+    target: &str,
+    version: &str,
+    channel: Channel,
+) -> Result<()> {
     let name = output
         .file_name()
         .and_then(std::ffi::OsStr::to_str)
         .context("release archive needs a UTF-8 filename")?;
     let preview = format!("parallax-{target}.tar.gz");
     let stable = format!("parallax-{version}-{target}.tar.gz");
-    if name != preview && name != stable {
-        bail!("release archive name `{name}` does not match preview or stable identity");
+    let expected = match channel {
+        Channel::Preview => preview,
+        Channel::Stable => stable,
+    };
+    if name != expected {
+        bail!("release archive name `{name}` does not match {channel:?} identity `{expected}`");
     }
     Ok(())
 }
@@ -64,24 +81,29 @@ pub(crate) fn rehearse(
     binary: &Path,
     target: &str,
     version: &str,
+    channel: Channel,
     source_epoch: u64,
     output_dir: &Path,
 ) -> Result<()> {
     validate_identity(target, version)?;
     validate_binary(binary, target, version)?;
-    rehearse_archives(binary, target, version, source_epoch, output_dir)
+    rehearse_archives(binary, target, version, channel, source_epoch, output_dir)
 }
 
 fn rehearse_archives(
     binary: &Path,
     target: &str,
     version: &str,
+    channel: Channel,
     source_epoch: u64,
     output_dir: &Path,
 ) -> Result<()> {
     std::fs::create_dir_all(output_dir)
         .with_context(|| format!("create rehearsal directory {}", output_dir.display()))?;
-    let name = format!("parallax-{version}-{target}.tar.gz");
+    let name = match channel {
+        Channel::Preview => format!("parallax-{target}.tar.gz"),
+        Channel::Stable => format!("parallax-{version}-{target}.tar.gz"),
+    };
     let first = temporary(output_dir, &name, "first");
     let second = temporary(output_dir, &name, "second");
     archive::write(binary, &first, source_epoch)?;
@@ -143,9 +165,14 @@ fn validate_verification_identity(spec: &VerifySpec) -> Result<()> {
     {
         bail!("source commit must be one full lowercase SHA");
     }
-    if !spec.source_ref.starts_with("refs/") || spec.source_ref.contains(char::is_whitespace) {
-        bail!("source ref must be a full refs/* name");
-    }
+    let channel = if spec.source_ref == "refs/heads/main" {
+        Channel::Preview
+    } else if spec.source_ref == format!("refs/tags/v{}", spec.version) {
+        Channel::Stable
+    } else {
+        bail!("source ref must be refs/heads/main for preview or refs/tags/v<version> for stable");
+    };
+    validate_archive_name(&spec.archive, &spec.target, &spec.version, channel)?;
     let repository_parts = spec.repository.split('/').collect::<Vec<_>>();
     if repository_parts.len() != 2
         || repository_parts.iter().any(|part| {
