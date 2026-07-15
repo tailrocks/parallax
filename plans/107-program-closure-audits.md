@@ -30,10 +30,12 @@
   remaining plan/index BLOCKED bijection, and accepts future closure dates.
   Packet validation is fail-closed over the exact top-level schema and requires
   a clean independent audit, non-empty tool versions, passing commands with
-  evidence hashes, artifact hashes, structured finding/exception arrays, and fresh
-  blocked-trigger records; hollow or extra-field packets fail the dry run.
+  output bytes bound to their hashes, repository artifact hashes verified
+  against safe relative paths, structured finding/exception arrays, and fresh
+  blocked-trigger records; hollow, extra-field, path traversal, or tampered
+  packets fail.
   The final lane runs `cargo xtask ci --full` before structural verification
-  with every required pinned tool. All 71 xtask tests, strict xtask Clippy,
+  with every required pinned tool. All 72 xtask tests, strict xtask Clippy,
   Actionlint, workflow/classifier fixtures, Rust formatting, structural policy,
   and the explicit dry-run command pass locally.
 - 2026-07-15: the fresh direct/dependency blocker matrix is preserved in

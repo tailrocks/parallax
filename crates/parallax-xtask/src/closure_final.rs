@@ -240,6 +240,7 @@ fn validate_evidence(
         ensure!(digest == attestation.digest, "closure packet digest drift");
         let value: serde_json::Value = serde_json::from_slice(&source)?;
         packet::validate(&value, c0, &attestation.auditor)?;
+        packet::validate_artifacts(root, &value)?;
     }
     Ok(())
 }
@@ -351,6 +352,7 @@ fn is_hex(value: &str, length: usize) -> bool {
 fn dry_run_fixtures() -> Result<()> {
     let sha = "0123456789abcdef0123456789abcdef01234567";
     let digest = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    let output_digest = format!("{:x}", Sha256::digest(b"passed"));
     let a = parse_attestation(&format!(
         "auditor=source-a;c0={sha};c1={sha};tree={sha};result=pass;digest={digest}"
     ))?;
@@ -365,7 +367,7 @@ fn dry_run_fixtures() -> Result<()> {
         "auditor": "source-a",
         "independent": true,
         "tool_versions": {"rustc": "1.97.0"},
-        "commands": [{"command": "cargo xtask ci --full", "exit_code": 0, "evidence_sha256": digest}],
+        "commands": [{"command": "cargo xtask ci --full", "exit_code": 0, "output": "passed", "output_sha256": output_digest}],
         "artifact_hashes": {"target/report.json": digest},
         "findings": [],
         "exceptions": [],

@@ -1,6 +1,7 @@
-use std::collections::BTreeSet;
+use std::{collections::BTreeSet, fs, path::Path};
 
 use anyhow::{Context, Result, ensure};
+use sha2::{Digest, Sha256};
 
 use super::is_hex;
 
@@ -81,6 +82,30 @@ fn validate_hash_map(value: &serde_json::Value) -> Result<()> {
     Ok(())
 }
 
+pub(super) fn validate_artifacts(root: &Path, value: &serde_json::Value) -> Result<()> {
+    for (path, expected) in value["artifact_hashes"]
+        .as_object()
+        .context("artifact_hashes must be an object")?
+    {
+        let relative = Path::new(path);
+        ensure!(
+            !relative.is_absolute()
+                && relative
+                    .components()
+                    .all(|component| matches!(component, std::path::Component::Normal(_))),
+            "artifact path is not a safe repository-relative path"
+        );
+        let source = fs::read(root.join(relative))
+            .with_context(|| format!("failed to read artifact `{path}`"))?;
+        let actual = format!("{:x}", Sha256::digest(source));
+        ensure!(
+            expected.as_str() == Some(actual.as_str()),
+            "artifact hash drift for `{path}`"
+        );
+    }
+    Ok(())
+}
+
 fn validate_commands(value: &serde_json::Value) -> Result<()> {
     let commands = value.as_array().context("commands must be an array")?;
     ensure!(!commands.is_empty(), "commands must not be empty");
@@ -88,7 +113,7 @@ fn validate_commands(value: &serde_json::Value) -> Result<()> {
         let object = command.as_object().context("command must be an object")?;
         ensure!(
             object.keys().map(String::as_str).collect::<BTreeSet<_>>()
-                == BTreeSet::from(["command", "evidence_sha256", "exit_code"]),
+                == BTreeSet::from(["command", "exit_code", "output", "output_sha256"]),
             "command fields differ from schema"
         );
         ensure!(
@@ -98,11 +123,14 @@ fn validate_commands(value: &serde_json::Value) -> Result<()> {
             "command text is empty"
         );
         ensure!(command["exit_code"] == 0, "closure command did not pass");
+        let output = command["output"]
+            .as_str()
+            .context("command output must be a string")?;
+        ensure!(!output.trim().is_empty(), "command output is empty");
+        let digest = format!("{:x}", Sha256::digest(output.as_bytes()));
         ensure!(
-            command["evidence_sha256"]
-                .as_str()
-                .is_some_and(|hash| is_hex(hash, 64)),
-            "command evidence hash is invalid"
+            command["output_sha256"].as_str() == Some(digest.as_str()),
+            "command output hash is invalid"
         );
     }
     Ok(())
