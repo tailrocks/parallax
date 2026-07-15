@@ -23,7 +23,10 @@ struct Matrix {
 #[derive(Debug, Deserialize)]
 struct Ratchets {
     fire_event_calls: usize,
+    legacy_handoffs: usize,
     raw_router_builders: usize,
+    test_cases: usize,
+    test_files: usize,
 }
 
 #[derive(Debug, Deserialize)]
@@ -79,6 +82,12 @@ pub(super) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
     }
 
     let discovered = discover_tests(root)?;
+    let test_cases = discovered.values().map(BTreeSet::len).sum::<usize>();
+    let legacy_handoffs = matrix
+        .entries
+        .iter()
+        .filter(|entry| entry.legacy_handoff.is_some())
+        .count();
     let mut fire_event_calls = 0;
     let mut raw_router_builders = 0;
     for (path, test_ids) in &discovered {
@@ -115,6 +124,22 @@ pub(super) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
         }
     }
     validate_private_route_imports(root, &matrix, &mut findings)?;
+    for (actual, expected, label) in [
+        (discovered.len(), matrix.ratchets.test_files, "test files"),
+        (test_cases, matrix.ratchets.test_cases, "test cases"),
+        (
+            legacy_handoffs,
+            matrix.ratchets.legacy_handoffs,
+            "legacy handoffs",
+        ),
+    ] {
+        if actual != expected {
+            findings.push(finding(
+                "ui.tests.inventory-ratchet",
+                &format!("{label} count is {actual}, matrix ratchet is {expected}"),
+            ));
+        }
+    }
     if fire_event_calls != matrix.ratchets.fire_event_calls {
         findings.push(finding(
             "ui.tests.fire-event-ratchet",

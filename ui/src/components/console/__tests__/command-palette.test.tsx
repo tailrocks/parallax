@@ -105,7 +105,9 @@ describe("CommandPalette", () => {
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/logs"))
   })
+})
 
+describe("CommandPalette entity navigation", () => {
   it("shows id jump entries for trace and ambiguous 16-hex ids", async () => {
     const user = userEvent.setup()
     mockPaletteData()

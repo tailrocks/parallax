@@ -189,7 +189,9 @@ describe("Services route", () => {
       to: custom.toNanos,
     })
   })
+})
 
+describe("Service detail route", () => {
   it("renders detail stats and hides infra band without CPU/memory", async () => {
     renderWithRouter(
       <ServiceDetailContent

@@ -28,11 +28,9 @@ function renderWithRouter(component: React.ReactNode, initialEntries = ["/"]) {
   })
 }
 
-describe("shell primitives", () => {
-  afterEach(() => {
-    cleanup()
-  })
+afterEach(cleanup)
 
+describe("shell primitives", () => {
   it("renders PageHeader breadcrumb shape", async () => {
     const item = nav[0]!
     renderWithRouter(
@@ -62,7 +60,9 @@ describe("shell primitives", () => {
       expect(item.activeIcon).toBeDefined()
     }
   })
+})
 
+describe("shell integration", () => {
   it("keeps the styled error fallback inside the shell", async () => {
     const user = userEvent.setup()
     renderWithRouter(

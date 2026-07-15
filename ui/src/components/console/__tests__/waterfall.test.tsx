@@ -102,7 +102,9 @@ describe("TraceWaterfall", () => {
     await user.keyboard("k")
     expect(onSelect).toHaveBeenLastCalledWith("root")
   })
+})
 
+describe("TraceWaterfall modes", () => {
   it("highlights critical-path span rows", () => {
     render(
       <TraceWaterfall

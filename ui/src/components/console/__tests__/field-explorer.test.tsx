@@ -27,55 +27,59 @@ afterEach(() => {
   vi.mocked(graphql).mockReset()
 })
 
-describe("FieldExplorer", () => {
-  it("loads field keys, stats, service filters, and SQL pivots", async () => {
-    const user = userEvent.setup()
-    const onApplyService = vi.fn()
-    vi.mocked(graphql).mockImplementation(
-      async <T,>(query: string): Promise<T> => {
-        if (query.includes("fieldKeys")) {
-          return {
-            fieldKeys: [
-              {
-                key: "resource.service.name",
-                namespace: "service",
-                source: "RESOURCE",
-                rowCount: "3",
-                nonNullCount: "3",
-                coverage: 1,
-                isIdentifier: false,
-              },
-              {
-                key: "http.request.method",
-                namespace: "http",
-                source: "SPAN",
-                rowCount: "3",
-                nonNullCount: "2",
-                coverage: 2 / 3,
-                isIdentifier: false,
-              },
-            ],
-          } as T
-        }
-        if (query.includes("fieldStats")) {
-          return {
-            fieldStats: {
+function mockFieldExplorerQueries() {
+  vi.mocked(graphql).mockImplementation(
+    async <T,>(query: string): Promise<T> => {
+      if (query.includes("fieldKeys")) {
+        return {
+          fieldKeys: [
+            {
               key: "resource.service.name",
               namespace: "service",
               source: "RESOURCE",
               rowCount: "3",
               nonNullCount: "3",
-              distinctCount: "1",
               coverage: 1,
-              capped: false,
               isIdentifier: false,
-              topValues: [{ value: "checkout", count: "3" }],
             },
-          } as T
-        }
-        throw new Error(`unexpected query ${query}`)
+            {
+              key: "http.request.method",
+              namespace: "http",
+              source: "SPAN",
+              rowCount: "3",
+              nonNullCount: "2",
+              coverage: 2 / 3,
+              isIdentifier: false,
+            },
+          ],
+        } as T
       }
-    )
+      if (query.includes("fieldStats")) {
+        return {
+          fieldStats: {
+            key: "resource.service.name",
+            namespace: "service",
+            source: "RESOURCE",
+            rowCount: "3",
+            nonNullCount: "3",
+            distinctCount: "1",
+            coverage: 1,
+            capped: false,
+            isIdentifier: false,
+            topValues: [{ value: "checkout", count: "3" }],
+          },
+        } as T
+      }
+      throw new Error(`unexpected query ${query}`)
+    }
+  )
+}
+
+describe("FieldExplorer", () => {
+  it("loads field keys, stats, service filters, and SQL pivots", async () => {
+    const user = userEvent.setup()
+    const onApplyService = vi.fn()
+    mockFieldExplorerQueries()
 
     renderTestRouter(
       <FieldExplorer range={range} onApplyService={onApplyService} />,

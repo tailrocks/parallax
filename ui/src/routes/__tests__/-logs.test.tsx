@@ -236,7 +236,9 @@ describe("LogsTable", () => {
       screen.getByRole("link", { name: /run run-a/i }).getAttribute("href")
     ).toBe("/runs/run-a?range=7d")
   })
+})
 
+describe("LogsTable navigation", () => {
   it("preserves custom ranges in trace drilldown links", async () => {
     renderWithRouter(
       <LogsTable logs={[log]} range={custom} columns={["service", "trace"]} />

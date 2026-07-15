@@ -2,7 +2,10 @@
   "schema_version": 1,
   "ratchets": {
     "fire_event_calls": 7,
-    "raw_router_builders": 1
+    "legacy_handoffs": 41,
+    "raw_router_builders": 1,
+    "test_cases": 185,
+    "test_files": 45
   },
   "private_route_imports": [
     {

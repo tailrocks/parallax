@@ -174,6 +174,18 @@ component, route, and future browser evidence.
   self-tests cover layout routing. All 45 files / 185 tests pass under forced
   Bun; TypeScript, both Oxlint lanes, Oxfmt, matrix policy/tests, strict xtask
   Clippy, and diff hygiene pass locally.
+- 2026-07-15: reconciled the shared structural policy after the dashboard/SQL
+  ownership split and semantic/router migrations. The obsolete mixed
+  `-final-sweep` rows are gone; dashboard assertions/file size are owned at
+  their new path; all changed test file ceilings were lowered to the current
+  measurements. Oversized describe callbacks were split by scenario and the
+  field-explorer query fixture extracted, replacing growth with smaller exact
+  function ratchets. The matrix now also locks 45 files, 185 cases, and 41
+  legacy handoffs. The Plan 129-owned structural findings are zero; all 45
+  files / 185 tests, TypeScript, both Oxlint lanes, Oxfmt, matrix policy/tests,
+  strict xtask Clippy, and diff hygiene pass locally. The complete structural
+  gate remains red only on separately owned active-plan Rust/production UI
+  measurements and is not claimed as Plan 129 closure evidence.
 
 ## Fixed Test Topology
 
