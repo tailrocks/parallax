@@ -53,6 +53,11 @@
   entry now each fail `read_binary`; no fixture relies on the production
   packager to manufacture malformed input. All 10 release-focused xtask tests
   pass and strict all-target xtask clippy is clean on Linux arm64.
+- 2026-07-15: completed the local checksum/SBOM syntax tamper matrix. The
+  verifier now has fixtures for a wrong digest, uppercase/non-terminated
+  digest, multiline checksum, wrong SBOM archive name, wrong archive digest,
+  wrong CycloneDX format, malformed JSON, and a missing SBOM. The focused test
+  and strict all-target xtask clippy pass locally.
 
 ## Why
 

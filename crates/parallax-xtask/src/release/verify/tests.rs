@@ -108,14 +108,43 @@ fn checksum_and_sbom_fail_closed() -> Result<(), Box<dyn std::error::Error>> {
         format!("{}\n", "0".repeat(64)),
     )?;
     let bad_checksum = verify_checksum(&archive_path).is_err();
+    std::fs::write(
+        sidecar(&archive_path, "sha256"),
+        digest.to_ascii_uppercase(),
+    )?;
+    let uppercase_without_newline = verify_checksum(&archive_path).is_err();
+    std::fs::write(
+        sidecar(&archive_path, "sha256"),
+        format!("{digest}\n{digest}\n"),
+    )?;
+    let multiline_checksum = verify_checksum(&archive_path).is_err();
     archive::write_checksum(&archive_path)?;
     write_sbom(&sbom_path, "wrong.tar.gz", &digest)?;
-    let bad_sbom = verify_sbom(&archive_path, file_name(&archive_path)?, &digest).is_err();
+    let bad_sbom_name = verify_sbom(&archive_path, file_name(&archive_path)?, &digest).is_err();
+    write_sbom(&sbom_path, file_name(&archive_path)?, &"0".repeat(64))?;
+    let bad_sbom_digest = verify_sbom(&archive_path, file_name(&archive_path)?, &digest).is_err();
+    std::fs::write(
+        &sbom_path,
+        br#"{"bomFormat":"SPDX","specVersion":"1.6","metadata":{}}"#,
+    )?;
+    let bad_sbom_format = verify_sbom(&archive_path, file_name(&archive_path)?, &digest).is_err();
+    std::fs::write(&sbom_path, b"not-json")?;
+    let malformed_sbom = verify_sbom(&archive_path, file_name(&archive_path)?, &digest).is_err();
     std::fs::remove_file(&sbom_path)?;
     let missing_sbom = verify_sbom(&archive_path, file_name(&archive_path)?, &digest).is_err();
 
-    let actual = (valid, bad_checksum, bad_sbom, missing_sbom);
-    let expected = ((true, true), true, true, true);
+    let actual = (
+        valid,
+        bad_checksum,
+        uppercase_without_newline,
+        multiline_checksum,
+        bad_sbom_name,
+        bad_sbom_digest,
+        bad_sbom_format,
+        malformed_sbom,
+        missing_sbom,
+    );
+    let expected = ((true, true), true, true, true, true, true, true, true, true);
     if actual != expected {
         return Err(format!("release sidecar verification mismatch: {actual:?}").into());
     }
