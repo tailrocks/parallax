@@ -45,6 +45,12 @@ The independently actionable exemplar primary-key correction was split into
   `zstd` features; Tonic 0.14.6 maps `tls-ring` to `tokio-rustls/ring`.
   Therefore the native-TLS/plaintext feature split required by Step 0 is still
   absent and implementation cannot begin without violating policy.
+- 2026-07-15 fresh upstream check at branch head `d82023a`: crates.io still
+  reports `greptimedb-ingester 0.18.0` as latest. `cargo info` exposes no
+  alternate transport feature, and the downloaded published manifest still
+  requires tonic 0.14 with `tls-ring`; tonic 0.14.6 maps that feature directly
+  to `tokio-rustls/ring`. The plaintext/native-TLS split remains absent, so
+  Step 0 still stops before any manifest or product-code change.
 
 ## Scope
 
