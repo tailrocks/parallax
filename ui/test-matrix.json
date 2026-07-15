@@ -1066,6 +1066,21 @@
       ],
       "required_environment": "bun",
       "status": "implemented"
+    },
+    {
+      "id": "vitest-044",
+      "surface": "platform/test-harness",
+      "risk": "External GraphQL and SSE examples remain unknown, fresh, and complete",
+      "scenario_owner": "platform/test-harness",
+      "lane_owner": "vitest/unit",
+      "layer": "model",
+      "test_file": "ui/tests/harness/wire-fixtures.test.ts",
+      "test_ids": [
+        "returns fresh unknown GraphQL characterization values",
+        "returns fresh unknown SSE data, malformed, reconnect, and completion values"
+      ],
+      "required_environment": "bun",
+      "status": "implemented"
     }
   ]
 }

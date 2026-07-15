@@ -114,6 +114,14 @@ component, route, and future browser evidence.
   timestamp, and per-factory sequencing; its matrix row has no legacy debt.
   All 43 files / 179 tests pass under forced Bun; TypeScript, both Oxlint lanes,
   Oxfmt, matrix policy/tests, strict xtask Clippy, and diff hygiene pass locally.
+- 2026-07-15: added fresh-value GraphQL and SSE characterization builders under
+  the harness boundary. Their public return type is `unknown`; they import no
+  production decoder and cover valid data, empty data, GraphQL error,
+  type-malformed payload, malformed SSE JSON, reconnect/error, and completion.
+  Final-topology self-tests prove exact frozen shapes and independent object
+  identity, and the matrix owns both test IDs without legacy debt. All 44 files
+  / 181 tests pass under forced Bun; TypeScript, both Oxlint lanes, Oxfmt,
+  matrix policy/tests, strict xtask Clippy, and diff hygiene pass locally.
 
 ## Fixed Test Topology
 
