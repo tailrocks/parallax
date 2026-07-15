@@ -111,6 +111,11 @@ reviewable generated source and reproducible offline builds.
   key `url.path` through the generated constant. Seven Vitest cases and the
   production web build/typecheck pass locally. Rust `tracing` field keys remain
   literal only where the macro grammar requires compile-time field syntax.
+- 2026-07-15: completed the missing Weaver schema-negative gate. The read-only
+  semconv check now requires repository fixtures for invalid stability,
+  invalid attribute type, and an unresolved attribute reference to fail under
+  pinned Weaver 0.24.2 after the real registry passes. The cross-repository
+  check, four focused xtask tests, formatting, and strict clippy pass locally.
 
 ## Scope
 

@@ -1,6 +1,6 @@
 use std::{collections::BTreeSet, fs, path::Path, process::Command};
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result, bail, ensure};
 use serde::{Deserialize, Serialize};
 use tempfile::TempDir;
 
@@ -95,17 +95,8 @@ fn check_generated_artifacts(root: &Path, playground_root: Option<&Path>) -> Res
 }
 
 fn check_weaver(root: &Path) -> Result<()> {
-    let output = Command::new("weaver")
-        .args([
-            "registry",
-            "check",
-            "--registry",
-            "telemetry/semconv/registry",
-            "--future",
-        ])
-        .current_dir(root)
-        .output()
-        .context("start pinned Weaver; run `mise install` to provision it")?;
+    let registry = root.join("telemetry/semconv/registry");
+    let output = run_weaver(root, &registry)?;
     if !output.status.success() {
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -114,7 +105,39 @@ fn check_weaver(root: &Path) -> Result<()> {
             status = output.status
         );
     }
+
+    let fixtures_root = root.join("telemetry/semconv/fixtures");
+    let mut fixtures = fs::read_dir(&fixtures_root)
+        .with_context(|| format!("read Weaver fixtures `{}`", fixtures_root.display()))?
+        .filter_map(Result::ok)
+        .filter(|entry| entry.file_type().is_ok_and(|kind| kind.is_dir()))
+        .map(|entry| entry.path())
+        .collect::<Vec<_>>();
+    fixtures.sort();
+    ensure!(
+        fixtures.len() >= 3,
+        "Weaver negative fixture set must cover stability, type, and references"
+    );
+    for fixture in fixtures {
+        let output = run_weaver(root, &fixture)?;
+        ensure!(
+            !output.status.success(),
+            "Weaver negative fixture `{}` unexpectedly passed",
+            fixture.display()
+        );
+    }
     Ok(())
+}
+
+fn run_weaver(root: &Path, registry: &Path) -> Result<std::process::Output> {
+    Command::new("weaver")
+        .args(["registry", "check", "--registry"])
+        .arg(registry)
+        .arg("--future")
+        .arg("--quiet")
+        .current_dir(root)
+        .output()
+        .context("start pinned Weaver; run `mise install` to provision it")
 }
 
 pub(crate) fn generate(root: &Path) -> Result<()> {

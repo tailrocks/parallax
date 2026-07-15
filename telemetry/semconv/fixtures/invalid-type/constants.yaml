@@ -1,0 +1,10 @@
+groups:
+  - id: fixture.invalid_type
+    type: attribute_group
+    brief: Negative fixture for an invalid attribute type.
+    stability: stable
+    attributes:
+      - id: fixture.attribute
+        type: not-a-type
+        brief: Fixture attribute.
+        stability: stable
