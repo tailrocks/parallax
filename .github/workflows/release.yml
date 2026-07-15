@@ -205,6 +205,8 @@ jobs:
           mise exec -- cargo xtask release-package \
             --binary "target/${TARGET}/release/parallax" \
             --archive "$archive" \
+            --target "$TARGET" \
+            --version "$VERSION" \
             --source-epoch "$source_epoch"
           echo "archive=$archive" >> "$GITHUB_OUTPUT"
           echo "source_epoch=$source_epoch" >> "$GITHUB_OUTPUT"

@@ -58,6 +58,13 @@
   digest, multiline checksum, wrong SBOM archive name, wrong archive digest,
   wrong CycloneDX format, malformed JSON, and a missing SBOM. The focused test
   and strict all-target xtask clippy pass locally.
+- 2026-07-15: closed the producer-side identity bypass. `release-package` now
+  requires target and version, rejects archive names outside the exact preview
+  or stable contract, and verifies the built object's architecture, embedded
+  version identity, symbol table, and resolvable line tables before writing
+  archive bytes. Both preview and stable callers pass their authoritative
+  identities. The release suite, CLI parser fixture, and strict all-target
+  xtask clippy pass locally.
 
 ## Why
 

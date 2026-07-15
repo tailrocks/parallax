@@ -83,6 +83,10 @@ pub(crate) enum Command {
         #[arg(long)]
         archive: PathBuf,
         #[arg(long)]
+        target: String,
+        #[arg(long)]
+        version: String,
+        #[arg(long)]
         source_epoch: u64,
     },
     /// Package the same binary twice and require byte-identical release output.

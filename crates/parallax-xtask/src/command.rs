@@ -107,8 +107,10 @@ fn execute_release(command: Command) -> Result<()> {
         Command::ReleasePackage {
             binary,
             archive,
+            target,
+            version,
             source_epoch,
-        } => release::package(&binary, &archive, source_epoch),
+        } => release::package(&binary, &archive, &target, &version, source_epoch),
         Command::ReleaseRehearse {
             binary,
             target,

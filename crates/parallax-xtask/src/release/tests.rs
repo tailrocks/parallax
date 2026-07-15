@@ -1,4 +1,7 @@
-use std::{io::Read, path::PathBuf};
+use std::{
+    io::Read,
+    path::{Path, PathBuf},
+};
 
 use flate2::read::GzDecoder;
 use tar::EntryType;
@@ -95,8 +98,26 @@ fn identity_rejects_unsupported_targets_and_ambiguous_versions() -> Result<(), S
         validate_identity("powerpc-unknown-linux-gnu", "0.1.0").is_err(),
         validate_identity("x86_64-unknown-linux-gnu", "v0.1.0").is_err(),
         validate_identity("x86_64-unknown-linux-gnu", "0.1.0 bad").is_err(),
+        validate_archive_name(
+            Path::new("parallax-x86_64-unknown-linux-gnu.tar.gz"),
+            "x86_64-unknown-linux-gnu",
+            "0.1.0-preview.1+abcdef0",
+        )
+        .is_ok(),
+        validate_archive_name(
+            Path::new("parallax-0.1.0-x86_64-unknown-linux-gnu.tar.gz"),
+            "x86_64-unknown-linux-gnu",
+            "0.1.0",
+        )
+        .is_ok(),
+        validate_archive_name(
+            Path::new("parallax-wrong.tar.gz"),
+            "x86_64-unknown-linux-gnu",
+            "0.1.0",
+        )
+        .is_err(),
     );
-    if actual != (true, true, true, true) {
+    if actual != (true, true, true, true, true, true, true) {
         return Err(format!("release identity validation mismatch: {actual:?}"));
     }
     Ok(())

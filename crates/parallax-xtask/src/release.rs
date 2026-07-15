@@ -25,7 +25,18 @@ pub(crate) struct VerifySpec {
     pub signer_workflow: String,
 }
 
-pub(crate) fn package(binary: &Path, output: &Path, source_epoch: u64) -> Result<()> {
+pub(crate) fn package(
+    binary: &Path,
+    output: &Path,
+    target: &str,
+    version: &str,
+    source_epoch: u64,
+) -> Result<()> {
+    validate_identity(target, version)?;
+    validate_archive_name(output, target, version)?;
+    let binary_bytes = std::fs::read(binary)
+        .with_context(|| format!("read release binary {}", binary.display()))?;
+    verify::verify_object(&binary_bytes, target, version)?;
     println!(
         "==> package {} -> {} (SOURCE_DATE_EPOCH={source_epoch})",
         binary.display(),
@@ -34,6 +45,19 @@ pub(crate) fn package(binary: &Path, output: &Path, source_epoch: u64) -> Result
     archive::write(binary, output, source_epoch)?;
     let digest = archive::write_checksum(output)?;
     println!("==> archive sha256 {digest}");
+    Ok(())
+}
+
+fn validate_archive_name(output: &Path, target: &str, version: &str) -> Result<()> {
+    let name = output
+        .file_name()
+        .and_then(std::ffi::OsStr::to_str)
+        .context("release archive needs a UTF-8 filename")?;
+    let preview = format!("parallax-{target}.tar.gz");
+    let stable = format!("parallax-{version}-{target}.tar.gz");
+    if name != preview && name != stable {
+        bail!("release archive name `{name}` does not match preview or stable identity");
+    }
     Ok(())
 }
 

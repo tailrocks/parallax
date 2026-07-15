@@ -153,7 +153,7 @@ fn read_binary(spec: &VerifySpec) -> Result<Vec<u8>> {
     Ok(binary)
 }
 
-fn verify_object(binary: &[u8], target: &str, version: &str) -> Result<()> {
+pub(super) fn verify_object(binary: &[u8], target: &str, version: &str) -> Result<()> {
     let object = object::File::parse(binary).context("parse release binary object")?;
     let expected = match target {
         "aarch64-apple-darwin" => (BinaryFormat::MachO, Architecture::Aarch64),
