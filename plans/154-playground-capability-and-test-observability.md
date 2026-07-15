@@ -494,6 +494,13 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   `test.attempt.ordinal`. The normal payment suite and the two-fixture retry
   rehearsal both pass locally on Linux arm64 with the documented mise/Gradle
   cache invocation. Collector rendering remains part of final acceptance.
+- 2026-07-15: closed the remaining local CLI process-boundary characterization
+  gap. Child-command construction is now a pure inspectable boundary; its test
+  proves a normal daemon child receives `TRACEPARENT`, run-scoped resource
+  attributes, and session/run baggage, while the intentional orphan path
+  explicitly removes `TRACEPARENT`, `TRACESTATE`, and `BAGGAGE`. The locked
+  CLI suite passes 11 tests and strict all-target clippy is clean on Linux
+  arm64.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
