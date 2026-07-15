@@ -90,6 +90,10 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
 - `a21585f` adds the shared Axum middleware and applies it to every Rust HTTP
   service. It emits the standard server span attributes and
   `http.server.request.duration` RED histogram; focused Rust checks pass.
+- `be50679` corrects that middleware's failure recording: HTTP 5xx responses
+  now set `error.type` and OpenTelemetry error status on the retained server
+  span itself rather than the no-longer-current ambient span. The focused
+  library suite (19 tests), formatting, and strict clippy pass locally.
 - `dfdd066` moves flagd evaluation into the shared Rust telemetry library and
   connects `cacheLeak`, `poisonMessage`, and `canaryFailure` to their real
   recommendation, orders, and checkout chaos paths, with explicit environment
