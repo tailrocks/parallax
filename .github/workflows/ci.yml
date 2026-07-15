@@ -507,7 +507,7 @@ jobs:
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.bun/install/cache
-          key: oxfmt-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('ui/bun.lock', 'ui/package.json', 'ui/.oxfmtrc.jsonc', 'ui/**/*.ts', 'ui/**/*.tsx', 'ui/**/*.js', 'ui/**/*.jsx') }}
+          key: oxfmt-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('ui/bun.lock', 'ui/package.json', 'ui/.oxfmtrc.jsonc', 'ui/**/*.ts', 'ui/**/*.tsx') }}
           restore-keys: oxfmt-${{ runner.os }}-${{ runner.arch }}-
       - run: bun ci
         working-directory: ui

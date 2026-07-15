@@ -16,9 +16,9 @@
     "lint": "bun run lint:native && bun run lint:type-aware",
     "lint:native": "bun ./node_modules/oxlint/bin/oxlint --deny-warnings --report-unused-disable-directives .",
     "lint:type-aware": "bun ./node_modules/oxlint/bin/oxlint --type-aware --deny-warnings --report-unused-disable-directives .",
-    "format": "bun ./node_modules/oxfmt/bin/oxfmt --write \"**/*.{ts,tsx,js,jsx}\" \"!src/routeTree.gen.ts\"",
-    "format:list": "bun ./node_modules/oxfmt/bin/oxfmt --list-different \"**/*.{ts,tsx,js,jsx}\" \"!src/routeTree.gen.ts\"",
-    "check": "bun ./node_modules/oxfmt/bin/oxfmt --check \"**/*.{ts,tsx,js,jsx}\" \"!src/routeTree.gen.ts\"",
+    "format": "bun ./node_modules/oxfmt/bin/oxfmt --write \"**/*.{ts,tsx}\" \"!src/routeTree.gen.ts\"",
+    "format:list": "bun ./node_modules/oxfmt/bin/oxfmt --list-different \"**/*.{ts,tsx}\" \"!src/routeTree.gen.ts\"",
+    "check": "bun ./node_modules/oxfmt/bin/oxfmt --check \"**/*.{ts,tsx}\" \"!src/routeTree.gen.ts\"",
     "typecheck": "bun ./node_modules/typescript/bin/tsc --noEmit"
   },
   "dependencies": {

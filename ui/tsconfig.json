@@ -21,6 +21,8 @@
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "erasableSyntaxOnly": true,
+    "allowJs": false,
+    "checkJs": false,
     "noEmit": true,
 
     /* Linting */
