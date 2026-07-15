@@ -384,9 +384,7 @@ function SqlPage() {
             if (!table || !column || !dataType) continue
             if (!grouped.has(table)) grouped.set(table, [])
             grouped.get(table)?.push({ name: column, dataType })
-          } catch {
-            // skip malformed rows
-          }
+          } catch {}
         }
         setSchema(grouped)
       })

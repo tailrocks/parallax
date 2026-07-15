@@ -11,36 +11,33 @@ fn external_verifiers_bind_every_release_identity() -> Result<(), Box<dyn std::e
     let signature = signature_arguments(&spec);
     let provenance = provenance_arguments(&spec);
 
-    assert_eq!(
-        signature,
-        [
-            OsString::from("verify-blob"),
-            OsString::from("--bundle"),
-            OsString::from(format!("{}.bundle", archive.display())),
-            OsString::from("--certificate-identity"),
-            OsString::from(&spec.signer_identity),
-            OsString::from("--certificate-oidc-issuer"),
-            OsString::from(OIDC_ISSUER),
-            archive.as_os_str().to_owned(),
-        ]
-    );
-    assert_eq!(
-        provenance,
-        [
-            OsString::from("attestation"),
-            OsString::from("verify"),
-            archive.as_os_str().to_owned(),
-            OsString::from("--repo"),
-            OsString::from(&spec.repository),
-            OsString::from("--signer-workflow"),
-            OsString::from(&spec.signer_workflow),
-            OsString::from("--source-digest"),
-            OsString::from(&spec.source_commit),
-            OsString::from("--source-ref"),
-            OsString::from(&spec.source_ref),
-            OsString::from("--deny-self-hosted-runners"),
-        ]
-    );
+    let expected_signature = [
+        OsString::from("verify-blob"),
+        OsString::from("--bundle"),
+        OsString::from(format!("{}.bundle", archive.display())),
+        OsString::from("--certificate-identity"),
+        OsString::from(&spec.signer_identity),
+        OsString::from("--certificate-oidc-issuer"),
+        OsString::from(OIDC_ISSUER),
+        archive.as_os_str().to_owned(),
+    ];
+    let expected_provenance = [
+        OsString::from("attestation"),
+        OsString::from("verify"),
+        archive.as_os_str().to_owned(),
+        OsString::from("--repo"),
+        OsString::from(&spec.repository),
+        OsString::from("--signer-workflow"),
+        OsString::from(&spec.signer_workflow),
+        OsString::from("--source-digest"),
+        OsString::from(&spec.source_commit),
+        OsString::from("--source-ref"),
+        OsString::from(&spec.source_ref),
+        OsString::from("--deny-self-hosted-runners"),
+    ];
+    if signature != expected_signature || provenance != expected_provenance {
+        return Err("external verifier identity arguments drifted".into());
+    }
     Ok(())
 }
 
@@ -278,11 +275,15 @@ fn noncanonical_outer_archive_bytes_fail_closed() -> Result<(), Box<dyn std::err
 
     let mut trailing_bytes = original.clone();
     trailing_bytes.extend_from_slice(b"unattested trailing bytes");
-    assert!(verify_canonical_archive(&trailing_bytes, b"fixture", 1_700_000_000).is_err());
+    if verify_canonical_archive(&trailing_bytes, b"fixture", 1_700_000_000).is_ok() {
+        return Err("archive with trailing bytes passed canonical verification".into());
+    }
 
     let mut changed_deflate_stream = original;
     changed_deflate_stream[10] ^= 1;
-    assert!(verify_canonical_archive(&changed_deflate_stream, b"fixture", 1_700_000_000).is_err());
+    if verify_canonical_archive(&changed_deflate_stream, b"fixture", 1_700_000_000).is_ok() {
+        return Err("changed deflate stream passed canonical verification".into());
+    }
 
     let oversized = temp
         .path()
@@ -290,7 +291,9 @@ fn noncanonical_outer_archive_bytes_fail_closed() -> Result<(), Box<dyn std::err
     std::fs::File::create(&oversized)?.set_len(MAX_ARCHIVE_BYTES + 1)?;
     let error = read_binary(&spec(oversized, target, env!("CARGO_PKG_VERSION")))
         .expect_err("oversized archive must fail before reading");
-    assert!(error.to_string().contains("exceeds 512 MiB"));
+    if !error.to_string().contains("exceeds 512 MiB") {
+        return Err(error.into());
+    }
     Ok(())
 }
 

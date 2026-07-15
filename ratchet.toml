@@ -138,7 +138,7 @@ ceiling = 2
 [[rust_suppressions]]
 crate_name = "parallax-api"
 lint = "clippy::too_many_lines"
-ceiling = 5
+ceiling = 4
 
 [[rust_suppressions]]
 crate_name = "parallax-cli"
@@ -612,7 +612,7 @@ ceiling = 441
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/routes/services.$service.tsx"
-ceiling = 833
+ceiling = 831
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -622,7 +622,7 @@ ceiling = 501
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/routes/sql.tsx"
-ceiling = 665
+ceiling = 664
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -726,12 +726,12 @@ ceiling = 62
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/components/metric-strip.tsx:116"
+scope = "ui/src/components/metric-strip.tsx:121"
 ceiling = 68
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/components/metric-strip.tsx:96"
+scope = "ui/src/components/metric-strip.tsx:101"
 ceiling = 114
 
 [[limits]]
@@ -1001,22 +1001,22 @@ ceiling = 89
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/services.$service.tsx:362"
+scope = "ui/src/routes/services.$service.tsx:358"
 ceiling = 135
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/services.$service.tsx:600"
+scope = "ui/src/routes/services.$service.tsx:596"
 ceiling = 62
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/services.$service.tsx:663"
+scope = "ui/src/routes/services.$service.tsx:659"
 ceiling = 139
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/services.$service.tsx:803"
+scope = "ui/src/routes/services.$service.tsx:799"
 ceiling = 69
 
 [[limits]]
@@ -1031,18 +1031,18 @@ ceiling = 98
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/sql.tsx:191"
+scope = "ui/src/routes/sql.tsx:192"
 ceiling = 65
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/sql.tsx:270"
+scope = "ui/src/routes/sql.tsx:271"
 ceiling = 62
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/sql.tsx:338"
-ceiling = 359
+scope = "ui/src/routes/sql.tsx:339"
+ceiling = 357
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -1536,7 +1536,7 @@ ceiling = 29
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/sql.tsx:376"
+scope = "ui/src/routes/sql.tsx:377"
 ceiling = 16
 
 [[limits]]
@@ -1975,7 +1975,7 @@ ceiling = 3
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-cli/src/commands/tests.rs"
-ceiling = 38
+ceiling = 36
 
 [[limits]]
 metric = "rust.assertions"
@@ -2266,11 +2266,6 @@ ceiling = 120
 metric = "rust.function-lines"
 scope = "crates/parallax-api/src/resolvers/metrics/tests.rs::metric_label_and_runtime_resolvers_query_memory_store"
 ceiling = 114
-
-[[limits]]
-metric = "rust.function-lines"
-scope = "crates/parallax-api/src/resolvers/runs/tests.rs::runs_list_stats_match_single_run"
-ceiling = 112
 
 [[limits]]
 metric = "rust.function-lines"

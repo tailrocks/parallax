@@ -127,7 +127,9 @@ fn rehearsal_rejects_non_release_and_oversized_binaries() -> Result<(), Box<dyn 
         temp.path(),
     )
     .expect_err("oversized release binary must fail before reading");
-    assert!(error.to_string().contains("exceeds 512 MiB"));
+    if !error.to_string().contains("exceeds 512 MiB") {
+        return Err(error.into());
+    }
     Ok(())
 }
 

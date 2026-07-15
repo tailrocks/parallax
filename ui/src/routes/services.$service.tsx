@@ -77,16 +77,8 @@ import {
 } from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
 import { cn } from "@/lib/utils"
-import {
-  HTTP_SERVER_REQUEST_DURATION,
-  REQUEST_DURATION_METRICS,
-} from "@/shared/semconv"
-
-interface SeriesPoint {
-  tsNanos: string
-  value: number
-}
-
+import * as Semconv from "@/shared/semconv"
+type SeriesPoint = { tsNanos: string; value: number }
 interface SpanRed {
   rate: SeriesPoint[]
   errorRate: SeriesPoint[]
@@ -201,10 +193,10 @@ export async function loadServiceDetail(service: string, range: ResolvedRange) {
         lastSeenNanos
         instanceCount
       }
-      httpDurationExemplars: metricExemplars(name: "${HTTP_SERVER_REQUEST_DURATION}", service: "${escaped}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", limit: 50) {
+      httpDurationExemplars: metricExemplars(name: "${Semconv.HTTP_SERVER_REQUEST_DURATION}", service: "${escaped}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", limit: 50) {
         tsNanos service name value traceId spanId runId attributes
       }
-      rpcDurationExemplars: metricExemplars(name: "${REQUEST_DURATION_METRICS[1]}", service: "${escaped}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", limit: 50) {
+      rpcDurationExemplars: metricExemplars(name: "${Semconv.REQUEST_DURATION_METRICS[1]}", service: "${escaped}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", limit: 50) {
         tsNanos service name value traceId spanId runId attributes
       }
       runtimeSnapshot(service: "${escaped}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", stepSeconds: ${stepSeconds}) {

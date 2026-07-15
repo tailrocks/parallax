@@ -4,11 +4,13 @@ const CUSTOM_ENDPOINT: &str = "http://127.0.0.1:14317";
 
 #[test]
 fn protocol_follows_port() {
-    assert_eq!(protocol_for("http://localhost:4317"), OTLP_GRPC_PROTOCOL);
-    assert_eq!(protocol_for("http://localhost:4318"), OTLP_HTTP_PROTOCOL);
     assert_eq!(
-        protocol_for("http://host.docker.internal:14317"),
-        OTLP_GRPC_PROTOCOL
+        (
+            protocol_for("http://localhost:4317"),
+            protocol_for("http://localhost:4318"),
+            protocol_for("http://host.docker.internal:14317"),
+        ),
+        (OTLP_GRPC_PROTOCOL, OTLP_HTTP_PROTOCOL, OTLP_GRPC_PROTOCOL)
     );
 }
 
@@ -21,8 +23,10 @@ fn flag_beats_env() {
         CUSTOM_ENDPOINT,
     )
     .unwrap();
-    assert_eq!(fwd.endpoint, "http://localhost:4317");
-    assert!(fwd.compare);
+    assert_eq!(
+        (fwd.endpoint.as_str(), fwd.compare),
+        ("http://localhost:4317", true)
+    );
 }
 
 #[test]
@@ -34,15 +38,19 @@ fn flag_off_forces_default() {
         CUSTOM_ENDPOINT,
     )
     .unwrap();
-    assert_eq!(fwd.endpoint, CUSTOM_ENDPOINT);
-    assert!(!fwd.compare);
+    assert_eq!(
+        (fwd.endpoint.as_str(), fwd.compare),
+        (CUSTOM_ENDPOINT, false)
+    );
 }
 
 #[test]
 fn rotel_alias_resolves() {
     let fwd = resolve_forward_from(None, Some("rotel".to_string()), None, CUSTOM_ENDPOINT).unwrap();
-    assert_eq!(fwd.endpoint, DEFAULT_ROTEL_ENDPOINT);
-    assert!(fwd.compare);
+    assert_eq!(
+        (fwd.endpoint.as_str(), fwd.compare),
+        (DEFAULT_ROTEL_ENDPOINT, true)
+    );
 }
 
 #[test]
@@ -54,9 +62,10 @@ fn explicit_url_from_env() {
         CUSTOM_ENDPOINT,
     )
     .unwrap();
-    assert_eq!(fwd.endpoint, "http://collector:4318");
-    assert_eq!(fwd.protocol, OTLP_HTTP_PROTOCOL);
-    assert!(fwd.compare);
+    assert_eq!(
+        (fwd.endpoint.as_str(), fwd.protocol, fwd.compare),
+        ("http://collector:4318", OTLP_HTTP_PROTOCOL, true)
+    );
 }
 
 #[test]
@@ -68,15 +77,19 @@ fn respects_preexisting_otel_endpoint() {
         CUSTOM_ENDPOINT,
     )
     .unwrap();
-    assert_eq!(fwd.endpoint, "http://localhost:4317");
-    assert!(fwd.compare);
+    assert_eq!(
+        (fwd.endpoint.as_str(), fwd.compare),
+        ("http://localhost:4317", true)
+    );
 }
 
 #[test]
 fn default_when_nothing_set() {
     let fwd = resolve_forward_from(None, None, None, CUSTOM_ENDPOINT).unwrap();
-    assert_eq!(fwd.endpoint, CUSTOM_ENDPOINT);
-    assert!(!fwd.compare);
+    assert_eq!(
+        (fwd.endpoint.as_str(), fwd.compare),
+        (CUSTOM_ENDPOINT, false)
+    );
 }
 
 #[test]

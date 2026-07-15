@@ -144,6 +144,17 @@ pub(crate) async fn run_start(
         return Ok(0);
     }
 
+    execute_child(client, &command, &pairs, &fwd, session, &run_id).await
+}
+
+async fn execute_child(
+    client: &Client,
+    command: &[String],
+    pairs: &[(&str, String)],
+    fwd: &Forward,
+    session: RunSessionSpan,
+    run_id: &str,
+) -> anyhow::Result<i32> {
     // Wrapper mode: inject env, run the child, capture the exit code.
     println!("Parallax run id: {run_id}");
     println!("command: {}", command.join(" "));
@@ -160,7 +171,7 @@ pub(crate) async fn run_start(
     println!("live: parallax run watch {run_id}");
     let mut cmd = tokio::process::Command::new(&command[0]);
     cmd.args(&command[1..]);
-    for (key, value) in &pairs {
+    for (key, value) in pairs {
         cmd.env(key, value);
     }
     // Always attempt runFinish even when the child fails to spawn, so the run
@@ -174,7 +185,7 @@ pub(crate) async fn run_start(
     let finish = client
         .graphql(&format!(
             r#"mutation {{ runFinish(runId: "{}", endedAtNanos: "{}", exitCode: {exit_code}) }}"#,
-            gql_str(&run_id),
+            gql_str(run_id),
             now_nanos()
         ))
         .await;
