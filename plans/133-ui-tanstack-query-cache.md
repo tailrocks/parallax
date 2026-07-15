@@ -18,7 +18,7 @@
 - **Depends on**: 095, 101, 128, 129, 132, 144, 145, 151
 - **Category**: UI / TanStack Query / cache correctness
 - **Planned at**: `e3e7997`, revised 2026-07-12
-- **Status**: TODO
+- **Status**: BLOCKED — upstream UI and Playwright dependency plans are incomplete
 
 ## Why This Matters
 

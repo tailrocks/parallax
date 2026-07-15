@@ -60,6 +60,11 @@ protection, cross-store recovery, or truthful physical-reclaim promise.
 Consequently Steps 2-5 remain forbidden; this plan contains no safe
 implementation work until the operator supplies the required approved contract.
 
+Fresh audit on 2026-07-15 at `691cf17`: repository search still finds no
+`docs/research/decisions/retention-and-prune-contract.md`, and no operator
+approval names the destructive lifecycle fields required by Step 1. The
+spool-only implementation remains authoritative and no deletion work is safe.
+
 Steps 2-5 are forbidden until that exact record is approved. If approval is
 unavailable, rejects every proposal, or changes storage/product scope, mark this
 plan `BLOCKED` with the exact open decision and stop. Never infer destructive

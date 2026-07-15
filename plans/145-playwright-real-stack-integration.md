@@ -22,7 +22,7 @@
 - **Depends on**: 093, 101, 132, 144
 - **Category**: tests / integration / GreptimeDB / Turso
 - **Planned at**: `e3e7997`, revised 2026-07-12
-- **Status**: TODO
+- **Status**: BLOCKED — Plans 132 and 144 are not complete
 
 ## Why This Matters
 

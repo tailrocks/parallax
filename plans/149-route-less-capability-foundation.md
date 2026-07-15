@@ -24,7 +24,7 @@
 - **Depends on**: 100, 129, 152, 153
 - **Category**: TypeScript / route-less capabilities / architecture foundation
 - **Planned at**: `e3e7997`, 2026-07-12
-- **Status**: TODO
+- **Status**: BLOCKED — Plans 100, 129, 152, and 153 are not complete
 
 ## Why This Matters
 

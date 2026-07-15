@@ -24,7 +24,7 @@
 - **Depends on**: 101, 132, 144, 145
 - **Category**: tests / compatibility / accessibility / visual
 - **Planned at**: `e3e7997`, revised 2026-07-12
-- **Status**: TODO
+- **Status**: BLOCKED — Plans 132, 144, and 145 are not complete
 
 ## Why This Matters
 

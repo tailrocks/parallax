@@ -21,7 +21,7 @@
 - **Depends on**: 095, 101, 129, 133, 140, 141, 142, 145, 151
 - **Category**: performance / correctness / live data
 - **Planned at**: `e3e7997`, revised 2026-07-12
-- **Status**: TODO
+- **Status**: BLOCKED — upstream cache, feature, browser, and final UI plans are incomplete
 
 ## Why This Matters
 

@@ -22,7 +22,7 @@
 - **Depends on**: 094, 101, 128, 129, 132
 - **Category**: tests / Playwright / CI
 - **Planned at**: `e3e7997`, revised 2026-07-12
-- **Status**: TODO
+- **Status**: BLOCKED — Plans 128, 129, and 132 are not complete
 
 ## Why This Matters
 
