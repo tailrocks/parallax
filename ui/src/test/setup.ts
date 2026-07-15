@@ -6,23 +6,30 @@ import {
   recordDiagnostic,
   resetDiagnostics,
 } from "@/test/diagnostics"
+import { networkEscapeReason } from "@/test/network"
 
 afterEach(cleanup)
 
 const originalConsoleError = console.error
 const originalConsoleWarn = console.warn
+const originalFetch = globalThis.fetch
 
 beforeEach(() => {
   resetDiagnostics()
   console.error = (...values: unknown[]) => recordDiagnostic("error", values)
   console.warn = (...values: unknown[]) => recordDiagnostic("warn", values)
+  globalThis.fetch = (input: RequestInfo | URL) =>
+    Promise.reject(new Error(networkEscapeReason(input)))
 })
 
 afterEach(() => {
   console.error = originalConsoleError
   console.warn = originalConsoleWarn
+  globalThis.fetch = originalFetch
   assertDiagnostics()
 })
+
+process.env["TZ"] = "UTC"
 
 class TestResizeObserver implements ResizeObserver {
   readonly #callback: ResizeObserverCallback

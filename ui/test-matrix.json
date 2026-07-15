@@ -1051,6 +1051,21 @@
       ],
       "required_environment": "bun",
       "status": "implemented"
+    },
+    {
+      "id": "vitest-043",
+      "surface": "platform/test-harness",
+      "risk": "Tests cannot escape to the network and own deterministic time and IDs",
+      "scenario_owner": "platform/test-harness",
+      "lane_owner": "vitest/unit",
+      "layer": "model",
+      "test_file": "ui/tests/harness/boundaries.test.ts",
+      "test_ids": [
+        "reports exact network escape targets",
+        "provides UTC time and deterministic isolated identifiers"
+      ],
+      "required_environment": "bun",
+      "status": "implemented"
     }
   ]
 }

@@ -105,6 +105,15 @@ component, route, and future browser evidence.
   suppressing them. All 42 files / 177 tests pass under forced Bun with zero
   diagnostics; TypeScript, both Oxlint lanes, Oxfmt, matrix policy and negative
   fixtures, strict xtask Clippy, and diff hygiene pass locally.
+- 2026-07-15: completed the ready network/time/identity harness boundary. Every
+  test begins with a fetch implementation that fails with the exact requested
+  target unless the test installs its own explicit stub; the original runtime
+  fetch is restored after each case. UTC is fixed for the harness, and reusable
+  fixtures expose an immutable instant plus isolated deterministic ID factories.
+  A second final-topology harness file proves exact URL diagnostics, timezone,
+  timestamp, and per-factory sequencing; its matrix row has no legacy debt.
+  All 43 files / 179 tests pass under forced Bun; TypeScript, both Oxlint lanes,
+  Oxfmt, matrix policy/tests, strict xtask Clippy, and diff hygiene pass locally.
 
 ## Fixed Test Topology
 
