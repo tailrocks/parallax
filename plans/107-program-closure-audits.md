@@ -28,6 +28,10 @@
   restricts the closure diff to the mechanical allowlist, hashes and validates
   both JSON packets, proves program-file/authorization retirement and the
   remaining plan/index BLOCKED bijection, and accepts future closure dates.
+  Packet validation is fail-closed over the exact top-level schema and requires
+  a clean independent audit, non-empty tool versions, passing commands with
+  evidence hashes, artifact hashes, structured finding/exception arrays, and fresh
+  blocked-trigger records; hollow or extra-field packets fail the dry run.
   The final lane runs `cargo xtask ci --full` before structural verification
   with every required pinned tool. All 71 xtask tests, strict xtask Clippy,
   Actionlint, workflow/classifier fixtures, Rust formatting, structural policy,
