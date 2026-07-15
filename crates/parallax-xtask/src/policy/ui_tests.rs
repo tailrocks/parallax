@@ -34,6 +34,20 @@ const REQUIRED_SURFACES: [&str; 21] = [
     "shared/ui",
     "shared/visualization",
 ];
+const REQUIRED_VITEST_RULES: [&str; 12] = [
+    "expect-expect",
+    "no-conditional-expect",
+    "no-conditional-tests",
+    "no-disabled-tests",
+    "no-duplicate-hooks",
+    "no-focused-tests",
+    "no-identical-title",
+    "no-standalone-expect",
+    "no-test-prefixes",
+    "valid-describe-callback",
+    "valid-expect",
+    "warn-todo",
+];
 
 #[derive(Debug, Deserialize)]
 struct Matrix {
@@ -97,6 +111,7 @@ pub(super) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
     if matrix.schema_version != 1 {
         findings.push(finding("ui.tests.schema", "schema_version must equal 1"));
     }
+    validate_oxlint(root, &mut findings);
 
     let mut ids = BTreeSet::new();
     let mut represented = BTreeMap::new();
@@ -183,6 +198,19 @@ pub(super) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
         ));
     }
     Ok(findings)
+}
+
+fn validate_oxlint(root: &Path, findings: &mut Vec<Finding>) {
+    let source = fs::read_to_string(root.join("ui/.oxlintrc.jsonc")).unwrap_or_default();
+    for rule in REQUIRED_VITEST_RULES {
+        let required = format!(r#""vitest/{rule}": "error""#);
+        if !source.contains(&required) {
+            findings.push(finding(
+                "ui.tests.lint",
+                &format!("stable native Vitest rule `{rule}` must be an error"),
+            ));
+        }
+    }
 }
 
 fn validate_catalog(matrix: &Matrix, findings: &mut Vec<Finding>) {

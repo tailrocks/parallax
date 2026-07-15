@@ -39,9 +39,14 @@ describe("test diagnostic policy", () => {
 
   it("owns page errors exactly", () => {
     expectDiagnostic("error", "page error Error: page exploded")
-    window.dispatchEvent(
-      new ErrorEvent("error", { error: new Error("page exploded") })
-    )
+    expect(
+      window.dispatchEvent(
+        new ErrorEvent("error", {
+          cancelable: true,
+          error: new Error("page exploded"),
+        })
+      )
+    ).toBe(false)
   })
 
   it("owns browser rejections exactly", () => {
@@ -53,6 +58,6 @@ describe("test diagnostic policy", () => {
     Object.defineProperty(event, "reason", {
       value: new Error("promise exploded"),
     })
-    window.dispatchEvent(event)
+    expect(window.dispatchEvent(event)).toBe(false)
   })
 })

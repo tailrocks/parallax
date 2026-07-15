@@ -202,6 +202,16 @@ component, route, and future browser evidence.
   timers without a global third-party allowlist. All 45 files / 188 tests pass
   under forced Bun; TypeScript, both Oxlint lanes, Oxfmt, matrix policy/tests,
   strict xtask Clippy, and diff hygiene pass locally.
+- 2026-07-15: enabled twelve stable native Oxlint Vitest correctness rules
+  explicitly because repository categories are intentionally off: assertion
+  presence/validity, conditional/focused/disabled tests, duplicate hooks,
+  identical titles, standalone assertions, prefixed tests, describe callback
+  validity, and TODOs. Existing duplicate cleanup hooks were consolidated and
+  diagnostic self-tests now contain observable assertions. `ui.tests` freezes
+  the exact required rule set, and its negative fixture proves missing rules
+  fail. All 45 files / 188 tests pass under forced Bun; TypeScript, native and
+  type-aware Oxlint, Oxfmt, matrix policy/tests, strict xtask Clippy, and diff
+  hygiene pass locally.
 
 ## Fixed Test Topology
 

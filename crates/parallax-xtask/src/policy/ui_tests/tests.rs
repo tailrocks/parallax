@@ -91,5 +91,10 @@ fn rejects_test_id_drift() -> Result<(), Box<dyn std::error::Error>> {
             .iter()
             .any(|finding| finding.rule_id == "ui.tests.catalog")
     );
+    assert!(
+        findings
+            .iter()
+            .any(|finding| finding.rule_id == "ui.tests.lint")
+    );
     Ok(())
 }

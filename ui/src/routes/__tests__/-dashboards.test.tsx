@@ -38,8 +38,8 @@ vi.mock("@/lib/api", () => ({
   graphqlCached: apiMock.graphql,
 }))
 
-afterEach(cleanup)
 afterEach(() => {
+  cleanup()
   apiMock.graphql.mockReset()
   apiMock.graphql.mockImplementation(apiMock.defaultGraphql)
 })
