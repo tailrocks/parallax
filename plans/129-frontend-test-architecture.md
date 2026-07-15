@@ -131,6 +131,16 @@ component, route, and future browser evidence.
   router builders without changing their public assertions. All 45 files / 182
   tests pass under forced Bun; TypeScript, both Oxlint lanes, Oxfmt, matrix
   policy/tests, strict xtask Clippy, and diff hygiene pass locally.
+- 2026-07-15: locked the first structural anti-pattern contract into
+  `ui.tests`. Focused/skipped cases, snapshots, real `setTimeout` use, and
+  diagnostic allowlists now fail with `ui.tests.antipattern`; the negative
+  fixture proves that diagnostic. The matrix also owns an exact shrink-only
+  `fireEvent` ratchet. Range picker, GraphQL operation, trace view mode, field
+  explorer, and RPC inspector migrated ten ordinary clicks to per-test
+  `userEvent.setup()` sessions, shrinking the ratchet from 54 to 44 while
+  retaining low-level mechanics for later classification. All 45 files / 182
+  tests pass under forced Bun; TypeScript, both Oxlint lanes, Oxfmt, matrix
+  policy/tests, strict xtask Clippy, and diff hygiene pass locally.
 
 ## Fixed Test Topology
 

@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { cleanup, render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it } from "vitest"
 
 import type { SpanLink } from "@/lib/api"
@@ -48,7 +49,8 @@ const stream: RpcStreamInfo = {
 }
 
 describe("trace RPC inspector helpers", () => {
-  it("caps inspector events and expands on demand", () => {
+  it("caps inspector events and expands on demand", async () => {
+    const user = userEvent.setup()
     render(
       <InspectorEventList
         events={Array.from({ length: 60 }, (_, index) => event(index))}
@@ -56,11 +58,14 @@ describe("trace RPC inspector helpers", () => {
     )
 
     expect(screen.getAllByTestId("inspector-event")).toHaveLength(25)
-    fireEvent.click(screen.getByRole("button", { name: /show all 60 events/i }))
+    await user.click(
+      screen.getByRole("button", { name: /show all 60 events/i })
+    )
     expect(screen.getAllByTestId("inspector-event")).toHaveLength(60)
   })
 
   it("caps inspector links and expands on demand", async () => {
+    const user = userEvent.setup()
     renderTestRouter(
       <InspectorLinksList
         links={Array.from({ length: 60 }, (_, index) => link(index))}
@@ -71,7 +76,7 @@ describe("trace RPC inspector helpers", () => {
     )
 
     expect(await screen.findAllByTestId("trace-link-edge")).toHaveLength(25)
-    fireEvent.click(screen.getByRole("button", { name: /show all 60 links/i }))
+    await user.click(screen.getByRole("button", { name: /show all 60 links/i }))
     expect(screen.getAllByTestId("trace-link-edge")).toHaveLength(60)
   })
 

@@ -1,5 +1,8 @@
 {
   "schema_version": 1,
+  "ratchets": {
+    "fire_event_calls": 44
+  },
   "entries": [
     {
       "id": "vitest-001",

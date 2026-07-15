@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, screen } from "@testing-library/react"
+import { screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { FieldExplorer } from "@/components/console/field-explorer"
@@ -28,6 +29,7 @@ afterEach(() => {
 
 describe("FieldExplorer", () => {
   it("loads field keys, stats, service filters, and SQL pivots", async () => {
+    const user = userEvent.setup()
     const onApplyService = vi.fn()
     vi.mocked(graphql).mockImplementation(
       async <T,>(query: string): Promise<T> => {
@@ -80,7 +82,7 @@ describe("FieldExplorer", () => {
       { targetPaths: ["/sql"] }
     )
 
-    fireEvent.click(await screen.findByRole("button", { name: /fields/i }))
+    await user.click(await screen.findByRole("button", { name: /fields/i }))
 
     expect(await screen.findByText("resource.service.name")).toBeTruthy()
     expect(await screen.findByText("checkout")).toBeTruthy()
@@ -92,7 +94,7 @@ describe("FieldExplorer", () => {
       screen.getByRole("button", { name: /open exclusion sql for checkout/i })
     ).toBeTruthy()
 
-    fireEvent.click(screen.getByRole("button", { name: /include/i }))
+    await user.click(screen.getByRole("button", { name: /include/i }))
     expect(onApplyService).toHaveBeenCalledWith("checkout")
     expect(vi.mocked(graphql).mock.calls[0]?.[0]).toContain("fieldKeys")
     expect(vi.mocked(graphql).mock.calls[1]?.[0]).toContain("fieldStats")

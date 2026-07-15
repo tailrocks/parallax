@@ -23,12 +23,13 @@ fn rejects_test_id_drift() -> Result<(), Box<dyn std::error::Error>> {
     fs::create_dir_all(test_path.parent().expect("test path has parent"))?;
     fs::write(
         &test_path,
-        "window.scrollTo = () => {};\nit(\"actual behavior\", () => {});\n",
+        "window.scrollTo = () => {};\nsetTimeout(() => {}, 1);\nit(\"actual behavior\", () => {});\n",
     )?;
     fs::write(
         temp.path().join("ui/test-matrix.json"),
         r#"{
   "schema_version": 1,
+  "ratchets": { "fire_event_calls": 0 },
   "entries": [{
     "id": "vitest-001",
     "surface": "features/sample",
@@ -62,6 +63,11 @@ fn rejects_test_id_drift() -> Result<(), Box<dyn std::error::Error>> {
         findings
             .iter()
             .any(|finding| finding.rule_id == "ui.tests.harness")
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|finding| finding.rule_id == "ui.tests.antipattern")
     );
     Ok(())
 }

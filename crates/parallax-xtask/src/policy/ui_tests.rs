@@ -15,7 +15,13 @@ const RERUN: &str = "cargo xtask policy --only ui.tests";
 #[derive(Debug, Deserialize)]
 struct Matrix {
     schema_version: u32,
+    ratchets: Ratchets,
     entries: Vec<Entry>,
+}
+
+#[derive(Debug, Deserialize)]
+struct Ratchets {
+    fire_event_calls: usize,
 }
 
 #[derive(Debug, Deserialize)]
@@ -61,6 +67,7 @@ pub(super) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
     }
 
     let discovered = discover_tests(root)?;
+    let mut fire_event_calls = 0;
     for (path, test_ids) in &discovered {
         if path.starts_with("ui/src/test/") {
             findings.push(finding(
@@ -68,7 +75,7 @@ pub(super) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
                 &format!("test body `{path}` is inside the harness-only src/test directory"),
             ));
         }
-        check_local_harness(root, path, &mut findings)?;
+        fire_event_calls += check_test_source(root, path, &mut findings)?;
         match represented.get(path) {
             Some(expected) if expected == test_ids => {}
             Some(expected) => findings.push(finding(
@@ -90,6 +97,15 @@ pub(super) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
                 &format!("matrix references missing or empty test file `{path}`"),
             ));
         }
+    }
+    if fire_event_calls != matrix.ratchets.fire_event_calls {
+        findings.push(finding(
+            "ui.tests.fire-event-ratchet",
+            &format!(
+                "fireEvent call count is {fire_event_calls}, matrix ratchet is {}",
+                matrix.ratchets.fire_event_calls
+            ),
+        ));
     }
     Ok(findings)
 }
@@ -188,7 +204,7 @@ fn validate_entry(
     Ok(())
 }
 
-fn check_local_harness(root: &Path, path: &str, findings: &mut Vec<Finding>) -> Result<()> {
+fn check_test_source(root: &Path, path: &str, findings: &mut Vec<Finding>) -> Result<usize> {
     let source = fs::read_to_string(root.join(path))?;
     for forbidden in [
         "window.scrollTo =",
@@ -203,7 +219,25 @@ fn check_local_harness(root: &Path, path: &str, findings: &mut Vec<Finding>) -> 
             ));
         }
     }
-    Ok(())
+    for forbidden in [
+        (".only(", "focused test"),
+        (".skip(", "skipped test"),
+        ("toMatchSnapshot(", "snapshot assertion"),
+        ("toMatchInlineSnapshot(", "inline snapshot assertion"),
+        ("setTimeout(", "real-time sleep/timer"),
+        ("diagnosticAllowlist", "diagnostic allowlist"),
+    ] {
+        if source.contains(forbidden.0) {
+            findings.push(finding(
+                "ui.tests.antipattern",
+                &format!(
+                    "`{path}` contains forbidden {} `{}`",
+                    forbidden.1, forbidden.0
+                ),
+            ));
+        }
+    }
+    Ok(source.match_indices("fireEvent.").count())
 }
 
 fn discover_tests(workspace: &Path) -> Result<BTreeMap<String, BTreeSet<String>>> {

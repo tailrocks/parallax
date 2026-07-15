@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { cleanup, render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { GraphqlOperationCard } from "@/components/console/graphql-operation"
@@ -30,7 +31,8 @@ const operation: GraphqlOperation = {
 }
 
 describe("GraphqlOperationCard", () => {
-  it("renders operation badges and selects the backing span", () => {
+  it("renders operation badges and selects the backing span", async () => {
+    const user = userEvent.setup()
     const onSelect = vi.fn()
 
     render(
@@ -44,7 +46,7 @@ describe("GraphqlOperationCard", () => {
     expect(screen.getByText("error")).toBeTruthy()
     expect(screen.getByText("Partial field errors")).toBeTruthy()
 
-    fireEvent.click(screen.getByRole("button", { name: /reviews/i }))
+    await user.click(screen.getByRole("button", { name: /reviews/i }))
     expect(onSelect).toHaveBeenCalledWith("slow-review")
   })
 

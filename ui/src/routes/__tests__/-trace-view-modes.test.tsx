@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { cleanup, render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
@@ -38,11 +39,12 @@ describe("trace detail view modes", () => {
     })
   })
 
-  it("dispatches view changes from the mode toggle", () => {
+  it("dispatches view changes from the mode toggle", async () => {
+    const user = userEvent.setup()
     const onChange = vi.fn()
     render(<TraceViewModeToggle value="tree" onChange={onChange} />)
 
-    fireEvent.click(screen.getByRole("button", { name: /lanes view/i }))
+    await user.click(screen.getByRole("button", { name: /lanes view/i }))
 
     expect(onChange).toHaveBeenCalledWith("lanes")
   })
