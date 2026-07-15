@@ -129,6 +129,14 @@ reviewable generated source and reproducible offline builds.
   deliberate wire fixtures. Cross-repository deterministic checking, generated
   OTLP round-trip tests, 34 playground Rust tests, strict clippy, nine web
   tests plus production build/typecheck, and the payment Gradle suite pass.
+- 2026-07-15: added a shrink-only runtime ownership ratchet after that
+  migration. The read-only cross-repository semconv check now scans the Rust,
+  Java, and Playwright W4 producers/acceptance consumer and rejects quoted
+  generated test/VCS wire names or assertion/harness taxonomy values before
+  drift can reappear. It deliberately excludes generated files, Gradle's
+  pre-compilation environment construction, and `#[cfg(test)]` wire fixtures.
+  A focused positive/negative/fixture unit test, all five semconv xtask tests,
+  strict xtask clippy, and the real cross-repository check pass locally.
 
 ## Scope
 

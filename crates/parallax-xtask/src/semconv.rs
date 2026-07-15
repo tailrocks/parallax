@@ -29,7 +29,49 @@ pub(crate) struct CheckReport {
 pub(crate) fn check(root: &Path, playground_root: Option<&Path>) -> Result<CheckReport> {
     check_weaver(root)?;
     check_rust_ownership(root)?;
-    check_generated_artifacts(root, playground_root)
+    let report = check_generated_artifacts(root, playground_root)?;
+    if let Some(playground_root) = playground_root {
+        check_playground_test_consumer_ownership(root, playground_root)?;
+    }
+    Ok(report)
+}
+
+fn check_playground_test_consumer_ownership(root: &Path, playground_root: &Path) -> Result<()> {
+    let document: RegistryDocument =
+        serde_yml::from_str(&fs::read_to_string(root.join(REGISTRY))?)?;
+    let guarded = document
+        .constants
+        .iter()
+        .filter_map(|constant| constant.value.as_deref())
+        .filter(|value| {
+            value.starts_with("test.")
+                || *value == "vcs.ref.head.revision"
+                || matches!(*value, "assertion_failure" | "harness_error")
+        })
+        .collect::<Vec<_>>();
+    for relative in [
+        "cli/src/test_report.rs",
+        "cli/src/test_verify.rs",
+        "libs/playground-telemetry/src/lib.rs",
+        "services/payment/src/test/java/dev/tailrocks/payment/TestTelemetryAcceptanceTest.java",
+        "services/semconv/src/main/java/io/tailrocks/testsupport/OpenTelemetryTestExtension.java",
+        "web/e2e/telemetry-reporter.ts",
+    ] {
+        let path = playground_root.join(relative);
+        if !path.is_file() {
+            continue;
+        }
+        let source = fs::read_to_string(&path)?;
+        let production = source.split("#[cfg(test)]").next().unwrap_or(&source);
+        for value in &guarded {
+            if production.contains(&format!("\"{value}\"")) {
+                bail!(
+                    "playground runtime source `{relative}` duplicates generated semantic-convention value `{value}`"
+                );
+            }
+        }
+    }
+    Ok(())
 }
 
 fn check_rust_ownership(root: &Path) -> Result<()> {
@@ -448,8 +490,8 @@ fn write(path: &Path, contents: &str) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::{
-        Constant, check_generated_artifacts, check_rust_ownership, generate_at, render_typescript,
-        validate,
+        Constant, check_generated_artifacts, check_playground_test_consumer_ownership,
+        check_rust_ownership, generate_at, render_typescript, validate,
     };
     use std::fs;
     use tempfile::TempDir;
@@ -519,6 +561,34 @@ mod tests {
                 .to_string()
                 .contains("stale semantic-convention artifact")
         );
+        Ok(())
+    }
+
+    #[test]
+    fn playground_test_consumer_ownership_rejects_wire_literals() -> anyhow::Result<()> {
+        let root = TempDir::new()?;
+        let playground = TempDir::new()?;
+        let registry = root.path().join("telemetry/semconv/contract.yaml");
+        fs::create_dir_all(registry.parent().expect("registry parent"))?;
+        fs::write(
+            &registry,
+            "constants:\n  - id: test.attempt.ordinal\n    rust: TEST_ATTEMPT_ORDINAL\n    typescript: TEST_ATTEMPT_ORDINAL\n    java: TEST_ATTEMPT_ORDINAL\n    value: test.attempt.ordinal\n    owner: playground\n",
+        )?;
+        let consumer = playground.path().join("cli/src/test_report.rs");
+        fs::create_dir_all(consumer.parent().expect("consumer parent"))?;
+        fs::write(&consumer, "let key = semconv::TEST_ATTEMPT_ORDINAL;\n")?;
+        check_playground_test_consumer_ownership(root.path(), playground.path())?;
+
+        fs::write(&consumer, "let key = \"test.attempt.ordinal\";\n")?;
+        let error = check_playground_test_consumer_ownership(root.path(), playground.path())
+            .expect_err("runtime wire literal must fail");
+        assert!(error.to_string().contains("duplicates generated"));
+
+        fs::write(
+            &consumer,
+            "let key = semconv::TEST_ATTEMPT_ORDINAL;\n#[cfg(test)]\nmod tests { const FIXTURE: &str = \"test.attempt.ordinal\"; }\n",
+        )?;
+        check_playground_test_consumer_ownership(root.path(), playground.path())?;
         Ok(())
     }
 
